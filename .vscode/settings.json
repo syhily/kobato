@@ -1,20 +1,25 @@
 {
     "cSpell.words": [
-        "Debugf",
+        "danielgtaylor",
+        "debugf",
+        "fasthttp",
+        "gofiber",
         "golangci",
-        "Infof",
+        "huma",
+        "humacli",
+        "infof",
         "knadh",
-        "Koanf",
+        "koanf",
         "kobato",
         "stretchr",
-        "Tracef",
-        "Warnf"
+        "tracef",
+        "warnf"
     ],
     "cSpell.ignorePaths": [
         "go.mod",
         "go.sum",
         "go.work",
         ".golangci.yml",
-        ".pre-commit-config.yaml",
+        ".pre-commit-config.yaml"
     ]
 }
