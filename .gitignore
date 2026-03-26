@@ -25,6 +25,7 @@ go.work
 
 # builds
 kobato
+dist/
 
 # Editor/IDE
 # .idea/

@@ -9,7 +9,6 @@ linters:
     - cyclop
     - dupl
     - forbidigo
-    - gochecknoglobals
     - gocognit
     - goconst
     - gosec

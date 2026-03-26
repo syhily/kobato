@@ -32,7 +32,10 @@ func main() {
 		}
 
 		// Create Kobato API server using Fiber adapter
-		router := fiber.New()
+		router := fiber.New(fiber.Config{
+			AppName:      "Kobato",
+			ServerHeader: fmt.Sprintf("Kobato/%s", ShortVersion()),
+		})
 
 		api := adapter.New(router, huma.DefaultConfig("Kobato API", "1.0.0"))
 
@@ -53,6 +56,12 @@ func main() {
 			log.Infof("Server on port %d stopped successfully!", options.Port)
 		})
 	})
+
+	cmd := cli.Root()
+	cmd.Use = "kobato"
+	cmd.Short = "Kobato"
+	cmd.Long = "Kobato is a headless blog engine for content creators."
+	cmd.Version = LongVersion()
 
 	// Run the Kobato API server.
 	cli.Run()

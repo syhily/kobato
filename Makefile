@@ -1,4 +1,4 @@
-## kobata build tooling
+## kobato build tooling
 
 MAKEFLAGS += --silent
 
@@ -36,6 +36,9 @@ pre-commit: test lint vuln
 run:
 	go run main.go
 
+build: ## Build executable files
+	goreleaser release --clean --snapshot
+
 ## test: Test with go test
 test:
 	go test -test.v -race -covermode=atomic -coverprofile=coverage.out ./... && go tool cover -html=coverage.out && rm coverage.out
@@ -49,10 +52,4 @@ vuln:
 	go install golang.org/x/vuln/cmd/govulncheck@latest
 	govulncheck ./...
 
-## badges: Generate README badges
-badge badges:
-	go test ./... -coverprofile coverage.out \
-	COVERAGE=$(go tool cover -func=coverage.out | grep total: | grep -Eo '[0-9]+\.[0-9]+') \
-	curl -sL "https://img.shields.io/static/v1?label=coverage&message=$$COVERAGE%&color=$$COLOR&logo=go" > images/badges/coverage.svg
-
-.PHONY: lint fmt tidy pre-commit test test-perf vuln badges
+.PHONY: lint fmt tidy pre-commit test test-perf vuln

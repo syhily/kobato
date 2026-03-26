@@ -1,0 +1,63 @@
+project_name: kobato
+version: 2
+
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - id: kobato
+    binary: kobato
+    gcflags:
+      - all=-l -B
+    ldflags:
+      - -s -w
+      - -X github.com/syhily/kobato/main.gitTag={{ .Version }}
+      - -X github.com/syhily/kobato/main.gitCommit={{ .Commit }}
+      - -X github.com/syhily/kobato/main.buildDate={{ .Date }}
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - windows
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+      - loong64
+    ignore:
+      - goos: windows
+        goarch: loong64
+      - goos: darwin
+        goarch: loong64
+
+checksum:
+  name_template: 'checksums.txt'
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - '^docs:'
+      - '^test:'
+      - '^web:'
+      - '^build:'
+
+archives:
+  - id: kobato
+    ids:
+      - kobato
+    wrap_in_directory: "true"
+    format_overrides:
+      - goos: linux
+        formats: [tar.gz]
+      - goos: darwin
+        formats: [zip]
+      - goos: windows
+        formats: [zip]
+
+release:
+  draft: true
+
+snapshot:
+  version_template: "{{ incminor .Version }}-next"
