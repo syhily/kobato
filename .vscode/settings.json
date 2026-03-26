@@ -17,6 +17,7 @@
         "kobato",
         "ldflags",
         "loong",
+        "Prefork",
         "stretchr",
         "tracef",
         "warnf"

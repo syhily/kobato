@@ -30,12 +30,13 @@ Kobato :: %s :: %s
 
 // Options for the Kobato API server.
 type Options struct {
-	Port  int  `help:"Port to listen on" short:"p" default:"8888"`
-	Debug bool `help:"Enable debug mode" short:"d" default:"false"`
+	Port    int  `help:"Port to listen on" short:"p" default:"8888"`
+	Debug   bool `help:"Enable debug mode" short:"d" default:"false"`
+	APIDocs bool `help:"Enable API docs" default:"true"`
 }
 
-func addRoutes(_ huma.API) {
-	// TODO: Add routes here
+func addAPIRoutes(_ huma.API) {
+	// TODO: Add API routes here
 }
 
 func main() {
@@ -53,24 +54,37 @@ func main() {
 			ServerHeader: fmt.Sprintf("Kobato/%s", ShortVersion()),
 		})
 
-		api := adapter.New(router, huma.DefaultConfig("Kobato API", "1.0.0"))
+		config := huma.DefaultConfig("Kobato API", ShortVersion())
+		// The OpenAPI and docs should be disabled for a production running instance.
+		if !options.APIDocs {
+			config.OpenAPIPath = ""
+			config.DocsPath = ""
+			config.SchemasPath = ""
+		}
+		api := adapter.New(router, config)
 
-		addRoutes(api)
+		addAPIRoutes(api)
 
 		router.Hooks().OnPreStartupMessage(func(sm *fiber.PreStartupMessageData) error {
 			sm.BannerHeader = fmt.Sprintf(bannerHeader, ShortVersion(), time.Now().Format("2006-01-02 15:04:05"))
 			return nil
 		})
 
+		// TODO Add the database migration.
+		router.Hooks().OnPostStartupMessage(func(_ *fiber.PostStartupMessageData) error {
+			return nil
+		})
+
 		hooks.OnStart(func() {
-			if err := router.Listen(fmt.Sprintf(":%d", options.Port)); err != nil {
+			if err := router.Listen(fmt.Sprintf(":%d", options.Port), fiber.ListenConfig{
+				EnablePrefork: true,
+			}); err != nil {
 				log.Errorf("Error starting server: %v", err)
 			}
 		})
 
 		hooks.OnStop(func() {
-			log.Infof("Stopping server on port %d...\n", options.Port)
-			if err := router.Shutdown(); err != nil {
+			if err := router.ShutdownWithTimeout(time.Second * 5); err != nil {
 				log.Errorf("Error shutting down server: %v", err)
 			}
 			log.Infof("Server on port %d stopped successfully!", options.Port)

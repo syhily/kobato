@@ -15,7 +15,7 @@ func ShortVersion() string {
 	if gitTag != "" {
 		return gitTag
 	}
-	return "dev"
+	return "0.0.0-dev"
 }
 
 func LongVersion() string {
@@ -24,5 +24,5 @@ func LongVersion() string {
 	if gitTag != "" {
 		return fmt.Sprintf("%s (commit: %s, built at: %s, platform: %s, go: %s)", gitTag, gitCommit, buildDate, platform, goVersion)
 	}
-	return fmt.Sprintf("nightly (platform: %s, go: %s)", platform, goVersion)
+	return fmt.Sprintf("%s (platform: %s, go: %s)", ShortVersion(), platform, goVersion)
 }
