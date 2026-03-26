@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/danielgtaylor/huma/v2/humacli"
@@ -10,6 +11,21 @@ import (
 	"github.com/syhily/kobato/adapter"
 
 	_ "github.com/danielgtaylor/huma/v2/formats/cbor"
+)
+
+const (
+	// Banner header for the Kobato API server. Plan to change it to a more stylish one.
+	bannerHeader = ` __   ___   ______    _______       __  ___________  ______
+|/"| /  ") /    " \  |   _  "\     /""\("     _   ")/    " \
+(: |/   / // ____  \ (. |_)  :)   /    \)__/  \\__/// ____  \
+|    __/ /  /    ) :)|:     \/   /' /\  \  \\_ /  /  /    ) :)
+(// _  \(: (____/ // (|  _  \\  //  __'  \ |.  | (: (____/ //
+|: | \  \\        /  |: |_)  :)/   /  \\  \\:  |  \        /
+(__|  \__)\"_____/   (_______/(___/    \___)\__|   \"_____/
+
+Kobato :: %s :: %s
+
+`
 )
 
 // Options for the Kobato API server.
@@ -41,8 +57,12 @@ func main() {
 
 		addRoutes(api)
 
+		router.Hooks().OnPreStartupMessage(func(sm *fiber.PreStartupMessageData) error {
+			sm.BannerHeader = fmt.Sprintf(bannerHeader, ShortVersion(), time.Now().Format("2006-01-02 15:04:05"))
+			return nil
+		})
+
 		hooks.OnStart(func() {
-			log.Infof("Starting server on port %d...\n", options.Port)
 			if err := router.Listen(fmt.Sprintf(":%d", options.Port)); err != nil {
 				log.Errorf("Error starting server: %v", err)
 			}
