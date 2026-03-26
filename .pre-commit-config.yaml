@@ -1,0 +1,22 @@
+---
+exclude: ^(assets/.*)$
+repos:
+  # CHECKS - will try to load the files for valid syntax
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: check-yaml
+      - id: check-json
+      - id: check-added-large-files
+      - id: check-vcs-permalinks
+      - id: check-merge-conflict
+      - id: check-symlinks
+      - id: detect-private-key
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+
+  # LINTERS - will try to validate that all standards are conformed to
+  - repo: https://github.com/golangci/golangci-lint
+    rev: v2.9.0
+    hooks:
+      - id: golangci-lint

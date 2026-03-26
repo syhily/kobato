@@ -1,0 +1,20 @@
+{
+    "cSpell.words": [
+        "Debugf",
+        "golangci",
+        "Infof",
+        "knadh",
+        "Koanf",
+        "kobato",
+        "stretchr",
+        "Tracef",
+        "Warnf"
+    ],
+    "cSpell.ignorePaths": [
+        "go.mod",
+        "go.sum",
+        "go.work",
+        ".golangci.yml",
+        ".pre-commit-config.yaml",
+    ]
+}
