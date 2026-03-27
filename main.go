@@ -9,6 +9,7 @@ import (
 	"github.com/gofiber/fiber/v3"
 	"github.com/gofiber/fiber/v3/log"
 	"github.com/syhily/kobato/adapter"
+	"github.com/syhily/kobato/apis"
 
 	_ "github.com/danielgtaylor/huma/v2/formats/cbor"
 )
@@ -35,10 +36,6 @@ type Options struct {
 	APIDocs bool `help:"Enable API docs" default:"true"`
 }
 
-func addAPIRoutes(_ huma.API) {
-	// TODO: Add API routes here
-}
-
 func main() {
 	cli := humacli.New(func(hooks humacli.Hooks, options *Options) {
 		// Set the log level to debug if debug mode is enabled
@@ -54,16 +51,16 @@ func main() {
 			ServerHeader: fmt.Sprintf("Kobato/%s", ShortVersion()),
 		})
 
-		config := huma.DefaultConfig("Kobato API", ShortVersion())
+		humaConfig := huma.DefaultConfig("Kobato API", ShortVersion())
 		// The OpenAPI and docs should be disabled for a production running instance.
 		if !options.APIDocs {
-			config.OpenAPIPath = ""
-			config.DocsPath = ""
-			config.SchemasPath = ""
+			humaConfig.OpenAPIPath = ""
+			humaConfig.DocsPath = ""
+			humaConfig.SchemasPath = ""
 		}
-		api := adapter.New(router, config)
+		api := adapter.New(router, humaConfig)
 
-		addAPIRoutes(api)
+		apis.AddAPIRoutes(api)
 
 		router.Hooks().OnPreStartupMessage(func(sm *fiber.PreStartupMessageData) error {
 			sm.BannerHeader = fmt.Sprintf(bannerHeader, ShortVersion(), time.Now().Format("2006-01-02 15:04:05"))

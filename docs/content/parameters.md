@@ -11,7 +11,6 @@ Tells the API to return additional data related to the resource you have request
 * Posts & Pages: `authors`, `tags`
 * Authors: `count.posts`
 * Tags: `count.posts`
-* Tiers: `monthly_price`, `yearly_price`, `benefits`
 
 Includes can be combined with a comma, e.g., `&include=authors,tags`.
 
@@ -23,10 +22,6 @@ For posts and pages:
 For authors and tags:
 
 * `&include=count.posts` will add `"count": {"posts": 7}` to the response.
-
-For tiers:
-
-* `&include=monthly_price,yearly_price,benefits` will add monthly price, yearly price, and benefits data.
 
 ## Fields
 
@@ -64,7 +59,7 @@ Apply fine-grained filters to target specific data.
 * `&filter=tag:getting-started` on posts returns those with the tag slug that matches `getting-started`.
 * `&filter=visibility:public` on tiers returns only those marked as publicly visible.
 
-The possibilities are extensive! Query strings are explained in detail in the [filtering](/content-api/filtering) section.
+The possibilities are extensive! Query strings are explained in detail in the [filtering](./filtering.md) section.
 
 ## Limit
 
