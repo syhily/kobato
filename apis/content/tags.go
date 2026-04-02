@@ -26,6 +26,7 @@ func addTagsRoutes(api huma.API) {
 		Method:      http.MethodGet,
 		Path:        "/tags/{id}",
 		Summary:     "Get tag by ID",
+		Description: "Retrieve a single public tag by its ID. Supports include and fields query parameters.",
 		Tags:        []string{"Tags"},
 	}
 	huma.Register(api, getByIDOp, func(_ context.Context, _ *schema.TagReadByIDInput) (*schema.TagOutput, error) {
@@ -37,6 +38,7 @@ func addTagsRoutes(api huma.API) {
 		Method:      http.MethodGet,
 		Path:        "/tags/slug/{slug}",
 		Summary:     "Get tag by slug",
+		Description: "Retrieve a single public tag by its slug. Supports include and fields query parameters.",
 		Tags:        []string{"Tags"},
 	}
 	huma.Register(api, getBySlugOp, func(_ context.Context, _ *schema.TagReadBySlugInput) (*schema.TagOutput, error) {

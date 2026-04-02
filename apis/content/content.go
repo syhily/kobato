@@ -7,8 +7,7 @@ import (
 
 func AddContentRoutes(api *huma.Group) {
 	api.UseSimpleModifier(func(o *huma.Operation) {
-		o.Summary = "Content API - Using for read-only access to content."
-		o.Tags = append(o.Tags, "Content")
+		o.Summary = "Content API - " + o.Summary
 		o.Errors = schema.ContentErrorCodes
 	})
 

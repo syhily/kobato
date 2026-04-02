@@ -26,6 +26,7 @@ func addTagsRoutes(api huma.API) {
 		Method:      http.MethodGet,
 		Path:        "/tags/{id}",
 		Summary:     "Get tag by ID",
+		Description: "Retrieve a single tag by its ID. Supports include and fields query parameters.",
 		Tags:        []string{"Tags"},
 	}
 	huma.Register(api, getByIDOp, func(_ context.Context, _ *schema.TagReadByIDInput) (*schema.TagOutput, error) {
@@ -37,6 +38,7 @@ func addTagsRoutes(api huma.API) {
 		Method:      http.MethodGet,
 		Path:        "/tags/slug/{slug}",
 		Summary:     "Get tag by slug",
+		Description: "Retrieve a single tag by its slug. Supports include and fields query parameters.",
 		Tags:        []string{"Tags"},
 	}
 	huma.Register(api, getBySlugOp, func(_ context.Context, _ *schema.TagReadBySlugInput) (*schema.TagOutput, error) {
@@ -48,6 +50,7 @@ func addTagsRoutes(api huma.API) {
 		Method:        http.MethodPost,
 		Path:          "/tags",
 		Summary:       "Create a tag",
+		Description:   "Create a new tag. The name field is required. Tags can be used to organize posts and pages.",
 		Tags:          []string{"Tags"},
 		DefaultStatus: http.StatusCreated,
 	}
@@ -60,6 +63,7 @@ func addTagsRoutes(api huma.API) {
 		Method:      http.MethodPut,
 		Path:        "/tags/{id}",
 		Summary:     "Update a tag",
+		Description: "Update an existing tag by ID. The updated_at field is required for optimistic locking.",
 		Tags:        []string{"Tags"},
 	}
 	huma.Register(api, updateOp, func(_ context.Context, _ *schema.UpdateTagInput) (*schema.TagOutput, error) {
@@ -71,6 +75,7 @@ func addTagsRoutes(api huma.API) {
 		Method:        http.MethodDelete,
 		Path:          "/tags/{id}",
 		Summary:       "Delete a tag",
+		Description:   "Permanently delete a tag by its ID. Posts associated with the tag will have the tag removed.",
 		Tags:          []string{"Tags"},
 		DefaultStatus: http.StatusNoContent,
 	}

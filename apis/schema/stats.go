@@ -160,6 +160,11 @@ type AdminStatsOutput struct {
 	Meta  json.RawMessage   `json:"meta,omitempty"`
 }
 
+type FeedbackBrowseInput struct {
+	IDPathParam
+	CommonBrowseQueryParams
+}
+
 type AdminFeedbackEntry struct {
 	ID        string `json:"id"`
 	PostID    string `json:"post_id"`

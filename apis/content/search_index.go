@@ -14,6 +14,7 @@ func addSearchIndexRoutes(api huma.API) {
 		Method:      http.MethodGet,
 		Path:        "/search-index/posts",
 		Summary:     "Get content search index posts",
+		Description: "Retrieve all published posts formatted for search indexing via the Content API.",
 		Tags:        []string{"Search Index"},
 	}
 	huma.Register(api, postsOp, func(_ context.Context, _ *schema.EmptyInput) (*schema.ContentSearchIndexPostsOutput, error) {
@@ -25,6 +26,7 @@ func addSearchIndexRoutes(api huma.API) {
 		Method:      http.MethodGet,
 		Path:        "/search-index/authors",
 		Summary:     "Get content search index authors",
+		Description: "Retrieve all authors formatted for search indexing via the Content API.",
 		Tags:        []string{"Search Index"},
 	}
 	huma.Register(api, authorsOp, func(_ context.Context, _ *schema.EmptyInput) (*schema.ContentSearchIndexAuthorsOutput, error) {
@@ -36,6 +38,7 @@ func addSearchIndexRoutes(api huma.API) {
 		Method:      http.MethodGet,
 		Path:        "/search-index/tags",
 		Summary:     "Get content search index tags",
+		Description: "Retrieve all public tags formatted for search indexing via the Content API.",
 		Tags:        []string{"Search Index"},
 	}
 	huma.Register(api, tagsOp, func(_ context.Context, _ *schema.EmptyInput) (*schema.ContentSearchIndexTagsOutput, error) {

@@ -17,7 +17,7 @@ type WebhookResource struct {
 }
 
 type CreateWebhookBody struct {
-	Event         string  `json:"event" maxLength:"50"`
+	Event         string  `json:"event" maxLength:"50" pattern:"^[a-z_.]+$"`
 	TargetURL     string  `json:"target_url" maxLength:"2000"`
 	Name          *string `json:"name,omitempty" maxLength:"191"`
 	Secret        *string `json:"secret,omitempty" maxLength:"191"`
@@ -32,7 +32,7 @@ type CreateWebhookInput struct {
 }
 
 type UpdateWebhookBody struct {
-	Event      *string `json:"event,omitempty" maxLength:"50"`
+	Event      *string `json:"event,omitempty" maxLength:"50" pattern:"^[a-z_.]+$"`
 	TargetURL  *string `json:"target_url,omitempty" maxLength:"2000"`
 	Name       *string `json:"name,omitempty" maxLength:"191"`
 	Secret     *string `json:"secret,omitempty" maxLength:"191"`

@@ -13,6 +13,20 @@ type MemberLabelResource struct {
 	Count     *LabelCountMeta `json:"count,omitempty"`
 }
 
+type LabelsBrowseInput struct {
+	CommonBrowseQueryParams
+}
+
+type LabelReadByIDInput struct {
+	IDPathParam
+	CommonReadQueryParams
+}
+
+type LabelReadBySlugInput struct {
+	SlugPathParam
+	CommonReadQueryParams
+}
+
 type CreateLabelBody struct {
 	Name string  `json:"name" minLength:"1" maxLength:"191" pattern:"^([^,]|$)"`
 	Slug *string `json:"slug,omitempty" maxLength:"191"`

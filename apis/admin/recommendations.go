@@ -14,9 +14,10 @@ func addRecommendationsRoutes(api huma.API) {
 		Method:      http.MethodGet,
 		Path:        "/recommendations",
 		Summary:     "List recommendations",
+		Description: "Browse outgoing site recommendations with pagination and ordering support.",
 		Tags:        []string{"Recommendations"},
 	}
-	huma.Register(api, listOp, func(_ context.Context, _ *schema.CommonBrowseQueryParams) (*schema.AdminRecommendationsOutput, error) {
+	huma.Register(api, listOp, func(_ context.Context, _ *schema.AdminRecommendationsBrowseInput) (*schema.AdminRecommendationsOutput, error) {
 		return &schema.AdminRecommendationsOutput{}, nil
 	})
 
@@ -25,6 +26,7 @@ func addRecommendationsRoutes(api huma.API) {
 		Method:      http.MethodPost,
 		Path:        "/recommendations",
 		Summary:     "Create recommendation",
+		Description: "Create a new outgoing recommendation for another publication or website.",
 		Tags:        []string{"Recommendations"},
 	}
 	huma.Register(api, createOp, func(_ context.Context, _ *schema.CreateRecommendationInput) (*schema.AdminRecommendationOutput, error) {
@@ -36,6 +38,7 @@ func addRecommendationsRoutes(api huma.API) {
 		Method:      http.MethodPost,
 		Path:        "/recommendations/check",
 		Summary:     "Check recommendations",
+		Description: "Check whether a URL is already recommended and retrieve metadata about the target site.",
 		Tags:        []string{"Recommendations"},
 	}
 	huma.Register(api, checkOp, func(_ context.Context, _ *schema.CheckRecommendationInput) (*schema.AdminNoContentOutput, error) {
@@ -47,9 +50,10 @@ func addRecommendationsRoutes(api huma.API) {
 		Method:      http.MethodGet,
 		Path:        "/incoming_recommendations",
 		Summary:     "List incoming recommendations",
+		Description: "Browse incoming recommendations from other sites that recommend this publication.",
 		Tags:        []string{"Recommendations"},
 	}
-	huma.Register(api, listIncomingOp, func(_ context.Context, _ *schema.CommonBrowseQueryParams) (*schema.AdminIncomingRecommendationsOutput, error) {
+	huma.Register(api, listIncomingOp, func(_ context.Context, _ *schema.AdminIncomingRecommendationsBrowseInput) (*schema.AdminIncomingRecommendationsOutput, error) {
 		return &schema.AdminIncomingRecommendationsOutput{}, nil
 	})
 
@@ -58,6 +62,7 @@ func addRecommendationsRoutes(api huma.API) {
 		Method:      http.MethodGet,
 		Path:        "/recommendations/{id}",
 		Summary:     "Read recommendation",
+		Description: "Retrieve a single recommendation by its ID.",
 		Tags:        []string{"Recommendations"},
 	}
 	huma.Register(api, getByIDOp, func(_ context.Context, _ *schema.IDPathParam) (*schema.AdminRecommendationOutput, error) {
@@ -69,6 +74,7 @@ func addRecommendationsRoutes(api huma.API) {
 		Method:      http.MethodPut,
 		Path:        "/recommendations/{id}",
 		Summary:     "Update recommendation",
+		Description: "Update an existing recommendation by ID. Supports changing the title, reason, excerpt, and featured image.",
 		Tags:        []string{"Recommendations"},
 	}
 	huma.Register(api, updateOp, func(_ context.Context, _ *schema.UpdateRecommendationInput) (*schema.AdminRecommendationOutput, error) {
@@ -80,6 +86,7 @@ func addRecommendationsRoutes(api huma.API) {
 		Method:      http.MethodDelete,
 		Path:        "/recommendations/{id}",
 		Summary:     "Delete recommendation",
+		Description: "Permanently delete an outgoing recommendation by its ID.",
 		Tags:        []string{"Recommendations"},
 	}
 	huma.Register(api, deleteOp, func(_ context.Context, _ *schema.IDPathParam) (*schema.AdminNoContentOutput, error) {

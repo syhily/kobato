@@ -14,6 +14,7 @@ func addRecommendationsRoutes(api huma.API) {
 		Method:      http.MethodGet,
 		Path:        "/recommendations",
 		Summary:     "List recommendations",
+		Description: "Browse public site recommendations with pagination support.",
 		Tags:        []string{"Recommendations"},
 	}
 	huma.Register(api, op, func(_ context.Context, _ *schema.ContentRecommendationsBrowseInput) (*schema.ContentRecommendationsOutput, error) {

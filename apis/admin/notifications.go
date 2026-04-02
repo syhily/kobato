@@ -14,6 +14,7 @@ func addNotificationsRoutes(api huma.API) {
 		Method:      http.MethodGet,
 		Path:        "/notifications",
 		Summary:     "List notifications",
+		Description: "Browse all active notifications for the current user.",
 		Tags:        []string{"Notifications"},
 	}
 	huma.Register(api, listOp, func(_ context.Context, _ *schema.EmptyInput) (*schema.AdminNotificationsOutput, error) {
@@ -25,6 +26,7 @@ func addNotificationsRoutes(api huma.API) {
 		Method:      http.MethodPost,
 		Path:        "/notifications",
 		Summary:     "Create notification",
+		Description: "Create a new notification to display in the admin interface.",
 		Tags:        []string{"Notifications"},
 	}
 	huma.Register(api, createOp, func(_ context.Context, _ *schema.CreateNotificationInput) (*schema.AdminNotificationsOutput, error) {
@@ -36,6 +38,7 @@ func addNotificationsRoutes(api huma.API) {
 		Method:      http.MethodDelete,
 		Path:        "/notifications/{notification_id}",
 		Summary:     "Delete notification",
+		Description: "Dismiss a notification by marking it as seen.",
 		Tags:        []string{"Notifications"},
 	}
 	huma.Register(api, deleteOp, func(_ context.Context, _ *schema.NotificationIDPathParam) (*schema.AdminNoContentOutput, error) {

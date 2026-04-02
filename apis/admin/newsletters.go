@@ -26,6 +26,7 @@ func addNewslettersRoutes(api huma.API) {
 		Method:      http.MethodGet,
 		Path:        "/newsletters/{id}",
 		Summary:     "Get newsletter by ID",
+		Description: "Retrieve a single newsletter by its ID. Supports include and fields query parameters.",
 		Tags:        []string{"Newsletters"},
 	}
 	huma.Register(api, getByIDOp, func(_ context.Context, _ *schema.NewsletterReadByIDInput) (*schema.NewsletterOutput, error) {
@@ -37,6 +38,7 @@ func addNewslettersRoutes(api huma.API) {
 		Method:        http.MethodPost,
 		Path:          "/newsletters",
 		Summary:       "Create a newsletter",
+		Description:   "Create a new newsletter. The name field is required. Multiple newsletters can exist for different audience segments.",
 		Tags:          []string{"Newsletters"},
 		DefaultStatus: http.StatusCreated,
 	}
@@ -49,6 +51,7 @@ func addNewslettersRoutes(api huma.API) {
 		Method:      http.MethodPut,
 		Path:        "/newsletters/{id}",
 		Summary:     "Update a newsletter",
+		Description: "Update an existing newsletter by ID. Certain changes like sender email require email verification before taking effect.",
 		Tags:        []string{"Newsletters"},
 	}
 	huma.Register(api, updateOp, func(_ context.Context, _ *schema.UpdateNewsletterInput) (*schema.NewsletterOutput, error) {
@@ -60,6 +63,7 @@ func addNewslettersRoutes(api huma.API) {
 		Method:      http.MethodPut,
 		Path:        "/newsletters/verifications",
 		Summary:     "Verify newsletter property update",
+		Description: "Confirm a pending newsletter property change (e.g., sender email) using a verification token sent to the new address.",
 		Tags:        []string{"Newsletters"},
 	}
 	huma.Register(api, verifyPropertyOp, func(_ context.Context, _ *schema.AdminNewsletterVerificationInput) (*schema.NewsletterOutput, error) {

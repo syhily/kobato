@@ -80,6 +80,22 @@ type CreateCommentInput struct {
 	}
 }
 
+type CommentRepliesBrowseInput struct {
+	IDPathParam
+	CommonBrowseQueryParams
+	Include []CommentInclude `query:"include,omitempty" doc:"Supported values: post, member, replies, replies.member"`
+}
+
+type CommentReportsBrowseInput struct {
+	IDPathParam
+	CommonBrowseQueryParams
+}
+
+type CommentLikesBrowseInput struct {
+	IDPathParam
+	CommonBrowseQueryParams
+}
+
 type UpdateCommentBody struct {
 	Status *string `json:"status,omitempty" enum:"published,hidden,deleted"`
 }

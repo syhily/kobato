@@ -26,6 +26,7 @@ func addPagesRoutes(api huma.API) {
 		Method:      http.MethodDelete,
 		Path:        "/pages",
 		Summary:     "Bulk delete pages",
+		Description: "Permanently delete multiple pages matching the given filter.",
 		Tags:        []string{"Pages"},
 	}
 	huma.Register(api, bulkDeleteOp, func(_ context.Context, _ *schema.AdminPageBulkDeleteInput) (*schema.AdminBulkActionOutput, error) {
@@ -37,6 +38,7 @@ func addPagesRoutes(api huma.API) {
 		Method:      http.MethodPut,
 		Path:        "/pages/bulk",
 		Summary:     "Bulk edit pages",
+		Description: "Apply a bulk action to multiple pages matching the given filter. Supported actions include adding/removing tags and changing access level.",
 		Tags:        []string{"Pages"},
 	}
 	huma.Register(api, bulkEditOp, func(_ context.Context, _ *schema.AdminPageBulkEditInput) (*schema.AdminBulkActionOutput, error) {
@@ -48,6 +50,7 @@ func addPagesRoutes(api huma.API) {
 		Method:      http.MethodGet,
 		Path:        "/pages/{id}",
 		Summary:     "Get page by ID",
+		Description: "Retrieve a single page by its ID. Supports include, fields, and formats query parameters.",
 		Tags:        []string{"Pages"},
 	}
 	huma.Register(api, getByIDOp, func(_ context.Context, _ *schema.AdminPageReadByIDInput) (*schema.AdminPageOutput, error) {
@@ -59,6 +62,7 @@ func addPagesRoutes(api huma.API) {
 		Method:      http.MethodGet,
 		Path:        "/pages/slug/{slug}",
 		Summary:     "Get page by slug",
+		Description: "Retrieve a single page by its slug. Supports include, fields, and formats query parameters.",
 		Tags:        []string{"Pages"},
 	}
 	huma.Register(api, getBySlugOp, func(_ context.Context, _ *schema.AdminPageReadBySlugInput) (*schema.AdminPageOutput, error) {
@@ -70,6 +74,7 @@ func addPagesRoutes(api huma.API) {
 		Method:        http.MethodPost,
 		Path:          "/pages",
 		Summary:       "Create a page",
+		Description:   "Create a new page. The title field is required. Supports setting content in lexical or mobiledoc format and associating tags/authors.",
 		Tags:          []string{"Pages"},
 		DefaultStatus: http.StatusCreated,
 	}
@@ -82,6 +87,7 @@ func addPagesRoutes(api huma.API) {
 		Method:      http.MethodPut,
 		Path:        "/pages/{id}",
 		Summary:     "Update a page",
+		Description: "Update an existing page by ID. The updated_at field is required for optimistic locking. Supports partial updates — only provided fields are changed.",
 		Tags:        []string{"Pages"},
 	}
 	huma.Register(api, updateOp, func(_ context.Context, _ *schema.UpdatePageInput) (*schema.AdminPageOutput, error) {
@@ -93,6 +99,7 @@ func addPagesRoutes(api huma.API) {
 		Method:        http.MethodPost,
 		Path:          "/pages/{id}/copy",
 		Summary:       "Copy a page",
+		Description:   "Create a duplicate of an existing page. The new page is created in draft status with a modified title indicating it is a copy.",
 		Tags:          []string{"Pages"},
 		DefaultStatus: http.StatusCreated,
 	}
@@ -105,6 +112,7 @@ func addPagesRoutes(api huma.API) {
 		Method:        http.MethodDelete,
 		Path:          "/pages/{id}",
 		Summary:       "Delete a page",
+		Description:   "Permanently delete a page by its ID. This action cannot be undone.",
 		Tags:          []string{"Pages"},
 		DefaultStatus: http.StatusNoContent,
 	}

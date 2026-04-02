@@ -14,6 +14,7 @@ func addWebhooksRoutes(api huma.API) {
 		Method:        http.MethodPost,
 		Path:          "/webhooks",
 		Summary:       "Create a webhook",
+		Description:   "Create a new webhook for an integration. Requires a target URL and event name. The event name must be lowercase.",
 		Tags:          []string{"Webhooks"},
 		DefaultStatus: http.StatusCreated,
 	}
@@ -26,6 +27,7 @@ func addWebhooksRoutes(api huma.API) {
 		Method:      http.MethodPut,
 		Path:        "/webhooks/{id}",
 		Summary:     "Update a webhook",
+		Description: "Update an existing webhook by ID. Supports changing the target URL, event, and other configuration.",
 		Tags:        []string{"Webhooks"},
 	}
 	huma.Register(api, updateOp, func(_ context.Context, _ *schema.UpdateWebhookInput) (*schema.WebhookOutput, error) {
@@ -37,6 +39,7 @@ func addWebhooksRoutes(api huma.API) {
 		Method:        http.MethodDelete,
 		Path:          "/webhooks/{id}",
 		Summary:       "Delete a webhook",
+		Description:   "Permanently delete a webhook by its ID.",
 		Tags:          []string{"Webhooks"},
 		DefaultStatus: http.StatusNoContent,
 	}

@@ -26,6 +26,7 @@ func addPagesRoutes(api huma.API) {
 		Method:      http.MethodGet,
 		Path:        "/pages/{id}",
 		Summary:     "Get page by ID",
+		Description: "Retrieve a single published page by its ID. Supports include, fields, and formats query parameters.",
 		Tags:        []string{"Pages"},
 	}
 	huma.Register(api, getByIDOp, func(_ context.Context, _ *schema.ContentPageReadByIDInput) (*schema.PageOutput, error) {
@@ -37,6 +38,7 @@ func addPagesRoutes(api huma.API) {
 		Method:      http.MethodGet,
 		Path:        "/pages/slug/{slug}",
 		Summary:     "Get page by slug",
+		Description: "Retrieve a single published page by its slug. Supports include, fields, and formats query parameters.",
 		Tags:        []string{"Pages"},
 	}
 	huma.Register(api, getBySlugOp, func(_ context.Context, _ *schema.ContentPageReadBySlugInput) (*schema.PageOutput, error) {

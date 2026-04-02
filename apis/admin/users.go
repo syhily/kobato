@@ -26,6 +26,7 @@ func addUsersRoutes(api huma.API) {
 		Method:      http.MethodGet,
 		Path:        "/users/{id}",
 		Summary:     "Get user by ID",
+		Description: "Retrieve a single staff user by their ID. Supports include and fields query parameters. Use 'me' as the ID to get the current user.",
 		Tags:        []string{"Users"},
 	}
 	huma.Register(api, getByIDOp, func(_ context.Context, _ *schema.UserReadByIDInput) (*schema.UserOutput, error) {
@@ -37,6 +38,7 @@ func addUsersRoutes(api huma.API) {
 		Method:      http.MethodGet,
 		Path:        "/users/slug/{slug}",
 		Summary:     "Get user by slug",
+		Description: "Retrieve a single staff user by their slug. Supports include and fields query parameters.",
 		Tags:        []string{"Users"},
 	}
 	huma.Register(api, getBySlugOp, func(_ context.Context, _ *schema.UserReadBySlugInput) (*schema.UserOutput, error) {
@@ -48,6 +50,7 @@ func addUsersRoutes(api huma.API) {
 		Method:      http.MethodGet,
 		Path:        "/users/email/{email}",
 		Summary:     "Get user by email",
+		Description: "Retrieve a single staff user by their email address. Supports include and fields query parameters.",
 		Tags:        []string{"Users"},
 	}
 	huma.Register(api, getByEmailOp, func(_ context.Context, _ *schema.UserReadByEmailInput) (*schema.UserOutput, error) {
@@ -59,6 +62,7 @@ func addUsersRoutes(api huma.API) {
 		Method:      http.MethodGet,
 		Path:        "/users/{id}/token",
 		Summary:     "Get user personal token",
+		Description: "Retrieve the personal API token for a staff user. The token provides Content API access scoped to the user.",
 		Tags:        []string{"Users"},
 	}
 	huma.Register(api, getTokenOp, func(_ context.Context, _ *schema.IDPathParam) (*schema.AdminUserTokenOutput, error) {
@@ -70,6 +74,7 @@ func addUsersRoutes(api huma.API) {
 		Method:      http.MethodPut,
 		Path:        "/users/{id}",
 		Summary:     "Update a user",
+		Description: "Update an existing staff user by ID. Supports updating profile information, role, and notification preferences.",
 		Tags:        []string{"Users"},
 	}
 	huma.Register(api, updateOp, func(_ context.Context, _ *schema.UpdateUserInput) (*schema.UserOutput, error) {
@@ -81,6 +86,7 @@ func addUsersRoutes(api huma.API) {
 		Method:      http.MethodPut,
 		Path:        "/users/password",
 		Summary:     "Change user password",
+		Description: "Change a staff user's password. Requires the old password and a new password confirmation.",
 		Tags:        []string{"Users"},
 	}
 	huma.Register(api, changePasswordOp, func(_ context.Context, _ *schema.AdminUserChangePasswordInput) (*schema.AdminUserPasswordOutput, error) {
@@ -92,6 +98,7 @@ func addUsersRoutes(api huma.API) {
 		Method:      http.MethodPut,
 		Path:        "/users/owner",
 		Summary:     "Transfer site ownership",
+		Description: "Transfer site ownership to another staff user. Only the current owner can perform this action.",
 		Tags:        []string{"Users"},
 	}
 	huma.Register(api, transferOwnerOp, func(_ context.Context, _ *schema.AdminTransferOwnershipInput) (*schema.AdminTransferOwnershipOutput, error) {
@@ -103,6 +110,7 @@ func addUsersRoutes(api huma.API) {
 		Method:      http.MethodPut,
 		Path:        "/users/{id}/token",
 		Summary:     "Regenerate user personal token",
+		Description: "Regenerate the personal API token for a staff user. The previous token is immediately invalidated.",
 		Tags:        []string{"Users"},
 	}
 	huma.Register(api, regenerateTokenOp, func(_ context.Context, _ *schema.IDPathParam) (*schema.AdminUserTokenOutput, error) {
@@ -114,6 +122,7 @@ func addUsersRoutes(api huma.API) {
 		Method:        http.MethodDelete,
 		Path:          "/users/{id}",
 		Summary:       "Delete a user",
+		Description:   "Permanently delete a staff user. Their posts will be reassigned to the site owner.",
 		Tags:          []string{"Users"},
 		DefaultStatus: http.StatusNoContent,
 	}
@@ -154,6 +163,7 @@ func addInvitesRoutes(api huma.API) {
 		Method:      http.MethodGet,
 		Path:        "/invites/{id}",
 		Summary:     "Get invite by ID",
+		Description: "Retrieve a single pending invitation by its ID.",
 		Tags:        []string{"Users"},
 	}
 	huma.Register(api, getByIDOp, func(_ context.Context, _ *schema.IDPathParam) (*schema.InviteOutput, error) {
@@ -178,6 +188,7 @@ func addInvitesRoutes(api huma.API) {
 		Method:        http.MethodDelete,
 		Path:          "/invites/{id}",
 		Summary:       "Delete an invite",
+		Description:   "Revoke a pending invitation. The invite link will no longer be valid.",
 		Tags:          []string{"Users"},
 		DefaultStatus: http.StatusNoContent,
 	}

@@ -7,8 +7,7 @@ import (
 
 func AddAdminRoutes(api *huma.Group) {
 	api.UseSimpleModifier(func(o *huma.Operation) {
-		o.Summary = "Admin API - Using for full access to content and settings."
-		o.Tags = append(o.Tags, "Admin")
+		o.Summary = "Admin API - " + o.Summary
 		o.Errors = schema.AdminErrorCodes
 	})
 

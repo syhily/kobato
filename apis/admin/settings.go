@@ -14,6 +14,7 @@ func addSettingsRoutes(api huma.API) {
 		Method:      http.MethodGet,
 		Path:        "/settings/routes/yaml",
 		Summary:     "Download routes YAML",
+		Description: "Download the current custom routes configuration as a YAML file.",
 		Tags:        []string{"Settings"},
 		Responses: map[string]*huma.Response{
 			"200": {
@@ -33,6 +34,7 @@ func addSettingsRoutes(api huma.API) {
 		Method:      http.MethodPost,
 		Path:        "/settings/routes/yaml",
 		Summary:     "Upload routes YAML",
+		Description: "Upload a custom routes configuration YAML file to override the site's routing rules.",
 		Tags:        []string{"Settings"},
 	}
 	huma.Register(api, uploadRoutesYAMLOp, func(_ context.Context, _ *schema.AdminRoutesYAMLUploadInput) (*schema.AdminNoContentOutput, error) {
@@ -68,6 +70,7 @@ func addSettingsRoutes(api huma.API) {
 		Method:      http.MethodPut,
 		Path:        "/settings/verifications",
 		Summary:     "Verify settings property update",
+		Description: "Confirm a pending settings change using a verification token, typically for email-based verifications.",
 		Tags:        []string{"Settings"},
 	}
 	huma.Register(api, verifyOp, func(_ context.Context, _ *schema.AdminSettingsVerificationInput) (*schema.AdminGetSettingsOutput, error) {
@@ -79,6 +82,7 @@ func addSettingsRoutes(api huma.API) {
 		Method:        http.MethodDelete,
 		Path:          "/settings/stripe/connect",
 		Summary:       "Disconnect Stripe Connect integration",
+		Description:   "Disconnect the linked Stripe account from the site. Existing subscriptions will no longer be managed.",
 		Tags:          []string{"Settings"},
 		DefaultStatus: http.StatusNoContent,
 	}

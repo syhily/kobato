@@ -83,6 +83,34 @@ type AdminEmailFailureResource struct {
 	Member       *EmailFailureMemberResource `json:"member,omitempty"`
 }
 
+type EmailBatchesBrowseInput struct {
+	IDPathParam
+	CommonBrowseQueryParams
+}
+
+type EmailFailuresBrowseInput struct {
+	IDPathParam
+	CommonBrowseQueryParams
+}
+
+type AdminEmailPreviewOutput struct {
+	EmailPreviews []AdminEmailPreviewResource `json:"email_previews"`
+}
+
+type AdminEmailPreviewResource struct {
+	HTML      string `json:"html"`
+	Plaintext string `json:"plaintext"`
+	Subject   string `json:"subject"`
+}
+
+type SendTestEmailPreviewInput struct {
+	IDPathParam
+	Body struct {
+		Emails     []string `json:"emails"`
+		Newsletter string   `json:"newsletter"`
+	}
+}
+
 type AdminEmailAnalyticsStatusOutput struct {
-	State string `json:"status"`
+	AnalyticsStatus string `json:"status"`
 }

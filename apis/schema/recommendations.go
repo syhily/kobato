@@ -38,6 +38,14 @@ type AdminRecommendationResource struct {
 	Count *RecommendationCountMeta `json:"count,omitempty"`
 }
 
+type AdminRecommendationsBrowseInput struct {
+	CommonBrowseQueryParams
+}
+
+type AdminIncomingRecommendationsBrowseInput struct {
+	CommonBrowseQueryParams
+}
+
 type AdminRecommendationsOutput struct {
 	Recommendations []AdminRecommendationResource `json:"recommendations"`
 	Meta            BrowseMeta                    `json:"meta"`

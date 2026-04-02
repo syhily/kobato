@@ -14,6 +14,7 @@ func addSnippetsRoutes(api huma.API) {
 		Method:      http.MethodGet,
 		Path:        "/snippets",
 		Summary:     "List snippets",
+		Description: "Browse reusable content snippets with filter, pagination, and ordering support.",
 		Tags:        []string{"Snippets"},
 	}
 	huma.Register(api, listOp, func(_ context.Context, _ *schema.SnippetsBrowseInput) (*schema.AdminSnippetsOutput, error) {
@@ -25,6 +26,7 @@ func addSnippetsRoutes(api huma.API) {
 		Method:      http.MethodPost,
 		Path:        "/snippets",
 		Summary:     "Create snippet",
+		Description: "Create a new reusable content snippet. Requires name and mobiledoc content.",
 		Tags:        []string{"Snippets"},
 	}
 	huma.Register(api, createOp, func(_ context.Context, _ *schema.CreateSnippetInput) (*schema.AdminSnippetOutput, error) {
@@ -36,6 +38,7 @@ func addSnippetsRoutes(api huma.API) {
 		Method:      http.MethodGet,
 		Path:        "/snippets/{id}",
 		Summary:     "Read snippet",
+		Description: "Retrieve a single snippet by its ID.",
 		Tags:        []string{"Snippets"},
 	}
 	huma.Register(api, getByIDOp, func(_ context.Context, _ *schema.SnippetReadInput) (*schema.AdminSnippetOutput, error) {
@@ -47,6 +50,7 @@ func addSnippetsRoutes(api huma.API) {
 		Method:      http.MethodPut,
 		Path:        "/snippets/{id}",
 		Summary:     "Update snippet",
+		Description: "Update an existing snippet by ID. Supports partial updates to name, mobiledoc, and lexical content.",
 		Tags:        []string{"Snippets"},
 	}
 	huma.Register(api, updateOp, func(_ context.Context, _ *schema.UpdateSnippetInput) (*schema.AdminSnippetOutput, error) {
@@ -58,6 +62,7 @@ func addSnippetsRoutes(api huma.API) {
 		Method:      http.MethodDelete,
 		Path:        "/snippets/{id}",
 		Summary:     "Delete snippet",
+		Description: "Permanently delete a snippet by its ID.",
 		Tags:        []string{"Snippets"},
 	}
 	huma.Register(api, deleteOp, func(_ context.Context, _ *schema.IDPathParam) (*schema.AdminNoContentOutput, error) {

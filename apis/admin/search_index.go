@@ -16,6 +16,7 @@ func addSearchIndexRoutes(api huma.API) {
 		Method:      http.MethodGet,
 		Path:        "/search-index/posts",
 		Summary:     "Get search index posts",
+		Description: "Retrieve all posts formatted for search indexing, including title, excerpt, and content fields.",
 		Tags:        []string{tag},
 	}, func(_ context.Context, _ *schema.EmptyInput) (*schema.AdminSearchIndexPostsOutput, error) {
 		return &schema.AdminSearchIndexPostsOutput{}, nil
@@ -26,6 +27,7 @@ func addSearchIndexRoutes(api huma.API) {
 		Method:      http.MethodGet,
 		Path:        "/search-index/pages",
 		Summary:     "Get search index pages",
+		Description: "Retrieve all pages formatted for search indexing, including title, excerpt, and content fields.",
 		Tags:        []string{tag},
 	}, func(_ context.Context, _ *schema.EmptyInput) (*schema.AdminSearchIndexPagesOutput, error) {
 		return &schema.AdminSearchIndexPagesOutput{}, nil
@@ -36,6 +38,7 @@ func addSearchIndexRoutes(api huma.API) {
 		Method:      http.MethodGet,
 		Path:        "/search-index/tags",
 		Summary:     "Get search index tags",
+		Description: "Retrieve all public tags formatted for search indexing.",
 		Tags:        []string{tag},
 	}, func(_ context.Context, _ *schema.EmptyInput) (*schema.AdminSearchIndexTagsOutput, error) {
 		return &schema.AdminSearchIndexTagsOutput{}, nil
@@ -46,6 +49,7 @@ func addSearchIndexRoutes(api huma.API) {
 		Method:      http.MethodGet,
 		Path:        "/search-index/users",
 		Summary:     "Get search index users",
+		Description: "Retrieve all staff users formatted for search indexing.",
 		Tags:        []string{tag},
 	}, func(_ context.Context, _ *schema.EmptyInput) (*schema.AdminSearchIndexUsersOutput, error) {
 		return &schema.AdminSearchIndexUsersOutput{}, nil

@@ -26,6 +26,7 @@ func addPostsRoutes(api huma.API) {
 		Method:      http.MethodGet,
 		Path:        "/posts/{id}",
 		Summary:     "Get post by ID",
+		Description: "Retrieve a single published post by its ID. Supports include, fields, and formats query parameters.",
 		Tags:        []string{"Posts"},
 	}
 	huma.Register(api, getByIDOp, func(_ context.Context, _ *schema.ContentPostReadByIDInput) (*schema.PostOutput, error) {
@@ -37,6 +38,7 @@ func addPostsRoutes(api huma.API) {
 		Method:      http.MethodGet,
 		Path:        "/posts/slug/{slug}",
 		Summary:     "Get post by slug",
+		Description: "Retrieve a single published post by its slug. Supports include, fields, and formats query parameters.",
 		Tags:        []string{"Posts"},
 	}
 	huma.Register(api, getBySlugOp, func(_ context.Context, _ *schema.ContentPostReadBySlugInput) (*schema.PostOutput, error) {

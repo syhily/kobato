@@ -26,6 +26,7 @@ func addAuthorsRoutes(api huma.API) {
 		Method:      http.MethodGet,
 		Path:        "/authors/{id}",
 		Summary:     "Get author by ID",
+		Description: "Retrieve a single author by their ID. Supports include and fields query parameters.",
 		Tags:        []string{"Authors"},
 	}
 	huma.Register(api, getByIDOp, func(_ context.Context, _ *schema.AuthorReadByIDInput) (*schema.AuthorOutput, error) {
@@ -37,6 +38,7 @@ func addAuthorsRoutes(api huma.API) {
 		Method:      http.MethodGet,
 		Path:        "/authors/slug/{slug}",
 		Summary:     "Get author by slug",
+		Description: "Retrieve a single author by their slug. Supports include and fields query parameters.",
 		Tags:        []string{"Authors"},
 	}
 	huma.Register(api, getBySlugOp, func(_ context.Context, _ *schema.AuthorReadBySlugInput) (*schema.AuthorOutput, error) {
