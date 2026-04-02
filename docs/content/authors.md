@@ -4,9 +4,9 @@ description: Authors are a subset of [users](../staff.md) who have published pos
 ---
 
 ```js
-GET /content/authors/
-GET /content/authors/{id}/
-GET /content/authors/slug/{slug}/
+GET /api/content/authors/
+GET /api/content/authors/{id}/
+GET /api/content/authors/slug/{slug}/
 ```
 
 Authors that are not associated with a post are not returned. You can supply `include=count.posts` to retrieve the number of posts associated with an author.

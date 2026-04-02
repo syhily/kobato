@@ -1,18 +1,12 @@
 package schema
 
-type ListAuthorsInput struct {
-	BrowseQueryParams
-}
-
 type AuthorResource struct {
 	Slug string `json:"slug"`
 	ID   string `json:"id"`
 
-	// ghost metadata schema
 	MetaTitle       *string `json:"meta_title"`
 	MetaDescription *string `json:"meta_description"`
 
-	// authors schema
 	Name         string  `json:"name"`
 	ProfileImage *string `json:"profile_image"`
 	CoverImage   *string `json:"cover_image"`
@@ -21,9 +15,15 @@ type AuthorResource struct {
 	Location     *string `json:"location"`
 	Facebook     *string `json:"facebook"`
 	Twitter      *string `json:"twitter"`
+	Threads      *string `json:"threads,omitempty"`
+	Bluesky      *string `json:"bluesky,omitempty"`
+	Mastodon     *string `json:"mastodon,omitempty"`
+	Tiktok       *string `json:"tiktok,omitempty"`
+	Youtube      *string `json:"youtube,omitempty"`
+	Instagram    *string `json:"instagram,omitempty"`
+	Linkedin     *string `json:"linkedin,omitempty"`
 	URL          *string `json:"url"`
 
-	// Optional count of posts, only returned if include=count.posts is provided.
 	Count *PostCountMeta `json:"count,omitempty"`
 }
 
@@ -32,6 +32,6 @@ type ListAuthorsOutput struct {
 	Meta    BrowseMeta       `json:"meta"`
 }
 
-type GetAuthorOutput struct {
+type AuthorOutput struct {
 	Authors []AuthorResource `json:"authors"`
 }

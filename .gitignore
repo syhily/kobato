@@ -32,3 +32,6 @@ tmp/
 # .idea/
 # .vscode/
 .cursor/
+
+# Local development
+ghost/

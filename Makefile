@@ -2,9 +2,6 @@
 
 MAKEFLAGS += --silent
 
-GOLANGCI_LINT_VERSION = v2.9.0
-CONTAINER_RUNTIME := $(shell command -v podman 2>/dev/null || command -v docker 2>/dev/null)
-
 all: help
 
 ## help: Prints a list of available build targets.
@@ -19,7 +16,7 @@ help:
 
 ## lint: Lint with golangci-lint
 lint:
-	${CONTAINER_RUNTIME} run --rm -v $$(pwd):/repo -w /repo docker.io/golangci/golangci-lint:${GOLANGCI_LINT_VERSION} golangci-lint run --verbose --color always ./...
+	golangci-lint run --verbose --color always ./...
 
 ## fmt: Format with gofmt
 fmt:

@@ -45,20 +45,20 @@ The Content API provides access to Posts, Pages, Tags, Authors, Tiers, and Setti
 
 | Verb | Path                                           | Method                |
 | ---- | ---------------------------------------------- | --------------------- |
-| GET  | [/posts/](./content/posts.md)                  | Browse posts          |
-| GET  | [/posts/\{id}/](./content/posts.md)            | Read a post by ID     |
-| GET  | [/posts/slug/\{slug}/](./content/posts.md)     | Read a post by slug   |
-| GET  | [/authors/](./content/authors.md)              | Browse authors        |
-| GET  | [/authors/\{id}/](./content/authors.md)        | Read an author by ID  |
-| GET  | [/authors/slug/\{slug}/](./content/authors.md) | Read a author by slug |
-| GET  | [/tags/](./content/tags.md)                    | Browse tags           |
-| GET  | [/tags/\{id}/](./content/tags.md)              | Read a tag by ID      |
-| GET  | [/tags/slug/\{slug}/](./content/tags.md)       | Read a tag by slug    |
-| GET  | [/pages/](./content/pages.md)                  | Browse pages          |
-| GET  | [/pages/\{id}/](./content/pages.md)            | Read a page by ID     |
-| GET  | [/pages/slug/\{slug}/](./content/pages.md)     | Read a page by slug   |
-| GET  | [/tiers/](./content/tiers.md)                  | Browse tiers          |
-| GET  | [/settings/](./content/settings.md)            | Browse settings       |
+| GET  | [/api/content/posts/](./content/posts.md)                  | Browse posts          |
+| GET  | [/api/content/posts/\{id}/](./content/posts.md)            | Read a post by ID     |
+| GET  | [/api/content/posts/slug/\{slug}/](./content/posts.md)     | Read a post by slug   |
+| GET  | [/api/content/authors/](./content/authors.md)              | Browse authors        |
+| GET  | [/api/content/authors/\{id}/](./content/authors.md)        | Read an author by ID  |
+| GET  | [/api/content/authors/slug/\{slug}/](./content/authors.md) | Read a author by slug |
+| GET  | [/api/content/tags/](./content/tags.md)                    | Browse tags           |
+| GET  | [/api/content/tags/\{id}/](./content/tags.md)              | Read a tag by ID      |
+| GET  | [/api/content/tags/slug/\{slug}/](./content/tags.md)       | Read a tag by slug    |
+| GET  | [/api/content/pages/](./content/pages.md)                  | Browse pages          |
+| GET  | [/api/content/pages/\{id}/](./content/pages.md)            | Read a page by ID     |
+| GET  | [/api/content/pages/slug/\{slug}/](./content/pages.md)     | Read a page by slug   |
+| GET  | [/api/content/tiers/](./content/tiers.md)                  | Browse tiers          |
+| GET  | [/api/content/settings/](./content/settings.md)            | Browse settings       |
 
 The Content API supports two types of request: Browse and Read. Browse endpoints allow you to fetch lists of resources, whereas Read endpoints allow you to fetch a single resource.
 

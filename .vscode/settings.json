@@ -4,6 +4,7 @@
         "danielgtaylor",
         "debugf",
         "fasthttp",
+        "frontmatter",
         "gcflags",
         "goarch",
         "gofiber",
@@ -18,7 +19,9 @@
         "kobato",
         "ldflags",
         "loong",
-        "Prefork",
+        "mobiledoc",
+        "prefork",
+        "signups",
         "stretchr",
         "tracef",
         "warnf"

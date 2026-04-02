@@ -4,7 +4,7 @@ description: Settings contain the global settings for a site.
 ---
 
 ```js
-GET /content/settings/
+GET /api/content/settings/
 ```
 
 The settings endpoint is a special case. You will receive a single object, rather than an array. This endpoint doesn’t accept any query parameters.

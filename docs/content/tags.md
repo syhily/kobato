@@ -4,9 +4,9 @@ description: Tags are the [primary taxonomy](./publishing.md#tags) within a Koba
 ---
 
 ```js
-GET /content/tags/
-GET /content/tags/{id}/
-GET /content/tags/slug/{slug}/
+GET /api/content/tags/
+GET /api/content/tags/{id}/
+GET /api/content/tags/slug/{slug}/
 ```
 
 By default, internal tags are always included, use `filter=visibility:public` to limit the response directly to handle filtering and outputting the response.

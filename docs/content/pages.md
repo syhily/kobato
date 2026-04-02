@@ -4,9 +4,9 @@ description: Pages are static resources that are not included in channels or col
 ---
 
 ```js
-GET /content/pages/
-GET /content/pages/{id}/
-GET /content/pages/slug/{slug}/
+GET /api/content/pages/
+GET /api/content/pages/{id}/
+GET /api/content/pages/slug/{slug}/
 ```
 
 Pages are structured identically to posts. The response object will look the same, only the resource key will be `pages`.

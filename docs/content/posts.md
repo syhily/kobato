@@ -4,9 +4,9 @@ description: Posts are the primary resource in a Kobato site. Using the posts en
 ---
 
 ```js
-GET /content/posts/
-GET /content/posts/{id}/
-GET /content/posts/slug/{slug}/
+GET /api/content/posts/
+GET /api/content/posts/{id}/
+GET /api/content/posts/slug/{slug}/
 ```
 
 By default, posts are returned in reverse chronological order by published date when fetching more than one.
