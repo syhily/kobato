@@ -186,7 +186,7 @@ type CreatePostBody struct {
 type CreatePostInput struct {
 	Include []AdminPostInclude `query:"include,omitempty" doc:"Relationships to include in response"`
 	Formats []string           `query:"formats,omitempty" doc:"Output formats. Supported values: lexical, html, plaintext, mobiledoc." enum:"lexical,html,plaintext,mobiledoc"`
-	Source  *string            `query:"source,omitempty" doc:"Set to 'html' when creating a post from HTML content" enum:"html"`
+	Source  string             `query:"source,omitempty" doc:"Set to 'html' when creating a post from HTML content" enum:"html"`
 	Body    struct {
 		Posts []CreatePostBody `json:"posts" minItems:"1" maxItems:"1"`
 	}
@@ -207,12 +207,12 @@ type UpdatePostInput struct {
 	IDPathParam
 	Include          []AdminPostInclude `query:"include,omitempty" doc:"Relationships to include in response"`
 	Formats          []string           `query:"formats,omitempty" doc:"Output formats. Supported values: lexical, html, plaintext, mobiledoc." enum:"lexical,html,plaintext,mobiledoc"`
-	Newsletter       *string            `query:"newsletter,omitempty" doc:"Newsletter slug to send the post to"`
-	EmailSegment     *string            `query:"email_segment,omitempty" doc:"Email recipient segment"`
-	ForceRerender    *bool              `query:"force_rerender,omitempty" doc:"Force re-render of the post"`
-	SaveRevision     *bool              `query:"save_revision,omitempty" doc:"Save a revision of the post"`
-	ConvertToLexical *bool              `query:"convert_to_lexical,omitempty" doc:"Convert mobiledoc to lexical"`
-	Source           *string            `query:"source,omitempty" doc:"Set to 'html' when updating from HTML content" enum:"html"`
+	Newsletter       string             `query:"newsletter,omitempty" doc:"Newsletter slug to send the post to"`
+	EmailSegment     string             `query:"email_segment,omitempty" doc:"Email recipient segment"`
+	ForceRerender    bool               `query:"force_rerender,omitempty" doc:"Force re-render of the post"`
+	SaveRevision     bool               `query:"save_revision,omitempty" doc:"Save a revision of the post"`
+	ConvertToLexical bool               `query:"convert_to_lexical,omitempty" doc:"Convert mobiledoc to lexical"`
+	Source           string             `query:"source,omitempty" doc:"Set to 'html' when updating from HTML content" enum:"html"`
 	Body             struct {
 		Posts []UpdatePostBody `json:"posts" minItems:"1" maxItems:"1"`
 	}

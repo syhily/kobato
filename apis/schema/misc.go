@@ -181,7 +181,7 @@ type AdminSlackTestOutput struct {
 
 type OEmbedReadInput struct {
 	URL  string  `query:"url" doc:"URL to fetch oEmbed data for"`
-	Type *string `query:"type,omitempty" doc:"Type of oEmbed (e.g., bookmark)"`
+	Type string `query:"type,omitempty" doc:"Type of oEmbed (e.g., bookmark)"`
 }
 
 type MentionsBrowseInput struct {

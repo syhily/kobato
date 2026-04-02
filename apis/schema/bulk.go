@@ -74,13 +74,13 @@ type AdminPageBulkEditInput struct {
 }
 
 type AdminMemberBulkDeleteInput struct {
-	All    *bool  `query:"all,omitempty"`
+	All    bool   `query:"all,omitempty"`
 	Filter string `query:"filter,omitempty"`
 	Search string `query:"search,omitempty"`
 }
 
 type AdminMemberBulkEditInput struct {
-	All    *bool  `query:"all,omitempty"`
+	All    bool   `query:"all,omitempty"`
 	Filter string `query:"filter,omitempty"`
 	Search string `query:"search,omitempty"`
 	Body   struct {

@@ -124,8 +124,8 @@ type CreateMemberBody struct {
 }
 
 type CreateMemberInput struct {
-	SendEmail *bool   `query:"send_email,omitempty" doc:"Send a welcome email to the new member"`
-	EmailType *string `query:"email_type,omitempty" doc:"Type of email to send" enum:"signin,signup,subscribe"`
+	SendEmail bool   `query:"send_email,omitempty" doc:"Send a welcome email to the new member"`
+	EmailType string `query:"email_type,omitempty" doc:"Type of email to send" enum:"signin,signup,subscribe"`
 	Body      struct {
 		Members []CreateMemberBody `json:"members" minItems:"1" maxItems:"1"`
 	}
@@ -154,7 +154,7 @@ type UpdateMemberInput struct {
 
 type DeleteMemberInput struct {
 	IDPathParam
-	Cancel *bool `query:"cancel,omitempty"`
+	Cancel bool `query:"cancel,omitempty"`
 }
 
 type ListMembersOutput struct {

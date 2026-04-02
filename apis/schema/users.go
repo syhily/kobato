@@ -110,7 +110,7 @@ type UpdateUserInput struct {
 }
 
 type RolesBrowseInput struct {
-	Permissions *string `query:"permissions,omitempty" doc:"Filter roles by permission type" enum:"assign"`
+	Permissions string `query:"permissions,omitempty" doc:"Filter roles by permission type" enum:"assign"`
 }
 
 type ListRolesOutput struct {

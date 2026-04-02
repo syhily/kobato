@@ -239,7 +239,7 @@ func addMembersRoutes(api huma.API) {
 		Tags:        []string{"Members"},
 	}
 	huma.Register(api, stripeConnectOp, func(_ context.Context, _ *struct {
-		Mode *string `query:"mode,omitempty" enum:"live,test"`
+		Mode string `query:"mode,omitempty" enum:"live,test"`
 	}) (*schema.AdminNoContentOutput, error) {
 		return &schema.AdminNoContentOutput{}, nil
 	})

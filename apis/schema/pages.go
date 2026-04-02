@@ -42,7 +42,7 @@ type CreatePageBody struct {
 type CreatePageInput struct {
 	Include []AdminPageInclude `query:"include,omitempty" doc:"Relationships to include in response"`
 	Formats []string           `query:"formats,omitempty" doc:"Output formats. Supported values: lexical, html, plaintext, mobiledoc." enum:"lexical,html,plaintext,mobiledoc"`
-	Source  *string            `query:"source,omitempty" doc:"Set to 'html' when creating a page from HTML content" enum:"html"`
+	Source  string             `query:"source,omitempty" doc:"Set to 'html' when creating a page from HTML content" enum:"html"`
 	Body    struct {
 		Pages []CreatePageBody `json:"pages" minItems:"1" maxItems:"1"`
 	}
@@ -60,10 +60,10 @@ type UpdatePageInput struct {
 	IDPathParam
 	Include          []AdminPageInclude `query:"include,omitempty" doc:"Relationships to include in response"`
 	Formats          []string           `query:"formats,omitempty" doc:"Output formats. Supported values: lexical, html, plaintext, mobiledoc." enum:"lexical,html,plaintext,mobiledoc"`
-	ForceRerender    *bool              `query:"force_rerender,omitempty" doc:"Force re-render of the page"`
-	SaveRevision     *bool              `query:"save_revision,omitempty" doc:"Save a revision of the page"`
-	ConvertToLexical *bool              `query:"convert_to_lexical,omitempty" doc:"Convert mobiledoc to lexical"`
-	Source           *string            `query:"source,omitempty" doc:"Set to 'html' when updating from HTML content" enum:"html"`
+	ForceRerender    bool               `query:"force_rerender,omitempty" doc:"Force re-render of the page"`
+	SaveRevision     bool               `query:"save_revision,omitempty" doc:"Save a revision of the page"`
+	ConvertToLexical bool               `query:"convert_to_lexical,omitempty" doc:"Convert mobiledoc to lexical"`
+	Source           string             `query:"source,omitempty" doc:"Set to 'html' when updating from HTML content" enum:"html"`
 	Body             struct {
 		Pages []UpdatePageBody `json:"pages" minItems:"1" maxItems:"1"`
 	}

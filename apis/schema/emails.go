@@ -84,5 +84,5 @@ type AdminEmailFailureResource struct {
 }
 
 type AdminEmailAnalyticsStatusOutput struct {
-	Status string `json:"status"`
+	State string `json:"status"`
 }

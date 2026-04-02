@@ -101,7 +101,7 @@ type CreateNewsletterBody struct {
 
 type CreateNewsletterInput struct {
 	Include       []NewsletterInclude `query:"include,omitempty" doc:"Supported values: count.posts, count.members, count.active_members"`
-	OptInExisting *bool               `query:"opt_in_existing,omitempty" doc:"Subscribe existing members to this newsletter"`
+	OptInExisting bool                `query:"opt_in_existing,omitempty" doc:"Subscribe existing members to this newsletter"`
 	Body          struct {
 		Newsletters []CreateNewsletterBody `json:"newsletters" minItems:"1" maxItems:"1"`
 	}

@@ -45,7 +45,7 @@ type CommentBrowseQueryParams struct {
 	CommonBrowseQueryParams
 	PostID                string           `query:"post_id,omitempty" doc:"Filter comments by post ID"`
 	Include               []CommentInclude `query:"include,omitempty" doc:"Supported values: post, member, replies, replies.member"`
-	ImpersonateMemberUUID *string          `query:"impersonate_member_uuid,omitempty" doc:"UUID of member to impersonate for liked status"`
+	ImpersonateMemberUUID string           `query:"impersonate_member_uuid,omitempty" doc:"UUID of member to impersonate for liked status"`
 }
 
 type CommentsBrowseInput struct {
@@ -56,7 +56,7 @@ type CommentsByPostBrowseInput struct {
 	PostIDPathParam
 	CommonBrowseQueryParams
 	Include               []CommentInclude `query:"include,omitempty" doc:"Supported values: post, member, replies, replies.member"`
-	ImpersonateMemberUUID *string          `query:"impersonate_member_uuid,omitempty" doc:"UUID of member to impersonate for liked status"`
+	ImpersonateMemberUUID string           `query:"impersonate_member_uuid,omitempty" doc:"UUID of member to impersonate for liked status"`
 }
 
 type CommentReadInput struct {

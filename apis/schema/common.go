@@ -96,70 +96,70 @@ type CommonBrowseQueryParams struct {
 	Limit  string   `query:"limit,omitempty" doc:"Number of records to return, or 'all'" default:"15"`
 	Page   int      `query:"page,omitempty" minimum:"1" default:"1"`
 	Order  string   `query:"order,omitempty" doc:"Order by expression"`
-	Debug  *bool    `query:"debug,omitempty" doc:"Include debug information when supported"`
+	Debug  bool     `query:"debug,omitempty" doc:"Include debug information when supported"`
 }
 
 type CommonReadQueryParams struct {
 	Fields []string `query:"fields,omitempty" doc:"Comma-separated fields to return"`
-	Debug  *bool    `query:"debug,omitempty" doc:"Include debug information when supported"`
+	Debug  bool     `query:"debug,omitempty" doc:"Include debug information when supported"`
 }
 
 type ContentPostBrowseQueryParams struct {
 	CommonBrowseQueryParams
 	Include      []ContentPostInclude `query:"include,omitempty" doc:"Supported values: authors, tags, sentiment"`
 	Formats      []string             `query:"formats,omitempty" doc:"Content API post output formats. Supported values: lexical, html, plaintext, mobiledoc." default:"html" enum:"lexical,html,plaintext,mobiledoc"`
-	AbsoluteURLs *bool                `query:"absolute_urls,omitempty" doc:"Return absolute URLs instead of relative URLs where supported"`
-	Collection   *string              `query:"collection,omitempty" doc:"Filter posts by collection slug"`
+	AbsoluteURLs bool                 `query:"absolute_urls,omitempty" doc:"Return absolute URLs instead of relative URLs where supported"`
+	Collection   string               `query:"collection,omitempty" doc:"Filter posts by collection slug"`
 }
 
 type ContentPostReadQueryParams struct {
 	CommonReadQueryParams
 	Include      []ContentPostInclude `query:"include,omitempty" doc:"Supported values: authors, tags, sentiment"`
 	Formats      []string             `query:"formats,omitempty" doc:"Content API post output formats. Supported values: lexical, html, plaintext, mobiledoc." default:"html" enum:"lexical,html,plaintext,mobiledoc"`
-	AbsoluteURLs *bool                `query:"absolute_urls,omitempty" doc:"Return absolute URLs instead of relative URLs where supported"`
+	AbsoluteURLs bool                 `query:"absolute_urls,omitempty" doc:"Return absolute URLs instead of relative URLs where supported"`
 }
 
 type ContentPageBrowseQueryParams struct {
 	CommonBrowseQueryParams
 	Include      []ContentPageInclude `query:"include,omitempty" doc:"Supported values: authors, tags"`
 	Formats      []string             `query:"formats,omitempty" doc:"Content API page output formats. Supported values: lexical, html, plaintext, mobiledoc." default:"html" enum:"lexical,html,plaintext,mobiledoc"`
-	AbsoluteURLs *bool                `query:"absolute_urls,omitempty" doc:"Return absolute URLs instead of relative URLs where supported"`
+	AbsoluteURLs bool                 `query:"absolute_urls,omitempty" doc:"Return absolute URLs instead of relative URLs where supported"`
 }
 
 type ContentPageReadQueryParams struct {
 	CommonReadQueryParams
 	Include      []ContentPageInclude `query:"include,omitempty" doc:"Supported values: authors, tags"`
 	Formats      []string             `query:"formats,omitempty" doc:"Content API page output formats. Supported values: lexical, html, plaintext, mobiledoc." default:"html" enum:"lexical,html,plaintext,mobiledoc"`
-	AbsoluteURLs *bool                `query:"absolute_urls,omitempty" doc:"Return absolute URLs instead of relative URLs where supported"`
+	AbsoluteURLs bool                 `query:"absolute_urls,omitempty" doc:"Return absolute URLs instead of relative URLs where supported"`
 }
 
 type AdminPostBrowseQueryParams struct {
 	CommonBrowseQueryParams
 	Include      []AdminPostInclude `query:"include,omitempty" doc:"Supported values: tags, authors, authors.roles, email, tiers, newsletter, count.conversions, count.signups, count.paid_conversions, count.clicks, sentiment, count.positive_feedback, count.negative_feedback, post_revisions, post_revisions.author"`
 	Formats      []string           `query:"formats,omitempty" doc:"Admin API post output formats. Supported values: lexical, html, plaintext, mobiledoc. Ghost defaults to lexical and mobiledoc." enum:"lexical,html,plaintext,mobiledoc"`
-	Collection   *string            `query:"collection,omitempty" doc:"Filter posts by collection slug"`
-	AbsoluteURLs *bool              `query:"absolute_urls,omitempty" doc:"Return absolute URLs instead of relative URLs where supported"`
+	Collection   string             `query:"collection,omitempty" doc:"Filter posts by collection slug"`
+	AbsoluteURLs bool               `query:"absolute_urls,omitempty" doc:"Return absolute URLs instead of relative URLs where supported"`
 }
 
 type AdminPostReadQueryParams struct {
 	CommonReadQueryParams
 	Include      []AdminPostInclude `query:"include,omitempty" doc:"Supported values: tags, authors, authors.roles, email, tiers, newsletter, count.conversions, count.signups, count.paid_conversions, count.clicks, sentiment, count.positive_feedback, count.negative_feedback, post_revisions, post_revisions.author"`
 	Formats      []string           `query:"formats,omitempty" doc:"Admin API post output formats. Supported values: lexical, html, plaintext, mobiledoc. Ghost defaults to lexical and mobiledoc." enum:"lexical,html,plaintext,mobiledoc"`
-	AbsoluteURLs *bool              `query:"absolute_urls,omitempty" doc:"Return absolute URLs instead of relative URLs where supported"`
+	AbsoluteURLs bool               `query:"absolute_urls,omitempty" doc:"Return absolute URLs instead of relative URLs where supported"`
 }
 
 type AdminPageBrowseQueryParams struct {
 	CommonBrowseQueryParams
 	Include      []AdminPageInclude `query:"include,omitempty" doc:"Supported values: tags, authors, authors.roles, tiers, count.signups, count.paid_conversions, post_revisions, post_revisions.author"`
 	Formats      []string           `query:"formats,omitempty" doc:"Admin API page output formats. Supported values: lexical, html, plaintext, mobiledoc. Ghost defaults to lexical and mobiledoc." enum:"lexical,html,plaintext,mobiledoc"`
-	AbsoluteURLs *bool              `query:"absolute_urls,omitempty" doc:"Return absolute URLs instead of relative URLs where supported"`
+	AbsoluteURLs bool               `query:"absolute_urls,omitempty" doc:"Return absolute URLs instead of relative URLs where supported"`
 }
 
 type AdminPageReadQueryParams struct {
 	CommonReadQueryParams
 	Include      []AdminPageInclude `query:"include,omitempty" doc:"Supported values: tags, authors, authors.roles, tiers, count.signups, count.paid_conversions, post_revisions, post_revisions.author"`
 	Formats      []string           `query:"formats,omitempty" doc:"Admin API page output formats. Supported values: lexical, html, plaintext, mobiledoc. Ghost defaults to lexical and mobiledoc." enum:"lexical,html,plaintext,mobiledoc"`
-	AbsoluteURLs *bool              `query:"absolute_urls,omitempty" doc:"Return absolute URLs instead of relative URLs where supported"`
+	AbsoluteURLs bool               `query:"absolute_urls,omitempty" doc:"Return absolute URLs instead of relative URLs where supported"`
 }
 
 type AuthorBrowseQueryParams struct {

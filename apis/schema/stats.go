@@ -3,20 +3,20 @@ package schema
 import "encoding/json"
 
 type StatsDateFromParams struct {
-	DateFrom *string `query:"date_from,omitempty" doc:"Start date for stats range (ISO 8601)"`
+	DateFrom string `query:"date_from,omitempty" doc:"Start date for stats range (ISO 8601)"`
 }
 
 type StatsDateRangeParams struct {
-	DateFrom *string `query:"date_from,omitempty" doc:"Start date for stats range (ISO 8601)"`
-	DateTo   *string `query:"date_to,omitempty" doc:"End date for stats range (ISO 8601)"`
+	DateFrom string `query:"date_from,omitempty" doc:"Start date for stats range (ISO 8601)"`
+	DateTo   string `query:"date_to,omitempty" doc:"End date for stats range (ISO 8601)"`
 }
 
 type StatsCommonRangeParams struct {
-	Order    *string `query:"order,omitempty" doc:"Order expression"`
-	Limit    *string `query:"limit,omitempty" doc:"Number of results to return"`
-	DateFrom *string `query:"date_from,omitempty" doc:"Start date (ISO 8601)"`
-	DateTo   *string `query:"date_to,omitempty" doc:"End date (ISO 8601)"`
-	Timezone *string `query:"timezone,omitempty" doc:"Timezone for date calculations"`
+	Order    string `query:"order,omitempty" doc:"Order expression"`
+	Limit    string `query:"limit,omitempty" doc:"Number of results to return"`
+	DateFrom string `query:"date_from,omitempty" doc:"Start date (ISO 8601)"`
+	DateTo   string `query:"date_to,omitempty" doc:"End date (ISO 8601)"`
+	Timezone string `query:"timezone,omitempty" doc:"Timezone for date calculations"`
 }
 
 type StatsMemberCountInput struct {
@@ -32,26 +32,26 @@ type StatsSubscriptionsInput struct{}
 type StatsReferrersInput struct{}
 
 type StatsTopContentInput struct {
-	DateFrom     *string `query:"date_from,omitempty" doc:"Start date (ISO 8601)"`
-	DateTo       *string `query:"date_to,omitempty" doc:"End date (ISO 8601)"`
-	Timezone     *string `query:"timezone,omitempty" doc:"Timezone for date calculations"`
-	MemberStatus *string `query:"member_status,omitempty" doc:"Filter by member status"`
-	PostType     *string `query:"post_type,omitempty" doc:"Filter by post type"`
-	PostUUID     *string `query:"post_uuid,omitempty" doc:"Filter by post UUID"`
-	Pathname     *string `query:"pathname,omitempty" doc:"Filter by pathname"`
-	Device       *string `query:"device,omitempty" doc:"Filter by device type"`
-	Location     *string `query:"location,omitempty" doc:"Filter by location"`
-	Source       *string `query:"source,omitempty" doc:"Filter by traffic source"`
-	UtmSource    *string `query:"utm_source,omitempty" doc:"Filter by UTM source"`
-	UtmMedium    *string `query:"utm_medium,omitempty" doc:"Filter by UTM medium"`
-	UtmCampaign  *string `query:"utm_campaign,omitempty" doc:"Filter by UTM campaign"`
-	UtmContent   *string `query:"utm_content,omitempty" doc:"Filter by UTM content"`
-	UtmTerm      *string `query:"utm_term,omitempty" doc:"Filter by UTM term"`
+	DateFrom     string `query:"date_from,omitempty" doc:"Start date (ISO 8601)"`
+	DateTo       string `query:"date_to,omitempty" doc:"End date (ISO 8601)"`
+	Timezone     string `query:"timezone,omitempty" doc:"Timezone for date calculations"`
+	MemberStatus string `query:"member_status,omitempty" doc:"Filter by member status"`
+	PostType     string `query:"post_type,omitempty" doc:"Filter by post type"`
+	PostUUID     string `query:"post_uuid,omitempty" doc:"Filter by post UUID"`
+	Pathname     string `query:"pathname,omitempty" doc:"Filter by pathname"`
+	Device       string `query:"device,omitempty" doc:"Filter by device type"`
+	Location     string `query:"location,omitempty" doc:"Filter by location"`
+	Source       string `query:"source,omitempty" doc:"Filter by traffic source"`
+	UtmSource    string `query:"utm_source,omitempty" doc:"Filter by UTM source"`
+	UtmMedium    string `query:"utm_medium,omitempty" doc:"Filter by UTM medium"`
+	UtmCampaign  string `query:"utm_campaign,omitempty" doc:"Filter by UTM campaign"`
+	UtmContent   string `query:"utm_content,omitempty" doc:"Filter by UTM content"`
+	UtmTerm      string `query:"utm_term,omitempty" doc:"Filter by UTM term"`
 }
 
 type StatsTopPostsInput struct {
 	StatsCommonRangeParams
-	PostType *string `query:"post_type,omitempty" doc:"Filter by post type"`
+	PostType string `query:"post_type,omitempty" doc:"Filter by post type"`
 }
 
 type StatsTopPostsViewsInput struct {
@@ -60,17 +60,17 @@ type StatsTopPostsViewsInput struct {
 
 type StatsNewsletterStatsInput struct {
 	StatsCommonRangeParams
-	NewsletterID *string `query:"newsletter_id,omitempty" doc:"Filter by newsletter ID"`
+	NewsletterID string `query:"newsletter_id,omitempty" doc:"Filter by newsletter ID"`
 }
 
 type StatsNewsletterClickInput struct {
-	NewsletterID *string `query:"newsletter_id,omitempty" doc:"Filter by newsletter ID"`
-	PostIDs      *string `query:"post_ids,omitempty" doc:"Comma-separated post IDs"`
+	NewsletterID string `query:"newsletter_id,omitempty" doc:"Filter by newsletter ID"`
+	PostIDs      string `query:"post_ids,omitempty" doc:"Comma-separated post IDs"`
 }
 
 type StatsSubscriberCountInput struct {
 	StatsDateRangeParams
-	NewsletterID *string `query:"newsletter_id,omitempty" doc:"Filter by newsletter ID"`
+	NewsletterID string `query:"newsletter_id,omitempty" doc:"Filter by newsletter ID"`
 }
 
 type StatsPostReferrersInput struct {
@@ -100,7 +100,7 @@ type StatsPostsMemberCountsInput struct {
 
 type StatsTopSourcesGrowthInput struct {
 	StatsCommonRangeParams
-	MemberStatus *string `query:"member_status,omitempty" doc:"Filter by member status"`
+	MemberStatus string `query:"member_status,omitempty" doc:"Filter by member status"`
 }
 
 type MemberCountDataPoint struct {
@@ -132,7 +132,7 @@ type MemberMRRStatsOutput struct {
 }
 
 type MemberStatsQueryParams struct {
-	Days *int `query:"days,omitempty" doc:"Number of days to look back"`
+	Days int `query:"days,omitempty" doc:"Number of days to look back"`
 }
 
 type MemberCountStatsInput struct {
