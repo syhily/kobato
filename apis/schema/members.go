@@ -1,44 +1,6 @@
 package schema
 
-type LabelCountMeta struct {
-	Members int `json:"members"`
-}
-
-type MemberLabelResource struct {
-	ID        string          `json:"id"`
-	Name      string          `json:"name"`
-	Slug      string          `json:"slug"`
-	CreatedAt string          `json:"created_at"`
-	UpdatedAt *string         `json:"updated_at"`
-	Count     *LabelCountMeta `json:"count,omitempty"`
-}
-
-type CreateLabelBody struct {
-	Name string  `json:"name" minLength:"1" maxLength:"191" pattern:"^([^,]|$)"`
-	Slug *string `json:"slug,omitempty" maxLength:"191"`
-}
-
-type CreateLabelInput struct {
-	Body struct {
-		Labels []CreateLabelBody `json:"labels" minItems:"1" maxItems:"1"`
-	}
-}
-
-type UpdateLabelBody struct {
-	Name *string `json:"name,omitempty" maxLength:"191"`
-	Slug *string `json:"slug,omitempty" maxLength:"191"`
-}
-
-type UpdateLabelInput struct {
-	IDPathParam
-	Body struct {
-		Labels []UpdateLabelBody `json:"labels" minItems:"1" maxItems:"1"`
-	}
-}
-
-type AdminLabelOutput struct {
-	Labels []MemberLabelResource `json:"labels"`
-}
+import "github.com/danielgtaylor/huma/v2"
 
 type MemberNewsletterResource struct {
 	ID          string  `json:"id"`
@@ -150,7 +112,6 @@ type CreateMemberBody struct {
 	Email            string           `json:"email" minLength:"1" maxLength:"191" pattern:"^([^,]|$)"`
 	Name             *string          `json:"name,omitempty" maxLength:"191" pattern:"^([^,]|$)"`
 	Note             *string          `json:"note,omitempty" maxLength:"2000"`
-	Geolocation      *string          `json:"geolocation,omitempty"`
 	Labels           []SlugRef        `json:"labels,omitempty"`
 	Products         []SlugRef        `json:"products,omitempty"`
 	Tiers            []SlugRef        `json:"tiers,omitempty"`
@@ -174,7 +135,6 @@ type UpdateMemberBody struct {
 	Email       *string          `json:"email,omitempty" maxLength:"191" pattern:"^([^,]|$)"`
 	Name        *string          `json:"name,omitempty" maxLength:"191" pattern:"^([^,]|$)"`
 	Note        *string          `json:"note,omitempty" maxLength:"2000"`
-	Geolocation *string          `json:"geolocation,omitempty"`
 	Labels      []SlugRef        `json:"labels,omitempty"`
 	Products    []SlugRef        `json:"products,omitempty"`
 	Tiers       []SlugRef        `json:"tiers,omitempty"`
@@ -204,4 +164,72 @@ type ListMembersOutput struct {
 
 type MemberOutput struct {
 	Members []MemberResource `json:"members"`
+}
+
+// Admin member operation types
+
+type AdminMemberEventsBrowseInput struct {
+	Limit  string `query:"limit,omitempty"`
+	Filter string `query:"filter,omitempty"`
+}
+
+type AdminMemberEventsOutput struct {
+	Events []AdminMemberEventResource `json:"events"`
+	Meta   BrowseMeta                 `json:"meta"`
+}
+
+type AdminMemberEventResource struct {
+	ID        string `json:"id"`
+	Type      string `json:"type"`
+	CreatedAt string `json:"created_at"`
+}
+
+type AdminMemberCSVInput struct {
+	Limit  string `query:"limit,omitempty"`
+	Filter string `query:"filter,omitempty"`
+	Search string `query:"search,omitempty"`
+}
+
+type AdminMemberCSVImportFormData struct {
+	MembersFile huma.FormFile `form:"membersfile" required:"true"`
+	Mapping     string        `form:"mapping,omitempty"`
+	Labels      string        `form:"labels,omitempty"`
+}
+
+type AdminMemberCSVImportInput struct {
+	RawBody huma.MultipartFormFiles[AdminMemberCSVImportFormData]
+}
+
+type AdminCreateMemberSubscriptionInput struct {
+	IDPathParam
+	Body struct {
+		StripePriceID string `json:"stripe_price_id"`
+	}
+}
+
+type MemberSubscriptionIDPathParam struct {
+	ID             string `path:"id" maxLength:"24"`
+	SubscriptionID string `path:"subscription_id" maxLength:"191"`
+}
+
+type AdminUpdateMemberSubscriptionInput struct {
+	MemberSubscriptionIDPathParam
+	Body struct {
+		CancelAtPeriodEnd bool    `json:"cancel_at_period_end"`
+		Status            *string `json:"status,omitempty"`
+	}
+}
+
+type AdminMemberSigninURLOutput struct {
+	MemberID string `json:"member_id"`
+	URL      string `json:"url"`
+}
+
+type AdminMemberCommentingToggleInput struct {
+	IDPathParam
+	Body struct {
+		Reason       *string `json:"reason,omitempty"`
+		ExpiresAt    *string `json:"expires_at,omitempty"`
+		HideComments *bool   `json:"hide_comments,omitempty"`
+	}
 }

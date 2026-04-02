@@ -56,7 +56,7 @@ type TagEditFields struct {
 	CodeinjectionHead  *string `json:"codeinjection_head,omitempty" maxLength:"65535"`
 	CodeinjectionFoot  *string `json:"codeinjection_foot,omitempty" maxLength:"65535"`
 	CanonicalURL       *string `json:"canonical_url,omitempty" maxLength:"2000"`
-	AccentColor        *string `json:"accent_color,omitempty" maxLength:"50"`
+	AccentColor        *string `json:"accent_color,omitempty" maxLength:"50" pattern:"^$|^#[0-9A-Fa-f]{6}$"`
 }
 
 type CreateTagBody struct {

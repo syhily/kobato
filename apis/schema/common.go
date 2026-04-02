@@ -1,7 +1,5 @@
 package schema
 
-import "encoding/json"
-
 var (
 	ContentErrorCodes = []int{400, 401, 403, 404, 500}
 	AdminErrorCodes   = []int{400, 401, 403, 404, 422, 500}
@@ -90,8 +88,6 @@ const (
 	MemberIncludeEmailRecipients MemberInclude = "email_recipients"
 	MemberIncludeProducts        MemberInclude = "products"
 	MemberIncludeTiers           MemberInclude = "tiers"
-	MemberIncludeNewsletters     MemberInclude = "newsletters"
-	MemberIncludeLabels          MemberInclude = "labels"
 )
 
 type CommonBrowseQueryParams struct {
@@ -210,13 +206,13 @@ type NewsletterReadQueryParams struct {
 
 type MemberBrowseQueryParams struct {
 	CommonBrowseQueryParams
-	Include []MemberInclude `query:"include,omitempty" doc:"Supported values: email_recipients, products, tiers. For compatibility this schema also keeps newsletters and labels."`
+	Include []MemberInclude `query:"include,omitempty" doc:"Supported values: email_recipients, products, tiers"`
 	Search  string          `query:"search,omitempty" doc:"Free-text member search query"`
 }
 
 type MemberReadQueryParams struct {
 	CommonReadQueryParams
-	Include []MemberInclude `query:"include,omitempty" doc:"Supported values: email_recipients, products, tiers. For compatibility this schema also keeps newsletters and labels."`
+	Include []MemberInclude `query:"include,omitempty" doc:"Supported values: email_recipients, products, tiers"`
 }
 
 // Path parameter types
@@ -231,6 +227,61 @@ type SlugPathParam struct {
 
 type EmailPathParam struct {
 	Email string `path:"email" maxLength:"191" doc:"Resource email"`
+}
+
+type EmptyInput struct{}
+
+type NotificationIDPathParam struct {
+	NotificationID string `path:"notification_id" maxLength:"24"`
+}
+
+type NamePathParam struct {
+	Name string `path:"name" maxLength:"191"`
+}
+
+type KeyIDPathParam struct {
+	KeyID string `path:"keyid" maxLength:"24"`
+}
+
+type PostIDPathParam struct {
+	PostID string `path:"post_id" maxLength:"24"`
+}
+
+type ResourceIDPathParam struct {
+	Resource string `path:"resource" maxLength:"50"`
+	ID       string `path:"id" maxLength:"24"`
+}
+
+type TypeNamePathParam struct {
+	Type string `path:"type" maxLength:"50"`
+	Name string `path:"name" maxLength:"191"`
+}
+
+type TypeNameIDPathParam struct {
+	Type string `path:"type" maxLength:"50"`
+	Name string `path:"name" maxLength:"191"`
+	ID   string `path:"id" maxLength:"24"`
+}
+
+type IntegrationRefreshKeyInput struct {
+	IDPathParam
+	KeyIDPathParam
+}
+
+type SchedulePublishInput struct {
+	ResourceIDPathParam
+}
+
+type GenerateSlugInput struct {
+	TypeNamePathParam
+}
+
+type GenerateSlugByIDInput struct {
+	TypeNameIDPathParam
+}
+
+type CommentByPostInput struct {
+	PostIDPathParam
 }
 
 type ContentPostsBrowseInput struct {
@@ -407,28 +458,4 @@ type AuthorRef struct {
 
 type CollectionRef struct {
 	ID string `json:"id" maxLength:"24"`
-}
-
-type EmailResource struct {
-	ID              string  `json:"id"`
-	UUID            string  `json:"uuid"`
-	Status          string  `json:"status"`
-	RecipientFilter string  `json:"recipient_filter"`
-	Error           *string `json:"error"`
-	// ErrorData contains email-provider-specific error details when sending fails
-	ErrorData      json.RawMessage `json:"error_data"`
-	EmailCount     int             `json:"email_count"`
-	DeliveredCount int             `json:"delivered_count"`
-	OpenedCount    int             `json:"opened_count"`
-	FailedCount    int             `json:"failed_count"`
-	Subject        string          `json:"subject"`
-	From           string          `json:"from"`
-	ReplyTo        *string         `json:"reply_to"`
-	Source         string          `json:"source"`
-	HTML           *string         `json:"html"`
-	Plaintext      *string         `json:"plaintext"`
-	TrackOpens     bool            `json:"track_opens"`
-	SubmittedAt    string          `json:"submitted_at"`
-	CreatedAt      string          `json:"created_at"`
-	UpdatedAt      string          `json:"updated_at"`
 }

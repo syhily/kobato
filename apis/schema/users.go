@@ -149,3 +149,48 @@ type ListInvitesOutput struct {
 type InviteOutput struct {
 	Invites []InviteResource `json:"invites"`
 }
+
+type AdminUserTokenResource struct {
+	ID     string `json:"id"`
+	Secret string `json:"secret"`
+}
+
+type AdminUserTokenOutput struct {
+	APIKey AdminUserTokenResource `json:"apiKey"`
+}
+
+type AdminUserPasswordMessage struct {
+	Message string `json:"message"`
+}
+
+type AdminPasswordBody struct {
+	NewPassword string `json:"newPassword"`
+	Ne2Password string `json:"ne2Password"`
+	UserID      string `json:"user_id"`
+}
+
+type AdminUserChangePasswordInput struct {
+	Body struct {
+		Password []AdminPasswordBody `json:"password"`
+	}
+}
+
+type AdminUserPasswordOutput struct {
+	Password []AdminUserPasswordMessage `json:"password"`
+}
+
+type AdminOwnerBody struct {
+	Owner []AdminOwnerTransferItem `json:"owner"`
+}
+
+type AdminOwnerTransferItem struct {
+	UserID string `json:"user_id"`
+}
+
+type AdminTransferOwnershipInput struct {
+	Body AdminOwnerBody
+}
+
+type AdminTransferOwnershipOutput struct {
+	Users []UserResource `json:"users"`
+}

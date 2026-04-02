@@ -166,8 +166,6 @@ type PostPageContentFields struct {
 	TwitterDescription  *string     `json:"twitter_description,omitempty" maxLength:"500"`
 	CustomTemplate      *string     `json:"custom_template,omitempty" maxLength:"100"`
 	CanonicalURL        *string     `json:"canonical_url,omitempty" maxLength:"2000"`
-	Comments            *bool       `json:"comments,omitempty"`
-	Frontmatter         *string     `json:"frontmatter,omitempty"`
 	VisibilityFilter    *string     `json:"visibility_filter,omitempty"`
 	Tags                []SlugRef   `json:"tags,omitempty"`
 	Authors             []AuthorRef `json:"authors,omitempty"`
