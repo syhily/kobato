@@ -165,7 +165,7 @@ type FeedbackBrowseInput struct {
 	CommonBrowseQueryParams
 }
 
-type AdminFeedbackEntry struct {
+type AdminFeedbackResource struct {
 	ID        string `json:"id"`
 	PostID    string `json:"post_id"`
 	MemberID  string `json:"member_id"`
@@ -174,6 +174,6 @@ type AdminFeedbackEntry struct {
 }
 
 type AdminFeedbackOutput struct {
-	Feedback []AdminFeedbackEntry `json:"feedback"`
-	Meta     BrowseMeta           `json:"meta"`
+	Feedback []AdminFeedbackResource `json:"feedback"`
+	Meta     BrowseMeta              `json:"meta"`
 }

@@ -14,22 +14,6 @@ import (
 	_ "github.com/danielgtaylor/huma/v2/formats/cbor"
 )
 
-const (
-	// Banner header for the Kobato API server. Plan to change it to a more stylish one.
-	bannerHeader = ` __   ___   ______    _______       __  ___________  ______
-|/"| /  ") /    " \  |   _  "\     /""\("     _   ")/    " \
-(: |/   / // ____  \ (. |_)  :)   /    \)__/  \\__/// ____  \
-|    __/ /  /    ) :)|:     \/   /' /\  \  \\_ /  /  /    ) :)
-(// _  \(: (____/ // (|  _  \\  //  __'  \ |.  | (: (____/ //
-|: | \  \\        /  |: |_)  :)/   /  \\  \\:  |  \        /
-(__|  \__)\"_____/   (_______/(___/    \___)\__|   \"_____/
-
-Kobato :: %s :: %s
-
-`
-)
-
-// Options for the Kobato API server.
 type Options struct {
 	Port    int  `help:"Port to listen on" short:"p" default:"8888"`
 	Debug   bool `help:"Enable debug mode" short:"d" default:"false"`
@@ -52,12 +36,7 @@ func main() {
 		})
 
 		humaConfig := huma.DefaultConfig("Kobato API", ShortVersion())
-		// The OpenAPI and docs should be disabled for a production running instance.
-		if !options.APIDocs {
-			humaConfig.OpenAPIPath = ""
-			humaConfig.DocsPath = ""
-			humaConfig.SchemasPath = ""
-		}
+		apis.AddAPIConfigs(humaConfig, options.APIDocs)
 		api := adapter.New(router, humaConfig)
 
 		apis.AddAPIRoutes(api)

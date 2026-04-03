@@ -77,12 +77,12 @@ type AdminExploreOutput struct {
 	} `json:"explore"`
 }
 
-type SlugEntry struct {
+type SlugResource struct {
 	Slug string `json:"slug"`
 }
 
 type AdminSlugsOutput struct {
-	Slugs []SlugEntry `json:"slugs"`
+	Slugs []SlugResource `json:"slugs"`
 }
 
 type AdminActionsOutput struct {
@@ -98,7 +98,7 @@ type ActionActorResource struct {
 	ProfileImage *string `json:"profile_image,omitempty"`
 }
 
-type ActionResourceObject struct {
+type ActionTargetResource struct {
 	ID    string  `json:"id"`
 	Title *string `json:"title,omitempty"`
 	Slug  *string `json:"slug,omitempty"`
@@ -114,7 +114,7 @@ type AdminActionResource struct {
 	Context      json.RawMessage       `json:"context"`
 	CreatedAt    string                `json:"created_at"`
 	Actor        *ActionActorResource  `json:"actor,omitempty"`
-	Resource     *ActionResourceObject `json:"resource,omitempty"`
+	Resource     *ActionTargetResource `json:"resource,omitempty"`
 }
 
 type AdminMentionsOutput struct {

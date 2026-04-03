@@ -85,7 +85,7 @@ type GetSettingsOutput struct {
 
 // Admin settings types -- the admin API returns a flat key-value array.
 
-type AdminSettingEntry struct {
+type AdminSettingResource struct {
 	Key string `json:"key"`
 	// Value is the setting value. Type depends on key:
 	//   string settings: JSON string (e.g., "title", "description")
@@ -104,12 +104,12 @@ type AdminSettingsMeta struct {
 }
 
 type AdminGetSettingsOutput struct {
-	Settings []AdminSettingEntry `json:"settings"`
-	Meta     AdminSettingsMeta   `json:"meta"`
+	Settings []AdminSettingResource `json:"settings"`
+	Meta     AdminSettingsMeta      `json:"meta"`
 }
 
 type AdminEditSettingsInput struct {
 	Body struct {
-		Settings []AdminSettingEntry `json:"settings"`
+		Settings []AdminSettingResource `json:"settings"`
 	}
 }

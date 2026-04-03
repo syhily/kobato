@@ -5,10 +5,10 @@ type DBExportMeta struct {
 	Version    string `json:"version"`
 }
 
-type DBEntry struct {
+type DBResource struct {
 	Meta DBExportMeta `json:"meta"`
 }
 
 type AdminDBOutput struct {
-	DB []DBEntry `json:"db"`
+	DB []DBResource `json:"db"`
 }

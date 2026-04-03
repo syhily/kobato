@@ -220,13 +220,13 @@ type AdminUpdateMemberSubscriptionInput struct {
 	}
 }
 
-type AdminMemberSigninURLEntry struct {
+type AdminMemberSigninURLResource struct {
 	MemberID string `json:"member_id"`
 	URL      string `json:"url"`
 }
 
 type AdminMemberSigninURLOutput struct {
-	MemberSigninUrls []AdminMemberSigninURLEntry `json:"member_signin_urls"`
+	MemberSigninUrls []AdminMemberSigninURLResource `json:"member_signin_urls"`
 }
 
 type AdminMemberCommentingToggleInput struct {
