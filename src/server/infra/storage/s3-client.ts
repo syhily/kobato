@@ -1,3 +1,6 @@
+import type { ServiceInputTypes, ServiceOutputTypes } from '@aws-sdk/client-s3'
+import type { FinalizeRequestMiddleware, HandlerExecutionContext } from '@smithy/types'
+
 import { createHash } from 'node:crypto'
 import { Readable } from 'node:stream'
 
@@ -21,6 +24,7 @@ const log = getLogger('images.s3')
 // --- Lazy AWS SDK loader ---
 
 type AwsSdk = typeof import('@aws-sdk/client-s3')
+type S3ClientInstance = InstanceType<AwsSdk['S3Client']>
 
 let awsSdk: AwsSdk | undefined
 
@@ -35,7 +39,7 @@ async function getAwsSdk(): Promise<AwsSdk> {
 
 interface CachedClient {
   fingerprint: string
-  client: any
+  client: S3ClientInstance
 }
 
 const globalForS3 = globalThis as unknown as {
@@ -56,7 +60,7 @@ function fingerprintFor(storage: AssetsSettings['storage']): string {
 // --- Public types ---
 
 export interface ImageStorageContext {
-  client: any
+  client: S3ClientInstance
   bucket: string
 }
 
@@ -136,24 +140,25 @@ export async function getImageStorageContext(options?: { requireEnabled?: boolea
 // (https://github.com/aws/aws-sdk-js-v3/blob/main/supplemental-docs/MD5_FALLBACK.md)
 // is to install a middleware AFTER `flexibleChecksumsMiddleware` that
 // strips the modern checksum headers and replaces them with `Content-MD5`.
-function installDeleteObjectsMd5Fallback(_sdk: AwsSdk, client: any): void {
-  const middleware = (next: any, context: any) => async (args: any) => {
-    if (context.commandName !== 'DeleteObjectsCommand') {
+function installDeleteObjectsMd5Fallback(_sdk: AwsSdk, client: S3ClientInstance): void {
+  const middleware: FinalizeRequestMiddleware<ServiceInputTypes, ServiceOutputTypes> =
+    (next, context: HandlerExecutionContext) => async (args) => {
+      if (context.commandName !== 'DeleteObjectsCommand') {
+        return next(args)
+      }
+      const request = args.request as { headers: Record<string, string>; body?: unknown }
+      for (const header of Object.keys(request.headers)) {
+        const lower = header.toLowerCase()
+        if (lower.startsWith('x-amz-checksum-') || lower.startsWith('x-amz-sdk-checksum-')) {
+          delete request.headers[header]
+        }
+      }
+      if (request.body !== undefined && request.body !== null) {
+        const body = Buffer.from(request.body as string | Uint8Array)
+        request.headers['Content-MD5'] = createHash('md5').update(body).digest('base64')
+      }
       return next(args)
     }
-    const request = args.request as { headers: Record<string, string>; body?: unknown }
-    for (const header of Object.keys(request.headers)) {
-      const lower = header.toLowerCase()
-      if (lower.startsWith('x-amz-checksum-') || lower.startsWith('x-amz-sdk-checksum-')) {
-        delete request.headers[header]
-      }
-    }
-    if (request.body !== undefined && request.body !== null) {
-      const body = Buffer.from(request.body as string | Uint8Array)
-      request.headers['Content-MD5'] = createHash('md5').update(body).digest('base64')
-    }
-    return next(args)
-  }
   client.middlewareStack.addRelativeTo(middleware, {
     relation: 'before',
     toMiddleware: 'httpSigningMiddleware',
