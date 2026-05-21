@@ -179,9 +179,15 @@ export function SessionsView({ items, filters }: SessionsViewProps) {
               <Popover>
                 <PopoverTrigger
                   render={
-                    <Button type="button" variant="outline" className="w-full justify-start font-normal">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="h-9 w-full justify-start gap-2 border-line bg-transparent px-3 py-2 font-normal shadow-xs transition-[color,box-shadow] data-[popup-open]:border-ring data-[popup-open]:ring-[3px] data-[popup-open]:ring-ring/50"
+                    >
                       <CalendarIcon data-icon="inline-start" />
-                      {filters.from || filters.to ? formatRangeLabel(filters.from, filters.to) : '选择时间范围'}
+                      <span className="truncate">
+                        {filters.from || filters.to ? formatRangeLabel(filters.from, filters.to) : '选择时间范围'}
+                      </span>
                     </Button>
                   }
                 />

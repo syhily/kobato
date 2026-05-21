@@ -54,7 +54,7 @@ export default defineConfig({
   staged: {
     '*.{js,jsx,ts,tsx,mjs,cjs}': 'vp fmt && vp lint',
   },
-  plugins: [reactRouterHonoServer(), ...(reactRouter() as Plugin[]), tailwindcss(), devtoolsJson()] as PluginOption[],
+  plugins: [devtoolsJson(), reactRouterHonoServer(), ...(reactRouter() as Plugin[]), tailwindcss()] as PluginOption[],
   resolve: {
     tsconfigPaths: true,
   },
