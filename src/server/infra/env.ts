@@ -33,6 +33,7 @@ function loadEnv() {
   try {
     return createEnv(envConfig)
   } catch {
+    // eslint-disable-next-line no-console
     console.error(
       [
         '请确认 .env 文件中已正确设置以下变量：',

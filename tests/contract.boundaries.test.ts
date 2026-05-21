@@ -86,7 +86,7 @@ describe('contract: module and bundle boundaries', () => {
       const source = readFileSync(file, 'utf8')
       return source.split('\n').some((line) => {
         const trimmed = line.trim()
-        return trimmed.startsWith('import') && !trimmed.startsWith('import type') && /@\/server\//.test(trimmed)
+        return trimmed.startsWith('import') && !trimmed.startsWith('import type') && trimmed.includes('@/server/')
       })
     })
 
@@ -605,7 +605,7 @@ describe('contract: module and bundle boundaries', () => {
   it('keeps client utilities independent from UI component modules', () => {
     const offenders = files('src/client', 'src/shared', '-g', '*.ts').filter((file) => {
       const source = readFileSync(file, 'utf8')
-      return /@\/ui\//.test(source)
+      return source.includes('@/ui/')
     })
 
     expect(offenders).toEqual([])
@@ -627,7 +627,7 @@ describe('contract: module and bundle boundaries', () => {
         if (trimmed.startsWith('import type ') || trimmed.startsWith('import type{')) {
           return false
         }
-        return /@\/server\//.test(trimmed) || /\.server(?:["']|$)/.test(trimmed)
+        return trimmed.includes('@/server/') || /\.server(?:["']|$)/.test(trimmed)
       })
     })
 
@@ -945,7 +945,7 @@ describe('contract: module and bundle boundaries', () => {
       // Match `className={` immediately followed by a backtick. Any
       // call site that wraps the template in `cn(`…`)` already starts
       // with `className={cn(` and is exempt.
-      if (/className=\{`/.test(source)) {
+      if (source.includes('className={`')) {
         offenders.push(file)
       }
     }
@@ -1096,7 +1096,7 @@ describe('contract: module and bundle boundaries', () => {
     expect(existsSync('src/ui/lib/wp-compat.ts')).toBe(false)
     const offenders = files('src', '-g', '*.ts', '-g', '*.tsx').filter((file) => {
       const source = readFileSync(file, 'utf8')
-      return /from '@\/ui\/lib\/wp-compat'/.test(source)
+      return source.includes("from '@/ui/lib/wp-compat'")
     })
     expect(offenders).toEqual([])
   })
@@ -1157,7 +1157,7 @@ describe('contract: module and bundle boundaries', () => {
       .filter((file) => file !== 'src/ui/components/icon-button-content.tsx')
       .filter((file) => {
         const source = readFileSync(file, 'utf8')
-        return /absolute top-0 flex size-full items-center justify-center/.test(source)
+        return source.includes('absolute top-0 flex size-full items-center justify-center')
       })
     expect(offenders).toEqual([])
   })

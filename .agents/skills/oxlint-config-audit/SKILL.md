@@ -160,6 +160,7 @@ To see the full list of rules available in the current vite-plus bundle, run `vp
 
 | Rule | Reason |
 |------|--------|
+| `no-named-as-default` / `no-named-as-default-member` | 100% false positives: tiptap extensions and bcrypt use default imports by design; renaming would be non-idiomatic. |
 | `no-shadow` | Too noisy in React hooks (`const [x, setX] = ...` shadows outer `x` in callbacks). |
 | `no-underscore-dangle` | Drizzle uses `_` prefixes for internal columns; idiomatic. |
 | `no-use-before-define` | Hoisted function declarations are valid here. |

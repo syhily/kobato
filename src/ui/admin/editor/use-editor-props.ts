@@ -8,7 +8,9 @@ export function useMathInlineClickEditorRef() {
 }
 
 export function useOpenFootnoteEditDialogRef() {
-  return useRef<(targetKey: string) => void>(() => {})
+  return useRef<(targetKey: string) => void>(() => {
+    /* noop */
+  })
 }
 
 /**

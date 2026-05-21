@@ -238,7 +238,6 @@ function SearchReindexCard() {
       }
       setReindex({ phase: 'success', total, processed, failed })
     } catch (err) {
-      console.error('Reindex failed:', err)
       setReindex({ phase: 'idle', total: 0, processed: 0, failed: 0 })
       toast.error(err instanceof Error ? err.message : '索引重建失败')
     }

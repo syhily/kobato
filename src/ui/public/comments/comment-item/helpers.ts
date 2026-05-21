@@ -19,7 +19,9 @@ export interface LeafContext {
   onDismissMyComment: (id: bigint | string) => void
 }
 
-function noop() {}
+function noop() {
+  /* noop */
+}
 
 // Read-only consumer that returns sensible defaults when no `<Comments>`
 // orchestrator is present (test snapshots and the legacy `<Comment>` SSR

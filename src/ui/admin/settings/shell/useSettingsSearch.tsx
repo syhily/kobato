@@ -20,7 +20,9 @@ interface FilterState {
 
 const FilterContext = createContext<FilterState>({
   filter: '',
-  setFilter: () => {},
+  setFilter: () => {
+    /* noop */
+  },
 })
 
 interface SearchApiState {
@@ -38,9 +40,15 @@ const SearchApiContext = createContext<SearchApiState>({
   checkVisible: () => true,
   highlightKeywords: (text) => text,
   noResult: false,
-  setNoResult: () => {},
-  registerComponent: () => {},
-  unregisterComponent: () => {},
+  setNoResult: () => {
+    /* noop */
+  },
+  registerComponent: () => {
+    /* noop */
+  },
+  unregisterComponent: () => {
+    /* noop */
+  },
   getVisibleComponents: () => new Set<SearchComponentId>(),
   isOnlyVisibleComponent: () => false,
 })

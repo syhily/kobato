@@ -28,19 +28,18 @@ Claude loads these additively as it moves through the codebase:
 ## Skills
 
 Conventions below are calibrated against the agent Skills under
-`.claude/skills/` and `.agents/skills/`, kept in sync via
-`skills-lock.json`. Open SKILL.md and any referenced rule files _before_
+`.agents/skills/`. Open SKILL.md and any referenced rule files _before_
 writing code when a task triggers one:
 
 | Skill                         | Triggers                                                                       |
 | ----------------------------- | ------------------------------------------------------------------------------ |
 | `react-router-framework-mode` | Routes, loaders, actions, forms, navigation, `react-router.config.ts`          |
-| `hono`                        | Hono APIs, routing, middleware, JSX, validation, testing, streaming.           |
 | `vercel-react-best-practices` | Any React/SSR code. The 70 numbered rules are the performance baseline.        |
 | `vercel-composition-patterns` | New components, boolean-prop matrices, compound components, context providers. |
 | `shadcn`                      | shadcn/ui components, presets, `components.json`.                              |
 | `tailwind-design-system`      | CSS tokens, design-system primitives, Tailwind v4 `@theme` changes.            |
 | `web-design-guidelines`       | UI accessibility, UX, Web Interface Guidelines compliance.                     |
+| `privacy-logging`             | Log output, audit events, error handling that touches user data.               |
 
 Skills win on conflict. Quote stable rule ids in PR review (e.g.
 `bundle-barrel-imports`, `architecture-avoid-boolean-props`,

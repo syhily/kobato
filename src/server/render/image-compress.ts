@@ -11,7 +11,7 @@ export async function compressImage(buf: Buffer, options: CompressImageOptions =
   if (!options.preserveAlpha) {
     pipeline.flatten({ background: { r: 255, g: 255, b: 255 } })
   }
-  return await pipeline
+  return pipeline
     .png({
       compressionLevel: 9,
       adaptiveFiltering: true,

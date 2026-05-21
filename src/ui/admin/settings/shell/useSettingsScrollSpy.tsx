@@ -8,10 +8,16 @@ interface ScrollSpyContextData {
 }
 
 const ScrollSpyContext = createContext<ScrollSpyContextData>({
-  updateSection: () => {},
-  updateNav: () => {},
+  updateSection: () => {
+    /* noop */
+  },
+  updateNav: () => {
+    /* noop */
+  },
   currentSection: null,
-  scrollToSection: () => {},
+  scrollToSection: () => {
+    /* noop */
+  },
 })
 
 const SCROLL_MARGIN = 140

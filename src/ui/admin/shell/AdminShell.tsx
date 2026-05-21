@@ -18,9 +18,13 @@ const AdminChromeContext = createContext<AdminChromeContextValue | null>(null)
 
 const NOOP_CHROME: AdminChromeContextValue = {
   focused: false,
-  setFocused: () => {},
+  setFocused: () => {
+    /* noop */
+  },
   scrollTopLifted: false,
-  setScrollTopLifted: () => {},
+  setScrollTopLifted: () => {
+    /* noop */
+  },
 }
 
 export function useAdminChrome(): AdminChromeContextValue {

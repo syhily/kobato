@@ -189,7 +189,7 @@ export async function reorderAdminCategories(orderedIds: readonly string[]): Pro
 
   const updated = await reorderCategoryRows(orderedIds.map((id) => BigInt(id)))
   const countOf = await categoryPostCounter()
-  return await Promise.all(updated.map(async (row) => toAdminCategoryDto(row, await countOf(row.name))))
+  return Promise.all(updated.map(async (row) => toAdminCategoryDto(row, await countOf(row.name))))
 }
 
 // Block-only deletion: refuse to delete a category any post still

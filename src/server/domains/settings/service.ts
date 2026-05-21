@@ -67,7 +67,7 @@ export async function updateBlogSettingsSection<S extends SettingsSection>(
     rescheduleBackup()
   }
 
-  return await refreshBlogSettings()
+  return refreshBlogSettings()
 }
 
 // --- Internal helpers ------------------------------------------------------

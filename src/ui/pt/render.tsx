@@ -249,22 +249,13 @@ const portableTextComponents: PortableTextComponents = {
     table: TableBlockComponent,
   },
   hardBreak: () => <br />,
-  unknownType: ({ value }) => {
-    if (typeof console !== 'undefined') {
-      console.warn('[PortableTextBody] unknown block type:', (value as { _type?: string })._type)
-    }
+  unknownType: () => {
     return null
   },
-  unknownMark: ({ children, markType }) => {
-    if (typeof console !== 'undefined') {
-      console.warn('[PortableTextBody] unknown mark type:', markType)
-    }
+  unknownMark: ({ children }) => {
     return <>{children}</>
   },
-  unknownBlockStyle: ({ children, value }) => {
-    if (typeof console !== 'undefined') {
-      console.warn('[PortableTextBody] unknown block style:', (value as { style?: string }).style)
-    }
+  unknownBlockStyle: ({ children }) => {
     return <p>{children}</p>
   },
   unknownList: ({ children }) => <ul>{children}</ul>,

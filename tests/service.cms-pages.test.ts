@@ -325,7 +325,7 @@ describe('cms/pages/service — saveDraft / publishLatest CAS + force', () => {
   })
 
   it('saveDraft with force=true bypasses CAS at the repo and writes an audit log row', async () => {
-    const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
+    const writeSpy = vi.spyOn(process.stdout, 'write').mockImplementation(() => true)
 
     vi.mocked(repo.findPageMetaById).mockResolvedValue(metaRow({ id: 7n }))
     vi.mocked(repo.findLatestRevision).mockResolvedValue(
@@ -354,8 +354,8 @@ describe('cms/pages/service — saveDraft / publishLatest CAS + force', () => {
     expect(repoArg.force).toBe(true)
 
     // Audit log line emitted exactly once for the genuine overwrite.
-    const auditLines = consoleSpy.mock.calls
-      .map(([first]) => (typeof first === 'string' ? first : ''))
+    const auditLines = writeSpy.mock.calls
+      .map(([chunk]) => (typeof chunk === 'string' ? chunk : ''))
       .filter((line) => line.includes('"scope":"audit.cms.pages"'))
     expect(auditLines.length).toBe(1)
     const parsed = JSON.parse(auditLines[0]!)
@@ -368,11 +368,13 @@ describe('cms/pages/service — saveDraft / publishLatest CAS + force', () => {
     expect(parsed.clientExpectedToken).toBe('client-thought-this')
     expect(parsed.resultRevisionId).toBe('601')
 
-    consoleSpy.mockRestore()
+    writeSpy.mockRestore()
   })
 
   it('saveDraft with force=true on a no-op overwrite (matching tokens) skips the audit log', async () => {
-    const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
+    const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {
+      /* noop */
+    })
 
     vi.mocked(repo.findPageMetaById).mockResolvedValue(metaRow({ id: 7n }))
     const same = 'aligned-token'
@@ -433,7 +435,7 @@ describe('cms/pages/service — saveDraft / publishLatest CAS + force', () => {
   })
 
   it('publishLatest with force=true writes audit log with mode="publish"', async () => {
-    const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
+    const writeSpy = vi.spyOn(process.stdout, 'write').mockImplementation(() => true)
 
     vi.mocked(repo.findPageMetaById).mockResolvedValue(metaRow({ id: 11n }))
     vi.mocked(repo.findLatestRevision).mockResolvedValue(
@@ -458,15 +460,15 @@ describe('cms/pages/service — saveDraft / publishLatest CAS + force', () => {
       force: true,
     })
 
-    const auditLines = consoleSpy.mock.calls
-      .map(([first]) => (typeof first === 'string' ? first : ''))
+    const auditLines = writeSpy.mock.calls
+      .map(([chunk]) => (typeof chunk === 'string' ? chunk : ''))
       .filter((line) => line.includes('"scope":"audit.cms.pages"'))
     expect(auditLines.length).toBe(1)
     const parsed = JSON.parse(auditLines[0]!)
     expect(parsed.mode).toBe('publish')
     expect(parsed.resultRevisionId).toBe('901')
 
-    consoleSpy.mockRestore()
+    writeSpy.mockRestore()
   })
 })
 

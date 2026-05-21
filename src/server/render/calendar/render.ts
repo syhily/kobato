@@ -189,5 +189,5 @@ export async function renderCalendar(date: Date, theme: CalendarTheme = 'light')
   ctx.fillText(authorText, WIDTH - 36, HEIGHT - 50)
 
   const encodedImage = await canvas.encode('png')
-  return await compressImage(encodedImage, { preserveAlpha: theme === 'dark' })
+  return compressImage(encodedImage, { preserveAlpha: theme === 'dark' })
 }

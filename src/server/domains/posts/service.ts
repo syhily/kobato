@@ -148,12 +148,16 @@ export async function listPostsForAdmin(
   filters: ListPostsFilters = {},
   viewer?: ViewerContext,
 ): Promise<AdminPostsListResult> {
+  let appliedFilters = filters
   if (viewer && viewer.role !== 'admin') {
-    filters = { ...filters, authorId: BigInt(viewer.userId) }
+    appliedFilters = { ...filters, authorId: BigInt(viewer.userId) }
   }
-  const offset = filters.offset ?? 0
-  const limit = filters.limit ?? 20
-  const [rows, total] = await Promise.all([listPostMetas({ ...filters, limit, offset }), countPostMetas(filters)])
+  const offset = appliedFilters.offset ?? 0
+  const limit = appliedFilters.limit ?? 20
+  const [rows, total] = await Promise.all([
+    listPostMetas({ ...appliedFilters, limit, offset }),
+    countPostMetas(appliedFilters),
+  ])
   if (rows.length === 0) {
     return { posts: [], total, hasMore: false }
   }
@@ -281,8 +285,9 @@ export async function createPost(
   authorId: bigint | null,
   viewer?: ViewerContext,
 ): Promise<AdminPostDto> {
+  let resolvedAuthorId = authorId
   if (viewer && viewer.role !== 'admin') {
-    authorId = BigInt(viewer.userId)
+    resolvedAuthorId = BigInt(viewer.userId)
   }
   const slug = resolveSlugForPost(input.slug, input.title)
   ensureSlugLegal(slug)
@@ -311,7 +316,7 @@ export async function createPost(
         tags: input.tags ?? [],
         alias: input.alias ?? [],
         publishedAt: input.publishedAt ?? now,
-        authorId,
+        authorId: resolvedAuthorId,
       })
       .returning()
     return inserted

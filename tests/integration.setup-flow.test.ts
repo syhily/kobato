@@ -14,7 +14,12 @@ vi.mock('@/server/infra/redis/storage', () => ({
     hset: vi.fn(async () => 1),
     hgetall: vi.fn(async () => ({})),
     pexpireat: vi.fn(async () => 1),
-    pipeline: () => ({ del: () => {}, exec: vi.fn(async () => []) }),
+    pipeline: () => ({
+      del: () => {
+        /* noop */
+      },
+      exec: vi.fn(async () => []),
+    }),
   }),
 }))
 

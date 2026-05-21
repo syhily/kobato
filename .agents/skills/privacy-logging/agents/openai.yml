@@ -1,0 +1,3 @@
+interface:
+  display_name: "Privacy Logging"
+  short_description: "Enforces data-sensitivity tiers (L0-L5) and auto-tagging rules for all log output."

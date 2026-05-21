@@ -15,6 +15,7 @@ export const THEME_COOKIE = 'yf-blog-theme'
 const ThemeContext = createContext<ThemeContextType | null>(null)
 
 function setThemeCookie(resolved: Resolved) {
+  // eslint-disable-next-line unicorn/no-document-cookie
   document.cookie = `${THEME_COOKIE}=${resolved};path=/;max-age=${60 * 60 * 24 * 365};SameSite=Lax`
 }
 

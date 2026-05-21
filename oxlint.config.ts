@@ -155,6 +155,39 @@ export default defineConfig({
     // consumed by a method that works on iterators (e.g. `.map`, `.filter`).
     'unicorn/no-useless-iterator-to-array': 'warn',
 
+    // P0 — Suspicious (likely bugs, low noise).
+    'no-extend-native': 'error',
+    'no-unexpected-multiline': 'error',
+    'no-unmodified-loop-condition': 'error',
+    'no-commented-out-tests': 'warn',
+    'no-extraneous-class': 'warn',
+    'no-unnecessary-type-arguments': 'warn',
+    'no-unnecessary-type-constraint': 'warn',
+    'no-unsafe-enum-comparison': 'warn',
+    'no-instanceof-builtins': 'warn',
+
+    // P1 — Restriction (feature bans).
+    'no-var': 'error',
+    'no-sequences': 'error',
+    'prefer-node-protocol': 'error',
+    'no-param-reassign': 'warn',
+    'no-empty-function': 'warn',
+    'no-console': 'warn',
+    'promise/catch-or-return': 'warn',
+    'no-document-cookie': 'error',
+
+    // P2 — Pedantic (strict, incremental).
+    'no-case-declarations': 'error',
+    'prefer-includes': 'warn',
+    'return-await': 'warn',
+
+    // P3 — Perf.
+    'prefer-array-flat-map': 'warn',
+    'prefer-set-has': 'warn',
+
+    // P4 — Import hygiene.
+    'no-absolute-path': 'warn',
+
     // A11y additions. Both are zero-violation guards against empty headings
     // and broken `<a>` (`href="#"` or missing href).
     'jsx-a11y/heading-has-content': 'error',

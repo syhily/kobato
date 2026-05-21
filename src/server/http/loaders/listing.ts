@@ -119,7 +119,7 @@ export async function listingLoader<TExtra = undefined>({
    * resolved page slice. Runs after pagination/overflow redirects so the
    * caller only sees the in-page slice that will actually render.
    */
-  computeExtra?: (args: ListingExtraArgs<ListingPostCardWithMetadata>) => Promise<TExtra> | TExtra
+  computeExtra?: (args: ListingExtraArgs) => Promise<TExtra> | TExtra
   /** Static extra payload, used when no async work is needed. */
   extra?: TExtra
   /**

@@ -1,10 +1,10 @@
-// Lightweight structured JSON logger. We deliberately don't pull in pino/winston
-// to keep the runtime footprint small — the SSR adapter only needs leveled,
-// structured output to stdout/stderr. A future refactor can swap this for a
-// real implementation by changing `emit()` only.
+// Structured JSON logger backed by pino. The public API (Logger interface,
+// getLogger, logger singleton) is the only stable surface — consumers never
+// touch pino directly, so the underlying transport can be swapped without
+// touching call sites.
 //
 // Privacy: known L3 fields (e.g. email, ip, name) are wrapped in {E}…{/E}
-// markers per `.cursor/rules/privacy-logging.mdc`, so log aggregators can
+// markers per `.agents/skills/privacy-logging/SKILL.md`, so log aggregators can
 // strip or hash them before storage. Callers don't need to remember to tag
 // values manually — using the standard key names is enough.
 //
@@ -17,26 +17,25 @@
 // writes the row and logs the line; see RBAC-REVIEW.md §F13. Until that
 // ships, treat `getLogger('audit.*')` calls as informational only.
 
+import { Writable } from 'node:stream'
+import pino from 'pino'
+
 import { LOG_LEVEL } from '@/server/infra/env'
 
 type Level = 'debug' | 'info' | 'warn' | 'error'
 
-const LEVEL_ORDER: Record<Level, number> = { debug: 10, info: 20, warn: 30, error: 40 }
-
-function readMinLevel(): Level {
-  // `import.meta.env` is injected by Vite at build/dev time. Guard
-  // against bare-Node entry points (e.g. one-off `vp dlx tsx`
-  // scripts under `scripts/`) where the object is undefined and
-  // accessing `.PROD` would otherwise crash module evaluation.
+function resolveLevel(): Level {
+  if (LOG_LEVEL) {
+    return LOG_LEVEL
+  }
   const meta = (import.meta as { env?: { PROD?: boolean } }).env
-  const fallback: Level = meta?.PROD === true ? 'info' : 'debug'
-  return LOG_LEVEL ?? fallback
+  return meta?.PROD === true ? 'info' : 'debug'
 }
 
-const minLevel: Level = readMinLevel()
+// ---------------------------------------------------------------------------
+// Privacy tagging — L3 (direct identifier) fields
+// ---------------------------------------------------------------------------
 
-// Field names that hold L3 (direct identifier) data. Values logged under
-// these keys are wrapped in `{E}…{/E}` markers in the emitted JSON string.
 const L3_KEYS = new Set([
   'email',
   'ip',
@@ -55,11 +54,13 @@ function tagL3(value: unknown): unknown {
   if (value === null || value === undefined) {
     return value
   }
-  // For numbers/objects/arrays, JSON.stringify keeps the marker meaningful
-  // without falling back to `[object Object]`.
   const str = typeof value === 'string' ? value : (JSON.stringify(value) ?? '')
   return str === '' ? str : `{E}${str}{/E}`
 }
+
+// ---------------------------------------------------------------------------
+// Error serialization — preserves cause chains and extra props
+// ---------------------------------------------------------------------------
 
 function serializeError(err: Error): Record<string, unknown> {
   const out: Record<string, unknown> = {
@@ -69,12 +70,10 @@ function serializeError(err: Error): Record<string, unknown> {
   if (err.stack) {
     out.stack = err.stack
   }
-  // `cause` may itself be an Error — recurse so the chain survives JSON.stringify.
   const cause = (err as Error & { cause?: unknown }).cause
   if (cause !== undefined) {
     out.cause = cause instanceof Error ? serializeError(cause) : cause
   }
-  // Preserve any extra enumerable own props (e.g. node `code`, `errno`).
   for (const key of Object.keys(err)) {
     if (key in out) {
       continue
@@ -96,34 +95,46 @@ function applyPrivacyTags(context: LogContext): LogContext {
   return tagged
 }
 
+// ---------------------------------------------------------------------------
+// Pino root instance
+// ---------------------------------------------------------------------------
+
 interface LogContext {
   [key: string]: unknown
 }
 
-function emit(level: Level, scope: string, message: string, context?: LogContext): void {
-  if (LEVEL_ORDER[level] < LEVEL_ORDER[minLevel]) {
-    return
-  }
+// Pino's default destination (SonicBoom) writes directly to the file
+// descriptor, which bypasses process.stdout.write — making test spies
+// unable to intercept log output. A thin Writable wrapper keeps output
+// going to stdout while remaining interceptable in tests.
+const stdout = new Writable({
+  write(chunk, _encoding, cb) {
+    process.stdout.write(String(chunk))
+    cb()
+  },
+})
 
-  const safeContext = context ? applyPrivacyTags(context) : undefined
+const root = pino(
+  {
+    level: resolveLevel(),
+    // Output "info" instead of 30, "warn" instead of 40, etc.
+    formatters: {
+      level(label: string) {
+        return { level: label }
+      },
+    },
+    // ISO-8601 timestamps to match the previous custom logger's format.
+    timestamp: pino.stdTimeFunctions.isoTime,
+    serializers: {
+      error: serializeError,
+    },
+  },
+  stdout,
+)
 
-  const payload = {
-    level,
-    scope,
-    msg: message,
-    time: new Date().toISOString(),
-    ...safeContext,
-  }
-
-  const target = level === 'error' ? console.error : level === 'warn' ? console.warn : console.log
-  // Stringify so log aggregators can parse it; fall back to console.log if
-  // stringify fails (e.g. circular ref).
-  try {
-    target(JSON.stringify(payload))
-  } catch {
-    target(`[${level}] ${scope} ${message}`, safeContext ?? {})
-  }
-}
+// ---------------------------------------------------------------------------
+// Public Logger interface — unchanged from the custom logger
+// ---------------------------------------------------------------------------
 
 export interface Logger {
   debug(message: string, context?: LogContext): void
@@ -135,12 +146,14 @@ export interface Logger {
 }
 
 function makeLogger(scope: string, base: LogContext = {}): Logger {
-  const merge = (extra?: LogContext): LogContext => ({ ...base, ...extra })
+  const pinoChild = root.child({ scope, ...base })
+  const wrap = (ctx?: LogContext): Record<string, unknown> => (ctx ? applyPrivacyTags(ctx) : {})
+
   return {
-    debug: (msg, ctx) => emit('debug', scope, msg, merge(ctx)),
-    info: (msg, ctx) => emit('info', scope, msg, merge(ctx)),
-    warn: (msg, ctx) => emit('warn', scope, msg, merge(ctx)),
-    error: (msg, ctx) => emit('error', scope, msg, merge(ctx)),
+    debug: (msg, ctx) => pinoChild.debug(wrap(ctx), msg),
+    info: (msg, ctx) => pinoChild.info(wrap(ctx), msg),
+    warn: (msg, ctx) => pinoChild.warn(wrap(ctx), msg),
+    error: (msg, ctx) => pinoChild.error(wrap(ctx), msg),
     child: (extra) => makeLogger(scope, { ...base, ...extra }),
     withScope: (newScope) => makeLogger(newScope, base),
   }

@@ -219,5 +219,5 @@ export async function drawOpenGraph({ title, summary, cover }: OpenGraphProps): 
   ctx.restore()
 
   const encodedImage = await canvas.encode('png')
-  return await compressImage(encodedImage)
+  return compressImage(encodedImage)
 }

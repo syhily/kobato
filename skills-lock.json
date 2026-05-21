@@ -1,12 +1,6 @@
 {
   "version": 1,
   "skills": {
-    "hono": {
-      "source": "yusukebe/hono-skill",
-      "sourceType": "github",
-      "skillPath": "skills/hono/SKILL.md",
-      "computedHash": "220e5e1b12bbaeec49ec362b6e2262d77632d0536e9758bba9acbbc323fef990"
-    },
     "react-router-framework-mode": {
       "source": "remix-run/agent-skills",
       "sourceType": "github",

@@ -38,22 +38,22 @@ function detectBrowser(ua: string): { name: string; version: string } | null {
 }
 
 function detectOs(ua: string): string | null {
-  if (/Windows NT 10/.test(ua)) {
+  if (ua.includes('Windows NT 10')) {
     return 'Windows'
   }
-  if (/Windows/.test(ua)) {
+  if (ua.includes('Windows')) {
     return 'Windows'
   }
   if (/iPhone|iPad|iPod/.test(ua)) {
     return 'iOS'
   }
-  if (/Android/.test(ua)) {
+  if (ua.includes('Android')) {
     return 'Android'
   }
   if (/Mac OS X|Macintosh/.test(ua)) {
     return 'macOS'
   }
-  if (/Linux/.test(ua)) {
+  if (ua.includes('Linux')) {
     return 'Linux'
   }
   return null
