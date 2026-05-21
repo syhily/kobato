@@ -774,36 +774,6 @@ describe('contract: module and bundle boundaries', () => {
         explicitAllowedHits.add(explicit.key)
         return true
       }
-
-      if (
-        file.startsWith('src/server/markdown/mermaid/') &&
-        ['./errors.ts', './parse.ts', './render.ts', './types.ts'].includes(specifier)
-      ) {
-        return true
-      }
-      if (file.startsWith('src/shared/pt/') && (specifier.startsWith('./') || specifier.startsWith('../'))) {
-        return true
-      }
-      if (
-        file.startsWith('src/server/domains/content/') &&
-        (specifier.startsWith('./') || specifier.startsWith('../'))
-      ) {
-        return true
-      }
-      if (file.startsWith('src/ui/admin/editor/tiptap/block-cards/') && specifier.startsWith('./')) {
-        return true
-      }
-      if (file.startsWith('src/ui/admin/editor-shell/') && specifier.startsWith('./')) {
-        return true
-      }
-      // Hono server layer uses relative imports for its own sub-tree
-      if (file.startsWith('src/server/http/') && (specifier.startsWith('./') || specifier.startsWith('../'))) {
-        return true
-      }
-      // Shared contracts use relative imports for their own sub-tree
-      if (file.startsWith('src/shared/contracts/') && specifier.startsWith('./')) {
-        return true
-      }
       return false
     }
 

@@ -47,6 +47,9 @@ export function FloatingMusicPlayer({ track, onClose }: FloatingMusicPlayerProps
     let cancelled = false
     let destroy: (() => void) | undefined
 
+    // Lazy-load aplayer-ts so the audio decoder and its CSS do not bloat
+    // the admin music-list chunk. The dock only mounts after the operator
+    // explicitly hits 「播放」.
     void (async () => {
       const [{ default: APlayer }, resolvedMeta] = await Promise.all([
         import('aplayer-ts'),

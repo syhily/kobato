@@ -57,6 +57,11 @@ export async function updateBlogSettingsSection<S extends SettingsSection>(
   const nextRow = await applySectionPatch(section, validated)
   await upsertSetting(nextRow, updatedBy, meta.scope)
 
+  // The backup scheduler is only needed when the backup section is edited.
+  // Keeping it as a dynamic import avoids pulling the scheduler (and its
+  // transitive dependency on the backup service) into the settings module's
+  // static dependency graph, which keeps test files that touch settings
+  // lighter when they do not exercise backup logic.
   if (section === 'backup') {
     const { rescheduleBackup } = await import('@/server/domains/backup/scheduler')
     rescheduleBackup()

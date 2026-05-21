@@ -1,4 +1,5 @@
-import { execFile } from 'node:child_process'
+import { execFile, spawn } from 'node:child_process'
+import { Readable } from 'node:stream'
 import { promisify } from 'node:util'
 import { createGunzip, createGzip } from 'node:zlib'
 
@@ -55,8 +56,6 @@ export async function createBackup(): Promise<{ fileName: string; size: number }
   const key = `backup/backup-${timestamp}.sql.gz`
 
   log.info('Starting backup', { key })
-
-  const { spawn } = await import('node:child_process')
 
   const pgDump = spawn('pg_dump', ['--no-owner', '--no-acl', '--clean', '--if-exists', `--dbname=${dbUrl}`])
 
@@ -123,9 +122,6 @@ export async function restoreFromBackup(buffer: Buffer): Promise<void> {
   log.info('Starting restore')
 
   const gunzip = createGunzip()
-  const { Readable } = await import('node:stream')
-  const { spawn } = await import('node:child_process')
-
   const inputStream = Readable.from([buffer])
   inputStream.pipe(gunzip)
 

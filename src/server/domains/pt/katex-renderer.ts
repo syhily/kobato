@@ -15,6 +15,10 @@ export function getKatexRenderer(): Promise<KatexRenderer> {
 }
 
 async function createKatexRenderer(): Promise<KatexRenderer> {
+  // Lazy-load KaTeX (and the mhchem extension) so the hefty parser stays
+  // out of modules that only need the renderer interface. On a typical
+  // blog most posts do not contain math, so the chunk is only fetched
+  // when the first TeX block is encountered during prerender or preview.
   const [{ default: katex }] = await Promise.all([import('katex'), import('katex/contrib/mhchem')])
 
   return {

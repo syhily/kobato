@@ -111,6 +111,9 @@ export function MusicPlayer({ id, auto, center }: MusicPlayerProps) {
         resolve()
       })
 
+    // Lazy-load aplayer-ts so the decoder + DOM-heavy CSS stay out of the
+    // initial page chunk. The player is only needed when the article
+    // actually contains a `<MusicPlayer>` block, which is a minority of posts.
     const bootstrap = (): void => {
       if (cancelled) {
         return

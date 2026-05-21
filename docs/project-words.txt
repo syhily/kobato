@@ -60,6 +60,7 @@ folo
 fong
 fontsource
 forencrypt
+FOUC
 fumadocs
 genyo
 giscus
@@ -171,6 +172,7 @@ oxfmt
 oxlint
 padolsey
 pandiyan
+pathed
 pcss
 pefc
 penheulim
@@ -229,6 +231,7 @@ thumbhash
 timestamptz
 tlyric
 toolsmp
+topbar
 translog
 tsconfigs
 tsgo
@@ -257,6 +260,7 @@ wangdaodao
 weapi
 wechat
 weibo
+wlwmanifest
 wshobson
 xiao
 xiaoten
