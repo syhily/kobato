@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 
 import type { NavigationItem } from '@/shared/config/blog'
+import type { HeaderCurrentUser } from '@/ui/public/chrome/Header'
 
 import { useNavigationSettings } from '@/ui/lib/blog-config-context'
 import { Footer } from '@/ui/public/chrome/Footer'
@@ -25,7 +26,7 @@ import { UserMenu } from '@/ui/public/chrome/UserMenu'
 export interface BaseLayoutProps {
   navigation?: NavigationItem[]
   footer?: boolean
-  currentUser: import('@/ui/public/chrome/Header').HeaderCurrentUser | null
+  currentUser: HeaderCurrentUser | null
   pathname: string
   search: string
   children?: ReactNode

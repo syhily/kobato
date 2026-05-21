@@ -1,9 +1,9 @@
 import type { PmBlockNode, PmNode } from '@/shared/pt/bridge/types'
-import type { SolutionBlock } from '@/shared/pt/schema'
+import type { Block, SolutionBlock } from '@/shared/pt/schema'
 
 export function solutionBlockToPmNode(
   block: SolutionBlock,
-  pushBlocks: (out: PmNode[], blocks: readonly import('@/shared/pt/schema').Block[]) => void,
+  pushBlocks: (out: PmNode[], blocks: readonly Block[]) => void,
 ): PmBlockNode {
   const inner: PmNode[] = []
   pushBlocks(inner, block.children)

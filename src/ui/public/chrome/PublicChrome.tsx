@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 
 import type { NavigationItem } from '@/shared/config/blog'
+import type { HeaderCurrentUser } from '@/ui/public/chrome/Header'
 
 import { BaseLayout } from '@/ui/public/chrome/BaseLayout'
 // `public.css` is the public site's complete cascade (Bootstrap reboot/grid/
@@ -38,7 +39,7 @@ export interface PublicChromeProps {
    * Authenticated user (or `null`). The header's user menu derives the
    * "admin only" branches (e.g. "管理后台" link) from `currentUser.role`.
    */
-  currentUser: import('@/ui/public/chrome/Header').HeaderCurrentUser | null
+  currentUser: HeaderCurrentUser | null
   pathname: string
   search: string
   children?: ReactNode

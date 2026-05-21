@@ -1,19 +1,26 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import type { PortableTextBody } from '@/shared/pt/schema'
+import type {
+  EditorShellStatus,
+  EntityLike,
+  PublishState,
+  RevisionLike,
+  SaveBodyOutput,
+  SidebarPublishStatus,
+  UseEditorShellStateArgs,
+  UseEditorShellStateOutput,
+} from '@/ui/admin/editor-shell/editor-shell-types'
 
 import { arePortableTextBodiesEquivalent } from '@/shared/pt/bridge/canonicalize'
-
-import type { EntityLike, UseEditorShellStateArgs, UseEditorShellStateOutput } from './editor-shell-types'
-
 import {
   derivePublishState,
   deriveSidebarPublishStatus,
   deriveSidebarRevisionSummary,
   deriveSidebarSaveStatus,
-} from './editor-shell-derived'
-import { useEditorShellLayout } from './use-editor-shell-layout'
-import { useEditorShellPersist } from './use-editor-shell-persist'
+} from '@/ui/admin/editor-shell/editor-shell-derived'
+import { useEditorShellLayout } from '@/ui/admin/editor-shell/use-editor-shell-layout'
+import { useEditorShellPersist } from '@/ui/admin/editor-shell/use-editor-shell-persist'
 
 // --- Hook -------------------------------------------------------------------
 
@@ -87,10 +94,8 @@ export function useEditorShellState<
   const [expectedToken, setExpectedToken] = useState<string | null>(
     isEditing ? ((detail.latestRevision ?? detail.publishedRevision)?.clientRevisionToken ?? null) : null,
   )
-  const [latestRevision, setLatestRevision] = useState<import('./editor-shell-types').RevisionLike | null>(
-    isEditing ? detail.latestRevision : null,
-  )
-  const [publishedRevision, setPublishedRevision] = useState<import('./editor-shell-types').RevisionLike | null>(
+  const [latestRevision, setLatestRevision] = useState<RevisionLike | null>(isEditing ? detail.latestRevision : null)
+  const [publishedRevision, setPublishedRevision] = useState<RevisionLike | null>(
     isEditing ? detail.publishedRevision : null,
   )
   // Mirror of `entity.publishedAt` that follows meta save round-trips.
@@ -101,7 +106,9 @@ export function useEditorShellState<
   )
 
   // --- Status chip ---------------------------------------------------------
-  const [status, setStatus] = useState<import('./editor-shell-types').EditorShellStatus>({ kind: 'idle' })
+  const [status, setStatus] = useState<EditorShellStatus>({
+    kind: 'idle',
+  })
   const [displaySaveAtMs, setDisplaySaveAtMs] = useState<number | null>(() => {
     if (!isEditing || detail === undefined) {
       return null
@@ -200,7 +207,7 @@ export function useEditorShellState<
   )
 
   const onBodySaved = useCallback(
-    (payload: import('./editor-shell-types').SaveBodyOutput) => {
+    (payload: SaveBodyOutput) => {
       if (payload.status === 'conflict') {
         setStatus({ kind: 'conflict', expectedToken: payload.expectedToken })
         cancelActionBanner()
@@ -286,7 +293,7 @@ export function useEditorShellState<
   })
 
   // --- Derived flags + projections -----------------------------------------
-  const publishState = useMemo<import('./editor-shell-types').PublishState>(
+  const publishState = useMemo<PublishState>(
     () =>
       isEditing ? derivePublishState(latestRevision, publishedRevision, meta.published) : { kind: 'not-published-yet' },
     [isEditing, latestRevision, publishedRevision, meta.published],
@@ -302,7 +309,7 @@ export function useEditorShellState<
     return !arePortableTextBodiesEquivalent(body, lastSavedBodyRef.current)
   }, [isEditing, body, publishState])
 
-  const sidebarPublishStatus = useMemo<import('./editor-shell-types').SidebarPublishStatus | null>(
+  const sidebarPublishStatus = useMemo<SidebarPublishStatus | null>(
     () => deriveSidebarPublishStatus({ isEditing, publishState, publishedAt: meta.publishedAt }),
     [isEditing, publishState, meta.publishedAt],
   )

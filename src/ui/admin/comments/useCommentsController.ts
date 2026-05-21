@@ -1,6 +1,7 @@
 import { useReducer } from 'react'
 
 import type { AdminCommentWire as AdminComment } from '@/shared/contracts/comments'
+import type { CommentBody } from '@/shared/pt/comment-schema'
 
 import { idStr } from '@/shared/utils/tools'
 
@@ -37,7 +38,7 @@ type CommentsAction =
   | { type: 'loaded'; comments: AdminComment[]; total: number; hasMore: boolean; statusCounts: StatusCounts }
   | { type: 'removeComment'; id: string }
   | { type: 'approveComment'; id: string }
-  | { type: 'updateCommentContent'; id: string; body: import('@/shared/pt/comment-schema').CommentBody }
+  | { type: 'updateCommentContent'; id: string; body: CommentBody }
   | { type: 'setFilterStatus'; value: FilterStatus }
   | { type: 'setFilterPage'; value: FilterItem | null }
   | { type: 'setFilterAuthor'; value: FilterItem | null }

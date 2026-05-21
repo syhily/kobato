@@ -1,6 +1,7 @@
 import { useRouteLoaderData } from 'react-router'
 
 import type { ListingPageLoaderData } from '@/server/http/loaders/listing'
+import type { ListingPostCard } from '@/shared/types/catalog'
 import type { SidebarData } from '@/ui/public/Sidebar'
 
 import { trackAccess } from '@/server/domains/analytics/track'
@@ -27,7 +28,7 @@ import type { Route } from './+types/home'
 
 interface HomeExtra {
   categoryLinks: Record<string, string>
-  featurePosts: import('@/shared/types/catalog').ListingPostCard[]
+  featurePosts: ListingPostCard[]
   sidebar: SidebarData
 }
 

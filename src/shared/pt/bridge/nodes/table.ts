@@ -1,4 +1,4 @@
-import type { PmBlockNode } from '@/shared/pt/bridge/types'
+import type { PmBlockNode, PmMark } from '@/shared/pt/bridge/types'
 import type { LinkMarkDef, TableBlock, TableCell, TableRow, Span } from '@/shared/pt/schema'
 
 import { pmMarkToSpanMark, pushSpan } from '@/shared/pt/bridge/nodes/text'
@@ -13,7 +13,7 @@ export function tableBlockToPmNode(block: TableBlock): PmBlockNode {
       type: 'tableRow',
       attrs: { _key: row._key },
       content: row.cells.map((cell) => {
-        const inlines: { type: 'text'; text: string; marks?: import('../types').PmMark[] }[] = []
+        const inlines: { type: 'text'; text: string; marks?: PmMark[] }[] = []
         for (const span of cell.content) {
           pushSpan(inlines, span, cell.markDefs ?? [])
         }

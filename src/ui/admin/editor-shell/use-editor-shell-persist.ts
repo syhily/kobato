@@ -1,20 +1,20 @@
+import type { NavigateFunction } from 'react-router'
+
 import { useCallback, useRef, useState } from 'react'
 
 import type { PortableTextBody } from '@/shared/pt/schema'
-
-import { useMutation } from '@/client/api/query'
-import { useAutosave, type AutosaveStatus } from '@/client/hooks/use-autosave'
-import { arePortableTextBodiesEquivalent } from '@/shared/pt/bridge/canonicalize'
-
 import type {
   EditorShellStatus,
   EntityLike,
   RevisionLike,
   SaveBodyOutput,
   UseEditorShellStateArgs,
-} from './editor-shell-types'
+} from '@/ui/admin/editor-shell/editor-shell-types'
 
-import { isPendingForAutosave } from './editor-shell-derived'
+import { useMutation } from '@/client/api/query'
+import { useAutosave, type AutosaveStatus } from '@/client/hooks/use-autosave'
+import { arePortableTextBodiesEquivalent } from '@/shared/pt/bridge/canonicalize'
+import { isPendingForAutosave } from '@/ui/admin/editor-shell/editor-shell-derived'
 
 function localInputValueToIso(localValue: string): string | null {
   if (localValue === '') {
@@ -50,7 +50,7 @@ export function useEditorShellPersist<
   buildUpsertMetaPayload: UseEditorShellStateArgs<TMeta, TEntity>['buildUpsertMetaPayload']
   directSaveDraft: UseEditorShellStateArgs<TMeta, TEntity>['directSaveDraft']
   editPath: (id: string) => string
-  navigate: import('react-router').NavigateFunction
+  navigate: NavigateFunction
   metaDraftFromEntity: (entity: TEntity) => TMeta
 
   onMetaSaved: (entity: EntityLike) => void

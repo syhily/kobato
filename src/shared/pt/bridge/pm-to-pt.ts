@@ -1,4 +1,4 @@
-import type { PmDoc, PmNode, PmBlockNode } from '@/shared/pt/bridge/types'
+import type { PmDoc, PmNode, PmBlockNode, PmInlineNode } from '@/shared/pt/bridge/types'
 import type {
   Block,
   FootnoteDefinitionBlock,
@@ -100,7 +100,7 @@ export function pushPmNode(
     }
     case 'codeBlock': {
       const text = (node.content ?? [])
-        .filter((child): child is import('./types').PmInlineNode => isInline(child))
+        .filter((child): child is PmInlineNode => isInline(child))
         .map((child) => child.text)
         .join('')
       out.push({

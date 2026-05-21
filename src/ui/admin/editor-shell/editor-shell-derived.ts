@@ -5,7 +5,7 @@ import type {
   SidebarPublishStatus,
   SidebarRevisionSummary,
   SidebarSaveStatus,
-} from './editor-shell-types'
+} from '@/ui/admin/editor-shell/editor-shell-types'
 
 // --- Autosave guard ---------------------------------------------------------
 

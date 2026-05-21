@@ -7,11 +7,12 @@ import type {
   NonRecursiveBlock,
   PortableTextBody,
   Span,
+  TableCell,
 } from '@/shared/pt/schema'
 
 export function footnoteDefinitionBlockToPmNode(
   block: FootnoteDefinitionBlock,
-  pushBlocks: (out: PmNode[], blocks: readonly import('@/shared/pt/schema').Block[]) => void,
+  pushBlocks: (out: PmNode[], blocks: readonly Block[]) => void,
 ): PmBlockNode {
   const inner: PmNode[] = []
   pushBlocks(inner, block.children)
@@ -218,10 +219,7 @@ function syncBlock(block: Block, keyToIndex: Map<string, number>): Block {
         rows: block.rows.map((row) => ({
           ...row,
           cells: row.cells.map((cell) => {
-            const nextCellDefs = syncMarkDefs(
-              cell.markDefs,
-              keyToIndex,
-            ) as import('@/shared/pt/schema').TableCell['markDefs']
+            const nextCellDefs = syncMarkDefs(cell.markDefs, keyToIndex) as TableCell['markDefs']
             return {
               ...cell,
               markDefs: nextCellDefs,

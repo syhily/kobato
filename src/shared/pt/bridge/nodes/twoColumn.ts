@@ -1,9 +1,9 @@
 import type { PmBlockNode, PmNode } from '@/shared/pt/bridge/types'
-import type { TwoColumnBlock } from '@/shared/pt/schema'
+import type { Block, TwoColumnBlock } from '@/shared/pt/schema'
 
 export function twoColumnBlockToPmNode(
   block: TwoColumnBlock,
-  pushBlocks: (out: PmNode[], blocks: readonly import('@/shared/pt/schema').Block[]) => void,
+  pushBlocks: (out: PmNode[], blocks: readonly Block[]) => void,
 ): PmBlockNode {
   const leftInner: PmNode[] = []
   const rightInner: PmNode[] = []

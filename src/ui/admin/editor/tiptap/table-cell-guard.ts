@@ -1,5 +1,5 @@
 import { Extension } from '@tiptap/core'
-import { Slice, Fragment } from '@tiptap/pm/model'
+import { Slice, Fragment, Node } from '@tiptap/pm/model'
 import { Plugin, PluginKey } from '@tiptap/pm/state'
 
 const TABLE_CELL_GUARD_KEY = new PluginKey('tableCellGuard')
@@ -20,7 +20,7 @@ function isInsideTableCell(state: {
   return false
 }
 
-function sanitizeNode(node: import('@tiptap/pm/model').Node): import('@tiptap/pm/model').Node {
+function sanitizeNode(node: Node): Node {
   if (node.isText) {
     const legalMarks = node.marks.filter((m) => !ILLEGAL_MARK_NAMES.has(m.type.name))
     if (legalMarks.length === node.marks.length) {
@@ -33,7 +33,7 @@ function sanitizeNode(node: import('@tiptap/pm/model').Node): import('@tiptap/pm
     return node
   }
 
-  const sanitized: import('@tiptap/pm/model').Node[] = []
+  const sanitized: Node[] = []
   node.forEach((child) => {
     sanitized.push(sanitizeNode(child))
   })
@@ -42,7 +42,7 @@ function sanitizeNode(node: import('@tiptap/pm/model').Node): import('@tiptap/pm
 }
 
 function sanitizeSlice(slice: Slice): Slice {
-  const sanitized: import('@tiptap/pm/model').Node[] = []
+  const sanitized: Node[] = []
   slice.content.forEach((child) => {
     sanitized.push(sanitizeNode(child))
   })
