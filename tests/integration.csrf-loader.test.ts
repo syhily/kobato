@@ -8,6 +8,14 @@ vi.mock('@/server/domains/auth/context', () => ({
   }),
 }))
 
+vi.mock('@/server/infra/db/operations/comment', () => ({
+  countAdminPendingDashboard: vi.fn(async () => ({ all: 0, approval: 0, deletion: 0 })),
+}))
+
+vi.mock('@/server/infra/db/operations/user', () => ({
+  countUsers: vi.fn(async () => 0),
+}))
+
 describe('integration: admin layout loader issues a CSRF token', () => {
   it('returns csrfToken in the loader data', async () => {
     const { loader } = await import('@/routes/admin/layout')

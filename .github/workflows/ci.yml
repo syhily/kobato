@@ -18,22 +18,16 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
-
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 25
       - uses: voidzero-dev/setup-vp@v1
         with:
           cache: true
 
-      # `vp install` follows the package manager declared in package.json
-      # (npm@11). Cache the Vite+ task graph so reruns on the same branch
-      # are fast.
       - run: vp install
-
-      # React Router 7 generates per-route type declarations (./+types/*)
-      # at codegen time. `vp check` doesn't know about this, so run it
-      # explicitly before lint/typecheck.
       - run: vp dlx react-router typegen
-
       - run: vp check
       - run: vp test run
 
@@ -43,8 +37,10 @@ jobs:
     timeout-minutes: 15
     needs: check
     steps:
-      - uses: actions/checkout@v4
-
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 25
       - uses: voidzero-dev/setup-vp@v1
         with:
           cache: true
