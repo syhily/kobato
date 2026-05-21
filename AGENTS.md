@@ -6,7 +6,8 @@ Repository conventions for AI agents and contributors.
 
 - React Router 7 Framework Mode with SSR (`appDirectory: 'src'`). Vite+ builds.
 - React 19 TSX/TS only.
-- Postgres + Redis. Path alias `@/*` → `./src/*`.
+- Postgres + Redis.
+- Path alias `@/*` → `./src/*`.
 - Five layers under `src/`: `routes/` (orchestration), `server/` (SSR),
   `client/` (browser), `ui/` (components), `shared/` (isomorphic).
 
@@ -14,14 +15,15 @@ Repository conventions for AI agents and contributors.
 
 Claude loads these additively as it moves through the codebase:
 
-| File                   | Scope                                                              |
-| ---------------------- | ------------------------------------------------------------------ |
-| `src/routes/AGENTS.md` | Route modules, loaders, actions, React Router conventions          |
-| `src/server/AGENTS.md` | Server layers (infra, domains, http, render), API procedures, auth |
-| `src/client/AGENTS.md` | Browser hooks, oRPC client, React.lazy patterns                    |
-| `src/ui/AGENTS.md`     | Pure-props components, shadcn, PT renderer, component architecture |
-| `src/shared/AGENTS.md` | Isomorphic modules, Zod contracts, DTOs, PT schema                 |
-| `tests/AGENTS.md`      | Test utilities, naming conventions, coverage rules                 |
+| File                          | Scope                                                              |
+| ----------------------------- | ------------------------------------------------------------------ |
+| `src/routes/AGENTS.md`        | Route modules, loaders, actions, React Router conventions          |
+| `src/server/AGENTS.md`        | Server layers (infra, domains, http, render), API procedures, auth |
+| `src/client/AGENTS.md`        | Browser hooks, oRPC client, React.lazy patterns                    |
+| `src/ui/AGENTS.md`            | Pure-props components, shadcn, PT renderer, component architecture |
+| `src/assets/styles/AGENTS.md` | Tailwind tokens, design-system CSS, `@theme` conventions           |
+| `src/shared/AGENTS.md`        | Isomorphic modules, Zod contracts, DTOs, PT schema                 |
+| `tests/AGENTS.md`             | Test utilities, naming conventions, coverage rules                 |
 
 ## Skills
 
@@ -60,9 +62,8 @@ Skills win on conflict. Quote stable rule ids in PR review (e.g.
 
 Do not reintroduce:
 
-- No `astro.config.ts`, `src/pages`, `.astro` shells, `src/actions`,
-  `src/middleware`, `src/layouts`, `src/services`, `src/hooks`, `src/db`,
-  `src/assets/scripts`, or `src/content/`.
+- No `src/actions`, `src/middleware`, `src/layouts`, `src/services`,
+  `src/hooks`, `src/db`, `src/assets/scripts`, or `src/content/`.
 - No `src/blog.config.ts`, `DEFAULT_SETTINGS`, `BlogConstants`, or
   per-section "reset to defaults" action.
 - No monolithic `BlogConfigContext`/`<BlogConfigProvider>`. Use

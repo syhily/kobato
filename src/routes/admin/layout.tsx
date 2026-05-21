@@ -33,7 +33,8 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   // lets a logged-in commenter reach their own profile without us
   // having to ship two parallel chromes.
   if (!hasAtLeast(role, 'visitor')) {
-    throw redirect(`/admin/signin?redirect_to=${encodeURIComponent(url.pathname)}`)
+    const redirectPath = url.pathname.replace(/\.data$/, '')
+    throw redirect(`/admin/signin?redirect_to=${encodeURIComponent(redirectPath)}`)
   }
 
   // Reuse the existing CSRF cookie within its TTL window; only mint a fresh

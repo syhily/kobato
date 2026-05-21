@@ -17,7 +17,8 @@ export const handle: RouteHandle = { layout: 'admin' }
 export async function loader({ request, context }: Route.LoaderArgs) {
   const { role, user, url } = getRouteRequestContext({ request, context })
   if (!hasAtLeast(role, 'author')) {
-    throw redirect(`/admin/signin?redirect_to=${encodeURIComponent(url.pathname)}`)
+    const redirectPath = url.pathname.replace(/\.data$/, '')
+    throw redirect(`/admin/signin?redirect_to=${encodeURIComponent(redirectPath)}`)
   }
 
   const issued = await reuseOrIssueCsrfToken(request)
