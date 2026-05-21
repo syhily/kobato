@@ -13,6 +13,13 @@
   }
 }
 
+/* Sidebar scoped variant — matches shadcn/ui sidebar data attribute */
+@custom-variant sidebar {
+  &:where([data-sidebar='sidebar'], [data-sidebar='sidebar'] *) {
+    @slot;
+  }
+}
+
 @source '../..';
 
 /* Project semantic tokens */
@@ -72,12 +79,19 @@
   --code-inline-fg: #24292e;
   --code-inline-border: color-mix(in oklab, var(--code-bg) 68%, white 32%);
   --size-empty-state: 50vh;
+  --size-sidebar-item: 34px;
+  --size-search-trigger: 38px;
+  --mobile-navbar-height: 64px;
   --z-aside-drawer: 1020;
   --z-modal: 1050;
   --z-nav-splash: 1100;
   --scrim: rgba(8, 15, 25, 0.3);
   --skeleton-start: rgba(0, 0, 0, 0.04);
   --skeleton-end: rgba(0, 0, 0, 0.08);
+
+  /* Sidebar layout */
+  --sidebar-width: 20.5rem;
+  --sidebar-width-icon: 4rem;
 
   /* Shadow and popup primitives */
   --shadow-card-value: 0 0 30px 0 rgb(40 49 73 / 2%);
@@ -121,7 +135,7 @@
   --sidebar-foreground: var(--ink-1);
   --sidebar-primary: var(--brand);
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: var(--line);
+  --sidebar-accent: var(--surface-dim);
   --sidebar-accent-foreground: var(--ink-1);
   --sidebar-border: var(--border-soft);
   --sidebar-ring: var(--brand);
@@ -253,6 +267,16 @@
   /* FAB tokens dark */
   --fab-bg: var(--surface-dim);
   --fab-fg: var(--ink-1);
+
+  /* Sidebar */
+  --sidebar: var(--surface-secondary);
+  --sidebar-foreground: var(--ink-on-dark);
+  --sidebar-primary: var(--brand);
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: color-mix(in oklab, var(--brand) 18%, var(--surface-dim));
+  --sidebar-accent-foreground: #ffffff;
+  --sidebar-border: var(--ink-3);
+  --sidebar-ring: var(--brand);
 }
 
 /* Shiki dual theme dark override */
@@ -345,6 +369,16 @@
 
     --fab-bg: var(--surface-dim);
     --fab-fg: var(--ink-1);
+
+    /* Sidebar */
+    --sidebar: var(--surface-secondary);
+    --sidebar-foreground: var(--ink-on-dark);
+    --sidebar-primary: var(--brand);
+    --sidebar-primary-foreground: #ffffff;
+    --sidebar-accent: color-mix(in oklab, var(--brand) 18%, var(--surface-dim));
+    --sidebar-accent-foreground: #ffffff;
+    --sidebar-border: var(--ink-3);
+    --sidebar-ring: var(--brand);
   }
 
   :root:not(.light, .dark) pre.shiki {
@@ -458,6 +492,9 @@
   --text-btn-lg: clamp(0.875rem, 0.8rem + 0.2vw, 0.9375rem);
 
   --leading-badge: 1.2;
+  --spacing-sidebar-item: var(--size-sidebar-item);
+  --spacing-search-trigger: var(--size-search-trigger);
+  --spacing-empty-state: var(--size-empty-state);
   --spacing-badge-overlay-y: 0.4375rem;
   --spacing-icon-inset: 28%;
   --spacing-btn-icon-md: 2.625rem;

@@ -246,7 +246,14 @@ const ANIMATE_TOKENS = ['shake', 'comments-shimmer', 'comment-flash'] as const
 
 // --spacing-* -- the broad spacing scale that p-, m-, gap-, top-,
 // w-, h-, ... all read from when they are given a custom token.
-const SPACING_TOKENS = ['badge-overlay-y', 'icon-inset', 'btn-icon-md'] as const
+const SPACING_TOKENS = [
+  'sidebar-item',
+  'search-trigger',
+  'empty-state',
+  'badge-overlay-y',
+  'icon-inset',
+  'btn-icon-md',
+] as const
 
 // Note: --leading-* is intentionally NOT registered. Tailwind v4
 // links font-size and line-height through a built-in conflicting-

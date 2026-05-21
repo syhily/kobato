@@ -21,6 +21,7 @@ Claude loads these additively as it moves through the codebase:
 | `src/client/AGENTS.md` | Browser hooks, oRPC client, React.lazy patterns                    |
 | `src/ui/AGENTS.md`     | Pure-props components, shadcn, PT renderer, component architecture |
 | `src/shared/AGENTS.md` | Isomorphic modules, Zod contracts, DTOs, PT schema                 |
+| `tests/AGENTS.md`      | Test utilities, naming conventions, coverage rules                 |
 
 ## Skills
 
@@ -46,7 +47,6 @@ Skills win on conflict. Quote stable rule ids in PR review (e.g.
 ## Build & CI
 
 - `vp dev`, `vp check` (format + lint + types), `vp test run`, `vp build`
-- Import test utilities from `vite-plus/test`, not `vitest`.
 - Before committing: `vp check`, `vp test run`, `vp build`
 
 ## Git
