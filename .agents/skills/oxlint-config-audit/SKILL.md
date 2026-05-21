@@ -4,7 +4,9 @@ Trigger: user asks to "audit lint rules", "补齐 lint 规则", "enable missing 
 
 ## Purpose
 
-Find oxlint rules that are **supported by the installed oxlint version** but **not yet enabled in `oxlint.config.ts`**, evaluate whether they are valuable for this project, enable them, and fix the resulting violations. This is a complete workflow — not just documentation.
+Find oxlint rules that are **supported by the oxlint version bundled with vite-plus** but **not yet enabled in `oxlint.config.ts`**, evaluate whether they are valuable for this project, enable them, and fix the resulting violations. This is a complete workflow — not just documentation.
+
+> **Note:** This project does not install oxlint directly. Linting is invoked through `vp lint` (vite-plus), which bundles its own oxlint binary and plugins. Do not run `npx oxlint` or `node_modules/.bin/oxlint` directly — always use `vp lint` and forward flags with `vp lint -- <flags>`.
 
 ## Agent Protocol
 
@@ -22,9 +24,28 @@ Compare the current config against the **Priority candidate table** below.
 - **Skip** any rule listed in **Keep OFF**.
 - **Skip** any plugin not loaded in `oxlint.config.ts` (this project loads: `react`, `jsx-a11y`, `react-perf`, `import`, `typescript`, `promise`, `node`, `unicorn`, `oxc`).
 
-The remaining rules are the **candidates**. Order them by priority: P0 first, then P1, P2, P3, P4.
+The remaining rules are the **proposed candidates**. Order them by priority: P0 first, then P1, P2, P3, P4.
 
-### Step 3 — Batch enable & triage
+### Step 3 — Gatekeeper review (NEW)
+
+Before injecting any rule, evaluate each proposed candidate against the project's actual codebase and conventions. Ask: **"Will this rule catch real bugs in this project, or will it just create noise?"**
+
+Reject rules that fail any of these checks:
+
+1. **Already covered by TypeScript or `categories.correctness`** — If TypeScript's exhaustiveness checking or the `correctness` category already catches the issue, don't duplicate it.
+2. **Conflicts with framework idioms** — React Router intentionally throws `redirect()` and `new Response()` from loaders. Rules like `only-throw-error` that flag these are not valuable here.
+3. **Flags intentional, valuable patterns** — `== null` / `!= null` is an explicit project convention for null/undefined guards. `eqeqeq` should NOT be enabled if the only violations are this pattern.
+4. **Too noisy for marginal value** — Context defaults (`() => {}`), test mocks, and standard library usage patterns (tiptap default imports) should not require 20+ manual fixes.
+5. **Side-effect imports are explicit and intentional** — CSS imports (`import '@/assets/styles/admin.css'`) and TypeScript module augmentation (`import 'react-router'`) are standard, not accidents.
+
+**Gatekeeper decision log format:** For each rejected rule, record:
+- Rule name
+- Reason for rejection
+- Example of the intentional pattern it would flag
+
+Only rules that **pass** the gatekeeper become the **final candidates** for Step 4.
+
+### Step 4 — Batch enable & triage
 
 For each priority group (P0, then P1, etc.), do:
 
@@ -41,9 +62,13 @@ For each priority group (P0, then P1, etc.), do:
 9. **Verify**: Run `vp check` and `vp test run` before moving to the next priority group.
 10. **Commit or revert**: If the batch is clean, keep it and delete the backup. If it broke tests, restore from backup and retry rules one-by-one.
 
-### Step 4 — Cleanup
+### Step 5 — Cleanup
 
-Remove any `.bak` files. Summarize what was enabled, what was deferred to `warn`, and what was rejected.
+Remove any `.bak` files. Summarize:
+- What was **enabled** (and at what level)
+- What was **deferred to `warn`**
+- What was **rejected by the gatekeeper** (with reasoning)
+- What was **rejected after triage** (too many violations)
 
 ---
 
@@ -66,7 +91,9 @@ If `vp test run` fails because a lint fix changed runtime behavior (e.g. `eqeqeq
 
 ## Priority candidate table
 
-These are rules the installed oxlint supports but the project does NOT currently enable. Process them **in priority order** (P0 highest).
+These are rules the bundled oxlint supports but the project does NOT currently enable. Process them **in priority order** (P0 highest).
+
+To see the full list of rules available in the current vite-plus bundle, run `vp lint -- --rules`.
 
 ### P0 — Suspicious (likely bugs, low noise)
 
@@ -244,4 +271,4 @@ When a rule produces violations that are NOT auto-fixable, use these patterns:
 
 ## Last audited
 
-2026-05-21 — oxlint version from the current `node_modules` install.
+2026-05-21 — Added Step 3 Gatekeeper review. Updated to clarify oxlint is bundled with vite-plus, not installed directly.
