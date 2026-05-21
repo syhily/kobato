@@ -15,7 +15,7 @@ const log = getLogger('cache.buckets')
 //
 // Deliberately excludes:
 //  - `session:*`         clearing it would log every signed-in user out
-//                         and break in-flight CSRF tokens.
+//                         and break in-flight tokens.
 //  - `rate-limit:*`      clearing it would let a throttled abuser retry
 //                         immediately, defeating the spam wall.
 // Those two surfaces stay administered through `vp` shells / Redis CLI,

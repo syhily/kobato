@@ -4,7 +4,6 @@ import type { RouteHandle } from '@/root'
 
 import { useDetachPublicCss } from '@/client/hooks/use-detach-public-css'
 import { getRouteRequestContext } from '@/server/domains/auth/context'
-import { reuseOrIssueCsrfToken } from '@/server/domains/auth/csrf'
 import { hasAtLeast } from '@/server/domains/auth/rbac'
 import { countAdminPendingDashboard } from '@/server/infra/db/operations/comment'
 import { countUsers } from '@/server/infra/db/operations/user'
@@ -37,26 +36,19 @@ export async function loader({ request, context }: Route.LoaderArgs) {
     throw redirect(`/admin/signin?redirect_to=${encodeURIComponent(redirectPath)}`)
   }
 
-  // Reuse the existing CSRF cookie within its TTL window; only mint a fresh
-  // token (and Set-Cookie) when the cookie is missing or expired.
-  const issued = await reuseOrIssueCsrfToken(request)
   const pendingComments = hasAtLeast(role, 'admin') ? await countAdminPendingDashboard() : { all: 0 }
   const userCount = hasAtLeast(role, 'admin') ? await countUsers() : 0
-  return data(
-    {
-      currentUser: {
-        id: user?.id ?? '',
-        name: user?.name ?? '管理员',
-        email: user?.email ?? '',
-        role: (user?.role ?? null) as 'admin' | 'author' | 'visitor' | null,
-      },
-      siteTitle: getBlogSettingsBundleSync()?.siteIdentity?.title ?? '管理后台',
-      pendingCommentCount: pendingComments.all,
-      userCount,
-      csrfToken: issued.token,
+  return data({
+    currentUser: {
+      id: user?.id ?? '',
+      name: user?.name ?? '管理员',
+      email: user?.email ?? '',
+      role: (user?.role ?? null) as 'admin' | 'author' | 'visitor' | null,
     },
-    issued.setCookie === '' ? undefined : { headers: { 'Set-Cookie': issued.setCookie } },
-  )
+    siteTitle: getBlogSettingsBundleSync()?.siteIdentity?.title ?? '管理后台',
+    pendingCommentCount: pendingComments.all,
+    userCount,
+  })
 }
 
 export { AdminErrorFallback as ErrorBoundary }
@@ -72,23 +64,13 @@ export default function WpAdminLayoutRoute({ loaderData }: Route.ComponentProps)
         serif typography the public article surface gets.
       */}
       <PostFontLinks />
-      {/*
-        CSRF anchor for the oRPC client. The csrf cookie is
-        HttpOnly so JS can't read it; the client picks up the matching
-        token from this meta tag and sends it as `X-CSRF-Token` on
-        every mutation. React updates the `content` attribute when
-        the loader revalidates (token rotation, fresh login), so
-        long-lived admin sessions stay valid automatically. See
-        `src/client/api/client.ts`.
-      */}
-      <meta name="csrf-token" content={loaderData.csrfToken} />
       <AdminShell
         currentUser={loaderData.currentUser}
         siteTitle={loaderData.siteTitle}
         pendingCommentCount={loaderData.pendingCommentCount}
         userCount={loaderData.userCount}
       >
-        <Outlet context={{ csrfToken: loaderData.csrfToken, currentUser: loaderData.currentUser }} />
+        <Outlet context={{ currentUser: loaderData.currentUser }} />
       </AdminShell>
     </>
   )

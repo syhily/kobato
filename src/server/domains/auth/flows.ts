@@ -5,7 +5,6 @@ import { data, redirect } from 'react-router'
 import type { BlogSession } from '@/server/domains/auth/session-storage'
 import type { AssetsSettings, SiteIdentitySettings } from '@/shared/config/blog'
 
-import { clearCsrfCookie, issueCsrfToken, validateRequestCsrf } from '@/server/domains/auth/csrf'
 import { establishLoginSession, login } from '@/server/domains/auth/primitives'
 import { commitSession } from '@/server/domains/auth/session-storage'
 import {
@@ -45,23 +44,9 @@ async function commitHeaders(session: BlogSession, extraSetCookie?: string): Pro
   return headers
 }
 
-async function csrfFailure(request: Request, session: BlogSession, csrf: string): Promise<AuthFailure | null> {
-  const [valid] = await validateRequestCsrf(request, csrf)
-  if (valid) {
-    return null
-  }
-  return {
-    ok: false,
-    status: 403,
-    message: '页面安全令牌已失效，请刷新后重试。',
-    headers: await commitHeaders(session, await clearCsrfCookie(request)),
-  }
-}
-
 export async function signInWithSession({
   email,
   password,
-  csrf,
   session,
   request,
   clientAddress,
@@ -69,17 +54,11 @@ export async function signInWithSession({
 }: {
   email: string
   password: string
-  csrf: string
   session: BlogSession
   request: Request
   clientAddress: string
   redirectTo: string
 }): Promise<AuthFlowResult<{ redirectTo: string }>> {
-  const csrfErr = await csrfFailure(request, session, csrf)
-  if (csrfErr) {
-    return csrfErr
-  }
-
   const limit = await tryRateLimit(clientAddress)
   if (limit.exceeded) {
     return {
@@ -100,18 +79,10 @@ export async function signInWithSession({
     }
   }
 
-  // `establishLoginSession` already minted the session cookie with the
-  // sid it wrote to Redis. Stack the CSRF rotation cookie on top
-  // instead of re-committing the in-memory session (which would mint
-  // a second, orphan sid).
-  const rotated = await issueCsrfToken(request)
-  const headers = new Headers()
-  headers.append('Set-Cookie', established.setCookie)
-  headers.append('Set-Cookie', rotated.setCookie)
   return {
     ok: true,
     data: { redirectTo },
-    headers,
+    headers: { 'Set-Cookie': established.setCookie },
   }
 }
 
@@ -120,7 +91,6 @@ export interface SignUpAdminSeed {
   name: string
   email: string
   password: string
-  csrf: string
 }
 
 export async function signUpInitialAdminWithSession({
@@ -128,7 +98,6 @@ export async function signUpInitialAdminWithSession({
   name,
   email,
   password,
-  csrf,
   session,
   request,
   clientAddress,
@@ -137,11 +106,6 @@ export async function signUpInitialAdminWithSession({
   request: Request
   clientAddress: string
 }): Promise<AuthFlowResult<{ redirectTo: string }>> {
-  const csrfErr = await csrfFailure(request, session, csrf)
-  if (csrfErr) {
-    return csrfErr
-  }
-
   if (await hasAdmin()) {
     return {
       ok: false,
@@ -223,13 +187,10 @@ export async function signUpInitialAdminWithSession({
 
   await refreshBlogSettings()
 
-  const headers = new Headers()
-  headers.append('Set-Cookie', established.setCookie)
-  headers.append('Set-Cookie', await clearCsrfCookie(request))
   return {
     ok: true,
     data: { redirectTo: '/admin' },
-    headers,
+    headers: { 'Set-Cookie': established.setCookie },
   }
 }
 

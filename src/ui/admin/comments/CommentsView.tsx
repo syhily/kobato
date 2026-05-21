@@ -55,7 +55,6 @@ function ClearFilterButton({ onClick }: { onClick: () => void }) {
 }
 
 export interface CommentsViewProps {
-  commentCsrfToken: string
   currentUserName: string
   currentUserEmail: string
   initialAuthorId?: string
@@ -64,7 +63,6 @@ export interface CommentsViewProps {
 }
 
 export function CommentsView({
-  commentCsrfToken,
   currentUserName,
   currentUserEmail,
   initialAuthorId = '',
@@ -137,11 +135,6 @@ export function CommentsView({
   const [replyTarget, setReplyTarget] = useState<AdminComment | null>(null)
   const [editUserTarget, setEditUserTarget] = useState<AdminComment | null>(null)
   const [confirm, setConfirm] = useState<ConfirmState | null>(null)
-  const [replyCsrfToken, setReplyCsrfToken] = useState(commentCsrfToken)
-
-  useEffect(() => {
-    setReplyCsrfToken(commentCsrfToken)
-  }, [commentCsrfToken])
 
   useEffect(() => {
     if (!authorRehydrateData?.authors.length) {
@@ -405,13 +398,11 @@ export function CommentsView({
         comment={replyTarget}
         authorName={currentUserName || '管理员'}
         authorEmail={currentUserEmail}
-        csrfToken={replyCsrfToken}
         onClose={() => setReplyTarget(null)}
         onReplied={() => {
           setReplyTarget(null)
           reload()
         }}
-        onCsrfRotated={setReplyCsrfToken}
       />
 
       <ConfirmDialog state={confirm} onClose={() => setConfirm(null)} />

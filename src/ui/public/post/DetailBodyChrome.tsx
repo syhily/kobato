@@ -33,7 +33,6 @@ export interface DetailBodyChromeProps {
   likes: number
   permalink: string
   commentKey: string
-  commentCsrfToken: string
   commentsPromise: Promise<DetailPageComments>
   currentUser?: CommentFormUser
   commentsEnabled: boolean
@@ -59,7 +58,6 @@ export function DetailBodyChrome({
   likes,
   permalink,
   commentKey,
-  commentCsrfToken,
   commentsPromise,
   currentUser,
   commentsEnabled,
@@ -144,7 +142,6 @@ export function DetailBodyChrome({
             {(resolved) => (
               <Comments
                 commentKey={commentKey}
-                csrfToken={commentCsrfToken}
                 comments={resolved.commentData}
                 items={resolved.commentItems}
                 user={currentUser}

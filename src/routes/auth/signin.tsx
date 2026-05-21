@@ -2,7 +2,6 @@ import bcrypt from 'bcryptjs'
 import { data, redirect } from 'react-router'
 
 import { getRouteRequestContext } from '@/server/domains/auth/context'
-import { clearCsrfCookie, reuseOrIssueCsrfToken, validateRequestCsrf } from '@/server/domains/auth/csrf'
 import { processAuthFormSubmission, signInWithSession } from '@/server/domains/auth/flows'
 import { establishLoginSession, logout } from '@/server/domains/auth/primitives'
 import { signInSchema } from '@/server/domains/auth/schema'
@@ -52,8 +51,6 @@ export async function loader({ request, context }: Route.LoaderArgs) {
     throw redirect(redirectTo)
   }
 
-  const { token, setCookie } = await reuseOrIssueCsrfToken(request)
-
   // For reset / invite, surface a token error on the loader so the UI
   // can short-circuit before the user types a new password. `peekToken`
   // is read-only on purpose — the action below consumes the token only
@@ -71,10 +68,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
     }
   }
 
-  return data(
-    { redirectTo, csrf: token, action: action ?? 'login', tokenError, resetToken },
-    setCookie === '' ? undefined : { headers: { 'Set-Cookie': setCookie } },
-  )
+  return data({ redirectTo, action: action ?? 'login', tokenError, resetToken })
 }
 
 export async function action({ request, context }: Route.ActionArgs) {
@@ -126,24 +120,7 @@ export async function action({ request, context }: Route.ActionArgs) {
   }
 
   if (action === 'resetpassword' || action === 'accept-invite') {
-    // Credential-rotating flow. Two non-negotiable invariants:
-    //   1. CSRF must be validated. The reset link by itself is a bearer
-    //      token leaked over email; without CSRF, a malicious page can
-    //      submit it from elsewhere.
-    //   2. ALL other sessions of the target user must be revoked before
-    //      we issue a new one. This is the recovery path users walk
-    //      after suspecting credential compromise; leaving an
-    //      attacker-held cookie alive defeats the point.
     const formData = await request.formData()
-    const csrf = formFieldString(formData, 'csrf')
-    const [csrfOk] = await validateRequestCsrf(request, csrf)
-    if (!csrfOk) {
-      return data(
-        { error: '页面安全令牌已失效，请刷新后重试。' },
-        { headers: { 'Set-Cookie': await clearCsrfCookie(request) } },
-      )
-    }
-
     const rawToken = formFieldString(formData, 'reset_token')
     const newPassword = formFieldString(formData, 'password')
     const purpose = action === 'resetpassword' ? 'password-reset' : 'author-invite'
@@ -181,7 +158,7 @@ export async function action({ request, context }: Route.ActionArgs) {
   return processAuthFormSubmission({
     request,
     schema: signInSchema,
-    fields: ['email', 'password', 'csrf'] as const,
+    fields: ['email', 'password'] as const,
     defaultErrorMessage: '请填写正确的邮箱和密码。',
     redirectTo,
     run: (input) => signInWithSession({ ...input, session, request, clientAddress, redirectTo }),
@@ -197,7 +174,6 @@ export default function LoginRoute({ actionData, loaderData }: Route.ComponentPr
     <div className="flex flex-col gap-8">
       <header className="text-center">
         <BrandLogo className="mx-auto mb-10 h-20 w-auto" />
-        <h1 className="text-3xl font-bold tracking-tight text-foreground md:text-4xl">用户登陆</h1>
       </header>
 
       {actionData?.error || hasMessage(actionData) || loaderData.tokenError ? (
@@ -220,10 +196,10 @@ export default function LoginRoute({ actionData, loaderData }: Route.ComponentPr
         </div>
       ) : null}
 
-      {loaderData.action === 'login' && <LoginForm csrf={loaderData.csrf} />}
-      {loaderData.action === 'lostpassword' && <LostPasswordForm csrf={loaderData.csrf} />}
+      {loaderData.action === 'login' && <LoginForm />}
+      {loaderData.action === 'lostpassword' && <LostPasswordForm />}
       {(loaderData.action === 'resetpassword' || loaderData.action === 'accept-invite') && loaderData.resetToken && (
-        <ResetPasswordForm csrf={loaderData.csrf} token={loaderData.resetToken} />
+        <ResetPasswordForm token={loaderData.resetToken} />
       )}
     </div>
   )

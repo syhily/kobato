@@ -26,7 +26,7 @@ export const CACHE_BUCKET_FALLBACKS: Record<CacheBucketId, CacheBucketSlot> = {
 
 // Read-only cache surfaces that the admin panel surfaces for visibility
 // only — no rename, no clear. Both are critical to runtime behaviour:
-// `session:*` clearing would log everyone out and break in-flight CSRF
+// `session:*` clearing would log everyone out and break in-flight tokens
 // tokens; `rate-limit:*` clearing would let throttled abusers retry
 // immediately. The prefixes are baked in to keep these surfaces
 // administrative-tool territory (vp shells / Redis CLI).

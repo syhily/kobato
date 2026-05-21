@@ -170,7 +170,6 @@ export interface CommentReplyInput {
   email: string
   link?: string
   body: CommentBody
-  csrf: string
   rid?: number
   subtitle?: string
 }
@@ -217,8 +216,6 @@ import type { AdminCommentWire, CommentItemWire } from '@/shared/contracts/comme
 
 export interface ReplyCommentOutput {
   comment: CommentItemWire
-  /** Next CSRF token for a follow-up `replyComment` without full page reload. */
-  csrfToken: string
 }
 
 export interface CommentEditOutput {

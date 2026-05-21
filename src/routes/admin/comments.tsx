@@ -18,14 +18,12 @@ export function meta({ matches }: Route.MetaArgs) {
 }
 
 export default function WpAdminCommentsRoute() {
-  const { csrfToken, currentUser } = useOutletContext<{
-    csrfToken: string
+  const { currentUser } = useOutletContext<{
     currentUser: { id: string; name: string; email: string }
   }>()
   const [searchParams] = useSearchParams()
   return (
     <CommentsView
-      commentCsrfToken={csrfToken}
       currentUserName={currentUser.name}
       currentUserEmail={currentUser.email}
       initialAuthorId={searchParams.get('userId') ?? undefined}

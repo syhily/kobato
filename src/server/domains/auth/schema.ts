@@ -2,11 +2,10 @@ import { z } from 'zod'
 
 import { httpUrlOrEmptyStringSchema } from '@/shared/utils/safe-url'
 
-// CSRF field is `csrf` — see `@/server/domains/auth/csrf` top-of-file note.
+// Auth form schemas.
 export const signInSchema = z.object({
   email: z.email(),
   password: z.string().min(10),
-  csrf: z.string().default(''),
 })
 export type SignInInput = z.infer<typeof signInSchema>
 
@@ -15,7 +14,6 @@ export const signUpAdminSchema = z.object({
   name: z.string().min(1),
   email: z.email(),
   password: z.string().min(10),
-  csrf: z.string().default(''),
 })
 export type SignUpAdminInput = z.infer<typeof signUpAdminSchema>
 

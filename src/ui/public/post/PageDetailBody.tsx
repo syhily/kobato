@@ -22,7 +22,6 @@ export interface PageDetailBodyProps {
   draftMarker?: DraftMarker
   likes: number
   commentKey: string
-  commentCsrfToken: string
   commentsPromise: Promise<DetailPageComments>
   currentUser?: CommentFormUser
   admin?: boolean
@@ -35,7 +34,6 @@ export function PageDetailBody({
   draftMarker = null,
   likes,
   commentKey,
-  commentCsrfToken,
   commentsPromise,
   currentUser,
   admin,
@@ -60,7 +58,6 @@ export function PageDetailBody({
             likes={likes}
             permalink={page.permalink}
             commentKey={commentKey}
-            commentCsrfToken={commentCsrfToken}
             commentsPromise={commentsPromise}
             currentUser={currentUser}
             commentsEnabled={page.comments}

@@ -3,18 +3,14 @@ import { beforeEach, describe, expect, it, vi } from 'vite-plus/test'
 // Covers RBAC-RECTIFICATION-PLAN §1.2.
 //
 // The `signin` action's password-reset and author-invite branches
-// share two non-negotiable invariants:
+// share a non-negotiable invariant:
 //
-//   1. The CSRF token MUST be validated. The reset link is a bearer
-//      token leaked over email; without CSRF a malicious page could
-//      submit it cross-origin.
-//   2. After a successful password rotation, ALL other sessions of the
-//      target user MUST be revoked — `establishLoginSession` is called
-//      with `{ revokeOtherSessions: true }` so a stolen cookie cannot
-//      survive the recovery flow.
+//   After a successful password rotation, ALL other sessions of the
+//   target user MUST be revoked — `establishLoginSession` is called
+//   with `{ revokeOtherSessions: true }` so a stolen cookie cannot
+//   survive the recovery flow.
 //
-// We exercise the action with three scenarios that pin both invariants
-// in place.
+// We exercise the action with scenarios that pin this invariant in place.
 
 const state = vi.hoisted(() => {
   const store = new Map<string, unknown>()
@@ -34,8 +30,6 @@ const state = vi.hoisted(() => {
 })
 
 const sessionMocks = vi.hoisted(() => ({
-  validateRequestCsrf: vi.fn(),
-  clearCsrfCookie: vi.fn(async () => 'csrf=; Path=/; Max-Age=0'),
   commitSession: vi.fn(async () => 'blog_session=stub'),
   destroySession: vi.fn(async () => 'blog_session=deleted'),
 }))
@@ -43,15 +37,6 @@ const sessionMocks = vi.hoisted(() => ({
 // The route module imports each helper from its original location.
 // Mocking the `@/server/session` re-export does nothing — Vitest only
 // catches the import at the path the consumer actually used.
-
-vi.mock('@/server/domains/auth/csrf', async () => {
-  const actual = await vi.importActual<typeof import('@/server/domains/auth/csrf')>('@/server/domains/auth/csrf')
-  return {
-    ...actual,
-    validateRequestCsrf: sessionMocks.validateRequestCsrf,
-    clearCsrfCookie: sessionMocks.clearCsrfCookie,
-  }
-})
 
 vi.mock('@/server/domains/auth/session-storage', async () => {
   const actual = await vi.importActual<typeof import('@/server/domains/auth/session-storage')>(
@@ -152,8 +137,6 @@ function resetRequest(body: Record<string, string>): Request {
 
 beforeEach(() => {
   vi.clearAllMocks()
-  // Default: CSRF valid; tests opt out individually.
-  sessionMocks.validateRequestCsrf.mockResolvedValue([true, null] as never)
   tokenMocks.consumeToken.mockResolvedValue(null)
   userQueryMocks.findUserById.mockResolvedValue(null)
 })
@@ -166,24 +149,12 @@ async function readActionData<T>(promise: Promise<unknown>): Promise<T> {
   return result as T
 }
 
-describe('routes/signin — password-reset CSRF + session-revocation', () => {
-  it('returns the CSRF error and never touches the session when validateRequestCsrf fails', async () => {
-    sessionMocks.validateRequestCsrf.mockResolvedValueOnce([false, 'missing'] as never)
-    const result = await readActionData<{ error: string | null }>(
-      action({
-        request: resetRequest({ csrf: 'bad', reset_token: 'rt', password: 'longenough' }),
-      } as never),
-    )
-    expect(result.error).toBe('页面安全令牌已失效，请刷新后重试。')
-    expect(authPrimitivesMocks.establishLoginSession).not.toHaveBeenCalled()
-    expect(tokenMocks.consumeToken).not.toHaveBeenCalled()
-  })
-
+describe('routes/signin — password-reset session-revocation', () => {
   it('returns 链接无效或已过期 when consumeToken yields null (no session established)', async () => {
     tokenMocks.consumeToken.mockResolvedValueOnce(null)
     const result = await readActionData<{ error: string | null }>(
       action({
-        request: resetRequest({ csrf: 'good', reset_token: 'rt', password: 'longenough' }),
+        request: resetRequest({ reset_token: 'rt', password: 'longenough' }),
       } as never),
     )
     expect(result.error).toBe('链接无效或已过期。')
@@ -205,7 +176,7 @@ describe('routes/signin — password-reset CSRF + session-revocation', () => {
     let caught: unknown
     try {
       await action({
-        request: resetRequest({ csrf: 'good', reset_token: 'rt', password: 'longenough' }),
+        request: resetRequest({ reset_token: 'rt', password: 'longenough' }),
       } as never)
     } catch (error) {
       caught = error

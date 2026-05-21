@@ -7,23 +7,17 @@ import { Input } from '@/ui/components/input'
 import { Label } from '@/ui/components/label'
 import { cn } from '@/ui/lib/cn'
 
-export interface AdminInstallFormProps {
-  csrf: string
-}
-
 // Shared auth input styling — must match AdminCredentialsForm.
 const inputClasses =
   'h-[54px] rounded-lg border-0 bg-muted/50 px-4 text-xl md:text-xl placeholder:text-muted-foreground/50 focus-visible:bg-background focus-visible:ring-2 focus-visible:ring-primary/25 focus-visible:border-primary'
 
-export function AdminInstallForm({ csrf }: AdminInstallFormProps) {
+export function AdminInstallForm() {
   const navigation = useNavigation()
   const isSubmitting = navigation.state === 'submitting' && navigation.formMethod === 'POST'
   const [showPassword, setShowPassword] = useState(false)
 
   return (
     <Form method="post" id="adminInstallForm" className="flex w-full flex-col gap-6">
-      <input type="hidden" name="csrf" value={csrf} />
-
       <div className="flex w-full flex-col gap-2">
         <Label htmlFor="install-title" className="text-[15px] font-semibold">
           站点名称

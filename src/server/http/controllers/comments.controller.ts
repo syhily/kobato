@@ -3,7 +3,6 @@ import { z } from 'zod'
 
 import type { CommentReq } from '@/shared/types/comments'
 
-import { issueCsrfToken } from '@/server/domains/auth/csrf'
 import { userSession } from '@/server/domains/auth/primitives'
 import { isCommentOwner } from '@/server/domains/auth/rbac'
 import { decreaseLikes, increaseLikes, queryLikes, validateLikeToken } from '@/server/domains/comments/likes'
@@ -128,7 +127,6 @@ const replyInput = z
     email: z.email(),
     link: httpUrlOrEmptyStringSchema.optional(),
     body: commentBodySchema,
-    csrf: z.string().min(1).optional(),
     rid: z.number().optional(),
     subtitle: z.string().max(COMMENT_HONEYPOT_MAX_LEN).optional().default(''),
   })
@@ -141,7 +139,7 @@ const replyInput = z
 const replyComment = publicProc
   .route({ method: 'POST', path: '/comments/reply' })
   .input(replyInput)
-  .output(z.object({ comment: commentItemDto, csrfToken: z.string() }))
+  .output(z.object({ comment: commentItemDto }))
   .handler(async ({ input, context }) => {
     const { request, clientAddress, session, responseHeaders } = context
     const isAdmin = userSession(session)?.role === 'admin'
@@ -164,8 +162,6 @@ const replyComment = publicProc
       rid: input.rid,
     }
     const comment = await createComment(commentPayload, request, clientAddress, session)
-    const rotated = await issueCsrfToken(request)
-    responseHeaders.append('Set-Cookie', rotated.setCookie)
     if (!isAdmin) {
       const ttl = requireBlogSettingsSection('comments').comments.tokenTtlSeconds
       const token = await issueCommentToken(comment.id, comment.userId, input.page_key, ttl)
@@ -173,7 +169,7 @@ const replyComment = publicProc
       const next = appendCommentToken(existing, input.page_key, token, ttl)
       responseHeaders.append('Set-Cookie', serializeCommentTokensCookie(next))
     }
-    return { comment: asCommentItemWire(comment), csrfToken: rotated.token }
+    return { comment: asCommentItemWire(comment) }
   })
 
 const list = publicProc

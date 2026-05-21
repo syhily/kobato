@@ -6,7 +6,6 @@ import type { Env } from '@/server/http/context'
 import type { HandlerContext } from '@/server/http/orpc-base'
 
 import { apiRouter } from '@/server/http/api-router'
-import { csrfGuard } from '@/server/http/middlewares/csrf'
 import { getBlogSettingsBundleSync } from '@/shared/config/blog'
 
 // ─── oRPC + Hono perimeter ──────────────────────────────
@@ -16,9 +15,7 @@ import { getBlogSettingsBundleSync } from '@/shared/config/blog'
 // `/rpc/*`. The Hono wrapper here is responsible for three things:
 //
 //   1. `bodyLimit` — read from `blog.limits` settings (default 10 MB).
-//   2. `csrfGuard` — must run **before** the RPCHandler so it can
-//      validate the body without racing the handler's own parse.
-//      The guard short-circuits GET / HEAD requests itself.
+//   2. Context bridging — `c.var.{session,viewer,clientAddress}` is
 //   3. Context bridging — `c.var.{session,viewer,clientAddress}` is
 //      populated by the perimeter middleware in `src/server.ts`;
 //      `responseHeaders` is a fresh `Headers` object that procedures
@@ -50,10 +47,6 @@ export function createApiApp(): Hono<Env> {
       onError: (c) => c.json({ error: { message: '请求体过大' } }, 413),
     }),
   )
-
-  // CSRF must precede the handler (the RPCHandler will consume the
-  // body once and the guard needs to read it via `request.clone()`).
-  app.use('/rpc/*', csrfGuard)
 
   app.use('/rpc/*', async (c, next) => {
     const responseHeaders = new Headers()

@@ -63,7 +63,7 @@ async function catchResponse(promise: Promise<unknown>): Promise<Response> {
 
 describe('routes/setup', () => {
   describe('loader', () => {
-    it('issues a CSRF token when noAdmin', async () => {
+    it('returns data payload when noAdmin', async () => {
       const result = await loader({
         request: new Request('http://localhost/admin/setup'),
         url: new URL('http://localhost/admin/setup'),
@@ -72,10 +72,8 @@ describe('routes/setup', () => {
         pattern: 'admin/setup',
       })
 
-      const payload = (result as { data: { csrf: string } }).data
-      expect(payload.csrf).toBeDefined()
-      expect(typeof payload.csrf).toBe('string')
-      expect(payload.csrf.length).toBeGreaterThan(10)
+      const payload = (result as { data: Record<string, unknown> }).data
+      expect(payload).toBeDefined()
     })
 
     it('redirects to /admin/signin when installed', async () => {
@@ -106,7 +104,6 @@ describe('routes/setup', () => {
       formData.set('name', 'Admin')
       formData.set('email', 'admin@example.com')
       formData.set('password', 'correcthorsebatterystaple')
-      formData.set('csrf', 'test-csrf-token')
 
       await action({
         request: new Request('http://localhost/admin/setup', {
@@ -122,7 +119,7 @@ describe('routes/setup', () => {
       expect(mocks.processAuthFormSubmission).toHaveBeenCalledOnce()
       const call = mocks.processAuthFormSubmission.mock.calls[0]![0]
       expect(call.schema).toBeDefined()
-      expect(call.fields).toEqual(['title', 'name', 'email', 'password', 'csrf'])
+      expect(call.fields).toEqual(['title', 'name', 'email', 'password'])
       expect(call.defaultErrorMessage).toBe('请填写完整的管理员账号信息。')
       expect(call.redirectTo).toBeUndefined()
     })
@@ -133,7 +130,6 @@ describe('routes/setup', () => {
       formData.set('name', 'A')
       formData.set('email', 'a@b.com')
       formData.set('password', '1234567890')
-      formData.set('csrf', 'token')
 
       await action({
         request: new Request('http://localhost/admin/setup', {

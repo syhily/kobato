@@ -19,8 +19,6 @@ export interface PostDetailBodyProps {
   admin: boolean
   likes: number
   commentKey: string
-  /** Public comment form CSRF (paired with `csrf-token` HttpOnly cookie). */
-  commentCsrfToken: string
   /** Streamed in via React Router `<Await>`. */
   commentsPromise: Promise<DetailPageComments>
   currentUser?: CommentFormUser
@@ -36,7 +34,6 @@ export function PostDetailBody({
   admin,
   likes,
   commentKey,
-  commentCsrfToken,
   commentsPromise,
   currentUser,
   draftMarker,
@@ -71,7 +68,6 @@ export function PostDetailBody({
                 likes={likes}
                 permalink={post.permalink}
                 commentKey={commentKey}
-                commentCsrfToken={commentCsrfToken}
                 commentsPromise={commentsPromise}
                 currentUser={currentUser}
                 commentsEnabled={post.comments}

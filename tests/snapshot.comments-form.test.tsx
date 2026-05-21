@@ -18,7 +18,6 @@ describe('snapshot: Comments form variants', () => {
     const html = renderInRouter(
       <Comments
         commentKey="https://yufan.me/posts/hello/"
-        csrfToken="snapshot-csrf-token"
         comments={{ comments: [], count: 0, roots_count: 0 }}
         items={[]}
       />,
@@ -37,7 +36,6 @@ describe('snapshot: Comments form variants', () => {
     const html = renderInRouter(
       <Comments
         commentKey="https://yufan.me/posts/hello/"
-        csrfToken="snapshot-csrf-token"
         comments={{ comments: [], count: 0, roots_count: 0 }}
         items={[]}
         user={adminUser}
@@ -47,14 +45,7 @@ describe('snapshot: Comments form variants', () => {
   })
 
   it('returns the failure placeholder when comments is null', () => {
-    const html = renderInRouter(
-      <Comments
-        commentKey="https://yufan.me/posts/hello/"
-        csrfToken="snapshot-csrf-token"
-        comments={null}
-        items={[]}
-      />,
-    )
+    const html = renderInRouter(<Comments commentKey="https://yufan.me/posts/hello/" comments={null} items={[]} />)
     expect(html).toContain('评论加载失败')
   })
 
@@ -99,8 +90,6 @@ describe('snapshot: Comments form variants', () => {
     const html = renderInRouter(
       <CommentReplyForm
         commentKey="https://yufan.me/posts/hello/"
-        csrfToken="snapshot-csrf-token"
-        onCsrfRotated={() => undefined}
         replyToId={42}
         replyTarget={replyTarget}
         onCancel={() => undefined}

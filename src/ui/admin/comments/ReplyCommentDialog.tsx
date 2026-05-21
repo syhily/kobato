@@ -23,27 +23,14 @@ export interface ReplyCommentDialogProps {
   comment: AdminComment | null
   authorName: string
   authorEmail: string
-  csrfToken: string
   onClose: () => void
   onReplied: () => void
-  onCsrfRotated: (token: string) => void
 }
 
-export function ReplyCommentDialog({
-  comment,
-  authorName,
-  authorEmail,
-  csrfToken,
-  onClose,
-  onReplied,
-  onCsrfRotated,
-}: ReplyCommentDialogProps) {
+export function ReplyCommentDialog({ comment, authorName, authorEmail, onClose, onReplied }: ReplyCommentDialogProps) {
   const mutation = useMutation({
     ...orpcQuery.comments.replyComment.mutationOptions(),
-    onSuccess: (payload) => {
-      if (payload.csrfToken) {
-        onCsrfRotated(payload.csrfToken)
-      }
+    onSuccess: () => {
       onReplied()
     },
   })
@@ -101,7 +88,6 @@ export function ReplyCommentDialog({
               email: authorEmail,
               body,
               rid: Number.parseInt(idStr(comment.id), 10),
-              csrf: csrfToken,
             })
           }}
           className="flex flex-col gap-4"

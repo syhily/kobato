@@ -25,8 +25,6 @@ import {
 
 export interface CommentsProps {
   commentKey: string
-  /** CSRF token for `replyComment` (must match `csrf-token` cookie). Rotates after each successful reply. */
-  csrfToken: string
   comments: CommentsData | null
   items: CommentItemType[]
   user?: CommentFormUser
@@ -177,7 +175,7 @@ export const commentTreeReducer = reducer
 // (`Comments.Header`, `Comments.ReplyFormSlot`, `Comments.List`,
 // `Comments.LoadMore`). Leaf components consume the shared
 // `CommentsContext` instead of accepting render-prop callbacks.
-export function Comments({ commentKey, csrfToken: initialCsrfToken, comments, items, user }: CommentsProps) {
+export function Comments({ commentKey, comments, items, user }: CommentsProps) {
   if (comments == null) {
     return (
       <div id="comments" className="pt-12">
@@ -190,7 +188,6 @@ export function Comments({ commentKey, csrfToken: initialCsrfToken, comments, it
     <CommentsRoot
       key={commentKey}
       commentKey={commentKey}
-      initialCsrfToken={initialCsrfToken}
       initialItems={items}
       rootsCount={comments.roots_count}
       totalCount={comments.count}
@@ -206,7 +203,6 @@ export function Comments({ commentKey, csrfToken: initialCsrfToken, comments, it
 
 interface CommentsRootProps {
   commentKey: string
-  initialCsrfToken: string
   initialItems: CommentItemType[]
   rootsCount: number
   totalCount: number
@@ -214,20 +210,8 @@ interface CommentsRootProps {
   children: React.ReactNode
 }
 
-function CommentsRoot({
-  commentKey,
-  initialCsrfToken,
-  initialItems,
-  rootsCount,
-  totalCount,
-  user,
-  children,
-}: CommentsRootProps) {
+function CommentsRoot({ commentKey, initialItems, rootsCount, totalCount, user, children }: CommentsRootProps) {
   const [state, dispatch] = useReducer(reducer, createCommentTreeState(initialItems, rootsCount))
-  const [csrfToken, setCsrfToken] = useState(initialCsrfToken)
-  useEffect(() => {
-    setCsrfToken(initialCsrfToken)
-  }, [initialCsrfToken])
 
   // Scroll the reply form into view after a Reply click. The Tiptap
   // editor inside the form auto-focuses on mount; we just need to
@@ -311,8 +295,6 @@ function CommentsRoot({
     () => (
       <CommentReplyForm
         commentKey={commentKey}
-        csrfToken={csrfToken}
-        onCsrfRotated={setCsrfToken}
         replyToId={activeReplyToId}
         replyTarget={replyTarget}
         user={user}
@@ -320,7 +302,7 @@ function CommentsRoot({
         onReplied={onReplied}
       />
     ),
-    [commentKey, csrfToken, setCsrfToken, activeReplyToId, replyTarget, user, onCancelReply, onReplied],
+    [commentKey, activeReplyToId, replyTarget, user, onCancelReply, onReplied],
   )
 
   const value = useMemo<CommentsContextValue>(

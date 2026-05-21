@@ -29,7 +29,7 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
 
   const footnotesSectionTitle = resolveFootnotesSectionTitle(requireBlogSettingsSection('content'))
 
-  const { detail, commentCsrfSetCookie } = await loadPublicDetailData({
+  const { detail } = await loadPublicDetailData({
     request,
     context,
     target: { type: 'page', ownerId: BigInt(preview.page.id) },
@@ -48,10 +48,7 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
       footnotesSectionTitle,
     },
     {
-      headers:
-        preview.publicEtag === null
-          ? { 'Set-Cookie': commentCsrfSetCookie }
-          : { 'Set-Cookie': commentCsrfSetCookie, ETag: preview.publicEtag },
+      headers: preview.publicEtag === null ? undefined : { ETag: preview.publicEtag },
     },
   )
 }
@@ -69,15 +66,12 @@ export default function PageDetailRoute({ loaderData }: Route.ComponentProps) {
   return (
     <>
       <PostFontLinks />
-      {/* CSRF anchor consumed by the oRPC client — see admin.layout. */}
-      <meta name="csrf-token" content={detail.csrfToken} />
       <PageDetailBody
         page={page}
         headings={page.headings}
         draftMarker={draftMarker}
         likes={detail.likes}
         commentKey={detail.commentKey}
-        commentCsrfToken={detail.csrfToken}
         commentsPromise={detail.comments}
         currentUser={detail.currentUser}
         admin={detail.admin}

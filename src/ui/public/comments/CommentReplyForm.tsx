@@ -17,9 +17,6 @@ import { CommentBodyEditor, EMPTY_COMMENT_BODY, isCommentBodyBlank } from '@/ui/
 
 export interface CommentReplyFormProps {
   commentKey: string
-  /** Matches `csrf-token` cookie; server returns a fresh token after each successful reply. */
-  csrfToken: string
-  onCsrfRotated: (token: string) => void
   user?: CommentFormUser
   /** Currently active reply target id; 0 means top-level reply. */
   replyToId: number
@@ -37,8 +34,6 @@ export interface CommentReplyFormProps {
 // `useMutation` is both simpler and lighter-weight.
 export function CommentReplyForm({
   commentKey,
-  csrfToken,
-  onCsrfRotated,
   user,
   replyToId,
   replyTarget,
@@ -80,9 +75,6 @@ export function CommentReplyForm({
     ...orpcQuery.comments.replyComment.mutationOptions(),
     onSuccess: (data: ReplyCommentOutput) => {
       setSubmitError(null)
-      if (data.csrfToken) {
-        onCsrfRotated(data.csrfToken)
-      }
       onReplied(data.comment, replyToId)
       // Persist guest info for future visits.
       if (!user) {
@@ -142,7 +134,6 @@ export function CommentReplyForm({
       email,
       link: link !== '' ? link : undefined,
       body,
-      csrf: csrfToken,
       rid: replyToId === 0 ? undefined : replyToId,
       subtitle: subtitle === '' ? undefined : subtitle,
     }

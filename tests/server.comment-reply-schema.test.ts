@@ -17,7 +17,7 @@ describe('commentReplySchema anti-spam', () => {
     name: 'Reader',
     email: 'reader@example.com',
     body: HELLO_BODY,
-    csrf: 'csrf-token-value',
+    // csrf field removed
     subtitle: '',
   }
 
@@ -55,7 +55,6 @@ describe('commentReplySchema anti-spam', () => {
       name: base.name,
       email: base.email,
       body: base.body,
-      csrf: base.csrf,
     })
     expect(data.subtitle).toBe('')
   })

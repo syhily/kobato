@@ -33,16 +33,14 @@ function PasswordToggle({ show, onToggle }: { show: boolean; onToggle: () => voi
 
 export interface LoginFormProps {
   action?: string
-  csrf: string
 }
 
-export function LoginForm({ action, csrf }: LoginFormProps) {
+export function LoginForm({ action }: LoginFormProps) {
   const isSubmitting = useAuthSubmitting()
   const [showPassword, setShowPassword] = useState(false)
 
   return (
     <Form method="post" action={action} id="loginForm" className="flex w-full flex-col gap-6">
-      <input type="hidden" name="csrf" value={csrf} />
       <div className="flex w-full flex-col gap-2">
         <Label htmlFor="loginForm-email" className="text-[15px] font-semibold">
           邮箱
@@ -106,15 +104,13 @@ export function LoginForm({ action, csrf }: LoginFormProps) {
 
 export interface LostPasswordFormProps {
   action?: string
-  csrf: string
 }
 
-export function LostPasswordForm({ action, csrf }: LostPasswordFormProps) {
+export function LostPasswordForm({ action }: LostPasswordFormProps) {
   const isSubmitting = useAuthSubmitting()
 
   return (
     <Form method="post" action={action} id="loginForm" className="flex w-full flex-col gap-6">
-      <input type="hidden" name="csrf" value={csrf} />
       <div className="flex w-full flex-col gap-2">
         <Label htmlFor="loginForm-email" className="text-[15px] font-semibold">
           邮箱
@@ -156,17 +152,15 @@ export function LostPasswordForm({ action, csrf }: LostPasswordFormProps) {
 
 export interface ResetPasswordFormProps {
   action?: string
-  csrf: string
   token: string
 }
 
-export function ResetPasswordForm({ action, csrf, token }: ResetPasswordFormProps) {
+export function ResetPasswordForm({ action, token }: ResetPasswordFormProps) {
   const isSubmitting = useAuthSubmitting()
   const [showPassword, setShowPassword] = useState(false)
 
   return (
     <Form method="post" action={action} id="loginForm" className="flex w-full flex-col gap-6">
-      <input type="hidden" name="csrf" value={csrf} />
       <input type="hidden" name="reset_token" value={token} />
       <div className="flex w-full flex-col gap-2">
         <Label htmlFor="loginForm-password" className="text-[15px] font-semibold">

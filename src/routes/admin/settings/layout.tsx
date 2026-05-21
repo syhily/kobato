@@ -11,7 +11,6 @@ import { SECTION_TO_BUNDLE_KEY } from '@/shared/config/settings'
 import type { Route } from './+types/layout'
 
 interface ParentContext {
-  csrfToken: string
   currentUser: { id: string; name: string; email: string }
 }
 

@@ -110,7 +110,7 @@ async function catchResponse(promise: Promise<unknown>): Promise<Response> {
 }
 
 describe('integration: /admin/setup full install flow', () => {
-  it('loader issues a CSRF token and action accepts it, returning a redirect to /admin', async () => {
+  it('loader returns data and action redirects to /admin', async () => {
     const loaderResult = await loader({
       request: new Request('http://localhost/admin/setup'),
       url: new URL('http://localhost/admin/setup'),
@@ -119,28 +119,20 @@ describe('integration: /admin/setup full install flow', () => {
       pattern: 'admin/setup',
     })
 
-    const payload = (loaderResult as { data: { csrf: string } }).data
-    expect(payload.csrf).toBeDefined()
-    expect(typeof payload.csrf).toBe('string')
-    expect(payload.csrf.length).toBeGreaterThan(10)
-
-    const init = (loaderResult as { init: { headers?: Record<string, string> } }).init
-    const setCookie = init.headers?.['Set-Cookie'] ?? ''
-    expect(setCookie).toContain('csrf-token=')
+    const payload = (loaderResult as { data: Record<string, unknown> }).data
+    expect(payload).toBeDefined()
 
     const formData = new FormData()
     formData.set('title', 'My Blog')
     formData.set('name', 'Admin')
     formData.set('email', 'admin@example.com')
     formData.set('password', 'correcthorsebatterystaple')
-    formData.set('csrf', payload.csrf)
 
     const response = await catchResponse(
       action({
         request: new Request('http://localhost/admin/setup', {
           method: 'POST',
           body: formData,
-          headers: { Cookie: setCookie.split(';')[0]! },
         }),
         url: new URL('http://localhost/admin/setup'),
         context: new Map(),
@@ -187,41 +179,31 @@ describe('integration: /admin/setup full install flow', () => {
     expect(cookies.some((c) => c.startsWith('__session='))).toBe(true)
   })
 
-  it('action rejects a mismatched CSRF token', async () => {
-    const loaderResult = await loader({
-      request: new Request('http://localhost/admin/setup'),
-      url: new URL('http://localhost/admin/setup'),
-      context: new Map(),
-      params: {},
-      pattern: 'admin/setup',
-    })
-
-    const init = (loaderResult as { init: { headers?: Record<string, string> } }).init
-    const setCookie = init.headers?.['Set-Cookie'] ?? ''
-
+  it('action accepts valid form data and redirects to /admin', async () => {
     const formData = new FormData()
     formData.set('title', 'My Blog')
     formData.set('name', 'Admin')
     formData.set('email', 'admin@example.com')
     formData.set('password', 'correcthorsebatterystaple')
-    formData.set('csrf', 'wrong-token')
 
-    const actionResult = await action({
-      request: new Request('http://localhost/admin/setup', {
-        method: 'POST',
-        body: formData,
-        headers: { Cookie: setCookie.split(';')[0]! },
-      }),
-      url: new URL('http://localhost/admin/setup'),
-      context: new Map(),
-      params: {},
-      pattern: 'admin/setup',
-    })
+    // Successful setup throws a redirect Response.
+    let response: Response | undefined
+    try {
+      await action({
+        request: new Request('http://localhost/admin/setup', {
+          method: 'POST',
+          body: formData,
+        }),
+        url: new URL('http://localhost/admin/setup'),
+        context: new Map(),
+        params: {},
+        pattern: 'admin/setup',
+      })
+    } catch (caught) {
+      response = caught as Response
+    }
 
-    // CSRF failure returns a data object with an error field.
-    const result = actionResult as { data: { error: string } }
-    expect(result.data.error).toBeDefined()
-    expect(userQuery.insertAdmin).not.toHaveBeenCalled()
-    expect(settingQuery.upsertSetting).not.toHaveBeenCalled()
+    expect(response!.status).toBe(302)
+    expect(response!.headers.get('Location')).toBe('/admin')
   })
 })

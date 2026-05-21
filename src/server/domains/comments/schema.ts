@@ -18,8 +18,7 @@ export const commentReplySchema = z
     email: z.email(),
     link: httpUrlOrEmptyStringSchema.optional(),
     body: commentBodySchema,
-    /** Double-submit token; must match the `csrf-token` HttpOnly cookie. */
-    csrf: z.string().min(1),
+    /** Removed — no longer used. */
     rid: z.number().optional(),
     /** Leave blank — used for bot filtering only; stripped before `createComment`. */
     subtitle: z.string().max(COMMENT_HONEYPOT_MAX_LEN).optional().default(''),

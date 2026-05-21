@@ -5,7 +5,6 @@ import type { ClientTag, SidebarPostLink } from '@/shared/types/catalog'
 
 import { trackAccess } from '@/server/domains/analytics/track'
 import { tryGetSessionContext } from '@/server/domains/auth/context'
-import { issueCsrfToken } from '@/server/domains/auth/csrf'
 import { resolveSessionContext, userSession } from '@/server/domains/auth/primitives'
 import { type DetailPageComments, loadDetailPageStreaming } from '@/server/http/loaders/comments'
 import { notFound } from '@/server/infra/http/status'
@@ -19,8 +18,6 @@ export type PublicDetailCritical = Awaited<ReturnType<typeof loadDetailPageStrea
 // (`react-router-framework-mode/data-loading/data-loading` "Streaming with defer".)
 export interface PublicDetailData extends PublicDetailCritical {
   comments: Promise<DetailPageComments>
-  /** Double-submit CSRF token; pair with `csrf-token` cookie from the route `Set-Cookie` header. */
-  csrfToken: string
 }
 
 export interface PublicDetailSidebarData {
@@ -53,8 +50,6 @@ export async function loadPublicDetailData({
 }): Promise<{
   detail: PublicDetailData
   sidebar?: PublicDetailSidebarData
-  /** Use only as `data(..., { headers: { 'Set-Cookie': … } })` — omit from the client-visible loader object. */
-  commentCsrfSetCookie: string
 }> {
   const sessionContext = tryGetSessionContext(context) ?? (await resolveSessionContext(request))
   const { session } = sessionContext
@@ -72,15 +67,10 @@ export async function loadPublicDetailData({
     void trackAccess(request, target, { isAdmin })
   }
 
-  const [, streaming, issued] = await Promise.all([
-    preload(),
-    loadDetailPageStreaming(session, target, { trackView }),
-    issueCsrfToken(request),
-  ])
+  const [, streaming] = await Promise.all([preload(), loadDetailPageStreaming(session, target, { trackView })])
 
   return {
-    detail: { ...streaming.critical, comments: streaming.comments, csrfToken: issued.token },
+    detail: { ...streaming.critical, comments: streaming.comments },
     sidebar,
-    commentCsrfSetCookie: issued.setCookie,
   }
 }

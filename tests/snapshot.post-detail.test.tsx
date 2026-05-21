@@ -55,7 +55,6 @@ describe('snapshot: PostDetailBody composed view', () => {
         admin={false}
         likes={7}
         commentKey="https://yufan.me/posts/hello/"
-        commentCsrfToken="snapshot-csrf-token"
         commentsPromise={commentsPromise}
         sidebar={sidebar}
       >
@@ -85,7 +84,6 @@ describe('snapshot: PostDetailBody composed view', () => {
         admin={false}
         likes={0}
         commentKey="https://yufan.me/posts/no-toc/"
-        commentCsrfToken="snapshot-csrf-token"
         commentsPromise={commentsPromise}
         sidebar={sidebar}
       >

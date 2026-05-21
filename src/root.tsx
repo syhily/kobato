@@ -7,7 +7,6 @@ import { Links, Meta, Outlet, Scripts, ScrollRestoration, useRouteLoaderData } f
 
 import { makeQueryClient } from '@/client/api/query-client'
 import { useChunkErrorRecovery, useReloadOnChunkError } from '@/client/hooks/use-chunk-error-recovery'
-import { useCsrfRefresh } from '@/client/hooks/use-csrf-refresh'
 import { useFocusHash } from '@/client/hooks/use-focus-hash'
 import { useIosNoZoomOnFocus } from '@/client/hooks/use-ios-no-zoom'
 import { getRouteRequestContext } from '@/server/domains/auth/context'
@@ -238,23 +237,12 @@ export default function App({ loaderData }: Route.ComponentProps) {
         <ThemeProvider initialResolved={loaderData.theme ?? undefined}>
           <BlogSettingsProvider value={loaderData.blogSettings ?? undefined}>
             <NavigationSplash />
-            <CsrfRefresh />
             <Outlet />
           </BlogSettingsProvider>
         </ThemeProvider>
       </HydrationBoundary>
     </QueryClientProvider>
   )
-}
-
-function CsrfRefresh() {
-  // Keep the CSRF token fresh for long-lived tabs (admin SPA and
-  // open article detail pages). Seeds from the SSR meta tag on mount,
-  // then refreshes every 30 minutes before the 4-hour cookie TTL.
-  // Must live inside QueryClientProvider so useMutation can access
-  // the QueryClient context.
-  useCsrfRefresh()
-  return null
 }
 
 export function ErrorBoundary({ error, loaderData }: Route.ErrorBoundaryProps) {

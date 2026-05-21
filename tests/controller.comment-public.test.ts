@@ -64,10 +64,6 @@ vi.mock('@/server/domains/auth/primitives', () => ({
   userSession: () => undefined,
 }))
 
-vi.mock('@/server/domains/auth/csrf', () => ({
-  issueCsrfToken: vi.fn().mockResolvedValue({ token: 'csrf-x', setCookie: 'csrf=...' }),
-}))
-
 vi.mock('@/shared/config/blog', () => ({
   requireBlogSettingsSection: (section: string) => {
     if (section === 'siteIdentity') {

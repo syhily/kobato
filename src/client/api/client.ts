@@ -15,36 +15,7 @@ import type { ApiRouter } from '@/server/http/api-router'
  *
  * Errors thrown by the server are normalized client-side as
  * `ORPCError` instances.
- *
- * CSRF: the server's `csrfGuard` middleware enforces CSRF on every
- * non-GET request. The csrf cookie is `HttpOnly`, so JS can't read
- * it directly — we inject the matching token as the
- * `X-CSRF-Token` header pulled from a server-rendered
- * `<meta name="csrf-token">` tag. Page-level loaders (admin
- * layout, post / page detail) issue or reuse the cookie and render
- * the meta tag in the same response, so any mutation kicked off
- * from that page arrives at the API with a valid token.
  */
-let csrfToken: string | undefined
-
-export function setCsrfToken(token: string | undefined) {
-  csrfToken = token
-  if (typeof document !== 'undefined') {
-    const meta = document.querySelector<HTMLMetaElement>('meta[name="csrf-token"]')
-    if (meta) {
-      meta.content = token ?? ''
-    }
-  }
-}
-
-export function readCsrfMeta(): string | undefined {
-  if (typeof document === 'undefined') {
-    return undefined
-  }
-  const meta = document.querySelector<HTMLMetaElement>('meta[name="csrf-token"]')
-  return meta?.content || undefined
-}
-
 const link = new RPCLink({
   // RPCLink does `new URL(baseUrl)` internally and the `URL` constructor
   // throws on relative inputs ("Invalid URL"), so we resolve `/rpc`
@@ -56,10 +27,7 @@ const link = new RPCLink({
   //   - Storybook / Vitest may stub `location`; reading it per-call
   //     instead of once-at-construction keeps those overrides honest.
   url: () => `${globalThis.location?.origin ?? 'http://localhost'}/rpc`,
-  headers: () => {
-    const token = csrfToken ?? readCsrfMeta()
-    return token ? { 'x-csrf-token': token } : {}
-  },
+  headers: () => ({}),
 })
 
 export const orpc: RouterClient<ApiRouter> = createORPCClient(link)

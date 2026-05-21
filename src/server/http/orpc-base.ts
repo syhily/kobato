@@ -10,7 +10,7 @@ import { ErrorMessages } from '@/server/infra/http/errors'
 // (session / install-gate / visitor-cookie / wp-decoy) has run.
 //
 // `responseHeaders` is a mutable bag the procedure can append to
-// (e.g. `Set-Cookie` for csrf rotation or comment-token issuance).
+// (e.g. `Set-Cookie` for comment-token issuance).
 // The Hono bridge merges entries onto the final `Response` after
 // `RPCHandler.handle()` resolves — oRPC's RPC wire format doesn't
 // have a per-procedure header channel, so this is the bridge's job.
@@ -36,9 +36,8 @@ export interface AuthedHandlerContext extends Omit<HandlerContext, 'viewer'> {
 const root = os.$context<HandlerContext>()
 
 // ─── Middleware: require a logged-in user ───────────────
-// Throws ORPCError('UNAUTHORIZED') if no session user. The Hono CSRF
-// guard runs upstream of the RPCHandler bridge, so we only deal with
-// auth + role logic here.
+// Throws ORPCError('UNAUTHORIZED') if no session user. We only deal
+// with auth + role logic here.
 const requireAuth = root.middleware(({ context, next }) => {
   const user = context.session.get('user')
   if (!user) {
@@ -72,9 +71,7 @@ function requireRole(role: Role) {
 }
 
 // ─── Public base procedure ──────────────────────────────
-// No auth gate. The CSRF middleware (`csrfGuard`) runs on the Hono
-// layer for every `/rpc/*` mutation regardless of which base procedure
-// the leaf chose — so public mutations are still CSRF-protected.
+// No auth gate. Public mutations rely on session authentication.
 export const publicProc = root
 
 // ─── Authed base procedure ──────────────────────────────

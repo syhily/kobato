@@ -66,7 +66,7 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
     selectSidebarPosts(getSidebarWidgetCount(requireBlogSettingsSection('sidebar'), 'recentPosts')),
   ])
 
-  const { detail, commentCsrfSetCookie } = await loadPublicDetailData({
+  const { detail } = await loadPublicDetailData({
     request,
     context,
     target: { type: 'post', ownerId: BigInt(post.id) },
@@ -85,7 +85,7 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
       imageMeta,
       draftMarker,
     },
-    { headers: { 'Set-Cookie': commentCsrfSetCookie, ETag: etag } },
+    { headers: { ETag: etag } },
   )
 }
 
@@ -102,8 +102,6 @@ export default function PostDetailRoute({ loaderData }: Route.ComponentProps) {
   return (
     <>
       <PostFontLinks />
-      {/* CSRF anchor consumed by the oRPC client — see admin.layout. */}
-      <meta name="csrf-token" content={detail.csrfToken} />
       <PostDetailBody
         post={post}
         headings={post.headings}
@@ -111,7 +109,6 @@ export default function PostDetailRoute({ loaderData }: Route.ComponentProps) {
         admin={detail.admin}
         likes={detail.likes}
         commentKey={detail.commentKey}
-        commentCsrfToken={detail.csrfToken}
         commentsPromise={detail.comments}
         currentUser={detail.currentUser}
         draftMarker={draftMarker}

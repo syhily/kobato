@@ -1,7 +1,6 @@
 import { data } from 'react-router'
 
 import { getRouteRequestContext } from '@/server/domains/auth/context'
-import { issueCsrfToken } from '@/server/domains/auth/csrf'
 import { processAuthFormSubmission, signUpInitialAdminWithSession } from '@/server/domains/auth/flows'
 import { signUpAdminSchema } from '@/server/domains/auth/schema'
 import { ensureNoAdminOrRedirect } from '@/server/domains/settings/install-gate'
@@ -11,7 +10,7 @@ import { BrandLogo } from '@/ui/public/chrome/BrandLogo'
 
 import type { Route } from './+types/index'
 
-const ADMIN_INSTALL_FIELDS = ['title', 'name', 'email', 'password', 'csrf'] as const
+const ADMIN_INSTALL_FIELDS = ['title', 'name', 'email', 'password'] as const
 
 export async function loader({ request, context }: Route.LoaderArgs) {
   // Possible outcomes:
@@ -19,11 +18,9 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   //   installed → 303 → /admin/signin
   await ensureNoAdminOrRedirect()
 
-  // Pull the request context so we trip session middleware exactly once
-  // even though we no longer write the CSRF token through the session.
+  // Pull the request context so we trip session middleware exactly once.
   getRouteRequestContext({ request, context })
-  const { token: csrf, setCookie } = await issueCsrfToken(request)
-  return data({ csrf }, { headers: { 'Set-Cookie': setCookie } })
+  return data({})
 }
 
 export async function action({ request, context }: Route.ActionArgs) {
@@ -48,7 +45,7 @@ export function meta({ matches }: Route.MetaArgs) {
   return routeMeta({ title: '创建站点' }, bundleFromMatches(matches))
 }
 
-export default function AdminInstallRoute({ actionData, loaderData }: Route.ComponentProps) {
+export default function AdminInstallRoute({ actionData }: Route.ComponentProps) {
   return (
     <div className="flex flex-col gap-8">
       {/* Ghost-style welcome header */}
@@ -64,7 +61,7 @@ export default function AdminInstallRoute({ actionData, loaderData }: Route.Comp
         </div>
       ) : null}
 
-      <AdminInstallForm csrf={loaderData.csrf} />
+      <AdminInstallForm />
     </div>
   )
 }
