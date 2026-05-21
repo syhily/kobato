@@ -1,5 +1,6 @@
 import { z } from 'zod'
 
+import { recordAuditEventFromContext } from '@/server/domains/audit/service'
 import { userSession } from '@/server/domains/auth/primitives'
 import {
   addMusic,
@@ -44,6 +45,11 @@ const add = authorProc
       sourceId: input.sourceId,
       uploader: { id: BigInt(context.viewer.userId), name: userSession(context.session)?.name ?? '' },
     })
+    recordAuditEventFromContext(context, {
+      action: 'music_added',
+      resourceType: 'music',
+      resourceId: String(music.id),
+    })
     return { music }
   })
 
@@ -59,13 +65,18 @@ const update = authorProc
     }),
   )
   .output(updateMusicOutputDto)
-  .handler(async ({ input }) => {
+  .handler(async ({ input, context }) => {
     const music = await updateMusicMetadata({
       id: BigInt(input.id),
       name: input.name,
       artist: input.artist,
       album: input.album,
       lyric: input.lyric ?? null,
+    })
+    recordAuditEventFromContext(context, {
+      action: 'music_updated',
+      resourceType: 'music',
+      resourceId: input.id,
     })
     return { music }
   })
@@ -76,6 +87,11 @@ const remove = authorProc
   .output(z.void())
   .handler(async ({ input, context }) => {
     await deleteMusic(BigInt(input.id), { userId: context.viewer.userId, role: context.viewer.role })
+    recordAuditEventFromContext(context, {
+      action: 'music_deleted',
+      resourceType: 'music',
+      resourceId: input.id,
+    })
   })
 
 export const adminMusicRouter = { list, search, add, update, delete: remove }

@@ -14,6 +14,8 @@ interface LimitsFormProps {
 const BOUNDS = {
   maxRequestBodySize: { min: 1024, max: 100 * 1024 * 1024 },
   sessionMaxAge: { min: 60, max: 365 * 24 * 60 * 60 },
+  auditLogDbRetentionDays: { min: 1, max: 90 },
+  auditLogArchiveRetentionDays: { min: 1, max: 365 * 2 },
 } as const
 
 function LimitsRequestCard({ limits }: { limits: LimitsSettings }) {
@@ -106,11 +108,82 @@ function LimitsSessionCard({ limits }: { limits: LimitsSettings }) {
   )
 }
 
+function LimitsAuditCard({ limits }: { limits: LimitsSettings }) {
+  const { isEditing, form, settingGroupProps } = useSettingsCard<
+    LimitsSettings,
+    { auditLogDbRetentionDays: number; auditLogArchiveRetentionDays: number }
+  >({
+    section: 'limits',
+    source: limits,
+    toState: (source) => ({
+      auditLogDbRetentionDays: source.auditLogDbRetentionDays ?? 30,
+      auditLogArchiveRetentionDays: source.auditLogArchiveRetentionDays ?? 180,
+    }),
+    fromState: (state) => ({
+      auditLogDbRetentionDays: state.auditLogDbRetentionDays,
+      auditLogArchiveRetentionDays: state.auditLogArchiveRetentionDays,
+    }),
+  })
+
+  return (
+    <SettingGroup
+      title="审计日志限制"
+      description="控制审计日志在数据库中的保留时长，以及归档到 S3 后的保留时长。S3 未开启时，超期日志将直接删除而不归档。"
+      {...settingGroupProps}
+    >
+      {isEditing ? (
+        <SettingGroupContent>
+          <SettingsRow
+            label="数据库保留天数"
+            htmlFor="limits-audit-db-retention"
+            hint={`范围 ${BOUNDS.auditLogDbRetentionDays.min} - ${BOUNDS.auditLogDbRetentionDays.max}。默认 30 天。`}
+          >
+            <Input
+              id="limits-audit-db-retention"
+              type="number"
+              min={BOUNDS.auditLogDbRetentionDays.min}
+              max={BOUNDS.auditLogDbRetentionDays.max}
+              {...form.register('auditLogDbRetentionDays', { valueAsNumber: true })}
+            />
+          </SettingsRow>
+          <SettingsRow
+            label="S3 归档保留天数"
+            htmlFor="limits-audit-archive-retention"
+            hint={`范围 ${BOUNDS.auditLogArchiveRetentionDays.min} - ${BOUNDS.auditLogArchiveRetentionDays.max}。默认 180 天。`}
+          >
+            <Input
+              id="limits-audit-archive-retention"
+              type="number"
+              min={BOUNDS.auditLogArchiveRetentionDays.min}
+              max={BOUNDS.auditLogArchiveRetentionDays.max}
+              {...form.register('auditLogArchiveRetentionDays', { valueAsNumber: true })}
+            />
+          </SettingsRow>
+        </SettingGroupContent>
+      ) : (
+        <SettingGroupContent>
+          <SettingValue
+            label="数据库保留天数"
+            value={`${limits.auditLogDbRetentionDays ?? 30} 天`}
+            hint="超期后将归档到 S3；S3 未开启时直接删除。"
+          />
+          <SettingValue
+            label="S3 归档保留天数"
+            value={`${limits.auditLogArchiveRetentionDays ?? 180} 天`}
+            hint="S3 上的 gzip 归档文件保留时长。"
+          />
+        </SettingGroupContent>
+      )}
+    </SettingGroup>
+  )
+}
+
 export function LimitsForm({ limits }: LimitsFormProps) {
   return (
     <div className="flex flex-col gap-5">
       <LimitsRequestCard limits={limits} />
       <LimitsSessionCard limits={limits} />
+      <LimitsAuditCard limits={limits} />
     </div>
   )
 }

@@ -1,6 +1,7 @@
 import { ORPCError } from '@orpc/server'
 import { z } from 'zod'
 
+import { recordAuditEventFromContext } from '@/server/domains/audit/service'
 import {
   approveComment,
   deleteComment,
@@ -12,23 +13,32 @@ import {
 import { asAdminCommentsWire } from '@/server/domains/comments/projection'
 import { adminClearDeleteRequest, findCommentWithUserById, softDeleteCommentById } from '@/server/domains/comments/repo'
 import { adminProc } from '@/server/http/orpc-base'
-import { getLogger } from '@/server/infra/logger'
 import { adminCommentDto, adminPendingDashboardDto } from '@/shared/contracts/comments'
 
 const approve = adminProc
   .route({ method: 'POST', path: '/comment-admin/approve' })
   .input(z.object({ rid: z.string() }))
   .output(z.void())
-  .handler(async ({ input }) => {
+  .handler(async ({ input, context }) => {
     await approveComment(input.rid)
+    recordAuditEventFromContext(context, {
+      action: 'comment_approved',
+      resourceType: 'comment',
+      resourceId: input.rid,
+    })
   })
 
 const deleteOne = adminProc
   .route({ method: 'POST', path: '/comment-admin/delete' })
   .input(z.object({ rid: z.string() }))
   .output(z.void())
-  .handler(async ({ input }) => {
+  .handler(async ({ input, context }) => {
     await deleteComment(input.rid)
+    recordAuditEventFromContext(context, {
+      action: 'comment_deleted',
+      resourceType: 'comment',
+      resourceId: input.rid,
+    })
   })
 
 const loadAll = adminProc
@@ -130,15 +140,17 @@ const approveCommentDeletion = adminProc
     }
     if (input.approve) {
       await softDeleteCommentById(id)
-      getLogger('audit.comment').info('delete request approved', {
-        actor: context.viewer.userId,
-        commentId: input.commentId,
+      recordAuditEventFromContext(context, {
+        action: 'comment_delete_request_approved',
+        resourceType: 'comment',
+        resourceId: input.commentId,
       })
     } else {
       await adminClearDeleteRequest(id)
-      getLogger('audit.comment').info('delete request rejected', {
-        actor: context.viewer.userId,
-        commentId: input.commentId,
+      recordAuditEventFromContext(context, {
+        action: 'comment_delete_request_rejected',
+        resourceType: 'comment',
+        resourceId: input.commentId,
       })
     }
     return { success: true }

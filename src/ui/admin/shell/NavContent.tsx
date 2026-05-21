@@ -1,17 +1,12 @@
 import {
   FileTextIcon,
-  FolderIcon,
   ImagesIcon,
-  LinkIcon,
+  LibraryIcon,
   MessageSquareIcon,
-  Music2Icon,
   NotebookPenIcon,
   PlusIcon,
-  SmartphoneIcon,
-  TagsIcon,
-  UsersIcon,
+  ShieldIcon,
 } from 'lucide-react'
-import { useCallback, useEffect, useState } from 'react'
 
 import type { AdminShellProps } from '@/ui/admin/shell/AdminShell'
 
@@ -25,43 +20,7 @@ interface NavContentProps {
   userCount?: number
 }
 
-const POSTS_EXPANDED_KEY = 'admin-nav-posts-expanded'
-
-function useLocalStorageBoolean(key: string, defaultValue = false) {
-  const [value, setValue] = useState(defaultValue)
-
-  useEffect(() => {
-    try {
-      const stored = window.localStorage.getItem(key)
-      if (stored !== null) {
-        setValue(stored === 'true')
-      }
-    } catch {
-      // ignore
-    }
-  }, [key])
-
-  const setStored = useCallback(
-    (next: boolean | ((prev: boolean) => boolean)) => {
-      setValue((prev) => {
-        const resolved = typeof next === 'function' ? next(prev) : next
-        try {
-          window.localStorage.setItem(key, String(resolved))
-        } catch {
-          // ignore
-        }
-        return resolved
-      })
-    },
-    [key],
-  )
-
-  return [value, setStored] as const
-}
-
 export function NavContent({ role, pendingCommentCount = 0, userCount }: NavContentProps) {
-  const [postsExpanded, setPostsExpanded] = useLocalStorageBoolean(POSTS_EXPANDED_KEY, false)
-
   if (!role) {
     return null
   }
@@ -74,22 +33,20 @@ export function NavContent({ role, pendingCommentCount = 0, userCount }: NavCont
       <SidebarGroupContent>
         <SidebarMenu>
           {showAuthorItems && (
-            <NavMenuItem.Collapsible expanded={postsExpanded} id="posts-submenu" onExpandedChange={setPostsExpanded}>
-              <NavMenuItem.CollapsibleItem ariaLabel="展开文章子菜单">
-                <NavMenuItem.Link
-                  to="/admin/posts"
-                  activeOnSubpath
-                  className="[&>svg]:transition-opacity group-hover/menu-item:[&>svg]:opacity-0"
-                >
-                  <NotebookPenIcon />
-                  <NavMenuItem.Label>文章管理</NavMenuItem.Label>
-                </NavMenuItem.Link>
-                <NavMenuItem.Link
-                  to="/editor/post/new"
-                  className="absolute top-1/2 right-1 z-10 flex size-7 -translate-y-1/2 items-center justify-center rounded-md p-0 text-sidebar-foreground opacity-0 transition-opacity group-hover/menu-item:opacity-100 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:opacity-100"
-                >
-                  <PlusIcon className="size-4" />
-                </NavMenuItem.Link>
+            <NavMenuItem.Collapsible id="posts-submenu" paths={['/admin/posts']}>
+              <NavMenuItem.CollapsibleItem
+                ariaLabel="展开文章子菜单"
+                action={
+                  <NavMenuItem.Link
+                    to="/editor/post/new"
+                    className="absolute top-1/2 right-1 z-10 flex size-7 -translate-y-1/2 items-center justify-center rounded-md p-0 text-sidebar-foreground opacity-0 transition-opacity group-hover/menu-item:opacity-100 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:opacity-100"
+                  >
+                    <PlusIcon className="size-4" />
+                  </NavMenuItem.Link>
+                }
+              >
+                <NotebookPenIcon />
+                <NavMenuItem.Label>文章管理</NavMenuItem.Label>
               </NavMenuItem.CollapsibleItem>
 
               <NavMenuItem.CollapsibleMenu>
@@ -100,7 +57,7 @@ export function NavContent({ role, pendingCommentCount = 0, userCount }: NavCont
                 </NavMenuItem>
                 <NavMenuItem>
                   <NavMenuItem.Link to="/admin/posts?status=draft" className="pl-11">
-                    <NavMenuItem.Label>草稿</NavMenuItem.Label>
+                    <NavMenuItem.Label>草稿箱</NavMenuItem.Label>
                   </NavMenuItem.Link>
                 </NavMenuItem>
                 <NavMenuItem>
@@ -135,68 +92,91 @@ export function NavContent({ role, pendingCommentCount = 0, userCount }: NavCont
             </NavMenuItem>
           )}
 
-          {showAdminItems && (
-            <NavMenuItem>
-              <NavMenuItem.Link to="/admin/categories">
-                <FolderIcon />
-                <NavMenuItem.Label>分类管理</NavMenuItem.Label>
-              </NavMenuItem.Link>
-            </NavMenuItem>
+          {showAuthorItems && (
+            <NavMenuItem.Collapsible id="taxonomy-submenu" paths={['/admin/categories', '/admin/tags']}>
+              <NavMenuItem.CollapsibleItem ariaLabel="展开分门别类子菜单">
+                <LibraryIcon />
+                <NavMenuItem.Label>分门别类</NavMenuItem.Label>
+              </NavMenuItem.CollapsibleItem>
+
+              <NavMenuItem.CollapsibleMenu>
+                {showAdminItems && (
+                  <NavMenuItem>
+                    <NavMenuItem.Link to="/admin/categories" className="pl-11">
+                      <NavMenuItem.Label>分类管理</NavMenuItem.Label>
+                    </NavMenuItem.Link>
+                  </NavMenuItem>
+                )}
+                <NavMenuItem>
+                  <NavMenuItem.Link to="/admin/tags" className="pl-11">
+                    <NavMenuItem.Label>标签管理</NavMenuItem.Label>
+                  </NavMenuItem.Link>
+                </NavMenuItem>
+              </NavMenuItem.CollapsibleMenu>
+            </NavMenuItem.Collapsible>
           )}
 
           {showAuthorItems && (
-            <NavMenuItem>
-              <NavMenuItem.Link to="/admin/tags">
-                <TagsIcon />
-                <NavMenuItem.Label>标签管理</NavMenuItem.Label>
-              </NavMenuItem.Link>
-            </NavMenuItem>
-          )}
-
-          {showAdminItems && (
-            <NavMenuItem>
-              <NavMenuItem.Link to="/admin/friends">
-                <LinkIcon />
-                <NavMenuItem.Label>友链管理</NavMenuItem.Label>
-              </NavMenuItem.Link>
-            </NavMenuItem>
-          )}
-
-          {showAuthorItems && (
-            <NavMenuItem>
-              <NavMenuItem.Link to="/admin/library/images">
+            <NavMenuItem.Collapsible
+              id="media-submenu"
+              paths={['/admin/library/images', '/admin/library/music', '/admin/friends']}
+            >
+              <NavMenuItem.CollapsibleItem ariaLabel="展开媒体管理子菜单">
                 <ImagesIcon />
-                <NavMenuItem.Label>图片管理</NavMenuItem.Label>
-              </NavMenuItem.Link>
-            </NavMenuItem>
-          )}
+                <NavMenuItem.Label>媒体管理</NavMenuItem.Label>
+              </NavMenuItem.CollapsibleItem>
 
-          {showAuthorItems && (
-            <NavMenuItem>
-              <NavMenuItem.Link to="/admin/library/music">
-                <Music2Icon />
-                <NavMenuItem.Label>音乐管理</NavMenuItem.Label>
-              </NavMenuItem.Link>
-            </NavMenuItem>
+              <NavMenuItem.CollapsibleMenu>
+                <NavMenuItem>
+                  <NavMenuItem.Link to="/admin/library/images" className="pl-11">
+                    <NavMenuItem.Label>图片管理</NavMenuItem.Label>
+                  </NavMenuItem.Link>
+                </NavMenuItem>
+                <NavMenuItem>
+                  <NavMenuItem.Link to="/admin/library/music" className="pl-11">
+                    <NavMenuItem.Label>音乐管理</NavMenuItem.Label>
+                  </NavMenuItem.Link>
+                </NavMenuItem>
+                {showAdminItems && (
+                  <NavMenuItem>
+                    <NavMenuItem.Link to="/admin/friends" className="pl-11">
+                      <NavMenuItem.Label>友链管理</NavMenuItem.Label>
+                    </NavMenuItem.Link>
+                  </NavMenuItem>
+                )}
+              </NavMenuItem.CollapsibleMenu>
+            </NavMenuItem.Collapsible>
           )}
 
           {showAdminItems && (
-            <NavMenuItem>
-              <NavMenuItem.Link to="/admin/users" activeOnSubpath>
-                <UsersIcon />
-                <NavMenuItem.Label>用户管理</NavMenuItem.Label>
-              </NavMenuItem.Link>
-              {userCount != null && <SidebarMenuBadge>{userCount}</SidebarMenuBadge>}
-            </NavMenuItem>
-          )}
+            <NavMenuItem.Collapsible
+              id="security-submenu"
+              paths={['/admin/security/sessions', '/admin/security/audit-log', '/admin/users']}
+            >
+              <NavMenuItem.CollapsibleItem ariaLabel="展开安全管理子菜单">
+                <ShieldIcon />
+                <NavMenuItem.Label>安全管理</NavMenuItem.Label>
+              </NavMenuItem.CollapsibleItem>
 
-          {showAdminItems && (
-            <NavMenuItem>
-              <NavMenuItem.Link to="/admin/security/sessions">
-                <SmartphoneIcon />
-                <NavMenuItem.Label>会话管理</NavMenuItem.Label>
-              </NavMenuItem.Link>
-            </NavMenuItem>
+              <NavMenuItem.CollapsibleMenu>
+                <NavMenuItem>
+                  <NavMenuItem.Link to="/admin/security/sessions" className="pl-11" end>
+                    <NavMenuItem.Label>会话管理</NavMenuItem.Label>
+                  </NavMenuItem.Link>
+                </NavMenuItem>
+                <NavMenuItem>
+                  <NavMenuItem.Link to="/admin/security/audit-log" className="pl-11">
+                    <NavMenuItem.Label>审计日志</NavMenuItem.Label>
+                  </NavMenuItem.Link>
+                </NavMenuItem>
+                <NavMenuItem>
+                  <NavMenuItem.Link to="/admin/users" className="pl-11" activeOnSubpath>
+                    <NavMenuItem.Label>用户管理</NavMenuItem.Label>
+                  </NavMenuItem.Link>
+                  {userCount != null && <SidebarMenuBadge>{userCount}</SidebarMenuBadge>}
+                </NavMenuItem>
+              </NavMenuItem.CollapsibleMenu>
+            </NavMenuItem.Collapsible>
           )}
         </SidebarMenu>
       </SidebarGroupContent>

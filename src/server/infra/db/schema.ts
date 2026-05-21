@@ -724,7 +724,7 @@ export const auditLog = pgTable(
   {
     id: bigserial('id', { mode: 'bigint' }).primaryKey(),
     action: varchar('action', { length: 50 }).notNull(),
-    actorId: bigint('actor_id', { mode: 'bigint' }).references(() => user.id),
+    actorId: bigint('actor_id', { mode: 'bigint' }).references(() => user.id, { onDelete: 'set null' }),
     actorRole: varchar('actor_role', { length: 20 }),
     resourceType: varchar('resource_type', { length: 50 }).notNull(),
     resourceId: varchar('resource_id', { length: 100 }),
@@ -740,6 +740,7 @@ export const auditLog = pgTable(
     index('idx_audit_log_resource').on(table.resourceType, table.resourceId),
     index('idx_audit_log_created_at').on(table.createdAt),
     index('idx_audit_log_action').on(table.action),
+    index('idx_audit_log_action_created_at').on(table.action, table.createdAt),
   ],
 )
 

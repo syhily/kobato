@@ -57,7 +57,14 @@ export async function createBackup(): Promise<{ fileName: string; size: number }
 
   log.info('Starting backup', { key })
 
-  const pgDump = spawn('pg_dump', ['--no-owner', '--no-acl', '--clean', '--if-exists', `--dbname=${dbUrl}`])
+  const pgDump = spawn('pg_dump', [
+    '--no-owner',
+    '--no-acl',
+    '--clean',
+    '--if-exists',
+    '--exclude-table=audit_log',
+    `--dbname=${dbUrl}`,
+  ])
 
   const gzip = createGzip()
   pgDump.stdout.pipe(gzip)

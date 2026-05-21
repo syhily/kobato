@@ -1,8 +1,17 @@
-import { useReducer } from 'react'
+import { useEffect, useReducer, useRef } from 'react'
+import { useLocation } from 'react-router'
 
 import type { AdminPostDto } from '@/shared/types/posts'
 
 export type PostStatusFilter = 'all' | 'published' | 'draft' | 'hidden'
+
+function getInitialStatusFromSearch(search: string): PostStatusFilter {
+  const status = new URLSearchParams(search).get('status')
+  if (status === 'draft' || status === 'published' || status === 'hidden') {
+    return status
+  }
+  return 'all'
+}
 
 interface PostsState {
   rows: AdminPostDto[]
@@ -94,6 +103,17 @@ function postsReducer(state: PostsState, action: PostsAction): PostsState {
 }
 
 export function usePostsController() {
+  const { search } = useLocation()
+  const initialStatus = getInitialStatusFromSearch(search)
+
+  const statusMap: Record<PostStatusFilter, { published?: boolean; visible?: boolean }> = {
+    all: {},
+    published: { published: true, visible: true },
+    draft: { published: false },
+    hidden: { published: true, visible: false },
+  }
+  const map = statusMap[initialStatus]
+
   const [state, dispatch] = useReducer(postsReducer, {
     rows: [],
     total: 0,
@@ -101,13 +121,26 @@ export function usePostsController() {
     deletedStatus: 'normal',
     currentPage: 0,
     pageSize: 10,
-    status: 'all' as PostStatusFilter,
+    status: initialStatus,
+    published: map.published,
+    visible: map.visible,
     category: '',
     tag: '',
     authorId: '',
     sortBy: 'publishedAt',
     sortOrder: 'desc',
   })
+
+  const statusRef = useRef(state.status)
+  statusRef.current = state.status
+
+  useEffect(() => {
+    const urlStatus = getInitialStatusFromSearch(search)
+    if (urlStatus !== statusRef.current) {
+      dispatch({ type: 'setStatus', value: urlStatus })
+    }
+  }, [search])
+
   return { state, dispatch }
 }
 

@@ -97,7 +97,7 @@ export function AdminShell({ currentUser, siteTitle, pendingCommentCount, userCo
           <SidebarInset
             className={cn(
               'overflow-x-hidden overflow-y-auto',
-              !focused && 'max-h-[calc(100%_-_var(--mobile-navbar-height))] sidebar:max-h-full',
+              !focused && 'max-h-[calc(100%_-_var(--mobile-navbar-height))] md:max-h-full',
             )}
           >
             <main

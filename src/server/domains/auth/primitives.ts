@@ -1,5 +1,6 @@
 import type { User } from '@/server/infra/db/types'
 
+import { recordAuditEvent } from '@/server/domains/audit/service'
 import { type Role } from '@/server/domains/auth/rbac'
 import { recordSessionActivity, recordSessionLogin } from '@/server/domains/auth/repo'
 import {
@@ -111,6 +112,20 @@ export async function establishLoginSession(
     // The audit row is recoverable on next login; do not block the
     // user's auth flow.
   }
+
+  recordAuditEvent({
+    action: 'login',
+    resourceType: 'session',
+    resourceId: sid,
+    actorId: dbUser.id,
+    actorRole: dbUser.role,
+    ipAddress: clientAddress,
+    userAgent,
+    details: {
+      method: options.revokeOtherSessions ? 'credential_rotation' : 'password',
+    },
+  })
+
   return { sid, setCookie }
 }
 

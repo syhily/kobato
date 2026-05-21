@@ -1,6 +1,7 @@
 import { ORPCError } from '@orpc/server'
 import { z } from 'zod'
 
+import { recordAuditEventFromContext } from '@/server/domains/audit/service'
 import { deleteAdminFriend, listFriendsForAdmin, upsertAdminFriend } from '@/server/domains/friends/service'
 import { adminProc } from '@/server/http/orpc-base'
 import { adminFriendDto } from '@/shared/contracts/friends'
@@ -39,7 +40,7 @@ const upsert = adminProc
     }),
   )
   .output(z.object({ friend: adminFriendDto }))
-  .handler(async ({ input }) => {
+  .handler(async ({ input, context }) => {
     const friend = await upsertAdminFriend({
       id: input.id !== undefined ? BigInt(input.id) : undefined,
       website: input.website,
@@ -49,6 +50,11 @@ const upsert = adminProc
       rssUrl: input.rssUrl ?? null,
       visible: input.visible,
     })
+    recordAuditEventFromContext(context, {
+      action: input.id === undefined ? 'friend_created' : 'friend_updated',
+      resourceType: 'friend',
+      resourceId: String(friend.id),
+    })
     return { friend }
   })
 
@@ -56,11 +62,16 @@ const remove = adminProc
   .route({ method: 'POST', path: '/admin/friends/remove' })
   .input(z.object({ id: z.string().min(1) }))
   .output(z.void())
-  .handler(async ({ input }) => {
+  .handler(async ({ input, context }) => {
     const ok = await deleteAdminFriend(BigInt(input.id))
     if (!ok) {
       throw new ORPCError('NOT_FOUND', { message: '友链不存在' })
     }
+    recordAuditEventFromContext(context, {
+      action: 'friend_deleted',
+      resourceType: 'friend',
+      resourceId: input.id,
+    })
   })
 
 export const adminFriendsRouter = { list, upsert, delete: remove }

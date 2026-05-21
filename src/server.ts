@@ -9,6 +9,7 @@ import { createHonoServer } from 'react-router-hono-server/node'
 
 import type { Env } from '@/server/http/context'
 
+import { scheduleNextArchive } from '@/server/domains/audit/scheduler'
 import { requestContext, sessionContext } from '@/server/domains/auth/context'
 import { scheduleNextBackup } from '@/server/domains/backup/scheduler'
 import { createApiApp } from '@/server/http/app'
@@ -145,7 +146,8 @@ const server = await createHonoServer<Env>({
 
 wrapFetchWithLeakedResponseHandler(server)
 
-// Start backup scheduler after server is configured
+// Start schedulers after server is configured
 scheduleNextBackup()
+scheduleNextArchive()
 
 export default server

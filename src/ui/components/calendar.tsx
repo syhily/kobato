@@ -1,3 +1,4 @@
+import { zhCN } from 'date-fns/locale'
 import { ChevronDownIcon, ChevronLeftIcon, ChevronRightIcon } from 'lucide-react'
 import { useEffect, useMemo, useRef, type ComponentProps } from 'react'
 import {
@@ -50,7 +51,7 @@ function CalendarWeekNumber({ children, ...weekProps }: WeekNumberProps) {
 }
 
 const DEFAULT_FORMATTERS = {
-  formatMonthDropdown: (date: Date) => date.toLocaleString('default', { month: 'short' }),
+  formatMonthDropdown: (date: Date) => date.toLocaleString('zh-CN', { month: 'short' }),
 }
 
 const BASE_COMPONENTS = {
@@ -150,6 +151,7 @@ export function Calendar({
         className,
       )}
       captionLayout={captionLayout}
+      locale={zhCN}
       formatters={mergedFormatters}
       classNames={mergedClassNames}
       components={mergedComponents}

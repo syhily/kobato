@@ -1,6 +1,7 @@
 import { ORPCError } from '@orpc/server'
 import { z } from 'zod'
 
+import { recordAuditEventFromContext } from '@/server/domains/audit/service'
 import { SECTION_REGISTRY } from '@/server/domains/settings/sections'
 import { getAdminBlogSettings, updateBlogSettingsSection } from '@/server/domains/settings/service'
 import { getSupportedTimeZones } from '@/server/domains/settings/timezones'
@@ -55,6 +56,12 @@ const update = adminProc
       })
     }
     await updateBlogSettingsSection(input.section, input.payload, editorId)
+    recordAuditEventFromContext(context, {
+      action: 'settings_updated',
+      resourceType: 'setting',
+      resourceId: input.section,
+      details: { section: input.section },
+    })
     return { success: true }
   })
 

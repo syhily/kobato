@@ -1,6 +1,8 @@
 import { SearchIcon } from 'lucide-react'
 import { useEffect, useState } from 'react'
+import { useLocation } from 'react-router'
 
+import { SearchShortcutHint } from '@/ui/admin/shared/SearchShortcutHint'
 import { AdminSearchDialog } from '@/ui/admin/shell/AdminSearchDialog'
 import { SidebarHeader } from '@/ui/components/sidebar'
 
@@ -11,6 +13,8 @@ interface AppSidebarHeaderProps {
 
 export function AppSidebarHeader({ className, siteTitle }: AppSidebarHeaderProps) {
   const [searchOpen, setSearchOpen] = useState(false)
+  const location = useLocation()
+  const isSettingsPage = location.pathname.startsWith('/admin/settings')
 
   // Global ⌘K / Ctrl+K shortcut
   useEffect(() => {
@@ -23,13 +27,17 @@ export function AppSidebarHeader({ className, siteTitle }: AppSidebarHeaderProps
         return
       }
       if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        // Defer to the settings search input on the settings page.
+        if (isSettingsPage) {
+          return
+        }
         e.preventDefault()
         setSearchOpen((prev) => !prev)
       }
     }
     document.addEventListener('keydown', handleKeyDown)
     return () => document.removeEventListener('keydown', handleKeyDown)
-  }, [])
+  }, [isSettingsPage])
 
   return (
     <SidebarHeader className={className}>
@@ -63,9 +71,7 @@ export function AppSidebarHeader({ className, siteTitle }: AppSidebarHeaderProps
             <SearchIcon className="size-4" />
             全站搜索
           </div>
-          <kbd className="rounded bg-transparent px-1.5 py-0.5 text-badge font-medium text-muted-foreground shadow-none">
-            ⌘K
-          </kbd>
+          <SearchShortcutHint />
         </button>
       </div>
 

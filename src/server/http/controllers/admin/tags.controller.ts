@@ -1,6 +1,7 @@
 import { ORPCError } from '@orpc/server'
 import { z } from 'zod'
 
+import { recordAuditEventFromContext } from '@/server/domains/audit/service'
 import { deleteAdminTag, listTagsForAdmin, upsertAdminTag } from '@/server/domains/taxonomies/tags/service'
 import { authorProc } from '@/server/http/orpc-base'
 import { adminTagDto } from '@/shared/contracts/tags'
@@ -36,6 +37,11 @@ const upsert = authorProc
       },
       context.viewer,
     )
+    recordAuditEventFromContext(context, {
+      action: input.id === undefined ? 'tag_created' : 'tag_updated',
+      resourceType: 'tag',
+      resourceId: String(tag.id),
+    })
     return { tag }
   })
 
@@ -48,6 +54,11 @@ const remove = authorProc
     if (!ok) {
       throw new ORPCError('NOT_FOUND', { message: '标签不存在' })
     }
+    recordAuditEventFromContext(context, {
+      action: 'tag_deleted',
+      resourceType: 'tag',
+      resourceId: input.id,
+    })
   })
 
 export const adminTagsRouter = { list, upsert, delete: remove }

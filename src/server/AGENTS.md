@@ -269,6 +269,46 @@ the caller's responsibility.
   `source` reserved as varchar for future providers. Lyrics live in
   `music.lyric` so the player avoids a second round trip.
 
+### Audit Log
+
+- **When to record**: Every state-mutating admin operation, auth
+  lifecycle event (login/logout/password reset), and bulk action MUST
+  emit an audit event. Read-only queries (list, get, preview) MUST NOT.
+- **How to record**: Import `recordAuditEventFromContext` from
+  `@/server/domains/audit/service` and call it after the mutation
+  succeeds (so failures are not logged). Never inline the context
+  extraction — the helper reads `actorId`, `actorRole`, `ipAddress`,
+  and `userAgent` from `HandlerContext` consistently.
+- **Action naming**: Use kebab-case verbs in present tense:
+  `<entity>_<verb>` (e.g. `post_published`, `user_soft_deleted`).
+  Avoid `_by_admin` suffixes; the actor identity already distinguishes
+  who performed the action.
+- **Resource type**: Use the singular table/entity name (`post`,
+  `page`, `user`, `session`, `comment`, `setting`, …). Keep it
+  consistent with `RESOURCE_TYPE_OPTIONS` in the admin UI filter.
+- **Details**: Put only non-sensitive metadata in `details`. L3
+  sensitive fields (`email`, `ip`, `userAgent`, `phone`, `cookie`,
+  `deviceId`, `authorEmail`, `authorIp`) are automatically tagged with
+  `{E}…{/E}` before storage and masked to `***` in API responses.
+  Do NOT put passwords, tokens, or raw session ids in details.
+- **Retention**: DB rows are kept for `auditLogDbRetentionDays`
+  (default 30, max 90). Older rows are archived daily at 04:00 to S3
+  as `audit-log/archive/YYYY-MM-DD.jsonl.gz` and then deleted from
+  the DB. S3 archives are kept for `auditLogArchiveRetentionDays`
+  (default 180). The `audit_log` table is excluded from `pg_dump`
+  backups.
+- **Querying**: The admin list API clamps `dateFrom` to the retention
+  boundary server-side so the UI cannot request data that has already
+  been archived.
+- **Batcher**: Events are buffered in memory (threshold 50 events /
+  500ms flush) and written via Postgres `COPY FROM STDIN` for
+  throughput. On COPY failure the batch falls back to per-row INSERT.
+  Events in the buffer at process shutdown are flushed on `SIGTERM` /
+  `SIGINT` / `beforeExit`.
+- **UI sync checklist**: When adding a new action, update
+  `ACTION_OPTIONS` in `src/ui/admin/audit/AuditLogToolbar.tsx` so the
+  admin filter list stays in sync with emitted events.
+
 ## Server layering constraints
 
 - `infra/*` imports nothing from `domains/`, `http/`, or `render/`.

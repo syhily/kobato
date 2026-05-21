@@ -3,6 +3,7 @@ import { z } from 'zod'
 
 import type { CommentReq } from '@/shared/types/comments'
 
+import { recordAuditEventFromContext } from '@/server/domains/audit/service'
 import { userSession } from '@/server/domains/auth/primitives'
 import { isCommentOwner } from '@/server/domains/auth/rbac'
 import { decreaseLikes, increaseLikes, queryLikes, validateLikeToken } from '@/server/domains/comments/likes'
@@ -162,6 +163,12 @@ const replyComment = publicProc
       rid: input.rid,
     }
     const comment = await createComment(commentPayload, request, clientAddress, session)
+    recordAuditEventFromContext(context, {
+      action: 'comment_created',
+      resourceType: 'comment',
+      resourceId: String(comment.id),
+      details: { pageKey: input.page_key, isAdmin, isPending: !isAdmin && comment.isPending === true },
+    })
     if (!isAdmin) {
       const ttl = requireBlogSettingsSection('comments').comments.tokenTtlSeconds
       const token = await issueCommentToken(comment.id, comment.userId, input.page_key, ttl)

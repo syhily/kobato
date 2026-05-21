@@ -36,18 +36,18 @@ function resolveLevel(): Level {
 // Privacy tagging — L3 (direct identifier) fields
 // ---------------------------------------------------------------------------
 
-const L3_KEYS = new Set([
+export const L3_KEYS = new Set([
   'email',
   'ip',
   'clientAddress',
   'remoteAddress',
   'userAgent',
   'phone',
-  'name',
   'authorEmail',
   'authorIp',
   'cookie',
   'deviceId',
+  'name',
 ])
 
 function tagL3(value: unknown): unknown {

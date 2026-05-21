@@ -1,6 +1,6 @@
 import { ChevronRightIcon } from 'lucide-react'
-import { type ComponentProps, type ReactNode, createContext, use, useMemo } from 'react'
-import { Link } from 'react-router'
+import { type ComponentProps, type ReactNode, createContext, use, useEffect, useMemo, useState } from 'react'
+import { Link, matchPath, useLocation } from 'react-router'
 
 import { useIsActiveLink } from '@/ui/admin/shell/use-is-active-link'
 import { SidebarMenuButton, SidebarMenuItem, useSidebar } from '@/ui/components/sidebar'
@@ -112,18 +112,35 @@ function NavMenuLabel({ children, className, ...props }: ComponentProps<'span'>)
 }
 
 /* ------------------------------------------------------------------ */
+/*  useMatchAny                                                        */
+/* ------------------------------------------------------------------ */
+
+function useMatchAny(paths: string[]): boolean {
+  const { pathname } = useLocation()
+  return paths.some((path) => matchPath({ path, end: false }, pathname) != null)
+}
+
+/* ------------------------------------------------------------------ */
 /*  NavMenuCollapsible                                                 */
 /* ------------------------------------------------------------------ */
 
 interface NavMenuCollapsibleProps {
   children: ReactNode
-  expanded: boolean
   id: string
-  onExpandedChange: (expanded: boolean) => void
+  paths?: string[]
 }
 
-function NavMenuCollapsible({ children, expanded, id, onExpandedChange }: NavMenuCollapsibleProps) {
-  const value = useMemo(() => ({ expanded, id, onExpandedChange }), [expanded, id, onExpandedChange])
+function NavMenuCollapsible({ children, id, paths = [] }: NavMenuCollapsibleProps) {
+  const isActive = useMatchAny(paths)
+  const [expanded, setExpanded] = useState(isActive)
+
+  useEffect(() => {
+    if (isActive) {
+      setExpanded(true)
+    }
+  }, [isActive])
+
+  const value = useMemo(() => ({ expanded, id, onExpandedChange: setExpanded }), [expanded, id])
   return <CollapsibleContext.Provider value={value}>{children}</CollapsibleContext.Provider>
 }
 
@@ -134,9 +151,10 @@ function NavMenuCollapsible({ children, expanded, id, onExpandedChange }: NavMen
 interface NavMenuCollapsibleItemProps {
   ariaLabel: string
   children: ReactNode
+  action?: ReactNode
 }
 
-function NavMenuCollapsibleItem({ ariaLabel, children }: NavMenuCollapsibleItemProps) {
+function NavMenuCollapsibleItem({ ariaLabel, children, action }: NavMenuCollapsibleItemProps) {
   const { expanded, id, onExpandedChange } = useCollapsibleContext()
 
   return (
@@ -147,16 +165,25 @@ function NavMenuCollapsibleItem({ ariaLabel, children }: NavMenuCollapsibleItemP
         aria-expanded={expanded}
         aria-label={ariaLabel}
         className={cn(
-          'absolute top-0 left-3 z-10 flex !h-sidebar-item w-auto items-center justify-center',
+          'absolute top-0 left-4 z-10 flex !h-sidebar-item w-auto items-center justify-center',
           'rounded-md p-0 text-sidebar-accent-foreground transition-all',
           'hover:bg-transparent hover:text-sidebar-accent-foreground',
-          'opacity-0 group-hover/menu-item:opacity-100',
+          expanded ? 'opacity-100' : 'opacity-0 group-hover/menu-item:opacity-100',
         )}
         onClick={() => onExpandedChange(!expanded)}
       >
         <ChevronRightIcon className={cn('size-4 transition-all', expanded && 'rotate-90')} />
       </button>
-      {children}
+      <SidebarMenuButton
+        onClick={() => onExpandedChange(!expanded)}
+        className={cn(
+          '[&>svg]:transition-opacity',
+          expanded ? '[&>svg]:opacity-0' : 'group-hover/menu-item:[&>svg]:opacity-0',
+        )}
+      >
+        {children}
+      </SidebarMenuButton>
+      {action}
     </NavMenuItemRoot>
   )
 }

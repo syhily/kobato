@@ -51,6 +51,7 @@ export default [
     route('admin/me/comments', 'routes/admin/me/comments.tsx'),
     route('admin/me/sessions', 'routes/admin/me/sessions.tsx'),
     route('admin/security/sessions', 'routes/admin/security/sessions.tsx'),
+    route('admin/security/audit-log', 'routes/admin/security/audit-log.tsx'),
     route('admin/analytics', 'routes/admin/analytics/layout.tsx', [
       index('routes/admin/analytics/overview.tsx'),
       route('realtime', 'routes/admin/analytics/realtime.tsx'),

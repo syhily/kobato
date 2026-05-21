@@ -15,6 +15,7 @@
   "[javascriptreact]": { "editor.defaultFormatter": "oxc.oxc-vscode" },
   "[typescript]": { "editor.defaultFormatter": "oxc.oxc-vscode" },
   "[typescriptreact]": { "editor.defaultFormatter": "oxc.oxc-vscode" },
+  "oxc.configPath": "./oxlint.config.ts",
   "oxc.fmt.configPath": "./oxfmt.config.ts",
   "oxc.disableNestedConfig": true,
   "oxc.requireConfig": true,
@@ -25,7 +26,8 @@
   "editor.formatOnSave": true,
   "editor.formatOnSaveMode": "file",
   "editor.codeActionsOnSave": {
-    "source.fixAll.oxc": "explicit"
+    "source.format.oxc": "always",
+    "source.fixAll.oxc": "always"
   },
   "editor.quickSuggestions": {
     "strings": "on"

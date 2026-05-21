@@ -393,6 +393,10 @@ export interface LimitsSettings {
   maxRequestBodySize: number
   /** Session cookie max-age in seconds (default: 30 days). */
   sessionMaxAge: number
+  /** Audit log retention days in DB (default: 30). */
+  auditLogDbRetentionDays: number
+  /** Audit log archive retention days in S3 (default: 180). */
+  auditLogArchiveRetentionDays: number
 }
 
 // Composed bundle of every section. Each field is `null` until the

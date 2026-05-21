@@ -1,5 +1,6 @@
 import { z } from 'zod'
 
+import { recordAuditEventFromContext } from '@/server/domains/audit/service'
 import {
   checkPgToolsAvailable,
   createBackup,
@@ -41,8 +42,13 @@ const list = adminProc
 const create = adminProc
   .route({ method: 'POST', path: '/admin/backup/create' })
   .output(z.object({ fileName: z.string(), size: z.number() }))
-  .handler(async () => {
+  .handler(async ({ context }) => {
     const result = await createBackup()
+    recordAuditEventFromContext(context, {
+      action: 'backup_created',
+      resourceType: 'backup',
+      resourceId: result.fileName,
+    })
     return result
   })
 
@@ -50,9 +56,14 @@ const restore = adminProc
   .route({ method: 'POST', path: '/admin/backup/restore' })
   .input(z.object({ key: z.string() }))
   .output(z.object({ success: z.boolean() }))
-  .handler(async ({ input }) => {
+  .handler(async ({ input, context }) => {
     const buffer = await getBackupBuffer(input.key)
     await restoreFromBackup(buffer)
+    recordAuditEventFromContext(context, {
+      action: 'backup_restored',
+      resourceType: 'backup',
+      resourceId: input.key,
+    })
 
     log.info('Restore completed, scheduling server restart', { key: input.key })
 

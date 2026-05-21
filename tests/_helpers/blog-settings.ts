@@ -155,5 +155,7 @@ export const TEST_BLOG_SETTINGS_BUNDLE: BlogSettingsBundle = {
   limits: {
     maxRequestBodySize: 10 * 1024 * 1024,
     sessionMaxAge: 60 * 60 * 24 * 30,
+    auditLogDbRetentionDays: 30,
+    auditLogArchiveRetentionDays: 180,
   },
 }

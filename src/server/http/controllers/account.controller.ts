@@ -2,6 +2,7 @@ import { ORPCError } from '@orpc/server'
 import bcrypt from 'bcryptjs'
 import { z } from 'zod'
 
+import { recordAuditEventFromContext } from '@/server/domains/audit/service'
 import { findSessionMeta, revokeSessionById } from '@/server/domains/auth/repo'
 import { revokeAllSessionsOfUser } from '@/server/domains/auth/session-storage'
 import { authedProc } from '@/server/http/orpc-base'
@@ -116,6 +117,11 @@ const updatePassword = authedProc
     const hashed = await bcrypt.hash(input.newPassword, 12)
     await updateUserById(dbUser.id, { password: hashed })
     await revokeAllSessionsOfUser(dbUser.id, session.id)
+    recordAuditEventFromContext(context, {
+      action: 'password_changed',
+      resourceType: 'user',
+      resourceId: viewer.userId,
+    })
     return { success: true }
   })
 
@@ -134,6 +140,12 @@ const revokeSession = authedProc
       throw new ORPCError('FORBIDDEN', { message: '无权操作该会话。' })
     }
     await revokeSessionById(input.id, meta.userId)
+    recordAuditEventFromContext(context, {
+      action: 'session_revoked',
+      resourceType: 'session',
+      resourceId: input.id,
+      details: { currentSession, targetUserId: String(meta.userId) },
+    })
     return { success: true, currentSession }
   })
 

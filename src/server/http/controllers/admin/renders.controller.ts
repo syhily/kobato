@@ -1,6 +1,7 @@
 import { renderMermaidSVGAsync } from 'beautiful-mermaid'
 import { z } from 'zod'
 
+import { recordAuditEventFromContext } from '@/server/domains/audit/service'
 import { reindexSearchBatch } from '@/server/domains/posts/reindex'
 import { getKatexRenderer, type KatexRenderer } from '@/server/domains/pt/katex-renderer'
 import { adminProc } from '@/server/http/orpc-base'
@@ -54,6 +55,13 @@ const reindexSearch = adminProc
       nextOffset: z.number().nullable(),
     }),
   )
-  .handler(({ input }) => reindexSearchBatch(input))
+  .handler(async ({ input, context }) => {
+    const result = await reindexSearchBatch(input)
+    recordAuditEventFromContext(context, {
+      action: 'search_reindexed',
+      resourceType: 'search',
+    })
+    return result
+  })
 
 export const adminRendersRouter = { math, mermaid, reindexSearch }

@@ -1,6 +1,7 @@
 import { ORPCError } from '@orpc/server'
 import { z } from 'zod'
 
+import { recordAuditEventFromContext } from '@/server/domains/audit/service'
 import { userSession } from '@/server/domains/auth/primitives'
 import { uploadImageMetadataSchema } from '@/server/domains/images/schema'
 import {
@@ -50,6 +51,11 @@ const remove = authorProc
   .output(z.void())
   .handler(async ({ input, context }) => {
     await deleteImage(BigInt(input.id), context.viewer)
+    recordAuditEventFromContext(context, {
+      action: 'image_deleted',
+      resourceType: 'image',
+      resourceId: input.id,
+    })
   })
 
 const updateNote = authorProc
@@ -58,6 +64,11 @@ const updateNote = authorProc
   .output(z.object({ image: adminImageDto }))
   .handler(async ({ input, context }) => {
     const image = await updateImageNote(BigInt(input.id), input.note ?? null, context.viewer)
+    recordAuditEventFromContext(context, {
+      action: 'image_note_updated',
+      resourceType: 'image',
+      resourceId: input.id,
+    })
     return { image }
   })
 
@@ -112,6 +123,11 @@ const upload = authorProc
     } else {
       image = await uploadImage({ kind: { kind: 'friend', host: metadata.host }, ...baseArgs })
     }
+    recordAuditEventFromContext(context, {
+      action: 'image_uploaded',
+      resourceType: 'image',
+      resourceId: String(image.id),
+    })
     return { image }
   })
 

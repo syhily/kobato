@@ -534,6 +534,13 @@ export const limitsSchema = z.object({
     .min(60)
     .max(365 * 24 * 60 * 60)
     .default(60 * 60 * 24 * 30),
+  auditLogDbRetentionDays: z.coerce.number().int().min(1).max(90).default(30),
+  auditLogArchiveRetentionDays: z.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(365 * 2)
+    .default(180),
 })
 export type LimitsInput = z.infer<typeof limitsSchema>
 

@@ -67,6 +67,11 @@ export async function updateBlogSettingsSection<S extends SettingsSection>(
     rescheduleBackup()
   }
 
+  if (section === 'limits') {
+    const { rescheduleArchive } = await import('@/server/domains/audit/scheduler')
+    rescheduleArchive()
+  }
+
   return refreshBlogSettings()
 }
 

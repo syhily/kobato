@@ -1,4 +1,5 @@
 import { accountRouter } from '@/server/http/controllers/account.controller'
+import { auditLogRouter } from '@/server/http/controllers/admin/audit.controller'
 import { adminBackupRouter } from '@/server/http/controllers/admin/backup.controller'
 import { adminCacheRouter } from '@/server/http/controllers/admin/cache.controller'
 import { adminCategoriesRouter } from '@/server/http/controllers/admin/categories.controller'
@@ -32,6 +33,7 @@ export const apiRouter = {
   music: musicRouter,
   admin: {
     users: adminUsersRouter,
+    auditLog: auditLogRouter,
     settings: adminSettingsRouter,
     cache: adminCacheRouter,
     mail: adminMailRouter,

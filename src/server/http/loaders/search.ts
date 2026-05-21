@@ -2,6 +2,7 @@ import { redirect } from 'react-router'
 
 import type { ListingPageLoaderData } from '@/server/http/loaders/listing'
 
+import { recordAuditEvent } from '@/server/domains/audit/service'
 import { getClientPostsWithMetadata, getPostsBySlugs } from '@/server/domains/posts/repo'
 import { parseListingPage } from '@/server/http/loaders/pagination'
 import { searchPostOptions } from '@/server/infra/search/options'
@@ -15,11 +16,15 @@ export interface SearchLoaderOptions {
   keyword: string | undefined
   num: string | undefined
   forceNoindex?: boolean
+  clientAddress?: string
+  request?: Request
 }
 export async function searchLoader({
   keyword,
   num,
   forceNoindex = true,
+  clientAddress,
+  request,
 }: SearchLoaderOptions): Promise<ListingPageLoaderData> {
   const listingNowIso = new Date().toISOString()
   const query = keyword?.trim() ?? ''
@@ -30,6 +35,15 @@ export async function searchLoader({
   const pageNum = parseListingPage(num, rootPath)
   const pageSize = requireBlogSettingsSection('content').pagination.search
   const { hits, page, totalPages } = await searchPosts(query, pageSize, (pageNum - 1) * pageSize)
+  if (request !== undefined) {
+    recordAuditEvent({
+      action: 'search',
+      resourceType: 'search',
+      details: { keyword: query, resultCount: hits.length },
+      ipAddress: clientAddress ?? null,
+      userAgent: request.headers.get('User-Agent') ?? null,
+    })
+  }
   if (num !== undefined) {
     if (totalPages === 0) {
       throw redirect('/', { status: 302 })

@@ -50,8 +50,8 @@ import { deriveSlug } from '@/server/infra/slug'
 import { requireBlogSettingsSection } from '@/shared/config/blog'
 import { collectHeadings, collectImageStoragePaths } from '@/shared/pt/utils'
 
-const auditLog = getLogger('audit.cms.posts')
 const log = getLogger('posts.service')
+const auditLog = getLogger('audit.cms.posts')
 
 /** Auto-create any tags that don't already exist in the database. */
 async function ensureTagsExist(tagNames: string[], tx = db): Promise<void> {

@@ -1,6 +1,7 @@
 import { ORPCError } from '@orpc/server'
 import { z } from 'zod'
 
+import { recordAuditEventFromContext } from '@/server/domains/audit/service'
 import {
   listPostsSchema,
   previewPostBodySchema,
@@ -60,6 +61,11 @@ const remove = authorProc
     if (!result.deleted) {
       throw new ORPCError('NOT_FOUND', { message: '文章不存在或已被删除。' })
     }
+    recordAuditEventFromContext(context, {
+      action: 'post_deleted',
+      resourceType: 'post',
+      resourceId: input.id,
+    })
   })
 
 const restore = authorProc
@@ -71,6 +77,11 @@ const restore = authorProc
     if (!result.restored) {
       throw new ORPCError('NOT_FOUND', { message: '文章不存在或未被删除。' })
     }
+    recordAuditEventFromContext(context, {
+      action: 'post_restored',
+      resourceType: 'post',
+      resourceId: input.id,
+    })
     return { success: true }
   })
 
@@ -80,6 +91,11 @@ const unpublish = authorProc
   .output(z.object({ post: adminPostDto }))
   .handler(async ({ input, context }) => {
     const post = await unpublishPost(BigInt(input.id), context.viewer)
+    recordAuditEventFromContext(context, {
+      action: 'post_unpublished',
+      resourceType: 'post',
+      resourceId: input.id,
+    })
     return { post }
   })
 
@@ -88,7 +104,7 @@ const saveDraft = authorProc
   .input(savePostBodySchema)
   .output(saveResultOutput)
   .handler(async ({ input, context }) => {
-    return savePostDraft(
+    const result = await savePostDraft(
       {
         postId: BigInt(input.id),
         body: input.body,
@@ -98,6 +114,14 @@ const saveDraft = authorProc
       },
       context.viewer,
     )
+    if (result.status === 'saved') {
+      recordAuditEventFromContext(context, {
+        action: 'post_draft_saved',
+        resourceType: 'post',
+        resourceId: input.id,
+      })
+    }
+    return result
   })
 
 const publishLatest = authorProc
@@ -105,7 +129,7 @@ const publishLatest = authorProc
   .input(savePostBodySchema)
   .output(saveResultOutput)
   .handler(async ({ input, context }) => {
-    return publishPostLatest(
+    const result = await publishPostLatest(
       {
         postId: BigInt(input.id),
         body: input.body,
@@ -116,6 +140,15 @@ const publishLatest = authorProc
       },
       context.viewer,
     )
+    if (result.status === 'saved') {
+      recordAuditEventFromContext(context, {
+        action: 'post_published',
+        resourceType: 'post',
+        resourceId: input.id,
+        details: { publishedAt: input.publishedAt },
+      })
+    }
+    return result
   })
 
 const preview = authorProc
@@ -155,6 +188,11 @@ const upsertMeta = authorProc
       input.id === undefined
         ? await createPost(meta, sessionUserId, context.viewer)
         : await updatePostMeta({ id: BigInt(input.id), ...meta }, context.viewer)
+    recordAuditEventFromContext(context, {
+      action: input.id === undefined ? 'post_created' : 'post_meta_updated',
+      resourceType: 'post',
+      resourceId: String(post.id),
+    })
     return { post }
   })
 

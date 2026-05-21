@@ -1,6 +1,7 @@
 import bcrypt from 'bcryptjs'
 import { data, redirect } from 'react-router'
 
+import { recordAuditEvent } from '@/server/domains/audit/service'
 import { getRouteRequestContext } from '@/server/domains/auth/context'
 import { processAuthFormSubmission, signInWithSession } from '@/server/domains/auth/flows'
 import { establishLoginSession, logout } from '@/server/domains/auth/primitives'
@@ -36,12 +37,24 @@ function formFieldString(formData: FormData, key: string): string {
 export async function loader({ request, context }: Route.LoaderArgs) {
   await ensureInstalledOrRedirect()
 
-  const { session, user, url } = getRouteRequestContext({ request, context })
+  const { session, user, url, clientAddress } = getRouteRequestContext({ request, context })
   const redirectTo = safeRedirectPath(url.searchParams.get('redirect_to'), '/', url.origin)
   const action = url.searchParams.get('action')
 
   if (action === 'logout') {
+    const user = session.get('user')
     await logout(session)
+    if (user) {
+      recordAuditEvent({
+        action: 'logout',
+        resourceType: 'session',
+        resourceId: session.id,
+        actorId: user.id,
+        actorRole: user.role,
+        ipAddress: clientAddress,
+        userAgent: request.headers.get('User-Agent'),
+      })
+    }
     throw redirect(redirectTo, {
       headers: { 'Set-Cookie': await destroySession(session) },
     })
@@ -103,6 +116,15 @@ export async function action({ request, context }: Route.ActionArgs) {
         const origin = new URL(request.url).origin
         const link = `${origin}/admin/signin?action=resetpassword&token=${encodeURIComponent(token)}`
         await sendPasswordReset(u, link)
+        recordAuditEvent({
+          action: 'password_reset_requested',
+          resourceType: 'user',
+          resourceId: String(u.id),
+          actorId: u.id,
+          actorRole: u.role,
+          ipAddress: clientAddress,
+          userAgent: request.headers.get('User-Agent'),
+        })
       } else if (u && !u.role && u.password === '') {
         // Anonymous commenter with at least one approved comment can
         // claim the account by setting a password.
@@ -113,6 +135,15 @@ export async function action({ request, context }: Route.ActionArgs) {
           const origin = new URL(request.url).origin
           const link = `${origin}/admin/signin?action=resetpassword&token=${encodeURIComponent(token)}`
           await sendPasswordReset(u, link)
+          recordAuditEvent({
+            action: 'password_reset_requested',
+            resourceType: 'user',
+            resourceId: String(u.id),
+            actorId: u.id,
+            actorRole: 'visitor',
+            ipAddress: clientAddress,
+            userAgent: request.headers.get('User-Agent'),
+          })
         }
       }
     }
@@ -151,6 +182,15 @@ export async function action({ request, context }: Route.ActionArgs) {
     // and orphan the one we just wrote.
     const established = await establishLoginSession(session, dbUser, request, clientAddress, {
       revokeOtherSessions: true,
+    })
+    recordAuditEvent({
+      action: 'password_reset_complete',
+      resourceType: 'user',
+      resourceId: String(dbUser.id),
+      actorId: dbUser.id,
+      actorRole: dbUser.role,
+      ipAddress: clientAddress,
+      userAgent: request.headers.get('User-Agent'),
     })
     return redirect(redirectTo, { headers: { 'Set-Cookie': established.setCookie } })
   }

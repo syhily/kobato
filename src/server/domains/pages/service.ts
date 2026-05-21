@@ -55,8 +55,8 @@ import { collectHeadings, collectImageStoragePaths } from '@/shared/pt/utils'
 //     against — handy for forensics)
 //   - mode ('draft' | 'publish')
 //   - resultRevisionId (the row that ended up persisted)
-const auditLog = getLogger('audit.cms.pages')
 const log = getLogger('pages.service')
+const auditLog = getLogger('audit.cms.pages')
 
 // Service layer for the page CMS. Wraps the repository's transactional
 // state machines with input validation, ActionFailure surfacing, and

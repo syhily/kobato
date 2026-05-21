@@ -2,6 +2,7 @@ import { SearchIcon, XIcon } from 'lucide-react'
 import { useEffect, useRef } from 'react'
 
 import { useSettingsSearchFilter } from '@/ui/admin/settings/shell/useSettingsSearch'
+import { SearchShortcutHint } from '@/ui/admin/shared/SearchShortcutHint'
 import { Input } from '@/ui/components/input'
 
 function isTypingTarget(target: EventTarget | null): boolean {
@@ -11,22 +12,14 @@ function isTypingTarget(target: EventTarget | null): boolean {
   )
 }
 
-function SearchShortcutHint() {
-  return (
-    <div className="absolute top-1/2 right-2.5 z-10 hidden -translate-y-1/2 rounded border bg-background px-1.5 py-0.5 text-[10px] font-semibold tracking-wider text-muted-foreground select-none lg:flex">
-      <kbd className="font-sans">/</kbd>
-    </div>
-  )
-}
-
 export function SettingsSearchInput() {
   const { filter, setFilter } = useSettingsSearchFilter()
   const searchInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      const isFindShortcut = (event.metaKey || event.ctrlKey) && event.key === 'f'
-      if (!isFindShortcut) {
+      const isSearchShortcut = (event.metaKey || event.ctrlKey) && event.key === 'k'
+      if (!isSearchShortcut) {
         return
       }
       if (isTypingTarget(event.target)) {
@@ -69,7 +62,9 @@ export function SettingsSearchInput() {
             <XIcon className="size-3.5" />
           </button>
         ) : (
-          <SearchShortcutHint />
+          <div className="absolute top-1/2 right-2.5 z-10 hidden -translate-y-1/2 select-none lg:flex">
+            <SearchShortcutHint />
+          </div>
         )}
       </div>
     </div>

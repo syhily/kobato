@@ -30,7 +30,7 @@ const DELETED_STATUS_OPTIONS = [
 const STATUS_OPTIONS = [
   { value: 'all', label: '全部' },
   { value: 'published', label: '已发布' },
-  { value: 'draft', label: '未发布' },
+  { value: 'draft', label: '草稿箱' },
   { value: 'hidden', label: '隐藏' },
 ]
 

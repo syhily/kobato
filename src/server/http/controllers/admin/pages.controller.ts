@@ -1,6 +1,7 @@
 import { ORPCError } from '@orpc/server'
 import { z } from 'zod'
 
+import { recordAuditEventFromContext } from '@/server/domains/audit/service'
 import { listPagesSchema, savePageBodySchema, upsertPageMetaSchema } from '@/server/domains/pages/schema'
 import {
   createPage,
@@ -51,22 +52,32 @@ const remove = adminProc
   .route({ method: 'POST', path: '/admin/pages/remove' })
   .input(idInput)
   .output(z.void())
-  .handler(async ({ input }) => {
+  .handler(async ({ input, context }) => {
     const result = await deletePage(BigInt(input.id))
     if (!result.deleted) {
       throw new ORPCError('NOT_FOUND', { message: '页面不存在或已被删除。' })
     }
+    recordAuditEventFromContext(context, {
+      action: 'page_deleted',
+      resourceType: 'page',
+      resourceId: input.id,
+    })
   })
 
 const restore = adminProc
   .route({ method: 'POST', path: '/admin/pages/restore' })
   .input(idInput)
   .output(z.object({ success: z.boolean() }))
-  .handler(async ({ input }) => {
+  .handler(async ({ input, context }) => {
     const result = await restorePage(BigInt(input.id))
     if (!result.restored) {
       throw new ORPCError('NOT_FOUND', { message: '页面不存在或未被删除。' })
     }
+    recordAuditEventFromContext(context, {
+      action: 'page_restored',
+      resourceType: 'page',
+      resourceId: input.id,
+    })
     return { success: true }
   })
 
@@ -74,8 +85,13 @@ const unpublish = adminProc
   .route({ method: 'POST', path: '/admin/pages/unpublish' })
   .input(z.object({ id: z.string().min(1) }))
   .output(z.object({ page: adminPageDto }))
-  .handler(async ({ input }) => {
+  .handler(async ({ input, context }) => {
     const page = await unpublishPage(BigInt(input.id))
+    recordAuditEventFromContext(context, {
+      action: 'page_unpublished',
+      resourceType: 'page',
+      resourceId: input.id,
+    })
     return { page }
   })
 
@@ -84,13 +100,21 @@ const saveDraft = adminProc
   .input(savePageBodySchema)
   .output(saveResultOutput)
   .handler(async ({ input, context }) => {
-    return savePageDraft({
+    const result = await savePageDraft({
       pageId: BigInt(input.id),
       body: input.body,
       expectedClientRevisionToken: input.expectedClientRevisionToken ?? undefined,
       force: input.force,
       authorId: BigInt(context.viewer.userId),
     })
+    if (result.status === 'saved') {
+      recordAuditEventFromContext(context, {
+        action: 'page_draft_saved',
+        resourceType: 'page',
+        resourceId: input.id,
+      })
+    }
+    return result
   })
 
 const publishLatest = adminProc
@@ -98,7 +122,7 @@ const publishLatest = adminProc
   .input(savePageBodySchema)
   .output(saveResultOutput)
   .handler(async ({ input, context }) => {
-    return publishPageLatest({
+    const result = await publishPageLatest({
       pageId: BigInt(input.id),
       body: input.body,
       expectedClientRevisionToken: input.expectedClientRevisionToken ?? undefined,
@@ -106,6 +130,15 @@ const publishLatest = adminProc
       authorId: BigInt(context.viewer.userId),
       publishedAt: input.publishedAt !== undefined ? new Date(input.publishedAt) : undefined,
     })
+    if (result.status === 'saved') {
+      recordAuditEventFromContext(context, {
+        action: 'page_published',
+        resourceType: 'page',
+        resourceId: input.id,
+        details: { publishedAt: input.publishedAt },
+      })
+    }
+    return result
   })
 
 const preview = adminProc
@@ -141,6 +174,11 @@ const upsertMeta = adminProc
       input.id === undefined
         ? await createPage(meta, sessionUserId)
         : await updatePageMeta({ id: BigInt(input.id), ...meta })
+    recordAuditEventFromContext(context, {
+      action: input.id === undefined ? 'page_created' : 'page_meta_updated',
+      resourceType: 'page',
+      resourceId: String(page.id),
+    })
     return { page }
   })
 

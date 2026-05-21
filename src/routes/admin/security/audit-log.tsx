@@ -1,0 +1,19 @@
+import { getRouteRequestContext } from '@/server/domains/auth/context'
+import { requireRole } from '@/server/domains/auth/rbac'
+import { getBlogSettingsBundleSync } from '@/shared/config/blog'
+import { AuditLogView } from '@/ui/admin/audit/AuditLogView'
+
+import type { Route } from './+types/audit-log'
+
+export async function loader({ request, context }: Route.LoaderArgs) {
+  const ctx = getRouteRequestContext({ request, context })
+  requireRole(ctx, 'admin')
+  const bundle = getBlogSettingsBundleSync()
+  return {
+    retentionDays: bundle?.limits?.auditLogDbRetentionDays ?? 30,
+  }
+}
+
+export default function AuditLogPage({ loaderData }: Route.ComponentProps) {
+  return <AuditLogView retentionDays={loaderData.retentionDays} />
+}

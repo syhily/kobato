@@ -1,6 +1,7 @@
 import { ORPCError } from '@orpc/server'
 import { z } from 'zod'
 
+import { recordAuditEventFromContext } from '@/server/domains/audit/service'
 import { findSessionMeta, revokeSessionById } from '@/server/domains/auth/repo'
 import { revokeAllSessionsOfUser } from '@/server/domains/auth/session-storage'
 import { issueResetToken, issueSetupToken, revokeTokensFor } from '@/server/domains/auth/verification-tokens'
@@ -25,7 +26,6 @@ import {
   updateUserRole,
 } from '@/server/infra/db/operations/user'
 import { sendAuthorInvite, sendPasswordReset as sendPasswordResetEmail } from '@/server/infra/email/sender'
-import { getLogger } from '@/server/infra/logger'
 import {
   tryInviteByEmailRateLimit,
   tryInviteRateLimit,
@@ -87,12 +87,18 @@ const update = adminProc
     }),
   )
   .output(successOutput)
-  .handler(async ({ input }) => {
+  .handler(async ({ input, context }) => {
     const { id, ...patch } = input
     const updated = await updateUserById(BigInt(id), patch)
     if (updated === null) {
       throw new ORPCError('NOT_FOUND', { message: '用户不存在' })
     }
+    recordAuditEventFromContext(context, {
+      action: 'user_updated',
+      resourceType: 'user',
+      resourceId: id,
+      details: { fields: Object.keys(patch) },
+    })
     return { success: true }
   })
 
@@ -121,10 +127,11 @@ const softDelete = adminProc
       throw new ORPCError('NOT_FOUND', { message: '用户不存在或已被删除' })
     }
     await revokeAllSessionsOfUser(targetId)
-    getLogger('audit.user').info('user soft deleted', {
-      actor: context.viewer.userId,
-      target: userId,
-      role: target.role,
+    recordAuditEventFromContext(context, {
+      action: 'user_soft_deleted',
+      resourceType: 'user',
+      resourceId: userId,
+      details: { previousRole: target.role },
     })
   })
 
@@ -137,7 +144,11 @@ const restore = adminProc
     if (!ok) {
       throw new ORPCError('NOT_FOUND', { message: '用户不存在' })
     }
-    getLogger('audit.user').info('user restored', { actor: context.viewer.userId, target: input.id })
+    recordAuditEventFromContext(context, {
+      action: 'user_restored',
+      resourceType: 'user',
+      resourceId: input.id,
+    })
     return { success: true }
   })
 
@@ -145,7 +156,7 @@ const mute = adminProc
   .route({ method: 'POST', path: '/admin/users/mute' })
   .input(z.object({ id: z.string().min(1), muted: z.boolean() }))
   .output(z.object({ user: adminUserDto }))
-  .handler(async ({ input }) => {
+  .handler(async ({ input, context }) => {
     const updated = await muteAdminUser(BigInt(input.id), input.muted)
     if (!updated) {
       throw new ORPCError('NOT_FOUND', { message: '用户不存在或为管理员（管理员不可禁言）' })
@@ -154,6 +165,11 @@ const mute = adminProc
     if (!dto) {
       throw new ORPCError('NOT_FOUND', { message: '用户不存在' })
     }
+    recordAuditEventFromContext(context, {
+      action: input.muted ? 'user_muted' : 'user_unmuted',
+      resourceType: 'user',
+      resourceId: input.id,
+    })
     return { user: dto }
   })
 
@@ -180,11 +196,11 @@ const updateRole = adminProc
     const updated = await updateUserRole(targetId, input.role)
     if (updated) {
       await revokeAllSessionsOfUser(targetId)
-      getLogger('audit.user').info('user role changed', {
-        actor: context.viewer.userId,
-        target: userId,
-        from: target.role,
-        to: input.role,
+      recordAuditEventFromContext(context, {
+        action: 'user_role_changed',
+        resourceType: 'user',
+        resourceId: userId,
+        details: { from: target.role, to: input.role },
       })
     }
     const dto = await fetchAdminUserDto(targetId)
@@ -220,21 +236,21 @@ const inviteAuthor = adminProc
     if (!sendResult.ok) {
       await revokeTokensFor(user.id, 'author-invite')
       await softDeleteUserById(user.id)
-      getLogger('audit.user').warn('author invite rolled back: email send failed', {
-        actor: context.viewer.userId,
-        target: String(user.id),
-        email: input.email,
-        reason: sendResult.reason,
-        message: sendResult.message,
+      recordAuditEventFromContext(context, {
+        action: 'author_invite_rolled_back',
+        resourceType: 'user',
+        resourceId: String(user.id),
+        details: { email: input.email, reason: sendResult.reason, message: sendResult.message },
       })
       throw new ORPCError('BAD_GATEWAY', {
         message: `邮件发送失败，已回滚账户创建：${sendResult.message}`,
       })
     }
-    getLogger('audit.user').info('author invited', {
-      actor: context.viewer.userId,
-      target: String(user.id),
-      email: input.email,
+    recordAuditEventFromContext(context, {
+      action: 'author_invited',
+      resourceType: 'user',
+      resourceId: String(user.id),
+      details: { email: input.email },
     })
     return { success: true }
   })
@@ -256,9 +272,10 @@ const sendPasswordReset = adminProc
     const origin = new URL(context.request.url).origin
     const link = `${origin}/admin/signin?action=resetpassword&token=${encodeURIComponent(token)}`
     await sendPasswordResetEmail(user, link)
-    getLogger('audit.user').info('password reset sent', {
-      actor: context.viewer.userId,
-      target: String(user.id),
+    recordAuditEventFromContext(context, {
+      action: 'password_reset_sent',
+      resourceType: 'user',
+      resourceId: String(user.id),
     })
     return { success: true }
   })
@@ -274,11 +291,11 @@ const revokeSession = adminProc
       return { success: true, currentSession }
     }
     await revokeSessionById(input.sessionId, meta.userId)
-    getLogger('audit.session').info('session revoked by admin', {
-      actor: context.viewer.userId,
-      target: meta.userId.toString(),
-      sessionId: input.sessionId,
-      selfRevoke: currentSession,
+    recordAuditEventFromContext(context, {
+      action: 'session_revoked',
+      resourceType: 'session',
+      resourceId: input.sessionId,
+      details: { targetUserId: String(meta.userId), selfRevoke: currentSession },
     })
     return { success: true, currentSession }
   })
@@ -299,9 +316,10 @@ const revokeAllSessions = adminProc
       throw new ORPCError('NOT_FOUND', { message: '用户不存在' })
     }
     await revokeAllSessionsOfUser(targetId)
-    getLogger('audit.session').info('all sessions revoked by admin', {
-      actor: context.viewer.userId,
-      target: input.userId,
+    recordAuditEventFromContext(context, {
+      action: 'session_revoked',
+      resourceType: 'session',
+      resourceId: input.userId,
     })
     return { success: true }
   })
@@ -310,13 +328,31 @@ const bulkApproveComments = adminProc
   .route({ method: 'POST', path: '/admin/users/bulk-approve-comments' })
   .input(userIdInput)
   .output(z.object({ approved: z.number() }))
-  .handler(({ input }) => bulkApproveCommentsForUser(BigInt(input.userId)))
+  .handler(async ({ input, context }) => {
+    const result = await bulkApproveCommentsForUser(BigInt(input.userId))
+    recordAuditEventFromContext(context, {
+      action: 'comments_bulk_approved',
+      resourceType: 'comment',
+      resourceId: input.userId,
+      details: { count: result.approved },
+    })
+    return result
+  })
 
 const bulkDeleteComments = adminProc
   .route({ method: 'POST', path: '/admin/users/bulk-delete-comments' })
   .input(userIdInput)
   .output(z.object({ deleted: z.number() }))
-  .handler(({ input }) => bulkDeleteCommentsForUser(BigInt(input.userId)))
+  .handler(async ({ input, context }) => {
+    const result = await bulkDeleteCommentsForUser(BigInt(input.userId))
+    recordAuditEventFromContext(context, {
+      action: 'comments_bulk_deleted',
+      resourceType: 'comment',
+      resourceId: input.userId,
+      details: { count: result.deleted },
+    })
+    return result
+  })
 
 export const adminUsersRouter = {
   list,

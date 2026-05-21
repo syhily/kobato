@@ -1,0 +1,116 @@
+import { Writable } from 'node:stream'
+import { beforeEach, describe, expect, it, vi } from 'vite-plus/test'
+
+const dbInsert = vi.fn()
+const dbInsertValues = vi.fn(() => ({ values: dbInsert }))
+
+const copyStream = new Writable({
+  write(_chunk, _encoding, callback) {
+    callback()
+  },
+})
+
+const poolConnect = vi.fn(() =>
+  Promise.resolve({
+    query: vi.fn(() => copyStream),
+    release: vi.fn(),
+  }),
+)
+
+const getRawPool = vi.fn(() => ({ connect: poolConnect }))
+
+vi.mock('@/server/infra/db/pool', () => ({
+  db: { insert: dbInsertValues },
+  getRawPool,
+}))
+
+vi.mock('@/server/infra/db/schema', () => ({
+  auditLog: { $inferSelect: {}, $inferInsert: {} },
+}))
+
+vi.mock('@/server/infra/logger', () => ({
+  getLogger: () => ({ error: vi.fn(), warn: vi.fn(), info: vi.fn(), debug: vi.fn() }),
+}))
+
+vi.mock('pg-copy-streams', () => ({
+  from: vi.fn(() =>
+    vi.fn(() => {
+      // Return the writable stream immediately so pipeline can use it
+      setTimeout(() => copyStream.emit('finish'), 0)
+      return copyStream
+    }),
+  ),
+}))
+
+const GLOBAL_KEY = Symbol.for('yufan.me/audit-batcher')
+
+async function resetBatcher() {
+  const g = globalThis as unknown as Record<symbol, unknown>
+  delete g[GLOBAL_KEY]
+  const mod = await import('@/server/domains/audit/batcher')
+  return mod
+}
+
+describe('audit/batcher', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    delete (globalThis as unknown as Record<symbol, unknown>)[GLOBAL_KEY]
+  })
+
+  it('buffers events and flushes when threshold is reached', async () => {
+    const { pushAuditEvent, flushAuditLog } = await resetBatcher()
+
+    for (let i = 0; i < 49; i++) {
+      pushAuditEvent({ action: 'test', resourceType: 'test' })
+    }
+    expect(poolConnect).not.toHaveBeenCalled()
+
+    pushAuditEvent({ action: 'test', resourceType: 'test' })
+    // The 50th push triggers an async flush; wait for it to complete.
+    await flushAuditLog()
+    expect(poolConnect).toHaveBeenCalled()
+  })
+
+  it('flushes on timer after the first push', async () => {
+    const { pushAuditEvent, flushAuditLog } = await resetBatcher()
+
+    pushAuditEvent({ action: 'test', resourceType: 'test' })
+    expect(poolConnect).not.toHaveBeenCalled()
+
+    await new Promise((r) => setTimeout(r, 600))
+    expect(poolConnect).toHaveBeenCalled()
+
+    await flushAuditLog()
+  })
+
+  it('falls back to per-row insert when COPY fails', async () => {
+    poolConnect.mockRejectedValueOnce(new Error('pool exhausted'))
+
+    const { pushAuditEvent, flushAuditLog } = await resetBatcher()
+
+    for (let i = 0; i < 50; i++) {
+      pushAuditEvent({ action: 'test', resourceType: 'test' })
+    }
+
+    await new Promise((r) => setTimeout(r, 50))
+    await flushAuditLog()
+
+    // Should have tried COPY (pool connect called) then fallen back to INSERT
+    expect(poolConnect).toHaveBeenCalled()
+    expect(dbInsertValues).toHaveBeenCalled()
+  })
+
+  it('preserves createdAt from push time', async () => {
+    const { pushAuditEvent, flushAuditLog } = await resetBatcher()
+    const before = new Date()
+
+    pushAuditEvent({ action: 'test', resourceType: 'test' })
+    await flushAuditLog()
+
+    const after = new Date()
+    const batch = dbInsert.mock.calls[0][0]
+    expect(batch).toBeInstanceOf(Array)
+    expect(batch[0].createdAt.getTime()).toBeGreaterThanOrEqual(before.getTime())
+    expect(batch[0].createdAt.getTime()).toBeLessThanOrEqual(after.getTime())
+  })
+})

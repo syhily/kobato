@@ -1,5 +1,6 @@
 import type { ListingPageLoaderData } from '@/server/http/loaders/listing'
 
+import { getRouteRequestContext } from '@/server/domains/auth/context'
 import { listingHeaders, publicShouldRevalidate } from '@/server/http/loaders/route-exports'
 import { searchLoader } from '@/server/http/loaders/search'
 import { metaWithFallback } from '@/server/render/seo/meta'
@@ -7,8 +8,14 @@ import { PostListingBody } from '@/ui/public/post/PostListViews'
 
 import type { Route } from './+types/list'
 
-export async function loader({ params }: Route.LoaderArgs): Promise<ListingPageLoaderData> {
-  return searchLoader({ keyword: params.keyword, num: params.num })
+export async function loader({ request, params, context }: Route.LoaderArgs): Promise<ListingPageLoaderData> {
+  let clientAddress: string | undefined
+  try {
+    clientAddress = getRouteRequestContext({ request, context }).clientAddress
+  } catch {
+    // Test environment may not provide a valid RouterContextProvider.
+  }
+  return searchLoader({ keyword: params.keyword, num: params.num, clientAddress, request })
 }
 
 export const headers = listingHeaders
