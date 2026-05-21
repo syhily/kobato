@@ -168,18 +168,17 @@ export function ScrollSpyProvider({ children }: { children: ReactNode }) {
     }
   }, [currentSection])
 
-  return (
-    <ScrollSpyContext.Provider
-      value={{
-        updateSection,
-        updateNav,
-        currentSection,
-        scrollToSection: scrollTo,
-      }}
-    >
-      {children}
-    </ScrollSpyContext.Provider>
+  const value = useMemo(
+    () => ({
+      updateSection,
+      updateNav,
+      currentSection,
+      scrollToSection: scrollTo,
+    }),
+    [updateSection, updateNav, currentSection, scrollTo],
   )
+
+  return <ScrollSpyContext.Provider value={value}>{children}</ScrollSpyContext.Provider>
 }
 
 export function useScrollSpyContext() {

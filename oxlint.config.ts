@@ -46,6 +46,10 @@ export default defineConfig({
     'import/no-webpack-loader-syntax': 'error',
     // Mutable named exports break tree-shaking and confuse module consumers.
     'import/no-mutable-exports': 'error',
+    // Empty named import blocks are a code smell and confuse bundlers.
+    'import/no-empty-named-blocks': 'error',
+    // Project explicitly avoids barrel files (bundle-barrel-imports).
+    'oxc/no-barrel-file': 'error',
 
     // Promise / async correctness. Fire-and-forget work should be written as
     // `void task().catch(...)` so the intent is visible to reviewers and lint.
@@ -54,6 +58,9 @@ export default defineConfig({
     'promise/no-promise-in-callback': 'off',
     'promise/no-return-in-finally': 'error',
     'promise/always-return': 'off',
+
+    // Oxc performance lints.
+    'oxc/no-accumulating-spread': 'warn',
 
     // React and React Hooks.
     'react/exhaustive-deps': 'warn',
@@ -79,6 +86,9 @@ export default defineConfig({
     // shuffles state on a delete. Default to stable keys. Existing
     // backlog (~22 sites) is `warn` for incremental cleanup.
     'react/no-array-index-key': 'warn',
+    // Constructing a new object/array as Context value causes unnecessary
+    // re-renders for all consumers on every render.
+    'react/jsx-no-constructed-context-values': 'warn',
 
     // TypeScript rules that catch runtime bugs without forcing noisy style preferences.
     'typescript/await-thenable': 'error',
@@ -112,6 +122,10 @@ export default defineConfig({
     // PortableText block types. 7 sites today are missing default branches;
     // warn lets the backlog drain without blocking.
     'typescript/switch-exhaustiveness-check': 'warn',
+    // Discourage blind @ts-ignore; @ts-expect-error is preferred.
+    'typescript/ban-ts-comment': 'warn',
+    // Clean up unnecessary template-literal wrapping of plain expressions.
+    'typescript/no-unnecessary-template-expression': 'warn',
 
     // React Router and SSR routes intentionally forward props and render trusted HTML.
     'react/jsx-props-no-spread-multi': 'off',
@@ -137,6 +151,9 @@ export default defineConfig({
     // `await foo.bar.baz` parses as `(await foo).bar.baz` only when the
     // expression starts with await — surprising in property-chain reads.
     'unicorn/no-await-expression-member': 'warn',
+    // Avoid converting an iterator to an array when the array is immediately
+    // consumed by a method that works on iterators (e.g. `.map`, `.filter`).
+    'unicorn/no-useless-iterator-to-array': 'warn',
 
     // A11y additions. Both are zero-violation guards against empty headings
     // and broken `<a>` (`href="#"` or missing href).

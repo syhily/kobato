@@ -185,6 +185,7 @@ plaiceholder
 playform
 playpause
 procfile
+prosemirror
 psql
 pswp
 pwsz

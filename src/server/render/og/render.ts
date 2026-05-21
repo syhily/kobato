@@ -185,7 +185,7 @@ export async function drawOpenGraph({ title, summary, cover }: OpenGraphProps): 
   const [coverImage, logoImage] = await Promise.all([loadImage(cover), loadImage(logoDark())])
 
   // Mark sure the summary length is small enough to fit in
-  let description = `${summary.replace(/<[^>]+>/g, '').trim()}`
+  let description = summary.replace(/<[^>]+>/g, '').trim()
   if (description.length > 80) {
     description = `${description.slice(0, 80)} ...`
   }

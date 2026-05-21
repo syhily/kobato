@@ -1,5 +1,5 @@
 import { ChevronRightIcon } from 'lucide-react'
-import { type ComponentProps, type ReactNode, createContext, use } from 'react'
+import { type ComponentProps, type ReactNode, createContext, use, useMemo } from 'react'
 import { Link } from 'react-router'
 
 import { useIsActiveLink } from '@/ui/admin/shell/use-is-active-link'
@@ -123,9 +123,8 @@ interface NavMenuCollapsibleProps {
 }
 
 function NavMenuCollapsible({ children, expanded, id, onExpandedChange }: NavMenuCollapsibleProps) {
-  return (
-    <CollapsibleContext.Provider value={{ expanded, id, onExpandedChange }}>{children}</CollapsibleContext.Provider>
-  )
+  const value = useMemo(() => ({ expanded, id, onExpandedChange }), [expanded, id, onExpandedChange])
+  return <CollapsibleContext.Provider value={value}>{children}</CollapsibleContext.Provider>
 }
 
 /* ------------------------------------------------------------------ */

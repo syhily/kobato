@@ -95,7 +95,7 @@ function readOrCreateSessionId(): string {
     window.sessionStorage.setItem(SESSION_KEY, fresh)
     return fresh
   } catch {
-    return `${Date.now().toString(36)}`
+    return Date.now().toString(36)
   }
 }
 

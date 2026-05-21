@@ -1,4 +1,4 @@
-import { createContext, use, useEffect, useState } from 'react'
+import { createContext, use, useCallback, useEffect, useMemo, useState } from 'react'
 
 type Theme = 'dark' | 'light' | 'system'
 type Resolved = 'dark' | 'light'
@@ -82,12 +82,14 @@ export function ThemeProvider({ children, initialResolved = 'light' }: ThemeProv
     }
   }, [theme, hydrated])
 
-  const setTheme = (next: Theme) => {
+  const setTheme = useCallback((next: Theme) => {
     localStorage.setItem(STORAGE_KEY, next)
     setThemeState(next)
-  }
+  }, [])
 
-  return <ThemeContext.Provider value={{ theme, setTheme, resolvedTheme }}>{children}</ThemeContext.Provider>
+  const value = useMemo(() => ({ theme, setTheme, resolvedTheme }), [theme, setTheme, resolvedTheme])
+
+  return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>
 }
 
 export function useTheme(): ThemeContextType {

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useReducer, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { flushSync } from 'react-dom'
 
 import type { CommentItemWire as CommentItemType } from '@/shared/contracts/comments'
@@ -307,41 +307,61 @@ function CommentsRoot({
 
   // The same reply form JSX flows through context to whichever depth
   // currently owns it (top-level or nested under the active comment).
-  const replyForm = (
-    <CommentReplyForm
-      commentKey={commentKey}
-      csrfToken={csrfToken}
-      onCsrfRotated={setCsrfToken}
-      replyToId={activeReplyToId}
-      replyTarget={replyTarget}
-      user={user}
-      onCancel={onCancelReply}
-      onReplied={onReplied}
-    />
+  const replyForm = useMemo(
+    () => (
+      <CommentReplyForm
+        commentKey={commentKey}
+        csrfToken={csrfToken}
+        onCsrfRotated={setCsrfToken}
+        replyToId={activeReplyToId}
+        replyTarget={replyTarget}
+        user={user}
+        onCancel={onCancelReply}
+        onReplied={onReplied}
+      />
+    ),
+    [commentKey, csrfToken, setCsrfToken, activeReplyToId, replyTarget, user, onCancelReply, onReplied],
   )
 
-  // Rebuilt every render because `replyForm` is a fresh JSX node each time;
-  // memoising would force an extra dependency without a re-render benefit
-  // (every consumer re-renders on `state` changes anyway).
-  const value: CommentsContextValue = {
-    commentKey,
-    totalCount,
-    admin,
-    user,
-    state,
-    activeReplyToId,
-    myCommentIds,
-    myCommentExpiresAt,
-    currentUserId: user?.id != null ? String(user.id) : null,
-    onReply,
-    onCancelReply,
-    onEdited,
-    onApproved,
-    onDeleted,
-    onDismissMyComment,
-    dispatch,
-    replyForm,
-  }
+  const value = useMemo<CommentsContextValue>(
+    () => ({
+      commentKey,
+      totalCount,
+      admin,
+      user,
+      state,
+      activeReplyToId,
+      myCommentIds,
+      myCommentExpiresAt,
+      currentUserId: user?.id != null ? String(user.id) : null,
+      onReply,
+      onCancelReply,
+      onEdited,
+      onApproved,
+      onDeleted,
+      onDismissMyComment,
+      dispatch,
+      replyForm,
+    }),
+    [
+      commentKey,
+      totalCount,
+      admin,
+      user,
+      state,
+      activeReplyToId,
+      myCommentIds,
+      myCommentExpiresAt,
+      onReply,
+      onCancelReply,
+      onEdited,
+      onApproved,
+      onDeleted,
+      onDismissMyComment,
+      dispatch,
+      replyForm,
+    ],
+  )
 
   return (
     <CommentsContext.Provider value={value}>

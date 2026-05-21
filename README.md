@@ -138,24 +138,6 @@ admin row exists; stage 2 at `/admin/setup/settings` then
 seeds the 14 settings rows. After that the public site is live and the
 admin console at `/admin` is available to the new admin user.
 
-## Content model
-
-| Surface           | Storage                           | Public URL                                  | Admin surface              |
-| ----------------- | --------------------------------- | ------------------------------------------- | -------------------------- |
-| Posts             | `post` + `content` (PortableText) | `/posts/:slug`                              | `/admin/posts`             |
-| Pages             | `page` + `content` (PortableText) | `/:slug`                                    | `/admin/pages`             |
-| Categories / tags | Postgres                          | `/cats/:slug`, `/tags/:slug`                | `/admin/{categories,tags}` |
-| Friends           | Postgres                          | Friends grid (page meta toggle)             | `/admin/friends`           |
-| Images            | Postgres + optional S3            | `<assetsHost>/images/...`                   | `/admin/images`            |
-| Music             | Postgres + optional S3            | Embedded in PortableText via 16-char nanoid | `/admin/musics`            |
-| Comments          | Postgres (threaded, with likes)   | Inline on posts/pages, moderation in admin  | `/admin/comments`          |
-
-Slug generation runs through one server-side helper
-(`@/server/infra/slug::deriveSlug`) — `pinyin-pro` → whitespace
-collapse → `github-slugger`. The page↔post namespace is global and
-enforced at catalog build time. Heading anchors are pre-computed at
-SSR so deep links survive across re-renders.
-
 ## Admin console
 
 The `/admin` SPA shares one Tiptap editor for posts and pages with
@@ -169,30 +151,6 @@ The console also covers user management, sessions, taxonomy CRUD, the
 analytics dashboard (overview + realtime), an image library with
 inline category/friend uploads (locked to 1280×425), a music library
 with per-track lyrics, and per-section settings pages.
-
-## API & permissions
-
-Every dynamic non-page request goes through the oRPC router at
-`/rpc/*`. The permission matrix is encoded in the **base procedure**
-each leaf picks:
-
-| Base         | Guard                          | Use for                     |
-| ------------ | ------------------------------ | --------------------------- |
-| `publicProc` | No auth gate; CSRF on non-GET  | Anonymous reads + mutations |
-| `authedProc` | `requireAuth` + CSRF           | Any logged-in user          |
-| `authorProc` | `requireRole('author')` + CSRF | Authors and admins          |
-| `adminProc`  | `requireRole('admin')` + CSRF  | Admins only                 |
-
-Audit the entire surface with one grep:
-
-```bash
-grep -rn "adminProc\|authorProc\|authedProc\|publicProc" src/server/http/controllers/
-```
-
-OpenAPI is auto-generated from the router in development at
-`/openapi.json` and `/docs`. Non-JSON output (RSS/Atom, sitemap, OG
-images, redirects, analytics events) is served by native Hono resource
-routers under `src/server/http/resources/`.
 
 ## Commands
 
