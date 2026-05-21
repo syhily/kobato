@@ -151,8 +151,7 @@ function NavMenuCollapsibleItem({ ariaLabel, children }: NavMenuCollapsibleItemP
           'absolute top-0 left-3 z-10 flex !h-sidebar-item w-auto items-center justify-center',
           'rounded-md p-0 text-sidebar-accent-foreground transition-all',
           'hover:bg-transparent hover:text-sidebar-accent-foreground',
-          'focus-visible:opacity-100',
-          'group-hover/menu-item:opacity-100 sidebar:opacity-0',
+          'opacity-0 group-hover/menu-item:opacity-100',
         )}
         onClick={() => onExpandedChange(!expanded)}
       >
@@ -175,15 +174,16 @@ function NavMenuCollapsibleMenu({ children }: NavMenuCollapsibleMenuProps) {
   const { expanded, id } = useCollapsibleContext()
 
   return (
-    <ul
+    <div
       id={id}
+      role="group"
       className={cn(
-        'grid list-none overflow-hidden p-0 transition-all duration-200 ease-out',
+        'grid overflow-hidden transition-all duration-200 ease-out',
         expanded ? 'mb-5 grid-rows-[1fr]' : 'mb-0 grid-rows-[0fr]',
       )}
     >
-      {children}
-    </ul>
+      <ul className="min-h-0 list-none overflow-hidden p-0">{children}</ul>
+    </div>
   )
 }
 

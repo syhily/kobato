@@ -1,7 +1,34 @@
-import { useMatch } from 'react-router'
+import { useLocation, useMatch } from 'react-router'
 
 export function useIsActiveLink(path?: string, activeOnSubpath = false, end = false): boolean {
-  const pattern = path ? (activeOnSubpath ? `${path}/*` : path) : ''
+  const qIdx = path?.indexOf('?') ?? -1
+  const pathPart = qIdx >= 0 ? path!.slice(0, qIdx) : (path ?? '')
+  const searchPart = qIdx >= 0 ? path!.slice(qIdx + 1) : ''
+
+  const pattern = pathPart ? (activeOnSubpath ? `${pathPart}/*` : pathPart) : ''
   const match = useMatch({ path: pattern, end })
-  return match !== null
+  const { search: currentSearch } = useLocation()
+
+  if (match === null) {
+    return false
+  }
+
+  if (searchPart) {
+    const targetParams = new URLSearchParams(searchPart)
+    const currentParams = new URLSearchParams(currentSearch)
+    for (const [key, value] of targetParams) {
+      if (currentParams.get(key) !== value) {
+        return false
+      }
+    }
+    return true
+  }
+
+  // Exact-match links with no search params should not be active when a
+  // more specific (search-parameterised) sibling link would match instead.
+  if (end && currentSearch) {
+    return false
+  }
+
+  return true
 }
