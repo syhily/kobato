@@ -1,7 +1,7 @@
 import sharp from 'sharp'
-import { rgbaToThumbHash } from 'thumbhash'
 
 import { DomainError } from '@/server/infra/http/errors'
+import { rgbaToThumbHash } from '@/shared/utils/thumbhash'
 
 // Image processing pipeline shared by every upload entry point. Takes
 // the browser-encoded blob (already JPEG, already cropped/resized to
