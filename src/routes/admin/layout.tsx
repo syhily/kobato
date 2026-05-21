@@ -1,4 +1,4 @@
-import { data, Outlet, redirect, useLocation } from 'react-router'
+import { data, Outlet, redirect } from 'react-router'
 
 import type { RouteHandle } from '@/root'
 
@@ -6,11 +6,15 @@ import { useDetachPublicCss } from '@/client/hooks/use-detach-public-css'
 import { getRouteRequestContext } from '@/server/domains/auth/context'
 import { reuseOrIssueCsrfToken } from '@/server/domains/auth/csrf'
 import { hasAtLeast } from '@/server/domains/auth/rbac'
+import { countAdminPendingDashboard } from '@/server/infra/db/operations/comment'
+import { countUsers } from '@/server/infra/db/operations/user'
+import { getBlogSettingsBundleSync } from '@/shared/config/blog'
 import { AdminErrorFallback } from '@/ui/admin/shell/AdminErrorFallback'
 import { AdminShell } from '@/ui/admin/shell/AdminShell'
 import { PostFontLinks } from '@/ui/public/post/PostFontLinks'
 
 import type { Route } from './+types/layout'
+
 // The admin SPA only needs Tailwind v4 (with the `` prefix) plus the
 // shadcn admin theme tokens declared inside `admin.css`. Importing
 // `tailwind.css` directly here keeps Bootstrap reboot/grid/utilities and the
@@ -35,6 +39,8 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   // Reuse the existing CSRF cookie within its TTL window; only mint a fresh
   // token (and Set-Cookie) when the cookie is missing or expired.
   const issued = await reuseOrIssueCsrfToken(request)
+  const pendingComments = hasAtLeast(role, 'admin') ? await countAdminPendingDashboard() : { all: 0 }
+  const userCount = hasAtLeast(role, 'admin') ? await countUsers() : 0
   return data(
     {
       currentUser: {
@@ -43,6 +49,9 @@ export async function loader({ request, context }: Route.LoaderArgs) {
         email: user?.email ?? '',
         role: (user?.role ?? null) as 'admin' | 'author' | 'visitor' | null,
       },
+      siteTitle: getBlogSettingsBundleSync()?.siteIdentity?.title ?? '管理后台',
+      pendingCommentCount: pendingComments.all,
+      userCount,
       csrfToken: issued.token,
     },
     issued.setCookie === '' ? undefined : { headers: { 'Set-Cookie': issued.setCookie } },
@@ -53,7 +62,6 @@ export { AdminErrorFallback as ErrorBoundary }
 
 export default function WpAdminLayoutRoute({ loaderData }: Route.ComponentProps) {
   useDetachPublicCss()
-  const { pathname } = useLocation()
   return (
     <>
       {/*
@@ -73,7 +81,12 @@ export default function WpAdminLayoutRoute({ loaderData }: Route.ComponentProps)
         `src/client/api/client.ts`.
       */}
       <meta name="csrf-token" content={loaderData.csrfToken} />
-      <AdminShell currentUser={loaderData.currentUser} pathname={pathname}>
+      <AdminShell
+        currentUser={loaderData.currentUser}
+        siteTitle={loaderData.siteTitle}
+        pendingCommentCount={loaderData.pendingCommentCount}
+        userCount={loaderData.userCount}
+      >
         <Outlet context={{ csrfToken: loaderData.csrfToken, currentUser: loaderData.currentUser }} />
       </AdminShell>
     </>

@@ -1,4 +1,4 @@
-import { ChartLineIcon, LinkIcon, RadioIcon } from 'lucide-react'
+import { ActivityIcon, ChartLineIcon, LinkIcon } from 'lucide-react'
 import { NavLink, Outlet } from 'react-router'
 
 import { getRouteRequestContext } from '@/server/domains/auth/context'
@@ -25,7 +25,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
 
 const SUBNAV = [
   { to: '/admin/analytics', label: '概览', icon: ChartLineIcon, end: true },
-  { to: '/admin/analytics/realtime', label: '实时', icon: RadioIcon, end: false },
+  { to: '/admin/analytics/realtime', label: '实时', icon: ActivityIcon, end: false },
   { to: '/admin/analytics/mentions', label: '反向链接', icon: LinkIcon, end: false },
 ]
 
