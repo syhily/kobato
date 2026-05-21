@@ -114,7 +114,7 @@ const stdout = new Writable({
   },
 })
 
-const root = pino(
+export const root = pino(
   {
     level: resolveLevel(),
     // Output "info" instead of 30, "warn" instead of 40, etc.

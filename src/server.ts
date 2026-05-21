@@ -1,3 +1,6 @@
+import type { Context } from 'hono'
+
+import { pinoLogger } from 'hono-pino'
 import { compress } from 'hono/compress'
 import { requestId } from 'hono/request-id'
 import { secureHeaders } from 'hono/secure-headers'
@@ -24,10 +27,45 @@ import { feedRouter } from '@/server/http/resources/feed'
 import { imagesRouter } from '@/server/http/resources/images'
 import { redirectsRouter } from '@/server/http/resources/redirects'
 import { sitemapRouter } from '@/server/http/resources/sitemap'
-import { getLogger } from '@/server/infra/logger'
+import { root } from '@/server/infra/logger'
 import { buildOpenApiDocsHtml } from '@/server/render/openapi-docs'
 
-const requestLog = getLogger('http.request')
+// L5: authorization tokens must NEVER reach logs.
+// L3: cookie, user-agent, and any header carrying IP need {E}…{/E} markers
+// per `src/server/infra/logger.ts` privacy tagging convention.
+const L5_REQ_HEADERS = new Set(['authorization'])
+const L3_REQ_HEADERS = new Set([
+  'cookie',
+  'user-agent',
+  'x-forwarded-for',
+  'cf-connecting-ip',
+  'true-client-ip',
+  'x-real-ip',
+  'forwarded',
+])
+
+function sanitizeReqHeaders(headers: Record<string, string | undefined>): Record<string, string | undefined> {
+  const out: Record<string, string | undefined> = {}
+  for (const [key, value] of Object.entries(headers)) {
+    const lower = key.toLowerCase()
+    if (L5_REQ_HEADERS.has(lower)) {
+      out[key] = '[REDACTED]'
+    } else if (L3_REQ_HEADERS.has(lower) && value) {
+      out[key] = `{E}${value}{/E}`
+    } else {
+      out[key] = value
+    }
+  }
+  return out
+}
+
+function resBindings(c: Context) {
+  const headers: Record<string, string> = {}
+  c.res.headers.forEach((value, key) => {
+    headers[key] = key.toLowerCase() === 'set-cookie' && value ? `{E}${value}{/E}` : value
+  })
+  return { res: { status: c.res.status, headers } }
+}
 
 const server = await createHonoServer<Env>({
   configure(app) {
@@ -35,18 +73,21 @@ const server = await createHonoServer<Env>({
     app.use(requestId())
     app.use(compress())
     app.use(secureHeaders())
-    app.use(async (c, next) => {
-      const start = Date.now()
-      await next()
-      const duration = Date.now() - start
-      requestLog.info('request', {
-        method: c.req.method,
-        path: c.req.path,
-        status: c.res.status,
-        duration,
-        requestId: c.var.requestId,
-      })
-    })
+    app.use(
+      pinoLogger({
+        pino: root,
+        http: {
+          onReqBindings: (c) => ({
+            req: {
+              url: c.req.path,
+              method: c.req.method,
+              headers: sanitizeReqHeaders(c.req.header()),
+            },
+          }),
+          onResBindings: resBindings,
+        },
+      }),
+    )
     app.use(trailingSlashNormaliser)
     app.use(honoWpDecoyMiddleware)
     app.use(honoSessionMiddleware)
