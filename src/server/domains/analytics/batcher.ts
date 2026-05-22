@@ -6,6 +6,7 @@ import type { EnrichedAccessEvent } from '@/server/domains/analytics/types'
 
 import { getRawPool } from '@/server/infra/db/pool'
 import { getLogger } from '@/server/infra/logger'
+import { registerShutdownHook } from '@/server/infra/shutdown'
 
 // In-memory aggregator for `access_log` rows. Same flush-trigger
 // contract as `@/server/domains/analytics/pv-batcher`'s `PageViewBatcher`:
@@ -68,12 +69,7 @@ class AccessLogBatcher {
   private flushing: Promise<void> | null = null
 
   constructor(private readonly opts: BatcherOptions) {
-    const onShutdown = () => {
-      void this.flush().catch((err) => log.error('flush on shutdown failed', { err: String(err) }))
-    }
-    process.once('SIGTERM', onShutdown)
-    process.once('SIGINT', onShutdown)
-    process.once('beforeExit', onShutdown)
+    registerShutdownHook(() => this.flush())
   }
 
   push(event: EnrichedAccessEvent): void {

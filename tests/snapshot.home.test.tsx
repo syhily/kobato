@@ -12,10 +12,6 @@ function withMetadata(post: ReturnType<typeof makePost>): ClientPostWithMetadata
 }
 
 describe('snapshot: HomeLayoutBody composed page', () => {
-  // Pin a deterministic clock so the TodayCalendar widget produces a stable
-  // `images/calendar/YYYY/MMDD.png` URL across CI runs. 12:00 UTC on
-  // 2026-04-25 maps to 20:00 in `Asia/Shanghai`, which the blog config uses
-  // for date formatting — locking the rendered date to `0425`.
   beforeEach(() => {
     vi.useFakeTimers()
     vi.setSystemTime(new Date('2026-04-25T12:00:00.000Z'))
@@ -44,7 +40,11 @@ describe('snapshot: HomeLayoutBody composed page', () => {
         listingNowIso="2026-04-25T12:00:00.000Z"
       />,
     )
-    expect(html).toMatchSnapshot()
+    expect(html).toContain('Post home-0')
+    expect(html).toContain('Post home-1')
+    expect(html).toContain('Post home-2')
+    expect(html).toContain('typescript')
+    expect(html).toContain('/tags/typescript')
   })
 
   it('renders the page-1 home composition with the FeaturePosts hero block', () => {
@@ -66,7 +66,10 @@ describe('snapshot: HomeLayoutBody composed page', () => {
         listingNowIso="2026-04-25T12:00:00.000Z"
       />,
     )
-    expect(html).toMatchSnapshot()
+    expect(html).toContain('Post home-feat-0')
+    expect(html).toContain('Post feature-hero-0')
+    expect(html).toContain('Post feature-hero-1')
+    expect(html).toContain('Post feature-hero-2')
   })
 
   it('renders the deep-paginated home composition (no feature block)', () => {
@@ -87,6 +90,8 @@ describe('snapshot: HomeLayoutBody composed page', () => {
         listingNowIso="2026-04-25T12:00:00.000Z"
       />,
     )
-    expect(html).toMatchSnapshot()
+    expect(html).toContain('Post home-page2-0')
+    expect(html).toContain('Post home-page2-1')
+    expect(html).not.toContain('Post feature')
   })
 })

@@ -11,6 +11,7 @@ import { db } from '@/server/infra/db/pool'
 import { post as postMetaTable, user } from '@/server/infra/db/schema'
 import { requireBlogSettingsSection } from '@/shared/config/blog'
 import { toListingPostCard, toSidebarPostLink } from '@/shared/types/catalog'
+import { escapeLikePattern } from '@/shared/utils/escape-like'
 import { shuffle } from '@/shared/utils/tools'
 
 export type { ContentType } from '@/server/domains/content/schema'
@@ -78,7 +79,7 @@ function buildPostsWhere(filters: ListPostsFilters): SQL | undefined {
     conditions.push(isNull(postMetaTable.deletedAt))
   }
   if (filters.q && filters.q.trim() !== '') {
-    const pattern = `%${filters.q.trim()}%`
+    const pattern = `%${escapeLikePattern(filters.q.trim())}%`
     conditions.push(sql`(${postMetaTable.slug} ILIKE ${pattern} OR ${postMetaTable.title} ILIKE ${pattern})`)
   }
   if (filters.category) {

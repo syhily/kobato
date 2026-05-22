@@ -4,6 +4,7 @@ import type { NewTag, TagRow } from '@/server/infra/db/types'
 
 import { db } from '@/server/infra/db/pool'
 import { tag } from '@/server/infra/db/schema'
+import { escapeLikePattern } from '@/shared/utils/escape-like'
 
 // Public listing reads. Stable `name ASC` order so the `/tags`
 // catalogue (and any sidebar widget that surfaces the full list) has
@@ -29,7 +30,7 @@ export interface AdminTagsListFilters {
 // returned page (and `hasMore` would lie).
 function buildAdminTagWhere(filters: AdminTagsListFilters): SQL | undefined {
   if (filters.q && filters.q.trim() !== '') {
-    const pattern = `%${filters.q.trim()}%`
+    const pattern = `%${escapeLikePattern(filters.q.trim())}%`
     return or(ilike(tag.name, pattern), ilike(tag.slug, pattern))
   }
   return undefined

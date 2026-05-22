@@ -6,6 +6,7 @@ import type { Env } from '@/server/http/context'
 import { restoreFromBackup } from '@/server/domains/backup/service'
 import { requireRoleMw } from '@/server/http/middlewares/hono-rbac'
 import { getLogger } from '@/server/infra/logger'
+import { requestShutdown } from '@/server/infra/shutdown'
 
 const log = getLogger('backup.upload')
 
@@ -30,7 +31,7 @@ export const backupUploadRouter = new Hono<Env>().post(
 
     // Graceful restart after response is sent
     setTimeout(() => {
-      process.exit(0)
+      requestShutdown('backup-restore')
     }, 500)
 
     return c.json({ success: true })

@@ -2,8 +2,8 @@ import { vi } from 'vite-plus/test'
 
 // Tiny in-memory Redis double good enough for the surface our app uses:
 //   - ioredis-style: get/set/del/incr/expire/ttl/pipeline (session.server.ts)
-//   - unstorage Storage<T>-style: getItem/setItem/getItemRaw/setItemRaw/
-//     removeItem/has (image-cache, avatar-cache, thumbhash, rate-limit)
+//   - cache-style: getItem/setItem/getItemRaw/setItemRaw/
+//     removeItem/hasItem/getKeys (image-cache, avatar-cache, thumbhash, search)
 // Keeping both shapes available behind one Map lets a test stub either
 // surface and observe through the same store.
 
@@ -26,7 +26,7 @@ export interface MockRedis {
   expire: ReturnType<typeof vi.fn<(key: string, seconds: number) => Promise<number>>>
   ttl: ReturnType<typeof vi.fn<(key: string) => Promise<number>>>
   pipeline: ReturnType<typeof vi.fn>
-  // unstorage surface
+  // cache-style surface (production lives in src/server/infra/redis/storage.ts)
   getItem: ReturnType<typeof vi.fn<(key: string) => Promise<unknown>>>
   setItem: ReturnType<typeof vi.fn>
   getItemRaw: ReturnType<typeof vi.fn<(key: string) => Promise<unknown>>>
@@ -157,11 +157,11 @@ export function mockRedis(now: () => number = Date.now): MockRedis {
     return builder
   })
 
-  // --- unstorage-style ---
-  // unstorage stores raw bytes through `setItemRaw`/`getItemRaw` and
-  // JSON-encoded values through `setItem`/`getItem`. We implement them as
-  // typed siblings on the same store so a test can `getItem("k")` after a
-  // production write through `setItem("k", ...)` and observe the round trip.
+  // --- cache-style ---
+  // Raw bytes go through `setItemRaw`/`getItemRaw` and JSON-encoded values
+  // through `setItem`/`getItem`. We implement them as typed siblings on the
+  // same store so a test can `getItem("k")` after a production write through
+  // `setItem("k", ...)` and observe the round trip.
   const getItem = vi.fn(async (key: string) => {
     const raw = read(key)
     if (raw === null || raw === undefined) {
@@ -187,10 +187,10 @@ export function mockRedis(now: () => number = Date.now): MockRedis {
     store.delete(key)
   })
   const hasItem = vi.fn(async (key: string) => read(key) !== null)
-  // unstorage's `getKeys(prefix)` returns every key whose name starts
-  // with the prefix string. We mirror that contract (prefix-match,
-  // not glob) so test stubs of cache writers can iterate via the same
-  // API path the production code uses against `unstorage`.
+  // `getKeys(prefix)` returns every key whose name starts with the
+  // prefix string. We mirror that contract (prefix-match, not glob) so
+  // test stubs of cache writers can iterate via the same API path the
+  // production code uses.
   const getKeys = vi.fn(async (prefix?: string) => {
     const t = now()
     const out: string[] = []

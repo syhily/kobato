@@ -6,7 +6,7 @@ import { recordSessionActivity, recordSessionLogin } from '@/server/domains/auth
 import {
   type BlogSession,
   buildSessionWithSid,
-  commitSession,
+  commitSessionWithMaxAge,
   getRequestSession,
   revokeAllSessionsOfUser,
   type SessionUser,
@@ -93,7 +93,7 @@ export async function establishLoginSession(
   // sid-pinned `newSession` below.
   session.set('user', userData)
   const newSession = buildSessionWithSid(sid, { user: userData })
-  const setCookie = await commitSession(newSession)
+  const setCookie = await commitSessionWithMaxAge(newSession)
   const userAgent = request.headers.get('User-Agent')
   await updateLastLogin(dbUser.id, clientAddress, userAgent)
   await redisInstance().sadd(`user_sessions:${dbUser.id}`, sid)

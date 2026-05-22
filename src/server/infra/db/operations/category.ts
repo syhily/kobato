@@ -4,6 +4,7 @@ import type { CategoryRow, NewCategory } from '@/server/infra/db/types'
 
 import { db } from '@/server/infra/db/pool'
 import { category } from '@/server/infra/db/schema'
+import { escapeLikePattern } from '@/shared/utils/escape-like'
 
 // Public listing reads. Stable `(sort_order ASC, id ASC)` order so the
 // `/categories` listing has a deterministic admin-controlled ranking
@@ -25,7 +26,7 @@ export interface AdminCategoriesListFilters {
 export async function listAdminCategoryRows(filters: AdminCategoriesListFilters = {}): Promise<CategoryRow[]> {
   const conditions = []
   if (filters.q && filters.q.trim() !== '') {
-    const pattern = `%${filters.q.trim()}%`
+    const pattern = `%${escapeLikePattern(filters.q.trim())}%`
     conditions.push(
       or(ilike(category.name, pattern), ilike(category.slug, pattern), ilike(category.description, pattern)),
     )

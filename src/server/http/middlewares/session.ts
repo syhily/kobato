@@ -3,7 +3,7 @@ import { createMiddleware } from 'hono/factory'
 import type { Env } from '@/server/http/context'
 
 import { resolveSessionContext } from '@/server/domains/auth/primitives'
-import { commitSession } from '@/server/domains/auth/session-storage'
+import { commitSessionWithMaxAge } from '@/server/domains/auth/session-storage'
 import { getClientAddress } from '@/shared/utils/request'
 
 export const honoSessionMiddleware = createMiddleware<Env>(async (c, next) => {
@@ -16,7 +16,7 @@ export const honoSessionMiddleware = createMiddleware<Env>(async (c, next) => {
   await next()
 
   if (c.var.sessionDirty) {
-    const setCookie = await commitSession(c.var.session)
+    const setCookie = await commitSessionWithMaxAge(c.var.session)
     c.header('Set-Cookie', setCookie, { append: true })
   }
 })

@@ -455,6 +455,7 @@ export const RATE_LIMIT_BUCKET_KEYS = [
   'passwordResetIp',
   'passwordResetEmail',
   'passwordResetTarget',
+  'resourceIp',
 ] as const
 
 export const rateLimitSchema = z.object(

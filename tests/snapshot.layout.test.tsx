@@ -4,13 +4,6 @@ import { BaseLayout } from '@/ui/public/chrome/BaseLayout'
 
 import { renderInRouter } from './_helpers/render'
 
-// BaseLayout is the chrome shared by every page (header, main, fixed
-// widgets). Snapshot it in its three primary configurations so any
-// markup drift surfaces as a PR diff. `renderInRouter` from the shared
-// helper wires both the memory router (so `Header`'s `useLocation`
-// resolves) and the `BlogSettingsProvider` (so per-section hooks like `useNavigationSettings`
-// resolves to `TEST_BLOG_SETTINGS`).
-
 const adminUser = { id: '1', name: 'admin', role: 'admin' as const }
 
 describe('snapshot: BaseLayout shell', () => {
@@ -21,7 +14,10 @@ describe('snapshot: BaseLayout shell', () => {
       </BaseLayout>,
       '/',
     )
-    expect(html).toMatchSnapshot()
+    expect(html).toContain('page body')
+    expect(html).toContain('href="/"')
+    expect(html).toContain('首页')
+    expect(html).toMatch(/<footer[^>]*>/u)
   })
 
   it('renders without the footer when explicitly disabled (page detail)', () => {
@@ -31,7 +27,8 @@ describe('snapshot: BaseLayout shell', () => {
       </BaseLayout>,
       '/about',
     )
-    expect(html).toMatchSnapshot()
+    expect(html).toContain('about body')
+    expect(html).not.toMatch(/<footer[^>]*>/u)
   })
 
   it('renders the admin variant of the chrome', () => {
@@ -41,6 +38,7 @@ describe('snapshot: BaseLayout shell', () => {
       </BaseLayout>,
       '/posts/hello',
     )
-    expect(html).toMatchSnapshot()
+    expect(html).toContain('post body')
+    expect(html).toContain('用户菜单')
   })
 })

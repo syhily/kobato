@@ -5,6 +5,7 @@ import { Pool } from 'pg'
 
 import { runDatabaseMigrations } from '@/server/infra/db/migrate'
 import { DATABASE_URL } from '@/server/infra/env'
+import { registerShutdownHook } from '@/server/infra/shutdown'
 
 // Drizzle 1.0.0-rc.1 narrowed `NodePgDatabase`'s sole generic from a raw
 // `{ tableName: PgTable }` map to `AnyRelations` (= `TablesRelationalConfig`),
@@ -42,3 +43,9 @@ export function getRawPool(): Pool {
   }
   return client
 }
+
+export async function closePool(): Promise<void> {
+  await getRawPool().end()
+}
+
+registerShutdownHook(closePool)

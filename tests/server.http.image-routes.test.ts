@@ -61,8 +61,14 @@ vi.mock('@/shared/config/blog', () => ({
     if (section === 'cache') {
       return { cache: { og: { prefix: 'og:', ttlSeconds: 3600 } } }
     }
+    if (section === 'rateLimit') {
+      return { rateLimit: { resourceIp: { windowSeconds: 60, maxAttempts: 60 } } }
+    }
     return {}
   },
+  getBlogSettingsBundleSync: () => ({
+    rateLimit: { resourceIp: { windowSeconds: 60, maxAttempts: 60 } },
+  }),
 }))
 
 const { imagesRouter } = await import('@/server/http/resources/images')

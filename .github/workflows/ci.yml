@@ -29,7 +29,13 @@ jobs:
       - run: vp install
       - run: vp dlx react-router typegen
       - run: vp check
+      - run: npm audit --audit-level=moderate
       - run: vp test run
+      - uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage/
+        if: always()
 
   build:
     name: production build

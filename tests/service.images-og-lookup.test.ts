@@ -31,7 +31,13 @@ vi.mock('@/shared/config/blog', () => ({
     if (section === 'siteIdentity') {
       return { description: 'A blog', website: 'https://example.com' }
     }
+    if (section === 'rateLimit') {
+      return { rateLimit: { resourceIp: { windowSeconds: 60, maxAttempts: 60 } } }
+    }
     return {}
+  }),
+  getBlogSettingsBundleSync: () => ({
+    rateLimit: { resourceIp: { windowSeconds: 60, maxAttempts: 60 } },
   }),
 }))
 

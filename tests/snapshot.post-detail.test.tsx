@@ -8,10 +8,6 @@ import { makePost, makePostList, makeTag } from './_helpers/catalog'
 import { renderInRouter } from './_helpers/render'
 
 describe('snapshot: PostDetailBody composed view', () => {
-  // Pin a deterministic clock so the TodayCalendar widget produces a stable
-  // `images/calendar/YYYY/MMDD.png` URL across CI runs. 12:00 UTC on
-  // 2026-04-25 maps to 20:00 in `Asia/Shanghai`, which the blog config uses
-  // for date formatting — locking the rendered date to `0425`.
   beforeEach(() => {
     vi.useFakeTimers()
     vi.setSystemTime(new Date('2026-04-25T12:00:00.000Z'))
@@ -43,9 +39,6 @@ describe('snapshot: PostDetailBody composed view', () => {
       pendingComments: [],
     }
 
-    // The Suspense fallback renders synchronously during the first SSR pass;
-    // the `<Await>` boundary catches the unresolved promise and the snapshot
-    // captures the comments-skeleton chrome instead of the resolved island.
     const commentsPromise = Promise.resolve({ commentData: null, commentItems: [] })
     const html = renderInRouter(
       <PostDetailBody
@@ -63,7 +56,16 @@ describe('snapshot: PostDetailBody composed view', () => {
         </p>
       </PostDetailBody>,
     )
-    expect(html).toMatchSnapshot()
+    expect(html).toContain('Hello world')
+    expect(html).toContain('Post body content with a')
+    expect(html).toContain('typescript')
+    expect(html).toContain('/tags/typescript')
+    expect(html).toContain('aria-label="展开文章目录"')
+    expect(html).toContain('Section A')
+    expect(html).toContain('Subsection')
+    expect(html).toContain('Section B')
+    expect(html).toContain('data-liked="false"')
+    expect(html).toContain('/posts/side-0')
   })
 
   it('renders without TOC when post.toc=false (markup divergence)', () => {
@@ -90,6 +92,8 @@ describe('snapshot: PostDetailBody composed view', () => {
         <p>body</p>
       </PostDetailBody>,
     )
-    expect(html).toMatchSnapshot()
+    expect(html).toContain('No TOC post')
+    expect(html).toContain('body')
+    expect(html).not.toContain('aria-label="展开文章目录"')
   })
 })

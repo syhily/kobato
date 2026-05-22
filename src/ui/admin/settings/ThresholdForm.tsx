@@ -74,6 +74,12 @@ const BUCKET_META: Record<BucketKey, { title: string; description: string; windo
       windowHint: '60 秒 - 1 小时。默认 60 秒。',
       attemptsHint: '默认 1 次。',
     },
+    resourceIp: {
+      title: '公共资源限流（按 IP）',
+      description: 'RSS、站点地图、OG 图片、头像等公共资源的访问按客户端 IP 计数。',
+      windowHint: '60 秒 - 24 小时。默认 1 分钟（60）。',
+      attemptsHint: '默认 60 次。',
+    },
   }
 
 function RateLimitBucketCard({ bucketKey, rateLimit }: { bucketKey: BucketKey; rateLimit: RateLimitSettings }) {

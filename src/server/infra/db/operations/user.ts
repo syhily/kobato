@@ -6,6 +6,7 @@ import type { NewUser, User } from '@/server/infra/db/types'
 import { db } from '@/server/infra/db/pool'
 import { comment, post, user } from '@/server/infra/db/schema'
 import { getBlogSettingsBundleSync } from '@/shared/config/blog'
+import { escapeLikePattern } from '@/shared/utils/escape-like'
 
 const PASSWORD_HASH_ROUNDS = 12
 
@@ -72,7 +73,7 @@ export async function insertAdmin(
   password: string,
   options: InsertAdminOptions = {},
 ): Promise<User[]> {
-  const hashedPassword = bcrypt.hashSync(password, PASSWORD_HASH_ROUNDS)
+  const hashedPassword = await bcrypt.hash(password, PASSWORD_HASH_ROUNDS)
   const admin: NewUser = {
     name,
     email,
@@ -200,7 +201,7 @@ function buildAdminUsersConditions(filters: AdminUsersListFilters) {
     conditions.push(or(eq(user.role, 'author'), eq(user.role, 'visitor'), isNull(user.role)))
   }
   if (filters.q && filters.q.trim() !== '') {
-    const like = `%${filters.q.trim()}%`
+    const like = `%${escapeLikePattern(filters.q.trim())}%`
     conditions.push(or(sql`${user.name} ILIKE ${like}`, sql`${user.email} ILIKE ${like}`))
   }
   if (filters.hasPosts) {

@@ -4,6 +4,7 @@ import type { ImageRow, NewImage } from '@/server/infra/db/types'
 
 import { db } from '@/server/infra/db/pool'
 import { image, user } from '@/server/infra/db/schema'
+import { escapeLikePattern } from '@/shared/utils/escape-like'
 
 export interface AdminImagesListFilters {
   q?: string
@@ -60,7 +61,7 @@ function buildAdminImageWhere(filters: AdminImagesListFilters): SQL | undefined 
   }
 
   if (filters.q && filters.q.trim() !== '') {
-    const pattern = `%${filters.q.trim()}%`
+    const pattern = `%${escapeLikePattern(filters.q.trim())}%`
     const search = or(ilike(image.storagePath, pattern), ilike(image.note, pattern))
     if (search) {
       conditions.push(search)

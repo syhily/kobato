@@ -8,6 +8,7 @@ export type { MyCommentsStatus }
 
 import { db } from '@/server/infra/db/pool'
 import { comment, metric, page, post, user } from '@/server/infra/db/schema'
+import { escapeLikePattern } from '@/shared/utils/escape-like'
 
 // Common projection: every comment column we expose to the application,
 // joined with the public user attributes. Keep the shape stable here so the
@@ -418,7 +419,7 @@ export async function searchPages(q: string | undefined, limit: number, publicId
   if (publicIds && publicIds.length > 0) {
     conditions.push(inArray(metric.publicId, publicIds))
   } else if (q) {
-    conditions.push(ilike(entity.title, `%${q}%`))
+    conditions.push(ilike(entity.title, `%${escapeLikePattern(q)}%`))
   }
   const rows = await db
     .select({ key: metric.publicId, title: entity.title })
@@ -452,7 +453,7 @@ export async function searchCommentAuthors(
   if (ids && ids.length > 0) {
     conditions.push(inArray(user.id, ids))
   } else if (q) {
-    conditions.push(ilike(user.name, `%${q}%`))
+    conditions.push(ilike(user.name, `%${escapeLikePattern(q)}%`))
   }
   return db
     .selectDistinct({ id: user.id, name: user.name })
@@ -735,7 +736,7 @@ function mineWhere(userId: bigint, filters: MyCommentsFilters = {}) {
     // is not a SQL-injection vector; the per-user row volume is
     // bounded by the soft-delete window, so a sequential filter is
     // acceptable here.
-    clauses.push(sql`${comment.content} ILIKE ${`%${filters.q.trim()}%`}`)
+    clauses.push(sql`${comment.content} ILIKE ${`%${escapeLikePattern(filters.q.trim())}%`}`)
   }
   return and(...clauses)
 }

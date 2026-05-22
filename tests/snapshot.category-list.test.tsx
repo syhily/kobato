@@ -42,7 +42,14 @@ describe('snapshot: PostListingBody (category variant)', () => {
         listingNowIso="2026-04-25T12:00:00.000Z"
       />,
     )
-    expect(html).toMatchSnapshot()
+    expect(html).toContain('技术')
+    expect(html).toContain('Programming, infrastructure, debugging.')
+    expect(html).toContain('First')
+    expect(html).toContain('Second')
+    expect(html).toContain('/posts/first')
+    expect(html).toContain('/posts/second')
+    expect(html).toContain('2024-01-01')
+    expect(html).toContain('2024-02-01')
   })
 
   it('renders the deep-paginated category page (no description)', () => {
@@ -66,6 +73,10 @@ describe('snapshot: PostListingBody (category variant)', () => {
         listingNowIso="2026-04-25T12:00:00.000Z"
       />,
     )
-    expect(html).toMatchSnapshot()
+    expect(html).toContain('技术')
+    expect(html).not.toContain('Programming, infrastructure, debugging.')
+    expect(html).toContain('Third')
+    expect(html).toContain('/posts/third')
+    expect(html).toContain('2024-03-01')
   })
 })

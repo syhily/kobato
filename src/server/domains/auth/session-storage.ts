@@ -42,6 +42,12 @@ function resolveSessionMaxAge(): number {
   return typeof configured === 'number' && configured > 0 ? configured : SESSION_MAX_AGE
 }
 
+export { resolveSessionMaxAge }
+
+export async function commitSessionWithMaxAge(session: BlogSession): Promise<string> {
+  return commitSession(session, { maxAge: resolveSessionMaxAge() })
+}
+
 const storage = createSessionStorage<BlogSessionData>({
   cookie: {
     name: '__session',

@@ -8,7 +8,7 @@
 
 import type { Role } from '@/shared/utils/roles'
 
-import { SESSION_MAX_AGE } from '@/server/domains/auth/session-storage'
+import { resolveSessionMaxAge } from '@/server/domains/auth/session-storage'
 import { getLogger } from '@/server/infra/logger'
 import { redisInstance } from '@/server/infra/redis/storage'
 
@@ -61,7 +61,7 @@ export async function recordSessionLogin(input: RecordLoginInput): Promise<void>
   const redis = redisInstance()
   const now = input.loginAt ?? new Date()
   const loginMs = now.getTime()
-  const expiresMs = loginMs + SESSION_MAX_AGE * 1000
+  const expiresMs = loginMs + resolveSessionMaxAge() * 1000
   const fields = {
     userId: input.userId.toString(),
     userAgent: truncateUserAgent(input.userAgent),
@@ -87,7 +87,7 @@ export async function recordSessionLogin(input: RecordLoginInput): Promise<void>
 export function recordSessionActivity(sid: string): void {
   const redis = redisInstance()
   const now = Date.now()
-  const newExpiresAt = now + SESSION_MAX_AGE * 1000
+  const newExpiresAt = now + resolveSessionMaxAge() * 1000
   void Promise.all([
     redis.hset(META_KEY(sid), {
       lastActiveAt: String(now),

@@ -90,6 +90,7 @@ const fixture: BlogSettingsBundle = {
     passwordResetIp: { windowSeconds: 60 * 30, maxAttempts: 3 },
     passwordResetEmail: { windowSeconds: 60 * 5, maxAttempts: 1 },
     passwordResetTarget: { windowSeconds: 60, maxAttempts: 1 },
+    resourceIp: { windowSeconds: 60, maxAttempts: 60 },
   },
   search: {
     search: {

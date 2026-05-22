@@ -64,6 +64,10 @@ const redisStub = {
         ops.push(async () => results.push([null, sessionBlobs.has(key) ? 1 : 0]))
         return builder
       },
+      hgetall(key: string) {
+        ops.push(async () => results.push([null, metaHashes.get(key) ?? {}]))
+        return builder
+      },
       async exec() {
         for (const op of ops) {
           await op()

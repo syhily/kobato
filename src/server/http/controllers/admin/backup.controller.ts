@@ -10,6 +10,7 @@ import {
 } from '@/server/domains/backup/service'
 import { adminProc } from '@/server/http/orpc-base'
 import { getLogger } from '@/server/infra/logger'
+import { requestShutdown } from '@/server/infra/shutdown'
 import { getBlogSettingsBundleSync } from '@/shared/config/blog'
 
 const log = getLogger('backup.controller')
@@ -68,7 +69,7 @@ const restore = adminProc
     log.info('Restore completed, scheduling server restart', { key: input.key })
 
     setTimeout(() => {
-      process.exit(0)
+      requestShutdown('backup-restore')
     }, 500)
 
     return { success: true }

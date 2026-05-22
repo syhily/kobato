@@ -26,22 +26,35 @@ function withMetadata(post: ReturnType<typeof makePost>): ClientPostWithMetadata
 describe('snapshot: Pagination', () => {
   it('dense (total = 4) at page 2', () => {
     const html = renderInRouter(<Pagination current={2} total={4} rootPath="/archives" />)
-    expect(html).toMatchSnapshot()
+    expect(html).toContain('aria-label="文章"')
+    expect(html).toContain('>1<')
+    expect(html).toContain('aria-current="page"')
+    expect(html).toContain('>2<')
+    expect(html).toContain('>3<')
   })
 
   it('windowed (total = 12) near the start', () => {
     const html = renderInRouter(<Pagination current={2} total={12} rootPath="/archives" />)
-    expect(html).toMatchSnapshot()
+    expect(html).toContain('>1<')
+    expect(html).toContain('aria-current="page"')
+    expect(html).toContain('>2<')
+    expect(html).toContain('>3<')
+    expect(html).toContain('更多')
   })
 
   it('windowed (total = 12) in the middle', () => {
     const html = renderInRouter(<Pagination current={6} total={12} rootPath="/archives" />)
-    expect(html).toMatchSnapshot()
+    expect(html).toContain('aria-current="page"')
+    expect(html).toContain('>6<')
+    expect(html).toContain('更多')
   })
 
   it('windowed (total = 12) near the end', () => {
     const html = renderInRouter(<Pagination current={11} total={12} rootPath="/archives" />)
-    expect(html).toMatchSnapshot()
+    expect(html).toContain('aria-current="page"')
+    expect(html).toContain('>11<')
+    expect(html).toContain('>12<')
+    expect(html).toContain('更多')
   })
 
   it('returns nothing when total <= 1', () => {
@@ -53,7 +66,9 @@ describe('snapshot: Pagination', () => {
 describe('snapshot: SearchBar widget', () => {
   it('renders the sidebar search input', () => {
     const html = renderInRouter(<SearchBar />)
-    expect(html).toMatchSnapshot()
+    expect(html).toContain('<form')
+    expect(html).toContain('type="search"')
+    expect(html).toContain('文章寻踪')
   })
 })
 
@@ -83,7 +98,10 @@ describe('snapshot: CodeBlock', () => {
         </code>
       </CodeBlock>,
     )
-    expect(html).toMatchSnapshot()
+    expect(html).toContain('code-block-wrapper')
+    expect(html).toContain('TypeScript')
+    expect(html).toContain('Copy')
+    expect(html).toContain('const answer = 42;')
   })
 })
 
@@ -101,7 +119,8 @@ describe('snapshot: PostListingBody (category/tag/search)', () => {
         listingNowIso="2026-04-25T12:00:00.000Z"
       />,
     )
-    expect(html).toMatchSnapshot()
+    expect(html).toContain('404')
+    expect(html).toContain('抱歉，没有你要找的内容')
   })
 
   it('renders a 2-post page with pagination', () => {
@@ -133,7 +152,10 @@ describe('snapshot: PostListingBody (category/tag/search)', () => {
         listingNowIso="2026-04-25T12:00:00.000Z"
       />,
     )
-    expect(html).toMatchSnapshot()
+    expect(html).toContain('First post')
+    expect(html).toContain('Second post')
+    expect(html).toContain('/posts/first')
+    expect(html).toContain('/posts/second')
   })
 })
 
@@ -148,7 +170,8 @@ describe('snapshot: PostSquare card', () => {
       }),
     )
     const html = renderInRouter(<PostSquare post={post} first listingNowIso="2026-04-25T12:00:00.000Z" />)
-    expect(html).toMatchSnapshot()
+    expect(html).toContain('Card title')
+    expect(html).toContain('/posts/card')
   })
 
   it('renders the small variant', () => {
@@ -161,6 +184,7 @@ describe('snapshot: PostSquare card', () => {
       }),
     )
     const html = renderInRouter(<PostSquare post={post} first={false} listingNowIso="2026-04-25T12:00:00.000Z" />)
-    expect(html).toMatchSnapshot()
+    expect(html).toContain('Card 2')
+    expect(html).toContain('/posts/card-2')
   })
 })

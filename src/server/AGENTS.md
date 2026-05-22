@@ -17,7 +17,7 @@ server/
 ## infra/
 
 Pure primitives. `db/` (Drizzle pool, schema, migrations,
-`operations/<entity>.ts` raw helpers), `redis/` (unstorage + ioredis:
+`operations/<entity>.ts` raw helpers), `redis/` (ioredis:
 storage, buckets, inflight, `buffer-cache`, `admin-ops`), `http/`
 (generic `etag`, `headers`, `status`, `errors` with `DomainError` /
 `ActionFailure`), `email/` (sender + React Email), `search/` (openai

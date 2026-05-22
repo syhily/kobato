@@ -3,6 +3,7 @@ import type { EntityTarget } from '@/server/infra/db/target'
 import { incrementMetricPv, incrementMetricPvBatch } from '@/server/infra/db/operations/metric'
 import { targetKey } from '@/server/infra/db/target'
 import { getLogger } from '@/server/infra/logger'
+import { registerShutdownHook } from '@/server/infra/shutdown'
 
 // In-memory aggregator for high-frequency counters. We currently track page
 // views (every request to a post page bumps the same counter) but the same
@@ -31,12 +32,7 @@ class PageViewBatcher {
   private flushing: Promise<void> | null = null
 
   constructor(private readonly opts: BatcherOptions) {
-    const onShutdown = () => {
-      void this.flush().catch((err) => log.error('flush on shutdown failed', { err: String(err) }))
-    }
-    process.once('SIGTERM', onShutdown)
-    process.once('SIGINT', onShutdown)
-    process.once('beforeExit', onShutdown)
+    registerShutdownHook(() => this.flush())
   }
 
   increment(key: string): void {

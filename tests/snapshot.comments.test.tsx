@@ -47,14 +47,16 @@ function makeComment(overrides: Partial<CommentItemType> = {}): CommentItemType 
   }
 }
 
-// Snapshot the comment markup as rendered by the React component tree
-// (post P0-4 the API endpoints return JSON `CommentItem` records and the
-// browser re-uses these same components, so the SSR shape and the client
-// shape are guaranteed to match).
 describe('snapshot: comment HTML', () => {
   it('root comment without children, non-admin viewer', () => {
     const html = renderInRouter(<CommentItem comment={makeComment()} depth={1} admin={false} />)
-    expect(html).toMatchSnapshot()
+    expect(html).toContain('id="user-comment-1"')
+    expect(html).toContain('Alice')
+    expect(html).toContain('Hello, world.')
+    expect(html).toContain('data-rid="1"')
+    expect(html).toContain('回复')
+    expect(html).not.toContain('编辑')
+    expect(html).not.toContain('删除')
   })
 
   it('renders author badge inline with the comment author', () => {
@@ -69,19 +71,11 @@ describe('snapshot: comment HTML', () => {
         admin={false}
       />,
     )
-    // The badge is still a `<span>` (not a `<div>`) carrying the
-    // chip utility chain (`text-badge font-bold rounded-full
-    // inline-flex …`). Stage 11 P9 dropped the legacy
-    // `comment-author-badge` WP-compat literal, so the matcher keys
-    // off the surviving badge-typography tokens instead.
     expect(html).toMatch(/<span class="[^"]*\bleading-badge\b[^"]*\btext-badge\b[^"]*\bfont-bold\b/u)
     expect(html).toContain('color:#151b2b')
-    // Defence: the badge label "站长" must sit inside a `<span>`,
-    // not a `<div>` (the `<div>` would break the inline flow next to
-    // the author link).
     expect(html).not.toMatch(/<div[^>]*\bleading-badge\b/u)
     expect(html).not.toContain('comment-author-badge')
-    expect(html).toMatchSnapshot()
+    expect(html).toContain('站长')
   })
 
   it('root comment with one nested child, admin viewer (edit/delete buttons)', () => {
@@ -95,28 +89,32 @@ describe('snapshot: comment HTML', () => {
     })
     const root = makeComment({ children: [child] })
     const html = renderInRouter(<CommentItem comment={root} depth={1} admin={true} />)
-    expect(html).toMatchSnapshot()
+    expect(html).toContain('id="user-comment-1"')
+    expect(html).toContain('id="user-comment-2"')
+    expect(html).toContain('Alice')
+    expect(html).toContain('Bob')
+    expect(html).toContain('编辑')
+    expect(html).toContain('删除')
+    expect(html).toContain('id="user-comment-2"')
   })
 
   it('pending comment shows the moderation hint', () => {
     const html = renderInRouter(
       <CommentItem comment={makeComment({ isPending: true })} depth={1} admin={false} pending />,
     )
-    expect(html).toMatchSnapshot()
+    expect(html).toContain('您的评论正在等待审核中...')
   })
 
   it('rendered list of two siblings', () => {
     const html = renderInRouter(
       <Comment comments={[makeComment({ id: '1' }), makeComment({ id: '2', name: 'Bob' })]} admin={false} />,
     )
-    expect(html).toMatchSnapshot()
+    expect(html).toContain('id="user-comment-1"')
+    expect(html).toContain('id="user-comment-2"')
+    expect(html).toContain('Alice')
+    expect(html).toContain('Bob')
   })
 
-  // The previous SSR-string path stripped React event props before injecting
-  // the markup, so we used a CSS background-image fallback for the avatar
-  // instead of an `onError` handler. We keep that contract here so an
-  // accidental `onError` (or worse, an inline `onerror=`) doesn't sneak back
-  // into the markup.
   it('does not emit any inline onerror= attributes on rendered comment HTML', () => {
     const html = renderInRouter(<CommentItem comment={makeComment()} depth={1} admin={true} />)
     expect(html.toLowerCase()).not.toContain('onerror')

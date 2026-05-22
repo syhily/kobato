@@ -155,3 +155,9 @@ export async function tryCommentPostRateLimitByEmail(email: string): Promise<Rat
 export async function tryLikeIncreaseRateLimit(ip: string): Promise<RateLimitResult> {
   return tryKeyedRateLimit(likeIncreaseKey(ip), readBucket('likeIncreaseIp'))
 }
+
+const resourceKey = (ip: string) => `${RATE_LIMIT_NAMESPACE}resource:${ip}`
+
+export async function tryResourceRateLimit(ip: string): Promise<RateLimitResult> {
+  return tryKeyedRateLimit(resourceKey(ip), readBucket('resourceIp'))
+}

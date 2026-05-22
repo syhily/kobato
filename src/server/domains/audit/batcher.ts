@@ -8,6 +8,7 @@ import { csvEscape } from '@/server/domains/audit/csv'
 import { db, getRawPool } from '@/server/infra/db/pool'
 import { auditLog } from '@/server/infra/db/schema'
 import { getLogger } from '@/server/infra/logger'
+import { registerShutdownHook } from '@/server/infra/shutdown'
 
 const log = getLogger('audit.batcher')
 
@@ -46,12 +47,7 @@ class AuditLogBatcher {
   private flushing: Promise<void> | null = null
 
   constructor(private readonly opts: BatcherOptions) {
-    const onShutdown = () => {
-      void this.flush().catch((err) => log.error('flush on shutdown failed', { err: String(err) }))
-    }
-    process.once('SIGTERM', onShutdown)
-    process.once('SIGINT', onShutdown)
-    process.once('beforeExit', onShutdown)
+    registerShutdownHook(() => this.flush())
   }
 
   push(event: AuditEventInput): void {

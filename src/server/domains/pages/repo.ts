@@ -10,6 +10,7 @@ import { hydrateImageRefs } from '@/server/domains/images/image-meta'
 import { toCmsPage } from '@/server/domains/pages/projection'
 import { db } from '@/server/infra/db/pool'
 import { page as pageMetaTable, user } from '@/server/infra/db/schema'
+import { escapeLikePattern } from '@/shared/utils/escape-like'
 
 export {
   findContentById,
@@ -52,7 +53,7 @@ function buildPagesWhere(filters: ListPagesFilters): SQL | undefined {
     conditions.push(isNull(pageMetaTable.deletedAt))
   }
   if (filters.q && filters.q.trim() !== '') {
-    const pattern = `%${filters.q.trim()}%`
+    const pattern = `%${escapeLikePattern(filters.q.trim())}%`
     conditions.push(sql`(${pageMetaTable.slug} ILIKE ${pattern} OR ${pageMetaTable.title} ILIKE ${pattern})`)
   }
   if (conditions.length === 0) {

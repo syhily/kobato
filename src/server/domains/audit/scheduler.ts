@@ -1,5 +1,6 @@
 import { runArchiveJob } from '@/server/domains/audit/archive'
 import { getLogger } from '@/server/infra/logger'
+import { registerShutdownHook } from '@/server/infra/shutdown'
 import { getBlogSettingsBundleSync } from '@/shared/config/blog'
 
 const log = getLogger('audit.scheduler')
@@ -50,3 +51,14 @@ export function rescheduleArchive(): void {
   log.info('Rescheduling audit archive due to settings change')
   scheduleNextArchive()
 }
+
+export function stopArchiveScheduler(): void {
+  if (archiveTimer) {
+    clearTimeout(archiveTimer)
+    archiveTimer = null
+  }
+}
+
+registerShutdownHook(async () => {
+  stopArchiveScheduler()
+})

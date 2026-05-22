@@ -440,14 +440,70 @@ export async function resolveImageMetaBySources(links: string[]): Promise<Map<st
  * in parallel so N items sharing the same cover incur one Redis + one
  * DB round-trip at most.
  */
+async function loadManyImageThumbhash(urls: string[]): Promise<Map<string, ImageThumbhashLookup>> {
+  const out = new Map<string, ImageThumbhashLookup>()
+  if (urls.length === 0) {
+    return out
+  }
+
+  let publicBaseUrl: string | null = null
+  try {
+    publicBaseUrl = getPublicBaseUrl()
+  } catch {
+    // Settings unconfigured — fall through; only external rows can resolve.
+  }
+
+  const pathToUrl = new Map<string, string>()
+  const uniquePaths: string[] = []
+  for (const url of urls) {
+    if (url === '') {
+      continue
+    }
+    const storagePath = resolveSrcToStoragePath(url, publicBaseUrl)
+    if (storagePath === null) {
+      continue
+    }
+    if (!pathToUrl.has(storagePath)) {
+      pathToUrl.set(storagePath, url)
+      uniquePaths.push(storagePath)
+    }
+  }
+
+  if (uniquePaths.length === 0) {
+    return out
+  }
+
+  let metaMap: Map<string, CachedImageMeta>
+  try {
+    metaMap = await readManyMeta(uniquePaths)
+  } catch (error) {
+    log.warn('Failed to resolve image metadata batch; continuing without enhancement', { error })
+    return out
+  }
+
+  for (const [storagePath, url] of pathToUrl) {
+    const meta = metaMap.get(storagePath)
+    if (meta === undefined || !meta.found) {
+      continue
+    }
+    out.set(url, {
+      width: meta.width,
+      height: meta.height,
+      thumbhash: meta.thumbhash ?? undefined,
+      publicUrl: publicBaseUrl === null ? null : resolvePublicUrl(meta, publicBaseUrl),
+    })
+  }
+
+  return out
+}
+
 export async function hydrateImageRefs<T>(
   items: T[],
   getUrl: (item: T) => string,
   apply: (item: T, lookup: ImageThumbhashLookup | null) => void,
 ): Promise<void> {
   const uniqueUrls = [...new Set(items.map(getUrl).filter((url) => url !== ''))]
-  const lookups = await Promise.all(uniqueUrls.map((url) => loadImageThumbhash(url)))
-  const lookupMap = new Map(uniqueUrls.map((url, i) => [url, lookups[i]]))
+  const lookupMap = await loadManyImageThumbhash(uniqueUrls)
   for (const item of items) {
     const url = getUrl(item)
     const lookup = url === '' ? null : (lookupMap.get(url) ?? null)

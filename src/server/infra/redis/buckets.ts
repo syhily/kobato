@@ -24,9 +24,7 @@ const log = getLogger('cache.buckets')
 // `RESERVED_CACHE_BUCKETS` registry (see `countReservedBuckets()`).
 //
 // Patterns talk to `redisInstance()` directly so the SCAN MATCH
-// expression matches whatever shape the writers currently emit. Going
-// through `unstorage`'s `getKeys()` would prepend a `:` separator and
-// miss the `og-…` / `calendar-…` / `avatar-…` shapes entirely.
+// expression matches whatever shape the writers currently emit.
 export type { CacheBucket, CacheBucketId, CacheBucketStats } from '@/shared/types/cache'
 
 // Static metadata. The dynamic prefix / TTL / pattern slots are filled

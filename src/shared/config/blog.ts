@@ -308,6 +308,8 @@ export interface RateLimitSettings {
    * if their own IP rate-limit budget is fresh.
    */
   passwordResetTarget: RateLimitBucket
+  /** Public resource endpoints (RSS, sitemap, OG images, avatars) per client IP. */
+  resourceIp: RateLimitBucket
 }
 
 export interface SearchSettings {

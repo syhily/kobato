@@ -7,6 +7,7 @@ import type { Env } from '@/server/http/context'
 
 import { findPageBySlug } from '@/server/domains/pages/repo'
 import { findPostBySlug } from '@/server/domains/posts/repo'
+import { tryResourceRateLimit } from '@/server/infra/rate-limit'
 import { loadBuffer } from '@/server/infra/redis/buffer-cache'
 import { AvatarStatus, cacheAvatar, loadAvatar } from '@/server/render/avatar/cache'
 import {
@@ -19,6 +20,7 @@ import {
 import { serveCalendar } from '@/server/render/calendar/serve'
 import { drawOpenGraph } from '@/server/render/og/render'
 import { requireBlogSettingsSection } from '@/shared/config/blog'
+import { getClientAddress } from '@/shared/utils/request'
 import { joinUrl } from '@/shared/utils/urls'
 
 // ─── OG image ─────────────────────────────────────────────────────
@@ -59,6 +61,13 @@ function stripPng(filename: string): string {
 }
 
 export const imagesRouter = new Hono<Env>()
+  .use(async (c, next) => {
+    const { exceeded } = await tryResourceRateLimit(getClientAddress(c.req.raw))
+    if (exceeded) {
+      return c.json({ error: 'Too many requests' }, 429)
+    }
+    await next()
+  })
   .get('/images/og/:filename{[^/]+\\.png}', async (c) => {
     const slug = stripPng(c.req.param('filename'))
     if (!slug) {

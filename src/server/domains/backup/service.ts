@@ -38,12 +38,23 @@ function ensurePgTools(): void {
   }
 }
 
-function getDatabaseUrl(): string {
+function getPgConnectionOptions(): { args: string[]; env: Record<string, string> } {
   const url = process.env.DATABASE_URL
   if (!url) {
     throw new DomainError('INTERNAL', 'DATABASE_URL 未配置')
   }
-  return url
+  const parsed = new URL(url)
+  const env: Record<string, string> = { ...(process.env as Record<string, string>) }
+  if (parsed.password) {
+    env.PGPASSWORD = parsed.password
+  }
+  const args = [
+    `--host=${parsed.hostname}`,
+    `--port=${parsed.port || '5432'}`,
+    `--dbname=${parsed.pathname.slice(1)}`,
+    `--username=${parsed.username}`,
+  ]
+  return { args, env }
 }
 
 import type { BackupFileDto } from '@/shared/types/backup'
@@ -51,20 +62,17 @@ export type { BackupFileDto }
 
 export async function createBackup(): Promise<{ fileName: string; size: number }> {
   ensurePgTools()
-  const dbUrl = getDatabaseUrl()
+  const { args: connArgs, env } = getPgConnectionOptions()
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19)
   const key = `backup/backup-${timestamp}.sql.gz`
 
   log.info('Starting backup', { key })
 
-  const pgDump = spawn('pg_dump', [
-    '--no-owner',
-    '--no-acl',
-    '--clean',
-    '--if-exists',
-    '--exclude-table=audit_log',
-    `--dbname=${dbUrl}`,
-  ])
+  const pgDump = spawn(
+    'pg_dump',
+    ['--no-owner', '--no-acl', '--clean', '--if-exists', '--exclude-table=audit_log', ...connArgs],
+    { env },
+  )
 
   const gzip = createGzip()
   pgDump.stdout.pipe(gzip)
@@ -124,7 +132,7 @@ export async function cleanupOldBackups(days: number): Promise<void> {
 
 export async function restoreFromBackup(buffer: Buffer): Promise<void> {
   ensurePgTools()
-  const dbUrl = getDatabaseUrl()
+  const { args: connArgs, env } = getPgConnectionOptions()
 
   log.info('Starting restore')
 
@@ -144,7 +152,8 @@ export async function restoreFromBackup(buffer: Buffer): Promise<void> {
   const sql = Buffer.concat(chunks).toString('utf-8')
   const wrappedSql = `BEGIN;\nSET CONSTRAINTS ALL DEFERRED;\n${sql}\nCOMMIT;\n`
 
-  const psql = spawn('psql', [`--dbname=${dbUrl}`, '--echo-all'], {
+  const psql = spawn('psql', [...connArgs, '--echo-all'], {
+    env,
     stdio: ['pipe', 'inherit', 'inherit'],
   })
 

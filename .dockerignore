@@ -17,3 +17,14 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 bun-debug.log*
+
+tests/
+README.md
+*.md
+.github/
+.agents/
+.editorconfig
+.gitattributes
+LICENSE
+skills-lock.json
+AGENTS.md

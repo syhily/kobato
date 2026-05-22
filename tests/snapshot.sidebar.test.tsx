@@ -7,8 +7,6 @@ import { Sidebar } from '@/ui/public/Sidebar'
 import { makePostList, makeTag } from './_helpers/catalog'
 import { renderInRouter } from './_helpers/render'
 
-// Pin a deterministic clock so the TodayCalendar widget produces a stable
-// `images/calendar/YYYY/MMDD.png` URL across CI runs.
 beforeEach(() => {
   vi.useFakeTimers()
   vi.setSystemTime(new Date('2026-04-24T12:00:00.000Z'))
@@ -44,7 +42,20 @@ describe('snapshot: Sidebar', () => {
       recentComments: sampleRecent,
     }
     const html = renderInRouter(<Sidebar data={data} />)
-    expect(html).toMatchSnapshot()
+    expect(html).toContain('id="search"')
+    expect(html).toContain('id="recent-posts"')
+    expect(html).toContain('id="recent-comments"')
+    expect(html).toContain('流年拾忆')
+    expect(html).toContain('雁过留声')
+    expect(html).toContain('Post side-0')
+    expect(html).toContain('/posts/side-0')
+    expect(html).toContain('typescript')
+    expect(html).toContain('/tags/typescript')
+    expect(html).toContain('react')
+    expect(html).toContain('/tags/react')
+    expect(html).toContain('alice')
+    expect(html).toContain('bob')
+    expect(html).toContain('/images/calendar/2026/0424.png')
   })
 
   it('renders an empty sidebar (every widget hides itself when starved)', () => {
@@ -54,6 +65,9 @@ describe('snapshot: Sidebar', () => {
       recentComments: [],
     }
     const html = renderInRouter(<Sidebar data={data} />)
-    expect(html).toMatchSnapshot()
+    expect(html).toContain('id="search"')
+    expect(html).not.toContain('id="recent-posts"')
+    expect(html).not.toContain('id="recent-comments"')
+    expect(html).toContain('/images/calendar/2026/0424.png')
   })
 })

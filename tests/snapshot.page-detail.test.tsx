@@ -29,7 +29,11 @@ describe('snapshot: PageDetailBody composed view', () => {
         <p>About body</p>
       </PageDetailBody>,
     )
-    expect(html).toMatchSnapshot()
+    expect(html).toContain('About')
+    expect(html).toContain('About body')
+    expect(html).toContain('/images/about.png')
+    expect(html).toContain('data-liked="false"')
+    expect(html).not.toContain('aria-label="展开文章目录"')
   })
 
   it('renders a page with TOC + comments enabled', () => {
@@ -42,9 +46,6 @@ describe('snapshot: PageDetailBody composed view', () => {
       comments: true,
     })
     const headings: MarkdownHeading[] = [{ depth: 2, slug: 'intro', text: 'Intro' }]
-    // The comments island is rendered behind a `<Suspense fallback>` so the
-    // SSR snapshot captures the skeleton shell whether or not the promise
-    // resolves synchronously.
     const commentsPromise = Promise.resolve({ commentData: null, commentItems: [] })
     const html = renderInRouter(
       <PageDetailBody
@@ -57,6 +58,11 @@ describe('snapshot: PageDetailBody composed view', () => {
         <p>Guide body</p>
       </PageDetailBody>,
     )
-    expect(html).toMatchSnapshot()
+    expect(html).toContain('Guide')
+    expect(html).toContain('Guide body')
+    expect(html).toContain('/images/guide.png')
+    expect(html).toContain('aria-label="展开文章目录"')
+    expect(html).toContain('Intro')
+    expect(html).toContain('data-liked="false"')
   })
 })

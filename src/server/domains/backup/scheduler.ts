@@ -1,6 +1,7 @@
 import { computeNextRun } from '@/server/domains/backup/scheduler-utils'
 import { checkPgToolsAvailable, cleanupOldBackups, createBackup } from '@/server/domains/backup/service'
 import { getLogger } from '@/server/infra/logger'
+import { registerShutdownHook } from '@/server/infra/shutdown'
 import { getBlogSettingsBundleSync } from '@/shared/config/blog'
 
 const log = getLogger('backup.scheduler')
@@ -70,3 +71,14 @@ export function rescheduleBackup(): void {
   log.info('Rescheduling backup due to settings change')
   scheduleNextBackup()
 }
+
+export function stopBackupScheduler(): void {
+  if (backupTimer) {
+    clearTimeout(backupTimer)
+    backupTimer = null
+  }
+}
+
+registerShutdownHook(async () => {
+  stopBackupScheduler()
+})

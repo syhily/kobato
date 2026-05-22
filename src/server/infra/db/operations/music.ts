@@ -4,6 +4,7 @@ import type { MusicRow, NewMusic } from '@/server/infra/db/types'
 
 import { db } from '@/server/infra/db/pool'
 import { music, user } from '@/server/infra/db/schema'
+import { escapeLikePattern } from '@/shared/utils/escape-like'
 
 export interface AdminMusicListFilters {
   q?: string
@@ -50,7 +51,7 @@ function buildAdminMusicWhere(filters: AdminMusicListFilters): SQL | undefined {
   }
 
   if (filters.q && filters.q.trim() !== '') {
-    const pattern = `%${filters.q.trim()}%`
+    const pattern = `%${escapeLikePattern(filters.q.trim())}%`
     const search = or(
       ilike(music.name, pattern),
       ilike(music.artist, pattern),

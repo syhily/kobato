@@ -29,6 +29,7 @@ import { redirectsRouter } from '@/server/http/resources/redirects'
 import { sitemapRouter } from '@/server/http/resources/sitemap'
 import { createHonoServer } from '@/server/infra/hono/node'
 import { root } from '@/server/infra/logger'
+import { setHttpServer } from '@/server/infra/shutdown'
 import { buildOpenApiDocsHtml } from '@/server/render/openapi-docs'
 
 // L5: authorization tokens must NEVER reach logs.
@@ -69,6 +70,9 @@ function resBindings(c: Context) {
 }
 
 const server = await createHonoServer<Env>({
+  onServe: (httpServer) => {
+    setHttpServer(httpServer)
+  },
   configure(app) {
     app.onError(onErrorHandler)
     app.use(requestId())

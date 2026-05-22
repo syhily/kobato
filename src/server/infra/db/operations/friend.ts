@@ -4,6 +4,7 @@ import type { FriendRow, NewFriend } from '@/server/infra/db/types'
 
 import { db } from '@/server/infra/db/pool'
 import { friend } from '@/server/infra/db/schema'
+import { escapeLikePattern } from '@/shared/utils/escape-like'
 
 // Stable ascending id ordering for the public catalog. Output is fed
 // into `hydrateImages()` and the MDX `<Friends />` shuffle, so the
@@ -35,7 +36,7 @@ function buildAdminFriendWhere(filters: AdminFriendsListFilters): SQL | undefine
     conditions.push(eq(friend.visible, true))
   }
   if (filters.q && filters.q.trim() !== '') {
-    const pattern = `%${filters.q.trim()}%`
+    const pattern = `%${escapeLikePattern(filters.q.trim())}%`
     const search = or(
       ilike(friend.website, pattern),
       ilike(friend.description, pattern),

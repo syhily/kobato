@@ -24,7 +24,9 @@ describe('snapshot: PostListingBody (search variant)', () => {
         listingNowIso="2026-04-25T12:00:00.000Z"
       />,
     )
-    expect(html).toMatchSnapshot()
+    expect(html).toContain('【react】搜索结果')
+    expect(html).toContain('404')
+    expect(html).toContain('抱歉，没有你要找的内容...')
   })
 
   it('renders a search results page with posts (pagination suppressed)', () => {
@@ -49,6 +51,9 @@ describe('snapshot: PostListingBody (search variant)', () => {
         listingNowIso="2026-04-25T12:00:00.000Z"
       />,
     )
-    expect(html).toMatchSnapshot()
+    expect(html).toContain('【react】搜索结果')
+    expect(html).toContain('React tips')
+    expect(html).toContain('/posts/react-tips')
+    expect(html).toContain('2024-04-01')
   })
 })

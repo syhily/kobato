@@ -8,6 +8,8 @@ import { getLogger } from '@/server/infra/logger'
 
 const POLL_INTERVAL_MS = 2_000
 const HEARTBEAT_INTERVAL_MS = 25_000
+const MAX_SSE_CONNECTIONS = 10
+let activeSSEConnections = 0
 
 export const analyticsEventsRouter = new Hono<Env>().get('/api/analytics/events', requireRoleMw('admin'), async (c) => {
   const sinceParam = c.req.query('since')
@@ -19,6 +21,11 @@ export const analyticsEventsRouter = new Hono<Env>().get('/api/analytics/events'
   const encoder = new TextEncoder()
   const stream = new ReadableStream<Uint8Array>({
     start(controller) {
+      if (activeSSEConnections >= MAX_SSE_CONNECTIONS) {
+        controller.error(new Error('Too many concurrent SSE connections'))
+        return
+      }
+      activeSSEConnections++
       let closed = false
       let pollInProgress = false
 
@@ -27,6 +34,7 @@ export const analyticsEventsRouter = new Hono<Env>().get('/api/analytics/events'
           return
         }
         closed = true
+        activeSSEConnections--
         clearInterval(pollTimer)
         clearInterval(heartbeatTimer)
         c.req.raw.signal.removeEventListener('abort', close)

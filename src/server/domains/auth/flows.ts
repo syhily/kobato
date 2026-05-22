@@ -6,7 +6,7 @@ import type { BlogSession } from '@/server/domains/auth/session-storage'
 import type { AssetsSettings, SiteIdentitySettings } from '@/shared/config/blog'
 
 import { establishLoginSession, login } from '@/server/domains/auth/primitives'
-import { commitSession } from '@/server/domains/auth/session-storage'
+import { commitSessionWithMaxAge } from '@/server/domains/auth/session-storage'
 import {
   ASSETS_STORAGE_INSTALL_DEFAULTS,
   buildDefaultSectionPayloads,
@@ -34,7 +34,7 @@ interface AuthSuccess<T> {
 export type AuthFlowResult<T> = AuthFailure | AuthSuccess<T>
 
 async function commitHeaders(session: BlogSession, extraSetCookie?: string): Promise<HeadersInit> {
-  const sessionCookie = await commitSession(session)
+  const sessionCookie = await commitSessionWithMaxAge(session)
   if (extraSetCookie === undefined) {
     return { 'Set-Cookie': sessionCookie }
   }

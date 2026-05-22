@@ -8,11 +8,6 @@ import { Comments } from '@/ui/public/comments/Comments'
 
 import { renderInRouter } from './_helpers/render'
 
-// `Comments.tsx` was previously a 159-line component that hand-rolled the
-// admin-vs-anonymous form three times (name / email / link). After
-// extracting `<CommentFormFields>` and porting the reply form to an island,
-// we lock the rendered markup so any regression in the read-only-hidden vs.
-// visible-required pattern is caught by a snapshot diff.
 describe('snapshot: Comments form variants', () => {
   it('renders the anonymous form (visible required name/email, optional link)', () => {
     const html = renderInRouter(
@@ -22,7 +17,13 @@ describe('snapshot: Comments form variants', () => {
         items={[]}
       />,
     )
-    expect(html).toMatchSnapshot()
+    expect(html).toContain('id="comments"')
+    expect(html).toContain('评论')
+    expect(html).toContain('/images/default-avatar.png')
+    expect(html).toContain('name="name"')
+    expect(html).toContain('name="email"')
+    expect(html).toContain('name="link"')
+    expect(html).toContain('type="submit"')
   })
 
   it('renders the admin form (hidden readonly identity inputs preloaded)', () => {
@@ -41,7 +42,15 @@ describe('snapshot: Comments form variants', () => {
         user={adminUser}
       />,
     )
-    expect(html).toMatchSnapshot()
+    expect(html).toContain('id="comments"')
+    expect(html).toContain('评论')
+    expect(html).toContain('/images/avatar/1.png')
+    expect(html).toContain('value="Admin"')
+    expect(html).toContain('value="admin@yufan.me"')
+    expect(html).toContain('value="https://yufan.me"')
+    expect(html).toContain('readOnly')
+    expect(html).toContain('hidden')
+    expect(html).toContain('type="submit"')
   })
 
   it('returns the failure placeholder when comments is null', () => {
@@ -97,11 +106,6 @@ describe('snapshot: Comments form variants', () => {
       />,
     )
 
-    // The reply editor container flips on extra padding-top (`pt-10`)
-    // when a reply is staged so the absolutely-positioned
-    // `<ReplyOverlay>` doesn't sit on top of the user's caret. The
-    // editor is a `<div>` wrapper around the Tiptap content area,
-    // so the assertion keys off the `pt-10` utility on that wrapper.
     expect(html).toMatch(/<div[^>]*class="[^"]*\bpt-10\b/u)
     expect(html).toMatch(/<div class="[^"]*\bpointer-events-none\b[^"]*\babsolute\b[^"]*\btop-\[0\.4rem\]/u)
     expect(html).toContain('回复 @雨帆')

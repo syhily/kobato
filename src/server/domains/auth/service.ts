@@ -71,12 +71,15 @@ export async function listSessionsByUser(userId: bigint): Promise<SessionMeta[]>
   if (liveSids.length === 0) {
     return []
   }
-  const metas = await Promise.all(
-    liveSids.map(async (sid) => {
-      const hash = (await redis.hgetall(META_KEY(sid))) as Record<string, string>
-      return parseMeta(sid, hash)
-    }),
-  )
+  const metaPipeline = redis.pipeline()
+  for (const sid of liveSids) {
+    metaPipeline.hgetall(META_KEY(sid))
+  }
+  const metaResults = await metaPipeline.exec()
+  const metas = liveSids.map((sid, i) => {
+    const [, hash] = metaResults?.[i] ?? [null, {}]
+    return parseMeta(sid, hash as Record<string, string>)
+  })
   return metas.filter((meta): meta is SessionMeta => meta !== null && meta.userId === userId)
 }
 
@@ -131,12 +134,15 @@ export async function listAllSessions(): Promise<SessionWithUser[]> {
     }
     return []
   }
-  const metas = await Promise.all(
-    liveSids.map(async (sid) => {
-      const hash = (await redis.hgetall(META_KEY(sid))) as Record<string, string>
-      return parseMeta(sid, hash)
-    }),
-  )
+  const metaPipeline = redis.pipeline()
+  for (const sid of liveSids) {
+    metaPipeline.hgetall(META_KEY(sid))
+  }
+  const metaResults = await metaPipeline.exec()
+  const metas = liveSids.map((sid, i) => {
+    const [, hash] = metaResults?.[i] ?? [null, {}]
+    return parseMeta(sid, hash as Record<string, string>)
+  })
   const validMetas = metas.filter((meta): meta is SessionMeta => meta !== null)
   if (orphanSids.length > 0) {
     const cleanup = redis.pipeline()
