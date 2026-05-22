@@ -401,6 +401,15 @@ export interface LimitsSettings {
   auditLogArchiveRetentionDays: number
 }
 
+export interface CorsSettings {
+  cors: {
+    /** Master switch: when `false`, the middleware skips CORS entirely. */
+    enabled: boolean
+    /** Allowed origin URLs. Empty array = mirror mode (reflect request origin). */
+    origins: string[]
+  }
+}
+
 // Composed bundle of every section. Each field is `null` until the
 // corresponding `setting('blog.<section>')` row has been seeded by the
 // install flow or the admin panel. A "fully installed" deployment has
@@ -427,6 +436,7 @@ export interface BlogSettingsBundle {
   rateLimit: RateLimitSettings | null
   search: SearchSettings | null
   fonts: FontsSettings | null
+  cors: CorsSettings | null
   backup: BackupSettings | null
   limits: LimitsSettings | null
 }

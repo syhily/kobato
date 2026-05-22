@@ -65,6 +65,6 @@ export async function indexPost(postId: bigint, title: string, summary: string, 
     })
 }
 
-export async function removePostIndex(postId: bigint): Promise<void> {
-  await db.delete(postSearchIndex).where(eq(postSearchIndex.postId, postId))
+export async function removePostIndex(postId: bigint, tx = db): Promise<void> {
+  await tx.delete(postSearchIndex).where(eq(postSearchIndex.postId, postId))
 }

@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto'
 
 import type { RateLimitBucket, RateLimitSettings } from '@/shared/config/blog'
 
+import { DomainError } from '@/server/infra/http/errors'
 import { redisInstance } from '@/server/infra/redis/storage'
 import { getBlogSettingsBundleSync } from '@/shared/config/blog'
 import { rateLimitDefaults } from '@/shared/config/settings'
@@ -74,9 +75,9 @@ export async function tryKeyedRateLimit(key: string, bucket: RateLimitBucket): P
   const results = await pipeline.exec()
   const incrResult = results?.[0]
   if (!incrResult || incrResult[0]) {
-    throw new Error(`tryKeyedRateLimit: failed to increment counter for ${key}`, {
-      cause: incrResult?.[0] ?? undefined,
-    })
+    throw new DomainError('INTERNAL', `tryKeyedRateLimit: failed to increment counter for ${key}`, [
+      { message: String(incrResult?.[0] ?? 'unknown redis error'), path: ['redis'] },
+    ])
   }
   const count = Number(incrResult[1])
   return { count, exceeded: count > bucket.maxAttempts }

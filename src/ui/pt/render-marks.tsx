@@ -16,8 +16,14 @@ export function renderMathMarkupOrTexFallback(
   const markup = mathml !== undefined && mathml !== '' ? mathml : legacySvg
   if (markup !== undefined && markup !== '') {
     if (layout === 'inline') {
+      // SAFETY: `markup` is MathML (or legacy SVG) produced server-side by
+      // KaTeX. The source TeX is validated by `commentBodySchema` / post body
+      // schema before reaching the renderer.
       return <span className="math-inline inline-block align-middle" dangerouslySetInnerHTML={{ __html: markup }} />
     }
+    // SAFETY: `markup` is MathML (or legacy SVG) produced server-side by
+    // KaTeX. The source TeX is validated by post/page body schema before
+    // reaching the renderer.
     return (
       <div
         className="math math-display text-center [&_svg]:mx-auto [&_svg]:block [&_svg]:max-w-none"
@@ -44,8 +50,11 @@ export function LinkMark({ value, children }: PortableTextMarkComponentProps<Lin
   if (def === undefined) {
     return <>{children}</>
   }
+  // Defense-in-depth: even if the schema filter is bypassed, never emit
+  // executable JavaScript or data URLs in the public renderer.
+  const href = /^\s*(javascript|data):/i.test(def.href) ? '#' : def.href
   return (
-    <a href={def.href} rel={def.rel} target={def.target} className={PT_INLINE.link}>
+    <a href={href} rel={def.rel} target={def.target} className={PT_INLINE.link}>
       {children}
     </a>
   )

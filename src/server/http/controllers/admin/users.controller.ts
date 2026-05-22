@@ -32,6 +32,7 @@ import {
   tryPasswordResetByTargetRateLimit,
 } from '@/server/infra/rate-limit'
 import { adminUserDto } from '@/shared/contracts/users'
+import { idFromString } from '@/shared/utils/id'
 
 const idInput = z.object({ id: z.string().min(1) })
 const userIdInput = z.object({ userId: z.string().min(1) })
@@ -66,7 +67,7 @@ const get = adminProc
   .input(idInput)
   .output(z.object({ user: adminUserDto }))
   .handler(async ({ input }) => {
-    const user = await fetchAdminUserDto(BigInt(input.id))
+    const user = await fetchAdminUserDto(idFromString(input.id))
     if (!user) {
       throw new ORPCError('NOT_FOUND', { message: '用户不存在' })
     }
@@ -89,7 +90,7 @@ const update = adminProc
   .output(successOutput)
   .handler(async ({ input, context }) => {
     const { id, ...patch } = input
-    const updated = await updateUserById(BigInt(id), patch)
+    const updated = await updateUserById(idFromString(id), patch)
     if (updated === null) {
       throw new ORPCError('NOT_FOUND', { message: '用户不存在' })
     }
@@ -111,7 +112,7 @@ const softDelete = adminProc
     if (context.viewer.userId === userId) {
       throw new ORPCError('FORBIDDEN', { message: '不能删除自己。' })
     }
-    const targetId = BigInt(userId)
+    const targetId = idFromString(userId)
     const target = await findUserById(targetId)
     if (!target) {
       throw new ORPCError('NOT_FOUND', { message: '用户不存在' })
@@ -140,7 +141,7 @@ const restore = adminProc
   .input(idInput)
   .output(successOutput)
   .handler(async ({ input, context }) => {
-    const ok = await restoreAdminUser(BigInt(input.id))
+    const ok = await restoreAdminUser(idFromString(input.id))
     if (!ok) {
       throw new ORPCError('NOT_FOUND', { message: '用户不存在' })
     }
@@ -157,7 +158,7 @@ const mute = adminProc
   .input(z.object({ id: z.string().min(1), muted: z.boolean() }))
   .output(z.object({ user: adminUserDto }))
   .handler(async ({ input, context }) => {
-    const updated = await muteAdminUser(BigInt(input.id), input.muted)
+    const updated = await muteAdminUser(idFromString(input.id), input.muted)
     if (!updated) {
       throw new ORPCError('NOT_FOUND', { message: '用户不存在或为管理员（管理员不可禁言）' })
     }
@@ -182,7 +183,7 @@ const updateRole = adminProc
     if (context.viewer.userId === userId) {
       throw new ORPCError('FORBIDDEN', { message: '不能修改自己的角色。' })
     }
-    const targetId = BigInt(userId)
+    const targetId = idFromString(userId)
     const target = await findUserById(targetId)
     if (!target) {
       throw new ORPCError('NOT_FOUND', { message: '用户不存在。' })
@@ -218,7 +219,7 @@ const inviteAuthor = adminProc
     }
     const [ipLimit, emailLimit] = await Promise.all([
       tryInviteRateLimit(context.clientAddress),
-      tryInviteByEmailRateLimit(BigInt(context.viewer.userId), input.email),
+      tryInviteByEmailRateLimit(idFromString(context.viewer.userId), input.email),
     ])
     if (ipLimit.exceeded || emailLimit.exceeded) {
       throw new ORPCError('TOO_MANY_REQUESTS', { message: '邀请发送过于频繁，请稍后再试。' })
@@ -307,7 +308,7 @@ const revokeAllSessions = adminProc
   .handler(async ({ input, context }) => {
     let targetId: bigint
     try {
-      targetId = BigInt(input.userId)
+      targetId = idFromString(input.userId)
     } catch {
       throw new ORPCError('BAD_REQUEST', { message: '用户 ID 无效。' })
     }
@@ -329,7 +330,7 @@ const bulkApproveComments = adminProc
   .input(userIdInput)
   .output(z.object({ approved: z.number() }))
   .handler(async ({ input, context }) => {
-    const result = await bulkApproveCommentsForUser(BigInt(input.userId))
+    const result = await bulkApproveCommentsForUser(idFromString(input.userId))
     recordAuditEventFromContext(context, {
       action: 'comments_bulk_approved',
       resourceType: 'comment',
@@ -344,7 +345,7 @@ const bulkDeleteComments = adminProc
   .input(userIdInput)
   .output(z.object({ deleted: z.number() }))
   .handler(async ({ input, context }) => {
-    const result = await bulkDeleteCommentsForUser(BigInt(input.userId))
+    const result = await bulkDeleteCommentsForUser(idFromString(input.userId))
     recordAuditEventFromContext(context, {
       action: 'comments_bulk_deleted',
       resourceType: 'comment',

@@ -2,6 +2,7 @@ import type { Block, ImageBlock, PortableTextBody } from '@/shared/pt/schema'
 
 import { getPublicBaseUrl } from '@/server/domains/images/storage'
 import { findImageById, updateImageNote } from '@/server/infra/db/operations/image'
+import { idFromString } from '@/shared/utils/id'
 
 // Two-step sync for `image` blocks at save time.
 //
@@ -36,7 +37,7 @@ export async function syncLibraryImageBlocks(body: PortableTextBody): Promise<vo
     }
     let id: bigint
     try {
-      id = BigInt(target.imageId)
+      id = idFromString(target.imageId)
     } catch {
       continue
     }

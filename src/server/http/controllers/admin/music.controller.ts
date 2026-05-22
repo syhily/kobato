@@ -16,6 +16,7 @@ import {
   searchMusicOutputDto,
   updateMusicOutputDto,
 } from '@/shared/contracts/music'
+import { idFromString } from '@/shared/utils/id'
 
 const list = authorProc
   .route({ method: 'GET', path: '/admin/music/list' })
@@ -43,7 +44,7 @@ const add = authorProc
     const music = await addMusic({
       source: input.source,
       sourceId: input.sourceId,
-      uploader: { id: BigInt(context.viewer.userId), name: userSession(context.session)?.name ?? '' },
+      uploader: { id: idFromString(context.viewer.userId), name: userSession(context.session)?.name ?? '' },
     })
     recordAuditEventFromContext(context, {
       action: 'music_added',
@@ -67,7 +68,7 @@ const update = authorProc
   .output(updateMusicOutputDto)
   .handler(async ({ input, context }) => {
     const music = await updateMusicMetadata({
-      id: BigInt(input.id),
+      id: idFromString(input.id),
       name: input.name,
       artist: input.artist,
       album: input.album,
@@ -86,7 +87,7 @@ const remove = authorProc
   .input(z.object({ id: z.string().min(1) }))
   .output(z.void())
   .handler(async ({ input, context }) => {
-    await deleteMusic(BigInt(input.id), { userId: context.viewer.userId, role: context.viewer.role })
+    await deleteMusic(idFromString(input.id), { userId: context.viewer.userId, role: context.viewer.role })
     recordAuditEventFromContext(context, {
       action: 'music_deleted',
       resourceType: 'music',

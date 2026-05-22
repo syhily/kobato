@@ -4,6 +4,8 @@
 // Server-only because `ownerId` is a `bigint` and the public wire uses
 // the opaque `metric.public_id` UUID instead.
 
+import { idFromString } from '@/shared/utils/id'
+
 export type EntityType = 'post' | 'page'
 
 export interface EntityTarget {
@@ -29,7 +31,7 @@ export function parseTargetKey(key: string): EntityTarget | null {
     return null
   }
   try {
-    return { type, ownerId: BigInt(idStr) }
+    return { type, ownerId: idFromString(idStr) }
   } catch {
     return null
   }

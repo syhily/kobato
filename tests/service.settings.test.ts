@@ -118,6 +118,7 @@ const fixtureBundle: BlogSettingsBundle = {
     globalCss: [],
     postCss: [],
   },
+  cors: { cors: { enabled: false, origins: [] } },
   backup: {
     scheduled: { enabled: false, frequency: 'daily', hour: 3, minute: 0 },
     retention: { enabled: true, days: 30 },
@@ -148,6 +149,7 @@ function bundleRows(bundle: BlogSettingsBundle): Setting[] {
     rateLimit: 'blog.rateLimit',
     search: 'blog.search',
     fonts: 'blog.fonts',
+    cors: 'blog.cors',
     limits: 'blog.limits',
   }
   const rows: Setting[] = []

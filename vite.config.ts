@@ -4,6 +4,7 @@ import type { Plugin, PluginOption } from 'vite'
 
 import { reactRouter } from '@react-router/dev/vite'
 import tailwindcss from '@tailwindcss/vite'
+import { DevToolsRolldownUI } from '@vitejs/devtools-rolldown'
 import { defineConfig } from 'vite-plus'
 
 import oxfmtConfig from './oxfmt.config.ts'
@@ -47,18 +48,27 @@ export default defineConfig({
   staged: {
     '*.{js,jsx,ts,tsx,mjs,cjs}': 'vp fmt && vp lint',
   },
-  plugins: [reactRouterHonoServer(), ...(reactRouter() as Plugin[]), tailwindcss()] as PluginOption[],
+  plugins: [
+    reactRouterHonoServer(),
+    ...(reactRouter() as Plugin[]),
+    tailwindcss(),
+    DevToolsRolldownUI(),
+  ] as PluginOption[],
   resolve: {
     tsconfigPaths: true,
   },
   build: {
     emptyOutDir: true,
-    chunkSizeWarningLimit: 800,
+    chunkSizeWarningLimit: 500,
     rollupOptions: {
+      devtools: {},
       output: {
         manualChunks(id) {
           if (id.includes('node_modules/@tiptap/') || id.includes('node_modules/prosemirror-')) {
             return 'editor-tiptap'
+          }
+          if (id.includes('node_modules/@napi-rs/canvas')) {
+            return 'canvas'
           }
           return undefined
         },

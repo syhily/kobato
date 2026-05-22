@@ -174,6 +174,9 @@ export function MathInlinePanel({ editor }: MathInlinePanelProps) {
           <span className="ml-2 text-xs text-muted-foreground">渲染中…</span>
         ) : (
           <span
+            // SAFETY: `previewHtml` is MathML produced by the admin render
+            // endpoint (`/admin/renders/math`) via KaTeX. Only admins can
+            // trigger this path; the TeX source is not guest-controllable.
             className="ml-2 inline-flex min-h-[1.25em] max-w-full items-center overflow-x-auto align-middle"
             dangerouslySetInnerHTML={{ __html: previewHtml }}
           />

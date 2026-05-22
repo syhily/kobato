@@ -15,6 +15,7 @@ vi.mock('bcryptjs', () => ({
 vi.mock('@/server/infra/db/operations/user', () => ({
   findUserById: vi.fn(),
   updateUserById: vi.fn(),
+  PASSWORD_HASH_ROUNDS: 12,
 }))
 
 vi.mock('@/server/domains/auth/session-storage', () => ({

@@ -82,7 +82,7 @@ vi.mock('@/shared/types/catalog', async () => {
   }
 })
 
-vi.mock('@/server/domains/pages/service', () => ({
+vi.mock('@/server/domains/pages/services/draft', () => ({
   loadPageDraftPreviewBySlug: vi.fn(),
 }))
 
@@ -118,7 +118,7 @@ vi.mock('@/server/render/image-enhance', () => ({
 }))
 
 const pageRoute = await import('@/routes/public/page/detail')
-const pagesService = await import('@/server/domains/pages/service')
+const pagesService = await import('@/server/domains/pages/services/draft')
 const draftPreviewMock = vi.mocked(pagesService.loadPageDraftPreviewBySlug)
 
 type LoaderResult = {

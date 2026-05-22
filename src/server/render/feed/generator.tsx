@@ -7,6 +7,7 @@ import { listAllCategories } from '@/server/domains/taxonomies/categories/servic
 import { getTagsByNames } from '@/server/domains/taxonomies/tags/service'
 import { findCategoryByName, findCategoryBySlug } from '@/server/infra/db/operations/category'
 import { findTagByName, findTagBySlug } from '@/server/infra/db/operations/tag'
+import { DomainError } from '@/server/infra/http/errors'
 import { renderPortableTextToHtml } from '@/server/render/feed/feed-pt-render'
 import { requireBlogSettingsSection } from '@/shared/config/blog'
 import { joinUrl } from '@/shared/utils/urls'
@@ -63,7 +64,7 @@ export async function generateFeeds(options: FeedOptions = {}) {
   const content = requireBlogSettingsSection('content')
   const { includeHidden = true, includeScheduled = false, size = content.feed.size, category, tag } = options
   if (category !== undefined && tag !== undefined) {
-    throw new Error('Category and tag cannot be specified at the same time')
+    throw new DomainError('BAD_REQUEST', 'Category and tag cannot be specified at the same time')
   }
   const filtered = await selectFeedPosts({ includeHidden, includeScheduled, category, tag })
   const feedPosts = filtered.slice(0, size)

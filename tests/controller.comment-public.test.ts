@@ -27,10 +27,16 @@ vi.mock('@/server/domains/comments/likes', () => ({
   validateLikeToken: vi.fn(),
 }))
 
-vi.mock('@/server/domains/comments/loader', () => ({
+vi.mock('@/server/domains/comments/services/public-query', () => ({
   loadComments: vi.fn(),
   parseComments: vi.fn().mockResolvedValue([]),
+}))
+
+vi.mock('@/server/domains/comments/services/mutate', () => ({
   createComment: vi.fn(),
+}))
+
+vi.mock('@/server/domains/comments/services/shared', () => ({
   resolveMetricTarget: vi.fn(),
   safeResolveMetricTarget: vi.fn(),
 }))
@@ -51,7 +57,7 @@ vi.mock('@/server/domains/comments/token', () => ({
   verifyCommentOwnership: vi.fn().mockResolvedValue({ ok: false, cleaned: [] }),
 }))
 
-vi.mock('@/server/domains/comments/moderation', () => ({
+vi.mock('@/server/domains/comments/services/moderate', () => ({
   updateComment: vi.fn(),
   getCommentById: vi.fn(),
 }))
@@ -74,7 +80,8 @@ vi.mock('@/shared/config/blog', () => ({
 }))
 
 const rateLimitMod = await import('@/server/infra/rate-limit')
-const loaderMod = await import('@/server/domains/comments/loader')
+const publicQuery = await import('@/server/domains/comments/services/public-query')
+const shared = await import('@/server/domains/comments/services/shared')
 const { commentsRouter } = await import('@/server/http/controllers/comments.controller')
 
 describe('commentsRouter.increaseLike', () => {
@@ -100,7 +107,7 @@ describe('commentsRouter.findAvatar', () => {
 describe('commentsRouter.loadComments', () => {
   it('throws NOT_FOUND when the metric public_id has no matching target', async () => {
     const { ORPCError } = await import('@orpc/server')
-    vi.mocked(loaderMod.resolveMetricTarget).mockRejectedValueOnce(
+    vi.mocked(shared.resolveMetricTarget).mockRejectedValueOnce(
       new ORPCError('NOT_FOUND', { message: '评论目标不存在' }),
     )
     const ctx = makePublicCtx()
@@ -110,8 +117,8 @@ describe('commentsRouter.loadComments', () => {
   })
 
   it('throws BAD_GATEWAY when the comment loader fails', async () => {
-    vi.mocked(loaderMod.resolveMetricTarget).mockResolvedValueOnce({ type: 'post', ownerId: 1n })
-    vi.mocked(loaderMod.loadComments).mockResolvedValueOnce(null)
+    vi.mocked(shared.resolveMetricTarget).mockResolvedValueOnce({ type: 'post', ownerId: 1n })
+    vi.mocked(publicQuery.loadComments).mockResolvedValueOnce(null)
     const ctx = makePublicCtx()
     await expect(
       call(commentsRouter.loadComments, { page_key: 'pk-1', offset: 0 }, { context: ctx }),

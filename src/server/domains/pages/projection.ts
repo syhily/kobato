@@ -2,6 +2,7 @@ import type { ContentRow, PageMetaRow } from '@/server/infra/db/types'
 import type { PortableTextBody } from '@/shared/pt/schema'
 import type { ClientPage, MarkdownHeading } from '@/shared/types/catalog'
 
+import { DomainError } from '@/server/infra/http/errors'
 import { validatePortableTextBody } from '@/shared/pt/utils'
 
 // --- Public catalog projection ----------------------------------------------
@@ -73,7 +74,7 @@ export function toCmsPage(
 // the `PostRow` (currently named `metric`-row in legacy callers) and
 // projects it into `ClientPost`.
 export function toCmsPost(): never {
-  throw new Error('toCmsPost is reserved for the next iteration; posts are still served from MDX')
+  throw new DomainError('INTERNAL', 'toCmsPost is reserved for the next iteration; posts are still served from MDX')
 }
 
 // --- Admin projection -------------------------------------------------------

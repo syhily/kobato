@@ -5,6 +5,7 @@ import { createCanvas, GlobalFonts } from '@napi-rs/canvas'
 import { format, getDate, getISODay, getMonth, getYear } from 'date-fns'
 import { Solar } from 'lunar-typescript'
 
+import { DomainError } from '@/server/infra/http/errors'
 import { compressImage } from '@/server/render/image-compress'
 import { oppoSerif } from '@/server/render/og/assets'
 
@@ -45,7 +46,7 @@ async function fetchDailyQuote(date: Date) {
   const url = `https://apiv3.shanbay.com/weapps/dailyquote/quote?date=${format(date, 'yyyy-MM-dd')}`
   const res = await fetch(url)
   if (!res.ok) {
-    throw new Error(`API 请求失败: ${res.status}`)
+    throw new DomainError('INTERNAL', `API 请求失败: ${res.status}`)
   }
   return res.json() as Promise<{ content: string; translation: string; author: string }>
 }

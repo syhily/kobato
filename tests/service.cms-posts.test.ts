@@ -6,7 +6,7 @@ import { post as postMetaTable } from '@/server/infra/db/schema'
 
 import { clearAllTables } from './_helpers/integration-db'
 
-const service = await import('@/server/domains/posts/service')
+const service = await import('@/server/domains/posts/services/mutate')
 
 beforeEach(async () => {
   await clearAllTables(db)

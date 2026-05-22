@@ -12,8 +12,10 @@ import {
   type SessionUser,
 } from '@/server/domains/auth/session-storage'
 import { findUserById, updateLastLogin, verifyUserPassword } from '@/server/infra/db/operations/user'
+import { DomainError } from '@/server/infra/http/errors'
 import { getLogger } from '@/server/infra/logger'
 import { redisInstance } from '@/server/infra/redis/storage'
+import { idFromString } from '@/shared/utils/id'
 
 export interface SessionContext {
   session: BlogSession
@@ -64,7 +66,7 @@ export async function establishLoginSession(
       userId: String(dbUser.id),
       email: dbUser.email,
     })
-    throw new Error('establishLoginSession requires a user with a role')
+    throw new DomainError('INTERNAL', 'establishLoginSession requires a user with a role')
   }
   if (options.revokeOtherSessions) {
     await revokeAllSessionsOfUser(dbUser.id)
@@ -180,7 +182,7 @@ export async function resolveSessionContext(request: Request): Promise<SessionCo
     let dbUser: Awaited<ReturnType<typeof findUserById>> = null
     let dbReachable = true
     try {
-      dbUser = await findUserById(BigInt(user.id))
+      dbUser = await findUserById(idFromString(user.id))
     } catch {
       // Transient DB error — keep the existing session intact and try
       // again on the next request. Unsetting `user` here would log out

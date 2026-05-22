@@ -57,9 +57,10 @@ vi.mock('@/server/domains/posts/repo', () => ({
 }))
 vi.mock('@/server/domains/pages/repo', () => ({
   findPageBySlug: mocks.findPageBySlug,
+  findPublicPageMetaBySlug: vi.fn(async () => null),
   buildDbPage: mocks.buildDbPage,
 }))
-vi.mock('@/server/domains/pages/service', () => ({
+vi.mock('@/server/domains/pages/services/draft', () => ({
   loadPageDraftPreviewBySlug: mocks.loadPageDraftPreviewBySlug,
 }))
 vi.mock('@/server/domains/auth/context', () => ({

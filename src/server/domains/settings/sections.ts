@@ -8,6 +8,7 @@ import {
   cacheSchema,
   commentsSchema,
   contentSchema,
+  corsSchema,
   fontsSchema,
   generalSchema,
   limitsSchema,
@@ -19,6 +20,7 @@ import {
   sidebarSchema,
   socialsSchema,
 } from '@/server/domains/settings/schema'
+import { DomainError } from '@/server/infra/http/errors'
 import {
   rateLimitDefaults,
   SETTINGS_SECTIONS,
@@ -213,6 +215,18 @@ export const SECTION_REGISTRY = {
       postCss: [],
     },
   },
+  cors: {
+    scope: 'blog.cors',
+    schema: corsSchema,
+    key: 'cors',
+    // Empty origins = mirror mode (reflect request Origin header).
+    // Safe default for same-origin deployments; the admin adds
+    // specific origins when a CDN or third-party integration
+    // needs cross-origin access.
+    defaults: {
+      cors: { enabled: false, origins: [] },
+    },
+  },
   backup: {
     scope: 'blog.backup',
     schema: backupSchema,
@@ -307,7 +321,10 @@ export function buildDefaultSectionPayloads(): { section: SettingsSection; paylo
       // pinpoints the exact field that drifted.
       const first = check.error.issues[0]
       const path = first ? first.path.join('.') : '<unknown>'
-      throw new Error(`${meta.scope} defaults invalid at \`${path}\`: ${first?.message ?? 'unknown reason'}`)
+      throw new DomainError(
+        'INTERNAL',
+        `${meta.scope} defaults invalid at \`${path}\`: ${first?.message ?? 'unknown reason'}`,
+      )
     }
     out.push({ section, payload: check.data as Record<string, unknown> })
   }

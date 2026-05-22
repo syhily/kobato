@@ -19,33 +19,34 @@ import { registerShutdownHook } from '@/server/infra/shutdown'
 // and re-introduce the matching generic.
 const globalForDb = globalThis as unknown as {
   db: NodePgDatabase | undefined
+  pool: Pool | undefined
 }
 
 await runDatabaseMigrations()
 
-// Using globalThis to store the database connection so the Vite dev server's
-// HMR-driven module reloads don't open a new pool on every edit.
-export const db: NodePgDatabase = globalForDb.db ?? drizzle({ connection: DATABASE_URL })
+// Own the Pool lifecycle explicitly so downstream code can reach the raw
+// `pg.Pool` without spelunking into Drizzle internals. The Pool is stored
+// on globalThis for HMR safety (same pattern as before) and passed to
+// Drizzle via `{ client }`.
+const pool: Pool = globalForDb.pool ?? new Pool({ connectionString: DATABASE_URL })
+
+if (!globalForDb.pool) {
+  globalForDb.pool = pool
+}
+
+export const db: NodePgDatabase = globalForDb.db ?? drizzle({ client: pool })
 
 if (!globalForDb.db) {
   globalForDb.db = db
 }
 
-// Direct access to the underlying `node-postgres` Pool. Drizzle's typed
-// `db` surface doesn't include `$client` (we drop the extra generic on
-// purpose, see the comment above), so the analytics batcher needs to
-// reach the raw pool through this helper to acquire a `PoolClient` for
-// `pg-copy-streams`. Every other call site should keep using `db`.
-export function getRawPool(): Pool {
-  const client = (db as unknown as Record<string, unknown>).$client
-  if (!(client instanceof Pool)) {
-    throw new Error('Expected db.$client to be a pg Pool')
-  }
-  return client
-}
+/** Direct access to the underlying `node-postgres` Pool. Needed by the
+ *  analytics / audit batchers to acquire a `PoolClient` for `pg-copy-streams`.
+ *  Every other call site should keep using `db`. */
+export { pool }
 
 export async function closePool(): Promise<void> {
-  await getRawPool().end()
+  await pool.end()
 }
 
 registerShutdownHook(closePool)

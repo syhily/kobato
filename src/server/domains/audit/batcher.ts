@@ -5,10 +5,11 @@ import { from as copyFrom } from 'pg-copy-streams'
 import type { AuditEventInput, BatcherOptions } from '@/server/domains/audit/types'
 
 import { csvEscape } from '@/server/domains/audit/csv'
-import { db, getRawPool } from '@/server/infra/db/pool'
+import { db, pool } from '@/server/infra/db/pool'
 import { auditLog } from '@/server/infra/db/schema'
 import { getLogger } from '@/server/infra/logger'
 import { registerShutdownHook } from '@/server/infra/shutdown'
+import { idFromString } from '@/shared/utils/id'
 
 const log = getLogger('audit.batcher')
 
@@ -102,7 +103,6 @@ class AuditLogBatcher {
 }
 
 async function copyEvents(events: AuditEventInput[]): Promise<void> {
-  const pool = getRawPool()
   const client = await pool.connect()
   try {
     const sql = `COPY audit_log (${COPY_COLUMNS.join(', ')}) FROM STDIN WITH (FORMAT csv, NULL '\\N')`
@@ -147,7 +147,7 @@ async function insertPerRow(events: AuditEventInput[]): Promise<void> {
     await db.insert(auditLog).values(
       events.map((e) => ({
         action: e.action,
-        actorId: e.actorId === null || e.actorId === undefined ? null : BigInt(e.actorId),
+        actorId: e.actorId === null || e.actorId === undefined ? null : idFromString(e.actorId),
         actorRole: e.actorRole ?? null,
         resourceType: e.resourceType,
         resourceId: e.resourceId ?? null,
@@ -173,7 +173,7 @@ async function insertPerRow(events: AuditEventInput[]): Promise<void> {
     try {
       await db.insert(auditLog).values({
         action: e.action,
-        actorId: e.actorId === null || e.actorId === undefined ? null : BigInt(e.actorId),
+        actorId: e.actorId === null || e.actorId === undefined ? null : idFromString(e.actorId),
         actorRole: e.actorRole ?? null,
         resourceType: e.resourceType,
         resourceId: e.resourceId ?? null,
@@ -201,25 +201,20 @@ async function insertPerRow(events: AuditEventInput[]): Promise<void> {
 // Singleton — global batcher instance
 // ---------------------------------------------------------------------------
 
-const GLOBAL_KEY = Symbol.for('yufan.me/audit-batcher')
-
-function getGlobalSingleton<T>(key: symbol, factory: () => T): T {
-  const g = globalThis as unknown as Record<symbol, T | undefined>
-  if (g[key] === undefined) {
-    g[key] = factory()
-  }
-  return g[key] as T
-}
+let batcher: AuditLogBatcher | undefined
 
 function getBatcher(): AuditLogBatcher {
-  return getGlobalSingleton(
-    GLOBAL_KEY,
-    () =>
-      new AuditLogBatcher({
-        flushIntervalMs: 500,
-        flushThreshold: 50,
-      }),
-  )
+  if (batcher === undefined) {
+    batcher = new AuditLogBatcher({
+      flushIntervalMs: 500,
+      flushThreshold: 50,
+    })
+  }
+  return batcher
+}
+
+export function resetAuditLogBatcher(): void {
+  batcher = undefined
 }
 
 export function pushAuditEvent(event: AuditEventInput): void {

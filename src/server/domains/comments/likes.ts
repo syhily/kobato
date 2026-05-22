@@ -120,24 +120,26 @@ export async function purgeStaleLikeTokens(): Promise<void> {
  * Guarded by a `Symbol.for` global so HMR / accidental double imports
  * never spawn duplicate timers in dev.
  */
-import { getOrCreateGlobalSingleton } from '@/server/infra/global-singleton'
-
 const SWEEP_INTERVAL_MS = 60 * 60 * 1000
-const SWEEP_KEY = Symbol.for('yufan.me/likes/sweep')
+
+let sweepTimer: NodeJS.Timeout | undefined
 
 function ensureLikeTokenSweepStarted(): void {
-  const existing = getOrCreateGlobalSingleton<NodeJS.Timeout | undefined>(SWEEP_KEY, () => undefined)
-  if (existing !== undefined) {
+  if (sweepTimer !== undefined) {
     return
   }
-  const timer = setInterval(() => {
+  sweepTimer = setInterval(() => {
     void purgeStaleLikeTokens().catch((err) => {
       log.warn('background sweep failed', { error: err })
     })
   }, SWEEP_INTERVAL_MS)
   // Don't pin the Node event loop — the timer is purely opportunistic.
-  timer.unref?.()
-  // Register the timer in the global singleton so subsequent calls no-op.
-  const slot = globalThis as unknown as Record<symbol, NodeJS.Timeout | undefined>
-  slot[SWEEP_KEY] = timer
+  sweepTimer.unref?.()
+}
+
+export function resetLikeTokenSweep(): void {
+  if (sweepTimer !== undefined) {
+    clearInterval(sweepTimer)
+    sweepTimer = undefined
+  }
 }

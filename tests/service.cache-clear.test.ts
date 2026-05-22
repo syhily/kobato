@@ -106,6 +106,8 @@ beforeEach(async () => {
   vi.resetModules()
   vi.clearAllMocks()
   await clearAllTables(db)
+  const { redisInstance } = await import('@/server/infra/redis/storage')
+  await redisInstance().flushdb()
 })
 
 describe('posts service cache clearing', () => {
@@ -141,7 +143,7 @@ describe('posts service cache clearing', () => {
         ] as any,
     )
 
-    const { loadCatalogPostMetas } = await import('@/server/domains/posts/service')
+    const { loadCatalogPostMetas } = await import('@/server/domains/posts/services/catalog')
 
     const first = await loadCatalogPostMetas()
     expect(first).toHaveLength(1)
@@ -185,7 +187,8 @@ describe('posts service cache clearing', () => {
     )
     vi.mocked(postRepo.findPostMetaBySlug).mockImplementation(async () => null)
 
-    const { loadCatalogPostMetas, createPost } = await import('@/server/domains/posts/service')
+    const { loadCatalogPostMetas } = await import('@/server/domains/posts/services/catalog')
+    const { createPost } = await import('@/server/domains/posts/services/mutate')
 
     // Prime cache
     await loadCatalogPostMetas()
@@ -232,7 +235,8 @@ describe('posts service cache clearing', () => {
     )
     vi.mocked(postRepo.findPostMetaBySlug).mockImplementation(async () => null)
 
-    const { loadCatalogPostMetas, createPost } = await import('@/server/domains/posts/service')
+    const { loadCatalogPostMetas } = await import('@/server/domains/posts/services/catalog')
+    const { createPost } = await import('@/server/domains/posts/services/mutate')
 
     await loadCatalogPostMetas()
     expect(postRepo.listPublicPostMetas).toHaveBeenCalledTimes(1)
@@ -276,7 +280,7 @@ describe('pages service cache clearing', () => {
         ] as any,
     )
 
-    const { loadCatalogPages } = await import('@/server/domains/pages/service')
+    const { loadCatalogPages } = await import('@/server/domains/pages/services/catalog')
 
     const first = await loadCatalogPages()
     expect(first).toHaveLength(1)
@@ -314,7 +318,8 @@ describe('pages service cache clearing', () => {
         ] as any,
     )
 
-    const { loadCatalogPages, createPage } = await import('@/server/domains/pages/service')
+    const { loadCatalogPages } = await import('@/server/domains/pages/services/catalog')
+    const { createPage } = await import('@/server/domains/pages/services/mutate')
 
     // Prime cache
     await loadCatalogPages()

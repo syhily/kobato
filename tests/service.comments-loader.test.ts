@@ -90,7 +90,7 @@ vi.mock('@/shared/config/blog', () => ({
 const queries = await import('@/server/infra/db/operations/comment')
 const metricQueries = await import('@/server/infra/db/operations/metric')
 const { loadComments, latestComments, pendingComments, parseComments } =
-  await import('@/server/domains/comments/loader')
+  await import('@/server/domains/comments/services/public-query')
 
 const POST_HELLO = { type: 'post' as const, ownerId: 1n }
 const POST_NEW = { type: 'post' as const, ownerId: 2n }

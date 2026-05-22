@@ -3,17 +3,23 @@ import { describe, expect, it, vi } from 'vite-plus/test'
 
 import { makeAuthedCtx } from './_helpers/mock-ctx'
 
-vi.mock('@/server/domains/pages/service', () => ({
+vi.mock('@/server/domains/pages/services/mutate', () => ({
   createPage: vi.fn(),
   deletePage: vi.fn(),
+  restorePage: vi.fn(),
+  unpublishPage: vi.fn(),
+  updatePageMeta: vi.fn(),
+}))
+
+vi.mock('@/server/domains/pages/services/admin-query', () => ({
   getPageDetailForAdmin: vi.fn(),
   listPagesForAdmin: vi.fn(),
   listRevisionsForAdmin: vi.fn(),
+}))
+
+vi.mock('@/server/domains/pages/services/draft', () => ({
   publishLatest: vi.fn(),
-  restorePage: vi.fn(),
   saveDraft: vi.fn(),
-  unpublishPage: vi.fn(),
-  updatePageMeta: vi.fn(),
 }))
 
 vi.mock('@/server/render/feed/feed-pt-render', () => ({
@@ -24,7 +30,9 @@ vi.mock('@/shared/pt/utils', () => ({
   collectHeadings: vi.fn(),
 }))
 
-const service = await import('@/server/domains/pages/service')
+const mutateService = await import('@/server/domains/pages/services/mutate')
+const adminQueryService = await import('@/server/domains/pages/services/admin-query')
+const draftService = await import('@/server/domains/pages/services/draft')
 const { renderPortableTextToHtml } = await import('@/server/render/feed/feed-pt-render')
 const { collectHeadings } = await import('@/shared/pt/utils')
 const { adminPagesRouter } = await import('@/server/http/controllers/admin/pages.controller')
@@ -67,7 +75,7 @@ const revisionStub = {
 
 describe('adminPagesRouter.get', () => {
   it('throws NOT_FOUND when the page detail is null', async () => {
-    vi.mocked(service.getPageDetailForAdmin).mockResolvedValueOnce(null as never)
+    vi.mocked(adminQueryService.getPageDetailForAdmin).mockResolvedValueOnce(null as never)
     const ctx = makeAuthedCtx()
     await expect(call(adminPagesRouter.get, { id: '999' }, { context: ctx })).rejects.toMatchObject({
       code: 'NOT_FOUND',
@@ -75,7 +83,7 @@ describe('adminPagesRouter.get', () => {
   })
 
   it('passes through the detail dto on hit', async () => {
-    vi.mocked(service.getPageDetailForAdmin).mockResolvedValueOnce({
+    vi.mocked(adminQueryService.getPageDetailForAdmin).mockResolvedValueOnce({
       page: pageStub as never,
       latestRevision: null,
       publishedRevision: null,
@@ -88,7 +96,7 @@ describe('adminPagesRouter.get', () => {
 
 describe('adminPagesRouter.delete', () => {
   it('throws NOT_FOUND when deletePage yields { deleted: false }', async () => {
-    vi.mocked(service.deletePage).mockResolvedValueOnce({ deleted: false } as never)
+    vi.mocked(mutateService.deletePage).mockResolvedValueOnce({ deleted: false } as never)
     const ctx = makeAuthedCtx()
     await expect(call(adminPagesRouter.delete, { id: '1' }, { context: ctx })).rejects.toMatchObject({
       code: 'NOT_FOUND',
@@ -96,7 +104,7 @@ describe('adminPagesRouter.delete', () => {
   })
 
   it('resolves to undefined when deletePage succeeds', async () => {
-    vi.mocked(service.deletePage).mockResolvedValueOnce({ deleted: true } as never)
+    vi.mocked(mutateService.deletePage).mockResolvedValueOnce({ deleted: true } as never)
     const ctx = makeAuthedCtx()
     const res = await call(adminPagesRouter.delete, { id: '1' }, { context: ctx })
     expect(res).toBeUndefined()
@@ -105,14 +113,14 @@ describe('adminPagesRouter.delete', () => {
 
 describe('adminPagesRouter.restore', () => {
   it('returns { success: true } when restore succeeds', async () => {
-    vi.mocked(service.restorePage).mockResolvedValueOnce({ restored: true } as never)
+    vi.mocked(mutateService.restorePage).mockResolvedValueOnce({ restored: true } as never)
     const ctx = makeAuthedCtx()
     const res = await call(adminPagesRouter.restore, { id: '1' }, { context: ctx })
     expect(res).toEqual({ success: true })
   })
 
   it('throws NOT_FOUND when restore yields { restored: false }', async () => {
-    vi.mocked(service.restorePage).mockResolvedValueOnce({ restored: false } as never)
+    vi.mocked(mutateService.restorePage).mockResolvedValueOnce({ restored: false } as never)
     const ctx = makeAuthedCtx()
     await expect(call(adminPagesRouter.restore, { id: '1' }, { context: ctx })).rejects.toMatchObject({
       code: 'NOT_FOUND',
@@ -122,7 +130,7 @@ describe('adminPagesRouter.restore', () => {
 
 describe('adminPagesRouter.unpublish', () => {
   it('returns the unpublished page', async () => {
-    vi.mocked(service.unpublishPage).mockResolvedValueOnce(pageStub as never)
+    vi.mocked(mutateService.unpublishPage).mockResolvedValueOnce(pageStub as never)
     const ctx = makeAuthedCtx()
     const res = await call(adminPagesRouter.unpublish, { id: '1' }, { context: ctx })
     expect(res.page.id).toBe('1')
@@ -131,7 +139,7 @@ describe('adminPagesRouter.unpublish', () => {
 
 describe('adminPagesRouter.saveDraft', () => {
   it('returns saved status on success', async () => {
-    vi.mocked(service.saveDraft).mockResolvedValueOnce({
+    vi.mocked(draftService.saveDraft).mockResolvedValueOnce({
       status: 'saved',
       revision: revisionStub as never,
     } as never)
@@ -145,7 +153,7 @@ describe('adminPagesRouter.saveDraft', () => {
   })
 
   it('returns conflict status when tokens mismatch', async () => {
-    vi.mocked(service.saveDraft).mockResolvedValueOnce({
+    vi.mocked(draftService.saveDraft).mockResolvedValueOnce({
       status: 'conflict',
       latest: revisionStub as never,
       expectedToken: '11111111-1111-4000-8000-000000000000',
@@ -162,7 +170,7 @@ describe('adminPagesRouter.saveDraft', () => {
 
 describe('adminPagesRouter.publishLatest', () => {
   it('returns saved status on success', async () => {
-    vi.mocked(service.publishLatest).mockResolvedValueOnce({
+    vi.mocked(draftService.publishLatest).mockResolvedValueOnce({
       status: 'saved',
       revision: revisionStub as never,
     } as never)
@@ -189,7 +197,7 @@ describe('adminPagesRouter.preview', () => {
 
 describe('adminPagesRouter.upsertMeta', () => {
   it('creates a page when id is omitted', async () => {
-    vi.mocked(service.createPage).mockResolvedValueOnce(pageStub as never)
+    vi.mocked(mutateService.createPage).mockResolvedValueOnce(pageStub as never)
     const ctx = makeAuthedCtx()
     const res = await call(
       adminPagesRouter.upsertMeta,
@@ -211,7 +219,7 @@ describe('adminPagesRouter.upsertMeta', () => {
   })
 
   it('updates a page when id is provided', async () => {
-    vi.mocked(service.updatePageMeta).mockResolvedValueOnce(pageStub as never)
+    vi.mocked(mutateService.updatePageMeta).mockResolvedValueOnce(pageStub as never)
     const ctx = makeAuthedCtx()
     const res = await call(
       adminPagesRouter.upsertMeta,
@@ -236,7 +244,7 @@ describe('adminPagesRouter.upsertMeta', () => {
 
 describe('adminPagesRouter.listRevisions', () => {
   it('returns revisions for the page', async () => {
-    vi.mocked(service.listRevisionsForAdmin).mockResolvedValueOnce([revisionStub] as never)
+    vi.mocked(adminQueryService.listRevisionsForAdmin).mockResolvedValueOnce([revisionStub] as never)
     const ctx = makeAuthedCtx()
     const res = await call(adminPagesRouter.listRevisions, { id: '1' }, { context: ctx })
     expect(res.revisions).toHaveLength(1)

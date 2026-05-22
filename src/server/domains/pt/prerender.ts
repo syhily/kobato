@@ -5,6 +5,9 @@ import type { Block, MarkDef, PortableTextBody, TextBlock } from '@/shared/pt/sc
 
 import { getKatexRenderer, type KatexRenderer } from '@/server/domains/pt/katex-renderer'
 import { SHIKI_THEMES, shikiTransformers } from '@/server/domains/pt/shiki'
+import { getLogger } from '@/server/infra/logger'
+
+const log = getLogger('pt.prerender')
 
 // Server-side pre-renderer for PortableText bodies.
 //
@@ -200,9 +203,10 @@ async function runShikiPasses(blocks: { code: string; language?: string; highlig
           defaultColor: false,
           transformers: shikiTransformers(),
         })
-      } catch {
+      } catch (err) {
         // Per-block failure: leave `highlightedHtml` unset so the
         // renderer falls back to plain `<code>` for this block only.
+        log.warn('shiki pass failed for block', { error: String(err) })
       }
     }),
   )
@@ -231,15 +235,17 @@ async function runKatexPasses(
     ...blocks.map(async (block) => {
       try {
         block.mathml = await renderer.render(block.tex, true)
-      } catch {
+      } catch (err) {
         // Leave mathml unset; renderer will fall back to legacy SVG or raw text.
+        log.warn('katex block render failed', { error: String(err) })
       }
     }),
     ...inlines.map(async (def) => {
       try {
         def.mathml = await renderer.render(def.tex, false)
-      } catch {
+      } catch (err) {
         // Leave mathml unset.
+        log.warn('katex inline render failed', { error: String(err) })
       }
     }),
   ])
@@ -257,10 +263,11 @@ async function runMermaidPasses(blocks: { code: string; svg?: string }[]): Promi
     blocks.map(async (block) => {
       try {
         block.svg = await renderMermaidSVGAsync(block.code)
-      } catch {
+      } catch (err) {
         // Leave svg unset; the renderer falls back to a `<pre>`
         // mermaid placeholder so the diagram source is still
         // recoverable.
+        log.warn('mermaid render failed', { error: String(err) })
       }
     }),
   )

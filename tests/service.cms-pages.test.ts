@@ -45,7 +45,10 @@ vi.mock('@/server/infra/db/operations/like', () => ({
 
 const repo = await import('@/server/domains/pages/repo')
 const { DomainError } = await import('@/server/infra/http/errors')
-const service = await import('@/server/domains/pages/service')
+const adminQuery = await import('@/server/domains/pages/services/admin-query')
+const mutate = await import('@/server/domains/pages/services/mutate')
+const draft = await import('@/server/domains/pages/services/draft')
+const catalog = await import('@/server/domains/pages/services/catalog')
 
 function metaRow(overrides: Partial<PageMetaWithAuthor> = {}): PageMetaWithAuthor {
   const now = overrides.createdAt ?? new Date('2026-05-01T00:00:00.000Z')
@@ -112,20 +115,20 @@ describe('cms/pages/service — listPagesForAdmin / getPageDetailForAdmin', () =
     vi.mocked(repo.listPageMetas).mockResolvedValue([metaRow({ id: 1n }), metaRow({ id: 2n, slug: 'links' })])
     vi.mocked(repo.countPageMetas).mockResolvedValue(5)
 
-    const more = await service.listPagesForAdmin({ offset: 0, limit: 2 })
+    const more = await adminQuery.listPagesForAdmin({ offset: 0, limit: 2 })
     expect(more.total).toBe(5)
     expect(more.hasMore).toBe(true)
     expect(more.pages.map((p) => p.slug)).toEqual(['about', 'links'])
 
     vi.mocked(repo.listPageMetas).mockResolvedValue([metaRow({ id: 5n, slug: 'guestbook' })])
     vi.mocked(repo.countPageMetas).mockResolvedValue(5)
-    const last = await service.listPagesForAdmin({ offset: 4, limit: 2 })
+    const last = await adminQuery.listPagesForAdmin({ offset: 4, limit: 2 })
     expect(last.hasMore).toBe(false)
   })
 
   it('getPageDetailForAdmin returns null for missing rows (route then 404s)', async () => {
     vi.mocked(repo.findPageMetaById).mockResolvedValue(null)
-    expect(await service.getPageDetailForAdmin(99n)).toBeNull()
+    expect(await adminQuery.getPageDetailForAdmin(99n)).toBeNull()
   })
 
   it('getPageDetailForAdmin projects latest + published revisions independently', async () => {
@@ -136,7 +139,7 @@ describe('cms/pages/service — listPagesForAdmin / getPageDetailForAdmin', () =
     vi.mocked(repo.findLatestRevision).mockResolvedValue(draft)
     vi.mocked(repo.findContentById).mockResolvedValue(published)
 
-    const detail = await service.getPageDetailForAdmin(7n)
+    const detail = await adminQuery.getPageDetailForAdmin(7n)
     expect(detail?.page.id).toBe('7')
     expect(detail?.latestRevision?.revisionNo).toBe(4)
     expect(detail?.latestRevision?.status).toBe('draft')
@@ -147,24 +150,24 @@ describe('cms/pages/service — listPagesForAdmin / getPageDetailForAdmin', () =
 
 describe('cms/pages/service — createPage / updatePageMeta validation', () => {
   it('rejects slugs that contain illegal characters', async () => {
-    await expect(service.createPage({ slug: 'About Me', title: 'x' }, null)).rejects.toBeInstanceOf(DomainError)
+    await expect(mutate.createPage({ slug: 'About Me', title: 'x' }, null)).rejects.toBeInstanceOf(DomainError)
   })
 
   it('rejects reserved slugs that would shadow public routes', async () => {
     for (const slug of ['posts', 'cats', 'tags', 'admin', 'api']) {
-      await expect(service.createPage({ slug, title: 't' }, null)).rejects.toBeInstanceOf(DomainError)
+      await expect(mutate.createPage({ slug, title: 't' }, null)).rejects.toBeInstanceOf(DomainError)
     }
   })
 
   it('rejects an existing slug on create with HTTP 409 semantics', async () => {
     vi.mocked(repo.findPageMetaBySlug).mockResolvedValue(metaRow({ slug: 'about' }))
-    await expect(service.createPage({ slug: 'about', title: 't' }, null)).rejects.toMatchObject({ code: 'CONFLICT' })
+    await expect(mutate.createPage({ slug: 'about', title: 't' }, null)).rejects.toMatchObject({ code: 'CONFLICT' })
   })
 
   it('updatePageMeta tolerates a same-slug edit (no collision check fires)', async () => {
     vi.mocked(repo.findPageMetaById).mockResolvedValue(metaRow({ id: 7n, slug: 'about', title: 'old' }))
     vi.mocked(repo.updatePageMetaById).mockResolvedValue(metaRow({ id: 7n, slug: 'about', title: 'new' }))
-    const dto = await service.updatePageMeta({ id: 7n, slug: 'about', title: 'new' })
+    const dto = await mutate.updatePageMeta({ id: 7n, slug: 'about', title: 'new' })
     expect(dto.title).toBe('new')
     expect(repo.findPageMetaBySlug).not.toHaveBeenCalled()
   })
@@ -172,14 +175,14 @@ describe('cms/pages/service — createPage / updatePageMeta validation', () => {
   it('updatePageMeta blocks renaming to a slug already used by a different page', async () => {
     vi.mocked(repo.findPageMetaById).mockResolvedValue(metaRow({ id: 7n, slug: 'about' }))
     vi.mocked(repo.findPageMetaBySlug).mockResolvedValue(metaRow({ id: 99n, slug: 'guestbook' }))
-    await expect(service.updatePageMeta({ id: 7n, slug: 'guestbook', title: 't' })).rejects.toMatchObject({
+    await expect(mutate.updatePageMeta({ id: 7n, slug: 'guestbook', title: 't' })).rejects.toMatchObject({
       code: 'CONFLICT',
     })
   })
 
   it('updatePageMeta returns 404 when the row was already deleted', async () => {
     vi.mocked(repo.findPageMetaById).mockResolvedValue(null)
-    await expect(service.updatePageMeta({ id: 7n, slug: 'about', title: 't' })).rejects.toMatchObject({
+    await expect(mutate.updatePageMeta({ id: 7n, slug: 'about', title: 't' })).rejects.toMatchObject({
       code: 'NOT_FOUND',
     })
   })
@@ -188,7 +191,7 @@ describe('cms/pages/service — createPage / updatePageMeta validation', () => {
     vi.mocked(repo.findPageMetaBySlug).mockResolvedValue(null)
     vi.mocked(repo.insertPageMeta).mockResolvedValue(metaRow({ slug: 'new-page', published: false }))
 
-    await service.createPage({ title: 'New Page', published: true }, null)
+    await mutate.createPage({ title: 'New Page', published: true }, null)
 
     const patch = vi.mocked(repo.insertPageMeta).mock.calls[0][0]
     expect(patch.published).toBe(false)
@@ -198,7 +201,7 @@ describe('cms/pages/service — createPage / updatePageMeta validation', () => {
     vi.mocked(repo.findPageMetaBySlug).mockResolvedValue(null)
     vi.mocked(repo.insertPageMeta).mockResolvedValue(metaRow({ slug: 'new-page', published: false }))
 
-    await service.createPage({ title: 'New Page' }, null)
+    await mutate.createPage({ title: 'New Page' }, null)
 
     const patch = vi.mocked(repo.insertPageMeta).mock.calls[0][0]
     expect(patch.published).toBe(false)
@@ -211,7 +214,7 @@ describe('cms/pages/service — createPage / updatePageMeta validation', () => {
       metaRow({ id: 7n, slug: 'about', published: true, title: 'Updated' }),
     )
 
-    const dto = await service.updatePageMeta({ id: 7n, slug: 'about', title: 'Updated', published: false })
+    const dto = await mutate.updatePageMeta({ id: 7n, slug: 'about', title: 'Updated', published: false })
     expect(dto.title).toBe('Updated')
 
     const patch = vi.mocked(repo.updatePageMetaById).mock.calls[0][1]
@@ -223,14 +226,14 @@ describe('cms/pages/service — saveDraft / publishLatest body validation', () =
   it('rejects a malformed body (zod issues become DomainError 400)', async () => {
     vi.mocked(repo.findPageMetaById).mockResolvedValue(metaRow({ id: 1n }))
     await expect(
-      service.saveDraft({ pageId: 1n, body: [{ _type: 'unknown', _key: 'k' }], authorId: null }),
+      draft.saveDraft({ pageId: 1n, body: [{ _type: 'unknown', _key: 'k' }], authorId: null }),
     ).rejects.toMatchObject({ code: 'BAD_REQUEST' })
     expect(repo.saveDraftRevision).not.toHaveBeenCalled()
   })
 
   it('rejects when the page row is missing without touching the transaction', async () => {
     vi.mocked(repo.findPageMetaById).mockResolvedValue(null)
-    await expect(service.saveDraft({ pageId: 1n, body: VALID_BODY, authorId: null })).rejects.toMatchObject({
+    await expect(draft.saveDraft({ pageId: 1n, body: VALID_BODY, authorId: null })).rejects.toMatchObject({
       code: 'NOT_FOUND',
     })
     expect(repo.saveDraftRevision).not.toHaveBeenCalled()
@@ -252,7 +255,7 @@ describe('cms/pages/service — saveDraft / publishLatest body validation', () =
         storagePath: 'images/2026/05/foo.jpg',
       },
     ]
-    await service.saveDraft({ pageId: 1n, body, authorId: 42n })
+    await draft.saveDraft({ pageId: 1n, body, authorId: 42n })
 
     const arg = vi.mocked(repo.saveDraftRevision).mock.calls[0][1]
     expect(arg.ownerId).toBe(1n)
@@ -275,7 +278,7 @@ describe('cms/pages/service — saveDraft / publishLatest body validation', () =
       expectedToken: latest.clientRevisionToken,
     })
 
-    const result = await service.saveDraft({
+    const result = await draft.saveDraft({
       pageId: 1n,
       body: VALID_BODY,
       authorId: null,
@@ -295,7 +298,7 @@ describe('cms/pages/service — saveDraft / publishLatest body validation', () =
       status: 'published',
       row: contentRow({ revisionNo: 7, status: 'published' }),
     })
-    const result = await service.publishLatest({ pageId: 1n, body: VALID_BODY, authorId: 5n })
+    const result = await draft.publishLatest({ pageId: 1n, body: VALID_BODY, authorId: 5n })
     expect(result.status).toBe('saved')
     if (result.status === 'saved') {
       expect(result.revision.status).toBe('published')
@@ -312,7 +315,7 @@ describe('cms/pages/service — saveDraft / publishLatest CAS + force', () => {
       row: contentRow({ revisionNo: 1, status: 'draft' }),
     })
 
-    await service.saveDraft({
+    await draft.saveDraft({
       pageId: 1n,
       body: VALID_BODY,
       authorId: null,
@@ -342,7 +345,7 @@ describe('cms/pages/service — saveDraft / publishLatest CAS + force', () => {
       row: contentRow({ id: 601n, ownerId: 7n, revisionNo: 9, status: 'draft' }),
     })
 
-    await service.saveDraft({
+    await draft.saveDraft({
       pageId: 7n,
       body: VALID_BODY,
       authorId: 42n,
@@ -386,7 +389,7 @@ describe('cms/pages/service — saveDraft / publishLatest CAS + force', () => {
       row: contentRow({ id: 701n, ownerId: 7n, revisionNo: 3, status: 'draft' }),
     })
 
-    await service.saveDraft({
+    await draft.saveDraft({
       pageId: 7n,
       body: VALID_BODY,
       authorId: null,
@@ -416,7 +419,7 @@ describe('cms/pages/service — saveDraft / publishLatest CAS + force', () => {
       expectedToken: stale.clientRevisionToken,
     })
 
-    const result = await service.publishLatest({
+    const result = await draft.publishLatest({
       pageId: 1n,
       body: VALID_BODY,
       authorId: null,
@@ -452,7 +455,7 @@ describe('cms/pages/service — saveDraft / publishLatest CAS + force', () => {
       row: contentRow({ id: 901n, ownerId: 11n, revisionNo: 12, status: 'published' }),
     })
 
-    await service.publishLatest({
+    await draft.publishLatest({
       pageId: 11n,
       body: VALID_BODY,
       authorId: 99n,
@@ -475,17 +478,17 @@ describe('cms/pages/service — saveDraft / publishLatest CAS + force', () => {
 describe('cms/pages/service — public catalog projection', () => {
   it('loadCatalogPageBySlug 404s on soft-deleted rows', async () => {
     vi.mocked(repo.findPublicPageMetaBySlug).mockResolvedValue(null)
-    expect(await service.loadCatalogPageBySlug('gone')).toBeNull()
+    expect(await catalog.loadCatalogPageBySlug('gone')).toBeNull()
   })
 
   it('loadCatalogPageBySlug 404s when meta.published=false', async () => {
     vi.mocked(repo.findPublicPageMetaBySlug).mockResolvedValue(metaRow({ published: false }))
-    expect(await service.loadCatalogPageBySlug('about')).toBeNull()
+    expect(await catalog.loadCatalogPageBySlug('about')).toBeNull()
   })
 
   it('loadCatalogPageBySlug 404s when publishedRevisionId is null (no revision promoted)', async () => {
     vi.mocked(repo.findPublicPageMetaBySlug).mockResolvedValue(metaRow({ id: 1n, publishedRevisionId: null }))
-    expect(await service.loadCatalogPageBySlug('about')).toBeNull()
+    expect(await catalog.loadCatalogPageBySlug('about')).toBeNull()
   })
 
   it('loadCatalogPageBySlug joins the published revision body when present', async () => {
@@ -500,7 +503,7 @@ describe('cms/pages/service — public catalog projection', () => {
         headings: [{ depth: 2, text: 'Hello', slug: 'hello' }],
       }),
     )
-    const page = await service.loadCatalogPageBySlug('about')
+    const page = await catalog.loadCatalogPageBySlug('about')
     expect(page?.body).toEqual(VALID_BODY)
     expect(page?.imageSources).toEqual(['images/2026/05/foo.jpg'])
     expect(page?.headings).toEqual([{ depth: 2, text: 'Hello', slug: 'hello' }])

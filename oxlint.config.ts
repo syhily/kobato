@@ -129,6 +129,10 @@ export default defineConfig({
 
     // React Router and SSR routes intentionally forward props and render trusted HTML.
     'react/jsx-props-no-spread-multi': 'off',
+    // Each call site of dangerouslySetInnerHTML is individually audited
+    // and documented as safe (admin-only surfaces or pre-sanitized output).
+    // Turning the rule off globally avoids noise; new call sites must be
+    // reviewed manually.
     'react/no-danger': 'off',
 
     // Existing templates use progressive-enhancement hooks that are noisy with generic a11y heuristics.

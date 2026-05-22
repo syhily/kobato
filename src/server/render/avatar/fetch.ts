@@ -3,6 +3,7 @@ import { Buffer } from 'node:buffer'
 import { findEmailById } from '@/server/infra/db/operations/user'
 import { compressImage } from '@/server/render/image-compress'
 import { requireBlogSettingsSection } from '@/shared/config/blog'
+import { idFromString } from '@/shared/utils/id'
 import { encodedEmail } from '@/shared/utils/security'
 import { isNumeric } from '@/shared/utils/tools'
 import { joinUrl } from '@/shared/utils/urls'
@@ -118,7 +119,7 @@ export async function fetchQQAvatarImage(email: string): Promise<Buffer | null> 
  *  external mirror at all. */
 export async function resolveAvatarInfo(rawHash: string): Promise<{ email: string | null; hash: string | null }> {
   if (isNumeric(rawHash)) {
-    const email = await findEmailById(BigInt(rawHash))
+    const email = await findEmailById(idFromString(rawHash))
     if (email === null) {
       return { email: null, hash: null }
     }

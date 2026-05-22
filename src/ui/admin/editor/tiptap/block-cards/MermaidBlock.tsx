@@ -67,6 +67,10 @@ export function MermaidBlockOptions({ stableId, center, onCenterChange }: Mermai
 export function MermaidBlockSummary({ payload }: { payload: MermaidBlock }) {
   const center = payload.center === true
   if (payload.svg !== undefined && payload.svg !== '') {
+    {
+      /* SAFETY: `svg` is produced server-side by `beautiful-mermaid`. Only
+        admins can author Mermaid blocks. */
+    }
     const inner = (
       <div
         className={cn('mermaid mt-2 max-w-full overflow-x-auto [&_svg]:max-w-none', center && 'shrink-0')}
@@ -113,6 +117,8 @@ export function MermaidBlockSourceEditor({ payload, onCommit, onCancel }: Mermai
 
   const previewInner =
     previewHtml !== '' ? (
+      // SAFETY: `previewHtml` is SVG produced by `beautiful-mermaid` via the
+      // admin render endpoint. Only admins can trigger this path.
       <div
         className={cn('mermaid mt-2 max-w-full overflow-x-auto [&_svg]:max-w-none', center && 'shrink-0')}
         dangerouslySetInnerHTML={{ __html: previewHtml }}

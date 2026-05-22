@@ -8,7 +8,7 @@ import { comment, post, user } from '@/server/infra/db/schema'
 import { getBlogSettingsBundleSync } from '@/shared/config/blog'
 import { escapeLikePattern } from '@/shared/utils/escape-like'
 
-const PASSWORD_HASH_ROUNDS = 12
+export const PASSWORD_HASH_ROUNDS = 12
 
 export async function hasAdmin(): Promise<boolean> {
   const res = await db.select({ count: count() }).from(user).where(eq(user.role, 'admin'))

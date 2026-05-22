@@ -6,8 +6,9 @@ import type { DetailPageComments } from '@/shared/types/comments'
 import { bumpPageView } from '@/server/domains/analytics/pv-batcher'
 import { userSession } from '@/server/domains/auth/primitives'
 import { queryLikes } from '@/server/domains/comments/likes'
-import { ensureCommentPage, loadComments, parseComments } from '@/server/domains/comments/loader'
 import { asCommentItemsWire } from '@/server/domains/comments/projection'
+import { loadComments, parseComments } from '@/server/domains/comments/services/public-query'
+import { ensureCommentPage } from '@/server/domains/comments/services/shared'
 import { loadSidebarData } from '@/server/http/loaders/sidebar'
 
 // `SessionUser` carries the canonical `role`. The public reply form

@@ -13,6 +13,7 @@ import type {
 } from '@/shared/contracts/analytics'
 
 import { db } from '@/server/infra/db/pool'
+import { DomainError } from '@/server/infra/http/errors'
 import {
   FILTERABLE_TYPES,
   METRIC_TYPES,
@@ -21,6 +22,7 @@ import {
   pickAggregateSource,
   pickTimeBucket,
 } from '@/shared/contracts/analytics'
+import { idFromString } from '@/shared/utils/id'
 
 // Shared query helpers for the analytics dashboard. One module owns:
 //
@@ -108,7 +110,7 @@ export function parseAnalyticsSearch(searchParams: URLSearchParams): AnalyticsQu
   if ((entityType === 'post' || entityType === 'page') && entityIdRaw) {
     try {
       result.entityType = entityType
-      result.entityId = BigInt(entityIdRaw)
+      result.entityId = idFromString(entityIdRaw)
     } catch {
       // ignore — entity narrowing is optional.
     }
@@ -121,7 +123,7 @@ function quoteIdent(name: string): SQL {
   // accepted. Anything else (e.g. a user-supplied SQL fragment) gets
   // rejected before reaching the builder.
   if (!/^[a-z_][a-z0-9_]*$/.test(name)) {
-    throw new Error(`invalid identifier: ${name}`)
+    throw new DomainError('BAD_REQUEST', `invalid identifier: ${name}`)
   }
   return sql.raw(`"${name}"`)
 }
@@ -280,7 +282,7 @@ export async function queryHeatmap(input: AnalyticsQueryInput): Promise<HeatmapC
 
 export async function queryMetric(input: AnalyticsQueryInput, type: MetricType, limit = 20): Promise<MetricRow[]> {
   if (!METRIC_SET.has(type)) {
-    throw new Error(`unknown metric type: ${type}`)
+    throw new DomainError('BAD_REQUEST', `unknown metric type: ${type}`)
   }
   const col = METRIC_COLUMN[type]
   const where = whereClause(input)

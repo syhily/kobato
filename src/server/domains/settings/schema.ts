@@ -14,6 +14,13 @@ import { httpUrlOrEmptyStringSchema } from '@/shared/utils/safe-url'
 export type { SocialNetwork } from '@/shared/config/socials'
 export { SOCIAL_NETWORKS }
 
+// Strict boolean that also accepts the string literals "true" / "false"
+// (e.g. from form data) without the surprising `Boolean("false") === true`
+// behaviour of `coerceBoolean`.
+const coerceBoolean = z
+  .union([z.boolean(), z.literal('true'), z.literal('false')])
+  .transform((v) => (typeof v === 'boolean' ? v : v === 'true'))
+
 const sortOrderSchema = z.enum(['asc', 'desc'])
 
 // `locale` is a BCP 47 tag (e.g. `zh-CN`); `timeZone` is an IANA name
@@ -129,13 +136,13 @@ export const contentSchema = z.object({
     search: z.coerce.number().int().min(1).max(100),
   }),
   feed: z.object({
-    full: z.coerce.boolean(),
+    full: coerceBoolean,
     size: z.coerce.number().int().min(1).max(100),
   }),
   post: z.object({
     sort: sortOrderSchema,
     sortBy: z.enum(['publishedAt', 'updatedAt']).default('publishedAt'),
-    featureEnabled: z.coerce.boolean().default(false),
+    featureEnabled: coerceBoolean.default(false),
   }),
   footnotes: z
     .object({
@@ -150,7 +157,7 @@ export const sidebarSchema = z.object({
     widgets: z.array(
       z.object({
         type: z.enum(['search', 'recentPosts', 'recentComments', 'randomTags', 'todayCalendar']),
-        enabled: z.coerce.boolean(),
+        enabled: coerceBoolean,
         count: z.coerce.number().int().min(0).max(100).optional(),
       }),
     ),
@@ -200,7 +207,7 @@ export type SeoInput = z.infer<typeof seoSchema>
 // shape validator.
 export const mailSchema = z.object({
   mail: z.object({
-    enabled: z.coerce.boolean(),
+    enabled: coerceBoolean,
     host: z.string().trim().min(1).max(253),
     apiKey: z.string().trim().max(512).optional(),
     sender: z.union([z.literal(''), z.email()]),
@@ -366,13 +373,13 @@ export const assetsSchema = z
       scheme: z.enum(['http', 'https']),
     }),
     storage: z.object({
-      enabled: z.coerce.boolean(),
+      enabled: coerceBoolean,
       endpoint: z.union([z.literal(''), z.url()]),
       region: z.string().trim().max(60),
       bucket: z.string().trim().max(120),
       accessKeyId: z.string().trim().max(255),
       secretAccessKey: z.string().trim().max(512).optional(),
-      forcePathStyle: z.coerce.boolean(),
+      forcePathStyle: coerceBoolean,
       urlTemplate: z.string().trim().max(500),
     }),
     upload: z.object({
@@ -465,7 +472,7 @@ export type RateLimitInput = z.infer<typeof rateLimitSchema>
 
 export const searchSchema = z.object({
   search: z.object({
-    enabled: z.coerce.boolean(),
+    enabled: coerceBoolean,
     mode: z.enum(['vector', 'like']).default('like'),
     /** OpenAI-compatible API endpoint. Empty string means use the official OpenAI endpoint. */
     endpoint: z.union([z.literal(''), z.url()]),
@@ -497,7 +504,7 @@ export type FontsInput = z.infer<typeof fontsSchema>
 export const backupSchema = z
   .object({
     scheduled: z.object({
-      enabled: z.coerce.boolean(),
+      enabled: coerceBoolean,
       frequency: z.enum(['daily', 'weekly', 'monthly']).default('daily'),
       hour: z.coerce.number().int().min(0).max(23).default(3),
       minute: z.union([z.literal(0), z.literal(30)]).default(0),
@@ -505,7 +512,7 @@ export const backupSchema = z
       dayOfMonth: z.coerce.number().int().min(1).max(28).optional(),
     }),
     retention: z.object({
-      enabled: z.coerce.boolean().default(true),
+      enabled: coerceBoolean.default(true),
       days: z.coerce.number().int().min(1).max(365).default(30),
     }),
   })
@@ -544,6 +551,14 @@ export const limitsSchema = z.object({
     .default(180),
 })
 export type LimitsInput = z.infer<typeof limitsSchema>
+
+export const corsSchema = z.object({
+  cors: z.object({
+    enabled: coerceBoolean,
+    origins: z.array(z.string().trim().min(1).max(253)).max(20).default([]),
+  }),
+})
+export type CorsInput = z.infer<typeof corsSchema>
 
 /** Bounds re-exported so the admin form can mirror them in `min`/`max` attributes. */
 export const RATE_LIMIT_BOUNDS = {

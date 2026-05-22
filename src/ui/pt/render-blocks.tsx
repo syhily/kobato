@@ -103,6 +103,9 @@ export function CodeBlockNodeComponent({ value }: PortableTextTypeComponentProps
         className={value.language !== undefined ? `language-${value.language}` : undefined}
         copyText={value.code}
         data-language={value.language}
+        // SAFETY: `highlightedHtml` is produced server-side by Shiki's
+        // `codeToHtml`, which HTML-escapes the source code. No user input
+        // reaches this path without escaping.
         dangerouslySetInnerHTML={{ __html: value.highlightedHtml }}
       />
     )
@@ -127,6 +130,9 @@ export function MermaidBlockComponent({ value }: PortableTextTypeComponentProps<
   const center = value.center === true
 
   if (value.svg !== undefined && value.svg !== '') {
+    // SAFETY: `svg` is produced server-side by `beautiful-mermaid`'s SVG
+    // renderer. Mermaid diagrams are authored by admins only; guest users
+    // cannot inject arbitrary Mermaid source into published content.
     const inner = (
       <div className={cn('mermaid', center && '[&_svg]:max-w-none')} dangerouslySetInnerHTML={{ __html: value.svg }} />
     )
@@ -239,12 +245,16 @@ function applyInlineMark(node: ReactNode, markName: string, markDefs: readonly M
     return node
   }
   switch (def._type) {
-    case 'link':
+    case 'link': {
+      // Defense-in-depth: never emit executable JavaScript or data URLs
+      // even if the schema filter is somehow bypassed.
+      const href = /^\s*(javascript|data):/i.test(def.href) ? '#' : def.href
       return (
-        <a href={def.href} rel={def.rel} target={def.target} className={PT_INLINE.link}>
+        <a href={href} rel={def.rel} target={def.target} className={PT_INLINE.link}>
           {node}
         </a>
       )
+    }
     case 'mathInline':
       return renderMathMarkupOrTexFallback(def.tex, def.mathml, def.svg, 'inline')
     case 'footnoteRef':

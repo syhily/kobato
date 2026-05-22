@@ -11,6 +11,7 @@ import type { Role } from '@/shared/utils/roles'
 import { resolveSessionMaxAge } from '@/server/domains/auth/session-storage'
 import { getLogger } from '@/server/infra/logger'
 import { redisInstance } from '@/server/infra/redis/storage'
+import { idFromString } from '@/shared/utils/id'
 
 const log = getLogger('auth.sessions')
 
@@ -109,7 +110,7 @@ function parseMeta(sid: string, hash: Record<string, string>): SessionMeta | nul
   }
   let userId: bigint
   try {
-    userId = BigInt(userIdRaw)
+    userId = idFromString(userIdRaw)
   } catch {
     return null
   }

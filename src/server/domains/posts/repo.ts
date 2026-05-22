@@ -12,6 +12,7 @@ import { post as postMetaTable, user } from '@/server/infra/db/schema'
 import { requireBlogSettingsSection } from '@/shared/config/blog'
 import { toListingPostCard, toSidebarPostLink } from '@/shared/types/catalog'
 import { escapeLikePattern } from '@/shared/utils/escape-like'
+import { idFromString } from '@/shared/utils/id'
 import { shuffle } from '@/shared/utils/tools'
 
 export type { ContentType } from '@/server/domains/content/schema'
@@ -254,9 +255,9 @@ export async function updatePostMetaById(
   return rows[0] ?? null
 }
 
-export async function softDeletePostMeta(id: bigint): Promise<boolean> {
+export async function softDeletePostMeta(id: bigint, tx = db): Promise<boolean> {
   const now = new Date()
-  const rows = await db
+  const rows = await tx
     .update(postMetaTable)
     .set({ deletedAt: now, updatedAt: now })
     .where(and(eq(postMetaTable.id, id), isNull(postMetaTable.deletedAt)))
@@ -264,8 +265,8 @@ export async function softDeletePostMeta(id: bigint): Promise<boolean> {
   return rows.length > 0
 }
 
-export async function restorePostMeta(id: bigint): Promise<boolean> {
-  const rows = await db
+export async function restorePostMeta(id: bigint, tx = db): Promise<boolean> {
+  const rows = await tx
     .update(postMetaTable)
     .set({ deletedAt: null, updatedAt: new Date() })
     .where(eq(postMetaTable.id, id))
@@ -538,7 +539,7 @@ export async function getClientPostsWithMetadata<PostLike extends { id: string }
     return []
   }
   const metas = await queryMetadata(
-    posts.map((post) => ({ type: 'post' as const, ownerId: BigInt(post.id) })),
+    posts.map((post) => ({ type: 'post' as const, ownerId: idFromString(post.id) })),
     options,
   )
   return posts.map((post) => {

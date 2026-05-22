@@ -9,6 +9,7 @@ export type { MyCommentsStatus }
 import { db } from '@/server/infra/db/pool'
 import { comment, metric, page, post, user } from '@/server/infra/db/schema'
 import { escapeLikePattern } from '@/shared/utils/escape-like'
+import { idFromString } from '@/shared/utils/id'
 
 // Common projection: every comment column we expose to the application,
 // joined with the public user attributes. Keep the shape stable here so the
@@ -151,7 +152,7 @@ export async function latestDistinctCommentIds(adminIds: bigint[], limit: number
   ORDER BY  created_at DESC
   LIMIT     ${limit}`
   const result = await db.execute(query)
-  return result.rows.map((row) => BigInt(String((row as { id: unknown }).id)))
+  return result.rows.map((row) => idFromString(String((row as { id: unknown }).id)))
 }
 
 export async function commentsByIds(ids: bigint[], limit: number): Promise<PendingCommentRow[]> {

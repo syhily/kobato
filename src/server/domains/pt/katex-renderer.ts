@@ -6,12 +6,19 @@ export interface KatexRenderer {
   render: (tex: string, display: boolean) => Promise<string>
 }
 
-import { getOrCreateGlobalSingleton } from '@/server/infra/global-singleton'
-
-const RENDERER_KEY = Symbol.for('yufan.me/markdown/katex-renderer')
+let rendererPromise: Promise<KatexRenderer> | undefined
 
 export function getKatexRenderer(): Promise<KatexRenderer> {
-  return getOrCreateGlobalSingleton(RENDERER_KEY, () => createKatexRenderer())
+  if (rendererPromise === undefined) {
+    rendererPromise = createKatexRenderer()
+  }
+  return rendererPromise
+}
+
+if (import.meta.hot) {
+  import.meta.hot.dispose(() => {
+    rendererPromise = undefined
+  })
 }
 
 async function createKatexRenderer(): Promise<KatexRenderer> {

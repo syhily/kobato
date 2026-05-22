@@ -12,7 +12,7 @@ import {
   ensureUniqueOnUpdateTaxonomy,
   resolveSlugForTaxonomy,
 } from '@/server/domains/taxonomies/shared'
-import { createProcessCache } from '@/server/infra/cache/process-cache'
+import { createRedisCache } from '@/server/infra/cache/redis-cache'
 import {
   type AdminTagsListFilters,
   countAdminTags,
@@ -159,17 +159,17 @@ export async function deleteAdminTag(id: bigint, _viewer?: TagViewerContext): Pr
 
 // --- Public catalog queries -------------------------------------------------
 
-const tagCache = createProcessCache<Tag[]>({ ttlMs: 30_000 })
+const tagCache = createRedisCache<Tag[]>('tags:all', { ttlMs: 30_000 })
 const tagInflight = createInflight<Tag[]>()
 
 export async function listAllTags(): Promise<Tag[]> {
-  const cached = tagCache.get()
+  const cached = await tagCache.get()
   if (cached !== null) {
     return cached
   }
 
   return tagInflight('listAllTags', async () => {
-    const cachedInner = tagCache.get()
+    const cachedInner = await tagCache.get()
     if (cachedInner !== null) {
       return cachedInner
     }
@@ -182,7 +182,7 @@ export async function listAllTags(): Promise<Tag[]> {
       .orderBy(asc(tagTable.name))
 
     if (tagRows.length === 0) {
-      tagCache.set([])
+      await tagCache.set([])
       return []
     }
 
@@ -209,7 +209,7 @@ export async function listAllTags(): Promise<Tag[]> {
       permalink: `/tags/${row.slug}`,
     }))
 
-    tagCache.set(tags)
+    await tagCache.set(tags)
     return tags
   })
 }

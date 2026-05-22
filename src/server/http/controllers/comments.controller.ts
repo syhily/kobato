@@ -7,14 +7,6 @@ import { recordAuditEventFromContext } from '@/server/domains/audit/service'
 import { userSession } from '@/server/domains/auth/primitives'
 import { isCommentOwner } from '@/server/domains/auth/rbac'
 import { decreaseLikes, increaseLikes, queryLikes, validateLikeToken } from '@/server/domains/comments/likes'
-import {
-  createComment,
-  loadComments,
-  parseComments,
-  resolveMetricTarget,
-  safeResolveMetricTarget,
-} from '@/server/domains/comments/loader'
-import { getCommentById, updateComment, updateOwnComment } from '@/server/domains/comments/moderation'
 import { asCommentItemWire, asCommentItemsWire } from '@/server/domains/comments/projection'
 import {
   clearDeleteRequest,
@@ -25,6 +17,10 @@ import {
   listMyComments,
   requestDeleteComment,
 } from '@/server/domains/comments/repo'
+import { getCommentById, updateComment, updateOwnComment } from '@/server/domains/comments/services/moderate'
+import { createComment } from '@/server/domains/comments/services/mutate'
+import { loadComments, parseComments } from '@/server/domains/comments/services/public-query'
+import { resolveMetricTarget, safeResolveMetricTarget } from '@/server/domains/comments/services/shared'
 import {
   appendCommentToken,
   cleanupExpiredTokens,
@@ -45,6 +41,7 @@ import { requireBlogSettingsSection } from '@/shared/config/blog'
 import { commentItemDto } from '@/shared/contracts/comments'
 import { commentBodySchema } from '@/shared/pt/comment-schema'
 import { parseCommentTokensCookie, serializeCommentTokensCookie } from '@/shared/utils/comment-token'
+import { idFromString } from '@/shared/utils/id'
 import { httpUrlOrEmptyStringSchema } from '@/shared/utils/safe-url'
 import { encodedEmail } from '@/shared/utils/security'
 import { joinUrl } from '@/shared/utils/urls'
@@ -230,7 +227,7 @@ const edit = publicProc
       if (ownerByToken) {
         responseHeaders.append('Set-Cookie', serializeCommentTokensCookie(cleaned))
       } else {
-        const commentId = BigInt(input.rid)
+        const commentId = idFromString(input.rid)
         const row = await findCommentWithUserById(commentId)
         const ownerBySession = sessionUser !== undefined && row !== null && row.userId.toString() === sessionUser.id
         if (!ownerBySession) {
@@ -242,6 +239,11 @@ const edit = publicProc
     if (!updated) {
       throw new ORPCError('NOT_FOUND', { message: '更新评论失败' })
     }
+    recordAuditEventFromContext(context, {
+      action: 'comment_updated',
+      resourceType: 'comment',
+      resourceId: input.rid,
+    })
     return { comment: asCommentItemWire(updated) }
   })
 
@@ -252,7 +254,7 @@ const updateOwn = authedProc
   .input(z.object({ commentId: z.string(), body: commentBodySchema }))
   .output(successOutput)
   .handler(async ({ input, context }) => {
-    const commentId = BigInt(input.commentId ?? '0')
+    const commentId = input.commentId ? idFromString(input.commentId) : 0n
     if (commentId === 0n) {
       throw new ORPCError('BAD_REQUEST', { message: '缺少 commentId' })
     }
@@ -268,6 +270,11 @@ const updateOwn = authedProc
       throw new ORPCError('CONFLICT', { message: '已有回复，无法再编辑。' })
     }
     await updateOwnComment(String(commentId), input.body)
+    recordAuditEventFromContext(context, {
+      action: 'comment_own_updated',
+      resourceType: 'comment',
+      resourceId: input.commentId,
+    })
     return { success: true }
   })
 
@@ -276,7 +283,7 @@ const requestDeleteOwn = authedProc
   .input(z.object({ commentId: z.string() }))
   .output(successOutput)
   .handler(async ({ input, context }) => {
-    const commentId = BigInt(input.commentId)
+    const commentId = idFromString(input.commentId)
     const c = await findCommentWithUserById(commentId)
     if (!c || !isCommentOwner(context.viewer, c)) {
       throw new ORPCError('NOT_FOUND', { message: '资源不存在。' })
@@ -284,7 +291,7 @@ const requestDeleteOwn = authedProc
     if (c.deleteRequestedAt !== null) {
       return { success: true }
     }
-    await requestDeleteComment(commentId, BigInt(context.viewer.userId))
+    await requestDeleteComment(commentId, idFromString(context.viewer.userId))
     return { success: true }
   })
 
@@ -293,12 +300,12 @@ const cancelDeleteOwn = authedProc
   .input(z.object({ commentId: z.string() }))
   .output(successOutput)
   .handler(async ({ input, context }) => {
-    const commentId = BigInt(input.commentId)
+    const commentId = idFromString(input.commentId)
     const c = await findCommentWithUserById(commentId)
     if (!c || !isCommentOwner(context.viewer, c)) {
       throw new ORPCError('NOT_FOUND', { message: '资源不存在。' })
     }
-    const ok = await clearDeleteRequest(commentId, BigInt(context.viewer.userId))
+    const ok = await clearDeleteRequest(commentId, idFromString(context.viewer.userId))
     if (!ok) {
       throw new ORPCError('CONFLICT', { message: '无法撤回删除申请。' })
     }
@@ -320,7 +327,7 @@ const listMine = authedProc
     }),
   )
   .handler(async ({ input, context }) => {
-    const userId = BigInt(context.viewer.userId)
+    const userId = idFromString(context.viewer.userId)
     const offset = input.offset
     const limit = Math.min(input.limit, 100)
     const [comments, counts] = await Promise.all([listMyComments(userId, offset, limit), countMyComments(userId)])
@@ -373,7 +380,7 @@ const myComments = publicProc
     const commentIds: bigint[] = []
     for (const entry of validEntries) {
       if (entry.payload.pageKey === input.page_key) {
-        commentIds.push(BigInt(entry.payload.commentId))
+        commentIds.push(idFromString(entry.payload.commentId))
       }
     }
     const comments = await findCommentsByIds(commentIds)

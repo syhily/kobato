@@ -88,6 +88,11 @@ React hooks/components under `src/client/` and `src/ui/`.
 - `routes/*` may import from any layer; route components must accept
   plain props.
 - Avoid barrel `index.ts` files (`bundle-barrel-imports`).
+- Do not use inline `import('module').Type` syntax for type annotations;
+  always import types at the top of the file (`import type { Type }`).
+- Refactor from architectural correctness, not minimal diff size. Necessary
+  structural changes are encouraged even when they touch many files. Mitigate
+  risk by adding tests before refactoring, not by avoiding the refactor.
 
 Skill rules reviewers cite: `server-no-shared-module-state`,
 `server-cache-react`, `bundle-analyzable-paths`, `bundle-dynamic-imports`,

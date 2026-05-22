@@ -14,7 +14,9 @@ import { scheduleNextBackup } from '@/server/domains/backup/scheduler'
 import { createApiApp } from '@/server/http/app'
 import { onErrorHandler } from '@/server/http/errors'
 import { wrapFetchWithLeakedResponseHandler } from '@/server/http/leaked-response'
+import { corsMiddleware } from '@/server/http/middlewares/cors'
 import { honoInstallGateMiddleware } from '@/server/http/middlewares/install-gate'
+import { requestTimeout } from '@/server/http/middlewares/request-timeout'
 import { buildRouteContexts, honoSessionMiddleware } from '@/server/http/middlewares/session'
 import { trailingSlashNormaliser } from '@/server/http/middlewares/trailing-slash'
 import { honoVisitorCookieMiddleware } from '@/server/http/middlewares/visitor-cookie'
@@ -78,6 +80,7 @@ const server = await createHonoServer<Env>({
     app.use(requestId())
     app.use(compress())
     app.use(secureHeaders())
+    app.use(corsMiddleware())
     app.use(
       pinoLogger({
         pino: root,
@@ -95,6 +98,7 @@ const server = await createHonoServer<Env>({
     )
     app.use(trailingSlashNormaliser)
     app.use(honoWpDecoyMiddleware)
+    app.use(requestTimeout())
     app.use(honoSessionMiddleware)
     app.use(honoInstallGateMiddleware)
     app.use(honoVisitorCookieMiddleware)

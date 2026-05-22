@@ -83,7 +83,7 @@ vi.mock('@/server/domains/taxonomies/tags/service', () => ({
   listAllTags: vi.fn(async () => []),
   selectSidebarTags: vi.fn(async () => []),
 }))
-vi.mock('@/server/domains/posts/service', () => ({
+vi.mock('@/server/domains/posts/services/draft', () => ({
   loadPostDraftPreviewBySlug: vi.fn(),
 }))
 vi.mock('@/shared/types/catalog', async () => {
@@ -127,7 +127,7 @@ vi.mock('@/server/render/image-enhance', () => ({
 }))
 
 const postRoute = await import('@/routes/public/post/detail')
-const postsService = await import('@/server/domains/posts/service')
+const postsService = await import('@/server/domains/posts/services/draft')
 const draftPreviewMock = vi.mocked(postsService.loadPostDraftPreviewBySlug)
 const postsRepo = await import('@/server/domains/posts/repo')
 const findPostBySlugMock = vi.mocked(postsRepo.findPostBySlug)

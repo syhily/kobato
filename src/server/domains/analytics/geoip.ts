@@ -17,9 +17,7 @@ import { getLogger } from '@/server/infra/logger'
 
 const log = getLogger('analytics.geoip')
 
-import { getOrCreateGlobalSingleton } from '@/server/infra/global-singleton'
-
-const GEOIP_KEY = Symbol.for('yufan.me/analytics-geoip-reader')
+let readerPromise: Promise<ReaderModel | null> | undefined
 
 async function openReader(): Promise<ReaderModel | null> {
   if (!MAXMIND_DB_PATH) {
@@ -42,7 +40,16 @@ async function openReader(): Promise<ReaderModel | null> {
 }
 
 export function getGeoReader(): Promise<ReaderModel | null> {
-  return getOrCreateGlobalSingleton(GEOIP_KEY, () => openReader())
+  if (readerPromise === undefined) {
+    readerPromise = openReader()
+  }
+  return readerPromise
+}
+
+if (import.meta.hot) {
+  import.meta.hot.dispose(() => {
+    readerPromise = undefined
+  })
 }
 
 export async function lookupCity(ip: string): Promise<City | null> {

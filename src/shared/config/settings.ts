@@ -29,6 +29,7 @@ export const SETTINGS_SECTIONS = [
   'rateLimit',
   'search',
   'fonts',
+  'cors',
   'backup',
   'limits',
 ] as const
@@ -62,6 +63,7 @@ export const SECTION_TO_BUNDLE_KEY = {
   rateLimit: 'rateLimit',
   search: 'search',
   fonts: 'fonts',
+  cors: 'cors',
   backup: 'backup',
   limits: 'limits',
 } as const satisfies Record<SettingsSection, string>
@@ -124,6 +126,13 @@ export const SECTION_DISPLAY: Record<SettingsSection, SectionDisplayMeta> = {
     description: 'OG 图与日历图渲染所用的远程 TTF 字体地址',
     group: 'site',
     icon: 'Type',
+  },
+  cors: {
+    to: '/admin/settings',
+    label: 'CORS 配置',
+    description: '跨域资源共享，允许的来源域名列表',
+    group: 'system',
+    icon: 'Globe',
   },
   content: {
     to: '/admin/settings',

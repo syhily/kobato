@@ -27,6 +27,7 @@ import {
 import { db } from '@/server/infra/db/pool'
 import { category as categoryTable, post as postMetaTable } from '@/server/infra/db/schema'
 import { DomainError } from '@/server/infra/http/errors'
+import { idFromString } from '@/shared/utils/id'
 
 // Wire-format DTO returned by every admin category endpoint. Bigint
 // id stringified so the browser bundle never touches BigInt. The
@@ -187,7 +188,7 @@ export async function reorderAdminCategories(orderedIds: readonly string[]): Pro
     }
   }
 
-  const updated = await reorderCategoryRows(orderedIds.map((id) => BigInt(id)))
+  const updated = await reorderCategoryRows(orderedIds.map((id) => idFromString(id)))
   const countOf = await categoryPostCounter()
   return Promise.all(updated.map(async (row) => toAdminCategoryDto(row, await countOf(row.name))))
 }

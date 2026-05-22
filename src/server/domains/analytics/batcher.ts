@@ -4,7 +4,7 @@ import { from as copyFrom } from 'pg-copy-streams'
 
 import type { EnrichedAccessEvent } from '@/server/domains/analytics/types'
 
-import { getRawPool } from '@/server/infra/db/pool'
+import { pool } from '@/server/infra/db/pool'
 import { getLogger } from '@/server/infra/logger'
 import { registerShutdownHook } from '@/server/infra/shutdown'
 
@@ -131,7 +131,6 @@ class AccessLogBatcher {
 }
 
 async function copyEvents(events: EnrichedAccessEvent[]): Promise<void> {
-  const pool = getRawPool()
   const client = await pool.connect()
   try {
     const sql = `COPY access_log (${COPY_COLUMNS.join(', ')}) FROM STDIN WITH (FORMAT csv, NULL '\\N')`
@@ -191,19 +190,20 @@ export function csvEscape(value: string | number | null | undefined): string {
   return str
 }
 
-import { getOrCreateGlobalSingleton } from '@/server/infra/global-singleton'
-
-const GLOBAL_KEY = Symbol.for('yufan.me/analytics-batcher')
+let batcher: AccessLogBatcher | undefined
 
 function getBatcher(): AccessLogBatcher {
-  return getOrCreateGlobalSingleton(
-    GLOBAL_KEY,
-    () =>
-      new AccessLogBatcher({
-        flushIntervalMs: 1000,
-        flushThreshold: 100,
-      }),
-  )
+  if (batcher === undefined) {
+    batcher = new AccessLogBatcher({
+      flushIntervalMs: 1000,
+      flushThreshold: 100,
+    })
+  }
+  return batcher
+}
+
+export function resetAccessLogBatcher(): void {
+  batcher = undefined
 }
 
 export function pushAccessEvent(event: EnrichedAccessEvent): void {

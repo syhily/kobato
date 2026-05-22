@@ -2,18 +2,18 @@ import { ORPCError } from '@orpc/server'
 import { z } from 'zod'
 
 import { recordAuditEventFromContext } from '@/server/domains/audit/service'
+import { asAdminCommentsWire } from '@/server/domains/comments/projection'
+import { adminClearDeleteRequest, findCommentWithUserById, softDeleteCommentById } from '@/server/domains/comments/repo'
 import {
-  approveComment,
-  deleteComment,
   loadAdminPendingDashboard,
   loadAllComments,
   searchAuthorOptions,
   searchPageOptions,
-} from '@/server/domains/comments/moderation'
-import { asAdminCommentsWire } from '@/server/domains/comments/projection'
-import { adminClearDeleteRequest, findCommentWithUserById, softDeleteCommentById } from '@/server/domains/comments/repo'
+} from '@/server/domains/comments/services/admin-query'
+import { approveComment, deleteComment } from '@/server/domains/comments/services/moderate'
 import { adminProc } from '@/server/http/orpc-base'
 import { adminCommentDto, adminPendingDashboardDto } from '@/shared/contracts/comments'
+import { idFromString } from '@/shared/utils/id'
 
 const approve = adminProc
   .route({ method: 'POST', path: '/comment-admin/approve' })
@@ -69,7 +69,7 @@ const loadAll = adminProc
       input.offset,
       input.limit,
       input.pageKey,
-      input.userId ? BigInt(input.userId) : undefined,
+      input.userId ? idFromString(input.userId) : undefined,
       input.status,
     )
     return {
@@ -113,7 +113,7 @@ const searchAuthors = adminProc
           continue
         }
         try {
-          out.push(BigInt(trimmed))
+          out.push(idFromString(trimmed))
         } catch {
           /* drop */
         }
@@ -130,7 +130,7 @@ const approveCommentDeletion = adminProc
   .input(z.object({ commentId: z.string(), approve: z.boolean() }))
   .output(z.object({ success: z.boolean() }))
   .handler(async ({ input, context }) => {
-    const id = BigInt(input.commentId)
+    const id = idFromString(input.commentId)
     const c = await findCommentWithUserById(id)
     if (!c) {
       throw new ORPCError('NOT_FOUND', { message: '评论不存在。' })

@@ -116,7 +116,7 @@ export function PostListingBody({
           <h1 className={cn(postTitleClass, 'font-bold')}>{title}</h1>
           {description && (
             <div className="mt-1 text-ink-4">
-              <span dangerouslySetInnerHTML={{ __html: description }} />
+              <span>{description}</span>
             </div>
           )}
         </div>

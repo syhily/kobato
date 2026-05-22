@@ -1,11 +1,11 @@
-FROM node:25-alpine AS build
+FROM node:24-alpine AS build
 WORKDIR /app
 COPY . .
 RUN --mount=type=cache,target=/root/.npm \
     npm ci
 RUN NODE_ENV=production npm run build
 
-FROM node:25-alpine AS runtime
+FROM node:24-alpine AS runtime
 WORKDIR /app
 ENV NPM_CONFIG_LEGACY_PEER_DEPS=true
 RUN apk add --no-cache tini postgresql-client

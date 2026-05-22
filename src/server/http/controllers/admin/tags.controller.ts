@@ -5,6 +5,7 @@ import { recordAuditEventFromContext } from '@/server/domains/audit/service'
 import { deleteAdminTag, listTagsForAdmin, upsertAdminTag } from '@/server/domains/taxonomies/tags/service'
 import { authorProc } from '@/server/http/orpc-base'
 import { adminTagDto } from '@/shared/contracts/tags'
+import { idFromString } from '@/shared/utils/id'
 
 const list = authorProc
   .route({ method: 'GET', path: '/admin/tags/list' })
@@ -31,7 +32,7 @@ const upsert = authorProc
   .handler(async ({ input, context }) => {
     const tag = await upsertAdminTag(
       {
-        id: input.id !== undefined ? BigInt(input.id) : undefined,
+        id: input.id !== undefined ? idFromString(input.id) : undefined,
         name: input.name,
         slug: input.slug,
       },
@@ -50,7 +51,7 @@ const remove = authorProc
   .input(z.object({ id: z.string().min(1) }))
   .output(z.void())
   .handler(async ({ input, context }) => {
-    const ok = await deleteAdminTag(BigInt(input.id), context.viewer)
+    const ok = await deleteAdminTag(idFromString(input.id), context.viewer)
     if (!ok) {
       throw new ORPCError('NOT_FOUND', { message: '标签不存在' })
     }

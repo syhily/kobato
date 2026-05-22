@@ -14,6 +14,7 @@ import {
 import { authorProc } from '@/server/http/orpc-base'
 import { requireBlogSettingsSection } from '@/shared/config/blog'
 import { adminImageDto, listImagesOutputDto } from '@/shared/contracts/images'
+import { idFromString } from '@/shared/utils/id'
 
 function formatBytes(bytes: number): string {
   if (bytes >= 1024 * 1024) {
@@ -50,7 +51,7 @@ const remove = authorProc
   .input(z.object({ id: z.string().min(1) }))
   .output(z.void())
   .handler(async ({ input, context }) => {
-    await deleteImage(BigInt(input.id), context.viewer)
+    await deleteImage(idFromString(input.id), context.viewer)
     recordAuditEventFromContext(context, {
       action: 'image_deleted',
       resourceType: 'image',
@@ -63,7 +64,7 @@ const updateNote = authorProc
   .input(z.object({ id: z.string().min(1), note: z.string().nullable().optional() }))
   .output(z.object({ image: adminImageDto }))
   .handler(async ({ input, context }) => {
-    const image = await updateImageNote(BigInt(input.id), input.note ?? null, context.viewer)
+    const image = await updateImageNote(idFromString(input.id), input.note ?? null, context.viewer)
     recordAuditEventFromContext(context, {
       action: 'image_note_updated',
       resourceType: 'image',
@@ -77,7 +78,7 @@ const recalculateThumbhash = authorProc
   .input(z.object({ id: z.string().min(1) }))
   .output(z.object({ image: adminImageDto }))
   .handler(async ({ input, context }) => {
-    const image = await recalculateImageThumbhash(BigInt(input.id), context.viewer)
+    const image = await recalculateImageThumbhash(idFromString(input.id), context.viewer)
     return { image }
   })
 
@@ -105,7 +106,7 @@ const upload = authorProc
     if (!sessionUser) {
       throw new ORPCError('UNAUTHORIZED', { message: '未登录' })
     }
-    const uploader = { id: BigInt(sessionUser.id), name: sessionUser.name }
+    const uploader = { id: idFromString(sessionUser.id), name: sessionUser.name }
     const buffer = Buffer.from(await input.file.arrayBuffer())
     const { metadata } = input
     const baseArgs = {

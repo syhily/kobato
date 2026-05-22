@@ -3,6 +3,7 @@ import { createHash } from 'node:crypto'
 
 import LogoDarkSvg from '@/assets/logos/logo-dark.svg?raw'
 import LogoLightSvg from '@/assets/logos/logo.svg?raw'
+import { DomainError } from '@/server/infra/http/errors'
 import { getLogger } from '@/server/infra/logger'
 import { loadBuffer } from '@/server/infra/redis/buffer-cache'
 import { requireBlogSettingsSection } from '@/shared/config/blog'
@@ -55,15 +56,15 @@ const inProcessByUrl = new Map<string, Buffer>()
 async function fetchFontBuffer(url: string): Promise<Buffer> {
   const res = await fetch(url)
   if (!res.ok) {
-    throw new Error(`HTTP ${res.status}`)
+    throw new DomainError('INTERNAL', `HTTP ${res.status}`)
   }
   const contentLength = Number(res.headers.get('content-length') ?? '0')
   if (contentLength > FONT_MAX_BYTES) {
-    throw new Error(`Content-Length ${contentLength} exceeds ${FONT_MAX_BYTES}`)
+    throw new DomainError('INTERNAL', `Content-Length ${contentLength} exceeds ${FONT_MAX_BYTES}`)
   }
   const arrayBuf = await res.arrayBuffer()
   if (arrayBuf.byteLength > FONT_MAX_BYTES) {
-    throw new Error(`Downloaded ${arrayBuf.byteLength} bytes exceeds ${FONT_MAX_BYTES}`)
+    throw new DomainError('INTERNAL', `Downloaded ${arrayBuf.byteLength} bytes exceeds ${FONT_MAX_BYTES}`)
   }
   return Buffer.from(arrayBuf)
 }

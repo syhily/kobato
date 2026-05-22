@@ -195,6 +195,11 @@ const PROBES: Record<SettingsSection, SectionProbe> = {
     }
     return true
   },
+  cors: (value) =>
+    typeof value.cors === 'object' &&
+    value.cors !== null &&
+    typeof (value.cors as Record<string, unknown>).enabled === 'boolean' &&
+    Array.isArray((value.cors as Record<string, unknown>).origins),
   backup: (value) =>
     typeof value.scheduled === 'object' &&
     value.scheduled !== null &&

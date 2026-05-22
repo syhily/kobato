@@ -31,6 +31,8 @@ export function stripMathArtifacts(block: Block): Block {
 
 export function MathBlockSummary({ payload }: { payload: MathBlock }) {
   if (payload.mathml !== undefined && payload.mathml !== '') {
+    // SAFETY: `mathml` is produced server-side by KaTeX via the admin
+    // render endpoint. Only admins can author math blocks.
     return (
       <div
         className="math math-display mt-2 max-w-full overflow-x-auto text-center"
@@ -39,6 +41,8 @@ export function MathBlockSummary({ payload }: { payload: MathBlock }) {
     )
   }
   if (payload.svg !== undefined && payload.svg !== '') {
+    // SAFETY: `svg` is produced server-side by KaTeX. Only admins can
+    // author math blocks.
     return (
       <div
         className="math math-display mt-2 max-w-full overflow-x-auto text-center [&_svg]:max-w-none"
@@ -102,6 +106,8 @@ export function MathBlockSourceEditor({ payload, onCommit, onCancel }: MathBlock
           <span className="ml-2 text-xs text-muted-foreground">渲染中…</span>
         ) : (
           <div
+            // SAFETY: `previewHtml` is MathML produced by KaTeX via the admin
+            // render endpoint. Only admins can trigger this path.
             className="math math-display mt-2 max-w-full overflow-x-auto text-center"
             dangerouslySetInnerHTML={{ __html: previewHtml }}
           />

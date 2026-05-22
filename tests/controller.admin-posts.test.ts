@@ -3,29 +3,37 @@ import { describe, expect, it, vi } from 'vite-plus/test'
 
 import { makeAuthedCtx } from './_helpers/mock-ctx'
 
-vi.mock('@/server/domains/posts/service', () => ({
+vi.mock('@/server/domains/posts/services/mutate', () => ({
   createPost: vi.fn(),
   deletePost: vi.fn(),
+  restorePost: vi.fn(),
+  unpublishPost: vi.fn(),
+  updatePostMeta: vi.fn(),
+}))
+
+vi.mock('@/server/domains/posts/services/admin-query', () => ({
   getPostDetailForAdmin: vi.fn(),
   listPostsForAdmin: vi.fn(),
   listRevisionsForAdmin: vi.fn(),
+}))
+
+vi.mock('@/server/domains/posts/services/draft', () => ({
   publishLatest: vi.fn(),
-  restorePost: vi.fn(),
   saveDraft: vi.fn(),
-  unpublishPost: vi.fn(),
-  updatePostMeta: vi.fn(),
 }))
 
 vi.mock('@/server/domains/posts/preview', () => ({
   renderPortableTextToHtml: vi.fn(),
 }))
 
-const service = await import('@/server/domains/posts/service')
+const mutateService = await import('@/server/domains/posts/services/mutate')
+const adminQueryService = await import('@/server/domains/posts/services/admin-query')
+const draftService = await import('@/server/domains/posts/services/draft')
 const { adminPostsRouter } = await import('@/server/http/controllers/admin/posts.controller')
 
 describe('adminPostsRouter.get', () => {
   it('throws NOT_FOUND when the post detail is null', async () => {
-    vi.mocked(service.getPostDetailForAdmin).mockResolvedValueOnce(null as never)
+    vi.mocked(adminQueryService.getPostDetailForAdmin).mockResolvedValueOnce(null as never)
     const ctx = makeAuthedCtx()
     await expect(call(adminPostsRouter.get, { id: '999' }, { context: ctx })).rejects.toMatchObject({
       code: 'NOT_FOUND',
@@ -60,7 +68,7 @@ describe('adminPostsRouter.get', () => {
       commentCount: 0,
       commentPublicId: 'pid-1',
     }
-    vi.mocked(service.getPostDetailForAdmin).mockResolvedValueOnce({
+    vi.mocked(adminQueryService.getPostDetailForAdmin).mockResolvedValueOnce({
       post: post as never,
       latestRevision: null,
       publishedRevision: null,
@@ -75,7 +83,7 @@ describe('adminPostsRouter.get', () => {
 
 describe('adminPostsRouter.delete', () => {
   it('throws NOT_FOUND when deletePost yields { deleted: false }', async () => {
-    vi.mocked(service.deletePost).mockResolvedValueOnce({ deleted: false } as never)
+    vi.mocked(mutateService.deletePost).mockResolvedValueOnce({ deleted: false } as never)
     const ctx = makeAuthedCtx()
     await expect(call(adminPostsRouter.delete, { id: '1' }, { context: ctx })).rejects.toMatchObject({
       code: 'NOT_FOUND',
@@ -83,7 +91,7 @@ describe('adminPostsRouter.delete', () => {
   })
 
   it('resolves to undefined when deletePost succeeds (z.void output)', async () => {
-    vi.mocked(service.deletePost).mockResolvedValueOnce({ deleted: true } as never)
+    vi.mocked(mutateService.deletePost).mockResolvedValueOnce({ deleted: true } as never)
     const ctx = makeAuthedCtx()
     const res = await call(adminPostsRouter.delete, { id: '1' }, { context: ctx })
     expect(res).toBeUndefined()
@@ -104,7 +112,7 @@ describe('adminPostsRouter.saveDraft', () => {
       createdAt: '2026-01-01T00:00:00.000Z',
       updatedAt: '2026-01-01T00:00:00.000Z',
     }
-    vi.mocked(service.saveDraft).mockResolvedValueOnce({
+    vi.mocked(draftService.saveDraft).mockResolvedValueOnce({
       status: 'saved',
       revision: revision as never,
     } as never)

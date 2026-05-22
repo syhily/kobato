@@ -1,6 +1,6 @@
 import type { Config as ReactRouterConfig } from '@react-router/dev/config'
 import type { IncomingMessage, ServerResponse } from 'node:http'
-import type { Plugin, UserConfig } from 'vite'
+import type { Plugin, UserConfig, ViteDevServer } from 'vite'
 
 import honoDevServer, { type DevServerOptions } from '@hono/vite-dev-server'
 import nodeAdapter from '@hono/vite-dev-server/node'
@@ -111,21 +111,20 @@ export function reactRouterHonoServer(options: ReactRouterHonoServerPluginOption
           rollupOptions: {
             input: serverEntryPoint,
             output: {
-              entryFileNames: (chunk: any) => {
-                chunk.facadeModuleId = REACT_ROUTER_SERVER_BUILD_MODULE_ID
+              entryFileNames: (chunk) => {
+                ;(chunk as { facadeModuleId?: string }).facadeModuleId = REACT_ROUTER_SERVER_BUILD_MODULE_ID
                 return 'index.js'
               },
-              chunkFileNames: (chunk: any) => {
+              chunkFileNames: (chunk) => {
                 if (chunk.name === 'server-build') {
                   return reactRouterBuildFile
                 }
                 return 'assets/[name]-[hash].js'
               },
-              manualChunks: (id: string, meta: any) => {
-                if (meta.getModuleInfo(id)?.importers.some((id: string) => id.includes(serverEntryPoint))) {
+              manualChunks: (id, meta) => {
+                if (meta.getModuleInfo(id)?.importers.some((importer) => importer.includes(serverEntryPoint))) {
                   return path.basename(id, path.extname(id))
                 }
-                return undefined
               },
             },
           },
@@ -136,7 +135,7 @@ export function reactRouterHonoServer(options: ReactRouterHonoServerPluginOption
         return {
           ...baseConfig,
           environments: {
-            ssr: ssrConfig as any,
+            ssr: ssrConfig as UserConfig['environments'] extends Record<string, infer V> ? V : never,
           },
         }
       }
@@ -196,7 +195,7 @@ export function reactRouterHonoServer(options: ReactRouterHonoServerPluginOption
       })
 
       if (typeof devServerPlugin.configureServer === 'function') {
-        await (devServerPlugin.configureServer as any)(server)
+        await (devServerPlugin.configureServer as (server: ViteDevServer) => void | Promise<void>)(server)
       } else {
         // oxlint-disable-next-line no-console
         console.error('Dev server plugin configureServer hook is not a function. This is likely a bug, I guess 😅\n')

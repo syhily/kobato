@@ -10,8 +10,11 @@ import { regularSession } from './_helpers/session'
 // dependency + scheduler jitter), which is impossible if any pair were
 // serialised.
 
-vi.mock('@/server/domains/comments/loader', () => ({
+vi.mock('@/server/domains/comments/services/shared', () => ({
   ensureCommentPage: vi.fn(async () => seedMetric()),
+}))
+
+vi.mock('@/server/domains/comments/services/public-query', () => ({
   loadComments: vi.fn(),
   parseComments: vi.fn(async () => []),
 }))
@@ -19,7 +22,8 @@ vi.mock('@/server/domains/comments/likes', () => ({ queryLikes: vi.fn() }))
 vi.mock('@/server/http/loaders/sidebar', () => ({ loadSidebarData: vi.fn() }))
 vi.mock('@/server/domains/analytics/pv-batcher', () => ({ bumpPageView: vi.fn() }))
 
-const commentLoader = await import('@/server/domains/comments/loader')
+const commentShared = await import('@/server/domains/comments/services/shared')
+const commentPublicQuery = await import('@/server/domains/comments/services/public-query')
 const likes = await import('@/server/domains/comments/likes')
 const sidebar = await import('@/server/http/loaders/sidebar')
 const metrics = await import('@/server/domains/analytics/pv-batcher')
@@ -36,12 +40,12 @@ function delay<T>(value: T, ms: number): Promise<T> {
 
 beforeEach(() => {
   vi.clearAllMocks()
-  vi.mocked(commentLoader.ensureCommentPage).mockResolvedValue(seedMetric())
+  vi.mocked(commentShared.ensureCommentPage).mockResolvedValue(seedMetric())
 })
 
 describe('services/comments/page-data — loadDetailPageData', () => {
   it('loadComments + queryLikes + loadSidebarData run in parallel (≤100ms wall clock for 50ms each)', async () => {
-    vi.mocked(commentLoader.loadComments).mockImplementation(() =>
+    vi.mocked(commentPublicQuery.loadComments).mockImplementation(() =>
       delay({ count: 0, roots_count: 0, comments: [] }, 50),
     )
     vi.mocked(likes.queryLikes).mockImplementation(() => delay(0, 50))
@@ -66,7 +70,7 @@ describe('services/comments/page-data — loadDetailPageData', () => {
   })
 
   it('skips parseComments entirely when there are zero comments (short-circuit)', async () => {
-    vi.mocked(commentLoader.loadComments).mockResolvedValue({
+    vi.mocked(commentPublicQuery.loadComments).mockResolvedValue({
       count: 0,
       roots_count: 0,
       comments: [],
@@ -83,11 +87,11 @@ describe('services/comments/page-data — loadDetailPageData', () => {
     const result = await loadDetailPageData(regularSession(), POST_EMPTY)
 
     expect(result.commentItems).toEqual([])
-    expect(commentLoader.parseComments).not.toHaveBeenCalled()
+    expect(commentPublicQuery.parseComments).not.toHaveBeenCalled()
   })
 
   it('ensures the page row once, then loads comments without a second upsert', async () => {
-    vi.mocked(commentLoader.loadComments).mockResolvedValue({
+    vi.mocked(commentPublicQuery.loadComments).mockResolvedValue({
       count: 0,
       roots_count: 0,
       comments: [],
@@ -103,14 +107,14 @@ describe('services/comments/page-data — loadDetailPageData', () => {
 
     await loadDetailPageData(regularSession(), POST_ONE_UPSERT)
 
-    expect(commentLoader.ensureCommentPage).toHaveBeenCalledOnce()
-    expect(commentLoader.loadComments).toHaveBeenCalledWith(expect.anything(), POST_ONE_UPSERT, 0, {
+    expect(commentShared.ensureCommentPage).toHaveBeenCalledOnce()
+    expect(commentPublicQuery.loadComments).toHaveBeenCalledWith(expect.anything(), POST_ONE_UPSERT, 0, {
       ensurePage: false,
     })
   })
 
   it('skips view increments when caller disables tracking', async () => {
-    vi.mocked(commentLoader.loadComments).mockResolvedValue({
+    vi.mocked(commentPublicQuery.loadComments).mockResolvedValue({
       count: 0,
       roots_count: 0,
       comments: [],

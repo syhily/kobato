@@ -1,0 +1,92 @@
+import { beforeEach, describe, expect, it } from 'vite-plus/test'
+
+import { db } from '@/server/infra/db/pool'
+import { setting } from '@/server/infra/db/schema'
+
+import { clearAllTables } from '../_helpers/integration-db'
+import { makeAuthedCtx, makePublicCtx } from '../_helpers/mock-ctx'
+import { callRpc, parseRpcJson } from './_helpers/rpc-call'
+
+beforeEach(async () => {
+  await clearAllTables(db)
+  const { redisInstance } = await import('@/server/infra/redis/storage')
+  await redisInstance().flushdb()
+  // Evict the in-process settings snapshot so tests don't reuse a
+  // stale hydration promise from a previous worker.
+  const { BLOG_SETTINGS_SNAPSHOT_SLOT } = await import('@/shared/config/blog')
+  BLOG_SETTINGS_SNAPSHOT_SLOT.writeHydration(undefined)
+  BLOG_SETTINGS_SNAPSHOT_SLOT.write(null)
+  // Seed the three rows that `hydrateBlogSettings` treats as the
+  // "installed" baseline (general + assets + limits).
+  await db.insert(setting).values([
+    {
+      scope: 'blog.general',
+      data: {
+        title: 'Test Blog',
+        description: 'A test blog',
+        website: 'https://example.com',
+        keywords: ['test'],
+        author: { name: 'Test Author' },
+        locale: 'zh-CN',
+        timeZone: 'Asia/Shanghai',
+        timeFormat: 'relative',
+      },
+    },
+    {
+      scope: 'blog.assets',
+      data: {
+        asset: { host: 'https://cdn.example.com', scheme: 'https' },
+        storage: {
+          enabled: false,
+          endpoint: '',
+          region: '',
+          bucket: '',
+          accessKeyId: '',
+          secretAccessKey: '',
+          forcePathStyle: false,
+          urlTemplate: '',
+        },
+        upload: { maxBytes: 5 * 1024 * 1024, jpegQuality: 85 },
+      },
+    },
+    {
+      scope: 'blog.limits',
+      data: {
+        maxRequestBodySize: 10 * 1024 * 1024,
+        sessionMaxAge: 60 * 60 * 24 * 30,
+        auditLogDbRetentionDays: 30,
+        auditLogArchiveRetentionDays: 180,
+      },
+    },
+  ])
+})
+
+describe('integration / admin settings', () => {
+  it('rejects unauthenticated settings update', async () => {
+    const ctx = makePublicCtx()
+    const res = await callRpc(
+      '/admin/settings/update',
+      { section: 'limits', payload: { maxRequestBodySize: 5 * 1024 * 1024 } },
+      ctx,
+    )
+    expect(res.status).toBe(401)
+  })
+
+  it('updates and reads back a setting value', async () => {
+    const ctx = makeAuthedCtx({ role: 'admin' })
+
+    const updateRes = await callRpc(
+      '/admin/settings/update',
+      { section: 'limits', payload: { maxRequestBodySize: 5 * 1024 * 1024 } },
+      ctx,
+    )
+    expect(updateRes.status).toBe(200)
+    const updateBody = await parseRpcJson<{ success: boolean }>(updateRes)
+    expect(updateBody.success).toBe(true)
+
+    const getRes = await callRpc('/admin/settings/loadAll', {}, ctx)
+    expect(getRes.status).toBe(200)
+    const data = await parseRpcJson<{ bundle: { limits: { maxRequestBodySize: number } } }>(getRes)
+    expect(data.bundle.limits.maxRequestBodySize).toBe(5 * 1024 * 1024)
+  })
+})

@@ -10,6 +10,7 @@ import { db } from '@/server/infra/db/pool'
 import { auditLog, user } from '@/server/infra/db/schema'
 import { getBlogSettingsBundleSync } from '@/shared/config/blog'
 import { auditLogActorsOutput, auditLogItemDto, auditLogListInput, auditLogListOutput } from '@/shared/contracts/audit'
+import { idFromString } from '@/shared/utils/id'
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -57,7 +58,7 @@ export function buildWhere(input: AuditLogFilterInput) {
   }
   if (input.actorId) {
     try {
-      conditions.push(eq(auditLog.actorId, BigInt(input.actorId)))
+      conditions.push(eq(auditLog.actorId, idFromString(input.actorId)))
     } catch {
       throw new ORPCError('BAD_REQUEST', { message: 'actorId 格式无效' })
     }
@@ -156,7 +157,9 @@ const exportCsv = adminProc
     const total = countResult[0]?.value ?? 0
 
     if (total > EXPORT_MAX_ROWS) {
-      throw new Error(`导出记录数超过上限 ${EXPORT_MAX_ROWS} 条，请缩小筛选范围后再试。`)
+      throw new ORPCError('BAD_REQUEST', {
+        message: `导出记录数超过上限 ${EXPORT_MAX_ROWS} 条，请缩小筛选范围后再试。`,
+      })
     }
 
     // Fetch all matching rows

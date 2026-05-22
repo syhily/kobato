@@ -94,6 +94,10 @@ export function CodeBlock({ children, className, copyText, dangerouslySetInnerHT
       {dangerouslySetInnerHTML !== undefined ? (
         // Shiki `codeToHtml` already emits `<pre class="shiki">…</pre>` — host
         // it in a div so we do not nest `<pre>` inside `<pre>`.
+        //
+        // SAFETY: `dangerouslySetInnerHTML` carries HTML produced by Shiki's
+        // `codeToHtml`, which HTML-escapes the raw source code. No untrusted
+        // user input reaches this path without escaping.
         <div
           className={cn(
             '[&>pre]:mt-0 [&>pre]:mb-0 [&>pre]:rounded-t-none [&>pre]:border-t-0',

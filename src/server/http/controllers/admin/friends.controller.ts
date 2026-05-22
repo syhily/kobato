@@ -5,6 +5,7 @@ import { recordAuditEventFromContext } from '@/server/domains/audit/service'
 import { deleteAdminFriend, listFriendsForAdmin, upsertAdminFriend } from '@/server/domains/friends/service'
 import { adminProc } from '@/server/http/orpc-base'
 import { adminFriendDto } from '@/shared/contracts/friends'
+import { idFromString } from '@/shared/utils/id'
 
 const list = adminProc
   .route({ method: 'GET', path: '/admin/friends/list' })
@@ -42,7 +43,7 @@ const upsert = adminProc
   .output(z.object({ friend: adminFriendDto }))
   .handler(async ({ input, context }) => {
     const friend = await upsertAdminFriend({
-      id: input.id !== undefined ? BigInt(input.id) : undefined,
+      id: input.id !== undefined ? idFromString(input.id) : undefined,
       website: input.website,
       description: input.description ?? null,
       homepage: input.homepage,
@@ -63,7 +64,7 @@ const remove = adminProc
   .input(z.object({ id: z.string().min(1) }))
   .output(z.void())
   .handler(async ({ input, context }) => {
-    const ok = await deleteAdminFriend(BigInt(input.id))
+    const ok = await deleteAdminFriend(idFromString(input.id))
     if (!ok) {
       throw new ORPCError('NOT_FOUND', { message: '友链不存在' })
     }

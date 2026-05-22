@@ -144,3 +144,21 @@ export async function parseInput<T>(schema: ZodType<T>, input: unknown): Promise
   }
   throw zodFailure(result.error)
 }
+
+// ---------------------------------------------------------------------------
+// Postgres error helpers
+// ---------------------------------------------------------------------------
+
+/** Detect a Postgres unique-constraint violation (SQLSTATE 23505).
+ *  When `constraintName` is passed, the match is narrowed to that
+ *  specific constraint so call sites don't accidentally swallow
+ *  unrelated uniqueness errors. */
+export function isUniqueConstraintError(err: unknown, constraintName?: string): boolean {
+  if (err instanceof Error && 'code' in err && (err as Record<string, unknown>).code === '23505') {
+    if (constraintName) {
+      return 'constraint' in err && (err as Record<string, unknown>).constraint === constraintName
+    }
+    return true
+  }
+  return false
+}

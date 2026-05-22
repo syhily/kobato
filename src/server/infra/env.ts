@@ -36,11 +36,11 @@ function loadEnv() {
     // eslint-disable-next-line no-console
     console.error(
       [
-        '请确认 .env 文件中已正确设置以下变量：',
+        'Please ensure the following variables are correctly set in your .env file:',
         '',
-        '    DATABASE_URL   — PostgreSQL 连接地址',
-        '    REDIS_URL      — Redis 连接地址',
-        '    SESSION_SECRET — 会话加密密钥',
+        '    DATABASE_URL   — PostgreSQL connection URL',
+        '    REDIS_URL      — Redis connection URL',
+        '    SESSION_SECRET — Session signing secret',
       ].join('\n'),
     )
     process.exit(1)

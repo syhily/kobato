@@ -17,6 +17,7 @@ import { refreshBlogSettings } from '@/server/domains/settings/snapshot'
 import { upsertSetting } from '@/server/infra/db/operations/setting'
 import { hasAdmin, insertAdmin } from '@/server/infra/db/operations/user'
 import { tryRateLimit } from '@/server/infra/rate-limit'
+import { idFromString } from '@/shared/utils/id'
 
 interface AuthFailure {
   ok: false
@@ -161,7 +162,7 @@ export async function signUpInitialAdminWithSession({
   ]
 
   // Validate every section against its schema before writing any.
-  const updatedBy = BigInt(admin.id)
+  const updatedBy = idFromString(admin.id)
   for (const { section, payload } of sections) {
     const meta = SECTION_REGISTRY[section]
     const check = meta.schema.safeParse(payload)

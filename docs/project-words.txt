@@ -232,6 +232,7 @@ teruteru
 textnodes
 theia
 thumbhash
+timescaledb
 timestamptz
 tlyric
 tmpfs

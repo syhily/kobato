@@ -6,7 +6,8 @@ import { recordAuditEventFromContext } from '@/server/domains/audit/service'
 import { findSessionMeta, revokeSessionById } from '@/server/domains/auth/repo'
 import { revokeAllSessionsOfUser } from '@/server/domains/auth/session-storage'
 import { authedProc } from '@/server/http/orpc-base'
-import { findUserById, updateUserById } from '@/server/infra/db/operations/user'
+import { findUserById, PASSWORD_HASH_ROUNDS, updateUserById } from '@/server/infra/db/operations/user'
+import { idFromString } from '@/shared/utils/id'
 
 // ─── Input schemas ──────────────────────────────────────
 // Kept inline (was previously in `src/shared/contracts/account.ts`,
@@ -54,7 +55,7 @@ const updateProfile = authedProc
   .output(z.object({ user: accountUserOutput }))
   .handler(async ({ input, context }) => {
     const { viewer } = context
-    const userId = BigInt(viewer.userId)
+    const userId = idFromString(viewer.userId)
     const dbUser = await findUserById(userId)
     if (!dbUser) {
       throw new ORPCError('NOT_FOUND', { message: '用户不存在。' })
@@ -106,7 +107,7 @@ const updatePassword = authedProc
   .output(z.object({ success: z.boolean() }))
   .handler(async ({ input, context }) => {
     const { viewer, session } = context
-    const dbUser = await findUserById(BigInt(viewer.userId))
+    const dbUser = await findUserById(idFromString(viewer.userId))
     if (!dbUser) {
       throw new ORPCError('NOT_FOUND', { message: '用户不存在。' })
     }
@@ -114,7 +115,7 @@ const updatePassword = authedProc
     if (!ok) {
       throw new ORPCError('FORBIDDEN', { message: '原密码错误。' })
     }
-    const hashed = await bcrypt.hash(input.newPassword, 12)
+    const hashed = await bcrypt.hash(input.newPassword, PASSWORD_HASH_ROUNDS)
     await updateUserById(dbUser.id, { password: hashed })
     await revokeAllSessionsOfUser(dbUser.id, session.id)
     recordAuditEventFromContext(context, {

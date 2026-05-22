@@ -17,11 +17,11 @@ const poolConnect = vi.fn(() =>
   }),
 )
 
-const getRawPool = vi.fn(() => ({ connect: poolConnect }))
+const pool = { connect: poolConnect }
 
 vi.mock('@/server/infra/db/pool', () => ({
   db: { insert: dbInsertValues },
-  getRawPool,
+  pool,
 }))
 
 vi.mock('@/server/infra/db/schema', () => ({
@@ -42,19 +42,15 @@ vi.mock('pg-copy-streams', () => ({
   ),
 }))
 
-const GLOBAL_KEY = Symbol.for('yufan.me/audit-batcher')
-
 async function resetBatcher() {
-  const g = globalThis as unknown as Record<symbol, unknown>
-  delete g[GLOBAL_KEY]
   const mod = await import('@/server/domains/audit/batcher')
+  mod.resetAuditLogBatcher()
   return mod
 }
 
 describe('audit/batcher', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    delete (globalThis as unknown as Record<symbol, unknown>)[GLOBAL_KEY]
   })
 
   it('buffers events and flushes when threshold is reached', async () => {

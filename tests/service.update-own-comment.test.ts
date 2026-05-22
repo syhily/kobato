@@ -54,7 +54,7 @@ vi.mock('@/server/domains/comments/canonicalize', () => ({
 
 const queries = await import('@/server/infra/db/operations/comment')
 const emails = await import('@/server/domains/comments/email')
-const { updateOwnComment } = await import('@/server/domains/comments/moderation')
+const { updateOwnComment } = await import('@/server/domains/comments/services/moderate')
 
 // `findCommentWithUserById` returns a deep Drizzle-inferred shape whose
 // `body` union covers every PT block variant. The test rows are

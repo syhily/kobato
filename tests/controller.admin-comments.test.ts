@@ -3,13 +3,16 @@ import { describe, expect, it, vi } from 'vite-plus/test'
 
 import { makeAuthedCtx } from './_helpers/mock-ctx'
 
-vi.mock('@/server/domains/comments/moderation', () => ({
-  approveComment: vi.fn(),
-  deleteComment: vi.fn(),
+vi.mock('@/server/domains/comments/services/admin-query', () => ({
   loadAdminPendingDashboard: vi.fn(),
   loadAllComments: vi.fn(),
   searchAuthorOptions: vi.fn(),
   searchPageOptions: vi.fn(),
+}))
+
+vi.mock('@/server/domains/comments/services/moderate', () => ({
+  approveComment: vi.fn(),
+  deleteComment: vi.fn(),
 }))
 
 vi.mock('@/server/domains/comments/projection', () => ({
@@ -22,7 +25,8 @@ vi.mock('@/server/domains/comments/repo', () => ({
   softDeleteCommentById: vi.fn(),
 }))
 
-const moderation = await import('@/server/domains/comments/moderation')
+const adminQuery = await import('@/server/domains/comments/services/admin-query')
+const moderate = await import('@/server/domains/comments/services/moderate')
 const projection = await import('@/server/domains/comments/projection')
 const repo = await import('@/server/domains/comments/repo')
 const { adminCommentsRouter } = await import('@/server/http/controllers/admin/comments.controller')
@@ -61,7 +65,7 @@ const comment = {
 
 describe('adminCommentsRouter.approve', () => {
   it('resolves to undefined on success', async () => {
-    vi.mocked(moderation.approveComment).mockResolvedValueOnce(undefined)
+    vi.mocked(moderate.approveComment).mockResolvedValueOnce(undefined)
     const ctx = makeAuthedCtx()
     const res = await call(adminCommentsRouter.approve, { rid: '1' }, { context: ctx })
     expect(res).toBeUndefined()
@@ -70,7 +74,7 @@ describe('adminCommentsRouter.approve', () => {
 
 describe('adminCommentsRouter.delete', () => {
   it('resolves to undefined on success', async () => {
-    vi.mocked(moderation.deleteComment).mockResolvedValueOnce(undefined)
+    vi.mocked(moderate.deleteComment).mockResolvedValueOnce(undefined)
     const ctx = makeAuthedCtx()
     const res = await call(adminCommentsRouter.delete, { rid: '1' }, { context: ctx })
     expect(res).toBeUndefined()
@@ -79,7 +83,7 @@ describe('adminCommentsRouter.delete', () => {
 
 describe('adminCommentsRouter.loadAll', () => {
   it('returns comments, total, hasMore and statusCounts', async () => {
-    vi.mocked(moderation.loadAllComments).mockResolvedValueOnce({
+    vi.mocked(adminQuery.loadAllComments).mockResolvedValueOnce({
       comments: [comment] as never,
       total: 1,
       hasMore: false,
@@ -97,7 +101,7 @@ describe('adminCommentsRouter.loadAll', () => {
 
 describe('adminCommentsRouter.searchPages', () => {
   it('returns pages matching query', async () => {
-    vi.mocked(moderation.searchPageOptions).mockResolvedValueOnce([{ key: 'p1', title: 'Page 1' }] as never)
+    vi.mocked(adminQuery.searchPageOptions).mockResolvedValueOnce([{ key: 'p1', title: 'Page 1' }] as never)
     const ctx = makeAuthedCtx()
     const res = await call(adminCommentsRouter.searchPages, { q: 'page' }, { context: ctx })
     expect(res.pages).toHaveLength(1)
@@ -107,7 +111,7 @@ describe('adminCommentsRouter.searchPages', () => {
 
 describe('adminCommentsRouter.searchAuthors', () => {
   it('returns authors matching query', async () => {
-    vi.mocked(moderation.searchAuthorOptions).mockResolvedValueOnce([{ id: 1n, name: 'Alice' }] as never)
+    vi.mocked(adminQuery.searchAuthorOptions).mockResolvedValueOnce([{ id: 1n, name: 'Alice' }] as never)
     const ctx = makeAuthedCtx()
     const res = await call(adminCommentsRouter.searchAuthors, { q: 'alice' }, { context: ctx })
     expect(res.authors).toHaveLength(1)
@@ -151,7 +155,7 @@ describe('adminCommentsRouter.approveCommentDeletion', () => {
 
 describe('adminCommentsRouter.listPendingDashboard', () => {
   it('returns pending dashboard items', async () => {
-    vi.mocked(moderation.loadAdminPendingDashboard).mockResolvedValueOnce({
+    vi.mocked(adminQuery.loadAdminPendingDashboard).mockResolvedValueOnce({
       items: [
         {
           id: '1',

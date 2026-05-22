@@ -10,6 +10,7 @@ import {
 } from '@/server/domains/taxonomies/categories/service'
 import { adminProc } from '@/server/http/orpc-base'
 import { adminCategoryDto } from '@/shared/contracts/categories'
+import { idFromString } from '@/shared/utils/id'
 
 const list = adminProc
   .route({ method: 'GET', path: '/admin/categories/list' })
@@ -32,7 +33,7 @@ const upsert = adminProc
   .output(z.object({ category: adminCategoryDto }))
   .handler(async ({ input, context }) => {
     const category = await upsertAdminCategory({
-      id: input.id !== undefined ? BigInt(input.id) : undefined,
+      id: input.id !== undefined ? idFromString(input.id) : undefined,
       name: input.name,
       slug: input.slug,
       cover: input.cover,
@@ -52,7 +53,7 @@ const remove = adminProc
   .input(z.object({ id: z.string().min(1) }))
   .output(z.void())
   .handler(async ({ input, context }) => {
-    const ok = await deleteAdminCategory(BigInt(input.id))
+    const ok = await deleteAdminCategory(idFromString(input.id))
     if (!ok) {
       throw new ORPCError('NOT_FOUND', { message: '分类不存在' })
     }

@@ -74,7 +74,9 @@ export type StandardListItem = (typeof STANDARD_LIST_ITEMS)[number]
 export const linkMarkDefSchema = z.object({
   _type: z.literal('link'),
   _key: NON_EMPTY_KEY,
-  href: z.string(),
+  href: z
+    .string()
+    .refine((v) => !/^\s*(javascript|data):/i.test(v), { message: 'href must not use javascript: or data: protocol' }),
   rel: z.string().optional(),
   target: z.string().optional(),
 })

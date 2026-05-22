@@ -9,17 +9,18 @@ import {
   upsertPostMetaSchema,
 } from '@/server/domains/posts/schema'
 import {
-  createPost,
-  deletePost,
   getPostDetailForAdmin,
   listPostsForAdmin,
   listRevisionsForAdmin as listPostRevisionsForAdmin,
-  publishLatest as publishPostLatest,
+} from '@/server/domains/posts/services/admin-query'
+import { saveDraft as savePostDraft, publishLatest as publishPostLatest } from '@/server/domains/posts/services/draft'
+import {
+  createPost,
+  deletePost,
   restorePost,
-  saveDraft as savePostDraft,
   unpublishPost,
   updatePostMeta,
-} from '@/server/domains/posts/service'
+} from '@/server/domains/posts/services/mutate'
 import { authorProc } from '@/server/http/orpc-base'
 import { deriveSlug } from '@/server/infra/slug'
 import { renderPortableTextToHtml as renderPostPortableTextToHtml } from '@/server/render/feed/feed-pt-render'
@@ -31,6 +32,7 @@ import {
 } from '@/shared/contracts/posts'
 import { previewOutputDto, saveResultOutput } from '@/shared/contracts/revision'
 import { collectHeadings } from '@/shared/pt/utils'
+import { idFromString } from '@/shared/utils/id'
 
 const idInput = z.object({ id: z.string().min(1) })
 
@@ -45,7 +47,7 @@ const get = authorProc
   .input(idInput)
   .output(adminPostDetailDto)
   .handler(async ({ input, context }) => {
-    const detail = await getPostDetailForAdmin(BigInt(input.id), context.viewer)
+    const detail = await getPostDetailForAdmin(idFromString(input.id), context.viewer)
     if (detail === null) {
       throw new ORPCError('NOT_FOUND', { message: '文章不存在或已被删除。' })
     }
@@ -57,7 +59,7 @@ const remove = authorProc
   .input(idInput)
   .output(z.void())
   .handler(async ({ input, context }) => {
-    const result = await deletePost(BigInt(input.id), context.viewer)
+    const result = await deletePost(idFromString(input.id), context.viewer)
     if (!result.deleted) {
       throw new ORPCError('NOT_FOUND', { message: '文章不存在或已被删除。' })
     }
@@ -73,7 +75,7 @@ const restore = authorProc
   .input(idInput)
   .output(z.object({ success: z.boolean() }))
   .handler(async ({ input, context }) => {
-    const result = await restorePost(BigInt(input.id), context.viewer)
+    const result = await restorePost(idFromString(input.id), context.viewer)
     if (!result.restored) {
       throw new ORPCError('NOT_FOUND', { message: '文章不存在或未被删除。' })
     }
@@ -90,7 +92,7 @@ const unpublish = authorProc
   .input(z.object({ id: z.string().min(1) }))
   .output(z.object({ post: adminPostDto }))
   .handler(async ({ input, context }) => {
-    const post = await unpublishPost(BigInt(input.id), context.viewer)
+    const post = await unpublishPost(idFromString(input.id), context.viewer)
     recordAuditEventFromContext(context, {
       action: 'post_unpublished',
       resourceType: 'post',
@@ -106,11 +108,11 @@ const saveDraft = authorProc
   .handler(async ({ input, context }) => {
     const result = await savePostDraft(
       {
-        postId: BigInt(input.id),
+        postId: idFromString(input.id),
         body: input.body,
         expectedClientRevisionToken: input.expectedClientRevisionToken ?? undefined,
         force: input.force,
-        authorId: BigInt(context.viewer.userId),
+        authorId: idFromString(context.viewer.userId),
       },
       context.viewer,
     )
@@ -131,11 +133,11 @@ const publishLatest = authorProc
   .handler(async ({ input, context }) => {
     const result = await publishPostLatest(
       {
-        postId: BigInt(input.id),
+        postId: idFromString(input.id),
         body: input.body,
         expectedClientRevisionToken: input.expectedClientRevisionToken ?? undefined,
         force: input.force,
-        authorId: BigInt(context.viewer.userId),
+        authorId: idFromString(context.viewer.userId),
         publishedAt: input.publishedAt !== undefined ? new Date(input.publishedAt) : undefined,
       },
       context.viewer,
@@ -183,11 +185,11 @@ const upsertMeta = authorProc
       pinnedAt: input.pinnedAt === undefined || input.pinnedAt === null ? input.pinnedAt : new Date(input.pinnedAt),
       publishedAt: input.publishedAt === undefined ? undefined : new Date(input.publishedAt),
     }
-    const sessionUserId = BigInt(context.viewer.userId)
+    const sessionUserId = idFromString(context.viewer.userId)
     const post =
       input.id === undefined
         ? await createPost(meta, sessionUserId, context.viewer)
-        : await updatePostMeta({ id: BigInt(input.id), ...meta }, context.viewer)
+        : await updatePostMeta({ id: idFromString(input.id), ...meta }, context.viewer)
     recordAuditEventFromContext(context, {
       action: input.id === undefined ? 'post_created' : 'post_meta_updated',
       resourceType: 'post',
@@ -201,7 +203,7 @@ const listRevisions = authorProc
   .input(z.object({ id: z.string().min(1) }))
   .output(listPostRevisionsOutputDto)
   .handler(async ({ input, context }) => {
-    const revisions = await listPostRevisionsForAdmin(BigInt(input.id), context.viewer)
+    const revisions = await listPostRevisionsForAdmin(idFromString(input.id), context.viewer)
     return { revisions }
   })
 

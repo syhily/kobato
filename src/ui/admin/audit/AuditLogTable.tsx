@@ -230,6 +230,9 @@ function JsonDetailRow({ details }: { details: Record<string, unknown> | null })
       <TableCell colSpan={6} className="p-0">
         <div className="max-h-64 overflow-auto border-t">
           {html ? (
+            // SAFETY: `html` is produced by Shiki's `codeToHtml` on a JSON
+            // string. Shiki HTML-escapes the input, so audit-log `details`
+            // fields cannot inject scripts through this path.
             <div
               className="[&>pre]:m-0 [&>pre]:rounded-none [&>pre]:border-0 [&>pre]:bg-transparent [&>pre]:px-4 [&>pre]:py-3 [&>pre]:text-xs [&>pre]:leading-relaxed"
               dangerouslySetInnerHTML={{ __html: html }}
