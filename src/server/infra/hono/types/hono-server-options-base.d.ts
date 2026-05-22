@@ -1,0 +1,67 @@
+import type { Context, Env, Hono } from 'hono'
+import type { AppLoadContext, RouterContextProvider, ServerBuild, UNSAFE_MiddlewareEnabled } from 'react-router'
+
+export type ReactRouterHonoServerAppLoadContext = UNSAFE_MiddlewareEnabled extends true
+  ? RouterContextProvider
+  : AppLoadContext
+
+export interface HonoServerOptionsBase<E extends Env> {
+  /**
+   * The base Hono app to use as a replacement for the default one created automatically
+   *
+   * It will be used to mount the React Router server on the `basename` path
+   * defined in the [React Router config](https://api.reactrouter.com/v7/types/_react_router_dev.config.Config.html)
+   *
+   * {@link Hono}
+   */
+  app?: Hono<E>
+  /**
+   * The port to start the server on
+   *
+   * Defaults to `process.env.PORT || 3000`
+   */
+  port?: number
+  /**
+   * Augment the React Router AppLoadContext
+   *
+   * Don't forget to declare the AppLoadContext in your app, next to where you create the Hono server
+   *
+   * ```ts
+   * declare module "react-router" {
+   *   interface AppLoadContext {
+   *     // Add your custom context here
+   *     whatever: string;
+   *   }
+   * }
+   * ```
+   *
+   * **To make the typing works correctly, in your `react-router.config.ts` or where you want, add future v8_middleware flag type to true.**
+   *
+   * ```ts
+   * declare module "react-router" {
+   *   interface Future {
+   *     v8_middleware: true; // 👈 Enable middleware types
+   *   }
+   * }
+   * ```
+   */
+  getLoadContext?: (
+    c: Context<E>,
+    options: {
+      build: ServerBuild
+      mode: string
+    },
+  ) => Promise<ReactRouterHonoServerAppLoadContext> | ReactRouterHonoServerAppLoadContext
+  /**
+   * Hook to add middleware that runs before any built-in middleware, including assets serving.
+   *
+   * You can use it to add protection middleware, for example.
+   */
+  beforeAll?: (app: Hono<E>) => Promise<void> | void
+  /**
+   * Customize the Hono server, for example, adding middleware
+   *
+   * It is applied after the default middleware and before the React Router middleware
+   */
+  configure?: (app: Hono<E>) => Promise<void> | void
+}

@@ -129,6 +129,7 @@ mathml
 mboker
 meilisearch
 metas
+mhchem
 miantiao
 microflash
 millis

@@ -4,12 +4,12 @@ import type { Plugin, PluginOption } from 'vite'
 
 import { reactRouter } from '@react-router/dev/vite'
 import tailwindcss from '@tailwindcss/vite'
-import { reactRouterHonoServer } from 'react-router-hono-server/dev'
 import devtoolsJson from 'vite-plugin-devtools-json'
 import { defineConfig } from 'vite-plus'
 
 import oxfmtConfig from './oxfmt.config.ts'
 import oxlintConfig from './oxlint.config.ts'
+import { reactRouterHonoServer } from './src/server/infra/hono/dev.ts'
 
 export default defineConfig({
   fmt: oxfmtConfig as OxfmtConfig,

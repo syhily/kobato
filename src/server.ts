@@ -5,7 +5,6 @@ import { compress } from 'hono/compress'
 import { requestId } from 'hono/request-id'
 import { secureHeaders } from 'hono/secure-headers'
 import { RouterContextProvider } from 'react-router'
-import { createHonoServer } from 'react-router-hono-server/node'
 
 import type { Env } from '@/server/http/context'
 
@@ -28,6 +27,7 @@ import { feedRouter } from '@/server/http/resources/feed'
 import { imagesRouter } from '@/server/http/resources/images'
 import { redirectsRouter } from '@/server/http/resources/redirects'
 import { sitemapRouter } from '@/server/http/resources/sitemap'
+import { createHonoServer } from '@/server/infra/hono/node'
 import { root } from '@/server/infra/logger'
 import { buildOpenApiDocsHtml } from '@/server/render/openapi-docs'
 

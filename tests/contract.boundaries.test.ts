@@ -760,6 +760,11 @@ describe('contract: module and bundle boundaries', () => {
       // be resolved too late by Vite+'s config loader.
       { key: 'vite.config.ts -> ./oxfmt.config.ts', file: 'vite.config.ts', specifier: './oxfmt.config.ts' },
       { key: 'vite.config.ts -> ./oxlint.config.ts', file: 'vite.config.ts', specifier: './oxlint.config.ts' },
+      {
+        key: 'vite.config.ts -> ./src/server/infra/hono/dev.ts',
+        file: 'vite.config.ts',
+        specifier: './src/server/infra/hono/dev.ts',
+      },
       // (routes.ts no longer imports api-actions since all API routes moved to Hono)
     ] as const
     const explicitAllowedHits = new Set<string>()

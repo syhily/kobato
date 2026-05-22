@@ -19,7 +19,11 @@ async function createKatexRenderer(): Promise<KatexRenderer> {
   // out of modules that only need the renderer interface. On a typical
   // blog most posts do not contain math, so the chunk is only fetched
   // when the first TeX block is encountered during prerender or preview.
-  const [{ default: katex }] = await Promise.all([import('katex'), import('katex/contrib/mhchem')])
+  const [{ default: katex }] = await Promise.all([
+    import('katex'),
+    // @ts-expect-error katex/contrib/mhchem has no type declarations
+    import('katex/contrib/mhchem'),
+  ])
 
   return {
     async render(tex: string, display: boolean): Promise<string> {
