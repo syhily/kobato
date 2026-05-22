@@ -19,8 +19,10 @@ export const TEST_ENV = {
 } as const
 
 export function ensureTestEnv(): void {
+  // Always overwrite so that a `.env` file loaded by Vite/Vitest does
+  // not leak production credentials into the test suite.
   for (const [key, value] of Object.entries(TEST_ENV)) {
-    process.env[key] ??= value
+    process.env[key] = value
   }
 }
 

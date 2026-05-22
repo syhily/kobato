@@ -1,26 +1,21 @@
-import type { SQL } from 'drizzle-orm'
+import { and, eq } from 'drizzle-orm'
+import { beforeEach, describe, expect, it } from 'vite-plus/test'
 
-import { PgDialect } from 'drizzle-orm/pg-core'
-import { beforeEach, describe, expect, it, vi } from 'vite-plus/test'
+import { incrementMetricPvBatch } from '@/server/infra/db/operations/metric'
+import { db } from '@/server/infra/db/pool'
+import { metric } from '@/server/infra/db/schema'
 
-const dbMocks = vi.hoisted(() => ({
-  execute: vi.fn<(query: SQL) => Promise<{ rows: unknown[] }>>(async () => ({ rows: [] })),
-}))
-
-vi.mock('@/server/infra/db/pool', () => ({
-  db: {
-    execute: dbMocks.execute,
-  },
-}))
-
-const { incrementMetricPvBatch } = await import('@/server/infra/db/operations/metric')
-
-beforeEach(() => {
-  vi.clearAllMocks()
+beforeEach(async () => {
+  await db.delete(metric)
 })
 
 describe('db/query/metric', () => {
-  it('casts batched view values to stable postgres types', async () => {
+  it('increments pv for valid batched deltas', async () => {
+    await db.insert(metric).values([
+      { type: 'post', ownerId: 1n, pv: 0 },
+      { type: 'page', ownerId: 2n, pv: 0 },
+    ])
+
     await incrementMetricPvBatch(
       new Map([
         ['post:1', 1],
@@ -28,19 +23,24 @@ describe('db/query/metric', () => {
       ]),
     )
 
-    expect(dbMocks.execute).toHaveBeenCalledOnce()
+    const postRow = await db
+      .select({ pv: metric.pv })
+      .from(metric)
+      .where(and(eq(metric.type, 'post'), eq(metric.ownerId, 1n)))
+      .limit(1)
+    const pageRow = await db
+      .select({ pv: metric.pv })
+      .from(metric)
+      .where(and(eq(metric.type, 'page'), eq(metric.ownerId, 2n)))
+      .limit(1)
 
-    const [query] = dbMocks.execute.mock.calls[0]!
-    const compiled = new PgDialect().sqlToQuery(query)
-
-    expect(compiled.sql).toContain(
-      '($1::varchar(16), $2::bigint, $3::bigint), ($4::varchar(16), $5::bigint, $6::bigint)',
-    )
-    expect(compiled.sql).toContain('COALESCE("metric"."pv", 0) + v.delta')
-    expect(compiled.params).toEqual(['post', '1', 1, 'page', '2', 2])
+    expect(postRow[0]?.pv).toBe(1)
+    expect(pageRow[0]?.pv).toBe(2)
   })
 
   it('skips empty and non-positive batched view deltas', async () => {
+    await db.insert(metric).values([{ type: 'post', ownerId: 1n, pv: 5 }])
+
     await incrementMetricPvBatch(
       new Map([
         ['post:1', 0],
@@ -48,10 +48,17 @@ describe('db/query/metric', () => {
       ]),
     )
 
-    expect(dbMocks.execute).not.toHaveBeenCalled()
+    const rows = await db
+      .select({ pv: metric.pv })
+      .from(metric)
+      .where(and(eq(metric.type, 'post'), eq(metric.ownerId, 1n)))
+      .limit(1)
+    expect(rows[0]?.pv).toBe(5)
   })
 
   it('skips malformed composite keys (no colon, unknown type, empty id)', async () => {
+    await db.insert(metric).values([{ type: 'post', ownerId: 1n, pv: 10 }])
+
     await incrementMetricPvBatch(
       new Map([
         ['notarget', 5],
@@ -59,6 +66,12 @@ describe('db/query/metric', () => {
         ['post:', 5],
       ]),
     )
-    expect(dbMocks.execute).not.toHaveBeenCalled()
+
+    const rows = await db
+      .select({ pv: metric.pv })
+      .from(metric)
+      .where(and(eq(metric.type, 'post'), eq(metric.ownerId, 1n)))
+      .limit(1)
+    expect(rows[0]?.pv).toBe(10)
   })
 })

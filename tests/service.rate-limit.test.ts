@@ -3,86 +3,33 @@
 // line would double the file length without adding clarity.
 // oxlint-disable unicorn/no-await-expression-member
 
-import { beforeEach, describe, expect, it, vi } from 'vite-plus/test'
+import { beforeEach, describe, expect, it } from 'vite-plus/test'
 
-// Tiny in-memory Redis double that supports just the two commands the
-// rate-limit module actually pipelines: `INCR` and `EXPIRE … NX`. We
-// don't model TTL ticks (the production module never reads the TTL
-// back), so the assertion surface stays narrow on purpose.
-interface PipelineRecord {
-  cmd: 'incr' | 'expire'
-  args: unknown[]
-}
+import { setBlogSettingsBundleForTests } from '@/server/domains/settings/snapshot'
+import {
+  tryCommentPostRateLimit,
+  tryCommentPostRateLimitByEmail,
+  tryLikeIncreaseRateLimit,
+  tryRateLimit,
+} from '@/server/infra/rate-limit'
+import { redisInstance } from '@/server/infra/redis/storage'
 
-interface MockRedis {
-  counts: Map<string, number>
-  ttls: Map<string, number>
-  pipeline: ReturnType<typeof vi.fn>
-  /** Flat list of all pipeline commands seen across the test (newest last). */
-  log: PipelineRecord[]
-}
+import { TEST_BLOG_SETTINGS_BUNDLE } from './_helpers/blog-settings'
 
-function createRedis(): MockRedis {
-  const counts = new Map<string, number>()
-  const ttls = new Map<string, number>()
-  const log: PipelineRecord[] = []
-
-  const pipeline = vi.fn(() => {
-    const queue: PipelineRecord[] = []
-    const builder = {
-      incr(key: string) {
-        queue.push({ cmd: 'incr', args: [key] })
-        return builder
-      },
-      expire(key: string, seconds: number, mode?: string) {
-        queue.push({ cmd: 'expire', args: [key, seconds, mode] })
-        return builder
-      },
-      async exec() {
-        const results: [Error | null, unknown][] = []
-        for (const entry of queue) {
-          log.push(entry)
-          if (entry.cmd === 'incr') {
-            const [key] = entry.args as [string]
-            const next = (counts.get(key) ?? 0) + 1
-            counts.set(key, next)
-            results.push([null, next])
-            continue
-          }
-          // EXPIRE — `NX` only sets the TTL when the key has no TTL.
-          // We don't simulate TTL expiry, so this is just bookkeeping.
-          const [key, seconds] = entry.args as [string, number, string?]
-          if (!ttls.has(key)) {
-            ttls.set(key, seconds)
-          }
-          results.push([null, 1])
-        }
-        return results
-      },
+async function clearRateLimitKeys(): Promise<void> {
+  const redis = redisInstance()
+  let cursor = '0'
+  do {
+    const [nextCursor, keys] = await redis.scan(cursor, 'MATCH', 'rate-limit:*', 'COUNT', 100)
+    cursor = nextCursor
+    if (keys.length > 0) {
+      await redis.del(...keys)
     }
-    return builder
-  })
-
-  return { counts, ttls, pipeline, log }
+  } while (cursor !== '0')
 }
 
-const redis = createRedis()
-
-vi.mock('@/server/infra/redis/storage', () => ({
-  redisInstance: () => redis,
-  storage: {},
-}))
-
-const { setBlogSettingsBundleForTests } = await import('@/server/domains/settings/snapshot')
-const { TEST_BLOG_SETTINGS_BUNDLE } = await import('./_helpers/blog-settings')
-const { tryRateLimit, tryCommentPostRateLimit, tryCommentPostRateLimitByEmail, tryLikeIncreaseRateLimit } =
-  await import('@/server/infra/rate-limit')
-
-beforeEach(() => {
-  redis.counts.clear()
-  redis.ttls.clear()
-  redis.log.length = 0
-  redis.pipeline.mockClear()
+beforeEach(async () => {
+  await clearRateLimitKeys()
   setBlogSettingsBundleForTests(TEST_BLOG_SETTINGS_BUNDLE)
 })
 
@@ -102,14 +49,13 @@ describe('server/rate-limit — config-driven thresholds', () => {
 
     expect(first).toEqual({ count: 1, exceeded: false })
     expect(second).toEqual({ count: 2, exceeded: false })
-    // 3rd hit > maxAttempts(2) — surface this as `exceeded: true`.
     expect(third).toEqual({ count: 3, exceeded: true })
 
-    // First hit armed the EXPIRE NX with the configured window; later
-    // hits still emit the EXPIRE pipeline step but our mock no-ops it.
-    const expires = redis.log.filter((entry) => entry.cmd === 'expire')
-    expect(expires.length).toBeGreaterThan(0)
-    expect(expires[0]?.args).toEqual([expect.stringMatching(/^rate-limit:like-increase:/), 120, 'NX'])
+    // First hit armed the EXPIRE NX with the configured window.
+    const redis = redisInstance()
+    const ttl = await redis.ttl('rate-limit:like-increase:1.2.3.4')
+    expect(ttl).toBeGreaterThan(0)
+    expect(ttl).toBeLessThanOrEqual(120)
   })
 
   it('hot-reloads when the admin saves a new policy mid-process', async () => {
@@ -123,7 +69,6 @@ describe('server/rate-limit — config-driven thresholds', () => {
     expect((await tryRateLimit('5.5.5.5')).exceeded).toBe(false)
     expect((await tryRateLimit('5.5.5.5')).exceeded).toBe(false)
     expect((await tryRateLimit('5.5.5.5')).exceeded).toBe(false)
-    // 4th call — still inside the original cap of 3, so `exceeded: true`.
     expect((await tryRateLimit('5.5.5.5')).exceeded).toBe(true)
 
     // Admin tightens the cap to 1; the very next call sees the new
@@ -161,13 +106,15 @@ describe('server/rate-limit — config-driven thresholds', () => {
     await tryCommentPostRateLimitByEmail('alice@example.com')
     await tryLikeIncreaseRateLimit('11.11.11.11')
 
-    const namespaces = [...redis.counts.keys()].map((key) => key.split(':').slice(0, 2).join(':'))
+    const redis = redisInstance()
+    const keys = await redis.keys('rate-limit:*')
+    const namespaces = keys.map((key) => key.split(':').slice(0, 2).join(':'))
     expect(new Set(namespaces)).toEqual(
       new Set(['rate-limit:signin', 'rate-limit:comment-post', 'rate-limit:comment-email', 'rate-limit:like-increase']),
     )
     // Email keys must store the hash, not the raw address. The string
     // 'alice@example.com' should never appear verbatim in any key.
-    for (const key of redis.counts.keys()) {
+    for (const key of keys) {
       expect(key.includes('alice@example.com')).toBe(false)
     }
   })

@@ -7,7 +7,6 @@ import { beforeEach, describe, expect, it, vi } from 'vite-plus/test'
 const mocks = vi.hoisted(() => ({
   findPostBySlug: vi.fn(async (): Promise<unknown> => null),
   findPageBySlug: vi.fn(async (): Promise<unknown> => null),
-  loadBuffer: vi.fn(async () => Buffer.from('png-data')),
   drawOpenGraph: vi.fn(() => Buffer.from('og-image')),
 }))
 
@@ -16,9 +15,6 @@ vi.mock('@/server/domains/posts/repo', () => ({
 }))
 vi.mock('@/server/domains/pages/repo', () => ({
   findPageBySlug: mocks.findPageBySlug,
-}))
-vi.mock('@/server/infra/redis/buffer-cache', () => ({
-  loadBuffer: mocks.loadBuffer,
 }))
 vi.mock('@/server/render/og/render', () => ({
   drawOpenGraph: mocks.drawOpenGraph,
@@ -105,9 +101,15 @@ describe('OG image slug resolution', () => {
 
     const res = await requestOg('collision')
     expect(res.status).toBe(200)
-    // Verify loadBuffer was called — the cache key contains a SHA1 hash
-    // of title+summary+cover, which should use post data, not page data.
-    expect(mocks.loadBuffer).toHaveBeenCalledTimes(1)
+    // Verify drawOpenGraph was called with post data, not page data.
+    expect(mocks.drawOpenGraph).toHaveBeenCalledTimes(1)
+    expect(mocks.drawOpenGraph).toHaveBeenCalledWith(
+      expect.objectContaining({
+        title: 'Post Title',
+        summary: 'Post Summary',
+        cover: '/post-cover.png',
+      }),
+    )
   })
 
   it('404 for empty slug (route pattern mismatch)', async () => {

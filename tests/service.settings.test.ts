@@ -9,18 +9,7 @@ vi.mock('@/server/infra/db/operations/setting', () => ({
   upsertSetting: vi.fn(),
 }))
 
-// Snapshot hydrate/refresh fan through `storage.getItem` /
-// `storage.setItem` (the settings-version coherence key). The default
-// `@/server/cache/storage` would try to dial `redis://localhost:6379` —
-// fine locally, but on CI there is no Redis and `ioredis` retries
-// forever, blowing past every test timeout. Tests never assert on the
-// version key, so an in-memory no-op is plenty.
-vi.mock('@/server/infra/redis/storage', () => ({
-  storage: {
-    getItem: vi.fn(async () => null),
-    setItem: vi.fn(async () => undefined),
-  },
-}))
+import { flushWorkerRedis } from './_helpers/redis'
 
 const settingQueries = await import('@/server/infra/db/operations/setting')
 const { getAdminBlogSettings, updateBlogSettingsSection } = await import('@/server/domains/settings/service')
@@ -179,7 +168,8 @@ function bundleRows(bundle: BlogSettingsBundle): Setting[] {
   return rows
 }
 
-beforeEach(() => {
+beforeEach(async () => {
+  await flushWorkerRedis()
   vi.mocked(settingQueries.findSettingByScope).mockReset()
   vi.mocked(settingQueries.findSettingsByScopePrefix).mockReset()
   vi.mocked(settingQueries.upsertSetting).mockReset()

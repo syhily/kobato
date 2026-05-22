@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vite-plus/test'
 
+import { flushWorkerRedis } from './_helpers/redis'
 import { emptySession } from './_helpers/session'
 
 // `signInWithSession` is the single entry-point both the public admin login
@@ -13,35 +14,11 @@ import { emptySession } from './_helpers/session'
 //   2. The rate limiter only round-trips Redis once per attempt (the
 //      legacy `exceedLimit` + `incrLimit` pair was collapsed into
 //      `tryRateLimit`).
-
-// Stub Redis: the cookie-backed `createSessionStorage` writes the encrypted
-// session id to Redis on commit and reads it back for `getSession`. The
-// flow test only cares about the Set-Cookie surface, so a no-op Redis is
-// enough; we do *not* mock `commitSession` itself, because the merged
-// `signInWithSession` (in the same module) would still see the real export
-// — `vi.mock` only swaps the module's *named* exports, not internal calls.
-vi.mock('@/server/infra/redis/storage', () => ({
-  redisInstance: () => ({
-    get: vi.fn(async () => null),
-    set: vi.fn(async () => 'OK'),
-    del: vi.fn(async () => 1),
-    sadd: vi.fn(async () => 1),
-    srem: vi.fn(async () => 1),
-    smembers: vi.fn(async () => []),
-    // Session metadata writes added in the session-management feature.
-    // Stubs return success so `establishLoginSession` proceeds without
-    // touching a real Redis.
-    hset: vi.fn(async () => 1),
-    hgetall: vi.fn(async () => ({})),
-    pexpireat: vi.fn(async () => 1),
-    pipeline: () => ({
-      del: () => {
-        /* noop */
-      },
-      exec: vi.fn(async () => []),
-    }),
-  }),
-}))
+//
+// Redis is real (session storage writes encrypted session blobs), while
+// DB operations stay mocked so boundary-condition tests (empty insertAdmin
+// result, concurrent-install race) remain possible without heavy fixture
+// setup.
 
 vi.mock('@/server/infra/db/operations/user', () => ({
   hasAdmin: vi.fn(async () => false),
@@ -61,6 +38,12 @@ vi.mock('@/server/domains/settings/snapshot', () => ({
 
 vi.mock('@/server/infra/rate-limit', () => ({
   tryRateLimit: vi.fn(async () => ({ count: 1, exceeded: false })),
+}))
+
+vi.mock('@/server/domains/audit/service', () => ({
+  recordAuditEvent: vi.fn(),
+  buildAuditContext: vi.fn(),
+  recordAuditEventFromContext: vi.fn(),
 }))
 
 const userQuery = await import('@/server/infra/db/operations/user')
@@ -96,7 +79,7 @@ function testUser(partial: Partial<User> = {}): User {
   }
 }
 
-beforeEach(() => {
+beforeEach(async () => {
   verifyUserPasswordMock.mockReset()
   vi.mocked(userQuery.hasAdmin).mockReset()
   vi.mocked(userQuery.hasAdmin).mockResolvedValue(false)
@@ -106,6 +89,7 @@ beforeEach(() => {
   vi.mocked(settingsSnapshot.refreshBlogSettings).mockReset()
   vi.mocked(rateLimit.tryRateLimit).mockReset()
   vi.mocked(rateLimit.tryRateLimit).mockResolvedValue({ count: 1, exceeded: false })
+  await flushWorkerRedis()
 })
 
 function setCookieHeaders(headers: HeadersInit): string[] {

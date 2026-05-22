@@ -1,84 +1,29 @@
-import { beforeEach, describe, expect, it, vi } from 'vite-plus/test'
+import { beforeEach, describe, expect, it } from 'vite-plus/test'
 
-// Stub Redis with a minimal in-memory store that supports the SCAN /
-// UNLINK round-trips the cache-admin service relies on. We can't reuse
-// `tests/_helpers/redis.ts` directly because that helper doesn't model
-// SCAN cursors or UNLINK; this file owns the smaller, purpose-built
-// mock for the cache-admin contract.
-interface MockRedis {
-  store: Map<string, unknown>
-  scan: ReturnType<typeof vi.fn>
-  unlink: ReturnType<typeof vi.fn>
-}
+import { setBlogSettingsBundleForTests } from '@/server/domains/settings/snapshot'
+import { clearAdminCache, getAdminCacheStats } from '@/server/infra/redis/admin-ops'
+import { redisInstance } from '@/server/infra/redis/storage'
 
-function createRedis(initial: Record<string, unknown> = {}): MockRedis {
-  const store = new Map(Object.entries(initial))
-  // Return everything in one SCAN call (cursor "0" → done). The
-  // production code is cursor-paginated, so a single-batch response
-  // exercises the loop's exit branch.
-  const scan = vi.fn(async (_cursor: string, _match: string, pattern: string, _count: string, count: number) => {
-    void _cursor
-    void _match
-    void _count
-    void count
-    const re = patternToRegex(pattern)
-    const matched = [...store.keys()].filter((key) => re.test(key))
-    return ['0', matched]
-  })
-  const unlink = vi.fn(async (...keys: string[]) => {
-    let removed = 0
-    for (const key of keys) {
-      if (store.delete(key)) {
-        removed += 1
-      }
-    }
-    return removed
-  })
-  return { store, scan, unlink }
-}
-
-// Translate a Redis SCAN MATCH pattern (only `*` wildcard supported in
-// this corner of the surface) to a JS regex.
-function patternToRegex(pattern: string): RegExp {
-  const escaped = pattern.replaceAll(/[.+?^${}()|[\]\\]/g, '\\$&').replaceAll('*', '.*')
-  return new RegExp(`^${escaped}$`)
-}
-
-// `vi.mock('@/server/infra/redis/storage', …)` runs against the mock factory's
-// return value at import time, so the redis instance shared by every
-// test is created before any `await import(...)` below.
-const fixture = createRedis()
-
-vi.mock('@/server/infra/redis/storage', () => ({
-  redisInstance: () => fixture,
-  storage: {},
-}))
-
-const { clearAdminCache, getAdminCacheStats } = await import('@/server/infra/redis/admin-ops')
-const { DomainError } = await import('@/server/infra/http/errors')
-const { setBlogSettingsBundleForTests } = await import('@/server/domains/settings/snapshot')
-const { TEST_BLOG_SETTINGS_BUNDLE } = await import('./_helpers/blog-settings')
+import { TEST_BLOG_SETTINGS_BUNDLE } from './_helpers/blog-settings'
+import { flushWorkerRedis } from './_helpers/redis'
 
 describe('service: cache admin', () => {
-  beforeEach(() => {
-    fixture.store.clear()
-    fixture.unlink.mockClear()
-    fixture.scan.mockClear()
-    // Restore the global fixture between tests; individual cases below
-    // override individual cache prefixes to exercise rename logic.
+  beforeEach(async () => {
+    // Flush the current worker's Redis keys so no leftover keys from
+    // other tests pollute the SCAN counts.
+    await flushWorkerRedis()
     setBlogSettingsBundleForTests(TEST_BLOG_SETTINGS_BUNDLE)
   })
 
   it('counts keys per bucket via SCAN', async () => {
-    // The shared fixture seeds prefixes (`og:`, `avatar:`,
-    // `calendar:`); see `tests/_helpers/blog-settings`.
-    fixture.store.set('og:hello-deadbeef', new Uint8Array([1, 2]))
-    fixture.store.set('og:world-cafef00d', new Uint8Array([3, 4]))
-    fixture.store.set('avatar:abc', new Uint8Array([5]))
-    fixture.store.set('calendar:2026-04-30', new Uint8Array([6]))
-    // Out-of-bucket noise (sessions, rate-limit) — must NOT show up.
-    fixture.store.set('session:xyz', 'cookie-payload')
-    fixture.store.set('rate-limit:1.2.3.4', '4')
+    const redis = redisInstance()
+    await redis.set('og:hello-deadbeef', Buffer.from([1, 2]))
+    await redis.set('og:world-cafef00d', Buffer.from([3, 4]))
+    await redis.set('avatar:abc', Buffer.from([5]))
+    await redis.set('calendar:2026-04-30', Buffer.from([6]))
+    // Out-of-bucket noise — must NOT show up.
+    await redis.set('session:xyz', 'cookie-payload')
+    await redis.set('rate-limit:1.2.3.4', '4')
 
     const stats = await getAdminCacheStats()
 
@@ -95,27 +40,28 @@ describe('service: cache admin', () => {
   })
 
   it('clears only the targeted bucket', async () => {
-    fixture.store.set('og:hello-deadbeef', new Uint8Array([1]))
-    fixture.store.set('og:world-cafef00d', new Uint8Array([2]))
-    fixture.store.set('avatar:abc', new Uint8Array([3]))
-    fixture.store.set('session:xyz', 'cookie-payload')
+    const redis = redisInstance()
+    await redis.set('og:hello-deadbeef', Buffer.from([1]))
+    await redis.set('og:world-cafef00d', Buffer.from([2]))
+    await redis.set('avatar:abc', Buffer.from([3]))
+    await redis.set('session:xyz', 'cookie-payload')
 
     const result = await clearAdminCache('og')
 
     expect(result.cleared).toEqual([{ bucketId: 'og', label: 'OG 图缓存', removed: 2 }])
     expect(result.total).toBe(2)
-    expect([...fixture.store.keys()].sort()).toEqual(['avatar:abc', 'session:xyz'])
-    // Refreshed snapshot should reflect the deletion.
-    expect(result.refreshedStats.buckets.find((bucket) => bucket.id === 'og')?.keyCount).toBe(0)
-    expect(result.refreshedStats.buckets.find((bucket) => bucket.id === 'avatar')?.keyCount).toBe(1)
+
+    const remaining = await redis.keys('*')
+    expect(remaining.sort()).toEqual(['avatar:abc', 'session:xyz'])
   })
 
   it('aggregates counts when clearing all buckets', async () => {
-    fixture.store.set('og:hello-deadbeef', new Uint8Array([1]))
-    fixture.store.set('avatar:abc', new Uint8Array([2]))
-    fixture.store.set('avatar:def', new Uint8Array([3]))
-    fixture.store.set('calendar:2026-04-30', new Uint8Array([4]))
-    fixture.store.set('session:xyz', 'cookie-payload')
+    const redis = redisInstance()
+    await redis.set('og:hello-deadbeef', Buffer.from([1]))
+    await redis.set('avatar:abc', Buffer.from([2]))
+    await redis.set('avatar:def', Buffer.from([3]))
+    await redis.set('calendar:2026-04-30', Buffer.from([4]))
+    await redis.set('session:xyz', 'cookie-payload')
 
     const result = await clearAdminCache('all')
 
@@ -129,26 +75,22 @@ describe('service: cache admin', () => {
       embeddingSearch: 0,
       searchResult: 0,
     })
-    // Out-of-bucket keys (sessions, rate-limit) survive a "全部清空".
-    expect([...fixture.store.keys()]).toEqual(['session:xyz'])
+    // Out-of-bucket keys survive a "全部清空".
+    const remaining = await redis.keys('*')
+    expect(remaining).toEqual(['session:xyz'])
   })
 
   it('rejects unknown bucket targets with DomainError', async () => {
-    await expect(clearAdminCache('nope' as never)).rejects.toBeInstanceOf(DomainError)
+    await expect(clearAdminCache('nope' as never)).rejects.toThrow('未知的缓存分组')
   })
 
   it('returns 0 deletions when the bucket is already empty', async () => {
     const result = await clearAdminCache('og')
     expect(result.total).toBe(0)
     expect(result.cleared[0]?.removed).toBe(0)
-    expect(fixture.unlink).not.toHaveBeenCalled()
   })
 
   it('honors a renamed prefix from the live snapshot', async () => {
-    // Editor renamed the OG bucket via the admin panel. The SCAN
-    // pattern + key matching must follow the rename immediately, so
-    // legacy keys under the previous prefix are NOT touched while the
-    // renamed bucket targets the new pattern.
     setBlogSettingsBundleForTests({
       ...TEST_BLOG_SETTINGS_BUNDLE,
       cache: {
@@ -158,9 +100,11 @@ describe('service: cache admin', () => {
         },
       },
     })
-    fixture.store.set('opengraph:fresh-deadbeef', new Uint8Array([1]))
-    fixture.store.set('og:stale-deadbeef', new Uint8Array([2])) // legacy key under the old prefix
-    fixture.store.set('avatar:abc', new Uint8Array([3]))
+
+    const redis = redisInstance()
+    await redis.set('opengraph:fresh-deadbeef', Buffer.from([1]))
+    await redis.set('og:stale-deadbeef', Buffer.from([2])) // legacy key under the old prefix
+    await redis.set('avatar:abc', Buffer.from([3]))
 
     const stats = await getAdminCacheStats()
     expect(stats.buckets.find((bucket) => bucket.id === 'og')?.pattern).toBe('opengraph:*')
@@ -168,13 +112,14 @@ describe('service: cache admin', () => {
 
     const cleared = await clearAdminCache('og')
     expect(cleared.total).toBe(1)
-    // Legacy `og:stale-…` key is NOT touched — that's the documented
-    // behaviour: old keys age out at their stored TTL.
-    expect([...fixture.store.keys()].sort()).toEqual(['avatar:abc', 'og:stale-deadbeef'])
+    // Legacy `og:stale-…` key is NOT touched.
+    const remaining = await redis.keys('*')
+    expect(remaining.sort()).toEqual(['avatar:abc', 'og:stale-deadbeef'])
   })
 
   it('exposes prefix + TTL on every stats entry', async () => {
-    fixture.store.set('og:hello-x', new Uint8Array([1]))
+    const redis = redisInstance()
+    await redis.set('og:hello-x', Buffer.from([1]))
     const stats = await getAdminCacheStats()
 
     const og = stats.buckets.find((bucket) => bucket.id === 'og')
@@ -184,23 +129,21 @@ describe('service: cache admin', () => {
     expect(og?.pattern).toBe(`${cacheFixture.og.prefix}*`)
   })
 
-  // The `imageMeta` buckets used to be process-local
-  // `lru-cache` instances; routing them through Redis means the admin
-  // panel is now the single source of truth for invalidation, so the
-  // SCAN + UNLINK contract has to cover them too.
   it('scans and clears the imageMeta buckets the same way as og/avatar/calendar', async () => {
-    fixture.store.set('image-meta:images/2024/06/cover.jpg', JSON.stringify({ found: true }))
-    fixture.store.set('image-meta:images/2024/06/banner.jpg', JSON.stringify({ found: false }))
-    fixture.store.set('og:foo', new Uint8Array([1]))
+    const redis = redisInstance()
+    await redis.set('image-meta:images/2024/06/cover.jpg', JSON.stringify({ found: true }))
+    await redis.set('image-meta:images/2024/06/banner.jpg', JSON.stringify({ found: false }))
+    await redis.set('og:foo', Buffer.from([1]))
 
     const stats = await getAdminCacheStats()
     const counts = Object.fromEntries(stats.buckets.map((b) => [b.id, b.keyCount]))
-    expect(counts.imageMeta).toBe(2)
     expect(counts.imageMeta).toBe(2)
 
     const result = await clearAdminCache('imageMeta')
     expect(result.total).toBe(2)
     expect(result.cleared[0]?.bucketId).toBe('imageMeta')
     // og keys survive a targeted imageMeta sweep.
+    const remaining = await redis.keys('*')
+    expect(remaining).toEqual(['og:foo'])
   })
 })

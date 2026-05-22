@@ -22,9 +22,6 @@ vi.mock('@/server/render/avatar/cache', () => ({
   cacheAvatar: vi.fn(),
   loadAvatar: vi.fn().mockResolvedValue(null),
 }))
-vi.mock('@/server/infra/redis/buffer-cache', () => ({
-  loadBuffer: vi.fn().mockResolvedValue(Buffer.from([0x89, 0x50, 0x4e, 0x47])),
-}))
 // catalog/catalog was removed; images.ts now queries posts/repo and pages/repo
 // directly via findPostBySlug / findPageBySlug in parallel.
 vi.mock('@/server/render/avatar/fetch', () => ({

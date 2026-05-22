@@ -1,51 +1,40 @@
 import { call } from '@orpc/server'
-import { describe, expect, it, vi } from 'vite-plus/test'
+import { beforeEach, describe, expect, it } from 'vite-plus/test'
 
+import { setBlogSettingsBundleForTests } from '@/server/domains/settings/snapshot'
+import { adminCacheRouter } from '@/server/http/controllers/admin/cache.controller'
+import { redisInstance } from '@/server/infra/redis/storage'
+
+import { TEST_BLOG_SETTINGS_BUNDLE } from './_helpers/blog-settings'
 import { makeAuthedCtx } from './_helpers/mock-ctx'
+import { flushWorkerRedis } from './_helpers/redis'
 
-vi.mock('@/server/infra/redis/admin-ops', () => ({
-  clearAdminCache: vi.fn(),
-  getAdminCacheStats: vi.fn(),
-}))
-
-const cacheMod = await import('@/server/infra/redis/admin-ops')
-const { adminCacheRouter } = await import('@/server/http/controllers/admin/cache.controller')
-
-const statsStub = {
-  buckets: [
-    {
-      id: 'og',
-      label: 'OG',
-      description: '',
-      prefix: 'og:',
-      ttlSeconds: 600,
-      pattern: 'og:*',
-      keyCount: 3,
-    },
-  ],
-  reserved: [],
-  total: 3,
-  generatedAt: new Date().toISOString(),
-}
+beforeEach(async () => {
+  await flushWorkerRedis()
+  setBlogSettingsBundleForTests(TEST_BLOG_SETTINGS_BUNDLE)
+})
 
 describe('adminCacheRouter.getStats', () => {
   it('proxies the service stats verbatim', async () => {
-    vi.mocked(cacheMod.getAdminCacheStats).mockResolvedValueOnce(statsStub as never)
     const ctx = makeAuthedCtx()
     const res = (await call(adminCacheRouter.getStats, {}, { context: ctx })) as { total: number }
-    expect(res.total).toBe(3)
+    expect(res.total).toBe(0)
   })
 })
 
 describe('adminCacheRouter.clear', () => {
   it('forwards the target string to the service and ships the refreshed stats', async () => {
-    vi.mocked(cacheMod.clearAdminCache).mockResolvedValueOnce({
-      cleared: [{ bucketId: 'og', label: 'OG', removed: 2 }],
-      total: 2,
-      refreshedStats: statsStub,
-    } as never)
+    const redis = redisInstance()
+    await redis.set('og:hello', Buffer.from([1]))
+
     const ctx = makeAuthedCtx()
-    await call(adminCacheRouter.clear, { target: 'og' }, { context: ctx })
-    expect(vi.mocked(cacheMod.clearAdminCache)).toHaveBeenCalledWith('og')
+    const res = (await call(adminCacheRouter.clear, { target: 'og' }, { context: ctx })) as {
+      total: number
+      cleared: Array<{ bucketId: string; removed: number }>
+    }
+
+    expect(res.total).toBe(1)
+    expect(res.cleared[0]?.bucketId).toBe('og')
+    expect(res.cleared[0]?.removed).toBe(1)
   })
 })

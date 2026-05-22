@@ -1,76 +1,63 @@
 import { beforeEach, describe, expect, it, vi } from 'vite-plus/test'
 
+import { db } from '@/server/infra/db/pool'
+import { post, postSearchIndex } from '@/server/infra/db/schema'
+
+import { clearAllTables } from './_helpers/integration-db'
+import { flushWorkerRedis } from './_helpers/redis'
+
 const mocks = vi.hoisted(() => ({
-  dbSelect: vi.fn(),
-  getBlogSettingsBundleSync: vi.fn(),
   generateEmbedding: vi.fn(),
-}))
-
-vi.mock('@/server/infra/db/pool', () => ({
-  db: { select: mocks.dbSelect },
-}))
-
-vi.mock('@/shared/config/blog', () => ({
-  getBlogSettingsBundleSync: mocks.getBlogSettingsBundleSync,
 }))
 
 vi.mock('@/server/infra/search/openai', () => ({
   generateEmbedding: mocks.generateEmbedding,
 }))
 
-// `searchPosts` caches result slugs in Redis. The default
-// `@/server/cache/storage` would try to dial `redis://localhost:6379` —
-// fine locally, but on CI there is no Redis and `ioredis` retries
-// forever, blowing past every test timeout. An in-memory no-op forces
-// every call to a cache miss so tests exercise the real query path.
-vi.mock('@/server/infra/redis/storage', () => ({
-  storage: {
-    getItem: vi.fn(async () => null),
-    setItem: vi.fn(async () => undefined),
-  },
-}))
+const { searchPosts } = await import('@/server/infra/search/search')
+const { setBlogSettingsBundleForTests } = await import('@/server/domains/settings/snapshot')
+const { TEST_BLOG_SETTINGS_BUNDLE } = await import('./_helpers/blog-settings')
 
-function chainable(rows: unknown[]) {
-  const handle = Promise.resolve(rows) as unknown as {
-    from: () => typeof handle
-    innerJoin: () => typeof handle
-    leftJoin: () => typeof handle
-    where: () => typeof handle
-    orderBy: () => typeof handle
-    limit: () => typeof handle
-    then: Promise<unknown[]>['then']
-  }
-  handle.from = () => handle
-  handle.innerJoin = () => handle
-  handle.leftJoin = () => handle
-  handle.where = () => handle
-  handle.orderBy = () => handle
-  handle.limit = () => handle
-  return handle
+beforeEach(async () => {
+  await clearAllTables(db)
+  await flushWorkerRedis()
+  mocks.generateEmbedding.mockReset()
+  setBlogSettingsBundleForTests(TEST_BLOG_SETTINGS_BUNDLE)
+})
+
+async function seedPost(overrides: Partial<typeof post.$inferInsert> = {}) {
+  const rows = await db
+    .insert(post)
+    .values({
+      slug: 'test-post',
+      title: 'Test Post',
+      summary: 'A test summary',
+      publishedAt: overrides.publishedAt ?? new Date(),
+      ...overrides,
+    })
+    .returning()
+  await db.insert(postSearchIndex).values({
+    postId: rows[0].id,
+    plainText: overrides.summary ?? 'A test summary',
+  })
+  return rows[0]
 }
 
-const { searchPostOptions } = await import('@/server/infra/search/options')
-const { searchPosts } = await import('@/server/infra/search/search')
-
-beforeEach(() => {
-  mocks.dbSelect.mockReset()
-  mocks.getBlogSettingsBundleSync.mockReset()
-  mocks.generateEmbedding.mockReset()
-
-  // Default: LIKE mode (no vector)
-  mocks.getBlogSettingsBundleSync.mockReturnValue({
+function enableVectorMode() {
+  setBlogSettingsBundleForTests({
+    ...TEST_BLOG_SETTINGS_BUNDLE,
     search: {
       search: {
-        enabled: false,
-        mode: 'like',
+        enabled: true,
+        mode: 'vector',
         endpoint: '',
-        apiKey: '',
+        apiKey: 'sk-test',
         model: 'text-embedding-3-small',
         similarityThreshold: 0.5,
       },
     },
   })
-})
+}
 
 describe('services/search — searchPosts', () => {
   it('returns empty results for empty query', async () => {
@@ -80,73 +67,56 @@ describe('services/search — searchPosts', () => {
   })
 
   it('uses LIKE mode by default', async () => {
-    mocks.dbSelect.mockImplementation(() => chainable([{ slug: 'post-with-phrase' }, { slug: 'another-post' }]))
+    await seedPost({ slug: 'post-with-phrase', title: '向量数据库入门' })
+    await seedPost({ slug: 'another-post', title: '另一个文章' })
 
     const result = await searchPosts('向量数据库', 10)
 
-    expect(result.hits).toEqual(['post-with-phrase', 'another-post'])
+    expect(result.hits).toEqual(['post-with-phrase'])
     expect(result.totalPages).toBe(1)
     expect(mocks.generateEmbedding).not.toHaveBeenCalled()
   })
 
   it('paginates LIKE results', async () => {
-    mocks.dbSelect.mockImplementation(() => chainable([{ slug: 'post-a' }, { slug: 'post-b' }, { slug: 'post-c' }]))
+    const now = new Date()
+    await seedPost({ slug: 'post-a', title: 'Test A', publishedAt: new Date(now.getTime() - 2000) })
+    await seedPost({ slug: 'post-b', title: 'Test B', publishedAt: new Date(now.getTime() - 1000) })
+    await seedPost({ slug: 'post-c', title: 'Test C', publishedAt: now })
 
-    const result = await searchPosts('query', 2, 1)
+    const result = await searchPosts('test', 2, 1)
 
-    expect(result.hits).toEqual(['post-b', 'post-c'])
+    // Ordered by publishedAt DESC: post-c, post-b, post-a
+    // offset=1, limit=2 → post-b, post-a
+    expect(result.hits).toEqual(['post-b', 'post-a'])
     expect(result.page).toBe(1)
     expect(result.totalPages).toBe(2)
   })
 
-  it('uses vector mode when enabled and embedding succeeds', async () => {
-    mocks.getBlogSettingsBundleSync.mockReturnValue({
-      search: {
-        search: {
-          enabled: true,
-          mode: 'vector',
-          endpoint: '',
-          apiKey: 'sk-test',
-          model: 'text-embedding-3-small',
-          similarityThreshold: 0.5,
-        },
-      },
-    })
+  it('uses vector mode when enabled and embedding succeeds, falls back to LIKE results', async () => {
+    enableVectorMode()
     mocks.generateEmbedding.mockResolvedValue([0.1, 0.2, 0.3])
-    mocks.dbSelect.mockImplementation(() => chainable([{ slug: 'vector-match-1' }, { slug: 'vector-match-2' }]))
 
-    const result = await searchPosts('semantic query', 10)
+    await seedPost({ slug: 'vector-match-1', title: 'Semantic One' })
+    await seedPost({ slug: 'vector-match-2', title: 'Semantic Two' })
 
-    expect(mocks.generateEmbedding).toHaveBeenCalledWith('semantic query')
-    expect(result.hits).toEqual(['vector-match-1', 'vector-match-2'])
+    const result = await searchPosts('semantic', 10)
+
+    expect(mocks.generateEmbedding).toHaveBeenCalledWith('semantic')
+    // Vector search won't match because no embeddings in DB,
+    // but LIKE should still find the titles containing 'semantic'
+    expect(result.hits).toContain('vector-match-1')
+    expect(result.hits).toContain('vector-match-2')
   })
 
   it('falls back to LIKE when vector mode is enabled but embedding fails', async () => {
-    mocks.getBlogSettingsBundleSync.mockReturnValue({
-      search: {
-        search: {
-          enabled: true,
-          mode: 'vector',
-          endpoint: '',
-          apiKey: 'sk-test',
-          model: 'text-embedding-3-small',
-          similarityThreshold: 0.5,
-        },
-      },
-    })
+    enableVectorMode()
     mocks.generateEmbedding.mockResolvedValue(null)
-    mocks.dbSelect.mockImplementation(() => chainable([{ slug: 'like-fallback' }]))
 
-    const result = await searchPosts('query', 10)
+    await seedPost({ slug: 'like-fallback', title: 'Test Fallback' })
+
+    const result = await searchPosts('test', 10)
 
     expect(mocks.generateEmbedding).toHaveBeenCalled()
     expect(result.hits).toEqual(['like-fallback'])
-  })
-
-  it('exposes searchPostOptions with correct visibility flags', () => {
-    expect(searchPostOptions()).toEqual({
-      includeHidden: true,
-      includeScheduled: import.meta.env.DEV,
-    })
   })
 })

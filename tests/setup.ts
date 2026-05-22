@@ -8,27 +8,26 @@ import { BLOG_SETTINGS_SNAPSHOT_SLOT } from '@/shared/config/blog'
 
 import { TEST_BLOG_SETTINGS_BUNDLE } from './_helpers/blog-settings'
 
-const USE_REAL_DB = process.env.TEST_USE_REAL_DB === 'true'
 let testDbUrl: string | null = null
 
-if (USE_REAL_DB) {
-  const { createWorkerDatabase, dropWorkerDatabase } = await import('./_helpers/integration-db')
-  const workerId = process.env.VITEST_WORKER_ID || '0'
-  testDbUrl = await createWorkerDatabase(workerId)
-  process.env.DATABASE_URL = testDbUrl
+const { createWorkerDatabase, dropWorkerDatabase } = await import('./_helpers/integration-db')
+const workerId = process.env.VITEST_WORKER_ID || '0'
+testDbUrl = await createWorkerDatabase(workerId)
+process.env.DATABASE_URL = testDbUrl
 
-  afterAll(async () => {
-    const { closePool } = await import('@/server/infra/db/pool')
-    try {
-      await closePool()
-    } catch {
-      // ignore — pool may already be closed by shutdown hooks
-    }
-    if (testDbUrl) {
-      await dropWorkerDatabase(testDbUrl)
-    }
-  })
-}
+afterAll(async () => {
+  // Some test files mock `db.pool`; use optional access so the cleanup
+  // does not blow up when the hoisted mock lacks `closePool`.
+  try {
+    const mod = await import('@/server/infra/db/pool')
+    await (mod as { closePool?: () => Promise<void> }).closePool?.()
+  } catch {
+    // ignore — pool may already be closed by shutdown hooks
+  }
+  if (testDbUrl) {
+    await dropWorkerDatabase(testDbUrl)
+  }
+})
 
 // Provide the env vars `@/server/env` requires at module-load time.
 import './_helpers/env'

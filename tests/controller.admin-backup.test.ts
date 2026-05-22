@@ -15,6 +15,11 @@ vi.mock('@/shared/config/blog', () => ({
   getBlogSettingsBundleSync: vi.fn(),
 }))
 
+vi.mock('@/server/infra/shutdown', () => ({
+  requestShutdown: vi.fn(),
+  registerShutdownHook: vi.fn(),
+}))
+
 const service = await import('@/server/domains/backup/service')
 const blogConfig = await import('@/shared/config/blog')
 const { adminBackupRouter } = await import('@/server/http/controllers/admin/backup.controller')

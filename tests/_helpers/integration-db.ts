@@ -1,3 +1,5 @@
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
+
 import { sql } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/node-postgres'
 import { migrate } from 'drizzle-orm/node-postgres/migrator'
@@ -23,13 +25,21 @@ function getAdminPool(): Pool {
 /**
  * Detect which optional extensions are available in the current Postgres
  * instance. Returns a Set of available extension names.
+ *
+ * If the query fails (e.g. the database is not fully ready yet), we catch
+ * the error and return an empty set so the caller can fall back to skipping
+ * extension-dependent migrations.
  */
 async function detectAvailableExtensions(db: ReturnType<typeof drizzle>): Promise<Set<string>> {
-  const result = await db.execute(sql`
-    SELECT extname FROM pg_available_extensions
-    WHERE extname IN ('timescaledb', 'vector')
-  `)
-  return new Set((result.rows as { extname: string }[]).map((r) => r.extname))
+  try {
+    const result = await db.execute(sql`
+      SELECT extname FROM pg_available_extensions
+      WHERE extname IN ('timescaledb', 'vector')
+    `)
+    return new Set((result.rows as { extname: string }[]).map((r) => r.extname))
+  } catch {
+    return new Set()
+  }
 }
 
 /**
@@ -109,11 +119,38 @@ export async function createWorkerDatabase(workerId: string): Promise<string> {
   testUrl.pathname = `/${dbName}`
   const connectionString = testUrl.toString()
 
-  // Run migrations in the newly-created database
-  const pool = new Pool({ connectionString })
-  const db = drizzle({ client: pool })
+  // Pre-create optional extensions in the new database using the admin
+  // connection.  The drizzle `enable_pgvector` migration may fail silently
+  // or run too late in some environments (e.g. CI service containers),
+  // so we ensure the extensions exist before migrations start.
+  const extPool = new Pool({ connectionString })
+  try {
+    await extPool.query(`CREATE EXTENSION IF NOT EXISTS vector`)
+  } catch {
+    // ignore — extension not available in this Postgres build
+  }
+  try {
+    await extPool.query(`CREATE EXTENSION IF NOT EXISTS timescaledb`)
+  } catch {
+    // ignore — extension not available in this Postgres build
+  }
+  await extPool.end()
+
+  // Run migrations in the newly-created database.
+  // Use `connection: { connectionString, max: 1 }` to match the project's
+  // `migrate.ts` pattern and avoid pooling issues during setup.
+  const db = drizzle({
+    connection: { connectionString, max: 1 },
+  })
+
+  // Ensure the connection is actually ready before running migrations.
+  // The pg Pool is lazy; the first query may fail if the DB isn't fully
+  // initialised yet (especially in CI service containers).
+  await db.execute(sql`select 1`)
+
   await runTestMigrations(db)
-  await pool.end()
+  const client = db.$client as { end: () => Promise<void> }
+  await client.end()
 
   return connectionString
 }
@@ -138,7 +175,7 @@ export async function dropWorkerDatabase(dbNameOrUrl: string): Promise<void> {
  * wants to reset state between its own test cases without tearing down the
  * whole database.
  */
-export async function clearAllTables(db: ReturnType<typeof drizzle>): Promise<void> {
+export async function clearAllTables(db: NodePgDatabase): Promise<void> {
   // Query information_schema for all tables in the public schema,
   // excluding drizzle's own migration table.
   const result = await db.execute(sql`

@@ -1,39 +1,16 @@
 import { beforeEach, describe, expect, it, vi } from 'vite-plus/test'
 
+import { db } from '@/server/infra/db/pool'
+
+import { clearAllTables } from './_helpers/integration-db'
+
 // Tests that the inline cache clearing in posts/pages services works
 // correctly, replacing the old `subscribeCatalogInvalidate` pattern.
-
-const txMocks = vi.hoisted(() => {
-  const insertReturning = vi.fn<() => unknown[]>(() => [])
-  const insertValues = vi.fn(() => ({ returning: insertReturning }))
-  const insert = vi.fn(() => ({ values: insertValues }))
-
-  const updateReturning = vi.fn<() => unknown[]>(() => [])
-  const updateWhere = vi.fn(() => ({ returning: updateReturning }))
-  const updateSet = vi.fn(() => ({ where: updateWhere }))
-  const update = vi.fn(() => ({ set: updateSet }))
-
-  return {
-    insert,
-    insertValues,
-    insertReturning,
-    update,
-    updateSet,
-    updateWhere,
-    updateReturning,
-  }
-})
-
-vi.mock('@/server/infra/db/pool', () => ({
-  db: {
-    transaction: vi.fn(async (cb: (tx: unknown) => Promise<unknown>) =>
-      cb({
-        insert: txMocks.insert,
-        update: txMocks.update,
-      }),
-    ),
-  },
-}))
+//
+// We keep the repo mocks so the test focuses purely on cache-invalidation
+// semantics; only `db.pool` is real so `createPost` (which issues a raw
+// `db.transaction`) can execute without a brittle hand-rolled transaction
+// stub.
 
 vi.mock('@/server/domains/posts/repo', () => ({
   countPostMetas: vi.fn(async () => 0),
@@ -53,34 +30,6 @@ vi.mock('@/server/domains/posts/repo', () => ({
   softDeletePostMeta: vi.fn(async () => true),
   updatePostMetaById: vi.fn(async () => null),
 }))
-
-function makeMockPostRow(overrides: Record<string, unknown> = {}) {
-  return {
-    id: 1n,
-    slug: 'new-post',
-    title: 'New Post',
-    summary: '',
-    cover: '',
-    og: null,
-    published: false,
-    commentsEnabled: true,
-    showToc: false,
-    showUpdated: false,
-    visible: true,
-    publishedAt: new Date(),
-    publishedRevisionId: null,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    deletedAt: null,
-    category: null,
-    tags: [],
-    alias: [],
-    authorId: null,
-    pinnedAt: null,
-    firstPublishedAt: null,
-    ...overrides,
-  }
-}
 
 function makeMockPageRow(overrides: Record<string, unknown> = {}) {
   return {
@@ -153,9 +102,10 @@ vi.mock('@/server/infra/db/operations/like', () => ({
   metricsByOwnerIds: vi.fn(async () => []),
 }))
 
-beforeEach(() => {
+beforeEach(async () => {
   vi.resetModules()
   vi.clearAllMocks()
+  await clearAllTables(db)
 })
 
 describe('posts service cache clearing', () => {
@@ -234,8 +184,6 @@ describe('posts service cache clearing', () => {
         ] as any,
     )
     vi.mocked(postRepo.findPostMetaBySlug).mockImplementation(async () => null)
-    txMocks.insertReturning.mockReturnValue([makeMockPostRow()])
-    txMocks.updateReturning.mockReturnValue([makeMockPostRow()])
 
     const { loadCatalogPostMetas, createPost } = await import('@/server/domains/posts/service')
 
@@ -283,7 +231,6 @@ describe('posts service cache clearing', () => {
         ] as any,
     )
     vi.mocked(postRepo.findPostMetaBySlug).mockImplementation(async () => null)
-    txMocks.insertReturning.mockReturnValue([makeMockPostRow()])
 
     const { loadCatalogPostMetas, createPost } = await import('@/server/domains/posts/service')
 
@@ -366,8 +313,6 @@ describe('pages service cache clearing', () => {
           },
         ] as any,
     )
-    txMocks.insertReturning.mockReturnValue([makeMockPageRow()])
-    txMocks.updateReturning.mockReturnValue([makeMockPageRow()])
 
     const { loadCatalogPages, createPage } = await import('@/server/domains/pages/service')
 

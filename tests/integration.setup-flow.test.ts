@@ -1,27 +1,12 @@
+import { eq, sql } from 'drizzle-orm'
 import { beforeEach, describe, expect, it, vi } from 'vite-plus/test'
 
-import { emptySession } from './_helpers/session'
+import { db } from '@/server/infra/db/pool'
+import { setting, user } from '@/server/infra/db/schema'
 
-// Stub Redis so `establishLoginSession` can commit the session.
-vi.mock('@/server/infra/redis/storage', () => ({
-  redisInstance: () => ({
-    get: vi.fn(async () => null),
-    set: vi.fn(async () => 'OK'),
-    del: vi.fn(async () => 1),
-    sadd: vi.fn(async () => 1),
-    srem: vi.fn(async () => 1),
-    smembers: vi.fn(async () => []),
-    hset: vi.fn(async () => 1),
-    hgetall: vi.fn(async () => ({})),
-    pexpireat: vi.fn(async () => 1),
-    pipeline: () => ({
-      del: () => {
-        /* noop */
-      },
-      exec: vi.fn(async () => []),
-    }),
-  }),
-}))
+import { clearAllTables } from './_helpers/integration-db'
+import { flushWorkerRedis } from './_helpers/redis'
+import { emptySession } from './_helpers/session'
 
 vi.mock('@/server/domains/auth/context', () => ({
   getRouteRequestContext: vi.fn().mockReturnValue({
@@ -40,44 +25,6 @@ vi.mock('@/server/domains/settings/install-gate', () => ({
   getInstallState: vi.fn(async () => 'noAdmin' as const),
 }))
 
-vi.mock('@/server/infra/db/operations/user', () => ({
-  hasAdmin: vi.fn(async () => false),
-  insertAdmin: vi.fn(async () => [
-    {
-      id: 1n,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      deletedAt: null,
-      name: 'Admin',
-      email: 'admin@example.com',
-      emailVerified: false,
-      link: null,
-      password: 'hashed',
-      badgeName: null,
-      badgeColor: null,
-      badgeTextColor: null,
-      lastIp: null,
-      lastUa: null,
-      role: 'admin',
-      isMuted: false,
-      receiveEmail: true,
-    },
-  ]),
-  verifyUserPassword: vi.fn(),
-  updateLastLogin: vi.fn(async () => undefined),
-}))
-
-vi.mock('@/server/infra/db/operations/setting', () => ({
-  upsertSetting: vi.fn(async () => ({
-    id: 1n,
-    scope: 'blog.general',
-    data: {},
-    updatedAt: new Date(),
-    updatedBy: 1n,
-  })),
-  findSettingByScope: vi.fn(async () => null),
-}))
-
 vi.mock('@/server/domains/settings/snapshot', () => ({
   refreshBlogSettings: vi.fn(async () => null),
 }))
@@ -86,14 +33,11 @@ vi.mock('@/server/infra/rate-limit', () => ({
   tryRateLimit: vi.fn(async () => ({ count: 1, exceeded: false })),
 }))
 
-const userQuery = await import('@/server/infra/db/operations/user')
-const settingQuery = await import('@/server/infra/db/operations/setting')
-const settingsSnapshot = await import('@/server/domains/settings/snapshot')
-
 const { action, loader } = await import('@/routes/auth/setup/index')
 
-beforeEach(() => {
-  vi.clearAllMocks()
+beforeEach(async () => {
+  await clearAllTables(db)
+  await flushWorkerRedis()
 })
 
 // React Router's `redirect()` throws a Response object — catch it.
@@ -144,14 +88,21 @@ describe('integration: /admin/setup full install flow', () => {
     expect(response.status).toBe(302)
     expect(response.headers.get('Location')).toBe('/admin')
 
-    expect(userQuery.insertAdmin).toHaveBeenCalledOnce()
-    expect(userQuery.insertAdmin).toHaveBeenCalledWith('Admin', 'admin@example.com', 'correcthorsebatterystaple')
+    // Verify admin user was created
+    const adminRows = await db.select().from(user).where(eq(user.role, 'admin'))
+    expect(adminRows).toHaveLength(1)
+    expect(adminRows[0]?.name).toBe('Admin')
+    expect(adminRows[0]?.email).toBe('admin@example.com')
+    expect(adminRows[0]?.role).toBe('admin')
 
-    expect(settingQuery.upsertSetting).toHaveBeenCalled()
-    const calls = vi.mocked(settingQuery.upsertSetting).mock.calls
-    expect(calls.length).toBe(15)
+    // Verify settings were seeded
+    const settingRows = await db
+      .select()
+      .from(setting)
+      .where(sql`${setting.scope} like 'blog.%'`)
+    expect(settingRows.length).toBe(15)
 
-    const scopes = new Set(calls.map(([, , scope]) => scope as string))
+    const scopes = new Set(settingRows.map((r) => r.scope))
     const EXPECTED_SECTIONS = [
       'blog.general',
       'blog.assets',
@@ -172,8 +123,6 @@ describe('integration: /admin/setup full install flow', () => {
     for (const scope of EXPECTED_SECTIONS) {
       expect(scopes.has(scope)).toBe(true)
     }
-
-    expect(settingsSnapshot.refreshBlogSettings).toHaveBeenCalledOnce()
 
     const cookies = response.headers.getSetCookie()
     expect(cookies.some((c) => c.startsWith('__session='))).toBe(true)

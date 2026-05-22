@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, develop]
   pull_request:
     branches: [main]
 
@@ -44,7 +44,6 @@ jobs:
       DATABASE_URL: postgres://test:test@localhost:5432/test
       REDIS_URL: redis://localhost:6379
       SESSION_SECRET: ci-session-secret
-      TEST_USE_REAL_DB: true
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-node@v6
