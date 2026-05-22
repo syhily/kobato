@@ -60,7 +60,7 @@ folo
 fong
 fontsource
 forencrypt
-FOUC
+fouc
 fumadocs
 genyo
 giscus
@@ -72,6 +72,7 @@ gotop
 grayscale
 gungseo
 hashtext
+healthcheck
 hefei
 heiti
 hiragino
@@ -91,6 +92,7 @@ iosevka
 iroha
 iseeklife
 isodate
+isready
 jamo
 jefc
 jian
@@ -207,7 +209,7 @@ sauvignon
 scalafmt
 scann
 sefc
-Segoe
+segoe
 serialised
 shadcn
 sheng
@@ -232,6 +234,7 @@ theia
 thumbhash
 timestamptz
 tlyric
+tmpfs
 toolsmp
 topbar
 translog

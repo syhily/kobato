@@ -1,8 +1,38 @@
-// Vitest global setup. Provides the env vars `@/server/env` requires at
-// module-load time so tests can transitively import `*.server.ts` modules
-// without spinning up Postgres/Redis. The actual values live in
-// `tests/_helpers/env.ts` so they can be re-imported piecewise.
+// Vitest worker setup. Runs once per worker before any test file in that
+// worker. Must create the test database before the first test file imports
+// `db.pool.ts` (which reads DATABASE_URL at module-load time).
+
+import { afterAll } from 'vite-plus/test'
+
+import { BLOG_SETTINGS_SNAPSHOT_SLOT } from '@/shared/config/blog'
+
+import { TEST_BLOG_SETTINGS_BUNDLE } from './_helpers/blog-settings'
+
+const USE_REAL_DB = process.env.TEST_USE_REAL_DB === 'true'
+let testDbUrl: string | null = null
+
+if (USE_REAL_DB) {
+  const { createWorkerDatabase, dropWorkerDatabase } = await import('./_helpers/integration-db')
+  const workerId = process.env.VITEST_WORKER_ID || '0'
+  testDbUrl = await createWorkerDatabase(workerId)
+  process.env.DATABASE_URL = testDbUrl
+
+  afterAll(async () => {
+    const { closePool } = await import('@/server/infra/db/pool')
+    try {
+      await closePool()
+    } catch {
+      // ignore — pool may already be closed by shutdown hooks
+    }
+    if (testDbUrl) {
+      await dropWorkerDatabase(testDbUrl)
+    }
+  })
+}
+
+// Provide the env vars `@/server/env` requires at module-load time.
 import './_helpers/env'
+
 // Seed the in-process settings snapshot once per worker by writing
 // directly to the shared cross-module slot. Importing through
 // `@/server/domains/settings/snapshot` would transitively load
@@ -14,9 +44,5 @@ import './_helpers/env'
 // that need to clear or replace the snapshot before each `it` should
 // call `setBlogSettingsBundleForTests(...)` from
 // `@/server/domains/settings/snapshot` themselves.
-import { BLOG_SETTINGS_SNAPSHOT_SLOT } from '@/shared/config/blog'
-
-import { TEST_BLOG_SETTINGS_BUNDLE } from './_helpers/blog-settings'
-
 BLOG_SETTINGS_SNAPSHOT_SLOT.write(TEST_BLOG_SETTINGS_BUNDLE)
 BLOG_SETTINGS_SNAPSHOT_SLOT.writeHydration(Promise.resolve(TEST_BLOG_SETTINGS_BUNDLE))
