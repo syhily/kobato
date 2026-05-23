@@ -5,9 +5,9 @@ import { Link } from 'react-router'
 
 import type { ListingPostCard, ListingPostCardWithMetadata } from '@/shared/types/catalog'
 
+import { useSidebarSettings, useSiteIdentity } from '@/shared/lib/blog-config-context'
 import { formatShowDate } from '@/shared/utils/formatter'
 import { Button } from '@/ui/components/button'
-import { useSidebarSettings, useSiteIdentity } from '@/ui/lib/blog-config-context'
 import { cn } from '@/ui/lib/cn'
 import { Pagination } from '@/ui/public/post/Pagination'
 import { postTitleClass } from '@/ui/public/post/postChrome'

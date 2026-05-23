@@ -12,7 +12,7 @@ export function notFound(message = 'Not Found'): never {
 export function pngResponse(buffer: Buffer | Uint8Array, headers?: HeadersInit): Response {
   const responseHeaders = new Headers(headers)
   responseHeaders.set('Content-Type', 'image/png')
-  return new Response(buffer as unknown as BodyInit, {
+  return new Response(new Uint8Array(buffer), {
     headers: responseHeaders,
   })
 }

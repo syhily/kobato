@@ -3,6 +3,7 @@ import { CheckIcon, EditIcon, LinkIcon, MoreHorizontalIcon, ReplyIcon, Trash2Ico
 import type { AdminCommentWire as AdminComment } from '@/shared/contracts/comments'
 
 import { useMutation, orpcQuery } from '@/client/api/query'
+import { useSiteIdentity } from '@/shared/lib/blog-config-context'
 import { formatLocalDate } from '@/shared/utils/formatter'
 import { safeHref } from '@/shared/utils/safe-url'
 import { idStr } from '@/shared/utils/tools'
@@ -17,7 +18,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/ui/components/dropdown-menu'
-import { useSiteIdentity } from '@/ui/lib/blog-config-context'
 import { PortableTextBody } from '@/ui/pt/render'
 
 const ADMIN_DATE_FORMAT = 'yyyy-LL-dd HH:mm'

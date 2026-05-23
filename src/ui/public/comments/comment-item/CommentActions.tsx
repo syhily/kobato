@@ -3,6 +3,7 @@ import { useRevalidator } from 'react-router'
 import type { CommentItemWire as CommentItemType } from '@/shared/contracts/comments'
 
 import { orpcQuery, useMutation } from '@/client/api/query'
+import { useSiteIdentity } from '@/shared/lib/blog-config-context'
 import { formatLocalDate } from '@/shared/utils/formatter'
 import {
   AlertDialog,
@@ -15,7 +16,6 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/ui/components/alert-dialog'
-import { useSiteIdentity } from '@/ui/lib/blog-config-context'
 import { cn } from '@/ui/lib/cn'
 import { asKey, commentFooterButtonClass, useCommentsLeafContext } from '@/ui/public/comments/comment-item/helpers'
 

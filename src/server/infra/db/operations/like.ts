@@ -1,9 +1,8 @@
 import { and, eq, inArray, isNotNull, isNull, lt, sql } from 'drizzle-orm'
-
 import type { EntityTarget, EntityType } from '@/server/infra/db/target'
-
 import { db } from '@/server/infra/db/pool'
-import { comment, like, metric } from '@/server/infra/db/schema'
+import { comment } from '@/server/infra/db/schema/comment'
+import { like, metric } from '@/server/infra/db/schema/metric'
 import { targetKey } from '@/server/infra/db/target'
 
 // Filter clause used everywhere we look up like rows by entity target.

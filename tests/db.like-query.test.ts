@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 
 import { consumeActiveLikeToken, existsActiveLikeToken, purgeOldLikeTokens } from '@/server/infra/db/operations/like'
 import { db } from '@/server/infra/db/pool'
-import { like } from '@/server/infra/db/schema'
+import { like } from '@/server/infra/db/schema/metric'
 
 const POST_A = { type: 'post' as const, ownerId: 1n }
 

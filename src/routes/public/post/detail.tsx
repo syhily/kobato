@@ -37,7 +37,7 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
     if (hasAtLeast(sessionContext.role, 'author')) {
       const preview = await loadPostDraftPreviewBySlug(params.slug)
       if (preview !== null) {
-        sourcePost = preview.post as unknown as typeof sourcePost
+        sourcePost = preview.post
         draftMarker = 'draft'
       }
     }

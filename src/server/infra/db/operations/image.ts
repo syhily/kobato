@@ -1,9 +1,8 @@
 import { and, count, desc, eq, ilike, inArray, isNull, like, or, type SQL, sql } from 'drizzle-orm'
-
 import type { ImageRow, NewImage } from '@/server/infra/db/types'
-
 import { db } from '@/server/infra/db/pool'
-import { image, user } from '@/server/infra/db/schema'
+import { image } from '@/server/infra/db/schema/media'
+import { user } from '@/server/infra/db/schema/user'
 import { escapeLikePattern } from '@/shared/utils/escape-like'
 
 export interface AdminImagesListFilters {

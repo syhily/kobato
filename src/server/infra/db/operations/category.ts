@@ -1,9 +1,9 @@
-import { and, asc, eq, ilike, or } from 'drizzle-orm'
+import { and, asc, eq, ilike, inArray, or, sql } from 'drizzle-orm'
 
 import type { CategoryRow, NewCategory } from '@/server/infra/db/types'
 
 import { db } from '@/server/infra/db/pool'
-import { category } from '@/server/infra/db/schema'
+import { category } from '@/server/infra/db/schema/taxonomy'
 import { escapeLikePattern } from '@/shared/utils/escape-like'
 
 // Public listing reads. Stable `(sort_order ASC, id ASC)` order so the
@@ -105,18 +105,17 @@ export async function reorderCategories(orderedIds: readonly bigint[]): Promise<
     return []
   }
   const now = new Date()
+  const whens = sql.join(
+    orderedIds.map((id, i) => sql`WHEN ${category.id} = ${id} THEN ${i}`),
+    sql` `,
+  )
   return db.transaction(async (tx) => {
-    const updated: CategoryRow[] = []
-    for (const [index, id] of orderedIds.entries()) {
-      const rows = await tx
-        .update(category)
-        .set({ sortOrder: index, updatedAt: now })
-        .where(eq(category.id, id))
-        .returning()
-      if (rows[0]) {
-        updated.push(rows[0])
-      }
-    }
-    return updated
+    const rows = await tx
+      .update(category)
+      .set({ sortOrder: sql`CASE ${whens} END`, updatedAt: now })
+      .where(inArray(category.id, [...orderedIds]))
+      .returning()
+    const byId = new Map(rows.map((r) => [r.id, r]))
+    return orderedIds.map((id) => byId.get(id)!).filter(Boolean)
   })
 }

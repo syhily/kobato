@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 
 import { insertImageIfMissing, upsertImageByStoragePath } from '@/server/infra/db/operations/image'
 import { db } from '@/server/infra/db/pool'
-import { image } from '@/server/infra/db/schema'
+import { image } from '@/server/infra/db/schema/media'
 
 beforeEach(async () => {
   await db.delete(image)

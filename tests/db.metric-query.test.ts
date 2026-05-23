@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 
 import { incrementMetricPvBatch } from '@/server/infra/db/operations/metric'
 import { db } from '@/server/infra/db/pool'
-import { metric } from '@/server/infra/db/schema'
+import { metric } from '@/server/infra/db/schema/metric'
 
 beforeEach(async () => {
   await db.delete(metric)

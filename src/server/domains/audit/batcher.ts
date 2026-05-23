@@ -6,7 +6,7 @@ import type { AuditEventInput, BatcherOptions } from '@/server/domains/audit/typ
 
 import { csvEscape } from '@/server/domains/audit/csv'
 import { db, pool } from '@/server/infra/db/pool'
-import { auditLog } from '@/server/infra/db/schema'
+import { auditLog } from '@/server/infra/db/schema/config'
 import { getLogger } from '@/server/infra/logger'
 import { registerShutdownHook } from '@/server/infra/shutdown'
 import { idFromString } from '@/shared/utils/id'

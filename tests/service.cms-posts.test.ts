@@ -2,7 +2,7 @@ import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
 
 import { db } from '@/server/infra/db/pool'
-import { post as postMetaTable } from '@/server/infra/db/schema'
+import { post as postMetaTable } from '@/server/infra/db/schema/post'
 
 import { clearAllTables } from './_helpers/integration-db'
 

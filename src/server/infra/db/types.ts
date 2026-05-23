@@ -1,19 +1,13 @@
-import type {
-  category,
-  comment,
-  content,
-  friend,
-  image,
-  like,
-  metric,
-  music,
-  page,
-  post,
-  setting,
-  tag,
-  user,
-  verification,
-} from '@/server/infra/db/schema'
+import type { category, tag } from '@/server/infra/db/schema/taxonomy'
+import type { comment } from '@/server/infra/db/schema/comment'
+import type { content } from '@/server/infra/db/schema/content'
+import type { friend } from '@/server/infra/db/schema/friend'
+import type { image, music } from '@/server/infra/db/schema/media'
+import type { like, metric } from '@/server/infra/db/schema/metric'
+import type { page } from '@/server/infra/db/schema/page'
+import type { post } from '@/server/infra/db/schema/post'
+import type { setting } from '@/server/infra/db/schema/config'
+import type { user, verification } from '@/server/infra/db/schema/user'
 
 // Types for insert
 export type NewMetric = typeof metric.$inferInsert

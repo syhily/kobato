@@ -5,6 +5,7 @@ import { Link, useNavigate, useRevalidator, useSearchParams } from 'react-router
 import type { AdminSessionItem } from '@/routes/admin/security/sessions'
 
 import { useMutation, orpcQuery } from '@/client/api/query'
+import { useSiteIdentity } from '@/shared/lib/blog-config-context'
 import { formatLocalDate } from '@/shared/utils/formatter'
 import { roleLabel } from '@/shared/utils/roles'
 import { formatUserAgentLabel } from '@/shared/utils/user-agent'
@@ -19,7 +20,6 @@ import { Card, CardContent } from '@/ui/components/card'
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@/ui/components/empty'
 import { InputGroup, InputGroupAddon, InputGroupInput } from '@/ui/components/input-group'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/components/select'
-import { useSiteIdentity } from '@/ui/lib/blog-config-context'
 
 const DATE_FORMAT = 'yyyy-LL-dd HH:mm'
 

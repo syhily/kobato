@@ -3,7 +3,7 @@ import { eq } from 'drizzle-orm'
 import type { Comment, NewComment } from '@/server/infra/db/types'
 
 import { db } from '@/server/infra/db/pool'
-import { comment } from '@/server/infra/db/schema'
+import { comment } from '@/server/infra/db/schema/comment'
 
 export async function insertComment(values: NewComment): Promise<Comment | null> {
   const res = await db.insert(comment).values(values).returning()

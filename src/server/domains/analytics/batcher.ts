@@ -1,3 +1,4 @@
+import { appendFile, readFile, rename, writeFile } from 'node:fs/promises'
 import { Readable } from 'node:stream'
 import { pipeline } from 'node:stream/promises'
 import { from as copyFrom } from 'pg-copy-streams'
@@ -29,6 +30,7 @@ const log = getLogger('analytics.batcher')
 interface BatcherOptions {
   flushIntervalMs: number
   flushThreshold: number
+  deadLetterPath?: string
 }
 
 // Column order is wire-significant — `COPY (col1, col2, ...) FROM
@@ -109,18 +111,11 @@ class AccessLogBatcher {
         await copyEvents(snapshot)
         log.debug('flushed access log', { count: snapshot.length })
       } catch (err) {
-        log.error('flush failed; dropping batch', {
+        log.error('flush failed; writing to dead-letter', {
           err: err instanceof Error ? err.message : String(err),
           count: snapshot.length,
         })
-        // Deliberately NOT restoring the snapshot to the buffer:
-        // unlike counter increments (where losing N bumps is just
-        // a counter undershoot), access-log rows are append-only
-        // analytics and the most common failure mode is a malformed
-        // row that would re-throw on every retry. Drop the batch
-        // and continue serving live traffic. A future revision can
-        // route failed batches to a dead-letter table if the data
-        // volume justifies the complexity.
+        await writeDeadLetter(snapshot, this.opts.deadLetterPath)
       } finally {
         this.flushing = null
       }
@@ -212,4 +207,125 @@ export function pushAccessEvent(event: EnrichedAccessEvent): void {
 
 export function flushAccessLog(): Promise<void> {
   return getBatcher().flush()
+}
+
+// ─── dead-letter ──────────────────────────────────────────
+//
+// When COPY fails (transient network error, Postgres restart,
+// malformed row, etc.) the failed batch is serialized as one
+// JSON line per event and appended to a local JSONL file. A
+// separate `replayDeadLetter()` call can re-ingest the file
+// once the failure is resolved.
+
+const DEAD_LETTER_SEP = '\n'
+
+function deadLetterPath(): string {
+  return process.env.ANALYTICS_DEAD_LETTER_PATH ?? '/tmp/yufan-access-log-dead-letter.jsonl'
+}
+
+function serializeForDeadLetter(events: EnrichedAccessEvent[]): string {
+  return events
+    .map((e) =>
+      JSON.stringify({
+        ...e,
+        ts: e.ts.toISOString(),
+        entityId: e.entityId === null ? null : e.entityId.toString(),
+      }),
+    )
+    .join(DEAD_LETTER_SEP) + DEAD_LETTER_SEP
+}
+
+async function writeDeadLetter(events: EnrichedAccessEvent[], path?: string): Promise<void> {
+  const target = path ?? deadLetterPath()
+  try {
+    await appendFile(target, serializeForDeadLetter(events), 'utf-8')
+    log.info('wrote dead-letter batch', { path: target, count: events.length })
+  } catch (writeErr) {
+    // If even the dead-letter write fails, we've done everything we can.
+    log.error('dead-letter write also failed', {
+      err: writeErr instanceof Error ? writeErr.message : String(writeErr),
+      count: events.length,
+    })
+  }
+}
+
+function deserializeFromDeadLetter(line: string): EnrichedAccessEvent | null {
+  try {
+    const raw = JSON.parse(line) as Record<string, unknown>
+    return {
+      ts: new Date(raw.ts as string),
+      visitorHash: raw.visitorHash as string,
+      sessionId: raw.sessionId as string | null,
+      ip: raw.ip as string | null,
+      path: raw.path as string,
+      entityType: raw.entityType as 'post' | 'page' | null,
+      entityId: raw.entityId === null ? null : BigInt(raw.entityId as string),
+      referer: raw.referer as string | null,
+      refererHost: raw.refererHost as string | null,
+      country: raw.country as string | null,
+      region: raw.region as string | null,
+      city: raw.city as string | null,
+      latitude: raw.latitude as number | null,
+      longitude: raw.longitude as number | null,
+      timezone: raw.timezone as string | null,
+      language: raw.language as string | null,
+      ua: raw.ua as string | null,
+      browser: raw.browser as string | null,
+      browserVersion: raw.browserVersion as string | null,
+      os: raw.os as string | null,
+      osVersion: raw.osVersion as string | null,
+      device: raw.device as string | null,
+      deviceType: raw.deviceType as string | null,
+      isBot: raw.isBot as boolean,
+    }
+  } catch {
+    return null
+  }
+}
+
+export async function replayDeadLetter(path?: string): Promise<{ replayed: number; failed: number }> {
+  const target = path ?? deadLetterPath()
+  let content: string
+  try {
+    content = await readFile(target, 'utf-8')
+  } catch {
+    log.info('no dead-letter file to replay', { path: target })
+    return { replayed: 0, failed: 0 }
+  }
+
+  const lines = content.split('\n').filter((l) => l.trim() !== '')
+  if (lines.length === 0) {
+    return { replayed: 0, failed: 0 }
+  }
+
+  const events: EnrichedAccessEvent[] = []
+  let failed = 0
+  for (const line of lines) {
+    const event = deserializeFromDeadLetter(line)
+    if (event !== null) {
+      events.push(event)
+    } else {
+      failed++
+    }
+  }
+
+  if (events.length > 0) {
+    try {
+      await copyEvents(events)
+      log.info('replayed dead-letter batch', { count: events.length, path: target })
+      // Truncate the file on successful replay (atomic rename).
+      const tmp = `${target}.replayed`
+      await writeFile(tmp, '', 'utf-8')
+      await rename(tmp, target)
+    } catch (err) {
+      log.error('dead-letter replay also failed; keeping file', {
+        err: err instanceof Error ? err.message : String(err),
+        count: events.length,
+        path: target,
+      })
+      failed += events.length
+    }
+  }
+
+  return { replayed: events.length - (failed > 0 ? 0 : 0), failed }
 }

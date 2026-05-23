@@ -1,12 +1,14 @@
 import { and, eq, gte, isNotNull, isNull, or, sql } from 'drizzle-orm'
-
 import type { EntityTarget, EntityType } from '@/server/infra/db/target'
 import type { MyCommentsStatus } from '@/shared/types/comments'
 
 export type { MyCommentsStatus }
 
 import { db } from '@/server/infra/db/pool'
-import { comment, page, post, user } from '@/server/infra/db/schema'
+import { comment } from '@/server/infra/db/schema/comment'
+import { page } from '@/server/infra/db/schema/page'
+import { post } from '@/server/infra/db/schema/post'
+import { user } from '@/server/infra/db/schema/user'
 import { escapeLikePattern } from '@/shared/utils/escape-like'
 
 // Common projection: every comment column we expose to the application,

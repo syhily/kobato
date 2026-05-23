@@ -1,19 +1,5 @@
 import type { NavigateFunction } from 'react-router'
 
-import {
-  ArrowLeftIcon,
-  ChartLineIcon,
-  ExternalLinkIcon,
-  EyeOffIcon,
-  Loader2Icon,
-  PanelRightCloseIcon,
-  PanelRightOpenIcon,
-  SaveIcon,
-  SlidersHorizontalIcon,
-  UploadIcon,
-} from 'lucide-react'
-import { Link } from 'react-router'
-
 import type { AdminPostDetailDto, AdminPostDto } from '@/shared/types/posts'
 
 import { orpc } from '@/client/api/client'
@@ -23,20 +9,18 @@ import { ActionBanner } from '@/ui/admin/editor-shell/ActionBanner'
 import { DraftConflictDialog } from '@/ui/admin/editor-shell/DraftConflictDialog'
 import { FloatingPublishButton } from '@/ui/admin/editor-shell/FloatingPublishButton'
 import { PreviewPane } from '@/ui/admin/editor-shell/PreviewPanel'
-import { RevisionHistoryDrawer } from '@/ui/admin/editor-shell/RevisionsDrawer'
 import { useEditorShellState } from '@/ui/admin/editor-shell/use-editor-shell-state'
 import { PageBodyEditor } from '@/ui/admin/editor/PageBodyEditor'
 import {
   EMPTY_POST_META_DRAFT,
   metaDraftFromPost,
   metaDraftsEqual,
-  PostMetaSidebar,
   type PostMetaDraft,
 } from '@/ui/admin/posts/PostMetaSidebar'
-import { Button } from '@/ui/components/button'
-import { Input } from '@/ui/components/input'
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/ui/components/sheet'
-import { useContentSettings } from '@/ui/lib/blog-config-context'
+import { CreateModeBanner } from '@/ui/admin/posts/CreateModeBanner'
+import { PostEditorMetaAside, PostEditorMetaSheet } from '@/ui/admin/posts/PostEditorMetaPanel'
+import { PostEditorToolbar } from '@/ui/admin/posts/PostEditorToolbar'
+import { TitleSlugStrip } from '@/ui/admin/posts/TitleSlugStrip'
 import { cn } from '@/ui/lib/cn'
 
 export interface PostEditorShellProps {
@@ -90,8 +74,6 @@ function buildPostUpsertPayload({
 // entity-specific mutations + LS hooks + sidebar component and
 // renders the toolbar / layout / dialog markup.
 export function PostEditorShell({ mode, detail, navigate }: PostEditorShellProps) {
-  const contentSettings = useContentSettings()
-  const featureEnabled = contentSettings.post.featureEnabled
   // Local narrowing flag so TS knows `detail` is defined in the
   // `isEditing` JSX branches below. `isEditing` is just a
   // `boolean` and can't carry the type guard.
@@ -139,135 +121,7 @@ export function PostEditorShell({ mode, detail, navigate }: PostEditorShellProps
         state.previewOpen ? 'min-h-0 flex-1' : 'min-h-[calc(100vh-4rem)]',
       )}
     >
-      {/* Toolbar splits into two intent groups that share a single row
-       *  when there is room:
-       *    LEFT  — navigation away (`返回列表`, `公开预览`)
-       *    RIGHT — work on the current document (`实时预览`, action
-       *            buttons, `元数据`)
-       *  Labels collapse to icons in two tiers as the viewport
-       *  narrows: LEFT first (`<lg`), RIGHT second (`<sm`). */}
-      <header className="flex flex-wrap items-center gap-2 text-sm">
-        <div className="flex min-w-0 items-center gap-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            render={
-              <Link to="/admin/posts">
-                <ArrowLeftIcon />
-                <span className="sr-only lg:not-sr-only">返回列表</span>
-              </Link>
-            }
-          />
-          {isEditing ? (
-            <>
-              <Button
-                variant="ghost"
-                size="sm"
-                render={
-                  <Link to={`/posts/${detail.post.slug}`} target="_blank" rel="noreferrer">
-                    <ExternalLinkIcon />
-                    <span className="sr-only lg:not-sr-only">公开预览</span>
-                  </Link>
-                }
-              />
-              <Button
-                variant="ghost"
-                size="sm"
-                render={
-                  <Link to={`/editor/post/${detail.post.id}/analytics`}>
-                    <ChartLineIcon />
-                    <span className="sr-only lg:not-sr-only">分析</span>
-                  </Link>
-                }
-              />
-            </>
-          ) : null}
-        </div>
-        <div className="ml-auto flex min-w-0 items-center gap-2">
-          <Button
-            variant={state.previewOpen ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => state.setPreviewOpen((open) => !open)}
-            title={state.previewOpen ? '关闭实时预览，恢复菜单' : '开启实时预览，并折叠左侧菜单'}
-            aria-pressed={state.previewOpen}
-            className={cn('hidden lg:inline-flex', state.previewOpen && 'border border-transparent')}
-          >
-            {state.previewOpen ? <PanelRightCloseIcon /> : <PanelRightOpenIcon />}
-            <span className="sr-only sm:not-sr-only">实时预览</span>
-          </Button>
-          {mode === 'create' ? (
-            <Button
-              size="sm"
-              onClick={() => {
-                void state.persistCreate()
-              }}
-              disabled={state.isPending || !state.canPersistMeta}
-              title="保存文章信息并上传当前正文"
-            >
-              {state.isCreating ? <Loader2Icon className="animate-spin" /> : <UploadIcon />}
-              <span className="sr-only sm:not-sr-only">{state.isCreating ? '创建中…' : '创建文章'}</span>
-            </Button>
-          ) : (
-            <>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={state.persistSave}
-                disabled={state.isPending || !state.canPersistMeta}
-                title="保存文章信息（立即生效），并在正文与最新版本不一致时另存为新草稿 (Cmd/Ctrl+S)"
-              >
-                {state.isSavingDraft ? <Loader2Icon className="animate-spin" /> : <SaveIcon />}
-                <span className="sr-only sm:not-sr-only">{state.isSavingDraft ? '保存中…' : '保存草稿'}</span>
-              </Button>
-              <Button
-                size="sm"
-                onClick={state.persistPublish}
-                disabled={state.isPending || !state.canPublish}
-                title={
-                  state.canPublish
-                    ? state.sidebarPublishStatus === 'scheduled'
-                      ? '将最新草稿按计划时间上线 (Cmd/Ctrl+Shift+P)'
-                      : '将最新草稿发布到线上 (Cmd/Ctrl+Shift+P)'
-                    : '当前没有待发布的草稿'
-                }
-              >
-                {state.isPublishing ? <Loader2Icon className="animate-spin" /> : <UploadIcon />}
-                <span className="sr-only sm:not-sr-only">
-                  {state.isPublishing
-                    ? '发布中…'
-                    : state.sidebarPublishStatus === 'scheduled'
-                      ? '计划发布'
-                      : '发布草稿'}
-                </span>
-              </Button>
-              {state.meta.published ? (
-                <Button
-                  variant="destructive-soft"
-                  size="sm"
-                  onClick={state.persistUnpublish}
-                  disabled={state.isPending}
-                  title="将文章下线，公开访问会返回 404；正文不会丢失，再次发布草稿即可恢复"
-                >
-                  {state.isUnpublishing ? <Loader2Icon className="animate-spin" /> : <EyeOffIcon />}
-                  <span className="sr-only sm:not-sr-only">{state.isUnpublishing ? '取消中…' : '取消发布'}</span>
-                </Button>
-              ) : null}
-            </>
-          )}
-          <Button
-            variant={state.metaOpen ? 'secondary' : 'outline'}
-            size="sm"
-            onClick={() => state.setMetaOpen((open) => !open)}
-            title={state.metaOpen ? '隐藏文章信息面板' : '展开文章信息面板'}
-            aria-pressed={state.metaOpen}
-            aria-label="切换文章信息面板"
-            className={cn(state.metaOpen && 'border border-transparent')}
-          >
-            <SlidersHorizontalIcon />
-            <span className="sr-only sm:not-sr-only">元数据</span>
-          </Button>
-        </div>
-      </header>
+      <PostEditorToolbar mode={mode} isEditing={isEditing} detail={detail} state={state} />
 
       {isEditing && state.previewBanner !== null ? (
         <ActionBanner
@@ -340,67 +194,11 @@ export function PostEditorShell({ mode, detail, navigate }: PostEditorShellProps
           </section>
         ) : null}
         {!state.previewOpen && state.metaOpen ? (
-          <aside className="hidden min-h-0 flex-col overflow-y-auto pr-1 lg:flex">
-            <PostMetaSidebar
-              draft={state.meta}
-              onChange={state.setMeta}
-              disabled={state.isPending}
-              publishStatus={state.sidebarPublishStatus}
-              ogPreviewSlug={isEditing ? detail.post.slug : null}
-              revisionSummary={state.sidebarRevisionSummary}
-              saveStatus={state.sidebarSaveStatus}
-              featureEnabled={featureEnabled}
-              extras={
-                isEditing ? (
-                  <div className="rounded-md border bg-card p-2">
-                    <RevisionHistoryDrawer
-                      type="post"
-                      ownerId={detail.post.id}
-                      currentToken={state.expectedToken}
-                      currentBody={state.body}
-                      onAdoptRevision={state.adoptRevisionFromHistory}
-                    />
-                  </div>
-                ) : null
-              }
-            />
-          </aside>
+          <PostEditorMetaAside isEditing={isEditing} detail={detail} state={state} />
         ) : null}
       </div>
       {state.previewOpen || !state.isLg ? (
-        <Sheet open={state.metaOpen} onOpenChange={state.setMetaOpen}>
-          <SheetContent side="right" className="flex w-full flex-col gap-0 p-0 sm:max-w-sm">
-            <SheetHeader className="border-b">
-              <SheetTitle>文章信息</SheetTitle>
-              <SheetDescription>编辑标题、Slug、SEO、发布时间等元数据。</SheetDescription>
-            </SheetHeader>
-            <div className="flex min-h-0 flex-1 flex-col overflow-y-auto p-4">
-              <PostMetaSidebar
-                draft={state.meta}
-                onChange={state.setMeta}
-                disabled={state.isPending}
-                publishStatus={state.sidebarPublishStatus}
-                ogPreviewSlug={isEditing ? detail.post.slug : null}
-                revisionSummary={state.sidebarRevisionSummary}
-                saveStatus={state.sidebarSaveStatus}
-                featureEnabled={featureEnabled}
-                extras={
-                  isEditing ? (
-                    <div className="rounded-md border bg-card p-2">
-                      <RevisionHistoryDrawer
-                        type="post"
-                        ownerId={detail.post.id}
-                        currentToken={state.expectedToken}
-                        currentBody={state.body}
-                        onAdoptRevision={state.adoptRevisionFromHistory}
-                      />
-                    </div>
-                  ) : null
-                }
-              />
-            </div>
-          </SheetContent>
-        </Sheet>
+        <PostEditorMetaSheet isEditing={isEditing} detail={detail} state={state} />
       ) : null}
       {state.conflict !== null && isEditing ? (
         <DraftConflictDialog
@@ -419,61 +217,6 @@ export function PostEditorShell({ mode, detail, navigate }: PostEditorShellProps
           onChooseServer={state.adoptServerVersion}
         />
       ) : null}
-    </div>
-  )
-}
-
-interface CreateModeBannerProps {
-  draftSavedAt: number | null
-}
-
-function CreateModeBanner({ draftSavedAt }: CreateModeBannerProps) {
-  return (
-    <div className="flex items-center justify-between rounded-md border border-destructive/10 bg-destructive/5 px-3 py-2 text-xs text-muted-foreground">
-      <span>新文章正文仅本地保留，点击「创建文章」后才会同步到服务器。</span>
-      {draftSavedAt !== null ? (
-        <span className="font-mono">已恢复本地草稿 · {new Date(draftSavedAt).toLocaleTimeString('zh-CN')}</span>
-      ) : null}
-    </div>
-  )
-}
-
-interface TitleSlugStripProps {
-  title: string
-  slug: string
-  onTitleChange: (value: string) => void
-  onSlugChange: (value: string) => void
-  disabled?: boolean
-}
-
-// Title + slug strip rendered immediately above the body editor —
-// the visible post identity sits at the top of the canvas, not buried
-// in a side panel. Values mirror into `meta`; the next save click
-// pushes both fields to the server.
-function TitleSlugStrip({ title, slug, onTitleChange, onSlugChange, disabled }: TitleSlugStripProps) {
-  return (
-    <div className="flex flex-col gap-2 rounded-md border bg-card p-3">
-      <Input
-        aria-label="文章标题"
-        value={title}
-        onChange={(e) => onTitleChange(e.target.value)}
-        placeholder="文章标题"
-        maxLength={200}
-        disabled={disabled}
-        className="h-auto border-0 bg-transparent px-0 text-2xl leading-tight font-bold tracking-tight shadow-none focus-visible:ring-0 md:text-3xl dark:bg-transparent"
-      />
-      <div className="flex items-center gap-2 font-mono text-xs text-muted-foreground">
-        <span>/</span>
-        <Input
-          aria-label="URL slug"
-          value={slug}
-          onChange={(e) => onSlugChange(e.target.value)}
-          placeholder="留空将根据标题按拼音生成"
-          maxLength={80}
-          disabled={disabled}
-          className="h-7 grow border-0 bg-transparent px-0 text-xs shadow-none focus-visible:ring-0 dark:bg-transparent"
-        />
-      </div>
     </div>
   )
 }

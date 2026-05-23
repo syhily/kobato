@@ -14,7 +14,7 @@ import {
 import { toClientPostFromMeta, type ListPublicPostsFilters } from '@/server/domains/posts/repos/shared'
 import { toPostFromMeta } from '@/server/domains/posts/repos/single'
 import { db } from '@/server/infra/db/pool'
-import { post as postMetaTable } from '@/server/infra/db/schema'
+import { post as postMetaTable } from '@/server/infra/db/schema/post'
 import { requireBlogSettingsSection } from '@/shared/config/blog'
 import { toListingPostCard, toSidebarPostLink } from '@/shared/types/catalog'
 import { idFromString } from '@/shared/utils/id'
@@ -291,7 +291,7 @@ export async function selectSidebarPosts(count: number): Promise<SidebarPostLink
         sql`${postMetaTable.publishedAt} <= ${new Date()}`,
       ),
     )
-    .orderBy(sql`RANDOM()`)
+    .orderBy(sql`md5(${postMetaTable.id}::text)`)
     .limit(count)
   return metas.map((meta) => toClientPostFromMeta(meta)).map(toSidebarPostLink)
 }

@@ -86,7 +86,7 @@ describe('audit/controller helpers', () => {
         ipAddress: '192.168.1.1',
         userAgent: 'Mozilla/5.0',
         createdAt: new Date('2026-05-20T12:00:00Z'),
-      } as unknown as import('@/server/infra/db/schema').AuditLogRow
+      } as unknown as import('@/server/infra/db/schema/config').AuditLogRow
 
       const dto = toItemDto(row, 'Alice')
       expect(dto.id).toBe('1')
@@ -111,7 +111,7 @@ describe('audit/controller helpers', () => {
         ipAddress: null,
         userAgent: null,
         createdAt: new Date('2026-05-20T12:00:00Z'),
-      } as unknown as import('@/server/infra/db/schema').AuditLogRow
+      } as unknown as import('@/server/infra/db/schema/config').AuditLogRow
 
       const dto = toItemDto(row, null)
       expect(dto.actorId).toBeNull()

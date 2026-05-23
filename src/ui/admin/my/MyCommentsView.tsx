@@ -7,6 +7,7 @@ import type { CommentBody } from '@/shared/pt/comment-schema'
 import type { MyCommentsStatus } from '@/shared/types/comments'
 
 import { useMutation, orpcQuery } from '@/client/api/query'
+import { useSiteIdentity } from '@/shared/lib/blog-config-context'
 import { formatLocalDate } from '@/shared/utils/formatter'
 import { MyEditCommentDialog } from '@/ui/admin/my/MyEditCommentDialog'
 import { AdminListPage } from '@/ui/admin/shared/AdminListPage'
@@ -20,7 +21,6 @@ import { Input } from '@/ui/components/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/components/select'
 import { Skeleton } from '@/ui/components/skeleton'
 import { Tabs, TabsList, TabsTrigger } from '@/ui/components/tabs'
-import { useSiteIdentity } from '@/ui/lib/blog-config-context'
 import { PortableTextBody } from '@/ui/pt/render'
 
 const ADMIN_DATE_FORMAT = 'yyyy-LL-dd HH:mm'
@@ -322,7 +322,7 @@ export function MyCommentsView({
         // particular are always validated against the narrower
         // `commentBodySchema` at write time, so the runtime invariant
         // holds and the cast is safe.
-        target={editTarget ? { id: editTarget.id, body: editTarget.body as unknown as CommentBody } : null}
+        target={editTarget ? { id: editTarget.id, body: editTarget.body as CommentBody } : null}
         onClose={() => setEditTarget(null)}
         onSaved={() => {
           setEditTarget(null)

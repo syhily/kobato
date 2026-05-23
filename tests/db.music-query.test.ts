@@ -7,7 +7,7 @@ import {
   softDeleteMusic,
 } from '@/server/infra/db/operations/music'
 import { db } from '@/server/infra/db/pool'
-import { music } from '@/server/infra/db/schema'
+import { music } from '@/server/infra/db/schema/media'
 
 beforeEach(async () => {
   await db.delete(music)

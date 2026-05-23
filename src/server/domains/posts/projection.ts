@@ -3,6 +3,7 @@ import type { PortableTextBody } from '@/shared/pt/schema'
 import type { ClientPost, MarkdownHeading } from '@/shared/types/catalog'
 
 import { validatePortableTextBody } from '@/shared/pt/utils'
+import { readStringArray } from '@/shared/utils/tools'
 
 // --- Public catalog projection ----------------------------------------------
 
@@ -32,8 +33,8 @@ export function toCmsPost(
     /** Public catalog: mirrors `published_at` (publish / schedule), not draft saves. */
     updated: meta.publishedAt,
     comments: meta.commentsEnabled,
-    alias: (meta.alias as string[]) ?? [],
-    tags: (meta.tags as string[]) ?? [],
+    alias: readStringArray(meta.alias),
+    tags: readStringArray(meta.tags),
     category: meta.category,
     summary: meta.summary,
     cover: meta.cover || '/images/open-graph.png',
@@ -117,8 +118,8 @@ export function toAdminPostDto(
     updatedAt: row.updatedAt.toISOString(),
     deletedAt: row.deletedAt === null ? null : row.deletedAt.toISOString(),
     category: row.category,
-    tags: (row.tags as string[]) ?? [],
-    alias: (row.alias as string[]) ?? [],
+    tags: readStringArray(row.tags),
+    alias: readStringArray(row.alias),
     authorId: row.authorId === null ? null : String(row.authorId),
     authorName: (row as { authorName?: string | null }).authorName ?? null,
     pinnedAt: row.pinnedAt === null ? null : row.pinnedAt.toISOString(),
@@ -169,13 +170,6 @@ function readBody(value: unknown): PortableTextBody {
     return []
   }
   return validatePortableTextBody(value)
-}
-
-function readStringArray(value: unknown): string[] {
-  if (!Array.isArray(value)) {
-    return []
-  }
-  return value.filter((item): item is string => typeof item === 'string')
 }
 
 function readHeadings(value: unknown): MarkdownHeading[] {

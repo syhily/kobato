@@ -1,7 +1,6 @@
 import { and, desc, eq, inArray, max } from 'drizzle-orm'
 import { randomUUID } from 'node:crypto'
 import { isDeepStrictEqual } from 'node:util'
-
 import type {
   ContentType,
   PublishLatestInput,
@@ -11,9 +10,10 @@ import type {
 } from '@/server/domains/content/schema'
 import type { ContentRow, NewContent } from '@/server/infra/db/types'
 import type { PortableTextBody } from '@/shared/pt/schema'
-
 import { db } from '@/server/infra/db/pool'
-import { content as contentTable, page as pageMetaTable, post as postMetaTable } from '@/server/infra/db/schema'
+import { content as contentTable } from '@/server/infra/db/schema/content'
+import { page as pageMetaTable } from '@/server/infra/db/schema/page'
+import { post as postMetaTable } from '@/server/infra/db/schema/post'
 import { DomainError } from '@/server/infra/http/errors'
 import { arePortableTextBodiesEquivalent } from '@/shared/pt/bridge/canonicalize'
 

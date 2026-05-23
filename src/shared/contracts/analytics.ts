@@ -7,7 +7,7 @@ export const PRESET_KEYS = ['last-1h', 'today', 'yesterday', 'last-7d', 'last-30
 export type PresetKey = (typeof PRESET_KEYS)[number]
 
 // Typed tuple for z.enum (z.enum does not accept readonly arrays).
-export const PRESET_KEY_VALUES = PRESET_KEYS as unknown as [PresetKey, ...PresetKey[]]
+export const PRESET_KEY_VALUES = [...PRESET_KEYS] as [PresetKey, ...PresetKey[]]
 
 export interface DateRange {
   /** Unix seconds, inclusive. */
@@ -97,7 +97,7 @@ export const METRIC_TYPES = [
 
 export type MetricType = (typeof METRIC_TYPES)[number]
 
-export const METRIC_TYPE_VALUES = METRIC_TYPES as unknown as [MetricType, ...MetricType[]]
+export const METRIC_TYPE_VALUES = [...METRIC_TYPES] as [MetricType, ...MetricType[]]
 
 export const METRIC_GROUPS = ['location', 'referer', 'time', 'device', 'browser'] as const
 export type MetricGroup = (typeof METRIC_GROUPS)[number]

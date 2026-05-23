@@ -3,8 +3,8 @@ import { useDeferredValue, useMemo, useRef } from 'react'
 import type { PortableTextBody } from '@/shared/pt/schema'
 
 import { useMediumZoom } from '@/client/hooks/use-medium-zoom'
+import { useContentSettings, useSiteIdentity } from '@/shared/lib/blog-config-context'
 import { resolveFootnotesSectionTitle } from '@/shared/utils/footnotes-section-title'
-import { useContentSettings, useSiteIdentity } from '@/ui/lib/blog-config-context'
 import { PortableTextBody as PortableTextBodyRenderer } from '@/ui/pt/render'
 
 export interface PreviewPaneProps {

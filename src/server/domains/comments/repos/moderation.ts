@@ -1,7 +1,7 @@
 import { and, eq, isNotNull, isNull } from 'drizzle-orm'
 
 import { db } from '@/server/infra/db/pool'
-import { comment } from '@/server/infra/db/schema'
+import { comment } from '@/server/infra/db/schema/comment'
 
 export async function approveCommentById(id: bigint): Promise<void> {
   await db.update(comment).set({ isPending: false }).where(eq(comment.id, id))

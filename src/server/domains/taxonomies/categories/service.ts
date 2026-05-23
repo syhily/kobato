@@ -1,9 +1,7 @@
 import { asc, inArray, sql } from 'drizzle-orm'
-
 import type { CategoryRow } from '@/server/infra/db/types'
 import type { Category } from '@/shared/types/catalog'
 import type { AdminCategoryDto } from '@/shared/types/categories'
-
 import { hydrateImageRefs } from '@/server/domains/images/image-meta'
 import { listPostsByCategory, listPublicPosts } from '@/server/domains/posts/repos/public-query'
 import {
@@ -25,7 +23,8 @@ import {
   updateCategory,
 } from '@/server/infra/db/operations/category'
 import { db } from '@/server/infra/db/pool'
-import { category as categoryTable, post as postMetaTable } from '@/server/infra/db/schema'
+import { category as categoryTable } from '@/server/infra/db/schema/taxonomy'
+import { post as postMetaTable } from '@/server/infra/db/schema/post'
 import { DomainError } from '@/server/infra/http/errors'
 import { idFromString } from '@/shared/utils/id'
 

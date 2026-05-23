@@ -6,7 +6,7 @@ import type { DetailPageComments } from '@/shared/types/comments'
 import type { DraftMarker } from '@/ui/public/post/DetailBodyChrome'
 
 import { useMediumZoom } from '@/client/hooks/use-medium-zoom'
-import { useSiteIdentity } from '@/ui/lib/blog-config-context'
+import { useSiteIdentity } from '@/shared/lib/blog-config-context'
 import { LikeShare } from '@/ui/public/LikeActions'
 import { DetailBodyChrome } from '@/ui/public/post/DetailBodyChrome'
 import { postMetaTagsClass } from '@/ui/public/post/postChrome'

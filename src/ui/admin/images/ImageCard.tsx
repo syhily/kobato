@@ -2,8 +2,8 @@ import { memo } from 'react'
 
 import type { AdminImageDto } from '@/shared/types/images'
 
+import { useAssetsSettings } from '@/shared/lib/blog-config-context'
 import { getImageUrl } from '@/shared/types/images'
-import { useAssetsSettings } from '@/ui/lib/blog-config-context'
 import { cn } from '@/ui/lib/cn'
 
 interface ImageCardProps {

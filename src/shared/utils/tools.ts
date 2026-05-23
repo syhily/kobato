@@ -2,6 +2,13 @@ export function isNumeric(str: string): boolean {
   return /^-?\d+$/.test(str)
 }
 
+export function readStringArray(value: unknown): string[] {
+  if (!Array.isArray(value)) {
+    return []
+  }
+  return value.filter((item): item is string => typeof item === 'string')
+}
+
 // Render a numeric/BigInt id as a plain decimal string. Drizzle types
 // `bigint` columns as JS BigInts (e.g. `comment.id`, `userId`), but the
 // pg int8 type-parser actually returns those values as strings — so wire

@@ -4,8 +4,8 @@ import { useCallback, useEffect, useState } from 'react'
 import type { MarkdownHeading } from '@/shared/types/catalog'
 import type { TocOpts } from '@/shared/utils/toc'
 
+import { useSeoSettingsOptional } from '@/shared/lib/blog-config-context'
 import { generateToC } from '@/shared/utils/toc'
-import { useSeoSettingsOptional } from '@/ui/lib/blog-config-context'
 import { cn } from '@/ui/lib/cn'
 import { TocItems } from '@/ui/public/post/TocItems'
 

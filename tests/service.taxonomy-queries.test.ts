@@ -1,7 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-
 import { db } from '@/server/infra/db/pool'
-import { category, post, tag } from '@/server/infra/db/schema'
+import { category, tag } from '@/server/infra/db/schema/taxonomy'
+
+
+import { post } from '@/server/infra/db/schema/post'
 
 vi.mock('@/server/domains/images/image-meta', () => ({
   hydrateImageRefs: vi.fn(async () => undefined),

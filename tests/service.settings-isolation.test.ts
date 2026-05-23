@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { updateBlogSettingsSection } from '@/server/domains/settings/service'
 import { setBlogSettingsBundleForTests } from '@/server/domains/settings/snapshot'
 import { db } from '@/server/infra/db/pool'
-import { setting } from '@/server/infra/db/schema'
+import { setting } from '@/server/infra/db/schema/config'
 
 beforeEach(async () => {
   await db.delete(setting)

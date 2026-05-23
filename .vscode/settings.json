@@ -2,7 +2,7 @@
   "cSpell.customDictionaries": {
     "project-words": {
       "name": "project-words",
-      "path": "${workspaceRoot}/docs/project-words.txt",
+      "path": "${workspaceRoot}/.vscode/project-words.txt",
       "description": "Words used in this project",
       "addWords": true
     },
@@ -15,11 +15,11 @@
   "[javascriptreact]": { "editor.defaultFormatter": "oxc.oxc-vscode" },
   "[typescript]": { "editor.defaultFormatter": "oxc.oxc-vscode" },
   "[typescriptreact]": { "editor.defaultFormatter": "oxc.oxc-vscode" },
-  "oxc.configPath": "./oxlint.config.ts",
-  "oxc.fmt.configPath": "./oxfmt.config.ts",
+  "oxc.configPath": "${workspaceRoot}/oxlint.config.ts",
+  "oxc.fmt.configPath": "${workspaceRoot}/oxfmt.config.ts",
   "oxc.disableNestedConfig": true,
   "oxc.requireConfig": true,
-  "oxc.tsConfigPath": "./tsconfig.json",
+  "oxc.tsConfigPath": "${workspaceRoot}/tsconfig.json",
   "oxc.typeAware": true,
   "oxc.useExecPath": true,
   "editor.defaultFormatter": "oxc.oxc-vscode",
@@ -36,7 +36,7 @@
     "*.css": "tailwindcss"
   },
   "npm.scriptRunner": "npm",
-  "tailwindCSS.experimental.configFile": "src/assets/styles/tailwind.css",
+  "tailwindCSS.experimental.configFile": "${workspaceRoot}/src/assets/styles/tailwind.css",
   "tailwindCSS.classFunctions": ["cn"],
   "tailwindCSS.includeLanguages": {
     "mdx": "html"

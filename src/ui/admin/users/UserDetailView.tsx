@@ -9,6 +9,7 @@ import type { AdminUserDto } from '@/shared/types/users'
 
 import { orpc } from '@/client/api/client'
 import { orpcQuery, useMutation, useQuery, useQueryClient } from '@/client/api/query'
+import { useSiteIdentity } from '@/shared/lib/blog-config-context'
 import { formatLocalDate } from '@/shared/utils/formatter'
 import { idStr } from '@/shared/utils/tools'
 import { AdminListPage } from '@/ui/admin/shared/AdminListPage'
@@ -21,7 +22,6 @@ import { Button } from '@/ui/components/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/ui/components/card'
 import { Separator } from '@/ui/components/separator'
 import { Skeleton } from '@/ui/components/skeleton'
-import { useSiteIdentity } from '@/ui/lib/blog-config-context'
 import { PortableTextBody } from '@/ui/pt/render'
 
 type Role = NonNullable<AdminUserDto['role']>

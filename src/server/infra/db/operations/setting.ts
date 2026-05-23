@@ -3,7 +3,7 @@ import { eq, like } from 'drizzle-orm'
 import type { Setting } from '@/server/infra/db/types'
 
 import { db } from '@/server/infra/db/pool'
-import { setting } from '@/server/infra/db/schema'
+import { setting } from '@/server/infra/db/schema/config'
 
 export async function findSettingByScope(scope: string): Promise<Setting | null> {
   const rows = await db.select().from(setting).where(eq(setting.scope, scope)).limit(1)

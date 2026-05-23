@@ -1,8 +1,8 @@
 import type { ImgHTMLAttributes, Ref } from 'react'
 
 import { useThumbhashBackground } from '@/client/hooks/use-thumbhash-bg'
+import { useAssetsSettings } from '@/shared/lib/blog-config-context'
 import { getImageSrcset, getImageUrl } from '@/shared/types/images'
-import { useAssetsSettings } from '@/ui/lib/blog-config-context'
 import { cn } from '@/ui/lib/cn'
 import { useImageLoaded } from '@/ui/public/widgets/use-image-loaded'
 

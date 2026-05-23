@@ -1,4 +1,4 @@
-import { useFontsSettingsOptional } from '@/ui/lib/blog-config-context'
+import { useFontsSettingsOptional } from '@/shared/lib/blog-config-context'
 
 // Emits one `<link rel="stylesheet">` per `fonts.postCss` entry. Both
 // post and page detail routes mount this near the top of their body so

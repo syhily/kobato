@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 
 import { db } from '@/server/infra/db/pool'
-import { image } from '@/server/infra/db/schema'
+import { image } from '@/server/infra/db/schema/media'
 import { redisInstance } from '@/server/infra/redis/storage'
 
 import { clearAllTables } from './_helpers/integration-db'

@@ -3,11 +3,11 @@ import { useMemo, useState } from 'react'
 
 import type { AdminImageDto } from '@/shared/types/images'
 
+import { useAssetsSettingsOptional } from '@/shared/lib/blog-config-context'
 import { UploadImageDialog, type UploadKind } from '@/ui/admin/shared/UploadImageDialog'
 import { Button } from '@/ui/components/button'
 import { Input } from '@/ui/components/input'
 import { Label } from '@/ui/components/label'
-import { useAssetsSettingsOptional } from '@/ui/lib/blog-config-context'
 
 // Shared cover/poster row used by `EditCategoryDialog` and
 // `EditFriendDialog`. Replaces the previous "single URL input" layout

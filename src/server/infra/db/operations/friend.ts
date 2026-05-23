@@ -3,7 +3,7 @@ import { and, count, desc, eq, ilike, or, type SQL, sql } from 'drizzle-orm'
 import type { FriendRow, NewFriend } from '@/server/infra/db/types'
 
 import { db } from '@/server/infra/db/pool'
-import { friend } from '@/server/infra/db/schema'
+import { friend } from '@/server/infra/db/schema/friend'
 import { escapeLikePattern } from '@/shared/utils/escape-like'
 
 // Stable ascending id ordering for the public catalog. Output is fed

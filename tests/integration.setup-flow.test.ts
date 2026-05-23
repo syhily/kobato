@@ -1,9 +1,10 @@
 import { eq, sql } from 'drizzle-orm'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-
 import { db } from '@/server/infra/db/pool'
-import { setting, user } from '@/server/infra/db/schema'
+import { setting } from '@/server/infra/db/schema/config'
 
+
+import { user } from '@/server/infra/db/schema/user'
 import { clearAllTables } from './_helpers/integration-db'
 import { flushWorkerRedis } from './_helpers/redis'
 import { emptySession } from './_helpers/session'

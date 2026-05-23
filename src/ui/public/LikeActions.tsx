@@ -4,11 +4,11 @@ import { startTransition, useEffect, useOptimistic, useState } from 'react'
 import type { DecreaseLikeOutput, IncreaseLikeOutput, ValidateLikeTokenOutput } from '@/shared/types/likes'
 
 import { useMutation, orpcQuery } from '@/client/api/query'
+import { useSiteIdentity } from '@/shared/lib/blog-config-context'
 import { joinUrl } from '@/shared/utils/urls'
 import { Button } from '@/ui/components/button'
 import { IconButtonContent } from '@/ui/components/icon-button-content'
 import { QQIcon, WechatIcon, WeiboIcon } from '@/ui/icons/brand-social-icons'
-import { useSiteIdentity } from '@/ui/lib/blog-config-context'
 import { cn } from '@/ui/lib/cn'
 import { QRDialog } from '@/ui/public/widgets/QRDialog'
 

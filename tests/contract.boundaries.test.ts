@@ -659,7 +659,7 @@ describe('contract: module and bundle boundaries', () => {
   })
 
   it('keeps blog settings provider split by section context', () => {
-    const source = readFileSync('src/ui/lib/blog-config-context.tsx', 'utf8')
+    const source = readFileSync('src/shared/lib/blog-config-context.tsx', 'utf8')
 
     // The contexts file now derives one context per `BUNDLE_KEYS`
     // entry through a `makeContext('<key>')` factory instead of 12

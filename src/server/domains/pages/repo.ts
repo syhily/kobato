@@ -1,15 +1,14 @@
 import { and, desc, eq, getColumns, isNotNull, isNull, sql, type SQL } from 'drizzle-orm'
-
 import type { CmsPage } from '@/server/domains/pages/projection'
 import type { NewPageMeta, PageMetaRow } from '@/server/infra/db/types'
 import type { Page } from '@/shared/types/catalog'
-
 import { findContentById, findContentsByIds } from '@/server/domains/content/repo'
 import { isCatalogVisible } from '@/server/domains/content/schema'
 import { hydrateImageRefs } from '@/server/domains/images/image-meta'
 import { toCmsPage } from '@/server/domains/pages/projection'
 import { db } from '@/server/infra/db/pool'
-import { page as pageMetaTable, user } from '@/server/infra/db/schema'
+import { page as pageMetaTable } from '@/server/infra/db/schema/page'
+import { user } from '@/server/infra/db/schema/user'
 import { escapeLikePattern } from '@/shared/utils/escape-like'
 
 export {

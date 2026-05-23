@@ -5,6 +5,7 @@ import { toast } from 'sonner'
 import type { AdminFriendDto, UpsertFriendInput } from '@/shared/types/friends'
 
 import { useMutation, orpcQuery } from '@/client/api/query'
+import { useAssetsSettingsOptional } from '@/shared/lib/blog-config-context'
 import { buildPublicBaseUrlFromStorage, extractFriendHostSafe } from '@/shared/types/images'
 import { CoverInputRow } from '@/ui/admin/shared/CoverInputRow'
 import { Button } from '@/ui/components/button'
@@ -20,7 +21,6 @@ import {
 import { Input } from '@/ui/components/input'
 import { Label } from '@/ui/components/label'
 import { Textarea } from '@/ui/components/textarea'
-import { useAssetsSettingsOptional } from '@/ui/lib/blog-config-context'
 
 // Discriminator: `friend === null` opens the dialog in "new friend"
 // mode; a populated `friend` opens it in "edit existing" mode. The

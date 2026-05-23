@@ -7,10 +7,10 @@ import type { AdminPendingItemDto, ListPendingDashboardOutput } from '@/shared/t
 
 import { orpc } from '@/client/api/client'
 import { orpcQuery, useMutation, useQuery } from '@/client/api/query'
+import { useSiteIdentity } from '@/shared/lib/blog-config-context'
 import { formatLocalDate } from '@/shared/utils/formatter'
 import { Badge } from '@/ui/components/badge'
 import { Button } from '@/ui/components/button'
-import { useSiteIdentity } from '@/ui/lib/blog-config-context'
 
 // Empty-state copy. Picked once in the SSR loader so the same line is
 // used during hydration — no hydration mismatch.

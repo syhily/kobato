@@ -3,7 +3,7 @@ import type { ReactNode } from 'react'
 import type { NavigationItem } from '@/shared/config/blog'
 import type { HeaderCurrentUser } from '@/ui/public/chrome/Header'
 
-import { useNavigationSettings } from '@/ui/lib/blog-config-context'
+import { useNavigationSettings } from '@/shared/lib/blog-config-context'
 import { Footer } from '@/ui/public/chrome/Footer'
 import { Header } from '@/ui/public/chrome/Header'
 import { ScrollTopButton } from '@/ui/public/chrome/ScrollTopButton'

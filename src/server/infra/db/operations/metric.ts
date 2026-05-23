@@ -4,7 +4,7 @@ import type { EntityTarget } from '@/server/infra/db/target'
 import type { MetricRow, NewMetric } from '@/server/infra/db/types'
 
 import { db } from '@/server/infra/db/pool'
-import { metric } from '@/server/infra/db/schema'
+import { metric } from '@/server/infra/db/schema/metric'
 import { targetKey } from '@/server/infra/db/target'
 
 export type { MetricRow } from '@/server/infra/db/types'

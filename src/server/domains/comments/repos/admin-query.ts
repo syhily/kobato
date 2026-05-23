@@ -1,7 +1,5 @@
 import { and, count, desc, eq, ilike, inArray, isNotNull, isNull, sql } from 'drizzle-orm'
-
 import type { EntityType } from '@/server/infra/db/target'
-
 import { resolveEntitiesForComments } from '@/server/domains/comments/repos/public-query'
 import {
   adminPendingWhere,
@@ -19,7 +17,9 @@ import {
   type PageOption,
 } from '@/server/domains/comments/repos/shared'
 import { db } from '@/server/infra/db/pool'
-import { comment, metric, user } from '@/server/infra/db/schema'
+import { comment } from '@/server/infra/db/schema/comment'
+import { metric } from '@/server/infra/db/schema/metric'
+import { user } from '@/server/infra/db/schema/user'
 import { escapeLikePattern } from '@/shared/utils/escape-like'
 
 export async function findCommentWithUserAndTarget(id: bigint) {

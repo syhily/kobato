@@ -5,7 +5,7 @@ import type { ArchiveResult, CleanupResult } from '@/server/domains/audit/types'
 
 import { recordAuditEvent } from '@/server/domains/audit/service'
 import { db } from '@/server/infra/db/pool'
-import { auditLog } from '@/server/infra/db/schema'
+import { auditLog } from '@/server/infra/db/schema/config'
 import { getLogger } from '@/server/infra/logger'
 import { deleteS3Objects, listS3Objects, putS3Object } from '@/server/infra/storage/s3-client'
 import { getBlogSettingsBundleSync } from '@/shared/config/blog'

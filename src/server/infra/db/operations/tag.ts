@@ -3,7 +3,7 @@ import { asc, count, eq, ilike, or, type SQL } from 'drizzle-orm'
 import type { NewTag, TagRow } from '@/server/infra/db/types'
 
 import { db } from '@/server/infra/db/pool'
-import { tag } from '@/server/infra/db/schema'
+import { tag } from '@/server/infra/db/schema/taxonomy'
 import { escapeLikePattern } from '@/shared/utils/escape-like'
 
 // Public listing reads. Stable `name ASC` order so the `/tags`
@@ -122,4 +122,17 @@ export async function seedTagIfMissing(values: NewTag, tx = db): Promise<boolean
     .onConflictDoNothing({ target: tag.name })
     .returning({ id: tag.id })
   return result.length > 0
+}
+
+// Batch version of `seedTagIfMissing`. A single `INSERT ... ON CONFLICT`
+// with multiple values avoids N round-trips inside a transaction.
+export async function seedTagsIfMissing(valuesList: NewTag[], tx = db): Promise<void> {
+  if (valuesList.length === 0) {
+    return
+  }
+  const now = new Date()
+  await tx
+    .insert(tag)
+    .values(valuesList.map((values) => ({ ...values, createdAt: now, updatedAt: now })))
+    .onConflictDoNothing({ target: tag.name })
 }

@@ -2,7 +2,9 @@ import { and, cosineDistance, desc, eq, gt, ilike, isNull, or, sql } from 'drizz
 import { createHash } from 'node:crypto'
 
 import { db } from '@/server/infra/db/pool'
-import { post, postSearchIndex } from '@/server/infra/db/schema'
+import { post } from '@/server/infra/db/schema/post'
+
+import { postSearchIndex } from '@/server/infra/db/schema/content'
 import { getLogger } from '@/server/infra/logger'
 import { storage } from '@/server/infra/redis/storage'
 import { generateEmbedding } from '@/server/infra/search/openai'

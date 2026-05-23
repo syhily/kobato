@@ -2,7 +2,7 @@ import { and, eq, lt, sql } from 'drizzle-orm'
 import { createHash, randomBytes } from 'node:crypto'
 
 import { db } from '@/server/infra/db/pool'
-import { verification } from '@/server/infra/db/schema'
+import { verification } from '@/server/infra/db/schema/user'
 import { getLogger } from '@/server/infra/logger'
 
 const log = getLogger('verification-tokens')

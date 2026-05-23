@@ -11,8 +11,8 @@ import type {
 } from '@/shared/types/comments'
 
 import { useMutation, orpcQuery } from '@/client/api/query'
+import { useCommentsSettings } from '@/shared/lib/blog-config-context'
 import { Button } from '@/ui/components/button'
-import { useCommentsSettings } from '@/ui/lib/blog-config-context'
 import { CommentItem } from '@/ui/public/comments/comment-item/CommentItem'
 import { CommentReplyForm } from '@/ui/public/comments/CommentReplyForm'
 import {

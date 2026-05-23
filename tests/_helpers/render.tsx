@@ -6,7 +6,7 @@ import { renderToStaticMarkup, renderToString } from 'react-dom/server'
 import { prerenderToNodeStream } from 'react-dom/static'
 import { createMemoryRouter, type RouteObject, RouterProvider } from 'react-router'
 
-import { BlogSettingsProvider } from '@/ui/lib/blog-config-context'
+import { BlogSettingsProvider } from '@/shared/lib/blog-config-context'
 import { ThemeProvider } from '@/ui/lib/ThemeProvider'
 
 import { TEST_BLOG_SETTINGS_BUNDLE } from './blog-settings'

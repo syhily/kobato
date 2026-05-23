@@ -3,7 +3,7 @@ import { and, eq, isNull } from 'drizzle-orm'
 import type { NewPostMeta, PostMetaRow } from '@/server/infra/db/types'
 
 import { db } from '@/server/infra/db/pool'
-import { post as postMetaTable } from '@/server/infra/db/schema'
+import { post as postMetaTable } from '@/server/infra/db/schema/post'
 
 export async function insertPostMeta(values: NewPostMeta): Promise<PostMetaRow> {
   const rows = await db.insert(postMetaTable).values(values).returning()

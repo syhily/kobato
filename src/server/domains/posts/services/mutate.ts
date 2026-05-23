@@ -18,9 +18,9 @@ import {
   insertSlugRegistry,
   updateSlugRegistryByEntity,
 } from '@/server/infra/db/operations/slug-registry'
-import { seedTagIfMissing } from '@/server/infra/db/operations/tag'
+import { seedTagsIfMissing } from '@/server/infra/db/operations/tag'
 import { db } from '@/server/infra/db/pool'
-import { post as postMetaTable } from '@/server/infra/db/schema'
+import { post as postMetaTable } from '@/server/infra/db/schema/post'
 import { DomainError, isUniqueConstraintError } from '@/server/infra/http/errors'
 import { getLogger } from '@/server/infra/logger'
 import { ensureSlugLegal, resolveSlug } from '@/server/infra/slug-validation'
@@ -32,8 +32,9 @@ async function ensureTagsExist(tagNames: string[], tx = db): Promise<void> {
   if (tagNames.length === 0) {
     return
   }
-  await Promise.all(
-    tagNames.map((name) => seedTagIfMissing({ name, slug: resolveSlugForTaxonomy(undefined, name) }, tx)),
+  await seedTagsIfMissing(
+    tagNames.map((name) => ({ name, slug: resolveSlugForTaxonomy(undefined, name) })),
+    tx,
   )
 }
 

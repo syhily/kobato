@@ -1,4 +1,4 @@
-import { Loader2Icon, PlayIcon, PlusIcon, SearchIcon, SquareIcon, XIcon } from 'lucide-react'
+import { Loader2Icon, SearchIcon, XIcon } from 'lucide-react'
 import { type MouseEvent, useCallback, useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
 
@@ -18,7 +18,12 @@ import { InputGroup, InputGroupAddon, InputGroupInput } from '@/ui/components/in
 import { Label } from '@/ui/components/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/components/select'
 import { Skeleton } from '@/ui/components/skeleton'
-import { cn } from '@/ui/lib/cn'
+import { AudioPreviewPlayer } from '@/ui/admin/musics/AudioPreviewPlayer'
+import {
+  INITIAL_PREVIEW_PROGRESS,
+  type PreviewProgress,
+  SearchResultItem,
+} from '@/ui/admin/musics/SearchResultItem'
 
 // Result-count options. The schema caps `limit` at 30 server-side
 // (see `searchMusicSchema` in `@/server/domains/music/schema`); the upper
@@ -54,28 +59,6 @@ export interface AddMusicDialogProps {
 //      URL directly. We never persist the previewUrl.
 //   3. Operator clicks "添加" → `addMusic({ source, sourceId })` and
 //      the row gets prepended to the parent list. Dialog stays open.
-interface PreviewProgress {
-  /** Total clip length in seconds; `null` while metadata is still loading. */
-  duration: number | null
-  /** Playhead position in seconds. */
-  currentTime: number
-}
-
-const INITIAL_PREVIEW_PROGRESS: PreviewProgress = { duration: null, currentTime: 0 }
-
-// Format a seconds value into `m:ss`. Negative / non-finite inputs
-// fall through to `--:--` so the UI doesn't flash NaN while audio
-// metadata is still loading. Hours are intentionally not handled —
-// preview clips are 30 s netease snippets, never longer than ~10 min.
-function formatSeconds(value: number | null): string {
-  if (value === null || !Number.isFinite(value) || value < 0) {
-    return '--:--'
-  }
-  const total = Math.floor(value)
-  const minutes = Math.floor(total / 60)
-  const seconds = total % 60
-  return `${minutes}:${seconds.toString().padStart(2, '0')}`
-}
 
 export function AddMusicDialog({ open, onClose, onAdded }: AddMusicDialogProps) {
   const [keyword, setKeyword] = useState('')
@@ -292,142 +275,46 @@ export function AddMusicDialog({ open, onClose, onAdded }: AddMusicDialogProps) 
                   previewUrl?: string
                   _added?: boolean
                 }
-                const previewActive = previewSourceId === hit.sourceId
-                const adding = addingSourceId === hit.sourceId
-                const added = decorated._added === true
-                // Progress + duration are tracked for the audio
-                // element globally; the active row owns them visually
-                // because there is only ever one preview playing at
-                // a time (the audio src is re-pointed on each click).
-                const progress = previewActive ? previewProgress : null
-                const totalDuration = progress?.duration ?? null
-                const currentTime = progress?.currentTime ?? 0
-                const ratio =
-                  totalDuration !== null && totalDuration > 0
-                    ? Math.min(1, Math.max(0, currentTime / totalDuration))
-                    : 0
                 return (
-                  <div key={hit.sourceId} className="flex flex-col gap-2 rounded-md border bg-card px-3 py-2">
-                    <div className="flex items-center gap-3">
-                      {hit.coverUrl !== '' ? (
-                        // The cover URL is a third-party CDN link; rendered
-                        // directly because the search list does not benefit
-                        // from going through the local image pipeline.
-                        <img
-                          src={hit.coverUrl}
-                          alt=""
-                          className="size-12 shrink-0 rounded object-cover"
-                          loading="lazy"
-                        />
-                      ) : (
-                        <div className="size-12 shrink-0 rounded bg-muted" />
-                      )}
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-medium">{hit.name}</p>
-                        <p className="truncate text-xs text-muted-foreground">
-                          {hit.artist.join(' / ')}
-                          {hit.album !== '' ? ` · ${hit.album}` : ''}
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant="outline"
-                          onClick={() => onPreview(decorated)}
-                          disabled={decorated.previewUrl === undefined || decorated.previewUrl === ''}
-                        >
-                          {previewActive ? <SquareIcon /> : <PlayIcon />}
-                          {previewActive ? '停止' : '试听'}
-                        </Button>
-                        <Button type="button" size="sm" onClick={() => onAdd(hit)} disabled={adding || added}>
-                          {adding ? <Loader2Icon className="animate-spin" /> : <PlusIcon />}
-                          {added ? '已添加' : adding ? '添加中' : '添加'}
-                        </Button>
-                      </div>
-                    </div>
-                    {previewActive ? (
-                      // Click-to-seek progress bar. Disabled visually
-                      // until `loadedmetadata` populates `duration` so
-                      // the operator does not seek into a NaN clip.
-                      <div className="flex items-center gap-2 pl-15">
-                        <span className="w-9 shrink-0 text-right font-mono text-[11px] text-muted-foreground tabular-nums">
-                          {formatSeconds(currentTime)}
-                        </span>
-                        <div
-                          // Custom click-to-seek progress bar. `<input type="range">`
-                          // would lose the styled track + per-pixel click handler.
-                          // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role
-                          role="slider"
-                          aria-label="预览进度"
-                          aria-valuemin={0}
-                          aria-valuemax={totalDuration ?? 0}
-                          aria-valuenow={currentTime}
-                          aria-valuetext={`${formatSeconds(currentTime)} / ${formatSeconds(totalDuration)}`}
-                          aria-disabled={totalDuration === null || undefined}
-                          tabIndex={totalDuration !== null ? 0 : -1}
-                          onClick={onSeek}
-                          className={cn(
-                            'relative h-1.5 flex-1 overflow-hidden rounded-full bg-muted',
-                            totalDuration !== null
-                              ? 'cursor-pointer hover:bg-muted/80'
-                              : 'cursor-not-allowed opacity-60',
-                          )}
-                        >
-                          <div
-                            className="h-full rounded-full bg-primary transition-[width] duration-150 ease-linear"
-                            style={{ width: `${(ratio * 100).toFixed(2)}%` }}
-                          />
-                        </div>
-                        <span className="w-9 shrink-0 font-mono text-[11px] text-muted-foreground tabular-nums">
-                          {formatSeconds(totalDuration)}
-                        </span>
-                      </div>
-                    ) : null}
-                  </div>
+                  <SearchResultItem
+                    key={hit.sourceId}
+                    hit={decorated}
+                    previewActive={previewSourceId === hit.sourceId}
+                    adding={addingSourceId === hit.sourceId}
+                    added={decorated._added === true}
+                    previewProgress={previewSourceId === hit.sourceId ? previewProgress : null}
+                    onPreview={onPreview}
+                    onAdd={onAdd}
+                    onSeek={onSeek}
+                  />
                 )
               })
             )}
           </div>
         </div>
 
-        {/* Hidden inline preview audio. Rendered once and re-targeted as the
-            admin clicks 「试听」; pause + clear on dialog close. Lives outside
-            the scroll region so a long result list does not push it off-screen.
-            `loadedmetadata` / `timeupdate` populate the inline progress bar
-            shown under the currently-playing row. */}
-        <audio
-          ref={audioRef}
-          aria-label="音乐预览"
-          onLoadedMetadata={(event) => {
-            // Capture into a local before scheduling the state update.
-            // React reuses the synthetic event after the handler returns,
-            // so reading `event.currentTarget` from inside the
-            // functional `setState` updater can hit a nulled reference.
-            const duration = event.currentTarget.duration
+        <AudioPreviewPlayer
+          audioRef={audioRef}
+          onLoadedMetadata={(duration) => {
             setPreviewProgress((prev) => ({
               ...prev,
-              duration: Number.isFinite(duration) && duration > 0 ? duration : null,
+              duration: duration > 0 ? duration : null,
             }))
           }}
-          onTimeUpdate={(event) => {
-            const currentTime = event.currentTarget.currentTime
+          onTimeUpdate={(currentTime) => {
             setPreviewProgress((prev) => ({ ...prev, currentTime }))
           }}
           onEnded={() => {
             setPreviewSourceId(null)
             setPreviewProgress(INITIAL_PREVIEW_PROGRESS)
           }}
-          onPause={(event) => {
-            const currentTime = event.currentTarget.currentTime
+          onPause={(currentTime) => {
             if (currentTime === 0) {
               setPreviewSourceId(null)
               setPreviewProgress(INITIAL_PREVIEW_PROGRESS)
             }
           }}
-        >
-          <track kind="captions" />
-        </audio>
+        />
 
         <DialogFooter className="border-t px-6 py-3">
           <Button type="button" variant="outline" onClick={onClose}>

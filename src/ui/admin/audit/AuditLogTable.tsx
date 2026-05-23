@@ -3,6 +3,7 @@ import { createHighlighter } from 'shiki'
 
 import type { AuditLogItemDto } from '@/shared/contracts/audit'
 
+import { useSiteIdentity } from '@/shared/lib/blog-config-context'
 import { formatLocalDate } from '@/shared/utils/formatter'
 import { ACTION_OPTIONS, RESOURCE_TYPE_OPTIONS } from '@/ui/admin/audit/AuditLogToolbar'
 import { Badge } from '@/ui/components/badge'
@@ -11,7 +12,6 @@ import { Card } from '@/ui/components/card'
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@/ui/components/empty'
 import { SafeHtml } from '@/ui/components/safe-html'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/ui/components/table'
-import { useSiteIdentity } from '@/ui/lib/blog-config-context'
 
 interface AuditLogTableProps {
   rows: AuditLogItemDto[]

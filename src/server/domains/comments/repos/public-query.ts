@@ -1,7 +1,5 @@
 import { and, count, desc, eq, gte, inArray, isNotNull, isNull, or, sql } from 'drizzle-orm'
-
 import type { EntityTarget, EntityType } from '@/server/infra/db/target'
-
 import {
   commentWithUser,
   targetSlugTitleSubquery,
@@ -11,7 +9,10 @@ import {
   type PendingCommentRow,
 } from '@/server/domains/comments/repos/shared'
 import { db } from '@/server/infra/db/pool'
-import { comment, page, post, user } from '@/server/infra/db/schema'
+import { comment } from '@/server/infra/db/schema/comment'
+import { page } from '@/server/infra/db/schema/page'
+import { post } from '@/server/infra/db/schema/post'
+import { user } from '@/server/infra/db/schema/user'
 import { idFromString } from '@/shared/utils/id'
 
 export async function pendingComments(limit: number): Promise<PendingCommentRow[]> {

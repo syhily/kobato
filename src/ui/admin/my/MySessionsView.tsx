@@ -6,6 +6,7 @@ import type { MySessionItem } from '@/routes/admin/me/sessions'
 
 import { orpc } from '@/client/api/client'
 import { useMutation } from '@/client/api/query'
+import { useSiteIdentity } from '@/shared/lib/blog-config-context'
 import { formatLocalDate } from '@/shared/utils/formatter'
 import { formatUserAgentLabel } from '@/shared/utils/user-agent'
 import { AdminListPage } from '@/ui/admin/shared/AdminListPage'
@@ -14,7 +15,6 @@ import { Badge } from '@/ui/components/badge'
 import { Button } from '@/ui/components/button'
 import { Card, CardContent } from '@/ui/components/card'
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@/ui/components/empty'
-import { useSiteIdentity } from '@/ui/lib/blog-config-context'
 
 const DATE_FORMAT = 'yyyy-LL-dd HH:mm'
 

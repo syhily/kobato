@@ -341,7 +341,7 @@ export function ImageEditorCanvas({
   // when `max-w-full` shrinks the canvas inside the dialog.
 
   const beginDrag = useCallback(
-    (event: React.PointerEvent<HTMLCanvasElement>, mode: 'move' | 'resize') => {
+    (event: React.PointerEvent, mode: 'move' | 'resize') => {
       if (crop === null || displayLayout === null) {
         return
       }
@@ -362,7 +362,7 @@ export function ImageEditorCanvas({
   )
 
   const onPointerMove = useCallback(
-    (event: React.PointerEvent<HTMLCanvasElement>) => {
+    (event: React.PointerEvent) => {
       if (dragState === null || displayLayout === null || crop === null) {
         return
       }
@@ -394,7 +394,7 @@ export function ImageEditorCanvas({
   )
 
   const endDrag = useCallback(
-    (event: React.PointerEvent<HTMLCanvasElement>) => {
+    (event: React.PointerEvent) => {
       if (dragState !== null && dragState.pointerId === event.pointerId) {
         ;(event.target as Element).releasePointerCapture?.(event.pointerId)
         setDragState(null)
@@ -453,11 +453,11 @@ export function ImageEditorCanvas({
             }}
             onPointerDown={(event) => {
               event.stopPropagation()
-              beginDrag(event as unknown as React.PointerEvent<HTMLCanvasElement>, 'resize')
+              beginDrag(event, 'resize')
             }}
-            onPointerMove={(event) => onPointerMove(event as unknown as React.PointerEvent<HTMLCanvasElement>)}
-            onPointerUp={(event) => endDrag(event as unknown as React.PointerEvent<HTMLCanvasElement>)}
-            onPointerCancel={(event) => endDrag(event as unknown as React.PointerEvent<HTMLCanvasElement>)}
+            onPointerMove={(event) => onPointerMove(event)}
+            onPointerUp={(event) => endDrag(event)}
+            onPointerCancel={(event) => endDrag(event)}
           >
             <MoveDiagonal2Icon className="size-4" strokeWidth={2.5} />
           </button>

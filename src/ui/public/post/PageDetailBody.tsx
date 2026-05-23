@@ -4,7 +4,7 @@ import type { CommentFormUser, DetailPageShell, MarkdownHeading } from '@/shared
 import type { DetailPageComments } from '@/shared/types/comments'
 
 import { useMediumZoom } from '@/client/hooks/use-medium-zoom'
-import { useSiteIdentity } from '@/ui/lib/blog-config-context'
+import { useSiteIdentity } from '@/shared/lib/blog-config-context'
 import { Footer } from '@/ui/public/chrome/Footer'
 import { DetailBodyChrome, type DraftMarker } from '@/ui/public/post/DetailBodyChrome'
 import { Image } from '@/ui/public/widgets/Image'

@@ -35,7 +35,7 @@ export function InlineOwnEditForm({ comment, onCancel, onSaved }: InlineOwnEditF
   // expects the narrower `CommentBody`. Comment bodies are validated
   // against `commentBodySchema` at insert/update time, so the runtime
   // invariant holds (see the parallel cast in `MyEditCommentDialog`).
-  const seed = comment.body as unknown as CommentBody
+  const seed = comment.body as CommentBody
   const [body, setBody] = useState<CommentBody>(seed)
   const [bodyKey, setBodyKey] = useState(0)
 

@@ -1,7 +1,7 @@
 import { eq, and } from 'drizzle-orm'
 
 import { db } from '@/server/infra/db/pool'
-import { slugRegistry } from '@/server/infra/db/schema'
+import { slugRegistry } from '@/server/infra/db/schema/config'
 
 export async function insertSlugRegistry({
   slug,

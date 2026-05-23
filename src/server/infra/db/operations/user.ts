@@ -1,12 +1,13 @@
 import bcrypt from 'bcryptjs'
 import { and, count, desc, eq, inArray, isNull, max, ne, or, sql } from 'drizzle-orm'
-
 import type { NewUser, User } from '@/server/infra/db/types'
 
 export type SafeUser = Omit<User, 'password' | 'lastIp' | 'lastUa'>
 
 import { db } from '@/server/infra/db/pool'
-import { comment, post, user } from '@/server/infra/db/schema'
+import { comment } from '@/server/infra/db/schema/comment'
+import { post } from '@/server/infra/db/schema/post'
+import { user } from '@/server/infra/db/schema/user'
 import { getBlogSettingsBundleSync } from '@/shared/config/blog'
 import { escapeLikePattern } from '@/shared/utils/escape-like'
 

@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 
 import { db } from '@/server/infra/db/pool'
-import { setting } from '@/server/infra/db/schema'
+import { setting } from '@/server/infra/db/schema/config'
 
 import { clearAllTables } from '../_helpers/integration-db'
 import { makeAuthedCtx } from '../_helpers/mock-ctx'

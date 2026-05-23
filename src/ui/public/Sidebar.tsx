@@ -3,10 +3,10 @@ import { Link } from 'react-router'
 import type { ClientTag, SidebarPostLink } from '@/shared/types/catalog'
 import type { LatestComment } from '@/shared/types/comments'
 
+import { useSidebarSettings, useSiteIdentity } from '@/shared/lib/blog-config-context'
 import { formatLocalDate } from '@/shared/utils/formatter'
 import { safeHref } from '@/shared/utils/safe-url'
 import { Tooltip } from '@/ui/components/tooltip'
-import { useSidebarSettings, useSiteIdentity } from '@/ui/lib/blog-config-context'
 import { cn } from '@/ui/lib/cn'
 import { SearchBar } from '@/ui/public/Search'
 

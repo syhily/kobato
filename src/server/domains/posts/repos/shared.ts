@@ -3,8 +3,9 @@ import { and, asc, desc, eq, isNotNull, isNull, or, sql, type SQL } from 'drizzl
 import type { PostMetaRow } from '@/server/infra/db/types'
 import type { ClientPost } from '@/shared/types/catalog'
 
-import { post as postMetaTable } from '@/server/infra/db/schema'
+import { post as postMetaTable } from '@/server/infra/db/schema/post'
 import { escapeLikePattern } from '@/shared/utils/escape-like'
+import { readStringArray } from '@/shared/utils/tools'
 
 export type PostMetaWithAuthor = PostMetaRow & { authorName: string | null }
 
@@ -116,8 +117,8 @@ export function toClientPostFromMeta(meta: PostMetaRow): ClientPost {
     date,
     updated: meta.publishedAt,
     comments: meta.commentsEnabled,
-    alias: (meta.alias as string[]) ?? [],
-    tags: (meta.tags as string[]) ?? [],
+    alias: readStringArray(meta.alias),
+    tags: readStringArray(meta.tags),
     category: meta.category,
     summary: meta.summary,
     cover: meta.cover || '/images/open-graph.png',

@@ -1,9 +1,8 @@
 import { eq } from 'drizzle-orm'
-
 import type { EntityTarget, EntityType } from '@/server/infra/db/target'
-
 import { db } from '@/server/infra/db/pool'
-import { page, post } from '@/server/infra/db/schema'
+import { page } from '@/server/infra/db/schema/page'
+import { post } from '@/server/infra/db/schema/post'
 import { requireBlogSettingsSection } from '@/shared/config/blog'
 import { joinUrl } from '@/shared/utils/urls'
 

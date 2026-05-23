@@ -1,5 +1,5 @@
+import { useSiteIdentity } from '@/shared/lib/blog-config-context'
 import { formatLocalDate } from '@/shared/utils/formatter'
-import { useSiteIdentity } from '@/ui/lib/blog-config-context'
 
 export function Footer() {
   const siteIdentity = useSiteIdentity()

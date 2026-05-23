@@ -5,6 +5,7 @@ import type { AdminUserDto, MuteUserInput, UserIdInput } from '@/shared/types/us
 
 import { orpc } from '@/client/api/client'
 import { orpcQuery, useMutation, useQuery, useQueryClient } from '@/client/api/query'
+import { useSiteIdentity } from '@/shared/lib/blog-config-context'
 import { AdminListPage } from '@/ui/admin/shared/AdminListPage'
 import { type ConfirmState, ConfirmDialog } from '@/ui/admin/shared/ConfirmDialog'
 import { useDebouncedSearch } from '@/ui/admin/shared/useDebouncedSearch'
@@ -13,7 +14,6 @@ import { UsersTable } from '@/ui/admin/users/UsersTable'
 import { UsersToolbar } from '@/ui/admin/users/UsersToolbar'
 import { useUsersController } from '@/ui/admin/users/useUsersController'
 import { Button } from '@/ui/components/button'
-import { useSiteIdentity } from '@/ui/lib/blog-config-context'
 
 // Orchestrator. Owns fetcher state, the controller dispatch, the
 // confirm-dialog reducer, and effect wiring. Presentation lives in

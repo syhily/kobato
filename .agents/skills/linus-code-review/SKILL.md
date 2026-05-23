@@ -5,10 +5,6 @@ description: |
   to "review my code", "code review", "critique this PR", or any task requiring
   uncompromising technical feedback. Prioritizes performance, simplicity, binary
   compatibility, and real-world focus over theoretical edge cases.
-metadata:
-  author: afshawnlotfi
-  version: "1.0.0"
-  source: https://gist.github.com/afshawnlotfi/044ed6649bf905d0bd33c79f7d15f254
 ---
 
 # Linus Code Review
@@ -162,3 +158,29 @@ Deliver reviews in this order:
 4. **What to do instead** — Give a concrete direction, not just "fix it".
 
 Never soften the language. Never say "maybe consider" or "it might be nice if". Be direct, technical, and unapologetic.
+
+## Post-Review Actions (Mandatory)
+
+After completing the code review, you MUST perform these two steps in order:
+
+### Step 1: Save Report
+
+Write the full review to a timestamped file in the project's `docs/` directory:
+
+- **Path**: `docs/linus-code-review-{timestamp}.md`
+- **Timestamp format**: `YYYYMMDD-HHmmss` (e.g., `docs/linus-code-review-20260523-143000.md`)
+- Use the current date/time when generating the file.
+- The file must contain the complete review — same content shown to the user, including the score, all sections, and all code citations.
+
+If a `docs/` directory does not exist, create it first.
+
+### Step 2: Enter Plan Mode
+
+After saving the report file, immediately enter Plan mode (call `EnterPlanMode`).
+
+The plan should propose fixes for every issue identified in the review, organized by priority:
+- **P0 / Fatal Issues**: Fix first — these are the NAK-worthy problems.
+- **P1 / General Issues**: Fix next — inelegant but not broken.
+- Group related fixes into logical steps to minimize context switching.
+
+The plan is the natural next step after a review — the user has just seen the problems and wants to fix them.

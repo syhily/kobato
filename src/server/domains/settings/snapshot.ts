@@ -210,16 +210,24 @@ const PROBES: Record<SettingsSection, SectionProbe> = {
   limits: (value) => typeof value.maxRequestBodySize === 'number' && typeof value.sessionMaxAge === 'number',
 }
 
+// Dynamic key-value assembly for the settings bundle. The bundle is a
+// strongly-typed `BlogSettingsBundle` but is assembled from DB rows whose
+// section keys come from a registry. The cast is consolidated into these
+// two helpers so the rest of the module uses typed access.
+function bundleSet(bundle: BlogSettingsBundle, key: string, value: unknown): void {
+  ;(bundle as unknown as Record<string, unknown>)[key] = value
+}
+
+function bundleHas(bundle: BlogSettingsBundle, key: string): boolean {
+  return (bundle as unknown as Record<string, unknown>)[key] !== null
+}
+
 // Project the canonical `BUNDLE_KEYS` list (mirrors `SETTINGS_SECTIONS`)
 // into a freshly-nulled bundle. Adding a section in
 // `@/shared/config/settings.ts` automatically extends this — there is no
 // sibling 12-line `null` literal to also remember.
 function emptyBundle(): BlogSettingsBundle {
-  const bundle = {} as Record<string, null>
-  for (const key of BUNDLE_KEYS) {
-    bundle[key] = null
-  }
-  return bundle as unknown as BlogSettingsBundle
+  return Object.fromEntries(BUNDLE_KEYS.map((key) => [key, null])) as unknown as BlogSettingsBundle
 }
 
 async function loadSettingsFromDb(): Promise<BlogSettingsBundle | null> {
@@ -253,7 +261,7 @@ async function loadSettingsFromDb(): Promise<BlogSettingsBundle | null> {
     // The bucket field carries the same DTO shape as the row's `data`;
     // the cast is a deliberate boundary widening that the probe above
     // backs.
-    ;(bundle as unknown as Record<string, unknown>)[meta.key] = data
+    bundleSet(bundle, meta.key, data)
   }
 
   // (`blog.general` + `blog.assets`) must be present. Until they are,
@@ -311,13 +319,13 @@ async function backfillMissingSectionDefaults(bundle: BlogSettingsBundle): Promi
     // saw one whose probe rejected the shape; both are safe to
     // overwrite with the validated default (probe-failed rows are
     // already being treated as missing by the snapshot reader).
-    if ((bundle as unknown as Record<string, unknown>)[meta.key] !== null) {
+    if (bundleHas(bundle, meta.key)) {
       continue
     }
 
     try {
       await upsertSetting(payload, null, meta.scope)
-      ;(bundle as unknown as Record<string, unknown>)[meta.key] = payload
+      bundleSet(bundle, meta.key, payload)
       log.info('Backfilled missing section with registry default', { scope: meta.scope })
     } catch (error) {
       log.warn('Failed to backfill missing section default', { scope: meta.scope, error })

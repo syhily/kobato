@@ -1,9 +1,8 @@
 import { asc, inArray, sql } from 'drizzle-orm'
-
 import type { TagRow } from '@/server/infra/db/types'
 import type { Tag } from '@/shared/types/catalog'
 import type { AdminTagDto } from '@/shared/types/tags'
-
+import { readStringArray } from '@/shared/utils/tools'
 import { hasAtLeast, type Role } from '@/server/domains/auth/rbac'
 import { listPostsByTag, listPublicPosts } from '@/server/domains/posts/repos/public-query'
 import {
@@ -25,7 +24,8 @@ import {
   updateTag,
 } from '@/server/infra/db/operations/tag'
 import { db } from '@/server/infra/db/pool'
-import { post as postMetaTable, tag as tagTable } from '@/server/infra/db/schema'
+import { post as postMetaTable } from '@/server/infra/db/schema/post'
+import { tag as tagTable } from '@/server/infra/db/schema/taxonomy'
 import { DomainError, ErrorMessages } from '@/server/infra/http/errors'
 import { createInflight } from '@/server/infra/redis/inflight'
 
@@ -67,7 +67,7 @@ async function countPostsByTags(): Promise<Map<string, number>> {
   const metas = await listPublicPosts({ includeHidden: true, includeScheduled: true })
   const counts = new Map<string, number>()
   for (const meta of metas) {
-    const tags = (meta.tags as string[]) ?? []
+    const tags = readStringArray(meta.tags)
     for (const tag of tags) {
       counts.set(tag, (counts.get(tag) ?? 0) + 1)
     }

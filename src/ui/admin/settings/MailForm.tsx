@@ -4,6 +4,7 @@ import { Controller } from 'react-hook-form'
 
 import { orpc } from '@/client/api/client'
 import { useMutation } from '@/client/api/query'
+import { useSiteIdentity } from '@/shared/lib/blog-config-context'
 import { SettingsRow } from '@/ui/admin/settings/SettingsSection'
 import { SettingGroup } from '@/ui/admin/settings/shell/SettingGroup'
 import { SettingGroupContent } from '@/ui/admin/settings/shell/SettingGroupContent'
@@ -13,7 +14,6 @@ import { Button } from '@/ui/components/button'
 import { FieldLabel } from '@/ui/components/field'
 import { Input } from '@/ui/components/input'
 import { Switch } from '@/ui/components/switch'
-import { useSiteIdentity } from '@/ui/lib/blog-config-context'
 
 export interface MailLoaderShape {
   enabled: boolean

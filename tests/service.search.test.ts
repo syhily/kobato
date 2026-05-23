@@ -1,8 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-
 import { db } from '@/server/infra/db/pool'
-import { post, postSearchIndex } from '@/server/infra/db/schema'
+import { post } from '@/server/infra/db/schema/post'
 
+
+import { postSearchIndex } from '@/server/infra/db/schema/content'
 import { clearAllTables } from './_helpers/integration-db'
 import { flushWorkerRedis } from './_helpers/redis'
 

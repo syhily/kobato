@@ -1,19 +1,8 @@
-import type { LucideIcon } from 'lucide-react'
-
-import {
-  ArrowRightIcon,
-  ClockIcon,
-  FileCheck2Icon,
-  FileImageIcon,
-  FilePenLineIcon,
-  FileTextIcon,
-  MessageSquareIcon,
-  NotebookPenIcon,
-  TrendingUpIcon,
-} from 'lucide-react'
-import { data, Link } from 'react-router'
-
 import type { EntityType } from '@/server/infra/db/target'
+
+import type { DraftSummary, MyCommentSummary } from '@/ui/admin/dashboard/types'
+
+import { data } from 'react-router'
 
 import { queryCounters, queryViews } from '@/server/domains/analytics/query'
 import { getRouteRequestContext } from '@/server/domains/auth/context'
@@ -25,9 +14,14 @@ import { countPostMetas, listPostMetas } from '@/server/domains/posts/repos/admi
 import { bundleFromMatches, routeMeta } from '@/server/render/seo/meta'
 import { computeDateRange } from '@/shared/contracts/analytics'
 import { roleLabel } from '@/shared/utils/roles'
+import { QuickActions } from '@/ui/admin/dashboard/QuickActions'
+import { RecentDraftsCard } from '@/ui/admin/dashboard/RecentDraftsCard'
+import { RecentMyCommentsCard } from '@/ui/admin/dashboard/RecentMyCommentsCard'
+import { RecentPublishedCard } from '@/ui/admin/dashboard/RecentPublishedCard'
+import { StatsGrid } from '@/ui/admin/dashboard/StatsGrid'
+import { WeeklyTrendCard } from '@/ui/admin/dashboard/WeeklyTrendCard'
 import { PendingModerationPanel, pickEmptyStateLine } from '@/ui/admin/welcome/PendingModerationPanel'
 import { VisitSummaryCard } from '@/ui/admin/welcome/VisitSummaryCard'
-import { Button } from '@/ui/components/button'
 
 import type { Route } from './+types/dashboard'
 
@@ -61,20 +55,6 @@ function makeExcerpt(raw: string): string {
     return trimmed
   }
   return `${codepoints.slice(0, COMMENT_EXCERPT_LIMIT).join('')}…`
-}
-
-interface DraftSummary {
-  id: string
-  title: string
-  updatedAtIso: string
-}
-
-interface MyCommentSummary {
-  id: string
-  excerpt: string
-  createdAtIso: string
-  isPending: boolean
-  entity: { title: string; permalink: string } | null
 }
 
 export async function loader({ request, context }: Route.LoaderArgs) {
@@ -238,302 +218,6 @@ export default function DashboardRoute({ loaderData }: Route.ComponentProps) {
         <RecentDraftsCard drafts={recentDrafts} />
       </div>
       <RecentMyCommentsCard comments={recentMyComments} />
-    </div>
-  )
-}
-
-interface StatsGridProps {
-  stats: {
-    draftCount: number
-    publishedCount: number
-    myCommentsTotal: number
-    myCommentsPending: number
-  }
-}
-
-// Per-card palette. Each tone pairs a soft status bg fill with its
-// matching fg (used for the decorative icon) so the four KPI cards
-// read as distinct stripes at a glance while staying on the design
-// system's status tokens (auto-flips in dark mode).
-const TONE_CLASSES = {
-  warn: { bg: 'bg-status-warn-bg', icon: 'text-status-warn-fg' },
-  success: { bg: 'bg-status-success-bg', icon: 'text-status-success-fg' },
-  info: { bg: 'bg-status-info-bg', icon: 'text-status-info-fg' },
-  error: { bg: 'bg-status-error-bg', icon: 'text-status-error-fg' },
-} as const
-
-type StatCardTone = keyof typeof TONE_CLASSES
-
-function StatsGrid({ stats }: StatsGridProps) {
-  return (
-    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-      <StatCard
-        label="我的草稿"
-        value={stats.draftCount}
-        href="/admin/posts?published=false"
-        icon={FilePenLineIcon}
-        tone="warn"
-      />
-      <StatCard
-        label="已发布文章"
-        value={stats.publishedCount}
-        href="/admin/posts?published=true"
-        icon={FileCheck2Icon}
-        tone="success"
-      />
-      <StatCard
-        label="我的评论"
-        value={stats.myCommentsTotal}
-        href="/admin/me/comments"
-        icon={MessageSquareIcon}
-        tone="info"
-      />
-      <StatCard
-        label="待审评论"
-        value={stats.myCommentsPending}
-        href="/admin/me/comments?status=pending"
-        emphasis={stats.myCommentsPending > 0}
-        icon={ClockIcon}
-        tone="error"
-      />
-    </div>
-  )
-}
-
-interface StatCardProps {
-  label: string
-  value: number
-  href: string
-  icon: LucideIcon
-  tone: StatCardTone
-  emphasis?: boolean
-}
-
-function StatCard({ label, value, href, icon: Icon, tone, emphasis }: StatCardProps) {
-  const palette = TONE_CLASSES[tone]
-  return (
-    <Link
-      to={href}
-      className={`group relative overflow-hidden rounded-lg border p-4 transition-colors hover:border-line-muted ${palette.bg}`}
-    >
-      {/* Decorative background icon. Inset on the right (`right-3`) so
-          it reads as a watermark, not a banner. Hover scales the glyph
-          ~12% as a subtle motion cue; `motion-reduce` variants honour
-          the user's reduced-motion preference.
-          `pointer-events-none` + `aria-hidden` keep it inert. */}
-      <Icon
-        aria-hidden="true"
-        className={`pointer-events-none absolute top-1/2 right-3 size-14 -translate-y-1/2 opacity-40 transition-transform duration-200 ease-out group-hover:scale-110 motion-reduce:transition-none motion-reduce:group-hover:scale-100 ${palette.icon}`}
-        strokeWidth={1.5}
-      />
-      <p className="relative text-xs text-muted-foreground">{label}</p>
-      <p className={`relative mt-1 text-2xl font-semibold ${emphasis ? 'text-destructive' : 'text-foreground'}`}>
-        {value}
-      </p>
-    </Link>
-  )
-}
-
-function QuickActions() {
-  return (
-    <div className="flex flex-wrap gap-2">
-      <Button type="button" variant="outline" size="sm" render={<Link to="/editor/post/new" />}>
-        <NotebookPenIcon data-icon className="size-4" /> 新建文章
-      </Button>
-      <Button type="button" variant="outline" size="sm" render={<Link to="/editor/page/new" />}>
-        <FileTextIcon data-icon className="size-4" /> 新建页面
-      </Button>
-      <Button type="button" variant="outline" size="sm" render={<Link to="/admin/library/images" />}>
-        <FileImageIcon data-icon className="size-4" /> 上传图片
-      </Button>
-    </div>
-  )
-}
-
-interface TrendPoint {
-  time: string
-  visits: number
-  visitors: number
-}
-
-function WeeklyTrendCard({ points }: { points: TrendPoint[] }) {
-  // Aggregate hourly points into daily buckets for a 7-day sparkline.
-  const daily = aggregateToDaily(points)
-  const maxVisits = Math.max(1, ...daily.map((d) => d.visits))
-  const width = 320
-  const height = 64
-  const padding = 4
-  const chartW = width - padding * 2
-  const chartH = height - padding * 2
-  const stepX = daily.length > 1 ? chartW / (daily.length - 1) : chartW
-
-  const pathPoints = daily.map((d, i) => {
-    const x = padding + i * stepX
-    const y = padding + chartH - (d.visits / maxVisits) * chartH
-    return `${x},${y}`
-  })
-
-  const areaPath =
-    pathPoints.length > 0
-      ? `M${pathPoints[0]} L${pathPoints.slice(1).join(' L')} L${padding + chartW},${padding + chartH} L${padding},${padding + chartH} Z`
-      : ''
-
-  const linePath = pathPoints.length > 0 ? `M${pathPoints.join(' L')}` : ''
-
-  return (
-    <div className="rounded-lg border bg-card p-6">
-      <div className="flex items-center gap-2">
-        <TrendingUpIcon className="size-4 text-muted-foreground" />
-        <h2 className="text-base font-medium">最近 7 天访问趋势</h2>
-      </div>
-      <div className="mt-4 flex items-end gap-4">
-        <svg viewBox={`0 0 ${width} ${height}`} className="h-16 w-full max-w-xs" preserveAspectRatio="none">
-          <defs>
-            <linearGradient id="trendGradient" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity="0.25" />
-              <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity="0" />
-            </linearGradient>
-          </defs>
-          {areaPath && <path d={areaPath} fill="url(#trendGradient)" />}
-          {linePath && (
-            <path
-              d={linePath}
-              fill="none"
-              stroke="hsl(var(--primary))"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          )}
-        </svg>
-        <div className="mb-1 flex flex-col gap-0.5 text-right">
-          <span className="text-2xl font-semibold tabular-nums">{daily.reduce((s, d) => s + d.visits, 0)}</span>
-          <span className="text-xs text-muted-foreground">总访问</span>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-function aggregateToDaily(points: TrendPoint[]): { date: string; visits: number; visitors: number }[] {
-  const map = new Map<string, { visits: number; visitors: number }>()
-  for (const p of points) {
-    const date = p.time.slice(0, 10)
-    const existing = map.get(date) ?? { visits: 0, visitors: 0 }
-    existing.visits += p.visits
-    existing.visitors += p.visitors
-    map.set(date, existing)
-  }
-  return Array.from(map.entries())
-    .map(([date, vals]) => ({ date, ...vals }))
-    .sort((a, b) => a.date.localeCompare(b.date))
-}
-
-function RecentPublishedCard({ posts }: { posts: DraftSummary[] }) {
-  return (
-    <div className="rounded-lg border bg-card p-6">
-      <div className="flex items-baseline justify-between gap-3">
-        <h2 className="text-base font-medium">最近发布</h2>
-        <Button type="button" variant="ghost" size="sm" render={<Link to="/admin/posts?published=true" />}>
-          <span className="hidden sm:inline">全部文章</span> <ArrowRightIcon data-icon />
-        </Button>
-      </div>
-      {posts.length === 0 ? (
-        <p className="mt-3 text-sm text-muted-foreground">暂无已发布文章。</p>
-      ) : (
-        <ul className="mt-3 flex flex-col gap-2 text-sm">
-          {posts.map((post) => (
-            <li key={post.id} className="flex items-center justify-between gap-3">
-              <Link to={`/editor/post/${post.id}`} className="truncate text-foreground hover:underline">
-                {post.title || '(未命名)'}
-              </Link>
-              <time
-                dateTime={post.updatedAtIso}
-                className="shrink-0 text-xs text-muted-foreground tabular-nums"
-                title={post.updatedAtIso}
-              >
-                {post.updatedAtIso.slice(0, 10)}
-              </time>
-            </li>
-          ))}
-        </ul>
-      )}
-    </div>
-  )
-}
-
-function RecentDraftsCard({ drafts }: { drafts: DraftSummary[] }) {
-  return (
-    <div className="rounded-lg border bg-card p-6">
-      <div className="flex items-baseline justify-between gap-3">
-        <h2 className="text-base font-medium">最近草稿</h2>
-        <Button type="button" variant="ghost" size="sm" render={<Link to="/admin/posts?published=false" />}>
-          <span className="hidden sm:inline">全部草稿</span> <ArrowRightIcon data-icon />
-        </Button>
-      </div>
-      {drafts.length === 0 ? (
-        <p className="mt-3 text-sm text-muted-foreground">暂无草稿，去 创建一篇 吧。</p>
-      ) : (
-        <ul className="mt-3 flex flex-col gap-2 text-sm">
-          {drafts.map((draft) => (
-            <li key={draft.id} className="flex items-center justify-between gap-3">
-              <Link to={`/editor/post/${draft.id}`} className="truncate text-foreground hover:underline">
-                {draft.title || '(未命名草稿)'}
-              </Link>
-              <time
-                dateTime={draft.updatedAtIso}
-                className="shrink-0 text-xs text-muted-foreground tabular-nums"
-                title={draft.updatedAtIso}
-              >
-                {draft.updatedAtIso.slice(0, 10)}
-              </time>
-            </li>
-          ))}
-        </ul>
-      )}
-    </div>
-  )
-}
-
-function RecentMyCommentsCard({ comments }: { comments: MyCommentSummary[] }) {
-  return (
-    <div className="rounded-lg border bg-card p-6">
-      <div className="flex items-baseline justify-between gap-3">
-        <h2 className="text-base font-medium">我的最近评论</h2>
-        <Button type="button" variant="ghost" size="sm" render={<Link to="/admin/me/comments" />}>
-          <span className="hidden sm:inline">全部评论</span> <ArrowRightIcon data-icon />
-        </Button>
-      </div>
-      {comments.length === 0 ? (
-        <p className="mt-3 text-sm text-muted-foreground">你还没有发表过评论。</p>
-      ) : (
-        <ul className="mt-3 flex flex-col gap-3 text-sm">
-          {comments.map((comment) => (
-            <li key={comment.id} className="flex flex-col gap-1">
-              <div className="flex items-baseline justify-between gap-3">
-                {comment.entity ? (
-                  <Link to={comment.entity.permalink} className="truncate text-foreground hover:underline">
-                    《{comment.entity.title}》
-                  </Link>
-                ) : (
-                  <span className="truncate text-muted-foreground">(目标已删除)</span>
-                )}
-                <time
-                  dateTime={comment.createdAtIso}
-                  className="shrink-0 text-xs text-muted-foreground tabular-nums"
-                  title={comment.createdAtIso}
-                >
-                  {comment.createdAtIso.slice(0, 10)}
-                </time>
-              </div>
-              <p className="truncate text-xs text-muted-foreground">
-                {comment.isPending ? <span className="mr-2 text-destructive">[待审]</span> : null}
-                {comment.excerpt || '(空评论)'}
-              </p>
-            </li>
-          ))}
-        </ul>
-      )}
     </div>
   )
 }
