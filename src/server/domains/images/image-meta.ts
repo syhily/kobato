@@ -6,7 +6,7 @@ import { ActionFailure } from '@/server/infra/http/errors'
 import { getLogger } from '@/server/infra/logger'
 import { createInflight } from '@/server/infra/redis/inflight'
 import { storage } from '@/server/infra/redis/storage'
-import { requireBlogSettingsSection } from '@/shared/config/blog'
+import { getCacheSettings } from '@/shared/config/blog'
 
 // Image metadata resolver. Looks up matching `image` rows by
 // `storagePath` and returns width, height, thumbhash, and the
@@ -66,7 +66,7 @@ function rowToCached(row: ImageRow): CachedImageMetaPresent {
 // write. Old keys under the previous prefix age out at their stored
 // TTL — there's no migration step.
 function bucket(): { prefix: string; ttlSeconds: number } {
-  return requireBlogSettingsSection('cache').cache.imageMeta
+  return getCacheSettings().cache.imageMeta
 }
 
 function cacheKey(storagePath: string): string {

@@ -593,7 +593,9 @@ export function requireBlogSettingsBundle(): BlogSettingsBundle {
  *   const content = requireBlogSettingsSection('content')
  *   const total = content.pagination.posts
  */
-export function requireBlogSettingsSection<K extends keyof BlogSettingsBundle>(section: K): NonNullable<BlogSettingsBundle[K]> {
+export function requireBlogSettingsSection<K extends keyof BlogSettingsBundle>(
+  section: K,
+): NonNullable<BlogSettingsBundle[K]> {
   const value = requireBlogSettingsBundle()[section]
   if (value === null) {
     throw new Error(
@@ -602,8 +604,9 @@ export function requireBlogSettingsSection<K extends keyof BlogSettingsBundle>(s
         'means a row was manually truncated. Re-run install or restore from backup.',
     )
   }
-  if (section === 'cache') {
-    return withCacheFallbacks(value as CacheSettingsNonNull) as unknown as NonNullable<BlogSettingsBundle[K]>
-  }
   return value
+}
+
+export function getCacheSettings(): NonNullable<BlogSettingsBundle['cache']> {
+  return withCacheFallbacks(requireBlogSettingsSection('cache'))
 }

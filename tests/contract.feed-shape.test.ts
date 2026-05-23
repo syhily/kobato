@@ -12,7 +12,7 @@ const here = dirname(fileURLToPath(import.meta.url))
 const projectRoot = resolve(here, '..')
 
 const feedSource = readFileSync(resolve(projectRoot, 'src/server/render/feed/generator.tsx'), 'utf8')
-const feedPtRenderSource = readFileSync(resolve(projectRoot, 'src/server/render/feed/feed-pt-render.tsx'), 'utf8')
+const feedPtRenderSource = readFileSync(resolve(projectRoot, 'src/server/render/feed/feed-pt-render.ts'), 'utf8')
 
 describe('contract: feed (RSS + Atom) shape', () => {
   it('declares the historical content-types for both RSS and Atom', () => {
@@ -33,11 +33,11 @@ describe('contract: feed (RSS + Atom) shape', () => {
   })
 
   it("renders each entry's full MDX body (not just the summary)", () => {
-    // The feed delegates to the shared SSR helper in `feed-pt-render.tsx`,
-    // which is the same path post/page detail routes use. We assert the
-    // helper is wired in and that entry items receive the prerendered body
-    // as `content`, so subscribers see the full post — not a summary stub.
-    expect(feedPtRenderSource).toContain('prerenderToHtml')
+    // The feed delegates to the shared SSR helper in `feed-pt-render.ts`,
+    // which converts PortableText to HTML server-side via `@portabletext/to-html`.
+    // We assert the helper is wired in and that entry items receive the rendered
+    // body as `content`, so subscribers see the full post — not a summary stub.
+    expect(feedPtRenderSource).toContain('toHTML')
     expect(feedSource).toContain('content: contents[i]')
   })
 

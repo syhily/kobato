@@ -3,7 +3,7 @@ import { format, isValid, parse } from 'date-fns'
 import { notFound, pngResponse } from '@/server/infra/http/status'
 import { loadBuffer } from '@/server/infra/redis/buffer-cache'
 import { type CalendarTheme, renderCalendar } from '@/server/render/calendar/render'
-import { requireBlogSettingsSection } from '@/shared/config/blog'
+import { getCacheSettings } from '@/shared/config/blog'
 
 const timeRegex = /^\d{4}$/
 
@@ -33,7 +33,7 @@ export async function serveCalendar(
   // `/admin/settings/cache` apply to the very next render. Dark
   // variants get a distinct cache key so the two themes don't clobber
   // each other under the same prefix.
-  const cache = requireBlogSettingsSection('cache').cache.calendar
+  const cache = getCacheSettings().cache.calendar
   const themeSuffix = theme === 'dark' ? '-dark' : ''
   const buffer = await loadBuffer(
     `${cache.prefix}${format(date, 'yyyy-MM-dd')}${themeSuffix}`,

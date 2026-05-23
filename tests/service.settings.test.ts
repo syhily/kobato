@@ -15,7 +15,7 @@ const settingQueries = await import('@/server/infra/db/operations/setting')
 const { getAdminBlogSettings, updateBlogSettingsSection } = await import('@/server/domains/settings/service')
 const { setBlogSettingsBundleForTests, getBlogSettingsBundleSync } = await import('@/server/domains/settings/snapshot')
 const { DomainError } = await import('@/server/infra/http/errors')
-const { requireBlogSettingsSection } = await import('@/shared/config/blog')
+const { getCacheSettings } = await import('@/shared/config/blog')
 
 // Bucketed settings fixture. The on-disk DB stores one row per section
 // (`blog.general`, `blog.assets`, …) so `bundleRows()` projects this
@@ -731,7 +731,7 @@ describe('services/settings — snapshot reader', () => {
     expect(live?.siteIdentity?.locale).toBe('zh-CN')
   })
 
-  it('requireBlogSettingsSection(cache) backfills missing bucket slots with fallbacks', () => {
+  it('getCacheSettings() backfills missing bucket slots with fallbacks', () => {
     const legacyCache = {
       og: { prefix: 'legacy-og:', ttlSeconds: 1234 },
       calendar: { prefix: 'legacy-calendar:', ttlSeconds: 5678 },
@@ -746,7 +746,7 @@ describe('services/settings — snapshot reader', () => {
     }
     setBlogSettingsBundleForTests(legacyLikeBundle)
 
-    const cache = requireBlogSettingsSection('cache').cache
+    const cache = getCacheSettings().cache
     expect(cache.og).toEqual({ prefix: 'legacy-og:', ttlSeconds: 1234 })
     expect(cache.calendar).toEqual({ prefix: 'legacy-calendar:', ttlSeconds: 5678 })
     expect(cache.avatar).toEqual({ prefix: 'legacy-avatar:', ttlSeconds: 4321 })

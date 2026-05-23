@@ -2,7 +2,7 @@ import type { CacheBucket, CacheBucketId, CacheBucketStats, ReservedCacheBucketS
 
 import { getLogger } from '@/server/infra/logger'
 import { redisInstance } from '@/server/infra/redis/storage'
-import { requireBlogSettingsSection } from '@/shared/config/blog'
+import { getCacheSettings } from '@/shared/config/blog'
 import { RESERVED_CACHE_BUCKETS } from '@/shared/types/cache'
 
 const log = getLogger('cache.buckets')
@@ -81,7 +81,7 @@ const BUCKET_META = [
  * `getAdminCacheStats()` / `clearAdminCache()`.
  */
 export function getCacheBuckets(): CacheBucket[] {
-  const cache = requireBlogSettingsSection('cache').cache
+  const cache = getCacheSettings().cache
   return BUCKET_META.map((meta) => {
     const slot = cache[meta.id]
     return {

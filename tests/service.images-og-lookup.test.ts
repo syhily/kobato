@@ -32,6 +32,7 @@ vi.mock('@/shared/config/blog', () => ({
     }
     return {}
   }),
+  getCacheSettings: () => ({ cache: { og: { prefix: 'og:', ttlSeconds: 3600 } } }),
   getBlogSettingsBundleSync: () => ({
     rateLimit: { resourceIp: { windowSeconds: 60, maxAttempts: 60 } },
   }),

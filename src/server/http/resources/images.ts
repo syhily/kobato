@@ -19,7 +19,7 @@ import {
 } from '@/server/render/avatar/fetch'
 import { serveCalendar } from '@/server/render/calendar/serve'
 import { drawOpenGraph } from '@/server/render/og/render'
-import { requireBlogSettingsSection } from '@/shared/config/blog'
+import { getCacheSettings, requireBlogSettingsSection } from '@/shared/config/blog'
 import { getClientAddress } from '@/shared/utils/request'
 import { joinUrl } from '@/shared/utils/urls'
 
@@ -27,7 +27,7 @@ import { joinUrl } from '@/shared/utils/urls'
 
 function ogCacheKey(slug: string, title: string, summary: string, cover: string): string {
   const hash = crypto.createHash('sha1').update(`${title}\u0001${summary}\u0001${cover}`).digest('hex').slice(0, 16)
-  return `${requireBlogSettingsSection('cache').cache.og.prefix}${slug}-${hash}`
+  return `${getCacheSettings().cache.og.prefix}${slug}-${hash}`
 }
 
 const OG_HEADERS: HeadersInit = {
@@ -74,7 +74,7 @@ export const imagesRouter = new Hono<Env>()
       return ogFallback(c)
     }
 
-    const ttl = requireBlogSettingsSection('cache').cache.og.ttlSeconds
+    const ttl = getCacheSettings().cache.og.ttlSeconds
     const [post, page] = await Promise.all([findPostBySlug(slug), findPageBySlug(slug)])
     if (!post && !page) {
       return ogFallback(c)

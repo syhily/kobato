@@ -56,6 +56,7 @@
     "@orpc/react-query": "^1.14.3",
     "@orpc/server": "^1.14.3",
     "@portabletext/react": "^6.2.0",
+    "@portabletext/to-html": "^5.0.2",
     "@react-router/node": "^7.15.1",
     "@shikijs/transformers": "^4.1.0",
     "@t3-oss/env-core": "^0.13.11",
