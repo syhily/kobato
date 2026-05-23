@@ -55,7 +55,7 @@ export function HomeLayoutBody({
               totalPage={totalPage}
               categoryLinks={categoryLinks}
               listingNowIso={listingNowIso}
-              hasSidebar={hasSidebar}
+              layout={hasSidebar ? 'with-sidebar' : 'full'}
             />
           )}
           <Sidebar data={sidebar} />
@@ -95,7 +95,7 @@ export interface PostListingBodyProps {
   pageNum: number
   totalPage: number
   rootPath: string
-  alwaysRenderPagination?: boolean
+  pagination?: 'always' | 'auto'
   listingNowIso: string
 }
 
@@ -106,7 +106,7 @@ export function PostListingBody({
   pageNum,
   totalPage,
   rootPath,
-  alwaysRenderPagination = true,
+  pagination = 'always',
   listingNowIso,
 }: PostListingBodyProps) {
   return (
@@ -134,7 +134,7 @@ export function PostListingBody({
                 <PostSquare key={post.slug} post={post} first={index === 0} listingNowIso={listingNowIso} />
               ))}
             </div>
-            {(alwaysRenderPagination || totalPage > 1) && (
+            {(pagination === 'always' || totalPage > 1) && (
               <div className="mt-6 lg:mt-12">
                 <Pagination current={pageNum} total={totalPage} rootPath={rootPath} />
               </div>
@@ -219,7 +219,7 @@ export interface PostCardsProps {
   totalPage: number
   categoryLinks: Record<string, string>
   listingNowIso: string
-  hasSidebar?: boolean
+  layout?: 'with-sidebar' | 'full'
 }
 
 export function PostCards({
@@ -228,11 +228,16 @@ export function PostCards({
   totalPage,
   categoryLinks,
   listingNowIso,
-  hasSidebar = true,
+  layout = 'with-sidebar',
 }: PostCardsProps) {
   const config = useSiteIdentity()
   return (
-    <div className={cn('box-border w-full max-w-full shrink-0 px-3', hasSidebar ? 'xl:w-[71%]' : 'xl:w-full')}>
+    <div
+      className={cn(
+        'box-border w-full max-w-full shrink-0 px-3',
+        layout === 'with-sidebar' ? 'xl:w-[71%]' : 'xl:w-full',
+      )}
+    >
       <div>
         {posts.map((post) => (
           <div

@@ -16,7 +16,7 @@ export interface PostDetailBodyProps {
   post: DetailPostShell
   headings: MarkdownHeading[]
   visibleTags: ClientTag[]
-  admin: boolean
+  mode: 'admin' | 'public'
   likes: number
   commentKey: string
   /** Streamed in via React Router `<Await>`. */
@@ -31,7 +31,7 @@ export function PostDetailBody({
   post,
   headings,
   visibleTags,
-  admin,
+  mode,
   likes,
   commentKey,
   commentsPromise,
@@ -62,17 +62,17 @@ export function PostDetailBody({
                 title={post.title}
                 date={post.date}
                 updated={post.updated}
-                showUpdated={post.showUpdated}
+                updatedVisibility={post.showUpdated ? 'shown' : 'hidden'}
                 headings={headings}
-                toc={post.toc}
+                toc={post.toc ? 'enabled' : 'disabled'}
                 likes={likes}
                 permalink={post.permalink}
                 commentKey={commentKey}
                 commentsPromise={commentsPromise}
                 currentUser={currentUser}
-                commentsEnabled={post.comments}
-                admin={admin}
-                editHref={admin ? `/editor/post/${post.id}` : undefined}
+                comments={post.comments ? 'enabled' : 'disabled'}
+                mode={mode}
+                editHref={mode === 'admin' ? `/editor/post/${post.id}` : undefined}
                 draftMarker={draftMarker}
                 postContentRef={postContentRef}
                 metaClassName="mt-4 mb-3"

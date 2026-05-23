@@ -1,38 +1,14 @@
-// Single canonical KaTeX to MathML renderer for the entire blog. Page
-// save / publish prerendering and the admin editor preview both flow
-// through this module so draft previews and published pages cannot drift.
+import katex from 'katex'
+import 'katex/contrib/mhchem'
 
 export interface KatexRenderer {
   render: (tex: string, display: boolean) => Promise<string>
 }
 
-let rendererPromise: Promise<KatexRenderer> | undefined
+let cachedRenderer: KatexRenderer | undefined
 
 export function getKatexRenderer(): Promise<KatexRenderer> {
-  if (rendererPromise === undefined) {
-    rendererPromise = createKatexRenderer()
-  }
-  return rendererPromise
-}
-
-if (import.meta.hot) {
-  import.meta.hot.dispose(() => {
-    rendererPromise = undefined
-  })
-}
-
-async function createKatexRenderer(): Promise<KatexRenderer> {
-  // Lazy-load KaTeX (and the mhchem extension) so the hefty parser stays
-  // out of modules that only need the renderer interface. On a typical
-  // blog most posts do not contain math, so the chunk is only fetched
-  // when the first TeX block is encountered during prerender or preview.
-  const [{ default: katex }] = await Promise.all([
-    import('katex'),
-    // @ts-expect-error katex/contrib/mhchem has no type declarations
-    import('katex/contrib/mhchem'),
-  ])
-
-  return {
+  cachedRenderer ??= {
     async render(tex: string, display: boolean): Promise<string> {
       return katex.renderToString(tex, {
         displayMode: display,
@@ -42,4 +18,11 @@ async function createKatexRenderer(): Promise<KatexRenderer> {
       })
     },
   }
+  return Promise.resolve(cachedRenderer)
+}
+
+if (import.meta.hot) {
+  import.meta.hot.dispose(() => {
+    cachedRenderer = undefined
+  })
 }

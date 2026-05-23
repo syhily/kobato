@@ -4,7 +4,7 @@ Repository conventions for AI agents and contributors.
 
 ## Quick orientation
 
-- React Router 7 Framework Mode with SSR (`appDirectory: 'src'`). Vite+ builds.
+- React Router 7 Framework Mode with SSR (`appDirectory: 'src'`).
 - React 19 TSX/TS only.
 - Postgres + Redis.
 - Path alias `@/*` → `./src/*`.
@@ -45,10 +45,16 @@ Skills win on conflict. Quote stable rule ids in PR review (e.g.
 `bundle-barrel-imports`, `architecture-avoid-boolean-props`,
 `server-no-shared-module-state`).
 
+## CodeGraph
+
+This project has a CodeGraph MCP server (`codegraph_*` tools) — a tree-sitter-parsed knowledge graph. Use it for **structural** queries (call graphs, symbol locations, impact analysis, signatures); use grep/read only for **literal text**. Prefer `codegraph_context` as the primary tool (composes search + node + callers + callees in one call). Trust AST-parsed results — don't re-verify with grep. Don't delegate exploration to sub-agents; answer directly with 2-3 codegraph calls. If `.codegraph/` is missing, offer to run `codegraph init -i`.
+
 ## Build & CI
 
-- `vp dev`, `vp check` (format + lint + types), `vp test run`, `vp build`
-- Before committing: `vp check`, `vp test run`, `vp build`
+- `npm run dev`, `npm run fmt:check`, `npm run lint`, `npm run typecheck`,
+  `npm run test`, `npm run build`
+- Before committing: `npm run fmt:check && npm run lint && npm run typecheck`,
+  `npm run test`, `npm run build`
 
 ## Git
 
@@ -59,17 +65,17 @@ Skills win on conflict. Quote stable rule ids in PR review (e.g.
 
 ## Defensive constraints
 
-Do not reintroduce:
+These patterns are banned:
 
-- No `src/actions`, `src/middleware`, `src/layouts`, `src/services`,
+- `src/actions`, `src/middleware`, `src/layouts`, `src/services`,
   `src/hooks`, `src/db`, `src/assets/scripts`, or `src/content/`.
-- No `src/blog.config.ts`, `DEFAULT_SETTINGS`, `BlogConstants`, or
+- `src/blog.config.ts`, `DEFAULT_SETTINGS`, `BlogConstants`, or
   per-section "reset to defaults" action.
-- No monolithic `BlogConfigContext`/`<BlogConfigProvider>`. Use
+- Monolithic `BlogConfigContext`/`<BlogConfigProvider>`. Use
   per-section hooks.
-- No `data-admin-shell` selector.
-- No `src/lib/` parallel to `@/ui/lib`.
-- No `@/ui/admin/shadcn/components/ui/` nesting.
+- `data-admin-shell` selector.
+- `src/lib/` parallel to `@/ui/lib`.
+- `@/ui/admin/shadcn/components/ui/` nesting.
 - Preserve public URLs, feed URLs, image endpoints, WordPress
   compatibility routes, and pagination routes unless explicitly asked to
   change them.

@@ -18,21 +18,21 @@ interface UseSettingsCardOptions<TSource, TState extends FieldValues> {
    * Project the editable form state into the payload sent to the server.
    * In patch mode (default), return only the fields this card edits — the
    * hook auto-merges with `source` to produce a full section payload.
-   * When `patch: false`, return the full section payload manually.
+   * When `mode: 'full'`, return the full section payload manually.
    */
   fromState: (state: TState) => Record<string, unknown>
-  schema?: z.ZodType<TState>
+  schema?: z.ZodType<TState, any>
   /**
-   * When true (default), `fromState` only needs to return the changed
-   * sub-tree; the hook deep-merges it with `source`. When false,
+   * When `'patch'` (default), `fromState` only needs to return the changed
+   * sub-tree; the hook deep-merges it with `source`. When `'full'`,
    * `fromState` must return the complete section payload.
    */
-  patch?: boolean
+  mode?: 'patch' | 'full'
 }
 
 interface UseSettingsCardResult<TState extends FieldValues> {
-  isEditing: boolean
-  setIsEditing: (value: boolean) => void
+  mode: 'read' | 'edit'
+  setMode: (mode: 'read' | 'edit') => void
   form: UseFormReturn<TState>
   save: () => void
   cancel: () => void
@@ -41,8 +41,8 @@ interface UseSettingsCardResult<TState extends FieldValues> {
   errorMessage: string | null
   /** Spread into <SettingGroup> to wire up edit/save/cancel/status. */
   settingGroupProps: {
-    isEditing: boolean
-    onEditingChange: (value: boolean) => void
+    mode: 'read' | 'edit'
+    onModeChange: (mode: 'read' | 'edit') => void
     onSave: () => void
     onCancel: () => void
     saveState: 'idle' | 'saving' | 'saved' | 'error'
@@ -77,9 +77,9 @@ export function useSettingsCard<TSource, TState extends FieldValues>({
   toState,
   fromState,
   schema,
-  patch = true,
+  mode: mergeMode = 'patch',
 }: UseSettingsCardOptions<TSource, TState>): UseSettingsCardResult<TState> {
-  const [isEditing, setIsEditing] = useState(false)
+  const [mode, setMode] = useState<'read' | 'edit'>('read')
   const [status, setStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const revalidator = useRevalidator()
@@ -104,7 +104,7 @@ export function useSettingsCard<TSource, TState extends FieldValues>({
     if (!schema) {
       return undefined
     }
-    return zodResolver(schema as never) as Resolver<TState>
+    return zodResolver(schema)
   }, [schema])
 
   const form = useForm<TState>({
@@ -120,18 +120,18 @@ export function useSettingsCard<TSource, TState extends FieldValues>({
   useEffect(() => {
     if (source !== lastSourceSnapshot) {
       setLastSourceSnapshot(source)
-      if (!isEditing) {
+      if (mode === 'read') {
         reset(initialValues)
       }
     }
-  }, [source, lastSourceSnapshot, isEditing, initialValues, reset])
+  }, [source, lastSourceSnapshot, mode, initialValues, reset])
 
   const updateMutation = useMutation({
     mutationFn: ({ section, payload }: { section: SettingsSection; payload: Record<string, unknown> }) =>
       orpc.admin.settings.update({ section, payload }),
     onSuccess: () => {
       setStatus('saved')
-      setIsEditing(false)
+      setMode('read')
       void revalidator.revalidate()
     },
     onError: (error) => {
@@ -145,7 +145,8 @@ export function useSettingsCard<TSource, TState extends FieldValues>({
       setStatus('saving')
       setErrorMessage(null)
       const patchPayload = fromStateRef.current(values)
-      const payload = patch ? deepMerge(sourceRef.current as Record<string, unknown>, patchPayload) : patchPayload
+      const payload =
+        mergeMode === 'patch' ? deepMerge(sourceRef.current as Record<string, unknown>, patchPayload) : patchPayload
       updateMutation.mutate({ section, payload })
     })().catch((error: unknown) => {
       if (error instanceof Error) {
@@ -153,18 +154,18 @@ export function useSettingsCard<TSource, TState extends FieldValues>({
         setStatus('error')
       }
     })
-  }, [handleSubmit, patch, section, updateMutation])
+  }, [handleSubmit, mergeMode, section, updateMutation])
 
   const cancel = useCallback(() => {
     reset(initialValues)
-    setIsEditing(false)
+    setMode('read')
     setStatus('idle')
     setErrorMessage(null)
   }, [initialValues, reset])
 
   return {
-    isEditing,
-    setIsEditing,
+    mode,
+    setMode,
     form,
     save,
     cancel,
@@ -172,8 +173,8 @@ export function useSettingsCard<TSource, TState extends FieldValues>({
     status,
     errorMessage,
     settingGroupProps: {
-      isEditing,
-      onEditingChange: setIsEditing,
+      mode,
+      onModeChange: setMode,
       onSave: save,
       onCancel: cancel,
       saveState: status,

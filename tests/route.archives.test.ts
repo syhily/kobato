@@ -35,7 +35,7 @@ describe('routes/archives loader', () => {
   it('includes visible=false posts while still excluding scheduled posts', async () => {
     const result = (await loader({
       request: new Request('http://localhost/archives'),
-    } as never)) as { resolvedPosts: Array<{ slug: string }>; listingNowIso: string }
+    } as unknown as Parameters<typeof loader>[0])) as { resolvedPosts: Array<{ slug: string }>; listingNowIso: string }
 
     expect(mocks.listClientPosts).toHaveBeenCalledWith({
       includeHidden: true,

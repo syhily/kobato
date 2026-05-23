@@ -2,7 +2,7 @@
 // worker. Must create the test database before the first test file imports
 // `db.pool.ts` (which reads DATABASE_URL at module-load time).
 
-import { afterAll } from 'vitest'
+import { afterAll, afterEach } from 'vitest'
 
 import { BLOG_SETTINGS_SNAPSHOT_SLOT } from '@/shared/config/blog'
 
@@ -45,3 +45,8 @@ import './_helpers/env'
 // `@/server/domains/settings/snapshot` themselves.
 BLOG_SETTINGS_SNAPSHOT_SLOT.write(TEST_BLOG_SETTINGS_BUNDLE)
 BLOG_SETTINGS_SNAPSHOT_SLOT.writeHydration(Promise.resolve(TEST_BLOG_SETTINGS_BUNDLE))
+
+// Auto-reset the snapshot after every test to prevent isolation leaks.
+afterEach(() => {
+  BLOG_SETTINGS_SNAPSHOT_SLOT.write(TEST_BLOG_SETTINGS_BUNDLE)
+})

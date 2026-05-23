@@ -1,6 +1,6 @@
 import type { NavigateFunction } from 'react-router'
 
-import type { AdminPostDetailDto, AdminPostDto } from '@/shared/types/posts'
+import type { AdminPostDetailDto, AdminPostDto, SavePostBodyInput, UpsertPostMetaInput } from '@/shared/types/posts'
 
 import { orpc } from '@/client/api/client'
 import { useCreatePostDraft } from '@/client/hooks/use-create-post-draft'
@@ -49,7 +49,7 @@ function buildPostUpsertPayload({
   meta: PostMetaDraft
   id?: string
   publishedAt: string | null
-}): Record<string, unknown> {
+}): UpsertPostMetaInput {
   return {
     ...(id !== undefined ? { id } : {}),
     ...(meta.slug.trim() !== '' ? { slug: meta.slug.trim() } : {}),
@@ -82,7 +82,7 @@ export function PostEditorShell({ mode, detail, navigate }: PostEditorShellProps
   // --- Shared state hook ---------------------------------------------------
   // The hook owns `useMutation()` internally — Shell only provides
   // entity-specific mutation functions + the LS hook factories.
-  const state = useEditorShellState<PostMetaDraft, AdminPostDto>({
+  const state = useEditorShellState<PostMetaDraft, AdminPostDto, UpsertPostMetaInput>({
     mode,
     entityKind: 'post',
     detail: detail
@@ -99,17 +99,17 @@ export function PostEditorShell({ mode, detail, navigate }: PostEditorShellProps
       usePostLocalDraft({ postId: entityId, clientRevisionToken, body, disabled }),
     useCreateDraftHook: ({ body, meta }) => useCreatePostDraft({ body, meta }),
     upsertMetaFn: async (input) => {
-      const result = await orpc.admin.posts.upsertMeta(input as never)
+      const result = await orpc.admin.posts.upsertMeta(input)
       return result.post
     },
-    saveDraftFn: (input) => orpc.admin.posts.saveDraft(input as never),
-    publishFn: (input) => orpc.admin.posts.publishLatest(input as never),
+    saveDraftFn: (input) => orpc.admin.posts.saveDraft(input as unknown as SavePostBodyInput),
+    publishFn: (input) => orpc.admin.posts.publishLatest(input as unknown as SavePostBodyInput),
     unpublishFn: async (input) => {
       const result = await orpc.admin.posts.unpublish(input)
       return result.post
     },
     buildUpsertMetaPayload: buildPostUpsertPayload,
-    directSaveDraft: (input) => orpc.admin.posts.saveDraft(input as never),
+    directSaveDraft: (input) => orpc.admin.posts.saveDraft(input),
     editPath: (id) => `/editor/post/${id}`,
     navigate,
   })
@@ -121,7 +121,7 @@ export function PostEditorShell({ mode, detail, navigate }: PostEditorShellProps
         state.previewOpen ? 'min-h-0 flex-1' : 'min-h-[calc(100vh-4rem)]',
       )}
     >
-      <PostEditorToolbar mode={mode} isEditing={isEditing} detail={detail} state={state} />
+      <PostEditorToolbar mode={mode} detail={detail} state={state} />
 
       {isEditing && state.previewBanner !== null ? (
         <ActionBanner
@@ -188,18 +188,15 @@ export function PostEditorShell({ mode, detail, navigate }: PostEditorShellProps
               body={state.body}
               title={state.meta.title}
               slug={state.meta.slug}
-              showPublicSyncHint={state.showPreviewPublicSyncHint}
               scrollContainerRef={state.previewScrollRef}
             />
           </section>
         ) : null}
         {!state.previewOpen && state.metaOpen ? (
-          <PostEditorMetaAside isEditing={isEditing} detail={detail} state={state} />
+          <PostEditorMetaAside mode={mode} detail={detail} state={state} />
         ) : null}
       </div>
-      {state.previewOpen || !state.isLg ? (
-        <PostEditorMetaSheet isEditing={isEditing} detail={detail} state={state} />
-      ) : null}
+      {state.previewOpen || !state.isLg ? <PostEditorMetaSheet mode={mode} detail={detail} state={state} /> : null}
       {state.conflict !== null && isEditing ? (
         <DraftConflictDialog
           open={true}

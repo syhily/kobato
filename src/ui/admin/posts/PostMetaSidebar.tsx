@@ -241,7 +241,7 @@ export interface MetaSidebarProps {
    * Whether the feature-post (pinning) toggle is shown in the sidebar.
    * Driven by the `blog.content` `post.featureEnabled` setting.
    */
-  featureEnabled?: boolean
+  featureGate?: 'enabled' | 'disabled'
   /**
    * Optional extra slot rendered at the bottom of the panel. Used by
    * the editor shell to mount the revision history drawer trigger
@@ -268,7 +268,7 @@ export function PostMetaSidebar({
   ogPreviewSlug,
   revisionSummary,
   saveStatus,
-  featureEnabled,
+  featureGate,
   extras,
 }: MetaSidebarProps) {
   const set = <K extends keyof PostMetaDraft>(key: K, value: PostMetaDraft[K]) => onChange({ ...draft, [key]: value })
@@ -356,19 +356,19 @@ export function PostMetaSidebar({
           <CardTitle className="text-base">展示选项</CardTitle>
         </CardHeader>
         <CardContent className="grid gap-3">
-          {POST_META_TOGGLE_FIELDS.filter((field) => field.featureGate !== 'featurePosts' || featureEnabled).map(
-            (field) => (
-              <ToggleRow
-                key={field.key}
-                id={field.id}
-                label={field.label}
-                description={field.description}
-                checked={draft[field.key]}
-                onCheckedChange={(value) => set(field.key, value)}
-                disabled={disabled}
-              />
-            ),
-          )}
+          {POST_META_TOGGLE_FIELDS.filter(
+            (field) => field.featureGate !== 'featurePosts' || featureGate === 'enabled',
+          ).map((field) => (
+            <ToggleRow
+              key={field.key}
+              id={field.id}
+              label={field.label}
+              description={field.description}
+              checked={draft[field.key]}
+              onCheckedChange={(value) => set(field.key, value)}
+              disabled={disabled}
+            />
+          ))}
         </CardContent>
       </Card>
       {extras !== undefined ? extras : null}

@@ -1,13 +1,11 @@
 import type { MetaDescriptor } from 'react-router'
 
-import { afterAll, beforeAll, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
 
 import type { BlogSettingsBundle } from '@/shared/config/blog'
 
 import { setBlogSettingsBundleForTests } from '@/server/domains/settings/snapshot'
 import { pageTitle, routeMeta } from '@/server/render/seo/meta'
-
-import { TEST_BLOG_SETTINGS_BUNDLE } from './_helpers/blog-settings'
 
 // `routeMeta` and `pageTitle` consult the snapshot reader for the
 // site title / website / OG defaults. There is no longer a baked-in
@@ -125,14 +123,8 @@ const fixture: BlogSettingsBundle = {
   },
 }
 
-beforeAll(() => {
+beforeEach(() => {
   setBlogSettingsBundleForTests(fixture)
-})
-
-afterAll(() => {
-  // Restore the global fixture installed by `tests/setup.ts` so other
-  // tests sharing the worker still have a hydrated snapshot.
-  setBlogSettingsBundleForTests(TEST_BLOG_SETTINGS_BUNDLE)
 })
 
 // Helpers to find a meta tag by predicate. routeMeta produces a heterogeneous

@@ -115,7 +115,7 @@ function SortableWidgetRow({
 }
 
 export function SidebarForm({ sidebar }: SidebarFormProps) {
-  const { isEditing, form, settingGroupProps } = useSettingsCard<SidebarSettings, { widgets: SidebarWidget[] }>({
+  const { mode, form, settingGroupProps } = useSettingsCard<SidebarSettings, { widgets: SidebarWidget[] }>({
     section: 'sidebar',
     source: sidebar,
     toState: (source) => ({ widgets: [...source.sidebar.widgets] }),
@@ -144,7 +144,7 @@ export function SidebarForm({ sidebar }: SidebarFormProps) {
       description="控制侧边栏的功能模块。拖拽可调整顺序，取消勾选则隐藏对应模块。"
       {...settingGroupProps}
     >
-      {isEditing ? (
+      {mode === 'edit' ? (
         <SettingGroupContent>
           <DndContext
             sensors={sensors}

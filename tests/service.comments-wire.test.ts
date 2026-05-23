@@ -51,6 +51,13 @@ describe('asCommentItemWire', () => {
     expect(wire.userId).toBe('9')
   })
 
+  it('strips PII fields (ua, ip, email) from public wire', () => {
+    const wire = asCommentItemWire(makeRow())
+    expect(wire).not.toHaveProperty('ua')
+    expect(wire).not.toHaveProperty('ip')
+    expect(wire).not.toHaveProperty('email')
+  })
+
   it('emits ISO-8601 timestamps for Date fields', () => {
     const wire = asCommentItemWire(makeRow())
     expect(wire.createAt).toBe('2024-01-15T08:30:00.000Z')
@@ -92,5 +99,12 @@ describe('asAdminCommentsWire', () => {
     expect(wire[0]?.id).toBe('3')
     expect(wire[0]?.pageTitle).toBe('我的页面')
     expect(wire[0]?.pagePublicId).toBe('public-uuid')
+  })
+
+  it('preserves PII fields (ua, ip, email) on admin wire', () => {
+    const wire = asAdminCommentsWire([{ ...makeRow({ id: 3n }), pageTitle: null, pagePublicId: null }])
+    expect(wire[0]?.ua).toBeNull()
+    expect(wire[0]?.ip).toBeNull()
+    expect(wire[0]?.email).toBe('alice@example.com')
   })
 })

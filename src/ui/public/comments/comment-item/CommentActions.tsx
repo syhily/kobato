@@ -21,16 +21,16 @@ import { asKey, commentFooterButtonClass, useCommentsLeafContext } from '@/ui/pu
 
 interface CommentActionsProps {
   comment: CommentItemType
-  admin: boolean | undefined
+  mode?: 'admin' | 'public'
   /** Open the admin / legacy-token edit area (round-trips through `comment.edit`). */
   onEditAdmin: () => void
   /** Open the visitor self-edit area (posts to `comment.updateOwn`). */
   onEditOwn: () => void
 }
 
-export function CommentActions({ comment, admin: propAdmin, onEditAdmin, onEditOwn }: CommentActionsProps) {
+export function CommentActions({ comment, mode: propMode, onEditAdmin, onEditOwn }: CommentActionsProps) {
   const siteIdentity = useSiteIdentity()
-  const leaf = useCommentsLeafContext(propAdmin)
+  const leaf = useCommentsLeafContext(propMode)
   const revalidator = useRevalidator()
   const approve = useMutation({
     ...orpcQuery.admin.comments.approve.mutationOptions(),

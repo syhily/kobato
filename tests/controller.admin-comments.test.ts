@@ -1,6 +1,9 @@
 import { call } from '@orpc/server'
 import { describe, expect, it, vi } from 'vitest'
 
+import type { AdminCommentWire } from '@/shared/contracts/comments'
+import type { AdminComment } from '@/shared/types/comments'
+
 import { makeAuthedCtx } from './_helpers/mock-ctx'
 
 vi.mock('@/server/domains/comments/services/admin-query', () => ({
@@ -88,12 +91,12 @@ describe('adminCommentsRouter.delete', () => {
 describe('adminCommentsRouter.loadAll', () => {
   it('returns comments, total, hasMore and statusCounts', async () => {
     vi.mocked(adminQuery.loadAllComments).mockResolvedValueOnce({
-      comments: [comment] as never,
+      comments: [comment as unknown as AdminComment],
       total: 1,
       hasMore: false,
       statusCounts: { all: 1, pending: 0, approved: 1 },
-    } as never)
-    vi.mocked(projection.asAdminCommentsWire).mockReturnValue([comment] as never)
+    })
+    vi.mocked(projection.asAdminCommentsWire).mockReturnValue([comment as unknown as AdminCommentWire])
     const ctx = makeAuthedCtx()
     const res = await call(adminCommentsRouter.loadAll, { offset: 0, limit: 20, status: 'all' }, { context: ctx })
     expect(res.comments).toHaveLength(1)
@@ -105,7 +108,7 @@ describe('adminCommentsRouter.loadAll', () => {
 
 describe('adminCommentsRouter.searchPages', () => {
   it('returns pages matching query', async () => {
-    vi.mocked(adminQuery.searchPageOptions).mockResolvedValueOnce([{ key: 'p1', title: 'Page 1' }] as never)
+    vi.mocked(adminQuery.searchPageOptions).mockResolvedValueOnce([{ key: 'p1', title: 'Page 1' }])
     const ctx = makeAuthedCtx()
     const res = await call(adminCommentsRouter.searchPages, { q: 'page' }, { context: ctx })
     expect(res.pages).toHaveLength(1)
@@ -115,7 +118,7 @@ describe('adminCommentsRouter.searchPages', () => {
 
 describe('adminCommentsRouter.searchAuthors', () => {
   it('returns authors matching query', async () => {
-    vi.mocked(adminQuery.searchAuthorOptions).mockResolvedValueOnce([{ id: 1n, name: 'Alice' }] as never)
+    vi.mocked(adminQuery.searchAuthorOptions).mockResolvedValueOnce([{ id: 1n, name: 'Alice' }])
     const ctx = makeAuthedCtx()
     const res = await call(adminCommentsRouter.searchAuthors, { q: 'alice' }, { context: ctx })
     expect(res.authors).toHaveLength(1)
@@ -127,7 +130,7 @@ describe('adminCommentsRouter.approveCommentDeletion', () => {
   it('returns success when approving deletion', async () => {
     vi.mocked(queryRepo.findCommentWithUserById).mockResolvedValueOnce({
       deleteRequestedAt: new Date(),
-    } as never)
+    } as unknown as Awaited<ReturnType<typeof queryRepo.findCommentWithUserById>>)
     vi.mocked(moderationRepo.softDeleteCommentById).mockResolvedValueOnce(undefined)
     const ctx = makeAuthedCtx()
     const res = await call(
@@ -139,7 +142,9 @@ describe('adminCommentsRouter.approveCommentDeletion', () => {
   })
 
   it('throws NOT_FOUND when comment does not exist', async () => {
-    vi.mocked(queryRepo.findCommentWithUserById).mockResolvedValueOnce(null as never)
+    vi.mocked(queryRepo.findCommentWithUserById).mockResolvedValueOnce(
+      null as unknown as Awaited<ReturnType<typeof queryRepo.findCommentWithUserById>>,
+    )
     const ctx = makeAuthedCtx()
     await expect(
       call(adminCommentsRouter.approveCommentDeletion, { commentId: '999', approve: true }, { context: ctx }),
@@ -149,7 +154,7 @@ describe('adminCommentsRouter.approveCommentDeletion', () => {
   it('throws CONFLICT when no delete request exists', async () => {
     vi.mocked(queryRepo.findCommentWithUserById).mockResolvedValueOnce({
       deleteRequestedAt: null,
-    } as never)
+    } as unknown as Awaited<ReturnType<typeof queryRepo.findCommentWithUserById>>)
     const ctx = makeAuthedCtx()
     await expect(
       call(adminCommentsRouter.approveCommentDeletion, { commentId: '1', approve: true }, { context: ctx }),
@@ -176,7 +181,7 @@ describe('adminCommentsRouter.listPendingDashboard', () => {
       total: 1,
       hasMore: false,
       counts: { all: 1, approval: 1, deletion: 0 },
-    } as never)
+    } as unknown as Awaited<ReturnType<typeof adminQuery.loadAdminPendingDashboard>>)
     const ctx = makeAuthedCtx()
     const res = await call(adminCommentsRouter.listPendingDashboard, {}, { context: ctx })
     expect(res.items).toHaveLength(1)

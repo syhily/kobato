@@ -183,10 +183,14 @@ export async function resolveSessionContext(request: Request): Promise<SessionCo
     let dbReachable = true
     try {
       dbUser = await findUserById(idFromString(user.id))
-    } catch {
+    } catch (err) {
       // Transient DB error — keep the existing session intact and try
       // again on the next request. Unsetting `user` here would log out
       // every active session every time the DB has a hiccup.
+      getLogger('auth').warn('transient db error during session back-compat lookup', {
+        err: err instanceof Error ? err.message : String(err),
+        userId: user.id,
+      })
       dbReachable = false
     }
     if (dbUser && dbUser.role) {

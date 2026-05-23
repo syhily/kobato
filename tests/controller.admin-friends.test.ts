@@ -27,10 +27,10 @@ const friend = {
 describe('adminFriendsRouter.list', () => {
   it('returns friends, total and hasMore', async () => {
     vi.mocked(service.listFriendsForAdmin).mockResolvedValueOnce({
-      friends: [friend] as never,
+      friends: [friend],
       total: 1,
       hasMore: false,
-    } as never)
+    })
     const ctx = makeAuthedCtx()
     const res = await call(adminFriendsRouter.list, { q: 'example' }, { context: ctx })
     expect(res.friends).toHaveLength(1)
@@ -41,7 +41,7 @@ describe('adminFriendsRouter.list', () => {
 
 describe('adminFriendsRouter.upsert', () => {
   it('returns the upserted friend', async () => {
-    vi.mocked(service.upsertAdminFriend).mockResolvedValueOnce(friend as never)
+    vi.mocked(service.upsertAdminFriend).mockResolvedValueOnce(friend)
     const ctx = makeAuthedCtx()
     const res = await call(
       adminFriendsRouter.upsert,

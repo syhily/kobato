@@ -51,7 +51,7 @@ function asNullableIso(value: Date | string | null | undefined): string | null {
   return typeof value === 'string' ? value : value.toISOString()
 }
 
-function projectCommentBase(row: CommentAndUser): CommentItemWire {
+function projectPublicCommentBase(row: CommentAndUser): CommentItemWire {
   return {
     id: asString(row.id),
     createAt: asIso(row.createAt),
@@ -64,8 +64,6 @@ function projectCommentBase(row: CommentAndUser): CommentItemWire {
     ownerId: asNullableString(row.ownerId),
     userId: asString(row.userId),
     isVerified: row.isVerified,
-    ua: row.ua,
-    ip: row.ip,
     rid: row.rid,
     isCollapsed: row.isCollapsed,
     isPending: row.isPending,
@@ -74,7 +72,6 @@ function projectCommentBase(row: CommentAndUser): CommentItemWire {
     voteDown: row.voteDown,
     rootId: asNullableString(row.rootId),
     name: row.name,
-    email: row.email,
     emailVerified: row.emailVerified,
     link: row.link,
     badgeName: row.badgeName,
@@ -83,8 +80,17 @@ function projectCommentBase(row: CommentAndUser): CommentItemWire {
   }
 }
 
+function projectAdminCommentBase(row: CommentAndUser): Omit<AdminCommentWire, 'pageTitle' | 'pagePublicId'> {
+  return {
+    ...projectPublicCommentBase(row),
+    ua: row.ua,
+    ip: row.ip,
+    email: row.email,
+  }
+}
+
 export function asCommentItemWire(comment: CommentItem | CommentAndUser): CommentItemWire {
-  const base = projectCommentBase(comment)
+  const base = projectPublicCommentBase(comment)
   const children = (comment as CommentItem).children
   if (children !== undefined) {
     base.children = children.map((c) => asCommentItemWire(c))
@@ -98,7 +104,7 @@ export function asCommentItemsWire(comments: CommentItem[]): CommentItemWire[] {
 
 export function asAdminCommentsWire(comments: AdminComment[]): AdminCommentWire[] {
   return comments.map((row) => ({
-    ...projectCommentBase(row),
+    ...projectAdminCommentBase(row),
     pageTitle: row.pageTitle,
     pagePublicId: row.pagePublicId,
   }))

@@ -33,6 +33,7 @@ import {
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@/ui/components/empty'
 import { Skeleton } from '@/ui/components/skeleton'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/ui/components/table'
+import { maskIp, maskUa } from '@/ui/lib/mask'
 
 const DATE_FORMAT = 'yyyy-LL-dd HH:mm'
 
@@ -222,8 +223,8 @@ const UserRow = memo(function UserRow({
           {user.lastCommentAt && (
             <span>评论：{formatLocalDate(new Date(user.lastCommentAt), DATE_FORMAT, config)}</span>
           )}
-          {!!user.lastIp && <span>IP：{user.lastIp}</span>}
-          {!!user.lastUa && <span className="max-w-xs truncate">UA：{user.lastUa}</span>}
+          {!!user.lastIp && <span>IP：{maskIp(user.lastIp)}</span>}
+          {!!user.lastUa && <span className="max-w-xs truncate">UA：{maskUa(user.lastUa)}</span>}
         </div>
       </TableCell>
       <TableCell className="text-center">

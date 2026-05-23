@@ -1,3 +1,4 @@
+import { RouterContextProvider } from 'react-router'
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { PortableTextBody } from '@/shared/pt/schema'
@@ -88,7 +89,7 @@ function makeArgs(slug: string) {
     slug,
     wantsDraftPreview: false,
     request: new Request(`http://localhost/${slug}`),
-    context: {} as never,
+    context: new RouterContextProvider(),
   }
 }
 

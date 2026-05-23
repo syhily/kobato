@@ -4,14 +4,14 @@ import { CommentItem } from '@/ui/public/comments/comment-item/CommentItem'
 
 export interface CommentProps {
   comments: CommentItemType[]
-  admin: boolean
+  mode: 'admin' | 'public'
 }
 
-export function Comment({ comments, admin }: CommentProps) {
+export function Comment({ comments, mode }: CommentProps) {
   return (
     <>
       {comments.map((item) => (
-        <CommentItem key={item.id} comment={item} depth={1} admin={admin} />
+        <CommentItem key={item.id} comment={item} depth={1} mode={mode} />
       ))}
     </>
   )

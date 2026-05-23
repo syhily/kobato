@@ -8,16 +8,17 @@ import { PostMetaSidebar } from '@/ui/admin/posts/PostMetaSidebar'
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/ui/components/sheet'
 
 interface PostEditorMetaPanelProps {
-  isEditing: boolean
+  mode: 'create' | 'edit'
   detail?: AdminPostDetailDto
   state: UseEditorShellStateOutput<PostMetaDraft>
 }
 
 function renderMetaExtras(
-  isEditing: boolean,
+  mode: 'create' | 'edit',
   detail: AdminPostDetailDto | undefined,
   state: UseEditorShellStateOutput<PostMetaDraft>,
 ) {
+  const isEditing = mode === 'edit' && detail !== undefined
   if (!isEditing) {
     return null
   }
@@ -34,9 +35,10 @@ function renderMetaExtras(
   )
 }
 
-export function PostEditorMetaAside({ isEditing, detail, state }: PostEditorMetaPanelProps) {
+export function PostEditorMetaAside({ mode, detail, state }: PostEditorMetaPanelProps) {
   const contentSettings = useContentSettings()
   const featureEnabled = contentSettings.post.featureEnabled
+  const isEditing = mode === 'edit' && detail !== undefined
 
   return (
     <aside className="hidden min-h-0 flex-col overflow-y-auto pr-1 lg:flex">
@@ -48,16 +50,17 @@ export function PostEditorMetaAside({ isEditing, detail, state }: PostEditorMeta
         ogPreviewSlug={isEditing ? detail!.post.slug : null}
         revisionSummary={state.sidebarRevisionSummary}
         saveStatus={state.sidebarSaveStatus}
-        featureEnabled={featureEnabled}
-        extras={renderMetaExtras(isEditing, detail, state)}
+        featureGate={featureEnabled ? 'enabled' : 'disabled'}
+        extras={renderMetaExtras(mode, detail, state)}
       />
     </aside>
   )
 }
 
-export function PostEditorMetaSheet({ isEditing, detail, state }: PostEditorMetaPanelProps) {
+export function PostEditorMetaSheet({ mode, detail, state }: PostEditorMetaPanelProps) {
   const contentSettings = useContentSettings()
   const featureEnabled = contentSettings.post.featureEnabled
+  const isEditing = mode === 'edit' && detail !== undefined
 
   return (
     <Sheet open={state.metaOpen} onOpenChange={state.setMetaOpen}>
@@ -75,8 +78,8 @@ export function PostEditorMetaSheet({ isEditing, detail, state }: PostEditorMeta
             ogPreviewSlug={isEditing ? detail!.post.slug : null}
             revisionSummary={state.sidebarRevisionSummary}
             saveStatus={state.sidebarSaveStatus}
-            featureEnabled={featureEnabled}
-            extras={renderMetaExtras(isEditing, detail, state)}
+            featureGate={featureEnabled ? 'enabled' : 'disabled'}
+            extras={renderMetaExtras(mode, detail, state)}
           />
         </div>
       </SheetContent>

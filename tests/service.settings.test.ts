@@ -224,7 +224,7 @@ describe('services/settings — updateBlogSettingsSection', () => {
   it('rejects an invalid section payload with DomainError(400)', async () => {
     vi.mocked(settingQueries.findSettingsByScopePrefix).mockResolvedValue([])
 
-    await expect(updateBlogSettingsSection('general', { title: '' } as never, null)).rejects.toBeInstanceOf(DomainError)
+    await expect(updateBlogSettingsSection('general', { title: '' }, null)).rejects.toBeInstanceOf(DomainError)
     expect(settingQueries.upsertSetting).not.toHaveBeenCalled()
   })
 
@@ -249,7 +249,7 @@ describe('services/settings — updateBlogSettingsSection', () => {
             updatedBy,
           } as Setting,
         ])
-      return undefined as never
+      return { id: 99n, scope, data: data as Record<string, unknown>, updatedAt: new Date(), updatedBy }
     })
 
     const next = await updateBlogSettingsSection(
@@ -303,7 +303,13 @@ describe('services/settings — updateBlogSettingsSection', () => {
       existing.find((row) => row.scope === 'blog.assets')!,
     )
     vi.mocked(settingQueries.findSettingsByScopePrefix).mockResolvedValue(existing)
-    vi.mocked(settingQueries.upsertSetting).mockResolvedValue(undefined as never)
+    vi.mocked(settingQueries.upsertSetting).mockResolvedValue({
+      id: 1n,
+      scope: 'blog.general',
+      data: {},
+      updatedAt: new Date(),
+      updatedBy: null,
+    } as Setting)
 
     await updateBlogSettingsSection(
       'assets',
@@ -334,7 +340,13 @@ describe('services/settings — updateBlogSettingsSection', () => {
 
   it('does not read the rest of the document when patching a single section (write isolation)', async () => {
     vi.mocked(settingQueries.findSettingsByScopePrefix).mockResolvedValue(bundleRows(fixtureBundle))
-    vi.mocked(settingQueries.upsertSetting).mockResolvedValue(undefined as never)
+    vi.mocked(settingQueries.upsertSetting).mockResolvedValue({
+      id: 1n,
+      scope: 'blog.general',
+      data: {},
+      updatedAt: new Date(),
+      updatedBy: null,
+    } as Setting)
 
     await updateBlogSettingsSection(
       'navigation',
@@ -360,7 +372,13 @@ describe('services/settings — mail section', () => {
   it("writes the full mail patch to scope='blog.mail' when an apiKey is provided", async () => {
     // The non-omitted-apiKey path doesn't read the existing row.
     vi.mocked(settingQueries.findSettingsByScopePrefix).mockResolvedValue(bundleRows(fixtureBundle))
-    vi.mocked(settingQueries.upsertSetting).mockResolvedValue(undefined as never)
+    vi.mocked(settingQueries.upsertSetting).mockResolvedValue({
+      id: 1n,
+      scope: 'blog.general',
+      data: {},
+      updatedAt: new Date(),
+      updatedBy: null,
+    } as Setting)
 
     await updateBlogSettingsSection(
       'mail',
@@ -400,7 +418,13 @@ describe('services/settings — mail section', () => {
       updatedBy: null,
     } as Setting)
     vi.mocked(settingQueries.findSettingsByScopePrefix).mockResolvedValue(bundleRows(fixtureBundle))
-    vi.mocked(settingQueries.upsertSetting).mockResolvedValue(undefined as never)
+    vi.mocked(settingQueries.upsertSetting).mockResolvedValue({
+      id: 1n,
+      scope: 'blog.general',
+      data: {},
+      updatedAt: new Date(),
+      updatedBy: null,
+    } as Setting)
 
     await updateBlogSettingsSection(
       'mail',
@@ -451,7 +475,7 @@ describe('services/settings — rateLimit section', () => {
             updatedBy,
           } as Setting,
         ])
-      return undefined as never
+      return { id: 99n, scope, data: data as Record<string, unknown>, updatedAt: new Date(), updatedBy }
     })
 
     const next = await updateBlogSettingsSection(
@@ -536,7 +560,7 @@ describe('services/settings — rateLimit section', () => {
           inviteIp: { windowSeconds: 3600, maxAttempts: 5 },
           passwordResetIp: { windowSeconds: 1800, maxAttempts: 3 },
           // likeIncreaseIp deliberately omitted
-        } as never,
+        },
         null,
       ),
     ).rejects.toBeInstanceOf(DomainError)
@@ -547,7 +571,13 @@ describe('services/settings — rateLimit section', () => {
 describe('services/settings — cache section', () => {
   it("writes a valid cache patch to scope='blog.cache' and refreshes the snapshot", async () => {
     vi.mocked(settingQueries.findSettingsByScopePrefix).mockResolvedValue(bundleRows(fixtureBundle))
-    vi.mocked(settingQueries.upsertSetting).mockResolvedValue(undefined as never)
+    vi.mocked(settingQueries.upsertSetting).mockResolvedValue({
+      id: 1n,
+      scope: 'blog.general',
+      data: {},
+      updatedAt: new Date(),
+      updatedBy: null,
+    } as Setting)
 
     await updateBlogSettingsSection(
       'cache',
@@ -783,7 +813,13 @@ describe('services/settings — snapshot reader', () => {
     } as Setting
     const completeRows = bundleRows(fixtureBundle).filter((row) => row.scope !== 'blog.cache')
     vi.mocked(settingQueries.findSettingsByScopePrefix).mockResolvedValue([...completeRows, legacyRow])
-    vi.mocked(settingQueries.upsertSetting).mockResolvedValue(undefined as never)
+    vi.mocked(settingQueries.upsertSetting).mockResolvedValue({
+      id: 1n,
+      scope: 'blog.general',
+      data: {},
+      updatedAt: new Date(),
+      updatedBy: null,
+    } as Setting)
 
     const dto = await getAdminBlogSettings()
 

@@ -13,7 +13,7 @@ import {
 } from 'lucide-react'
 import { Link } from 'react-router'
 
-import type { AdminPageDetailDto, AdminPageDto } from '@/shared/types/pages'
+import type { AdminPageDetailDto, AdminPageDto, SavePageBodyInput, UpsertPageMetaInput } from '@/shared/types/pages'
 
 import { orpc } from '@/client/api/client'
 import { useCreatePageDraft } from '@/client/hooks/use-create-page-draft'
@@ -63,7 +63,7 @@ function buildPageUpsertPayload({
   meta: PageMetaDraft
   id?: string
   publishedAt: string | null
-}): Record<string, unknown> {
+}): UpsertPageMetaInput {
   return {
     ...(id !== undefined ? { id } : {}),
     ...(meta.slug.trim() !== '' ? { slug: meta.slug.trim() } : {}),
@@ -91,7 +91,7 @@ export function PageEditorShell({ mode, detail, navigate }: PageEditorShellProps
   // --- Shared state hook ---------------------------------------------------
   // The hook owns `useMutation()` internally — Shell only provides
   // entity-specific mutation functions + the LS hook factories.
-  const state = useEditorShellState<PageMetaDraft, AdminPageDto>({
+  const state = useEditorShellState<PageMetaDraft, AdminPageDto, UpsertPageMetaInput>({
     mode,
     entityKind: 'page',
     detail: detail
@@ -108,17 +108,17 @@ export function PageEditorShell({ mode, detail, navigate }: PageEditorShellProps
       usePageLocalDraft({ pageId: entityId, clientRevisionToken, body, disabled }),
     useCreateDraftHook: ({ body, meta }) => useCreatePageDraft({ body, meta }),
     upsertMetaFn: async (input) => {
-      const result = await orpc.admin.pages.upsertMeta(input as never)
+      const result = await orpc.admin.pages.upsertMeta(input)
       return result.page
     },
-    saveDraftFn: (input) => orpc.admin.pages.saveDraft(input as never),
-    publishFn: (input) => orpc.admin.pages.publishLatest(input as never),
+    saveDraftFn: (input) => orpc.admin.pages.saveDraft(input as unknown as SavePageBodyInput),
+    publishFn: (input) => orpc.admin.pages.publishLatest(input as unknown as SavePageBodyInput),
     unpublishFn: async (input) => {
       const result = await orpc.admin.pages.unpublish(input)
       return result.page
     },
     buildUpsertMetaPayload: buildPageUpsertPayload,
-    directSaveDraft: (input) => orpc.admin.pages.saveDraft(input as never),
+    directSaveDraft: (input) => orpc.admin.pages.saveDraft(input),
     editPath: (id) => `/editor/page/${id}`,
     navigate,
   })
@@ -306,7 +306,6 @@ export function PageEditorShell({ mode, detail, navigate }: PageEditorShellProps
               body={state.body}
               title={state.meta.title}
               slug={state.meta.slug}
-              showPublicSyncHint={state.showPreviewPublicSyncHint}
               scrollContainerRef={state.previewScrollRef}
             />
           </section>

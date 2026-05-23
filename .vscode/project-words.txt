@@ -30,6 +30,8 @@ cimage
 ckenh
 cnip
 codegen
+codegraph
+collisively
 colour
 commentform
 csslintrc
@@ -103,6 +105,7 @@ jing
 jmoiron
 jshintignore
 jungshik
+junie
 junkfix
 katex
 khalil
@@ -192,6 +195,7 @@ plaiceholder
 playform
 playpause
 portabletext
+prerender
 procfile
 prosemirror
 psql
@@ -240,10 +244,12 @@ thumbhash
 timescaledb
 timestamptz
 tini
+tiptap
 tlyric
 tmpfs
 toolsmp
 topbar
+trae
 translog
 tsconfigs
 tsgo

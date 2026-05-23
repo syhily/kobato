@@ -2,6 +2,7 @@ import {
   Archive,
   Database,
   FileText,
+  Globe,
   HardDrive,
   Mail,
   MessageSquare,
@@ -23,7 +24,7 @@ import { useScrollSpyContext, useScrollSpyNav } from '@/ui/admin/settings/shell/
 import { useSettingsSearch } from '@/ui/admin/settings/shell/useSettingsSearch'
 import { cn } from '@/ui/lib/cn'
 
-const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
+export const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
   Settings,
   HardDrive,
   Type,
@@ -36,6 +37,7 @@ const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
   Mail,
   SearchCode,
   Database,
+  Globe,
   Shield,
   SlidersHorizontal,
   Archive,

@@ -24,7 +24,7 @@ export interface PageDetailBodyProps {
   commentKey: string
   commentsPromise: Promise<DetailPageComments>
   currentUser?: CommentFormUser
-  admin?: boolean
+  mode?: 'admin' | 'public'
   children: ReactNode
 }
 
@@ -36,7 +36,7 @@ export function PageDetailBody({
   commentKey,
   commentsPromise,
   currentUser,
-  admin,
+  mode,
   children,
 }: PageDetailBodyProps) {
   const config = useSiteIdentity()
@@ -52,17 +52,17 @@ export function PageDetailBody({
             title={page.title}
             date={page.date}
             updated={page.updated}
-            showUpdated={page.showUpdated}
+            updatedVisibility={page.showUpdated ? 'shown' : 'hidden'}
             headings={headings}
-            toc={page.toc}
+            toc={page.toc ? 'enabled' : 'disabled'}
             likes={likes}
             permalink={page.permalink}
             commentKey={commentKey}
             commentsPromise={commentsPromise}
             currentUser={currentUser}
-            commentsEnabled={page.comments}
-            admin={admin}
-            editHref={admin ? `/editor/page/${page.id}` : undefined}
+            comments={page.comments ? 'enabled' : 'disabled'}
+            mode={mode}
+            editHref={mode === 'admin' ? `/editor/page/${page.id}` : undefined}
             draftMarker={draftMarker}
             postContentRef={postContentRef}
             metaClassName="mt-3 mb-4"

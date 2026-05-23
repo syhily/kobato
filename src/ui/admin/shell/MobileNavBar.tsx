@@ -7,13 +7,13 @@ import { cn } from '@/ui/lib/cn'
 
 interface MobileNavButtonProps {
   to: string
-  activeOnSubpath?: boolean
+  activeMatch?: 'exact' | 'subpath'
   children: React.ReactNode
   label: string
 }
 
-function MobileNavButton({ to, activeOnSubpath = false, children, label }: MobileNavButtonProps) {
-  const isActive = useIsActiveLink(to, activeOnSubpath)
+function MobileNavButton({ to, activeMatch = 'exact', children, label }: MobileNavButtonProps) {
+  const isActive = useIsActiveLink(to, activeMatch === 'subpath')
 
   return (
     <Link
@@ -45,15 +45,15 @@ export function MobileNavBar() {
       )}
     >
       <div className="mx-auto grid h-14 w-full max-w-[var(--container-popup-sm)] grid-cols-4 items-center justify-items-center px-5">
-        <MobileNavButton to="/admin/analytics" activeOnSubpath label="统计">
+        <MobileNavButton to="/admin/analytics" activeMatch="subpath" label="统计">
           <TrendingUpIcon className="size-5" strokeWidth={1.5} />
         </MobileNavButton>
 
-        <MobileNavButton to="/admin/posts" activeOnSubpath label="文章">
+        <MobileNavButton to="/admin/posts" activeMatch="subpath" label="文章">
           <NotebookPenIcon className="size-5" strokeWidth={1.5} />
         </MobileNavButton>
 
-        <MobileNavButton to="/admin/users" activeOnSubpath label="用户">
+        <MobileNavButton to="/admin/users" activeMatch="subpath" label="用户">
           <UsersIcon className="size-5" strokeWidth={1.5} />
         </MobileNavButton>
 

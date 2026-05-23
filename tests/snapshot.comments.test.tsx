@@ -26,8 +26,6 @@ function makeComment(overrides: Partial<CommentItemType> = {}): CommentItemType 
     ownerId: '1',
     userId: '42',
     isVerified: true,
-    ua: '',
-    ip: '',
     rid: 0,
     isCollapsed: false,
     isPending: false,
@@ -36,7 +34,6 @@ function makeComment(overrides: Partial<CommentItemType> = {}): CommentItemType 
     voteDown: 0,
     rootId: null,
     name: 'Alice',
-    email: 'alice@example.com',
     emailVerified: true,
     link: 'https://alice.example.com',
     badgeName: null,
@@ -49,7 +46,7 @@ function makeComment(overrides: Partial<CommentItemType> = {}): CommentItemType 
 
 describe('snapshot: comment HTML', () => {
   it('root comment without children, non-admin viewer', () => {
-    const html = renderInRouter(<CommentItem comment={makeComment()} depth={1} admin={false} />)
+    const html = renderInRouter(<CommentItem comment={makeComment()} depth={1} mode="public" />)
     expect(html).toContain('id="user-comment-1"')
     expect(html).toContain('Alice')
     expect(html).toContain('Hello, world.')
@@ -68,7 +65,7 @@ describe('snapshot: comment HTML', () => {
           badgeTextColor: '#151b2b',
         })}
         depth={1}
-        admin={false}
+        mode="public"
       />,
     )
     expect(html).toMatch(/<span class="[^"]*\bleading-badge\b[^"]*\btext-badge\b[^"]*\bfont-bold\b/u)
@@ -88,7 +85,7 @@ describe('snapshot: comment HTML', () => {
       content: '<p>Reply.</p>',
     })
     const root = makeComment({ children: [child] })
-    const html = renderInRouter(<CommentItem comment={root} depth={1} admin={true} />)
+    const html = renderInRouter(<CommentItem comment={root} depth={1} mode="admin" />)
     expect(html).toContain('id="user-comment-1"')
     expect(html).toContain('id="user-comment-2"')
     expect(html).toContain('Alice')
@@ -100,14 +97,14 @@ describe('snapshot: comment HTML', () => {
 
   it('pending comment shows the moderation hint', () => {
     const html = renderInRouter(
-      <CommentItem comment={makeComment({ isPending: true })} depth={1} admin={false} pending />,
+      <CommentItem comment={makeComment({ isPending: true })} depth={1} mode="public" pending />,
     )
     expect(html).toContain('您的评论正在等待审核中...')
   })
 
   it('rendered list of two siblings', () => {
     const html = renderInRouter(
-      <Comment comments={[makeComment({ id: '1' }), makeComment({ id: '2', name: 'Bob' })]} admin={false} />,
+      <Comment comments={[makeComment({ id: '1' }), makeComment({ id: '2', name: 'Bob' })]} mode="public" />,
     )
     expect(html).toContain('id="user-comment-1"')
     expect(html).toContain('id="user-comment-2"')
@@ -116,7 +113,7 @@ describe('snapshot: comment HTML', () => {
   })
 
   it('does not emit any inline onerror= attributes on rendered comment HTML', () => {
-    const html = renderInRouter(<CommentItem comment={makeComment()} depth={1} admin={true} />)
+    const html = renderInRouter(<CommentItem comment={makeComment()} depth={1} mode="admin" />)
     expect(html.toLowerCase()).not.toContain('onerror')
   })
 })

@@ -159,33 +159,37 @@ interface ActionRowProps {
 function ActionRow({ editor, sigmaToggleActive, onLink }: ActionRowProps) {
   return (
     <div className="flex items-center gap-0.5 px-1 py-1">
-      <Toggle title="加粗" active={editor.isActive('bold')} onClick={() => editor.chain().focus().toggleBold().run()}>
+      <Toggle
+        title="加粗"
+        state={editor.isActive('bold') ? 'active' : 'inactive'}
+        onClick={() => editor.chain().focus().toggleBold().run()}
+      >
         <BoldIcon />
       </Toggle>
       <Toggle
         title="斜体"
-        active={editor.isActive('italic')}
+        state={editor.isActive('italic') ? 'active' : 'inactive'}
         onClick={() => editor.chain().focus().toggleItalic().run()}
       >
         <ItalicIcon />
       </Toggle>
       <Toggle
         title="下划线"
-        active={editor.isActive('underline')}
+        state={editor.isActive('underline') ? 'active' : 'inactive'}
         onClick={() => editor.chain().focus().toggleUnderline().run()}
       >
         <UnderlineIcon />
       </Toggle>
       <Toggle
         title="删除线"
-        active={editor.isActive('strike')}
+        state={editor.isActive('strike') ? 'active' : 'inactive'}
         onClick={() => editor.chain().focus().toggleStrike().run()}
       >
         <StrikethroughIcon />
       </Toggle>
       <Toggle
         title="行内代码"
-        active={editor.isActive('code')}
+        state={editor.isActive('code') ? 'active' : 'inactive'}
         onClick={() => editor.chain().focus().toggleCode().run()}
       >
         <Code2Icon />
@@ -193,7 +197,7 @@ function ActionRow({ editor, sigmaToggleActive, onLink }: ActionRowProps) {
       <Separator orientation="vertical" className="mx-1 h-5" />
       <Toggle
         title="链接"
-        active={editor.isActive('link')}
+        state={editor.isActive('link') ? 'active' : 'inactive'}
         onClick={() => {
           if (editor.isActive('link')) {
             editor.chain().focus().extendMarkRange('link').run()
@@ -205,7 +209,7 @@ function ActionRow({ editor, sigmaToggleActive, onLink }: ActionRowProps) {
       </Toggle>
       <Toggle
         title="行内公式（大分式请加 \\displaystyle；多行用 / 公式块）"
-        active={sigmaToggleActive}
+        state={sigmaToggleActive ? 'active' : 'inactive'}
         onClick={() => {
           void insertMathInline(editor)
         }}
@@ -235,23 +239,24 @@ function OpenLinkPreview({ editor }: { editor: Editor }) {
 
 interface ToggleProps {
   title: string
-  active: boolean
+  state?: 'active' | 'inactive'
   onClick: () => void
   disabled?: boolean
   children: React.ReactNode
 }
 
-function Toggle({ title, active, onClick, disabled, children }: ToggleProps) {
+function Toggle({ title, state, onClick, disabled, children }: ToggleProps) {
+  const isActive = state === 'active'
   return (
     <Button
       type="button"
-      variant={active ? 'secondary' : 'ghost'}
+      variant={isActive ? 'secondary' : 'ghost'}
       size="icon"
       onClick={onClick}
       disabled={disabled}
       title={title}
       aria-label={title}
-      aria-pressed={active}
+      aria-pressed={isActive}
       className={cn('size-7')}
     >
       {children}

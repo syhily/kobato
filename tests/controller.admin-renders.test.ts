@@ -31,7 +31,7 @@ describe('adminRendersRouter.math', () => {
   it('returns rendered mathml for valid tex', async () => {
     vi.mocked(getKatexRenderer).mockResolvedValueOnce({
       render: vi.fn().mockResolvedValue('<mathml>\\frac{1}{2}</mathml>'),
-    } as never)
+    })
     const ctx = makeAuthedCtx()
     const res = await call(adminRendersRouter.math, { tex: '\\frac{1}{2}' }, { context: ctx })
     expect(res.mathml).toBe('<mathml>\\frac{1}{2}</mathml>')
@@ -48,7 +48,7 @@ describe('adminRendersRouter.mermaid', () => {
   })
 
   it('returns rendered svg for valid code', async () => {
-    vi.mocked(renderMermaidSVGAsync).mockResolvedValueOnce('<svg>diagram</svg>' as never)
+    vi.mocked(renderMermaidSVGAsync).mockResolvedValueOnce('<svg>diagram</svg>')
     const ctx = makeAuthedCtx()
     const res = await call(adminRendersRouter.mermaid, { code: 'graph TD; A-->B;' }, { context: ctx })
     expect(res.svg).toBe('<svg>diagram</svg>')
@@ -63,7 +63,7 @@ describe('adminRendersRouter.reindexSearch', () => {
       failed: 0,
       total: 100,
       nextOffset: 10,
-    } as never)
+    })
     const ctx = makeAuthedCtx()
     const res = await call(adminRendersRouter.reindexSearch, { offset: 0, batchSize: 10 }, { context: ctx })
     expect(res.processed).toBe(5)

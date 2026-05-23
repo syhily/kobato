@@ -20,7 +20,7 @@ describe('snapshot: PostListingBody (search variant)', () => {
         pageNum={1}
         totalPage={0}
         rootPath="/search/react"
-        alwaysRenderPagination={false}
+        pagination="auto"
         listingNowIso="2026-04-25T12:00:00.000Z"
       />,
     )
@@ -47,7 +47,7 @@ describe('snapshot: PostListingBody (search variant)', () => {
         pageNum={1}
         totalPage={1}
         rootPath="/search/react"
-        alwaysRenderPagination={false}
+        pagination="auto"
         listingNowIso="2026-04-25T12:00:00.000Z"
       />,
     )

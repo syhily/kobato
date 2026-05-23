@@ -18,6 +18,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/ui/components/dropdown-menu'
+import { maskIp, maskUa } from '@/ui/lib/mask'
 import { PortableTextBody } from '@/ui/pt/render'
 
 const ADMIN_DATE_FORMAT = 'yyyy-LL-dd HH:mm'
@@ -56,7 +57,7 @@ export function AdminCommentRow({
 }: AdminCommentRowProps) {
   const config = useSiteIdentity()
   const authorHref = safeHref(comment.link)
-  const truncatedUa = comment.ua ? (comment.ua.length > 50 ? `${comment.ua.substring(0, 50)}...` : comment.ua) : null
+  const truncatedUa = maskUa(comment.ua)
 
   const approveMutation = useMutation({
     ...orpcQuery.admin.comments.approve.mutationOptions(),
@@ -254,7 +255,7 @@ export function AdminCommentRow({
           {(truncatedUa || comment.ip) && (
             <div className="mt-3 flex flex-wrap gap-x-3 text-xs text-muted-foreground">
               {!!truncatedUa && <span>UA: {truncatedUa}</span>}
-              {!!comment.ip && <span>IP: {comment.ip}</span>}
+              {!!comment.ip && <span>IP: {maskIp(comment.ip)}</span>}
             </div>
           )}
         </div>

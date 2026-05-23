@@ -36,7 +36,7 @@ function toFormState(source: SocialsSettings): { rows: SocialRow[] } {
 }
 
 export function SocialsEditor({ socials }: SocialsEditorProps) {
-  const { isEditing, form, settingGroupProps } = useSettingsCard<SocialsSettings, { rows: SocialRow[] }>({
+  const { mode, form, settingGroupProps } = useSettingsCard<SocialsSettings, { rows: SocialRow[] }>({
     section: 'socials',
     source: socials,
     toState: toFormState,
@@ -76,7 +76,7 @@ export function SocialsEditor({ socials }: SocialsEditorProps) {
       description="配置各社交平台的账号或二维码。填写链接后平台即生效，留空则不在网站展示。"
       {...settingGroupProps}
     >
-      {isEditing ? (
+      {mode === 'edit' ? (
         <div className="flex flex-col gap-3">
           {fields.map((field, index) => {
             const meta = getSocialNetworkMeta(field.network)

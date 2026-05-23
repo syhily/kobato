@@ -1,3 +1,4 @@
+import { appendFile, readFile, rename, writeFile } from 'node:fs/promises'
 import { Readable } from 'node:stream'
 import { pipeline } from 'node:stream/promises'
 import { from as copyFrom } from 'pg-copy-streams'
@@ -12,6 +13,105 @@ import { registerShutdownHook } from '@/server/infra/shutdown'
 import { idFromString } from '@/shared/utils/id'
 
 const log = getLogger('audit.batcher')
+
+const DEAD_LETTER_SEP = '\n'
+
+function deadLetterPath(): string {
+  return process.env.AUDIT_DEAD_LETTER_PATH ?? '/tmp/yufan-audit-dead-letter.jsonl'
+}
+
+function serializeForDeadLetter(events: AuditEventInput[]): string {
+  return (
+    events
+      .map((e) =>
+        JSON.stringify({
+          ...e,
+          createdAt: (e.createdAt ?? new Date()).toISOString(),
+        }),
+      )
+      .join(DEAD_LETTER_SEP) + DEAD_LETTER_SEP
+  )
+}
+
+async function writeDeadLetter(events: AuditEventInput[], path?: string): Promise<void> {
+  const target = path ?? deadLetterPath()
+  try {
+    await appendFile(target, serializeForDeadLetter(events), 'utf-8')
+    log.info('wrote audit dead-letter batch', { path: target, count: events.length })
+  } catch (writeErr) {
+    log.error('audit dead-letter write also failed', {
+      err: writeErr instanceof Error ? writeErr.message : String(writeErr),
+      count: events.length,
+    })
+  }
+}
+
+function deserializeFromDeadLetter(line: string): AuditEventInput | null {
+  try {
+    const raw = JSON.parse(line) as Record<string, unknown>
+    return {
+      action: raw.action as string,
+      actorId: raw.actorId as string | null | undefined,
+      actorRole: raw.actorRole as string | null | undefined,
+      resourceType: raw.resourceType as string,
+      resourceId: raw.resourceId as string | null | undefined,
+      details: raw.details === null ? undefined : (raw.details as Record<string, unknown> | undefined),
+      ipAddress: raw.ipAddress as string | null | undefined,
+      userAgent: raw.userAgent as string | null | undefined,
+      createdAt: raw.createdAt === undefined ? undefined : new Date(raw.createdAt as string),
+    }
+  } catch {
+    return null
+  }
+}
+
+export async function replayDeadLetter(path?: string): Promise<{ replayed: number; failed: number }> {
+  const target = path ?? deadLetterPath()
+  let content: string
+  try {
+    content = await readFile(target, 'utf-8')
+  } catch {
+    log.info('no audit dead-letter file to replay', { path: target })
+    return { replayed: 0, failed: 0 }
+  }
+
+  const lines = content.split('\n').filter((l) => l.trim() !== '')
+  if (lines.length === 0) {
+    return { replayed: 0, failed: 0 }
+  }
+
+  const events: AuditEventInput[] = []
+  let failed = 0
+  for (const line of lines) {
+    const event = deserializeFromDeadLetter(line)
+    if (event !== null) {
+      events.push(event)
+    } else {
+      failed++
+    }
+  }
+
+  let replayed = 0
+  if (events.length > 0) {
+    try {
+      await copyEvents(events)
+      log.info('replayed audit dead-letter batch', { count: events.length, path: target })
+      const tmp = `${target}.replayed`
+      await writeFile(tmp, '', 'utf-8')
+      await rename(tmp, target)
+      replayed = events.length
+    } catch (err) {
+      log.error('audit dead-letter replay also failed; keeping file', {
+        err: err instanceof Error ? err.message : String(err),
+        count: events.length,
+        path: target,
+      })
+      failed += events.length
+    }
+  }
+
+  return { replayed, failed }
+}
 
 // Column order is wire-significant — `COPY (col1, col2, ...) FROM
 // STDIN` parses positional CSV, so this list MUST match the order
@@ -166,8 +266,8 @@ async function insertPerRow(events: AuditEventInput[]): Promise<void> {
   }
 
   // Slow path: per-row with individual error handling.
+  const failedEvents: AuditEventInput[] = []
   let successCount = 0
-  let failCount = 0
 
   for (const e of events) {
     try {
@@ -184,16 +284,20 @@ async function insertPerRow(events: AuditEventInput[]): Promise<void> {
       })
       successCount++
     } catch (rowErr) {
-      failCount++
-      log.error('single-row audit insert failed; dropping row', {
+      failedEvents.push(e)
+      log.error('single-row audit insert failed; queueing for dead-letter', {
         action: e.action,
         err: rowErr instanceof Error ? rowErr.message : String(rowErr),
       })
     }
   }
 
-  if (failCount > 0) {
-    log.warn('per-row fallback completed', { successCount, failCount })
+  if (failedEvents.length > 0) {
+    log.warn('per-row fallback completed; writing failures to dead-letter', {
+      successCount,
+      failCount: failedEvents.length,
+    })
+    await writeDeadLetter(failedEvents)
   }
 }
 

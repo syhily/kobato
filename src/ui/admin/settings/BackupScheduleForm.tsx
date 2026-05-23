@@ -35,7 +35,7 @@ interface BackupScheduleFormProps {
 }
 
 export function BackupScheduleForm({ backup, canConfigure }: BackupScheduleFormProps) {
-  const { isEditing, form, settingGroupProps } = useSettingsCard<BackupSettings, FormState>({
+  const { mode, form, settingGroupProps } = useSettingsCard<BackupSettings, FormState>({
     section: 'backup',
     source: backup,
     toState: (source) => ({
@@ -70,7 +70,7 @@ export function BackupScheduleForm({ backup, canConfigure }: BackupScheduleFormP
 
   return (
     <SettingGroup title="定时备份" description="配置自动备份的频率与保留策略。" {...settingGroupProps}>
-      {isEditing ? (
+      {mode === 'edit' ? (
         <SettingGroupContent>
           <SettingsRow label="启用定时备份">
             <Controller

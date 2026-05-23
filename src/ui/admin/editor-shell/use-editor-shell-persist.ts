@@ -30,6 +30,7 @@ function localInputValueToIso(localValue: string): string | null {
 export function useEditorShellPersist<
   TMeta extends { title: string; slug: string; published: boolean; publishedAt: string },
   TEntity extends EntityLike,
+  TUpsertMetaInput = Record<string, unknown>,
 >(args: {
   isEditing: boolean
   meta: TMeta
@@ -43,12 +44,12 @@ export function useEditorShellPersist<
   serverPublishedAtIso: string | null
   conflict: { localBody: PortableTextBody; localSavedAt: number } | null
 
-  upsertMetaFn: UseEditorShellStateArgs<TMeta, TEntity>['upsertMetaFn']
-  saveDraftFn: UseEditorShellStateArgs<TMeta, TEntity>['saveDraftFn']
-  publishFn: UseEditorShellStateArgs<TMeta, TEntity>['publishFn']
-  unpublishFn: UseEditorShellStateArgs<TMeta, TEntity>['unpublishFn']
-  buildUpsertMetaPayload: UseEditorShellStateArgs<TMeta, TEntity>['buildUpsertMetaPayload']
-  directSaveDraft: UseEditorShellStateArgs<TMeta, TEntity>['directSaveDraft']
+  upsertMetaFn: UseEditorShellStateArgs<TMeta, TEntity, TUpsertMetaInput>['upsertMetaFn']
+  saveDraftFn: UseEditorShellStateArgs<TMeta, TEntity, TUpsertMetaInput>['saveDraftFn']
+  publishFn: UseEditorShellStateArgs<TMeta, TEntity, TUpsertMetaInput>['publishFn']
+  unpublishFn: UseEditorShellStateArgs<TMeta, TEntity, TUpsertMetaInput>['unpublishFn']
+  buildUpsertMetaPayload: UseEditorShellStateArgs<TMeta, TEntity, TUpsertMetaInput>['buildUpsertMetaPayload']
+  directSaveDraft: UseEditorShellStateArgs<TMeta, TEntity, TUpsertMetaInput>['directSaveDraft']
   editPath: (id: string) => string
   navigate: NavigateFunction
   metaDraftFromEntity: (entity: TEntity) => TMeta

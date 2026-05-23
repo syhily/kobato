@@ -22,6 +22,7 @@ import { Button } from '@/ui/components/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/ui/components/card'
 import { Separator } from '@/ui/components/separator'
 import { Skeleton } from '@/ui/components/skeleton'
+import { maskIp, maskUa } from '@/ui/lib/mask'
 import { PortableTextBody } from '@/ui/pt/render'
 
 type Role = NonNullable<AdminUserDto['role']>
@@ -232,11 +233,11 @@ export function UserDetailView({ userId, navigate }: UserDetailViewProps) {
                 <Separator className="my-2" />
                 <div className="flex flex-col gap-1">
                   <span className="text-xs text-muted-foreground">最近 IP</span>
-                  <span className="break-all">{user.lastIp ?? '—'}</span>
+                  <span className="break-all">{maskIp(user.lastIp) ?? '—'}</span>
                 </div>
                 <div className="flex flex-col gap-1">
                   <span className="text-xs text-muted-foreground">最近 User-Agent</span>
-                  <span className="text-xs break-all">{user.lastUa ?? '—'}</span>
+                  <span className="text-xs break-all">{maskUa(user.lastUa) ?? '—'}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">注册时间</span>

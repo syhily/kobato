@@ -145,7 +145,7 @@ const DEFAULT_TOC_CONFIG = {
 
 export interface TableOfContentsProps {
   headings: MarkdownHeading[]
-  toc: boolean
+  toc?: 'enabled' | 'disabled'
 }
 
 // `<TableOfContents>` only mounts inside public detail routes that are
@@ -155,9 +155,9 @@ export interface TableOfContentsProps {
 // is intercepted by the install gate before this component mounts —
 // in which case we fall back to the project's historical 2..4 heading
 // levels.
-export function TableOfContents({ headings, toc }: TableOfContentsProps) {
+export function TableOfContents({ headings, toc = 'disabled' }: TableOfContentsProps) {
   const seo = useSeoSettingsOptional()
-  const generateTocConfig = toc ? (seo?.toc ?? DEFAULT_TOC_CONFIG) : false
+  const generateTocConfig = toc === 'enabled' ? (seo?.toc ?? DEFAULT_TOC_CONFIG) : false
   const items = generateToC(headings, generateTocConfig)
   const [visible, setVisible] = useState(false)
   const [hovered, setHovered] = useState(false)

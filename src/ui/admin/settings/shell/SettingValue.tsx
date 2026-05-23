@@ -9,15 +9,15 @@ interface SettingValueProps {
   value: ReactNode
   /** Optional helper text rendered beneath the value. */
   hint?: ReactNode
-  /** When true, the value is rendered in a muted monospace box (for secrets, URLs, etc.). */
-  code?: boolean
+  /** Value display format. `'code'` renders in a muted monospace box (for secrets, URLs, etc.). */
+  format?: 'plain' | 'code'
   className?: string
 }
 
 // A read-only key-value row inside a `SettingGroup`.
 // On desktop it renders as a two-column grid (label left, value right);
 // on narrow viewports the columns collapse vertically.
-export function SettingValue({ label, value, hint, code, className }: SettingValueProps) {
+export function SettingValue({ label, value, hint, format = 'plain', className }: SettingValueProps) {
   return (
     <div
       className={cn(
@@ -27,7 +27,7 @@ export function SettingValue({ label, value, hint, code, className }: SettingVal
     >
       <span className="pt-0.5 text-sm font-medium text-foreground sm:pt-1">{label}</span>
       <div className="flex flex-col gap-1">
-        {code ? (
+        {format === 'code' ? (
           <div className="rounded-md border bg-muted/40 px-3 py-2 font-mono text-sm break-all text-foreground">
             {value || <span className="text-muted-foreground">—</span>}
           </div>

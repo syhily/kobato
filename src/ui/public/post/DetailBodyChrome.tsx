@@ -27,16 +27,16 @@ export interface DetailBodyChromeProps {
   title: string
   date: Date
   updated?: Date | null
-  showUpdated: boolean
+  updatedVisibility?: 'shown' | 'hidden'
   headings: MarkdownHeading[]
-  toc: boolean
+  toc?: 'enabled' | 'disabled'
   likes: number
   permalink: string
   commentKey: string
   commentsPromise: Promise<DetailPageComments>
   currentUser?: CommentFormUser
-  commentsEnabled: boolean
-  admin?: boolean
+  comments?: 'enabled' | 'disabled'
+  mode?: 'admin' | 'public'
   editHref?: string
   draftMarker?: DraftMarker
   metaExtra?: ReactNode
@@ -52,16 +52,16 @@ export function DetailBodyChrome({
   title,
   date,
   updated,
-  showUpdated,
+  updatedVisibility = 'hidden',
   headings,
-  toc,
+  toc = 'disabled',
   likes,
   permalink,
   commentKey,
   commentsPromise,
   currentUser,
-  commentsEnabled,
-  admin,
+  comments = 'disabled',
+  mode,
   editHref,
   draftMarker = null,
   metaExtra,
@@ -78,7 +78,7 @@ export function DetailBodyChrome({
 
   return (
     <>
-      {admin && editHref && (
+      {mode === 'admin' && editHref && (
         <Link
           to={editHref}
           // The parent card uses `p-4 md:p-8`, so anchoring the icon
@@ -99,7 +99,7 @@ export function DetailBodyChrome({
           <PencilIcon className="size-4" />
         </Link>
       )}
-      <h1 className={cn(postTitleClass, 'font-bold', admin && editHref && 'pr-10')}>
+      <h1 className={cn(postTitleClass, 'font-bold', mode === 'admin' && editHref && 'pr-10')}>
         {markerLabel !== null && (
           <span className="text-alert">
             <span className="sr-only">{markerLabel.sr}</span>
@@ -113,7 +113,7 @@ export function DetailBodyChrome({
           <time dateTime={publishedIso} className="tabular-nums">
             {formatLocalDate(date, 'yyyy-MM-dd HH:mm', siteIdentity)}
           </time>
-          {showUpdated && (
+          {updatedVisibility === 'shown' && (
             <div className="flex min-w-0 flex-wrap items-baseline gap-x-1">
               <span className="shrink-0">修改于</span>
               <time dateTime={updatedIso} className="tabular-nums">
@@ -136,7 +136,7 @@ export function DetailBodyChrome({
       </div>
       <LikeButton permalink={permalink} commentKey={commentKey} likes={likes} />
       {afterLikeButton}
-      {commentsEnabled && (
+      {comments === 'enabled' && (
         <Suspense fallback={<CommentsSkeleton />}>
           <Await resolve={commentsPromise}>
             {(resolved) => (

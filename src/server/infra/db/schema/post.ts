@@ -51,6 +51,7 @@ export const post = pgTable(
     index('idx_post_published_at').on(table.publishedAt),
     index('idx_post_first_published_at').on(table.firstPublishedAt),
     index('idx_post_pinned_at').on(table.pinnedAt),
+    index('idx_post_catalog').on(table.deletedAt, table.published, table.firstPublishedAt),
   ],
 )
 

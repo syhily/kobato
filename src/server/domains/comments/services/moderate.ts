@@ -1,6 +1,7 @@
 import type { CommentBody } from '@/shared/pt/comment-schema'
 
 import { withCommentBadgeTextColor } from '@/server/domains/comments/badge'
+import { clearLatestCommentsCache } from '@/server/domains/comments/cache'
 import { canonicalizeCommentBody } from '@/server/domains/comments/canonicalize'
 import { sendApprovedComment, sendNewComment } from '@/server/domains/comments/email'
 import { findCommentWithUserAndTarget } from '@/server/domains/comments/repos/admin-query'
@@ -21,6 +22,7 @@ const OWN_EDIT_GRACE_MS = 30 * 60 * 1000
 export async function approveComment(rid: string) {
   const id = idFromString(rid)
   await approveCommentById(id)
+  await clearLatestCommentsCache()
   const c = await findCommentWithUserAndTarget(id)
   if (c) {
     const target = asCommentTarget(c.comment.type, c.comment.ownerId)
@@ -34,6 +36,7 @@ export async function approveComment(rid: string) {
 
 export async function deleteComment(rid: string) {
   await deleteCommentById(idFromString(rid))
+  await clearLatestCommentsCache()
 }
 
 export async function getCommentById(rid: string) {
@@ -44,6 +47,7 @@ export async function updateComment(rid: string, newBody: CommentBody) {
   const id = idFromString(rid)
   const { body, content } = await canonicalizeCommentBody(newBody)
   await updateCommentBodyAndContent(id, body, content)
+  await clearLatestCommentsCache()
 
   const r = await findCommentWithUserById(id)
   if (r === null) {
@@ -83,5 +87,6 @@ export async function updateOwnComment(rid: string, newBody: CommentBody) {
     }
   }
 
+  await clearLatestCommentsCache()
   return { ...withCommentBadgeTextColor(r), content: null }
 }

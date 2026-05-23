@@ -1,3 +1,5 @@
+import type { JSONContent } from '@tiptap/core'
+
 import Link from '@tiptap/extension-link'
 import Placeholder from '@tiptap/extension-placeholder'
 import { type Editor, EditorContent, useEditor } from '@tiptap/react'
@@ -111,7 +113,7 @@ export function CommentBodyEditor({
     immediatelyRender: false,
     editable: disabled !== true,
     extensions,
-    content: safeBodyToPmDoc(initialBody) as never,
+    content: safeBodyToPmDoc(initialBody) as JSONContent,
     onUpdate({ editor: instance }) {
       const body = pmDocToBody(instance.getJSON() as PmDoc)
       const result = safeValidateCommentBody(body)
@@ -134,7 +136,7 @@ export function CommentBodyEditor({
     if (editor === null) {
       return
     }
-    editor.commands.setContent(safeBodyToPmDoc(initialBody) as never, { emitUpdate: false })
+    editor.commands.setContent(safeBodyToPmDoc(initialBody) as JSONContent, { emitUpdate: false })
     // `initialBody` ref isn't a stable dep — keying on `bodyKey` is
     // the documented contract for resetting.
     // eslint-disable-next-line react-hooks/exhaustive-deps

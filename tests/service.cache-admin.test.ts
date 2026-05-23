@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 
+import type { ClearCacheTarget } from '@/shared/types/cache'
+
 import { setBlogSettingsBundleForTests } from '@/server/domains/settings/snapshot'
 import { clearAdminCache, getAdminCacheStats } from '@/server/infra/redis/admin-ops'
 import { redisInstance } from '@/server/infra/redis/storage'
@@ -81,7 +83,7 @@ describe('service: cache admin', () => {
   })
 
   it('rejects unknown bucket targets with DomainError', async () => {
-    await expect(clearAdminCache('nope' as never)).rejects.toThrow('未知的缓存分组')
+    await expect(clearAdminCache('nope' as unknown as ClearCacheTarget)).rejects.toThrow('未知的缓存分组')
   })
 
   it('returns 0 deletions when the bucket is already empty', async () => {

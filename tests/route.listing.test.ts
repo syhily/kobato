@@ -87,7 +87,7 @@ describe('routes/category.list loader', () => {
       categoryRoute.loader({
         request: new Request('http://localhost/cats/missing'),
         params: { slug: 'missing' },
-      } as never),
+      } as unknown as Parameters<typeof categoryRoute.loader>[0]),
     ).rejects.toMatchObject({ status: 404 })
   })
 
@@ -95,7 +95,7 @@ describe('routes/category.list loader', () => {
     const data = await categoryRoute.loader({
       request: new Request('http://localhost/cats/general'),
       params: { slug: 'general' },
-    } as never)
+    } as unknown as Parameters<typeof categoryRoute.loader>[0])
 
     expect(data.title).toBe('general')
     const canonical = data.seo.find(
@@ -113,7 +113,7 @@ describe('routes/category.list loader', () => {
     const data = (await categoryRoute.loader({
       request: new Request('http://localhost/cats/general'),
       params: { slug: 'general' },
-    } as never)) as { resolvedPosts: Array<{ slug: string }> }
+    } as unknown as Parameters<typeof categoryRoute.loader>[0])) as { resolvedPosts: Array<{ slug: string }> }
 
     expect(data.resolvedPosts.map((post) => post.slug)).toContain('hidden-post')
   })
@@ -122,7 +122,7 @@ describe('routes/category.list loader', () => {
     const data = (await categoryRoute.loader({
       request: new Request('http://localhost/cats/general'),
       params: { slug: 'general' },
-    } as never)) as { resolvedPosts: Array<{ slug: string }> }
+    } as unknown as Parameters<typeof categoryRoute.loader>[0])) as { resolvedPosts: Array<{ slug: string }> }
 
     expect(data.resolvedPosts.map((post) => post.slug)).toContain('hidden-post')
   })
@@ -134,7 +134,7 @@ describe('routes/tag.list loader', () => {
       tagRoute.loader({
         request: new Request('http://localhost/tags/missing'),
         params: { slug: 'missing' },
-      } as never),
+      } as unknown as Parameters<typeof tagRoute.loader>[0]),
     ).rejects.toMatchObject({ status: 404 })
   })
 
@@ -142,7 +142,7 @@ describe('routes/tag.list loader', () => {
     const data = (await tagRoute.loader({
       request: new Request('http://localhost/tags/typescript'),
       params: { slug: 'typescript' },
-    } as never)) as { title: string }
+    } as unknown as Parameters<typeof tagRoute.loader>[0])) as { title: string }
 
     expect(data.title).toContain('typescript')
   })
@@ -151,7 +151,7 @@ describe('routes/tag.list loader', () => {
     const data = (await tagRoute.loader({
       request: new Request('http://localhost/tags/typescript'),
       params: { slug: 'typescript' },
-    } as never)) as { resolvedPosts: Array<{ slug: string }> }
+    } as unknown as Parameters<typeof tagRoute.loader>[0])) as { resolvedPosts: Array<{ slug: string }> }
 
     expect(data.resolvedPosts.map((post) => post.slug)).toContain('hidden-post')
   })
@@ -163,7 +163,7 @@ describe('routes/search.list loader', () => {
       searchRoute.loader({
         request: new Request('http://localhost/search/'),
         params: { keyword: '   ' },
-      } as never),
+      } as unknown as Parameters<typeof searchRoute.loader>[0]),
     ).rejects.toMatchObject({ status: 302 })
   })
 
@@ -171,7 +171,7 @@ describe('routes/search.list loader', () => {
     const data = await searchRoute.loader({
       request: new Request('http://localhost/search/react'),
       params: { keyword: 'react' },
-    } as never)
+    } as unknown as Parameters<typeof searchRoute.loader>[0])
 
     expect(data.title).toContain('react')
     const robots = data.seo.find(
@@ -184,7 +184,7 @@ describe('routes/search.list loader', () => {
     const data = (await searchRoute.loader({
       request: new Request('http://localhost/search/react'),
       params: { keyword: 'react' },
-    } as never)) as { resolvedPosts: Array<{ slug: string }> }
+    } as unknown as Parameters<typeof searchRoute.loader>[0])) as { resolvedPosts: Array<{ slug: string }> }
 
     expect(data.resolvedPosts.map((post) => post.slug)).toContain('hidden-post')
   })

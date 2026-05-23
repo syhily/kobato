@@ -74,7 +74,7 @@ export default function PageDetailRoute({ loaderData }: Route.ComponentProps) {
         commentKey={detail.commentKey}
         commentsPromise={detail.comments}
         currentUser={detail.currentUser}
-        admin={detail.admin}
+        mode={detail.admin ? 'admin' : 'public'}
       >
         <PortableTextBody
           body={body}

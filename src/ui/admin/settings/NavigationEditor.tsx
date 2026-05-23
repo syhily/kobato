@@ -61,7 +61,7 @@ const TYPE_LABELS: Record<FooterNavItem['type'], string> = {
 // ---------------------------------------------------------------------------
 
 function SideNavCard({ navigation }: { navigation: NavigationSettings }) {
-  const { isEditing, form, settingGroupProps } = useSettingsCard<NavigationSettings, { sideNavRows: SideNavRow[] }>({
+  const { mode, form, settingGroupProps } = useSettingsCard<NavigationSettings, { sideNavRows: SideNavRow[] }>({
     section: 'navigation',
     source: navigation,
     toState: (source) => ({
@@ -98,7 +98,7 @@ function SideNavCard({ navigation }: { navigation: NavigationSettings }) {
       description="侧边栏导航条目。顺序、标题、链接均可调整。最多 20 个。"
       {...settingGroupProps}
     >
-      {isEditing ? (
+      {mode === 'edit' ? (
         <div className="flex flex-col gap-3">
           {rows.fields.length === 0 ? (
             <p className="text-sm text-muted-foreground">还没有任何菜单条目，点下方按钮新增一项。</p>
@@ -279,7 +279,7 @@ function SortableFooterNavRow({
 }
 
 function FooterNavCard({ navigation, socials }: { navigation: NavigationSettings; socials: SocialItem[] }) {
-  const { isEditing, form, settingGroupProps } = useSettingsCard<
+  const { mode, form, settingGroupProps } = useSettingsCard<
     NavigationSettings,
     { footerNavItems: FooterNavItemRowState[] }
   >({
@@ -327,7 +327,7 @@ function FooterNavCard({ navigation, socials }: { navigation: NavigationSettings
       description="页脚中显示的快捷按钮。可选择社交链接、主题切换或搜索。最多 5 项，拖拽可调整顺序。"
       {...settingGroupProps}
     >
-      {isEditing ? (
+      {mode === 'edit' ? (
         <div className="flex flex-col gap-3">
           {rows.fields.length === 0 ? (
             <p className="text-sm text-muted-foreground">还没有任何导航条目，点下方按钮新增一项。</p>

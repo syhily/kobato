@@ -21,20 +21,18 @@ interface FontsFormProps {
 }
 
 function FontsCanvasCard({ fonts }: { fonts: FontsSettings }) {
-  const { isEditing, form, settingGroupProps } = useSettingsCard<FontsSettings, { ogUrl: string; calendarUrl: string }>(
-    {
-      section: 'fonts',
-      source: fonts,
-      toState: (source) => ({
-        ogUrl: source.og.url,
-        calendarUrl: source.calendar.url,
-      }),
-      fromState: (state) => ({
-        og: { url: state.ogUrl.trim() },
-        calendar: { url: state.calendarUrl.trim() },
-      }),
-    },
-  )
+  const { mode, form, settingGroupProps } = useSettingsCard<FontsSettings, { ogUrl: string; calendarUrl: string }>({
+    section: 'fonts',
+    source: fonts,
+    toState: (source) => ({
+      ogUrl: source.og.url,
+      calendarUrl: source.calendar.url,
+    }),
+    fromState: (state) => ({
+      og: { url: state.ogUrl.trim() },
+      calendar: { url: state.calendarUrl.trim() },
+    }),
+  })
 
   return (
     <SettingGroup
@@ -42,7 +40,7 @@ function FontsCanvasCard({ fonts }: { fonts: FontsSettings }) {
       description="服务端渲染 OG 图与日历图时使用的字体。必须是 TTF / OTF 格式。留空时降级使用系统中文字体。"
       {...settingGroupProps}
     >
-      {isEditing ? (
+      {mode === 'edit' ? (
         <SettingGroupContent>
           <SettingsRow
             label="OG 图字体 URL"
@@ -76,7 +74,7 @@ function FontsCanvasCard({ fonts }: { fonts: FontsSettings }) {
 }
 
 function FontsGlobalCssCard({ fonts }: { fonts: FontsSettings }) {
-  const { isEditing, form, settingGroupProps } = useSettingsCard<FontsSettings, { globalCss: CssRow[] }>({
+  const { mode, form, settingGroupProps } = useSettingsCard<FontsSettings, { globalCss: CssRow[] }>({
     section: 'fonts',
     source: fonts,
     toState: (source) => ({
@@ -95,7 +93,7 @@ function FontsGlobalCssCard({ fonts }: { fonts: FontsSettings }) {
       description="每个 URL 都会在所有页面的 <head> 注入一个 <link rel='stylesheet'>。"
       {...settingGroupProps}
     >
-      {isEditing ? (
+      {mode === 'edit' ? (
         <SettingGroupContent>
           <div className="flex flex-col gap-3">
             {rows.fields.length === 0 ? (
@@ -150,7 +148,7 @@ function FontsGlobalCssCard({ fonts }: { fonts: FontsSettings }) {
 }
 
 function FontsPostCssCard({ fonts }: { fonts: FontsSettings }) {
-  const { isEditing, form, settingGroupProps } = useSettingsCard<FontsSettings, { postCss: CssRow[] }>({
+  const { mode, form, settingGroupProps } = useSettingsCard<FontsSettings, { postCss: CssRow[] }>({
     section: 'fonts',
     source: fonts,
     toState: (source) => ({
@@ -169,7 +167,7 @@ function FontsPostCssCard({ fonts }: { fonts: FontsSettings }) {
       description="仅在文章详情页的 <head> 注入。适合体积大、仅长文阅读需要的字体。"
       {...settingGroupProps}
     >
-      {isEditing ? (
+      {mode === 'edit' ? (
         <SettingGroupContent>
           <div className="flex flex-col gap-3">
             {rows.fields.length === 0 ? (

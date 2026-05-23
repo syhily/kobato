@@ -138,7 +138,7 @@ function ReservedBucketsSection({ reserved }: { reserved: ReservedCacheBucketSta
   return (
     <SettingGroup
       title="受保护的缓存（只读）"
-      description="以下缓存关键到运行时安全，仅作可视化展示，不支持改名或清空。如确需操作，请通过 `vp` 或 Redis CLI 进行。"
+      description="以下缓存关键到运行时安全，仅作可视化展示，不支持改名或清空。如确需操作，请通过 `npm` 或 Redis CLI 进行。"
     >
       <div className="grid gap-3 sm:grid-cols-2">
         {reserved.map((bucket) => (

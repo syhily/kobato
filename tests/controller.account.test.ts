@@ -61,8 +61,10 @@ const updatedUserStub = {
 
 describe('accountRouter.updateProfile', () => {
   beforeEach(() => {
-    vi.mocked(findUserById).mockResolvedValue(dbUserStub as never)
-    vi.mocked(updateUserById).mockResolvedValue(updatedUserStub as never)
+    vi.mocked(findUserById).mockResolvedValue(dbUserStub as unknown as Awaited<ReturnType<typeof findUserById>>)
+    vi.mocked(updateUserById).mockResolvedValue(
+      updatedUserStub as unknown as Awaited<ReturnType<typeof updateUserById>>,
+    )
   })
 
   it('updates name when supplied and returns the projected user', async () => {
@@ -90,8 +92,10 @@ describe('accountRouter.updateProfile', () => {
 
 describe('accountRouter.updatePassword', () => {
   beforeEach(() => {
-    vi.mocked(findUserById).mockResolvedValue(dbUserStub as never)
-    vi.mocked(updateUserById).mockResolvedValue(updatedUserStub as never)
+    vi.mocked(findUserById).mockResolvedValue(dbUserStub as unknown as Awaited<ReturnType<typeof findUserById>>)
+    vi.mocked(updateUserById).mockResolvedValue(
+      updatedUserStub as unknown as Awaited<ReturnType<typeof updateUserById>>,
+    )
   })
 
   it('hashes the new password, persists it, and revokes other sessions', async () => {
@@ -112,7 +116,7 @@ describe('accountRouter.updatePassword', () => {
   it('throws FORBIDDEN when the original password does not match', async () => {
     const bcryptModule = await import('bcryptjs')
     const bcrypt = bcryptModule.default
-    vi.mocked(bcrypt.compare).mockResolvedValueOnce(false as never)
+    vi.mocked(bcrypt.compare as (password: string, hash: string) => Promise<boolean>).mockResolvedValueOnce(false)
     const ctx = makeAuthedCtx({ userId: '1' })
     await expect(
       call(accountRouter.updatePassword, { oldPassword: 'wrong', newPassword: 'new-password-1' }, { context: ctx }),
@@ -122,7 +126,7 @@ describe('accountRouter.updatePassword', () => {
 
 describe('accountRouter.revokeSession', () => {
   it('returns `currentSession: false` when the revoked id is not the caller session', async () => {
-    vi.mocked(revokeSessionById).mockResolvedValue(true as never)
+    vi.mocked(revokeSessionById).mockResolvedValue(undefined)
     const ctx = makeAuthedCtx({ userId: '1', sessionId: 'caller-session' })
     const res = await call(accountRouter.revokeSession, { id: 'other-session' }, { context: ctx })
     expect(res).toEqual({ success: true, currentSession: false })

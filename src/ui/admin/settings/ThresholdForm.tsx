@@ -84,7 +84,7 @@ const BUCKET_META: Record<BucketKey, { title: string; description: string; windo
 
 function RateLimitBucketCard({ bucketKey, rateLimit }: { bucketKey: BucketKey; rateLimit: RateLimitSettings }) {
   const meta = BUCKET_META[bucketKey]
-  const { isEditing, form, settingGroupProps } = useSettingsCard<
+  const { mode, form, settingGroupProps } = useSettingsCard<
     RateLimitSettings,
     { windowSeconds: number; maxAttempts: number }
   >({
@@ -103,7 +103,7 @@ function RateLimitBucketCard({ bucketKey, rateLimit }: { bucketKey: BucketKey; r
 
   return (
     <SettingGroup title={meta.title} description={meta.description} {...settingGroupProps}>
-      {isEditing ? (
+      {mode === 'edit' ? (
         <SettingGroupContent>
           <SettingsRow label="时间窗口（秒）" htmlFor={`rate-limit-${bucketKey}-window`} hint={meta.windowHint}>
             <Input

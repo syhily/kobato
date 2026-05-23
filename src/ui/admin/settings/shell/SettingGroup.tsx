@@ -13,8 +13,8 @@ interface SettingGroupProps {
   /** Action buttons / controls rendered in the top-right of the header.
    *  Typically an Edit button in read mode, or Save + Cancel in edit mode. */
   actions?: ReactNode
-  isEditing?: boolean
-  onEditingChange?: (value: boolean) => void
+  mode?: 'read' | 'edit'
+  onModeChange?: (mode: 'read' | 'edit') => void
   onSave?: () => void
   onCancel?: () => void
   saveState?: 'idle' | 'saving' | 'saved' | 'error'
@@ -27,21 +27,21 @@ export function SettingGroup({
   children,
   className,
   actions,
-  isEditing,
-  onEditingChange,
+  mode,
+  onModeChange,
   onSave,
   onCancel,
   saveState,
   errorMessage,
 }: SettingGroupProps) {
-  const showEdit = !isEditing && onEditingChange && !actions
-  const showActions = isEditing && (onSave || onCancel)
+  const showEdit = mode !== 'edit' && onModeChange && !actions
+  const showActions = mode === 'edit' && (onSave || onCancel)
 
   return (
     <div
       className={cn(
         'relative flex flex-col gap-6 rounded-xl border transition-all',
-        isEditing ? 'border-border shadow-sm' : 'hover:border-border/80 hover:shadow-sm',
+        mode === 'edit' ? 'border-border shadow-sm' : 'hover:border-border/80 hover:shadow-sm',
         className,
       )}
     >
@@ -51,7 +51,7 @@ export function SettingGroup({
             <div>
               <h3 className="text-base font-semibold text-foreground">{title}</h3>
               {description && (
-                <p className={cn('mt-1 mr-5 text-sm text-muted-foreground', isEditing && 'hidden md:block')}>
+                <p className={cn('mt-1 mr-5 text-sm text-muted-foreground', mode === 'edit' && 'hidden md:block')}>
                   {description}
                 </p>
               )}
@@ -61,7 +61,7 @@ export function SettingGroup({
             {actions}
 
             {showEdit ? (
-              <Button type="button" variant="ghost" size="sm" onClick={() => onEditingChange(true)}>
+              <Button type="button" variant="ghost" size="sm" onClick={() => onModeChange('edit')}>
                 <PencilIcon data-icon="sm" />
                 <span className="ml-1">编辑</span>
               </Button>

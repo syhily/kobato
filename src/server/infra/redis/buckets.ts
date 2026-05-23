@@ -18,7 +18,7 @@ const log = getLogger('cache.buckets')
 //                         and break in-flight tokens.
 //  - `rate-limit:*`      clearing it would let a throttled abuser retry
 //                         immediately, defeating the spam wall.
-// Those two surfaces stay administered through `vp` shells / Redis CLI,
+// Those two surfaces stay administered through `npm` shells / Redis CLI,
 // and the `cache` settings schema validates against them collisively.
 // They DO surface read-only in the admin cache page via the parallel
 // `RESERVED_CACHE_BUCKETS` registry (see `countReservedBuckets()`).

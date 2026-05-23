@@ -154,7 +154,7 @@ export function MusicPlayerComponent({ value }: PortableTextTypeComponentProps<M
     <MusicPlayer
       id={value.playerId}
       auto={suppressAutoplay ? false : value.auto === true}
-      center={value.center === true}
+      alignment={value.center === true ? 'center' : 'start'}
     />
   )
 }

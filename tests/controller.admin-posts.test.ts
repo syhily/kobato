@@ -33,7 +33,7 @@ const { adminPostsRouter } = await import('@/server/http/controllers/admin/posts
 
 describe('adminPostsRouter.get', () => {
   it('throws NOT_FOUND when the post detail is null', async () => {
-    vi.mocked(adminQueryService.getPostDetailForAdmin).mockResolvedValueOnce(null as never)
+    vi.mocked(adminQueryService.getPostDetailForAdmin).mockResolvedValueOnce(null)
     const ctx = makeAuthedCtx()
     await expect(call(adminPostsRouter.get, { id: '999' }, { context: ctx })).rejects.toMatchObject({
       code: 'NOT_FOUND',
@@ -69,10 +69,10 @@ describe('adminPostsRouter.get', () => {
       commentPublicId: 'pid-1',
     }
     vi.mocked(adminQueryService.getPostDetailForAdmin).mockResolvedValueOnce({
-      post: post as never,
+      post: post,
       latestRevision: null,
       publishedRevision: null,
-    } as never)
+    })
     const ctx = makeAuthedCtx()
     const res = (await call(adminPostsRouter.get, { id: '1' }, { context: ctx })) as {
       post: { id: string }
@@ -83,7 +83,7 @@ describe('adminPostsRouter.get', () => {
 
 describe('adminPostsRouter.delete', () => {
   it('throws NOT_FOUND when deletePost yields { deleted: false }', async () => {
-    vi.mocked(mutateService.deletePost).mockResolvedValueOnce({ deleted: false } as never)
+    vi.mocked(mutateService.deletePost).mockResolvedValueOnce({ deleted: false })
     const ctx = makeAuthedCtx()
     await expect(call(adminPostsRouter.delete, { id: '1' }, { context: ctx })).rejects.toMatchObject({
       code: 'NOT_FOUND',
@@ -91,7 +91,7 @@ describe('adminPostsRouter.delete', () => {
   })
 
   it('resolves to undefined when deletePost succeeds (z.void output)', async () => {
-    vi.mocked(mutateService.deletePost).mockResolvedValueOnce({ deleted: true } as never)
+    vi.mocked(mutateService.deletePost).mockResolvedValueOnce({ deleted: true })
     const ctx = makeAuthedCtx()
     const res = await call(adminPostsRouter.delete, { id: '1' }, { context: ctx })
     expect(res).toBeUndefined()
@@ -114,8 +114,8 @@ describe('adminPostsRouter.saveDraft', () => {
     }
     vi.mocked(draftService.saveDraft).mockResolvedValueOnce({
       status: 'saved',
-      revision: revision as never,
-    } as never)
+      revision: revision,
+    })
     const ctx = makeAuthedCtx()
     const res = (await call(
       adminPostsRouter.saveDraft,

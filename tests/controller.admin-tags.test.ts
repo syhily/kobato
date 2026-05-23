@@ -23,7 +23,7 @@ describe('adminTagsRouter.list', () => {
           postCount: 5,
           createdAt: '2026-01-01T00:00:00.000Z',
           updatedAt: '2026-01-01T00:00:00.000Z',
-        } as never,
+        },
       ],
       total: 1,
       hasMore: false,
@@ -50,7 +50,7 @@ describe('adminTagsRouter.upsert', () => {
       createdAt: '2026-01-01T00:00:00.000Z',
       updatedAt: '2026-01-01T00:00:00.000Z',
     }
-    vi.mocked(service.upsertAdminTag).mockResolvedValueOnce(tag as never)
+    vi.mocked(service.upsertAdminTag).mockResolvedValueOnce(tag)
     const ctx = makeAuthedCtx()
     const res = (await call(adminTagsRouter.upsert, { name: 'Tag B' }, { context: ctx })) as {
       tag: unknown

@@ -1,6 +1,8 @@
 import { call } from '@orpc/server'
 import { describe, expect, it, vi } from 'vitest'
 
+import type { BlogSettingsBundle } from '@/shared/config/blog'
+
 import { makeAuthedCtx } from './_helpers/mock-ctx'
 
 vi.mock('@/server/domains/backup/service', () => ({
@@ -28,7 +30,7 @@ describe('adminBackupRouter.status', () => {
   it('returns s3Enabled and pgToolsAvailable', async () => {
     vi.mocked(blogConfig.getBlogSettingsBundleSync).mockReturnValue({
       assets: { storage: { enabled: true } },
-    } as never)
+    } as unknown as BlogSettingsBundle)
     vi.mocked(service.checkPgToolsAvailable).mockResolvedValueOnce(true)
     const ctx = makeAuthedCtx()
     const res = await call(adminBackupRouter.status, undefined, { context: ctx })
@@ -46,7 +48,7 @@ describe('adminBackupRouter.list', () => {
         lastModified: '2026-01-01T00:00:00.000Z',
       },
     ]
-    vi.mocked(service.listBackups).mockResolvedValueOnce(files as never)
+    vi.mocked(service.listBackups).mockResolvedValueOnce(files)
     const ctx = makeAuthedCtx()
     const res = await call(adminBackupRouter.list, undefined, { context: ctx })
     expect(res.files).toHaveLength(1)
@@ -59,7 +61,7 @@ describe('adminBackupRouter.create', () => {
     vi.mocked(service.createBackup).mockResolvedValueOnce({
       fileName: '2026-01-01.sql.gz',
       size: 2048,
-    } as never)
+    })
     const ctx = makeAuthedCtx()
     const res = await call(adminBackupRouter.create, undefined, { context: ctx })
     expect(res).toEqual({ fileName: '2026-01-01.sql.gz', size: 2048 })
@@ -68,7 +70,7 @@ describe('adminBackupRouter.create', () => {
 
 describe('adminBackupRouter.restore', () => {
   it('returns success after restoring backup', async () => {
-    vi.mocked(service.getBackupBuffer).mockResolvedValueOnce(Buffer.from('sql') as never)
+    vi.mocked(service.getBackupBuffer).mockResolvedValueOnce(Buffer.from('sql'))
     vi.mocked(service.restoreFromBackup).mockResolvedValueOnce(undefined)
     const ctx = makeAuthedCtx()
     const res = await call(adminBackupRouter.restore, { key: 'backup/2026-01-01.sql.gz' }, { context: ctx })

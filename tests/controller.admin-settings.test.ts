@@ -37,7 +37,9 @@ const bundleStub = {
 
 describe('adminSettingsRouter.get', () => {
   it('returns the settings bundle', async () => {
-    vi.mocked(getAdminBlogSettings).mockResolvedValueOnce({ bundle: bundleStub } as never)
+    vi.mocked(getAdminBlogSettings).mockResolvedValueOnce({
+      bundle: bundleStub as unknown as Awaited<ReturnType<typeof getAdminBlogSettings>>['bundle'],
+    })
     const ctx = makeAuthedCtx()
     const res = await call(adminSettingsRouter.get, {}, { context: ctx })
     expect(res.bundle).toEqual(bundleStub)
@@ -46,7 +48,9 @@ describe('adminSettingsRouter.get', () => {
 
 describe('adminSettingsRouter.loadAll', () => {
   it('returns the settings bundle plus timeZones', async () => {
-    vi.mocked(getAdminBlogSettings).mockResolvedValueOnce({ bundle: bundleStub } as never)
+    vi.mocked(getAdminBlogSettings).mockResolvedValueOnce({ bundle: bundleStub } as unknown as Awaited<
+      ReturnType<typeof getAdminBlogSettings>
+    >)
     vi.mocked(getSupportedTimeZones).mockReturnValueOnce(['Asia/Shanghai', 'UTC'])
     const ctx = makeAuthedCtx()
     const res = await call(adminSettingsRouter.loadAll, {}, { context: ctx })
@@ -57,7 +61,9 @@ describe('adminSettingsRouter.loadAll', () => {
 
 describe('adminSettingsRouter.update', () => {
   it('updates a section with a valid payload', async () => {
-    vi.mocked(updateBlogSettingsSection).mockResolvedValueOnce(bundleStub as never)
+    vi.mocked(updateBlogSettingsSection).mockResolvedValueOnce(
+      bundleStub as unknown as Awaited<ReturnType<typeof updateBlogSettingsSection>>,
+    )
     const ctx = makeAuthedCtx()
     const res = await call(
       adminSettingsRouter.update,

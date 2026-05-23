@@ -82,10 +82,10 @@ describe('services/feed — generateFeeds (channel envelope)', () => {
     expect(feeds.atom).toContain('xml:lang="zh-CN"')
   })
 
-  it('ships the legacy `WordPress 3.2.1` generator string (subscriber compat)', async () => {
+  it('does not set a custom generator string (uses the feed library default)', async () => {
     fakeCatalog()
     const feeds = await generateFeeds()
-    expect(feeds.rss).toContain('<generator>WordPress 3.2.1</generator>')
+    expect(feeds.rss).not.toContain('<generator>WordPress 3.2.1</generator>')
   })
 
   it('selects hidden posts by default while still excluding scheduled posts', async () => {

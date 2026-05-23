@@ -87,14 +87,14 @@ export function PublishStatusRow({
           <PublishModeOption
             id={`${fieldId}-now`}
             value="now"
-            active={!isScheduled}
+            state={!isScheduled ? 'selected' : 'unselected'}
             label="立即发布"
             description="使用当前时间"
           />
           <PublishModeOption
             id={`${fieldId}-scheduled`}
             value="scheduled"
-            active={isScheduled}
+            state={isScheduled ? 'selected' : 'unselected'}
             label="定时发布"
             description="到点上线"
           />
@@ -124,18 +124,19 @@ function RevisionSummaryInline({ summary }: { summary: SidebarRevisionSummary | 
 interface PublishModeOptionProps {
   id: string
   value: string
-  active: boolean
+  state: 'selected' | 'unselected'
   label: string
   description: string
 }
 
-function PublishModeOption({ id, value, active, label, description }: PublishModeOptionProps) {
+function PublishModeOption({ id, value, state, label, description }: PublishModeOptionProps) {
+  const isSelected = state === 'selected'
   return (
     <label
       htmlFor={id}
       className={cn(
         'flex cursor-pointer items-start gap-2 rounded-md border bg-background p-2 transition-colors',
-        active ? 'border-primary ring-1 ring-primary/30' : 'hover:bg-accent/40',
+        isSelected ? 'border-primary ring-1 ring-primary/30' : 'hover:bg-accent/40',
       )}
     >
       <RadioGroupItem id={id} value={value} className="mt-0.5" />

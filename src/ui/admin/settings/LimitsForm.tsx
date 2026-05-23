@@ -19,7 +19,7 @@ const BOUNDS = {
 } as const
 
 function LimitsRequestCard({ limits }: { limits: LimitsSettings }) {
-  const { isEditing, form, settingGroupProps } = useSettingsCard<LimitsSettings, { maxRequestBodySize: number }>({
+  const { mode, form, settingGroupProps } = useSettingsCard<LimitsSettings, { maxRequestBodySize: number }>({
     section: 'limits',
     source: limits,
     toState: (source) => ({ maxRequestBodySize: source.maxRequestBodySize }),
@@ -34,7 +34,7 @@ function LimitsRequestCard({ limits }: { limits: LimitsSettings }) {
       description="控制上传文件、表单提交等场景的最大请求体大小。过大可能增加内存压力，过小则可能导致图片上传失败。"
       {...settingGroupProps}
     >
-      {isEditing ? (
+      {mode === 'edit' ? (
         <SettingGroupContent>
           <SettingsRow
             label="最大请求体大小（字节）"
@@ -64,7 +64,7 @@ function LimitsRequestCard({ limits }: { limits: LimitsSettings }) {
 }
 
 function LimitsSessionCard({ limits }: { limits: LimitsSettings }) {
-  const { isEditing, form, settingGroupProps } = useSettingsCard<LimitsSettings, { sessionMaxAge: number }>({
+  const { mode, form, settingGroupProps } = useSettingsCard<LimitsSettings, { sessionMaxAge: number }>({
     section: 'limits',
     source: limits,
     toState: (source) => ({ sessionMaxAge: source.sessionMaxAge }),
@@ -79,7 +79,7 @@ function LimitsSessionCard({ limits }: { limits: LimitsSettings }) {
       description="管理后台与公共站点的登录会话有效期。过期后用户需要重新登录。"
       {...settingGroupProps}
     >
-      {isEditing ? (
+      {mode === 'edit' ? (
         <SettingGroupContent>
           <SettingsRow
             label="会话最大有效期（秒）"
@@ -109,7 +109,7 @@ function LimitsSessionCard({ limits }: { limits: LimitsSettings }) {
 }
 
 function LimitsAuditCard({ limits }: { limits: LimitsSettings }) {
-  const { isEditing, form, settingGroupProps } = useSettingsCard<
+  const { mode, form, settingGroupProps } = useSettingsCard<
     LimitsSettings,
     { auditLogDbRetentionDays: number; auditLogArchiveRetentionDays: number }
   >({
@@ -131,7 +131,7 @@ function LimitsAuditCard({ limits }: { limits: LimitsSettings }) {
       description="控制审计日志在数据库中的保留时长，以及归档到 S3 后的保留时长。S3 未开启时，超期日志将直接删除而不归档。"
       {...settingGroupProps}
     >
-      {isEditing ? (
+      {mode === 'edit' ? (
         <SettingGroupContent>
           <SettingsRow
             label="数据库保留天数"

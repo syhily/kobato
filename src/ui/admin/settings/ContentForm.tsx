@@ -27,7 +27,7 @@ const SORT_BY_ITEMS = [
 ]
 
 function ContentPaginationCard({ content }: { content: ContentSettings }) {
-  const { isEditing, form, settingGroupProps } = useSettingsCard<
+  const { mode, form, settingGroupProps } = useSettingsCard<
     ContentSettings,
     { pagPosts: number; pagCategory: number; pagTags: number; pagSearch: number }
   >({
@@ -55,7 +55,7 @@ function ContentPaginationCard({ content }: { content: ContentSettings }) {
       description="每个列表页显示多少篇文章。改动会立即影响首页 / 分类 / 标签 / 搜索结果。"
       {...settingGroupProps}
     >
-      {isEditing ? (
+      {mode === 'edit' ? (
         <SettingGroupContent>
           <SettingsRow label="首页每页文章数" htmlFor="content-pag-posts">
             <Input
@@ -107,10 +107,7 @@ function ContentPaginationCard({ content }: { content: ContentSettings }) {
 }
 
 function ContentFeedCard({ content }: { content: ContentSettings }) {
-  const { isEditing, form, settingGroupProps } = useSettingsCard<
-    ContentSettings,
-    { feedFull: boolean; feedSize: number }
-  >({
+  const { mode, form, settingGroupProps } = useSettingsCard<ContentSettings, { feedFull: boolean; feedSize: number }>({
     section: 'content',
     source: content,
     toState: (source) => ({
@@ -128,7 +125,7 @@ function ContentFeedCard({ content }: { content: ContentSettings }) {
       description="决定 /feed 与 /feed/atom 输出的条目数与是否包含正文。"
       {...settingGroupProps}
     >
-      {isEditing ? (
+      {mode === 'edit' ? (
         <SettingGroupContent>
           <SettingsRow label="包含完整正文" hint="关闭后只输出摘要 + 永久链接。订阅器中阅读体验更好但不利于离线阅读。">
             <div className="flex items-center gap-3">
@@ -165,7 +162,7 @@ function ContentFeedCard({ content }: { content: ContentSettings }) {
 }
 
 function ContentSortCard({ content }: { content: ContentSettings }) {
-  const { isEditing, form, settingGroupProps } = useSettingsCard<
+  const { mode, form, settingGroupProps } = useSettingsCard<
     ContentSettings,
     {
       postSort: 'asc' | 'desc'
@@ -195,7 +192,7 @@ function ContentSortCard({ content }: { content: ContentSettings }) {
       description="文章列表的默认排序方向。开启置顶后，可在文章编辑页将文章置顶到首页精选区。"
       {...settingGroupProps}
     >
-      {isEditing ? (
+      {mode === 'edit' ? (
         <SettingGroupContent>
           <SettingsRow label="排序字段" htmlFor="content-post-sort-by">
             <Controller
@@ -270,7 +267,7 @@ function ContentSortCard({ content }: { content: ContentSettings }) {
 }
 
 function ContentFootnotesCard({ content }: { content: ContentSettings }) {
-  const { isEditing, form, settingGroupProps } = useSettingsCard<ContentSettings, { footnotesSectionTitle: string }>({
+  const { mode, form, settingGroupProps } = useSettingsCard<ContentSettings, { footnotesSectionTitle: string }>({
     section: 'content',
     source: content,
     toState: (source) => ({
@@ -287,7 +284,7 @@ function ContentFootnotesCard({ content }: { content: ContentSettings }) {
       description="Portable Text 页面文末脚注列表上方的标题，默认为「尾声礼记」。不影响 MDX 文章页的脚注样式。"
       {...settingGroupProps}
     >
-      {isEditing ? (
+      {mode === 'edit' ? (
         <SettingGroupContent>
           <SettingsRow label="标题文案" htmlFor="content-footnotes-section-title">
             <Input

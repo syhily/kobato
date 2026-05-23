@@ -39,10 +39,12 @@ export function makeRouteContext({
 
 // Convenience to match the typical `loader({ request, context, params })`
 // signature without callers having to construct the args object themselves.
-export function makeLoaderArgs(options: MakeContextOptions & { params?: Record<string, string | undefined> } = {}) {
+export function makeLoaderArgs(
+  options: MakeContextOptions & { params?: Record<string, string | undefined> } = {},
+): any {
   const request = options.request ?? new Request('http://localhost/')
   const context = makeRouteContext({ ...options, request })
-  return { request, context, params: options.params ?? {} } as never
+  return { request, context, params: options.params ?? {} }
 }
 
 /** React Router `data()` wraps the loader payload; unwrap for direct handler tests. */

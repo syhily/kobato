@@ -1,0 +1,2 @@
+npm run fmt:check
+npm run lint

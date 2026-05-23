@@ -33,7 +33,7 @@ interface ReindexProgress {
 }
 
 function SearchModeCard({ search }: { search: SearchLoaderShape }) {
-  const { isEditing, form, settingGroupProps } = useSettingsCard<
+  const { mode, form, settingGroupProps } = useSettingsCard<
     SearchLoaderShape,
     { enabled: boolean; mode: 'vector' | 'like' }
   >({
@@ -55,7 +55,7 @@ function SearchModeCard({ search }: { search: SearchLoaderShape }) {
       description="选择文章搜索的底层实现。LIKE 模式仅依赖 Postgres，无需外部 API；向量模式需要 OpenAI API Key。"
       {...settingGroupProps}
     >
-      {isEditing ? (
+      {mode === 'edit' ? (
         <SettingGroupContent>
           <SettingsRow label="启用 AI 向量搜索" hint="关闭时所有搜索请求都会降级为 Postgres LIKE 查询。">
             <Controller
@@ -109,7 +109,7 @@ function SearchModeCard({ search }: { search: SearchLoaderShape }) {
 
 function SearchOpenAiCard({ search }: { search: SearchLoaderShape }) {
   const apiKeyConfigured = search.apiKeyMask !== null
-  const { isEditing, form, settingGroupProps } = useSettingsCard<
+  const { mode, form, settingGroupProps } = useSettingsCard<
     SearchLoaderShape,
     { endpoint: string; apiKey: string; model: string; similarityThreshold: number }
   >({
@@ -134,7 +134,7 @@ function SearchOpenAiCard({ search }: { search: SearchLoaderShape }) {
 
   return (
     <SettingGroup title="OpenAI 配置" description="向量搜索需要调用 OpenAI Embedding API。" {...settingGroupProps}>
-      {isEditing ? (
+      {mode === 'edit' ? (
         <SettingGroupContent>
           <SettingsRow
             label="API Endpoint"

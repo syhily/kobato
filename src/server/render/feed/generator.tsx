@@ -80,7 +80,6 @@ export async function generateFeeds(options: FeedOptions = {}) {
     favicon: joinUrl(siteIdentity.website, '/favicon.svg'),
     copyright: `All rights reserved ${siteIdentity.initialYear}, ${siteIdentity.author.name}`,
     updated: new Date(),
-    generator: 'WordPress 3.2.1',
     feedLinks: {
       rss: `${siteIdentity.website}${category ? `/cats/${category}` : ''}${tag ? `/tags/${tag}` : ''}/feed`,
       atom: `${siteIdentity.website}${category ? `/cats/${category}` : ''}${tag ? `/tags/${tag}` : ''}/feed/atom/`,

@@ -12,7 +12,7 @@ interface CommentsFormProps {
 }
 
 function CommentsPaginationCard({ comments }: { comments: CommentsSettings }) {
-  const { isEditing, form, settingGroupProps } = useSettingsCard<CommentsSettings, { size: number }>({
+  const { mode, form, settingGroupProps } = useSettingsCard<CommentsSettings, { size: number }>({
     section: 'comments',
     source: comments,
     toState: (source) => ({ size: source.comments.size }),
@@ -25,7 +25,7 @@ function CommentsPaginationCard({ comments }: { comments: CommentsSettings }) {
 
   return (
     <SettingGroup title="评论分页" description="控制文章页面下方的评论列表加载行为。" {...settingGroupProps}>
-      {isEditing ? (
+      {mode === 'edit' ? (
         <SettingGroupContent>
           <SettingsRow label="每页评论数" htmlFor="comments-size" hint="客户端「加载更多」每次抓取的根评论数量。">
             <Input
@@ -47,7 +47,7 @@ function CommentsPaginationCard({ comments }: { comments: CommentsSettings }) {
 }
 
 function CommentsAvatarCard({ comments }: { comments: CommentsSettings }) {
-  const { isEditing, form, settingGroupProps } = useSettingsCard<
+  const { mode, form, settingGroupProps } = useSettingsCard<
     CommentsSettings,
     { avatarMirror: string; avatarSize: number }
   >({
@@ -70,7 +70,7 @@ function CommentsAvatarCard({ comments }: { comments: CommentsSettings }) {
       description="访客头像通过 Gravatar 协议拉取。镜像 URL 用于绕过 gravatar.com 的访问限制。"
       {...settingGroupProps}
     >
-      {isEditing ? (
+      {mode === 'edit' ? (
         <SettingGroupContent>
           <SettingsRow
             label="Gravatar 镜像 URL"
@@ -100,7 +100,7 @@ function CommentsAvatarCard({ comments }: { comments: CommentsSettings }) {
 }
 
 function CommentsTokenCard({ comments }: { comments: CommentsSettings }) {
-  const { isEditing, form, settingGroupProps } = useSettingsCard<CommentsSettings, { tokenTtlSeconds: number }>({
+  const { mode, form, settingGroupProps } = useSettingsCard<CommentsSettings, { tokenTtlSeconds: number }>({
     section: 'comments',
     source: comments,
     toState: (source) => ({ tokenTtlSeconds: source.comments.tokenTtlSeconds }),
@@ -117,7 +117,7 @@ function CommentsTokenCard({ comments }: { comments: CommentsSettings }) {
       description="控制匿名评论者发表后可编辑自己评论的时间窗口。"
       {...settingGroupProps}
     >
-      {isEditing ? (
+      {mode === 'edit' ? (
         <SettingGroupContent>
           <SettingsRow
             label="Token 有效期 (秒)"

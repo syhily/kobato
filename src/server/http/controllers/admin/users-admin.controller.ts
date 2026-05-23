@@ -2,6 +2,7 @@ import { ORPCError } from '@orpc/server'
 import { z } from 'zod'
 
 import { recordAuditEventFromContext } from '@/server/domains/audit/service'
+import { revokeAllSessionsOfUser } from '@/server/domains/auth/session-storage'
 import { issueResetToken, issueSetupToken, revokeTokensFor } from '@/server/domains/auth/verification-tokens'
 import { fetchAdminUserDto, muteAdminUser } from '@/server/domains/users/service'
 import { adminProc } from '@/server/http/orpc-base'
@@ -67,7 +68,6 @@ const updateRole = adminProc
     }
     const updated = await updateUserRole(targetId, input.role)
     if (updated) {
-      const { revokeAllSessionsOfUser } = await import('@/server/domains/auth/session-storage')
       await revokeAllSessionsOfUser(targetId)
       recordAuditEventFromContext(context, {
         action: 'user_role_changed',
