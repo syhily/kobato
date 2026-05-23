@@ -102,8 +102,8 @@ export function PostEditorShell({ mode, detail, navigate }: PostEditorShellProps
       const result = await orpc.admin.posts.upsertMeta(input)
       return result.post
     },
-    saveDraftFn: (input) => orpc.admin.posts.saveDraft(input as Record<string, unknown> & SavePostBodyInput),
-    publishFn: (input) => orpc.admin.posts.publishLatest(input as Record<string, unknown> & SavePostBodyInput),
+    saveDraftFn: (input) => orpc.admin.posts.saveDraft(input as unknown as SavePostBodyInput),
+    publishFn: (input) => orpc.admin.posts.publishLatest(input as unknown as SavePostBodyInput),
     unpublishFn: async (input) => {
       const result = await orpc.admin.posts.unpublish(input)
       return result.post

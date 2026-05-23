@@ -215,11 +215,11 @@ const PROBES: Record<SettingsSection, SectionProbe> = {
 // section keys come from a registry. The cast is consolidated into these
 // two helpers so the rest of the module uses typed access.
 function bundleSet(bundle: BlogSettingsBundle, key: string, value: unknown): void {
-  Object.assign(bundle, { [key]: value })
+  ;(bundle as unknown as Record<string, unknown>)[key] = value
 }
 
 function bundleHas(bundle: BlogSettingsBundle, key: string): boolean {
-  return Reflect.get(bundle, key) !== null
+  return (bundle as unknown as Record<string, unknown>)[key] !== null
 }
 
 // Project the canonical `BUNDLE_KEYS` list (mirrors `SETTINGS_SECTIONS`)
@@ -227,7 +227,7 @@ function bundleHas(bundle: BlogSettingsBundle, key: string): boolean {
 // `@/shared/config/settings.ts` automatically extends this — there is no
 // sibling 12-line `null` literal to also remember.
 function emptyBundle(): BlogSettingsBundle {
-  return Object.assign({} as BlogSettingsBundle, Object.fromEntries(BUNDLE_KEYS.map((key) => [key, null])))
+  return Object.fromEntries(BUNDLE_KEYS.map((key) => [key, null])) as unknown as BlogSettingsBundle
 }
 
 async function loadSettingsFromDb(): Promise<BlogSettingsBundle | null> {

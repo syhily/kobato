@@ -111,8 +111,8 @@ export function PageEditorShell({ mode, detail, navigate }: PageEditorShellProps
       const result = await orpc.admin.pages.upsertMeta(input)
       return result.page
     },
-    saveDraftFn: (input) => orpc.admin.pages.saveDraft(input as Record<string, unknown> & SavePageBodyInput),
-    publishFn: (input) => orpc.admin.pages.publishLatest(input as Record<string, unknown> & SavePageBodyInput),
+    saveDraftFn: (input) => orpc.admin.pages.saveDraft(input as unknown as SavePageBodyInput),
+    publishFn: (input) => orpc.admin.pages.publishLatest(input as unknown as SavePageBodyInput),
     unpublishFn: async (input) => {
       const result = await orpc.admin.pages.unpublish(input)
       return result.page
