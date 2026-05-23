@@ -193,9 +193,11 @@ function CalendarDropdown({ options, className: _className, ...selectProps }: Dr
       <Select
         value={String(selectProps.value ?? '')}
         onValueChange={(v) => {
-          selectProps.onChange?.({
-            target: { value: Number(v), name: selectProps.name },
-          } as unknown as React.ChangeEvent<HTMLSelectElement>)
+          selectProps.onChange?.(
+            Object.assign({} as React.ChangeEvent<HTMLSelectElement>, {
+              target: { value: Number(v), name: selectProps.name },
+            }),
+          )
         }}
         disabled={selectProps.disabled}
       >

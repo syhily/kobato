@@ -74,11 +74,11 @@ function serializeError(err: Error): Record<string, unknown> {
   if (cause !== undefined) {
     out.cause = cause instanceof Error ? serializeError(cause) : cause
   }
-  for (const key of Object.keys(err)) {
+  for (const [key, value] of Object.entries(err)) {
     if (key in out) {
       continue
     }
-    ;(out as Record<string, unknown>)[key] = (err as unknown as Record<string, unknown>)[key]
+    out[key] = value
   }
   return out
 }

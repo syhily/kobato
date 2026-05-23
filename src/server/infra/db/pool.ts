@@ -17,7 +17,7 @@ import { registerShutdownHook } from '@/server/infra/shutdown'
 // `EmptyRelations`. If a future caller wants `db.query.<table>` style access,
 // switch this to `drizzle({ connection, relations })` with a relations module
 // and re-introduce the matching generic.
-const globalForDb = globalThis as unknown as {
+const globalForDb = globalThis as typeof globalThis & {
   db: NodePgDatabase | undefined
   pool: Pool | undefined
 }

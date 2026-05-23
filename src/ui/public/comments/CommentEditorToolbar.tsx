@@ -83,7 +83,7 @@ export function CommentEditorToolbar({ editor, disabled }: CommentEditorToolbarP
         <ToolButton
           title="加粗 (Cmd/Ctrl+B)"
           disabled={disabled}
-          active={state.bold}
+          state={state.bold ? 'active' : 'inactive'}
           onClick={() => editor.chain().focus().toggleBold().run()}
         >
           <BoldIcon />
@@ -91,7 +91,7 @@ export function CommentEditorToolbar({ editor, disabled }: CommentEditorToolbarP
         <ToolButton
           title="斜体 (Cmd/Ctrl+I)"
           disabled={disabled}
-          active={state.italic}
+          state={state.italic ? 'active' : 'inactive'}
           onClick={() => editor.chain().focus().toggleItalic().run()}
         >
           <ItalicIcon />
@@ -99,7 +99,7 @@ export function CommentEditorToolbar({ editor, disabled }: CommentEditorToolbarP
         <ToolButton
           title="下划线 (Cmd/Ctrl+U)"
           disabled={disabled}
-          active={state.underline}
+          state={state.underline ? 'active' : 'inactive'}
           onClick={() => editor.chain().focus().toggleUnderline().run()}
         >
           <UnderlineIcon />
@@ -107,7 +107,7 @@ export function CommentEditorToolbar({ editor, disabled }: CommentEditorToolbarP
         <ToolButton
           title="删除线"
           disabled={disabled}
-          active={state.strike}
+          state={state.strike ? 'active' : 'inactive'}
           onClick={() => editor.chain().focus().toggleStrike().run()}
         >
           <StrikethroughIcon />
@@ -115,7 +115,7 @@ export function CommentEditorToolbar({ editor, disabled }: CommentEditorToolbarP
         <ToolButton
           title="行内代码"
           disabled={disabled}
-          active={state.code}
+          state={state.code ? 'active' : 'inactive'}
           onClick={() => editor.chain().focus().toggleCode().run()}
         >
           <CodeIcon />
@@ -124,7 +124,7 @@ export function CommentEditorToolbar({ editor, disabled }: CommentEditorToolbarP
         <ToolButton
           title="无序列表"
           disabled={disabled}
-          active={state.bulletList}
+          state={state.bulletList ? 'active' : 'inactive'}
           onClick={() => editor.chain().focus().toggleBulletList().run()}
         >
           <ListIcon />
@@ -132,7 +132,7 @@ export function CommentEditorToolbar({ editor, disabled }: CommentEditorToolbarP
         <ToolButton
           title="有序列表"
           disabled={disabled}
-          active={state.orderedList}
+          state={state.orderedList ? 'active' : 'inactive'}
           onClick={() => editor.chain().focus().toggleOrderedList().run()}
         >
           <ListOrderedIcon />
@@ -140,13 +140,13 @@ export function CommentEditorToolbar({ editor, disabled }: CommentEditorToolbarP
         <ToolButton
           title="引用"
           disabled={disabled}
-          active={state.blockquote}
+          state={state.blockquote ? 'active' : 'inactive'}
           onClick={() => editor.chain().focus().toggleBlockquote().run()}
         >
           <QuoteIcon />
         </ToolButton>
         <ToolDivider />
-        <ToolButton title="链接" disabled={disabled} active={state.link} onClick={promptLink}>
+        <ToolButton title="链接" disabled={disabled} state={state.link ? 'active' : 'inactive'} onClick={promptLink}>
           <LinkIcon />
         </ToolButton>
       </div>
@@ -230,18 +230,19 @@ function LinkPromptDialog({ seed, onClose, onConfirm }: LinkPromptDialogProps) {
 interface ToolButtonProps {
   title: string
   disabled: boolean
-  active: boolean
+  state?: 'active' | 'inactive'
   onClick: () => void
   children: React.ReactNode
 }
 
-function ToolButton({ title, disabled, active, onClick, children }: ToolButtonProps) {
+function ToolButton({ title, disabled, state, onClick, children }: ToolButtonProps) {
+  const isActive = state === 'active'
   return (
     <button
       type="button"
       title={title}
       disabled={disabled}
-      aria-pressed={active}
+      aria-pressed={isActive}
       // Prevent the button from stealing focus on mousedown so the
       // contenteditable selection stays intact while the formatting
       // command runs. Without this the caret would briefly jump out
@@ -254,7 +255,7 @@ function ToolButton({ title, disabled, active, onClick, children }: ToolButtonPr
         '[&_svg]:size-4',
         'text-ink-4 hover:bg-surface hover:text-ink-1',
         'disabled:cursor-not-allowed disabled:opacity-50',
-        active && 'bg-surface text-brand',
+        isActive && 'bg-surface text-brand',
       )}
     >
       {children}

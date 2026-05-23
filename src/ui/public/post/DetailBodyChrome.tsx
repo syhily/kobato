@@ -124,7 +124,7 @@ export function DetailBodyChrome({
         </div>
         {metaExtra}
       </div>
-      <TableOfContents headings={headings} toc={toc === 'enabled'} />
+      <TableOfContents headings={headings} toc={toc} />
       <div className={contentWrapperClassName}>
         {/* `post-content` is the compound suffix targeted by
             `@utility prose-blog { &.post-content {…} }` in

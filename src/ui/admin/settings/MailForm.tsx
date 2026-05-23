@@ -34,7 +34,7 @@ interface TestStatus {
 const idleTestStatus: TestStatus = { state: 'idle', message: null }
 
 function MailToggleCard({ mail }: { mail: MailLoaderShape }) {
-  const { isEditing, form, settingGroupProps } = useSettingsCard<MailLoaderShape, { enabled: boolean }>({
+  const { mode, form, settingGroupProps } = useSettingsCard<MailLoaderShape, { enabled: boolean }>({
     section: 'mail',
     source: mail,
     toState: (source) => ({ enabled: source.enabled }),
@@ -49,7 +49,7 @@ function MailToggleCard({ mail }: { mail: MailLoaderShape }) {
       description="关闭后，所有评论通知 / 回复通知 / 审核通过通知都不会再发送（不会报错，仅记录 debug 日志）。"
       {...settingGroupProps}
     >
-      {isEditing ? (
+      {mode === 'edit' ? (
         <SettingGroupContent>
           <SettingsRow label="启用邮件发送" hint="生产环境推荐先用「测试发送」确认连接，再打开此开关。">
             <div className="flex items-center gap-3">
@@ -77,7 +77,7 @@ function MailToggleCard({ mail }: { mail: MailLoaderShape }) {
 
 function MailConfigCard({ mail }: { mail: MailLoaderShape }) {
   const apiKeyConfigured = mail.apiKeyMask !== null
-  const { isEditing, form, settingGroupProps } = useSettingsCard<
+  const { mode, form, settingGroupProps } = useSettingsCard<
     MailLoaderShape,
     { host: string; sender: string; apiKey: string }
   >({
@@ -104,7 +104,7 @@ function MailConfigCard({ mail }: { mail: MailLoaderShape }) {
       description="配置 Zeabur ZSend 的接入地址、API Key 和发件人邮箱。修改后立即生效。"
       {...settingGroupProps}
     >
-      {isEditing ? (
+      {mode === 'edit' ? (
         <SettingGroupContent>
           <SettingsRow label="接入域名" htmlFor="mail-host" hint="不带协议，例如 api.zeabur.com。">
             <Input id="mail-host" placeholder="api.zeabur.com" maxLength={253} {...form.register('host')} />

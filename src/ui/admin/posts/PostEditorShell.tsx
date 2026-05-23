@@ -121,7 +121,7 @@ export function PostEditorShell({ mode, detail, navigate }: PostEditorShellProps
         state.previewOpen ? 'min-h-0 flex-1' : 'min-h-[calc(100vh-4rem)]',
       )}
     >
-      <PostEditorToolbar mode={mode} isEditing={isEditing} detail={detail} state={state} />
+      <PostEditorToolbar mode={mode} detail={detail} state={state} />
 
       {isEditing && state.previewBanner !== null ? (
         <ActionBanner
@@ -188,18 +188,15 @@ export function PostEditorShell({ mode, detail, navigate }: PostEditorShellProps
               body={state.body}
               title={state.meta.title}
               slug={state.meta.slug}
-              showPublicSyncHint={state.showPreviewPublicSyncHint}
               scrollContainerRef={state.previewScrollRef}
             />
           </section>
         ) : null}
         {!state.previewOpen && state.metaOpen ? (
-          <PostEditorMetaAside isEditing={isEditing} detail={detail} state={state} />
+          <PostEditorMetaAside mode={mode} detail={detail} state={state} />
         ) : null}
       </div>
-      {state.previewOpen || !state.isLg ? (
-        <PostEditorMetaSheet isEditing={isEditing} detail={detail} state={state} />
-      ) : null}
+      {state.previewOpen || !state.isLg ? <PostEditorMetaSheet mode={mode} detail={detail} state={state} /> : null}
       {state.conflict !== null && isEditing ? (
         <DraftConflictDialog
           open={true}

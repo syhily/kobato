@@ -170,7 +170,7 @@ export function NavContent({ role, pendingCommentCount = 0, userCount }: NavCont
                   </NavMenuItem.Link>
                 </NavMenuItem>
                 <NavMenuItem>
-                  <NavMenuItem.Link to="/admin/users" className="pl-11" activeOnSubpath>
+                  <NavMenuItem.Link to="/admin/users" className="pl-11" activeMatch="subpath">
                     <NavMenuItem.Label>用户管理</NavMenuItem.Label>
                   </NavMenuItem.Link>
                   {userCount != null && <SidebarMenuBadge>{userCount}</SidebarMenuBadge>}

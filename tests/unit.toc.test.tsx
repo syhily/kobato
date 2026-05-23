@@ -17,7 +17,7 @@ describe('ui/post/toc/TableOfContents', () => {
     const previous = getBlogSettingsBundleSync()
     setBlogSettingsBundleForTests(null)
     try {
-      const html = renderToStaticMarkup(<TableOfContents headings={headings} toc={true} />)
+      const html = renderToStaticMarkup(<TableOfContents headings={headings} toc="enabled" />)
       expect(html).toContain('href="#intro"')
       expect(html).not.toContain('href="#deep"')
     } finally {

@@ -21,12 +21,12 @@ import { cn } from '@/ui/lib/cn'
 
 interface PostEditorToolbarProps {
   mode: 'create' | 'edit'
-  isEditing: boolean
   detail?: AdminPostDetailDto
   state: UseEditorShellStateOutput<PostMetaDraft>
 }
 
-export function PostEditorToolbar({ mode, isEditing, detail, state }: PostEditorToolbarProps) {
+export function PostEditorToolbar({ mode, detail, state }: PostEditorToolbarProps) {
+  const isEditing = mode === 'edit' && detail !== undefined
   return (
     <header className="flex flex-wrap items-center gap-2 text-sm">
       <div className="flex min-w-0 items-center gap-2">

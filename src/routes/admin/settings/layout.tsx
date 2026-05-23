@@ -71,12 +71,12 @@ export async function loader(_args: Route.LoaderArgs) {
   // the entire admin panel on existing deployments whose DB predates them.
   for (const section of SETTINGS_SECTIONS) {
     const key = SECTION_TO_BUNDLE_KEY[section]
-    if ((bundle as unknown as Record<string, unknown>)[key] === null) {
+    if (Reflect.get(bundle, key) === null) {
       const meta = SECTION_REGISTRY[section]
       if (meta.defaults !== null) {
         try {
           await upsertSetting(meta.defaults, null, meta.scope)
-          ;(bundle as unknown as Record<string, unknown>)[key] = meta.defaults
+          Object.assign(bundle, { [key]: meta.defaults })
         } catch {
           // Best-effort; if it fails we'll surface it below.
         }

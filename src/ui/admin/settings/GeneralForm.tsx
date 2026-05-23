@@ -66,7 +66,7 @@ function toFormValues(source: SiteIdentitySettings): GeneralFormValues {
 }
 
 function GeneralIdentityCard({ siteIdentity }: { siteIdentity: SiteIdentitySettings }) {
-  const { isEditing, form, settingGroupProps } = useSettingsCard<SiteIdentitySettings, GeneralFormValues>({
+  const { mode, form, settingGroupProps } = useSettingsCard<SiteIdentitySettings, GeneralFormValues>({
     section: 'general',
     source: siteIdentity,
     schema: generalFormSchema,
@@ -88,7 +88,7 @@ function GeneralIdentityCard({ siteIdentity }: { siteIdentity: SiteIdentitySetti
       description="站点标题、描述、关键词、作者签名。SEO 和邮件模板也会读取这些字段。"
       {...settingGroupProps}
     >
-      {isEditing ? (
+      {mode === 'edit' ? (
         <SettingGroupContent>
           <SettingsRow label="站点标题" htmlFor="general-title" error={formState.errors.title?.message}>
             <Input id="general-title" maxLength={120} {...form.register('title')} />
@@ -159,7 +159,7 @@ function GeneralIdentityCard({ siteIdentity }: { siteIdentity: SiteIdentitySetti
 }
 
 function GeneralFooterCard({ siteIdentity }: { siteIdentity: SiteIdentitySettings }) {
-  const { isEditing, form, settingGroupProps } = useSettingsCard<SiteIdentitySettings, GeneralFormValues>({
+  const { mode, form, settingGroupProps } = useSettingsCard<SiteIdentitySettings, GeneralFormValues>({
     section: 'general',
     source: siteIdentity,
     schema: generalFormSchema,
@@ -175,7 +175,7 @@ function GeneralFooterCard({ siteIdentity }: { siteIdentity: SiteIdentitySetting
 
   return (
     <SettingGroup title="页脚信息" description="网站页脚的版权年份与备案号。" {...settingGroupProps}>
-      {isEditing ? (
+      {mode === 'edit' ? (
         <SettingGroupContent>
           <SettingsRow label="起始年份" htmlFor="general-initial-year" error={formState.errors.initialYear?.message}>
             <Input
@@ -210,7 +210,7 @@ function GeneralFooterCard({ siteIdentity }: { siteIdentity: SiteIdentitySetting
 }
 
 function GeneralAuthorCard({ siteIdentity }: { siteIdentity: SiteIdentitySettings }) {
-  const { isEditing, form, settingGroupProps } = useSettingsCard<SiteIdentitySettings, GeneralFormValues>({
+  const { mode, form, settingGroupProps } = useSettingsCard<SiteIdentitySettings, GeneralFormValues>({
     section: 'general',
     source: siteIdentity,
     schema: generalFormSchema,
@@ -232,7 +232,7 @@ function GeneralAuthorCard({ siteIdentity }: { siteIdentity: SiteIdentitySetting
       description="评论邮件 + RSS feed 的 author 字段都引用这里的姓名 / 邮箱 / 主页。"
       {...settingGroupProps}
     >
-      {isEditing ? (
+      {mode === 'edit' ? (
         <SettingGroupContent>
           <SettingsRow label="作者姓名" htmlFor="general-author-name" error={formState.errors.author?.name?.message}>
             <Input id="general-author-name" maxLength={60} {...form.register('author.name')} />
@@ -272,7 +272,7 @@ function GeneralTimeZoneCard({
   siteIdentity: SiteIdentitySettings
   timeZones: readonly string[]
 }) {
-  const { isEditing, form, settingGroupProps } = useSettingsCard<SiteIdentitySettings, GeneralFormValues>({
+  const { mode, form, settingGroupProps } = useSettingsCard<SiteIdentitySettings, GeneralFormValues>({
     section: 'general',
     source: siteIdentity,
     schema: generalFormSchema,
@@ -296,7 +296,7 @@ function GeneralTimeZoneCard({
       description="影响日期格式化函数以及 OG 图、邮件模板等所有依赖时区的渲染分支。"
       {...settingGroupProps}
     >
-      {isEditing ? (
+      {mode === 'edit' ? (
         <SettingGroupContent>
           <SettingsRow
             label="语言"

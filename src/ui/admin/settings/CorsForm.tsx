@@ -25,10 +25,7 @@ interface CorsFormProps {
 const MAX_ORIGINS = 20
 
 function CorsPolicyCard({ cors }: CorsFormProps) {
-  const { isEditing, form, settingGroupProps } = useSettingsCard<
-    CorsSettings,
-    { enabled: boolean; origins: OriginRow[] }
-  >({
+  const { mode, form, settingGroupProps } = useSettingsCard<CorsSettings, { enabled: boolean; origins: OriginRow[] }>({
     section: 'cors',
     source: cors,
     toState: (source) => ({
@@ -49,7 +46,7 @@ function CorsPolicyCard({ cors }: CorsFormProps) {
       description="跨域资源共享配置。启用后，允许指定的外部域名通过浏览器直接访问站点资源。列表为空时将镜像请求来源（适用于开发环境）。"
       {...settingGroupProps}
     >
-      {isEditing ? (
+      {mode === 'edit' ? (
         <SettingGroupContent>
           <SettingsRow label="启用 CORS" hint="关闭时，所有跨域请求将被浏览器拒绝。">
             <Controller

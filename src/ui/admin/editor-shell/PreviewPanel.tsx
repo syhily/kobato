@@ -10,12 +10,6 @@ import { PortableTextBody as PortableTextBodyRenderer } from '@/ui/pt/render'
 export interface PreviewPaneProps {
   body: PortableTextBody
   /**
-   * When true, the preview body can differ from what anonymous visitors
-   * see: either the editor has **unsaved** local changes, or the server
-   * holds a **draft-ahead** revision that has not been published yet.
-   */
-  showPublicSyncHint?: boolean
-  /**
    * Page title mirrored from the metadata draft. Rendered above the
    * body so the preview's first visible line is the title, matching
    * the editor side which now hides its own title/slug strip while

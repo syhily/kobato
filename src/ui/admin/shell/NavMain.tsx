@@ -28,7 +28,7 @@ export function NavMain({ role }: NavMainProps) {
 
           {hasAtLeast(role, 'admin') && (
             <NavMenuItem>
-              <NavMenuItem.Link to="/admin/analytics" activeOnSubpath>
+              <NavMenuItem.Link to="/admin/analytics" activeMatch="subpath">
                 <ChartLineIcon />
                 <NavMenuItem.Label>访问统计</NavMenuItem.Label>
               </NavMenuItem.Link>

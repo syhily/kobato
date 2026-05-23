@@ -24,7 +24,7 @@ const SCHEME_OPTIONS: { value: 'http' | 'https'; label: string }[] = [
 ]
 
 function AssetsDomainCard({ assets }: { assets: AssetsLoaderShape }) {
-  const { isEditing, form, settingGroupProps } = useSettingsCard<
+  const { mode, form, settingGroupProps } = useSettingsCard<
     AssetsLoaderShape,
     { assetHost: string; assetScheme: 'http' | 'https' }
   >({
@@ -45,7 +45,7 @@ function AssetsDomainCard({ assets }: { assets: AssetsLoaderShape }) {
       description="统一的资源域名：MDX `<MusicPlayer>` 读取音频/歌词，图片公共 URL 也复用这里的 host + scheme。"
       {...settingGroupProps}
     >
-      {isEditing ? (
+      {mode === 'edit' ? (
         <SettingGroupContent>
           <SettingsRow label="协议" htmlFor="assets-asset-scheme">
             <Controller
@@ -91,7 +91,7 @@ function AssetsDomainCard({ assets }: { assets: AssetsLoaderShape }) {
 }
 
 function AssetsToggleCard({ assets }: { assets: AssetsLoaderShape }) {
-  const { isEditing, form, settingGroupProps } = useSettingsCard<AssetsLoaderShape, { enabled: boolean }>({
+  const { mode, form, settingGroupProps } = useSettingsCard<AssetsLoaderShape, { enabled: boolean }>({
     section: 'assets',
     source: assets,
     toState: (source) => ({ enabled: source.storage.enabled }),
@@ -106,7 +106,7 @@ function AssetsToggleCard({ assets }: { assets: AssetsLoaderShape }) {
       description="未开启时「图片管理」页面只能浏览历史图片，所有上传 / 替换入口都会返回 503。"
       {...settingGroupProps}
     >
-      {isEditing ? (
+      {mode === 'edit' ? (
         <SettingGroupContent>
           <SettingsRow label="启用 S3 上传" hint="关闭后已经入库的图片仍按上方的资源域名解析。">
             <Controller
@@ -138,7 +138,7 @@ function AssetsToggleCard({ assets }: { assets: AssetsLoaderShape }) {
 
 function AssetsS3Card({ assets }: { assets: AssetsLoaderShape }) {
   const secretConfigured = assets.secretAccessKeyMask !== null
-  const { isEditing, form, settingGroupProps } = useSettingsCard<
+  const { mode, form, settingGroupProps } = useSettingsCard<
     AssetsLoaderShape,
     {
       endpoint: string
@@ -183,7 +183,7 @@ function AssetsS3Card({ assets }: { assets: AssetsLoaderShape }) {
       description="所有上传到「图片管理」的图片都会写入这里。修改后立即生效。"
       {...settingGroupProps}
     >
-      {isEditing ? (
+      {mode === 'edit' ? (
         <SettingGroupContent>
           <SettingsRow label="Endpoint" htmlFor="assets-endpoint" hint="完整 URL，例如 https://s3.amazonaws.com。">
             <Input
@@ -266,7 +266,7 @@ function AssetsS3Card({ assets }: { assets: AssetsLoaderShape }) {
 }
 
 function AssetsUploadCard({ assets }: { assets: AssetsLoaderShape }) {
-  const { isEditing, form, settingGroupProps } = useSettingsCard<
+  const { mode, form, settingGroupProps } = useSettingsCard<
     AssetsLoaderShape,
     { maxBytes: number; jpegQuality: number }
   >({
@@ -287,7 +287,7 @@ function AssetsUploadCard({ assets }: { assets: AssetsLoaderShape }) {
       description="影响后台「图片管理」上传时的体积上限与 JPEG 重编码画质。"
       {...settingGroupProps}
     >
-      {isEditing ? (
+      {mode === 'edit' ? (
         <SettingGroupContent>
           <SettingsRow
             label="最大上传体积（字节）"

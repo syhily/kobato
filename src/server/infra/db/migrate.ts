@@ -12,7 +12,7 @@ const MIGRATIONS_TABLE = '__drizzle_migrations'
 
 const log = getLogger('db:migrations')
 
-const globalForMigrations = globalThis as unknown as {
+const globalForMigrations = globalThis as typeof globalThis & {
   databaseMigrationsPromise: Promise<void> | undefined
 }
 

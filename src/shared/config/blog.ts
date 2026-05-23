@@ -482,7 +482,7 @@ export interface BlogSettingsBundle {
 
 import { CACHE_BUCKET_FALLBACKS, type CacheBucketSlot } from '@/shared/types/cache'
 
-const globalForSnapshot = globalThis as unknown as {
+const globalForSnapshot = globalThis as typeof globalThis & {
   blogSettingsSnapshot: BlogSettingsBundle | null | undefined
   blogSettingsHydration: Promise<BlogSettingsBundle | null> | undefined
 }

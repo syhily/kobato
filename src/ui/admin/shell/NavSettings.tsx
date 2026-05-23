@@ -22,7 +22,7 @@ export function NavSettings({ role }: NavSettingsProps) {
       <SidebarGroupContent>
         <SidebarMenu>
           <NavMenuItem>
-            <NavMenuItem.Link to="/admin/settings" activeOnSubpath>
+            <NavMenuItem.Link to="/admin/settings" activeMatch="subpath">
               <SettingsIcon />
               <NavMenuItem.Label>系统设置</NavMenuItem.Label>
             </NavMenuItem.Link>

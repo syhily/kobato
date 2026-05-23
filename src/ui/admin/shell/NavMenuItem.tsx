@@ -42,7 +42,7 @@ interface NavMenuLinkProps extends ComponentProps<typeof SidebarMenuButton> {
   to?: string
   target?: string
   rel?: string
-  activeOnSubpath?: boolean
+  activeMatch?: 'exact' | 'subpath'
   isActive?: boolean
   end?: boolean
 }
@@ -50,13 +50,13 @@ interface NavMenuLinkProps extends ComponentProps<typeof SidebarMenuButton> {
 function NavMenuLink({
   to,
   target,
-  activeOnSubpath = false,
+  activeMatch = 'exact',
   isActive: controlledIsActive,
   end = false,
   children,
   ...props
 }: NavMenuLinkProps) {
-  const computedIsActive = useIsActiveLink(to, activeOnSubpath, end)
+  const computedIsActive = useIsActiveLink(to, activeMatch === 'subpath', end)
   const isActive = controlledIsActive ?? computedIsActive
   const { isMobile, setOpenMobile } = useSidebar()
 

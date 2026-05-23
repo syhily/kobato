@@ -58,7 +58,7 @@ export function BlockStyleButtons({ editor, disabled }: BlockStyleProps) {
           key={value}
           title={title}
           disabled={disabled}
-          active={active === value}
+          state={active === value ? 'active' : 'inactive'}
           onClick={() => applyBlockStyle(editor, value)}
         >
           <Icon />

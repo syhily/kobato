@@ -12,7 +12,7 @@ interface SeoFormProps {
 }
 
 function SeoTocCard({ seo }: { seo: SeoSettings }) {
-  const { isEditing, form, settingGroupProps } = useSettingsCard<SeoSettings, { tocMin: number; tocMax: number }>({
+  const { mode, form, settingGroupProps } = useSettingsCard<SeoSettings, { tocMin: number; tocMax: number }>({
     section: 'seo',
     source: seo,
     toState: (source) => ({
@@ -26,7 +26,7 @@ function SeoTocCard({ seo }: { seo: SeoSettings }) {
 
   return (
     <SettingGroup title="目录 (TOC)" description="文章右侧目录的标题层级范围。" {...settingGroupProps}>
-      {isEditing ? (
+      {mode === 'edit' ? (
         <SettingGroupContent>
           <SettingsRow label="最浅级别" htmlFor="seo-toc-min" hint="只显示比这个级别更深的标题。1 表示包含 h1。">
             <Input
@@ -58,7 +58,7 @@ function SeoTocCard({ seo }: { seo: SeoSettings }) {
 }
 
 function SeoOgCard({ seo }: { seo: SeoSettings }) {
-  const { isEditing, form, settingGroupProps } = useSettingsCard<SeoSettings, { ogWidth: number; ogHeight: number }>({
+  const { mode, form, settingGroupProps } = useSettingsCard<SeoSettings, { ogWidth: number; ogHeight: number }>({
     section: 'seo',
     source: seo,
     toState: (source) => ({
@@ -76,7 +76,7 @@ function SeoOgCard({ seo }: { seo: SeoSettings }) {
       description="服务端 Canvas 用以下尺寸生成 /images/og/:slug.png 并写入 og:image:width / og:image:height meta。修改后会立即影响新生成的图片，已缓存的图片需手动清理。"
       {...settingGroupProps}
     >
-      {isEditing ? (
+      {mode === 'edit' ? (
         <SettingGroupContent>
           <SettingsRow
             label="宽度 (px)"

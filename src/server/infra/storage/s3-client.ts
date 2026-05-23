@@ -42,7 +42,7 @@ interface CachedClient {
   client: S3ClientInstance
 }
 
-const globalForS3 = globalThis as unknown as {
+const globalForS3 = globalThis as typeof globalThis & {
   imageS3CachedClient: CachedClient | undefined
 }
 

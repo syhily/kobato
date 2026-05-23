@@ -306,7 +306,6 @@ export function PageEditorShell({ mode, detail, navigate }: PageEditorShellProps
               body={state.body}
               title={state.meta.title}
               slug={state.meta.slug}
-              showPublicSyncHint={state.showPreviewPublicSyncHint}
               scrollContainerRef={state.previewScrollRef}
             />
           </section>

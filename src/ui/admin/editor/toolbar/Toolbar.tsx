@@ -167,7 +167,7 @@ export function Toolbar(props: ToolbarProps) {
         <ToolbarButton
           title="加粗 (Cmd/Ctrl+B)"
           disabled={disabled}
-          active={editor.isActive('bold')}
+          state={editor.isActive('bold') ? 'active' : 'inactive'}
           onClick={() => editor.chain().focus().toggleBold().run()}
         >
           <BoldIcon />
@@ -175,7 +175,7 @@ export function Toolbar(props: ToolbarProps) {
         <ToolbarButton
           title="斜体 (Cmd/Ctrl+I)"
           disabled={disabled}
-          active={editor.isActive('italic')}
+          state={editor.isActive('italic') ? 'active' : 'inactive'}
           onClick={() => editor.chain().focus().toggleItalic().run()}
         >
           <ItalicIcon />
@@ -183,7 +183,7 @@ export function Toolbar(props: ToolbarProps) {
         <ToolbarButton
           title="下划线 (Cmd/Ctrl+U)"
           disabled={disabled}
-          active={editor.isActive('underline')}
+          state={editor.isActive('underline') ? 'active' : 'inactive'}
           onClick={() => editor.chain().focus().toggleUnderline().run()}
         >
           <UnderlineIcon />
@@ -191,7 +191,7 @@ export function Toolbar(props: ToolbarProps) {
         <ToolbarButton
           title="删除线"
           disabled={disabled}
-          active={editor.isActive('strike')}
+          state={editor.isActive('strike') ? 'active' : 'inactive'}
           onClick={() => editor.chain().focus().toggleStrike().run()}
         >
           <StrikethroughIcon />
@@ -199,7 +199,7 @@ export function Toolbar(props: ToolbarProps) {
         <ToolbarButton
           title="行内代码"
           disabled={disabled}
-          active={editor.isActive('code')}
+          state={editor.isActive('code') ? 'active' : 'inactive'}
           onClick={() => editor.chain().focus().toggleCode().run()}
         >
           <Code2Icon />
@@ -216,7 +216,7 @@ export function Toolbar(props: ToolbarProps) {
         <ToolbarButton
           title="无序列表"
           disabled={disabled}
-          active={editor.isActive('bulletList')}
+          state={editor.isActive('bulletList') ? 'active' : 'inactive'}
           onClick={() => editor.chain().focus().toggleBulletList().run()}
         >
           <ListIcon />
@@ -224,7 +224,7 @@ export function Toolbar(props: ToolbarProps) {
         <ToolbarButton
           title="有序列表"
           disabled={disabled}
-          active={editor.isActive('orderedList')}
+          state={editor.isActive('orderedList') ? 'active' : 'inactive'}
           onClick={() => editor.chain().focus().toggleOrderedList().run()}
         >
           <ListOrderedIcon />
@@ -355,7 +355,7 @@ function AlignGroup({ editor, disabled, density }: DensityGroupProps) {
       <ToolbarButton
         title="居左"
         disabled={disabled}
-        active={editor.isActive({ textAlign: 'left' })}
+        state={editor.isActive({ textAlign: 'left' }) ? 'active' : 'inactive'}
         onClick={() => editor.chain().focus().setTextAlign('left').run()}
       >
         <AlignLeftIcon />
@@ -363,7 +363,7 @@ function AlignGroup({ editor, disabled, density }: DensityGroupProps) {
       <ToolbarButton
         title="居中"
         disabled={disabled}
-        active={editor.isActive({ textAlign: 'center' })}
+        state={editor.isActive({ textAlign: 'center' }) ? 'active' : 'inactive'}
         onClick={() => editor.chain().focus().setTextAlign('center').run()}
       >
         <AlignCenterIcon />
@@ -371,7 +371,7 @@ function AlignGroup({ editor, disabled, density }: DensityGroupProps) {
       <ToolbarButton
         title="居右"
         disabled={disabled}
-        active={editor.isActive({ textAlign: 'right' })}
+        state={editor.isActive({ textAlign: 'right' }) ? 'active' : 'inactive'}
         onClick={() => editor.chain().focus().setTextAlign('right').run()}
       >
         <AlignRightIcon />
