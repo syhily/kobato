@@ -12,6 +12,7 @@ import { BackupView } from '@/ui/admin/settings/BackupView'
 import { CacheView } from '@/ui/admin/settings/CacheView'
 import { CommentsForm } from '@/ui/admin/settings/CommentsForm'
 import { ContentForm } from '@/ui/admin/settings/ContentForm'
+import { CorsForm } from '@/ui/admin/settings/CorsForm'
 import { FontsForm } from '@/ui/admin/settings/FontsForm'
 import { GeneralForm } from '@/ui/admin/settings/GeneralForm'
 import { LimitsForm } from '@/ui/admin/settings/LimitsForm'
@@ -57,6 +58,7 @@ const SECTIONS = [
   { id: 'search', ...SECTION_DISPLAY.search },
   // 系统运维
   { id: 'cache', ...SECTION_DISPLAY.cache },
+  { id: 'cors', ...SECTION_DISPLAY.cors },
   { id: 'rateLimit', ...SECTION_DISPLAY.rateLimit },
   { id: 'limits', ...SECTION_DISPLAY.limits },
   { id: 'backup', ...SECTION_DISPLAY.backup },
@@ -268,6 +270,11 @@ function SettingsPageInner() {
               {isSectionVisible('cache') && (
                 <SectionWrapper id="cache" title="缓存管理">
                   <CacheView cache={settings.cache.cache} />
+                </SectionWrapper>
+              )}
+              {isSectionVisible('cors') && (
+                <SectionWrapper id="cors" title="CORS 配置">
+                  <CorsForm cors={settings.cors} />
                 </SectionWrapper>
               )}
               {isSectionVisible('rateLimit') && (

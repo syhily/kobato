@@ -100,7 +100,7 @@
     "react": "^19.2.6",
     "react-day-picker": "^10.0.1",
     "react-dom": "^19.2.6",
-    "react-hook-form": "^7.76.0",
+    "react-hook-form": "^7.76.1",
     "react-router": "^7.15.1",
     "sharp": "^0.34.5",
     "shiki": "^4.1.0",
@@ -111,7 +111,7 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
-    "@hono/vite-dev-server": "^0.25.3",
+    "@hono/vite-dev-server": "^0.26.0",
     "@opentelemetry/api": "^1.9.1",
     "@portabletext/types": "^4.0.2",
     "@react-router/dev": "^7.15.1",
