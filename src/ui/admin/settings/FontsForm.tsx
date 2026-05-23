@@ -21,7 +21,10 @@ interface FontsFormProps {
 }
 
 function FontsCanvasCard({ fonts }: { fonts: FontsSettings }) {
-  const { mode, form, settingGroupProps } = useSettingsCard<FontsSettings, { ogUrl: string; calendarUrl: string }>({
+  const { mode, form, settingGroupProps, optimisticSource } = useSettingsCard<
+    FontsSettings,
+    { ogUrl: string; calendarUrl: string }
+  >({
     section: 'fonts',
     source: fonts,
     toState: (source) => ({
@@ -34,6 +37,7 @@ function FontsCanvasCard({ fonts }: { fonts: FontsSettings }) {
     }),
   })
 
+  const display = optimisticSource ?? fonts
   return (
     <SettingGroup
       title="Canvas 字体"
@@ -65,8 +69,8 @@ function FontsCanvasCard({ fonts }: { fonts: FontsSettings }) {
         </SettingGroupContent>
       ) : (
         <SettingGroupContent>
-          <SettingValue label="OG 图字体" value={fonts.og.url || '—'} />
-          <SettingValue label="日历图字体" value={fonts.calendar.url || '—'} />
+          <SettingValue label="OG 图字体" value={display.og.url || '—'} />
+          <SettingValue label="日历图字体" value={display.calendar.url || '—'} />
         </SettingGroupContent>
       )}
     </SettingGroup>
@@ -74,7 +78,7 @@ function FontsCanvasCard({ fonts }: { fonts: FontsSettings }) {
 }
 
 function FontsGlobalCssCard({ fonts }: { fonts: FontsSettings }) {
-  const { mode, form, settingGroupProps } = useSettingsCard<FontsSettings, { globalCss: CssRow[] }>({
+  const { mode, form, settingGroupProps, optimisticSource } = useSettingsCard<FontsSettings, { globalCss: CssRow[] }>({
     section: 'fonts',
     source: fonts,
     toState: (source) => ({
@@ -85,6 +89,7 @@ function FontsGlobalCssCard({ fonts }: { fonts: FontsSettings }) {
     }),
   })
 
+  const display = optimisticSource ?? fonts
   const rows = useFieldArray({ control: form.control, name: 'globalCss' })
 
   return (
@@ -136,10 +141,10 @@ function FontsGlobalCssCard({ fonts }: { fonts: FontsSettings }) {
         </SettingGroupContent>
       ) : (
         <SettingGroupContent>
-          {fonts.globalCss.length === 0 ? (
+          {display.globalCss.length === 0 ? (
             <p className="text-sm text-muted-foreground">未配置</p>
           ) : (
-            fonts.globalCss.map((url, i) => <SettingValue key={url} label={`CSS ${i + 1}`} value={url} />)
+            display.globalCss.map((url, i) => <SettingValue key={url} label={`CSS ${i + 1}`} value={url} />)
           )}
         </SettingGroupContent>
       )}
@@ -148,7 +153,7 @@ function FontsGlobalCssCard({ fonts }: { fonts: FontsSettings }) {
 }
 
 function FontsPostCssCard({ fonts }: { fonts: FontsSettings }) {
-  const { mode, form, settingGroupProps } = useSettingsCard<FontsSettings, { postCss: CssRow[] }>({
+  const { mode, form, settingGroupProps, optimisticSource } = useSettingsCard<FontsSettings, { postCss: CssRow[] }>({
     section: 'fonts',
     source: fonts,
     toState: (source) => ({
@@ -159,6 +164,7 @@ function FontsPostCssCard({ fonts }: { fonts: FontsSettings }) {
     }),
   })
 
+  const display = optimisticSource ?? fonts
   const rows = useFieldArray({ control: form.control, name: 'postCss' })
 
   return (
@@ -210,10 +216,10 @@ function FontsPostCssCard({ fonts }: { fonts: FontsSettings }) {
         </SettingGroupContent>
       ) : (
         <SettingGroupContent>
-          {fonts.postCss.length === 0 ? (
+          {display.postCss.length === 0 ? (
             <p className="text-sm text-muted-foreground">未配置</p>
           ) : (
-            fonts.postCss.map((url, i) => <SettingValue key={url} label={`CSS ${i + 1}`} value={url} />)
+            display.postCss.map((url, i) => <SettingValue key={url} label={`CSS ${i + 1}`} value={url} />)
           )}
         </SettingGroupContent>
       )}

@@ -12,7 +12,7 @@ interface CommentsFormProps {
 }
 
 function CommentsPaginationCard({ comments }: { comments: CommentsSettings }) {
-  const { mode, form, settingGroupProps } = useSettingsCard<CommentsSettings, { size: number }>({
+  const { mode, form, settingGroupProps, optimisticSource } = useSettingsCard<CommentsSettings, { size: number }>({
     section: 'comments',
     source: comments,
     toState: (source) => ({ size: source.comments.size }),
@@ -23,6 +23,7 @@ function CommentsPaginationCard({ comments }: { comments: CommentsSettings }) {
     }),
   })
 
+  const display = optimisticSource ?? comments
   return (
     <SettingGroup title="评论分页" description="控制文章页面下方的评论列表加载行为。" {...settingGroupProps}>
       {mode === 'edit' ? (
@@ -39,7 +40,7 @@ function CommentsPaginationCard({ comments }: { comments: CommentsSettings }) {
         </SettingGroupContent>
       ) : (
         <SettingGroupContent>
-          <SettingValue label="每页评论数" value={`${comments.comments.size}`} />
+          <SettingValue label="每页评论数" value={`${display.comments.size}`} />
         </SettingGroupContent>
       )}
     </SettingGroup>
@@ -47,7 +48,7 @@ function CommentsPaginationCard({ comments }: { comments: CommentsSettings }) {
 }
 
 function CommentsAvatarCard({ comments }: { comments: CommentsSettings }) {
-  const { mode, form, settingGroupProps } = useSettingsCard<
+  const { mode, form, settingGroupProps, optimisticSource } = useSettingsCard<
     CommentsSettings,
     { avatarMirror: string; avatarSize: number }
   >({
@@ -64,6 +65,7 @@ function CommentsAvatarCard({ comments }: { comments: CommentsSettings }) {
     }),
   })
 
+  const display = optimisticSource ?? comments
   return (
     <SettingGroup
       title="头像镜像"
@@ -91,8 +93,8 @@ function CommentsAvatarCard({ comments }: { comments: CommentsSettings }) {
         </SettingGroupContent>
       ) : (
         <SettingGroupContent>
-          <SettingValue label="镜像 URL" value={comments.comments.avatar.mirror} />
-          <SettingValue label="头像尺寸" value={`${comments.comments.avatar.size}px`} />
+          <SettingValue label="镜像 URL" value={display.comments.avatar.mirror} />
+          <SettingValue label="头像尺寸" value={`${display.comments.avatar.size}px`} />
         </SettingGroupContent>
       )}
     </SettingGroup>
@@ -100,7 +102,10 @@ function CommentsAvatarCard({ comments }: { comments: CommentsSettings }) {
 }
 
 function CommentsTokenCard({ comments }: { comments: CommentsSettings }) {
-  const { mode, form, settingGroupProps } = useSettingsCard<CommentsSettings, { tokenTtlSeconds: number }>({
+  const { mode, form, settingGroupProps, optimisticSource } = useSettingsCard<
+    CommentsSettings,
+    { tokenTtlSeconds: number }
+  >({
     section: 'comments',
     source: comments,
     toState: (source) => ({ tokenTtlSeconds: source.comments.tokenTtlSeconds }),
@@ -111,6 +116,7 @@ function CommentsTokenCard({ comments }: { comments: CommentsSettings }) {
     }),
   })
 
+  const display = optimisticSource ?? comments
   return (
     <SettingGroup
       title="匿名评论 Token"
@@ -137,8 +143,8 @@ function CommentsTokenCard({ comments }: { comments: CommentsSettings }) {
         <SettingGroupContent>
           <SettingValue
             label="Token 有效期"
-            value={`${comments.comments.tokenTtlSeconds} 秒`}
-            hint={`约 ${Math.round(comments.comments.tokenTtlSeconds / 60)} 分钟`}
+            value={`${display.comments.tokenTtlSeconds} 秒`}
+            hint={`约 ${Math.round(display.comments.tokenTtlSeconds / 60)} 分钟`}
           />
         </SettingGroupContent>
       )}

@@ -66,7 +66,7 @@ function toFormValues(source: SiteIdentitySettings): GeneralFormValues {
 }
 
 function GeneralIdentityCard({ siteIdentity }: { siteIdentity: SiteIdentitySettings }) {
-  const { mode, form, settingGroupProps } = useSettingsCard<SiteIdentitySettings, GeneralFormValues>({
+  const { mode, form, settingGroupProps, optimisticSource } = useSettingsCard<SiteIdentitySettings, GeneralFormValues>({
     section: 'general',
     source: siteIdentity,
     schema: generalFormSchema,
@@ -79,6 +79,7 @@ function GeneralIdentityCard({ siteIdentity }: { siteIdentity: SiteIdentitySetti
     }),
   })
 
+  const display = optimisticSource ?? siteIdentity
   const keywords = useFieldArray({ control: form.control, name: 'keywords' })
   const { formState } = form
 
@@ -148,10 +149,10 @@ function GeneralIdentityCard({ siteIdentity }: { siteIdentity: SiteIdentitySetti
         </SettingGroupContent>
       ) : (
         <SettingGroupContent>
-          <SettingValue label="站点标题" value={siteIdentity.title} />
-          <SettingValue label="站点描述" value={siteIdentity.description} />
-          <SettingValue label="站点 URL" value={siteIdentity.website} />
-          <SettingValue label="关键词" value={siteIdentity.keywords.join('、') || '—'} />
+          <SettingValue label="站点标题" value={display.title} />
+          <SettingValue label="站点描述" value={display.description} />
+          <SettingValue label="站点 URL" value={display.website} />
+          <SettingValue label="关键词" value={display.keywords.join('、') || '—'} />
         </SettingGroupContent>
       )}
     </SettingGroup>
@@ -159,7 +160,7 @@ function GeneralIdentityCard({ siteIdentity }: { siteIdentity: SiteIdentitySetti
 }
 
 function GeneralFooterCard({ siteIdentity }: { siteIdentity: SiteIdentitySettings }) {
-  const { mode, form, settingGroupProps } = useSettingsCard<SiteIdentitySettings, GeneralFormValues>({
+  const { mode, form, settingGroupProps, optimisticSource } = useSettingsCard<SiteIdentitySettings, GeneralFormValues>({
     section: 'general',
     source: siteIdentity,
     schema: generalFormSchema,
@@ -171,6 +172,7 @@ function GeneralFooterCard({ siteIdentity }: { siteIdentity: SiteIdentitySetting
     }),
   })
 
+  const display = optimisticSource ?? siteIdentity
   const { formState } = form
 
   return (
@@ -200,9 +202,9 @@ function GeneralFooterCard({ siteIdentity }: { siteIdentity: SiteIdentitySetting
         </SettingGroupContent>
       ) : (
         <SettingGroupContent>
-          <SettingValue label="起始年份" value={`${siteIdentity.initialYear}`} />
-          <SettingValue label="ICP 备案号" value={siteIdentity.icpNo || '—'} />
-          <SettingValue label="萌国备案号" value={siteIdentity.moeIcpNo || '—'} />
+          <SettingValue label="起始年份" value={`${display.initialYear}`} />
+          <SettingValue label="ICP 备案号" value={display.icpNo || '—'} />
+          <SettingValue label="萌国备案号" value={display.moeIcpNo || '—'} />
         </SettingGroupContent>
       )}
     </SettingGroup>
@@ -210,7 +212,7 @@ function GeneralFooterCard({ siteIdentity }: { siteIdentity: SiteIdentitySetting
 }
 
 function GeneralAuthorCard({ siteIdentity }: { siteIdentity: SiteIdentitySettings }) {
-  const { mode, form, settingGroupProps } = useSettingsCard<SiteIdentitySettings, GeneralFormValues>({
+  const { mode, form, settingGroupProps, optimisticSource } = useSettingsCard<SiteIdentitySettings, GeneralFormValues>({
     section: 'general',
     source: siteIdentity,
     schema: generalFormSchema,
@@ -224,6 +226,7 @@ function GeneralAuthorCard({ siteIdentity }: { siteIdentity: SiteIdentitySetting
     }),
   })
 
+  const display = optimisticSource ?? siteIdentity
   const { formState } = form
 
   return (
@@ -256,9 +259,9 @@ function GeneralAuthorCard({ siteIdentity }: { siteIdentity: SiteIdentitySetting
         </SettingGroupContent>
       ) : (
         <SettingGroupContent>
-          <SettingValue label="作者姓名" value={siteIdentity.author.name} />
-          <SettingValue label="作者邮箱" value={siteIdentity.author.email} />
-          <SettingValue label="作者主页" value={siteIdentity.author.url} />
+          <SettingValue label="作者姓名" value={display.author.name} />
+          <SettingValue label="作者邮箱" value={display.author.email} />
+          <SettingValue label="作者主页" value={display.author.url} />
         </SettingGroupContent>
       )}
     </SettingGroup>
@@ -272,7 +275,7 @@ function GeneralTimeZoneCard({
   siteIdentity: SiteIdentitySettings
   timeZones: readonly string[]
 }) {
-  const { mode, form, settingGroupProps } = useSettingsCard<SiteIdentitySettings, GeneralFormValues>({
+  const { mode, form, settingGroupProps, optimisticSource } = useSettingsCard<SiteIdentitySettings, GeneralFormValues>({
     section: 'general',
     source: siteIdentity,
     schema: generalFormSchema,
@@ -284,6 +287,7 @@ function GeneralTimeZoneCard({
     }),
   })
 
+  const display = optimisticSource ?? siteIdentity
   const timeZoneItems = useMemo<TimeZoneItem[]>(
     () => timeZones.map((zone) => ({ value: zone, label: zone })),
     [timeZones],
@@ -358,9 +362,9 @@ function GeneralTimeZoneCard({
         </SettingGroupContent>
       ) : (
         <SettingGroupContent>
-          <SettingValue label="语言" value={siteIdentity.locale} />
-          <SettingValue label="时区" value={siteIdentity.timeZone} />
-          <SettingValue label="日期格式" value={siteIdentity.timeFormat} />
+          <SettingValue label="语言" value={display.locale} />
+          <SettingValue label="时区" value={display.timeZone} />
+          <SettingValue label="日期格式" value={display.timeFormat} />
         </SettingGroupContent>
       )}
     </SettingGroup>

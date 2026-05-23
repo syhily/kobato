@@ -36,7 +36,7 @@ function toFormState(source: SocialsSettings): { rows: SocialRow[] } {
 }
 
 export function SocialsEditor({ socials }: SocialsEditorProps) {
-  const { mode, form, settingGroupProps } = useSettingsCard<SocialsSettings, { rows: SocialRow[] }>({
+  const { mode, form, settingGroupProps, optimisticSource } = useSettingsCard<SocialsSettings, { rows: SocialRow[] }>({
     section: 'socials',
     source: socials,
     toState: toFormState,
@@ -57,6 +57,7 @@ export function SocialsEditor({ socials }: SocialsEditorProps) {
     }),
   })
 
+  const display = optimisticSource ?? socials
   const { fields, update: updateField } = useFieldArray({ control: form.control, name: 'rows' })
 
   const patch = (index: number, update: Partial<SocialRow>) => {
@@ -131,10 +132,10 @@ export function SocialsEditor({ socials }: SocialsEditorProps) {
         </div>
       ) : (
         <div className="flex flex-col gap-2">
-          {socials.socials.length === 0 ? (
+          {display.socials.length === 0 ? (
             <p className="text-sm text-muted-foreground">未配置任何社交链接</p>
           ) : (
-            socials.socials.map((item) => {
+            display.socials.map((item) => {
               const meta = getSocialNetworkMeta(item.network)
               return (
                 <SettingValue

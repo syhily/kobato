@@ -25,7 +25,10 @@ interface CorsFormProps {
 const MAX_ORIGINS = 20
 
 function CorsPolicyCard({ cors }: CorsFormProps) {
-  const { mode, form, settingGroupProps } = useSettingsCard<CorsSettings, { enabled: boolean; origins: OriginRow[] }>({
+  const { mode, form, settingGroupProps, optimisticSource } = useSettingsCard<
+    CorsSettings,
+    { enabled: boolean; origins: OriginRow[] }
+  >({
     section: 'cors',
     source: cors,
     toState: (source) => ({
@@ -38,6 +41,7 @@ function CorsPolicyCard({ cors }: CorsFormProps) {
     }),
   })
 
+  const display = optimisticSource ?? cors
   const rows = useFieldArray({ control: form.control, name: 'origins' })
 
   return (
@@ -110,19 +114,19 @@ function CorsPolicyCard({ cors }: CorsFormProps) {
         </SettingGroupContent>
       ) : (
         <SettingGroupContent>
-          <SettingValue label="CORS 状态" value={cors.cors.enabled ? '已开启' : '已关闭'} />
+          <SettingValue label="CORS 状态" value={display.cors.enabled ? '已开启' : '已关闭'} />
           <SettingValue
             label="允许的来源"
             value={
-              cors.cors.origins.length === 0
+              display.cors.origins.length === 0
                 ? '镜像模式（允许所有来源）'
-                : cors.cors.origins.length === 1
-                  ? cors.cors.origins[0]
-                  : `${cors.cors.origins.length} 个来源`
+                : display.cors.origins.length === 1
+                  ? display.cors.origins[0]
+                  : `${display.cors.origins.length} 个来源`
             }
           />
-          {cors.cors.origins.length > 1 &&
-            cors.cors.origins.map((url, i) => <SettingValue key={url} label={`来源 ${i + 1}`} value={url} />)}
+          {display.cors.origins.length > 1 &&
+            display.cors.origins.map((url, i) => <SettingValue key={url} label={`来源 ${i + 1}`} value={url} />)}
         </SettingGroupContent>
       )}
     </SettingGroup>

@@ -19,7 +19,10 @@ const BOUNDS = {
 } as const
 
 function LimitsRequestCard({ limits }: { limits: LimitsSettings }) {
-  const { mode, form, settingGroupProps } = useSettingsCard<LimitsSettings, { maxRequestBodySize: number }>({
+  const { mode, form, settingGroupProps, optimisticSource } = useSettingsCard<
+    LimitsSettings,
+    { maxRequestBodySize: number }
+  >({
     section: 'limits',
     source: limits,
     toState: (source) => ({ maxRequestBodySize: source.maxRequestBodySize }),
@@ -28,6 +31,7 @@ function LimitsRequestCard({ limits }: { limits: LimitsSettings }) {
     }),
   })
 
+  const display = optimisticSource ?? limits
   return (
     <SettingGroup
       title="请求限制"
@@ -54,8 +58,8 @@ function LimitsRequestCard({ limits }: { limits: LimitsSettings }) {
         <SettingGroupContent>
           <SettingValue
             label="最大请求体大小"
-            value={`${limits.maxRequestBodySize.toLocaleString()} 字节`}
-            hint={`约 ${(limits.maxRequestBodySize / (1024 * 1024)).toFixed(1)} MB`}
+            value={`${display.maxRequestBodySize.toLocaleString()} 字节`}
+            hint={`约 ${(display.maxRequestBodySize / (1024 * 1024)).toFixed(1)} MB`}
           />
         </SettingGroupContent>
       )}
@@ -64,7 +68,10 @@ function LimitsRequestCard({ limits }: { limits: LimitsSettings }) {
 }
 
 function LimitsSessionCard({ limits }: { limits: LimitsSettings }) {
-  const { mode, form, settingGroupProps } = useSettingsCard<LimitsSettings, { sessionMaxAge: number }>({
+  const { mode, form, settingGroupProps, optimisticSource } = useSettingsCard<
+    LimitsSettings,
+    { sessionMaxAge: number }
+  >({
     section: 'limits',
     source: limits,
     toState: (source) => ({ sessionMaxAge: source.sessionMaxAge }),
@@ -73,6 +80,7 @@ function LimitsSessionCard({ limits }: { limits: LimitsSettings }) {
     }),
   })
 
+  const display = optimisticSource ?? limits
   return (
     <SettingGroup
       title="会话限制"
@@ -99,8 +107,8 @@ function LimitsSessionCard({ limits }: { limits: LimitsSettings }) {
         <SettingGroupContent>
           <SettingValue
             label="会话最大有效期"
-            value={`${limits.sessionMaxAge.toLocaleString()} 秒`}
-            hint={`约 ${Math.round(limits.sessionMaxAge / (60 * 60 * 24))} 天`}
+            value={`${display.sessionMaxAge.toLocaleString()} 秒`}
+            hint={`约 ${Math.round(display.sessionMaxAge / (60 * 60 * 24))} 天`}
           />
         </SettingGroupContent>
       )}
@@ -109,7 +117,7 @@ function LimitsSessionCard({ limits }: { limits: LimitsSettings }) {
 }
 
 function LimitsAuditCard({ limits }: { limits: LimitsSettings }) {
-  const { mode, form, settingGroupProps } = useSettingsCard<
+  const { mode, form, settingGroupProps, optimisticSource } = useSettingsCard<
     LimitsSettings,
     { auditLogDbRetentionDays: number; auditLogArchiveRetentionDays: number }
   >({
@@ -125,6 +133,7 @@ function LimitsAuditCard({ limits }: { limits: LimitsSettings }) {
     }),
   })
 
+  const display = optimisticSource ?? limits
   return (
     <SettingGroup
       title="审计日志限制"
@@ -164,12 +173,12 @@ function LimitsAuditCard({ limits }: { limits: LimitsSettings }) {
         <SettingGroupContent>
           <SettingValue
             label="数据库保留天数"
-            value={`${limits.auditLogDbRetentionDays ?? 30} 天`}
+            value={`${display.auditLogDbRetentionDays ?? 30} 天`}
             hint="超期后将归档到 S3；S3 未开启时直接删除。"
           />
           <SettingValue
             label="S3 归档保留天数"
-            value={`${limits.auditLogArchiveRetentionDays ?? 180} 天`}
+            value={`${display.auditLogArchiveRetentionDays ?? 180} 天`}
             hint="S3 上的 gzip 归档文件保留时长。"
           />
         </SettingGroupContent>

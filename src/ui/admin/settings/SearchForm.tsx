@@ -33,7 +33,7 @@ interface ReindexProgress {
 }
 
 function SearchModeCard({ search }: { search: SearchLoaderShape }) {
-  const { mode, form, settingGroupProps } = useSettingsCard<
+  const { mode, form, settingGroupProps, optimisticSource } = useSettingsCard<
     SearchLoaderShape,
     { enabled: boolean; mode: 'vector' | 'like' }
   >({
@@ -49,6 +49,7 @@ function SearchModeCard({ search }: { search: SearchLoaderShape }) {
     }),
   })
 
+  const display = optimisticSource ?? search
   return (
     <SettingGroup
       title="搜索模式"
@@ -96,10 +97,10 @@ function SearchModeCard({ search }: { search: SearchLoaderShape }) {
         </SettingGroupContent>
       ) : (
         <SettingGroupContent>
-          <SettingValue label="AI 向量搜索" value={search.search.enabled ? '已开启' : '已关闭'} />
+          <SettingValue label="AI 向量搜索" value={display.search.enabled ? '已开启' : '已关闭'} />
           <SettingValue
             label="搜索模式"
-            value={search.search.mode === 'vector' ? '向量（OpenAI + pgvector）' : 'LIKE（纯 Postgres）'}
+            value={display.search.mode === 'vector' ? '向量（OpenAI + pgvector）' : 'LIKE（纯 Postgres）'}
           />
         </SettingGroupContent>
       )}
@@ -108,8 +109,7 @@ function SearchModeCard({ search }: { search: SearchLoaderShape }) {
 }
 
 function SearchOpenAiCard({ search }: { search: SearchLoaderShape }) {
-  const apiKeyConfigured = search.apiKeyMask !== null
-  const { mode, form, settingGroupProps } = useSettingsCard<
+  const { mode, form, settingGroupProps, optimisticSource } = useSettingsCard<
     SearchLoaderShape,
     { endpoint: string; apiKey: string; model: string; similarityThreshold: number }
   >({
@@ -132,6 +132,8 @@ function SearchOpenAiCard({ search }: { search: SearchLoaderShape }) {
     },
   })
 
+  const display = optimisticSource ?? search
+  const apiKeyConfigured = display.apiKeyMask !== null
   return (
     <SettingGroup title="OpenAI 配置" description="向量搜索需要调用 OpenAI Embedding API。" {...settingGroupProps}>
       {mode === 'edit' ? (
@@ -153,7 +155,7 @@ function SearchOpenAiCard({ search }: { search: SearchLoaderShape }) {
             label="API Key"
             htmlFor="search-api-key"
             hint={
-              apiKeyConfigured ? `当前已配置（结尾 …${search.apiKeyMask}）。留空保存表示保留现有 Key。` : '尚未配置。'
+              apiKeyConfigured ? `当前已配置（结尾 …${display.apiKeyMask}）。留空保存表示保留现有 Key。` : '尚未配置。'
             }
           >
             <Input
@@ -185,10 +187,10 @@ function SearchOpenAiCard({ search }: { search: SearchLoaderShape }) {
         </SettingGroupContent>
       ) : (
         <SettingGroupContent>
-          <SettingValue label="API Endpoint" value={search.search.endpoint || 'https://api.openai.com/v1（默认）'} />
-          <SettingValue label="API Key" value={apiKeyConfigured ? `已配置（结尾 …${search.apiKeyMask}）` : '未配置'} />
-          <SettingValue label="模型" value={search.search.model} />
-          <SettingValue label="相似度阈值" value={`${search.search.similarityThreshold}`} />
+          <SettingValue label="API Endpoint" value={display.search.endpoint || 'https://api.openai.com/v1（默认）'} />
+          <SettingValue label="API Key" value={apiKeyConfigured ? `已配置（结尾 …${display.apiKeyMask}）` : '未配置'} />
+          <SettingValue label="模型" value={display.search.model} />
+          <SettingValue label="相似度阈值" value={`${display.search.similarityThreshold}`} />
         </SettingGroupContent>
       )}
     </SettingGroup>

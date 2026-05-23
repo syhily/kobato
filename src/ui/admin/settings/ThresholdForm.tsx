@@ -84,7 +84,7 @@ const BUCKET_META: Record<BucketKey, { title: string; description: string; windo
 
 function RateLimitBucketCard({ bucketKey, rateLimit }: { bucketKey: BucketKey; rateLimit: RateLimitSettings }) {
   const meta = BUCKET_META[bucketKey]
-  const { mode, form, settingGroupProps } = useSettingsCard<
+  const { mode, form, settingGroupProps, optimisticSource } = useSettingsCard<
     RateLimitSettings,
     { windowSeconds: number; maxAttempts: number }
   >({
@@ -99,7 +99,8 @@ function RateLimitBucketCard({ bucketKey, rateLimit }: { bucketKey: BucketKey; r
     }),
   })
 
-  const bucket = rateLimit[bucketKey]
+  const display = optimisticSource ?? rateLimit
+  const bucket = display[bucketKey]
 
   return (
     <SettingGroup title={meta.title} description={meta.description} {...settingGroupProps}>

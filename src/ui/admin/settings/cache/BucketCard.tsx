@@ -131,7 +131,7 @@ export function BucketCard({ bucket, settings, allBuckets, isClearPending, clear
     // The cache section is atomic on the server — re-send the other
     // two buckets exactly as they came from the loader so a per-card
     // save can't accidentally clobber a sibling bucket.
-    save({
+    void save({
       cache: {
         ...allBuckets,
         [bucket.id]: {

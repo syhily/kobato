@@ -12,7 +12,10 @@ interface SeoFormProps {
 }
 
 function SeoTocCard({ seo }: { seo: SeoSettings }) {
-  const { mode, form, settingGroupProps } = useSettingsCard<SeoSettings, { tocMin: number; tocMax: number }>({
+  const { mode, form, settingGroupProps, optimisticSource } = useSettingsCard<
+    SeoSettings,
+    { tocMin: number; tocMax: number }
+  >({
     section: 'seo',
     source: seo,
     toState: (source) => ({
@@ -24,6 +27,7 @@ function SeoTocCard({ seo }: { seo: SeoSettings }) {
     }),
   })
 
+  const display = optimisticSource ?? seo
   return (
     <SettingGroup title="目录 (TOC)" description="文章右侧目录的标题层级范围。" {...settingGroupProps}>
       {mode === 'edit' ? (
@@ -49,8 +53,8 @@ function SeoTocCard({ seo }: { seo: SeoSettings }) {
         </SettingGroupContent>
       ) : (
         <SettingGroupContent>
-          <SettingValue label="最浅级别" value={`h${seo.toc.minHeadingLevel}`} />
-          <SettingValue label="最深级别" value={`h${seo.toc.maxHeadingLevel}`} />
+          <SettingValue label="最浅级别" value={`h${display.toc.minHeadingLevel}`} />
+          <SettingValue label="最深级别" value={`h${display.toc.maxHeadingLevel}`} />
         </SettingGroupContent>
       )}
     </SettingGroup>
@@ -58,7 +62,10 @@ function SeoTocCard({ seo }: { seo: SeoSettings }) {
 }
 
 function SeoOgCard({ seo }: { seo: SeoSettings }) {
-  const { mode, form, settingGroupProps } = useSettingsCard<SeoSettings, { ogWidth: number; ogHeight: number }>({
+  const { mode, form, settingGroupProps, optimisticSource } = useSettingsCard<
+    SeoSettings,
+    { ogWidth: number; ogHeight: number }
+  >({
     section: 'seo',
     source: seo,
     toState: (source) => ({
@@ -70,6 +77,7 @@ function SeoOgCard({ seo }: { seo: SeoSettings }) {
     }),
   })
 
+  const display = optimisticSource ?? seo
   return (
     <SettingGroup
       title="OG 图渲染尺寸"
@@ -103,8 +111,8 @@ function SeoOgCard({ seo }: { seo: SeoSettings }) {
         </SettingGroupContent>
       ) : (
         <SettingGroupContent>
-          <SettingValue label="宽度" value={`${seo.og.width}px`} />
-          <SettingValue label="高度" value={`${seo.og.height}px`} />
+          <SettingValue label="宽度" value={`${display.og.width}px`} />
+          <SettingValue label="高度" value={`${display.og.height}px`} />
         </SettingGroupContent>
       )}
     </SettingGroup>

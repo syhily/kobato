@@ -741,6 +741,82 @@ describe('services/settings — cache section', () => {
   })
 })
 
+describe('services/settings — cors section', () => {
+  it("writes the full cors payload to scope='blog.cors' verbatim", async () => {
+    let currentRows = bundleRows(fixtureBundle)
+    vi.mocked(settingQueries.findSettingsByScopePrefix).mockImplementation(async () => currentRows)
+    vi.mocked(settingQueries.upsertSetting).mockImplementation(async (data, updatedBy, scope) => {
+      currentRows = currentRows
+        .filter((row) => row.scope !== scope)
+        .concat([
+          {
+            id: 99n,
+            scope,
+            data: data as Record<string, unknown>,
+            updatedAt: new Date(),
+            updatedBy,
+          } as Setting,
+        ])
+      return { id: 99n, scope, data: data as Record<string, unknown>, updatedAt: new Date(), updatedBy }
+    })
+
+    const next = await updateBlogSettingsSection(
+      'cors',
+      {
+        cors: {
+          enabled: true,
+          origins: ['https://example.com', 'https://app.example.com'],
+        },
+      },
+      null,
+    )
+
+    expect(settingQueries.upsertSetting).toHaveBeenCalledOnce()
+    const [data, , scope] = vi.mocked(settingQueries.upsertSetting).mock.calls[0]
+    expect(scope).toBe('blog.cors')
+    expect((data as Record<string, unknown>).cors).toEqual({
+      enabled: true,
+      origins: ['https://example.com', 'https://app.example.com'],
+    })
+    expect(next?.cors?.cors.enabled).toBe(true)
+    expect(next?.cors?.cors.origins).toEqual(['https://example.com', 'https://app.example.com'])
+  })
+
+  it('rejects an origin that is not a valid URL-like string (min length)', async () => {
+    vi.mocked(settingQueries.findSettingsByScopePrefix).mockResolvedValue([])
+
+    await expect(
+      updateBlogSettingsSection(
+        'cors',
+        {
+          cors: {
+            enabled: true,
+            origins: [''],
+          },
+        },
+        null,
+      ),
+    ).rejects.toBeInstanceOf(DomainError)
+  })
+
+  it('rejects more than 20 origins', async () => {
+    vi.mocked(settingQueries.findSettingsByScopePrefix).mockResolvedValue([])
+
+    await expect(
+      updateBlogSettingsSection(
+        'cors',
+        {
+          cors: {
+            enabled: true,
+            origins: Array.from({ length: 21 }, (_, i) => `https://site${i}.example.com`),
+          },
+        },
+        null,
+      ),
+    ).rejects.toBeInstanceOf(DomainError)
+  })
+})
+
 describe('services/settings — snapshot reader', () => {
   it('getBlogSettingsBundleSync returns null when the slot is empty (pre-install)', () => {
     setBlogSettingsBundleForTests(undefined)

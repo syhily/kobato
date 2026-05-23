@@ -61,7 +61,10 @@ const TYPE_LABELS: Record<FooterNavItem['type'], string> = {
 // ---------------------------------------------------------------------------
 
 function SideNavCard({ navigation }: { navigation: NavigationSettings }) {
-  const { mode, form, settingGroupProps } = useSettingsCard<NavigationSettings, { sideNavRows: SideNavRow[] }>({
+  const { mode, form, settingGroupProps, optimisticSource } = useSettingsCard<
+    NavigationSettings,
+    { sideNavRows: SideNavRow[] }
+  >({
     section: 'navigation',
     source: navigation,
     toState: (source) => ({
@@ -83,6 +86,7 @@ function SideNavCard({ navigation }: { navigation: NavigationSettings }) {
     }),
   })
 
+  const display = optimisticSource ?? navigation
   const rows = useFieldArray({ control: form.control, name: 'sideNavRows' })
 
   const moveRow = (index: number, direction: -1 | 1) => {
@@ -175,10 +179,10 @@ function SideNavCard({ navigation }: { navigation: NavigationSettings }) {
         </div>
       ) : (
         <div className="flex flex-col gap-2">
-          {navigation.navigation.sideNav.length === 0 ? (
+          {display.navigation.sideNav.length === 0 ? (
             <p className="text-sm text-muted-foreground">未配置</p>
           ) : (
-            navigation.navigation.sideNav.map((item) => (
+            display.navigation.sideNav.map((item) => (
               <SettingValue
                 key={item.link}
                 label={item.text}
@@ -279,7 +283,7 @@ function SortableFooterNavRow({
 }
 
 function FooterNavCard({ navigation, socials }: { navigation: NavigationSettings; socials: SocialItem[] }) {
-  const { mode, form, settingGroupProps } = useSettingsCard<
+  const { mode, form, settingGroupProps, optimisticSource } = useSettingsCard<
     NavigationSettings,
     { footerNavItems: FooterNavItemRowState[] }
   >({
@@ -298,6 +302,7 @@ function FooterNavCard({ navigation, socials }: { navigation: NavigationSettings
     }),
   })
 
+  const display = optimisticSource ?? navigation
   const sensors = useSensors(
     useSensor(PointerSensor),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
@@ -370,10 +375,10 @@ function FooterNavCard({ navigation, socials }: { navigation: NavigationSettings
         </div>
       ) : (
         <div className="flex flex-col gap-2">
-          {navigation.navigation.footerNav.length === 0 ? (
+          {display.navigation.footerNav.length === 0 ? (
             <p className="text-sm text-muted-foreground">未配置</p>
           ) : (
-            navigation.navigation.footerNav.map((item, i) => (
+            display.navigation.footerNav.map((item, i) => (
               <SettingValue
                 key={`${item.type}-${item.network ?? ''}`}
                 label={`${i + 1}. ${TYPE_LABELS[item.type]}`}

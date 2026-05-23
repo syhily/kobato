@@ -35,7 +35,7 @@ interface BackupScheduleFormProps {
 }
 
 export function BackupScheduleForm({ backup, canConfigure }: BackupScheduleFormProps) {
-  const { mode, form, settingGroupProps } = useSettingsCard<BackupSettings, FormState>({
+  const { mode, form, settingGroupProps, optimisticSource } = useSettingsCard<BackupSettings, FormState>({
     section: 'backup',
     source: backup,
     toState: (source) => ({
@@ -64,6 +64,7 @@ export function BackupScheduleForm({ backup, canConfigure }: BackupScheduleFormP
     }),
   })
 
+  const display = optimisticSource ?? backup
   const enabled = useWatch({ control: form.control, name: 'scheduledEnabled' })
   const frequency = useWatch({ control: form.control, name: 'frequency' })
   const retentionEnabled = useWatch({ control: form.control, name: 'retentionEnabled' })
@@ -253,23 +254,23 @@ export function BackupScheduleForm({ backup, canConfigure }: BackupScheduleFormP
         </SettingGroupContent>
       ) : (
         <SettingGroupContent>
-          <SettingValue label="定时备份" value={backup.scheduled.enabled ? '已开启' : '已关闭'} />
-          {backup.scheduled.enabled && (
+          <SettingValue label="定时备份" value={display.scheduled.enabled ? '已开启' : '已关闭'} />
+          {display.scheduled.enabled && (
             <>
-              <SettingValue label="备份频率" value={FREQ_LABELS[backup.scheduled.frequency]} />
+              <SettingValue label="备份频率" value={FREQ_LABELS[display.scheduled.frequency]} />
               <SettingValue
                 label="备份时间"
-                value={`${String(backup.scheduled.hour).padStart(2, '0')}:${String(backup.scheduled.minute).padStart(2, '0')}`}
+                value={`${String(display.scheduled.hour).padStart(2, '0')}:${String(display.scheduled.minute).padStart(2, '0')}`}
               />
-              {backup.scheduled.frequency === 'weekly' && backup.scheduled.dayOfWeek && (
-                <SettingValue label="星期" value={WEEKDAY_LABELS[backup.scheduled.dayOfWeek - 1]} />
+              {display.scheduled.frequency === 'weekly' && display.scheduled.dayOfWeek && (
+                <SettingValue label="星期" value={WEEKDAY_LABELS[display.scheduled.dayOfWeek - 1]} />
               )}
-              {backup.scheduled.frequency === 'monthly' && backup.scheduled.dayOfMonth && (
-                <SettingValue label="每月日期" value={`${backup.scheduled.dayOfMonth} 日`} />
+              {display.scheduled.frequency === 'monthly' && display.scheduled.dayOfMonth && (
+                <SettingValue label="每月日期" value={`${display.scheduled.dayOfMonth} 日`} />
               )}
               <SettingValue
                 label="保留策略"
-                value={backup.retention.enabled ? `保留 ${backup.retention.days} 天` : '不自动清理'}
+                value={display.retention.enabled ? `保留 ${display.retention.days} 天` : '不自动清理'}
               />
             </>
           )}

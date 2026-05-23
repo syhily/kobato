@@ -34,7 +34,7 @@ interface TestStatus {
 const idleTestStatus: TestStatus = { state: 'idle', message: null }
 
 function MailToggleCard({ mail }: { mail: MailLoaderShape }) {
-  const { mode, form, settingGroupProps } = useSettingsCard<MailLoaderShape, { enabled: boolean }>({
+  const { mode, form, settingGroupProps, optimisticSource } = useSettingsCard<MailLoaderShape, { enabled: boolean }>({
     section: 'mail',
     source: mail,
     toState: (source) => ({ enabled: source.enabled }),
@@ -43,6 +43,7 @@ function MailToggleCard({ mail }: { mail: MailLoaderShape }) {
     }),
   })
 
+  const display = optimisticSource ?? mail
   return (
     <SettingGroup
       title="邮件发送总开关"
@@ -68,7 +69,7 @@ function MailToggleCard({ mail }: { mail: MailLoaderShape }) {
         </SettingGroupContent>
       ) : (
         <SettingGroupContent>
-          <SettingValue label="邮件发送" value={mail.enabled ? '已开启' : '已关闭'} />
+          <SettingValue label="邮件发送" value={display.enabled ? '已开启' : '已关闭'} />
         </SettingGroupContent>
       )}
     </SettingGroup>
@@ -76,8 +77,7 @@ function MailToggleCard({ mail }: { mail: MailLoaderShape }) {
 }
 
 function MailConfigCard({ mail }: { mail: MailLoaderShape }) {
-  const apiKeyConfigured = mail.apiKeyMask !== null
-  const { mode, form, settingGroupProps } = useSettingsCard<
+  const { mode, form, settingGroupProps, optimisticSource } = useSettingsCard<
     MailLoaderShape,
     { host: string; sender: string; apiKey: string }
   >({
@@ -98,6 +98,8 @@ function MailConfigCard({ mail }: { mail: MailLoaderShape }) {
     },
   })
 
+  const display = optimisticSource ?? mail
+  const apiKeyConfigured = display.apiKeyMask !== null
   return (
     <SettingGroup
       title="Zeabur ZSend 配置"
@@ -114,7 +116,7 @@ function MailConfigCard({ mail }: { mail: MailLoaderShape }) {
             htmlFor="mail-api-key"
             hint={
               apiKeyConfigured
-                ? `当前已配置（结尾 …${mail.apiKeyMask}）。留空保存表示保留现有 Key。`
+                ? `当前已配置（结尾 …${display.apiKeyMask}）。留空保存表示保留现有 Key。`
                 : '尚未配置。在 Zeabur 控制台 ZSend 服务页面生成的密钥。'
             }
           >
@@ -139,9 +141,9 @@ function MailConfigCard({ mail }: { mail: MailLoaderShape }) {
         </SettingGroupContent>
       ) : (
         <SettingGroupContent>
-          <SettingValue label="接入域名" value={mail.host} />
-          <SettingValue label="API Key" value={apiKeyConfigured ? `已配置（结尾 …${mail.apiKeyMask}）` : '未配置'} />
-          <SettingValue label="发件人邮箱" value={mail.sender} />
+          <SettingValue label="接入域名" value={display.host} />
+          <SettingValue label="API Key" value={apiKeyConfigured ? `已配置（结尾 …${display.apiKeyMask}）` : '未配置'} />
+          <SettingValue label="发件人邮箱" value={display.sender} />
         </SettingGroupContent>
       )}
     </SettingGroup>

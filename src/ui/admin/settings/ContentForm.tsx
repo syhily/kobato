@@ -27,7 +27,7 @@ const SORT_BY_ITEMS = [
 ]
 
 function ContentPaginationCard({ content }: { content: ContentSettings }) {
-  const { mode, form, settingGroupProps } = useSettingsCard<
+  const { mode, form, settingGroupProps, optimisticSource } = useSettingsCard<
     ContentSettings,
     { pagPosts: number; pagCategory: number; pagTags: number; pagSearch: number }
   >({
@@ -49,6 +49,7 @@ function ContentPaginationCard({ content }: { content: ContentSettings }) {
     }),
   })
 
+  const display = optimisticSource ?? content
   return (
     <SettingGroup
       title="分页"
@@ -96,10 +97,10 @@ function ContentPaginationCard({ content }: { content: ContentSettings }) {
         </SettingGroupContent>
       ) : (
         <SettingGroupContent>
-          <SettingValue label="首页每页" value={`${content.pagination.posts}`} />
-          <SettingValue label="分类页每页" value={`${content.pagination.category}`} />
-          <SettingValue label="标签页每页" value={`${content.pagination.tags}`} />
-          <SettingValue label="搜索结果每页" value={`${content.pagination.search}`} />
+          <SettingValue label="首页每页" value={`${display.pagination.posts}`} />
+          <SettingValue label="分类页每页" value={`${display.pagination.category}`} />
+          <SettingValue label="标签页每页" value={`${display.pagination.tags}`} />
+          <SettingValue label="搜索结果每页" value={`${display.pagination.search}`} />
         </SettingGroupContent>
       )}
     </SettingGroup>
@@ -107,7 +108,10 @@ function ContentPaginationCard({ content }: { content: ContentSettings }) {
 }
 
 function ContentFeedCard({ content }: { content: ContentSettings }) {
-  const { mode, form, settingGroupProps } = useSettingsCard<ContentSettings, { feedFull: boolean; feedSize: number }>({
+  const { mode, form, settingGroupProps, optimisticSource } = useSettingsCard<
+    ContentSettings,
+    { feedFull: boolean; feedSize: number }
+  >({
     section: 'content',
     source: content,
     toState: (source) => ({
@@ -119,6 +123,7 @@ function ContentFeedCard({ content }: { content: ContentSettings }) {
     }),
   })
 
+  const display = optimisticSource ?? content
   return (
     <SettingGroup
       title="RSS / Atom Feed"
@@ -153,8 +158,8 @@ function ContentFeedCard({ content }: { content: ContentSettings }) {
         </SettingGroupContent>
       ) : (
         <SettingGroupContent>
-          <SettingValue label="包含完整正文" value={content.feed.full ? '是' : '否'} />
-          <SettingValue label="Feed 条目数" value={`${content.feed.size}`} />
+          <SettingValue label="包含完整正文" value={display.feed.full ? '是' : '否'} />
+          <SettingValue label="Feed 条目数" value={`${display.feed.size}`} />
         </SettingGroupContent>
       )}
     </SettingGroup>
@@ -162,7 +167,7 @@ function ContentFeedCard({ content }: { content: ContentSettings }) {
 }
 
 function ContentSortCard({ content }: { content: ContentSettings }) {
-  const { mode, form, settingGroupProps } = useSettingsCard<
+  const { mode, form, settingGroupProps, optimisticSource } = useSettingsCard<
     ContentSettings,
     {
       postSort: 'asc' | 'desc'
@@ -186,6 +191,7 @@ function ContentSortCard({ content }: { content: ContentSettings }) {
     }),
   })
 
+  const display = optimisticSource ?? content
   return (
     <SettingGroup
       title="文章排序与置顶"
@@ -253,13 +259,13 @@ function ContentSortCard({ content }: { content: ContentSettings }) {
         <SettingGroupContent>
           <SettingValue
             label="排序字段"
-            value={SORT_BY_ITEMS.find((i) => i.value === content.post.sortBy)?.label ?? content.post.sortBy}
+            value={SORT_BY_ITEMS.find((i) => i.value === display.post.sortBy)?.label ?? display.post.sortBy}
           />
           <SettingValue
             label="排序方向"
-            value={SORT_DIR_ITEMS.find((i) => i.value === content.post.sort)?.label ?? content.post.sort}
+            value={SORT_DIR_ITEMS.find((i) => i.value === display.post.sort)?.label ?? display.post.sort}
           />
-          <SettingValue label="置顶功能" value={content.post.featureEnabled ? '已开启' : '已关闭'} />
+          <SettingValue label="置顶功能" value={display.post.featureEnabled ? '已开启' : '已关闭'} />
         </SettingGroupContent>
       )}
     </SettingGroup>
@@ -267,7 +273,10 @@ function ContentSortCard({ content }: { content: ContentSettings }) {
 }
 
 function ContentFootnotesCard({ content }: { content: ContentSettings }) {
-  const { mode, form, settingGroupProps } = useSettingsCard<ContentSettings, { footnotesSectionTitle: string }>({
+  const { mode, form, settingGroupProps, optimisticSource } = useSettingsCard<
+    ContentSettings,
+    { footnotesSectionTitle: string }
+  >({
     section: 'content',
     source: content,
     toState: (source) => ({
@@ -278,6 +287,7 @@ function ContentFootnotesCard({ content }: { content: ContentSettings }) {
     }),
   })
 
+  const display = optimisticSource ?? content
   return (
     <SettingGroup
       title="脚注汇总标题"
@@ -297,7 +307,7 @@ function ContentFootnotesCard({ content }: { content: ContentSettings }) {
         </SettingGroupContent>
       ) : (
         <SettingGroupContent>
-          <SettingValue label="标题文案" value={content.footnotes?.sectionTitle ?? '尾声礼记'} />
+          <SettingValue label="标题文案" value={display.footnotes?.sectionTitle ?? '尾声礼记'} />
         </SettingGroupContent>
       )}
     </SettingGroup>

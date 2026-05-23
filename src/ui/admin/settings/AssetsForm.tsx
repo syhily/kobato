@@ -24,7 +24,7 @@ const SCHEME_OPTIONS: { value: 'http' | 'https'; label: string }[] = [
 ]
 
 function AssetsDomainCard({ assets }: { assets: AssetsLoaderShape }) {
-  const { mode, form, settingGroupProps } = useSettingsCard<
+  const { mode, form, settingGroupProps, optimisticSource } = useSettingsCard<
     AssetsLoaderShape,
     { assetHost: string; assetScheme: 'http' | 'https' }
   >({
@@ -39,6 +39,7 @@ function AssetsDomainCard({ assets }: { assets: AssetsLoaderShape }) {
     }),
   })
 
+  const display = optimisticSource ?? assets
   return (
     <SettingGroup
       title="资源域名"
@@ -82,8 +83,8 @@ function AssetsDomainCard({ assets }: { assets: AssetsLoaderShape }) {
         </SettingGroupContent>
       ) : (
         <SettingGroupContent>
-          <SettingValue label="协议" value={assets.asset.scheme} />
-          <SettingValue label="域名" value={assets.asset.host} />
+          <SettingValue label="协议" value={display.asset.scheme} />
+          <SettingValue label="域名" value={display.asset.host} />
         </SettingGroupContent>
       )}
     </SettingGroup>
@@ -91,7 +92,7 @@ function AssetsDomainCard({ assets }: { assets: AssetsLoaderShape }) {
 }
 
 function AssetsToggleCard({ assets }: { assets: AssetsLoaderShape }) {
-  const { mode, form, settingGroupProps } = useSettingsCard<AssetsLoaderShape, { enabled: boolean }>({
+  const { mode, form, settingGroupProps, optimisticSource } = useSettingsCard<AssetsLoaderShape, { enabled: boolean }>({
     section: 'assets',
     source: assets,
     toState: (source) => ({ enabled: source.storage.enabled }),
@@ -100,6 +101,7 @@ function AssetsToggleCard({ assets }: { assets: AssetsLoaderShape }) {
     }),
   })
 
+  const display = optimisticSource ?? assets
   return (
     <SettingGroup
       title="启用图片上传"
@@ -127,7 +129,7 @@ function AssetsToggleCard({ assets }: { assets: AssetsLoaderShape }) {
         <SettingGroupContent>
           <SettingValue
             label="S3 上传"
-            value={assets.storage.enabled ? '已开启' : '已关闭'}
+            value={display.storage.enabled ? '已开启' : '已关闭'}
             hint="关闭后已经入库的图片仍按上方的资源域名解析，确保历史文章不会出现裂图。"
           />
         </SettingGroupContent>
@@ -137,8 +139,7 @@ function AssetsToggleCard({ assets }: { assets: AssetsLoaderShape }) {
 }
 
 function AssetsS3Card({ assets }: { assets: AssetsLoaderShape }) {
-  const secretConfigured = assets.secretAccessKeyMask !== null
-  const { mode, form, settingGroupProps } = useSettingsCard<
+  const { mode, form, settingGroupProps, optimisticSource } = useSettingsCard<
     AssetsLoaderShape,
     {
       endpoint: string
@@ -177,6 +178,8 @@ function AssetsS3Card({ assets }: { assets: AssetsLoaderShape }) {
     },
   })
 
+  const display = optimisticSource ?? assets
+  const secretConfigured = display.secretAccessKeyMask !== null
   return (
     <SettingGroup
       title="S3 兼容存储"
@@ -207,7 +210,7 @@ function AssetsS3Card({ assets }: { assets: AssetsLoaderShape }) {
             htmlFor="assets-secret"
             hint={
               secretConfigured
-                ? `当前已配置（结尾 …${assets.secretAccessKeyMask}）。留空保存表示保留现有 Secret。`
+                ? `当前已配置（结尾 …${display.secretAccessKeyMask}）。留空保存表示保留现有 Secret。`
                 : '尚未配置。将以明文存入 setting 表。'
             }
           >
@@ -249,16 +252,16 @@ function AssetsS3Card({ assets }: { assets: AssetsLoaderShape }) {
         </SettingGroupContent>
       ) : (
         <SettingGroupContent>
-          <SettingValue label="Endpoint" value={assets.storage.endpoint} />
-          <SettingValue label="Region" value={assets.storage.region} />
-          <SettingValue label="Bucket" value={assets.storage.bucket} />
-          <SettingValue label="Access Key ID" value={assets.storage.accessKeyId} />
+          <SettingValue label="Endpoint" value={display.storage.endpoint} />
+          <SettingValue label="Region" value={display.storage.region} />
+          <SettingValue label="Bucket" value={display.storage.bucket} />
+          <SettingValue label="Access Key ID" value={display.storage.accessKeyId} />
           <SettingValue
             label="Secret Access Key"
-            value={secretConfigured ? `已配置（结尾 …${assets.secretAccessKeyMask}）` : '未配置'}
+            value={secretConfigured ? `已配置（结尾 …${display.secretAccessKeyMask}）` : '未配置'}
           />
-          <SettingValue label="Path-style" value={assets.storage.forcePathStyle ? '已开启' : '已关闭'} />
-          <SettingValue label="图片地址模板" value={assets.storage.urlTemplate || '—'} />
+          <SettingValue label="Path-style" value={display.storage.forcePathStyle ? '已开启' : '已关闭'} />
+          <SettingValue label="图片地址模板" value={display.storage.urlTemplate || '—'} />
         </SettingGroupContent>
       )}
     </SettingGroup>
@@ -266,7 +269,7 @@ function AssetsS3Card({ assets }: { assets: AssetsLoaderShape }) {
 }
 
 function AssetsUploadCard({ assets }: { assets: AssetsLoaderShape }) {
-  const { mode, form, settingGroupProps } = useSettingsCard<
+  const { mode, form, settingGroupProps, optimisticSource } = useSettingsCard<
     AssetsLoaderShape,
     { maxBytes: number; jpegQuality: number }
   >({
@@ -281,6 +284,7 @@ function AssetsUploadCard({ assets }: { assets: AssetsLoaderShape }) {
     }),
   })
 
+  const display = optimisticSource ?? assets
   return (
     <SettingGroup
       title="上传参数"
@@ -316,10 +320,10 @@ function AssetsUploadCard({ assets }: { assets: AssetsLoaderShape }) {
         <SettingGroupContent>
           <SettingValue
             label="最大上传体积"
-            value={`${assets.upload.maxBytes.toLocaleString()} 字节`}
-            hint={`约 ${(assets.upload.maxBytes / (1024 * 1024)).toFixed(1)} MB`}
+            value={`${display.upload.maxBytes.toLocaleString()} 字节`}
+            hint={`约 ${(display.upload.maxBytes / (1024 * 1024)).toFixed(1)} MB`}
           />
-          <SettingValue label="JPEG 质量" value={`${assets.upload.jpegQuality}`} />
+          <SettingValue label="JPEG 质量" value={`${display.upload.jpegQuality}`} />
         </SettingGroupContent>
       )}
     </SettingGroup>

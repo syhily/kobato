@@ -30,7 +30,7 @@ interface UseSettingsCardOptions<TSource, TState extends FieldValues> {
   mode?: 'patch' | 'full'
 }
 
-interface UseSettingsCardResult<TState extends FieldValues> {
+interface UseSettingsCardResult<TSource, TState extends FieldValues> {
   mode: 'read' | 'edit'
   setMode: (mode: 'read' | 'edit') => void
   form: UseFormReturn<TState>
@@ -39,6 +39,8 @@ interface UseSettingsCardResult<TState extends FieldValues> {
   isPending: boolean
   status: 'idle' | 'saving' | 'saved' | 'error'
   errorMessage: string | null
+  /** Optimistic source derived from the last submitted form state. */
+  optimisticSource: TSource | null
   /** Spread into <SettingGroup> to wire up edit/save/cancel/status. */
   settingGroupProps: {
     mode: 'read' | 'edit'
@@ -78,10 +80,11 @@ export function useSettingsCard<TSource, TState extends FieldValues>({
   fromState,
   schema,
   mode: mergeMode = 'patch',
-}: UseSettingsCardOptions<TSource, TState>): UseSettingsCardResult<TState> {
+}: UseSettingsCardOptions<TSource, TState>): UseSettingsCardResult<TSource, TState> {
   const [mode, setMode] = useState<'read' | 'edit'>('read')
   const [status, setStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const [optimisticSource, setOptimisticSource] = useState<TSource | null>(null)
   const revalidator = useRevalidator()
 
   // Stable references: callers pass module-level functions for `toState`
@@ -123,44 +126,51 @@ export function useSettingsCard<TSource, TState extends FieldValues>({
       if (mode === 'read') {
         reset(initialValues)
       }
+      // Real source has caught up (e.g. after revalidation); clear optimistic.
+      if (optimisticSource !== null) {
+        setOptimisticSource(null)
+      }
     }
-  }, [source, lastSourceSnapshot, mode, initialValues, reset])
+  }, [source, lastSourceSnapshot, mode, initialValues, reset, optimisticSource])
 
   const updateMutation = useMutation({
     mutationFn: ({ section, payload }: { section: SettingsSection; payload: Record<string, unknown> }) =>
       orpc.admin.settings.update({ section, payload }),
-    onSuccess: () => {
-      setStatus('saved')
-      setMode('read')
-      void revalidator.revalidate()
-    },
-    onError: (error) => {
-      setStatus('error')
-      setErrorMessage(error.message)
-    },
   })
 
   const save = useCallback(() => {
-    handleSubmit((values) => {
+    handleSubmit(async (values) => {
       setStatus('saving')
       setErrorMessage(null)
       const patchPayload = fromStateRef.current(values)
       const payload =
         mergeMode === 'patch' ? deepMerge(sourceRef.current as Record<string, unknown>, patchPayload) : patchPayload
-      updateMutation.mutate({ section, payload })
+      // Optimistic update: immediately reflect the submitted values in read mode
+      // while the async request + revalidation happen in the background.
+      setOptimisticSource(payload as TSource)
+      setMode('read')
+      try {
+        await updateMutation.mutateAsync({ section, payload })
+        setStatus('saved')
+        void revalidator.revalidate()
+      } catch (error: unknown) {
+        setStatus('error')
+        setErrorMessage(error instanceof Error ? error.message : '保存失败')
+      }
     })().catch((error: unknown) => {
       if (error instanceof Error) {
         setErrorMessage(error.message)
         setStatus('error')
       }
     })
-  }, [handleSubmit, mergeMode, section, updateMutation])
+  }, [handleSubmit, mergeMode, section, updateMutation, revalidator])
 
   const cancel = useCallback(() => {
     reset(initialValues)
     setMode('read')
     setStatus('idle')
     setErrorMessage(null)
+    setOptimisticSource(null)
   }, [initialValues, reset])
 
   return {
@@ -172,6 +182,7 @@ export function useSettingsCard<TSource, TState extends FieldValues>({
     isPending: updateMutation.isPending,
     status,
     errorMessage,
+    optimisticSource,
     settingGroupProps: {
       mode,
       onModeChange: setMode,

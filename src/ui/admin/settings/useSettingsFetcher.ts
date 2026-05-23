@@ -13,7 +13,7 @@ interface UseSettingsFetcherOptions {
 }
 
 interface UseSettingsFetcherResult {
-  save: (payload: Record<string, unknown>) => void
+  save: (payload: Record<string, unknown>) => Promise<void>
   /**
    * Re-run the settings layout loader so every form re-renders with the
    * server's current snapshot. Used by the "撤销更改" affordance to
@@ -47,24 +47,23 @@ export function useSettingsFetcher({ section, onSaved }: UseSettingsFetcherOptio
   const updateMutation = useMutation({
     mutationFn: ({ section, payload }: { section: SettingsSection; payload: Record<string, unknown> }) =>
       orpc.admin.settings.update({ section, payload }),
-    onSuccess: () => {
-      setStatus('saved')
-      onSaved?.()
-      void revalidator.revalidate()
-    },
-    onError: (error) => {
-      setStatus('error')
-      setErrorMessage(error.message)
-    },
   })
 
   const save = useCallback(
-    (payload: Record<string, unknown>) => {
+    async (payload: Record<string, unknown>) => {
       setStatus('saving')
       setErrorMessage(null)
-      updateMutation.mutate({ section, payload })
+      try {
+        await updateMutation.mutateAsync({ section, payload })
+        setStatus('saved')
+        onSaved?.()
+        void revalidator.revalidate()
+      } catch (error: unknown) {
+        setStatus('error')
+        setErrorMessage(error instanceof Error ? error.message : '保存失败')
+      }
     },
-    [section, updateMutation],
+    [section, updateMutation, onSaved, revalidator],
   )
 
   const revert = useCallback(() => {
