@@ -5,7 +5,7 @@ import { cn } from '@/ui/lib/cn'
 
 export interface MusicPlayerProps {
   id: string
-  autoplay?: boolean
+  auto?: boolean
   alignment?: 'center' | 'start'
 }
 
@@ -91,7 +91,7 @@ export function scheduleMusicPlayerInit(
 // therefore skip idle deferral entirely and initialise on the earliest
 // async turn (still one animation frame wait for DOM layout — same idea
 // as `FloatingMusicPlayer`).
-export function MusicPlayer({ id, autoplay: auto, alignment: center }: MusicPlayerProps) {
+export function MusicPlayer({ id, auto, alignment: center }: MusicPlayerProps) {
   const containerRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {

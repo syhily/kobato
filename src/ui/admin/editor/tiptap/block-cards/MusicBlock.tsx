@@ -61,7 +61,7 @@ export function MusicPlayerOptions({ stableId, auto, center, onFlagChange }: Mus
 export function MusicBlockSummary({ payload }: { payload: MusicPlayerBlock }) {
   return (
     <div className="mt-2">
-      <MusicPlayer id={payload.playerId} autoplay={false} alignment={payload.center ? 'center' : 'start'} />
+      <MusicPlayer id={payload.playerId} auto={false} alignment={payload.center ? 'center' : 'start'} />
     </div>
   )
 }
