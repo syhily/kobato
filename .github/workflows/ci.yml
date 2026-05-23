@@ -52,9 +52,9 @@ jobs:
           cache: 'npm'
       - run: npm ci
       - run: npm audit --audit-level=moderate
+      - run: npm run typecheck
       - run: npm run fmt:check
       - run: npm run lint
-      - run: npm run typecheck
       - run: npm run test
       - uses: actions/upload-artifact@v7
         with:
