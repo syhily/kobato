@@ -22,7 +22,7 @@ import { CodeBlock as CodeBlockComponent } from '@/ui/pt/blocks/CodeBlock'
 import { MusicPlayer } from '@/ui/pt/blocks/MusicPlayer'
 import { FootnoteReference } from '@/ui/pt/Footnotes'
 import { renderMathMarkupOrTexFallback } from '@/ui/pt/render-marks'
-import { HeadingIdByBlockKeyContext, MusicPresentationContext, PT_INLINE, RssModeContext } from '@/ui/pt/render-shared'
+import { HeadingIdByBlockKeyContext, MusicPresentationContext, PT_INLINE } from '@/ui/pt/render-shared'
 
 // --- Layout helpers ---------------------------------------------------------
 
@@ -150,10 +150,6 @@ export function HorizontalRuleComponent(_props: PortableTextTypeComponentProps<H
 
 export function MusicPlayerComponent({ value }: PortableTextTypeComponentProps<MusicPlayerBlock>) {
   const { suppressAutoplay } = use(MusicPresentationContext)
-  const isRss = use(RssModeContext)
-  if (isRss) {
-    return <p className="my-4 text-center text-ink-3">🎵 此文章包含音乐播放器，请访问原文收听。</p>
-  }
   return (
     <MusicPlayer
       id={value.playerId}

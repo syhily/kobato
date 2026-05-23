@@ -1,5 +1,5 @@
-import GithubSlugger from 'github-slugger'
 import { toHTML, type PortableTextComponents } from '@portabletext/to-html'
+import GithubSlugger from 'github-slugger'
 
 import type {
   CodeBlock,
@@ -14,8 +14,12 @@ import type {
   TextBlock,
   TwoColumnBlock,
 } from '@/shared/pt/schema'
-import { collectHeadingSlotsInPortableTextRenderOrder } from '@/shared/pt/utils'
+
+import { safeBuildMusicPublicUrl } from '@/server/domains/music/storage'
+import { findMusicByPlayerIds } from '@/server/infra/db/operations/music'
+import { deriveSlug } from '@/server/infra/slug'
 import { requireBlogSettingsSection } from '@/shared/config/blog'
+import { collectHeadingSlotsInPortableTextRenderOrder } from '@/shared/pt/utils'
 import { resolveFootnotesSectionTitle } from '@/shared/utils/footnotes-section-title'
 
 export interface RenderPortableTextToHtmlOptions {
@@ -36,7 +40,9 @@ export async function renderPortableTextToHtml(
   const inlineBody = body.filter((block) => block._type !== 'footnoteDefinition')
   const footnotes = body.filter((block): block is FootnoteDefinitionBlock => block._type === 'footnoteDefinition')
 
-  const components = buildPortableTextComponents({ headingIdByBlockKey, isRss })
+  const musicByPlayerId = await resolveMusicPlayerMeta(body)
+
+  const components = buildPortableTextComponents({ headingIdByBlockKey, isRss, musicByPlayerId })
 
   let html = toHTML(inlineBody as never, { components })
 
@@ -58,13 +64,71 @@ function buildHeadingIdMap(body: PortableTextBodyType, headingSlugs: readonly st
   for (let i = 0; i < slots.length; i += 1) {
     const slot = slots[i]
     const pre = headingSlugs[i]
-    const id =
-      typeof pre === 'string' && pre.length > 0
-        ? pre
-        : fallbackSlugger.slug(slot.plainText)
+    const id = typeof pre === 'string' && pre.length > 0 ? pre : fallbackSlugger.slug(deriveSlug(slot.plainText))
     map.set(slot.blockKey, id)
   }
   return map
+}
+
+// ---------------------------------------------------------------------------
+// Music player resolution
+// ---------------------------------------------------------------------------
+
+interface MusicMeta {
+  name: string
+  artist: string
+  audioUrl: string
+}
+
+async function resolveMusicPlayerMeta(body: PortableTextBodyType): Promise<Map<string, MusicMeta>> {
+  const playerIds = collectMusicPlayerIds(body)
+  if (playerIds.length === 0) {
+    return new Map()
+  }
+
+  const uniqueIds = [...new Set(playerIds)]
+  const rows = await findMusicByPlayerIds(uniqueIds)
+
+  const map = new Map<string, MusicMeta>()
+  for (const row of rows) {
+    const audioUrl = safeBuildMusicPublicUrl(row.audioStoragePath)
+    if (audioUrl !== null) {
+      map.set(row.playerId, { name: row.name, artist: row.artist, audioUrl })
+    }
+  }
+  return map
+}
+
+function collectMusicPlayerIds(body: PortableTextBodyType): string[] {
+  const ids: string[] = []
+  for (const block of body) {
+    if (block._type === 'musicPlayer') {
+      ids.push(block.playerId)
+      continue
+    }
+    if (block._type === 'solution' || block._type === 'footnoteDefinition') {
+      for (const child of block.children) {
+        if (child._type === 'musicPlayer') {
+          ids.push(child.playerId)
+        }
+      }
+      continue
+    }
+    if (block._type === 'twoColumn') {
+      for (const child of block.left) {
+        if (child._type === 'musicPlayer') {
+          ids.push(child.playerId)
+        }
+      }
+      for (const child of block.right) {
+        if (child._type === 'musicPlayer') {
+          ids.push(child.playerId)
+        }
+      }
+      continue
+    }
+  }
+  return ids
 }
 
 // ---------------------------------------------------------------------------
@@ -74,6 +138,7 @@ function buildHeadingIdMap(body: PortableTextBodyType, headingSlugs: readonly st
 interface ComponentContext {
   headingIdByBlockKey: Map<string, string>
   isRss: boolean
+  musicByPlayerId: Map<string, MusicMeta>
 }
 
 function buildPortableTextComponents(ctx: ComponentContext): PortableTextComponents {
@@ -122,9 +187,20 @@ function buildPortableTextComponents(ctx: ComponentContext): PortableTextCompone
         return `<a href="${escapeHtml(href)}"${rel}${target}>${children}</a>`
       },
       mathInline: ({ value, children }) => {
-        const markup = value?.mathml ?? value?.svg
-        if (markup !== undefined && markup !== '') {
-          return markup
+        if (ctx.isRss) {
+          if (value?.mathml !== undefined && value.mathml !== '') {
+            return value.mathml
+          }
+          if (value?.svg !== undefined && value.svg !== '') {
+            return value.svg
+          }
+        } else {
+          if (value?.svg !== undefined && value.svg !== '') {
+            return value.svg
+          }
+          if (value?.mathml !== undefined && value.mathml !== '') {
+            return value.mathml
+          }
         }
         return `<code>${value?.tex ? escapeHtml(value.tex) : children}</code>`
       },
@@ -138,10 +214,10 @@ function buildPortableTextComponents(ctx: ComponentContext): PortableTextCompone
     types: {
       image: ({ value }) => renderImageBlock(value as ImageBlock),
       code: ({ value }) => renderCodeBlock(value as CodeBlock),
-      mathBlock: ({ value }) => renderMathBlock(value as MathBlock),
+      mathBlock: ({ value }) => renderMathBlock(value as MathBlock, ctx.isRss),
       mermaid: ({ value }) => renderMermaidBlock(value as MermaidBlock),
       horizontalRule: () => '<hr />',
-      musicPlayer: ({ value }) => renderMusicPlayer(value as MusicPlayerBlock, ctx.isRss),
+      musicPlayer: ({ value }) => renderMusicPlayer(value as MusicPlayerBlock, ctx),
       solution: ({ value }) => {
         const children = (value as SolutionBlock).children
         return toHTML(children as never, { components: buildPortableTextComponents(ctx) })
@@ -176,25 +252,36 @@ function renderImageBlock(value: ImageBlock): string {
   const width = value.width !== undefined ? ` width="${value.width}"` : ''
   const height = value.height !== undefined ? ` height="${value.height}"` : ''
   const caption =
-    value.caption !== undefined && value.caption !== ''
-      ? `<figcaption>${escapeHtml(value.caption)}</figcaption>`
-      : ''
+    value.caption !== undefined && value.caption !== '' ? `<figcaption>${escapeHtml(value.caption)}</figcaption>` : ''
   return `<figure><img src="${src}"${alt}${width}${height} />${caption}</figure>`
 }
 
 function renderCodeBlock(value: CodeBlock): string {
-  const langClass = value.language !== undefined && value.language !== '' ? ` class="language-${escapeHtml(value.language)}"` : ''
-  const dataLang = value.language !== undefined && value.language !== '' ? ` data-language="${escapeHtml(value.language)}"` : ''
+  const langClass =
+    value.language !== undefined && value.language !== '' ? ` class="language-${escapeHtml(value.language)}"` : ''
+  const dataLang =
+    value.language !== undefined && value.language !== '' ? ` data-language="${escapeHtml(value.language)}"` : ''
   if (value.highlightedHtml !== undefined && value.highlightedHtml !== '') {
     return `<pre><code${langClass}${dataLang}>${value.highlightedHtml}</code></pre>`
   }
   return `<pre><code${langClass}${dataLang}>${escapeHtml(value.code)}</code></pre>`
 }
 
-function renderMathBlock(value: MathBlock): string {
-  const markup = value.mathml ?? value.svg
-  if (markup !== undefined && markup !== '') {
-    return markup
+function renderMathBlock(value: MathBlock, isRss: boolean): string {
+  if (isRss) {
+    if (value.mathml !== undefined && value.mathml !== '') {
+      return value.mathml
+    }
+    if (value.svg !== undefined && value.svg !== '') {
+      return value.svg
+    }
+  } else {
+    if (value.svg !== undefined && value.svg !== '') {
+      return value.svg
+    }
+    if (value.mathml !== undefined && value.mathml !== '') {
+      return value.mathml
+    }
   }
   return `<pre><code>${escapeHtml(value.tex)}</code></pre>`
 }
@@ -206,11 +293,15 @@ function renderMermaidBlock(value: MermaidBlock): string {
   return `<pre class="mermaid">${escapeHtml(value.code)}</pre>`
 }
 
-function renderMusicPlayer(value: MusicPlayerBlock, isRss: boolean): string {
-  if (isRss) {
-    return '<p>🎵 此文章包含音乐播放器，请访问原文收听。</p>'
+function renderMusicPlayer(value: MusicPlayerBlock, ctx: ComponentContext): string {
+  const meta = ctx.musicByPlayerId.get(value.playerId)
+  if (meta === undefined) {
+    return `<p>🎵 此文章包含音乐播放器，请访问原文收听。</p>`
   }
-  return `<p>[Music: ${escapeHtml(value.playerId)}]</p>`
+  const name = escapeHtml(meta.name)
+  const artist = escapeHtml(meta.artist)
+  const src = escapeHtml(meta.audioUrl)
+  return `<figure><audio controls preload="none" src="${src}"></audio><figcaption>🎵 ${name} — ${artist}</figcaption></figure>`
 }
 
 // ---------------------------------------------------------------------------
@@ -248,11 +339,37 @@ function renderTableBlock(value: TableBlock): string {
   return html
 }
 
-function renderSpansInline(spans: readonly { _key: string; text: string; marks?: string[] }[], markDefs: readonly { _key: string; _type: string; href?: string; rel?: string; target?: string; tex?: string; mathml?: string; svg?: string; index?: number }[]): string {
+function renderSpansInline(
+  spans: readonly { _key: string; text: string; marks?: string[] }[],
+  markDefs: readonly {
+    _key: string
+    _type: string
+    href?: string
+    rel?: string
+    target?: string
+    tex?: string
+    mathml?: string
+    svg?: string
+    index?: number
+  }[],
+): string {
   return spans.map((span) => renderSpanInline(span, markDefs)).join('')
 }
 
-function renderSpanInline(span: { _key: string; text: string; marks?: string[] }, markDefs: readonly { _key: string; _type: string; href?: string; rel?: string; target?: string; tex?: string; mathml?: string; svg?: string; index?: number }[]): string {
+function renderSpanInline(
+  span: { _key: string; text: string; marks?: string[] },
+  markDefs: readonly {
+    _key: string
+    _type: string
+    href?: string
+    rel?: string
+    target?: string
+    tex?: string
+    mathml?: string
+    svg?: string
+    index?: number
+  }[],
+): string {
   const marks = span.marks ?? []
   if (marks.length === 0) {
     return escapeHtml(span.text)
@@ -264,7 +381,21 @@ function renderSpanInline(span: { _key: string; text: string; marks?: string[] }
   return html
 }
 
-function applyInlineMarkHtml(text: string, markName: string, markDefs: readonly { _key: string; _type: string; href?: string; rel?: string; target?: string; tex?: string; mathml?: string; svg?: string; index?: number }[]): string {
+function applyInlineMarkHtml(
+  text: string,
+  markName: string,
+  markDefs: readonly {
+    _key: string
+    _type: string
+    href?: string
+    rel?: string
+    target?: string
+    tex?: string
+    mathml?: string
+    svg?: string
+    index?: number
+  }[],
+): string {
   switch (markName) {
     case 'strong':
       return `<strong>${text}</strong>`
@@ -289,9 +420,13 @@ function applyInlineMarkHtml(text: string, markName: string, markDefs: readonly 
       return `<a href="${escapeHtml(href)}"${rel}${target}>${text}</a>`
     }
     case 'mathInline': {
-      const markup = def.mathml ?? def.svg
-      if (markup !== undefined && markup !== '') {
-        return markup
+      // RSS prefers MathML (better reader support); web prefers SVG
+      // (better browser rendering consistency).
+      if (def.mathml !== undefined && def.mathml !== '') {
+        return def.mathml
+      }
+      if (def.svg !== undefined && def.svg !== '') {
+        return def.svg
       }
       return `<code>${def.tex ? escapeHtml(def.tex) : text}</code>`
     }

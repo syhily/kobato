@@ -40,6 +40,5 @@ export interface MusicPresentationCtx {
 export const MusicPresentationContext = createContext<MusicPresentationCtx>({
   suppressAutoplay: false,
 })
-export const RssModeContext = createContext<boolean>(false)
 
 export const FOOTNOTES_SECTION_FALLBACK_TITLE = '尾声礼记'

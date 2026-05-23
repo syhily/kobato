@@ -36,7 +36,6 @@ import {
   MusicPresentationContext,
   type MusicPresentationCtx,
   PT_INLINE,
-  RssModeContext,
 } from '@/ui/pt/render-shared'
 
 // SSR/CSR renderer for PortableText. Built on top of `@portabletext/react`'s
@@ -95,12 +94,6 @@ export interface PortableTextBodyProps {
   suppressMusicAutoplay?: boolean
   /** Visible `<h3>` above the footnotes list; defaults to 「尾声礼记」 when omitted. */
   footnotesSectionTitle?: string
-  /**
-   * When true, interactive blocks (musicPlayer, etc.) degrade to
-   * static HTML so the output is safe for RSS/Atom feed readers that
-   * don't execute JavaScript.
-   */
-  rssMode?: boolean
 }
 
 export function PortableTextBody({
@@ -109,7 +102,6 @@ export function PortableTextBody({
   headingSlugs,
   suppressMusicAutoplay,
   footnotesSectionTitle,
-  rssMode,
 }: PortableTextBodyProps) {
   const footnoteCtx = useMemo<FootnoteRefCtx>(() => ({ definitions: collectFootnoteDefinitions(body) }), [body])
 
@@ -151,20 +143,18 @@ export function PortableTextBody({
   return (
     <ImageMetaProvider value={imageMeta}>
       <MusicPresentationContext.Provider value={musicPresentation}>
-        <RssModeContext.Provider value={rssMode === true}>
-          <FootnoteProvider>
-            <FootnoteRefContext.Provider value={footnoteCtx}>
-              <HeadingIdByBlockKeyContext.Provider value={headingIdByBlockKey}>
-                <div className="portable-text-body">
-                  <PortableText value={inlineBody as never} components={portableTextComponents} />
-                  {footnotes.length > 0 ? (
-                    <FootnotesSection definitions={footnotes} sectionTitle={resolvedFootnotesHeading} />
-                  ) : null}
-                </div>
-              </HeadingIdByBlockKeyContext.Provider>
-            </FootnoteRefContext.Provider>
-          </FootnoteProvider>
-        </RssModeContext.Provider>
+        <FootnoteProvider>
+          <FootnoteRefContext.Provider value={footnoteCtx}>
+            <HeadingIdByBlockKeyContext.Provider value={headingIdByBlockKey}>
+              <div className="portable-text-body">
+                <PortableText value={inlineBody as never} components={portableTextComponents} />
+                {footnotes.length > 0 ? (
+                  <FootnotesSection definitions={footnotes} sectionTitle={resolvedFootnotesHeading} />
+                ) : null}
+              </div>
+            </HeadingIdByBlockKeyContext.Provider>
+          </FootnoteRefContext.Provider>
+        </FootnoteProvider>
       </MusicPresentationContext.Provider>
     </ImageMetaProvider>
   )
