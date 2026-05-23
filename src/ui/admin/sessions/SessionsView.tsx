@@ -20,6 +20,7 @@ import { Card, CardContent } from '@/ui/components/card'
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@/ui/components/empty'
 import { InputGroup, InputGroupAddon, InputGroupInput } from '@/ui/components/input-group'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/components/select'
+import { maskIp } from '@/ui/lib/mask'
 
 const DATE_FORMAT = 'yyyy-LL-dd HH:mm'
 
@@ -232,7 +233,7 @@ function AdminSessionRow({ item, submitting, onRevoke, config }: RowProps) {
               <MonitorIcon className="size-3.5 text-muted-foreground" />
               <span>{label}</span>
               <span className="text-muted-foreground">·</span>
-              <span className="break-all">{item.ip || '—'}</span>
+              <span className="break-all">{maskIp(item.ip) || '—'}</span>
             </div>
             <dl className="grid grid-cols-1 gap-x-4 gap-y-0.5 text-xs text-muted-foreground sm:grid-cols-3">
               <div>

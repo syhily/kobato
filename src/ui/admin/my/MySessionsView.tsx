@@ -15,6 +15,7 @@ import { Badge } from '@/ui/components/badge'
 import { Button } from '@/ui/components/button'
 import { Card, CardContent } from '@/ui/components/card'
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@/ui/components/empty'
+import { maskIp } from '@/ui/lib/mask'
 
 const DATE_FORMAT = 'yyyy-LL-dd HH:mm'
 
@@ -132,7 +133,7 @@ function SessionRow({ item, submitting, onRevoke, dateFormat, config }: SessionR
           <dl className="grid grid-cols-1 gap-x-4 gap-y-1 text-xs text-muted-foreground sm:grid-cols-2">
             <div>
               <dt className="inline">IP：</dt>
-              <dd className="inline break-all">{item.ip || '—'}</dd>
+              <dd className="inline break-all">{maskIp(item.ip) || '—'}</dd>
             </div>
             <div>
               <dt className="inline">登录时间：</dt>

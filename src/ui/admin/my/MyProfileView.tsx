@@ -14,6 +14,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/ui/
 import { Input } from '@/ui/components/input'
 import { Label } from '@/ui/components/label'
 import { Separator } from '@/ui/components/separator'
+import { maskIp, maskUa } from '@/ui/lib/mask'
 
 const DATE_FORMAT = 'yyyy-LL-dd HH:mm'
 
@@ -150,11 +151,11 @@ export function MyProfileView({ user, counts }: MyProfileViewProps) {
               </div>
               <div className="flex flex-col gap-1">
                 <span className="text-xs text-muted-foreground">最近 IP</span>
-                <span className="break-all">{user.lastIp ?? '—'}</span>
+                <span className="break-all">{maskIp(user.lastIp) ?? '—'}</span>
               </div>
               <div className="flex flex-col gap-1">
                 <span className="text-xs text-muted-foreground">最近 User-Agent</span>
-                <span className="text-xs break-all">{user.lastUa ?? '—'}</span>
+                <span className="text-xs break-all">{maskUa(user.lastUa) ?? '—'}</span>
               </div>
             </CardContent>
           </Card>
