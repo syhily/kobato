@@ -32,6 +32,7 @@
     "fmt": "oxfmt --config oxfmt.config.ts",
     "fmt:check": "oxfmt --config oxfmt.config.ts --check",
     "lint": "oxlint -c oxlint.config.ts",
+    "prepare": "npx husky",
     "preview": "node ./build/server/index.js",
     "start": "node ./build/server/index.js",
     "test": "vitest run --coverage",

@@ -2,7 +2,7 @@
 export default {
   upgrade: true,
   // Keep @types/node within major version 24 by limiting upgrades to minor/patch.
-  target: (name, semver) => {
+  target: (name, _semver) => {
     if (name === '@types/node') {
       return 'minor'
     }
