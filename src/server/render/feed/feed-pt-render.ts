@@ -1,5 +1,4 @@
 import { toHTML, type PortableTextComponents } from '@portabletext/to-html'
-import GithubSlugger from 'github-slugger'
 
 import type {
   CodeBlock,
@@ -60,11 +59,10 @@ export async function renderPortableTextToHtml(
 function buildHeadingIdMap(body: PortableTextBodyType, headingSlugs: readonly string[]): Map<string, string> {
   const slots = collectHeadingSlotsInPortableTextRenderOrder(body)
   const map = new Map<string, string>()
-  const fallbackSlugger = new GithubSlugger()
   for (let i = 0; i < slots.length; i += 1) {
     const slot = slots[i]
     const pre = headingSlugs[i]
-    const id = typeof pre === 'string' && pre.length > 0 ? pre : fallbackSlugger.slug(deriveSlug(slot.plainText))
+    const id = typeof pre === 'string' && pre.length > 0 ? pre : deriveSlug(slot.plainText)
     map.set(slot.blockKey, id)
   }
   return map
