@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vite-plus/test'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 // Tests for the OG image route slug resolution in `imagesRouter`.
 // After removing getEntryBySlug, the route now uses parallel lookups
@@ -10,7 +10,7 @@ const mocks = vi.hoisted(() => ({
   drawOpenGraph: vi.fn(() => Buffer.from('og-image')),
 }))
 
-vi.mock('@/server/domains/posts/repo', () => ({
+vi.mock('@/server/domains/posts/repos/single', () => ({
   findPostBySlug: mocks.findPostBySlug,
 }))
 vi.mock('@/server/domains/pages/repo', () => ({

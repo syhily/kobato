@@ -1,5 +1,5 @@
 import { eq } from 'drizzle-orm'
-import { beforeEach, describe, expect, it } from 'vite-plus/test'
+import { beforeEach, describe, expect, it } from 'vitest'
 
 import { insertImageIfMissing, upsertImageByStoragePath } from '@/server/infra/db/operations/image'
 import { db } from '@/server/infra/db/pool'

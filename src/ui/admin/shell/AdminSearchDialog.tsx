@@ -82,6 +82,7 @@ export function AdminSearchDialog({ open, onOpenChange }: AdminSearchDialogProps
             onChange={(e) => setQuery(e.target.value)}
             placeholder="全站搜索..."
             className="flex-1 bg-transparent text-base outline-none placeholder:text-muted-foreground"
+            aria-label="搜索"
           />
           {isSearching ? (
             <Loader2Icon className="size-4 shrink-0 animate-spin text-muted-foreground" />

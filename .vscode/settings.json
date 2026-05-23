@@ -35,7 +35,7 @@
   "files.associations": {
     "*.css": "tailwindcss"
   },
-  "npm.scriptRunner": "vp",
+  "npm.scriptRunner": "npm",
   "tailwindCSS.experimental.configFile": "src/assets/styles/tailwind.css",
   "tailwindCSS.classFunctions": ["cn"],
   "tailwindCSS.includeLanguages": {

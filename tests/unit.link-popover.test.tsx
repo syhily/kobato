@@ -1,7 +1,7 @@
 import type { Editor } from '@tiptap/core'
 
 import { renderToStaticMarkup } from 'react-dom/server'
-import { describe, expect, it } from 'vite-plus/test'
+import { describe, expect, it } from 'vitest'
 
 import { LinkPopover } from '@/ui/admin/editor/tiptap/LinkPopover'
 

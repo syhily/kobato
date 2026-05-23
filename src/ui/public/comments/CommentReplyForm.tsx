@@ -96,7 +96,7 @@ export function CommentReplyForm({
   })
 
   const avatar = useMutation({
-    ...orpcQuery.comments.findAvatar.mutationOptions(),
+    ...orpcQuery.avatar.find.mutationOptions(),
     onSuccess: (payload: FindAvatarOutput) => setAvatarSrc(payload.avatar),
   })
 
@@ -259,7 +259,15 @@ function CommentFormHoneypot() {
   return (
     <div className="absolute left-[-10000px] size-px overflow-hidden" aria-hidden="true">
       <label htmlFor="comment-subtitle">Subtitle</label>
-      <input id="comment-subtitle" name="subtitle" type="text" tabIndex={-1} autoComplete="off" defaultValue="" />
+      <input
+        id="comment-subtitle"
+        name="subtitle"
+        type="text"
+        tabIndex={-1}
+        autoComplete="off"
+        defaultValue=""
+        aria-label="Honeypot"
+      />
     </div>
   )
 }
@@ -282,23 +290,23 @@ function CommentFormFields({ user, guestProfile, commentKey, replyToId, onEmailB
   return (
     <div className="-mx-1 -mt-2 mb-4 flex flex-wrap md:-mx-2 md:-mt-4">
       {hasIdentity ? (
-        <input name="name" type="text" readOnly hidden defaultValue={nameValue} />
+        <input name="name" type="text" readOnly hidden defaultValue={nameValue} aria-label="昵称" />
       ) : (
         <div className="mt-2 box-border w-full max-w-full shrink-0 px-1 md:mt-4 md:w-1/2 md:px-2">
           <Input className="bg-canvas" placeholder="昵称" name="name" type="text" required />
         </div>
       )}
       {hasIdentity ? (
-        <input name="email" defaultValue={emailValue} type="email" readOnly hidden />
+        <input name="email" defaultValue={emailValue} type="email" readOnly hidden aria-label="邮箱" />
       ) : (
         <div className="mt-2 box-border w-full max-w-full shrink-0 px-1 md:mt-4 md:w-1/2 md:px-2">
           <Input className="bg-canvas" name="email" placeholder="邮箱" type="email" required onBlur={onEmailBlur} />
         </div>
       )}
-      <input hidden name="page_key" type="text" defaultValue={commentKey} />
-      <input hidden name="rid" type="text" value={String(replyToId)} readOnly />
+      <input hidden name="page_key" type="text" defaultValue={commentKey} aria-label="页面标识" />
+      <input hidden name="rid" type="text" value={String(replyToId)} readOnly aria-label="回复目标" />
       {hasIdentity ? (
-        <input name="link" type="url" readOnly hidden defaultValue={linkValue} />
+        <input name="link" type="url" readOnly hidden defaultValue={linkValue} aria-label="网址" />
       ) : (
         <div className="mt-2 box-border w-full max-w-full shrink-0 px-1 md:mt-4 md:px-2">
           <Input className="bg-canvas" placeholder="网址" name="link" type="url" />

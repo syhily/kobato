@@ -1,6 +1,6 @@
 import type { ClientTag, SidebarPostLink } from '@/shared/types/catalog'
 
-import { selectSidebarPosts as querySidebarPosts } from '@/server/domains/posts/repo'
+import { selectSidebarPosts as querySidebarPosts } from '@/server/domains/posts/repos/public-query'
 import { getSidebarWidgetCount, requireBlogSettingsSection } from '@/shared/config/blog'
 import { sampleSize } from '@/shared/utils/tools'
 

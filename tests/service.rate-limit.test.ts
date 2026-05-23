@@ -3,7 +3,7 @@
 // line would double the file length without adding clarity.
 // oxlint-disable unicorn/no-await-expression-member
 
-import { beforeEach, describe, expect, it } from 'vite-plus/test'
+import { beforeEach, describe, expect, it } from 'vitest'
 
 import { setBlogSettingsBundleForTests } from '@/server/domains/settings/snapshot'
 import {

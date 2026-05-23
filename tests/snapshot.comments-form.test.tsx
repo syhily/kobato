@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vite-plus/test'
+import { describe, expect, it } from 'vitest'
 
 import type { CommentItemWire as CommentItemType } from '@/shared/contracts/comments'
 import type { CommentFormUser } from '@/shared/types/catalog'
@@ -70,7 +70,13 @@ describe('snapshot: Comments form variants', () => {
           _type: 'block',
           _key: 'b1',
           style: 'normal',
-          children: [{ _type: 'span', _key: 's1', text: '谢谢告知，目前 RSS 在 Next.js 下面使用起来比较困难。' }],
+          children: [
+            {
+              _type: 'span',
+              _key: 's1',
+              text: '谢谢告知，目前 RSS 在 Next.js 下面使用起来比较困难。',
+            },
+          ],
         },
       ],
       type: 'post' as const,

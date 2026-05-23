@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vite-plus/test'
+import { describe, expect, it, vi } from 'vitest'
 
 // Regression net for the Hono path-parser footgun that was silently
 // degrading every `/images/*.png` endpoint to its fallback branch.
@@ -47,7 +47,7 @@ vi.mock('@/server/domains/pages/repo', () => ({
   listPublicPageMetas: vi.fn(async () => []),
   findPageBySlug: vi.fn(),
 }))
-vi.mock('@/server/domains/posts/repo', () => ({
+vi.mock('@/server/domains/posts/repos/single', () => ({
   findPostBySlug: vi.fn().mockResolvedValue({ title: 'T', summary: 'S', cover: 'C' }),
 }))
 vi.mock('@/shared/config/blog', () => ({
@@ -94,7 +94,7 @@ describe('imagesRouter avatar', () => {
 
 describe('imagesRouter og', () => {
   it('looks up slug via findPostBySlug and findPageBySlug in parallel', async () => {
-    const { findPostBySlug } = await import('@/server/domains/posts/repo')
+    const { findPostBySlug } = await import('@/server/domains/posts/repos/single')
     const { findPageBySlug } = await import('@/server/domains/pages/repo')
     await imagesRouter.request('/images/og/hello-world.png')
     expect(vi.mocked(findPostBySlug)).toHaveBeenCalledWith('hello-world')

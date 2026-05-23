@@ -146,7 +146,11 @@ export function rgbaToThumbHash(w: number, h: number, rgba: ArrayLike<number>): 
  * @param hash The bytes of the ThumbHash.
  * @returns The width, height, and pixels of the rendered placeholder image.
  */
-export function thumbHashToRGBA(hash: ArrayLike<number>): { w: number; h: number; rgba: Uint8Array } {
+export function thumbHashToRGBA(hash: ArrayLike<number>): {
+  w: number
+  h: number
+  rgba: Uint8Array
+} {
   const { PI, min, max, cos, round } = Math
 
   // Read the constants
@@ -252,7 +256,12 @@ export function thumbHashToRGBA(hash: ArrayLike<number>): { w: number; h: number
  * @param hash The bytes of the ThumbHash.
  * @returns The RGBA values for the average color. Each value ranges from 0 to 1.
  */
-export function thumbHashToAverageRGBA(hash: ArrayLike<number>): { r: number; g: number; b: number; a: number } {
+export function thumbHashToAverageRGBA(hash: ArrayLike<number>): {
+  r: number
+  g: number
+  b: number
+  a: number
+} {
   const { min, max } = Math
   const header = hash[0] | (hash[1] << 8) | (hash[2] << 16)
   const l = (header & 63) / 63

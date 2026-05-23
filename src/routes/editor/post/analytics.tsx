@@ -13,7 +13,7 @@ import {
 import { getRouteRequestContext } from '@/server/domains/auth/context'
 import { requireRole } from '@/server/domains/auth/rbac'
 import { toAdminPostDto } from '@/server/domains/posts/projection'
-import { findPostMetaById } from '@/server/domains/posts/repo'
+import { findPostMetaById } from '@/server/domains/posts/repos/single'
 import { METRIC_GROUPS, METRIC_GROUP_TABS } from '@/shared/contracts/analytics'
 import { Counters } from '@/ui/admin/analytics/Counters'
 import { DateRangePicker } from '@/ui/admin/analytics/DateRangePicker'

@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vite-plus/test'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 // Stub email templates with trivial React components so the import
 // chain is cheap and we can focus on the sender's transport / config
@@ -75,7 +75,12 @@ describe('email/sender — internalSend (via sendNewComment)', () => {
   const target = { type: 'post' as const, ownerId: 1n }
 
   it('skips with reason=disabled when the master switch is off', async () => {
-    setMail({ enabled: false, host: 'api.zeabur.com', apiKey: 'KEY', sender: 'noreply@example.com' })
+    setMail({
+      enabled: false,
+      host: 'api.zeabur.com',
+      apiKey: 'KEY',
+      sender: 'noreply@example.com',
+    })
 
     const result = await sendNewComment(commentInfo, target)
 
@@ -99,7 +104,12 @@ describe('email/sender — internalSend (via sendNewComment)', () => {
   })
 
   it('POSTs to the configured Zeabur ZSend endpoint with the bearer token', async () => {
-    setMail({ enabled: true, host: 'api.zeabur.com', apiKey: 'SECRET', sender: 'noreply@example.com' })
+    setMail({
+      enabled: true,
+      host: 'api.zeabur.com',
+      apiKey: 'SECRET',
+      sender: 'noreply@example.com',
+    })
     fetchMock.mockResolvedValueOnce(new Response(null, { status: 200 }))
 
     const result = await sendNewComment(commentInfo, target)
@@ -117,7 +127,12 @@ describe('email/sender — internalSend (via sendNewComment)', () => {
   })
 
   it('reports upstream rejections through reason=upstream with the status code', async () => {
-    setMail({ enabled: true, host: 'api.zeabur.com', apiKey: 'SECRET', sender: 'noreply@example.com' })
+    setMail({
+      enabled: true,
+      host: 'api.zeabur.com',
+      apiKey: 'SECRET',
+      sender: 'noreply@example.com',
+    })
     fetchMock.mockResolvedValueOnce(new Response('quota exceeded', { status: 429, statusText: 'Too Many Requests' }))
 
     const result = await sendNewComment(commentInfo, target)
@@ -133,7 +148,12 @@ describe('email/sender — internalSend (via sendNewComment)', () => {
   })
 
   it('reports network failures through reason=network', async () => {
-    setMail({ enabled: true, host: 'api.zeabur.com', apiKey: 'SECRET', sender: 'noreply@example.com' })
+    setMail({
+      enabled: true,
+      host: 'api.zeabur.com',
+      apiKey: 'SECRET',
+      sender: 'noreply@example.com',
+    })
     fetchMock.mockRejectedValueOnce(new Error('ECONNREFUSED'))
 
     const result = await sendNewComment(commentInfo, target)
@@ -150,7 +170,12 @@ describe('email/sender — internalSend (via sendNewComment)', () => {
 
 describe('email/sender — sendTestMail', () => {
   it('bypasses the enabled toggle so editors can verify before going live', async () => {
-    setMail({ enabled: false, host: 'api.zeabur.com', apiKey: 'KEY', sender: 'noreply@example.com' })
+    setMail({
+      enabled: false,
+      host: 'api.zeabur.com',
+      apiKey: 'KEY',
+      sender: 'noreply@example.com',
+    })
     fetchMock.mockResolvedValueOnce(new Response(null, { status: 200 }))
 
     const result = await sendTestMail('me@example.com')
@@ -176,7 +201,12 @@ describe('email/sender — sendTestMail', () => {
   })
 
   it('surfaces upstream errors with the original status', async () => {
-    setMail({ enabled: true, host: 'api.zeabur.com', apiKey: 'SECRET', sender: 'noreply@example.com' })
+    setMail({
+      enabled: true,
+      host: 'api.zeabur.com',
+      apiKey: 'SECRET',
+      sender: 'noreply@example.com',
+    })
     fetchMock.mockResolvedValueOnce(new Response('forbidden', { status: 403, statusText: 'Forbidden' }))
 
     const result = await sendTestMail('me@example.com')

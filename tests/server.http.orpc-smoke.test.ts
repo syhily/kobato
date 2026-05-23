@@ -1,6 +1,6 @@
 import { ORPCError, os } from '@orpc/server'
 import { RPCHandler } from '@orpc/server/fetch'
-import { describe, expect, it } from 'vite-plus/test'
+import { describe, expect, it } from 'vitest'
 import { z } from 'zod'
 
 // End-to-end smoke for the oRPC + Hono mount pattern. We assemble a

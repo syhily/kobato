@@ -15,6 +15,7 @@ import type {
   TextBlock,
 } from '@/shared/pt/schema'
 
+import { SafeHtml } from '@/ui/components/safe-html'
 import { cn } from '@/ui/lib/cn'
 import { BlockImage } from '@/ui/pt/blocks/BlockImage'
 import { CodeBlock as CodeBlockComponent } from '@/ui/pt/blocks/CodeBlock'
@@ -103,9 +104,6 @@ export function CodeBlockNodeComponent({ value }: PortableTextTypeComponentProps
         className={value.language !== undefined ? `language-${value.language}` : undefined}
         copyText={value.code}
         data-language={value.language}
-        // SAFETY: `highlightedHtml` is produced server-side by Shiki's
-        // `codeToHtml`, which HTML-escapes the source code. No user input
-        // reaches this path without escaping.
         dangerouslySetInnerHTML={{ __html: value.highlightedHtml }}
       />
     )
@@ -130,11 +128,8 @@ export function MermaidBlockComponent({ value }: PortableTextTypeComponentProps<
   const center = value.center === true
 
   if (value.svg !== undefined && value.svg !== '') {
-    // SAFETY: `svg` is produced server-side by `beautiful-mermaid`'s SVG
-    // renderer. Mermaid diagrams are authored by admins only; guest users
-    // cannot inject arbitrary Mermaid source into published content.
     const inner = (
-      <div className={cn('mermaid', center && '[&_svg]:max-w-none')} dangerouslySetInnerHTML={{ __html: value.svg }} />
+      <SafeHtml html={value.svg} strategy="mermaid" className={cn('mermaid', center && '[&_svg]:max-w-none')} />
     )
     if (!center) {
       return inner

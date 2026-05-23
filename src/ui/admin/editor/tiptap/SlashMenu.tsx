@@ -89,7 +89,10 @@ export const SlashCommandsExtension = Extension.create<SlashCommandsExtensionOpt
             },
             onKeyDown: (props) => {
               if (props.event.key === 'Escape') {
-                component?.updateProps({ ...(component.props as SlashMenuListProps), isOpen: false })
+                component?.updateProps({
+                  ...(component.props as SlashMenuListProps),
+                  isOpen: false,
+                })
                 return true
               }
               return component?.ref?.onKeyDown(props) ?? false
@@ -220,8 +223,7 @@ function SlashMenuList(props: SlashMenuListProps) {
           <button
             key={item.id}
             type="button"
-            role="option"
-            aria-selected={active}
+            aria-label={item.title}
             onMouseEnter={() => setActiveIndex(index)}
             onMouseDown={(event) => {
               event.preventDefault()

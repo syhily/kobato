@@ -129,10 +129,9 @@ export function TagsField({ values, onChange, disabled }: TagsFieldProps) {
           {open && filtered.length > 0 && (
             <ul className="absolute z-(--z-modal) mt-1 max-h-60 w-full overflow-auto rounded-md border bg-popover py-1 shadow-md">
               {filtered.map((tag, index) => (
-                <li
+                <button
                   key={tag.id}
-                  role="option"
-                  aria-selected={index === highlighted}
+                  type="button"
                   onMouseEnter={() => setHighlighted(index)}
                   onMouseDown={(e) => {
                     // Prevent the input from losing focus before the click
@@ -141,12 +140,12 @@ export function TagsField({ values, onChange, disabled }: TagsFieldProps) {
                     addTag(tag.name)
                   }}
                   className={cn(
-                    'cursor-pointer px-3 py-2 text-sm',
+                    'w-full cursor-pointer px-3 py-2 text-left text-sm',
                     index === highlighted ? 'bg-accent text-accent-foreground' : 'text-popover-foreground',
                   )}
                 >
                   {tag.name}
-                </li>
+                </button>
               ))}
             </ul>
           )}
@@ -163,7 +162,8 @@ export function TagsField({ values, onChange, disabled }: TagsFieldProps) {
       </div>
       {unknownTags.length > 0 && (
         <p className="text-xs text-status-warn-fg">
-          警告：以下标签尚未在系统中创建：{unknownTags.join('、')}。保存前请确认，或前往标签管理新建。
+          警告：以下标签尚未在系统中创建：{unknownTags.join('、')}
+          。保存前请确认，或前往标签管理新建。
         </p>
       )}
     </div>

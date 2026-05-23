@@ -1,4 +1,4 @@
-import type { PendingCommentRow } from '@/server/domains/comments/repo'
+import type { PendingCommentRow } from '@/server/domains/comments/repos/shared'
 import type { LatestComment } from '@/server/domains/comments/types'
 import type { MetricRow } from '@/server/infra/db/types'
 

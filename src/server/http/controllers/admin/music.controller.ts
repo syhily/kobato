@@ -44,7 +44,10 @@ const add = authorProc
     const music = await addMusic({
       source: input.source,
       sourceId: input.sourceId,
-      uploader: { id: idFromString(context.viewer.userId), name: userSession(context.session)?.name ?? '' },
+      uploader: {
+        id: idFromString(context.viewer.userId),
+        name: userSession(context.session)?.name ?? '',
+      },
     })
     recordAuditEventFromContext(context, {
       action: 'music_added',
@@ -87,7 +90,10 @@ const remove = authorProc
   .input(z.object({ id: z.string().min(1) }))
   .output(z.void())
   .handler(async ({ input, context }) => {
-    await deleteMusic(idFromString(input.id), { userId: context.viewer.userId, role: context.viewer.role })
+    await deleteMusic(idFromString(input.id), {
+      userId: context.viewer.userId,
+      role: context.viewer.role,
+    })
     recordAuditEventFromContext(context, {
       action: 'music_deleted',
       resourceType: 'music',

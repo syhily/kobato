@@ -3,6 +3,8 @@ import { and, count, desc, eq, inArray, isNull, max, ne, or, sql } from 'drizzle
 
 import type { NewUser, User } from '@/server/infra/db/types'
 
+export type SafeUser = Omit<User, 'password' | 'lastIp' | 'lastUa'>
+
 import { db } from '@/server/infra/db/pool'
 import { comment, post, user } from '@/server/infra/db/schema'
 import { getBlogSettingsBundleSync } from '@/shared/config/blog'
@@ -23,6 +25,42 @@ export async function findUserByEmail(email: string): Promise<User | null> {
 export async function findUserById(id: bigint): Promise<User | null> {
   const rows = await db.select().from(user).where(eq(user.id, id)).limit(1)
   return rows[0] ?? null
+}
+
+const safeUserColumns = {
+  id: user.id,
+  createdAt: user.createdAt,
+  updatedAt: user.updatedAt,
+  deletedAt: user.deletedAt,
+  name: user.name,
+  email: user.email,
+  emailVerified: user.emailVerified,
+  link: user.link,
+  badgeName: user.badgeName,
+  badgeColor: user.badgeColor,
+  badgeTextColor: user.badgeTextColor,
+  role: user.role,
+  isMuted: user.isMuted,
+  receiveEmail: user.receiveEmail,
+}
+
+export async function findSafeUserByEmail(email: string): Promise<SafeUser | null> {
+  const rows = await db.select(safeUserColumns).from(user).where(eq(user.email, email)).limit(1)
+  return rows[0] ?? null
+}
+
+export async function findSafeUserById(id: bigint): Promise<SafeUser | null> {
+  const rows = await db.select(safeUserColumns).from(user).where(eq(user.id, id)).limit(1)
+  return rows[0] ?? null
+}
+
+export async function hasRegisteredAccount(email: string): Promise<boolean> {
+  const rows = await db
+    .select({ id: user.id })
+    .from(user)
+    .where(and(eq(user.email, email), ne(user.password, '')))
+    .limit(1)
+  return rows.length > 0
 }
 
 /**
@@ -106,8 +144,8 @@ export async function insertAuthor(name: string, email: string): Promise<User[]>
   return db.insert(user).values(author).returning()
 }
 
-export async function insertCommentUser(name: string, email: string, website: string): Promise<User | null> {
-  const existing = await findUserByEmail(email)
+export async function insertCommentUser(name: string, email: string, website: string): Promise<SafeUser | null> {
+  const existing = await findSafeUserByEmail(email)
   if (existing !== null) {
     return existing
   }
@@ -121,7 +159,7 @@ export async function insertCommentUser(name: string, email: string, website: st
     badgeColor: '',
     receiveEmail: true,
   }
-  const res = await db.insert(user).values(u).returning()
+  const res = await db.insert(user).values(u).returning(safeUserColumns)
   return res[0] ?? null
 }
 

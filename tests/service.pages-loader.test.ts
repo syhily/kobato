@@ -1,4 +1,4 @@
-import { beforeAll, beforeEach, describe, expect, it, vi } from 'vite-plus/test'
+import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { PortableTextBody } from '@/shared/pt/schema'
 
@@ -9,7 +9,12 @@ import { makePage } from './_helpers/catalog'
 // findPageBySlug) instead of the old catalog cache (getEntryBySlug).
 
 const pageBody: PortableTextBody = [
-  { _type: 'block', _key: 'p1', style: 'normal', children: [{ _type: 'span', _key: 'p1s', text: 'Hello' }] },
+  {
+    _type: 'block',
+    _key: 'p1',
+    style: 'normal',
+    children: [{ _type: 'span', _key: 'p1s', text: 'Hello' }],
+  },
 ]
 
 function makePostMeta(
@@ -52,7 +57,7 @@ const mocks = vi.hoisted(() => ({
   resolveSessionContext: vi.fn(async () => ({ role: 'anonymous', user: null, session: null })),
 }))
 
-vi.mock('@/server/domains/posts/repo', () => ({
+vi.mock('@/server/domains/posts/repos/single', () => ({
   findPublicPostMetaBySlug: mocks.findPublicPostMetaBySlug,
 }))
 vi.mock('@/server/domains/pages/repo', () => ({
@@ -93,7 +98,11 @@ beforeEach(() => {
   mocks.findPageBySlug.mockImplementation(async () => null)
   mocks.loadPageDraftPreviewBySlug.mockImplementation(async () => null)
   mocks.tryGetSessionContext.mockReturnValue(null)
-  mocks.resolveSessionContext.mockImplementation(async () => ({ role: 'anonymous', user: null, session: null }))
+  mocks.resolveSessionContext.mockImplementation(async () => ({
+    role: 'anonymous',
+    user: null,
+    session: null,
+  }))
 })
 
 let loadPagePreview: (typeof import('@/server/domains/pages/loader'))['loadPagePreview']
@@ -131,7 +140,9 @@ describe('loadPagePreview — slug redirect logic', () => {
   it('does not redirect for a scheduled post (publishedAt in future)', async () => {
     mocks.findPublicPostMetaBySlug.mockImplementation(async () => makePostMeta({ publishedAt: new Date('2099-01-01') }))
 
-    await expect(loadPagePreview(makeArgs('scheduled-post'))).rejects.toMatchObject({ status: 404 })
+    await expect(loadPagePreview(makeArgs('scheduled-post'))).rejects.toMatchObject({
+      status: 404,
+    })
   })
 
   it('returns page data when slug matches a published page', async () => {
@@ -159,7 +170,10 @@ describe('loadPagePreview — slug redirect logic', () => {
 
   it('shows draft to admin when slug has no published page', async () => {
     const draftPage = makeDbPage({ slug: 'new-page', title: 'New Page Draft' })
-    mocks.loadPageDraftPreviewBySlug.mockImplementation(async () => ({ page: draftPage, hasNewerDraft: false }))
+    mocks.loadPageDraftPreviewBySlug.mockImplementation(async () => ({
+      page: draftPage,
+      hasNewerDraft: false,
+    }))
     mocks.tryGetSessionContext.mockReturnValue({ role: 'admin', user: { id: '1' }, session: {} })
 
     const result = await loadPagePreview(makeArgs('new-page'))

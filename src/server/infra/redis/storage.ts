@@ -3,6 +3,7 @@ import type { Cluster, Redis } from 'ioredis'
 import { Redis as RedisClient } from 'ioredis'
 
 import { REDIS_URL } from '@/server/infra/env'
+import { registerShutdownHook } from '@/server/infra/shutdown'
 
 const redis = new RedisClient(REDIS_URL)
 
@@ -96,3 +97,9 @@ export const storage = {
 export function redisInstance(): Redis | Cluster {
   return redis
 }
+
+export async function closeRedis(): Promise<void> {
+  await redis.quit()
+}
+
+registerShutdownHook(closeRedis)

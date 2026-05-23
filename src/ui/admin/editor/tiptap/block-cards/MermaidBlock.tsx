@@ -8,6 +8,7 @@ import { useAdminMermaidPreview } from '@/ui/admin/editor/tiptap/use-admin-merma
 import { Button } from '@/ui/components/button'
 import { Checkbox } from '@/ui/components/checkbox'
 import { Label } from '@/ui/components/label'
+import { SafeHtml } from '@/ui/components/safe-html'
 import { Textarea } from '@/ui/components/textarea'
 import { cn } from '@/ui/lib/cn'
 
@@ -67,14 +68,11 @@ export function MermaidBlockOptions({ stableId, center, onCenterChange }: Mermai
 export function MermaidBlockSummary({ payload }: { payload: MermaidBlock }) {
   const center = payload.center === true
   if (payload.svg !== undefined && payload.svg !== '') {
-    {
-      /* SAFETY: `svg` is produced server-side by `beautiful-mermaid`. Only
-        admins can author Mermaid blocks. */
-    }
     const inner = (
-      <div
+      <SafeHtml
+        html={payload.svg}
+        strategy="mermaid"
         className={cn('mermaid mt-2 max-w-full overflow-x-auto [&_svg]:max-w-none', center && 'shrink-0')}
-        dangerouslySetInnerHTML={{ __html: payload.svg }}
       />
     )
     if (!center) {
@@ -117,11 +115,10 @@ export function MermaidBlockSourceEditor({ payload, onCommit, onCancel }: Mermai
 
   const previewInner =
     previewHtml !== '' ? (
-      // SAFETY: `previewHtml` is SVG produced by `beautiful-mermaid` via the
-      // admin render endpoint. Only admins can trigger this path.
-      <div
+      <SafeHtml
+        html={previewHtml}
+        strategy="preview"
         className={cn('mermaid mt-2 max-w-full overflow-x-auto [&_svg]:max-w-none', center && 'shrink-0')}
-        dangerouslySetInnerHTML={{ __html: previewHtml }}
       />
     ) : (
       <span className="ml-2 text-xs text-muted-foreground">输入源码后显示预览</span>

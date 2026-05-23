@@ -8,7 +8,7 @@ import { establishLoginSession, logout } from '@/server/domains/auth/primitives'
 import { signInSchema } from '@/server/domains/auth/schema'
 import { destroySession } from '@/server/domains/auth/session-storage'
 import { consumeToken, issueResetToken, peekToken } from '@/server/domains/auth/verification-tokens'
-import { countApprovedCommentsByUser } from '@/server/domains/comments/repo'
+import { countApprovedCommentsByUser } from '@/server/domains/comments/repos/public-query'
 import { ensureInstalledOrRedirect } from '@/server/domains/settings/install-gate'
 import { findUserByEmail, findUserById, updateUserById } from '@/server/infra/db/operations/user'
 import { sendPasswordReset } from '@/server/infra/email/sender'
@@ -224,9 +224,9 @@ export default function LoginRoute({ actionData, loaderData }: Route.ComponentPr
             </p>
           ) : null}
           {hasMessage(actionData) ? (
-            <p role="status" aria-live="polite" className="text-green-600 dark:text-green-400">
+            <output aria-live="polite" className="text-green-600 dark:text-green-400">
               {actionData.message}
-            </p>
+            </output>
           ) : null}
           {loaderData.tokenError ? (
             <p role="alert" aria-live="polite" className="text-destructive">

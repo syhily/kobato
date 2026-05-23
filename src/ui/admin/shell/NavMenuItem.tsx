@@ -200,16 +200,15 @@ function NavMenuCollapsibleMenu({ children }: NavMenuCollapsibleMenuProps) {
   const { expanded, id } = useCollapsibleContext()
 
   return (
-    <div
+    <fieldset
       id={id}
-      role="group"
       className={cn(
-        'grid overflow-hidden transition-all duration-200 ease-out',
+        'grid overflow-hidden border-0 p-0 transition-all duration-200 ease-out',
         expanded ? 'mb-5 grid-rows-[1fr]' : 'mb-0 grid-rows-[0fr]',
       )}
     >
       <ul className="min-h-0 list-none overflow-hidden p-0">{children}</ul>
-    </div>
+    </fieldset>
   )
 }
 

@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from 'vite-plus/test'
+import { afterEach, describe, expect, it } from 'vitest'
 
 import type { AssetsSettings } from '@/shared/config/blog'
 
@@ -55,7 +55,11 @@ describe('server/images/storage — toggle dispatch', () => {
       },
     })
     await expect(
-      putImage({ storagePath: 'images/2026/05/x.jpg', body: Buffer.from(''), contentType: 'image/jpeg' }),
+      putImage({
+        storagePath: 'images/2026/05/x.jpg',
+        body: Buffer.from(''),
+        contentType: 'image/jpeg',
+      }),
     ).rejects.toMatchObject({ status: 503 })
     await expect(deleteImage('images/2026/05/x.jpg')).rejects.toMatchObject({ status: 503 })
   })

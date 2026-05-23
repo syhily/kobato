@@ -1,5 +1,5 @@
 import { call } from '@orpc/server'
-import { describe, expect, it, vi } from 'vite-plus/test'
+import { describe, expect, it, vi } from 'vitest'
 
 import { makeAuthedCtx } from './_helpers/mock-ctx'
 
@@ -63,7 +63,9 @@ describe('adminSettingsRouter.update', () => {
       adminSettingsRouter.update,
       {
         section: 'mail',
-        payload: { mail: { enabled: false, host: 'api.zeabur.com', sender: 'noreply@example.com' } },
+        payload: {
+          mail: { enabled: false, host: 'api.zeabur.com', sender: 'noreply@example.com' },
+        },
       },
       { context: ctx },
     )

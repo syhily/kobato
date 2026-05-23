@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vite-plus/test'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import {
   assertNotWordPressDecoy,
@@ -33,12 +33,19 @@ fixtures.samplePost = {
   body: () => null,
   imageSources: [],
 }
-fixtures.samplePage = { ...makePage({ slug: 'about' }), body: [], imageSources: [], publishedRevisionId: null }
+fixtures.samplePage = {
+  ...makePage({ slug: 'about' }),
+  body: [],
+  imageSources: [],
+  publishedRevisionId: null,
+}
 
 // catalog/catalog removed; pages/loader.ts now uses findPublicPostMetaBySlug +
 // findPageBySlug directly. Catalog slug routing is gone.
-vi.mock('@/server/domains/posts/repo', () => ({
+vi.mock('@/server/domains/posts/repos/public-query', () => ({
   listPublicPostMetas: vi.fn(async () => []),
+}))
+vi.mock('@/server/domains/posts/repos/single', () => ({
   findPostBySlug: vi.fn(async (slug: string) => (slug === 'hello' ? fixtures.samplePost : null)),
   findPublicPostMetaBySlug: vi.fn(async (slug: string) =>
     slug === 'hello'

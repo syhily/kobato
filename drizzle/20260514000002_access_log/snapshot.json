@@ -2,16 +2,10 @@
   "version": "8",
   "dialect": "postgres",
   "id": "f9a79e55-4642-4f85-b86b-1cf7f95e9784",
-  "prevIds": [
-    "38f752d1-2df2-40fd-81e5-e33dd4828ad5"
-  ],
+  "prevIds": ["38f752d1-2df2-40fd-81e5-e33dd4828ad5"],
   "ddl": [
     {
-      "values": [
-        "admin",
-        "author",
-        "visitor"
-      ],
+      "values": ["admin", "author", "visitor"],
       "name": "user_role",
       "entityType": "enums",
       "schema": "public"
@@ -3750,9 +3744,7 @@
       "table": "verification"
     },
     {
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "name": "category_pkey",
       "schema": "public",
@@ -3760,9 +3752,7 @@
       "entityType": "pks"
     },
     {
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "name": "comment_pkey",
       "schema": "public",
@@ -3770,9 +3760,7 @@
       "entityType": "pks"
     },
     {
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "name": "content_pkey",
       "schema": "public",
@@ -3780,9 +3768,7 @@
       "entityType": "pks"
     },
     {
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "name": "friend_pkey",
       "schema": "public",
@@ -3790,9 +3776,7 @@
       "entityType": "pks"
     },
     {
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "name": "image_pkey",
       "schema": "public",
@@ -3800,9 +3784,7 @@
       "entityType": "pks"
     },
     {
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "name": "like_pkey",
       "schema": "public",
@@ -3810,9 +3792,7 @@
       "entityType": "pks"
     },
     {
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "name": "metric_pkey",
       "schema": "public",
@@ -3820,9 +3800,7 @@
       "entityType": "pks"
     },
     {
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "name": "music_pkey",
       "schema": "public",
@@ -3830,9 +3808,7 @@
       "entityType": "pks"
     },
     {
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "name": "page_pkey",
       "schema": "public",
@@ -3840,9 +3816,7 @@
       "entityType": "pks"
     },
     {
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "name": "post_pkey",
       "schema": "public",
@@ -3850,9 +3824,7 @@
       "entityType": "pks"
     },
     {
-      "columns": [
-        "post_id"
-      ],
+      "columns": ["post_id"],
       "nameExplicit": false,
       "name": "post_search_index_pkey",
       "schema": "public",
@@ -3860,9 +3832,7 @@
       "entityType": "pks"
     },
     {
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "name": "setting_pkey",
       "schema": "public",
@@ -3870,9 +3840,7 @@
       "entityType": "pks"
     },
     {
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "name": "tag_pkey",
       "schema": "public",
@@ -3880,9 +3848,7 @@
       "entityType": "pks"
     },
     {
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "name": "user_pkey",
       "schema": "public",
@@ -3890,9 +3856,7 @@
       "entityType": "pks"
     },
     {
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "name": "verification_pkey",
       "schema": "public",
@@ -3901,9 +3865,7 @@
     },
     {
       "nameExplicit": false,
-      "columns": [
-        "name"
-      ],
+      "columns": ["name"],
       "nullsNotDistinct": false,
       "name": "category_name_key",
       "schema": "public",
@@ -3912,9 +3874,7 @@
     },
     {
       "nameExplicit": false,
-      "columns": [
-        "slug"
-      ],
+      "columns": ["slug"],
       "nullsNotDistinct": false,
       "name": "category_slug_key",
       "schema": "public",
@@ -3923,9 +3883,7 @@
     },
     {
       "nameExplicit": false,
-      "columns": [
-        "storage_path"
-      ],
+      "columns": ["storage_path"],
       "nullsNotDistinct": false,
       "name": "image_storage_path_key",
       "schema": "public",
@@ -3934,9 +3892,7 @@
     },
     {
       "nameExplicit": false,
-      "columns": [
-        "player_id"
-      ],
+      "columns": ["player_id"],
       "nullsNotDistinct": false,
       "name": "music_player_id_key",
       "schema": "public",
@@ -3945,9 +3901,7 @@
     },
     {
       "nameExplicit": false,
-      "columns": [
-        "audio_storage_path"
-      ],
+      "columns": ["audio_storage_path"],
       "nullsNotDistinct": false,
       "name": "music_audio_storage_path_key",
       "schema": "public",
@@ -3956,9 +3910,7 @@
     },
     {
       "nameExplicit": false,
-      "columns": [
-        "cover_storage_path"
-      ],
+      "columns": ["cover_storage_path"],
       "nullsNotDistinct": false,
       "name": "music_cover_storage_path_key",
       "schema": "public",
@@ -3967,9 +3919,7 @@
     },
     {
       "nameExplicit": false,
-      "columns": [
-        "slug"
-      ],
+      "columns": ["slug"],
       "nullsNotDistinct": false,
       "name": "page_slug_key",
       "schema": "public",
@@ -3978,9 +3928,7 @@
     },
     {
       "nameExplicit": false,
-      "columns": [
-        "slug"
-      ],
+      "columns": ["slug"],
       "nullsNotDistinct": false,
       "name": "post_slug_key",
       "schema": "public",
@@ -3989,9 +3937,7 @@
     },
     {
       "nameExplicit": false,
-      "columns": [
-        "scope"
-      ],
+      "columns": ["scope"],
       "nullsNotDistinct": false,
       "name": "setting_scope_key",
       "schema": "public",
@@ -4000,9 +3946,7 @@
     },
     {
       "nameExplicit": false,
-      "columns": [
-        "name"
-      ],
+      "columns": ["name"],
       "nullsNotDistinct": false,
       "name": "tag_name_key",
       "schema": "public",
@@ -4011,9 +3955,7 @@
     },
     {
       "nameExplicit": false,
-      "columns": [
-        "slug"
-      ],
+      "columns": ["slug"],
       "nullsNotDistinct": false,
       "name": "tag_slug_key",
       "schema": "public",
@@ -4022,9 +3964,7 @@
     },
     {
       "nameExplicit": false,
-      "columns": [
-        "email"
-      ],
+      "columns": ["email"],
       "nullsNotDistinct": false,
       "name": "user_email_key",
       "schema": "public",

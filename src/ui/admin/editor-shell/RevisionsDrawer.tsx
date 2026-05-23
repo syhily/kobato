@@ -59,7 +59,11 @@ export function RevisionHistoryDrawer({
 
   const listQuery = useQuery(
     type === 'page'
-      ? orpcQuery.admin.pages.listRevisions.queryOptions({ input: { id: ownerId }, enabled: open, staleTime: Infinity })
+      ? orpcQuery.admin.pages.listRevisions.queryOptions({
+          input: { id: ownerId },
+          enabled: open,
+          staleTime: Infinity,
+        })
       : orpcQuery.admin.posts.listRevisions.queryOptions({
           input: { id: ownerId },
           enabled: open,

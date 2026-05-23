@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vite-plus/test'
+import { describe, expect, it } from 'vitest'
 
 import { getImageUrl, isTransformableRemoteImage } from '@/shared/types/images'
 
@@ -8,7 +8,13 @@ describe('shared/images — getImageUrl', () => {
   it('returns src unchanged when the host does not match', () => {
     const src = 'https://other.cdn.com/image.jpg'
     expect(
-      getImageUrl({ src, width: 300, height: 300, assetHost, urlTemplate: '!upyun520/both/{width}x{height}' }),
+      getImageUrl({
+        src,
+        width: 300,
+        height: 300,
+        assetHost,
+        urlTemplate: '!upyun520/both/{width}x{height}',
+      }),
     ).toBe(src)
   })
 

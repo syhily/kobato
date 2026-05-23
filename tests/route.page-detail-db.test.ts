@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vite-plus/test'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { PortableTextBody } from '@/shared/pt/schema'
 
@@ -59,8 +59,10 @@ vi.mock('@/server/domains/pages/repo', () => ({
   findPageBySlug: vi.fn(async (slug: string) => (slug === 'about' ? dbPage : null)),
   buildDbPage: (p: unknown) => p,
 }))
-vi.mock('@/server/domains/posts/repo', () => ({
+vi.mock('@/server/domains/posts/repos/public-query', () => ({
   listPublicPostMetas: vi.fn(async () => []),
+}))
+vi.mock('@/server/domains/posts/repos/single', () => ({
   findPostBySlug: vi.fn(async () => null),
   findPublicPostMetaBySlug: vi.fn(async () => null),
 }))

@@ -4,7 +4,7 @@ Conventions for the `tests/` directory.
 
 ## Test utilities
 
-- Import test utilities from `vite-plus/test`, not `vitest`.
+- Import test utilities from `vitest`, not `vite-plus/test`.
 
 ## Infrastructure requirements
 

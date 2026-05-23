@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vite-plus/test'
+import { describe, expect, it } from 'vitest'
 
 import type { CommentItemWire } from '@/shared/contracts/comments'
 
@@ -12,7 +12,14 @@ function makeComment(id: bigint, ownerId: bigint, name = 'Alice'): CommentItemWi
     updatedAt: '2024-01-15T08:30:00.000Z',
     deleteAt: null,
     content: null,
-    body: [{ _type: 'block', _key: 'b1', style: 'normal', children: [{ _type: 'span', _key: 's1', text: 'Hello.' }] }],
+    body: [
+      {
+        _type: 'block',
+        _key: 'b1',
+        style: 'normal',
+        children: [{ _type: 'span', _key: 's1', text: 'Hello.' }],
+      },
+    ],
     type: 'post',
     ownerId: String(ownerId),
     userId: '42',

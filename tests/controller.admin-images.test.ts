@@ -1,5 +1,5 @@
 import { call } from '@orpc/server'
-import { describe, expect, it, vi } from 'vite-plus/test'
+import { describe, expect, it, vi } from 'vitest'
 
 import { makeAuthedCtx } from './_helpers/mock-ctx'
 
@@ -57,7 +57,10 @@ describe('adminImagesRouter.delete', () => {
 
 describe('adminImagesRouter.updateNote', () => {
   it('returns updated image', async () => {
-    vi.mocked(service.updateImageNote).mockResolvedValueOnce({ ...image, note: 'Updated note' } as never)
+    vi.mocked(service.updateImageNote).mockResolvedValueOnce({
+      ...image,
+      note: 'Updated note',
+    } as never)
     const ctx = makeAuthedCtx()
     const res = await call(adminImagesRouter.updateNote, { id: '1', note: 'Updated note' }, { context: ctx })
     expect(res.image.note).toBe('Updated note')

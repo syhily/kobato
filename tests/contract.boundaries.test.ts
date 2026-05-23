@@ -1,5 +1,5 @@
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
-import { describe, expect, it } from 'vite-plus/test'
+import { describe, expect, it } from 'vitest'
 
 // Node-native replacement for the previous `rg --files` shell-out. GitHub's
 // `ubuntu-latest` runner does not ship ripgrep, so `execFileSync('rg', …)`
@@ -752,14 +752,6 @@ describe('contract: module and bundle boundaries', () => {
 
   it('keeps source relative imports inside the documented allowlist', () => {
     const explicitAllowed = [
-      // Vite+'s `defineConfig({ fmt, lint })` only accepts inline objects
-      // (the toolchain reads them statically — see
-      // https://viteplus.dev/guide/troubleshooting). The Oxfmt/Oxlint
-      // configs therefore have to be siblings of `vite.config.ts` and
-      // imported with explicit relative `.ts` specifiers; aliases would
-      // be resolved too late by Vite+'s config loader.
-      { key: 'vite.config.ts -> ./oxfmt.config.ts', file: 'vite.config.ts', specifier: './oxfmt.config.ts' },
-      { key: 'vite.config.ts -> ./oxlint.config.ts', file: 'vite.config.ts', specifier: './oxlint.config.ts' },
       {
         key: 'vite.config.ts -> ./src/server/infra/hono/dev.ts',
         file: 'vite.config.ts',

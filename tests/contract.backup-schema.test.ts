@@ -1,6 +1,6 @@
-import { describe, expect, it } from 'vite-plus/test'
+import { describe, expect, it } from 'vitest'
 
-import { backupSchema } from '@/server/domains/settings/schema'
+import { backupSchema } from '@/server/domains/settings/schemas/backup'
 
 describe('contract/backup-schema', () => {
   it('accepts valid daily schedule', () => {

@@ -1,5 +1,5 @@
 import { call } from '@orpc/server'
-import { describe, expect, it, vi } from 'vite-plus/test'
+import { describe, expect, it, vi } from 'vitest'
 
 import { makeAuthedCtx } from './_helpers/mock-ctx'
 
@@ -52,7 +52,9 @@ describe('adminTagsRouter.upsert', () => {
     }
     vi.mocked(service.upsertAdminTag).mockResolvedValueOnce(tag as never)
     const ctx = makeAuthedCtx()
-    const res = (await call(adminTagsRouter.upsert, { name: 'Tag B' }, { context: ctx })) as { tag: unknown }
+    const res = (await call(adminTagsRouter.upsert, { name: 'Tag B' }, { context: ctx })) as {
+      tag: unknown
+    }
     expect(res.tag).toEqual(tag)
   })
 })

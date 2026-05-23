@@ -1,4 +1,4 @@
-import { vi } from 'vite-plus/test'
+import { vi } from 'vitest'
 
 import type { Comment, Like, MetricRow, NewComment, NewUser, User } from '@/server/infra/db/types'
 

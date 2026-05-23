@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vite-plus/test'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { db } from '@/server/infra/db/pool'
 import { category, post, tag } from '@/server/infra/db/schema'

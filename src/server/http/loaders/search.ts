@@ -3,7 +3,7 @@ import { redirect } from 'react-router'
 import type { ListingPageLoaderData } from '@/server/http/loaders/listing'
 
 import { recordAuditEvent } from '@/server/domains/audit/service'
-import { getClientPostsWithMetadata, getPostsBySlugs } from '@/server/domains/posts/repo'
+import { getClientPostsWithMetadata, getPostsBySlugs } from '@/server/domains/posts/repos/public-query'
 import { parseListingPage } from '@/server/http/loaders/pagination'
 import { searchPostOptions } from '@/server/infra/search/options'
 import { searchPosts } from '@/server/infra/search/search'

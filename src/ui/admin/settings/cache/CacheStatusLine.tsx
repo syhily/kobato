@@ -30,13 +30,9 @@ export function CacheStatusLine({ status, target, generatedAt }: CacheStatusLine
         ? `数据采集时间：${formatTimestamp(generatedAt)}`
         : ''
   return (
-    <p
-      role="status"
-      aria-live="polite"
-      className={isError ? 'text-xs text-destructive' : 'text-xs text-muted-foreground'}
-    >
+    <output aria-live="polite" className={isError ? 'text-xs text-destructive' : 'text-xs text-muted-foreground'}>
       {message}
-    </p>
+    </output>
   )
 }
 
@@ -59,13 +55,9 @@ export function ReadOnlyStatusLine({ clearStatus, target, savedHint }: ReadOnlyS
   }
   const message = isSuccess ? clearStatus.message : isError ? clearStatus.message : savedHint
   return (
-    <span
-      role="status"
-      aria-live="polite"
-      className={isError ? 'text-xs text-destructive' : 'text-xs text-muted-foreground'}
-    >
+    <output aria-live="polite" className={isError ? 'text-xs text-destructive' : 'text-xs text-muted-foreground'}>
       {message}
-    </span>
+    </output>
   )
 }
 
@@ -101,12 +93,11 @@ export function BucketSaveStatus({ isDirty, isPending, status, errorMessage, val
     message = '尚未保存的更改'
   }
   return (
-    <span
-      role="status"
+    <output
       aria-live="polite"
       className={tone === 'error' ? 'text-sm text-destructive' : 'text-sm text-muted-foreground'}
     >
       {message}
-    </span>
+    </output>
   )
 }

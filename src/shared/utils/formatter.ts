@@ -27,7 +27,11 @@ export type FormatterLocale =
   | { locale: string; timeZone: string; timeFormat: string }
   | { settings: { locale: string; timeZone: string; timeFormat: string } }
 
-function pickLocale(config: FormatterLocale): { locale: string; timeZone: string; timeFormat: string } {
+function pickLocale(config: FormatterLocale): {
+  locale: string
+  timeZone: string
+  timeFormat: string
+} {
   if ('settings' in config) {
     return config.settings
   }

@@ -2,18 +2,17 @@ import type { PublishLatestResult, SaveDraftResult } from '@/server/domains/page
 import type { ContentRow, PostMetaRow } from '@/server/infra/db/types'
 import type { PortableTextBody } from '@/shared/pt/schema'
 
+import {
+  findContentById,
+  findLatestDraft,
+  publishLatestRevision,
+  saveDraftRevision,
+} from '@/server/domains/content/repo'
 import { canonicalizeBodyOrThrow } from '@/server/domains/content/save-helpers'
 import { syncLibraryImageBlocks } from '@/server/domains/pages/image-sync'
 import { indexPost } from '@/server/domains/posts/indexer'
 import { toAdminRevisionDto, toCmsPost, type CmsPost } from '@/server/domains/posts/projection'
-import {
-  findContentById,
-  findLatestDraft,
-  findPostMetaById,
-  findPublicPostMetaBySlug,
-  publishLatestRevision,
-  saveDraftRevision,
-} from '@/server/domains/posts/repo'
+import { findPostMetaById, findPublicPostMetaBySlug } from '@/server/domains/posts/repos/single'
 import {
   assertOwnPostOr404,
   clearPostMetasCache,

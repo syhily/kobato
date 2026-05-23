@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vite-plus/test'
+import { describe, expect, it } from 'vitest'
 
 import type { CommentBody } from '@/shared/pt/comment-schema'
 
@@ -100,7 +100,12 @@ describe('commentBodyToMarkdown', () => {
 
   it('escapes markdown metacharacters in plain text spans', () => {
     const body: CommentBody = [
-      { _type: 'block', _key: 'b1', style: 'normal', children: [span('use *asterisk* and _underscore_')] },
+      {
+        _type: 'block',
+        _key: 'b1',
+        style: 'normal',
+        children: [span('use *asterisk* and _underscore_')],
+      },
     ]
     expect(commentBodyToMarkdown(body)).toBe('use \\*asterisk\\* and \\_underscore\\_')
   })

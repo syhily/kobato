@@ -51,7 +51,12 @@ export function TagsView() {
 
   useEffect(() => {
     if (listData) {
-      dispatch({ type: 'loaded', rows: listData.tags, total: listData.total, hasMore: listData.hasMore })
+      dispatch({
+        type: 'loaded',
+        rows: listData.tags,
+        total: listData.total,
+        hasMore: listData.hasMore,
+      })
     }
   }, [listData, dispatch])
 

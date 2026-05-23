@@ -7,15 +7,15 @@ import { userSession } from '@/server/domains/auth/primitives'
 import { withCommentBadgeTextColor } from '@/server/domains/comments/badge'
 import { canonicalizeCommentBody } from '@/server/domains/comments/canonicalize'
 import { sendNewComment, sendNewReply } from '@/server/domains/comments/email'
+import { insertComment } from '@/server/domains/comments/repos/mutate'
 import {
   countApprovedCommentsByUser,
   findCommentRootId,
   findCommentWithSourceUser,
-  insertComment,
   recentCommentsForUserDedupe,
-} from '@/server/domains/comments/repo'
+} from '@/server/domains/comments/repos/public-query'
 import { safeResolveMetricTarget } from '@/server/domains/comments/services/shared'
-import { insertCommentUser, updateLastLogin } from '@/server/infra/db/operations/user'
+import { hasRegisteredAccount, insertCommentUser, updateLastLogin } from '@/server/infra/db/operations/user'
 import { DomainError } from '@/server/infra/http/errors'
 import { getLogger } from '@/server/infra/logger'
 import { requireBlogSettingsSection } from '@/shared/config/blog'
@@ -44,22 +44,22 @@ async function validateSubmission(
     throw new DomainError('NOT_FOUND', '系统错误，评论的目标页面不存在。')
   }
 
+  const loginUser = userSession(session)
+  if (loginUser === undefined && (await hasRegisteredAccount(commentReq.email))) {
+    throw new DomainError('UNAUTHORIZED', '该邮箱已经注册，请登录后再进行评论留言。')
+  }
+
   const u = await insertCommentUser(commentReq.name, commentReq.email, commentReq.link || '')
   if (u === null) {
     throw new DomainError('INTERNAL', '系统错误，用户创建失败。')
   }
 
-  const loginUser = userSession(session)
   if (u.role === 'admin') {
     if (loginUser === undefined) {
       throw new DomainError('UNAUTHORIZED', '管理员账号需要登陆才能评论。')
     }
   } else if (loginUser !== undefined && loginUser.email !== u.email) {
     throw new DomainError('FORBIDDEN', '评论邮箱与登陆账号不相符。')
-  }
-
-  if (u.password !== undefined && u.password !== null && u.password !== '' && loginUser === undefined) {
-    throw new DomainError('UNAUTHORIZED', '该邮箱已经注册，请登录后再进行评论留言。')
   }
 
   if (u.isMuted) {

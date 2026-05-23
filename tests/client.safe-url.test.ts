@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vite-plus/test'
+import { describe, expect, it } from 'vitest'
 
 import { httpUrlOrEmptyStringSchema, optionalHttpUrlSchema, safeHref, safeRedirectPath } from '@/shared/utils/safe-url'
 

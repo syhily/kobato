@@ -3,6 +3,7 @@ import { type ReactNode } from 'react'
 
 import type { FootnoteRefMarkDef, LinkMarkDef, MathInlineMarkDef } from '@/shared/pt/schema'
 
+import { SafeHtml } from '@/ui/components/safe-html'
 import { cn } from '@/ui/lib/cn'
 import { FootnoteReference } from '@/ui/pt/Footnotes'
 import { PT_INLINE } from '@/ui/pt/render-shared'
@@ -16,18 +17,13 @@ export function renderMathMarkupOrTexFallback(
   const markup = mathml !== undefined && mathml !== '' ? mathml : legacySvg
   if (markup !== undefined && markup !== '') {
     if (layout === 'inline') {
-      // SAFETY: `markup` is MathML (or legacy SVG) produced server-side by
-      // KaTeX. The source TeX is validated by `commentBodySchema` / post body
-      // schema before reaching the renderer.
-      return <span className="math-inline inline-block align-middle" dangerouslySetInnerHTML={{ __html: markup }} />
+      return <SafeHtml html={markup} strategy="math" tag="span" className="math-inline inline-block align-middle" />
     }
-    // SAFETY: `markup` is MathML (or legacy SVG) produced server-side by
-    // KaTeX. The source TeX is validated by post/page body schema before
-    // reaching the renderer.
     return (
-      <div
+      <SafeHtml
+        html={markup}
+        strategy="math"
         className="math math-display text-center [&_svg]:mx-auto [&_svg]:block [&_svg]:max-w-none"
-        dangerouslySetInnerHTML={{ __html: markup }}
       />
     )
   }

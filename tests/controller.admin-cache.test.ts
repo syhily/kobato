@@ -1,5 +1,5 @@
 import { call } from '@orpc/server'
-import { beforeEach, describe, expect, it } from 'vite-plus/test'
+import { beforeEach, describe, expect, it } from 'vitest'
 
 import { setBlogSettingsBundleForTests } from '@/server/domains/settings/snapshot'
 import { adminCacheRouter } from '@/server/http/controllers/admin/cache.controller'

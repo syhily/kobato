@@ -138,7 +138,7 @@ const server = await createHonoServer<Env>({
     app.route('/', backupUploadRouter)
 
     // ─── Dev-only API docs ────────────────────────────────
-    if (process.env.NODE_ENV !== 'production') {
+    if (!import.meta.env.PROD) {
       app.get('/openapi.json', async (c) => c.json(await buildOpenApiDocument()))
       app.get('/docs', (c) => c.html(buildOpenApiDocsHtml()))
     }

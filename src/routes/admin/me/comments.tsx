@@ -1,18 +1,13 @@
 import { data } from 'react-router'
 
-import type { MyCommentsStatus } from '@/server/domains/comments/repo'
+import type { MyCommentsStatus } from '@/server/domains/comments/repos/shared'
 import type { EntityType } from '@/server/infra/db/target'
 import type { PortableTextBody as PortableTextBodyType } from '@/shared/pt/schema'
 
 import { getRouteRequestContext } from '@/server/domains/auth/context'
 import { requireRole } from '@/server/domains/auth/rbac'
-import {
-  countMyComments,
-  findParentCommentsByIds,
-  listMyCommentEntities,
-  listMyComments,
-  resolveEntitiesForComments,
-} from '@/server/domains/comments/repo'
+import { countMyComments, listMyCommentEntities, listMyComments } from '@/server/domains/comments/repos/admin-query'
+import { findParentCommentsByIds, resolveEntitiesForComments } from '@/server/domains/comments/repos/public-query'
 import { bundleFromMatches, routeMeta } from '@/server/render/seo/meta'
 import { MyCommentsView } from '@/ui/admin/my/MyCommentsView'
 
@@ -171,7 +166,11 @@ export async function loader({ request, context }: Route.LoaderArgs) {
     const parent = parentRaw
       ? parentRaw.deletedAt !== null
         ? { name: '', excerpt: '', isDeleted: true as const }
-        : { name: parentRaw.name, excerpt: makeExcerpt(parentRaw.content), isDeleted: false as const }
+        : {
+            name: parentRaw.name,
+            excerpt: makeExcerpt(parentRaw.content),
+            isDeleted: false as const,
+          }
       : null
     return {
       id: String(c.id),
@@ -201,7 +200,17 @@ export async function loader({ request, context }: Route.LoaderArgs) {
       entityOptions.unshift({ value: `${entity.type}:${entity.ownerId}`, label: row.title })
     }
   }
-  return data({ items, counts, totalCounts, offset, limit, status, q, entity: entityValue, entityOptions })
+  return data({
+    items,
+    counts,
+    totalCounts,
+    offset,
+    limit,
+    status,
+    q,
+    entity: entityValue,
+    entityOptions,
+  })
 }
 
 export default function WpAdminMyCommentsRoute({ loaderData }: Route.ComponentProps) {

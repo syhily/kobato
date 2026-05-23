@@ -97,7 +97,11 @@ export async function peekToken(rawToken: string, purpose: TokenPurpose): Promis
   const value = sha256(rawToken)
   try {
     const rows = await db
-      .select({ purpose: verification.purpose, userId: verification.userId, expiresAt: verification.expiresAt })
+      .select({
+        purpose: verification.purpose,
+        userId: verification.userId,
+        expiresAt: verification.expiresAt,
+      })
       .from(verification)
       .where(eq(verification.value, value))
       .limit(1)
@@ -119,10 +123,11 @@ export async function consumeToken(rawToken: string, purpose: TokenPurpose): Pro
   }
   const value = sha256(rawToken)
   try {
-    const rows = await db
-      .delete(verification)
-      .where(eq(verification.value, value))
-      .returning({ purpose: verification.purpose, userId: verification.userId, expiresAt: verification.expiresAt })
+    const rows = await db.delete(verification).where(eq(verification.value, value)).returning({
+      purpose: verification.purpose,
+      userId: verification.userId,
+      expiresAt: verification.expiresAt,
+    })
     return validatedTokenRow(rows[0], purpose)
   } catch (error) {
     log.error('consumeToken failed', { error })

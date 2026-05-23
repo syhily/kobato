@@ -1,0 +1,157 @@
+import { and, asc, desc, eq, isNotNull, isNull, or, sql, type SQL } from 'drizzle-orm'
+
+import type { PostMetaRow } from '@/server/infra/db/types'
+import type { ClientPost } from '@/shared/types/catalog'
+
+import { post as postMetaTable } from '@/server/infra/db/schema'
+import { escapeLikePattern } from '@/shared/utils/escape-like'
+
+export type PostMetaWithAuthor = PostMetaRow & { authorName: string | null }
+
+export interface ListPostsFilters {
+  /** Free-text query matched case-insensitively against `slug` and `title`. */
+  q?: string
+  /** Deletion state filter. */
+  deletedStatus?: 'all' | 'deleted' | 'normal'
+  /** Zero-based offset for pagination. */
+  offset?: number
+  /** Page size. When undefined every match is returned. */
+  limit?: number
+  /** Filter by category name. */
+  category?: string
+  /** Filter by tag name (JSONB contains). */
+  tag?: string
+  /** Filter by published flag. */
+  published?: boolean
+  /** Filter by visible flag. */
+  visible?: boolean
+  /** Sort field. */
+  sortBy?: 'publishedAt' | 'updatedAt'
+  /** Sort direction. */
+  sortOrder?: 'asc' | 'desc'
+  /** Filter by author id. */
+  authorId?: bigint
+  /**
+   * Coarse lifecycle bucket — partitions every live row into one of two
+   * sets that match the `StatusBadge` logic in `PostsView`:
+   *   - `'published'`: `published = true AND published_revision_id IS NOT NULL`
+   *                   (publicly visible on the site).
+   *   - `'draft'`: everything else (`published = false`, OR
+   *                `published_revision_id IS NULL` meaning the row has
+   *                only ever held draft revisions / was never promoted).
+   *
+   * Use this for "drafts vs published" dashboards instead of `published`
+   * alone — the boolean flag misses the common "freshly created but
+   * not yet promoted" case where the row sits at `published = true`,
+   * `published_revision_id = NULL` and is what users intuitively call
+   * a draft.
+   */
+  lifecycle?: 'draft' | 'published'
+}
+
+export function buildPostsWhere(filters: ListPostsFilters): SQL | undefined {
+  const conditions: SQL[] = []
+  if (filters.deletedStatus === 'deleted') {
+    conditions.push(isNotNull(postMetaTable.deletedAt))
+  } else if (filters.deletedStatus === 'normal') {
+    conditions.push(isNull(postMetaTable.deletedAt))
+  }
+  if (filters.q && filters.q.trim() !== '') {
+    const pattern = `%${escapeLikePattern(filters.q.trim())}%`
+    conditions.push(sql`(${postMetaTable.slug} ILIKE ${pattern} OR ${postMetaTable.title} ILIKE ${pattern})`)
+  }
+  if (filters.category) {
+    conditions.push(eq(postMetaTable.category, filters.category))
+  }
+  if (filters.tag) {
+    conditions.push(sql`${postMetaTable.tags} @> ${JSON.stringify([filters.tag])}::jsonb`)
+  }
+  if (filters.published !== undefined) {
+    conditions.push(eq(postMetaTable.published, filters.published))
+  }
+  if (filters.visible !== undefined) {
+    conditions.push(eq(postMetaTable.visible, filters.visible))
+  }
+  if (filters.authorId !== undefined) {
+    conditions.push(eq(postMetaTable.authorId, filters.authorId))
+  }
+  if (filters.lifecycle === 'published') {
+    conditions.push(eq(postMetaTable.published, true), isNotNull(postMetaTable.publishedRevisionId))
+  } else if (filters.lifecycle === 'draft') {
+    const draftClause = or(eq(postMetaTable.published, false), isNull(postMetaTable.publishedRevisionId))
+    if (draftClause !== undefined) {
+      conditions.push(draftClause)
+    }
+  }
+  if (conditions.length === 0) {
+    return undefined
+  }
+  if (conditions.length === 1) {
+    return conditions[0]
+  }
+  return and(...conditions)
+}
+
+export function buildPostsOrderBy(filters: ListPostsFilters) {
+  const col = filters.sortBy === 'updatedAt' ? postMetaTable.updatedAt : postMetaTable.firstPublishedAt
+  return filters.sortOrder === 'asc' ? asc(col) : desc(col)
+}
+
+export interface ListPublicPostsFilters {
+  category?: string
+  tag?: string
+  includeHidden?: boolean
+  includeScheduled?: boolean
+  sortBy?: 'publishedAt' | 'updatedAt'
+  limit?: number
+  offset?: number
+}
+
+/** Public `date` is first publication time; falls back to `published_at` before the first publish. */
+export function toClientPostFromMeta(meta: PostMetaRow): ClientPost {
+  const date = meta.firstPublishedAt ?? meta.publishedAt
+  return {
+    id: String(meta.id),
+    title: meta.title,
+    date,
+    updated: meta.publishedAt,
+    comments: meta.commentsEnabled,
+    alias: (meta.alias as string[]) ?? [],
+    tags: (meta.tags as string[]) ?? [],
+    category: meta.category,
+    summary: meta.summary,
+    cover: meta.cover || '/images/open-graph.png',
+    og: meta.og ?? undefined,
+    published: meta.published,
+    visible: meta.visible,
+    toc: meta.showToc,
+    showUpdated: meta.showUpdated,
+    slug: meta.slug,
+    permalink: `/posts/${meta.slug}`,
+    headings: [],
+    pinnedAt: meta.pinnedAt ?? undefined,
+  }
+}
+
+export function buildPublicPostsWhere(filters: ListPublicPostsFilters): SQL {
+  const conditions: SQL[] = [
+    isNull(postMetaTable.deletedAt),
+    eq(postMetaTable.published, true),
+    isNotNull(postMetaTable.publishedRevisionId),
+  ]
+
+  if (!filters.includeHidden) {
+    conditions.push(eq(postMetaTable.visible, true))
+  }
+  if (!filters.includeScheduled) {
+    conditions.push(sql`${postMetaTable.publishedAt} <= ${new Date()}`)
+  }
+  if (filters.category) {
+    conditions.push(eq(postMetaTable.category, filters.category))
+  }
+  if (filters.tag) {
+    conditions.push(sql`${postMetaTable.tags} @> ${JSON.stringify([filters.tag])}::jsonb`)
+  }
+
+  return and(...conditions)!
+}

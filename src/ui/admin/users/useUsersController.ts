@@ -35,7 +35,13 @@ type UsersAction =
 function usersReducer(state: UsersState, action: UsersAction): UsersState {
   switch (action.type) {
     case 'loaded':
-      return { ...state, rows: action.rows, total: action.total, hasMore: action.hasMore, selected: {} }
+      return {
+        ...state,
+        rows: action.rows,
+        total: action.total,
+        hasMore: action.hasMore,
+        selected: {},
+      }
     case 'setQ':
       return { ...state, q: action.value, currentPage: 0 }
     case 'setRole':

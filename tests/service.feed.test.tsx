@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vite-plus/test'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 // `feedResponse` and `generateFeeds` thread a real `feed` package output, the
 // content catalog, and `prerenderToNodeStream` together. We mock the catalog
@@ -16,7 +16,7 @@ const mocks = vi.hoisted(() => ({
   getTagsByNames: vi.fn(),
 }))
 
-vi.mock('@/server/domains/posts/repo', () => ({
+vi.mock('@/server/domains/posts/repos/public-query', () => ({
   listPublicPostsWithContent: mocks.listPublicPostsWithContent,
 }))
 vi.mock('@/server/infra/db/operations/category', () => ({

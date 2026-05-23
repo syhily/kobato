@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vite-plus/test'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { seedMetric } from './_helpers/db'
 import { adminSession, regularSession } from './_helpers/session'
@@ -9,7 +9,7 @@ import { adminSession, regularSession } from './_helpers/session'
 // pin the contract by mocking the DB query module — the real Drizzle calls
 // are out of scope for this layer.
 
-vi.mock('@/server/infra/db/operations/comment', () => ({
+vi.mock('@/server/domains/comments/repos/public-query', () => ({
   pendingComments: vi.fn(),
   adminUserIds: vi.fn(),
   latestDistinctCommentIds: vi.fn(),
@@ -17,20 +17,6 @@ vi.mock('@/server/infra/db/operations/comment', () => ({
   countCommentsAndRoots: vi.fn(),
   findRootComments: vi.fn(),
   findChildComments: vi.fn(),
-  approveCommentById: vi.fn(),
-  deleteCommentById: vi.fn(),
-  insertComment: vi.fn(),
-  countAllComments: vi.fn(),
-  listAdminComments: vi.fn(),
-  countApprovedCommentsByUser: vi.fn(),
-  recentCommentsForUserDedupe: vi.fn(),
-  findCommentRootId: vi.fn(),
-  findCommentWithSourceUser: vi.fn(),
-  findCommentWithUserAndTarget: vi.fn(),
-  findCommentWithUserById: vi.fn(),
-  updateCommentContent: vi.fn(),
-  searchCommentAuthors: vi.fn(),
-  searchPages: vi.fn(),
 }))
 
 vi.mock('@/server/infra/db/operations/metric', () => ({
@@ -87,7 +73,7 @@ vi.mock('@/shared/config/blog', () => ({
   },
 }))
 
-const queries = await import('@/server/infra/db/operations/comment')
+const queries = await import('@/server/domains/comments/repos/public-query')
 const metricQueries = await import('@/server/infra/db/operations/metric')
 const { loadComments, latestComments, pendingComments, parseComments } =
   await import('@/server/domains/comments/services/public-query')
@@ -229,8 +215,24 @@ describe('services/comments/loader — latestComments / pendingComments', () => 
     vi.mocked(queries.adminUserIds).mockResolvedValue([99n])
     vi.mocked(queries.latestDistinctCommentIds).mockResolvedValue([10n, 20n])
     vi.mocked(queries.commentsByIds).mockResolvedValue([
-      { id: 10n, type: 'post', ownerId: 1n, slug: 'a', title: 'A', author: 'Alice', authorLink: '' },
-      { id: 20n, type: 'post', ownerId: 2n, slug: 'b', title: null, author: null, authorLink: null },
+      {
+        id: 10n,
+        type: 'post',
+        ownerId: 1n,
+        slug: 'a',
+        title: 'A',
+        author: 'Alice',
+        authorLink: '',
+      },
+      {
+        id: 20n,
+        type: 'post',
+        ownerId: 2n,
+        slug: 'b',
+        title: null,
+        author: null,
+        authorLink: null,
+      },
     ])
 
     const list = await latestComments()

@@ -161,7 +161,11 @@ export async function queryCounters(input: AnalyticsQueryInput): Promise<Counter
     WHERE ${where}
   `)
   const row = result.rows[0] as
-    | { visits?: string | number | null; visitors?: string | number | null; referers?: string | number | null }
+    | {
+        visits?: string | number | null
+        visitors?: string | number | null
+        referers?: string | number | null
+      }
     | undefined
   return {
     visits: Number(row?.visits ?? 0),
@@ -270,7 +274,12 @@ export async function queryHeatmap(input: AnalyticsQueryInput): Promise<HeatmapC
     GROUP BY weekday, hour
   `)
   return result.rows.map((row) => {
-    const r = row as { weekday: number; hour: number; visits: string | number; visitors: string | number }
+    const r = row as {
+      weekday: number
+      hour: number
+      visits: string | number
+      visitors: string | number
+    }
     return {
       weekday: r.weekday,
       hour: r.hour,

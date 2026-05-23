@@ -190,7 +190,10 @@ export function PostsView() {
                 items={DELETED_STATUS_OPTIONS}
                 value={state.deletedStatus}
                 onValueChange={(value) =>
-                  dispatch({ type: 'setDeletedStatus', value: (value ?? 'normal') as 'all' | 'deleted' | 'normal' })
+                  dispatch({
+                    type: 'setDeletedStatus',
+                    value: (value ?? 'normal') as 'all' | 'deleted' | 'normal',
+                  })
                 }
               >
                 <SelectTrigger className="w-full">
@@ -210,7 +213,10 @@ export function PostsView() {
                 items={STATUS_OPTIONS}
                 value={state.status}
                 onValueChange={(value) => {
-                  dispatch({ type: 'setStatus', value: (value ?? 'all') as 'all' | 'published' | 'draft' | 'hidden' })
+                  dispatch({
+                    type: 'setStatus',
+                    value: (value ?? 'all') as 'all' | 'published' | 'draft' | 'hidden',
+                  })
                 }}
               >
                 <SelectTrigger className="w-full">
@@ -305,7 +311,10 @@ export function PostsView() {
                   items={SORT_BY_OPTIONS}
                   value={state.sortBy}
                   onValueChange={(value) =>
-                    dispatch({ type: 'setSortBy', value: (value ?? 'publishedAt') as 'publishedAt' | 'updatedAt' })
+                    dispatch({
+                      type: 'setSortBy',
+                      value: (value ?? 'publishedAt') as 'publishedAt' | 'updatedAt',
+                    })
                   }
                 >
                   <SelectTrigger className="grow">
@@ -324,7 +333,12 @@ export function PostsView() {
                   variant="outline"
                   size="icon"
                   title={state.sortOrder === 'desc' ? '降序' : '升序'}
-                  onClick={() => dispatch({ type: 'setSortOrder', value: state.sortOrder === 'desc' ? 'asc' : 'desc' })}
+                  onClick={() =>
+                    dispatch({
+                      type: 'setSortOrder',
+                      value: state.sortOrder === 'desc' ? 'asc' : 'desc',
+                    })
+                  }
                 >
                   {state.sortOrder === 'desc' ? <ArrowDownIcon /> : <ArrowUpIcon />}
                 </Button>

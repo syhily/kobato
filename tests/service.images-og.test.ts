@@ -1,6 +1,6 @@
 import { Buffer } from 'node:buffer'
 import sharp from 'sharp'
-import { describe, expect, it } from 'vite-plus/test'
+import { describe, expect, it } from 'vitest'
 
 import { drawOpenGraph } from '@/server/render/og/render'
 

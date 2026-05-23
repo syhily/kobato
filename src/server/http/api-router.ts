@@ -13,10 +13,16 @@ import { adminPostsRouter } from '@/server/http/controllers/admin/posts.controll
 import { adminRendersRouter } from '@/server/http/controllers/admin/renders.controller'
 import { adminSettingsRouter } from '@/server/http/controllers/admin/settings.controller'
 import { adminTagsRouter } from '@/server/http/controllers/admin/tags.controller'
-import { adminUsersRouter } from '@/server/http/controllers/admin/users.controller'
+import { adminUsersAdminRouter } from '@/server/http/controllers/admin/users-admin.controller'
+import { adminUsersCrudRouter } from '@/server/http/controllers/admin/users-crud.controller'
+import { adminUsersSessionsRouter } from '@/server/http/controllers/admin/users-sessions.controller'
 import { analyticsRouter } from '@/server/http/controllers/analytics.controller'
-import { commentsRouter } from '@/server/http/controllers/comments.controller'
+import { avatarRouter } from '@/server/http/controllers/avatar.controller'
+import { commentsAuthedRouter } from '@/server/http/controllers/comments-authed.controller'
+import { commentsPublicRouter } from '@/server/http/controllers/comments-public.controller'
+import { commentsTokenRouter } from '@/server/http/controllers/comments-token.controller'
 import { imageRouter } from '@/server/http/controllers/image.controller'
+import { likesRouter } from '@/server/http/controllers/likes.controller'
 import { musicRouter } from '@/server/http/controllers/music.controller'
 
 // The composed oRPC router. The shape is the audit surface for the
@@ -28,11 +34,13 @@ import { musicRouter } from '@/server/http/controllers/music.controller'
 export const apiRouter = {
   account: accountRouter,
   analytics: analyticsRouter,
-  comments: commentsRouter,
+  avatar: avatarRouter,
+  comments: { ...commentsPublicRouter, ...commentsAuthedRouter, ...commentsTokenRouter },
   image: imageRouter,
+  likes: likesRouter,
   music: musicRouter,
   admin: {
-    users: adminUsersRouter,
+    users: { ...adminUsersCrudRouter, ...adminUsersAdminRouter, ...adminUsersSessionsRouter },
     auditLog: auditLogRouter,
     settings: adminSettingsRouter,
     cache: adminCacheRouter,

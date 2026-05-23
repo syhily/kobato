@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vite-plus/test'
+import { describe, expect, it } from 'vitest'
 
 import { portableTextBodySchema, type Block, type PortableTextBody } from '@/shared/pt/schema'
 import {
@@ -91,7 +91,15 @@ const PARAGRAPH_WITH_LINK: Block = {
   _key: 'b2',
   style: 'normal',
   children: [span('See '), { _type: 'span', _key: 's-link', text: 'docs', marks: ['link-1'] }],
-  markDefs: [{ _type: 'link', _key: 'link-1', href: 'https://example.com', target: '_blank', rel: 'nofollow' }],
+  markDefs: [
+    {
+      _type: 'link',
+      _key: 'link-1',
+      href: 'https://example.com',
+      target: '_blank',
+      rel: 'nofollow',
+    },
+  ],
 }
 
 const FULL_BODY: PortableTextBody = [

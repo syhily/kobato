@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vite-plus/test'
+import { describe, expect, it } from 'vitest'
 
 import { BaseLayout } from '@/ui/public/chrome/BaseLayout'
 

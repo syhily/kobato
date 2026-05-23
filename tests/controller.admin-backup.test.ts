@@ -1,5 +1,5 @@
 import { call } from '@orpc/server'
-import { describe, expect, it, vi } from 'vite-plus/test'
+import { describe, expect, it, vi } from 'vitest'
 
 import { makeAuthedCtx } from './_helpers/mock-ctx'
 
@@ -26,7 +26,9 @@ const { adminBackupRouter } = await import('@/server/http/controllers/admin/back
 
 describe('adminBackupRouter.status', () => {
   it('returns s3Enabled and pgToolsAvailable', async () => {
-    vi.mocked(blogConfig.getBlogSettingsBundleSync).mockReturnValue({ assets: { storage: { enabled: true } } } as never)
+    vi.mocked(blogConfig.getBlogSettingsBundleSync).mockReturnValue({
+      assets: { storage: { enabled: true } },
+    } as never)
     vi.mocked(service.checkPgToolsAvailable).mockResolvedValueOnce(true)
     const ctx = makeAuthedCtx()
     const res = await call(adminBackupRouter.status, undefined, { context: ctx })
@@ -54,7 +56,10 @@ describe('adminBackupRouter.list', () => {
 
 describe('adminBackupRouter.create', () => {
   it('returns fileName and size on success', async () => {
-    vi.mocked(service.createBackup).mockResolvedValueOnce({ fileName: '2026-01-01.sql.gz', size: 2048 } as never)
+    vi.mocked(service.createBackup).mockResolvedValueOnce({
+      fileName: '2026-01-01.sql.gz',
+      size: 2048,
+    } as never)
     const ctx = makeAuthedCtx()
     const res = await call(adminBackupRouter.create, undefined, { context: ctx })
     expect(res).toEqual({ fileName: '2026-01-01.sql.gz', size: 2048 })

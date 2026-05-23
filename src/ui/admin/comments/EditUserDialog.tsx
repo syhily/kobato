@@ -85,7 +85,11 @@ export function EditUserDialog({ comment, onClose, onSaved }: EditUserDialogProp
             // Use `string | null` so we can explicitly clear the badge
             // text-colour override (sends a literal JSON `null`); empty
             // strings get filtered/normalised on the server.
-            const payload: Record<string, string | null> = { name, email, id: idStr(comment.userId) }
+            const payload: Record<string, string | null> = {
+              name,
+              email,
+              id: idStr(comment.userId),
+            }
             if (link) {
               payload.link = link
             }

@@ -13,7 +13,7 @@ import {
   findRootComments,
   latestDistinctCommentIds,
   pendingComments as pendingCommentsRepo,
-} from '@/server/domains/comments/repo'
+} from '@/server/domains/comments/repos/public-query'
 import { toLatestComment, ensureCommentPage } from '@/server/domains/comments/services/shared'
 import { getLogger } from '@/server/infra/logger'
 import { getSidebarWidgetCount, requireBlogSettingsSection } from '@/shared/config/blog'

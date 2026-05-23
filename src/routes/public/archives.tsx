@@ -1,4 +1,4 @@
-import { getClientPostsWithMetadata, listClientPosts } from '@/server/domains/posts/repo'
+import { getClientPostsWithMetadata, listClientPosts } from '@/server/domains/posts/repos/public-query'
 import { listingHeaders, publicShouldRevalidate } from '@/server/http/loaders/route-exports'
 import { bundleFromMatches, routeMeta } from '@/server/render/seo/meta'
 import { toListingPostCard } from '@/shared/types/catalog'

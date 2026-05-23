@@ -167,7 +167,11 @@ function ContentFeedCard({ content }: { content: ContentSettings }) {
 function ContentSortCard({ content }: { content: ContentSettings }) {
   const { isEditing, form, settingGroupProps } = useSettingsCard<
     ContentSettings,
-    { postSort: 'asc' | 'desc'; postSortBy: 'publishedAt' | 'updatedAt'; postFeatureEnabled: boolean }
+    {
+      postSort: 'asc' | 'desc'
+      postSortBy: 'publishedAt' | 'updatedAt'
+      postFeatureEnabled: boolean
+    }
   >({
     section: 'content',
     source: content,

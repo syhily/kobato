@@ -12,7 +12,7 @@ import {
   listPublicPostCardsPaginated,
   selectFeaturePosts,
   selectSidebarPosts,
-} from '@/server/domains/posts/repo'
+} from '@/server/domains/posts/repos/public-query'
 import { getCategoryLinks } from '@/server/domains/taxonomies/categories/service'
 import { listAllTags } from '@/server/domains/taxonomies/tags/service'
 import { listingLoader } from '@/server/http/loaders/listing'

@@ -1,5 +1,5 @@
 import { call } from '@orpc/server'
-import { describe, expect, it, vi } from 'vite-plus/test'
+import { describe, expect, it, vi } from 'vitest'
 
 import { makeAuthedCtx } from './_helpers/mock-ctx'
 
@@ -89,7 +89,9 @@ describe('adminPagesRouter.get', () => {
       publishedRevision: null,
     } as never)
     const ctx = makeAuthedCtx()
-    const res = (await call(adminPagesRouter.get, { id: '1' }, { context: ctx })) as { page: { id: string } }
+    const res = (await call(adminPagesRouter.get, { id: '1' }, { context: ctx })) as {
+      page: { id: string }
+    }
     expect(res.page.id).toBe('1')
   })
 })

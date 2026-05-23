@@ -1,6 +1,6 @@
 import { createElement } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
-import { describe, expect, it } from 'vite-plus/test'
+import { describe, expect, it } from 'vitest'
 
 import type { LinkMarkDef } from '@/shared/pt/schema'
 
@@ -69,7 +69,11 @@ describe('security / XSS payload — PT renderer defense-in-depth', () => {
   it('LinkMark strips or neutralises javascript: href as defense-in-depth', () => {
     // If the schema filter is somehow bypassed, the renderer must not emit
     // executable JavaScript URLs. We test the renderer's fallback here.
-    const value = { _type: 'link', _key: 'k1', href: "javascript:alert('xss')" } as unknown as LinkMarkDef
+    const value = {
+      _type: 'link',
+      _key: 'k1',
+      href: "javascript:alert('xss')",
+    } as unknown as LinkMarkDef
     const html = renderToStaticMarkup(
       createElement(LinkMark, {
         value,

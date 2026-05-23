@@ -1,5 +1,5 @@
 import { and, eq } from 'drizzle-orm'
-import { beforeEach, describe, expect, it } from 'vite-plus/test'
+import { beforeEach, describe, expect, it } from 'vitest'
 
 import { incrementMetricPvBatch } from '@/server/infra/db/operations/metric'
 import { db } from '@/server/infra/db/pool'

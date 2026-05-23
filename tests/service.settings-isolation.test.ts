@@ -1,5 +1,5 @@
 import { eq } from 'drizzle-orm'
-import { beforeEach, describe, expect, it } from 'vite-plus/test'
+import { beforeEach, describe, expect, it } from 'vitest'
 
 import { updateBlogSettingsSection } from '@/server/domains/settings/service'
 import { setBlogSettingsBundleForTests } from '@/server/domains/settings/snapshot'
@@ -16,7 +16,9 @@ describe('services/settings — write isolation', () => {
     await Promise.all([
       updateBlogSettingsSection(
         'mail',
-        { mail: { enabled: true, host: 'api.zeabur.com', apiKey: 'KEY-A', sender: 'a@example.com' } },
+        {
+          mail: { enabled: true, host: 'api.zeabur.com', apiKey: 'KEY-A', sender: 'a@example.com' },
+        },
         null,
       ),
       updateBlogSettingsSection(
@@ -76,7 +78,9 @@ describe('services/settings — write isolation', () => {
   it('mail save with omitted apiKey reads ONLY the mail scope, not any other section', async () => {
     await db.insert(setting).values({
       scope: 'blog.mail',
-      data: { mail: { enabled: true, host: 'old.example.com', apiKey: 'KEEP-ME', sender: 'a@b.co' } },
+      data: {
+        mail: { enabled: true, host: 'old.example.com', apiKey: 'KEEP-ME', sender: 'a@b.co' },
+      },
       updatedBy: null,
     })
 

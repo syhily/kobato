@@ -206,7 +206,10 @@ export function useEditorShellPersist<
         expectedClientRevisionToken: null,
       })
     } catch (error) {
-      setStatus({ kind: 'error', message: error instanceof Error ? error.message : '保存正文失败' })
+      setStatus({
+        kind: 'error',
+        message: error instanceof Error ? error.message : '保存正文失败',
+      })
       setIsCreating(false)
       void navigate(editPath(savedEntity.id), { replace: true })
       return

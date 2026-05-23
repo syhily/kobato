@@ -46,10 +46,28 @@ const log = getLogger('pt.prerender')
 export async function prerenderPortableTextBody(body: PortableTextBody): Promise<PortableTextBody> {
   // Collect work first so we can run code / math / mermaid renders
   // in parallel.
-  const codeBlocks: { _type: 'code'; _key: string; code: string; language?: string; highlightedHtml?: string }[] = []
-  const mathBlocks: { _type: 'mathBlock'; _key: string; tex: string; mathml?: string; svg?: string }[] = []
+  const codeBlocks: {
+    _type: 'code'
+    _key: string
+    code: string
+    language?: string
+    highlightedHtml?: string
+  }[] = []
+  const mathBlocks: {
+    _type: 'mathBlock'
+    _key: string
+    tex: string
+    mathml?: string
+    svg?: string
+  }[] = []
   const mermaidBlocks: { _type: 'mermaid'; _key: string; code: string; svg?: string }[] = []
-  const mathInlineDefs: { _type: 'mathInline'; _key: string; tex: string; mathml?: string; svg?: string }[] = []
+  const mathInlineDefs: {
+    _type: 'mathInline'
+    _key: string
+    tex: string
+    mathml?: string
+    svg?: string
+  }[] = []
 
   for (const block of body) {
     collectBlock(block, codeBlocks, mathBlocks, mermaidBlocks, mathInlineDefs)

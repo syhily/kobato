@@ -185,7 +185,10 @@ export async function searchPosts(
   // Try cache first
   const cached = await getCachedSearchResult(cacheKey)
   if (cached !== null) {
-    getLogger('search.result').info('Search result cache hit', { query: trimmed, total: cached.length })
+    getLogger('search.result').info('Search result cache hit', {
+      query: trimmed,
+      total: cached.length,
+    })
     const hits = cached.slice(offset, offset + limit)
     return {
       hits,

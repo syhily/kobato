@@ -1,5 +1,5 @@
 import { call } from '@orpc/server'
-import { describe, expect, it, vi } from 'vite-plus/test'
+import { describe, expect, it, vi } from 'vitest'
 
 import { makeAuthedCtx } from './_helpers/mock-ctx'
 
@@ -21,7 +21,11 @@ function mockAnalyticsInput() {
 describe('analyticsRouter.counters', () => {
   it('returns counters from the service', async () => {
     vi.mocked(queryMod.parseAnalyticsSearch).mockReturnValueOnce(mockAnalyticsInput() as never)
-    vi.mocked(queryMod.queryCounters).mockResolvedValueOnce({ visits: 10, visitors: 5, referers: 3 } as never)
+    vi.mocked(queryMod.queryCounters).mockResolvedValueOnce({
+      visits: 10,
+      visitors: 5,
+      referers: 3,
+    } as never)
     const ctx = makeAuthedCtx()
     const res = (await call(analyticsRouter.counters, { preset: 'today' }, { context: ctx })) as {
       visits: number

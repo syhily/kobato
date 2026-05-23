@@ -3,7 +3,7 @@ import type { MetaDescriptor } from 'react-router'
 import type { FeedLinkOptions } from '@/server/render/seo/meta'
 import type { ListingPostCard, ListingPostCardWithMetadata } from '@/shared/types/catalog'
 
-import { getClientPostsWithMetadata } from '@/server/domains/posts/repo'
+import { getClientPostsWithMetadata } from '@/server/domains/posts/repos/public-query'
 import { parseListingPage, redirectListingOverflow } from '@/server/http/loaders/pagination'
 import { listingSeo } from '@/server/render/seo/listing-seo'
 import { requireBlogSettingsSection } from '@/shared/config/blog'

@@ -1,5 +1,5 @@
 import { call } from '@orpc/server'
-import { describe, expect, it, vi } from 'vite-plus/test'
+import { describe, expect, it, vi } from 'vitest'
 
 import { makeAuthedCtx } from './_helpers/mock-ctx'
 
@@ -45,7 +45,11 @@ describe('adminFriendsRouter.upsert', () => {
     const ctx = makeAuthedCtx()
     const res = await call(
       adminFriendsRouter.upsert,
-      { website: 'Example', homepage: 'https://example.com', poster: 'https://example.com/poster.jpg' },
+      {
+        website: 'Example',
+        homepage: 'https://example.com',
+        poster: 'https://example.com/poster.jpg',
+      },
       { context: ctx },
     )
     expect(res.friend.id).toBe('1')

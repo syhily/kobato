@@ -104,7 +104,8 @@ export function AuditLogView({ retentionDays }: AuditLogViewProps) {
         />
         {exportMutation.isError && (
           <p className="text-sm text-destructive">
-            导出失败：{exportMutation.error instanceof Error ? exportMutation.error.message : '未知错误'}
+            导出失败：
+            {exportMutation.error instanceof Error ? exportMutation.error.message : '未知错误'}
           </p>
         )}
       </AdminListPage.Toolbar>

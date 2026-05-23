@@ -107,7 +107,13 @@ function NavGroup({ group, items }: NavGroupProps) {
 }
 
 interface SettingsNavProps {
-  items: Array<{ id: SettingsSection; label: string; icon: string; group: SettingsNavGroup; keywords: string[] }>
+  items: Array<{
+    id: SettingsSection
+    label: string
+    icon: string
+    group: SettingsNavGroup
+    keywords: string[]
+  }>
 }
 
 export function SettingsNav({ items }: SettingsNavProps) {

@@ -72,7 +72,7 @@ export function LikeButton({ permalink, commentKey, likes: initialLikes }: LikeB
   const [state, addOptimistic] = useOptimistic(baseState, applyLikeOptimistic)
 
   const validate = useMutation({
-    ...orpcQuery.comments.validateLikeToken.mutationOptions(),
+    ...orpcQuery.likes.validate.mutationOptions(),
     onSuccess: (data: ValidateLikeTokenOutput) => {
       setBaseState((prev) => (data.key === prev.commentKey ? { ...prev, liked: data.valid } : prev))
       if (!data.valid) {
@@ -82,7 +82,7 @@ export function LikeButton({ permalink, commentKey, likes: initialLikes }: LikeB
   })
 
   const increase = useMutation({
-    ...orpcQuery.comments.increaseLike.mutationOptions(),
+    ...orpcQuery.likes.increase.mutationOptions(),
     onSuccess: (data: IncreaseLikeOutput) => {
       setBaseState((prev) => (data.key === prev.commentKey ? { ...prev, liked: true, likes: data.likes } : prev))
       if (data.token) {
@@ -92,7 +92,7 @@ export function LikeButton({ permalink, commentKey, likes: initialLikes }: LikeB
   })
 
   const decrease = useMutation({
-    ...orpcQuery.comments.decreaseLike.mutationOptions(),
+    ...orpcQuery.likes.decrease.mutationOptions(),
     onSuccess: (data: DecreaseLikeOutput) => {
       setBaseState((prev) => (data.key === prev.commentKey ? { ...prev, liked: false, likes: data.likes } : prev))
       localStorage.removeItem(tokenStorageKey(permalink))
@@ -220,8 +220,7 @@ export function LikeShare({ post }: LikeShareProps) {
         size="iconMd"
         shape="circle"
         className="mx-1"
-        // oxlint-disable-next-line jsx-a11y/anchor-has-content
-        render={<a href={`https://connect.qq.com/widget/shareqq/index.html?${qq}`} />}
+        render={<a href={`https://connect.qq.com/widget/shareqq/index.html?${qq}`} aria-label="分享到 QQ 空间" />}
         title="分享到 QQ 空间"
       >
         <IconButtonContent>
@@ -243,8 +242,7 @@ export function LikeShare({ post }: LikeShareProps) {
         size="iconMd"
         shape="circle"
         className="mx-1"
-        // oxlint-disable-next-line jsx-a11y/anchor-has-content
-        render={<a href={`https://service.weibo.com/share/share.php?${weibo}`} />}
+        render={<a href={`https://service.weibo.com/share/share.php?${weibo}`} aria-label="分享到微博" />}
         title="分享到微博"
       >
         <IconButtonContent>

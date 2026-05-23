@@ -49,7 +49,11 @@ function friendsReducer(state: FriendsState, action: FriendsAction): FriendsStat
     case 'removeFriend':
       // Optimistic removal: drop the row from the visible page and
       // decrement `total`. The next reload re-syncs.
-      return { ...state, rows: state.rows.filter((row) => row.id !== action.id), total: Math.max(0, state.total - 1) }
+      return {
+        ...state,
+        rows: state.rows.filter((row) => row.id !== action.id),
+        total: Math.max(0, state.total - 1),
+      }
     case 'prependFriend':
       return { ...state, rows: [action.friend, ...state.rows], total: state.total + 1 }
   }

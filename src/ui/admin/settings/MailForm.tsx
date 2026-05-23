@@ -155,7 +155,11 @@ function MailTestCard({ mail }: { mail: MailLoaderShape }) {
 
   const testMutation = useMutation({
     mutationFn: ({ to }: { to: string }) => orpc.admin.mail.sendTest({ to }),
-    onSuccess: () => setTestStatus({ state: 'success', message: '测试邮件已通过 Zeabur ZSend 发送，请到收件箱确认。' }),
+    onSuccess: () =>
+      setTestStatus({
+        state: 'success',
+        message: '测试邮件已通过 Zeabur ZSend 发送，请到收件箱确认。',
+      }),
     onError: (error) => setTestStatus({ state: 'error', message: error.message ?? '测试发送失败' }),
   })
 

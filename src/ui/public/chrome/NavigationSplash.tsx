@@ -130,8 +130,7 @@ export function NavigationSplash() {
   }
 
   return (
-    <div
-      role="status"
+    <output
       aria-live="polite"
       aria-label="页面加载中"
       className={cn(
@@ -166,6 +165,6 @@ export function NavigationSplash() {
           }}
         />
       </div>
-    </div>
+    </output>
   )
 }

@@ -1,5 +1,5 @@
 import { call } from '@orpc/server'
-import { beforeEach, describe, expect, it, vi } from 'vite-plus/test'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { makeAuthedCtx } from './_helpers/mock-ctx'
 
@@ -44,7 +44,10 @@ vi.mock('@/server/infra/rate-limit', () => ({
   tryPasswordResetByTargetRateLimit: vi.fn().mockResolvedValue({ exceeded: false }),
 }))
 
-const { adminUsersRouter } = await import('@/server/http/controllers/admin/users.controller')
+const { adminUsersCrudRouter } = await import('@/server/http/controllers/admin/users-crud.controller')
+const { adminUsersAdminRouter } = await import('@/server/http/controllers/admin/users-admin.controller')
+const { adminUsersSessionsRouter } = await import('@/server/http/controllers/admin/users-sessions.controller')
+const adminUsersRouter = { ...adminUsersCrudRouter, ...adminUsersAdminRouter, ...adminUsersSessionsRouter }
 const userQuery = await import('@/server/infra/db/operations/user')
 const usersService = await import('@/server/domains/users/service')
 

@@ -9,6 +9,7 @@ import { generateBlockKey } from '@/shared/pt/utils'
 import { useAdminMathPreview } from '@/ui/admin/editor/tiptap/use-admin-math-preview'
 import { Button } from '@/ui/components/button'
 import { Label } from '@/ui/components/label'
+import { SafeHtml } from '@/ui/components/safe-html'
 import { Textarea } from '@/ui/components/textarea'
 
 // Inline-mark editing panels that swap into the BubbleMenu when the
@@ -173,12 +174,11 @@ export function MathInlinePanel({ editor }: MathInlinePanelProps) {
         {showSpinner ? (
           <span className="ml-2 text-xs text-muted-foreground">渲染中…</span>
         ) : (
-          <span
-            // SAFETY: `previewHtml` is MathML produced by the admin render
-            // endpoint (`/admin/renders/math`) via KaTeX. Only admins can
-            // trigger this path; the TeX source is not guest-controllable.
+          <SafeHtml
+            html={previewHtml}
+            strategy="preview"
+            tag="span"
             className="ml-2 inline-flex min-h-[1.25em] max-w-full items-center overflow-x-auto align-middle"
-            dangerouslySetInnerHTML={{ __html: previewHtml }}
           />
         )}
       </div>

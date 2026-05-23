@@ -9,38 +9,53 @@ import {
   softDeletePageMeta,
   updatePageMetaById,
 } from '@/server/domains/pages/repo'
+import { clearPagesCache, type UpsertPageMetaInput } from '@/server/domains/pages/services/shared'
 import {
-  clearPagesCache,
-  ensureSlugLegal,
-  resolveSlugForPage,
-  type UpsertPageMetaInput,
-} from '@/server/domains/pages/services/shared'
-import { DomainError } from '@/server/infra/http/errors'
+  deleteSlugRegistryByEntity,
+  findSlugRegistryBySlug,
+  insertSlugRegistry,
+  updateSlugRegistryByEntity,
+} from '@/server/infra/db/operations/slug-registry'
+import { DomainError, isUniqueConstraintError } from '@/server/infra/http/errors'
+import { ensureSlugLegal, resolveSlug } from '@/server/infra/slug-validation'
 
 export async function createPage(input: UpsertPageMetaInput, authorId: bigint | null): Promise<AdminPageDto> {
-  const slug = resolveSlugForPage(input.slug, input.title)
-  ensureSlugLegal(slug)
+  const slug = resolveSlug(input.slug, input.title)
+  ensureSlugLegal(slug, 'page')
   // page↔page collision; the cross-table page↔post fence runs in the
   // catalog snapshot rebuild after invalidate.
   const collision = await findPageMetaBySlug(slug)
   if (collision !== null) {
     throw new DomainError('CONFLICT', `slug "${slug}" 已被其它页面占用。`)
   }
+  const crossCollision = await findSlugRegistryBySlug(slug)
+  if (crossCollision !== null && crossCollision.entityType !== 'page') {
+    throw new DomainError('CONFLICT', `slug "${slug}" 已被其它文章占用。`)
+  }
   const now = new Date()
-  const row = await insertPageMeta({
-    slug,
-    title: input.title,
-    summary: input.summary ?? '',
-    cover: input.cover ?? '',
-    og: input.og ?? null,
-    published: false,
-    commentsEnabled: input.commentsEnabled ?? true,
-    showToc: input.showToc ?? false,
-    showUpdated: input.showUpdated ?? false,
-    showFriends: input.showFriends ?? false,
-    publishedAt: input.publishedAt ?? now,
-    authorId,
-  })
+  let row: Awaited<ReturnType<typeof insertPageMeta>>
+  try {
+    row = await insertPageMeta({
+      slug,
+      title: input.title,
+      summary: input.summary ?? '',
+      cover: input.cover ?? '',
+      og: input.og ?? null,
+      published: false,
+      commentsEnabled: input.commentsEnabled ?? true,
+      showToc: input.showToc ?? false,
+      showUpdated: input.showUpdated ?? false,
+      showFriends: input.showFriends ?? false,
+      publishedAt: input.publishedAt ?? now,
+      authorId,
+    })
+    await insertSlugRegistry({ slug, entityType: 'page', entityId: row.id })
+  } catch (err) {
+    if (isUniqueConstraintError(err, 'uq_slug_registry_slug')) {
+      throw new DomainError('CONFLICT', `slug "${slug}" 已被占用。`)
+    }
+    throw err
+  }
   await clearPagesCache()
   return toAdminPageDto(row)
 }
@@ -49,8 +64,8 @@ export async function updatePageMeta(input: UpsertPageMetaInput): Promise<AdminP
   if (input.id === undefined) {
     throw new DomainError('BAD_REQUEST', 'updatePageMeta requires an id')
   }
-  const slug = resolveSlugForPage(input.slug, input.title)
-  ensureSlugLegal(slug)
+  const slug = resolveSlug(input.slug, input.title)
+  ensureSlugLegal(slug, 'page')
   const existing = await findPageMetaById(input.id)
   if (existing === null) {
     throw new DomainError('NOT_FOUND', '页面不存在或已被删除。')
@@ -60,19 +75,34 @@ export async function updatePageMeta(input: UpsertPageMetaInput): Promise<AdminP
     if (collision !== null && collision.id !== input.id) {
       throw new DomainError('CONFLICT', `slug "${slug}" 已被其它页面占用。`)
     }
+    const crossCollision = await findSlugRegistryBySlug(slug)
+    if (crossCollision !== null && crossCollision.entityType !== 'page') {
+      throw new DomainError('CONFLICT', `slug "${slug}" 已被其它文章占用。`)
+    }
   }
-  const updated = await updatePageMetaById(input.id, {
-    slug,
-    title: input.title,
-    summary: input.summary ?? existing.summary,
-    cover: input.cover ?? existing.cover,
-    og: input.og === undefined ? existing.og : input.og,
-    commentsEnabled: input.commentsEnabled ?? existing.commentsEnabled,
-    showToc: input.showToc ?? existing.showToc,
-    showUpdated: input.showUpdated ?? existing.showUpdated,
-    showFriends: input.showFriends ?? existing.showFriends,
-    publishedAt: input.publishedAt ?? existing.publishedAt,
-  })
+  let updated: Awaited<ReturnType<typeof updatePageMetaById>>
+  try {
+    updated = await updatePageMetaById(input.id, {
+      slug,
+      title: input.title,
+      summary: input.summary ?? existing.summary,
+      cover: input.cover ?? existing.cover,
+      og: input.og === undefined ? existing.og : input.og,
+      commentsEnabled: input.commentsEnabled ?? existing.commentsEnabled,
+      showToc: input.showToc ?? existing.showToc,
+      showUpdated: input.showUpdated ?? existing.showUpdated,
+      showFriends: input.showFriends ?? existing.showFriends,
+      publishedAt: input.publishedAt ?? existing.publishedAt,
+    })
+    if (existing.slug !== slug) {
+      await updateSlugRegistryByEntity({ entityType: 'page', entityId: input.id, slug })
+    }
+  } catch (err) {
+    if (isUniqueConstraintError(err, 'uq_slug_registry_slug')) {
+      throw new DomainError('CONFLICT', `slug "${slug}" 已被占用。`)
+    }
+    throw err
+  }
   if (updated === null) {
     throw new DomainError('NOT_FOUND', '页面不存在或已被删除。')
   }
@@ -83,6 +113,7 @@ export async function updatePageMeta(input: UpsertPageMetaInput): Promise<AdminP
 export async function deletePage(id: bigint): Promise<{ deleted: boolean }> {
   const deleted = await softDeletePageMeta(id)
   if (deleted) {
+    await deleteSlugRegistryByEntity({ entityType: 'page', entityId: id })
     await clearPagesCache()
   }
   return { deleted }
@@ -91,6 +122,16 @@ export async function deletePage(id: bigint): Promise<{ deleted: boolean }> {
 export async function restorePage(id: bigint): Promise<{ restored: boolean }> {
   const restored = await restorePageMeta(id)
   if (restored) {
+    const meta = await findPageMetaById(id)
+    if (meta !== null) {
+      try {
+        await insertSlugRegistry({ slug: meta.slug, entityType: 'page', entityId: id })
+      } catch (err) {
+        if (!isUniqueConstraintError(err, 'uq_slug_registry_slug')) {
+          throw err
+        }
+      }
+    }
     await clearPagesCache()
   }
   return { restored }

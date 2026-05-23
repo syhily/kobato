@@ -5,7 +5,7 @@ import type { Category } from '@/shared/types/catalog'
 import type { AdminCategoryDto } from '@/shared/types/categories'
 
 import { hydrateImageRefs } from '@/server/domains/images/image-meta'
-import { listPostsByCategory, listPublicPosts } from '@/server/domains/posts/repo'
+import { listPostsByCategory, listPublicPosts } from '@/server/domains/posts/repos/public-query'
 import {
   deleteAdminTaxonomy,
   ensureUniqueOnCreateTaxonomy,

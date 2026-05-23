@@ -51,7 +51,13 @@ export function Link({ href, target, rel, style, children }: LinkProps) {
   )
 }
 
-type ImgProps = { src: string; alt?: string; style?: CSSProperties; width?: number; height?: number }
+type ImgProps = {
+  src: string
+  alt?: string
+  style?: CSSProperties
+  width?: number
+  height?: number
+}
 export function Img({ src, alt = '', style, width, height }: ImgProps) {
   return <img src={src} alt={alt} style={style} width={width} height={height} />
 }

@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vite-plus/test'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { makeRouteContext } from './_helpers/context'
 import { emptySession } from './_helpers/session'

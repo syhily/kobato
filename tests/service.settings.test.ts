@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vite-plus/test'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { Setting } from '@/server/infra/db/types'
 import type { BlogSettingsBundle } from '@/shared/config/blog'
@@ -72,7 +72,11 @@ const fixtureBundle: BlogSettingsBundle = {
     },
   },
   comments: {
-    comments: { size: 10, avatar: { mirror: 'https://cdn.example.com/avatar', size: 80 }, tokenTtlSeconds: 1800 },
+    comments: {
+      size: 10,
+      avatar: { mirror: 'https://cdn.example.com/avatar', size: 80 },
+      tokenTtlSeconds: 1800,
+    },
   },
   seo: {
     toc: { minHeadingLevel: 2, maxHeadingLevel: 4 },
@@ -361,7 +365,12 @@ describe('services/settings — mail section', () => {
     await updateBlogSettingsSection(
       'mail',
       {
-        mail: { enabled: true, host: 'api.zeabur.com', apiKey: 'NEWKEY', sender: 'noreply@example.com' },
+        mail: {
+          enabled: true,
+          host: 'api.zeabur.com',
+          apiKey: 'NEWKEY',
+          sender: 'noreply@example.com',
+        },
       },
       null,
     )
@@ -384,7 +393,9 @@ describe('services/settings — mail section', () => {
     vi.mocked(settingQueries.findSettingByScope).mockResolvedValueOnce({
       id: 1n,
       scope: 'blog.mail',
-      data: { mail: { enabled: true, host: 'old.example.com', apiKey: 'STORED', sender: 'a@b.co' } },
+      data: {
+        mail: { enabled: true, host: 'old.example.com', apiKey: 'STORED', sender: 'a@b.co' },
+      },
       updatedAt: new Date(),
       updatedBy: null,
     } as Setting)
@@ -740,8 +751,14 @@ describe('services/settings — snapshot reader', () => {
     expect(cache.calendar).toEqual({ prefix: 'legacy-calendar:', ttlSeconds: 5678 })
     expect(cache.avatar).toEqual({ prefix: 'legacy-avatar:', ttlSeconds: 4321 })
     expect(cache.imageMeta).toEqual({ prefix: 'image-meta:', ttlSeconds: 60 * 60 })
-    expect(cache.embeddingSearch).toEqual({ prefix: 'embedding-search:', ttlSeconds: 60 * 60 * 24 * 7 })
-    expect(cache.embeddingSearch).toEqual({ prefix: 'embedding-search:', ttlSeconds: 60 * 60 * 24 * 7 })
+    expect(cache.embeddingSearch).toEqual({
+      prefix: 'embedding-search:',
+      ttlSeconds: 60 * 60 * 24 * 7,
+    })
+    expect(cache.embeddingSearch).toEqual({
+      prefix: 'embedding-search:',
+      ttlSeconds: 60 * 60 * 24 * 7,
+    })
   })
 
   it('hydrate rejects legacy 3-bucket cache rows so the registry default backfills the section', async () => {

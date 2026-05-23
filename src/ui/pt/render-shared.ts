@@ -37,7 +37,9 @@ export const HeadingIdByBlockKeyContext = createContext<Map<string, string>>(EMP
 export interface MusicPresentationCtx {
   suppressAutoplay: boolean
 }
-export const MusicPresentationContext = createContext<MusicPresentationCtx>({ suppressAutoplay: false })
+export const MusicPresentationContext = createContext<MusicPresentationCtx>({
+  suppressAutoplay: false,
+})
 export const RssModeContext = createContext<boolean>(false)
 
 export const FOOTNOTES_SECTION_FALLBACK_TITLE = '尾声礼记'

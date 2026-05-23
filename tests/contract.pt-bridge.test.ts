@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vite-plus/test'
+import { describe, expect, it } from 'vitest'
 
 import type { PmBlockNode } from '@/shared/pt/bridge/types'
 import type { PortableTextBody } from '@/shared/pt/schema'
@@ -63,10 +63,30 @@ describe('contract: pt-bridge — round-trip on the standard subset', () => {
 
   it('round-trips h1-h4 headings preserving the block-level _key', () => {
     const body: PortableTextBody = [
-      { _type: 'block', _key: 'h-one', style: 'h1', children: [{ _type: 'span', _key: 's1', text: '一' }] },
-      { _type: 'block', _key: 'h-two', style: 'h2', children: [{ _type: 'span', _key: 's2', text: '二' }] },
-      { _type: 'block', _key: 'h-three', style: 'h3', children: [{ _type: 'span', _key: 's3', text: '三' }] },
-      { _type: 'block', _key: 'h-four', style: 'h4', children: [{ _type: 'span', _key: 's4', text: '四' }] },
+      {
+        _type: 'block',
+        _key: 'h-one',
+        style: 'h1',
+        children: [{ _type: 'span', _key: 's1', text: '一' }],
+      },
+      {
+        _type: 'block',
+        _key: 'h-two',
+        style: 'h2',
+        children: [{ _type: 'span', _key: 's2', text: '二' }],
+      },
+      {
+        _type: 'block',
+        _key: 'h-three',
+        style: 'h3',
+        children: [{ _type: 'span', _key: 's3', text: '三' }],
+      },
+      {
+        _type: 'block',
+        _key: 'h-four',
+        style: 'h4',
+        children: [{ _type: 'span', _key: 's4', text: '四' }],
+      },
     ]
     const back = pmDocToBody(bodyToPmDoc(body))
     expect(back.map((b) => b._key)).toEqual(['h-one', 'h-two', 'h-three', 'h-four'])
@@ -197,11 +217,17 @@ describe('contract: pt-bridge — round-trip on the standard subset', () => {
     ]
     const doc = bodyToPmDoc(body)
     // Paragraph align stored on paragraph node
-    expect((doc.content[0] as { attrs?: Record<string, unknown> }).attrs).toMatchObject({ textAlign: 'center' })
+    expect((doc.content[0] as { attrs?: Record<string, unknown> }).attrs).toMatchObject({
+      textAlign: 'center',
+    })
     // Heading align stored on heading node
-    expect((doc.content[1] as { attrs?: Record<string, unknown> }).attrs).toMatchObject({ textAlign: 'right' })
+    expect((doc.content[1] as { attrs?: Record<string, unknown> }).attrs).toMatchObject({
+      textAlign: 'right',
+    })
     // Blockquote align stored on blockquote node, paragraph inside has no align
-    expect((doc.content[2] as { attrs?: Record<string, unknown> }).attrs).toMatchObject({ textAlign: 'left' })
+    expect((doc.content[2] as { attrs?: Record<string, unknown> }).attrs).toMatchObject({
+      textAlign: 'left',
+    })
 
     const back = pmDocToBody(doc)
     expect(back.map((b) => (b._type === 'block' ? { align: b.align, style: b.style } : null))).toEqual([
@@ -254,7 +280,15 @@ describe('contract: pt-bridge — round-trip on the standard subset', () => {
         _type: 'block',
         _key: 'b1',
         style: 'normal',
-        markDefs: [{ _type: 'link', _key: 'l1', href: 'https://example.com', rel: 'noreferrer', target: '_blank' }],
+        markDefs: [
+          {
+            _type: 'link',
+            _key: 'l1',
+            href: 'https://example.com',
+            rel: 'noreferrer',
+            target: '_blank',
+          },
+        ],
         children: [
           { _type: 'span', _key: 's1', text: 'click ' },
           { _type: 'span', _key: 's2', text: 'here', marks: ['l1'] },
@@ -311,7 +345,13 @@ describe('contract: pt-bridge — round-trip on the standard subset', () => {
 describe('contract: pt-bridge — custom blocks pass through opaquely', () => {
   it('musicPlayer blocks round-trip via the blockCard payload slot', () => {
     const body: PortableTextBody = [
-      { _type: 'musicPlayer', _key: 'mp-1', playerId: 'abcdef0123456789', auto: true, center: true },
+      {
+        _type: 'musicPlayer',
+        _key: 'mp-1',
+        playerId: 'abcdef0123456789',
+        auto: true,
+        center: true,
+      },
     ]
     const doc = bodyToPmDoc(body)
     expect(doc.content[0].type).toBe('blockCard')

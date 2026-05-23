@@ -208,8 +208,14 @@ function SortableFooterNavRow({
   onUpdate: (idx: number, patch: Partial<FooterNavItem>) => void
   onRemove: (idx: number) => void
 }) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: item.clientId })
-  const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.5 : 1 }
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: item.clientId,
+  })
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  }
 
   return (
     <div ref={setNodeRef} style={style} className="flex items-center gap-3 rounded-md border border-line bg-canvas p-3">
@@ -280,7 +286,10 @@ function FooterNavCard({ navigation, socials }: { navigation: NavigationSettings
     section: 'navigation',
     source: navigation,
     toState: (source) => ({
-      footerNavItems: source.navigation.footerNav.map((item, i) => ({ ...item, clientId: `footer-${i}` })),
+      footerNavItems: source.navigation.footerNav.map((item, i) => ({
+        ...item,
+        clientId: `footer-${i}`,
+      })),
     }),
     fromState: (state) => ({
       navigation: {

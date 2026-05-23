@@ -63,7 +63,11 @@ function SortableWidgetRow({
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: widget.type,
   })
-  const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.5 : 1 }
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  }
   const hasCount = widget.type === 'recentPosts' || widget.type === 'recentComments' || widget.type === 'randomTags'
 
   return (

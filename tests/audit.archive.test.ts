@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vite-plus/test'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const dbDeleteWhere = vi.fn(() => Promise.resolve({ rowCount: 0 })) as ReturnType<typeof vi.fn>
 const dbSelectLimit = vi.fn(() => Promise.resolve([])) as ReturnType<typeof vi.fn>

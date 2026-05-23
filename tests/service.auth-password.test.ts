@@ -1,5 +1,5 @@
 import bcrypt from 'bcryptjs'
-import { describe, expect, it } from 'vite-plus/test'
+import { describe, expect, it } from 'vitest'
 
 // We don't expose a `hashPassword`/`verifyPassword` wrapper — bcryptjs is
 // called inline from `db/query/user.server.ts`. The tests below pin the

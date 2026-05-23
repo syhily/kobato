@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { describe, expect, it } from 'vite-plus/test'
+import { describe, expect, it } from 'vitest'
 
 // Covers RBAC-RECTIFICATION-PLAN §1.7 (O7).
 //
@@ -29,10 +29,11 @@ import { describe, expect, it } from 'vite-plus/test'
 
 const here = dirname(fileURLToPath(import.meta.url))
 const projectRoot = resolve(here, '..')
-const commentQueryPath = resolve(projectRoot, 'src/server/infra/db/operations/comment.ts')
+const commentQueryPath = resolve(projectRoot, 'src/server/domains/comments/repos/admin-query.ts')
+const commentSharedPath = resolve(projectRoot, 'src/server/domains/comments/repos/shared.ts')
 
 function readSource(): string {
-  return readFileSync(commentQueryPath, 'utf8')
+  return readFileSync(commentQueryPath, 'utf8') + '\n' + readFileSync(commentSharedPath, 'utf8')
 }
 
 function extractFunctionBody(source: string, fnSignaturePattern: RegExp): string {
@@ -125,7 +126,7 @@ describe('server/db/query/comment — listMyComments / countMyComments share vis
     const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000
     const HOURS_DAYS_FORMS = [`${SEVEN_DAYS_MS}`, '7 * 24 * 60 * 60 * 1000', '7 * 24 * 3_600_000', '7 * 86_400_000']
     const constLine = /MY_COMMENTS_SOFT_DELETE_GRACE_MS\s*=\s*([^\n;]+)/.exec(source)
-    expect(constLine, 'expected `const MY_COMMENTS_SOFT_DELETE_GRACE_MS = …` in comment.ts').not.toBeNull()
+    expect(constLine, 'expected `const MY_COMMENTS_SOFT_DELETE_GRACE_MS = …` in comments/repos').not.toBeNull()
     const expression = constLine![1]!.trim().replace(/[\s_]/g, '')
     const accepted = HOURS_DAYS_FORMS.map((f) => f.replace(/[\s_]/g, ''))
     expect(

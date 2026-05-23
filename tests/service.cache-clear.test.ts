@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vite-plus/test'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { db } from '@/server/infra/db/pool'
 
@@ -12,21 +12,29 @@ import { clearAllTables } from './_helpers/integration-db'
 // `db.transaction`) can execute without a brittle hand-rolled transaction
 // stub.
 
-vi.mock('@/server/domains/posts/repo', () => ({
+vi.mock('@/server/domains/posts/repos/admin-query', () => ({
   countPostMetas: vi.fn(async () => 0),
+  listPostMetas: vi.fn(async () => []),
+}))
+vi.mock('@/server/domains/content/repo', () => ({
   findContentById: vi.fn(),
   findContentsByIds: vi.fn(async () => []),
   findLatestDraft: vi.fn(),
   findLatestRevision: vi.fn(),
+  listRevisions: vi.fn(async () => []),
+  publishLatestRevision: vi.fn(async () => ({ revisionId: 1n, changed: true })),
+  saveDraftRevision: vi.fn(async () => ({ id: 1n })),
+}))
+vi.mock('@/server/domains/posts/repos/single', () => ({
   findPostMetaById: vi.fn(),
   findPostMetaBySlug: vi.fn(),
   findPublicPostMetaBySlug: vi.fn(),
-  listPostMetas: vi.fn(async () => []),
+}))
+vi.mock('@/server/domains/posts/repos/public-query', () => ({
   listPublicPostMetas: vi.fn(async () => []),
-  listRevisions: vi.fn(async () => []),
-  publishLatestRevision: vi.fn(async () => ({ revisionId: 1n, changed: true })),
+}))
+vi.mock('@/server/domains/posts/repos/write', () => ({
   restorePostMeta: vi.fn(async () => true),
-  saveDraftRevision: vi.fn(async () => ({ id: 1n })),
   softDeletePostMeta: vi.fn(async () => true),
   updatePostMetaById: vi.fn(async () => null),
 }))
@@ -112,8 +120,8 @@ beforeEach(async () => {
 
 describe('posts service cache clearing', () => {
   it('loadCatalogPostMetas returns cached data within TTL', async () => {
-    const postRepo = await import('@/server/domains/posts/repo')
-    vi.mocked(postRepo.listPublicPostMetas).mockImplementation(
+    const publicQuery = await import('@/server/domains/posts/repos/public-query')
+    vi.mocked(publicQuery.listPublicPostMetas).mockImplementation(
       async () =>
         [
           {
@@ -151,12 +159,13 @@ describe('posts service cache clearing', () => {
     // Second call should use cache (no additional DB call within 10s TTL)
     const second = await loadCatalogPostMetas()
     expect(second).toHaveLength(1)
-    expect(postRepo.listPublicPostMetas).toHaveBeenCalledTimes(1)
+    expect(publicQuery.listPublicPostMetas).toHaveBeenCalledTimes(1)
   })
 
   it('mutation clears cache so next load hits DB', async () => {
-    const postRepo = await import('@/server/domains/posts/repo')
-    vi.mocked(postRepo.listPublicPostMetas).mockImplementation(
+    const publicQuery = await import('@/server/domains/posts/repos/public-query')
+    const single = await import('@/server/domains/posts/repos/single')
+    vi.mocked(publicQuery.listPublicPostMetas).mockImplementation(
       async () =>
         [
           {
@@ -185,26 +194,27 @@ describe('posts service cache clearing', () => {
           },
         ] as any,
     )
-    vi.mocked(postRepo.findPostMetaBySlug).mockImplementation(async () => null)
+    vi.mocked(single.findPostMetaBySlug).mockImplementation(async () => null)
 
     const { loadCatalogPostMetas } = await import('@/server/domains/posts/services/catalog')
     const { createPost } = await import('@/server/domains/posts/services/mutate')
 
     // Prime cache
     await loadCatalogPostMetas()
-    expect(postRepo.listPublicPostMetas).toHaveBeenCalledTimes(1)
+    expect(publicQuery.listPublicPostMetas).toHaveBeenCalledTimes(1)
 
     // Mutate
     await createPost({ title: 'New Post', summary: '', tags: [], category: undefined }, null)
 
     // Next load should hit DB again (cache was cleared)
     await loadCatalogPostMetas()
-    expect(postRepo.listPublicPostMetas).toHaveBeenCalledTimes(2)
+    expect(publicQuery.listPublicPostMetas).toHaveBeenCalledTimes(2)
   })
 
   it('multiple mutations in sequence clear cache each time', async () => {
-    const postRepo = await import('@/server/domains/posts/repo')
-    vi.mocked(postRepo.listPublicPostMetas).mockImplementation(
+    const publicQuery = await import('@/server/domains/posts/repos/public-query')
+    const single = await import('@/server/domains/posts/repos/single')
+    vi.mocked(publicQuery.listPublicPostMetas).mockImplementation(
       async () =>
         [
           {
@@ -233,21 +243,21 @@ describe('posts service cache clearing', () => {
           },
         ] as any,
     )
-    vi.mocked(postRepo.findPostMetaBySlug).mockImplementation(async () => null)
+    vi.mocked(single.findPostMetaBySlug).mockImplementation(async () => null)
 
     const { loadCatalogPostMetas } = await import('@/server/domains/posts/services/catalog')
     const { createPost } = await import('@/server/domains/posts/services/mutate')
 
     await loadCatalogPostMetas()
-    expect(postRepo.listPublicPostMetas).toHaveBeenCalledTimes(1)
+    expect(publicQuery.listPublicPostMetas).toHaveBeenCalledTimes(1)
 
     await createPost({ title: 'First', summary: '', tags: [], category: undefined }, null)
     await loadCatalogPostMetas()
-    expect(postRepo.listPublicPostMetas).toHaveBeenCalledTimes(2)
+    expect(publicQuery.listPublicPostMetas).toHaveBeenCalledTimes(2)
 
     await createPost({ title: 'Second', summary: '', tags: [], category: undefined }, null)
     await loadCatalogPostMetas()
-    expect(postRepo.listPublicPostMetas).toHaveBeenCalledTimes(3)
+    expect(publicQuery.listPublicPostMetas).toHaveBeenCalledTimes(3)
   })
 })
 

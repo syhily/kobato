@@ -1,29 +1,29 @@
 import { eq } from 'drizzle-orm'
 
+import { findContentById } from '@/server/domains/content/repo'
 import { indexPost, removePostIndex } from '@/server/domains/posts/indexer'
 import { toAdminPostDto, type AdminPostDto } from '@/server/domains/posts/projection'
-import {
-  findContentById,
-  findPostMetaById,
-  findPostMetaBySlug,
-  restorePostMeta,
-  softDeletePostMeta,
-  updatePostMetaById,
-} from '@/server/domains/posts/repo'
+import { findPostMetaById, findPostMetaBySlug } from '@/server/domains/posts/repos/single'
+import { restorePostMeta, softDeletePostMeta, updatePostMetaById } from '@/server/domains/posts/repos/write'
 import {
   assertOwnPostOr404,
   clearPostMetasCache,
-  ensureSlugLegal,
-  resolveSlugForPost,
   type UpsertPostMetaInput,
   type ViewerContext,
 } from '@/server/domains/posts/services/shared'
 import { resolveSlugForTaxonomy } from '@/server/domains/taxonomies/shared'
+import {
+  deleteSlugRegistryByEntity,
+  findSlugRegistryBySlug,
+  insertSlugRegistry,
+  updateSlugRegistryByEntity,
+} from '@/server/infra/db/operations/slug-registry'
 import { seedTagIfMissing } from '@/server/infra/db/operations/tag'
 import { db } from '@/server/infra/db/pool'
 import { post as postMetaTable } from '@/server/infra/db/schema'
 import { DomainError, isUniqueConstraintError } from '@/server/infra/http/errors'
 import { getLogger } from '@/server/infra/logger'
+import { ensureSlugLegal, resolveSlug } from '@/server/infra/slug-validation'
 import { idFromString } from '@/shared/utils/id'
 
 const log = getLogger('posts.service')
@@ -46,11 +46,15 @@ export async function createPost(
   if (viewer && viewer.role !== 'admin') {
     resolvedAuthorId = idFromString(viewer.userId)
   }
-  const slug = resolveSlugForPost(input.slug, input.title)
-  ensureSlugLegal(slug)
+  const slug = resolveSlug(input.slug, input.title)
+  ensureSlugLegal(slug, 'post')
   const collision = await findPostMetaBySlug(slug)
   if (collision !== null) {
     throw new DomainError('CONFLICT', `slug "${slug}" 已被其它文章占用。`)
+  }
+  const crossCollision = await findSlugRegistryBySlug(slug)
+  if (crossCollision !== null && crossCollision.entityType !== 'post') {
+    throw new DomainError('CONFLICT', `slug "${slug}" 已被其它页面占用。`)
   }
   const now = new Date()
   try {
@@ -79,11 +83,12 @@ export async function createPost(
         .returning()
       return inserted
     })
+    await insertSlugRegistry({ slug, entityType: 'post', entityId: row.id })
     await clearPostMetasCache()
     return toAdminPostDto(row)
   } catch (err) {
-    if (isUniqueConstraintError(err, 'post_slug_key')) {
-      throw new DomainError('CONFLICT', `slug "${slug}" 已被其它文章占用。`)
+    if (isUniqueConstraintError(err, 'post_slug_key') || isUniqueConstraintError(err, 'uq_slug_registry_slug')) {
+      throw new DomainError('CONFLICT', `slug "${slug}" 已被占用。`)
     }
     throw err
   }
@@ -94,14 +99,18 @@ export async function updatePostMeta(input: UpsertPostMetaInput, viewer?: Viewer
     throw new DomainError('BAD_REQUEST', 'updatePostMeta requires an id')
   }
   const id = input.id
-  const slug = resolveSlugForPost(input.slug, input.title)
-  ensureSlugLegal(slug)
+  const slug = resolveSlug(input.slug, input.title)
+  ensureSlugLegal(slug, 'post')
   const existing = await findPostMetaById(id)
   assertOwnPostOr404(existing, viewer)
   if (existing.slug !== slug) {
     const collision = await findPostMetaBySlug(slug)
     if (collision !== null && collision.id !== id) {
       throw new DomainError('CONFLICT', `slug "${slug}" 已被其它文章占用。`)
+    }
+    const crossCollision = await findSlugRegistryBySlug(slug)
+    if (crossCollision !== null && crossCollision.entityType !== 'post') {
+      throw new DomainError('CONFLICT', `slug "${slug}" 已被其它页面占用。`)
     }
   }
   try {
@@ -130,14 +139,17 @@ export async function updatePostMeta(input: UpsertPostMetaInput, viewer?: Viewer
         .returning()
       return result ?? null
     })
+    if (existing.slug !== slug) {
+      await updateSlugRegistryByEntity({ entityType: 'post', entityId: id, slug })
+    }
     if (updated === null) {
       throw new DomainError('NOT_FOUND', '文章不存在或已被删除。')
     }
     await clearPostMetasCache()
     return toAdminPostDto(updated)
   } catch (err) {
-    if (isUniqueConstraintError(err, 'post_slug_key')) {
-      throw new DomainError('CONFLICT', `slug "${slug}" 已被其它文章占用。`)
+    if (isUniqueConstraintError(err, 'post_slug_key') || isUniqueConstraintError(err, 'uq_slug_registry_slug')) {
+      throw new DomainError('CONFLICT', `slug "${slug}" 已被占用。`)
     }
     throw err
   }
@@ -154,6 +166,7 @@ export async function deletePost(id: bigint, viewer?: ViewerContext): Promise<{ 
     return ok
   })
   if (deleted) {
+    await deleteSlugRegistryByEntity({ entityType: 'post', entityId: id })
     await clearPostMetasCache()
   }
   return { deleted }
@@ -166,18 +179,27 @@ export async function restorePost(id: bigint, viewer?: ViewerContext): Promise<{
     return restorePostMeta(id, tx)
   })
   if (restored) {
+    const restoredMeta = await findPostMetaById(id)
+    if (restoredMeta !== null) {
+      try {
+        await insertSlugRegistry({ slug: restoredMeta.slug, entityType: 'post', entityId: id })
+      } catch (err) {
+        if (!isUniqueConstraintError(err, 'uq_slug_registry_slug')) {
+          throw err
+        }
+      }
+    }
     await clearPostMetasCache()
-    const meta = await findPostMetaById(id)
-    if (meta !== null && meta.published && meta.publishedRevisionId !== null) {
-      const revision = await findContentById(meta.publishedRevisionId)
+    if (restoredMeta !== null && restoredMeta.published && restoredMeta.publishedRevisionId !== null) {
+      const revision = await findContentById(restoredMeta.publishedRevisionId)
       if (revision !== null) {
         await indexPost(
-          meta.id,
-          meta.title,
-          meta.summary,
+          restoredMeta.id,
+          restoredMeta.title,
+          restoredMeta.summary,
           revision.body as import('@/shared/pt/schema').PortableTextBody,
         ).catch((err: unknown) => {
-          log.warn('index post failed', { postId: meta.id, error: err })
+          log.warn('index post failed', { postId: restoredMeta.id, error: err })
         })
       }
     }

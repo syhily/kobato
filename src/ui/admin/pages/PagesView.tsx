@@ -147,7 +147,10 @@ export function PagesView() {
                 items={DELETED_STATUS_OPTIONS}
                 value={state.deletedStatus}
                 onValueChange={(value) =>
-                  dispatch({ type: 'setDeletedStatus', value: (value ?? 'normal') as 'all' | 'deleted' | 'normal' })
+                  dispatch({
+                    type: 'setDeletedStatus',
+                    value: (value ?? 'normal') as 'all' | 'deleted' | 'normal',
+                  })
                 }
               >
                 <SelectTrigger className="w-full">

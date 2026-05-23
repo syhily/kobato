@@ -93,7 +93,10 @@ async function readMeta(storagePath: string): Promise<CachedImageMeta> {
     try {
       await storage.setItem(cacheKey(storagePath), value, { ttl: bucket().ttlSeconds })
     } catch (error) {
-      log.warn('Failed to write image-meta cache; continuing without warmth', { storagePath, error })
+      log.warn('Failed to write image-meta cache; continuing without warmth', {
+        storagePath,
+        error,
+      })
     }
     return value
   })

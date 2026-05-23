@@ -9,14 +9,14 @@ Implementation: `src/server/infra/logger.ts` (pino-based, auto-tags L3 keys).
 
 ## Quick Decision Rules
 
-| Tier | Action | Examples |
-| ---- | ------ | -------- |
-| **L5** | **NEVER log** | Passwords, session tokens, CSRF tokens, password-reset tokens, API keys |
-| **L4** | **NEVER log** | Comment bodies, post/page draft content, contact form submissions |
-| **L3** | **Auto-tagged `{E}...{/E}`** | Email, name, phone, IP, user agent, cookie, device ID |
-| **L2** | Allowed | `userId`, `commentId`, `postId`, timestamps, vote counts, role |
-| **L1** | Allowed | Settings keys, feature flags, IT operations, metrics |
-| **L0** | Allowed | Published post titles, public slugs, site name |
+| Tier   | Action                       | Examples                                                                |
+| ------ | ---------------------------- | ----------------------------------------------------------------------- |
+| **L5** | **NEVER log**                | Passwords, session tokens, CSRF tokens, password-reset tokens, API keys |
+| **L4** | **NEVER log**                | Comment bodies, post/page draft content, contact form submissions       |
+| **L3** | **Auto-tagged `{E}...{/E}`** | Email, name, phone, IP, user agent, cookie, device ID                   |
+| **L2** | Allowed                      | `userId`, `commentId`, `postId`, timestamps, vote counts, role          |
+| **L1** | Allowed                      | Settings keys, feature flags, IT operations, metrics                    |
+| **L0** | Allowed                      | Published post titles, public slugs, site name                          |
 
 ## L3 Auto-Tagging
 

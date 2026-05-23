@@ -275,7 +275,11 @@ function CommentsRoot({ commentKey, initialItems, rootsCount, totalCount, user, 
     ...orpcQuery.comments.myComments.mutationOptions(),
     onSuccess: (payload: MyCommentsOutput) => {
       if (payload.comments.length > 0) {
-        dispatch({ type: 'mergeMyComments', comments: payload.comments, expiresAt: payload.expiresAt })
+        dispatch({
+          type: 'mergeMyComments',
+          comments: payload.comments,
+          expiresAt: payload.expiresAt,
+        })
         setMyCommentIds(new Set(payload.comments.map((c) => asKey(c.id))))
         setMyCommentExpiresAt(new Map(Object.entries(payload.expiresAt)))
       }

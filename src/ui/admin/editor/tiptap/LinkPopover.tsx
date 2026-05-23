@@ -33,7 +33,11 @@ function linkMarkAttributes(
 }
 
 export function LinkPopover({ editor, variant, onClose }: LinkPopoverProps) {
-  const linkAttrs = editor.getAttributes('link') as { href?: string; rel?: string; target?: string }
+  const linkAttrs = editor.getAttributes('link') as {
+    href?: string
+    rel?: string
+    target?: string
+  }
   const initialHref = linkAttrs.href ?? ''
   const initialNewTab = isNewTabTarget(linkAttrs.target)
 

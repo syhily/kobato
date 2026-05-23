@@ -1,6 +1,6 @@
 import type { Editor } from '@tiptap/core'
 
-import { describe, expect, it } from 'vite-plus/test'
+import { describe, expect, it } from 'vitest'
 
 // The TableBubbleMenu's UI is composed of one `<Button>` per
 // editor command. The popover positioning is owned by Tiptap's

@@ -1,6 +1,6 @@
 import type { MetaDescriptor } from 'react-router'
 
-import { afterAll, beforeAll, describe, expect, it } from 'vite-plus/test'
+import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
 import type { BlogSettingsBundle } from '@/shared/config/blog'
 
@@ -61,7 +61,11 @@ const fixture: BlogSettingsBundle = {
     },
   },
   comments: {
-    comments: { size: 10, avatar: { mirror: 'https://cdn.test.example/avatar', size: 80 }, tokenTtlSeconds: 1800 },
+    comments: {
+      size: 10,
+      avatar: { mirror: 'https://cdn.test.example/avatar', size: 80 },
+      tokenTtlSeconds: 1800,
+    },
   },
   seo: {
     toc: { minHeadingLevel: 2, maxHeadingLevel: 4 },

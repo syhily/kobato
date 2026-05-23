@@ -1,5 +1,4 @@
 import { createHash } from 'node:crypto'
-import OpenAI from 'openai'
 
 import { getLogger } from '@/server/infra/logger'
 import { createInflight } from '@/server/infra/redis/inflight'
@@ -7,7 +6,12 @@ import { storage } from '@/server/infra/redis/storage'
 import { getBlogSettingsBundleSync } from '@/shared/config/blog'
 import { CACHE_BUCKET_FALLBACKS } from '@/shared/types/cache'
 
-function getClient(): OpenAI | null {
+interface OpenAiConfig {
+  apiKey: string
+  baseURL: string
+}
+
+function getConfig(): OpenAiConfig | null {
   const bundle = getBlogSettingsBundleSync()
   if (bundle === null) {
     return null
@@ -18,11 +22,9 @@ function getClient(): OpenAI | null {
     return null
   }
 
-  const options: ConstructorParameters<typeof OpenAI>[0] = { apiKey: settings.apiKey }
-  if (settings.endpoint && settings.endpoint.trim() !== '') {
-    options.baseURL = settings.endpoint.trim()
-  }
-  return new OpenAI(options)
+  const endpoint = settings.endpoint?.trim()
+  const baseURL = endpoint || 'https://api.openai.com/v1'
+  return { apiKey: settings.apiKey, baseURL }
 }
 
 // ---------------------------------------------------------------------------
@@ -50,8 +52,8 @@ function embeddingCacheKey(prefix: string, text: string): string {
 }
 
 export async function generateEmbedding(text: string): Promise<number[] | null> {
-  const client = getClient()
-  if (client === null) {
+  const config = getConfig()
+  if (config === null) {
     return null
   }
 
@@ -87,18 +89,39 @@ export async function generateEmbedding(text: string): Promise<number[] | null> 
     }
 
     try {
-      const response = await client.embeddings.create({ model, input, dimensions: 1536 })
+      const url = `${config.baseURL}/embeddings`
+      const response = await fetch(url, {
+        method: 'POST',
+        signal: AbortSignal.timeout(30_000),
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${config.apiKey}`,
+        },
+        body: JSON.stringify({ model, input, dimensions: 1536 }),
+      })
+      if (!response.ok) {
+        const body = await response.text().catch(() => '')
+        getLogger('search.openai').error('Embedding API returned non-2xx', {
+          status: response.status,
+          body: body.slice(0, 200),
+          model,
+        })
+        return null
+      }
+      const json = (await response.json()) as {
+        data?: Array<{ embedding?: number[] }>
+      }
       getLogger('search.openai').info('Embedding response', {
         model,
-        dataLength: response.data?.length,
-        firstDimensions: response.data?.[0]?.embedding?.length,
+        dataLength: json.data?.length,
+        firstDimensions: json.data?.[0]?.embedding?.length,
       })
-      const embedding = response.data?.[0]?.embedding
+      const embedding = json.data?.[0]?.embedding
       if (!Array.isArray(embedding) || embedding.length === 0) {
         getLogger('search.openai').error('Embedding generation returned invalid data', {
           model,
-          hasData: response.data !== undefined,
-          dataLength: response.data?.length,
+          hasData: json.data !== undefined,
+          dataLength: json.data?.length,
           embeddingType: typeof embedding,
           hint: 'The configured endpoint or model may not support embeddings. Use a dedicated embedding model (e.g. text-embedding-3-small).',
         })

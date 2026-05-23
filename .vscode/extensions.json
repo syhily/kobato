@@ -1,4 +1,4 @@
 {
-  "recommendations": ["oxc.oxc-vscode", "VoidZero.vite-plus-extension-pack", "bradlc.vscode-tailwindcss"],
+  "recommendations": ["oxc.oxc-vscode", "bradlc.vscode-tailwindcss"],
   "unwantedRecommendations": []
 }

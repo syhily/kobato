@@ -45,7 +45,11 @@ function tagsReducer(state: TagsState, action: TagsAction): TagsState {
       // decrement `total`. We deliberately don't try to fetch the
       // next-page replacement row — the next reload (e.g. on a
       // subsequent search-change or page-change) re-syncs.
-      return { ...state, rows: state.rows.filter((row) => row.id !== action.id), total: Math.max(0, state.total - 1) }
+      return {
+        ...state,
+        rows: state.rows.filter((row) => row.id !== action.id),
+        total: Math.max(0, state.total - 1),
+      }
     case 'prependTag':
       return { ...state, rows: [action.tag, ...state.rows], total: state.total + 1 }
   }

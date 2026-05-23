@@ -74,6 +74,7 @@ export function SearchBar() {
           name="q"
           required
           enterKeyHint="search"
+          aria-label="文章寻踪"
         />
       </Form>
     </div>

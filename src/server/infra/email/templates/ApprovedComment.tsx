@@ -1,4 +1,5 @@
 import { Link, Text } from '@/server/infra/email/render'
+import { SafeEmailHtml } from '@/server/infra/email/safe-html'
 import { EmailLayout } from '@/server/infra/email/templates/layout/EmailLayout'
 import { requireBlogSettingsSection } from '@/shared/config/blog'
 
@@ -26,7 +27,7 @@ export function ApprovedComment({ receiver, postTitle, postLink, commentContent,
         》中的留言，已经通过审核
       </Text>
       <div style={quoteBox}>
-        <div style={quoteText} dangerouslySetInnerHTML={{ __html: commentContent }} />
+        <SafeEmailHtml html={commentContent} style={quoteText} />
       </div>
       <Text style={paragraph}>您可以打开下方链接查看留言：</Text>
       <Link href={commentLink} target="_blank" rel="noreferrer" style={primaryLink}>

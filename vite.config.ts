@@ -1,53 +1,13 @@
-import type { OxfmtConfig } from 'oxfmt'
-import type { OxlintConfig } from 'oxlint'
 import type { Plugin, PluginOption } from 'vite'
 
 import { reactRouter } from '@react-router/dev/vite'
 import tailwindcss from '@tailwindcss/vite'
 import { DevToolsRolldownUI } from '@vitejs/devtools-rolldown'
-import { defineConfig } from 'vite-plus'
+import { defineConfig } from 'vite'
 
-import oxfmtConfig from './oxfmt.config.ts'
-import oxlintConfig from './oxlint.config.ts'
 import { reactRouterHonoServer } from './src/server/infra/hono/dev.ts'
 
 export default defineConfig({
-  fmt: oxfmtConfig as OxfmtConfig,
-  lint: oxlintConfig as OxlintConfig,
-  test: {
-    globals: false,
-    environment: 'node',
-    include: ['tests/**/*.test.{ts,tsx}'],
-    setupFiles: ['./tests/setup.ts'],
-    coverage: {
-      provider: 'v8',
-      reporter: ['text', 'html'],
-      include: ['src/**/*.{ts,tsx}'],
-      exclude: [
-        'src/**/*.d.ts',
-        'src/server/db/schema.ts',
-        'src/server/db/types/**',
-        'src/env.d.ts',
-        'src/blog.config.ts',
-        'src/routes.ts',
-        'src/entry.client.tsx',
-        'src/entry.server.tsx',
-        'src/root.tsx',
-        'src/routes/**/*.tsx',
-        'src/assets/**',
-        'src/ui/**',
-      ],
-      thresholds: {
-        lines: 70,
-        branches: 75,
-        functions: 70,
-        statements: 70,
-      },
-    },
-  },
-  staged: {
-    '*.{js,jsx,ts,tsx,mjs,cjs}': 'vp fmt && vp lint',
-  },
   plugins: [
     reactRouterHonoServer(),
     ...(reactRouter() as Plugin[]),

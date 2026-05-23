@@ -135,7 +135,10 @@ export function useEditorShellState<
 
   // --- Banner (post-save preview link) -------------------------------------
   const pendingActionRef = useRef<{ kind: 'draft' | 'published'; remaining: number } | null>(null)
-  const [previewBanner, setPreviewBanner] = useState<{ kind: 'draft' | 'published'; slug: string } | null>(null)
+  const [previewBanner, setPreviewBanner] = useState<{
+    kind: 'draft' | 'published'
+    slug: string
+  } | null>(null)
   const dismissPreviewBanner = useCallback(() => setPreviewBanner(null), [])
   const noteActionLegSucceeded = useCallback((slugForBanner: string) => {
     const pending = pendingActionRef.current
@@ -174,7 +177,10 @@ export function useEditorShellState<
   }, [isEditing, createDraft.loadedDraft])
 
   // --- Conflict detection (edit mode) --------------------------------------
-  const [conflict, setConflict] = useState<{ localBody: PortableTextBody; localSavedAt: number } | null>(null)
+  const [conflict, setConflict] = useState<{
+    localBody: PortableTextBody
+    localSavedAt: number
+  } | null>(null)
   const [conflictResolved, setConflictResolved] = useState(false)
   useEffect(() => {
     if (conflictResolved) {
@@ -387,7 +393,10 @@ export function useEditorShellState<
       }
       setBody(revision.body)
       setBodyKey(`${detail!.entity.id}:adopt-revision:${revision.revisionNo}:${Date.now()}`)
-      setStatus({ kind: 'info', message: `已载入 R${revision.revisionNo}，记得保存或发布以生效。` })
+      setStatus({
+        kind: 'info',
+        message: `已载入 R${revision.revisionNo}，记得保存或发布以生效。`,
+      })
     },
     [isEditing, detail],
   )

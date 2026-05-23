@@ -69,15 +69,14 @@ const fieldVariants = cva('group/field flex w-full gap-3 data-[invalid=true]:tex
   },
 })
 
-interface FieldProps extends ComponentProps<'div'>, VariantProps<typeof fieldVariants> {}
+interface FieldProps extends ComponentProps<'fieldset'>, VariantProps<typeof fieldVariants> {}
 
 function Field({ className, orientation = 'vertical', ...props }: FieldProps) {
   return (
-    <div
-      role="group"
+    <fieldset
       data-slot="field"
       data-orientation={orientation}
-      className={cn(fieldVariants({ orientation }), className)}
+      className={cn('border-0 p-0', fieldVariants({ orientation }), className)}
       {...props}
     />
   )

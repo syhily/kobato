@@ -9,6 +9,7 @@ import { Badge } from '@/ui/components/badge'
 import { Button } from '@/ui/components/button'
 import { Card } from '@/ui/components/card'
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@/ui/components/empty'
+import { SafeHtml } from '@/ui/components/safe-html'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/ui/components/table'
 import { useSiteIdentity } from '@/ui/lib/blog-config-context'
 
@@ -198,7 +199,10 @@ function ChevronIcon({ expanded }: { expanded: boolean }) {
       strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
-      style={{ transform: expanded ? 'rotate(90deg)' : 'rotate(0deg)', transition: 'transform 0.15s' }}
+      style={{
+        transform: expanded ? 'rotate(90deg)' : 'rotate(0deg)',
+        transition: 'transform 0.15s',
+      }}
     >
       <path d="m9 18 6-6-6-6" />
     </svg>
@@ -230,12 +234,10 @@ function JsonDetailRow({ details }: { details: Record<string, unknown> | null })
       <TableCell colSpan={6} className="p-0">
         <div className="max-h-64 overflow-auto border-t">
           {html ? (
-            // SAFETY: `html` is produced by Shiki's `codeToHtml` on a JSON
-            // string. Shiki HTML-escapes the input, so audit-log `details`
-            // fields cannot inject scripts through this path.
-            <div
+            <SafeHtml
+              html={html}
+              strategy="audit"
               className="[&>pre]:m-0 [&>pre]:rounded-none [&>pre]:border-0 [&>pre]:bg-transparent [&>pre]:px-4 [&>pre]:py-3 [&>pre]:text-xs [&>pre]:leading-relaxed"
-              dangerouslySetInnerHTML={{ __html: html }}
             />
           ) : (
             <pre className="px-4 py-3 text-xs leading-relaxed">{json}</pre>

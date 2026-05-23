@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vite-plus/test'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 // Covers RBAC-RECTIFICATION-PLAN §1.2.
 //
@@ -112,7 +112,7 @@ const userQueryMocks = vi.hoisted(() => ({
 
 vi.mock('@/server/infra/db/operations/user', () => userQueryMocks)
 
-vi.mock('@/server/infra/db/operations/comment', () => ({
+vi.mock('@/server/domains/comments/repos/query', () => ({
   countApprovedCommentsByUser: vi.fn(async () => 0),
 }))
 

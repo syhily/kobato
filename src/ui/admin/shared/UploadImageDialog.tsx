@@ -161,9 +161,17 @@ export function UploadImageDialog({ open, kind, onClose, onUploaded, initialFile
       const trimmedNote = note.trim()
       const metadata =
         kind.kind === 'category'
-          ? { kind: 'category' as const, slug: kind.slug, ...(trimmedNote !== '' ? { note: trimmedNote } : {}) }
+          ? {
+              kind: 'category' as const,
+              slug: kind.slug,
+              ...(trimmedNote !== '' ? { note: trimmedNote } : {}),
+            }
           : kind.kind === 'friend'
-            ? { kind: 'friend' as const, host: kind.host, ...(trimmedNote !== '' ? { note: trimmedNote } : {}) }
+            ? {
+                kind: 'friend' as const,
+                host: kind.host,
+                ...(trimmedNote !== '' ? { note: trimmedNote } : {}),
+              }
             : { kind: 'generic' as const, ...(trimmedNote !== '' ? { note: trimmedNote } : {}) }
       const data = await orpc.admin.images.upload({ file: encoded.blob, metadata })
       onUploaded(data.image)
@@ -213,7 +221,14 @@ export function UploadImageDialog({ open, kind, onClose, onUploaded, initialFile
                 <Button type="button" onClick={() => fileInputRef.current?.click()}>
                   <UploadIcon data-icon /> 选择图片
                 </Button>
-                <input ref={fileInputRef} type="file" accept="image/*" hidden onChange={onSelectFile} />
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  hidden
+                  aria-label="选择图片文件"
+                  onChange={onSelectFile}
+                />
               </div>
             ) : (
               <>
@@ -234,7 +249,14 @@ export function UploadImageDialog({ open, kind, onClose, onUploaded, initialFile
                     <Button type="button" variant="outline" size="sm" onClick={() => fileInputRef.current?.click()}>
                       <UploadIcon data-icon /> 重新选择
                     </Button>
-                    <input ref={fileInputRef} type="file" accept="image/*" hidden onChange={onSelectFile} />
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*"
+                      hidden
+                      aria-label="选择图片文件"
+                      onChange={onSelectFile}
+                    />
                   </div>
                 </div>
                 <ImageEditorCanvas
@@ -283,6 +305,7 @@ export function UploadImageDialog({ open, kind, onClose, onUploaded, initialFile
                     value={jpegQuality}
                     onChange={(event) => setJpegQuality(Number(event.target.value))}
                     className="w-full"
+                    aria-label="JPEG 质量"
                   />
                   <p className="text-xs text-muted-foreground">
                     越高越清晰、文件越大。常规图建议 80-85，封面/海报建议 82-90。

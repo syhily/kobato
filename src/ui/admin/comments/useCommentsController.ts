@@ -35,7 +35,13 @@ interface CommentsState {
 }
 
 type CommentsAction =
-  | { type: 'loaded'; comments: AdminComment[]; total: number; hasMore: boolean; statusCounts: StatusCounts }
+  | {
+      type: 'loaded'
+      comments: AdminComment[]
+      total: number
+      hasMore: boolean
+      statusCounts: StatusCounts
+    }
   | { type: 'removeComment'; id: string }
   | { type: 'approveComment'; id: string }
   | { type: 'updateCommentContent'; id: string; body: CommentBody }
@@ -58,7 +64,10 @@ function commentsReducer(state: CommentsState, action: CommentsAction): Comments
         statusCounts: action.statusCounts,
       }
     case 'removeComment':
-      return { ...state, comments: state.comments.filter((comment) => idStr(comment.id) !== action.id) }
+      return {
+        ...state,
+        comments: state.comments.filter((comment) => idStr(comment.id) !== action.id),
+      }
     case 'approveComment':
       return {
         ...state,

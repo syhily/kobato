@@ -23,7 +23,13 @@ function whereLikeTarget(target: EntityTarget) {
 export async function recordLikeAndCount(token: string, target: EntityTarget): Promise<number> {
   return db.transaction(async (tx) => {
     const now = new Date()
-    await tx.insert(like).values({ token, type: target.type, ownerId: target.ownerId, createdAt: now, updatedAt: now })
+    await tx.insert(like).values({
+      token,
+      type: target.type,
+      ownerId: target.ownerId,
+      createdAt: now,
+      updatedAt: now,
+    })
     const rows = await tx
       .update(metric)
       .set({ voteUp: sql`${metric.voteUp} + 1` })

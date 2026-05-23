@@ -134,9 +134,8 @@ function Sidebar({
           )}
           data-mobile="true"
           data-sidebar="sidebar"
-          role="navigation"
         >
-          <div className="flex size-full flex-col">{children}</div>
+          <nav className="flex size-full flex-col">{children}</nav>
         </SheetContent>
       </Sheet>
     )
@@ -144,26 +143,24 @@ function Sidebar({
 
   if (collapsible === 'none') {
     return (
-      <div
+      <nav
         ref={ref}
         className={cn('flex h-full w-(--sidebar-width) flex-col bg-sidebar text-sidebar-foreground', className)}
-        role="navigation"
         {...props}
       >
         {children}
-      </div>
+      </nav>
     )
   }
 
   return (
-    <div
+    <nav
       ref={ref}
       className="group peer hidden text-sidebar-foreground md:block"
       data-collapsible={state === 'collapsed' ? collapsible : ''}
       data-side={side}
       data-state={state}
       data-variant={variant}
-      role="navigation"
     >
       {/* spacer that handles the sidebar gap */}
       <div
@@ -198,7 +195,7 @@ function Sidebar({
           {children}
         </div>
       </div>
-    </div>
+    </nav>
   )
 }
 

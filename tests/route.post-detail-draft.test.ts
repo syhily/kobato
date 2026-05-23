@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vite-plus/test'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { PortableTextBody } from '@/shared/pt/schema'
 
@@ -66,7 +66,7 @@ vi.mock('@/server/domains/auth/primitives', async () => {
   }
 })
 
-vi.mock('@/server/domains/posts/repo', () => ({
+vi.mock('@/server/domains/posts/repos/single', () => ({
   findPostBySlug: vi.fn(async (slug: string) => {
     if (slug === 'hello') {
       return publishedPost
@@ -75,6 +75,8 @@ vi.mock('@/server/domains/posts/repo', () => ({
     // the real findPostBySlug now returns null for this case.
     return null
   }),
+}))
+vi.mock('@/server/domains/posts/repos/public-query', () => ({
   selectSidebarPosts: vi.fn(async () => []),
   listPublicPostMetas: vi.fn(async () => []),
 }))
@@ -129,8 +131,8 @@ vi.mock('@/server/render/image-enhance', () => ({
 const postRoute = await import('@/routes/public/post/detail')
 const postsService = await import('@/server/domains/posts/services/draft')
 const draftPreviewMock = vi.mocked(postsService.loadPostDraftPreviewBySlug)
-const postsRepo = await import('@/server/domains/posts/repo')
-const findPostBySlugMock = vi.mocked(postsRepo.findPostBySlug)
+const postsSingle = await import('@/server/domains/posts/repos/single')
+const findPostBySlugMock = vi.mocked(postsSingle.findPostBySlug)
 
 type LoaderResult = {
   post: { title: string }

@@ -1,5 +1,5 @@
 import { listAllPages } from '@/server/domains/pages/repo'
-import { listAllPosts } from '@/server/domains/posts/repo'
+import { listAllPosts } from '@/server/domains/posts/repos/public-query'
 import { requireBlogSettingsSection } from '@/shared/config/blog'
 import { joinUrl } from '@/shared/utils/urls'
 

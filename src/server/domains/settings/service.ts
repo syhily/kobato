@@ -78,85 +78,48 @@ export async function updateBlogSettingsSection<S extends SettingsSection>(
 // --- Internal helpers ------------------------------------------------------
 
 // Build the row's `data` payload for the given section. Most sections
-// just return the validated payload verbatim; the `mail` and `assets`
-// sections fold in the existing secret when the editor omits it (see
-// comments below).
+// just return the validated payload verbatim; `mail`, `assets`, and
+// `search` fold in the existing secret when the editor omits it.
 async function applySectionPatch(
   section: SettingsSection,
   validated: Record<string, unknown>,
 ): Promise<Record<string, unknown>> {
-  if (section === 'mail') {
-    return applyMailPatch(validated)
+  const secretConfig = SECRET_PRESERVE_CONFIG[section]
+  if (!secretConfig) {
+    return validated
   }
-  if (section === 'assets') {
-    return applyAssetsPatch(validated)
-  }
-  if (section === 'search') {
-    return applySearchPatch(validated)
-  }
-  return validated
+  return preserveSecretOnPatch(validated, section, secretConfig.payloadPath, secretConfig.secretKey)
 }
 
-async function applyMailPatch(validated: Record<string, unknown>): Promise<Record<string, unknown>> {
-  // Preserve the existing API key when the editor omits the field:
-  // the admin form sends `apiKey: undefined` whenever the input is
-  // left blank, which means "I'm tweaking other fields, don't make
-  // me re-paste the secret". Only an explicit string value (even
-  // empty) intentionally overwrites the stored key. The conflict
-  // domain is the `blog.mail` row only — a concurrent edit to
-  // `blog.cache` cannot wipe the API key.
-  const incomingMail = (validated.mail as Record<string, unknown>) ?? {}
-  if ('apiKey' in incomingMail && incomingMail.apiKey !== undefined) {
+// Sections where the admin form sends `undefined` for a secret field to
+// mean "keep the existing value". Maps section → { nested payload path,
+// secret key name }.
+const SECRET_PRESERVE_CONFIG: Partial<Record<SettingsSection, { payloadPath: string; secretKey: string }>> = {
+  mail: { payloadPath: 'mail', secretKey: 'apiKey' },
+  assets: { payloadPath: 'storage', secretKey: 'secretAccessKey' },
+  search: { payloadPath: 'search', secretKey: 'apiKey' },
+}
+
+// When the editor omits a secret field (sends `undefined`), fold the
+// previous secret back in so the user doesn't have to re-paste it.
+// An explicit string (including empty) overwrites the stored value.
+async function preserveSecretOnPatch(
+  validated: Record<string, unknown>,
+  section: SettingsSection,
+  payloadPath: string,
+  secretKey: string,
+): Promise<Record<string, unknown>> {
+  const incoming = (validated[payloadPath] as Record<string, unknown>) ?? {}
+  if (secretKey in incoming && incoming[secretKey] !== undefined) {
     return validated
   }
 
-  const existingRow = await findSettingByScope(SECTION_REGISTRY.mail.scope)
-  const existingMail = (existingRow?.data as Record<string, unknown> | undefined)?.mail as
+  const existingRow = await findSettingByScope(SECTION_REGISTRY[section].scope)
+  const existingPayload = (existingRow?.data as Record<string, unknown> | undefined)?.[payloadPath] as
     | Record<string, unknown>
     | undefined
-  const nextMail: Record<string, unknown> = { ...incomingMail, apiKey: existingMail?.apiKey ?? '' }
-  return { mail: nextMail }
-}
 
-async function applyAssetsPatch(validated: Record<string, unknown>): Promise<Record<string, unknown>> {
-  // Same "optional ⇒ keep existing" semantics as mail.apiKey, but for
-  // `storage.secretAccessKey`. Editor sends `undefined` to mean "I'm
-  // tweaking other fields, don't make me re-paste the secret"; an
-  // explicit string (including empty) overwrites the stored secret.
-  // Folding the previous secret back in keeps the persisted row
-  // self-consistent regardless of whether the master upload toggle
-  // is currently ON or OFF.
-  const incomingStorage = (validated.storage as Record<string, unknown>) ?? {}
-  if ('secretAccessKey' in incomingStorage && incomingStorage.secretAccessKey !== undefined) {
-    return validated
-  }
-
-  const existingRow = await findSettingByScope(SECTION_REGISTRY.assets.scope)
-  const existingStorage = (existingRow?.data as Record<string, unknown> | undefined)?.storage as
-    | Record<string, unknown>
-    | undefined
-  const previousSecret = typeof existingStorage?.secretAccessKey === 'string' ? existingStorage.secretAccessKey : ''
-  const nextStorage: Record<string, unknown> = {
-    ...incomingStorage,
-    secretAccessKey: previousSecret,
-  }
-  return { ...validated, storage: nextStorage }
-}
-
-async function applySearchPatch(validated: Record<string, unknown>): Promise<Record<string, unknown>> {
-  // Preserve the existing OpenAI API key when the editor omits the field.
-  const incomingSearch = (validated.search as Record<string, unknown>) ?? {}
-  if ('apiKey' in incomingSearch && incomingSearch.apiKey !== undefined) {
-    return validated
-  }
-
-  const existingRow = await findSettingByScope(SECTION_REGISTRY.search.scope)
-  const existingSearch = (existingRow?.data as Record<string, unknown> | undefined)?.search as
-    | Record<string, unknown>
-    | undefined
-  const nextSearch: Record<string, unknown> = {
-    ...incomingSearch,
-    apiKey: typeof existingSearch?.apiKey === 'string' ? existingSearch.apiKey : '',
-  }
-  return { search: nextSearch }
+  const previousSecret = typeof existingPayload?.[secretKey] === 'string' ? existingPayload[secretKey] : ''
+  const nextPayload: Record<string, unknown> = { ...incoming, [secretKey]: previousSecret }
+  return { ...validated, [payloadPath]: nextPayload }
 }

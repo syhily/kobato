@@ -1,6 +1,6 @@
 import type { ListingPageLoaderData } from '@/server/http/loaders/listing'
 
-import { countPublicPosts, listPublicPostCardsPaginated } from '@/server/domains/posts/repo'
+import { countPublicPosts, listPublicPostCardsPaginated } from '@/server/domains/posts/repos/public-query'
 import { listingLoader } from '@/server/http/loaders/listing'
 import { listingHeaders, publicShouldRevalidate } from '@/server/http/loaders/route-exports'
 import { findTagBySlug } from '@/server/infra/db/operations/tag'
@@ -20,7 +20,11 @@ export async function loader({ params }: Route.LoaderArgs): Promise<ListingPageL
 
   return listingLoader({
     rawNum: params.num,
-    totalPosts: await countPublicPosts({ includeHidden: true, includeScheduled: false, tag: tag.name }),
+    totalPosts: await countPublicPosts({
+      includeHidden: true,
+      includeScheduled: false,
+      tag: tag.name,
+    }),
     fetchPage: (pageNum, pageSize) =>
       listPublicPostCardsPaginated(pageNum, pageSize, {
         includeHidden: true,

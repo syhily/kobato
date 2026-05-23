@@ -23,7 +23,11 @@ export function textBlockToPmNode(block: TextBlock, asListItemChild: boolean): P
   if (headingLevel !== null) {
     return {
       type: 'heading',
-      attrs: { _key: block._key, level: headingLevel, ...(block.align ? { textAlign: block.align } : {}) },
+      attrs: {
+        _key: block._key,
+        level: headingLevel,
+        ...(block.align ? { textAlign: block.align } : {}),
+      },
       content: inlines,
     }
   }
@@ -67,7 +71,10 @@ export function spanMarkToPmMark(markName: string, markDefs: readonly MarkDef[])
         attrs: { _key: def._key, href: def.href, rel: def.rel, target: def.target },
       }
     case 'mathInline':
-      return { type: 'mathInline', attrs: { _key: def._key, tex: def.tex, mathml: def.mathml, svg: def.svg } }
+      return {
+        type: 'mathInline',
+        attrs: { _key: def._key, tex: def.tex, mathml: def.mathml, svg: def.svg },
+      }
     case 'footnoteRef':
       return {
         type: 'footnoteRef',

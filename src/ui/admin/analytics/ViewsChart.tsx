@@ -90,7 +90,6 @@ export function ViewsChart({ data, className, height = 220 }: ViewsChartProps) {
         viewBox={`0 0 ${geometry.width} ${geometry.height}`}
         width="100%"
         height={geometry.height}
-        role="img"
         aria-label="访问量与访客数折线图"
         onMouseLeave={() => setHoverIndex(null)}
         onMouseMove={(e) => {

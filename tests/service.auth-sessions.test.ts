@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from 'vite-plus/test'
+import { beforeEach, describe, expect, it } from 'vitest'
 
 import { recordSessionLogin } from '@/server/domains/auth/repo'
 import { listSessionsByUser } from '@/server/domains/auth/service'

@@ -3,7 +3,8 @@ import { z } from 'zod'
 
 import { recordAuditEventFromContext } from '@/server/domains/audit/service'
 import { asAdminCommentsWire } from '@/server/domains/comments/projection'
-import { adminClearDeleteRequest, findCommentWithUserById, softDeleteCommentById } from '@/server/domains/comments/repo'
+import { adminClearDeleteRequest, softDeleteCommentById } from '@/server/domains/comments/repos/moderation'
+import { findCommentWithUserById } from '@/server/domains/comments/repos/public-query'
 import {
   loadAdminPendingDashboard,
   loadAllComments,

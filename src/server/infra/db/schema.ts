@@ -724,7 +724,9 @@ export const auditLog = pgTable(
   {
     id: bigserial('id', { mode: 'bigint' }).primaryKey(),
     action: varchar('action', { length: 50 }).notNull(),
-    actorId: bigint('actor_id', { mode: 'bigint' }).references(() => user.id, { onDelete: 'set null' }),
+    actorId: bigint('actor_id', { mode: 'bigint' }).references(() => user.id, {
+      onDelete: 'set null',
+    }),
     actorRole: varchar('actor_role', { length: 20 }),
     resourceType: varchar('resource_type', { length: 50 }).notNull(),
     resourceId: varchar('resource_id', { length: 100 }),
@@ -743,6 +745,35 @@ export const auditLog = pgTable(
     index('idx_audit_log_action_created_at').on(table.action, table.createdAt),
   ],
 )
+
+// ---------------------------------------------------------------------------
+// Slug registry — global uniqueness enforcement for page ↔ post slugs.
+//
+// Both `page` and `post` have their own `UNIQUE(slug)`, but that only
+// catches collisions within the same table.  This registry guarantees
+// cross-table uniqueness at the database level, eliminating the race
+// condition that the old application-level `validateSlugFence` could not
+// prevent.
+// ---------------------------------------------------------------------------
+export const slugRegistry = pgTable(
+  'slug_registry',
+  {
+    id: bigserial('id', { mode: 'bigint' }).primaryKey().notNull(),
+    slug: varchar('slug', { length: 80 }).notNull(),
+    entityType: varchar('entity_type', { length: 16 }).$type<'page' | 'post'>().notNull(),
+    entityId: bigint('entity_id', { mode: 'bigint' }).notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' })
+      .notNull()
+      .$defaultFn(() => new Date()),
+  },
+  (table) => [
+    uniqueIndex('uq_slug_registry_slug').on(table.slug),
+    uniqueIndex('uq_slug_registry_entity').on(table.entityType, table.entityId),
+  ],
+)
+
+export type SlugRegistryRow = typeof slugRegistry.$inferSelect
+export type NewSlugRegistry = typeof slugRegistry.$inferInsert
 
 export type AuditLogRow = typeof auditLog.$inferSelect
 export type NewAuditLog = typeof auditLog.$inferInsert

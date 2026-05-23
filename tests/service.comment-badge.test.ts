@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vite-plus/test'
+import { describe, expect, it } from 'vitest'
 
 import { commentBadgeTextColor, withCommentBadgeTextColor } from '@/server/domains/comments/badge'
 
@@ -22,7 +22,11 @@ describe('services/comments/badge', () => {
     // but the override forces white — which is the whole point of the
     // user-facing setting.
     expect(
-      withCommentBadgeTextColor({ badgeName: '站长', badgeColor: '#6ab7ca', badgeTextColor: '#ff00aa' }).badgeTextColor,
+      withCommentBadgeTextColor({
+        badgeName: '站长',
+        badgeColor: '#6ab7ca',
+        badgeTextColor: '#ff00aa',
+      }).badgeTextColor,
     ).toBe('#ff00aa')
   })
 
@@ -42,7 +46,11 @@ describe('services/comments/badge', () => {
     // No badge → nothing to colour. Override is ignored so the public
     // renderer doesn't accidentally show a styled empty span.
     expect(
-      withCommentBadgeTextColor({ badgeName: null, badgeColor: '#6ab7ca', badgeTextColor: '#ff00aa' }).badgeTextColor,
+      withCommentBadgeTextColor({
+        badgeName: null,
+        badgeColor: '#6ab7ca',
+        badgeTextColor: '#ff00aa',
+      }).badgeTextColor,
     ).toBeNull()
   })
 })

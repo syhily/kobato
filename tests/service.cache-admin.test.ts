@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from 'vite-plus/test'
+import { beforeEach, describe, expect, it } from 'vitest'
 
 import { setBlogSettingsBundleForTests } from '@/server/domains/settings/snapshot'
 import { clearAdminCache, getAdminCacheStats } from '@/server/infra/redis/admin-ops'
@@ -96,7 +96,10 @@ describe('service: cache admin', () => {
       cache: {
         cache: {
           ...TEST_BLOG_SETTINGS_BUNDLE.cache!.cache,
-          og: { prefix: 'opengraph:', ttlSeconds: TEST_BLOG_SETTINGS_BUNDLE.cache!.cache.og.ttlSeconds },
+          og: {
+            prefix: 'opengraph:',
+            ttlSeconds: TEST_BLOG_SETTINGS_BUNDLE.cache!.cache.og.ttlSeconds,
+          },
         },
       },
     })

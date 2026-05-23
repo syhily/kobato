@@ -2,7 +2,7 @@
 // worker. Must create the test database before the first test file imports
 // `db.pool.ts` (which reads DATABASE_URL at module-load time).
 
-import { afterAll } from 'vite-plus/test'
+import { afterAll } from 'vitest'
 
 import { BLOG_SETTINGS_SNAPSHOT_SLOT } from '@/shared/config/blog'
 

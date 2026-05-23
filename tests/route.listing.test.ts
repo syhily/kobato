@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vite-plus/test'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { makeCategory, makePost, makePostList, makeTag } from './_helpers/catalog'
 // Listing routes (`/cats/:slug`, `/tags/:slug`, `/search/:keyword`) all share
@@ -27,7 +27,7 @@ vi.mock('@/shared/types/catalog', async () => {
   }
 })
 
-vi.mock('@/server/domains/posts/repo', () => ({
+vi.mock('@/server/domains/posts/repos/public-query', () => ({
   listPostsByCategory: vi.fn(async (_name: string, options: { includeHidden?: boolean }) =>
     options?.includeHidden ? samplePosts : publicPosts,
   ),
@@ -51,7 +51,10 @@ vi.mock('@/server/domains/posts/repo', () => ({
     },
   ),
   getClientPostsWithMetadata: vi.fn(async (posts: unknown[]) =>
-    (posts as Array<{ slug: string }>).map((p) => ({ ...p, meta: { likes: 0, views: 0, comments: 0 } })),
+    (posts as Array<{ slug: string }>).map((p) => ({
+      ...p,
+      meta: { likes: 0, views: 0, comments: 0 },
+    })),
   ),
 }))
 

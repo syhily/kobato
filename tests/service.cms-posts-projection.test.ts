@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vite-plus/test'
+import { describe, expect, it } from 'vitest'
 
 import type { ContentRow, PostMetaRow } from '@/server/infra/db/types'
 
@@ -11,7 +11,7 @@ import type { ContentRow, PostMetaRow } from '@/server/infra/db/types'
 //   2. DTO field shape stability (id stringification, permalink, dates).
 
 const { toCmsPost } = await import('@/server/domains/posts/projection')
-const { toClientPostFromMeta } = await import('@/server/domains/posts/repo')
+const { toClientPostFromMeta } = await import('@/server/domains/posts/repos/shared')
 
 function metaRow(overrides: Partial<PostMetaRow> = {}): PostMetaRow {
   const now = overrides.createdAt ?? new Date('2026-05-01T00:00:00.000Z')
@@ -79,10 +79,22 @@ describe('cms/posts/projection — toCmsPost', () => {
   })
 
   it('joins the published revision body when present', () => {
-    const body = [{ _type: 'block', _key: 'b1', style: 'h2', children: [{ _type: 'span', _key: 's1', text: 'Hi' }] }]
+    const body = [
+      {
+        _type: 'block',
+        _key: 'b1',
+        style: 'h2',
+        children: [{ _type: 'span', _key: 's1', text: 'Hi' }],
+      },
+    ]
     const dto = toCmsPost(
       metaRow({ publishedRevisionId: 200n }),
-      contentRow({ id: 200n, body, imageSources: ['images/x.jpg'], headings: [{ depth: 2, text: 'Hi', slug: 'hi' }] }),
+      contentRow({
+        id: 200n,
+        body,
+        imageSources: ['images/x.jpg'],
+        headings: [{ depth: 2, text: 'Hi', slug: 'hi' }],
+      }),
     )
     expect(dto.body).toEqual(body)
     expect(dto.imageSources).toEqual(['images/x.jpg'])

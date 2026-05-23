@@ -2,7 +2,7 @@ import type { EntityTarget } from '@/server/infra/db/target'
 
 import { pushAccessEvent } from '@/server/domains/analytics/batcher'
 import { enrichEvent } from '@/server/domains/analytics/enrich'
-import { ANALYTICS_TRACK_ADMIN } from '@/server/infra/env'
+import { ANALYTICS_KEEP_BOT_ROWS, ANALYTICS_TRACK_ADMIN } from '@/server/infra/env'
 import { getLogger } from '@/server/infra/logger'
 import { getClientAddress } from '@/shared/utils/request'
 
@@ -24,7 +24,7 @@ const log = getLogger('analytics.track')
 // undefined) keeps the default of stripping bots. The continuous
 // aggregates already filter on `is_bot = FALSE` so leaving bot rows
 // in is mainly a forensic / debugging affordance.
-const KEEP_BOT_ROWS = process.env.ANALYTICS_KEEP_BOT_ROWS === 'true'
+const KEEP_BOT_ROWS = ANALYTICS_KEEP_BOT_ROWS
 
 const YF_AID_COOKIE = 'yf_aid'
 

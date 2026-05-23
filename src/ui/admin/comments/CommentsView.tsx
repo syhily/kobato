@@ -352,7 +352,10 @@ export function CommentsView({
                   onConfirmApprove={askApprove}
                   onConfirmDelete={askDelete}
                   onFilterByPage={(pageKey, pageTitle) => {
-                    dispatch({ type: 'setFilterPage', value: { value: pageKey, label: pageTitle } })
+                    dispatch({
+                      type: 'setFilterPage',
+                      value: { value: pageKey, label: pageTitle },
+                    })
                     if (typeof window !== 'undefined') {
                       window.scrollTo({ top: 0, behavior: 'smooth' })
                     }

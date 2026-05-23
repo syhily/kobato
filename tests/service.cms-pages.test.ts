@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vite-plus/test'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { PageMetaWithAuthor } from '@/server/domains/pages/repo'
 import type { ContentRow } from '@/server/infra/db/types'
@@ -41,6 +41,14 @@ vi.mock('@/server/infra/db/operations/metric', () => ({
 vi.mock('@/server/infra/db/operations/like', () => ({
   metricsByOwnerIds: vi.fn(async () => []),
   commentCountsByOwnerIds: vi.fn(async () => []),
+}))
+vi.mock('@/server/infra/db/operations/slug-registry', () => ({
+  insertSlugRegistry: vi.fn(async () => ({})),
+  updateSlugRegistryByEntity: vi.fn(async () => ({})),
+  deleteSlugRegistryByEntity: vi.fn(async () => {
+    void 0
+  }),
+  findSlugRegistryBySlug: vi.fn(async () => null),
 }))
 
 const repo = await import('@/server/domains/pages/repo')
@@ -161,7 +169,9 @@ describe('cms/pages/service — createPage / updatePageMeta validation', () => {
 
   it('rejects an existing slug on create with HTTP 409 semantics', async () => {
     vi.mocked(repo.findPageMetaBySlug).mockResolvedValue(metaRow({ slug: 'about' }))
-    await expect(mutate.createPage({ slug: 'about', title: 't' }, null)).rejects.toMatchObject({ code: 'CONFLICT' })
+    await expect(mutate.createPage({ slug: 'about', title: 't' }, null)).rejects.toMatchObject({
+      code: 'CONFLICT',
+    })
   })
 
   it('updatePageMeta tolerates a same-slug edit (no collision check fires)', async () => {
@@ -214,7 +224,12 @@ describe('cms/pages/service — createPage / updatePageMeta validation', () => {
       metaRow({ id: 7n, slug: 'about', published: true, title: 'Updated' }),
     )
 
-    const dto = await mutate.updatePageMeta({ id: 7n, slug: 'about', title: 'Updated', published: false })
+    const dto = await mutate.updatePageMeta({
+      id: 7n,
+      slug: 'about',
+      title: 'Updated',
+      published: false,
+    })
     expect(dto.title).toBe('Updated')
 
     const patch = vi.mocked(repo.updatePageMetaById).mock.calls[0][1]
@@ -247,7 +262,12 @@ describe('cms/pages/service — saveDraft / publishLatest body validation', () =
     })
 
     const body = [
-      { _type: 'block', _key: 'h1', style: 'h2', children: [{ _type: 'span', _key: 's1', text: 'Hello' }] },
+      {
+        _type: 'block',
+        _key: 'h1',
+        style: 'h2',
+        children: [{ _type: 'span', _key: 's1', text: 'Hello' }],
+      },
       {
         _type: 'image',
         _key: 'i1',
@@ -382,7 +402,13 @@ describe('cms/pages/service — saveDraft / publishLatest CAS + force', () => {
     vi.mocked(repo.findPageMetaById).mockResolvedValue(metaRow({ id: 7n }))
     const same = 'aligned-token'
     vi.mocked(repo.findLatestRevision).mockResolvedValue(
-      contentRow({ id: 700n, ownerId: 7n, revisionNo: 3, status: 'draft', clientRevisionToken: same }),
+      contentRow({
+        id: 700n,
+        ownerId: 7n,
+        revisionNo: 3,
+        status: 'draft',
+        clientRevisionToken: same,
+      }),
     )
     vi.mocked(repo.saveDraftRevision).mockResolvedValue({
       status: 'saved',

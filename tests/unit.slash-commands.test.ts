@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vite-plus/test'
+import { describe, expect, it } from 'vitest'
 
 import { filterSlashCommands, SLASH_COMMANDS } from '@/ui/admin/editor/tiptap/slash-commands'
 

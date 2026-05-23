@@ -145,7 +145,11 @@ export async function clearBucket(bucket: CacheBucket): Promise<number> {
         const deleted = await redis.unlink(...slice)
         removed += Number(deleted)
       } catch (error) {
-        log.error('Failed to UNLINK cache batch', { bucket: bucket.id, error, batchSize: slice.length })
+        log.error('Failed to UNLINK cache batch', {
+          bucket: bucket.id,
+          error,
+          batchSize: slice.length,
+        })
         throw error
       }
     }

@@ -1,13 +1,10 @@
 import type { ContentRow } from '@/server/infra/db/types'
 
+import { findContentById, findContentsByIds } from '@/server/domains/content/repo'
 import { isCatalogVisible } from '@/server/domains/content/schema'
 import { toCmsPost, type CmsPost } from '@/server/domains/posts/projection'
-import {
-  findContentById,
-  findContentsByIds,
-  findPublicPostMetaBySlug,
-  listPublicPostMetas,
-} from '@/server/domains/posts/repo'
+import { listPublicPostMetas } from '@/server/domains/posts/repos/public-query'
+import { findPublicPostMetaBySlug } from '@/server/domains/posts/repos/single'
 import { postMetaCache } from '@/server/domains/posts/services/shared'
 import { requireBlogSettingsSection } from '@/shared/config/blog'
 

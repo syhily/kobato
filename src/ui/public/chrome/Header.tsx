@@ -364,6 +364,7 @@ export function Header({ navigation, currentUser, pathname, search }: HeaderProp
               <img src="/logo-dark.svg" alt="且听书吟" className={navbarBrandImgClass} />
             </Link>
           </h1>
+          {/* oxlint-disable-next-line jsx-a11y/no-noninteractive-element-interactions */}
           <nav className={siteMenuClass} onClick={() => setMenuOpen(false)}>
             <ul className={siteMenuListClass}>
               {navigation.map((menu, i) => (
@@ -405,8 +406,9 @@ export function Header({ navigation, currentUser, pathname, search }: HeaderProp
                   size="iconSm"
                   shape="circle"
                   className="mr-2"
-                  // oxlint-disable-next-line jsx-a11y/anchor-has-content
-                  render={<a href={social.link} target="_blank" rel="noreferrer" />}
+                  render={
+                    <a href={social.link} target="_blank" rel="noreferrer" aria-label={social.title ?? social.name} />
+                  }
                   title={social.title ?? social.name}
                 >
                   <IconButtonContent>

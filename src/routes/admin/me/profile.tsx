@@ -2,7 +2,7 @@ import { data } from 'react-router'
 
 import { getRouteRequestContext } from '@/server/domains/auth/context'
 import { requireRole } from '@/server/domains/auth/rbac'
-import { countMyComments } from '@/server/domains/comments/repo'
+import { countMyComments } from '@/server/domains/comments/repos/admin-query'
 import { findUserById } from '@/server/infra/db/operations/user'
 import { bundleFromMatches, routeMeta } from '@/server/render/seo/meta'
 import { MyProfileView } from '@/ui/admin/my/MyProfileView'

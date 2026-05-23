@@ -195,4 +195,4 @@ boot.
 ## License
 
 - **Source code:** [MIT](LICENSE)
-- **Bundled fonts / third-party:** [licenses/](licenses)
+- **Fonts in logo design:** [licenses/](licenses)

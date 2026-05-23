@@ -59,6 +59,7 @@ fnref
 folo
 fong
 fontsource
+footgun
 forencrypt
 fouc
 fumadocs
@@ -128,6 +129,7 @@ luoli
 lxgw
 mathbb
 mathml
+MAXMIND
 mboker
 meilisearch
 metas
@@ -138,6 +140,7 @@ millis
 milvus
 minagi
 miui
+mmdb
 mmwebid
 mmwebsdk
 mochi
@@ -234,6 +237,7 @@ theia
 thumbhash
 timescaledb
 timestamptz
+tini
 tlyric
 tmpfs
 toolsmp

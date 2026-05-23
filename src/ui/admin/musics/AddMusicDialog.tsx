@@ -288,7 +288,10 @@ export function AddMusicDialog({ open, onClose, onAdded }: AddMusicDialogProps) 
               <p className="text-sm text-muted-foreground">输入关键词后点击搜索。</p>
             ) : (
               results.map((hit) => {
-                const decorated = hit as MetingSearchHit & { previewUrl?: string; _added?: boolean }
+                const decorated = hit as MetingSearchHit & {
+                  previewUrl?: string
+                  _added?: boolean
+                }
                 const previewActive = previewSourceId === hit.sourceId
                 const adding = addingSourceId === hit.sourceId
                 const added = decorated._added === true
@@ -395,6 +398,7 @@ export function AddMusicDialog({ open, onClose, onAdded }: AddMusicDialogProps) 
             shown under the currently-playing row. */}
         <audio
           ref={audioRef}
+          aria-label="音乐预览"
           onLoadedMetadata={(event) => {
             // Capture into a local before scheduling the state update.
             // React reuses the synthetic event after the handler returns,

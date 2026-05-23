@@ -4,7 +4,7 @@ import { drizzle } from 'drizzle-orm/node-postgres'
 import { Pool } from 'pg'
 
 import { runDatabaseMigrations } from '@/server/infra/db/migrate'
-import { DATABASE_URL } from '@/server/infra/env'
+import { DATABASE_URL, DB_POOL_MAX, DB_STATEMENT_TIMEOUT_MS } from '@/server/infra/env'
 import { registerShutdownHook } from '@/server/infra/shutdown'
 
 // Drizzle 1.0.0-rc.1 narrowed `NodePgDatabase`'s sole generic from a raw
@@ -28,7 +28,13 @@ await runDatabaseMigrations()
 // `pg.Pool` without spelunking into Drizzle internals. The Pool is stored
 // on globalThis for HMR safety (same pattern as before) and passed to
 // Drizzle via `{ client }`.
-const pool: Pool = globalForDb.pool ?? new Pool({ connectionString: DATABASE_URL })
+const pool: Pool =
+  globalForDb.pool ??
+  new Pool({
+    connectionString: DATABASE_URL,
+    max: DB_POOL_MAX,
+    statement_timeout: DB_STATEMENT_TIMEOUT_MS,
+  })
 
 if (!globalForDb.pool) {
   globalForDb.pool = pool
@@ -46,6 +52,9 @@ if (!globalForDb.db) {
 export { pool }
 
 export async function closePool(): Promise<void> {
+  if (pool.ended || pool.ending) {
+    return
+  }
   await pool.end()
 }
 

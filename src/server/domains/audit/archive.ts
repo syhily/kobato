@@ -228,7 +228,9 @@ export async function runArchiveJob(): Promise<void> {
       },
     })
   } catch (error) {
-    log.error('Archive job failed', { error: error instanceof Error ? error.message : String(error) })
+    log.error('Archive job failed', {
+      error: error instanceof Error ? error.message : String(error),
+    })
     recordAuditEvent({
       action: 'audit_archive_run_failed',
       resourceType: 'audit_log',

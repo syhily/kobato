@@ -1,19 +1,14 @@
-import type { ListPostsFilters } from '@/server/domains/posts/repo'
+import type { ListPostsFilters } from '@/server/domains/posts/repos/shared'
 
+import { findContentById, findLatestRevision, listRevisions } from '@/server/domains/content/repo'
 import {
   toAdminPostDto,
   toAdminRevisionDto,
   type AdminPostDetailDto,
   type AdminRevisionDto,
 } from '@/server/domains/posts/projection'
-import {
-  countPostMetas,
-  findContentById,
-  findLatestRevision,
-  findPostMetaById,
-  listPostMetas,
-  listRevisions,
-} from '@/server/domains/posts/repo'
+import { countPostMetas, listPostMetas } from '@/server/domains/posts/repos/admin-query'
+import { findPostMetaById } from '@/server/domains/posts/repos/single'
 import {
   assertOwnPostOr404,
   type AdminPostsListResult,

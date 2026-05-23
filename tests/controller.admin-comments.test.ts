@@ -1,5 +1,5 @@
 import { call } from '@orpc/server'
-import { describe, expect, it, vi } from 'vite-plus/test'
+import { describe, expect, it, vi } from 'vitest'
 
 import { makeAuthedCtx } from './_helpers/mock-ctx'
 
@@ -19,16 +19,20 @@ vi.mock('@/server/domains/comments/projection', () => ({
   asAdminCommentsWire: vi.fn(),
 }))
 
-vi.mock('@/server/domains/comments/repo', () => ({
+vi.mock('@/server/domains/comments/repos/moderation', () => ({
   adminClearDeleteRequest: vi.fn(),
-  findCommentWithUserById: vi.fn(),
   softDeleteCommentById: vi.fn(),
+}))
+
+vi.mock('@/server/domains/comments/repos/public-query', () => ({
+  findCommentWithUserById: vi.fn(),
 }))
 
 const adminQuery = await import('@/server/domains/comments/services/admin-query')
 const moderate = await import('@/server/domains/comments/services/moderate')
 const projection = await import('@/server/domains/comments/projection')
-const repo = await import('@/server/domains/comments/repo')
+const moderationRepo = await import('@/server/domains/comments/repos/moderation')
+const queryRepo = await import('@/server/domains/comments/repos/public-query')
 const { adminCommentsRouter } = await import('@/server/http/controllers/admin/comments.controller')
 
 const comment = {
@@ -121,10 +125,10 @@ describe('adminCommentsRouter.searchAuthors', () => {
 
 describe('adminCommentsRouter.approveCommentDeletion', () => {
   it('returns success when approving deletion', async () => {
-    vi.mocked(repo.findCommentWithUserById).mockResolvedValueOnce({
+    vi.mocked(queryRepo.findCommentWithUserById).mockResolvedValueOnce({
       deleteRequestedAt: new Date(),
     } as never)
-    vi.mocked(repo.softDeleteCommentById).mockResolvedValueOnce(undefined)
+    vi.mocked(moderationRepo.softDeleteCommentById).mockResolvedValueOnce(undefined)
     const ctx = makeAuthedCtx()
     const res = await call(
       adminCommentsRouter.approveCommentDeletion,
@@ -135,7 +139,7 @@ describe('adminCommentsRouter.approveCommentDeletion', () => {
   })
 
   it('throws NOT_FOUND when comment does not exist', async () => {
-    vi.mocked(repo.findCommentWithUserById).mockResolvedValueOnce(null as never)
+    vi.mocked(queryRepo.findCommentWithUserById).mockResolvedValueOnce(null as never)
     const ctx = makeAuthedCtx()
     await expect(
       call(adminCommentsRouter.approveCommentDeletion, { commentId: '999', approve: true }, { context: ctx }),
@@ -143,7 +147,7 @@ describe('adminCommentsRouter.approveCommentDeletion', () => {
   })
 
   it('throws CONFLICT when no delete request exists', async () => {
-    vi.mocked(repo.findCommentWithUserById).mockResolvedValueOnce({
+    vi.mocked(queryRepo.findCommentWithUserById).mockResolvedValueOnce({
       deleteRequestedAt: null,
     } as never)
     const ctx = makeAuthedCtx()

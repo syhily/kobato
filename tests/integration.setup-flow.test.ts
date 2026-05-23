@@ -1,5 +1,5 @@
 import { eq, sql } from 'drizzle-orm'
-import { beforeEach, describe, expect, it, vi } from 'vite-plus/test'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { db } from '@/server/infra/db/pool'
 import { setting, user } from '@/server/infra/db/schema'

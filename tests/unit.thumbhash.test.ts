@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import sharp from 'sharp'
-import { describe, expect, it } from 'vite-plus/test'
+import { describe, expect, it } from 'vitest'
 
 import {
   rgbaToDataURL,
@@ -33,7 +33,11 @@ async function loadRGBA(path: string): Promise<{ w: number; h: number; rgba: Uin
     .ensureAlpha()
     .raw()
     .toBuffer({ resolveWithObject: true })
-  return { w: info.width, h: info.height, rgba: new Uint8Array(data.buffer, data.byteOffset, data.byteLength) }
+  return {
+    w: info.width,
+    h: info.height,
+    rgba: new Uint8Array(data.buffer, data.byteOffset, data.byteLength),
+  }
 }
 
 function bytesToBase64(bytes: Uint8Array): string {

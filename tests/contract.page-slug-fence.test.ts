@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vite-plus/test'
+import { describe, expect, it } from 'vitest'
 
 import { validateSlugFence, CatalogConsistencyError, type CatalogEntry } from '@/server/domains/pages/fence'
 

@@ -118,13 +118,13 @@ export function loader({ request, context }: Route.LoaderArgs) {
 }
 
 // The root loader ships `{ admin, blogSettings }`. Both can change at
-// runtime: `admin` flips on three POST endpoints (login, install,
+// runtime: `admin` flips on three POST endpoints (login, setup,
 // logout); `blogSettings` flips whenever an admin saves a settings page.
 // Revalidate when any of those actions submit. The settings layout
 // calls `useRevalidator()` after a successful oRPC mutation, so
 // admin saves through other tabs are already covered.
 export function shouldRevalidate({ formAction, defaultShouldRevalidate }: ShouldRevalidateFunctionArgs) {
-  if (formAction && (formAction.startsWith('/admin/signin') || formAction.startsWith('/admin/install'))) {
+  if (formAction && (formAction.startsWith('/admin/signin') || formAction.startsWith('/admin/setup'))) {
     return defaultShouldRevalidate
   }
   return false

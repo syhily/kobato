@@ -347,7 +347,10 @@ export function BackupView({ backup }: BackupViewProps) {
       const formData = new FormData()
       formData.append('file', file)
       // oRPC doesn't support multipart/form-data uploads — raw fetch is required here
-      const res = await fetch('/api/admin/backup/upload-restore', { method: 'POST', body: formData })
+      const res = await fetch('/api/admin/backup/upload-restore', {
+        method: 'POST',
+        body: formData,
+      })
       if (!res.ok) {
         const data = (await res.json()) as { error?: { message?: string } }
         throw new Error(data.error?.message ?? '上传还原失败')
@@ -414,7 +417,7 @@ export function BackupView({ backup }: BackupViewProps) {
                     <td className="px-4 py-2 text-muted-foreground">
                       {file.lastModified.slice(0, 19).replace('T', ' ')}
                     </td>
-                    <td className="px-4 py-2 text-right">
+                    <td className="px-4 py-2 text-right" aria-label="操作">
                       <div className="flex justify-end gap-2">
                         <Button
                           type="button"

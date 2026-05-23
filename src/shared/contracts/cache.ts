@@ -40,7 +40,13 @@ export const adminCacheStatsDto = z.object({
 })
 
 export const clearCacheResultDto = z.object({
-  cleared: z.array(z.object({ bucketId: cacheBucketId, label: z.string(), removed: z.number().int().nonnegative() })),
+  cleared: z.array(
+    z.object({
+      bucketId: cacheBucketId,
+      label: z.string(),
+      removed: z.number().int().nonnegative(),
+    }),
+  ),
   total: z.number().int().nonnegative(),
   refreshedStats: adminCacheStatsDto,
 })

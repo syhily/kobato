@@ -41,7 +41,11 @@ export interface PutImageInput {
 /** PUT to the configured S3 bucket. Refuses when the upload toggle is OFF. */
 export async function putImage(input: PutImageInput): Promise<void> {
   ensureUploadReady()
-  await putImageObject({ key: input.storagePath, body: input.body, contentType: input.contentType })
+  await putImageObject({
+    key: input.storagePath,
+    body: input.body,
+    contentType: input.contentType,
+  })
 }
 
 /** DELETE from the configured S3 bucket. Best-effort: missing objects are not an error. */

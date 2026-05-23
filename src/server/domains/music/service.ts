@@ -240,7 +240,11 @@ export async function addMusic(input: AddMusicInputs): Promise<AdminMusicDto> {
   try {
     row = await insertMusic(newRow)
   } catch (error) {
-    log.error('Music insert failed; rolling back S3 uploads', { sourceId: input.sourceId, playerId, error })
+    log.error('Music insert failed; rolling back S3 uploads', {
+      sourceId: input.sourceId,
+      playerId,
+      error,
+    })
     await Promise.allSettled([deleteMusicObject(audioStoragePath), deleteMusicObject(coverStoragePath)])
     throw new DomainError('INTERNAL', '音乐元数据写入失败，请稍后重试')
   }
@@ -362,6 +366,7 @@ async function downloadBinary(url: string, maxBytes: number, what: 'audio' | 'co
   let response: Response
   try {
     response = await fetch(url, {
+      signal: AbortSignal.timeout(30_000),
       headers: {
         // netease and friends often blacklist the default Node user
         // agent for direct CDN downloads; spoof a stock browser UA so

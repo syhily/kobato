@@ -48,5 +48,5 @@ export function createGetLoadContext(getLoadContext: HonoServerOptionsBase<Env>[
  * Get the build mode from the environment
  */
 export function getBuildMode() {
-  return process.env.NODE_ENV === 'development' ? 'development' : 'production'
+  return import.meta.env.DEV ? 'development' : 'production'
 }

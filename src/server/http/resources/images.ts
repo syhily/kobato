@@ -6,7 +6,7 @@ import crypto from 'node:crypto'
 import type { Env } from '@/server/http/context'
 
 import { findPageBySlug } from '@/server/domains/pages/repo'
-import { findPostBySlug } from '@/server/domains/posts/repo'
+import { findPostBySlug } from '@/server/domains/posts/repos/single'
 import { tryResourceRateLimit } from '@/server/infra/rate-limit'
 import { loadBuffer } from '@/server/infra/redis/buffer-cache'
 import { AvatarStatus, cacheAvatar, loadAvatar } from '@/server/render/avatar/cache'

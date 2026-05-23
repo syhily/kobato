@@ -50,6 +50,7 @@ export function Heatmap({ data, className }: HeatmapProps) {
             </div>
           ))}
         </div>
+        {/* oxlint-disable jsx-a11y/prefer-tag-over-role */}
         <div
           className="grid grid-cols-[repeat(24,minmax(0,1fr))] gap-px"
           role="img"
@@ -77,6 +78,7 @@ export function Heatmap({ data, className }: HeatmapProps) {
             )
           })}
         </div>
+        {/* oxlint-enable jsx-a11y/prefer-tag-over-role */}
       </div>
       <div className="ml-7 flex items-center justify-between text-[10px] text-muted-foreground">
         <span>0:00</span>

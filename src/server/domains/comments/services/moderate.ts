@@ -3,15 +3,14 @@ import type { CommentBody } from '@/shared/pt/comment-schema'
 import { withCommentBadgeTextColor } from '@/server/domains/comments/badge'
 import { canonicalizeCommentBody } from '@/server/domains/comments/canonicalize'
 import { sendApprovedComment, sendNewComment } from '@/server/domains/comments/email'
+import { findCommentWithUserAndTarget } from '@/server/domains/comments/repos/admin-query'
+import { approveCommentById, deleteCommentById } from '@/server/domains/comments/repos/moderation'
 import {
-  approveCommentById,
-  deleteCommentById,
-  findCommentWithUserAndTarget,
-  findCommentWithUserById,
   updateCommentBodyAndContent,
   updateOwnCommentBody,
   updateOwnCommentBodyAndPending,
-} from '@/server/domains/comments/repo'
+} from '@/server/domains/comments/repos/mutate'
+import { findCommentWithUserById } from '@/server/domains/comments/repos/public-query'
 import { asCommentTarget } from '@/server/domains/comments/services/shared'
 import { getLogger } from '@/server/infra/logger'
 import { idFromString } from '@/shared/utils/id'

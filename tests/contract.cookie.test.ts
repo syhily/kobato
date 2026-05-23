@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { describe, expect, it } from 'vite-plus/test'
+import { describe, expect, it } from 'vitest'
 
 // Cookie config drives every authenticated user's browser; even a quiet
 // regression (e.g. flipping `httpOnly` to false, dropping `sameSite`) would

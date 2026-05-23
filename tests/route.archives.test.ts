@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vite-plus/test'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { makePost } from './_helpers/catalog'
 const mocks = vi.hoisted(() => ({
@@ -7,7 +7,7 @@ const mocks = vi.hoisted(() => ({
   getClientPostsWithMetadata: vi.fn(async (posts: unknown[]) => posts),
 }))
 
-vi.mock('@/server/domains/posts/repo', () => ({
+vi.mock('@/server/domains/posts/repos/public-query', () => ({
   listClientPosts: mocks.listClientPosts,
   listAllPosts: mocks.listAllPosts,
   getClientPostsWithMetadata: mocks.getClientPostsWithMetadata,

@@ -2,24 +2,22 @@ import { z } from 'zod'
 
 import type { BlogSettingsBundle } from '@/shared/config/blog'
 
-import {
-  assetsSchema,
-  backupSchema,
-  cacheSchema,
-  commentsSchema,
-  contentSchema,
-  corsSchema,
-  fontsSchema,
-  generalSchema,
-  limitsSchema,
-  mailSchema,
-  navigationSchema,
-  rateLimitSchema,
-  searchSchema,
-  seoSchema,
-  sidebarSchema,
-  socialsSchema,
-} from '@/server/domains/settings/schema'
+import { assetsSchema } from '@/server/domains/settings/schemas/assets'
+import { backupSchema } from '@/server/domains/settings/schemas/backup'
+import { cacheSchema } from '@/server/domains/settings/schemas/cache'
+import { commentsSchema } from '@/server/domains/settings/schemas/comments'
+import { contentSchema } from '@/server/domains/settings/schemas/content'
+import { corsSchema } from '@/server/domains/settings/schemas/cors'
+import { fontsSchema } from '@/server/domains/settings/schemas/fonts'
+import { generalSchema } from '@/server/domains/settings/schemas/general'
+import { limitsSchema } from '@/server/domains/settings/schemas/limits'
+import { mailSchema } from '@/server/domains/settings/schemas/mail'
+import { navigationSchema } from '@/server/domains/settings/schemas/navigation'
+import { rateLimitSchema } from '@/server/domains/settings/schemas/rate-limit'
+import { searchSchema } from '@/server/domains/settings/schemas/search'
+import { seoSchema } from '@/server/domains/settings/schemas/seo'
+import { sidebarSchema } from '@/server/domains/settings/schemas/sidebar'
+import { socialsSchema } from '@/server/domains/settings/schemas/socials'
 import { DomainError } from '@/server/infra/http/errors'
 import {
   rateLimitDefaults,
@@ -165,11 +163,36 @@ export const SECTION_REGISTRY = {
   // seed below. The admin then opens `/admin/settings/assets` to
   // flip the storage toggle on and supply credentials when ready.
   assets: { scope: 'blog.assets', schema: assetsSchema, key: 'assets', defaults: null },
-  navigation: { scope: 'blog.navigation', schema: navigationSchema, key: 'navigation', defaults: navigationDefaults },
-  socials: { scope: 'blog.socials', schema: socialsSchema, key: 'socials', defaults: socialsDefaults },
-  content: { scope: 'blog.content', schema: contentSchema, key: 'content', defaults: contentDefaults },
-  sidebar: { scope: 'blog.sidebar', schema: sidebarSchema, key: 'sidebar', defaults: sidebarDefaults },
-  comments: { scope: 'blog.comments', schema: commentsSchema, key: 'comments', defaults: commentsDefaults },
+  navigation: {
+    scope: 'blog.navigation',
+    schema: navigationSchema,
+    key: 'navigation',
+    defaults: navigationDefaults,
+  },
+  socials: {
+    scope: 'blog.socials',
+    schema: socialsSchema,
+    key: 'socials',
+    defaults: socialsDefaults,
+  },
+  content: {
+    scope: 'blog.content',
+    schema: contentSchema,
+    key: 'content',
+    defaults: contentDefaults,
+  },
+  sidebar: {
+    scope: 'blog.sidebar',
+    schema: sidebarSchema,
+    key: 'sidebar',
+    defaults: sidebarDefaults,
+  },
+  comments: {
+    scope: 'blog.comments',
+    schema: commentsSchema,
+    key: 'comments',
+    defaults: commentsDefaults,
+  },
   seo: { scope: 'blog.seo', schema: seoSchema, key: 'seo', defaults: seoDefaults },
   mail: { scope: 'blog.mail', schema: mailSchema, key: 'mail', defaults: mailDefaults },
   cache: { scope: 'blog.cache', schema: cacheSchema, key: 'cache', defaults: cacheDefaults },
@@ -308,7 +331,10 @@ export const updateSettingsSchema = z.object({
  *   - `backfillMissingSectionDefaults()` (existing deployments that
  *     pre-date the "seed all sections at install" change).
  */
-export function buildDefaultSectionPayloads(): { section: SettingsSection; payload: Record<string, unknown> }[] {
+export function buildDefaultSectionPayloads(): {
+  section: SettingsSection
+  payload: Record<string, unknown>
+}[] {
   const out: { section: SettingsSection; payload: Record<string, unknown> }[] = []
   for (const section of SETTINGS_SECTIONS) {
     const meta = SECTION_REGISTRY[section]

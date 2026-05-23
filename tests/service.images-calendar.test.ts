@@ -1,7 +1,7 @@
 import { parseISO } from 'date-fns'
 import { Buffer } from 'node:buffer'
 import sharp from 'sharp'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vite-plus/test'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { renderCalendar } from '@/server/render/calendar/render'
 

@@ -18,13 +18,12 @@ import { cn } from '@/ui/lib/cn'
 //      already exposes a Base UI `useRender` slot, so the
 //      `InputGroupButton` wrapper passes through normal `Button`
 //      props without needing any extra primitive.
-function InputGroup({ className, ...props }: ComponentProps<'div'>) {
+function InputGroup({ className, ...props }: ComponentProps<'fieldset'>) {
   return (
-    <div
+    <fieldset
       data-slot="input-group"
-      role="group"
       className={cn(
-        'group/input-group relative flex w-full items-center rounded-md border border-line shadow-xs transition-[color,box-shadow] outline-none',
+        'group/input-group relative flex w-full items-center rounded-md border border-line p-0 shadow-xs transition-[color,box-shadow] outline-none',
         'h-9 min-w-0 has-[>textarea]:h-auto',
         // Variants based on alignment.
         'has-[>[data-align=inline-start]]:[&>input]:pl-2',
@@ -64,13 +63,13 @@ function InputGroupAddon({
   className,
   align = 'inline-start',
   ...props
-}: ComponentProps<'div'> & VariantProps<typeof inputGroupAddonVariants>) {
+}: ComponentProps<'button'> & VariantProps<typeof inputGroupAddonVariants>) {
   return (
-    <div
-      role="group"
+    <button
+      type="button"
       data-slot="input-group-addon"
       data-align={align}
-      className={cn(inputGroupAddonVariants({ align }), className)}
+      className={cn('appearance-none border-0 bg-transparent text-left', inputGroupAddonVariants({ align }), className)}
       onClick={(e) => {
         if ((e.target as HTMLElement).closest('button')) {
           return

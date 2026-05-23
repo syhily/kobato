@@ -1,5 +1,5 @@
 import { Writable } from 'node:stream'
-import { beforeEach, describe, expect, it, vi } from 'vite-plus/test'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const dbInsert = vi.fn()
 const dbInsertValues = vi.fn(() => ({ values: dbInsert }))

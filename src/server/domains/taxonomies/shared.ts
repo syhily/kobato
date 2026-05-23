@@ -100,7 +100,10 @@ export async function deleteAdminTaxonomy<T extends { name: string }>(
     return false
   }
 
-  const referencing = await deps.listPostsBy(existing.name, { includeHidden: true, includeScheduled: true })
+  const referencing = await deps.listPostsBy(existing.name, {
+    includeHidden: true,
+    includeScheduled: true,
+  })
   if (referencing.length > 0) {
     throw new DomainError(
       'CONFLICT',

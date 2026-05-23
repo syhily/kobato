@@ -4,7 +4,6 @@ import type { PostMetaRow } from '@/server/infra/db/types'
 import { canEditPost, type ViewerContext as RbacViewerContext } from '@/server/domains/auth/rbac'
 import { createRedisCache } from '@/server/infra/cache/redis-cache'
 import { DomainError, ErrorMessages } from '@/server/infra/http/errors'
-import { deriveSlug } from '@/server/infra/slug'
 
 export type ViewerContext = RbacViewerContext
 
@@ -59,48 +58,10 @@ export function assertOwnPostOr404(meta: PostMetaRow | null, viewer?: ViewerCont
   }
 }
 
-const RESERVED_POST_SLUGS = new Set<string>([
-  'posts',
-  'cats',
-  'tags',
-  'archives',
-  'search',
-  'admin',
-  'api',
-  'feed',
-  'sitemap.xml',
-  'robots.txt',
-])
-
-const SLUG_PATTERN = /^[a-z0-9]+(?:[._-][a-z0-9]+)*$/
-
-export function ensureSlugLegal(slug: string): void {
-  if (!SLUG_PATTERN.test(slug)) {
-    throw new DomainError('BAD_REQUEST', '文章 slug 格式不合法（仅允许小写字母、数字、`-` `_` `.`）。')
-  }
-  if (slug.length > 80) {
-    throw new DomainError('BAD_REQUEST', '文章 slug 长度不得超过 80 个字符。')
-  }
-  if (RESERVED_POST_SLUGS.has(slug)) {
-    throw new DomainError('BAD_REQUEST', `slug "${slug}" 是站点保留路径。`)
-  }
-}
-
-export function resolveSlugForPost(explicit: string | undefined, title: string): string {
-  if (typeof explicit === 'string' && explicit.trim() !== '') {
-    return explicit.trim()
-  }
-  const derived = deriveSlug(title)
-  if (derived === '') {
-    throw new DomainError('BAD_REQUEST', '无法从标题推导出 slug，请手动填写。', [
-      { message: '标题推导出空 slug，请手动填写', path: ['slug'] },
-    ])
-  }
-  return derived
-}
-
 // Process-level cache for catalog post metas. Cleared on admin writes.
-const postMetaCache = createRedisCache<CmsPost[]>('posts:catalog:metas', { ttlMs: 10_000 })
+// Blog catalog data changes infrequently (only on admin writes).
+// 5-minute TTL balances freshness with DB load.
+const postMetaCache = createRedisCache<CmsPost[]>('posts:catalog:metas', { ttlMs: 300_000 })
 
 export async function clearPostMetasCache(): Promise<void> {
   await postMetaCache.clear()

@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vite-plus/test'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 vi.mock('@/server/infra/db/operations/like', () => ({
   recordLikeAndCount: vi.fn(async () => 0),
@@ -109,7 +109,11 @@ describe('services/comments/likes — queryMetadata', () => {
       ownerIds.includes(POST_A.ownerId) ? [{ ownerId: POST_A.ownerId, count: 3 }] : [],
     )
 
-    const result = await queryMetadata([POST_A, POST_B], { likes: true, views: true, comments: true })
+    const result = await queryMetadata([POST_A, POST_B], {
+      likes: true,
+      views: true,
+      comments: true,
+    })
 
     expect(result.size).toBe(2)
     expect(result.get('post:1')).toEqual({ likes: 5, views: 100, comments: 3, publicId: 'uuid-a' })

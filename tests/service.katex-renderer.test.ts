@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vite-plus/test'
+import { describe, expect, it } from 'vitest'
 
 describe('server/pt/katex-renderer', () => {
   it('renders TeX through KaTeX MathML output', async () => {

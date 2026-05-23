@@ -10,6 +10,7 @@ import { createRequestHandler } from 'react-router'
 import type { HonoServerOptionsBase } from '@/server/infra/hono/types/hono-server-options-base'
 import type { CreateNodeServerOptions } from '@/server/infra/hono/types/node.https'
 
+import { PORT } from '@/server/infra/env'
 import { bindIncomingRequestSocketInfo, getBuildMode, importBuild } from '@/server/infra/hono/helpers'
 import { cache } from '@/server/infra/hono/middleware'
 import { getLogger } from '@/server/infra/logger'
@@ -93,7 +94,7 @@ export async function createHonoServer<E extends Env = BlankEnv>(options?: HonoS
 
         log.info(`🏎️ Server started in ${Date.now() - startTime}ms`)
       }),
-    port: options?.port || Number(process.env.PORT) || 3000,
+    port: options?.port || PORT,
     overrideGlobalObjects: options?.overrideGlobalObjects ?? false,
   }
   const mode = getBuildMode()
@@ -125,7 +126,10 @@ export async function createHonoServer<E extends Env = BlankEnv>(options?: HonoS
   app.use(
     '*',
     cache(60 * 60), // 1 hour
-    serveStatic({ root: PRODUCTION ? clientBuildPath : './public', ...mergedOptions.serveStaticOptions?.publicAssets }),
+    serveStatic({
+      root: PRODUCTION ? clientBuildPath : './public',
+      ...mergedOptions.serveStaticOptions?.publicAssets,
+    }),
   )
 
   /**

@@ -7,6 +7,7 @@ import { orpc } from '@/client/api/client'
 import { useAdminMathPreview } from '@/ui/admin/editor/tiptap/use-admin-math-preview'
 import { Button } from '@/ui/components/button'
 import { Label } from '@/ui/components/label'
+import { SafeHtml } from '@/ui/components/safe-html'
 import { Textarea } from '@/ui/components/textarea'
 
 export function mathBlockIcon(props: { className?: string }) {
@@ -32,21 +33,20 @@ export function stripMathArtifacts(block: Block): Block {
 export function MathBlockSummary({ payload }: { payload: MathBlock }) {
   if (payload.mathml !== undefined && payload.mathml !== '') {
     // SAFETY: `mathml` is produced server-side by KaTeX via the admin
-    // render endpoint. Only admins can author math blocks.
     return (
-      <div
+      <SafeHtml
+        html={payload.mathml}
+        strategy="math"
         className="math math-display mt-2 max-w-full overflow-x-auto text-center"
-        dangerouslySetInnerHTML={{ __html: payload.mathml }}
       />
     )
   }
   if (payload.svg !== undefined && payload.svg !== '') {
-    // SAFETY: `svg` is produced server-side by KaTeX. Only admins can
-    // author math blocks.
     return (
-      <div
+      <SafeHtml
+        html={payload.svg}
+        strategy="math"
         className="math math-display mt-2 max-w-full overflow-x-auto text-center [&_svg]:max-w-none"
-        dangerouslySetInnerHTML={{ __html: payload.svg }}
       />
     )
   }
@@ -105,11 +105,10 @@ export function MathBlockSourceEditor({ payload, onCommit, onCancel }: MathBlock
         {showSpinner ? (
           <span className="ml-2 text-xs text-muted-foreground">渲染中…</span>
         ) : (
-          <div
-            // SAFETY: `previewHtml` is MathML produced by KaTeX via the admin
-            // render endpoint. Only admins can trigger this path.
+          <SafeHtml
+            html={previewHtml}
+            strategy="preview"
             className="math math-display mt-2 max-w-full overflow-x-auto text-center"
-            dangerouslySetInnerHTML={{ __html: previewHtml }}
           />
         )}
       </div>

@@ -1,4 +1,4 @@
-import type { AdminListFilters, AdminPendingKind } from '@/server/domains/comments/repo'
+import type { AdminListFilters, AdminPendingKind } from '@/server/domains/comments/repos/shared'
 import type { AdminCommentsResult } from '@/server/domains/comments/types'
 import type { AdminPendingDashboardDto, AdminPendingItemDto } from '@/shared/types/comments'
 
@@ -10,7 +10,7 @@ import {
   listAdminPendingDashboard,
   searchCommentAuthors,
   searchPages,
-} from '@/server/domains/comments/repo'
+} from '@/server/domains/comments/repos/admin-query'
 import { asCommentTarget, entityPermalink } from '@/server/domains/comments/services/shared'
 import { findMetricByPublicId } from '@/server/infra/db/operations/metric'
 

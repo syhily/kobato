@@ -416,6 +416,7 @@ export function ImageEditorCanvas({
       <div className="relative max-w-full rounded-md border bg-black/40">
         <canvas
           ref={canvasRef}
+          aria-label="图片裁剪画布"
           className="block max-w-full cursor-move select-none"
           style={{ touchAction: 'none' }}
           onPointerDown={(event) => beginDrag(event, 'move')}

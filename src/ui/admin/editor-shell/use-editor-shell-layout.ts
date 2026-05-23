@@ -61,5 +61,13 @@ export function useEditorShellLayout() {
     })
   }, [])
 
-  return { previewOpen, setPreviewOpen, metaOpen, setMetaOpen, isLg, editorScrollRef, previewScrollRef }
+  return {
+    previewOpen,
+    setPreviewOpen,
+    metaOpen,
+    setMetaOpen,
+    isLg,
+    editorScrollRef,
+    previewScrollRef,
+  }
 }

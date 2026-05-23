@@ -96,14 +96,20 @@ export const TEST_BLOG_SETTINGS_BUNDLE: BlogSettingsBundle = {
     },
   },
   comments: {
-    comments: { size: 10, avatar: { mirror: 'https://gravatar.loli.net/avatar', size: 120 }, tokenTtlSeconds: 1800 },
+    comments: {
+      size: 10,
+      avatar: { mirror: 'https://gravatar.loli.net/avatar', size: 120 },
+      tokenTtlSeconds: 1800,
+    },
   },
   seo: {
     toc: { minHeadingLevel: 2, maxHeadingLevel: 3 },
     og: { width: 1200, height: 768 },
   },
 
-  mail: { mail: { enabled: false, host: 'api.zeabur.com', apiKey: '', sender: 'noreply@send.yufan.me' } },
+  mail: {
+    mail: { enabled: false, host: 'api.zeabur.com', apiKey: '', sender: 'noreply@send.yufan.me' },
+  },
   cache: {
     cache: {
       og: { ...CACHE_BUCKET_FALLBACKS.og, ttlSeconds: 60 * 60 * 24 * 7 },

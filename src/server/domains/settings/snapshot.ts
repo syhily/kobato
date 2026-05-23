@@ -1,6 +1,6 @@
 import type { BlogSettingsBundle } from '@/shared/config/blog'
 
-import { RATE_LIMIT_BUCKET_KEYS } from '@/server/domains/settings/schema'
+import { RATE_LIMIT_BUCKET_KEYS } from '@/server/domains/settings/schemas/rate-limit'
 import {
   buildDefaultSectionPayloads,
   SECTION_REGISTRY,

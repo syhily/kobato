@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vite-plus/test'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { db } from '@/server/infra/db/pool'
 import { post, postSearchIndex } from '@/server/infra/db/schema'
@@ -79,8 +79,16 @@ describe('services/search — searchPosts', () => {
 
   it('paginates LIKE results', async () => {
     const now = new Date()
-    await seedPost({ slug: 'post-a', title: 'Test A', publishedAt: new Date(now.getTime() - 2000) })
-    await seedPost({ slug: 'post-b', title: 'Test B', publishedAt: new Date(now.getTime() - 1000) })
+    await seedPost({
+      slug: 'post-a',
+      title: 'Test A',
+      publishedAt: new Date(now.getTime() - 2000),
+    })
+    await seedPost({
+      slug: 'post-b',
+      title: 'Test B',
+      publishedAt: new Date(now.getTime() - 1000),
+    })
     await seedPost({ slug: 'post-c', title: 'Test C', publishedAt: now })
 
     const result = await searchPosts('test', 2, 1)

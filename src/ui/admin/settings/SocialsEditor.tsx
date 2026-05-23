@@ -61,7 +61,13 @@ export function SocialsEditor({ socials }: SocialsEditorProps) {
 
   const patch = (index: number, update: Partial<SocialRow>) => {
     const f = fields[index]
-    updateField(index, { network: f.network, name: f.name, title: f.title, link: f.link, ...update })
+    updateField(index, {
+      network: f.network,
+      name: f.name,
+      title: f.title,
+      link: f.link,
+      ...update,
+    })
   }
 
   return (

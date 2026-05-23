@@ -11,6 +11,18 @@ import { redisInstance } from '@/server/infra/redis/storage'
 
 const log = getLogger('auth.sessions')
 
+function cleanOrphanMetas(orphanSids: string[]): void {
+  if (orphanSids.length === 0) {
+    return
+  }
+  const redis = redisInstance()
+  const cleanup = redis.pipeline()
+  for (const sid of orphanSids) {
+    cleanup.del(META_KEY(sid))
+  }
+  void cleanup.exec().catch((error) => log.warn('orphan cleanup failed', { error: String(error) }))
+}
+
 /**
  * Pipeline `EXISTS session:<sid>` against every candidate sid in one
  * round trip. Any sid whose cookie blob is gone counts as orphaned —
@@ -125,13 +137,7 @@ export async function listAllSessions(): Promise<SessionWithUser[]> {
     }
   })
   if (liveSids.length === 0) {
-    if (orphanSids.length > 0) {
-      const cleanup = redis.pipeline()
-      for (const sid of orphanSids) {
-        cleanup.del(META_KEY(sid))
-      }
-      void cleanup.exec().catch((error) => log.warn('orphan cleanup failed', { error: String(error) }))
-    }
+    cleanOrphanMetas(orphanSids)
     return []
   }
   const metaPipeline = redis.pipeline()
@@ -144,13 +150,7 @@ export async function listAllSessions(): Promise<SessionWithUser[]> {
     return parseMeta(sid, hash as Record<string, string>)
   })
   const validMetas = metas.filter((meta): meta is SessionMeta => meta !== null)
-  if (orphanSids.length > 0) {
-    const cleanup = redis.pipeline()
-    for (const sid of orphanSids) {
-      cleanup.del(META_KEY(sid))
-    }
-    void cleanup.exec().catch((error) => log.warn('orphan cleanup failed', { error: String(error) }))
-  }
+  cleanOrphanMetas(orphanSids)
   if (validMetas.length === 0) {
     return []
   }

@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vite-plus/test'
+import { describe, expect, it } from 'vitest'
 
 import { buildObjectKey, extractHostForFriendKey } from '@/server/domains/images/key'
 import { DomainError } from '@/server/infra/http/errors'

@@ -1,5 +1,5 @@
 import { RouterContextProvider } from 'react-router'
-import { beforeEach, describe, expect, it, vi } from 'vite-plus/test'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { makePage, makePost, makePostList, makeTag } from './_helpers/catalog'
 import { makeLoaderArgs, unwrapLoaderData } from './_helpers/context'
@@ -15,13 +15,18 @@ const samplePost = {
   body: [],
   imageSources: [],
 }
-const samplePage = { ...makePage({ slug: 'about' }), body: [], imageSources: [], publishedRevisionId: null }
+const samplePage = {
+  ...makePage({ slug: 'about' }),
+  body: [],
+  imageSources: [],
+  publishedRevisionId: null,
+}
 const sampleTag = makeTag({ name: 'typescript', slug: 'typescript' })
 const sidebarSamples = makePostList(3, { slug: 'sidebar' })
 
 // catalog/catalog removed; post detail uses findPostBySlug directly, page
 // detail uses pages/loader which queries findPublicPostMetaBySlug + findPageBySlug.
-vi.mock('@/server/domains/posts/repo', () => ({
+vi.mock('@/server/domains/posts/repos/single', () => ({
   findPostBySlug: vi.fn(async (slug: string) => {
     if (slug === 'hello' || slug === 'hello-old') {
       return samplePost
@@ -30,10 +35,18 @@ vi.mock('@/server/domains/posts/repo', () => ({
   }),
   findPublicPostMetaBySlug: vi.fn(async (slug: string) => {
     if (slug === 'hello' || slug === 'hello-old') {
-      return { slug, published: true, deletedAt: null, publishedRevisionId: 1n, publishedAt: new Date() }
+      return {
+        slug,
+        published: true,
+        deletedAt: null,
+        publishedRevisionId: 1n,
+        publishedAt: new Date(),
+      }
     }
     return null
   }),
+}))
+vi.mock('@/server/domains/posts/repos/public-query', () => ({
   listClientPosts: vi.fn(async () => sidebarSamples),
   selectSidebarPosts: vi.fn(async () => sidebarSamples),
 }))

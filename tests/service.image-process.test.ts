@@ -1,5 +1,5 @@
 import sharp from 'sharp'
-import { describe, expect, it } from 'vite-plus/test'
+import { describe, expect, it } from 'vitest'
 
 import { processImageBuffer } from '@/server/domains/images/process'
 import { DomainError } from '@/server/infra/http/errors'

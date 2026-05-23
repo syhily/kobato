@@ -79,7 +79,10 @@ export function createApiApp(): Hono<Env> {
           merged.set(key, value)
         }
       })
-      return new Response(result.response.body, { status: result.response.status, headers: merged })
+      return new Response(result.response.body, {
+        status: result.response.status,
+        headers: merged,
+      })
     }
     return result.response
   })

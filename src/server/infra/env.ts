@@ -12,6 +12,8 @@ const envConfig = {
     // Database
     DATABASE_URL: z.url(),
     REDIS_URL: z.url(),
+    DB_POOL_MAX: z.coerce.number().int().min(1).max(100).optional().default(20),
+    DB_STATEMENT_TIMEOUT_MS: z.coerce.number().int().min(1_000).max(120_000).optional().default(30_000),
 
     // Session cookie signing.
     SESSION_SECRET: z.string().min(1),
@@ -24,6 +26,12 @@ const envConfig = {
       .enum(['true', 'false'])
       .transform((v) => v === 'true')
       .default(false),
+    // Flip to `true` to keep bot rows in the access_log table.
+    // Default `false` strips them. Mainly a forensic / debugging affordance.
+    ANALYTICS_KEEP_BOT_ROWS: z
+      .enum(['true', 'false'])
+      .transform((v) => v === 'true')
+      .default(false),
   },
   runtimeEnv: process.env,
   emptyStringAsUndefined: true,
@@ -33,14 +41,16 @@ function loadEnv() {
   try {
     return createEnv(envConfig)
   } catch {
-    // eslint-disable-next-line no-console
-    console.error(
+    // Bootstrap-phase fallback: logger is not yet available because it
+    // depends on env itself. Use stderr directly for the fatal message.
+    process.stderr.write(
       [
         'Please ensure the following variables are correctly set in your .env file:',
         '',
         '    DATABASE_URL   — PostgreSQL connection URL',
         '    REDIS_URL      — Redis connection URL',
         '    SESSION_SECRET — Session signing secret',
+        '',
       ].join('\n'),
     )
     process.exit(1)
@@ -50,8 +60,11 @@ function loadEnv() {
 const env = loadEnv()
 
 export const {
+  ANALYTICS_KEEP_BOT_ROWS,
   ANALYTICS_TRACK_ADMIN,
   DATABASE_URL,
+  DB_POOL_MAX,
+  DB_STATEMENT_TIMEOUT_MS,
   HOST,
   LOG_LEVEL,
   MAXMIND_DB_PATH,

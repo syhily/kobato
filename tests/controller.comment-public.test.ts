@@ -1,5 +1,5 @@
 import { call } from '@orpc/server'
-import { describe, expect, it, vi } from 'vite-plus/test'
+import { describe, expect, it, vi } from 'vitest'
 
 import { makePublicCtx } from './_helpers/mock-ctx'
 
@@ -62,7 +62,7 @@ vi.mock('@/server/domains/comments/services/moderate', () => ({
   getCommentById: vi.fn(),
 }))
 
-vi.mock('@/server/infra/db/operations/comment', () => ({
+vi.mock('@/server/domains/comments/repos/public-query', () => ({
   findCommentWithUserById: vi.fn(),
 }))
 
@@ -82,22 +82,27 @@ vi.mock('@/shared/config/blog', () => ({
 const rateLimitMod = await import('@/server/infra/rate-limit')
 const publicQuery = await import('@/server/domains/comments/services/public-query')
 const shared = await import('@/server/domains/comments/services/shared')
-const { commentsRouter } = await import('@/server/http/controllers/comments.controller')
+const { avatarRouter } = await import('@/server/http/controllers/avatar.controller')
+const { commentsPublicRouter } = await import('@/server/http/controllers/comments-public.controller')
+const commentsRouter = commentsPublicRouter
+const { likesRouter } = await import('@/server/http/controllers/likes.controller')
 
-describe('commentsRouter.increaseLike', () => {
+describe('likesRouter.increase', () => {
   it('throws TOO_MANY_REQUESTS when the per-IP rate limit is exceeded', async () => {
-    vi.mocked(rateLimitMod.tryLikeIncreaseRateLimit).mockResolvedValueOnce({ exceeded: true } as never)
+    vi.mocked(rateLimitMod.tryLikeIncreaseRateLimit).mockResolvedValueOnce({
+      exceeded: true,
+    } as never)
     const ctx = makePublicCtx({ clientAddress: '1.2.3.4' })
-    await expect(call(commentsRouter.increaseLike, { key: 'pk-1' }, { context: ctx })).rejects.toMatchObject({
+    await expect(call(likesRouter.increase, { key: 'pk-1' }, { context: ctx })).rejects.toMatchObject({
       code: 'TOO_MANY_REQUESTS',
     })
   })
 })
 
-describe('commentsRouter.findAvatar', () => {
+describe('avatarRouter.find', () => {
   it('returns the resolved avatar URL for non-QQ email', async () => {
     const ctx = makePublicCtx()
-    const res = (await call(commentsRouter.findAvatar, { email: 'someone@example.com' }, { context: ctx })) as {
+    const res = (await call(avatarRouter.find, { email: 'someone@example.com' }, { context: ctx })) as {
       avatar: string
     }
     expect(res.avatar).toMatch(/^https:\/\/example\.test\/images\/avatar\/.+\.png$/)

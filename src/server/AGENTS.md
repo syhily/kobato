@@ -32,11 +32,12 @@ One folder per business domain. Base vocabulary:
 `schema.ts / repo.ts / service.ts / projection.ts / cache.ts` plus
 feature-named files (`preview.ts`, `loader.ts`, etc.).
 
-When `service.ts` grows beyond ~300 lines, split it into a `services/`
-subdirectory with per-use-case modules (e.g. `services/catalog.ts`,
-`services/mutate.ts`). Shared helpers and types stay in `service.ts`
-or move to `services/shared.ts`. Callers import from the specific
-module rather than the monolithic `service.ts`.
+When any domain file (`service.ts`, `repo.ts`, `schema.ts`, etc.)
+grows beyond ~300 lines, split it into a focused subdirectory with
+per-use-case modules (e.g. `services/catalog.ts`, `repos/admin-query.ts`,
+`schemas/general.ts`). Shared helpers and types stay in the root file
+or move to a `shared.ts` within the subdirectory. Callers import from
+the specific module rather than the monolithic file.
 
 Domains: `analytics`, `auth` (session-storage, csrf, rbac, flows,
 verification-tokens), `comments` (loader, moderation, projection, likes,

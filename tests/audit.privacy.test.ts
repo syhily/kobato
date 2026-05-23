@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vite-plus/test'
+import { describe, expect, it } from 'vitest'
 
 import { stripL3Markers, tagL3InDetails } from '@/server/domains/audit/privacy'
 

@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vite-plus/test'
+import { describe, expect, it } from 'vitest'
 
 import type { ContentRow, PageMetaRow } from '@/server/infra/db/types'
 
@@ -66,10 +66,22 @@ describe('cms/pages/projection — toCmsPage', () => {
   })
 
   it('joins the published revision body when present', () => {
-    const body = [{ _type: 'block', _key: 'b1', style: 'h2', children: [{ _type: 'span', _key: 's1', text: 'Hi' }] }]
+    const body = [
+      {
+        _type: 'block',
+        _key: 'b1',
+        style: 'h2',
+        children: [{ _type: 'span', _key: 's1', text: 'Hi' }],
+      },
+    ]
     const dto = toCmsPage(
       metaRow({ id: 1n, publishedRevisionId: 200n }),
-      contentRow({ id: 200n, body, imageSources: ['images/x.jpg'], headings: [{ depth: 2, text: 'Hi', slug: 'hi' }] }),
+      contentRow({
+        id: 200n,
+        body,
+        imageSources: ['images/x.jpg'],
+        headings: [{ depth: 2, text: 'Hi', slug: 'hi' }],
+      }),
     )
     expect(dto.body).toEqual(body)
     expect(dto.imageSources).toEqual(['images/x.jpg'])
@@ -122,7 +134,14 @@ describe('cms/pages/projection — toAdminRevisionDto', () => {
         id: 12345n,
         revisionNo: 7,
         status: 'published',
-        body: [{ _type: 'block', _key: 'b1', style: 'normal', children: [{ _type: 'span', _key: 's1', text: 'Hi' }] }],
+        body: [
+          {
+            _type: 'block',
+            _key: 'b1',
+            style: 'normal',
+            children: [{ _type: 'span', _key: 's1', text: 'Hi' }],
+          },
+        ],
         authorId: 99n,
       }),
     )

@@ -3,6 +3,7 @@ import { Readable } from 'node:stream'
 import { promisify } from 'node:util'
 import { createGunzip, createGzip } from 'node:zlib'
 
+import { DATABASE_URL } from '@/server/infra/env'
 import { ActionFailure, DomainError } from '@/server/infra/http/errors'
 import { getLogger } from '@/server/infra/logger'
 import { deleteS3Objects, getS3ObjectBuffer, listS3Objects, putS3Object } from '@/server/infra/storage/s3-client'
@@ -39,7 +40,7 @@ function ensurePgTools(): void {
 }
 
 function getPgConnectionOptions(): { args: string[]; env: Record<string, string> } {
-  const url = process.env.DATABASE_URL
+  const url = DATABASE_URL
   if (!url) {
     throw new DomainError('INTERNAL', 'DATABASE_URL 未配置')
   }

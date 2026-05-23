@@ -1,8 +1,8 @@
-import type { Mock } from 'vite-plus/test'
+import type { Mock } from 'vitest'
 
-import { beforeEach, describe, expect, it, vi } from 'vite-plus/test'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type { CommentWithUser } from '@/server/infra/db/operations/comment'
+import type { CommentWithUser } from '@/server/domains/comments/repos/shared'
 
 // `updateOwnComment` (visitor self-edit of their own comment) branches
 // on the age of the row at edit time:
@@ -19,21 +19,22 @@ import type { CommentWithUser } from '@/server/infra/db/operations/comment'
 // refetch → projection pipeline; the only differences are the SQL
 // helper picked and whether the email fires.
 
-vi.mock('@/server/infra/db/operations/comment', () => ({
+vi.mock('@/server/domains/comments/repos/public-query', () => ({
   findCommentWithUserById: vi.fn(),
+}))
+vi.mock('@/server/domains/comments/repos/admin-query', () => ({
+  findCommentWithUserAndTarget: vi.fn(),
+}))
+
+vi.mock('@/server/domains/comments/repos/mutate', () => ({
   updateOwnCommentBody: vi.fn(async () => undefined),
   updateOwnCommentBodyAndPending: vi.fn(async () => undefined),
-  // Touched only by sibling helpers in `comments/admin` we don't
-  // exercise here, but the module imports them so the mock has to
-  // cover the full surface.
-  approveCommentById: vi.fn(),
-  countAllComments: vi.fn(),
-  deleteCommentById: vi.fn(),
-  findCommentWithUserAndTarget: vi.fn(),
-  listAdminComments: vi.fn(),
-  searchCommentAuthors: vi.fn(),
-  searchPages: vi.fn(),
   updateCommentBodyAndContent: vi.fn(),
+}))
+
+vi.mock('@/server/domains/comments/repos/moderation', () => ({
+  approveCommentById: vi.fn(),
+  deleteCommentById: vi.fn(),
 }))
 
 vi.mock('@/server/infra/db/operations/metric', () => ({
@@ -49,10 +50,15 @@ vi.mock('@/server/domains/comments/email', () => ({
 // projection — heavy, and orthogonal to the moderation-state branch
 // we're testing. Stub it to a deterministic shape.
 vi.mock('@/server/domains/comments/canonicalize', () => ({
-  canonicalizeCommentBody: vi.fn(async (input: unknown) => ({ body: input, content: 'edited markdown' })),
+  canonicalizeCommentBody: vi.fn(async (input: unknown) => ({
+    body: input,
+    content: 'edited markdown',
+  })),
 }))
 
-const queries = await import('@/server/infra/db/operations/comment')
+const queryRepo = await import('@/server/domains/comments/repos/public-query')
+await import('@/server/domains/comments/repos/admin-query')
+const mutateRepo = await import('@/server/domains/comments/repos/mutate')
 const emails = await import('@/server/domains/comments/email')
 const { updateOwnComment } = await import('@/server/domains/comments/services/moderate')
 
@@ -62,7 +68,7 @@ const { updateOwnComment } = await import('@/server/domains/comments/services/mo
 // widen the literal back into the union — a typed re-cast lets the
 // fixture rows feed `mockResolvedValueOnce` without sprinkling extra
 // casts at every call site.
-const findCommentMock = queries.findCommentWithUserById as unknown as Mock<
+const findCommentMock = queryRepo.findCommentWithUserById as unknown as Mock<
   (id: bigint) => Promise<CommentWithUser | null>
 >
 
@@ -128,9 +134,9 @@ describe('updateOwnComment — grace-window branch', () => {
 
     const result = await updateOwnComment('42', NEW_BODY)
 
-    expect(queries.updateOwnCommentBody).toHaveBeenCalledTimes(1)
-    expect(queries.updateOwnCommentBody).toHaveBeenCalledWith(42n, NEW_BODY, 'edited markdown')
-    expect(queries.updateOwnCommentBodyAndPending).not.toHaveBeenCalled()
+    expect(mutateRepo.updateOwnCommentBody).toHaveBeenCalledTimes(1)
+    expect(mutateRepo.updateOwnCommentBody).toHaveBeenCalledWith(42n, NEW_BODY, 'edited markdown')
+    expect(mutateRepo.updateOwnCommentBodyAndPending).not.toHaveBeenCalled()
     expect(emails.sendNewComment).not.toHaveBeenCalled()
     expect(result).not.toBeNull()
     expect(result?.isPending).toBe(false)
@@ -144,9 +150,9 @@ describe('updateOwnComment — grace-window branch', () => {
 
     const result = await updateOwnComment('42', NEW_BODY)
 
-    expect(queries.updateOwnCommentBodyAndPending).toHaveBeenCalledTimes(1)
-    expect(queries.updateOwnCommentBodyAndPending).toHaveBeenCalledWith(42n, NEW_BODY, 'edited markdown')
-    expect(queries.updateOwnCommentBody).not.toHaveBeenCalled()
+    expect(mutateRepo.updateOwnCommentBodyAndPending).toHaveBeenCalledTimes(1)
+    expect(mutateRepo.updateOwnCommentBodyAndPending).toHaveBeenCalledWith(42n, NEW_BODY, 'edited markdown')
+    expect(mutateRepo.updateOwnCommentBody).not.toHaveBeenCalled()
     expect(emails.sendNewComment).toHaveBeenCalledTimes(1)
     // The notification carries the refetched (now-pending) row + its
     // (type, ownerId) target so the moderation inbox links back to
@@ -163,8 +169,8 @@ describe('updateOwnComment — grace-window branch', () => {
     const result = await updateOwnComment('42', NEW_BODY)
 
     expect(result).toBeNull()
-    expect(queries.updateOwnCommentBody).not.toHaveBeenCalled()
-    expect(queries.updateOwnCommentBodyAndPending).not.toHaveBeenCalled()
+    expect(mutateRepo.updateOwnCommentBody).not.toHaveBeenCalled()
+    expect(mutateRepo.updateOwnCommentBodyAndPending).not.toHaveBeenCalled()
     expect(emails.sendNewComment).not.toHaveBeenCalled()
   })
 })
