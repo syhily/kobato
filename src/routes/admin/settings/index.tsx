@@ -22,7 +22,7 @@ import { SearchForm } from '@/ui/admin/settings/SearchForm'
 import { SeoForm } from '@/ui/admin/settings/SeoForm'
 import { SettingsCloseButton } from '@/ui/admin/settings/shell/SettingsHeader'
 import { SettingsMobileBar } from '@/ui/admin/settings/shell/SettingsMobileBar'
-import { SettingsNav } from '@/ui/admin/settings/shell/SettingsNav'
+import { ICON_MAP, SettingsNav } from '@/ui/admin/settings/shell/SettingsNav'
 import { SettingsPanel } from '@/ui/admin/settings/shell/SettingsPanel'
 import { SettingsSearchInput } from '@/ui/admin/settings/shell/SettingsSearchInput'
 import { ScrollSpyProvider, useScrollSpy } from '@/ui/admin/settings/shell/useSettingsScrollSpy'
@@ -84,11 +84,25 @@ function useIsMobile() {
   return useSyncExternalStore(subscribeMobile, getMobileSnapshot, getMobileServerSnapshot)
 }
 
-function SectionWrapper({ id, title, children }: { id: string; title: string; children: React.ReactNode }) {
+function SectionWrapper({
+  id,
+  title,
+  icon,
+  children,
+}: {
+  id: string
+  title: string
+  icon: string
+  children: React.ReactNode
+}) {
   const { ref } = useScrollSpy(id)
+  const Icon = ICON_MAP[icon]
   return (
     <div ref={ref}>
-      <h3 className="font-semibold text-foreground">{title}</h3>
+      <h3 className="flex items-center gap-2 font-semibold text-foreground">
+        {Icon && <Icon className="size-4" />}
+        {title}
+      </h3>
       <div className="mt-4 flex flex-col gap-5">{children}</div>
     </div>
   )
@@ -197,17 +211,17 @@ function SettingsPageInner() {
           <div className="flex flex-col gap-16">
             <SettingsGroup title="站点">
               {isSectionVisible('general') && (
-                <SectionWrapper id="general" title="基本信息">
+                <SectionWrapper id="general" title="基本信息" icon="Settings">
                   <GeneralForm siteIdentity={settings.siteIdentity} timeZones={tz} />
                 </SectionWrapper>
               )}
               {isSectionVisible('assets') && (
-                <SectionWrapper id="assets" title="存储配置">
+                <SectionWrapper id="assets" title="存储配置" icon="HardDrive">
                   <AssetsForm assets={projectAssetsForAdmin(settings.assets)} />
                 </SectionWrapper>
               )}
               {isSectionVisible('fonts') && (
-                <SectionWrapper id="fonts" title="字体配置">
+                <SectionWrapper id="fonts" title="字体配置" icon="Type">
                   <FontsForm fonts={settings.fonts} />
                 </SectionWrapper>
               )}
@@ -215,32 +229,32 @@ function SettingsPageInner() {
 
             <SettingsGroup title="内容与展示">
               {isSectionVisible('content') && (
-                <SectionWrapper id="content" title="内容与分页">
+                <SectionWrapper id="content" title="内容与分页" icon="FileText">
                   <ContentForm content={settings.content} />
                 </SectionWrapper>
               )}
               {isSectionVisible('sidebar') && (
-                <SectionWrapper id="sidebar" title="侧边栏">
+                <SectionWrapper id="sidebar" title="侧边栏" icon="PanelLeft">
                   <SidebarForm sidebar={settings.sidebar} />
                 </SectionWrapper>
               )}
               {isSectionVisible('comments') && (
-                <SectionWrapper id="comments" title="评论与头像">
+                <SectionWrapper id="comments" title="评论与头像" icon="MessageSquare">
                   <CommentsForm comments={settings.comments} />
                 </SectionWrapper>
               )}
               {isSectionVisible('seo') && (
-                <SectionWrapper id="seo" title="SEO 与目录">
+                <SectionWrapper id="seo" title="SEO 与目录" icon="Search">
                   <SeoForm seo={settings.seo} />
                 </SectionWrapper>
               )}
               {isSectionVisible('navigation') && (
-                <SectionWrapper id="navigation" title="导航菜单">
+                <SectionWrapper id="navigation" title="导航菜单" icon="Navigation">
                   <NavigationEditor navigation={settings.navigation} socials={settings.socials.socials} />
                 </SectionWrapper>
               )}
               {isSectionVisible('socials') && (
-                <SectionWrapper id="socials" title="社交链接">
+                <SectionWrapper id="socials" title="社交链接" icon="Share2">
                   <SocialsEditor socials={settings.socials} />
                 </SectionWrapper>
               )}
@@ -248,7 +262,7 @@ function SettingsPageInner() {
 
             <SettingsGroup title="服务集成">
               {isSectionVisible('mail') && (
-                <SectionWrapper id="mail" title="邮件服务">
+                <SectionWrapper id="mail" title="邮件服务" icon="Mail">
                   <MailForm
                     mail={{
                       enabled: settings.mail.mail.enabled,
@@ -260,7 +274,7 @@ function SettingsPageInner() {
                 </SectionWrapper>
               )}
               {isSectionVisible('search') && (
-                <SectionWrapper id="search" title="文章搜索">
+                <SectionWrapper id="search" title="文章搜索" icon="SearchCode">
                   <SearchForm search={projectSearchForAdmin(settings.search)} />
                 </SectionWrapper>
               )}
@@ -268,27 +282,27 @@ function SettingsPageInner() {
 
             <SettingsGroup title="系统运维">
               {isSectionVisible('cache') && (
-                <SectionWrapper id="cache" title="缓存管理">
+                <SectionWrapper id="cache" title="缓存管理" icon="Database">
                   <CacheView cache={settings.cache.cache} />
                 </SectionWrapper>
               )}
               {isSectionVisible('cors') && (
-                <SectionWrapper id="cors" title="CORS 配置">
+                <SectionWrapper id="cors" title="CORS 配置" icon="Globe">
                   <CorsForm cors={settings.cors} />
                 </SectionWrapper>
               )}
               {isSectionVisible('rateLimit') && (
-                <SectionWrapper id="rateLimit" title="流控设置">
+                <SectionWrapper id="rateLimit" title="流控设置" icon="Shield">
                   <ThresholdForm rateLimit={settings.rateLimit} />
                 </SectionWrapper>
               )}
               {isSectionVisible('limits') && (
-                <SectionWrapper id="limits" title="运行限制">
+                <SectionWrapper id="limits" title="运行限制" icon="SlidersHorizontal">
                   <LimitsForm limits={settings.limits} />
                 </SectionWrapper>
               )}
               {isSectionVisible('backup') && (
-                <SectionWrapper id="backup" title="备份与还原">
+                <SectionWrapper id="backup" title="备份与还原" icon="Archive">
                   <BackupView
                     backup={
                       settings.backup ?? {
