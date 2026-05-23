@@ -94,7 +94,7 @@ describe('routes/signin', () => {
     const response = await catchResponse(
       loader({
         request: new Request('http://localhost/admin/signin?action=logout&redirect_to=https://evil.example/phish'),
-      } as never),
+      } as unknown as Parameters<typeof loader>[0]),
     )
 
     expect(response.status).toBe(302)
@@ -106,7 +106,7 @@ describe('routes/signin', () => {
     const response = await catchResponse(
       loader({
         request: new Request('http://localhost/admin/signin?redirect_to=//evil.example/phish'),
-      } as never),
+      } as unknown as Parameters<typeof loader>[0]),
     )
 
     expect(response.status).toBe(302)
@@ -119,7 +119,7 @@ describe('routes/signin', () => {
         method: 'POST',
         body: new FormData(),
       }),
-    } as never)
+    } as unknown as Parameters<typeof action>[0])
 
     expect(mocks.processAuthFormSubmission).toHaveBeenCalledWith(expect.objectContaining({ redirectTo: '/admin' }))
   })

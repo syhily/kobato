@@ -22,8 +22,8 @@ beforeEach(() => {
         author: 'Shakespeare',
       }),
       { headers: { 'Content-Type': 'application/json' } },
-    ) as never
-  }) as never
+    )
+  })
 })
 
 afterEach(() => {
@@ -45,7 +45,7 @@ describe('services/images/calendar — renderCalendar', () => {
   })
 
   it('propagates upstream API failures (no half-rendered image)', { timeout: 30_000 }, async () => {
-    globalThis.fetch = vi.fn(async () => new Response('nope', { status: 500 })) as never
+    globalThis.fetch = vi.fn(async () => new Response('nope', { status: 500 }))
 
     await expect(renderCalendar(parseISO('2024-04-24'))).rejects.toThrow(/API 请求失败/)
   })

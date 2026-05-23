@@ -155,7 +155,7 @@ describe('routes/signin — password-reset session-revocation', () => {
     const result = await readActionData<{ error: string | null }>(
       action({
         request: resetRequest({ reset_token: 'rt', password: 'longenough' }),
-      } as never),
+      } as unknown as Parameters<typeof action>[0]),
     )
     expect(result.error).toBe('链接无效或已过期。')
     expect(authPrimitivesMocks.establishLoginSession).not.toHaveBeenCalled()
@@ -177,7 +177,7 @@ describe('routes/signin — password-reset session-revocation', () => {
     try {
       await action({
         request: resetRequest({ reset_token: 'rt', password: 'longenough' }),
-      } as never)
+      } as unknown as Parameters<typeof action>[0])
     } catch (error) {
       caught = error
     }

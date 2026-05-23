@@ -185,7 +185,7 @@ describe('routes/page.detail loader', () => {
         request: new Request('http://localhost/about'),
         context: new RouterContextProvider(),
         params: { slug: 'about' },
-      } as never),
+      } as unknown as Parameters<typeof pageRoute.loader>[0]),
     )
 
     expect(data.page.permalink).toBe('/about')

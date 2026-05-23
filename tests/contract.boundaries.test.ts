@@ -685,7 +685,7 @@ describe('contract: module and bundle boundaries', () => {
     const source = readFileSync('src/ui/admin/settings/shell/useSettingsCard.tsx', 'utf8')
 
     expect(source).toContain('useForm<TState>')
-    expect(source).toContain('zodResolver(schema as never)')
+    expect(source).toContain('zodResolver(schema)')
     expect(source).not.toContain('submittedDraftRef')
     expect(source).not.toContain('setSnapshot(')
 

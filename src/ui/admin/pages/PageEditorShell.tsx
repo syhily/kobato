@@ -13,7 +13,7 @@ import {
 } from 'lucide-react'
 import { Link } from 'react-router'
 
-import type { AdminPageDetailDto, AdminPageDto } from '@/shared/types/pages'
+import type { AdminPageDetailDto, AdminPageDto, SavePageBodyInput, UpsertPageMetaInput } from '@/shared/types/pages'
 
 import { orpc } from '@/client/api/client'
 import { useCreatePageDraft } from '@/client/hooks/use-create-page-draft'
@@ -108,17 +108,17 @@ export function PageEditorShell({ mode, detail, navigate }: PageEditorShellProps
       usePageLocalDraft({ pageId: entityId, clientRevisionToken, body, disabled }),
     useCreateDraftHook: ({ body, meta }) => useCreatePageDraft({ body, meta }),
     upsertMetaFn: async (input) => {
-      const result = await orpc.admin.pages.upsertMeta(input as never)
+      const result = await orpc.admin.pages.upsertMeta(input as unknown as UpsertPageMetaInput)
       return result.page
     },
-    saveDraftFn: (input) => orpc.admin.pages.saveDraft(input as never),
-    publishFn: (input) => orpc.admin.pages.publishLatest(input as never),
+    saveDraftFn: (input) => orpc.admin.pages.saveDraft(input as unknown as SavePageBodyInput),
+    publishFn: (input) => orpc.admin.pages.publishLatest(input as unknown as SavePageBodyInput),
     unpublishFn: async (input) => {
       const result = await orpc.admin.pages.unpublish(input)
       return result.page
     },
     buildUpsertMetaPayload: buildPageUpsertPayload,
-    directSaveDraft: (input) => orpc.admin.pages.saveDraft(input as never),
+    directSaveDraft: (input) => orpc.admin.pages.saveDraft(input),
     editPath: (id) => `/editor/page/${id}`,
     navigate,
   })

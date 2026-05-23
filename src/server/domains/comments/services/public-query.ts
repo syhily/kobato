@@ -5,6 +5,7 @@ import type { EntityTarget } from '@/server/infra/db/target'
 import { userSession } from '@/server/domains/auth/primitives'
 import { hasAtLeast } from '@/server/domains/auth/rbac'
 import { withCommentBadgeTextColor } from '@/server/domains/comments/badge'
+import { latestCommentsCache } from '@/server/domains/comments/cache'
 import {
   adminUserIds,
   commentsByIds,
@@ -28,11 +29,18 @@ export async function pendingComments(): Promise<LatestComment[]> {
 }
 
 export async function latestComments(): Promise<LatestComment[]> {
+  const cached = await latestCommentsCache.get()
+  if (cached !== null) {
+    return cached
+  }
+
   const limit = getSidebarWidgetCount(requireBlogSettingsSection('sidebar'), 'recentComments')
   const ids = await adminUserIds()
   const distinctIds = await latestDistinctCommentIds(ids, limit)
   const rows = await commentsByIds(distinctIds, limit)
-  return rows.map(toLatestComment)
+  const result = rows.map(toLatestComment)
+  await latestCommentsCache.set(result)
+  return result
 }
 
 export async function loadComments(

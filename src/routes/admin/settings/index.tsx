@@ -6,7 +6,12 @@ import type { SettingsOutletContext } from '@/routes/admin/settings/layout'
 import { getRouteRequestContext } from '@/server/domains/auth/context'
 import { requireRole } from '@/server/domains/auth/rbac'
 import { settingsMeta } from '@/server/render/seo/settings-meta'
-import { SECTION_DISPLAY, projectAssetsForAdmin, projectSearchForAdmin } from '@/shared/config/settings'
+import {
+  NAV_GROUP_LABEL,
+  SECTION_DISPLAY,
+  projectAssetsForAdmin,
+  projectSearchForAdmin,
+} from '@/shared/config/settings'
 import { AssetsForm } from '@/ui/admin/settings/AssetsForm'
 import { BackupView } from '@/ui/admin/settings/BackupView'
 import { CacheView } from '@/ui/admin/settings/CacheView'
@@ -41,28 +46,98 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   return null
 }
 
-const SECTIONS = [
+const SECTION_CONFIGS: {
+  id: keyof typeof SECTION_DISPLAY
+  render: (bundle: SettingsOutletContext['bundle'], tz: readonly string[]) => React.ReactNode
+}[] = [
   // 站点
-  { id: 'general', ...SECTION_DISPLAY.general },
-  { id: 'assets', ...SECTION_DISPLAY.assets },
-  { id: 'fonts', ...SECTION_DISPLAY.fonts },
+  {
+    id: 'general',
+    render: (bundle, tz) => <GeneralForm siteIdentity={bundle.siteIdentity} timeZones={tz} />,
+  },
+  {
+    id: 'assets',
+    render: (bundle) => <AssetsForm assets={projectAssetsForAdmin(bundle.assets)} />,
+  },
+  {
+    id: 'fonts',
+    render: (bundle) => <FontsForm fonts={bundle.fonts} />,
+  },
   // 内容与展示
-  { id: 'content', ...SECTION_DISPLAY.content },
-  { id: 'sidebar', ...SECTION_DISPLAY.sidebar },
-  { id: 'comments', ...SECTION_DISPLAY.comments },
-  { id: 'seo', ...SECTION_DISPLAY.seo },
-  { id: 'navigation', ...SECTION_DISPLAY.navigation },
-  { id: 'socials', ...SECTION_DISPLAY.socials },
+  {
+    id: 'content',
+    render: (bundle) => <ContentForm content={bundle.content} />,
+  },
+  {
+    id: 'sidebar',
+    render: (bundle) => <SidebarForm sidebar={bundle.sidebar} />,
+  },
+  {
+    id: 'comments',
+    render: (bundle) => <CommentsForm comments={bundle.comments} />,
+  },
+  {
+    id: 'seo',
+    render: (bundle) => <SeoForm seo={bundle.seo} />,
+  },
+  {
+    id: 'navigation',
+    render: (bundle) => <NavigationEditor navigation={bundle.navigation} socials={bundle.socials.socials} />,
+  },
+  {
+    id: 'socials',
+    render: (bundle) => <SocialsEditor socials={bundle.socials} />,
+  },
   // 服务集成
-  { id: 'mail', ...SECTION_DISPLAY.mail },
-  { id: 'search', ...SECTION_DISPLAY.search },
+  {
+    id: 'mail',
+    render: (bundle) => (
+      <MailForm
+        mail={{
+          enabled: bundle.mail.mail.enabled,
+          host: bundle.mail.mail.host,
+          sender: bundle.mail.mail.sender,
+          apiKeyMask: bundle.mail.mail.apiKey === '' ? null : bundle.mail.mail.apiKey.slice(-4),
+        }}
+      />
+    ),
+  },
+  {
+    id: 'search',
+    render: (bundle) => <SearchForm search={projectSearchForAdmin(bundle.search)} />,
+  },
   // 系统运维
-  { id: 'cache', ...SECTION_DISPLAY.cache },
-  { id: 'cors', ...SECTION_DISPLAY.cors },
-  { id: 'rateLimit', ...SECTION_DISPLAY.rateLimit },
-  { id: 'limits', ...SECTION_DISPLAY.limits },
-  { id: 'backup', ...SECTION_DISPLAY.backup },
-] as const
+  {
+    id: 'cache',
+    render: (bundle) => <CacheView cache={bundle.cache.cache} />,
+  },
+  {
+    id: 'cors',
+    render: (bundle) => <CorsForm cors={bundle.cors} />,
+  },
+  {
+    id: 'rateLimit',
+    render: (bundle) => <ThresholdForm rateLimit={bundle.rateLimit} />,
+  },
+  {
+    id: 'limits',
+    render: (bundle) => <LimitsForm limits={bundle.limits} />,
+  },
+  {
+    id: 'backup',
+    render: (bundle) => (
+      <BackupView
+        backup={
+          bundle.backup ?? {
+            scheduled: { enabled: false, frequency: 'daily', hour: 3, minute: 0 },
+            retention: { enabled: true, days: 30 },
+          }
+        }
+        timeZone={bundle.siteIdentity.timeZone}
+      />
+    ),
+  },
+]
 
 const MOBILE_QUERY = '(max-width: 1023px)'
 
@@ -165,12 +240,12 @@ function SettingsPageInner() {
     }
   }, [navigate])
 
-  const navItems = SECTIONS.map((s) => ({
+  const navItems = SECTION_CONFIGS.map((s) => ({
     id: s.id,
-    label: s.label,
-    icon: s.icon,
-    group: s.group,
-    keywords: [s.label, s.description, s.id],
+    label: SECTION_DISPLAY[s.id].label,
+    icon: SECTION_DISPLAY[s.id].icon,
+    group: SECTION_DISPLAY[s.id].group,
+    keywords: [SECTION_DISPLAY[s.id].label, SECTION_DISPLAY[s.id].description, s.id],
   }))
 
   const isSectionVisible = useCallback(
@@ -178,11 +253,15 @@ function SettingsPageInner() {
       if (!isMobile || !filter) {
         return true
       }
-      const s = SECTIONS.find((sec) => sec.id === id)
+      const s = SECTION_CONFIGS.find((sec) => sec.id === id)
       if (!s) {
         return true
       }
-      return checkVisible([s.label, s.description, s.id])
+      return checkVisible([
+        SECTION_DISPLAY[s.id as keyof typeof SECTION_DISPLAY].label,
+        SECTION_DISPLAY[s.id as keyof typeof SECTION_DISPLAY].description,
+        s.id,
+      ])
     },
     [isMobile, filter, checkVisible],
   )
@@ -209,112 +288,22 @@ function SettingsPageInner() {
       >
         <div className="px-8 pt-16 pb-[60vh] lg:max-w-[760px] lg:px-14 lg:pt-0">
           <div className="flex flex-col gap-16">
-            <SettingsGroup title="站点">
-              {isSectionVisible('general') && (
-                <SectionWrapper id="general" title="基本信息" icon="Settings">
-                  <GeneralForm siteIdentity={settings.siteIdentity} timeZones={tz} />
-                </SectionWrapper>
-              )}
-              {isSectionVisible('assets') && (
-                <SectionWrapper id="assets" title="存储配置" icon="HardDrive">
-                  <AssetsForm assets={projectAssetsForAdmin(settings.assets)} />
-                </SectionWrapper>
-              )}
-              {isSectionVisible('fonts') && (
-                <SectionWrapper id="fonts" title="字体配置" icon="Type">
-                  <FontsForm fonts={settings.fonts} />
-                </SectionWrapper>
-              )}
-            </SettingsGroup>
-
-            <SettingsGroup title="内容与展示">
-              {isSectionVisible('content') && (
-                <SectionWrapper id="content" title="内容与分页" icon="FileText">
-                  <ContentForm content={settings.content} />
-                </SectionWrapper>
-              )}
-              {isSectionVisible('sidebar') && (
-                <SectionWrapper id="sidebar" title="侧边栏" icon="PanelLeft">
-                  <SidebarForm sidebar={settings.sidebar} />
-                </SectionWrapper>
-              )}
-              {isSectionVisible('comments') && (
-                <SectionWrapper id="comments" title="评论与头像" icon="MessageSquare">
-                  <CommentsForm comments={settings.comments} />
-                </SectionWrapper>
-              )}
-              {isSectionVisible('seo') && (
-                <SectionWrapper id="seo" title="SEO 与目录" icon="Search">
-                  <SeoForm seo={settings.seo} />
-                </SectionWrapper>
-              )}
-              {isSectionVisible('navigation') && (
-                <SectionWrapper id="navigation" title="导航菜单" icon="Navigation">
-                  <NavigationEditor navigation={settings.navigation} socials={settings.socials.socials} />
-                </SectionWrapper>
-              )}
-              {isSectionVisible('socials') && (
-                <SectionWrapper id="socials" title="社交链接" icon="Share2">
-                  <SocialsEditor socials={settings.socials} />
-                </SectionWrapper>
-              )}
-            </SettingsGroup>
-
-            <SettingsGroup title="服务集成">
-              {isSectionVisible('mail') && (
-                <SectionWrapper id="mail" title="邮件服务" icon="Mail">
-                  <MailForm
-                    mail={{
-                      enabled: settings.mail.mail.enabled,
-                      host: settings.mail.mail.host,
-                      sender: settings.mail.mail.sender,
-                      apiKeyMask: settings.mail.mail.apiKey === '' ? null : settings.mail.mail.apiKey.slice(-4),
-                    }}
-                  />
-                </SectionWrapper>
-              )}
-              {isSectionVisible('search') && (
-                <SectionWrapper id="search" title="文章搜索" icon="SearchCode">
-                  <SearchForm search={projectSearchForAdmin(settings.search)} />
-                </SectionWrapper>
-              )}
-            </SettingsGroup>
-
-            <SettingsGroup title="系统运维">
-              {isSectionVisible('cache') && (
-                <SectionWrapper id="cache" title="缓存管理" icon="Database">
-                  <CacheView cache={settings.cache.cache} />
-                </SectionWrapper>
-              )}
-              {isSectionVisible('cors') && (
-                <SectionWrapper id="cors" title="CORS 配置" icon="Globe">
-                  <CorsForm cors={settings.cors} />
-                </SectionWrapper>
-              )}
-              {isSectionVisible('rateLimit') && (
-                <SectionWrapper id="rateLimit" title="流控设置" icon="Shield">
-                  <ThresholdForm rateLimit={settings.rateLimit} />
-                </SectionWrapper>
-              )}
-              {isSectionVisible('limits') && (
-                <SectionWrapper id="limits" title="运行限制" icon="SlidersHorizontal">
-                  <LimitsForm limits={settings.limits} />
-                </SectionWrapper>
-              )}
-              {isSectionVisible('backup') && (
-                <SectionWrapper id="backup" title="备份与还原" icon="Archive">
-                  <BackupView
-                    backup={
-                      settings.backup ?? {
-                        scheduled: { enabled: false, frequency: 'daily', hour: 3, minute: 0 },
-                        retention: { enabled: true, days: 30 },
-                      }
-                    }
-                    timeZone={settings.siteIdentity.timeZone}
-                  />
-                </SectionWrapper>
-              )}
-            </SettingsGroup>
+            {(['site', 'content', 'service', 'system'] as const).map((group) => (
+              <SettingsGroup key={group} title={NAV_GROUP_LABEL[group]}>
+                {SECTION_CONFIGS.filter((s) => SECTION_DISPLAY[s.id].group === group).map((s) =>
+                  isSectionVisible(s.id) ? (
+                    <SectionWrapper
+                      key={s.id}
+                      id={s.id}
+                      title={SECTION_DISPLAY[s.id].label}
+                      icon={SECTION_DISPLAY[s.id].icon}
+                    >
+                      {s.render(settings, tz)}
+                    </SectionWrapper>
+                  ) : null,
+                )}
+              </SettingsGroup>
+            ))}
           </div>
         </div>
       </main>

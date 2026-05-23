@@ -12,7 +12,7 @@ const { adminMailRouter } = await import('@/server/http/controllers/admin/mail.c
 
 describe('adminMailRouter.sendTest', () => {
   it('returns { success: true } when sendTestMail succeeds', async () => {
-    vi.mocked(sendTestMail).mockResolvedValueOnce({ ok: true } as never)
+    vi.mocked(sendTestMail).mockResolvedValueOnce({ ok: true })
     const ctx = makeAuthedCtx()
     const res = await call(adminMailRouter.sendTest, { to: 'admin@example.com' }, { context: ctx })
     expect(res).toEqual({ success: true })
@@ -23,7 +23,7 @@ describe('adminMailRouter.sendTest', () => {
       ok: false,
       reason: 'unconfigured',
       message: '邮件服务尚未配置完整（缺少 Host / API Key / 发件人）',
-    } as never)
+    })
     const ctx = makeAuthedCtx()
     await expect(call(adminMailRouter.sendTest, { to: 'admin@example.com' }, { context: ctx })).rejects.toMatchObject({
       code: 'BAD_REQUEST',
@@ -36,7 +36,7 @@ describe('adminMailRouter.sendTest', () => {
       reason: 'upstream',
       status: 502,
       message: '502 Bad Gateway',
-    } as never)
+    })
     const ctx = makeAuthedCtx()
     await expect(call(adminMailRouter.sendTest, { to: 'admin@example.com' }, { context: ctx })).rejects.toMatchObject({
       code: 'BAD_GATEWAY',

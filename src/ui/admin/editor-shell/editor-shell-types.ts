@@ -142,7 +142,7 @@ export interface UseEditorShellStateArgs<TMeta, TEntity extends EntityLike> {
   directSaveDraft: (input: {
     id: string
     body: PortableTextBody
-    expectedClientRevisionToken: string | null
+    expectedClientRevisionToken?: string | null
     force?: boolean
   }) => Promise<SaveBodyOutput>
 

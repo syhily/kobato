@@ -20,12 +20,12 @@ function mockAnalyticsInput() {
 
 describe('analyticsRouter.counters', () => {
   it('returns counters from the service', async () => {
-    vi.mocked(queryMod.parseAnalyticsSearch).mockReturnValueOnce(mockAnalyticsInput() as never)
+    vi.mocked(queryMod.parseAnalyticsSearch).mockReturnValueOnce(mockAnalyticsInput())
     vi.mocked(queryMod.queryCounters).mockResolvedValueOnce({
       visits: 10,
       visitors: 5,
       referers: 3,
-    } as never)
+    })
     const ctx = makeAuthedCtx()
     const res = (await call(analyticsRouter.counters, { preset: 'today' }, { context: ctx })) as {
       visits: number
@@ -36,10 +36,8 @@ describe('analyticsRouter.counters', () => {
 
 describe('analyticsRouter.views', () => {
   it('returns views points from the service', async () => {
-    vi.mocked(queryMod.parseAnalyticsSearch).mockReturnValueOnce(mockAnalyticsInput() as never)
-    vi.mocked(queryMod.queryViews).mockResolvedValueOnce([
-      { time: '2026-01-01T00:00:00.000Z', visits: 1, visitors: 1 } as never,
-    ])
+    vi.mocked(queryMod.parseAnalyticsSearch).mockReturnValueOnce(mockAnalyticsInput())
+    vi.mocked(queryMod.queryViews).mockResolvedValueOnce([{ time: '2026-01-01T00:00:00.000Z', visits: 1, visitors: 1 }])
     const ctx = makeAuthedCtx()
     const res = (await call(analyticsRouter.views, { preset: 'today' }, { context: ctx })) as unknown[]
     expect(res).toHaveLength(1)
@@ -48,8 +46,8 @@ describe('analyticsRouter.views', () => {
 
 describe('analyticsRouter.heatmap', () => {
   it('returns heatmap cells from the service', async () => {
-    vi.mocked(queryMod.parseAnalyticsSearch).mockReturnValueOnce(mockAnalyticsInput() as never)
-    vi.mocked(queryMod.queryHeatmap).mockResolvedValueOnce([{ weekday: 0, hour: 0, visits: 1, visitors: 1 } as never])
+    vi.mocked(queryMod.parseAnalyticsSearch).mockReturnValueOnce(mockAnalyticsInput())
+    vi.mocked(queryMod.queryHeatmap).mockResolvedValueOnce([{ weekday: 0, hour: 0, visits: 1, visitors: 1 }])
     const ctx = makeAuthedCtx()
     const res = (await call(analyticsRouter.heatmap, { preset: 'today' }, { context: ctx })) as unknown[]
     expect(res).toHaveLength(1)
@@ -58,8 +56,8 @@ describe('analyticsRouter.heatmap', () => {
 
 describe('analyticsRouter.metrics', () => {
   it('returns metric rows from the service', async () => {
-    vi.mocked(queryMod.parseAnalyticsSearch).mockReturnValueOnce(mockAnalyticsInput() as never)
-    vi.mocked(queryMod.queryMetric).mockResolvedValueOnce([{ name: 'Chrome', visits: 5, visitors: 3 } as never])
+    vi.mocked(queryMod.parseAnalyticsSearch).mockReturnValueOnce(mockAnalyticsInput())
+    vi.mocked(queryMod.queryMetric).mockResolvedValueOnce([{ name: 'Chrome', visits: 5, visitors: 3 }])
     const ctx = makeAuthedCtx()
     const res = (await call(
       analyticsRouter.metrics,

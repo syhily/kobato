@@ -1,11 +1,16 @@
 // Comment-domain cache layer.
 //
-// Currently a placeholder so the domain follows the locked vocabulary
-// (schema.ts / repo.ts / service.ts / projection.ts / cache.ts).
-// Redis-backed caching for comment listings or counts can be added here
-// when profiling shows a hot path that benefits from it.
+// Currently caches the global "latest comments" sidebar list.
+// Per-page comment-thread caching is left for future profiling.
 
-export const commentCache = {
-  /** No-op placeholder until Redis-backed caching is implemented. */
-  enabled: false,
+import type { LatestComment } from '@/shared/types/comments'
+
+import { createRedisCache } from '@/server/infra/cache/redis-cache'
+
+export const latestCommentsCache = createRedisCache<LatestComment[]>('comments:latest', {
+  ttlMs: 30_000,
+})
+
+export async function clearLatestCommentsCache(): Promise<void> {
+  await latestCommentsCache.clear()
 }

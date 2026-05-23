@@ -62,15 +62,15 @@ export function PostDetailBody({
                 title={post.title}
                 date={post.date}
                 updated={post.updated}
-                showUpdated={post.showUpdated}
+                updatedVisibility={post.showUpdated ? 'shown' : 'hidden'}
                 headings={headings}
-                toc={post.toc}
+                toc={post.toc ? 'enabled' : 'disabled'}
                 likes={likes}
                 permalink={post.permalink}
                 commentKey={commentKey}
                 commentsPromise={commentsPromise}
                 currentUser={currentUser}
-                commentsEnabled={post.comments}
+                comments={post.comments ? 'enabled' : 'disabled'}
                 mode={mode}
                 editHref={mode === 'admin' ? `/editor/post/${post.id}` : undefined}
                 draftMarker={draftMarker}

@@ -20,7 +20,7 @@ describe('musicRouter.get', () => {
       url: 'https://cdn.example.com/musics/abc123def4567890.mp3',
       pic: 'https://cdn.example.com/musics/abc123def4567890.jpg',
       lyric: '[00:00.00]Lyric line 1',
-    } as never)
+    })
     const ctx = makePublicCtx()
     const res = (await call(musicRouter.get, { id: 'abc123def4567890' }, { context: ctx })) as {
       music: { id: string; name: string }

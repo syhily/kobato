@@ -1,5 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import type { CommentAndUser } from '@/server/domains/comments/types'
+
 // Stub email templates with trivial React components so the import
 // chain is cheap and we can focus on the sender's transport / config
 // branches.
@@ -71,7 +73,7 @@ describe('email/sender — internalSend (via sendNewComment)', () => {
     content: 'hello',
     isPending: false,
     user: { id: 1n, name: 'visitor', email: 'visitor@example.com' },
-  } as never
+  } as unknown as CommentAndUser
   const target = { type: 'post' as const, ownerId: 1n }
 
   it('skips with reason=disabled when the master switch is off', async () => {

@@ -91,7 +91,8 @@ describe('likesRouter.increase', () => {
   it('throws TOO_MANY_REQUESTS when the per-IP rate limit is exceeded', async () => {
     vi.mocked(rateLimitMod.tryLikeIncreaseRateLimit).mockResolvedValueOnce({
       exceeded: true,
-    } as never)
+      count: 1,
+    })
     const ctx = makePublicCtx({ clientAddress: '1.2.3.4' })
     await expect(call(likesRouter.increase, { key: 'pk-1' }, { context: ctx })).rejects.toMatchObject({
       code: 'TOO_MANY_REQUESTS',

@@ -57,7 +57,7 @@ describe('services/comments/page-data — loadDetailPageData', () => {
           pendingComments: [],
           tags: [],
           isAdmin: false,
-        } as never,
+        } as unknown as Awaited<ReturnType<typeof sidebar.loadSidebarData>>,
         50,
       ),
     )
@@ -82,7 +82,7 @@ describe('services/comments/page-data — loadDetailPageData', () => {
       pendingComments: [],
       tags: [],
       isAdmin: false,
-    } as never)
+    } as unknown as Awaited<ReturnType<typeof sidebar.loadSidebarData>>)
 
     const result = await loadDetailPageData(regularSession(), POST_EMPTY)
 
@@ -103,7 +103,7 @@ describe('services/comments/page-data — loadDetailPageData', () => {
       pendingComments: [],
       tags: [],
       isAdmin: false,
-    } as never)
+    } as unknown as Awaited<ReturnType<typeof sidebar.loadSidebarData>>)
 
     await loadDetailPageData(regularSession(), POST_ONE_UPSERT)
 
@@ -126,7 +126,7 @@ describe('services/comments/page-data — loadDetailPageData', () => {
       pendingComments: [],
       tags: [],
       isAdmin: false,
-    } as never)
+    } as unknown as Awaited<ReturnType<typeof sidebar.loadSidebarData>>)
 
     await loadDetailPageData(regularSession(), POST_NO_TRACK, { trackView: false })
 

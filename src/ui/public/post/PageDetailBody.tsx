@@ -52,15 +52,15 @@ export function PageDetailBody({
             title={page.title}
             date={page.date}
             updated={page.updated}
-            showUpdated={page.showUpdated}
+            updatedVisibility={page.showUpdated ? 'shown' : 'hidden'}
             headings={headings}
-            toc={page.toc}
+            toc={page.toc ? 'enabled' : 'disabled'}
             likes={likes}
             permalink={page.permalink}
             commentKey={commentKey}
             commentsPromise={commentsPromise}
             currentUser={currentUser}
-            commentsEnabled={page.comments}
+            comments={page.comments ? 'enabled' : 'disabled'}
             mode={mode}
             editHref={mode === 'admin' ? `/editor/page/${page.id}` : undefined}
             draftMarker={draftMarker}

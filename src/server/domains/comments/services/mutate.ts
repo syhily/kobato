@@ -5,6 +5,7 @@ import type { NewComment } from '@/server/infra/db/types'
 
 import { userSession } from '@/server/domains/auth/primitives'
 import { withCommentBadgeTextColor } from '@/server/domains/comments/badge'
+import { clearLatestCommentsCache } from '@/server/domains/comments/cache'
 import { canonicalizeCommentBody } from '@/server/domains/comments/canonicalize'
 import { sendNewComment, sendNewReply } from '@/server/domains/comments/email'
 import { insertComment } from '@/server/domains/comments/repos/mutate'
@@ -165,5 +166,6 @@ export async function createComment(
   const sub = await validateSubmission(commentReq, req, clientAddress, session)
   const info = await persistComment(commentReq, sub, req.headers.get('User-Agent'), clientAddress)
   await notifyCommentCreated(info, sub.target)
+  await clearLatestCommentsCache()
   return info
 }

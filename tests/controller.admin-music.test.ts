@@ -39,7 +39,7 @@ describe('adminMusicRouter.list', () => {
       musics: [musicStub],
       total: 1,
       hasMore: false,
-    } as never)
+    })
     const ctx = makeAuthedCtx()
     const res = await call(adminMusicRouter.list, {}, { context: ctx })
     expect(res.musics).toHaveLength(1)
@@ -62,7 +62,7 @@ describe('adminMusicRouter.search', () => {
           previewUrl: 'https://cdn.example.com/preview.mp3',
         },
       ],
-    } as never)
+    })
     const ctx = makeAuthedCtx()
     const res = await call(adminMusicRouter.search, { keyword: 'Song' }, { context: ctx })
     expect(res.results).toHaveLength(1)
@@ -72,7 +72,7 @@ describe('adminMusicRouter.search', () => {
 
 describe('adminMusicRouter.add', () => {
   it('returns the added music', async () => {
-    vi.mocked(service.addMusic).mockResolvedValueOnce(musicStub as never)
+    vi.mocked(service.addMusic).mockResolvedValueOnce(musicStub)
     const ctx = makeAuthedCtx()
     const res = await call(adminMusicRouter.add, { source: 'netease', sourceId: '12345' }, { context: ctx })
     expect(res.music.id).toBe('1')
@@ -81,7 +81,7 @@ describe('adminMusicRouter.add', () => {
 
 describe('adminMusicRouter.update', () => {
   it('returns the updated music', async () => {
-    vi.mocked(service.updateMusicMetadata).mockResolvedValueOnce(musicStub as never)
+    vi.mocked(service.updateMusicMetadata).mockResolvedValueOnce(musicStub)
     const ctx = makeAuthedCtx()
     const res = await call(
       adminMusicRouter.update,

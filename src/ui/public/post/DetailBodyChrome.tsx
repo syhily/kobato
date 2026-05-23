@@ -27,15 +27,15 @@ export interface DetailBodyChromeProps {
   title: string
   date: Date
   updated?: Date | null
-  showUpdated: boolean
+  updatedVisibility?: 'shown' | 'hidden'
   headings: MarkdownHeading[]
-  toc: boolean
+  toc?: 'enabled' | 'disabled'
   likes: number
   permalink: string
   commentKey: string
   commentsPromise: Promise<DetailPageComments>
   currentUser?: CommentFormUser
-  commentsEnabled: boolean
+  comments?: 'enabled' | 'disabled'
   mode?: 'admin' | 'public'
   editHref?: string
   draftMarker?: DraftMarker
@@ -52,15 +52,15 @@ export function DetailBodyChrome({
   title,
   date,
   updated,
-  showUpdated,
+  updatedVisibility = 'hidden',
   headings,
-  toc,
+  toc = 'disabled',
   likes,
   permalink,
   commentKey,
   commentsPromise,
   currentUser,
-  commentsEnabled,
+  comments = 'disabled',
   mode,
   editHref,
   draftMarker = null,
@@ -113,7 +113,7 @@ export function DetailBodyChrome({
           <time dateTime={publishedIso} className="tabular-nums">
             {formatLocalDate(date, 'yyyy-MM-dd HH:mm', siteIdentity)}
           </time>
-          {showUpdated && (
+          {updatedVisibility === 'shown' && (
             <div className="flex min-w-0 flex-wrap items-baseline gap-x-1">
               <span className="shrink-0">修改于</span>
               <time dateTime={updatedIso} className="tabular-nums">
@@ -124,7 +124,7 @@ export function DetailBodyChrome({
         </div>
         {metaExtra}
       </div>
-      <TableOfContents headings={headings} toc={toc} />
+      <TableOfContents headings={headings} toc={toc === 'enabled'} />
       <div className={contentWrapperClassName}>
         {/* `post-content` is the compound suffix targeted by
             `@utility prose-blog { &.post-content {…} }` in
@@ -136,7 +136,7 @@ export function DetailBodyChrome({
       </div>
       <LikeButton permalink={permalink} commentKey={commentKey} likes={likes} />
       {afterLikeButton}
-      {commentsEnabled && (
+      {comments === 'enabled' && (
         <Suspense fallback={<CommentsSkeleton />}>
           <Await resolve={commentsPromise}>
             {(resolved) => (

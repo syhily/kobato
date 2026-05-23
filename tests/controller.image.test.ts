@@ -17,7 +17,7 @@ describe('imageRouter.resolveThumbhash', () => {
       height: 200,
       thumbhash: 'abc123',
       publicUrl: 'https://cdn.example.com/images/test.jpg',
-    } as never)
+    })
     const ctx = makePublicCtx()
     const res = (await call(
       imageRouter.resolveThumbhash,

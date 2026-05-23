@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { portableTextBodySchema, type Block, type PortableTextBody } from '@/shared/pt/schema'
+import { portableTextBodySchema, type Block, type NonRecursiveBlock, type PortableTextBody } from '@/shared/pt/schema'
 import {
   bodyToPlainText,
   collectHeadings,
@@ -178,7 +178,7 @@ describe('contract: portable-text dialect — rejects unknown shapes', () => {
     const bad: Block = {
       _type: 'solution',
       _key: 'sol-outer',
-      children: [SOLUTION as never],
+      children: [SOLUTION as unknown as NonRecursiveBlock],
     }
     expect(safeValidatePortableTextBody([bad]).ok).toBe(false)
   })
@@ -188,7 +188,7 @@ describe('contract: portable-text dialect — rejects unknown shapes', () => {
       _type: 'footnoteDefinition',
       _key: 'fn-outer',
       index: 1,
-      children: [SOLUTION as never],
+      children: [SOLUTION as unknown as NonRecursiveBlock],
     }
     expect(safeValidatePortableTextBody([bad]).ok).toBe(false)
   })
@@ -203,7 +203,7 @@ describe('contract: portable-text dialect — rejects unknown shapes', () => {
     const bad: Block = {
       _type: 'twoColumn',
       _key: 'tc-outer',
-      left: [inner as never],
+      left: [inner as unknown as NonRecursiveBlock],
       right: [],
     }
     expect(safeValidatePortableTextBody([bad]).ok).toBe(false)

@@ -1,6 +1,8 @@
 import { call } from '@orpc/server'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import type { AdminUserRow } from '@/server/infra/db/operations/user'
+
 import { makeAuthedCtx } from './_helpers/mock-ctx'
 
 vi.mock('@/server/infra/db/operations/user', () => ({
@@ -73,7 +75,7 @@ describe('adminUsersRouter.list', () => {
       lastCommentAt: null,
     }
     vi.mocked(usersService.listUsersForAdmin).mockResolvedValueOnce({
-      users: [userRow as never],
+      users: [userRow as unknown as AdminUserRow],
       total: 1,
       hasMore: false,
     })
@@ -97,7 +99,9 @@ describe('adminUsersRouter.get', () => {
 
 describe('adminUsersRouter.softDelete', () => {
   beforeEach(() => {
-    vi.mocked(userQuery.findUserById).mockResolvedValue({ id: 2n, role: 'visitor' } as never)
+    vi.mocked(userQuery.findUserById).mockResolvedValue({ id: 2n, role: 'visitor' } as unknown as Awaited<
+      ReturnType<typeof userQuery.findUserById>
+    >)
   })
 
   it('refuses with FORBIDDEN when the viewer is the same user', async () => {
@@ -108,7 +112,9 @@ describe('adminUsersRouter.softDelete', () => {
   })
 
   it('refuses with CONFLICT when removing the last admin', async () => {
-    vi.mocked(userQuery.findUserById).mockResolvedValueOnce({ id: 9n, role: 'admin' } as never)
+    vi.mocked(userQuery.findUserById).mockResolvedValueOnce({ id: 9n, role: 'admin' } as unknown as Awaited<
+      ReturnType<typeof userQuery.findUserById>
+    >)
     vi.mocked(userQuery.countAdmins).mockResolvedValueOnce(1)
     const ctx = makeAuthedCtx({ userId: '1' })
     await expect(call(adminUsersRouter.softDelete, { id: '9' }, { context: ctx })).rejects.toMatchObject({
@@ -117,7 +123,9 @@ describe('adminUsersRouter.softDelete', () => {
   })
 
   it('resolves to undefined (void output) on successful deletion and revokes sessions', async () => {
-    vi.mocked(userQuery.findUserById).mockResolvedValueOnce({ id: 9n, role: 'visitor' } as never)
+    vi.mocked(userQuery.findUserById).mockResolvedValueOnce({ id: 9n, role: 'visitor' } as unknown as Awaited<
+      ReturnType<typeof userQuery.findUserById>
+    >)
     const ctx = makeAuthedCtx({ userId: '1' })
     const res = await call(adminUsersRouter.softDelete, { id: '9' }, { context: ctx })
     expect(res).toBeUndefined()
@@ -136,7 +144,9 @@ describe('adminUsersRouter.update', () => {
   })
 
   it('returns success on a successful patch', async () => {
-    vi.mocked(userQuery.updateUserById).mockResolvedValueOnce({ id: '1', name: 'X' } as never)
+    vi.mocked(userQuery.updateUserById).mockResolvedValueOnce({ id: '1', name: 'X' } as unknown as Awaited<
+      ReturnType<typeof userQuery.updateUserById>
+    >)
     const ctx = makeAuthedCtx()
     const res = await call(adminUsersRouter.update, { id: '1', name: 'X' }, { context: ctx })
     expect(res).toEqual({ success: true })

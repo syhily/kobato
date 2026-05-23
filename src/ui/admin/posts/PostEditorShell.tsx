@@ -1,6 +1,6 @@
 import type { NavigateFunction } from 'react-router'
 
-import type { AdminPostDetailDto, AdminPostDto } from '@/shared/types/posts'
+import type { AdminPostDetailDto, AdminPostDto, SavePostBodyInput, UpsertPostMetaInput } from '@/shared/types/posts'
 
 import { orpc } from '@/client/api/client'
 import { useCreatePostDraft } from '@/client/hooks/use-create-post-draft'
@@ -99,17 +99,17 @@ export function PostEditorShell({ mode, detail, navigate }: PostEditorShellProps
       usePostLocalDraft({ postId: entityId, clientRevisionToken, body, disabled }),
     useCreateDraftHook: ({ body, meta }) => useCreatePostDraft({ body, meta }),
     upsertMetaFn: async (input) => {
-      const result = await orpc.admin.posts.upsertMeta(input as never)
+      const result = await orpc.admin.posts.upsertMeta(input as unknown as UpsertPostMetaInput)
       return result.post
     },
-    saveDraftFn: (input) => orpc.admin.posts.saveDraft(input as never),
-    publishFn: (input) => orpc.admin.posts.publishLatest(input as never),
+    saveDraftFn: (input) => orpc.admin.posts.saveDraft(input as unknown as SavePostBodyInput),
+    publishFn: (input) => orpc.admin.posts.publishLatest(input as unknown as SavePostBodyInput),
     unpublishFn: async (input) => {
       const result = await orpc.admin.posts.unpublish(input)
       return result.post
     },
     buildUpsertMetaPayload: buildPostUpsertPayload,
-    directSaveDraft: (input) => orpc.admin.posts.saveDraft(input as never),
+    directSaveDraft: (input) => orpc.admin.posts.saveDraft(input),
     editPath: (id) => `/editor/post/${id}`,
     navigate,
   })

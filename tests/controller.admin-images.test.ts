@@ -34,10 +34,10 @@ const image = {
 describe('adminImagesRouter.list', () => {
   it('returns images, total and hasMore', async () => {
     vi.mocked(service.listImagesForAdmin).mockResolvedValueOnce({
-      images: [image] as never,
+      images: [image],
       total: 1,
       hasMore: false,
-    } as never)
+    })
     const ctx = makeAuthedCtx()
     const res = await call(adminImagesRouter.list, { q: 'cat', kind: 'generic' }, { context: ctx })
     expect(res.images).toHaveLength(1)
@@ -60,7 +60,7 @@ describe('adminImagesRouter.updateNote', () => {
     vi.mocked(service.updateImageNote).mockResolvedValueOnce({
       ...image,
       note: 'Updated note',
-    } as never)
+    })
     const ctx = makeAuthedCtx()
     const res = await call(adminImagesRouter.updateNote, { id: '1', note: 'Updated note' }, { context: ctx })
     expect(res.image.note).toBe('Updated note')
@@ -69,7 +69,7 @@ describe('adminImagesRouter.updateNote', () => {
 
 describe('adminImagesRouter.recalculateThumbhash', () => {
   it('returns image with recalculated thumbhash', async () => {
-    vi.mocked(service.recalculateImageThumbhash).mockResolvedValueOnce(image as never)
+    vi.mocked(service.recalculateImageThumbhash).mockResolvedValueOnce(image)
     const ctx = makeAuthedCtx()
     const res = await call(adminImagesRouter.recalculateThumbhash, { id: '1' }, { context: ctx })
     expect(res.image.id).toBe('1')

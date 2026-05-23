@@ -21,7 +21,7 @@ interface UseSettingsCardOptions<TSource, TState extends FieldValues> {
    * When `patch: false`, return the full section payload manually.
    */
   fromState: (state: TState) => Record<string, unknown>
-  schema?: z.ZodType<TState>
+  schema?: z.ZodType<TState, any>
   /**
    * When true (default), `fromState` only needs to return the changed
    * sub-tree; the hook deep-merges it with `source`. When false,
@@ -104,7 +104,7 @@ export function useSettingsCard<TSource, TState extends FieldValues>({
     if (!schema) {
       return undefined
     }
-    return zodResolver(schema as never) as Resolver<TState>
+    return zodResolver(schema)
   }, [schema])
 
   const form = useForm<TState>({
