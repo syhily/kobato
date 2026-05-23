@@ -43,7 +43,8 @@ import { useEditorShellPersist } from '@/ui/admin/editor-shell/use-editor-shell-
 export function useEditorShellState<
   TMeta extends { title: string; slug: string; published: boolean; publishedAt: string },
   TEntity extends EntityLike,
->(args: UseEditorShellStateArgs<TMeta, TEntity>): UseEditorShellStateOutput<TMeta> {
+  TUpsertMetaInput = Record<string, unknown>,
+>(args: UseEditorShellStateArgs<TMeta, TEntity, TUpsertMetaInput>): UseEditorShellStateOutput<TMeta> {
   const {
     mode,
     entityKind: _entityKind,

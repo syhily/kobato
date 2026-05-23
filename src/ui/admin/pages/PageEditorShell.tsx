@@ -63,7 +63,7 @@ function buildPageUpsertPayload({
   meta: PageMetaDraft
   id?: string
   publishedAt: string | null
-}): Record<string, unknown> {
+}): UpsertPageMetaInput {
   return {
     ...(id !== undefined ? { id } : {}),
     ...(meta.slug.trim() !== '' ? { slug: meta.slug.trim() } : {}),
@@ -91,7 +91,7 @@ export function PageEditorShell({ mode, detail, navigate }: PageEditorShellProps
   // --- Shared state hook ---------------------------------------------------
   // The hook owns `useMutation()` internally — Shell only provides
   // entity-specific mutation functions + the LS hook factories.
-  const state = useEditorShellState<PageMetaDraft, AdminPageDto>({
+  const state = useEditorShellState<PageMetaDraft, AdminPageDto, UpsertPageMetaInput>({
     mode,
     entityKind: 'page',
     detail: detail
@@ -108,11 +108,11 @@ export function PageEditorShell({ mode, detail, navigate }: PageEditorShellProps
       usePageLocalDraft({ pageId: entityId, clientRevisionToken, body, disabled }),
     useCreateDraftHook: ({ body, meta }) => useCreatePageDraft({ body, meta }),
     upsertMetaFn: async (input) => {
-      const result = await orpc.admin.pages.upsertMeta(input as unknown as UpsertPageMetaInput)
+      const result = await orpc.admin.pages.upsertMeta(input)
       return result.page
     },
-    saveDraftFn: (input) => orpc.admin.pages.saveDraft(input as unknown as SavePageBodyInput),
-    publishFn: (input) => orpc.admin.pages.publishLatest(input as unknown as SavePageBodyInput),
+    saveDraftFn: (input) => orpc.admin.pages.saveDraft(input as Record<string, unknown> & SavePageBodyInput),
+    publishFn: (input) => orpc.admin.pages.publishLatest(input as Record<string, unknown> & SavePageBodyInput),
     unpublishFn: async (input) => {
       const result = await orpc.admin.pages.unpublish(input)
       return result.page

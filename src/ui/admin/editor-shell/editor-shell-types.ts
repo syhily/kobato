@@ -82,7 +82,11 @@ export type SaveBodyOutput =
 
 // --- Hook arguments ---------------------------------------------------------
 
-export interface UseEditorShellStateArgs<TMeta, TEntity extends EntityLike> {
+export interface UseEditorShellStateArgs<
+  TMeta,
+  TEntity extends EntityLike,
+  TUpsertMetaInput = Record<string, unknown>,
+> {
   mode: 'create' | 'edit'
   /** `'post' | 'page'` — drives body-key prefixes and route stubs. */
   entityKind: 'post' | 'page'
@@ -120,7 +124,7 @@ export interface UseEditorShellStateArgs<TMeta, TEntity extends EntityLike> {
   // `SaveBodyOutput`. The hook owns the `useMutation()` calls + the
   // onSuccess/onError handlers internally so it can wire them into
   // its status machine without TDZ gymnastics.
-  upsertMetaFn: (input: Record<string, unknown>) => Promise<TEntity>
+  upsertMetaFn: (input: TUpsertMetaInput) => Promise<TEntity>
   saveDraftFn: (input: Record<string, unknown>) => Promise<SaveBodyOutput>
   publishFn: (input: Record<string, unknown>) => Promise<SaveBodyOutput>
   unpublishFn: (input: { id: string }) => Promise<TEntity>
@@ -132,7 +136,7 @@ export interface UseEditorShellStateArgs<TMeta, TEntity extends EntityLike> {
    * `commentsEnabled`, `showToc`, `showUpdated`, `slug`, `publishedAt`)
    * are built here from `meta`.
    */
-  buildUpsertMetaPayload: (input: { meta: TMeta; id?: string; publishedAt: string | null }) => Record<string, unknown>
+  buildUpsertMetaPayload: (input: { meta: TMeta; id?: string; publishedAt: string | null }) => TUpsertMetaInput
 
   /**
    * Direct oRPC `saveDraft` for autosave + force-save (adoptLocalDraft).

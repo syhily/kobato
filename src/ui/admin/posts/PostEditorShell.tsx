@@ -49,7 +49,7 @@ function buildPostUpsertPayload({
   meta: PostMetaDraft
   id?: string
   publishedAt: string | null
-}): Record<string, unknown> {
+}): UpsertPostMetaInput {
   return {
     ...(id !== undefined ? { id } : {}),
     ...(meta.slug.trim() !== '' ? { slug: meta.slug.trim() } : {}),
@@ -82,7 +82,7 @@ export function PostEditorShell({ mode, detail, navigate }: PostEditorShellProps
   // --- Shared state hook ---------------------------------------------------
   // The hook owns `useMutation()` internally — Shell only provides
   // entity-specific mutation functions + the LS hook factories.
-  const state = useEditorShellState<PostMetaDraft, AdminPostDto>({
+  const state = useEditorShellState<PostMetaDraft, AdminPostDto, UpsertPostMetaInput>({
     mode,
     entityKind: 'post',
     detail: detail
@@ -99,11 +99,11 @@ export function PostEditorShell({ mode, detail, navigate }: PostEditorShellProps
       usePostLocalDraft({ postId: entityId, clientRevisionToken, body, disabled }),
     useCreateDraftHook: ({ body, meta }) => useCreatePostDraft({ body, meta }),
     upsertMetaFn: async (input) => {
-      const result = await orpc.admin.posts.upsertMeta(input as unknown as UpsertPostMetaInput)
+      const result = await orpc.admin.posts.upsertMeta(input)
       return result.post
     },
-    saveDraftFn: (input) => orpc.admin.posts.saveDraft(input as unknown as SavePostBodyInput),
-    publishFn: (input) => orpc.admin.posts.publishLatest(input as unknown as SavePostBodyInput),
+    saveDraftFn: (input) => orpc.admin.posts.saveDraft(input as Record<string, unknown> & SavePostBodyInput),
+    publishFn: (input) => orpc.admin.posts.publishLatest(input as Record<string, unknown> & SavePostBodyInput),
     unpublishFn: async (input) => {
       const result = await orpc.admin.posts.unpublish(input)
       return result.post
