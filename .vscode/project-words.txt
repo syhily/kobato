@@ -30,6 +30,7 @@ cimage
 ckenh
 cnip
 codegen
+collisively
 colour
 commentform
 csslintrc
@@ -192,6 +193,7 @@ plaiceholder
 playform
 playpause
 portabletext
+prerender
 procfile
 prosemirror
 psql
@@ -240,6 +242,7 @@ thumbhash
 timescaledb
 timestamptz
 tini
+tiptap
 tlyric
 tmpfs
 toolsmp

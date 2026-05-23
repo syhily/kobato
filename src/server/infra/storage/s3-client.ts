@@ -14,7 +14,7 @@ import { requireBlogSettingsSection } from '@/shared/config/blog'
 // `@aws-sdk/core` ships an ESM index that does
 // `import './emitWarningIfUnsupportedVersion'` without the `.js`
 // extension. Node ESM (and the Vitest SSR loader) reject that import
-// at module-eval time. Rolldown bundles the SDK in `vp build` so
+// at module-eval time. Rolldown bundles the SDK in `npm run build` so
 // production never sees it, but the lazy getter ensures test files
 // that transitively touch this module don't crash on import — the
 // AWS SDK is only evaluated when a function actually calls `getAwsSdk()`.

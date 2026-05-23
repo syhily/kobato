@@ -29,7 +29,7 @@ export const CACHE_BUCKET_FALLBACKS: Record<CacheBucketId, CacheBucketSlot> = {
 // `session:*` clearing would log everyone out and break in-flight tokens
 // tokens; `rate-limit:*` clearing would let throttled abusers retry
 // immediately. The prefixes are baked in to keep these surfaces
-// administrative-tool territory (vp shells / Redis CLI).
+// administrative-tool territory (npm shells / Redis CLI).
 export type ReservedCacheBucketId = 'session' | 'rateLimit'
 
 export interface ReservedCacheBucket {

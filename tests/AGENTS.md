@@ -23,7 +23,7 @@ docker compose -f docker-compose.test.yml up -d
 Then run tests normally:
 
 ```bash
-vp test run
+npm run test
 ```
 
 Services:

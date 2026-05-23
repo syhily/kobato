@@ -21,8 +21,7 @@ schema/migrations.
 
 > **Contributors:** start at [AGENTS.md](AGENTS.md) — it documents the
 > import boundaries, the four-layer `src/server/` graph, the install
-> contract, the API permission matrix, and the Vite+ (`vp`) toolchain
-> expectations.
+> contract, and the API permission matrix.
 
 ## Highlights
 
@@ -72,7 +71,6 @@ schema/migrations.
 | Editor     | Tiptap (ProseMirror) ↔ PortableText bridge; SSR via `@portabletext/react`                   |
 | Data       | Postgres (Drizzle), Redis (sessions, rate limits, generated-image caches)                   |
 | Assets     | S3-compatible bucket, opt-in per blog                                                       |
-| Build      | Vite+ (`vp`) — Vite, Rolldown, Vitest, Oxlint, Oxfmt ([viteplus.dev](https://viteplus.dev)) |
 
 ## Architecture
 
@@ -80,7 +78,7 @@ Five cooperating top-level layers under `src/` with a one-way import
 graph (`routes → server / ui / client / shared`; `server → shared`;
 `shared` stays isomorphic).
 
-```
+```text
 src/
 ├── routes/      Route modules grouped into public/, auth/, admin/
 ├── server/      SSR-only: infra/, domains/, http/, render/
@@ -118,8 +116,8 @@ Deeper rationale and the rules each layer enforces live in
 git clone https://github.com/syhily/yufan.me.git
 cd yufan.me
 cp .env.example .env
-vp install
-vp dev
+npm install
+npm run dev
 ```
 
 Minimum `.env`:
@@ -155,18 +153,17 @@ with per-track lyrics, and per-section settings pages.
 ## Commands
 
 ```bash
-vp dev              # dev server + HMR
-vp check            # format, lint, types
-vp test             # watch tests
-vp test run         # CI-style test run
-vp build            # production build
-vp preview          # serve production build locally
-vp run db:generate  # Drizzle migration from schema edits
+npm run dev              # dev server + HMR
+npm run fmt:check        # check formatting (oxfmt)
+npm run lint             # lint (oxlint)
+npm run typecheck        # type-check (tsc + react-router typegen)
+npm run test             # run tests with coverage (vitest)
+npm run build            # production build
+npm run db:generate      # Drizzle migration from schema edits
 ```
 
-Use `vp add` / `vp remove` / `vp update` for packages — don't call
-`npm` / `pnpm` / `yarn` directly. The reasons (and the Vite+ pitfalls)
-are in [AGENTS.md](AGENTS.md).
+Package manager is npm (see `packageManager` in `package.json`). Use
+`npm install` / `npm uninstall` / `npm update` for dependency changes.
 
 ## Configuration
 

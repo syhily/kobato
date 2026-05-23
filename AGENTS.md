@@ -4,7 +4,7 @@ Repository conventions for AI agents and contributors.
 
 ## Quick orientation
 
-- React Router 7 Framework Mode with SSR (`appDirectory: 'src'`). Vite+ builds.
+- React Router 7 Framework Mode with SSR (`appDirectory: 'src'`). Vite builds.
 - React 19 TSX/TS only.
 - Postgres + Redis.
 - Path alias `@/*` → `./src/*`.
@@ -47,8 +47,10 @@ Skills win on conflict. Quote stable rule ids in PR review (e.g.
 
 ## Build & CI
 
-- `vp dev`, `vp check` (format + lint + types), `vp test run`, `vp build`
-- Before committing: `vp check`, `vp test run`, `vp build`
+- `npm run dev`, `npm run fmt:check`, `npm run lint`, `npm run typecheck`,
+  `npm run test`, `npm run build`
+- Before committing: `npm run fmt:check && npm run lint && npm run typecheck`,
+  `npm run test`, `npm run build`
 
 ## Git
 
