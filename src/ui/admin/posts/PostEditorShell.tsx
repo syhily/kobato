@@ -1,6 +1,6 @@
 import type { NavigateFunction } from 'react-router'
 
-import type { AdminPostDetailDto, AdminPostDto, SavePostBodyInput, UpsertPostMetaInput } from '@/shared/types/posts'
+import type { AdminPostDetailDto, AdminPostDto, UpsertPostMetaInput } from '@/shared/types/posts'
 
 import { orpc } from '@/client/api/client'
 import { useCreatePostDraft } from '@/client/hooks/use-create-post-draft'
@@ -102,8 +102,8 @@ export function PostEditorShell({ mode, detail, navigate }: PostEditorShellProps
       const result = await orpc.admin.posts.upsertMeta(input)
       return result.post
     },
-    saveDraftFn: (input) => orpc.admin.posts.saveDraft(input as unknown as SavePostBodyInput),
-    publishFn: (input) => orpc.admin.posts.publishLatest(input as unknown as SavePostBodyInput),
+    saveDraftFn: (input) => orpc.admin.posts.saveDraft(input),
+    publishFn: (input) => orpc.admin.posts.publishLatest(input),
     unpublishFn: async (input) => {
       const result = await orpc.admin.posts.unpublish(input)
       return result.post

@@ -1,5 +1,7 @@
 import type { BlogSettingsBundle } from '@/shared/config/blog'
 
+type BundleWithIndex = BlogSettingsBundle & Record<string, unknown>
+
 import { RATE_LIMIT_BUCKET_KEYS } from '@/server/domains/settings/schemas/rate-limit'
 import {
   buildDefaultSectionPayloads,
@@ -215,11 +217,11 @@ const PROBES: Record<SettingsSection, SectionProbe> = {
 // section keys come from a registry. The cast is consolidated into these
 // two helpers so the rest of the module uses typed access.
 function bundleSet(bundle: BlogSettingsBundle, key: string, value: unknown): void {
-  ;(bundle as unknown as Record<string, unknown>)[key] = value
+  ;(bundle as BundleWithIndex)[key] = value
 }
 
 function bundleHas(bundle: BlogSettingsBundle, key: string): boolean {
-  return (bundle as unknown as Record<string, unknown>)[key] !== null
+  return (bundle as BundleWithIndex)[key] !== null
 }
 
 // Project the canonical `BUNDLE_KEYS` list (mirrors `SETTINGS_SECTIONS`)
@@ -227,7 +229,7 @@ function bundleHas(bundle: BlogSettingsBundle, key: string): boolean {
 // `@/shared/config/settings.ts` automatically extends this — there is no
 // sibling 12-line `null` literal to also remember.
 function emptyBundle(): BlogSettingsBundle {
-  return Object.fromEntries(BUNDLE_KEYS.map((key) => [key, null])) as unknown as BlogSettingsBundle
+  return Object.fromEntries(BUNDLE_KEYS.map((key) => [key, null])) as BundleWithIndex
 }
 
 async function loadSettingsFromDb(): Promise<BlogSettingsBundle | null> {

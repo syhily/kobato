@@ -13,7 +13,7 @@ import {
 } from 'lucide-react'
 import { Link } from 'react-router'
 
-import type { AdminPageDetailDto, AdminPageDto, SavePageBodyInput, UpsertPageMetaInput } from '@/shared/types/pages'
+import type { AdminPageDetailDto, AdminPageDto, UpsertPageMetaInput } from '@/shared/types/pages'
 
 import { orpc } from '@/client/api/client'
 import { useCreatePageDraft } from '@/client/hooks/use-create-page-draft'
@@ -111,8 +111,8 @@ export function PageEditorShell({ mode, detail, navigate }: PageEditorShellProps
       const result = await orpc.admin.pages.upsertMeta(input)
       return result.page
     },
-    saveDraftFn: (input) => orpc.admin.pages.saveDraft(input as unknown as SavePageBodyInput),
-    publishFn: (input) => orpc.admin.pages.publishLatest(input as unknown as SavePageBodyInput),
+    saveDraftFn: (input) => orpc.admin.pages.saveDraft(input),
+    publishFn: (input) => orpc.admin.pages.publishLatest(input),
     unpublishFn: async (input) => {
       const result = await orpc.admin.pages.unpublish(input)
       return result.page

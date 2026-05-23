@@ -76,6 +76,14 @@ export interface EntityLike {
   publishedAt: string | null
 }
 
+export interface SaveBodyInput {
+  id: string
+  body: PortableTextBody
+  expectedClientRevisionToken?: string | null
+  force?: boolean
+  publishedAt?: string
+}
+
 export type SaveBodyOutput =
   | { status: 'saved'; revision: RevisionLike }
   | { status: 'conflict'; expectedToken: string; latest: RevisionLike }
@@ -125,8 +133,8 @@ export interface UseEditorShellStateArgs<
   // onSuccess/onError handlers internally so it can wire them into
   // its status machine without TDZ gymnastics.
   upsertMetaFn: (input: TUpsertMetaInput) => Promise<TEntity>
-  saveDraftFn: (input: Record<string, unknown>) => Promise<SaveBodyOutput>
-  publishFn: (input: Record<string, unknown>) => Promise<SaveBodyOutput>
+  saveDraftFn: (input: SaveBodyInput) => Promise<SaveBodyOutput>
+  publishFn: (input: SaveBodyInput) => Promise<SaveBodyOutput>
   unpublishFn: (input: { id: string }) => Promise<TEntity>
 
   /**

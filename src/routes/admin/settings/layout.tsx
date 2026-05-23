@@ -2,6 +2,8 @@ import { isRouteErrorResponse, Outlet, useOutletContext, useRouteError } from 'r
 
 import type { BlogSettingsBundle } from '@/shared/config/blog'
 
+type BundleWithIndex = BlogSettingsBundle & Record<string, unknown>
+
 import { SECTION_REGISTRY, SETTINGS_SECTIONS } from '@/server/domains/settings/sections'
 import { getAdminBlogSettings } from '@/server/domains/settings/service'
 import { getSupportedTimeZones } from '@/server/domains/settings/timezones'
@@ -69,14 +71,15 @@ export async function loader(_args: Route.LoaderArgs) {
   // gets written to DB and populated in the bundle before we check.
   // This prevents newly-added optional sections (e.g. backup) from breaking
   // the entire admin panel on existing deployments whose DB predates them.
+  const dyn = bundle as BundleWithIndex
   for (const section of SETTINGS_SECTIONS) {
-    const key = SECTION_TO_BUNDLE_KEY[section]
-    if ((bundle as unknown as Record<string, unknown>)[key] === null) {
+    const key: string = SECTION_TO_BUNDLE_KEY[section]
+    if (dyn[key] === null) {
       const meta = SECTION_REGISTRY[section]
       if (meta.defaults !== null) {
         try {
           await upsertSetting(meta.defaults, null, meta.scope)
-          ;(bundle as unknown as Record<string, unknown>)[key] = meta.defaults
+          dyn[key] = meta.defaults
         } catch {
           // Best-effort; if it fails we'll surface it below.
         }
