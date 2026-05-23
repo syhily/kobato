@@ -35,6 +35,7 @@ vi.mock('@/server/domains/pages/repo', () => ({
 // orchestration without needing the metric DB.
 vi.mock('@/server/infra/db/operations/metric', () => ({
   ensureMetric: vi.fn(async () => ({})),
+  ensureMetricsBatch: vi.fn(async () => undefined),
   findMetricByPublicId: vi.fn(),
   findMetricByTarget: vi.fn(),
 }))

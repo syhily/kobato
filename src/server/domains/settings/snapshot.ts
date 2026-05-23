@@ -358,20 +358,21 @@ export async function hydrateBlogSettings(): Promise<BlogSettingsBundle | null> 
 
   BLOG_SETTINGS_SNAPSHOT_SLOT.writeHydration(undefined)
   const targetVersion = await getSettingsVersion()
-  const newPending = loadSettingsFromDb()
-    .then((value) => {
+  const newPending = (async () => {
+    try {
+      const value = await loadSettingsFromDb()
       BLOG_SETTINGS_SNAPSHOT_SLOT.write(value)
       localSettingsVersion = targetVersion
       return value
-    })
-    .catch((error) => {
+    } catch (error) {
       // Evict the failed promise so a follow-up request retries.
       // We rethrow so the caller can decide what to do (the install
       // gate logs and lets the request through; the search warmup
       // logs and skips index construction).
       BLOG_SETTINGS_SNAPSHOT_SLOT.writeHydration(undefined)
       throw error
-    })
+    }
+  })()
   BLOG_SETTINGS_SNAPSHOT_SLOT.writeHydration(newPending)
   return newPending
 }

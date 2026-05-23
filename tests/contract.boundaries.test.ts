@@ -757,6 +757,11 @@ describe('contract: module and bundle boundaries', () => {
         file: 'vite.config.ts',
         specifier: './src/server/infra/hono/dev.ts',
       },
+      {
+        key: 'dev.ts -> ./dev-server-ref',
+        file: 'src/server/infra/hono/dev.ts',
+        specifier: './dev-server-ref',
+      },
       // (routes.ts no longer imports api-actions since all API routes moved to Hono)
     ] as const
     const explicitAllowedHits = new Set<string>()

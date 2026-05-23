@@ -7,6 +7,8 @@ import nodeAdapter from '@hono/vite-dev-server/node'
 import fs from 'node:fs'
 import path from 'node:path'
 
+import { setViteDevServer } from './dev-server-ref'
+
 interface ReactRouterHonoServerEnv {
   readonly REACT_ROUTER_HONO_SERVER_BUILD_DIRECTORY: string
   readonly REACT_ROUTER_HONO_SERVER_ASSETS_DIR: string
@@ -146,7 +148,7 @@ export function reactRouterHonoServer(options: ReactRouterHonoServerPluginOption
       }
     },
     async configureServer(server) {
-      globalThis.__viteDevServer = server
+      setViteDevServer(server)
 
       if (!pluginConfig) {
         return
@@ -197,8 +199,9 @@ export function reactRouterHonoServer(options: ReactRouterHonoServerPluginOption
       if (typeof devServerPlugin.configureServer === 'function') {
         await (devServerPlugin.configureServer as (server: ViteDevServer) => void | Promise<void>)(server)
       } else {
-        // oxlint-disable-next-line no-console
-        console.error('Dev server plugin configureServer hook is not a function. This is likely a bug, I guess 😅\n')
+        process.stderr.write(
+          'Dev server plugin configureServer hook is not a function. This is likely a bug, I guess 😅\n',
+        )
         throw new Error('Cannot apply dev server plugin configureServer hook')
       }
     },
@@ -260,9 +263,8 @@ function findDefaultServerEntry(appDirectory: string): string {
   }
 
   if (!warned) {
-    // oxlint-disable-next-line no-console
-    console.warn(
-      `No server entry point found. Will use a virtual module (${VIRTUAL_MODULE_ID}) with a default Hono server.`,
+    process.stderr.write(
+      `No server entry point found. Will use a virtual module (${VIRTUAL_MODULE_ID}) with a default Hono server.\n`,
     )
     warned = true
   }

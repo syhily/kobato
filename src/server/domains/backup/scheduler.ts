@@ -51,7 +51,10 @@ export function scheduleNextBackup(): void {
     // Immediate fallback: if calculated time is in the past, run in 1 minute
     log.warn('Calculated next backup time is in the past; scheduling in 1 minute')
     backupTimer = setTimeout(() => {
-      void runBackupJob().then(() => scheduleNextBackup())
+      void (async () => {
+        await runBackupJob()
+        scheduleNextBackup()
+      })()
     }, 60_000)
     return
   }
@@ -63,7 +66,10 @@ export function scheduleNextBackup(): void {
   })
 
   backupTimer = setTimeout(() => {
-    void runBackupJob().then(() => scheduleNextBackup())
+    void (async () => {
+      await runBackupJob()
+      scheduleNextBackup()
+    })()
   }, delayMs)
 }
 

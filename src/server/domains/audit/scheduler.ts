@@ -43,7 +43,10 @@ export function scheduleNextArchive(): void {
   })
 
   archiveTimer = setTimeout(() => {
-    void runArchiveJob().then(() => scheduleNextArchive())
+    void (async () => {
+      await runArchiveJob()
+      scheduleNextArchive()
+    })()
   }, delayMs)
 }
 

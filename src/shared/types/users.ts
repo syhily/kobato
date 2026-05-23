@@ -6,9 +6,9 @@ export interface ListUsersInput {
   limit?: number
   q?: string
   role?: 'all' | 'admin' | 'author' | 'visitor' | 'normal'
-  includeDeleted?: boolean | 'true' | 'false'
+  includeDeleted?: boolean
   sortBy?: UserSortOrder
-  hasPosts?: boolean | 'true' | 'false'
+  hasPosts?: boolean
 }
 
 export interface UserIdInput {
@@ -16,7 +16,7 @@ export interface UserIdInput {
 }
 
 export interface MuteUserInput extends UserIdInput {
-  muted: boolean | 'true' | 'false'
+  muted: boolean
 }
 
 export interface AdminUserDto {

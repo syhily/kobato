@@ -593,11 +593,7 @@ export function requireBlogSettingsBundle(): BlogSettingsBundle {
  *   const content = requireBlogSettingsSection('content')
  *   const total = content.pagination.posts
  */
-export function requireBlogSettingsSection(section: 'cache'): NonNullable<BlogSettingsBundle['cache']>
-export function requireBlogSettingsSection<K extends Exclude<keyof BlogSettingsBundle, 'cache'>>(
-  section: K,
-): NonNullable<BlogSettingsBundle[K]>
-export function requireBlogSettingsSection(section: keyof BlogSettingsBundle) {
+export function requireBlogSettingsSection<K extends keyof BlogSettingsBundle>(section: K): NonNullable<BlogSettingsBundle[K]> {
   const value = requireBlogSettingsBundle()[section]
   if (value === null) {
     throw new Error(
@@ -607,7 +603,7 @@ export function requireBlogSettingsSection(section: keyof BlogSettingsBundle) {
     )
   }
   if (section === 'cache') {
-    return withCacheFallbacks(value as CacheSettingsNonNull)
+    return withCacheFallbacks(value as CacheSettingsNonNull) as unknown as NonNullable<BlogSettingsBundle[K]>
   }
   return value
 }

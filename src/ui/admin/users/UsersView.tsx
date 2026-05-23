@@ -57,7 +57,7 @@ export function UsersView() {
     mutationFn: (vars: MuteUserInput) =>
       orpc.admin.users.mute({
         id: vars.userId,
-        muted: vars.muted === true || vars.muted === 'true',
+        muted: vars.muted,
       }),
     onSuccess: (payload) => {
       dispatch({ type: 'patchUser', user: payload.user })

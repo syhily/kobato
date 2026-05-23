@@ -1,3 +1,4 @@
+import type { ListPublicPostsFilters } from '@/server/domains/posts/repos/shared'
 import type { PostMetaRow } from '@/server/infra/db/types'
 import type { ClientPost, Post, PostVisibilityOptions } from '@/shared/types/catalog'
 
@@ -33,7 +34,7 @@ export async function hydrateClientPostCovers(posts: ClientPost[]): Promise<void
 
 export function buildPublicPostFilters(
   options?: PostVisibilityOptions,
-): Omit<import('@/server/domains/posts/repos/shared').ListPublicPostsFilters, 'sortBy' | 'limit' | 'offset'> {
+): Omit<ListPublicPostsFilters, 'sortBy' | 'limit' | 'offset'> {
   return {
     includeHidden: options?.includeHidden ?? false,
     includeScheduled: options?.includeScheduled ?? false,

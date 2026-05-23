@@ -11,6 +11,7 @@ import type { HonoServerOptionsBase } from '@/server/infra/hono/types/hono-serve
 import type { CreateNodeServerOptions } from '@/server/infra/hono/types/node.https'
 
 import { PORT } from '@/server/infra/env'
+import { getViteDevServer } from '@/server/infra/hono/dev-server-ref'
 import { bindIncomingRequestSocketInfo, getBuildMode, importBuild } from '@/server/infra/hono/helpers'
 import { cache } from '@/server/infra/hono/middleware'
 import { getLogger } from '@/server/infra/logger'
@@ -175,13 +176,16 @@ export async function createHonoServer<E extends Env = BlankEnv>(options?: HonoS
     )
     // Execute your onServe callback. Use case: socket.io binding
     mergedOptions.onServe?.(server)
-  } else if (globalThis.__viteDevServer?.httpServer) {
-    const httpServer = globalThis.__viteDevServer.httpServer
+  } else {
+    const devServer = getViteDevServer()
+    if (devServer?.httpServer) {
+      const httpServer = devServer.httpServer
 
-    // Execute your onServe callback. Use case: socket.io binding
-    mergedOptions.onServe?.(httpServer)
+      // Execute your onServe callback. Use case: socket.io binding
+      mergedOptions.onServe?.(httpServer)
 
-    log.info('🚧 Dev server started')
+      log.info('🚧 Dev server started')
+    }
   }
 
   return app

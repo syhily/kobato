@@ -1,5 +1,7 @@
 import { eq } from 'drizzle-orm'
 
+import type { PortableTextBody } from '@/shared/pt/schema'
+
 import { findContentById } from '@/server/domains/content/repo'
 import { indexPost, removePostIndex } from '@/server/domains/posts/indexer'
 import { toAdminPostDto, type AdminPostDto } from '@/server/domains/posts/projection'
@@ -198,7 +200,7 @@ export async function restorePost(id: bigint, viewer?: ViewerContext): Promise<{
           restoredMeta.id,
           restoredMeta.title,
           restoredMeta.summary,
-          revision.body as import('@/shared/pt/schema').PortableTextBody,
+          revision.body as PortableTextBody,
         ).catch((err: unknown) => {
           log.warn('index post failed', { postId: restoredMeta.id, error: err })
         })

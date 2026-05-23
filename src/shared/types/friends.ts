@@ -25,7 +25,7 @@ export interface AdminFriendDto {
 // to `offset=0, limit=10` (the default page size on the client).
 export interface ListFriendsInput {
   q?: string
-  includeHidden?: boolean | 'true' | 'false'
+  includeHidden?: boolean
   offset?: number
   limit?: number
 }

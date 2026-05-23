@@ -49,8 +49,8 @@ jobs:
       - uses: actions/setup-node@v6
         with:
           node-version: 24
+          cache: 'npm'
       - run: npm ci
-      - run: npx react-router typegen
       - run: npm audit --audit-level=moderate
       - run: npm run fmt:check
       - run: npm run lint
@@ -72,6 +72,6 @@ jobs:
       - uses: actions/setup-node@v6
         with:
           node-version: 24
+          cache: 'npm'
       - run: npm ci
-      - run: npx react-router typegen
       - run: npm run build

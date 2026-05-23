@@ -1,4 +1,4 @@
-import type { AdminPostDto, CmsPost } from '@/server/domains/posts/projection'
+import type { AdminPostDto, AdminRevisionDto, CmsPost } from '@/server/domains/posts/projection'
 import type { PostMetaRow } from '@/server/infra/db/types'
 
 import { canEditPost, type ViewerContext as RbacViewerContext } from '@/server/domains/auth/rbac'
@@ -42,10 +42,10 @@ export interface SavePostBodyInput {
 }
 
 export type SavePostResult =
-  | { status: 'saved'; revision: import('@/server/domains/posts/projection').AdminRevisionDto }
+  | { status: 'saved'; revision: AdminRevisionDto }
   | {
       status: 'conflict'
-      latest: import('@/server/domains/posts/projection').AdminRevisionDto
+      latest: AdminRevisionDto
       expectedToken: string
     }
 
