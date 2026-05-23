@@ -5,6 +5,7 @@ import { useMemo, type ReactNode } from 'react'
 import type {
   FootnoteDefinitionBlock,
   NonRecursiveBlock,
+  PortableTextBlock,
   PortableTextBody as PortableTextBodyType,
   SolutionBlock,
   TextBlock,
@@ -87,11 +88,11 @@ export interface PortableTextBodyProps {
    */
   headingSlugs?: readonly string[]
   /**
-   * When true, every `musicPlayer` block renders with autoplay forced
-   * off so admin surfaces (live preview pane, SSR preview HTML) stay
-   * silent while still honouring `center` for layout.
+   * When `'suppressed'`, every `musicPlayer` block renders with autoplay
+   * forced off so admin surfaces (live preview pane, SSR preview HTML)
+   * stay silent while still honouring `alignment` for layout.
    */
-  suppressMusicAutoplay?: boolean
+  musicAutoplay?: 'suppressed' | 'default'
   /** Visible `<h3>` above the footnotes list; defaults to 「尾声礼记」 when omitted. */
   footnotesSectionTitle?: string
 }
@@ -100,7 +101,7 @@ export function PortableTextBody({
   body,
   imageMeta,
   headingSlugs,
-  suppressMusicAutoplay,
+  musicAutoplay,
   footnotesSectionTitle,
 }: PortableTextBodyProps) {
   const footnoteCtx = useMemo<FootnoteRefCtx>(() => ({ definitions: collectFootnoteDefinitions(body) }), [body])
@@ -131,8 +132,8 @@ export function PortableTextBody({
   )
 
   const musicPresentation = useMemo<MusicPresentationCtx>(
-    () => ({ suppressAutoplay: suppressMusicAutoplay === true }),
-    [suppressMusicAutoplay],
+    () => ({ suppressAutoplay: musicAutoplay === 'suppressed' }),
+    [musicAutoplay],
   )
 
   const resolvedFootnotesHeading =
@@ -147,7 +148,7 @@ export function PortableTextBody({
           <FootnoteRefContext.Provider value={footnoteCtx}>
             <HeadingIdByBlockKeyContext.Provider value={headingIdByBlockKey}>
               <div className="portable-text-body">
-                <PortableText value={inlineBody as never} components={portableTextComponents} />
+                <PortableText value={inlineBody as PortableTextBlock[]} components={portableTextComponents} />
                 {footnotes.length > 0 ? (
                   <FootnotesSection definitions={footnotes} sectionTitle={resolvedFootnotesHeading} />
                 ) : null}
@@ -262,7 +263,7 @@ function SolutionBlockComponent({ value }: PortableTextTypeComponentProps<Soluti
   // work inside the solution wrapper.
   return (
     <Solution>
-      <PortableText value={value.children as never} components={portableTextComponents} />
+      <PortableText value={value.children as PortableTextBlock[]} components={portableTextComponents} />
     </Solution>
   )
 }
@@ -271,10 +272,10 @@ function TwoColumnBlockComponent({ value }: PortableTextTypeComponentProps<TwoCo
   return (
     <section className="my-6 grid grid-cols-1 gap-6 md:grid-cols-2 md:gap-8" data-pt-two-column="">
       <div className="min-w-0" data-pt-two-column-pane="" data-side="left">
-        <PortableText value={value.left as never} components={portableTextComponents} />
+        <PortableText value={value.left as PortableTextBlock[]} components={portableTextComponents} />
       </div>
       <div className="min-w-0" data-pt-two-column-pane="" data-side="right">
-        <PortableText value={value.right as never} components={portableTextComponents} />
+        <PortableText value={value.right as PortableTextBlock[]} components={portableTextComponents} />
       </div>
     </section>
   )
@@ -345,11 +346,13 @@ function FootnotesSection({
           const anchorId = `user-content-fn-${definition.index}`
           const lastPk = lastNormalParagraphKey(definition.children)
           const comps = footnotesPortableComponents(lastPk, definition.index)
-          const preview = <PortableText value={definition.children as never} components={portableTextComponents} />
+          const preview = (
+            <PortableText value={definition.children as PortableTextBlock[]} components={portableTextComponents} />
+          )
           return (
             <li key={definition._key} id={anchorId}>
               <FootnotePreviewRegistrar anchorId={anchorId} preview={preview} />
-              <PortableText value={definition.children as never} components={comps} />
+              <PortableText value={definition.children as PortableTextBlock[]} components={comps} />
               {lastPk === null ? (
                 <p>
                   <FootnoteBackrefLink footnoteIndex={definition.index} />

@@ -115,7 +115,7 @@ describe('snapshot: PostListingBody (category/tag/search)', () => {
         pageNum={1}
         totalPage={0}
         rootPath="/tags/rust"
-        alwaysRenderPagination={false}
+        pagination="auto"
         listingNowIso="2026-04-25T12:00:00.000Z"
       />,
     )

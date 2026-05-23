@@ -1,4 +1,4 @@
-import type { Editor } from '@tiptap/core'
+import type { Editor, JSONContent } from '@tiptap/core'
 
 import { useCallback, useRef, useState } from 'react'
 
@@ -193,7 +193,7 @@ export function useEditorFootnotes(editor: Editor | null): UseEditorFootnotesRes
       const applied = applyFootnoteRenumberTransaction(instance, synced)
       if (!applied) {
         // Fallback to full reset when transaction produces no changes.
-        instance.commands.setContent(bodyToPmDoc(stripFootnoteDefinitionsForEditor(synced)) as never, {
+        instance.commands.setContent(bodyToPmDoc(stripFootnoteDefinitionsForEditor(synced)) as JSONContent, {
           emitUpdate: false,
         })
       }
@@ -303,7 +303,7 @@ export function useEditorFootnotes(editor: Editor | null): UseEditorFootnotesRes
       footnoteDefsRef.current = syncedDefs
       editorFootnoteSigRef.current = footnoteSyncSignature(mergedCanon)
       if (editor) {
-        editor.commands.setContent(bodyToPmDoc(stripFootnoteDefinitionsForEditor(mergedCanon)) as never, {
+        editor.commands.setContent(bodyToPmDoc(stripFootnoteDefinitionsForEditor(mergedCanon)) as JSONContent, {
           emitUpdate: false,
         })
       }

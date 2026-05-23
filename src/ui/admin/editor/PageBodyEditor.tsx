@@ -1,3 +1,5 @@
+import type { JSONContent } from '@tiptap/core'
+
 import Focus from '@tiptap/extension-focus'
 import Link from '@tiptap/extension-link'
 import Placeholder from '@tiptap/extension-placeholder'
@@ -172,7 +174,7 @@ export function PageBodyEditor({
       EditorActionsExtension,
       TableCellGuardExtension,
     ],
-    content: bodyToPmDoc(stripFootnoteDefinitionsForEditor(validatePortableTextBody(initialBody))) as never,
+    content: bodyToPmDoc(stripFootnoteDefinitionsForEditor(validatePortableTextBody(initialBody))) as JSONContent,
     onUpdate({ editor: instance }) {
       const merged = footnotes.handleEditorUpdate(instance)
       onBodyChangeRef.current(merged)

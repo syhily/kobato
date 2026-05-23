@@ -36,7 +36,7 @@ export interface DetailBodyChromeProps {
   commentsPromise: Promise<DetailPageComments>
   currentUser?: CommentFormUser
   commentsEnabled: boolean
-  admin?: boolean
+  mode?: 'admin' | 'public'
   editHref?: string
   draftMarker?: DraftMarker
   metaExtra?: ReactNode
@@ -61,7 +61,7 @@ export function DetailBodyChrome({
   commentsPromise,
   currentUser,
   commentsEnabled,
-  admin,
+  mode,
   editHref,
   draftMarker = null,
   metaExtra,
@@ -78,7 +78,7 @@ export function DetailBodyChrome({
 
   return (
     <>
-      {admin && editHref && (
+      {mode === 'admin' && editHref && (
         <Link
           to={editHref}
           // The parent card uses `p-4 md:p-8`, so anchoring the icon
@@ -99,7 +99,7 @@ export function DetailBodyChrome({
           <PencilIcon className="size-4" />
         </Link>
       )}
-      <h1 className={cn(postTitleClass, 'font-bold', admin && editHref && 'pr-10')}>
+      <h1 className={cn(postTitleClass, 'font-bold', mode === 'admin' && editHref && 'pr-10')}>
         {markerLabel !== null && (
           <span className="text-alert">
             <span className="sr-only">{markerLabel.sr}</span>

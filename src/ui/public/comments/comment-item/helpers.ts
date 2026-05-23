@@ -27,13 +27,13 @@ function noop() {
 // orchestrator is present (test snapshots and the legacy `<Comment>` SSR
 // helper). Compound usage is unaffected — the orchestrator always provides
 // the full context value, so leaf components see real callbacks there.
-export function useCommentsLeafContext(propAdmin: boolean | undefined): LeafContext {
+export function useCommentsLeafContext(propMode: 'admin' | 'public' | undefined): LeafContext {
   const ctx = use(CommentsContext)
   if (ctx !== null) {
     return adapt(ctx)
   }
   return {
-    admin: propAdmin === true,
+    admin: propMode === 'admin',
     myCommentIds: new Set(),
     myCommentExpiresAt: new Map(),
     currentUserId: null,

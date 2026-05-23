@@ -7,6 +7,7 @@ import type {
   MathBlock,
   MermaidBlock,
   MusicPlayerBlock,
+  PortableTextBlock,
   PortableTextBody as PortableTextBodyType,
   SolutionBlock,
   TableBlock,
@@ -23,7 +24,7 @@ import { resolveFootnotesSectionTitle } from '@/shared/utils/footnotes-section-t
 
 export interface RenderPortableTextToHtmlOptions {
   rssMode?: boolean
-  suppressMusicAutoplay?: boolean
+  musicAutoplay?: 'suppressed' | 'default'
 }
 
 export async function renderPortableTextToHtml(
@@ -43,7 +44,7 @@ export async function renderPortableTextToHtml(
 
   const components = buildPortableTextComponents({ headingIdByBlockKey, isRss, musicByPlayerId })
 
-  let html = toHTML(inlineBody as never, { components })
+  let html = toHTML(inlineBody as PortableTextBlock[], { components })
 
   if (footnotes.length > 0) {
     html += renderFootnotesSection(footnotes, footnotesSectionTitle, components)
@@ -218,12 +219,12 @@ function buildPortableTextComponents(ctx: ComponentContext): PortableTextCompone
       musicPlayer: ({ value }) => renderMusicPlayer(value as MusicPlayerBlock, ctx),
       solution: ({ value }) => {
         const children = (value as SolutionBlock).children
-        return toHTML(children as never, { components: buildPortableTextComponents(ctx) })
+        return toHTML(children as PortableTextBlock[], { components: buildPortableTextComponents(ctx) })
       },
       twoColumn: ({ value }) => {
         const v = value as TwoColumnBlock
-        const left = toHTML(v.left as never, { components: buildPortableTextComponents(ctx) })
-        const right = toHTML(v.right as never, { components: buildPortableTextComponents(ctx) })
+        const left = toHTML(v.left as PortableTextBlock[], { components: buildPortableTextComponents(ctx) })
+        const right = toHTML(v.right as PortableTextBlock[], { components: buildPortableTextComponents(ctx) })
         if (ctx.isRss) {
           return left + right
         }
@@ -448,7 +449,7 @@ function renderFootnotesSection(
   html += '<ol>'
   for (const def of definitions) {
     const anchorId = `user-content-fn-${def.index}`
-    const childrenHtml = toHTML(def.children as never, { components })
+    const childrenHtml = toHTML(def.children as PortableTextBlock[], { components })
     html += `<li id="${anchorId}">${childrenHtml}<p><a href="#user-content-fnref-${def.index}" data-footnote-backref="" aria-label="返回引用">↩</a></p></li>`
   }
   html += '</ol></section>'

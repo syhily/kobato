@@ -57,3 +57,4 @@ data/maxmind/*.mmdb
 .trae/
 .agents/settings.local.json
 .claude/settings.local.json
+.codegraph/

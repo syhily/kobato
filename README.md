@@ -71,6 +71,7 @@ schema/migrations.
 | Editor     | Tiptap (ProseMirror) ↔ PortableText bridge; SSR via `@portabletext/react`                   |
 | Data       | Postgres (Drizzle), Redis (sessions, rate limits, generated-image caches)                   |
 | Assets     | S3-compatible bucket, opt-in per blog                                                       |
+| Build      | Vite, Vitest, Oxlint, Oxfmt, TypeScript (`npm run` scripts)                                 |
 
 ## Architecture
 
@@ -136,6 +137,20 @@ admin row exists; stage 2 at `/admin/setup/settings` then
 seeds the 14 settings rows. After that the public site is live and the
 admin console at `/admin` is available to the new admin user.
 
+## AI coding setup (required)
+
+This project uses [CodeGraph](https://github.com/colbymchenry/codegraph) — a local, tree-sitter-parsed knowledge graph that gives AI agents instant structural code intelligence (call graphs, symbol lookups, impact analysis) instead of expensive grep-and-read exploration. It is **required** for AI-assisted development with Claude Code, Cursor, or any supported agent.
+
+```bash
+# Install and configure your agent(s) — auto-detects Claude Code, Cursor, etc.
+npx @colbymchenry/codegraph
+
+# Build the per-project index
+codegraph init -i
+```
+
+Restart your agent after install. CodeGraph is zero-config, 100% local (SQLite), respects `.gitignore`, and auto-syncs on file changes.
+
 ## Admin console
 
 The `/admin` SPA shares one Tiptap editor for posts and pages with
@@ -181,9 +196,9 @@ require a redeploy.
 
 ## Deployment
 
-The [Dockerfile](Dockerfile) runs `npm run build` against a Node 25
+The [Dockerfile](Dockerfile) runs `npm run build` against a Node 24
 Alpine base and ships `build/` with `npm run start`
-(`react-router-serve`). Default listen port `4321`. Generated Vite
+(`node ./build/server/index.js`). Default listen port `4321`. Generated Vite
 assets are **not** uploaded to S3 by the build; object storage is
 reserved for user media. Migrations under `drizzle/` are copied into
 the runtime image and applied by your deployment workflow before

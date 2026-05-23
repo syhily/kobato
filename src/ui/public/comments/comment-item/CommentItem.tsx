@@ -13,7 +13,7 @@ export interface CommentItemProps {
    * `<Comments>` orchestrator (e.g. SSR snapshot tests), callers pass this
    * directly; in compound usage the value lifts from context.
    */
-  admin?: boolean
+  mode?: 'admin' | 'public'
 }
 
 // Self-recursive comment node. The previous implementation accepted a
@@ -29,17 +29,17 @@ export function CommentItem(props: CommentItemProps) {
   return props.depth === 1 ? <RootComment {...props} /> : <NestedComment {...props} />
 }
 
-function RootComment({ comment, depth, pending, admin: propAdmin }: CommentItemProps) {
-  const leaf = useCommentsLeafContext(propAdmin)
+function RootComment({ comment, depth, pending, mode: propMode }: CommentItemProps) {
+  const leaf = useCommentsLeafContext(propMode)
   const children = comment.children ?? []
   const isReplyTarget = leaf.activeReplyToId !== 0 && asKey(comment.id) === asKey(leaf.activeReplyToId)
   const childrenTail = depth === 1 && isReplyTarget ? leaf.replyForm : null
   return (
-    <CommentRow comment={comment} depth={depth} pending={pending} admin={propAdmin}>
+    <CommentRow comment={comment} depth={depth} pending={pending} mode={propMode}>
       {(children.length > 0 || childrenTail) && (
         <ul className={childrenListClass}>
           {children.map((child) => (
-            <CommentItem key={asKey(child.id)} comment={child} depth={depth + 1} admin={propAdmin} />
+            <CommentItem key={asKey(child.id)} comment={child} depth={depth + 1} mode={propMode} />
           ))}
           {!!childrenTail && <li>{childrenTail}</li>}
         </ul>
@@ -48,17 +48,17 @@ function RootComment({ comment, depth, pending, admin: propAdmin }: CommentItemP
   )
 }
 
-function NestedComment({ comment, depth, pending, admin: propAdmin }: CommentItemProps) {
-  const leaf = useCommentsLeafContext(propAdmin)
+function NestedComment({ comment, depth, pending, mode: propMode }: CommentItemProps) {
+  const leaf = useCommentsLeafContext(propMode)
   const children = comment.children ?? []
   const isReplyTarget = leaf.activeReplyToId !== 0 && asKey(comment.id) === asKey(leaf.activeReplyToId)
   const afterComment = depth !== 1 && isReplyTarget ? leaf.replyForm : null
   return (
     <>
-      <CommentRow comment={comment} depth={depth} pending={pending} admin={propAdmin} />
+      <CommentRow comment={comment} depth={depth} pending={pending} mode={propMode} />
       {!!afterComment && <li>{afterComment}</li>}
       {children.map((child) => (
-        <CommentItem key={asKey(child.id)} comment={child} depth={depth + 1} admin={propAdmin} />
+        <CommentItem key={asKey(child.id)} comment={child} depth={depth + 1} mode={propMode} />
       ))}
     </>
   )

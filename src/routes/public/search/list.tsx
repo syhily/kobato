@@ -33,7 +33,7 @@ export default function SearchListRoute({ loaderData }: Route.ComponentProps) {
       pageNum={loaderData.pageNum}
       totalPage={loaderData.totalPage}
       rootPath={loaderData.rootPath}
-      alwaysRenderPagination={false}
+      pagination="auto"
       listingNowIso={loaderData.listingNowIso}
     />
   )

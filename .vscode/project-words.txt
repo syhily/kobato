@@ -30,6 +30,7 @@ cimage
 ckenh
 cnip
 codegen
+codegraph
 collisively
 colour
 commentform
@@ -104,6 +105,7 @@ jing
 jmoiron
 jshintignore
 jungshik
+junie
 junkfix
 katex
 khalil
@@ -247,6 +249,7 @@ tlyric
 tmpfs
 toolsmp
 topbar
+trae
 translog
 tsconfigs
 tsgo

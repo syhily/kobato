@@ -24,11 +24,11 @@ interface CommentRowProps {
   comment: CommentItemType
   depth: number
   pending?: boolean
-  admin?: boolean
+  mode?: 'admin' | 'public'
   children?: ReactNode
 }
 
-export function CommentRow({ comment, depth, pending, admin: propAdmin, children }: CommentRowProps) {
+export function CommentRow({ comment, depth, pending, mode: propMode, children }: CommentRowProps) {
   // `editing` is a small state machine — only one kind of editor can be
   // open at a time. `admin` opens the admin/legacy-token-backed
   // `<InlineEditForm>` (which round-trips through `comment.getRaw` /
@@ -37,7 +37,7 @@ export function CommentRow({ comment, depth, pending, admin: propAdmin, children
   // shipped, no extra fetch). The footer picks the discriminator based
   // on which button the operator clicks.
   const [editing, setEditing] = useState<'admin' | 'own' | false>(false)
-  const leaf = useCommentsLeafContext(propAdmin)
+  const leaf = useCommentsLeafContext(propMode)
   const isMyComment = leaf.myCommentIds.has(asKey(comment.id))
   const isOwnedByCurrentUser = leaf.currentUserId !== null && String(comment.userId) === leaf.currentUserId
   const hasPendingDelete = comment.deleteRequestedAt !== null && comment.deleteRequestedAt !== undefined
@@ -96,7 +96,7 @@ export function CommentRow({ comment, depth, pending, admin: propAdmin, children
           )}
           <CommentActions
             comment={comment}
-            admin={propAdmin}
+            mode={propMode}
             onEditAdmin={() => setEditing('admin')}
             onEditOwn={() => setEditing('own')}
           />

@@ -6,7 +6,7 @@ Trigger: user asks to "audit lint rules", "补齐 lint 规则", "enable missing 
 
 Find oxlint rules that are **supported by the installed oxlint version** but **not yet enabled in `oxlint.config.ts`**, evaluate whether they are valuable for this project, enable them, and fix the resulting violations. This is a complete workflow — not just documentation.
 
-> **Note:** oxlint is a direct devDependency. Run via `npm run lint` for standard checks. For flags (`--fix`, `--rules`, `--format`), use `npx oxlint -- <flags>` directly.
+> **Note:** oxlint is a direct devDependency. Run via `npm run lint` for standard checks. For flags (`--fix`, `--rules`, `--format`), use `npx oxlint <flags>` directly.
 
 ## Agent Protocol
 
@@ -14,7 +14,7 @@ When this skill is triggered, execute the following steps **in order**. Do not s
 
 ### Step 1 — Read current config
 
-Use `ReadFile` on `oxlint.config.ts`. Extract all rule names currently present in the `rules:` object (including those set to `'off'`).
+Use `Read` on `oxlint.config.ts`. Extract all rule names currently present in the `rules:` object (including those set to `'off'`).
 
 ### Step 2 — Build candidate list
 
@@ -26,7 +26,7 @@ Compare the current config against the **Priority candidate table** below.
 
 The remaining rules are the **proposed candidates**. Order them by priority: P0 first, then P1, P2, P3, P4.
 
-### Step 3 — Gatekeeper review (NEW)
+### Step 3 — Gatekeeper review
 
 Before injecting any rule, evaluate each proposed candidate against the project's actual codebase and conventions. Ask: **"Will this rule catch real bugs in this project, or will it just create noise?"**
 
@@ -50,7 +50,7 @@ Only rules that **pass** the gatekeeper become the **final candidates** for Step
 For each priority group (P0, then P1, etc.), do:
 
 1. **Backup**: `cp oxlint.config.ts oxlint.config.ts.bak`
-2. **Inject**: Use `StrReplaceFile` to append all rules in this group to the `rules:` object at level `error`.
+2. **Inject**: Use `Edit` to append all rules in this group to the `rules:` object at level `error`.
 3. **Lint**: Run `npm run lint 2>&1 | tee /tmp/oxlint-batch.txt`
 4. **Parse**: Count how many violations are reported **for rules in this group**.
    - A simple heuristic: grep the rule name in `/tmp/oxlint-batch.txt` and count occurrences.
@@ -102,8 +102,6 @@ To see the full list of rules available in the current oxlint installation, run 
 | `no-extend-native` | error | Never mutate built-in prototypes. Zero legitimate use case. |
 | `no-unexpected-multiline` | error | ASI footguns. |
 | `no-unmodified-loop-condition` | error | Infinite loops from never-updated conditions. |
-| `no-named-as-default` | warn | Import name clashes with a non-default export. |
-| `no-named-as-default-member` | warn | Import member name clashes with default export. |
 | `no-commented-out-tests` | warn | Dead test code. |
 | `consistent-return` | warn | Mixing `return` and `return value` in same function. |
 | `no-extraneous-class` | warn | Classes with only static members → plain object. |

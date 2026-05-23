@@ -24,7 +24,7 @@ export interface PageDetailBodyProps {
   commentKey: string
   commentsPromise: Promise<DetailPageComments>
   currentUser?: CommentFormUser
-  admin?: boolean
+  mode?: 'admin' | 'public'
   children: ReactNode
 }
 
@@ -36,7 +36,7 @@ export function PageDetailBody({
   commentKey,
   commentsPromise,
   currentUser,
-  admin,
+  mode,
   children,
 }: PageDetailBodyProps) {
   const config = useSiteIdentity()
@@ -61,8 +61,8 @@ export function PageDetailBody({
             commentsPromise={commentsPromise}
             currentUser={currentUser}
             commentsEnabled={page.comments}
-            admin={admin}
-            editHref={admin ? `/editor/page/${page.id}` : undefined}
+            mode={mode}
+            editHref={mode === 'admin' ? `/editor/page/${page.id}` : undefined}
             draftMarker={draftMarker}
             postContentRef={postContentRef}
             metaClassName="mt-3 mb-4"

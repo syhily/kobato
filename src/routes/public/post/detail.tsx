@@ -107,7 +107,7 @@ export default function PostDetailRoute({ loaderData }: Route.ComponentProps) {
         post={post}
         headings={post.headings}
         visibleTags={visibleTags}
-        admin={detail.admin}
+        mode={detail.admin ? 'admin' : 'public'}
         likes={detail.likes}
         commentKey={detail.commentKey}
         commentsPromise={detail.comments}
