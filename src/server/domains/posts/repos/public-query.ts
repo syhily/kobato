@@ -11,7 +11,11 @@ import {
   hydratePostImages,
   hydratePostMetasToFullPosts,
 } from '@/server/domains/posts/repos/hydrate'
-import { toClientPostFromMeta, type ListPublicPostsFilters } from '@/server/domains/posts/repos/shared'
+import {
+  buildPublicPostsWhere,
+  toClientPostFromMeta,
+  type ListPublicPostsFilters,
+} from '@/server/domains/posts/repos/shared'
 import { toPostFromMeta } from '@/server/domains/posts/repos/single'
 import { db } from '@/server/infra/db/pool'
 import { post as postMetaTable } from '@/server/infra/db/schema/post'
@@ -28,7 +32,6 @@ export async function listPublicPostMetas(sortBy: 'publishedAt' | 'updatedAt' = 
 }
 
 export async function listPublicPosts(filters: ListPublicPostsFilters = {}): Promise<PostMetaRow[]> {
-  const { buildPublicPostsWhere } = await import('@/server/domains/posts/repos/shared')
   const col = filters.sortBy === 'updatedAt' ? postMetaTable.updatedAt : postMetaTable.firstPublishedAt
   const where = buildPublicPostsWhere(filters)
   let q = db.select().from(postMetaTable).where(where).orderBy(desc(col))
@@ -45,7 +48,6 @@ export async function listPublicPosts(filters: ListPublicPostsFilters = {}): Pro
 export async function countPublicPosts(
   filters: Omit<ListPublicPostsFilters, 'sortBy' | 'limit' | 'offset'> = {},
 ): Promise<number> {
-  const { buildPublicPostsWhere } = await import('@/server/domains/posts/repos/shared')
   const where = buildPublicPostsWhere(filters)
   const rows = await db
     .select({ count: sql<number>`count(*)::int` })
