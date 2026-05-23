@@ -24,8 +24,8 @@ describe('contract: feed (RSS + Atom) shape', () => {
     expect(feedSource).not.toMatch(/\n\s*stylesheet:\s/m)
   })
 
-  it('uses `WordPress 3.2.1` as the generator string (legacy compatibility)', () => {
-    expect(feedSource).toContain("generator: 'WordPress 3.2.1'")
+  it('does not set a custom generator string (uses the feed library default)', () => {
+    expect(feedSource).not.toMatch(/\n\s*generator:\s/m)
   })
 
   it('emits the feed in zh-CN', () => {

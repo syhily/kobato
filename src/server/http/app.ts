@@ -1,6 +1,5 @@
 import { RPCHandler } from '@orpc/server/fetch'
 import { Hono } from 'hono'
-import { bodyLimit } from 'hono/body-limit'
 
 import type { Env } from '@/server/http/context'
 import type { HandlerContext } from '@/server/http/orpc-base'
@@ -15,8 +14,9 @@ import { getBlogSettingsBundleSync } from '@/shared/config/blog'
 // `/rpc/*`. The Hono wrapper here is responsible for three things:
 //
 //   1. `bodyLimit` — read from `blog.limits` settings (default 10 MB).
+//      Checked per-request from the live settings snapshot so admin
+//      changes take effect immediately without a server restart.
 //   2. Context bridging — `c.var.{session,viewer,clientAddress}` is
-//   3. Context bridging — `c.var.{session,viewer,clientAddress}` is
 //      populated by the perimeter middleware in `src/server.ts`;
 //      `responseHeaders` is a fresh `Headers` object that procedures
 //      can append to (Set-Cookie etc.) and we merge onto the final
@@ -41,12 +41,17 @@ function resolveMaxBodySize(): number {
 export function createApiApp(): Hono<Env> {
   const app = new Hono<Env>()
 
-  app.use(
-    bodyLimit({
-      maxSize: resolveMaxBodySize(),
-      onError: (c) => c.json({ error: { message: '请求体过大' } }, 413),
-    }),
-  )
+  // Per-request body size check. Reads the live settings snapshot every
+  // time (a single pointer load — negligible cost) so an admin change to
+  // `maxRequestBodySize` takes effect on the very next request.
+  app.use(async (c, next) => {
+    const maxSize = resolveMaxBodySize()
+    const contentLength = c.req.header('content-length')
+    if (contentLength && Number(contentLength) > maxSize) {
+      return c.json({ error: { message: '请求体过大' } }, 413)
+    }
+    await next()
+  })
 
   app.use('/rpc/*', async (c, next) => {
     const responseHeaders = new Headers()
