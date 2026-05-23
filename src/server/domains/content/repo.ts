@@ -55,12 +55,13 @@ export async function findLatestDraft(type: ContentType, ownerId: bigint): Promi
   return rows[0] ?? null
 }
 
-export async function listRevisions(type: ContentType, ownerId: bigint): Promise<ContentRow[]> {
+export async function listRevisions(type: ContentType, ownerId: bigint, limit = 100): Promise<ContentRow[]> {
   return db
     .select()
     .from(contentTable)
     .where(and(eq(contentTable.type, type), eq(contentTable.ownerId, ownerId)))
     .orderBy(desc(contentTable.revisionNo))
+    .limit(limit)
 }
 
 export async function saveDraftRevision(type: ContentType, input: SaveDraftInput): Promise<SaveDraftResult> {

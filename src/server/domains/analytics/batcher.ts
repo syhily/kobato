@@ -311,6 +311,7 @@ export async function replayDeadLetter(path?: string): Promise<{ replayed: numbe
     }
   }
 
+  let replayed = 0
   if (events.length > 0) {
     try {
       await copyEvents(events)
@@ -319,6 +320,7 @@ export async function replayDeadLetter(path?: string): Promise<{ replayed: numbe
       const tmp = `${target}.replayed`
       await writeFile(tmp, '', 'utf-8')
       await rename(tmp, target)
+      replayed = events.length
     } catch (err) {
       log.error('dead-letter replay also failed; keeping file', {
         err: err instanceof Error ? err.message : String(err),
@@ -329,5 +331,5 @@ export async function replayDeadLetter(path?: string): Promise<{ replayed: numbe
     }
   }
 
-  return { replayed: events.length - (failed > 0 ? 0 : 0), failed }
+  return { replayed, failed }
 }

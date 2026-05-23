@@ -128,12 +128,13 @@ export async function findPublicPageMetaBySlug(slug: string): Promise<PageMetaRo
 }
 
 /** All non-deleted page meta rows; cataloged at startup. */
-export async function listPublicPageMetas(): Promise<PageMetaRow[]> {
+export async function listPublicPageMetas(limit = 500): Promise<PageMetaRow[]> {
   return db
     .select()
     .from(pageMetaTable)
     .where(isNull(pageMetaTable.deletedAt))
     .orderBy(desc(pageMetaTable.firstPublishedAt))
+    .limit(limit)
 }
 
 // --- Writes ------------------------------------------------------------------

@@ -29,7 +29,7 @@ export const adminPendingDashboardDto = z.object({
   }),
 })
 
-// ─── comments (shared by public + admin controllers) ───
+// ─── comments (public wire — no PII) ───
 export const commentBaseDto = z.object({
   id: idString,
   createAt: isoDateTime,
@@ -42,8 +42,6 @@ export const commentBaseDto = z.object({
   ownerId: idString.nullable(),
   userId: idString,
   isVerified: z.boolean().nullable(),
-  ua: z.string().nullable(),
-  ip: z.string().nullable(),
   rid: z.number().int().nonnegative(),
   isCollapsed: z.boolean().nullable(),
   isPending: z.boolean().nullable(),
@@ -52,7 +50,6 @@ export const commentBaseDto = z.object({
   voteDown: z.number().nullable(),
   rootId: idString.nullable(),
   name: z.string(),
-  email: z.string(),
   emailVerified: z.boolean(),
   link: z.string().nullable(),
   badgeName: z.string().nullable(),
@@ -68,7 +65,14 @@ export const commentItemDto: z.ZodType<CommentItemWire> = commentBaseDto.extend(
   children: z.lazy(() => z.array(commentItemDto).optional()),
 }) as z.ZodType<CommentItemWire>
 
-export const adminCommentDto = commentBaseDto.extend({
+// ─── admin comment wire (includes PII fields) ───
+export const adminCommentBaseDto = commentBaseDto.extend({
+  ua: z.string().nullable(),
+  ip: z.string().nullable(),
+  email: z.string(),
+})
+
+export const adminCommentDto = adminCommentBaseDto.extend({
   pageTitle: z.string().nullable(),
   pagePublicId: z.string().nullable(),
 })

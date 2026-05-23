@@ -128,7 +128,7 @@ describe('adminUsersRouter.softDelete', () => {
 
 describe('adminUsersRouter.update', () => {
   it('throws NOT_FOUND when updateUserById yields null', async () => {
-    vi.mocked(userQuery.updateUserById).mockResolvedValueOnce(null as never)
+    vi.mocked(userQuery.updateUserById).mockResolvedValueOnce(null)
     const ctx = makeAuthedCtx()
     await expect(call(adminUsersRouter.update, { id: '99', name: 'X' }, { context: ctx })).rejects.toMatchObject({
       code: 'NOT_FOUND',

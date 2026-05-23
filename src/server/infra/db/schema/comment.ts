@@ -42,5 +42,6 @@ export const comment = pgTable(
     index('idx_comment_owner').on(table.type, table.ownerId),
     index('idx_comment_deleted_at').on(table.deletedAt),
     index('idx_comment_delete_requested_at').on(table.deleteRequestedAt),
+    index('idx_comment_thread').on(table.type, table.ownerId, table.rootId),
   ],
 )

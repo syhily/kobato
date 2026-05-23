@@ -26,9 +26,12 @@ import { shuffle } from '@/shared/utils/tools'
 
 export { toClientPostFromMeta } from '@/server/domains/posts/repos/shared'
 
-export async function listPublicPostMetas(sortBy: 'publishedAt' | 'updatedAt' = 'publishedAt'): Promise<PostMetaRow[]> {
+export async function listPublicPostMetas(
+  sortBy: 'publishedAt' | 'updatedAt' = 'publishedAt',
+  limit = 5000,
+): Promise<PostMetaRow[]> {
   const col = sortBy === 'updatedAt' ? postMetaTable.updatedAt : postMetaTable.firstPublishedAt
-  return db.select().from(postMetaTable).where(isNull(postMetaTable.deletedAt)).orderBy(desc(col))
+  return db.select().from(postMetaTable).where(isNull(postMetaTable.deletedAt)).orderBy(desc(col)).limit(limit)
 }
 
 export async function listPublicPosts(filters: ListPublicPostsFilters = {}): Promise<PostMetaRow[]> {
@@ -173,9 +176,9 @@ export async function listAllPosts(options?: PostVisibilityOptions): Promise<Pos
   return posts
 }
 
-export async function listClientPosts(options?: PostVisibilityOptions): Promise<ClientPost[]> {
+export async function listClientPosts(options?: PostVisibilityOptions & { limit?: number }): Promise<ClientPost[]> {
   const filters = buildPublicPostFilters(options)
-  const metas = await listPublicPosts({ ...filters })
+  const metas = await listPublicPosts({ ...filters, limit: options?.limit ?? 5000 })
   const posts = metas.map((meta) => toClientPostFromMeta(meta))
   await hydrateImageRefs(
     posts,
@@ -252,7 +255,8 @@ export async function selectFeaturePosts(seed: string): Promise<ClientPost[]> {
       .select()
       .from(postMetaTable)
       .where(and(publicWhere, sql`${postMetaTable.cover} <> ''`))
-      .orderBy(desc(postMetaTable.firstPublishedAt)),
+      .orderBy(desc(postMetaTable.firstPublishedAt))
+      .limit(100),
   ])
 
   const recentIds = new Set(recentMetas.map((r) => r.id))

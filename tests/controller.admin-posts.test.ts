@@ -33,7 +33,7 @@ const { adminPostsRouter } = await import('@/server/http/controllers/admin/posts
 
 describe('adminPostsRouter.get', () => {
   it('throws NOT_FOUND when the post detail is null', async () => {
-    vi.mocked(adminQueryService.getPostDetailForAdmin).mockResolvedValueOnce(null as never)
+    vi.mocked(adminQueryService.getPostDetailForAdmin).mockResolvedValueOnce(null)
     const ctx = makeAuthedCtx()
     await expect(call(adminPostsRouter.get, { id: '999' }, { context: ctx })).rejects.toMatchObject({
       code: 'NOT_FOUND',

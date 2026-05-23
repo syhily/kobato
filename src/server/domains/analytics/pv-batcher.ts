@@ -1,6 +1,6 @@
 import type { EntityTarget } from '@/server/infra/db/target'
 
-import { incrementMetricPv, incrementMetricPvBatch } from '@/server/infra/db/operations/metric'
+import { incrementMetricPvBatch } from '@/server/infra/db/operations/metric'
 import { targetKey } from '@/server/infra/db/target'
 import { getLogger } from '@/server/infra/logger'
 import { registerShutdownHook } from '@/server/infra/shutdown'
@@ -106,13 +106,12 @@ export function resetPageViewBatcher(): void {
 
 // Single source of truth for page-view increments.
 //
-// We intentionally write through directly instead of relying on the in-memory
-// batcher so production deployments with short-lived/ephemeral workers do not
-// lose buffered increments before a timer flush runs.
+// Writes are buffered in-memory and flushed either when the buffer reaches
+// `flushThreshold` (50), when `flushIntervalMs` elapses (60s), or on process
+// shutdown. Callers that require durability before returning (e.g. ephemeral
+// workers) can await `flushPageViews()` after the request ends.
 export function bumpPageView(target: EntityTarget): void {
-  void incrementMetricPv(target).catch((err) => {
-    log.error('direct page-view increment failed', { err: String(err), target: targetKey(target) })
-  })
+  getBatcher().increment(targetKey(target))
 }
 
 export function flushPageViews(): Promise<void> {

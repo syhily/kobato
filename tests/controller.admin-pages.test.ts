@@ -75,7 +75,7 @@ const revisionStub = {
 
 describe('adminPagesRouter.get', () => {
   it('throws NOT_FOUND when the page detail is null', async () => {
-    vi.mocked(adminQueryService.getPageDetailForAdmin).mockResolvedValueOnce(null as never)
+    vi.mocked(adminQueryService.getPageDetailForAdmin).mockResolvedValueOnce(null)
     const ctx = makeAuthedCtx()
     await expect(call(adminPagesRouter.get, { id: '999' }, { context: ctx })).rejects.toMatchObject({
       code: 'NOT_FOUND',

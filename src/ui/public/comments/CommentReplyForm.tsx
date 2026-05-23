@@ -73,14 +73,14 @@ export function CommentReplyForm({
 
   const reply = useMutation({
     ...orpcQuery.comments.replyComment.mutationOptions(),
-    onSuccess: (data: ReplyCommentOutput) => {
+    onSuccess: (data: ReplyCommentOutput, variables: ReplyCommentInput) => {
       setSubmitError(null)
       onReplied(data.comment, replyToId)
       // Persist guest info for future visits.
       if (!user) {
         saveGuestProfile({
           name: data.comment.name,
-          email: data.comment.email,
+          email: variables.email,
           link: data.comment.link ?? undefined,
           avatar: avatarSrc,
         })

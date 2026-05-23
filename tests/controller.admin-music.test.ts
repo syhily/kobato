@@ -94,7 +94,7 @@ describe('adminMusicRouter.update', () => {
 
 describe('adminMusicRouter.delete', () => {
   it('resolves to undefined on success', async () => {
-    vi.mocked(service.deleteMusic).mockResolvedValueOnce(undefined as never)
+    vi.mocked(service.deleteMusic).mockResolvedValueOnce(undefined)
     const ctx = makeAuthedCtx()
     const res = await call(adminMusicRouter.delete, { id: '1' }, { context: ctx })
     expect(res).toBeUndefined()

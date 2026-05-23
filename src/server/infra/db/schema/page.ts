@@ -77,6 +77,7 @@ export const page = pgTable(
     index('idx_page_slug').on(table.slug),
     index('idx_page_deleted_at').on(table.deletedAt),
     index('idx_page_first_published_at').on(table.firstPublishedAt),
+    index('idx_page_catalog').on(table.deletedAt, table.published, table.firstPublishedAt),
   ],
 )
 
