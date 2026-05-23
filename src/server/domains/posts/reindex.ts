@@ -1,5 +1,7 @@
 import { and, eq, inArray, isNotNull, isNull } from 'drizzle-orm'
+
 import type { PortableTextBody } from '@/shared/pt/schema'
+
 import { indexPost } from '@/server/domains/posts/indexer'
 import { db } from '@/server/infra/db/pool'
 import { content } from '@/server/infra/db/schema/content'

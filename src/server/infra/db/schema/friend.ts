@@ -1,12 +1,4 @@
-import {
-  bigserial,
-  boolean,
-  index,
-  pgTable,
-  text,
-  timestamp,
-  varchar,
-} from 'drizzle-orm/pg-core'
+import { bigserial, boolean, index, pgTable, text, timestamp, varchar } from 'drizzle-orm/pg-core'
 
 // Friend links for the public grid (`<Friends />` in posts, `show_friends` on
 // pages). CRUD at `/admin/friends`.

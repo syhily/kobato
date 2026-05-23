@@ -1,5 +1,7 @@
 import { and, count, desc, eq, gte, inArray, isNotNull, isNull, or, sql } from 'drizzle-orm'
+
 import type { EntityTarget, EntityType } from '@/server/infra/db/target'
+
 import {
   commentWithUser,
   targetSlugTitleSubquery,

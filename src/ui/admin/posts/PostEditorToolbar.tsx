@@ -1,8 +1,3 @@
-import type { AdminPostDetailDto } from '@/shared/types/posts'
-
-import type { PostMetaDraft } from '@/ui/admin/posts/PostMetaSidebar'
-import type { UseEditorShellStateOutput } from '@/ui/admin/editor-shell/editor-shell-types'
-
 import {
   ArrowLeftIcon,
   ChartLineIcon,
@@ -16,6 +11,10 @@ import {
   UploadIcon,
 } from 'lucide-react'
 import { Link } from 'react-router'
+
+import type { AdminPostDetailDto } from '@/shared/types/posts'
+import type { UseEditorShellStateOutput } from '@/ui/admin/editor-shell/editor-shell-types'
+import type { PostMetaDraft } from '@/ui/admin/posts/PostMetaSidebar'
 
 import { Button } from '@/ui/components/button'
 import { cn } from '@/ui/lib/cn'
@@ -116,11 +115,7 @@ export function PostEditorToolbar({ mode, isEditing, detail, state }: PostEditor
             >
               {state.isPublishing ? <Loader2Icon className="animate-spin" /> : <UploadIcon />}
               <span className="sr-only sm:not-sr-only">
-                {state.isPublishing
-                  ? '发布中…'
-                  : state.sidebarPublishStatus === 'scheduled'
-                    ? '计划发布'
-                    : '发布草稿'}
+                {state.isPublishing ? '发布中…' : state.sidebarPublishStatus === 'scheduled' ? '计划发布' : '发布草稿'}
               </span>
             </Button>
             {state.meta.published ? (

@@ -1,8 +1,9 @@
 import { asc, inArray, sql } from 'drizzle-orm'
+
 import type { TagRow } from '@/server/infra/db/types'
 import type { Tag } from '@/shared/types/catalog'
 import type { AdminTagDto } from '@/shared/types/tags'
-import { readStringArray } from '@/shared/utils/tools'
+
 import { hasAtLeast, type Role } from '@/server/domains/auth/rbac'
 import { listPostsByTag, listPublicPosts } from '@/server/domains/posts/repos/public-query'
 import {
@@ -28,6 +29,7 @@ import { post as postMetaTable } from '@/server/infra/db/schema/post'
 import { tag as tagTable } from '@/server/infra/db/schema/taxonomy'
 import { DomainError, ErrorMessages } from '@/server/infra/http/errors'
 import { createInflight } from '@/server/infra/redis/inflight'
+import { readStringArray } from '@/shared/utils/tools'
 
 // Wire-format DTO for every admin tag endpoint. `postCount` is
 // projected by the caller from the live `ContentCatalog` (mirrors

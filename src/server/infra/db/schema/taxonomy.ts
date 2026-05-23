@@ -1,12 +1,4 @@
-import {
-  bigserial,
-  index,
-  integer,
-  pgTable,
-  text,
-  timestamp,
-  varchar,
-} from 'drizzle-orm/pg-core'
+import { bigserial, index, integer, pgTable, text, timestamp, varchar } from 'drizzle-orm/pg-core'
 
 // Post category. CRUD at `/admin/categories`. MDX references categories by
 // `name` (`UNIQUE`). `slug` drives `/cats/:slug` (`UNIQUE`). `sort_order`

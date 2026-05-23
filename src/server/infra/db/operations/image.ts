@@ -1,5 +1,7 @@
 import { and, count, desc, eq, ilike, inArray, isNull, like, or, type SQL, sql } from 'drizzle-orm'
+
 import type { ImageRow, NewImage } from '@/server/infra/db/types'
+
 import { db } from '@/server/infra/db/pool'
 import { image } from '@/server/infra/db/schema/media'
 import { user } from '@/server/infra/db/schema/user'

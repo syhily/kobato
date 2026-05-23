@@ -15,7 +15,13 @@ export interface AudioPreviewPlayerProps {
  * `loadedmetadata` / `timeupdate` populate the inline progress bar
  * shown under the currently-playing row.
  */
-export function AudioPreviewPlayer({ audioRef, onLoadedMetadata, onTimeUpdate, onEnded, onPause }: AudioPreviewPlayerProps) {
+export function AudioPreviewPlayer({
+  audioRef,
+  onLoadedMetadata,
+  onTimeUpdate,
+  onEnded,
+  onPause,
+}: AudioPreviewPlayerProps) {
   return (
     <audio
       ref={audioRef}

@@ -1,12 +1,8 @@
 import type { LucideIcon } from 'lucide-react'
 
-import {
-  ClockIcon,
-  FileCheck2Icon,
-  FilePenLineIcon,
-  MessageSquareIcon,
-} from 'lucide-react'
+import { ClockIcon, FileCheck2Icon, FilePenLineIcon, MessageSquareIcon } from 'lucide-react'
 import { Link } from 'react-router'
+
 import { cn } from '@/ui/lib/cn'
 
 // Per-card palette. Each tone pairs a soft status bg fill with its
@@ -81,7 +77,10 @@ function StatCard({ label, value, href, icon: Icon, tone, emphasis }: StatCardPr
   return (
     <Link
       to={href}
-      className={cn('group relative overflow-hidden rounded-lg border p-4 transition-colors hover:border-line-muted', palette.bg)}
+      className={cn(
+        'group relative overflow-hidden rounded-lg border p-4 transition-colors hover:border-line-muted',
+        palette.bg,
+      )}
     >
       {/* Decorative background icon. Inset on the right (`right-3`) so
           it reads as a watermark, not a banner. Hover scales the glyph
@@ -90,7 +89,10 @@ function StatCard({ label, value, href, icon: Icon, tone, emphasis }: StatCardPr
           `pointer-events-none` + `aria-hidden` keep it inert. */}
       <Icon
         aria-hidden="true"
-        className={cn('pointer-events-none absolute top-1/2 right-3 size-14 -translate-y-1/2 opacity-40 transition-transform duration-200 ease-out group-hover:scale-110 motion-reduce:transition-none motion-reduce:group-hover:scale-100', palette.icon)}
+        className={cn(
+          'pointer-events-none absolute top-1/2 right-3 size-14 -translate-y-1/2 opacity-40 transition-transform duration-200 ease-out group-hover:scale-110 motion-reduce:transition-none motion-reduce:group-hover:scale-100',
+          palette.icon,
+        )}
         strokeWidth={1.5}
       />
       <p className="relative text-xs text-muted-foreground">{label}</p>

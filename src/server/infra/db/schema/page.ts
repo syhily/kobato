@@ -1,13 +1,4 @@
-import {
-  bigint,
-  bigserial,
-  boolean,
-  index,
-  pgTable,
-  text,
-  timestamp,
-  varchar,
-} from 'drizzle-orm/pg-core'
+import { bigint, bigserial, boolean, index, pgTable, text, timestamp, varchar } from 'drizzle-orm/pg-core'
 
 // Page business-identity table. Owns one row per page (about / links /
 // guestbook / …) and, for each row, the metadata an admin edits in

@@ -1,13 +1,10 @@
 import type { AdminPostDetailDto } from '@/shared/types/posts'
-
-import type { PostMetaDraft } from '@/ui/admin/posts/PostMetaSidebar'
 import type { UseEditorShellStateOutput } from '@/ui/admin/editor-shell/editor-shell-types'
+import type { PostMetaDraft } from '@/ui/admin/posts/PostMetaSidebar'
 
 import { useContentSettings } from '@/shared/lib/blog-config-context'
 import { RevisionHistoryDrawer } from '@/ui/admin/editor-shell/RevisionsDrawer'
-import {
-  PostMetaSidebar,
-} from '@/ui/admin/posts/PostMetaSidebar'
+import { PostMetaSidebar } from '@/ui/admin/posts/PostMetaSidebar'
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/ui/components/sheet'
 
 interface PostEditorMetaPanelProps {
@@ -16,7 +13,11 @@ interface PostEditorMetaPanelProps {
   state: UseEditorShellStateOutput<PostMetaDraft>
 }
 
-function renderMetaExtras(isEditing: boolean, detail: AdminPostDetailDto | undefined, state: UseEditorShellStateOutput<PostMetaDraft>) {
+function renderMetaExtras(
+  isEditing: boolean,
+  detail: AdminPostDetailDto | undefined,
+  state: UseEditorShellStateOutput<PostMetaDraft>,
+) {
   if (!isEditing) {
     return null
   }

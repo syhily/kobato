@@ -5,6 +5,8 @@ import { toast } from 'sonner'
 import type { AdminMusicDto, MetingSearchHit } from '@/shared/types/music'
 
 import { useMutation, orpcQuery } from '@/client/api/query'
+import { AudioPreviewPlayer } from '@/ui/admin/musics/AudioPreviewPlayer'
+import { INITIAL_PREVIEW_PROGRESS, type PreviewProgress, SearchResultItem } from '@/ui/admin/musics/SearchResultItem'
 import { Button } from '@/ui/components/button'
 import {
   Dialog,
@@ -18,12 +20,6 @@ import { InputGroup, InputGroupAddon, InputGroupInput } from '@/ui/components/in
 import { Label } from '@/ui/components/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/components/select'
 import { Skeleton } from '@/ui/components/skeleton'
-import { AudioPreviewPlayer } from '@/ui/admin/musics/AudioPreviewPlayer'
-import {
-  INITIAL_PREVIEW_PROGRESS,
-  type PreviewProgress,
-  SearchResultItem,
-} from '@/ui/admin/musics/SearchResultItem'
 
 // Result-count options. The schema caps `limit` at 30 server-side
 // (see `searchMusicSchema` in `@/server/domains/music/schema`); the upper

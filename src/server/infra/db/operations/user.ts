@@ -1,5 +1,6 @@
 import bcrypt from 'bcryptjs'
 import { and, count, desc, eq, inArray, isNull, max, ne, or, sql } from 'drizzle-orm'
+
 import type { NewUser, User } from '@/server/infra/db/types'
 
 export type SafeUser = Omit<User, 'password' | 'lastIp' | 'lastUa'>

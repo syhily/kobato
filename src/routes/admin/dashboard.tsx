@@ -1,8 +1,7 @@
-import type { EntityType } from '@/server/infra/db/target'
-
-import type { DraftSummary, MyCommentSummary } from '@/ui/admin/dashboard/types'
-
 import { data } from 'react-router'
+
+import type { EntityType } from '@/server/infra/db/target'
+import type { DraftSummary, MyCommentSummary } from '@/ui/admin/dashboard/types'
 
 import { queryCounters, queryViews } from '@/server/domains/analytics/query'
 import { getRouteRequestContext } from '@/server/domains/auth/context'

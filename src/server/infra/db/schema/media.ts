@@ -1,14 +1,4 @@
-import {
-  bigint,
-  bigserial,
-  index,
-  integer,
-  pgTable,
-  text,
-  timestamp,
-  uniqueIndex,
-  varchar,
-} from 'drizzle-orm/pg-core'
+import { bigint, bigserial, index, integer, pgTable, text, timestamp, uniqueIndex, varchar } from 'drizzle-orm/pg-core'
 
 // Image library backing the admin "图片管理" surface.
 //

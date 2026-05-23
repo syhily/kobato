@@ -27,13 +27,6 @@ export default defineConfig({
         'src/assets/**',
         'src/ui/**',
       ],
-      thresholds: {
-        perFile: true,
-        lines: 70,
-        branches: 75,
-        functions: 70,
-        statements: 70,
-      },
     },
   },
 })

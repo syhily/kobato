@@ -51,10 +51,7 @@ export function SearchResultItem({
 }: SearchResultItemProps) {
   const totalDuration = previewProgress?.duration ?? null
   const currentTime = previewProgress?.currentTime ?? 0
-  const ratio =
-    totalDuration !== null && totalDuration > 0
-      ? Math.min(1, Math.max(0, currentTime / totalDuration))
-      : 0
+  const ratio = totalDuration !== null && totalDuration > 0 ? Math.min(1, Math.max(0, currentTime / totalDuration)) : 0
 
   return (
     <div className="flex flex-col gap-2 rounded-md border bg-card px-3 py-2">

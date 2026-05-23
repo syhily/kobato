@@ -224,15 +224,17 @@ function deadLetterPath(): string {
 }
 
 function serializeForDeadLetter(events: EnrichedAccessEvent[]): string {
-  return events
-    .map((e) =>
-      JSON.stringify({
-        ...e,
-        ts: e.ts.toISOString(),
-        entityId: e.entityId === null ? null : e.entityId.toString(),
-      }),
-    )
-    .join(DEAD_LETTER_SEP) + DEAD_LETTER_SEP
+  return (
+    events
+      .map((e) =>
+        JSON.stringify({
+          ...e,
+          ts: e.ts.toISOString(),
+          entityId: e.entityId === null ? null : e.entityId.toString(),
+        }),
+      )
+      .join(DEAD_LETTER_SEP) + DEAD_LETTER_SEP
+  )
 }
 
 async function writeDeadLetter(events: EnrichedAccessEvent[], path?: string): Promise<void> {

@@ -18,11 +18,14 @@ interface BackupRestoreDialogProps {
 
 export function BackupRestoreDialog({ restoreKey, isPending, onConfirm, onCancel }: BackupRestoreDialogProps) {
   return (
-    <AlertDialog open onOpenChange={(open) => {
-      if (!open) {
-        onCancel()
-      }
-    }}>
+    <AlertDialog
+      open
+      onOpenChange={(open) => {
+        if (!open) {
+          onCancel()
+        }
+      }}
+    >
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>确认还原</AlertDialogTitle>

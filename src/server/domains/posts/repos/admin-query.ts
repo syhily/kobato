@@ -1,10 +1,10 @@
 import { eq, sql, getColumns } from 'drizzle-orm'
+
 import type { PostMetaWithAuthor, ListPostsFilters } from '@/server/domains/posts/repos/shared'
+
 import { buildPostsWhere, buildPostsOrderBy } from '@/server/domains/posts/repos/shared'
 import { db } from '@/server/infra/db/pool'
 import { post as postMetaTable } from '@/server/infra/db/schema/post'
-
-
 import { user } from '@/server/infra/db/schema/user'
 
 export async function listPostMetas(filters: ListPostsFilters = {}): Promise<PostMetaWithAuthor[]> {

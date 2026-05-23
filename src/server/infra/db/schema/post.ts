@@ -1,15 +1,5 @@
 import { sql } from 'drizzle-orm'
-import {
-  bigint,
-  bigserial,
-  boolean,
-  index,
-  jsonb,
-  pgTable,
-  text,
-  timestamp,
-  varchar,
-} from 'drizzle-orm/pg-core'
+import { bigint, bigserial, boolean, index, jsonb, pgTable, text, timestamp, varchar } from 'drizzle-orm/pg-core'
 
 export const post = pgTable(
   'post',

@@ -1,5 +1,7 @@
 import { and, count, desc, eq, ilike, isNull, or, type SQL } from 'drizzle-orm'
+
 import type { MusicRow, NewMusic } from '@/server/infra/db/types'
+
 import { db } from '@/server/infra/db/pool'
 import { music } from '@/server/infra/db/schema/media'
 import { user } from '@/server/infra/db/schema/user'

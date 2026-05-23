@@ -13,6 +13,7 @@ import {
   uniqueIndex,
   varchar,
 } from 'drizzle-orm/pg-core'
+
 import { user } from '@/server/infra/db/schema/user'
 
 // Section-scoped store for the editable blog configuration. One row per

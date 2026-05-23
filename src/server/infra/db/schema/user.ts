@@ -1,15 +1,6 @@
 import { sql } from 'drizzle-orm'
-import {
-  bigint,
-  bigserial,
-  boolean,
-  index,
-  pgTable,
-  text,
-  timestamp,
-  uniqueIndex,
-  varchar,
-} from 'drizzle-orm/pg-core'
+import { bigint, bigserial, boolean, index, pgTable, text, timestamp, uniqueIndex, varchar } from 'drizzle-orm/pg-core'
+
 import { userRoleEnum } from '@/server/infra/db/schema/shared'
 
 // RBAC role enum. Declared as a real Postgres ENUM (not a CHECK

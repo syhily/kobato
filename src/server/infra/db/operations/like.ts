@@ -1,5 +1,7 @@
 import { and, eq, inArray, isNotNull, isNull, lt, sql } from 'drizzle-orm'
+
 import type { EntityTarget, EntityType } from '@/server/infra/db/target'
+
 import { db } from '@/server/infra/db/pool'
 import { comment } from '@/server/infra/db/schema/comment'
 import { like, metric } from '@/server/infra/db/schema/metric'

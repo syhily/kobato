@@ -1,14 +1,5 @@
 import { sql } from 'drizzle-orm'
-import {
-  bigint,
-  bigserial,
-  index,
-  pgTable,
-  timestamp,
-  uniqueIndex,
-  uuid,
-  varchar,
-} from 'drizzle-orm/pg-core'
+import { bigint, bigserial, index, pgTable, timestamp, uniqueIndex, uuid, varchar } from 'drizzle-orm/pg-core'
 import { randomUUID } from 'node:crypto'
 
 // Per-entity metric counters keyed on `(type, owner_id)` where `type` is

@@ -11,15 +11,15 @@ import { FloatingPublishButton } from '@/ui/admin/editor-shell/FloatingPublishBu
 import { PreviewPane } from '@/ui/admin/editor-shell/PreviewPanel'
 import { useEditorShellState } from '@/ui/admin/editor-shell/use-editor-shell-state'
 import { PageBodyEditor } from '@/ui/admin/editor/PageBodyEditor'
+import { CreateModeBanner } from '@/ui/admin/posts/CreateModeBanner'
+import { PostEditorMetaAside, PostEditorMetaSheet } from '@/ui/admin/posts/PostEditorMetaPanel'
+import { PostEditorToolbar } from '@/ui/admin/posts/PostEditorToolbar'
 import {
   EMPTY_POST_META_DRAFT,
   metaDraftFromPost,
   metaDraftsEqual,
   type PostMetaDraft,
 } from '@/ui/admin/posts/PostMetaSidebar'
-import { CreateModeBanner } from '@/ui/admin/posts/CreateModeBanner'
-import { PostEditorMetaAside, PostEditorMetaSheet } from '@/ui/admin/posts/PostEditorMetaPanel'
-import { PostEditorToolbar } from '@/ui/admin/posts/PostEditorToolbar'
 import { TitleSlugStrip } from '@/ui/admin/posts/TitleSlugStrip'
 import { cn } from '@/ui/lib/cn'
 
