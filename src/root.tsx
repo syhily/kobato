@@ -1,7 +1,7 @@
 import type { MiddlewareFunction, ShouldRevalidateFunctionArgs } from 'react-router'
 
 import { dehydrate, HydrationBoundary, QueryClientProvider } from '@tanstack/react-query'
-import { lazy, Suspense, useState } from 'react'
+import { useState } from 'react'
 import { preconnect, prefetchDNS } from 'react-dom'
 import { Links, Meta, Outlet, Scripts, ScrollRestoration, useRouteLoaderData } from 'react-router'
 
@@ -17,25 +17,9 @@ import { ThemeProvider, THEME_COOKIE } from '@/ui/lib/ThemeProvider'
 import { ChunkReloadOverlay } from '@/ui/public/chrome/ChunkReloadOverlay'
 import { ErrorView } from '@/ui/public/chrome/ErrorView'
 import { NavigationSplash } from '@/ui/public/chrome/NavigationSplash'
+import { PublicChrome } from '@/ui/public/chrome/PublicChrome'
 
 import type { Route } from './+types/root'
-
-// `PublicChrome` (which carries `public.css`) is reached *statically* by
-// every public URL through `routes/public/layout.tsx`, which is what makes
-// the SSR `<Links />` output include the resolved stylesheet on first paint.
-// The root `ErrorBoundary` only fires for errors that propagate above the
-// route layouts (root middleware, root loader, or wp-decoy probes), so it
-// can afford to lazy-load the chrome — that keeps the admin SPA chunk
-// free of `public.css` while still giving fatal-error pages real styling.
-//
-// IMPORTANT: do NOT re-export `PublicChrome` (or any binding from
-// `@/ui/public/chrome/PublicChrome` or `@/ui/public/chrome/BaseLayout`) from
-// this module. A re-export pins the live binding statically and would
-// drag `public.css` into every route chunk, breaking the cascade
-// contract documented in `tailwind.css` (#admin-buttons-no-padding).
-const PublicChromeLazy = lazy(() =>
-  import('@/ui/public/chrome/PublicChrome').then((m) => ({ default: m.PublicChrome })),
-)
 
 // Order matters:
 //   1. Session middleware decrypts the cookie + populates request
@@ -50,10 +34,10 @@ const PublicChromeLazy = lazy(() =>
 // of the *highest route with a loader* and refuses to render any
 // component below it (no `loaderData` available; see RR docs §"next()
 // and Error Handling"). Putting the probe filter on root would
-// therefore force scanner 404s through root's lazy-chrome
-// `ErrorBoundary` and lose the synchronous `<PublicChrome>` shell that
-// the public layout's boundary already provides for real 404s.
-// Instead, the two routes that can legitimately receive a probe path
+// therefore force scanner 404s through root's `ErrorBoundary`
+// and lose the synchronous `<PublicChrome>` shell that the public
+// layout's boundary already provides for real 404s. Instead, the two
+// routes that can legitimately receive a probe path
 // (`page.detail` for single-segment `.php`/`cgi-bin`, `not-found` for
 // the splat) call `assertNotWordPressDecoy()` at the top of their
 // loader, so the throw originates inside a leaf loader and bubbles up
@@ -279,15 +263,13 @@ export function ErrorBoundary({ error, loaderData }: Route.ErrorBoundaryProps) {
   return (
     <ThemeProvider initialResolved={loaderData?.theme ?? undefined}>
       <BlogSettingsProvider value={blogSettings ?? undefined}>
-        <Suspense fallback={null}>
-          {blogSettings ? (
-            <PublicChromeLazy currentUser={loaderData?.currentUser ?? null} pathname="/" search="">
-              {body}
-            </PublicChromeLazy>
-          ) : (
-            body
-          )}
-        </Suspense>
+        {blogSettings ? (
+          <PublicChrome currentUser={loaderData?.currentUser ?? null} pathname="/" search="">
+            {body}
+          </PublicChrome>
+        ) : (
+          body
+        )}
       </BlogSettingsProvider>
     </ThemeProvider>
   )
