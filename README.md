@@ -117,39 +117,65 @@ Deeper rationale and the rules each layer enforces live in
 git clone https://github.com/syhily/yufan.me.git
 cd yufan.me
 cp .env.example .env
+# Edit .env — see "Environment variables" below
 npm install
 npm run dev
 ```
-
-Minimum `.env`:
-
-```text
-DATABASE_URL=postgres://user:pass@host:5432/db
-REDIS_URL=redis://host:6379
-SESSION_SECRET=<high-entropy secret>
-```
-
-Optional: `MAXMIND_DB_PATH` for geo-enriched analytics,
-`ANALYTICS_TRACK_ADMIN` to include admin visits in dashboards.
 
 First boot redirects every request to `/admin/setup` until an
 admin row exists; stage 2 at `/admin/setup/settings` then
 seeds the 14 settings rows. After that the public site is live and the
 admin console at `/admin` is available to the new admin user.
 
-## AI coding setup (required)
+### Environment variables
 
-This project uses [CodeGraph](https://github.com/colbymchenry/codegraph) — a local, tree-sitter-parsed knowledge graph that gives AI agents instant structural code intelligence (call graphs, symbol lookups, impact analysis) instead of expensive grep-and-read exploration. It is **required** for AI-assisted development with Claude Code, Cursor, or any supported agent.
+All configuration is read from `.env` (gitignored). Copy
+`.env.example` and fill in the values.
+
+#### Required
+
+| Variable         | Description                                                                                   |
+| ---------------- | --------------------------------------------------------------------------------------------- |
+| `DATABASE_URL`   | PostgreSQL connection URL, e.g. `postgres://user:pass@host:5432/db`                           |
+| `REDIS_URL`      | Redis connection URL for sessions, rate limiting, and cache buckets, e.g. `redis://host:6379` |
+| `SESSION_SECRET` | HMAC key for signing session cookies. Generate with `openssl rand -hex 32`                    |
+
+#### Recommended
+
+| Variable         | Description                                                                                                                                                                                                                                                                                                                                                                                    |
+| ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ENCRYPTION_KEY` | AES-256-GCM key for encrypting API keys and S3 credentials stored in the database. Any string works (SHA-256 derived). Generate with `openssl rand -hex 32`. When set, secrets are encrypted before every DB write and decrypted on read. When unset, secrets are stored as plaintext (not recommended for production). See [Secret encryption](#secret-encryption) below for migration steps. |
+
+#### Optional
+
+| Variable                  | Default   | Description                                                                                                                                                                              |
+| ------------------------- | --------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `HOST`                    | `0.0.0.0` | HTTP listen address                                                                                                                                                                      |
+| `PORT`                    | `4321`    | HTTP listen port (1–65535)                                                                                                                                                               |
+| `DB_POOL_MAX`             | `20`      | Max Postgres connections per process                                                                                                                                                     |
+| `DB_STATEMENT_TIMEOUT_MS` | `30000`   | Per-query timeout in ms                                                                                                                                                                  |
+| `LOG_LEVEL`               | `info`    | One of: `debug`, `info`, `warn`, `error`                                                                                                                                                 |
+| `MAXMIND_DB_PATH`         | —         | Path to GeoLite2-City `.mmdb`. When set, analytics records include geo data (country/region/city/lat/lon/timezone). Download from [MaxMind](https://www.maxmind.com/en/geolite2/signup). |
+| `ANALYTICS_TRACK_ADMIN`   | `false`   | Include admin visits in analytics dashboards                                                                                                                                             |
+| `ANALYTICS_KEEP_BOT_ROWS` | `false`   | Keep bot rows in `access_log` (forensic/debugging)                                                                                                                                       |
+
+### Secret encryption
+
+The `mail.apiKey`, `assets.storage.secretAccessKey`, and `search.search.apiKey` fields are stored in Postgres JSONB. Set `ENCRYPTION_KEY` to encrypt them at the application layer with AES-256-GCM.
+
+**New deployments:** set `ENCRYPTION_KEY` before the first launch. Secrets will be encrypted from the start.
+
+**Existing deployments (migrating from plaintext):**
 
 ```bash
-# Install and configure your agent(s) — auto-detects Claude Code, Cursor, etc.
-npx @colbymchenry/codegraph
+# 1. Add to .env
+echo "ENCRYPTION_KEY=$(openssl rand -hex 32)" >> .env
 
-# Build the per-project index
-codegraph init -i
+# 2. Run the one-shot migration script
+npx tsx scripts/encrypt-settings-secrets.ts
 ```
 
-Restart your agent after install. CodeGraph is zero-config, 100% local (SQLite), respects `.gitignore`, and auto-syncs on file changes.
+The migration script reads the three secret-containing rows, encrypts any plaintext values, and writes them back. Safe to re-run — already-encrypted values are skipped. After migration, `decryptIfNeeded` transparently handles both encrypted and (straggler) plaintext values.
 
 ## Admin console
 

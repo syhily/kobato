@@ -1,2 +1,1 @@
-npm run fmt:check
-npm run lint
+npx lint-staged

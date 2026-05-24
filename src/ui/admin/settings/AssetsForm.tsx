@@ -24,7 +24,7 @@ const SCHEME_OPTIONS: { value: 'http' | 'https'; label: string }[] = [
 ]
 
 function AssetsDomainCard({ assets }: { assets: AssetsLoaderShape }) {
-  const { mode, form, settingGroupProps, optimisticSource } = useSettingsCard<
+  const { mode, form, settingGroupProps, display } = useSettingsCard<
     AssetsLoaderShape,
     { assetHost: string; assetScheme: 'http' | 'https' }
   >({
@@ -39,7 +39,6 @@ function AssetsDomainCard({ assets }: { assets: AssetsLoaderShape }) {
     }),
   })
 
-  const display = optimisticSource ?? assets
   return (
     <SettingGroup
       title="资源域名"
@@ -92,7 +91,7 @@ function AssetsDomainCard({ assets }: { assets: AssetsLoaderShape }) {
 }
 
 function AssetsToggleCard({ assets }: { assets: AssetsLoaderShape }) {
-  const { mode, form, settingGroupProps, optimisticSource } = useSettingsCard<AssetsLoaderShape, { enabled: boolean }>({
+  const { mode, form, settingGroupProps, display } = useSettingsCard<AssetsLoaderShape, { enabled: boolean }>({
     section: 'assets',
     source: assets,
     toState: (source) => ({ enabled: source.storage.enabled }),
@@ -101,7 +100,6 @@ function AssetsToggleCard({ assets }: { assets: AssetsLoaderShape }) {
     }),
   })
 
-  const display = optimisticSource ?? assets
   return (
     <SettingGroup
       title="启用图片上传"
@@ -139,7 +137,7 @@ function AssetsToggleCard({ assets }: { assets: AssetsLoaderShape }) {
 }
 
 function AssetsS3Card({ assets }: { assets: AssetsLoaderShape }) {
-  const { mode, form, settingGroupProps, optimisticSource } = useSettingsCard<
+  const { mode, form, settingGroupProps, display } = useSettingsCard<
     AssetsLoaderShape,
     {
       endpoint: string
@@ -178,7 +176,6 @@ function AssetsS3Card({ assets }: { assets: AssetsLoaderShape }) {
     },
   })
 
-  const display = optimisticSource ?? assets
   const secretConfigured = display.secretAccessKeyMask !== null
   return (
     <SettingGroup
@@ -269,7 +266,7 @@ function AssetsS3Card({ assets }: { assets: AssetsLoaderShape }) {
 }
 
 function AssetsUploadCard({ assets }: { assets: AssetsLoaderShape }) {
-  const { mode, form, settingGroupProps, optimisticSource } = useSettingsCard<
+  const { mode, form, settingGroupProps, display } = useSettingsCard<
     AssetsLoaderShape,
     { maxBytes: number; jpegQuality: number }
   >({
@@ -284,7 +281,6 @@ function AssetsUploadCard({ assets }: { assets: AssetsLoaderShape }) {
     }),
   })
 
-  const display = optimisticSource ?? assets
   return (
     <SettingGroup
       title="上传参数"

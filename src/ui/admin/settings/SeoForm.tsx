@@ -12,10 +12,7 @@ interface SeoFormProps {
 }
 
 function SeoTocCard({ seo }: { seo: SeoSettings }) {
-  const { mode, form, settingGroupProps, optimisticSource } = useSettingsCard<
-    SeoSettings,
-    { tocMin: number; tocMax: number }
-  >({
+  const { mode, form, settingGroupProps, display } = useSettingsCard<SeoSettings, { tocMin: number; tocMax: number }>({
     section: 'seo',
     source: seo,
     toState: (source) => ({
@@ -27,7 +24,6 @@ function SeoTocCard({ seo }: { seo: SeoSettings }) {
     }),
   })
 
-  const display = optimisticSource ?? seo
   return (
     <SettingGroup title="目录 (TOC)" description="文章右侧目录的标题层级范围。" {...settingGroupProps}>
       {mode === 'edit' ? (
@@ -62,7 +58,7 @@ function SeoTocCard({ seo }: { seo: SeoSettings }) {
 }
 
 function SeoOgCard({ seo }: { seo: SeoSettings }) {
-  const { mode, form, settingGroupProps, optimisticSource } = useSettingsCard<
+  const { mode, form, settingGroupProps, display } = useSettingsCard<
     SeoSettings,
     { ogWidth: number; ogHeight: number }
   >({
@@ -77,7 +73,6 @@ function SeoOgCard({ seo }: { seo: SeoSettings }) {
     }),
   })
 
-  const display = optimisticSource ?? seo
   return (
     <SettingGroup
       title="OG 图渲染尺寸"

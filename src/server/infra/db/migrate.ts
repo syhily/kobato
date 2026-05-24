@@ -1,9 +1,8 @@
 import { sql } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/node-postgres'
 import { migrate } from 'drizzle-orm/node-postgres/migrator'
-import process from 'node:process'
 
-import { DATABASE_URL } from '@/server/infra/env'
+import { DATABASE_URL, isVitest } from '@/server/infra/env'
 import { getLogger } from '@/server/infra/logger'
 
 const MIGRATIONS_FOLDER = './drizzle'
@@ -57,7 +56,7 @@ async function migrateDatabase(): Promise<void> {
 }
 
 export function runDatabaseMigrations(): Promise<void> {
-  if (process.env.VITEST === 'true') {
+  if (isVitest()) {
     log.debug('Skipping database migrations in Vitest')
     return Promise.resolve()
   }

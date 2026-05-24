@@ -25,7 +25,7 @@ interface CorsFormProps {
 const MAX_ORIGINS = 20
 
 function CorsPolicyCard({ cors }: CorsFormProps) {
-  const { mode, form, settingGroupProps, optimisticSource } = useSettingsCard<
+  const { mode, form, settingGroupProps, display } = useSettingsCard<
     CorsSettings,
     { enabled: boolean; origins: OriginRow[] }
   >({
@@ -43,7 +43,6 @@ function CorsPolicyCard({ cors }: CorsFormProps) {
     }),
   })
 
-  const display = optimisticSource ?? cors
   const rows = useFieldArray({ control: form.control, name: 'origins' })
 
   return (

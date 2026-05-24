@@ -66,7 +66,7 @@ function toFormValues(source: SiteIdentitySettings): GeneralFormValues {
 }
 
 function GeneralIdentityCard({ siteIdentity }: { siteIdentity: SiteIdentitySettings }) {
-  const { mode, form, settingGroupProps, optimisticSource } = useSettingsCard<SiteIdentitySettings, GeneralFormValues>({
+  const { mode, form, settingGroupProps, display } = useSettingsCard<SiteIdentitySettings, GeneralFormValues>({
     section: 'general',
     source: siteIdentity,
     schema: generalFormSchema,
@@ -79,7 +79,6 @@ function GeneralIdentityCard({ siteIdentity }: { siteIdentity: SiteIdentitySetti
     }),
   })
 
-  const display = optimisticSource ?? siteIdentity
   const keywords = useFieldArray({ control: form.control, name: 'keywords' })
   const { formState } = form
 
@@ -160,7 +159,7 @@ function GeneralIdentityCard({ siteIdentity }: { siteIdentity: SiteIdentitySetti
 }
 
 function GeneralFooterCard({ siteIdentity }: { siteIdentity: SiteIdentitySettings }) {
-  const { mode, form, settingGroupProps, optimisticSource } = useSettingsCard<SiteIdentitySettings, GeneralFormValues>({
+  const { mode, form, settingGroupProps, display } = useSettingsCard<SiteIdentitySettings, GeneralFormValues>({
     section: 'general',
     source: siteIdentity,
     schema: generalFormSchema,
@@ -172,7 +171,6 @@ function GeneralFooterCard({ siteIdentity }: { siteIdentity: SiteIdentitySetting
     }),
   })
 
-  const display = optimisticSource ?? siteIdentity
   const { formState } = form
 
   return (
@@ -212,7 +210,7 @@ function GeneralFooterCard({ siteIdentity }: { siteIdentity: SiteIdentitySetting
 }
 
 function GeneralAuthorCard({ siteIdentity }: { siteIdentity: SiteIdentitySettings }) {
-  const { mode, form, settingGroupProps, optimisticSource } = useSettingsCard<SiteIdentitySettings, GeneralFormValues>({
+  const { mode, form, settingGroupProps, display } = useSettingsCard<SiteIdentitySettings, GeneralFormValues>({
     section: 'general',
     source: siteIdentity,
     schema: generalFormSchema,
@@ -226,7 +224,6 @@ function GeneralAuthorCard({ siteIdentity }: { siteIdentity: SiteIdentitySetting
     }),
   })
 
-  const display = optimisticSource ?? siteIdentity
   const { formState } = form
 
   return (
@@ -275,7 +272,7 @@ function GeneralTimeZoneCard({
   siteIdentity: SiteIdentitySettings
   timeZones: readonly string[]
 }) {
-  const { mode, form, settingGroupProps, optimisticSource } = useSettingsCard<SiteIdentitySettings, GeneralFormValues>({
+  const { mode, form, settingGroupProps, display } = useSettingsCard<SiteIdentitySettings, GeneralFormValues>({
     section: 'general',
     source: siteIdentity,
     schema: generalFormSchema,
@@ -287,7 +284,6 @@ function GeneralTimeZoneCard({
     }),
   })
 
-  const display = optimisticSource ?? siteIdentity
   const timeZoneItems = useMemo<TimeZoneItem[]>(
     () => timeZones.map((zone) => ({ value: zone, label: zone })),
     [timeZones],

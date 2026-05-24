@@ -29,7 +29,7 @@ const fixtureBundle: BlogSettingsBundle = {
     keywords: [],
     author: { name: 'tester', email: 'test@example.com', url: 'https://example.com' },
     locale: 'zh-CN',
-    timeZone: 'UTC',
+    timeZone: 'Asia/Shanghai',
     timeFormat: 'yyyy-LL-dd HH:mm',
     initialYear: 2024,
   },
@@ -83,7 +83,7 @@ const fixtureBundle: BlogSettingsBundle = {
     og: { width: 1200, height: 630 },
   },
 
-  mail: { mail: { enabled: false, host: '', apiKey: '', sender: '' } },
+  mail: { mail: { enabled: false, host: 'api.zeabur.com', apiKey: '', sender: 'noreply@example.com' } },
   cache: {
     cache: {
       og: { prefix: 'og:', ttlSeconds: 3600 },
@@ -191,7 +191,7 @@ describe('services/settings — getAdminBlogSettings', () => {
     expect(dto.bundle).toBeNull()
   })
 
-  it('returns the assembled bundle when every section row passes the shape probe', async () => {
+  it('returns the assembled bundle when every section row passes schema validation', async () => {
     vi.mocked(settingQueries.findSettingsByScopePrefix).mockResolvedValue(bundleRows(fixtureBundle))
 
     const dto = await getAdminBlogSettings()

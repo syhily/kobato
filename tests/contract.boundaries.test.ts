@@ -713,11 +713,11 @@ describe('contract: module and bundle boundaries', () => {
       // `useFieldArray` is allowed (consumed via the wrapper's `form.control`).
       expect(formSource).not.toMatch(/import\s*\{[^}]*\buseForm\b[^}]*\}\s*from\s*['"]react-hook-form['"]/)
       // The wrapper's exit point: `useRevalidator` belongs to
-      // `useSettingsFetcher`, which is reached through the wrapper.
+      // `useSettingsMutation`, which is reached through the wrapper.
       // `MailForm` is allowed to import `useFetcher` from `react-router`
       // for the secondary "send test mail" button — that channel is
       // independent of the section-update channel and shouldn't be
-      // routed through `useSettingsFetcher`.
+      // routed through `useSettingsMutation`.
       expect(formSource).not.toMatch(/import\s*\{[^}]*\buseRevalidator\b[^}]*\}\s*from\s*['"]react-router['"]/)
     }
   })
@@ -756,6 +756,11 @@ describe('contract: module and bundle boundaries', () => {
         key: 'vite.config.ts -> ./src/server/infra/hono/dev.ts',
         file: 'vite.config.ts',
         specifier: './src/server/infra/hono/dev.ts',
+      },
+      {
+        key: 'vite.config.ts -> ./src/server/infra/route-warmup',
+        file: 'vite.config.ts',
+        specifier: './src/server/infra/route-warmup',
       },
       {
         key: 'dev.ts -> ./dev-server-ref',

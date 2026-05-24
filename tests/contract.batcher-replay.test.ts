@@ -1,7 +1,7 @@
 import { PassThrough } from 'node:stream'
 import { describe, expect, it, vi } from 'vitest'
 
-import { replayDeadLetter } from '@/server/domains/analytics/batcher'
+import { replayDeadLetterAccessLog } from '@/server/domains/analytics/batcher'
 
 // Mock fs/promises so we can control dead-letter file contents without
 // touching the real filesystem.
@@ -78,7 +78,7 @@ const makeEvent = (path: string) =>
 describe('replayDeadLetter', () => {
   it('returns replayed=0 failed=0 when file does not exist', async () => {
     vi.mocked(readFile).mockRejectedValue(new Error('ENOENT'))
-    const result = await replayDeadLetter('/tmp/nonexistent.jsonl')
+    const result = await replayDeadLetterAccessLog('/tmp/nonexistent.jsonl')
     expect(result).toEqual({ replayed: 0, failed: 0 })
   })
 
@@ -89,7 +89,7 @@ describe('replayDeadLetter', () => {
     vi.mocked(writeFile).mockResolvedValue(undefined)
     vi.mocked(rename).mockResolvedValue(undefined)
 
-    const result = await replayDeadLetter('/tmp/test.jsonl')
+    const result = await replayDeadLetterAccessLog('/tmp/test.jsonl')
     expect(result.replayed).toBe(3)
     expect(result.failed).toBe(0)
   })
@@ -99,7 +99,7 @@ describe('replayDeadLetter', () => {
     vi.mocked(readFile).mockResolvedValue(lines.join('\n') + '\n')
     vi.mocked(pipeline).mockRejectedValue(new Error('COPY failed'))
 
-    const result = await replayDeadLetter('/tmp/test.jsonl')
+    const result = await replayDeadLetterAccessLog('/tmp/test.jsonl')
     expect(result.replayed).toBe(0)
     expect(result.failed).toBe(3) // 1 parse + 2 copy failures
   })
@@ -109,7 +109,7 @@ describe('replayDeadLetter', () => {
     vi.mocked(readFile).mockResolvedValue(lines.join('\n') + '\n')
     vi.mocked(pipeline).mockRejectedValue(new Error('COPY failed'))
 
-    const result = await replayDeadLetter('/tmp/test.jsonl')
+    const result = await replayDeadLetterAccessLog('/tmp/test.jsonl')
     expect(result.replayed).toBe(0)
     expect(result.failed).toBe(4) // 2 parse + 2 copy failures
   })

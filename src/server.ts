@@ -11,6 +11,7 @@ import type { Env } from '@/server/http/context'
 import { scheduleNextArchive } from '@/server/domains/audit/scheduler'
 import { requestContext, sessionContext } from '@/server/domains/auth/context'
 import { scheduleNextBackup } from '@/server/domains/backup/scheduler'
+import { hydrateBlogSettings } from '@/server/domains/settings/snapshot'
 import { createApiApp } from '@/server/http/app'
 import { onErrorHandler } from '@/server/http/errors'
 import { wrapFetchWithLeakedResponseHandler } from '@/server/http/leaked-response'
@@ -29,6 +30,7 @@ import { feedRouter } from '@/server/http/resources/feed'
 import { imagesRouter } from '@/server/http/resources/images'
 import { redirectsRouter } from '@/server/http/resources/redirects'
 import { sitemapRouter } from '@/server/http/resources/sitemap'
+import { emitEncryptionStartupWarning } from '@/server/infra/crypto/secret-encryption'
 import { createHonoServer } from '@/server/infra/hono/node'
 import { root } from '@/server/infra/logger'
 import { setHttpServer } from '@/server/infra/shutdown'
@@ -144,6 +146,11 @@ const server = await createHonoServer<Env>({
     }
   },
   getLoadContext(c) {
+    // Warm the settings snapshot so the root loader's
+    // `getBlogSettingsBundleSync()` reads fresh data. Only fires for
+    // React Router SSR routes — static assets skip this entirely.
+    // Idempotent: concurrent requests share the same in-flight promise.
+    void hydrateBlogSettings()
     const { session, request } = buildRouteContexts(c)
     const context = new RouterContextProvider()
     context.set(sessionContext, session)
@@ -157,5 +164,6 @@ wrapFetchWithLeakedResponseHandler(server)
 // Start schedulers after server is configured
 scheduleNextBackup()
 scheduleNextArchive()
+emitEncryptionStartupWarning()
 
 export default server

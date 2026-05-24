@@ -34,7 +34,7 @@ interface TestStatus {
 const idleTestStatus: TestStatus = { state: 'idle', message: null }
 
 function MailToggleCard({ mail }: { mail: MailLoaderShape }) {
-  const { mode, form, settingGroupProps, optimisticSource } = useSettingsCard<MailLoaderShape, { enabled: boolean }>({
+  const { mode, form, settingGroupProps, display } = useSettingsCard<MailLoaderShape, { enabled: boolean }>({
     section: 'mail',
     source: mail,
     toState: (source) => ({ enabled: source.enabled }),
@@ -43,7 +43,6 @@ function MailToggleCard({ mail }: { mail: MailLoaderShape }) {
     }),
   })
 
-  const display = optimisticSource ?? mail
   return (
     <SettingGroup
       title="邮件发送总开关"
@@ -77,7 +76,7 @@ function MailToggleCard({ mail }: { mail: MailLoaderShape }) {
 }
 
 function MailConfigCard({ mail }: { mail: MailLoaderShape }) {
-  const { mode, form, settingGroupProps, optimisticSource } = useSettingsCard<
+  const { mode, form, settingGroupProps, display } = useSettingsCard<
     MailLoaderShape,
     { host: string; sender: string; apiKey: string }
   >({
@@ -98,7 +97,6 @@ function MailConfigCard({ mail }: { mail: MailLoaderShape }) {
     },
   })
 
-  const display = optimisticSource ?? mail
   const apiKeyConfigured = display.apiKeyMask !== null
   return (
     <SettingGroup

@@ -4,6 +4,7 @@ import { rescheduleArchive } from '@/server/domains/audit/scheduler'
 import { rescheduleBackup } from '@/server/domains/backup/scheduler'
 import { SECTION_REGISTRY, type SettingsSection } from '@/server/domains/settings/sections'
 import { hydrateBlogSettings, refreshBlogSettings } from '@/server/domains/settings/snapshot'
+import { decryptIfNeeded, encryptIfNeeded } from '@/server/infra/crypto/secret-encryption'
 import { findSettingByScope, upsertSetting } from '@/server/infra/db/operations/setting'
 import { DomainError } from '@/server/infra/http/errors'
 
@@ -26,8 +27,9 @@ export interface AdminBlogSettingsDto {
 }
 
 export async function getAdminBlogSettings(): Promise<AdminBlogSettingsDto> {
-  // Always re-hydrate when the admin panel loads so the editor sees the
-  // latest committed state, even if another tab just wrote to the row.
+  // Delegates to the snapshot hydrator, which re-reads from DB when the
+  // Redis version counter has advanced (set by `refreshBlogSettings`
+  // after every admin write) or shares an in-flight promise otherwise.
   const bundle = await hydrateBlogSettings()
   return { bundle }
 }
@@ -54,9 +56,8 @@ export async function updateBlogSettingsSection<S extends SettingsSection>(
       })),
     )
   }
-  const validated = parsed.data as Record<string, unknown>
-
-  const nextRow = await applySectionPatch(section, validated)
+  const nextRow = await applySectionPatch(section, parsed.data)
+  encryptSecretsInPlace(section, nextRow)
   await upsertSetting(nextRow, updatedBy, meta.scope)
 
   if (section === 'backup') {
@@ -75,13 +76,10 @@ export async function updateBlogSettingsSection<S extends SettingsSection>(
 // Build the row's `data` payload for the given section. Most sections
 // just return the validated payload verbatim; `mail`, `assets`, and
 // `search` fold in the existing secret when the editor omits it.
-async function applySectionPatch(
-  section: SettingsSection,
-  validated: Record<string, unknown>,
-): Promise<Record<string, unknown>> {
+async function applySectionPatch(section: SettingsSection, validated: unknown): Promise<Record<string, unknown>> {
   const secretConfig = SECRET_PRESERVE_CONFIG[section]
   if (!secretConfig) {
-    return validated
+    return validated as Record<string, unknown>
   }
   return preserveSecretOnPatch(validated, section, secretConfig.payloadPath, secretConfig.secretKey)
 }
@@ -99,14 +97,15 @@ const SECRET_PRESERVE_CONFIG: Partial<Record<SettingsSection, { payloadPath: str
 // previous secret back in so the user doesn't have to re-paste it.
 // An explicit string (including empty) overwrites the stored value.
 async function preserveSecretOnPatch(
-  validated: Record<string, unknown>,
+  validated: unknown,
   section: SettingsSection,
   payloadPath: string,
   secretKey: string,
 ): Promise<Record<string, unknown>> {
-  const incoming = (validated[payloadPath] as Record<string, unknown>) ?? {}
+  const record = validated as Record<string, unknown>
+  const incoming = (record[payloadPath] as Record<string, unknown>) ?? {}
   if (secretKey in incoming && incoming[secretKey] !== undefined) {
-    return validated
+    return record
   }
 
   const existingRow = await findSettingByScope(SECTION_REGISTRY[section].scope)
@@ -114,7 +113,25 @@ async function preserveSecretOnPatch(
     | Record<string, unknown>
     | undefined
 
-  const previousSecret = typeof existingPayload?.[secretKey] === 'string' ? existingPayload[secretKey] : ''
+  // Decrypt the stored secret before returning it to the admin UI
+  const raw = typeof existingPayload?.[secretKey] === 'string' ? existingPayload[secretKey] : ''
+  const previousSecret = decryptIfNeeded(raw as string)
   const nextPayload: Record<string, unknown> = { ...incoming, [secretKey]: previousSecret }
-  return { ...validated, [payloadPath]: nextPayload }
+  return { ...record, [payloadPath]: nextPayload }
+}
+
+// Encrypt secret fields in-place before writing to the DB.
+function encryptSecretsInPlace(section: SettingsSection, row: Record<string, unknown>): void {
+  const config = SECRET_PRESERVE_CONFIG[section]
+  if (!config) {
+    return
+  }
+  const bucket = row[config.payloadPath] as Record<string, unknown> | undefined
+  if (!bucket) {
+    return
+  }
+  const value = bucket[config.secretKey]
+  if (typeof value === 'string') {
+    bucket[config.secretKey] = encryptIfNeeded(value)
+  }
 }

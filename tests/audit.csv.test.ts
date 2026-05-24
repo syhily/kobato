@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
-import { csvEscape, csvEscapeDisplay } from '@/server/domains/audit/csv'
+import { csvEscapeDisplay } from '@/server/http/controllers/admin/audit.controller'
+import { csvEscape } from '@/server/infra/csv'
 
 describe('audit/csv', () => {
   it('returns \\N for null and undefined', () => {

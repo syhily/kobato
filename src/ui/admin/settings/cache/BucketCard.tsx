@@ -16,7 +16,7 @@ import {
 import { BucketSaveStatus, ReadOnlyStatusLine } from '@/ui/admin/settings/cache/CacheStatusLine'
 import { SettingsRow } from '@/ui/admin/settings/SettingsSection'
 import { SettingGroup } from '@/ui/admin/settings/shell/SettingGroup'
-import { useSettingsFetcher } from '@/ui/admin/settings/useSettingsFetcher'
+import { useSettingsMutation } from '@/ui/admin/settings/useSettingsMutation'
 import { Button } from '@/ui/components/button'
 import { Input } from '@/ui/components/input'
 
@@ -79,15 +79,19 @@ export function BucketCard({ bucket, settings, allBuckets, isClearPending, clear
     submittedDraftRef.current = null
     setSnapshot(submitted.value)
   }, [])
-  const {
-    save,
-    isPending: isSavePending,
-    status: saveStatus,
-    errorMessage,
-  } = useSettingsFetcher({
-    section: 'cache',
-    onSaved,
-  })
+  const { commit, isPending: isSavePending, status: saveStatus, errorMessage } = useSettingsMutation()
+
+  const save = useCallback(
+    async (payload: Record<string, unknown>) => {
+      try {
+        await commit('cache', payload)
+        onSaved?.()
+      } catch {
+        // commit already set error status
+      }
+    },
+    [commit, onSaved],
+  )
 
   // Auto-exit the edit mode on a successful save originated from this
   // card. The "saved" status sticks until the next submission, so we

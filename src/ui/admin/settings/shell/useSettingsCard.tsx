@@ -3,12 +3,10 @@ import type { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { type DefaultValues, type FieldValues, type Resolver, type UseFormReturn, useForm } from 'react-hook-form'
-import { useRevalidator } from 'react-router'
 
 import type { SettingsSection } from '@/shared/config/settings'
 
-import { orpc } from '@/client/api/client'
-import { useMutation } from '@/client/api/query'
+import { useSettingsMutation } from '@/ui/admin/settings/useSettingsMutation'
 
 interface UseSettingsCardOptions<TSource, TState extends FieldValues> {
   section: SettingsSection
@@ -39,8 +37,8 @@ interface UseSettingsCardResult<TSource, TState extends FieldValues> {
   isPending: boolean
   status: 'idle' | 'saving' | 'saved' | 'error'
   errorMessage: string | null
-  /** Optimistic source derived from the last submitted form state. */
-  optimisticSource: TSource | null
+  /** Resolved display data: optimistic if pending, else server source. */
+  display: TSource
   /** Spread into <SettingGroup> to wire up edit/save/cancel/status. */
   settingGroupProps: {
     mode: 'read' | 'edit'
@@ -52,7 +50,11 @@ interface UseSettingsCardResult<TSource, TState extends FieldValues> {
   }
 }
 
-function deepMerge(target: Record<string, unknown>, patch: Record<string, unknown>): Record<string, unknown> {
+function deepMerge(
+  target: Record<string, unknown>,
+  patch: Record<string, unknown>,
+  seen: WeakSet<object> = new WeakSet(),
+): Record<string, unknown> {
   const result = { ...target }
   for (const key of Object.keys(patch)) {
     const patchVal = patch[key]
@@ -65,7 +67,11 @@ function deepMerge(target: Record<string, unknown>, patch: Record<string, unknow
       typeof targetVal === 'object' &&
       !Array.isArray(targetVal)
     ) {
-      result[key] = deepMerge(targetVal as Record<string, unknown>, patchVal as Record<string, unknown>)
+      if (seen.has(patchVal)) {
+        continue
+      }
+      seen.add(patchVal)
+      result[key] = deepMerge(targetVal as Record<string, unknown>, patchVal as Record<string, unknown>, seen)
     } else {
       result[key] = patchVal
     }
@@ -82,10 +88,8 @@ export function useSettingsCard<TSource, TState extends FieldValues>({
   mode: mergeMode = 'patch',
 }: UseSettingsCardOptions<TSource, TState>): UseSettingsCardResult<TSource, TState> {
   const [mode, setMode] = useState<'read' | 'edit'>('read')
-  const [status, setStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
-  const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [optimisticSource, setOptimisticSource] = useState<TSource | null>(null)
-  const revalidator = useRevalidator()
+  const { commit, resetStatus, isPending, status, errorMessage } = useSettingsMutation()
 
   // Stable references: callers pass module-level functions for `toState`
   // and `fromState`, so identity is stable across renders. Use refs to
@@ -133,15 +137,8 @@ export function useSettingsCard<TSource, TState extends FieldValues>({
     }
   }, [source, lastSourceSnapshot, mode, initialValues, reset, optimisticSource])
 
-  const updateMutation = useMutation({
-    mutationFn: ({ section, payload }: { section: SettingsSection; payload: Record<string, unknown> }) =>
-      orpc.admin.settings.update({ section, payload }),
-  })
-
   const save = useCallback(() => {
     handleSubmit(async (values) => {
-      setStatus('saving')
-      setErrorMessage(null)
       const patchPayload = fromStateRef.current(values)
       const payload =
         mergeMode === 'patch' ? deepMerge(sourceRef.current as Record<string, unknown>, patchPayload) : patchPayload
@@ -150,28 +147,24 @@ export function useSettingsCard<TSource, TState extends FieldValues>({
       setOptimisticSource(payload as TSource)
       setMode('read')
       try {
-        await updateMutation.mutateAsync({ section, payload })
-        setStatus('saved')
-        void revalidator.revalidate()
-      } catch (error: unknown) {
-        setStatus('error')
-        setErrorMessage(error instanceof Error ? error.message : '保存失败')
+        await commit(section, payload)
+      } catch {
+        // commit already set error status
       }
     })().catch((error: unknown) => {
       if (error instanceof Error) {
-        setErrorMessage(error.message)
-        setStatus('error')
+        // Form validation errors are caught here; mutation errors are
+        // handled inside commit().
       }
     })
-  }, [handleSubmit, mergeMode, section, updateMutation, revalidator])
+  }, [handleSubmit, mergeMode, section, commit])
 
   const cancel = useCallback(() => {
     reset(initialValues)
+    resetStatus()
     setMode('read')
-    setStatus('idle')
-    setErrorMessage(null)
     setOptimisticSource(null)
-  }, [initialValues, reset])
+  }, [initialValues, reset, resetStatus])
 
   return {
     mode,
@@ -179,10 +172,10 @@ export function useSettingsCard<TSource, TState extends FieldValues>({
     form,
     save,
     cancel,
-    isPending: updateMutation.isPending,
+    isPending,
     status,
     errorMessage,
-    optimisticSource,
+    display: optimisticSource ?? source,
     settingGroupProps: {
       mode,
       onModeChange: setMode,

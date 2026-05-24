@@ -27,7 +27,7 @@ const SORT_BY_ITEMS = [
 ]
 
 function ContentPaginationCard({ content }: { content: ContentSettings }) {
-  const { mode, form, settingGroupProps, optimisticSource } = useSettingsCard<
+  const { mode, form, settingGroupProps, display } = useSettingsCard<
     ContentSettings,
     { pagPosts: number; pagCategory: number; pagTags: number; pagSearch: number }
   >({
@@ -49,7 +49,6 @@ function ContentPaginationCard({ content }: { content: ContentSettings }) {
     }),
   })
 
-  const display = optimisticSource ?? content
   return (
     <SettingGroup
       title="分页"
@@ -108,7 +107,7 @@ function ContentPaginationCard({ content }: { content: ContentSettings }) {
 }
 
 function ContentFeedCard({ content }: { content: ContentSettings }) {
-  const { mode, form, settingGroupProps, optimisticSource } = useSettingsCard<
+  const { mode, form, settingGroupProps, display } = useSettingsCard<
     ContentSettings,
     { feedFull: boolean; feedSize: number }
   >({
@@ -123,7 +122,6 @@ function ContentFeedCard({ content }: { content: ContentSettings }) {
     }),
   })
 
-  const display = optimisticSource ?? content
   return (
     <SettingGroup
       title="RSS / Atom Feed"
@@ -167,7 +165,7 @@ function ContentFeedCard({ content }: { content: ContentSettings }) {
 }
 
 function ContentSortCard({ content }: { content: ContentSettings }) {
-  const { mode, form, settingGroupProps, optimisticSource } = useSettingsCard<
+  const { mode, form, settingGroupProps, display } = useSettingsCard<
     ContentSettings,
     {
       postSort: 'asc' | 'desc'
@@ -191,7 +189,6 @@ function ContentSortCard({ content }: { content: ContentSettings }) {
     }),
   })
 
-  const display = optimisticSource ?? content
   return (
     <SettingGroup
       title="文章排序与置顶"
@@ -273,7 +270,7 @@ function ContentSortCard({ content }: { content: ContentSettings }) {
 }
 
 function ContentFootnotesCard({ content }: { content: ContentSettings }) {
-  const { mode, form, settingGroupProps, optimisticSource } = useSettingsCard<
+  const { mode, form, settingGroupProps, display } = useSettingsCard<
     ContentSettings,
     { footnotesSectionTitle: string }
   >({
@@ -287,7 +284,6 @@ function ContentFootnotesCard({ content }: { content: ContentSettings }) {
     }),
   })
 
-  const display = optimisticSource ?? content
   return (
     <SettingGroup
       title="脚注汇总标题"

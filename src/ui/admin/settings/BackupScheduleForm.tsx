@@ -35,7 +35,7 @@ interface BackupScheduleFormProps {
 }
 
 export function BackupScheduleForm({ backup, canConfigure }: BackupScheduleFormProps) {
-  const { mode, form, settingGroupProps, optimisticSource } = useSettingsCard<BackupSettings, FormState>({
+  const { mode, form, settingGroupProps, display } = useSettingsCard<BackupSettings, FormState>({
     section: 'backup',
     source: backup,
     toState: (source) => ({
@@ -64,7 +64,6 @@ export function BackupScheduleForm({ backup, canConfigure }: BackupScheduleFormP
     }),
   })
 
-  const display = optimisticSource ?? backup
   const enabled = useWatch({ control: form.control, name: 'scheduledEnabled' })
   const frequency = useWatch({ control: form.control, name: 'frequency' })
   const retentionEnabled = useWatch({ control: form.control, name: 'retentionEnabled' })

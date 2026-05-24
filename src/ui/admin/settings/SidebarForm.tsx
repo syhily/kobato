@@ -115,17 +115,13 @@ function SortableWidgetRow({
 }
 
 export function SidebarForm({ sidebar }: SidebarFormProps) {
-  const { mode, form, settingGroupProps, optimisticSource } = useSettingsCard<
-    SidebarSettings,
-    { widgets: SidebarWidget[] }
-  >({
+  const { mode, form, settingGroupProps, display } = useSettingsCard<SidebarSettings, { widgets: SidebarWidget[] }>({
     section: 'sidebar',
     source: sidebar,
     toState: (source) => ({ widgets: [...source.sidebar.widgets] }),
     fromState: (state) => ({ sidebar: { widgets: state.widgets } }),
   })
 
-  const display = optimisticSource ?? sidebar
   const sensors = useSensors(
     useSensor(PointerSensor),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),

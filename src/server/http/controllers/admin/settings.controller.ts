@@ -9,14 +9,7 @@ import { adminProc } from '@/server/http/orpc-base'
 import { ErrorMessages } from '@/server/infra/http/errors'
 import { SETTINGS_SECTIONS, type SettingsSection } from '@/shared/config/settings'
 import { blogSettingsBundleDto } from '@/shared/contracts/settings'
-
-function safeBigInt(value: string): bigint | null {
-  try {
-    return BigInt(value)
-  } catch {
-    return null
-  }
-}
+import { safeBigInt } from '@/shared/utils/tools'
 
 const get = adminProc
   .route({ method: 'GET', path: '/admin/settings/get' })

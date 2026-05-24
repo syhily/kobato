@@ -5,9 +5,15 @@ import tailwindcss from '@tailwindcss/vite'
 import { defineConfig } from 'vite'
 
 import { reactRouterHonoServer } from './src/server/infra/hono/dev.ts'
+import { routeWarmupPlugin } from './src/server/infra/route-warmup'
 
 export default defineConfig({
-  plugins: [reactRouterHonoServer(), ...(reactRouter() as Plugin[]), tailwindcss()] as PluginOption[],
+  plugins: [
+    reactRouterHonoServer(),
+    ...(reactRouter() as Plugin[]),
+    tailwindcss(),
+    routeWarmupPlugin(),
+  ] as PluginOption[],
   resolve: {
     tsconfigPaths: true,
   },

@@ -21,7 +21,7 @@ interface FontsFormProps {
 }
 
 function FontsCanvasCard({ fonts }: { fonts: FontsSettings }) {
-  const { mode, form, settingGroupProps, optimisticSource } = useSettingsCard<
+  const { mode, form, settingGroupProps, display } = useSettingsCard<
     FontsSettings,
     { ogUrl: string; calendarUrl: string }
   >({
@@ -37,7 +37,6 @@ function FontsCanvasCard({ fonts }: { fonts: FontsSettings }) {
     }),
   })
 
-  const display = optimisticSource ?? fonts
   return (
     <SettingGroup
       title="Canvas 字体"
@@ -78,7 +77,7 @@ function FontsCanvasCard({ fonts }: { fonts: FontsSettings }) {
 }
 
 function FontsGlobalCssCard({ fonts }: { fonts: FontsSettings }) {
-  const { mode, form, settingGroupProps, optimisticSource } = useSettingsCard<FontsSettings, { globalCss: CssRow[] }>({
+  const { mode, form, settingGroupProps, display } = useSettingsCard<FontsSettings, { globalCss: CssRow[] }>({
     section: 'fonts',
     source: fonts,
     toState: (source) => ({
@@ -89,7 +88,6 @@ function FontsGlobalCssCard({ fonts }: { fonts: FontsSettings }) {
     }),
   })
 
-  const display = optimisticSource ?? fonts
   const rows = useFieldArray({ control: form.control, name: 'globalCss' })
 
   return (
@@ -153,7 +151,7 @@ function FontsGlobalCssCard({ fonts }: { fonts: FontsSettings }) {
 }
 
 function FontsPostCssCard({ fonts }: { fonts: FontsSettings }) {
-  const { mode, form, settingGroupProps, optimisticSource } = useSettingsCard<FontsSettings, { postCss: CssRow[] }>({
+  const { mode, form, settingGroupProps, display } = useSettingsCard<FontsSettings, { postCss: CssRow[] }>({
     section: 'fonts',
     source: fonts,
     toState: (source) => ({
@@ -164,7 +162,6 @@ function FontsPostCssCard({ fonts }: { fonts: FontsSettings }) {
     }),
   })
 
-  const display = optimisticSource ?? fonts
   const rows = useFieldArray({ control: form.control, name: 'postCss' })
 
   return (

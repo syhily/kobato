@@ -36,7 +36,7 @@ function toFormState(source: SocialsSettings): { rows: SocialRow[] } {
 }
 
 export function SocialsEditor({ socials }: SocialsEditorProps) {
-  const { mode, form, settingGroupProps, optimisticSource } = useSettingsCard<SocialsSettings, { rows: SocialRow[] }>({
+  const { mode, form, settingGroupProps, display } = useSettingsCard<SocialsSettings, { rows: SocialRow[] }>({
     section: 'socials',
     source: socials,
     toState: toFormState,
@@ -57,7 +57,6 @@ export function SocialsEditor({ socials }: SocialsEditorProps) {
     }),
   })
 
-  const display = optimisticSource ?? socials
   const { fields, update: updateField } = useFieldArray({ control: form.control, name: 'rows' })
 
   const patch = (index: number, update: Partial<SocialRow>) => {

@@ -1,8 +1,5 @@
 import type { BlogSettingsBundle } from '@/shared/config/blog'
 
-type BundleWithIndex = BlogSettingsBundle & Record<string, unknown>
-
-import { RATE_LIMIT_BUCKET_KEYS } from '@/server/domains/settings/schemas/rate-limit'
 import {
   buildDefaultSectionPayloads,
   SECTION_REGISTRY,
@@ -11,12 +8,14 @@ import {
   sectionFromScope,
   type SettingsSection,
 } from '@/server/domains/settings/sections'
+import { decryptIfNeeded } from '@/server/infra/crypto/secret-encryption'
 import { findSettingsByScopePrefix, upsertSetting } from '@/server/infra/db/operations/setting'
+import { isVitest } from '@/server/infra/env'
 import { getLogger } from '@/server/infra/logger'
 import { storage } from '@/server/infra/redis/storage'
 import { BLOG_SETTINGS_SNAPSHOT_SLOT, getBlogSettingsBundleSync, requireBlogSettingsBundle } from '@/shared/config/blog'
-import { BUNDLE_KEYS } from '@/shared/config/settings'
-import { CACHE_BUCKET_IDS } from '@/shared/types/cache'
+import { BUNDLE_KEYS, type BundleKey } from '@/shared/config/settings'
+import { deepFreeze } from '@/shared/utils/tools'
 
 const log = getLogger('settings.snapshot')
 
@@ -53,175 +52,16 @@ async function getSettingsVersion(): Promise<number> {
 // `requireBlogSettingsSection()` throws so any post-install path that
 // bypasses the gate fails loudly.
 
-// Per-section shape probes. Each probe returns `true` when the loaded
-// JSONB row matches the bucket DTO it claims to populate; rows that
-// fail the probe are silently dropped so a corrupt section can't take
-// down sibling sections that loaded fine.
-//
-// Keys are typed as `SettingsSection` so adding a new section in
-// `SETTINGS_SECTIONS` makes the compiler insist on a matching probe
-// here — the only per-section asymmetry that did NOT collapse into
-// the `SECTION_REGISTRY` derivation below.
-type SectionProbe = (value: Record<string, unknown>) => boolean
-
-const PROBES: Record<SettingsSection, SectionProbe> = {
-  general: (value) =>
-    typeof value.title === 'string' &&
-    typeof value.description === 'string' &&
-    typeof value.website === 'string' &&
-    Array.isArray(value.keywords) &&
-    typeof value.author === 'object' &&
-    value.author !== null &&
-    typeof value.locale === 'string' &&
-    typeof value.timeZone === 'string' &&
-    typeof value.timeFormat === 'string',
-  // The merged `assets` section combines the music CDN host (formerly
-  // `localization.asset`), the S3 storage credentials, and the upload
-  // limits. Rows persisted before the merge carry only some of these
-  // and would otherwise pass an over-permissive probe — only to crash
-  // callers that read every field. The probe enforces the full
-  // post-merge shape so legacy rows fall through and are caught by
-  // the `siteIdentity === null || assets === null` "uninstalled" gate
-  assets: (value) => {
-    if (typeof value.asset !== 'object' || value.asset === null) {
-      return false
-    }
-    if (typeof value.storage !== 'object' || value.storage === null) {
-      return false
-    }
-    if (typeof value.upload !== 'object' || value.upload === null) {
-      return false
-    }
-    const asset = value.asset as Record<string, unknown>
-    const storage = value.storage as Record<string, unknown>
-    const upload = value.upload as Record<string, unknown>
-    return (
-      typeof asset.host === 'string' &&
-      (asset.scheme === 'http' || asset.scheme === 'https') &&
-      typeof storage.enabled === 'boolean' &&
-      typeof storage.endpoint === 'string' &&
-      typeof storage.region === 'string' &&
-      typeof storage.bucket === 'string' &&
-      typeof storage.accessKeyId === 'string' &&
-      typeof storage.secretAccessKey === 'string' &&
-      typeof storage.forcePathStyle === 'boolean' &&
-      typeof storage.urlTemplate === 'string' &&
-      typeof upload.maxBytes === 'number' &&
-      typeof upload.jpegQuality === 'number'
-    )
-  },
-  navigation: (value) =>
-    typeof value.navigation === 'object' &&
-    value.navigation !== null &&
-    Array.isArray((value.navigation as Record<string, unknown>).sideNav) &&
-    Array.isArray((value.navigation as Record<string, unknown>).footerNav),
-  socials: (value) => Array.isArray(value.socials),
-  content: (value) =>
-    typeof value.pagination === 'object' &&
-    value.pagination !== null &&
-    typeof value.feed === 'object' &&
-    value.feed !== null &&
-    typeof value.post === 'object' &&
-    value.post !== null,
-  sidebar: (value) =>
-    typeof value.sidebar === 'object' &&
-    value.sidebar !== null &&
-    Array.isArray((value.sidebar as Record<string, unknown>).widgets),
-  comments: (value) => typeof value.comments === 'object' && value.comments !== null,
-  seo: (value) =>
-    typeof value.toc === 'object' && value.toc !== null && typeof value.og === 'object' && value.og !== null,
-
-  mail: (value) => typeof value.mail === 'object' && value.mail !== null,
-  // Each cache bucket carries `prefix` + `ttlSeconds`. Probe walks
-  // every required bucket so a row missing newer surfaces (e.g. a
-  // legacy install written before `imageMeta` was
-  // added) falls through and gets repaired by the registry-default
-  // backfill — same pattern as the `rateLimit` probe below. Without
-  // this, the admin cache form would crash with
-  // `Cannot read properties of undefined (reading 'prefix')` because
-  // the editor reads the bundle directly without going through
-  // `requireBlogSettingsSection('cache')`'s fallback wrap.
-  cache: (value) => {
-    if (typeof value.cache !== 'object' || value.cache === null) {
-      return false
-    }
-    const buckets = value.cache as Record<string, unknown>
-    for (const id of CACHE_BUCKET_IDS) {
-      const slot = buckets[id]
-      if (typeof slot !== 'object' || slot === null) {
-        return false
-      }
-      const entry = slot as Record<string, unknown>
-      if (typeof entry.prefix !== 'string' || typeof entry.ttlSeconds !== 'number') {
-        return false
-      }
-    }
-    return true
-  },
-  // Each rate-limit bucket carries `windowSeconds` + `maxAttempts`.
-  // Probe walks every required bucket so a row missing the new
-  // `likeIncreaseIp` surface (e.g. someone hand-edited the JSONB)
-  // falls through and gets repaired by the registry-default backfill.
-  rateLimit: (value) => {
-    for (const key of RATE_LIMIT_BUCKET_KEYS) {
-      const bucket = value[key]
-      if (typeof bucket !== 'object' || bucket === null) {
-        return false
-      }
-      const slot = bucket as Record<string, unknown>
-      if (typeof slot.windowSeconds !== 'number' || typeof slot.maxAttempts !== 'number') {
-        return false
-      }
-    }
-    return true
-  },
-  search: (value) =>
-    typeof value.search === 'object' &&
-    value.search !== null &&
-    typeof (value.search as Record<string, unknown>).enabled === 'boolean' &&
-    typeof (value.search as Record<string, unknown>).mode === 'string' &&
-    typeof (value.search as Record<string, unknown>).model === 'string' &&
-    typeof (value.search as Record<string, unknown>).similarityThreshold === 'number',
-  fonts: (value) => {
-    for (const slot of ['og', 'calendar'] as const) {
-      const v = (value[slot] ?? null) as Record<string, unknown> | null
-      if (v === null || typeof v.url !== 'string') {
-        return false
-      }
-    }
-    for (const slot of ['globalCss', 'postCss'] as const) {
-      const v = value[slot]
-      if (!Array.isArray(v) || v.some((entry) => typeof entry !== 'string')) {
-        return false
-      }
-    }
-    return true
-  },
-  cors: (value) =>
-    typeof value.cors === 'object' &&
-    value.cors !== null &&
-    typeof (value.cors as Record<string, unknown>).enabled === 'boolean' &&
-    Array.isArray((value.cors as Record<string, unknown>).origins),
-  backup: (value) =>
-    typeof value.scheduled === 'object' &&
-    value.scheduled !== null &&
-    typeof (value.scheduled as Record<string, unknown>).enabled === 'boolean' &&
-    typeof value.retention === 'object' &&
-    value.retention !== null &&
-    typeof (value.retention as Record<string, unknown>).enabled === 'boolean',
-  limits: (value) => typeof value.maxRequestBodySize === 'number' && typeof value.sessionMaxAge === 'number',
-}
-
 // Dynamic key-value assembly for the settings bundle. The bundle is a
 // strongly-typed `BlogSettingsBundle` but is assembled from DB rows whose
 // section keys come from a registry. The cast is consolidated into these
 // two helpers so the rest of the module uses typed access.
-function bundleSet(bundle: BlogSettingsBundle, key: string, value: unknown): void {
-  ;(bundle as BundleWithIndex)[key] = value
+function bundleSet(bundle: BlogSettingsBundle, key: BundleKey, value: unknown): void {
+  ;(bundle as unknown as Record<string, unknown>)[key] = value
 }
 
-function bundleHas(bundle: BlogSettingsBundle, key: string): boolean {
-  return (bundle as BundleWithIndex)[key] !== null
+function bundleHas(bundle: BlogSettingsBundle, key: BundleKey): boolean {
+  return (bundle as unknown as Record<string, unknown>)[key] !== null
 }
 
 // Project the canonical `BUNDLE_KEYS` list (mirrors `SETTINGS_SECTIONS`)
@@ -229,7 +69,33 @@ function bundleHas(bundle: BlogSettingsBundle, key: string): boolean {
 // `@/shared/config/settings.ts` automatically extends this — there is no
 // sibling 12-line `null` literal to also remember.
 function emptyBundle(): BlogSettingsBundle {
-  return Object.fromEntries(BUNDLE_KEYS.map((key) => [key, null])) as BundleWithIndex
+  return Object.fromEntries(BUNDLE_KEYS.map((key) => [key, null])) as unknown as BlogSettingsBundle
+}
+
+// Secret field locations: section → { bundle key, nested path, field name }.
+// Mirrors SECRET_PRESERVE_CONFIG in service.ts. Duplicated here to avoid
+// a circular import (service → snapshot → service).
+const SECRET_FIELDS = [
+  { section: 'mail' as const, bundleKey: 'mail' as const, path: 'mail', field: 'apiKey' },
+  { section: 'assets' as const, bundleKey: 'assets' as const, path: 'storage', field: 'secretAccessKey' },
+  { section: 'search' as const, bundleKey: 'search' as const, path: 'search', field: 'apiKey' },
+]
+
+function decryptSecretsInBundle(bundle: BlogSettingsBundle): void {
+  for (const { bundleKey, path, field } of SECRET_FIELDS) {
+    const sectionData = bundle[bundleKey] as Record<string, unknown> | null
+    if (sectionData === null) {
+      continue
+    }
+    const bucket = sectionData[path] as Record<string, unknown> | undefined
+    if (!bucket) {
+      continue
+    }
+    const value = bucket[field]
+    if (typeof value === 'string' && value.startsWith('enc:')) {
+      bucket[field] = decryptIfNeeded(value)
+    }
+  }
 }
 
 async function loadSettingsFromDb(): Promise<BlogSettingsBundle | null> {
@@ -250,19 +116,19 @@ async function loadSettingsFromDb(): Promise<BlogSettingsBundle | null> {
       log.warn('Ignoring setting row with unrecognised scope', { scope: row.scope })
       continue
     }
-    const data = row.data as Record<string, unknown> | null | undefined
+    const data = row.data
     if (data === null || typeof data !== 'object') {
       log.warn('Setting row has non-object data; skipping', { scope: row.scope })
       continue
     }
-    if (!PROBES[section](data)) {
-      log.warn('Setting row failed shape probe; skipping', { scope: row.scope })
+    const meta = SECTION_REGISTRY[section]
+    if (!meta.schema.safeParse(data).success) {
+      log.warn('Setting row failed schema validation; skipping', { scope: row.scope })
       continue
     }
-    const meta = SECTION_REGISTRY[section]
     // The bucket field carries the same DTO shape as the row's `data`;
-    // the cast is a deliberate boundary widening that the probe above
-    // backs.
+    // the cast is a deliberate boundary widening that the schema
+    // validation above backs.
     bundleSet(bundle, meta.key, data)
   }
 
@@ -283,6 +149,9 @@ async function loadSettingsFromDb(): Promise<BlogSettingsBundle | null> {
   // `signUpInitialAdminWithSession()` which writes all rows up
   // front, so they hit this branch with nothing to do.
   await backfillMissingSectionDefaults(bundle)
+
+  // Decrypt any encrypted secret fields so runtime consumers see plaintext.
+  decryptSecretsInBundle(bundle)
 
   return bundle
 }
@@ -386,8 +255,8 @@ export async function hydrateBlogSettings(): Promise<BlogSettingsBundle | null> 
  */
 export async function refreshBlogSettings(): Promise<BlogSettingsBundle | null> {
   BLOG_SETTINGS_SNAPSHOT_SLOT.writeHydration(undefined)
-  const result = await hydrateBlogSettings()
   await bumpSettingsVersion()
+  const result = await hydrateBlogSettings()
   return result
 }
 
@@ -406,7 +275,7 @@ export { getBlogSettingsBundleSync, requireBlogSettingsBundle }
 // Test runs (`VITEST=true`) skip the hydration so the suite isn't forced
 // to mock the DB pool just to import a server module. Tests that need a
 // hydrated snapshot can call `setBlogSettingsBundleForTests(...)`.
-if (typeof process === 'undefined' || process.env.VITEST !== 'true') {
+if (!isVitest()) {
   void hydrateBlogSettings().catch((error) => {
     log.error('Initial blog settings hydration failed', { error })
   })
@@ -414,8 +283,9 @@ if (typeof process === 'undefined' || process.env.VITEST !== 'true') {
 
 /** Test-only: replace the snapshot synchronously. */
 export function setBlogSettingsBundleForTests(value: BlogSettingsBundle | null | undefined): void {
-  BLOG_SETTINGS_SNAPSHOT_SLOT.write(value)
-  BLOG_SETTINGS_SNAPSHOT_SLOT.writeHydration(value === undefined ? undefined : Promise.resolve(value ?? null))
+  const frozen = value == null ? value : deepFreeze(value)
+  BLOG_SETTINGS_SNAPSHOT_SLOT.write(frozen)
+  BLOG_SETTINGS_SNAPSHOT_SLOT.writeHydration(frozen === undefined ? undefined : Promise.resolve(frozen ?? null))
 }
 
 // `SETTINGS_SECTIONS` is exported for `service.ts` and tests that

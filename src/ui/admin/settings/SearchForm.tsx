@@ -33,7 +33,7 @@ interface ReindexProgress {
 }
 
 function SearchModeCard({ search }: { search: SearchLoaderShape }) {
-  const { mode, form, settingGroupProps, optimisticSource } = useSettingsCard<
+  const { mode, form, settingGroupProps, display } = useSettingsCard<
     SearchLoaderShape,
     { enabled: boolean; mode: 'vector' | 'like' }
   >({
@@ -49,7 +49,6 @@ function SearchModeCard({ search }: { search: SearchLoaderShape }) {
     }),
   })
 
-  const display = optimisticSource ?? search
   return (
     <SettingGroup
       title="搜索模式"
@@ -109,7 +108,7 @@ function SearchModeCard({ search }: { search: SearchLoaderShape }) {
 }
 
 function SearchOpenAiCard({ search }: { search: SearchLoaderShape }) {
-  const { mode, form, settingGroupProps, optimisticSource } = useSettingsCard<
+  const { mode, form, settingGroupProps, display } = useSettingsCard<
     SearchLoaderShape,
     { endpoint: string; apiKey: string; model: string; similarityThreshold: number }
   >({
@@ -132,7 +131,6 @@ function SearchOpenAiCard({ search }: { search: SearchLoaderShape }) {
     },
   })
 
-  const display = optimisticSource ?? search
   const apiKeyConfigured = display.apiKeyMask !== null
   return (
     <SettingGroup title="OpenAI 配置" description="向量搜索需要调用 OpenAI Embedding API。" {...settingGroupProps}>

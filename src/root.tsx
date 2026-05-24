@@ -5,12 +5,16 @@ import { useState } from 'react'
 import { preconnect, prefetchDNS } from 'react-dom'
 import { Links, Meta, Outlet, Scripts, ScrollRestoration, useRouteLoaderData } from 'react-router'
 
+import type { WarmupManifest } from '@/server/render/warmup/manifest'
+
 import { makeQueryClient } from '@/client/api/query-client'
+import { RouteWarmupScript } from '@/client/components/RouteWarmupScript'
 import { useChunkErrorRecovery, useReloadOnChunkError } from '@/client/hooks/use-chunk-error-recovery'
 import { useFocusHash } from '@/client/hooks/use-focus-hash'
 import { useIosNoZoomOnFocus } from '@/client/hooks/use-ios-no-zoom'
 import { getRouteRequestContext } from '@/server/domains/auth/context'
 import { bundleFromMatches, routeMeta } from '@/server/render/seo/meta'
+import { getWarmupManifest } from '@/server/render/warmup/manifest'
 import { getBlogSettingsBundleSync } from '@/shared/config/blog'
 import { BlogSettingsProvider } from '@/shared/lib/blog-config-context'
 import { ThemeProvider, THEME_COOKIE } from '@/ui/lib/ThemeProvider'
@@ -20,6 +24,26 @@ import { NavigationSplash } from '@/ui/public/chrome/NavigationSplash'
 import { PublicChrome } from '@/ui/public/chrome/PublicChrome'
 
 import type { Route } from './+types/root'
+
+function collectTier2Chunks(manifest: WarmupManifest, isAdmin: boolean): string[] {
+  const seen = new Set<string>()
+  const result: string[] = []
+  const push = (arr: string[]) => {
+    for (const c of arr) {
+      if (!seen.has(c)) {
+        seen.add(c)
+        result.push(c)
+      }
+    }
+  }
+  push(manifest.tier2_public)
+  if (isAdmin) {
+    push(manifest.tier2_admin)
+    push(manifest.tier2_editor)
+  }
+  push(manifest.tier2_auth)
+  return result
+}
 
 // Order matters:
 //   1. Session middleware decrypts the cookie + populates request
@@ -122,6 +146,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
   // page falls back to the system-stack fonts declared in
   // `tailwind.css` without any pre-paint flash.
   const rootData = useRouteLoaderData<{
+    admin?: boolean
     theme?: 'dark' | 'light' | null
     blogSettings?: {
       fonts?: { globalCss?: string[] } | null
@@ -155,6 +180,13 @@ export function Layout({ children }: { children: React.ReactNode }) {
     prefetchDNS(`https://${host}`)
   }
 
+  // Tier-1 route warmup: preload critical public route chunks
+  const warmupManifest = getWarmupManifest()
+  const tier1Links = warmupManifest?.tier1 ?? []
+
+  // Tier-2 idle warmup: collect chunks based on auth status
+  const tier2Chunks = warmupManifest ? collectTier2Chunks(warmupManifest, rootData?.admin === true) : []
+
   return (
     <html lang="zh-CN" className={theme ?? undefined}>
       <head>
@@ -166,12 +198,16 @@ export function Layout({ children }: { children: React.ReactNode }) {
         ))}
         <Meta />
         <Links />
+        {tier1Links.map((href) => (
+          <link key={href} rel="modulepreload" href={href} />
+        ))}
       </head>
       <body>
         {children}
         <ChunkReloadOverlay />
         <ScrollRestoration />
         <Scripts />
+        <RouteWarmupScript chunks={tier2Chunks} />
       </body>
     </html>
   )

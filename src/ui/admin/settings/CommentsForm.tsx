@@ -12,7 +12,7 @@ interface CommentsFormProps {
 }
 
 function CommentsPaginationCard({ comments }: { comments: CommentsSettings }) {
-  const { mode, form, settingGroupProps, optimisticSource } = useSettingsCard<CommentsSettings, { size: number }>({
+  const { mode, form, settingGroupProps, display } = useSettingsCard<CommentsSettings, { size: number }>({
     section: 'comments',
     source: comments,
     toState: (source) => ({ size: source.comments.size }),
@@ -23,7 +23,6 @@ function CommentsPaginationCard({ comments }: { comments: CommentsSettings }) {
     }),
   })
 
-  const display = optimisticSource ?? comments
   return (
     <SettingGroup title="评论分页" description="控制文章页面下方的评论列表加载行为。" {...settingGroupProps}>
       {mode === 'edit' ? (
@@ -48,7 +47,7 @@ function CommentsPaginationCard({ comments }: { comments: CommentsSettings }) {
 }
 
 function CommentsAvatarCard({ comments }: { comments: CommentsSettings }) {
-  const { mode, form, settingGroupProps, optimisticSource } = useSettingsCard<
+  const { mode, form, settingGroupProps, display } = useSettingsCard<
     CommentsSettings,
     { avatarMirror: string; avatarSize: number }
   >({
@@ -65,7 +64,6 @@ function CommentsAvatarCard({ comments }: { comments: CommentsSettings }) {
     }),
   })
 
-  const display = optimisticSource ?? comments
   return (
     <SettingGroup
       title="头像镜像"
@@ -102,10 +100,7 @@ function CommentsAvatarCard({ comments }: { comments: CommentsSettings }) {
 }
 
 function CommentsTokenCard({ comments }: { comments: CommentsSettings }) {
-  const { mode, form, settingGroupProps, optimisticSource } = useSettingsCard<
-    CommentsSettings,
-    { tokenTtlSeconds: number }
-  >({
+  const { mode, form, settingGroupProps, display } = useSettingsCard<CommentsSettings, { tokenTtlSeconds: number }>({
     section: 'comments',
     source: comments,
     toState: (source) => ({ tokenTtlSeconds: source.comments.tokenTtlSeconds }),
@@ -116,7 +111,6 @@ function CommentsTokenCard({ comments }: { comments: CommentsSettings }) {
     }),
   })
 
-  const display = optimisticSource ?? comments
   return (
     <SettingGroup
       title="匿名评论 Token"

@@ -1,10 +1,10 @@
 import { RotateCwIcon, SaveIcon, UploadIcon, XIcon } from 'lucide-react'
-import { type SubmitEventHandler, useCallback, useEffect, useRef, useState } from 'react'
+import { Suspense, type SubmitEventHandler, lazy, useCallback, useEffect, useRef, useState } from 'react'
 
 import type { AdminImageDto } from '@/shared/types/images'
+import type { LockedAspect } from '@/ui/admin/shared/ImageEditorCanvas'
 
 import { orpc } from '@/client/api/client'
-import { ImageEditorCanvas, type LockedAspect } from '@/ui/admin/shared/ImageEditorCanvas'
 import { Button } from '@/ui/components/button'
 import {
   Dialog,
@@ -16,6 +16,10 @@ import {
 } from '@/ui/components/dialog'
 import { Input } from '@/ui/components/input'
 import { Label } from '@/ui/components/label'
+
+const ImageEditorCanvas = lazy(() =>
+  import('@/ui/admin/shared/ImageEditorCanvas').then((m) => ({ default: m.ImageEditorCanvas })),
+)
 
 // Upload variants. The fixed-aspect variants pre-set the locked
 // 1280×425 ratio used by category covers and friend posters; the
@@ -259,15 +263,17 @@ export function UploadImageDialog({ open, kind, onClose, onUploaded, initialFile
                     />
                   </div>
                 </div>
-                <ImageEditorCanvas
-                  file={file}
-                  rotation={rotation}
-                  jpegQuality={jpegQuality}
-                  locked={lockedAspect}
-                  outputWidth={kind.kind === 'generic' && targetWidth !== null ? targetWidth : undefined}
-                  onCropChange={handleCropChange}
-                  onReady={handleEncoderReady}
-                />
+                <Suspense fallback={<p className="text-sm text-muted-foreground">正在加载图片编辑器…</p>}>
+                  <ImageEditorCanvas
+                    file={file}
+                    rotation={rotation}
+                    jpegQuality={jpegQuality}
+                    locked={lockedAspect}
+                    outputWidth={kind.kind === 'generic' && targetWidth !== null ? targetWidth : undefined}
+                    onCropChange={handleCropChange}
+                    onReady={handleEncoderReady}
+                  />
+                </Suspense>
                 {kind.kind === 'generic' && cropWidth !== null ? (
                   <div className="flex flex-col gap-2">
                     <Label htmlFor="upload-target-width">输出宽度（像素，最大 {cropWidth}）</Label>

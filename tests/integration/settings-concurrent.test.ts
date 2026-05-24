@@ -24,16 +24,17 @@ beforeEach(async () => {
         description: 'Test',
         website: 'https://example.com',
         keywords: ['test'],
-        author: { name: 'Test' },
+        author: { name: 'Test', email: 'test@example.com', url: 'https://example.com' },
         locale: 'zh-CN',
         timeZone: 'Asia/Shanghai',
         timeFormat: 'relative',
+        initialYear: 2024,
       },
     },
     {
       scope: 'blog.assets',
       data: {
-        asset: { host: 'https://cdn.example.com', scheme: 'https' },
+        asset: { host: 'cdn.example.com', scheme: 'https' },
         storage: {
           enabled: false,
           endpoint: '',

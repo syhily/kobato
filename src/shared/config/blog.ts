@@ -1,7 +1,5 @@
 import type { SocialNetwork } from '@/shared/config/socials'
 
-import { deepFreeze } from '@/shared/utils/tools'
-
 // Per-section DTOs for the editable blog configuration.
 //
 // The runtime config used to live in a single fat aggregated shape;
@@ -563,11 +561,6 @@ export function getBlogSettingsBundleSync(): BlogSettingsBundle | null {
   const raw = BLOG_SETTINGS_SNAPSHOT_SLOT.read()
   if (raw === null) {
     return null
-  }
-  // Deep-freeze in tests so accidental in-place mutations of the shared
-  // global bundle fail fast instead of leaking to unrelated tests.
-  if (process.env.VITEST === 'true') {
-    return deepFreeze(structuredClone(raw))
   }
   return raw
 }

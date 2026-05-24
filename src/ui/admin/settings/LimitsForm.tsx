@@ -19,10 +19,7 @@ const BOUNDS = {
 } as const
 
 function LimitsRequestCard({ limits }: { limits: LimitsSettings }) {
-  const { mode, form, settingGroupProps, optimisticSource } = useSettingsCard<
-    LimitsSettings,
-    { maxRequestBodySize: number }
-  >({
+  const { mode, form, settingGroupProps, display } = useSettingsCard<LimitsSettings, { maxRequestBodySize: number }>({
     section: 'limits',
     source: limits,
     toState: (source) => ({ maxRequestBodySize: source.maxRequestBodySize }),
@@ -31,7 +28,6 @@ function LimitsRequestCard({ limits }: { limits: LimitsSettings }) {
     }),
   })
 
-  const display = optimisticSource ?? limits
   return (
     <SettingGroup
       title="请求限制"
@@ -68,10 +64,7 @@ function LimitsRequestCard({ limits }: { limits: LimitsSettings }) {
 }
 
 function LimitsSessionCard({ limits }: { limits: LimitsSettings }) {
-  const { mode, form, settingGroupProps, optimisticSource } = useSettingsCard<
-    LimitsSettings,
-    { sessionMaxAge: number }
-  >({
+  const { mode, form, settingGroupProps, display } = useSettingsCard<LimitsSettings, { sessionMaxAge: number }>({
     section: 'limits',
     source: limits,
     toState: (source) => ({ sessionMaxAge: source.sessionMaxAge }),
@@ -80,7 +73,6 @@ function LimitsSessionCard({ limits }: { limits: LimitsSettings }) {
     }),
   })
 
-  const display = optimisticSource ?? limits
   return (
     <SettingGroup
       title="会话限制"
@@ -117,7 +109,7 @@ function LimitsSessionCard({ limits }: { limits: LimitsSettings }) {
 }
 
 function LimitsAuditCard({ limits }: { limits: LimitsSettings }) {
-  const { mode, form, settingGroupProps, optimisticSource } = useSettingsCard<
+  const { mode, form, settingGroupProps, display } = useSettingsCard<
     LimitsSettings,
     { auditLogDbRetentionDays: number; auditLogArchiveRetentionDays: number }
   >({
@@ -133,7 +125,6 @@ function LimitsAuditCard({ limits }: { limits: LimitsSettings }) {
     }),
   })
 
-  const display = optimisticSource ?? limits
   return (
     <SettingGroup
       title="审计日志限制"

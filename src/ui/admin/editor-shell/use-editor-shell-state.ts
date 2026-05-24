@@ -5,7 +5,6 @@ import type {
   EditorShellStatus,
   EntityLike,
   PublishState,
-  RevisionLike,
   SaveBodyOutput,
   SidebarPublishStatus,
   UseEditorShellStateArgs,
@@ -19,27 +18,13 @@ import {
   deriveSidebarRevisionSummary,
   deriveSidebarSaveStatus,
 } from '@/ui/admin/editor-shell/editor-shell-derived'
+import { useEditorBodyState } from '@/ui/admin/editor-shell/use-editor-body-state'
+import { useEditorKeyboardShortcuts } from '@/ui/admin/editor-shell/use-editor-keyboard-shortcuts'
+import { useEditorMetaState } from '@/ui/admin/editor-shell/use-editor-meta-state'
+import { useEditorRevisionManager } from '@/ui/admin/editor-shell/use-editor-revision-manager'
 import { useEditorShellLayout } from '@/ui/admin/editor-shell/use-editor-shell-layout'
 import { useEditorShellPersist } from '@/ui/admin/editor-shell/use-editor-shell-persist'
 
-// --- Hook -------------------------------------------------------------------
-
-/**
- * Shared state machine for the post + page editor shells. Owns:
- *
- *  - body + meta drafts (with persistence baselines)
- *  - layout toggles (preview, meta panel, lg breakpoint)
- *  - revision token + last-loaded snapshots
- *  - draft conflict detection vs local-storage payload
- *  - autosave loop dispatch
- *  - persistSave / persistPublish / persistCreate / persistUnpublish
- *  - keyboard shortcuts (Cmd/Ctrl+S, Cmd/Ctrl+Shift+P)
- *  - publish-state projection + sidebar status projections
- *
- * Per-entity differences (DTO key shape, API endpoint paths, mutation
- * payload fields, sidebar component) stay in the Shell — see
- * `PostEditorShell.tsx` / `PageEditorShell.tsx` for the wiring.
- */
 export function useEditorShellState<
   TMeta extends { title: string; slug: string; published: boolean; publishedAt: string },
   TEntity extends EntityLike,
@@ -66,50 +51,22 @@ export function useEditorShellState<
 
   const isEditing = mode === 'edit' && detail !== undefined
 
-  // --- Meta draft -----------------------------------------------------------
-  const [meta, setMeta] = useState<TMeta>(isEditing ? metaDraftFromEntity(detail.entity) : emptyMeta)
+  // --- Sub-hooks ------------------------------------------------------------
+  const bodyState = useEditorBodyState(isEditing, detail)
+  const { body, setBody, bodyKey, initialBody, lastSavedBodyRef, replaceBody, markBodySaved } = bodyState
 
-  // --- Body draft -----------------------------------------------------------
-  const initialBody = useMemo<PortableTextBody>(() => {
-    if (!isEditing) {
-      return []
-    }
-    return (detail.latestRevision ?? detail.publishedRevision)?.body ?? []
-  }, [isEditing, detail])
-  const [body, setBody] = useState<PortableTextBody>(initialBody)
+  const metaState = useEditorMetaState(isEditing, detail, emptyMeta, metaDraftFromEntity)
+  const { meta, setMeta, lastPersistedMetaRef, serverPublishedAtIso, resetMeta } = metaState
 
-  const initialBodyKey = useMemo(() => {
-    if (!isEditing) {
-      return 'create:initial'
-    }
-    const rev = detail.latestRevision ?? detail.publishedRevision
-    return rev !== null ? `${detail.entity.id}:${rev.clientRevisionToken}` : `${detail.entity.id}:empty`
-  }, [isEditing, detail])
-  const [bodyKey, setBodyKey] = useState(initialBodyKey)
+  const revisionManager = useEditorRevisionManager(isEditing, detail)
+  const { expectedToken, latestRevision, publishedRevision, updateAfterSave } = revisionManager
 
   // --- Live preview pane ----------------------------------------------------
   const { previewOpen, setPreviewOpen, metaOpen, setMetaOpen, isLg, editorScrollRef, previewScrollRef } =
     useEditorShellLayout()
 
-  // --- Revision tokens + mirrors -------------------------------------------
-  const [expectedToken, setExpectedToken] = useState<string | null>(
-    isEditing ? ((detail.latestRevision ?? detail.publishedRevision)?.clientRevisionToken ?? null) : null,
-  )
-  const [latestRevision, setLatestRevision] = useState<RevisionLike | null>(isEditing ? detail.latestRevision : null)
-  const [publishedRevision, setPublishedRevision] = useState<RevisionLike | null>(
-    isEditing ? detail.publishedRevision : null,
-  )
-  // Mirror of `entity.publishedAt` that follows meta save round-trips.
-  // We need it to detect "operator just switched out of 定时发布
-  // mode" — `meta.publishedAt === ''` is ambiguous on its own.
-  const [serverPublishedAtIso, setServerPublishedAtIso] = useState<string | null>(
-    isEditing ? detail.entity.publishedAt : null,
-  )
-
   // --- Status chip ---------------------------------------------------------
-  const [status, setStatus] = useState<EditorShellStatus>({
-    kind: 'idle',
-  })
+  const [status, setStatus] = useState<EditorShellStatus>({ kind: 'idle' })
   const [displaySaveAtMs, setDisplaySaveAtMs] = useState<number | null>(() => {
     if (!isEditing || detail === undefined) {
       return null
@@ -119,13 +76,7 @@ export function useEditorShellState<
     return Number.isNaN(ms) ? null : ms
   })
 
-  // --- Baselines (for dirty + skip-no-op-save) -----------------------------
-  const lastPersistedMetaRef = useRef<TMeta>(
-    isEditing && detail !== undefined ? metaDraftFromEntity(detail.entity) : { ...emptyMeta },
-  )
-  const lastSavedBodyRef = useRef<PortableTextBody>(initialBody)
-
-  // --- LS draft hooks (called with the live body/meta we own) -------------
+  // --- LS draft hooks -------------------------------------------------------
   const { loadedDraft: loadedLocalDraft, clearDraft: clearLocalDraft } = useLocalDraftHook({
     entityId: isEditing ? detail.entity.id : null,
     clientRevisionToken: expectedToken,
@@ -174,8 +125,8 @@ export function useEditorShellState<
     createDraftHydratedRef.current = true
     setMeta(createDraft.loadedDraft.meta)
     setBody(createDraft.loadedDraft.body)
-    setBodyKey(`create:restored:${createDraft.loadedDraft.savedAt}`)
-  }, [isEditing, createDraft.loadedDraft])
+    replaceBody(createDraft.loadedDraft.body, `create:restored:${createDraft.loadedDraft.savedAt}`)
+  }, [isEditing, createDraft.loadedDraft, setMeta, replaceBody, setBody])
 
   // --- Conflict detection (edit mode) --------------------------------------
   const [conflict, setConflict] = useState<{
@@ -196,21 +147,19 @@ export function useEditorShellState<
     setConflict({ localBody: loadedLocalDraft.body, localSavedAt: loadedLocalDraft.savedAt })
   }, [loadedLocalDraft, initialBody, conflictResolved])
 
-  // --- Save reducers (Shell wires these via mutation onSuccess) ------------
+  // --- Save reducers -------------------------------------------------------
   const onMetaSaved = useCallback(
     (saved: EntityLike) => {
       setStatus({ kind: 'saved', at: new Date() })
       const freshMeta = metaDraftFromEntity(saved as TEntity)
-      lastPersistedMetaRef.current = freshMeta
+      resetMeta(freshMeta, saved.publishedAt)
       const saveMs = Date.parse(saved.updatedAt)
       if (!Number.isNaN(saveMs)) {
         setDisplaySaveAtMs(saveMs)
       }
-      setMeta(freshMeta)
-      setServerPublishedAtIso(saved.publishedAt)
       noteActionLegSucceeded(saved.slug)
     },
-    [metaDraftFromEntity, noteActionLegSucceeded],
+    [metaDraftFromEntity, noteActionLegSucceeded, resetMeta],
   )
 
   const onBodySaved = useCallback(
@@ -227,29 +176,24 @@ export function useEditorShellState<
       }
       const slugForBanner = meta.slug.trim() === '' ? (detail?.entity.slug ?? '') : meta.slug.trim()
       noteActionLegSucceeded(slugForBanner)
-      setExpectedToken(payload.revision.clientRevisionToken)
-      setLatestRevision(payload.revision)
-      if (payload.revision.status === 'published') {
-        setPublishedRevision(payload.revision)
-      }
-      lastSavedBodyRef.current = payload.revision.body
+      updateAfterSave(payload.revision)
+      markBodySaved(payload.revision.body)
     },
-    [meta.slug, detail, cancelActionBanner, noteActionLegSucceeded],
+    [meta.slug, detail, cancelActionBanner, noteActionLegSucceeded, updateAfterSave, markBodySaved],
   )
 
-  const onUnpublishSaved = useCallback((saved: EntityLike, freshMeta: TMeta) => {
-    setStatus({ kind: 'saved', at: new Date() })
-    lastPersistedMetaRef.current = freshMeta
-    const saveMs = Date.parse(saved.updatedAt)
-    if (!Number.isNaN(saveMs)) {
-      setDisplaySaveAtMs(saveMs)
-    }
-    setMeta(freshMeta)
-    setServerPublishedAtIso(saved.publishedAt)
-    // Take the entity offline = drop any leftover banner; the public
-    // URL is no longer accessible.
-    setPreviewBanner(null)
-  }, [])
+  const onUnpublishSaved = useCallback(
+    (saved: EntityLike, freshMeta: TMeta) => {
+      setStatus({ kind: 'saved', at: new Date() })
+      resetMeta(freshMeta, saved.publishedAt)
+      const saveMs = Date.parse(saved.updatedAt)
+      if (!Number.isNaN(saveMs)) {
+        setDisplaySaveAtMs(saveMs)
+      }
+      setPreviewBanner(null)
+    },
+    [resetMeta],
+  )
 
   const noteError = useCallback(
     (message: string) => {
@@ -293,7 +237,7 @@ export function useEditorShellState<
     noteError,
     setStatus,
     setMeta,
-    setServerPublishedAtIso,
+    setServerPublishedAtIso: metaState.setServerPublishedAtIso,
     lastSavedBodyRef,
     pendingActionRef,
     createDraft,
@@ -314,7 +258,7 @@ export function useEditorShellState<
       return true
     }
     return !arePortableTextBodiesEquivalent(body, lastSavedBodyRef.current)
-  }, [isEditing, body, publishState])
+  }, [isEditing, body, publishState, lastSavedBodyRef])
 
   const sidebarPublishStatus = useMemo<SidebarPublishStatus | null>(
     () => deriveSidebarPublishStatus({ isEditing, publishState, publishedAt: meta.publishedAt }),
@@ -322,42 +266,21 @@ export function useEditorShellState<
   )
 
   // --- Keyboard shortcuts --------------------------------------------------
-  useEffect(() => {
-    function onKeyDown(event: KeyboardEvent) {
-      if (!event.metaKey && !event.ctrlKey) {
-        return
-      }
-      const key = event.key.toLowerCase()
-      if (key === 's' && !event.shiftKey) {
-        event.preventDefault()
-        if (mode === 'create') {
-          void persistCreate()
-        } else {
-          persistSave()
-        }
-        return
-      }
-      if (key === 'p' && event.shiftKey) {
-        event.preventDefault()
-        if (!isEditing) {
-          return
-        }
-        if (publishState.kind !== 'published-current') {
-          persistPublish()
-        }
-      }
-    }
-    window.addEventListener('keydown', onKeyDown)
-    return () => window.removeEventListener('keydown', onKeyDown)
-  }, [mode, isEditing, persistCreate, persistSave, persistPublish, publishState])
+  useEditorKeyboardShortcuts({
+    mode,
+    isEditing,
+    persistCreate,
+    persistSave,
+    persistPublish,
+    publishState,
+  })
 
   // --- Conflict / history adoption handlers -------------------------------
   const adoptLocalDraft = useCallback(async () => {
     if (conflict === null || !isEditing) {
       return
     }
-    setBody(conflict.localBody)
-    setBodyKey(`${detail!.entity.id}:adopt-local:${Date.now()}`)
+    replaceBody(conflict.localBody, `${detail!.entity.id}:adopt-local:${Date.now()}`)
     setConflict(null)
     setConflictResolved(true)
     setStatus({ kind: 'saving' })
@@ -368,55 +291,38 @@ export function useEditorShellState<
         expectedClientRevisionToken: expectedToken,
         force: true,
       })
-      // `handleBodySavedRef` lives inside `useEditorShellPersist`,
-      // but `onBodySaved` is the same callback object. We can call
-      // it directly because the ref indirection was only needed for
-      // the autosave flush closure.
       onBodySaved(result)
     } catch (error) {
       setStatus({ kind: 'error', message: error instanceof Error ? error.message : '保存失败' })
     }
-  }, [conflict, isEditing, detail, expectedToken, directSaveDraft, onBodySaved])
+  }, [conflict, isEditing, detail, expectedToken, directSaveDraft, onBodySaved, replaceBody])
 
   const adoptServerVersion = useCallback(() => {
-    setBody(initialBody)
-    setBodyKey(`${detail?.entity.id ?? 'new'}:adopt-server:${Date.now()}`)
-    lastSavedBodyRef.current = initialBody
+    replaceBody(initialBody, `${detail?.entity.id ?? 'new'}:adopt-server:${Date.now()}`)
+    markBodySaved(initialBody)
     clearLocalDraft()
     setConflict(null)
     setConflictResolved(true)
-  }, [initialBody, detail, clearLocalDraft])
+  }, [initialBody, detail, clearLocalDraft, replaceBody, markBodySaved])
 
   const adoptRevisionFromHistory = useCallback(
     (revision: { body: PortableTextBody; revisionNo: number }) => {
       if (!isEditing) {
         return
       }
-      setBody(revision.body)
-      setBodyKey(`${detail!.entity.id}:adopt-revision:${revision.revisionNo}:${Date.now()}`)
-      setStatus({
-        kind: 'info',
-        message: `已载入 R${revision.revisionNo}，记得保存或发布以生效。`,
-      })
+      replaceBody(revision.body, `${detail!.entity.id}:adopt-revision:${revision.revisionNo}:${Date.now()}`)
+      setStatus({ kind: 'info', message: `已载入 R${revision.revisionNo}，记得保存或发布以生效。` })
     },
-    [isEditing, detail],
+    [isEditing, detail, replaceBody],
   )
 
-  // --- Sidebar projection (revision summary + save status) ----------------
+  // --- Sidebar projection --------------------------------------------------
   const canPersistMeta = meta.title.trim() !== ''
   const canPublish = isEditing && publishState.kind !== 'published-current'
-
   const sidebarRevisionSummary = deriveSidebarRevisionSummary({ isEditing, publishState })
-
   const isBodyDirty = !arePortableTextBodiesEquivalent(body, lastSavedBodyRef.current)
   const isMetaDirty = !metaDraftsEqual(meta, lastPersistedMetaRef.current)
-  const sidebarSaveStatus = deriveSidebarSaveStatus({
-    status,
-    isEditing,
-    isBodyDirty,
-    isMetaDirty,
-    displaySaveAtMs,
-  })
+  const sidebarSaveStatus = deriveSidebarSaveStatus({ status, isEditing, isBodyDirty, isMetaDirty, displaySaveAtMs })
 
   return {
     meta,

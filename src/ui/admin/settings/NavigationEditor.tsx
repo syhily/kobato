@@ -61,32 +61,30 @@ const TYPE_LABELS: Record<FooterNavItem['type'], string> = {
 // ---------------------------------------------------------------------------
 
 function SideNavCard({ navigation }: { navigation: NavigationSettings }) {
-  const { mode, form, settingGroupProps, optimisticSource } = useSettingsCard<
-    NavigationSettings,
-    { sideNavRows: SideNavRow[] }
-  >({
-    section: 'navigation',
-    source: navigation,
-    toState: (source) => ({
-      sideNavRows: source.navigation.sideNav.map((item, i) => ({
-        clientId: `sidenav-${i}`,
-        text: item.text,
-        link: item.link,
-        newTab: item.target === '_blank',
-      })),
-    }),
-    fromState: (state) => ({
-      navigation: {
-        sideNav: state.sideNavRows.map((row) => ({
-          text: row.text.trim(),
-          link: row.link.trim(),
-          ...(row.newTab ? { target: '_blank' } : {}),
+  const { mode, form, settingGroupProps, display } = useSettingsCard<NavigationSettings, { sideNavRows: SideNavRow[] }>(
+    {
+      section: 'navigation',
+      source: navigation,
+      toState: (source) => ({
+        sideNavRows: source.navigation.sideNav.map((item, i) => ({
+          clientId: `sidenav-${i}`,
+          text: item.text,
+          link: item.link,
+          newTab: item.target === '_blank',
         })),
-      },
-    }),
-  })
+      }),
+      fromState: (state) => ({
+        navigation: {
+          sideNav: state.sideNavRows.map((row) => ({
+            text: row.text.trim(),
+            link: row.link.trim(),
+            ...(row.newTab ? { target: '_blank' } : {}),
+          })),
+        },
+      }),
+    },
+  )
 
-  const display = optimisticSource ?? navigation
   const rows = useFieldArray({ control: form.control, name: 'sideNavRows' })
 
   const moveRow = (index: number, direction: -1 | 1) => {
@@ -147,6 +145,7 @@ function SideNavCard({ navigation }: { navigation: NavigationSettings }) {
                       size="icon"
                       disabled={index === 0}
                       onClick={() => moveRow(index, -1)}
+                      aria-label="上移"
                     >
                       <ArrowUpIcon data-icon />
                     </Button>
@@ -156,10 +155,17 @@ function SideNavCard({ navigation }: { navigation: NavigationSettings }) {
                       size="icon"
                       disabled={index === rows.fields.length - 1}
                       onClick={() => moveRow(index, 1)}
+                      aria-label="下移"
                     >
                       <ArrowDownIcon data-icon />
                     </Button>
-                    <Button type="button" variant="destructive-soft" size="icon" onClick={() => rows.remove(index)}>
+                    <Button
+                      type="button"
+                      variant="destructive-soft"
+                      size="icon"
+                      onClick={() => rows.remove(index)}
+                      aria-label="删除"
+                    >
                       <Trash2Icon data-icon />
                     </Button>
                   </div>
@@ -275,7 +281,7 @@ function SortableFooterNavRow({
           </div>
         )}
       </div>
-      <Button type="button" variant="destructive-soft" size="icon" onClick={() => onRemove(index)}>
+      <Button type="button" variant="destructive-soft" size="icon" onClick={() => onRemove(index)} aria-label="删除">
         <Trash2Icon data-icon />
       </Button>
     </div>
@@ -283,7 +289,7 @@ function SortableFooterNavRow({
 }
 
 function FooterNavCard({ navigation, socials }: { navigation: NavigationSettings; socials: SocialItem[] }) {
-  const { mode, form, settingGroupProps, optimisticSource } = useSettingsCard<
+  const { mode, form, settingGroupProps, display } = useSettingsCard<
     NavigationSettings,
     { footerNavItems: FooterNavItemRowState[] }
   >({
@@ -302,7 +308,6 @@ function FooterNavCard({ navigation, socials }: { navigation: NavigationSettings
     }),
   })
 
-  const display = optimisticSource ?? navigation
   const sensors = useSensors(
     useSensor(PointerSensor),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),

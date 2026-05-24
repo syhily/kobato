@@ -3,7 +3,6 @@ import { createMiddleware } from 'hono/factory'
 import type { Env } from '@/server/http/context'
 
 import { getInstallState } from '@/server/domains/settings/install-gate'
-import { hydrateBlogSettings } from '@/server/domains/settings/snapshot'
 import { getLogger } from '@/server/infra/logger'
 
 const log = getLogger('install.gate')
@@ -34,17 +33,6 @@ function isExempt(pathname: string): boolean {
 
 export const honoInstallGateMiddleware = createMiddleware<Env>(async (c, next) => {
   const url = new URL(c.req.url)
-
-  // Eagerly hydrate the settings snapshot on every request so the root
-  // loader's `getBlogSettingsBundleSync()` reads warm data.  The call is
-  // idempotent — concurrent requests share the same in-flight promise.
-  // Failures are logged but never block the request; the install gate
-  // below still has `hasAdmin()` as its ground truth.
-  try {
-    await hydrateBlogSettings()
-  } catch (error) {
-    log.error('Install gate failed to hydrate settings; letting request through', { error })
-  }
 
   if (isExempt(url.pathname)) {
     return next()

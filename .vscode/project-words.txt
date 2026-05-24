@@ -79,6 +79,7 @@ healthcheck
 hefei
 heiti
 hiragino
+hmac
 hnsw
 honorbkk
 huaweiyal
@@ -133,7 +134,7 @@ luoli
 lxgw
 mathbb
 mathml
-MAXMIND
+maxmind
 mboker
 meilisearch
 metas
@@ -170,6 +171,7 @@ ntes
 nuid
 opencc
 opendal
+opengraph
 oppo
 opposans
 opposerif
@@ -217,6 +219,7 @@ samp
 sauvignon
 scalafmt
 scann
+sched
 sefc
 segoe
 serialised

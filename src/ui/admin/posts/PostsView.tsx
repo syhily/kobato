@@ -333,6 +333,7 @@ export function PostsView() {
                   variant="outline"
                   size="icon"
                   title={state.sortOrder === 'desc' ? '降序' : '升序'}
+                  aria-label={state.sortOrder === 'desc' ? '降序' : '升序'}
                   onClick={() =>
                     dispatch({
                       type: 'setSortOrder',

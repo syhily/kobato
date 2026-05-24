@@ -18,6 +18,10 @@ const envConfig = {
     // Session cookie signing.
     SESSION_SECRET: z.string().min(1),
 
+    // AES-256-GCM key for encrypting secrets stored in the DB (API keys,
+    // S3 credentials). Optional: secrets remain plaintext until set.
+    ENCRYPTION_KEY: z.string().min(1).optional(),
+
     // Filesystem path to the MaxMind GeoLite2-City mmdb. Optional.
     MAXMIND_DB_PATH: z.string().min(1).optional(),
     // Flip to `true` on dev environments where you want
@@ -65,6 +69,7 @@ export const {
   DATABASE_URL,
   DB_POOL_MAX,
   DB_STATEMENT_TIMEOUT_MS,
+  ENCRYPTION_KEY,
   HOST,
   LOG_LEVEL,
   MAXMIND_DB_PATH,
@@ -72,3 +77,7 @@ export const {
   REDIS_URL,
   SESSION_SECRET,
 } = env
+
+export function isVitest(): boolean {
+  return process.env.VITEST === 'true'
+}

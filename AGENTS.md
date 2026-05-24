@@ -45,16 +45,50 @@ Skills win on conflict. Quote stable rule ids in PR review (e.g.
 `bundle-barrel-imports`, `architecture-avoid-boolean-props`,
 `server-no-shared-module-state`).
 
-## CodeGraph
-
-This project has a CodeGraph MCP server (`codegraph_*` tools) — a tree-sitter-parsed knowledge graph. Use it for **structural** queries (call graphs, symbol locations, impact analysis, signatures); use grep/read only for **literal text**. Prefer `codegraph_context` as the primary tool (composes search + node + callers + callees in one call). Trust AST-parsed results — don't re-verify with grep. Don't delegate exploration to sub-agents; answer directly with 2-3 codegraph calls. If `.codegraph/` is missing, offer to run `codegraph init -i`.
-
 ## Build & CI
 
 - `npm run dev`, `npm run fmt:check`, `npm run lint`, `npm run typecheck`,
   `npm run test`, `npm run build`
 - Before committing: `npm run fmt:check && npm run lint && npm run typecheck`,
   `npm run test`, `npm run build`
+
+## Route module prewarming
+
+The build produces ~500 JS chunks (13 MB). A Vite plugin
+(`src/server/infra/route-warmup.ts`) splits them into tiers so the browser
+proactively loads high-priority route chunks:
+
+| Tier          | What                                      | Mechanism                                     |
+| ------------- | ----------------------------------------- | --------------------------------------------- |
+| tier 1        | Public layout + home + post detail        | `<link rel="modulepreload">` in HTML `<head>` |
+| tier 2 public | Archives, categories, tags, search, pages | Idle `modulepreload` via inline `<script>`    |
+| tier 2 admin  | Dashboard, posts, settings, etc.          | Idle warmup (only for authenticated admins)   |
+| tier 2 editor | Editor shells                             | Idle warmup (only for admins)                 |
+| tier 2 auth   | Signin, setup                             | Idle warmup (all visitors)                    |
+
+The plugin runs in the SSR `writeBundle` hook (after both client and server
+builds finish), reads `server_manifest_default` from
+`build/server/assets/server-build.js`, and writes
+`build/client/assets/warmup-manifest.json`.
+
+**Key files:**
+
+| File                                          | Role                                            |
+| --------------------------------------------- | ----------------------------------------------- |
+| `src/server/infra/route-warmup.ts`            | Vite plugin — manifest generation               |
+| `src/server/render/warmup/manifest.ts`        | Server-side manifest reader (disk-cached)       |
+| `src/client/components/RouteWarmupScript.tsx` | Presentational — renders idle-warmup `<script>` |
+| `src/root.tsx`                                | Layout wires tier-1 links + tier-2 script       |
+
+**Exclusion rules:** Shiki grammar chunks are excluded (not in any route's
+`imports` array). `editor-tiptap-*` is excluded from public/admin tiers.
+Chunks > 100 KB are excluded from idle warmup. The idle script respects
+`navigator.connection.saveData`, skips 2g, and defers until the page is
+visible.
+
+When adding or removing routes from `src/routes.ts`, update the tier arrays
+in `src/server/infra/route-warmup.ts` (`TIER1_ROUTES`, `TIER2_PUBLIC_ROUTES`,
+etc.) to keep the warmup manifest in sync.
 
 ## Git
 

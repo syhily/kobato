@@ -2,7 +2,6 @@ import { ORPCError } from '@orpc/server'
 import { and, count, desc, eq, gte, inArray, isNotNull, lt } from 'drizzle-orm'
 import { z } from 'zod'
 
-import { csvEscapeDisplay } from '@/server/domains/audit/csv'
 import { stripL3Markers } from '@/server/domains/audit/privacy'
 import { maskIp, maskUserAgent } from '@/server/domains/audit/utils'
 import { adminProc } from '@/server/http/orpc-base'
@@ -143,6 +142,21 @@ const list = adminProc
 // ---------------------------------------------------------------------------
 // Export (CSV)
 // ---------------------------------------------------------------------------
+
+const FORMULA_PREFIXES = new Set(['=', '+', '-', '@'])
+
+// Exported for testing only.
+export function csvEscapeDisplay(value: string | number | null | undefined): string {
+  if (value === null || value === undefined) {
+    return ''
+  }
+  const str = typeof value === 'string' ? value : String(value)
+  const sanitized = str.length > 0 && FORMULA_PREFIXES.has(str[0]) ? `\t${str}` : str
+  if (/[",\n\r]/.test(sanitized)) {
+    return `"${sanitized.replace(/"/g, '""')}"`
+  }
+  return sanitized
+}
 
 const EXPORT_MAX_ROWS = 10_000
 

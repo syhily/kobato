@@ -1,3 +1,12 @@
+// Parse a string to BigInt, returning null on failure instead of throwing.
+export function safeBigInt(value: string): bigint | null {
+  try {
+    return BigInt(value)
+  } catch {
+    return null
+  }
+}
+
 export function isNumeric(str: string): boolean {
   return /^-?\d+$/.test(str)
 }

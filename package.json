@@ -126,6 +126,7 @@
     "@types/ws": "^8.18.1",
     "@vitest/coverage-v8": "^4.1.7",
     "drizzle-kit": "~1.0.0-rc.3",
+    "lint-staged": "^17.0.5",
     "oxfmt": "^0.51.0",
     "oxlint": "^1.66.0",
     "oxlint-tsgolint": "^0.23.0",
@@ -134,6 +135,12 @@
     "typescript": "^6.0.3",
     "vite": "^8.0.14",
     "vitest": "^4.1.7"
+  },
+  "lint-staged": {
+    "*.{ts,tsx}": [
+      "oxfmt --config oxfmt.config.ts --write",
+      "oxlint -c oxlint.config.ts --fix"
+    ]
   },
   "packageManager": "npm@11.15.0"
 }
