@@ -196,5 +196,8 @@ export default defineConfig({
     // and broken `<a>` (`href="#"` or missing href).
     'jsx-a11y/heading-has-content': 'error',
     'jsx-a11y/anchor-is-valid': 'error',
+    // Project uses custom CSS-animated popups instead of native <dialog> to
+    // avoid browser default positioning/backdrop styling.
+    'jsx-a11y/prefer-tag-over-role': 'off',
   },
 })

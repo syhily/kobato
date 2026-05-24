@@ -198,7 +198,6 @@ function SlashMenuList(props: SlashMenuListProps) {
         // Combobox-style suggestion popup, not a form select. The
         // <select> alternative the lint rule suggests has incompatible
         // keyboard model and can't be styled this way.
-        // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role
         role="listbox"
         className="fixed z-[1600] w-72 rounded-md border bg-popover p-2 text-sm text-muted-foreground shadow-md"
         style={positionStyle(rect)}
@@ -210,7 +209,6 @@ function SlashMenuList(props: SlashMenuListProps) {
   }
   return createPortal(
     <div
-      // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role
       role="listbox"
       aria-label="斜杠命令菜单"
       className="fixed z-[1600] flex max-h-72 w-72 flex-col gap-0.5 overflow-y-auto rounded-md border bg-popover p-1 text-sm shadow-md"

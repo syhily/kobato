@@ -102,7 +102,7 @@ export function Popup({
   children,
 }: PopupProps) {
   const [entered, setEntered] = useState(false)
-  const dialogRef = useRef<HTMLDialogElement | null>(null)
+  const dialogRef = useRef<HTMLDivElement | null>(null)
   const previouslyFocusedRef = useRef<HTMLElement | null>(null)
 
   useEffect(() => {
@@ -195,8 +195,9 @@ export function Popup({
         onClick={onClose}
         aria-hidden="true"
       />
-      <dialog
+      <div
         ref={dialogRef}
+        role="dialog"
         aria-modal="true"
         aria-label={ariaLabelledBy === undefined ? ariaLabel : undefined}
         aria-labelledby={ariaLabelledBy}
@@ -219,7 +220,7 @@ export function Popup({
           <XIcon size={22} aria-hidden className="inline-block align-middle text-ink-4" />
         </button>
         <div className={cn('relative rounded-lg bg-canvas text-ink-1', CONTENT_SIZE_CLASS[size])}>{children}</div>
-      </dialog>
+      </div>
     </div>,
     document.body,
   )
