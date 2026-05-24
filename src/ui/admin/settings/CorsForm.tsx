@@ -36,8 +36,10 @@ function CorsPolicyCard({ cors }: CorsFormProps) {
       origins: source.cors.origins.map((url, i) => ({ clientId: `cors-origin-${i}`, url })),
     }),
     fromState: (state) => ({
-      enabled: state.enabled,
-      origins: state.origins.map((row) => row.url.trim()).filter((url) => url !== ''),
+      cors: {
+        enabled: state.enabled,
+        origins: state.origins.map((row) => row.url.trim()).filter((url) => url !== ''),
+      },
     }),
   })
 
