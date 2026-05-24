@@ -23,53 +23,79 @@ interface FontsFormProps {
 function FontsCanvasCard({ fonts }: { fonts: FontsSettings }) {
   const { mode, form, settingGroupProps, display } = useSettingsCard<
     FontsSettings,
-    { ogUrl: string; calendarUrl: string }
+    { ogPath: string; ogFamily: string; calendarPath: string; calendarFamily: string }
   >({
     section: 'fonts',
     source: fonts,
     toState: (source) => ({
-      ogUrl: source.og.url,
-      calendarUrl: source.calendar.url,
+      ogPath: source.og.path,
+      ogFamily: source.og.family,
+      calendarPath: source.calendar.path,
+      calendarFamily: source.calendar.family,
     }),
     fromState: (state) => ({
-      og: { url: state.ogUrl.trim() },
-      calendar: { url: state.calendarUrl.trim() },
+      og: { path: state.ogPath.trim(), family: state.ogFamily.trim() },
+      calendar: { path: state.calendarPath.trim(), family: state.calendarFamily.trim() },
     }),
   })
 
   return (
     <SettingGroup
       title="Canvas 字体"
-      description="服务端渲染 OG 图与日历图时使用的字体。必须是 TTF / OTF 格式。留空时降级使用系统中文字体。"
+      description="服务端渲染 OG 图与日历图时使用的本地 TTF/OTF 字体文件。留空时降级使用系统中文字体。"
       {...settingGroupProps}
     >
       {mode === 'edit' ? (
         <SettingGroupContent>
-          <SettingsRow
-            label="OG 图字体 URL"
-            htmlFor="fonts-og-url"
-            hint="例如 https://cat.yufan.me/fonts-src/opposans.ttf"
-          >
-            <Input id="fonts-og-url" type="url" placeholder="https://..." maxLength={500} {...form.register('ogUrl')} />
+          <SettingsRow label="OG 图字体" htmlFor="fonts-og-path">
+            <div className="flex flex-col gap-2 sm:flex-row sm:gap-3">
+              <Input
+                id="fonts-og-path"
+                type="text"
+                placeholder="文件名，例如 opposans.ttf"
+                maxLength={200}
+                className="sm:flex-[2]"
+                {...form.register('ogPath')}
+              />
+              <Input
+                type="text"
+                placeholder="族名，例如 OPPOSans"
+                maxLength={100}
+                className="sm:flex-1"
+                {...form.register('ogFamily')}
+              />
+            </div>
           </SettingsRow>
-          <SettingsRow
-            label="日历图字体 URL"
-            htmlFor="fonts-calendar-url"
-            hint="例如 https://cat.yufan.me/fonts-src/opposerif.ttf"
-          >
-            <Input
-              id="fonts-calendar-url"
-              type="url"
-              placeholder="https://..."
-              maxLength={500}
-              {...form.register('calendarUrl')}
-            />
+          <SettingsRow label="日历图字体" htmlFor="fonts-calendar-path">
+            <div className="flex flex-col gap-2 sm:flex-row sm:gap-3">
+              <Input
+                id="fonts-calendar-path"
+                type="text"
+                placeholder="文件名，例如 opposerif.ttf"
+                maxLength={200}
+                className="sm:flex-[2]"
+                {...form.register('calendarPath')}
+              />
+              <Input
+                type="text"
+                placeholder="族名，例如 OPPOSerif"
+                maxLength={100}
+                className="sm:flex-1"
+                {...form.register('calendarFamily')}
+              />
+            </div>
           </SettingsRow>
         </SettingGroupContent>
       ) : (
         <SettingGroupContent>
-          <SettingValue label="OG 图字体" value={display.og.url || '—'} />
-          <SettingValue label="日历图字体" value={display.calendar.url || '—'} />
+          <SettingValue
+            label="OG 图字体"
+            value={display.og.path ? `${display.og.path}（${display.og.family}）` : '—'}
+          />
+          <SettingValue
+            label="日历图字体"
+            value={display.calendar.path ? `${display.calendar.path}（${display.calendar.family}）` : '—'}
+          />
         </SettingGroupContent>
       )}
     </SettingGroup>

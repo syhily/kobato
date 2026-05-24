@@ -4,7 +4,7 @@ import type { Buffer } from 'node:buffer'
 import { Canvas, GlobalFonts, loadImage } from '@napi-rs/canvas'
 
 import { compressImage } from '@/server/render/image-compress'
-import { logoDark, oppoSans } from '@/server/render/og/assets'
+import { logoDark, oppoSans, type FontSlot } from '@/server/render/og/assets'
 import { requireBlogSettingsSection } from '@/shared/config/blog'
 
 /**
@@ -132,32 +132,37 @@ export interface OpenGraphProps {
   cover: string
 }
 
+let ogFontSlot: FontSlot | null = null
+
 // Single-flight font registration: if a deploy spike fires 50 OG
-// renders in parallel, only the first one fetches the TTF — the rest
-// await the same Promise. Buffer is null when the admin hasn't
-// configured the URL yet (or the fetch failed); in that case we skip
-// `GlobalFonts.register` and Canvas falls back to its built-in CJK
-// shaper so the OG image still renders, just with system typography.
+// renders in parallel, only the first one reads the TTF — the rest
+// await the same Promise. Slot is null when the admin hasn't
+// configured the path/family yet (or the file is missing); in that
+// case we skip `GlobalFonts.register` and Canvas falls back to its
+// built-in CJK shaper so the OG image still renders, just with system
+// typography.
 //
 // CRITICAL: the single-flight promise must NOT memoize the "skipped"
-// path. If the admin starts with an empty URL, paste a URL later, and
+// path. If the admin starts with empty fields, fills them later, and
 // we'd kept a resolved no-op promise here, every subsequent render
 // would short-circuit on that cached resolution and never re-attempt
-// the fetch — the dynamic-URL strategy would only take effect after a
+// the load — the dynamic strategy would only take effect after a
 // process restart. So we clear `ogFontReady` whenever the font is
 // *not* registered after the work runs, both on success-but-null and
 // on caught error.
 let ogFontReady: Promise<void> | null = null
 function ensureFonts(): Promise<void> {
+  const slot = ogFontSlot
   // Fast path: font already registered. No promise indirection needed.
-  if (GlobalFonts.has('OPPOSans')) {
+  if (slot !== null && GlobalFonts.has(slot.family)) {
     return Promise.resolve()
   }
   if (ogFontReady === null) {
     ogFontReady = (async () => {
-      const buffer = await oppoSans()
-      if (buffer !== null && !GlobalFonts.has('OPPOSans')) {
-        GlobalFonts.register(buffer, 'OPPOSans')
+      const loaded = await oppoSans()
+      if (loaded !== null && !GlobalFonts.has(loaded.family)) {
+        GlobalFonts.register(loaded.buffer, loaded.family)
+        ogFontSlot = loaded
       }
     })()
       .catch((err) => {
@@ -165,10 +170,11 @@ function ensureFonts(): Promise<void> {
         throw err
       })
       .finally(() => {
+        const s = ogFontSlot
         // If the work resolved without actually registering (null
-        // buffer, snapshot race), drop the single-flight so the next
-        // render re-reads settings and re-fetches.
-        if (!GlobalFonts.has('OPPOSans')) {
+        // slot, snapshot race), drop the single-flight so the next
+        // render re-reads settings and re-loads.
+        if (s === null || !GlobalFonts.has(s.family)) {
           ogFontReady = null
         }
       })
@@ -198,9 +204,11 @@ export async function drawOpenGraph({ title, summary, cover }: OpenGraphProps): 
   ctx.fillRect(0, 0, seo.og.width, seo.og.height)
   ctx.save()
 
+  const ogFont = ogFontSlot?.family ?? 'sans-serif'
+
   // Add website title
   ctx.fillStyle = '#e0c2bb'
-  ctx.font = '900 70px OPPOSans'
+  ctx.font = `900 70px ${ogFont}`
   printAt(ctx, siteIdentity.title, 96, 180, 96, seo.og.width, 70)
 
   // Add website logo
@@ -208,11 +216,11 @@ export async function drawOpenGraph({ title, summary, cover }: OpenGraphProps): 
 
   // Add article title
   ctx.fillStyle = '#fff'
-  ctx.font = '800 48px OPPOSans'
+  ctx.font = `800 48px ${ogFont}`
   printAt(ctx, title, 96, seo.og.height / 2 - 64, 96, seo.og.width - 192, 64)
 
   // Add article summary
-  ctx.font = '600 36px OPPOSans'
+  ctx.font = `600 36px ${ogFont}`
   ctx.fillStyle = 'rgba(255,255,255,0.5)'
   printAt(ctx, description, 96, seo.og.height - 200, 48, seo.og.width - 192, 36)
 

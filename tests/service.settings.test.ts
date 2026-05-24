@@ -117,8 +117,8 @@ const fixtureBundle: BlogSettingsBundle = {
     },
   },
   fonts: {
-    og: { url: '' },
-    calendar: { url: '' },
+    og: { path: '', family: '' },
+    calendar: { path: '', family: '' },
     globalCss: [],
     postCss: [],
   },
@@ -132,6 +132,9 @@ const fixtureBundle: BlogSettingsBundle = {
     sessionMaxAge: 60 * 60 * 24 * 30,
     auditLogDbRetentionDays: 30,
     auditLogArchiveRetentionDays: 180,
+  },
+  analytics: {
+    analytics: { trackAdmin: false, keepBotRows: false },
   },
 }
 
@@ -155,6 +158,7 @@ function bundleRows(bundle: BlogSettingsBundle): Setting[] {
     fonts: 'blog.fonts',
     cors: 'blog.cors',
     limits: 'blog.limits',
+    analytics: 'blog.analytics',
   }
   const rows: Setting[] = []
   let id = 1n

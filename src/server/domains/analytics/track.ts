@@ -2,29 +2,27 @@ import type { EntityTarget } from '@/server/infra/db/target'
 
 import { pushAccessEvent } from '@/server/domains/analytics/batcher'
 import { enrichEvent } from '@/server/domains/analytics/enrich'
-import { ANALYTICS_KEEP_BOT_ROWS, ANALYTICS_TRACK_ADMIN } from '@/server/infra/env'
 import { getLogger } from '@/server/infra/logger'
+import { getBlogSettingsBundleSync } from '@/shared/config/blog'
 import { getClientAddress } from '@/shared/utils/request'
 
 // Single entry point for every "this request happened" signal. Fire-
 // and-forget: callers `void trackAccess(...)` so a slow geo lookup or
 // a backed-up batch flush never blocks render.
 //
-// Bot filter is on by default and lives behind an env flag so a
-// debugger can flip it from outside the process. We deliberately do
-// NOT also call `bumpPageView()` here even though the analytics plan
-// mentions a dual-write contract — the existing call site inside
-// `loadDetailPageCritical` (`@/server/http/loaders/comments`) already
-// runs for every detail render and predates this pipeline; mirroring
-// it here would double-count.
+// Bot filter and admin-exemption are driven by the `analytics` settings
+// section (`blog.analytics`). If the section has not been seeded yet
+// (e.g. a deployment upgraded before the backfill runs), both toggles
+// fall back to their safe defaults (`trackAdmin: false`,
+// `keepBotRows: false`) so the access-log pipeline never breaks.
+//
+// We deliberately do NOT also call `bumpPageView()` here even though
+// the analytics plan mentions a dual-write contract — the existing call
+// site inside `loadDetailPageCritical`
+// (`@/server/http/loaders/comments`) already runs for every detail
+// render and predates this pipeline; mirroring it here would double-count.
 
 const log = getLogger('analytics.track')
-
-// `false` keeps bot rows in the table; any other value (including
-// undefined) keeps the default of stripping bots. The continuous
-// aggregates already filter on `is_bot = FALSE` so leaving bot rows
-// in is mainly a forensic / debugging affordance.
-const KEEP_BOT_ROWS = ANALYTICS_KEEP_BOT_ROWS
 
 const YF_AID_COOKIE = 'yf_aid'
 
@@ -52,8 +50,7 @@ export interface TrackAccessOptions {
    * Set by callers that have already resolved the session role. Admin
    * visits are skipped by default (matches the `bumpPageView` admin
    * exemption — dashboard owners shouldn't pollute their own visitor
-   * metrics). Set `ANALYTICS_TRACK_ADMIN=true` in `.env` to override
-   * for local debugging.
+   * metrics). Toggle "记录管理员访问" in `/admin/settings` to override.
    */
   isAdmin?: boolean
 }
@@ -64,7 +61,10 @@ export async function trackAccess(
   options: TrackAccessOptions = {},
 ): Promise<void> {
   try {
-    if (options.isAdmin && !ANALYTICS_TRACK_ADMIN) {
+    const bundle = getBlogSettingsBundleSync()
+    const analytics = bundle?.analytics?.analytics ?? { trackAdmin: false, keepBotRows: false }
+
+    if (options.isAdmin && !analytics.trackAdmin) {
       return
     }
     if (isPrefetchRequest(request)) {
@@ -83,7 +83,7 @@ export async function trackAccess(
       sessionId: readVisitorCookie(request.headers),
     })
 
-    if (event.isBot && !KEEP_BOT_ROWS && !options.skipBotFilter) {
+    if (event.isBot && !analytics.keepBotRows && !options.skipBotFilter) {
       return
     }
 

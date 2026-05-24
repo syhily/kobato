@@ -32,6 +32,7 @@ export const SETTINGS_SECTIONS = [
   'cors',
   'backup',
   'limits',
+  'analytics',
 ] as const
 
 export type SettingsSection = (typeof SETTINGS_SECTIONS)[number]
@@ -66,6 +67,7 @@ export const SECTION_TO_BUNDLE_KEY = {
   cors: 'cors',
   backup: 'backup',
   limits: 'limits',
+  analytics: 'analytics',
 } as const satisfies Record<SettingsSection, string>
 
 export type BundleKey = (typeof SECTION_TO_BUNDLE_KEY)[SettingsSection]
@@ -75,7 +77,7 @@ export const BUNDLE_KEYS = SETTINGS_SECTIONS.map((section) => SECTION_TO_BUNDLE_
 
 // Display metadata for each settings section. The strings are
 // rendered in the admin `<SettingsShell>` sidebar and the mobile
-// drawer; centralising them here means adding a thirteenth section
+// drawer; centralising them here means adding a new section
 // is a one-file edit (extend `SETTINGS_SECTIONS` and add the matching
 // label/description) instead of "remember to also touch the sidebar
 // component".
@@ -123,7 +125,7 @@ export const SECTION_DISPLAY: Record<SettingsSection, SectionDisplayMeta> = {
   fonts: {
     to: '/admin/settings',
     label: '字体配置',
-    description: 'OG 图与日历图渲染所用的远程 TTF 字体地址',
+    description: 'OG 图与日历图渲染所用的本地 TTF/OTF 字体相对路径',
     group: 'site',
     icon: 'Type',
   },
@@ -217,6 +219,13 @@ export const SECTION_DISPLAY: Record<SettingsSection, SectionDisplayMeta> = {
     description: '数据库自动备份、手动备份与还原',
     group: 'system',
     icon: 'Archive',
+  },
+  analytics: {
+    to: '/admin/settings',
+    label: '分析统计',
+    description: '访问日志的采集策略与过滤选项',
+    group: 'system',
+    icon: 'BarChart3',
   },
 }
 

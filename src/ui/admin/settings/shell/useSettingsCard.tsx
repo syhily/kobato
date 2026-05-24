@@ -39,7 +39,6 @@ interface UseSettingsCardResult<TSource extends object, TState extends FieldValu
   cancel: () => void
   isPending: boolean
   status: 'idle' | 'saving' | 'saved' | 'error'
-  errorMessage: string | null
   /** Resolved display data: optimistic if pending, else server source. */
   display: TSource
   /** Spread into <SettingGroup> to wire up edit/save/cancel/status. */
@@ -49,7 +48,6 @@ interface UseSettingsCardResult<TSource extends object, TState extends FieldValu
     onSave: () => void
     onCancel: () => void
     saveState: 'idle' | 'saving' | 'saved' | 'error'
-    errorMessage: string | null
   }
 }
 
@@ -89,7 +87,7 @@ export function useSettingsCard<TSource extends object, TState extends FieldValu
 }: UseSettingsCardOptions<TSource, TState>): UseSettingsCardResult<TSource, TState> {
   const [mode, setMode] = useState<'read' | 'edit'>('read')
   const [optimisticSource, setOptimisticSource] = useState<TSource | null>(null)
-  const { commit, resetStatus, isPending, status, errorMessage } = useSettingsMutation()
+  const { commit, resetStatus, isPending, status } = useSettingsMutation()
 
   // Stable references: callers pass module-level functions for `toState`
   // and `fromState`, so identity is stable across renders. Use refs to
@@ -138,18 +136,27 @@ export function useSettingsCard<TSource extends object, TState extends FieldValu
   }, [source, lastSourceSnapshot, mode, initialValues, reset, optimisticSource])
 
   const save = useCallback(() => {
-    handleSubmit(async (values) => {
-      const patchPayload = fromStateRef.current(values)
-      const payload: TSource =
-        mergeMode === 'patch' ? deepMerge(sourceRef.current, patchPayload) : (patchPayload as TSource)
-      // Optimistic update: immediately reflect the submitted values in read mode
-      // while the async request + revalidation happen in the background.
-      setOptimisticSource(payload)
-      setMode('read')
-      await commit(section, payload as Record<string, unknown>)
-    })().catch((error: unknown) => {
-      log.error('Unexpected save error', { error })
-    })
+    void handleSubmit(
+      async (values) => {
+        const patchPayload = fromStateRef.current(values)
+        const payload: TSource =
+          mergeMode === 'patch' ? deepMerge(sourceRef.current, patchPayload) : (patchPayload as TSource)
+        // Optimistic update: immediately reflect the submitted values in read mode
+        // while the async request + revalidation happen in the background.
+        setOptimisticSource(payload)
+        setMode('read')
+        const ok = await commit(section, payload as Record<string, unknown>)
+        if (!ok) {
+          // Rollback: the server rejected the payload (validation, missing
+          // file, etc.). Clear the optimistic overlay so the UI reverts to
+          // the last known server state.
+          setOptimisticSource(null)
+        }
+      },
+      (errors) => {
+        log.debug('Form validation failed', { errors })
+      },
+    )()
   }, [handleSubmit, mergeMode, section, commit])
 
   const cancel = useCallback(() => {
@@ -167,7 +174,6 @@ export function useSettingsCard<TSource extends object, TState extends FieldValu
     cancel,
     isPending,
     status,
-    errorMessage,
     display: optimisticSource ?? source,
     settingGroupProps: {
       mode,
@@ -175,7 +181,6 @@ export function useSettingsCard<TSource extends object, TState extends FieldValu
       onSave: save,
       onCancel: cancel,
       saveState: status,
-      errorMessage,
     },
   }
 }

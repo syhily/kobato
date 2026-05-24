@@ -1,6 +1,7 @@
 import { createContext, type Context, type ReactNode, use } from 'react'
 
 import type {
+  AnalyticsSettings,
   AssetsSettings,
   BackupSettings,
   BlogSettingsBundle,
@@ -61,6 +62,7 @@ const SECTION_CONTEXTS: SectionContextMap = {
   cors: makeContext('cors'),
   backup: makeContext('backup'),
   limits: makeContext('limits'),
+  analytics: makeContext('analytics'),
 }
 
 interface BlogSettingsProviderProps {
@@ -229,4 +231,11 @@ export function useLimitsSettings(): LimitsSettings {
 }
 export function useLimitsSettingsOptional(): LimitsSettings | undefined {
   return useSectionOptional('limits')
+}
+
+export function useAnalyticsSettings(): AnalyticsSettings {
+  return useSection('useAnalyticsSettings', 'analytics')
+}
+export function useAnalyticsSettingsOptional(): AnalyticsSettings | undefined {
+  return useSectionOptional('analytics')
 }

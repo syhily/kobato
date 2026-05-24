@@ -1,5 +1,6 @@
 import {
   Archive,
+  BarChart3,
   Database,
   FileText,
   Globe,
@@ -41,6 +42,7 @@ export const ICON_MAP: Record<string, React.ComponentType<{ className?: string }
   Shield,
   SlidersHorizontal,
   Archive,
+  BarChart3,
 }
 
 interface SettingsNavItemProps {

@@ -2,6 +2,7 @@ import { z } from 'zod'
 
 import type { BlogSettingsBundle } from '@/shared/config/blog'
 
+import { analyticsSchema } from '@/server/domains/settings/schemas/analytics'
 import { assetsSchema } from '@/server/domains/settings/schemas/assets'
 import { backupSchema } from '@/server/domains/settings/schemas/backup'
 import { cacheSchema } from '@/server/domains/settings/schemas/cache'
@@ -227,13 +228,13 @@ export const SECTION_REGISTRY = {
     schema: fontsSchema,
     key: 'fonts',
     // Empty defaults — every consumer degrades silently to fallback
-    // system fonts until the admin pastes URLs at
+    // system fonts until the admin pastes paths at
     // `/admin/settings/fonts`. So a fresh install renders the
     // home / archives / OG image without throwing, just with system
     // typography.
     defaults: {
-      og: { url: '' },
-      calendar: { url: '' },
+      og: { path: '', family: '' },
+      calendar: { path: '', family: '' },
       globalCss: [],
       postCss: [],
     },
@@ -268,6 +269,14 @@ export const SECTION_REGISTRY = {
       sessionMaxAge: 60 * 60 * 24 * 30,
       auditLogDbRetentionDays: 30,
       auditLogArchiveRetentionDays: 180,
+    },
+  },
+  analytics: {
+    scope: 'blog.analytics',
+    schema: analyticsSchema,
+    key: 'analytics',
+    defaults: {
+      analytics: { trackAdmin: false, keepBotRows: false },
     },
   },
 } as const satisfies Record<SettingsSection, SectionMeta>

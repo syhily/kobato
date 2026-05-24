@@ -1,11 +1,11 @@
 import { Buffer } from 'node:buffer'
-import { createHash } from 'node:crypto'
+import { readFile } from 'node:fs/promises'
+import path from 'node:path'
 
 import LogoDarkSvg from '@/assets/logos/logo-dark.svg?raw'
 import LogoLightSvg from '@/assets/logos/logo.svg?raw'
-import { DomainError } from '@/server/infra/http/errors'
+import { FONT_PATH } from '@/server/infra/env'
 import { getLogger } from '@/server/infra/logger'
-import { loadBuffer } from '@/server/infra/redis/buffer-cache'
 import { requireBlogSettingsSection } from '@/shared/config/blog'
 
 // Logo SVGs are inlined into the server bundle via Vite's built-in
@@ -28,92 +28,97 @@ export function logoLight(): Buffer {
 
 // -------- Canvas fonts (`fonts.og` / `fonts.calendar` from settings) --------
 //
-// The TTFs used by `@napi-rs/canvas` (`og.ts` + `calendar.ts`) used to
-// live in the repo as `?binary` imports; the binary then sat embedded
-// in the server bundle as a ~60 MB z85+gzip string. They now live on a
-// CDN and the URL is admin-configurable at `/admin/settings/fonts`.
+// TTF/OTF files live on the local filesystem under the directory
+// configured by the `FONT_PATH` environment variable. The admin
+// specifies a filename relative to that directory and a font-family
+// name in `/admin/settings/fonts`.
 //
-// Three layers of caching protect the SSR hot path:
-//
-//   1. Process Map (`inProcessByUrl`) — keyed by URL so a settings
-//      rotation doesn't return a stale Buffer. Hit = zero I/O.
-//   2. Redis via `loadBuffer` — shared between replicas, TTL 30 days
-//      (effectively forever); URL-hash key auto-invalidates on rotate.
-//   3. CDN `fetch` — only on a cold replica after a Redis flush.
+// A single process-level Map caches the Buffer so repeated renders
+// don't re-read disk. The key is the resolved absolute path; changing
+// the setting (or replacing the file on disk) requires a process
+// restart to pick up the new font. This is acceptable because fonts
+// change far less frequently than settings, and Docker deployments are
+// immutable.
 //
 // Failure mode is **null, not throw**. An admin who hasn't configured
-// the URL, or a CDN outage, must NOT 500 the OG / calendar route. The
-// renderer skips `GlobalFonts.register()` for null buffers and Canvas
-// falls back to its built-in system CJK shaper.
+// the path, or a missing file, must NOT 500 the OG / calendar route.
+// The renderer skips `GlobalFonts.register()` for null buffers and
+// Canvas falls back to its built-in system CJK shaper.
 
 const log = getLogger('images.assets')
 
-const FONT_CACHE_TTL_SECONDS = 60 * 60 * 24 * 30 // 30 days
-const FONT_MAX_BYTES = 100 * 1024 * 1024 // 100 MB hard cap
-
-const inProcessByUrl = new Map<string, Buffer>()
-
-async function fetchFontBuffer(url: string): Promise<Buffer> {
-  const res = await fetch(url)
-  if (!res.ok) {
-    throw new DomainError('INTERNAL', `HTTP ${res.status}`)
-  }
-  const contentLength = Number(res.headers.get('content-length') ?? '0')
-  if (contentLength > FONT_MAX_BYTES) {
-    throw new DomainError('INTERNAL', `Content-Length ${contentLength} exceeds ${FONT_MAX_BYTES}`)
-  }
-  const arrayBuf = await res.arrayBuffer()
-  if (arrayBuf.byteLength > FONT_MAX_BYTES) {
-    throw new DomainError('INTERNAL', `Downloaded ${arrayBuf.byteLength} bytes exceeds ${FONT_MAX_BYTES}`)
-  }
-  return Buffer.from(arrayBuf)
+export interface FontSlot {
+  buffer: Buffer
+  family: string
 }
 
-async function loadFontSlot(slot: 'og' | 'calendar'): Promise<Buffer | null> {
+const inProcessByPath = new Map<string, Buffer>()
+
+async function loadFontSlot(slot: 'og' | 'calendar'): Promise<FontSlot | null> {
   const fonts = requireBlogSettingsSection('fonts')
-  const url = fonts[slot].url
-  if (url === '') {
-    // Common misconfiguration on fresh installs: paste-the-URL-later
-    // story. Single info log per cold replica so the operator can
-    // tell from logs that the font slot is unconfigured rather than
-    // failing — `ogFontReady` in og.ts intentionally retries every
-    // request, but we don't want to log on each retry.
+  const relativePath = fonts[slot].path
+  const family = fonts[slot].family
+  if (relativePath === '' || family === '') {
     if (!loggedEmpty.has(slot)) {
-      log.info('Canvas font slot has no URL configured; using fallback system font', { slot })
+      log.info('Canvas font slot has no path/family configured; using fallback system font', { slot })
       loggedEmpty.add(slot)
     }
     return null
   }
   loggedEmpty.delete(slot)
-  const inProcess = inProcessByUrl.get(url)
-  if (inProcess !== undefined) {
-    return inProcess
+
+  if (!FONT_PATH) {
+    if (!loggedUnset.has(slot)) {
+      log.info('FONT_PATH is not set; using fallback system font', { slot })
+      loggedUnset.add(slot)
+    }
+    return null
   }
+  loggedUnset.delete(slot)
+
+  const basePath = path.resolve(FONT_PATH)
+  const fullPath = path.resolve(basePath, relativePath)
+
+  // Path-traversal guard: the resolved path must stay inside FONT_PATH.
+  const relativeToBase = path.relative(basePath, fullPath)
+  if (relativeToBase.startsWith('..') || path.isAbsolute(relativeToBase)) {
+    log.warn('Canvas font path escapes FONT_PATH directory; rejecting', { slot, relativePath, fullPath })
+    return null
+  }
+
+  const cached = inProcessByPath.get(fullPath)
+  if (cached !== undefined) {
+    return { buffer: cached, family }
+  }
+
   try {
-    const key = `fonts:cache:${createHash('sha256').update(url).digest('hex')}`
-    const buffer = await loadBuffer(key, () => fetchFontBuffer(url), FONT_CACHE_TTL_SECONDS)
-    inProcessByUrl.set(url, buffer)
-    log.info('Loaded Canvas font slot', { slot, url, bytes: buffer.byteLength })
-    return buffer
+    const buffer = await readFile(fullPath)
+    inProcessByPath.set(fullPath, buffer)
+    log.info('Loaded Canvas font slot', { slot, path: fullPath, family, bytes: buffer.byteLength })
+    return { buffer, family }
   } catch (err) {
-    log.warn('Failed to load Canvas font slot', {
-      slot,
-      url,
-      err: err instanceof Error ? err.message : String(err),
-    })
+    if (!loggedMissing.has(fullPath)) {
+      log.warn('Failed to load Canvas font slot', {
+        slot,
+        path: fullPath,
+        err: err instanceof Error ? err.message : String(err),
+      })
+      loggedMissing.add(fullPath)
+    }
     return null
   }
 }
 
-// Deduplicates the "no URL configured" log so operators see it once
-// per replica, not on every render. Re-armed when a URL gets pasted
-// (cleared on the first successful resolve).
+// Deduplicates the "no path configured" / "FONT_PATH unset" / "file missing"
+// logs so operators see them once per replica, not on every render.
 const loggedEmpty = new Set<'og' | 'calendar'>()
+const loggedUnset = new Set<'og' | 'calendar'>()
+const loggedMissing = new Set<string>()
 
-export function oppoSans(): Promise<Buffer | null> {
+export function oppoSans(): Promise<FontSlot | null> {
   return loadFontSlot('og')
 }
 
-export function oppoSerif(): Promise<Buffer | null> {
+export function oppoSerif(): Promise<FontSlot | null> {
   return loadFontSlot('calendar')
 }

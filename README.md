@@ -156,8 +156,6 @@ All configuration is read from `.env` (gitignored). Copy
 | `DB_STATEMENT_TIMEOUT_MS` | `30000`   | Per-query timeout in ms                                                                                                                                                                  |
 | `LOG_LEVEL`               | `info`    | One of: `debug`, `info`, `warn`, `error`                                                                                                                                                 |
 | `MAXMIND_DB_PATH`         | —         | Path to GeoLite2-City `.mmdb`. When set, analytics records include geo data (country/region/city/lat/lon/timezone). Download from [MaxMind](https://www.maxmind.com/en/geolite2/signup). |
-| `ANALYTICS_TRACK_ADMIN`   | `false`   | Include admin visits in analytics dashboards                                                                                                                                             |
-| `ANALYTICS_KEEP_BOT_ROWS` | `false`   | Keep bot rows in `access_log` (forensic/debugging)                                                                                                                                       |
 
 ### Secret encryption
 

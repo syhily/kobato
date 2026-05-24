@@ -24,18 +24,11 @@ const envConfig = {
 
     // Filesystem path to the MaxMind GeoLite2-City mmdb. Optional.
     MAXMIND_DB_PATH: z.string().min(1).optional(),
-    // Flip to `true` on dev environments where you want
-    // to see your own visits land in the table during analytics work.
-    ANALYTICS_TRACK_ADMIN: z
-      .enum(['true', 'false'])
-      .transform((v) => v === 'true')
-      .default(false),
-    // Flip to `true` to keep bot rows in the access_log table.
-    // Default `false` strips them. Mainly a forensic / debugging affordance.
-    ANALYTICS_KEEP_BOT_ROWS: z
-      .enum(['true', 'false'])
-      .transform((v) => v === 'true')
-      .default(false),
+
+    // Filesystem directory containing TTF/OTF fonts for OG image and calendar
+    // rendering. Admin settings specify filenames relative to this directory.
+    // Optional: when unset, Canvas falls back to its built-in system CJK shaper.
+    FONT_PATH: z.string().min(1).optional(),
   },
   runtimeEnv: process.env,
   emptyStringAsUndefined: true,
@@ -68,12 +61,11 @@ function loadEnv() {
 const env = loadEnv()
 
 export const {
-  ANALYTICS_KEEP_BOT_ROWS,
-  ANALYTICS_TRACK_ADMIN,
   DATABASE_URL,
   DB_POOL_MAX,
   DB_STATEMENT_TIMEOUT_MS,
   ENCRYPTION_KEY,
+  FONT_PATH,
   HOST,
   LOG_LEVEL,
   MAXMIND_DB_PATH,

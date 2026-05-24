@@ -65,7 +65,6 @@ interface BucketSaveStatusProps {
   isDirty: boolean
   isPending: boolean
   status: 'idle' | 'saving' | 'saved' | 'error'
-  errorMessage: string | null
   validationError: string | null
 }
 
@@ -76,7 +75,7 @@ interface BucketSaveStatusProps {
 // Rendered inside a persistent `role="status"` live region so the
 // state transitions (保存中 → 已保存 / 保存失败) are announced to
 // screen readers without the region being torn down.
-export function BucketSaveStatus({ isDirty, isPending, status, errorMessage, validationError }: BucketSaveStatusProps) {
+export function BucketSaveStatus({ isDirty, isPending, status, validationError }: BucketSaveStatusProps) {
   let message = ''
   let tone: 'muted' | 'error' = 'muted'
   if (isPending) {
@@ -85,7 +84,7 @@ export function BucketSaveStatus({ isDirty, isPending, status, errorMessage, val
     message = '配置存在冲突，请先修正'
     tone = 'error'
   } else if (status === 'error') {
-    message = errorMessage ?? '保存失败'
+    message = '保存失败'
     tone = 'error'
   } else if (status === 'saved' && !isDirty) {
     message = '已保存'

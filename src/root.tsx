@@ -5,8 +5,6 @@ import { useState } from 'react'
 import { preconnect, prefetchDNS } from 'react-dom'
 import { Links, Meta, Outlet, Scripts, ScrollRestoration, useRouteLoaderData } from 'react-router'
 
-import type { WarmupManifest } from '@/server/render/warmup/manifest'
-
 import { makeQueryClient } from '@/client/api/query-client'
 import { RouteWarmupScript } from '@/client/components/RouteWarmupScript'
 import { useChunkErrorRecovery, useReloadOnChunkError } from '@/client/hooks/use-chunk-error-recovery'
@@ -25,7 +23,15 @@ import { PublicChrome } from '@/ui/public/chrome/PublicChrome'
 
 import type { Route } from './+types/root'
 
-function collectTier2Chunks(manifest: WarmupManifest, isAdmin: boolean): string[] {
+function collectTier2Chunks(
+  manifest: {
+    tier2_public: string[]
+    tier2_admin: string[]
+    tier2_editor: string[]
+    tier2_auth: string[]
+  },
+  isAdmin: boolean,
+): string[] {
   const seen = new Set<string>()
   const result: string[] = []
   const push = (arr: string[]) => {
@@ -122,7 +128,11 @@ export function loader({ request, context }: Route.LoaderArgs) {
   const queryClient = makeQueryClient()
   const dehydratedState = dehydrate(queryClient)
 
-  return { admin, currentUser, blogSettings, theme, dehydratedState }
+  const warmupManifest = getWarmupManifest()
+  const tier1Links = warmupManifest?.tier1 ?? []
+  const tier2Chunks = warmupManifest ? collectTier2Chunks(warmupManifest, admin) : []
+
+  return { admin, currentUser, blogSettings, theme, dehydratedState, tier1Links, tier2Chunks }
 }
 
 // The root loader ships `{ admin, blogSettings }`. Both can change at
@@ -152,6 +162,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
       fonts?: { globalCss?: string[] } | null
       assets?: { asset?: { host?: string } | null } | null
     } | null
+    tier1Links?: string[]
+    tier2Chunks?: string[]
   }>('root')
   const theme = rootData?.theme ?? null
   const globalFontCss = rootData?.blogSettings?.fonts?.globalCss ?? []
@@ -181,11 +193,10 @@ export function Layout({ children }: { children: React.ReactNode }) {
   }
 
   // Tier-1 route warmup: preload critical public route chunks
-  const warmupManifest = getWarmupManifest()
-  const tier1Links = warmupManifest?.tier1 ?? []
+  const tier1Links = rootData?.tier1Links ?? []
 
   // Tier-2 idle warmup: collect chunks based on auth status
-  const tier2Chunks = warmupManifest ? collectTier2Chunks(warmupManifest, rootData?.admin === true) : []
+  const tier2Chunks = rootData?.tier2Chunks ?? []
 
   return (
     <html lang="zh-CN" className={theme ?? undefined}>

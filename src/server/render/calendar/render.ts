@@ -7,7 +7,7 @@ import { Solar } from 'lunar-typescript'
 
 import { DomainError } from '@/server/infra/http/errors'
 import { compressImage } from '@/server/render/image-compress'
-import { oppoSerif } from '@/server/render/og/assets'
+import { oppoSerif, type FontSlot } from '@/server/render/og/assets'
 
 const WIDTH = 600
 const HEIGHT = 880
@@ -17,16 +17,20 @@ const HEIGHT = 880
 // catch path must clear `calendarFontReady` so the next render
 // re-reads settings — otherwise pasting a URL after first render takes
 // effect only on process restart.
+let calendarFontSlot: FontSlot | null = null
+
 let calendarFontReady: Promise<void> | null = null
 function ensureFonts(): Promise<void> {
-  if (GlobalFonts.has('OPPOSerif')) {
+  const slot = calendarFontSlot
+  if (slot !== null && GlobalFonts.has(slot.family)) {
     return Promise.resolve()
   }
   if (calendarFontReady === null) {
     calendarFontReady = (async () => {
-      const buffer = await oppoSerif()
-      if (buffer !== null && !GlobalFonts.has('OPPOSerif')) {
-        GlobalFonts.register(buffer, 'OPPOSerif')
+      const loaded = await oppoSerif()
+      if (loaded !== null && !GlobalFonts.has(loaded.family)) {
+        GlobalFonts.register(loaded.buffer, loaded.family)
+        calendarFontSlot = loaded
       }
     })()
       .catch((err) => {
@@ -34,7 +38,8 @@ function ensureFonts(): Promise<void> {
         throw err
       })
       .finally(() => {
-        if (!GlobalFonts.has('OPPOSerif')) {
+        const s = calendarFontSlot
+        if (s === null || !GlobalFonts.has(s.family)) {
           calendarFontReady = null
         }
       })
@@ -131,9 +136,11 @@ export async function renderCalendar(date: Date, theme: CalendarTheme = 'light')
   ctx.lineWidth = 4
   ctx.strokeRect(12, 12, WIDTH - 24, HEIGHT - 24)
 
+  const calFont = calendarFontSlot?.family ?? 'serif'
+
   ctx.fillStyle = inkColor
   ctx.textBaseline = 'middle'
-  ctx.font = '28px OPPOSerif'
+  ctx.font = `28px ${calFont}`
   ctx.textAlign = 'left'
 
   ctx.fillText(monthText, 36, 50)
@@ -152,11 +159,11 @@ export async function renderCalendar(date: Date, theme: CalendarTheme = 'light')
 
   ctx.textAlign = 'center'
   ctx.textBaseline = 'middle'
-  ctx.font = '400px OPPOSerif'
+  ctx.font = `400px ${calFont}`
   const dayY = 320
   ctx.fillText(String(getDate(date)), WIDTH / 2, dayY)
 
-  ctx.font = '50px OPPOSerif'
+  ctx.font = `50px ${calFont}`
   const auspiciousY = dayY + 220
   ctx.fillText(dailyAuspicious, WIDTH / 2, auspiciousY)
 
@@ -172,7 +179,7 @@ export async function renderCalendar(date: Date, theme: CalendarTheme = 'light')
 
   ctx.textAlign = 'left'
   ctx.textBaseline = 'top'
-  ctx.font = '36px OPPOSerif'
+  ctx.font = `36px ${calFont}`
   const quoteText = quoteData.translation
   const quoteLines = wrapText(ctx, quoteText, maxTextWidth)
   let y = quoteY
@@ -184,7 +191,7 @@ export async function renderCalendar(date: Date, theme: CalendarTheme = 'light')
   }
 
   y += 30
-  ctx.font = '24px OPPOSerif'
+  ctx.font = `24px ${calFont}`
   ctx.textAlign = 'right'
   const authorText = quoteData.author || ''
   ctx.fillText(authorText, WIDTH - 36, HEIGHT - 50)

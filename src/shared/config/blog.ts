@@ -349,10 +349,10 @@ export interface SearchSettings {
 // a `.css` file that itself loads woff2 chunks (the standard
 // `cn-font-split` output reshipped to a CDN).
 export interface FontsSettings {
-  /** TTF/OTF URL for the OG-image renderer (post title + site name). */
-  og: { url: string }
-  /** TTF/OTF URL for the calendar image renderer (day digits). */
-  calendar: { url: string }
+  /** Relative path + font family for the OG-image renderer (post title + site name). */
+  og: { path: string; family: string }
+  /** Relative path + font family for the calendar image renderer (day digits). */
+  calendar: { path: string; family: string }
   /**
    * CSS bundle URLs injected into every page's `<head>`. Each entry
    * becomes one `<link rel="stylesheet">`. Typical use: one URL per
@@ -401,6 +401,15 @@ export interface LimitsSettings {
   auditLogArchiveRetentionDays: number
 }
 
+export interface AnalyticsSettings {
+  analytics: {
+    /** When `true`, admin sessions' visits are written to `access_log`. */
+    trackAdmin: boolean
+    /** When `true`, bot rows are kept in `access_log` instead of stripped. */
+    keepBotRows: boolean
+  }
+}
+
 export interface CorsSettings {
   cors: {
     /** Master switch: when `false`, the middleware skips CORS entirely. */
@@ -439,6 +448,7 @@ export interface BlogSettingsBundle {
   cors: CorsSettings | null
   backup: BackupSettings | null
   limits: LimitsSettings | null
+  analytics: AnalyticsSettings | null
 }
 
 // Runtime half of the blog-config module. The pure-types half lives in

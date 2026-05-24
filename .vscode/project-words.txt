@@ -60,6 +60,7 @@ fmoran
 fnref
 folo
 fong
+fontconfig
 fontsource
 footgun
 forencrypt
@@ -229,6 +230,7 @@ shiki
 shikijs
 shinmun
 shmily
+Skia
 skrs
 slugignore
 sqlx

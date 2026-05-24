@@ -150,8 +150,8 @@ export const TEST_BLOG_SETTINGS_BUNDLE: BlogSettingsBundle = {
     },
   },
   fonts: {
-    og: { url: '' },
-    calendar: { url: '' },
+    og: { path: '', family: '' },
+    calendar: { path: '', family: '' },
     globalCss: [],
     postCss: [],
   },
@@ -165,5 +165,8 @@ export const TEST_BLOG_SETTINGS_BUNDLE: BlogSettingsBundle = {
     sessionMaxAge: 60 * 60 * 24 * 30,
     auditLogDbRetentionDays: 30,
     auditLogArchiveRetentionDays: 180,
+  },
+  analytics: {
+    analytics: { trackAdmin: false, keepBotRows: false },
   },
 }

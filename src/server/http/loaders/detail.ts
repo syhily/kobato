@@ -61,7 +61,7 @@ export async function loadPublicDetailData({
   // counter increment happens via `loadDetailPageCritical` (called
   // from `loadDetailPageStreaming` below), the time-series write
   // happens here. The admin-exemption (matching `bumpPageView`'s)
-  // and the `ANALYTICS_TRACK_ADMIN` override both live inside
+  // and the analytics settings override both live inside
   // `trackAccess`. `void`d — never blocks the loader.
   if (trackView) {
     void trackAccess(request, target, { isAdmin })

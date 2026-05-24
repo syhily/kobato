@@ -153,12 +153,41 @@ the caller's responsibility.
   `@/shared/utils/request` + `@/shared/utils/security`. Use `zod`
   directly.
 
+### Env vars vs database settings
+
+Env vars live in `@/server/infra/env.ts` and require a redeploy to change.
+Database settings live in the `setting` table and are editable at runtime via
+`/admin/settings`. Three categories decide where a config belongs:
+
+**Category 1 — Env var (immutable runtime constants)**
+Configuration that is set once during deployment and never changed by admins.
+Examples: `HOST`, `PORT`, `LOG_LEVEL`, `DB_POOL_MAX`, `DB_STATEMENT_TIMEOUT_MS`.
+
+**Category 2 — Env var (secrets & credentials)**
+Passwords, API keys, connection strings, and signing secrets that must not live
+in the database (or must be encrypted if they do). Examples: `DATABASE_URL`,
+`REDIS_URL`, `SESSION_SECRET`, `ENCRYPTION_KEY`.
+
+**Category 3 — Env var (deployment-local filesystem paths)**
+Paths that are specific to the Docker/host environment and meaningless to change
+at runtime. Examples: `MAXMIND_DB_PATH`, `FONT_PATH`.
+
+**What belongs in database settings**
+Everything else: feature toggles, thresholds, URLs, CDN hosts, pagination sizes,
+relative font paths, and any behavior an admin might want to flip without
+redeploying. Examples: `assets.storage.enabled`, `seo.og.width`,
+`analytics.trackAdmin`, `cache.og.ttlSeconds`.
+
+- Negative rule: if a config could reasonably be toggled by an admin from the
+  dashboard, it MUST be a database setting, not an env var.
+
 ## Configuration & Install Gate
 
 - Source of truth is the `setting` table — one JSONB row per section,
-  `scope='blog.<section>'`. 14 sections: `general`, `assets`,
+  `scope='blog.<section>'`. 17 sections: `general`, `assets`,
   `navigation`, `socials`, `content`, `sidebar`, `comments`, `seo`,
-  `footer`, `mail`, `cache`, `rateLimit`, `search`, `fonts`.
+  `mail`, `cache`, `rateLimit`, `search`, `fonts`, `cors`, `backup`,
+  `limits`, `analytics`.
   Per-section splitting avoids races between concurrent admin tabs.
 - Section ↔ DB scope ↔ Zod schema ↔ bundle key mapping lives in
   `@/server/domains/settings/sections.ts`'s `SECTION_REGISTRY`.
@@ -172,8 +201,8 @@ the caller's responsibility.
      the first admin row and auto-logs in. Redirects to stage 2.
   2. `routes/auth/setup/settings.tsx`
      (`/admin/setup/settings`) persists `blog.general` and
-     `blog.assets` from the form AND seeds the remaining 12 sections
-     from `SECTION_REGISTRY[<section>].defaults`. All 14 rows are
+     `blog.assets` from the form AND seeds the remaining 15 sections
+     from `SECTION_REGISTRY[<section>].defaults`. All 17 rows are
      written atomically. `blog.assets` defaults to upload toggle OFF.
 - `honoInstallGateMiddleware`
   (`@/server/http/middlewares/install-gate.ts`) reads

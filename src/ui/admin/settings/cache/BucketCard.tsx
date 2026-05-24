@@ -79,7 +79,7 @@ export function BucketCard({ bucket, settings, allBuckets, isClearPending, clear
     submittedDraftRef.current = null
     setSnapshot(submitted.value)
   }, [])
-  const { commit, isPending: isSavePending, status: saveStatus, errorMessage } = useSettingsMutation()
+  const { commit, isPending: isSavePending, status: saveStatus } = useSettingsMutation()
 
   const save = useCallback(
     async (payload: Record<string, unknown>) => {
@@ -208,7 +208,6 @@ export function BucketCard({ bucket, settings, allBuckets, isClearPending, clear
       isDirty={isDirty}
       isPending={isSavePending}
       status={saveStatus}
-      errorMessage={errorMessage}
       validationError={validationError}
     />
   ) : (

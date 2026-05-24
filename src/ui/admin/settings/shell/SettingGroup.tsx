@@ -18,7 +18,6 @@ interface SettingGroupProps {
   onSave?: () => void
   onCancel?: () => void
   saveState?: 'idle' | 'saving' | 'saved' | 'error'
-  errorMessage?: string | null
 }
 
 export function SettingGroup({
@@ -32,7 +31,6 @@ export function SettingGroup({
   onSave,
   onCancel,
   saveState,
-  errorMessage,
 }: SettingGroupProps) {
   const showEdit = mode !== 'edit' && onModeChange && !actions
   const showActions = mode === 'edit' && (onSave || onCancel)
@@ -79,8 +77,6 @@ export function SettingGroup({
                     <CheckIcon data-icon className="size-3.5" />
                     已保存
                   </span>
-                ) : saveState === 'error' && errorMessage ? (
-                  <span className="max-w-[200px] truncate text-xs text-destructive">{errorMessage}</span>
                 ) : null}
 
                 {onCancel ? (

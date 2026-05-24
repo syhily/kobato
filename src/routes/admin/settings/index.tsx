@@ -12,6 +12,7 @@ import {
   projectAssetsForAdmin,
   projectSearchForAdmin,
 } from '@/shared/config/settings'
+import { AnalyticsForm } from '@/ui/admin/settings/AnalyticsForm'
 import { AssetsForm } from '@/ui/admin/settings/AssetsForm'
 import { BackupView } from '@/ui/admin/settings/BackupView'
 import { CacheView } from '@/ui/admin/settings/CacheView'
@@ -122,6 +123,10 @@ const SECTION_CONFIGS: {
   {
     id: 'limits',
     render: (bundle) => <LimitsForm limits={bundle.limits} />,
+  },
+  {
+    id: 'analytics',
+    render: (bundle) => <AnalyticsForm analytics={bundle.analytics} />,
   },
   {
     id: 'backup',

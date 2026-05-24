@@ -16,8 +16,10 @@ export const blogSettingsBundleDto = z.object({
   rateLimit: sectionPayload,
   search: sectionPayload,
   fonts: sectionPayload,
+  cors: sectionPayload,
   backup: sectionPayload,
   limits: sectionPayload,
+  analytics: sectionPayload,
 })
 
 // Intentionally omitted — blogSettingsBundleDto uses z.unknown().nullable()

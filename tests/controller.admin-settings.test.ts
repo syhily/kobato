@@ -1,6 +1,8 @@
 import { call } from '@orpc/server'
 import { describe, expect, it, vi } from 'vitest'
 
+import { DomainError } from '@/server/infra/http/errors'
+
 import { makeAuthedCtx } from './_helpers/mock-ctx'
 
 vi.mock('@/server/domains/settings/service', () => ({
@@ -32,7 +34,9 @@ const bundleStub = {
   rateLimit: null,
   search: null,
   fonts: null,
+  cors: null,
   limits: null,
+  analytics: null,
 }
 
 describe('adminSettingsRouter.get', () => {
@@ -79,6 +83,7 @@ describe('adminSettingsRouter.update', () => {
   })
 
   it('throws BAD_REQUEST for an invalid payload', async () => {
+    vi.mocked(updateBlogSettingsSection).mockRejectedValueOnce(new DomainError('BAD_REQUEST', '设置数据无效'))
     const ctx = makeAuthedCtx()
     await expect(
       call(

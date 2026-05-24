@@ -8,7 +8,11 @@ RUN NODE_ENV=production npm run build
 FROM node:24-alpine AS runtime
 WORKDIR /app
 ENV NPM_CONFIG_LEGACY_PEER_DEPS=true
-RUN apk add --no-cache tini postgresql-client
+# tini — PID 1 init for proper signal handling.
+# postgresql-client — for pg_dump / pg_restore in backup jobs.
+# font-noto-cjk — system fallback CJK fonts for @napi-rs/canvas.
+RUN apk add --no-cache tini postgresql-client font-noto-cjk && \
+    fc-cache -fv
 COPY package.json package-lock.json ./
 RUN --mount=type=cache,target=/root/.npm \
     npm ci --omit=dev

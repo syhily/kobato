@@ -44,7 +44,7 @@ export async function loader({
   // the row still counts toward visits / visitors / referers. The
   // admin-exemption (so the dashboard owner doesn't pollute their
   // own visitor metrics) lives inside `trackAccess`; pass `isAdmin`
-  // so it can apply the exemption and honour `ANALYTICS_TRACK_ADMIN`.
+  // so it can apply the exemption and honour the analytics settings.
   void trackAccess(request, null, { isAdmin: userSession(session)?.role === 'admin' })
 
   const content = requireBlogSettingsSection('content')
