@@ -1,6 +1,6 @@
 import { useState } from 'react'
 
-import type { EntityLike, RevisionLike } from '@/ui/admin/editor-shell/editor-shell-types'
+import type { EditorShellArgs, EntityLike, RevisionLike } from '@/ui/admin/editor-shell/editor-shell-types'
 
 export interface EditorRevisionManager {
   expectedToken: string | null
@@ -10,15 +10,18 @@ export interface EditorRevisionManager {
 }
 
 export function useEditorRevisionManager<TEntity extends EntityLike>(
-  isEditing: boolean,
-  detail: { entity: TEntity; latestRevision: RevisionLike | null; publishedRevision: RevisionLike | null } | undefined,
+  args: EditorShellArgs<TEntity>,
 ): EditorRevisionManager {
   const [expectedToken, setExpectedToken] = useState<string | null>(
-    isEditing ? ((detail!.latestRevision ?? detail!.publishedRevision)?.clientRevisionToken ?? null) : null,
+    args.isEditing
+      ? ((args.detail.latestRevision ?? args.detail.publishedRevision)?.clientRevisionToken ?? null)
+      : null,
   )
-  const [latestRevision, setLatestRevision] = useState<RevisionLike | null>(isEditing ? detail!.latestRevision : null)
+  const [latestRevision, setLatestRevision] = useState<RevisionLike | null>(
+    args.isEditing ? args.detail.latestRevision : null,
+  )
   const [publishedRevision, setPublishedRevision] = useState<RevisionLike | null>(
-    isEditing ? detail!.publishedRevision : null,
+    args.isEditing ? args.detail.publishedRevision : null,
   )
 
   const updateAfterSave = (revision: RevisionLike) => {

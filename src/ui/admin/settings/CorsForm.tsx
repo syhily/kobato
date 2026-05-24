@@ -13,6 +13,10 @@ import { FieldLabel } from '@/ui/components/field'
 import { Input } from '@/ui/components/input'
 import { Switch } from '@/ui/components/switch'
 
+function makeCorsClientId(): string {
+  return makeCorsClientId()
+}
+
 interface OriginRow {
   clientId: string
   url: string
@@ -102,7 +106,7 @@ function CorsPolicyCard({ cors }: CorsFormProps) {
                   variant="outline"
                   size="sm"
                   disabled={rows.fields.length >= MAX_ORIGINS}
-                  onClick={() => rows.append({ clientId: crypto.randomUUID(), url: '' })}
+                  onClick={() => rows.append({ clientId: makeCorsClientId(), url: '' })}
                 >
                   <PlusIcon /> 添加来源
                 </Button>

@@ -1,5 +1,6 @@
 import type { BlogSettingsBundle } from '@/shared/config/blog'
 
+import { SECRET_FIELDS } from '@/server/domains/settings/secrets'
 import {
   buildDefaultSectionPayloads,
   SECTION_REGISTRY,
@@ -71,15 +72,6 @@ function bundleHas(bundle: BlogSettingsBundle, key: BundleKey): boolean {
 function emptyBundle(): BlogSettingsBundle {
   return Object.fromEntries(BUNDLE_KEYS.map((key) => [key, null])) as unknown as BlogSettingsBundle
 }
-
-// Secret field locations: section → { bundle key, nested path, field name }.
-// Mirrors SECRET_PRESERVE_CONFIG in service.ts. Duplicated here to avoid
-// a circular import (service → snapshot → service).
-const SECRET_FIELDS = [
-  { section: 'mail' as const, bundleKey: 'mail' as const, path: 'mail', field: 'apiKey' },
-  { section: 'assets' as const, bundleKey: 'assets' as const, path: 'storage', field: 'secretAccessKey' },
-  { section: 'search' as const, bundleKey: 'search' as const, path: 'search', field: 'apiKey' },
-]
 
 function decryptSecretsInBundle(bundle: BlogSettingsBundle): void {
   for (const { bundleKey, path, field } of SECRET_FIELDS) {

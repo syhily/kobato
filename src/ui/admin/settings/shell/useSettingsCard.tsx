@@ -6,9 +6,12 @@ import { type DefaultValues, type FieldValues, type Resolver, type UseFormReturn
 
 import type { SettingsSection } from '@/shared/config/settings'
 
+import { getLogger } from '@/client/lib/logger'
 import { useSettingsMutation } from '@/ui/admin/settings/useSettingsMutation'
 
-interface UseSettingsCardOptions<TSource, TState extends FieldValues> {
+const log = getLogger('settings.card')
+
+interface UseSettingsCardOptions<TSource extends object, TState extends FieldValues> {
   section: SettingsSection
   source: TSource
   toState: (source: TSource) => TState
@@ -28,7 +31,7 @@ interface UseSettingsCardOptions<TSource, TState extends FieldValues> {
   mode?: 'patch' | 'full'
 }
 
-interface UseSettingsCardResult<TSource, TState extends FieldValues> {
+interface UseSettingsCardResult<TSource extends object, TState extends FieldValues> {
   mode: 'read' | 'edit'
   setMode: (mode: 'read' | 'edit') => void
   form: UseFormReturn<TState>
@@ -50,36 +53,33 @@ interface UseSettingsCardResult<TSource, TState extends FieldValues> {
   }
 }
 
-function deepMerge(
-  target: Record<string, unknown>,
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === 'object' && !Array.isArray(value)
+}
+
+function deepMerge<T extends object>(
+  target: T,
   patch: Record<string, unknown>,
   seen: WeakSet<object> = new WeakSet(),
-): Record<string, unknown> {
-  const result = { ...target }
+): T {
+  const result: Record<string, unknown> = { ...(target as Record<string, unknown>) }
   for (const key of Object.keys(patch)) {
     const patchVal = patch[key]
-    const targetVal = target[key]
-    if (
-      patchVal !== null &&
-      typeof patchVal === 'object' &&
-      !Array.isArray(patchVal) &&
-      targetVal !== null &&
-      typeof targetVal === 'object' &&
-      !Array.isArray(targetVal)
-    ) {
+    const targetVal = result[key]
+    if (isRecord(patchVal) && isRecord(targetVal)) {
       if (seen.has(patchVal)) {
         continue
       }
       seen.add(patchVal)
-      result[key] = deepMerge(targetVal as Record<string, unknown>, patchVal as Record<string, unknown>, seen)
+      result[key] = deepMerge(targetVal, patchVal, seen)
     } else {
       result[key] = patchVal
     }
   }
-  return result
+  return result as T
 }
 
-export function useSettingsCard<TSource, TState extends FieldValues>({
+export function useSettingsCard<TSource extends object, TState extends FieldValues>({
   section,
   source,
   toState,
@@ -140,22 +140,15 @@ export function useSettingsCard<TSource, TState extends FieldValues>({
   const save = useCallback(() => {
     handleSubmit(async (values) => {
       const patchPayload = fromStateRef.current(values)
-      const payload =
-        mergeMode === 'patch' ? deepMerge(sourceRef.current as Record<string, unknown>, patchPayload) : patchPayload
+      const payload: TSource =
+        mergeMode === 'patch' ? deepMerge(sourceRef.current, patchPayload) : (patchPayload as TSource)
       // Optimistic update: immediately reflect the submitted values in read mode
       // while the async request + revalidation happen in the background.
-      setOptimisticSource(payload as TSource)
+      setOptimisticSource(payload)
       setMode('read')
-      try {
-        await commit(section, payload)
-      } catch {
-        // commit already set error status
-      }
+      await commit(section, payload as Record<string, unknown>)
     })().catch((error: unknown) => {
-      if (error instanceof Error) {
-        // Form validation errors are caught here; mutation errors are
-        // handled inside commit().
-      }
+      log.error('Unexpected save error', { error })
     })
   }, [handleSubmit, mergeMode, section, commit])
 

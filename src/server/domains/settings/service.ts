@@ -2,11 +2,15 @@ import type { BlogSettingsBundle } from '@/shared/config/blog'
 
 import { rescheduleArchive } from '@/server/domains/audit/scheduler'
 import { rescheduleBackup } from '@/server/domains/backup/scheduler'
+import { SECRET_FIELDS } from '@/server/domains/settings/secrets'
 import { SECTION_REGISTRY, type SettingsSection } from '@/server/domains/settings/sections'
 import { hydrateBlogSettings, refreshBlogSettings } from '@/server/domains/settings/snapshot'
 import { decryptIfNeeded, encryptIfNeeded } from '@/server/infra/crypto/secret-encryption'
 import { findSettingByScope, upsertSetting } from '@/server/infra/db/operations/setting'
 import { DomainError } from '@/server/infra/http/errors'
+import { getLogger } from '@/server/infra/logger'
+
+const log = getLogger('settings.service')
 
 // DTO returned by the admin "get settings" endpoint. The codebase no
 // longer ships a `BlogConstants` block — date fields (`locale`,
@@ -61,11 +65,11 @@ export async function updateBlogSettingsSection<S extends SettingsSection>(
   await upsertSetting(nextRow, updatedBy, meta.scope)
 
   if (section === 'backup') {
-    rescheduleBackup()
+    void rescheduleBackup().catch((e) => log.error('rescheduleBackup failed', { error: String(e) }))
   }
 
   if (section === 'limits') {
-    rescheduleArchive()
+    void rescheduleArchive().catch((e) => log.error('rescheduleArchive failed', { error: String(e) }))
   }
 
   return refreshBlogSettings()
@@ -77,20 +81,11 @@ export async function updateBlogSettingsSection<S extends SettingsSection>(
 // just return the validated payload verbatim; `mail`, `assets`, and
 // `search` fold in the existing secret when the editor omits it.
 async function applySectionPatch(section: SettingsSection, validated: unknown): Promise<Record<string, unknown>> {
-  const secretConfig = SECRET_PRESERVE_CONFIG[section]
+  const secretConfig = SECRET_FIELDS.find((f) => f.section === section)
   if (!secretConfig) {
     return validated as Record<string, unknown>
   }
-  return preserveSecretOnPatch(validated, section, secretConfig.payloadPath, secretConfig.secretKey)
-}
-
-// Sections where the admin form sends `undefined` for a secret field to
-// mean "keep the existing value". Maps section → { nested payload path,
-// secret key name }.
-const SECRET_PRESERVE_CONFIG: Partial<Record<SettingsSection, { payloadPath: string; secretKey: string }>> = {
-  mail: { payloadPath: 'mail', secretKey: 'apiKey' },
-  assets: { payloadPath: 'storage', secretKey: 'secretAccessKey' },
-  search: { payloadPath: 'search', secretKey: 'apiKey' },
+  return preserveSecretOnPatch(validated, section, secretConfig.path, secretConfig.field)
 }
 
 // When the editor omits a secret field (sends `undefined`), fold the
@@ -122,16 +117,16 @@ async function preserveSecretOnPatch(
 
 // Encrypt secret fields in-place before writing to the DB.
 function encryptSecretsInPlace(section: SettingsSection, row: Record<string, unknown>): void {
-  const config = SECRET_PRESERVE_CONFIG[section]
+  const config = SECRET_FIELDS.find((f) => f.section === section)
   if (!config) {
     return
   }
-  const bucket = row[config.payloadPath] as Record<string, unknown> | undefined
+  const bucket = row[config.path] as Record<string, unknown> | undefined
   if (!bucket) {
     return
   }
-  const value = bucket[config.secretKey]
+  const value = bucket[config.field]
   if (typeof value === 'string') {
-    bucket[config.secretKey] = encryptIfNeeded(value)
+    bucket[config.field] = encryptIfNeeded(value)
   }
 }

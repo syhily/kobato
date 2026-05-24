@@ -73,7 +73,7 @@ export function scheduleNextBackup(): void {
   }, delayMs)
 }
 
-export function rescheduleBackup(): void {
+export async function rescheduleBackup(): Promise<void> {
   log.info('Rescheduling backup due to settings change')
   scheduleNextBackup()
 }

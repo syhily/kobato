@@ -44,16 +44,20 @@ const envConfig = {
 function loadEnv() {
   try {
     return createEnv(envConfig)
-  } catch {
+  } catch (error) {
     // Bootstrap-phase fallback: logger is not yet available because it
     // depends on env itself. Use stderr directly for the fatal message.
     process.stderr.write(
       [
+        'Environment validation failed:',
+        String(error),
+        '',
         'Please ensure the following variables are correctly set in your .env file:',
         '',
         '    DATABASE_URL   — PostgreSQL connection URL',
         '    REDIS_URL      — Redis connection URL',
         '    SESSION_SECRET — Session signing secret',
+        '    ENCRYPTION_KEY - The encryption key for sensitive content',
         '',
       ].join('\n'),
     )

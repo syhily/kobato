@@ -1,3 +1,5 @@
+import type { PoolClient } from 'pg'
+
 import { appendFile, readFile, rename, writeFile } from 'node:fs/promises'
 import { Readable } from 'node:stream'
 import { pipeline } from 'node:stream/promises'
@@ -101,14 +103,15 @@ export abstract class CopyBatcher<T> {
   }
 
   protected async copyToDb(events: T[]): Promise<void> {
-    const client = await pool.connect()
+    let client: PoolClient | undefined
     try {
+      client = await pool.connect()
       const sql = `COPY ${this.table} (${this.columns.join(', ')}) FROM STDIN WITH (FORMAT csv, NULL '\\N')`
       const stream = client.query(copyFrom(sql))
       const source = Readable.from(events.map((e) => this.toCsvRow(e)))
       await pipeline(source, stream)
     } finally {
-      client.release()
+      client?.release()
     }
   }
 }

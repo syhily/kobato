@@ -74,8 +74,8 @@ export function decryptIfNeeded(ciphertext: string): string {
   try {
     return decrypt(ciphertext)
   } catch (error) {
-    log.error('Failed to decrypt secret; returning raw value', { error })
-    return ciphertext
+    log.error('Failed to decrypt secret — encryption key may have changed or ciphertext is corrupted', { error })
+    throw new Error('Secret decryption failed', { cause: error })
   }
 }
 

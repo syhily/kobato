@@ -50,15 +50,17 @@ export function useEditorShellState<
   } = args
 
   const isEditing = mode === 'edit' && detail !== undefined
+  const shellArgs =
+    isEditing && detail ? { isEditing: true as const, detail } : { isEditing: false as const, detail: undefined }
 
   // --- Sub-hooks ------------------------------------------------------------
-  const bodyState = useEditorBodyState(isEditing, detail)
+  const bodyState = useEditorBodyState(shellArgs)
   const { body, setBody, bodyKey, initialBody, lastSavedBodyRef, replaceBody, markBodySaved } = bodyState
 
-  const metaState = useEditorMetaState(isEditing, detail, emptyMeta, metaDraftFromEntity)
+  const metaState = useEditorMetaState(shellArgs, emptyMeta, metaDraftFromEntity)
   const { meta, setMeta, lastPersistedMetaRef, serverPublishedAtIso, resetMeta } = metaState
 
-  const revisionManager = useEditorRevisionManager(isEditing, detail)
+  const revisionManager = useEditorRevisionManager(shellArgs)
   const { expectedToken, latestRevision, publishedRevision, updateAfterSave } = revisionManager
 
   // --- Live preview pane ----------------------------------------------------

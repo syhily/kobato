@@ -76,6 +76,16 @@ export interface EntityLike {
   publishedAt: string | null
 }
 
+export interface EditorShellDetail<TEntity extends EntityLike> {
+  entity: TEntity
+  latestRevision: RevisionLike | null
+  publishedRevision: RevisionLike | null
+}
+
+export type EditorShellArgs<TEntity extends EntityLike> =
+  | { isEditing: true; detail: EditorShellDetail<TEntity> }
+  | { isEditing: false; detail?: undefined }
+
 export interface SaveBodyInput {
   id: string
   body: PortableTextBody

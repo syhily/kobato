@@ -2,11 +2,10 @@ import { ORPCError } from '@orpc/server'
 import { z } from 'zod'
 
 import { recordAuditEventFromContext } from '@/server/domains/audit/service'
-import { SECTION_REGISTRY } from '@/server/domains/settings/sections'
 import { getAdminBlogSettings, updateBlogSettingsSection } from '@/server/domains/settings/service'
 import { getSupportedTimeZones } from '@/server/domains/settings/timezones'
 import { adminProc } from '@/server/http/orpc-base'
-import { ErrorMessages } from '@/server/infra/http/errors'
+import { DomainError } from '@/server/infra/http/errors'
 import { SETTINGS_SECTIONS, type SettingsSection } from '@/shared/config/settings'
 import { blogSettingsBundleDto } from '@/shared/contracts/settings'
 import { safeBigInt } from '@/shared/utils/tools'
@@ -40,15 +39,17 @@ const update = adminProc
   .output(z.object({ success: z.boolean() }))
   .handler(async ({ input, context }) => {
     const editorId = safeBigInt(context.viewer.userId)
-    const meta = SECTION_REGISTRY[input.section]
-    const parsed = await meta.schema.safeParseAsync(input.payload)
-    if (!parsed.success) {
-      throw new ORPCError('BAD_REQUEST', {
-        message: ErrorMessages.INVALID_INPUT,
-        data: parsed.error.issues.map((i) => ({ message: i.message, path: i.path.map(String) })),
-      })
+    try {
+      await updateBlogSettingsSection(input.section, input.payload, editorId)
+    } catch (err) {
+      if (err instanceof DomainError && err.code === 'BAD_REQUEST') {
+        throw new ORPCError('BAD_REQUEST', {
+          message: err.message,
+          data: err.issues,
+        })
+      }
+      throw err
     }
-    await updateBlogSettingsSection(input.section, input.payload, editorId)
     recordAuditEventFromContext(context, {
       action: 'settings_updated',
       resourceType: 'setting',

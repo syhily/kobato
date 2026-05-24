@@ -7,8 +7,8 @@ import { orpc } from '@/client/api/client'
 import { useMutation } from '@/client/api/query'
 
 export interface UseSettingsMutationResult {
-  /** Commit a section payload. Sets status to 'saving', calls mutateAsync + revalidation. Re-throws on error so callers can react. */
-  commit: (section: SettingsSection, payload: Record<string, unknown>) => Promise<void>
+  /** Commit a section payload. Sets status to 'saving', calls mutateAsync + revalidation. Returns `true` on success, `false` on error. */
+  commit: (section: SettingsSection, payload: Record<string, unknown>) => Promise<boolean>
   /** Reset status and errorMessage to idle/null. */
   resetStatus: () => void
   /** Imperative revalidation (from useRevalidator). */
@@ -36,10 +36,11 @@ export function useSettingsMutation(): UseSettingsMutationResult {
         await updateMutation.mutateAsync({ section, payload })
         setStatus('saved')
         void revalidator.revalidate()
+        return true
       } catch (error: unknown) {
         setStatus('error')
         setErrorMessage(error instanceof Error ? error.message : '保存失败')
-        throw error
+        return false
       }
     },
     [updateMutation, revalidator],

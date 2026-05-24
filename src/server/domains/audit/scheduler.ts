@@ -50,7 +50,7 @@ export function scheduleNextArchive(): void {
   }, delayMs)
 }
 
-export function rescheduleArchive(): void {
+export async function rescheduleArchive(): Promise<void> {
   log.info('Rescheduling audit archive due to settings change')
   scheduleNextArchive()
 }

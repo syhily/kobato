@@ -83,11 +83,9 @@ export function BucketCard({ bucket, settings, allBuckets, isClearPending, clear
 
   const save = useCallback(
     async (payload: Record<string, unknown>) => {
-      try {
-        await commit('cache', payload)
+      const ok = await commit('cache', payload)
+      if (ok) {
         onSaved?.()
-      } catch {
-        // commit already set error status
       }
     },
     [commit, onSaved],

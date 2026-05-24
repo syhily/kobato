@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react'
 
-import type { EntityLike } from '@/ui/admin/editor-shell/editor-shell-types'
+import type { EditorShellArgs, EntityLike } from '@/ui/admin/editor-shell/editor-shell-types'
 
 export interface EditorMetaState<TMeta> {
   meta: TMeta
@@ -15,17 +15,16 @@ export function useEditorMetaState<
   TMeta extends { title: string; slug: string; published: boolean; publishedAt: string },
   TEntity extends EntityLike,
 >(
-  isEditing: boolean,
-  detail: { entity: TEntity } | undefined,
+  args: EditorShellArgs<TEntity>,
   emptyMeta: TMeta,
   metaDraftFromEntity: (entity: TEntity) => TMeta,
 ): EditorMetaState<TMeta> {
-  const [meta, setMeta] = useState<TMeta>(isEditing && detail ? metaDraftFromEntity(detail.entity) : emptyMeta)
+  const [meta, setMeta] = useState<TMeta>(args.isEditing ? metaDraftFromEntity(args.detail.entity) : emptyMeta)
   const lastPersistedMetaRef = useRef<TMeta>(
-    isEditing && detail ? metaDraftFromEntity(detail.entity) : { ...emptyMeta },
+    args.isEditing ? metaDraftFromEntity(args.detail.entity) : { ...emptyMeta },
   )
   const [serverPublishedAtIso, setServerPublishedAtIso] = useState<string | null>(
-    isEditing && detail ? detail.entity.publishedAt : null,
+    args.isEditing ? args.detail.entity.publishedAt : null,
   )
 
   const resetMeta = (freshMeta: TMeta, publishedAt: string | null) => {

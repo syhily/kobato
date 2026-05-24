@@ -296,31 +296,63 @@ export function routeWarmupPlugin(): Plugin {
 // Manifest parser
 // ---------------------------------------------------------------------------
 
+function findMatchingBrace(text: string, start: number): number {
+  let depth = 0
+  let inString = false
+  let escape = false
+  let stringChar = ''
+
+  for (let i = start; i < text.length; i++) {
+    const char = text[i]
+
+    if (inString) {
+      if (escape) {
+        escape = false
+        continue
+      }
+      if (char === '\\') {
+        escape = true
+        continue
+      }
+      if (char === stringChar) {
+        inString = false
+      }
+      continue
+    }
+
+    if (char === '"' || char === "'") {
+      inString = true
+      stringChar = char
+      continue
+    }
+
+    if (char === '{') {
+      depth++
+    } else if (char === '}') {
+      depth--
+      if (depth === 0) {
+        return i
+      }
+    }
+  }
+
+  return -1
+}
+
 function parseServerManifest(serverBuildPath: string): RouteManifest | null {
   try {
     const src = readFileSync(serverBuildPath, 'utf-8')
     // Extract the server_manifest_default object
-    const startMarker = 'var server_manifest_default = {'
+    const startMarker = 'var server_manifest_default = '
     const startIdx = src.indexOf(startMarker)
     if (startIdx === -1) {
       return null
     }
 
-    // Find the matching closing brace — the object is top-level,
-    // so we count braces from the opening `{`
-    const objectStart = startIdx + startMarker.length - 1
-    let depth = 0
-    let endIdx = objectStart
-    for (let i = objectStart; i < src.length; i++) {
-      if (src[i] === '{') {
-        depth++
-      } else if (src[i] === '}') {
-        depth--
-        if (depth === 0) {
-          endIdx = i
-          break
-        }
-      }
+    const objectStart = startIdx + startMarker.length
+    const endIdx = findMatchingBrace(src, objectStart)
+    if (endIdx === -1) {
+      return null
     }
 
     const objectText = src.slice(objectStart, endIdx + 1)
@@ -328,19 +360,7 @@ function parseServerManifest(serverBuildPath: string): RouteManifest | null {
     const jsonSafe = objectText.replace(/\bvoid 0\b/g, 'null')
     // Also handle unquoted keys by wrapping them
     const quoted = jsonSafe.replace(/([{,]\s*)([a-zA-Z_$][a-zA-Z0-9_$]*)\s*:/g, '$1"$2":')
-    try {
-      return JSON.parse(quoted)
-    } catch {
-      // Fallback: evaluate as a JS expression using a safe subset approach
-      try {
-        // The object only contains strings, arrays, booleans, and null/void 0
-        // which are safe to evaluate after void 0 -> null replacement
-        const safeExpr = `(0,eval)('(${jsonSafe})')`
-        return (0, eval)(safeExpr) as RouteManifest
-      } catch {
-        return null
-      }
-    }
+    return JSON.parse(quoted) as RouteManifest
   } catch {
     return null
   }
