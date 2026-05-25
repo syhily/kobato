@@ -4,6 +4,7 @@ import { recordAuditEventFromContext } from '@/server/domains/audit/service'
 import {
   checkPgToolsAvailable,
   createBackup,
+  deleteBackup,
   getBackupBuffer,
   listBackups,
   restoreFromBackup,
@@ -34,10 +35,11 @@ const status = adminProc
 
 const list = adminProc
   .route({ method: 'GET', path: '/admin/backup/list' })
-  .output(z.object({ files: z.array(backupFileDto) }))
-  .handler(async () => {
-    const files = await listBackups()
-    return { files }
+  .input(z.object({ limit: z.number().optional(), offset: z.number().optional() }).optional())
+  .output(z.object({ files: z.array(backupFileDto), total: z.number() }))
+  .handler(async ({ input }) => {
+    const result = await listBackups(input?.limit, input?.offset)
+    return result
   })
 
 const create = adminProc
@@ -51,6 +53,20 @@ const create = adminProc
       resourceId: result.fileName,
     })
     return result
+  })
+
+const delete_ = adminProc
+  .route({ method: 'POST', path: '/admin/backup/delete' })
+  .input(z.object({ key: z.string() }))
+  .output(z.object({ success: z.boolean() }))
+  .handler(async ({ input, context }) => {
+    await deleteBackup(input.key)
+    recordAuditEventFromContext(context, {
+      action: 'backup_deleted',
+      resourceType: 'backup',
+      resourceId: input.key,
+    })
+    return { success: true }
   })
 
 const restore = adminProc
@@ -75,4 +91,4 @@ const restore = adminProc
     return { success: true }
   })
 
-export const adminBackupRouter = { status, list, create, restore }
+export const adminBackupRouter = { status, list, create, restore, delete: delete_ }

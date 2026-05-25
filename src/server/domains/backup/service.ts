@@ -101,17 +101,24 @@ export async function createBackup(): Promise<{ fileName: string; size: number }
   return { fileName: key.split('/').pop()!, size: buffer.length }
 }
 
-export async function listBackups(): Promise<BackupFileDto[]> {
+export async function listBackups(limit?: number, offset?: number): Promise<{ files: BackupFileDto[]; total: number }> {
   const objects = await listS3Objects('backup/')
-  return objects
+  const filtered = objects
     .filter((o) => o.key.endsWith('.sql.gz'))
     .sort((a, b) => b.lastModified.getTime() - a.lastModified.getTime())
-    .map((o) => ({
+
+  const total = filtered.length
+  const page = filtered.slice(offset ?? 0, limit !== undefined ? (offset ?? 0) + limit : undefined)
+
+  return {
+    files: page.map((o) => ({
       key: o.key,
       fileName: o.key.split('/').pop()!,
       size: o.size,
       lastModified: o.lastModified.toISOString(),
-    }))
+    })),
+    total,
+  }
 }
 
 export async function getBackupBuffer(key: string): Promise<Buffer> {
@@ -129,6 +136,11 @@ export async function cleanupOldBackups(days: number): Promise<void> {
 
   log.info('Cleaning up old backups', { count: toDelete.length, cutoff: cutoff.toISOString() })
   await deleteS3Objects(toDelete)
+}
+
+export async function deleteBackup(key: string): Promise<void> {
+  await deleteS3Objects([key])
+  log.info('Backup deleted', { key })
 }
 
 export async function restoreFromBackup(buffer: Buffer): Promise<void> {
@@ -151,7 +163,13 @@ export async function restoreFromBackup(buffer: Buffer): Promise<void> {
   })
 
   const sql = Buffer.concat(chunks).toString('utf-8')
-  const wrappedSql = `BEGIN;\nSET CONSTRAINTS ALL DEFERRED;\n${sql}\nCOMMIT;\n`
+
+  // TimescaleDB requires pre/post restore hooks so that hypertable
+  // catalog metadata is recreated correctly. See:
+  // https://docs.timescale.com/use-timescale/latest/backup-restore/pg-dump-and-restore/
+  const preSql = 'SELECT timescaledb_pre_restore();\n'
+  const postSql = 'SELECT timescaledb_post_restore();\n'
+  const wrappedSql = `${preSql}BEGIN;\nSET CONSTRAINTS ALL DEFERRED;\n${sql}\nCOMMIT;\n${postSql}`
 
   const psql = spawn('psql', [...connArgs, '--echo-all'], {
     env,

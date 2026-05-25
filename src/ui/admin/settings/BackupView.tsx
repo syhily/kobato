@@ -22,7 +22,7 @@ const FALLBACK_BACKUP: BackupSettings = {
   retention: { enabled: true, days: 30 },
 }
 
-export function BackupView({ backup }: BackupViewProps) {
+export function BackupView({ backup, timeZone }: BackupViewProps) {
   const queryClient = useQueryClient()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [restoreKey, setRestoreKey] = useState<string | null>(null)
@@ -36,11 +36,14 @@ export function BackupView({ backup }: BackupViewProps) {
   const { data: listData, isPending: listLoading } = useQuery({
     queryKey: ['admin', 'backup', 'list'],
     queryFn: () => orpc.admin.backup.list(),
+    staleTime: Infinity,
+    refetchOnWindowFocus: false,
   })
 
   const s3Enabled = statusData?.s3Enabled ?? false
   const pgToolsAvailable = statusData?.pgToolsAvailable ?? false
   const backups = listData?.files ?? []
+  const totalBackups = listData?.total ?? 0
 
   const source = backup ?? FALLBACK_BACKUP
 
@@ -56,6 +59,13 @@ export function BackupView({ backup }: BackupViewProps) {
     onSuccess: () => {
       setRestoreKey(null)
       toast.success('还原成功，服务即将重启…')
+    },
+  })
+
+  const deleteMutation = useMutation({
+    mutationFn: ({ key }: { key: string }) => orpc.admin.backup.delete({ key }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['admin', 'backup', 'list'] })
     },
   })
 
@@ -108,12 +118,16 @@ export function BackupView({ backup }: BackupViewProps) {
 
       <BackupFileList
         backups={backups}
+        total={totalBackups}
+        timeZone={timeZone}
         canConfigure={canConfigure}
         isCreating={createMutation.isPending}
         onCreate={() => createMutation.mutate()}
         restorePending={restoreMutation.isPending}
         pgToolsAvailable={pgToolsAvailable}
         onRestore={(key) => setRestoreKey(key)}
+        onDelete={(key) => deleteMutation.mutate({ key })}
+        deletePending={deleteMutation.isPending}
       />
 
       {restoreKey && (

@@ -1,3 +1,5 @@
+import { useState } from 'react'
+
 import { SettingGroup } from '@/ui/admin/settings/shell/SettingGroup'
 import { Button } from '@/ui/components/button'
 
@@ -10,12 +12,16 @@ interface BackupFile {
 
 interface BackupFileListProps {
   backups: BackupFile[]
+  total: number
+  timeZone: string
   canConfigure: boolean
   isCreating: boolean
   onCreate: () => void
   restorePending: boolean
   pgToolsAvailable: boolean
   onRestore: (key: string) => void
+  onDelete: (key: string) => void
+  deletePending: boolean
 }
 
 function formatBytes(bytes: number): string {
@@ -31,15 +37,35 @@ function formatBytes(bytes: number): string {
   return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)} GB`
 }
 
+const PAGE_SIZE = 5
+
+function formatDateTime(iso: string, timeZone: string): string {
+  return new Intl.DateTimeFormat('zh-CN', {
+    timeZone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false,
+  }).format(new Date(iso))
+}
+
 export function BackupFileList({
   backups,
+  total,
+  timeZone,
   canConfigure,
   isCreating,
   onCreate,
   restorePending,
   pgToolsAvailable,
   onRestore,
+  onDelete,
+  deletePending,
 }: BackupFileListProps) {
+  const [displayCount, setDisplayCount] = useState(PAGE_SIZE)
   return (
     <SettingGroup
       title="备份文件"
@@ -64,13 +90,11 @@ export function BackupFileList({
               </tr>
             </thead>
             <tbody className="divide-y">
-              {backups.map((file) => (
+              {backups.slice(0, displayCount).map((file) => (
                 <tr key={file.key}>
                   <td className="px-4 py-2 font-mono text-xs">{file.fileName}</td>
                   <td className="px-4 py-2 text-right tabular-nums">{formatBytes(file.size)}</td>
-                  <td className="px-4 py-2 text-muted-foreground">
-                    {file.lastModified.slice(0, 19).replace('T', ' ')}
-                  </td>
+                  <td className="px-4 py-2 text-muted-foreground">{formatDateTime(file.lastModified, timeZone)}</td>
                   <td className="px-4 py-2 text-right" aria-label="操作">
                     <div className="flex justify-end gap-2">
                       <Button
@@ -90,12 +114,35 @@ export function BackupFileList({
                       >
                         还原
                       </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        disabled={deletePending}
+                        onClick={() => {
+                          if (window.confirm(`确定要删除备份文件 ${file.fileName} 吗？`)) {
+                            onDelete(file.key)
+                          }
+                        }}
+                      >
+                        删除
+                      </Button>
                     </div>
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
+        </div>
+      )}
+      {backups.length > 0 && displayCount < backups.length && (
+        <div className="flex items-center justify-between px-1 py-2">
+          <span className="text-xs text-muted-foreground">
+            共 {total} 个备份文件，已展示 {Math.min(displayCount, backups.length)} 个
+          </span>
+          <Button type="button" variant="outline" size="sm" onClick={() => setDisplayCount((c) => c + PAGE_SIZE)}>
+            加载更多
+          </Button>
         </div>
       )}
     </SettingGroup>

@@ -48,7 +48,7 @@ describe('adminBackupRouter.list', () => {
         lastModified: '2026-01-01T00:00:00.000Z',
       },
     ]
-    vi.mocked(service.listBackups).mockResolvedValueOnce(files)
+    vi.mocked(service.listBackups).mockResolvedValueOnce({ files, total: files.length })
     const ctx = makeAuthedCtx()
     const res = await call(adminBackupRouter.list, undefined, { context: ctx })
     expect(res.files).toHaveLength(1)

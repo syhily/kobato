@@ -11,7 +11,7 @@
 Source code for [yufan.me](https://yufan.me) — a self-hosted blog CMS
 running on React Router 7 (SSR), Hono, and oRPC. Posts, pages,
 taxonomies, comments, images, music, and per-section settings all live
-in Postgres and are edited from the built-in `/admin` console.
+in TimescaleDB and are edited from the built-in `/admin` console.
 Bodies are stored as **PortableText** and authored through a Tiptap
 editor that round-trips losslessly to the wire format.
 
@@ -25,7 +25,7 @@ schema/migrations.
 
 ## Highlights
 
-- **Postgres-backed content model.** Posts (`/posts/:slug`) and pages
+- **TimescaleDB-backed content model.** Posts (`/posts/:slug`) and pages
   (`/:slug`) share one global slug namespace; categories, tags, and
   friends are first-class taxonomies with referential integrity. Page
   drafts get an admin-only preview overlay; future-dated posts stay
@@ -57,7 +57,7 @@ schema/migrations.
   read-only and uploads return 503 until a settings flip. Generated
   Vite assets ship with the build image; S3 is for user media only.
 - **First-party analytics.** Visit ingestion + dashboards backed by
-  Postgres, with optional MaxMind GeoLite2 enrichment.
+  TimescaleDB, with optional MaxMind GeoLite2 enrichment.
 
 ## Stack
 
