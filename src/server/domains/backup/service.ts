@@ -112,17 +112,24 @@ export async function listBackups(
   limit?: number,
   continuationToken?: string,
 ): Promise<{ files: BackupFileDto[]; nextContinuationToken?: string }> {
-  const { objects, nextContinuationToken } = await listS3ObjectsPaginated('backup/', limit, continuationToken)
-  const files = objects
-    .filter((o) => o.key.endsWith('.sql.gz'))
-    .map((o) => ({
-      key: o.key,
-      fileName: o.key.split('/').pop()!,
-      size: o.size,
-      lastModified: o.lastModified.toISOString(),
-    }))
-    .sort((a, b) => new Date(b.lastModified).getTime() - new Date(a.lastModified).getTime())
-  return { files, nextContinuationToken }
+  try {
+    const { objects, nextContinuationToken } = await listS3ObjectsPaginated('backup/', limit, continuationToken)
+    const files = objects
+      .filter((o) => o.key.endsWith('.sql.gz'))
+      .map((o) => ({
+        key: o.key,
+        fileName: o.key.split('/').pop()!,
+        size: o.size,
+        lastModified: o.lastModified.toISOString(),
+      }))
+      .sort((a, b) => new Date(b.lastModified).getTime() - new Date(a.lastModified).getTime())
+    return { files, nextContinuationToken }
+  } catch (error) {
+    if (error instanceof ActionFailure) {
+      return { files: [] }
+    }
+    throw error
+  }
 }
 
 export async function getBackupBuffer(key: string): Promise<Buffer> {

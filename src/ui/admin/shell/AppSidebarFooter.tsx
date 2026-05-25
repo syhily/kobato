@@ -1,6 +1,8 @@
-import { ChevronsUpDownIcon, LogOutIcon, MessageSquareIcon, MonitorIcon, UserIcon } from 'lucide-react'
+import { ChevronsUpDownIcon, InfoIcon, LogOutIcon, MessageSquareIcon, MonitorIcon, UserIcon } from 'lucide-react'
+import { useState } from 'react'
 import { Link } from 'react-router'
 
+import { VersionDialog } from '@/ui/admin/shell/VersionDialog'
 import { Avatar, AvatarFallback, AvatarImage } from '@/ui/components/avatar'
 import {
   DropdownMenu,
@@ -20,6 +22,7 @@ interface AppSidebarFooterProps {
 }
 
 export function AppSidebarFooter({ className, id, name, email }: AppSidebarFooterProps) {
+  const [versionOpen, setVersionOpen] = useState(false)
   const initial = (name || email || '?').slice(0, 1).toUpperCase()
 
   return (
@@ -90,6 +93,11 @@ export function AppSidebarFooter({ className, id, name, email }: AppSidebarFoote
                 }
               />
               <DropdownMenuSeparator className="my-2" />
+              <DropdownMenuItem className="my-0.5 rounded-md px-3 py-2 text-sm" onClick={() => setVersionOpen(true)}>
+                <InfoIcon className="mr-2 size-4" />
+                系统版本
+              </DropdownMenuItem>
+              <DropdownMenuSeparator className="my-2" />
               <DropdownMenuItem
                 className="my-0.5 rounded-md px-3 py-2 text-sm"
                 render={
@@ -101,6 +109,7 @@ export function AppSidebarFooter({ className, id, name, email }: AppSidebarFoote
               />
             </DropdownMenuContent>
           </DropdownMenu>
+          <VersionDialog open={versionOpen} onOpenChange={setVersionOpen} />
         </SidebarMenuItem>
       </SidebarMenu>
     </SidebarFooter>

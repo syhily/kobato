@@ -15,6 +15,12 @@ import type { ViteDevServer } from 'vite'
 
 declare global {
   var __viteDevServer: ViteDevServer | undefined
+  const __APP_NAME__: string
+  const __APP_VERSION__: string
+  const __APP_DESCRIPTION__: string
+  const __APP_AUTHOR_NAME__: string
+  const __APP_HOMEPAGE__: string
+  const __APP_REPOSITORY__: string
 }
 
 declare module '@hono/node-server/serve-static' {
