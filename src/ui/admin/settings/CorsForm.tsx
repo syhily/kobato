@@ -14,7 +14,7 @@ import { Input } from '@/ui/components/input'
 import { Switch } from '@/ui/components/switch'
 
 function makeCorsClientId(): string {
-  return makeCorsClientId()
+  return crypto.randomUUID()
 }
 
 interface OriginRow {
