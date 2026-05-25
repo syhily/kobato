@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 
-import { CheckIcon, Loader2Icon, PencilIcon, XIcon } from 'lucide-react'
+import { Loader2Icon, PencilIcon, XIcon } from 'lucide-react'
 
 import { Button } from '@/ui/components/button'
 import { cn } from '@/ui/lib/cn'
@@ -73,10 +73,7 @@ export function SettingGroup({
                     保存中…
                   </span>
                 ) : saveState === 'saved' ? (
-                  <span className="flex items-center gap-1 text-xs text-green-600">
-                    <CheckIcon data-icon className="size-3.5" />
-                    已保存
-                  </span>
+                  <span className="text-xs text-muted-foreground">已保存</span>
                 ) : null}
 
                 {onCancel ? (

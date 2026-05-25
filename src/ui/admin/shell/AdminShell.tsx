@@ -1,10 +1,10 @@
 import { createContext, type ReactNode, use, useEffect, useMemo, useRef, useState } from 'react'
-import { Toaster } from 'sonner'
 
 import { AdminScrollTopButton } from '@/ui/admin/shell/AdminScrollTopButton'
 import { AppSidebar } from '@/ui/admin/shell/AppSidebar'
 import { MobileNavBar } from '@/ui/admin/shell/MobileNavBar'
 import { SidebarInset, SidebarProvider } from '@/ui/components/sidebar'
+import { Toaster } from '@/ui/components/sonner'
 import { cn } from '@/ui/lib/cn'
 
 interface AdminChromeContextValue {
@@ -127,7 +127,7 @@ export function AdminShell({ currentUser, siteTitle, pendingCommentCount, userCo
           lifted={focused || scrollTopLifted}
           {...(focused ? { scrollRootRef: mainScrollRef } : {})}
         />
-        <Toaster position="top-center" richColors closeButton />
+        <Toaster />
       </div>
     </AdminChromeContext.Provider>
   )
