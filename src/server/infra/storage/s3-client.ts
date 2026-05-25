@@ -19,7 +19,7 @@ import { requireBlogSettingsSection } from '@/shared/config/blog'
 // that transitively touch this module don't crash on import — the
 // AWS SDK is only evaluated when a function actually calls `getAwsSdk()`.
 
-const log = getLogger('images.s3')
+const log = getLogger('storage.s3')
 
 // --- Lazy AWS SDK loader ---
 
