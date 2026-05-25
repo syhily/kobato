@@ -9,7 +9,7 @@ import { db } from '@/server/infra/db/pool'
 import { comment } from '@/server/infra/db/schema/comment'
 import { post } from '@/server/infra/db/schema/post'
 import { user } from '@/server/infra/db/schema/user'
-import { getBlogSettingsBundleSync } from '@/shared/config/blog'
+import { getBlogSettingsBundleSync } from '@/shared/config/getters'
 import { escapeLikePattern } from '@/shared/utils/escape-like'
 
 export const PASSWORD_HASH_ROUNDS = 12

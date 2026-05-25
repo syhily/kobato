@@ -19,7 +19,7 @@ import { safeResolveMetricTarget } from '@/server/domains/comments/services/shar
 import { hasRegisteredAccount, insertCommentUser, updateLastLogin } from '@/server/infra/db/operations/user'
 import { DomainError } from '@/server/infra/http/errors'
 import { getLogger } from '@/server/infra/logger'
-import { requireBlogSettingsSection } from '@/shared/config/blog'
+import { requireBlogSettingsSection } from '@/shared/config/getters'
 import { idFromString } from '@/shared/utils/id'
 
 const log = getLogger('comments.loader')

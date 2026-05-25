@@ -1,6 +1,6 @@
 import { bigserial, index, integer, pgTable, text, timestamp, varchar } from 'drizzle-orm/pg-core'
 
-// Post category. CRUD at `/admin/categories`. MDX references categories by
+// Post category. CRUD at `/admin/taxonomy/categories`. MDX references categories by
 // `name` (`UNIQUE`). `slug` drives `/cats/:slug` (`UNIQUE`). `sort_order`
 // orders `/categories`.
 //
@@ -27,7 +27,7 @@ export const category = pgTable(
   (table) => [index('idx_category_slug').on(table.slug), index('idx_category_sort_order').on(table.sortOrder)],
 )
 
-// Post tag. CRUD at `/admin/tags`. MDX references tags by `name` (`UNIQUE`);
+// Post tag. CRUD at `/admin/taxonomy/tags`. MDX references tags by `name` (`UNIQUE`);
 // `slug` drives `/tags/:slug` (`UNIQUE`).
 export const tag = pgTable(
   'tag',

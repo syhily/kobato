@@ -29,10 +29,12 @@ Page modules grouped into four nested trees, each with its own layout
   `setup/index` (`/admin/setup`), `setup/settings`
   (`/admin/setup/settings`).
 - `routes/admin/` — admin SPA. `dashboard`, `comments`,
-  `users/{index,detail}`, `my/{profile,comments,sessions}`,
-  `security/sessions`, `friends`, `categories`, `tags`, `pages/index`,
-  `posts/{index,analytics}`, `library/images`, `library/music`,
-  `restore`, `analytics/{layout,overview,realtime,mentions}`,
+  `me/{profile,comments,sessions}`,
+  `security/{sessions,audit-log,users/{index,detail}}`,
+  `taxonomy/{categories,tags}`,
+  `library/{images,music,branding,friends}`, `pages/index`,
+  `posts/{index,analytics}`,
+  `analytics/{layout,overview,realtime,mentions}`,
   `settings/{layout,…}` — one file per settings section.
 - `routes/editor/` — standalone immersive editing shell (split from
   `routes/admin/`). `post/{new,edit,analytics}`, `page/{new,edit}`. Owns
@@ -63,7 +65,9 @@ src/routes/
 │   └── setup/{index,settings}.tsx
 └── admin/      # the admin SPA shell
     ├── layout.tsx, dashboard.tsx, welcome.tsx, …
-    ├── users/{index,detail}.tsx
+    ├── security/users/{index,detail}.tsx
+    ├── taxonomy/{categories,tags}.tsx
+    ├── library/{images,music,branding,friends}.tsx
     ├── my/{profile,comments,sessions}.tsx
     ├── pages/{index,new,edit}.tsx
     ├── posts/{index,new,edit}.tsx
@@ -76,7 +80,7 @@ Conventions inside an area directory:
 | Role file                | Meaning                                                                                                               |
 | ------------------------ | --------------------------------------------------------------------------------------------------------------------- |
 | `<area>/layout.tsx`      | Pathless or pathed layout — owns chrome, error boundary, and revalidation policy for its children.                    |
-| `<entity>/detail.tsx`    | Single-resource page (e.g. `public/post/detail.tsx`, `public/page/detail.tsx`, `admin/users/detail.tsx`).             |
+| `<entity>/detail.tsx`    | Single-resource page (e.g. `public/post/detail.tsx`, `public/page/detail.tsx`, `admin/security/users/detail.tsx`).    |
 | `<entity>/list.tsx`      | Paginated listing — the same module is mounted twice in `routes.ts` (e.g. `/cats/:slug` AND `/cats/:slug/page/:num`). |
 | `<entity>/index.tsx`     | The bare-prefix admin page when a sibling `new.tsx`/`edit.tsx`/`detail.tsx` already lives in the same directory.      |
 | `<entity>/new.tsx`       | Admin create form (`/admin/<entity>/new`).                                                                            |

@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react'
 import { Controller } from 'react-hook-form'
 import { toast } from 'sonner'
 
-import type { SearchLoaderShape } from '@/shared/config/settings'
+import type { SearchLoaderShape } from '@/shared/config/projection'
 
 import { orpc } from '@/client/api/client'
 import { SettingsRow } from '@/ui/admin/settings/SettingsSection'

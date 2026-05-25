@@ -9,7 +9,7 @@ import { findCategoryByName, findCategoryBySlug } from '@/server/infra/db/operat
 import { findTagByName, findTagBySlug } from '@/server/infra/db/operations/tag'
 import { DomainError } from '@/server/infra/http/errors'
 import { renderPortableTextToHtml } from '@/server/render/feed/feed-pt-render'
-import { requireBlogSettingsSection } from '@/shared/config/blog'
+import { requireBlogSettingsSection } from '@/shared/config/getters'
 import { joinUrl } from '@/shared/utils/urls'
 
 export interface FeedOptions {

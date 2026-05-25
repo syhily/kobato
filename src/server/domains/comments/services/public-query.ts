@@ -17,7 +17,8 @@ import {
 } from '@/server/domains/comments/repos/public-query'
 import { toLatestComment, ensureCommentPage } from '@/server/domains/comments/services/shared'
 import { getLogger } from '@/server/infra/logger'
-import { getSidebarWidgetCount, requireBlogSettingsSection } from '@/shared/config/blog'
+import { requireBlogSettingsSection } from '@/shared/config/getters'
+import { getSidebarWidgetCount } from '@/shared/config/utils'
 import { idFromString } from '@/shared/utils/id'
 import { groupBy } from '@/shared/utils/tools'
 

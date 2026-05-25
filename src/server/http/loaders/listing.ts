@@ -6,7 +6,7 @@ import type { ListingPostCard, ListingPostCardWithMetadata } from '@/shared/type
 import { getClientPostsWithMetadata } from '@/server/domains/posts/repos/public-query'
 import { parseListingPage, redirectListingOverflow } from '@/server/http/loaders/pagination'
 import { listingSeo } from '@/server/render/seo/listing-seo'
-import { requireBlogSettingsSection } from '@/shared/config/blog'
+import { requireBlogSettingsSection } from '@/shared/config/getters'
 
 // Shared loader-return shape for every listing route (`/`, `/cats/:slug`,
 // `/tags/:slug`, `/search/:keyword`). Components destructure the same fields

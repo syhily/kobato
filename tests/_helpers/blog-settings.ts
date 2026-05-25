@@ -17,7 +17,7 @@
 // their `__snapshots__` files churning every time an unrelated default
 // changes. Tests that need a different shape can call
 // `setBlogSettingsBundleForTests(custom)` in their own `beforeEach`.
-import type { BlogSettingsBundle } from '@/shared/config/blog'
+import type { BlogSettingsBundle } from '@/shared/config/types'
 
 import { CACHE_BUCKET_FALLBACKS } from '@/shared/types/cache'
 

@@ -11,7 +11,7 @@ import ApprovedComment from '@/server/infra/email/templates/ApprovedComment'
 import NewComment from '@/server/infra/email/templates/NewComment'
 import NewReply from '@/server/infra/email/templates/NewReply'
 import { getLogger } from '@/server/infra/logger'
-import { requireBlogSettingsSection } from '@/shared/config/blog'
+import { requireBlogSettingsSection } from '@/shared/config/getters'
 
 const log = getLogger('comments.email')
 

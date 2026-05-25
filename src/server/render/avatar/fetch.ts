@@ -2,7 +2,7 @@ import { Buffer } from 'node:buffer'
 
 import { findEmailById } from '@/server/infra/db/operations/user'
 import { compressImage } from '@/server/render/image-compress'
-import { requireBlogSettingsSection } from '@/shared/config/blog'
+import { requireBlogSettingsSection } from '@/shared/config/getters'
 import { idFromString } from '@/shared/utils/id'
 import { encodedEmail } from '@/shared/utils/security'
 import { isNumeric } from '@/shared/utils/tools'

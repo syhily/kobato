@@ -1,6 +1,6 @@
 import { Controller } from 'react-hook-form'
 
-import type { AssetsLoaderShape } from '@/shared/config/settings'
+import type { AssetsLoaderShape } from '@/shared/config/projection'
 
 import { SettingsRow } from '@/ui/admin/settings/SettingsSection'
 import { SettingGroup } from '@/ui/admin/settings/shell/SettingGroup'
@@ -11,6 +11,7 @@ import { FieldLabel } from '@/ui/components/field'
 import { Input } from '@/ui/components/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/components/select'
 import { Switch } from '@/ui/components/switch'
+import { Textarea } from '@/ui/components/textarea'
 
 export type { AssetsLoaderShape }
 
@@ -103,7 +104,7 @@ function AssetsToggleCard({ assets }: { assets: AssetsLoaderShape }) {
   return (
     <SettingGroup
       title="启用图片上传"
-      description="未开启时「图片管理」页面只能浏览历史图片，所有上传 / 替换入口都会返回 503。"
+      description="未开启时「图片管理」与「品牌素材」页面只能浏览，所有上传 / 替换入口都会返回 503。"
       {...settingGroupProps}
     >
       {mode === 'edit' ? (
@@ -180,7 +181,7 @@ function AssetsS3Card({ assets }: { assets: AssetsLoaderShape }) {
   return (
     <SettingGroup
       title="S3 兼容存储"
-      description="所有上传到「图片管理」的图片都会写入这里。修改后立即生效。"
+      description="所有上传到「图片管理」与「品牌素材」的文件都会写入这里。修改后立即生效。"
       {...settingGroupProps}
     >
       {mode === 'edit' ? (
@@ -326,6 +327,44 @@ function AssetsUploadCard({ assets }: { assets: AssetsLoaderShape }) {
   )
 }
 
+// `robots.txt` is plain configuration text (not an asset), so it stays
+// here in the settings section and flows through the regular settings
+// PATCH. The actual brand assets (favicons, logos, posters, default
+// avatar) are managed at `/admin/library/branding`.
+function AssetsRobotsTxtCard({ assets }: { assets: AssetsLoaderShape }) {
+  const { mode, form, settingGroupProps, display } = useSettingsCard<AssetsLoaderShape, { robotsTxt: string }>({
+    section: 'assets',
+    source: assets,
+    toState: (source) => ({ robotsTxt: source.branding.robotsTxt }),
+    fromState: (state) => ({ branding: { robotsTxt: state.robotsTxt } }),
+  })
+
+  return (
+    <SettingGroup
+      title="robots.txt"
+      description="爬虫规则。留空时由 siteIdentity.website 自动生成包含 Sitemap 行的默认值。"
+      {...settingGroupProps}
+    >
+      <SettingGroupContent>
+        {mode === 'edit' ? (
+          <SettingsRow label="robots.txt 内容" htmlFor="assets-robots-txt">
+            <Textarea
+              id="assets-robots-txt"
+              aria-label="robots.txt 内容"
+              rows={6}
+              value={form.watch('robotsTxt')}
+              onChange={(e) => form.setValue('robotsTxt', e.target.value, { shouldDirty: true })}
+              placeholder="留空则使用默认规则"
+            />
+          </SettingsRow>
+        ) : (
+          <SettingValue label="robots.txt" value={display.branding.robotsTxt || '使用默认规则'} />
+        )}
+      </SettingGroupContent>
+    </SettingGroup>
+  )
+}
+
 export function AssetsForm({ assets }: AssetsFormProps) {
   return (
     <div className="flex flex-col gap-5">
@@ -333,6 +372,7 @@ export function AssetsForm({ assets }: AssetsFormProps) {
       <AssetsToggleCard assets={assets} />
       <AssetsS3Card assets={assets} />
       <AssetsUploadCard assets={assets} />
+      <AssetsRobotsTxtCard assets={assets} />
     </div>
   )
 }

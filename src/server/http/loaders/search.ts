@@ -8,7 +8,7 @@ import { parseListingPage } from '@/server/http/loaders/pagination'
 import { searchPostOptions } from '@/server/infra/search/options'
 import { searchPosts } from '@/server/infra/search/search'
 import { listingSeo } from '@/server/render/seo/listing-seo'
-import { requireBlogSettingsSection } from '@/shared/config/blog'
+import { requireBlogSettingsSection } from '@/shared/config/getters'
 import { toClientPost, toListingPostCard } from '@/shared/types/catalog'
 import { pagePath, searchRootPath } from '@/shared/utils/paths'
 

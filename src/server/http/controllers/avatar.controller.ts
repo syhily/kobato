@@ -4,7 +4,7 @@ import { publicProc } from '@/server/http/orpc-base'
 import { findUserIdByEmail } from '@/server/infra/db/operations/user'
 import { AvatarStatus, cacheAvatar } from '@/server/render/avatar/cache'
 import { fetchQQAvatarImage, isQQEmail } from '@/server/render/avatar/fetch'
-import { requireBlogSettingsSection } from '@/shared/config/blog'
+import { requireBlogSettingsSection } from '@/shared/config/getters'
 import { encodedEmail } from '@/shared/utils/security'
 import { joinUrl } from '@/shared/utils/urls'
 

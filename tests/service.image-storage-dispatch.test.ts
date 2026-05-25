@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest'
 
-import type { AssetsSettings } from '@/shared/config/blog'
+import type { AssetsSettings } from '@/shared/config/types'
 
 import { setBlogSettingsBundleForTests } from '@/server/domains/settings/snapshot'
 

@@ -3,7 +3,7 @@ import { format, isValid, parse } from 'date-fns'
 import { notFound, pngResponse } from '@/server/infra/http/status'
 import { loadBuffer } from '@/server/infra/redis/buffer-cache'
 import { type CalendarTheme, renderCalendar } from '@/server/render/calendar/render'
-import { getCacheSettings } from '@/shared/config/blog'
+import { getCacheSettings } from '@/shared/config/getters'
 
 const timeRegex = /^\d{4}$/
 

@@ -1,8 +1,8 @@
-import type { AssetsSettings } from '@/shared/config/blog'
+import type { AssetsSettings } from '@/shared/config/types'
 
 import { ActionFailure } from '@/server/infra/http/errors'
 import { deleteS3Object, getS3ObjectBuffer, putPublicS3Object } from '@/server/infra/storage/s3-client'
-import { requireBlogSettingsSection } from '@/shared/config/blog'
+import { requireBlogSettingsSection } from '@/shared/config/getters'
 
 // Storage entry point used by the upload pipeline and the SSR
 // enhancer. Everything is conditioned on a single

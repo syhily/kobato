@@ -222,7 +222,7 @@ function AdminSessionRow({ item, submitting, onRevoke, config }: RowProps) {
           </Avatar>
           <div className="flex min-w-0 flex-col gap-1.5">
             <div className="flex flex-wrap items-center gap-2">
-              <Link to={`/admin/users/${item.userId}`} className="text-sm font-medium hover:underline">
+              <Link to={`/admin/security/users/${item.userId}`} className="text-sm font-medium hover:underline">
                 {item.userName}
               </Link>
               <span className="text-xs text-muted-foreground">{item.userEmail}</span>

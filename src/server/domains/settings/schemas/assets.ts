@@ -34,6 +34,21 @@ const coerceBoolean = z
 // secret". `applySectionPatch` folds the persisted value back in;
 // passing an empty string (or any explicit string) overwrites the
 // stored secret.
+
+// Branding user-asset slots (SVGs / binaries) are managed through the
+// dedicated `/admin/branding/upload` and `/admin/branding/clear`
+// endpoints. The schema below only declares `robotsTxt` — the only
+// piece of branding that's plain text configuration rather than an
+// uploaded asset. The service layer merges this PATCH with the
+// persisted binary/SVG ObjectRefs so they aren't wiped.
+const ROBOTS_PRINTABLE = /^[\t\n\r -~]*$/
+const robotsTxt = z
+  .string()
+  .max(2_000)
+  .refine((v) => v === '' || ROBOTS_PRINTABLE.test(v), {
+    message: 'robots.txt 只能包含可打印 ASCII 字符',
+  })
+
 export const assetsSchema = z
   .object({
     asset: z.object({
@@ -63,6 +78,11 @@ export const assetsSchema = z
         .max(50 * 1024 * 1024),
       jpegQuality: z.coerce.number().int().min(40).max(100),
     }),
+    branding: z
+      .object({
+        robotsTxt: robotsTxt.optional(),
+      })
+      .optional(),
   })
   .superRefine((value, ctx) => {
     if (!value.storage.enabled) {

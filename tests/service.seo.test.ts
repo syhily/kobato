@@ -2,7 +2,7 @@ import type { MetaDescriptor } from 'react-router'
 
 import { beforeEach, describe, expect, it } from 'vitest'
 
-import type { BlogSettingsBundle } from '@/shared/config/blog'
+import type { BlogSettingsBundle } from '@/shared/config/types'
 
 import { setBlogSettingsBundleForTests } from '@/server/domains/settings/snapshot'
 import { pageTitle, routeMeta } from '@/server/render/seo/meta'

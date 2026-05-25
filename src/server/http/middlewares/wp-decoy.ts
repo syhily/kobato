@@ -23,7 +23,7 @@ export function isWordPressDecoyPath(pathname: string): boolean {
 
   // `/admin/*` is the SPA admin shell. Everything the real shell ever
   // serves is a clean React Router path with no file extension
-  // (`/admin/comments`, `/admin/users`, `/admin/users/123`).
+  // (`/admin/comments`, `/admin/security/users`, `/admin/security/users/123`).
   // The probes we want to keep intercepting under this prefix are
   // exclusively WordPress PHP entry points (e.g. `options.php`,
   // `setup-config.php`, `admin-ajax.php`, `network/setup-config.php`),

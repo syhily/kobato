@@ -6,7 +6,7 @@ import { ActionFailure } from '@/server/infra/http/errors'
 import { getLogger } from '@/server/infra/logger'
 import { createInflight } from '@/server/infra/redis/inflight'
 import { storage } from '@/server/infra/redis/storage'
-import { getCacheSettings } from '@/shared/config/blog'
+import { getCacheSettings } from '@/shared/config/getters'
 
 // Image metadata resolver. Looks up matching `image` rows by
 // `storagePath` and returns width, height, thumbhash, and the

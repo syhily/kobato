@@ -2,7 +2,7 @@ import { render } from '@/server/infra/email/render'
 import AuthorInvite from '@/server/infra/email/templates/AuthorInvite'
 import PasswordReset from '@/server/infra/email/templates/PasswordReset'
 import { getLogger } from '@/server/infra/logger'
-import { requireBlogSettingsSection } from '@/shared/config/blog'
+import { requireBlogSettingsSection } from '@/shared/config/getters'
 
 const log = getLogger('email')
 

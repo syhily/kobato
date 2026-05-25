@@ -2,7 +2,7 @@ import { Buffer } from 'node:buffer'
 
 import { createInflight } from '@/server/infra/redis/inflight'
 import { storage } from '@/server/infra/redis/storage'
-import { getCacheSettings } from '@/shared/config/blog'
+import { getCacheSettings } from '@/shared/config/getters'
 
 export interface Avatar {
   status: AvatarStatus

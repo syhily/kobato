@@ -6,7 +6,7 @@ import { toCmsPost, type CmsPost } from '@/server/domains/posts/projection'
 import { listPublicPostMetas } from '@/server/domains/posts/repos/public-query'
 import { findPublicPostMetaBySlug } from '@/server/domains/posts/repos/single'
 import { postMetaCache } from '@/server/domains/posts/services/shared'
-import { requireBlogSettingsSection } from '@/shared/config/blog'
+import { requireBlogSettingsSection } from '@/shared/config/getters'
 
 export async function loadCatalogPostMetas(): Promise<CmsPost[]> {
   const cached = await postMetaCache.get()

@@ -1,4 +1,4 @@
-import type { RateLimitSettings } from '@/shared/config/blog'
+import type { RateLimitSettings } from '@/shared/config/types'
 
 import { SettingsRow } from '@/ui/admin/settings/SettingsSection'
 import { SettingGroup } from '@/ui/admin/settings/shell/SettingGroup'

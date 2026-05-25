@@ -1,7 +1,7 @@
-import type { AssetsSettings, SearchSettings } from '@/shared/config/blog'
-import type { AssetsLoaderShape, SearchLoaderShape } from '@/shared/config/settings'
+import type { AssetsLoaderShape, SearchLoaderShape } from '@/shared/config/projection'
+import type { AssetsSettings, SearchSettings } from '@/shared/config/types'
 
-import { projectAssetsForAdmin, projectSearchForAdmin } from '@/shared/config/settings'
+import { projectAssetsForAdmin, projectSearchForAdmin } from '@/shared/config/projection'
 
 export { projectAssetsForAdmin, projectSearchForAdmin }
 

@@ -1,7 +1,7 @@
 import { Trash2Icon } from 'lucide-react'
 import { useCallback, useState } from 'react'
 
-import type { CacheSettings } from '@/shared/config/blog'
+import type { CacheSettings } from '@/shared/config/types'
 import type { CacheBucketId, ClearCacheTarget, ReservedCacheBucketStats } from '@/shared/types/cache'
 
 import { orpc } from '@/client/api/client'

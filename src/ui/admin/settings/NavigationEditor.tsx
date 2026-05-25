@@ -20,8 +20,8 @@ import { Controller, useFieldArray } from 'react-hook-form'
 
 const VERTICAL_AXIS_ONLY = [restrictToVerticalAxis]
 
-import type { FooterNavItem, NavigationSettings, SocialItem } from '@/shared/config/blog'
 import type { SocialNetwork } from '@/shared/config/socials'
+import type { FooterNavItem, NavigationSettings, SocialItem } from '@/shared/config/types'
 
 import { SOCIAL_NETWORK_META, SOCIAL_NETWORKS } from '@/shared/config/socials'
 import { SettingGroup } from '@/ui/admin/settings/shell/SettingGroup'

@@ -3,7 +3,7 @@ import type { EntityTarget } from '@/server/infra/db/target'
 import { pushAccessEvent } from '@/server/domains/analytics/batcher'
 import { enrichEvent } from '@/server/domains/analytics/enrich'
 import { getLogger } from '@/server/infra/logger'
-import { getBlogSettingsBundleSync } from '@/shared/config/blog'
+import { getBlogSettingsBundleSync } from '@/shared/config/getters'
 import { getClientAddress } from '@/shared/utils/request'
 
 // Single entry point for every "this request happened" signal. Fire-

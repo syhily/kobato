@@ -4,7 +4,7 @@ import { cors } from 'hono/cors'
 
 import type { Env } from '@/server/http/context'
 
-import { getBlogSettingsBundleSync } from '@/shared/config/blog'
+import { getBlogSettingsBundleSync } from '@/shared/config/getters'
 
 // CORS middleware for API and SSR routes. Reads configuration from the
 // blog settings system (`cors` section) so the admin can update origins

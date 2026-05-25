@@ -18,9 +18,10 @@ import {
   Type,
 } from 'lucide-react'
 
-import type { SettingsNavGroup, SettingsSection } from '@/shared/config/settings'
+import type { SettingsNavGroup } from '@/shared/config/display'
+import type { SettingsSection } from '@/shared/config/sections'
 
-import { NAV_GROUP_LABEL } from '@/shared/config/settings'
+import { NAV_GROUP_LABEL } from '@/shared/config/display'
 import { useScrollSpyContext, useScrollSpyNav } from '@/ui/admin/settings/shell/useSettingsScrollSpy'
 import { useSettingsSearch } from '@/ui/admin/settings/shell/useSettingsSearch'
 import { cn } from '@/ui/lib/cn'

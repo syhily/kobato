@@ -5,7 +5,7 @@ import type { EntityTarget, EntityType } from '@/server/infra/db/target'
 import { db } from '@/server/infra/db/pool'
 import { page } from '@/server/infra/db/schema/page'
 import { post } from '@/server/infra/db/schema/post'
-import { requireBlogSettingsSection } from '@/shared/config/blog'
+import { requireBlogSettingsSection } from '@/shared/config/getters'
 import { joinUrl } from '@/shared/utils/urls'
 
 /**

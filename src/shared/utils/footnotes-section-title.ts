@@ -1,4 +1,4 @@
-import type { ContentSettings } from '@/shared/config/blog'
+import type { ContentSettings } from '@/shared/config/types'
 
 const DEFAULT_FOOTNOTES_SECTION_TITLE = '尾声礼记'
 

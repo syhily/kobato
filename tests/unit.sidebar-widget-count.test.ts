@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { getSidebarWidgetCount } from '@/shared/config/blog'
+import { getSidebarWidgetCount } from '@/shared/config/utils'
 
 describe('getSidebarWidgetCount', () => {
   const baseSettings = {

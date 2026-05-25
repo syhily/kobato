@@ -4,11 +4,11 @@ import type { FinalizeRequestMiddleware, HandlerExecutionContext } from '@smithy
 import { createHash } from 'node:crypto'
 import { Readable } from 'node:stream'
 
-import type { AssetsSettings } from '@/shared/config/blog'
+import type { AssetsSettings } from '@/shared/config/types'
 
 import { ActionFailure } from '@/server/infra/http/errors'
 import { getLogger } from '@/server/infra/logger'
-import { requireBlogSettingsSection } from '@/shared/config/blog'
+import { requireBlogSettingsSection } from '@/shared/config/getters'
 
 // `@aws-sdk/client-s3` is loaded lazily via `getAwsSdk()` because
 // `@aws-sdk/core` ships an ESM index that does

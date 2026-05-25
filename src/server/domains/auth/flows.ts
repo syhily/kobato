@@ -3,7 +3,7 @@ import type { ZodType } from 'zod'
 import { data, redirect } from 'react-router'
 
 import type { BlogSession } from '@/server/domains/auth/session-storage'
-import type { AssetsSettings, SiteIdentitySettings } from '@/shared/config/blog'
+import type { AssetsSettings, SiteIdentitySettings } from '@/shared/config/types'
 
 import { establishLoginSession, login } from '@/server/domains/auth/primitives'
 import { commitSessionWithMaxAge } from '@/server/domains/auth/session-storage'

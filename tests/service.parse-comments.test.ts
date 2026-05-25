@@ -13,9 +13,9 @@ import type { CommentAndUser, CommentItem } from '@/shared/types/comments'
 // inside the loader's projection pass) reaches it for the default badge
 // colour. The exact value is irrelevant — we only assert on tree shape.
 
-vi.mock('@/shared/config/blog', () => ({
+vi.mock('@/shared/config/getters', () => ({
   requireBlogSettingsSection: () => ({}),
-  requireBlogSettings: () => ({}),
+  requireBlogSettingsBundle: () => ({}),
 }))
 
 const { parseComments } = await import('@/server/domains/comments/services/public-query')

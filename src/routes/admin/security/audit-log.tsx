@@ -1,6 +1,6 @@
 import { getRouteRequestContext } from '@/server/domains/auth/context'
 import { requireRole } from '@/server/domains/auth/rbac'
-import { getBlogSettingsBundleSync } from '@/shared/config/blog'
+import { getBlogSettingsBundleSync } from '@/shared/config/getters'
 import { AuditLogView } from '@/ui/admin/audit/AuditLogView'
 
 import type { Route } from './+types/audit-log'

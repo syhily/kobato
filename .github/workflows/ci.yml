@@ -55,7 +55,7 @@ jobs:
       - run: npm run typecheck
       - run: npm run fmt:check
       - run: npm run lint
-      - run: npm run test
+      - run: npm run test -- --coverage
       - uses: actions/upload-artifact@v7
         with:
           name: coverage-report

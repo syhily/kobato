@@ -20,7 +20,7 @@ export default defineConfig({
   build: {
     emptyOutDir: true,
     chunkSizeWarningLimit: 500,
-    rollupOptions: {
+    rolldownOptions: {
       output: {
         manualChunks(id) {
           if (id.includes('node_modules/@tiptap/') || id.includes('node_modules/prosemirror-')) {

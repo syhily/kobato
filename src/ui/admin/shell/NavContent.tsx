@@ -93,7 +93,10 @@ export function NavContent({ role, pendingCommentCount = 0, userCount }: NavCont
           )}
 
           {showAuthorItems && (
-            <NavMenuItem.Collapsible id="taxonomy-submenu" paths={['/admin/categories', '/admin/tags']}>
+            <NavMenuItem.Collapsible
+              id="taxonomy-submenu"
+              paths={['/admin/taxonomy/categories', '/admin/taxonomy/tags']}
+            >
               <NavMenuItem.CollapsibleItem ariaLabel="展开分门别类子菜单">
                 <LibraryIcon />
                 <NavMenuItem.Label>分门别类</NavMenuItem.Label>
@@ -102,13 +105,13 @@ export function NavContent({ role, pendingCommentCount = 0, userCount }: NavCont
               <NavMenuItem.CollapsibleMenu>
                 {showAdminItems && (
                   <NavMenuItem>
-                    <NavMenuItem.Link to="/admin/categories" className="pl-11">
+                    <NavMenuItem.Link to="/admin/taxonomy/categories" className="pl-11">
                       <NavMenuItem.Label>分类管理</NavMenuItem.Label>
                     </NavMenuItem.Link>
                   </NavMenuItem>
                 )}
                 <NavMenuItem>
-                  <NavMenuItem.Link to="/admin/tags" className="pl-11">
+                  <NavMenuItem.Link to="/admin/taxonomy/tags" className="pl-11">
                     <NavMenuItem.Label>标签管理</NavMenuItem.Label>
                   </NavMenuItem.Link>
                 </NavMenuItem>
@@ -119,7 +122,12 @@ export function NavContent({ role, pendingCommentCount = 0, userCount }: NavCont
           {showAuthorItems && (
             <NavMenuItem.Collapsible
               id="media-submenu"
-              paths={['/admin/library/images', '/admin/library/music', '/admin/friends']}
+              paths={[
+                '/admin/library/images',
+                '/admin/library/music',
+                '/admin/library/branding',
+                '/admin/library/friends',
+              ]}
             >
               <NavMenuItem.CollapsibleItem ariaLabel="展开媒体管理子菜单">
                 <ImagesIcon />
@@ -139,7 +147,14 @@ export function NavContent({ role, pendingCommentCount = 0, userCount }: NavCont
                 </NavMenuItem>
                 {showAdminItems && (
                   <NavMenuItem>
-                    <NavMenuItem.Link to="/admin/friends" className="pl-11">
+                    <NavMenuItem.Link to="/admin/library/branding" className="pl-11">
+                      <NavMenuItem.Label>品牌素材</NavMenuItem.Label>
+                    </NavMenuItem.Link>
+                  </NavMenuItem>
+                )}
+                {showAdminItems && (
+                  <NavMenuItem>
+                    <NavMenuItem.Link to="/admin/library/friends" className="pl-11">
                       <NavMenuItem.Label>友链管理</NavMenuItem.Label>
                     </NavMenuItem.Link>
                   </NavMenuItem>
@@ -151,7 +166,7 @@ export function NavContent({ role, pendingCommentCount = 0, userCount }: NavCont
           {showAdminItems && (
             <NavMenuItem.Collapsible
               id="security-submenu"
-              paths={['/admin/security/sessions', '/admin/security/audit-log', '/admin/users']}
+              paths={['/admin/security/sessions', '/admin/security/audit-log', '/admin/security/users']}
             >
               <NavMenuItem.CollapsibleItem ariaLabel="展开安全管理子菜单">
                 <ShieldIcon />
@@ -170,7 +185,7 @@ export function NavContent({ role, pendingCommentCount = 0, userCount }: NavCont
                   </NavMenuItem.Link>
                 </NavMenuItem>
                 <NavMenuItem>
-                  <NavMenuItem.Link to="/admin/users" className="pl-11" activeMatch="subpath">
+                  <NavMenuItem.Link to="/admin/security/users" className="pl-11" activeMatch="subpath">
                     <NavMenuItem.Label>用户管理</NavMenuItem.Label>
                   </NavMenuItem.Link>
                   {userCount != null && <SidebarMenuBadge>{userCount}</SidebarMenuBadge>}

@@ -50,7 +50,7 @@ vi.mock('@/server/domains/pages/repo', () => ({
 vi.mock('@/server/domains/posts/repos/single', () => ({
   findPostBySlug: vi.fn().mockResolvedValue({ title: 'T', summary: 'S', cover: 'C' }),
 }))
-vi.mock('@/shared/config/blog', () => ({
+vi.mock('@/shared/config/getters', () => ({
   requireBlogSettingsSection: (section: string) => {
     if (section === 'siteIdentity') {
       return { website: 'https://example.test', description: 'desc' }

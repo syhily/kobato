@@ -1,7 +1,7 @@
 import { call } from '@orpc/server'
 import { describe, expect, it, vi } from 'vitest'
 
-import type { BlogSettingsBundle } from '@/shared/config/blog'
+import type { BlogSettingsBundle } from '@/shared/config/types'
 
 import { makeAuthedCtx } from './_helpers/mock-ctx'
 
@@ -14,7 +14,7 @@ vi.mock('@/server/domains/backup/service', () => ({
   restoreFromBackup: vi.fn(),
 }))
 
-vi.mock('@/shared/config/blog', () => ({
+vi.mock('@/shared/config/getters', () => ({
   getBlogSettingsBundleSync: vi.fn(),
 }))
 
@@ -24,7 +24,7 @@ vi.mock('@/server/infra/shutdown', () => ({
 }))
 
 const service = await import('@/server/domains/backup/service')
-const blogConfig = await import('@/shared/config/blog')
+const blogConfig = await import('@/shared/config/getters')
 const { adminBackupRouter } = await import('@/server/http/controllers/admin/backup.controller')
 
 describe('adminBackupRouter.status', () => {

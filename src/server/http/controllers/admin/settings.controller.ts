@@ -1,12 +1,14 @@
 import { ORPCError } from '@orpc/server'
 import { z } from 'zod'
 
+import type { SettingsSection } from '@/shared/config/sections'
+
 import { recordAuditEventFromContext } from '@/server/domains/audit/service'
 import { getAdminBlogSettings, updateBlogSettingsSection } from '@/server/domains/settings/service'
 import { getSupportedTimeZones } from '@/server/domains/settings/timezones'
 import { adminProc } from '@/server/http/orpc-base'
 import { DomainError } from '@/server/infra/http/errors'
-import { SETTINGS_SECTIONS, type SettingsSection } from '@/shared/config/settings'
+import { SETTINGS_SECTIONS } from '@/shared/config/sections'
 import { blogSettingsBundleDto } from '@/shared/contracts/settings'
 import { safeBigInt } from '@/shared/utils/tools'
 

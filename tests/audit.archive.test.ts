@@ -38,7 +38,7 @@ vi.mock('@/server/infra/storage/s3-client', () => ({
   deleteS3Objects,
 }))
 
-vi.mock('@/shared/config/blog', () => ({ getBlogSettingsBundleSync }))
+vi.mock('@/shared/config/getters', () => ({ getBlogSettingsBundleSync }))
 
 vi.mock('@/server/infra/logger', () => ({
   getLogger: () => ({ error: vi.fn(), warn: vi.fn(), info: vi.fn(), debug: vi.fn() }),

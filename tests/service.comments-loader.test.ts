@@ -38,7 +38,7 @@ vi.mock('@/server/domains/comments/email', () => ({
 // `loader.ts`'s sidebar-row → permalink projection reads
 // `siteIdentity.website` via the blog-config bundle. Stub it so the
 // public detail loader produces deterministic URLs.
-vi.mock('@/shared/config/blog', () => ({
+vi.mock('@/shared/config/getters', () => ({
   requireBlogSettingsSection: (key: string) => {
     if (key === 'siteIdentity') {
       return { website: 'https://yufan.me', title: 'Yufan' }
@@ -60,16 +60,6 @@ vi.mock('@/shared/config/blog', () => ({
       return { comments: { size: 20 } }
     }
     return {}
-  },
-  getSidebarWidgetCount: (
-    settings: { sidebar: { widgets: Array<{ type: string; enabled: boolean; count?: number }> } },
-    type: string,
-  ) => {
-    const widget = settings.sidebar.widgets.find((w) => w.type === type)
-    if (!widget || !widget.enabled) {
-      return 0
-    }
-    return widget.count ?? 0
   },
 }))
 

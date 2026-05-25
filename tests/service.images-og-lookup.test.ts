@@ -19,7 +19,7 @@ vi.mock('@/server/domains/pages/repo', () => ({
 vi.mock('@/server/render/og/render', () => ({
   drawOpenGraph: mocks.drawOpenGraph,
 }))
-vi.mock('@/shared/config/blog', () => ({
+vi.mock('@/shared/config/getters', () => ({
   requireBlogSettingsSection: vi.fn((section: string) => {
     if (section === 'cache') {
       return { cache: { og: { prefix: 'og:', ttlSeconds: 3600 } } }

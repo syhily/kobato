@@ -3,7 +3,7 @@ import { randomUUID } from 'node:crypto'
 import type { CommentTokenCookie, CommentTokenCookieEntry } from '@/shared/utils/comment-token'
 
 import { redisInstance } from '@/server/infra/redis/storage'
-import { requireBlogSettingsSection } from '@/shared/config/blog'
+import { requireBlogSettingsSection } from '@/shared/config/getters'
 
 const TOKEN_KEY_PREFIX = 'comment:token:'
 

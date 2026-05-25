@@ -6,12 +6,8 @@ import type { SettingsOutletContext } from '@/routes/admin/settings/layout'
 import { getRouteRequestContext } from '@/server/domains/auth/context'
 import { requireRole } from '@/server/domains/auth/rbac'
 import { settingsMeta } from '@/server/render/seo/settings-meta'
-import {
-  NAV_GROUP_LABEL,
-  SECTION_DISPLAY,
-  projectAssetsForAdmin,
-  projectSearchForAdmin,
-} from '@/shared/config/settings'
+import { NAV_GROUP_LABEL, SECTION_DISPLAY } from '@/shared/config/display'
+import { projectAssetsForAdmin, projectSearchForAdmin } from '@/shared/config/projection'
 import { AnalyticsForm } from '@/ui/admin/settings/AnalyticsForm'
 import { AssetsForm } from '@/ui/admin/settings/AssetsForm'
 import { BackupView } from '@/ui/admin/settings/BackupView'

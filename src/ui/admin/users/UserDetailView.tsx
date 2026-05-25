@@ -104,7 +104,7 @@ export function UserDetailView({ userId, navigate }: UserDetailViewProps) {
   const deleteMutation = useMutation({
     mutationFn: (vars: { userId: string }) => orpc.admin.users.softDelete({ id: vars.userId }),
     onSuccess: () => {
-      void navigate('/admin/users')
+      void navigate('/admin/security/users')
     },
   })
 
@@ -155,7 +155,7 @@ export function UserDetailView({ userId, navigate }: UserDetailViewProps) {
               type="button"
               variant="ghost"
               size="icon"
-              onClick={() => void navigate('/admin/users')}
+              onClick={() => void navigate('/admin/security/users')}
               aria-label="返回用户列表"
             >
               <ArrowLeftIcon />

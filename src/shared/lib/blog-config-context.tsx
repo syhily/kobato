@@ -1,5 +1,6 @@
 import { createContext, type Context, type ReactNode, use } from 'react'
 
+import type { BundleKey } from '@/shared/config/sections'
 import type {
   AnalyticsSettings,
   AssetsSettings,
@@ -18,10 +19,9 @@ import type {
   SidebarSettings,
   SiteIdentitySettings,
   SocialsSettings,
-} from '@/shared/config/blog'
-import type { BundleKey } from '@/shared/config/settings'
+} from '@/shared/config/types'
 
-import { BUNDLE_KEYS } from '@/shared/config/settings'
+import { BUNDLE_KEYS } from '@/shared/config/sections'
 
 // Per-section React contexts. The keys are derived from the canonical
 // `BUNDLE_KEYS` listing in `@/shared/config/settings`, so adding a new

@@ -12,7 +12,7 @@ import {
 import { memo } from 'react'
 import { Link } from 'react-router'
 
-import type { SiteIdentitySettings } from '@/shared/config/blog'
+import type { SiteIdentitySettings } from '@/shared/config/types'
 import type { AdminUserDto } from '@/shared/types/users'
 
 import { formatLocalDate } from '@/shared/utils/formatter'
@@ -180,7 +180,11 @@ const UserRow = memo(function UserRow({
           </Avatar>
           <div className="min-w-0">
             <div className="flex items-center gap-2">
-              <Link to={`/admin/users/${user.id}`} prefetch="intent" className="truncate font-medium hover:underline">
+              <Link
+                to={`/admin/security/users/${user.id}`}
+                prefetch="intent"
+                className="truncate font-medium hover:underline"
+              >
                 {user.name}
               </Link>
               {user.badgeName && (
@@ -263,7 +267,7 @@ const UserRow = memo(function UserRow({
           <DropdownMenuContent align="end" className="w-52">
             <DropdownMenuItem
               render={
-                <Link to={`/admin/users/${user.id}`}>
+                <Link to={`/admin/security/users/${user.id}`}>
                   <EyeIcon /> 查看详情
                 </Link>
               }

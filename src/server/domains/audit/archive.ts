@@ -8,7 +8,7 @@ import { db } from '@/server/infra/db/pool'
 import { auditLog } from '@/server/infra/db/schema/config'
 import { getLogger } from '@/server/infra/logger'
 import { deleteS3Objects, listS3Objects, putS3Object } from '@/server/infra/storage/s3-client'
-import { getBlogSettingsBundleSync } from '@/shared/config/blog'
+import { getBlogSettingsBundleSync } from '@/shared/config/getters'
 
 const log = getLogger('audit.archive')
 

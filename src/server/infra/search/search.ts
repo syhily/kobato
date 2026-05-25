@@ -7,7 +7,7 @@ import { post } from '@/server/infra/db/schema/post'
 import { getLogger } from '@/server/infra/logger'
 import { storage } from '@/server/infra/redis/storage'
 import { generateEmbedding } from '@/server/infra/search/openai'
-import { getBlogSettingsBundleSync } from '@/shared/config/blog'
+import { getBlogSettingsBundleSync } from '@/shared/config/getters'
 import { CACHE_BUCKET_FALLBACKS } from '@/shared/types/cache'
 
 const DEFAULT_SEARCH_SETTINGS = {

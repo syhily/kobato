@@ -1,6 +1,6 @@
 import type { MetaDescriptor } from 'react-router'
 
-import type { BlogSettingsBundle } from '@/shared/config/blog'
+import type { BlogSettingsBundle } from '@/shared/config/types'
 
 import { type FeedLinkOptions, routeMeta } from '@/server/render/seo/meta'
 import { pagePath } from '@/shared/utils/paths'

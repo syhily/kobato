@@ -19,7 +19,7 @@ import {
 import { toPostFromMeta } from '@/server/domains/posts/repos/single'
 import { db } from '@/server/infra/db/pool'
 import { post as postMetaTable } from '@/server/infra/db/schema/post'
-import { requireBlogSettingsSection } from '@/shared/config/blog'
+import { requireBlogSettingsSection } from '@/shared/config/getters'
 import { toListingPostCard, toSidebarPostLink } from '@/shared/types/catalog'
 import { idFromString } from '@/shared/utils/id'
 import { shuffle } from '@/shared/utils/tools'

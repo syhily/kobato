@@ -7,7 +7,7 @@ import type { Role } from '@/shared/utils/roles'
 import { SESSION_SECRET } from '@/server/infra/env'
 import { getLogger } from '@/server/infra/logger'
 import { redisInstance } from '@/server/infra/redis/storage'
-import { getBlogSettingsBundleSync } from '@/shared/config/blog'
+import { getBlogSettingsBundleSync } from '@/shared/config/getters'
 
 const log = getLogger('auth.session-storage')
 

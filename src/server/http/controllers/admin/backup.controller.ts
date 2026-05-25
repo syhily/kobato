@@ -12,7 +12,7 @@ import {
 import { adminProc } from '@/server/http/orpc-base'
 import { getLogger } from '@/server/infra/logger'
 import { requestShutdown } from '@/server/infra/shutdown'
-import { getBlogSettingsBundleSync } from '@/shared/config/blog'
+import { getBlogSettingsBundleSync } from '@/shared/config/getters'
 
 const log = getLogger('backup.controller')
 

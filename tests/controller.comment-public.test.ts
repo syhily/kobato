@@ -70,7 +70,7 @@ vi.mock('@/server/domains/auth/primitives', () => ({
   userSession: () => undefined,
 }))
 
-vi.mock('@/shared/config/blog', () => ({
+vi.mock('@/shared/config/getters', () => ({
   requireBlogSettingsSection: (section: string) => {
     if (section === 'siteIdentity') {
       return { website: 'https://example.test' }

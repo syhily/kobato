@@ -1,6 +1,6 @@
 import { isRouteErrorResponse, Outlet, useOutletContext, useRouteError } from 'react-router'
 
-import type { BlogSettingsBundle } from '@/shared/config/blog'
+import type { BlogSettingsBundle } from '@/shared/config/types'
 
 type BundleWithIndex = BlogSettingsBundle & Record<string, unknown>
 
@@ -8,7 +8,7 @@ import { SECTION_REGISTRY, SETTINGS_SECTIONS } from '@/server/domains/settings/s
 import { getAdminBlogSettings } from '@/server/domains/settings/service'
 import { getSupportedTimeZones } from '@/server/domains/settings/timezones'
 import { upsertSetting } from '@/server/infra/db/operations/setting'
-import { SECTION_TO_BUNDLE_KEY } from '@/shared/config/settings'
+import { SECTION_TO_BUNDLE_KEY } from '@/shared/config/sections'
 
 import type { Route } from './+types/layout'
 

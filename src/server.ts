@@ -24,8 +24,10 @@ import { honoVisitorCookieMiddleware } from '@/server/http/middlewares/visitor-c
 import { honoWpDecoyMiddleware } from '@/server/http/middlewares/wp-decoy'
 import { buildOpenApiDocument } from '@/server/http/openapi'
 import { analyticsEventsRouter } from '@/server/http/resources/analytics-events'
+import { assetsRouter } from '@/server/http/resources/assets'
 import { backupDownloadRouter } from '@/server/http/resources/backup-download'
 import { backupUploadRouter } from '@/server/http/resources/backup-upload'
+import { brandingRouter } from '@/server/http/resources/branding'
 import { feedRouter } from '@/server/http/resources/feed'
 import { imagesRouter } from '@/server/http/resources/images'
 import { redirectsRouter } from '@/server/http/resources/redirects'
@@ -129,6 +131,7 @@ const server = await createHonoServer<Env>({
     app.all('/assets/*', (c) => c.body(null, 404))
 
     // ─── Public resource routes ───────────────────────────
+    app.route('/', assetsRouter)
     app.route('/', analyticsEventsRouter)
     app.route('/', feedRouter)
     app.route('/', imagesRouter)
@@ -138,6 +141,9 @@ const server = await createHonoServer<Env>({
     // ─── Admin backup resource routes ─────────────────────
     app.route('/', backupDownloadRouter)
     app.route('/', backupUploadRouter)
+
+    // ─── Admin branding resource routes ──────────────────
+    app.route('/', brandingRouter)
 
     // ─── Dev-only API docs ────────────────────────────────
     if (!import.meta.env.PROD) {

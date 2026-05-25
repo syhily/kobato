@@ -4,7 +4,7 @@ import type { MetricRow } from '@/server/infra/db/types'
 
 import { ensureMetric, findMetricByPublicId } from '@/server/infra/db/operations/metric'
 import { DomainError } from '@/server/infra/http/errors'
-import { requireBlogSettingsSection } from '@/shared/config/blog'
+import { requireBlogSettingsSection } from '@/shared/config/getters'
 
 export interface MetricTarget {
   type: 'post' | 'page'

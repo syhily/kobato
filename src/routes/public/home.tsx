@@ -20,7 +20,8 @@ import { listingHeaders, publicShouldRevalidate } from '@/server/http/loaders/ro
 import { loadSidebarData } from '@/server/http/loaders/sidebar'
 import { selectSidebarTags } from '@/server/http/loaders/sidebar-select'
 import { metaWithFallback } from '@/server/render/seo/meta'
-import { getSidebarWidgetCount, requireBlogSettingsSection } from '@/shared/config/blog'
+import { requireBlogSettingsSection } from '@/shared/config/getters'
+import { getSidebarWidgetCount } from '@/shared/config/utils'
 import { formatLocalDate } from '@/shared/utils/formatter'
 import { HomeLayoutBody } from '@/ui/public/post/PostListViews'
 

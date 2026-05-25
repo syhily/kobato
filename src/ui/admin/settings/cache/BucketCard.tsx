@@ -1,7 +1,7 @@
 import { EditIcon, SaveIcon, Trash2Icon, XIcon } from 'lucide-react'
 import { type SubmitEventHandler, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
-import type { CacheSettings } from '@/shared/config/blog'
+import type { CacheSettings } from '@/shared/config/types'
 import type { CacheBucketId, CacheBucketStats } from '@/shared/types/cache'
 import type { ClearStatus } from '@/ui/admin/settings/cache/cache-status'
 

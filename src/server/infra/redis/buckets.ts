@@ -2,7 +2,7 @@ import type { CacheBucket, CacheBucketId, CacheBucketStats, ReservedCacheBucketS
 
 import { getLogger } from '@/server/infra/logger'
 import { redisInstance } from '@/server/infra/redis/storage'
-import { getCacheSettings } from '@/shared/config/blog'
+import { getCacheSettings } from '@/shared/config/getters'
 import { RESERVED_CACHE_BUCKETS } from '@/shared/types/cache'
 
 const log = getLogger('cache.buckets')

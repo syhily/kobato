@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 
 import { signUpInitialAdminWithSession } from '@/server/domains/auth/flows'
 import { db } from '@/server/infra/db/pool'
-import { getBlogSettingsBundleSync } from '@/shared/config/blog'
+import { getBlogSettingsBundleSync } from '@/shared/config/getters'
 
 import { clearAllTables } from './_helpers/integration-db'
 import { flushWorkerRedis } from './_helpers/redis'

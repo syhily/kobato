@@ -2,7 +2,7 @@ import { createMiddleware } from 'hono/factory'
 import { HTTPException } from 'hono/http-exception'
 
 import type { Env } from '@/server/http/context'
-import type { RateLimitBucket, RateLimitSettings } from '@/shared/config/blog'
+import type { RateLimitBucket, RateLimitSettings } from '@/shared/config/types'
 
 import { readBucket, tryKeyedRateLimit } from '@/server/infra/rate-limit'
 

@@ -5,7 +5,7 @@ import { Canvas, GlobalFonts, loadImage } from '@napi-rs/canvas'
 
 import { compressImage } from '@/server/render/image-compress'
 import { logoDark, oppoSans, type FontSlot } from '@/server/render/og/assets'
-import { requireBlogSettingsSection } from '@/shared/config/blog'
+import { requireBlogSettingsSection } from '@/shared/config/getters'
 
 /**
  * Generate the open graph.
@@ -188,7 +188,8 @@ export async function drawOpenGraph({ title, summary, cover }: OpenGraphProps): 
   const seo = requireBlogSettingsSection('seo')
 
   // Fetch the cover image as the background
-  const [coverImage, logoImage] = await Promise.all([loadImage(cover), loadImage(logoDark())])
+  const [coverImage, logoBuffer] = await Promise.all([loadImage(cover), logoDark()])
+  const logoImage = await loadImage(logoBuffer)
 
   // Mark sure the summary length is small enough to fit in
   let description = summary.replace(/<[^>]+>/g, '').trim()

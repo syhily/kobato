@@ -2,10 +2,11 @@ import { MenuIcon } from 'lucide-react'
 import { useEffect, useId, useRef, useState } from 'react'
 import { Link } from 'react-router'
 
-import type { NavigationItem } from '@/shared/config/blog'
 import type { SocialNetwork } from '@/shared/config/socials'
+import type { NavigationItem } from '@/shared/config/types'
 
-import { useSiteIdentity, useSocialsSettings } from '@/shared/lib/blog-config-context'
+import { brandingVersion } from '@/shared/config/utils'
+import { useAssetsSettingsOptional, useSiteIdentity, useSocialsSettings } from '@/shared/lib/blog-config-context'
 import { Button } from '@/ui/components/button'
 import { IconButtonContent } from '@/ui/components/icon-button-content'
 import { SOCIAL_NETWORK_ICONS } from '@/ui/icons/social-icons'
@@ -244,6 +245,9 @@ function SocialNavIcon({ network, className }: { network: SocialNetwork; classNa
 export function Header({ navigation, currentUser, pathname, search }: HeaderProps) {
   const { title } = useSiteIdentity()
   const { socials } = useSocialsSettings()
+  const assets = useAssetsSettingsOptional()
+  const qs = brandingVersion(assets?.branding)
+  const v = qs ? `?v=${qs}` : ''
   const logoutQuery = new URLSearchParams({
     action: 'logout',
     redirect_to: `${pathname}${search}`,
@@ -361,7 +365,7 @@ export function Header({ navigation, currentUser, pathname, search }: HeaderProp
         <div className={asideInnerClass}>
           <h1 id={menuLabelId} className={navbarBrandClass}>
             <Link to="/" title={title} className="block" prefetch="intent">
-              <img src="/logo-dark.svg" alt="且听书吟" className={navbarBrandImgClass} />
+              <img src={`/logo-dark.svg${v}`} alt="且听书吟" className={navbarBrandImgClass} />
             </Link>
           </h1>
           {/* oxlint-disable-next-line jsx-a11y/no-noninteractive-element-interactions */}

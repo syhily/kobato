@@ -1,7 +1,7 @@
 import { Link, Text } from '@/server/infra/email/render'
 import { SafeEmailHtml } from '@/server/infra/email/safe-html'
 import { EmailLayout } from '@/server/infra/email/templates/layout/EmailLayout'
-import { requireBlogSettingsSection } from '@/shared/config/blog'
+import { requireBlogSettingsSection } from '@/shared/config/getters'
 
 interface Props {
   postTitle: string

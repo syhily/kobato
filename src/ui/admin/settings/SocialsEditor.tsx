@@ -1,6 +1,6 @@
 import { useFieldArray } from 'react-hook-form'
 
-import type { SocialsSettings } from '@/shared/config/blog'
+import type { SocialsSettings } from '@/shared/config/types'
 
 import { type SocialNetwork, SOCIAL_NETWORKS, getSocialNetworkMeta } from '@/shared/config/socials'
 import { SettingGroup } from '@/ui/admin/settings/shell/SettingGroup'

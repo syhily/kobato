@@ -18,9 +18,10 @@ import type { MetaDescriptor } from 'react-router'
 // A `null` bundle is possible only on the install split-screen (the
 // install gate intercepts every other path); each helper handles it
 // defensively.
-import type { BlogSettingsBundle } from '@/shared/config/blog'
+import type { BlogSettingsBundle } from '@/shared/config/types'
 
-import { extractXHandle, getBlogSettingsBundleSync } from '@/shared/config/blog'
+import { getBlogSettingsBundleSync } from '@/shared/config/getters'
+import { brandingVersion, extractXHandle } from '@/shared/config/utils'
 import { joinUrl } from '@/shared/utils/urls'
 
 // Minimal sentinel rendered before the install flow has populated the
@@ -111,7 +112,9 @@ function baseTags(
     keywords: string[]
     website: string
   },
+  v?: string,
 ): MetaDescriptor[] {
+  const qs = v ? `?v=${v}` : ''
   return [
     { title },
     { name: 'title', content: title },
@@ -134,9 +137,9 @@ function baseTags(
       href: `${config.website}/feed/atom/`,
     },
     { tagName: 'link', rel: 'sitemap', href: `${config.website}/sitemap.xml` },
-    { tagName: 'link', rel: 'icon', href: '/favicon.ico', sizes: '32x32' },
-    { tagName: 'link', rel: 'icon', href: '/favicon.svg', type: 'image/svg+xml' },
-    { tagName: 'link', rel: 'apple-touch-icon', href: '/apple-touch-icon.png' },
+    { tagName: 'link', rel: 'icon', href: `/favicon.ico${qs}`, sizes: '32x32' },
+    { tagName: 'link', rel: 'icon', href: `/favicon.svg${qs}`, type: 'image/svg+xml' },
+    { tagName: 'link', rel: 'apple-touch-icon', href: `/apple-touch-icon.png${qs}` },
     { tagName: 'link', rel: 'manifest', href: '/manifest.webmanifest' },
   ]
 }
@@ -337,7 +340,7 @@ export function routeMeta(
   const imageAlt = ogImageAltText || resolvedTitle
 
   const meta: MetaDescriptor[] = [
-    ...baseTags(resolvedTitle, resolvedDescription, siteIdentity),
+    ...baseTags(resolvedTitle, resolvedDescription, siteIdentity, brandingVersion(resolved?.assets?.branding)),
     ...robotsTags(noindex),
     ...ogTags(
       {

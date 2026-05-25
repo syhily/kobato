@@ -5,7 +5,7 @@ import type { Env } from '@/server/http/context'
 import type { HandlerContext } from '@/server/http/orpc-base'
 
 import { apiRouter } from '@/server/http/api-router'
-import { getBlogSettingsBundleSync } from '@/shared/config/blog'
+import { getBlogSettingsBundleSync } from '@/shared/config/getters'
 
 // ─── oRPC + Hono perimeter ──────────────────────────────
 //

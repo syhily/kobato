@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { Setting } from '@/server/infra/db/types'
-import type { BlogSettingsBundle } from '@/shared/config/blog'
+import type { BlogSettingsBundle } from '@/shared/config/types'
 
 vi.mock('@/server/infra/db/operations/setting', () => ({
   findSettingByScope: vi.fn(),
@@ -15,7 +15,7 @@ const settingQueries = await import('@/server/infra/db/operations/setting')
 const { getAdminBlogSettings, updateBlogSettingsSection } = await import('@/server/domains/settings/service')
 const { setBlogSettingsBundleForTests, getBlogSettingsBundleSync } = await import('@/server/domains/settings/snapshot')
 const { DomainError } = await import('@/server/infra/http/errors')
-const { getCacheSettings } = await import('@/shared/config/blog')
+const { getCacheSettings } = await import('@/shared/config/getters')
 
 // Bucketed settings fixture. The on-disk DB stores one row per section
 // (`blog.general`, `blog.assets`, …) so `bundleRows()` projects this

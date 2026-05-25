@@ -152,8 +152,8 @@ describe('isWordPressDecoyPath', () => {
     // memory. Paths under that prefix that don't end in `.php` are SPA routes,
     // not scanner probes.
     expect(isWordPressDecoyPath('/admin/comments')).toBe(false)
-    expect(isWordPressDecoyPath('/admin/users')).toBe(false)
-    expect(isWordPressDecoyPath('/admin/users/12345')).toBe(false)
+    expect(isWordPressDecoyPath('/admin/security/users')).toBe(false)
+    expect(isWordPressDecoyPath('/admin/security/users/12345')).toBe(false)
   })
 
   it('ignores unrelated paths', () => {

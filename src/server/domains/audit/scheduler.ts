@@ -1,7 +1,7 @@
 import { runArchiveJob } from '@/server/domains/audit/archive'
 import { getLogger } from '@/server/infra/logger'
 import { registerShutdownHook } from '@/server/infra/shutdown'
-import { getBlogSettingsBundleSync } from '@/shared/config/blog'
+import { getBlogSettingsBundleSync } from '@/shared/config/getters'
 
 const log = getLogger('audit.scheduler')
 

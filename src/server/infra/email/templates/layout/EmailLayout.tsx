@@ -2,7 +2,7 @@ import { TZDate } from '@date-fns/tz'
 import { getYear } from 'date-fns'
 
 import { Body, Container, Html, Img, Link, Section, Text } from '@/server/infra/email/render'
-import { requireBlogSettingsSection } from '@/shared/config/blog'
+import { requireBlogSettingsSection } from '@/shared/config/getters'
 
 interface Props {
   receiver: string

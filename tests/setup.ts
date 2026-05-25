@@ -4,7 +4,7 @@
 
 import { afterAll, afterEach } from 'vitest'
 
-import { BLOG_SETTINGS_SNAPSHOT_SLOT } from '@/shared/config/blog'
+import { BLOG_SETTINGS_SNAPSHOT_SLOT } from '@/shared/config/snapshot'
 
 import { TEST_BLOG_SETTINGS_BUNDLE } from './_helpers/blog-settings'
 

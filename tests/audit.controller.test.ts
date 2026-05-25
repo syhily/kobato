@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 
-vi.mock('@/shared/config/blog', () => ({
+vi.mock('@/shared/config/getters', () => ({
   getBlogSettingsBundleSync: vi.fn(() => ({
     limits: { auditLogDbRetentionDays: 30, auditLogArchiveRetentionDays: 180 },
   })),

@@ -1,6 +1,8 @@
 import { z } from 'zod'
 
-import type { BlogSettingsBundle } from '@/shared/config/blog'
+import type { UpdateSettingsInput } from '@/shared/config/contracts'
+import type { SettingsSection } from '@/shared/config/sections'
+import type { BlogSettingsBundle } from '@/shared/config/types'
 
 import { analyticsSchema } from '@/server/domains/settings/schemas/analytics'
 import { assetsSchema } from '@/server/domains/settings/schemas/assets'
@@ -20,12 +22,8 @@ import { seoSchema } from '@/server/domains/settings/schemas/seo'
 import { sidebarSchema } from '@/server/domains/settings/schemas/sidebar'
 import { socialsSchema } from '@/server/domains/settings/schemas/socials'
 import { DomainError } from '@/server/infra/http/errors'
-import {
-  rateLimitDefaults,
-  SETTINGS_SECTIONS,
-  type SettingsSection,
-  type UpdateSettingsInput,
-} from '@/shared/config/settings'
+import { rateLimitDefaults } from '@/shared/config/defaults'
+import { SETTINGS_SECTIONS } from '@/shared/config/sections'
 
 export { SETTINGS_SECTIONS }
 export type { SettingsSection, UpdateSettingsInput }

@@ -8,7 +8,7 @@ import { adminProc } from '@/server/http/orpc-base'
 import { db } from '@/server/infra/db/pool'
 import { auditLog } from '@/server/infra/db/schema/config'
 import { user } from '@/server/infra/db/schema/user'
-import { getBlogSettingsBundleSync } from '@/shared/config/blog'
+import { getBlogSettingsBundleSync } from '@/shared/config/getters'
 import { auditLogActorsOutput, auditLogItemDto, auditLogListInput, auditLogListOutput } from '@/shared/contracts/audit'
 import { idFromString } from '@/shared/utils/id'
 

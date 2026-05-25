@@ -2,7 +2,7 @@ import { computeNextRun } from '@/server/domains/backup/scheduler-utils'
 import { checkPgToolsAvailable, cleanupOldBackups, createBackup } from '@/server/domains/backup/service'
 import { getLogger } from '@/server/infra/logger'
 import { registerShutdownHook } from '@/server/infra/shutdown'
-import { getBlogSettingsBundleSync } from '@/shared/config/blog'
+import { getBlogSettingsBundleSync } from '@/shared/config/getters'
 
 const log = getLogger('backup.scheduler')
 

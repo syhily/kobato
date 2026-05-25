@@ -4,7 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { type DefaultValues, type FieldValues, type Resolver, type UseFormReturn, useForm } from 'react-hook-form'
 
-import type { SettingsSection } from '@/shared/config/settings'
+import type { SettingsSection } from '@/shared/config/sections'
 
 import { getLogger } from '@/client/lib/logger'
 import { useSettingsMutation } from '@/ui/admin/settings/useSettingsMutation'

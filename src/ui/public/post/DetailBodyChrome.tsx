@@ -2,7 +2,7 @@ import { PencilIcon } from 'lucide-react'
 import { type ReactNode, Suspense } from 'react'
 import { Await, Link } from 'react-router'
 
-import type { SiteIdentitySettings } from '@/shared/config/blog'
+import type { SiteIdentitySettings } from '@/shared/config/types'
 import type { CommentFormUser, MarkdownHeading } from '@/shared/types/catalog'
 import type { DetailPageComments } from '@/shared/types/comments'
 

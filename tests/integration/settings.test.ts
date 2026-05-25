@@ -13,7 +13,7 @@ beforeEach(async () => {
   await redisInstance().flushdb()
   // Evict the in-process settings snapshot so tests don't reuse a
   // stale hydration promise from a previous worker.
-  const { BLOG_SETTINGS_SNAPSHOT_SLOT } = await import('@/shared/config/blog')
+  const { BLOG_SETTINGS_SNAPSHOT_SLOT } = await import('@/shared/config/snapshot')
   BLOG_SETTINGS_SNAPSHOT_SLOT.writeHydration(undefined)
   BLOG_SETTINGS_SNAPSHOT_SLOT.write(null)
   // Seed the three rows that `hydrateBlogSettings` treats as the

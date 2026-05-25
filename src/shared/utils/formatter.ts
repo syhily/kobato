@@ -9,7 +9,7 @@
 //
 // ```ts
 // // SSR / server callers
-// import { requireBlogSettingsSection } from '@/shared/config/blog'
+// import { requireBlogSettingsSection } from '@/shared/config/getters'
 // formatLocalDate(post.date, undefined, requireBlogSettingsSection('siteIdentity'))
 // // UI components
 // const siteIdentity = useSiteIdentity()

@@ -1,5 +1,5 @@
 import type { SettingsSection } from '@/server/domains/settings/sections'
-import type { BlogSettingsBundle } from '@/shared/config/blog'
+import type { BlogSettingsBundle } from '@/shared/config/types'
 
 export interface SecretFieldConfig {
   section: SettingsSection

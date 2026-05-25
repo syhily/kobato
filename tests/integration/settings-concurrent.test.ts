@@ -11,7 +11,7 @@ beforeEach(async () => {
   await clearAllTables(db)
   const { redisInstance } = await import('@/server/infra/redis/storage')
   await redisInstance().flushdb()
-  const { BLOG_SETTINGS_SNAPSHOT_SLOT } = await import('@/shared/config/blog')
+  const { BLOG_SETTINGS_SNAPSHOT_SLOT } = await import('@/shared/config/snapshot')
   BLOG_SETTINGS_SNAPSHOT_SLOT.writeHydration(undefined)
   BLOG_SETTINGS_SNAPSHOT_SLOT.write(null)
 

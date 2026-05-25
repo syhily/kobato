@@ -1,4 +1,5 @@
-import type { BlogSettingsBundle } from '@/shared/config/blog'
+import type { BundleKey } from '@/shared/config/sections'
+import type { BlogSettingsBundle } from '@/shared/config/types'
 
 import { SECRET_FIELDS } from '@/server/domains/settings/secrets'
 import {
@@ -14,8 +15,9 @@ import { findSettingsByScopePrefix, upsertSetting } from '@/server/infra/db/oper
 import { isVitest } from '@/server/infra/env'
 import { getLogger } from '@/server/infra/logger'
 import { storage } from '@/server/infra/redis/storage'
-import { BLOG_SETTINGS_SNAPSHOT_SLOT, getBlogSettingsBundleSync, requireBlogSettingsBundle } from '@/shared/config/blog'
-import { BUNDLE_KEYS, type BundleKey } from '@/shared/config/settings'
+import { getBlogSettingsBundleSync, requireBlogSettingsBundle } from '@/shared/config/getters'
+import { BUNDLE_KEYS } from '@/shared/config/sections'
+import { BLOG_SETTINGS_SNAPSHOT_SLOT } from '@/shared/config/snapshot'
 import { deepFreeze } from '@/shared/utils/tools'
 
 const log = getLogger('settings.snapshot')

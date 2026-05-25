@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 
-import type { NavigationItem } from '@/shared/config/blog'
+import type { NavigationItem } from '@/shared/config/types'
 import type { HeaderCurrentUser } from '@/ui/public/chrome/Header'
 
 import { useNavigationSettings } from '@/shared/lib/blog-config-context'

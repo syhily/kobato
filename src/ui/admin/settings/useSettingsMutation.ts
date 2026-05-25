@@ -2,7 +2,7 @@ import { useCallback, useState } from 'react'
 import { useRevalidator } from 'react-router'
 import { toast } from 'sonner'
 
-import type { SettingsSection } from '@/shared/config/settings'
+import type { SettingsSection } from '@/shared/config/sections'
 
 import { orpc } from '@/client/api/client'
 import { useMutation } from '@/client/api/query'

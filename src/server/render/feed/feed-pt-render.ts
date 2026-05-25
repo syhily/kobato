@@ -18,7 +18,7 @@ import type {
 import { safeBuildMusicPublicUrl } from '@/server/domains/music/storage'
 import { findMusicByPlayerIds } from '@/server/infra/db/operations/music'
 import { deriveSlug } from '@/server/infra/slug'
-import { requireBlogSettingsSection } from '@/shared/config/blog'
+import { requireBlogSettingsSection } from '@/shared/config/getters'
 import { collectHeadingSlotsInPortableTextRenderOrder } from '@/shared/pt/utils'
 import { resolveFootnotesSectionTitle } from '@/shared/utils/footnotes-section-title'
 

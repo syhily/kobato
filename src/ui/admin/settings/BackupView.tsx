@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
 
-import type { BackupSettings } from '@/shared/config/blog'
+import type { BackupSettings } from '@/shared/config/types'
 import type { BackupFileDto } from '@/shared/types/backup'
 
 import { orpc } from '@/client/api/client'

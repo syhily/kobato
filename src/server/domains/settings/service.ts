@@ -2,7 +2,7 @@ import { access } from 'node:fs/promises'
 import path from 'node:path'
 
 import type { FontsInput } from '@/server/domains/settings/schemas/fonts'
-import type { BlogSettingsBundle } from '@/shared/config/blog'
+import type { BlogSettingsBundle } from '@/shared/config/types'
 
 import { rescheduleArchive } from '@/server/domains/audit/scheduler'
 import { rescheduleBackup } from '@/server/domains/backup/scheduler'
@@ -72,6 +72,7 @@ export async function updateBlogSettingsSection<S extends SettingsSection>(
   }
 
   const nextRow = await applySectionPatch(section, parsed.data)
+
   encryptSecretsInPlace(section, nextRow)
   await upsertSetting(nextRow, updatedBy, meta.scope)
 
@@ -90,13 +91,38 @@ export async function updateBlogSettingsSection<S extends SettingsSection>(
 
 // Build the row's `data` payload for the given section. Most sections
 // just return the validated payload verbatim; `mail`, `assets`, and
-// `search` fold in the existing secret when the editor omits it.
+// `search` fold in the existing secret when the editor omits it. The
+// `assets` section additionally preserves `branding` (managed by the
+// /admin/branding/upload endpoints, never sent through this PATCH).
 async function applySectionPatch(section: SettingsSection, validated: unknown): Promise<Record<string, unknown>> {
+  let row = validated as Record<string, unknown>
   const secretConfig = SECRET_FIELDS.find((f) => f.section === section)
-  if (!secretConfig) {
-    return validated as Record<string, unknown>
+  if (secretConfig) {
+    row = await preserveSecretOnPatch(row, section, secretConfig.path, secretConfig.field)
   }
-  return preserveSecretOnPatch(validated, section, secretConfig.path, secretConfig.field)
+  if (section === 'assets') {
+    row = await preserveBrandingOnPatch(row)
+  }
+  return row
+}
+
+// Merge the persisted `branding` map into the assets row before upsert.
+// The admin form only sends `robotsTxt` through the settings PATCH —
+// asset uploads (SVG/binary) go through `/admin/branding/upload` and
+// write their ObjectRefs directly. We have to splice the persisted
+// ObjectRefs back in, then layer the patch on top, so neither side
+// wipes the other.
+async function preserveBrandingOnPatch(row: Record<string, unknown>): Promise<Record<string, unknown>> {
+  const existingRow = await findSettingByScope(SECTION_REGISTRY.assets.scope)
+  const existingBranding = (existingRow?.data as Record<string, unknown> | undefined)?.branding as
+    | Record<string, unknown>
+    | undefined
+  const incomingBranding = row.branding as Record<string, unknown> | undefined
+  if (existingBranding === undefined && incomingBranding === undefined) {
+    return row
+  }
+  const merged: Record<string, unknown> = { ...existingBranding, ...incomingBranding }
+  return { ...row, branding: merged }
 }
 
 // When the editor omits a secret field (sends `undefined`), fold the

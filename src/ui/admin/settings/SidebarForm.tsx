@@ -20,7 +20,7 @@ import { Controller, useFieldArray } from 'react-hook-form'
 
 const VERTICAL_AXIS_ONLY = [restrictToVerticalAxis]
 
-import type { SidebarSettings, SidebarWidget, SidebarWidgetType } from '@/shared/config/blog'
+import type { SidebarSettings, SidebarWidget, SidebarWidgetType } from '@/shared/config/types'
 
 import { SettingsRow } from '@/ui/admin/settings/SettingsSection'
 import { SettingGroup } from '@/ui/admin/settings/shell/SettingGroup'

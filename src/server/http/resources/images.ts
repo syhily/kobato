@@ -19,7 +19,7 @@ import {
 } from '@/server/render/avatar/fetch'
 import { serveCalendar } from '@/server/render/calendar/serve'
 import { drawOpenGraph } from '@/server/render/og/render'
-import { getCacheSettings, requireBlogSettingsSection } from '@/shared/config/blog'
+import { getCacheSettings, requireBlogSettingsSection } from '@/shared/config/getters'
 import { getClientAddress } from '@/shared/utils/request'
 import { joinUrl } from '@/shared/utils/urls'
 

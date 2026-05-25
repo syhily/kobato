@@ -3,7 +3,7 @@ import { createHash } from 'node:crypto'
 import { getLogger } from '@/server/infra/logger'
 import { createInflight } from '@/server/infra/redis/inflight'
 import { storage } from '@/server/infra/redis/storage'
-import { getBlogSettingsBundleSync } from '@/shared/config/blog'
+import { getBlogSettingsBundleSync } from '@/shared/config/getters'
 import { CACHE_BUCKET_FALLBACKS } from '@/shared/types/cache'
 
 interface OpenAiConfig {

@@ -3,7 +3,7 @@ import { useMemo } from 'react'
 import { Controller, useFieldArray } from 'react-hook-form'
 import { z } from 'zod'
 
-import type { SiteIdentitySettings } from '@/shared/config/blog'
+import type { SiteIdentitySettings } from '@/shared/config/types'
 
 import { SettingsRow } from '@/ui/admin/settings/SettingsSection'
 import { SettingGroup } from '@/ui/admin/settings/shell/SettingGroup'

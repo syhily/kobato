@@ -1,7 +1,7 @@
 import { PlusIcon, Trash2Icon } from 'lucide-react'
 import { useFieldArray } from 'react-hook-form'
 
-import type { FontsSettings } from '@/shared/config/blog'
+import type { FontsSettings } from '@/shared/config/types'
 
 import { SettingsRow } from '@/ui/admin/settings/SettingsSection'
 import { SettingGroup } from '@/ui/admin/settings/shell/SettingGroup'

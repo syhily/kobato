@@ -12,7 +12,7 @@ import {
   uploadImage,
 } from '@/server/domains/images/service'
 import { authorProc } from '@/server/http/orpc-base'
-import { requireBlogSettingsSection } from '@/shared/config/blog'
+import { requireBlogSettingsSection } from '@/shared/config/getters'
 import { adminImageDto, listImagesOutputDto } from '@/shared/contracts/images'
 import { idFromString } from '@/shared/utils/id'
 

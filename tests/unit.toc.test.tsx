@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest'
 import type { MarkdownHeading } from '@/shared/types/catalog'
 
 import { setBlogSettingsBundleForTests } from '@/server/domains/settings/snapshot'
-import { getBlogSettingsBundleSync } from '@/shared/config/blog'
+import { getBlogSettingsBundleSync } from '@/shared/config/getters'
 import { TableOfContents } from '@/ui/public/post/TableOfContents'
 
 const headings: MarkdownHeading[] = [

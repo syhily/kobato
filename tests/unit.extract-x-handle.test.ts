@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { extractXHandle } from '@/shared/config/blog'
+import { extractXHandle } from '@/shared/config/utils'
 
 describe('extractXHandle', () => {
   it('returns undefined when socials array is empty', () => {

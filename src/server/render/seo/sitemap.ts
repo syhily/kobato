@@ -1,6 +1,6 @@
 import { listAllPages } from '@/server/domains/pages/repo'
 import { listAllPosts } from '@/server/domains/posts/repos/public-query'
-import { requireBlogSettingsSection } from '@/shared/config/blog'
+import { requireBlogSettingsSection } from '@/shared/config/getters'
 import { joinUrl } from '@/shared/utils/urls'
 
 export async function buildSitemapXml(_request: Request): Promise<string> {

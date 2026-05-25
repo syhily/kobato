@@ -53,7 +53,7 @@ export function MobileNavBar() {
           <NotebookPenIcon className="size-5" strokeWidth={1.5} />
         </MobileNavButton>
 
-        <MobileNavButton to="/admin/users" activeMatch="subpath" label="用户">
+        <MobileNavButton to="/admin/security/users" activeMatch="subpath" label="用户">
           <UsersIcon className="size-5" strokeWidth={1.5} />
         </MobileNavButton>
 

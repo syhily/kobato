@@ -1,6 +1,6 @@
 import { Controller, useWatch } from 'react-hook-form'
 
-import type { BackupSettings } from '@/shared/config/blog'
+import type { BackupSettings } from '@/shared/config/types'
 
 import { SettingsRow } from '@/ui/admin/settings/SettingsSection'
 import { SettingGroup } from '@/ui/admin/settings/shell/SettingGroup'
