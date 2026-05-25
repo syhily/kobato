@@ -1,6 +1,6 @@
 import { getPublicBaseUrl } from '@/server/domains/images/storage'
 import { ActionFailure } from '@/server/infra/http/errors'
-import { deleteImageObject, getImageStorageContext, putImageObject } from '@/server/infra/storage/s3-client'
+import { deleteImageObject, getS3StorageContext, putImageObject } from '@/server/infra/storage/s3-client'
 
 // Music files share the same S3 bucket and the same `assets.storage`
 // toggle as the image library — see AGENTS.md "Content" section. The
@@ -77,5 +77,5 @@ export function safeBuildMusicPublicUrl(storagePath: string): string | null {
  * audio bytes from the upstream provider.
  */
 export async function ensureMusicStorageEnabled(): Promise<void> {
-  await getImageStorageContext()
+  await getS3StorageContext()
 }

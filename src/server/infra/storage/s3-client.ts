@@ -1,4 +1,4 @@
-import type { ServiceInputTypes, ServiceOutputTypes } from '@aws-sdk/client-s3'
+import type { ServiceInputTypes, ServiceOutputTypes, _Object } from '@aws-sdk/client-s3'
 import type { FinalizeRequestMiddleware, HandlerExecutionContext } from '@smithy/types'
 
 import { createHash } from 'node:crypto'
@@ -43,7 +43,7 @@ interface CachedClient {
 }
 
 const globalForS3 = globalThis as typeof globalThis & {
-  imageS3CachedClient: CachedClient | undefined
+  s3CachedClient: CachedClient | undefined
 }
 
 function fingerprintFor(storage: AssetsSettings['storage']): string {
@@ -59,7 +59,7 @@ function fingerprintFor(storage: AssetsSettings['storage']): string {
 
 // --- Public types ---
 
-export interface ImageStorageContext {
+export interface S3StorageContext {
   client: S3ClientInstance
   bucket: string
 }
@@ -86,7 +86,7 @@ export interface S3ObjectMeta {
  * music, backup) are the canonical entry points — callers should not
  * reach this helper directly.
  */
-export async function getImageStorageContext(options?: { requireEnabled?: boolean }): Promise<ImageStorageContext> {
+export async function getS3StorageContext(options?: { requireEnabled?: boolean }): Promise<S3StorageContext> {
   const settings = requireBlogSettingsSection('assets')
   const storage = settings.storage
   if (options?.requireEnabled !== false && !storage.enabled) {
@@ -97,7 +97,7 @@ export async function getImageStorageContext(options?: { requireEnabled?: boolea
   }
 
   const fingerprint = fingerprintFor(storage)
-  const cached = globalForS3.imageS3CachedClient
+  const cached = globalForS3.s3CachedClient
   if (cached !== undefined && cached.fingerprint === fingerprint) {
     return { client: cached.client, bucket: storage.bucket }
   }
@@ -128,7 +128,7 @@ export async function getImageStorageContext(options?: { requireEnabled?: boolea
   }
   const client = new sdk.S3Client(config)
   installDeleteObjectsMd5Fallback(sdk, client)
-  globalForS3.imageS3CachedClient = { fingerprint, client }
+  globalForS3.s3CachedClient = { fingerprint, client }
   return { client, bucket: storage.bucket }
 }
 
@@ -171,7 +171,7 @@ function installDeleteObjectsMd5Fallback(_sdk: AwsSdk, client: S3ClientInstance)
 
 export async function putImageObject(input: PutImageObjectInput): Promise<void> {
   const sdk = await getAwsSdk()
-  const { client, bucket } = await getImageStorageContext()
+  const { client, bucket } = await getS3StorageContext()
   await client.send(
     new sdk.PutObjectCommand({
       Bucket: bucket,
@@ -185,13 +185,13 @@ export async function putImageObject(input: PutImageObjectInput): Promise<void> 
 
 export async function deleteImageObject(key: string): Promise<void> {
   const sdk = await getAwsSdk()
-  const { client, bucket } = await getImageStorageContext()
+  const { client, bucket } = await getS3StorageContext()
   await client.send(new sdk.DeleteObjectCommand({ Bucket: bucket, Key: key }))
 }
 
 export async function headImageObject(key: string): Promise<boolean> {
   const sdk = await getAwsSdk()
-  const { client, bucket } = await getImageStorageContext()
+  const { client, bucket } = await getS3StorageContext()
   try {
     await client.send(new sdk.HeadObjectCommand({ Bucket: bucket, Key: key }))
     return true
@@ -205,7 +205,7 @@ export async function headImageObject(key: string): Promise<boolean> {
 
 export async function getImageObject(key: string): Promise<Buffer> {
   const sdk = await getAwsSdk()
-  const { client, bucket } = await getImageStorageContext({ requireEnabled: false })
+  const { client, bucket } = await getS3StorageContext({ requireEnabled: false })
   const response = await client.send(new sdk.GetObjectCommand({ Bucket: bucket, Key: key }))
   if (response.Body === undefined) {
     throw new ActionFailure(404, 'S3 对象不存在或内容为空')
@@ -220,7 +220,7 @@ export async function getImageObject(key: string): Promise<Buffer> {
   })
 }
 
-function parseS3Contents(contents: import('@aws-sdk/client-s3')._Object[] | undefined): S3ObjectMeta[] {
+function parseS3Contents(contents: _Object[] | undefined): S3ObjectMeta[] {
   const objects: S3ObjectMeta[] = []
   for (const item of contents ?? []) {
     if (item.Key && item.LastModified && item.Size !== undefined) {
@@ -232,7 +232,7 @@ function parseS3Contents(contents: import('@aws-sdk/client-s3')._Object[] | unde
 
 export async function listS3Objects(prefix: string): Promise<S3ObjectMeta[]> {
   const sdk = await getAwsSdk()
-  const { client, bucket } = await getImageStorageContext({ requireEnabled: false })
+  const { client, bucket } = await getS3StorageContext({ requireEnabled: false })
   const objects: S3ObjectMeta[] = []
   let continuationToken: string | undefined
   do {
@@ -260,7 +260,7 @@ export async function listS3ObjectsPaginated(
   continuationToken?: string,
 ): Promise<ListS3ObjectsPaginatedResult> {
   const sdk = await getAwsSdk()
-  const { client, bucket } = await getImageStorageContext({ requireEnabled: false })
+  const { client, bucket } = await getS3StorageContext({ requireEnabled: false })
   const response = await client.send(
     new sdk.ListObjectsV2Command({
       Bucket: bucket,
@@ -274,7 +274,7 @@ export async function listS3ObjectsPaginated(
 
 export async function getS3ObjectBuffer(key: string): Promise<Buffer> {
   const sdk = await getAwsSdk()
-  const { client, bucket } = await getImageStorageContext({ requireEnabled: false })
+  const { client, bucket } = await getS3StorageContext({ requireEnabled: false })
   const response = await client.send(new sdk.GetObjectCommand({ Bucket: bucket, Key: key }))
   if (response.Body === undefined) {
     throw new ActionFailure(404, 'S3 对象不存在或内容为空')
@@ -290,7 +290,7 @@ export async function getS3ObjectBuffer(key: string): Promise<Buffer> {
 
 export async function putS3Object(key: string, body: Buffer | Readable, contentType?: string): Promise<void> {
   const sdk = await getAwsSdk()
-  const { client, bucket } = await getImageStorageContext()
+  const { client, bucket } = await getS3StorageContext()
   await client.send(
     new sdk.PutObjectCommand({
       Bucket: bucket,
@@ -304,7 +304,7 @@ export async function putS3Object(key: string, body: Buffer | Readable, contentT
 
 export async function deleteS3Object(key: string): Promise<void> {
   const sdk = await getAwsSdk()
-  const { client, bucket } = await getImageStorageContext({ requireEnabled: false })
+  const { client, bucket } = await getS3StorageContext({ requireEnabled: false })
   await client.send(new sdk.DeleteObjectCommand({ Bucket: bucket, Key: key }))
 }
 
@@ -313,7 +313,7 @@ export async function deleteS3Objects(keys: string[]): Promise<void> {
     return
   }
   const sdk = await getAwsSdk()
-  const { client, bucket } = await getImageStorageContext()
+  const { client, bucket } = await getS3StorageContext()
   await client.send(
     new sdk.DeleteObjectsCommand({
       Bucket: bucket,
