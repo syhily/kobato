@@ -17,7 +17,7 @@ const ASSET_CACHE_CONTROL = 'public, max-age=3600, must-revalidate'
 // reply 304 when the bytes match — no body, no S3 fetch on the hot path.
 for (const path of Object.keys(ASSET_ROUTES)) {
   assetsRouter.get(path, async (c) => {
-    const resolved = await resolveSiteAsset(path)
+    const resolved = await resolveSiteAsset(path, { original: c.req.query('original') !== undefined })
     if (!resolved) {
       return c.body(null, 404)
     }

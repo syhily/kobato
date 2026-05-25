@@ -6,7 +6,7 @@ import { __TOKENS_FOR_TESTS } from '@/ui/lib/cn'
 // Why this contract test exists.
 //
 // Custom design tokens live in @theme inline blocks in
-// src/assets/styles/tailwind.css. tailwind-merge does not parse those
+// src/styles/tailwind.css. tailwind-merge does not parse those
 // blocks, so src/ui/lib/cn.ts hand-mirrors the token names into
 // extendTailwindMerge under the matching theme key. A forgotten
 // registration silently reintroduces the original bug -- two tokens
@@ -88,7 +88,7 @@ function parseThemeBlocks(css: string): ParsedThemeBlocks {
 // registers it, omits it, or moves it below the line consciously.
 const BELOW_THE_LINE_NAMESPACES = new Set<string>(['breakpoint', 'container', 'width', 'size'])
 
-const CSS_PATH = 'src/assets/styles/tailwind.css'
+const CSS_PATH = 'src/styles/tailwind.css'
 
 describe('contract: @theme tokens are mirrored into tailwind-merge', () => {
   const css = readFileSync(CSS_PATH, 'utf8')
@@ -138,7 +138,7 @@ describe('contract: @theme tokens are mirrored into tailwind-merge', () => {
     expect(
       drift,
       [
-        `src/ui/lib/cn.ts disagrees with src/assets/styles/tailwind.css.`,
+        `src/ui/lib/cn.ts disagrees with src/styles/tailwind.css.`,
         `For each namespace below, the entries under "missingFromCn" exist in`,
         `the CSS but were not registered with extendTailwindMerge -- a future`,
         `cn() call composing two tokens of the same namespace prefix may`,

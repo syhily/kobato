@@ -119,7 +119,7 @@ describe('contract: module and bundle boundaries', () => {
     // needs to sit above the rest of the page). Anything else
     // un-layered would risk shadowing Tailwind utilities and
     // resurrect the `!important` fight.
-    const globals = readFileSync('src/assets/styles/public.css', 'utf8')
+    const globals = readFileSync('src/styles/public.css', 'utf8')
     expect(globals).toMatch(/^\s*@layer\s+base\s*,\s*components\s*,\s*utilities\s*;/m)
     // The Tailwind import must still be present — it's the source
     // of `@layer utilities` and Preflight `@layer base`.
@@ -127,7 +127,7 @@ describe('contract: module and bundle boundaries', () => {
   })
 
   it('keeps optional vendor CSS out of the root stylesheet', () => {
-    const source = readFileSync('src/assets/styles/public.css', 'utf8')
+    const source = readFileSync('src/styles/public.css', 'utf8')
 
     expect(source).not.toContain('bootstrap/dist/css/bootstrap.css')
     expect(source).not.toContain('bootstrap/dist/css/bootstrap-reboot.css')
@@ -146,7 +146,7 @@ describe('contract: module and bundle boundaries', () => {
     // Bootstrap utility ladder (`d-flex`, `me-2`, `text-center`,
     // `sticky-top`, …) and its `_legacy-utilities.css` shim must
     // also stay un-imported.
-    const globals = readFileSync('src/assets/styles/public.css', 'utf8')
+    const globals = readFileSync('src/styles/public.css', 'utf8')
 
     // Match real CSS/JS import statements only — comments mentioning
     // `bootstrap/dist/css/bootstrap-grid.css` (the historical retired
@@ -171,10 +171,10 @@ describe('contract: module and bundle boundaries', () => {
     // contract guards every step of that retirement so a future
     // refactor can't silently re-introduce the legacy partials.
     expect(existsSync('src/ui/primitives/buttons.css')).toBe(false)
-    expect(existsSync('src/assets/styles/bootstrap-compat.css')).toBe(false)
-    expect(existsSync('src/assets/styles/components.css')).toBe(false)
+    expect(existsSync('src/styles/bootstrap-compat.css')).toBe(false)
+    expect(existsSync('src/styles/components.css')).toBe(false)
 
-    const globals = readFileSync('src/assets/styles/public.css', 'utf8')
+    const globals = readFileSync('src/styles/public.css', 'utf8')
     expect(globals).not.toMatch(/@import\s+['"][^'"]*buttons\.css['"]/)
     expect(globals).not.toMatch(/@import\s+['"][^'"]*bootstrap-compat\.css['"]/)
     expect(globals).not.toMatch(/@import\s+['"][^'"]*components\.css['"]/)
@@ -215,7 +215,7 @@ describe('contract: module and bundle boundaries', () => {
 
     // Source-of-truth for the `28%` icon-inset magic number — every
     // icon-button consumer reads it through `m-icon-inset`.
-    const tailwindCss = readFileSync('src/assets/styles/tailwind.css', 'utf8')
+    const tailwindCss = readFileSync('src/styles/tailwind.css', 'utf8')
     expect(tailwindCss).toMatch(/--spacing-icon-inset:\s*28%;/)
   })
 
@@ -237,7 +237,7 @@ describe('contract: module and bundle boundaries', () => {
     expect(existsSync('src/ui/primitives/cards.css')).toBe(false)
     expect(existsSync('src/ui/primitives/lists.css')).toBe(false)
 
-    const globals = readFileSync('src/assets/styles/public.css', 'utf8')
+    const globals = readFileSync('src/styles/public.css', 'utf8')
     expect(globals).not.toMatch(/@import\s+['"][^'"]*cards\.css['"]/)
     expect(globals).not.toMatch(/@import\s+['"][^'"]*lists\.css['"]/)
 
@@ -245,7 +245,7 @@ describe('contract: module and bundle boundaries', () => {
     // (theme alias) backed by `--ink-5` (`#eaecf3`) in the
     // semantic `:root` block. Both must stay registered because
     // PostSquare reads the alias as `text-ink-5`.
-    const tailwindCss = readFileSync('src/assets/styles/tailwind.css', 'utf8')
+    const tailwindCss = readFileSync('src/styles/tailwind.css', 'utf8')
     expect(tailwindCss).toMatch(/--ink-5:\s*#eaecf3;/)
     expect(tailwindCss).toMatch(/--color-ink-5:\s*var\(--ink-5\);/)
 
@@ -351,13 +351,13 @@ describe('contract: module and bundle boundaries', () => {
     // future cleanup can't drop it without replacing the consumer.
     expect(existsSync('src/ui/primitives/navigation.css')).toBe(false)
 
-    const globals = readFileSync('src/assets/styles/public.css', 'utf8')
+    const globals = readFileSync('src/styles/public.css', 'utf8')
     expect(globals).not.toMatch(/@import\s+['"][^'"]*navigation\.css['"]/)
 
     // The drawer-stacking token is the public chrome's only
     // first-class consumer; pin it so the consumer (Header.tsx
     // `asideShellClass`) keeps resolving.
-    const tokens = readFileSync('src/assets/styles/tailwind.css', 'utf8')
+    const tokens = readFileSync('src/styles/tailwind.css', 'utf8')
     expect(tokens).toMatch(/--z-aside-drawer:\s*1020;/)
 
     // Scan every public source file for residual className tokens
@@ -424,7 +424,7 @@ describe('contract: module and bundle boundaries', () => {
     // contract makes the regression visible at PR time instead.
     expect(existsSync('src/ui/primitives/popup.css')).toBe(false)
 
-    const globals = readFileSync('src/assets/styles/public.css', 'utf8')
+    const globals = readFileSync('src/styles/public.css', 'utf8')
     expect(globals).not.toMatch(/popup\.css/)
 
     const offenders: string[] = []
@@ -455,7 +455,7 @@ describe('contract: module and bundle boundaries', () => {
     // contract makes the regression visible at PR time instead.
     expect(existsSync('src/ui/primitives/media.css')).toBe(false)
 
-    const globals = readFileSync('src/assets/styles/public.css', 'utf8')
+    const globals = readFileSync('src/styles/public.css', 'utf8')
     expect(globals).not.toMatch(/@import\s+['"][^'"]*media\.css['"]/)
 
     const offenders: string[] = []
@@ -495,7 +495,7 @@ describe('contract: module and bundle boundaries', () => {
     // contract makes the regression visible at PR time instead.
     expect(existsSync('src/ui/primitives/forms.css')).toBe(false)
 
-    const globals = readFileSync('src/assets/styles/public.css', 'utf8')
+    const globals = readFileSync('src/styles/public.css', 'utf8')
     expect(globals).not.toMatch(/@import\s+['"][^'"]*forms\.css['"]/)
 
     const offenders: string[] = []
@@ -550,7 +550,7 @@ describe('contract: module and bundle boundaries', () => {
     // visible at PR time instead.
     expect(existsSync('src/ui/sidebar/sidebar.css')).toBe(false)
 
-    const globals = readFileSync('src/assets/styles/public.css', 'utf8')
+    const globals = readFileSync('src/styles/public.css', 'utf8')
     expect(globals).not.toMatch(/@import\s+['"][^'"]*sidebar\.css['"]/)
 
     // The previously-pinned `:before` exceptions are now banned
@@ -833,7 +833,7 @@ describe('contract: module and bundle boundaries', () => {
   })
 
   it('keeps fonts off the repo and out of every CSS bundle (everything flows through blog.fonts admin settings)', () => {
-    const globals = readFileSync('src/assets/styles/public.css', 'utf8')
+    const globals = readFileSync('src/styles/public.css', 'utf8')
     const root = readFileSync('src/root.tsx', 'utf8')
 
     // The repo must not ship any TTF/WOFF2 binary or pre-baked font CSS.
@@ -878,7 +878,7 @@ describe('contract: module and bundle boundaries', () => {
     // bans any user-authored partial from re-overriding `sr-only`
     // with that anti-pattern, and pins that the retired class is not
     // resurrected in `public.css`.
-    const source = readFileSync('src/assets/styles/public.css', 'utf8')
+    const source = readFileSync('src/styles/public.css', 'utf8')
 
     expect(source).not.toMatch(/\.screen-reader-text\b/)
     expect(source).not.toMatch(/\.sr-only\s*\{[^}]*display:\s*none/s)
@@ -977,8 +977,8 @@ describe('contract: module and bundle boundaries', () => {
     // `tailwind.css`, so the brand typography utility owns the whole
     // post-content surface in one place. The MDX `<Solution>` clip-on-hidden
     // rule must never come back in either file.
-    const publicCss = readFileSync('src/assets/styles/public.css', 'utf8')
-    const tailwindCss = readFileSync('src/assets/styles/tailwind.css', 'utf8')
+    const publicCss = readFileSync('src/styles/public.css', 'utf8')
+    const tailwindCss = readFileSync('src/styles/tailwind.css', 'utf8')
 
     expect(publicCss).not.toMatch(/\.post-content \.solution\s*{[^}]*overflow:\s*hidden/s)
     expect(tailwindCss).not.toMatch(/\.post-content \.solution\s*{[^}]*overflow:\s*hidden/s)
@@ -996,8 +996,8 @@ describe('contract: module and bundle boundaries', () => {
     // folded back into `public.css`, so the only post-content CSS
     // partial is the inline block right after `@utility prose-blog`.
     // This contract makes both invariants visible at PR time.
-    const publicCss = readFileSync('src/assets/styles/public.css', 'utf8')
-    const tailwindCss = readFileSync('src/assets/styles/tailwind.css', 'utf8')
+    const publicCss = readFileSync('src/styles/public.css', 'utf8')
+    const tailwindCss = readFileSync('src/styles/tailwind.css', 'utf8')
     const commentItem = readFileSync('src/ui/public/comments/comment-item/helpers.ts', 'utf8')
 
     expect(publicCss).not.toMatch(/^\s*\.post-content\s*\{/m)
@@ -1086,7 +1086,7 @@ describe('contract: module and bundle boundaries', () => {
     //      `className` through `cn('comment-content', …)`.
     //   4. The historical `src/ui/lib/wp-compat.ts` registry stays
     //      deleted — no file re-introduces it or re-imports it.
-    const tailwindCss = readFileSync('src/assets/styles/tailwind.css', 'utf8')
+    const tailwindCss = readFileSync('src/styles/tailwind.css', 'utf8')
     expect(tailwindCss).toMatch(/&\.post-content\s*\{/)
     expect(tailwindCss).toMatch(/&\.comment-content\s*\{/)
 
@@ -1238,7 +1238,7 @@ describe('contract: module and bundle boundaries', () => {
     // so the system-preference branch fires the same overrides. Counts
     // here are selector occurrences (across `,`-joined selector lists),
     // not rule blocks.
-    const aplayer = readFileSync('src/assets/styles/aplayer.css', 'utf8').replace(/\/\*[\s\S]*?\*\//g, '')
+    const aplayer = readFileSync('src/styles/aplayer.css', 'utf8').replace(/\/\*[\s\S]*?\*\//g, '')
     const darkRuleCount = (aplayer.match(/\.dark\s+\.aplayer/g) ?? []).length
     const mediaRuleCount = (aplayer.match(/:root:not\(\.light,\s*\.dark\)\s+\.aplayer/g) ?? []).length
 

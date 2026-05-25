@@ -34,7 +34,7 @@ import { extendTailwindMerge } from 'tailwind-merge'
 // different token namespace.
 //
 // Token lists below mirror the @theme inline blocks in
-// src/assets/styles/tailwind.css. Adding a new --text-foo, --color-foo
+// src/styles/tailwind.css. Adding a new --text-foo, --color-foo
 // or --shadow-foo token there must be paired with a matching entry
 // here. The unit test in tests/unit.cn.test.ts pins the contract so
 // the regression is loud at CI time.
@@ -290,7 +290,7 @@ export function cn(...inputs: ClassValue[]): string {
 
 // Test-only surface. The contract test in
 // tests/contract.tailwind-tokens.test.ts diffs these against the
-// @theme inline blocks in src/assets/styles/tailwind.css so a forgotten
+// @theme inline blocks in src/styles/tailwind.css so a forgotten
 // registration is caught at CI time. Do not consume this from app code.
 //
 // REGISTERED_NAMESPACES is the set of @theme namespaces this file

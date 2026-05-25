@@ -65,7 +65,7 @@ Deeper rationale and the rules each layer enforces live in [AGENTS.md](AGENTS.md
 ## Quick start
 
 ```bash
-git clone https://github.com/syhily/kobato.git
+git clone https://github.com/syhily/kobato
 cd kobato
 cp .env.example .env
 # Edit .env — see "Environment variables" below

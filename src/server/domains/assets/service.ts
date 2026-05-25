@@ -64,26 +64,28 @@ export interface ResolvedAsset {
   etag: string
 }
 
-export async function resolveSiteAsset(path: string): Promise<ResolvedAsset | null> {
+export async function resolveSiteAsset(path: string, options?: { original?: boolean }): Promise<ResolvedAsset | null> {
   const route = ASSET_ROUTES[path]
   if (!route) {
     return null
   }
   if (route.kind === 'svg') {
-    return resolveSvg(route.slot)
+    return resolveSvg(route.slot, options?.original)
   }
   return resolveBinary(route.slot)
 }
 
-async function resolveSvg(slot: SvgSlot): Promise<ResolvedAsset> {
-  const ref = getBlogSettingsBundleSync()?.assets?.branding?.[slot]
-  if (ref) {
-    const buffer = await fetchBrandingObject(slot, ref)
-    if (buffer !== null) {
-      return { content: buffer, contentType: ref.contentType, etag: ref.etag }
+async function resolveSvg(slot: SvgSlot, original?: boolean): Promise<ResolvedAsset> {
+  if (!original) {
+    const ref = getBlogSettingsBundleSync()?.assets?.branding?.[slot]
+    if (ref) {
+      const buffer = await fetchBrandingObject(slot, ref)
+      if (buffer !== null) {
+        return { content: buffer, contentType: ref.contentType, etag: ref.etag }
+      }
+      // S3 fetch failed (transient or the bucket has been pruned). Fall
+      // through to the bundled default instead of 500'ing the route.
     }
-    // S3 fetch failed (transient or the bucket has been pruned). Fall
-    // through to the bundled default instead of 500'ing the route.
   }
   return {
     content: Buffer.from(DEFAULT_SVG[slot], 'utf8'),

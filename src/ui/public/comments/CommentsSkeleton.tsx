@@ -6,7 +6,7 @@ import { cn } from '@/ui/lib/cn'
 //
 // Visual contract: three pulsing horizontal bars (full / 60% / full). The
 // shimmer keyframes + `--animate-comments-shimmer` token live in
-// `@/assets/styles/tailwind.css` so Tailwind tree-shakes them when this
+// `@/styles/tailwind.css` so Tailwind tree-shakes them when this
 // component is not on the page; `motion-reduce:animate-none` honours
 // `prefers-reduced-motion: reduce`.
 const SHIMMER_LINE_CLASS =

@@ -30,7 +30,7 @@ import { BaseLayout } from '@/ui/public/chrome/BaseLayout'
 // `button { padding: 0; border: none }` rule from `reset.css` would
 // then beat the layered `px-5` / `border` utilities, stripping
 // all padding from shadcn buttons; see #admin-buttons-no-padding).
-import '@/assets/styles/public.css'
+import '@/styles/public.css'
 
 export interface PublicChromeProps {
   navigation?: NavigationItem[]

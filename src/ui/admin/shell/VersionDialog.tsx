@@ -78,9 +78,13 @@ export function VersionDialog({ open, onOpenChange }: VersionDialogProps) {
           {/* Logo */}
           <div className="flex flex-col items-center gap-3">
             <div className="size-16">
-              <img src="/logo.svg" alt="站点图标" className="h-full w-full rounded-md object-cover dark:hidden" />
               <img
-                src="/logo-dark.svg"
+                src="/logo.svg?original"
+                alt="站点图标"
+                className="h-full w-full rounded-md object-cover dark:hidden"
+              />
+              <img
+                src="/logo-dark.svg?original"
                 alt="站点图标"
                 className="hidden h-full w-full rounded-md object-cover dark:block"
               />

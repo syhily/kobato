@@ -15,15 +15,15 @@ Repository conventions for AI agents and contributors.
 
 Claude loads these additively as it moves through the codebase:
 
-| File                          | Scope                                                              |
-| ----------------------------- | ------------------------------------------------------------------ |
-| `src/routes/AGENTS.md`        | Route modules, loaders, actions, React Router conventions          |
-| `src/server/AGENTS.md`        | Server layers (infra, domains, http, render), API procedures, auth |
-| `src/client/AGENTS.md`        | Browser hooks, oRPC client, React.lazy patterns                    |
-| `src/ui/AGENTS.md`            | Pure-props components, shadcn, PT renderer, component architecture |
-| `src/assets/styles/AGENTS.md` | Tailwind tokens, design-system CSS, `@theme` conventions           |
-| `src/shared/AGENTS.md`        | Isomorphic modules, Zod contracts, DTOs, PT schema                 |
-| `tests/AGENTS.md`             | Test utilities, naming conventions, coverage rules                 |
+| File                   | Scope                                                              |
+| ---------------------- | ------------------------------------------------------------------ |
+| `src/routes/AGENTS.md` | Route modules, loaders, actions, React Router conventions          |
+| `src/server/AGENTS.md` | Server layers (infra, domains, http, render), API procedures, auth |
+| `src/client/AGENTS.md` | Browser hooks, oRPC client, React.lazy patterns                    |
+| `src/ui/AGENTS.md`     | Pure-props components, shadcn, PT renderer, component architecture |
+| `src/styles/AGENTS.md` | Tailwind tokens, design-system CSS, `@theme` conventions           |
+| `src/shared/AGENTS.md` | Isomorphic modules, Zod contracts, DTOs, PT schema                 |
+| `tests/AGENTS.md`      | Test utilities, naming conventions, coverage rules                 |
 
 ## Skills
 

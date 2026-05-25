@@ -6,7 +6,7 @@ import { cva, type VariantProps } from 'class-variance-authority'
 import { cn } from '@/ui/lib/cn'
 
 // Button variants tuned to match the public site's `.btn` rules in
-// `src/assets/styles/_base.css`:
+// `src/styles/_base.css`:
 //
 // 1. Generous horizontal padding (`px-5` ≈ 20px, vs upstream shadcn's
 //    16px) so labels never feel cramped against the button edge. The

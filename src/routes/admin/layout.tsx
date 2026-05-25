@@ -19,7 +19,7 @@ import type { Route } from './+types/layout'
 // `tailwind.css` directly here keeps Bootstrap reboot/grid/utilities and the
 // public-site cascade (`public.css`) out of this route's chunk, matching
 // the project's "admin pages do not load public.css" contract.
-import '@/assets/styles/admin.css'
+import '@/styles/admin.css'
 
 export const handle: RouteHandle = { layout: 'admin' }
 

@@ -22,7 +22,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/syhily/kobato.git"
+    "url": "https://github.com/syhily/kobato"
   },
   "type": "module",
   "scripts": {

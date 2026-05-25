@@ -36,7 +36,7 @@
     "*.css": "tailwindcss"
   },
   "npm.scriptRunner": "npm",
-  "tailwindCSS.experimental.configFile": "${workspaceRoot}/src/assets/styles/tailwind.css",
+  "tailwindCSS.experimental.configFile": "${workspaceRoot}/src/styles/tailwind.css",
   "tailwindCSS.classFunctions": ["cn"],
   "tailwindCSS.includeLanguages": {
     "mdx": "html"

@@ -10,7 +10,7 @@ import { AdminErrorFallback } from '@/ui/admin/shell/AdminErrorFallback'
 // historical `admin.css` Bootstrap split-screen rules out of this route's
 // chunk, matching the project's "admin pages do not load public.css"
 // contract.
-import '@/assets/styles/admin.css'
+import '@/styles/admin.css'
 
 // Tells `root.tsx` to skip rendering `<BaseLayout>` for any descendant route
 // so the admin / login stack can own its own chrome.

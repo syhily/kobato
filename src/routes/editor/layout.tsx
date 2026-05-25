@@ -9,7 +9,7 @@ import { AdminErrorFallback } from '@/ui/admin/shell/AdminErrorFallback'
 import { PostFontLinks } from '@/ui/public/post/PostFontLinks'
 
 import type { Route } from './+types/layout'
-import '@/assets/styles/admin.css'
+import '@/styles/admin.css'
 
 export const handle: RouteHandle = { layout: 'admin' }
 
