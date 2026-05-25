@@ -23,10 +23,9 @@ import { trailingSlashNormaliser } from '@/server/http/middlewares/trailing-slas
 import { honoVisitorCookieMiddleware } from '@/server/http/middlewares/visitor-cookie'
 import { honoWpDecoyMiddleware } from '@/server/http/middlewares/wp-decoy'
 import { buildOpenApiDocument } from '@/server/http/openapi'
-import { analyticsEventsRouter } from '@/server/http/resources/analytics-events'
+import { analyticsEventsRouter } from '@/server/http/resources/analytics'
 import { assetsRouter } from '@/server/http/resources/assets'
-import { backupDownloadRouter } from '@/server/http/resources/backup-download'
-import { backupUploadRouter } from '@/server/http/resources/backup-upload'
+import { backupRouter } from '@/server/http/resources/backup'
 import { brandingRouter } from '@/server/http/resources/branding'
 import { feedRouter } from '@/server/http/resources/feed'
 import { imagesRouter } from '@/server/http/resources/images'
@@ -139,8 +138,7 @@ const server = await createHonoServer<Env>({
     app.route('/', redirectsRouter)
 
     // ─── Admin backup resource routes ─────────────────────
-    app.route('/', backupDownloadRouter)
-    app.route('/', backupUploadRouter)
+    app.route('/', backupRouter)
 
     // ─── Admin branding resource routes ──────────────────
     app.route('/', brandingRouter)

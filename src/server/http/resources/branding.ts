@@ -4,6 +4,7 @@ import { bodyLimit } from 'hono/body-limit'
 import type { Env } from '@/server/http/context'
 
 import { clearBrandingAsset, isBrandingSlot, uploadBrandingAsset } from '@/server/domains/assets/management'
+import { recordAuditEvent } from '@/server/domains/audit/service'
 import { requireRoleMw } from '@/server/http/middlewares/hono-rbac'
 import { getLogger } from '@/server/infra/logger'
 
@@ -32,6 +33,16 @@ export const brandingRouter = new Hono<Env>()
       }
       const buffer = Buffer.from(await file.arrayBuffer())
       const ref = await uploadBrandingAsset(slot, buffer)
+      recordAuditEvent({
+        action: 'branding_uploaded',
+        actorId: c.var.viewer?.userId,
+        actorRole: c.var.viewer?.role ?? null,
+        resourceType: 'branding',
+        resourceId: slot,
+        ipAddress: c.var.clientAddress,
+        userAgent: c.req.header('User-Agent') ?? null,
+        details: { size: buffer.length },
+      })
       log.info('Branding uploaded', { slot, size: buffer.length })
       return c.json({ slot, ref })
     },
@@ -43,6 +54,15 @@ export const brandingRouter = new Hono<Env>()
       return c.json({ error: { message: '未知的品牌素材槽位' } }, 400)
     }
     await clearBrandingAsset(slot)
+    recordAuditEvent({
+      action: 'branding_cleared',
+      actorId: c.var.viewer?.userId,
+      actorRole: c.var.viewer?.role ?? null,
+      resourceType: 'branding',
+      resourceId: slot,
+      ipAddress: c.var.clientAddress,
+      userAgent: c.req.header('User-Agent') ?? null,
+    })
     log.info('Branding cleared', { slot })
     return c.json({ slot, success: true })
   })

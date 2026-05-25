@@ -53,6 +53,8 @@ export const ACTION_OPTIONS = [
   { value: 'page_meta_updated', label: '页面元数据更新' },
   { value: 'page_created', label: '页面创建' },
   { value: 'comment_created', label: '评论创建' },
+  { value: 'comment_updated', label: '评论更新' },
+  { value: 'comment_own_updated', label: '评论更新（本人）' },
   { value: 'comment_approved', label: '评论审核通过' },
   { value: 'comment_deleted', label: '评论删除' },
   { value: 'comment_delete_request_approved', label: '评论删除请求通过' },
@@ -77,7 +79,11 @@ export const ACTION_OPTIONS = [
   { value: 'music_updated', label: '音乐更新' },
   { value: 'music_deleted', label: '音乐删除' },
   { value: 'backup_created', label: '备份创建' },
+  { value: 'backup_deleted', label: '备份删除' },
   { value: 'backup_restored', label: '备份恢复' },
+  { value: 'branding_uploaded', label: '品牌素材上传' },
+  { value: 'branding_cleared', label: '品牌素材清除' },
+  { value: 'audit_archive_run_failed', label: '审计归档执行失败' },
   { value: 'cache_cleared', label: '缓存清除' },
   { value: 'search_reindexed', label: '搜索重建索引' },
   { value: 'test_mail_sent', label: '测试邮件发送' },
@@ -103,6 +109,7 @@ export const RESOURCE_TYPE_OPTIONS = [
   { value: 'search', label: '搜索' },
   { value: 'mail', label: '邮件' },
   { value: 'audit_log', label: '审计日志' },
+  { value: 'branding', label: '品牌素材' },
 ]
 
 function ClearButton({ onClick }: { onClick: () => void }) {

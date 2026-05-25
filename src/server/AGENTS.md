@@ -62,7 +62,7 @@ router (`api-router.ts`), error hook (`errors.ts`), OpenAPI export
 install-gate, rate-limit, trailing-slash, visitor-cookie, wp-decoy,
 hono-rbac); `controllers/` (per-domain `<name>.controller.ts`, admin
 under `controllers/admin/`); `resources/` (non-JSON: feed, sitemap,
-images, redirects, analytics-events); `loaders/` (React Router data
+images, redirects, analytics); `loaders/` (React Router data
 orchestrators: detail, listing, search, comments, sidebar, pagination,
 revalidate, route-exports).
 
