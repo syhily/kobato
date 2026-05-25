@@ -1,6 +1,6 @@
 import { getPublicBaseUrl } from '@/server/domains/images/storage'
 import { ActionFailure } from '@/server/infra/http/errors'
-import { deleteImageObject, getS3StorageContext, putImageObject } from '@/server/infra/storage/s3-client'
+import { deleteS3Object, getS3StorageContext, putPublicS3Object } from '@/server/infra/storage/s3-client'
 
 // Music files share the same S3 bucket and the same `assets.storage`
 // toggle as the image library — see AGENTS.md "Content" section. The
@@ -20,7 +20,7 @@ import { deleteImageObject, getS3StorageContext, putImageObject } from '@/server
  * the image library.
  */
 export async function putMusicAudio(key: string, body: Buffer): Promise<void> {
-  await putImageObject({
+  await putPublicS3Object({
     key,
     body,
     contentType: 'audio/mpeg',
@@ -29,7 +29,7 @@ export async function putMusicAudio(key: string, body: Buffer): Promise<void> {
 
 /** Upload a JPEG cover object. */
 export async function putMusicCover(key: string, body: Buffer): Promise<void> {
-  await putImageObject({
+  await putPublicS3Object({
     key,
     body,
     contentType: 'image/jpeg',
@@ -38,7 +38,7 @@ export async function putMusicCover(key: string, body: Buffer): Promise<void> {
 
 /** Delete a music object (audio or cover) from S3. */
 export async function deleteMusicObject(key: string): Promise<void> {
-  await deleteImageObject(key)
+  await deleteS3Object(key)
 }
 
 /**

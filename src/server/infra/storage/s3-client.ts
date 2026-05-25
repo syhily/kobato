@@ -64,7 +64,7 @@ export interface S3StorageContext {
   bucket: string
 }
 
-export interface PutImageObjectInput {
+export interface PutPublicS3ObjectInput {
   key: string
   body: Buffer
   contentType: string
@@ -169,7 +169,7 @@ function installDeleteObjectsMd5Fallback(_sdk: AwsSdk, client: S3ClientInstance)
 
 // --- Operations ---
 
-export async function putImageObject(input: PutImageObjectInput): Promise<void> {
+export async function putPublicS3Object(input: PutPublicS3ObjectInput): Promise<void> {
   const sdk = await getAwsSdk()
   const { client, bucket } = await getS3StorageContext()
   await client.send(
@@ -181,43 +181,6 @@ export async function putImageObject(input: PutImageObjectInput): Promise<void> 
       CacheControl: input.cacheControl ?? 'public, max-age=31536000, immutable',
     }),
   )
-}
-
-export async function deleteImageObject(key: string): Promise<void> {
-  const sdk = await getAwsSdk()
-  const { client, bucket } = await getS3StorageContext()
-  await client.send(new sdk.DeleteObjectCommand({ Bucket: bucket, Key: key }))
-}
-
-export async function headImageObject(key: string): Promise<boolean> {
-  const sdk = await getAwsSdk()
-  const { client, bucket } = await getS3StorageContext()
-  try {
-    await client.send(new sdk.HeadObjectCommand({ Bucket: bucket, Key: key }))
-    return true
-  } catch (error) {
-    if (error instanceof Error && (error.name === 'NotFound' || error.name === 'NoSuchKey')) {
-      return false
-    }
-    throw error
-  }
-}
-
-export async function getImageObject(key: string): Promise<Buffer> {
-  const sdk = await getAwsSdk()
-  const { client, bucket } = await getS3StorageContext({ requireEnabled: false })
-  const response = await client.send(new sdk.GetObjectCommand({ Bucket: bucket, Key: key }))
-  if (response.Body === undefined) {
-    throw new ActionFailure(404, 'S3 对象不存在或内容为空')
-  }
-
-  const stream = response.Body as Readable
-  const chunks: Buffer[] = []
-  return new Promise((resolve, reject) => {
-    stream.on('data', (chunk: Buffer) => chunks.push(chunk))
-    stream.on('end', () => resolve(Buffer.concat(chunks)))
-    stream.on('error', (err: Error) => reject(err))
-  })
 }
 
 function parseS3Contents(contents: _Object[] | undefined): S3ObjectMeta[] {

@@ -1,7 +1,7 @@
 import type { AssetsSettings } from '@/shared/config/blog'
 
 import { ActionFailure } from '@/server/infra/http/errors'
-import { deleteImageObject, getImageObject, putImageObject } from '@/server/infra/storage/s3-client'
+import { deleteS3Object, getS3ObjectBuffer, putPublicS3Object } from '@/server/infra/storage/s3-client'
 import { requireBlogSettingsSection } from '@/shared/config/blog'
 
 // Storage entry point used by the upload pipeline and the SSR
@@ -41,7 +41,7 @@ export interface PutImageInput {
 /** PUT to the configured S3 bucket. Refuses when the upload toggle is OFF. */
 export async function putImage(input: PutImageInput): Promise<void> {
   ensureUploadReady()
-  await putImageObject({
+  await putPublicS3Object({
     key: input.storagePath,
     body: input.body,
     contentType: input.contentType,
@@ -51,12 +51,12 @@ export async function putImage(input: PutImageInput): Promise<void> {
 /** DELETE from the configured S3 bucket. Best-effort: missing objects are not an error. */
 export async function deleteImage(storagePath: string): Promise<void> {
   ensureUploadReady()
-  await deleteImageObject(storagePath)
+  await deleteS3Object(storagePath)
 }
 
 /** GET from the configured S3 bucket. Throws on missing object or network failure. */
 export async function getImage(storagePath: string): Promise<Buffer> {
-  return getImageObject(storagePath)
+  return getS3ObjectBuffer(storagePath)
 }
 
 /**
