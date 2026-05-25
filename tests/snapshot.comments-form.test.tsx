@@ -12,7 +12,7 @@ describe('snapshot: Comments form variants', () => {
   it('renders the anonymous form (visible required name/email, optional link)', () => {
     const html = renderInRouter(
       <Comments
-        commentKey="https://yufan.me/posts/hello/"
+        commentKey="https://example.com/posts/hello/"
         comments={{ comments: [], count: 0, roots_count: 0 }}
         items={[]}
       />,
@@ -30,13 +30,13 @@ describe('snapshot: Comments form variants', () => {
     const adminUser: CommentFormUser = {
       id: '1',
       name: 'Admin',
-      email: 'admin@yufan.me',
-      website: 'https://yufan.me',
+      email: 'admin@example.com',
+      website: 'https://example.com',
       admin: true,
     }
     const html = renderInRouter(
       <Comments
-        commentKey="https://yufan.me/posts/hello/"
+        commentKey="https://example.com/posts/hello/"
         comments={{ comments: [], count: 0, roots_count: 0 }}
         items={[]}
         user={adminUser}
@@ -46,15 +46,15 @@ describe('snapshot: Comments form variants', () => {
     expect(html).toContain('评论')
     expect(html).toContain('/images/avatar/1.png')
     expect(html).toContain('value="Admin"')
-    expect(html).toContain('value="admin@yufan.me"')
-    expect(html).toContain('value="https://yufan.me"')
+    expect(html).toContain('value="admin@example.com"')
+    expect(html).toContain('value="https://example.com"')
     expect(html).toContain('readOnly')
     expect(html).toContain('hidden')
     expect(html).toContain('type="submit"')
   })
 
   it('returns the failure placeholder when comments is null', () => {
-    const html = renderInRouter(<Comments commentKey="https://yufan.me/posts/hello/" comments={null} items={[]} />)
+    const html = renderInRouter(<Comments commentKey="https://example.com/posts/hello/" comments={null} items={[]} />)
     expect(html).toContain('评论加载失败')
   })
 
@@ -92,7 +92,7 @@ describe('snapshot: Comments form variants', () => {
       rootId: '1',
       name: '雨帆',
       emailVerified: true,
-      link: 'https://yufan.me',
+      link: 'https://example.com',
       badgeName: '站长',
       badgeColor: '#6ab7ca',
       badgeTextColor: '#151b2b',
@@ -101,7 +101,7 @@ describe('snapshot: Comments form variants', () => {
 
     const html = renderInRouter(
       <CommentReplyForm
-        commentKey="https://yufan.me/posts/hello/"
+        commentKey="https://example.com/posts/hello/"
         replyToId={42}
         replyTarget={replyTarget}
         onCancel={() => undefined}

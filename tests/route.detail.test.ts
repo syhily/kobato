@@ -101,7 +101,7 @@ vi.mock('@/server/http/loaders/comments', () => ({
       admin: false,
       likes: { count: 0, liked: false },
       currentUser: null,
-      commentKey: 'https://yufan.me/posts/hello/',
+      commentKey: 'https://example.com/posts/hello/',
       recentComments: [],
       pendingComments: [],
     },

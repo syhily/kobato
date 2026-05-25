@@ -25,9 +25,9 @@ export const TEST_BLOG_SETTINGS_BUNDLE: BlogSettingsBundle = {
   siteIdentity: {
     title: '且听书吟',
     description: '诗与梦想的远方',
-    website: 'https://yufan.me',
-    keywords: ['雨帆', '且听书吟', 'syhily', 'amehochan', 'yufan'],
-    author: { name: '雨帆', email: 'syhily@gmail.com', url: 'https://yufan.me' },
+    website: 'https://example.com',
+    keywords: ['雨帆', '且听书吟', 'syhily', 'kobato', 'こばと'],
+    author: { name: '雨帆', email: 'syhily@gmail.com', url: 'https://example.com' },
     locale: 'zh-CN',
     timeZone: 'Asia/Shanghai',
     timeFormat: 'yyyy-MM-dd',
@@ -39,12 +39,12 @@ export const TEST_BLOG_SETTINGS_BUNDLE: BlogSettingsBundle = {
   // exercise the "uploads enabled" path by default and switch the
   // toggle off in individual tests as needed.
   assets: {
-    asset: { host: 'cat.yufan.me', scheme: 'https' },
+    asset: { host: 'assets.example.com', scheme: 'https' },
     storage: {
       enabled: true,
       endpoint: 'https://s3.example.com',
       region: 'auto',
-      bucket: 'yufan-test',
+      bucket: 'kobato-test',
       accessKeyId: 'AKIA-TEST',
       secretAccessKey: 'secret-test',
       forcePathStyle: false,
@@ -108,7 +108,7 @@ export const TEST_BLOG_SETTINGS_BUNDLE: BlogSettingsBundle = {
   },
 
   mail: {
-    mail: { enabled: false, host: 'api.zeabur.com', apiKey: '', sender: 'noreply@send.yufan.me' },
+    mail: { enabled: false, host: 'api.zeabur.com', apiKey: '', sender: 'noreply@example.com' },
   },
   cache: {
     cache: {

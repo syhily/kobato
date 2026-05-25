@@ -13,7 +13,7 @@ export function adminUser(overrides: Partial<SessionUser> = {}): SessionUser {
   return {
     id: '1',
     name: 'admin',
-    email: 'admin@yufan.me',
+    email: 'admin@example.com',
     website: null,
     role: 'admin',
     ...overrides,
@@ -35,7 +35,7 @@ export function authorUser(overrides: Partial<SessionUser> = {}): SessionUser {
   return {
     id: '3',
     name: 'author',
-    email: 'author@yufan.me',
+    email: 'author@example.com',
     website: null,
     role: 'author',
     ...overrides,

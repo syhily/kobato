@@ -2,6 +2,7 @@ import type { EnrichedAccessEvent } from '@/server/domains/analytics/types'
 
 import { csvEscape } from '@/server/infra/csv'
 import { CopyBatcher, replayDeadLetter as replayFromInfra, writeDeadLetter } from '@/server/infra/db/copy-batcher'
+import { ANALYTICS_DEAD_LETTER_PATH } from '@/server/infra/env'
 import { getLogger } from '@/server/infra/logger'
 import { safeBigInt } from '@/shared/utils/tools'
 
@@ -10,7 +11,7 @@ export { csvEscape }
 const DEAD_LETTER_SEP = '\n'
 
 function deadLetterPath(): string {
-  return process.env.ANALYTICS_DEAD_LETTER_PATH ?? '/tmp/yufan-access-log-dead-letter.jsonl'
+  return ANALYTICS_DEAD_LETTER_PATH ?? '/tmp/kobato-access-log-dead-letter.jsonl'
 }
 
 function serializeForDeadLetter(events: EnrichedAccessEvent[]): string {

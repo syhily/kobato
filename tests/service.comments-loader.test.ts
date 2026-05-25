@@ -41,7 +41,7 @@ vi.mock('@/server/domains/comments/email', () => ({
 vi.mock('@/shared/config/getters', () => ({
   requireBlogSettingsSection: (key: string) => {
     if (key === 'siteIdentity') {
-      return { website: 'https://yufan.me', title: 'Yufan' }
+      return { website: 'https://example.com', title: 'Yufan' }
     }
     if (key === 'sidebar') {
       return {

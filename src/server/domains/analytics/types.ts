@@ -31,7 +31,7 @@ export interface RawAccessEvent {
   acceptLanguage: string | null
   /** Polymorphic content target. `null` for non-content pages (home / listings / search). */
   target: EntityTarget | null
-  /** Long-lived visitor cookie (`yf_aid`). `null` on the first request before the cookie is issued. */
+  /** Long-lived visitor cookie (`kobato_aid`). `null` on the first request before the cookie is issued. */
   sessionId: string | null
 }
 

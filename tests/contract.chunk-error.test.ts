@@ -13,12 +13,12 @@ import { isChunkLoadError } from '@/shared/utils/chunk-error'
 
 describe('isChunkLoadError', () => {
   it('matches Chrome / Edge dynamic import failures', () => {
-    const err = new TypeError('Failed to fetch dynamically imported module: https://yufan.me/assets/abc.js')
+    const err = new TypeError('Failed to fetch dynamically imported module: https://example.com/assets/abc.js')
     expect(isChunkLoadError(err)).toBe(true)
   })
 
   it('matches Firefox dynamic import failures', () => {
-    const err = new TypeError('error loading dynamically imported module: https://yufan.me/assets/abc.js')
+    const err = new TypeError('error loading dynamically imported module: https://example.com/assets/abc.js')
     expect(isChunkLoadError(err)).toBe(true)
   })
 
@@ -34,7 +34,7 @@ describe('isChunkLoadError', () => {
   })
 
   it('matches webpack-style chunk failures by message', () => {
-    const err = new Error('Loading chunk 17 failed at https://yufan.me/...')
+    const err = new Error('Loading chunk 17 failed at https://example.com/...')
     expect(isChunkLoadError(err)).toBe(true)
   })
 

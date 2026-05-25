@@ -1204,6 +1204,30 @@ describe('contract: module and bundle boundaries', () => {
     expect(baseLayout).toMatch(/\btransform-gpu\b/)
   })
 
+  it('centralises all process.env access in src/server/infra/env.ts', () => {
+    // Every environment variable must be declared, validated, and exported
+    // from `src/server/infra/env.ts`. No other source file may touch
+    // `process.env` directly — this keeps the env surface discoverable and
+    // prevents untyped, unchecked runtime accesses from spreading across
+    // the codebase.
+    const offenders: string[] = []
+    for (const file of files('src', '-g', '*.ts', '-g', '*.tsx')) {
+      // `.d.ts` files are allowed to mention `process.env.*` in doc comments.
+      if (file.endsWith('.d.ts')) {
+        continue
+      }
+      // The single canonical env module is the only allowed consumer.
+      if (file === 'src/server/infra/env.ts') {
+        continue
+      }
+      const source = readFileSync(file, 'utf8')
+      if (/\bprocess\.env\b/.test(source)) {
+        offenders.push(file)
+      }
+    }
+    expect(offenders).toEqual([])
+  })
+
   it('mirrors every .dark .aplayer rule under the prefers-color-scheme media-query block', () => {
     // The APlayer reskin is keyed on `.dark .aplayer*`. Noscript visitors
     // on a dark-OS preference have no `.dark` class on `<html>`, so the

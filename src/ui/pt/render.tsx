@@ -42,7 +42,7 @@ import {
 // SSR/CSR renderer for PortableText. Built on top of `@portabletext/react`'s
 // composable component map so the standard text/list/heading/decorator
 // pipeline (including consecutive list-item folding) is delegated to the
-// official toolkit, while every yufan.me-specific block / mark
+// official toolkit, while every kobato-specific block / mark
 // (`image`, `code`, `mathBlock`, `mermaid`, `horizontalRule`,
 // `musicPlayer`, `solution`, `twoColumn`, `footnoteDefinition`, `table`,
 // plus `mathInline` / `footnoteRef` mark defs) is handled in a sibling

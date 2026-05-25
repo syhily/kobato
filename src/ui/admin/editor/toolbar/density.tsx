@@ -5,7 +5,7 @@ import { ToolbarButton } from '@/ui/admin/editor/toolbar/ToolbarButton'
 
 export type ToolbarDensity = 'compact' | 'full'
 
-const TOOLBAR_DENSITY_STORAGE_KEY = 'yufan.me/admin/page-editor/toolbar-density'
+const TOOLBAR_DENSITY_STORAGE_KEY = 'kobato/admin/page-editor/toolbar-density'
 
 // Persistent toolbar density preference. Defaults to `'full'` so a
 // fresh visit shows every group inline; the outer `flex-wrap` container

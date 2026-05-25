@@ -109,7 +109,7 @@ export interface UpdateMusicOutput {
 // Public GET payload — what `/api/music/get?id=...` returns
 // to the browser-side `<MusicPlayer />` so APlayer can render. Kept
 // intentionally aligned with the historical `MusicMeta` shape from
-// the static `cat.yufan.me/musics/<id>.json` files so the legacy
+// the static `assets.example.com/musics/<id>.json` files so the legacy
 // client code can switch to the new endpoint with a one-line URL
 // change.
 export interface PublicMusicMeta {

@@ -145,7 +145,7 @@ export interface AddMusicInputs {
   /**
    * Optional pre-resolved metadata + asset URLs. The historical-import
    * script preloads this from the legacy
-   * `https://cat.yufan.me/musics/<id>.json` so we don't pay for a full
+   * `https://assets.example.com/musics/<id>.json` so we don't pay for a full
    * Meting round-trip on import. Missing fields fall through to the
    * Meting wrapper.
    */

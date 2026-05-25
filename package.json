@@ -1,28 +1,28 @@
 {
-  "name": "yufan.me",
-  "version": "5.0.0",
+  "name": "kobato",
+  "version": "6.0.0",
   "private": true,
-  "description": "The personal blog for Yufan Sheng",
+  "description": "Kobato — a self-hosted blog CMS built with React Router 7, Hono, and oRPC",
   "keywords": [
-    "ameho",
     "blog",
-    "syhily",
-    "yufan"
+    "cms",
+    "kobato",
+    "こばと"
   ],
-  "homepage": "https://yufan.me",
+  "homepage": "https://github.com/syhily/kobato",
   "bugs": {
-    "url": "https://github.com/syhily/yufan.me/issues",
+    "url": "https://github.com/syhily/kobato/issues",
     "email": "syhily@gmail.com"
   },
   "license": "MIT",
   "author": {
     "name": "Yufan Sheng",
     "email": "syhily@gmail.com",
-    "url": "https://yufan.me"
+    "url": "https://github.com/syhily"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/syhily/yufan.me.git"
+    "url": "https://github.com/syhily/kobato.git"
   },
   "type": "module",
   "scripts": {

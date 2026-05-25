@@ -24,14 +24,14 @@ import { getClientAddress } from '@/shared/utils/request'
 
 const log = getLogger('analytics.track')
 
-const YF_AID_COOKIE = 'yf_aid'
+const KOBATO_AID_COOKIE = 'kobato_aid'
 
 function readVisitorCookie(headers: Headers): string | null {
   const cookie = headers.get('cookie')
   if (!cookie) {
     return null
   }
-  const re = new RegExp(`(?:^|;\\s*)${YF_AID_COOKIE}=([^;]+)`)
+  const re = new RegExp(`(?:^|;\\s*)${KOBATO_AID_COOKIE}=([^;]+)`)
   const m = cookie.match(re)
   return m ? decodeURIComponent(m[1]!) : null
 }
@@ -96,4 +96,4 @@ export async function trackAccess(
   }
 }
 
-export { YF_AID_COOKIE }
+export { KOBATO_AID_COOKIE }

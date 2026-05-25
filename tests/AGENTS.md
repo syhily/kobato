@@ -38,7 +38,7 @@ GitHub Actions already defines `postgres` and `redis` service containers in
 
 ### Worker isolation
 
-- **Postgres**: each worker gets its own database (`yufan_test_${workerId}_${timestamp}`), created by `tests/_helpers/integration-db.ts` and dropped in `afterAll`.
+- **Postgres**: each worker gets its own database (`kobato_test_${workerId}_${timestamp}`), created by `tests/_helpers/integration-db.ts` and dropped in `afterAll`.
 - **Redis**: `tests/_helpers/env.ts` maps `VITEST_WORKER_ID % 16` to a distinct Redis database (0–15).
 - Tests that write tables should call `clearAllTables(db)` in `beforeEach` to reset state between cases within the same worker.
 - Tests that write Redis should call `flushWorkerRedis()` in `beforeEach` to clear keys.

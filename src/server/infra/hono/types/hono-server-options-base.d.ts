@@ -18,7 +18,7 @@ export interface HonoServerOptionsBase<E extends Env> {
   /**
    * The port to start the server on
    *
-   * Defaults to `process.env.PORT || 3000`
+   * Defaults to `PORT || 3000`
    */
   port?: number
   /**

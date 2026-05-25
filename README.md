@@ -1,63 +1,22 @@
-<!-- markdownlint-disable MD033 MD041 -->
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="public/images/blog-poster-dark.png">
-  <img alt="Yufan Blog Logo" src="public/images/blog-poster.png">
-</picture>
+# Kobato (こばと。)
 
-# yufan.me
+> _"A little bird carrying hope, one letter at a time."_
 
-[![Folo](https://badge.folo.is/feed/54772566650461214?color=FF5C00&labelColor=black&style=flat-square)](https://app.folo.is/share/feeds/54772566650461214)
+**Kobato** is a self-hosted blog CMS built by [Yufan Sheng](https://github.com/syhily) — the engine that powers the personal site [且听书吟](https://yufan.me). It runs on React Router 7 (SSR), Hono, and oRPC. Posts, pages, taxonomies, comments, images, music, and per-section settings all live in TimescaleDB and are edited from the built-in `/admin` console. Bodies are stored as **PortableText** and authored through a Tiptap editor that round-trips losslessly to the wire format.
 
-Source code for [yufan.me](https://yufan.me) — a self-hosted blog CMS
-running on React Router 7 (SSR), Hono, and oRPC. Posts, pages,
-taxonomies, comments, images, music, and per-section settings all live
-in TimescaleDB and are edited from the built-in `/admin` console.
-Bodies are stored as **PortableText** and authored through a Tiptap
-editor that round-trips losslessly to the wire format.
+The repository is the whole product: the public site, the admin SPA, the API perimeter, the SSR renderer, the install gate, and the database schema/migrations.
 
-The repository is the whole product: the public site, the admin SPA,
-the API perimeter, the SSR renderer, the install gate, and the database
-schema/migrations.
-
-> **Contributors:** start at [AGENTS.md](AGENTS.md) — it documents the
-> import boundaries, the four-layer `src/server/` graph, the install
-> contract, and the API permission matrix.
+> **Contributors:** start at [AGENTS.md](AGENTS.md) — it documents the import boundaries, the four-layer `src/server/` graph, the install contract, and the API permission matrix.
 
 ## Highlights
 
-- **TimescaleDB-backed content model.** Posts (`/posts/:slug`) and pages
-  (`/:slug`) share one global slug namespace; categories, tags, and
-  friends are first-class taxonomies with referential integrity. Page
-  drafts get an admin-only preview overlay; future-dated posts stay
-  excluded until publish time.
-- **PortableText body, Tiptap editor.** A single `@/shared/pt/schema`
-  Zod dialect is the wire format. The PT ↔ ProseMirror bridge
-  (`@/shared/pt/bridge`) is a single file; standard blocks map to
-  Tiptap built-ins, custom blocks (`image`, `code`, `mathBlock`,
-  `mermaid`, `musicPlayer`, `solution`, `footnoteDefinition`, `table`)
-  ride a generic `blockCard` node. Round-trip is contract-tested.
-- **Typed API, end-to-end.** Every HTTP call goes through `/rpc/*` via
-  oRPC. Procedures are declared from one of four base procedures
-  (`publicProc` / `authedProc` / `authorProc` / `adminProc`) and the
-  browser client is built from `typeof apiRouter`. Zod DTOs in
-  `shared/contracts/` are paired with compile-time parity assertions
-  against `shared/types/`.
-- **Section-scoped settings.** 14 JSONB rows under `setting` —
-  `blog.general`, `blog.assets`, `blog.navigation`, `blog.socials`,
-  `blog.content`, `blog.sidebar`, `blog.comments`, `blog.seo`,
-  `blog.footer`, `blog.mail`, `blog.cache`, `blog.rateLimit`,
-  `blog.search`, `blog.fonts`. Each section saves independently so
-  concurrent admin tabs cannot race.
-- **Two-stage install gate.** Until an admin row exists, every request
-  redirects to `/admin/setup`. After admin creation, stage 2
-  at `/admin/setup/settings` writes the 14 settings rows
-  atomically.
-- **Optional object storage.** S3 (or any S3-compatible bucket) is
-  gated by `assets.storage.enabled`. Off by default — the library is
-  read-only and uploads return 503 until a settings flip. Generated
-  Vite assets ship with the build image; S3 is for user media only.
-- **First-party analytics.** Visit ingestion + dashboards backed by
-  TimescaleDB, with optional MaxMind GeoLite2 enrichment.
+- **TimescaleDB-backed content model.** Posts (`/posts/:slug`) and pages (`/:slug`) share one global slug namespace; categories, tags, and friends are first-class taxonomies with referential integrity. Page drafts get an admin-only preview overlay; future-dated posts stay excluded until publish time.
+- **PortableText body, Tiptap editor.** A single `@/shared/pt/schema` Zod dialect is the wire format. The PT ↔ ProseMirror bridge (`@/shared/pt/bridge`) is a single file; standard blocks map to Tiptap built-ins, custom blocks (`image`, `code`, `mathBlock`, `mermaid`, `musicPlayer`, `solution`, `footnoteDefinition`, `table`) ride a generic `blockCard` node. Round-trip is contract-tested.
+- **Typed API, end-to-end.** Every HTTP call goes through `/rpc/*` via oRPC. Procedures are declared from one of four base procedures (`publicProc` / `authedProc` / `authorProc` / `adminProc`) and the browser client is built from `typeof apiRouter`. Zod DTOs in `shared/contracts/` are paired with compile-time parity assertions against `shared/types/`.
+- **Section-scoped settings.** 14 JSONB rows under `setting` — `blog.general`, `blog.assets`, `blog.navigation`, `blog.socials`, `blog.content`, `blog.sidebar`, `blog.comments`, `blog.seo`, `blog.footer`, `blog.mail`, `blog.cache`, `blog.rateLimit`, `blog.search`, `blog.fonts`. Each section saves independently so concurrent admin tabs cannot race.
+- **Two-stage install gate.** Until an admin row exists, every request redirects to `/admin/setup`. After admin creation, stage 2 at `/admin/setup/settings` writes the 14 settings rows atomically.
+- **Optional object storage.** S3 (or any S3-compatible bucket) is gated by `assets.storage.enabled`. Off by default — the library is read-only and uploads return 503 until a settings flip. Generated Vite assets ship with the build image; S3 is for user media only.
+- **First-party analytics.** Visit ingestion + dashboards backed by TimescaleDB, with optional MaxMind GeoLite2 enrichment.
 
 ## Stack
 
@@ -75,9 +34,7 @@ schema/migrations.
 
 ## Architecture
 
-Five cooperating top-level layers under `src/` with a one-way import
-graph (`routes → server / ui / client / shared`; `server → shared`;
-`shared` stays isomorphic).
+Five cooperating top-level layers under `src/` with a one-way import graph (`routes → server / ui / client / shared`; `server → shared`; `shared` stays isomorphic).
 
 ```text
 src/
@@ -90,47 +47,31 @@ src/
 └── server.ts    Hono entry / SSR adapter
 ```
 
-The `src/server/` tree is itself four layers, in strict order
-(`infra → domains → http`, `domains → render → http`):
+The `src/server/` tree is itself four layers, in strict order (`infra → domains → http`, `domains → render → http`):
 
-- **`infra/`** — Drizzle pool, Redis storage, generic HTTP vocabulary,
-  email, search, env, logger, rate limiter, slug pipeline. Zero
-  business knowledge.
-- **`domains/`** — One folder per business concept (`auth`, `catalog`,
-  `pages`, `posts`, `comments`, `images`, `music`, `friends`,
-  `taxonomies`, `settings`, `users`, `analytics`, `pt`, …). Locked
-  vocabulary: `schema.ts / repo.ts / service.ts / projection.ts /
-cache.ts`.
-- **`http/`** — Hono entry, oRPC procedure base, controllers,
-  middlewares, resource routers (RSS, sitemap, OG, redirects), React
-  Router loaders. Orchestration only — no business rules.
-- **`render/`** — SSR output products: SEO meta, RSS/Atom, OG images,
-  calendar SVGs, avatar fetch, react-prerender drain, image
-  post-processing. Never persists.
+- **`infra/`** — Drizzle pool, Redis storage, generic HTTP vocabulary, email, search, env, logger, rate limiter, slug pipeline. Zero business knowledge.
+- **`domains/`** — One folder per business concept (`auth`, `catalog`, `pages`, `posts`, `comments`, `images`, `music`, `friends`, `taxonomies`, `settings`, `users`, `analytics`, `pt`, …). Locked vocabulary: `schema.ts / repo.ts / service.ts / projection.ts / cache.ts`.
+- **`http/`** — Hono entry, oRPC procedure base, controllers, middlewares, resource routers (RSS, sitemap, OG, redirects), React Router loaders. Orchestration only — no business rules.
+- **`render/`** — SSR output products: SEO meta, RSS/Atom, OG images, calendar SVGs, avatar fetch, react-prerender drain, image post-processing. Never persists.
 
-Deeper rationale and the rules each layer enforces live in
-[AGENTS.md](AGENTS.md) and the subdirectory `AGENTS.md` files.
+Deeper rationale and the rules each layer enforces live in [AGENTS.md](AGENTS.md) and the subdirectory `AGENTS.md` files.
 
 ## Quick start
 
 ```bash
-git clone https://github.com/syhily/yufan.me.git
-cd yufan.me
+git clone https://github.com/syhily/kobato.git
+cd kobato
 cp .env.example .env
 # Edit .env — see "Environment variables" below
 npm install
 npm run dev
 ```
 
-First boot redirects every request to `/admin/setup` until an
-admin row exists; stage 2 at `/admin/setup/settings` then
-seeds the 14 settings rows. After that the public site is live and the
-admin console at `/admin` is available to the new admin user.
+First boot redirects every request to `/admin/setup` until an admin row exists; stage 2 at `/admin/setup/settings` then seeds the 14 settings rows. After that the public site is live and the admin console at `/admin` is available to the new admin user.
 
 ### Environment variables
 
-All configuration is read from `.env` (gitignored). Copy
-`.env.example` and fill in the values.
+All configuration is read from `.env` (gitignored). Copy `.env.example` and fill in the values.
 
 #### Required
 
@@ -177,17 +118,9 @@ The migration script reads the three secret-containing rows, encrypts any plaint
 
 ## Admin console
 
-The `/admin` SPA shares one Tiptap editor for posts and pages with
-a three-layer UX: top toolbar (image library / music picker / link /
-table / hr / undo-redo), floating bubble menus for text and table
-selections, and a `/`-driven slash menu for block insertion. Cells are
-inline-only and the image block is a React NodeView for inline alt +
-caption editing.
+The `/admin` SPA shares one Tiptap editor for posts and pages with a three-layer UX: top toolbar (image library / music picker / link / table / hr / undo-redo), floating bubble menus for text and table selections, and a `/`-driven slash menu for block insertion. Cells are inline-only and the image block is a React NodeView for inline alt + caption editing.
 
-The console also covers user management, sessions, taxonomy CRUD, the
-analytics dashboard (overview + realtime), an image library with
-inline category/friend uploads (locked to 1280×425), a music library
-with per-track lyrics, and per-section settings pages.
+The console also covers user management, sessions, taxonomy CRUD, the analytics dashboard (overview + realtime), an image library with inline category/friend uploads (locked to 1280×425), a music library with per-track lyrics, and per-section settings pages.
 
 ## Commands
 
@@ -201,34 +134,19 @@ npm run build            # production build
 npm run db:generate      # Drizzle migration from schema edits
 ```
 
-Package manager is npm (see `packageManager` in `package.json`). Use
-`npm install` / `npm uninstall` / `npm update` for dependency changes.
+Package manager is npm (see `packageManager` in `package.json`). Use `npm install` / `npm uninstall` / `npm update` for dependency changes.
 
 ## Configuration
 
-Runtime behaviour is driven by the `setting` table — **one JSONB row
-per section** under `scope='blog.<section>'`. There is no checked-in
-`blog.config.ts` or global defaults file; each section's schema lives
-beside its service in `src/server/domains/settings/` and the registry
-in `sections.ts` maps section ↔ DB scope ↔ Zod schema ↔ bundle key.
+Runtime behaviour is driven by the `setting` table — **one JSONB row per section** under `scope='blog.<section>'`. There is no checked-in `blog.config.ts` or global defaults file; each section's schema lives beside its service in `src/server/domains/settings/` and the registry in `sections.ts` maps section ↔ DB scope ↔ Zod schema ↔ bundle key.
 
-The S3 toggle, credentials, bucket, asset CDN host, and upload limits
-all live under `setting('blog.assets')` (edited at
-`/admin/settings/assets`) — not in env vars. The dispatcher reads
-the toggle on every PUT/DELETE so flipping storage on/off does not
-require a redeploy.
+The S3 toggle, credentials, bucket, asset CDN host, and upload limits all live under `setting('blog.assets')` (edited at `/admin/settings/assets`) — not in env vars. The dispatcher reads the toggle on every PUT/DELETE so flipping storage on/off does not require a redeploy.
 
 ## Deployment
 
-The [Dockerfile](Dockerfile) runs `npm run build` against a Node 24
-Alpine base and ships `build/` with `npm run start`
-(`node ./build/server/index.js`). Default listen port `4321`. Generated Vite
-assets are **not** uploaded to S3 by the build; object storage is
-reserved for user media. Migrations under `drizzle/` are copied into
-the runtime image and applied by your deployment workflow before
-boot.
+The [Dockerfile](Dockerfile) runs `npm run build` against a Node 24 Alpine base and ships `build/` with `npm run start` (`node ./build/server/index.js`). Default listen port `4321`. Generated Vite assets are **not** uploaded to S3 by the build; object storage is reserved for user media. Migrations under `drizzle/` are copied into the runtime image and applied by your deployment workflow before boot.
 
 ## License
 
-- **Source code:** [MIT](LICENSE)
+- **Source code:** [MIT](LICENSE) — © Yufan Sheng
 - **Fonts in logo design:** [licenses/](licenses)

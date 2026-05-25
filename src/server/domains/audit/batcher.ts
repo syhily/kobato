@@ -4,6 +4,7 @@ import { csvEscape } from '@/server/infra/csv'
 import { CopyBatcher, replayDeadLetter, writeDeadLetter } from '@/server/infra/db/copy-batcher'
 import { db } from '@/server/infra/db/pool'
 import { auditLog } from '@/server/infra/db/schema/config'
+import { AUDIT_DEAD_LETTER_PATH } from '@/server/infra/env'
 import { getLogger } from '@/server/infra/logger'
 import { idFromString } from '@/shared/utils/id'
 
@@ -12,7 +13,7 @@ const log = getLogger('audit.batcher')
 const DEAD_LETTER_SEP = '\n'
 
 function deadLetterPath(): string {
-  return process.env.AUDIT_DEAD_LETTER_PATH ?? '/tmp/yufan-audit-dead-letter.jsonl'
+  return AUDIT_DEAD_LETTER_PATH ?? '/tmp/kobato-audit-dead-letter.jsonl'
 }
 
 function serializeForDeadLetter(events: AuditEventInput[]): string {

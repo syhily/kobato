@@ -110,7 +110,7 @@ function buildRequest(): Request {
 const stubUser = testUser({
   id: 1n,
   name: 'Admin',
-  email: 'admin@yufan.me',
+  email: 'admin@example.com',
   link: null,
   role: 'admin',
 })
@@ -121,7 +121,7 @@ describe('services/auth/flow — signInWithSession', () => {
     const request = buildRequest()
 
     const result = await signInWithSession({
-      email: 'admin@yufan.me',
+      email: 'admin@example.com',
       password: 'correct horse',
       session: emptySession(),
       request,
@@ -139,7 +139,7 @@ describe('services/auth/flow — signInWithSession', () => {
     const request = buildRequest()
 
     await signInWithSession({
-      email: 'admin@yufan.me',
+      email: 'admin@example.com',
       password: 'correct horse',
       session: emptySession(),
       request,
@@ -156,7 +156,7 @@ describe('services/auth/flow — signInWithSession', () => {
     const request = buildRequest()
 
     const result = await signInWithSession({
-      email: 'admin@yufan.me',
+      email: 'admin@example.com',
       password: 'correct horse',
       session: emptySession(),
       request,
@@ -176,7 +176,7 @@ describe('services/auth/flow — signInWithSession', () => {
     const request = buildRequest()
 
     const result = await signInWithSession({
-      email: 'admin@yufan.me',
+      email: 'admin@example.com',
       password: 'wrong',
       session: emptySession(),
       request,
@@ -195,13 +195,13 @@ describe('services/auth/flow — signUpInitialAdminWithSession (install stage 1)
   const baseSeed = {
     title: 'My Blog',
     name: 'Admin',
-    email: 'admin@yufan.me',
+    email: 'admin@example.com',
     password: 'correct horse staple battery',
   }
 
   it('creates the admin row, seeds all settings, and redirects to /admin', async () => {
     vi.mocked(userQuery.insertAdmin).mockResolvedValue([
-      testUser({ id: 7n, name: 'Admin', email: 'admin@yufan.me', link: '', role: 'admin' }),
+      testUser({ id: 7n, name: 'Admin', email: 'admin@example.com', link: '', role: 'admin' }),
     ])
     const request = buildRequest()
 
@@ -216,7 +216,7 @@ describe('services/auth/flow — signUpInitialAdminWithSession (install stage 1)
     if (result.ok === true) {
       expect(result.data.redirectTo).toBe('/admin')
     }
-    expect(userQuery.insertAdmin).toHaveBeenCalledWith('Admin', 'admin@yufan.me', baseSeed.password)
+    expect(userQuery.insertAdmin).toHaveBeenCalledWith('Admin', 'admin@example.com', baseSeed.password)
 
     // All settings sections are seeded in one pass.
     expect(settingQuery.upsertSetting).toHaveBeenCalled()
@@ -252,7 +252,7 @@ describe('services/auth/flow — signUpInitialAdminWithSession (install stage 1)
     expect(general?.data.locale).toBe('zh-CN')
     expect(general?.data.author).toMatchObject({
       name: 'Admin',
-      email: 'admin@yufan.me',
+      email: 'admin@example.com',
     })
 
     const assets = byScope.get('blog.assets')

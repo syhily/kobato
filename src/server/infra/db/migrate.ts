@@ -28,7 +28,7 @@ async function migrateDatabase(): Promise<void> {
   log.info('Running database migrations', { migrationsFolder: MIGRATIONS_FOLDER })
 
   try {
-    await migrationDb.execute(sql`SELECT pg_advisory_lock(hashtext('yufan.me'), hashtext('drizzle'))`)
+    await migrationDb.execute(sql`SELECT pg_advisory_lock(hashtext('kobato'), hashtext('drizzle'))`)
     locked = true
     await migrate(migrationDb, {
       migrationsFolder: MIGRATIONS_FOLDER,
@@ -44,7 +44,7 @@ async function migrateDatabase(): Promise<void> {
   } finally {
     if (locked) {
       try {
-        await migrationDb.execute(sql`SELECT pg_advisory_unlock(hashtext('yufan.me'), hashtext('drizzle'))`)
+        await migrationDb.execute(sql`SELECT pg_advisory_unlock(hashtext('kobato'), hashtext('drizzle'))`)
       } catch (error) {
         log.warn('Failed to release database migration advisory lock', {
           error: error instanceof Error ? error.message : String(error),

@@ -42,23 +42,23 @@ describe('server/images/render-enhance — loadImageThumbhash', () => {
   it('returns the row dimensions and thumbhash for a matched URL', async () => {
     const row = await seedImage()
 
-    const result = await loadImageThumbhash('https://cat.yufan.me/images/categories/coding.jpg')
+    const result = await loadImageThumbhash('https://assets.example.com/images/categories/coding.jpg')
     expect(result).toEqual({
       width: 1280,
       height: 425,
       thumbhash: 'cover-hash',
-      publicUrl: `https://cat.yufan.me/images/categories/coding.jpg?v=${row.updatedAt.getTime()}`,
+      publicUrl: `https://assets.example.com/images/categories/coding.jpg?v=${row.updatedAt.getTime()}`,
     })
   })
 
   it('returns null when the URL has no matching row', async () => {
-    expect(await loadImageThumbhash('https://cat.yufan.me/images/no-such.jpg')).toBeNull()
+    expect(await loadImageThumbhash('https://assets.example.com/images/no-such.jpg')).toBeNull()
   })
 
   it('serves a second hit from the Redis cache', async () => {
     await seedImage()
 
-    const result1 = await loadImageThumbhash('https://cat.yufan.me/images/categories/coding.jpg')
+    const result1 = await loadImageThumbhash('https://assets.example.com/images/categories/coding.jpg')
     expect(result1).not.toBeNull()
 
     // Verify cache was written to Redis
@@ -66,7 +66,7 @@ describe('server/images/render-enhance — loadImageThumbhash', () => {
     expect(cached).not.toBeNull()
 
     // Second call should return the same result (cache hit)
-    const result2 = await loadImageThumbhash('https://cat.yufan.me/images/categories/coding.jpg')
+    const result2 = await loadImageThumbhash('https://assets.example.com/images/categories/coding.jpg')
     expect(result2).toEqual(result1)
   })
 })

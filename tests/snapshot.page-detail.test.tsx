@@ -23,7 +23,7 @@ describe('snapshot: PageDetailBody composed view', () => {
         page={page}
         headings={[]}
         likes={0}
-        commentKey="https://yufan.me/about/"
+        commentKey="https://example.com/about/"
         commentsPromise={commentsPromise}
       >
         <p>About body</p>
@@ -52,7 +52,7 @@ describe('snapshot: PageDetailBody composed view', () => {
         page={page}
         headings={headings}
         likes={3}
-        commentKey="https://yufan.me/guide/"
+        commentKey="https://example.com/guide/"
         commentsPromise={commentsPromise}
       >
         <p>Guide body</p>

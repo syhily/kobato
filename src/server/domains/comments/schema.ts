@@ -69,7 +69,7 @@ export type LoadAllCommentsInput = z.infer<typeof loadAllCommentsSchema>
 // and ignores `q` to avoid mixing two query intents in one round-trip.
 //
 // `key` is the page-flavoured equivalent: a single page `key` (a URL
-// such as `https://yufan.me/about/`) used to rehydrate the page-title
+// such as `https://example.com/about/`) used to rehydrate the page-title
 // Combobox from a `?pageKey=…` URL parameter. Page keys are not
 // comma-safe (URL fragments may legally contain `,`), so unlike `ids`
 // we accept a single value rather than splitting.

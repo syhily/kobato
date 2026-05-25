@@ -132,7 +132,7 @@ function FontsGlobalCssCard({ fonts }: { fonts: FontsSettings }) {
                 <div key={field.id} className="flex items-center gap-2">
                   <Input
                     type="url"
-                    placeholder="https://cat.yufan.me/fonts/<name>.css"
+                    placeholder="https://assets.example.com/fonts/<name>.css"
                     maxLength={500}
                     className="flex-1"
                     {...form.register(`globalCss.${index}.url` as const)}
@@ -206,7 +206,7 @@ function FontsPostCssCard({ fonts }: { fonts: FontsSettings }) {
                 <div key={field.id} className="flex items-center gap-2">
                   <Input
                     type="url"
-                    placeholder="https://cat.yufan.me/fonts/<name>.css"
+                    placeholder="https://assets.example.com/fonts/<name>.css"
                     maxLength={500}
                     className="flex-1"
                     {...form.register(`postCss.${index}.url` as const)}

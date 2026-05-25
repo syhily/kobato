@@ -756,7 +756,7 @@ describe('contract: pt-bridge — link markDef dedup', () => {
         _type: 'block',
         _key: 'b1',
         style: 'normal',
-        markDefs: [{ _type: 'link', _key: 'lk-shared', href: 'https://yufan.me' }],
+        markDefs: [{ _type: 'link', _key: 'lk-shared', href: 'https://example.com' }],
         children: [
           { _type: 'span', _key: 's1', text: 'go ' },
           { _type: 'span', _key: 's2', text: 'home', marks: ['lk-shared'] },
@@ -771,7 +771,7 @@ describe('contract: pt-bridge — link markDef dedup', () => {
       return
     }
     expect(back[0].markDefs?.length).toBe(1)
-    expect(back[0].markDefs?.[0]).toMatchObject({ _type: 'link', href: 'https://yufan.me' })
+    expect(back[0].markDefs?.[0]).toMatchObject({ _type: 'link', href: 'https://example.com' })
   })
 
   it('keeps two markDefs when the hrefs differ even if the visible text is identical', () => {
@@ -904,7 +904,7 @@ describe('contract: pt-bridge — table round-trip', () => {
               {
                 _type: 'tableCell',
                 _key: 'c-1',
-                markDefs: [{ _type: 'link', _key: 'lk-1', href: 'https://yufan.me' }],
+                markDefs: [{ _type: 'link', _key: 'lk-1', href: 'https://example.com' }],
                 content: [{ _type: 'span', _key: 's1', text: 'home', marks: ['lk-1'] }],
               },
             ],
@@ -918,6 +918,6 @@ describe('contract: pt-bridge — table round-trip', () => {
     }
     const cell = back[0].rows[0].cells[0]
     expect(cell.markDefs?.length).toBe(1)
-    expect(cell.markDefs?.[0]).toMatchObject({ _type: 'link', href: 'https://yufan.me' })
+    expect(cell.markDefs?.[0]).toMatchObject({ _type: 'link', href: 'https://example.com' })
   })
 })

@@ -105,7 +105,7 @@ async function runTestMigrations(db: ReturnType<typeof drizzle>): Promise<void> 
  * and return the connection URL.
  */
 export async function createWorkerDatabase(workerId: string): Promise<string> {
-  const dbName = `yufan_test_${workerId}_${Date.now()}`
+  const dbName = `kobato_test_${workerId}_${Date.now()}`
   const adminPool = getAdminPool()
 
   try {

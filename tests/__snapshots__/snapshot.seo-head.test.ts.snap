@@ -18,30 +18,30 @@ exports[`snapshot: SEO meta head > default (home / website) head 1`] = `
     "name": "author",
   },
   {
-    "href": "https://yufan.me",
+    "href": "https://example.com",
     "rel": "author",
     "tagName": "link",
   },
   {
-    "content": "雨帆,且听书吟,syhily,amehochan,yufan",
+    "content": "雨帆,且听书吟,syhily,kobato,こばと",
     "name": "keywords",
   },
   {
-    "href": "https://yufan.me/feed/",
+    "href": "https://example.com/feed/",
     "rel": "alternate",
     "tagName": "link",
     "title": "且听书吟",
     "type": "application/rss+xml",
   },
   {
-    "href": "https://yufan.me/feed/atom/",
+    "href": "https://example.com/feed/atom/",
     "rel": "alternate",
     "tagName": "link",
     "title": "且听书吟",
     "type": "application/atom+xml",
   },
   {
-    "href": "https://yufan.me/sitemap.xml",
+    "href": "https://example.com/sitemap.xml",
     "rel": "sitemap",
     "tagName": "link",
   },
@@ -92,11 +92,11 @@ exports[`snapshot: SEO meta head > default (home / website) head 1`] = `
     "property": "og:description",
   },
   {
-    "content": "https://yufan.me",
+    "content": "https://example.com",
     "property": "og:url",
   },
   {
-    "content": "https://yufan.me/images/open-graph.png",
+    "content": "https://example.com/images/open-graph.png",
     "property": "og:image",
   },
   {
@@ -132,7 +132,7 @@ exports[`snapshot: SEO meta head > default (home / website) head 1`] = `
     "property": "twitter:card",
   },
   {
-    "content": "https://yufan.me/images/open-graph.png",
+    "content": "https://example.com/images/open-graph.png",
     "property": "twitter:image",
   },
   {
@@ -160,30 +160,30 @@ exports[`snapshot: SEO meta head > listing head with paging links + noindex 1`] 
     "name": "author",
   },
   {
-    "href": "https://yufan.me",
+    "href": "https://example.com",
     "rel": "author",
     "tagName": "link",
   },
   {
-    "content": "雨帆,且听书吟,syhily,amehochan,yufan",
+    "content": "雨帆,且听书吟,syhily,kobato,こばと",
     "name": "keywords",
   },
   {
-    "href": "https://yufan.me/feed/",
+    "href": "https://example.com/feed/",
     "rel": "alternate",
     "tagName": "link",
     "title": "且听书吟",
     "type": "application/rss+xml",
   },
   {
-    "href": "https://yufan.me/feed/atom/",
+    "href": "https://example.com/feed/atom/",
     "rel": "alternate",
     "tagName": "link",
     "title": "且听书吟",
     "type": "application/atom+xml",
   },
   {
-    "href": "https://yufan.me/sitemap.xml",
+    "href": "https://example.com/sitemap.xml",
     "rel": "sitemap",
     "tagName": "link",
   },
@@ -234,11 +234,11 @@ exports[`snapshot: SEO meta head > listing head with paging links + noindex 1`] 
     "property": "og:description",
   },
   {
-    "content": "https://yufan.me/archives/page/2",
+    "content": "https://example.com/archives/page/2",
     "property": "og:url",
   },
   {
-    "content": "https://yufan.me/images/open-graph.png",
+    "content": "https://example.com/images/open-graph.png",
     "property": "og:image",
   },
   {
@@ -274,7 +274,7 @@ exports[`snapshot: SEO meta head > listing head with paging links + noindex 1`] 
     "property": "twitter:card",
   },
   {
-    "content": "https://yufan.me/images/open-graph.png",
+    "content": "https://example.com/images/open-graph.png",
     "property": "twitter:image",
   },
   {
@@ -282,17 +282,17 @@ exports[`snapshot: SEO meta head > listing head with paging links + noindex 1`] 
     "property": "twitter:image:alt",
   },
   {
-    "href": "https://yufan.me/archives/page/2",
+    "href": "https://example.com/archives/page/2",
     "rel": "canonical",
     "tagName": "link",
   },
   {
-    "href": "https://yufan.me/archives",
+    "href": "https://example.com/archives",
     "rel": "prev",
     "tagName": "link",
   },
   {
-    "href": "https://yufan.me/archives/page/3",
+    "href": "https://example.com/archives/page/3",
     "rel": "next",
     "tagName": "link",
   },
@@ -317,30 +317,30 @@ exports[`snapshot: SEO meta head > post detail head includes article:tag entries
     "name": "author",
   },
   {
-    "href": "https://yufan.me",
+    "href": "https://example.com",
     "rel": "author",
     "tagName": "link",
   },
   {
-    "content": "雨帆,且听书吟,syhily,amehochan,yufan",
+    "content": "雨帆,且听书吟,syhily,kobato,こばと",
     "name": "keywords",
   },
   {
-    "href": "https://yufan.me/feed/",
+    "href": "https://example.com/feed/",
     "rel": "alternate",
     "tagName": "link",
     "title": "且听书吟",
     "type": "application/rss+xml",
   },
   {
-    "href": "https://yufan.me/feed/atom/",
+    "href": "https://example.com/feed/atom/",
     "rel": "alternate",
     "tagName": "link",
     "title": "且听书吟",
     "type": "application/atom+xml",
   },
   {
-    "href": "https://yufan.me/sitemap.xml",
+    "href": "https://example.com/sitemap.xml",
     "rel": "sitemap",
     "tagName": "link",
   },
@@ -391,11 +391,11 @@ exports[`snapshot: SEO meta head > post detail head includes article:tag entries
     "property": "og:description",
   },
   {
-    "content": "https://yufan.me/posts/hello",
+    "content": "https://example.com/posts/hello",
     "property": "og:url",
   },
   {
-    "content": "https://yufan.me/images/open-graph.png",
+    "content": "https://example.com/images/open-graph.png",
     "property": "og:image",
   },
   {
@@ -455,7 +455,7 @@ exports[`snapshot: SEO meta head > post detail head includes article:tag entries
     "property": "twitter:card",
   },
   {
-    "content": "https://yufan.me/images/open-graph.png",
+    "content": "https://example.com/images/open-graph.png",
     "property": "twitter:image",
   },
   {
@@ -463,7 +463,7 @@ exports[`snapshot: SEO meta head > post detail head includes article:tag entries
     "property": "twitter:image:alt",
   },
   {
-    "href": "https://yufan.me/posts/hello",
+    "href": "https://example.com/posts/hello",
     "rel": "canonical",
     "tagName": "link",
   },

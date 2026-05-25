@@ -1,6 +1,6 @@
 import { randomBytes } from 'node:crypto'
 
-import { YF_AID_COOKIE } from '@/server/domains/analytics/track'
+import { KOBATO_AID_COOKIE } from '@/server/domains/analytics/track'
 
 // Long-lived opaque visitor identifier. Issued exactly once per browser
 // (httpOnly, sameSite=Lax, Max-Age=30d) so the analytics dashboard can
@@ -41,14 +41,20 @@ export interface VisitorCookieResolution {
 }
 
 export function resolveVisitorCookie(request: Request): VisitorCookieResolution {
-  const existing = readCookie(request.headers.get('cookie'), YF_AID_COOKIE)
+  const existing = readCookie(request.headers.get('cookie'), KOBATO_AID_COOKIE)
   if (existing && /^[a-f0-9]{16,64}$/i.test(existing)) {
     return { visitorId: existing, setCookie: null }
   }
   const visitorId = randomBytes(12).toString('hex')
   const url = new URL(request.url)
   const secure = url.protocol === 'https:'
-  const parts = [`${YF_AID_COOKIE}=${visitorId}`, 'Path=/', `Max-Age=${MAX_AGE_SECONDS}`, 'HttpOnly', 'SameSite=Lax']
+  const parts = [
+    `${KOBATO_AID_COOKIE}=${visitorId}`,
+    'Path=/',
+    `Max-Age=${MAX_AGE_SECONDS}`,
+    'HttpOnly',
+    'SameSite=Lax',
+  ]
   if (secure) {
     parts.push('Secure')
   }

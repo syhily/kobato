@@ -8,6 +8,7 @@ import {
   type SvgSlot,
 } from '@/server/assets/defaults'
 import { fetchBrandingObject, SLOT_CONTENT_TYPE } from '@/server/domains/assets/storage'
+import { NODE_ENV } from '@/server/infra/env'
 import { getBlogSettingsBundleSync } from '@/shared/config/getters'
 
 interface SvgRoute {
@@ -45,7 +46,7 @@ export const ASSET_ROUTES: Readonly<Record<string, AssetRoute>> = {
 // Defensive sanity check: every BinarySlot must have exactly one route.
 // Mostly catches the case where the slot list grows but `ASSET_ROUTES`
 // isn't updated, leaving an unreachable binary in the settings row.
-if (process.env.NODE_ENV !== 'production') {
+if (NODE_ENV !== 'production') {
   const slots = new Set<string>(BINARY_SLOTS)
   for (const route of Object.values(ASSET_ROUTES)) {
     if (route.kind === 'binary') {

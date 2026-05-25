@@ -3,7 +3,7 @@ import { Readable } from 'node:stream'
 import { promisify } from 'node:util'
 import { createGunzip, createGzip } from 'node:zlib'
 
-import { DATABASE_URL } from '@/server/infra/env'
+import { DATABASE_URL, processEnv } from '@/server/infra/env'
 import { ActionFailure, DomainError } from '@/server/infra/http/errors'
 import { getLogger } from '@/server/infra/logger'
 import {
@@ -52,7 +52,7 @@ function getPgConnectionOptions(): { args: string[]; env: Record<string, string>
     throw new DomainError('INTERNAL', 'DATABASE_URL 未配置')
   }
   const parsed = new URL(url)
-  const env: Record<string, string> = { ...(process.env as Record<string, string>) }
+  const env: Record<string, string> = { ...processEnv }
   if (parsed.password) {
     env.PGPASSWORD = parsed.password
   }

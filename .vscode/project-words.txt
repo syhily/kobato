@@ -4,8 +4,6 @@ alignfull
 alignleft
 alignright
 alignwide
-ameho
-amehochan
 aplayer
 appver
 arnowelzel
@@ -42,6 +40,7 @@ cynosura
 daiji
 datetime
 datong
+dbname
 dichen
 dinesh
 dotum
@@ -84,6 +83,7 @@ hmac
 hnsw
 honorbkk
 huaweiyal
+hypertable
 ianvs
 icomoon
 iconfont
@@ -114,6 +114,7 @@ khalil
 khtml
 koanughi
 koaunghi
+kobato
 labelledby
 lafoyer
 lanczos
@@ -190,6 +191,7 @@ pcss
 pefc
 penheulim
 pglite
+pgpassword
 photoswipe
 phpinfo
 picimg
@@ -230,14 +232,13 @@ shiki
 shikijs
 shinmun
 shmily
-Skia
+skia
 skrs
 slugignore
 sqlx
 srcset
 stylesheet
 suus
-syhily
 tabindex
 tagcloud
 taza
@@ -296,7 +297,6 @@ yetgul
 ying
 yuaanlin
 yual
-yufan
 yyjn
 zeabur
 zhihu

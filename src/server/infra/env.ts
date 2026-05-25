@@ -29,6 +29,14 @@ const envConfig = {
     // rendering. Admin settings specify filenames relative to this directory.
     // Optional: when unset, Canvas falls back to its built-in system CJK shaper.
     FONT_PATH: z.string().min(1).optional(),
+
+    // Dead-letter file paths for analytics and audit batchers.
+    // Optional: fall back to `/tmp/...` defaults when unset.
+    ANALYTICS_DEAD_LETTER_PATH: z.string().min(1).optional(),
+    AUDIT_DEAD_LETTER_PATH: z.string().min(1).optional(),
+
+    // Node environment. Optional: defaults to 'development'.
+    NODE_ENV: z.enum(['development', 'production', 'test']).optional().default('development'),
   },
   runtimeEnv: process.env,
   emptyStringAsUndefined: true,
@@ -61,6 +69,8 @@ function loadEnv() {
 const env = loadEnv()
 
 export const {
+  ANALYTICS_DEAD_LETTER_PATH,
+  AUDIT_DEAD_LETTER_PATH,
   DATABASE_URL,
   DB_POOL_MAX,
   DB_STATEMENT_TIMEOUT_MS,
@@ -69,6 +79,7 @@ export const {
   HOST,
   LOG_LEVEL,
   MAXMIND_DB_PATH,
+  NODE_ENV,
   PORT,
   REDIS_URL,
   SESSION_SECRET,
@@ -77,3 +88,6 @@ export const {
 export function isVitest(): boolean {
   return process.env.VITEST === 'true'
 }
+
+/** Full `process.env` snapshot for child-process spawning (e.g. pg_dump). */
+export const processEnv: Record<string, string> = process.env as Record<string, string>

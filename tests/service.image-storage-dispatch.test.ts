@@ -20,7 +20,7 @@ afterEach(() => {
 describe('server/images/storage — toggle dispatch', () => {
   it('reports the public base URL from the assets section host when uploads are ON', () => {
     expect(isUploadEnabled()).toBe(true)
-    expect(getPublicBaseUrl()).toBe('https://cat.yufan.me')
+    expect(getPublicBaseUrl()).toBe('https://assets.example.com')
   })
 
   it('follows asset host updates immediately', () => {
@@ -43,7 +43,7 @@ describe('server/images/storage — toggle dispatch', () => {
       },
     })
     expect(isUploadEnabled()).toBe(false)
-    expect(getPublicBaseUrl()).toBe('https://cat.yufan.me')
+    expect(getPublicBaseUrl()).toBe('https://assets.example.com')
   })
 
   it('refuses putImage / deleteImage when the toggle is OFF', async () => {

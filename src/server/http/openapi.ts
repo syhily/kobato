@@ -11,9 +11,9 @@ const generator = new OpenAPIGenerator()
 export async function buildOpenApiDocument() {
   return generator.generate(apiRouter, {
     info: {
-      title: 'Yufan.me API',
+      title: 'Kobato API',
       version: '1.0.0',
-      description: 'Internal API for the Yufan.me blog platform.',
+      description: 'Internal API for the Kobato blog platform.',
     },
     servers: [{ url: '/rpc', description: 'oRPC RPC endpoint' }],
   })

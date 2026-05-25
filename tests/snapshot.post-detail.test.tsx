@@ -47,7 +47,7 @@ describe('snapshot: PostDetailBody composed view', () => {
         visibleTags={visibleTags}
         mode="public"
         likes={7}
-        commentKey="https://yufan.me/posts/hello/"
+        commentKey="https://example.com/posts/hello/"
         commentsPromise={commentsPromise}
         sidebar={sidebar}
       >
@@ -85,7 +85,7 @@ describe('snapshot: PostDetailBody composed view', () => {
         visibleTags={[]}
         mode="public"
         likes={0}
-        commentKey="https://yufan.me/posts/no-toc/"
+        commentKey="https://example.com/posts/no-toc/"
         commentsPromise={commentsPromise}
         sidebar={sidebar}
       >

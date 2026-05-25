@@ -25,7 +25,7 @@ export function EmailLayout({ receiver, children }: Props) {
           <Section style={{ padding: 0 }}>
             <div style={hero}>
               <Img
-                src="https://yufan.me/images/blog-poster-dark.png"
+                src="https://example.com/images/blog-poster-dark.png"
                 style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
                 alt={siteIdentity.title}
               />

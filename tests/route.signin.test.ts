@@ -32,7 +32,7 @@ vi.mock('@/server/domains/auth/context', async () => {
     ...actual,
     getRouteRequestContext: vi.fn(({ request }: { request: Request }) => ({
       session: state.session,
-      user: state.loggedIn ? { id: '1', name: 'admin', email: 'admin@yufan.me' } : undefined,
+      user: state.loggedIn ? { id: '1', name: 'admin', email: 'admin@example.com' } : undefined,
       role: state.loggedIn ? ('admin' as const) : null,
       clientAddress: '127.0.0.1',
       url: new URL(request.url),
