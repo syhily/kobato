@@ -220,6 +220,16 @@ export async function getImageObject(key: string): Promise<Buffer> {
   })
 }
 
+function parseS3Contents(contents: import('@aws-sdk/client-s3')._Object[] | undefined): S3ObjectMeta[] {
+  const objects: S3ObjectMeta[] = []
+  for (const item of contents ?? []) {
+    if (item.Key && item.LastModified && item.Size !== undefined) {
+      objects.push({ key: item.Key, size: item.Size, lastModified: item.LastModified })
+    }
+  }
+  return objects
+}
+
 export async function listS3Objects(prefix: string): Promise<S3ObjectMeta[]> {
   const sdk = await getAwsSdk()
   const { client, bucket } = await getImageStorageContext({ requireEnabled: false })
@@ -233,11 +243,7 @@ export async function listS3Objects(prefix: string): Promise<S3ObjectMeta[]> {
         ContinuationToken: continuationToken,
       }),
     )
-    for (const item of response.Contents ?? []) {
-      if (item.Key && item.LastModified && item.Size !== undefined) {
-        objects.push({ key: item.Key, size: item.Size, lastModified: item.LastModified })
-      }
-    }
+    objects.push(...parseS3Contents(response.Contents))
     continuationToken = response.NextContinuationToken
   } while (continuationToken)
   return objects
@@ -263,13 +269,7 @@ export async function listS3ObjectsPaginated(
       ContinuationToken: continuationToken,
     }),
   )
-  const objects: S3ObjectMeta[] = []
-  for (const item of response.Contents ?? []) {
-    if (item.Key && item.LastModified && item.Size !== undefined) {
-      objects.push({ key: item.Key, size: item.Size, lastModified: item.LastModified })
-    }
-  }
-  return { objects, nextContinuationToken: response.NextContinuationToken }
+  return { objects: parseS3Contents(response.Contents), nextContinuationToken: response.NextContinuationToken }
 }
 
 export async function getS3ObjectBuffer(key: string): Promise<Buffer> {
@@ -300,6 +300,12 @@ export async function putS3Object(key: string, body: Buffer | Readable, contentT
       CacheControl: 'private, max-age=31536000',
     }),
   )
+}
+
+export async function deleteS3Object(key: string): Promise<void> {
+  const sdk = await getAwsSdk()
+  const { client, bucket } = await getImageStorageContext({ requireEnabled: false })
+  await client.send(new sdk.DeleteObjectCommand({ Bucket: bucket, Key: key }))
 }
 
 export async function deleteS3Objects(keys: string[]): Promise<void> {

@@ -7,6 +7,7 @@ import { DATABASE_URL } from '@/server/infra/env'
 import { ActionFailure, DomainError } from '@/server/infra/http/errors'
 import { getLogger } from '@/server/infra/logger'
 import {
+  deleteS3Object,
   deleteS3Objects,
   getS3ObjectBuffer,
   listS3Objects,
@@ -120,6 +121,7 @@ export async function listBackups(
       size: o.size,
       lastModified: o.lastModified.toISOString(),
     }))
+    .sort((a, b) => new Date(b.lastModified).getTime() - new Date(a.lastModified).getTime())
   return { files, nextContinuationToken }
 }
 
@@ -141,7 +143,7 @@ export async function cleanupOldBackups(days: number): Promise<void> {
 }
 
 export async function deleteBackup(key: string): Promise<void> {
-  await deleteS3Objects([key])
+  await deleteS3Object(key)
   log.info('Backup deleted', { key })
 }
 

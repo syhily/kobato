@@ -40,28 +40,21 @@ function formatBytes(bytes: number): string {
   return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)} GB`
 }
 
+const BASE_OPTS: Intl.DateTimeFormatOptions = {
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+  hour: '2-digit',
+  minute: '2-digit',
+  second: '2-digit',
+  hour12: false,
+}
+
 function formatDateTime(iso: string, timeZone: string): string {
   try {
-    return new Intl.DateTimeFormat('zh-CN', {
-      timeZone,
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit',
-      hour12: false,
-    }).format(new Date(iso))
+    return new Intl.DateTimeFormat('zh-CN', { ...BASE_OPTS, timeZone }).format(new Date(iso))
   } catch {
-    return new Intl.DateTimeFormat('zh-CN', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit',
-      hour12: false,
-    }).format(new Date(iso))
+    return new Intl.DateTimeFormat('zh-CN', BASE_OPTS).format(new Date(iso))
   }
 }
 

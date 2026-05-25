@@ -39,14 +39,21 @@ export function BackupView({ backup, timeZone }: BackupViewProps) {
   })
 
   const loadPage = useCallback(async (limit: number, token?: string) => {
-    const res = await orpc.admin.backup.list({ limit, continuationToken: token })
-    if (token) {
-      setBackupFiles((prev) => [...prev, ...res.files])
-    } else {
-      setBackupFiles(res.files)
+    try {
+      const res = await orpc.admin.backup.list({ limit, continuationToken: token })
+      if (token) {
+        setBackupFiles((prev) => [...prev, ...res.files])
+      } else {
+        setBackupFiles(res.files)
+      }
+      setNextToken(res.nextContinuationToken)
+      return res
+    } catch (err) {
+      toast.error('加载备份列表失败', {
+        description: err instanceof Error ? err.message : '请检查网络或刷新页面重试',
+      })
+      throw err
     }
-    setNextToken(res.nextContinuationToken)
-    return res
   }, [])
 
   useEffect(() => {
@@ -128,12 +135,12 @@ export function BackupView({ backup, timeZone }: BackupViewProps) {
     <div className="flex flex-col gap-6">
       {(statusLoading || isInitialLoading) && <div className="text-sm text-muted-foreground">正在读取备份信息…</div>}
       {!statusLoading && !isInitialLoading && !pgToolsAvailable && (
-        <div className="rounded-md border border-amber-500/30 bg-amber-500/5 p-4 text-sm text-amber-700">
+        <div className="rounded-md border border-status-warn-border/30 bg-status-warn-bg/50 p-4 text-sm text-status-warn-fg">
           当前运行环境缺少 postgresql-client，备份与还原功能不可用。
         </div>
       )}
       {!statusLoading && !isInitialLoading && !s3Enabled && (
-        <div className="rounded-md border border-amber-500/30 bg-amber-500/5 p-4 text-sm text-amber-700">
+        <div className="rounded-md border border-status-warn-border/30 bg-status-warn-bg/50 p-4 text-sm text-status-warn-fg">
           请先前往存储配置启用 S3 存储。
         </div>
       )}
