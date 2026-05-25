@@ -1,6 +1,7 @@
 import { useState } from 'react'
 
 import { SettingGroup } from '@/ui/admin/settings/shell/SettingGroup'
+import { type ConfirmState, ConfirmDialog } from '@/ui/admin/shared/ConfirmDialog'
 import { Button } from '@/ui/components/button'
 
 interface BackupFile {
@@ -12,7 +13,6 @@ interface BackupFile {
 
 interface BackupFileListProps {
   backups: BackupFile[]
-  total: number
   timeZone: string
   canConfigure: boolean
   isCreating: boolean
@@ -22,6 +22,9 @@ interface BackupFileListProps {
   onRestore: (key: string) => void
   onDelete: (key: string) => void
   deletePending: boolean
+  onLoadMore: () => void
+  isLoadingMore: boolean
+  hasMore: boolean
 }
 
 function formatBytes(bytes: number): string {
@@ -37,24 +40,33 @@ function formatBytes(bytes: number): string {
   return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)} GB`
 }
 
-const PAGE_SIZE = 5
-
 function formatDateTime(iso: string, timeZone: string): string {
-  return new Intl.DateTimeFormat('zh-CN', {
-    timeZone,
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-    hour12: false,
-  }).format(new Date(iso))
+  try {
+    return new Intl.DateTimeFormat('zh-CN', {
+      timeZone,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false,
+    }).format(new Date(iso))
+  } catch {
+    return new Intl.DateTimeFormat('zh-CN', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false,
+    }).format(new Date(iso))
+  }
 }
 
 export function BackupFileList({
   backups,
-  total,
   timeZone,
   canConfigure,
   isCreating,
@@ -64,8 +76,11 @@ export function BackupFileList({
   onRestore,
   onDelete,
   deletePending,
+  onLoadMore,
+  isLoadingMore,
+  hasMore,
 }: BackupFileListProps) {
-  const [displayCount, setDisplayCount] = useState(PAGE_SIZE)
+  const [confirm, setConfirm] = useState<ConfirmState | null>(null)
   return (
     <SettingGroup
       title="备份文件"
@@ -90,7 +105,7 @@ export function BackupFileList({
               </tr>
             </thead>
             <tbody className="divide-y">
-              {backups.slice(0, displayCount).map((file) => (
+              {backups.map((file) => (
                 <tr key={file.key}>
                   <td className="px-4 py-2 font-mono text-xs">{file.fileName}</td>
                   <td className="px-4 py-2 text-right tabular-nums">{formatBytes(file.size)}</td>
@@ -119,11 +134,15 @@ export function BackupFileList({
                         variant="ghost"
                         size="sm"
                         disabled={deletePending}
-                        onClick={() => {
-                          if (window.confirm(`确定要删除备份文件 ${file.fileName} 吗？`)) {
-                            onDelete(file.key)
-                          }
-                        }}
+                        onClick={() =>
+                          setConfirm({
+                            title: `删除备份文件「${file.fileName}」？`,
+                            description: '此操作会从 S3 永久删除该备份文件，无法撤销。',
+                            actionLabel: '删除',
+                            destructive: true,
+                            onConfirm: () => onDelete(file.key),
+                          })
+                        }
                       >
                         删除
                       </Button>
@@ -135,16 +154,15 @@ export function BackupFileList({
           </table>
         </div>
       )}
-      {backups.length > 0 && displayCount < backups.length && (
+      {backups.length > 0 && hasMore && (
         <div className="flex items-center justify-between px-1 py-2">
-          <span className="text-xs text-muted-foreground">
-            共 {total} 个备份文件，已展示 {Math.min(displayCount, backups.length)} 个
-          </span>
-          <Button type="button" variant="outline" size="sm" onClick={() => setDisplayCount((c) => c + PAGE_SIZE)}>
-            加载更多
+          <span className="text-xs text-muted-foreground">已展示 {backups.length} 个备份文件</span>
+          <Button type="button" variant="outline" size="sm" disabled={isLoadingMore} onClick={() => onLoadMore()}>
+            {isLoadingMore ? '加载中…' : '加载更多'}
           </Button>
         </div>
       )}
+      <ConfirmDialog state={confirm} onClose={() => setConfirm(null)} />
     </SettingGroup>
   )
 }

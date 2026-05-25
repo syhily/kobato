@@ -1,10 +1,11 @@
-import { useCallback, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
 
 import type { BackupSettings } from '@/shared/config/blog'
+import type { BackupFileDto } from '@/shared/types/backup'
 
 import { orpc } from '@/client/api/client'
-import { useMutation, useQuery, useQueryClient } from '@/client/api/query'
+import { useMutation, useQuery } from '@/client/api/query'
 import { BackupFileList } from '@/ui/admin/settings/BackupFileList'
 import { BackupRestoreDialog } from '@/ui/admin/settings/BackupRestoreDialog'
 import { BackupScheduleForm } from '@/ui/admin/settings/BackupScheduleForm'
@@ -23,34 +24,46 @@ const FALLBACK_BACKUP: BackupSettings = {
 }
 
 export function BackupView({ backup, timeZone }: BackupViewProps) {
-  const queryClient = useQueryClient()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [restoreKey, setRestoreKey] = useState<string | null>(null)
   const [uploading, setUploading] = useState(false)
+
+  const [backupFiles, setBackupFiles] = useState<BackupFileDto[]>([])
+  const [nextToken, setNextToken] = useState<string | undefined>()
+  const [isInitialLoading, setIsInitialLoading] = useState(false)
+  const [isLoadingMore, setIsLoadingMore] = useState(false)
 
   const { data: statusData, isPending: statusLoading } = useQuery({
     queryKey: ['admin', 'backup', 'status'],
     queryFn: () => orpc.admin.backup.status(),
   })
 
-  const { data: listData, isPending: listLoading } = useQuery({
-    queryKey: ['admin', 'backup', 'list'],
-    queryFn: () => orpc.admin.backup.list(),
-    staleTime: Infinity,
-    refetchOnWindowFocus: false,
-  })
+  const loadPage = useCallback(async (limit: number, token?: string) => {
+    const res = await orpc.admin.backup.list({ limit, continuationToken: token })
+    if (token) {
+      setBackupFiles((prev) => [...prev, ...res.files])
+    } else {
+      setBackupFiles(res.files)
+    }
+    setNextToken(res.nextContinuationToken)
+    return res
+  }, [])
+
+  useEffect(() => {
+    setIsInitialLoading(true)
+    void loadPage(5).finally(() => setIsInitialLoading(false))
+  }, [loadPage])
 
   const s3Enabled = statusData?.s3Enabled ?? false
   const pgToolsAvailable = statusData?.pgToolsAvailable ?? false
-  const backups = listData?.files ?? []
-  const totalBackups = listData?.total ?? 0
 
   const source = backup ?? FALLBACK_BACKUP
 
   const createMutation = useMutation({
     mutationFn: () => orpc.admin.backup.create(),
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ['admin', 'backup', 'list'] })
+      setIsInitialLoading(true)
+      void loadPage(backupFiles.length || 5).finally(() => setIsInitialLoading(false))
     },
   })
 
@@ -65,9 +78,22 @@ export function BackupView({ backup, timeZone }: BackupViewProps) {
   const deleteMutation = useMutation({
     mutationFn: ({ key }: { key: string }) => orpc.admin.backup.delete({ key }),
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ['admin', 'backup', 'list'] })
+      toast.success('备份文件已删除')
+      setIsInitialLoading(true)
+      void loadPage(backupFiles.length || 5).finally(() => setIsInitialLoading(false))
+    },
+    onError: (error: Error) => {
+      toast.error('删除失败', { description: error.message })
     },
   })
+
+  const handleLoadMore = useCallback(() => {
+    if (!nextToken || isLoadingMore) {
+      return
+    }
+    setIsLoadingMore(true)
+    void loadPage(5, nextToken).finally(() => setIsLoadingMore(false))
+  }, [nextToken, isLoadingMore, loadPage])
 
   const handleUploadRestore = useCallback(async () => {
     const input = fileInputRef.current
@@ -79,7 +105,6 @@ export function BackupView({ backup, timeZone }: BackupViewProps) {
     try {
       const formData = new FormData()
       formData.append('file', file)
-      // oRPC doesn't support multipart/form-data uploads — raw fetch is required here
       const res = await fetch('/api/admin/backup/upload-restore', {
         method: 'POST',
         body: formData,
@@ -98,17 +123,16 @@ export function BackupView({ backup, timeZone }: BackupViewProps) {
   }, [])
 
   const canConfigure = s3Enabled && pgToolsAvailable
-  const isLoading = statusLoading || listLoading
 
   return (
     <div className="flex flex-col gap-6">
-      {isLoading && <div className="text-sm text-muted-foreground">正在读取备份信息…</div>}
-      {!isLoading && !pgToolsAvailable && (
+      {(statusLoading || isInitialLoading) && <div className="text-sm text-muted-foreground">正在读取备份信息…</div>}
+      {!statusLoading && !isInitialLoading && !pgToolsAvailable && (
         <div className="rounded-md border border-amber-500/30 bg-amber-500/5 p-4 text-sm text-amber-700">
           当前运行环境缺少 postgresql-client，备份与还原功能不可用。
         </div>
       )}
-      {!isLoading && !s3Enabled && (
+      {!statusLoading && !isInitialLoading && !s3Enabled && (
         <div className="rounded-md border border-amber-500/30 bg-amber-500/5 p-4 text-sm text-amber-700">
           请先前往存储配置启用 S3 存储。
         </div>
@@ -117,8 +141,7 @@ export function BackupView({ backup, timeZone }: BackupViewProps) {
       <BackupScheduleForm backup={source} canConfigure={canConfigure} />
 
       <BackupFileList
-        backups={backups}
-        total={totalBackups}
+        backups={backupFiles}
         timeZone={timeZone}
         canConfigure={canConfigure}
         isCreating={createMutation.isPending}
@@ -128,6 +151,9 @@ export function BackupView({ backup, timeZone }: BackupViewProps) {
         onRestore={(key) => setRestoreKey(key)}
         onDelete={(key) => deleteMutation.mutate({ key })}
         deletePending={deleteMutation.isPending}
+        onLoadMore={handleLoadMore}
+        isLoadingMore={isLoadingMore}
+        hasMore={!!nextToken}
       />
 
       {restoreKey && (

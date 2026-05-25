@@ -243,6 +243,35 @@ export async function listS3Objects(prefix: string): Promise<S3ObjectMeta[]> {
   return objects
 }
 
+export interface ListS3ObjectsPaginatedResult {
+  objects: S3ObjectMeta[]
+  nextContinuationToken?: string
+}
+
+export async function listS3ObjectsPaginated(
+  prefix: string,
+  maxKeys?: number,
+  continuationToken?: string,
+): Promise<ListS3ObjectsPaginatedResult> {
+  const sdk = await getAwsSdk()
+  const { client, bucket } = await getImageStorageContext({ requireEnabled: false })
+  const response = await client.send(
+    new sdk.ListObjectsV2Command({
+      Bucket: bucket,
+      Prefix: prefix,
+      MaxKeys: maxKeys,
+      ContinuationToken: continuationToken,
+    }),
+  )
+  const objects: S3ObjectMeta[] = []
+  for (const item of response.Contents ?? []) {
+    if (item.Key && item.LastModified && item.Size !== undefined) {
+      objects.push({ key: item.Key, size: item.Size, lastModified: item.LastModified })
+    }
+  }
+  return { objects, nextContinuationToken: response.NextContinuationToken }
+}
+
 export async function getS3ObjectBuffer(key: string): Promise<Buffer> {
   const sdk = await getAwsSdk()
   const { client, bucket } = await getImageStorageContext({ requireEnabled: false })

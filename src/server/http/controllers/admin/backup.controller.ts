@@ -35,10 +35,10 @@ const status = adminProc
 
 const list = adminProc
   .route({ method: 'GET', path: '/admin/backup/list' })
-  .input(z.object({ limit: z.number().optional(), offset: z.number().optional() }).optional())
-  .output(z.object({ files: z.array(backupFileDto), total: z.number() }))
+  .input(z.object({ limit: z.number().optional(), continuationToken: z.string().optional() }).optional())
+  .output(z.object({ files: z.array(backupFileDto), nextContinuationToken: z.string().optional() }))
   .handler(async ({ input }) => {
-    const result = await listBackups(input?.limit, input?.offset)
+    const result = await listBackups(input?.limit, input?.continuationToken)
     return result
   })
 

@@ -8,6 +8,7 @@ import { makeAuthedCtx } from './_helpers/mock-ctx'
 vi.mock('@/server/domains/backup/service', () => ({
   checkPgToolsAvailable: vi.fn(),
   createBackup: vi.fn(),
+  deleteBackup: vi.fn(),
   getBackupBuffer: vi.fn(),
   listBackups: vi.fn(),
   restoreFromBackup: vi.fn(),
@@ -48,11 +49,12 @@ describe('adminBackupRouter.list', () => {
         lastModified: '2026-01-01T00:00:00.000Z',
       },
     ]
-    vi.mocked(service.listBackups).mockResolvedValueOnce({ files, total: files.length })
+    vi.mocked(service.listBackups).mockResolvedValueOnce({ files, nextContinuationToken: undefined })
     const ctx = makeAuthedCtx()
     const res = await call(adminBackupRouter.list, undefined, { context: ctx })
     expect(res.files).toHaveLength(1)
     expect(res.files[0].fileName).toBe('2026-01-01.sql.gz')
+    expect(res.nextContinuationToken).toBeUndefined()
   })
 })
 
@@ -65,6 +67,15 @@ describe('adminBackupRouter.create', () => {
     const ctx = makeAuthedCtx()
     const res = await call(adminBackupRouter.create, undefined, { context: ctx })
     expect(res).toEqual({ fileName: '2026-01-01.sql.gz', size: 2048 })
+  })
+})
+
+describe('adminBackupRouter.delete', () => {
+  it('returns success after deleting backup', async () => {
+    vi.mocked(service.deleteBackup).mockResolvedValueOnce(undefined)
+    const ctx = makeAuthedCtx()
+    const res = await call(adminBackupRouter.delete, { key: 'backup/2026-01-01.sql.gz' }, { context: ctx })
+    expect(res).toEqual({ success: true })
   })
 })
 

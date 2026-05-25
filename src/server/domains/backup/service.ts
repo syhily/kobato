@@ -6,7 +6,13 @@ import { createGunzip, createGzip } from 'node:zlib'
 import { DATABASE_URL } from '@/server/infra/env'
 import { ActionFailure, DomainError } from '@/server/infra/http/errors'
 import { getLogger } from '@/server/infra/logger'
-import { deleteS3Objects, getS3ObjectBuffer, listS3Objects, putS3Object } from '@/server/infra/storage/s3-client'
+import {
+  deleteS3Objects,
+  getS3ObjectBuffer,
+  listS3Objects,
+  listS3ObjectsPaginated,
+  putS3Object,
+} from '@/server/infra/storage/s3-client'
 
 const execFileAsync = promisify(execFile)
 const log = getLogger('backup.service')
@@ -101,24 +107,20 @@ export async function createBackup(): Promise<{ fileName: string; size: number }
   return { fileName: key.split('/').pop()!, size: buffer.length }
 }
 
-export async function listBackups(limit?: number, offset?: number): Promise<{ files: BackupFileDto[]; total: number }> {
-  const objects = await listS3Objects('backup/')
-  const filtered = objects
+export async function listBackups(
+  limit?: number,
+  continuationToken?: string,
+): Promise<{ files: BackupFileDto[]; nextContinuationToken?: string }> {
+  const { objects, nextContinuationToken } = await listS3ObjectsPaginated('backup/', limit, continuationToken)
+  const files = objects
     .filter((o) => o.key.endsWith('.sql.gz'))
-    .sort((a, b) => b.lastModified.getTime() - a.lastModified.getTime())
-
-  const total = filtered.length
-  const page = filtered.slice(offset ?? 0, limit !== undefined ? (offset ?? 0) + limit : undefined)
-
-  return {
-    files: page.map((o) => ({
+    .map((o) => ({
       key: o.key,
       fileName: o.key.split('/').pop()!,
       size: o.size,
       lastModified: o.lastModified.toISOString(),
-    })),
-    total,
-  }
+    }))
+  return { files, nextContinuationToken }
 }
 
 export async function getBackupBuffer(key: string): Promise<Buffer> {
