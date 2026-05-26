@@ -171,9 +171,9 @@ export async function extractBackupSql(buffer: Buffer, fileName: string): Promis
     return buffer.toString('utf-8')
   }
 
-  if (fileName.endsWith('.sql.gz')) {
+  if (fileName.endsWith('.gz')) {
     if (buffer.length < 2 || buffer[0] !== 0x1f || buffer[1] !== 0x8b) {
-      throw new ActionFailure(400, '备份文件格式不正确，请上传有效的 .sql.gz 文件')
+      throw new ActionFailure(400, '备份文件格式不正确，请上传有效的 gzip 文件')
     }
 
     const gunzip = createGunzip()
@@ -192,7 +192,7 @@ export async function extractBackupSql(buffer: Buffer, fileName: string): Promis
     return Buffer.concat(chunks).toString('utf-8')
   }
 
-  throw new ActionFailure(400, '不支持的备份文件格式，仅支持 .sql 或 .sql.gz')
+  throw new ActionFailure(400, '不支持的备份文件格式，仅支持 .sql 或 .gz')
 }
 
 export function validateBackupSql(sql: string): void {
@@ -246,8 +246,8 @@ export async function restoreFromSql(sql: string): Promise<void> {
   log.info('Restore completed successfully')
 }
 
-export async function restoreFromBackup(buffer: Buffer): Promise<void> {
-  const sql = await extractBackupSql(buffer, 'backup.sql.gz')
+export async function restoreFromBackup(buffer: Buffer, fileName: string): Promise<void> {
+  const sql = await extractBackupSql(buffer, fileName)
   validateBackupSql(sql)
   await restoreFromSql(sql)
 }

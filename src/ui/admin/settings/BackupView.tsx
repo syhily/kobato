@@ -237,14 +237,27 @@ export function BackupView({ backup, timeZone }: BackupViewProps) {
         />
       )}
 
-      <SettingGroup title="手动还原" description="上传 .sql.gz 备份文件进行还原。">
+      <SettingGroup title="手动还原" description="上传 .sql 或 .gz 备份文件进行还原。">
         <div className="flex flex-col gap-3">
           <input
             ref={fileInputRef}
             type="file"
             accept=".sql,.gz,application/gzip"
             disabled={!pgToolsAvailable || uploading}
-            onChange={(e) => setSelectedFile(e.target.files?.[0] ?? null)}
+            onChange={(e) => {
+              const file = e.target.files?.[0] ?? null
+              if (file) {
+                const name = file.name
+                const isValid = /\.sql$/i.test(name) || /\.sql\.gz$/i.test(name) || /^[^.]+\.gz$/i.test(name)
+                if (!isValid) {
+                  toast.error('仅支持 .sql、.sql.gz 或 .gz 格式的备份文件')
+                  e.target.value = ''
+                  setSelectedFile(null)
+                  return
+                }
+              }
+              setSelectedFile(file)
+            }}
             className="sr-only"
             aria-label="选择备份文件"
           />

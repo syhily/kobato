@@ -86,10 +86,12 @@ describe('adminBackupRouter.delete', () => {
 
 describe('adminBackupRouter.restore', () => {
   it('returns accepted after restoring backup', async () => {
-    vi.mocked(service.getBackupBuffer).mockResolvedValueOnce(Buffer.from('sql'))
+    const buffer = Buffer.from('sql')
+    vi.mocked(service.getBackupBuffer).mockResolvedValueOnce(buffer)
     vi.mocked(service.restoreFromBackup).mockResolvedValueOnce(undefined)
     const ctx = makeAuthedCtx()
     const res = await call(adminBackupRouter.restore, { key: 'backup/2026-01-01.sql.gz' }, { context: ctx })
     expect(res).toEqual({ accepted: true })
+    expect(service.restoreFromBackup).toHaveBeenCalledWith(buffer, 'backup/2026-01-01.sql.gz')
   })
 })

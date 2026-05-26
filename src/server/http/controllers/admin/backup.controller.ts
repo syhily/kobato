@@ -89,7 +89,7 @@ const restore = adminProc
     // Defer heavy restore work so the HTTP response can be flushed first.
     Promise.resolve()
       .then(async () => {
-        await restoreFromBackup(buffer)
+        await restoreFromBackup(buffer, input.key)
         recordAuditEvent({
           action: 'backup_restored',
           resourceType: 'backup',

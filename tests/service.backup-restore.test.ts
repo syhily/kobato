@@ -35,6 +35,18 @@ describe('services/backup — extractBackupSql', () => {
     await expect(extractBackupSql(buffer, 'backup.sql.gz')).rejects.toThrow(ActionFailure)
   })
 
+  it('extracts plain .gz file', async () => {
+    const sql = 'CREATE TABLE users (id INT);'
+    const gzipped = await gzipString(sql)
+    const result = await extractBackupSql(gzipped, 'backup.gz')
+    expect(result).toBe(sql)
+  })
+
+  it('rejects non-gzip data with .gz extension', async () => {
+    const buffer = Buffer.from('not gzip data', 'utf-8')
+    await expect(extractBackupSql(buffer, 'backup.gz')).rejects.toThrow(ActionFailure)
+  })
+
   it('rejects unsupported file extensions', async () => {
     const buffer = Buffer.from('some data', 'utf-8')
     await expect(extractBackupSql(buffer, 'backup.zip')).rejects.toThrow(ActionFailure)
