@@ -9,6 +9,7 @@ type ShutdownHook = () => Promise<void>
 const hooks: ShutdownHook[] = []
 let httpServer: ServerType | null = null
 let shuttingDown = false
+let restartState: 'idle' | 'restarting' = 'idle'
 
 export function registerShutdownHook(hook: ShutdownHook): void {
   hooks.push(hook)
@@ -16,6 +17,15 @@ export function registerShutdownHook(hook: ShutdownHook): void {
 
 export function setHttpServer(server: ServerType): void {
   httpServer = server
+}
+
+export function getRestartState(): 'idle' | 'restarting' {
+  return restartState
+}
+
+export function setRestartState(state: 'idle' | 'restarting'): void {
+  restartState = state
+  log.info('Restart state changed', { state })
 }
 
 export function requestShutdown(reason: string): void {

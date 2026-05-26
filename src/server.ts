@@ -1,5 +1,6 @@
 import type { Context } from 'hono'
 
+import { serve } from '@hono/node-server'
 import { pinoLogger } from 'hono-pino'
 import { compress } from 'hono/compress'
 import { requestId } from 'hono/request-id'
@@ -32,9 +33,11 @@ import { imagesRouter } from '@/server/http/resources/images'
 import { redirectsRouter } from '@/server/http/resources/redirects'
 import { sitemapRouter } from '@/server/http/resources/sitemap'
 import { emitEncryptionStartupWarning } from '@/server/infra/crypto/secret-encryption'
+import { PORT } from '@/server/infra/env'
 import { createHonoServer } from '@/server/infra/hono/node'
 import { root } from '@/server/infra/logger'
-import { setHttpServer } from '@/server/infra/shutdown'
+import { setRestartApp, setRestartHttpServer } from '@/server/infra/restart'
+import { getRestartState } from '@/server/infra/shutdown'
 import { buildOpenApiDocsHtml } from '@/server/render/openapi-docs'
 
 // L5: authorization tokens must NEVER reach logs.
@@ -74,10 +77,8 @@ function resBindings(c: Context) {
   return { res: { status: c.res.status, headers } }
 }
 
-const server = await createHonoServer<Env>({
-  onServe: (httpServer) => {
-    setHttpServer(httpServer)
-  },
+const app = await createHonoServer<Env>({
+  autoServe: false,
   configure(app) {
     app.onError(onErrorHandler)
     app.use(requestId())
@@ -108,7 +109,18 @@ const server = await createHonoServer<Env>({
 
     // Health probes
     app.get('/health', (c) => c.json({ status: 'ok' }))
-    app.get('/ready', (c) => c.json({ status: 'ok' }))
+    app.get('/ready', (c) => {
+      if (getRestartState() === 'restarting') {
+        return c.json({ status: 'restarting' }, 503)
+      }
+      return c.json({ status: 'ok' })
+    })
+
+    // ─── Admin backup resource routes ─────────────────────
+    // Mounted BEFORE createApiApp so large-file endpoints
+    // (upload-restore, setup-restore) are not caught by the
+    // 10 MB content-length check in createApiApp.
+    app.route('/', backupRouter)
 
     // ─── API (oRPC at /rpc/*) ────────────────────────────
     app.route('/', createApiApp())
@@ -137,9 +149,6 @@ const server = await createHonoServer<Env>({
     app.route('/', sitemapRouter)
     app.route('/', redirectsRouter)
 
-    // ─── Admin backup resource routes ─────────────────────
-    app.route('/', backupRouter)
-
     // ─── Admin branding resource routes ──────────────────
     app.route('/', brandingRouter)
 
@@ -163,11 +172,24 @@ const server = await createHonoServer<Env>({
   },
 })
 
-wrapFetchWithLeakedResponseHandler(server)
+wrapFetchWithLeakedResponseHandler(app)
+
+const httpServer = import.meta.env.PROD
+  ? serve({ fetch: app.fetch.bind(app), port: PORT }, (info) => {
+      root.info(`🚀 Server started on port ${info.port}`)
+      root.info(`🌍 http://127.0.0.1:${info.port}`)
+      root.info(`🏎️ Server started`)
+    })
+  : null
+
+setRestartApp(app)
+if (httpServer) {
+  setRestartHttpServer(httpServer)
+}
 
 // Start schedulers after server is configured
 scheduleNextBackup()
 scheduleNextArchive()
 emitEncryptionStartupWarning()
 
-export default server
+export default app

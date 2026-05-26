@@ -15,6 +15,18 @@ import {
   putS3Object,
 } from '@/server/infra/storage/s3-client'
 
+async function hasTimescaleDbRestoreFunctions(): Promise<boolean> {
+  const { db } = await import('@/server/infra/db/pool')
+  try {
+    const result = await db.execute(
+      `SELECT 1 FROM pg_proc p JOIN pg_namespace n ON p.pronamespace = n.oid WHERE n.nspname = 'public' AND p.proname = 'timescaledb_pre_restore'`,
+    )
+    return result.rows.length > 0
+  } catch {
+    return false
+  }
+}
+
 const execFileAsync = promisify(execFile)
 const log = getLogger('backup.service')
 
@@ -154,33 +166,63 @@ export async function deleteBackup(key: string): Promise<void> {
   log.info('Backup deleted', { key })
 }
 
-export async function restoreFromBackup(buffer: Buffer): Promise<void> {
+export async function extractBackupSql(buffer: Buffer, fileName: string): Promise<string> {
+  if (fileName.endsWith('.sql')) {
+    return buffer.toString('utf-8')
+  }
+
+  if (fileName.endsWith('.sql.gz')) {
+    if (buffer.length < 2 || buffer[0] !== 0x1f || buffer[1] !== 0x8b) {
+      throw new ActionFailure(400, '备份文件格式不正确，请上传有效的 .sql.gz 文件')
+    }
+
+    const gunzip = createGunzip()
+    const inputStream = Readable.from([buffer])
+    inputStream.pipe(gunzip)
+
+    const chunks: Buffer[] = []
+    gunzip.on('data', (chunk: Buffer) => chunks.push(chunk))
+
+    await new Promise<void>((resolve, reject) => {
+      gunzip.on('end', () => resolve())
+      gunzip.on('error', reject)
+      inputStream.on('error', reject)
+    })
+
+    return Buffer.concat(chunks).toString('utf-8')
+  }
+
+  throw new ActionFailure(400, '不支持的备份文件格式，仅支持 .sql 或 .sql.gz')
+}
+
+export function validateBackupSql(sql: string): void {
+  const hasPgDumpHeader = /PostgreSQL database dump/i.test(sql)
+  const hasCreateTable = /CREATE\s+TABLE/i.test(sql)
+  const hasInsert = /INSERT\s+INTO/i.test(sql)
+  if (!hasPgDumpHeader && !hasCreateTable && !hasInsert) {
+    throw new ActionFailure(400, '备份文件内容不符合数据库备份格式')
+  }
+}
+
+export async function restoreFromSql(sql: string): Promise<void> {
   ensurePgTools()
   const { args: connArgs, env } = getPgConnectionOptions()
 
   log.info('Starting restore')
 
-  const gunzip = createGunzip()
-  const inputStream = Readable.from([buffer])
-  inputStream.pipe(gunzip)
+  const timescaleEnabled = await hasTimescaleDbRestoreFunctions()
+  let wrappedSql: string
 
-  const chunks: Buffer[] = []
-  gunzip.on('data', (chunk: Buffer) => chunks.push(chunk))
-
-  await new Promise<void>((resolve, reject) => {
-    gunzip.on('end', () => resolve())
-    gunzip.on('error', reject)
-    inputStream.on('error', reject)
-  })
-
-  const sql = Buffer.concat(chunks).toString('utf-8')
-
-  // TimescaleDB requires pre/post restore hooks so that hypertable
-  // catalog metadata is recreated correctly. See:
-  // https://docs.timescale.com/use-timescale/latest/backup-restore/pg-dump-and-restore/
-  const preSql = 'SELECT timescaledb_pre_restore();\n'
-  const postSql = 'SELECT timescaledb_post_restore();\n'
-  const wrappedSql = `${preSql}BEGIN;\nSET CONSTRAINTS ALL DEFERRED;\n${sql}\nCOMMIT;\n${postSql}`
+  if (timescaleEnabled) {
+    // TimescaleDB requires pre/post restore hooks so that hypertable
+    // catalog metadata is recreated correctly. See:
+    // https://docs.timescale.com/use-timescale/latest/backup-restore/pg-dump-and-restore/
+    const preSql = 'SELECT public.timescaledb_pre_restore();\n'
+    const postSql = 'SELECT public.timescaledb_post_restore();\n'
+    wrappedSql = `${preSql}BEGIN;\nSET CONSTRAINTS ALL DEFERRED;\n${sql}\nCOMMIT;\n${postSql}`
+  } else {
+    wrappedSql = `BEGIN;\nSET CONSTRAINTS ALL DEFERRED;\n${sql}\nCOMMIT;\n`
+  }
 
   const psql = spawn('psql', [...connArgs, '--echo-all'], {
     env,
@@ -202,4 +244,10 @@ export async function restoreFromBackup(buffer: Buffer): Promise<void> {
   })
 
   log.info('Restore completed successfully')
+}
+
+export async function restoreFromBackup(buffer: Buffer): Promise<void> {
+  const sql = await extractBackupSql(buffer, 'backup.sql.gz')
+  validateBackupSql(sql)
+  await restoreFromSql(sql)
 }

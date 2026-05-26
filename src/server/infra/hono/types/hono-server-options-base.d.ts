@@ -16,6 +16,15 @@ export interface HonoServerOptionsBase<E extends Env> {
    */
   app?: Hono<E>
   /**
+   * Whether to automatically start the HTTP server in production mode.
+   *
+   * Set to `false` when the caller wants to manage the `serve()` lifecycle
+   * externally (e.g. for in-process graceful restart).
+   *
+   * @default true
+   */
+  autoServe?: boolean
+  /**
    * The port to start the server on
    *
    * Defaults to `PORT || 3000`

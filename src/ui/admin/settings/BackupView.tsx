@@ -11,7 +11,8 @@ import { BackupRestoreDialog } from '@/ui/admin/settings/BackupRestoreDialog'
 import { BackupScheduleForm } from '@/ui/admin/settings/BackupScheduleForm'
 import { SettingGroup } from '@/ui/admin/settings/shell/SettingGroup'
 import { Button } from '@/ui/components/button'
-import { Input } from '@/ui/components/input'
+
+type RestorePhase = 'confirm' | 'waiting'
 
 interface BackupViewProps {
   backup: BackupSettings | null
@@ -23,10 +24,41 @@ const FALLBACK_BACKUP: BackupSettings = {
   retention: { enabled: true, days: 30 },
 }
 
+async function pollReady(onTimeout: () => void, signal: AbortSignal) {
+  const MAX_ATTEMPTS = 150
+  const INTERVAL_MS = 2000
+
+  for (let i = 0; i < MAX_ATTEMPTS; i++) {
+    if (signal.aborted) {
+      return
+    }
+
+    try {
+      const res = await fetch('/ready', { cache: 'no-store', signal })
+      if (res.ok) {
+        window.location.reload()
+        return
+      }
+    } catch {
+      // Network errors during restart are expected; keep polling.
+    }
+
+    await new Promise<void>((resolve) => setTimeout(resolve, INTERVAL_MS))
+  }
+
+  if (!signal.aborted) {
+    toast.error('等待服务重启超时，请手动刷新页面。')
+    onTimeout()
+  }
+}
+
 export function BackupView({ backup, timeZone }: BackupViewProps) {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [restoreKey, setRestoreKey] = useState<string | null>(null)
+  const [restorePhase, setRestorePhase] = useState<RestorePhase>('confirm')
   const [uploading, setUploading] = useState(false)
+  const [selectedFile, setSelectedFile] = useState<File | null>(null)
+  const pollAbortRef = useRef<AbortController | null>(null)
 
   const [backupFiles, setBackupFiles] = useState<BackupFileDto[]>([])
   const [nextToken, setNextToken] = useState<string | undefined>()
@@ -61,6 +93,13 @@ export function BackupView({ backup, timeZone }: BackupViewProps) {
     void loadPage(5).finally(() => setIsInitialLoading(false))
   }, [loadPage])
 
+  // Abort any in-flight polling when the component unmounts.
+  useEffect(() => {
+    return () => {
+      pollAbortRef.current?.abort()
+    }
+  }, [])
+
   const s3Enabled = statusData?.s3Enabled ?? false
   const pgToolsAvailable = statusData?.pgToolsAvailable ?? false
 
@@ -77,8 +116,17 @@ export function BackupView({ backup, timeZone }: BackupViewProps) {
   const restoreMutation = useMutation({
     mutationFn: ({ key }: { key: string }) => orpc.admin.backup.restore({ key }),
     onSuccess: () => {
+      setRestorePhase('waiting')
+      pollAbortRef.current = new AbortController()
+      void pollReady(() => {
+        setRestoreKey(null)
+        setRestorePhase('confirm')
+      }, pollAbortRef.current.signal)
+    },
+    onError: (error: Error) => {
+      toast.error('还原失败', { description: error.message })
       setRestoreKey(null)
-      toast.success('还原成功，服务即将重启…')
+      setRestorePhase('confirm')
     },
   })
 
@@ -103,31 +151,40 @@ export function BackupView({ backup, timeZone }: BackupViewProps) {
   }, [nextToken, isLoadingMore, loadPage])
 
   const handleUploadRestore = useCallback(async () => {
-    const input = fileInputRef.current
-    if (!input?.files?.[0]) {
+    if (!selectedFile) {
       return
     }
-    const file = input.files[0]
     setUploading(true)
     try {
       const formData = new FormData()
-      formData.append('file', file)
+      formData.append('file', selectedFile)
       const res = await fetch('/api/admin/backup/upload-restore', {
         method: 'POST',
         body: formData,
       })
+      const json = (await res.json()) as { accepted?: boolean; error?: { message?: string } }
       if (!res.ok) {
-        const data = (await res.json()) as { error?: { message?: string } }
-        throw new Error(data.error?.message ?? '上传还原失败')
+        throw new Error(json.error?.message ?? '上传还原失败')
       }
-      toast.success('还原成功，服务即将重启…')
+      if (json.accepted) {
+        setRestorePhase('waiting')
+        setRestoreKey('upload-restore')
+        pollAbortRef.current = new AbortController()
+        void pollReady(() => {
+          setRestoreKey(null)
+          setRestorePhase('confirm')
+        }, pollAbortRef.current.signal)
+      }
     } catch (err) {
       toast.error(err instanceof Error ? err.message : '上传还原失败')
     } finally {
       setUploading(false)
-      input.value = ''
+      setSelectedFile(null)
+      if (fileInputRef.current) {
+        fileInputRef.current.value = ''
+      }
     }
-  }, [])
+  }, [selectedFile])
 
   const canConfigure = s3Enabled && pgToolsAvailable
 
@@ -155,7 +212,10 @@ export function BackupView({ backup, timeZone }: BackupViewProps) {
         onCreate={() => createMutation.mutate()}
         restorePending={restoreMutation.isPending}
         pgToolsAvailable={pgToolsAvailable}
-        onRestore={(key) => setRestoreKey(key)}
+        onRestore={(key) => {
+          setRestoreKey(key)
+          setRestorePhase('confirm')
+        }}
         onDelete={(key) => deleteMutation.mutate({ key })}
         deletePending={deleteMutation.isPending}
         onLoadMore={handleLoadMore}
@@ -167,16 +227,49 @@ export function BackupView({ backup, timeZone }: BackupViewProps) {
         <BackupRestoreDialog
           restoreKey={restoreKey}
           isPending={restoreMutation.isPending}
+          phase={restorePhase}
           onConfirm={(key) => restoreMutation.mutate({ key })}
-          onCancel={() => setRestoreKey(null)}
+          onCancel={() => {
+            pollAbortRef.current?.abort()
+            setRestoreKey(null)
+            setRestorePhase('confirm')
+          }}
         />
       )}
 
       <SettingGroup title="手动还原" description="上传 .sql.gz 备份文件进行还原。">
         <div className="flex flex-col gap-3">
-          <Input ref={fileInputRef} type="file" accept=".sql.gz" disabled={!pgToolsAvailable || uploading} />
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".sql,.gz,application/gzip"
+            disabled={!pgToolsAvailable || uploading}
+            onChange={(e) => setSelectedFile(e.target.files?.[0] ?? null)}
+            className="sr-only"
+            aria-label="选择备份文件"
+          />
+          <div className="flex items-center gap-3 rounded-md bg-muted/50 px-3 py-2.5">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={!pgToolsAvailable || uploading}
+              onClick={() => fileInputRef.current?.click()}
+            >
+              {selectedFile ? '重新选择' : '选择文件'}
+            </Button>
+            {selectedFile ? (
+              <span className="text-sm text-muted-foreground">{selectedFile.name}</span>
+            ) : (
+              <span className="text-sm text-muted-foreground">未选择文件</span>
+            )}
+          </div>
           <div className="flex gap-2">
-            <Button type="button" disabled={!pgToolsAvailable || uploading} onClick={() => void handleUploadRestore()}>
+            <Button
+              type="button"
+              disabled={!pgToolsAvailable || uploading || !selectedFile}
+              onClick={() => void handleUploadRestore()}
+            >
               {uploading ? '上传还原中…' : '上传并还原'}
             </Button>
           </div>

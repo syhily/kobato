@@ -146,7 +146,7 @@ export async function createHonoServer<E extends Env = BlankEnv>(options?: HonoS
   /**
    * Start the production server
    */
-  if (PRODUCTION) {
+  if (PRODUCTION && mergedOptions.autoServe !== false) {
     const server = serve(
       {
         fetch: app.fetch.bind(app),

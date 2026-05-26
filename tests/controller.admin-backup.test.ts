@@ -21,6 +21,11 @@ vi.mock('@/shared/config/getters', () => ({
 vi.mock('@/server/infra/shutdown', () => ({
   requestShutdown: vi.fn(),
   registerShutdownHook: vi.fn(),
+  setRestartState: vi.fn(),
+}))
+
+vi.mock('@/server/infra/restart', () => ({
+  restartServer: vi.fn(),
 }))
 
 const service = await import('@/server/domains/backup/service')
@@ -80,11 +85,11 @@ describe('adminBackupRouter.delete', () => {
 })
 
 describe('adminBackupRouter.restore', () => {
-  it('returns success after restoring backup', async () => {
+  it('returns accepted after restoring backup', async () => {
     vi.mocked(service.getBackupBuffer).mockResolvedValueOnce(Buffer.from('sql'))
     vi.mocked(service.restoreFromBackup).mockResolvedValueOnce(undefined)
     const ctx = makeAuthedCtx()
     const res = await call(adminBackupRouter.restore, { key: 'backup/2026-01-01.sql.gz' }, { context: ctx })
-    expect(res).toEqual({ success: true })
+    expect(res).toEqual({ accepted: true })
   })
 })

@@ -66,7 +66,7 @@ export function VersionDialog({ open, onOpenChange }: VersionDialogProps) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-sm">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <TagIcon className="size-5 text-muted-foreground" />

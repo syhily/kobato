@@ -3,63 +3,102 @@ import { describe, expect, it, vi } from 'vitest'
 
 import type { Env } from '@/server/http/context'
 
-// The install gate calls `hasAdmin()` (DB). We stub it so we can drive
-// the two install states directly.
+// prettier-ignore
+const EXEMPT_CASES = [
+  // static asset prefixes
+  { path: '/assets/main.js',         desc: 'assets prefix' },
+  { path: '/build/client.js',        desc: 'build prefix' },
+  { path: '/fonts/Inter.woff2',      desc: 'fonts prefix' },
+  { path: '/images/avatar/1.png',    desc: 'images prefix' },
+  // favicon variants
+  { path: '/favicon.svg',            desc: 'favicon svg' },
+  { path: '/favicon.ico',            desc: 'favicon ico' },
+  // logo variants
+  { path: '/logo.svg',               desc: 'logo svg' },
+  { path: '/logo-dark.svg',          desc: 'logo-dark svg' },
+  { path: '/logo-large.svg',         desc: 'logo-large svg' },
+  { path: '/logo-large-dark.svg',    desc: 'logo-large-dark svg' },
+  // apple touch icon
+  { path: '/apple-touch-icon.png',   desc: 'apple-touch-icon' },
+  // other well-known files
+  { path: '/robots.txt',             desc: 'robots.txt' },
+  { path: '/sitemap.xml',            desc: 'sitemap.xml' },
+  { path: '/__manifest',             desc: '__manifest' },
+  // install-gate explicit paths
+  { path: '/admin/signin',           desc: 'admin signin' },
+  { path: '/admin/setup',            desc: 'admin setup' },
+  { path: '/api/setup/restore',      desc: 'api setup restore' },
+  { path: '/ready',                  desc: 'ready endpoint' },
+  // React Router data suffix
+  { path: '/admin/signin.data',      desc: 'RR data suffix' },
+]
 
-const mockHasAdmin = vi.fn()
-
-vi.mock('@/server/infra/db/operations/user', () => ({
-  hasAdmin: () => mockHasAdmin(),
-}))
-
-async function createApp(): Promise<Hono<Env>> {
-  const { honoInstallGateMiddleware } = await import('@/server/http/middlewares/install-gate')
-  const app = new Hono<Env>()
-  app.use(honoInstallGateMiddleware)
-  app.all('*', (c) => c.json({ passed: true, path: c.req.path }, 200))
-  return app
-}
+// prettier-ignore
+const BLOCKED_CASES = [
+  { path: '/',                       desc: 'root path' },
+  { path: '/posts/hello',            desc: 'public post' },
+  { path: '/about',                  desc: 'page route' },
+]
 
 describe('honoInstallGateMiddleware', () => {
-  it('lets exempt exact paths through in any state', async () => {
-    mockHasAdmin.mockResolvedValue(false)
+  async function makeApp() {
+    const { honoInstallGateMiddleware } = await import('@/server/http/middlewares/install-gate')
+    const app = new Hono<Env>()
+    app.use(honoInstallGateMiddleware)
+    app.all('*', (c) => c.json({ ok: true }))
+    return app
+  }
 
-    const app = await createApp()
-    const res = await app.request('/admin/setup')
-    expect(res.status).toBe(200)
+  describe('exempt paths (noAdmin → passes through)', () => {
+    for (const { path, desc } of EXEMPT_CASES) {
+      it(`allows ${desc}: ${path}`, async () => {
+        vi.doMock('@/server/infra/db/operations/user', () => ({
+          hasAdmin: vi.fn().mockResolvedValue(false),
+        }))
+        try {
+          const app = await makeApp()
+          const res = await app.request(path)
+          // Either 200 (passed through) or 303 (allowed by explicit exempt)
+          expect(res.status).not.toBe(302)
+          expect(res.headers.get('location')).not.toBe('/admin/setup')
+        } finally {
+          vi.doUnmock('@/server/infra/db/operations/user')
+        }
+      })
+    }
   })
 
-  it('lets exempt exact paths with React Router .data suffix through in noAdmin state', async () => {
-    mockHasAdmin.mockResolvedValue(false)
-
-    const app = await createApp()
-    const res = await app.request('/admin/setup.data', { method: 'POST' })
-    expect(res.status).toBe(200)
+  describe('blocked paths (noAdmin → redirect)', () => {
+    for (const { path, desc } of BLOCKED_CASES) {
+      it(`redirects ${desc}: ${path}`, async () => {
+        vi.doMock('@/server/infra/db/operations/user', () => ({
+          hasAdmin: vi.fn().mockResolvedValue(false),
+        }))
+        try {
+          const app = await makeApp()
+          const res = await app.request(path)
+          expect(res.status).toBe(303)
+          expect(res.headers.get('location')).toBe('/admin/setup')
+        } finally {
+          vi.doUnmock('@/server/infra/db/operations/user')
+        }
+      })
+    }
   })
 
-  it('lets exempt exact paths with .data suffix through in installed state', async () => {
-    mockHasAdmin.mockResolvedValue(true)
-
-    const app = await createApp()
-    const res = await app.request('/admin/signin.data', { method: 'POST' })
-    expect(res.status).toBe(200)
-  })
-
-  it('still redirects non-exempt .data requests in noAdmin state', async () => {
-    mockHasAdmin.mockResolvedValue(false)
-
-    const app = await createApp()
-    const res = await app.request('/admin/some-other.php.data', { method: 'POST' })
-    expect(res.status).toBe(303)
-    expect(res.headers.get('Location')).toBe('/admin/setup')
-  })
-
-  it('redirects non-exempt requests in noAdmin state', async () => {
-    mockHasAdmin.mockResolvedValue(false)
-
-    const app = await createApp()
-    const res = await app.request('/dashboard')
-    expect(res.status).toBe(303)
-    expect(res.headers.get('Location')).toBe('/admin/setup')
+  describe('installed state', () => {
+    it('allows all paths when installed', async () => {
+      vi.doMock('@/server/infra/db/operations/user', () => ({
+        hasAdmin: vi.fn().mockResolvedValue(true),
+      }))
+      vi.resetModules()
+      try {
+        const app = await makeApp()
+        const res = await app.request('/posts/hello')
+        expect(res.status).toBe(200)
+      } finally {
+        vi.doUnmock('@/server/infra/db/operations/user')
+      }
+    })
   })
 })

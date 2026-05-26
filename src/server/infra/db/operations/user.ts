@@ -15,8 +15,20 @@ import { escapeLikePattern } from '@/shared/utils/escape-like'
 export const PASSWORD_HASH_ROUNDS = 12
 
 export async function hasAdmin(): Promise<boolean> {
-  const res = await db.select({ count: count() }).from(user).where(eq(user.role, 'admin'))
+  const res = await db
+    .select({ count: count() })
+    .from(user)
+    .where(and(eq(user.role, 'admin'), isNull(user.deletedAt)))
   return res.length > 0 && res[0].count > 0
+}
+
+export async function findFirstAdminUser(): Promise<User | null> {
+  const rows = await db
+    .select()
+    .from(user)
+    .where(and(eq(user.role, 'admin'), isNull(user.deletedAt)))
+    .limit(1)
+  return rows[0] ?? null
 }
 
 export async function findUserByEmail(email: string): Promise<User | null> {

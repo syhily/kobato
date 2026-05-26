@@ -7,7 +7,7 @@ import { getLogger } from '@/server/infra/logger'
 
 const log = getLogger('install.gate')
 
-const EXEMPT_PATHS = new Set(['/admin/signin', '/admin/setup'])
+const EXEMPT_PATHS = new Set(['/admin/signin', '/admin/setup', '/api/setup/restore', '/ready'])
 
 const EXEMPT_PATH_PREFIXES = [
   '/assets/',
@@ -15,6 +15,8 @@ const EXEMPT_PATH_PREFIXES = [
   '/fonts/',
   '/images/',
   '/favicon',
+  '/logo',
+  '/apple-touch-icon',
   '/robots.txt',
   '/sitemap.xml',
   '/__manifest',

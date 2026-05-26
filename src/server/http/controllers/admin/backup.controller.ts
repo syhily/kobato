@@ -1,6 +1,6 @@
 import { z } from 'zod'
 
-import { recordAuditEventFromContext } from '@/server/domains/audit/service'
+import { recordAuditEvent, recordAuditEventFromContext } from '@/server/domains/audit/service'
 import {
   checkPgToolsAvailable,
   createBackup,
@@ -11,7 +11,8 @@ import {
 } from '@/server/domains/backup/service'
 import { adminProc } from '@/server/http/orpc-base'
 import { getLogger } from '@/server/infra/logger'
-import { requestShutdown } from '@/server/infra/shutdown'
+import { restartServer } from '@/server/infra/restart'
+import { setRestartState } from '@/server/infra/shutdown'
 import { getBlogSettingsBundleSync } from '@/shared/config/getters'
 
 const log = getLogger('backup.controller')
@@ -72,23 +73,44 @@ const delete_ = adminProc
 const restore = adminProc
   .route({ method: 'POST', path: '/admin/backup/restore' })
   .input(z.object({ key: z.string() }))
-  .output(z.object({ success: z.boolean() }))
+  .output(z.object({ accepted: z.boolean() }))
   .handler(async ({ input, context }) => {
     const buffer = await getBackupBuffer(input.key)
-    await restoreFromBackup(buffer)
-    recordAuditEventFromContext(context, {
-      action: 'backup_restored',
-      resourceType: 'backup',
-      resourceId: input.key,
-    })
 
-    log.info('Restore completed, scheduling server restart', { key: input.key })
+    // Extract request-scoped values before returning so the background
+    // closure does not depend on the oRPC context lifetime.
+    const actorId = context.viewer?.userId
+    const actorRole = context.viewer?.role ?? null
+    const ipAddress = context.clientAddress
+    const userAgent = context.request.headers.get('User-Agent')
 
-    setTimeout(() => {
-      requestShutdown('backup-restore')
-    }, 500)
+    setRestartState('restarting')
 
-    return { success: true }
+    // Defer heavy restore work so the HTTP response can be flushed first.
+    Promise.resolve()
+      .then(async () => {
+        await restoreFromBackup(buffer)
+        recordAuditEvent({
+          action: 'backup_restored',
+          resourceType: 'backup',
+          resourceId: input.key,
+          actorId,
+          actorRole,
+          ipAddress,
+          userAgent,
+        })
+        log.info('Restore completed, scheduling server restart', { key: input.key })
+        await restartServer()
+      })
+      .catch((err) => {
+        log.error('Background restore failed', {
+          key: input.key,
+          err: err instanceof Error ? err.message : String(err),
+        })
+        setRestartState('idle')
+      })
+
+    return { accepted: true }
   })
 
 export const adminBackupRouter = { status, list, create, restore, delete: delete_ }

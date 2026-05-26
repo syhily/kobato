@@ -3,6 +3,7 @@ import { data } from 'react-router'
 import { getRouteRequestContext } from '@/server/domains/auth/context'
 import { processAuthFormSubmission, signUpInitialAdminWithSession } from '@/server/domains/auth/flows'
 import { signUpAdminSchema } from '@/server/domains/auth/schema'
+import { checkPgToolsAvailable } from '@/server/domains/backup/service'
 import { ensureNoAdminOrRedirect } from '@/server/domains/settings/install-gate'
 import { bundleFromMatches, routeMeta } from '@/server/render/seo/meta'
 import { AdminInstallForm } from '@/ui/admin/auth/AdminInstallForm'
@@ -20,7 +21,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
 
   // Pull the request context so we trip session middleware exactly once.
   getRouteRequestContext({ request, context })
-  return data({})
+  return data({ pgToolsAvailable: await checkPgToolsAvailable() })
 }
 
 export async function action({ request, context }: Route.ActionArgs) {
@@ -45,7 +46,7 @@ export function meta({ matches }: Route.MetaArgs) {
   return routeMeta({ title: '创建站点' }, bundleFromMatches(matches))
 }
 
-export default function AdminInstallRoute({ actionData }: Route.ComponentProps) {
+export default function AdminInstallRoute({ actionData, loaderData }: Route.ComponentProps) {
   return (
     <div className="flex flex-col gap-8">
       {/* Ghost-style welcome header */}
@@ -61,7 +62,7 @@ export default function AdminInstallRoute({ actionData }: Route.ComponentProps) 
         </div>
       ) : null}
 
-      <AdminInstallForm />
+      <AdminInstallForm pgToolsAvailable={loaderData.pgToolsAvailable} />
     </div>
   )
 }
