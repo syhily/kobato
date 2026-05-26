@@ -5,6 +5,7 @@ import type { Env } from '@/server/http/context'
 import type { HandlerContext } from '@/server/http/orpc-base'
 
 import { apiRouter } from '@/server/http/api-router'
+import { dynamicBodyLimit } from '@/server/http/middlewares/dynamic-body-limit'
 import { getBlogSettingsBundleSync } from '@/shared/config/getters'
 
 // ─── oRPC + Hono perimeter ──────────────────────────────
@@ -44,14 +45,12 @@ export function createApiApp(): Hono<Env> {
   // Per-request body size check. Reads the live settings snapshot every
   // time (a single pointer load — negligible cost) so an admin change to
   // `maxRequestBodySize` takes effect on the very next request.
-  app.use(async (c, next) => {
-    const maxSize = resolveMaxBodySize()
-    const contentLength = c.req.header('content-length')
-    if (contentLength && Number(contentLength) > maxSize) {
-      return c.json({ error: { message: '请求体过大' } }, 413)
-    }
-    await next()
-  })
+  app.use(
+    dynamicBodyLimit({
+      maxSize: resolveMaxBodySize,
+      onError: (c) => c.json({ error: { message: '请求体过大' } }, 413),
+    }),
+  )
 
   app.use('/rpc/*', async (c, next) => {
     const responseHeaders = new Headers()
