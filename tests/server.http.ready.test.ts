@@ -3,16 +3,17 @@ import { describe, expect, it, vi } from 'vitest'
 
 import type { Env } from '@/server/http/context'
 
-import { getRestartState, setRestartState } from '@/server/infra/shutdown'
+import { getPhase, setPhase } from '@/server/infra/lifecycle'
 
 describe('/ready endpoint', () => {
-  it('returns 200 when restart state is idle', async () => {
-    setRestartState('idle')
+  it('returns 200 when phase is running', async () => {
+    setPhase('running')
 
     const app = new Hono<Env>()
     app.get('/ready', (c) => {
-      if (getRestartState() === 'restarting') {
-        return c.json({ status: 'restarting' }, 503)
+      const currentPhase = getPhase()
+      if (currentPhase !== 'running') {
+        return c.json({ status: currentPhase }, 503)
       }
       return c.json({ status: 'ok' })
     })
@@ -23,13 +24,14 @@ describe('/ready endpoint', () => {
     expect(body.status).toBe('ok')
   })
 
-  it('returns 503 when restart state is restarting', async () => {
-    setRestartState('restarting')
+  it('returns 503 when phase is restarting', async () => {
+    setPhase('restarting')
 
     const app = new Hono<Env>()
     app.get('/ready', (c) => {
-      if (getRestartState() === 'restarting') {
-        return c.json({ status: 'restarting' }, 503)
+      const currentPhase = getPhase()
+      if (currentPhase !== 'running') {
+        return c.json({ status: currentPhase }, 503)
       }
       return c.json({ status: 'ok' })
     })
@@ -40,7 +42,7 @@ describe('/ready endpoint', () => {
     expect(body.status).toBe('restarting')
 
     // Reset state so subsequent tests are not affected
-    setRestartState('idle')
+    setPhase('running')
   })
 
   it('is exempt from install-gate middleware', async () => {

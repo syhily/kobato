@@ -10,7 +10,7 @@ vi.mock('@/server/infra/logger', () => ({
   getLogger: () => ({ error: vi.fn(), warn: vi.fn(), info: vi.fn(), debug: vi.fn() }),
 }))
 
-vi.mock('@/server/infra/shutdown', () => ({
+vi.mock('@/server/infra/lifecycle', () => ({
   registerShutdownHook: vi.fn(),
 }))
 

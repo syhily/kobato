@@ -1,12 +1,12 @@
 import { describe, expect, it, vi } from 'vitest'
 
-describe('server/infra/shutdown', () => {
+describe('server/infra/lifecycle', () => {
   it('closes registered HTTP server during shutdown', async () => {
     vi.resetModules()
     const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => undefined as never)
 
     try {
-      const { setHttpServer, requestShutdown } = await import('@/server/infra/shutdown')
+      const { setHttpServer, requestShutdown } = await import('@/server/infra/lifecycle')
 
       const closeMock = vi.fn((cb: () => void) => cb())
       const fakeServer = { close: closeMock } as unknown as import('@hono/node-server').ServerType
@@ -28,7 +28,7 @@ describe('server/infra/shutdown', () => {
     const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => undefined as never)
 
     try {
-      const { requestShutdown } = await import('@/server/infra/shutdown')
+      const { requestShutdown } = await import('@/server/infra/lifecycle')
 
       // Should complete gracefully without a registered server
       requestShutdown('test')

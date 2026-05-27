@@ -42,10 +42,17 @@ import { migrateDatabase } from '@/server/infra/db/migrate'
 import { createDbPool, closePool } from '@/server/infra/db/pool'
 import { isVitest, PORT } from '@/server/infra/env'
 import { createHonoServer } from '@/server/infra/hono/node'
+import {
+  getPhase,
+  getRestoreResult,
+  registerShutdownHook,
+  restartServer,
+  setHttpServer,
+  setPhase,
+  setRestartApp,
+  setRestartDb,
+} from '@/server/infra/lifecycle'
 import { root } from '@/server/infra/logger'
-import { setRestartApp, setRestartDb, restartServer } from '@/server/infra/restart'
-import { getRestoreState } from '@/server/infra/restore-state'
-import { getRestartState, registerShutdownHook, setHttpServer, setRestartState } from '@/server/infra/shutdown'
 import { buildOpenApiDocsHtml } from '@/server/render/openapi-docs'
 
 // ─── HMR-safe resource creation ──────────────────────────
@@ -119,8 +126,6 @@ registerRestoreComplete(async (success, err) => {
       { err: restartErr instanceof Error ? restartErr.message : String(restartErr) },
       'Server restart failed during restore completion',
     )
-  } finally {
-    setRestartState('idle')
   }
 })
 
@@ -263,12 +268,9 @@ const app = await createHonoServer<Env>({
     // Health probes
     app.get('/health', (c) => c.json({ status: 'ok' }))
     app.get('/ready', (c) => {
-      const restore = getRestoreState()
-      if (restore.phase !== 'idle') {
-        return c.json({ status: 'restoring', restore }, 503)
-      }
-      if (getRestartState() === 'restarting') {
-        return c.json({ status: 'restarting' }, 503)
+      const currentPhase = getPhase()
+      if (currentPhase !== 'running') {
+        return c.json({ status: currentPhase, restore: getRestoreResult() }, 503)
       }
       return c.json({ status: 'ok' })
     })
@@ -352,6 +354,8 @@ scheduleNextBackup()
 initBackupScheduler()
 scheduleNextArchive(db, pool)
 emitEncryptionStartupWarning()
+
+setPhase('running')
 
 if (import.meta.hot) {
   import.meta.hot.accept()

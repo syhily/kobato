@@ -3,8 +3,7 @@ import type { Pool } from 'pg'
 import type { Logger } from '@/server/infra/logger'
 
 import { closePool } from '@/server/infra/db/pool'
-import { setRestoreState } from '@/server/infra/restore-state'
-import { closeHttpServer, setRestartState } from '@/server/infra/shutdown'
+import { closeHttpServer, setPhase, setRestoreResult } from '@/server/infra/lifecycle'
 
 type CompleteFn = (success: boolean, error?: Error) => Promise<void>
 let completeFn: CompleteFn | null = null
@@ -34,8 +33,8 @@ export interface RestoreOrchestratorDeps {
  */
 export function performSafeRestore(deps: RestoreOrchestratorDeps, restoreFn: () => Promise<void>): void {
   void (async () => {
-    setRestoreState('draining')
-    setRestartState('restarting')
+    setRestoreResult('draining')
+    setPhase('restarting')
 
     // Yield to the event loop so the HTTP response can flush before
     // we start tearing down connections.
@@ -50,16 +49,16 @@ export function performSafeRestore(deps: RestoreOrchestratorDeps, restoreFn: () 
 
       // 2. Run restore — psql uses its own connection, and the pool
       //    is still available for post-restore DB queries inside restoreFn.
-      setRestoreState('restoring')
+      setRestoreResult('restoring')
       await restoreFn()
 
-      setRestoreState('completed')
+      setRestoreResult('completed')
       deps.log.info('Restore completed successfully')
       success = true
     } catch (err) {
       error = err instanceof Error ? err : new Error(String(err))
       deps.log.error('Restore failed', { err: error.message })
-      setRestoreState('failed', error.message)
+      setRestoreResult('failed', error.message)
     }
 
     // 3. Run completion callback first (recreates pool, restarts server,

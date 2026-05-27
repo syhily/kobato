@@ -2,8 +2,8 @@ import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 import type { Pool } from 'pg'
 
 import { runArchiveJob } from '@/server/domains/audit/archive'
+import { registerShutdownHook } from '@/server/infra/lifecycle'
 import { getLogger } from '@/server/infra/logger'
-import { registerShutdownHook } from '@/server/infra/shutdown'
 import { getBlogSettingsBundleSync } from '@/shared/config/getters'
 
 const log = getLogger('audit.scheduler')

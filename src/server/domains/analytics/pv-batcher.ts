@@ -4,8 +4,8 @@ import type { EntityTarget } from '@/server/infra/db/target'
 
 import { incrementMetricPvBatch } from '@/server/infra/db/operations/metric'
 import { targetKey } from '@/server/infra/db/target'
+import { registerShutdownHook } from '@/server/infra/lifecycle'
 import { getLogger } from '@/server/infra/logger'
-import { registerShutdownHook } from '@/server/infra/shutdown'
 
 // In-memory aggregator for high-frequency counters. We currently track page
 // views (every request to a post page bumps the same counter) but the same

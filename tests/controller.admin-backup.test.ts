@@ -22,13 +22,10 @@ vi.mock('@/shared/config/getters', () => ({
   getBlogSettingsBundleSync: vi.fn(),
 }))
 
-vi.mock('@/server/infra/shutdown', () => ({
+vi.mock('@/server/infra/lifecycle', () => ({
   requestShutdown: vi.fn(),
   registerShutdownHook: vi.fn(),
-  setRestartState: vi.fn(),
-}))
-
-vi.mock('@/server/infra/restart', () => ({
+  setPhase: vi.fn(),
   restartServer: vi.fn(),
 }))
 

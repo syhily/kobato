@@ -1,19 +1,16 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const closeHttpServer = vi.fn().mockResolvedValue(undefined)
-const setRestartState = vi.fn()
-const setRestoreState = vi.fn()
+const setPhase = vi.fn()
+const setRestoreResult = vi.fn()
 const closePool = vi.fn().mockResolvedValue(undefined)
 
-vi.mock('@/server/infra/shutdown', () => ({
+vi.mock('@/server/infra/lifecycle', () => ({
   closeHttpServer,
-  setRestartState,
-  getRestartState: vi.fn().mockReturnValue('restarting'),
-}))
-
-vi.mock('@/server/infra/restore-state', () => ({
-  setRestoreState,
-  getRestoreState: vi.fn().mockReturnValue({ phase: 'idle' }),
+  setPhase,
+  getPhase: vi.fn().mockReturnValue('restarting'),
+  setRestoreResult,
+  getRestoreResult: vi.fn().mockReturnValue({ phase: 'idle', startedAt: '' }),
 }))
 
 vi.mock('@/server/infra/db/pool', () => ({
@@ -43,13 +40,13 @@ describe('backup/restore-orchestrator', () => {
     // Yield to event loop so the background task starts
     await new Promise((r) => setTimeout(r, 10))
 
-    expect(setRestoreState).toHaveBeenCalledWith('draining')
-    expect(setRestartState).toHaveBeenCalledWith('restarting')
+    expect(setRestoreResult).toHaveBeenCalledWith('draining')
+    expect(setPhase).toHaveBeenCalledWith('restarting')
     expect(closeHttpServer).toHaveBeenCalled()
     expect(restoreFn).toHaveBeenCalled()
     // Pool is closed AFTER restoreFn so post-restore DB queries work
     expect(closePool).toHaveBeenCalled()
-    expect(setRestoreState).toHaveBeenCalledWith('completed')
+    expect(setRestoreResult).toHaveBeenCalledWith('completed')
     expect(complete).toHaveBeenCalledWith(true, undefined)
   })
 
@@ -64,7 +61,7 @@ describe('backup/restore-orchestrator', () => {
     performSafeRestore({ pool: {} as any, log }, restoreFn)
     await new Promise((r) => setTimeout(r, 10))
 
-    expect(setRestoreState).toHaveBeenCalledWith('failed', 'psql failed')
+    expect(setRestoreResult).toHaveBeenCalledWith('failed', 'psql failed')
     expect(complete).toHaveBeenCalledWith(false, expect.any(Error))
   })
 

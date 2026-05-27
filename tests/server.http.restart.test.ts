@@ -2,8 +2,7 @@ import type { ServerType } from '@hono/node-server'
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { restartServer, setRestartApp } from '@/server/infra/restart'
-import { getRestartState, setHttpServer, setRestartState } from '@/server/infra/shutdown'
+import { getPhase, restartServer, setHttpServer, setPhase, setRestartApp } from '@/server/infra/lifecycle'
 
 vi.mock('@hono/node-server', async (importOriginal) => {
   const mod = await importOriginal<typeof import('@hono/node-server')>()
@@ -24,12 +23,12 @@ describe('server/http/restart — restartServer', () => {
     serveMock.mockClear()
   })
 
-  it('resets restartState to idle even when httpServer is null (dev mode)', async () => {
+  it('sets phase to running even when httpServer is null (dev mode)', async () => {
     const fakeApp = { fetch: vi.fn() } as unknown as Parameters<typeof setRestartApp>[0]
     setRestartApp(fakeApp)
-    setRestartState('restarting')
+    setPhase('restarting')
     await restartServer()
-    expect(getRestartState()).toBe('idle')
+    expect(getPhase()).toBe('running')
   })
 
   it('does nothing when already restarting', async () => {
@@ -43,7 +42,7 @@ describe('server/http/restart — restartServer', () => {
 
     setHttpServer(fakeServer)
     setRestartApp(fakeApp)
-    setRestartState('restarting')
+    setPhase('restarting')
 
     // Kick off two concurrent restarts
     const p1 = restartServer()
@@ -53,6 +52,6 @@ describe('server/http/restart — restartServer', () => {
     // Only the first one should have attempted to close the server
     expect(closeMock).toHaveBeenCalledTimes(1)
     expect(serveMock).toHaveBeenCalledTimes(1)
-    setRestartState('idle')
+    setPhase('running')
   })
 })

@@ -3,7 +3,7 @@ import type { Cluster, Redis } from 'ioredis'
 import { Redis as RedisClient } from 'ioredis'
 
 import { REDIS_URL } from '@/server/infra/env'
-import { registerShutdownHook } from '@/server/infra/shutdown'
+import { registerShutdownHook } from '@/server/infra/lifecycle'
 
 const redis = new RedisClient(REDIS_URL)
 

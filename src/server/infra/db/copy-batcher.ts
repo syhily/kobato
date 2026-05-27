@@ -5,8 +5,8 @@ import { Readable } from 'node:stream'
 import { pipeline } from 'node:stream/promises'
 import { from as copyFrom } from 'pg-copy-streams'
 
+import { registerShutdownHook } from '@/server/infra/lifecycle'
 import { getLogger, type Logger } from '@/server/infra/logger'
-import { registerShutdownHook } from '@/server/infra/shutdown'
 
 export interface CopyBatcherOptions {
   flushIntervalMs: number
