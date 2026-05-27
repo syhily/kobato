@@ -20,8 +20,13 @@ export const adminRevisionDto = z.object({
 })
 
 export const saveResultOutput = z.discriminatedUnion('status', [
-  z.object({ status: z.literal('saved'), revision: adminRevisionDto }),
-  z.object({ status: z.literal('conflict'), latest: adminRevisionDto, expectedToken: z.string() }),
+  z.object({ status: z.literal('saved'), revision: adminRevisionDto, warning: z.string().optional() }),
+  z.object({
+    status: z.literal('conflict'),
+    latest: adminRevisionDto,
+    expectedToken: z.string(),
+    warning: z.string().optional(),
+  }),
 ])
 
 export const previewOutputDto = z.object({

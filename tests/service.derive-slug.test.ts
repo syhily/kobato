@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
-import { deriveSlug, SLUG_MAX, SLUG_PATTERN } from '@/server/infra/slug'
+import { deriveSlug } from '@/server/infra/slug'
+import { DERIVED_SLUG_PATTERN, SLUG_MAX } from '@/shared/slug'
 
 // Contract tests for the project-wide slug helper. These pin the
 // pinyin-pro -> github-slugger pipeline so any future swap of either
@@ -53,13 +54,13 @@ describe('deriveSlug', () => {
     expect(deriveSlug('react')).toBe('react')
   })
 
-  it('every non-empty output satisfies SLUG_PATTERN and stays within SLUG_MAX', () => {
+  it('every non-empty output satisfies DERIVED_SLUG_PATTERN and stays within SLUG_MAX', () => {
     const samples = ['编程', '张三', 'react', 'React Router', 'Web 开发', '架构 v2', 'Hello, World!']
     for (const sample of samples) {
       const slug = deriveSlug(sample)
       expect(slug.length).toBeGreaterThan(0)
       expect(slug.length).toBeLessThanOrEqual(SLUG_MAX)
-      expect(SLUG_PATTERN.test(slug)).toBe(true)
+      expect(DERIVED_SLUG_PATTERN.test(slug)).toBe(true)
     }
   })
 })

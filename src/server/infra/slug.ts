@@ -42,7 +42,7 @@ import { pinyin } from 'pinyin-pro'
 // types in the package's `.d.ts`).
 //
 // Three normalisation quirks the helper has to paper over before
-// the result satisfies `SLUG_PATTERN`:
+// the result satisfies `DERIVED_SLUG_PATTERN`:
 //
 //   1. With `nonZh: 'consecutive'`, pinyin-pro keeps every
 //      non-Chinese character verbatim AND adds its own separator on
@@ -71,17 +71,6 @@ export function deriveSlug(text: string): string {
   return slugged.replace(/-+/g, '-').replace(/^-|-$/g, '')
 }
 
-// Slug pattern shared across schemas (`tag`, `category`, `page`).
-// Lowercase ASCII alphanumerics + `-`, no leading / trailing dash,
-// no double dash. Matches `github-slugger` output one-for-one — any
-// `deriveSlug(text)` value that's non-empty satisfies this regex,
-// so the pattern is BOTH the validation envelope for user-supplied
-// slugs AND the post-condition of the helper.
-export const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
+import { DERIVED_SLUG_PATTERN, SLUG_MAX } from '@/shared/slug'
 
-// Hard ceiling on slug length. 80 matches the existing per-table
-// schemas (`tag.slug`, `category.slug`, `pageMeta.slug`) so callers
-// can validate against this constant instead of repeating the
-// magic number. The pinyin expansion of a 20-character Han title
-// can run ~80 ASCII characters, which is exactly the budget.
-export const SLUG_MAX = 80
+export { DERIVED_SLUG_PATTERN, SLUG_MAX }

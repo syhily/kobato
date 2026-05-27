@@ -22,7 +22,7 @@ import pino from 'pino'
 
 import { LOG_LEVEL } from '@/server/infra/env'
 
-type Level = 'debug' | 'info' | 'warn' | 'error'
+type Level = NonNullable<typeof LOG_LEVEL>
 
 function resolveLevel(): Level {
   if (LOG_LEVEL) {

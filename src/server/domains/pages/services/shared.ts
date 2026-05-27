@@ -55,23 +55,25 @@ export interface SavePageBodyInput {
 }
 
 export type SavePageResult =
-  | { status: 'saved'; revision: AdminRevisionDto }
+  | { status: 'saved'; revision: AdminRevisionDto; warning?: string }
   | {
       status: 'conflict'
       latest: AdminRevisionDto
       /** Token the editor must echo on the next attempt. */
       expectedToken: string
+      warning?: string
     }
 
-export function projectSaveResult(result: SaveDraftResult | PublishLatestResult): SavePageResult {
+export function projectSaveResult(result: SaveDraftResult | PublishLatestResult, warning?: string): SavePageResult {
   if (result.status === 'conflict') {
     return {
       status: 'conflict',
       latest: toAdminRevisionDto(result.latest),
       expectedToken: result.expectedToken,
+      warning,
     }
   }
-  return { status: 'saved', revision: toAdminRevisionDto(result.row) }
+  return { status: 'saved', revision: toAdminRevisionDto(result.row), warning }
 }
 
 export type { AdminPageDetailDto, AdminPageDto } from '@/server/domains/pages/projection'

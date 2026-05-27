@@ -42,11 +42,12 @@ export interface SavePostBodyInput {
 }
 
 export type SavePostResult =
-  | { status: 'saved'; revision: AdminRevisionDto }
+  | { status: 'saved'; revision: AdminRevisionDto; warning?: string }
   | {
       status: 'conflict'
       latest: AdminRevisionDto
       expectedToken: string
+      warning?: string
     }
 
 export function assertOwnPostOr404(meta: PostMetaRow | null, viewer?: ViewerContext): asserts meta is PostMetaRow {

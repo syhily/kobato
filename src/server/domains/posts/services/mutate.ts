@@ -189,12 +189,13 @@ export async function restorePost(
   db: NodePgDatabase,
   id: bigint,
   viewer?: ViewerContext,
-): Promise<{ restored: boolean }> {
+): Promise<{ restored: boolean; warning?: string }> {
   const meta = await findPostMetaById(db, id)
   assertOwnPostOr404(meta, viewer)
   const restored = await db.transaction(async (tx) => {
     return restorePostMeta(tx, id)
   })
+  let warning: string | undefined
   if (restored) {
     const restoredMeta = await findPostMetaById(db, id)
     if (restoredMeta !== null) {
@@ -210,19 +211,22 @@ export async function restorePost(
     if (restoredMeta !== null && restoredMeta.published && restoredMeta.publishedRevisionId !== null) {
       const revision = await findContentById(db, restoredMeta.publishedRevisionId)
       if (revision !== null) {
-        await indexPost(
-          db,
-          restoredMeta.id,
-          restoredMeta.title,
-          restoredMeta.summary,
-          revision.body as PortableTextBody,
-        ).catch((err: unknown) => {
+        try {
+          await indexPost(
+            db,
+            restoredMeta.id,
+            restoredMeta.title,
+            restoredMeta.summary,
+            revision.body as PortableTextBody,
+          )
+        } catch (err: unknown) {
           log.warn('index post failed', { postId: restoredMeta.id, error: err })
-        })
+          warning = '搜索索引更新失败，该文章可能不会出现在搜索结果中。'
+        }
       }
     }
   }
-  return { restored }
+  return { restored, warning }
 }
 
 export async function unpublishPost(db: NodePgDatabase, id: bigint, viewer?: ViewerContext): Promise<AdminPostDto> {

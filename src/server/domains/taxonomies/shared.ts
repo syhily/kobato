@@ -1,5 +1,6 @@
 import { DomainError } from '@/server/infra/http/errors'
 import { deriveSlug } from '@/server/infra/slug'
+import { DERIVED_SLUG_PATTERN, SLUG_MAX } from '@/shared/slug'
 
 // Shared helpers for admin taxonomy CRUD (categories & tags). The two
 // entity types share structurally identical uniqueness checks, slug
@@ -20,7 +21,18 @@ export function formatBlockMessage(kind: string, name: string, titles: readonly 
 // entirely of emoji / punctuation).
 export function resolveSlugForTaxonomy(explicit: string | undefined, name: string): string {
   if (typeof explicit === 'string' && explicit.trim() !== '') {
-    return explicit.trim()
+    const slug = explicit.trim()
+    if (!DERIVED_SLUG_PATTERN.test(slug)) {
+      throw new DomainError('BAD_REQUEST', 'slug 格式不合法（仅允许小写字母、数字、`-`）。', [
+        { message: 'slug 格式不合法', path: ['slug'] },
+      ])
+    }
+    if (slug.length > SLUG_MAX) {
+      throw new DomainError('BAD_REQUEST', `slug 长度不得超过 ${SLUG_MAX} 个字符。`, [
+        { message: `slug 长度不得超过 ${SLUG_MAX} 个字符`, path: ['slug'] },
+      ])
+    }
+    return slug
   }
   const derived = deriveSlug(name)
   if (derived === '') {

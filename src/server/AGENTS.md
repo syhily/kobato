@@ -254,7 +254,7 @@ redeploying. Examples: `assets.storage.enabled`, `seo.og.width`,
 
 - Canonical helper: `@/server/infra/slug::deriveSlug(text)`. Pipeline
   `pinyin-pro` → whitespace-collapse → `github-slugger`, post-pass
-  satisfies `SLUG_PATTERN` (`^[a-z0-9]+(?:-[a-z0-9]+)*$`).
+  satisfies `DERIVED_SLUG_PATTERN` from `@/shared/slug` (`^[a-z0-9]+(?:-[a-z0-9]+)*$`).
 - Server-only — `pinyin-pro` ships ~150KB of CJK lookup tables and must
   NOT reach the client. Admin forms send `slug?: string`; the service
   derives from the entity name/title when blank.

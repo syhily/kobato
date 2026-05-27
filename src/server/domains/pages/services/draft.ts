@@ -78,9 +78,16 @@ async function savePageBodyInternal(
     throw new DomainError('NOT_FOUND', '页面不存在或已被删除。')
   }
   const body = await canonicalizeBodyOrThrow(input.body)
-  await syncLibraryImageBlocks(db, body).catch((err: unknown) => {
+
+  const warnings: string[] = []
+
+  try {
+    await syncLibraryImageBlocks(db, body)
+  } catch (err: unknown) {
     log.warn('sync library image blocks failed', { pageId: input.pageId, error: err })
-  })
+    warnings.push('图片库同步失败，部分图片可能无法正常显示。')
+  }
+
   const imageSources = collectImageStoragePaths(body)
   const headings = collectHeadings(body, deriveSlug)
 
@@ -121,7 +128,7 @@ async function savePageBodyInternal(
   if (mode === 'publish' && wroteSuccessfully) {
     await clearPagesCache()
   }
-  return projectSaveResult(result)
+  return projectSaveResult(result, warnings.length > 0 ? warnings.join(' ') : undefined)
 }
 
 export function saveDraft(db: NodePgDatabase, input: SavePageBodyInput): Promise<SavePageResult> {

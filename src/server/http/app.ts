@@ -69,28 +69,19 @@ export function createApiApp(): Hono<Env> {
       return
     }
     // Merge per-procedure response headers (Set-Cookie etc.) onto the
-    // RPC response before handing it back to Hono. `Headers` has no
-    // `size`; we iterate once to detect any-set and again to merge,
-    // both via `forEach` which is the only standards-defined surface.
-    let extraHeaders = false
-    responseHeaders.forEach(() => {
-      extraHeaders = true
+    // RPC response before handing it back to Hono.
+    const merged = new Headers(result.response.headers)
+    responseHeaders.forEach((value, key) => {
+      if (key.toLowerCase() === 'set-cookie') {
+        merged.append(key, value)
+      } else {
+        merged.set(key, value)
+      }
     })
-    if (extraHeaders) {
-      const merged = new Headers(result.response.headers)
-      responseHeaders.forEach((value, key) => {
-        if (key.toLowerCase() === 'set-cookie') {
-          merged.append(key, value)
-        } else {
-          merged.set(key, value)
-        }
-      })
-      return new Response(result.response.body, {
-        status: result.response.status,
-        headers: merged,
-      })
-    }
-    return result.response
+    return new Response(result.response.body, {
+      status: result.response.status,
+      headers: merged,
+    })
   })
 
   return app

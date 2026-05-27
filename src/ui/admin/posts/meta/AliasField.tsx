@@ -2,12 +2,11 @@ import { XIcon } from 'lucide-react'
 import { useCallback, useState } from 'react'
 import { toast } from 'sonner'
 
+import { DERIVED_SLUG_PATTERN } from '@/shared/slug'
 import { Badge } from '@/ui/components/badge'
 import { Button } from '@/ui/components/button'
 import { Input } from '@/ui/components/input'
 import { Label } from '@/ui/components/label'
-
-const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
 
 export interface AliasFieldProps {
   values: string[]
@@ -24,7 +23,7 @@ export function AliasField({ values, onChange, disabled }: AliasFieldProps) {
       if (slug === '' || values.includes(slug)) {
         return
       }
-      if (!SLUG_PATTERN.test(slug)) {
+      if (!DERIVED_SLUG_PATTERN.test(slug)) {
         toast.error('别名只能包含小写字母、数字和连字符，且不能以连字符开头或结尾。')
         return
       }

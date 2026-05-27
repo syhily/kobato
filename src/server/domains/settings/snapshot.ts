@@ -56,16 +56,25 @@ async function getSettingsVersion(): Promise<number> {
 // `requireBlogSettingsSection()` throws so any post-install path that
 // bypasses the gate fails loudly.
 
+// Compile-time guard: BUNDLE_KEYS must cover every key of BlogSettingsBundle.
+// If the two drift (new section added to one but not the other), this line
+// will error.
+type _AssertBundleKeys = BundleKey extends keyof BlogSettingsBundle
+  ? keyof BlogSettingsBundle extends BundleKey
+    ? true
+    : never
+  : never
+
 // Dynamic key-value assembly for the settings bundle. The bundle is a
 // strongly-typed `BlogSettingsBundle` but is assembled from DB rows whose
 // section keys come from a registry. The cast is consolidated into these
 // two helpers so the rest of the module uses typed access.
 function bundleSet(bundle: BlogSettingsBundle, key: BundleKey, value: unknown): void {
-  ;(bundle as unknown as Record<string, unknown>)[key] = value
+  ;(bundle as Record<BundleKey, unknown>)[key] = value
 }
 
 function bundleHas(bundle: BlogSettingsBundle, key: BundleKey): boolean {
-  return (bundle as unknown as Record<string, unknown>)[key] !== null
+  return (bundle as Record<BundleKey, unknown>)[key] !== null
 }
 
 // Project the canonical `BUNDLE_KEYS` list (mirrors `SETTINGS_SECTIONS`)
@@ -73,7 +82,7 @@ function bundleHas(bundle: BlogSettingsBundle, key: BundleKey): boolean {
 // `@/shared/config/settings.ts` automatically extends this — there is no
 // sibling 12-line `null` literal to also remember.
 function emptyBundle(): BlogSettingsBundle {
-  return Object.fromEntries(BUNDLE_KEYS.map((key) => [key, null])) as unknown as BlogSettingsBundle
+  return Object.fromEntries(BUNDLE_KEYS.map((key) => [key, null])) as Record<BundleKey, null> as BlogSettingsBundle
 }
 
 function decryptSecretsInBundle(bundle: BlogSettingsBundle): void {

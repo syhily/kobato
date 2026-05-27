@@ -74,9 +74,16 @@ async function savePostBodyInternal(
   const meta = await findPostMetaById(db, input.postId)
   assertOwnPostOr404(meta, viewer)
   const body = await canonicalizeBodyOrThrow(input.body)
-  await syncLibraryImageBlocks(db, body).catch((err: unknown) => {
+
+  const warnings: string[] = []
+
+  try {
+    await syncLibraryImageBlocks(db, body)
+  } catch (err: unknown) {
     log.warn('sync library image blocks failed', { postId: input.postId, error: err })
-  })
+    warnings.push('图片库同步失败，部分图片可能无法正常显示。')
+  }
+
   const imageSources = collectImageStoragePaths(body)
   const headings = collectHeadings(body, deriveSlug)
 
@@ -120,19 +127,16 @@ async function savePostBodyInternal(
     if (publishedRevision !== null) {
       const postMeta = await findPostMetaById(db, input.postId)
       if (postMeta !== null) {
-        await indexPost(
-          db,
-          postMeta.id,
-          postMeta.title,
-          postMeta.summary,
-          publishedRevision.body as PortableTextBody,
-        ).catch((err: unknown) => {
+        try {
+          await indexPost(db, postMeta.id, postMeta.title, postMeta.summary, publishedRevision.body as PortableTextBody)
+        } catch (err: unknown) {
           log.warn('index post failed', { postId: postMeta.id, error: err })
-        })
+          warnings.push('搜索索引更新失败，该文章可能不会出现在搜索结果中。')
+        }
       }
     }
   }
-  return projectSaveResult(result)
+  return projectSaveResult(result, warnings.length > 0 ? warnings.join(' ') : undefined)
 }
 
 export function saveDraft(
@@ -151,13 +155,14 @@ export function publishLatest(
   return savePostBodyInternal(db, input, 'publish', viewer)
 }
 
-function projectSaveResult(result: SaveDraftResult | PublishLatestResult): SavePostResult {
+function projectSaveResult(result: SaveDraftResult | PublishLatestResult, warning?: string): SavePostResult {
   if (result.status === 'conflict') {
     return {
       status: 'conflict',
       latest: toAdminRevisionDto(result.latest),
       expectedToken: result.expectedToken,
+      warning,
     }
   }
-  return { status: 'saved', revision: toAdminRevisionDto(result.row) }
+  return { status: 'saved', revision: toAdminRevisionDto(result.row), warning }
 }

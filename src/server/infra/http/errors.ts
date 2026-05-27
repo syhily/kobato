@@ -114,7 +114,7 @@ export class ActionFailure extends Error {
 export const ErrorMessages = {
   FORBIDDEN: '权限不足，需要更高角色。',
   NOT_FOUND: '资源不存在。',
-  UNAUTHORIZED: '未登录',
+  UNAUTHORIZED: '需要登录后再操作。',
   INSUFFICIENT_PERMISSIONS: '权限不足',
   INVALID_INPUT: '输入数据无效',
   INTERNAL_SERVER_ERROR: '服务器内部错误',
@@ -153,10 +153,12 @@ export async function parseInput<T>(schema: ZodType<T>, input: unknown): Promise
  *  When `constraintName` is passed, the match is narrowed to that
  *  specific constraint so call sites don't accidentally swallow
  *  unrelated uniqueness errors. */
+import { DatabaseError } from 'pg'
+
 export function isUniqueConstraintError(err: unknown, constraintName?: string): boolean {
-  if (err instanceof Error && 'code' in err && (err as Record<string, unknown>).code === '23505') {
+  if (err instanceof DatabaseError && err.code === '23505') {
     if (constraintName) {
-      return 'constraint' in err && (err as Record<string, unknown>).constraint === constraintName
+      return err.constraint === constraintName
     }
     return true
   }

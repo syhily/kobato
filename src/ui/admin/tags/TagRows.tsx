@@ -5,13 +5,12 @@ import { toast } from 'sonner'
 import type { AdminTagDto, UpsertTagInput } from '@/shared/types/tags'
 
 import { useMutation, orpcQuery } from '@/client/api/query'
+import { DERIVED_SLUG_PATTERN, SLUG_MAX } from '@/shared/slug'
 import { Badge } from '@/ui/components/badge'
 import { Button } from '@/ui/components/button'
 import { Input } from '@/ui/components/input'
 import { Skeleton } from '@/ui/components/skeleton'
 import { TableCell, TableRow } from '@/ui/components/table'
-
-const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/i
 
 export interface TagDraft {
   name: string
@@ -138,11 +137,11 @@ export function TagEditorRow({ tagId, initialDraft, submitLabel, onCancel, onSav
     if (trimmedName.length > 20) {
       return '名称不能超过 20 个字符'
     }
-    if (trimmedSlug !== '' && !SLUG_PATTERN.test(trimmedSlug)) {
+    if (trimmedSlug !== '' && !DERIVED_SLUG_PATTERN.test(trimmedSlug)) {
       return 'slug 仅允许小写字母、数字、短横线'
     }
-    if (trimmedSlug.length > 80) {
-      return 'slug 不能超过 80 个字符'
+    if (trimmedSlug.length > SLUG_MAX) {
+      return `slug 不能超过 ${SLUG_MAX} 个字符`
     }
     return null
   })()

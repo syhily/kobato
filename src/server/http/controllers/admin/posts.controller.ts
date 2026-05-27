@@ -73,7 +73,7 @@ const remove = authorProc
 const restore = authorProc
   .route({ method: 'POST', path: '/admin/posts/restore' })
   .input(idInput)
-  .output(z.object({ success: z.boolean() }))
+  .output(z.object({ success: z.boolean(), warning: z.string().optional() }))
   .handler(async ({ input, context }) => {
     const result = await restorePost(context.db, idFromString(input.id), context.viewer)
     if (!result.restored) {
@@ -84,7 +84,7 @@ const restore = authorProc
       resourceType: 'post',
       resourceId: input.id,
     })
-    return { success: true }
+    return { success: true, warning: result.warning }
   })
 
 const unpublish = authorProc
