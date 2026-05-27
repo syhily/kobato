@@ -1,0 +1,177 @@
+# yaml-language-server: $schema=https://schema.zeabur.app/template.json
+apiVersion: zeabur.com/v1
+kind: Template
+metadata:
+  name: Kobato
+spec:
+  description: A self-hosted blog CMS powered by React Router 7, Hono, and oRPC.
+  icon: https://raw.githubusercontent.com/syhily/kobato/main/src/server/assets/defaults/favicon.svg
+  tags:
+    - Blog
+    - CMS
+  variables:
+    - key: PUBLIC_DOMAIN
+      type: DOMAIN
+      name: Public Domain
+      description: The domain to access your Kobato blog.
+  readme: |
+    # Kobato on Zeabur
+
+    [Kobato](https://github.com/syhily/kobato) is a self-hosted blog CMS built with React Router 7, Hono, and oRPC.
+
+    This template provisions everything you need in one click:
+
+    - **Kobato** — the blog CMS (pre-built image from GHCR)
+    - **TimescaleDB** — PostgreSQL with time-series support for content and analytics
+    - **Redis** — sessions, rate limiting, and cache
+
+    ## After deployment
+
+    1. Wait until all services report healthy in the dashboard.
+    2. Open the public domain you bound during deployment.
+    3. You will be redirected to `/admin/setup` to create the admin account.
+    4. Start writing posts from the built-in admin console at `/admin`.
+
+    ## Custom domain
+
+    Bind your own domain in the **Networking** tab of the Kobato service after deployment.
+
+    ## Updates
+
+    To upgrade, change the image tag of the Kobato service to a newer release from
+    [GHCR](https://github.com/syhily/kobato/pkgs/container/kobato) and redeploy.
+
+    ## License
+
+    Kobato is licensed under [MIT](https://github.com/syhily/kobato/blob/main/LICENSE).
+  services:
+    - name: timescaledb
+      icon: https://avatars.githubusercontent.com/u/8986001?s=200&v=4
+      template: PREBUILT
+      spec:
+        id: timescaledb
+        source:
+          image: timescale/timescaledb:latest-pg17
+        ports:
+          - id: database
+            port: 5432
+            type: TCP
+        volumes:
+          - id: data
+            dir: /var/lib/postgresql/data
+        instructions:
+          - title: Command to connect to your TimescaleDB
+            content: psql -h ${PORT_FORWARDED_HOSTNAME} -p ${DATABASE_PORT_FORWARDED_PORT} -U ${POSTGRES_USER} -d ${POSTGRES_DB}
+          - title: TimescaleDB username
+            content: ${POSTGRES_USER}
+          - title: TimescaleDB password
+            content: ${POSTGRES_PASSWORD}
+          - title: TimescaleDB database
+            content: ${POSTGRES_DB}
+          - title: TimescaleDB host
+            content: ${PORT_FORWARDED_HOSTNAME}
+          - title: TimescaleDB port
+            content: ${DATABASE_PORT_FORWARDED_PORT}
+        env:
+          DATABASE_URL:
+            default: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}
+            expose: true
+          DATABASE_URL_UNPOOLED:
+            default: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}
+            expose: true
+          POSTGRES_DB:
+            default: kobato
+            expose: true
+          POSTGRES_HOST:
+            default: ${CONTAINER_HOSTNAME}
+            expose: true
+          POSTGRES_PASSWORD:
+            default: ${PASSWORD}
+            expose: true
+          POSTGRES_PORT:
+            default: ${DATABASE_PORT}
+            expose: true
+          POSTGRES_USER:
+            default: postgres
+            expose: true
+
+    - name: redis
+      icon: https://raw.githubusercontent.com/zeabur/service-icons/main/marketplace/redis.svg
+      template: PREBUILT
+      spec:
+        id: redis
+        source:
+          image: redis/redis-stack-server:latest
+        ports:
+          - id: database
+            port: 6379
+            type: TCP
+        volumes:
+          - id: data
+            dir: /data
+        instructions:
+          - title: Command to connect to your Redis
+            content: redis-cli -h ${PORT_FORWARDED_HOSTNAME} -p ${DATABASE_PORT_FORWARDED_PORT} -a ${REDIS_PASSWORD}
+          - title: Redis Connection String
+            content: redis://:${REDIS_PASSWORD}@${PORT_FORWARDED_HOSTNAME}:${DATABASE_PORT_FORWARDED_PORT}
+          - title: Redis password
+            content: ${REDIS_PASSWORD}
+          - title: Redis host
+            content: ${PORT_FORWARDED_HOSTNAME}
+          - title: Redis port
+            content: ${DATABASE_PORT_FORWARDED_PORT}
+        env:
+          CONFFILE:
+            default: /etc/redis-stack.conf
+          REDIS_ARGS:
+            default: --requirepass ${REDIS_PASSWORD}
+          REDIS_CONNECTION_STRING:
+            default: redis://:${REDIS_PASSWORD}@${REDIS_HOST}:${REDIS_PORT}
+            expose: true
+          REDIS_HOST:
+            default: ${CONTAINER_HOSTNAME}
+            expose: true
+          REDIS_PASSWORD:
+            default: ${PASSWORD}
+            expose: true
+          REDIS_PORT:
+            default: ${DATABASE_PORT}
+            expose: true
+          REDIS_URI:
+            default: ${REDIS_CONNECTION_STRING}
+            expose: true
+        configs:
+          - path: /etc/redis-stack.conf
+            template: |
+              port 6379
+              daemonize no
+            permission: null
+            envsubst: null
+
+    - name: kobato
+      icon: https://raw.githubusercontent.com/syhily/kobato/main/src/server/assets/defaults/favicon.svg
+      template: PREBUILT
+      domainKey: PUBLIC_DOMAIN
+      dependencies:
+        - timescaledb
+        - redis
+      spec:
+        source:
+          image: ghcr.io/syhily/kobato:latest
+        ports:
+          - id: web
+            port: 4321
+            type: HTTP
+        env:
+          HOST:
+            default: 0.0.0.0
+          PORT:
+            default: '4321'
+          REDIS_URL:
+            default: ${REDIS_CONNECTION_STRING}
+          SESSION_SECRET:
+            default: ${PASSWORD}
+          ENCRYPTION_KEY:
+            default: ${PASSWORD}
+          NODE_ENV:
+            default: production

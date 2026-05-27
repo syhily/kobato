@@ -53,8 +53,9 @@ export function getPgToolsAvailableSync(): boolean {
   return pgToolsAvailable ?? false
 }
 
-function ensurePgTools(): void {
-  if (!pgToolsAvailable) {
+async function ensurePgTools(): Promise<void> {
+  const available = await checkPgToolsAvailable()
+  if (!available) {
     throw new ActionFailure(503, '当前运行环境缺少 postgresql-client，备份与还原功能不可用')
   }
 }
@@ -82,7 +83,7 @@ import type { BackupFileDto } from '@/shared/types/backup'
 export type { BackupFileDto }
 
 export async function createBackup(): Promise<{ fileName: string; size: number }> {
-  ensurePgTools()
+  await ensurePgTools()
   const { args: connArgs, env } = getPgConnectionOptions()
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19)
   const key = `backup/backup-${timestamp}.sql.gz`
@@ -206,7 +207,7 @@ export function validateBackupSql(sql: string): void {
 }
 
 export async function restoreFromSql(db: NodePgDatabase, sql: string): Promise<void> {
-  ensurePgTools()
+  await ensurePgTools()
   const { args: connArgs, env } = getPgConnectionOptions()
 
   log.info('Starting restore')

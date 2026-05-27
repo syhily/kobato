@@ -178,9 +178,13 @@ export async function logout(session: BlogSession): Promise<void> {
   session.unset('user')
 }
 
-export async function resolveSessionContext(db: NodePgDatabase, request: Request): Promise<SessionContext> {
+export async function resolveSessionContext(
+  db: NodePgDatabase,
+  request: Request,
+): Promise<SessionContext & { dirty: boolean }> {
   const session = await getRequestSession(request)
   let user = userSession(session)
+  let dirty = false
 
   // Back-compat: upgrade legacy cookies that lack `role` by hitting the DB once.
   // The migration to drop `user.is_admin` runs in a follow-up release, so
@@ -212,11 +216,13 @@ export async function resolveSessionContext(db: NodePgDatabase, request: Request
       }
       session.set('user', upgraded)
       user = upgraded
+      dirty = true
     } else if (dbReachable) {
       // Account confirmed gone-or-demoted: drop the session so they
       // re-login. Only on a successful DB read — see comment above.
       session.unset('user')
       user = undefined
+      dirty = true
     }
   }
 
@@ -229,5 +235,5 @@ export async function resolveSessionContext(db: NodePgDatabase, request: Request
     recordSessionActivity(session.id)
   }
 
-  return { session, user, role: user?.role ?? null }
+  return { session, user, role: user?.role ?? null, dirty }
 }

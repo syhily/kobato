@@ -4,6 +4,7 @@ import { bodyLimit } from 'hono/body-limit'
 import type { Env } from '@/server/http/context'
 
 import { recordAuditEvent } from '@/server/domains/audit/service'
+import { performSafeRestore } from '@/server/domains/backup/restore-orchestrator'
 import {
   checkPgToolsAvailable,
   extractBackupSql,
@@ -16,8 +17,6 @@ import { requireRoleMw } from '@/server/http/middlewares/hono-rbac'
 import { rateLimitByIp } from '@/server/http/middlewares/rate-limit'
 import { hasAdmin, findFirstAdminUser } from '@/server/infra/db/operations/user'
 import { getLogger } from '@/server/infra/logger'
-import { restartServer } from '@/server/infra/restart'
-import { setRestartState } from '@/server/infra/shutdown'
 
 const log = getLogger('backup.upload')
 
@@ -48,21 +47,10 @@ export const backupRouter = new Hono<Env>()
       const sql = await extractBackupSql(buffer, file.name)
       validateBackupSql(sql)
 
-      setRestartState('restarting')
-
-      Promise.resolve()
-        .then(async () => {
-          await restoreFromSql(c.var.db, sql)
-          log.info('Restore from uploaded backup completed')
-          await restartServer()
-        })
-        .catch((err) => {
-          log.error('Background restore failed', {
-            fileName: file.name,
-            err: err instanceof Error ? err.message : String(err),
-          })
-          setRestartState('idle')
-        })
+      performSafeRestore({ pool: c.var.pool, log }, async () => {
+        await restoreFromSql(c.var.db, sql)
+        log.info('Restore from uploaded backup completed')
+      })
 
       return c.json({ accepted: true })
     },
@@ -93,53 +81,39 @@ export const backupRouter = new Hono<Env>()
       const sql = await extractBackupSql(buffer, file.name)
       validateBackupSql(sql)
 
-      // Extract request-scoped values before returning so the background
-      // closure does not depend on the Hono context lifetime.
       const clientAddress = c.var.clientAddress
       const userAgent = c.req.raw.headers.get('User-Agent')
       const fileName = file.name
 
-      setRestartState('restarting')
+      performSafeRestore({ pool: c.var.pool, log }, async () => {
+        await restoreFromSql(c.var.db, sql)
 
-      Promise.resolve()
-        .then(async () => {
-          await restoreFromSql(c.var.db, sql)
+        const admin = await findFirstAdminUser(c.var.db)
+        if (!admin) {
+          log.error('Setup restore: no admin found after restore', { fileName })
+          throw new Error('Setup restore: no admin found after restore')
+        }
 
-          const admin = await findFirstAdminUser(c.var.db)
-          if (!admin) {
-            log.error('Setup restore: no admin found after restore', { fileName })
-            setRestartState('idle')
-            return
-          }
-
-          try {
-            await refreshBlogSettings(c.var.db)
-          } catch (err) {
-            log.warn('refreshBlogSettings failed after setup restore; continuing', {
-              err: err instanceof Error ? err.message : String(err),
-            })
-          }
-
-          recordAuditEvent(c.var.db, c.var.pool, {
-            action: 'setup_restored',
-            resourceType: 'backup',
-            resourceId: fileName,
-            actorId: admin.id,
-            actorRole: admin.role,
-            ipAddress: clientAddress,
-            userAgent,
-          })
-
-          log.info('Setup restore completed', { adminId: String(admin.id) })
-          await restartServer()
-        })
-        .catch((err) => {
-          log.error('Background setup restore failed', {
-            fileName,
+        try {
+          await refreshBlogSettings(c.var.db)
+        } catch (err) {
+          log.warn('refreshBlogSettings failed after setup restore; continuing', {
             err: err instanceof Error ? err.message : String(err),
           })
-          setRestartState('idle')
+        }
+
+        recordAuditEvent(c.var.db, c.var.pool, {
+          action: 'setup_restored',
+          resourceType: 'backup',
+          resourceId: fileName,
+          actorId: admin.id,
+          actorRole: admin.role,
+          ipAddress: clientAddress,
+          userAgent,
         })
+
+        log.info('Setup restore completed', { adminId: String(admin.id) })
+      })
 
       return c.json({ accepted: true })
     },

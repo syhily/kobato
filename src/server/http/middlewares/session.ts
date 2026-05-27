@@ -9,7 +9,7 @@ import { getClientAddress } from '@/shared/utils/request'
 export const honoSessionMiddleware = createMiddleware<Env>(async (c, next) => {
   const sessionCtx = await resolveSessionContext(c.var.db, c.req.raw)
   c.set('session', sessionCtx.session)
-  c.set('sessionDirty', false)
+  c.set('sessionDirty', sessionCtx.dirty)
   c.set('viewer', sessionCtx.user ? { userId: sessionCtx.user.id, role: sessionCtx.user.role } : null)
   c.set('clientAddress', getClientAddress(c.req.raw))
 

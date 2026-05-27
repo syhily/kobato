@@ -3,7 +3,7 @@ import type { ServerType } from '@hono/node-server'
 import { describe, expect, it, vi } from 'vitest'
 
 import { restartServer, setRestartApp, setRestartHttpServer } from '@/server/infra/restart'
-import { getRestartState, setRestartState } from '@/server/infra/shutdown'
+import { getRestartState, setHttpServer, setRestartState } from '@/server/infra/shutdown'
 
 describe('server/http/restart — restartServer', () => {
   it('resets restartState to idle even when httpServer is null (dev mode)', async () => {
@@ -25,6 +25,7 @@ describe('server/http/restart — restartServer', () => {
     const fakeApp = { fetch: vi.fn() } as unknown as Parameters<typeof setRestartApp>[0]
 
     setRestartHttpServer(fakeServer)
+    setHttpServer(fakeServer)
     setRestartApp(fakeApp)
     setRestartState('restarting')
 

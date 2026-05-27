@@ -1,8 +1,11 @@
 import type { ServerType } from '@hono/node-server'
+import type { Server as NodeHttpServer } from 'node:http'
 
 import { getLogger } from '@/server/infra/logger'
 
 const log = getLogger('shutdown')
+
+const DEFAULT_CLOSE_TIMEOUT_MS = 30_000
 
 type ShutdownHook = () => Promise<void>
 
@@ -17,6 +20,31 @@ export function registerShutdownHook(hook: ShutdownHook): void {
 
 export function setHttpServer(server: ServerType): void {
   httpServer = server
+}
+
+export async function closeHttpServer(timeoutMs = DEFAULT_CLOSE_TIMEOUT_MS): Promise<void> {
+  if (!httpServer) {
+    return
+  }
+  const nodeServer = httpServer as NodeHttpServer
+  nodeServer.closeIdleConnections?.()
+
+  await new Promise<void>((resolve) => {
+    const timer = setTimeout(() => {
+      log.warn(`HTTP server close timed out after ${timeoutMs}ms, forcing remaining connections closed`)
+      nodeServer.closeAllConnections?.()
+    }, timeoutMs)
+
+    httpServer!.close((err) => {
+      clearTimeout(timer)
+      if (err) {
+        log.warn('HTTP server close error', { err: String(err) })
+      }
+      // Node.js server.close() callback fires at most once.
+      // eslint-disable-next-line promise/no-multiple-resolved
+      resolve()
+    })
+  })
 }
 
 export function getRestartState(): 'idle' | 'restarting' {
@@ -44,17 +72,7 @@ async function performShutdown(reason: string): Promise<void> {
   }, 10_000)
   forceExit.unref()
 
-  if (httpServer) {
-    log.info('Closing HTTP server')
-    await new Promise<void>((resolve) => {
-      httpServer!.close((err) => {
-        if (err) {
-          log.warn('HTTP server close error', { err: String(err) })
-        }
-        resolve()
-      })
-    })
-  }
+  await closeHttpServer(8_000)
 
   for (const hook of hooks) {
     try {

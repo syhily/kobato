@@ -1,7 +1,6 @@
 import type { ServerType } from '@hono/node-server'
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 import type { Hono } from 'hono'
-import type { Server as NodeHttpServer } from 'node:http'
 
 import { serve } from '@hono/node-server'
 
@@ -10,7 +9,7 @@ import type { Env } from '@/server/http/context'
 import { refreshBlogSettings } from '@/server/domains/settings/snapshot'
 import { PORT } from '@/server/infra/env'
 import { root } from '@/server/infra/logger'
-import { setHttpServer, setRestartState } from '@/server/infra/shutdown'
+import { closeHttpServer, setHttpServer, setRestartState } from '@/server/infra/shutdown'
 
 let httpServer: ServerType | null = null
 let currentApp: Hono<Env> | null = null
@@ -37,27 +36,10 @@ export async function restartServer(): Promise<void> {
   const log = root.child({ component: 'restart' })
   log.info('Graceful restart started')
 
-  const CLOSE_TIMEOUT_MS = 30_000
-
   try {
+    await closeHttpServer()
+
     if (httpServer) {
-      ;(httpServer as NodeHttpServer).closeIdleConnections?.()
-
-      await new Promise<void>((resolve, _reject) => {
-        const timer = setTimeout(() => {
-          log.warn(`HTTP server close timed out after ${CLOSE_TIMEOUT_MS}ms, forcing remaining connections closed`)
-          ;(httpServer as NodeHttpServer).closeAllConnections?.()
-        }, CLOSE_TIMEOUT_MS)
-
-        httpServer!.close((err) => {
-          clearTimeout(timer)
-          if (err) {
-            log.warn({ err: String(err) }, 'HTTP server close error')
-          }
-          resolve()
-        })
-      })
-
       try {
         if (currentDb) {
           await refreshBlogSettings(currentDb)

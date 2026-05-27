@@ -14,6 +14,10 @@ vi.mock('@/server/domains/backup/service', () => ({
   restoreFromBackup: vi.fn(),
 }))
 
+vi.mock('@/server/domains/backup/restore-orchestrator', () => ({
+  performSafeRestore: vi.fn(),
+}))
+
 vi.mock('@/shared/config/getters', () => ({
   getBlogSettingsBundleSync: vi.fn(),
 }))
@@ -29,6 +33,7 @@ vi.mock('@/server/infra/restart', () => ({
 }))
 
 const service = await import('@/server/domains/backup/service')
+const orchestrator = await import('@/server/domains/backup/restore-orchestrator')
 const blogConfig = await import('@/shared/config/getters')
 const { adminBackupRouter } = await import('@/server/http/controllers/admin/backup.controller')
 
@@ -88,10 +93,12 @@ describe('adminBackupRouter.restore', () => {
   it('returns accepted after restoring backup', async () => {
     const buffer = Buffer.from('sql')
     vi.mocked(service.getBackupBuffer).mockResolvedValueOnce(buffer)
-    vi.mocked(service.restoreFromBackup).mockResolvedValueOnce(undefined)
     const ctx = makeAuthedCtx()
     const res = await call(adminBackupRouter.restore, { key: 'backup/2026-01-01.sql.gz' }, { context: ctx })
     expect(res).toEqual({ accepted: true })
-    expect(service.restoreFromBackup).toHaveBeenCalledWith(expect.any(Object), buffer, 'backup/2026-01-01.sql.gz')
+    expect(orchestrator.performSafeRestore).toHaveBeenCalledWith(
+      { pool: ctx.pool, log: expect.any(Object) },
+      expect.any(Function),
+    )
   })
 })

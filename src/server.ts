@@ -9,12 +9,14 @@ import { RouterContextProvider } from 'react-router'
 
 import type { Env } from '@/server/http/context'
 
-import { initAccessLogBatcher } from '@/server/domains/analytics/batcher'
-import { initPageViewBatcher } from '@/server/domains/analytics/pv-batcher'
-import { initAuditLogBatcher } from '@/server/domains/audit/batcher'
+import { flushAccessLog, initAccessLogBatcher, resetAccessLogBatcher } from '@/server/domains/analytics/batcher'
+import { flushPageViews, initPageViewBatcher, resetPageViewBatcher } from '@/server/domains/analytics/pv-batcher'
+import { flushAuditLog, initAuditLogBatcher, resetAuditLogBatcher } from '@/server/domains/audit/batcher'
 import { scheduleNextArchive } from '@/server/domains/audit/scheduler'
 import { dbContext, poolContext, requestContext, sessionContext } from '@/server/domains/auth/context'
+import { registerRestoreComplete } from '@/server/domains/backup/restore-orchestrator'
 import { scheduleNextBackup } from '@/server/domains/backup/scheduler'
+import { resetLikeTokenSweep } from '@/server/domains/comments/likes'
 import { warmBlogSettingsSnapshot } from '@/server/domains/settings/snapshot'
 import { createApiApp } from '@/server/http/app'
 import { onErrorHandler } from '@/server/http/errors'
@@ -41,8 +43,9 @@ import { createDbPool, closePool } from '@/server/infra/db/pool'
 import { isVitest, PORT } from '@/server/infra/env'
 import { createHonoServer } from '@/server/infra/hono/node'
 import { root } from '@/server/infra/logger'
-import { setRestartApp, setRestartHttpServer, setRestartDb } from '@/server/infra/restart'
-import { getRestartState, registerShutdownHook } from '@/server/infra/shutdown'
+import { setRestartApp, setRestartHttpServer, setRestartDb, restartServer } from '@/server/infra/restart'
+import { getRestoreState, setRestoreState } from '@/server/infra/restore-state'
+import { getRestartState, registerShutdownHook, setHttpServer, setRestartState } from '@/server/infra/shutdown'
 import { buildOpenApiDocsHtml } from '@/server/render/openapi-docs'
 
 // ─── HMR-safe resource creation ──────────────────────────
@@ -59,12 +62,68 @@ const hmr = import.meta.hot?.data as
     }
   | undefined
 
-const { db, pool } = hmr?.db && hmr?.pool ? { db: hmr.db, pool: hmr.pool } : createDbPool()
+let db!: ReturnType<typeof createDbPool>['db']
+let pool!: ReturnType<typeof createDbPool>['pool']
 
-if (import.meta.hot) {
-  hmr!.db = db
-  hmr!.pool = pool
+function initPool() {
+  const instance = hmr?.db && hmr?.pool ? { db: hmr.db, pool: hmr.pool } : createDbPool()
+  db = instance.db
+  pool = instance.pool
+  if (import.meta.hot) {
+    hmr!.db = db
+    hmr!.pool = pool
+  }
+  setRestartDb(db)
+  initAccessLogBatcher(pool)
+  initPageViewBatcher(db)
+  initAuditLogBatcher(db, pool)
 }
+
+initPool()
+
+// Register restore completion: recreate pool, restart server, reset state.
+registerRestoreComplete(async (success, err) => {
+  if (!success) {
+    root.error({ err: err?.message }, 'Restore failed, restarting server for recovery')
+  } else {
+    root.info('Restore succeeded, restarting server')
+  }
+
+  let recreated = false
+  try {
+    await recreatePool()
+    recreated = true
+  } catch (recreateErr) {
+    root.error(
+      { err: recreateErr instanceof Error ? recreateErr.message : String(recreateErr) },
+      'Pool recreation failed during restore completion',
+    )
+  }
+
+  if (recreated) {
+    try {
+      scheduleNextArchive(db, pool)
+    } catch (schedErr) {
+      root.warn(
+        { err: schedErr instanceof Error ? schedErr.message : String(schedErr) },
+        'Failed to reschedule archive after restore',
+      )
+    }
+  }
+
+  try {
+    await restartServer()
+    root.info('Restore completion finished, server back online')
+  } catch (restartErr) {
+    root.error(
+      { err: restartErr instanceof Error ? restartErr.message : String(restartErr) },
+      'Server restart failed during restore completion',
+    )
+  } finally {
+    setRestartState('idle')
+    setRestoreState('idle')
+  }
+})
 
 // Run migrations once per process (HMR-safe via hmr.migrationsRan).
 if (!hmr?.migrationsRan) {
@@ -79,15 +138,49 @@ if (!hmr?.migrationsRan) {
 // Register shutdown once per process.
 registerShutdownHook(() => closePool(pool))
 
-// Expose db for restart.ts so it can refresh blog settings on restart.
-setRestartDb(db)
+export async function recreatePool(): Promise<{ db: typeof db; pool: typeof pool }> {
+  try {
+    await flushAuditLog(db, pool)
+  } catch (err) {
+    root.warn(
+      { err: err instanceof Error ? err.message : String(err) },
+      'Audit log flush failed before pool recreation',
+    )
+  }
+  try {
+    await flushAccessLog()
+  } catch (err) {
+    root.warn(
+      { err: err instanceof Error ? err.message : String(err) },
+      'Access log flush failed before pool recreation',
+    )
+  }
+  try {
+    await flushPageViews()
+  } catch (err) {
+    root.warn(
+      { err: err instanceof Error ? err.message : String(err) },
+      'Page view flush failed before pool recreation',
+    )
+  }
 
-// Initialize in-memory batcher singletons so fire-and-forget analytics
-// and audit pipelines have a real DB connection instead of failing on
-// first use.
-initAccessLogBatcher(pool)
-initPageViewBatcher(db)
-initAuditLogBatcher(db, pool)
+  const instance = createDbPool()
+  db = instance.db
+  pool = instance.pool
+  if (import.meta.hot) {
+    hmr!.db = db
+    hmr!.pool = pool
+  }
+  setRestartDb(db)
+  resetAccessLogBatcher()
+  resetPageViewBatcher()
+  resetAuditLogBatcher()
+  initAccessLogBatcher(pool)
+  initPageViewBatcher(db)
+  initAuditLogBatcher(db, pool)
+  resetLikeTokenSweep()
+  return instance
+}
 
 // ─── Logging sanitisation ────────────────────────────────
 
@@ -171,6 +264,10 @@ const app = await createHonoServer<Env>({
     // Health probes
     app.get('/health', (c) => c.json({ status: 'ok' }))
     app.get('/ready', (c) => {
+      const restore = getRestoreState()
+      if (restore.phase !== 'idle') {
+        return c.json({ status: 'restoring', restore }, 503)
+      }
       if (getRestartState() === 'restarting') {
         return c.json({ status: 'restarting' }, 503)
       }
@@ -248,6 +345,7 @@ const httpServer = import.meta.env.PROD
 
 setRestartApp(app)
 if (httpServer) {
+  setHttpServer(httpServer)
   setRestartHttpServer(httpServer)
 }
 
