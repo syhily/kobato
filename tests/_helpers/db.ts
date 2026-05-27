@@ -1,6 +1,10 @@
-import { vi } from 'vitest'
+import { afterEach, vi } from 'vitest'
 
 import type { Comment, Like, MetricRow, NewComment, NewUser, User } from '@/server/infra/db/types'
+
+afterEach(() => {
+  resetSeedIds()
+})
 
 // --- High-level: replace a query module's named exports with spies. --------
 

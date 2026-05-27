@@ -10,6 +10,9 @@ type CompleteFn = (success: boolean, error?: Error) => Promise<void>
 let completeFn: CompleteFn | null = null
 
 export function registerRestoreComplete(fn: CompleteFn): void {
+  if (completeFn) {
+    throw new Error('registerRestoreComplete called twice; only one completion handler is supported')
+  }
   completeFn = fn
 }
 
@@ -74,6 +77,10 @@ export function performSafeRestore(deps: RestoreOrchestratorDeps, restoreFn: () 
     }
 
     // 4. Close the old pool after the completion callback is done.
+    // deps.pool is the old pool captured before drain. The completion
+    // callback (server.ts) calls recreatePool() which creates a new pool
+    // and assigns it to the module-level db/pool variables. We close the
+    // old pool here after the callback finishes using it.
     try {
       await closePool(deps.pool)
     } catch (err) {

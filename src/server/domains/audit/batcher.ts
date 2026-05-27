@@ -107,7 +107,12 @@ async function insertPerRow(db: NodePgDatabase, events: AuditEventInput[]): Prom
     await db.insert(auditLog).values(
       events.map((e) => ({
         action: e.action,
-        actorId: e.actorId === null || e.actorId === undefined ? null : idFromString(e.actorId),
+        actorId:
+          e.actorId === null || e.actorId === undefined
+            ? null
+            : typeof e.actorId === 'bigint'
+              ? e.actorId
+              : idFromString(e.actorId),
         actorRole: e.actorRole ?? null,
         resourceType: e.resourceType,
         resourceId: e.resourceId ?? null,
@@ -133,7 +138,12 @@ async function insertPerRow(db: NodePgDatabase, events: AuditEventInput[]): Prom
     try {
       await db.insert(auditLog).values({
         action: e.action,
-        actorId: e.actorId === null || e.actorId === undefined ? null : idFromString(e.actorId),
+        actorId:
+          e.actorId === null || e.actorId === undefined
+            ? null
+            : typeof e.actorId === 'bigint'
+              ? e.actorId
+              : idFromString(e.actorId),
         actorRole: e.actorRole ?? null,
         resourceType: e.resourceType,
         resourceId: e.resourceId ?? null,

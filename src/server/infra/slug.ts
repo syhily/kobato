@@ -1,6 +1,8 @@
 import GithubSlugger from 'github-slugger'
 import { pinyin } from 'pinyin-pro'
 
+import { DERIVED_SLUG_PATTERN, SLUG_MAX } from '@/shared/slug'
+
 // Single canonical slug helper for the entire blog. The pipeline is
 // `pinyin-pro` → `github-slugger`:
 //
@@ -70,7 +72,5 @@ export function deriveSlug(text: string): string {
   const slugged = new GithubSlugger().slug(collapsedSpaces)
   return slugged.replace(/-+/g, '-').replace(/^-|-$/g, '')
 }
-
-import { DERIVED_SLUG_PATTERN, SLUG_MAX } from '@/shared/slug'
 
 export { DERIVED_SLUG_PATTERN, SLUG_MAX }

@@ -36,6 +36,23 @@ async function pollReady(onTimeout: () => void, signal: AbortSignal) {
     try {
       const res = await fetch('/ready', { cache: 'no-store', signal })
       if (res.ok) {
+        // Server is back online; check the restore result before reloading.
+        try {
+          const statusRes = await fetch('/api/admin/backup/restore-status', {
+            cache: 'no-store',
+            signal,
+          })
+          if (statusRes.ok) {
+            const status = (await statusRes.json()) as { phase: string; error?: string }
+            if (status.phase === 'completed') {
+              toast.success('还原成功')
+            } else if (status.phase === 'failed') {
+              toast.error('还原失败', { description: status.error })
+            }
+          }
+        } catch {
+          // Ignore status check errors; the server is up, so proceed to reload.
+        }
         window.location.reload()
         return
       }
@@ -88,10 +105,18 @@ export function BackupView({ backup, timeZone }: BackupViewProps) {
     }
   }, [])
 
+  const safeLoadPage = useCallback(
+    (limit: number, token?: string) =>
+      loadPage(limit, token).catch(() => {
+        /* intentionally empty — loadPage already shows a toast on error */
+      }),
+    [loadPage],
+  )
+
   useEffect(() => {
     setIsInitialLoading(true)
-    void loadPage(5).finally(() => setIsInitialLoading(false))
-  }, [loadPage])
+    void safeLoadPage(5).finally(() => setIsInitialLoading(false))
+  }, [safeLoadPage])
 
   // Abort any in-flight polling when the component unmounts.
   useEffect(() => {
@@ -109,7 +134,7 @@ export function BackupView({ backup, timeZone }: BackupViewProps) {
     mutationFn: () => orpc.admin.backup.create(),
     onSuccess: () => {
       setIsInitialLoading(true)
-      void loadPage(backupFiles.length || 5).finally(() => setIsInitialLoading(false))
+      void safeLoadPage(backupFiles.length || 5).finally(() => setIsInitialLoading(false))
     },
   })
 
@@ -135,7 +160,7 @@ export function BackupView({ backup, timeZone }: BackupViewProps) {
     onSuccess: () => {
       toast.success('备份文件已删除')
       setIsInitialLoading(true)
-      void loadPage(backupFiles.length || 5).finally(() => setIsInitialLoading(false))
+      void safeLoadPage(backupFiles.length || 5).finally(() => setIsInitialLoading(false))
     },
     onError: (error: Error) => {
       toast.error('删除失败', { description: error.message })
@@ -147,8 +172,8 @@ export function BackupView({ backup, timeZone }: BackupViewProps) {
       return
     }
     setIsLoadingMore(true)
-    void loadPage(5, nextToken).finally(() => setIsLoadingMore(false))
-  }, [nextToken, isLoadingMore, loadPage])
+    void safeLoadPage(5, nextToken).finally(() => setIsLoadingMore(false))
+  }, [nextToken, isLoadingMore, safeLoadPage])
 
   const handleUploadRestore = useCallback(async () => {
     if (!selectedFile) {

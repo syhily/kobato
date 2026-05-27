@@ -23,7 +23,10 @@ async function hasTimescaleDbRestoreFunctions(db: NodePgDatabase): Promise<boole
       `SELECT 1 FROM pg_proc p JOIN pg_namespace n ON p.pronamespace = n.oid WHERE n.nspname = 'public' AND p.proname = 'timescaledb_pre_restore'`,
     )
     return result.rows.length > 0
-  } catch {
+  } catch (err) {
+    log.warn('TimescaleDB function probe failed; proceeding without hooks', {
+      err: err instanceof Error ? err.message : String(err),
+    })
     return false
   }
 }
@@ -174,7 +177,7 @@ export async function extractBackupSql(buffer: Buffer, fileName: string): Promis
   }
 
   if (fileName.endsWith('.gz')) {
-    if (buffer.length < 2 || buffer[0] !== 0x1f || buffer[1] !== 0x8b) {
+    if (buffer.length < 2 || !buffer.subarray(0, 2).equals(Buffer.from([0x1f, 0x8b]))) {
       throw new ActionFailure(400, '备份文件格式不正确，请上传有效的 gzip 文件')
     }
 

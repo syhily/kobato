@@ -13,6 +13,7 @@ import { loadComments, parseComments } from '@/server/domains/comments/services/
 import { resolveMetricTarget } from '@/server/domains/comments/services/shared'
 import { appendCommentToken, issueCommentToken, verifyCommentOwnership } from '@/server/domains/comments/token'
 import { publicProc } from '@/server/http/orpc-base'
+import { getLogger } from '@/server/infra/logger'
 import { tryCommentPostRateLimit, tryCommentPostRateLimitByEmail } from '@/server/infra/rate-limit'
 import { requireBlogSettingsSection } from '@/shared/config/getters'
 import { commentItemDto } from '@/shared/contracts/comments'
@@ -72,11 +73,21 @@ const replyComment = publicProc
       details: { pageKey: input.page_key, isAdmin, isPending: !isAdmin && comment.isPending === true },
     })
     if (!isAdmin) {
-      const ttl = requireBlogSettingsSection('comments').comments.tokenTtlSeconds
-      const token = await issueCommentToken(comment.id, comment.userId, input.page_key, ttl)
-      const existing = parseCommentTokensCookie(request.headers.get('Cookie'))
-      const next = appendCommentToken(existing, input.page_key, token, ttl)
-      responseHeaders.append('Set-Cookie', serializeCommentTokensCookie(next))
+      try {
+        const ttl = requireBlogSettingsSection('comments').comments.tokenTtlSeconds
+        const token = await issueCommentToken(comment.id, comment.userId, input.page_key, ttl)
+        const existing = parseCommentTokensCookie(request.headers.get('Cookie'))
+        const next = appendCommentToken(existing, input.page_key, token, ttl)
+        responseHeaders.append('Set-Cookie', serializeCommentTokensCookie(next))
+      } catch (err) {
+        // Token issuance failed (e.g. Redis down). The comment is already
+        // persisted; failing the whole request would leave the user
+        // without any indication their comment was saved.
+        getLogger('comments.token').warn('comment token issuance failed', {
+          commentId: comment.id,
+          error: err instanceof Error ? err.message : String(err),
+        })
+      }
     }
     return { comment: asCommentItemWire(comment) }
   })

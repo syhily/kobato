@@ -15,11 +15,6 @@ export function createDbPool(): { db: NodePgDatabase; pool: Pool } {
   return { db, pool }
 }
 
-// Singleton for server bootstrap and test compatibility.
-const _poolInstance = createDbPool()
-export const db = _poolInstance.db
-export const pool = _poolInstance.pool
-
 export async function closePool(pool: Pool): Promise<void> {
   if (!pool.ended && !pool.ending) {
     await pool.end()

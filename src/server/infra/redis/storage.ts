@@ -22,7 +22,7 @@ export const storage = {
     try {
       return JSON.parse(raw) as T
     } catch {
-      return raw as T
+      return null
     }
   },
 
@@ -68,7 +68,7 @@ export const storage = {
       try {
         return { key, value: JSON.parse(raw) as T }
       } catch {
-        return { key, value: raw as T }
+        return { key, value: null }
       }
     })
   },

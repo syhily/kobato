@@ -30,13 +30,4 @@ describe('infra/db/pool', () => {
       await expect(closePool(pool)).resolves.toBeUndefined()
     })
   })
-
-  describe('module-level singleton compat', () => {
-    it('exports db and pool as backward-compat singletons', async () => {
-      // The module-level exports exist for test backward-compat.
-      const mod = await import('@/server/infra/db/pool')
-      expect(mod.db).toBeDefined()
-      expect(mod.pool).toBeDefined()
-    })
-  })
 })

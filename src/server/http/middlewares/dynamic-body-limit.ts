@@ -39,7 +39,10 @@ export function dynamicBodyLimit(options: DynamicBodyLimitOptions): MiddlewareHa
     if (hasContentLength && !hasTransferEncoding) {
       // Only Content-Length present — we can trust it
       const contentLength = parseInt(c.req.raw.headers.get('content-length') || '0', 10)
-      return contentLength > maxSize ? onError(c) : next()
+      if (Number.isNaN(contentLength) || contentLength > maxSize) {
+        return onError(c)
+      }
+      return next()
     }
 
     // Transfer-Encoding present (chunked) or no length headers.

@@ -18,13 +18,13 @@ export const analyticsEventsRouter = new Hono<Env>().get('/api/analytics/events'
     lastSeen = new Date(Date.now() - 60_000)
   }
 
+  if (activeSSEConnections >= MAX_SSE_CONNECTIONS) {
+    return c.json({ error: 'Too many concurrent SSE connections' }, 503)
+  }
+
   const encoder = new TextEncoder()
   const stream = new ReadableStream<Uint8Array>({
     start(controller) {
-      if (activeSSEConnections >= MAX_SSE_CONNECTIONS) {
-        controller.error(new Error('Too many concurrent SSE connections'))
-        return
-      }
       activeSSEConnections++
       let closed = false
       let pollInProgress = false

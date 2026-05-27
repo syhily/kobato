@@ -17,10 +17,16 @@ import { requireRoleMw } from '@/server/http/middlewares/hono-rbac'
 import { rateLimitByIp } from '@/server/http/middlewares/rate-limit'
 import { hasAdmin, findFirstAdminUser } from '@/server/infra/db/operations/user'
 import { getLogger } from '@/server/infra/logger'
+import { getRestoreState, resetRestoreState } from '@/server/infra/restore-state'
 
 const log = getLogger('backup.upload')
 
 export const backupRouter = new Hono<Env>()
+  .get('/api/admin/backup/restore-status', requireRoleMw('admin'), (c) => {
+    const restore = getRestoreState()
+    resetRestoreState()
+    return c.json(restore)
+  })
   .get('/api/admin/backup/download/:key{.+}', requireRoleMw('admin'), async (c) => {
     const key = c.req.param('key')
     const buffer = await getBackupBuffer(key)

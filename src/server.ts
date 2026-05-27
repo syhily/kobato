@@ -15,7 +15,7 @@ import { flushAuditLog, initAuditLogBatcher, resetAuditLogBatcher } from '@/serv
 import { scheduleNextArchive } from '@/server/domains/audit/scheduler'
 import { dbContext, poolContext, requestContext, sessionContext } from '@/server/domains/auth/context'
 import { registerRestoreComplete } from '@/server/domains/backup/restore-orchestrator'
-import { scheduleNextBackup } from '@/server/domains/backup/scheduler'
+import { initBackupScheduler, scheduleNextBackup } from '@/server/domains/backup/scheduler'
 import { resetLikeTokenSweep } from '@/server/domains/comments/likes'
 import { warmBlogSettingsSnapshot } from '@/server/domains/settings/snapshot'
 import { createApiApp } from '@/server/http/app'
@@ -43,8 +43,8 @@ import { createDbPool, closePool } from '@/server/infra/db/pool'
 import { isVitest, PORT } from '@/server/infra/env'
 import { createHonoServer } from '@/server/infra/hono/node'
 import { root } from '@/server/infra/logger'
-import { setRestartApp, setRestartHttpServer, setRestartDb, restartServer } from '@/server/infra/restart'
-import { getRestoreState, setRestoreState } from '@/server/infra/restore-state'
+import { setRestartApp, setRestartDb, restartServer } from '@/server/infra/restart'
+import { getRestoreState } from '@/server/infra/restore-state'
 import { getRestartState, registerShutdownHook, setHttpServer, setRestartState } from '@/server/infra/shutdown'
 import { buildOpenApiDocsHtml } from '@/server/render/openapi-docs'
 
@@ -121,7 +121,6 @@ registerRestoreComplete(async (success, err) => {
     )
   } finally {
     setRestartState('idle')
-    setRestoreState('idle')
   }
 })
 
@@ -346,11 +345,11 @@ const httpServer = import.meta.env.PROD
 setRestartApp(app)
 if (httpServer) {
   setHttpServer(httpServer)
-  setRestartHttpServer(httpServer)
 }
 
 // Start schedulers after server is configured
 scheduleNextBackup()
+initBackupScheduler()
 scheduleNextArchive(db, pool)
 emitEncryptionStartupWarning()
 

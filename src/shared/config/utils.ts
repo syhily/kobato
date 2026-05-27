@@ -53,5 +53,5 @@ export function brandingVersion(branding: SiteAssetBranding | undefined | null):
       h = ((h << 5) + h + etag.charCodeAt(i)) | 0
     }
   }
-  return Math.abs(h).toString(36)
+  return (h >>> 0).toString(36)
 }

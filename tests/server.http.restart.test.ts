@@ -1,13 +1,30 @@
 import type { ServerType } from '@hono/node-server'
 
-import { describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { restartServer, setRestartApp, setRestartHttpServer } from '@/server/infra/restart'
+import { restartServer, setRestartApp } from '@/server/infra/restart'
 import { getRestartState, setHttpServer, setRestartState } from '@/server/infra/shutdown'
 
+vi.mock('@hono/node-server', async (importOriginal) => {
+  const mod = await importOriginal<typeof import('@hono/node-server')>()
+  return {
+    ...mod,
+    serve: vi.fn().mockReturnValue({
+      close: vi.fn(),
+      closeIdleConnections: vi.fn(),
+    } as unknown as ServerType),
+  }
+})
+
+const { serve } = await import('@hono/node-server')
+const serveMock = vi.mocked(serve)
+
 describe('server/http/restart — restartServer', () => {
+  beforeEach(() => {
+    serveMock.mockClear()
+  })
+
   it('resets restartState to idle even when httpServer is null (dev mode)', async () => {
-    setRestartHttpServer(null as unknown as ServerType)
     const fakeApp = { fetch: vi.fn() } as unknown as Parameters<typeof setRestartApp>[0]
     setRestartApp(fakeApp)
     setRestartState('restarting')
@@ -24,7 +41,6 @@ describe('server/http/restart — restartServer', () => {
 
     const fakeApp = { fetch: vi.fn() } as unknown as Parameters<typeof setRestartApp>[0]
 
-    setRestartHttpServer(fakeServer)
     setHttpServer(fakeServer)
     setRestartApp(fakeApp)
     setRestartState('restarting')
@@ -36,6 +52,7 @@ describe('server/http/restart — restartServer', () => {
 
     // Only the first one should have attempted to close the server
     expect(closeMock).toHaveBeenCalledTimes(1)
+    expect(serveMock).toHaveBeenCalledTimes(1)
     setRestartState('idle')
   })
 })

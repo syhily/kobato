@@ -86,9 +86,9 @@ export async function createPost(
           authorId: resolvedAuthorId,
         })
         .returning()
+      await insertSlugRegistry(tx, { slug, entityType: 'post', entityId: inserted.id })
       return inserted
     })
-    await insertSlugRegistry(db, { slug, entityType: 'post', entityId: row.id })
     await clearPostMetasCache()
     return toAdminPostDto(row)
   } catch (err) {
@@ -146,11 +146,11 @@ export async function updatePostMeta(
         })
         .where(eq(postMetaTable.id, id))
         .returning()
+      if (existing.slug !== slug) {
+        await updateSlugRegistryByEntity(tx, { entityType: 'post', entityId: id, slug })
+      }
       return result ?? null
     })
-    if (existing.slug !== slug) {
-      await updateSlugRegistryByEntity(db, { entityType: 'post', entityId: id, slug })
-    }
     if (updated === null) {
       throw new DomainError('NOT_FOUND', '文章不存在或已被删除。')
     }
@@ -175,11 +175,11 @@ export async function deletePost(
     const ok = await softDeletePostMeta(tx, id)
     if (ok) {
       await removePostIndex(tx, id)
+      await deleteSlugRegistryByEntity(tx, { entityType: 'post', entityId: id })
     }
     return ok
   })
   if (deleted) {
-    await deleteSlugRegistryByEntity(db, { entityType: 'post', entityId: id })
     await clearPostMetasCache()
   }
   return { deleted }
@@ -192,22 +192,26 @@ export async function restorePost(
 ): Promise<{ restored: boolean; warning?: string }> {
   const meta = await findPostMetaById(db, id)
   assertOwnPostOr404(meta, viewer)
-  const restored = await db.transaction(async (tx) => {
-    return restorePostMeta(tx, id)
-  })
   let warning: string | undefined
-  if (restored) {
-    const restoredMeta = await findPostMetaById(db, id)
-    if (restoredMeta !== null) {
-      try {
-        await insertSlugRegistry(db, { slug: restoredMeta.slug, entityType: 'post', entityId: id })
-      } catch (err) {
-        if (!isUniqueConstraintError(err, 'uq_slug_registry_slug')) {
-          throw err
+  const restored = await db.transaction(async (tx) => {
+    const ok = await restorePostMeta(tx, id)
+    if (ok) {
+      const restoredMeta = await findPostMetaById(tx, id)
+      if (restoredMeta !== null) {
+        try {
+          await insertSlugRegistry(tx, { slug: restoredMeta.slug, entityType: 'post', entityId: id })
+        } catch (err) {
+          if (!isUniqueConstraintError(err, 'uq_slug_registry_slug')) {
+            throw err
+          }
         }
       }
     }
+    return ok
+  })
+  if (restored) {
     await clearPostMetasCache()
+    const restoredMeta = await findPostMetaById(db, id)
     if (restoredMeta !== null && restoredMeta.published && restoredMeta.publishedRevisionId !== null) {
       const revision = await findContentById(db, restoredMeta.publishedRevisionId)
       if (revision !== null) {

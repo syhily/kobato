@@ -16,8 +16,8 @@ import { readBucket, tryKeyedRateLimit } from '@/server/infra/rate-limit'
  *   `authedRoute(app, contract, impl, { middleware: [rateLimitByIp('invite', 'inviteIp')] })`
  */
 export function rateLimitByIp(key: string, bucketOrName: RateLimitBucket | keyof RateLimitSettings) {
-  const bucket: RateLimitBucket = typeof bucketOrName === 'string' ? readBucket(bucketOrName) : bucketOrName
   return createMiddleware<Env>(async (c, next) => {
+    const bucket: RateLimitBucket = typeof bucketOrName === 'string' ? readBucket(bucketOrName) : bucketOrName
     const { exceeded } = await tryKeyedRateLimit(`rate-limit:${key}:${c.var.clientAddress}`, bucket)
     if (exceeded) {
       throw new HTTPException(429, { message: '请求过于频繁，请稍后再试。' })

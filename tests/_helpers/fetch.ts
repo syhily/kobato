@@ -1,6 +1,8 @@
 // Minimal `fetch` test double — captures every call and lets each test
-// queue per-URL responses. Tests that use this should `restoreFetch()` in an
-// `afterEach` so other suites observe the real `globalThis.fetch`.
+// queue per-URL responses. Auto-restores the original `fetch` after each
+// test so suites that forget `reset()` don't leak the mock.
+
+import { afterEach } from 'vitest'
 
 type FetchResponder = (input: Request | URL | string, init?: RequestInit) => Promise<Response>
 
@@ -31,6 +33,10 @@ export function installFetch(): MockFetchHandle {
   }
 
   globalThis.fetch = fetch as unknown as typeof globalThis.fetch
+
+  afterEach(() => {
+    globalThis.fetch = original
+  })
 
   return {
     fetch,

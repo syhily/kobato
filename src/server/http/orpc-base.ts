@@ -40,18 +40,22 @@ export interface AuthedHandlerContext extends Omit<HandlerContext, 'viewer'> {
 // `Hono → context` plumbing in `app.ts` is type-safe end-to-end.
 const root = os.$context<HandlerContext>()
 
-// ─── Middleware: require a logged-in user ───────────────
-// Throws ORPCError('UNAUTHORIZED') if no session user. We only deal
-// with auth + role logic here.
-const requireAuth = root.middleware(({ context, next }) => {
+function ensureViewer(context: HandlerContext): ViewerContext {
   const user = context.session.get('user')
   if (!user) {
     throw new ORPCError('UNAUTHORIZED', { message: ErrorMessages.UNAUTHORIZED })
   }
+  return { userId: user.id, role: user.role }
+}
+
+// ─── Middleware: require a logged-in user ───────────────
+// Throws ORPCError('UNAUTHORIZED') if no session user.
+const requireAuth = root.middleware(({ context, next }) => {
+  const viewer = ensureViewer(context)
   return next({
     context: {
       ...context,
-      viewer: { userId: user.id, role: user.role },
+      viewer,
     } satisfies AuthedHandlerContext,
   })
 })
@@ -59,17 +63,14 @@ const requireAuth = root.middleware(({ context, next }) => {
 // ─── Middleware: require role >= threshold ──────────────
 function requireRole(role: Role) {
   return root.middleware(({ context, next }) => {
-    const user = context.session.get('user')
-    if (!user) {
-      throw new ORPCError('UNAUTHORIZED', { message: ErrorMessages.UNAUTHORIZED })
-    }
-    if (!hasAtLeast(user.role, role)) {
+    const viewer = ensureViewer(context)
+    if (!hasAtLeast(viewer.role, role)) {
       throw new ORPCError('FORBIDDEN', { message: ErrorMessages.INSUFFICIENT_PERMISSIONS })
     }
     return next({
       context: {
         ...context,
-        viewer: { userId: user.id, role: user.role },
+        viewer,
       } satisfies AuthedHandlerContext,
     })
   })

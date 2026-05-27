@@ -301,15 +301,9 @@ export async function queryMetric(
   }
   const col = METRIC_COLUMN[type]
   const where = whereClause(input)
-  // `browserType` is the lower-cardinality slice of `browser` —
-  // we group on a derived bucket rather than on the column itself
-  // so the dashboard tab "browser type" can show `desktop / mobile
-  // / crawler` style splits without needing a separate column on
-  // the table. (The plan calls this out in §10.2.)
-  const groupExpr =
-    type === 'browserType'
-      ? sql`COALESCE(NULLIF(${quoteIdent(col)}, ''), '(unknown)')`
-      : sql`COALESCE(NULLIF(${quoteIdent(col)}, ''), '(unknown)')`
+  // All metric types (including browserType) use the same COALESCE grouping.
+  // browserType's lower cardinality comes from the source data, not the SQL.
+  const groupExpr = sql`COALESCE(NULLIF(${quoteIdent(col)}, ''), '(unknown)')`
   const result = await db.execute(sql`
     SELECT
       ${groupExpr} AS name,

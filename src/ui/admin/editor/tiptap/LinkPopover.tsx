@@ -44,7 +44,7 @@ export function LinkPopover({ editor, variant, onClose }: LinkPopoverProps) {
   const [linkText, setLinkText] = useState('')
   const [href, setHref] = useState(initialHref)
   const [openInNewTab, setOpenInNewTab] = useState(
-    variant === 'toolbar' ? true : initialHref === '' ? true : initialNewTab,
+    variant === 'toolbar' ? false : initialHref === '' ? false : initialNewTab,
   )
 
   const firstFieldRef = useRef<HTMLInputElement | null>(null)

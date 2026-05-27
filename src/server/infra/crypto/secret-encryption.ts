@@ -48,7 +48,11 @@ function decrypt(ciphertext: string): string {
 }
 
 function isEncrypted(value: string): boolean {
-  return value.startsWith(ENCRYPTED_PREFIX)
+  if (!value.startsWith(ENCRYPTED_PREFIX)) {
+    return false
+  }
+  const parts = value.slice(ENCRYPTED_PREFIX.length).split(':')
+  return parts.length === 3 && parts.every((p) => p.length > 0 && /^[0-9a-f]+$/i.test(p))
 }
 
 let warnedMissingKey = false

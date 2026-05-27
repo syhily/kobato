@@ -1,7 +1,7 @@
 import type { MiddlewareFunction, ShouldRevalidateFunctionArgs } from 'react-router'
 
 import { dehydrate, HydrationBoundary, QueryClientProvider } from '@tanstack/react-query'
-import { useState } from 'react'
+import { lazy, Suspense, useState } from 'react'
 import { preconnect, prefetchDNS } from 'react-dom'
 import { Links, Meta, Outlet, Scripts, ScrollRestoration, useRouteLoaderData } from 'react-router'
 
@@ -19,7 +19,7 @@ import { ThemeProvider, THEME_COOKIE } from '@/ui/lib/ThemeProvider'
 import { ChunkReloadOverlay } from '@/ui/public/chrome/ChunkReloadOverlay'
 import { ErrorView } from '@/ui/public/chrome/ErrorView'
 import { NavigationSplash } from '@/ui/public/chrome/NavigationSplash'
-import { PublicChrome } from '@/ui/public/chrome/PublicChrome'
+const PublicChrome = lazy(() => import('@/ui/public/chrome/PublicChrome').then((m) => ({ default: m.PublicChrome })))
 
 import type { Route } from './+types/root'
 
@@ -161,6 +161,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
     blogSettings?: {
       fonts?: { globalCss?: string[] } | null
       assets?: { asset?: { host?: string } | null } | null
+      siteIdentity?: { locale?: string } | null
     } | null
     tier1Links?: string[]
     tier2Chunks?: string[]
@@ -198,8 +199,10 @@ export function Layout({ children }: { children: React.ReactNode }) {
   // Tier-2 idle warmup: collect chunks based on auth status
   const tier2Chunks = rootData?.tier2Chunks ?? []
 
+  const locale = rootData?.blogSettings?.siteIdentity?.locale ?? 'zh-CN'
+
   return (
-    <html lang="zh-CN" className={theme ?? undefined}>
+    <html lang={locale} className={theme ?? undefined}>
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -311,9 +314,11 @@ export function ErrorBoundary({ error, loaderData }: Route.ErrorBoundaryProps) {
     <ThemeProvider initialResolved={loaderData?.theme ?? undefined}>
       <BlogSettingsProvider value={blogSettings ?? undefined}>
         {blogSettings ? (
-          <PublicChrome currentUser={loaderData?.currentUser ?? null} pathname="/" search="">
-            {body}
-          </PublicChrome>
+          <Suspense fallback={body}>
+            <PublicChrome currentUser={loaderData?.currentUser ?? null} pathname="/" search="">
+              {body}
+            </PublicChrome>
+          </Suspense>
         ) : (
           body
         )}

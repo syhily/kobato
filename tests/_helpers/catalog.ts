@@ -1,3 +1,5 @@
+import { afterEach } from 'vitest'
+
 import type { ClientCategory, ClientPage, ClientPost, ClientTag } from '@/shared/types/catalog'
 
 let counter = 0
@@ -80,6 +82,15 @@ export function makePage(overrides: Partial<ClientPage> = {}): ClientPage {
     ...overrides,
   }
 }
+
+export function resetCatalogIds(): void {
+  counter = 0
+  idCounter = 1_000_000
+}
+
+afterEach(() => {
+  resetCatalogIds()
+})
 
 export function makePostList(count: number, overrides: Partial<ClientPost> = {}): ClientPost[] {
   return Array.from({ length: count }, (_, i) => {

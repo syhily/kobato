@@ -75,7 +75,7 @@ export async function tryKeyedRateLimit(key: string, bucket: RateLimitBucket): P
   const results = await pipeline.exec()
   const incrResult = results?.[0]
   if (!incrResult || incrResult[0]) {
-    throw new DomainError('INTERNAL', `tryKeyedRateLimit: failed to increment counter for ${key}`, [
+    throw new DomainError('INTERNAL', 'tryKeyedRateLimit: failed to increment counter', [
       { message: String(incrResult?.[0] ?? 'unknown redis error'), path: ['redis'] },
     ])
   }

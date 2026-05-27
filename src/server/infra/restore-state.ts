@@ -20,3 +20,7 @@ export function setRestoreState(phase: RestorePhase, error?: string): void {
 export function getRestoreState(): RestoreState {
   return restoreState
 }
+
+export function resetRestoreState(): void {
+  restoreState = { phase: 'idle', startedAt: '' }
+}

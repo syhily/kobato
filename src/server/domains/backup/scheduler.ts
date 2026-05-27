@@ -83,6 +83,7 @@ export function scheduleNextBackup(): void {
 
 export async function rescheduleBackup(): Promise<void> {
   log.info('Rescheduling backup due to settings change')
+  hydrationRetryCount = 0
   scheduleNextBackup()
 }
 
@@ -93,6 +94,8 @@ export function stopBackupScheduler(): void {
   }
 }
 
-registerShutdownHook(async () => {
-  stopBackupScheduler()
-})
+export function initBackupScheduler(): void {
+  registerShutdownHook(async () => {
+    stopBackupScheduler()
+  })
+}
