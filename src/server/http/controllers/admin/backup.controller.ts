@@ -84,7 +84,7 @@ const restore = adminProc
 
     performSafeRestore({ pool, log }, async () => {
       await restoreFromBackup(db, buffer, input.key)
-      recordAuditEvent(db, pool, {
+      recordAuditEvent({
         action: 'backup_restored',
         resourceType: 'backup',
         resourceId: input.key,

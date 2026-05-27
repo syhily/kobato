@@ -16,15 +16,26 @@ import { refreshBlogSettings } from '@/server/domains/settings/snapshot'
 import { requireRoleMw } from '@/server/http/middlewares/hono-rbac'
 import { rateLimitByIp } from '@/server/http/middlewares/rate-limit'
 import { hasAdmin, findFirstAdminUser } from '@/server/infra/db/operations/user'
-import { getRestoreResult, resetRestoreResult } from '@/server/infra/lifecycle'
+import { getRestoreState, resetRestoreState } from '@/server/infra/lifecycle'
 import { getLogger } from '@/server/infra/logger'
 
 const log = getLogger('backup.upload')
 
+// pg_tools check is expensive (shells out). Cache at startup so we don't
+// pay the cost on every setup-restore request.
+let pgToolsAvailable: boolean | null = null
+
+async function isPgToolsAvailable(): Promise<boolean> {
+  if (pgToolsAvailable === null) {
+    pgToolsAvailable = await checkPgToolsAvailable()
+  }
+  return pgToolsAvailable
+}
+
 export const backupRouter = new Hono<Env>()
   .get('/api/admin/backup/restore-status', requireRoleMw('admin'), (c) => {
-    const restore = getRestoreResult()
-    resetRestoreResult()
+    const restore = getRestoreState()
+    resetRestoreState()
     return c.json(restore)
   })
   .get('/api/admin/backup/download/:key{.+}', requireRoleMw('admin'), async (c) => {
@@ -73,7 +84,7 @@ export const backupRouter = new Hono<Env>()
         return c.json({ error: { message: '站点已安装，请直接登录后通过后台还原备份。' } }, 409)
       }
 
-      if (!(await checkPgToolsAvailable())) {
+      if (!(await isPgToolsAvailable())) {
         return c.json({ error: { message: '当前运行环境缺少 postgresql-client，无法还原备份。' } }, 503)
       }
 
@@ -108,7 +119,7 @@ export const backupRouter = new Hono<Env>()
           })
         }
 
-        recordAuditEvent(c.var.db, c.var.pool, {
+        recordAuditEvent({
           action: 'setup_restored',
           resourceType: 'backup',
           resourceId: fileName,

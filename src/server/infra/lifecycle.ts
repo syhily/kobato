@@ -7,41 +7,43 @@ import { serve } from '@hono/node-server'
 
 import type { Env } from '@/server/http/context'
 
-import { PORT } from '@/server/infra/env'
+import { isVitest, PORT } from '@/server/infra/env'
 import { getLogger } from '@/server/infra/logger'
 
 const log = getLogger('lifecycle')
 
 const DEFAULT_CLOSE_TIMEOUT_MS = 30_000
 
-type ShutdownHook = () => Promise<void>
+// ─── Types ─────────────────────────────────────────────────
 
-export type Phase =
-  | 'booting'
-  | 'running'
-  | 'draining'
-  | 'restoring'
-  | 'completed'
-  | 'failed'
-  | 'restarting'
-  | 'shutting-down'
+export type ServerPhase = 'booting' | 'running' | 'restarting' | 'failed' | 'shutting-down'
 
-export interface RestoreResult {
-  phase: 'idle' | 'draining' | 'restoring' | 'completed' | 'failed'
+export type RestorePhase = 'idle' | 'draining' | 'restoring' | 'completed' | 'failed'
+
+export interface RestoreState {
+  phase: RestorePhase
   startedAt: string
   error?: string
 }
 
+interface ShutdownHook {
+  fn: () => Promise<void>
+  priority: number
+}
+
+type RefreshSettingsFn = (db: NodePgDatabase) => Promise<unknown>
+
 // ─── Internal state ──────────────────────────────────────
 
-let phase: Phase = 'running'
+let serverPhase: ServerPhase = 'booting'
 let httpServer: ServerType | null = null
 let shuttingDown = false
-let hooks: ShutdownHook[] = []
+const hooks: ShutdownHook[] = []
 let currentApp: Hono<Env> | null = null
 let currentDb: NodePgDatabase | null = null
 let restartPromise: Promise<void> | null = null
-let restoreResult: RestoreResult = { phase: 'idle', startedAt: '' }
+let restoreState: RestoreState = { phase: 'idle', startedAt: '' }
+let refreshSettingsFn: RefreshSettingsFn | null = null
 
 // ─── HTTP Server ─────────────────────────────────────────
 
@@ -77,12 +79,16 @@ export async function closeHttpServer(timeoutMs = DEFAULT_CLOSE_TIMEOUT_MS): Pro
 
 // ─── Shutdown ────────────────────────────────────────────
 
-export function registerShutdownHook(hook: ShutdownHook): void {
+/**
+ * Register a shutdown hook. Higher priority runs first.
+ * Flush hooks: priority 100. Connection-close hooks: priority 0 (default).
+ */
+export function registerShutdownHook(hook: () => Promise<void>, priority = 0): void {
   if (shuttingDown) {
     log.warn('Shutdown hook registered after shutdown started; ignoring')
     return
   }
-  hooks.push(hook)
+  hooks.push({ fn: hook, priority })
 }
 
 export function requestShutdown(reason: string): void {
@@ -90,8 +96,8 @@ export function requestShutdown(reason: string): void {
     return
   }
   shuttingDown = true
-  phase = 'shutting-down'
-  log.info('Shutdown requested', { reason, phase })
+  setServerPhase('shutting-down')
+  log.info('Shutdown requested', { reason })
   void performShutdown(reason)
 }
 
@@ -104,9 +110,12 @@ async function performShutdown(reason: string): Promise<void> {
 
   await closeHttpServer(8_000)
 
-  for (const hook of hooks) {
+  // Run hooks in priority-descending order so flushers (100) run before
+  // connection-closers (0).
+  const sorted = [...hooks].sort((a, b) => b.priority - a.priority)
+  for (const { fn } of sorted) {
     try {
-      await hook()
+      await fn()
     } catch (err) {
       log.warn('Shutdown hook failed', { err: String(err) })
     }
@@ -120,33 +129,51 @@ async function performShutdown(reason: string): Promise<void> {
 process.once('SIGTERM', () => requestShutdown('SIGTERM'))
 process.once('SIGINT', () => requestShutdown('SIGINT'))
 
-// ─── Phase ───────────────────────────────────────────────
+// ─── Server Phase ────────────────────────────────────────
 
-export function getPhase(): Phase {
-  return phase
+export function getServerPhase(): ServerPhase {
+  return serverPhase
 }
 
-export function setPhase(newPhase: Phase): void {
-  phase = newPhase
-  log.info('Phase changed', { phase: newPhase })
+const VALID_TRANSITIONS: Record<ServerPhase, readonly ServerPhase[]> = {
+  booting: ['running', 'restarting', 'failed', 'shutting-down'],
+  running: ['restarting', 'shutting-down'],
+  restarting: ['running', 'failed', 'shutting-down'],
+  failed: ['restarting', 'shutting-down'],
+  'shutting-down': [],
 }
 
-// ─── Restore Result ──────────────────────────────────────
-
-export function setRestoreResult(phase: RestoreResult['phase'], error?: string): void {
-  restoreResult = { phase, startedAt: new Date().toISOString(), error }
-  log.info('Restore result changed', { phase, err: error })
+export function setServerPhase(newPhase: ServerPhase): void {
+  if (newPhase === serverPhase) {
+    return
+  }
+  if (!isVitest()) {
+    const allowed = VALID_TRANSITIONS[serverPhase]
+    if (!allowed.includes(newPhase)) {
+      log.warn('Invalid phase transition', { from: serverPhase, to: newPhase })
+      return
+    }
+  }
+  serverPhase = newPhase
+  log.info('Server phase changed', { phase: newPhase })
 }
 
-export function getRestoreResult(): RestoreResult {
-  return restoreResult
+// ─── Restore State ───────────────────────────────────────
+
+export function setRestoreState(phase: RestorePhase, error?: string): void {
+  restoreState = { phase, startedAt: new Date().toISOString(), error }
+  log.info('Restore state changed', { phase, err: error })
 }
 
-export function resetRestoreResult(): void {
-  restoreResult = { phase: 'idle', startedAt: '' }
+export function getRestoreState(): RestoreState {
+  return restoreState
 }
 
-// ─── Restart ─────────────────────────────────────────────
+export function resetRestoreState(): void {
+  restoreState = { phase: 'idle', startedAt: '' }
+}
+
+// ─── DI setters ──────────────────────────────────────────
 
 export function setRestartApp(app: Hono<Env>): void {
   currentApp = app
@@ -155,6 +182,12 @@ export function setRestartApp(app: Hono<Env>): void {
 export function setRestartDb(db: NodePgDatabase): void {
   currentDb = db
 }
+
+export function setRestartRefreshSettings(fn: RefreshSettingsFn): void {
+  refreshSettingsFn = fn
+}
+
+// ─── Restart ─────────────────────────────────────────────
 
 export async function restartServer(): Promise<void> {
   if (restartPromise) {
@@ -168,6 +201,10 @@ export async function restartServer(): Promise<void> {
     return
   }
 
+  const app = currentApp
+
+  setServerPhase('restarting')
+
   restartPromise = (async () => {
     const restartLog = log.child({ component: 'restart' })
     restartLog.info('Graceful restart started')
@@ -175,15 +212,14 @@ export async function restartServer(): Promise<void> {
     try {
       await closeHttpServer()
 
-      const newServer = serve({ fetch: currentApp.fetch.bind(currentApp), port: PORT }, (info) => {
-        restartLog.info(`🚀 Server restarted on port ${info.port}`)
+      const newServer = serve({ fetch: app.fetch.bind(app), port: PORT }, (info) => {
+        restartLog.info(`Server restarted on port ${info.port}`)
       })
       setHttpServer(newServer)
 
-      if (currentDb) {
+      if (currentDb && refreshSettingsFn) {
         try {
-          const { refreshBlogSettings } = await import('@/server/domains/settings/snapshot')
-          await refreshBlogSettings(currentDb)
+          await refreshSettingsFn(currentDb)
         } catch (err) {
           restartLog.warn('refreshBlogSettings failed during restart; continuing', {
             err: err instanceof Error ? err.message : String(err),
@@ -191,13 +227,15 @@ export async function restartServer(): Promise<void> {
         }
       }
 
-      setPhase('running')
+      setServerPhase('running')
       restartLog.info('Graceful restart complete')
     } catch (err) {
       restartLog.error('Graceful restart failed', {
         err: err instanceof Error ? err.message : String(err),
       })
-      setPhase('running')
+      // Old server is already closed; new server failed to start. There is no
+      // recovery — flag the process as failed so health checks report 503.
+      setServerPhase('failed')
       throw err
     }
   })().finally(() => {

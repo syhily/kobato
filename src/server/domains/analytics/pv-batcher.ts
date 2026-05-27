@@ -16,10 +16,6 @@ import { getLogger } from '@/server/infra/logger'
 //  - Time since last flush exceeds `flushIntervalMs` (lazy timer set on the
 //    first increment after a flush).
 //  - The Node process gets SIGTERM/SIGINT/exit (best-effort flush).
-//
-// Note: in dev React Router may re-evaluate server modules on every request,
-// which would create multiple batchers — we guard by keeping a module-level
-// singleton so only one instance exists per process.
 
 interface BatcherOptions {
   flushIntervalMs: number
@@ -37,7 +33,7 @@ class PageViewBatcher {
     private readonly opts: BatcherOptions,
     private readonly db: NodePgDatabase,
   ) {
-    registerShutdownHook(() => this.flush())
+    registerShutdownHook(() => this.flush(), 100)
   }
 
   increment(key: string): void {
@@ -54,7 +50,7 @@ class PageViewBatcher {
         void this.flush()
       }, this.opts.flushIntervalMs)
       // Don't keep the event loop alive solely for this timer.
-      this.timer.unref?.()
+      this.timer.unref()
     }
   }
 
@@ -95,40 +91,30 @@ class PageViewBatcher {
 
 let batcher: PageViewBatcher | undefined
 
-function getBatcher(db?: NodePgDatabase): PageViewBatcher {
-  if (batcher === undefined) {
-    if (db === undefined) {
-      throw new Error('PageViewBatcher must be initialized with a db')
-    }
-    batcher = new PageViewBatcher(
-      {
-        flushIntervalMs: 60_000,
-        flushThreshold: 50,
-      },
-      db,
-    )
-  }
-  return batcher
+export function initPageViewBatcher(db: NodePgDatabase): void {
+  batcher = new PageViewBatcher(
+    {
+      flushIntervalMs: 60_000,
+      flushThreshold: 50,
+    },
+    db,
+  )
 }
 
 export function resetPageViewBatcher(): void {
   batcher = undefined
 }
 
-// Single source of truth for page-view increments.
-//
-// Writes are buffered in-memory and flushed either when the buffer reaches
-// `flushThreshold` (50), when `flushIntervalMs` elapses (60s), or on process
-// shutdown. Callers that require durability before returning (e.g. ephemeral
-// workers) can await `flushPageViews()` after the request ends.
-export function initPageViewBatcher(db: NodePgDatabase): void {
-  getBatcher(db)
+export function bumpPageView(target: EntityTarget): void {
+  if (!batcher) {
+    throw new Error('PageViewBatcher not initialized — call initPageViewBatcher(db) first')
+  }
+  batcher.increment(targetKey(target))
 }
 
-export function bumpPageView(target: EntityTarget, db?: NodePgDatabase): void {
-  getBatcher(db).increment(targetKey(target))
-}
-
-export function flushPageViews(db?: NodePgDatabase): Promise<void> {
-  return getBatcher(db).flush()
+export function flushPageViews(): Promise<void> {
+  if (!batcher) {
+    return Promise.resolve()
+  }
+  return batcher.flush()
 }

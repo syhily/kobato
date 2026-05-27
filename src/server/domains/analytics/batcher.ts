@@ -141,43 +141,40 @@ class AccessLogBatcher extends CopyBatcher<EnrichedAccessEvent> {
 
 let batcher: AccessLogBatcher | undefined
 
-function getBatcher(pool?: Pool): AccessLogBatcher {
-  if (batcher === undefined) {
-    if (pool === undefined) {
-      throw new Error('AccessLogBatcher must be initialized with a pool')
-    }
-    batcher = new AccessLogBatcher(pool)
-  }
-  return batcher
+export function initAccessLogBatcher(pool: Pool): void {
+  batcher = new AccessLogBatcher(pool)
 }
 
 export function resetAccessLogBatcher(): void {
   batcher = undefined
 }
 
-export function initAccessLogBatcher(pool: Pool): void {
-  getBatcher(pool)
+export function pushAccessEvent(event: EnrichedAccessEvent): void {
+  if (!batcher) {
+    throw new Error('AccessLogBatcher not initialized — call initAccessLogBatcher(pool) first')
+  }
+  batcher.push(event)
 }
 
-export function pushAccessEvent(event: EnrichedAccessEvent, pool?: Pool): void {
-  getBatcher(pool).push(event)
-}
-
-export function flushAccessLog(pool?: Pool): Promise<void> {
-  return getBatcher(pool).flush()
+export function flushAccessLog(): Promise<void> {
+  if (!batcher) {
+    return Promise.resolve()
+  }
+  return batcher.flush()
 }
 
 /** @deprecated Use replayDeadLetterAccessLog */
 export const replayDeadLetter = replayDeadLetterAccessLog
 
-export async function replayDeadLetterAccessLog(
-  pool: Pool,
-  path?: string,
-): Promise<{ replayed: number; failed: number }> {
+export async function replayDeadLetterAccessLog(path?: string): Promise<{ replayed: number; failed: number }> {
+  if (!batcher) {
+    throw new Error('AccessLogBatcher not initialized — call initAccessLogBatcher(pool) first')
+  }
+  const b = batcher
   return replayFromInfra(
     path ?? deadLetterPath(),
     deserializeFromDeadLetter,
-    async (events) => getBatcher(pool).ingest(events),
+    async (events) => b.ingest(events),
     getLogger('analytics.batcher'),
   )
 }

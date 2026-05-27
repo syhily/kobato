@@ -4,8 +4,19 @@ import { Redis as RedisClient } from 'ioredis'
 
 import { REDIS_URL } from '@/server/infra/env'
 import { registerShutdownHook } from '@/server/infra/lifecycle'
+import { getLogger } from '@/server/infra/logger'
 
-const redis = new RedisClient(REDIS_URL)
+const log = getLogger('redis')
+
+const redis = new RedisClient(REDIS_URL, {
+  lazyConnect: true,
+})
+
+redis.on('error', (err) => {
+  // ioredis handles reconnection internally; we log so the error is
+  // visible in monitoring but don't crash the process.
+  log.error('Redis connection error', { err: err.message })
+})
 
 /**
  * Lightweight Redis cache helper backed by the native ioredis client.
@@ -102,4 +113,4 @@ export async function closeRedis(): Promise<void> {
   await redis.quit()
 }
 
-registerShutdownHook(closeRedis)
+registerShutdownHook(closeRedis, 0)

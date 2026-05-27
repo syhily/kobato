@@ -1,16 +1,16 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const closeHttpServer = vi.fn().mockResolvedValue(undefined)
-const setPhase = vi.fn()
-const setRestoreResult = vi.fn()
+const setServerPhase = vi.fn()
+const setRestoreState = vi.fn()
 const closePool = vi.fn().mockResolvedValue(undefined)
 
 vi.mock('@/server/infra/lifecycle', () => ({
   closeHttpServer,
-  setPhase,
-  getPhase: vi.fn().mockReturnValue('restarting'),
-  setRestoreResult,
-  getRestoreResult: vi.fn().mockReturnValue({ phase: 'idle', startedAt: '' }),
+  setServerPhase,
+  getServerPhase: vi.fn().mockReturnValue('restarting'),
+  setRestoreState,
+  getRestoreState: vi.fn().mockReturnValue({ phase: 'idle', startedAt: '' }),
 }))
 
 vi.mock('@/server/infra/db/pool', () => ({
@@ -37,16 +37,15 @@ describe('backup/restore-orchestrator', () => {
 
     performSafeRestore({ pool: {} as any, log }, restoreFn)
 
-    // Yield to event loop so the background task starts
-    await new Promise((r) => setTimeout(r, 10))
+    // Drain the microtask queue to let the fire-and-forget IIFE complete
+    await new Promise((r) => setTimeout(r, 50))
 
-    expect(setRestoreResult).toHaveBeenCalledWith('draining')
-    expect(setPhase).toHaveBeenCalledWith('restarting')
+    expect(setRestoreState).toHaveBeenCalledWith('draining')
+    expect(setServerPhase).toHaveBeenCalledWith('restarting')
     expect(closeHttpServer).toHaveBeenCalled()
     expect(restoreFn).toHaveBeenCalled()
-    // Pool is closed AFTER restoreFn so post-restore DB queries work
     expect(closePool).toHaveBeenCalled()
-    expect(setRestoreResult).toHaveBeenCalledWith('completed')
+    expect(setRestoreState).toHaveBeenCalledWith('completed')
     expect(complete).toHaveBeenCalledWith(true, undefined)
   })
 
@@ -59,9 +58,9 @@ describe('backup/restore-orchestrator', () => {
     const log = { error: vi.fn(), warn: vi.fn(), info: vi.fn() } as any
 
     performSafeRestore({ pool: {} as any, log }, restoreFn)
-    await new Promise((r) => setTimeout(r, 10))
+    await new Promise((r) => setTimeout(r, 50))
 
-    expect(setRestoreResult).toHaveBeenCalledWith('failed', 'psql failed')
+    expect(setRestoreState).toHaveBeenCalledWith('failed', 'psql failed')
     expect(complete).toHaveBeenCalledWith(false, expect.any(Error))
   })
 
@@ -71,7 +70,7 @@ describe('backup/restore-orchestrator', () => {
     const log = { error: vi.fn(), warn: vi.fn(), info: vi.fn() } as any
 
     performSafeRestore({ pool: {} as any, log }, restoreFn)
-    await new Promise((r) => setTimeout(r, 10))
+    await new Promise((r) => setTimeout(r, 50))
 
     expect(log.error).toHaveBeenCalledWith('No restore completion handler registered')
   })
@@ -86,10 +85,33 @@ describe('backup/restore-orchestrator', () => {
     const log = { error: vi.fn(), warn: vi.fn(), info: vi.fn() } as any
 
     performSafeRestore({ pool: {} as any, log }, restoreFn)
-    await new Promise((r) => setTimeout(r, 10))
+    await new Promise((r) => setTimeout(r, 50))
 
     expect(closePool).toHaveBeenCalled()
     expect(restoreFn).toHaveBeenCalled()
     expect(complete).toHaveBeenCalledWith(true, undefined)
+  })
+
+  it('handles errors before the try block via the .catch() handler', async () => {
+    // Make setRestoreState throw synchronously (before the try block) so the
+    // .catch() on the IIFE fires.
+    setRestoreState.mockImplementationOnce(() => {
+      throw new Error('sync crash')
+    })
+
+    const { performSafeRestore, registerRestoreComplete } = await import('@/server/domains/backup/restore-orchestrator')
+    registerRestoreComplete(vi.fn().mockResolvedValue(undefined))
+
+    const restoreFn = vi.fn().mockResolvedValue(undefined)
+    const log = { error: vi.fn(), warn: vi.fn(), info: vi.fn() } as any
+
+    performSafeRestore({ pool: {} as any, log }, restoreFn)
+    await new Promise((r) => setTimeout(r, 50))
+
+    // The .catch() handler should have logged the crash
+    expect(log.error).toHaveBeenCalledWith(
+      'Restore orchestrator crashed',
+      expect.objectContaining({ err: 'sync crash' }),
+    )
   })
 })

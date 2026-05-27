@@ -7,8 +7,7 @@ import { getBlogSettingsBundleSync } from '@/shared/config/getters'
 const log = getLogger('backup.scheduler')
 
 let backupTimer: NodeJS.Timeout | null = null
-let hydrationRetryCount = 0
-const MAX_HYDRATION_RETRIES = 10
+let hydrationRetryAttempt = 0
 
 async function runBackupJob(): Promise<void> {
   try {
@@ -34,16 +33,18 @@ export function scheduleNextBackup(): void {
 
   const bundle = getBlogSettingsBundleSync()
   if (!bundle) {
-    // Settings not hydrated yet (boot-time race); retry with a cap.
-    hydrationRetryCount += 1
-    if (hydrationRetryCount > MAX_HYDRATION_RETRIES) {
-      log.error('Settings never hydrated after 10 attempts; giving up on backup scheduling')
-      return
-    }
-    backupTimer = setTimeout(() => scheduleNextBackup(), 30_000)
+    // Settings not hydrated yet (boot-time race). Retry with
+    // exponential backoff: 5s → 10s → 20s → … capped at 5 min.
+    hydrationRetryAttempt += 1
+    const delayMs = Math.min(5000 * 2 ** (hydrationRetryAttempt - 1), 300_000)
+    log.warn('Settings not hydrated; retrying backup schedule', {
+      attempt: hydrationRetryAttempt,
+      delayMs,
+    })
+    backupTimer = setTimeout(() => scheduleNextBackup(), delayMs)
     return
   }
-  hydrationRetryCount = 0
+  hydrationRetryAttempt = 0
 
   const backupSettings = bundle.backup
   const assets = bundle.assets
@@ -83,7 +84,7 @@ export function scheduleNextBackup(): void {
 
 export async function rescheduleBackup(): Promise<void> {
   log.info('Rescheduling backup due to settings change')
-  hydrationRetryCount = 0
+  hydrationRetryAttempt = 0
   scheduleNextBackup()
 }
 
@@ -97,5 +98,5 @@ export function stopBackupScheduler(): void {
 export function initBackupScheduler(): void {
   registerShutdownHook(async () => {
     stopBackupScheduler()
-  })
+  }, 0)
 }

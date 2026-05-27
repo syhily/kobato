@@ -212,12 +212,12 @@ export async function cleanupExpiredArchives(): Promise<CleanupResult> {
 // Run the full archive job
 // ---------------------------------------------------------------------------
 
-export async function runArchiveJob(db: NodePgDatabase, pool: Pool): Promise<void> {
+export async function runArchiveJob(db: NodePgDatabase, _pool: Pool): Promise<void> {
   try {
     const archiveResult = await archiveExpiredAuditLogs(db)
     const cleanupResult = await cleanupExpiredArchives()
 
-    recordAuditEvent(db, pool, {
+    recordAuditEvent({
       action: 'audit_archive_run',
       resourceType: 'audit_log',
       actorId: null,
@@ -233,7 +233,7 @@ export async function runArchiveJob(db: NodePgDatabase, pool: Pool): Promise<voi
     log.error('Archive job failed', {
       error: error instanceof Error ? error.message : String(error),
     })
-    recordAuditEvent(db, pool, {
+    recordAuditEvent({
       action: 'audit_archive_run_failed',
       resourceType: 'audit_log',
       actorId: null,

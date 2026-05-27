@@ -36,7 +36,6 @@ function formFieldString(formData: FormData, key: string): string {
 
 export async function loader({ request, context }: Route.LoaderArgs) {
   const db = getDbFromContext({ request, context })
-  const pool = getPoolFromContext({ request, context })
   await ensureInstalledOrRedirect(db)
 
   const { session, user, url, clientAddress } = getRouteRequestContext({ request, context })
@@ -47,7 +46,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
     const user = session.get('user')
     await logout(session)
     if (user) {
-      recordAuditEvent(db, pool, {
+      recordAuditEvent({
         action: 'logout',
         resourceType: 'session',
         resourceId: session.id,
@@ -120,7 +119,7 @@ export async function action({ request, context }: Route.ActionArgs) {
         const origin = new URL(request.url).origin
         const link = `${origin}/admin/signin?action=resetpassword&token=${encodeURIComponent(token)}`
         await sendPasswordReset(u, link)
-        recordAuditEvent(db, pool, {
+        recordAuditEvent({
           action: 'password_reset_requested',
           resourceType: 'user',
           resourceId: String(u.id),
@@ -139,7 +138,7 @@ export async function action({ request, context }: Route.ActionArgs) {
           const origin = new URL(request.url).origin
           const link = `${origin}/admin/signin?action=resetpassword&token=${encodeURIComponent(token)}`
           await sendPasswordReset(u, link)
-          recordAuditEvent(db, pool, {
+          recordAuditEvent({
             action: 'password_reset_requested',
             resourceType: 'user',
             resourceId: String(u.id),
@@ -187,7 +186,7 @@ export async function action({ request, context }: Route.ActionArgs) {
     const established = await establishLoginSession(db, pool, session, dbUser, request, clientAddress, {
       revokeOtherSessions: true,
     })
-    recordAuditEvent(db, pool, {
+    recordAuditEvent({
       action: 'password_reset_complete',
       resourceType: 'user',
       resourceId: String(dbUser.id),

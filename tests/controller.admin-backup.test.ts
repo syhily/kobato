@@ -25,7 +25,7 @@ vi.mock('@/shared/config/getters', () => ({
 vi.mock('@/server/infra/lifecycle', () => ({
   requestShutdown: vi.fn(),
   registerShutdownHook: vi.fn(),
-  setPhase: vi.fn(),
+  setServerPhase: vi.fn(),
   restartServer: vi.fn(),
 }))
 

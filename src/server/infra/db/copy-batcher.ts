@@ -13,6 +13,8 @@ export interface CopyBatcherOptions {
   flushThreshold: number
 }
 
+const VALID_IDENTIFIER = /^[a-z_][a-z0-9_]*$/
+
 // Generic in-memory batcher that flushes rows via `COPY FROM STDIN`.
 // Subclasses provide `toCsvRow()` for event serialization and
 // `onCopyFailed()` for domain-specific error handling (dead-letter,
@@ -23,7 +25,8 @@ export interface CopyBatcherOptions {
 //   - `flushIntervalMs` elapses since the first push after the last
 //     flush (lazy timer, `.unref()` so it doesn't keep Node alive).
 //   - Process receives SIGTERM / SIGINT / `beforeExit` (via
-//     `registerShutdownHook`).
+//     `registerShutdownHook` with priority 100 so flushers run before
+//     connection-close hooks).
 export abstract class CopyBatcher<T> {
   private buffer: T[] = []
   private timer: NodeJS.Timeout | null = null
@@ -38,9 +41,17 @@ export abstract class CopyBatcher<T> {
     scope: string,
     pool: Pool,
   ) {
+    if (!VALID_IDENTIFIER.test(table)) {
+      throw new Error(`Invalid table name for COPY: ${table}`)
+    }
+    for (const col of columns) {
+      if (!VALID_IDENTIFIER.test(col)) {
+        throw new Error(`Invalid column name for COPY: ${col}`)
+      }
+    }
     this.log = getLogger(scope)
     this.pool = pool
-    registerShutdownHook(() => this.flush())
+    registerShutdownHook(() => this.flush(), 100)
   }
 
   /** Serialize one event to a CSV row (single line, `\n`-terminated). */
@@ -61,7 +72,7 @@ export abstract class CopyBatcher<T> {
       this.timer = setTimeout(() => {
         void this.flush()
       }, this.opts.flushIntervalMs)
-      this.timer.unref?.()
+      this.timer.unref()
     }
   }
 

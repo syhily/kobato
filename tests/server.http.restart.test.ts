@@ -2,7 +2,7 @@ import type { ServerType } from '@hono/node-server'
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { getPhase, restartServer, setHttpServer, setPhase, setRestartApp } from '@/server/infra/lifecycle'
+import { getServerPhase, restartServer, setHttpServer, setRestartApp, setServerPhase } from '@/server/infra/lifecycle'
 
 vi.mock('@hono/node-server', async (importOriginal) => {
   const mod = await importOriginal<typeof import('@hono/node-server')>()
@@ -26,9 +26,9 @@ describe('server/http/restart — restartServer', () => {
   it('sets phase to running even when httpServer is null (dev mode)', async () => {
     const fakeApp = { fetch: vi.fn() } as unknown as Parameters<typeof setRestartApp>[0]
     setRestartApp(fakeApp)
-    setPhase('restarting')
+    setServerPhase('restarting')
     await restartServer()
-    expect(getPhase()).toBe('running')
+    expect(getServerPhase()).toBe('running')
   })
 
   it('does nothing when already restarting', async () => {
@@ -42,7 +42,7 @@ describe('server/http/restart — restartServer', () => {
 
     setHttpServer(fakeServer)
     setRestartApp(fakeApp)
-    setPhase('restarting')
+    setServerPhase('restarting')
 
     // Kick off two concurrent restarts
     const p1 = restartServer()
@@ -52,6 +52,28 @@ describe('server/http/restart — restartServer', () => {
     // Only the first one should have attempted to close the server
     expect(closeMock).toHaveBeenCalledTimes(1)
     expect(serveMock).toHaveBeenCalledTimes(1)
-    setPhase('running')
+    setServerPhase('running')
+  })
+
+  it('sets phase to failed when restart crashes', async () => {
+    const closeMock = vi.fn((cb: () => void) => cb())
+    const fakeServer = {
+      close: closeMock,
+      closeIdleConnections: vi.fn(),
+    } as unknown as ServerType
+
+    serveMock.mockImplementationOnce(() => {
+      throw new Error('port in use')
+    })
+
+    const fakeApp = { fetch: vi.fn() } as unknown as Parameters<typeof setRestartApp>[0]
+    setHttpServer(fakeServer)
+    setRestartApp(fakeApp)
+    setServerPhase('restarting')
+
+    await expect(restartServer()).rejects.toThrow('port in use')
+    expect(getServerPhase()).toBe('failed')
+
+    setServerPhase('running')
   })
 })

@@ -17,7 +17,7 @@ import { dbContext, poolContext, requestContext, sessionContext } from '@/server
 import { registerRestoreComplete } from '@/server/domains/backup/restore-orchestrator'
 import { initBackupScheduler, scheduleNextBackup } from '@/server/domains/backup/scheduler'
 import { resetLikeTokenSweep } from '@/server/domains/comments/likes'
-import { warmBlogSettingsSnapshot } from '@/server/domains/settings/snapshot'
+import { refreshBlogSettings, warmBlogSettingsSnapshot } from '@/server/domains/settings/snapshot'
 import { createApiApp } from '@/server/http/app'
 import { onErrorHandler } from '@/server/http/errors'
 import { wrapFetchWithLeakedResponseHandler } from '@/server/http/leaked-response'
@@ -43,14 +43,15 @@ import { createDbPool, closePool } from '@/server/infra/db/pool'
 import { isVitest, PORT } from '@/server/infra/env'
 import { createHonoServer } from '@/server/infra/hono/node'
 import {
-  getPhase,
-  getRestoreResult,
+  getRestoreState,
+  getServerPhase,
   registerShutdownHook,
   restartServer,
   setHttpServer,
-  setPhase,
   setRestartApp,
   setRestartDb,
+  setRestartRefreshSettings,
+  setServerPhase,
 } from '@/server/infra/lifecycle'
 import { root } from '@/server/infra/logger'
 import { buildOpenApiDocsHtml } from '@/server/render/openapi-docs'
@@ -76,11 +77,13 @@ function initPool() {
   const instance = hmr?.db && hmr?.pool ? { db: hmr.db, pool: hmr.pool } : createDbPool()
   db = instance.db
   pool = instance.pool
-  if (import.meta.hot) {
-    hmr!.db = db
-    hmr!.pool = pool
+  const hot = import.meta.hot
+  if (hot && hmr) {
+    hmr.db = db
+    hmr.pool = pool
   }
   setRestartDb(db)
+  setRestartRefreshSettings(refreshBlogSettings)
   initAccessLogBatcher(pool)
   initPageViewBatcher(db)
   initAuditLogBatcher(db, pool)
@@ -134,17 +137,19 @@ if (!hmr?.migrationsRan) {
   if (!isVitest()) {
     await migrateDatabase()
   }
-  if (import.meta.hot) {
-    hmr!.migrationsRan = true
+  const hot = import.meta.hot
+  if (hot && hmr) {
+    hmr.migrationsRan = true
   }
 }
 
-// Register shutdown once per process.
-registerShutdownHook(() => closePool(pool))
+// Register shutdown once per process. Priority 0 so all batchers
+// (priority 100) flush before the pool is closed.
+registerShutdownHook(() => closePool(pool), 0)
 
 export async function recreatePool(): Promise<{ db: typeof db; pool: typeof pool }> {
   try {
-    await flushAuditLog(db, pool)
+    await flushAuditLog()
   } catch (err) {
     root.warn(
       { err: err instanceof Error ? err.message : String(err) },
@@ -171,9 +176,10 @@ export async function recreatePool(): Promise<{ db: typeof db; pool: typeof pool
   const instance = createDbPool()
   db = instance.db
   pool = instance.pool
-  if (import.meta.hot) {
-    hmr!.db = db
-    hmr!.pool = pool
+  const hot = import.meta.hot
+  if (hot && hmr) {
+    hmr.db = db
+    hmr.pool = pool
   }
   setRestartDb(db)
   resetAccessLogBatcher()
@@ -268,9 +274,9 @@ const app = await createHonoServer<Env>({
     // Health probes
     app.get('/health', (c) => c.json({ status: 'ok' }))
     app.get('/ready', (c) => {
-      const currentPhase = getPhase()
-      if (currentPhase !== 'running') {
-        return c.json({ status: currentPhase, restore: getRestoreResult() }, 503)
+      const phase = getServerPhase()
+      if (phase !== 'running') {
+        return c.json({ status: phase, restore: getRestoreState() }, 503)
       }
       return c.json({ status: 'ok' })
     })
@@ -355,7 +361,7 @@ initBackupScheduler()
 scheduleNextArchive(db, pool)
 emitEncryptionStartupWarning()
 
-setPhase('running')
+setServerPhase('running')
 
 if (import.meta.hot) {
   import.meta.hot.accept()

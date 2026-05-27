@@ -37,7 +37,7 @@ export async function searchLoader(
   const pageSize = requireBlogSettingsSection('content').pagination.search
   const { hits, page, totalPages } = await searchPosts(db, query, pageSize, (pageNum - 1) * pageSize)
   if (request !== undefined) {
-    recordAuditEvent(db, pool, {
+    recordAuditEvent({
       action: 'search',
       resourceType: 'search',
       details: { keyword: query, resultCount: hits.length },

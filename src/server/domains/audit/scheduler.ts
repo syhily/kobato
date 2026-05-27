@@ -75,4 +75,4 @@ export function stopArchiveScheduler(): void {
 
 registerShutdownHook(async () => {
   stopArchiveScheduler()
-})
+}, 0)

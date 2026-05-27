@@ -120,7 +120,7 @@ export async function establishLoginSession(
     // user's auth flow.
   }
 
-  recordAuditEvent(db, pool, {
+  recordAuditEvent({
     action: 'login',
     resourceType: 'session',
     resourceId: sid,

@@ -177,41 +177,36 @@ async function insertPerRow(db: NodePgDatabase, events: AuditEventInput[]): Prom
 
 let batcher: AuditLogBatcher | undefined
 
-function getBatcher(db?: NodePgDatabase, pool?: Pool): AuditLogBatcher {
-  if (batcher === undefined) {
-    if (db === undefined || pool === undefined) {
-      throw new Error('AuditLogBatcher must be initialized with db and pool')
-    }
-    batcher = new AuditLogBatcher(db, pool)
-  }
-  return batcher
+export function initAuditLogBatcher(db: NodePgDatabase, pool: Pool): void {
+  batcher = new AuditLogBatcher(db, pool)
 }
 
 export function resetAuditLogBatcher(): void {
   batcher = undefined
 }
 
-export function initAuditLogBatcher(db: NodePgDatabase, pool: Pool): void {
-  getBatcher(db, pool)
+function requireBatcher(): AuditLogBatcher {
+  if (!batcher) {
+    throw new Error('AuditLogBatcher not initialized — call initAuditLogBatcher(db, pool) first')
+  }
+  return batcher
 }
 
-export function pushAuditEvent(db: NodePgDatabase, pool: Pool, event: AuditEventInput): void {
-  getBatcher(db, pool).push(event)
+export function pushAuditEvent(event: AuditEventInput): void {
+  requireBatcher().push(event)
 }
 
-export function flushAuditLog(db: NodePgDatabase, pool: Pool): Promise<void> {
-  return getBatcher(db, pool).flush()
+export function flushAuditLog(): Promise<void> {
+  if (!batcher) {
+    return Promise.resolve()
+  }
+  return batcher.flush()
 }
 
-export async function replayDeadLetterAuditLog(
-  db: NodePgDatabase,
-  pool: Pool,
-  path?: string,
-): Promise<{ replayed: number; failed: number }> {
-  return replayDeadLetter(
-    path ?? deadLetterPath(),
-    deserializeFromDeadLetter,
-    async (events) => getBatcher(db, pool).ingest(events),
-    log,
-  )
+export async function replayDeadLetterAuditLog(path?: string): Promise<{ replayed: number; failed: number }> {
+  if (!batcher) {
+    throw new Error('AuditLogBatcher not initialized — call initAuditLogBatcher(db, pool) first')
+  }
+  const b = batcher
+  return replayDeadLetter(path ?? deadLetterPath(), deserializeFromDeadLetter, async (events) => b.ingest(events), log)
 }

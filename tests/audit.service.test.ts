@@ -34,7 +34,7 @@ describe('audit/service', () => {
 
   describe('recordAuditEvent', () => {
     it('tags L3 fields and pushes to batcher', () => {
-      recordAuditEvent(mockDb, mockPool, {
+      recordAuditEvent({
         action: 'post_deleted',
         resourceType: 'post',
         resourceId: '1',
@@ -42,7 +42,7 @@ describe('audit/service', () => {
       })
 
       expect(pushAuditEvent).toHaveBeenCalledOnce()
-      const call = pushAuditEvent.mock.calls[0][2]
+      const call = pushAuditEvent.mock.calls[0][0]
       expect(call.action).toBe('post_deleted')
       expect(call.details).toEqual({ email: '{E}user@example.com{/E}', title: 'Hello' })
     })
@@ -52,7 +52,7 @@ describe('audit/service', () => {
         throw new Error('batcher full')
       })
 
-      expect(() => recordAuditEvent(mockDb, mockPool, { action: 'post_deleted', resourceType: 'post' })).not.toThrow()
+      expect(() => recordAuditEvent({ action: 'post_deleted', resourceType: 'post' })).not.toThrow()
 
       expect(getLogger().error).toHaveBeenCalled()
     })
@@ -117,7 +117,7 @@ describe('audit/service', () => {
       })
 
       expect(pushAuditEvent).toHaveBeenCalledOnce()
-      const call = pushAuditEvent.mock.calls[0][2]
+      const call = pushAuditEvent.mock.calls[0][0]
       expect(call.action).toBe('post_published')
       expect(call.actorId).toBe(42n)
       expect(call.actorRole).toBe('author')
