@@ -1,4 +1,5 @@
 import type { ServerType } from '@hono/node-server'
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 import type { Hono } from 'hono'
 import type { Server as NodeHttpServer } from 'node:http'
 
@@ -13,6 +14,7 @@ import { setHttpServer, setRestartState } from '@/server/infra/shutdown'
 
 let httpServer: ServerType | null = null
 let currentApp: Hono<Env> | null = null
+let currentDb: NodePgDatabase | null = null
 let isRestarting = false
 
 export function setRestartHttpServer(server: ServerType): void {
@@ -21,6 +23,10 @@ export function setRestartHttpServer(server: ServerType): void {
 
 export function setRestartApp(app: Hono<Env>): void {
   currentApp = app
+}
+
+export function setRestartDb(db: NodePgDatabase): void {
+  currentDb = db
 }
 
 export async function restartServer(): Promise<void> {
@@ -53,7 +59,9 @@ export async function restartServer(): Promise<void> {
       })
 
       try {
-        await refreshBlogSettings()
+        if (currentDb) {
+          await refreshBlogSettings(currentDb)
+        }
       } catch (err) {
         log.warn(
           { err: err instanceof Error ? err.message : String(err) },

@@ -1,3 +1,5 @@
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
+import type { Pool } from 'pg'
 import type { LoaderFunctionArgs, RouterContextProvider } from 'react-router'
 
 import { createContext } from 'react-router'
@@ -15,6 +17,8 @@ export interface RouteRequestContext extends SessionContext, RequestContextValue
 
 export const sessionContext = createContext<SessionContext>()
 export const requestContext = createContext<RequestContextValue>()
+export const dbContext = createContext<NodePgDatabase>()
+export const poolContext = createContext<Pool>()
 
 export function tryGetSessionContext(context: Readonly<RouterContextProvider> | undefined): SessionContext | undefined {
   if (context === undefined) {
@@ -56,4 +60,14 @@ export function getRouteRequestContext(args: AnyRouteArgs): RouteRequestContext 
     clientAddress: requestData.clientAddress,
     url: requestData.url,
   }
+}
+
+export function getDbFromContext(args: AnyRouteArgs): NodePgDatabase {
+  const context = args.context as Readonly<RouterContextProvider>
+  return context.get(dbContext)
+}
+
+export function getPoolFromContext(args: AnyRouteArgs): Pool {
+  const context = args.context as Readonly<RouterContextProvider>
+  return context.get(poolContext)
 }

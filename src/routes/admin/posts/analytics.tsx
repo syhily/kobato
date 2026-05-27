@@ -10,7 +10,7 @@ import {
   queryMetric,
   queryViews,
 } from '@/server/domains/analytics/query'
-import { getRouteRequestContext } from '@/server/domains/auth/context'
+import { getDbFromContext, getRouteRequestContext } from '@/server/domains/auth/context'
 import { requireRole } from '@/server/domains/auth/rbac'
 import { toAdminPostDto } from '@/server/domains/posts/projection'
 import { findPostMetaById } from '@/server/domains/posts/repos/single'
@@ -31,8 +31,10 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
   const ctx = getRouteRequestContext({ request, context })
   requireRole(ctx, 'author')
 
+  const db = getDbFromContext({ request, context })
+
   const postId = BigInt(params.postId)
-  const meta = await findPostMetaById(postId)
+  const meta = await findPostMetaById(db, postId)
   if (meta === null) {
     throw new Response('文章不存在', { status: 404 })
   }
@@ -44,10 +46,10 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
   const initialMetricTypes = METRIC_GROUPS.map((g) => METRIC_GROUP_TABS[g][0]!)
 
   const [counters, views, heatmap, ...metricRows] = await Promise.all([
-    queryCounters({ ...input, entityType: 'post', entityId: postId }),
-    queryViews({ ...input, entityType: 'post', entityId: postId }),
-    queryHeatmap({ ...input, entityType: 'post', entityId: postId }),
-    ...initialMetricTypes.map((t) => queryMetric({ ...input, entityType: 'post', entityId: postId }, t, 10)),
+    queryCounters(db, { ...input, entityType: 'post', entityId: postId }),
+    queryViews(db, { ...input, entityType: 'post', entityId: postId }),
+    queryHeatmap(db, { ...input, entityType: 'post', entityId: postId }),
+    ...initialMetricTypes.map((t) => queryMetric(db, { ...input, entityType: 'post', entityId: postId }, t, 10)),
   ])
 
   const initialMetrics: Partial<Record<MetricType, MetricRow[]>> = {}

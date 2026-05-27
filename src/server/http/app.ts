@@ -60,6 +60,8 @@ export function createApiApp(): Hono<Env> {
       viewer: c.var.viewer ?? null,
       clientAddress: c.var.clientAddress,
       responseHeaders,
+      db: c.var.db,
+      pool: c.var.pool,
     }
     const result = await handler.handle(c.req.raw, { prefix: '/rpc', context })
     if (!result.matched) {

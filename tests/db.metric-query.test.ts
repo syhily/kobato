@@ -1,9 +1,20 @@
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
+import type { Pool } from 'pg'
+
 import { and, eq } from 'drizzle-orm'
-import { beforeEach, describe, expect, it } from 'vitest'
+import { afterAll, beforeEach, describe, expect, it } from 'vitest'
 
 import { incrementMetricPvBatch } from '@/server/infra/db/operations/metric'
-import { db } from '@/server/infra/db/pool'
+import { createDbPool, closePool } from '@/server/infra/db/pool'
 import { metric } from '@/server/infra/db/schema/metric'
+
+const poolManager = createDbPool()
+const db: NodePgDatabase = poolManager.db
+const pool: Pool = poolManager.pool
+
+afterAll(async () => {
+  await closePool(pool)
+})
 
 beforeEach(async () => {
   await db.delete(metric)
@@ -17,6 +28,7 @@ describe('db/query/metric', () => {
     ])
 
     await incrementMetricPvBatch(
+      db,
       new Map([
         ['post:1', 1],
         ['page:2', 2],
@@ -42,6 +54,7 @@ describe('db/query/metric', () => {
     await db.insert(metric).values([{ type: 'post', ownerId: 1n, pv: 5 }])
 
     await incrementMetricPvBatch(
+      db,
       new Map([
         ['post:1', 0],
         ['page:2', -1],
@@ -60,6 +73,7 @@ describe('db/query/metric', () => {
     await db.insert(metric).values([{ type: 'post', ownerId: 1n, pv: 10 }])
 
     await incrementMetricPvBatch(
+      db,
       new Map([
         ['notarget', 5],
         ['note:42', 5],

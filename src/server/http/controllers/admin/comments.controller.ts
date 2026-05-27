@@ -21,7 +21,7 @@ const approve = adminProc
   .input(z.object({ rid: z.string() }))
   .output(z.void())
   .handler(async ({ input, context }) => {
-    await approveComment(input.rid)
+    await approveComment(context.db, input.rid)
     recordAuditEventFromContext(context, {
       action: 'comment_approved',
       resourceType: 'comment',
@@ -34,7 +34,7 @@ const deleteOne = adminProc
   .input(z.object({ rid: z.string() }))
   .output(z.void())
   .handler(async ({ input, context }) => {
-    await deleteComment(input.rid)
+    await deleteComment(context.db, input.rid)
     recordAuditEventFromContext(context, {
       action: 'comment_deleted',
       resourceType: 'comment',
@@ -65,8 +65,9 @@ const loadAll = adminProc
       }),
     }),
   )
-  .handler(async ({ input }) => {
+  .handler(async ({ input, context }) => {
     const result = await loadAllComments(
+      context.db,
       input.offset,
       input.limit,
       input.pageKey,
@@ -92,9 +93,9 @@ const searchPages = adminProc
   .route({ method: 'GET', path: '/comment-admin/search-pages' })
   .input(filterAutocompleteInput)
   .output(z.object({ pages: z.array(z.object({ key: z.string(), title: z.string().nullable() })) }))
-  .handler(async ({ input }) => {
+  .handler(async ({ input, context }) => {
     const keys = input.key ? [input.key] : undefined
-    const pages = await searchPageOptions(input.q, input.limit, keys)
+    const pages = await searchPageOptions(context.db, input.q, input.limit, keys)
     return { pages }
   })
 
@@ -102,7 +103,7 @@ const searchAuthors = adminProc
   .route({ method: 'GET', path: '/comment-admin/search-authors' })
   .input(filterAutocompleteInput)
   .output(z.object({ authors: z.array(z.object({ id: z.string(), name: z.string() })) }))
-  .handler(async ({ input }) => {
+  .handler(async ({ input, context }) => {
     function parseBigIntIds(raw: string | undefined): bigint[] | undefined {
       if (!raw || raw.length === 0) {
         return undefined
@@ -122,7 +123,7 @@ const searchAuthors = adminProc
       return out.length > 0 ? out : undefined
     }
     const ids = parseBigIntIds(input.ids)
-    const authors = await searchAuthorOptions(input.q, input.limit, ids)
+    const authors = await searchAuthorOptions(context.db, input.q, input.limit, ids)
     return { authors: authors.map((author) => ({ id: String(author.id), name: author.name })) }
   })
 
@@ -132,7 +133,7 @@ const approveCommentDeletion = adminProc
   .output(z.object({ success: z.boolean() }))
   .handler(async ({ input, context }) => {
     const id = idFromString(input.commentId)
-    const c = await findCommentWithUserById(id)
+    const c = await findCommentWithUserById(context.db, id)
     if (!c) {
       throw new ORPCError('NOT_FOUND', { message: '评论不存在。' })
     }
@@ -140,14 +141,14 @@ const approveCommentDeletion = adminProc
       throw new ORPCError('CONFLICT', { message: '该评论没有待处理的删除申请。' })
     }
     if (input.approve) {
-      await softDeleteCommentById(id)
+      await softDeleteCommentById(context.db, id)
       recordAuditEventFromContext(context, {
         action: 'comment_delete_request_approved',
         resourceType: 'comment',
         resourceId: input.commentId,
       })
     } else {
-      await adminClearDeleteRequest(id)
+      await adminClearDeleteRequest(context.db, id)
       recordAuditEventFromContext(context, {
         action: 'comment_delete_request_rejected',
         resourceType: 'comment',
@@ -167,8 +168,8 @@ const listPendingDashboard = adminProc
     }),
   )
   .output(adminPendingDashboardDto)
-  .handler(async ({ input }) => {
-    return loadAdminPendingDashboard(input.kind, input.offset ?? 0, input.limit ?? 20)
+  .handler(async ({ input, context }) => {
+    return loadAdminPendingDashboard(context.db, input.kind, input.offset ?? 0, input.limit ?? 20)
   })
 
 export const adminCommentsRouter = {

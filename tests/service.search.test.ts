@@ -1,11 +1,22 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
+import type { Pool } from 'pg'
 
-import { db } from '@/server/infra/db/pool'
+import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
+
+import { createDbPool, closePool } from '@/server/infra/db/pool'
 import { postSearchIndex } from '@/server/infra/db/schema/content'
 import { post } from '@/server/infra/db/schema/post'
 
 import { clearAllTables } from './_helpers/integration-db'
 import { flushWorkerRedis } from './_helpers/redis'
+
+const poolManager = createDbPool()
+const db: NodePgDatabase = poolManager.db
+const pool: Pool = poolManager.pool
+
+afterAll(async () => {
+  await closePool(pool)
+})
 
 const mocks = vi.hoisted(() => ({
   generateEmbedding: vi.fn(),
@@ -62,7 +73,7 @@ function enableVectorMode() {
 
 describe('services/search — searchPosts', () => {
   it('returns empty results for empty query', async () => {
-    const result = await searchPosts('', 10)
+    const result = await searchPosts(db, '', 10)
     expect(result.hits).toEqual([])
     expect(result.totalPages).toBe(0)
   })
@@ -71,7 +82,7 @@ describe('services/search — searchPosts', () => {
     await seedPost({ slug: 'post-with-phrase', title: '向量数据库入门' })
     await seedPost({ slug: 'another-post', title: '另一个文章' })
 
-    const result = await searchPosts('向量数据库', 10)
+    const result = await searchPosts(db, '向量数据库', 10)
 
     expect(result.hits).toEqual(['post-with-phrase'])
     expect(result.totalPages).toBe(1)
@@ -92,7 +103,7 @@ describe('services/search — searchPosts', () => {
     })
     await seedPost({ slug: 'post-c', title: 'Test C', publishedAt: now })
 
-    const result = await searchPosts('test', 2, 1)
+    const result = await searchPosts(db, 'test', 2, 1)
 
     // Ordered by publishedAt DESC: post-c, post-b, post-a
     // offset=1, limit=2 → post-b, post-a
@@ -108,7 +119,7 @@ describe('services/search — searchPosts', () => {
     await seedPost({ slug: 'vector-match-1', title: 'Semantic One' })
     await seedPost({ slug: 'vector-match-2', title: 'Semantic Two' })
 
-    const result = await searchPosts('semantic', 10)
+    const result = await searchPosts(db, 'semantic', 10)
 
     expect(mocks.generateEmbedding).toHaveBeenCalledWith('semantic')
     // Vector search won't match because no embeddings in DB,
@@ -123,7 +134,7 @@ describe('services/search — searchPosts', () => {
 
     await seedPost({ slug: 'like-fallback', title: 'Test Fallback' })
 
-    const result = await searchPosts('test', 10)
+    const result = await searchPosts(db, 'test', 10)
 
     expect(mocks.generateEmbedding).toHaveBeenCalled()
     expect(result.hits).toEqual(['like-fallback'])

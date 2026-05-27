@@ -1,11 +1,22 @@
-import { beforeEach, describe, expect, it } from 'vitest'
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
+import type { Pool } from 'pg'
 
-import { db } from '@/server/infra/db/pool'
+import { afterAll, beforeEach, describe, expect, it } from 'vitest'
+
+import { createDbPool, closePool } from '@/server/infra/db/pool'
 import { setting } from '@/server/infra/db/schema/config'
 
 import { clearAllTables } from '../_helpers/integration-db'
 import { makeAuthedCtx } from '../_helpers/mock-ctx'
 import { callRpc, parseRpcJson } from './_helpers/rpc-call'
+
+const poolManager = createDbPool()
+const db: NodePgDatabase = poolManager.db
+const pool: Pool = poolManager.pool
+
+afterAll(async () => {
+  await closePool(pool)
+})
 
 beforeEach(async () => {
   await clearAllTables(db)
@@ -62,7 +73,7 @@ beforeEach(async () => {
 
 describe('integration / concurrent settings edits', () => {
   it('updates two different sections without overwriting each other', async () => {
-    const ctx = makeAuthedCtx({ role: 'admin' })
+    const ctx = makeAuthedCtx({ role: 'admin', db, pool })
 
     // Update limits
     const limitsRes = await callRpc(

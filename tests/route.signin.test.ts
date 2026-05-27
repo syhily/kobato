@@ -37,6 +37,8 @@ vi.mock('@/server/domains/auth/context', async () => {
       clientAddress: '127.0.0.1',
       url: new URL(request.url),
     })),
+    getDbFromContext: vi.fn(() => ({})),
+    getPoolFromContext: vi.fn(() => ({})),
   }
 })
 

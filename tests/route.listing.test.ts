@@ -11,11 +11,20 @@ const samplePosts = [...publicPosts, hiddenPost]
 const sampleCategory = makeCategory({ name: 'general', slug: 'general' })
 const sampleTag = makeTag({ name: 'typescript', slug: 'typescript' })
 
+vi.mock('@/server/domains/auth/context', async () => {
+  const actual = await vi.importActual<typeof import('@/server/domains/auth/context')>('@/server/domains/auth/context')
+  return {
+    ...actual,
+    getDbFromContext: vi.fn(() => ({}) as import('drizzle-orm/node-postgres').NodePgDatabase),
+    getPoolFromContext: vi.fn(() => ({}) as import('pg').Pool),
+  }
+})
+
 vi.mock('@/server/infra/db/operations/category', () => ({
-  findCategoryBySlug: vi.fn(async (slug: string) => (slug === 'general' ? sampleCategory : null)),
+  findCategoryBySlug: vi.fn(async (_db: unknown, slug: string) => (slug === 'general' ? sampleCategory : null)),
 }))
 vi.mock('@/server/infra/db/operations/tag', () => ({
-  findTagBySlug: vi.fn(async (slug: string) => (slug === 'typescript' ? sampleTag : null)),
+  findTagBySlug: vi.fn(async (_db: unknown, slug: string) => (slug === 'typescript' ? sampleTag : null)),
 }))
 
 vi.mock('@/shared/types/catalog', async () => {
@@ -28,20 +37,22 @@ vi.mock('@/shared/types/catalog', async () => {
 })
 
 vi.mock('@/server/domains/posts/repos/public-query', () => ({
-  listPostsByCategory: vi.fn(async (_name: string, options: { includeHidden?: boolean }) =>
+  listPostsByCategory: vi.fn(async (_db: unknown, _name: string, options: { includeHidden?: boolean }) =>
     options?.includeHidden ? samplePosts : publicPosts,
   ),
-  listPostsByTag: vi.fn(async (_name: string, options: { includeHidden?: boolean }) =>
+  listPostsByTag: vi.fn(async (_db: unknown, _name: string, options: { includeHidden?: boolean }) =>
     options?.includeHidden ? samplePosts : publicPosts,
   ),
-  getPostsBySlugs: vi.fn(async (_slugs: string[], options: { includeHidden?: boolean }) =>
+  getPostsBySlugs: vi.fn(async (_db: unknown, _slugs: string[], options: { includeHidden?: boolean }) =>
     options?.includeHidden ? samplePosts : publicPosts,
   ),
-  countPublicPosts: vi.fn(async (_filters: { includeHidden?: boolean; category?: string; tag?: string }) =>
-    _filters?.includeHidden ? samplePosts.length : publicPosts.length,
+  countPublicPosts: vi.fn(
+    async (_db: unknown, _filters: { includeHidden?: boolean; category?: string; tag?: string }) =>
+      _filters?.includeHidden ? samplePosts.length : publicPosts.length,
   ),
   listPublicPostCardsPaginated: vi.fn(
     async (
+      _db: unknown,
       _pageNum: number,
       _pageSize: number,
       options: { includeHidden?: boolean; category?: string; tag?: string },
@@ -50,7 +61,7 @@ vi.mock('@/server/domains/posts/repos/public-query', () => ({
       return { posts, total: posts.length }
     },
   ),
-  getClientPostsWithMetadata: vi.fn(async (posts: unknown[]) =>
+  getClientPostsWithMetadata: vi.fn(async (_db: unknown, posts: unknown[]) =>
     (posts as Array<{ slug: string }>).map((p) => ({
       ...p,
       meta: { likes: 0, views: 0, comments: 0 },

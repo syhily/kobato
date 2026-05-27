@@ -1,3 +1,6 @@
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
+import type { Pool } from 'pg'
+
 import type { AuditEventInput } from '@/server/domains/audit/types'
 import type { HandlerContext } from '@/server/http/orpc-base'
 
@@ -24,10 +27,10 @@ const log = getLogger('audit.service')
  * Never throws. Any failure (DB down, malformed row, …) is logged and
  * silently swallowed so the caller's business logic is never blocked.
  */
-export function recordAuditEvent(input: AuditEventInput): void {
+export function recordAuditEvent(db: NodePgDatabase, pool: Pool, input: AuditEventInput): void {
   try {
     const tagged = tagL3InDetails(input.details)
-    pushAuditEvent({
+    pushAuditEvent(db, pool, {
       ...input,
       details: tagged,
     })
@@ -68,7 +71,7 @@ export function recordAuditEventFromContext(
   event: Omit<AuditEventInput, 'actorId' | 'actorRole' | 'ipAddress' | 'userAgent'>,
 ): void {
   const ctx = buildAuditContext(context)
-  recordAuditEvent({
+  recordAuditEvent(context.db, context.pool, {
     ...event,
     actorId: ctx.actorId,
     actorRole: ctx.actorRole,

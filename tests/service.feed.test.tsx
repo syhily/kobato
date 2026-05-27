@@ -1,3 +1,5 @@
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
+
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 // `feedResponse` and `generateFeeds` thread a real `feed` package output, the
@@ -34,6 +36,8 @@ vi.mock('@/server/domains/taxonomies/tags/service', () => ({
   getTagsByNames: mocks.getTagsByNames,
 }))
 
+const db = {} as NodePgDatabase
+
 const { feedResponse, generateFeeds } = await import('@/server/render/feed/generator')
 
 function fakeCatalog(
@@ -46,10 +50,14 @@ function fakeCatalog(
   const categories = opts.categories ?? []
   const tags = opts.tags ?? []
   mocks.listPublicPostsWithContent.mockResolvedValue(opts.posts ?? [])
-  mocks.findCategoryBySlug.mockImplementation((slug: string) => categories.find((cat) => cat.slug === slug))
-  mocks.findCategoryByName.mockImplementation((name: string) => categories.find((cat) => cat.name === name))
-  mocks.findTagBySlug.mockImplementation((slug: string) => tags.find((tag) => tag.slug === slug))
-  mocks.findTagByName.mockImplementation((name: string) => tags.find((tag) => tag.name === name))
+  mocks.findCategoryBySlug.mockImplementation((_db: unknown, slug: string) =>
+    categories.find((cat) => cat.slug === slug),
+  )
+  mocks.findCategoryByName.mockImplementation((_db: unknown, name: string) =>
+    categories.find((cat) => cat.name === name),
+  )
+  mocks.findTagBySlug.mockImplementation((_db: unknown, slug: string) => tags.find((tag) => tag.slug === slug))
+  mocks.findTagByName.mockImplementation((_db: unknown, name: string) => tags.find((tag) => tag.name === name))
   mocks.listAllCategories.mockResolvedValue(categories)
   mocks.getTagsByNames.mockResolvedValue([])
   return {
@@ -67,7 +75,7 @@ describe('services/feed — generateFeeds (channel envelope)', () => {
   it('produces both rss + atom strings even when there are zero posts', async () => {
     fakeCatalog()
 
-    const feeds = await generateFeeds()
+    const feeds = await generateFeeds(db)
 
     expect(feeds.rss).toContain('<?xml version=')
     expect(feeds.atom).toContain('<?xml version=')
@@ -77,23 +85,23 @@ describe('services/feed — generateFeeds (channel envelope)', () => {
 
   it('declares zh-CN language on both feeds', async () => {
     fakeCatalog()
-    const feeds = await generateFeeds()
+    const feeds = await generateFeeds(db)
     expect(feeds.rss).toContain('<language>zh-CN</language>')
     expect(feeds.atom).toContain('xml:lang="zh-CN"')
   })
 
   it('does not set a custom generator string (uses the feed library default)', async () => {
     fakeCatalog()
-    const feeds = await generateFeeds()
+    const feeds = await generateFeeds(db)
     expect(feeds.rss).not.toContain('<generator>WordPress 3.2.1</generator>')
   })
 
   it('selects hidden posts by default while still excluding scheduled posts', async () => {
     const catalog = fakeCatalog()
 
-    await generateFeeds()
+    await generateFeeds(db)
 
-    expect(catalog.listPublicPostsWithContent).toHaveBeenCalledWith({
+    expect(catalog.listPublicPostsWithContent).toHaveBeenCalledWith(expect.any(Object), {
       includeHidden: true,
       includeScheduled: false,
     })
@@ -105,17 +113,17 @@ describe('services/feed — generateFeeds (channel envelope)', () => {
       tags: [{ name: 'React', slug: 'react' }],
     })
 
-    await generateFeeds({ category: 'tech' })
+    await generateFeeds(db, { category: 'tech' })
 
-    expect(catalog.listPublicPostsWithContent).toHaveBeenLastCalledWith({
+    expect(catalog.listPublicPostsWithContent).toHaveBeenLastCalledWith(expect.any(Object), {
       includeHidden: true,
       includeScheduled: false,
       category: '技术',
     })
 
-    await generateFeeds({ tag: 'react' })
+    await generateFeeds(db, { tag: 'react' })
 
-    expect(catalog.listPublicPostsWithContent).toHaveBeenLastCalledWith({
+    expect(catalog.listPublicPostsWithContent).toHaveBeenLastCalledWith(expect.any(Object), {
       includeHidden: true,
       includeScheduled: false,
       tag: 'React',
@@ -124,7 +132,7 @@ describe('services/feed — generateFeeds (channel envelope)', () => {
 
   it('does not emit `xml-stylesheet` (client XSLT is deprecated in browsers)', async () => {
     fakeCatalog()
-    const feeds = await generateFeeds()
+    const feeds = await generateFeeds(db)
     expect(feeds.rss).not.toMatch(/xml-stylesheet/i)
     expect(feeds.atom).not.toMatch(/xml-stylesheet/i)
   })
@@ -136,28 +144,28 @@ describe('services/feed — generateFeeds (channel envelope)', () => {
         { name: '杂谈', slug: 'misc' },
       ],
     })
-    const feeds = await generateFeeds()
+    const feeds = await generateFeeds(db)
     expect(feeds.rss).toContain('<category>技术</category>')
     expect(feeds.rss).toContain('<category>杂谈</category>')
   })
 
   it('uses /cats/<slug>/feed and /cats/<slug>/feed/atom URLs when scoped to a category', async () => {
     fakeCatalog({ categories: [{ name: '技术', slug: 'tech' }] })
-    const feeds = await generateFeeds({ category: 'tech' })
+    const feeds = await generateFeeds(db, { category: 'tech' })
     // The feedLinks self-references appear in the channel header.
     expect(feeds.atom).toContain('/cats/tech/feed')
   })
 
   it('rejects calls that pass both category and tag', async () => {
     fakeCatalog()
-    await expect(generateFeeds({ category: 'tech', tag: 'react' })).rejects.toThrow(/at the same time/)
+    await expect(generateFeeds(db, { category: 'tech', tag: 'react' })).rejects.toThrow(/at the same time/)
   })
 })
 
 describe('services/feed — feedResponse (HTTP wrapper)', () => {
   it('rss returns application/xml; charset=utf-8', async () => {
     fakeCatalog()
-    const response = await feedResponse('rss')
+    const response = await feedResponse(db, 'rss')
     expect(response.headers.get('Content-Type')).toBe('application/xml; charset=utf-8')
     const body = await response.text()
     expect(body.startsWith('<?xml')).toBe(true)
@@ -165,7 +173,7 @@ describe('services/feed — feedResponse (HTTP wrapper)', () => {
 
   it('atom returns application/atom+xml; charset=utf-8', async () => {
     fakeCatalog()
-    const response = await feedResponse('atom')
+    const response = await feedResponse(db, 'atom')
     expect(response.headers.get('Content-Type')).toBe('application/atom+xml; charset=utf-8')
   })
 })

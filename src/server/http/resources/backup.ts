@@ -52,7 +52,7 @@ export const backupRouter = new Hono<Env>()
 
       Promise.resolve()
         .then(async () => {
-          await restoreFromSql(sql)
+          await restoreFromSql(c.var.db, sql)
           log.info('Restore from uploaded backup completed')
           await restartServer()
         })
@@ -75,7 +75,7 @@ export const backupRouter = new Hono<Env>()
       onError: (c) => c.json({ error: { message: '上传文件过大' } }, 413),
     }),
     async (c) => {
-      if (await hasAdmin()) {
+      if (await hasAdmin(c.var.db)) {
         return c.json({ error: { message: '站点已安装，请直接登录后通过后台还原备份。' } }, 409)
       }
 
@@ -103,9 +103,9 @@ export const backupRouter = new Hono<Env>()
 
       Promise.resolve()
         .then(async () => {
-          await restoreFromSql(sql)
+          await restoreFromSql(c.var.db, sql)
 
-          const admin = await findFirstAdminUser()
+          const admin = await findFirstAdminUser(c.var.db)
           if (!admin) {
             log.error('Setup restore: no admin found after restore', { fileName })
             setRestartState('idle')
@@ -113,14 +113,14 @@ export const backupRouter = new Hono<Env>()
           }
 
           try {
-            await refreshBlogSettings()
+            await refreshBlogSettings(c.var.db)
           } catch (err) {
             log.warn('refreshBlogSettings failed after setup restore; continuing', {
               err: err instanceof Error ? err.message : String(err),
             })
           }
 
-          recordAuditEvent({
+          recordAuditEvent(c.var.db, c.var.pool, {
             action: 'setup_restored',
             resourceType: 'backup',
             resourceId: fileName,

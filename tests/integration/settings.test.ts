@@ -1,11 +1,22 @@
-import { beforeEach, describe, expect, it } from 'vitest'
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
+import type { Pool } from 'pg'
 
-import { db } from '@/server/infra/db/pool'
+import { afterAll, beforeEach, describe, expect, it } from 'vitest'
+
+import { createDbPool, closePool } from '@/server/infra/db/pool'
 import { setting } from '@/server/infra/db/schema/config'
 
 import { clearAllTables } from '../_helpers/integration-db'
 import { makeAuthedCtx, makePublicCtx } from '../_helpers/mock-ctx'
 import { callRpc, parseRpcJson } from './_helpers/rpc-call'
+
+const poolManager = createDbPool()
+const db: NodePgDatabase = poolManager.db
+const pool: Pool = poolManager.pool
+
+afterAll(async () => {
+  await closePool(pool)
+})
 
 beforeEach(async () => {
   await clearAllTables(db)
@@ -64,7 +75,7 @@ beforeEach(async () => {
 
 describe('integration / admin settings', () => {
   it('rejects unauthenticated settings update', async () => {
-    const ctx = makePublicCtx()
+    const ctx = makePublicCtx({ db, pool })
     const res = await callRpc(
       '/admin/settings/update',
       { section: 'limits', payload: { maxRequestBodySize: 5 * 1024 * 1024 } },
@@ -74,7 +85,7 @@ describe('integration / admin settings', () => {
   })
 
   it('updates and reads back a setting value', async () => {
-    const ctx = makeAuthedCtx({ role: 'admin' })
+    const ctx = makeAuthedCtx({ role: 'admin', db, pool })
 
     const updateRes = await callRpc(
       '/admin/settings/update',

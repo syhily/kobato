@@ -34,6 +34,8 @@ const POST_EMPTY = { type: 'post' as const, ownerId: 2n }
 const POST_ONE_UPSERT = { type: 'post' as const, ownerId: 3n }
 const POST_NO_TRACK = { type: 'post' as const, ownerId: 4n }
 
+const mockDb = {} as import('drizzle-orm/node-postgres').NodePgDatabase
+
 function delay<T>(value: T, ms: number): Promise<T> {
   return new Promise((resolve) => setTimeout(() => resolve(value), ms))
 }
@@ -63,7 +65,7 @@ describe('services/comments/page-data — loadDetailPageData', () => {
     )
 
     const start = Date.now()
-    await loadDetailPageData(regularSession(), POST_TIMING)
+    await loadDetailPageData(mockDb, regularSession(), POST_TIMING)
     const elapsed = Date.now() - start
 
     expect(elapsed).toBeLessThan(100)
@@ -84,7 +86,7 @@ describe('services/comments/page-data — loadDetailPageData', () => {
       isAdmin: false,
     } as unknown as Awaited<ReturnType<typeof sidebar.loadSidebarData>>)
 
-    const result = await loadDetailPageData(regularSession(), POST_EMPTY)
+    const result = await loadDetailPageData(mockDb, regularSession(), POST_EMPTY)
 
     expect(result.commentItems).toEqual([])
     expect(commentPublicQuery.parseComments).not.toHaveBeenCalled()
@@ -104,11 +106,12 @@ describe('services/comments/page-data — loadDetailPageData', () => {
       tags: [],
       isAdmin: false,
     } as unknown as Awaited<ReturnType<typeof sidebar.loadSidebarData>>)
+    const session = regularSession()
 
-    await loadDetailPageData(regularSession(), POST_ONE_UPSERT)
+    await loadDetailPageData(mockDb, session, POST_ONE_UPSERT)
 
     expect(commentShared.ensureCommentPage).toHaveBeenCalledOnce()
-    expect(commentPublicQuery.loadComments).toHaveBeenCalledWith(expect.anything(), POST_ONE_UPSERT, 0, {
+    expect(commentPublicQuery.loadComments).toHaveBeenCalledWith(mockDb, session, POST_ONE_UPSERT, 0, {
       ensurePage: false,
     })
   })
@@ -128,7 +131,7 @@ describe('services/comments/page-data — loadDetailPageData', () => {
       isAdmin: false,
     } as unknown as Awaited<ReturnType<typeof sidebar.loadSidebarData>>)
 
-    await loadDetailPageData(regularSession(), POST_NO_TRACK, { trackView: false })
+    await loadDetailPageData(mockDb, regularSession(), POST_NO_TRACK, { trackView: false })
 
     expect(metrics.bumpPageView).not.toHaveBeenCalled()
   })

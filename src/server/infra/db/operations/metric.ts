@@ -1,9 +1,10 @@
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
+
 import { and, eq, sql } from 'drizzle-orm'
 
 import type { EntityTarget } from '@/server/infra/db/target'
 import type { MetricRow, NewMetric } from '@/server/infra/db/types'
 
-import { db } from '@/server/infra/db/pool'
 import { metric } from '@/server/infra/db/schema/metric'
 import { targetKey } from '@/server/infra/db/target'
 
@@ -29,7 +30,7 @@ function whereTarget(target: EntityTarget) {
  *   semantics. (No counter or `publicId` rewrite — those are
  *   handled by their own paths.)
  */
-export async function ensureMetric(target: EntityTarget): Promise<MetricRow> {
+export async function ensureMetric(db: NodePgDatabase, target: EntityTarget): Promise<MetricRow> {
   const np: NewMetric = {
     type: target.type,
     ownerId: target.ownerId,
@@ -49,7 +50,7 @@ export async function ensureMetric(target: EntityTarget): Promise<MetricRow> {
 }
 
 /** Batch upsert of metric rows. One SQL round-trip regardless of batch size. */
-export async function ensureMetricsBatch(targets: EntityTarget[]): Promise<MetricRow[]> {
+export async function ensureMetricsBatch(db: NodePgDatabase, targets: EntityTarget[]): Promise<MetricRow[]> {
   if (targets.length === 0) {
     return []
   }
@@ -70,17 +71,17 @@ export async function ensureMetricsBatch(targets: EntityTarget[]): Promise<Metri
     .returning()
 }
 
-export async function findMetricByPublicId(publicId: string): Promise<MetricRow | null> {
+export async function findMetricByPublicId(db: NodePgDatabase, publicId: string): Promise<MetricRow | null> {
   const rows = await db.select().from(metric).where(eq(metric.publicId, publicId)).limit(1)
   return rows[0] ?? null
 }
 
-export async function findMetricByTarget(target: EntityTarget): Promise<MetricRow | null> {
+export async function findMetricByTarget(db: NodePgDatabase, target: EntityTarget): Promise<MetricRow | null> {
   const rows = await db.select().from(metric).where(whereTarget(target)).limit(1)
   return rows[0] ?? null
 }
 
-export async function incrementMetricPv(target: EntityTarget, delta = 1): Promise<void> {
+export async function incrementMetricPv(db: NodePgDatabase, target: EntityTarget, delta = 1): Promise<void> {
   if (delta <= 0) {
     return
   }
@@ -97,7 +98,7 @@ export async function incrementMetricPv(target: EntityTarget, delta = 1): Promis
  * `"<type>:<ownerId>"` (see `targetKey`) so callers can use a regular
  * `Map<string, number>` without juggling tuples.
  */
-export async function incrementMetricPvBatch(deltas: Map<string, number>): Promise<void> {
+export async function incrementMetricPvBatch(db: NodePgDatabase, deltas: Map<string, number>): Promise<void> {
   const positive: Array<[string, string, number]> = []
   for (const [composite, delta] of deltas) {
     if (delta <= 0) {
@@ -132,7 +133,7 @@ export async function incrementMetricPvBatch(deltas: Map<string, number>): Promi
   `)
 }
 
-export async function decrementMetricVotes(target: EntityTarget): Promise<void> {
+export async function decrementMetricVotes(db: NodePgDatabase, target: EntityTarget): Promise<void> {
   await db
     .update(metric)
     .set({ voteUp: sql`GREATEST(${metric.voteUp} - 1, 0)` })

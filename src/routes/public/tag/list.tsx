@@ -1,5 +1,6 @@
 import type { ListingPageLoaderData } from '@/server/http/loaders/listing'
 
+import { getDbFromContext } from '@/server/domains/auth/context'
 import { countPublicPosts, listPublicPostCardsPaginated } from '@/server/domains/posts/repos/public-query'
 import { listingLoader } from '@/server/http/loaders/listing'
 import { listingHeaders, publicShouldRevalidate } from '@/server/http/loaders/route-exports'
@@ -10,23 +11,24 @@ import { PostListingBody } from '@/ui/public/post/PostListViews'
 
 import type { Route } from './+types/list'
 
-export async function loader({ params }: Route.LoaderArgs): Promise<ListingPageLoaderData> {
-  const tag = await findTagBySlug(params.slug)
+export async function loader({ request, context, params }: Route.LoaderArgs): Promise<ListingPageLoaderData> {
+  const db = getDbFromContext({ request, context })
+  const tag = await findTagBySlug(db, params.slug)
   if (!tag) {
     notFound()
   }
 
   const rootPath = `/tags/${tag.slug}`
 
-  return listingLoader({
+  return listingLoader(db, {
     rawNum: params.num,
-    totalPosts: await countPublicPosts({
+    totalPosts: await countPublicPosts(db, {
       includeHidden: true,
       includeScheduled: false,
       tag: tag.name,
     }),
     fetchPage: (pageNum, pageSize) =>
-      listPublicPostCardsPaginated(pageNum, pageSize, {
+      listPublicPostCardsPaginated(db, pageNum, pageSize, {
         includeHidden: true,
         includeScheduled: false,
         tag: tag.name,

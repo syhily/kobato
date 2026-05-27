@@ -1,3 +1,5 @@
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
+
 import type { ImageRow } from '@/server/infra/db/types'
 import type { AdminImageDto, ListImagesInput, ListImagesOutput } from '@/shared/types/images'
 
@@ -55,7 +57,7 @@ export interface UploadImageInputs {
   jpegQuality: number
 }
 
-export async function uploadImage(input: UploadImageInputs): Promise<AdminImageDto> {
+export async function uploadImage(db: NodePgDatabase, input: UploadImageInputs): Promise<AdminImageDto> {
   if (input.buffer.byteLength > input.maxBytes) {
     throw new DomainError('BAD_REQUEST', `图片体积超过上限（${formatBytes(input.maxBytes)}）`)
   }
@@ -86,7 +88,7 @@ export async function uploadImage(input: UploadImageInputs): Promise<AdminImageD
     // Timestamp keys are practically unique; the unique index would
     // catch any accidental collision and the catch loudly surfaces it.
     try {
-      row = await insertImage({
+      row = await insertImage(db, {
         storagePath: objectKey,
         mimeType: 'image/jpeg',
         width: processed.width,
@@ -101,7 +103,7 @@ export async function uploadImage(input: UploadImageInputs): Promise<AdminImageD
       throw new DomainError('INTERNAL', '图片元数据写入失败，请稍后重试')
     }
   } else {
-    row = await upsertImageByStoragePath({
+    row = await upsertImageByStoragePath(db, {
       storagePath: objectKey,
       mimeType: 'image/jpeg',
       width: processed.width,
@@ -118,7 +120,7 @@ export async function uploadImage(input: UploadImageInputs): Promise<AdminImageD
   return toAdminImageDto(row, input.uploader?.name ?? null)
 }
 
-export async function listImagesForAdmin(input: ListImagesInput = {}): Promise<ListImagesOutput> {
+export async function listImagesForAdmin(db: NodePgDatabase, input: ListImagesInput = {}): Promise<ListImagesOutput> {
   const offset = clampOffset(input.offset)
   const limit = clampLimit(input.limit)
 
@@ -130,8 +132,8 @@ export async function listImagesForAdmin(input: ListImagesInput = {}): Promise<L
   }
 
   const [rows, total] = await Promise.all([
-    listAdminImageRows(filters),
-    countAdminImages({ q: input.q, kind: input.kind }),
+    listAdminImageRows(db, filters),
+    countAdminImages(db, { q: input.q, kind: input.kind }),
   ])
 
   return {
@@ -143,8 +145,8 @@ export async function listImagesForAdmin(input: ListImagesInput = {}): Promise<L
 
 export type ImageViewerContext = ViewerContext
 
-export async function deleteImage(id: bigint, viewer?: ImageViewerContext): Promise<void> {
-  const existing = await findImageById(id)
+export async function deleteImage(db: NodePgDatabase, id: bigint, viewer?: ImageViewerContext): Promise<void> {
+  const existing = await findImageById(db, id)
   if (existing === null) {
     throw new DomainError('NOT_FOUND', '图片不存在')
   }
@@ -162,7 +164,7 @@ export async function deleteImage(id: bigint, viewer?: ImageViewerContext): Prom
     })
   }
 
-  const deleted = await softDeleteImage(id)
+  const deleted = await softDeleteImage(db, id)
   if (deleted === null) {
     throw new DomainError('NOT_FOUND', '图片不存在')
   }
@@ -170,26 +172,31 @@ export async function deleteImage(id: bigint, viewer?: ImageViewerContext): Prom
 }
 
 export async function updateImageNote(
+  db: NodePgDatabase,
   id: bigint,
   note: string | null,
   viewer?: ImageViewerContext,
 ): Promise<AdminImageDto> {
-  const existing = await findImageById(id)
+  const existing = await findImageById(db, id)
   if (existing === null) {
     throw new DomainError('NOT_FOUND', '图片不存在')
   }
   if (viewer && !canEditImage(viewer, existing)) {
     throw new DomainError('NOT_FOUND', ErrorMessages.NOT_FOUND)
   }
-  const updated = await updateImageNoteWithUploader(id, note)
+  const updated = await updateImageNoteWithUploader(db, id, note)
   if (updated === null) {
     throw new DomainError('NOT_FOUND', '图片不存在')
   }
   return toAdminImageDto(updated, updated.uploaderName)
 }
 
-export async function recalculateImageThumbhash(id: bigint, viewer?: ImageViewerContext): Promise<AdminImageDto> {
-  const existing = await findAdminImageRowById(id)
+export async function recalculateImageThumbhash(
+  db: NodePgDatabase,
+  id: bigint,
+  viewer?: ImageViewerContext,
+): Promise<AdminImageDto> {
+  const existing = await findAdminImageRowById(db, id)
   if (existing === null) {
     throw new DomainError('NOT_FOUND', '图片不存在')
   }
@@ -219,7 +226,7 @@ export async function recalculateImageThumbhash(id: bigint, viewer?: ImageViewer
     jpegQuality: 82,
   })
 
-  const updated = await updateImageThumbhashWithUploader(id, processed.thumbhash)
+  const updated = await updateImageThumbhashWithUploader(db, id, processed.thumbhash)
   if (updated === null) {
     throw new DomainError('NOT_FOUND', '图片不存在')
   }
@@ -229,8 +236,8 @@ export async function recalculateImageThumbhash(id: bigint, viewer?: ImageViewer
   return toAdminImageDto(updated, updated.uploaderName)
 }
 
-export async function findImageDtoById(id: bigint): Promise<AdminImageDto | null> {
-  const row = await findAdminImageRowById(id)
+export async function findImageDtoById(db: NodePgDatabase, id: bigint): Promise<AdminImageDto | null> {
+  const row = await findAdminImageRowById(db, id)
   if (row === null) {
     return null
   }
@@ -238,8 +245,11 @@ export async function findImageDtoById(id: bigint): Promise<AdminImageDto | null
 }
 
 /** Bulk lookup used by the SSR enhancer. Drops soft-deleted rows. */
-export async function bulkFindImagesByStoragePaths(paths: readonly string[]): Promise<Map<string, ImageRow>> {
-  const rows = await findImagesByStoragePaths(paths)
+export async function bulkFindImagesByStoragePaths(
+  db: NodePgDatabase,
+  paths: readonly string[],
+): Promise<Map<string, ImageRow>> {
+  const rows = await findImagesByStoragePaths(db, paths)
   const out = new Map<string, ImageRow>()
   for (const row of rows) {
     out.set(row.storagePath, row)

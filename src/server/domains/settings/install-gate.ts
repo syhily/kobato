@@ -1,3 +1,5 @@
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
+
 import { cache } from 'react'
 import { redirect } from 'react-router'
 
@@ -22,8 +24,8 @@ export type InstallState = 'noAdmin' | 'installed'
  * downstream loader (`/admin/setup`, `/admin/signin`) that calls
  * `ensure…OrRedirect()` share a single resolution per render pass.
  */
-export const getInstallState = cache(async function getInstallState(): Promise<InstallState> {
-  if (!(await hasAdmin())) {
+export const getInstallState = cache(async function getInstallState(db: NodePgDatabase): Promise<InstallState> {
+  if (!(await hasAdmin(db))) {
     return 'noAdmin'
   }
   return 'installed'
@@ -32,8 +34,8 @@ export const getInstallState = cache(async function getInstallState(): Promise<I
 /**
  * Convenience: `true` iff the deployment has finished installing.
  */
-export async function isInstalled(): Promise<boolean> {
-  return (await getInstallState()) === 'installed'
+export async function isInstalled(db: NodePgDatabase): Promise<boolean> {
+  return (await getInstallState(db)) === 'installed'
 }
 
 /**
@@ -42,8 +44,8 @@ export async function isInstalled(): Promise<boolean> {
  *   noAdmin   → resolve, render the admin-credentials form.
  *   installed → throw 303 → `/admin/signin`.
  */
-export async function ensureNoAdminOrRedirect(): Promise<null> {
-  const state = await getInstallState()
+export async function ensureNoAdminOrRedirect(db: NodePgDatabase): Promise<null> {
+  const state = await getInstallState(db)
   if (state === 'noAdmin') {
     return null
   }
@@ -56,8 +58,8 @@ export async function ensureNoAdminOrRedirect(): Promise<null> {
  *   noAdmin   → throw 303 → `/admin/setup` (nothing to log into yet).
  *   installed → resolve, render the login form.
  */
-export async function ensureInstalledOrRedirect(): Promise<null> {
-  const state = await getInstallState()
+export async function ensureInstalledOrRedirect(db: NodePgDatabase): Promise<null> {
+  const state = await getInstallState(db)
   if (state === 'noAdmin') {
     throw redirect('/admin/setup', { status: 303 })
   }

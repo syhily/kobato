@@ -2,7 +2,7 @@ import bcrypt from 'bcryptjs'
 import { data, redirect } from 'react-router'
 
 import { recordAuditEvent } from '@/server/domains/audit/service'
-import { getRouteRequestContext } from '@/server/domains/auth/context'
+import { getDbFromContext, getPoolFromContext, getRouteRequestContext } from '@/server/domains/auth/context'
 import { processAuthFormSubmission, signInWithSession } from '@/server/domains/auth/flows'
 import { establishLoginSession, logout } from '@/server/domains/auth/primitives'
 import { signInSchema } from '@/server/domains/auth/schema'
@@ -35,7 +35,9 @@ function formFieldString(formData: FormData, key: string): string {
 }
 
 export async function loader({ request, context }: Route.LoaderArgs) {
-  await ensureInstalledOrRedirect()
+  const db = getDbFromContext({ request, context })
+  const pool = getPoolFromContext({ request, context })
+  await ensureInstalledOrRedirect(db)
 
   const { session, user, url, clientAddress } = getRouteRequestContext({ request, context })
   const redirectTo = safeRedirectPath(url.searchParams.get('redirect_to'), '/', url.origin)
@@ -45,7 +47,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
     const user = session.get('user')
     await logout(session)
     if (user) {
-      recordAuditEvent({
+      recordAuditEvent(db, pool, {
         action: 'logout',
         resourceType: 'session',
         resourceId: session.id,
@@ -73,7 +75,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   if ((action === 'resetpassword' || action === 'accept-invite') && url.searchParams.has('token')) {
     const rawToken = url.searchParams.get('token')!
     const purpose = action === 'resetpassword' ? 'password-reset' : 'author-invite'
-    const result = await peekToken(rawToken, purpose)
+    const result = await peekToken(db, rawToken, purpose)
     if (result === null) {
       tokenError = '链接无效或已过期。'
     } else {
@@ -85,7 +87,9 @@ export async function loader({ request, context }: Route.LoaderArgs) {
 }
 
 export async function action({ request, context }: Route.ActionArgs) {
-  await ensureInstalledOrRedirect()
+  const db = getDbFromContext({ request, context })
+  const pool = getPoolFromContext({ request, context })
+  await ensureInstalledOrRedirect(db)
 
   const { session, clientAddress, url } = getRouteRequestContext({ request, context })
   const redirectTo = safeRedirectPath(url.searchParams.get('redirect_to'), '/admin', url.origin)
@@ -109,14 +113,14 @@ export async function action({ request, context }: Route.ActionArgs) {
     }
     // Always appear to succeed to prevent email enumeration.
     if (email) {
-      const u = await findUserByEmail(email)
+      const u = await findUserByEmail(db, email)
       if (u && u.role) {
         // Existing user with a role — send reset email.
-        const { token } = await issueResetToken(u.id)
+        const { token } = await issueResetToken(db, u.id)
         const origin = new URL(request.url).origin
         const link = `${origin}/admin/signin?action=resetpassword&token=${encodeURIComponent(token)}`
         await sendPasswordReset(u, link)
-        recordAuditEvent({
+        recordAuditEvent(db, pool, {
           action: 'password_reset_requested',
           resourceType: 'user',
           resourceId: String(u.id),
@@ -128,14 +132,14 @@ export async function action({ request, context }: Route.ActionArgs) {
       } else if (u && !u.role && u.password === '') {
         // Anonymous commenter with at least one approved comment can
         // claim the account by setting a password.
-        const approved = await countApprovedCommentsByUser(u.id)
+        const approved = await countApprovedCommentsByUser(db, u.id)
         if (approved >= 1) {
-          await updateUserById(u.id, { role: 'visitor' })
-          const { token } = await issueResetToken(u.id)
+          await updateUserById(db, u.id, { role: 'visitor' })
+          const { token } = await issueResetToken(db, u.id)
           const origin = new URL(request.url).origin
           const link = `${origin}/admin/signin?action=resetpassword&token=${encodeURIComponent(token)}`
           await sendPasswordReset(u, link)
-          recordAuditEvent({
+          recordAuditEvent(db, pool, {
             action: 'password_reset_requested',
             resourceType: 'user',
             resourceId: String(u.id),
@@ -160,15 +164,15 @@ export async function action({ request, context }: Route.ActionArgs) {
       return data({ error: '密码长度至少 6 位。' })
     }
 
-    const result = await consumeToken(rawToken, purpose)
+    const result = await consumeToken(db, rawToken, purpose)
     if (result === null) {
       return data({ error: '链接无效或已过期。' })
     }
 
     const hashed = await bcrypt.hash(newPassword, 12)
-    await updateUserById(result.userId, { password: hashed })
+    await updateUserById(db, result.userId, { password: hashed })
 
-    const dbUser = await findUserById(result.userId)
+    const dbUser = await findUserById(db, result.userId)
     if (!dbUser || !dbUser.role) {
       return data({ error: '账户状态异常，无法登录。' })
     }
@@ -180,10 +184,10 @@ export async function action({ request, context }: Route.ActionArgs) {
     // returned `setCookie` rather than re-committing the in-memory
     // session — calling `commitSession` after would mint a SECOND sid
     // and orphan the one we just wrote.
-    const established = await establishLoginSession(session, dbUser, request, clientAddress, {
+    const established = await establishLoginSession(db, pool, session, dbUser, request, clientAddress, {
       revokeOtherSessions: true,
     })
-    recordAuditEvent({
+    recordAuditEvent(db, pool, {
       action: 'password_reset_complete',
       resourceType: 'user',
       resourceId: String(dbUser.id),
@@ -201,7 +205,8 @@ export async function action({ request, context }: Route.ActionArgs) {
     fields: ['email', 'password'] as const,
     defaultErrorMessage: '请填写正确的邮箱和密码。',
     redirectTo,
-    run: (input) => signInWithSession({ ...input, session, request, clientAddress, redirectTo }),
+    run: (input: { email: string; password: string }) =>
+      signInWithSession(db, pool, { ...input, session, request, clientAddress, redirectTo }),
   })
 }
 

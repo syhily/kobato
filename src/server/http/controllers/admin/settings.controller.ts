@@ -15,7 +15,7 @@ import { safeBigInt } from '@/shared/utils/tools'
 const get = adminProc
   .route({ method: 'GET', path: '/admin/settings/get' })
   .output(z.object({ bundle: blogSettingsBundleDto.nullable() }))
-  .handler(() => getAdminBlogSettings())
+  .handler(({ context }) => getAdminBlogSettings(context.db))
 
 const loadAll = adminProc
   .route({ method: 'GET', path: '/admin/settings/loadAll' })
@@ -25,8 +25,8 @@ const loadAll = adminProc
       timeZones: z.array(z.string()),
     }),
   )
-  .handler(async () => {
-    const { bundle } = await getAdminBlogSettings()
+  .handler(async ({ context }) => {
+    const { bundle } = await getAdminBlogSettings(context.db)
     return { bundle, timeZones: [...getSupportedTimeZones()] }
   })
 
@@ -42,7 +42,7 @@ const update = adminProc
   .handler(async ({ input, context }) => {
     const editorId = safeBigInt(context.viewer.userId)
     try {
-      await updateBlogSettingsSection(input.section, input.payload, editorId)
+      await updateBlogSettingsSection(context.db, context.pool, input.section, input.payload, editorId)
     } catch (err) {
       if (err instanceof DomainError && err.code === 'BAD_REQUEST') {
         throw new ORPCError('BAD_REQUEST', {

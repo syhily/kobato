@@ -1,3 +1,5 @@
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
+
 import type { BlogSession } from '@/server/domains/auth/session-storage'
 import type { CommentAndUser, CommentItem, Comments, LatestComment } from '@/server/domains/comments/types'
 import type { EntityTarget } from '@/server/infra/db/target'
@@ -24,27 +26,31 @@ import { groupBy } from '@/shared/utils/tools'
 
 const log = getLogger('comments.parse')
 
-export async function pendingComments(): Promise<LatestComment[]> {
-  const rows = await pendingCommentsRepo(getSidebarWidgetCount(requireBlogSettingsSection('sidebar'), 'recentComments'))
+export async function pendingComments(db: NodePgDatabase): Promise<LatestComment[]> {
+  const rows = await pendingCommentsRepo(
+    db,
+    getSidebarWidgetCount(requireBlogSettingsSection('sidebar'), 'recentComments'),
+  )
   return rows.map(toLatestComment)
 }
 
-export async function latestComments(): Promise<LatestComment[]> {
+export async function latestComments(db: NodePgDatabase): Promise<LatestComment[]> {
   const cached = await latestCommentsCache.get()
   if (cached !== null) {
     return cached
   }
 
   const limit = getSidebarWidgetCount(requireBlogSettingsSection('sidebar'), 'recentComments')
-  const ids = await adminUserIds()
-  const distinctIds = await latestDistinctCommentIds(ids, limit)
-  const rows = await commentsByIds(distinctIds, limit)
+  const ids = await adminUserIds(db)
+  const distinctIds = await latestDistinctCommentIds(db, ids, limit)
+  const rows = await commentsByIds(db, distinctIds, limit)
   const result = rows.map(toLatestComment)
   await latestCommentsCache.set(result)
   return result
 }
 
 export async function loadComments(
+  db: NodePgDatabase,
   session: BlogSession,
   target: EntityTarget,
   offset: number,
@@ -57,11 +63,19 @@ export async function loadComments(
   const currentUserId = user?.id ? idFromString(user.id) : undefined
 
   const [, counts, rootComments] = await Promise.all([
-    ensurePage ? ensureCommentPage(target) : Promise.resolve(null),
-    countCommentsAndRoots(target, pendingArray, currentUserId),
-    findRootComments(target, pendingArray, offset, requireBlogSettingsSection('comments').comments.size, currentUserId),
+    ensurePage ? ensureCommentPage(db, target) : Promise.resolve(null),
+    countCommentsAndRoots(db, target, pendingArray, currentUserId),
+    findRootComments(
+      db,
+      target,
+      pendingArray,
+      offset,
+      requireBlogSettingsSection('comments').comments.size,
+      currentUserId,
+    ),
   ])
   const childComments = await findChildComments(
+    db,
     target,
     pendingArray,
     rootComments.map((c) => c.id),

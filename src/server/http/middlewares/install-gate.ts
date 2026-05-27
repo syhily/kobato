@@ -42,7 +42,7 @@ export const honoInstallGateMiddleware = createMiddleware<Env>(async (c, next) =
 
   let state: Awaited<ReturnType<typeof getInstallState>>
   try {
-    state = await getInstallState()
+    state = await getInstallState(c.var.db)
   } catch (error) {
     log.error('Install gate failed to determine install state; letting request through', { error })
     return next()

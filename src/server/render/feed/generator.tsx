@@ -1,3 +1,5 @@
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
+
 import { Feed } from 'feed'
 
 import type { Page, Post } from '@/shared/types/catalog'
@@ -36,15 +38,16 @@ export function feedHeaders(kind: 'rss' | 'atom'): HeadersInit {
 }
 
 export async function feedResponse(
+  db: NodePgDatabase,
   kind: 'rss' | 'atom',
   filter?: Pick<FeedOptions, 'category' | 'tag'>,
 ): Promise<Response> {
-  const feed = await generateFeeds(filter ?? {})
+  const feed = await generateFeeds(db, filter ?? {})
   const body = kind === 'rss' ? feed.rss : feed.atom
   return new Response(body, { headers: feedHeaders(kind) })
 }
 
-async function renderEntryContent(entry: Post | Page): Promise<string> {
+async function renderEntryContent(db: NodePgDatabase, entry: Post | Page): Promise<string> {
   // Feed items ship as HTML (RSS/Atom can't carry a React tree). We prerender
   // the body but skip the image-enhancement pipeline: feed readers don't
   // need thumbhash placeholders or DB-resolved dimensions.
@@ -53,20 +56,21 @@ async function renderEntryContent(entry: Post | Page): Promise<string> {
   // so feed readers without JavaScript still get meaningful content.
   // Both pages and posts now live in Postgres and carry a PortableText body.
   return renderPortableTextToHtml(
+    db,
     entry.body,
     entry.headings.map((h) => h.slug),
     { rssMode: true },
   )
 }
 
-export async function generateFeeds(options: FeedOptions = {}) {
+export async function generateFeeds(db: NodePgDatabase, options: FeedOptions = {}) {
   const siteIdentity = requireBlogSettingsSection('siteIdentity')
   const content = requireBlogSettingsSection('content')
   const { includeHidden = true, includeScheduled = false, size = content.feed.size, category, tag } = options
   if (category !== undefined && tag !== undefined) {
     throw new DomainError('BAD_REQUEST', 'Category and tag cannot be specified at the same time')
   }
-  const filtered = await selectFeedPosts({ includeHidden, includeScheduled, category, tag })
+  const filtered = await selectFeedPosts(db, { includeHidden, includeScheduled, category, tag })
   const feedPosts = filtered.slice(0, size)
 
   // Start to build the feed.
@@ -98,9 +102,9 @@ export async function generateFeeds(options: FeedOptions = {}) {
   const allCategoryNames = [...new Set(feedPosts.map((p) => p.category).filter(Boolean))]
 
   const [allTags, allCategories, contents] = await Promise.all([
-    getTagsByNames(allTagNames),
-    Promise.all(allCategoryNames.map((name) => findCategoryByName(name))),
-    Promise.all(feedPosts.map((post) => renderEntryContent(post))),
+    getTagsByNames(db, allTagNames),
+    Promise.all(allCategoryNames.map((name) => findCategoryByName(db, name))),
+    Promise.all(feedPosts.map((post) => renderEntryContent(db, post))),
   ])
 
   const tagMap = new Map(allTags.map((t) => [t.name, t]))
@@ -147,7 +151,7 @@ export async function generateFeeds(options: FeedOptions = {}) {
     })
   }
 
-  const categories = await listAllCategories()
+  const categories = await listAllCategories(db)
   for (const cat of categories) {
     feed.addCategory(cat.name)
   }
@@ -165,6 +169,7 @@ export async function generateFeeds(options: FeedOptions = {}) {
 }
 
 async function selectFeedPosts(
+  db: NodePgDatabase,
   options: Pick<FeedOptions, 'category' | 'tag'> & {
     includeHidden: boolean
     includeScheduled: boolean
@@ -176,20 +181,21 @@ async function selectFeedPosts(
   }
 
   if (options.category !== undefined) {
-    const category = (await findCategoryBySlug(options.category)) ?? (await findCategoryByName(options.category))
+    const category =
+      (await findCategoryBySlug(db, options.category)) ?? (await findCategoryByName(db, options.category))
     if (category === null) {
       return []
     }
-    return listPublicPostsWithContent({ ...visibility, category: category.name })
+    return listPublicPostsWithContent(db, { ...visibility, category: category.name })
   }
 
   if (options.tag !== undefined) {
-    const tag = (await findTagBySlug(options.tag)) ?? (await findTagByName(options.tag))
+    const tag = (await findTagBySlug(db, options.tag)) ?? (await findTagByName(db, options.tag))
     if (tag === null) {
       return []
     }
-    return listPublicPostsWithContent({ ...visibility, tag: tag.name })
+    return listPublicPostsWithContent(db, { ...visibility, tag: tag.name })
   }
 
-  return listPublicPostsWithContent(visibility)
+  return listPublicPostsWithContent(db, visibility)
 }

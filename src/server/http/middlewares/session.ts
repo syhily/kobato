@@ -7,7 +7,7 @@ import { commitSessionWithMaxAge } from '@/server/domains/auth/session-storage'
 import { getClientAddress } from '@/shared/utils/request'
 
 export const honoSessionMiddleware = createMiddleware<Env>(async (c, next) => {
-  const sessionCtx = await resolveSessionContext(c.req.raw)
+  const sessionCtx = await resolveSessionContext(c.var.db, c.req.raw)
   c.set('session', sessionCtx.session)
   c.set('sessionDirty', false)
   c.set('viewer', sessionCtx.user ? { userId: sessionCtx.user.id, role: sessionCtx.user.role } : null)

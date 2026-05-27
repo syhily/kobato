@@ -1,3 +1,5 @@
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
+
 import { and, eq, isNull, type SQL } from 'drizzle-orm'
 
 import type { ContentRow, PostMetaRow } from '@/server/infra/db/types'
@@ -6,21 +8,20 @@ import type { Post } from '@/shared/types/catalog'
 import { toCmsPost } from '@/server/domains/posts/projection'
 import { hydratePostImages } from '@/server/domains/posts/repos/hydrate'
 import { toClientPostFromMeta } from '@/server/domains/posts/repos/shared'
-import { db } from '@/server/infra/db/pool'
 import { content as contentTable } from '@/server/infra/db/schema/content'
 import { post as postMetaTable } from '@/server/infra/db/schema/post'
 
-export async function findPostMetaById(id: bigint): Promise<PostMetaRow | null> {
+export async function findPostMetaById(db: NodePgDatabase, id: bigint): Promise<PostMetaRow | null> {
   const rows = await db.select().from(postMetaTable).where(eq(postMetaTable.id, id)).limit(1)
   return rows[0] ?? null
 }
 
-export async function findPostMetaBySlug(slug: string): Promise<PostMetaRow | null> {
+export async function findPostMetaBySlug(db: NodePgDatabase, slug: string): Promise<PostMetaRow | null> {
   const rows = await db.select().from(postMetaTable).where(eq(postMetaTable.slug, slug)).limit(1)
   return rows[0] ?? null
 }
 
-export async function findPublicPostMetaBySlug(slug: string): Promise<PostMetaRow | null> {
+export async function findPublicPostMetaBySlug(db: NodePgDatabase, slug: string): Promise<PostMetaRow | null> {
   const rows = await db
     .select()
     .from(postMetaTable)
@@ -39,6 +40,7 @@ export function toPostFromMeta(meta: PostMetaRow): Post {
 }
 
 async function findPostWithRevisionBySlug(
+  db: NodePgDatabase,
   slug: string,
   extraWhere?: SQL,
 ): Promise<{ meta: PostMetaRow; revision: ContentRow | null } | null> {
@@ -55,22 +57,22 @@ async function findPostWithRevisionBySlug(
   return { meta: post as PostMetaRow, revision: content as ContentRow | null }
 }
 
-export async function findPostBySlug(slug: string): Promise<Post | null> {
-  const result = await findPostWithRevisionBySlug(slug, isNull(postMetaTable.deletedAt))
+export async function findPostBySlug(db: NodePgDatabase, slug: string): Promise<Post | null> {
+  const result = await findPostWithRevisionBySlug(db, slug, isNull(postMetaTable.deletedAt))
   if (result === null || !result.meta.published || result.meta.publishedRevisionId === null) {
     return null
   }
   const post = toCmsPost(result.meta, result.revision)
-  await hydratePostImages([post])
+  await hydratePostImages(db, [post])
   return post
 }
 
-export async function findPostBySlugForAdmin(slug: string): Promise<Post | null> {
-  const result = await findPostWithRevisionBySlug(slug)
+export async function findPostBySlugForAdmin(db: NodePgDatabase, slug: string): Promise<Post | null> {
+  const result = await findPostWithRevisionBySlug(db, slug)
   if (result === null) {
     return null
   }
   const post = toCmsPost(result.meta, result.revision)
-  await hydratePostImages([post])
+  await hydratePostImages(db, [post])
   return post
 }

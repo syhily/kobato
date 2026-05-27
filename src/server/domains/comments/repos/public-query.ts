@@ -1,3 +1,5 @@
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
+
 import { and, count, desc, eq, gte, inArray, isNotNull, isNull, or, sql } from 'drizzle-orm'
 
 import type { EntityTarget, EntityType } from '@/server/infra/db/target'
@@ -10,15 +12,14 @@ import {
   type ParentCommentRow,
   type PendingCommentRow,
 } from '@/server/domains/comments/repos/shared'
-import { db } from '@/server/infra/db/pool'
 import { comment } from '@/server/infra/db/schema/comment'
 import { page } from '@/server/infra/db/schema/page'
 import { post } from '@/server/infra/db/schema/post'
 import { user } from '@/server/infra/db/schema/user'
 import { idFromString } from '@/shared/utils/id'
 
-export async function pendingComments(limit: number): Promise<PendingCommentRow[]> {
-  const entity = targetSlugTitleSubquery()
+export async function pendingComments(db: NodePgDatabase, limit: number): Promise<PendingCommentRow[]> {
+  const entity = targetSlugTitleSubquery(db)
   const rows = await db
     .select({
       id: comment.id,
@@ -48,12 +49,16 @@ export async function pendingComments(limit: number): Promise<PendingCommentRow[
     }))
 }
 
-export async function adminUserIds(): Promise<bigint[]> {
+export async function adminUserIds(db: NodePgDatabase): Promise<bigint[]> {
   const rows = await db.select({ id: user.id }).from(user).where(eq(user.role, 'admin'))
   return rows.map((r) => r.id)
 }
 
-export async function latestDistinctCommentIds(adminIds: bigint[], limit: number): Promise<bigint[]> {
+export async function latestDistinctCommentIds(
+  db: NodePgDatabase,
+  adminIds: bigint[],
+  limit: number,
+): Promise<bigint[]> {
   const userFilter = adminIds.length > 0 ? sql`${comment.userId} NOT IN (${sql.join(adminIds, sql`, `)})` : sql`1 = 1`
   const query = sql`SELECT    id
   FROM      (
@@ -73,11 +78,11 @@ export async function latestDistinctCommentIds(adminIds: bigint[], limit: number
   return result.rows.map((row) => idFromString(String((row as { id: unknown }).id)))
 }
 
-export async function commentsByIds(ids: bigint[], limit: number): Promise<PendingCommentRow[]> {
+export async function commentsByIds(db: NodePgDatabase, ids: bigint[], limit: number): Promise<PendingCommentRow[]> {
   if (ids.length === 0) {
     return []
   }
-  const entity = targetSlugTitleSubquery()
+  const entity = targetSlugTitleSubquery(db)
   const rows = await db
     .select({
       id: comment.id,
@@ -110,6 +115,7 @@ export async function commentsByIds(ids: bigint[], limit: number): Promise<Pendi
 // Computes both totals in a single round-trip using a filtered aggregate so
 // loaders don't issue two near-identical queries on every comment render.
 export async function countCommentsAndRoots(
+  db: NodePgDatabase,
   target: EntityTarget,
   pendingValues: boolean[],
   currentUserId?: bigint,
@@ -135,6 +141,7 @@ export async function countCommentsAndRoots(
 }
 
 export async function findRootComments(
+  db: NodePgDatabase,
   target: EntityTarget,
   pendingValues: boolean[],
   offset: number,
@@ -162,6 +169,7 @@ export async function findRootComments(
 }
 
 export async function findChildComments(
+  db: NodePgDatabase,
   target: EntityTarget,
   pendingValues: boolean[],
   rootIds: bigint[],
@@ -187,12 +195,12 @@ export async function findChildComments(
     .where(and(...baseConditions))
 }
 
-export async function findCommentRootId(id: bigint): Promise<bigint | null> {
+export async function findCommentRootId(db: NodePgDatabase, id: bigint): Promise<bigint | null> {
   const rows = await db.select({ rootId: comment.rootId }).from(comment).where(eq(comment.id, id)).limit(1)
   return rows[0]?.rootId ?? null
 }
 
-export async function countApprovedCommentsByUser(userId: bigint): Promise<number> {
+export async function countApprovedCommentsByUser(db: NodePgDatabase, userId: bigint): Promise<number> {
   const rows = await db
     .select({ count: count() })
     .from(comment)
@@ -200,7 +208,7 @@ export async function countApprovedCommentsByUser(userId: bigint): Promise<numbe
   return rows.length > 0 ? rows[0].count : 0
 }
 
-export async function recentCommentsForUserDedupe(userId: bigint, since: Date, limit: number) {
+export async function recentCommentsForUserDedupe(db: NodePgDatabase, userId: bigint, since: Date, limit: number) {
   return db
     .select({ content: comment.content })
     .from(comment)
@@ -209,7 +217,7 @@ export async function recentCommentsForUserDedupe(userId: bigint, since: Date, l
     .limit(limit)
 }
 
-export async function findCommentWithUserById(id: bigint) {
+export async function findCommentWithUserById(db: NodePgDatabase, id: bigint) {
   const rows = await db
     .select(commentWithUser)
     .from(comment)
@@ -219,7 +227,7 @@ export async function findCommentWithUserById(id: bigint) {
   return rows[0] ?? null
 }
 
-export async function findCommentsByIds(ids: bigint[]) {
+export async function findCommentsByIds(db: NodePgDatabase, ids: bigint[]) {
   if (ids.length === 0) {
     return []
   }
@@ -230,7 +238,7 @@ export async function findCommentsByIds(ids: bigint[]) {
     .where(inArray(comment.id, ids))
 }
 
-export async function findCommentWithSourceUser(id: bigint) {
+export async function findCommentWithSourceUser(db: NodePgDatabase, id: bigint) {
   const rows = await db
     .select()
     .from(comment)
@@ -240,7 +248,10 @@ export async function findCommentWithSourceUser(id: bigint) {
   return rows[0] ?? null
 }
 
-export async function findParentCommentsByIds(ids: bigint[]): Promise<Map<string, ParentCommentRow>> {
+export async function findParentCommentsByIds(
+  db: NodePgDatabase,
+  ids: bigint[],
+): Promise<Map<string, ParentCommentRow>> {
   const out = new Map<string, ParentCommentRow>()
   if (ids.length === 0) {
     return out
@@ -269,6 +280,7 @@ export async function findParentCommentsByIds(ids: bigint[]): Promise<Map<string
 }
 
 export async function resolveEntitiesForComments(
+  db: NodePgDatabase,
   pairs: ReadonlyArray<{ type: EntityType; ownerId: bigint }>,
 ): Promise<Map<string, EntitySlugTitle>> {
   const out = new Map<string, EntitySlugTitle>()

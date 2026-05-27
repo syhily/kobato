@@ -13,8 +13,8 @@ const resolveThumbhash = publicProc
       height: z.number().nullable(),
     }),
   )
-  .handler(async ({ input }) => {
-    const image = await loadImageThumbhash(input.src)
+  .handler(async ({ input, context }) => {
+    const image = await loadImageThumbhash(context.db, input.src)
     return {
       thumbhash: image?.thumbhash ?? null,
       width: image?.width ?? null,

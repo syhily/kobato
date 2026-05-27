@@ -1,7 +1,8 @@
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
+
 import { and, cosineDistance, desc, eq, gt, ilike, isNull, or, sql } from 'drizzle-orm'
 import { createHash } from 'node:crypto'
 
-import { db } from '@/server/infra/db/pool'
 import { postSearchIndex } from '@/server/infra/db/schema/content'
 import { post } from '@/server/infra/db/schema/post'
 import { getLogger } from '@/server/infra/logger'
@@ -73,7 +74,11 @@ async function setCachedSearchResult(key: string, slugs: string[], ttlSeconds: n
 // Core search execution (no pagination — returns the full ordered list)
 // ---------------------------------------------------------------------------
 
-async function executeSearch(settings: ReturnType<typeof getSearchSettings>, query: string): Promise<string[]> {
+async function executeSearch(
+  db: NodePgDatabase,
+  settings: ReturnType<typeof getSearchSettings>,
+  query: string,
+): Promise<string[]> {
   const trimmed = query.trim()
   const pattern = `%${trimmed.replace(/[%_]/g, '\\$&')}%`
   const baseWhere = and(isNull(post.deletedAt), eq(post.published, true))
@@ -167,6 +172,7 @@ async function executeSearch(settings: ReturnType<typeof getSearchSettings>, que
 // ---------------------------------------------------------------------------
 
 export async function searchPosts(
+  db: NodePgDatabase,
   query: string,
   limit: number,
   offset: number = 0,
@@ -199,7 +205,7 @@ export async function searchPosts(
   }
 
   // Execute full search
-  const allSlugs = await executeSearch(settings, trimmed)
+  const allSlugs = await executeSearch(db, settings, trimmed)
 
   // Write cache (only when non-empty, as requested)
   if (allSlugs.length > 0) {

@@ -1,3 +1,5 @@
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
+
 import type { Block, ImageBlock, PortableTextBody } from '@/shared/pt/schema'
 
 import { getPublicBaseUrl } from '@/server/domains/images/storage'
@@ -22,7 +24,7 @@ import { idFromString } from '@/shared/utils/id'
 //
 // Mutates the passed body in place. Failures are swallowed —
 // canonicalising a single block isn't worth blocking the save.
-export async function syncLibraryImageBlocks(body: PortableTextBody): Promise<void> {
+export async function syncLibraryImageBlocks(db: NodePgDatabase, body: PortableTextBody): Promise<void> {
   const targets: ImageBlock[] = []
   for (const block of body) {
     collectImageBlocks(block, targets)
@@ -41,7 +43,7 @@ export async function syncLibraryImageBlocks(body: PortableTextBody): Promise<vo
     } catch {
       continue
     }
-    const row = await findImageById(id).catch(() => null)
+    const row = await findImageById(db, id).catch(() => null)
     if (row === null) {
       continue
     }
@@ -60,7 +62,7 @@ export async function syncLibraryImageBlocks(body: PortableTextBody): Promise<vo
     // Write `alt` back into the row when the operator edited it.
     const nextNote = (target.alt ?? '').trim()
     if (nextNote !== (row.note ?? '')) {
-      await updateImageNote(row.id, nextNote === '' ? null : nextNote).catch(() => undefined)
+      await updateImageNote(db, row.id, nextNote === '' ? null : nextNote).catch(() => undefined)
     }
   }
 }

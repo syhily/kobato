@@ -1,7 +1,7 @@
 import { useLoaderData } from 'react-router'
 
 import { parseAnalyticsSearch, queryMetric } from '@/server/domains/analytics/query'
-import { getRouteRequestContext } from '@/server/domains/auth/context'
+import { getDbFromContext, getRouteRequestContext } from '@/server/domains/auth/context'
 import { requireRole } from '@/server/domains/auth/rbac'
 import { DateRangePicker } from '@/ui/admin/analytics/DateRangePicker'
 import { useAnalyticsState } from '@/ui/admin/analytics/use-analytics-state'
@@ -16,7 +16,8 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   const url = new URL(request.url)
   const input = parseAnalyticsSearch(url.searchParams)
 
-  const referers = await queryMetric(input, 'referer', 50)
+  const db = getDbFromContext({ request, context })
+  const referers = await queryMetric(db, input, 'referer', 50)
 
   return { referers }
 }

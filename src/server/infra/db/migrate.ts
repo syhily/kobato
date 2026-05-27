@@ -2,7 +2,7 @@ import { sql } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/node-postgres'
 import { migrate } from 'drizzle-orm/node-postgres/migrator'
 
-import { DATABASE_URL, isVitest } from '@/server/infra/env'
+import { DATABASE_URL } from '@/server/infra/env'
 import { getLogger } from '@/server/infra/logger'
 
 const MIGRATIONS_FOLDER = './drizzle'
@@ -11,11 +11,7 @@ const MIGRATIONS_TABLE = '__drizzle_migrations'
 
 const log = getLogger('db:migrations')
 
-const globalForMigrations = globalThis as typeof globalThis & {
-  databaseMigrationsPromise: Promise<void> | undefined
-}
-
-async function migrateDatabase(): Promise<void> {
+export async function migrateDatabase(): Promise<void> {
   const migrationDb = drizzle({
     connection: {
       connectionString: DATABASE_URL,
@@ -53,14 +49,4 @@ async function migrateDatabase(): Promise<void> {
     }
     await client.end()
   }
-}
-
-export function runDatabaseMigrations(): Promise<void> {
-  if (isVitest()) {
-    log.debug('Skipping database migrations in Vitest')
-    return Promise.resolve()
-  }
-
-  globalForMigrations.databaseMigrationsPromise ??= migrateDatabase()
-  return globalForMigrations.databaseMigrationsPromise
 }

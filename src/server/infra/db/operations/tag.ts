@@ -1,8 +1,9 @@
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
+
 import { asc, count, eq, ilike, or, type SQL } from 'drizzle-orm'
 
 import type { NewTag, TagRow } from '@/server/infra/db/types'
 
-import { db } from '@/server/infra/db/pool'
 import { tag } from '@/server/infra/db/schema/taxonomy'
 import { escapeLikePattern } from '@/shared/utils/escape-like'
 
@@ -11,7 +12,7 @@ import { escapeLikePattern } from '@/shared/utils/escape-like'
 // a deterministic ordering. The post-derived `counts` projection
 // happens in `ContentCatalog`; everything that needs the
 // usage-sorted view (e.g. tag clouds) sorts there.
-export async function listPublicTagRows(): Promise<TagRow[]> {
+export async function listPublicTagRows(db: NodePgDatabase): Promise<TagRow[]> {
   return db.select().from(tag).orderBy(asc(tag.name))
 }
 
@@ -42,7 +43,7 @@ function buildAdminTagWhere(filters: AdminTagsListFilters): SQL | undefined {
 // `offset`/`limit` are supplied we paginate server-side; otherwise we
 // return the full filtered set (the catalog backfill and tests rely
 // on the latter).
-export async function listAdminTagRows(filters: AdminTagsListFilters = {}): Promise<TagRow[]> {
+export async function listAdminTagRows(db: NodePgDatabase, filters: AdminTagsListFilters = {}): Promise<TagRow[]> {
   const where = buildAdminTagWhere(filters)
   // Drizzle's builder narrows the return type on each chained method,
   // so we keep the chain expression and only branch on offset/limit at
@@ -64,7 +65,7 @@ export async function listAdminTagRows(filters: AdminTagsListFilters = {}): Prom
 // same `q` filter `listAdminTagRows` uses, ignoring `offset`/`limit`.
 // Powers the `total` field of the admin list response so the table's
 // pagination control can render the right number of pages.
-export async function countAdminTags(filters: AdminTagsListFilters = {}): Promise<number> {
+export async function countAdminTags(db: NodePgDatabase, filters: AdminTagsListFilters = {}): Promise<number> {
   const where = buildAdminTagWhere(filters)
   const rows = where
     ? await db.select({ value: count() }).from(tag).where(where)
@@ -72,22 +73,22 @@ export async function countAdminTags(filters: AdminTagsListFilters = {}): Promis
   return rows[0]?.value ?? 0
 }
 
-export async function findTagById(id: bigint): Promise<TagRow | null> {
+export async function findTagById(db: NodePgDatabase, id: bigint): Promise<TagRow | null> {
   const rows = await db.select().from(tag).where(eq(tag.id, id)).limit(1)
   return rows[0] ?? null
 }
 
-export async function findTagByName(name: string): Promise<TagRow | null> {
+export async function findTagByName(db: NodePgDatabase, name: string): Promise<TagRow | null> {
   const rows = await db.select().from(tag).where(eq(tag.name, name)).limit(1)
   return rows[0] ?? null
 }
 
-export async function findTagBySlug(slug: string): Promise<TagRow | null> {
+export async function findTagBySlug(db: NodePgDatabase, slug: string): Promise<TagRow | null> {
   const rows = await db.select().from(tag).where(eq(tag.slug, slug)).limit(1)
   return rows[0] ?? null
 }
 
-export async function insertTag(values: NewTag): Promise<TagRow> {
+export async function insertTag(db: NodePgDatabase, values: NewTag): Promise<TagRow> {
   const now = new Date()
   const rows = await db
     .insert(tag)
@@ -96,7 +97,7 @@ export async function insertTag(values: NewTag): Promise<TagRow> {
   return rows[0]
 }
 
-export async function updateTag(id: bigint, values: Partial<NewTag>): Promise<TagRow | null> {
+export async function updateTag(db: NodePgDatabase, id: bigint, values: Partial<NewTag>): Promise<TagRow | null> {
   const rows = await db
     .update(tag)
     .set({ ...values, updatedAt: new Date() })
@@ -105,7 +106,7 @@ export async function updateTag(id: bigint, values: Partial<NewTag>): Promise<Ta
   return rows[0] ?? null
 }
 
-export async function deleteTag(id: bigint): Promise<boolean> {
+export async function deleteTag(db: NodePgDatabase, id: bigint): Promise<boolean> {
   const result = await db.delete(tag).where(eq(tag.id, id)).returning({ id: tag.id })
   return result.length > 0
 }
@@ -114,7 +115,7 @@ export async function deleteTag(id: bigint): Promise<boolean> {
 // (name) DO NOTHING` so a re-run never overwrites a row the admin
 // has since edited (slug rename, …). Returns `true` when a new row
 // was inserted, `false` when the row already exists.
-export async function seedTagIfMissing(values: NewTag, tx = db): Promise<boolean> {
+export async function seedTagIfMissing(db: NodePgDatabase, values: NewTag, tx = db): Promise<boolean> {
   const now = new Date()
   const result = await tx
     .insert(tag)
@@ -126,7 +127,7 @@ export async function seedTagIfMissing(values: NewTag, tx = db): Promise<boolean
 
 // Batch version of `seedTagIfMissing`. A single `INSERT ... ON CONFLICT`
 // with multiple values avoids N round-trips inside a transaction.
-export async function seedTagsIfMissing(valuesList: NewTag[], tx = db): Promise<void> {
+export async function seedTagsIfMissing(db: NodePgDatabase, valuesList: NewTag[], tx = db): Promise<void> {
   if (valuesList.length === 0) {
     return
   }

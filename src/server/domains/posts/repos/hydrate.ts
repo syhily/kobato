@@ -1,3 +1,5 @@
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
+
 import type { ListPublicPostsFilters } from '@/server/domains/posts/repos/shared'
 import type { PostMetaRow } from '@/server/infra/db/types'
 import type { ClientPost, Post, PostVisibilityOptions } from '@/shared/types/catalog'
@@ -6,8 +8,9 @@ import { findContentsByIds } from '@/server/domains/content/repo'
 import { hydrateImageRefs } from '@/server/domains/images/image-meta'
 import { toCmsPost } from '@/server/domains/posts/projection'
 
-export async function hydratePostImages(posts: Post[]): Promise<void> {
+export async function hydratePostImages(db: NodePgDatabase, posts: Post[]): Promise<void> {
   await hydrateImageRefs(
+    db,
     posts,
     (p) => p.cover,
     (p, lookup) => {
@@ -19,8 +22,9 @@ export async function hydratePostImages(posts: Post[]): Promise<void> {
   )
 }
 
-export async function hydrateClientPostCovers(posts: ClientPost[]): Promise<void> {
+export async function hydrateClientPostCovers(db: NodePgDatabase, posts: ClientPost[]): Promise<void> {
   await hydrateImageRefs(
+    db,
     posts,
     (p) => p.cover,
     (p, lookup) => {
@@ -42,14 +46,14 @@ export function buildPublicPostFilters(
 }
 
 /** Join published `content` rows so callers receive a real `Post` with `body` (RSS, detail routes, etc.). */
-export async function hydratePostMetasToFullPosts(metas: PostMetaRow[]): Promise<Post[]> {
+export async function hydratePostMetasToFullPosts(db: NodePgDatabase, metas: PostMetaRow[]): Promise<Post[]> {
   if (metas.length === 0) {
     return []
   }
   const revisionIds = metas.map((m) => m.publishedRevisionId).filter((id): id is bigint => id !== null)
   const revisionMap = new Map<bigint, Awaited<ReturnType<typeof findContentsByIds>>[number]>()
   if (revisionIds.length > 0) {
-    const rows = await findContentsByIds(revisionIds)
+    const rows = await findContentsByIds(db, revisionIds)
     for (const row of rows) {
       revisionMap.set(row.id, row)
     }
@@ -58,6 +62,6 @@ export async function hydratePostMetasToFullPosts(metas: PostMetaRow[]): Promise
     const revision = meta.publishedRevisionId === null ? null : (revisionMap.get(meta.publishedRevisionId) ?? null)
     return toCmsPost(meta, revision)
   })
-  await hydratePostImages(posts)
+  await hydratePostImages(db, posts)
   return posts
 }

@@ -40,14 +40,14 @@ const list = authorProc
   .route({ method: 'GET', path: '/admin/posts/list' })
   .input(listPostsSchema)
   .output(listPostsOutputDto)
-  .handler(({ input, context }) => listPostsForAdmin(input, context.viewer))
+  .handler(({ input, context }) => listPostsForAdmin(context.db, input, context.viewer))
 
 const get = authorProc
   .route({ method: 'GET', path: '/admin/posts/get' })
   .input(idInput)
   .output(adminPostDetailDto)
   .handler(async ({ input, context }) => {
-    const detail = await getPostDetailForAdmin(idFromString(input.id), context.viewer)
+    const detail = await getPostDetailForAdmin(context.db, idFromString(input.id), context.viewer)
     if (detail === null) {
       throw new ORPCError('NOT_FOUND', { message: '文章不存在或已被删除。' })
     }
@@ -59,7 +59,7 @@ const remove = authorProc
   .input(idInput)
   .output(z.void())
   .handler(async ({ input, context }) => {
-    const result = await deletePost(idFromString(input.id), context.viewer)
+    const result = await deletePost(context.db, idFromString(input.id), context.viewer)
     if (!result.deleted) {
       throw new ORPCError('NOT_FOUND', { message: '文章不存在或已被删除。' })
     }
@@ -75,7 +75,7 @@ const restore = authorProc
   .input(idInput)
   .output(z.object({ success: z.boolean() }))
   .handler(async ({ input, context }) => {
-    const result = await restorePost(idFromString(input.id), context.viewer)
+    const result = await restorePost(context.db, idFromString(input.id), context.viewer)
     if (!result.restored) {
       throw new ORPCError('NOT_FOUND', { message: '文章不存在或未被删除。' })
     }
@@ -92,7 +92,7 @@ const unpublish = authorProc
   .input(z.object({ id: z.string().min(1) }))
   .output(z.object({ post: adminPostDto }))
   .handler(async ({ input, context }) => {
-    const post = await unpublishPost(idFromString(input.id), context.viewer)
+    const post = await unpublishPost(context.db, idFromString(input.id), context.viewer)
     recordAuditEventFromContext(context, {
       action: 'post_unpublished',
       resourceType: 'post',
@@ -107,6 +107,7 @@ const saveDraft = authorProc
   .output(saveResultOutput)
   .handler(async ({ input, context }) => {
     const result = await savePostDraft(
+      context.db,
       {
         postId: idFromString(input.id),
         body: input.body,
@@ -132,6 +133,7 @@ const publishLatest = authorProc
   .output(saveResultOutput)
   .handler(async ({ input, context }) => {
     const result = await publishPostLatest(
+      context.db,
       {
         postId: idFromString(input.id),
         body: input.body,
@@ -157,8 +159,8 @@ const preview = authorProc
   .route({ method: 'POST', path: '/admin/posts/preview' })
   .input(previewPostBodySchema)
   .output(previewOutputDto)
-  .handler(async ({ input }) => {
-    const html = await renderPostPortableTextToHtml(input.body, [])
+  .handler(async ({ input, context }) => {
+    const html = await renderPostPortableTextToHtml(context.db, input.body, [])
     const headings = collectHeadings(input.body, deriveSlug)
     return { html, headings }
   })
@@ -188,8 +190,8 @@ const upsertMeta = authorProc
     const sessionUserId = idFromString(context.viewer.userId)
     const post =
       input.id === undefined
-        ? await createPost(meta, sessionUserId, context.viewer)
-        : await updatePostMeta({ id: idFromString(input.id), ...meta }, context.viewer)
+        ? await createPost(context.db, meta, sessionUserId, context.viewer)
+        : await updatePostMeta(context.db, { id: idFromString(input.id), ...meta }, context.viewer)
     recordAuditEventFromContext(context, {
       action: input.id === undefined ? 'post_created' : 'post_meta_updated',
       resourceType: 'post',
@@ -203,7 +205,7 @@ const listRevisions = authorProc
   .input(z.object({ id: z.string().min(1) }))
   .output(listPostRevisionsOutputDto)
   .handler(async ({ input, context }) => {
-    const revisions = await listPostRevisionsForAdmin(idFromString(input.id), context.viewer)
+    const revisions = await listPostRevisionsForAdmin(context.db, idFromString(input.id), context.viewer)
     return { revisions }
   })
 

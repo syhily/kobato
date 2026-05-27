@@ -1,5 +1,6 @@
 import { data } from 'react-router'
 
+import { getDbFromContext } from '@/server/domains/auth/context'
 import { listAllFriends } from '@/server/domains/friends/service'
 import { loadPagePreview } from '@/server/domains/pages/loader'
 import { loadPublicDetailData } from '@/server/http/loaders/detail'
@@ -19,17 +20,18 @@ export const headers = detailHeaders
 export const shouldRevalidate = publicShouldRevalidate
 
 export async function loader({ request, context, params }: Route.LoaderArgs) {
+  const db = getDbFromContext({ request, context })
   const url = new URL(request.url)
   const wantsDraftPreview = url.searchParams.get('draft') === 'true'
 
   const [preview, friends] = await Promise.all([
-    loadPagePreview({ slug: params.slug, wantsDraftPreview, request, context }),
-    listAllFriends(),
+    loadPagePreview({ db, slug: params.slug, wantsDraftPreview, request, context }),
+    listAllFriends(db),
   ])
 
   const footnotesSectionTitle = resolveFootnotesSectionTitle(requireBlogSettingsSection('content'))
 
-  const { detail } = await loadPublicDetailData({
+  const { detail } = await loadPublicDetailData(db, {
     request,
     context,
     target: { type: 'page', ownerId: BigInt(preview.page.id) },

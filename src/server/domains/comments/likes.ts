@@ -1,3 +1,5 @@
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
+
 import { startOfDay, subDays } from 'date-fns'
 
 import type { EntityTarget } from '@/server/infra/db/target'
@@ -18,25 +20,28 @@ import { makeToken } from '@/shared/utils/security'
 
 const log = getLogger('comments.likes')
 
-export async function increaseLikes(target: EntityTarget): Promise<{ likes: number; token: string }> {
+export async function increaseLikes(
+  db: NodePgDatabase,
+  target: EntityTarget,
+): Promise<{ likes: number; token: string }> {
   // 64 base64url chars ≈ 48 bytes ≈ 384 bits of entropy.
   const token = makeToken(64)
   // Transactional: insert + bump + RETURNING new count run as one statement
   // pair so a concurrent decrement can't race in between and return us
   // yesterday's number.
-  const likes = await recordLikeAndCount(token, target)
+  const likes = await recordLikeAndCount(db, token, target)
   return { likes, token }
 }
 
-export async function decreaseLikes(target: EntityTarget, token: string) {
-  const consumed = await consumeActiveLikeToken(target, token)
+export async function decreaseLikes(db: NodePgDatabase, target: EntityTarget, token: string) {
+  const consumed = await consumeActiveLikeToken(db, target, token)
   if (consumed) {
-    await decrementMetricVotes(target)
+    await decrementMetricVotes(db, target)
   }
 }
 
-export async function queryLikes(target: EntityTarget): Promise<number> {
-  return metricVoteUp(target)
+export async function queryLikes(db: NodePgDatabase, target: EntityTarget): Promise<number> {
+  return metricVoteUp(db, target)
 }
 
 /**
@@ -47,6 +52,7 @@ export async function queryLikes(target: EntityTarget): Promise<number> {
  * metric `publicId` UUID for downstream wire-format usage.
  */
 export async function queryMetadata(
+  db: NodePgDatabase,
   targets: EntityTarget[],
   options: { likes: boolean; views: boolean; comments: boolean },
 ): Promise<Map<string, { likes: number; views: number; comments: number; publicId: string }>> {
@@ -57,10 +63,10 @@ export async function queryMetadata(
   const pageIds = targets.filter((t) => t.type === 'page').map((t) => t.ownerId)
 
   const [postMetrics, pageMetrics, postCommentCounts, pageCommentCounts] = await Promise.all([
-    metricsByOwnerIds('post', postIds),
-    metricsByOwnerIds('page', pageIds),
-    options.comments ? commentCountsByOwnerIds('post', postIds) : Promise.resolve([]),
-    options.comments ? commentCountsByOwnerIds('page', pageIds) : Promise.resolve([]),
+    metricsByOwnerIds(db, 'post', postIds),
+    metricsByOwnerIds(db, 'page', pageIds),
+    options.comments ? commentCountsByOwnerIds(db, 'post', postIds) : Promise.resolve([]),
+    options.comments ? commentCountsByOwnerIds(db, 'page', pageIds) : Promise.resolve([]),
   ])
 
   const metricByTarget = new Map<string, { like: number | null; view: number | null; publicId: string }>()
@@ -101,18 +107,18 @@ export async function queryMetadata(
  * pays a `Math.random()` + opportunistic table scan per call. Dedicated
  * cron jobs can still invoke `purgeStaleLikeTokens()` directly.
  */
-export async function validateLikeToken(target: EntityTarget, token: string): Promise<boolean> {
-  ensureLikeTokenSweepStarted()
-  return existsActiveLikeToken(target, token)
+export async function validateLikeToken(db: NodePgDatabase, target: EntityTarget, token: string): Promise<boolean> {
+  ensureLikeTokenSweepStarted(db)
+  return existsActiveLikeToken(db, target, token)
 }
 
 /**
  * Physically delete all soft-deleted like tokens older than 30 days. Safe to
  * call from a cron job; also invoked by the in-process sweep below.
  */
-export async function purgeStaleLikeTokens(): Promise<void> {
+export async function purgeStaleLikeTokens(db: NodePgDatabase): Promise<void> {
   const thirtyDaysAgo = startOfDay(subDays(new Date(), 30))
-  await purgeOldLikeTokens(thirtyDaysAgo)
+  await purgeOldLikeTokens(db, thirtyDaysAgo)
 }
 
 /**
@@ -123,15 +129,19 @@ export async function purgeStaleLikeTokens(): Promise<void> {
 const SWEEP_INTERVAL_MS = 60 * 60 * 1000
 
 let sweepTimer: NodeJS.Timeout | undefined
+let sweepDb: NodePgDatabase | undefined
 
-function ensureLikeTokenSweepStarted(): void {
+function ensureLikeTokenSweepStarted(db: NodePgDatabase): void {
   if (sweepTimer !== undefined) {
     return
   }
+  sweepDb = db
   sweepTimer = setInterval(() => {
-    void purgeStaleLikeTokens().catch((err) => {
-      log.warn('background sweep failed', { error: err })
-    })
+    if (sweepDb) {
+      void purgeStaleLikeTokens(sweepDb).catch((err) => {
+        log.warn('background sweep failed', { error: err })
+      })
+    }
   }, SWEEP_INTERVAL_MS)
   // Don't pin the Node event loop — the timer is purely opportunistic.
   sweepTimer.unref?.()

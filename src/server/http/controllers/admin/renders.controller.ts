@@ -56,7 +56,7 @@ const reindexSearch = adminProc
     }),
   )
   .handler(async ({ input, context }) => {
-    const result = await reindexSearchBatch(input)
+    const result = await reindexSearchBatch(context.db, input)
     recordAuditEventFromContext(context, {
       action: 'search_reindexed',
       resourceType: 'search',

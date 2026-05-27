@@ -1,3 +1,6 @@
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
+import type { Pool } from 'pg'
+
 import type { HandlerContext } from '@/server/http/orpc-base'
 
 // Builders for the `context` argument passed to oRPC procedures
@@ -12,6 +15,8 @@ export interface MockCtxOptions {
   sessionId?: string
   clientAddress?: string
   url?: string
+  db?: NodePgDatabase
+  pool?: Pool
 }
 
 function makeSessionStub(user: { id: string; role: string } | undefined, sessionId: string) {
@@ -36,6 +41,8 @@ export function makeAuthedCtx(opts: MockCtxOptions = {}): HandlerContext {
     viewer: { userId, role },
     clientAddress: opts.clientAddress ?? '127.0.0.1',
     responseHeaders: new Headers(),
+    db: opts.db ?? ({} as NodePgDatabase),
+    pool: opts.pool ?? ({} as Pool),
   }
 }
 
@@ -46,5 +53,7 @@ export function makePublicCtx(opts: MockCtxOptions = {}): HandlerContext {
     viewer: null,
     clientAddress: opts.clientAddress ?? '127.0.0.1',
     responseHeaders: new Headers(),
+    db: opts.db ?? ({} as NodePgDatabase),
+    pool: opts.pool ?? ({} as Pool),
   }
 }

@@ -1,3 +1,5 @@
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
+
 import { createElement } from 'react'
 
 import type { CommentAndUser } from '@/server/domains/comments/types'
@@ -15,8 +17,8 @@ import { requireBlogSettingsSection } from '@/shared/config/getters'
 
 const log = getLogger('comments.email')
 
-async function resolveEntity(target: EntityTarget): Promise<{ title: string; url: string } | null> {
-  const entity = await findEntitySlugTitle(target)
+async function resolveEntity(db: NodePgDatabase, target: EntityTarget): Promise<{ title: string; url: string } | null> {
+  const entity = await findEntitySlugTitle(db, target)
   if (entity === null) {
     return null
   }
@@ -24,8 +26,12 @@ async function resolveEntity(target: EntityTarget): Promise<{ title: string; url
 }
 
 // Sent to the administrator whenever a new comment is posted.
-export async function sendNewComment(commentInfo: CommentAndUser, target: EntityTarget): Promise<SendResult> {
-  const entity = await resolveEntity(target)
+export async function sendNewComment(
+  db: NodePgDatabase,
+  commentInfo: CommentAndUser,
+  target: EntityTarget,
+): Promise<SendResult> {
+  const entity = await resolveEntity(db, target)
   const commentHtml = commentBodyToHtml(commentInfo.body)
   if (entity === null) {
     log.warn('Skipping new-comment email: target entity not found', { target })
@@ -46,12 +52,13 @@ export async function sendNewComment(commentInfo: CommentAndUser, target: Entity
 
 // Sent to the original commenter when one of their comments receives a reply.
 export async function sendNewReply(
+  db: NodePgDatabase,
   sourceUser: User,
   source: Comment,
   reply: CommentAndUser,
   target: EntityTarget,
 ): Promise<SendResult> {
-  const entity = await resolveEntity(target)
+  const entity = await resolveEntity(db, target)
   const sourceHtml = commentBodyToHtml(source.body)
   const replyHtml = commentBodyToHtml(reply.body)
   if (entity === null) {
@@ -76,8 +83,13 @@ export async function sendNewReply(
 }
 
 // Sent to the commenter when an admin approves their previously pending comment.
-export async function sendApprovedComment(comment: Comment, user: User, target: EntityTarget): Promise<SendResult> {
-  const entity = await resolveEntity(target)
+export async function sendApprovedComment(
+  db: NodePgDatabase,
+  comment: Comment,
+  user: User,
+  target: EntityTarget,
+): Promise<SendResult> {
+  const entity = await resolveEntity(db, target)
   const commentHtml = commentBodyToHtml(comment.body)
   if (entity === null) {
     log.warn('Skipping approval email: target entity not found', { target })

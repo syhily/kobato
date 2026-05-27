@@ -81,29 +81,29 @@ const counters = adminProc
   .route({ method: 'GET', path: '/analytics/counters' })
   .input(analyticsInput)
   .output(countersOutput)
-  .handler(({ input }) => queryCounters(buildAnalyticsInput(input)))
+  .handler(({ input, context }) => queryCounters(context.db, buildAnalyticsInput(input)))
 
 const views = adminProc
   .route({ method: 'GET', path: '/analytics/views' })
   .input(analyticsInput)
   .output(z.array(viewsPointOutput))
-  .handler(({ input }) => queryViews(buildAnalyticsInput(input)))
+  .handler(({ input, context }) => queryViews(context.db, buildAnalyticsInput(input)))
 
 const heatmap = adminProc
   .route({ method: 'GET', path: '/analytics/heatmap' })
   .input(analyticsInput)
   .output(z.array(heatmapCellOutput))
-  .handler(({ input }) => queryHeatmap(buildAnalyticsInput(input)))
+  .handler(({ input, context }) => queryHeatmap(context.db, buildAnalyticsInput(input)))
 
 const metrics = adminProc
   .route({ method: 'GET', path: '/analytics/metrics' })
   .input(metricsInput)
   .output(z.array(metricRowOutput))
-  .handler(({ input }) => {
+  .handler(({ input, context }) => {
     if (!METRIC_SET.has(input.type)) {
       throw new ORPCError('BAD_REQUEST', { message: `unknown metric type: ${input.type}` })
     }
-    return queryMetric(buildAnalyticsInput(input), input.type, input.limit)
+    return queryMetric(context.db, buildAnalyticsInput(input), input.type, input.limit)
   })
 
 export const analyticsRouter = { counters, views, heatmap, metrics }

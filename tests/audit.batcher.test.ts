@@ -17,10 +17,11 @@ const poolConnect = vi.fn(() =>
   }),
 )
 
-const pool = { connect: poolConnect }
+const pool = { connect: poolConnect } as any
+const db = { insert: dbInsertValues } as any
 
 vi.mock('@/server/infra/db/pool', () => ({
-  db: { insert: dbInsertValues },
+  db,
   pool,
 }))
 
@@ -57,26 +58,26 @@ describe('audit/batcher', () => {
     const { pushAuditEvent, flushAuditLog } = await resetBatcher()
 
     for (let i = 0; i < 49; i++) {
-      pushAuditEvent({ action: 'test', resourceType: 'test' })
+      pushAuditEvent(db, pool, { action: 'test', resourceType: 'test' })
     }
     expect(poolConnect).not.toHaveBeenCalled()
 
-    pushAuditEvent({ action: 'test', resourceType: 'test' })
+    pushAuditEvent(db, pool, { action: 'test', resourceType: 'test' })
     // The 50th push triggers an async flush; wait for it to complete.
-    await flushAuditLog()
+    await flushAuditLog(db, pool)
     expect(poolConnect).toHaveBeenCalled()
   })
 
   it('flushes on timer after the first push', async () => {
     const { pushAuditEvent, flushAuditLog } = await resetBatcher()
 
-    pushAuditEvent({ action: 'test', resourceType: 'test' })
+    pushAuditEvent(db, pool, { action: 'test', resourceType: 'test' })
     expect(poolConnect).not.toHaveBeenCalled()
 
     await new Promise((r) => setTimeout(r, 600))
     expect(poolConnect).toHaveBeenCalled()
 
-    await flushAuditLog()
+    await flushAuditLog(db, pool)
   })
 
   it('falls back to per-row insert when COPY fails', async () => {
@@ -85,11 +86,11 @@ describe('audit/batcher', () => {
     const { pushAuditEvent, flushAuditLog } = await resetBatcher()
 
     for (let i = 0; i < 50; i++) {
-      pushAuditEvent({ action: 'test', resourceType: 'test' })
+      pushAuditEvent(db, pool, { action: 'test', resourceType: 'test' })
     }
 
     await new Promise((r) => setTimeout(r, 50))
-    await flushAuditLog()
+    await flushAuditLog(db, pool)
 
     // Should have tried COPY (pool connect called) then fallen back to INSERT
     expect(poolConnect).toHaveBeenCalled()
@@ -100,8 +101,8 @@ describe('audit/batcher', () => {
     const { pushAuditEvent, flushAuditLog } = await resetBatcher()
     const before = new Date()
 
-    pushAuditEvent({ action: 'test', resourceType: 'test' })
-    await flushAuditLog()
+    pushAuditEvent(db, pool, { action: 'test', resourceType: 'test' })
+    await flushAuditLog(db, pool)
 
     const after = new Date()
     const batch = dbInsert.mock.calls[0][0]

@@ -75,7 +75,7 @@ export const imagesRouter = new Hono<Env>()
     }
 
     const ttl = getCacheSettings().cache.og.ttlSeconds
-    const [post, page] = await Promise.all([findPostBySlug(slug), findPageBySlug(slug)])
+    const [post, page] = await Promise.all([findPostBySlug(c.var.db, slug), findPageBySlug(c.var.db, slug)])
     if (!post && !page) {
       return ogFallback(c)
     }
@@ -121,7 +121,7 @@ export const imagesRouter = new Hono<Env>()
       return c.redirect(defaultAvatarUrl())
     }
 
-    const { email, hash: canonical } = await resolveAvatarInfo(hash)
+    const { email, hash: canonical } = await resolveAvatarInfo(c.var.db, hash)
     if (canonical === null) {
       await cacheAvatar({ email: hash, status: AvatarStatus.NO_AVATAR })
       return c.redirect(defaultAvatarUrl())

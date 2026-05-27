@@ -37,8 +37,8 @@ const list = authorProc
     }),
   )
   .output(listImagesOutputDto)
-  .handler(({ input }) =>
-    listImagesForAdmin({
+  .handler(({ input, context }) =>
+    listImagesForAdmin(context.db, {
       q: input.q,
       kind: input.kind,
       offset: input.offset,
@@ -51,7 +51,7 @@ const remove = authorProc
   .input(z.object({ id: z.string().min(1) }))
   .output(z.void())
   .handler(async ({ input, context }) => {
-    await deleteImage(idFromString(input.id), context.viewer)
+    await deleteImage(context.db, idFromString(input.id), context.viewer)
     recordAuditEventFromContext(context, {
       action: 'image_deleted',
       resourceType: 'image',
@@ -64,7 +64,7 @@ const updateNote = authorProc
   .input(z.object({ id: z.string().min(1), note: z.string().nullable().optional() }))
   .output(z.object({ image: adminImageDto }))
   .handler(async ({ input, context }) => {
-    const image = await updateImageNote(idFromString(input.id), input.note ?? null, context.viewer)
+    const image = await updateImageNote(context.db, idFromString(input.id), input.note ?? null, context.viewer)
     recordAuditEventFromContext(context, {
       action: 'image_note_updated',
       resourceType: 'image',
@@ -78,7 +78,7 @@ const recalculateThumbhash = authorProc
   .input(z.object({ id: z.string().min(1) }))
   .output(z.object({ image: adminImageDto }))
   .handler(async ({ input, context }) => {
-    const image = await recalculateImageThumbhash(idFromString(input.id), context.viewer)
+    const image = await recalculateImageThumbhash(context.db, idFromString(input.id), context.viewer)
     return { image }
   })
 
@@ -118,11 +118,11 @@ const upload = authorProc
     }
     let image
     if (metadata.kind === 'generic') {
-      image = await uploadImage({ kind: { kind: 'generic' }, ...baseArgs })
+      image = await uploadImage(context.db, { kind: { kind: 'generic' }, ...baseArgs })
     } else if (metadata.kind === 'category') {
-      image = await uploadImage({ kind: { kind: 'category', slug: metadata.slug }, ...baseArgs })
+      image = await uploadImage(context.db, { kind: { kind: 'category', slug: metadata.slug }, ...baseArgs })
     } else {
-      image = await uploadImage({ kind: { kind: 'friend', host: metadata.host }, ...baseArgs })
+      image = await uploadImage(context.db, { kind: { kind: 'friend', host: metadata.host }, ...baseArgs })
     }
     recordAuditEventFromContext(context, {
       action: 'image_uploaded',

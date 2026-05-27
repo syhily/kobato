@@ -1,6 +1,9 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
+import type { Pool } from 'pg'
 
-import { db } from '@/server/infra/db/pool'
+import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
+
+import { createDbPool, closePool } from '@/server/infra/db/pool'
 
 import { clearAllTables } from './_helpers/integration-db'
 
@@ -11,6 +14,14 @@ import { clearAllTables } from './_helpers/integration-db'
 // semantics; only `db.pool` is real so `createPost` (which issues a raw
 // `db.transaction`) can execute without a brittle hand-rolled transaction
 // stub.
+
+const poolManager = createDbPool()
+const db: NodePgDatabase = poolManager.db
+const pool: Pool = poolManager.pool
+
+afterAll(async () => {
+  await closePool(pool)
+})
 
 vi.mock('@/server/domains/posts/repos/admin-query', () => ({
   countPostMetas: vi.fn(async () => 0),
@@ -101,6 +112,32 @@ vi.mock('@/server/infra/db/operations/metric', () => ({
   ensureMetric: vi.fn(),
 }))
 
+vi.mock('@/shared/config/getters', () => ({
+  requireBlogSettingsSection: (section: string) => {
+    if (section === 'content') {
+      return { post: { sortBy: 'publishedAt' }, page: {} }
+    }
+    if (section === 'pagination') {
+      return { posts: 6 }
+    }
+    if (section === 'siteIdentity') {
+      return { website: 'https://example.test', description: 'desc' }
+    }
+    if (section === 'cache') {
+      return { cache: { og: { prefix: 'og:', ttlSeconds: 3600 } } }
+    }
+    return {}
+  },
+  getCacheSettings: () => ({ cache: { og: { prefix: 'og:', ttlSeconds: 3600 } } }),
+  getBlogSettingsBundleSync: () => ({
+    pagination: { posts: 6 },
+    content: { post: { sortBy: 'publishedAt' }, page: {} },
+    assets: { storage: { enabled: false } },
+    rateLimit: { resourceIp: { windowSeconds: 60, maxAttempts: 60 } },
+    siteIdentity: { website: 'https://example.test', description: 'desc' },
+  }),
+}))
+
 vi.mock('@/server/domains/settings/sections', () => ({
   SECTION_REGISTRY: {},
 }))
@@ -153,11 +190,11 @@ describe('posts service cache clearing', () => {
 
     const { loadCatalogPostMetas } = await import('@/server/domains/posts/services/catalog')
 
-    const first = await loadCatalogPostMetas()
+    const first = await loadCatalogPostMetas(db)
     expect(first).toHaveLength(1)
 
     // Second call should use cache (no additional DB call within 10s TTL)
-    const second = await loadCatalogPostMetas()
+    const second = await loadCatalogPostMetas(db)
     expect(second).toHaveLength(1)
     expect(publicQuery.listPublicPostMetas).toHaveBeenCalledTimes(1)
   })
@@ -200,14 +237,14 @@ describe('posts service cache clearing', () => {
     const { createPost } = await import('@/server/domains/posts/services/mutate')
 
     // Prime cache
-    await loadCatalogPostMetas()
+    await loadCatalogPostMetas(db)
     expect(publicQuery.listPublicPostMetas).toHaveBeenCalledTimes(1)
 
     // Mutate
-    await createPost({ title: 'New Post', summary: '', tags: [], category: undefined }, null)
+    await createPost(db, { title: 'New Post', summary: '', tags: [], category: undefined }, null)
 
     // Next load should hit DB again (cache was cleared)
-    await loadCatalogPostMetas()
+    await loadCatalogPostMetas(db)
     expect(publicQuery.listPublicPostMetas).toHaveBeenCalledTimes(2)
   })
 
@@ -248,15 +285,15 @@ describe('posts service cache clearing', () => {
     const { loadCatalogPostMetas } = await import('@/server/domains/posts/services/catalog')
     const { createPost } = await import('@/server/domains/posts/services/mutate')
 
-    await loadCatalogPostMetas()
+    await loadCatalogPostMetas(db)
     expect(publicQuery.listPublicPostMetas).toHaveBeenCalledTimes(1)
 
-    await createPost({ title: 'First', summary: '', tags: [], category: undefined }, null)
-    await loadCatalogPostMetas()
+    await createPost(db, { title: 'First', summary: '', tags: [], category: undefined }, null)
+    await loadCatalogPostMetas(db)
     expect(publicQuery.listPublicPostMetas).toHaveBeenCalledTimes(2)
 
-    await createPost({ title: 'Second', summary: '', tags: [], category: undefined }, null)
-    await loadCatalogPostMetas()
+    await createPost(db, { title: 'Second', summary: '', tags: [], category: undefined }, null)
+    await loadCatalogPostMetas(db)
     expect(publicQuery.listPublicPostMetas).toHaveBeenCalledTimes(3)
   })
 })
@@ -292,10 +329,10 @@ describe('pages service cache clearing', () => {
 
     const { loadCatalogPages } = await import('@/server/domains/pages/services/catalog')
 
-    const first = await loadCatalogPages()
+    const first = await loadCatalogPages(db)
     expect(first).toHaveLength(1)
 
-    const second = await loadCatalogPages()
+    const second = await loadCatalogPages(db)
     expect(second).toHaveLength(1)
     expect(pageRepo.listPublicPageMetas).toHaveBeenCalledTimes(1)
   })
@@ -332,14 +369,14 @@ describe('pages service cache clearing', () => {
     const { createPage } = await import('@/server/domains/pages/services/mutate')
 
     // Prime cache
-    await loadCatalogPages()
+    await loadCatalogPages(db)
     expect(pageRepo.listPublicPageMetas).toHaveBeenCalledTimes(1)
 
     // Mutate
-    await createPage({ title: 'New Page', summary: '', slug: 'new-page' }, null)
+    await createPage(db, { title: 'New Page', summary: '', slug: 'new-page' }, null)
 
     // Next load should hit DB again
-    await loadCatalogPages()
+    await loadCatalogPages(db)
     expect(pageRepo.listPublicPageMetas).toHaveBeenCalledTimes(2)
   })
 })

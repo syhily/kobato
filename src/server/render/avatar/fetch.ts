@@ -1,3 +1,5 @@
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
+
 import { Buffer } from 'node:buffer'
 
 import { findEmailById } from '@/server/infra/db/operations/user'
@@ -117,9 +119,12 @@ export async function fetchQQAvatarImage(email: string): Promise<Buffer | null> 
  *  up in the user table; missing users resolve to `null` so the route
  *  can short-circuit to a "no avatar" cache entry without hitting any
  *  external mirror at all. */
-export async function resolveAvatarInfo(rawHash: string): Promise<{ email: string | null; hash: string | null }> {
+export async function resolveAvatarInfo(
+  db: NodePgDatabase,
+  rawHash: string,
+): Promise<{ email: string | null; hash: string | null }> {
   if (isNumeric(rawHash)) {
-    const email = await findEmailById(idFromString(rawHash))
+    const email = await findEmailById(db, idFromString(rawHash))
     if (email === null) {
       return { email: null, hash: null }
     }

@@ -2,6 +2,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { adminSession, regularSession } from './_helpers/session'
 
+const mockDb = {} as any
+
 vi.mock('@/server/domains/comments/services/public-query', () => ({
   latestComments: vi.fn(),
 }))
@@ -23,14 +25,14 @@ beforeEach(() => {
 
 describe('services/sidebar/load — loadSidebarData', () => {
   it('non-admin session reports admin=false and returns latest comments', async () => {
-    const data = await loadSidebarData(regularSession())
+    const data = await loadSidebarData(mockDb, regularSession())
 
     expect(data.admin).toBe(false)
     expect(data.recentComments).toHaveLength(1)
   })
 
   it('admin session reports admin=true and returns latest comments', async () => {
-    const data = await loadSidebarData(adminSession())
+    const data = await loadSidebarData(mockDb, adminSession())
 
     expect(data.admin).toBe(true)
     expect(data.recentComments).toHaveLength(1)

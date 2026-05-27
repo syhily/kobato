@@ -1,3 +1,5 @@
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
+
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { seedMetric } from './_helpers/db'
@@ -62,6 +64,8 @@ vi.mock('@/shared/config/getters', () => ({
     return {}
   },
 }))
+
+const db = {} as NodePgDatabase
 
 const queries = await import('@/server/domains/comments/repos/public-query')
 const metricQueries = await import('@/server/infra/db/operations/metric')
@@ -128,10 +132,10 @@ describe('services/comments/loader — loadComments', () => {
     vi.mocked(queries.findChildComments).mockResolvedValue([])
     vi.mocked(metricQueries.ensureMetric).mockResolvedValue(seedMetric())
 
-    await loadComments(regularSession(), POST_HELLO, 0)
+    await loadComments(db, regularSession(), POST_HELLO, 0)
 
-    expect(queries.countCommentsAndRoots).toHaveBeenCalledWith(POST_HELLO, [false], 2n)
-    expect(queries.findRootComments).toHaveBeenCalledWith(POST_HELLO, [false], 0, expect.any(Number), 2n)
+    expect(queries.countCommentsAndRoots).toHaveBeenCalledWith(db, POST_HELLO, [false], 2n)
+    expect(queries.findRootComments).toHaveBeenCalledWith(db, POST_HELLO, [false], 0, expect.any(Number), 2n)
   })
 
   it('admins additionally see pending comments (pending=[false,true])', async () => {
@@ -140,10 +144,10 @@ describe('services/comments/loader — loadComments', () => {
     vi.mocked(queries.findChildComments).mockResolvedValue([])
     vi.mocked(metricQueries.ensureMetric).mockResolvedValue(seedMetric())
 
-    await loadComments(adminSession(), POST_HELLO, 0)
+    await loadComments(db, adminSession(), POST_HELLO, 0)
 
-    expect(queries.countCommentsAndRoots).toHaveBeenCalledWith(POST_HELLO, [false, true], 1n)
-    expect(queries.findRootComments).toHaveBeenCalledWith(POST_HELLO, [false, true], 0, expect.any(Number), 1n)
+    expect(queries.countCommentsAndRoots).toHaveBeenCalledWith(db, POST_HELLO, [false, true], 1n)
+    expect(queries.findRootComments).toHaveBeenCalledWith(db, POST_HELLO, [false, true], 0, expect.any(Number), 1n)
   })
 
   it('returns the union of root + child comments and the aggregated counts', async () => {
@@ -156,13 +160,13 @@ describe('services/comments/loader — loadComments', () => {
     ])
     vi.mocked(metricQueries.ensureMetric).mockResolvedValue(seedMetric())
 
-    const result = await loadComments(regularSession(), POST_HELLO, 0)
+    const result = await loadComments(db, regularSession(), POST_HELLO, 0)
 
     expect(result?.count).toBe(5)
     expect(result?.roots_count).toBe(2)
     expect(result?.comments).toHaveLength(5)
     // Verify the join: child fetch was called with the root ids only.
-    expect(queries.findChildComments).toHaveBeenCalledWith(POST_HELLO, [false], [1n, 2n], 2n)
+    expect(queries.findChildComments).toHaveBeenCalledWith(db, POST_HELLO, [false], [1n, 2n], 2n)
   })
 
   it('upserts the metric even when the page has zero comments', async () => {
@@ -171,9 +175,9 @@ describe('services/comments/loader — loadComments', () => {
     vi.mocked(queries.findChildComments).mockResolvedValue([])
     vi.mocked(metricQueries.ensureMetric).mockResolvedValue(seedMetric())
 
-    await loadComments(regularSession(), POST_NEW, 0)
+    await loadComments(db, regularSession(), POST_NEW, 0)
 
-    expect(metricQueries.ensureMetric).toHaveBeenCalledWith(POST_NEW)
+    expect(metricQueries.ensureMetric).toHaveBeenCalledWith(db, POST_NEW)
   })
 
   it('issues metric upsert + counts + root listing in parallel (single tick)', async () => {
@@ -194,7 +198,7 @@ describe('services/comments/loader — loadComments', () => {
     vi.mocked(queries.findRootComments).mockImplementation(() => tracked([]))
     vi.mocked(queries.findChildComments).mockResolvedValue([])
 
-    await loadComments(regularSession(), POST_PARALLEL, 0)
+    await loadComments(db, regularSession(), POST_PARALLEL, 0)
 
     expect(peak).toBe(3)
   })
@@ -225,10 +229,10 @@ describe('services/comments/loader — latestComments / pendingComments', () => 
       },
     ])
 
-    const list = await latestComments()
+    const list = await latestComments(db)
 
     expect(queries.adminUserIds).toHaveBeenCalledOnce()
-    expect(queries.latestDistinctCommentIds).toHaveBeenCalledWith([99n], expect.any(Number))
+    expect(queries.latestDistinctCommentIds).toHaveBeenCalledWith(db, [99n], expect.any(Number))
     expect(list).toHaveLength(2)
     expect(list[0].permalink).toBe('/posts/a/#user-comment-10')
     // Null author/title fall back to empty string (sidebar must never crash).
@@ -238,8 +242,8 @@ describe('services/comments/loader — latestComments / pendingComments', () => 
 
   it('pendingComments forwards the configured sidebar size', async () => {
     vi.mocked(queries.pendingComments).mockResolvedValue([])
-    await pendingComments()
-    expect(queries.pendingComments).toHaveBeenCalledWith(expect.any(Number))
+    await pendingComments(db)
+    expect(queries.pendingComments).toHaveBeenCalledWith(db, expect.any(Number))
   })
 })
 

@@ -1,9 +1,20 @@
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
+import type { Pool } from 'pg'
+
 import { eq } from 'drizzle-orm'
-import { beforeEach, describe, expect, it } from 'vitest'
+import { afterAll, beforeEach, describe, expect, it } from 'vitest'
 
 import { consumeActiveLikeToken, existsActiveLikeToken, purgeOldLikeTokens } from '@/server/infra/db/operations/like'
-import { db } from '@/server/infra/db/pool'
+import { createDbPool, closePool } from '@/server/infra/db/pool'
 import { like } from '@/server/infra/db/schema/metric'
+
+const poolManager = createDbPool()
+const db: NodePgDatabase = poolManager.db
+const pool: Pool = poolManager.pool
+
+afterAll(async () => {
+  await closePool(pool)
+})
 
 const POST_A = { type: 'post' as const, ownerId: 1n }
 
@@ -23,7 +34,7 @@ describe('db/query/like.server', () => {
       { token: 'new-deleted', type: 'post', ownerId: 1n, deletedAt: after },
     ])
 
-    await purgeOldLikeTokens(cutoff)
+    await purgeOldLikeTokens(db, cutoff)
 
     const rows = await db.select({ token: like.token }).from(like)
     const tokens = rows.map((r) => r.token)
@@ -38,9 +49,9 @@ describe('db/query/like.server', () => {
       { token: 'tok-deleted', type: 'post', ownerId: 1n, deletedAt: new Date() },
     ])
 
-    expect(await existsActiveLikeToken(POST_A, 'tok-active')).toBe(true)
-    expect(await existsActiveLikeToken(POST_A, 'tok-deleted')).toBe(false)
-    expect(await existsActiveLikeToken(POST_A, 'noexist')).toBe(false)
+    expect(await existsActiveLikeToken(db, POST_A, 'tok-active')).toBe(true)
+    expect(await existsActiveLikeToken(db, POST_A, 'tok-deleted')).toBe(false)
+    expect(await existsActiveLikeToken(db, POST_A, 'noexist')).toBe(false)
   })
 
   it('atomically consumes active like tokens with one conditional update', async () => {
@@ -49,7 +60,7 @@ describe('db/query/like.server', () => {
       { token: 'tok-deleted', type: 'post', ownerId: 1n, deletedAt: new Date() },
     ])
 
-    const result = await consumeActiveLikeToken(POST_A, 'tok-consume')
+    const result = await consumeActiveLikeToken(db, POST_A, 'tok-consume')
     expect(result).toBe(true)
 
     // Verify the row is now soft-deleted
@@ -57,6 +68,6 @@ describe('db/query/like.server', () => {
     expect(rows[0]?.deletedAt).not.toBeNull()
 
     // Already deleted token cannot be consumed again
-    expect(await consumeActiveLikeToken(POST_A, 'tok-deleted')).toBe(false)
+    expect(await consumeActiveLikeToken(db, POST_A, 'tok-deleted')).toBe(false)
   })
 })

@@ -1,3 +1,4 @@
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 import type { MetaDescriptor } from 'react-router'
 
 import type { FeedLinkOptions } from '@/server/render/seo/meta'
@@ -71,64 +72,67 @@ function calculateTotalPages(postCount: number, pageSize: number, mergeTailThres
 //
 // Lives under `src/server/` so SSR-only catalog / metadata imports never reach
 // the client bundle.
-export async function listingLoader<TExtra = undefined>({
-  rawNum,
-  totalPosts,
-  fetchPage,
-  rootPath,
-  title,
-  description,
-  pageSize,
-  mergeTailWhenLessThan,
-  forceNoindex,
-  metadata,
-  seoMode = 'always',
-  feedLinks,
-  computeExtra,
-  extra,
-  allowEmpty,
-}: {
-  rawNum: string | undefined
-  totalPosts: number
-  fetchPage: (pageNum: number, pageSize: number) => Promise<ListingPostCard[]>
-  rootPath: string
-  title?: string
-  description?: string
-  pageSize?: number
-  /**
-   * Optional tail-merge guard. When set to a positive integer M and the
-   * natural last page would render fewer than M posts, that last page is
-   * merged into its predecessor i.e. the predecessor absorbs the orphan
-   * posts via the existing "the last page is open-ended" branch below.
-   * The result is a smaller totalPage and a fatter last page; the route
-   * helper then 301-redirects any out-of-range :num back to the new last
-   * page through the shared overflow handler.
-   */
-  mergeTailWhenLessThan?: number
-  forceNoindex?: boolean
-  metadata?: ListingMetadataFlags
-  seoMode?: ListingSeoMode
-  /**
-   * Optional scoped feed links (e.g. per-category or per-tag RSS/Atom URLs)
-   * forwarded to `listingSeo` so the rendered head advertises them as
-   * `<link rel="alternate">` entries alongside the site-wide feeds.
-   */
-  feedLinks?: FeedLinkOptions
-  /**
-   * Async callback that produces the per-route `extra` payload from the
-   * resolved page slice. Runs after pagination/overflow redirects so the
-   * caller only sees the in-page slice that will actually render.
-   */
-  computeExtra?: (args: ListingExtraArgs) => Promise<TExtra> | TExtra
-  /** Static extra payload, used when no async work is needed. */
-  extra?: TExtra
-  /**
-   * When `true`, an empty catalog (zero posts) is allowed to render instead
-   * of throwing a 404. Used by the home page so a fresh blog can show a
-   * friendly empty-state CTA.
-   */
-  allowEmpty?: boolean
-}): Promise<ListingPageLoaderData<TExtra>> {
+export async function listingLoader<TExtra = undefined>(
+  db: NodePgDatabase,
+  {
+    rawNum,
+    totalPosts,
+    fetchPage,
+    rootPath,
+    title,
+    description,
+    pageSize,
+    mergeTailWhenLessThan,
+    forceNoindex,
+    metadata,
+    seoMode = 'always',
+    feedLinks,
+    computeExtra,
+    extra,
+    allowEmpty,
+  }: {
+    rawNum: string | undefined
+    totalPosts: number
+    fetchPage: (pageNum: number, pageSize: number) => Promise<ListingPostCard[]>
+    rootPath: string
+    title?: string
+    description?: string
+    pageSize?: number
+    /**
+     * Optional tail-merge guard. When set to a positive integer M and the
+     * natural last page would render fewer than M posts, that last page is
+     * merged into its predecessor i.e. the predecessor absorbs the orphan
+     * posts via the existing "the last page is open-ended" branch below.
+     * The result is a smaller totalPage and a fatter last page; the route
+     * helper then 301-redirects any out-of-range :num back to the new last
+     * page through the shared overflow handler.
+     */
+    mergeTailWhenLessThan?: number
+    forceNoindex?: boolean
+    metadata?: ListingMetadataFlags
+    seoMode?: ListingSeoMode
+    /**
+     * Optional scoped feed links (e.g. per-category or per-tag RSS/Atom URLs)
+     * forwarded to `listingSeo` so the rendered head advertises them as
+     * `<link rel="alternate">` entries alongside the site-wide feeds.
+     */
+    feedLinks?: FeedLinkOptions
+    /**
+     * Async callback that produces the per-route `extra` payload from the
+     * resolved page slice. Runs after pagination/overflow redirects so the
+     * caller only sees the in-page slice that will actually render.
+     */
+    computeExtra?: (args: ListingExtraArgs) => Promise<TExtra> | TExtra
+    /** Static extra payload, used when no async work is needed. */
+    extra?: TExtra
+    /**
+     * When `true`, an empty catalog (zero posts) is allowed to render instead
+     * of throwing a 404. Used by the home page so a fresh blog can show a
+     * friendly empty-state CTA.
+     */
+    allowEmpty?: boolean
+  },
+): Promise<ListingPageLoaderData<TExtra>> {
   const listingNowIso = new Date().toISOString()
   const pageNum = parseListingPage(rawNum, rootPath)
   const effectivePageSize = pageSize ?? requireBlogSettingsSection('content').pagination.posts
@@ -145,7 +149,7 @@ export async function listingLoader<TExtra = undefined>({
           pageNum === totalPage ? totalPosts - (pageNum - 1) * effectivePageSize : effectivePageSize,
         )
 
-  const resolvedPosts = await getClientPostsWithMetadata(currentPosts, {
+  const resolvedPosts = await getClientPostsWithMetadata(db, currentPosts, {
     ...DEFAULT_LISTING_METADATA,
     ...metadata,
   })

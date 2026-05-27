@@ -46,8 +46,8 @@ vi.mock('@/server/domains/posts/repos/public-query', () => ({
   listPublicPostMetas: vi.fn(async () => []),
 }))
 vi.mock('@/server/domains/posts/repos/single', () => ({
-  findPostBySlug: vi.fn(async (slug: string) => (slug === 'hello' ? fixtures.samplePost : null)),
-  findPublicPostMetaBySlug: vi.fn(async (slug: string) =>
+  findPostBySlug: vi.fn(async (_db: unknown, slug: string) => (slug === 'hello' ? fixtures.samplePost : null)),
+  findPublicPostMetaBySlug: vi.fn(async (_db: unknown, slug: string) =>
     slug === 'hello'
       ? { slug, published: true, deletedAt: null, publishedRevisionId: 1n, publishedAt: new Date() }
       : null,
@@ -55,7 +55,7 @@ vi.mock('@/server/domains/posts/repos/single', () => ({
 }))
 vi.mock('@/server/domains/pages/repo', () => ({
   listPublicPageMetas: vi.fn(async () => []),
-  findPageBySlug: vi.fn(async (slug: string) => (slug === 'about' ? fixtures.samplePage : null)),
+  findPageBySlug: vi.fn(async (_db: unknown, slug: string) => (slug === 'about' ? fixtures.samplePage : null)),
   buildDbPage: (p: unknown) => p,
 }))
 vi.mock('@/server/domains/friends/service', () => ({

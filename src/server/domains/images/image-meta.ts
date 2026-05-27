@@ -1,3 +1,5 @@
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
+
 import type { ImageRow } from '@/server/infra/db/types'
 
 import { getPublicBaseUrl } from '@/server/domains/images/storage'
@@ -81,13 +83,13 @@ function cacheKey(storagePath: string): string {
 // avoided.
 const inflight = createInflight<CachedImageMeta>()
 
-async function readMeta(storagePath: string): Promise<CachedImageMeta> {
+async function readMeta(db: NodePgDatabase, storagePath: string): Promise<CachedImageMeta> {
   return inflight(storagePath, async () => {
     const cached = await storage.getItem<CachedImageMeta>(cacheKey(storagePath))
     if (cached !== null) {
       return cached
     }
-    const rows = await findImagesByStoragePaths([storagePath])
+    const rows = await findImagesByStoragePaths(db, [storagePath])
     const row = rows[0] ?? null
     const value: CachedImageMeta = row !== null ? rowToCached(row) : { found: false }
     try {
@@ -102,7 +104,7 @@ async function readMeta(storagePath: string): Promise<CachedImageMeta> {
   })
 }
 
-async function readManyMeta(storagePaths: string[]): Promise<Map<string, CachedImageMeta>> {
+async function readManyMeta(db: NodePgDatabase, storagePaths: string[]): Promise<Map<string, CachedImageMeta>> {
   const out = new Map<string, CachedImageMeta>()
   if (storagePaths.length === 0) {
     return out
@@ -128,7 +130,7 @@ async function readManyMeta(storagePaths: string[]): Promise<Map<string, CachedI
 
   if (missingPaths.length > 0) {
     // Batch query DB for cache misses.
-    const rows = await findImagesByStoragePaths(missingPaths)
+    const rows = await findImagesByStoragePaths(db, missingPaths)
     const rowMap = new Map(rows.map((r) => [r.storagePath, r]))
 
     // Build values and batch write back to Redis.
@@ -248,7 +250,7 @@ function normalizeStoragePath(storagePath: string): string {
   return withoutTransform
 }
 
-async function resolveSources(links: string[]): Promise<Map<string, ImageEnhancement>> {
+async function resolveSources(db: NodePgDatabase, links: string[]): Promise<Map<string, ImageEnhancement>> {
   const out = new Map<string, ImageEnhancement>()
 
   let publicBaseUrl: string | null = null
@@ -277,7 +279,10 @@ async function resolveSources(links: string[]): Promise<Map<string, ImageEnhance
 
   let cached: Map<string, CachedImageMeta>
   try {
-    cached = await readManyMeta(candidates.map((c) => c.storagePath))
+    cached = await readManyMeta(
+      db,
+      candidates.map((c) => c.storagePath),
+    )
   } catch (error) {
     log.warn('Failed to resolve image metadata; rendering naked images', { error })
     return out
@@ -367,7 +372,7 @@ export interface ImageThumbhashLookup {
  *
  * Returns `null` when the URL doesn't resolve to any `image` row.
  */
-export async function loadImageThumbhash(src: string): Promise<ImageThumbhashLookup | null> {
+export async function loadImageThumbhash(db: NodePgDatabase, src: string): Promise<ImageThumbhashLookup | null> {
   if (src === '') {
     return null
   }
@@ -386,7 +391,7 @@ export async function loadImageThumbhash(src: string): Promise<ImageThumbhashLoo
 
   let meta: CachedImageMeta
   try {
-    meta = await readMeta(storagePath)
+    meta = await readMeta(db, storagePath)
   } catch (error) {
     log.warn('Failed to resolve image metadata for cover', { src, error })
     return null
@@ -415,8 +420,11 @@ export interface ResolvedImageMeta {
  * against the raw `src` attribute emitted by MDX / React without worrying
  * about cache-buster suffixes or public-base-url rewrites.
  */
-export async function resolveImageMetaBySources(links: string[]): Promise<Map<string, ResolvedImageMeta>> {
-  const enhancements = await resolveSources(links)
+export async function resolveImageMetaBySources(
+  db: NodePgDatabase,
+  links: string[],
+): Promise<Map<string, ResolvedImageMeta>> {
+  const enhancements = await resolveSources(db, links)
   const out = new Map<string, ResolvedImageMeta>()
   for (const [src, enhancement] of enhancements) {
     const meta: ResolvedImageMeta = {}
@@ -443,7 +451,7 @@ export async function resolveImageMetaBySources(links: string[]): Promise<Map<st
  * in parallel so N items sharing the same cover incur one Redis + one
  * DB round-trip at most.
  */
-async function loadManyImageThumbhash(urls: string[]): Promise<Map<string, ImageThumbhashLookup>> {
+async function loadManyImageThumbhash(db: NodePgDatabase, urls: string[]): Promise<Map<string, ImageThumbhashLookup>> {
   const out = new Map<string, ImageThumbhashLookup>()
   if (urls.length === 0) {
     return out
@@ -478,7 +486,7 @@ async function loadManyImageThumbhash(urls: string[]): Promise<Map<string, Image
 
   let metaMap: Map<string, CachedImageMeta>
   try {
-    metaMap = await readManyMeta(uniquePaths)
+    metaMap = await readManyMeta(db, uniquePaths)
   } catch (error) {
     log.warn('Failed to resolve image metadata batch; continuing without enhancement', { error })
     return out
@@ -501,12 +509,13 @@ async function loadManyImageThumbhash(urls: string[]): Promise<Map<string, Image
 }
 
 export async function hydrateImageRefs<T>(
+  db: NodePgDatabase,
   items: T[],
   getUrl: (item: T) => string,
   apply: (item: T, lookup: ImageThumbhashLookup | null) => void,
 ): Promise<void> {
   const uniqueUrls = [...new Set(items.map(getUrl).filter((url) => url !== ''))]
-  const lookupMap = await loadManyImageThumbhash(uniqueUrls)
+  const lookupMap = await loadManyImageThumbhash(db, uniqueUrls)
   for (const item of items) {
     const url = getUrl(item)
     const lookup = url === '' ? null : (lookupMap.get(url) ?? null)

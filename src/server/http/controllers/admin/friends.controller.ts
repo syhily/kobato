@@ -18,8 +18,8 @@ const list = adminProc
     }),
   )
   .output(z.object({ friends: z.array(adminFriendDto), total: z.number(), hasMore: z.boolean() }))
-  .handler(({ input }) =>
-    listFriendsForAdmin({
+  .handler(({ input, context }) =>
+    listFriendsForAdmin(context.db, {
       q: input.q,
       includeHidden: input.includeHidden,
       offset: input.offset,
@@ -42,7 +42,7 @@ const upsert = adminProc
   )
   .output(z.object({ friend: adminFriendDto }))
   .handler(async ({ input, context }) => {
-    const friend = await upsertAdminFriend({
+    const friend = await upsertAdminFriend(context.db, {
       id: input.id !== undefined ? idFromString(input.id) : undefined,
       website: input.website,
       description: input.description ?? null,
@@ -64,7 +64,7 @@ const remove = adminProc
   .input(z.object({ id: z.string().min(1) }))
   .output(z.void())
   .handler(async ({ input, context }) => {
-    const ok = await deleteAdminFriend(idFromString(input.id))
+    const ok = await deleteAdminFriend(context.db, idFromString(input.id))
     if (!ok) {
       throw new ORPCError('NOT_FOUND', { message: '友链不存在' })
     }

@@ -1,3 +1,5 @@
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
+
 import type { BlogSession } from '@/server/domains/auth/session-storage'
 import type { MetricTarget } from '@/server/domains/comments/services/shared'
 import type { CommentAndUser, CommentReq } from '@/server/domains/comments/types'
@@ -35,22 +37,23 @@ interface ValidatedSubmission {
 }
 
 async function validateSubmission(
+  db: NodePgDatabase,
   commentReq: CommentReq,
   req: Request,
   clientAddress: string,
   session: BlogSession,
 ): Promise<ValidatedSubmission> {
-  const target = await safeResolveMetricTarget(commentReq.page_key)
+  const target = await safeResolveMetricTarget(db, commentReq.page_key)
   if (target === null) {
     throw new DomainError('NOT_FOUND', '系统错误，评论的目标页面不存在。')
   }
 
   const loginUser = userSession(session)
-  if (loginUser === undefined && (await hasRegisteredAccount(commentReq.email))) {
+  if (loginUser === undefined && (await hasRegisteredAccount(db, commentReq.email))) {
     throw new DomainError('UNAUTHORIZED', '该邮箱已经注册，请登录后再进行评论留言。')
   }
 
-  const u = await insertCommentUser(commentReq.name, commentReq.email, commentReq.link || '')
+  const u = await insertCommentUser(db, commentReq.name, commentReq.email, commentReq.link || '')
   if (u === null) {
     throw new DomainError('INTERNAL', '系统错误，用户创建失败。')
   }
@@ -71,18 +74,18 @@ async function validateSubmission(
 
   if (u.role !== 'admin') {
     const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
-    const recent = await recentCommentsForUserDedupe(u.id, since, 20)
+    const recent = await recentCommentsForUserDedupe(db, u.id, since, 20)
     if (recent.some((c) => c.content === markdownSnapshot)) {
       throw new DomainError('CONFLICT', '重复评论，你已经有了相同的留言，如果在页面看不到，说明它正在等待站长审核。')
     }
   }
 
-  await updateLastLogin(u.id, clientAddress, req.headers.get('User-Agent'))
+  await updateLastLogin(db, u.id, clientAddress, req.headers.get('User-Agent'))
 
   let rootId = 0n
   if (commentReq.rid !== undefined && commentReq.rid !== 0) {
     const ridBig = idFromString(commentReq.rid)
-    const parentRoot = await findCommentRootId(ridBig)
+    const parentRoot = await findCommentRootId(db, ridBig)
     rootId = parentRoot !== null && parentRoot !== 0n ? parentRoot : ridBig
   }
 
@@ -92,12 +95,13 @@ async function validateSubmission(
 // --- Step 2: Persist --------------------------------------------------------
 
 async function persistComment(
+  db: NodePgDatabase,
   commentReq: CommentReq,
   sub: ValidatedSubmission,
   ua: string | null,
   ip: string,
 ): Promise<CommentAndUser> {
-  const approvedCount = await countApprovedCommentsByUser(sub.user.id)
+  const approvedCount = await countApprovedCommentsByUser(db, sub.user.id)
   const isPending = approvedCount === 0
 
   const newComment: NewComment = {
@@ -117,7 +121,7 @@ async function persistComment(
     voteDown: 0,
     rootId: sub.rootId,
   }
-  const cr = await insertComment(newComment)
+  const cr = await insertComment(db, newComment)
   if (cr === null) {
     throw new DomainError('INTERNAL', '系统错误，评论创建失败。')
   }
@@ -139,16 +143,16 @@ async function persistComment(
 
 // --- Step 3: Notify ---------------------------------------------------------
 
-async function notifyCommentCreated(info: CommentAndUser, target: MetricTarget): Promise<void> {
+async function notifyCommentCreated(db: NodePgDatabase, info: CommentAndUser, target: MetricTarget): Promise<void> {
   if (info.email !== requireBlogSettingsSection('siteIdentity').author.email) {
-    void sendNewComment(info, target).catch((error) => {
+    void sendNewComment(db, info, target).catch((error) => {
       log.error('failed to send new comment email', { error })
     })
   }
   if (info.rid !== 0) {
-    const source = await findCommentWithSourceUser(idFromString(info.rid))
+    const source = await findCommentWithSourceUser(db, idFromString(info.rid))
     if (source) {
-      void sendNewReply(source.user, source.comment, info, target).catch((error) => {
+      void sendNewReply(db, source.user, source.comment, info, target).catch((error) => {
         log.error('failed to send new reply email', { error })
       })
     }
@@ -158,14 +162,15 @@ async function notifyCommentCreated(info: CommentAndUser, target: MetricTarget):
 // --- Public entry point -----------------------------------------------------
 
 export async function createComment(
+  db: NodePgDatabase,
   commentReq: CommentReq,
   req: Request,
   clientAddress: string,
   session: BlogSession,
 ): Promise<CommentAndUser> {
-  const sub = await validateSubmission(commentReq, req, clientAddress, session)
-  const info = await persistComment(commentReq, sub, req.headers.get('User-Agent'), clientAddress)
-  await notifyCommentCreated(info, sub.target)
+  const sub = await validateSubmission(db, commentReq, req, clientAddress, session)
+  const info = await persistComment(db, commentReq, sub, req.headers.get('User-Agent'), clientAddress)
+  await notifyCommentCreated(db, info, sub.target)
   await clearLatestCommentsCache()
   return info
 }

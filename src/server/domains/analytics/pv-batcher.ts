@@ -1,3 +1,5 @@
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
+
 import type { EntityTarget } from '@/server/infra/db/target'
 
 import { incrementMetricPvBatch } from '@/server/infra/db/operations/metric'
@@ -16,8 +18,8 @@ import { registerShutdownHook } from '@/server/infra/shutdown'
 //  - The Node process gets SIGTERM/SIGINT/exit (best-effort flush).
 //
 // Note: in dev React Router may re-evaluate server modules on every request,
-// which would create multiple batchers — we guard by attaching the instance
-// to globalThis to keep one per process.
+// which would create multiple batchers — we guard by keeping a module-level
+// singleton so only one instance exists per process.
 
 interface BatcherOptions {
   flushIntervalMs: number
@@ -31,7 +33,10 @@ class PageViewBatcher {
   private timer: NodeJS.Timeout | null = null
   private flushing: Promise<void> | null = null
 
-  constructor(private readonly opts: BatcherOptions) {
+  constructor(
+    private readonly opts: BatcherOptions,
+    private readonly db: NodePgDatabase,
+  ) {
     registerShutdownHook(() => this.flush())
   }
 
@@ -71,7 +76,7 @@ class PageViewBatcher {
 
     this.flushing = (async () => {
       try {
-        await incrementMetricPvBatch(snapshot)
+        await incrementMetricPvBatch(this.db, snapshot)
         log.debug('flushed page views', { keys: snapshot.size })
       } catch (err) {
         log.error('flush failed; restoring buffer', { err: String(err), keys: snapshot.size })
@@ -90,12 +95,18 @@ class PageViewBatcher {
 
 let batcher: PageViewBatcher | undefined
 
-function getBatcher(): PageViewBatcher {
+function getBatcher(db?: NodePgDatabase): PageViewBatcher {
   if (batcher === undefined) {
-    batcher = new PageViewBatcher({
-      flushIntervalMs: 60_000,
-      flushThreshold: 50,
-    })
+    if (db === undefined) {
+      throw new Error('PageViewBatcher must be initialized with a db')
+    }
+    batcher = new PageViewBatcher(
+      {
+        flushIntervalMs: 60_000,
+        flushThreshold: 50,
+      },
+      db,
+    )
   }
   return batcher
 }
@@ -110,10 +121,14 @@ export function resetPageViewBatcher(): void {
 // `flushThreshold` (50), when `flushIntervalMs` elapses (60s), or on process
 // shutdown. Callers that require durability before returning (e.g. ephemeral
 // workers) can await `flushPageViews()` after the request ends.
-export function bumpPageView(target: EntityTarget): void {
-  getBatcher().increment(targetKey(target))
+export function initPageViewBatcher(db: NodePgDatabase): void {
+  getBatcher(db)
 }
 
-export function flushPageViews(): Promise<void> {
-  return getBatcher().flush()
+export function bumpPageView(target: EntityTarget, db?: NodePgDatabase): void {
+  getBatcher(db).increment(targetKey(target))
+}
+
+export function flushPageViews(db?: NodePgDatabase): Promise<void> {
+  return getBatcher(db).flush()
 }

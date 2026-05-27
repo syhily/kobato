@@ -1,12 +1,23 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
+import type { Pool } from 'pg'
 
-import { db } from '@/server/infra/db/pool'
+import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
+
+import { createDbPool, closePool } from '@/server/infra/db/pool'
 import { post } from '@/server/infra/db/schema/post'
 import { category, tag } from '@/server/infra/db/schema/taxonomy'
 
 vi.mock('@/server/domains/images/image-meta', () => ({
   hydrateImageRefs: vi.fn(async () => undefined),
 }))
+
+const poolManager = createDbPool()
+const db: NodePgDatabase = poolManager.db
+const pool: Pool = poolManager.pool
+
+afterAll(async () => {
+  await closePool(pool)
+})
 
 beforeEach(async () => {
   await db.delete(post)
@@ -25,7 +36,7 @@ describe('listAllCategories', () => {
     })
 
     const { listAllCategories } = await import('@/server/domains/taxonomies/categories/service')
-    const cats = await listAllCategories()
+    const cats = await listAllCategories(db)
 
     expect(cats).toHaveLength(1)
     expect(cats[0].permalink).toBe('/cats/tech')
@@ -42,7 +53,7 @@ describe('listAllCategories', () => {
     })
 
     const { listAllCategories } = await import('@/server/domains/taxonomies/categories/service')
-    await listAllCategories()
+    await listAllCategories(db)
 
     const { hydrateImageRefs } = await import('@/server/render/image-enhance')
     expect(hydrateImageRefs).toHaveBeenCalled()
@@ -50,7 +61,7 @@ describe('listAllCategories', () => {
 
   it('empty result → empty array', async () => {
     const { listAllCategories } = await import('@/server/domains/taxonomies/categories/service')
-    const cats = await listAllCategories()
+    const cats = await listAllCategories(db)
     expect(cats).toEqual([])
   })
 })
@@ -63,7 +74,7 @@ describe('getCategoryLinks', () => {
     ])
 
     const { getCategoryLinks } = await import('@/server/domains/taxonomies/categories/service')
-    const links = await getCategoryLinks(['Tech', 'Life'])
+    const links = await getCategoryLinks(db, ['Tech', 'Life'])
 
     expect(links['Tech']).toBe('/cats/tech')
     expect(links['Life']).toBe('/cats/life')
@@ -71,7 +82,7 @@ describe('getCategoryLinks', () => {
 
   it('filters out null/empty names', async () => {
     const { getCategoryLinks } = await import('@/server/domains/taxonomies/categories/service')
-    const links = await getCategoryLinks(['', null as unknown as string, undefined as unknown as string])
+    const links = await getCategoryLinks(db, ['', null as unknown as string, undefined as unknown as string])
     expect(Object.keys(links)).toHaveLength(0)
   })
 
@@ -79,7 +90,7 @@ describe('getCategoryLinks', () => {
     await db.insert(category).values({ name: 'Tech', slug: 'tech', cover: '', description: '', sortOrder: 0 })
 
     const { getCategoryLinks } = await import('@/server/domains/taxonomies/categories/service')
-    const links = await getCategoryLinks(['Tech', 'Tech', 'Tech'])
+    const links = await getCategoryLinks(db, ['Tech', 'Tech', 'Tech'])
 
     expect(Object.keys(links)).toHaveLength(1)
   })
@@ -90,13 +101,13 @@ describe('getCategoryLink', () => {
     await db.insert(category).values({ name: 'Tech', slug: 'tech', cover: '', description: '', sortOrder: 0 })
 
     const { getCategoryLink } = await import('@/server/domains/taxonomies/categories/service')
-    const link = await getCategoryLink('Tech')
+    const link = await getCategoryLink(db, 'Tech')
     expect(link).toBe('/cats/tech')
   })
 
   it('returns empty string for a non-existent category', async () => {
     const { getCategoryLink } = await import('@/server/domains/taxonomies/categories/service')
-    const link = await getCategoryLink('Unknown')
+    const link = await getCategoryLink(db, 'Unknown')
     expect(link).toBe('')
   })
 })
@@ -110,7 +121,7 @@ describe('listAllTags', () => {
     await db.insert(tag).values({ name: 'React', slug: 'react' })
 
     const { listAllTags } = await import('@/server/domains/taxonomies/tags/service')
-    const tags = await listAllTags()
+    const tags = await listAllTags(db)
 
     expect(tags).toHaveLength(1)
     expect(tags[0].permalink).toBe('/tags/react')
@@ -120,7 +131,7 @@ describe('listAllTags', () => {
     await db.insert(tag).values({ name: 'Rust', slug: 'rust' })
 
     const { listAllTags } = await import('@/server/domains/taxonomies/tags/service')
-    const tags = await listAllTags()
+    const tags = await listAllTags(db)
 
     expect(tags[0].counts).toBe(0)
   })
@@ -134,7 +145,7 @@ describe('getTagsByNames', () => {
     ])
 
     const { getTagsByNames } = await import('@/server/domains/taxonomies/tags/service')
-    const tags = await getTagsByNames(['Vue', 'React'])
+    const tags = await getTagsByNames(db, ['Vue', 'React'])
 
     expect(tags[0].name).toBe('Vue')
     expect(tags[1].name).toBe('React')
@@ -142,13 +153,13 @@ describe('getTagsByNames', () => {
 
   it('filters out unknown names', async () => {
     const { getTagsByNames } = await import('@/server/domains/taxonomies/tags/service')
-    const tags = await getTagsByNames(['Unknown'])
+    const tags = await getTagsByNames(db, ['Unknown'])
     expect(tags).toEqual([])
   })
 
   it('empty input → empty array', async () => {
     const { getTagsByNames } = await import('@/server/domains/taxonomies/tags/service')
-    const tags = await getTagsByNames([])
+    const tags = await getTagsByNames(db, [])
     expect(tags).toEqual([])
   })
 
@@ -156,7 +167,7 @@ describe('getTagsByNames', () => {
     await db.insert(tag).values({ name: 'React', slug: 'react' })
 
     const { getTagsByNames } = await import('@/server/domains/taxonomies/tags/service')
-    const tags = await getTagsByNames(['React', 'React', 'React'])
+    const tags = await getTagsByNames(db, ['React', 'React', 'React'])
 
     expect(tags).toHaveLength(1)
     expect(tags[0].name).toBe('React')

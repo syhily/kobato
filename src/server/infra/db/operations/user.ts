@@ -5,7 +5,8 @@ import type { NewUser, User } from '@/server/infra/db/types'
 
 export type SafeUser = Omit<User, 'password' | 'lastIp' | 'lastUa'>
 
-import { db } from '@/server/infra/db/pool'
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
+
 import { comment } from '@/server/infra/db/schema/comment'
 import { post } from '@/server/infra/db/schema/post'
 import { user } from '@/server/infra/db/schema/user'
@@ -14,7 +15,7 @@ import { escapeLikePattern } from '@/shared/utils/escape-like'
 
 export const PASSWORD_HASH_ROUNDS = 12
 
-export async function hasAdmin(): Promise<boolean> {
+export async function hasAdmin(db: NodePgDatabase): Promise<boolean> {
   const res = await db
     .select({ count: count() })
     .from(user)
@@ -22,7 +23,7 @@ export async function hasAdmin(): Promise<boolean> {
   return res.length > 0 && res[0].count > 0
 }
 
-export async function findFirstAdminUser(): Promise<User | null> {
+export async function findFirstAdminUser(db: NodePgDatabase): Promise<User | null> {
   const rows = await db
     .select()
     .from(user)
@@ -31,12 +32,12 @@ export async function findFirstAdminUser(): Promise<User | null> {
   return rows[0] ?? null
 }
 
-export async function findUserByEmail(email: string): Promise<User | null> {
+export async function findUserByEmail(db: NodePgDatabase, email: string): Promise<User | null> {
   const rows = await db.select().from(user).where(eq(user.email, email)).limit(1)
   return rows[0] ?? null
 }
 
-export async function findUserById(id: bigint): Promise<User | null> {
+export async function findUserById(db: NodePgDatabase, id: bigint): Promise<User | null> {
   const rows = await db.select().from(user).where(eq(user.id, id)).limit(1)
   return rows[0] ?? null
 }
@@ -58,17 +59,17 @@ const safeUserColumns = {
   receiveEmail: user.receiveEmail,
 }
 
-export async function findSafeUserByEmail(email: string): Promise<SafeUser | null> {
+export async function findSafeUserByEmail(db: NodePgDatabase, email: string): Promise<SafeUser | null> {
   const rows = await db.select(safeUserColumns).from(user).where(eq(user.email, email)).limit(1)
   return rows[0] ?? null
 }
 
-export async function findSafeUserById(id: bigint): Promise<SafeUser | null> {
+export async function findSafeUserById(db: NodePgDatabase, id: bigint): Promise<SafeUser | null> {
   const rows = await db.select(safeUserColumns).from(user).where(eq(user.id, id)).limit(1)
   return rows[0] ?? null
 }
 
-export async function hasRegisteredAccount(email: string): Promise<boolean> {
+export async function hasRegisteredAccount(db: NodePgDatabase, email: string): Promise<boolean> {
   const rows = await db
     .select({ id: user.id })
     .from(user)
@@ -83,27 +84,27 @@ export async function hasRegisteredAccount(email: string): Promise<boolean> {
  * a single round trip. Returns rows in whatever order Postgres picks —
  * the caller indexes by `id` rather than relying on input order.
  */
-export async function findUsersByIds(ids: bigint[]): Promise<User[]> {
+export async function findUsersByIds(db: NodePgDatabase, ids: bigint[]): Promise<User[]> {
   if (ids.length === 0) {
     return []
   }
   return db.select().from(user).where(inArray(user.id, ids))
 }
 
-export async function verifyUserPassword(email: string, password: string): Promise<User | null> {
-  const u = await findUserByEmail(email)
+export async function verifyUserPassword(db: NodePgDatabase, email: string, password: string): Promise<User | null> {
+  const u = await findUserByEmail(db, email)
   if (u === null) {
     return null
   }
   return (await bcrypt.compare(password, u.password)) ? u : null
 }
 
-export async function findUserIdByEmail(email: string): Promise<string | null> {
+export async function findUserIdByEmail(db: NodePgDatabase, email: string): Promise<string | null> {
   const rows = await db.select({ id: user.id }).from(user).where(eq(user.email, email)).limit(1)
   return rows[0] ? `${rows[0].id}` : null
 }
 
-export async function findEmailById(id: bigint): Promise<string | null> {
+export async function findEmailById(db: NodePgDatabase, id: bigint): Promise<string | null> {
   const rows = await db.select({ email: user.email }).from(user).where(eq(user.id, id)).limit(1)
   return rows[0]?.email ?? null
 }
@@ -120,6 +121,7 @@ export interface InsertAdminOptions {
 }
 
 export async function insertAdmin(
+  db: NodePgDatabase,
   name: string,
   email: string,
   password: string,
@@ -143,7 +145,7 @@ export async function insertAdmin(
   return db.insert(user).values(admin).returning()
 }
 
-export async function insertAuthor(name: string, email: string): Promise<User[]> {
+export async function insertAuthor(db: NodePgDatabase, name: string, email: string): Promise<User[]> {
   const author: NewUser = {
     name,
     email,
@@ -158,8 +160,13 @@ export async function insertAuthor(name: string, email: string): Promise<User[]>
   return db.insert(user).values(author).returning()
 }
 
-export async function insertCommentUser(name: string, email: string, website: string): Promise<SafeUser | null> {
-  const existing = await findSafeUserByEmail(email)
+export async function insertCommentUser(
+  db: NodePgDatabase,
+  name: string,
+  email: string,
+  website: string,
+): Promise<SafeUser | null> {
+  const existing = await findSafeUserByEmail(db, email)
   if (existing !== null) {
     return existing
   }
@@ -177,7 +184,12 @@ export async function insertCommentUser(name: string, email: string, website: st
   return res[0] ?? null
 }
 
-export async function updateLastLogin(id: bigint, ip: string, userAgent: string | null): Promise<void> {
+export async function updateLastLogin(
+  db: NodePgDatabase,
+  id: bigint,
+  ip: string,
+  userAgent: string | null,
+): Promise<void> {
   await db.update(user).set({ lastIp: ip, lastUa: userAgent }).where(eq(user.id, id))
 }
 
@@ -197,7 +209,7 @@ export interface UserUpdate {
   receiveEmail?: boolean
 }
 
-export async function updateUserById(id: bigint, patch: UserUpdate): Promise<User | null> {
+export async function updateUserById(db: NodePgDatabase, id: bigint, patch: UserUpdate): Promise<User | null> {
   const updated = await db.update(user).set(patch).where(eq(user.id, id)).returning()
   return updated[0] ?? null
 }
@@ -262,7 +274,7 @@ function buildAdminUsersConditions(filters: AdminUsersListFilters) {
   return conditions
 }
 
-export async function countAdminUsers(filters: AdminUsersListFilters): Promise<number> {
+export async function countAdminUsers(db: NodePgDatabase, filters: AdminUsersListFilters): Promise<number> {
   const conditions = buildAdminUsersConditions(filters)
   const rows = await db
     .select({ counts: count() })
@@ -288,6 +300,7 @@ function lastCommentAtAggregate() {
 }
 
 export async function listAdminUsers(
+  db: NodePgDatabase,
   offset: number,
   limit: number,
   filters: AdminUsersListFilters,
@@ -344,7 +357,7 @@ export async function listAdminUsers(
   }))
 }
 
-export async function findAdminUserById(id: bigint): Promise<AdminUserRow | null> {
+export async function findAdminUserById(db: NodePgDatabase, id: bigint): Promise<AdminUserRow | null> {
   const rows = await db
     .select({
       id: user.id,
@@ -382,7 +395,7 @@ export async function findAdminUserById(id: bigint): Promise<AdminUserRow | null
   }
 }
 
-export async function softDeleteUserById(id: bigint): Promise<boolean> {
+export async function softDeleteUserById(db: NodePgDatabase, id: bigint): Promise<boolean> {
   const updated = await db
     .update(user)
     .set({ deletedAt: new Date() })
@@ -391,12 +404,12 @@ export async function softDeleteUserById(id: bigint): Promise<boolean> {
   return updated.length > 0
 }
 
-export async function restoreUserById(id: bigint): Promise<boolean> {
+export async function restoreUserById(db: NodePgDatabase, id: bigint): Promise<boolean> {
   const updated = await db.update(user).set({ deletedAt: null }).where(eq(user.id, id)).returning({ id: user.id })
   return updated.length > 0
 }
 
-export async function setUserMuted(id: bigint, muted: boolean): Promise<User | null> {
+export async function setUserMuted(db: NodePgDatabase, id: bigint, muted: boolean): Promise<User | null> {
   // Admins are exempt from muting; the admin UI hides the action, but
   // this guard makes the rule explicit at the storage boundary so it
   // cannot be bypassed by a hand-crafted API request. Reverse-asserts
@@ -410,17 +423,21 @@ export async function setUserMuted(id: bigint, muted: boolean): Promise<User | n
   return updated[0] ?? null
 }
 
-export async function countAdmins(): Promise<number> {
+export async function countAdmins(db: NodePgDatabase): Promise<number> {
   const rows = await db.select({ count: count() }).from(user).where(eq(user.role, 'admin'))
   return rows[0]?.count ?? 0
 }
 
-export async function updateUserRole(id: bigint, role: 'admin' | 'author' | 'visitor' | null): Promise<User | null> {
+export async function updateUserRole(
+  db: NodePgDatabase,
+  id: bigint,
+  role: 'admin' | 'author' | 'visitor' | null,
+): Promise<User | null> {
   const updated = await db.update(user).set({ role }).where(eq(user.id, id)).returning()
   return updated[0] ?? null
 }
 
-export async function countUsers(): Promise<number> {
+export async function countUsers(db: NodePgDatabase): Promise<number> {
   const rows = await db.select({ count: count() }).from(user)
   return rows[0]?.count ?? 0
 }

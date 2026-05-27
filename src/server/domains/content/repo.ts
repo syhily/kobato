@@ -1,3 +1,5 @@
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
+
 import { and, desc, eq, inArray, max } from 'drizzle-orm'
 import { randomUUID } from 'node:crypto'
 import { isDeepStrictEqual } from 'node:util'
@@ -12,7 +14,6 @@ import type {
 import type { ContentRow, NewContent } from '@/server/infra/db/types'
 import type { PortableTextBody } from '@/shared/pt/schema'
 
-import { db } from '@/server/infra/db/pool'
 import { content as contentTable } from '@/server/infra/db/schema/content'
 import { page as pageMetaTable } from '@/server/infra/db/schema/page'
 import { post as postMetaTable } from '@/server/infra/db/schema/post'
@@ -23,19 +24,23 @@ function metaTableFor(type: ContentType) {
   return type === 'page' ? pageMetaTable : postMetaTable
 }
 
-export async function findContentById(id: bigint): Promise<ContentRow | null> {
+export async function findContentById(db: NodePgDatabase, id: bigint): Promise<ContentRow | null> {
   const rows = await db.select().from(contentTable).where(eq(contentTable.id, id)).limit(1)
   return rows[0] ?? null
 }
 
-export async function findContentsByIds(ids: bigint[]): Promise<ContentRow[]> {
+export async function findContentsByIds(db: NodePgDatabase, ids: bigint[]): Promise<ContentRow[]> {
   if (ids.length === 0) {
     return []
   }
   return db.select().from(contentTable).where(inArray(contentTable.id, ids))
 }
 
-export async function findLatestRevision(type: ContentType, ownerId: bigint): Promise<ContentRow | null> {
+export async function findLatestRevision(
+  db: NodePgDatabase,
+  type: ContentType,
+  ownerId: bigint,
+): Promise<ContentRow | null> {
   const rows = await db
     .select()
     .from(contentTable)
@@ -45,7 +50,11 @@ export async function findLatestRevision(type: ContentType, ownerId: bigint): Pr
   return rows[0] ?? null
 }
 
-export async function findLatestDraft(type: ContentType, ownerId: bigint): Promise<ContentRow | null> {
+export async function findLatestDraft(
+  db: NodePgDatabase,
+  type: ContentType,
+  ownerId: bigint,
+): Promise<ContentRow | null> {
   const rows = await db
     .select()
     .from(contentTable)
@@ -55,7 +64,12 @@ export async function findLatestDraft(type: ContentType, ownerId: bigint): Promi
   return rows[0] ?? null
 }
 
-export async function listRevisions(type: ContentType, ownerId: bigint, limit = 100): Promise<ContentRow[]> {
+export async function listRevisions(
+  db: NodePgDatabase,
+  type: ContentType,
+  ownerId: bigint,
+  limit = 100,
+): Promise<ContentRow[]> {
   return db
     .select()
     .from(contentTable)
@@ -64,7 +78,11 @@ export async function listRevisions(type: ContentType, ownerId: bigint, limit = 
     .limit(limit)
 }
 
-export async function saveDraftRevision(type: ContentType, input: SaveDraftInput): Promise<SaveDraftResult> {
+export async function saveDraftRevision(
+  db: NodePgDatabase,
+  type: ContentType,
+  input: SaveDraftInput,
+): Promise<SaveDraftResult> {
   const metaTable = metaTableFor(type)
   return db.transaction(async (tx) => {
     const lockRows = await tx
@@ -152,6 +170,7 @@ export async function saveDraftRevision(type: ContentType, input: SaveDraftInput
 }
 
 export async function publishLatestRevision(
+  db: NodePgDatabase,
   type: ContentType,
   input: PublishLatestInput,
 ): Promise<PublishLatestResult> {
@@ -241,7 +260,7 @@ export async function publishLatestRevision(
   })
 }
 
-export async function maxRevisionNo(type: ContentType, ownerId: bigint): Promise<number | null> {
+export async function maxRevisionNo(db: NodePgDatabase, type: ContentType, ownerId: bigint): Promise<number | null> {
   const rows = await db
     .select({ value: max(contentTable.revisionNo) })
     .from(contentTable)

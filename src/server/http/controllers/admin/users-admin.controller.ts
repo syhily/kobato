@@ -30,11 +30,11 @@ const mute = adminProc
   .input(z.object({ id: z.string().min(1), muted: z.boolean() }))
   .output(z.object({ user: adminUserDto }))
   .handler(async ({ input, context }) => {
-    const updated = await muteAdminUser(idFromString(input.id), input.muted)
+    const updated = await muteAdminUser(context.db, idFromString(input.id), input.muted)
     if (!updated) {
       throw new ORPCError('NOT_FOUND', { message: '用户不存在或为管理员（管理员不可禁言）' })
     }
-    const dto = await fetchAdminUserDto(updated.id)
+    const dto = await fetchAdminUserDto(context.db, updated.id)
     if (!dto) {
       throw new ORPCError('NOT_FOUND', { message: '用户不存在' })
     }
@@ -56,17 +56,17 @@ const updateRole = adminProc
       throw new ORPCError('FORBIDDEN', { message: '不能修改自己的角色。' })
     }
     const targetId = idFromString(userId)
-    const target = await findUserById(targetId)
+    const target = await findUserById(context.db, targetId)
     if (!target) {
       throw new ORPCError('NOT_FOUND', { message: '用户不存在。' })
     }
     if (target.role === 'admin' && input.role !== 'admin') {
-      const adminCount = await countAdmins()
+      const adminCount = await countAdmins(context.db)
       if (adminCount <= 1) {
         throw new ORPCError('CONFLICT', { message: '不能降级唯一的管理员。' })
       }
     }
-    const updated = await updateUserRole(targetId, input.role)
+    const updated = await updateUserRole(context.db, targetId, input.role)
     if (updated) {
       await revokeAllSessionsOfUser(targetId)
       recordAuditEventFromContext(context, {
@@ -76,7 +76,7 @@ const updateRole = adminProc
         details: { from: target.role, to: input.role },
       })
     }
-    const dto = await fetchAdminUserDto(targetId)
+    const dto = await fetchAdminUserDto(context.db, targetId)
     return { user: dto }
   })
 
@@ -85,7 +85,7 @@ const inviteAuthor = adminProc
   .input(z.object({ email: z.email().min(1), name: z.string().min(1).max(100) }))
   .output(successOutput)
   .handler(async ({ input, context }) => {
-    const existing = await findUserByEmail(input.email)
+    const existing = await findUserByEmail(context.db, input.email)
     if (existing !== null) {
       throw new ORPCError('CONFLICT', { message: '该邮箱已被注册。' })
     }
@@ -96,19 +96,19 @@ const inviteAuthor = adminProc
     if (ipLimit.exceeded || emailLimit.exceeded) {
       throw new ORPCError('TOO_MANY_REQUESTS', { message: '邀请发送过于频繁，请稍后再试。' })
     }
-    const [user] = await insertAuthor(input.name, input.email)
+    const [user] = await insertAuthor(context.db, input.name, input.email)
     if (!user) {
       throw new ORPCError('INTERNAL_SERVER_ERROR', { message: '创建作者账户失败。' })
     }
-    const { token } = await issueSetupToken(user.id)
+    const { token } = await issueSetupToken(context.db, user.id)
     const origin = new URL(context.request.url).origin
     const link = `${origin}/admin/signin?action=accept-invite&token=${encodeURIComponent(token)}`
     const inviterSession = context.session.get('user')
     const inviter = inviterSession?.name ?? '管理员'
     const sendResult = await sendAuthorInvite(user, link, inviter, inviterSession?.email)
     if (!sendResult.ok) {
-      await revokeTokensFor(user.id, 'author-invite')
-      await softDeleteUserById(user.id)
+      await revokeTokensFor(context.db, user.id, 'author-invite')
+      await softDeleteUserById(context.db, user.id)
       recordAuditEventFromContext(context, {
         action: 'author_invite_rolled_back',
         resourceType: 'user',
@@ -133,7 +133,7 @@ const sendPasswordReset = adminProc
   .input(z.object({ email: z.email().min(1) }))
   .output(successOutput)
   .handler(async ({ input, context }) => {
-    const user = await findUserByEmail(input.email)
+    const user = await findUserByEmail(context.db, input.email)
     if (!user) {
       throw new ORPCError('NOT_FOUND', { message: '用户不存在' })
     }
@@ -141,7 +141,7 @@ const sendPasswordReset = adminProc
     if (limit.exceeded) {
       throw new ORPCError('TOO_MANY_REQUESTS', { message: '该用户的重置邮件发送过于频繁，请稍后再试。' })
     }
-    const { token } = await issueResetToken(user.id)
+    const { token } = await issueResetToken(context.db, user.id)
     const origin = new URL(context.request.url).origin
     const link = `${origin}/admin/signin?action=resetpassword&token=${encodeURIComponent(token)}`
     await sendPasswordResetEmail(user, link)

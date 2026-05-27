@@ -1,8 +1,11 @@
 import type { BlogSettingsBundle } from '@/shared/config/types'
 
-const globalForSnapshot = globalThis as typeof globalThis & {
+const storage: {
   blogSettingsSnapshot: BlogSettingsBundle | null | undefined
   blogSettingsHydration: Promise<BlogSettingsBundle | null> | undefined
+} = {
+  blogSettingsSnapshot: undefined,
+  blogSettingsHydration: undefined,
 }
 
 export interface BlogSettingsSnapshotSlot {
@@ -13,12 +16,12 @@ export interface BlogSettingsSnapshotSlot {
 }
 
 export const BLOG_SETTINGS_SNAPSHOT_SLOT: BlogSettingsSnapshotSlot = {
-  read: () => globalForSnapshot.blogSettingsSnapshot ?? null,
+  read: () => storage.blogSettingsSnapshot ?? null,
   write: (value) => {
-    globalForSnapshot.blogSettingsSnapshot = value
+    storage.blogSettingsSnapshot = value
   },
-  readHydration: () => globalForSnapshot.blogSettingsHydration,
+  readHydration: () => storage.blogSettingsHydration,
   writeHydration: (value) => {
-    globalForSnapshot.blogSettingsHydration = value
+    storage.blogSettingsHydration = value
   },
 }

@@ -72,7 +72,7 @@ export const analyticsEventsRouter = new Hono<Env>().get('/api/analytics/events'
         pollInProgress = true
         void (async () => {
           try {
-            const rows = await queryRealtimeTail(lastSeen)
+            const rows = await queryRealtimeTail(c.var.db, lastSeen)
             if (rows.length > 0) {
               const ordered = [...rows].reverse()
               lastSeen = new Date(ordered[ordered.length - 1]!.ts)

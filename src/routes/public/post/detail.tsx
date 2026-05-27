@@ -2,7 +2,7 @@ import { data } from 'react-router'
 
 import type { DraftMarker } from '@/ui/public/post/DetailBodyChrome'
 
-import { tryGetSessionContext } from '@/server/domains/auth/context'
+import { getDbFromContext, tryGetSessionContext } from '@/server/domains/auth/context'
 import { resolveSessionContext } from '@/server/domains/auth/primitives'
 import { resolveImageMetaBySources } from '@/server/domains/images/image-meta'
 import { selectSidebarPosts } from '@/server/domains/posts/repos/public-query'
@@ -30,13 +30,14 @@ export const headers = detailHeaders
 export const shouldRevalidate = publicShouldRevalidate
 
 export async function loader({ request, context, params }: Route.LoaderArgs) {
-  let sourcePost = (await findPostBySlug(params.slug)) ?? undefined
+  const db = getDbFromContext({ request, context })
+  let sourcePost = (await findPostBySlug(db, params.slug)) ?? undefined
   let draftMarker: DraftMarker = null
 
   if (sourcePost === undefined) {
-    const sessionContext = tryGetSessionContext(context) ?? (await resolveSessionContext(request))
+    const sessionContext = tryGetSessionContext(context) ?? (await resolveSessionContext(db, request))
     if (hasAtLeast(sessionContext.role, 'author')) {
-      const preview = await loadPostDraftPreviewBySlug(params.slug)
+      const preview = await loadPostDraftPreviewBySlug(db, params.slug)
       if (preview !== null) {
         sourcePost = preview.post
         draftMarker = 'draft'
@@ -62,13 +63,13 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
   }
 
   const [visibleTags, imageMeta, sidebarTags, sidebarPosts] = await Promise.all([
-    getTagsByNames(post.tags),
-    resolveImageMetaBySources(sourcePost.imageSources).then((r) => Object.fromEntries(r)),
-    listAllTags().then(selectSidebarTags),
-    selectSidebarPosts(getSidebarWidgetCount(requireBlogSettingsSection('sidebar'), 'recentPosts')),
+    getTagsByNames(db, post.tags),
+    resolveImageMetaBySources(db, sourcePost.imageSources).then((r) => Object.fromEntries(r)),
+    listAllTags(db).then(selectSidebarTags),
+    selectSidebarPosts(db, getSidebarWidgetCount(requireBlogSettingsSection('sidebar'), 'recentPosts')),
   ])
 
-  const { detail } = await loadPublicDetailData({
+  const { detail } = await loadPublicDetailData(db, {
     request,
     context,
     target: { type: 'post', ownerId: BigInt(post.id) },

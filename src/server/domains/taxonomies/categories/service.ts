@@ -1,3 +1,5 @@
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
+
 import { asc, inArray, sql } from 'drizzle-orm'
 
 import type { CategoryRow } from '@/server/infra/db/types'
@@ -24,7 +26,6 @@ import {
   reorderCategories as reorderCategoryRows,
   updateCategory,
 } from '@/server/infra/db/operations/category'
-import { db } from '@/server/infra/db/pool'
 import { post as postMetaTable } from '@/server/infra/db/schema/post'
 import { category as categoryTable } from '@/server/infra/db/schema/taxonomy'
 import { DomainError } from '@/server/infra/http/errors'
@@ -60,9 +61,9 @@ export interface AdminCategoriesListResult {
 // even on large lists (the in-process `postsByCategory` map is already
 // computed on catalog build). Counts include hidden + scheduled posts
 // so the column matches what the delete-block guard sees.
-async function categoryPostCounter(): Promise<(name: string) => Promise<number>> {
+async function categoryPostCounter(db: NodePgDatabase): Promise<(name: string) => Promise<number>> {
   return async (name: string) => {
-    const posts = await listPostsByCategory(name, { includeHidden: true, includeScheduled: true })
+    const posts = await listPostsByCategory(db, name, { includeHidden: true, includeScheduled: true })
     return posts.length
   }
 }
@@ -70,8 +71,8 @@ async function categoryPostCounter(): Promise<(name: string) => Promise<number>>
 // Bulk-count posts per category in a single query, then project into a
 // Map. Replaces the N+1 `categoryPostCounter` for list views while
 // keeping the per-category helper for single-row upserts.
-async function countPostsByCategories(): Promise<Map<string, number>> {
-  const metas = await listPublicPosts({ includeHidden: true, includeScheduled: true })
+async function countPostsByCategories(db: NodePgDatabase): Promise<Map<string, number>> {
+  const metas = await listPublicPosts(db, { includeHidden: true, includeScheduled: true })
   const counts = new Map<string, number>()
   for (const meta of metas) {
     const cat = meta.category
@@ -82,8 +83,11 @@ async function countPostsByCategories(): Promise<Map<string, number>> {
   return counts
 }
 
-export async function listCategoriesForAdmin(filters: AdminCategoriesListFilters): Promise<AdminCategoriesListResult> {
-  const [rows, counts] = await Promise.all([listAdminCategoryRows(filters), countPostsByCategories()])
+export async function listCategoriesForAdmin(
+  db: NodePgDatabase,
+  filters: AdminCategoriesListFilters,
+): Promise<AdminCategoriesListResult> {
+  const [rows, counts] = await Promise.all([listAdminCategoryRows(db, filters), countPostsByCategories(db)])
   return {
     categories: rows.map((row) => toAdminCategoryDto(row, counts.get(row.name) ?? 0)),
     total: rows.length,
@@ -110,7 +114,7 @@ export interface UpsertCategoryInputs {
 // `UNIQUE (name)` and `UNIQUE (slug)` at the application layer with a
 // pre-flight lookup so the editor sees a friendly 409 instead of the
 // raw Drizzle constraint error.
-export async function upsertAdminCategory(input: UpsertCategoryInputs): Promise<AdminCategoryDto> {
+export async function upsertAdminCategory(db: NodePgDatabase, input: UpsertCategoryInputs): Promise<AdminCategoryDto> {
   // Resolve the effective slug: an explicit non-empty value wins, an
   // empty / missing value falls back to the canonical pinyin pipeline
   // applied to the category name. We treat `''` the same as missing
@@ -119,25 +123,31 @@ export async function upsertAdminCategory(input: UpsertCategoryInputs): Promise<
   const slug = resolveSlugForTaxonomy(input.slug, input.name)
 
   if (input.id === undefined) {
-    await ensureUniqueOnCreateTaxonomy(findCategoryByName, findCategoryBySlug, input.name, slug, '分类')
-    const row = await insertCategory({
+    await ensureUniqueOnCreateTaxonomy(
+      (name) => findCategoryByName(db, name),
+      (slug) => findCategoryBySlug(db, slug),
+      input.name,
+      slug,
+      '分类',
+    )
+    const row = await insertCategory(db, {
       name: input.name,
       slug,
       cover: input.cover,
       description: input.description,
       sortOrder: input.sortOrder,
     })
-    const countOf = await categoryPostCounter()
+    const countOf = await categoryPostCounter(db)
     return toAdminCategoryDto(row, await countOf(row.name))
   }
 
-  const existing = await findCategoryById(input.id)
+  const existing = await findCategoryById(db, input.id)
   if (existing === null) {
     throw new DomainError('NOT_FOUND', '分类不存在')
   }
   await ensureUniqueOnUpdateTaxonomy(
-    findCategoryByName,
-    findCategoryBySlug,
+    (name) => findCategoryByName(db, name),
+    (slug) => findCategoryBySlug(db, slug),
     input.id,
     input.name,
     existing.name,
@@ -145,7 +155,7 @@ export async function upsertAdminCategory(input: UpsertCategoryInputs): Promise<
     existing.slug,
     '分类',
   )
-  const updated = await updateCategory(input.id, {
+  const updated = await updateCategory(db, input.id, {
     name: input.name,
     slug,
     cover: input.cover,
@@ -155,7 +165,7 @@ export async function upsertAdminCategory(input: UpsertCategoryInputs): Promise<
   if (updated === null) {
     throw new DomainError('NOT_FOUND', '分类不存在')
   }
-  const countOf = await categoryPostCounter()
+  const countOf = await categoryPostCounter(db)
   return toAdminCategoryDto(updated, await countOf(updated.name))
 }
 
@@ -164,7 +174,10 @@ export async function upsertAdminCategory(input: UpsertCategoryInputs): Promise<
 // `sort_order`, so a stale UI submission cannot silently truncate or
 // re-rank rows the admin has not seen. Returns the freshly-ordered
 // DTOs so the client reducer can swap state in place.
-export async function reorderAdminCategories(orderedIds: readonly string[]): Promise<AdminCategoryDto[]> {
+export async function reorderAdminCategories(
+  db: NodePgDatabase,
+  orderedIds: readonly string[],
+): Promise<AdminCategoryDto[]> {
   // Reject duplicates up-front — the bulk update is keyed on `id`, so
   // duplicates would silently collapse to the last index.
   const seen = new Set<string>()
@@ -178,7 +191,7 @@ export async function reorderAdminCategories(orderedIds: readonly string[]): Pro
   // Compare against the live set. We use `listPublicCategoryRows()`
   // (no filtering) so a search-filtered admin view never accidentally
   // re-orders only the visible subset.
-  const liveRows = await listPublicCategoryRows()
+  const liveRows = await listPublicCategoryRows(db)
   if (liveRows.length !== orderedIds.length) {
     throw new DomainError('CONFLICT', '排序与最新分类列表不一致，请刷新后重试')
   }
@@ -189,8 +202,11 @@ export async function reorderAdminCategories(orderedIds: readonly string[]): Pro
     }
   }
 
-  const updated = await reorderCategoryRows(orderedIds.map((id) => idFromString(id)))
-  const countOf = await categoryPostCounter()
+  const updated = await reorderCategoryRows(
+    db,
+    orderedIds.map((id) => idFromString(id)),
+  )
+  const countOf = await categoryPostCounter(db)
   return Promise.all(updated.map(async (row) => toAdminCategoryDto(row, await countOf(row.name))))
 }
 
@@ -201,18 +217,19 @@ export async function reorderAdminCategories(orderedIds: readonly string[]): Pro
 // catalog build would fail `validateTaxonomies` on cold start. The
 // 409 message lists up to 5 referencing post titles so the admin
 // knows which files to fix.
-export async function deleteAdminCategory(id: bigint): Promise<boolean> {
+export async function deleteAdminCategory(db: NodePgDatabase, id: bigint): Promise<boolean> {
   return deleteAdminTaxonomy(id, '分类', {
-    findById: findCategoryById,
-    deleteRow: deleteCategoryRow,
-    listPostsBy: listPostsByCategory,
+    findById: (id) => findCategoryById(db, id),
+    deleteRow: (id) => deleteCategoryRow(db, id),
+    listPostsBy: (name) => listPostsByCategory(db, name),
   })
 }
 
 // --- Public catalog queries -------------------------------------------------
 
-async function hydrateCategoryImages(categories: Category[]): Promise<void> {
+async function hydrateCategoryImages(db: NodePgDatabase, categories: Category[]): Promise<void> {
   await hydrateImageRefs(
+    db,
     categories,
     (c) => c.cover,
     (c, lookup) => {
@@ -224,7 +241,7 @@ async function hydrateCategoryImages(categories: Category[]): Promise<void> {
   )
 }
 
-export async function listAllCategories(): Promise<Category[]> {
+export async function listAllCategories(db: NodePgDatabase): Promise<Category[]> {
   const now = new Date()
   const rows = await db
     .select({
@@ -256,16 +273,16 @@ export async function listAllCategories(): Promise<Category[]> {
     })
   }
 
-  await hydrateCategoryImages(categories)
+  await hydrateCategoryImages(db, categories)
   return categories
 }
 
-export async function getCategoryLink(name: string): Promise<string> {
-  const category = await findCategoryByName(name)
+export async function getCategoryLink(db: NodePgDatabase, name: string): Promise<string> {
+  const category = await findCategoryByName(db, name)
   return category ? `/cats/${category.slug}` : ''
 }
 
-export async function getCategoryLinks(names: readonly string[]): Promise<Record<string, string>> {
+export async function getCategoryLinks(db: NodePgDatabase, names: readonly string[]): Promise<Record<string, string>> {
   const uniqueNames = [...new Set(names.filter((n): n is string => Boolean(n)))]
   if (uniqueNames.length === 0) {
     return {}

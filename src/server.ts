@@ -9,8 +9,11 @@ import { RouterContextProvider } from 'react-router'
 
 import type { Env } from '@/server/http/context'
 
+import { initAccessLogBatcher } from '@/server/domains/analytics/batcher'
+import { initPageViewBatcher } from '@/server/domains/analytics/pv-batcher'
+import { initAuditLogBatcher } from '@/server/domains/audit/batcher'
 import { scheduleNextArchive } from '@/server/domains/audit/scheduler'
-import { requestContext, sessionContext } from '@/server/domains/auth/context'
+import { dbContext, poolContext, requestContext, sessionContext } from '@/server/domains/auth/context'
 import { scheduleNextBackup } from '@/server/domains/backup/scheduler'
 import { warmBlogSettingsSnapshot } from '@/server/domains/settings/snapshot'
 import { createApiApp } from '@/server/http/app'
@@ -33,12 +36,60 @@ import { imagesRouter } from '@/server/http/resources/images'
 import { redirectsRouter } from '@/server/http/resources/redirects'
 import { sitemapRouter } from '@/server/http/resources/sitemap'
 import { emitEncryptionStartupWarning } from '@/server/infra/crypto/secret-encryption'
-import { PORT } from '@/server/infra/env'
+import { migrateDatabase } from '@/server/infra/db/migrate'
+import { createDbPool, closePool } from '@/server/infra/db/pool'
+import { isVitest, PORT } from '@/server/infra/env'
 import { createHonoServer } from '@/server/infra/hono/node'
 import { root } from '@/server/infra/logger'
-import { setRestartApp, setRestartHttpServer } from '@/server/infra/restart'
-import { getRestartState } from '@/server/infra/shutdown'
+import { setRestartApp, setRestartHttpServer, setRestartDb } from '@/server/infra/restart'
+import { getRestartState, registerShutdownHook } from '@/server/infra/shutdown'
 import { buildOpenApiDocsHtml } from '@/server/render/openapi-docs'
+
+// ─── HMR-safe resource creation ──────────────────────────
+// In dev, React Router re-evaluates server.ts on every HMR cycle.
+// import.meta.hot.data persists across those re-evaluations so the
+// Pool, Drizzle instance, and migration flag survive without
+// leaking connections or re-running completed migrations.
+
+const hmr = import.meta.hot?.data as
+  | {
+      pool?: ReturnType<typeof createDbPool>['pool']
+      db?: ReturnType<typeof createDbPool>['db']
+      migrationsRan?: boolean
+    }
+  | undefined
+
+const { db, pool } = hmr?.db && hmr?.pool ? { db: hmr.db, pool: hmr.pool } : createDbPool()
+
+if (import.meta.hot) {
+  hmr!.db = db
+  hmr!.pool = pool
+}
+
+// Run migrations once per process (HMR-safe via hmr.migrationsRan).
+if (!hmr?.migrationsRan) {
+  if (!isVitest()) {
+    await migrateDatabase()
+  }
+  if (import.meta.hot) {
+    hmr!.migrationsRan = true
+  }
+}
+
+// Register shutdown once per process.
+registerShutdownHook(() => closePool(pool))
+
+// Expose db for restart.ts so it can refresh blog settings on restart.
+setRestartDb(db)
+
+// Initialize in-memory batcher singletons so fire-and-forget analytics
+// and audit pipelines have a real DB connection instead of failing on
+// first use.
+initAccessLogBatcher(pool)
+initPageViewBatcher(db)
+initAuditLogBatcher(db, pool)
+
+// ─── Logging sanitisation ────────────────────────────────
 
 // L5: authorization tokens must NEVER reach logs.
 // L3: cookie, user-agent, and any header carrying IP need {E}…{/E} markers
@@ -77,9 +128,19 @@ function resBindings(c: Context) {
   return { res: { status: c.res.status, headers } }
 }
 
+// ─── Server assembly ─────────────────────────────────────
+
 const app = await createHonoServer<Env>({
   autoServe: false,
   configure(app) {
+    // Inject db and pool into every request's Hono context so
+    // middleware, route handlers, and the oRPC bridge can reach them.
+    app.use('*', async (c, next) => {
+      c.set('db', db)
+      c.set('pool', pool)
+      await next()
+    })
+
     app.onError(onErrorHandler)
     app.use(requestId())
     app.use(compress())
@@ -164,11 +225,13 @@ const app = await createHonoServer<Env>({
     // React Router SSR routes — static assets skip this entirely.
     // Idempotent: concurrent requests share the same in-flight promise.
     // Errors are handled internally; never leaks an unhandled rejection.
-    warmBlogSettingsSnapshot()
+    warmBlogSettingsSnapshot(db)
     const { session, request } = buildRouteContexts(c)
     const context = new RouterContextProvider()
     context.set(sessionContext, session)
     context.set(requestContext, request)
+    context.set(dbContext, db)
+    context.set(poolContext, pool)
     return context
   },
 })
@@ -190,7 +253,11 @@ if (httpServer) {
 
 // Start schedulers after server is configured
 scheduleNextBackup()
-scheduleNextArchive()
+scheduleNextArchive(db, pool)
 emitEncryptionStartupWarning()
+
+if (import.meta.hot) {
+  import.meta.hot.accept()
+}
 
 export default app

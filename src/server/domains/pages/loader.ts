@@ -1,3 +1,4 @@
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 import type { LoaderFunctionArgs } from 'react-router'
 
 import type { ResolvedImageMeta } from '@/server/domains/images/image-meta'
@@ -44,17 +45,19 @@ export interface PagePreviewResult {
 }
 
 export async function loadPagePreview({
+  db,
   slug,
   wantsDraftPreview,
   request,
   context,
 }: {
+  db: NodePgDatabase
   slug: string
   wantsDraftPreview: boolean
   request: Request
   context: LoaderFunctionArgs['context']
 }): Promise<PagePreviewResult> {
-  const [postMeta, page] = await Promise.all([findPublicPostMetaBySlug(slug), findPageBySlug(slug)])
+  const [postMeta, page] = await Promise.all([findPublicPostMetaBySlug(db, slug), findPageBySlug(db, slug)])
 
   // If the slug belongs to a published, non-deleted, non-scheduled post,
   // redirect to the canonical post URL. Matches the old catalog visibility
@@ -70,9 +73,9 @@ export async function loadPagePreview({
 
   const needsDraftLookup = sourcePage === undefined || (wantsDraftPreview && publishedPage !== undefined)
   if (needsDraftLookup) {
-    const sessionContext = tryGetSessionContext(context) ?? (await resolveSessionContext(request))
+    const sessionContext = tryGetSessionContext(context) ?? (await resolveSessionContext(db, request))
     if (sessionContext.role === 'admin') {
-      const preview = await loadPageDraftPreviewBySlug(slug)
+      const preview = await loadPageDraftPreviewBySlug(db, slug)
       if (preview !== null) {
         if (sourcePage === undefined) {
           sourcePage = buildDbPage(preview.page)
@@ -118,7 +121,7 @@ export async function loadPagePreview({
     headings: sourcePage.headings,
   }
 
-  const imageMeta = Object.fromEntries(await resolveImageMetaBySources(sourcePage.imageSources))
+  const imageMeta = Object.fromEntries(await resolveImageMetaBySources(db, sourcePage.imageSources))
 
   return {
     page: pageProjection,

@@ -1,5 +1,10 @@
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
+import type { Pool } from 'pg'
+
 import { RouterContextProvider } from 'react-router'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+
+import { dbContext, poolContext } from '@/server/domains/auth/context'
 
 import { makePage, makePost, makePostList, makeTag } from './_helpers/catalog'
 import { makeLoaderArgs, unwrapLoaderData } from './_helpers/context'
@@ -27,13 +32,13 @@ const sidebarSamples = makePostList(3, { slug: 'sidebar' })
 // catalog/catalog removed; post detail uses findPostBySlug directly, page
 // detail uses pages/loader which queries findPublicPostMetaBySlug + findPageBySlug.
 vi.mock('@/server/domains/posts/repos/single', () => ({
-  findPostBySlug: vi.fn(async (slug: string) => {
+  findPostBySlug: vi.fn(async (_db: unknown, slug: string) => {
     if (slug === 'hello' || slug === 'hello-old') {
       return samplePost
     }
     return null
   }),
-  findPublicPostMetaBySlug: vi.fn(async (slug: string) => {
+  findPublicPostMetaBySlug: vi.fn(async (_db: unknown, slug: string) => {
     if (slug === 'hello' || slug === 'hello-old') {
       return {
         slug,
@@ -52,7 +57,7 @@ vi.mock('@/server/domains/posts/repos/public-query', () => ({
 }))
 vi.mock('@/server/domains/pages/repo', () => ({
   listPublicPageMetas: vi.fn(async () => []),
-  findPageBySlug: vi.fn(async (slug: string) => {
+  findPageBySlug: vi.fn(async (_db: unknown, slug: string) => {
     if (slug === 'about') {
       return samplePage
     }
@@ -180,10 +185,13 @@ describe('routes/page.detail loader', () => {
   })
 
   it('falls back to resolving the request session when detail loaders receive an empty context', async () => {
+    const ctx = new RouterContextProvider()
+    ctx.set(dbContext, {} as NodePgDatabase)
+    ctx.set(poolContext, {} as Pool)
     const data = unwrapLoaderData<{ page: { permalink: string } }>(
       await pageRoute.loader({
         request: new Request('http://localhost/about'),
-        context: new RouterContextProvider(),
+        context: ctx,
         params: { slug: 'about' },
       } as unknown as Parameters<typeof pageRoute.loader>[0]),
     )

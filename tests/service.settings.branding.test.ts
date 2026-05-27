@@ -1,3 +1,5 @@
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
+
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { Setting } from '@/server/infra/db/types'
@@ -22,6 +24,8 @@ vi.mock('@/server/domains/settings/snapshot', () => ({
 vi.mock('@/server/domains/assets/generate', () => ({
   generateFaviconPack: vi.fn(),
 }))
+
+const db = {} as NodePgDatabase
 
 const s3 = await import('@/server/infra/storage/s3-client')
 const settings = await import('@/server/infra/db/operations/setting')
@@ -69,7 +73,7 @@ beforeEach(() => {
 
 describe('uploadBrandingAsset', () => {
   it('uploads a single binary slot and writes an ObjectRef to the settings row', async () => {
-    const ref = await uploadBrandingAsset('appleTouchIcon', PNG_BYTES)
+    const ref = await uploadBrandingAsset(db, 'appleTouchIcon', PNG_BYTES)
 
     expect(ref.contentType).toBe('image/png')
     expect(ref.etag).toMatch(/^[a-f0-9]{64}$/)
@@ -77,13 +81,13 @@ describe('uploadBrandingAsset', () => {
     expect(s3.putS3Object).toHaveBeenCalledTimes(1)
     expect(s3.putS3Object).toHaveBeenCalledWith('branding/apple-touch-icon', PNG_BYTES, 'image/png')
 
-    const [data] = vi.mocked(settings.upsertSetting).mock.calls[0]
+    const [, data] = vi.mocked(settings.upsertSetting).mock.calls[0]
     const branding = (data as Record<string, unknown>).branding as Record<string, unknown>
     expect(branding.appleTouchIcon).toEqual(ref)
   })
 
   it('regenerates and uploads the full favicon pack on faviconSvg upload', async () => {
-    await uploadBrandingAsset('faviconSvg', SVG_BYTES)
+    await uploadBrandingAsset(db, 'faviconSvg', SVG_BYTES)
 
     expect(generateFaviconPack).toHaveBeenCalledTimes(1)
     expect(s3.putS3Object).toHaveBeenCalledTimes(5)
@@ -98,7 +102,7 @@ describe('uploadBrandingAsset', () => {
       ]),
     )
 
-    const [data] = vi.mocked(settings.upsertSetting).mock.calls[0]
+    const [, data] = vi.mocked(settings.upsertSetting).mock.calls[0]
     const branding = (data as Record<string, unknown>).branding as Record<string, unknown>
     expect(branding.faviconSvg).toBeDefined()
     expect(branding.faviconIco).toBeDefined()
@@ -110,7 +114,7 @@ describe('uploadBrandingAsset', () => {
   it('rolls back S3 puts and skips the settings write when the pack regen fails', async () => {
     vi.mocked(generateFaviconPack).mockRejectedValue(new Error('sharp failed'))
 
-    await expect(uploadBrandingAsset('faviconSvg', SVG_BYTES)).rejects.toThrow('sharp failed')
+    await expect(uploadBrandingAsset(db, 'faviconSvg', SVG_BYTES)).rejects.toThrow('sharp failed')
 
     // The primary SVG put has already happened — rollback must remove it.
     expect(s3.deleteS3Object).toHaveBeenCalledWith('branding/favicon-svg')
@@ -119,13 +123,13 @@ describe('uploadBrandingAsset', () => {
 
   it('rejects mismatched content for a binary slot', async () => {
     // PNG bytes in an ICO slot should fail the magic-byte check.
-    await expect(uploadBrandingAsset('faviconIco', PNG_BYTES)).rejects.toThrow(/image\/x-icon/)
+    await expect(uploadBrandingAsset(db, 'faviconIco', PNG_BYTES)).rejects.toThrow(/image\/x-icon/)
     expect(s3.putS3Object).not.toHaveBeenCalled()
   })
 
   it('rejects an SVG that contains a script tag', async () => {
     const hostile = Buffer.from('<svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script></svg>', 'utf8')
-    await expect(uploadBrandingAsset('logoSvg', hostile)).rejects.toThrow(/脚本|事件处理器/)
+    await expect(uploadBrandingAsset(db, 'logoSvg', hostile)).rejects.toThrow(/脚本|事件处理器/)
     expect(s3.putS3Object).not.toHaveBeenCalled()
   })
 })
@@ -140,18 +144,18 @@ describe('clearBrandingAsset', () => {
       },
     } as Setting)
 
-    await clearBrandingAsset('appleTouchIcon')
+    await clearBrandingAsset(db, 'appleTouchIcon')
 
     expect(s3.deleteS3Object).toHaveBeenCalledTimes(1)
     expect(s3.deleteS3Object).toHaveBeenCalledWith('branding/apple-touch-icon')
 
-    const [data] = vi.mocked(settings.upsertSetting).mock.calls[0]
+    const [, data] = vi.mocked(settings.upsertSetting).mock.calls[0]
     const branding = (data as Record<string, unknown>).branding as Record<string, unknown>
     expect(branding.appleTouchIcon).toBeUndefined()
   })
 
   it('clears favicon pack when faviconSvg is cleared', async () => {
-    await clearBrandingAsset('faviconSvg')
+    await clearBrandingAsset(db, 'faviconSvg')
 
     expect(s3.deleteS3Object).toHaveBeenCalledTimes(5)
     const keys = vi.mocked(s3.deleteS3Object).mock.calls.map((c) => c[0])
@@ -165,7 +169,7 @@ describe('clearBrandingAsset', () => {
       ]),
     )
 
-    const [data] = vi.mocked(settings.upsertSetting).mock.calls[0]
+    const [, data] = vi.mocked(settings.upsertSetting).mock.calls[0]
     const branding = (data as Record<string, unknown>).branding as Record<string, unknown>
     expect(branding.faviconSvg).toBeUndefined()
     expect(branding.faviconIco).toBeUndefined()

@@ -1,3 +1,5 @@
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
+
 import { and, count, desc, eq, ilike, inArray, isNotNull, isNull, sql } from 'drizzle-orm'
 
 import type { EntityType } from '@/server/infra/db/target'
@@ -18,14 +20,13 @@ import {
   type MyCommentsFilters,
   type PageOption,
 } from '@/server/domains/comments/repos/shared'
-import { db } from '@/server/infra/db/pool'
 import { comment } from '@/server/infra/db/schema/comment'
 import { metric } from '@/server/infra/db/schema/metric'
 import { user } from '@/server/infra/db/schema/user'
 import { escapeLikePattern } from '@/shared/utils/escape-like'
 
-export async function findCommentWithUserAndTarget(id: bigint) {
-  const entity = targetSlugTitleSubquery()
+export async function findCommentWithUserAndTarget(db: NodePgDatabase, id: bigint) {
+  const entity = targetSlugTitleSubquery(db)
   const rows = await db
     .select({
       comment,
@@ -44,8 +45,13 @@ export async function findCommentWithUserAndTarget(id: bigint) {
 }
 
 // Page-title autocomplete for the comment-moderation filter Combobox.
-export async function searchPages(q: string | undefined, limit: number, publicIds?: string[]): Promise<PageOption[]> {
-  const entity = targetSlugTitleSubquery()
+export async function searchPages(
+  db: NodePgDatabase,
+  q: string | undefined,
+  limit: number,
+  publicIds?: string[],
+): Promise<PageOption[]> {
+  const entity = targetSlugTitleSubquery(db)
   const conditions = [isNull(metric.deletedAt), isNotNull(metric.type), isNotNull(metric.ownerId)]
   if (publicIds && publicIds.length > 0) {
     conditions.push(inArray(metric.publicId, publicIds))
@@ -64,6 +70,7 @@ export async function searchPages(q: string | undefined, limit: number, publicId
 
 // Comment-author autocomplete.
 export async function searchCommentAuthors(
+  db: NodePgDatabase,
   q: string | undefined,
   limit: number,
   ids?: bigint[],
@@ -83,7 +90,7 @@ export async function searchCommentAuthors(
     .limit(limit)
 }
 
-export async function countAllComments(filters: AdminListFilters): Promise<number> {
+export async function countAllComments(db: NodePgDatabase, filters: AdminListFilters): Promise<number> {
   const conditions = buildAdminListConditions(filters)
   const rows = await db
     .select({ counts: count() })
@@ -92,9 +99,9 @@ export async function countAllComments(filters: AdminListFilters): Promise<numbe
   return rows[0].counts
 }
 
-export async function listAdminComments(offset: number, limit: number, filters: AdminListFilters) {
+export async function listAdminComments(db: NodePgDatabase, offset: number, limit: number, filters: AdminListFilters) {
   const conditions = buildAdminListConditions(filters)
-  const entity = targetSlugTitleSubquery()
+  const entity = targetSlugTitleSubquery(db)
   return db
     .select({ ...commentWithUser, pageTitle: entity.title, pagePublicId: metric.publicId })
     .from(comment)
@@ -108,11 +115,12 @@ export async function listAdminComments(offset: number, limit: number, filters: 
 }
 
 export async function listAdminPendingDashboard(
+  db: NodePgDatabase,
   kind: AdminPendingKind,
   offset: number,
   limit: number,
 ): Promise<AdminPendingRow[]> {
-  const entity = targetSlugTitleSubquery()
+  const entity = targetSlugTitleSubquery(db)
   const rows = await db
     .select({
       id: comment.id,
@@ -149,7 +157,7 @@ export async function listAdminPendingDashboard(
   }))
 }
 
-export async function countAdminPendingDashboard(): Promise<{
+export async function countAdminPendingDashboard(db: NodePgDatabase): Promise<{
   all: number
   approval: number
   deletion: number
@@ -168,7 +176,7 @@ export async function countAdminPendingDashboard(): Promise<{
   }
 }
 
-export async function countApprovedRepliesOfComment(commentId: bigint): Promise<number> {
+export async function countApprovedRepliesOfComment(db: NodePgDatabase, commentId: bigint): Promise<number> {
   const rows = await db
     .select({ count: count() })
     .from(comment)
@@ -177,6 +185,7 @@ export async function countApprovedRepliesOfComment(commentId: bigint): Promise<
 }
 
 export async function listMyComments(
+  db: NodePgDatabase,
   userId: bigint,
   offset: number,
   limit: number,
@@ -192,7 +201,11 @@ export async function listMyComments(
     .offset(offset)
 }
 
-export async function listMyCommentEntities(userId: bigint, options: { q?: string } = {}): Promise<MyCommentEntity[]> {
+export async function listMyCommentEntities(
+  db: NodePgDatabase,
+  userId: bigint,
+  options: { q?: string } = {},
+): Promise<MyCommentEntity[]> {
   const pairs = await db
     .selectDistinct({ type: comment.type, ownerId: comment.ownerId })
     .from(comment)
@@ -200,7 +213,7 @@ export async function listMyCommentEntities(userId: bigint, options: { q?: strin
   const resolvable = pairs
     .filter((p): p is { type: EntityType; ownerId: bigint } => p.type !== null && p.ownerId !== null)
     .map((p) => ({ type: p.type, ownerId: p.ownerId }))
-  const entityMap = await resolveEntitiesForComments(resolvable)
+  const entityMap = await resolveEntitiesForComments(db, resolvable)
   const q = options.q?.trim().toLowerCase() ?? ''
   const out: MyCommentEntity[] = []
   for (const p of resolvable) {
@@ -218,6 +231,7 @@ export async function listMyCommentEntities(userId: bigint, options: { q?: strin
 }
 
 export async function countMyComments(
+  db: NodePgDatabase,
   userId: bigint,
   filters: MyCommentsFilters = {},
 ): Promise<{ total: number; pending: number; deleteRequested: number; deleted: number }> {

@@ -1,3 +1,5 @@
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
+
 import type { BundleKey } from '@/shared/config/sections'
 import type { BlogSettingsBundle } from '@/shared/config/types'
 
@@ -12,7 +14,6 @@ import {
 } from '@/server/domains/settings/sections'
 import { decryptIfNeeded } from '@/server/infra/crypto/secret-encryption'
 import { findSettingsByScopePrefix, upsertSetting } from '@/server/infra/db/operations/setting'
-import { isVitest } from '@/server/infra/env'
 import { getLogger } from '@/server/infra/logger'
 import { storage } from '@/server/infra/redis/storage'
 import { getBlogSettingsBundleSync, requireBlogSettingsBundle } from '@/shared/config/getters'
@@ -92,13 +93,13 @@ function decryptSecretsInBundle(bundle: BlogSettingsBundle): void {
   }
 }
 
-async function loadSettingsFromDb(): Promise<BlogSettingsBundle | null> {
+async function loadSettingsFromDb(db: NodePgDatabase): Promise<BlogSettingsBundle | null> {
   // Intentionally NOT wrapped in a try/catch: DB errors must propagate
   // up to `hydrateBlogSettings()` so the failed promise can be evicted
   // from the cache. Otherwise a transient outage on the very first
   // hydration would permanently pin the snapshot at "uninstalled" and
   // deadlock every subsequent request behind the install redirect.
-  const rows = await findSettingsByScopePrefix(SETTINGS_SCOPE_PREFIX)
+  const rows = await findSettingsByScopePrefix(db, SETTINGS_SCOPE_PREFIX)
   if (rows.length === 0) {
     return null
   }
@@ -142,7 +143,7 @@ async function loadSettingsFromDb(): Promise<BlogSettingsBundle | null> {
   // call returns a complete snapshot. New installs run through
   // `signUpInitialAdminWithSession()` which writes all rows up
   // front, so they hit this branch with nothing to do.
-  await backfillMissingSectionDefaults(bundle)
+  await backfillMissingSectionDefaults(bundle, db)
 
   // Decrypt any encrypted secret fields so runtime consumers see plaintext.
   decryptSecretsInBundle(bundle)
@@ -168,7 +169,7 @@ async function loadSettingsFromDb(): Promise<BlogSettingsBundle | null> {
  * the missing section, which is what we had before this change — no
  * regression.
  */
-async function backfillMissingSectionDefaults(bundle: BlogSettingsBundle): Promise<void> {
+async function backfillMissingSectionDefaults(bundle: BlogSettingsBundle, db: NodePgDatabase): Promise<void> {
   let candidates: { section: SettingsSection; payload: Record<string, unknown> }[]
   try {
     candidates = buildDefaultSectionPayloads()
@@ -189,7 +190,7 @@ async function backfillMissingSectionDefaults(bundle: BlogSettingsBundle): Promi
     }
 
     try {
-      await upsertSetting(payload, null, meta.scope)
+      await upsertSetting(db, payload, null, meta.scope)
       bundleSet(bundle, meta.key, payload)
       log.info('Backfilled missing section with registry default', { scope: meta.scope })
     } catch (error) {
@@ -208,7 +209,7 @@ async function backfillMissingSectionDefaults(bundle: BlogSettingsBundle): Promi
  * the cached promise is cleared so the next caller can retry instead of
  * being permanently pinned at the failure.
  */
-export async function hydrateBlogSettings(): Promise<BlogSettingsBundle | null> {
+export async function hydrateBlogSettings(db: NodePgDatabase): Promise<BlogSettingsBundle | null> {
   const pending = BLOG_SETTINGS_SNAPSHOT_SLOT.readHydration()
   if (pending) {
     const cached = BLOG_SETTINGS_SNAPSHOT_SLOT.read()
@@ -225,7 +226,7 @@ export async function hydrateBlogSettings(): Promise<BlogSettingsBundle | null> 
   const targetVersion = await getSettingsVersion()
   const newPending = (async () => {
     try {
-      const value = await loadSettingsFromDb()
+      const value = await loadSettingsFromDb(db)
       BLOG_SETTINGS_SNAPSHOT_SLOT.write(value)
       localSettingsVersion = targetVersion
       return value
@@ -247,10 +248,10 @@ export async function hydrateBlogSettings(): Promise<BlogSettingsBundle | null> 
  * endpoints after a successful update so the next request sees the new
  * values without waiting for a cache window to expire).
  */
-export async function refreshBlogSettings(): Promise<BlogSettingsBundle | null> {
+export async function refreshBlogSettings(db: NodePgDatabase): Promise<BlogSettingsBundle | null> {
   BLOG_SETTINGS_SNAPSHOT_SLOT.writeHydration(undefined)
   await bumpSettingsVersion()
-  const result = await hydrateBlogSettings()
+  const result = await hydrateBlogSettings(db)
   return result
 }
 
@@ -269,14 +270,10 @@ export { getBlogSettingsBundleSync, requireBlogSettingsBundle }
 // Test runs (`VITEST=true`) skip the hydration so the suite isn't forced
 // to mock the DB pool just to import a server module. Tests that need a
 // hydrated snapshot can call `setBlogSettingsBundleForTests(...)`.
-export function warmBlogSettingsSnapshot(): void {
-  void hydrateBlogSettings().catch((error) => {
+export function warmBlogSettingsSnapshot(db: NodePgDatabase): void {
+  void hydrateBlogSettings(db).catch((error) => {
     log.error('Blog settings hydration failed', { error })
   })
-}
-
-if (!isVitest()) {
-  warmBlogSettingsSnapshot()
 }
 
 /** Test-only: replace the snapshot synchronously. */

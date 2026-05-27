@@ -1,12 +1,23 @@
-import { eq } from 'drizzle-orm'
-import { beforeEach, describe, expect, it } from 'vitest'
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
+import type { Pool } from 'pg'
 
-import { db } from '@/server/infra/db/pool'
+import { eq } from 'drizzle-orm'
+import { afterAll, beforeEach, describe, expect, it } from 'vitest'
+
+import { createDbPool, closePool } from '@/server/infra/db/pool'
 import { post as postMetaTable } from '@/server/infra/db/schema/post'
 
 import { clearAllTables } from './_helpers/integration-db'
 
 const service = await import('@/server/domains/posts/services/mutate')
+
+const poolManager = createDbPool()
+const db: NodePgDatabase = poolManager.db
+const pool: Pool = poolManager.pool
+
+afterAll(async () => {
+  await closePool(pool)
+})
 
 beforeEach(async () => {
   await clearAllTables(db)
@@ -14,7 +25,7 @@ beforeEach(async () => {
 
 describe('cms/posts/service — createPost published guard', () => {
   it('always creates with published=false even when input says true', async () => {
-    const dto = await service.createPost({ title: 'Test', published: true }, null)
+    const dto = await service.createPost(db, { title: 'Test', published: true }, null)
 
     expect(dto.published).toBe(false)
 
@@ -23,7 +34,7 @@ describe('cms/posts/service — createPost published guard', () => {
   })
 
   it('creates with published=false when input omits the field', async () => {
-    const dto = await service.createPost({ title: 'Test' }, null)
+    const dto = await service.createPost(db, { title: 'Test' }, null)
 
     expect(dto.published).toBe(false)
 
@@ -34,14 +45,14 @@ describe('cms/posts/service — createPost published guard', () => {
 
 describe('cms/posts/service — updatePostMeta ignores published', () => {
   it('leaves existing published=true untouched even when input says false', async () => {
-    const created = await service.createPost({ title: 'Hello World', slug: 'hello-world' }, null)
+    const created = await service.createPost(db, { title: 'Hello World', slug: 'hello-world' }, null)
     // Manually set published=true in DB to simulate a published post
     await db
       .update(postMetaTable)
       .set({ published: true })
       .where(eq(postMetaTable.id, BigInt(created.id)))
 
-    const dto = await service.updatePostMeta({
+    const dto = await service.updatePostMeta(db, {
       id: BigInt(created.id),
       slug: 'hello-world',
       title: 'Updated',
@@ -57,9 +68,9 @@ describe('cms/posts/service — updatePostMeta ignores published', () => {
   })
 
   it('leaves existing published=false untouched even when input says true', async () => {
-    const created = await service.createPost({ title: 'Hello World', slug: 'hello-world' }, null)
+    const created = await service.createPost(db, { title: 'Hello World', slug: 'hello-world' }, null)
 
-    const dto = await service.updatePostMeta({
+    const dto = await service.updatePostMeta(db, {
       id: BigInt(created.id),
       slug: 'hello-world',
       title: 'Updated',

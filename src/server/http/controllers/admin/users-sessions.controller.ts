@@ -43,7 +43,7 @@ const revokeAllSessions = adminProc
     } catch {
       throw new ORPCError('BAD_REQUEST', { message: '用户 ID 无效。' })
     }
-    const target = await findUserById(targetId)
+    const target = await findUserById(context.db, targetId)
     if (!target) {
       throw new ORPCError('NOT_FOUND', { message: '用户不存在' })
     }
@@ -61,7 +61,7 @@ const bulkApproveComments = adminProc
   .input(userIdInput)
   .output(z.object({ approved: z.number() }))
   .handler(async ({ input, context }) => {
-    const result = await bulkApproveCommentsForUser(idFromString(input.userId))
+    const result = await bulkApproveCommentsForUser(context.db, idFromString(input.userId))
     recordAuditEventFromContext(context, {
       action: 'comments_bulk_approved',
       resourceType: 'comment',
@@ -76,7 +76,7 @@ const bulkDeleteComments = adminProc
   .input(userIdInput)
   .output(z.object({ deleted: z.number() }))
   .handler(async ({ input, context }) => {
-    const result = await bulkDeleteCommentsForUser(idFromString(input.userId))
+    const result = await bulkDeleteCommentsForUser(context.db, idFromString(input.userId))
     recordAuditEventFromContext(context, {
       action: 'comments_bulk_deleted',
       resourceType: 'comment',

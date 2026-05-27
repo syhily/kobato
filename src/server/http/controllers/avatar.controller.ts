@@ -12,8 +12,8 @@ const findAvatar = publicProc
   .route({ method: 'GET', path: '/avatar/find' })
   .input(z.object({ email: z.email() }))
   .output(z.object({ avatar: z.string() }))
-  .handler(async ({ input }) => {
-    const id = await findUserIdByEmail(input.email)
+  .handler(async ({ input, context }) => {
+    const id = await findUserIdByEmail(context.db, input.email)
     const hash = id === null ? await encodedEmail(input.email) : id
     if (isQQEmail(input.email)) {
       const canonicalHash = await encodedEmail(input.email)

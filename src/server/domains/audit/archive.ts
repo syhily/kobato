@@ -1,10 +1,12 @@
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
+import type { Pool } from 'pg'
+
 import { and, gt, gte, lt, sql } from 'drizzle-orm'
 import { createGzip } from 'node:zlib'
 
 import type { ArchiveResult, CleanupResult } from '@/server/domains/audit/types'
 
 import { recordAuditEvent } from '@/server/domains/audit/service'
-import { db } from '@/server/infra/db/pool'
 import { auditLog } from '@/server/infra/db/schema/config'
 import { getLogger } from '@/server/infra/logger'
 import { deleteS3Objects, listS3Objects, putS3Object } from '@/server/infra/storage/s3-client'
@@ -19,7 +21,7 @@ const ARCHIVE_PAGE_SIZE = 5000
 // Archive expired audit logs to S3
 // ---------------------------------------------------------------------------
 
-export async function archiveExpiredAuditLogs(): Promise<ArchiveResult> {
+export async function archiveExpiredAuditLogs(db: NodePgDatabase): Promise<ArchiveResult> {
   const bundle = getBlogSettingsBundleSync()
   const dbRetentionDays = bundle?.limits?.auditLogDbRetentionDays ?? 30
 
@@ -69,7 +71,7 @@ export async function archiveExpiredAuditLogs(): Promise<ArchiveResult> {
     dayEnd.setDate(dayEnd.getDate() + 1)
 
     try {
-      const archived = await archiveDay(day, dayStart, dayEnd)
+      const archived = await archiveDay(db, day, dayStart, dayEnd)
       archivedDays++
       archivedRows += archived
       deletedRows += archived
@@ -89,7 +91,7 @@ export async function archiveExpiredAuditLogs(): Promise<ArchiveResult> {
   return { archivedDays, archivedRows, deletedRows }
 }
 
-async function archiveDay(day: string, dayStart: Date, dayEnd: Date): Promise<number> {
+async function archiveDay(db: NodePgDatabase, day: string, dayStart: Date, dayEnd: Date): Promise<number> {
   const key = `${S3_ARCHIVE_PREFIX}${day}.jsonl.gz`
 
   // Stream pages through gzip to avoid loading everything into memory.
@@ -210,12 +212,12 @@ export async function cleanupExpiredArchives(): Promise<CleanupResult> {
 // Run the full archive job
 // ---------------------------------------------------------------------------
 
-export async function runArchiveJob(): Promise<void> {
+export async function runArchiveJob(db: NodePgDatabase, pool: Pool): Promise<void> {
   try {
-    const archiveResult = await archiveExpiredAuditLogs()
+    const archiveResult = await archiveExpiredAuditLogs(db)
     const cleanupResult = await cleanupExpiredArchives()
 
-    recordAuditEvent({
+    recordAuditEvent(db, pool, {
       action: 'audit_archive_run',
       resourceType: 'audit_log',
       actorId: null,
@@ -231,7 +233,7 @@ export async function runArchiveJob(): Promise<void> {
     log.error('Archive job failed', {
       error: error instanceof Error ? error.message : String(error),
     })
-    recordAuditEvent({
+    recordAuditEvent(db, pool, {
       action: 'audit_archive_run_failed',
       resourceType: 'audit_log',
       actorId: null,

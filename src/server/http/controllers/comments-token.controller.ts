@@ -52,7 +52,7 @@ const myComments = publicProc
         commentIds.push(idFromString(entry.payload.commentId))
       }
     }
-    const comments = await findCommentsByIds(commentIds)
+    const comments = await findCommentsByIds(context.db, commentIds)
     const items = await parseComments(comments)
     const expiresAt: Record<string, number> = {}
     for (const entry of validEntries) {

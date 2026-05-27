@@ -67,7 +67,7 @@ vi.mock('@/server/domains/auth/primitives', async () => {
 })
 
 vi.mock('@/server/domains/posts/repos/single', () => ({
-  findPostBySlug: vi.fn(async (slug: string) => {
+  findPostBySlug: vi.fn(async (_db: unknown, slug: string) => {
     if (slug === 'hello') {
       return publishedPost
     }
@@ -177,7 +177,7 @@ describe('routes/post.detail draft visibility', () => {
     }
     expect(thrown).toBeInstanceOf(Response)
     expect((thrown as Response).status).toBe(404)
-    expect(findPostBySlugMock).toHaveBeenCalledWith('secret')
+    expect(findPostBySlugMock).toHaveBeenCalledWith(expect.any(Object), 'secret')
     expect(draftPreviewMock).not.toHaveBeenCalled()
   })
 
@@ -196,7 +196,7 @@ describe('routes/post.detail draft visibility', () => {
     }
     expect(thrown).toBeInstanceOf(Response)
     expect((thrown as Response).status).toBe(404)
-    expect(findPostBySlugMock).toHaveBeenCalledWith('never-published')
+    expect(findPostBySlugMock).toHaveBeenCalledWith(expect.any(Object), 'never-published')
     expect(draftPreviewMock).not.toHaveBeenCalled()
   })
 
@@ -235,7 +235,7 @@ describe('routes/post.detail draft visibility', () => {
 
     expect(result.body).toEqual(draftBody)
     expect(result.draftMarker).toBe('draft')
-    expect(draftPreviewMock).toHaveBeenCalledWith('secret')
+    expect(draftPreviewMock).toHaveBeenCalledWith(expect.any(Object), 'secret')
   })
 
   it('shows 【草稿】 for an author viewing a draft post', async () => {
@@ -254,7 +254,7 @@ describe('routes/post.detail draft visibility', () => {
 
     expect(result.body).toEqual(draftBody)
     expect(result.draftMarker).toBe('draft')
-    expect(draftPreviewMock).toHaveBeenCalledWith('secret')
+    expect(draftPreviewMock).toHaveBeenCalledWith(expect.any(Object), 'secret')
   })
 
   it('does not paint a marker on a published post (admin session)', async () => {

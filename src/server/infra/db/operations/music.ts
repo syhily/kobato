@@ -1,8 +1,9 @@
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
+
 import { and, count, desc, eq, ilike, isNull, or, type SQL } from 'drizzle-orm'
 
 import type { MusicRow, NewMusic } from '@/server/infra/db/types'
 
-import { db } from '@/server/infra/db/pool'
 import { music } from '@/server/infra/db/schema/media'
 import { user } from '@/server/infra/db/schema/user'
 import { escapeLikePattern } from '@/shared/utils/escape-like'
@@ -74,7 +75,10 @@ function buildAdminMusicWhere(filters: AdminMusicListFilters): SQL | undefined {
   return and(...conditions)
 }
 
-export async function listAdminMusicRows(filters: AdminMusicListFilters = {}): Promise<AdminMusicRowWithUploader[]> {
+export async function listAdminMusicRows(
+  db: NodePgDatabase,
+  filters: AdminMusicListFilters = {},
+): Promise<AdminMusicRowWithUploader[]> {
   const where = buildAdminMusicWhere(filters)
   const baseQuery = db
     .select(ADMIN_MUSIC_WITH_UPLOADER_COLUMNS)
@@ -91,7 +95,7 @@ export async function listAdminMusicRows(filters: AdminMusicListFilters = {}): P
   return q
 }
 
-export async function findAdminMusicRowById(id: bigint): Promise<AdminMusicRowWithUploader | null> {
+export async function findAdminMusicRowById(db: NodePgDatabase, id: bigint): Promise<AdminMusicRowWithUploader | null> {
   const rows = await db
     .select(ADMIN_MUSIC_WITH_UPLOADER_COLUMNS)
     .from(music)
@@ -101,7 +105,7 @@ export async function findAdminMusicRowById(id: bigint): Promise<AdminMusicRowWi
   return rows[0] ?? null
 }
 
-export async function countAdminMusic(filters: AdminMusicListFilters = {}): Promise<number> {
+export async function countAdminMusic(db: NodePgDatabase, filters: AdminMusicListFilters = {}): Promise<number> {
   const where = buildAdminMusicWhere(filters)
   const rows = where
     ? await db.select({ value: count() }).from(music).where(where)
@@ -109,7 +113,7 @@ export async function countAdminMusic(filters: AdminMusicListFilters = {}): Prom
   return rows[0]?.value ?? 0
 }
 
-export async function findMusicById(id: bigint): Promise<MusicRow | null> {
+export async function findMusicById(db: NodePgDatabase, id: bigint): Promise<MusicRow | null> {
   const rows = await db.select().from(music).where(eq(music.id, id)).limit(1)
   return rows[0] ?? null
 }
@@ -119,7 +123,7 @@ export async function findMusicById(id: bigint): Promise<MusicRow | null> {
  * soft-deleted rows so a removed song renders the player as a no-op
  * placeholder instead of surfacing a 404 to the reader.
  */
-export async function findMusicByPlayerId(playerId: string): Promise<MusicRow | null> {
+export async function findMusicByPlayerId(db: NodePgDatabase, playerId: string): Promise<MusicRow | null> {
   const rows = await db
     .select()
     .from(music)
@@ -129,7 +133,11 @@ export async function findMusicByPlayerId(playerId: string): Promise<MusicRow | 
 }
 
 /** Idempotency helper for the historical-import path. */
-export async function findMusicBySourceAndId(source: string, sourceId: string): Promise<MusicRow | null> {
+export async function findMusicBySourceAndId(
+  db: NodePgDatabase,
+  source: string,
+  sourceId: string,
+): Promise<MusicRow | null> {
   const rows = await db
     .select()
     .from(music)
@@ -138,7 +146,7 @@ export async function findMusicBySourceAndId(source: string, sourceId: string): 
   return rows[0] ?? null
 }
 
-export async function findMusicByPlayerIds(playerIds: readonly string[]): Promise<MusicRow[]> {
+export async function findMusicByPlayerIds(db: NodePgDatabase, playerIds: readonly string[]): Promise<MusicRow[]> {
   if (playerIds.length === 0) {
     return []
   }
@@ -150,7 +158,7 @@ export async function findMusicByPlayerIds(playerIds: readonly string[]): Promis
     .where(and(where, isNull(music.deletedAt)))
 }
 
-export async function insertMusic(values: NewMusic): Promise<MusicRow> {
+export async function insertMusic(db: NodePgDatabase, values: NewMusic): Promise<MusicRow> {
   const now = new Date()
   const rows = await db
     .insert(music)
@@ -159,7 +167,7 @@ export async function insertMusic(values: NewMusic): Promise<MusicRow> {
   return rows[0]
 }
 
-export async function updateMusic(id: bigint, values: Partial<NewMusic>): Promise<MusicRow | null> {
+export async function updateMusic(db: NodePgDatabase, id: bigint, values: Partial<NewMusic>): Promise<MusicRow | null> {
   const rows = await db
     .update(music)
     .set({ ...values, updatedAt: new Date() })
@@ -168,7 +176,7 @@ export async function updateMusic(id: bigint, values: Partial<NewMusic>): Promis
   return rows[0] ?? null
 }
 
-export async function softDeleteMusic(id: bigint): Promise<MusicRow | null> {
+export async function softDeleteMusic(db: NodePgDatabase, id: bigint): Promise<MusicRow | null> {
   const now = new Date()
   const rows = await db.update(music).set({ deletedAt: now, updatedAt: now }).where(eq(music.id, id)).returning()
   return rows[0] ?? null

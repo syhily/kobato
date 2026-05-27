@@ -78,13 +78,13 @@ describe('imagesRouter avatar', () => {
     // Route does NOT 404 (it now resolves the hash; the path-parser bug
     // would have driven this into the missing-param fallback).
     expect(res.status).toBeLessThan(500)
-    expect(vi.mocked(resolveAvatarInfo)).toHaveBeenCalledWith('abcdef0123456789')
+    expect(vi.mocked(resolveAvatarInfo)).toHaveBeenCalledWith(undefined, 'abcdef0123456789')
   })
 
   it('matches numeric ids the same way', async () => {
     const { resolveAvatarInfo } = await import('@/server/render/avatar/fetch')
     await imagesRouter.request('/images/avatar/42.png')
-    expect(vi.mocked(resolveAvatarInfo)).toHaveBeenCalledWith('42')
+    expect(vi.mocked(resolveAvatarInfo)).toHaveBeenNthCalledWith(2, undefined, '42')
   })
 
   it('rejects non-png extensions with 404', async () => {
@@ -98,8 +98,8 @@ describe('imagesRouter og', () => {
     const { findPostBySlug } = await import('@/server/domains/posts/repos/single')
     const { findPageBySlug } = await import('@/server/domains/pages/repo')
     await imagesRouter.request('/images/og/hello-world.png')
-    expect(vi.mocked(findPostBySlug)).toHaveBeenCalledWith('hello-world')
-    expect(vi.mocked(findPageBySlug)).toHaveBeenCalledWith('hello-world')
+    expect(vi.mocked(findPostBySlug)).toHaveBeenCalledWith(undefined, 'hello-world')
+    expect(vi.mocked(findPageBySlug)).toHaveBeenCalledWith(undefined, 'hello-world')
   })
 })
 

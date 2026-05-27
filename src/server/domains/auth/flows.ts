@@ -1,3 +1,5 @@
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
+import type { Pool } from 'pg'
 import type { ZodType } from 'zod'
 
 import { data, redirect } from 'react-router'
@@ -45,21 +47,25 @@ async function commitHeaders(session: BlogSession, extraSetCookie?: string): Pro
   return headers
 }
 
-export async function signInWithSession({
-  email,
-  password,
-  session,
-  request,
-  clientAddress,
-  redirectTo,
-}: {
-  email: string
-  password: string
-  session: BlogSession
-  request: Request
-  clientAddress: string
-  redirectTo: string
-}): Promise<AuthFlowResult<{ redirectTo: string }>> {
+export async function signInWithSession(
+  db: NodePgDatabase,
+  pool: Pool,
+  {
+    email,
+    password,
+    session,
+    request,
+    clientAddress,
+    redirectTo,
+  }: {
+    email: string
+    password: string
+    session: BlogSession
+    request: Request
+    clientAddress: string
+    redirectTo: string
+  },
+): Promise<AuthFlowResult<{ redirectTo: string }>> {
   const limit = await tryRateLimit(clientAddress)
   if (limit.exceeded) {
     return {
@@ -70,7 +76,7 @@ export async function signInWithSession({
     }
   }
 
-  const established = await login({ email, password, session, request, clientAddress })
+  const established = await login(db, pool, { email, password, session, request, clientAddress })
   if (!established) {
     return {
       ok: false,
@@ -94,20 +100,24 @@ export interface SignUpAdminSeed {
   password: string
 }
 
-export async function signUpInitialAdminWithSession({
-  title,
-  name,
-  email,
-  password,
-  session,
-  request,
-  clientAddress,
-}: SignUpAdminSeed & {
-  session: BlogSession
-  request: Request
-  clientAddress: string
-}): Promise<AuthFlowResult<{ redirectTo: string }>> {
-  if (await hasAdmin()) {
+export async function signUpInitialAdminWithSession(
+  db: NodePgDatabase,
+  pool: Pool,
+  {
+    title,
+    name,
+    email,
+    password,
+    session,
+    request,
+    clientAddress,
+  }: SignUpAdminSeed & {
+    session: BlogSession
+    request: Request
+    clientAddress: string
+  },
+): Promise<AuthFlowResult<{ redirectTo: string }>> {
+  if (await hasAdmin(db)) {
     return {
       ok: false,
       status: 409,
@@ -116,7 +126,7 @@ export async function signUpInitialAdminWithSession({
     }
   }
 
-  const users = await insertAdmin(name, email, password)
+  const users = await insertAdmin(db, name, email, password)
   const admin = users[0]
   if (!admin) {
     return {
@@ -127,7 +137,7 @@ export async function signUpInitialAdminWithSession({
     }
   }
 
-  const established = await establishLoginSession(session, admin, request, clientAddress)
+  const established = await establishLoginSession(db, pool, session, admin, request, clientAddress)
 
   // ── Seed all settings sections in one pass ──
   const hostname = new URL(request.url).hostname
@@ -182,11 +192,11 @@ export async function signUpInitialAdminWithSession({
     const meta = SECTION_REGISTRY[section]
     const check = meta.schema.safeParse(payload)
     if (check.success) {
-      await upsertSetting(check.data as Record<string, unknown>, updatedBy, meta.scope)
+      await upsertSetting(db, check.data as Record<string, unknown>, updatedBy, meta.scope)
     }
   }
 
-  await refreshBlogSettings()
+  await refreshBlogSettings(db)
 
   return {
     ok: true,

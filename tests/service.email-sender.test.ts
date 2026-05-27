@@ -1,3 +1,5 @@
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
+
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { CommentAndUser } from '@/server/domains/comments/types'
@@ -31,6 +33,8 @@ vi.mock('@/server/domains/comments/url', async (importOriginal) => {
     findEntitySlugTitle: vi.fn(async () => ({ slug: 'hi', title: 'Hi' })),
   }
 })
+
+const db = {} as NodePgDatabase
 
 const { setBlogSettingsBundleForTests } = await import('@/server/domains/settings/snapshot')
 const { sendNewComment } = await import('@/server/domains/comments/email')
@@ -84,7 +88,7 @@ describe('email/sender — internalSend (via sendNewComment)', () => {
       sender: 'noreply@example.com',
     })
 
-    const result = await sendNewComment(commentInfo, target)
+    const result = await sendNewComment(db, commentInfo, target)
 
     expect(result.ok).toBe(false)
     if (result.ok === false) {
@@ -96,7 +100,7 @@ describe('email/sender — internalSend (via sendNewComment)', () => {
   it('skips with reason=unconfigured when API key is empty even if enabled', async () => {
     setMail({ enabled: true, host: 'api.zeabur.com', apiKey: '', sender: 'noreply@example.com' })
 
-    const result = await sendNewComment(commentInfo, target)
+    const result = await sendNewComment(db, commentInfo, target)
 
     expect(result.ok).toBe(false)
     if (result.ok === false) {
@@ -114,7 +118,7 @@ describe('email/sender — internalSend (via sendNewComment)', () => {
     })
     fetchMock.mockResolvedValueOnce(new Response(null, { status: 200 }))
 
-    const result = await sendNewComment(commentInfo, target)
+    const result = await sendNewComment(db, commentInfo, target)
 
     expect(result.ok).toBe(true)
     expect(fetchMock).toHaveBeenCalledOnce()
@@ -137,7 +141,7 @@ describe('email/sender — internalSend (via sendNewComment)', () => {
     })
     fetchMock.mockResolvedValueOnce(new Response('quota exceeded', { status: 429, statusText: 'Too Many Requests' }))
 
-    const result = await sendNewComment(commentInfo, target)
+    const result = await sendNewComment(db, commentInfo, target)
 
     expect(result.ok).toBe(false)
     if (result.ok === false && result.reason === 'upstream') {
@@ -158,7 +162,7 @@ describe('email/sender — internalSend (via sendNewComment)', () => {
     })
     fetchMock.mockRejectedValueOnce(new Error('ECONNREFUSED'))
 
-    const result = await sendNewComment(commentInfo, target)
+    const result = await sendNewComment(db, commentInfo, target)
 
     expect(result.ok).toBe(false)
     if (result.ok === false) {

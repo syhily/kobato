@@ -1,3 +1,6 @@
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
+import type { Pool } from 'pg'
+
 import { ORPCError, os } from '@orpc/server'
 
 import type { Env } from '@/server/http/context'
@@ -20,6 +23,8 @@ export interface HandlerContext {
   viewer: ViewerContext | null
   clientAddress: string
   responseHeaders: Headers
+  db: NodePgDatabase
+  pool: Pool
 }
 
 // Subtype produced by `requireAuth` — once an auth middleware passes,

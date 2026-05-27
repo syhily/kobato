@@ -9,8 +9,8 @@ import { feedResponse } from '@/server/render/feed/generator'
 import { getSlug, scopeFromUrl } from '@/server/render/feed/scope'
 import { getClientAddress } from '@/shared/utils/request'
 
-async function writeFeedResponse(c: Context<Env>, kind: 'rss' | 'atom', scope?: Parameters<typeof feedResponse>[1]) {
-  const res = await feedResponse(kind, scope)
+async function writeFeedResponse(c: Context<Env>, kind: 'rss' | 'atom', scope?: Parameters<typeof feedResponse>[2]) {
+  const res = await feedResponse(c.var.db, kind, scope)
   res.headers.forEach((v, k) => c.header(k, v))
   return c.body(await res.text())
 }

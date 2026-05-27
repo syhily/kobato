@@ -16,7 +16,7 @@ const list = adminProc
   .route({ method: 'GET', path: '/admin/categories/list' })
   .input(z.object({ q: z.string().optional() }))
   .output(z.object({ categories: z.array(adminCategoryDto), total: z.number() }))
-  .handler(({ input }) => listCategoriesForAdmin({ q: input.q }))
+  .handler(({ input, context }) => listCategoriesForAdmin(context.db, { q: input.q }))
 
 const upsert = adminProc
   .route({ method: 'POST', path: '/admin/categories/upsert' })
@@ -32,7 +32,7 @@ const upsert = adminProc
   )
   .output(z.object({ category: adminCategoryDto }))
   .handler(async ({ input, context }) => {
-    const category = await upsertAdminCategory({
+    const category = await upsertAdminCategory(context.db, {
       id: input.id !== undefined ? idFromString(input.id) : undefined,
       name: input.name,
       slug: input.slug,
@@ -53,7 +53,7 @@ const remove = adminProc
   .input(z.object({ id: z.string().min(1) }))
   .output(z.void())
   .handler(async ({ input, context }) => {
-    const ok = await deleteAdminCategory(idFromString(input.id))
+    const ok = await deleteAdminCategory(context.db, idFromString(input.id))
     if (!ok) {
       throw new ORPCError('NOT_FOUND', { message: '分类不存在' })
     }
@@ -69,7 +69,7 @@ const reorder = adminProc
   .input(z.object({ orderedIds: z.array(z.string().min(1)).min(1).max(500) }))
   .output(z.object({ categories: z.array(adminCategoryDto) }))
   .handler(async ({ input, context }) => {
-    const categories = await reorderAdminCategories(input.orderedIds)
+    const categories = await reorderAdminCategories(context.db, input.orderedIds)
     recordAuditEventFromContext(context, {
       action: 'categories_reordered',
       resourceType: 'category',

@@ -1,8 +1,10 @@
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
+import type { Pool } from 'pg'
+
 import type { AuditEventInput } from '@/server/domains/audit/types'
 
 import { csvEscape } from '@/server/infra/csv'
 import { CopyBatcher, replayDeadLetter, writeDeadLetter } from '@/server/infra/db/copy-batcher'
-import { db } from '@/server/infra/db/pool'
 import { auditLog } from '@/server/infra/db/schema/config'
 import { AUDIT_DEAD_LETTER_PATH } from '@/server/infra/env'
 import { getLogger } from '@/server/infra/logger'
@@ -65,8 +67,11 @@ const COPY_COLUMNS = [
 ] as const
 
 class AuditLogBatcher extends CopyBatcher<AuditEventInput> {
-  constructor() {
-    super({ flushIntervalMs: 500, flushThreshold: 50 }, 'audit_log', COPY_COLUMNS, 'audit.batcher')
+  private db: NodePgDatabase
+
+  constructor(db: NodePgDatabase, pool: Pool) {
+    super({ flushIntervalMs: 500, flushThreshold: 50 }, 'audit_log', COPY_COLUMNS, 'audit.batcher', pool)
+    this.db = db
   }
 
   protected toCsvRow(e: AuditEventInput): string {
@@ -88,7 +93,7 @@ class AuditLogBatcher extends CopyBatcher<AuditEventInput> {
   // On COPY failure, fall back to per-row INSERT (audit rows must not
   // be lost). Remaining failures after per-row go to dead-letter.
   protected async onCopyFailed(events: AuditEventInput[]): Promise<void> {
-    await insertPerRow(events)
+    await insertPerRow(this.db, events)
   }
 }
 
@@ -96,7 +101,7 @@ class AuditLogBatcher extends CopyBatcher<AuditEventInput> {
 // Fallback — per-row INSERT via Drizzle (slower but maximally safe)
 // ---------------------------------------------------------------------------
 
-async function insertPerRow(events: AuditEventInput[]): Promise<void> {
+async function insertPerRow(db: NodePgDatabase, events: AuditEventInput[]): Promise<void> {
   // Fast path: try a single batch insert first.
   try {
     await db.insert(auditLog).values(
@@ -162,9 +167,12 @@ async function insertPerRow(events: AuditEventInput[]): Promise<void> {
 
 let batcher: AuditLogBatcher | undefined
 
-function getBatcher(): AuditLogBatcher {
+function getBatcher(db?: NodePgDatabase, pool?: Pool): AuditLogBatcher {
   if (batcher === undefined) {
-    batcher = new AuditLogBatcher()
+    if (db === undefined || pool === undefined) {
+      throw new Error('AuditLogBatcher must be initialized with db and pool')
+    }
+    batcher = new AuditLogBatcher(db, pool)
   }
   return batcher
 }
@@ -173,19 +181,27 @@ export function resetAuditLogBatcher(): void {
   batcher = undefined
 }
 
-export function pushAuditEvent(event: AuditEventInput): void {
-  getBatcher().push(event)
+export function initAuditLogBatcher(db: NodePgDatabase, pool: Pool): void {
+  getBatcher(db, pool)
 }
 
-export function flushAuditLog(): Promise<void> {
-  return getBatcher().flush()
+export function pushAuditEvent(db: NodePgDatabase, pool: Pool, event: AuditEventInput): void {
+  getBatcher(db, pool).push(event)
 }
 
-export async function replayDeadLetterAuditLog(path?: string): Promise<{ replayed: number; failed: number }> {
+export function flushAuditLog(db: NodePgDatabase, pool: Pool): Promise<void> {
+  return getBatcher(db, pool).flush()
+}
+
+export async function replayDeadLetterAuditLog(
+  db: NodePgDatabase,
+  pool: Pool,
+  path?: string,
+): Promise<{ replayed: number; failed: number }> {
   return replayDeadLetter(
     path ?? deadLetterPath(),
     deserializeFromDeadLetter,
-    async (events) => getBatcher().ingest(events),
+    async (events) => getBatcher(db, pool).ingest(events),
     log,
   )
 }

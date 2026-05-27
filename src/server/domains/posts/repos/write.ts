@@ -1,16 +1,18 @@
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
+
 import { and, eq, isNull } from 'drizzle-orm'
 
 import type { NewPostMeta, PostMetaRow } from '@/server/infra/db/types'
 
-import { db } from '@/server/infra/db/pool'
 import { post as postMetaTable } from '@/server/infra/db/schema/post'
 
-export async function insertPostMeta(values: NewPostMeta): Promise<PostMetaRow> {
+export async function insertPostMeta(db: NodePgDatabase, values: NewPostMeta): Promise<PostMetaRow> {
   const rows = await db.insert(postMetaTable).values(values).returning()
   return rows[0]
 }
 
 export async function updatePostMetaById(
+  db: NodePgDatabase,
   id: bigint,
   patch: Partial<Omit<NewPostMeta, 'id' | 'createdAt'>>,
 ): Promise<PostMetaRow | null> {
@@ -22,9 +24,9 @@ export async function updatePostMetaById(
   return rows[0] ?? null
 }
 
-export async function softDeletePostMeta(id: bigint, tx = db): Promise<boolean> {
+export async function softDeletePostMeta(db: NodePgDatabase, id: bigint): Promise<boolean> {
   const now = new Date()
-  const rows = await tx
+  const rows = await db
     .update(postMetaTable)
     .set({ deletedAt: now, updatedAt: now })
     .where(and(eq(postMetaTable.id, id), isNull(postMetaTable.deletedAt)))
@@ -32,8 +34,8 @@ export async function softDeletePostMeta(id: bigint, tx = db): Promise<boolean> 
   return rows.length > 0
 }
 
-export async function restorePostMeta(id: bigint, tx = db): Promise<boolean> {
-  const rows = await tx
+export async function restorePostMeta(db: NodePgDatabase, id: bigint): Promise<boolean> {
+  const rows = await db
     .update(postMetaTable)
     .set({ deletedAt: null, updatedAt: new Date() })
     .where(eq(postMetaTable.id, id))

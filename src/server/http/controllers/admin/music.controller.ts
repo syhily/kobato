@@ -28,20 +28,22 @@ const list = authorProc
     }),
   )
   .output(listMusicOutputDto)
-  .handler(({ input }) => listMusicForAdmin({ q: input.q, offset: input.offset, limit: input.limit }))
+  .handler(({ input, context }) =>
+    listMusicForAdmin(context.db, { q: input.q, offset: input.offset, limit: input.limit }),
+  )
 
 const search = authorProc
   .route({ method: 'GET', path: '/admin/music/search' })
   .input(z.object({ keyword: z.string(), limit: z.coerce.number().optional() }))
   .output(searchMusicOutputDto)
-  .handler(({ input }) => searchMusic(input.keyword, input.limit))
+  .handler(({ input, context: _context }) => searchMusic(input.keyword, input.limit))
 
 const add = authorProc
   .route({ method: 'POST', path: '/admin/music/add' })
   .input(z.object({ source: z.literal('netease'), sourceId: z.string().trim().min(1).max(64) }))
   .output(addMusicOutputDto)
   .handler(async ({ input, context }) => {
-    const music = await addMusic({
+    const music = await addMusic(context.db, {
       source: input.source,
       sourceId: input.sourceId,
       uploader: {
@@ -70,7 +72,7 @@ const update = authorProc
   )
   .output(updateMusicOutputDto)
   .handler(async ({ input, context }) => {
-    const music = await updateMusicMetadata({
+    const music = await updateMusicMetadata(context.db, {
       id: idFromString(input.id),
       name: input.name,
       artist: input.artist,
@@ -90,7 +92,7 @@ const remove = authorProc
   .input(z.object({ id: z.string().min(1) }))
   .output(z.void())
   .handler(async ({ input, context }) => {
-    await deleteMusic(idFromString(input.id), {
+    await deleteMusic(context.db, idFromString(input.id), {
       userId: context.viewer.userId,
       role: context.viewer.role,
     })

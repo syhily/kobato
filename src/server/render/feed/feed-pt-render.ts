@@ -1,3 +1,5 @@
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
+
 import { toHTML, type PortableTextComponents } from '@portabletext/to-html'
 
 import type {
@@ -28,6 +30,7 @@ export interface RenderPortableTextToHtmlOptions {
 }
 
 export async function renderPortableTextToHtml(
+  db: NodePgDatabase,
   body: PortableTextBodyType,
   headingSlugs: readonly string[],
   options: RenderPortableTextToHtmlOptions = {},
@@ -40,7 +43,7 @@ export async function renderPortableTextToHtml(
   const inlineBody = body.filter((block) => block._type !== 'footnoteDefinition')
   const footnotes = body.filter((block): block is FootnoteDefinitionBlock => block._type === 'footnoteDefinition')
 
-  const musicByPlayerId = await resolveMusicPlayerMeta(body)
+  const musicByPlayerId = await resolveMusicPlayerMeta(db, body)
 
   const components = buildPortableTextComponents({ headingIdByBlockKey, isRss, musicByPlayerId })
 
@@ -79,14 +82,14 @@ interface MusicMeta {
   audioUrl: string
 }
 
-async function resolveMusicPlayerMeta(body: PortableTextBodyType): Promise<Map<string, MusicMeta>> {
+async function resolveMusicPlayerMeta(db: NodePgDatabase, body: PortableTextBodyType): Promise<Map<string, MusicMeta>> {
   const playerIds = collectMusicPlayerIds(body)
   if (playerIds.length === 0) {
     return new Map()
   }
 
   const uniqueIds = [...new Set(playerIds)]
-  const rows = await findMusicByPlayerIds(uniqueIds)
+  const rows = await findMusicByPlayerIds(db, uniqueIds)
 
   const map = new Map<string, MusicMeta>()
   for (const row of rows) {

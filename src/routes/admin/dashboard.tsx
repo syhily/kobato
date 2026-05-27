@@ -4,7 +4,7 @@ import type { EntityType } from '@/server/infra/db/target'
 import type { DraftSummary, MyCommentSummary } from '@/ui/admin/dashboard/types'
 
 import { queryCounters, queryViews } from '@/server/domains/analytics/query'
-import { getRouteRequestContext } from '@/server/domains/auth/context'
+import { getDbFromContext, getRouteRequestContext } from '@/server/domains/auth/context'
 import { requireRole } from '@/server/domains/auth/rbac'
 import { countMyComments, listMyComments } from '@/server/domains/comments/repos/admin-query'
 import { resolveEntitiesForComments } from '@/server/domains/comments/repos/public-query'
@@ -62,6 +62,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   // asserting here narrows `ctx.user` / `ctx.role` to non-null for the
   // loader body so the response shape is statically tight.
   requireRole(ctx, 'author')
+  const db = getDbFromContext({ request, context })
   const now = new Date()
   const hour = now.getHours()
   let greeting = '你好'
@@ -99,13 +100,13 @@ export async function loader({ request, context }: Route.LoaderArgs) {
     recentPublishedRows,
     recentMyCommentRows,
   ] = await Promise.all([
-    admin ? loadAdminPendingDashboard('all', 0, PENDING_PAGE_SIZE) : Promise.resolve(null),
-    admin ? queryCounters({ range: dayRange, filters: {} }) : Promise.resolve(null),
-    admin ? queryViews({ range: weekRange, filters: {} }) : Promise.resolve(null),
-    countPostMetas({ authorId, deletedStatus: 'normal', lifecycle: 'draft' }),
-    countPostMetas({ authorId, deletedStatus: 'normal', lifecycle: 'published' }),
-    countMyComments(userId),
-    listPostMetas({
+    admin ? loadAdminPendingDashboard(db, 'all', 0, PENDING_PAGE_SIZE) : Promise.resolve(null),
+    admin ? queryCounters(db, { range: dayRange, filters: {} }) : Promise.resolve(null),
+    admin ? queryViews(db, { range: weekRange, filters: {} }) : Promise.resolve(null),
+    countPostMetas(db, { authorId, deletedStatus: 'normal', lifecycle: 'draft' }),
+    countPostMetas(db, { authorId, deletedStatus: 'normal', lifecycle: 'published' }),
+    countMyComments(db, userId),
+    listPostMetas(db, {
       authorId,
       deletedStatus: 'normal',
       lifecycle: 'draft',
@@ -113,7 +114,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
       sortOrder: 'desc',
       limit: RECENT_DRAFTS_LIMIT,
     }),
-    listPostMetas({
+    listPostMetas(db, {
       authorId,
       deletedStatus: 'normal',
       lifecycle: 'published',
@@ -121,7 +122,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
       sortOrder: 'desc',
       limit: RECENT_PUBLISHED_LIMIT,
     }),
-    listMyComments(userId, 0, RECENT_MY_COMMENTS_LIMIT),
+    listMyComments(db, userId, 0, RECENT_MY_COMMENTS_LIMIT),
   ])
 
   // Project drafts: only id + title + updatedAt needed for the card.
@@ -144,7 +145,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   const entityPairs = recentMyCommentRows
     .filter((c): c is typeof c & { type: EntityType; ownerId: bigint } => c.type !== null && c.ownerId !== null)
     .map((c) => ({ type: c.type, ownerId: c.ownerId }))
-  const entityMap = entityPairs.length > 0 ? await resolveEntitiesForComments(entityPairs) : new Map()
+  const entityMap = entityPairs.length > 0 ? await resolveEntitiesForComments(db, entityPairs) : new Map()
   const recentMyComments: MyCommentSummary[] = recentMyCommentRows.map((c) => {
     const entity = c.type && c.ownerId !== null ? (entityMap.get(`${c.type}:${c.ownerId}`) ?? null) : null
     return {

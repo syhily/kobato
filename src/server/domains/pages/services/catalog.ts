@@ -1,3 +1,5 @@
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
+
 import type { ContentRow } from '@/server/infra/db/types'
 
 import { isCatalogVisible } from '@/server/domains/content/schema'
@@ -11,12 +13,12 @@ import {
 import { pagesCache } from '@/server/domains/pages/services/shared'
 
 /** All non-deleted, non-scheduled, published pages joined with their content. */
-export async function loadCatalogPages(): Promise<CmsPage[]> {
+export async function loadCatalogPages(db: NodePgDatabase): Promise<CmsPage[]> {
   const cached = await pagesCache.get()
   if (cached !== null) {
     return cached.map((p) => ({ ...p }))
   }
-  const metas = await listPublicPageMetas()
+  const metas = await listPublicPageMetas(db)
   const asOf = new Date()
   const visible = metas.filter((meta) => isCatalogVisible(meta, asOf))
   if (visible.length === 0) {
@@ -26,7 +28,7 @@ export async function loadCatalogPages(): Promise<CmsPage[]> {
   const revisionIds = visible.map((m) => m.publishedRevisionId).filter((id): id is bigint => id !== null)
   const revisionMap = new Map<bigint, ContentRow>()
   if (revisionIds.length > 0) {
-    const rows = await findContentsByIds(revisionIds)
+    const rows = await findContentsByIds(db, revisionIds)
     for (const row of rows) {
       revisionMap.set(row.id, row)
     }
@@ -47,11 +49,11 @@ export async function loadCatalogPages(): Promise<CmsPage[]> {
  * Scheduled (future-dated) pages 404 too so the catalog stays consistent
  * with `loadCatalogPages()`.
  */
-export async function loadCatalogPageBySlug(slug: string): Promise<CmsPage | null> {
-  const meta = await findPublicPageMetaBySlug(slug)
+export async function loadCatalogPageBySlug(db: NodePgDatabase, slug: string): Promise<CmsPage | null> {
+  const meta = await findPublicPageMetaBySlug(db, slug)
   if (meta === null || !isCatalogVisible(meta)) {
     return null
   }
-  const revision = meta.publishedRevisionId === null ? null : await findContentById(meta.publishedRevisionId)
+  const revision = meta.publishedRevisionId === null ? null : await findContentById(db, meta.publishedRevisionId)
   return toCmsPage(meta, revision)
 }

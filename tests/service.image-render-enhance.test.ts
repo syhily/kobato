@@ -1,6 +1,9 @@
-import { beforeEach, describe, expect, it } from 'vitest'
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
+import type { Pool } from 'pg'
 
-import { db } from '@/server/infra/db/pool'
+import { afterAll, beforeEach, describe, expect, it } from 'vitest'
+
+import { createDbPool, closePool } from '@/server/infra/db/pool'
 import { image } from '@/server/infra/db/schema/media'
 import { redisInstance } from '@/server/infra/redis/storage'
 
@@ -8,6 +11,14 @@ import { clearAllTables } from './_helpers/integration-db'
 import { flushWorkerRedis } from './_helpers/redis'
 
 const { clearImageEnhanceCache, loadImageThumbhash } = await import('@/server/render/image-enhance')
+
+const poolManager = createDbPool()
+const db: NodePgDatabase = poolManager.db
+const pool: Pool = poolManager.pool
+
+afterAll(async () => {
+  await closePool(pool)
+})
 const { setBlogSettingsBundleForTests } = await import('@/server/domains/settings/snapshot')
 const { TEST_BLOG_SETTINGS_BUNDLE } = await import('./_helpers/blog-settings')
 
@@ -36,13 +47,13 @@ async function seedImage(overrides: Partial<typeof image.$inferInsert> = {}) {
 
 describe('server/images/render-enhance — loadImageThumbhash', () => {
   it('returns null for empty src', async () => {
-    expect(await loadImageThumbhash('')).toBeNull()
+    expect(await loadImageThumbhash(db, '')).toBeNull()
   })
 
   it('returns the row dimensions and thumbhash for a matched URL', async () => {
     const row = await seedImage()
 
-    const result = await loadImageThumbhash('https://assets.example.com/images/categories/coding.jpg')
+    const result = await loadImageThumbhash(db, 'https://assets.example.com/images/categories/coding.jpg')
     expect(result).toEqual({
       width: 1280,
       height: 425,
@@ -52,13 +63,13 @@ describe('server/images/render-enhance — loadImageThumbhash', () => {
   })
 
   it('returns null when the URL has no matching row', async () => {
-    expect(await loadImageThumbhash('https://assets.example.com/images/no-such.jpg')).toBeNull()
+    expect(await loadImageThumbhash(db, 'https://assets.example.com/images/no-such.jpg')).toBeNull()
   })
 
   it('serves a second hit from the Redis cache', async () => {
     await seedImage()
 
-    const result1 = await loadImageThumbhash('https://assets.example.com/images/categories/coding.jpg')
+    const result1 = await loadImageThumbhash(db, 'https://assets.example.com/images/categories/coding.jpg')
     expect(result1).not.toBeNull()
 
     // Verify cache was written to Redis
@@ -66,7 +77,7 @@ describe('server/images/render-enhance — loadImageThumbhash', () => {
     expect(cached).not.toBeNull()
 
     // Second call should return the same result (cache hit)
-    const result2 = await loadImageThumbhash('https://assets.example.com/images/categories/coding.jpg')
+    const result2 = await loadImageThumbhash(db, 'https://assets.example.com/images/categories/coding.jpg')
     expect(result2).toEqual(result1)
   })
 })

@@ -31,7 +31,7 @@ const mocks = vi.hoisted(() => ({
   listClientPosts: vi.fn(),
   listAllTags: vi.fn(),
   postCount: 10,
-  paginatedPosts: vi.fn(async (pageNum: number, pageSize: number) => {
+  paginatedPosts: vi.fn(async (_db: unknown, pageNum: number, pageSize: number) => {
     const posts = mocks.listClientPosts() ?? []
     const start = (pageNum - 1) * pageSize
     return { posts: posts.slice(start, start + pageSize), total: posts.length }
@@ -43,7 +43,7 @@ vi.mock('@/server/domains/taxonomies/tags/service', () => ({
 }))
 vi.mock('@/server/domains/taxonomies/categories/service', () => ({
   getCategoryLink: vi.fn((name: string) => (name === sampleCategory.name ? sampleCategory.permalink : '')),
-  getCategoryLinks: vi.fn(async (names: string[]) =>
+  getCategoryLinks: vi.fn(async (_db: unknown, names: string[]) =>
     Object.fromEntries(names.filter((n) => n === sampleCategory.name).map((n) => [n, sampleCategory.permalink])),
   ),
 }))
@@ -62,7 +62,7 @@ vi.mock('@/server/domains/posts/repos/public-query', () => ({
   listClientPosts: mocks.listClientPosts,
   countPublicPosts: vi.fn(async () => mocks.postCount),
   listPublicPostCardsPaginated: mocks.paginatedPosts,
-  getClientPostsWithMetadata: vi.fn(async (posts: unknown[]) =>
+  getClientPostsWithMetadata: vi.fn(async (_db: unknown, posts: unknown[]) =>
     (posts as Array<{ slug: string; permalink: string }>).map((p) => ({
       ...p,
       meta: { likes: 0, views: 0, comments: 0 },

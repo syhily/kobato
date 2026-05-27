@@ -1,13 +1,21 @@
-import { eq, sql } from 'drizzle-orm'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
+import type { Pool } from 'pg'
 
-import { db } from '@/server/infra/db/pool'
+import { eq, sql } from 'drizzle-orm'
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
+
+import { createDbPool, closePool } from '@/server/infra/db/pool'
 import { setting } from '@/server/infra/db/schema/config'
 import { user } from '@/server/infra/db/schema/user'
 
 import { clearAllTables } from './_helpers/integration-db'
 import { flushWorkerRedis } from './_helpers/redis'
 import { emptySession } from './_helpers/session'
+
+const mockHandles = vi.hoisted(() => ({
+  getDbFromContext: vi.fn<any>(),
+  getPoolFromContext: vi.fn<any>(),
+}))
 
 vi.mock('@/server/domains/auth/context', () => ({
   getRouteRequestContext: vi.fn().mockReturnValue({
@@ -17,7 +25,17 @@ vi.mock('@/server/domains/auth/context', () => ({
     clientAddress: '127.0.0.1',
     url: new URL('http://localhost/admin/setup'),
   }),
+  getDbFromContext: mockHandles.getDbFromContext,
+  getPoolFromContext: mockHandles.getPoolFromContext,
 }))
+
+const poolDb = createDbPool()
+const db: NodePgDatabase = poolDb.db
+const pool: Pool = poolDb.pool
+
+afterAll(async () => {
+  await closePool(pool)
+})
 
 vi.mock('@/server/domains/settings/install-gate', () => ({
   ensureNoAdminOrRedirect: vi.fn(async () => null),
@@ -35,6 +53,11 @@ vi.mock('@/server/infra/rate-limit', () => ({
 }))
 
 const { action, loader } = await import('@/routes/auth/setup/index')
+
+beforeAll(() => {
+  mockHandles.getDbFromContext.mockReturnValue(db)
+  mockHandles.getPoolFromContext.mockReturnValue(pool)
+})
 
 beforeEach(async () => {
   await clearAllTables(db)

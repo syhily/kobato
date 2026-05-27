@@ -1,3 +1,5 @@
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
+
 import { customAlphabet } from 'nanoid'
 
 import type { MusicRow, NewMusic } from '@/server/infra/db/types'
@@ -66,7 +68,7 @@ const COVER_JPEG_QUALITY = 85
 // Read paths
 // ---------------------------------------------------------------------------
 
-export async function listMusicForAdmin(input: ListMusicInput = {}): Promise<ListMusicOutput> {
+export async function listMusicForAdmin(db: NodePgDatabase, input: ListMusicInput = {}): Promise<ListMusicOutput> {
   const offset = clampOffset(input.offset)
   const limit = clampLimit(input.limit)
 
@@ -76,7 +78,7 @@ export async function listMusicForAdmin(input: ListMusicInput = {}): Promise<Lis
     limit,
   }
 
-  const [rows, total] = await Promise.all([listAdminMusicRows(filters), countAdminMusic({ q: input.q })])
+  const [rows, total] = await Promise.all([listAdminMusicRows(db, filters), countAdminMusic(db, { q: input.q })])
 
   return {
     musics: rows.map((row) => toAdminMusicDto(row, row.uploaderName)),
@@ -85,8 +87,8 @@ export async function listMusicForAdmin(input: ListMusicInput = {}): Promise<Lis
   }
 }
 
-export async function findMusicDtoById(id: bigint): Promise<AdminMusicDto | null> {
-  const row = await findAdminMusicRowById(id)
+export async function findMusicDtoById(db: NodePgDatabase, id: bigint): Promise<AdminMusicDto | null> {
+  const row = await findAdminMusicRowById(db, id)
   if (row === null) {
     return null
   }
@@ -98,8 +100,8 @@ export async function findMusicDtoById(id: bigint): Promise<AdminMusicDto | null
  * `GET music.get` route. Returns `null` when the row is missing or
  * soft-deleted so the player can render a no-op placeholder.
  */
-export async function getMusicMetaForPlayer(playerId: string): Promise<PublicMusicMeta | null> {
-  const row = await findMusicByPlayerId(playerId)
+export async function getMusicMetaForPlayer(db: NodePgDatabase, playerId: string): Promise<PublicMusicMeta | null> {
+  const row = await findMusicByPlayerId(db, playerId)
   if (row === null) {
     return null
   }
@@ -169,13 +171,13 @@ export interface AddMusicPrefill {
  * imported song returns its existing row instead of re-uploading,
  * which makes the import script safe to re-run.
  */
-export async function addMusic(input: AddMusicInputs): Promise<AdminMusicDto> {
+export async function addMusic(db: NodePgDatabase, input: AddMusicInputs): Promise<AdminMusicDto> {
   await ensureMusicStorageEnabled()
 
   // Idempotency: skip the whole upload-and-insert dance if we already
   // imported this song. The caller can decide whether to surface this
   // as "already exists" (UI) or "skip" (importer).
-  const existing = await findMusicBySourceAndId(input.source, input.sourceId)
+  const existing = await findMusicBySourceAndId(db, input.source, input.sourceId)
   if (existing !== null && existing.deletedAt === null) {
     return toAdminMusicDto({ ...existing, uploaderName: input.uploader?.name ?? null }, input.uploader?.name ?? null)
   }
@@ -190,7 +192,7 @@ export async function addMusic(input: AddMusicInputs): Promise<AdminMusicDto> {
 
   const metadata = mergeMetadata(hit, input.prefill)
 
-  const playerId = await generateUniquePlayerId()
+  const playerId = await generateUniquePlayerId(db)
   const audioStoragePath = `musics/${playerId}.mp3`
   const coverStoragePath = `musics/${playerId}.jpg`
 
@@ -238,7 +240,7 @@ export async function addMusic(input: AddMusicInputs): Promise<AdminMusicDto> {
 
   let row: MusicRow
   try {
-    row = await insertMusic(newRow)
+    row = await insertMusic(db, newRow)
   } catch (error) {
     log.error('Music insert failed; rolling back S3 uploads', {
       sourceId: input.sourceId,
@@ -276,10 +278,11 @@ export interface MusicViewerContext {
 }
 
 export async function updateMusicMetadata(
+  db: NodePgDatabase,
   input: UpdateMusicMetadataInputs,
   viewer?: MusicViewerContext,
 ): Promise<AdminMusicDto> {
-  const existing = await findMusicById(input.id)
+  const existing = await findMusicById(db, input.id)
   if (existing === null || existing.deletedAt !== null) {
     throw new DomainError('NOT_FOUND', '音乐不存在')
   }
@@ -287,7 +290,7 @@ export async function updateMusicMetadata(
     throw new DomainError('NOT_FOUND', ErrorMessages.NOT_FOUND)
   }
 
-  const updated = await updateMusic(input.id, {
+  const updated = await updateMusic(db, input.id, {
     name: input.name,
     artist: input.artist.join(' / '),
     album: input.album,
@@ -300,15 +303,15 @@ export async function updateMusicMetadata(
   // Re-fetch through the admin projection so the response carries
   // the joined `uploaderName` instead of forcing the caller to
   // re-derive it.
-  const projected = await findAdminMusicRowById(input.id)
+  const projected = await findAdminMusicRowById(db, input.id)
   if (projected === null) {
     throw new DomainError('NOT_FOUND', '音乐不存在')
   }
   return toAdminMusicDto(projected, projected.uploaderName)
 }
 
-export async function deleteMusic(id: bigint, viewer?: MusicViewerContext): Promise<void> {
-  const existing = await findMusicById(id)
+export async function deleteMusic(db: NodePgDatabase, id: bigint, viewer?: MusicViewerContext): Promise<void> {
+  const existing = await findMusicById(db, id)
   if (existing === null) {
     throw new DomainError('NOT_FOUND', '音乐不存在')
   }
@@ -321,7 +324,7 @@ export async function deleteMusic(id: bigint, viewer?: MusicViewerContext): Prom
   // row when the delete only fails on the S3 leg.
   await Promise.allSettled([deleteMusicObject(existing.audioStoragePath), deleteMusicObject(existing.coverStoragePath)])
 
-  const deleted = await softDeleteMusic(id)
+  const deleted = await softDeleteMusic(db, id)
   if (deleted === null) {
     throw new DomainError('NOT_FOUND', '音乐不存在')
   }
@@ -350,10 +353,10 @@ function pickNonEmpty(...values: (string | undefined)[]): string {
   return ''
 }
 
-async function generateUniquePlayerId(): Promise<string> {
+async function generateUniquePlayerId(db: NodePgDatabase): Promise<string> {
   for (let attempt = 0; attempt < PLAYER_ID_RETRY_LIMIT; attempt += 1) {
     const candidate = generatePlayerId()
-    const collision = await findMusicByPlayerId(candidate)
+    const collision = await findMusicByPlayerId(db, candidate)
     if (collision === null) {
       return candidate
     }

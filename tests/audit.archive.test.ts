@@ -25,13 +25,6 @@ function createBundle(s3Enabled: boolean, secretAccessKey: string) {
 
 const getBlogSettingsBundleSync = vi.fn(() => createBundle(true, 'test-secret'))
 
-vi.mock('@/server/infra/db/pool', () => ({
-  db: {
-    delete: vi.fn(() => ({ where: dbDeleteWhere })),
-    select: dbSelect,
-  },
-}))
-
 vi.mock('@/server/infra/storage/s3-client', () => ({
   listS3Objects,
   putS3Object,
@@ -45,6 +38,11 @@ vi.mock('@/server/infra/logger', () => ({
 }))
 
 vi.mock('@/server/domains/audit/service', () => ({ recordAuditEvent: vi.fn() }))
+
+const db = {
+  delete: vi.fn(() => ({ where: dbDeleteWhere })),
+  select: dbSelect,
+} as any
 
 const { archiveExpiredAuditLogs, cleanupExpiredArchives } = await import('@/server/domains/audit/archive')
 
@@ -62,7 +60,7 @@ describe('audit/archive', () => {
         })),
       })
 
-      const result = await archiveExpiredAuditLogs()
+      const result = await archiveExpiredAuditLogs(db)
       expect(result).toEqual({ archivedDays: 0, archivedRows: 0, deletedRows: 0 })
     })
 
@@ -80,7 +78,7 @@ describe('audit/archive', () => {
       dbSelectWhere.mockReturnValueOnce({ orderBy: dbSelectOrderBy })
       dbSelectLimit.mockReturnValueOnce(Promise.resolve([]))
 
-      const result = await archiveExpiredAuditLogs()
+      const result = await archiveExpiredAuditLogs(db)
       expect(result.archivedDays).toBe(1)
       expect(putS3Object).not.toHaveBeenCalled()
     })
@@ -114,7 +112,7 @@ describe('audit/archive', () => {
 
       dbDeleteWhere.mockResolvedValueOnce({ rowCount: 1 })
 
-      const result = await archiveExpiredAuditLogs()
+      const result = await archiveExpiredAuditLogs(db)
       expect(result.archivedRows).toBe(1)
       expect(putS3Object).toHaveBeenCalledOnce()
       expect(dbDeleteWhere).toHaveBeenCalledOnce()
@@ -125,7 +123,7 @@ describe('audit/archive', () => {
 
       dbDeleteWhere.mockResolvedValueOnce({ rowCount: 42 })
 
-      const result = await archiveExpiredAuditLogs()
+      const result = await archiveExpiredAuditLogs(db)
       expect(result).toEqual({ archivedDays: 0, archivedRows: 0, deletedRows: 42 })
       expect(putS3Object).not.toHaveBeenCalled()
       expect(dbDeleteWhere).toHaveBeenCalledOnce()
@@ -136,7 +134,7 @@ describe('audit/archive', () => {
 
       dbDeleteWhere.mockResolvedValueOnce({ rowCount: 10 })
 
-      const result = await archiveExpiredAuditLogs()
+      const result = await archiveExpiredAuditLogs(db)
       expect(result).toEqual({ archivedDays: 0, archivedRows: 0, deletedRows: 10 })
       expect(putS3Object).not.toHaveBeenCalled()
     })

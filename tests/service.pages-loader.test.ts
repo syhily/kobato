@@ -49,6 +49,8 @@ function makeDbPage(overrides: Record<string, unknown> = {}) {
   }
 }
 
+const mockDb = {} as import('drizzle-orm/node-postgres').NodePgDatabase
+
 const mocks = vi.hoisted(() => ({
   findPublicPostMetaBySlug: vi.fn(async (): Promise<unknown> => null),
   findPageBySlug: vi.fn(async (): Promise<unknown> => null),
@@ -56,6 +58,7 @@ const mocks = vi.hoisted(() => ({
   loadPageDraftPreviewBySlug: vi.fn(async (): Promise<unknown> => null),
   tryGetSessionContext: vi.fn((): unknown => null),
   resolveSessionContext: vi.fn(async () => ({ role: 'anonymous', user: null, session: null })),
+  resolveImageMetaBySources: vi.fn(async () => []),
 }))
 
 vi.mock('@/server/domains/posts/repos/single', () => ({
@@ -80,12 +83,13 @@ vi.mock('@/server/infra/http/etag', () => ({
   weakEtag: () => 'etag',
   notModifiedResponse: (etag: string) => new Response(null, { status: 304, headers: { ETag: etag } }),
 }))
-vi.mock('@/server/render/image-enhance', () => ({
-  resolveImageMetaBySources: vi.fn(async () => []),
+vi.mock('@/server/domains/images/image-meta', () => ({
+  resolveImageMetaBySources: mocks.resolveImageMetaBySources,
 }))
 
 function makeArgs(slug: string) {
   return {
+    db: mockDb,
     slug,
     wantsDraftPreview: false,
     request: new Request(`http://localhost/${slug}`),

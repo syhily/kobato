@@ -92,6 +92,6 @@ describe('adminBackupRouter.restore', () => {
     const ctx = makeAuthedCtx()
     const res = await call(adminBackupRouter.restore, { key: 'backup/2026-01-01.sql.gz' }, { context: ctx })
     expect(res).toEqual({ accepted: true })
-    expect(service.restoreFromBackup).toHaveBeenCalledWith(buffer, 'backup/2026-01-01.sql.gz')
+    expect(service.restoreFromBackup).toHaveBeenCalledWith(expect.any(Object), buffer, 'backup/2026-01-01.sql.gz')
   })
 })

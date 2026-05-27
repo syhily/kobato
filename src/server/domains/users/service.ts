@@ -1,3 +1,5 @@
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
+
 import type { UserSortOrder } from '@/server/domains/users/schema'
 import type { User } from '@/server/infra/db/types'
 
@@ -59,8 +61,8 @@ export function toAdminUserDto(row: AdminUserRow): AdminUserDto {
 
 // `setUserMuted` returns the raw `user` row (no aggregation); refetch
 // the aggregated view so the client always gets the same DTO shape.
-export async function fetchAdminUserDto(id: bigint): Promise<AdminUserDto | null> {
-  const row = await findAdminUserById(id)
+export async function fetchAdminUserDto(db: NodePgDatabase, id: bigint): Promise<AdminUserDto | null> {
+  const row = await findAdminUserById(db, id)
   return row ? toAdminUserDto(row) : null
 }
 
@@ -73,37 +75,41 @@ export interface ListAdminUsersResult {
 }
 
 export async function listUsersForAdmin(
+  db: NodePgDatabase,
   offset: number,
   limit: number,
   filters: AdminUsersListFilters,
   sortBy: UserSortOrder = 'recent',
 ): Promise<ListAdminUsersResult> {
-  const [total, users] = await Promise.all([countAdminUsers(filters), listAdminUsers(offset, limit, filters, sortBy)])
+  const [total, users] = await Promise.all([
+    countAdminUsers(db, filters),
+    listAdminUsers(db, offset, limit, filters, sortBy),
+  ])
   return { users, total, hasMore: offset + users.length < total }
 }
 
-export async function getAdminUser(id: bigint): Promise<AdminUserRow | null> {
-  return findAdminUserById(id)
+export async function getAdminUser(db: NodePgDatabase, id: bigint): Promise<AdminUserRow | null> {
+  return findAdminUserById(db, id)
 }
 
-export async function softDeleteAdminUser(id: bigint): Promise<boolean> {
-  return softDeleteUserById(id)
+export async function softDeleteAdminUser(db: NodePgDatabase, id: bigint): Promise<boolean> {
+  return softDeleteUserById(db, id)
 }
 
-export async function restoreAdminUser(id: bigint): Promise<boolean> {
-  return restoreUserById(id)
+export async function restoreAdminUser(db: NodePgDatabase, id: bigint): Promise<boolean> {
+  return restoreUserById(db, id)
 }
 
-export async function muteAdminUser(id: bigint, muted: boolean) {
-  return setUserMuted(id, muted)
+export async function muteAdminUser(db: NodePgDatabase, id: bigint, muted: boolean) {
+  return setUserMuted(db, id, muted)
 }
 
-export async function bulkApproveCommentsForUser(userId: bigint): Promise<{ approved: number }> {
-  const approved = await bulkApprovePendingByUser(userId)
+export async function bulkApproveCommentsForUser(db: NodePgDatabase, userId: bigint): Promise<{ approved: number }> {
+  const approved = await bulkApprovePendingByUser(db, userId)
   return { approved }
 }
 
-export async function bulkDeleteCommentsForUser(userId: bigint): Promise<{ deleted: number }> {
-  const deleted = await bulkSoftDeleteCommentsByUser(userId)
+export async function bulkDeleteCommentsForUser(db: NodePgDatabase, userId: bigint): Promise<{ deleted: number }> {
+  const deleted = await bulkSoftDeleteCommentsByUser(db, userId)
   return { deleted }
 }

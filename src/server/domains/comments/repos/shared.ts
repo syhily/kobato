@@ -1,3 +1,5 @@
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
+
 import { and, eq, gte, isNotNull, isNull, or, sql } from 'drizzle-orm'
 
 import type { EntityTarget, EntityType } from '@/server/infra/db/target'
@@ -5,7 +7,6 @@ import type { MyCommentsStatus } from '@/shared/types/comments'
 
 export type { MyCommentsStatus }
 
-import { db } from '@/server/infra/db/pool'
 import { comment } from '@/server/infra/db/schema/comment'
 import { page } from '@/server/infra/db/schema/page'
 import { post } from '@/server/infra/db/schema/post'
@@ -75,7 +76,7 @@ export interface PendingCommentRow {
 // Post + page UNION used by `pendingComments` / `commentsByIds` and any
 // admin surface that wants to project `(type, owner_id)` back to a
 // human-readable slug + title without a polymorphic JOIN.
-export function targetSlugTitleSubquery() {
+export function targetSlugTitleSubquery(db: NodePgDatabase) {
   return db
     .select({
       type: sql<EntityType>`'post'`.as('type'),

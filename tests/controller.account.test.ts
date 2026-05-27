@@ -71,13 +71,17 @@ describe('accountRouter.updateProfile', () => {
     const ctx = makeAuthedCtx({ userId: '1', role: 'visitor' })
     const res = await call(accountRouter.updateProfile, { name: 'Alice the Updated' }, { context: ctx })
     expect(res.user).toBeDefined()
-    expect(vi.mocked(updateUserById)).toHaveBeenCalledWith(1n, expect.objectContaining({ name: 'Alice the Updated' }))
+    expect(vi.mocked(updateUserById)).toHaveBeenCalledWith(
+      expect.any(Object),
+      1n,
+      expect.objectContaining({ name: 'Alice the Updated' }),
+    )
   })
 
   it('refuses to set badge fields for a non-admin visitor', async () => {
     const ctx = makeAuthedCtx({ userId: '1', role: 'visitor' })
     await call(accountRouter.updateProfile, { badgeName: 'visitor-cannot-set' }, { context: ctx })
-    const callPatch = vi.mocked(updateUserById).mock.calls.at(-1)?.[1]
+    const callPatch = vi.mocked(updateUserById).mock.calls.at(-1)?.[2]
     expect(callPatch).not.toHaveProperty('badgeName')
   })
 
@@ -107,6 +111,7 @@ describe('accountRouter.updatePassword', () => {
     )
     expect(res.success).toBe(true)
     expect(vi.mocked(updateUserById)).toHaveBeenCalledWith(
+      expect.any(Object),
       1n,
       expect.objectContaining({ password: 'hashed:new-password' }),
     )

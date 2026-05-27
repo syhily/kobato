@@ -1,3 +1,6 @@
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
+import type { Pool } from 'pg'
+
 import { redirect } from 'react-router'
 
 import type { ListingPageLoaderData } from '@/server/http/loaders/listing'
@@ -19,13 +22,11 @@ export interface SearchLoaderOptions {
   clientAddress?: string
   request?: Request
 }
-export async function searchLoader({
-  keyword,
-  num,
-  forceNoindex = true,
-  clientAddress,
-  request,
-}: SearchLoaderOptions): Promise<ListingPageLoaderData> {
+export async function searchLoader(
+  db: NodePgDatabase,
+  pool: Pool,
+  { keyword, num, forceNoindex = true, clientAddress, request }: SearchLoaderOptions,
+): Promise<ListingPageLoaderData> {
   const listingNowIso = new Date().toISOString()
   const query = keyword?.trim() ?? ''
   if (query === '') {
@@ -34,9 +35,9 @@ export async function searchLoader({
   const rootPath = searchRootPath(query)
   const pageNum = parseListingPage(num, rootPath)
   const pageSize = requireBlogSettingsSection('content').pagination.search
-  const { hits, page, totalPages } = await searchPosts(query, pageSize, (pageNum - 1) * pageSize)
+  const { hits, page, totalPages } = await searchPosts(db, query, pageSize, (pageNum - 1) * pageSize)
   if (request !== undefined) {
-    recordAuditEvent({
+    recordAuditEvent(db, pool, {
       action: 'search',
       resourceType: 'search',
       details: { keyword: query, resultCount: hits.length },
@@ -52,9 +53,9 @@ export async function searchLoader({
       throw redirect(pagePath(rootPath, totalPages))
     }
   }
-  const hitPosts = await getPostsBySlugs(hits, searchPostOptions())
+  const hitPosts = await getPostsBySlugs(db, hits, searchPostOptions())
   const posts = hitPosts.map((p) => toListingPostCard(toClientPost(p)))
-  const resolvedPosts = await getClientPostsWithMetadata(posts, {
+  const resolvedPosts = await getClientPostsWithMetadata(db, posts, {
     likes: true,
     views: true,
     comments: false,

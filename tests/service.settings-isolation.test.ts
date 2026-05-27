@@ -1,10 +1,21 @@
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
+import type { Pool } from 'pg'
+
 import { eq } from 'drizzle-orm'
-import { beforeEach, describe, expect, it } from 'vitest'
+import { afterAll, beforeEach, describe, expect, it } from 'vitest'
 
 import { updateBlogSettingsSection } from '@/server/domains/settings/service'
 import { setBlogSettingsBundleForTests } from '@/server/domains/settings/snapshot'
-import { db } from '@/server/infra/db/pool'
+import { createDbPool, closePool } from '@/server/infra/db/pool'
 import { setting } from '@/server/infra/db/schema/config'
+
+const poolManager = createDbPool()
+const db: NodePgDatabase = poolManager.db
+const pool: Pool = poolManager.pool
+
+afterAll(async () => {
+  await closePool(pool)
+})
 
 beforeEach(async () => {
   await db.delete(setting)
@@ -15,6 +26,8 @@ describe('services/settings — write isolation', () => {
   it('parallel saves to mail and cache produce two scope-isolated UPSERTs', async () => {
     await Promise.all([
       updateBlogSettingsSection(
+        db,
+        pool,
         'mail',
         {
           mail: { enabled: true, host: 'api.zeabur.com', apiKey: 'KEY-A', sender: 'a@example.com' },
@@ -22,6 +35,8 @@ describe('services/settings — write isolation', () => {
         null,
       ),
       updateBlogSettingsSection(
+        db,
+        pool,
         'cache',
         {
           cache: {
@@ -55,6 +70,8 @@ describe('services/settings — write isolation', () => {
 
   it('saving sidebar does not read or rewrite the mail row', async () => {
     await updateBlogSettingsSection(
+      db,
+      pool,
       'sidebar',
       {
         sidebar: {
@@ -85,6 +102,8 @@ describe('services/settings — write isolation', () => {
     })
 
     await updateBlogSettingsSection(
+      db,
+      pool,
       'mail',
       { mail: { enabled: true, host: 'api.zeabur.com', sender: 'noreply@example.com' } },
       null,

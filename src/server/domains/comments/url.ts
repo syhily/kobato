@@ -1,8 +1,9 @@
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
+
 import { eq } from 'drizzle-orm'
 
 import type { EntityTarget, EntityType } from '@/server/infra/db/target'
 
-import { db } from '@/server/infra/db/pool'
 import { page } from '@/server/infra/db/schema/page'
 import { post } from '@/server/infra/db/schema/post'
 import { requireBlogSettingsSection } from '@/shared/config/getters'
@@ -34,7 +35,10 @@ export function entityCommentUrl(type: EntityType, slug: string): string {
  * metric table used to carry. Returns `null` when the entity has been
  * hard-deleted or the target points at nothing (orphan).
  */
-export async function findEntitySlugTitle(target: EntityTarget): Promise<{ slug: string; title: string } | null> {
+export async function findEntitySlugTitle(
+  db: NodePgDatabase,
+  target: EntityTarget,
+): Promise<{ slug: string; title: string } | null> {
   if (target.type === 'post') {
     const rows = await db
       .select({ slug: post.slug, title: post.title })

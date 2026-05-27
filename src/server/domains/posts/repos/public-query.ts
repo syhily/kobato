@@ -1,3 +1,5 @@
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
+
 import { and, desc, eq, inArray, isNotNull, isNull, sql } from 'drizzle-orm'
 
 import type { PostMetaRow } from '@/server/infra/db/types'
@@ -17,7 +19,6 @@ import {
   type ListPublicPostsFilters,
 } from '@/server/domains/posts/repos/shared'
 import { toPostFromMeta } from '@/server/domains/posts/repos/single'
-import { db } from '@/server/infra/db/pool'
 import { post as postMetaTable } from '@/server/infra/db/schema/post'
 import { requireBlogSettingsSection } from '@/shared/config/getters'
 import { toListingPostCard, toSidebarPostLink } from '@/shared/types/catalog'
@@ -27,6 +28,7 @@ import { shuffle } from '@/shared/utils/tools'
 export { toClientPostFromMeta } from '@/server/domains/posts/repos/shared'
 
 export async function listPublicPostMetas(
+  db: NodePgDatabase,
   sortBy: 'publishedAt' | 'updatedAt' = 'publishedAt',
   limit = 5000,
 ): Promise<PostMetaRow[]> {
@@ -34,7 +36,10 @@ export async function listPublicPostMetas(
   return db.select().from(postMetaTable).where(isNull(postMetaTable.deletedAt)).orderBy(desc(col)).limit(limit)
 }
 
-export async function listPublicPosts(filters: ListPublicPostsFilters = {}): Promise<PostMetaRow[]> {
+export async function listPublicPosts(
+  db: NodePgDatabase,
+  filters: ListPublicPostsFilters = {},
+): Promise<PostMetaRow[]> {
   const col = filters.sortBy === 'updatedAt' ? postMetaTable.updatedAt : postMetaTable.firstPublishedAt
   const where = buildPublicPostsWhere(filters)
   let q = db.select().from(postMetaTable).where(where).orderBy(desc(col))
@@ -49,6 +54,7 @@ export async function listPublicPosts(filters: ListPublicPostsFilters = {}): Pro
 }
 
 export async function countPublicPosts(
+  db: NodePgDatabase,
   filters: Omit<ListPublicPostsFilters, 'sortBy' | 'limit' | 'offset'> = {},
 ): Promise<number> {
   const where = buildPublicPostsWhere(filters)
@@ -60,14 +66,16 @@ export async function countPublicPosts(
 }
 
 export async function listPublicPostCards(
+  db: NodePgDatabase,
   options?: PostVisibilityOptions & { sortBy?: 'publishedAt' | 'updatedAt' },
 ): Promise<ListingPostCard[]> {
   const filters = buildPublicPostFilters(options)
-  const metas = await listPublicPosts({ ...filters, sortBy: options?.sortBy })
+  const metas = await listPublicPosts(db, { ...filters, sortBy: options?.sortBy })
   return metas.map((meta) => toClientPostFromMeta(meta)).map(toListingPostCard)
 }
 
 export async function listPublicPostCardsPaginated(
+  db: NodePgDatabase,
   pageNum: number,
   pageSize: number,
   options?: PostVisibilityOptions & {
@@ -83,7 +91,7 @@ export async function listPublicPostCardsPaginated(
   const filters = buildPublicPostFilters(options)
   const offset = options?.offset ?? (pageNum - 1) * pageSize
   const [metas, total] = await Promise.all([
-    listPublicPosts({
+    listPublicPosts(db, {
       ...filters,
       sortBy: options?.sortBy,
       category: options?.category,
@@ -91,10 +99,11 @@ export async function listPublicPostCardsPaginated(
       limit: pageSize,
       offset,
     }),
-    countPublicPosts({ ...filters, category: options?.category, tag: options?.tag }),
+    countPublicPosts(db, { ...filters, category: options?.category, tag: options?.tag }),
   ])
   const posts = metas.map((meta) => toClientPostFromMeta(meta)).map(toListingPostCard)
   await hydrateImageRefs(
+    db,
     posts,
     (p) => p.cover,
     (p, lookup) => {
@@ -113,6 +122,7 @@ export async function listPublicPostCardsPaginated(
  * use {@link listAllPosts} when only metadata is needed (sitemap, search index).
  */
 export async function listPublicPostsWithContent(
+  db: NodePgDatabase,
   options?: PostVisibilityOptions & {
     category?: string
     tag?: string
@@ -120,32 +130,44 @@ export async function listPublicPostsWithContent(
   },
 ): Promise<Post[]> {
   const filters = buildPublicPostFilters(options)
-  const metas = await listPublicPosts({
+  const metas = await listPublicPosts(db, {
     ...filters,
     category: options?.category,
     tag: options?.tag,
     sortBy: options?.sortBy,
   })
-  return hydratePostMetasToFullPosts(metas)
+  return hydratePostMetasToFullPosts(db, metas)
 }
 
-export async function listPostsByCategory(category: string, options?: PostVisibilityOptions): Promise<Post[]> {
+export async function listPostsByCategory(
+  db: NodePgDatabase,
+  category: string,
+  options?: PostVisibilityOptions,
+): Promise<Post[]> {
   const filters = buildPublicPostFilters(options)
-  const metas = await listPublicPosts({ ...filters, category })
+  const metas = await listPublicPosts(db, { ...filters, category })
   const posts = metas.map((meta) => toPostFromMeta(meta))
-  await hydratePostImages(posts)
+  await hydratePostImages(db, posts)
   return posts
 }
 
-export async function listPostsByTag(tag: string, options?: PostVisibilityOptions): Promise<Post[]> {
+export async function listPostsByTag(
+  db: NodePgDatabase,
+  tag: string,
+  options?: PostVisibilityOptions,
+): Promise<Post[]> {
   const filters = buildPublicPostFilters(options)
-  const metas = await listPublicPosts({ ...filters, tag })
+  const metas = await listPublicPosts(db, { ...filters, tag })
   const posts = metas.map((meta) => toPostFromMeta(meta))
-  await hydratePostImages(posts)
+  await hydratePostImages(db, posts)
   return posts
 }
 
-export async function getPostsBySlugs(slugs: readonly string[], options?: PostVisibilityOptions): Promise<Post[]> {
+export async function getPostsBySlugs(
+  db: NodePgDatabase,
+  slugs: readonly string[],
+  options?: PostVisibilityOptions,
+): Promise<Post[]> {
   if (slugs.length === 0) {
     return []
   }
@@ -164,23 +186,27 @@ export async function getPostsBySlugs(slugs: readonly string[], options?: PostVi
       return visible && published && meta.published
     })
     .map((meta) => toPostFromMeta(meta))
-  await hydratePostImages(posts)
+  await hydratePostImages(db, posts)
   return posts
 }
 
-export async function listAllPosts(options?: PostVisibilityOptions): Promise<Post[]> {
+export async function listAllPosts(db: NodePgDatabase, options?: PostVisibilityOptions): Promise<Post[]> {
   const filters = buildPublicPostFilters(options)
-  const metas = await listPublicPosts({ ...filters })
+  const metas = await listPublicPosts(db, { ...filters })
   const posts = metas.map((meta) => toPostFromMeta(meta))
-  await hydratePostImages(posts)
+  await hydratePostImages(db, posts)
   return posts
 }
 
-export async function listClientPosts(options?: PostVisibilityOptions & { limit?: number }): Promise<ClientPost[]> {
+export async function listClientPosts(
+  db: NodePgDatabase,
+  options?: PostVisibilityOptions & { limit?: number },
+): Promise<ClientPost[]> {
   const filters = buildPublicPostFilters(options)
-  const metas = await listPublicPosts({ ...filters, limit: options?.limit ?? 5000 })
+  const metas = await listPublicPosts(db, { ...filters, limit: options?.limit ?? 5000 })
   const posts = metas.map((meta) => toClientPostFromMeta(meta))
   await hydrateImageRefs(
+    db,
     posts,
     (p) => p.cover,
     (p, lookup) => {
@@ -194,6 +220,7 @@ export async function listClientPosts(options?: PostVisibilityOptions & { limit?
 }
 
 export async function getClientPostsWithMetadata<PostLike extends { id: string }>(
+  db: NodePgDatabase,
   posts: PostLike[],
   options: { likes: boolean; views: boolean; comments: boolean },
 ): Promise<(PostLike & { meta: { likes: number; views: number; comments: number } })[]> {
@@ -201,6 +228,7 @@ export async function getClientPostsWithMetadata<PostLike extends { id: string }
     return []
   }
   const metas = await queryMetadata(
+    db,
     posts.map((post) => ({ type: 'post' as const, ownerId: idFromString(post.id) })),
     options,
   )
@@ -213,7 +241,7 @@ export async function getClientPostsWithMetadata<PostLike extends { id: string }
 
 const FEATURE_POST_COUNT = 3
 
-export async function selectFeaturePosts(seed: string): Promise<ClientPost[]> {
+export async function selectFeaturePosts(db: NodePgDatabase, seed: string): Promise<ClientPost[]> {
   const content = requireBlogSettingsSection('content')
   if (!content.post.featureEnabled) {
     return []
@@ -237,7 +265,7 @@ export async function selectFeaturePosts(seed: string): Promise<ClientPost[]> {
 
   const pinned = pinnedMetas.map((meta) => toClientPostFromMeta(meta))
   if (pinned.length === FEATURE_POST_COUNT) {
-    await hydrateClientPostCovers(pinned)
+    await hydrateClientPostCovers(db, pinned)
     return pinned
   }
 
@@ -277,11 +305,11 @@ export async function selectFeaturePosts(seed: string): Promise<ClientPost[]> {
     result = [...pinned, ...shuffled.slice(0, FEATURE_POST_COUNT - pinned.length)]
   }
 
-  await hydrateClientPostCovers(result)
+  await hydrateClientPostCovers(db, result)
   return result
 }
 
-export async function selectSidebarPosts(count: number): Promise<SidebarPostLink[]> {
+export async function selectSidebarPosts(db: NodePgDatabase, count: number): Promise<SidebarPostLink[]> {
   if (count <= 0) {
     return []
   }

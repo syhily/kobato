@@ -1,3 +1,5 @@
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
+
 import { and, desc, eq, getColumns, isNotNull, isNull, sql, type SQL } from 'drizzle-orm'
 
 import type { CmsPage } from '@/server/domains/pages/projection'
@@ -8,7 +10,6 @@ import { findContentById, findContentsByIds } from '@/server/domains/content/rep
 import { isCatalogVisible } from '@/server/domains/content/schema'
 import { hydrateImageRefs } from '@/server/domains/images/image-meta'
 import { toCmsPage } from '@/server/domains/pages/projection'
-import { db } from '@/server/infra/db/pool'
 import { page as pageMetaTable } from '@/server/infra/db/schema/page'
 import { user } from '@/server/infra/db/schema/user'
 import { escapeLikePattern } from '@/shared/utils/escape-like'
@@ -66,7 +67,7 @@ function buildPagesWhere(filters: ListPagesFilters): SQL | undefined {
   return and(...conditions)
 }
 
-export async function listPageMetas(filters: ListPagesFilters = {}): Promise<PageMetaWithAuthor[]> {
+export async function listPageMetas(db: NodePgDatabase, filters: ListPagesFilters = {}): Promise<PageMetaWithAuthor[]> {
   const where = buildPagesWhere(filters)
   const base = db
     .select({
@@ -86,7 +87,7 @@ export async function listPageMetas(filters: ListPagesFilters = {}): Promise<Pag
   return q
 }
 
-export async function countPageMetas(filters: ListPagesFilters = {}): Promise<number> {
+export async function countPageMetas(db: NodePgDatabase, filters: ListPagesFilters = {}): Promise<number> {
   const where = buildPagesWhere(filters)
   const builder = where
     ? db
@@ -98,12 +99,12 @@ export async function countPageMetas(filters: ListPagesFilters = {}): Promise<nu
   return rows[0]?.count ?? 0
 }
 
-export async function findPageMetaById(id: bigint): Promise<PageMetaRow | null> {
+export async function findPageMetaById(db: NodePgDatabase, id: bigint): Promise<PageMetaRow | null> {
   const rows = await db.select().from(pageMetaTable).where(eq(pageMetaTable.id, id)).limit(1)
   return rows[0] ?? null
 }
 
-export async function findPageMetaBySlug(slug: string): Promise<PageMetaRow | null> {
+export async function findPageMetaBySlug(db: NodePgDatabase, slug: string): Promise<PageMetaRow | null> {
   const rows = await db.select().from(pageMetaTable).where(eq(pageMetaTable.slug, slug)).limit(1)
   return rows[0] ?? null
 }
@@ -118,7 +119,7 @@ export async function findPageMetaBySlug(slug: string): Promise<PageMetaRow | nu
  * helper would force a parallel "include scheduled" boolean. The
  * catalog applies the timestamp gate in the service layer instead.
  */
-export async function findPublicPageMetaBySlug(slug: string): Promise<PageMetaRow | null> {
+export async function findPublicPageMetaBySlug(db: NodePgDatabase, slug: string): Promise<PageMetaRow | null> {
   const rows = await db
     .select()
     .from(pageMetaTable)
@@ -128,7 +129,7 @@ export async function findPublicPageMetaBySlug(slug: string): Promise<PageMetaRo
 }
 
 /** All non-deleted page meta rows; cataloged at startup. */
-export async function listPublicPageMetas(limit = 500): Promise<PageMetaRow[]> {
+export async function listPublicPageMetas(db: NodePgDatabase, limit = 500): Promise<PageMetaRow[]> {
   return db
     .select()
     .from(pageMetaTable)
@@ -139,12 +140,13 @@ export async function listPublicPageMetas(limit = 500): Promise<PageMetaRow[]> {
 
 // --- Writes ------------------------------------------------------------------
 
-export async function insertPageMeta(values: NewPageMeta): Promise<PageMetaRow> {
+export async function insertPageMeta(db: NodePgDatabase, values: NewPageMeta): Promise<PageMetaRow> {
   const rows = await db.insert(pageMetaTable).values(values).returning()
   return rows[0]
 }
 
 export async function updatePageMetaById(
+  db: NodePgDatabase,
   id: bigint,
   patch: Partial<Omit<NewPageMeta, 'id' | 'createdAt'>>,
 ): Promise<PageMetaRow | null> {
@@ -161,7 +163,7 @@ export async function updatePageMetaById(
  * the rows themselves stay around for `restorePage`. Returns false
  * when the row was already deleted (idempotent for the admin button).
  */
-export async function softDeletePageMeta(id: bigint): Promise<boolean> {
+export async function softDeletePageMeta(db: NodePgDatabase, id: bigint): Promise<boolean> {
   const now = new Date()
   const rows = await db
     .update(pageMetaTable)
@@ -171,7 +173,7 @@ export async function softDeletePageMeta(id: bigint): Promise<boolean> {
   return rows.length > 0
 }
 
-export async function restorePageMeta(id: bigint): Promise<boolean> {
+export async function restorePageMeta(db: NodePgDatabase, id: bigint): Promise<boolean> {
   const rows = await db
     .update(pageMetaTable)
     .set({ deletedAt: null, updatedAt: new Date() })
@@ -182,8 +184,9 @@ export async function restorePageMeta(id: bigint): Promise<boolean> {
 
 // --- Hydrated queries (return public Page DTOs) ------------------------------
 
-async function hydratePageImages(pages: Page[]): Promise<void> {
+async function hydratePageImages(db: NodePgDatabase, pages: Page[]): Promise<void> {
   await hydrateImageRefs(
+    db,
     pages,
     (p) => p.cover,
     (p, lookup) => {
@@ -224,19 +227,19 @@ export function buildDbPage(page: CmsPage): Page {
   }
 }
 
-export async function findPageBySlug(slug: string): Promise<Page | null> {
-  const meta = await findPublicPageMetaBySlug(slug)
+export async function findPageBySlug(db: NodePgDatabase, slug: string): Promise<Page | null> {
+  const meta = await findPublicPageMetaBySlug(db, slug)
   if (meta === null || !isCatalogVisible(meta)) {
     return null
   }
-  const revision = meta.publishedRevisionId === null ? null : await findContentById(meta.publishedRevisionId)
+  const revision = meta.publishedRevisionId === null ? null : await findContentById(db, meta.publishedRevisionId)
   const page = buildDbPage(toCmsPage(meta, revision))
-  await hydratePageImages([page])
+  await hydratePageImages(db, [page])
   return page
 }
 
-export async function listAllPages(): Promise<Page[]> {
-  const metas = await listPublicPageMetas()
+export async function listAllPages(db: NodePgDatabase): Promise<Page[]> {
+  const metas = await listPublicPageMetas(db)
   const asOf = new Date()
   const visible = metas.filter((meta) => isCatalogVisible(meta, asOf))
   if (visible.length === 0) {
@@ -246,7 +249,7 @@ export async function listAllPages(): Promise<Page[]> {
   const revisionIds = visible.map((m) => m.publishedRevisionId).filter((id): id is bigint => id !== null)
   const revisionMap = new Map<bigint, Awaited<ReturnType<typeof findContentsByIds>>[number]>()
   if (revisionIds.length > 0) {
-    const rows = await findContentsByIds(revisionIds)
+    const rows = await findContentsByIds(db, revisionIds)
     for (const row of rows) {
       revisionMap.set(row.id, row)
     }
@@ -256,6 +259,6 @@ export async function listAllPages(): Promise<Page[]> {
     const revision = meta.publishedRevisionId === null ? null : (revisionMap.get(meta.publishedRevisionId) ?? null)
     return buildDbPage(toCmsPage(meta, revision))
   })
-  await hydratePageImages(pages)
+  await hydratePageImages(db, pages)
   return pages
 }

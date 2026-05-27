@@ -1,3 +1,5 @@
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
+
 import type { AdminPageDto } from '@/server/domains/pages/projection'
 
 import { toAdminPageDto } from '@/server/domains/pages/projection'
@@ -19,23 +21,27 @@ import {
 import { DomainError, isUniqueConstraintError } from '@/server/infra/http/errors'
 import { ensureSlugLegal, resolveSlug } from '@/server/infra/slug-validation'
 
-export async function createPage(input: UpsertPageMetaInput, authorId: bigint | null): Promise<AdminPageDto> {
+export async function createPage(
+  db: NodePgDatabase,
+  input: UpsertPageMetaInput,
+  authorId: bigint | null,
+): Promise<AdminPageDto> {
   const slug = resolveSlug(input.slug, input.title)
   ensureSlugLegal(slug, 'page')
   // page↔page collision; the cross-table page↔post fence runs in the
   // catalog snapshot rebuild after invalidate.
-  const collision = await findPageMetaBySlug(slug)
+  const collision = await findPageMetaBySlug(db, slug)
   if (collision !== null) {
     throw new DomainError('CONFLICT', `slug "${slug}" 已被其它页面占用。`)
   }
-  const crossCollision = await findSlugRegistryBySlug(slug)
+  const crossCollision = await findSlugRegistryBySlug(db, slug)
   if (crossCollision !== null && crossCollision.entityType !== 'page') {
     throw new DomainError('CONFLICT', `slug "${slug}" 已被其它文章占用。`)
   }
   const now = new Date()
   let row: Awaited<ReturnType<typeof insertPageMeta>>
   try {
-    row = await insertPageMeta({
+    row = await insertPageMeta(db, {
       slug,
       title: input.title,
       summary: input.summary ?? '',
@@ -49,7 +55,7 @@ export async function createPage(input: UpsertPageMetaInput, authorId: bigint | 
       publishedAt: input.publishedAt ?? now,
       authorId,
     })
-    await insertSlugRegistry({ slug, entityType: 'page', entityId: row.id })
+    await insertSlugRegistry(db, { slug, entityType: 'page', entityId: row.id })
   } catch (err) {
     if (isUniqueConstraintError(err, 'uq_slug_registry_slug')) {
       throw new DomainError('CONFLICT', `slug "${slug}" 已被占用。`)
@@ -60,29 +66,29 @@ export async function createPage(input: UpsertPageMetaInput, authorId: bigint | 
   return toAdminPageDto(row)
 }
 
-export async function updatePageMeta(input: UpsertPageMetaInput): Promise<AdminPageDto> {
+export async function updatePageMeta(db: NodePgDatabase, input: UpsertPageMetaInput): Promise<AdminPageDto> {
   if (input.id === undefined) {
     throw new DomainError('BAD_REQUEST', 'updatePageMeta requires an id')
   }
   const slug = resolveSlug(input.slug, input.title)
   ensureSlugLegal(slug, 'page')
-  const existing = await findPageMetaById(input.id)
+  const existing = await findPageMetaById(db, input.id)
   if (existing === null) {
     throw new DomainError('NOT_FOUND', '页面不存在或已被删除。')
   }
   if (existing.slug !== slug) {
-    const collision = await findPageMetaBySlug(slug)
+    const collision = await findPageMetaBySlug(db, slug)
     if (collision !== null && collision.id !== input.id) {
       throw new DomainError('CONFLICT', `slug "${slug}" 已被其它页面占用。`)
     }
-    const crossCollision = await findSlugRegistryBySlug(slug)
+    const crossCollision = await findSlugRegistryBySlug(db, slug)
     if (crossCollision !== null && crossCollision.entityType !== 'page') {
       throw new DomainError('CONFLICT', `slug "${slug}" 已被其它文章占用。`)
     }
   }
   let updated: Awaited<ReturnType<typeof updatePageMetaById>>
   try {
-    updated = await updatePageMetaById(input.id, {
+    updated = await updatePageMetaById(db, input.id, {
       slug,
       title: input.title,
       summary: input.summary ?? existing.summary,
@@ -95,7 +101,7 @@ export async function updatePageMeta(input: UpsertPageMetaInput): Promise<AdminP
       publishedAt: input.publishedAt ?? existing.publishedAt,
     })
     if (existing.slug !== slug) {
-      await updateSlugRegistryByEntity({ entityType: 'page', entityId: input.id, slug })
+      await updateSlugRegistryByEntity(db, { entityType: 'page', entityId: input.id, slug })
     }
   } catch (err) {
     if (isUniqueConstraintError(err, 'uq_slug_registry_slug')) {
@@ -110,22 +116,22 @@ export async function updatePageMeta(input: UpsertPageMetaInput): Promise<AdminP
   return toAdminPageDto(updated)
 }
 
-export async function deletePage(id: bigint): Promise<{ deleted: boolean }> {
-  const deleted = await softDeletePageMeta(id)
+export async function deletePage(db: NodePgDatabase, id: bigint): Promise<{ deleted: boolean }> {
+  const deleted = await softDeletePageMeta(db, id)
   if (deleted) {
-    await deleteSlugRegistryByEntity({ entityType: 'page', entityId: id })
+    await deleteSlugRegistryByEntity(db, { entityType: 'page', entityId: id })
     await clearPagesCache()
   }
   return { deleted }
 }
 
-export async function restorePage(id: bigint): Promise<{ restored: boolean }> {
-  const restored = await restorePageMeta(id)
+export async function restorePage(db: NodePgDatabase, id: bigint): Promise<{ restored: boolean }> {
+  const restored = await restorePageMeta(db, id)
   if (restored) {
-    const meta = await findPageMetaById(id)
+    const meta = await findPageMetaById(db, id)
     if (meta !== null) {
       try {
-        await insertSlugRegistry({ slug: meta.slug, entityType: 'page', entityId: id })
+        await insertSlugRegistry(db, { slug: meta.slug, entityType: 'page', entityId: id })
       } catch (err) {
         if (!isUniqueConstraintError(err, 'uq_slug_registry_slug')) {
           throw err
@@ -137,12 +143,12 @@ export async function restorePage(id: bigint): Promise<{ restored: boolean }> {
   return { restored }
 }
 
-export async function unpublishPage(id: bigint): Promise<AdminPageDto> {
-  const existing = await findPageMetaById(id)
+export async function unpublishPage(db: NodePgDatabase, id: bigint): Promise<AdminPageDto> {
+  const existing = await findPageMetaById(db, id)
   if (existing === null) {
     throw new DomainError('NOT_FOUND', '页面不存在或已被删除。')
   }
-  const updated = await updatePageMetaById(id, { published: false })
+  const updated = await updatePageMetaById(db, id, { published: false })
   if (updated === null) {
     throw new DomainError('NOT_FOUND', '页面不存在或已被删除。')
   }

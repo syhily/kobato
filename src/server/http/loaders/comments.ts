@@ -1,3 +1,5 @@
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
+
 import type { BlogSession, SessionUser } from '@/server/domains/auth/session-storage'
 import type { EntityTarget } from '@/server/infra/db/target'
 import type { CommentFormUser } from '@/shared/types/catalog'
@@ -35,8 +37,12 @@ export type { DetailPageComments } from '@/shared/types/comments'
 // renders immediately. PT bodies are stored pre-rendered, so the
 // per-row work in `parseComments` is now just projection — but the
 // network/DB round-trip is still worth deferring.
-async function loadCommentsAndItems(session: BlogSession, target: EntityTarget): Promise<DetailPageComments> {
-  const commentData = await loadComments(session, target, 0, { ensurePage: false })
+async function loadCommentsAndItems(
+  db: NodePgDatabase,
+  session: BlogSession,
+  target: EntityTarget,
+): Promise<DetailPageComments> {
+  const commentData = await loadComments(db, session, target, 0, { ensurePage: false })
   const commentItems = commentData && commentData.comments.length > 0 ? await parseComments(commentData.comments) : []
   return { commentData, commentItems: asCommentItemsWire(commentItems) }
 }
@@ -46,6 +52,7 @@ async function loadCommentsAndItems(session: BlogSession, target: EntityTarget):
 // Comments are intentionally excluded so the loader can stream them
 // alongside the SSR HTML.
 export async function loadDetailPageCritical(
+  db: NodePgDatabase,
   session: BlogSession,
   target: EntityTarget,
   options?: { trackView?: boolean },
@@ -62,9 +69,9 @@ export async function loadDetailPageCritical(
   }
 
   const [metricRow, likes, sidebar] = await Promise.all([
-    ensureCommentPage(target),
-    queryLikes(target),
-    loadSidebarData(session),
+    ensureCommentPage(db, target),
+    queryLikes(db, target),
+    loadSidebarData(db, session),
   ])
 
   return {
@@ -78,12 +85,13 @@ export async function loadDetailPageCritical(
 // Detail data with the comments promise split out, ready to stream through
 // React Router's `defer`-style return + `<Await>` consumer.
 export async function loadDetailPageStreaming(
+  db: NodePgDatabase,
   session: BlogSession,
   target: EntityTarget,
   options?: { trackView?: boolean },
 ) {
-  const critical = await loadDetailPageCritical(session, target, options)
-  const comments = loadCommentsAndItems(session, target)
+  const critical = await loadDetailPageCritical(db, session, target, options)
+  const comments = loadCommentsAndItems(db, session, target)
   return { critical, comments }
 }
 
@@ -92,12 +100,13 @@ export async function loadDetailPageStreaming(
 // contract directly and the admin-comments listing path still wants the
 // fully-resolved shape.
 export async function loadDetailPageData(
+  db: NodePgDatabase,
   session: BlogSession,
   target: EntityTarget,
   options?: { trackView?: boolean },
 ) {
-  const commentsPromise = loadCommentsAndItems(session, target)
-  const critical = await loadDetailPageCritical(session, target, options)
+  const commentsPromise = loadCommentsAndItems(db, session, target)
+  const critical = await loadDetailPageCritical(db, session, target, options)
   const comments = await commentsPromise
   return {
     ...critical,

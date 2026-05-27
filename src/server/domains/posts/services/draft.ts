@@ -1,3 +1,5 @@
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
+
 import type { PublishLatestResult, SaveDraftResult } from '@/server/domains/pages/repo'
 import type { ContentRow, PostMetaRow } from '@/server/infra/db/types'
 import type { PortableTextBody } from '@/shared/pt/schema'
@@ -32,20 +34,21 @@ export interface PostDraftPreview {
   hasNewerDraft: boolean
 }
 
-export async function loadPostDraftPreviewBySlug(slug: string): Promise<PostDraftPreview | null> {
-  const meta = await findPublicPostMetaBySlug(slug)
+export async function loadPostDraftPreviewBySlug(db: NodePgDatabase, slug: string): Promise<PostDraftPreview | null> {
+  const meta = await findPublicPostMetaBySlug(db, slug)
   if (meta === null) {
     return null
   }
-  const draft = await findLatestDraft('post', meta.id)
+  const draft = await findLatestDraft(db, 'post', meta.id)
   let revision: ContentRow | null = draft
   if (revision === null && meta.publishedRevisionId !== null) {
-    revision = await findContentById(meta.publishedRevisionId)
+    revision = await findContentById(db, meta.publishedRevisionId)
   }
   return { post: toCmsPost(meta, revision), hasNewerDraft: draft !== null }
 }
 
 export async function loadEditorBody(
+  db: NodePgDatabase,
   id: bigint,
   viewer?: ViewerContext,
 ): Promise<{
@@ -53,30 +56,31 @@ export async function loadEditorBody(
   draft: ContentRow | null
   published: ContentRow | null
 }> {
-  const meta = await findPostMetaById(id)
+  const meta = await findPostMetaById(db, id)
   assertOwnPostOr404(meta, viewer)
   const [draft, published] = await Promise.all([
-    findLatestDraft('post', meta.id),
-    meta.publishedRevisionId === null ? Promise.resolve(null) : findContentById(meta.publishedRevisionId),
+    findLatestDraft(db, 'post', meta.id),
+    meta.publishedRevisionId === null ? Promise.resolve(null) : findContentById(db, meta.publishedRevisionId),
   ])
   return { meta, draft, published }
 }
 
 async function savePostBodyInternal(
+  db: NodePgDatabase,
   input: SavePostBodyInput,
   mode: 'draft' | 'publish',
   viewer?: ViewerContext,
 ): Promise<SavePostResult> {
-  const meta = await findPostMetaById(input.postId)
+  const meta = await findPostMetaById(db, input.postId)
   assertOwnPostOr404(meta, viewer)
   const body = await canonicalizeBodyOrThrow(input.body)
-  await syncLibraryImageBlocks(body).catch((err: unknown) => {
+  await syncLibraryImageBlocks(db, body).catch((err: unknown) => {
     log.warn('sync library image blocks failed', { postId: input.postId, error: err })
   })
   const imageSources = collectImageStoragePaths(body)
   const headings = collectHeadings(body, deriveSlug)
 
-  const overwriteContext = input.force === true ? await findLatestDraft('post', meta.id).catch(() => null) : null
+  const overwriteContext = input.force === true ? await findLatestDraft(db, 'post', meta.id).catch(() => null) : null
 
   const repoInput = {
     ownerId: meta.id,
@@ -90,8 +94,8 @@ async function savePostBodyInternal(
 
   const result =
     mode === 'draft'
-      ? await saveDraftRevision('post', repoInput)
-      : await publishLatestRevision('post', { ...repoInput, publishedAt: input.publishedAt })
+      ? await saveDraftRevision(db, 'post', repoInput)
+      : await publishLatestRevision(db, 'post', { ...repoInput, publishedAt: input.publishedAt })
 
   const wroteSuccessfully = result.status === 'saved' || result.status === 'published'
   if (input.force === true && wroteSuccessfully && overwriteContext !== null) {
@@ -112,11 +116,12 @@ async function savePostBodyInternal(
   }
   if (mode === 'publish' && wroteSuccessfully) {
     await clearPostMetasCache()
-    const publishedRevision = await findContentById(result.row.id)
+    const publishedRevision = await findContentById(db, result.row.id)
     if (publishedRevision !== null) {
-      const postMeta = await findPostMetaById(input.postId)
+      const postMeta = await findPostMetaById(db, input.postId)
       if (postMeta !== null) {
         await indexPost(
+          db,
           postMeta.id,
           postMeta.title,
           postMeta.summary,
@@ -130,12 +135,20 @@ async function savePostBodyInternal(
   return projectSaveResult(result)
 }
 
-export function saveDraft(input: SavePostBodyInput, viewer?: ViewerContext): Promise<SavePostResult> {
-  return savePostBodyInternal(input, 'draft', viewer)
+export function saveDraft(
+  db: NodePgDatabase,
+  input: SavePostBodyInput,
+  viewer?: ViewerContext,
+): Promise<SavePostResult> {
+  return savePostBodyInternal(db, input, 'draft', viewer)
 }
 
-export function publishLatest(input: SavePostBodyInput, viewer?: ViewerContext): Promise<SavePostResult> {
-  return savePostBodyInternal(input, 'publish', viewer)
+export function publishLatest(
+  db: NodePgDatabase,
+  input: SavePostBodyInput,
+  viewer?: ViewerContext,
+): Promise<SavePostResult> {
+  return savePostBodyInternal(db, input, 'publish', viewer)
 }
 
 function projectSaveResult(result: SaveDraftResult | PublishLatestResult): SavePostResult {

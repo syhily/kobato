@@ -16,14 +16,6 @@ testDbUrl = await createWorkerDatabase(workerId)
 process.env.DATABASE_URL = testDbUrl
 
 afterAll(async () => {
-  // Some test files mock `db.pool`; use optional access so the cleanup
-  // does not blow up when the hoisted mock lacks `closePool`.
-  try {
-    const mod = await import('@/server/infra/db/pool')
-    await (mod as { closePool?: () => Promise<void> }).closePool?.()
-  } catch {
-    // ignore — pool may already be closed by shutdown hooks
-  }
   if (testDbUrl) {
     await dropWorkerDatabase(testDbUrl)
   }

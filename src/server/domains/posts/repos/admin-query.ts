@@ -1,13 +1,14 @@
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
+
 import { eq, sql, getColumns } from 'drizzle-orm'
 
 import type { PostMetaWithAuthor, ListPostsFilters } from '@/server/domains/posts/repos/shared'
 
 import { buildPostsWhere, buildPostsOrderBy } from '@/server/domains/posts/repos/shared'
-import { db } from '@/server/infra/db/pool'
 import { post as postMetaTable } from '@/server/infra/db/schema/post'
 import { user } from '@/server/infra/db/schema/user'
 
-export async function listPostMetas(filters: ListPostsFilters = {}): Promise<PostMetaWithAuthor[]> {
+export async function listPostMetas(db: NodePgDatabase, filters: ListPostsFilters = {}): Promise<PostMetaWithAuthor[]> {
   const where = buildPostsWhere(filters)
   const base = db
     .select({
@@ -27,7 +28,7 @@ export async function listPostMetas(filters: ListPostsFilters = {}): Promise<Pos
   return q
 }
 
-export async function countPostMetas(filters: ListPostsFilters = {}): Promise<number> {
+export async function countPostMetas(db: NodePgDatabase, filters: ListPostsFilters = {}): Promise<number> {
   const where = buildPostsWhere(filters)
   const builder = where
     ? db

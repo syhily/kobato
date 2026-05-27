@@ -1,9 +1,10 @@
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
+
 import { and, eq, inArray, isNotNull, isNull } from 'drizzle-orm'
 
 import type { PortableTextBody } from '@/shared/pt/schema'
 
 import { indexPost } from '@/server/domains/posts/indexer'
-import { db } from '@/server/infra/db/pool'
 import { content } from '@/server/infra/db/schema/content'
 import { post } from '@/server/infra/db/schema/post'
 import { getLogger } from '@/server/infra/logger'
@@ -28,7 +29,10 @@ export interface ReindexBatchResult {
  * When `batchSize` is omitted the entire set is processed in one call.
  * Returns `nextOffset` so callers can drive pagination until it is null.
  */
-export async function reindexSearchBatch(input: ReindexBatchInput = {}): Promise<ReindexBatchResult> {
+export async function reindexSearchBatch(
+  db: NodePgDatabase,
+  input: ReindexBatchInput = {},
+): Promise<ReindexBatchResult> {
   const rows = await db
     .select({
       id: post.id,
@@ -57,7 +61,7 @@ export async function reindexSearchBatch(input: ReindexBatchInput = {}): Promise
     const rev = contentMap.get(row.publishedRevisionId!)
     if (rev) {
       try {
-        await indexPost(row.id, row.title, row.summary, rev.body as PortableTextBody)
+        await indexPost(db, row.id, row.title, row.summary, rev.body as PortableTextBody)
         processed++
       } catch (err) {
         log.error('Index post failed', {

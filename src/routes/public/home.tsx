@@ -5,7 +5,7 @@ import type { ListingPostCard } from '@/shared/types/catalog'
 import type { SidebarData } from '@/ui/public/Sidebar'
 
 import { trackAccess } from '@/server/domains/analytics/track'
-import { getRouteRequestContext } from '@/server/domains/auth/context'
+import { getDbFromContext, getRouteRequestContext } from '@/server/domains/auth/context'
 import { userSession } from '@/server/domains/auth/primitives'
 import {
   countPublicPosts,
@@ -39,6 +39,7 @@ export async function loader({
   params,
 }: Route.LoaderArgs): Promise<ListingPageLoaderData<HomeExtra>> {
   const { session } = getRouteRequestContext({ request, context })
+  const db = getDbFromContext({ request, context })
 
   // Time-series access-log write for the analytics dashboard. The
   // homepage isn't a content detail page so we pass a null target —
@@ -58,23 +59,24 @@ export async function loader({
   }
 
   const [totalPosts, sidebar, featureSeed] = await Promise.all([
-    countPublicPosts(filters),
-    loadSidebarData(session),
+    countPublicPosts(db, filters),
+    loadSidebarData(db, session),
     Promise.resolve(formatLocalDate(new Date(), 'yyyy-MM-dd', requireBlogSettingsSection('siteIdentity'))),
   ])
 
   // Kick off independent queries in parallel with the listing pipeline.
-  const featurePromise = selectFeaturePosts(featureSeed)
+  const featurePromise = selectFeaturePosts(db, featureSeed)
   const sidebarPostsPromise = selectSidebarPosts(
+    db,
     getSidebarWidgetCount(requireBlogSettingsSection('sidebar'), 'recentPosts'),
   )
-  const tagsPromise = listAllTags()
+  const tagsPromise = listAllTags(db)
 
-  return listingLoader<HomeExtra>({
+  return listingLoader<HomeExtra>(db, {
     rawNum: params.num,
     totalPosts,
     fetchPage: (pageNum, pageSize) =>
-      listPublicPostCardsPaginated(pageNum, pageSize, {
+      listPublicPostCardsPaginated(db, pageNum, pageSize, {
         ...filters,
         offset: (pageNum - 1) * homePageSize,
       }).then((r) => r.posts),
@@ -87,7 +89,7 @@ export async function loader({
     computeExtra: async ({ resolvedPosts }) => {
       const uniqueCategories = [...new Set(resolvedPosts.map((p) => p.category).filter(Boolean))]
       const [categoryLinks, featurePosts, tags] = await Promise.all([
-        getCategoryLinks(uniqueCategories),
+        getCategoryLinks(db, uniqueCategories),
         featurePromise,
         tagsPromise,
       ])

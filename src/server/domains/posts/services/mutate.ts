@@ -1,3 +1,5 @@
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
+
 import { eq } from 'drizzle-orm'
 
 import type { PortableTextBody } from '@/shared/pt/schema'
@@ -21,7 +23,6 @@ import {
   updateSlugRegistryByEntity,
 } from '@/server/infra/db/operations/slug-registry'
 import { seedTagsIfMissing } from '@/server/infra/db/operations/tag'
-import { db } from '@/server/infra/db/pool'
 import { post as postMetaTable } from '@/server/infra/db/schema/post'
 import { DomainError, isUniqueConstraintError } from '@/server/infra/http/errors'
 import { getLogger } from '@/server/infra/logger'
@@ -30,17 +31,18 @@ import { idFromString } from '@/shared/utils/id'
 
 const log = getLogger('posts.service')
 
-async function ensureTagsExist(tagNames: string[], tx = db): Promise<void> {
+async function ensureTagsExist(db: NodePgDatabase, tagNames: string[]): Promise<void> {
   if (tagNames.length === 0) {
     return
   }
   await seedTagsIfMissing(
+    db,
     tagNames.map((name) => ({ name, slug: resolveSlugForTaxonomy(undefined, name) })),
-    tx,
   )
 }
 
 export async function createPost(
+  db: NodePgDatabase,
   input: UpsertPostMetaInput,
   authorId: bigint | null,
   viewer?: ViewerContext,
@@ -51,18 +53,18 @@ export async function createPost(
   }
   const slug = resolveSlug(input.slug, input.title)
   ensureSlugLegal(slug, 'post')
-  const collision = await findPostMetaBySlug(slug)
+  const collision = await findPostMetaBySlug(db, slug)
   if (collision !== null) {
     throw new DomainError('CONFLICT', `slug "${slug}" 已被其它文章占用。`)
   }
-  const crossCollision = await findSlugRegistryBySlug(slug)
+  const crossCollision = await findSlugRegistryBySlug(db, slug)
   if (crossCollision !== null && crossCollision.entityType !== 'post') {
     throw new DomainError('CONFLICT', `slug "${slug}" 已被其它页面占用。`)
   }
   const now = new Date()
   try {
     const row = await db.transaction(async (tx) => {
-      await ensureTagsExist(input.tags ?? [], tx)
+      await ensureTagsExist(tx, input.tags ?? [])
       const [inserted] = await tx
         .insert(postMetaTable)
         .values({
@@ -86,7 +88,7 @@ export async function createPost(
         .returning()
       return inserted
     })
-    await insertSlugRegistry({ slug, entityType: 'post', entityId: row.id })
+    await insertSlugRegistry(db, { slug, entityType: 'post', entityId: row.id })
     await clearPostMetasCache()
     return toAdminPostDto(row)
   } catch (err) {
@@ -97,28 +99,32 @@ export async function createPost(
   }
 }
 
-export async function updatePostMeta(input: UpsertPostMetaInput, viewer?: ViewerContext): Promise<AdminPostDto> {
+export async function updatePostMeta(
+  db: NodePgDatabase,
+  input: UpsertPostMetaInput,
+  viewer?: ViewerContext,
+): Promise<AdminPostDto> {
   if (input.id === undefined) {
     throw new DomainError('BAD_REQUEST', 'updatePostMeta requires an id')
   }
   const id = input.id
   const slug = resolveSlug(input.slug, input.title)
   ensureSlugLegal(slug, 'post')
-  const existing = await findPostMetaById(id)
+  const existing = await findPostMetaById(db, id)
   assertOwnPostOr404(existing, viewer)
   if (existing.slug !== slug) {
-    const collision = await findPostMetaBySlug(slug)
+    const collision = await findPostMetaBySlug(db, slug)
     if (collision !== null && collision.id !== id) {
       throw new DomainError('CONFLICT', `slug "${slug}" 已被其它文章占用。`)
     }
-    const crossCollision = await findSlugRegistryBySlug(slug)
+    const crossCollision = await findSlugRegistryBySlug(db, slug)
     if (crossCollision !== null && crossCollision.entityType !== 'post') {
       throw new DomainError('CONFLICT', `slug "${slug}" 已被其它页面占用。`)
     }
   }
   try {
     const updated = await db.transaction(async (tx) => {
-      await ensureTagsExist(input.tags ?? [], tx)
+      await ensureTagsExist(tx, input.tags ?? [])
       const [result] = await tx
         .update(postMetaTable)
         .set({
@@ -143,7 +149,7 @@ export async function updatePostMeta(input: UpsertPostMetaInput, viewer?: Viewer
       return result ?? null
     })
     if (existing.slug !== slug) {
-      await updateSlugRegistryByEntity({ entityType: 'post', entityId: id, slug })
+      await updateSlugRegistryByEntity(db, { entityType: 'post', entityId: id, slug })
     }
     if (updated === null) {
       throw new DomainError('NOT_FOUND', '文章不存在或已被删除。')
@@ -158,34 +164,42 @@ export async function updatePostMeta(input: UpsertPostMetaInput, viewer?: Viewer
   }
 }
 
-export async function deletePost(id: bigint, viewer?: ViewerContext): Promise<{ deleted: boolean }> {
-  const meta = await findPostMetaById(id)
+export async function deletePost(
+  db: NodePgDatabase,
+  id: bigint,
+  viewer?: ViewerContext,
+): Promise<{ deleted: boolean }> {
+  const meta = await findPostMetaById(db, id)
   assertOwnPostOr404(meta, viewer)
   const deleted = await db.transaction(async (tx) => {
-    const ok = await softDeletePostMeta(id, tx)
+    const ok = await softDeletePostMeta(tx, id)
     if (ok) {
-      await removePostIndex(id, tx)
+      await removePostIndex(tx, id)
     }
     return ok
   })
   if (deleted) {
-    await deleteSlugRegistryByEntity({ entityType: 'post', entityId: id })
+    await deleteSlugRegistryByEntity(db, { entityType: 'post', entityId: id })
     await clearPostMetasCache()
   }
   return { deleted }
 }
 
-export async function restorePost(id: bigint, viewer?: ViewerContext): Promise<{ restored: boolean }> {
-  const meta = await findPostMetaById(id)
+export async function restorePost(
+  db: NodePgDatabase,
+  id: bigint,
+  viewer?: ViewerContext,
+): Promise<{ restored: boolean }> {
+  const meta = await findPostMetaById(db, id)
   assertOwnPostOr404(meta, viewer)
   const restored = await db.transaction(async (tx) => {
-    return restorePostMeta(id, tx)
+    return restorePostMeta(tx, id)
   })
   if (restored) {
-    const restoredMeta = await findPostMetaById(id)
+    const restoredMeta = await findPostMetaById(db, id)
     if (restoredMeta !== null) {
       try {
-        await insertSlugRegistry({ slug: restoredMeta.slug, entityType: 'post', entityId: id })
+        await insertSlugRegistry(db, { slug: restoredMeta.slug, entityType: 'post', entityId: id })
       } catch (err) {
         if (!isUniqueConstraintError(err, 'uq_slug_registry_slug')) {
           throw err
@@ -194,9 +208,10 @@ export async function restorePost(id: bigint, viewer?: ViewerContext): Promise<{
     }
     await clearPostMetasCache()
     if (restoredMeta !== null && restoredMeta.published && restoredMeta.publishedRevisionId !== null) {
-      const revision = await findContentById(restoredMeta.publishedRevisionId)
+      const revision = await findContentById(db, restoredMeta.publishedRevisionId)
       if (revision !== null) {
         await indexPost(
+          db,
           restoredMeta.id,
           restoredMeta.title,
           restoredMeta.summary,
@@ -210,15 +225,15 @@ export async function restorePost(id: bigint, viewer?: ViewerContext): Promise<{
   return { restored }
 }
 
-export async function unpublishPost(id: bigint, viewer?: ViewerContext): Promise<AdminPostDto> {
-  const existing = await findPostMetaById(id)
+export async function unpublishPost(db: NodePgDatabase, id: bigint, viewer?: ViewerContext): Promise<AdminPostDto> {
+  const existing = await findPostMetaById(db, id)
   assertOwnPostOr404(existing, viewer)
-  const updated = await updatePostMetaById(id, { published: false })
+  const updated = await updatePostMetaById(db, id, { published: false })
   if (updated === null) {
     throw new DomainError('NOT_FOUND', '文章不存在或已被删除。')
   }
   await clearPostMetasCache()
-  await removePostIndex(id).catch((err: unknown) => {
+  await removePostIndex(db, id).catch((err: unknown) => {
     log.warn('remove post index failed', { postId: id, error: err })
   })
   return toAdminPostDto(updated)

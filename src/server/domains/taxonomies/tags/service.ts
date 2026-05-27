@@ -1,3 +1,5 @@
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
+
 import { asc, inArray, sql } from 'drizzle-orm'
 
 import type { TagRow } from '@/server/infra/db/types'
@@ -24,7 +26,6 @@ import {
   listAdminTagRows,
   updateTag,
 } from '@/server/infra/db/operations/tag'
-import { db } from '@/server/infra/db/pool'
 import { post as postMetaTable } from '@/server/infra/db/schema/post'
 import { tag as tagTable } from '@/server/infra/db/schema/taxonomy'
 import { DomainError, ErrorMessages } from '@/server/infra/http/errors'
@@ -55,9 +56,9 @@ export interface AdminTagsListResult {
 // Single catalog snapshot + per-row map lookup. Counts include
 // hidden + scheduled posts so the column matches what the
 // delete-block guard sees.
-async function tagPostCounter(): Promise<(name: string) => Promise<number>> {
+async function tagPostCounter(db: NodePgDatabase): Promise<(name: string) => Promise<number>> {
   return async (name: string) => {
-    const posts = await listPostsByTag(name, { includeHidden: true, includeScheduled: true })
+    const posts = await listPostsByTag(db, name, { includeHidden: true, includeScheduled: true })
     return posts.length
   }
 }
@@ -65,8 +66,8 @@ async function tagPostCounter(): Promise<(name: string) => Promise<number>> {
 // Bulk-count posts per tag in a single query, then project into a Map.
 // Replaces the N+1 `tagPostCounter` for list views while keeping the
 // per-tag helper for single-row upserts.
-async function countPostsByTags(): Promise<Map<string, number>> {
-  const metas = await listPublicPosts({ includeHidden: true, includeScheduled: true })
+async function countPostsByTags(db: NodePgDatabase): Promise<Map<string, number>> {
+  const metas = await listPublicPosts(db, { includeHidden: true, includeScheduled: true })
   const counts = new Map<string, number>()
   for (const meta of metas) {
     const tags = readStringArray(meta.tags)
@@ -82,12 +83,15 @@ async function countPostsByTags(): Promise<Map<string, number>> {
 // and the catalog snapshot. `total` is the full filtered count
 // (independent of `offset`/`limit`) so the client can render the
 // correct number of pagination buttons.
-export async function listTagsForAdmin(filters: AdminTagsListFilters): Promise<AdminTagsListResult> {
+export async function listTagsForAdmin(
+  db: NodePgDatabase,
+  filters: AdminTagsListFilters,
+): Promise<AdminTagsListResult> {
   const offset = filters.offset ?? 0
   const [rows, total, counts] = await Promise.all([
-    listAdminTagRows(filters),
-    countAdminTags({ q: filters.q }),
-    countPostsByTags(),
+    listAdminTagRows(db, filters),
+    countAdminTags(db, { q: filters.q }),
+    countPostsByTags(db),
   ])
   return {
     tags: rows.map((row) => toAdminTagDto(row, counts.get(row.name) ?? 0)),
@@ -107,13 +111,23 @@ export interface TagViewerContext {
   role: Role
 }
 
-export async function upsertAdminTag(input: UpsertTagInputs, viewer?: TagViewerContext): Promise<AdminTagDto> {
+export async function upsertAdminTag(
+  db: NodePgDatabase,
+  input: UpsertTagInputs,
+  viewer?: TagViewerContext,
+): Promise<AdminTagDto> {
   const slug = resolveSlugForTaxonomy(input.slug, input.name)
 
   if (input.id === undefined) {
-    await ensureUniqueOnCreateTaxonomy(findTagByName, findTagBySlug, input.name, slug, '标签')
-    const row = await insertTag({ name: input.name, slug })
-    const countOf = await tagPostCounter()
+    await ensureUniqueOnCreateTaxonomy(
+      (name) => findTagByName(db, name),
+      (slug) => findTagBySlug(db, slug),
+      input.name,
+      slug,
+      '标签',
+    )
+    const row = await insertTag(db, { name: input.name, slug })
+    const countOf = await tagPostCounter(db)
     return toAdminTagDto(row, await countOf(row.name))
   }
 
@@ -122,13 +136,13 @@ export async function upsertAdminTag(input: UpsertTagInputs, viewer?: TagViewerC
     throw new DomainError('FORBIDDEN', ErrorMessages.FORBIDDEN)
   }
 
-  const existing = await findTagById(input.id)
+  const existing = await findTagById(db, input.id)
   if (existing === null) {
     throw new DomainError('NOT_FOUND', '标签不存在')
   }
   await ensureUniqueOnUpdateTaxonomy(
-    findTagByName,
-    findTagBySlug,
+    (name) => findTagByName(db, name),
+    (slug) => findTagBySlug(db, slug),
     input.id,
     input.name,
     existing.name,
@@ -136,11 +150,11 @@ export async function upsertAdminTag(input: UpsertTagInputs, viewer?: TagViewerC
     existing.slug,
     '标签',
   )
-  const updated = await updateTag(input.id, { name: input.name, slug })
+  const updated = await updateTag(db, input.id, { name: input.name, slug })
   if (updated === null) {
     throw new DomainError('NOT_FOUND', '标签不存在')
   }
-  const countOf = await tagPostCounter()
+  const countOf = await tagPostCounter(db)
   return toAdminTagDto(updated, await countOf(updated.name))
 }
 
@@ -151,11 +165,11 @@ export async function upsertAdminTag(input: UpsertTagInputs, viewer?: TagViewerC
 // delete. Authors get the same UX as admins because the cross-check is
 // global to the tag, not the viewer. Same contract as
 // `deleteAdminCategory`.
-export async function deleteAdminTag(id: bigint, _viewer?: TagViewerContext): Promise<boolean> {
+export async function deleteAdminTag(db: NodePgDatabase, id: bigint, _viewer?: TagViewerContext): Promise<boolean> {
   return deleteAdminTaxonomy(id, '标签', {
-    findById: findTagById,
-    deleteRow: deleteTagRow,
-    listPostsBy: listPostsByTag,
+    findById: (id) => findTagById(db, id),
+    deleteRow: (id) => deleteTagRow(db, id),
+    listPostsBy: (name) => listPostsByTag(db, name),
   })
 }
 
@@ -164,7 +178,7 @@ export async function deleteAdminTag(id: bigint, _viewer?: TagViewerContext): Pr
 const tagCache = createRedisCache<Tag[]>('tags:all', { ttlMs: 30_000 })
 const tagInflight = createInflight<Tag[]>()
 
-export async function listAllTags(): Promise<Tag[]> {
+export async function listAllTags(db: NodePgDatabase): Promise<Tag[]> {
   const cached = await tagCache.get()
   if (cached !== null) {
     return cached
@@ -216,7 +230,7 @@ export async function listAllTags(): Promise<Tag[]> {
   })
 }
 
-export async function getTagsByNames(names: readonly string[]): Promise<Tag[]> {
+export async function getTagsByNames(db: NodePgDatabase, names: readonly string[]): Promise<Tag[]> {
   if (names.length === 0) {
     return []
   }

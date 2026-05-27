@@ -1,3 +1,4 @@
+import { getDbFromContext } from '@/server/domains/auth/context'
 import { listAllCategories } from '@/server/domains/taxonomies/categories/service'
 import { listingHeaders, publicShouldRevalidate } from '@/server/http/loaders/route-exports'
 import { bundleFromMatches, routeMeta } from '@/server/render/seo/meta'
@@ -5,8 +6,9 @@ import { CategoriesBody } from '@/ui/public/post/CategoriesBody'
 
 import type { Route } from './+types/categories'
 
-export async function loader(_: Route.LoaderArgs) {
-  const categories = await listAllCategories()
+export async function loader({ request, context }: Route.LoaderArgs) {
+  const db = getDbFromContext({ request, context })
+  const categories = await listAllCategories(db)
   return {
     categories,
   }

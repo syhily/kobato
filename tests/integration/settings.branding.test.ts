@@ -1,11 +1,22 @@
-import { beforeEach, describe, expect, it } from 'vitest'
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
+import type { Pool } from 'pg'
 
-import { db } from '@/server/infra/db/pool'
+import { afterAll, beforeEach, describe, expect, it } from 'vitest'
+
+import { createDbPool, closePool } from '@/server/infra/db/pool'
 import { setting } from '@/server/infra/db/schema/config'
 
 import { clearAllTables } from '../_helpers/integration-db'
 import { makeAuthedCtx } from '../_helpers/mock-ctx'
 import { callRpc, parseRpcJson } from './_helpers/rpc-call'
+
+const poolManager = createDbPool()
+const db: NodePgDatabase = poolManager.db
+const pool: Pool = poolManager.pool
+
+afterAll(async () => {
+  await closePool(pool)
+})
 
 // Asset uploads (SVG / ICO / PNG) flow through the dedicated
 // /api/admin/branding/upload endpoint, which requires real S3 — so
@@ -81,7 +92,7 @@ beforeEach(async () => {
 
 describe('integration / branding settings', () => {
   it('persists robots.txt through the assets PATCH', async () => {
-    const ctx = makeAuthedCtx({ role: 'admin' })
+    const ctx = makeAuthedCtx({ role: 'admin', db, pool })
 
     const updateRes = await callRpc(
       '/admin/settings/update',
@@ -104,7 +115,7 @@ describe('integration / branding settings', () => {
   })
 
   it('preserves uploaded asset ObjectRefs when the assets section is patched without branding', async () => {
-    const ctx = makeAuthedCtx({ role: 'admin' })
+    const ctx = makeAuthedCtx({ role: 'admin', db, pool })
 
     // Edit just the host — no branding in the PATCH payload.
     const updateRes = await callRpc(
@@ -135,7 +146,7 @@ describe('integration / branding settings', () => {
   })
 
   it('merges robots.txt with persisted asset ObjectRefs without wiping them', async () => {
-    const ctx = makeAuthedCtx({ role: 'admin' })
+    const ctx = makeAuthedCtx({ role: 'admin', db, pool })
 
     await callRpc(
       '/admin/settings/update',

@@ -75,6 +75,7 @@ const restore = adminProc
   .input(z.object({ key: z.string() }))
   .output(z.object({ accepted: z.boolean() }))
   .handler(async ({ input, context }) => {
+    const { db, pool } = context
     const buffer = await getBackupBuffer(input.key)
 
     // Extract request-scoped values before returning so the background
@@ -89,8 +90,8 @@ const restore = adminProc
     // Defer heavy restore work so the HTTP response can be flushed first.
     Promise.resolve()
       .then(async () => {
-        await restoreFromBackup(buffer, input.key)
-        recordAuditEvent({
+        await restoreFromBackup(db, buffer, input.key)
+        recordAuditEvent(db, pool, {
           action: 'backup_restored',
           resourceType: 'backup',
           resourceId: input.key,

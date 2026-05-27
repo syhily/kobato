@@ -10,7 +10,7 @@ import {
   queryMetric,
   queryViews,
 } from '@/server/domains/analytics/query'
-import { getRouteRequestContext } from '@/server/domains/auth/context'
+import { getDbFromContext, getRouteRequestContext } from '@/server/domains/auth/context'
 import { requireRole } from '@/server/domains/auth/rbac'
 import { METRIC_GROUPS, METRIC_GROUP_TABS } from '@/shared/contracts/analytics'
 import { Counters } from '@/ui/admin/analytics/Counters'
@@ -36,16 +36,18 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   const url = new URL(request.url)
   const input = parseAnalyticsSearch(url.searchParams)
 
+  const db = getDbFromContext({ request, context })
+
   // First-pass metric types: the first tab of each of the 5 groups.
   // The list components hydrate the other tabs on demand via their
   // own fetcher load.
   const initialMetricTypes = METRIC_GROUPS.map((g) => METRIC_GROUP_TABS[g][0]!)
 
   const [counters, views, heatmap, ...metricRows] = await Promise.all([
-    queryCounters(input),
-    queryViews(input),
-    queryHeatmap(input),
-    ...initialMetricTypes.map((t) => queryMetric(input, t, 10)),
+    queryCounters(db, input),
+    queryViews(db, input),
+    queryHeatmap(db, input),
+    ...initialMetricTypes.map((t) => queryMetric(db, input, t, 10)),
   ])
 
   const initialMetrics: Partial<Record<MetricType, MetricRow[]>> = {}

@@ -5,7 +5,6 @@ import { z } from 'zod'
 import { stripL3Markers } from '@/server/domains/audit/privacy'
 import { maskIp, maskUserAgent } from '@/server/domains/audit/utils'
 import { adminProc } from '@/server/http/orpc-base'
-import { db } from '@/server/infra/db/pool'
 import { auditLog } from '@/server/infra/db/schema/config'
 import { user } from '@/server/infra/db/schema/user'
 import { getBlogSettingsBundleSync } from '@/shared/config/getters'
@@ -104,7 +103,8 @@ const list = adminProc
   .route({ method: 'GET', path: '/admin/audit-log/list' })
   .input(auditLogListInput)
   .output(auditLogListOutput)
-  .handler(async ({ input }) => {
+  .handler(async ({ input, context }) => {
+    const { db } = context
     const where = buildWhere(input)
 
     // Count total
@@ -164,7 +164,8 @@ const exportCsv = adminProc
   .route({ method: 'POST', path: '/admin/audit-log/export' })
   .input(auditLogListInput.omit({ offset: true, limit: true }))
   .output(z.string())
-  .handler(async ({ input }) => {
+  .handler(async ({ input, context }) => {
+    const { db } = context
     const where = buildWhere(input)
 
     // Count first to enforce limit
@@ -234,7 +235,8 @@ const exportCsv = adminProc
 const actors = adminProc
   .route({ method: 'GET', path: '/admin/audit-log/actors' })
   .output(auditLogActorsOutput)
-  .handler(async () => {
+  .handler(async ({ context }) => {
+    const { db } = context
     const actorRows = await db
       .select({ actorId: auditLog.actorId })
       .from(auditLog)

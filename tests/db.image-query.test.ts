@@ -1,9 +1,20 @@
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
+import type { Pool } from 'pg'
+
 import { eq } from 'drizzle-orm'
-import { beforeEach, describe, expect, it } from 'vitest'
+import { afterAll, beforeEach, describe, expect, it } from 'vitest'
 
 import { insertImageIfMissing, upsertImageByStoragePath } from '@/server/infra/db/operations/image'
-import { db } from '@/server/infra/db/pool'
+import { createDbPool, closePool } from '@/server/infra/db/pool'
 import { image } from '@/server/infra/db/schema/media'
+
+const poolManager = createDbPool()
+const db: NodePgDatabase = poolManager.db
+const pool: Pool = poolManager.pool
+
+afterAll(async () => {
+  await closePool(pool)
+})
 
 beforeEach(async () => {
   await db.delete(image)
@@ -11,7 +22,7 @@ beforeEach(async () => {
 
 describe('db/query/image — upsertImageByStoragePath', () => {
   it('inserts a new row when storage_path is unseen', async () => {
-    const result = await upsertImageByStoragePath({
+    const result = await upsertImageByStoragePath(db, {
       storagePath: 'images/2026/05/foo.jpg',
       mimeType: 'image/jpeg',
       width: 100,
@@ -28,7 +39,7 @@ describe('db/query/image — upsertImageByStoragePath', () => {
   })
 
   it('updates on conflict and clears deleted_at to resurrect a soft-deleted row', async () => {
-    const first = await upsertImageByStoragePath({
+    const first = await upsertImageByStoragePath(db, {
       storagePath: 'images/2026/05/bar.jpg',
       mimeType: 'image/jpeg',
       width: 100,
@@ -43,7 +54,7 @@ describe('db/query/image — upsertImageByStoragePath', () => {
     await db.update(image).set({ deletedAt: new Date() }).where(eq(image.id, first.id))
 
     // Re-upload — should resurrect with updated fields and cleared deleted_at
-    const second = await upsertImageByStoragePath({
+    const second = await upsertImageByStoragePath(db, {
       storagePath: 'images/2026/05/bar.jpg',
       mimeType: 'image/png',
       width: 200,
@@ -63,7 +74,7 @@ describe('db/query/image — upsertImageByStoragePath', () => {
 
 describe('db/query/image — insertImageIfMissing', () => {
   it('returns the new row on a successful insert', async () => {
-    const row = await insertImageIfMissing({
+    const row = await insertImageIfMissing(db, {
       storagePath: 'images/2026/05/unique.jpg',
       mimeType: 'image/jpeg',
       width: 800,
@@ -78,7 +89,7 @@ describe('db/query/image — insertImageIfMissing', () => {
   })
 
   it('returns null when ON CONFLICT DO NOTHING skips the insert', async () => {
-    await insertImageIfMissing({
+    await insertImageIfMissing(db, {
       storagePath: 'images/2026/05/duplicate.jpg',
       mimeType: 'image/jpeg',
       width: 1280,
@@ -89,7 +100,7 @@ describe('db/query/image — insertImageIfMissing', () => {
       note: null,
     })
 
-    const second = await insertImageIfMissing({
+    const second = await insertImageIfMissing(db, {
       storagePath: 'images/2026/05/duplicate.jpg',
       mimeType: 'image/png',
       width: 1,

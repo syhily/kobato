@@ -1,7 +1,8 @@
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
+
 import { and, eq, lt, sql } from 'drizzle-orm'
 import { createHash, randomBytes } from 'node:crypto'
 
-import { db } from '@/server/infra/db/pool'
 import { verification } from '@/server/infra/db/schema/user'
 import { getLogger } from '@/server/infra/logger'
 
@@ -35,15 +36,20 @@ export interface TokenResult {
   expiresAt: Date
 }
 
-export async function issueResetToken(userId: bigint): Promise<TokenResult> {
-  return issueToken(userId, 'password-reset', RESET_TTL_MS)
+export async function issueResetToken(db: NodePgDatabase, userId: bigint): Promise<TokenResult> {
+  return issueToken(db, userId, 'password-reset', RESET_TTL_MS)
 }
 
-export async function issueSetupToken(userId: bigint): Promise<TokenResult> {
-  return issueToken(userId, 'author-invite', SETUP_TTL_MS)
+export async function issueSetupToken(db: NodePgDatabase, userId: bigint): Promise<TokenResult> {
+  return issueToken(db, userId, 'author-invite', SETUP_TTL_MS)
 }
 
-async function issueToken(userId: bigint, purpose: TokenPurpose, ttlMs: number): Promise<TokenResult> {
+async function issueToken(
+  db: NodePgDatabase,
+  userId: bigint,
+  purpose: TokenPurpose,
+  ttlMs: number,
+): Promise<TokenResult> {
   const raw = generateToken()
   const value = sha256(raw)
   const expiresAt = new Date(Date.now() + ttlMs)
@@ -90,7 +96,11 @@ function validatedTokenRow(
  * this to short-circuit a form before the user submits a password.
  * The destructive {@link consumeToken} is reserved for the action.
  */
-export async function peekToken(rawToken: string, purpose: TokenPurpose): Promise<ValidatedToken | null> {
+export async function peekToken(
+  db: NodePgDatabase,
+  rawToken: string,
+  purpose: TokenPurpose,
+): Promise<ValidatedToken | null> {
   if (!TOKEN_LEN_RE.test(rawToken)) {
     return null
   }
@@ -117,7 +127,11 @@ export async function peekToken(rawToken: string, purpose: TokenPurpose): Promis
  * exists, has the expected purpose, and is unexpired. Single-shot — a
  * subsequent call with the same token returns `null`.
  */
-export async function consumeToken(rawToken: string, purpose: TokenPurpose): Promise<ValidatedToken | null> {
+export async function consumeToken(
+  db: NodePgDatabase,
+  rawToken: string,
+  purpose: TokenPurpose,
+): Promise<ValidatedToken | null> {
   if (!TOKEN_LEN_RE.test(rawToken)) {
     return null
   }
@@ -135,11 +149,11 @@ export async function consumeToken(rawToken: string, purpose: TokenPurpose): Pro
   }
 }
 
-export async function revokeTokensFor(userId: bigint, purpose: TokenPurpose): Promise<void> {
+export async function revokeTokensFor(db: NodePgDatabase, userId: bigint, purpose: TokenPurpose): Promise<void> {
   await db.delete(verification).where(and(eq(verification.purpose, purpose), eq(verification.userId, userId)))
 }
 
-export async function purgeExpired(): Promise<number> {
+export async function purgeExpired(db: NodePgDatabase): Promise<number> {
   const result = await db.delete(verification).where(lt(verification.expiresAt, sql`now() - interval '1 day'`))
   return result.rowCount ?? 0
 }

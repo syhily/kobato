@@ -32,8 +32,9 @@ const list = adminProc
     }),
   )
   .output(z.object({ users: z.array(adminUserDto), total: z.number(), hasMore: z.boolean() }))
-  .handler(async ({ input }) => {
+  .handler(async ({ input, context }) => {
     const result = await listUsersForAdmin(
+      context.db,
       input.offset,
       input.limit,
       { q: input.q, role: input.role, includeDeleted: input.includeDeleted, hasPosts: input.hasPosts },
@@ -46,8 +47,8 @@ const get = adminProc
   .route({ method: 'GET', path: '/admin/users/get' })
   .input(idInput)
   .output(z.object({ user: adminUserDto }))
-  .handler(async ({ input }) => {
-    const user = await fetchAdminUserDto(idFromString(input.id))
+  .handler(async ({ input, context }) => {
+    const user = await fetchAdminUserDto(context.db, idFromString(input.id))
     if (!user) {
       throw new ORPCError('NOT_FOUND', { message: '用户不存在' })
     }
@@ -70,7 +71,7 @@ const update = adminProc
   .output(successOutput)
   .handler(async ({ input, context }) => {
     const { id, ...patch } = input
-    const updated = await updateUserById(idFromString(id), patch)
+    const updated = await updateUserById(context.db, idFromString(id), patch)
     if (updated === null) {
       throw new ORPCError('NOT_FOUND', { message: '用户不存在' })
     }
@@ -93,17 +94,17 @@ const softDelete = adminProc
       throw new ORPCError('FORBIDDEN', { message: '不能删除自己。' })
     }
     const targetId = idFromString(userId)
-    const target = await findUserById(targetId)
+    const target = await findUserById(context.db, targetId)
     if (!target) {
       throw new ORPCError('NOT_FOUND', { message: '用户不存在' })
     }
     if (target.role === 'admin') {
-      const adminCount = await countAdmins()
+      const adminCount = await countAdmins(context.db)
       if (adminCount <= 1) {
         throw new ORPCError('CONFLICT', { message: '不能删除唯一的管理员。' })
       }
     }
-    const ok = await softDeleteAdminUser(targetId)
+    const ok = await softDeleteAdminUser(context.db, targetId)
     if (!ok) {
       throw new ORPCError('NOT_FOUND', { message: '用户不存在或已被删除' })
     }
@@ -121,7 +122,7 @@ const restore = adminProc
   .input(idInput)
   .output(successOutput)
   .handler(async ({ input, context }) => {
-    const ok = await restoreAdminUser(idFromString(input.id))
+    const ok = await restoreAdminUser(context.db, idFromString(input.id))
     if (!ok) {
       throw new ORPCError('NOT_FOUND', { message: '用户不存在' })
     }

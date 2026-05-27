@@ -17,7 +17,9 @@ const list = authorProc
     }),
   )
   .output(z.object({ tags: z.array(adminTagDto), total: z.number(), hasMore: z.boolean() }))
-  .handler(({ input }) => listTagsForAdmin({ q: input.q, offset: input.offset, limit: input.limit }))
+  .handler(({ input, context }) =>
+    listTagsForAdmin(context.db, { q: input.q, offset: input.offset, limit: input.limit }),
+  )
 
 const upsert = authorProc
   .route({ method: 'POST', path: '/admin/tags/upsert' })
@@ -31,6 +33,7 @@ const upsert = authorProc
   .output(z.object({ tag: adminTagDto }))
   .handler(async ({ input, context }) => {
     const tag = await upsertAdminTag(
+      context.db,
       {
         id: input.id !== undefined ? idFromString(input.id) : undefined,
         name: input.name,
@@ -51,7 +54,7 @@ const remove = authorProc
   .input(z.object({ id: z.string().min(1) }))
   .output(z.void())
   .handler(async ({ input, context }) => {
-    const ok = await deleteAdminTag(idFromString(input.id), context.viewer)
+    const ok = await deleteAdminTag(context.db, idFromString(input.id), context.viewer)
     if (!ok) {
       throw new ORPCError('NOT_FOUND', { message: '标签不存在' })
     }

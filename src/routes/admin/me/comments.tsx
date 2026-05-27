@@ -4,7 +4,7 @@ import type { MyCommentsStatus } from '@/server/domains/comments/repos/shared'
 import type { EntityType } from '@/server/infra/db/target'
 import type { PortableTextBody as PortableTextBodyType } from '@/shared/pt/schema'
 
-import { getRouteRequestContext } from '@/server/domains/auth/context'
+import { getDbFromContext, getRouteRequestContext } from '@/server/domains/auth/context'
 import { requireRole } from '@/server/domains/auth/rbac'
 import { countMyComments, listMyCommentEntities, listMyComments } from '@/server/domains/comments/repos/admin-query'
 import { findParentCommentsByIds, resolveEntitiesForComments } from '@/server/domains/comments/repos/public-query'
@@ -114,6 +114,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   // `visitor` floor; keep the per-route guard explicit so future
   // refactors of the layout cannot accidentally widen access.
   requireRole(ctx, 'visitor')
+  const db = getDbFromContext({ request, context })
   const userId = BigInt(ctx.user.id)
   const url = new URL(request.url)
   const offset = Math.max(0, Number.parseInt(url.searchParams.get('offset') ?? '0', 10))
@@ -130,14 +131,14 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   //     entity-scoped view ("show me how many pending comments I left
   //     under THIS post"), so we reuse the filtered `counts` for both.
   const [rows, counts, totalCountsRaw, entityOptionsRaw] = await Promise.all([
-    listMyComments(userId, offset, limit, filters),
-    countMyComments(userId, filters),
+    listMyComments(db, userId, offset, limit, filters),
+    countMyComments(db, userId, filters),
     // When an entity filter is active, the tab pills should describe
     // the entity-scoped view, so skip the second roundtrip and reuse
     // `counts` below. We still issue a placeholder promise here so the
     // Promise.all shape stays static.
-    entity ? Promise.resolve(null) : countMyComments(userId),
-    listMyCommentEntities(userId),
+    entity ? Promise.resolve(null) : countMyComments(db, userId),
+    listMyCommentEntities(db, userId),
   ])
   const totalCounts = totalCountsRaw ?? counts
   // Batch entity and parent-comment lookups so a page of N rows only
@@ -157,8 +158,8 @@ export async function loader({ request, context }: Route.LoaderArgs) {
     ),
   ).map((id) => BigInt(id))
   const [entityMap, parentMap] = await Promise.all([
-    resolveEntitiesForComments(entityPairs),
-    findParentCommentsByIds(parentIds),
+    resolveEntitiesForComments(db, entityPairs),
+    findParentCommentsByIds(db, parentIds),
   ])
   const items: MyCommentItem[] = rows.map((c) => {
     const entity = c.type && c.ownerId !== null ? (entityMap.get(`${c.type}:${c.ownerId}`) ?? null) : null
@@ -194,7 +195,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   }))
   const entityValue = entity ? `${entity.type}:${entity.ownerId}` : null
   if (entity && !entityOptions.some((o) => o.value === entityValue)) {
-    const resolved = await resolveEntitiesForComments([entity])
+    const resolved = await resolveEntitiesForComments(db, [entity])
     const row = resolved.get(`${entity.type}:${entity.ownerId}`)
     if (row) {
       entityOptions.unshift({ value: `${entity.type}:${entity.ownerId}`, label: row.title })

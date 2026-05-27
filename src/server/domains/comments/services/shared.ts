@@ -1,3 +1,5 @@
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
+
 import type { PendingCommentRow } from '@/server/domains/comments/repos/shared'
 import type { LatestComment } from '@/server/domains/comments/types'
 import type { MetricRow } from '@/server/infra/db/types'
@@ -11,8 +13,8 @@ export interface MetricTarget {
   ownerId: bigint
 }
 
-export async function resolveMetricTarget(key: string): Promise<MetricTarget> {
-  const row = await findMetricByPublicId(key)
+export async function resolveMetricTarget(db: NodePgDatabase, key: string): Promise<MetricTarget> {
+  const row = await findMetricByPublicId(db, key)
   if (row === null || row.type === null || row.ownerId === null) {
     throw new DomainError('NOT_FOUND', '评论目标不存在')
   }
@@ -22,8 +24,8 @@ export async function resolveMetricTarget(key: string): Promise<MetricTarget> {
   return { type: row.type, ownerId: row.ownerId }
 }
 
-export async function safeResolveMetricTarget(key: string): Promise<MetricTarget | null> {
-  const row = await findMetricByPublicId(key)
+export async function safeResolveMetricTarget(db: NodePgDatabase, key: string): Promise<MetricTarget | null> {
+  const row = await findMetricByPublicId(db, key)
   if (row === null || row.type === null || row.ownerId === null) {
     return null
   }
@@ -74,6 +76,9 @@ export function asCommentTarget(
   return { type, ownerId }
 }
 
-export async function ensureCommentPage(target: { type: 'post' | 'page'; ownerId: bigint }): Promise<MetricRow> {
-  return ensureMetric(target)
+export async function ensureCommentPage(
+  db: NodePgDatabase,
+  target: { type: 'post' | 'page'; ownerId: bigint },
+): Promise<MetricRow> {
+  return ensureMetric(db, target)
 }

@@ -3,7 +3,7 @@ import { data, Outlet, redirect } from 'react-router'
 import type { RouteHandle } from '@/root'
 
 import { useDetachPublicCss } from '@/client/hooks/use-detach-public-css'
-import { getRouteRequestContext } from '@/server/domains/auth/context'
+import { getDbFromContext, getRouteRequestContext } from '@/server/domains/auth/context'
 import { hasAtLeast } from '@/server/domains/auth/rbac'
 import { countAdminPendingDashboard } from '@/server/domains/comments/repos/admin-query'
 import { countUsers } from '@/server/infra/db/operations/user'
@@ -25,6 +25,7 @@ export const handle: RouteHandle = { layout: 'admin' }
 
 export async function loader({ request, context }: Route.LoaderArgs) {
   const { role, user, url } = getRouteRequestContext({ request, context })
+  const db = getDbFromContext({ request, context })
   // Self-service visitors land on `/admin/me/profile`; other admin
   // routes have their own per-route `requireRole` gate that promotes
   // the minimum to `author` (content management) or `admin` (settings,
@@ -36,8 +37,8 @@ export async function loader({ request, context }: Route.LoaderArgs) {
     throw redirect(`/admin/signin?redirect_to=${encodeURIComponent(redirectPath)}`)
   }
 
-  const pendingComments = hasAtLeast(role, 'admin') ? await countAdminPendingDashboard() : { all: 0 }
-  const userCount = hasAtLeast(role, 'admin') ? await countUsers() : 0
+  const pendingComments = hasAtLeast(role, 'admin') ? await countAdminPendingDashboard(db) : { all: 0 }
+  const userCount = hasAtLeast(role, 'admin') ? await countUsers(db) : 0
   return data({
     currentUser: {
       id: user?.id ?? '',

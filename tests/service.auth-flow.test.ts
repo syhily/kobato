@@ -1,3 +1,5 @@
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
+
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { flushWorkerRedis } from './_helpers/redis'
@@ -45,6 +47,9 @@ vi.mock('@/server/domains/audit/service', () => ({
   buildAuditContext: vi.fn(),
   recordAuditEventFromContext: vi.fn(),
 }))
+
+const db = {} as NodePgDatabase
+const pool = {} as any
 
 const userQuery = await import('@/server/infra/db/operations/user')
 const settingQuery = await import('@/server/infra/db/operations/setting')
@@ -120,7 +125,7 @@ describe('services/auth/flow — signInWithSession', () => {
     verifyUserPasswordMock.mockResolvedValue(stubUser)
     const request = buildRequest()
 
-    const result = await signInWithSession({
+    const result = await signInWithSession(db, pool, {
       email: 'admin@example.com',
       password: 'correct horse',
       session: emptySession(),
@@ -138,7 +143,7 @@ describe('services/auth/flow — signInWithSession', () => {
     verifyUserPasswordMock.mockResolvedValue(stubUser)
     const request = buildRequest()
 
-    await signInWithSession({
+    await signInWithSession(db, pool, {
       email: 'admin@example.com',
       password: 'correct horse',
       session: emptySession(),
@@ -155,7 +160,7 @@ describe('services/auth/flow — signInWithSession', () => {
     vi.mocked(rateLimit.tryRateLimit).mockResolvedValue({ count: 99, exceeded: true })
     const request = buildRequest()
 
-    const result = await signInWithSession({
+    const result = await signInWithSession(db, pool, {
       email: 'admin@example.com',
       password: 'correct horse',
       session: emptySession(),
@@ -175,7 +180,7 @@ describe('services/auth/flow — signInWithSession', () => {
     verifyUserPasswordMock.mockResolvedValue(null)
     const request = buildRequest()
 
-    const result = await signInWithSession({
+    const result = await signInWithSession(db, pool, {
       email: 'admin@example.com',
       password: 'wrong',
       session: emptySession(),
@@ -205,7 +210,7 @@ describe('services/auth/flow — signUpInitialAdminWithSession (install stage 1)
     ])
     const request = buildRequest()
 
-    const result = await signUpInitialAdminWithSession({
+    const result = await signUpInitialAdminWithSession(db, pool, {
       ...baseSeed,
       session: emptySession(),
       request,
@@ -216,13 +221,13 @@ describe('services/auth/flow — signUpInitialAdminWithSession (install stage 1)
     if (result.ok === true) {
       expect(result.data.redirectTo).toBe('/admin')
     }
-    expect(userQuery.insertAdmin).toHaveBeenCalledWith('Admin', 'admin@example.com', baseSeed.password)
+    expect(userQuery.insertAdmin).toHaveBeenCalledWith(db, 'Admin', 'admin@example.com', baseSeed.password)
 
     // All settings sections are seeded in one pass.
     expect(settingQuery.upsertSetting).toHaveBeenCalled()
     const calls = vi.mocked(settingQuery.upsertSetting).mock.calls
     const byScope = new Map<string, { data: Record<string, unknown>; updatedBy: bigint | null }>()
-    for (const [data, updatedBy, scope] of calls) {
+    for (const [_1, data, updatedBy, scope] of calls) {
       byScope.set(scope, { data: data as Record<string, unknown>, updatedBy })
     }
 
@@ -258,14 +263,14 @@ describe('services/auth/flow — signUpInitialAdminWithSession (install stage 1)
     const assets = byScope.get('blog.assets')
     expect(assets?.data.asset).toEqual({ host: 'localhost', scheme: 'https' })
 
-    expect(settingsSnapshot.refreshBlogSettings).toHaveBeenCalledOnce()
+    expect(settingsSnapshot.refreshBlogSettings).toHaveBeenCalledWith(db)
   })
 
   it('refuses a duplicate stage-1 install (returns 409, no DB writes)', async () => {
     vi.mocked(userQuery.hasAdmin).mockResolvedValue(true)
     const request = buildRequest()
 
-    const result = await signUpInitialAdminWithSession({
+    const result = await signUpInitialAdminWithSession(db, pool, {
       ...baseSeed,
       session: emptySession(),
       request,
@@ -280,7 +285,7 @@ describe('services/auth/flow — signUpInitialAdminWithSession (install stage 1)
   })
 
   it('returns 400 when the request body is invalid', async () => {
-    const result = await signUpInitialAdminWithSession({
+    const result = await signUpInitialAdminWithSession(db, pool, {
       ...baseSeed,
       session: emptySession(),
       request: new Request('http://localhost/admin/setup', { method: 'POST' }),
@@ -296,7 +301,7 @@ describe('services/auth/flow — signUpInitialAdminWithSession (install stage 1)
     vi.mocked(userQuery.insertAdmin).mockResolvedValue([])
     const request = buildRequest()
 
-    const result = await signUpInitialAdminWithSession({
+    const result = await signUpInitialAdminWithSession(db, pool, {
       ...baseSeed,
       session: emptySession(),
       request,
@@ -318,7 +323,7 @@ describe('services/auth/flow — signUpInitialAdminWithSession (install stage 1)
     const request = buildRequest()
 
     await expect(
-      signUpInitialAdminWithSession({
+      signUpInitialAdminWithSession(db, pool, {
         ...baseSeed,
         session: emptySession(),
         request,

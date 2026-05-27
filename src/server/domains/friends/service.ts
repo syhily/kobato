@@ -1,3 +1,5 @@
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
+
 import type { FriendRow } from '@/server/infra/db/types'
 import type { Friend } from '@/shared/types/catalog'
 import type { AdminFriendDto } from '@/shared/types/friends'
@@ -52,8 +54,8 @@ export function toAdminFriendDto(row: FriendRow): AdminFriendDto {
   }
 }
 
-export async function listPublicFriends(): Promise<PublicFriend[]> {
-  const rows = await listPublicFriendRows()
+export async function listPublicFriends(db: NodePgDatabase): Promise<PublicFriend[]> {
+  const rows = await listPublicFriendRows(db)
   return rows.map(toPublicFriend)
 }
 
@@ -68,11 +70,14 @@ export interface AdminFriendsListResult {
 // round-trip for the page-of-rows query and the COUNT(*). `total` is
 // the full filtered count (independent of `offset`/`limit`) so the
 // client can render the correct number of pagination buttons.
-export async function listFriendsForAdmin(filters: AdminFriendsListFilters): Promise<AdminFriendsListResult> {
+export async function listFriendsForAdmin(
+  db: NodePgDatabase,
+  filters: AdminFriendsListFilters,
+): Promise<AdminFriendsListResult> {
   const offset = filters.offset ?? 0
   const [rows, total] = await Promise.all([
-    listAdminFriendRows(filters),
-    countAdminFriends({ q: filters.q, includeHidden: filters.includeHidden }),
+    listAdminFriendRows(db, filters),
+    countAdminFriends(db, { q: filters.q, includeHidden: filters.includeHidden }),
   ])
   return {
     friends: rows.map(toAdminFriendDto),
@@ -98,18 +103,18 @@ export interface UpsertFriendInputs {
 // reject benign protocol/trailing-slash variants the editor probably
 // meant as updates — this stays at the service layer so the admin can
 // still force the duplicate by editing the existing row directly).
-export async function upsertAdminFriend(input: UpsertFriendInputs): Promise<AdminFriendDto> {
+export async function upsertAdminFriend(db: NodePgDatabase, input: UpsertFriendInputs): Promise<AdminFriendDto> {
   const description = normaliseNullable(input.description)
   const rssUrl = normaliseNullable(input.rssUrl)
 
   if (input.id === undefined) {
-    const dup = await findFriendByHomepage(input.homepage)
+    const dup = await findFriendByHomepage(db, input.homepage)
     if (dup !== null) {
       throw new DomainError('CONFLICT', '已存在相同主页 URL 的友链', [
         { message: '主页 URL 已存在', path: ['homepage'] },
       ])
     }
-    const row = await insertFriend({
+    const row = await insertFriend(db, {
       website: input.website,
       description,
       homepage: input.homepage,
@@ -120,7 +125,7 @@ export async function upsertAdminFriend(input: UpsertFriendInputs): Promise<Admi
     return toAdminFriendDto(row)
   }
 
-  const existing = await findFriendById(input.id)
+  const existing = await findFriendById(db, input.id)
   if (existing === null) {
     throw new DomainError('NOT_FOUND', '友链不存在')
   }
@@ -128,14 +133,14 @@ export async function upsertAdminFriend(input: UpsertFriendInputs): Promise<Admi
   // but reject collisions with OTHER rows so two friend entries can't
   // share the same URL by accident.
   if (existing.homepage !== input.homepage) {
-    const dup = await findFriendByHomepage(input.homepage)
+    const dup = await findFriendByHomepage(db, input.homepage)
     if (dup !== null && dup.id !== input.id) {
       throw new DomainError('CONFLICT', '已存在相同主页 URL 的友链', [
         { message: '主页 URL 已存在', path: ['homepage'] },
       ])
     }
   }
-  const updated = await updateFriend(input.id, {
+  const updated = await updateFriend(db, input.id, {
     website: input.website,
     description,
     homepage: input.homepage,
@@ -149,8 +154,8 @@ export async function upsertAdminFriend(input: UpsertFriendInputs): Promise<Admi
   return toAdminFriendDto(updated)
 }
 
-export async function deleteAdminFriend(id: bigint): Promise<boolean> {
-  return deleteFriendRow(id)
+export async function deleteAdminFriend(db: NodePgDatabase, id: bigint): Promise<boolean> {
+  return deleteFriendRow(db, id)
 }
 
 // Trim and collapse the empty string to `null` so the DB never stores
@@ -166,8 +171,9 @@ function normaliseNullable(value: string | null | undefined): string | null {
 
 // --- Public catalog queries -------------------------------------------------
 
-async function hydrateFriendImages(friends: Friend[]): Promise<void> {
+async function hydrateFriendImages(db: NodePgDatabase, friends: Friend[]): Promise<void> {
   await hydrateImageRefs(
+    db,
     friends,
     (f) => f.poster,
     (f, lookup) => {
@@ -179,14 +185,14 @@ async function hydrateFriendImages(friends: Friend[]): Promise<void> {
   )
 }
 
-export async function listAllFriends(): Promise<Friend[]> {
-  const rows = await listPublicFriends()
+export async function listAllFriends(db: NodePgDatabase): Promise<Friend[]> {
+  const rows = await listPublicFriends(db)
   const friends = rows.map((row) => ({
     website: row.website,
     description: row.description,
     homepage: row.homepage,
     poster: row.poster,
   }))
-  await hydrateFriendImages(friends)
+  await hydrateFriendImages(db, friends)
   return friends
 }

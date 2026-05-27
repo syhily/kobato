@@ -1,3 +1,5 @@
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
+
 import { sql, type SQL } from 'drizzle-orm'
 
 import type {
@@ -12,7 +14,6 @@ import type {
   ViewsPoint,
 } from '@/shared/contracts/analytics'
 
-import { db } from '@/server/infra/db/pool'
 import { DomainError } from '@/server/infra/http/errors'
 import {
   FILTERABLE_TYPES,
@@ -150,7 +151,7 @@ function whereClause(input: AnalyticsQueryInput): SQL {
   return sql.join(conditions, sql` AND `)
 }
 
-export async function queryCounters(input: AnalyticsQueryInput): Promise<CountersDto> {
+export async function queryCounters(db: NodePgDatabase, input: AnalyticsQueryInput): Promise<CountersDto> {
   const where = whereClause(input)
   const result = await db.execute(sql`
     SELECT
@@ -174,7 +175,7 @@ export async function queryCounters(input: AnalyticsQueryInput): Promise<Counter
   }
 }
 
-export async function queryViews(input: AnalyticsQueryInput): Promise<ViewsPoint[]> {
+export async function queryViews(db: NodePgDatabase, input: AnalyticsQueryInput): Promise<ViewsPoint[]> {
   const bucket = pickTimeBucket(input.range)
   const source = pickAggregateSource(input.range)
   const where = whereClause(input)
@@ -259,7 +260,7 @@ function cagWhereClause(input: AnalyticsQueryInput): SQL {
   return sql.join(conditions, sql` AND `)
 }
 
-export async function queryHeatmap(input: AnalyticsQueryInput): Promise<HeatmapCell[]> {
+export async function queryHeatmap(db: NodePgDatabase, input: AnalyticsQueryInput): Promise<HeatmapCell[]> {
   const where = whereClause(input)
   // `EXTRACT(DOW)` returns Sunday=0..Saturday=6 — matches the
   // dashboard's CSS Grid `(row=weekday, col=hour)` layout.
@@ -289,7 +290,12 @@ export async function queryHeatmap(input: AnalyticsQueryInput): Promise<HeatmapC
   })
 }
 
-export async function queryMetric(input: AnalyticsQueryInput, type: MetricType, limit = 20): Promise<MetricRow[]> {
+export async function queryMetric(
+  db: NodePgDatabase,
+  input: AnalyticsQueryInput,
+  type: MetricType,
+  limit = 20,
+): Promise<MetricRow[]> {
   if (!METRIC_SET.has(type)) {
     throw new DomainError('BAD_REQUEST', `unknown metric type: ${type}`)
   }
@@ -325,7 +331,7 @@ export async function queryMetric(input: AnalyticsQueryInput, type: MetricType, 
   })
 }
 
-export async function queryRealtimeTail(sinceTs: Date, limit = 50): Promise<RealtimeEvent[]> {
+export async function queryRealtimeTail(db: NodePgDatabase, sinceTs: Date, limit = 50): Promise<RealtimeEvent[]> {
   const result = await db.execute(sql`
     SELECT
       ts,

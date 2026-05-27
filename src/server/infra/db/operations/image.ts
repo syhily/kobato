@@ -1,8 +1,9 @@
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
+
 import { and, count, desc, eq, ilike, inArray, isNull, like, or, type SQL, sql } from 'drizzle-orm'
 
 import type { ImageRow, NewImage } from '@/server/infra/db/types'
 
-import { db } from '@/server/infra/db/pool'
 import { image } from '@/server/infra/db/schema/media'
 import { user } from '@/server/infra/db/schema/user'
 import { escapeLikePattern } from '@/shared/utils/escape-like'
@@ -100,7 +101,10 @@ const ADMIN_IMAGE_WITH_UPLOADER_COLUMNS = {
   uploaderName: user.name,
 } as const
 
-export async function listAdminImageRows(filters: AdminImagesListFilters = {}): Promise<AdminImageRowWithUploader[]> {
+export async function listAdminImageRows(
+  db: NodePgDatabase,
+  filters: AdminImagesListFilters = {},
+): Promise<AdminImageRowWithUploader[]> {
   const where = buildAdminImageWhere(filters)
   // LEFT JOIN on `user` so a hard-deleted uploader row (or a NULL
   // `uploader_id` on legacy rows) does not hide the image from the
@@ -127,7 +131,7 @@ export async function listAdminImageRows(filters: AdminImagesListFilters = {}): 
  * shell can patch the row in place without a second `SELECT user`
  * round-trip after `updateImageNote()` / `findImageDtoById()`.
  */
-export async function findAdminImageRowById(id: bigint): Promise<AdminImageRowWithUploader | null> {
+export async function findAdminImageRowById(db: NodePgDatabase, id: bigint): Promise<AdminImageRowWithUploader | null> {
   const rows = await db
     .select(ADMIN_IMAGE_WITH_UPLOADER_COLUMNS)
     .from(image)
@@ -137,7 +141,7 @@ export async function findAdminImageRowById(id: bigint): Promise<AdminImageRowWi
   return rows[0] ?? null
 }
 
-export async function countAdminImages(filters: AdminImagesListFilters = {}): Promise<number> {
+export async function countAdminImages(db: NodePgDatabase, filters: AdminImagesListFilters = {}): Promise<number> {
   const where = buildAdminImageWhere(filters)
   const rows = where
     ? await db.select({ value: count() }).from(image).where(where)
@@ -145,18 +149,18 @@ export async function countAdminImages(filters: AdminImagesListFilters = {}): Pr
   return rows[0]?.value ?? 0
 }
 
-export async function findImageById(id: bigint): Promise<ImageRow | null> {
+export async function findImageById(db: NodePgDatabase, id: bigint): Promise<ImageRow | null> {
   const rows = await db.select().from(image).where(eq(image.id, id)).limit(1)
   return rows[0] ?? null
 }
 
-export async function findImageByStoragePath(storagePath: string): Promise<ImageRow | null> {
+export async function findImageByStoragePath(db: NodePgDatabase, storagePath: string): Promise<ImageRow | null> {
   const rows = await db.select().from(image).where(eq(image.storagePath, storagePath)).limit(1)
   return rows[0] ?? null
 }
 
 /** Batch-fetch by `storagePath`. Skips empty input arrays to avoid `IN ()` syntax errors. */
-export async function findImagesByStoragePaths(paths: readonly string[]): Promise<ImageRow[]> {
+export async function findImagesByStoragePaths(db: NodePgDatabase, paths: readonly string[]): Promise<ImageRow[]> {
   if (paths.length === 0) {
     return []
   }
@@ -166,7 +170,7 @@ export async function findImagesByStoragePaths(paths: readonly string[]): Promis
     .where(and(inArray(image.storagePath, [...paths]), isNull(image.deletedAt)))
 }
 
-export async function insertImage(values: NewImage): Promise<ImageRow> {
+export async function insertImage(db: NodePgDatabase, values: NewImage): Promise<ImageRow> {
   const now = new Date()
   const rows = await db
     .insert(image)
@@ -180,7 +184,7 @@ export async function insertImage(values: NewImage): Promise<ImageRow> {
  * `null` when the row was skipped because `storage_path` already
  * exists, so the importer can report `inserted` vs `skipped` counts.
  */
-export async function insertImageIfMissing(values: NewImage): Promise<ImageRow | null> {
+export async function insertImageIfMissing(db: NodePgDatabase, values: NewImage): Promise<ImageRow | null> {
   const now = new Date()
   const rows = await db
     .insert(image)
@@ -195,7 +199,7 @@ export async function insertImageIfMissing(values: NewImage): Promise<ImageRow |
  * Always clears `deleted_at` so re-uploading after a soft-delete
  * resurrects the row instead of carrying the tombstone forward.
  */
-export async function upsertImageByStoragePath(values: NewImage): Promise<ImageRow> {
+export async function upsertImageByStoragePath(db: NodePgDatabase, values: NewImage): Promise<ImageRow> {
   const now = new Date()
   const rows = await db
     .insert(image)
@@ -218,7 +222,7 @@ export async function upsertImageByStoragePath(values: NewImage): Promise<ImageR
   return rows[0]
 }
 
-export async function softDeleteImage(id: bigint): Promise<ImageRow | null> {
+export async function softDeleteImage(db: NodePgDatabase, id: bigint): Promise<ImageRow | null> {
   const rows = await db
     .update(image)
     .set({ deletedAt: new Date(), updatedAt: new Date() })
@@ -227,7 +231,7 @@ export async function softDeleteImage(id: bigint): Promise<ImageRow | null> {
   return rows[0] ?? null
 }
 
-export async function updateImageNote(id: bigint, note: string | null): Promise<ImageRow | null> {
+export async function updateImageNote(db: NodePgDatabase, id: bigint, note: string | null): Promise<ImageRow | null> {
   const rows = await db
     .update(image)
     .set({ note: note?.trim() === '' ? null : note, updatedAt: new Date() })
@@ -246,17 +250,22 @@ export async function updateImageNote(id: bigint, note: string | null): Promise<
  * service code stays single-call.
  */
 export async function updateImageNoteWithUploader(
+  db: NodePgDatabase,
   id: bigint,
   note: string | null,
 ): Promise<AdminImageRowWithUploader | null> {
-  const updated = await updateImageNote(id, note)
+  const updated = await updateImageNote(db, id, note)
   if (updated === null) {
     return null
   }
-  return findAdminImageRowById(id)
+  return findAdminImageRowById(db, id)
 }
 
-export async function updateImageThumbhash(id: bigint, thumbhash: string): Promise<ImageRow | null> {
+export async function updateImageThumbhash(
+  db: NodePgDatabase,
+  id: bigint,
+  thumbhash: string,
+): Promise<ImageRow | null> {
   const rows = await db.update(image).set({ thumbhash, updatedAt: new Date() }).where(eq(image.id, id)).returning()
   return rows[0] ?? null
 }
@@ -266,12 +275,13 @@ export async function updateImageThumbhash(id: bigint, thumbhash: string): Promi
  * admin shell receives the full DTO in one helper call.
  */
 export async function updateImageThumbhashWithUploader(
+  db: NodePgDatabase,
   id: bigint,
   thumbhash: string,
 ): Promise<AdminImageRowWithUploader | null> {
-  const updated = await updateImageThumbhash(id, thumbhash)
+  const updated = await updateImageThumbhash(db, id, thumbhash)
   if (updated === null) {
     return null
   }
-  return findAdminImageRowById(id)
+  return findAdminImageRowById(db, id)
 }

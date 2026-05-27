@@ -1,3 +1,5 @@
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
+
 import type { BrandingObjectRef } from '@/shared/config/types'
 
 import { type BinarySlot } from '@/server/assets/defaults'
@@ -42,7 +44,11 @@ export { isBrandingSlot, type BrandingSlot }
 //     every object we just put (including the freshly-uploaded SVG)
 //     so the operator can retry without leaving stale bytes in S3 or
 //     a partial pack in the row.
-export async function uploadBrandingAsset(slot: BrandingSlot, buffer: Buffer): Promise<BrandingObjectRef> {
+export async function uploadBrandingAsset(
+  db: NodePgDatabase,
+  slot: BrandingSlot,
+  buffer: Buffer,
+): Promise<BrandingObjectRef> {
   ensureMatchesSlot(slot, buffer)
   const uploaded: BrandingSlot[] = []
   try {
@@ -60,11 +66,11 @@ export async function uploadBrandingAsset(slot: BrandingSlot, buffer: Buffer): P
         uploaded.push(derived)
       }
       const merged = { ...refs, [slot]: primaryRef } as Record<BrandingSlot, BrandingObjectRef>
-      await persistBranding(merged)
+      await persistBranding(db, merged)
       return primaryRef
     }
 
-    await persistBranding({ [slot]: primaryRef } as Record<BrandingSlot, BrandingObjectRef>)
+    await persistBranding(db, { [slot]: primaryRef } as Record<BrandingSlot, BrandingObjectRef>)
     return primaryRef
   } catch (error) {
     log.warn('Branding upload failed; rolling back S3 objects', { slot, uploaded, error: String(error) })
@@ -76,40 +82,40 @@ export async function uploadBrandingAsset(slot: BrandingSlot, buffer: Buffer): P
 // Clear a branding slot. For `faviconSvg` we also tear down the four
 // derived icons so admins don't end up with a mismatched favicon SVG +
 // stale PNG/ICO pack.
-export async function clearBrandingAsset(slot: BrandingSlot): Promise<void> {
+export async function clearBrandingAsset(db: NodePgDatabase, slot: BrandingSlot): Promise<void> {
   const slotsToClear: BrandingSlot[] = slot === 'faviconSvg' ? [slot, ...FAVICON_DERIVED_SLOTS] : [slot]
   await Promise.all(slotsToClear.map((s) => deleteBrandingObject(s)))
-  await persistBrandingDelete(slotsToClear)
+  await persistBrandingDelete(db, slotsToClear)
 }
 
 // --- Settings-row helpers ---
 
-async function readAssetsRow(): Promise<Record<string, unknown>> {
-  const existing = await findSettingByScope(SECTION_REGISTRY.assets.scope)
+async function readAssetsRow(db: NodePgDatabase): Promise<Record<string, unknown>> {
+  const existing = await findSettingByScope(db, SECTION_REGISTRY.assets.scope)
   if (!existing) {
     throw new ActionFailure(409, '尚未安装站点设置，无法上传品牌素材')
   }
   return { ...(existing.data as Record<string, unknown>) }
 }
 
-async function persistBranding(refs: Record<string, BrandingObjectRef>): Promise<void> {
-  const row = await readAssetsRow()
+async function persistBranding(db: NodePgDatabase, refs: Record<string, BrandingObjectRef>): Promise<void> {
+  const row = await readAssetsRow(db)
   const branding = { ...(row.branding as Record<string, unknown> | undefined) }
   for (const [slot, ref] of Object.entries(refs)) {
     branding[slot] = ref
   }
   row.branding = branding
-  await upsertSetting(row, null, SECTION_REGISTRY.assets.scope)
-  await refreshBlogSettings()
+  await upsertSetting(db, row, null, SECTION_REGISTRY.assets.scope)
+  await refreshBlogSettings(db)
 }
 
-async function persistBrandingDelete(slots: BrandingSlot[]): Promise<void> {
-  const row = await readAssetsRow()
+async function persistBrandingDelete(db: NodePgDatabase, slots: BrandingSlot[]): Promise<void> {
+  const row = await readAssetsRow(db)
   const branding = { ...(row.branding as Record<string, unknown> | undefined) }
   for (const slot of slots) {
     delete branding[slot]
   }
   row.branding = branding
-  await upsertSetting(row, null, SECTION_REGISTRY.assets.scope)
-  await refreshBlogSettings()
+  await upsertSetting(db, row, null, SECTION_REGISTRY.assets.scope)
+  await refreshBlogSettings(db)
 }

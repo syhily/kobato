@@ -1,3 +1,5 @@
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
+
 import type { CommentBody } from '@/shared/pt/comment-schema'
 
 import { withCommentBadgeTextColor } from '@/server/domains/comments/badge'
@@ -19,37 +21,37 @@ import { idFromString } from '@/shared/utils/id'
 const adminLog = getLogger('comments.admin')
 const OWN_EDIT_GRACE_MS = 30 * 60 * 1000
 
-export async function approveComment(rid: string) {
+export async function approveComment(db: NodePgDatabase, rid: string) {
   const id = idFromString(rid)
-  await approveCommentById(id)
+  await approveCommentById(db, id)
   await clearLatestCommentsCache()
-  const c = await findCommentWithUserAndTarget(id)
+  const c = await findCommentWithUserAndTarget(db, id)
   if (c) {
     const target = asCommentTarget(c.comment.type, c.comment.ownerId)
     if (target) {
-      void sendApprovedComment(c.comment, c.user, target).catch((error) => {
+      void sendApprovedComment(db, c.comment, c.user, target).catch((error) => {
         adminLog.error('failed to send approved comment email', { error })
       })
     }
   }
 }
 
-export async function deleteComment(rid: string) {
-  await deleteCommentById(idFromString(rid))
+export async function deleteComment(db: NodePgDatabase, rid: string) {
+  await deleteCommentById(db, idFromString(rid))
   await clearLatestCommentsCache()
 }
 
-export async function getCommentById(rid: string) {
-  return findCommentWithUserById(idFromString(rid))
+export async function getCommentById(db: NodePgDatabase, rid: string) {
+  return findCommentWithUserById(db, idFromString(rid))
 }
 
-export async function updateComment(rid: string, newBody: CommentBody) {
+export async function updateComment(db: NodePgDatabase, rid: string, newBody: CommentBody) {
   const id = idFromString(rid)
   const { body, content } = await canonicalizeCommentBody(newBody)
-  await updateCommentBodyAndContent(id, body, content)
+  await updateCommentBodyAndContent(db, id, body, content)
   await clearLatestCommentsCache()
 
-  const r = await findCommentWithUserById(id)
+  const r = await findCommentWithUserById(db, id)
   if (r === null) {
     return null
   }
@@ -57,21 +59,21 @@ export async function updateComment(rid: string, newBody: CommentBody) {
   return { ...withCommentBadgeTextColor(r), content: null }
 }
 
-export async function updateOwnComment(rid: string, newBody: CommentBody) {
+export async function updateOwnComment(db: NodePgDatabase, rid: string, newBody: CommentBody) {
   const id = idFromString(rid)
-  const existing = await findCommentWithUserById(id)
+  const existing = await findCommentWithUserById(db, id)
   if (existing === null) {
     return null
   }
   const { body, content } = await canonicalizeCommentBody(newBody)
   const insideGrace = Date.now() - existing.createAt.getTime() < OWN_EDIT_GRACE_MS
   if (insideGrace) {
-    await updateOwnCommentBody(id, body, content)
+    await updateOwnCommentBody(db, id, body, content)
   } else {
-    await updateOwnCommentBodyAndPending(id, body, content)
+    await updateOwnCommentBodyAndPending(db, id, body, content)
   }
 
-  const r = await findCommentWithUserById(id)
+  const r = await findCommentWithUserById(db, id)
   if (r === null) {
     return null
   }
@@ -79,7 +81,7 @@ export async function updateOwnComment(rid: string, newBody: CommentBody) {
   if (!insideGrace) {
     if (r.type !== null && r.ownerId !== null) {
       const target = { type: r.type, ownerId: r.ownerId }
-      void sendNewComment(r, target).catch((error) => {
+      void sendNewComment(db, r, target).catch((error) => {
         adminLog.error('failed to send new comment email (own edit)', { error })
       })
     } else {

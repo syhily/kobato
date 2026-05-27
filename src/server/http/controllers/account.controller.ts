@@ -2,6 +2,8 @@ import { ORPCError } from '@orpc/server'
 import bcrypt from 'bcryptjs'
 import { z } from 'zod'
 
+import type { UserUpdate } from '@/server/infra/db/operations/user'
+
 import { recordAuditEventFromContext } from '@/server/domains/audit/service'
 import { findSessionMeta, revokeSessionById } from '@/server/domains/auth/repo'
 import { revokeAllSessionsOfUser } from '@/server/domains/auth/session-storage'
@@ -54,14 +56,14 @@ const updateProfile = authedProc
   .input(updateProfileInput)
   .output(z.object({ user: accountUserOutput }))
   .handler(async ({ input, context }) => {
-    const { viewer } = context
+    const { viewer, db } = context
     const userId = idFromString(viewer.userId)
-    const dbUser = await findUserById(userId)
+    const dbUser = await findUserById(db, userId)
     if (!dbUser) {
       throw new ORPCError('NOT_FOUND', { message: '用户不存在。' })
     }
     const canSetBadge = viewer.role === 'admin' || viewer.role === 'author'
-    const patch: Parameters<typeof updateUserById>[1] = {}
+    const patch: Partial<UserUpdate> = {}
     if (input.name !== undefined) {
       patch.name = input.name
     }
@@ -82,7 +84,7 @@ const updateProfile = authedProc
         patch.badgeTextColor = input.badgeTextColor ?? undefined
       }
     }
-    const updated = await updateUserById(userId, patch)
+    const updated = await updateUserById(db, userId, patch)
     if (!updated) {
       throw new ORPCError('NOT_FOUND', { message: '用户不存在。' })
     }
@@ -106,8 +108,8 @@ const updatePassword = authedProc
   .input(updatePasswordInput)
   .output(z.object({ success: z.boolean() }))
   .handler(async ({ input, context }) => {
-    const { viewer, session } = context
-    const dbUser = await findUserById(idFromString(viewer.userId))
+    const { viewer, session, db } = context
+    const dbUser = await findUserById(db, idFromString(viewer.userId))
     if (!dbUser) {
       throw new ORPCError('NOT_FOUND', { message: '用户不存在。' })
     }
@@ -116,7 +118,7 @@ const updatePassword = authedProc
       throw new ORPCError('FORBIDDEN', { message: '原密码错误。' })
     }
     const hashed = await bcrypt.hash(input.newPassword, PASSWORD_HASH_ROUNDS)
-    await updateUserById(dbUser.id, { password: hashed })
+    await updateUserById(db, dbUser.id, { password: hashed })
     await revokeAllSessionsOfUser(dbUser.id, session.id)
     recordAuditEventFromContext(context, {
       action: 'password_changed',

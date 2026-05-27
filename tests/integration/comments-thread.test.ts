@@ -1,10 +1,21 @@
-import { beforeEach, describe, expect, it } from 'vitest'
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
+import type { Pool } from 'pg'
 
-import { db } from '@/server/infra/db/pool'
+import { afterAll, beforeEach, describe, expect, it } from 'vitest'
+
+import { createDbPool, closePool } from '@/server/infra/db/pool'
 
 import { clearAllTables } from '../_helpers/integration-db'
 import { makeAuthedCtx, makePublicCtx } from '../_helpers/mock-ctx'
 import { callRpc, parseRpcJson } from './_helpers/rpc-call'
+
+const poolManager = createDbPool()
+const db: NodePgDatabase = poolManager.db
+const pool: Pool = poolManager.pool
+
+afterAll(async () => {
+  await closePool(pool)
+})
 
 beforeEach(async () => {
   await clearAllTables(db)
@@ -14,8 +25,8 @@ beforeEach(async () => {
 
 describe('integration / comment threading', () => {
   it('posts a comment on a page and loads it back', async () => {
-    const adminCtx = makeAuthedCtx({ role: 'admin' })
-    const publicCtx = makePublicCtx()
+    const adminCtx = makeAuthedCtx({ role: 'admin', db, pool })
+    const publicCtx = makePublicCtx({ db, pool })
 
     // 1. Create a page
     const pageRes = await callRpc(

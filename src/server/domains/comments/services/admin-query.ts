@@ -1,3 +1,5 @@
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
+
 import type { AdminListFilters, AdminPendingKind } from '@/server/domains/comments/repos/shared'
 import type { AdminCommentsResult } from '@/server/domains/comments/types'
 import type { AdminPendingDashboardDto, AdminPendingItemDto } from '@/shared/types/comments'
@@ -32,29 +34,32 @@ function makeDashboardExcerpt(raw: string | null): string {
 }
 
 export async function searchPageOptions(
+  db: NodePgDatabase,
   q: string | undefined,
   limit: number,
   publicIds?: string[],
 ): Promise<Array<{ key: string; title: string }>> {
-  return searchPages(q, limit, publicIds)
+  return searchPages(db, q, limit, publicIds)
 }
 
 export async function searchAuthorOptions(
+  db: NodePgDatabase,
   q: string | undefined,
   limit: number,
   ids?: bigint[],
 ): Promise<Array<{ id: bigint; name: string }>> {
-  return searchCommentAuthors(q, limit, ids)
+  return searchCommentAuthors(db, q, limit, ids)
 }
 
 export async function loadAdminPendingDashboard(
+  db: NodePgDatabase,
   kind: AdminPendingKind,
   offset: number,
   limit: number,
 ): Promise<AdminPendingDashboardDto> {
   const [rows, counts] = await Promise.all([
-    listAdminPendingDashboard(kind, offset, limit),
-    countAdminPendingDashboard(),
+    listAdminPendingDashboard(db, kind, offset, limit),
+    countAdminPendingDashboard(db),
   ])
   const items: AdminPendingItemDto[] = rows.map((row) => ({
     id: String(row.id),
@@ -77,6 +82,7 @@ export async function loadAdminPendingDashboard(
 }
 
 export async function loadAllComments(
+  db: NodePgDatabase,
   offset: number,
   limit: number,
   filterPublicId?: string,
@@ -85,7 +91,7 @@ export async function loadAllComments(
 ): Promise<AdminCommentsResult> {
   let target: { type: 'post' | 'page'; ownerId: bigint } | undefined
   if (filterPublicId) {
-    const metricRow = await findMetricByPublicId(filterPublicId)
+    const metricRow = await findMetricByPublicId(db, filterPublicId)
     if (metricRow !== null) {
       target = asCommentTarget(metricRow.type, metricRow.ownerId) ?? undefined
     }
@@ -101,10 +107,10 @@ export async function loadAllComments(
   const baseFilters = { target, userId: filterUserId } satisfies AdminListFilters
   const filters: AdminListFilters = { ...baseFilters, status }
   const [comments, allCount, pendingCount, approvedCount] = await Promise.all([
-    listAdminComments(offset, limit, filters),
-    countAllComments({ ...baseFilters, status: 'all' }),
-    countAllComments({ ...baseFilters, status: 'pending' }),
-    countAllComments({ ...baseFilters, status: 'approved' }),
+    listAdminComments(db, offset, limit, filters),
+    countAllComments(db, { ...baseFilters, status: 'all' }),
+    countAllComments(db, { ...baseFilters, status: 'pending' }),
+    countAllComments(db, { ...baseFilters, status: 'approved' }),
   ])
   const total = status === 'pending' ? pendingCount : status === 'approved' ? approvedCount : allCount
 

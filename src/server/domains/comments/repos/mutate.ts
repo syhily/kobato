@@ -1,20 +1,22 @@
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
+
 import { eq } from 'drizzle-orm'
 
 import type { Comment, NewComment } from '@/server/infra/db/types'
 
-import { db } from '@/server/infra/db/pool'
 import { comment } from '@/server/infra/db/schema/comment'
 
-export async function insertComment(values: NewComment): Promise<Comment | null> {
+export async function insertComment(db: NodePgDatabase, values: NewComment): Promise<Comment | null> {
   const res = await db.insert(comment).values(values).returning()
   return res[0] ?? null
 }
 
-export async function updateCommentContent(id: bigint, content: string): Promise<void> {
+export async function updateCommentContent(db: NodePgDatabase, id: bigint, content: string): Promise<void> {
   await db.update(comment).set({ content }).where(eq(comment.id, id))
 }
 
 export async function updateCommentBodyAndContent(
+  db: NodePgDatabase,
   id: bigint,
   body: NewComment['body'],
   content: string,
@@ -28,7 +30,12 @@ export async function updateCommentBodyAndContent(
 // its markdown projection in place, bumping `updated_at` but NOT
 // flipping `is_pending`. The comment stays in whatever moderation
 // state it was already in, and the admin notification is skipped.
-export async function updateOwnCommentBody(id: bigint, body: NewComment['body'], content: string): Promise<void> {
+export async function updateOwnCommentBody(
+  db: NodePgDatabase,
+  id: bigint,
+  body: NewComment['body'],
+  content: string,
+): Promise<void> {
   await db.update(comment).set({ body, content, updatedAt: new Date() }).where(eq(comment.id, id))
 }
 
@@ -40,6 +47,7 @@ export async function updateOwnCommentBody(id: bigint, body: NewComment['body'],
 // `updateCommentBodyAndContent` so a moderator's edit does not
 // re-queue an already-approved comment.
 export async function updateOwnCommentBodyAndPending(
+  db: NodePgDatabase,
   id: bigint,
   body: NewComment['body'],
   content: string,

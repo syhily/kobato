@@ -1,6 +1,6 @@
 import { data } from 'react-router'
 
-import { getRouteRequestContext } from '@/server/domains/auth/context'
+import { getDbFromContext, getPoolFromContext, getRouteRequestContext } from '@/server/domains/auth/context'
 import { processAuthFormSubmission, signUpInitialAdminWithSession } from '@/server/domains/auth/flows'
 import { signUpAdminSchema } from '@/server/domains/auth/schema'
 import { checkPgToolsAvailable } from '@/server/domains/backup/service'
@@ -14,10 +14,11 @@ import type { Route } from './+types/index'
 const ADMIN_INSTALL_FIELDS = ['title', 'name', 'email', 'password'] as const
 
 export async function loader({ request, context }: Route.LoaderArgs) {
+  const db = getDbFromContext({ request, context })
   // Possible outcomes:
   //   noAdmin   → render the admin-credentials form.
   //   installed → 303 → /admin/signin
-  await ensureNoAdminOrRedirect()
+  await ensureNoAdminOrRedirect(db)
 
   // Pull the request context so we trip session middleware exactly once.
   getRouteRequestContext({ request, context })
@@ -25,11 +26,13 @@ export async function loader({ request, context }: Route.LoaderArgs) {
 }
 
 export async function action({ request, context }: Route.ActionArgs) {
+  const db = getDbFromContext({ request, context })
+  const pool = getPoolFromContext({ request, context })
   // Same gate as the loader. A POST that races a concurrent install
   // would still be caught by `signUpInitialAdminWithSession`'s own
   // `hasAdmin()` check (returns 409), so the redirect here is a UX
   // courtesy, not a security boundary.
-  await ensureNoAdminOrRedirect()
+  await ensureNoAdminOrRedirect(db)
 
   const { session, clientAddress } = getRouteRequestContext({ request, context })
   return processAuthFormSubmission({
@@ -38,7 +41,7 @@ export async function action({ request, context }: Route.ActionArgs) {
     fields: ADMIN_INSTALL_FIELDS,
     defaultErrorMessage: '请填写完整的管理员账号信息。',
     redirectTo: undefined,
-    run: (input) => signUpInitialAdminWithSession({ ...input, session, request, clientAddress }),
+    run: (input) => signUpInitialAdminWithSession(db, pool, { ...input, session, request, clientAddress }),
   })
 }
 

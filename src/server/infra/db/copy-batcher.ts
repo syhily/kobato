@@ -1,11 +1,10 @@
-import type { PoolClient } from 'pg'
+import type { Pool, PoolClient } from 'pg'
 
 import { appendFile, readFile, rename, writeFile } from 'node:fs/promises'
 import { Readable } from 'node:stream'
 import { pipeline } from 'node:stream/promises'
 import { from as copyFrom } from 'pg-copy-streams'
 
-import { pool } from '@/server/infra/db/pool'
 import { getLogger, type Logger } from '@/server/infra/logger'
 import { registerShutdownHook } from '@/server/infra/shutdown'
 
@@ -30,14 +29,17 @@ export abstract class CopyBatcher<T> {
   private timer: NodeJS.Timeout | null = null
   private flushing: Promise<void> | null = null
   protected readonly log: Logger
+  private readonly pool: Pool
 
   constructor(
     private readonly opts: CopyBatcherOptions,
     private readonly table: string,
     private readonly columns: readonly string[],
     scope: string,
+    pool: Pool,
   ) {
     this.log = getLogger(scope)
+    this.pool = pool
     registerShutdownHook(() => this.flush())
   }
 
@@ -105,7 +107,7 @@ export abstract class CopyBatcher<T> {
   protected async copyToDb(events: T[]): Promise<void> {
     let client: PoolClient | undefined
     try {
-      client = await pool.connect()
+      client = await this.pool.connect()
       const sql = `COPY ${this.table} (${this.columns.join(', ')}) FROM STDIN WITH (FORMAT csv, NULL '\\N')`
       const stream = client.query(copyFrom(sql))
       const source = Readable.from(events.map((e) => this.toCsvRow(e)))

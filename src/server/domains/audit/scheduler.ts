@@ -1,3 +1,6 @@
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
+import type { Pool } from 'pg'
+
 import { runArchiveJob } from '@/server/domains/audit/archive'
 import { getLogger } from '@/server/infra/logger'
 import { registerShutdownHook } from '@/server/infra/shutdown'
@@ -6,6 +9,8 @@ import { getBlogSettingsBundleSync } from '@/shared/config/getters'
 const log = getLogger('audit.scheduler')
 
 let archiveTimer: NodeJS.Timeout | null = null
+let archivedDb: NodePgDatabase | undefined
+let archivedPool: Pool | undefined
 
 // ---------------------------------------------------------------------------
 // Scheduler — daily at 04:00
@@ -20,16 +25,18 @@ function computeNextRun(now: Date, hour: number, minute: number): Date {
   return next
 }
 
-export function scheduleNextArchive(): void {
+export function scheduleNextArchive(db: NodePgDatabase, pool: Pool): void {
   if (archiveTimer) {
     clearTimeout(archiveTimer)
     archiveTimer = null
   }
+  archivedDb = db
+  archivedPool = pool
 
   const bundle = getBlogSettingsBundleSync()
   if (!bundle) {
     // Settings not hydrated yet (boot-time race); retry shortly.
-    archiveTimer = setTimeout(() => scheduleNextArchive(), 30_000)
+    archiveTimer = setTimeout(() => scheduleNextArchive(db, pool), 30_000)
     return
   }
 
@@ -43,16 +50,20 @@ export function scheduleNextArchive(): void {
   })
 
   archiveTimer = setTimeout(() => {
-    void (async () => {
-      await runArchiveJob()
-      scheduleNextArchive()
-    })()
+    const cachedDb = archivedDb
+    const cachedPool = archivedPool
+    if (cachedDb && cachedPool) {
+      void (async () => {
+        await runArchiveJob(cachedDb, cachedPool)
+        scheduleNextArchive(cachedDb, cachedPool)
+      })()
+    }
   }, delayMs)
 }
 
-export async function rescheduleArchive(): Promise<void> {
+export async function rescheduleArchive(db: NodePgDatabase, pool: Pool): Promise<void> {
   log.info('Rescheduling audit archive due to settings change')
-  scheduleNextArchive()
+  scheduleNextArchive(db, pool)
 }
 
 export function stopArchiveScheduler(): void {

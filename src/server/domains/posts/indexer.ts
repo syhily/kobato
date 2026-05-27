@@ -1,8 +1,9 @@
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
+
 import { eq, sql } from 'drizzle-orm'
 
 import type { PortableTextBody } from '@/shared/pt/schema'
 
-import { db } from '@/server/infra/db/pool'
 import { postSearchIndex } from '@/server/infra/db/schema/content'
 import { getLogger } from '@/server/infra/logger'
 import { generateEmbedding } from '@/server/infra/search/openai'
@@ -33,7 +34,13 @@ function normalizeEmbedding(embedding: number[]): number[] {
   return embedding.concat(Array.from({ length: EMBEDDING_DIMENSIONS - embedding.length }, () => 0))
 }
 
-export async function indexPost(postId: bigint, title: string, summary: string, body: PortableTextBody): Promise<void> {
+export async function indexPost(
+  db: NodePgDatabase,
+  postId: bigint,
+  title: string,
+  summary: string,
+  body: PortableTextBody,
+): Promise<void> {
   const plainText = bodyToPlainText(body)
   const indexText = `${title}\n${summary}\n${plainText}`.trim()
 
@@ -65,6 +72,6 @@ export async function indexPost(postId: bigint, title: string, summary: string, 
     })
 }
 
-export async function removePostIndex(postId: bigint, tx = db): Promise<void> {
-  await tx.delete(postSearchIndex).where(eq(postSearchIndex.postId, postId))
+export async function removePostIndex(db: NodePgDatabase, postId: bigint): Promise<void> {
+  await db.delete(postSearchIndex).where(eq(postSearchIndex.postId, postId))
 }

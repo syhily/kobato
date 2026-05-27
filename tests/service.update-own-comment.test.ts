@@ -1,3 +1,4 @@
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 import type { Mock } from 'vitest'
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -55,6 +56,8 @@ vi.mock('@/server/domains/comments/canonicalize', () => ({
     content: 'edited markdown',
   })),
 }))
+
+const db = {} as NodePgDatabase
 
 const queryRepo = await import('@/server/domains/comments/repos/public-query')
 await import('@/server/domains/comments/repos/admin-query')
@@ -132,10 +135,10 @@ describe('updateOwnComment — grace-window branch', () => {
     const existing = row({ createAt: tenMinutesAgo, isPending: false })
     findCommentMock.mockResolvedValueOnce(existing).mockResolvedValueOnce(existing)
 
-    const result = await updateOwnComment('42', NEW_BODY)
+    const result = await updateOwnComment(db, '42', NEW_BODY)
 
     expect(mutateRepo.updateOwnCommentBody).toHaveBeenCalledTimes(1)
-    expect(mutateRepo.updateOwnCommentBody).toHaveBeenCalledWith(42n, NEW_BODY, 'edited markdown')
+    expect(mutateRepo.updateOwnCommentBody).toHaveBeenCalledWith(db, 42n, NEW_BODY, 'edited markdown')
     expect(mutateRepo.updateOwnCommentBodyAndPending).not.toHaveBeenCalled()
     expect(emails.sendNewComment).not.toHaveBeenCalled()
     expect(result).not.toBeNull()
@@ -148,16 +151,16 @@ describe('updateOwnComment — grace-window branch', () => {
     const refetched = row({ createAt: hourAgo, isPending: true })
     findCommentMock.mockResolvedValueOnce(existing).mockResolvedValueOnce(refetched)
 
-    const result = await updateOwnComment('42', NEW_BODY)
+    const result = await updateOwnComment(db, '42', NEW_BODY)
 
     expect(mutateRepo.updateOwnCommentBodyAndPending).toHaveBeenCalledTimes(1)
-    expect(mutateRepo.updateOwnCommentBodyAndPending).toHaveBeenCalledWith(42n, NEW_BODY, 'edited markdown')
+    expect(mutateRepo.updateOwnCommentBodyAndPending).toHaveBeenCalledWith(db, 42n, NEW_BODY, 'edited markdown')
     expect(mutateRepo.updateOwnCommentBody).not.toHaveBeenCalled()
     expect(emails.sendNewComment).toHaveBeenCalledTimes(1)
     // The notification carries the refetched (now-pending) row + its
     // (type, ownerId) target so the moderation inbox links back to
     // the correct post / page.
-    const [commentArg, targetArg] = vi.mocked(emails.sendNewComment).mock.calls[0]
+    const [, commentArg, targetArg] = vi.mocked(emails.sendNewComment).mock.calls[0]
     expect(commentArg.isPending).toBe(true)
     expect(targetArg).toEqual({ type: 'post', ownerId: 1n })
     expect(result?.isPending).toBe(true)
@@ -166,7 +169,7 @@ describe('updateOwnComment — grace-window branch', () => {
   it('returns null and skips writes when the row vanished mid-edit', async () => {
     findCommentMock.mockResolvedValueOnce(null)
 
-    const result = await updateOwnComment('42', NEW_BODY)
+    const result = await updateOwnComment(db, '42', NEW_BODY)
 
     expect(result).toBeNull()
     expect(mutateRepo.updateOwnCommentBody).not.toHaveBeenCalled()

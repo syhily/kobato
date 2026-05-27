@@ -4,6 +4,8 @@ import { recordSessionLogin } from '@/server/domains/auth/repo'
 import { listSessionsByUser } from '@/server/domains/auth/service'
 import { redisInstance } from '@/server/infra/redis/storage'
 
+const mockDb = {} as any
+
 async function clearSessionKeys(): Promise<void> {
   const redis = redisInstance()
   let cursor = '0'
@@ -66,7 +68,7 @@ describe('listSessionsByUser', () => {
       loginAt,
     })
 
-    const sessions = await listSessionsByUser(userId)
+    const sessions = await listSessionsByUser(mockDb, userId)
     const ids = sessions.map((s) => s.sid).sort()
     expect(ids).toEqual(['sid-a', 'sid-b'])
 
@@ -80,7 +82,7 @@ describe('listSessionsByUser', () => {
   })
 
   it('returns empty when no sessions are registered', async () => {
-    const sessions = await listSessionsByUser(7n)
+    const sessions = await listSessionsByUser(mockDb, 7n)
     expect(sessions).toEqual([])
   })
 })

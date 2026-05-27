@@ -1,3 +1,6 @@
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
+import type { Pool } from 'pg'
+
 import { access } from 'node:fs/promises'
 import path from 'node:path'
 
@@ -35,11 +38,11 @@ export interface AdminBlogSettingsDto {
   bundle: BlogSettingsBundle | null
 }
 
-export async function getAdminBlogSettings(): Promise<AdminBlogSettingsDto> {
+export async function getAdminBlogSettings(db: NodePgDatabase): Promise<AdminBlogSettingsDto> {
   // Delegates to the snapshot hydrator, which re-reads from DB when the
   // Redis version counter has advanced (set by `refreshBlogSettings`
   // after every admin write) or shares an in-flight promise otherwise.
-  const bundle = await hydrateBlogSettings()
+  const bundle = await hydrateBlogSettings(db)
   return { bundle }
 }
 
@@ -49,6 +52,8 @@ export async function getAdminBlogSettings(): Promise<AdminBlogSettingsDto> {
 // overwrite each other's JSONB. The on-disk row is the validated
 // payload verbatim — no nested merge with the rest of the document.
 export async function updateBlogSettingsSection<S extends SettingsSection>(
+  db: NodePgDatabase,
+  pool: Pool,
   section: S,
   payload: unknown,
   updatedBy: bigint | null,
@@ -71,20 +76,20 @@ export async function updateBlogSettingsSection<S extends SettingsSection>(
     await validateFontPaths(parsed.data as FontsInput)
   }
 
-  const nextRow = await applySectionPatch(section, parsed.data)
+  const nextRow = await applySectionPatch(db, section, parsed.data)
 
   encryptSecretsInPlace(section, nextRow)
-  await upsertSetting(nextRow, updatedBy, meta.scope)
+  await upsertSetting(db, nextRow, updatedBy, meta.scope)
 
   if (section === 'backup') {
     void rescheduleBackup().catch((e) => log.error('rescheduleBackup failed', { error: String(e) }))
   }
 
   if (section === 'limits') {
-    void rescheduleArchive().catch((e) => log.error('rescheduleArchive failed', { error: String(e) }))
+    void rescheduleArchive(db, pool).catch((e) => log.error('rescheduleArchive failed', { error: String(e) }))
   }
 
-  return refreshBlogSettings()
+  return refreshBlogSettings(db)
 }
 
 // --- Internal helpers ------------------------------------------------------
@@ -94,14 +99,18 @@ export async function updateBlogSettingsSection<S extends SettingsSection>(
 // `search` fold in the existing secret when the editor omits it. The
 // `assets` section additionally preserves `branding` (managed by the
 // /admin/branding/upload endpoints, never sent through this PATCH).
-async function applySectionPatch(section: SettingsSection, validated: unknown): Promise<Record<string, unknown>> {
+async function applySectionPatch(
+  db: NodePgDatabase,
+  section: SettingsSection,
+  validated: unknown,
+): Promise<Record<string, unknown>> {
   let row = validated as Record<string, unknown>
   const secretConfig = SECRET_FIELDS.find((f) => f.section === section)
   if (secretConfig) {
-    row = await preserveSecretOnPatch(row, section, secretConfig.path, secretConfig.field)
+    row = await preserveSecretOnPatch(db, row, section, secretConfig.path, secretConfig.field)
   }
   if (section === 'assets') {
-    row = await preserveBrandingOnPatch(row)
+    row = await preserveBrandingOnPatch(db, row)
   }
   return row
 }
@@ -112,8 +121,11 @@ async function applySectionPatch(section: SettingsSection, validated: unknown): 
 // write their ObjectRefs directly. We have to splice the persisted
 // ObjectRefs back in, then layer the patch on top, so neither side
 // wipes the other.
-async function preserveBrandingOnPatch(row: Record<string, unknown>): Promise<Record<string, unknown>> {
-  const existingRow = await findSettingByScope(SECTION_REGISTRY.assets.scope)
+async function preserveBrandingOnPatch(
+  db: NodePgDatabase,
+  row: Record<string, unknown>,
+): Promise<Record<string, unknown>> {
+  const existingRow = await findSettingByScope(db, SECTION_REGISTRY.assets.scope)
   const existingBranding = (existingRow?.data as Record<string, unknown> | undefined)?.branding as
     | Record<string, unknown>
     | undefined
@@ -129,6 +141,7 @@ async function preserveBrandingOnPatch(row: Record<string, unknown>): Promise<Re
 // previous secret back in so the user doesn't have to re-paste it.
 // An explicit string (including empty) overwrites the stored value.
 async function preserveSecretOnPatch(
+  db: NodePgDatabase,
   validated: unknown,
   section: SettingsSection,
   payloadPath: string,
@@ -140,7 +153,7 @@ async function preserveSecretOnPatch(
     return record
   }
 
-  const existingRow = await findSettingByScope(SECTION_REGISTRY[section].scope)
+  const existingRow = await findSettingByScope(db, SECTION_REGISTRY[section].scope)
   const existingPayload = (existingRow?.data as Record<string, unknown> | undefined)?.[payloadPath] as
     | Record<string, unknown>
     | undefined

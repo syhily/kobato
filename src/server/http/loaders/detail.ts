@@ -1,3 +1,4 @@
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 import type { LoaderFunctionArgs } from 'react-router'
 
 import type { EntityTarget } from '@/server/infra/db/target'
@@ -37,21 +38,24 @@ function isPrefetchRequest(request: Request): boolean {
   return purpose?.toLowerCase().includes('prefetch') ?? false
 }
 
-export async function loadPublicDetailData({
-  request,
-  context,
-  target,
-  preload,
-  sidebar,
-}: Pick<LoaderFunctionArgs, 'request' | 'context'> & {
-  target: EntityTarget
-  preload: () => Promise<void>
-  sidebar?: PublicDetailSidebarData
-}): Promise<{
+export async function loadPublicDetailData(
+  db: NodePgDatabase,
+  {
+    request,
+    context,
+    target,
+    preload,
+    sidebar,
+  }: Pick<LoaderFunctionArgs, 'request' | 'context'> & {
+    target: EntityTarget
+    preload: () => Promise<void>
+    sidebar?: PublicDetailSidebarData
+  },
+): Promise<{
   detail: PublicDetailData
   sidebar?: PublicDetailSidebarData
 }> {
-  const sessionContext = tryGetSessionContext(context) ?? (await resolveSessionContext(request))
+  const sessionContext = tryGetSessionContext(context) ?? (await resolveSessionContext(db, request))
   const { session } = sessionContext
   const trackView = !isPrefetchRequest(request)
   const isAdmin = userSession(session)?.role === 'admin'
@@ -67,7 +71,7 @@ export async function loadPublicDetailData({
     void trackAccess(request, target, { isAdmin })
   }
 
-  const [, streaming] = await Promise.all([preload(), loadDetailPageStreaming(session, target, { trackView })])
+  const [, streaming] = await Promise.all([preload(), loadDetailPageStreaming(db, session, target, { trackView })])
 
   return {
     detail: { ...streaming.critical, comments: streaming.comments },

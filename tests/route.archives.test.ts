@@ -4,8 +4,17 @@ import { makePost } from './_helpers/catalog'
 const mocks = vi.hoisted(() => ({
   listClientPosts: vi.fn(),
   listAllPosts: vi.fn(),
-  getClientPostsWithMetadata: vi.fn(async (posts: unknown[]) => posts),
+  getClientPostsWithMetadata: vi.fn(async (_db: unknown, posts: unknown[]) => posts),
 }))
+
+vi.mock('@/server/domains/auth/context', async () => {
+  const actual = await vi.importActual<typeof import('@/server/domains/auth/context')>('@/server/domains/auth/context')
+  return {
+    ...actual,
+    getDbFromContext: vi.fn(() => ({})),
+    getPoolFromContext: vi.fn(() => ({})),
+  }
+})
 
 vi.mock('@/server/domains/posts/repos/public-query', () => ({
   listClientPosts: mocks.listClientPosts,
@@ -37,7 +46,7 @@ describe('routes/archives loader', () => {
       request: new Request('http://localhost/archives'),
     } as unknown as Parameters<typeof loader>[0])) as { resolvedPosts: Array<{ slug: string }>; listingNowIso: string }
 
-    expect(mocks.listClientPosts).toHaveBeenCalledWith({
+    expect(mocks.listClientPosts).toHaveBeenCalledWith(expect.any(Object), {
       includeHidden: true,
       includeScheduled: false,
     })

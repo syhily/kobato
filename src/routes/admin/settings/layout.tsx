@@ -4,6 +4,7 @@ import type { BlogSettingsBundle } from '@/shared/config/types'
 
 type BundleWithIndex = BlogSettingsBundle & Record<string, unknown>
 
+import { getDbFromContext } from '@/server/domains/auth/context'
 import { SECTION_REGISTRY, SETTINGS_SECTIONS } from '@/server/domains/settings/sections'
 import { getAdminBlogSettings } from '@/server/domains/settings/service'
 import { getSupportedTimeZones } from '@/server/domains/settings/timezones'
@@ -61,8 +62,9 @@ export interface SettingsOutletContext extends ParentContext {
 // truncated a row by hand. Surfacing the regression at the layer that
 // actually owns the seed contract lets every per-section route trust
 // the bundle is fully populated and avoid re-stating the same guard.
-export async function loader(_args: Route.LoaderArgs) {
-  const { bundle } = await getAdminBlogSettings()
+export async function loader({ request, context }: Route.LoaderArgs) {
+  const db = getDbFromContext({ request, context })
+  const { bundle } = await getAdminBlogSettings(db)
   if (bundle === null) {
     throw new Response('站点尚未完成安装。', { status: 503 })
   }
@@ -78,7 +80,7 @@ export async function loader(_args: Route.LoaderArgs) {
       const meta = SECTION_REGISTRY[section]
       if (meta.defaults !== null) {
         try {
-          await upsertSetting(meta.defaults, null, meta.scope)
+          await upsertSetting(db, meta.defaults, null, meta.scope)
           dyn[key] = meta.defaults
         } catch {
           // Best-effort; if it fails we'll surface it below.

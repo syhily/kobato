@@ -16,8 +16,8 @@ const get = publicProc
     }),
   )
   .output(z.object({ music: publicMusicMetaDto }))
-  .handler(async ({ input }) => {
-    const meta = await getMusicMetaForPlayer(input.id)
+  .handler(async ({ input, context }) => {
+    const meta = await getMusicMetaForPlayer(context.db, input.id)
     if (meta === null) {
       throw new ORPCError('NOT_FOUND', { message: '音乐不存在或已下线' })
     }

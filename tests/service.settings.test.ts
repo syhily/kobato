@@ -1,3 +1,5 @@
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
+
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { Setting } from '@/server/infra/db/types'
@@ -32,6 +34,9 @@ vi.mock('@/server/infra/logger', () => ({
 }))
 
 import { flushWorkerRedis } from './_helpers/redis'
+
+const db = {} as NodePgDatabase
+const pool = {} as any
 
 const settingQueries = await import('@/server/infra/db/operations/setting')
 const { getAdminBlogSettings, updateBlogSettingsSection } = await import('@/server/domains/settings/service')
@@ -214,7 +219,7 @@ describe('services/settings — getAdminBlogSettings', () => {
   it('returns null when no DB rows exist (pre-install)', async () => {
     vi.mocked(settingQueries.findSettingsByScopePrefix).mockResolvedValue([])
 
-    const dto = await getAdminBlogSettings()
+    const dto = await getAdminBlogSettings(db)
 
     expect(dto.bundle).toBeNull()
   })
@@ -222,7 +227,7 @@ describe('services/settings — getAdminBlogSettings', () => {
   it('returns the assembled bundle when every section row passes schema validation', async () => {
     vi.mocked(settingQueries.findSettingsByScopePrefix).mockResolvedValue(bundleRows(fixtureBundle))
 
-    const dto = await getAdminBlogSettings()
+    const dto = await getAdminBlogSettings(db)
 
     expect(dto.bundle).not.toBeNull()
     expect(dto.bundle?.siteIdentity?.title).toBe(fixtureBundle.siteIdentity!.title)
@@ -242,7 +247,7 @@ describe('services/settings — getAdminBlogSettings', () => {
       } as Setting,
     ])
 
-    const dto = await getAdminBlogSettings()
+    const dto = await getAdminBlogSettings(db)
 
     expect(dto.bundle).toBeNull()
   })
@@ -252,7 +257,9 @@ describe('services/settings — updateBlogSettingsSection', () => {
   it('rejects an invalid section payload with DomainError(400)', async () => {
     vi.mocked(settingQueries.findSettingsByScopePrefix).mockResolvedValue([])
 
-    await expect(updateBlogSettingsSection('general', { title: '' }, null)).rejects.toBeInstanceOf(DomainError)
+    await expect(updateBlogSettingsSection(db, pool, 'general', { title: '' }, null)).rejects.toBeInstanceOf(
+      DomainError,
+    )
     expect(settingQueries.upsertSetting).not.toHaveBeenCalled()
   })
 
@@ -265,7 +272,7 @@ describe('services/settings — updateBlogSettingsSection', () => {
     // the legacy aggregated wrapper would echo the stale title.
     let currentRows = bundleRows(fixtureBundle)
     vi.mocked(settingQueries.findSettingsByScopePrefix).mockImplementation(async () => currentRows)
-    vi.mocked(settingQueries.upsertSetting).mockImplementation(async (data, updatedBy, scope) => {
+    vi.mocked(settingQueries.upsertSetting).mockImplementation(async (_db, data, updatedBy, scope) => {
       currentRows = currentRows
         .filter((row) => row.scope !== scope)
         .concat([
@@ -281,6 +288,8 @@ describe('services/settings — updateBlogSettingsSection', () => {
     })
 
     const next = await updateBlogSettingsSection(
+      db,
+      pool,
       'general',
       {
         title: '雨帆',
@@ -297,7 +306,7 @@ describe('services/settings — updateBlogSettingsSection', () => {
     )
 
     expect(settingQueries.upsertSetting).toHaveBeenCalledOnce()
-    const [data, updatedBy, scope] = vi.mocked(settingQueries.upsertSetting).mock.calls[0]
+    const [, data, updatedBy, scope] = vi.mocked(settingQueries.upsertSetting).mock.calls[0]
     expect(scope).toBe('blog.general')
     expect((data as Record<string, unknown>).title).toBe('雨帆')
     // The row contents are the validated payload verbatim — no legacy
@@ -340,6 +349,8 @@ describe('services/settings — updateBlogSettingsSection', () => {
     } as Setting)
 
     await updateBlogSettingsSection(
+      db,
+      pool,
       'assets',
       {
         asset: { host: 'cdn.test.example', scheme: 'https' },
@@ -357,13 +368,13 @@ describe('services/settings — updateBlogSettingsSection', () => {
       null,
     )
 
-    const [data, , scope] = vi.mocked(settingQueries.upsertSetting).mock.calls[0]
+    const [, data, , scope] = vi.mocked(settingQueries.upsertSetting).mock.calls[0]
     expect(scope).toBe('blog.assets')
     const payload = data as Record<string, unknown>
     expect(payload.asset).toEqual({ host: 'cdn.test.example', scheme: 'https' })
     const storage = payload.storage as Record<string, unknown>
     expect(storage.secretAccessKey).toBe('STORED')
-    expect(settingQueries.findSettingByScope).toHaveBeenCalledWith('blog.assets')
+    expect(settingQueries.findSettingByScope).toHaveBeenCalledWith(db, 'blog.assets')
   })
 
   it('does not read the rest of the document when patching a single section (write isolation)', async () => {
@@ -377,6 +388,8 @@ describe('services/settings — updateBlogSettingsSection', () => {
     } as Setting)
 
     await updateBlogSettingsSection(
+      db,
+      pool,
       'navigation',
       { navigation: { sideNav: [{ text: 'Home', link: '/' }], footerNav: [] } },
       null,
@@ -387,7 +400,7 @@ describe('services/settings — updateBlogSettingsSection', () => {
     // edits) is no longer reachable.
     expect(settingQueries.findSettingByScope).not.toHaveBeenCalled()
 
-    const [data, , scope] = vi.mocked(settingQueries.upsertSetting).mock.calls[0]
+    const [, data, , scope] = vi.mocked(settingQueries.upsertSetting).mock.calls[0]
     expect(scope).toBe('blog.navigation')
     expect((data as Record<string, unknown>).navigation).toEqual({
       sideNav: [{ text: 'Home', link: '/' }],
@@ -409,6 +422,8 @@ describe('services/settings — mail section', () => {
     } as Setting)
 
     await updateBlogSettingsSection(
+      db,
+      pool,
       'mail',
       {
         mail: {
@@ -421,7 +436,7 @@ describe('services/settings — mail section', () => {
       null,
     )
 
-    const [data, , scope] = vi.mocked(settingQueries.upsertSetting).mock.calls[0]
+    const [, data, , scope] = vi.mocked(settingQueries.upsertSetting).mock.calls[0]
     expect(scope).toBe('blog.mail')
     const mail = (data as Record<string, unknown>).mail as Record<string, unknown>
     expect(mail).toEqual({
@@ -455,6 +470,8 @@ describe('services/settings — mail section', () => {
     } as Setting)
 
     await updateBlogSettingsSection(
+      db,
+      pool,
       'mail',
       {
         mail: { enabled: true, host: 'api.zeabur.com', sender: 'noreply@example.com' },
@@ -464,8 +481,8 @@ describe('services/settings — mail section', () => {
 
     // The keep-existing branch fetches ONLY the mail row; no other
     // section's row is touched.
-    expect(settingQueries.findSettingByScope).toHaveBeenCalledExactlyOnceWith('blog.mail')
-    const [data] = vi.mocked(settingQueries.upsertSetting).mock.calls[0]
+    expect(settingQueries.findSettingByScope).toHaveBeenCalledExactlyOnceWith(db, 'blog.mail')
+    const [, data] = vi.mocked(settingQueries.upsertSetting).mock.calls[0]
     const mail = (data as Record<string, unknown>).mail as Record<string, unknown>
     expect(mail.apiKey).toBe('STORED')
     expect(mail.host).toBe('api.zeabur.com')
@@ -478,6 +495,8 @@ describe('services/settings — mail section', () => {
 
     await expect(
       updateBlogSettingsSection(
+        db,
+        pool,
         'mail',
         { mail: { enabled: false, host: 'api.zeabur.com', apiKey: '', sender: 'not-an-email' } },
         null,
@@ -491,7 +510,7 @@ describe('services/settings — rateLimit section', () => {
   it("writes a valid rateLimit patch to scope='blog.rateLimit' verbatim", async () => {
     let currentRows = bundleRows(fixtureBundle)
     vi.mocked(settingQueries.findSettingsByScopePrefix).mockImplementation(async () => currentRows)
-    vi.mocked(settingQueries.upsertSetting).mockImplementation(async (data, updatedBy, scope) => {
+    vi.mocked(settingQueries.upsertSetting).mockImplementation(async (_db, data, updatedBy, scope) => {
       currentRows = currentRows
         .filter((row) => row.scope !== scope)
         .concat([
@@ -507,6 +526,8 @@ describe('services/settings — rateLimit section', () => {
     })
 
     const next = await updateBlogSettingsSection(
+      db,
+      pool,
       'rateLimit',
       {
         signInIp: { windowSeconds: 600, maxAttempts: 3 },
@@ -523,7 +544,7 @@ describe('services/settings — rateLimit section', () => {
       11n,
     )
 
-    const [data, updatedBy, scope] = vi.mocked(settingQueries.upsertSetting).mock.calls[0]
+    const [, data, updatedBy, scope] = vi.mocked(settingQueries.upsertSetting).mock.calls[0]
     expect(scope).toBe('blog.rateLimit')
     expect(updatedBy).toBe(11n)
     expect(data).toMatchObject({
@@ -540,6 +561,8 @@ describe('services/settings — rateLimit section', () => {
 
     await expect(
       updateBlogSettingsSection(
+        db,
+        pool,
         'rateLimit',
         {
           signInIp: { windowSeconds: 30, maxAttempts: 5 },
@@ -560,6 +583,8 @@ describe('services/settings — rateLimit section', () => {
 
     await expect(
       updateBlogSettingsSection(
+        db,
+        pool,
         'rateLimit',
         {
           signInIp: { windowSeconds: 1800, maxAttempts: 5 },
@@ -580,6 +605,8 @@ describe('services/settings — rateLimit section', () => {
 
     await expect(
       updateBlogSettingsSection(
+        db,
+        pool,
         'rateLimit',
         {
           signInIp: { windowSeconds: 1800, maxAttempts: 5 },
@@ -608,6 +635,8 @@ describe('services/settings — cache section', () => {
     } as Setting)
 
     await updateBlogSettingsSection(
+      db,
+      pool,
       'cache',
       {
         cache: {
@@ -622,7 +651,7 @@ describe('services/settings — cache section', () => {
       null,
     )
 
-    const [data, , scope] = vi.mocked(settingQueries.upsertSetting).mock.calls[0]
+    const [, data, , scope] = vi.mocked(settingQueries.upsertSetting).mock.calls[0]
     expect(scope).toBe('blog.cache')
     const cache = (data as Record<string, unknown>).cache as Record<string, unknown>
     expect((cache.og as Record<string, unknown>).prefix).toBe('opengraph:')
@@ -635,6 +664,8 @@ describe('services/settings — cache section', () => {
 
     await expect(
       updateBlogSettingsSection(
+        db,
+        pool,
         'cache',
         {
           cache: {
@@ -656,6 +687,8 @@ describe('services/settings — cache section', () => {
 
     await expect(
       updateBlogSettingsSection(
+        db,
+        pool,
         'cache',
         {
           cache: {
@@ -677,6 +710,8 @@ describe('services/settings — cache section', () => {
 
     await expect(
       updateBlogSettingsSection(
+        db,
+        pool,
         'cache',
         {
           cache: {
@@ -697,6 +732,8 @@ describe('services/settings — cache section', () => {
 
     await expect(
       updateBlogSettingsSection(
+        db,
+        pool,
         'cache',
         {
           cache: {
@@ -717,6 +754,8 @@ describe('services/settings — cache section', () => {
 
     await expect(
       updateBlogSettingsSection(
+        db,
+        pool,
         'cache',
         {
           cache: {
@@ -737,6 +776,8 @@ describe('services/settings — cache section', () => {
 
     await expect(
       updateBlogSettingsSection(
+        db,
+        pool,
         'cache',
         {
           cache: {
@@ -753,6 +794,8 @@ describe('services/settings — cache section', () => {
 
     await expect(
       updateBlogSettingsSection(
+        db,
+        pool,
         'cache',
         {
           cache: {
@@ -773,7 +816,7 @@ describe('services/settings — cors section', () => {
   it("writes the full cors payload to scope='blog.cors' verbatim", async () => {
     let currentRows = bundleRows(fixtureBundle)
     vi.mocked(settingQueries.findSettingsByScopePrefix).mockImplementation(async () => currentRows)
-    vi.mocked(settingQueries.upsertSetting).mockImplementation(async (data, updatedBy, scope) => {
+    vi.mocked(settingQueries.upsertSetting).mockImplementation(async (_db, data, updatedBy, scope) => {
       currentRows = currentRows
         .filter((row) => row.scope !== scope)
         .concat([
@@ -789,6 +832,8 @@ describe('services/settings — cors section', () => {
     })
 
     const next = await updateBlogSettingsSection(
+      db,
+      pool,
       'cors',
       {
         cors: {
@@ -800,7 +845,7 @@ describe('services/settings — cors section', () => {
     )
 
     expect(settingQueries.upsertSetting).toHaveBeenCalledOnce()
-    const [data, , scope] = vi.mocked(settingQueries.upsertSetting).mock.calls[0]
+    const [, data, , scope] = vi.mocked(settingQueries.upsertSetting).mock.calls[0]
     expect(scope).toBe('blog.cors')
     expect((data as Record<string, unknown>).cors).toEqual({
       enabled: true,
@@ -815,6 +860,8 @@ describe('services/settings — cors section', () => {
 
     await expect(
       updateBlogSettingsSection(
+        db,
+        pool,
         'cors',
         {
           cors: {
@@ -832,6 +879,8 @@ describe('services/settings — cors section', () => {
 
     await expect(
       updateBlogSettingsSection(
+        db,
+        pool,
         'cors',
         {
           cors: {
@@ -925,13 +974,13 @@ describe('services/settings — snapshot reader', () => {
       updatedBy: null,
     } as Setting)
 
-    const dto = await getAdminBlogSettings()
+    const dto = await getAdminBlogSettings(db)
 
     expect(dto.bundle).not.toBeNull()
     const cache = dto.bundle!.cache!.cache
     expect(cache.imageMeta).toEqual({ prefix: 'image-meta:', ttlSeconds: 60 * 60 })
     const upsertCalls = vi.mocked(settingQueries.upsertSetting).mock.calls
-    expect(upsertCalls.some((call) => call[2] === 'blog.cache')).toBe(true)
+    expect(upsertCalls.some((call) => call[3] === 'blog.cache')).toBe(true)
   })
 })
 
@@ -941,7 +990,7 @@ describe('services/settings — warmBlogSettingsSnapshot', () => {
     vi.mocked(settingQueries.findSettingsByScopePrefix).mockRejectedValue(error)
 
     // Must not throw synchronously
-    expect(() => warmBlogSettingsSnapshot()).not.toThrow()
+    expect(() => warmBlogSettingsSnapshot(db)).not.toThrow()
 
     // Allow the rejected microtask to propagate through .catch()
     await new Promise((resolve) => setTimeout(resolve, 0))

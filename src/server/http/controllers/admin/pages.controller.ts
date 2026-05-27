@@ -36,14 +36,14 @@ const list = adminProc
   .route({ method: 'GET', path: '/admin/pages/list' })
   .input(listPagesSchema)
   .output(listPagesOutputDto)
-  .handler(({ input }) => listPagesForAdmin(input))
+  .handler(({ input, context }) => listPagesForAdmin(context.db, input))
 
 const get = adminProc
   .route({ method: 'GET', path: '/admin/pages/get' })
   .input(idInput)
   .output(adminPageDetailDto)
-  .handler(async ({ input }) => {
-    const detail = await getPageDetailForAdmin(idFromString(input.id))
+  .handler(async ({ input, context }) => {
+    const detail = await getPageDetailForAdmin(context.db, idFromString(input.id))
     if (detail === null) {
       throw new ORPCError('NOT_FOUND', { message: '页面不存在或已被删除。' })
     }
@@ -55,7 +55,7 @@ const remove = adminProc
   .input(idInput)
   .output(z.void())
   .handler(async ({ input, context }) => {
-    const result = await deletePage(idFromString(input.id))
+    const result = await deletePage(context.db, idFromString(input.id))
     if (!result.deleted) {
       throw new ORPCError('NOT_FOUND', { message: '页面不存在或已被删除。' })
     }
@@ -71,7 +71,7 @@ const restore = adminProc
   .input(idInput)
   .output(z.object({ success: z.boolean() }))
   .handler(async ({ input, context }) => {
-    const result = await restorePage(idFromString(input.id))
+    const result = await restorePage(context.db, idFromString(input.id))
     if (!result.restored) {
       throw new ORPCError('NOT_FOUND', { message: '页面不存在或未被删除。' })
     }
@@ -88,7 +88,7 @@ const unpublish = adminProc
   .input(z.object({ id: z.string().min(1) }))
   .output(z.object({ page: adminPageDto }))
   .handler(async ({ input, context }) => {
-    const page = await unpublishPage(idFromString(input.id))
+    const page = await unpublishPage(context.db, idFromString(input.id))
     recordAuditEventFromContext(context, {
       action: 'page_unpublished',
       resourceType: 'page',
@@ -102,7 +102,7 @@ const saveDraft = adminProc
   .input(savePageBodySchema)
   .output(saveResultOutput)
   .handler(async ({ input, context }) => {
-    const result = await savePageDraft({
+    const result = await savePageDraft(context.db, {
       pageId: idFromString(input.id),
       body: input.body,
       expectedClientRevisionToken: input.expectedClientRevisionToken ?? undefined,
@@ -124,7 +124,7 @@ const publishLatest = adminProc
   .input(savePageBodySchema)
   .output(saveResultOutput)
   .handler(async ({ input, context }) => {
-    const result = await publishPageLatest({
+    const result = await publishPageLatest(context.db, {
       pageId: idFromString(input.id),
       body: input.body,
       expectedClientRevisionToken: input.expectedClientRevisionToken ?? undefined,
@@ -147,8 +147,8 @@ const preview = adminProc
   .route({ method: 'POST', path: '/admin/pages/preview' })
   .input(z.object({ body: portableTextBodySchema }))
   .output(previewOutputDto)
-  .handler(async ({ input }) => {
-    const html = await renderPagePortableTextToHtml(input.body, [])
+  .handler(async ({ input, context }) => {
+    const html = await renderPagePortableTextToHtml(context.db, input.body, [])
     const headings = collectHeadings(input.body, deriveSlug)
     return { html, headings }
   })
@@ -174,8 +174,8 @@ const upsertMeta = adminProc
     const sessionUserId = idFromString(context.viewer.userId)
     const page =
       input.id === undefined
-        ? await createPage(meta, sessionUserId)
-        : await updatePageMeta({ id: idFromString(input.id), ...meta })
+        ? await createPage(context.db, meta, sessionUserId)
+        : await updatePageMeta(context.db, { id: idFromString(input.id), ...meta })
     recordAuditEventFromContext(context, {
       action: input.id === undefined ? 'page_created' : 'page_meta_updated',
       resourceType: 'page',
@@ -188,8 +188,8 @@ const listRevisions = adminProc
   .route({ method: 'GET', path: '/admin/pages/list-revisions' })
   .input(z.object({ id: z.string().min(1) }))
   .output(listPageRevisionsOutputDto)
-  .handler(async ({ input }) => {
-    const revisions = await listPageRevisionsForAdmin(idFromString(input.id))
+  .handler(async ({ input, context }) => {
+    const revisions = await listPageRevisionsForAdmin(context.db, idFromString(input.id))
     return { revisions }
   })
 

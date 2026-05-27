@@ -1,6 +1,6 @@
 import { data } from 'react-router'
 
-import { getRouteRequestContext } from '@/server/domains/auth/context'
+import { getDbFromContext, getRouteRequestContext } from '@/server/domains/auth/context'
 import { requireRole } from '@/server/domains/auth/rbac'
 import { listSessionsByUser } from '@/server/domains/auth/service'
 import { bundleFromMatches, routeMeta } from '@/server/render/seo/meta'
@@ -23,13 +23,14 @@ export interface MySessionItem {
 }
 
 export async function loader({ request, context }: Route.LoaderArgs) {
+  const db = getDbFromContext({ request, context })
   const ctx = getRouteRequestContext({ request, context })
   // admin.layout already gates on `visitor`, but assert here so
   // the loader narrows `ctx.user` to non-null and so a future
   // refactor of the layout can't accidentally widen access.
   requireRole(ctx, 'visitor')
   const userId = BigInt(ctx.user.id)
-  const sessions = await listSessionsByUser(userId)
+  const sessions = await listSessionsByUser(db, userId)
   // Sort newest-active first so the row most likely to be the
   // current device sits at the top.
   sessions.sort((a, b) => b.lastActiveAt.getTime() - a.lastActiveAt.getTime())

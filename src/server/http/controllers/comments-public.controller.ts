@@ -64,7 +64,7 @@ const replyComment = publicProc
       body: input.body,
       rid: input.rid,
     }
-    const comment = await createComment(commentPayload, request, clientAddress, session)
+    const comment = await createComment(context.db, commentPayload, request, clientAddress, session)
     recordAuditEventFromContext(context, {
       action: 'comment_created',
       resourceType: 'comment',
@@ -86,8 +86,8 @@ const list = publicProc
   .input(z.object({ page_key: z.string(), offset: z.number() }))
   .output(z.object({ comments: z.array(commentItemDto), next: z.boolean() }))
   .handler(async ({ input, context }) => {
-    const target = await resolveMetricTarget(input.page_key)
-    const comments = await loadComments(context.session, target, input.offset)
+    const target = await resolveMetricTarget(context.db, input.page_key)
+    const comments = await loadComments(context.db, context.session, target, input.offset)
     if (comments === null) {
       throw new ORPCError('BAD_GATEWAY', { message: '无法连接到评论服务器' })
     }
@@ -111,7 +111,7 @@ const getRaw = publicProc
       }
       responseHeaders.append('Set-Cookie', serializeCommentTokensCookie(cleaned))
     }
-    const comment = await getCommentById(input.rid)
+    const comment = await getCommentById(context.db, input.rid)
     if (!comment) {
       throw new ORPCError('NOT_FOUND', { message: '评论不存在' })
     }
@@ -133,14 +133,14 @@ const edit = publicProc
         responseHeaders.append('Set-Cookie', serializeCommentTokensCookie(cleaned))
       } else {
         const commentId = idFromString(input.rid)
-        const row = await findCommentWithUserById(commentId)
+        const row = await findCommentWithUserById(context.db, commentId)
         const ownerBySession = sessionUser !== undefined && row !== null && row.userId.toString() === sessionUser.id
         if (!ownerBySession) {
           throw new ORPCError('FORBIDDEN', { message: '无权编辑该评论' })
         }
       }
     }
-    const updated = await updateComment(input.rid, input.body)
+    const updated = await updateComment(context.db, input.rid, input.body)
     if (!updated) {
       throw new ORPCError('NOT_FOUND', { message: '更新评论失败' })
     }

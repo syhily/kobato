@@ -1,6 +1,6 @@
 import { data } from 'react-router'
 
-import { getRouteRequestContext } from '@/server/domains/auth/context'
+import { getDbFromContext, getRouteRequestContext } from '@/server/domains/auth/context'
 import { requireRole } from '@/server/domains/auth/rbac'
 import { listAllSessions } from '@/server/domains/auth/service'
 import { bundleFromMatches, routeMeta } from '@/server/render/seo/meta'
@@ -60,6 +60,7 @@ export interface AdminSessionItem {
 }
 
 export async function loader({ request, context }: Route.LoaderArgs) {
+  const db = getDbFromContext({ request, context })
   const ctx = getRouteRequestContext({ request, context })
   requireRole(ctx, 'admin')
   const url = new URL(request.url)
@@ -68,7 +69,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   const from = parseDateBoundary(url.searchParams.get('from'), 'start')
   const to = parseDateBoundary(url.searchParams.get('to'), 'end')
 
-  const all = await listAllSessions()
+  const all = await listAllSessions(db)
   let filtered = all
   if (q) {
     filtered = filtered.filter((s) => s.userName.toLowerCase().includes(q) || s.userEmail.toLowerCase().includes(q))

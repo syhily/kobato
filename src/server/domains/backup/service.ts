@@ -1,3 +1,5 @@
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
+
 import { execFile, spawn } from 'node:child_process'
 import { Readable } from 'node:stream'
 import { promisify } from 'node:util'
@@ -15,8 +17,7 @@ import {
   putS3Object,
 } from '@/server/infra/storage/s3-client'
 
-async function hasTimescaleDbRestoreFunctions(): Promise<boolean> {
-  const { db } = await import('@/server/infra/db/pool')
+async function hasTimescaleDbRestoreFunctions(db: NodePgDatabase): Promise<boolean> {
   try {
     const result = await db.execute(
       `SELECT 1 FROM pg_proc p JOIN pg_namespace n ON p.pronamespace = n.oid WHERE n.nspname = 'public' AND p.proname = 'timescaledb_pre_restore'`,
@@ -204,13 +205,13 @@ export function validateBackupSql(sql: string): void {
   }
 }
 
-export async function restoreFromSql(sql: string): Promise<void> {
+export async function restoreFromSql(db: NodePgDatabase, sql: string): Promise<void> {
   ensurePgTools()
   const { args: connArgs, env } = getPgConnectionOptions()
 
   log.info('Starting restore')
 
-  const timescaleEnabled = await hasTimescaleDbRestoreFunctions()
+  const timescaleEnabled = await hasTimescaleDbRestoreFunctions(db)
   let wrappedSql: string
 
   if (timescaleEnabled) {
@@ -246,8 +247,8 @@ export async function restoreFromSql(sql: string): Promise<void> {
   log.info('Restore completed successfully')
 }
 
-export async function restoreFromBackup(buffer: Buffer, fileName: string): Promise<void> {
+export async function restoreFromBackup(db: NodePgDatabase, buffer: Buffer, fileName: string): Promise<void> {
   const sql = await extractBackupSql(buffer, fileName)
   validateBackupSql(sql)
-  await restoreFromSql(sql)
+  await restoreFromSql(db, sql)
 }

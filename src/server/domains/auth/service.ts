@@ -2,6 +2,8 @@
 // composes the raw data-access primitives from `repo.ts`. Keeps `repo.ts`
 // lean (direct Redis reads/writes) per the domain locked vocabulary.
 
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
+
 import type { SessionMeta, SessionWithUser } from '@/server/domains/auth/repo'
 
 import { META_KEY, parseMeta, USER_SET_KEY } from '@/server/domains/auth/repo'
@@ -69,7 +71,7 @@ const MAX_SESSIONS_SCAN = 10_000
  * eviction or a manual cleanup) are filtered out — they would render
  * as empty rows in the UI.
  */
-export async function listSessionsByUser(userId: bigint): Promise<SessionMeta[]> {
+export async function listSessionsByUser(db: NodePgDatabase, userId: bigint): Promise<SessionMeta[]> {
   const redis = redisInstance()
   const sids = await redis.smembers(USER_SET_KEY(userId))
   if (sids.length === 0) {
@@ -103,7 +105,7 @@ export async function listSessionsByUser(userId: bigint): Promise<SessionMeta[]>
  * Soft-capped at `MAX_SESSIONS_SCAN` sids to bound memory usage on
  * long-running deployments.
  */
-export async function listAllSessions(): Promise<SessionWithUser[]> {
+export async function listAllSessions(db: NodePgDatabase): Promise<SessionWithUser[]> {
   const redis = redisInstance()
   const sids: string[] = []
   let cursor = '0'
@@ -155,7 +157,7 @@ export async function listAllSessions(): Promise<SessionWithUser[]> {
     return []
   }
   const uniqueIds = Array.from(new Set(validMetas.map((m) => m.userId)))
-  const users = await findUsersByIds(uniqueIds)
+  const users = await findUsersByIds(db, uniqueIds)
   const userById = new Map(users.map((u) => [u.id.toString(), u]))
   return validMetas.map((meta) => {
     const u = userById.get(meta.userId.toString())

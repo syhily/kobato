@@ -42,9 +42,7 @@ interface CachedClient {
   client: S3ClientInstance
 }
 
-const globalForS3 = globalThis as typeof globalThis & {
-  s3CachedClient: CachedClient | undefined
-}
+let s3CachedClient: CachedClient | undefined
 
 function fingerprintFor(storage: AssetsSettings['storage']): string {
   return JSON.stringify({
@@ -97,7 +95,7 @@ export async function getS3StorageContext(options?: { requireEnabled?: boolean }
   }
 
   const fingerprint = fingerprintFor(storage)
-  const cached = globalForS3.s3CachedClient
+  const cached = s3CachedClient
   if (cached !== undefined && cached.fingerprint === fingerprint) {
     return { client: cached.client, bucket: storage.bucket }
   }
@@ -128,7 +126,7 @@ export async function getS3StorageContext(options?: { requireEnabled?: boolean }
   }
   const client = new sdk.S3Client(config)
   installDeleteObjectsMd5Fallback(sdk, client)
-  globalForS3.s3CachedClient = { fingerprint, client }
+  s3CachedClient = { fingerprint, client }
   return { client, bucket: storage.bucket }
 }
 

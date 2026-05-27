@@ -1,3 +1,6 @@
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
+import type { Pool } from 'pg'
+
 import type { User } from '@/server/infra/db/types'
 
 import { recordAuditEvent } from '@/server/domains/audit/service'
@@ -55,6 +58,8 @@ export interface EstablishedLoginSession {
 }
 
 export async function establishLoginSession(
+  db: NodePgDatabase,
+  pool: Pool,
   session: BlogSession,
   dbUser: User,
   request: Request,
@@ -97,7 +102,7 @@ export async function establishLoginSession(
   const newSession = buildSessionWithSid(sid, { user: userData })
   const setCookie = await commitSessionWithMaxAge(newSession)
   const userAgent = request.headers.get('User-Agent')
-  await updateLastLogin(dbUser.id, clientAddress, userAgent)
+  await updateLastLogin(db, dbUser.id, clientAddress, userAgent)
   await redisInstance().sadd(`user_sessions:${dbUser.id}`, sid)
   // Persist the per-session metadata that powers /my/sessions and
   // /admin/security/sessions. Best-effort: any Redis hiccup here would
@@ -115,7 +120,7 @@ export async function establishLoginSession(
     // user's auth flow.
   }
 
-  recordAuditEvent({
+  recordAuditEvent(db, pool, {
     action: 'login',
     resourceType: 'session',
     resourceId: sid,
@@ -131,25 +136,29 @@ export async function establishLoginSession(
   return { sid, setCookie }
 }
 
-export async function login({
-  email,
-  password,
-  session,
-  request,
-  clientAddress,
-}: {
-  email: string
-  password: string
-  session: BlogSession
-  request: Request
-  clientAddress: string
-}): Promise<EstablishedLoginSession | null> {
-  const user = await verifyUserPassword(email, password)
+export async function login(
+  db: NodePgDatabase,
+  pool: Pool,
+  {
+    email,
+    password,
+    session,
+    request,
+    clientAddress,
+  }: {
+    email: string
+    password: string
+    session: BlogSession
+    request: Request
+    clientAddress: string
+  },
+): Promise<EstablishedLoginSession | null> {
+  const user = await verifyUserPassword(db, email, password)
   if (user === null || !user.role) {
     // Users without a role cannot log in (anonymous placeholder accounts).
     return null
   }
-  return establishLoginSession(session, user, request, clientAddress)
+  return establishLoginSession(db, pool, session, user, request, clientAddress)
 }
 
 export function userSession(session: BlogSession): SessionUser | undefined {
@@ -169,7 +178,7 @@ export async function logout(session: BlogSession): Promise<void> {
   session.unset('user')
 }
 
-export async function resolveSessionContext(request: Request): Promise<SessionContext> {
+export async function resolveSessionContext(db: NodePgDatabase, request: Request): Promise<SessionContext> {
   const session = await getRequestSession(request)
   let user = userSession(session)
 
@@ -182,7 +191,7 @@ export async function resolveSessionContext(request: Request): Promise<SessionCo
     let dbUser: Awaited<ReturnType<typeof findUserById>> = null
     let dbReachable = true
     try {
-      dbUser = await findUserById(idFromString(user.id))
+      dbUser = await findUserById(db, idFromString(user.id))
     } catch (err) {
       // Transient DB error — keep the existing session intact and try
       // again on the next request. Unsetting `user` here would log out

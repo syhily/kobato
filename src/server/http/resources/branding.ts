@@ -32,8 +32,8 @@ export const brandingRouter = new Hono<Env>()
         return c.json({ error: { message: '请上传文件' } }, 400)
       }
       const buffer = Buffer.from(await file.arrayBuffer())
-      const ref = await uploadBrandingAsset(slot, buffer)
-      recordAuditEvent({
+      const ref = await uploadBrandingAsset(c.var.db, slot, buffer)
+      recordAuditEvent(c.var.db, c.var.pool, {
         action: 'branding_uploaded',
         actorId: c.var.viewer?.userId,
         actorRole: c.var.viewer?.role ?? null,
@@ -53,8 +53,8 @@ export const brandingRouter = new Hono<Env>()
     if (typeof slot !== 'string' || !isBrandingSlot(slot)) {
       return c.json({ error: { message: '未知的品牌素材槽位' } }, 400)
     }
-    await clearBrandingAsset(slot)
-    recordAuditEvent({
+    await clearBrandingAsset(c.var.db, slot)
+    recordAuditEvent(c.var.db, c.var.pool, {
       action: 'branding_cleared',
       actorId: c.var.viewer?.userId,
       actorRole: c.var.viewer?.role ?? null,

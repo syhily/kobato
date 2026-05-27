@@ -1,6 +1,6 @@
 import { data } from 'react-router'
 
-import { getRouteRequestContext } from '@/server/domains/auth/context'
+import { getDbFromContext, getRouteRequestContext } from '@/server/domains/auth/context'
 import { requireRole } from '@/server/domains/auth/rbac'
 import { countMyComments } from '@/server/domains/comments/repos/admin-query'
 import { findUserById } from '@/server/infra/db/operations/user'
@@ -20,8 +20,9 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   // rejects anonymous visitors, but `requireRole` here keeps the
   // contract explicit for the loader.
   requireRole(ctx, 'visitor')
+  const db = getDbFromContext({ request, context })
   const userId = BigInt(ctx.user.id)
-  const [dbUser, counts] = await Promise.all([findUserById(userId), countMyComments(userId)])
+  const [dbUser, counts] = await Promise.all([findUserById(db, userId), countMyComments(db, userId)])
   return data({
     user: {
       id: ctx.user.id,

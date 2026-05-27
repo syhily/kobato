@@ -1,12 +1,14 @@
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
+
 import { listAllPages } from '@/server/domains/pages/repo'
 import { listAllPosts } from '@/server/domains/posts/repos/public-query'
 import { requireBlogSettingsSection } from '@/shared/config/getters'
 import { joinUrl } from '@/shared/utils/urls'
 
-export async function buildSitemapXml(_request: Request): Promise<string> {
+export async function buildSitemapXml(db: NodePgDatabase, _request: Request): Promise<string> {
   const [posts, pages] = await Promise.all([
-    listAllPosts({ includeHidden: true, includeScheduled: false }),
-    listAllPages(),
+    listAllPosts(db, { includeHidden: true, includeScheduled: false }),
+    listAllPages(db),
   ])
 
   // Build via array join so the response starts with `<?xml ... ?>` on the

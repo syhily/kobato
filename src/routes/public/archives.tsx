@@ -1,3 +1,4 @@
+import { getDbFromContext } from '@/server/domains/auth/context'
 import { getClientPostsWithMetadata, listClientPosts } from '@/server/domains/posts/repos/public-query'
 import { listingHeaders, publicShouldRevalidate } from '@/server/http/loaders/route-exports'
 import { bundleFromMatches, routeMeta } from '@/server/render/seo/meta'
@@ -6,11 +7,12 @@ import { ArchivesBody } from '@/ui/public/post/ArchivesBody'
 
 import type { Route } from './+types/archives'
 
-export async function loader(_: Route.LoaderArgs) {
+export async function loader({ request, context }: Route.LoaderArgs) {
+  const db = getDbFromContext({ request, context })
   const listingNowIso = new Date().toISOString()
-  const rawPosts = await listClientPosts({ includeHidden: true, includeScheduled: false })
+  const rawPosts = await listClientPosts(db, { includeHidden: true, includeScheduled: false })
   const posts = rawPosts.map(toListingPostCard)
-  const resolvedPosts = await getClientPostsWithMetadata(posts, {
+  const resolvedPosts = await getClientPostsWithMetadata(db, posts, {
     likes: true,
     views: true,
     comments: false,

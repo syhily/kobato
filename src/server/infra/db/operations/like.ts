@@ -1,8 +1,9 @@
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
+
 import { and, eq, inArray, isNotNull, isNull, lt, sql } from 'drizzle-orm'
 
 import type { EntityTarget, EntityType } from '@/server/infra/db/target'
 
-import { db } from '@/server/infra/db/pool'
 import { comment } from '@/server/infra/db/schema/comment'
 import { like, metric } from '@/server/infra/db/schema/metric'
 import { targetKey } from '@/server/infra/db/target'
@@ -21,7 +22,7 @@ function whereLikeTarget(target: EntityTarget) {
  * count reflects this exact insert; downstream UPDATEs touching the
  * same row queue behind it.
  */
-export async function recordLikeAndCount(token: string, target: EntityTarget): Promise<number> {
+export async function recordLikeAndCount(db: NodePgDatabase, token: string, target: EntityTarget): Promise<number> {
   return db.transaction(async (tx) => {
     const now = new Date()
     await tx.insert(like).values({
@@ -40,7 +41,11 @@ export async function recordLikeAndCount(token: string, target: EntityTarget): P
   })
 }
 
-export async function consumeActiveLikeToken(target: EntityTarget, token: string): Promise<boolean> {
+export async function consumeActiveLikeToken(
+  db: NodePgDatabase,
+  target: EntityTarget,
+  token: string,
+): Promise<boolean> {
   const now = new Date()
   const rows = await db
     .update(like)
@@ -50,7 +55,7 @@ export async function consumeActiveLikeToken(target: EntityTarget, token: string
   return rows.length > 0
 }
 
-export async function metricVoteUp(target: EntityTarget): Promise<number> {
+export async function metricVoteUp(db: NodePgDatabase, target: EntityTarget): Promise<number> {
   const rows = await db
     .select({ like: metric.voteUp })
     .from(metric)
@@ -73,7 +78,11 @@ export interface MetricsRow {
  * surface is already homogeneous, and a single `eq + inArray` is
  * cheaper than a polymorphic `(type, owner_id) IN (...)` predicate.
  */
-export async function metricsByOwnerIds(type: EntityType, ownerIds: bigint[]): Promise<MetricsRow[]> {
+export async function metricsByOwnerIds(
+  db: NodePgDatabase,
+  type: EntityType,
+  ownerIds: bigint[],
+): Promise<MetricsRow[]> {
   if (ownerIds.length === 0) {
     return []
   }
@@ -106,7 +115,11 @@ export interface TargetCommentCountRow {
  * `metricsByOwnerIds`'s shape so admin list services can fan both out
  * in the same loop.
  */
-export async function commentCountsByOwnerIds(type: EntityType, ownerIds: bigint[]): Promise<TargetCommentCountRow[]> {
+export async function commentCountsByOwnerIds(
+  db: NodePgDatabase,
+  type: EntityType,
+  ownerIds: bigint[],
+): Promise<TargetCommentCountRow[]> {
   if (ownerIds.length === 0) {
     return []
   }
@@ -127,11 +140,11 @@ export async function commentCountsByOwnerIds(type: EntityType, ownerIds: bigint
     .map((r) => ({ ownerId: r.ownerId, count: Number(r.count) }))
 }
 
-export async function purgeOldLikeTokens(before: Date): Promise<void> {
+export async function purgeOldLikeTokens(db: NodePgDatabase, before: Date): Promise<void> {
   await db.delete(like).where(and(isNotNull(like.deletedAt), lt(like.deletedAt, before)))
 }
 
-export async function existsActiveLikeToken(target: EntityTarget, token: string): Promise<boolean> {
+export async function existsActiveLikeToken(db: NodePgDatabase, target: EntityTarget, token: string): Promise<boolean> {
   const rows = await db
     .select({ id: like.id })
     .from(like)

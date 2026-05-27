@@ -1,6 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const pushAuditEvent = vi.fn()
+const mockDb = {} as any
+const mockPool = {} as any
 const loggerMock = { error: vi.fn(), warn: vi.fn(), info: vi.fn(), debug: vi.fn() }
 const getLogger = vi.fn(() => loggerMock)
 
@@ -32,7 +34,7 @@ describe('audit/service', () => {
 
   describe('recordAuditEvent', () => {
     it('tags L3 fields and pushes to batcher', () => {
-      recordAuditEvent({
+      recordAuditEvent(mockDb, mockPool, {
         action: 'post_deleted',
         resourceType: 'post',
         resourceId: '1',
@@ -40,7 +42,7 @@ describe('audit/service', () => {
       })
 
       expect(pushAuditEvent).toHaveBeenCalledOnce()
-      const call = pushAuditEvent.mock.calls[0][0]
+      const call = pushAuditEvent.mock.calls[0][2]
       expect(call.action).toBe('post_deleted')
       expect(call.details).toEqual({ email: '{E}user@example.com{/E}', title: 'Hello' })
     })
@@ -50,7 +52,7 @@ describe('audit/service', () => {
         throw new Error('batcher full')
       })
 
-      expect(() => recordAuditEvent({ action: 'post_deleted', resourceType: 'post' })).not.toThrow()
+      expect(() => recordAuditEvent(mockDb, mockPool, { action: 'post_deleted', resourceType: 'post' })).not.toThrow()
 
       expect(getLogger().error).toHaveBeenCalled()
     })
@@ -59,6 +61,8 @@ describe('audit/service', () => {
   describe('buildAuditContext', () => {
     it('extracts actor, role, ip and ua from HandlerContext', () => {
       const context = {
+        db: mockDb,
+        pool: mockPool,
         viewer: { userId: 1n, role: 'admin' },
         clientAddress: '192.168.1.1',
         request: new Request('http://localhost', {
@@ -77,6 +81,8 @@ describe('audit/service', () => {
 
     it('falls back to null for missing viewer or headers', () => {
       const context = {
+        db: mockDb,
+        pool: mockPool,
         viewer: null,
         clientAddress: '192.168.1.1',
         request: new Request('http://localhost'),
@@ -95,6 +101,8 @@ describe('audit/service', () => {
   describe('recordAuditEventFromContext', () => {
     it('combines buildAuditContext and recordAuditEvent', () => {
       const context = {
+        db: mockDb,
+        pool: mockPool,
         viewer: { userId: 42n, role: 'author' },
         clientAddress: '10.0.0.1',
         request: new Request('http://localhost', {
@@ -109,7 +117,7 @@ describe('audit/service', () => {
       })
 
       expect(pushAuditEvent).toHaveBeenCalledOnce()
-      const call = pushAuditEvent.mock.calls[0][0]
+      const call = pushAuditEvent.mock.calls[0][2]
       expect(call.action).toBe('post_published')
       expect(call.actorId).toBe(42n)
       expect(call.actorRole).toBe('author')

@@ -1,3 +1,5 @@
+import type { Pool } from 'pg'
+
 import type { EnrichedAccessEvent } from '@/server/domains/analytics/types'
 
 import { csvEscape } from '@/server/infra/csv'
@@ -124,8 +126,8 @@ const COPY_COLUMNS = [
 ] as const
 
 class AccessLogBatcher extends CopyBatcher<EnrichedAccessEvent> {
-  constructor() {
-    super({ flushIntervalMs: 1000, flushThreshold: 100 }, 'access_log', COPY_COLUMNS, 'analytics.batcher')
+  constructor(pool: Pool) {
+    super({ flushIntervalMs: 1000, flushThreshold: 100 }, 'access_log', COPY_COLUMNS, 'analytics.batcher', pool)
   }
 
   protected toCsvRow(e: EnrichedAccessEvent): string {
@@ -139,9 +141,12 @@ class AccessLogBatcher extends CopyBatcher<EnrichedAccessEvent> {
 
 let batcher: AccessLogBatcher | undefined
 
-function getBatcher(): AccessLogBatcher {
+function getBatcher(pool?: Pool): AccessLogBatcher {
   if (batcher === undefined) {
-    batcher = new AccessLogBatcher()
+    if (pool === undefined) {
+      throw new Error('AccessLogBatcher must be initialized with a pool')
+    }
+    batcher = new AccessLogBatcher(pool)
   }
   return batcher
 }
@@ -150,22 +155,29 @@ export function resetAccessLogBatcher(): void {
   batcher = undefined
 }
 
-export function pushAccessEvent(event: EnrichedAccessEvent): void {
-  getBatcher().push(event)
+export function initAccessLogBatcher(pool: Pool): void {
+  getBatcher(pool)
 }
 
-export function flushAccessLog(): Promise<void> {
-  return getBatcher().flush()
+export function pushAccessEvent(event: EnrichedAccessEvent, pool?: Pool): void {
+  getBatcher(pool).push(event)
+}
+
+export function flushAccessLog(pool?: Pool): Promise<void> {
+  return getBatcher(pool).flush()
 }
 
 /** @deprecated Use replayDeadLetterAccessLog */
 export const replayDeadLetter = replayDeadLetterAccessLog
 
-export async function replayDeadLetterAccessLog(path?: string): Promise<{ replayed: number; failed: number }> {
+export async function replayDeadLetterAccessLog(
+  pool: Pool,
+  path?: string,
+): Promise<{ replayed: number; failed: number }> {
   return replayFromInfra(
     path ?? deadLetterPath(),
     deserializeFromDeadLetter,
-    async (events) => getBatcher().ingest(events),
+    async (events) => getBatcher(pool).ingest(events),
     getLogger('analytics.batcher'),
   )
 }

@@ -1,8 +1,11 @@
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
+import type { Pool } from 'pg'
+
 import { RouterContextProvider } from 'react-router'
 
 import type { BlogSession, SessionUser } from '@/server/domains/auth/session-storage'
 
-import { requestContext, sessionContext } from '@/server/domains/auth/context'
+import { dbContext, poolContext, requestContext, sessionContext } from '@/server/domains/auth/context'
 
 import { regularSession } from './session'
 
@@ -34,6 +37,8 @@ export function makeRouteContext({
     clientAddress,
     url: new URL(request.url),
   })
+  context.set(dbContext, {} as NodePgDatabase)
+  context.set(poolContext, {} as Pool)
   return context
 }
 
