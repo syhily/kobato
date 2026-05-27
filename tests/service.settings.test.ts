@@ -3,17 +3,40 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Setting } from '@/server/infra/db/types'
 import type { BlogSettingsBundle } from '@/shared/config/types'
 
+const { getLogger, loggerMock } = vi.hoisted(() => {
+  const loggerMock = { error: vi.fn(), warn: vi.fn(), info: vi.fn(), debug: vi.fn() }
+  return { loggerMock, getLogger: vi.fn(() => loggerMock) }
+})
+
 vi.mock('@/server/infra/db/operations/setting', () => ({
   findSettingByScope: vi.fn(),
   findSettingsByScopePrefix: vi.fn(),
   upsertSetting: vi.fn(),
 }))
 
+vi.mock('@/server/infra/logger', () => ({
+  getLogger,
+  L3_KEYS: new Set([
+    'email',
+    'ip',
+    'clientAddress',
+    'remoteAddress',
+    'userAgent',
+    'phone',
+    'authorEmail',
+    'authorIp',
+    'cookie',
+    'deviceId',
+    'name',
+  ]),
+}))
+
 import { flushWorkerRedis } from './_helpers/redis'
 
 const settingQueries = await import('@/server/infra/db/operations/setting')
 const { getAdminBlogSettings, updateBlogSettingsSection } = await import('@/server/domains/settings/service')
-const { setBlogSettingsBundleForTests, getBlogSettingsBundleSync } = await import('@/server/domains/settings/snapshot')
+const { setBlogSettingsBundleForTests, getBlogSettingsBundleSync, warmBlogSettingsSnapshot } =
+  await import('@/server/domains/settings/snapshot')
 const { DomainError } = await import('@/server/infra/http/errors')
 const { getCacheSettings } = await import('@/shared/config/getters')
 
@@ -183,6 +206,7 @@ beforeEach(async () => {
   vi.mocked(settingQueries.findSettingByScope).mockReset()
   vi.mocked(settingQueries.findSettingsByScopePrefix).mockReset()
   vi.mocked(settingQueries.upsertSetting).mockReset()
+  vi.clearAllMocks()
   setBlogSettingsBundleForTests(undefined)
 })
 
@@ -908,5 +932,21 @@ describe('services/settings — snapshot reader', () => {
     expect(cache.imageMeta).toEqual({ prefix: 'image-meta:', ttlSeconds: 60 * 60 })
     const upsertCalls = vi.mocked(settingQueries.upsertSetting).mock.calls
     expect(upsertCalls.some((call) => call[2] === 'blog.cache')).toBe(true)
+  })
+})
+
+describe('services/settings — warmBlogSettingsSnapshot', () => {
+  it('catches and logs a failed hydration without leaking an unhandled rejection', async () => {
+    const error = new Error('DB pool exhausted')
+    vi.mocked(settingQueries.findSettingsByScopePrefix).mockRejectedValue(error)
+
+    // Must not throw synchronously
+    expect(() => warmBlogSettingsSnapshot()).not.toThrow()
+
+    // Allow the rejected microtask to propagate through .catch()
+    await new Promise((resolve) => setTimeout(resolve, 0))
+
+    expect(loggerMock.error).toHaveBeenCalledOnce()
+    expect(loggerMock.error).toHaveBeenCalledWith('Blog settings hydration failed', { error })
   })
 })

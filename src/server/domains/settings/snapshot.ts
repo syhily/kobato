@@ -269,10 +269,14 @@ export { getBlogSettingsBundleSync, requireBlogSettingsBundle }
 // Test runs (`VITEST=true`) skip the hydration so the suite isn't forced
 // to mock the DB pool just to import a server module. Tests that need a
 // hydrated snapshot can call `setBlogSettingsBundleForTests(...)`.
-if (!isVitest()) {
+export function warmBlogSettingsSnapshot(): void {
   void hydrateBlogSettings().catch((error) => {
-    log.error('Initial blog settings hydration failed', { error })
+    log.error('Blog settings hydration failed', { error })
   })
+}
+
+if (!isVitest()) {
+  warmBlogSettingsSnapshot()
 }
 
 /** Test-only: replace the snapshot synchronously. */

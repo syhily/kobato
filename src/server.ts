@@ -12,7 +12,7 @@ import type { Env } from '@/server/http/context'
 import { scheduleNextArchive } from '@/server/domains/audit/scheduler'
 import { requestContext, sessionContext } from '@/server/domains/auth/context'
 import { scheduleNextBackup } from '@/server/domains/backup/scheduler'
-import { hydrateBlogSettings } from '@/server/domains/settings/snapshot'
+import { warmBlogSettingsSnapshot } from '@/server/domains/settings/snapshot'
 import { createApiApp } from '@/server/http/app'
 import { onErrorHandler } from '@/server/http/errors'
 import { wrapFetchWithLeakedResponseHandler } from '@/server/http/leaked-response'
@@ -163,7 +163,8 @@ const app = await createHonoServer<Env>({
     // `getBlogSettingsBundleSync()` reads fresh data. Only fires for
     // React Router SSR routes — static assets skip this entirely.
     // Idempotent: concurrent requests share the same in-flight promise.
-    void hydrateBlogSettings()
+    // Errors are handled internally; never leaks an unhandled rejection.
+    warmBlogSettingsSnapshot()
     const { session, request } = buildRouteContexts(c)
     const context = new RouterContextProvider()
     context.set(sessionContext, session)
