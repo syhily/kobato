@@ -7,7 +7,7 @@ import { serve } from '@hono/node-server'
 
 import type { Env } from '@/server/http/context'
 
-import { isVitest, PORT } from '@/server/infra/env'
+import { PORT } from '@/server/infra/env'
 import { getLogger } from '@/server/infra/logger'
 
 const log = getLogger('lifecycle')
@@ -38,7 +38,7 @@ type RefreshSettingsFn = (db: NodePgDatabase) => Promise<unknown>
 let serverPhase: ServerPhase = 'booting'
 let httpServer: ServerType | null = null
 let shuttingDown = false
-const hooks: ShutdownHook[] = []
+let hooks: ShutdownHook[] = []
 let currentApp: Hono<Env> | null = null
 let currentDb: NodePgDatabase | null = null
 let restartPromise: Promise<void> | null = null
@@ -89,6 +89,7 @@ export function registerShutdownHook(hook: () => Promise<void>, priority = 0): v
     return
   }
   hooks.push({ fn: hook, priority })
+  hooks.sort((a, b) => b.priority - a.priority)
 }
 
 export function requestShutdown(reason: string): void {
@@ -110,10 +111,7 @@ async function performShutdown(reason: string): Promise<void> {
 
   await closeHttpServer(8_000)
 
-  // Run hooks in priority-descending order so flushers (100) run before
-  // connection-closers (0).
-  const sorted = [...hooks].sort((a, b) => b.priority - a.priority)
-  for (const { fn } of sorted) {
+  for (const { fn } of hooks) {
     try {
       await fn()
     } catch (err) {
@@ -147,12 +145,10 @@ export function setServerPhase(newPhase: ServerPhase): void {
   if (newPhase === serverPhase) {
     return
   }
-  if (!isVitest()) {
-    const allowed = VALID_TRANSITIONS[serverPhase]
-    if (!allowed.includes(newPhase)) {
-      log.warn('Invalid phase transition', { from: serverPhase, to: newPhase })
-      return
-    }
+  const allowed = VALID_TRANSITIONS[serverPhase]
+  if (!allowed.includes(newPhase)) {
+    log.warn('Invalid phase transition', { from: serverPhase, to: newPhase })
+    return
   }
   serverPhase = newPhase
   log.info('Server phase changed', { phase: newPhase })

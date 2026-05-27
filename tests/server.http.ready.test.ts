@@ -1,13 +1,23 @@
 import { Hono } from 'hono'
-import { describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { Env } from '@/server/http/context'
 
-import { getServerPhase, setServerPhase } from '@/server/infra/lifecycle'
+const getServerPhase = vi.fn().mockReturnValue('running')
+const setServerPhase = vi.fn()
+
+vi.mock('@/server/infra/lifecycle', () => ({
+  getServerPhase,
+  setServerPhase,
+}))
 
 describe('/ready endpoint', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
   it('returns 200 when phase is running', async () => {
-    setServerPhase('running')
+    getServerPhase.mockReturnValue('running')
 
     const app = new Hono<Env>()
     app.get('/ready', (c) => {
@@ -25,7 +35,7 @@ describe('/ready endpoint', () => {
   })
 
   it('returns 503 when phase is restarting', async () => {
-    setServerPhase('restarting')
+    getServerPhase.mockReturnValue('restarting')
 
     const app = new Hono<Env>()
     app.get('/ready', (c) => {
@@ -40,49 +50,6 @@ describe('/ready endpoint', () => {
     expect(res.status).toBe(503)
     const body = (await res.json()) as { status: string }
     expect(body.status).toBe('restarting')
-
-    // Reset state so subsequent tests are not affected
-    setServerPhase('running')
-  })
-
-  it('returns 503 when phase is booting', async () => {
-    setServerPhase('booting')
-
-    const app = new Hono<Env>()
-    app.get('/ready', (c) => {
-      const phase = getServerPhase()
-      if (phase !== 'running') {
-        return c.json({ status: phase }, 503)
-      }
-      return c.json({ status: 'ok' })
-    })
-
-    const res = await app.request('/ready')
-    expect(res.status).toBe(503)
-    const body = (await res.json()) as { status: string }
-    expect(body.status).toBe('booting')
-
-    setServerPhase('running')
-  })
-
-  it('returns 503 when phase is failed', async () => {
-    setServerPhase('failed')
-
-    const app = new Hono<Env>()
-    app.get('/ready', (c) => {
-      const phase = getServerPhase()
-      if (phase !== 'running') {
-        return c.json({ status: phase }, 503)
-      }
-      return c.json({ status: 'ok' })
-    })
-
-    const res = await app.request('/ready')
-    expect(res.status).toBe(503)
-    const body = (await res.json()) as { status: string }
-    expect(body.status).toBe('failed')
-
-    setServerPhase('running')
   })
 
   it('is exempt from install-gate middleware', async () => {

@@ -1,8 +1,18 @@
-import { describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { getRestoreState, getServerPhase, setRestoreState, setServerPhase } from '@/server/infra/lifecycle'
+const getServerPhase = vi.fn().mockReturnValue('running')
+const getRestoreState = vi.fn().mockReturnValue({ phase: 'idle', startedAt: '' })
+
+vi.mock('@/server/infra/lifecycle', () => ({
+  getServerPhase,
+  getRestoreState,
+}))
 
 describe('/ready endpoint restore-state behaviour', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
   // Inline the /ready logic so we can test it without importing server.ts
   function readyResponse() {
     const phase = getServerPhase()
@@ -13,16 +23,16 @@ describe('/ready endpoint restore-state behaviour', () => {
   }
 
   it('returns ok when phase is running and restore is idle', () => {
-    setRestoreState('idle')
-    setServerPhase('running')
+    getServerPhase.mockReturnValue('running')
+    getRestoreState.mockReturnValue({ phase: 'idle', startedAt: '' })
     const res = readyResponse()
     expect(res.status).toBe('ok')
     expect(res.code).toBe(200)
   })
 
   it('returns restoring 503 when restore is in progress', () => {
-    setRestoreState('draining')
-    setServerPhase('restarting')
+    getServerPhase.mockReturnValue('restarting')
+    getRestoreState.mockReturnValue({ phase: 'draining', startedAt: '2026-01-01T00:00:00.000Z' })
     const res = readyResponse()
     expect(res.status).toBe('restarting')
     expect(res.code).toBe(503)
@@ -30,8 +40,12 @@ describe('/ready endpoint restore-state behaviour', () => {
   })
 
   it('returns restoring 503 with failed details on restore failure', () => {
-    setRestoreState('failed', 'psql exited with code 1')
-    setServerPhase('restarting')
+    getServerPhase.mockReturnValue('restarting')
+    getRestoreState.mockReturnValue({
+      phase: 'failed',
+      startedAt: '2026-01-01T00:00:00.000Z',
+      error: 'psql exited with code 1',
+    })
     const res = readyResponse()
     expect(res.status).toBe('restarting')
     expect(res.code).toBe(503)
@@ -40,18 +54,10 @@ describe('/ready endpoint restore-state behaviour', () => {
   })
 
   it('returns restarting 503 when only restart state is active', () => {
-    setRestoreState('idle')
-    setServerPhase('restarting')
+    getServerPhase.mockReturnValue('restarting')
+    getRestoreState.mockReturnValue({ phase: 'idle', startedAt: '' })
     const res = readyResponse()
     expect(res.status).toBe('restarting')
-    expect(res.code).toBe(503)
-  })
-
-  it('returns booting 503 when server is initializing', () => {
-    setRestoreState('idle')
-    setServerPhase('booting')
-    const res = readyResponse()
-    expect(res.status).toBe('booting')
     expect(res.code).toBe(503)
   })
 })

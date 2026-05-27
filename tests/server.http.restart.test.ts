@@ -1,6 +1,6 @@
 import type { ServerType } from '@hono/node-server'
 
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { getServerPhase, restartServer, setHttpServer, setRestartApp, setServerPhase } from '@/server/infra/lifecycle'
 
@@ -21,6 +21,10 @@ const serveMock = vi.mocked(serve)
 describe('server/http/restart — restartServer', () => {
   beforeEach(() => {
     serveMock.mockClear()
+  })
+
+  afterEach(() => {
+    setServerPhase('running')
   })
 
   it('sets phase to running even when httpServer is null (dev mode)', async () => {
@@ -52,7 +56,6 @@ describe('server/http/restart — restartServer', () => {
     // Only the first one should have attempted to close the server
     expect(closeMock).toHaveBeenCalledTimes(1)
     expect(serveMock).toHaveBeenCalledTimes(1)
-    setServerPhase('running')
   })
 
   it('sets phase to failed when restart crashes', async () => {
@@ -73,7 +76,5 @@ describe('server/http/restart — restartServer', () => {
 
     await expect(restartServer()).rejects.toThrow('port in use')
     expect(getServerPhase()).toBe('failed')
-
-    setServerPhase('running')
   })
 })
