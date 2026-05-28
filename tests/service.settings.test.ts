@@ -151,7 +151,6 @@ const fixtureBundle: BlogSettingsBundle = {
     globalCss: [],
     postCss: [],
   },
-  cors: { cors: { enabled: false, origins: [] } },
   backup: {
     scheduled: { enabled: false, frequency: 'daily', hour: 3, minute: 0 },
     retention: { enabled: true, days: 30 },
@@ -167,6 +166,7 @@ const fixtureBundle: BlogSettingsBundle = {
   },
   security: {
     csrf: { enabled: true, exemptPaths: [] },
+    cors: { enabled: false, origins: [] },
   },
 }
 
@@ -188,7 +188,6 @@ function bundleRows(bundle: BlogSettingsBundle): Setting[] {
     rateLimit: 'blog.rateLimit',
     search: 'blog.search',
     fonts: 'blog.fonts',
-    cors: 'blog.cors',
     limits: 'blog.limits',
     analytics: 'blog.analytics',
     security: 'blog.security',
@@ -817,8 +816,8 @@ describe('services/settings — cache section', () => {
   })
 })
 
-describe('services/settings — cors section', () => {
-  it("writes the full cors payload to scope='blog.cors' verbatim", async () => {
+describe('services/settings — security section', () => {
+  it("writes the full security payload to scope='blog.security' verbatim", async () => {
     let currentRows = bundleRows(fixtureBundle)
     vi.mocked(settingQueries.findSettingsByScopePrefix).mockImplementation(async () => currentRows)
     vi.mocked(settingQueries.upsertSetting).mockImplementation(async (_db, data, updatedBy, scope) => {
@@ -839,8 +838,9 @@ describe('services/settings — cors section', () => {
     const next = await updateBlogSettingsSection(
       db,
       pool,
-      'cors',
+      'security',
       {
+        csrf: { enabled: true, exemptPaths: [] },
         cors: {
           enabled: true,
           origins: ['https://example.com', 'https://app.example.com'],
@@ -851,13 +851,13 @@ describe('services/settings — cors section', () => {
 
     expect(settingQueries.upsertSetting).toHaveBeenCalledOnce()
     const [, data, , scope] = vi.mocked(settingQueries.upsertSetting).mock.calls[0]
-    expect(scope).toBe('blog.cors')
+    expect(scope).toBe('blog.security')
     expect((data as Record<string, unknown>).cors).toEqual({
       enabled: true,
       origins: ['https://example.com', 'https://app.example.com'],
     })
-    expect(next?.cors?.cors.enabled).toBe(true)
-    expect(next?.cors?.cors.origins).toEqual(['https://example.com', 'https://app.example.com'])
+    expect(next?.security?.cors.enabled).toBe(true)
+    expect(next?.security?.cors.origins).toEqual(['https://example.com', 'https://app.example.com'])
   })
 
   it('rejects an origin that is not a valid URL-like string (min length)', async () => {
@@ -867,8 +867,9 @@ describe('services/settings — cors section', () => {
       updateBlogSettingsSection(
         db,
         pool,
-        'cors',
+        'security',
         {
+          csrf: { enabled: true, exemptPaths: [] },
           cors: {
             enabled: true,
             origins: [''],
@@ -886,8 +887,9 @@ describe('services/settings — cors section', () => {
       updateBlogSettingsSection(
         db,
         pool,
-        'cors',
+        'security',
         {
+          csrf: { enabled: true, exemptPaths: [] },
           cors: {
             enabled: true,
             origins: Array.from({ length: 21 }, (_, i) => `https://site${i}.example.com`),

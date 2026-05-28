@@ -6,17 +6,28 @@ describe('securitySchema', () => {
   it('accepts a valid payload', () => {
     const result = securitySchema.safeParse({
       csrf: { enabled: true, exemptPaths: ['/rpc/webhook'] },
+      cors: { enabled: false, origins: [] },
     })
     expect(result.success).toBe(true)
   })
 
-  it('applies defaults', () => {
+  it('applies csrf defaults', () => {
     const result = securitySchema.safeParse({
       csrf: { enabled: true },
     })
     expect(result.success).toBe(true)
     if (result.success) {
       expect(result.data.csrf.exemptPaths).toEqual([])
+    }
+  })
+
+  it('applies cors defaults when omitted', () => {
+    const result = securitySchema.safeParse({
+      csrf: { enabled: true },
+    })
+    expect(result.success).toBe(true)
+    if (result.success) {
+      expect(result.data.cors).toEqual({ enabled: false, origins: [] })
     }
   })
 
@@ -67,5 +78,27 @@ describe('securitySchema', () => {
     if (result.success) {
       expect(result.data.csrf.enabled).toBe(false)
     }
+  })
+
+  it('rejects more than 20 origins', () => {
+    const result = securitySchema.safeParse({
+      csrf: { enabled: true },
+      cors: {
+        enabled: true,
+        origins: Array.from({ length: 21 }, (_, i) => `https://site${i}.example.com`),
+      },
+    })
+    expect(result.success).toBe(false)
+  })
+
+  it('rejects an empty origin string', () => {
+    const result = securitySchema.safeParse({
+      csrf: { enabled: true },
+      cors: {
+        enabled: true,
+        origins: [''],
+      },
+    })
+    expect(result.success).toBe(false)
   })
 })

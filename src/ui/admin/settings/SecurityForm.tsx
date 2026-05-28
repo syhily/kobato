@@ -18,18 +18,24 @@ interface ExemptPathRow {
   path: string
 }
 
+interface OriginRow {
+  clientId: string
+  url: string
+}
+
 interface SecurityFormProps {
   security: SecuritySettings
 }
 
 const MAX_EXEMPT_PATHS = 20
+const MAX_ORIGINS = 20
 
 function CsrfToggleCard({ security }: SecurityFormProps) {
   const { mode, form, settingGroupProps, display } = useSettingsCard<SecuritySettings, { enabled: boolean }>({
     section: 'security',
     source: security,
     toState: (source) => ({ enabled: source.csrf.enabled }),
-    fromState: (state) => ({ csrf: { ...security.csrf, enabled: state.enabled } }),
+    fromState: (state) => ({ csrf: { ...security.csrf, enabled: state.enabled }, cors: security.cors }),
   })
 
   return (
@@ -79,6 +85,7 @@ function CsrfExemptPathsCard({ security }: SecurityFormProps) {
         ...security.csrf,
         exemptPaths: state.exemptPaths.map((row) => row.path.trim()).filter((p) => p !== ''),
       },
+      cors: security.cors,
     }),
   })
 
@@ -154,11 +161,123 @@ function CsrfExemptPathsCard({ security }: SecurityFormProps) {
   )
 }
 
+function CorsPolicyCard({ security }: SecurityFormProps) {
+  const { mode, form, settingGroupProps, display } = useSettingsCard<
+    SecuritySettings,
+    { enabled: boolean; origins: OriginRow[] }
+  >({
+    section: 'security',
+    source: security,
+    toState: (source) => ({
+      enabled: source.cors.enabled,
+      origins: source.cors.origins.map((url, i) => ({ clientId: `cors-origin-${i}`, url })),
+    }),
+    fromState: (state) => ({
+      csrf: security.csrf,
+      cors: {
+        enabled: state.enabled,
+        origins: state.origins.map((row) => row.url.trim()).filter((url) => url !== ''),
+      },
+    }),
+  })
+
+  const rows = useFieldArray({ control: form.control, name: 'origins' })
+
+  return (
+    <SettingGroup
+      title="CORS 策略"
+      description="跨域资源共享配置。启用后，允许指定的外部域名通过浏览器直接访问站点资源。列表为空时将镜像请求来源（适用于开发环境）。"
+      {...settingGroupProps}
+    >
+      {mode === 'edit' ? (
+        <SettingGroupContent>
+          <SettingsRow label="启用 CORS" hint="关闭时，所有跨域请求将被浏览器拒绝。">
+            <Controller
+              control={form.control}
+              name="enabled"
+              render={({ field }) => (
+                <div className="flex items-center gap-3">
+                  <Switch id="cors-enabled" checked={field.value} onCheckedChange={field.onChange} />
+                  <FieldLabel htmlFor="cors-enabled" className="font-normal">
+                    {field.value ? '已开启' : '已关闭'}
+                  </FieldLabel>
+                </div>
+              )}
+            />
+          </SettingsRow>
+          <SettingsRow
+            label="允许的来源"
+            hint={`每个来源必须是完整的 URL（如 https://example.com），最多 ${MAX_ORIGINS} 条。留空表示镜像模式。`}
+          >
+            <div className="flex flex-col gap-3">
+              {rows.fields.length === 0 ? (
+                <p className="text-sm text-muted-foreground">镜像模式：将自动允许所有请求来源。</p>
+              ) : (
+                rows.fields.map((field, index) => (
+                  <div key={field.id} className="flex items-center gap-2">
+                    <Input
+                      type="url"
+                      placeholder="https://example.com"
+                      maxLength={253}
+                      className="flex-1"
+                      {...form.register(`origins.${index}.url` as const)}
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => rows.remove(index)}
+                      aria-label="删除此项"
+                    >
+                      <Trash2Icon className="text-destructive" />
+                    </Button>
+                  </div>
+                ))
+              )}
+              <div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={rows.fields.length >= MAX_ORIGINS}
+                  onClick={() => rows.append({ clientId: crypto.randomUUID(), url: '' })}
+                >
+                  <PlusIcon /> 添加来源
+                </Button>
+                {rows.fields.length >= MAX_ORIGINS && (
+                  <span className="ml-2 text-xs text-muted-foreground">上限 {MAX_ORIGINS} 条</span>
+                )}
+              </div>
+            </div>
+          </SettingsRow>
+        </SettingGroupContent>
+      ) : (
+        <SettingGroupContent>
+          <SettingValue label="CORS 状态" value={display.cors.enabled ? '已开启' : '已关闭'} />
+          <SettingValue
+            label="允许的来源"
+            value={
+              display.cors.origins.length === 0
+                ? '镜像模式（允许所有来源）'
+                : display.cors.origins.length === 1
+                  ? display.cors.origins[0]
+                  : `${display.cors.origins.length} 个来源`
+            }
+          />
+          {display.cors.origins.length > 1 &&
+            display.cors.origins.map((url, i) => <SettingValue key={url} label={`来源 ${i + 1}`} value={url} />)}
+        </SettingGroupContent>
+      )}
+    </SettingGroup>
+  )
+}
+
 export function SecurityForm({ security }: SecurityFormProps) {
   return (
     <div className="flex flex-col gap-5">
       <CsrfToggleCard security={security} />
       <CsrfExemptPathsCard security={security} />
+      <CorsPolicyCard security={security} />
     </div>
   )
 }

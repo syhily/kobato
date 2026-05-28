@@ -44,13 +44,6 @@ export const SECTION_DISPLAY: Record<SettingsSection, SectionDisplayMeta> = {
     group: 'site',
     icon: 'Type',
   },
-  cors: {
-    to: '/admin/settings',
-    label: 'CORS 配置',
-    description: '跨域资源共享，允许的来源域名列表',
-    group: 'system',
-    icon: 'Globe',
-  },
   content: {
     to: '/admin/settings',
     label: '内容与分页',
@@ -145,7 +138,7 @@ export const SECTION_DISPLAY: Record<SettingsSection, SectionDisplayMeta> = {
   security: {
     to: '/admin/settings',
     label: '安全设置',
-    description: 'CSRF 防护与路径豁免',
+    description: 'CSRF 防护、路径豁免与 CORS 跨域配置',
     group: 'system',
     icon: 'ShieldCheck',
   },

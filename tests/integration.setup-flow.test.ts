@@ -124,7 +124,7 @@ describe('integration: /admin/setup full install flow', () => {
       .select()
       .from(setting)
       .where(sql`${setting.scope} like 'blog.%'`)
-    expect(settingRows.length).toBe(18)
+    expect(settingRows.length).toBe(17)
 
     const scopes = new Set(settingRows.map((r) => r.scope))
     const EXPECTED_SECTIONS = [
@@ -141,7 +141,6 @@ describe('integration: /admin/setup full install flow', () => {
       'blog.rateLimit',
       'blog.search',
       'blog.fonts',
-      'blog.cors',
       'blog.backup',
       'blog.limits',
       'blog.security',

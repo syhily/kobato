@@ -10,7 +10,6 @@ import { backupSchema } from '@/server/domains/settings/schemas/backup'
 import { cacheSchema } from '@/server/domains/settings/schemas/cache'
 import { commentsSchema } from '@/server/domains/settings/schemas/comments'
 import { contentSchema } from '@/server/domains/settings/schemas/content'
-import { corsSchema } from '@/server/domains/settings/schemas/cors'
 import { fontsSchema } from '@/server/domains/settings/schemas/fonts'
 import { generalSchema } from '@/server/domains/settings/schemas/general'
 import { limitsSchema } from '@/server/domains/settings/schemas/limits'
@@ -238,18 +237,6 @@ export const SECTION_REGISTRY = {
       postCss: [],
     },
   },
-  cors: {
-    scope: 'blog.cors',
-    schema: corsSchema,
-    key: 'cors',
-    // Empty origins = mirror mode (reflect request Origin header).
-    // Safe default for same-origin deployments; the admin adds
-    // specific origins when a CDN or third-party integration
-    // needs cross-origin access.
-    defaults: {
-      cors: { enabled: false, origins: [] },
-    },
-  },
   backup: {
     scope: 'blog.backup',
     schema: backupSchema,
@@ -284,6 +271,11 @@ export const SECTION_REGISTRY = {
     key: 'security',
     defaults: {
       csrf: { enabled: true, exemptPaths: [] },
+      // Empty origins = mirror mode (reflect request Origin header).
+      // Safe default for same-origin deployments; the admin adds
+      // specific origins when a CDN or third-party integration
+      // needs cross-origin access.
+      cors: { enabled: false, origins: [] },
     },
   },
 } as const satisfies Record<SettingsSection, SectionMeta>

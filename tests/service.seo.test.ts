@@ -110,7 +110,6 @@ const fixture: BlogSettingsBundle = {
     globalCss: [],
     postCss: [],
   },
-  cors: { cors: { enabled: false, origins: [] } },
   backup: {
     scheduled: { enabled: false, frequency: 'daily', hour: 3, minute: 0 },
     retention: { enabled: true, days: 30 },
@@ -126,6 +125,7 @@ const fixture: BlogSettingsBundle = {
   },
   security: {
     csrf: { enabled: true, exemptPaths: [] },
+    cors: { enabled: false, origins: [] },
   },
 }
 

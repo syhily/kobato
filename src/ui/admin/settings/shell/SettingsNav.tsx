@@ -14,6 +14,7 @@ import {
   Settings,
   Share2,
   Shield,
+  ShieldCheck,
   SlidersHorizontal,
   Type,
 } from 'lucide-react'
@@ -41,6 +42,7 @@ export const ICON_MAP: Record<string, React.ComponentType<{ className?: string }
   Database,
   Globe,
   Shield,
+  ShieldCheck,
   SlidersHorizontal,
   Archive,
   BarChart3,

@@ -60,7 +60,6 @@ const SECTION_CONTEXTS: SectionContextMap = {
   rateLimit: makeContext('rateLimit'),
   search: makeContext('search'),
   fonts: makeContext('fonts'),
-  cors: makeContext('cors'),
   backup: makeContext('backup'),
   limits: makeContext('limits'),
   analytics: makeContext('analytics'),

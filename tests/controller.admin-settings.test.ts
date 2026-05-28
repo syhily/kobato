@@ -34,7 +34,6 @@ const bundleStub = {
   rateLimit: null,
   search: null,
   fonts: null,
-  cors: null,
   limits: null,
   analytics: null,
 }

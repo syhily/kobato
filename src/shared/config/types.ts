@@ -263,17 +263,14 @@ export interface AnalyticsSettings {
   }
 }
 
-export interface CorsSettings {
-  cors: {
-    enabled: boolean
-    origins: string[]
-  }
-}
-
 export interface SecuritySettings {
   csrf: {
     enabled: boolean
     exemptPaths: string[]
+  }
+  cors: {
+    enabled: boolean
+    origins: string[]
   }
 }
 
@@ -291,7 +288,6 @@ export interface BlogSettingsBundle {
   rateLimit: RateLimitSettings | null
   search: SearchSettings | null
   fonts: FontsSettings | null
-  cors: CorsSettings | null
   backup: BackupSettings | null
   limits: LimitsSettings | null
   analytics: AnalyticsSettings | null

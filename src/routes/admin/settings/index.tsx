@@ -14,7 +14,6 @@ import { BackupView } from '@/ui/admin/settings/BackupView'
 import { CacheView } from '@/ui/admin/settings/CacheView'
 import { CommentsForm } from '@/ui/admin/settings/CommentsForm'
 import { ContentForm } from '@/ui/admin/settings/ContentForm'
-import { CorsForm } from '@/ui/admin/settings/CorsForm'
 import { FontsForm } from '@/ui/admin/settings/FontsForm'
 import { GeneralForm } from '@/ui/admin/settings/GeneralForm'
 import { LimitsForm } from '@/ui/admin/settings/LimitsForm'
@@ -108,10 +107,6 @@ const SECTION_CONFIGS: {
   {
     id: 'cache',
     render: (bundle) => <CacheView cache={bundle.cache.cache} />,
-  },
-  {
-    id: 'cors',
-    render: (bundle) => <CorsForm cors={bundle.cors} />,
   },
   {
     id: 'rateLimit',
