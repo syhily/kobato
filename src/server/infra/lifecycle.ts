@@ -42,6 +42,7 @@ let hooks: ShutdownHook[] = []
 let currentApp: Hono<Env> | null = null
 let currentDb: NodePgDatabase | null = null
 let restartPromise: Promise<void> | null = null
+let restartLock = false
 let restoreState: RestoreState = { phase: 'idle', startedAt: '' }
 let refreshSettingsFn: RefreshSettingsFn | null = null
 
@@ -189,10 +190,23 @@ export async function restartServer(): Promise<void> {
   if (restartPromise) {
     return restartPromise
   }
+  if (restartLock) {
+    // Another caller is between the lock acquisition and the promise
+    // assignment. Yield until they publish it, then piggyback.
+    let promise: Promise<void> | null = null
+    do {
+      await new Promise((r) => setTimeout(r, 0))
+      promise = restartPromise
+    } while (!promise)
+    return promise
+  }
+  restartLock = true
   if (!currentApp) {
+    restartLock = false
     return
   }
   if (shuttingDown) {
+    restartLock = false
     log.warn('Restart requested during shutdown; ignoring')
     return
   }
@@ -236,6 +250,7 @@ export async function restartServer(): Promise<void> {
     }
   })().finally(() => {
     restartPromise = null
+    restartLock = false
   })
 
   return restartPromise

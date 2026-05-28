@@ -1,3 +1,5 @@
+import { timingSafeEqual } from 'node:crypto'
+
 import type { BlogSession } from '@/server/domains/auth/session-storage'
 
 import { getBlogSettingsBundleSync } from '@/shared/config/getters'
@@ -26,14 +28,13 @@ export function validateCsrfToken(session: BlogSession, headerValue: string | nu
     return false
   }
   // Constant-time comparison to prevent timing attacks.
-  if (expected.length !== headerValue.length) {
+  const enc = new TextEncoder()
+  const expectedBuf = enc.encode(expected)
+  const headerBuf = enc.encode(headerValue)
+  if (expectedBuf.byteLength !== headerBuf.byteLength) {
     return false
   }
-  let mismatch = 0
-  for (let i = 0; i < expected.length; i++) {
-    mismatch |= expected.charCodeAt(i) ^ headerValue.charCodeAt(i)
-  }
-  return mismatch === 0
+  return timingSafeEqual(expectedBuf, headerBuf)
 }
 
 export function isCsrfEnabled(): boolean {

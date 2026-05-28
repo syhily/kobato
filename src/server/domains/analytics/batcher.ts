@@ -3,7 +3,12 @@ import type { Pool } from 'pg'
 import type { EnrichedAccessEvent } from '@/server/domains/analytics/types'
 
 import { csvEscape } from '@/server/infra/csv'
-import { CopyBatcher, replayDeadLetter as replayFromInfra, writeDeadLetter } from '@/server/infra/db/copy-batcher'
+import {
+  type FlushResult,
+  CopyBatcher,
+  replayDeadLetter as replayFromInfra,
+  writeDeadLetter,
+} from '@/server/infra/db/copy-batcher'
 import { ANALYTICS_DEAD_LETTER_PATH } from '@/server/infra/env'
 import { getLogger } from '@/server/infra/logger'
 import { safeBigInt } from '@/shared/utils/tools'
@@ -134,8 +139,9 @@ class AccessLogBatcher extends CopyBatcher<EnrichedAccessEvent> {
     return csvRow(e)
   }
 
-  protected async onCopyFailed(events: EnrichedAccessEvent[]): Promise<void> {
+  protected async onCopyFailed(events: EnrichedAccessEvent[]): Promise<FlushResult> {
     await writeDeadLetter(events, serializeForDeadLetter, deadLetterPath(), this.log)
+    return { committed: 0, deadLettered: events.length }
   }
 }
 
@@ -156,9 +162,9 @@ export function pushAccessEvent(event: EnrichedAccessEvent): void {
   batcher.push(event)
 }
 
-export function flushAccessLog(): Promise<void> {
+export function flushAccessLog(): Promise<FlushResult> {
   if (!batcher) {
-    return Promise.resolve()
+    return Promise.resolve({ committed: 0, deadLettered: 0 })
   }
   return batcher.flush()
 }

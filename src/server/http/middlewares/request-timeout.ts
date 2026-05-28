@@ -4,24 +4,42 @@ import { HTTPException } from 'hono/http-exception'
 
 import type { Env } from '@/server/http/context'
 
-// Per-request deadline. If a handler (or downstream middleware) exceeds
-// `timeoutMs`, the `AbortSignal` fires, Hono's built-in `onRequest` /
-// `fetch` integration forwards the abort to in-flight `fetch()` / DB calls
-// that respect `AbortSignal`, and this middleware converts the timeout
-// into a clean 503.
-//
-// The timeout is deliberately coarse (30 s) — it is a safety net for
-// stuck queries, not a SLA target. Rate-limiting and application-level
-// pagination already bound normal request cost.
+// Per-request deadline. Creates an `AbortController` whose signal is
+// forwarded to `c.req.raw.signal` via `AbortSignal.any()`. When the
+// timeout fires, any in-flight `fetch()` / DB call that respects
+// `AbortSignal` is cancelled immediately, and this middleware converts
+// the abort into a clean 503.
 const DEFAULT_TIMEOUT_MS = 30_000
 
 export function requestTimeout(timeoutMs = DEFAULT_TIMEOUT_MS): MiddlewareHandler<Env> {
   return async function requestTimeoutMiddleware(c, next) {
     const controller = new AbortController()
     const timer = setTimeout(() => controller.abort(), timeoutMs)
-    // Don't pin the event loop if this is the only pending timer.
     timer.unref()
-    c.req.raw.signal.addEventListener('abort', () => controller.abort())
+
+    // Merge our timeout signal with the client disconnect signal so
+    // handlers and downstream calls (pg queries, fetch, etc.) that
+    // read `c.req.raw.signal` are cancelled when either fires.
+    const combined = AbortSignal.any([c.req.raw.signal, controller.signal])
+
+    // Override the request's signal so `c.req.raw.signal` carries the
+    // combined abort. We replace the getter rather than mutating the
+    // frozen `Request` — Hono reads `c.req.raw.signal` each time.
+    const originalRaw = c.req.raw
+    Object.defineProperty(c.req, 'raw', {
+      get() {
+        return new Request(originalRaw.url, {
+          method: originalRaw.method,
+          headers: originalRaw.headers,
+          body: originalRaw.body,
+          signal: combined,
+          // @ts-expect-error — duplex is required for streamed bodies
+          duplex: originalRaw.duplex,
+        })
+      },
+      configurable: true,
+    })
+
     try {
       await next()
     } catch (err) {

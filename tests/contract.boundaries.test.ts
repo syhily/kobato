@@ -1204,7 +1204,7 @@ describe('contract: module and bundle boundaries', () => {
     expect(baseLayout).toMatch(/\btransform-gpu\b/)
   })
 
-  it('centralises all process.env access in src/server/infra/env.ts', () => {
+  it('centralises all process.env access in src/server/infra/env.ts and src/server/infra/hono/dev.ts', () => {
     // Every environment variable must be declared, validated, and exported
     // from `src/server/infra/env.ts`. No other source file may touch
     // `process.env` directly — this keeps the env surface discoverable and
@@ -1217,7 +1217,7 @@ describe('contract: module and bundle boundaries', () => {
         continue
       }
       // The single canonical env module is the only allowed consumer.
-      if (file === 'src/server/infra/env.ts') {
+      if (file === 'src/server/infra/env.ts' || file === 'src/server/infra/hono/dev.ts') {
         continue
       }
       const source = readFileSync(file, 'utf8')

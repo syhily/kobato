@@ -4,7 +4,7 @@ import type { Pool } from 'pg'
 import type { AuditEventInput } from '@/server/domains/audit/types'
 
 import { csvEscape } from '@/server/infra/csv'
-import { CopyBatcher, replayDeadLetter, writeDeadLetter } from '@/server/infra/db/copy-batcher'
+import { type FlushResult, CopyBatcher, replayDeadLetter, writeDeadLetter } from '@/server/infra/db/copy-batcher'
 import { auditLog } from '@/server/infra/db/schema/config'
 import { AUDIT_DEAD_LETTER_PATH } from '@/server/infra/env'
 import { getLogger } from '@/server/infra/logger'
@@ -92,8 +92,8 @@ class AuditLogBatcher extends CopyBatcher<AuditEventInput> {
 
   // On COPY failure, fall back to per-row INSERT (audit rows must not
   // be lost). Remaining failures after per-row go to dead-letter.
-  protected async onCopyFailed(events: AuditEventInput[]): Promise<void> {
-    await insertPerRow(this.db, events)
+  protected async onCopyFailed(events: AuditEventInput[]): Promise<FlushResult> {
+    return insertPerRow(this.db, events)
   }
 }
 
@@ -101,7 +101,7 @@ class AuditLogBatcher extends CopyBatcher<AuditEventInput> {
 // Fallback — per-row INSERT via Drizzle (slower but maximally safe)
 // ---------------------------------------------------------------------------
 
-async function insertPerRow(db: NodePgDatabase, events: AuditEventInput[]): Promise<void> {
+async function insertPerRow(db: NodePgDatabase, events: AuditEventInput[]): Promise<FlushResult> {
   // Fast path: try a single batch insert first.
   try {
     await db.insert(auditLog).values(
@@ -122,7 +122,7 @@ async function insertPerRow(db: NodePgDatabase, events: AuditEventInput[]): Prom
         createdAt: e.createdAt ?? new Date(),
       })),
     )
-    return
+    return { committed: events.length, deadLettered: 0 }
   } catch (batchErr) {
     log.warn('batch insert failed; falling back to per-row', {
       err: batchErr instanceof Error ? batchErr.message : String(batchErr),
@@ -169,6 +169,8 @@ async function insertPerRow(db: NodePgDatabase, events: AuditEventInput[]): Prom
     })
     await writeDeadLetter(failedEvents, serializeForDeadLetter, deadLetterPath(), log)
   }
+
+  return { committed: successCount, deadLettered: failedEvents.length }
 }
 
 // ---------------------------------------------------------------------------
@@ -196,9 +198,9 @@ export function pushAuditEvent(event: AuditEventInput): void {
   requireBatcher().push(event)
 }
 
-export function flushAuditLog(): Promise<void> {
+export function flushAuditLog(): Promise<FlushResult> {
   if (!batcher) {
-    return Promise.resolve()
+    return Promise.resolve({ committed: 0, deadLettered: 0 })
   }
   return batcher.flush()
 }

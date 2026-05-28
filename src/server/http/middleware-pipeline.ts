@@ -32,6 +32,7 @@ import { sitemapRouter } from '@/server/http/resources/sitemap'
 import { getRestoreState, getServerPhase } from '@/server/infra/lifecycle'
 import { root } from '@/server/infra/logger'
 import { sanitizeReqHeaders, resBindings } from '@/server/infra/logger/sanitizer'
+import { isRedisHealthy, pingRedis } from '@/server/infra/redis/storage'
 import { buildOpenApiDocsHtml } from '@/server/render/openapi-docs'
 
 export function configureMiddleware(app: Hono<Env>): void {
@@ -74,10 +75,17 @@ export function configureMiddleware(app: Hono<Env>): void {
 
   // Health probes
   app.get('/health', (c) => c.json({ status: 'ok' }))
-  app.get('/ready', (c) => {
+  app.get('/ready', async (c) => {
     const phase = getServerPhase()
     if (phase !== 'running') {
       return c.json({ status: phase, restore: getRestoreState() }, 503)
+    }
+    if (!isRedisHealthy()) {
+      return c.json({ status: 'degraded', detail: 'redis circuit open' }, 503)
+    }
+    const redisOk = await pingRedis()
+    if (!redisOk) {
+      return c.json({ status: 'degraded', detail: 'redis unreachable' }, 503)
     }
     return c.json({ status: 'ok' })
   })

@@ -148,6 +148,11 @@ export function reactRouterHonoServer(options: ReactRouterHonoServerPluginOption
       }
     },
     async configureServer(server) {
+      // Force development mode — the code default for NODE_ENV is now
+      // 'production', so the dev server must override it before any
+      // server module that reads env.ts is imported.
+      forceDevMode()
+
       setViteDevServer(server)
 
       if (!pluginConfig) {
@@ -249,6 +254,13 @@ function resolvePluginConfig(config: UserConfig, options: ReactRouterHonoServerP
 type PluginConfig = ReturnType<typeof resolvePluginConfig>
 
 let warned = false
+
+/** Force NODE_ENV to development (called by the Vite dev server plugin). */
+function forceDevMode(): void {
+  if (process.env.NODE_ENV !== 'test') {
+    process.env.NODE_ENV = 'development'
+  }
+}
 
 function findDefaultServerEntry(appDirectory: string): string {
   const fileWay = `${appDirectory}/server.ts`

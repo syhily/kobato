@@ -13,6 +13,11 @@ export interface CopyBatcherOptions {
   flushThreshold: number
 }
 
+export interface FlushResult {
+  committed: number
+  deadLettered: number
+}
+
 const VALID_IDENTIFIER = /^[a-z_][a-z0-9_]*$/
 
 // Generic in-memory batcher that flushes rows via `COPY FROM STDIN`.
@@ -30,7 +35,7 @@ const VALID_IDENTIFIER = /^[a-z_][a-z0-9_]*$/
 export abstract class CopyBatcher<T> {
   private buffer: T[] = []
   private timer: NodeJS.Timeout | null = null
-  private flushing: Promise<void> | null = null
+  private flushing: Promise<FlushResult> | null = null
   protected readonly log: Logger
   private readonly pool: Pool
 
@@ -51,14 +56,16 @@ export abstract class CopyBatcher<T> {
     }
     this.log = getLogger(scope)
     this.pool = pool
-    registerShutdownHook(() => this.flush(), 100)
+    registerShutdownHook(async () => {
+      void (await this.flush())
+    }, 100)
   }
 
   /** Serialize one event to a CSV row (single line, `\n`-terminated). */
   protected abstract toCsvRow(event: T): string
 
   /** Called when COPY fails. Implement INSERT fallback or dead-letter here. */
-  protected abstract onCopyFailed(events: T[], error: unknown): Promise<void>
+  protected abstract onCopyFailed(events: T[], error: unknown): Promise<FlushResult>
 
   push(event: T): void {
     this.buffer.push(event)
@@ -76,12 +83,12 @@ export abstract class CopyBatcher<T> {
     }
   }
 
-  async flush(): Promise<void> {
+  async flush(): Promise<FlushResult> {
     if (this.flushing) {
       return this.flushing
     }
     if (this.buffer.length === 0) {
-      return
+      return { committed: 0, deadLettered: 0 }
     }
 
     if (this.timer) {
@@ -96,12 +103,13 @@ export abstract class CopyBatcher<T> {
       try {
         await this.copyToDb(snapshot)
         this.log.debug('flushed batch', { count: snapshot.length })
+        return { committed: snapshot.length, deadLettered: 0 } as FlushResult
       } catch (err) {
         this.log.error('COPY failed', {
           err: err instanceof Error ? err.message : String(err),
           count: snapshot.length,
         })
-        await this.onCopyFailed(snapshot, err)
+        return await this.onCopyFailed(snapshot, err)
       } finally {
         this.flushing = null
       }
@@ -121,7 +129,14 @@ export abstract class CopyBatcher<T> {
       client = await this.pool.connect()
       const sql = `COPY ${this.table} (${this.columns.join(', ')}) FROM STDIN WITH (FORMAT csv, NULL '\\N')`
       const stream = client.query(copyFrom(sql))
-      const source = Readable.from(events.map((e) => this.toCsvRow(e)))
+      const toCsvRow = this.toCsvRow.bind(this)
+      const source = Readable.from(
+        (function* () {
+          for (const e of events) {
+            yield toCsvRow(e)
+          }
+        })(),
+      )
       await pipeline(source, stream)
     } finally {
       client?.release()

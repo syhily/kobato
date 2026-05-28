@@ -3,7 +3,7 @@ import { flushPageViews, initPageViewBatcher, resetPageViewBatcher } from '@/ser
 import { flushAuditLog, initAuditLogBatcher, resetAuditLogBatcher } from '@/server/domains/audit/batcher'
 import { scheduleNextArchive } from '@/server/domains/audit/scheduler'
 import { registerRestoreComplete } from '@/server/domains/backup/restore-orchestrator'
-import { resetLikeTokenSweep } from '@/server/domains/comments/likes'
+import { resetLikeTokenSweep, startLikeTokenSweep } from '@/server/domains/comments/likes'
 import { refreshBlogSettings } from '@/server/domains/settings/snapshot'
 import { migrateDatabase } from '@/server/infra/db/migrate'
 import { createDbPool, closePool } from '@/server/infra/db/pool'
@@ -42,6 +42,7 @@ function initPool() {
   initAccessLogBatcher(pool)
   initPageViewBatcher(db)
   initAuditLogBatcher(db, pool)
+  startLikeTokenSweep(db)
 }
 
 initPool()
@@ -150,6 +151,7 @@ export async function recreatePool(): Promise<{ db: typeof db; pool: typeof pool
   initPageViewBatcher(db)
   initAuditLogBatcher(db, pool)
   resetLikeTokenSweep()
+  startLikeTokenSweep(db)
   return instance
 }
 

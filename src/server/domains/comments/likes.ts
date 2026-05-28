@@ -101,14 +101,8 @@ export async function queryMetadata(
 
 /**
  * Validate if a like token exists and is valid (not deleted).
- *
- * Token cleanup is owned by `startLikeTokenSweep()` (a guarded
- * `setInterval` on the module-scope global), so this hot path no longer
- * pays a `Math.random()` + opportunistic table scan per call. Dedicated
- * cron jobs can still invoke `purgeStaleLikeTokens()` directly.
  */
 export async function validateLikeToken(db: NodePgDatabase, target: EntityTarget, token: string): Promise<boolean> {
-  ensureLikeTokenSweepStarted(db)
   return existsActiveLikeToken(db, target, token)
 }
 
@@ -131,7 +125,7 @@ const SWEEP_INTERVAL_MS = 60 * 60 * 1000
 let sweepTimer: NodeJS.Timeout | undefined
 let sweepDb: NodePgDatabase | undefined
 
-function ensureLikeTokenSweepStarted(db: NodePgDatabase): void {
+export function startLikeTokenSweep(db: NodePgDatabase): void {
   if (sweepTimer !== undefined) {
     return
   }

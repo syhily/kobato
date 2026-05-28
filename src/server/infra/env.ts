@@ -35,8 +35,7 @@ const envConfig = {
     ANALYTICS_DEAD_LETTER_PATH: z.string().min(1).optional(),
     AUDIT_DEAD_LETTER_PATH: z.string().min(1).optional(),
 
-    // Node environment. Optional: defaults to 'development'.
-    NODE_ENV: z.enum(['development', 'production', 'test']).optional().default('development'),
+    NODE_ENV: z.enum(['development', 'production', 'test']).optional().default('production'),
   },
   runtimeEnv: process.env,
   emptyStringAsUndefined: true,
@@ -89,5 +88,7 @@ export function isVitest(): boolean {
   return process.env.VITEST === 'true'
 }
 
-/** Full `process.env` snapshot for child-process spawning (e.g. pg_dump). */
-export const processEnv: Record<string, string> = process.env as Record<string, string>
+/** Full `process.env` snapshot (undefined values filtered) for child-process spawning (e.g. pg_dump). */
+export const processEnv: Record<string, string> = Object.fromEntries(
+  Object.entries(process.env).filter(([, v]) => v !== undefined),
+) as Record<string, string>

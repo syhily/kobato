@@ -11,6 +11,17 @@ interface OpenAiConfig {
   baseURL: string
 }
 
+const ALLOWED_HOSTS = ['api.openai.com', 'api.openai.com:443']
+
+function isAllowedBaseURL(url: string): boolean {
+  try {
+    const parsed = new URL(url)
+    return parsed.protocol === 'https:' && ALLOWED_HOSTS.includes(parsed.host)
+  } catch {
+    return false
+  }
+}
+
 function getConfig(): OpenAiConfig | null {
   const bundle = getBlogSettingsBundleSync()
   if (bundle === null) {
@@ -24,6 +35,13 @@ function getConfig(): OpenAiConfig | null {
 
   const endpoint = settings.endpoint?.trim()
   const baseURL = endpoint || 'https://api.openai.com/v1'
+  if (endpoint && !isAllowedBaseURL(baseURL)) {
+    getLogger('search.openai').error('Configured search endpoint is not in the allowlist', {
+      host: new URL(baseURL).host,
+      allowed: ALLOWED_HOSTS,
+    })
+    return null
+  }
   return { apiKey: settings.apiKey, baseURL }
 }
 

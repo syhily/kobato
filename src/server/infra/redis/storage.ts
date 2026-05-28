@@ -8,14 +8,64 @@ import { getLogger } from '@/server/infra/logger'
 
 const log = getLogger('redis')
 
+// ─── Circuit breaker ──────────────────────────────────────
+
+const FAILURE_THRESHOLD = 5
+const RESET_TIMEOUT_MS = 30_000
+
+let consecutiveFailures = 0
+let circuitOpenUntil = 0
+let circuitOpen = false
+
+function recordFailure(): void {
+  consecutiveFailures++
+  if (consecutiveFailures >= FAILURE_THRESHOLD && !circuitOpen) {
+    circuitOpen = true
+    circuitOpenUntil = Date.now() + RESET_TIMEOUT_MS
+    log.warn('Redis circuit breaker opened', {
+      failures: consecutiveFailures,
+      resetIn: RESET_TIMEOUT_MS,
+    })
+  }
+}
+
+function recordSuccess(): void {
+  consecutiveFailures = 0
+  if (circuitOpen) {
+    circuitOpen = false
+    log.info('Redis circuit breaker closed')
+  }
+}
+
+function isCircuitOpen(): boolean {
+  if (!circuitOpen) {
+    return false
+  }
+  if (Date.now() >= circuitOpenUntil) {
+    circuitOpen = false
+    log.info('Redis circuit breaker half-open, allowing probe')
+    return false
+  }
+  return true
+}
+
+export function isRedisHealthy(): boolean {
+  return !isCircuitOpen()
+}
+
+// ─── Client ───────────────────────────────────────────────
+
 const redis = new RedisClient(REDIS_URL, {
   lazyConnect: true,
 })
 
 redis.on('error', (err) => {
-  // ioredis handles reconnection internally; we log so the error is
-  // visible in monitoring but don't crash the process.
   log.error('Redis connection error', { err: err.message })
+  recordFailure()
+})
+
+redis.on('ready', () => {
+  recordSuccess()
 })
 
 /**
@@ -111,6 +161,22 @@ export function redisInstance(): Redis | Cluster {
 
 export async function closeRedis(): Promise<void> {
   await redis.quit()
+}
+
+/** Ping Redis to verify connectivity (used by /ready probe). */
+export async function pingRedis(): Promise<boolean> {
+  try {
+    const result = await redis.ping()
+    if (result === 'PONG') {
+      recordSuccess()
+      return true
+    }
+    recordFailure()
+    return false
+  } catch {
+    recordFailure()
+    return false
+  }
 }
 
 registerShutdownHook(closeRedis, 0)
