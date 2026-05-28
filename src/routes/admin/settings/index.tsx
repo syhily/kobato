@@ -21,6 +21,7 @@ import { LimitsForm } from '@/ui/admin/settings/LimitsForm'
 import { MailForm } from '@/ui/admin/settings/MailForm'
 import { NavigationEditor } from '@/ui/admin/settings/NavigationEditor'
 import { SearchForm } from '@/ui/admin/settings/SearchForm'
+import { SecurityForm } from '@/ui/admin/settings/SecurityForm'
 import { SeoForm } from '@/ui/admin/settings/SeoForm'
 import { SettingsCloseButton } from '@/ui/admin/settings/shell/SettingsHeader'
 import { SettingsMobileBar } from '@/ui/admin/settings/shell/SettingsMobileBar'
@@ -123,6 +124,10 @@ const SECTION_CONFIGS: {
   {
     id: 'analytics',
     render: (bundle) => <AnalyticsForm analytics={bundle.analytics} />,
+  },
+  {
+    id: 'security',
+    render: (bundle) => <SecurityForm security={bundle.security} />,
   },
   {
     id: 'backup',

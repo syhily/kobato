@@ -15,6 +15,7 @@ import type {
   NavigationSettings,
   RateLimitSettings,
   SearchSettings,
+  SecuritySettings,
   SeoSettings,
   SidebarSettings,
   SiteIdentitySettings,
@@ -63,6 +64,7 @@ const SECTION_CONTEXTS: SectionContextMap = {
   backup: makeContext('backup'),
   limits: makeContext('limits'),
   analytics: makeContext('analytics'),
+  security: makeContext('security'),
 }
 
 interface BlogSettingsProviderProps {
@@ -238,4 +240,11 @@ export function useAnalyticsSettings(): AnalyticsSettings {
 }
 export function useAnalyticsSettingsOptional(): AnalyticsSettings | undefined {
   return useSectionOptional('analytics')
+}
+
+export function useSecuritySettings(): SecuritySettings {
+  return useSection('useSecuritySettings', 'security')
+}
+export function useSecuritySettingsOptional(): SecuritySettings | undefined {
+  return useSectionOptional('security')
 }

@@ -69,7 +69,7 @@ const db = {} as NodePgDatabase
 
 const queries = await import('@/server/domains/comments/repos/public-query')
 const metricQueries = await import('@/server/infra/db/operations/metric')
-const { loadComments, latestComments, pendingComments, parseComments } =
+const { loadComments, latestComments, pendingComments } =
   await import('@/server/domains/comments/services/public-query')
 
 const POST_HELLO = { type: 'post' as const, ownerId: 1n }
@@ -244,13 +244,5 @@ describe('services/comments/loader — latestComments / pendingComments', () => 
     vi.mocked(queries.pendingComments).mockResolvedValue([])
     await pendingComments(db)
     expect(queries.pendingComments).toHaveBeenCalledWith(db, expect.any(Number))
-  })
-})
-
-describe('services/comments/loader — parseComments', () => {
-  it('adds a server-computed readable text color for comment badges', async () => {
-    const comments = await parseComments([row({ badgeName: '站长', badgeColor: '#6ab7ca' })])
-
-    expect(comments[0].badgeTextColor).toBe('#151b2b')
   })
 })

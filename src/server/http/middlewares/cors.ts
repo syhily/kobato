@@ -28,7 +28,7 @@ export function corsMiddleware(): MiddlewareHandler<Env> {
       return settings.cors.origins.filter((o) => o.length > 0).includes(origin ?? '') ? (origin ?? '') : ''
     },
     allowMethods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowHeaders: ['Content-Type', 'Authorization', 'X-Request-Id'],
+    allowHeaders: ['Content-Type', 'Authorization', 'X-Request-Id', 'X-CSRF-Token'],
     maxAge: 86400,
     credentials: true,
   })

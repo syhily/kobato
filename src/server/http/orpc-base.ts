@@ -41,11 +41,10 @@ export interface AuthedHandlerContext extends Omit<HandlerContext, 'viewer'> {
 const root = os.$context<HandlerContext>()
 
 function ensureViewer(context: HandlerContext): ViewerContext {
-  const user = context.session.get('user')
-  if (!user) {
+  if (!context.viewer) {
     throw new ORPCError('UNAUTHORIZED', { message: ErrorMessages.UNAUTHORIZED })
   }
-  return { userId: user.id, role: user.role }
+  return context.viewer
 }
 
 // ─── Middleware: require a logged-in user ───────────────

@@ -1,34 +1,7 @@
 import { z } from 'zod'
 
-import type {
-  DeletePageInput,
-  GetPageInput,
-  ListPageRevisionsInput,
-  ListPagesInput,
-  PreviewPageBodyInput,
-  RenderMathInput,
-  RestorePageInput,
-  SavePageBodyInput,
-  UnpublishPageInput,
-  UpsertPageMetaInput,
-} from '@/shared/types/pages'
-
 import { portableTextBodySchema } from '@/shared/pt/schema'
-
-// Re-export the wire-format types alongside the Zod validators so
-// admin Resource Routes import schema + type from the same module.
-export type {
-  DeletePageInput,
-  GetPageInput,
-  ListPageRevisionsInput,
-  ListPagesInput,
-  PreviewPageBodyInput,
-  RenderMathInput,
-  RestorePageInput,
-  SavePageBodyInput,
-  UnpublishPageInput,
-  UpsertPageMetaInput,
-}
+import { safeBoolean } from '@/shared/utils/schema'
 
 // `slug()` enforces the same kebab-case-ASCII shape `service.ts` checks
 // at the business-logic layer. Validation happens here too so the API
@@ -98,11 +71,11 @@ export const upsertPageMetaSchema = z.object({
     .nullable()
     .optional()
     .transform((value) => (value === undefined || value === '' ? null : value)),
-  published: z.coerce.boolean().optional(),
-  commentsEnabled: z.coerce.boolean().optional(),
-  showToc: z.coerce.boolean().optional(),
-  showUpdated: z.coerce.boolean().optional(),
-  showFriends: z.coerce.boolean().optional(),
+  published: safeBoolean().optional(),
+  commentsEnabled: safeBoolean().optional(),
+  showToc: safeBoolean().optional(),
+  showUpdated: safeBoolean().optional(),
+  showFriends: safeBoolean().optional(),
   publishedAt: z.iso.datetime({ offset: true }).optional(),
 })
 
@@ -115,7 +88,7 @@ export const savePageBodySchema = z.object({
   id: z.string().min(1),
   body: portableTextBodySchema,
   expectedClientRevisionToken: z.uuid().nullable().optional(),
-  force: z.coerce.boolean().optional(),
+  force: safeBoolean().optional(),
   // Optional publish target. Only `publishLatest` honours this; the
   // draft path ignores it (the metadata save endpoint owns
   // `publishedAt` for non-publish edits). When omitted, publish
@@ -140,7 +113,7 @@ export const previewPageBodySchema = z.object({
 // open) or a payload-flood attempt — both of which deserve a 400.
 export const renderMathSchema = z.object({
   tex: z.string().max(4 * 1024, 'TeX 表达式过长'),
-  display: z.coerce.boolean(),
+  display: safeBoolean(),
 })
 
 export const renderMermaidSchema = z.object({

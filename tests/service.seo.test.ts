@@ -124,6 +124,9 @@ const fixture: BlogSettingsBundle = {
   analytics: {
     analytics: { trackAdmin: false, keepBotRows: false },
   },
+  security: {
+    csrf: { enabled: true, exemptPaths: [] },
+  },
 }
 
 beforeEach(() => {

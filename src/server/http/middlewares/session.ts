@@ -2,6 +2,7 @@ import { createMiddleware } from 'hono/factory'
 
 import type { Env } from '@/server/http/context'
 
+import { ensureCsrfToken } from '@/server/domains/auth/csrf'
 import { resolveSessionContext } from '@/server/domains/auth/primitives'
 import { commitSessionWithMaxAge } from '@/server/domains/auth/session-storage'
 import { getClientAddress } from '@/shared/utils/request'
@@ -12,6 +13,15 @@ export const honoSessionMiddleware = createMiddleware<Env>(async (c, next) => {
   c.set('sessionDirty', sessionCtx.dirty)
   c.set('viewer', sessionCtx.user ? { userId: sessionCtx.user.id, role: sessionCtx.user.role } : null)
   c.set('clientAddress', getClientAddress(c.req.raw))
+
+  // Ensure every session carries a CSRF token. The token is generated
+  // lazily on first access; subsequent requests reuse it. Rotation
+  // (if configured) also regenerates the token and timestamp.
+  const tokenBefore = sessionCtx.session.get('csrfToken')
+  ensureCsrfToken(sessionCtx.session)
+  if (sessionCtx.session.get('csrfToken') !== tokenBefore) {
+    c.set('sessionDirty', true)
+  }
 
   await next()
 

@@ -169,4 +169,7 @@ export const TEST_BLOG_SETTINGS_BUNDLE: BlogSettingsBundle = {
   analytics: {
     analytics: { trackAdmin: false, keepBotRows: false },
   },
+  security: {
+    csrf: { enabled: true, exemptPaths: [] },
+  },
 }

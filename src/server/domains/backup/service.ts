@@ -1,5 +1,6 @@
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
+import { sql as drizzleSql } from 'drizzle-orm'
 import { execFile, spawn } from 'node:child_process'
 import { Readable } from 'node:stream'
 import { promisify } from 'node:util'
@@ -95,7 +96,7 @@ export async function createBackup(): Promise<{ fileName: string; size: number }
 
   const pgDump = spawn(
     'pg_dump',
-    ['--no-owner', '--no-acl', '--clean', '--if-exists', '--exclude-table=audit_log', ...connArgs],
+    ['--no-owner', '--no-acl', '--clean', '--if-exists', '--exclude-table-data=audit_log', ...connArgs],
     { env },
   )
 
@@ -216,26 +217,43 @@ export async function restoreFromSql(db: NodePgDatabase, sql: string): Promise<v
   log.info('Starting restore')
 
   const timescaleEnabled = await hasTimescaleDbRestoreFunctions(db)
-  let wrappedSql: string
 
+  // TimescaleDB pre/post restore hooks must run OUTSIDE the psql
+  // invocation that feeds the dump.  psql switches to COPY mode when
+  // it encounters a "COPY … FROM stdin;" block and consumes stdin
+  // line-by-line until a "\." terminator.  If the dump's last COPY
+  // block has any termination issue (encoding glitch, Windows CRLF,
+  // etc.), psql stays in COPY mode and swallows the COMMIT /
+  // post_restore SQL as data — then tries to execute the leftover
+  // COPY rows as standalone SQL, producing exactly the "syntax error
+  // at or near …" seen in production.  Calling the hooks through the
+  // Drizzle connection (a separate TCP socket) sidesteps the problem
+  // entirely.
   if (timescaleEnabled) {
-    // TimescaleDB requires pre/post restore hooks so that hypertable
-    // catalog metadata is recreated correctly. See:
-    // https://docs.timescale.com/use-timescale/latest/backup-restore/pg-dump-and-restore/
-    const preSql = 'SELECT public.timescaledb_pre_restore();\n'
-    const postSql = 'SELECT public.timescaledb_post_restore();\n'
-    wrappedSql = `${preSql}BEGIN;\nSET CONSTRAINTS ALL DEFERRED;\n${sql}\nCOMMIT;\n${postSql}`
-  } else {
-    wrappedSql = `BEGIN;\nSET CONSTRAINTS ALL DEFERRED;\n${sql}\nCOMMIT;\n`
+    await db.execute(drizzleSql`SELECT public.timescaledb_pre_restore()`)
   }
 
-  const psql = spawn('psql', [...connArgs, '--echo-all'], {
+  // ON_ERROR_STOP=1 causes psql to abort on the first SQL error
+  // instead of continuing silently.  Without it, a broken restore
+  // could exit with code 0 and log "completed successfully" while
+  // the data is only partially loaded and the TimescaleDB
+  // post_restore hook was never called.
+  const psql = spawn('psql', ['--single-transaction', '-v', 'ON_ERROR_STOP=1', ...connArgs, '--echo-all'], {
     env,
     stdio: ['pipe', 'inherit', 'inherit'],
   })
 
-  psql.stdin.write(wrappedSql)
+  psql.stdin.write(`SET CONSTRAINTS ALL DEFERRED;\n${sql}\n`)
   psql.stdin.end()
+
+  // When ON_ERROR_STOP aborts psql early, the stdin pipe is closed
+  // before all data has been flushed.  Without a listener the
+  // resulting EPIPE would crash the process as an unhandled error.
+  psql.stdin.on('error', (err) => {
+    if ((err as NodeJS.ErrnoException).code !== 'EPIPE') {
+      log.warn('psql stdin error', { err: err.message })
+    }
+  })
 
   await new Promise<void>((resolve, reject) => {
     psql.on('error', reject)
@@ -247,6 +265,10 @@ export async function restoreFromSql(db: NodePgDatabase, sql: string): Promise<v
       }
     })
   })
+
+  if (timescaleEnabled) {
+    await db.execute(drizzleSql`SELECT public.timescaledb_post_restore()`)
+  }
 
   log.info('Restore completed successfully')
 }

@@ -5,7 +5,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Setting } from '@/server/infra/db/types'
 import type { BlogSettingsBundle } from '@/shared/config/types'
 
-const { getLogger, loggerMock } = vi.hoisted(() => {
+const { getLogger } = vi.hoisted(() => {
   const loggerMock = { error: vi.fn(), warn: vi.fn(), info: vi.fn(), debug: vi.fn() }
   return { loggerMock, getLogger: vi.fn(() => loggerMock) }
 })
@@ -42,6 +42,7 @@ const settingQueries = await import('@/server/infra/db/operations/setting')
 const { getAdminBlogSettings, updateBlogSettingsSection } = await import('@/server/domains/settings/service')
 const { setBlogSettingsBundleForTests, getBlogSettingsBundleSync, warmBlogSettingsSnapshot } =
   await import('@/server/domains/settings/snapshot')
+const { BLOG_SETTINGS_SNAPSHOT_SLOT } = await import('@/shared/config/snapshot')
 const { DomainError } = await import('@/server/infra/http/errors')
 const { getCacheSettings } = await import('@/shared/config/getters')
 
@@ -164,6 +165,9 @@ const fixtureBundle: BlogSettingsBundle = {
   analytics: {
     analytics: { trackAdmin: false, keepBotRows: false },
   },
+  security: {
+    csrf: { enabled: true, exemptPaths: [] },
+  },
 }
 
 // Decompose the bundle into the actual `Setting[]` rows the DB would
@@ -187,6 +191,7 @@ function bundleRows(bundle: BlogSettingsBundle): Setting[] {
     cors: 'blog.cors',
     limits: 'blog.limits',
     analytics: 'blog.analytics',
+    security: 'blog.security',
   }
   const rows: Setting[] = []
   let id = 1n
@@ -985,17 +990,17 @@ describe('services/settings — snapshot reader', () => {
 })
 
 describe('services/settings — warmBlogSettingsSnapshot', () => {
-  it('catches and logs a failed hydration without leaking an unhandled rejection', async () => {
-    const error = new Error('DB pool exhausted')
-    vi.mocked(settingQueries.findSettingsByScopePrefix).mockRejectedValue(error)
+  it('catches a failed hydration without leaking an unhandled rejection', async () => {
+    vi.mocked(settingQueries.findSettingsByScopePrefix).mockRejectedValue(new Error('DB pool exhausted'))
 
     // Must not throw synchronously
     expect(() => warmBlogSettingsSnapshot(db)).not.toThrow()
 
-    // Allow the rejected microtask to propagate through .catch()
+    // Allow the rejected microtask to propagate through .catch().
+    // If the rejection were not caught, Node would emit an unhandledRejection.
     await new Promise((resolve) => setTimeout(resolve, 0))
 
-    expect(loggerMock.error).toHaveBeenCalledOnce()
-    expect(loggerMock.error).toHaveBeenCalledWith('Blog settings hydration failed', { error })
+    // The failed promise is evicted from the cache so the next request retries.
+    expect(BLOG_SETTINGS_SNAPSHOT_SLOT.readHydration()).toBeUndefined()
   })
 })

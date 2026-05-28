@@ -1,19 +1,7 @@
 import { z } from 'zod'
 
 import { portableTextBodySchema } from '@/shared/pt/schema'
-
-// Re-exported wire-format types from @/shared/types/posts
-export type {
-  DeletePostInput,
-  GetPostInput,
-  ListPostRevisionsInput,
-  ListPostsInput,
-  PreviewPostBodyInput,
-  RestorePostInput,
-  SavePostBodyInput,
-  UnpublishPostInput,
-  UpsertPostMetaInput,
-} from '@/shared/types/posts'
+import { safeBoolean } from '@/shared/utils/schema'
 
 const slugSchema = z
   .string()
@@ -71,11 +59,11 @@ export const upsertPostMetaSchema = z.object({
     .nullable()
     .optional()
     .transform((value) => (value === undefined || value === '' ? null : value)),
-  published: z.coerce.boolean().optional(),
-  commentsEnabled: z.coerce.boolean().optional(),
-  showToc: z.coerce.boolean().optional(),
-  showUpdated: z.coerce.boolean().optional(),
-  visible: z.coerce.boolean().optional(),
+  published: safeBoolean().optional(),
+  commentsEnabled: safeBoolean().optional(),
+  showToc: safeBoolean().optional(),
+  showUpdated: safeBoolean().optional(),
+  visible: safeBoolean().optional(),
   pinnedAt: z.iso.datetime({ offset: true }).nullable().optional(),
   publishedAt: z.iso.datetime({ offset: true }).optional(),
   category: z.string().trim().max(20).optional().default(''),
@@ -96,7 +84,7 @@ export const savePostBodySchema = z.object({
   id: z.string().min(1),
   body: portableTextBodySchema,
   expectedClientRevisionToken: z.uuid().nullable().optional(),
-  force: z.coerce.boolean().optional(),
+  force: safeBoolean().optional(),
   publishedAt: z.iso.datetime({ offset: true }).optional(),
 })
 

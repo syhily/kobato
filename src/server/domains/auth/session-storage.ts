@@ -30,6 +30,7 @@ export interface BlogSessionData {
   // which throws on `!dbUser.role` — so no callable code path can
   // produce a stored session with `user` but missing role.
   user?: SessionUser
+  csrfToken?: string
 }
 
 export type BlogSession = Session<BlogSessionData, BlogSessionData>

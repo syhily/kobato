@@ -6,7 +6,6 @@ import type { EntityTarget } from '@/server/infra/db/target'
 
 import { userSession } from '@/server/domains/auth/primitives'
 import { hasAtLeast } from '@/server/domains/auth/rbac'
-import { withCommentBadgeTextColor } from '@/server/domains/comments/badge'
 import { latestCommentsCache } from '@/server/domains/comments/cache'
 import {
   adminUserIds,
@@ -89,8 +88,50 @@ export async function loadComments(
   }
 }
 
+const MAX_RID_WALK = 256
+
+/**
+ * Walk the `rid` chain to find the nearest visible ancestor.
+ * Soft-deleted parents are transparent: we resolve through them so the
+ * thread doesn't break when a middle comment is removed.
+ * Returns 0 when the root is reached or the chain is broken.
+ */
+function resolveVisibleParentRid(commentId: number, rid: number | null, byId: Map<string, CommentAndUser>): number {
+  if (rid === 0 || rid === null || rid === undefined) {
+    return 0
+  }
+
+  const seen = new Set<number>()
+  seen.add(commentId)
+
+  let nextRid: number | null = rid
+  for (let step = 0; step < MAX_RID_WALK; step++) {
+    if (nextRid === 0 || nextRid === null) {
+      return 0
+    }
+    if (seen.has(nextRid)) {
+      return 0
+    }
+    seen.add(nextRid)
+
+    const parent = byId.get(String(nextRid))
+    if (parent === undefined) {
+      return 0
+    }
+    if (parent.deleteAt === null) {
+      return nextRid
+    }
+    nextRid = parent.rid
+  }
+
+  log.warn('comment rid walk hit MAX_RID_WALK limit, truncating to root', {
+    commentId,
+    limit: MAX_RID_WALK,
+  })
+  return 0
+}
+
 export async function parseComments(comments: CommentAndUser[]): Promise<CommentItem[]> {
-  const MAX_RID_WALK = 256
   const byId = new Map<string, CommentAndUser>()
   for (const c of comments) {
     byId.set(String(c.id), c)
@@ -101,49 +142,13 @@ export async function parseComments(comments: CommentAndUser[]): Promise<Comment
     if (c.deleteAt !== null) {
       continue
     }
-    let nextRid = c.rid
-    const ownIdNumeric = Number(c.id)
-    const seen = new Set<number>()
-    if (Number.isFinite(ownIdNumeric)) {
-      seen.add(ownIdNumeric)
-    }
-    let walked = 0
-    for (let i = 0; i < MAX_RID_WALK; i++) {
-      walked = i + 1
-      if (nextRid === 0 || nextRid === null || nextRid === undefined) {
-        walked = -1
-        break
-      }
-      if (seen.has(nextRid)) {
-        nextRid = 0
-        walked = -1
-        break
-      }
-      seen.add(nextRid)
-      const parent = byId.get(String(nextRid))
-      if (parent === undefined) {
-        nextRid = 0
-        walked = -1
-        break
-      }
-      if (parent.deleteAt === null) {
-        walked = -1
-        break
-      }
-      nextRid = parent.rid
-    }
-    if (walked >= MAX_RID_WALK) {
-      log.warn('comment rid walk hit MAX_RID_WALK limit, truncating to root', {
-        commentId: c.id,
-        limit: MAX_RID_WALK,
-      })
-      nextRid = 0
-    }
-    rewritten.push({ ...c, rid: nextRid })
+    const commentIdNumeric = Number(c.id)
+    const resolvedRid = Number.isFinite(commentIdNumeric) ? resolveVisibleParentRid(commentIdNumeric, c.rid, byId) : 0
+    rewritten.push({ ...c, rid: resolvedRid })
   }
 
   const projected = rewritten.map((comment) => ({
-    ...withCommentBadgeTextColor(comment),
+    ...comment,
     content: null,
   }))
   const childComments = groupBy(

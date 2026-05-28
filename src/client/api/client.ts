@@ -5,6 +5,12 @@ import { RPCLink } from '@orpc/client/fetch'
 
 import type { ApiRouter } from '@/server/http/api-router'
 
+let csrfToken: string | null = null
+
+export function setCsrfToken(token: string) {
+  csrfToken = token
+}
+
 /**
  * Typed oRPC client. Every procedure under `apiRouter` is available
  * as a strongly-typed async function — input/output types flow from
@@ -27,7 +33,13 @@ const link = new RPCLink({
   //   - Storybook / Vitest may stub `location`; reading it per-call
   //     instead of once-at-construction keeps those overrides honest.
   url: () => `${globalThis.location?.origin ?? 'http://localhost'}/rpc`,
-  headers: () => ({}),
+  headers: () => {
+    const h: Record<string, string> = {}
+    if (csrfToken) {
+      h['X-CSRF-Token'] = csrfToken
+    }
+    return h
+  },
 })
 
 export const orpc: RouterClient<ApiRouter> = createORPCClient(link)

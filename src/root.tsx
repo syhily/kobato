@@ -1,10 +1,11 @@
 import type { MiddlewareFunction, ShouldRevalidateFunctionArgs } from 'react-router'
 
 import { dehydrate, HydrationBoundary, QueryClientProvider } from '@tanstack/react-query'
-import { lazy, Suspense, useState } from 'react'
+import { lazy, Suspense, useLayoutEffect, useState } from 'react'
 import { preconnect, prefetchDNS } from 'react-dom'
 import { Links, Meta, Outlet, Scripts, ScrollRestoration, useRouteLoaderData } from 'react-router'
 
+import { setCsrfToken } from '@/client/api/client'
 import { makeQueryClient } from '@/client/api/query-client'
 import { RouteWarmupScript } from '@/client/components/RouteWarmupScript'
 import { useChunkErrorRecovery, useReloadOnChunkError } from '@/client/hooks/use-chunk-error-recovery'
@@ -88,8 +89,12 @@ export function meta({ loaderData, matches }: Route.MetaArgs) {
 }
 
 export function loader({ request, context }: Route.LoaderArgs) {
-  const { role, user } = getRouteRequestContext({ request, context })
+  const { role, user, session } = getRouteRequestContext({ request, context })
   const admin = role === 'admin'
+  const csrfToken = session.get('csrfToken')
+  if (typeof csrfToken !== 'string') {
+    throw new Error('CSRF token missing from session — session middleware must run before root loader')
+  }
   // Project the authenticated user (if any) to the slim shape the
   // public chrome's UserMenu needs. Don't ship the whole SessionUser —
   // email and badge fields belong on the profile page, not in the
@@ -132,7 +137,7 @@ export function loader({ request, context }: Route.LoaderArgs) {
   const tier1Links = warmupManifest?.tier1 ?? []
   const tier2Chunks = warmupManifest ? collectTier2Chunks(warmupManifest, admin) : []
 
-  return { admin, currentUser, blogSettings, theme, dehydratedState, tier1Links, tier2Chunks }
+  return { admin, currentUser, blogSettings, theme, csrfToken, dehydratedState, tier1Links, tier2Chunks }
 }
 
 // The root loader ships `{ admin, blogSettings }`. Both can change at
@@ -165,6 +170,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
     } | null
     tier1Links?: string[]
     tier2Chunks?: string[]
+    csrfToken?: string
   }>('root')
   const theme = rootData?.theme ?? null
   const globalFontCss = rootData?.blogSettings?.fonts?.globalCss ?? []
@@ -237,6 +243,11 @@ export type RouteHandle = {
 }
 
 export default function App({ loaderData }: Route.ComponentProps) {
+  // Seed the CSRF token before any child useEffect fires an oRPC call.
+  useLayoutEffect(() => {
+    setCsrfToken(loaderData.csrfToken)
+  }, [loaderData.csrfToken])
+
   useFocusHash()
   // Document-scoped install — every INPUT / TEXTAREA / SELECT across
   // public + admin + login + install flows inherits the no-zoom

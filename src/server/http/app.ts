@@ -5,6 +5,7 @@ import type { Env } from '@/server/http/context'
 import type { HandlerContext } from '@/server/http/orpc-base'
 
 import { apiRouter } from '@/server/http/api-router'
+import { csrfGuard } from '@/server/http/middlewares/csrf'
 import { dynamicBodyLimit } from '@/server/http/middlewares/dynamic-body-limit'
 import { getBlogSettingsBundleSync } from '@/shared/config/getters'
 
@@ -51,6 +52,8 @@ export function createApiApp(): Hono<Env> {
       onError: (c) => c.json({ error: { message: '请求体过大' } }, 413),
     }),
   )
+
+  app.use('/rpc/*', csrfGuard)
 
   app.use('/rpc/*', async (c, next) => {
     const responseHeaders = new Headers()

@@ -18,6 +18,7 @@ import { mailSchema } from '@/server/domains/settings/schemas/mail'
 import { navigationSchema } from '@/server/domains/settings/schemas/navigation'
 import { rateLimitSchema } from '@/server/domains/settings/schemas/rate-limit'
 import { searchSchema } from '@/server/domains/settings/schemas/search'
+import { securitySchema } from '@/server/domains/settings/schemas/security'
 import { seoSchema } from '@/server/domains/settings/schemas/seo'
 import { sidebarSchema } from '@/server/domains/settings/schemas/sidebar'
 import { socialsSchema } from '@/server/domains/settings/schemas/socials'
@@ -275,6 +276,14 @@ export const SECTION_REGISTRY = {
     key: 'analytics',
     defaults: {
       analytics: { trackAdmin: false, keepBotRows: false },
+    },
+  },
+  security: {
+    scope: 'blog.security',
+    schema: securitySchema,
+    key: 'security',
+    defaults: {
+      csrf: { enabled: true, exemptPaths: [] },
     },
   },
 } as const satisfies Record<SettingsSection, SectionMeta>

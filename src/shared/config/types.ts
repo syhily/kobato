@@ -270,6 +270,13 @@ export interface CorsSettings {
   }
 }
 
+export interface SecuritySettings {
+  csrf: {
+    enabled: boolean
+    exemptPaths: string[]
+  }
+}
+
 export interface BlogSettingsBundle {
   siteIdentity: SiteIdentitySettings | null
   assets: AssetsSettings | null
@@ -288,4 +295,5 @@ export interface BlogSettingsBundle {
   backup: BackupSettings | null
   limits: LimitsSettings | null
   analytics: AnalyticsSettings | null
+  security: SecuritySettings | null
 }

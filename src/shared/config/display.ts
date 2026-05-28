@@ -142,6 +142,13 @@ export const SECTION_DISPLAY: Record<SettingsSection, SectionDisplayMeta> = {
     group: 'system',
     icon: 'BarChart3',
   },
+  security: {
+    to: '/admin/settings',
+    label: '安全设置',
+    description: 'CSRF 防护与路径豁免',
+    group: 'system',
+    icon: 'ShieldCheck',
+  },
 }
 
 /**

@@ -3,7 +3,6 @@ import { data } from 'react-router'
 import type { DraftMarker } from '@/ui/public/post/DetailBodyChrome'
 
 import { getDbFromContext, tryGetSessionContext } from '@/server/domains/auth/context'
-import { resolveSessionContext } from '@/server/domains/auth/primitives'
 import { resolveImageMetaBySources } from '@/server/domains/images/image-meta'
 import { selectSidebarPosts } from '@/server/domains/posts/repos/public-query'
 import { findPostBySlug } from '@/server/domains/posts/repos/single'
@@ -35,7 +34,10 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
   let draftMarker: DraftMarker = null
 
   if (sourcePost === undefined) {
-    const sessionContext = tryGetSessionContext(context) ?? (await resolveSessionContext(db, request))
+    const sessionContext = tryGetSessionContext(context)
+    if (!sessionContext) {
+      throw new Error('Session context missing in post detail loader')
+    }
     if (hasAtLeast(sessionContext.role, 'author')) {
       const preview = await loadPostDraftPreviewBySlug(db, params.slug)
       if (preview !== null) {

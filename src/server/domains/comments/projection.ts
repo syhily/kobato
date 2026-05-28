@@ -19,6 +19,8 @@
 import type { AdminCommentWire, CommentItemWire } from '@/shared/contracts/comments'
 import type { AdminComment, CommentAndUser, CommentItem } from '@/shared/types/comments'
 
+import { withCommentBadgeTextColor } from '@/server/domains/comments/badge'
+
 function asString(value: bigint | string | null | undefined): string {
   if (typeof value === 'string') {
     return value
@@ -90,12 +92,12 @@ function projectAdminCommentBase(row: CommentAndUser): Omit<AdminCommentWire, 'p
 }
 
 export function asCommentItemWire(comment: CommentItem | CommentAndUser): CommentItemWire {
-  const base = projectPublicCommentBase(comment)
+  const wire = withCommentBadgeTextColor(projectPublicCommentBase(comment))
   const children = (comment as CommentItem).children
   if (children !== undefined) {
-    base.children = children.map((c) => asCommentItemWire(c))
+    wire.children = children.map((c) => asCommentItemWire(c))
   }
-  return base
+  return wire
 }
 
 export function asCommentItemsWire(comments: CommentItem[]): CommentItemWire[] {

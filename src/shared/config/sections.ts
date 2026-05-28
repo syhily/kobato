@@ -16,6 +16,7 @@ export const SETTINGS_SECTIONS = [
   'backup',
   'limits',
   'analytics',
+  'security',
 ] as const
 
 export type SettingsSection = (typeof SETTINGS_SECTIONS)[number]
@@ -38,6 +39,7 @@ export const SECTION_TO_BUNDLE_KEY = {
   backup: 'backup',
   limits: 'limits',
   analytics: 'analytics',
+  security: 'security',
 } as const satisfies Record<SettingsSection, string>
 
 export type BundleKey = (typeof SECTION_TO_BUNDLE_KEY)[SettingsSection]
