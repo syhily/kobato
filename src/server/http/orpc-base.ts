@@ -6,7 +6,7 @@ import { ORPCError, os } from '@orpc/server'
 import type { Env } from '@/server/http/context'
 
 import { hasAtLeast, type Role, type ViewerContext } from '@/server/domains/auth/rbac'
-import { ErrorMessages } from '@/server/infra/http/errors'
+import { DomainError, domainStatus, ErrorMessages } from '@/server/infra/http/errors'
 
 // Context every oRPC procedure sees. The Hono `/rpc/*` bridge in
 // `app.ts` builds this from `c.var` after the perimeter middleware
@@ -39,6 +39,22 @@ export interface AuthedHandlerContext extends Omit<HandlerContext, 'viewer'> {
 // procedure flavours below extend from this same root so the
 // `Hono → context` plumbing in `app.ts` is type-safe end-to-end.
 const root = os.$context<HandlerContext>()
+
+// oRPC only recognises its own `ORPCError`. Any other exception
+// (including our `DomainError`) is silently converted to a generic
+// 500 "Internal server error" — losing the domain code and message.
+// This middleware intercepts `DomainError` before oRPC swallows it
+// and translates it to an `ORPCError` with the correct HTTP status.
+const domainErrorGuard = root.middleware(async ({ next }) => {
+  try {
+    return await next({})
+  } catch (error) {
+    if (error instanceof DomainError) {
+      throw new ORPCError(error.code, { status: domainStatus(error), message: error.message })
+    }
+    throw error
+  }
+})
 
 function ensureViewer(context: HandlerContext): ViewerContext {
   if (!context.viewer) {
@@ -77,16 +93,16 @@ function requireRole(role: Role) {
 
 // ─── Public base procedure ──────────────────────────────
 // No auth gate. Public mutations rely on session authentication.
-export const publicProc = root
+export const publicProc = root.use(domainErrorGuard)
 
 // ─── Authed base procedure ──────────────────────────────
 // Any logged-in user (admin / author / visitor). After this middleware
 // resolves, `context.viewer` is typed as `ViewerContext` (non-null).
-export const authedProc = root.use(requireAuth)
+export const authedProc = root.use(requireAuth).use(domainErrorGuard)
 
 // ─── Role-gated base procedures ─────────────────────────
 // `adminProc` is admin-only. `authorProc` requires author or admin
 // (per `hasAtLeast`). Each procedure file picks one of these four
 // bases and the leaf inherits the matching guard.
-export const adminProc = root.use(requireRole('admin'))
-export const authorProc = root.use(requireRole('author'))
+export const adminProc = root.use(requireRole('admin')).use(domainErrorGuard)
+export const authorProc = root.use(requireRole('author')).use(domainErrorGuard)
