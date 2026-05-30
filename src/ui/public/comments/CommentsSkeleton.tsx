@@ -10,7 +10,7 @@ import { cn } from '@/ui/lib/cn'
 // component is not on the page; `motion-reduce:animate-none` honours
 // `prefers-reduced-motion: reduce`.
 const SHIMMER_LINE_CLASS =
-  'h-4 rounded-[4px] bg-[linear-gradient(90deg,var(--skeleton-start)_0%,var(--skeleton-end)_50%,var(--skeleton-start)_100%)] bg-[length:200%_100%] animate-comments-shimmer motion-reduce:animate-none'
+  'h-4 rounded-input bg-[linear-gradient(90deg,var(--skeleton-start)_0%,var(--skeleton-end)_50%,var(--skeleton-start)_100%)] bg-[length:200%_100%] animate-comments-shimmer motion-reduce:animate-none'
 
 export function CommentsSkeleton() {
   return (

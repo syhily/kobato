@@ -53,7 +53,7 @@ export function CommentRow({ comment, depth, pending, mode: propMode, children }
         <div className={depth === 1 ? commentInnerClass : nestedCommentInnerClass()}>
           <CommentAuthorLine comment={comment} />
           {isMyComment && (
-            <div className="mt-1.5 mb-1.5 flex w-full items-center gap-1.5 rounded-md border border-amber-500/30 bg-status-warn-bg px-2.5 py-1 text-xs text-status-warn-fg">
+            <div className="mt-1.5 mb-1.5 flex w-full items-center gap-1.5 rounded-md border border-status-warn-border/30 bg-status-warn-bg px-2.5 py-1 text-xs text-status-warn-fg">
               <span className="flex-1">{editableHint(leaf.myCommentExpiresAt.get(asKey(comment.id)), isPending)}</span>
               <button
                 type="button"
@@ -67,13 +67,13 @@ export function CommentRow({ comment, depth, pending, mode: propMode, children }
             </div>
           )}
           {isOwnedByCurrentUser && hasPendingDelete && (
-            <div className="mt-1.5 mb-1.5 flex w-full items-center gap-1.5 rounded-md border border-amber-500/30 bg-status-warn-bg px-2.5 py-1 text-xs text-status-warn-fg">
+            <div className="mt-1.5 mb-1.5 flex w-full items-center gap-1.5 rounded-md border border-status-warn-border/30 bg-status-warn-bg px-2.5 py-1 text-xs text-status-warn-fg">
               <span className="flex-1">你已申请删除这条评论，等待管理员处理。</span>
             </div>
           )}
           {isPending && !isMyComment && (
             <div className={commentContentClass(depth)}>
-              <div className="mt-1.5 mb-1.5 flex w-full items-center gap-1.5 rounded-md border border-amber-500/30 bg-status-warn-bg px-2.5 py-1 text-xs text-status-warn-fg">
+              <div className="mt-1.5 mb-1.5 flex w-full items-center gap-1.5 rounded-md border border-status-warn-border/30 bg-status-warn-bg px-2.5 py-1 text-xs text-status-warn-fg">
                 <span>您的评论正在等待审核中...</span>
               </div>
               <PortableTextBody body={comment.body} />

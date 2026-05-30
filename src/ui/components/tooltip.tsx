@@ -20,7 +20,7 @@ export type TooltipPlacement = 'top' | 'left'
 // --- Visual chrome constants ---
 
 const PUBLIC_BASE_CLASS =
-  'pointer-events-none relative z-[1080] w-max max-w-[min(24rem,calc(100vw-1rem))] rounded-xs bg-canvas px-2.5 py-1.5 text-[0.8125rem] leading-[1.6] text-ink-1 shadow-tooltip'
+  'pointer-events-none relative z-(--z-tooltip) w-max max-w-[min(24rem,calc(100vw-1rem))] rounded-xs bg-canvas px-2.5 py-1.5 text-admin-sm leading-[1.6] text-ink-1 shadow-tooltip'
 
 const ARROW_CLASS =
   'before:absolute before:size-0 before:border-solid' +

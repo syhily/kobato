@@ -146,7 +146,7 @@ export function CommentReplyForm({
       <form ref={formRef} id="commentForm" className="flex flex-1" onSubmit={handleSubmit}>
         <div
           className={cn(
-            'relative mr-[15px] flex size-10 shrink-0 items-center justify-center rounded-full leading-none font-semibold whitespace-nowrap max-md:mr-2.5 max-md:size-7',
+            'relative mr-comment-avatar-gap flex size-10 shrink-0 items-center justify-center rounded-full leading-none font-semibold whitespace-nowrap max-md:mr-2.5 max-md:size-7',
             isGuestMode && 'group/guest-avatar cursor-pointer',
           )}
           onClick={isGuestMode ? clearGuestProfile : undefined}
@@ -293,14 +293,37 @@ function CommentFormFields({ user, guestProfile, commentKey, replyToId, onEmailB
         <input name="name" type="text" readOnly hidden defaultValue={nameValue} aria-label="昵称" />
       ) : (
         <div className="mt-2 box-border w-full max-w-full shrink-0 px-1 md:mt-4 md:w-1/2 md:px-2">
-          <Input className="bg-canvas" placeholder="昵称" name="name" type="text" required />
+          <label htmlFor="comment-name" className="sr-only">
+            昵称
+          </label>
+          <Input
+            id="comment-name"
+            className="bg-canvas"
+            placeholder="昵称"
+            name="name"
+            type="text"
+            autoComplete="name"
+            required
+          />
         </div>
       )}
       {hasIdentity ? (
         <input name="email" defaultValue={emailValue} type="email" readOnly hidden aria-label="邮箱" />
       ) : (
         <div className="mt-2 box-border w-full max-w-full shrink-0 px-1 md:mt-4 md:w-1/2 md:px-2">
-          <Input className="bg-canvas" name="email" placeholder="邮箱" type="email" required onBlur={onEmailBlur} />
+          <label htmlFor="comment-email" className="sr-only">
+            邮箱
+          </label>
+          <Input
+            id="comment-email"
+            className="bg-canvas"
+            name="email"
+            placeholder="邮箱"
+            type="email"
+            autoComplete="email"
+            required
+            onBlur={onEmailBlur}
+          />
         </div>
       )}
       <input hidden name="page_key" type="text" defaultValue={commentKey} aria-label="页面标识" />
@@ -309,7 +332,10 @@ function CommentFormFields({ user, guestProfile, commentKey, replyToId, onEmailB
         <input name="link" type="url" readOnly hidden defaultValue={linkValue} aria-label="网址" />
       ) : (
         <div className="mt-2 box-border w-full max-w-full shrink-0 px-1 md:mt-4 md:px-2">
-          <Input className="bg-canvas" placeholder="网址" name="link" type="url" />
+          <label htmlFor="comment-url" className="sr-only">
+            网址
+          </label>
+          <Input id="comment-url" className="bg-canvas" placeholder="网址" name="link" type="url" autoComplete="url" />
         </div>
       )}
     </div>

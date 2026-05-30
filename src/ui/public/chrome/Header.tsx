@@ -125,7 +125,7 @@ const navbarBrandClass = cn(
   'flex items-center justify-between',
   'px-5 py-4',
   'lg:px-5 lg:py-3',
-  'xl:px-[25px] xl:pt-5 xl:pb-[15px]',
+  'xl:px-header-brand-x xl:pt-5 xl:pb-header-brand-b',
 )
 
 // `<img>` inside the navbar brand. Only ever rendered at `>=lg`
@@ -161,6 +161,7 @@ const menuTogglerClass = cn(
   'inline-flex items-center justify-center',
   'cursor-pointer border-0 bg-transparent p-0',
   'text-2xl leading-none text-ink-1',
+  'focus-visible:ring-(--ring-width) focus-visible:ring-ring/50 focus-visible:outline-hidden',
 )
 
 // Navigation menu container (`.site-menu`). Element promoted from
@@ -212,7 +213,7 @@ const siteMenuLinkClass = cn(
 // (see `publicButtonVariants` in `@/ui/primitives/btn` —
 // `variant: 'dark'`, `size: 'iconSm'`, `shape: 'circle'`) so an
 // off-rail consumer can opt out without a `!`-modifier conflict.
-const siteSubmenuClass = cn('shrink-0 p-[25px]', 'max-md:py-5', 'lg:max-xl:px-[15px] lg:max-xl:py-5')
+const siteSubmenuClass = cn('shrink-0 p-submenu-p', 'max-md:py-5', 'lg:max-xl:px-submenu-px-lg lg:max-xl:py-5')
 
 // Internal navigation links that target the same site live in `<Link>` so
 // React Router can perform client-side transitions and `prefetch` the next
@@ -365,7 +366,7 @@ export function Header({ navigation, currentUser, pathname, search }: HeaderProp
         <div className={asideInnerClass}>
           <h1 id={menuLabelId} className={navbarBrandClass}>
             <Link to="/" title={title} className="block" prefetch="intent">
-              <img src={`/logo-dark.svg${v}`} alt="且听书吟" className={navbarBrandImgClass} />
+              <img src={`/logo-dark.svg${v}`} alt="且听书吟" width={120} height={40} className={navbarBrandImgClass} />
             </Link>
           </h1>
           {/* oxlint-disable-next-line jsx-a11y/no-noninteractive-element-interactions */}

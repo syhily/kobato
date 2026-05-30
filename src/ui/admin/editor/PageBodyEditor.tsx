@@ -315,7 +315,7 @@ export function PageBodyEditor({
           // `pt-body-editor` narrows the math-inline chip tint to the Tiptap
           // canvas only (preview stays on the shared post-content styles).
           'post-content pt-body-editor prose-blog prose prose-lg max-w-none focus:outline-none',
-          'min-h-120 [&_.ProseMirror]:min-h-110',
+          'min-h-editor-min [&_.ProseMirror]:min-h-editor-prose-min',
           '[&_.ProseMirror]:focus:outline-none',
           '[&_blockquote[data-pt-solution]]:relative [&_blockquote[data-pt-solution]]:my-4 [&_blockquote[data-pt-solution]]:border-l-4 [&_blockquote[data-pt-solution]]:border-brand/40 [&_blockquote[data-pt-solution]]:bg-muted/25 [&_blockquote[data-pt-solution]]:py-3 [&_blockquote[data-pt-solution]]:pl-4',
           '[&_[data-pt-two-column-pane]]:min-w-0 [&_[data-pt-two-column-pane]]:rounded-md [&_[data-pt-two-column-pane]]:border [&_[data-pt-two-column-pane]]:border-dashed [&_[data-pt-two-column-pane]]:border-muted-foreground/45 [&_[data-pt-two-column-pane]]:bg-background/85 [&_[data-pt-two-column-pane]]:p-3',
@@ -374,7 +374,7 @@ export function PageBodyEditor({
             // freely with density without dragging the publish button
             // sideways — addresses the "publish icon drifts when the
             // toolbar expands" complaint.
-            <div className="pointer-events-none fixed right-20 bottom-6 left-0 z-40 flex items-center justify-center px-3 sm:right-24 sm:bottom-8 lg:right-28">
+            <div className="pointer-events-none fixed right-20 bottom-6 left-0 z-40 flex touch-manipulation items-center justify-center px-3 sm:right-24 sm:bottom-8 lg:right-28">
               <div className="pointer-events-auto max-w-full overflow-x-auto rounded-xl border bg-card/95 p-1 shadow-lg ring-1 ring-border/60 backdrop-blur-sm supports-[backdrop-filter]:bg-card/90">
                 <Toolbar {...toolbarProps} className="border-b-0" />
               </div>
@@ -393,7 +393,7 @@ export function PageBodyEditor({
             // the FAB only surfaces once the inline header toolbar
             // (which carries its own 发布草稿 button) has scrolled out
             // of view.
-            <div className="pointer-events-auto fixed right-4 bottom-6 z-40 sm:bottom-8 lg:right-6">
+            <div className="pointer-events-auto fixed right-4 bottom-6 z-40 touch-manipulation sm:bottom-8 lg:right-6">
               {floatingActions}
             </div>
           ) : null}

@@ -70,7 +70,7 @@ export function LoginForm({ action }: LoginFormProps) {
             required
             minLength={10}
             disabled={isSubmitting}
-            className={cn(inputClasses, 'pr-[8rem]')}
+            className={cn(inputClasses, 'pr-auth-input-pad')}
           />
           <div className="absolute top-3 right-2 bottom-3 flex items-center gap-1">
             <PasswordToggle show={showPassword} onToggle={() => setShowPassword((v) => !v)} />

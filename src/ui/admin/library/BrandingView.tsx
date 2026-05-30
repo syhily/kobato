@@ -335,7 +335,7 @@ function SlotRow({
       <div
         className={cn(
           'flex shrink-0 items-center justify-center rounded border p-2 sm:size-24',
-          meta.darkPreview ? 'border-slate-700 bg-slate-900' : 'bg-muted/40',
+          meta.darkPreview ? 'border-line-muted bg-surface-secondary' : 'bg-muted/40',
         )}
       >
         <img src={previewUrl} alt={meta.label} loading="lazy" className="max-h-20 max-w-full object-contain" />

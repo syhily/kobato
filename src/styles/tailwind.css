@@ -85,6 +85,14 @@
   --z-aside-drawer: 1020;
   --z-modal: 1050;
   --z-nav-splash: 1100;
+  --z-tooltip: 1080;
+
+  /* TOC z-index stack */
+  --z-toc-backdrop: 500;
+  --z-toc-drawer: 880;
+  --z-toc-drawer-open: 1000;
+  --z-toc-toggle: 890;
+  --z-toc-toggle-open: 1500;
   --scrim: rgba(8, 15, 25, 0.3);
   --skeleton-start: rgba(0, 0, 0, 0.04);
   --skeleton-end: rgba(0, 0, 0, 0.08);
@@ -153,6 +161,22 @@
   --status-success-bg: #f0fdf4;
   --status-success-fg: #166534;
   --status-success-border: #86efac;
+
+  /* Status tokens — draft */
+  --status-draft-bg: #fdf2f8;
+  --status-draft-fg: #be185d;
+  --status-draft-border: #f9a8d4;
+
+  /* Diff viewer tokens light */
+  --diff-change-bg: #fffbeb;
+  --diff-change-fg: #92400e;
+  --diff-change-border: #fcd34d;
+  --diff-insert-bg: #f0fdf4;
+  --diff-insert-fg: #166534;
+  --diff-insert-border: #86efac;
+  --diff-delete-bg: #fef2f2;
+  --diff-delete-fg: #991b1b;
+  --diff-delete-border: #fecaca;
 
   /* Chip tokens light */
   --chip-bg: var(--foreground);
@@ -251,6 +275,22 @@
   --status-success-bg: #052e16;
   --status-success-fg: #86efac;
   --status-success-border: #14532d;
+
+  /* Status tokens — draft dark */
+  --status-draft-bg: #4a0e2c;
+  --status-draft-fg: #f9a8d4;
+  --status-draft-border: #831843;
+
+  /* Diff viewer tokens dark */
+  --diff-change-bg: #451a03;
+  --diff-change-fg: #fcd34d;
+  --diff-change-border: #78350f;
+  --diff-insert-bg: #052e16;
+  --diff-insert-fg: #86efac;
+  --diff-insert-border: #14532d;
+  --diff-delete-bg: #450a0a;
+  --diff-delete-fg: #fecaca;
+  --diff-delete-border: #7f1d1d;
 
   /* Chip tokens dark */
   --chip-bg: var(--surface-dim);
@@ -357,6 +397,22 @@
     --status-success-fg: #86efac;
     --status-success-border: #14532d;
 
+    /* Status tokens — draft dark */
+    --status-draft-bg: #4a0e2c;
+    --status-draft-fg: #f9a8d4;
+    --status-draft-border: #831843;
+
+    /* Diff viewer tokens dark */
+    --diff-change-bg: #451a03;
+    --diff-change-fg: #fcd34d;
+    --diff-change-border: #78350f;
+    --diff-insert-bg: #052e16;
+    --diff-insert-fg: #86efac;
+    --diff-insert-border: #14532d;
+    --diff-delete-bg: #450a0a;
+    --diff-delete-fg: #fecaca;
+    --diff-delete-border: #7f1d1d;
+
     --chip-bg: var(--surface-dim);
     --chip-fg: var(--ink-1);
     --chip-hover-bg: var(--primary);
@@ -428,6 +484,10 @@
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
 
+  /* Radius: sm, md, and lg are intentionally flattened to the base --radius (5px)
+     for a consistent UI look. The raw --radius-sm (4px), --radius-md (6px), and
+     --radius-lg (10px) CSS variables are preserved for non-Tailwind usage.
+     For the 4px checkbox radius, see --radius-input below. */
   --radius-sm: var(--radius);
   --radius-md: var(--radius);
   --radius-lg: var(--radius);
@@ -501,6 +561,7 @@
   --shadow-like-active: var(--like-active-shadow);
 
   --radius-xs: var(--radius-xs);
+  --radius-input: var(--radius-sm);
   --font-code: var(--font-code);
 
   --text-md: 0.9375rem;
@@ -519,6 +580,28 @@
   --spacing-badge-overlay-y: 0.4375rem;
   --spacing-icon-inset: 28%;
   --spacing-btn-icon-md: 2.625rem;
+
+  /* TOC spacing tokens */
+  --spacing-toc-disc: 100px;
+  --spacing-toc-disc-hover: 120px;
+  --spacing-toc-disc-open: 50px;
+  --spacing-toc-disc-open-hover: 64px;
+  --spacing-toc-drawer: 280px;
+  --spacing-toc-drawer-edge: 48px;
+  --spacing-toc-toggle-edge-open: 25px;
+
+  /* Header / chrome spacing tokens */
+  --spacing-header-brand-x: 25px;
+  --spacing-header-brand-b: 15px;
+  --spacing-submenu-p: 25px;
+  --spacing-submenu-px-lg: 15px;
+
+  /* Form spacing tokens */
+  --spacing-comment-avatar-gap: 15px;
+  --spacing-auth-input-pad: 8rem;
+
+  /* Editor spacing tokens */
+  --spacing-editor-prose-min: 440px;
 
   --container-popup-sm: 300px;
   --container-popup-md: 540px;
@@ -582,6 +665,25 @@
   --color-status-success-fg: var(--status-success-fg);
   --color-status-success-border: var(--status-success-border);
 
+  /* Status tokens — draft */
+  --color-status-draft-bg: var(--status-draft-bg);
+  --color-status-draft-fg: var(--status-draft-fg);
+  --color-status-draft-border: var(--status-draft-border);
+
+  /* Diff viewer tokens */
+  --color-diff-change-bg: var(--diff-change-bg);
+  --color-diff-change-fg: var(--diff-change-fg);
+  --color-diff-change-border: var(--diff-change-border);
+  --color-diff-insert-bg: var(--diff-insert-bg);
+  --color-diff-insert-fg: var(--diff-insert-fg);
+  --color-diff-insert-border: var(--diff-insert-border);
+  --color-diff-delete-bg: var(--diff-delete-bg);
+  --color-diff-delete-fg: var(--diff-delete-fg);
+  --color-diff-delete-border: var(--diff-delete-border);
+
+  /* Z-index tokens */
+  --z-tooltip: var(--z-tooltip);
+
   --color-chip-bg: var(--chip-bg);
   --color-chip-fg: var(--chip-fg);
   --color-chip-hover-bg: var(--chip-hover-bg);
@@ -626,6 +728,17 @@
   ::backdrop,
   ::file-selector-button {
     border-color: var(--border);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }
 

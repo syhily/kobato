@@ -119,16 +119,33 @@ export function CommentActions({ comment, mode: propMode, onEditAdmin, onEditOwn
             撤回删除
           </button>
         ) : (
-          <button
-            type="button"
-            className={cn(commentFooterButtonClass, 'hover:text-alert')}
-            data-rid={comment.id}
-            onMouseDown={(event) => event.preventDefault()}
-            onClick={handleRequestDelete}
-            disabled={deleteToggleDisabled}
-          >
-            申请删除
-          </button>
+          <AlertDialog>
+            <AlertDialogTrigger
+              render={
+                <button
+                  type="button"
+                  className={cn(commentFooterButtonClass, 'hover:text-alert')}
+                  data-rid={comment.id}
+                  onMouseDown={(event) => event.preventDefault()}
+                  disabled={deleteToggleDisabled}
+                >
+                  申请删除
+                </button>
+              }
+            />
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>申请删除评论？</AlertDialogTitle>
+                <AlertDialogDescription>
+                  提交删除申请后，管理员将收到通知并进行审核。此操作不可撤销。
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>取消</AlertDialogCancel>
+                <AlertDialogAction onClick={handleRequestDelete}>确认申请</AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         ))}
       {leaf.admin && (
         <>

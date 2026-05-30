@@ -73,7 +73,7 @@ export function PageDetailBody({
         </div>
         <Footer />
       </div>
-      <div className="sticky top-0 z-1020 box-border hidden h-screen w-full max-w-full shrink-0 xl:block xl:w-1/3">
+      <div className="sticky top-0 z-(--z-aside-drawer) box-border hidden h-screen w-full max-w-full shrink-0 xl:block xl:w-1/3">
         <Image
           src={page.cover}
           alt={page.title}

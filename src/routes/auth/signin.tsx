@@ -228,7 +228,7 @@ export default function LoginRoute({ actionData, loaderData }: Route.ComponentPr
             </p>
           ) : null}
           {hasMessage(actionData) ? (
-            <output aria-live="polite" className="text-green-600 dark:text-green-400">
+            <output aria-live="polite" className="text-status-success-fg">
               {actionData.message}
             </output>
           ) : null}

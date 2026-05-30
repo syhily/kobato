@@ -53,13 +53,19 @@ export function BaseLayout({ navigation, footer, currentUser, pathname, search, 
   // fill all remaining inline space (`flex: 1 1 auto`).
   return (
     <div className="flex flex-col lg:flex-row">
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-50 focus:rounded-md focus:bg-foreground focus:px-4 focus:py-2 focus:text-background focus:shadow-lg"
+      >
+        跳转到主要内容
+      </a>
       <Header navigation={resolvedNavigation} currentUser={currentUser} pathname={pathname} search={search} />
       {currentUser && (
         <div className="fixed top-4 right-4 z-50 hidden lg:block">
           <UserMenu currentUser={currentUser} logoutQuery={logoutQuery} />
         </div>
       )}
-      <main className="flex flex-1 flex-col">
+      <main id="main-content" className="flex flex-1 flex-col">
         {children}
         {showFooter && <Footer />}
       </main>

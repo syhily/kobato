@@ -91,7 +91,7 @@ export function VersionDialog({ open, onOpenChange }: VersionDialogProps) {
             </div>
             <div className="flex items-center gap-2">
               <div className="text-lg font-semibold">{APP_NAME.charAt(0).toUpperCase() + APP_NAME.slice(1)}</div>
-              <span className="rounded-md bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">
+              <span className="rounded-md bg-status-success-bg px-2 py-0.5 text-xs font-semibold text-status-success-fg">
                 v{APP_VERSION}
               </span>
             </div>
@@ -183,7 +183,7 @@ function UpdateStatus({
 
   if (state === 'up-to-date') {
     return (
-      <div className="mt-2 flex items-center gap-1.5 text-xs text-emerald-600">
+      <div className="mt-2 flex items-center gap-1.5 text-xs text-status-success-fg">
         <CheckCircleIcon className="size-3.5" />
         当前已是最新版本
       </div>
@@ -193,13 +193,13 @@ function UpdateStatus({
   if (state === 'available' && latestVersion && releaseUrl) {
     return (
       <div className="mt-2 flex items-center gap-1.5 text-xs">
-        <ArrowUpCircleIcon className="size-3.5 text-blue-600" />
-        <span className="text-blue-600">发现新版本：</span>
+        <ArrowUpCircleIcon className="size-3.5 text-status-info-fg" />
+        <span className="text-status-info-fg">发现新版本：</span>
         <a
           href={releaseUrl}
           target="_blank"
           rel="noreferrer"
-          className="inline-flex items-center gap-0.5 font-medium text-blue-600 underline underline-offset-2 hover:text-blue-700"
+          className="inline-flex items-center gap-0.5 font-medium text-status-info-fg underline underline-offset-2 hover:opacity-80"
         >
           {latestVersion}
           <ExternalLinkIcon className="size-3" />

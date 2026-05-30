@@ -80,8 +80,8 @@ export function AdminSearchDialog({ open, onOpenChange }: AdminSearchDialogProps
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="全站搜索..."
-            className="flex-1 bg-transparent text-base outline-none placeholder:text-muted-foreground"
+            placeholder="全站搜索…"
+            className="flex-1 bg-transparent text-base outline-none placeholder:text-muted-foreground focus-visible:ring-(--ring-width) focus-visible:ring-ring/50"
             aria-label="搜索"
           />
           {isSearching ? (

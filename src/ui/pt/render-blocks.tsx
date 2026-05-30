@@ -64,7 +64,7 @@ export function HeadingBlock({
   const id = ids.get(value._key) ?? ''
   const cls = alignClass(value.align)
   return (
-    <Tag id={id} className={cls}>
+    <Tag id={id} className={cn('scroll-mt-20', cls)}>
       {children}
     </Tag>
   )

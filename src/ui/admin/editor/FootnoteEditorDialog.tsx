@@ -50,49 +50,49 @@ export function FootnoteEditorDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>{title}</DialogTitle>
-          <DialogDescription>{description}</DialogDescription>
-        </DialogHeader>
-        <div className="grid gap-2">
-          <Label htmlFor="footnote-editor-plain" className="text-xs">
-            脚注正文
-          </Label>
-          <Textarea
-            id="footnote-editor-plain"
-            value={draft}
-            onChange={(e) => setDraft(e.target.value)}
-            rows={6}
-            placeholder="在此输入脚注说明…（可多行）"
-            className="text-sm"
-          />
-        </div>
-        <DialogFooter className="flex flex-col-reverse gap-2 sm:flex-row sm:flex-wrap sm:justify-end">
-          <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
-            取消
-          </Button>
-          {mode === 'edit' && onDelete !== undefined ? (
-            <Button
-              type="button"
-              variant="destructive"
-              onClick={() => {
-                onDelete()
-                onOpenChange(false)
-              }}
-            >
-              删除
+        <form
+          onSubmit={(e) => {
+            e.preventDefault()
+            onConfirm(draft)
+            onOpenChange(false)
+          }}
+        >
+          <DialogHeader>
+            <DialogTitle>{title}</DialogTitle>
+            <DialogDescription>{description}</DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-2">
+            <Label htmlFor="footnote-editor-plain" className="text-xs">
+              脚注正文
+            </Label>
+            <Textarea
+              id="footnote-editor-plain"
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              rows={6}
+              placeholder="在此输入脚注说明…（可多行）"
+              className="text-sm"
+            />
+          </div>
+          <DialogFooter className="flex flex-col-reverse gap-2 sm:flex-row sm:flex-wrap sm:justify-end">
+            <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
+              取消
             </Button>
-          ) : null}
-          <Button
-            type="button"
-            onClick={() => {
-              onConfirm(draft)
-              onOpenChange(false)
-            }}
-          >
-            保存
-          </Button>
-        </DialogFooter>
+            {mode === 'edit' && onDelete !== undefined ? (
+              <Button
+                type="button"
+                variant="destructive"
+                onClick={() => {
+                  onDelete()
+                  onOpenChange(false)
+                }}
+              >
+                删除
+              </Button>
+            ) : null}
+            <Button type="submit">保存</Button>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   )

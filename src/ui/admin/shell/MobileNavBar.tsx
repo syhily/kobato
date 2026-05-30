@@ -32,7 +32,7 @@ function MobileNavButton({ to, activeMatch = 'exact', children, label }: MobileN
 }
 
 export function MobileNavBar() {
-  const { isMobile, setOpenMobile } = useSidebar()
+  const { isMobile, openMobile, setOpenMobile } = useSidebar()
 
   if (!isMobile) {
     return null
@@ -60,6 +60,8 @@ export function MobileNavBar() {
         <button
           type="button"
           onClick={() => setOpenMobile(true)}
+          aria-expanded={openMobile}
+          aria-controls="app-sidebar"
           className={cn(
             'flex flex-col items-center justify-center gap-0.5 rounded-lg px-3 py-1 text-xs font-medium transition-colors',
             'text-sidebar-foreground/60 hover:text-sidebar-foreground',

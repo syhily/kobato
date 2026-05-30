@@ -128,7 +128,9 @@ function SessionRow({ item, submitting, onRevoke, dateFormat, config }: SessionR
           <div className="flex flex-wrap items-center gap-2">
             <MonitorIcon className="size-4 text-muted-foreground" />
             <span className="text-sm font-medium">{label}</span>
-            {item.isCurrent && <Badge className="bg-emerald-600 text-white hover:bg-emerald-600">当前会话</Badge>}
+            {item.isCurrent && (
+              <Badge className="bg-status-success-bg text-status-success-fg hover:bg-status-success-bg">当前会话</Badge>
+            )}
           </div>
           <dl className="grid grid-cols-1 gap-x-4 gap-y-1 text-xs text-muted-foreground sm:grid-cols-2">
             <div>

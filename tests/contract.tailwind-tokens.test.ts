@@ -86,7 +86,7 @@ function parseThemeBlocks(css: string): ParsedThemeBlocks {
 // a brand-new namespace that nobody decided about yet -- if a token
 // lands in a new namespace, the test fails until a maintainer either
 // registers it, omits it, or moves it below the line consciously.
-const BELOW_THE_LINE_NAMESPACES = new Set<string>(['breakpoint', 'container', 'ring', 'size', 'width'])
+const BELOW_THE_LINE_NAMESPACES = new Set<string>(['breakpoint', 'container', 'ring', 'size', 'width', 'z'])
 
 const CSS_PATH = 'src/styles/tailwind.css'
 

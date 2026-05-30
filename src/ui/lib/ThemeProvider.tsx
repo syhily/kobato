@@ -23,6 +23,7 @@ function applyTheme(resolved: Resolved) {
   const root = document.documentElement
   root.classList.remove('light', 'dark')
   root.classList.add(resolved)
+  root.style.colorScheme = resolved
   const meta = document.querySelector('meta[name="color-scheme"]')
   if (meta) {
     meta.setAttribute('content', resolved)

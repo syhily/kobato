@@ -229,6 +229,18 @@ const COLOR_TOKENS = [
   'status-success-bg',
   'status-success-fg',
   'status-success-border',
+  'status-draft-bg',
+  'status-draft-fg',
+  'status-draft-border',
+  'diff-change-bg',
+  'diff-change-fg',
+  'diff-change-border',
+  'diff-insert-bg',
+  'diff-insert-fg',
+  'diff-insert-border',
+  'diff-delete-bg',
+  'diff-delete-fg',
+  'diff-delete-border',
   'chip-bg',
   'chip-fg',
   'chip-hover-bg',
@@ -249,7 +261,7 @@ const SHADOW_TOKENS = ['card', 'like-active', 'popup-close', 'toc-toggle', 'tool
 // the stock Tailwind v4 scale and tailwind-merge already knows them,
 // but redeclaring them here is harmless and protects against an
 // upstream key rename.
-const RADIUS_TOKENS = ['xs', 'sm', 'md', 'lg', 'xl'] as const
+const RADIUS_TOKENS = ['xs', 'sm', 'md', 'lg', 'xl', 'input'] as const
 
 // --font-* -- font-family scale
 const FONT_TOKENS = ['code'] as const
@@ -264,13 +276,27 @@ const SPACING_TOKENS = [
   'admin-thumb',
   'auth-btn',
   'auth-input',
+  'auth-input-pad',
   'badge-overlay-y',
   'btn-icon-md',
+  'comment-avatar-gap',
   'editor-min',
+  'editor-prose-min',
   'empty-state',
+  'header-brand-b',
+  'header-brand-x',
   'icon-inset',
   'search-trigger',
   'sidebar-item',
+  'submenu-p',
+  'submenu-px-lg',
+  'toc-disc',
+  'toc-disc-hover',
+  'toc-disc-open',
+  'toc-disc-open-hover',
+  'toc-drawer',
+  'toc-drawer-edge',
+  'toc-toggle-edge-open',
 ] as const
 
 // Note: --leading-* is intentionally NOT registered. Tailwind v4

@@ -3,7 +3,7 @@ import type { Editor, Range } from '@tiptap/core'
 import { Extension } from '@tiptap/core'
 import { ReactRenderer } from '@tiptap/react'
 import Suggestion, { type SuggestionProps, type SuggestionKeyDownProps } from '@tiptap/suggestion'
-import { useEffect, useImperativeHandle, useMemo, useRef, useState, type Ref } from 'react'
+import { useEffect, useImperativeHandle, useLayoutEffect, useRef, useState, type Ref } from 'react'
 import { createPortal } from 'react-dom'
 
 import { filterSlashCommands, SLASH_COMMANDS, type SlashCommand } from '@/ui/admin/editor/tiptap/slash-commands'
@@ -150,13 +150,13 @@ function SlashMenuList(props: SlashMenuListProps) {
 
   // Track the anchor rect so the menu follows the cursor as the user
   // types more characters. `clientRect()` queries layout (a layout
-  // read forces a flush on Chromium); `query` is in the dep array as
-  // an explicit invalidation key — when the filter text changes the
-  // cursor has moved, so we re-read. The closure itself doesn't read
-  // `query`, hence the disable: `query` is intentionally there only to
-  // drive cache invalidation.
-  // oxlint-disable-next-line react-hooks/exhaustive-deps
-  const rect = useMemo(() => (clientRect ? clientRect() : null), [clientRect, query])
+  // read forces a flush on Chromium). We read it inside useLayoutEffect
+  // so the measurement happens after paint but before the browser
+  // commits the next frame, avoiding a layout read during render.
+  const [rect, setRect] = useState<DOMRect | null>(null)
+  useLayoutEffect(() => {
+    setRect(clientRect ? clientRect() : null)
+  }, [clientRect, query])
 
   useImperativeHandle(ref, () => ({
     onKeyDown: ({ event }) => {

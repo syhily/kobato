@@ -99,7 +99,7 @@ export function DetailBodyChrome({
           <PencilIcon className="size-4" />
         </Link>
       )}
-      <h1 className={cn(postTitleClass, 'font-bold', mode === 'admin' && editHref && 'pr-10')}>
+      <h1 className={cn(postTitleClass, 'font-bold text-balance', mode === 'admin' && editHref && 'pr-10')}>
         {markerLabel !== null && (
           <span className="text-alert">
             <span className="sr-only">{markerLabel.sr}</span>

@@ -227,7 +227,11 @@ function AdminSessionRow({ item, submitting, onRevoke, config }: RowProps) {
               </Link>
               <span className="text-xs text-muted-foreground">{item.userEmail}</span>
               {!!item.userRole && <Badge variant="secondary">{roleLabel(item.userRole)}</Badge>}
-              {item.isCurrent && <Badge className="bg-emerald-600 text-white hover:bg-emerald-600">当前会话</Badge>}
+              {item.isCurrent && (
+                <Badge className="bg-status-success-bg text-status-success-fg hover:bg-status-success-bg">
+                  当前会话
+                </Badge>
+              )}
             </div>
             <div className="flex flex-wrap items-center gap-2 text-xs">
               <MonitorIcon className="size-3.5 text-muted-foreground" />

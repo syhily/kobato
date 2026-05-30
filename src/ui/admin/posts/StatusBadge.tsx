@@ -7,7 +7,7 @@ interface StatusBadgeProps {
 export function StatusBadge({ post }: StatusBadgeProps) {
   if (post.deletedAt !== null) {
     return (
-      <span className="inline-flex items-center gap-1.5 font-medium text-(--text-admin-sm) text-destructive">
+      <span className="inline-flex items-center gap-1.5 text-admin-sm font-medium text-destructive">
         <span className="size-1.5 rounded-full bg-destructive" />
         已删除
       </span>
@@ -16,8 +16,8 @@ export function StatusBadge({ post }: StatusBadgeProps) {
 
   if (!post.published) {
     return (
-      <span className="inline-flex items-center gap-1.5 font-medium text-(--text-admin-sm) text-pink-500">
-        <span className="size-1.5 rounded-full bg-pink-500" />
+      <span className="inline-flex items-center gap-1.5 text-admin-sm font-medium text-status-draft-fg">
+        <span className="size-1.5 rounded-full bg-status-draft-fg" />
         草稿
       </span>
     )
@@ -25,8 +25,8 @@ export function StatusBadge({ post }: StatusBadgeProps) {
 
   if (post.publishedRevisionId === null) {
     return (
-      <span className="inline-flex items-center gap-1.5 font-medium text-(--text-admin-sm) text-amber-600">
-        <span className="size-1.5 rounded-full bg-amber-600" />
+      <span className="inline-flex items-center gap-1.5 text-admin-sm font-medium text-status-warn-fg">
+        <span className="size-1.5 rounded-full bg-status-warn-fg" />
         仅草稿
       </span>
     )
@@ -34,16 +34,16 @@ export function StatusBadge({ post }: StatusBadgeProps) {
 
   if (!post.visible) {
     return (
-      <span className="inline-flex items-center gap-1.5 font-medium text-(--text-admin-sm) text-amber-600">
-        <span className="size-1.5 rounded-full bg-amber-600" />
+      <span className="inline-flex items-center gap-1.5 text-admin-sm font-medium text-status-warn-fg">
+        <span className="size-1.5 rounded-full bg-status-warn-fg" />
         隐藏
       </span>
     )
   }
 
   return (
-    <span className="inline-flex items-center gap-1.5 font-medium text-(--text-admin-sm) text-green-600">
-      <span className="size-1.5 rounded-full bg-green-600" />
+    <span className="inline-flex items-center gap-1.5 text-admin-sm font-medium text-status-success-fg">
+      <span className="size-1.5 rounded-full bg-status-success-fg" />
       已发布
     </span>
   )

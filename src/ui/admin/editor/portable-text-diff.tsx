@@ -259,9 +259,9 @@ export function DiffPanel({ diff, side }: DiffPanelProps) {
             className={cn(
               'rounded border px-2 py-2 text-sm',
               entry.status === 'unchanged' && 'border-muted bg-muted/30',
-              entry.status === 'changed' && 'border-amber-300 bg-amber-50',
-              entry.status === 'leftOnly' && side === 'left' && 'border-rose-300 bg-rose-50',
-              entry.status === 'rightOnly' && side === 'right' && 'border-emerald-300 bg-emerald-50',
+              entry.status === 'changed' && 'border-diff-change-border bg-diff-change-bg',
+              entry.status === 'leftOnly' && side === 'left' && 'border-diff-delete-border bg-diff-delete-bg',
+              entry.status === 'rightOnly' && side === 'right' && 'border-diff-insert-border bg-diff-insert-bg',
             )}
           >
             <div className="mb-1 flex items-center gap-2">
@@ -317,7 +317,7 @@ function BlockInlineDiff({ leftBlock, rightBlock, side }: BlockInlineDiffProps) 
         if (side === 'right' && part.op === 1) {
           return (
             // oxlint-disable-next-line react/no-array-index-key
-            <span key={idx} className="rounded bg-emerald-200/70 px-0.5 text-emerald-950">
+            <span key={idx} className="rounded bg-diff-insert-bg px-0.5 text-diff-insert-fg">
               {part.text}
             </span>
           )
@@ -325,7 +325,7 @@ function BlockInlineDiff({ leftBlock, rightBlock, side }: BlockInlineDiffProps) 
         if (side === 'left' && part.op === -1) {
           return (
             // oxlint-disable-next-line react/no-array-index-key
-            <span key={idx} className="rounded bg-rose-200/70 px-0.5 text-rose-950 line-through">
+            <span key={idx} className="rounded bg-diff-delete-bg px-0.5 text-diff-delete-fg line-through">
               {part.text}
             </span>
           )

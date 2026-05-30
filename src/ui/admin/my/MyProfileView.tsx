@@ -239,7 +239,9 @@ export function MyProfileView({ user, counts }: MyProfileViewProps) {
                   </>
                 )}
                 {!!profileError && <div className="text-sm text-destructive sm:col-span-2">{profileError}</div>}
-                {!!profileMessage && <div className="text-sm text-green-600 sm:col-span-2">{profileMessage}</div>}
+                {!!profileMessage && (
+                  <div className="text-sm text-status-success-fg sm:col-span-2">{profileMessage}</div>
+                )}
                 <div className="flex justify-end gap-2 sm:col-span-2">
                   <Button type="submit" disabled={profileMutation.isPending}>
                     <SaveIcon data-icon /> {profileMutation.isPending ? '保存中…' : '保存'}
@@ -307,7 +309,9 @@ export function MyProfileView({ user, counts }: MyProfileViewProps) {
                   </div>
                 </div>
                 {!!passwordError && <div className="text-sm text-destructive sm:col-span-2">{passwordError}</div>}
-                {!!passwordMessage && <div className="text-sm text-green-600 sm:col-span-2">{passwordMessage}</div>}
+                {!!passwordMessage && (
+                  <div className="text-sm text-status-success-fg sm:col-span-2">{passwordMessage}</div>
+                )}
                 <div className="flex justify-end gap-2 sm:col-span-2">
                   <Button type="submit" variant="outline" disabled={passwordMutation.isPending}>
                     <KeyRoundIcon data-icon /> {passwordMutation.isPending ? '更新中…' : '修改密码'}

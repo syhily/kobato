@@ -40,8 +40,8 @@ const tocToggleClass = cn(
   // the fixed-positioned button stays visually pinned to the same spot
   // it occupied before the lock engaged (otherwise it would jump 15px
   // rightward as the scrollbar vanishes from under the cursor).
-  'fixed top-0 right-[var(--scrollbar-width,0px)] bottom-0 z-890 my-auto -mr-20',
-  'flex h-25 w-25 cursor-pointer items-center justify-center',
+  'fixed top-0 right-[var(--scrollbar-width,0px)] bottom-0 z-(--z-toc-toggle) my-auto -mr-20',
+  'flex h-toc-disc w-toc-disc cursor-pointer items-center justify-center',
   // Force a compositor layer with `transform-gpu` (compiles to a
   // `translateZ(0)` seed in the transform shorthand). On iOS Safari
   // and a few low-end Android chromes, an element that gains a
@@ -67,16 +67,16 @@ const tocToggleClass = cn(
   'transition-[background-color,color,transform,translate,scale,rotate,box-shadow,width,height,margin] duration-500 ease-in-out',
   // State (closed) hover: grow into a 120x120 disc that pops 20px
   // closer to the viewport.
-  'hover:h-30 hover:w-30 hover:-translate-x-5 hover:bg-surface',
+  'hover:h-toc-disc-hover hover:w-toc-disc-hover hover:-translate-x-5 hover:bg-surface',
   // State (open): collapse to a 50x50 disc anchored to the drawer's
   // left edge. The button's right edge sits 25px past the viewport
-  // edge (-mr-6.25), and the box is then translated 280px (= the
-  // drawer width, `w-70`) to the left so its right edge bridges the
-  // drawer's left edge.
-  'data-[state=open]:z-1500 data-[state=open]:-mr-6.25 data-[state=open]:h-12.5 data-[state=open]:w-12.5 data-[state=open]:-translate-x-70 data-[state=open]:bg-surface',
+  // edge (-mr-toc-toggle-edge-open), and the box is then translated
+  // 280px (= the drawer width, `w-toc-drawer`) to the left so its
+  // right edge bridges the drawer's left edge.
+  'data-[state=open]:z-(--z-toc-toggle-open) data-[state=open]:-mr-toc-toggle-edge-open data-[state=open]:h-toc-disc-open data-[state=open]:w-toc-disc-open data-[state=open]:-translate-x-toc-drawer data-[state=open]:bg-surface',
   // State (open) hover: same anchor as the open base, just enlarged
   // to 64x64 so the affordance stays clickable.
-  'data-[state=open]:hover:-mr-8 data-[state=open]:hover:h-16 data-[state=open]:hover:w-16 data-[state=open]:hover:-translate-x-70',
+  'data-[state=open]:hover:-mr-8 data-[state=open]:hover:h-toc-disc-open-hover data-[state=open]:hover:w-toc-disc-open-hover data-[state=open]:hover:-translate-x-toc-drawer',
 )
 
 // TOC chevron. A single `ChevronLeftIcon` is rendered in both states
@@ -127,15 +127,15 @@ const tocDrawerClass = cn(
   // the toggle and the close, especially on iOS Safari where a
   // wide unpromoted layer can otherwise drop frames on its very
   // first translate after a route mount.
-  'fixed top-0 -right-72.5 bottom-0 z-880 h-full w-70 transform-gpu border-l border-line bg-surface font-normal transition-transform duration-500 ease-in-out',
-  'data-[state=open]:z-1000 data-[state=open]:-translate-x-72.5',
+  'fixed top-0 -right-toc-drawer-edge bottom-0 z-(--z-toc-drawer) h-full w-toc-drawer transform-gpu border-l border-line bg-surface font-normal transition-transform duration-500 ease-in-out',
+  'data-[state=open]:z-(--z-toc-drawer-open) data-[state=open]:-translate-x-toc-drawer',
 )
 
 // Scrim behind the drawer. Hidden until `data-state=open` and only
 // then occupies the viewport.
 const tocBackdropClass = cn(
   'pointer-events-none invisible',
-  'data-[state=open]:pointer-events-auto data-[state=open]:visible data-[state=open]:fixed data-[state=open]:inset-0 data-[state=open]:z-500 data-[state=open]:bg-scrim',
+  'data-[state=open]:pointer-events-auto data-[state=open]:visible data-[state=open]:fixed data-[state=open]:inset-0 data-[state=open]:z-(--z-toc-backdrop) data-[state=open]:bg-scrim',
 )
 
 const DEFAULT_TOC_CONFIG = {
@@ -269,7 +269,7 @@ export function TableOfContents({ headings, toc = 'disabled' }: TableOfContentsP
         </span>
       </button>
       <div data-state={state} className={tocDrawerClass}>
-        <div className="absolute top-0 -right-12 bottom-0 left-0 overflow-x-hidden overflow-y-auto">
+        <div className="absolute top-0 -right-12 bottom-0 left-0 overflow-x-hidden overflow-y-auto overscroll-contain">
           <div className="mr-12 pt-11.5">
             <h2 className="w-full px-10 text-left text-toc-title leading-[3.6rem] font-bold text-ink-1">文章目录</h2>
             <div className="pt-8">

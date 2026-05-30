@@ -135,7 +135,9 @@ function Sidebar({
           data-mobile="true"
           data-sidebar="sidebar"
         >
-          <nav className="flex size-full flex-col">{children}</nav>
+          <nav id="app-sidebar" className="flex size-full flex-col">
+            {children}
+          </nav>
         </SheetContent>
       </Sheet>
     )

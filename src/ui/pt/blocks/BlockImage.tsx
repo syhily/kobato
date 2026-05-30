@@ -131,6 +131,16 @@ export function BlockImage({
     thumbhashStyle === undefined ? style : style === undefined ? thumbhashStyle : { ...thumbhashStyle, ...style }
 
   const { className, ...imgRest } = rest
+  const hasDimensions =
+    (typeof imgRest.width === 'number' && imgRest.width > 0) || (typeof width === 'number' && width > 0)
+  const aspectStyle: React.CSSProperties | undefined = hasDimensions ? undefined : { aspectRatio: '16/9' }
+  const finalStyle: React.CSSProperties | undefined =
+    aspectStyle === undefined
+      ? mergedStyle
+      : mergedStyle === undefined
+        ? aspectStyle
+        : { ...aspectStyle, ...mergedStyle }
+
   return (
     <img
       {...imgRest}
@@ -143,7 +153,7 @@ export function BlockImage({
       sizes="100vw"
       srcSet={srcset}
       className={cn(DARK_IMAGE_DIM_CLASS, className)}
-      style={mergedStyle}
+      style={finalStyle}
       onLoad={handleLoad}
     />
   )
