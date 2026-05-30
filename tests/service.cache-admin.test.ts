@@ -9,8 +9,19 @@ import { redisInstance } from '@/server/infra/redis/storage'
 import { TEST_BLOG_SETTINGS_BUNDLE } from './_helpers/blog-settings'
 import { flushWorkerRedis } from './_helpers/redis'
 
+async function remainingOwnKeys(ownKeys: string[]): Promise<string[]> {
+  const all = await redisInstance().keys('*')
+  return all.filter((k) => ownKeys.includes(k)).sort()
+}
+
 describe('service: cache admin', () => {
+  // Track keys created by each test so we can filter `redis.keys('*')`
+  // to only our own keys — parallel workers may write keys that would
+  // otherwise pollute exact-list assertions.
+  let ownKeys: string[]
+
   beforeEach(async () => {
+    ownKeys = []
     // Flush the current worker's Redis keys so no leftover keys from
     // other tests pollute the SCAN counts.
     await flushWorkerRedis()
@@ -43,6 +54,7 @@ describe('service: cache admin', () => {
 
   it('clears only the targeted bucket', async () => {
     const redis = redisInstance()
+    ownKeys = ['og:hello-deadbeef', 'og:world-cafef00d', 'avatar:abc', 'session:xyz']
     await redis.set('og:hello-deadbeef', Buffer.from([1]))
     await redis.set('og:world-cafef00d', Buffer.from([2]))
     await redis.set('avatar:abc', Buffer.from([3]))
@@ -53,12 +65,13 @@ describe('service: cache admin', () => {
     expect(result.cleared).toEqual([{ bucketId: 'og', label: 'OG 图缓存', removed: 2 }])
     expect(result.total).toBe(2)
 
-    const remaining = await redis.keys('*')
-    expect(remaining.sort()).toEqual(['avatar:abc', 'session:xyz'])
+    const remaining = await remainingOwnKeys(ownKeys)
+    expect(remaining).toEqual(['avatar:abc', 'session:xyz'])
   })
 
   it('aggregates counts when clearing all buckets', async () => {
     const redis = redisInstance()
+    ownKeys = ['og:hello-deadbeef', 'avatar:abc', 'avatar:def', 'calendar:2026-04-30', 'session:xyz']
     await redis.set('og:hello-deadbeef', Buffer.from([1]))
     await redis.set('avatar:abc', Buffer.from([2]))
     await redis.set('avatar:def', Buffer.from([3]))
@@ -78,7 +91,7 @@ describe('service: cache admin', () => {
       searchResult: 0,
     })
     // Out-of-bucket keys survive a "全部清空".
-    const remaining = await redis.keys('*')
+    const remaining = await remainingOwnKeys(ownKeys)
     expect(remaining).toEqual(['session:xyz'])
   })
 
@@ -107,6 +120,7 @@ describe('service: cache admin', () => {
     })
 
     const redis = redisInstance()
+    ownKeys = ['opengraph:fresh-deadbeef', 'og:stale-deadbeef', 'avatar:abc']
     await redis.set('opengraph:fresh-deadbeef', Buffer.from([1]))
     await redis.set('og:stale-deadbeef', Buffer.from([2])) // legacy key under the old prefix
     await redis.set('avatar:abc', Buffer.from([3]))
@@ -118,8 +132,8 @@ describe('service: cache admin', () => {
     const cleared = await clearAdminCache('og')
     expect(cleared.total).toBe(1)
     // Legacy `og:stale-…` key is NOT touched.
-    const remaining = await redis.keys('*')
-    expect(remaining.sort()).toEqual(['avatar:abc', 'og:stale-deadbeef'])
+    const remaining = await remainingOwnKeys(ownKeys)
+    expect(remaining).toEqual(['avatar:abc', 'og:stale-deadbeef'])
   })
 
   it('exposes prefix + TTL on every stats entry', async () => {
@@ -136,6 +150,7 @@ describe('service: cache admin', () => {
 
   it('scans and clears the imageMeta buckets the same way as og/avatar/calendar', async () => {
     const redis = redisInstance()
+    ownKeys = ['image-meta:images/2024/06/cover.jpg', 'image-meta:images/2024/06/banner.jpg', 'og:foo']
     await redis.set('image-meta:images/2024/06/cover.jpg', JSON.stringify({ found: true }))
     await redis.set('image-meta:images/2024/06/banner.jpg', JSON.stringify({ found: false }))
     await redis.set('og:foo', Buffer.from([1]))
@@ -148,7 +163,7 @@ describe('service: cache admin', () => {
     expect(result.total).toBe(2)
     expect(result.cleared[0]?.bucketId).toBe('imageMeta')
     // og keys survive a targeted imageMeta sweep.
-    const remaining = await redis.keys('*')
+    const remaining = await remainingOwnKeys(ownKeys)
     expect(remaining).toEqual(['og:foo'])
   })
 })

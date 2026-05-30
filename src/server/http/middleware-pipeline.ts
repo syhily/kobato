@@ -10,7 +10,7 @@ import type { Env } from '@/server/http/context'
 
 import { getDb, getPool } from '@/server/bootstrap/db-lifecycle'
 import { dbContext, poolContext, requestContext, sessionContext } from '@/server/domains/auth/context'
-import { warmBlogSettingsSnapshot } from '@/server/domains/settings/snapshot'
+import { hydrateBlogSettings } from '@/server/domains/settings/snapshot'
 import { createApiApp } from '@/server/http/app'
 import { onErrorHandler } from '@/server/http/errors'
 import { corsMiddleware } from '@/server/http/middlewares/cors'
@@ -118,10 +118,20 @@ export function configureMiddleware(app: Hono<Env>): void {
   }
 }
 
-export function buildLoadContext(c: { var: Env['Variables']; req: { raw: Request; url: string } }) {
+export async function buildLoadContext(c: { var: Env['Variables']; req: { raw: Request; url: string } }) {
   const db = getDb()
   const pool = getPool()
-  warmBlogSettingsSnapshot(db)
+  // CRITICAL: await the hydration before returning the context.
+  //
+  // Route loaders (e.g. `routes/public/home.tsx`) call
+  // `requireBlogSettingsSection()` which reads the in-process snapshot
+  // synchronously. If we fire-and-forget (warmBlogSettingsSnapshot),
+  // loaders can run before the DB round-trip finishes and hit the
+  // "Blog settings have not been hydrated yet" error. Awaiting here
+  // guarantees the snapshot is populated before React Router calls any
+  // loader. See `tests/middleware.pipeline.test.ts` for the regression
+  // guard.
+  await hydrateBlogSettings(db)
   const { session, request } = buildRouteContexts(c)
   const context = new RouterContextProvider()
   context.set(sessionContext, session)

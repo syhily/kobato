@@ -109,12 +109,17 @@ export async function createHonoServer<E extends Env = BlankEnv>(options?: HonoS
 
   /**
    * Serve assets files from build/client/assets
+   *
+   * Only mounted in production: in development Vite's dev server handles
+   * asset serving and the `build/client` directory does not exist yet.
    */
-  app.use(
-    `/${import.meta.env.REACT_ROUTER_HONO_SERVER_ASSETS_DIR}/*`,
-    cache(60 * 60 * 24 * 365), // 1 year
-    serveStatic({ root: clientBuildPath, ...mergedOptions.serveStaticOptions?.clientAssets }),
-  )
+  if (PRODUCTION) {
+    app.use(
+      `/${import.meta.env.REACT_ROUTER_HONO_SERVER_ASSETS_DIR}/*`,
+      cache(60 * 60 * 24 * 365), // 1 year
+      serveStatic({ root: clientBuildPath, ...mergedOptions.serveStaticOptions?.clientAssets }),
+    )
+  }
 
   /**
    * Add optional middleware

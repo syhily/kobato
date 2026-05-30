@@ -1,5 +1,10 @@
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
+
 import { createDecipheriv, createHash, createCipheriv, randomBytes } from 'node:crypto'
 
+import { SECRET_FIELDS } from '@/server/domains/settings/secrets'
+import { SECTION_REGISTRY } from '@/server/domains/settings/sections'
+import { findSettingsByScopePrefix, upsertSetting } from '@/server/infra/db/operations/setting'
 import { ENCRYPTION_KEY, isVitest } from '@/server/infra/env'
 import { getLogger } from '@/server/infra/logger'
 
@@ -83,12 +88,105 @@ export function decryptIfNeeded(ciphertext: string): string {
   }
 }
 
-export function emitEncryptionStartupWarning(): void {
-  if (isVitest() || ENCRYPTION_KEY) {
+export async function migrateSecretsEncryption(db: NodePgDatabase): Promise<void> {
+  if (isVitest()) {
     return
   }
-  log.warn(
-    'ENCRYPTION_KEY is not set. API keys and S3 credentials will be stored as plaintext in the database. ' +
-      'Set ENCRYPTION_KEY and run `npx tsx scripts/encrypt-settings-secrets.ts` to encrypt existing secrets.',
-  )
+
+  if (!ENCRYPTION_KEY) {
+    log.warn(
+      'ENCRYPTION_KEY is not set. API keys and S3 credentials will be stored as plaintext in the database. ' +
+        'Set ENCRYPTION_KEY to enable automatic encryption on next startup.',
+    )
+
+    // Defensive: if secrets were previously encrypted, the app will fail
+    // at runtime when decryptIfNeeded is called.  Scan and warn so the
+    // operator sees the problem at startup rather than at request time.
+    const rows = await findSettingsByScopePrefix(db, 'blog.')
+    const byScope = new Map(rows.map((r) => [r.scope, r.data as Record<string, unknown>]))
+    let encryptedCount = 0
+    for (const { section, path, field } of SECRET_FIELDS) {
+      const scope = SECTION_REGISTRY[section].scope
+      const bucket = byScope.get(scope)?.[path] as Record<string, unknown> | undefined
+      const value = bucket?.[field]
+      if (typeof value === 'string' && isEncrypted(value)) {
+        encryptedCount++
+      }
+    }
+    if (encryptedCount > 0) {
+      log.error(
+        `${encryptedCount} encrypted secret(s) found in the database but ENCRYPTION_KEY is not set. ` +
+          'The app will crash at runtime when these secrets are read. ' +
+          'Restore the key or clear the secrets from the database.',
+      )
+    }
+    return
+  }
+
+  try {
+    const rows = await findSettingsByScopePrefix(db, 'blog.')
+    const byScope = new Map(rows.map((r) => [r.scope, r.data as Record<string, unknown>]))
+
+    let encrypted = 0
+    let verified = 0
+    const dirtyScopes = new Set<string>()
+    const failures: string[] = []
+
+    for (const { section, path, field } of SECRET_FIELDS) {
+      const scope = SECTION_REGISTRY[section].scope
+      const data = byScope.get(scope)
+      if (!data) {
+        continue
+      }
+
+      const bucket = data[path] as Record<string, unknown> | undefined
+      if (!bucket) {
+        continue
+      }
+
+      const value = bucket[field]
+      if (typeof value !== 'string' || value === '') {
+        continue
+      }
+
+      if (isEncrypted(value)) {
+        try {
+          decrypt(value)
+          verified++
+        } catch (error) {
+          const msg = `[${scope}] ${path}.${field} failed to decrypt — ENCRYPTION_KEY may be incorrect or ciphertext is corrupted`
+          log.error(msg, { error })
+          failures.push(msg)
+        }
+      } else {
+        try {
+          bucket[field] = encrypt(value)
+          dirtyScopes.add(scope)
+          encrypted++
+        } catch (error) {
+          const msg = `[${scope}] ${path}.${field} failed to encrypt`
+          log.error(msg, { error })
+          failures.push(msg)
+        }
+      }
+    }
+
+    for (const scope of dirtyScopes) {
+      await upsertSetting(db, byScope.get(scope)!, null, scope)
+    }
+
+    if (failures.length > 0) {
+      throw new Error(
+        `Secrets encryption migration aborted — ${failures.length} secret(s) failed. ` +
+          'Ensure ENCRYPTION_KEY is correct and secrets are not corrupted.',
+      )
+    }
+
+    if (encrypted > 0 || verified > 0) {
+      log.info(`Secrets migration complete: ${encrypted} encrypted, ${verified} verified`)
+    }
+  } catch (error) {
+    log.error('Secrets encryption migration failed', { error })
+    throw error
+  }
 }

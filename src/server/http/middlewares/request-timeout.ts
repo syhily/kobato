@@ -28,13 +28,13 @@ export function requestTimeout(timeoutMs = DEFAULT_TIMEOUT_MS): MiddlewareHandle
     const originalRaw = c.req.raw
     Object.defineProperty(c.req, 'raw', {
       get() {
-        return new Request(originalRaw.url, {
-          method: originalRaw.method,
-          headers: originalRaw.headers,
-          body: originalRaw.body,
-          signal: combined,
-          // @ts-expect-error — duplex is required for streamed bodies
-          duplex: originalRaw.duplex,
+        return new Proxy(originalRaw, {
+          get(target, prop) {
+            if (prop === 'signal') {
+              return combined
+            }
+            return Reflect.get(target, prop)
+          },
         })
       },
       configurable: true,

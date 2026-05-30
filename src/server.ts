@@ -5,13 +5,16 @@ import type { Env } from '@/server/http/context'
 import { getDb, getPool } from '@/server/bootstrap/db-lifecycle'
 import { scheduleNextArchive } from '@/server/domains/audit/scheduler'
 import { initBackupScheduler, scheduleNextBackup } from '@/server/domains/backup/scheduler'
+import { refreshBlogSettings } from '@/server/domains/settings/snapshot'
 import { wrapFetchWithLeakedResponseHandler } from '@/server/http/leaked-response'
 import { buildLoadContext, configureMiddleware } from '@/server/http/middleware-pipeline'
-import { emitEncryptionStartupWarning } from '@/server/infra/crypto/secret-encryption'
+import { migrateSecretsEncryption } from '@/server/infra/crypto/secret-encryption'
 import { PORT } from '@/server/infra/env'
 import { createHonoServer } from '@/server/infra/hono/node'
 import { setHttpServer, setRestartApp, setServerPhase } from '@/server/infra/lifecycle'
 import { root } from '@/server/infra/logger'
+
+const hmr = import.meta.hot?.data as { secretsMigrated?: boolean } | undefined
 
 // ─── Server assembly ─────────────────────────────────────
 
@@ -20,14 +23,35 @@ const app = await createHonoServer<Env>({
   configure(app) {
     configureMiddleware(app)
   },
-  getLoadContext(c) {
-    return buildLoadContext(c)
+  // Must be async because `buildLoadContext` awaits `hydrateBlogSettings`.
+  // createHonoServer handles both sync and async getLoadContext, but
+  // keeping the `async` keyword here makes the promise boundary explicit
+  // and prevents a future edit from accidentally dropping the await.
+  async getLoadContext(c) {
+    // oxlint-disable-next-line typescript/return-await
+    return await buildLoadContext(c)
   },
 })
 
 wrapFetchWithLeakedResponseHandler(app)
 
 setRestartApp(app)
+
+// ─── Scheduled tasks & startup migrations ────────────────
+
+scheduleNextBackup()
+initBackupScheduler()
+scheduleNextArchive(getDb(), getPool())
+
+// Run the secrets migration once per process (HMR-safe via
+// import.meta.hot.data so dev reloads don't re-query the DB).
+if (!hmr?.secretsMigrated) {
+  await migrateSecretsEncryption(getDb())
+  await refreshBlogSettings(getDb())
+  if (hmr) {
+    hmr.secretsMigrated = true
+  }
+}
 
 // ─── Start HTTP server ───────────────────────────────────
 
@@ -42,13 +66,6 @@ const httpServer = import.meta.env.PROD
 if (httpServer) {
   setHttpServer(httpServer)
 }
-
-// ─── Scheduled tasks ─────────────────────────────────────
-
-scheduleNextBackup()
-initBackupScheduler()
-scheduleNextArchive(getDb(), getPool())
-emitEncryptionStartupWarning()
 
 setServerPhase('running')
 
