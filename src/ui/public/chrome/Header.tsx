@@ -366,7 +366,7 @@ export function Header({ navigation, currentUser, pathname, search }: HeaderProp
         <div className={asideInnerClass}>
           <h1 id={menuLabelId} className={navbarBrandClass}>
             <Link to="/" title={title} className="block" prefetch="intent">
-              <img src={`/logo-dark.svg${v}`} alt="且听书吟" width={120} height={40} className={navbarBrandImgClass} />
+              <img src={`/logo-dark.svg${v}`} alt="且听书吟" width={60} height={60} className={navbarBrandImgClass} />
             </Link>
           </h1>
           {/* oxlint-disable-next-line jsx-a11y/no-noninteractive-element-interactions */}

@@ -163,6 +163,7 @@ nihaha
 nmtid
 nocolor
 nofollow
+noninteractive
 nopd
 notesans
 noto
