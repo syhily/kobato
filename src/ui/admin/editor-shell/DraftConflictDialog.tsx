@@ -107,7 +107,7 @@ function DraftPanel({ title, icon, timestamp, side, diff }: DraftPanelProps) {
           <span className="ml-auto text-xs text-muted-foreground">{new Date(timestamp).toLocaleString('zh-CN')}</span>
         ) : null}
       </div>
-      <div className="max-h-[480px] overflow-y-auto p-3">
+      <div className="max-h-(--spacing-editor-min) overflow-y-auto p-3">
         <DiffPanel diff={diff} side={side} />
       </div>
     </div>

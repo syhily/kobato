@@ -10,7 +10,7 @@ import { cn } from '@/ui/lib/cn'
 
 // Shared auth input styling — must match AdminCredentialsForm.
 const inputClasses =
-  'h-[54px] rounded-lg border-0 bg-muted/50 px-4 text-xl md:text-xl placeholder:text-muted-foreground/50 focus-visible:bg-background focus-visible:ring-2 focus-visible:ring-primary/25 focus-visible:border-primary'
+  'h-(--spacing-auth-input) rounded-lg border-0 bg-muted/50 px-4 text-xl md:text-xl placeholder:text-muted-foreground/50 focus-visible:bg-background focus-visible:ring-2 focus-visible:ring-primary/25 focus-visible:border-primary'
 
 interface AdminInstallFormProps {
   pgToolsAvailable?: boolean
@@ -191,7 +191,7 @@ export function AdminInstallForm({ pgToolsAvailable }: AdminInstallFormProps) {
       {mode === 'install' ? (
         <Form method="post" id="adminInstallForm" className="flex w-full flex-col gap-6">
           <div className="flex w-full flex-col gap-2">
-            <Label htmlFor="install-title" className="text-[15px] font-semibold">
+            <Label htmlFor="install-title" className="font-semibold text-(--text-admin-base)">
               站点名称
             </Label>
             <Input
@@ -207,7 +207,7 @@ export function AdminInstallForm({ pgToolsAvailable }: AdminInstallFormProps) {
           </div>
 
           <div className="flex w-full flex-col gap-2">
-            <Label htmlFor="install-name" className="text-[15px] font-semibold">
+            <Label htmlFor="install-name" className="font-semibold text-(--text-admin-base)">
               昵称
             </Label>
             <Input
@@ -223,7 +223,7 @@ export function AdminInstallForm({ pgToolsAvailable }: AdminInstallFormProps) {
           </div>
 
           <div className="flex w-full flex-col gap-2">
-            <Label htmlFor="install-email" className="text-[15px] font-semibold">
+            <Label htmlFor="install-email" className="font-semibold text-(--text-admin-base)">
               邮箱
             </Label>
             <Input
@@ -239,7 +239,7 @@ export function AdminInstallForm({ pgToolsAvailable }: AdminInstallFormProps) {
           </div>
 
           <div className="flex w-full flex-col gap-2">
-            <Label htmlFor="install-password" className="text-[15px] font-semibold">
+            <Label htmlFor="install-password" className="font-semibold text-(--text-admin-base)">
               密码
             </Label>
             <div className="relative w-full">
@@ -270,7 +270,7 @@ export function AdminInstallForm({ pgToolsAvailable }: AdminInstallFormProps) {
           <Button
             type="submit"
             disabled={isSubmitting}
-            className="mt-7 h-[52px] w-full rounded-lg bg-brand text-xl font-normal text-white hover:opacity-90"
+            className="mt-7 h-(--spacing-auth-btn) w-full rounded-lg bg-brand text-xl font-normal text-white hover:opacity-90"
           >
             {isSubmitting ? (
               '创建中...'
@@ -290,7 +290,7 @@ export function AdminInstallForm({ pgToolsAvailable }: AdminInstallFormProps) {
           className="flex w-full flex-col gap-6"
         >
           <div className="flex w-full flex-col gap-2">
-            <Label htmlFor="restore-file" className="text-[15px] font-semibold">
+            <Label htmlFor="restore-file" className="font-semibold text-(--text-admin-base)">
               备份文件
             </Label>
             <input
@@ -343,7 +343,7 @@ export function AdminInstallForm({ pgToolsAvailable }: AdminInstallFormProps) {
           <Button
             type="submit"
             disabled={isRestoring || pgToolsAvailable === false || restoreError !== null}
-            className="mt-7 h-[52px] w-full rounded-lg bg-brand text-xl font-normal text-white hover:opacity-90"
+            className="mt-7 h-(--spacing-auth-btn) w-full rounded-lg bg-brand text-xl font-normal text-white hover:opacity-90"
           >
             {isRestoring ? '恢复中...' : '上传并恢复'}
           </Button>

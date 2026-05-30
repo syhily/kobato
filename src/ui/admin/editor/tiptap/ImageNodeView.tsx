@@ -182,7 +182,7 @@ export function ImageNodeView(props: NodeViewProps) {
             className="max-h-72 w-auto rounded object-contain"
             draggable={false}
           />
-          <span className="absolute top-1 left-1 rounded bg-black/60 px-1.5 py-0.5 text-[10px] text-white">
+          <span className="absolute top-1 left-1 rounded bg-black/60 px-1.5 py-0.5 text-(--text-nano) text-white">
             {isLibrary ? '媒体库' : '外链'}
           </span>
         </div>

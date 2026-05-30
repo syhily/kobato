@@ -149,7 +149,7 @@ function SessionRow({ item, submitting, onRevoke, dateFormat, config }: SessionR
             </div>
           </dl>
           {item.userAgent && item.userAgent !== label && (
-            <div className="text-[11px] break-all text-muted-foreground/80">{item.userAgent}</div>
+            <div className="break-all text-(--text-micro) text-muted-foreground/80">{item.userAgent}</div>
           )}
         </div>
         <div className="flex shrink-0 items-start">

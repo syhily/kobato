@@ -1,20 +1,11 @@
-import { EditIcon, ExternalLinkIcon, GripVerticalIcon, MoreHorizontalIcon, Trash2Icon } from 'lucide-react'
-import { type DragEvent, memo } from 'react'
+import { EditIcon, ExternalLinkIcon, GripVerticalIcon, Trash2Icon } from 'lucide-react'
+import { type DragEvent, Fragment, memo } from 'react'
 
 import type { AdminCategoryDto } from '@/shared/types/categories'
 
-import { Badge } from '@/ui/components/badge'
-import { Button } from '@/ui/components/button'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/ui/components/dropdown-menu'
 import { Skeleton } from '@/ui/components/skeleton'
-import { TableCell, TableRow } from '@/ui/components/table'
 import { Tooltip } from '@/ui/components/tooltip'
+import { cn } from '@/ui/lib/cn'
 
 interface CategoryRowProps {
   category: AdminCategoryDto
@@ -27,9 +18,6 @@ interface CategoryRowProps {
   onDelete: () => void
 }
 
-// Drag-reorderable row for the categories table. Memoized so an
-// unrelated state tick (search debounce, draggingId rotate on a
-// sibling row) doesn't reconcile every row in the list.
 export const CategoryRow = memo(function CategoryRow({
   category,
   dragEnabled,
@@ -40,12 +28,7 @@ export const CategoryRow = memo(function CategoryRow({
   onEdit,
   onDelete,
 }: CategoryRowProps) {
-  // The whole row is the drop target so the admin can hover anywhere
-  // on the row (not just the small handle column) when releasing the
-  // dragged row. Only the handle cell flips `draggable={true}` so a
-  // click anywhere else in the row (image, name link, action menu)
-  // still behaves like a normal click without intercepting it.
-  const handleDragStart = (event: DragEvent<HTMLTableRowElement>) => {
+  const handleDragStart = (event: DragEvent<HTMLDivElement>) => {
     if (!dragEnabled) {
       return
     }
@@ -53,14 +36,14 @@ export const CategoryRow = memo(function CategoryRow({
     event.dataTransfer.setData('text/plain', category.id)
     onDragStart(category.id)
   }
-  const handleDragOver = (event: DragEvent<HTMLTableRowElement>) => {
+  const handleDragOver = (event: DragEvent<HTMLDivElement>) => {
     if (!dragEnabled) {
       return
     }
     event.preventDefault()
     event.dataTransfer.dropEffect = 'move'
   }
-  const handleDrop = (event: DragEvent<HTMLTableRowElement>) => {
+  const handleDrop = (event: DragEvent<HTMLDivElement>) => {
     if (!dragEnabled) {
       return
     }
@@ -69,112 +52,104 @@ export const CategoryRow = memo(function CategoryRow({
   }
 
   return (
-    <TableRow
+    <div
       draggable={dragEnabled}
       onDragStart={handleDragStart}
       onDragEnd={onDragEnd}
       onDragOver={handleDragOver}
       onDrop={handleDrop}
       data-dragging={isDragging ? 'true' : undefined}
-      className={isDragging ? 'opacity-50' : undefined}
+      className={cn(
+        'group relative flex items-center gap-4 px-4 py-3 transition-colors hover:bg-muted/50',
+        isDragging && 'opacity-50',
+      )}
     >
-      <TableCell className="pl-4">
-        <span
-          className={
-            dragEnabled
-              ? 'flex cursor-grab items-center justify-center text-muted-foreground hover:text-foreground active:cursor-grabbing'
-              : 'flex cursor-not-allowed items-center justify-center text-muted-foreground/40'
-          }
-          aria-hidden="true"
+      {/* Drag handle */}
+      <span
+        className={
+          dragEnabled
+            ? 'flex size-6 shrink-0 cursor-grab items-center justify-center rounded-sm text-muted-foreground hover:bg-accent hover:text-foreground active:cursor-grabbing'
+            : 'flex size-6 shrink-0 cursor-not-allowed items-center justify-center rounded-sm text-muted-foreground/40'
+        }
+        aria-label="拖拽排序"
+      >
+        <GripVerticalIcon className="size-4" />
+      </span>
+
+      {/* Cover */}
+      <div className="relative aspect-[16/10] w-(--spacing-admin-thumb) flex-shrink-0 overflow-hidden rounded-md bg-muted">
+        {category.cover ? (
+          <img src={category.cover} alt={category.name} className="size-full object-cover" loading="lazy" />
+        ) : null}
+      </div>
+
+      {/* Content */}
+      <div className="min-w-0 flex-1">
+        <button
+          type="button"
+          onClick={onEdit}
+          className="truncate font-semibold text-(--text-admin-base) hover:underline"
         >
-          <GripVerticalIcon className="size-4" />
-        </span>
-      </TableCell>
-      <TableCell>
-        {/* Plain <img>: same rationale as FriendsView — the admin list
-            should not depend on the localization context (`asset.host`)
-            for a thumbnail. */}
-        <img
-          src={category.cover}
-          alt={category.name}
-          loading="lazy"
-          decoding="async"
-          className="h-10 w-20 rounded border bg-muted object-cover"
-        />
-      </TableCell>
-      <TableCell>
-        <div className="flex flex-col gap-0.5">
-          <span className="font-medium">{category.name}</span>
+          {category.name}
+        </button>
+        <p className="mt-0.5 flex items-center gap-1 truncate text-(--text-admin-sm) text-muted-foreground">
           <a
             href={`/cats/${category.slug}`}
             target="_blank"
             rel="noreferrer"
-            className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
+            className="inline-flex items-center gap-1 hover:text-foreground"
           >
             <ExternalLinkIcon className="size-3" />
-            <span className="max-w-xs truncate">/cats/{category.slug}</span>
+            <span className="font-mono">/cats/{category.slug}</span>
           </a>
-        </div>
-      </TableCell>
-      <TableCell className="hidden max-w-xs lg:table-cell">
-        <CategoryDescriptionCell description={category.description} />
-      </TableCell>
-      <TableCell className="text-center">
-        <Badge variant="outline">{category.sortOrder}</Badge>
-      </TableCell>
-      <TableCell className="text-center">
-        {/* `secondary` reads as "informational" for non-zero counts;
-            zero falls back to `outline` so the cell visually says
-            "no references → safe to delete" without a colored chip. */}
-        <Badge variant={category.postCount > 0 ? 'secondary' : 'outline'}>{category.postCount}</Badge>
-      </TableCell>
-      <TableCell className="pr-4 text-right">
-        <DropdownMenu>
-          <DropdownMenuTrigger
-            render={
-              <Button type="button" variant="ghost" size="icon" aria-label="更多操作">
-                <MoreHorizontalIcon />
-              </Button>
-            }
-          />
-          <DropdownMenuContent align="end" className="w-44">
-            <DropdownMenuItem onClick={onEdit}>
-              <EditIcon /> 编辑
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem variant="destructive" onClick={onDelete}>
-              <Trash2Icon /> 删除
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </TableCell>
-    </TableRow>
+          {category.description ? (
+            <>
+              <span>·</span>
+              <CategoryDescription description={category.description} />
+            </>
+          ) : null}
+        </p>
+      </div>
+
+      {/* Post count */}
+      <span className="hidden w-(--spacing-admin-col-narrow) shrink-0 justify-end text-(--text-admin-sm) text-muted-foreground tabular-nums md:flex">
+        {category.postCount}
+      </span>
+
+      {/* Edit CTA */}
+      <button
+        type="button"
+        onClick={onEdit}
+        className="inline-flex h-(--spacing-sidebar-item) w-(--spacing-admin-col-narrow) shrink-0 items-center justify-center rounded-md border border-border text-muted-foreground transition-colors hover:border-foreground/30 hover:text-foreground"
+        title="编辑"
+      >
+        <EditIcon className="size-4" />
+      </button>
+
+      {/* Delete */}
+      <button
+        type="button"
+        onClick={onDelete}
+        className="inline-flex h-(--spacing-sidebar-item) w-(--spacing-admin-col-narrow) shrink-0 items-center justify-center rounded-md border border-border text-muted-foreground transition-colors hover:border-destructive/30 hover:text-destructive"
+        title="删除"
+      >
+        <Trash2Icon className="size-4" />
+      </button>
+    </div>
   )
 })
 
-interface CategoryDescriptionCellProps {
+interface CategoryDescriptionProps {
   description: string
 }
 
-// Render the category description in a single truncated line; on hover or
-// keyboard focus a tooltip surfaces the full text. Empty values fall back
-// to the em-dash placeholder without a tooltip (nothing to expand).
-function CategoryDescriptionCell({ description }: CategoryDescriptionCellProps) {
-  if (!description) {
-    return <span className="text-sm text-muted-foreground">—</span>
-  }
-  // Unified `<Tooltip>` primitive so the popup matches the rest of
-  // the site (white pill + drop shadow + ::before arrow). The trigger renders as
-  // `<button type="button">` so the truncated text is reachable by
-  // keyboard without `tabIndex` on a non-interactive element
-  // (`jsx-a11y/no-noninteractive-tabindex`); native button chrome is
-  // reset so it visually matches the surrounding table cell text.
+function CategoryDescription({ description }: CategoryDescriptionProps) {
   return (
     <Tooltip placement="top">
       <Tooltip.Trigger
         as="button"
         type="button"
-        className="block w-full cursor-help truncate border-0 bg-transparent p-0 text-left text-sm text-muted-foreground hover:text-foreground focus-visible:rounded-sm focus-visible:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+        className="cursor-help truncate text-left text-(--text-admin-sm) text-muted-foreground hover:text-foreground focus-visible:rounded-sm focus-visible:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
       >
         {description}
       </Tooltip.Trigger>
@@ -185,22 +160,22 @@ function CategoryDescriptionCell({ description }: CategoryDescriptionCellProps) 
 
 export function CategoriesSkeleton() {
   return (
-    <>
-      {Array.from({ length: 4 }).map((_, i) => (
-        // Skeleton rows — identical placeholders, swapped wholesale on load.
-        // oxlint-disable-next-line react/no-array-index-key
-        <TableRow key={i}>
-          <TableCell className="pl-4">
-            <Skeleton className="h-4 w-4" />
-          </TableCell>
-          <TableCell>
-            <Skeleton className="h-10 w-20 rounded" />
-          </TableCell>
-          <TableCell colSpan={5}>
-            <Skeleton className="h-4 w-1/3" />
-          </TableCell>
-        </TableRow>
+    <div className="divide-y">
+      {Array.from({ length: 4 }, (_, i) => (
+        <Fragment key={`skeleton-${i}`}>
+          <div className="flex items-center gap-4 px-4 py-3">
+            <Skeleton className="size-6 shrink-0 rounded-sm" />
+            <Skeleton className="aspect-[16/10] w-(--spacing-admin-thumb) shrink-0 rounded-md" />
+            <div className="flex min-w-0 flex-1 flex-col gap-2">
+              <Skeleton className="h-4 w-1/3" />
+              <Skeleton className="h-3 w-1/4" />
+            </div>
+            <Skeleton className="hidden h-4 w-(--spacing-admin-col-narrow) md:block" />
+            <Skeleton className="h-(--spacing-sidebar-item) w-(--spacing-admin-col-narrow) rounded-md" />
+            <Skeleton className="h-(--spacing-sidebar-item) w-(--spacing-admin-col-narrow) rounded-md" />
+          </div>
+        </Fragment>
       ))}
-    </>
+    </div>
   )
 }

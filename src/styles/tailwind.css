@@ -446,6 +446,26 @@
   --container-2xl: 1320px;
   --container-admin: 1480px;
 
+  --size-admin-thumb: 100px;
+  --size-admin-col-narrow: 52px;
+
+  --text-admin-sm: 0.8125rem;
+  --text-admin-base: 0.9375rem;
+  --text-micro: 0.6875rem;
+  --text-nano: 0.625rem;
+
+  --ring-width: 3px;
+
+  --size-auth-input: 54px;
+  --size-auth-btn: 52px;
+  --size-editor-min: 480px;
+
+  --spacing-admin-thumb: var(--size-admin-thumb);
+  --spacing-admin-col-narrow: var(--size-admin-col-narrow);
+  --spacing-auth-input: var(--size-auth-input);
+  --spacing-auth-btn: var(--size-auth-btn);
+  --spacing-editor-min: var(--size-editor-min);
+
   --color-canvas: var(--canvas);
   --color-surface: var(--surface);
   --color-surface-dim: var(--surface-dim);

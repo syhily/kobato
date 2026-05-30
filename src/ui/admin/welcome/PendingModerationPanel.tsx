@@ -257,7 +257,7 @@ function PendingRow({ item, disabled, onApprove, onReject, onApproveDeletion, on
             </>
           )}
         </div>
-        <p className="line-clamp-2 text-[15px] leading-snug break-words text-foreground">
+        <p className="line-clamp-2 leading-snug break-words text-(--text-admin-base) text-foreground">
           {item.excerpt || '（空评论）'}
         </p>
       </div>
@@ -313,7 +313,7 @@ function EmptyState({ line }: { line: string }) {
           className="size-14 text-status-warn-fg drop-shadow-[0_2px_10px_var(--status-warn-fg)]"
         />
       </div>
-      <p className="max-w-md text-[15px] text-muted-foreground">{line}</p>
+      <p className="max-w-md text-(--text-admin-base) text-muted-foreground">{line}</p>
     </div>
   )
 }

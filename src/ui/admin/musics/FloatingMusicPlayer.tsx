@@ -164,7 +164,7 @@ export function FloatingMusicPlayer({ track, onClose }: FloatingMusicPlayerProps
         )}
         <span className="flex max-w-32 flex-col text-left leading-tight">
           <span className="truncate text-xs font-medium">{displayName}</span>
-          <span className="truncate text-[11px] text-muted-foreground">{displayArtist}</span>
+          <span className="truncate text-(--text-micro) text-muted-foreground">{displayArtist}</span>
         </span>
         <ChevronRightIcon className="size-4 -rotate-180 text-muted-foreground transition-transform group-hover:text-primary" />
       </button>

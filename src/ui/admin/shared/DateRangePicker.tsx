@@ -7,7 +7,7 @@ import { Calendar } from '@/ui/components/calendar'
 import { Popover, PopoverContent, PopoverTrigger } from '@/ui/components/popover'
 
 const TRIGGER_CLASSES =
-  'h-9 w-full justify-start gap-2 border-line bg-transparent px-3 py-2 font-normal shadow-xs transition-[color,box-shadow] data-[popup-open]:border-ring data-[popup-open]:ring-[3px] data-[popup-open]:ring-ring/50'
+  'h-9 w-full justify-start gap-2 border-line bg-transparent px-3 py-2 font-normal shadow-xs transition-[color,box-shadow] data-[popup-open]:border-ring data-[popup-open]:ring-(--ring-width) data-[popup-open]:ring-ring/50'
 
 export function parseRange(from: string, to: string): DateRange | undefined {
   const start = from ? new Date(`${from}T00:00:00`) : undefined

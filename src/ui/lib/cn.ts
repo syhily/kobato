@@ -132,7 +132,20 @@ import { extendTailwindMerge } from 'tailwind-merge'
 // consumer doesn't justify the extra registry entry.
 
 // --text-* -- font-size scale
-const TEXT_TOKENS = ['md', '2xl', 'toc-toggle', 'toc-title', 'toc-link', 'badge', 'empty-state-hero', 'btn-lg'] as const
+const TEXT_TOKENS = [
+  'admin-sm',
+  'admin-base',
+  'badge',
+  'btn-lg',
+  'empty-state-hero',
+  'md',
+  'micro',
+  'nano',
+  'toc-link',
+  'toc-title',
+  'toc-toggle',
+  '2xl',
+] as const
 
 // --color-* -- shared color scale used by text-, bg-, border-, ring-,
 // decoration-, fill-, stroke-, ... utilities. Both the project-semantic
@@ -247,12 +260,17 @@ const ANIMATE_TOKENS = ['shake', 'comments-shimmer', 'comment-flash'] as const
 // --spacing-* -- the broad spacing scale that p-, m-, gap-, top-,
 // w-, h-, ... all read from when they are given a custom token.
 const SPACING_TOKENS = [
-  'sidebar-item',
-  'search-trigger',
-  'empty-state',
+  'admin-col-narrow',
+  'admin-thumb',
+  'auth-btn',
+  'auth-input',
   'badge-overlay-y',
-  'icon-inset',
   'btn-icon-md',
+  'editor-min',
+  'empty-state',
+  'icon-inset',
+  'search-trigger',
+  'sidebar-item',
 ] as const
 
 // Note: --leading-* is intentionally NOT registered. Tailwind v4

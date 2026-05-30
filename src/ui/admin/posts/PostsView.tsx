@@ -34,7 +34,7 @@ const SORT_OPTIONS = [
 const PAGE_SIZE = 10
 
 const pill =
-  'h-9 gap-1 rounded-[5px] border-border px-3 text-[13px] font-medium shadow-none hover:bg-accent focus-visible:border-border focus-visible:ring-0 data-[popup-open]:border-border data-[popup-open]:ring-0'
+  'h-9 gap-1 rounded-(--radius) border-border px-3 text-(--text-admin-sm) font-medium shadow-none hover:bg-accent focus-visible:border-border focus-visible:ring-0 data-[popup-open]:border-border data-[popup-open]:ring-0'
 
 function buildQueryInput(state: ReturnType<typeof usePostsController>['state'], offset: number) {
   return {
@@ -291,7 +291,7 @@ export function PostsView() {
             {/* New post */}
             <Link
               to="/editor/post/new"
-              className="inline-flex h-9 items-center gap-1.5 rounded-[5px] bg-primary px-3 text-[13px] font-medium text-primary-foreground shadow-none hover:bg-primary/90"
+              className="inline-flex h-9 items-center gap-1.5 rounded-(--radius) bg-primary px-3 font-medium text-(--text-admin-sm) text-primary-foreground shadow-none hover:bg-primary/90"
             >
               <PlusIcon className="size-4" />
               新建文章

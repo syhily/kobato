@@ -26,7 +26,7 @@ function formatPostDateLabel(post: AdminPostDto): string {
 function PostStatusText({ post }: { post: AdminPostDto }) {
   if (post.deletedAt !== null) {
     return (
-      <span className="inline-flex items-center gap-1.5 text-[13px] font-medium text-destructive">
+      <span className="inline-flex items-center gap-1.5 font-medium text-(--text-admin-sm) text-destructive">
         <span className="size-1.5 rounded-full bg-destructive" />
         已删除
       </span>
@@ -34,7 +34,7 @@ function PostStatusText({ post }: { post: AdminPostDto }) {
   }
   if (!post.published) {
     return (
-      <span className="inline-flex items-center gap-1.5 text-[13px] font-medium text-pink-500">
+      <span className="inline-flex items-center gap-1.5 font-medium text-(--text-admin-sm) text-pink-500">
         <span className="size-1.5 rounded-full bg-pink-500" />
         草稿
       </span>
@@ -42,7 +42,7 @@ function PostStatusText({ post }: { post: AdminPostDto }) {
   }
   if (post.publishedRevisionId === null) {
     return (
-      <span className="inline-flex items-center gap-1.5 text-[13px] font-medium text-amber-600">
+      <span className="inline-flex items-center gap-1.5 font-medium text-(--text-admin-sm) text-amber-600">
         <span className="size-1.5 rounded-full bg-amber-600" />
         仅草稿
       </span>
@@ -50,13 +50,13 @@ function PostStatusText({ post }: { post: AdminPostDto }) {
   }
   if (!post.visible) {
     return (
-      <span className="inline-flex items-center gap-1.5 text-[13px] font-medium text-amber-600">
+      <span className="inline-flex items-center gap-1.5 font-medium text-(--text-admin-sm) text-amber-600">
         <span className="size-1.5 rounded-full bg-amber-600" />
         隐藏
       </span>
     )
   }
-  return <span className="text-[13px] text-muted-foreground">已发布</span>
+  return <span className="text-(--text-admin-sm) text-muted-foreground">已发布</span>
 }
 
 export function PostRow({ post, onFilterCategory }: PostRowProps) {
@@ -73,7 +73,7 @@ export function PostRow({ post, onFilterCategory }: PostRowProps) {
       data-deleted={isDeleted || undefined}
     >
       {/* Thumbnail */}
-      <div className="relative aspect-[16/10] w-[100px] flex-shrink-0 overflow-hidden rounded-md bg-muted">
+      <div className="relative aspect-[16/10] w-(--spacing-admin-thumb) flex-shrink-0 overflow-hidden rounded-md bg-muted">
         {post.cover ? (
           <img src={post.cover} alt="" className="size-full object-cover" loading="lazy" />
         ) : (
@@ -87,14 +87,17 @@ export function PostRow({ post, onFilterCategory }: PostRowProps) {
       <div className="min-w-0 flex-1">
         {/* Title */}
         <div className="flex items-center gap-1.5">
-          <Link to={`/editor/post/${post.id}`} className="truncate text-[15px] font-semibold hover:underline">
+          <Link
+            to={`/editor/post/${post.id}`}
+            className="truncate font-semibold text-(--text-admin-base) hover:underline"
+          >
             {post.title}
           </Link>
           {post.pinnedAt !== null && <PinIcon className="size-3.5 shrink-0 text-status-warn-fg" />}
         </div>
 
         {/* Meta */}
-        <p className="mt-0.5 truncate text-[13px] text-muted-foreground">
+        <p className="mt-0.5 truncate text-(--text-admin-sm) text-muted-foreground">
           {post.authorName || '—'} 在{' '}
           {post.category && onFilterCategory ? (
             <button
@@ -120,7 +123,7 @@ export function PostRow({ post, onFilterCategory }: PostRowProps) {
       {/* Comment count */}
       <Link
         to={`/admin/comments?pageKey=${encodeURIComponent(post.commentPublicId)}`}
-        className="hidden w-[52px] shrink-0 items-center gap-1 text-[13px] text-muted-foreground transition-colors hover:text-foreground md:flex"
+        className="hidden w-(--spacing-admin-col-narrow) shrink-0 items-center gap-1 text-(--text-admin-sm) text-muted-foreground transition-colors hover:text-foreground md:flex"
       >
         <MessageSquareIcon className="size-4" />
         <span className="tabular-nums">{post.commentCount}</span>
@@ -129,7 +132,7 @@ export function PostRow({ post, onFilterCategory }: PostRowProps) {
       {/* CTA button */}
       <Link
         to={`/editor/post/${post.id}`}
-        className="inline-flex h-[34px] w-[52px] shrink-0 items-center justify-center rounded-md border border-border text-muted-foreground transition-colors hover:border-foreground/30 hover:text-foreground"
+        className="inline-flex h-(--spacing-sidebar-item) w-(--spacing-admin-col-narrow) shrink-0 items-center justify-center rounded-md border border-border text-muted-foreground transition-colors hover:border-foreground/30 hover:text-foreground"
         title="编辑"
       >
         <FilePenIcon className="size-4" />

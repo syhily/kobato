@@ -93,7 +93,7 @@ export function SearchResultItem({
         // until `loadedmetadata` populates `duration` so
         // the operator does not seek into a NaN clip.
         <div className="flex items-center gap-2 pl-15">
-          <span className="w-9 shrink-0 text-right font-mono text-[11px] text-muted-foreground tabular-nums">
+          <span className="w-9 shrink-0 text-right font-mono text-(--text-micro) text-muted-foreground tabular-nums">
             {formatSeconds(currentTime)}
           </span>
           <div
@@ -118,7 +118,7 @@ export function SearchResultItem({
               style={{ width: `${(ratio * 100).toFixed(2)}%` }}
             />
           </div>
-          <span className="w-9 shrink-0 font-mono text-[11px] text-muted-foreground tabular-nums">
+          <span className="w-9 shrink-0 font-mono text-(--text-micro) text-muted-foreground tabular-nums">
             {formatSeconds(totalDuration)}
           </span>
         </div>

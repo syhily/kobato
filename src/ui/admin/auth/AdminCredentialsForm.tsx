@@ -9,7 +9,7 @@ import { cn } from '@/ui/lib/cn'
 
 // Shared auth input styling across login / install / reset forms.
 const inputClasses =
-  'h-[54px] rounded-lg border-0 bg-muted/50 px-4 text-xl md:text-xl placeholder:text-muted-foreground/50 focus-visible:bg-background focus-visible:ring-2 focus-visible:ring-primary/25 focus-visible:border-primary'
+  'h-(--spacing-auth-input) rounded-lg border-0 bg-muted/50 px-4 text-xl md:text-xl placeholder:text-muted-foreground/50 focus-visible:bg-background focus-visible:ring-2 focus-visible:ring-primary/25 focus-visible:border-primary'
 
 function useAuthSubmitting(): boolean {
   const navigation = useNavigation()
@@ -42,7 +42,7 @@ export function LoginForm({ action }: LoginFormProps) {
   return (
     <Form method="post" action={action} id="loginForm" className="flex w-full flex-col gap-6">
       <div className="flex w-full flex-col gap-2">
-        <Label htmlFor="loginForm-email" className="text-[15px] font-semibold">
+        <Label htmlFor="loginForm-email" className="font-semibold text-(--text-admin-base)">
           邮箱
         </Label>
         <Input
@@ -57,7 +57,7 @@ export function LoginForm({ action }: LoginFormProps) {
         />
       </div>
       <div className="flex w-full flex-col gap-2">
-        <Label htmlFor="loginForm-password" className="text-[15px] font-semibold">
+        <Label htmlFor="loginForm-password" className="font-semibold text-(--text-admin-base)">
           密码
         </Label>
         <div className="relative w-full">
@@ -86,7 +86,7 @@ export function LoginForm({ action }: LoginFormProps) {
       <Button
         type="submit"
         disabled={isSubmitting}
-        className="mt-7 h-[52px] w-full rounded-lg bg-brand text-xl font-normal text-white hover:opacity-90"
+        className="mt-7 h-(--spacing-auth-btn) w-full rounded-lg bg-brand text-xl font-normal text-white hover:opacity-90"
       >
         {isSubmitting ? (
           '登陆中...'
@@ -112,7 +112,7 @@ export function LostPasswordForm({ action }: LostPasswordFormProps) {
   return (
     <Form method="post" action={action} id="loginForm" className="flex w-full flex-col gap-6">
       <div className="flex w-full flex-col gap-2">
-        <Label htmlFor="loginForm-email" className="text-[15px] font-semibold">
+        <Label htmlFor="loginForm-email" className="font-semibold text-(--text-admin-base)">
           邮箱
         </Label>
         <Input
@@ -129,7 +129,7 @@ export function LostPasswordForm({ action }: LostPasswordFormProps) {
       <Button
         type="submit"
         disabled={isSubmitting}
-        className="mt-7 h-[52px] w-full rounded-lg bg-brand text-xl font-normal text-white hover:opacity-90"
+        className="mt-7 h-(--spacing-auth-btn) w-full rounded-lg bg-brand text-xl font-normal text-white hover:opacity-90"
       >
         {isSubmitting ? (
           '发送中...'
@@ -139,7 +139,7 @@ export function LostPasswordForm({ action }: LostPasswordFormProps) {
           </>
         )}
       </Button>
-      <p className="text-center text-[13px] text-muted-foreground">
+      <p className="text-center text-(--text-admin-sm) text-muted-foreground">
         <Link to="/admin/signin" className="transition-colors hover:text-foreground">
           返回登陆
         </Link>
@@ -163,7 +163,7 @@ export function ResetPasswordForm({ action, token }: ResetPasswordFormProps) {
     <Form method="post" action={action} id="loginForm" className="flex w-full flex-col gap-6">
       <input type="hidden" name="reset_token" value={token} />
       <div className="flex w-full flex-col gap-2">
-        <Label htmlFor="loginForm-password" className="text-[15px] font-semibold">
+        <Label htmlFor="loginForm-password" className="font-semibold text-(--text-admin-base)">
           新密码
         </Label>
         <div className="relative w-full">
@@ -186,7 +186,7 @@ export function ResetPasswordForm({ action, token }: ResetPasswordFormProps) {
       <Button
         type="submit"
         disabled={isSubmitting}
-        className="mt-7 h-[52px] w-full rounded-lg bg-brand text-xl font-normal text-white hover:opacity-90"
+        className="mt-7 h-(--spacing-auth-btn) w-full rounded-lg bg-brand text-xl font-normal text-white hover:opacity-90"
       >
         {isSubmitting ? (
           '保存中...'

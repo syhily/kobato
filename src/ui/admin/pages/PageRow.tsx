@@ -25,7 +25,7 @@ function formatPageDateLabel(page: AdminPageDto): string {
 function PageStatusText({ page }: { page: AdminPageDto }) {
   if (page.deletedAt !== null) {
     return (
-      <span className="inline-flex items-center gap-1.5 text-[13px] font-medium text-destructive">
+      <span className="inline-flex items-center gap-1.5 font-medium text-(--text-admin-sm) text-destructive">
         <span className="size-1.5 rounded-full bg-destructive" />
         已删除
       </span>
@@ -33,7 +33,7 @@ function PageStatusText({ page }: { page: AdminPageDto }) {
   }
   if (!page.published) {
     return (
-      <span className="inline-flex items-center gap-1.5 text-[13px] font-medium text-pink-500">
+      <span className="inline-flex items-center gap-1.5 font-medium text-(--text-admin-sm) text-pink-500">
         <span className="size-1.5 rounded-full bg-pink-500" />
         草稿
       </span>
@@ -41,13 +41,13 @@ function PageStatusText({ page }: { page: AdminPageDto }) {
   }
   if (page.publishedRevisionId === null) {
     return (
-      <span className="inline-flex items-center gap-1.5 text-[13px] font-medium text-amber-600">
+      <span className="inline-flex items-center gap-1.5 font-medium text-(--text-admin-sm) text-amber-600">
         <span className="size-1.5 rounded-full bg-amber-600" />
         仅草稿
       </span>
     )
   }
-  return <span className="text-[13px] text-muted-foreground">已发布</span>
+  return <span className="text-(--text-admin-sm) text-muted-foreground">已发布</span>
 }
 
 export function PageRow({ page }: PageRowProps) {
@@ -64,7 +64,7 @@ export function PageRow({ page }: PageRowProps) {
       data-deleted={isDeleted || undefined}
     >
       {/* Thumbnail */}
-      <div className="relative aspect-[16/10] w-[100px] flex-shrink-0 overflow-hidden rounded-md bg-muted">
+      <div className="relative aspect-[16/10] w-(--spacing-admin-thumb) flex-shrink-0 overflow-hidden rounded-md bg-muted">
         {page.cover ? (
           <img src={page.cover} alt="" className="size-full object-cover" loading="lazy" />
         ) : (
@@ -77,12 +77,15 @@ export function PageRow({ page }: PageRowProps) {
       {/* Content */}
       <div className="min-w-0 flex-1">
         {/* Title */}
-        <Link to={`/editor/page/${page.id}`} className="truncate text-[15px] font-semibold hover:underline">
+        <Link
+          to={`/editor/page/${page.id}`}
+          className="truncate font-semibold text-(--text-admin-base) hover:underline"
+        >
           {page.title}
         </Link>
 
         {/* Meta */}
-        <p className="mt-0.5 truncate text-[13px] text-muted-foreground">
+        <p className="mt-0.5 truncate text-(--text-admin-sm) text-muted-foreground">
           <span className="font-mono">/{page.slug}</span>
           {' · '}
           {page.authorName || '—'}
@@ -99,7 +102,7 @@ export function PageRow({ page }: PageRowProps) {
       {/* Comment count */}
       <Link
         to={`/admin/comments?pageKey=${encodeURIComponent(page.commentPublicId)}`}
-        className="hidden w-[52px] shrink-0 items-center gap-1 text-[13px] text-muted-foreground transition-colors hover:text-foreground md:flex"
+        className="hidden w-(--spacing-admin-col-narrow) shrink-0 items-center gap-1 text-(--text-admin-sm) text-muted-foreground transition-colors hover:text-foreground md:flex"
       >
         <MessageSquareIcon className="size-4" />
         <span className="tabular-nums">{page.commentCount}</span>
@@ -108,7 +111,7 @@ export function PageRow({ page }: PageRowProps) {
       {/* CTA button */}
       <Link
         to={`/editor/page/${page.id}`}
-        className="inline-flex h-[34px] w-[52px] shrink-0 items-center justify-center rounded-md border border-border text-muted-foreground transition-colors hover:border-foreground/30 hover:text-foreground"
+        className="inline-flex h-(--spacing-sidebar-item) w-(--spacing-admin-col-narrow) shrink-0 items-center justify-center rounded-md border border-border text-muted-foreground transition-colors hover:border-foreground/30 hover:text-foreground"
         title="编辑"
       >
         <FilePenIcon className="size-4" />

@@ -78,7 +78,7 @@ export function Heatmap({ data, className }: HeatmapProps) {
           })}
         </div>
       </div>
-      <div className="ml-7 flex items-center justify-between text-[10px] text-muted-foreground">
+      <div className="ml-7 flex items-center justify-between text-(--text-nano) text-muted-foreground">
         <span>0:00</span>
         <span>6:00</span>
         <span>12:00</span>
