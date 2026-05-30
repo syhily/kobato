@@ -1,12 +1,12 @@
-import { EditIcon, ExternalLinkIcon, SaveIcon, Trash2Icon, XIcon } from 'lucide-react'
+import { EditIcon, SaveIcon, Trash2Icon, XIcon } from 'lucide-react'
 import { type SubmitEventHandler, memo, useEffect, useRef, useState } from 'react'
+import { Link } from 'react-router'
 import { toast } from 'sonner'
 
 import type { AdminTagDto, UpsertTagInput } from '@/shared/types/tags'
 
 import { useMutation, orpcQuery } from '@/client/api/query'
 import { DERIVED_SLUG_PATTERN, SLUG_MAX } from '@/shared/slug'
-import { Badge } from '@/ui/components/badge'
 import { Button } from '@/ui/components/button'
 import { Input } from '@/ui/components/input'
 import { Skeleton } from '@/ui/components/skeleton'
@@ -38,28 +38,22 @@ interface TagDisplayRowProps {
 export const TagDisplayRow = memo(function TagDisplayRow({ tag, disabled, onEdit, onDelete }: TagDisplayRowProps) {
   return (
     <TableRow>
-      <TableCell>
-        <span className="font-medium">{tag.name}</span>
+      <TableCell className="py-5">
+        <span>{tag.name}</span>
       </TableCell>
-      <TableCell>
-        <a
-          href={`/tags/${tag.slug}`}
-          target="_blank"
-          rel="noreferrer"
-          className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
+      <TableCell className="py-5">
+        <span className="text-sm text-muted-foreground">{tag.slug}</span>
+      </TableCell>
+      <TableCell className="py-5">
+        <Link
+          to={`/admin/posts?tag=${encodeURIComponent(tag.name)}`}
+          className="text-sm text-muted-foreground hover:text-foreground"
         >
-          <ExternalLinkIcon className="size-3" />
-          <span className="truncate">/tags/{tag.slug}</span>
-        </a>
+          {tag.postCount} 篇
+        </Link>
       </TableCell>
-      <TableCell className="text-center">
-        {/* `secondary` reads as "informational" for non-zero counts;
-            zero falls back to `outline` so the cell visually says
-            "no references → safe to delete" without a colored chip. */}
-        <Badge variant={tag.postCount > 0 ? 'secondary' : 'outline'}>{tag.postCount}</Badge>
-      </TableCell>
-      <TableCell className="pr-4 text-right">
-        <div className="flex justify-end gap-2">
+      <TableCell className="py-5 pr-4 text-right">
+        <div className="flex justify-end gap-1">
           <Button
             type="button"
             size="sm"
@@ -94,6 +88,7 @@ interface TagEditorRowProps {
   submitLabel: string
   onCancel: () => void
   onSaved: (tag: AdminTagDto) => void
+  onDelete?: () => void
 }
 
 // Inline editor row, mounted at most twice per page (one row in
@@ -101,7 +96,7 @@ interface TagEditorRowProps {
 // Each editor mounts its own fetcher so concurrent edits across rows
 // can't collide on a shared submit channel — the same per-card
 // pattern that `BucketCard` follows in the cache settings page.
-export function TagEditorRow({ tagId, initialDraft, submitLabel, onCancel, onSaved }: TagEditorRowProps) {
+export function TagEditorRow({ tagId, initialDraft, submitLabel, onCancel, onSaved, onDelete }: TagEditorRowProps) {
   const [draft, setDraft] = useState<TagDraft>(initialDraft)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const nameInputRef = useRef<HTMLInputElement>(null)
@@ -197,6 +192,18 @@ export function TagEditorRow({ tagId, initialDraft, submitLabel, onCancel, onSav
             <Button type="button" size="sm" variant="ghost" onClick={onCancel} disabled={isPending}>
               <XIcon data-icon /> 取消
             </Button>
+            {onDelete ? (
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                className="text-destructive hover:text-destructive"
+                onClick={onDelete}
+                disabled={isPending}
+              >
+                <Trash2Icon data-icon /> 删除
+              </Button>
+            ) : null}
             <Button type="submit" size="sm" disabled={isPending || localError !== null}>
               <SaveIcon data-icon /> {isPending ? '保存中…' : submitLabel}
             </Button>
@@ -215,7 +222,7 @@ export function TagsSkeleton() {
         // Skeleton rows — identical placeholders, swapped wholesale on load.
         // oxlint-disable-next-line react/no-array-index-key
         <TableRow key={i}>
-          <TableCell colSpan={4}>
+          <TableCell className="py-5" colSpan={4}>
             <Skeleton className="h-4 w-1/3" />
           </TableCell>
         </TableRow>

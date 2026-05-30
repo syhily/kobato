@@ -1,5 +1,8 @@
-import { PlusIcon, RefreshCwIcon, SearchIcon } from 'lucide-react'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { LoaderIcon, PlusIcon, SearchIcon } from 'lucide-react'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { toast } from 'sonner'
+
+import type { AdminTagDto } from '@/shared/types/tags'
 
 import { orpc } from '@/client/api/client'
 import { orpcQuery, useMutation, useQuery } from '@/client/api/query'
@@ -9,21 +12,10 @@ import { useDebouncedSearch } from '@/ui/admin/shared/useDebouncedSearch'
 import { draftFromTag, EMPTY_TAG_DRAFT, TagDisplayRow, TagEditorRow, TagsSkeleton } from '@/ui/admin/tags/TagRows'
 import { useTagsController } from '@/ui/admin/tags/useTagsController'
 import { Button } from '@/ui/components/button'
-import { Card } from '@/ui/components/card'
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@/ui/components/empty'
-import { InputGroup, InputGroupAddon, InputGroupInput } from '@/ui/components/input-group'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/components/select'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/ui/components/table'
 
-// Same step ladder the comment moderation table uses, so the two
-// admin list pages feel identical when an editor jumps between them.
-// 10 is the default (set in `useTagsController`) — matches the
-// comment moderation default and keeps the initial render small
-// even on a ~300-tag corpus.
-const PAGE_SIZE_OPTIONS: { value: string; label: string }[] = [10, 20, 50, 100].map((n) => ({
-  value: String(n),
-  label: `${n} 条`,
-}))
+const PAGE_SIZE = 30
 
 // Tags admin page orchestrator. Owns fetcher state, the
 // edit / create row toggle, and the soft-delete confirmation flow.
@@ -38,13 +30,13 @@ export function TagsView() {
   const {
     data: listData,
     isPending: isListPending,
-    refetch,
+    error: listError,
   } = useQuery(
     orpcQuery.admin.tags.list.queryOptions({
       input: {
         q: state.q || undefined,
-        offset: state.currentPage * state.pageSize,
-        limit: state.pageSize,
+        offset: 0,
+        limit: PAGE_SIZE,
       },
     }),
   )
@@ -60,9 +52,59 @@ export function TagsView() {
     }
   }, [listData, dispatch])
 
-  const reload = useCallback(() => {
-    void refetch()
-  }, [refetch])
+  useEffect(() => {
+    if (listError) {
+      toast.error('加载标签列表失败', { description: listError.message })
+    }
+  }, [listError])
+
+  // --- Infinite scroll: load more ---
+  const [loadingMore, setLoadingMore] = useState(false)
+  const sentinelRef = useRef<HTMLDivElement>(null)
+  const hasMore = state.hasMore
+
+  const loadMore = useCallback(async () => {
+    if (loadingMore || !hasMore) {
+      return
+    }
+    setLoadingMore(true)
+    try {
+      const result = await orpc.admin.tags.list({
+        q: state.q || undefined,
+        offset: state.rows.length,
+        limit: PAGE_SIZE,
+      })
+      dispatch({
+        type: 'appended',
+        rows: result.tags,
+        total: result.total,
+        hasMore: result.hasMore,
+      })
+    } catch (err) {
+      toast.error('加载更多标签失败', {
+        description: err instanceof Error ? err.message : String(err),
+      })
+    } finally {
+      setLoadingMore(false)
+    }
+  }, [loadingMore, hasMore, state.q, state.rows.length, dispatch])
+
+  useEffect(() => {
+    const el = sentinelRef.current
+    if (!el || !hasMore) {
+      return
+    }
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) {
+          void loadMore()
+        }
+      },
+      { rootMargin: '200px' },
+    )
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [loadMore, hasMore])
 
   // The fetcher hook's success callback doesn't receive the original
   // request payload, so latch the in-flight delete id into a ref. Once
@@ -80,6 +122,8 @@ export function TagsView() {
       if (id) {
         dispatch({ type: 'removeTag', id })
       }
+      // Close the inline editor when the tag being edited is deleted.
+      setEditingId(null)
     },
     onError: (error) => {
       pendingDeleteIdRef.current = null
@@ -99,7 +143,6 @@ export function TagsView() {
   })
 
   const isLoading = isListPending && state.rows.length === 0
-  const totalPages = useMemo(() => Math.max(1, Math.ceil(state.total / state.pageSize)), [state.total, state.pageSize])
 
   const handleStartEdit = useCallback((id: string) => {
     setIsCreating(false)
@@ -119,151 +162,132 @@ export function TagsView() {
     setIsCreating(false)
   }, [])
 
+  const handleDelete = useCallback(
+    (row: AdminTagDto) => {
+      setConfirm({
+        title: `删除标签「${row.name}」？`,
+        description:
+          '此操作会从数据库直接删除该标签。如果仍有文章引用此标签，删除将被阻止；请先在 MDX frontmatter 中改写后再删除。',
+        actionLabel: '删除',
+        destructive: true,
+        onConfirm: () => {
+          pendingDeleteIdRef.current = row.id
+          deleteApi.mutate(row.id)
+        },
+      })
+    },
+    [deleteApi],
+  )
+
   return (
     <>
       <AdminListPage>
         <AdminListPage.Header
-          title="标签管理"
-          description={`共 ${state.total} 个标签。MDX 文章 frontmatter 中的 tags 字段引用这些名称。`}
+          title={
+            <>
+              标签管理 <span className="text-sm font-normal text-muted-foreground">{state.total}</span>
+            </>
+          }
         >
-          <Button type="button" variant="outline" className="border-ink-4" onClick={reload} disabled={isListPending}>
-            <RefreshCwIcon /> 刷新
-          </Button>
-          <Button type="button" onClick={handleStartCreate} disabled={isCreating}>
-            <PlusIcon /> 新增标签
-          </Button>
+          <div className="flex items-center gap-3">
+            <div className="relative w-56">
+              <SearchIcon className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+              <input
+                type="search"
+                value={qInput}
+                onChange={(e) => setQInput(e.target.value)}
+                placeholder="搜索名称或 slug…"
+                aria-label="搜索标签"
+                className="h-9 w-full rounded-md border border-input bg-transparent py-1 pr-3 pl-9 text-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+              />
+            </div>
+            <Button type="button" onClick={handleStartCreate} disabled={isCreating}>
+              <PlusIcon /> 新增标签
+            </Button>
+          </div>
         </AdminListPage.Header>
 
-        <AdminListPage.Toolbar>
-          {/*
-           * 3-col grid mirroring the comment moderation toolbar: the
-           * search input occupies cols 1-2 (it's the only filter that
-           * regularly needs the extra width on narrow viewports), and
-           * the per-page selector sits on the right so admins can
-           * tune the page size without scrolling.
-           */}
-          <div className="grid gap-3 sm:grid-cols-3">
-            <div className="sm:col-span-2">
-              <AdminListPage.FilterField label="搜索（名称 / slug）">
-                <InputGroup>
-                  <InputGroupAddon>
-                    <SearchIcon />
-                  </InputGroupAddon>
-                  <InputGroupInput
-                    type="search"
-                    value={qInput}
-                    onChange={(e) => setQInput(e.target.value)}
-                    placeholder="输入名称或 URL slug 关键字"
-                  />
-                </InputGroup>
-              </AdminListPage.FilterField>
-            </div>
-            <AdminListPage.FilterField label="每页显示">
-              <Select
-                items={PAGE_SIZE_OPTIONS}
-                value={String(state.pageSize)}
-                onValueChange={(value) => dispatch({ type: 'setPageSize', value: Number.parseInt(value ?? '10', 10) })}
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {PAGE_SIZE_OPTIONS.map((item) => (
-                    <SelectItem key={item.value} value={item.value}>
-                      {item.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </AdminListPage.FilterField>
-          </div>
-        </AdminListPage.Toolbar>
-
         <AdminListPage.Body>
-          <Card className="overflow-hidden p-0">
-            <Table>
-              <TableHeader>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-[28%]">名称</TableHead>
+                <TableHead>Slug</TableHead>
+                <TableHead className="w-24">文章</TableHead>
+                <TableHead className="w-[60px] pr-4 text-right" />
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {isCreating ? (
+                <TagEditorRow
+                  initialDraft={EMPTY_TAG_DRAFT}
+                  submitLabel="创建"
+                  onCancel={handleStopCreate}
+                  onSaved={(saved) => {
+                    dispatch({ type: 'prependTag', tag: saved })
+                    handleStopCreate()
+                  }}
+                />
+              ) : null}
+              {isLoading ? (
+                <TagsSkeleton />
+              ) : state.rows.length === 0 && !isCreating ? (
                 <TableRow>
-                  <TableHead className="w-[28%]">名称</TableHead>
-                  <TableHead>URL slug</TableHead>
-                  <TableHead className="w-20 text-center">文章</TableHead>
-                  <TableHead className="w-[120px] pr-4 text-right">操作</TableHead>
+                  <TableCell colSpan={4} className="p-0">
+                    <Empty className="border-0">
+                      <EmptyHeader>
+                        <EmptyMedia variant="icon">
+                          <SearchIcon />
+                        </EmptyMedia>
+                        <EmptyTitle>未找到标签</EmptyTitle>
+                      </EmptyHeader>
+                    </Empty>
+                  </TableCell>
                 </TableRow>
-              </TableHeader>
-              <TableBody>
-                {isCreating ? (
-                  <TagEditorRow
-                    initialDraft={EMPTY_TAG_DRAFT}
-                    submitLabel="创建"
-                    onCancel={handleStopCreate}
-                    onSaved={(saved) => {
-                      dispatch({ type: 'prependTag', tag: saved })
-                      handleStopCreate()
-                    }}
-                  />
-                ) : null}
-                {isLoading ? (
-                  <TagsSkeleton />
-                ) : state.rows.length === 0 && !isCreating ? (
-                  <TableRow>
-                    <TableCell colSpan={4} className="p-0">
-                      <Empty className="border-0">
-                        <EmptyHeader>
-                          <EmptyMedia variant="icon">
-                            <SearchIcon />
-                          </EmptyMedia>
-                          <EmptyTitle>未找到标签</EmptyTitle>
-                        </EmptyHeader>
-                      </Empty>
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  state.rows.map((row) =>
-                    editingId === row.id ? (
-                      <TagEditorRow
-                        key={row.id}
-                        tagId={row.id}
-                        initialDraft={draftFromTag(row)}
-                        submitLabel="保存"
-                        onCancel={handleStopEdit}
-                        onSaved={(saved) => {
-                          dispatch({ type: 'patchTag', tag: saved })
-                          handleStopEdit()
-                        }}
-                      />
-                    ) : (
-                      <TagDisplayRow
-                        key={row.id}
-                        tag={row}
-                        disabled={isCreating || editingId !== null}
-                        onEdit={() => handleStartEdit(row.id)}
-                        onDelete={() =>
-                          setConfirm({
-                            title: `删除标签「${row.name}」？`,
-                            description:
-                              '此操作会从数据库直接删除该标签。如果仍有文章引用此标签，删除将被阻止；请先在 MDX frontmatter 中改写后再删除。',
-                            actionLabel: '删除',
-                            destructive: true,
-                            onConfirm: () => {
-                              pendingDeleteIdRef.current = row.id
-                              deleteApi.mutate(row.id)
-                            },
-                          })
-                        }
-                      />
-                    ),
-                  )
-                )}
-              </TableBody>
-            </Table>
-          </Card>
-        </AdminListPage.Body>
+              ) : (
+                state.rows.map((row) =>
+                  editingId === row.id ? (
+                    <TagEditorRow
+                      key={row.id}
+                      tagId={row.id}
+                      initialDraft={draftFromTag(row)}
+                      submitLabel="保存"
+                      onCancel={handleStopEdit}
+                      onSaved={(saved) => {
+                        dispatch({ type: 'patchTag', tag: saved })
+                        handleStopEdit()
+                      }}
+                      onDelete={() => handleDelete(row)}
+                    />
+                  ) : (
+                    <TagDisplayRow
+                      key={row.id}
+                      tag={row}
+                      disabled={isCreating || editingId !== null}
+                      onEdit={() => handleStartEdit(row.id)}
+                      onDelete={() => handleDelete(row)}
+                    />
+                  ),
+                )
+              )}
+            </TableBody>
+          </Table>
 
-        <AdminListPage.PageNavigation
-          totalPages={totalPages}
-          currentPage={state.currentPage}
-          onChange={(page) => dispatch({ type: 'setCurrentPage', value: page })}
-        />
+          {/* Sentinel for infinite scroll */}
+          {hasMore && <div ref={sentinelRef} className="h-1" />}
+
+          {/* Bottom status */}
+          <div className="py-6 text-center text-sm text-muted-foreground">
+            {loadingMore ? (
+              <span className="inline-flex items-center gap-2">
+                <LoaderIcon className="size-4 animate-spin" />
+                加载中…
+              </span>
+            ) : !hasMore && state.rows.length > 0 ? (
+              '已加载全部标签'
+            ) : null}
+          </div>
+        </AdminListPage.Body>
       </AdminListPage>
 
       <ConfirmDialog state={confirm} onClose={() => setConfirm(null)} />

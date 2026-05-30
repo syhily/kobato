@@ -1,5 +1,6 @@
 import { EditIcon, ExternalLinkIcon, GripVerticalIcon, Trash2Icon } from 'lucide-react'
 import { type DragEvent, Fragment, memo } from 'react'
+import { Link } from 'react-router'
 
 import type { AdminCategoryDto } from '@/shared/types/categories'
 
@@ -112,9 +113,12 @@ export const CategoryRow = memo(function CategoryRow({
       </div>
 
       {/* Post count */}
-      <span className="hidden w-(--spacing-admin-col-narrow) shrink-0 justify-end text-(--text-admin-sm) text-muted-foreground tabular-nums md:flex">
-        {category.postCount}
-      </span>
+      <Link
+        to={`/admin/posts?category=${encodeURIComponent(category.name)}`}
+        className="hidden w-(--spacing-admin-col-narrow) shrink-0 justify-end text-(--text-admin-sm) text-muted-foreground tabular-nums hover:text-foreground md:flex"
+      >
+        {category.postCount} 篇
+      </Link>
 
       {/* Edit CTA */}
       <button

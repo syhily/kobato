@@ -13,6 +13,14 @@ function getInitialStatusFromSearch(search: string): PostStatusFilter {
   return 'all'
 }
 
+function getInitialTagFromSearch(search: string): string {
+  return new URLSearchParams(search).get('tag') ?? ''
+}
+
+function getInitialCategoryFromSearch(search: string): string {
+  return new URLSearchParams(search).get('category') ?? ''
+}
+
 interface PostsState {
   rows: AdminPostDto[]
   total: number
@@ -113,6 +121,8 @@ function postsReducer(state: PostsState, action: PostsAction): PostsState {
 export function usePostsController() {
   const { search } = useLocation()
   const initialStatus = getInitialStatusFromSearch(search)
+  const initialTag = getInitialTagFromSearch(search)
+  const initialCategory = getInitialCategoryFromSearch(search)
 
   const derived = deriveStatusFields(initialStatus)
 
@@ -125,8 +135,8 @@ export function usePostsController() {
     status: initialStatus,
     published: derived.published,
     visible: derived.visible,
-    category: '',
-    tag: '',
+    category: initialCategory,
+    tag: initialTag,
     authorId: '',
     sortBy: 'publishedAt',
     sortOrder: 'desc',
@@ -135,10 +145,30 @@ export function usePostsController() {
   const statusRef = useRef(state.status)
   statusRef.current = state.status
 
+  const tagRef = useRef(state.tag)
+  tagRef.current = state.tag
+
+  const categoryRef = useRef(state.category)
+  categoryRef.current = state.category
+
   useEffect(() => {
     const urlStatus = getInitialStatusFromSearch(search)
     if (urlStatus !== statusRef.current) {
       dispatch({ type: 'setStatus', value: urlStatus })
+    }
+  }, [search])
+
+  useEffect(() => {
+    const urlTag = getInitialTagFromSearch(search)
+    if (urlTag !== tagRef.current) {
+      dispatch({ type: 'setTag', value: urlTag })
+    }
+  }, [search])
+
+  useEffect(() => {
+    const urlCategory = getInitialCategoryFromSearch(search)
+    if (urlCategory !== categoryRef.current) {
+      dispatch({ type: 'setCategory', value: urlCategory })
     }
   }, [search])
 
