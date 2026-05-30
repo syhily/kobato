@@ -587,7 +587,7 @@
   --spacing-toc-disc-open: 50px;
   --spacing-toc-disc-open-hover: 64px;
   --spacing-toc-drawer: 280px;
-  --spacing-toc-drawer-edge: 48px;
+  --spacing-toc-drawer-edge: 280px;
   --spacing-toc-toggle-edge-open: 25px;
 
   /* Header / chrome spacing tokens */
