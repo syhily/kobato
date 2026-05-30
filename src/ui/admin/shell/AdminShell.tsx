@@ -114,7 +114,7 @@ export function AdminShell({ currentUser, siteTitle, pendingCommentCount, userCo
               <div
                 className={cn(
                   focused && 'flex min-h-0 flex-1 flex-col',
-                  focused ? 'w-full p-2 lg:p-4' : 'mx-auto w-full max-w-7xl p-4 lg:p-6',
+                  focused ? 'w-full p-2 lg:p-4' : 'mx-auto w-full max-w-(--container-admin) p-4 lg:p-6',
                 )}
               >
                 {children}

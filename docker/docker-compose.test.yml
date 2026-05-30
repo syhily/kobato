@@ -1,3 +1,5 @@
+name: kobato-test
+
 services:
   postgres-test:
     image: timescale/timescaledb-ha:pg17

@@ -1,19 +1,50 @@
 import type { AdminPostDto } from '@/shared/types/posts'
 
-import { Badge } from '@/ui/components/badge'
+interface StatusBadgeProps {
+  post: AdminPostDto
+}
 
-export function StatusBadge({ post }: { post: AdminPostDto }) {
+export function StatusBadge({ post }: StatusBadgeProps) {
   if (post.deletedAt !== null) {
-    return <Badge variant="destructive">已删除</Badge>
+    return (
+      <span className="inline-flex items-center gap-1.5 text-[13px] font-medium text-destructive">
+        <span className="size-1.5 rounded-full bg-destructive" />
+        已删除
+      </span>
+    )
   }
+
   if (!post.published) {
-    return <Badge variant="secondary">未发布</Badge>
+    return (
+      <span className="inline-flex items-center gap-1.5 text-[13px] font-medium text-pink-500">
+        <span className="size-1.5 rounded-full bg-pink-500" />
+        草稿
+      </span>
+    )
   }
+
   if (post.publishedRevisionId === null) {
-    return <Badge variant="outline">仅草稿</Badge>
+    return (
+      <span className="inline-flex items-center gap-1.5 text-[13px] font-medium text-amber-600">
+        <span className="size-1.5 rounded-full bg-amber-600" />
+        仅草稿
+      </span>
+    )
   }
+
   if (!post.visible) {
-    return <Badge variant="outline">隐藏</Badge>
+    return (
+      <span className="inline-flex items-center gap-1.5 text-[13px] font-medium text-amber-600">
+        <span className="size-1.5 rounded-full bg-amber-600" />
+        隐藏
+      </span>
+    )
   }
-  return <Badge>已发布</Badge>
+
+  return (
+    <span className="inline-flex items-center gap-1.5 text-[13px] font-medium text-green-600">
+      <span className="size-1.5 rounded-full bg-green-600" />
+      已发布
+    </span>
+  )
 }

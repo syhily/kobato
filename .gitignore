@@ -28,9 +28,8 @@ coverage/
 # scratch / probe scripts (e.g. tmp/meting-probe.mjs)
 tmp/
 
-# MaxMind GeoLite2 binaries — license forbids redistribution. The
-# analytics pipeline reads the path from MAXMIND_DB_PATH at runtime.
-data/maxmind/*.mmdb
+# Local data directory
+data/
 
 # environment variables
 .env

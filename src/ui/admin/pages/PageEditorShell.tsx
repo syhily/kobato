@@ -9,13 +9,18 @@ import {
   PanelRightOpenIcon,
   SaveIcon,
   SlidersHorizontalIcon,
+  Trash2Icon,
+  Undo2Icon,
   UploadIcon,
 } from 'lucide-react'
-import { Link } from 'react-router'
+import { useState } from 'react'
+import { Link, useNavigate } from 'react-router'
+import { toast } from 'sonner'
 
 import type { AdminPageDetailDto, AdminPageDto, UpsertPageMetaInput } from '@/shared/types/pages'
 
 import { orpc } from '@/client/api/client'
+import { useMutation } from '@/client/api/query'
 import { useCreatePageDraft } from '@/client/hooks/use-create-page-draft'
 import { usePageLocalDraft } from '@/client/hooks/use-page-local-draft'
 import { ActionBanner } from '@/ui/admin/editor-shell/ActionBanner'
@@ -32,6 +37,7 @@ import {
   MetaSidebar,
   type PageMetaDraft,
 } from '@/ui/admin/pages/MetaSidebar'
+import { type ConfirmState, ConfirmDialog } from '@/ui/admin/shared/ConfirmDialog'
 import { Button } from '@/ui/components/button'
 import { Input } from '@/ui/components/input'
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/ui/components/sheet'
@@ -79,6 +85,62 @@ function buildPageUpsertPayload({
   }
 }
 
+function usePageDeleteRestore(detail: AdminPageDetailDto | undefined) {
+  const navigate = useNavigate()
+  const [confirm, setConfirm] = useState<ConfirmState | null>(null)
+
+  const page = detail?.page
+
+  const deleteApi = useMutation({
+    mutationFn: (id: string) => orpc.admin.pages.delete({ id }),
+    onSuccess: () => {
+      toast.success('页面已删除')
+      void navigate('/admin/pages')
+    },
+    onError: (error) => {
+      setConfirm({
+        title: '删除失败',
+        description: error.message,
+        actionLabel: '我知道了',
+        destructive: false,
+        onConfirm: () => undefined,
+      })
+    },
+  })
+
+  const restoreApi = useMutation({
+    mutationFn: (id: string) => orpc.admin.pages.restore({ id }),
+    onSuccess: () => {
+      toast.success('页面已恢复')
+      void navigate(0)
+    },
+    onError: (error) => {
+      setConfirm({
+        title: '恢复失败',
+        description: error.message,
+        actionLabel: '我知道了',
+        destructive: false,
+        onConfirm: () => undefined,
+      })
+    },
+  })
+
+  const handleDelete = page
+    ? () =>
+        setConfirm({
+          title: `删除页面「${page.title}」？`,
+          description: '页面会被软删除（30 天内可恢复）。已发布的链接将立即返回 404。',
+          actionLabel: '删除',
+          destructive: true,
+          onConfirm: () => deleteApi.mutate(page.id),
+        })
+    : undefined
+
+  const handleRestore = page ? () => restoreApi.mutate(page.id) : undefined
+
+  return { confirm, setConfirm, handleDelete, handleRestore }
+}
+
 // Top-level orchestrator for the page authoring screen. All shared
 // state lives in `useEditorShellState`; this Shell wires the
 // entity-specific mutations + LS hooks + sidebar component and
@@ -87,6 +149,7 @@ export function PageEditorShell({ mode, detail, navigate }: PageEditorShellProps
   // Local narrowing flag so TS knows `detail` is defined in the
   // `isEditing` JSX branches below.
   const isEditing = mode === 'edit' && detail !== undefined
+  const { confirm, setConfirm, handleDelete, handleRestore } = usePageDeleteRestore(isEditing ? detail : undefined)
 
   // --- Shared state hook ---------------------------------------------------
   // The hook owns `useMutation()` internally — Shell only provides
@@ -322,15 +385,40 @@ export function PageEditorShell({ mode, detail, navigate }: PageEditorShellProps
               saveStatus={state.sidebarSaveStatus}
               extras={
                 isEditing ? (
-                  <div className="rounded-md border bg-card p-2">
-                    <RevisionHistoryDrawer
-                      type="page"
-                      ownerId={detail.page.id}
-                      currentToken={state.expectedToken}
-                      currentBody={state.body}
-                      onAdoptRevision={state.adoptRevisionFromHistory}
-                    />
-                  </div>
+                  <>
+                    <div className="rounded-md border bg-card p-2">
+                      <RevisionHistoryDrawer
+                        type="page"
+                        ownerId={detail.page.id}
+                        currentToken={state.expectedToken}
+                        currentBody={state.body}
+                        onAdoptRevision={state.adoptRevisionFromHistory}
+                      />
+                    </div>
+                    <div className="group/delete rounded-md border border-destructive/30 p-2 transition-colors hover:bg-destructive">
+                      {detail.page.deletedAt !== null ? (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="w-full justify-start text-destructive group-hover/delete:text-white hover:bg-transparent hover:text-white"
+                          type="button"
+                          onClick={handleRestore}
+                        >
+                          <Undo2Icon /> 恢复页面
+                        </Button>
+                      ) : (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="w-full justify-start text-destructive group-hover/delete:text-white hover:bg-transparent hover:text-white"
+                          type="button"
+                          onClick={handleDelete}
+                        >
+                          <Trash2Icon /> 删除页面
+                        </Button>
+                      )}
+                    </div>
+                  </>
                 ) : null
               }
             />
@@ -355,15 +443,40 @@ export function PageEditorShell({ mode, detail, navigate }: PageEditorShellProps
                 saveStatus={state.sidebarSaveStatus}
                 extras={
                   isEditing ? (
-                    <div className="rounded-md border bg-card p-2">
-                      <RevisionHistoryDrawer
-                        type="page"
-                        ownerId={detail.page.id}
-                        currentToken={state.expectedToken}
-                        currentBody={state.body}
-                        onAdoptRevision={state.adoptRevisionFromHistory}
-                      />
-                    </div>
+                    <>
+                      <div className="rounded-md border bg-card p-2">
+                        <RevisionHistoryDrawer
+                          type="page"
+                          ownerId={detail.page.id}
+                          currentToken={state.expectedToken}
+                          currentBody={state.body}
+                          onAdoptRevision={state.adoptRevisionFromHistory}
+                        />
+                      </div>
+                      <div className="group/delete rounded-md border border-destructive/30 p-2 transition-colors hover:bg-destructive">
+                        {detail.page.deletedAt !== null ? (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="w-full justify-start text-destructive group-hover/delete:text-white hover:bg-transparent hover:text-white"
+                            type="button"
+                            onClick={handleRestore}
+                          >
+                            <Undo2Icon /> 恢复页面
+                          </Button>
+                        ) : (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="w-full justify-start text-destructive group-hover/delete:text-white hover:bg-transparent hover:text-white"
+                            type="button"
+                            onClick={handleDelete}
+                          >
+                            <Trash2Icon /> 删除页面
+                          </Button>
+                        )}
+                      </div>
+                    </>
                   ) : null
                 }
               />
@@ -371,6 +484,7 @@ export function PageEditorShell({ mode, detail, navigate }: PageEditorShellProps
           </SheetContent>
         </Sheet>
       ) : null}
+      <ConfirmDialog state={confirm} onClose={() => setConfirm(null)} />
       {state.conflict !== null && isEditing ? (
         <DraftConflictDialog
           open={true}

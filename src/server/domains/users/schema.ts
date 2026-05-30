@@ -29,6 +29,10 @@ export const listUsersSchema = z.object({
     .enum(['true', 'false'])
     .transform((value) => value === 'true')
     .optional(),
+  hasPages: z
+    .enum(['true', 'false'])
+    .transform((value) => value === 'true')
+    .optional(),
 })
 
 export const userIdSchema = z.object({

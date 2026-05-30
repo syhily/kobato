@@ -1,17 +1,16 @@
-import { FilePenIcon, ImageIcon, MessageSquareIcon, PinIcon } from 'lucide-react'
+import { FilePenIcon, ImageIcon, MessageSquareIcon } from 'lucide-react'
 import { Link } from 'react-router'
 
-import type { AdminPostDto } from '@/shared/types/posts'
+import type { AdminPageDto } from '@/shared/types/pages'
 
 import { cn } from '@/ui/lib/cn'
 
-interface PostRowProps {
-  post: AdminPostDto
-  onFilterCategory?: (category: string) => void
+interface PageRowProps {
+  page: AdminPageDto
 }
 
-function formatPostDate(post: AdminPostDto): string {
-  const date = post.published ? new Date(post.firstPublishedAt ?? post.publishedAt) : new Date(post.updatedAt)
+function formatPageDate(page: AdminPageDto): string {
+  const date = page.published ? new Date(page.publishedAt) : new Date(page.updatedAt)
   return date.toLocaleDateString('zh-CN', {
     year: 'numeric',
     month: 'short',
@@ -19,12 +18,12 @@ function formatPostDate(post: AdminPostDto): string {
   })
 }
 
-function formatPostDateLabel(post: AdminPostDto): string {
-  return post.published ? '发布于' : '更新于'
+function formatPageDateLabel(page: AdminPageDto): string {
+  return page.published ? '发布于' : '更新于'
 }
 
-function PostStatusText({ post }: { post: AdminPostDto }) {
-  if (post.deletedAt !== null) {
+function PageStatusText({ page }: { page: AdminPageDto }) {
+  if (page.deletedAt !== null) {
     return (
       <span className="inline-flex items-center gap-1.5 text-[13px] font-medium text-destructive">
         <span className="size-1.5 rounded-full bg-destructive" />
@@ -32,7 +31,7 @@ function PostStatusText({ post }: { post: AdminPostDto }) {
       </span>
     )
   }
-  if (!post.published) {
+  if (!page.published) {
     return (
       <span className="inline-flex items-center gap-1.5 text-[13px] font-medium text-pink-500">
         <span className="size-1.5 rounded-full bg-pink-500" />
@@ -40,7 +39,7 @@ function PostStatusText({ post }: { post: AdminPostDto }) {
       </span>
     )
   }
-  if (post.publishedRevisionId === null) {
+  if (page.publishedRevisionId === null) {
     return (
       <span className="inline-flex items-center gap-1.5 text-[13px] font-medium text-amber-600">
         <span className="size-1.5 rounded-full bg-amber-600" />
@@ -48,21 +47,13 @@ function PostStatusText({ post }: { post: AdminPostDto }) {
       </span>
     )
   }
-  if (!post.visible) {
-    return (
-      <span className="inline-flex items-center gap-1.5 text-[13px] font-medium text-amber-600">
-        <span className="size-1.5 rounded-full bg-amber-600" />
-        隐藏
-      </span>
-    )
-  }
   return <span className="text-[13px] text-muted-foreground">已发布</span>
 }
 
-export function PostRow({ post, onFilterCategory }: PostRowProps) {
-  const isDeleted = post.deletedAt !== null
+export function PageRow({ page }: PageRowProps) {
+  const isDeleted = page.deletedAt !== null
 
-  const dateText = `${formatPostDateLabel(post)} ${formatPostDate(post)}`
+  const dateText = `${formatPageDateLabel(page)} ${formatPageDate(page)}`
 
   return (
     <div
@@ -74,8 +65,8 @@ export function PostRow({ post, onFilterCategory }: PostRowProps) {
     >
       {/* Thumbnail */}
       <div className="relative aspect-[16/10] w-[100px] flex-shrink-0 overflow-hidden rounded-md bg-muted">
-        {post.cover ? (
-          <img src={post.cover} alt="" className="size-full object-cover" loading="lazy" />
+        {page.cover ? (
+          <img src={page.cover} alt="" className="size-full object-cover" loading="lazy" />
         ) : (
           <div className="flex size-full items-center justify-center text-muted-foreground">
             <ImageIcon className="size-5" />
@@ -86,49 +77,37 @@ export function PostRow({ post, onFilterCategory }: PostRowProps) {
       {/* Content */}
       <div className="min-w-0 flex-1">
         {/* Title */}
-        <div className="flex items-center gap-1.5">
-          <Link to={`/editor/post/${post.id}`} className="truncate text-[15px] font-semibold hover:underline">
-            {post.title}
-          </Link>
-          {post.pinnedAt !== null && <PinIcon className="size-3.5 shrink-0 text-status-warn-fg" />}
-        </div>
+        <Link to={`/editor/page/${page.id}`} className="truncate text-[15px] font-semibold hover:underline">
+          {page.title}
+        </Link>
 
         {/* Meta */}
         <p className="mt-0.5 truncate text-[13px] text-muted-foreground">
-          {post.authorName || '—'} 在{' '}
-          {post.category && onFilterCategory ? (
-            <button
-              type="button"
-              onClick={() => onFilterCategory(post.category!)}
-              className="hover:text-foreground hover:underline"
-            >
-              {post.category}
-            </button>
-          ) : (
-            post.category || '无分类'
-          )}
+          <span className="font-mono">/{page.slug}</span>
+          {' · '}
+          {page.authorName || '—'}
           {' · '}
           {dateText}
         </p>
 
         {/* Status */}
         <div className="mt-1">
-          <PostStatusText post={post} />
+          <PageStatusText page={page} />
         </div>
       </div>
 
       {/* Comment count */}
       <Link
-        to={`/admin/comments?pageKey=${encodeURIComponent(post.commentPublicId)}`}
+        to={`/admin/comments?pageKey=${encodeURIComponent(page.commentPublicId)}`}
         className="hidden w-[52px] shrink-0 items-center gap-1 text-[13px] text-muted-foreground transition-colors hover:text-foreground md:flex"
       >
         <MessageSquareIcon className="size-4" />
-        <span className="tabular-nums">{post.commentCount}</span>
+        <span className="tabular-nums">{page.commentCount}</span>
       </Link>
 
       {/* CTA button */}
       <Link
-        to={`/editor/post/${post.id}`}
+        to={`/editor/page/${page.id}`}
         className="inline-flex h-[34px] w-[52px] shrink-0 items-center justify-center rounded-md border border-border text-muted-foreground transition-colors hover:border-foreground/30 hover:text-foreground"
         title="编辑"
       >

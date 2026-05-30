@@ -1,4 +1,6 @@
 import { type ReactNode } from 'react'
+// Allow title to be a ReactNode so callers can compose inline elements
+// (e.g. a count badge next to the heading text).
 
 import { AdminPagination } from '@/ui/admin/shared/AdminPagination'
 import { Card, CardContent } from '@/ui/components/card'
@@ -50,7 +52,7 @@ function AdminListPageRoot({ children }: { children: ReactNode }) {
 }
 
 interface HeaderProps {
-  title: string
+  title: ReactNode
   description?: string
   /**
    * Trailing slot rendered to the right of the title block on desktop,
@@ -63,12 +65,12 @@ interface HeaderProps {
 
 function AdminListPageHeader({ title, description, children }: HeaderProps) {
   return (
-    <header className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+    <header className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-start sm:justify-between">
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
         {description ? <p className="text-sm text-muted-foreground">{description}</p> : null}
       </div>
-      {children ? <div className="flex gap-2">{children}</div> : null}
+      {children ? <div className="flex flex-wrap gap-2">{children}</div> : null}
     </header>
   )
 }

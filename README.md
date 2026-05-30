@@ -30,6 +30,32 @@ The repository is the whole product: the public site, the admin SPA, the API per
 
 ## Quick start
 
+### With Docker (recommended for local development)
+
+A `docker-compose.yml` is provided for local development with persistent data:
+
+```bash
+npm run docker:dev
+```
+
+Then configure your `.env`:
+
+```bash
+cp .env.example .env
+# Set DATABASE_URL=postgres://postgres:postgres@localhost:5433/kobato
+# Set REDIS_URL=redis://localhost:6380
+# Generate and set SESSION_SECRET
+```
+
+Finally, install dependencies and start the dev server:
+
+```bash
+npm install
+npm run dev
+```
+
+### Without Docker
+
 ```bash
 git clone https://github.com/syhily/kobato
 cd kobato
@@ -95,6 +121,17 @@ node ./build/server/index.js
 
 Make sure `NODE_ENV=production` and migrations have been applied.
 
+## Testing
+
+For running the test suite, use the dedicated test compose file which spins up **ephemeral** Postgres and Redis containers (data lives in memory and is discarded on stop):
+
+```bash
+npm run docker:test
+npm run test
+```
+
+The test compose uses tmpfs-backed storage and isolated `test` credentials so tests always start from a clean slate.
+
 ## Scripts
 
 ```bash
@@ -105,6 +142,8 @@ npm run test        # run tests
 npm run lint        # lint
 npm run fmt:check   # check formatting
 npm run db:generate # generate Drizzle migrations
+npm run docker:dev  # start dev components
+npm run docker:test # start test components
 ```
 
 ## License

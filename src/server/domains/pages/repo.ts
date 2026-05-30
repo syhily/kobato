@@ -41,6 +41,10 @@ export interface ListPagesFilters {
   q?: string
   /** Deletion state filter. */
   deletedStatus?: 'all' | 'deleted' | 'normal'
+  /** Published state filter. */
+  published?: boolean
+  /** Filter by author. */
+  authorId?: bigint
   /** Zero-based offset for pagination. */
   offset?: number
   /** Page size. When undefined every match is returned. */
@@ -53,6 +57,12 @@ function buildPagesWhere(filters: ListPagesFilters): SQL | undefined {
     conditions.push(isNotNull(pageMetaTable.deletedAt))
   } else if (filters.deletedStatus === 'normal') {
     conditions.push(isNull(pageMetaTable.deletedAt))
+  }
+  if (filters.published !== undefined) {
+    conditions.push(eq(pageMetaTable.published, filters.published))
+  }
+  if (filters.authorId) {
+    conditions.push(eq(pageMetaTable.authorId, filters.authorId))
   }
   if (filters.q && filters.q.trim() !== '') {
     const pattern = `%${escapeLikePattern(filters.q.trim())}%`

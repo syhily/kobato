@@ -444,6 +444,7 @@
   --container-lg: 960px;
   --container-xl: 1140px;
   --container-2xl: 1320px;
+  --container-admin: 1480px;
 
   --color-canvas: var(--canvas);
   --color-surface: var(--surface);

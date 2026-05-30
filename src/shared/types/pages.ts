@@ -92,6 +92,10 @@ export interface ListPagesInput {
   q?: string
   /** Deletion state filter. */
   deletedStatus?: 'all' | 'deleted' | 'normal'
+  /** Published state filter. */
+  published?: boolean
+  /** Filter by author. */
+  authorId?: string
   /** Zero-based offset for pagination. */
   offset?: number
   /** Page size; capped server-side. */

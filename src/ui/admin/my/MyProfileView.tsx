@@ -1,4 +1,4 @@
-import { KeyRoundIcon, SaveIcon } from 'lucide-react'
+import { EyeIcon, EyeOffIcon, KeyRoundIcon, SaveIcon } from 'lucide-react'
 import { useState } from 'react'
 import { useRevalidator } from 'react-router'
 
@@ -70,6 +70,8 @@ export function MyProfileView({ user, counts }: MyProfileViewProps) {
   const [badgeColor, setBadgeColor] = useState(user.badgeColor || '#008c95')
   const [oldPassword, setOldPassword] = useState('')
   const [newPassword, setNewPassword] = useState('')
+  const [showOldPassword, setShowOldPassword] = useState(false)
+  const [showNewPassword, setShowNewPassword] = useState(false)
   const [profileMessage, setProfileMessage] = useState<string | null>(null)
   const [passwordMessage, setPasswordMessage] = useState<string | null>(null)
 
@@ -263,24 +265,46 @@ export function MyProfileView({ user, counts }: MyProfileViewProps) {
               >
                 <div className="flex flex-col gap-2">
                   <Label htmlFor="profile-old-pw">原密码</Label>
-                  <Input
-                    id="profile-old-pw"
-                    type="password"
-                    value={oldPassword}
-                    onChange={(e) => setOldPassword(e.target.value)}
-                    required
-                  />
+                  <div className="relative">
+                    <Input
+                      id="profile-old-pw"
+                      type={showOldPassword ? 'text' : 'password'}
+                      value={oldPassword}
+                      onChange={(e) => setOldPassword(e.target.value)}
+                      required
+                      className="pr-10"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowOldPassword((v) => !v)}
+                      className="absolute inset-y-0 right-0 flex items-center px-3 text-muted-foreground hover:text-foreground"
+                      aria-label={showOldPassword ? '隐藏密码' : '显示密码'}
+                    >
+                      {showOldPassword ? <EyeOffIcon size={16} /> : <EyeIcon size={16} />}
+                    </button>
+                  </div>
                 </div>
                 <div className="flex flex-col gap-2">
                   <Label htmlFor="profile-new-pw">新密码</Label>
-                  <Input
-                    id="profile-new-pw"
-                    type="password"
-                    value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
-                    required
-                    minLength={6}
-                  />
+                  <div className="relative">
+                    <Input
+                      id="profile-new-pw"
+                      type={showNewPassword ? 'text' : 'password'}
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      required
+                      minLength={6}
+                      className="pr-10"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowNewPassword((v) => !v)}
+                      className="absolute inset-y-0 right-0 flex items-center px-3 text-muted-foreground hover:text-foreground"
+                      aria-label={showNewPassword ? '隐藏密码' : '显示密码'}
+                    >
+                      {showNewPassword ? <EyeOffIcon size={16} /> : <EyeIcon size={16} />}
+                    </button>
+                  </div>
                 </div>
                 {!!passwordError && <div className="text-sm text-destructive sm:col-span-2">{passwordError}</div>}
                 {!!passwordMessage && <div className="text-sm text-green-600 sm:col-span-2">{passwordMessage}</div>}

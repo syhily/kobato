@@ -9,6 +9,7 @@ export interface ListUsersInput {
   includeDeleted?: boolean
   sortBy?: UserSortOrder
   hasPosts?: boolean
+  hasPages?: boolean
 }
 
 export interface UserIdInput {

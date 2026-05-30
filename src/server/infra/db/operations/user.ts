@@ -8,6 +8,7 @@ export type SafeUser = Omit<User, 'password' | 'lastIp' | 'lastUa'>
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
 import { comment } from '@/server/infra/db/schema/comment'
+import { page } from '@/server/infra/db/schema/page'
 import { post } from '@/server/infra/db/schema/post'
 import { user } from '@/server/infra/db/schema/user'
 import { getBlogSettingsBundleSync } from '@/shared/config/getters'
@@ -227,6 +228,7 @@ export interface AdminUsersListFilters {
   role?: UserRoleFilter
   includeDeleted?: boolean
   hasPosts?: boolean
+  hasPages?: boolean
 }
 
 export interface AdminUserRow {
@@ -270,6 +272,9 @@ function buildAdminUsersConditions(filters: AdminUsersListFilters) {
   }
   if (filters.hasPosts) {
     conditions.push(sql`EXISTS (SELECT 1 FROM ${post} WHERE ${eq(post.authorId, user.id)})`)
+  }
+  if (filters.hasPages) {
+    conditions.push(sql`EXISTS (SELECT 1 FROM ${page} WHERE ${eq(page.authorId, user.id)})`)
   }
   return conditions
 }

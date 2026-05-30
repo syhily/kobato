@@ -28,6 +28,7 @@ const list = adminProc
       role: z.enum(['all', 'admin', 'author', 'visitor', 'normal']).default('all'),
       includeDeleted: z.boolean().default(false),
       hasPosts: z.boolean().default(false),
+      hasPages: z.boolean().default(false),
       sortBy: z.enum(['recent', 'commentCount']).default('recent'),
     }),
   )
@@ -37,7 +38,13 @@ const list = adminProc
       context.db,
       input.offset,
       input.limit,
-      { q: input.q, role: input.role, includeDeleted: input.includeDeleted, hasPosts: input.hasPosts },
+      {
+        q: input.q,
+        role: input.role,
+        includeDeleted: input.includeDeleted,
+        hasPosts: input.hasPosts,
+        hasPages: input.hasPages,
+      },
       input.sortBy,
     )
     return { users: result.users.map(toAdminUserDto), total: result.total, hasMore: result.hasMore }

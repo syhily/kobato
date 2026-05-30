@@ -1,73 +1,68 @@
-import { ArrowDownIcon, ArrowUpIcon, PlusIcon, RefreshCwIcon, SearchIcon } from 'lucide-react'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { LoaderIcon, PlusIcon, SearchIcon, XIcon } from 'lucide-react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router'
 import { toast } from 'sonner'
 
 import type { AdminUserDto } from '@/shared/types/users'
 
 import { orpc } from '@/client/api/client'
-import { orpcQuery, useMutation, useQuery } from '@/client/api/query'
+import { orpcQuery, useQuery } from '@/client/api/query'
 import { PostRow } from '@/ui/admin/posts/PostRow'
 import { PostsSkeleton } from '@/ui/admin/posts/PostsSkeleton'
-import { usePostsController } from '@/ui/admin/posts/usePostsController'
+import { type PostStatusFilter, usePostsController } from '@/ui/admin/posts/usePostsController'
 import { AdminListPage } from '@/ui/admin/shared/AdminListPage'
-import { type ConfirmState, ConfirmDialog } from '@/ui/admin/shared/ConfirmDialog'
-import { useDebouncedSearch } from '@/ui/admin/shared/useDebouncedSearch'
-import { Button } from '@/ui/components/button'
-import { Card } from '@/ui/components/card'
 import { Combobox, ComboboxContent, ComboboxItem, ComboboxTrigger, ComboboxValue } from '@/ui/components/combobox'
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@/ui/components/empty'
-import { InputGroup, InputGroupAddon, InputGroupInput } from '@/ui/components/input-group'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/components/select'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/ui/components/table'
+import { cn } from '@/ui/lib/cn'
 
-const DELETED_STATUS_OPTIONS = [
-  { value: 'all', label: '全部' },
-  { value: 'normal', label: '正常' },
+const STATUS_OPTIONS = [
+  { value: 'all', label: '全部状态' },
+  { value: 'published', label: '已发布' },
+  { value: 'draft', label: '草稿' },
+  { value: 'hidden', label: '隐藏' },
   { value: 'deleted', label: '已删除' },
 ]
 
-const STATUS_OPTIONS = [
-  { value: 'all', label: '全部' },
-  { value: 'published', label: '已发布' },
-  { value: 'draft', label: '草稿箱' },
-  { value: 'hidden', label: '隐藏' },
+const SORT_OPTIONS = [
+  { value: 'publishedAt-desc', label: '最新发布' },
+  { value: 'publishedAt-asc', label: '最早发布' },
+  { value: 'updatedAt-desc', label: '最近更新' },
+  { value: 'updatedAt-asc', label: '最早更新' },
 ]
 
-const PAGE_SIZE_OPTIONS = [10, 20, 50, 100].map((n) => ({
-  value: String(n),
-  label: `${n} 条`,
-}))
+const PAGE_SIZE = 10
 
-const SORT_BY_OPTIONS = [
-  { value: 'publishedAt', label: '首次发布时间' },
-  { value: 'updatedAt', label: '最近更新时间' },
-]
+const pill =
+  'h-9 gap-1 rounded-[5px] border-border px-3 text-[13px] font-medium shadow-none hover:bg-accent focus-visible:border-border focus-visible:ring-0 data-[popup-open]:border-border data-[popup-open]:ring-0'
+
+function buildQueryInput(state: ReturnType<typeof usePostsController>['state'], offset: number) {
+  return {
+    q: state.q || undefined,
+    deletedStatus: state.deletedStatus,
+    offset,
+    limit: PAGE_SIZE,
+    category: state.category || undefined,
+    tag: state.tag || undefined,
+    published: state.published,
+    visible: state.visible,
+    sortBy: state.sortBy,
+    sortOrder: state.sortOrder,
+    authorId: state.authorId || undefined,
+  }
+}
 
 export function PostsView() {
   const { state, dispatch } = usePostsController()
-  const [confirm, setConfirm] = useState<ConfirmState | null>(null)
 
+  // --- Initial page query ---
   const {
     data: listData,
     isPending: isListPending,
-    refetch,
     error: listError,
   } = useQuery(
     orpcQuery.admin.posts.list.queryOptions({
-      input: {
-        q: state.q || undefined,
-        deletedStatus: state.deletedStatus,
-        offset: state.currentPage * state.pageSize,
-        limit: state.pageSize,
-        category: state.category || undefined,
-        tag: state.tag || undefined,
-        published: state.published,
-        visible: state.visible,
-        sortBy: state.sortBy,
-        sortOrder: state.sortOrder,
-        authorId: state.authorId || undefined,
-      },
+      input: buildQueryInput(state, 0),
     }),
   )
 
@@ -83,51 +78,51 @@ export function PostsView() {
     }
   }, [listError])
 
-  const reload = useCallback(() => {
-    void refetch()
-  }, [refetch])
+  // --- Infinite scroll: load more ---
+  const [loadingMore, setLoadingMore] = useState(false)
+  const sentinelRef = useRef<HTMLDivElement>(null)
+  const hasMore = state.rows.length < state.total
 
-  const deleteApi = useMutation({
-    mutationFn: (id: string) => orpc.admin.posts.delete({ id }),
-    onSuccess: () => reload(),
-    onError: (error) =>
-      setConfirm({
-        title: '删除失败',
-        description: error.message,
-        actionLabel: '我知道了',
-        destructive: false,
-        onConfirm: () => undefined,
-      }),
-  })
+  const loadMore = useCallback(async () => {
+    if (loadingMore || !hasMore) {
+      return
+    }
+    setLoadingMore(true)
+    try {
+      const result = await orpc.admin.posts.list(buildQueryInput(state, state.rows.length))
+      dispatch({ type: 'appended', rows: result.posts, total: result.total })
+    } catch (err) {
+      toast.error('加载更多文章失败', {
+        description: err instanceof Error ? err.message : String(err),
+      })
+    } finally {
+      setLoadingMore(false)
+    }
+  }, [loadingMore, hasMore, state, dispatch])
 
-  const restoreApi = useMutation({
-    mutationFn: (id: string) => orpc.admin.posts.restore({ id }),
-    onSuccess: () => reload(),
-    onError: (error) =>
-      setConfirm({
-        title: '恢复失败',
-        description: error.message,
-        actionLabel: '我知道了',
-        destructive: false,
-        onConfirm: () => undefined,
-      }),
-  })
+  useEffect(() => {
+    const el = sentinelRef.current
+    if (!el || !hasMore) {
+      return
+    }
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) {
+          void loadMore()
+        }
+      },
+      { rootMargin: '200px' },
+    )
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [loadMore, hasMore])
 
-  const [qInput, setQInput] = useDebouncedSearch({
-    delayMs: 300,
-    onChange: (value) => dispatch({ type: 'setQ', value }),
-  })
-
-  // Load filter option data
+  // --- Filter option data ---
   const { data: categoriesData } = useQuery(orpcQuery.admin.categories.list.queryOptions({ input: {} }))
-
   const { data: tagsData } = useQuery(orpcQuery.admin.tags.list.queryOptions({ input: { limit: 100 } }))
-
   const { data: usersData } = useQuery(
     orpcQuery.admin.users.list.queryOptions({ input: { limit: 100, hasPosts: true } }),
   )
-
-  const totalPages = useMemo(() => Math.max(1, Math.ceil(state.total / state.pageSize)), [state.total, state.pageSize])
 
   const categories = categoriesData?.categories
   const tags = tagsData?.tags
@@ -137,7 +132,7 @@ export function PostsView() {
     () => [{ value: '', label: '全部分类' }, ...(categories ?? []).map((c) => ({ value: c.name, label: c.name }))],
     [categories],
   )
-  const tagNames = useMemo(() => ['', ...(tags ?? []).map((t) => t.name)], [tags])
+  const tagNames = useMemo(() => (tags ?? []).map((t) => t.name), [tags])
   const authorOptions = useMemo(
     () => [
       { value: '', label: '全部作者' },
@@ -147,117 +142,47 @@ export function PostsView() {
   )
 
   const isLoading = isListPending && state.rows.length === 0
+  const sortValue = `${state.sortBy}-${state.sortOrder}`
 
   return (
     <>
       <AdminListPage>
         <AdminListPage.Header
-          title="文章管理"
-          description={`共 ${state.total} 篇文章。点击「编辑」可进入富文本编辑器，编辑器右侧可同时调整文章元数据。`}
+          title={
+            <>
+              文章管理 <span className="text-sm font-normal text-muted-foreground">{state.total}</span>
+            </>
+          }
         >
-          <Button type="button" variant="outline" className="border-ink-4" onClick={reload} disabled={isListPending}>
-            <RefreshCwIcon /> 刷新
-          </Button>
-          <Button
-            type="button"
-            render={
-              <Link to="/editor/post/new">
-                <PlusIcon /> 新建文章
-              </Link>
-            }
-          />
-        </AdminListPage.Header>
+          <div className="flex shrink-0 flex-wrap items-center gap-2">
+            {/* Status */}
+            <Select
+              items={STATUS_OPTIONS}
+              value={state.status}
+              onValueChange={(value) => {
+                dispatch({ type: 'setStatus', value: (value ?? 'all') as PostStatusFilter })
+              }}
+            >
+              <SelectTrigger className={pill}>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {STATUS_OPTIONS.map((item) => (
+                  <SelectItem key={item.value} value={item.value}>
+                    {item.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
 
-        <AdminListPage.Toolbar>
-          <div className="grid gap-3 sm:grid-cols-5">
-            <div className="sm:col-span-2">
-              <AdminListPage.FilterField label="搜索（slug / 标题）">
-                <InputGroup>
-                  <InputGroupAddon>
-                    <SearchIcon />
-                  </InputGroupAddon>
-                  <InputGroupInput
-                    type="search"
-                    value={qInput}
-                    onChange={(e) => setQInput(e.target.value)}
-                    placeholder="输入 slug 或标题关键字"
-                  />
-                </InputGroup>
-              </AdminListPage.FilterField>
-            </div>
-            <AdminListPage.FilterField label="删除状态">
-              <Select
-                items={DELETED_STATUS_OPTIONS}
-                value={state.deletedStatus}
-                onValueChange={(value) =>
-                  dispatch({
-                    type: 'setDeletedStatus',
-                    value: (value ?? 'normal') as 'all' | 'deleted' | 'normal',
-                  })
-                }
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {DELETED_STATUS_OPTIONS.map((item) => (
-                    <SelectItem key={item.value} value={item.value}>
-                      {item.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </AdminListPage.FilterField>
-            <AdminListPage.FilterField label="发布状态">
-              <Select
-                items={STATUS_OPTIONS}
-                value={state.status}
-                onValueChange={(value) => {
-                  dispatch({
-                    type: 'setStatus',
-                    value: (value ?? 'all') as 'all' | 'published' | 'draft' | 'hidden',
-                  })
-                }}
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {STATUS_OPTIONS.map((item) => (
-                    <SelectItem key={item.value} value={item.value}>
-                      {item.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </AdminListPage.FilterField>
-            <AdminListPage.FilterField label="每页显示">
-              <Select
-                items={PAGE_SIZE_OPTIONS}
-                value={String(state.pageSize)}
-                onValueChange={(value) => dispatch({ type: 'setPageSize', value: Number.parseInt(value ?? '20', 10) })}
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {PAGE_SIZE_OPTIONS.map((item) => (
-                    <SelectItem key={item.value} value={item.value}>
-                      {item.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </AdminListPage.FilterField>
-          </div>
-          <div className="grid gap-3 sm:grid-cols-4">
-            <AdminListPage.FilterField label="分类">
+            {/* Category */}
+            <div className="relative">
               <Select
                 items={categoryOptions}
                 value={state.category}
                 onValueChange={(value) => dispatch({ type: 'setCategory', value: value ?? '' })}
               >
-                <SelectTrigger className="w-full">
+                <SelectTrigger className={cn(pill, state.category && 'pr-7 [&>span:last-child]:hidden')}>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -268,32 +193,54 @@ export function PostsView() {
                   ))}
                 </SelectContent>
               </Select>
-            </AdminListPage.FilterField>
-            <AdminListPage.FilterField label="标签">
+              {state.category && (
+                <button
+                  type="button"
+                  onClick={() => dispatch({ type: 'setCategory', value: '' })}
+                  className="absolute top-1/2 right-1.5 z-10 flex size-5 -translate-y-1/2 items-center justify-center rounded-sm text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
+                >
+                  <XIcon className="size-3.5" />
+                </button>
+              )}
+            </div>
+
+            {/* Tag */}
+            <div className="relative">
               <Combobox
                 items={tagNames}
-                value={state.tag}
+                value={state.tag || null}
                 onValueChange={(value) => dispatch({ type: 'setTag', value: value ?? '' })}
               >
-                <ComboboxTrigger className="w-full">
+                <ComboboxTrigger className={cn(pill, state.tag && 'pr-7 [&>span:last-child]:hidden')}>
                   <ComboboxValue placeholder="全部标签" />
                 </ComboboxTrigger>
                 <ComboboxContent<string> inputPlaceholder="搜索标签…" emptyMessage="无匹配标签">
                   {(item) => (
                     <ComboboxItem key={item} value={item}>
-                      {item === '' ? '全部标签' : item}
+                      {item}
                     </ComboboxItem>
                   )}
                 </ComboboxContent>
               </Combobox>
-            </AdminListPage.FilterField>
-            <AdminListPage.FilterField label="作者">
+              {state.tag && (
+                <button
+                  type="button"
+                  onClick={() => dispatch({ type: 'setTag', value: '' })}
+                  className="absolute top-1/2 right-1.5 z-10 flex size-5 -translate-y-1/2 items-center justify-center rounded-sm text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
+                >
+                  <XIcon className="size-3.5" />
+                </button>
+              )}
+            </div>
+
+            {/* Author */}
+            <div className="relative">
               <Select
                 items={authorOptions}
                 value={state.authorId}
                 onValueChange={(value) => dispatch({ type: 'setAuthorId', value: value ?? '' })}
               >
-                <SelectTrigger className="w-full">
+                <SelectTrigger className={cn(pill, state.authorId && 'pr-7 [&>span:last-child]:hidden')}>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -304,110 +251,94 @@ export function PostsView() {
                   ))}
                 </SelectContent>
               </Select>
-            </AdminListPage.FilterField>
-            <AdminListPage.FilterField label="排序">
-              <div className="flex gap-2">
-                <Select
-                  items={SORT_BY_OPTIONS}
-                  value={state.sortBy}
-                  onValueChange={(value) =>
-                    dispatch({
-                      type: 'setSortBy',
-                      value: (value ?? 'publishedAt') as 'publishedAt' | 'updatedAt',
-                    })
-                  }
-                >
-                  <SelectTrigger className="grow">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {SORT_BY_OPTIONS.map((item) => (
-                      <SelectItem key={item.value} value={item.value}>
-                        {item.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <Button
+              {state.authorId && (
+                <button
                   type="button"
-                  variant="outline"
-                  size="icon"
-                  title={state.sortOrder === 'desc' ? '降序' : '升序'}
-                  aria-label={state.sortOrder === 'desc' ? '降序' : '升序'}
-                  onClick={() =>
-                    dispatch({
-                      type: 'setSortOrder',
-                      value: state.sortOrder === 'desc' ? 'asc' : 'desc',
-                    })
-                  }
+                  onClick={() => dispatch({ type: 'setAuthorId', value: '' })}
+                  className="absolute top-1/2 right-1.5 z-10 flex size-5 -translate-y-1/2 items-center justify-center rounded-sm text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
                 >
-                  {state.sortOrder === 'desc' ? <ArrowDownIcon /> : <ArrowUpIcon />}
-                </Button>
-              </div>
-            </AdminListPage.FilterField>
+                  <XIcon className="size-3.5" />
+                </button>
+              )}
+            </div>
+
+            {/* Sort */}
+            <Select
+              items={SORT_OPTIONS}
+              value={sortValue}
+              onValueChange={(value) => {
+                if (!value) {
+                  return
+                }
+                const dashIdx = value.indexOf('-')
+                const sortBy = value.slice(0, dashIdx) as 'publishedAt' | 'updatedAt'
+                const sortOrder = value.slice(dashIdx + 1) as 'asc' | 'desc'
+                dispatch({ type: 'setSortBy', value: sortBy })
+                dispatch({ type: 'setSortOrder', value: sortOrder })
+              }}
+            >
+              <SelectTrigger className={pill}>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {SORT_OPTIONS.map((item) => (
+                  <SelectItem key={item.value} value={item.value}>
+                    {item.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {/* New post */}
+            <Link
+              to="/editor/post/new"
+              className="inline-flex h-9 items-center gap-1.5 rounded-[5px] bg-primary px-3 text-[13px] font-medium text-primary-foreground shadow-none hover:bg-primary/90"
+            >
+              <PlusIcon className="size-4" />
+              新建文章
+            </Link>
           </div>
-        </AdminListPage.Toolbar>
+        </AdminListPage.Header>
 
         <AdminListPage.Body>
-          <Card className="overflow-hidden p-0">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="pl-4">标题</TableHead>
-                  <TableHead className="hidden md:table-cell">分类</TableHead>
-                  <TableHead className="hidden w-24 text-center md:table-cell">作者</TableHead>
-                  <TableHead className="w-28 text-center">状态</TableHead>
-                  <TableHead className="hidden w-44 lg:table-cell">发布时间</TableHead>
-                  <TableHead className="w-56 pr-4 text-right">操作</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {isLoading ? (
-                  <PostsSkeleton />
-                ) : state.rows.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={6} className="p-0">
-                      <Empty className="border-0">
-                        <EmptyHeader>
-                          <EmptyMedia variant="icon">
-                            <SearchIcon />
-                          </EmptyMedia>
-                          <EmptyTitle>未找到文章</EmptyTitle>
-                        </EmptyHeader>
-                      </Empty>
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  state.rows.map((row) => (
-                    <PostRow
-                      key={row.id}
-                      post={row}
-                      onDelete={() =>
-                        setConfirm({
-                          title: `删除文章「${row.title}」？`,
-                          description: '文章会被软删除（30 天内可恢复）。已发布的链接将立即返回 404。',
-                          actionLabel: '删除',
-                          destructive: true,
-                          onConfirm: () => deleteApi.mutate(row.id),
-                        })
-                      }
-                      onRestore={() => restoreApi.mutate(row.id)}
-                    />
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </Card>
+          {isLoading ? (
+            <PostsSkeleton />
+          ) : state.rows.length === 0 ? (
+            <Empty>
+              <EmptyHeader>
+                <EmptyMedia variant="icon">
+                  <SearchIcon />
+                </EmptyMedia>
+                <EmptyTitle>未找到文章</EmptyTitle>
+              </EmptyHeader>
+            </Empty>
+          ) : (
+            <>
+              <div className="divide-y">
+                {state.rows.map((row) => (
+                  <PostRow
+                    key={row.id}
+                    post={row}
+                    onFilterCategory={(category) => dispatch({ type: 'setCategory', value: category })}
+                  />
+                ))}
+              </div>
+              {/* Sentinel for infinite scroll */}
+              {hasMore && <div ref={sentinelRef} className="h-1" />}
+              {/* Bottom status */}
+              <div className="py-6 text-center text-sm text-muted-foreground">
+                {loadingMore ? (
+                  <span className="inline-flex items-center gap-2">
+                    <LoaderIcon className="size-4 animate-spin" />
+                    加载中…
+                  </span>
+                ) : !hasMore && state.rows.length > 0 ? (
+                  '已加载全部文章'
+                ) : null}
+              </div>
+            </>
+          )}
         </AdminListPage.Body>
-
-        <AdminListPage.PageNavigation
-          totalPages={totalPages}
-          currentPage={state.currentPage}
-          onChange={(page) => dispatch({ type: 'setCurrentPage', value: page })}
-        />
       </AdminListPage>
-
-      <ConfirmDialog state={confirm} onClose={() => setConfirm(null)} />
     </>
   )
 }

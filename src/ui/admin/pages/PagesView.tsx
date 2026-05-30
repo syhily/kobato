@@ -1,340 +1,241 @@
-import {
-  FilePenIcon,
-  MessageSquareIcon,
-  PlusIcon,
-  RefreshCwIcon,
-  SearchIcon,
-  Trash2Icon,
-  Undo2Icon,
-} from 'lucide-react'
-import { useCallback, useEffect, useState } from 'react'
+import { LoaderIcon, PlusIcon, SearchIcon, XIcon } from 'lucide-react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router'
 import { toast } from 'sonner'
 
-import type { AdminPageDto, DeletePageInput, RestorePageInput } from '@/shared/types/pages'
+import type { AdminUserDto } from '@/shared/types/users'
 
 import { orpc } from '@/client/api/client'
-import { orpcQuery, useMutation, useQuery, useQueryClient } from '@/client/api/query'
-import { usePagesController } from '@/ui/admin/pages/usePagesController'
+import { orpcQuery, useQuery } from '@/client/api/query'
+import { PageRow } from '@/ui/admin/pages/PageRow'
+import { PagesSkeleton } from '@/ui/admin/pages/PagesSkeleton'
+import { type PageStatusFilter, usePagesController } from '@/ui/admin/pages/usePagesController'
 import { AdminListPage } from '@/ui/admin/shared/AdminListPage'
-import { type ConfirmState, ConfirmDialog } from '@/ui/admin/shared/ConfirmDialog'
-import { useDebouncedSearch } from '@/ui/admin/shared/useDebouncedSearch'
-import { Badge } from '@/ui/components/badge'
-import { Button } from '@/ui/components/button'
-import { Card } from '@/ui/components/card'
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@/ui/components/empty'
-import { InputGroup, InputGroupAddon, InputGroupInput } from '@/ui/components/input-group'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/components/select'
-import { Skeleton } from '@/ui/components/skeleton'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/ui/components/table'
+import { cn } from '@/ui/lib/cn'
 
-const DELETED_STATUS_OPTIONS = [
-  { value: 'all', label: '全部' },
-  { value: 'normal', label: '正常' },
+const STATUS_OPTIONS = [
+  { value: 'all', label: '全部状态' },
+  { value: 'published', label: '已发布' },
+  { value: 'draft', label: '草稿' },
   { value: 'deleted', label: '已删除' },
 ]
 
-export function PagesView() {
-  const queryClient = useQueryClient()
-  const { state, dispatch } = usePagesController()
-  const [confirm, setConfirm] = useState<ConfirmState | null>(null)
+const PAGE_SIZE = 10
 
-  const listQuery = useQuery(
+const pill =
+  'h-9 gap-1 rounded-[5px] border-border px-3 text-[13px] font-medium shadow-none hover:bg-accent focus-visible:border-border focus-visible:ring-0 data-[popup-open]:border-border data-[popup-open]:ring-0'
+
+function buildQueryInput(state: ReturnType<typeof usePagesController>['state'], offset: number) {
+  return {
+    q: state.q || undefined,
+    deletedStatus: state.deletedStatus,
+    published: state.published,
+    offset,
+    limit: PAGE_SIZE,
+    authorId: state.authorId || undefined,
+  }
+}
+
+export function PagesView() {
+  const { state, dispatch } = usePagesController()
+
+  // --- Initial page query ---
+  const {
+    data: listData,
+    isPending: isListPending,
+    error: listError,
+  } = useQuery(
     orpcQuery.admin.pages.list.queryOptions({
-      input: {
-        q: state.q || undefined,
-        deletedStatus: state.deletedStatus,
-      },
+      input: buildQueryInput(state, 0),
     }),
   )
 
   useEffect(() => {
-    if (listQuery.data) {
-      dispatch({ type: 'loaded', rows: listQuery.data.pages, total: listQuery.data.total })
+    if (listData) {
+      dispatch({ type: 'loaded', rows: listData.pages, total: listData.total })
     }
-  }, [listQuery.data, dispatch])
+  }, [listData, dispatch])
 
   useEffect(() => {
-    if (listQuery.error) {
-      toast.error('加载页面列表失败', { description: listQuery.error.message })
+    if (listError) {
+      toast.error('加载页面列表失败', { description: listError.message })
     }
-  }, [listQuery.error])
+  }, [listError])
 
-  const isListPending = listQuery.isFetching
+  // --- Infinite scroll: load more ---
+  const [loadingMore, setLoadingMore] = useState(false)
+  const sentinelRef = useRef<HTMLDivElement>(null)
+  const hasMore = state.rows.length < state.total
 
-  const reload = useCallback(() => {
-    void listQuery.refetch()
-  }, [listQuery])
+  const loadMore = useCallback(async () => {
+    if (loadingMore || !hasMore) {
+      return
+    }
+    setLoadingMore(true)
+    try {
+      const result = await orpc.admin.pages.list(buildQueryInput(state, state.rows.length))
+      dispatch({ type: 'appended', rows: result.pages, total: result.total })
+    } catch (err) {
+      toast.error('加载更多页面失败', {
+        description: err instanceof Error ? err.message : String(err),
+      })
+    } finally {
+      setLoadingMore(false)
+    }
+  }, [loadingMore, hasMore, state, dispatch])
 
-  const deleteMutation = useMutation({
-    mutationFn: (input: DeletePageInput) => orpc.admin.pages.delete({ id: input.id }),
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ['admin', 'listPages'] })
-    },
-    onError: (error) =>
-      setConfirm({
-        title: '删除失败',
-        description: error.message,
-        actionLabel: '我知道了',
-        destructive: false,
-        onConfirm: () => undefined,
-      }),
-  })
-  const submitDelete = deleteMutation.mutate
-
-  const restoreMutation = useMutation({
-    mutationFn: (input: RestorePageInput) => orpc.admin.pages.restore({ id: input.id }),
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ['admin', 'listPages'] })
-    },
-    onError: (error) =>
-      setConfirm({
-        title: '恢复失败',
-        description: error.message,
-        actionLabel: '我知道了',
-        destructive: false,
-        onConfirm: () => undefined,
-      }),
-  })
-  const submitRestore = restoreMutation.mutate
-
-  const [qInput, setQInput] = useDebouncedSearch({
-    delayMs: 300,
-    onChange: (value) => dispatch({ type: 'setQ', value }),
-  })
+  useEffect(() => {
+    const el = sentinelRef.current
+    if (!el || !hasMore) {
+      return
+    }
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) {
+          void loadMore()
+        }
+      },
+      { rootMargin: '200px' },
+    )
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [loadMore, hasMore])
 
   const isLoading = isListPending && state.rows.length === 0
+
+  // --- Filter option data ---
+  const { data: usersData } = useQuery(
+    orpcQuery.admin.users.list.queryOptions({ input: { limit: 100, hasPages: true } }),
+  )
+  const users = usersData?.users
+  const authorOptions = useMemo(
+    () => [
+      { value: '', label: '全部作者' },
+      ...(users ?? []).map((u: AdminUserDto) => ({ value: u.id, label: u.name })),
+    ],
+    [users],
+  )
 
   return (
     <>
       <AdminListPage>
         <AdminListPage.Header
-          title="页面管理"
-          description={`共 ${state.total} 个页面。点击「编辑」可进入富文本编辑器，编辑器右侧可同时调整页面元数据。`}
+          title={
+            <>
+              页面管理 <span className="text-sm font-normal text-muted-foreground">{state.total}</span>
+            </>
+          }
         >
-          <Button type="button" variant="outline" className="border-ink-4" onClick={reload} disabled={isListPending}>
-            <RefreshCwIcon /> 刷新
-          </Button>
-          <Button
-            type="button"
-            render={
-              <Link to="/editor/page/new">
-                <PlusIcon /> 新建页面
-              </Link>
-            }
-          />
-        </AdminListPage.Header>
-
-        <AdminListPage.Toolbar>
-          <div className="grid gap-3 sm:grid-cols-3">
-            <div className="sm:col-span-2">
-              <AdminListPage.FilterField label="搜索（slug / 标题）">
-                <InputGroup>
-                  <InputGroupAddon>
-                    <SearchIcon />
-                  </InputGroupAddon>
-                  <InputGroupInput
-                    type="search"
-                    value={qInput}
-                    onChange={(e) => setQInput(e.target.value)}
-                    placeholder="输入 slug 或标题关键字"
-                  />
-                </InputGroup>
-              </AdminListPage.FilterField>
-            </div>
-            <AdminListPage.FilterField label="删除状态">
+          <div className="flex shrink-0 flex-wrap items-center gap-2">
+            {/* Status */}
+            <div className="relative">
               <Select
-                items={DELETED_STATUS_OPTIONS}
-                value={state.deletedStatus}
-                onValueChange={(value) =>
-                  dispatch({
-                    type: 'setDeletedStatus',
-                    value: (value ?? 'normal') as 'all' | 'deleted' | 'normal',
-                  })
-                }
+                items={STATUS_OPTIONS}
+                value={state.status}
+                onValueChange={(value) => {
+                  dispatch({ type: 'setStatus', value: (value ?? 'all') as PageStatusFilter })
+                }}
               >
-                <SelectTrigger className="w-full">
+                <SelectTrigger className={cn(pill, state.status !== 'all' && 'pr-7 [&>span:last-child]:hidden')}>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {DELETED_STATUS_OPTIONS.map((item) => (
+                  {STATUS_OPTIONS.map((item) => (
                     <SelectItem key={item.value} value={item.value}>
                       {item.label}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
-            </AdminListPage.FilterField>
+              {state.status !== 'all' && (
+                <button
+                  type="button"
+                  onClick={() => dispatch({ type: 'setStatus', value: 'all' })}
+                  className="absolute top-1/2 right-1.5 z-10 flex size-5 -translate-y-1/2 items-center justify-center rounded-sm text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
+                >
+                  <XIcon className="size-3.5" />
+                </button>
+              )}
+            </div>
+
+            {/* Author */}
+            <div className="relative">
+              <Select
+                items={authorOptions}
+                value={state.authorId}
+                onValueChange={(value) => dispatch({ type: 'setAuthorId', value: value ?? '' })}
+              >
+                <SelectTrigger className={cn(pill, state.authorId && 'pr-7 [&>span:last-child]:hidden')}>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {authorOptions.map((item) => (
+                    <SelectItem key={item.value} value={item.value}>
+                      {item.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {state.authorId && (
+                <button
+                  type="button"
+                  onClick={() => dispatch({ type: 'setAuthorId', value: '' })}
+                  className="absolute top-1/2 right-1.5 z-10 flex size-5 -translate-y-1/2 items-center justify-center rounded-sm text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
+                >
+                  <XIcon className="size-3.5" />
+                </button>
+              )}
+            </div>
+
+            {/* New page */}
+            <Link
+              to="/editor/page/new"
+              className="inline-flex h-9 items-center gap-1.5 rounded-[5px] bg-primary px-3 text-[13px] font-medium text-primary-foreground shadow-none hover:bg-primary/90"
+            >
+              <PlusIcon className="size-4" />
+              新建页面
+            </Link>
           </div>
-        </AdminListPage.Toolbar>
+        </AdminListPage.Header>
 
         <AdminListPage.Body>
-          <Card className="overflow-hidden p-0">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="pl-4">标题</TableHead>
-                  <TableHead className="hidden md:table-cell">摘要</TableHead>
-                  <TableHead className="hidden w-24 text-center md:table-cell">作者</TableHead>
-                  <TableHead className="w-28 text-center">状态</TableHead>
-                  <TableHead className="hidden w-44 lg:table-cell">更新时间</TableHead>
-                  <TableHead className="w-56 pr-4 text-right">操作</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {isLoading ? (
-                  <PagesSkeleton />
-                ) : state.rows.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={6} className="p-0">
-                      <Empty className="border-0">
-                        <EmptyHeader>
-                          <EmptyMedia variant="icon">
-                            <SearchIcon />
-                          </EmptyMedia>
-                          <EmptyTitle>未找到页面</EmptyTitle>
-                        </EmptyHeader>
-                      </Empty>
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  state.rows.map((row) => (
-                    <PageRow
-                      key={row.id}
-                      page={row}
-                      onDelete={() =>
-                        setConfirm({
-                          title: `删除页面「${row.title}」？`,
-                          description: '页面会被软删除（30 天内可恢复）。已发布的链接将立即返回 404。',
-                          actionLabel: '删除',
-                          destructive: true,
-                          onConfirm: () => submitDelete({ id: row.id }),
-                        })
-                      }
-                      onRestore={() => submitRestore({ id: row.id })}
-                    />
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </Card>
+          {isLoading ? (
+            <PagesSkeleton />
+          ) : state.rows.length === 0 ? (
+            <Empty>
+              <EmptyHeader>
+                <EmptyMedia variant="icon">
+                  <SearchIcon />
+                </EmptyMedia>
+                <EmptyTitle>未找到页面</EmptyTitle>
+              </EmptyHeader>
+            </Empty>
+          ) : (
+            <>
+              <div className="divide-y">
+                {state.rows.map((row) => (
+                  <PageRow key={row.id} page={row} />
+                ))}
+              </div>
+              {/* Sentinel for infinite scroll */}
+              {hasMore && <div ref={sentinelRef} className="h-1" />}
+              {/* Bottom status */}
+              <div className="py-6 text-center text-sm text-muted-foreground">
+                {loadingMore ? (
+                  <span className="inline-flex items-center gap-2">
+                    <LoaderIcon className="size-4 animate-spin" />
+                    加载中…
+                  </span>
+                ) : !hasMore && state.rows.length > 0 ? (
+                  '已加载全部页面'
+                ) : null}
+              </div>
+            </>
+          )}
         </AdminListPage.Body>
       </AdminListPage>
-
-      <ConfirmDialog state={confirm} onClose={() => setConfirm(null)} />
-    </>
-  )
-}
-
-interface PageRowProps {
-  page: AdminPageDto
-  onDelete: () => void
-  onRestore: () => void
-}
-
-function PageRow({ page, onDelete, onRestore }: PageRowProps) {
-  const isDeleted = page.deletedAt !== null
-  return (
-    <TableRow className={isDeleted ? 'opacity-60' : undefined}>
-      <TableCell className="pl-4 align-top">
-        <div className="font-medium">{page.title}</div>
-        <Link
-          to={`/${page.slug}`}
-          className="font-mono text-xs text-muted-foreground hover:text-foreground hover:underline"
-        >
-          /{page.slug}
-        </Link>
-      </TableCell>
-      <TableCell className="hidden max-w-md md:table-cell">
-        <p className="line-clamp-2 text-sm text-muted-foreground">{page.summary || '—'}</p>
-      </TableCell>
-      <TableCell className="hidden w-24 text-center align-middle md:table-cell">
-        <p className="text-sm text-muted-foreground">{page.authorName || '—'}</p>
-      </TableCell>
-      <TableCell className="text-center align-middle">
-        <StatusBadge page={page} />
-      </TableCell>
-      <TableCell className="hidden align-middle text-sm lg:table-cell">
-        {new Date(page.updatedAt).toLocaleString('zh-CN')}
-      </TableCell>
-      <TableCell className="pr-4 text-right align-top">
-        <div className="flex justify-end gap-2">
-          {!isDeleted ? (
-            <>
-              <Button
-                variant="ghost"
-                size="sm"
-                title="查看评论"
-                className="w-20 justify-start"
-                render={
-                  <Link to={`/admin/comments?pageKey=${encodeURIComponent(page.commentPublicId)}`}>
-                    <MessageSquareIcon /> {page.commentCount}
-                  </Link>
-                }
-              />
-              <Button
-                variant="outline"
-                size="sm"
-                render={
-                  <Link to={`/editor/page/${page.id}`}>
-                    <FilePenIcon /> 编辑
-                  </Link>
-                }
-              />
-              <Button variant="ghost" size="sm" onClick={onDelete} title="删除">
-                <Trash2Icon />
-              </Button>
-            </>
-          ) : (
-            <Button variant="outline" size="sm" onClick={onRestore} title="恢复">
-              <Undo2Icon /> 恢复
-            </Button>
-          )}
-        </div>
-      </TableCell>
-    </TableRow>
-  )
-}
-
-function StatusBadge({ page }: { page: AdminPageDto }) {
-  if (page.deletedAt !== null) {
-    return <Badge variant="destructive">已删除</Badge>
-  }
-  if (!page.published) {
-    return <Badge variant="secondary">未发布</Badge>
-  }
-  if (page.publishedRevisionId === null) {
-    return <Badge variant="outline">仅草稿</Badge>
-  }
-  return <Badge>已发布</Badge>
-}
-
-function PagesSkeleton() {
-  return (
-    <>
-      {[0, 1, 2, 3].map((i) => (
-        <TableRow key={i}>
-          <TableCell className="pl-4">
-            <Skeleton className="h-4 w-32" />
-            <Skeleton className="mt-2 h-3 w-20" />
-          </TableCell>
-          <TableCell className="hidden md:table-cell">
-            <Skeleton className="h-3 w-full" />
-          </TableCell>
-          <TableCell className="hidden md:table-cell">
-            <Skeleton className="mx-auto h-3 w-16" />
-          </TableCell>
-          <TableCell>
-            <Skeleton className="mx-auto h-5 w-16" />
-          </TableCell>
-          <TableCell className="hidden lg:table-cell">
-            <Skeleton className="h-3 w-32" />
-          </TableCell>
-          <TableCell className="pr-4">
-            <Skeleton className="ml-auto h-8 w-32" />
-          </TableCell>
-        </TableRow>
-      ))}
     </>
   )
 }

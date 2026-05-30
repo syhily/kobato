@@ -267,7 +267,16 @@ export async function restoreFromSql(db: NodePgDatabase, sql: string): Promise<v
   })
 
   if (timescaleEnabled) {
-    await db.execute(drizzleSql`SELECT public.timescaledb_post_restore()`)
+    try {
+      await db.execute(drizzleSql`SELECT public.timescaledb_post_restore()`)
+    } catch (err) {
+      log.warn(
+        'timescaledb_post_restore() failed; the SQL dump was already applied successfully, but TimescaleDB metadata may be inconsistent. If this is a non-TimescaleDB backup restored to TimescaleDB, you can usually ignore this.',
+        {
+          err: err instanceof Error ? err.message : String(err),
+        },
+      )
+    }
   }
 
   log.info('Restore completed successfully')
