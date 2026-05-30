@@ -120,7 +120,7 @@ export async function reorderCategories(db: NodePgDatabase, orderedIds: readonly
   return db.transaction(async (tx) => {
     const rows = await tx
       .update(category)
-      .set({ sortOrder: sql`CASE ${whens} END`, updatedAt: now })
+      .set({ sortOrder: sql`CASE ${whens} END::integer`, updatedAt: now })
       .where(inArray(category.id, [...orderedIds]))
       .returning()
     const byId = new Map(rows.map((r) => [r.id, r]))
