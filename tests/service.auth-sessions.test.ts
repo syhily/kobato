@@ -43,7 +43,7 @@ beforeEach(async () => {
 describe('listSessionsByUser', () => {
   it('joins the user_sessions set with each session_meta hash and returns parsed metadata', async () => {
     const userId = 42n
-    const loginAt = new Date('2026-05-01T08:00:00Z')
+    const loginAt = new Date()
     const redis = redisInstance()
 
     // `recordSessionLogin` writes the meta hash; the `user_sessions` set
