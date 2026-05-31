@@ -9,7 +9,8 @@ import { orpcQuery, useMutation, useQuery } from '@/client/api/query'
 import { AdminListPage } from '@/ui/admin/shared/AdminListPage'
 import { type ConfirmState, ConfirmDialog } from '@/ui/admin/shared/ConfirmDialog'
 import { useDebouncedSearch } from '@/ui/admin/shared/useDebouncedSearch'
-import { draftFromTag, EMPTY_TAG_DRAFT, TagDisplayRow, TagEditorRow, TagsSkeleton } from '@/ui/admin/tags/TagRows'
+import { EditTagDialog } from '@/ui/admin/tags/EditTagDialog'
+import { TagRow, TagsSkeleton } from '@/ui/admin/tags/TagRows'
 import { useTagsController } from '@/ui/admin/tags/useTagsController'
 import { Button } from '@/ui/components/button'
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@/ui/components/empty'
@@ -17,15 +18,16 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 
 const PAGE_SIZE = 30
 
-// Tags admin page orchestrator. Owns fetcher state, the
-// edit / create row toggle, and the soft-delete confirmation flow.
-// Per-row presentation (display + inline editor + skeleton) lives
-// in `./TagRows.tsx` so this file only owns orchestration.
+type EditTarget = AdminTagDto | null | undefined
+
+// Tags admin page orchestrator. Owns fetcher state, the dialog-based
+// edit / create flow, and the soft-delete confirmation flow.
+// Per-row presentation lives in `./TagRows.tsx` so this file only owns
+// orchestration.
 export function TagsView() {
   const { state, dispatch } = useTagsController()
   const [confirm, setConfirm] = useState<ConfirmState | null>(null)
-  const [editingId, setEditingId] = useState<string | null>(null)
-  const [isCreating, setIsCreating] = useState(false)
+  const [editTarget, setEditTarget] = useState<EditTarget>(undefined)
 
   const {
     data: listData,
@@ -122,8 +124,7 @@ export function TagsView() {
       if (id) {
         dispatch({ type: 'removeTag', id })
       }
-      // Close the inline editor when the tag being edited is deleted.
-      setEditingId(null)
+      setEditTarget(undefined)
     },
     onError: (error) => {
       pendingDeleteIdRef.current = null
@@ -143,24 +144,7 @@ export function TagsView() {
   })
 
   const isLoading = isListPending && state.rows.length === 0
-
-  const handleStartEdit = useCallback((id: string) => {
-    setIsCreating(false)
-    setEditingId(id)
-  }, [])
-
-  const handleStopEdit = useCallback(() => {
-    setEditingId(null)
-  }, [])
-
-  const handleStartCreate = useCallback(() => {
-    setEditingId(null)
-    setIsCreating(true)
-  }, [])
-
-  const handleStopCreate = useCallback(() => {
-    setIsCreating(false)
-  }, [])
+  const isDialogOpen = editTarget !== undefined
 
   const handleDelete = useCallback(
     (row: AdminTagDto) => {
@@ -201,7 +185,7 @@ export function TagsView() {
                 className="h-9 w-full rounded-md border border-input bg-transparent py-1 pr-3 pl-9 text-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
               />
             </div>
-            <Button type="button" onClick={handleStartCreate} disabled={isCreating}>
+            <Button type="button" onClick={() => setEditTarget(null)} disabled={isDialogOpen}>
               <PlusIcon /> 新增标签
             </Button>
           </div>
@@ -211,6 +195,7 @@ export function TagsView() {
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead className="w-20">OG 图</TableHead>
                 <TableHead className="w-[28%]">名称</TableHead>
                 <TableHead>Slug</TableHead>
                 <TableHead className="w-24">文章</TableHead>
@@ -218,22 +203,11 @@ export function TagsView() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {isCreating ? (
-                <TagEditorRow
-                  initialDraft={EMPTY_TAG_DRAFT}
-                  submitLabel="创建"
-                  onCancel={handleStopCreate}
-                  onSaved={(saved) => {
-                    dispatch({ type: 'prependTag', tag: saved })
-                    handleStopCreate()
-                  }}
-                />
-              ) : null}
               {isLoading ? (
                 <TagsSkeleton />
-              ) : state.rows.length === 0 && !isCreating ? (
+              ) : state.rows.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={4} className="p-0">
+                  <TableCell colSpan={5} className="p-0">
                     <Empty className="border-0">
                       <EmptyHeader>
                         <EmptyMedia variant="icon">
@@ -245,30 +219,15 @@ export function TagsView() {
                   </TableCell>
                 </TableRow>
               ) : (
-                state.rows.map((row) =>
-                  editingId === row.id ? (
-                    <TagEditorRow
-                      key={row.id}
-                      tagId={row.id}
-                      initialDraft={draftFromTag(row)}
-                      submitLabel="保存"
-                      onCancel={handleStopEdit}
-                      onSaved={(saved) => {
-                        dispatch({ type: 'patchTag', tag: saved })
-                        handleStopEdit()
-                      }}
-                      onDelete={() => handleDelete(row)}
-                    />
-                  ) : (
-                    <TagDisplayRow
-                      key={row.id}
-                      tag={row}
-                      disabled={isCreating || editingId !== null}
-                      onEdit={() => handleStartEdit(row.id)}
-                      onDelete={() => handleDelete(row)}
-                    />
-                  ),
-                )
+                state.rows.map((row) => (
+                  <TagRow
+                    key={row.id}
+                    tag={row}
+                    disabled={isDialogOpen}
+                    onEdit={() => setEditTarget(row)}
+                    onDelete={() => handleDelete(row)}
+                  />
+                ))
               )}
             </TableBody>
           </Table>
@@ -289,6 +248,19 @@ export function TagsView() {
           </div>
         </AdminListPage.Body>
       </AdminListPage>
+
+      <EditTagDialog
+        tag={editTarget}
+        onClose={() => setEditTarget(undefined)}
+        onSaved={(saved) => {
+          if (editTarget === null) {
+            dispatch({ type: 'prependTag', tag: saved })
+          } else {
+            dispatch({ type: 'patchTag', tag: saved })
+          }
+          setEditTarget(undefined)
+        }}
+      />
 
       <ConfirmDialog state={confirm} onClose={() => setConfirm(null)} />
     </>

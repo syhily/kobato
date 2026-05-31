@@ -9,6 +9,7 @@ export interface AdminTagDto {
   id: string
   name: string
   slug: string
+  ogImage: string
   /**
    * Number of MDX posts (visible + hidden + scheduled) whose
    * `frontmatter.tags[]` includes this row's `name`. Mirrors the
@@ -50,6 +51,7 @@ export interface UpsertTagInput {
   id?: string
   name: string
   slug?: string
+  ogImage?: string
 }
 
 export interface UpsertTagOutput {

@@ -40,6 +40,7 @@ export function toAdminTagDto(row: TagRow, postCount: number): AdminTagDto {
     id: String(row.id),
     name: row.name,
     slug: row.slug,
+    ogImage: row.ogImage,
     postCount,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
@@ -104,6 +105,7 @@ export interface UpsertTagInputs {
   id?: bigint
   name: string
   slug?: string
+  ogImage?: string
 }
 
 export interface TagViewerContext {
@@ -126,7 +128,7 @@ export async function upsertAdminTag(
       slug,
       '标签',
     )
-    const row = await insertTag(db, { name: input.name, slug })
+    const row = await insertTag(db, { name: input.name, slug, ogImage: input.ogImage ?? '' })
     const countOf = await tagPostCounter(db)
     return toAdminTagDto(row, await countOf(row.name))
   }
@@ -150,7 +152,7 @@ export async function upsertAdminTag(
     existing.slug,
     '标签',
   )
-  const updated = await updateTag(db, input.id, { name: input.name, slug })
+  const updated = await updateTag(db, input.id, { name: input.name, slug, ogImage: input.ogImage })
   if (updated === null) {
     throw new DomainError('NOT_FOUND', '标签不存在')
   }

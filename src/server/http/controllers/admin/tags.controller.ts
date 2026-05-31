@@ -28,6 +28,7 @@ const upsert = authorProc
       id: z.string().min(1).optional(),
       name: z.string().trim().min(1).max(20),
       slug: z.string().optional(),
+      ogImage: z.string().optional(),
     }),
   )
   .output(z.object({ tag: adminTagDto }))
@@ -38,6 +39,7 @@ const upsert = authorProc
         id: input.id !== undefined ? idFromString(input.id) : undefined,
         name: input.name,
         slug: input.slug,
+        ogImage: input.ogImage,
       },
       context.viewer,
     )

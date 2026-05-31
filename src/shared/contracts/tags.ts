@@ -9,6 +9,7 @@ export const adminTagDto = z.object({
   id: idString,
   name: z.string(),
   slug: z.string(),
+  ogImage: z.string(),
   postCount: z.number().int().nonnegative(),
   createdAt: isoDateTime,
   updatedAt: isoDateTime,

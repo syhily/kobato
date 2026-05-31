@@ -37,6 +37,7 @@ export async function loader({ request, context, params }: Route.LoaderArgs): Pr
     metadata: { likes: true, views: true, comments: false },
     title: tag.name,
     extra: undefined,
+    ogImageUrl: tag.ogImage || undefined,
   })
 }
 

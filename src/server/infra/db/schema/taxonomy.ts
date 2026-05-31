@@ -42,6 +42,7 @@ export const tag = pgTable(
       .$defaultFn(() => new Date()),
     name: varchar('name', { length: 20 }).unique().notNull(),
     slug: varchar('slug', { length: 80 }).unique().notNull(),
+    ogImage: text('og_image').notNull().default(''),
   },
   (table) => [index('idx_tag_slug').on(table.slug)],
 )
