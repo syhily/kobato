@@ -1,7 +1,7 @@
 import {
   CopyIcon,
   MusicIcon,
-  PencilIcon,
+  SquarePenIcon,
   PlayIcon,
   PlusIcon,
   RefreshCwIcon,
@@ -284,7 +284,7 @@ export function MusicsView() {
                           onClick={() => setEditTarget(row)}
                           aria-label={`编辑「${row.name}」`}
                         >
-                          <PencilIcon />
+                          <SquarePenIcon />
                         </Button>
                         <Button
                           type="button"

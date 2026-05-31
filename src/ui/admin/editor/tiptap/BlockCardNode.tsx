@@ -1,6 +1,6 @@
 import { Node } from '@tiptap/core'
 import { NodeViewWrapper, ReactNodeViewRenderer, type NodeViewProps } from '@tiptap/react'
-import { FunctionSquareIcon, PencilIcon, TrashIcon } from 'lucide-react'
+import { FunctionSquareIcon, SquarePenIcon, TrashIcon } from 'lucide-react'
 import { useState } from 'react'
 
 import type { Block } from '@/shared/pt/schema'
@@ -129,7 +129,7 @@ function BlockCardView(props: NodeViewProps) {
                 className="opacity-0 transition-opacity group-hover:opacity-100"
                 onClick={() => setEditing(true)}
               >
-                <PencilIcon />
+                <SquarePenIcon />
               </Button>
             ) : null}
           </div>

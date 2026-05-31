@@ -1,4 +1,4 @@
-import { EditIcon, Trash2Icon } from 'lucide-react'
+import { SquarePenIcon, Trash2Icon } from 'lucide-react'
 import { memo } from 'react'
 import { Link } from 'react-router'
 
@@ -50,7 +50,7 @@ export const TagRow = memo(function TagRow({ tag, disabled, onEdit, onDelete }: 
             title="编辑"
             aria-label={`编辑标签 ${tag.name}`}
           >
-            <EditIcon className="size-4" />
+            <SquarePenIcon className="size-4" />
           </button>
           <button
             type="button"

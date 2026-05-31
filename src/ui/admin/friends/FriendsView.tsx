@@ -1,5 +1,5 @@
 import {
-  EditIcon,
+  SquarePenIcon,
   ExternalLinkIcon,
   EyeIcon,
   EyeOffIcon,
@@ -333,7 +333,7 @@ function FriendRow({ friend, onEdit, onDelete }: FriendRowProps) {
           />
           <DropdownMenuContent align="end" className="w-44">
             <DropdownMenuItem onClick={onEdit}>
-              <EditIcon /> 编辑
+              <SquarePenIcon /> 编辑
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem variant="destructive" onClick={onDelete}>

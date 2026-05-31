@@ -1,4 +1,4 @@
-import { CheckIcon, EditIcon, LinkIcon, MoreHorizontalIcon, ReplyIcon, Trash2Icon, UserIcon } from 'lucide-react'
+import { CheckIcon, LinkIcon, MoreHorizontalIcon, ReplyIcon, SquarePenIcon, Trash2Icon, UserIcon } from 'lucide-react'
 
 import type { AdminCommentWire as AdminComment } from '@/shared/contracts/comments'
 
@@ -129,7 +129,7 @@ export function AdminCommentRow({
           />
           <DropdownMenuContent align="end" className="w-40">
             <DropdownMenuItem onClick={onEdit}>
-              <EditIcon /> 编辑评论
+              <SquarePenIcon /> 编辑评论
             </DropdownMenuItem>
             <DropdownMenuItem onClick={onEditUser}>
               <UserIcon /> 编辑用户

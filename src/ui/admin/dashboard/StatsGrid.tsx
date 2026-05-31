@@ -1,6 +1,6 @@
 import type { LucideIcon } from 'lucide-react'
 
-import { ClockIcon, FileCheck2Icon, FilePenLineIcon, MessageSquareIcon } from 'lucide-react'
+import { ClockIcon, FileCheck2Icon, MessageSquareIcon, SquarePenIcon } from 'lucide-react'
 import { Link } from 'react-router'
 
 import { cn } from '@/ui/lib/cn'
@@ -34,7 +34,7 @@ export function StatsGrid({ stats }: StatsGridProps) {
         label="我的草稿"
         value={stats.draftCount}
         href="/admin/posts?published=false"
-        icon={FilePenLineIcon}
+        icon={SquarePenIcon}
         tone="warn"
       />
       <StatCard

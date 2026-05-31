@@ -54,7 +54,7 @@ export function UsersToolbar({
               type="button"
               variant="outline"
               size="sm"
-              className={cn('border-input', hasFilters && 'border-foreground/30 bg-secondary')}
+              className={cn(hasFilters && 'border-foreground/30 bg-secondary')}
             >
               <FilterIcon /> 筛选
             </Button>

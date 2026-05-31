@@ -1,4 +1,4 @@
-import { EditIcon, SaveIcon, Trash2Icon, XIcon } from 'lucide-react'
+import { SaveIcon, SquarePenIcon, Trash2Icon, XIcon } from 'lucide-react'
 import { type SubmitEventHandler, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import type { CacheSettings } from '@/shared/config/types'
@@ -180,7 +180,7 @@ export function BucketCard({ bucket, settings, allBuckets, isClearPending, clear
         </Button>
       ) : (
         <Button type="button" variant="outline" disabled={isClearPending} onClick={onEdit}>
-          <EditIcon data-icon /> 编辑
+          <SquarePenIcon data-icon /> 编辑
         </Button>
       )}
       {isEditing ? (

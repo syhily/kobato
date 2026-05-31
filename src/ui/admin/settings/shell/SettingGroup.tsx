@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 
-import { Loader2Icon, PencilIcon, XIcon } from 'lucide-react'
+import { Loader2Icon, SquarePenIcon, XIcon } from 'lucide-react'
 
 import { Button } from '@/ui/components/button'
 import { cn } from '@/ui/lib/cn'
@@ -60,7 +60,7 @@ export function SettingGroup({
 
             {showEdit ? (
               <Button type="button" variant="ghost" size="sm" onClick={() => onModeChange('edit')}>
-                <PencilIcon data-icon="sm" />
+                <SquarePenIcon data-icon="sm" />
                 <span className="ml-1">编辑</span>
               </Button>
             ) : null}

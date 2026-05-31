@@ -1,4 +1,4 @@
-import { EditIcon, ExternalLinkIcon, GripVerticalIcon, Trash2Icon } from 'lucide-react'
+import { ExternalLinkIcon, GripVerticalIcon, SquarePenIcon, Trash2Icon } from 'lucide-react'
 import { type DragEvent, Fragment, memo } from 'react'
 import { Link } from 'react-router'
 
@@ -127,7 +127,7 @@ export const CategoryRow = memo(function CategoryRow({
         className="inline-flex h-(--spacing-sidebar-item) w-(--spacing-admin-col-narrow) shrink-0 items-center justify-center rounded-md border border-border text-muted-foreground transition-colors hover:border-foreground/30 hover:text-foreground"
         title="编辑"
       >
-        <EditIcon className="size-4" />
+        <SquarePenIcon className="size-4" />
       </button>
 
       {/* Delete */}

@@ -1,4 +1,4 @@
-import { PencilIcon, RefreshCwIcon, RotateCcwIcon, SearchIcon, Trash2Icon, XIcon } from 'lucide-react'
+import { RefreshCwIcon, RotateCcwIcon, SearchIcon, SquarePenIcon, Trash2Icon, XIcon } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate, useRevalidator, useSearchParams } from 'react-router'
 
@@ -388,7 +388,7 @@ function MyCommentRow({ item, submitting, onEdit, onRequestDelete, onCancelDelet
             <div className="flex flex-wrap items-center gap-2">
               {canEdit && (
                 <Button type="button" size="sm" variant="outline" disabled={submitting} onClick={onEdit}>
-                  <PencilIcon data-icon="inline-start" /> 修改
+                  <SquarePenIcon data-icon="inline-start" /> 修改
                 </Button>
               )}
               {hasPendingDelete ? (
