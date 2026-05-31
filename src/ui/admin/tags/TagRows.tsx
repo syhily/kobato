@@ -4,7 +4,6 @@ import { Link } from 'react-router'
 
 import type { AdminTagDto } from '@/shared/types/tags'
 
-import { Button } from '@/ui/components/button'
 import { Skeleton } from '@/ui/components/skeleton'
 import { TableCell, TableRow } from '@/ui/components/table'
 
@@ -43,16 +42,16 @@ export const TagRow = memo(function TagRow({ tag, disabled, onEdit, onDelete }: 
       </TableCell>
       <TableCell className="py-5 pr-4 text-right">
         <div className="flex justify-end gap-1">
-          <Button
+          <button
             type="button"
-            size="sm"
-            variant="ghost"
             onClick={onEdit}
             disabled={disabled}
+            className="inline-flex h-(--spacing-sidebar-item) w-(--spacing-admin-col-narrow) shrink-0 items-center justify-center rounded-md border border-border text-muted-foreground transition-colors hover:border-foreground/30 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
+            title="编辑"
             aria-label={`编辑标签 ${tag.name}`}
           >
-            <EditIcon />
-          </Button>
+            <EditIcon className="size-4" />
+          </button>
           <button
             type="button"
             onClick={onDelete}
