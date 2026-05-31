@@ -33,11 +33,11 @@ export default function MentionsPage() {
         <p className="text-sm text-muted-foreground">追踪来自其他网站的外部链接</p>
       </div>
 
-      <Card className="px-4 py-3">
+      <Card className="px-4 py-3 shadow-none transition-shadow hover:shadow-sm">
         <DateRangePicker preset={state.preset} onSelect={state.setPreset} />
       </Card>
 
-      <Card className="gap-2">
+      <Card className="gap-2 shadow-none transition-shadow hover:shadow-sm">
         <CardContent className="px-4 pb-4">
           {referers.length === 0 ? (
             <div className="py-8 text-center text-sm text-muted-foreground">当前时间范围内暂无数据</div>
