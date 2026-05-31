@@ -53,17 +53,16 @@ export const TagRow = memo(function TagRow({ tag, disabled, onEdit, onDelete }: 
           >
             <EditIcon />
           </Button>
-          <Button
+          <button
             type="button"
-            size="sm"
-            variant="ghost"
-            className="text-destructive hover:text-destructive"
             onClick={onDelete}
             disabled={disabled}
+            className="inline-flex h-(--spacing-sidebar-item) w-(--spacing-admin-col-narrow) shrink-0 items-center justify-center rounded-md border border-border text-muted-foreground transition-colors hover:border-destructive/30 hover:text-destructive disabled:cursor-not-allowed disabled:opacity-50"
+            title="删除"
             aria-label={`删除标签 ${tag.name}`}
           >
-            <Trash2Icon />
-          </Button>
+            <Trash2Icon className="size-4" />
+          </button>
         </div>
       </TableCell>
     </TableRow>
