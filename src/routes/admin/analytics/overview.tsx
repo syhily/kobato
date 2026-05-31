@@ -65,7 +65,7 @@ export default function WpAdminAnalyticsOverview() {
 
   return (
     <div className="flex flex-col gap-4">
-      <Card className="px-4 py-3 shadow-none transition-shadow hover:shadow-sm">
+      <Card className="px-4 py-3 shadow-none">
         <div className="flex flex-col gap-3">
           <DateRangePicker preset={state.preset} onSelect={state.setPreset} />
           <FiltersBar filters={state.filters} onClear={state.clearFilter} onClearAll={state.clearAllFilters} />
@@ -74,7 +74,7 @@ export default function WpAdminAnalyticsOverview() {
 
       <Counters data={counters} />
 
-      <Card className="gap-2 shadow-none transition-shadow hover:shadow-sm">
+      <Card className="gap-2 shadow-none">
         <CardContent className="flex flex-col gap-3 px-4 pb-4">
           <Tabs value={chartTab} onValueChange={(v) => setChartTab(v as 'views' | 'heatmap')}>
             <TabsList className="h-8">

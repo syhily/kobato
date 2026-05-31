@@ -31,7 +31,7 @@ export function WeeklyTrendCard({ points }: { points: TrendPoint[] }) {
   const linePath = pathPoints.length > 0 ? `M${pathPoints.join(' L')}` : ''
 
   return (
-    <div className="rounded-lg border bg-card p-6">
+    <div className="rounded-xl border bg-card p-6">
       <div className="flex items-center gap-2">
         <TrendingUpIcon className="size-4 text-muted-foreground" />
         <h2 className="text-base font-medium">最近 7 天访问趋势</h2>

@@ -210,7 +210,7 @@ export function BrandingView({ branding, storageEnabled }: BrandingViewProps) {
       />
 
       {!storageEnabled ? (
-        <div className="rounded-md border border-status-warn-border/30 bg-status-warn-bg/50 p-4 text-sm text-status-warn-fg">
+        <div className="rounded-xl border border-status-warn-border/30 bg-status-warn-bg/50 p-4 text-sm text-status-warn-fg">
           当前未启用 S3 上传，所有上传 / 清除入口将返回 503。请先到{' '}
           <a className="underline underline-offset-2" href="/admin/settings#assets">
             系统设置 → 资源

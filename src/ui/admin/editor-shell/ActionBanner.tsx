@@ -28,7 +28,7 @@ export function ActionBanner({ kind, slug, basePath, onClose }: ActionBannerProp
       ? 'text-status-warn-fg/80 hover:bg-status-warn-border/20 hover:text-status-warn-fg'
       : 'text-status-success-fg/80 hover:bg-status-success-border/20 hover:text-status-success-fg'
   return (
-    <output className={cn('flex flex-wrap items-center gap-2 rounded-md border px-3 py-2 text-xs', themeClass)}>
+    <output className={cn('flex flex-wrap items-center gap-2 rounded-xl border px-3 py-2 text-xs', themeClass)}>
       <span>{message}</span>
       <Link to={href} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 font-mono underline">
         <ExternalLinkIcon className="size-3" />

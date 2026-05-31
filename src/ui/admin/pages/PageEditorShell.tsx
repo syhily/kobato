@@ -386,7 +386,7 @@ export function PageEditorShell({ mode, detail, navigate }: PageEditorShellProps
               extras={
                 isEditing ? (
                   <>
-                    <div className="rounded-md border bg-card p-2">
+                    <div className="rounded-xl border bg-card p-2">
                       <RevisionHistoryDrawer
                         type="page"
                         ownerId={detail.page.id}
@@ -395,7 +395,7 @@ export function PageEditorShell({ mode, detail, navigate }: PageEditorShellProps
                         onAdoptRevision={state.adoptRevisionFromHistory}
                       />
                     </div>
-                    <div className="group/delete rounded-md border border-destructive/30 p-2 transition-colors hover:bg-destructive">
+                    <div className="group/delete rounded-xl border border-destructive/30 p-2 transition-colors hover:bg-destructive">
                       {detail.page.deletedAt !== null ? (
                         <Button
                           variant="ghost"
@@ -444,7 +444,7 @@ export function PageEditorShell({ mode, detail, navigate }: PageEditorShellProps
                 extras={
                   isEditing ? (
                     <>
-                      <div className="rounded-md border bg-card p-2">
+                      <div className="rounded-xl border bg-card p-2">
                         <RevisionHistoryDrawer
                           type="page"
                           ownerId={detail.page.id}
@@ -453,7 +453,7 @@ export function PageEditorShell({ mode, detail, navigate }: PageEditorShellProps
                           onAdoptRevision={state.adoptRevisionFromHistory}
                         />
                       </div>
-                      <div className="group/delete rounded-md border border-destructive/30 p-2 transition-colors hover:bg-destructive">
+                      <div className="group/delete rounded-xl border border-destructive/30 p-2 transition-colors hover:bg-destructive">
                         {detail.page.deletedAt !== null ? (
                           <Button
                             variant="ghost"
@@ -512,7 +512,7 @@ interface CreateModeBannerProps {
 
 function CreateModeBanner({ draftSavedAt }: CreateModeBannerProps) {
   return (
-    <div className="flex items-center justify-between rounded-md border border-destructive/10 bg-destructive/5 px-3 py-2 text-xs text-muted-foreground">
+    <div className="flex items-center justify-between rounded-xl border border-destructive/10 bg-destructive/5 px-3 py-2 text-xs text-muted-foreground">
       <span>新页面正文仅本地保留，点击「创建页面」后才会同步到服务器。</span>
       {draftSavedAt !== null ? (
         <span className="font-mono">已恢复本地草稿 · {new Date(draftSavedAt).toLocaleTimeString('zh-CN')}</span>
@@ -531,7 +531,7 @@ interface TitleSlugStripProps {
 
 function TitleSlugStrip({ title, slug, onTitleChange, onSlugChange, disabled }: TitleSlugStripProps) {
   return (
-    <div className="flex flex-col gap-2 rounded-md border bg-card p-3">
+    <div className="flex flex-col gap-2 rounded-xl border bg-card p-3">
       <Input
         aria-label="页面标题"
         value={title}

@@ -217,12 +217,12 @@ export function BackupView({ backup, timeZone }: BackupViewProps) {
     <div className="flex flex-col gap-6">
       {(statusLoading || isInitialLoading) && <div className="text-sm text-muted-foreground">正在读取备份信息…</div>}
       {!statusLoading && !isInitialLoading && !pgToolsAvailable && (
-        <div className="rounded-md border border-status-warn-border/30 bg-status-warn-bg/50 p-4 text-sm text-status-warn-fg">
+        <div className="rounded-xl border border-status-warn-border/30 bg-status-warn-bg/50 p-4 text-sm text-status-warn-fg">
           当前运行环境缺少 postgresql-client，备份与还原功能不可用。
         </div>
       )}
       {!statusLoading && !isInitialLoading && !s3Enabled && (
-        <div className="rounded-md border border-status-warn-border/30 bg-status-warn-bg/50 p-4 text-sm text-status-warn-fg">
+        <div className="rounded-xl border border-status-warn-border/30 bg-status-warn-bg/50 p-4 text-sm text-status-warn-fg">
           请先前往存储配置启用 S3 存储。
         </div>
       )}
@@ -286,7 +286,7 @@ export function BackupView({ backup, timeZone }: BackupViewProps) {
             className="sr-only"
             aria-label="选择备份文件"
           />
-          <div className="flex items-center gap-3 rounded-md bg-muted/50 px-3 py-2.5">
+          <div className="flex items-center gap-3 rounded-xl bg-muted/50 px-3 py-2.5">
             <Button
               type="button"
               variant="outline"

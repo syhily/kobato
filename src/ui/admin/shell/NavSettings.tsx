@@ -40,7 +40,7 @@ function ThemeToggleItem() {
 
   return (
     <SidebarMenuItem>
-      <div className="flex h-sidebar-item w-full items-center gap-3 overflow-hidden rounded-md px-3 py-2 pl-4 text-left text-md font-medium text-sidebar-foreground transition-all hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">
+      <div className="flex h-sidebar-item w-full items-center gap-3 overflow-hidden rounded-xl px-3 py-2 pl-4 text-left text-md font-medium text-sidebar-foreground transition-all hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">
         {isDark ? <SunIcon className="size-4 shrink-0" /> : <MoonIcon className="size-4 shrink-0" />}
         <span className="flex-1 truncate">{isDark ? '浅色模式' : '深色模式'}</span>
         <Switch

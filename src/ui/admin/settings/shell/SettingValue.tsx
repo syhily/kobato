@@ -28,7 +28,7 @@ export function SettingValue({ label, value, hint, format = 'plain', className }
       <span className="pt-0.5 text-sm font-medium text-foreground sm:pt-1">{label}</span>
       <div className="flex flex-col gap-1">
         {format === 'code' ? (
-          <div className="rounded-md border bg-muted/40 px-3 py-2 font-mono text-sm break-all text-foreground">
+          <div className="rounded-xl border bg-muted/40 px-3 py-2 font-mono text-sm break-all text-foreground">
             {value || <span className="text-muted-foreground">—</span>}
           </div>
         ) : (

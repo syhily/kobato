@@ -33,7 +33,7 @@ export const ImageCard = memo(function ImageCard({ image, onClick }: ImageCardPr
       onClick={onClick}
       aria-label={`查看图片 ${image.storagePath}`}
       className={cn(
-        'group relative block aspect-square w-full overflow-hidden rounded-md border bg-muted',
+        'group relative block aspect-square w-full overflow-hidden rounded-xl border bg-muted',
         'focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none',
         'transition-shadow hover:shadow-md',
       )}

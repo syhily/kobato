@@ -54,7 +54,7 @@ export function SearchResultItem({
   const ratio = totalDuration !== null && totalDuration > 0 ? Math.min(1, Math.max(0, currentTime / totalDuration)) : 0
 
   return (
-    <div className="flex flex-col gap-2 rounded-md border bg-card px-3 py-2">
+    <div className="flex flex-col gap-2 rounded-xl border bg-card px-3 py-2">
       <div className="flex items-center gap-3">
         {hit.coverUrl !== '' ? (
           // The cover URL is a third-party CDN link; rendered

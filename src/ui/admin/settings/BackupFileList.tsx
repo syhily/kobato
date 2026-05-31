@@ -87,7 +87,7 @@ export function BackupFileList({
       {backups.length === 0 ? (
         <p className="text-sm text-muted-foreground">暂无备份文件</p>
       ) : (
-        <div className="overflow-x-auto rounded-md border">
+        <div className="overflow-x-auto rounded-xl border">
           <table className="w-full text-sm">
             <thead className="bg-muted">
               <tr>

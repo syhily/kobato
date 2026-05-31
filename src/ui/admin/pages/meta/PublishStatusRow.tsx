@@ -35,7 +35,7 @@ export function PublishStatusRow({
   const isFuture = isScheduled && (Date.parse(publishedAt) || 0) > Date.now()
 
   return (
-    <div className="grid gap-3 rounded-md border bg-muted/30 p-3">
+    <div className="grid gap-3 rounded-xl border bg-muted/30 p-3">
       <div className="grid gap-1">
         <Label className="text-xs font-medium tracking-wide text-muted-foreground uppercase">发布状态</Label>
         <div className="flex min-w-0 flex-wrap items-center gap-2">
@@ -117,7 +117,7 @@ function PublishModeOption({ id, value, active, label, description }: PublishMod
     <label
       htmlFor={id}
       className={cn(
-        'flex cursor-pointer items-start gap-2 rounded-md border bg-background p-2 transition-colors',
+        'flex cursor-pointer items-start gap-2 rounded-xl border bg-background p-2 transition-colors',
         active ? 'border-primary ring-1 ring-primary/30' : 'hover:bg-accent/40',
       )}
     >

@@ -120,7 +120,7 @@ export function PendingModerationPanel({ initial, emptyStateLine }: PendingModer
     // tall monitors. Body is the only scroll container — header /
     // pagination stay pinned via `shrink-0`, items get `min-h-0
     // overflow-y-auto`.
-    <div className="flex h-[340px] max-h-[50vh] min-h-[280px] flex-col rounded-lg border bg-card p-5">
+    <div className="flex min-h-[280px] flex-col rounded-xl border bg-card p-5">
       <div className="flex shrink-0 flex-wrap items-center justify-between gap-3">
         <div className="min-w-0">
           <h2 className="text-lg font-medium">

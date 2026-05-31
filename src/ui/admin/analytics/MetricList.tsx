@@ -44,7 +44,7 @@ export function MetricList({ type, initial, className, entityType, entityId }: M
           // Skeleton placeholders — identical non-interactive items
           // that disappear in one shot when data arrives.
           // oxlint-disable-next-line react/no-array-index-key
-          <Skeleton key={i} className="h-8 w-full rounded-md" />
+          <Skeleton key={i} className="h-8 w-full rounded-xl" />
         ))}
       </div>
     )
@@ -64,11 +64,11 @@ export function MetricList({ type, initial, className, entityType, entityId }: M
           <li key={row.name}>
             <button
               type="button"
-              className="group relative flex w-full items-center gap-2 overflow-hidden rounded-md px-2 py-1.5 text-sm transition-colors hover:bg-accent/60 focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
+              className="group relative flex w-full items-center gap-2 overflow-hidden rounded-xl px-2 py-1.5 text-sm transition-colors hover:bg-accent/60 focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
               onClick={() => state.setFilter(type, row.name)}
             >
               <span
-                className="absolute inset-y-0 left-0 -z-0 rounded-md"
+                className="absolute inset-y-0 left-0 -z-0 rounded-xl"
                 style={{
                   width: `${ratio * 100}%`,
                   background: 'color-mix(in srgb, var(--color-chart-1, #6366f1) 14%, transparent)',

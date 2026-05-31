@@ -78,7 +78,7 @@ function StatCard({ label, value, href, icon: Icon, tone, emphasis }: StatCardPr
     <Link
       to={href}
       className={cn(
-        'group relative overflow-hidden rounded-lg border p-4 transition-colors hover:border-line-muted',
+        'group relative overflow-hidden rounded-xl border p-4 transition-colors hover:border-line-muted',
         palette.bg,
       )}
     >

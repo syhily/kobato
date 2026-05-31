@@ -78,7 +78,7 @@ export const CategoryRow = memo(function CategoryRow({
       </span>
 
       {/* Cover */}
-      <div className="relative aspect-[16/10] w-(--spacing-admin-thumb) flex-shrink-0 overflow-hidden rounded-md bg-muted">
+      <div className="relative aspect-[16/10] w-(--spacing-admin-thumb) flex-shrink-0 overflow-hidden rounded-xl bg-muted">
         {category.cover ? (
           <img src={category.cover} alt={category.name} className="size-full object-cover" loading="lazy" />
         ) : null}
@@ -124,7 +124,7 @@ export const CategoryRow = memo(function CategoryRow({
       <button
         type="button"
         onClick={onEdit}
-        className="inline-flex h-(--spacing-sidebar-item) w-(--spacing-admin-col-narrow) shrink-0 items-center justify-center rounded-md border border-border text-muted-foreground transition-colors hover:border-foreground/30 hover:text-foreground"
+        className="inline-flex h-(--spacing-sidebar-item) w-(--spacing-admin-col-narrow) shrink-0 items-center justify-center rounded-xl border border-border text-muted-foreground transition-colors hover:border-foreground/30 hover:text-foreground"
         title="编辑"
       >
         <SquarePenIcon className="size-4" />
@@ -134,7 +134,7 @@ export const CategoryRow = memo(function CategoryRow({
       <button
         type="button"
         onClick={onDelete}
-        className="inline-flex h-(--spacing-sidebar-item) w-(--spacing-admin-col-narrow) shrink-0 items-center justify-center rounded-md border border-border text-muted-foreground transition-colors hover:border-destructive/30 hover:text-destructive"
+        className="inline-flex h-(--spacing-sidebar-item) w-(--spacing-admin-col-narrow) shrink-0 items-center justify-center rounded-xl border border-border text-muted-foreground transition-colors hover:border-destructive/30 hover:text-destructive"
         title="删除"
       >
         <Trash2Icon className="size-4" />
@@ -169,14 +169,14 @@ export function CategoriesSkeleton() {
         <Fragment key={`skeleton-${i}`}>
           <div className="flex items-center gap-4 px-4 py-3">
             <Skeleton className="size-6 shrink-0 rounded-sm" />
-            <Skeleton className="aspect-[16/10] w-(--spacing-admin-thumb) shrink-0 rounded-md" />
+            <Skeleton className="aspect-[16/10] w-(--spacing-admin-thumb) shrink-0 rounded-xl" />
             <div className="flex min-w-0 flex-1 flex-col gap-2">
               <Skeleton className="h-4 w-1/3" />
               <Skeleton className="h-3 w-1/4" />
             </div>
             <Skeleton className="hidden h-4 w-(--spacing-admin-col-narrow) md:block" />
-            <Skeleton className="h-(--spacing-sidebar-item) w-(--spacing-admin-col-narrow) rounded-md" />
-            <Skeleton className="h-(--spacing-sidebar-item) w-(--spacing-admin-col-narrow) rounded-md" />
+            <Skeleton className="h-(--spacing-sidebar-item) w-(--spacing-admin-col-narrow) rounded-xl" />
+            <Skeleton className="h-(--spacing-sidebar-item) w-(--spacing-admin-col-narrow) rounded-xl" />
           </div>
         </Fragment>
       ))}

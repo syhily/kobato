@@ -7,8 +7,6 @@ import type { AdminTagDto } from '@/shared/types/tags'
 import { Skeleton } from '@/ui/components/skeleton'
 import { TableCell, TableRow } from '@/ui/components/table'
 
-const DEFAULT_OG_IMAGE = '/images/open-graph.png'
-
 interface TagRowProps {
   tag: AdminTagDto
   disabled: boolean
@@ -17,15 +15,8 @@ interface TagRowProps {
 }
 
 export const TagRow = memo(function TagRow({ tag, disabled, onEdit, onDelete }: TagRowProps) {
-  const ogImageUrl = tag.ogImage || DEFAULT_OG_IMAGE
-
   return (
     <TableRow>
-      <TableCell className="py-4">
-        <div className="relative aspect-[1200/630] w-16 shrink-0 overflow-hidden rounded-md bg-muted">
-          <img src={ogImageUrl} alt={tag.name} className="size-full object-cover" loading="lazy" />
-        </div>
-      </TableCell>
       <TableCell className="py-5">
         <span>{tag.name}</span>
       </TableCell>
@@ -46,7 +37,7 @@ export const TagRow = memo(function TagRow({ tag, disabled, onEdit, onDelete }: 
             type="button"
             onClick={onEdit}
             disabled={disabled}
-            className="inline-flex h-(--spacing-sidebar-item) w-(--spacing-admin-col-narrow) shrink-0 items-center justify-center rounded-md border border-border text-muted-foreground transition-colors hover:border-foreground/30 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
+            className="inline-flex h-(--spacing-sidebar-item) w-(--spacing-admin-col-narrow) shrink-0 items-center justify-center rounded-xl border border-border text-muted-foreground transition-colors hover:border-foreground/30 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
             title="编辑"
             aria-label={`编辑标签 ${tag.name}`}
           >
@@ -56,7 +47,7 @@ export const TagRow = memo(function TagRow({ tag, disabled, onEdit, onDelete }: 
             type="button"
             onClick={onDelete}
             disabled={disabled}
-            className="inline-flex h-(--spacing-sidebar-item) w-(--spacing-admin-col-narrow) shrink-0 items-center justify-center rounded-md border border-border text-muted-foreground transition-colors hover:border-destructive/30 hover:text-destructive disabled:cursor-not-allowed disabled:opacity-50"
+            className="inline-flex h-(--spacing-sidebar-item) w-(--spacing-admin-col-narrow) shrink-0 items-center justify-center rounded-xl border border-border text-muted-foreground transition-colors hover:border-destructive/30 hover:text-destructive disabled:cursor-not-allowed disabled:opacity-50"
             title="删除"
             aria-label={`删除标签 ${tag.name}`}
           >
@@ -75,10 +66,7 @@ export function TagsSkeleton() {
         // Skeleton rows — identical placeholders, swapped wholesale on load.
         // oxlint-disable-next-line react/no-array-index-key
         <TableRow key={i}>
-          <TableCell className="py-4">
-            <Skeleton className="aspect-[1200/630] w-16 rounded-md" />
-          </TableCell>
-          <TableCell className="py-5" colSpan={4}>
+          <TableCell className="py-5" colSpan={3}>
             <Skeleton className="h-4 w-1/3" />
           </TableCell>
         </TableRow>

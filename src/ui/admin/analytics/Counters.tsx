@@ -26,7 +26,7 @@ export function Counters({ data, className }: CountersProps) {
   return (
     <div className={cn('grid grid-cols-1 gap-4 md:grid-cols-3', className)}>
       {CARDS.map((card) => (
-        <Card key={card.key} className="gap-3 px-6 py-5 shadow-none transition-shadow hover:shadow-sm">
+        <Card key={card.key} className="gap-3 px-6 py-5 shadow-none">
           <div className="flex flex-col gap-0.5">
             <span className="text-sm font-medium text-muted-foreground">{card.label}</span>
             <span className="text-xs text-muted-foreground/70">{card.description}</span>

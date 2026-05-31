@@ -39,7 +39,7 @@ export function NavContent({ role, pendingCommentCount = 0, userCount }: NavCont
                 action={
                   <NavMenuItem.Link
                     to="/editor/post/new"
-                    className="absolute top-1/2 right-1 z-10 flex size-7 -translate-y-1/2 items-center justify-center rounded-md p-0 text-sidebar-foreground opacity-0 transition-opacity group-hover/menu-item:opacity-100 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:opacity-100"
+                    className="absolute top-1/2 right-1 z-10 flex size-7 -translate-y-1/2 items-center justify-center rounded-xl p-0 text-sidebar-foreground opacity-0 transition-opacity group-hover/menu-item:opacity-100 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:opacity-100"
                   >
                     <PlusIcon className="size-4" />
                   </NavMenuItem.Link>

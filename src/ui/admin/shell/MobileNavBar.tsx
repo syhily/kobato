@@ -20,7 +20,7 @@ function MobileNavButton({ to, activeMatch = 'exact', children, label }: MobileN
       to={to}
       prefetch="intent"
       className={cn(
-        'flex flex-col items-center justify-center gap-0.5 rounded-lg px-3 py-1 text-xs font-medium transition-colors',
+        'flex flex-col items-center justify-center gap-0.5 rounded-xl px-3 py-1 text-xs font-medium transition-colors',
         isActive ? 'text-sidebar-foreground' : 'text-sidebar-foreground/60 hover:text-sidebar-foreground',
       )}
       aria-label={label}
@@ -63,7 +63,7 @@ export function MobileNavBar() {
           aria-expanded={openMobile}
           aria-controls="app-sidebar"
           className={cn(
-            'flex flex-col items-center justify-center gap-0.5 rounded-lg px-3 py-1 text-xs font-medium transition-colors',
+            'flex flex-col items-center justify-center gap-0.5 rounded-xl px-3 py-1 text-xs font-medium transition-colors',
             'text-sidebar-foreground/60 hover:text-sidebar-foreground',
           )}
           aria-label="更多"

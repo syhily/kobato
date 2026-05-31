@@ -118,7 +118,7 @@ export function ImageNodeView(props: NodeViewProps) {
     <NodeViewWrapper
       data-image-node-view
       className={cn(
-        'group relative my-3 flex flex-col gap-2 rounded-md border-2 border-dashed bg-muted/20 p-3',
+        'group relative my-3 flex flex-col gap-2 rounded-xl border-2 border-dashed bg-muted/20 p-3',
         props.selected ? 'border-primary' : 'border-border',
       )}
       contentEditable={false}

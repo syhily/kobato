@@ -253,7 +253,7 @@ export function AddMusicDialog({ open, onClose, onAdded }: AddMusicDialogProps) 
          */}
         <div className="min-h-0 flex-1 overflow-y-auto px-6 py-4">
           {errorMessage !== null ? (
-            <p className="mb-3 rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">{errorMessage}</p>
+            <p className="mb-3 rounded-xl bg-destructive/10 px-3 py-2 text-sm text-destructive">{errorMessage}</p>
           ) : null}
 
           <div className="flex flex-col gap-2">
@@ -261,7 +261,7 @@ export function AddMusicDialog({ open, onClose, onAdded }: AddMusicDialogProps) 
               Array.from({ length: 3 }).map((_, index) => (
                 // Skeleton placeholders — identical, swapped wholesale on load.
                 // oxlint-disable-next-line react/no-array-index-key
-                <Skeleton key={index} className="h-16 w-full rounded-md" />
+                <Skeleton key={index} className="h-16 w-full rounded-xl" />
               ))
             ) : results.length === 0 ? (
               <p className="text-sm text-muted-foreground">输入关键词后点击搜索。</p>

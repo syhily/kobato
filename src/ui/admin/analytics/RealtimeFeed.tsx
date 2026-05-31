@@ -16,7 +16,7 @@ export function RealtimeFeed({ className }: { className?: string }) {
   }, [events])
 
   return (
-    <Card className={cn('flex flex-col gap-2 shadow-none transition-shadow hover:shadow-sm', className)}>
+    <Card className={cn('flex flex-col gap-2 shadow-none', className)}>
       <CardHeader className="flex flex-row items-center justify-between pb-2">
         <CardTitle className="text-sm font-semibold">实时访问</CardTitle>
         <StatusPip state={state} />
@@ -35,7 +35,7 @@ export function RealtimeFeed({ className }: { className?: string }) {
                   // append-only and never reorder.
                   // oxlint-disable-next-line react/no-array-index-key
                   key={`${e.ts}-${idx}`}
-                  className="grid grid-cols-[auto_1fr_auto] items-center gap-2 rounded-md px-2 py-1 text-xs hover:bg-accent/40"
+                  className="grid grid-cols-[auto_1fr_auto] items-center gap-2 rounded-xl px-2 py-1 text-xs hover:bg-accent/40"
                 >
                   <span className="text-muted-foreground tabular-nums">{formatClockTime(e.ts)}</span>
                   <span className="truncate text-foreground" title={e.path}>

@@ -142,7 +142,7 @@ function ReservedBucketsSection({ reserved }: { reserved: ReservedCacheBucketSta
     >
       <div className="grid gap-3 sm:grid-cols-2">
         {reserved.map((bucket) => (
-          <div key={bucket.id} className="rounded-md border bg-card p-4">
+          <div key={bucket.id} className="rounded-xl border bg-card p-4">
             <div className="flex items-baseline justify-between gap-3">
               <h3 className="text-sm font-medium">{bucket.label}</h3>
               <span className="font-mono text-xs text-muted-foreground">{bucket.prefix}*</span>

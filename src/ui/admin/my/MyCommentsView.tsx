@@ -423,7 +423,7 @@ function MyCommentRow({ item, submitting, onEdit, onRequestDelete, onCancelDelet
          * `comment-content` hook for code-block tweaks in `tailwind.css`.
          */}
         {item.parent && (
-          <div className="rounded-md border border-l-4 bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
+          <div className="rounded-xl border border-l-4 bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
             {item.parent.isDeleted ? (
               <span className="italic">回复一条已删除的评论</span>
             ) : (

@@ -81,17 +81,17 @@ export function VersionDialog({ open, onOpenChange }: VersionDialogProps) {
               <img
                 src="/logo.svg?original"
                 alt="站点图标"
-                className="h-full w-full rounded-md object-cover dark:hidden"
+                className="h-full w-full rounded-xl object-cover dark:hidden"
               />
               <img
                 src="/logo-dark.svg?original"
                 alt="站点图标"
-                className="hidden h-full w-full rounded-md object-cover dark:block"
+                className="hidden h-full w-full rounded-xl object-cover dark:block"
               />
             </div>
             <div className="flex items-center gap-2">
               <div className="text-lg font-semibold">{APP_NAME.charAt(0).toUpperCase() + APP_NAME.slice(1)}</div>
-              <span className="rounded-md bg-status-success-bg px-2 py-0.5 text-xs font-semibold text-status-success-fg">
+              <span className="rounded-xl bg-status-success-bg px-2 py-0.5 text-xs font-semibold text-status-success-fg">
                 v{APP_VERSION}
               </span>
             </div>
@@ -115,7 +115,7 @@ export function VersionDialog({ open, onOpenChange }: VersionDialogProps) {
           </div>
 
           {/* Update check */}
-          <div className="rounded-lg border p-3">
+          <div className="rounded-xl border p-3">
             <div className="flex items-center justify-between">
               <span className="text-sm font-medium">更新检查</span>
               <button
@@ -123,7 +123,7 @@ export function VersionDialog({ open, onOpenChange }: VersionDialogProps) {
                 onClick={() => void handleCheckUpdate()}
                 disabled={checkState === 'loading'}
                 className={cn(
-                  'inline-flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-sm font-medium transition-colors',
+                  'inline-flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-sm font-medium transition-colors',
                   'hover:bg-accent hover:text-accent-foreground',
                   'disabled:pointer-events-none disabled:opacity-50',
                 )}
@@ -151,7 +151,7 @@ function VersionLink({ href, icon, children }: { href: string; icon: React.React
       href={href}
       target="_blank"
       rel="noreferrer"
-      className="inline-flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-sm transition-colors hover:bg-accent hover:text-accent-foreground"
+      className="inline-flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-sm transition-colors hover:bg-accent hover:text-accent-foreground"
     >
       {icon}
       {children}

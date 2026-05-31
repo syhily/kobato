@@ -199,7 +199,7 @@ function SlashMenuList(props: SlashMenuListProps) {
         // <select> alternative the lint rule suggests has incompatible
         // keyboard model and can't be styled this way.
         role="listbox"
-        className="fixed z-[1600] w-72 rounded-md border bg-popover p-2 text-sm text-muted-foreground shadow-md"
+        className="fixed z-[1600] w-72 rounded-xl border bg-popover p-2 text-sm text-muted-foreground shadow-md"
         style={positionStyle(rect)}
       >
         没有匹配的命令
@@ -211,7 +211,7 @@ function SlashMenuList(props: SlashMenuListProps) {
     <div
       role="listbox"
       aria-label="斜杠命令菜单"
-      className="fixed z-[1600] flex max-h-72 w-72 flex-col gap-0.5 overflow-y-auto rounded-md border bg-popover p-1 text-sm shadow-md"
+      className="fixed z-[1600] flex max-h-72 w-72 flex-col gap-0.5 overflow-y-auto rounded-xl border bg-popover p-1 text-sm shadow-md"
       style={positionStyle(rect)}
     >
       {items.map((item, index) => {

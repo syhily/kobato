@@ -137,7 +137,7 @@ function ImageTile({ image, onClick }: ImageTileProps) {
       type="button"
       onClick={onClick}
       className={cn(
-        'group relative aspect-square overflow-hidden rounded-md border bg-muted/30',
+        'group relative aspect-square overflow-hidden rounded-xl border bg-muted/30',
         'transition hover:ring-2 hover:ring-primary',
       )}
       title={image.storagePath}

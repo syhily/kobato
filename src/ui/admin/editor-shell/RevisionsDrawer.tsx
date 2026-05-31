@@ -313,7 +313,7 @@ function RevisionDetailView({ revision, currentBody, isCurrent, onAdopt }: Revis
         <span>更新于 {new Date(revision.updatedAt).toLocaleString('zh-CN')}</span>
         <span className="ml-auto">{changedCount === 0 ? '与当前一致' : `${changedCount} 处差异`}</span>
       </div>
-      <div className="grid min-h-0 grow grid-cols-2 gap-2 overflow-hidden rounded-md border bg-card">
+      <div className="grid min-h-0 grow grid-cols-2 gap-2 overflow-hidden rounded-xl border bg-card">
         <div className="flex min-h-0 flex-col border-r">
           <div className="border-b bg-muted/50 px-2 py-1 text-xs font-medium text-muted-foreground">历史版本</div>
           <div ref={leftScrollRef} className="min-h-0 grow overflow-y-auto overscroll-contain p-2">
@@ -327,7 +327,7 @@ function RevisionDetailView({ revision, currentBody, isCurrent, onAdopt }: Revis
           </div>
         </div>
       </div>
-      <div className="flex items-center justify-between gap-2 rounded-md border bg-card p-3 text-xs text-muted-foreground">
+      <div className="flex items-center justify-between gap-2 rounded-xl border bg-card p-3 text-xs text-muted-foreground">
         <span>选择此版本会用历史正文替换编辑器内容；更改不会立刻保存到服务器，需要再点一次「保存」或「发布」。</span>
         <Button onClick={onAdopt} disabled={isCurrent} title={isCurrent ? '当前正在编辑此版本' : '使用此版本'}>
           <CheckIcon /> {isCurrent ? '当前' : '选择此版本'}

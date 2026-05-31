@@ -108,7 +108,7 @@ function SideNavCard({ navigation }: { navigation: NavigationSettings }) {
             rows.fields.map((field, index) => (
               <div
                 key={field.id}
-                className="flex flex-col gap-3 rounded-md border bg-muted/30 p-3 sm:flex-row sm:items-end"
+                className="flex flex-col gap-3 rounded-xl border bg-muted/30 p-3 sm:flex-row sm:items-end"
               >
                 <div className="flex flex-1 flex-col gap-2 sm:flex-row">
                   <div className="flex flex-col gap-1 sm:flex-1">
@@ -228,7 +228,7 @@ function SortableFooterNavRow({
   }
 
   return (
-    <div ref={setNodeRef} style={style} className="flex items-center gap-3 rounded-md border border-line bg-canvas p-3">
+    <div ref={setNodeRef} style={style} className="flex items-center gap-3 rounded-xl border border-line bg-canvas p-3">
       <button
         type="button"
         {...attributes}

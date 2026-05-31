@@ -1,4 +1,4 @@
-import { FilePenIcon, ImageIcon, MessageSquareIcon } from 'lucide-react'
+import { ImageIcon, MessageSquareIcon, SquarePenIcon } from 'lucide-react'
 import { Link } from 'react-router'
 
 import type { AdminPageDto } from '@/shared/types/pages'
@@ -64,7 +64,7 @@ export function PageRow({ page }: PageRowProps) {
       data-deleted={isDeleted || undefined}
     >
       {/* Thumbnail */}
-      <div className="relative aspect-[16/10] w-(--spacing-admin-thumb) flex-shrink-0 overflow-hidden rounded-md bg-muted">
+      <div className="relative aspect-[16/10] w-(--spacing-admin-thumb) flex-shrink-0 overflow-hidden rounded-xl bg-muted">
         {page.cover ? (
           <img src={page.cover} alt="" className="size-full object-cover" loading="lazy" />
         ) : (
@@ -111,10 +111,10 @@ export function PageRow({ page }: PageRowProps) {
       {/* CTA button */}
       <Link
         to={`/editor/page/${page.id}`}
-        className="inline-flex h-(--spacing-sidebar-item) w-(--spacing-admin-col-narrow) shrink-0 items-center justify-center rounded-md border border-border text-muted-foreground transition-colors hover:border-foreground/30 hover:text-foreground"
+        className="inline-flex h-(--spacing-sidebar-item) w-(--spacing-admin-col-narrow) shrink-0 items-center justify-center rounded-xl border border-border text-muted-foreground transition-colors hover:border-foreground/30 hover:text-foreground"
         title="编辑"
       >
-        <FilePenIcon className="size-4" />
+        <SquarePenIcon className="size-4" />
       </Link>
     </div>
   )

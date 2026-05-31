@@ -114,7 +114,7 @@ export function CodeBlockBubbleMenu({ editor }: CodeBlockBubbleMenuProps) {
       editor={editor}
       options={CODE_BLOCK_BUBBLE_MENU_OPTIONS}
       shouldShow={({ editor: instance }) => instance.isEditable && instance.isActive('codeBlock')}
-      className="z-50 rounded-md border bg-popover text-popover-foreground shadow-md"
+      className="z-50 rounded-xl border bg-popover text-popover-foreground shadow-md"
     >
       <div className="flex items-center gap-2 px-2 py-1">
         <span className="text-xs text-muted-foreground">代码语言</span>

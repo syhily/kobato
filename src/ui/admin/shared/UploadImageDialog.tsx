@@ -219,7 +219,7 @@ export function UploadImageDialog({ open, kind, onClose, onUploaded, initialFile
           </DialogHeader>
           <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto pr-1">
             {file === null ? (
-              <div className="flex flex-col items-center gap-3 rounded-md border border-dashed p-8">
+              <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed p-8">
                 <UploadIcon className="size-8 text-muted-foreground" />
                 <p className="text-sm text-muted-foreground">点击下方按钮选择本地图片</p>
                 <Button type="button" onClick={() => fileInputRef.current?.click()}>

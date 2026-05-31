@@ -1,4 +1,4 @@
-import { FilePenIcon, ImageIcon, MessageSquareIcon, PinIcon } from 'lucide-react'
+import { ImageIcon, MessageSquareIcon, PinIcon, SquarePenIcon } from 'lucide-react'
 import { Link } from 'react-router'
 
 import type { AdminPostDto } from '@/shared/types/posts'
@@ -73,7 +73,7 @@ export function PostRow({ post, onFilterCategory }: PostRowProps) {
       data-deleted={isDeleted || undefined}
     >
       {/* Thumbnail */}
-      <div className="relative aspect-[16/10] w-(--spacing-admin-thumb) flex-shrink-0 overflow-hidden rounded-md bg-muted">
+      <div className="relative aspect-[16/10] w-(--spacing-admin-thumb) flex-shrink-0 overflow-hidden rounded-xl bg-muted">
         {post.cover ? (
           <img src={post.cover} alt="" className="size-full object-cover" loading="lazy" />
         ) : (
@@ -132,10 +132,10 @@ export function PostRow({ post, onFilterCategory }: PostRowProps) {
       {/* CTA button */}
       <Link
         to={`/editor/post/${post.id}`}
-        className="inline-flex h-(--spacing-sidebar-item) w-(--spacing-admin-col-narrow) shrink-0 items-center justify-center rounded-md border border-border text-muted-foreground transition-colors hover:border-foreground/30 hover:text-foreground"
+        className="inline-flex h-(--spacing-sidebar-item) w-(--spacing-admin-col-narrow) shrink-0 items-center justify-center rounded-xl border border-border text-muted-foreground transition-colors hover:border-foreground/30 hover:text-foreground"
         title="编辑"
       >
-        <FilePenIcon className="size-4" />
+        <SquarePenIcon className="size-4" />
       </Link>
     </div>
   )

@@ -9,7 +9,7 @@ import { cn } from '@/ui/lib/cn'
 
 // Shared auth input styling across login / install / reset forms.
 const inputClasses =
-  'h-(--spacing-auth-input) rounded-lg border-0 bg-muted/50 px-4 text-xl md:text-xl placeholder:text-muted-foreground/50 focus-visible:bg-background focus-visible:ring-2 focus-visible:ring-primary/25 focus-visible:border-primary'
+  'h-(--spacing-auth-input) rounded-xl border-0 bg-muted/50 px-4 text-xl md:text-xl placeholder:text-muted-foreground/50 focus-visible:bg-background focus-visible:ring-2 focus-visible:ring-primary/25 focus-visible:border-primary'
 
 function useAuthSubmitting(): boolean {
   const navigation = useNavigation()
@@ -86,7 +86,7 @@ export function LoginForm({ action }: LoginFormProps) {
       <Button
         type="submit"
         disabled={isSubmitting}
-        className="mt-7 h-(--spacing-auth-btn) w-full rounded-lg bg-brand text-xl font-normal text-white hover:opacity-90"
+        className="mt-7 h-(--spacing-auth-btn) w-full rounded-xl bg-brand text-xl font-normal text-white hover:opacity-90"
       >
         {isSubmitting ? (
           '登陆中...'
@@ -129,7 +129,7 @@ export function LostPasswordForm({ action }: LostPasswordFormProps) {
       <Button
         type="submit"
         disabled={isSubmitting}
-        className="mt-7 h-(--spacing-auth-btn) w-full rounded-lg bg-brand text-xl font-normal text-white hover:opacity-90"
+        className="mt-7 h-(--spacing-auth-btn) w-full rounded-xl bg-brand text-xl font-normal text-white hover:opacity-90"
       >
         {isSubmitting ? (
           '发送中...'
@@ -186,7 +186,7 @@ export function ResetPasswordForm({ action, token }: ResetPasswordFormProps) {
       <Button
         type="submit"
         disabled={isSubmitting}
-        className="mt-7 h-(--spacing-auth-btn) w-full rounded-lg bg-brand text-xl font-normal text-white hover:opacity-90"
+        className="mt-7 h-(--spacing-auth-btn) w-full rounded-xl bg-brand text-xl font-normal text-white hover:opacity-90"
       >
         {isSubmitting ? (
           '保存中...'

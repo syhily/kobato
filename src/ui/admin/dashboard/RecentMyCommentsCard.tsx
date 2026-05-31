@@ -7,7 +7,7 @@ import { Button } from '@/ui/components/button'
 
 export function RecentMyCommentsCard({ comments }: { comments: MyCommentSummary[] }) {
   return (
-    <div className="rounded-lg border bg-card p-6">
+    <div className="rounded-xl border bg-card p-6">
       <div className="flex items-baseline justify-between gap-3">
         <h2 className="text-base font-medium">我的最近评论</h2>
         <Button type="button" variant="ghost" size="sm" render={<Link to="/admin/me/comments" />}>

@@ -166,7 +166,7 @@ function NavMenuCollapsibleItem({ ariaLabel, children, action }: NavMenuCollapsi
         aria-label={ariaLabel}
         className={cn(
           'absolute top-0 left-4 z-10 flex !h-sidebar-item w-auto items-center justify-center',
-          'rounded-md p-0 text-sidebar-accent-foreground transition-all',
+          'rounded-xl p-0 text-sidebar-accent-foreground transition-all',
           'hover:bg-transparent hover:text-sidebar-accent-foreground',
           expanded ? 'opacity-100' : 'opacity-0 group-hover/menu-item:opacity-100',
         )}

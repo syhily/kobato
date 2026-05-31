@@ -143,7 +143,7 @@ export function ImageField({
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
             className={cn(
-              'group relative block w-full overflow-hidden rounded-md border bg-muted/30',
+              'group relative block w-full overflow-hidden rounded-xl border bg-muted/30',
               aspect,
               'transition focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none',
               disabled

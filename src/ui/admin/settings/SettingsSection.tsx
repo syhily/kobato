@@ -121,7 +121,7 @@ interface ReadOnlyFieldProps {
 export function ReadOnlyField({ label, value, hint }: ReadOnlyFieldProps) {
   return (
     <SettingsRow label={label} hint={hint}>
-      <div className="rounded-md border bg-muted/40 px-3 py-2 font-mono text-sm break-all text-foreground">
+      <div className="rounded-xl border bg-muted/40 px-3 py-2 font-mono text-sm break-all text-foreground">
         {value || <span className="text-muted-foreground">—</span>}
       </div>
     </SettingsRow>

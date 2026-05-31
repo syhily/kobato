@@ -10,7 +10,7 @@ import { cn } from '@/ui/lib/cn'
 
 // Shared auth input styling — must match AdminCredentialsForm.
 const inputClasses =
-  'h-(--spacing-auth-input) rounded-lg border-0 bg-muted/50 px-4 text-xl md:text-xl placeholder:text-muted-foreground/50 focus-visible:bg-background focus-visible:ring-2 focus-visible:ring-primary/25 focus-visible:border-primary'
+  'h-(--spacing-auth-input) rounded-xl border-0 bg-muted/50 px-4 text-xl md:text-xl placeholder:text-muted-foreground/50 focus-visible:bg-background focus-visible:ring-2 focus-visible:ring-primary/25 focus-visible:border-primary'
 
 interface AdminInstallFormProps {
   pgToolsAvailable?: boolean
@@ -145,7 +145,7 @@ export function AdminInstallForm({ pgToolsAvailable }: AdminInstallFormProps) {
       </Dialog>
 
       {/* Mode switcher */}
-      <div className="flex w-full rounded-lg bg-muted/50 p-1">
+      <div className="flex w-full rounded-xl bg-muted/50 p-1">
         <button
           type="button"
           onClick={() => {
@@ -154,7 +154,7 @@ export function AdminInstallForm({ pgToolsAvailable }: AdminInstallFormProps) {
             setSelectedFile(null)
           }}
           className={cn(
-            'flex-1 rounded-md py-2.5 text-sm font-medium transition-colors',
+            'flex-1 rounded-xl py-2.5 text-sm font-medium transition-colors',
             mode === 'install'
               ? 'bg-background text-foreground shadow-sm'
               : 'text-muted-foreground hover:text-foreground',
@@ -171,7 +171,7 @@ export function AdminInstallForm({ pgToolsAvailable }: AdminInstallFormProps) {
           }}
           disabled={pgToolsAvailable === false}
           className={cn(
-            'flex-1 rounded-md py-2.5 text-sm font-medium transition-colors',
+            'flex-1 rounded-xl py-2.5 text-sm font-medium transition-colors',
             mode === 'restore'
               ? 'bg-background text-foreground shadow-sm'
               : 'text-muted-foreground hover:text-foreground',
@@ -183,7 +183,7 @@ export function AdminInstallForm({ pgToolsAvailable }: AdminInstallFormProps) {
       </div>
 
       {pgToolsAvailable === false && mode === 'restore' ? (
-        <div className="rounded-lg border border-destructive/20 bg-destructive/5 p-4 text-sm text-destructive">
+        <div className="rounded-xl border border-destructive/20 bg-destructive/5 p-4 text-sm text-destructive">
           当前运行环境缺少 postgresql-client，无法使用备份恢复功能。请联系管理员或选择全新安装。
         </div>
       ) : null}
@@ -270,7 +270,7 @@ export function AdminInstallForm({ pgToolsAvailable }: AdminInstallFormProps) {
           <Button
             type="submit"
             disabled={isSubmitting}
-            className="mt-7 h-(--spacing-auth-btn) w-full rounded-lg bg-brand text-xl font-normal text-white hover:opacity-90"
+            className="mt-7 h-(--spacing-auth-btn) w-full rounded-xl bg-brand text-xl font-normal text-white hover:opacity-90"
           >
             {isSubmitting ? (
               '创建中...'
@@ -305,7 +305,7 @@ export function AdminInstallForm({ pgToolsAvailable }: AdminInstallFormProps) {
               className="sr-only"
               aria-label="选择备份文件"
             />
-            <div className="flex items-center gap-3 rounded-md bg-muted px-3 py-2.5">
+            <div className="flex items-center gap-3 rounded-xl bg-muted px-3 py-2.5">
               <Button
                 type="button"
                 variant="outline"
@@ -325,7 +325,7 @@ export function AdminInstallForm({ pgToolsAvailable }: AdminInstallFormProps) {
             </div>
           </div>
 
-          <div className="rounded-lg border border-border bg-muted/30 p-4 text-sm text-muted-foreground">
+          <div className="rounded-xl border border-border bg-muted/30 p-4 text-sm text-muted-foreground">
             <p className="mb-2 font-medium text-foreground">恢复说明</p>
             <ul className="flex list-disc flex-col gap-1 pl-4">
               <li>支持 .sql 和 .sql.gz 格式的备份文件。</li>
@@ -343,7 +343,7 @@ export function AdminInstallForm({ pgToolsAvailable }: AdminInstallFormProps) {
           <Button
             type="submit"
             disabled={isRestoring || pgToolsAvailable === false || restoreError !== null}
-            className="mt-7 h-(--spacing-auth-btn) w-full rounded-lg bg-brand text-xl font-normal text-white hover:opacity-90"
+            className="mt-7 h-(--spacing-auth-btn) w-full rounded-xl bg-brand text-xl font-normal text-white hover:opacity-90"
           >
             {isRestoring ? '恢复中...' : '上传并恢复'}
           </Button>

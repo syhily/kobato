@@ -71,7 +71,7 @@ function SortableWidgetRow({
   const hasCount = widget.type === 'recentPosts' || widget.type === 'recentComments' || widget.type === 'randomTags'
 
   return (
-    <div ref={setNodeRef} style={style} className="flex items-start gap-3 rounded-md border border-line bg-canvas p-3">
+    <div ref={setNodeRef} style={style} className="flex items-start gap-3 rounded-xl border border-line bg-canvas p-3">
       <button
         type="button"
         {...attributes}

@@ -110,7 +110,7 @@ function BlockCardView(props: NodeViewProps) {
     <NodeViewWrapper
       data-pt-block-card={attrs._ptType}
       className={cn(
-        'group relative my-3 rounded-md border-2 border-dashed bg-muted/30 p-4 text-sm',
+        'group relative my-3 rounded-xl border-2 border-dashed bg-muted/30 p-4 text-sm',
         props.selected ? 'border-primary' : 'border-border',
       )}
       contentEditable={false}

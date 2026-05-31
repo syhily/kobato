@@ -123,7 +123,7 @@ export function PageBubbleMenu({ editor }: PageBubbleMenuProps) {
       }}
       // Tiptap renders the menu element as a positioned wrapper; we
       // style it minimally and let the inner row handle visuals.
-      className="z-50 rounded-md border bg-popover text-popover-foreground shadow-md"
+      className="z-50 rounded-xl border bg-popover text-popover-foreground shadow-md"
     >
       {/* Capture mousedown so the editor keeps its ProseMirror selection
        * while the operator clicks Σ / bold / … — without this, focus

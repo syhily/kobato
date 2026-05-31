@@ -45,7 +45,7 @@ export function SettingsSearchInput() {
           placeholder="搜索设置…"
           value={filter}
           onChange={(e) => setFilter(e.target.value)}
-          className="h-10 w-full rounded-lg border border-transparent bg-card pr-8 pl-9 text-sm shadow-sm transition-[color,background-color,border-color,box-shadow] hover:shadow focus-visible:border-brand focus-visible:bg-card focus-visible:ring-2 focus-visible:ring-brand/25"
+          className="h-10 w-full rounded-xl border border-transparent bg-card pr-8 pl-9 text-sm shadow-sm transition-[color,background-color,border-color,box-shadow] hover:shadow focus-visible:border-brand focus-visible:bg-card focus-visible:ring-2 focus-visible:ring-brand/25"
           autoComplete="off"
           autoCorrect="off"
         />

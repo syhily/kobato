@@ -70,7 +70,7 @@ export function UsersToolbar({
                     key={option.value}
                     type="button"
                     className={cn(
-                      'rounded-md px-2.5 py-1 text-sm transition-colors',
+                      'rounded-xl px-2.5 py-1 text-sm transition-colors',
                       role === option.value
                         ? 'bg-secondary font-medium text-secondary-foreground'
                         : 'text-muted-foreground hover:bg-muted hover:text-foreground',

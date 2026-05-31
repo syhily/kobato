@@ -15,7 +15,7 @@ export function PostsSkeleton() {
               <Skeleton className="h-3 w-20" />
             </div>
             <Skeleton className="hidden h-3 w-10 md:block" />
-            <Skeleton className="h-(--spacing-sidebar-item) w-(--spacing-admin-col-narrow) rounded-md" />
+            <Skeleton className="h-(--spacing-sidebar-item) w-(--spacing-admin-col-narrow) rounded-xl" />
           </div>
         </Fragment>
       ))}

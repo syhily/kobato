@@ -12,7 +12,7 @@ export function SettingsCloseButton() {
         onClick={() => {
           void navigate(-1)
         }}
-        className="inline-flex items-center rounded-md p-1.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-hidden"
+        className="inline-flex items-center rounded-xl p-1.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-hidden"
       >
         <XIcon className="size-6" aria-hidden="true" />
         <span className="sr-only">关闭</span>

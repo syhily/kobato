@@ -20,7 +20,7 @@ export function SettingsMobileBar() {
           placeholder="搜索设置…"
           value={filter}
           onChange={(e) => setFilter(e.target.value)}
-          className="h-10 w-full rounded-lg border border-transparent bg-card pr-8 pl-9 text-sm shadow-sm"
+          className="h-10 w-full rounded-xl border border-transparent bg-card pr-8 pl-9 text-sm shadow-sm"
           autoComplete="off"
           autoCorrect="off"
         />

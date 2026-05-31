@@ -44,7 +44,7 @@ export function MetricsGroup({ group, initial, className, entityType, entityId }
   const [active, setActive] = useState<MetricType>(tabs[0]!)
 
   return (
-    <Card className={cn('gap-2 shadow-none transition-shadow hover:shadow-sm', className)}>
+    <Card className={cn('gap-2 shadow-none', className)}>
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
           <CardTitle className="text-sm font-semibold text-foreground">{GROUP_LABEL[group]}</CardTitle>

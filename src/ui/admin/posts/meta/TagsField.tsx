@@ -127,7 +127,7 @@ export function TagsField({ values, onChange, disabled }: TagsFieldProps) {
             autoComplete="off"
           />
           {open && filtered.length > 0 && (
-            <ul className="absolute z-(--z-modal) mt-1 max-h-60 w-full overflow-auto rounded-md border bg-popover py-1 shadow-md">
+            <ul className="absolute z-(--z-modal) mt-1 max-h-60 w-full overflow-auto rounded-xl border bg-popover py-1 shadow-md">
               {filtered.map((tag, index) => (
                 <button
                   key={tag.id}

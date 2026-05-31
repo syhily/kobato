@@ -50,12 +50,12 @@ export function AppSidebarHeader({ className, siteTitle }: AppSidebarHeaderProps
         {/* Site branding */}
         <div className="flex items-center justify-between">
           <div className="flex min-w-0 items-center gap-3">
-            <div className="size-8 shrink-0 rounded-md">
-              <img src={`/logo.svg${v}`} alt="站点图标" className="h-full w-full rounded-md object-cover dark:hidden" />
+            <div className="size-8 shrink-0 rounded-xl">
+              <img src={`/logo.svg${v}`} alt="站点图标" className="h-full w-full rounded-xl object-cover dark:hidden" />
               <img
                 src={`/logo-dark.svg${v}`}
                 alt="站点图标"
-                className="hidden h-full w-full rounded-md object-cover dark:block"
+                className="hidden h-full w-full rounded-xl object-cover dark:block"
               />
             </div>
             <div className="min-w-0 flex-1 overflow-hidden text-md font-semibold text-ellipsis whitespace-nowrap text-foreground">
@@ -70,7 +70,7 @@ export function AppSidebarHeader({ className, siteTitle }: AppSidebarHeaderProps
           onClick={() => setSearchOpen(true)}
           aria-expanded={searchOpen}
           aria-haspopup="dialog"
-          className="flex h-search-trigger items-center justify-between rounded-md border border-sidebar-border bg-background pr-3 pl-4 text-sm text-muted-foreground shadow-xs transition-colors hover:bg-accent hover:text-accent-foreground hover:shadow-sm"
+          className="flex h-search-trigger items-center justify-between rounded-xl border border-sidebar-border bg-background pr-3 pl-4 text-sm text-muted-foreground shadow-xs transition-colors hover:bg-accent hover:text-accent-foreground hover:shadow-sm"
         >
           <div className="flex items-center gap-2">
             <SearchIcon className="size-4" />

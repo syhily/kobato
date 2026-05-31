@@ -171,7 +171,7 @@ export function FloatingMusicPlayer({ track, onClose }: FloatingMusicPlayerProps
 
       <div
         hidden={collapsed}
-        className="w-88 max-w-[calc(100vw-2rem)] overflow-hidden rounded-lg bg-card shadow-xl ring-1 ring-border"
+        className="w-88 max-w-[calc(100vw-2rem)] overflow-hidden rounded-xl bg-card shadow-xl ring-1 ring-border"
       >
         <div className="flex items-center gap-2 border-b bg-muted/40 px-3 py-1.5">
           <Music2Icon className="size-4 text-muted-foreground" />

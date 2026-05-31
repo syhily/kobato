@@ -99,7 +99,7 @@ interface DraftPanelProps {
 
 function DraftPanel({ title, icon, timestamp, side, diff }: DraftPanelProps) {
   return (
-    <div className="flex min-h-0 flex-col rounded-md border bg-card">
+    <div className="flex min-h-0 flex-col rounded-xl border bg-card">
       <div className="flex items-center gap-2 border-b px-3 py-2 text-sm font-medium">
         {icon}
         {title}

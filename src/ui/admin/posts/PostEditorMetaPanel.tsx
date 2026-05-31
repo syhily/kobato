@@ -37,7 +37,7 @@ function MetaExtras({
   const isDeleted = post.deletedAt !== null
   return (
     <>
-      <div className="rounded-md border bg-card p-2">
+      <div className="rounded-xl border bg-card p-2">
         <RevisionHistoryDrawer
           type="post"
           ownerId={post.id}
@@ -46,7 +46,7 @@ function MetaExtras({
           onAdoptRevision={state.adoptRevisionFromHistory}
         />
       </div>
-      <div className="group/delete rounded-md border border-destructive/30 p-2 transition-colors hover:bg-destructive">
+      <div className="group/delete rounded-xl border border-destructive/30 p-2 transition-colors hover:bg-destructive">
         {isDeleted ? (
           <Button
             variant="ghost"

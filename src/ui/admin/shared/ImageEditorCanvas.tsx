@@ -413,7 +413,7 @@ export function ImageEditorCanvas({
 
   return (
     <div className="flex flex-col gap-2">
-      <div className="relative max-w-full rounded-md border bg-black/40">
+      <div className="relative max-w-full rounded-xl border bg-black/40">
         <canvas
           ref={canvasRef}
           aria-label="图片裁剪画布"

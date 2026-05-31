@@ -93,7 +93,7 @@ export function ImageDetailDialog({
 
   return (
     <Dialog open={open} onOpenChange={(next) => !next && onClose()}>
-      <DialogContent className="h-dvh max-h-dvh w-dvw max-w-dvw gap-0 overflow-hidden rounded-none border-0 p-0 sm:h-auto sm:max-h-[min(900px,92dvh)] sm:max-w-3xl sm:rounded-lg sm:border">
+      <DialogContent className="h-dvh max-h-dvh w-dvw max-w-dvw gap-0 overflow-hidden rounded-none border-0 p-0 sm:h-auto sm:max-h-[min(900px,92dvh)] sm:max-w-3xl sm:rounded-xl sm:border">
         <div className="flex h-dvh flex-col sm:h-auto sm:max-h-[min(900px,92dvh)]">
           <DialogHeader className="shrink-0 px-4 pt-4 sm:px-6 sm:pt-6">
             <DialogTitle className="truncate text-base sm:text-lg">{fileName}</DialogTitle>
@@ -101,7 +101,7 @@ export function ImageDetailDialog({
           </DialogHeader>
 
           <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-4 pb-2 sm:gap-4 sm:px-6">
-            <div className="flex items-center justify-center rounded-md border bg-muted">
+            <div className="flex items-center justify-center rounded-xl border bg-muted">
               {/* Plain <img>: this is the admin library, lazy-loaded
                   remote URL, alt="" because the file path + meta
                   fields below already convey the image identity. */}
@@ -110,7 +110,7 @@ export function ImageDetailDialog({
                 alt=""
                 loading="lazy"
                 decoding="async"
-                className="max-h-[35vh] w-auto max-w-full rounded-md object-contain sm:max-h-[50vh] lg:max-h-[60vh]"
+                className="max-h-[35vh] w-auto max-w-full rounded-xl object-contain sm:max-h-[50vh] lg:max-h-[60vh]"
               />
             </div>
 

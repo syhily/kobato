@@ -117,10 +117,10 @@ export function EditMusicDialog({ music, onClose, onSaved }: EditMusicDialogProp
                 <>
                   {/* Admin preview thumbnail: the cover is already a small public S3 URL
                       and does not need CDN transform for an 80×80 dialog preview. */}
-                  <img src={music.coverUrl} alt="" className="size-20 rounded-md object-cover" loading="lazy" />
+                  <img src={music.coverUrl} alt="" className="size-20 rounded-xl object-cover" loading="lazy" />
                 </>
               ) : (
-                <div className="size-20 rounded-md bg-muted" />
+                <div className="size-20 rounded-xl bg-muted" />
               )}
               <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-xs text-muted-foreground">
                 <dt>player_id</dt>

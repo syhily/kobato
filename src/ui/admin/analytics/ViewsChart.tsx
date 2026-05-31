@@ -241,7 +241,7 @@ function Tooltip({ point, x, width }: { point: ViewsPoint; x: number; width: num
   return (
     <div
       className={cn(
-        'pointer-events-none absolute top-3 z-10 min-w-[140px] rounded-md border bg-popover px-3 py-2 text-xs shadow-md',
+        'pointer-events-none absolute top-3 z-10 min-w-[140px] rounded-xl border bg-popover px-3 py-2 text-xs shadow-md',
         align === 'left' && 'left-12',
         align === 'right' && 'right-6',
         align === 'center' && 'left-1/2 -translate-x-1/2',
@@ -283,7 +283,7 @@ function SingleBar({ label, value, color }: { label: string; value: number; colo
       <div className="text-3xl font-bold tabular-nums" style={{ color }}>
         {value}
       </div>
-      <div className="h-32 w-12 rounded-md" style={{ background: color, opacity: 0.65 }} />
+      <div className="h-32 w-12 rounded-xl" style={{ background: color, opacity: 0.65 }} />
       <div className="text-sm text-muted-foreground">{label}</div>
     </div>
   )

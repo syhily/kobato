@@ -289,7 +289,7 @@ export function PageBodyEditor({
 
   if (editor === null) {
     return (
-      <div className="flex min-h-0 flex-1 items-center justify-center rounded-md border bg-card p-4 text-sm text-muted-foreground">
+      <div className="flex min-h-0 flex-1 items-center justify-center rounded-xl border bg-card p-4 text-sm text-muted-foreground">
         编辑器正在加载…
       </div>
     )
@@ -318,8 +318,8 @@ export function PageBodyEditor({
           'min-h-editor-min [&_.ProseMirror]:min-h-editor-prose-min',
           '[&_.ProseMirror]:focus:outline-none',
           '[&_blockquote[data-pt-solution]]:relative [&_blockquote[data-pt-solution]]:my-4 [&_blockquote[data-pt-solution]]:border-l-4 [&_blockquote[data-pt-solution]]:border-brand/40 [&_blockquote[data-pt-solution]]:bg-muted/25 [&_blockquote[data-pt-solution]]:py-3 [&_blockquote[data-pt-solution]]:pl-4',
-          '[&_[data-pt-two-column-pane]]:min-w-0 [&_[data-pt-two-column-pane]]:rounded-md [&_[data-pt-two-column-pane]]:border [&_[data-pt-two-column-pane]]:border-dashed [&_[data-pt-two-column-pane]]:border-muted-foreground/45 [&_[data-pt-two-column-pane]]:bg-background/85 [&_[data-pt-two-column-pane]]:p-3',
-          '[&_section[data-pt-two-column]]:relative [&_section[data-pt-two-column]]:my-5 [&_section[data-pt-two-column]]:grid [&_section[data-pt-two-column]]:gap-4 [&_section[data-pt-two-column]]:rounded-lg [&_section[data-pt-two-column]]:border-2 [&_section[data-pt-two-column]]:border-dashed [&_section[data-pt-two-column]]:border-border [&_section[data-pt-two-column]]:bg-muted/30 [&_section[data-pt-two-column]]:p-3 [&_section[data-pt-two-column]]:shadow-sm [&_section[data-pt-two-column]]:md:grid-cols-2',
+          '[&_[data-pt-two-column-pane]]:min-w-0 [&_[data-pt-two-column-pane]]:rounded-xl [&_[data-pt-two-column-pane]]:border [&_[data-pt-two-column-pane]]:border-dashed [&_[data-pt-two-column-pane]]:border-muted-foreground/45 [&_[data-pt-two-column-pane]]:bg-background/85 [&_[data-pt-two-column-pane]]:p-3',
+          '[&_section[data-pt-two-column]]:relative [&_section[data-pt-two-column]]:my-5 [&_section[data-pt-two-column]]:grid [&_section[data-pt-two-column]]:gap-4 [&_section[data-pt-two-column]]:rounded-xl [&_section[data-pt-two-column]]:border-2 [&_section[data-pt-two-column]]:border-dashed [&_section[data-pt-two-column]]:border-border [&_section[data-pt-two-column]]:bg-muted/30 [&_section[data-pt-two-column]]:p-3 [&_section[data-pt-two-column]]:shadow-sm [&_section[data-pt-two-column]]:md:grid-cols-2',
           '[&_.ProseMirror_p.is-editor-empty:first-child::before]:text-muted-foreground',
           '[&_.ProseMirror_p.is-editor-empty:first-child::before]:content-[attr(data-placeholder)]',
           '[&_.ProseMirror_p.is-editor-empty:first-child::before]:pointer-events-none',
@@ -331,7 +331,7 @@ export function PageBodyEditor({
   )
 
   return (
-    <div className="relative flex min-h-0 w-full min-w-0 flex-1 flex-col rounded-md border bg-card">
+    <div className="relative flex min-h-0 w-full min-w-0 flex-1 flex-col rounded-xl border bg-card">
       {livePreviewOpen ? (
         <>
           {/* Sticks to the top of the admin `<main>` scrollport; canvas

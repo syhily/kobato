@@ -87,7 +87,7 @@ export function AdminSearchDialog({ open, onOpenChange }: AdminSearchDialogProps
           {isSearching ? (
             <Loader2Icon className="size-4 shrink-0 animate-spin text-muted-foreground" />
           ) : (
-            <kbd className="shrink-0 rounded-md border bg-muted px-2 py-0.5 text-badge font-medium text-muted-foreground">
+            <kbd className="shrink-0 rounded-xl border bg-muted px-2 py-0.5 text-badge font-medium text-muted-foreground">
               ESC
             </kbd>
           )}
@@ -176,14 +176,14 @@ const SearchResultItem = memo(function SearchResultItem({
     <button
       type="button"
       className={cn(
-        'flex items-center justify-between gap-3 rounded-lg px-2 py-2.5 text-left text-sm transition-colors',
+        'flex items-center justify-between gap-3 rounded-xl px-2 py-2.5 text-left text-sm transition-colors',
         'hover:bg-accent hover:text-accent-foreground',
       )}
       onClick={onClick}
     >
       <span className="min-w-0 truncate font-medium">{title}</span>
       {!published && (
-        <span className="shrink-0 rounded-md bg-status-warn-bg px-2 py-0.5 text-badge font-semibold text-status-warn-fg">
+        <span className="shrink-0 rounded-xl bg-status-warn-bg px-2 py-0.5 text-badge font-semibold text-status-warn-fg">
           草稿
         </span>
       )}

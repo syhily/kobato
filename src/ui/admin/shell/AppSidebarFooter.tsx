@@ -34,7 +34,7 @@ export function AppSidebarFooter({ className, id, name, email }: AppSidebarFoote
               render={
                 <button
                   type="button"
-                  className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-left text-sm font-medium transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                  className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm font-medium transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                   aria-label="用户菜单"
                 >
                   <Avatar className="size-8">
@@ -52,7 +52,7 @@ export function AppSidebarFooter({ className, id, name, email }: AppSidebarFoote
               }
             />
             <DropdownMenuContent align="start" sideOffset={8} className="min-w-[var(--anchor-width)] px-3 pt-3">
-              <DropdownMenuLabel className="flex items-center gap-3 rounded-md p-3">
+              <DropdownMenuLabel className="flex items-center gap-3 rounded-xl p-3">
                 <Avatar className="size-10">
                   {id ? <AvatarImage src={`/images/avatar/${id}.png`} alt={name} /> : null}
                   <AvatarFallback className="bg-primary text-sm font-semibold text-primary-foreground">
@@ -66,7 +66,7 @@ export function AppSidebarFooter({ className, id, name, email }: AppSidebarFoote
               </DropdownMenuLabel>
               <DropdownMenuSeparator className="my-2" />
               <DropdownMenuItem
-                className="my-0.5 rounded-md px-3 py-2 text-sm"
+                className="my-0.5 rounded-xl px-3 py-2 text-sm"
                 render={
                   <Link to="/admin/me/profile" prefetch="intent">
                     <UserIcon className="mr-2 size-4" />
@@ -75,7 +75,7 @@ export function AppSidebarFooter({ className, id, name, email }: AppSidebarFoote
                 }
               />
               <DropdownMenuItem
-                className="my-0.5 rounded-md px-3 py-2 text-sm"
+                className="my-0.5 rounded-xl px-3 py-2 text-sm"
                 render={
                   <Link to="/admin/me/comments" prefetch="intent">
                     <MessageSquareIcon className="mr-2 size-4" />
@@ -84,7 +84,7 @@ export function AppSidebarFooter({ className, id, name, email }: AppSidebarFoote
                 }
               />
               <DropdownMenuItem
-                className="my-0.5 rounded-md px-3 py-2 text-sm"
+                className="my-0.5 rounded-xl px-3 py-2 text-sm"
                 render={
                   <Link to="/admin/me/sessions" prefetch="intent">
                     <MonitorIcon className="mr-2 size-4" />
@@ -93,13 +93,13 @@ export function AppSidebarFooter({ className, id, name, email }: AppSidebarFoote
                 }
               />
               <DropdownMenuSeparator className="my-2" />
-              <DropdownMenuItem className="my-0.5 rounded-md px-3 py-2 text-sm" onClick={() => setVersionOpen(true)}>
+              <DropdownMenuItem className="my-0.5 rounded-xl px-3 py-2 text-sm" onClick={() => setVersionOpen(true)}>
                 <InfoIcon className="mr-2 size-4" />
                 系统版本
               </DropdownMenuItem>
               <DropdownMenuSeparator className="my-2" />
               <DropdownMenuItem
-                className="my-0.5 rounded-md px-3 py-2 text-sm"
+                className="my-0.5 rounded-xl px-3 py-2 text-sm"
                 render={
                   <a href="/admin/signin?action=logout&redirect_to=/">
                     <LogOutIcon className="mr-2 size-4" />

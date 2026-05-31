@@ -82,9 +82,9 @@ export function SocialsEditor({ socials }: SocialsEditorProps) {
             const meta = getSocialNetworkMeta(field.network)
             const Icon = SOCIAL_NETWORK_ICONS[field.network]
             return (
-              <div key={field.id} className="flex flex-col gap-3 rounded-md border bg-muted/30 p-3">
+              <div key={field.id} className="flex flex-col gap-3 rounded-xl border bg-muted/30 p-3">
                 <div className="flex items-center gap-2">
-                  <span className="flex size-8 items-center justify-center rounded-md border bg-background text-foreground [&_svg]:size-4">
+                  <span className="flex size-8 items-center justify-center rounded-xl border bg-background text-foreground [&_svg]:size-4">
                     <Icon />
                   </span>
                   <div className="flex flex-col leading-tight">

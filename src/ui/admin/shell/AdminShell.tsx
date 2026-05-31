@@ -89,7 +89,7 @@ export function AdminShell({ currentUser, siteTitle, pendingCommentCount, userCo
       <div className="flex h-dvh flex-col overflow-hidden bg-background text-foreground">
         <a
           href="#admin-main-content"
-          className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-50 focus:rounded-md focus:bg-foreground focus:px-4 focus:py-2 focus:text-background focus:shadow-lg"
+          className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-50 focus:rounded-xl focus:bg-foreground focus:px-4 focus:py-2 focus:text-background focus:shadow-lg"
         >
           跳转到主要内容
         </a>

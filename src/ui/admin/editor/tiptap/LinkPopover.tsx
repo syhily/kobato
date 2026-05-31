@@ -113,7 +113,7 @@ export function LinkPopover({ editor, variant, onClose }: LinkPopoverProps) {
 
   return (
     <div
-      className="flex w-96 max-w-[calc(100vw-2rem)] flex-col gap-3 rounded-md border bg-popover p-3 text-sm shadow-md"
+      className="flex w-96 max-w-[calc(100vw-2rem)] flex-col gap-3 rounded-xl border bg-popover p-3 text-sm shadow-md"
       onMouseDown={(event) => {
         event.preventDefault()
       }}

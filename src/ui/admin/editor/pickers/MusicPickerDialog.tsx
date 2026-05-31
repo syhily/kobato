@@ -164,7 +164,7 @@ function MusicRow({ music, onClick }: MusicRowProps) {
       <button
         type="button"
         onClick={onClick}
-        className="flex w-full items-center gap-3 rounded-md border bg-card p-2 text-left transition hover:border-primary"
+        className="flex w-full items-center gap-3 rounded-xl border bg-card p-2 text-left transition hover:border-primary"
       >
         <img
           src={music.coverUrl}
