@@ -16,7 +16,7 @@ export function RealtimeFeed({ className }: { className?: string }) {
   }, [events])
 
   return (
-    <Card className={cn('flex flex-col gap-2', className)}>
+    <Card className={cn('flex flex-col gap-2 shadow-none transition-shadow hover:shadow-sm', className)}>
       <CardHeader className="flex flex-row items-center justify-between pb-2">
         <CardTitle className="text-sm font-semibold">实时访问</CardTitle>
         <StatusPip state={state} />
