@@ -88,6 +88,9 @@ export async function loadAllComments(
   filterPublicId?: string,
   filterUserId?: bigint,
   status?: 'all' | 'pending' | 'approved',
+  filterQ?: string,
+  filterCreatedAfter?: Date,
+  filterCreatedBefore?: Date,
 ): Promise<AdminCommentsResult> {
   let target: { type: 'post' | 'page'; ownerId: bigint } | undefined
   if (filterPublicId) {
@@ -105,12 +108,17 @@ export async function loadAllComments(
     }
   }
   const baseFilters = { target, userId: filterUserId } satisfies AdminListFilters
-  const filters: AdminListFilters = { ...baseFilters, status }
+  const extraFilters = {
+    q: filterQ,
+    createdAfter: filterCreatedAfter,
+    createdBefore: filterCreatedBefore,
+  } satisfies Partial<AdminListFilters>
+  const filters: AdminListFilters = { ...baseFilters, status, ...extraFilters }
   const [comments, allCount, pendingCount, approvedCount] = await Promise.all([
     listAdminComments(db, offset, limit, filters),
-    countAllComments(db, { ...baseFilters, status: 'all' }),
-    countAllComments(db, { ...baseFilters, status: 'pending' }),
-    countAllComments(db, { ...baseFilters, status: 'approved' }),
+    countAllComments(db, { ...baseFilters, status: 'all', ...extraFilters }),
+    countAllComments(db, { ...baseFilters, status: 'pending', ...extraFilters }),
+    countAllComments(db, { ...baseFilters, status: 'approved', ...extraFilters }),
   ])
   const total = status === 'pending' ? pendingCount : status === 'approved' ? approvedCount : allCount
 

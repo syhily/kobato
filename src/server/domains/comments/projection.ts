@@ -82,7 +82,9 @@ function projectPublicCommentBase(row: CommentAndUser): CommentItemWire {
   }
 }
 
-function projectAdminCommentBase(row: CommentAndUser): Omit<AdminCommentWire, 'pageTitle' | 'pagePublicId'> {
+function projectAdminCommentBase(
+  row: CommentAndUser,
+): Omit<AdminCommentWire, 'pageTitle' | 'pagePublicId' | 'pageCover'> {
   return {
     ...projectPublicCommentBase(row),
     ua: row.ua,
@@ -109,5 +111,6 @@ export function asAdminCommentsWire(comments: AdminComment[]): AdminCommentWire[
     ...projectAdminCommentBase(row),
     pageTitle: row.pageTitle,
     pagePublicId: row.pagePublicId,
+    pageCover: row.pageCover,
   }))
 }

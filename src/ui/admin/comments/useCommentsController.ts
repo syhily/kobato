@@ -7,10 +7,14 @@ import { idStr } from '@/shared/utils/tools'
 
 export type FilterStatus = 'all' | 'pending' | 'approved'
 
-// `FilterItem` is the shape Base UI Combobox treats specially: when an
-// `items` array contains `{ value, label }` objects, `label` is auto-used in
-// `Combobox.Value` / `Combobox.Input` and `value` is auto-used for the
-// controlled `value` lookup.
+export type FilterFieldKey = 'status' | 'page' | 'author' | 'text' | 'date'
+
+export interface ActiveFilter {
+  field: FilterFieldKey
+  value: string
+  label: string
+}
+
 export interface FilterItem {
   value: string
   label: string
@@ -22,15 +26,12 @@ export interface StatusCounts {
   approved: number
 }
 
+const PAGE_SIZE = 10
+
 interface CommentsState {
   comments: AdminComment[]
   total: number
-  hasMore: boolean
-  currentPage: number
-  pageSize: number
-  filterStatus: FilterStatus
-  filterPage: FilterItem | null
-  filterAuthor: FilterItem | null
+  filters: ActiveFilter[]
   statusCounts: StatusCounts
 }
 
@@ -39,19 +40,20 @@ type CommentsAction =
       type: 'loaded'
       comments: AdminComment[]
       total: number
-      hasMore: boolean
       statusCounts: StatusCounts
+    }
+  | {
+      type: 'appended'
+      comments: AdminComment[]
+      total: number
     }
   | { type: 'removeComment'; id: string }
   | { type: 'approveComment'; id: string }
   | { type: 'updateCommentContent'; id: string; body: CommentBody }
-  | { type: 'setFilterStatus'; value: FilterStatus }
-  | { type: 'setFilterPage'; value: FilterItem | null }
-  | { type: 'setFilterAuthor'; value: FilterItem | null }
-  | { type: 'renameFilterAuthor'; label: string }
-  | { type: 'renameFilterPage'; label: string }
-  | { type: 'setPageSize'; value: number }
-  | { type: 'setCurrentPage'; value: number }
+  | { type: 'addFilter'; field: FilterFieldKey; value: string; label: string }
+  | { type: 'removeFilter'; field: FilterFieldKey }
+  | { type: 'renameFilter'; field: FilterFieldKey; label: string }
+  | { type: 'clearFilters' }
 
 function commentsReducer(state: CommentsState, action: CommentsAction): CommentsState {
   switch (action.type) {
@@ -60,8 +62,13 @@ function commentsReducer(state: CommentsState, action: CommentsAction): Comments
         ...state,
         comments: action.comments,
         total: action.total,
-        hasMore: action.hasMore,
         statusCounts: action.statusCounts,
+      }
+    case 'appended':
+      return {
+        ...state,
+        comments: [...state.comments, ...action.comments],
+        total: action.total,
       }
     case 'removeComment':
       return {
@@ -82,56 +89,55 @@ function commentsReducer(state: CommentsState, action: CommentsAction): Comments
           idStr(comment.id) === action.id ? { ...comment, body: action.body } : comment,
         ),
       }
-    case 'setFilterStatus':
-      return { ...state, filterStatus: action.value, currentPage: 0 }
-    case 'setFilterPage':
-      return { ...state, filterPage: action.value, currentPage: 0 }
-    case 'setFilterAuthor':
-      return { ...state, filterAuthor: action.value, currentPage: 0 }
-    case 'renameFilterAuthor':
-      if (!state.filterAuthor) {
+    case 'addFilter': {
+      const next = state.filters.filter((f) => f.field !== action.field)
+      next.push({ field: action.field, value: action.value, label: action.label })
+      return { ...state, filters: next }
+    }
+    case 'removeFilter':
+      return { ...state, filters: state.filters.filter((f) => f.field !== action.field) }
+    case 'renameFilter': {
+      const idx = state.filters.findIndex((f) => f.field === action.field)
+      if (idx === -1) {
         return state
       }
-      return { ...state, filterAuthor: { ...state.filterAuthor, label: action.label } }
-    case 'renameFilterPage':
-      if (!state.filterPage) {
-        return state
-      }
-      return { ...state, filterPage: { ...state.filterPage, label: action.label } }
-    case 'setPageSize':
-      return { ...state, pageSize: action.value, currentPage: 0 }
-    case 'setCurrentPage':
-      return { ...state, currentPage: action.value }
+      const next = [...state.filters]
+      next[idx] = { ...next[idx]!, label: action.label }
+      return { ...state, filters: next }
+    }
+    case 'clearFilters':
+      return { ...state, filters: [] }
   }
 }
 
 export interface UseCommentsControllerOptions {
-  initialAuthorId: string
-  initialPageKey: string
-  initialStatus: FilterStatus
+  initialFilters: ActiveFilter[]
 }
 
-export function useCommentsController({
-  initialAuthorId,
-  initialPageKey,
-  initialStatus,
-}: UseCommentsControllerOptions) {
+export function useCommentsController({ initialFilters }: UseCommentsControllerOptions) {
   const [state, dispatch] = useReducer(commentsReducer, {
     comments: [],
     total: 0,
-    hasMore: false,
-    currentPage: 0,
-    pageSize: 10,
-    filterStatus: initialStatus,
-    filterPage: initialPageKey ? { value: initialPageKey, label: initialPageKey } : null,
-    filterAuthor: initialAuthorId ? { value: initialAuthorId, label: initialAuthorId } : null,
+    filters: initialFilters,
     statusCounts: { all: 0, pending: 0, approved: 0 },
   })
+
+  const statusFilter = state.filters.find((f) => f.field === 'status')
+  const pageFilter = state.filters.find((f) => f.field === 'page')
+  const authorFilter = state.filters.find((f) => f.field === 'author')
+  const textFilter = state.filters.find((f) => f.field === 'text')
+  const dateFilter = state.filters.find((f) => f.field === 'date')
 
   return {
     state,
     dispatch,
-    filterPageKey: state.filterPage?.value ?? '',
-    filterAuthorId: state.filterAuthor?.value ?? '',
+    pageSize: PAGE_SIZE,
+    hasMore: state.comments.length < state.total,
+    filterStatus: (statusFilter?.value ?? 'all') as FilterStatus,
+    filterPageKey: pageFilter?.value ?? '',
+    filterAuthorId: authorFilter?.value ?? '',
+    filterQ: textFilter?.value ?? '',
+    filterCreatedAfter: dateFilter?.value ? dateFilter.value.split('/')[0] || undefined : undefined,
+    filterCreatedBefore: dateFilter?.value ? dateFilter.value.split('/')[1] || undefined : undefined,
   }
 }

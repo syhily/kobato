@@ -1,13 +1,15 @@
-import { RefreshCwIcon, SearchIcon, XIcon } from 'lucide-react'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { LoaderIcon, SearchIcon } from 'lucide-react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { toast } from 'sonner'
 
 import type { AdminCommentWire as AdminComment } from '@/shared/contracts/comments'
-import type { FilterItem, FilterStatus } from '@/ui/admin/comments/useCommentsController'
+import type { ActiveFilter, FilterFieldKey, FilterItem, FilterStatus } from '@/ui/admin/comments/useCommentsController'
 
+import { orpc } from '@/client/api/client'
 import { orpcQuery, useMutation, useQuery } from '@/client/api/query'
 import { idStr } from '@/shared/utils/tools'
 import { AdminCommentRow } from '@/ui/admin/comments/AdminCommentRow'
+import { CommentsFilterBar } from '@/ui/admin/comments/CommentsFilterBar'
 import { EditCommentDialog } from '@/ui/admin/comments/EditCommentDialog'
 import { EditUserDialog } from '@/ui/admin/comments/EditUserDialog'
 import { ReplyCommentDialog } from '@/ui/admin/comments/ReplyCommentDialog'
@@ -15,65 +17,22 @@ import { useCommentsController } from '@/ui/admin/comments/useCommentsController
 import { AdminListPage } from '@/ui/admin/shared/AdminListPage'
 import { type ConfirmState, ConfirmDialog } from '@/ui/admin/shared/ConfirmDialog'
 import { useDebouncedSearch } from '@/ui/admin/shared/useDebouncedSearch'
-import { Button } from '@/ui/components/button'
-import { Card, CardContent } from '@/ui/components/card'
-import { Combobox, ComboboxContent, ComboboxItem, ComboboxTrigger, ComboboxValue } from '@/ui/components/combobox'
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@/ui/components/empty'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/components/select'
 import { Skeleton } from '@/ui/components/skeleton'
-import { Tabs, TabsList, TabsTrigger } from '@/ui/components/tabs'
 
-// How long to wait after the user stops typing in a Combobox input
-// before firing the autocomplete request. 250ms feels snappy without
-// firing on every keystroke for slow-typing CJK IMEs.
 const FILTER_QUERY_DEBOUNCE_MS = 250
-
-const PAGE_SIZE_OPTIONS: { value: string; label: string }[] = [10, 20, 50, 100].map((n) => ({
-  value: String(n),
-  label: `${n} 条`,
-}))
-
-// Tiny "X 清除" affordance shown next to a filter label whenever that
-// filter is non-empty. Uses the `destructive-soft` Button variant
-// (light-pink bg, magenta text) so it visually telegraphs "removes a
-// selection" without yelling at the user. Kept small (`size="sm"` plus
-// shorter horizontal padding via `px-2`) so it fits neatly on the
-// header row above each Combobox without inflating the row height.
-function ClearFilterButton({ onClick }: { onClick: () => void }) {
-  return (
-    <Button
-      type="button"
-      variant="destructive-soft"
-      size="sm"
-      onClick={onClick}
-      className="h-7 gap-1 px-2 py-0 text-xs"
-    >
-      <XIcon data-icon="sm" />
-      清除
-    </Button>
-  )
-}
 
 export interface CommentsViewProps {
   currentUserName: string
   currentUserEmail: string
-  initialAuthorId?: string
-  initialPageKey?: string
-  initialStatus?: FilterStatus
+  initialFilters: ActiveFilter[]
 }
 
-export function CommentsView({
-  currentUserName,
-  currentUserEmail,
-  initialAuthorId = '',
-  initialPageKey = '',
-  initialStatus = 'all',
-}: CommentsViewProps) {
-  const { state, dispatch, filterPageKey, filterAuthorId } = useCommentsController({
-    initialAuthorId,
-    initialPageKey,
-    initialStatus,
-  })
+export function CommentsView({ currentUserName, currentUserEmail, initialFilters }: CommentsViewProps) {
+  const { state, dispatch, pageSize, hasMore, filterQ, filterCreatedAfter, filterCreatedBefore } =
+    useCommentsController({
+      initialFilters,
+    })
 
   const loadMutation = useMutation({
     ...orpcQuery.admin.comments.loadAll.mutationOptions(),
@@ -82,7 +41,6 @@ export function CommentsView({
         type: 'loaded',
         comments: payload.comments,
         total: payload.total,
-        hasMore: payload.hasMore,
         statusCounts: payload.statusCounts,
       })
     },
@@ -92,13 +50,13 @@ export function CommentsView({
   })
 
   const [debouncedPageQuery, setDebouncedPageQuery] = useState('')
-  const [pageQuery, setPageQuery] = useDebouncedSearch({
+  const [, setPageQuery] = useDebouncedSearch({
     delayMs: FILTER_QUERY_DEBOUNCE_MS,
     onChange: (value) => setDebouncedPageQuery(value),
   })
 
   const [debouncedAuthorQuery, setDebouncedAuthorQuery] = useState('')
-  const [authorQuery, setAuthorQuery] = useDebouncedSearch({
+  const [, setAuthorQuery] = useDebouncedSearch({
     delayMs: FILTER_QUERY_DEBOUNCE_MS,
     onChange: (value) => setDebouncedAuthorQuery(value),
   })
@@ -115,17 +73,19 @@ export function CommentsView({
     }),
   )
 
+  const authorInitial = initialFilters.find((f) => f.field === 'author')
   const { data: authorRehydrateData } = useQuery(
     orpcQuery.admin.comments.searchAuthors.queryOptions({
-      input: initialAuthorId ? { ids: initialAuthorId } : {},
-      enabled: !!initialAuthorId,
+      input: authorInitial ? { ids: authorInitial.value } : {},
+      enabled: !!authorInitial,
     }),
   )
 
+  const pageInitial = initialFilters.find((f) => f.field === 'page')
   const { data: pageRehydrateData } = useQuery(
     orpcQuery.admin.comments.searchPages.queryOptions({
-      input: initialPageKey ? { key: initialPageKey } : {},
-      enabled: !!initialPageKey,
+      input: pageInitial ? { key: pageInitial.value } : {},
+      enabled: !!pageInitial,
     }),
   )
 
@@ -140,57 +100,105 @@ export function CommentsView({
     if (!authorRehydrateData?.authors.length) {
       return
     }
-    dispatch({ type: 'renameFilterAuthor', label: authorRehydrateData.authors[0].name })
+    dispatch({ type: 'renameFilter', field: 'author', label: authorRehydrateData.authors[0].name })
   }, [authorRehydrateData, dispatch])
 
   useEffect(() => {
     if (!pageRehydrateData?.pages.length) {
       return
     }
-    dispatch({ type: 'renameFilterPage', label: pageRehydrateData.pages[0].title || '无标题' })
+    dispatch({ type: 'renameFilter', field: 'page', label: pageRehydrateData.pages[0].title || '无标题' })
   }, [pageRehydrateData, dispatch])
 
-  const reload = useCallback(() => {
-    const offset = state.currentPage * state.pageSize
-    loadComments({
+  const statusFilter = state.filters.find((f) => f.field === 'status')
+  const pageKeyFilter = state.filters.find((f) => f.field === 'page')
+  const userIdFilter = state.filters.find((f) => f.field === 'author')
+
+  const buildQueryInput = useCallback(
+    (offset: number) => ({
       offset,
-      limit: state.pageSize,
-      ...(filterPageKey ? { pageKey: filterPageKey } : {}),
-      ...(filterAuthorId ? { userId: filterAuthorId } : {}),
-      ...(state.filterStatus !== 'all' ? { status: state.filterStatus } : {}),
-    })
-  }, [loadComments, state.currentPage, state.pageSize, filterPageKey, filterAuthorId, state.filterStatus])
+      limit: pageSize,
+      ...(pageKeyFilter ? { pageKey: pageKeyFilter.value } : {}),
+      ...(userIdFilter ? { userId: userIdFilter.value } : {}),
+      ...(statusFilter && statusFilter.value !== 'all' ? { status: statusFilter.value as FilterStatus } : {}),
+      ...(filterQ ? { q: filterQ } : {}),
+      ...(filterCreatedAfter ? { createdAfter: filterCreatedAfter } : {}),
+      ...(filterCreatedBefore ? { createdBefore: filterCreatedBefore } : {}),
+    }),
+    [pageSize, pageKeyFilter, userIdFilter, statusFilter, filterQ, filterCreatedAfter, filterCreatedBefore],
+  )
+
+  // Initial load / reload when filters change
+  const reload = useCallback(() => {
+    loadComments(buildQueryInput(0))
+  }, [loadComments, buildQueryInput])
 
   useEffect(() => {
     reload()
   }, [reload])
 
-  // Server-returned items, normalised to `{ value, label }` so Base UI
-  // Combobox can auto-display labels via `Combobox.Value`. We also splice
-  // the currently selected item back in (when not present in the latest
-  // server response) so Base UI's "selected indicator" can still find a
-  // match in the rendered list — otherwise the check-mark would silently
-  // disappear when the user starts typing a query that excludes their
-  // current selection.
+  // Infinite scroll: load more via imperative API call
+  const [loadingMore, setLoadingMore] = useState(false)
+  const sentinelRef = useRef<HTMLDivElement>(null)
+
+  const loadMore = useCallback(async () => {
+    if (loadingMore || !hasMore) {
+      return
+    }
+    setLoadingMore(true)
+    try {
+      const result = await orpc.admin.comments.loadAll(buildQueryInput(state.comments.length))
+      dispatch({
+        type: 'appended',
+        comments: result.comments,
+        total: result.total,
+      })
+    } catch {
+      toast.error('加载更多评论失败')
+    } finally {
+      setLoadingMore(false)
+    }
+  }, [loadingMore, hasMore, buildQueryInput, state.comments.length, dispatch])
+
+  useEffect(() => {
+    if (!hasMore) {
+      return
+    }
+    const el = sentinelRef.current
+    if (!el) {
+      return
+    }
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry?.isIntersecting) {
+          void loadMore()
+        }
+      },
+      { rootMargin: '200px' },
+    )
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [hasMore, loadMore])
+
   const pageItems = useMemo<FilterItem[]>(() => {
     const fetched = pagesData?.pages ?? []
     const items = fetched.map((p) => ({ value: p.key, label: p.title || '无标题' }))
-    if (state.filterPage && !items.some((i) => i.value === state.filterPage!.value)) {
-      items.unshift(state.filterPage)
+    const current = state.filters.find((f) => f.field === 'page')
+    if (current && !items.some((i) => i.value === current.value)) {
+      items.unshift({ value: current.value, label: current.label })
     }
     return items
-  }, [pagesData, state.filterPage])
+  }, [pagesData, state.filters])
 
   const authorItems = useMemo<FilterItem[]>(() => {
     const fetched = authorsData?.authors ?? []
     const items = fetched.map((a) => ({ value: a.id, label: a.name }))
-    if (state.filterAuthor && !items.some((i) => i.value === state.filterAuthor!.value)) {
-      items.unshift(state.filterAuthor)
+    const current = state.filters.find((f) => f.field === 'author')
+    if (current && !items.some((i) => i.value === current.value)) {
+      items.unshift({ value: current.value, label: current.label })
     }
     return items
-  }, [authorsData, state.filterAuthor])
-
-  const totalPages = useMemo(() => Math.max(1, Math.ceil(state.total / state.pageSize)), [state.total, state.pageSize])
+  }, [authorsData, state.filters])
 
   const askApprove = useCallback(
     (run: () => void) =>
@@ -215,119 +223,66 @@ export function CommentsView({
     [],
   )
 
+  const handleAddFilter = useCallback(
+    (field: FilterFieldKey, value: string, label: string) => {
+      dispatch({ type: 'addFilter', field, value, label })
+    },
+    [dispatch],
+  )
+
+  const handleRemoveFilter = useCallback(
+    (field: FilterFieldKey) => {
+      dispatch({ type: 'removeFilter', field })
+    },
+    [dispatch],
+  )
+
+  const handleClearFilters = useCallback(() => {
+    dispatch({ type: 'clearFilters' })
+  }, [dispatch])
+
+  const hasActiveFilters = state.filters.length > 0
   const isLoading = isCommentsLoading
 
   return (
     <>
       <AdminListPage>
         <AdminListPage.Header title="评论管理" description="审核、回复、编辑站点评论。">
-          <Button type="button" variant="outline" className="border-ink-4" onClick={reload} disabled={isLoading}>
-            <RefreshCwIcon data-icon="inline-start" /> 刷新
-          </Button>
+          <div className="flex items-center gap-2">
+            {!hasActiveFilters && (
+              <CommentsFilterBar
+                filters={state.filters}
+                onAddFilter={handleAddFilter}
+                onRemoveFilter={handleRemoveFilter}
+                onClearFilters={handleClearFilters}
+                pageItems={pageItems}
+                authorItems={authorItems}
+                onPageSearch={setPageQuery}
+                onAuthorSearch={setAuthorQuery}
+                isPagesPending={isPagesPending}
+                isAuthorsPending={isAuthorsPending}
+              />
+            )}
+          </div>
         </AdminListPage.Header>
 
-        <AdminListPage.Toolbar>
-          <Tabs
-            value={state.filterStatus}
-            onValueChange={(value) => dispatch({ type: 'setFilterStatus', value: value as FilterStatus })}
-          >
-            <TabsList>
-              <TabsTrigger value="all">全部 · {state.statusCounts.all}</TabsTrigger>
-              <TabsTrigger value="pending">待审核 · {state.statusCounts.pending}</TabsTrigger>
-              <TabsTrigger value="approved">已审核 · {state.statusCounts.approved}</TabsTrigger>
-            </TabsList>
-          </Tabs>
-          {/*
-           * Filter row. The `FilterField` compound owns the label-row alignment
-           * (fixed 28px) so the three controls below stay aligned even when only
-           * one column has a "X 清除" button visible.
-           */}
-          <div className="grid gap-3 sm:grid-cols-3">
-            <AdminListPage.FilterField
-              label="筛选文章"
-              action={
-                state.filterPage ? (
-                  <ClearFilterButton onClick={() => dispatch({ type: 'setFilterPage', value: null })} />
-                ) : undefined
-              }
-            >
-              <Combobox<FilterItem>
-                items={pageItems}
-                value={state.filterPage}
-                onValueChange={(item) => dispatch({ type: 'setFilterPage', value: item })}
-                inputValue={pageQuery}
-                onInputValueChange={(value) => setPageQuery(value)}
-                filter={null}
-              >
-                <ComboboxTrigger className="w-full">
-                  <ComboboxValue placeholder="全部文章" />
-                </ComboboxTrigger>
-                <ComboboxContent<FilterItem>
-                  inputPlaceholder="搜索文章…"
-                  emptyMessage={isPagesPending ? '加载中…' : '无匹配文章'}
-                >
-                  {(item) => (
-                    <ComboboxItem key={item.value} value={item}>
-                      {item.label}
-                    </ComboboxItem>
-                  )}
-                </ComboboxContent>
-              </Combobox>
-            </AdminListPage.FilterField>
-            <AdminListPage.FilterField
-              label="筛选评论人员"
-              action={
-                state.filterAuthor ? (
-                  <ClearFilterButton onClick={() => dispatch({ type: 'setFilterAuthor', value: null })} />
-                ) : undefined
-              }
-            >
-              <Combobox<FilterItem>
-                items={authorItems}
-                value={state.filterAuthor}
-                onValueChange={(item) => dispatch({ type: 'setFilterAuthor', value: item })}
-                inputValue={authorQuery}
-                onInputValueChange={(value) => setAuthorQuery(value)}
-                filter={null}
-              >
-                <ComboboxTrigger className="w-full">
-                  <ComboboxValue placeholder="全部人员" />
-                </ComboboxTrigger>
-                <ComboboxContent<FilterItem>
-                  inputPlaceholder="搜索人员…"
-                  emptyMessage={isAuthorsPending ? '加载中…' : '无匹配人员'}
-                >
-                  {(item) => (
-                    <ComboboxItem key={item.value} value={item}>
-                      {item.label}
-                    </ComboboxItem>
-                  )}
-                </ComboboxContent>
-              </Combobox>
-            </AdminListPage.FilterField>
-            <AdminListPage.FilterField label="每页显示">
-              <Select
-                items={PAGE_SIZE_OPTIONS}
-                value={String(state.pageSize)}
-                onValueChange={(value) => dispatch({ type: 'setPageSize', value: Number.parseInt(value ?? '10', 10) })}
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {PAGE_SIZE_OPTIONS.map((item) => (
-                    <SelectItem key={item.value} value={item.value}>
-                      {item.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </AdminListPage.FilterField>
-          </div>
-        </AdminListPage.Toolbar>
+        {hasActiveFilters && (
+          <CommentsFilterBar
+            filters={state.filters}
+            onAddFilter={handleAddFilter}
+            onRemoveFilter={handleRemoveFilter}
+            onClearFilters={handleClearFilters}
+            pageItems={pageItems}
+            authorItems={authorItems}
+            onPageSearch={setPageQuery}
+            onAuthorSearch={setAuthorQuery}
+            isPagesPending={isPagesPending}
+            isAuthorsPending={isAuthorsPending}
+          />
+        )}
 
         <AdminListPage.Body>
-          <div className="flex flex-col gap-3">
+          <div className="divide-y">
             {isLoading ? (
               <CommentsSkeleton />
             ) : state.comments.length === 0 ? (
@@ -352,16 +307,13 @@ export function CommentsView({
                   onConfirmApprove={askApprove}
                   onConfirmDelete={askDelete}
                   onFilterByPage={(pageKey, pageTitle) => {
-                    dispatch({
-                      type: 'setFilterPage',
-                      value: { value: pageKey, label: pageTitle },
-                    })
+                    dispatch({ type: 'addFilter', field: 'page', value: pageKey, label: pageTitle })
                     if (typeof window !== 'undefined') {
                       window.scrollTo({ top: 0, behavior: 'smooth' })
                     }
                   }}
                   onFilterByAuthor={(userId, name) => {
-                    dispatch({ type: 'setFilterAuthor', value: { value: userId, label: name } })
+                    dispatch({ type: 'addFilter', field: 'author', value: userId, label: name })
                     if (typeof window !== 'undefined') {
                       window.scrollTo({ top: 0, behavior: 'smooth' })
                     }
@@ -370,13 +322,24 @@ export function CommentsView({
               ))
             )}
           </div>
-        </AdminListPage.Body>
 
-        <AdminListPage.PageNavigation
-          totalPages={totalPages}
-          currentPage={state.currentPage}
-          onChange={(page) => dispatch({ type: 'setCurrentPage', value: page })}
-        />
+          {/* Sentinel for infinite scroll */}
+          {hasMore && <div ref={sentinelRef} className="h-1" />}
+
+          {/* Bottom status */}
+          {(loadingMore || (!hasMore && state.comments.length > 0)) && (
+            <div className="py-6 text-center text-sm text-muted-foreground">
+              {loadingMore ? (
+                <span className="inline-flex items-center gap-2">
+                  <LoaderIcon className="size-4 animate-spin" />
+                  加载中…
+                </span>
+              ) : (
+                '已加载全部评论'
+              )}
+            </div>
+          )}
+        </AdminListPage.Body>
       </AdminListPage>
 
       <EditCommentDialog
@@ -417,18 +380,15 @@ function CommentsSkeleton() {
   return (
     <>
       {Array.from({ length: 3 }).map((_, i) => (
-        // Skeleton cards — identical placeholders, swapped wholesale on load.
         // oxlint-disable-next-line react/no-array-index-key
-        <Card key={i}>
-          <CardContent className="flex gap-4">
-            <Skeleton className="size-12 shrink-0 rounded-full" />
-            <div className="flex flex-1 flex-col gap-2">
-              <Skeleton className="h-4 w-1/3" />
-              <Skeleton className="h-3 w-1/2" />
-              <Skeleton className="h-12 w-full" />
-            </div>
-          </CardContent>
-        </Card>
+        <div key={i} className="flex gap-4 px-4 py-3">
+          <Skeleton className="size-10 shrink-0 rounded-full" />
+          <div className="flex flex-1 flex-col gap-2">
+            <Skeleton className="h-4 w-1/4" />
+            <Skeleton className="h-3 w-1/3" />
+            <Skeleton className="h-12 w-full" />
+          </div>
+        </div>
       ))}
     </>
   )

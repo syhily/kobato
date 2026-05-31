@@ -75,6 +75,7 @@ export const adminCommentBaseDto = commentBaseDto.extend({
 export const adminCommentDto = adminCommentBaseDto.extend({
   pageTitle: z.string().nullable(),
   pagePublicId: z.string().nullable(),
+  pageCover: z.string().nullable(),
 })
 
 export type AdminCommentWire = z.infer<typeof adminCommentDto>

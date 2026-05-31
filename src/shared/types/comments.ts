@@ -111,6 +111,7 @@ export interface AdminComment extends CommentAndUser {
    * orphaned comments whose metric row is missing.
    */
   pagePublicId: string | null
+  pageCover: string | null
 }
 
 export interface AdminCommentsResult {

@@ -1,5 +1,7 @@
 import { useOutletContext, useSearchParams } from 'react-router'
 
+import type { ActiveFilter } from '@/ui/admin/comments/useCommentsController'
+
 import { getRouteRequestContext } from '@/server/domains/auth/context'
 import { requireRole } from '@/server/domains/auth/rbac'
 import { bundleFromMatches, routeMeta } from '@/server/render/seo/meta'
@@ -22,13 +24,30 @@ export default function WpAdminCommentsRoute() {
     currentUser: { id: string; name: string; email: string }
   }>()
   const [searchParams] = useSearchParams()
+
+  const initialFilters: ActiveFilter[] = []
+
+  const status = searchParams.get('status')
+  if (status && status !== 'all') {
+    const label = status === 'pending' ? '待审核' : '已审核'
+    initialFilters.push({ field: 'status', value: status, label })
+  }
+
+  const pageKey = searchParams.get('pageKey')
+  if (pageKey) {
+    initialFilters.push({ field: 'page', value: pageKey, label: pageKey })
+  }
+
+  const userId = searchParams.get('userId')
+  if (userId) {
+    initialFilters.push({ field: 'author', value: userId, label: userId })
+  }
+
   return (
     <CommentsView
       currentUserName={currentUser.name}
       currentUserEmail={currentUser.email}
-      initialAuthorId={searchParams.get('userId') ?? undefined}
-      initialPageKey={searchParams.get('pageKey') ?? undefined}
-      initialStatus={(searchParams.get('status') as 'all' | 'pending' | 'approved') ?? undefined}
+      initialFilters={initialFilters}
     />
   )
 }

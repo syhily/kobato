@@ -1,6 +1,6 @@
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
-import { and, eq, gte, isNotNull, isNull, or, sql } from 'drizzle-orm'
+import { and, eq, gte, isNotNull, isNull, lte, or, sql } from 'drizzle-orm'
 
 import type { EntityTarget, EntityType } from '@/server/infra/db/target'
 import type { MyCommentsStatus } from '@/shared/types/comments'
@@ -83,6 +83,7 @@ export function targetSlugTitleSubquery(db: NodePgDatabase) {
       ownerId: post.id,
       slug: post.slug,
       title: post.title,
+      cover: post.cover,
     })
     .from(post)
     .unionAll(
@@ -92,6 +93,7 @@ export function targetSlugTitleSubquery(db: NodePgDatabase) {
           ownerId: page.id,
           slug: page.slug,
           title: page.title,
+          cover: page.cover,
         })
         .from(page),
     )
@@ -113,6 +115,9 @@ export interface AdminListFilters {
   target?: EntityTarget
   userId?: bigint
   status?: 'all' | 'pending' | 'approved'
+  q?: string
+  createdAfter?: Date
+  createdBefore?: Date
 }
 
 export function buildAdminListConditions(filters: AdminListFilters) {
@@ -128,6 +133,15 @@ export function buildAdminListConditions(filters: AdminListFilters) {
   }
   if (filters.status === 'approved') {
     conditions.push(eq(comment.isPending, false))
+  }
+  if (filters.q && filters.q.trim() !== '') {
+    conditions.push(sql`${comment.content} ILIKE ${`%${escapeLikePattern(filters.q.trim())}%`}`)
+  }
+  if (filters.createdAfter) {
+    conditions.push(gte(comment.createdAt, filters.createdAfter))
+  }
+  if (filters.createdBefore) {
+    conditions.push(lte(comment.createdAt, filters.createdBefore))
   }
   return conditions
 }
