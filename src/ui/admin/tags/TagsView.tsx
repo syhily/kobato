@@ -12,7 +12,6 @@ import { useDebouncedSearch } from '@/ui/admin/shared/useDebouncedSearch'
 import { EditTagDialog } from '@/ui/admin/tags/EditTagDialog'
 import { TagRow, TagsSkeleton } from '@/ui/admin/tags/TagRows'
 import { useTagsController } from '@/ui/admin/tags/useTagsController'
-import { Button } from '@/ui/components/button'
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@/ui/components/empty'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/ui/components/table'
 
@@ -185,9 +184,15 @@ export function TagsView() {
                 className="h-9 w-full rounded-md border border-input bg-transparent py-1 pr-3 pl-9 text-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
               />
             </div>
-            <Button type="button" onClick={() => setEditTarget(null)} disabled={isDialogOpen}>
-              <PlusIcon /> 新增标签
-            </Button>
+            <button
+              type="button"
+              onClick={() => setEditTarget(null)}
+              disabled={isDialogOpen}
+              className="inline-flex h-9 items-center gap-1.5 rounded-(--radius) bg-primary px-3 font-medium text-(--text-admin-sm) text-primary-foreground shadow-none hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <PlusIcon className="size-4" />
+              新增标签
+            </button>
           </div>
         </AdminListPage.Header>
 
