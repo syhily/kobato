@@ -160,8 +160,10 @@ function ensureFonts(): Promise<void> {
   if (ogFontReady === null) {
     ogFontReady = (async () => {
       const loaded = await oppoSans()
-      if (loaded !== null && !GlobalFonts.has(loaded.family)) {
-        GlobalFonts.register(loaded.buffer, loaded.family)
+      if (loaded !== null) {
+        if (!GlobalFonts.has(loaded.family)) {
+          GlobalFonts.register(loaded.buffer, loaded.family)
+        }
         ogFontSlot = loaded
       }
     })()

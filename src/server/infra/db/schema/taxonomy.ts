@@ -21,6 +21,7 @@ export const category = pgTable(
     name: varchar('name', { length: 20 }).unique().notNull(),
     slug: varchar('slug', { length: 80 }).unique().notNull(),
     cover: text('cover').notNull(),
+    og: text('og'),
     description: text('description').notNull().default(''),
     sortOrder: integer('sort_order').notNull().default(0),
   },

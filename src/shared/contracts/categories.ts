@@ -10,6 +10,7 @@ export const adminCategoryDto = z.object({
   name: z.string(),
   slug: z.string(),
   cover: z.string(),
+  og: z.string().nullable(),
   description: z.string(),
   sortOrder: z.number().int(),
   postCount: z.number().int().nonnegative(),

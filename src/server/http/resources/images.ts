@@ -7,6 +7,7 @@ import type { Env } from '@/server/http/context'
 
 import { findPageBySlug } from '@/server/domains/pages/repo'
 import { findPostBySlug } from '@/server/domains/posts/repos/single'
+import { findCategoryBySlug } from '@/server/infra/db/operations/category'
 import { tryResourceRateLimit } from '@/server/infra/rate-limit'
 import { loadBuffer } from '@/server/infra/redis/buffer-cache'
 import { AvatarStatus, cacheAvatar, loadAvatar } from '@/server/render/avatar/cache'
@@ -95,6 +96,28 @@ export const imagesRouter = new Hono<Env>()
     const buffer = await loadBuffer(
       ogCacheKey(slug, page!.title, summary, page!.cover),
       () => drawOpenGraph({ title: page!.title, summary, cover: page!.cover }),
+      ttl,
+    )
+    c.header('Content-Type', 'image/png')
+    Object.entries(OG_HEADERS).forEach(([k, v]) => c.header(k, v))
+    return c.body(new Uint8Array(buffer))
+  })
+  .get('/images/og/cats/:filename{[^/]+\\.png}', async (c) => {
+    const slug = stripPng(c.req.param('filename'))
+    if (!slug) {
+      return ogFallback(c)
+    }
+
+    const ttl = getCacheSettings().cache.og.ttlSeconds
+    const category = await findCategoryBySlug(c.var.db, slug)
+    if (!category) {
+      return ogFallback(c)
+    }
+
+    const summary = category.description || requireBlogSettingsSection('siteIdentity').description
+    const buffer = await loadBuffer(
+      ogCacheKey(`cat-${slug}`, category.name, summary, category.cover),
+      () => drawOpenGraph({ title: category.name, summary, cover: category.cover }),
       ttl,
     )
     c.header('Content-Type', 'image/png')

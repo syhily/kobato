@@ -18,6 +18,7 @@ const category = {
   name: 'Tech',
   slug: 'tech',
   cover: 'https://example.com/cover.jpg',
+  og: null,
   description: 'Tech posts',
   sortOrder: 0,
   postCount: 5,

@@ -1,4 +1,4 @@
-import { ImageOffIcon, UploadIcon } from 'lucide-react'
+import { ImageOffIcon, LinkIcon, XIcon } from 'lucide-react'
 import { useMemo, useState } from 'react'
 
 import type { AdminImageDto } from '@/shared/types/images'
@@ -8,17 +8,16 @@ import { UploadImageDialog, type UploadKind } from '@/ui/admin/shared/UploadImag
 import { Button } from '@/ui/components/button'
 import { Input } from '@/ui/components/input'
 import { Label } from '@/ui/components/label'
+import { cn } from '@/ui/lib/cn'
 
 // Shared cover/poster row used by `EditCategoryDialog` and
 // `EditFriendDialog`. Replaces the previous "single URL input" layout
 // with a preview + upload button + collapsible URL input.
 //
 // Layout:
-//   [80×40 thumbnail] [上传 / 替换 button]   <— always visible
-//   [URL input field]                       <— hidden when value
-//                                              matches the auto-
-//                                              generated S3 key for
-//                                              the active `kind`
+//   [full-width thumbnail]                 <— click to upload / replace
+//   [URL input field]                       <— hidden by default;
+//                                              toggle via link icon
 //
 // The dialog is invoked through the `kind` discriminator: passing
 // `{ kind: 'category', slug }` locks the cropper to 1280×425 and
@@ -49,6 +48,18 @@ export interface CoverInputRowProps {
    * Pass an empty string to always show the manual input.
    */
   expectedAutoUrl: string
+  /**
+   * Optional preview image shown inside the thumbnail when `value` is
+   * empty. Used by OG fields to display the auto-generated default card
+   * so the operator sees what will be rendered before clicking to
+   * override.
+   */
+  fallbackSrc?: string
+  /**
+   * Optional Tailwind classes applied to the thumbnail button.
+   * Defaults to `h-24 w-full` when omitted.
+   */
+  thumbnailClassName?: string
 }
 
 export function CoverInputRow({
@@ -59,6 +70,8 @@ export function CoverInputRow({
   onChange,
   uploadKind,
   expectedAutoUrl,
+  fallbackSrc,
+  thumbnailClassName,
 }: CoverInputRowProps) {
   const [uploadOpen, setUploadOpen] = useState(false)
   const [showManualInput, setShowManualInput] = useState(false)
@@ -93,33 +106,83 @@ export function CoverInputRow({
     return undefined
   })()
 
+  const hasValue = value !== ''
+
   return (
     <div className="flex flex-col gap-2">
-      <Label htmlFor={htmlFor}>{label}</Label>
+      <div className="flex items-center justify-between gap-2">
+        <Label htmlFor={htmlFor}>{label}</Label>
+        <div className="flex items-center gap-1">
+          <Button
+            variant="ghost"
+            size="icon"
+            type="button"
+            title={showManualInput ? '收起 URL 输入' : '粘贴 URL'}
+            aria-label={showManualInput ? `收起 ${label} 的 URL 输入` : `粘贴 ${label} 的 URL`}
+            aria-pressed={showManualInput}
+            onClick={() => setShowManualInput((prev) => !prev)}
+          >
+            <LinkIcon />
+          </Button>
+          {hasValue ? (
+            <Button
+              variant="ghost"
+              size="icon"
+              type="button"
+              title="清空"
+              aria-label={`清空 ${label}`}
+              onClick={() => onChange('')}
+            >
+              <XIcon />
+            </Button>
+          ) : null}
+        </div>
+      </div>
       <div className="flex items-center gap-3">
-        {/* Thumbnail preview. Shows a placeholder icon when no URL is
-            set so the slot height stays predictable across new/edit
-            modes. */}
-        <div className="flex h-10 w-20 items-center justify-center overflow-hidden rounded border bg-muted">
-          {value !== '' ? (
-            <>
-              {/* Small preview thumbnail (80×40): the URL is already a public S3
-                  object; no CDN transform needed for this size. */}
-              <img src={value} alt={label} loading="lazy" decoding="async" className="h-full w-full object-cover" />
-            </>
+        {/* Thumbnail preview — now a click target that opens the upload
+            dialog so the operator can replace by clicking the image itself. */}
+        <button
+          type="button"
+          disabled={uploadDisabled}
+          onClick={() => setUploadOpen(true)}
+          className={cn(
+            'flex items-center justify-center overflow-hidden rounded border bg-muted',
+            thumbnailClassName ?? 'h-24 w-full',
+            uploadDisabled
+              ? 'cursor-not-allowed opacity-60'
+              : 'cursor-pointer hover:border-primary hover:ring-2 hover:ring-primary/30',
+          )}
+          title={uploadTitle ?? (value === '' ? '点击上传' : '点击替换')}
+        >
+          {hasValue ? (
+            <img
+              src={value}
+              alt={label}
+              loading="lazy"
+              decoding="async"
+              className="h-full w-full object-cover"
+              onError={(e) => {
+                ;(e.currentTarget as HTMLImageElement).style.visibility = 'hidden'
+              }}
+            />
+          ) : fallbackSrc ? (
+            <img
+              src={fallbackSrc}
+              alt={`${label} 预览`}
+              loading="lazy"
+              decoding="async"
+              className="h-full w-full object-cover"
+              onError={(e) => {
+                ;(e.currentTarget as HTMLImageElement).style.visibility = 'hidden'
+              }}
+            />
           ) : (
             <ImageOffIcon className="size-4 text-muted-foreground" />
           )}
-        </div>
-        <Button type="button" onClick={() => setUploadOpen(true)} disabled={uploadDisabled} title={uploadTitle}>
-          <UploadIcon data-icon /> {value === '' ? '上传' : '替换'}
-        </Button>
-        <Button type="button" variant="ghost" size="sm" onClick={() => setShowManualInput((prev) => !prev)}>
-          {showManualInput ? '收起 URL 输入' : '手动填写 URL'}
-        </Button>
+        </button>
       </div>
 
-      {(!isAutoManaged || showManualInput) && (
+      {showManualInput && (
         <Input
           id={htmlFor}
           type="url"
@@ -129,9 +192,9 @@ export function CoverInputRow({
           placeholder={expectedAutoUrl !== '' ? expectedAutoUrl : 'https://example.com/cover.jpg'}
         />
       )}
-      {isAutoManaged && !showManualInput && (
+      {!isAutoManaged && !showManualInput && value !== '' && (
         <p className="text-xs text-muted-foreground">
-          已使用自动生成的对象键 <code className="font-mono">{value}</code>。
+          已设置自定义图片 <code className="font-mono">{value}</code>。
         </p>
       )}
       {description ? <p className="text-xs text-muted-foreground">{description}</p> : null}

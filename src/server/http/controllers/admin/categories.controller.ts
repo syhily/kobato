@@ -26,8 +26,8 @@ const upsert = adminProc
       name: z.string().trim().min(1).max(20),
       slug: z.string().optional(),
       cover: z.url().max(500),
+      og: z.url().max(500).optional(),
       description: z.string().max(999).optional(),
-      sortOrder: z.coerce.number().int().min(0).max(9999).optional().default(0),
     }),
   )
   .output(z.object({ category: adminCategoryDto }))
@@ -37,8 +37,8 @@ const upsert = adminProc
       name: input.name,
       slug: input.slug,
       cover: input.cover,
+      og: input.og,
       description: input.description ?? '',
-      sortOrder: input.sortOrder,
     })
     recordAuditEventFromContext(context, {
       action: input.id === undefined ? 'category_created' : 'category_updated',

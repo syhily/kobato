@@ -18,6 +18,8 @@ export interface ListingSeoProps {
    * Used by category and tag listings to advertise their dedicated feeds.
    */
   feedLinks?: FeedLinkOptions
+  /** Custom OG image URL; when omitted falls back to the site-wide default. */
+  ogImageUrl?: string
 }
 
 // Produces the **complete** `MetaDescriptor[]` for a listing page in one
@@ -31,7 +33,7 @@ export interface ListingSeoProps {
 // already extracted the bundle from `matches`) can pass it explicitly
 // to avoid touching `globalThis`.
 export function listingSeo(
-  { title, description, pageNum, totalPage, rootPath, forceNoindex = false, feedLinks }: ListingSeoProps,
+  { title, description, pageNum, totalPage, rootPath, forceNoindex = false, feedLinks, ogImageUrl }: ListingSeoProps,
   bundle?: BlogSettingsBundle | null,
 ): MetaDescriptor[] {
   let pageTitle = title
@@ -44,6 +46,7 @@ export function listingSeo(
       title: pageTitle,
       description,
       pageUrl: pagePath(rootPath, pageNum),
+      ogImageUrl,
       canonical: true,
       prevUrl: pageNum > 1 ? pagePath(rootPath, pageNum - 1) : undefined,
       nextUrl: pageNum < totalPage ? pagePath(rootPath, pageNum + 1) : undefined,

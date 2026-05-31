@@ -87,6 +87,7 @@ export async function listingLoader<TExtra = undefined>(
     metadata,
     seoMode = 'always',
     feedLinks,
+    ogImageUrl,
     computeExtra,
     extra,
     allowEmpty,
@@ -117,6 +118,8 @@ export async function listingLoader<TExtra = undefined>(
      * `<link rel="alternate">` entries alongside the site-wide feeds.
      */
     feedLinks?: FeedLinkOptions
+    /** Custom OG image URL for the listing page. */
+    ogImageUrl?: string
     /**
      * Async callback that produces the per-route `extra` payload from the
      * resolved page slice. Runs after pagination/overflow redirects so the
@@ -168,6 +171,7 @@ export async function listingLoader<TExtra = undefined>(
           rootPath,
           forceNoindex,
           feedLinks,
+          ogImageUrl,
         })
 
   return {

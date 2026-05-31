@@ -43,6 +43,7 @@ export function toAdminCategoryDto(row: CategoryRow, postCount: number): AdminCa
     name: row.name,
     slug: row.slug,
     cover: row.cover,
+    og: row.og ?? null,
     description: row.description,
     sortOrder: row.sortOrder,
     postCount,
@@ -105,8 +106,9 @@ export interface UpsertCategoryInputs {
    */
   slug?: string
   cover: string
+  og?: string
   description: string
-  sortOrder: number
+  sortOrder?: number
 }
 
 // Single entry-point that the admin Resource Route action calls. The
@@ -134,8 +136,9 @@ export async function upsertAdminCategory(db: NodePgDatabase, input: UpsertCateg
       name: input.name,
       slug,
       cover: input.cover,
+      og: input.og,
       description: input.description,
-      sortOrder: input.sortOrder,
+      ...(input.sortOrder !== undefined ? { sortOrder: input.sortOrder } : {}),
     })
     const countOf = await categoryPostCounter(db)
     return toAdminCategoryDto(row, await countOf(row.name))
@@ -159,8 +162,9 @@ export async function upsertAdminCategory(db: NodePgDatabase, input: UpsertCateg
     name: input.name,
     slug,
     cover: input.cover,
+    og: input.og,
     description: input.description,
-    sortOrder: input.sortOrder,
+    ...(input.sortOrder !== undefined ? { sortOrder: input.sortOrder } : {}),
   })
   if (updated === null) {
     throw new DomainError('NOT_FOUND', '分类不存在')

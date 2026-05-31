@@ -10,6 +10,7 @@ export interface AdminCategoryDto {
   name: string
   slug: string
   cover: string
+  og: string | null
   description: string
   sortOrder: number
   /**
@@ -44,6 +45,7 @@ export interface UpsertCategoryInput {
   name: string
   slug?: string
   cover: string
+  og?: string
   description?: string
   sortOrder?: number
 }

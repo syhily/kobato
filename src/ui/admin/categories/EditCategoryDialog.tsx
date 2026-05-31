@@ -21,9 +21,6 @@ import { Input } from '@/ui/components/input'
 import { Label } from '@/ui/components/label'
 import { Textarea } from '@/ui/components/textarea'
 
-// Discriminator: `category === null` opens the dialog in "new
-// category" mode; a populated `category` opens it in "edit existing"
-// mode. Same convention as `EditFriendDialog`.
 export interface EditCategoryDialogProps {
   category: AdminCategoryDto | null | undefined
   onClose: () => void
@@ -34,8 +31,8 @@ const EMPTY_DRAFT = {
   name: '',
   slug: '',
   cover: '',
+  og: '',
   description: '',
-  sortOrder: 0,
 }
 
 export function EditCategoryDialog({ category, onClose, onSaved }: EditCategoryDialogProps) {
@@ -68,8 +65,8 @@ export function EditCategoryDialog({ category, onClose, onSaved }: EditCategoryD
       name: category.name,
       slug: category.slug,
       cover: category.cover,
+      og: category.og ?? '',
       description: category.description,
-      sortOrder: category.sortOrder,
     })
   }, [category])
 
@@ -91,7 +88,16 @@ export function EditCategoryDialog({ category, onClose, onSaved }: EditCategoryD
     const slug = draft.slug.trim().toLowerCase()
     return `${base}/images/categories/${slug}.jpg`
   }, [assetsSettings, slugSafe, draft.slug])
+
   const slugChanged = isEditing && category && category.slug !== draft.slug.trim()
+  const slugForOg = draft.slug.trim().toLowerCase()
+  const ogFallbackSrc = useMemo(() => {
+    if (!slugSafe || slugForOg === '') {
+      return undefined
+    }
+    const buster = djb2Short(`${draft.name}\u0001${draft.description}\u0001${draft.cover}`)
+    return `/images/og/cats/${encodeURIComponent(slugForOg)}.png?_= ${buster}`
+  }, [slugSafe, slugForOg, draft.name, draft.description, draft.cover])
 
   return (
     <Dialog open={open} onOpenChange={(next) => !next && onClose()}>
@@ -111,12 +117,10 @@ export function EditCategoryDialog({ category, onClose, onSaved }: EditCategoryD
             const payload: UpsertCategoryInput = {
               ...(isEditing && category ? { id: category.id } : {}),
               name: draft.name.trim(),
-              // Only forward `slug` when the operator typed something.
-              // An empty value means "let the server derive it from name".
               ...(trimmedSlug !== '' ? { slug: trimmedSlug } : {}),
               cover: draft.cover.trim(),
+              ...(draft.og.trim() !== '' ? { og: draft.og.trim() } : {}),
               description: draft.description,
-              sortOrder: draft.sortOrder,
             }
             submit(payload)
           }}
@@ -147,19 +151,33 @@ export function EditCategoryDialog({ category, onClose, onSaved }: EditCategoryD
             />
             <p className="text-xs text-muted-foreground">仅允许小写字母、数字、短横线；留空时按拼音从名称自动生成。</p>
           </div>
-          <div className="sm:col-span-2">
+          <div className="sm:col-span-1">
             <CoverInputRow
-              label="封面图 (1280×425)"
+              label="封面图"
               htmlFor="category-cover"
               description={
                 slugChanged
-                  ? '注意：slug 已修改，新封面会写入新 slug 对应的 S3 对象，旧对象会成为孤儿，需要在「图片管理」手动删除。'
-                  : '裁剪、旋转、调整画质后将上传到 images/categories/<slug>.jpg。'
+                  ? '注意：slug 已修改，新封面会写入新 slug 对应的 S3 对象。'
+                  : '裁剪、旋转、调整画质后上传到 images/categories/<slug>.jpg。'
               }
               value={draft.cover}
               onChange={(value) => setDraft((prev) => ({ ...prev, cover: value }))}
-              uploadKind={slugSafe ? { kind: 'category', slug: draft.slug.trim().toLowerCase() } : null}
+              uploadKind={slugSafe ? { kind: 'category', slug: slugForOg } : null}
               expectedAutoUrl={expectedAutoUrl}
+              thumbnailClassName="h-40 w-full"
+            />
+          </div>
+          <div className="sm:col-span-1">
+            <CoverInputRow
+              label="OG 图"
+              htmlFor="category-og"
+              description="留空时基于封面图自动生成 OG 图。"
+              value={draft.og}
+              onChange={(value) => setDraft((prev) => ({ ...prev, og: value }))}
+              uploadKind={slugSafe ? { kind: 'generic' } : null}
+              expectedAutoUrl=""
+              fallbackSrc={ogFallbackSrc}
+              thumbnailClassName="h-40 w-full"
             />
           </div>
           <div className="flex flex-col gap-2 sm:col-span-2">
@@ -172,18 +190,6 @@ export function EditCategoryDialog({ category, onClose, onSaved }: EditCategoryD
               rows={4}
               placeholder="该分类的简介，将在 /cats/:slug 顶部渲染（支持 Markdown）"
             />
-          </div>
-          <div className="flex flex-col gap-2 sm:col-span-1">
-            <Label htmlFor="category-sort-order">排序</Label>
-            <Input
-              id="category-sort-order"
-              type="number"
-              value={draft.sortOrder}
-              min={0}
-              max={9999}
-              onChange={(e) => setDraft((prev) => ({ ...prev, sortOrder: Number(e.target.value) || 0 }))}
-            />
-            <p className="text-xs text-muted-foreground">数字越小越靠前。</p>
           </div>
           {errorMessage ? <p className="text-sm text-destructive sm:col-span-2">{errorMessage}</p> : null}
           <DialogFooter className="sm:col-span-2">
@@ -198,4 +204,12 @@ export function EditCategoryDialog({ category, onClose, onSaved }: EditCategoryD
       </DialogContent>
     </Dialog>
   )
+}
+
+function djb2Short(input: string): string {
+  let hash = 5381
+  for (let i = 0; i < input.length; i += 1) {
+    hash = (hash * 33) ^ input.charCodeAt(i)
+  }
+  return (hash >>> 0).toString(16).padStart(8, '0').slice(0, 8)
 }
