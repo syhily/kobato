@@ -208,11 +208,11 @@ export function AdminCommentRow({
 
       {/* Cover thumbnail */}
       {thumbSrc ? (
-        <div className="hidden aspect-[16/10] w-(--spacing-admin-thumb) shrink-0 overflow-hidden rounded-xl bg-muted md:block">
+        <div className="hidden aspect-[16/10] w-(--spacing-admin-thumb) shrink-0 self-start overflow-hidden rounded-xl bg-muted md:block">
           <img src={thumbSrc} alt="" className="size-full object-cover" loading="lazy" />
         </div>
       ) : comment.pageTitle ? (
-        <div className="hidden aspect-[16/10] w-(--spacing-admin-thumb) shrink-0 items-center justify-center rounded-xl bg-muted text-muted-foreground md:flex">
+        <div className="hidden aspect-[16/10] w-(--spacing-admin-thumb) shrink-0 items-center justify-center self-start rounded-xl bg-muted text-muted-foreground md:flex">
           <ImageIcon className="size-5" />
         </div>
       ) : null}
