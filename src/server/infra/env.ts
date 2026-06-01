@@ -32,7 +32,7 @@ const envConfig = {
     // landed. Pin to whatever extension version the target Postgres
     // image ships. Optional: defaults to the version this codebase
     // is currently developed against.
-    TIMESCALEDB_VERSION: z.string().min(1).optional().default('2.27.1'),
+    TIMESCALEDB_VERSION: z.string().min(1).optional().default('2.27.0'),
 
     // Filesystem path to the MaxMind GeoLite2-City mmdb. Optional.
     MAXMIND_DB_PATH: z.string().min(1).optional(),

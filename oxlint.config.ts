@@ -181,6 +181,7 @@ export default defineConfig({
     'no-document-cookie': 'error',
 
     // P2 — Pedantic (strict, incremental).
+    'no-throw-literal': 'error',
     'no-case-declarations': 'error',
     'prefer-includes': 'warn',
     'return-await': 'warn',
