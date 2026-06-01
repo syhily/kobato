@@ -95,14 +95,23 @@ describe('asCommentItemsWire', () => {
 
 describe('asAdminCommentsWire', () => {
   it('adds pageTitle / pagePublicId on top of the base projection', () => {
-    const wire = asAdminCommentsWire([{ ...makeRow({ id: 3n }), pageTitle: '我的页面', pagePublicId: 'public-uuid' }])
-    expect(wire[0]?.id).toBe('3')
+    const wire = asAdminCommentsWire([
+      {
+        ...makeRow({ id: 3n }),
+        pageTitle: '我的页面',
+        pagePublicId: 'public-uuid',
+        pageCover: null,
+        pagePermalink: null,
+      },
+    ])
     expect(wire[0]?.pageTitle).toBe('我的页面')
     expect(wire[0]?.pagePublicId).toBe('public-uuid')
   })
 
   it('preserves PII fields (ua, ip, email) on admin wire', () => {
-    const wire = asAdminCommentsWire([{ ...makeRow({ id: 3n }), pageTitle: null, pagePublicId: null }])
+    const wire = asAdminCommentsWire([
+      { ...makeRow({ id: 3n }), pageTitle: null, pagePublicId: null, pageCover: null, pagePermalink: null },
+    ])
     expect(wire[0]?.ua).toBeNull()
     expect(wire[0]?.ip).toBeNull()
     expect(wire[0]?.email).toBe('alice@example.com')

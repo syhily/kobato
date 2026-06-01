@@ -51,6 +51,10 @@ const loadAll = adminProc
       pageKey: z.string().optional(),
       userId: z.string().optional(),
       status: z.enum(['all', 'pending', 'approved']).optional(),
+      q: z.string().trim().max(200).optional(),
+      match: z.enum(['contains', 'does-not-contain']).optional(),
+      createdAfter: z.iso.datetime().optional(),
+      createdBefore: z.iso.datetime().optional(),
     }),
   )
   .output(
@@ -73,6 +77,10 @@ const loadAll = adminProc
       input.pageKey,
       input.userId ? idFromString(input.userId) : undefined,
       input.status,
+      input.q,
+      input.match,
+      input.createdAfter ? new Date(input.createdAfter) : undefined,
+      input.createdBefore ? new Date(input.createdBefore) : undefined,
     )
     return {
       comments: asAdminCommentsWire(result.comments),

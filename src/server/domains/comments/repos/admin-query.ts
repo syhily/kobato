@@ -103,7 +103,14 @@ export async function listAdminComments(db: NodePgDatabase, offset: number, limi
   const conditions = buildAdminListConditions(filters)
   const entity = targetSlugTitleSubquery(db)
   return db
-    .select({ ...commentWithUser, pageTitle: entity.title, pagePublicId: metric.publicId })
+    .select({
+      ...commentWithUser,
+      type: comment.type,
+      pageSlug: entity.slug,
+      pageTitle: entity.title,
+      pagePublicId: metric.publicId,
+      pageCover: entity.cover,
+    })
     .from(comment)
     .innerJoin(user, eq(comment.userId, user.id))
     .leftJoin(entity, and(eq(entity.type, comment.type), eq(entity.ownerId, comment.ownerId)))

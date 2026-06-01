@@ -111,6 +111,14 @@ export interface AdminComment extends CommentAndUser {
    * orphaned comments whose metric row is missing.
    */
   pagePublicId: string | null
+  pageCover: string | null
+  /**
+   * Fully-qualified public URL for the page this comment belongs to.
+   * Powers the per-row "查看文章" overflow-menu item in the admin
+   * comments list. `null` when the metric is orphaned or the entity
+   * type/slug are missing.
+   */
+  pagePermalink: string | null
 }
 
 export interface AdminCommentsResult {
@@ -195,6 +203,10 @@ export interface LoadAllCommentsInput {
   pageKey?: string
   userId?: string
   status?: 'all' | 'pending' | 'approved'
+  q?: string
+  match?: 'contains' | 'does-not-contain'
+  createdAfter?: string
+  createdBefore?: string
 }
 
 export interface FilterAutocompleteInput {

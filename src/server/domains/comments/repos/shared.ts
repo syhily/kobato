@@ -1,6 +1,6 @@
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
-import { and, eq, gte, isNotNull, isNull, or, sql } from 'drizzle-orm'
+import { and, eq, gte, ilike, isNotNull, isNull, lte, not, or, sql } from 'drizzle-orm'
 
 import type { EntityTarget, EntityType } from '@/server/infra/db/target'
 import type { MyCommentsStatus } from '@/shared/types/comments'
@@ -83,6 +83,7 @@ export function targetSlugTitleSubquery(db: NodePgDatabase) {
       ownerId: post.id,
       slug: post.slug,
       title: post.title,
+      cover: post.cover,
     })
     .from(post)
     .unionAll(
@@ -92,6 +93,7 @@ export function targetSlugTitleSubquery(db: NodePgDatabase) {
           ownerId: page.id,
           slug: page.slug,
           title: page.title,
+          cover: page.cover,
         })
         .from(page),
     )
@@ -113,6 +115,10 @@ export interface AdminListFilters {
   target?: EntityTarget
   userId?: bigint
   status?: 'all' | 'pending' | 'approved'
+  q?: string
+  match?: 'contains' | 'does-not-contain'
+  createdAfter?: Date
+  createdBefore?: Date
 }
 
 export function buildAdminListConditions(filters: AdminListFilters) {
@@ -128,6 +134,20 @@ export function buildAdminListConditions(filters: AdminListFilters) {
   }
   if (filters.status === 'approved') {
     conditions.push(eq(comment.isPending, false))
+  }
+  if (filters.q && filters.q.trim() !== '') {
+    const pattern = `%${escapeLikePattern(filters.q.trim())}%`
+    if (filters.match === 'does-not-contain') {
+      conditions.push(not(ilike(comment.content, pattern)))
+    } else {
+      conditions.push(ilike(comment.content, pattern))
+    }
+  }
+  if (filters.createdAfter) {
+    conditions.push(gte(comment.createdAt, filters.createdAfter))
+  }
+  if (filters.createdBefore) {
+    conditions.push(lte(comment.createdAt, filters.createdBefore))
   }
   return conditions
 }
@@ -226,8 +246,9 @@ export function mineWhere(userId: bigint, filters: MyCommentsFilters = {}) {
     // parameterises the bound literal so the `%pattern%` interpolation
     // is not a SQL-injection vector; the per-user row volume is
     // bounded by the soft-delete window, so a sequential filter is
-    // acceptable here.
-    clauses.push(sql`${comment.content} ILIKE ${`%${escapeLikePattern(filters.q.trim())}%`}`)
+    // acceptable here. Uses the typed `ilike` builder to match the
+    // style of `buildAdminListConditions`.
+    clauses.push(ilike(comment.content, `%${escapeLikePattern(filters.q.trim())}%`))
   }
   return and(...clauses)
 }

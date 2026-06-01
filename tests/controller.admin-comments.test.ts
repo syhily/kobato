@@ -1,5 +1,5 @@
 import { call } from '@orpc/server'
-import { describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { AdminCommentWire } from '@/shared/contracts/comments'
 import type { AdminComment } from '@/shared/types/comments'
@@ -38,6 +38,10 @@ const moderationRepo = await import('@/server/domains/comments/repos/moderation'
 const queryRepo = await import('@/server/domains/comments/repos/public-query')
 const { adminCommentsRouter } = await import('@/server/http/controllers/admin/comments.controller')
 
+beforeEach(() => {
+  vi.clearAllMocks()
+})
+
 const comment = {
   id: '1',
   createAt: '2026-01-01T00:00:00.000Z',
@@ -68,6 +72,8 @@ const comment = {
   badgeTextColor: null,
   pageTitle: 'Post 1',
   pagePublicId: 'pid-1',
+  pageCover: null,
+  pagePermalink: null,
 }
 
 describe('adminCommentsRouter.approve', () => {
@@ -103,6 +109,143 @@ describe('adminCommentsRouter.loadAll', () => {
     expect(res.total).toBe(1)
     expect(res.hasMore).toBe(false)
     expect(res.statusCounts.all).toBe(1)
+  })
+
+  it('forwards `q` and `match: "contains"` to loadAllComments', async () => {
+    vi.mocked(adminQuery.loadAllComments).mockResolvedValueOnce({
+      comments: [],
+      total: 0,
+      hasMore: false,
+      statusCounts: { all: 0, pending: 0, approved: 0 },
+    })
+    vi.mocked(projection.asAdminCommentsWire).mockReturnValue([])
+    const ctx = makeAuthedCtx()
+    await call(adminCommentsRouter.loadAll, { offset: 0, limit: 20, q: 'foo', match: 'contains' }, { context: ctx })
+    expect(adminQuery.loadAllComments).toHaveBeenCalledWith(
+      ctx.db,
+      0,
+      20,
+      undefined,
+      undefined,
+      undefined,
+      'foo',
+      'contains',
+      undefined,
+      undefined,
+    )
+  })
+
+  it('forwards `match: "does-not-contain"` so the repo can flip ILIKE to NOT ILIKE', async () => {
+    vi.mocked(adminQuery.loadAllComments).mockResolvedValueOnce({
+      comments: [],
+      total: 0,
+      hasMore: false,
+      statusCounts: { all: 0, pending: 0, approved: 0 },
+    })
+    vi.mocked(projection.asAdminCommentsWire).mockReturnValue([])
+    const ctx = makeAuthedCtx()
+    await call(
+      adminCommentsRouter.loadAll,
+      { offset: 0, limit: 20, q: 'spam', match: 'does-not-contain' },
+      { context: ctx },
+    )
+    expect(adminQuery.loadAllComments).toHaveBeenCalledWith(
+      ctx.db,
+      0,
+      20,
+      undefined,
+      undefined,
+      undefined,
+      'spam',
+      'does-not-contain',
+      undefined,
+      undefined,
+    )
+  })
+
+  it('rejects an unknown `match` value (Zod validation)', async () => {
+    const ctx = makeAuthedCtx()
+    await expect(
+      call(
+        adminCommentsRouter.loadAll,
+        { offset: 0, limit: 20, q: 'foo', match: 'equals' as 'contains' },
+        { context: ctx },
+      ),
+    ).rejects.toBeDefined()
+    expect(adminQuery.loadAllComments).not.toHaveBeenCalled()
+  })
+
+  it('trims `q` before passing to loadAllComments (Zod `.trim()`)', async () => {
+    vi.mocked(adminQuery.loadAllComments).mockResolvedValueOnce({
+      comments: [],
+      total: 0,
+      hasMore: false,
+      statusCounts: { all: 0, pending: 0, approved: 0 },
+    })
+    vi.mocked(projection.asAdminCommentsWire).mockReturnValue([])
+    const ctx = makeAuthedCtx()
+    await call(adminCommentsRouter.loadAll, { offset: 0, limit: 20, q: '  foo  ', match: 'contains' }, { context: ctx })
+    expect(adminQuery.loadAllComments).toHaveBeenCalledWith(
+      ctx.db,
+      0,
+      20,
+      undefined,
+      undefined,
+      undefined,
+      'foo',
+      'contains',
+      undefined,
+      undefined,
+    )
+  })
+
+  it('forwards `createdAfter` and `createdBefore` as Date objects to loadAllComments', async () => {
+    vi.mocked(adminQuery.loadAllComments).mockResolvedValueOnce({
+      comments: [],
+      total: 0,
+      hasMore: false,
+      statusCounts: { all: 0, pending: 0, approved: 0 },
+    })
+    vi.mocked(projection.asAdminCommentsWire).mockReturnValue([])
+    const ctx = makeAuthedCtx()
+    await call(
+      adminCommentsRouter.loadAll,
+      {
+        offset: 0,
+        limit: 20,
+        createdAfter: '2026-06-01T00:00:00.000Z',
+        createdBefore: '2026-06-30T23:59:59.999Z',
+      },
+      { context: ctx },
+    )
+    expect(adminQuery.loadAllComments).toHaveBeenCalledWith(
+      ctx.db,
+      0,
+      20,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      new Date('2026-06-01T00:00:00.000Z'),
+      new Date('2026-06-30T23:59:59.999Z'),
+    )
+  })
+
+  it('rejects a malformed `createdAfter` (Zod ISO datetime validation)', async () => {
+    const ctx = makeAuthedCtx()
+    await expect(
+      call(adminCommentsRouter.loadAll, { offset: 0, limit: 20, createdAfter: 'not-a-date' }, { context: ctx }),
+    ).rejects.toBeDefined()
+    expect(adminQuery.loadAllComments).not.toHaveBeenCalled()
+  })
+
+  it('rejects a malformed `createdBefore` (Zod ISO datetime validation)', async () => {
+    const ctx = makeAuthedCtx()
+    await expect(
+      call(adminCommentsRouter.loadAll, { offset: 0, limit: 20, createdBefore: '2026-13-99' }, { context: ctx }),
+    ).rejects.toBeDefined()
+    expect(adminQuery.loadAllComments).not.toHaveBeenCalled()
   })
 })
 

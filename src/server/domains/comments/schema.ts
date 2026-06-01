@@ -52,6 +52,10 @@ export const loadAllCommentsSchema = z.object({
   pageKey: z.string().optional(),
   userId: z.string().optional(),
   status: z.enum(['all', 'pending', 'approved']).optional(),
+  q: z.string().trim().max(200).optional(),
+  match: z.enum(['contains', 'does-not-contain']).optional(),
+  createdAfter: z.iso.datetime().optional(),
+  createdBefore: z.iso.datetime().optional(),
 })
 export type LoadAllCommentsInput = z.infer<typeof loadAllCommentsSchema>
 
