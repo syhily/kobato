@@ -22,6 +22,18 @@ const envConfig = {
     // S3 credentials). Optional: secrets remain plaintext until set.
     ENCRYPTION_KEY: z.string().min(1).optional(),
 
+    // Expected TimescaleDB extension version stamped in
+    // `_timescaledb_catalog.metadata.timescaledb_version`. The
+    // restore flow compares the dump's stamped version against this
+    // value up front and short-circuits with a clear error if they
+    // diverge — TimescaleDB's own `post_restore()` enforces the same
+    // check but reports it as a generic "catalog version mismatch"
+    // half-way through the psql run, after data may have partially
+    // landed. Pin to whatever extension version the target Postgres
+    // image ships. Optional: defaults to the version this codebase
+    // is currently developed against.
+    TIMESCALEDB_VERSION: z.string().min(1).optional().default('2.27.1'),
+
     // Filesystem path to the MaxMind GeoLite2-City mmdb. Optional.
     MAXMIND_DB_PATH: z.string().min(1).optional(),
 
@@ -82,6 +94,7 @@ export const {
   PORT,
   REDIS_URL,
   SESSION_SECRET,
+  TIMESCALEDB_VERSION,
 } = env
 
 export function isVitest(): boolean {

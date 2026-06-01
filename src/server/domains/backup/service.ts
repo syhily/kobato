@@ -6,7 +6,7 @@ import { Readable } from 'node:stream'
 import { promisify } from 'node:util'
 import { createGunzip, createGzip } from 'node:zlib'
 
-import { DATABASE_URL, processEnv } from '@/server/infra/env'
+import { DATABASE_URL, processEnv, TIMESCALEDB_VERSION } from '@/server/infra/env'
 import { ActionFailure, DomainError } from '@/server/infra/http/errors'
 import { getLogger } from '@/server/infra/logger'
 import {
@@ -210,11 +210,45 @@ export function validateBackupSql(sql: string): void {
   }
 }
 
+// Pull the `timescaledb_version` value out of the dump's
+// `_timescaledb_catalog.metadata` COPY block. The block is a
+// tab-separated list with three columns (key, value,
+// include_in_telemetry) terminated by a `\.` line; we look for the
+// row whose first column is `timescaledb_version` and return its
+// second column. Returns `null` when the dump doesn't carry
+// TimescaleDB metadata (e.g. a plain-Postgres backup) — the caller
+// is expected to treat that as "no version pin, proceed".
+function readTimescaleVersionFromDump(sql: string): string | null {
+  const block = /COPY _timescaledb_catalog\.metadata[^\n]*\n([\s\S]*?)^\\\.$/m.exec(sql)
+  if (!block) {
+    return null
+  }
+  const match = /^timescaledb_version\t([^\t\n]+)/m.exec(block[1])
+  return match ? match[1] : null
+}
+
 export async function restoreFromSql(db: NodePgDatabase, sql: string): Promise<void> {
   await ensurePgTools()
   const { args: connArgs, env } = getPgConnectionOptions()
 
   log.info('Starting restore')
+
+  // Fail fast on TimescaleDB version drift. The dump's
+  // `_timescaledb_catalog.metadata.timescaledb_version` row carries
+  // the source extension version; TimescaleDB's own
+  // `timescaledb_post_restore()` enforces a strict equality check
+  // against the running extension, but only after the dump has
+  // already been streamed through psql and `ON_ERROR_STOP=1` has
+  // partially landed rows. Surface the mismatch here so the operator
+  // gets a clear actionable error before any data is written.
+  const dumpedVersion = readTimescaleVersionFromDump(sql)
+  if (dumpedVersion !== null && dumpedVersion !== TIMESCALEDB_VERSION) {
+    throw new ActionFailure(
+      400,
+      `TimescaleDB 版本不匹配：备份文件中的版本为 ${dumpedVersion}，当前环境期望 ${TIMESCALEDB_VERSION}。` +
+        `请在原始备份环境将 TIMESCALEDB_VERSION 设置为 '${TIMESCALEDB_VERSION}'，重启应用以触发自动版本对齐后重新备份。`,
+    )
+  }
 
   const timescaleEnabled = await hasTimescaleDbRestoreFunctions(db)
 
