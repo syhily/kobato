@@ -179,14 +179,14 @@ export interface StatusCounts {
 
 const PAGE_SIZE = 10
 
-interface CommentsState {
+export interface CommentsState {
   comments: AdminComment[]
   total: number
   filters: ActiveFilter[]
   statusCounts: StatusCounts
 }
 
-type CommentsAction =
+export type CommentsAction =
   | {
       type: 'loaded'
       comments: AdminComment[]
@@ -206,7 +206,7 @@ type CommentsAction =
   | { type: 'renameFilter'; field: FilterFieldKey; label: string }
   | { type: 'clearFilters' }
 
-function commentsReducer(state: CommentsState, action: CommentsAction): CommentsState {
+export function commentsReducer(state: CommentsState, action: CommentsAction): CommentsState {
   switch (action.type) {
     case 'loaded':
       return {

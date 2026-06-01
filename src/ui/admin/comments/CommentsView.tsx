@@ -7,7 +7,7 @@ import type { AdminCommentWire as AdminComment } from '@/shared/contracts/commen
 import type { ActiveFilter, FilterFieldKey, FilterItem } from '@/ui/admin/comments/useCommentsController'
 
 import { orpc } from '@/client/api/client'
-import { orpcQuery, useMutation, useQuery } from '@/client/api/query'
+import { orpcQuery, useQuery } from '@/client/api/query'
 import { idStr } from '@/shared/utils/tools'
 import { AdminCommentRow } from '@/ui/admin/comments/AdminCommentRow'
 import { CommentsFilterBar } from '@/ui/admin/comments/CommentsFilterBar'
@@ -45,27 +45,28 @@ export function CommentsView({ currentUserName, currentUserEmail, initialFilters
     initialFilters,
   })
 
-  // `loadAll` is a GET, but we wrap it in `useMutation` for
-  // imperative control: `reload()` decides when to fire, and
-  // `lastQueryKeyRef` dedupes repeat calls so the page doesn't
-  // stack `加载评论列表失败` toasts when the user is exploring
-  // filter combos. A `useQuery` would refetch on key change
-  // automatically but wouldn't give us the callback wiring we
-  // need for the dedup or the toast.
-  const loadMutation = useMutation({
-    ...orpcQuery.admin.comments.loadAll.mutationOptions(),
-    onSuccess: (payload) => {
-      dispatch({
-        type: 'loaded',
-        comments: payload.comments,
-        total: payload.total,
-        statusCounts: payload.statusCounts,
-      })
+  const [isCommentsLoading, setIsCommentsLoading] = useState(false)
+  const lastQueryKeyRef = useRef<string | null>(null)
+
+  const loadComments = useCallback(
+    async (input: { offset: number; limit: number }) => {
+      setIsCommentsLoading(true)
+      try {
+        const result = await orpc.admin.comments.loadAll(input)
+        dispatch({
+          type: 'loaded',
+          comments: result.comments,
+          total: result.total,
+          statusCounts: result.statusCounts,
+        })
+      } catch (error) {
+        toast.error('加载评论列表失败', { description: (error as Error).message })
+      } finally {
+        setIsCommentsLoading(false)
+      }
     },
-    onError: (error) => {
-      toast.error('加载评论列表失败', { description: error.message })
-    },
-  })
+    [dispatch],
+  )
 
   const [debouncedPageQuery, setDebouncedPageQuery] = useState('')
   const [, setPageQuery] = useDebouncedSearch({
@@ -107,8 +108,6 @@ export function CommentsView({ currentUserName, currentUserEmail, initialFilters
     }),
   )
 
-  const { mutate: loadComments, isPending: isCommentsLoading } = loadMutation
-
   const [editTarget, setEditTarget] = useState<AdminComment | null>(null)
   const [replyTarget, setReplyTarget] = useState<AdminComment | null>(null)
   const [editUserTarget, setEditUserTarget] = useState<AdminComment | null>(null)
@@ -135,7 +134,17 @@ export function CommentsView({ currentUserName, currentUserEmail, initialFilters
   // back/forward restore the active filter set. Debounced to coalesce
   // rapid filter changes (e.g. typing in the text filter) into a single
   // history entry replacement.
-  const [, setSearchParams] = useSearchParams()
+  //
+  // Only updates the URL when the serialized filter state actually
+  // differs from what's already in the address bar. Without this guard
+  // the initial mount fires `setSearchParams` after 300ms even when
+  // the URL is already clean, which triggers an unnecessary loader
+  // revalidation (a second `.data` request) and causes React Router to
+  // re-render the route component while the initial load is
+  // still in flight.
+  const [searchParams, setSearchParams] = useSearchParams()
+  const currentSearchRef = useRef(searchParams)
+  currentSearchRef.current = searchParams
   const urlSyncTimerRef = useRef<number | null>(null)
   useEffect(() => {
     if (urlSyncTimerRef.current !== null) {
@@ -176,7 +185,9 @@ export function CommentsView({ currentUserName, currentUserEmail, initialFilters
           }
         }
       }
-      setSearchParams(next, { replace: true, preventScrollReset: true })
+      if (next.toString() !== currentSearchRef.current.toString()) {
+        setSearchParams(next, { replace: true, preventScrollReset: true })
+      }
     }, 300)
     return () => {
       if (urlSyncTimerRef.current !== null) {
@@ -199,19 +210,6 @@ export function CommentsView({ currentUserName, currentUserEmail, initialFilters
     [pageSize, filterPageKey, filterAuthorId, filterStatus, filterText, filterCreatedAfter, filterCreatedBefore],
   )
 
-  // The inline filter chips (text / date) add themselves to the bar
-  // with an empty value and only commit a real value on Enter / blur.
-  // That means a state change like "add an empty text filter" still
-  // re-runs this effect, even though the resulting query is
-  // identical to the previous one. Tracking the last fired query key
-  // and skipping the call when nothing actually changed keeps the
-  // network silent (and avoids stacking `加载评论列表失败` toasts when
-  // the server is slow / the user is exploring filter combos).
-  //
-  // `force: true` bypasses the skip for callback-driven reloads
-  // (EditUserDialog, ReplyCommentDialog) where the underlying data
-  // has changed even if the query shape hasn't.
-  const lastQueryKeyRef = useRef<string | null>(null)
   const reload = useCallback(
     (force = false) => {
       const input = buildQueryInput(0)
@@ -220,7 +218,7 @@ export function CommentsView({ currentUserName, currentUserEmail, initialFilters
         return
       }
       lastQueryKeyRef.current = key
-      loadComments(input)
+      void loadComments(input)
     },
     [loadComments, buildQueryInput],
   )
@@ -252,6 +250,12 @@ export function CommentsView({ currentUserName, currentUserEmail, initialFilters
     }
   }, [loadingMore, hasMore, buildQueryInput, state.comments.length, dispatch])
 
+  // Keep a stable ref so the IntersectionObserver callback always has
+  // access to the latest `loadMore` closure without needing to re-create
+  // the observer every time `loadMore` changes identity.
+  const loadMoreRef = useRef(loadMore)
+  loadMoreRef.current = loadMore
+
   useEffect(() => {
     if (!hasMore) {
       return
@@ -263,14 +267,14 @@ export function CommentsView({ currentUserName, currentUserEmail, initialFilters
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry?.isIntersecting) {
-          void loadMore()
+          void loadMoreRef.current()
         }
       },
       { rootMargin: '200px' },
     )
     observer.observe(el)
     return () => observer.disconnect()
-  }, [hasMore, loadMore])
+  }, [hasMore])
 
   const pageItems = useMemo<FilterItem[]>(() => {
     const fetched = pagesData?.pages ?? []
