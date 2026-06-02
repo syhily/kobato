@@ -1,7 +1,0 @@
-export function IconOrderList(props: React.SVGProps<SVGSVGElement>) {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" {...props}>
-      <path d="M0.622 18.334h19.54v7.55l11.052-9.412-11.052-9.413v7.549h-19.54v3.725z" fill="currentColor" />
-    </svg>
-  )
-}

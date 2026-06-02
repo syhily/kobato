@@ -1,254 +1,139 @@
-import { useCallback, useEffect, useRef, useSyncExternalStore } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 
-type CreateAudioElementOptions = {
-  src?: string
+export type UseAudioControlOptions = {
+  src: string
   autoPlay?: boolean
   initialVolume?: number
   onEnded?: () => void
   onError?: (e: Event) => void
 }
 
-function useCreateAudioElement(options?: CreateAudioElementOptions) {
-  const audioElementRef = useRef<HTMLAudioElement | undefined>(undefined)
+export function useAudioControl(options: UseAudioControlOptions) {
+  const audioRef = useRef<HTMLAudioElement | null>(null)
 
-  if (typeof document !== 'undefined' && !audioElementRef.current) {
-    const audio = (audioElementRef.current = document.createElement('audio'))
+  const [isPlaying, setIsPlaying] = useState(false)
+  const [currentTime, setCurrentTime] = useState(0)
+  const [duration, setDuration] = useState(0)
+  const [bufferedSeconds, setBufferedSeconds] = useState(0)
+  const [volume, setVolumeState] = useState(options.initialVolume ?? 0.7)
+  const [muted, setMutedState] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
 
-    if (typeof options?.src !== 'undefined') {
-      audio.src = options.src
-    }
-    if (typeof options?.autoPlay !== 'undefined') {
-      audio.autoplay = options.autoPlay
-    }
-    if (typeof options?.initialVolume !== 'undefined') {
-      audio.volume = options.initialVolume
-    }
-  }
+  const onEndedRef = useRef(options.onEnded)
+  const onErrorRef = useRef(options.onError)
+  onEndedRef.current = options.onEnded
+  onErrorRef.current = options.onError
 
   useEffect(() => {
-    const audio = audioElementRef.current
-    const handler = options?.onError
-    if (audio && handler) {
-      audio.addEventListener('error', handler)
-      return () => {
-        audio.removeEventListener('error', handler)
+    const audio = document.createElement('audio')
+    audio.src = options.src
+    audio.volume = options.initialVolume ?? 0.7
+    if (options.autoPlay) {
+      audio.autoplay = true
+    }
+    audioRef.current = audio
+
+    const handlePlay = () => setIsPlaying(true)
+    const handlePause = () => setIsPlaying(false)
+    const handleTimeUpdate = () => setCurrentTime(audio.currentTime)
+    const handleDurationChange = () => setDuration(Number.isFinite(audio.duration) ? audio.duration : 0)
+    const handleProgress = () => {
+      if (audio.buffered.length > 0) {
+        setBufferedSeconds(audio.buffered.end(audio.buffered.length - 1))
       }
     }
-  }, [options?.onError])
-
-  useEffect(() => {
-    const audio = audioElementRef.current
-    const handler = options?.onEnded
-    if (audio && handler) {
-      audio.addEventListener('ended', handler)
-      return () => {
-        audio.removeEventListener('ended', handler)
-      }
+    const handleVolumeChange = () => {
+      setVolumeState(audio.volume)
+      setMutedState(audio.muted)
     }
-  }, [options?.onEnded])
+    const handleWaiting = () => setIsLoading(true)
+    const handlePlaying = () => setIsLoading(false)
+    const handleEnded = () => {
+      setIsPlaying(false)
+      onEndedRef.current?.()
+    }
+    const handleError = (e: Event) => {
+      onErrorRef.current?.(e)
+    }
 
-  useEffect(() => {
+    audio.addEventListener('play', handlePlay)
+    audio.addEventListener('pause', handlePause)
+    audio.addEventListener('timeupdate', handleTimeUpdate)
+    audio.addEventListener('durationchange', handleDurationChange)
+    audio.addEventListener('progress', handleProgress)
+    audio.addEventListener('volumechange', handleVolumeChange)
+    audio.addEventListener('waiting', handleWaiting)
+    audio.addEventListener('playing', handlePlaying)
+    audio.addEventListener('ended', handleEnded)
+    audio.addEventListener('error', handleError)
+
+    if (options.autoPlay) {
+      void audio.play().catch(() => {
+        // Ignore autoplay policy rejections
+      })
+    }
+
     return () => {
-      const audio = audioElementRef.current
-      if (audio) {
-        audio.pause()
-        audio.currentTime = 0
-      }
-      audioElementRef.current = undefined
+      audio.pause()
+      audio.currentTime = 0
+      audio.removeEventListener('play', handlePlay)
+      audio.removeEventListener('pause', handlePause)
+      audio.removeEventListener('timeupdate', handleTimeUpdate)
+      audio.removeEventListener('durationchange', handleDurationChange)
+      audio.removeEventListener('progress', handleProgress)
+      audio.removeEventListener('volumechange', handleVolumeChange)
+      audio.removeEventListener('waiting', handleWaiting)
+      audio.removeEventListener('playing', handlePlaying)
+      audio.removeEventListener('ended', handleEnded)
+      audio.removeEventListener('error', handleError)
+      audioRef.current = null
+    }
+  }, [options.src, options.autoPlay, options.initialVolume])
+
+  const playAudio = useCallback(async () => {
+    const audio = audioRef.current
+    if (!audio) {
+      return
+    }
+    try {
+      await audio.play()
+    } catch {
+      // Ignore autoplay policy rejections
     }
   }, [])
 
-  return audioElementRef
-}
+  const togglePlay = useCallback(() => {
+    const audio = audioRef.current
+    if (!audio) {
+      return
+    }
+    if (audio.paused) {
+      void playAudio()
+    } else {
+      audio.pause()
+    }
+  }, [playAudio])
 
-export function useAudioControl(options: CreateAudioElementOptions) {
-  const audioElementRef = useCreateAudioElement(options)
-
-  const playAudio = useCallback(
-    async (src: string) => {
-      const audio = audioElementRef.current
-      if (audio) {
-        if (audio.src !== src) {
-          audio.pause()
-          audio.currentTime = 0
-          audio.src = src
-        }
-        try {
-          await audioElementRef.current?.play()
-        } catch {
-          // Ignore autoplay policy rejections
-        }
-      }
-    },
-    [audioElementRef],
-  )
-
-  const togglePlay = useCallback(
-    (src: string) => {
-      const audio = audioElementRef.current
-      if (!audio) {
-        return
-      }
-      if (audio.paused) {
-        void playAudio(src)
-      } else {
-        audio.pause()
-      }
-    },
-    [audioElementRef, playAudio],
-  )
-
-  const seek = useCallback(
-    (second: number) => {
-      const audio = audioElementRef.current
-      if (audio) {
-        audio.currentTime = second
-      }
-    },
-    [audioElementRef],
-  )
+  const seek = useCallback((second: number) => {
+    const audio = audioRef.current
+    if (audio) {
+      audio.currentTime = second
+    }
+  }, [])
 
   const toggleMuted = useCallback(() => {
-    const audio = audioElementRef.current
+    const audio = audioRef.current
     if (audio) {
       audio.muted = !audio.muted
     }
-  }, [audioElementRef])
+  }, [])
 
-  const setVolume = useCallback(
-    (value: number) => {
-      const audio = audioElementRef.current
-      if (audio) {
-        audio.volume = value
-      }
-    },
-    [audioElementRef],
-  )
-
-  const volume = useSyncExternalStore(
-    useCallback(
-      (onStoreChange: () => void) => {
-        audioElementRef.current?.addEventListener('volumechange', onStoreChange)
-        return () => {
-          audioElementRef.current?.removeEventListener('volumechange', onStoreChange)
-        }
-      },
-      [audioElementRef],
-    ),
-    () => audioElementRef.current?.volume,
-    () => undefined,
-  )
-
-  const muted = useSyncExternalStore(
-    useCallback(
-      (onStoreChange: () => void) => {
-        audioElementRef.current?.addEventListener('volumechange', onStoreChange)
-        return () => {
-          audioElementRef.current?.removeEventListener('volumechange', onStoreChange)
-        }
-      },
-      [audioElementRef],
-    ),
-    () => audioElementRef.current?.muted,
-    () => undefined,
-  )
-
-  const currentTime = useSyncExternalStore(
-    useCallback(
-      (onStoreChange: () => void) => {
-        audioElementRef.current?.addEventListener('timeupdate', onStoreChange)
-        return () => {
-          audioElementRef.current?.removeEventListener('timeupdate', onStoreChange)
-        }
-      },
-      [audioElementRef],
-    ),
-    () => {
-      if (!audioElementRef.current) {
-        return undefined
-      }
-      return Math.round(audioElementRef.current.currentTime)
-    },
-    () => undefined,
-  )
-
-  const duration = useSyncExternalStore(
-    useCallback(
-      (onStoreChange: () => void) => {
-        audioElementRef.current?.addEventListener('durationchange', onStoreChange)
-        return () => {
-          audioElementRef.current?.removeEventListener('durationchange', onStoreChange)
-        }
-      },
-      [audioElementRef],
-    ),
-    () => audioElementRef.current?.duration,
-    () => undefined,
-  )
-
-  const bufferedSeconds = useSyncExternalStore(
-    useCallback(
-      (onStoreChange: () => void) => {
-        audioElementRef.current?.addEventListener('progress', onStoreChange)
-        return () => {
-          audioElementRef.current?.removeEventListener('progress', onStoreChange)
-        }
-      },
-      [audioElementRef],
-    ),
-    () => {
-      const audio = audioElementRef.current
-      if (!audio) {
-        return 0
-      }
-      if (audio.buffered.length > 0) {
-        return audio.buffered.end(audio.buffered.length - 1)
-      }
-      return 0
-    },
-    () => undefined,
-  )
-
-  const isPlaying = useSyncExternalStore(
-    useCallback(
-      (onStoreChange: () => void) => {
-        audioElementRef.current?.addEventListener('play', onStoreChange)
-        audioElementRef.current?.addEventListener('pause', onStoreChange)
-        return () => {
-          audioElementRef.current?.removeEventListener('play', onStoreChange)
-          audioElementRef.current?.removeEventListener('pause', onStoreChange)
-        }
-      },
-      [audioElementRef],
-    ),
-    () => {
-      const audio = audioElementRef.current
-      return audio ? !audio.paused : false
-    },
-    () => undefined,
-  )
-
-  const isLoading = useSyncExternalStore(
-    useCallback(
-      (onStoreChange: () => void) => {
-        audioElementRef.current?.addEventListener('playing', onStoreChange)
-        audioElementRef.current?.addEventListener('waiting', onStoreChange)
-        return () => {
-          audioElementRef.current?.removeEventListener('playing', onStoreChange)
-          audioElementRef.current?.removeEventListener('waiting', onStoreChange)
-        }
-      },
-      [audioElementRef],
-    ),
-    () => {
-      const audio = audioElementRef.current
-      if (!audio) {
-        return false
-      }
-      return audio.networkState === audio.NETWORK_LOADING
-    },
-    () => undefined,
-  )
+  const setVolume = useCallback((value: number) => {
+    const audio = audioRef.current
+    if (audio) {
+      audio.volume = value
+    }
+  }, [])
 
   return {
     volume,

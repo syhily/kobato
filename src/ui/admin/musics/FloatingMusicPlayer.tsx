@@ -149,11 +149,7 @@ export function FloatingMusicPlayer({ track, onClose }: FloatingMusicPlayerProps
             </div>
           ) : (
             <Suspense fallback={<div className="aplayer" data-id={track.playerId} />}>
-              {audio ? (
-                <APlayer audio={audio} autoPlay initialLoop="none" />
-              ) : (
-                <div className="aplayer" data-id={track.playerId} />
-              )}
+              {audio ? <APlayer audio={audio} autoPlay /> : <div className="aplayer" data-id={track.playerId} />}
             </Suspense>
           )}
         </div>

@@ -114,7 +114,7 @@ export function MusicPlayer({ id, auto, alignment: center }: MusicPlayerProps) {
       )}
     >
       <Suspense fallback={<div className="aplayer" data-id={id} />}>
-        {audio ? <APlayer audio={audio} autoPlay={auto ?? false} initialLoop="none" /> : null}
+        {audio ? <APlayer audio={audio} autoPlay={auto ?? false} /> : null}
       </Suspense>
     </div>
   )

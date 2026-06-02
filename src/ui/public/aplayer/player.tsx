@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 
 import type { ArtistInfo, AudioInfo } from '@/ui/public/aplayer/types'
 
@@ -7,24 +7,18 @@ import { defaultThemeColor } from '@/ui/public/aplayer/constants'
 import { PlaybackControls } from '@/ui/public/aplayer/controller'
 import { useAudioControl } from '@/ui/public/aplayer/hooks/use-audio-control'
 import { useNotice } from '@/ui/public/aplayer/hooks/use-notice'
-import { usePlaylist } from '@/ui/public/aplayer/hooks/use-playlist'
-import { useSafeTimeout } from '@/ui/public/aplayer/hooks/use-safe-timeout'
 import { useThemeColor } from '@/ui/public/aplayer/hooks/use-theme-color'
 import { IconPause } from '@/ui/public/aplayer/icons/pause'
 import { IconPlay } from '@/ui/public/aplayer/icons/play'
 import { IconRight } from '@/ui/public/aplayer/icons/right'
-import { Playlist } from '@/ui/public/aplayer/list'
 import { Lyrics } from '@/ui/public/aplayer/lyrics'
 
 export type APlayerProps = {
-  audio: AudioInfo | readonly AudioInfo[]
+  audio: AudioInfo
   theme?: string
   volume?: number
   appearance?: 'normal' | 'fixed'
-  initialLoop?: 'all' | 'one' | 'none'
-  initialOrder?: 'list' | 'random'
   autoPlay?: boolean
-  listMaxHeight?: number
 }
 
 export function APlayer({
@@ -32,87 +26,22 @@ export function APlayer({
   audio,
   appearance = 'normal',
   volume = 0.7,
-  initialLoop,
-  initialOrder,
   autoPlay = false,
-  listMaxHeight = 250,
 }: APlayerProps) {
-  const playlist = usePlaylist(Array.isArray(audio) ? audio : [audio], {
-    initialLoop,
-    initialOrder,
-    getSongId: (song) => song.url,
-  })
-
   const [notice, showNotice] = useNotice()
-  const setTimeout = useSafeTimeout()
-
-  const autoSkipTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
-
-  const cancelAutoSkip = useCallback(() => {
-    if (autoSkipTimeoutRef.current) {
-      clearTimeout(autoSkipTimeoutRef.current)
-      autoSkipTimeoutRef.current = undefined
-    }
-  }, [])
 
   const audioControl = useAudioControl({
-    src: playlist.currentSong.url,
+    src: audio.url,
     initialVolume: volume,
     autoPlay,
-    onError(e) {
-      const { error } = e.target as HTMLAudioElement
-      if (error) {
-        showNotice('An audio error has occurred, player will skip forward in 2 seconds.')
-      }
-      if (playlist.hasNextSong) {
-        autoSkipTimeoutRef.current = setTimeout(() => {
-          playlist.next()
-        }, 2000)
-      }
-    },
-    onEnded() {
-      if (playlist.hasNextSong) {
-        playlist.next()
-      }
+    onError() {
+      showNotice('An audio error has occurred.')
     },
   })
 
-  useEffect(() => {
-    if (autoPlay) {
-      void audioControl.playAudio(playlist.currentSong.url)
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [autoPlay])
-
-  const isInitialEffectRef = useRef(true)
-  useEffect(() => {
-    if (isInitialEffectRef.current) {
-      isInitialEffectRef.current = false
-    } else {
-      if (playlist.currentSong) {
-        void audioControl.playAudio(playlist.currentSong.url)
-      }
-    }
-  }, [playlist.currentSong, audioControl])
-
   const handlePlayButtonClick = useCallback(() => {
-    cancelAutoSkip()
-    audioControl.togglePlay(playlist.currentSong.url)
-  }, [audioControl, cancelAutoSkip, playlist.currentSong.url])
-
-  const hasPlaylist = playlist.length > 1
-  const [isPlaylistOpen, setPlaylistOpen] = useState(() => hasPlaylist)
-  const themeColor = useThemeColor(playlist.currentSong, theme)
-  const playlistAudioProp = useMemo(() => (Array.isArray(audio) ? audio : [audio]), [audio])
-
-  const { prioritize } = playlist
-  const handlePlayAudioFromList = useCallback(
-    (audioInfo: AudioInfo) => {
-      cancelAutoSkip()
-      prioritize(audioInfo)
-    },
-    [cancelAutoSkip, prioritize],
-  )
+    audioControl.togglePlay()
+  }, [audioControl])
 
   const renderArtist = useCallback((artist?: string | ArtistInfo) => {
     if (!artist) {
@@ -136,24 +65,23 @@ export function APlayer({
   const bodyRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    if (appearance === 'fixed') {
-      if (bodyRef.current) {
-        const bodyElement = bodyRef.current
-        bodyElement.style.width = bodyElement.offsetWidth - 18 + 'px'
-        return () => {
-          bodyElement.removeAttribute('style')
-        }
+    if (appearance === 'fixed' && bodyRef.current) {
+      const bodyElement = bodyRef.current
+      bodyElement.style.width = bodyElement.offsetWidth - 18 + 'px'
+      return () => {
+        bodyElement.removeAttribute('style')
       }
     }
   }, [appearance])
+
+  const themeColor = useThemeColor(audio, theme)
 
   return (
     <div
       className={cn('aplayer', {
         'aplayer-fixed': appearance === 'fixed',
         'aplayer-loading': audioControl.isLoading,
-        'aplayer-withlist': hasPlaylist,
-        'aplayer-withlrc': Boolean(playlist.currentSong.lrc) && appearance !== 'fixed',
+        'aplayer-withlrc': Boolean(audio.lrc) && appearance !== 'fixed',
         'aplayer-narrow': mini,
       })}
     >
@@ -161,7 +89,7 @@ export function APlayer({
         <div
           className="aplayer-pic"
           onClick={handlePlayButtonClick}
-          style={{ backgroundImage: `url("${playlist.currentSong?.cover}")` }}
+          style={{ backgroundImage: `url("${audio.cover}")` }}
         >
           <div
             className={cn('aplayer-button', {
@@ -174,45 +102,26 @@ export function APlayer({
         </div>
         <div className="aplayer-info">
           <div className="aplayer-music">
-            <span className="aplayer-title">{playlist.currentSong?.name ?? 'Audio name'}</span>
-            <span className="aplayer-author"> - {renderArtist(playlist.currentSong?.artist)}</span>
+            <span className="aplayer-title">{audio.name ?? 'Audio name'}</span>
+            <span className="aplayer-author"> - {renderArtist(audio.artist)}</span>
           </div>
           {appearance === 'fixed' ? null : (
-            <Lyrics
-              show={displayLyrics}
-              lrcText={playlist.currentSong.lrc}
-              currentTime={audioControl.currentTime ?? 0}
-            />
+            <Lyrics show={displayLyrics} lrcText={audio.lrc} currentTime={audioControl.currentTime} />
           )}
           <PlaybackControls
-            volume={audioControl.volume ?? volume}
+            volume={audioControl.volume}
             onChangeVolume={audioControl.setVolume}
-            muted={audioControl.muted ?? false}
-            onToggleMuted={() => audioControl.toggleMuted()}
+            muted={audioControl.muted}
+            onToggleMuted={audioControl.toggleMuted}
             themeColor={themeColor}
             currentTime={audioControl.currentTime}
             audioDurationSeconds={audioControl.duration}
             bufferedSeconds={audioControl.bufferedSeconds}
-            onSeek={(second) => audioControl.seek(second)}
-            onToggleMenu={() => setPlaylistOpen((open) => !open)}
-            order={playlist.order}
-            onOrderChange={playlist.setOrder}
-            loop={playlist.loop}
-            onLoopChange={playlist.setLoop}
-            isPlaying={audioControl.isPlaying ?? false}
+            onSeek={audioControl.seek}
+            isPlaying={audioControl.isPlaying}
             onTogglePlay={handlePlayButtonClick}
-            onSkipForward={() => {
-              if (playlist.hasNextSong) {
-                playlist.next()
-              }
-            }}
-            onSkipBack={() => {
-              playlist.previous()
-            }}
             showLyrics={displayLyrics}
-            onToggleLyrics={() => {
-              setDisplayLyrics((prev) => !prev)
-            }}
+            onToggleLyrics={() => setDisplayLyrics((prev) => !prev)}
           />
         </div>
         <div className="aplayer-notice" style={notice.style}>
@@ -224,18 +133,8 @@ export function APlayer({
           </button>
         </div>
       </div>
-      {hasPlaylist ? (
-        <Playlist
-          themeColor={themeColor}
-          open={isPlaylistOpen}
-          audio={playlistAudioProp as AudioInfo[]}
-          playingAudioUrl={playlist.currentSong.url}
-          onPlayAudio={handlePlayAudioFromList}
-          listMaxHeight={listMaxHeight}
-        />
-      ) : null}
       {appearance === 'fixed' && (
-        <Lyrics show={displayLyrics} lrcText={playlist.currentSong.lrc} currentTime={audioControl.currentTime ?? 0} />
+        <Lyrics show={displayLyrics} lrcText={audio.lrc} currentTime={audioControl.currentTime} />
       )}
     </div>
   )
