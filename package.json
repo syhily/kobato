@@ -75,7 +75,6 @@
     "@tiptap/react": "^3.24.0",
     "@tiptap/starter-kit": "^3.24.0",
     "@tiptap/suggestion": "^3.24.0",
-    "aplayer-ts": "^2.6.0",
     "bcryptjs": "^3.0.3",
     "date-fns": "^4.4.0",
     "diff-match-patch": "^1.0.5",

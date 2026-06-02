@@ -1,7 +1,13 @@
-import { useEffect, useRef } from 'react'
+import { lazy, Suspense, useEffect, useState } from 'react'
 
 import { loadMusic } from '@/client/api/music'
 import { cn } from '@/ui/lib/cn'
+
+import type { AudioInfo } from '@/ui/public/aplayer/types'
+
+const APlayer = lazy(() =>
+  import('@/ui/public/aplayer/player').then((m) => ({ default: m.APlayer })),
+)
 
 export interface MusicPlayerProps {
   id: string
@@ -73,106 +79,34 @@ export function scheduleMusicPlayerInit(
   }
 }
 
-// MDX-embeddable music player. Lazy-loads APlayer only when the
-// component is actually mounted, so posts without music carry no
-// aplayer.js payload.
-//
-// Metadata is fetched through the internal public API
-// (`/api/music/get?id=<playerId>`) which resolves the audio /
-// cover URL pair against the configured S3 public base URL on the
-// server side. The client never has to know about asset hosts or
-// storage settings.
-//
-// **Autoplay scheduling**: `scheduleMusicPlayerInit` defers onto
-// `requestIdleCallback` (with a timeout), which can land hundreds of ms
-// to seconds after navigation. Chromium treats audibly starting media
-// that late as unrelated to user activation and blocks `audio.play()`
-// even though APlayer passes `autoplay: true`. When `auto` is set we
-// therefore skip idle deferral entirely and initialise on the earliest
-// async turn (still one animation frame wait for DOM layout — same idea
-// as `FloatingMusicPlayer`).
 export function MusicPlayer({ id, auto, alignment: center }: MusicPlayerProps) {
-  const containerRef = useRef<HTMLDivElement>(null)
+  const [audio, setAudio] = useState<AudioInfo | null>(null)
 
   useEffect(() => {
     if (!id) {
       return
     }
     let cancelled = false
-    let destroy: (() => void) | undefined
 
-    const waitForPaint = (): Promise<void> =>
-      new Promise((resolve) => {
-        const host = typeof window !== 'undefined' ? window : undefined
-        if (host?.requestAnimationFrame !== undefined) {
-          host.requestAnimationFrame(() => resolve())
-          return
-        }
-        resolve()
-      })
-
-    // Lazy-load aplayer-ts so the decoder + DOM-heavy CSS stay out of the
-    // initial page chunk. The player is only needed when the article
-    // actually contains a `<MusicPlayer>` block, which is a minority of posts.
-    const bootstrap = (): void => {
-      if (cancelled) {
+    void (async () => {
+      const meta = await loadMusic(id)
+      if (cancelled || meta === null) {
         return
       }
-      void (async () => {
-        const [{ default: APlayer }, meta] = await Promise.all([
-          import('aplayer-ts'),
-          loadMusic(id),
-          import('aplayer-ts/src/css/base.css'),
-        ])
-        if (cancelled || meta === null) {
-          return
-        }
-
-        await waitForPaint()
-        const container = containerRef.current
-        if (cancelled || container === null) {
-          return
-        }
-
-        const player = APlayer().init({
-          container,
-          lrcType: 1,
-          loop: 'none',
-          autoplay: auto ?? false,
-          audio: {
-            name: meta.name,
-            artist: meta.artist,
-            url: meta.url,
-            cover: meta.pic,
-            theme: '#008c95',
-            lrc: meta.lyric,
-          },
-        })
-
-        destroy = () => {
-          try {
-            player.destroy()
-            container.innerHTML = ''
-          } catch {
-            // Nothing actionable: we're already tearing down.
-          }
-        }
-      })()
-    }
-
-    let cancelScheduled: (() => void) | undefined
-    if (auto === true) {
-      bootstrap()
-    } else {
-      cancelScheduled = scheduleMusicPlayerInit(bootstrap)
-    }
+      setAudio({
+        name: meta.name,
+        artist: meta.artist,
+        url: meta.url,
+        cover: meta.pic,
+        lrc: meta.lyric,
+        theme: '#008c95',
+      })
+    })()
 
     return () => {
       cancelled = true
-      cancelScheduled?.()
-      destroy?.()
     }
-  }, [id, auto])
+  }, [id])
 
   return (
     <div
@@ -181,7 +115,9 @@ export function MusicPlayer({ id, auto, alignment: center }: MusicPlayerProps) {
         center && 'mx-auto max-md:mx-auto',
       )}
     >
-      <div ref={containerRef} className="aplayer" data-id={id} />
+      <Suspense fallback={<div className="aplayer" data-id={id} />}>
+        {audio ? <APlayer audio={audio} autoPlay={auto ?? false} initialLoop="none" /> : null}
+      </Suspense>
     </div>
   )
 }
