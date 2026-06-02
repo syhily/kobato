@@ -252,8 +252,8 @@
   justify-content: center;
 }
 .aplayer .aplayer-pic .aplayer-play svg {
-  height: 20px;
-  width: 20px;
+  height: 20px !important;
+  width: 20px !important;
 }
 .aplayer .aplayer-pic .aplayer-pause {
   width: 24px;
@@ -266,8 +266,8 @@
   position: absolute;
   top: 6px;
   left: 6px;
-  height: 12px;
-  width: 12px;
+  height: 12px !important;
+  width: 12px !important;
 }
 .aplayer .aplayer-info {
   margin-left: 66px;
