@@ -78,7 +78,7 @@ export function APlayer({
 
   return (
     <div
-      className={cn('aplayer', {
+      className={cn('aplayer not-prose', {
         'aplayer-fixed': appearance === 'fixed',
         'aplayer-loading': audioControl.isLoading,
         'aplayer-withlrc': Boolean(audio.lrc) && appearance !== 'fixed',
