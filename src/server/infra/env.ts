@@ -1,6 +1,83 @@
-import { createEnv } from '@t3-oss/env-core'
 import process from 'node:process'
 import { z } from 'zod'
+
+// ---------------------------------------------------------------------------
+// Minimal t3-env replacement — Zod-only, server-only
+// ---------------------------------------------------------------------------
+
+type ServerSchema = Record<string, z.ZodType>
+
+type InferOutput<T extends ServerSchema> = {
+  [K in keyof T]: T[K] extends z.ZodType ? z.infer<T[K]> : never
+}
+
+interface EnvIssue {
+  message: string
+  path: Array<string | number>
+}
+
+interface CreateEnvOptions<TServer extends ServerSchema> {
+  server: TServer
+  runtimeEnv?: Record<string, string | undefined>
+  emptyStringAsUndefined?: boolean
+  skipValidation?: boolean
+  onValidationError?: (issues: readonly EnvIssue[]) => never
+}
+
+export function createEnv<TServer extends ServerSchema>(opts: CreateEnvOptions<TServer>): InferOutput<TServer> {
+  const runtimeEnv = opts.runtimeEnv ?? process.env
+
+  if (opts.emptyStringAsUndefined) {
+    for (const [key, value] of Object.entries(runtimeEnv)) {
+      if (value === '') {
+        delete (runtimeEnv as Record<string, unknown>)[key]
+      }
+    }
+  }
+
+  if (opts.skipValidation) {
+    return runtimeEnv as InferOutput<TServer>
+  }
+
+  const result: Record<string, unknown> = {}
+  const issues: EnvIssue[] = []
+
+  for (const [key, schema] of Object.entries(opts.server)) {
+    try {
+      result[key] = schema.parse(runtimeEnv[key])
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        for (const issue of error.issues) {
+          issues.push({
+            message: issue.message,
+            path: [key, ...issue.path.map(String)],
+          })
+        }
+      } else {
+        issues.push({
+          message: String(error),
+          path: [key],
+        })
+      }
+    }
+  }
+
+  if (issues.length > 0) {
+    const onValidationError =
+      opts.onValidationError ??
+      ((issues): never => {
+        process.stderr.write(`❌ Invalid environment variables: ${JSON.stringify(issues)}\n`)
+        throw new Error('Invalid environment variables')
+      })
+    return onValidationError(issues)
+  }
+
+  return result as InferOutput<TServer>
+}
+
+// ---------------------------------------------------------------------------
+// Project environment schema
+// ---------------------------------------------------------------------------
 
 const envConfig = {
   server: {

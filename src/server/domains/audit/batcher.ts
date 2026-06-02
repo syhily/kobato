@@ -1,6 +1,8 @@
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 import type { Pool } from 'pg'
 
+import superjson from 'superjson'
+
 import type { AuditEventInput } from '@/server/domains/audit/types'
 
 import { csvEscape } from '@/server/infra/csv'
@@ -19,32 +21,12 @@ function deadLetterPath(): string {
 }
 
 function serializeForDeadLetter(events: AuditEventInput[]): string {
-  return (
-    events
-      .map((e) =>
-        JSON.stringify({
-          ...e,
-          createdAt: (e.createdAt ?? new Date()).toISOString(),
-        }),
-      )
-      .join(DEAD_LETTER_SEP) + DEAD_LETTER_SEP
-  )
+  return events.map((e) => superjson.stringify(e)).join(DEAD_LETTER_SEP) + DEAD_LETTER_SEP
 }
 
 function deserializeFromDeadLetter(line: string): AuditEventInput | null {
   try {
-    const raw = JSON.parse(line) as Record<string, unknown>
-    return {
-      action: raw.action as string,
-      actorId: raw.actorId as string | null | undefined,
-      actorRole: raw.actorRole as string | null | undefined,
-      resourceType: raw.resourceType as string,
-      resourceId: raw.resourceId as string | null | undefined,
-      details: raw.details === null ? undefined : (raw.details as Record<string, unknown> | undefined),
-      ipAddress: raw.ipAddress as string | null | undefined,
-      userAgent: raw.userAgent as string | null | undefined,
-      createdAt: raw.createdAt === undefined ? undefined : new Date(raw.createdAt as string),
-    }
+    return superjson.parse<AuditEventInput>(line)
   } catch {
     return null
   }

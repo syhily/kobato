@@ -1,8 +1,7 @@
 import type { ComponentProps } from 'react'
 
-import { cva, type VariantProps } from 'class-variance-authority'
-
 import { cn } from '@/ui/lib/cn'
+import { cva, type VariantProps } from '@/ui/lib/cva'
 
 // Size scale, by intent:
 //

@@ -1,6 +1,5 @@
 import { isbot } from 'isbot'
 import { createHash } from 'node:crypto'
-import { UAParser } from 'ua-parser-js'
 
 import type { EnrichedAccessEvent, RawAccessEvent } from '@/server/domains/analytics/types'
 
@@ -50,29 +49,15 @@ function parsePrimaryLanguage(header: string | null): string | null {
   return first ? first : null
 }
 
-// Treat the visit as a bot if either the `isbot` heuristic flags it
-// (mature regex against ~6000 known bots) OR the UA parser classifies
-// it as a crawler/spider/fetcher. The UA-parser bucket catches
-// some self-identified bots that `isbot`'s allow-list misses on
-// older releases. Sink applies the same belt-and-suspenders
-// (see `server/utils/access-log.ts:117-125`).
-function isBotUa(ua: string, uaResult: ReturnType<UAParser['getResult']>): boolean {
+function isBotUa(ua: string): boolean {
   if (!ua) {
     return false
   }
-  if (isbot(ua)) {
-    return true
-  }
-  const browserType = uaResult.browser.type
-  if (browserType && ['crawler', 'fetcher', 'spider', 'bot'].includes(browserType)) {
-    return true
-  }
-  return false
+  return isbot(ua)
 }
 
 export async function enrichEvent(raw: RawAccessEvent): Promise<EnrichedAccessEvent> {
   const ua = raw.ua ?? ''
-  const uaResult = new UAParser(ua).getResult()
   const language = parsePrimaryLanguage(raw.acceptLanguage)
   const geo = raw.ip ? await lookupCity(raw.ip) : null
 
@@ -101,12 +86,12 @@ export async function enrichEvent(raw: RawAccessEvent): Promise<EnrichedAccessEv
     timezone,
     language,
     ua: ua || null,
-    browser: uaResult.browser.name ?? null,
-    browserVersion: uaResult.browser.version ?? null,
-    os: uaResult.os.name ?? null,
-    osVersion: uaResult.os.version ?? null,
-    device: uaResult.device.model ?? null,
-    deviceType: uaResult.device.type ?? null,
-    isBot: isBotUa(ua, uaResult),
+    browser: null,
+    browserVersion: null,
+    os: null,
+    osVersion: null,
+    device: null,
+    deviceType: null,
+    isBot: isBotUa(ua),
   }
 }

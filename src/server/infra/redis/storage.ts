@@ -1,6 +1,7 @@
 import type { Cluster, Redis } from 'ioredis'
 
 import { Redis as RedisClient } from 'ioredis'
+import superjson from 'superjson'
 
 import { REDIS_URL } from '@/server/infra/env'
 import { registerShutdownHook } from '@/server/infra/lifecycle'
@@ -81,14 +82,14 @@ export const storage = {
       return null
     }
     try {
-      return JSON.parse(raw) as T
+      return superjson.parse<T>(raw)
     } catch {
       return null
     }
   },
 
   async setItem(key: string, value: unknown, opts?: { ttl?: number }): Promise<void> {
-    const payload = JSON.stringify(value)
+    const payload = superjson.stringify(value)
     if (opts?.ttl) {
       await redis.set(key, payload, 'EX', opts.ttl)
     } else {

@@ -1,9 +1,9 @@
 import type { ComponentProps } from 'react'
 
 import { useRender } from '@base-ui/react/use-render'
-import { cva, type VariantProps } from 'class-variance-authority'
 
 import { cn } from '@/ui/lib/cn'
+import { cva, type VariantProps } from '@/ui/lib/cva'
 
 // Button variants tuned to match the public site's `.btn` rules in
 // `src/styles/_base.css`:

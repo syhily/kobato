@@ -1,6 +1,7 @@
 import type { Session } from 'react-router'
 
 import { createSession, createSessionStorage } from 'react-router'
+import superjson from 'superjson'
 
 import type { Role } from '@/shared/utils/roles'
 
@@ -74,7 +75,7 @@ const storage = createSessionStorage<BlogSessionData>({
       return null
     }
     try {
-      return JSON.parse(value) as BlogSessionData
+      return superjson.parse<BlogSessionData>(value)
     } catch {
       log.warn('session parse failed', { id })
       return null
@@ -90,7 +91,7 @@ const storage = createSessionStorage<BlogSessionData>({
 
 async function writeSession(id: string, data: BlogSessionData, expires: Date | undefined): Promise<void> {
   const redis = redisInstance()
-  const payload = JSON.stringify(data)
+  const payload = superjson.stringify(data)
   const ttl = resolveSessionMaxAge()
   if (expires) {
     await redis.set(`session:${id}`, payload, 'PXAT', expires.getTime())

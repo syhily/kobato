@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto'
+import superjson from 'superjson'
 
 import type { CommentTokenCookie, CommentTokenCookieEntry } from '@/shared/utils/comment-token'
 
@@ -29,7 +30,7 @@ export async function issueCommentToken(
   }
   const ttl = ttlSeconds ?? requireBlogSettingsSection('comments').comments.tokenTtlSeconds
   const redis = redisInstance()
-  await redis.set(`${TOKEN_KEY_PREFIX}${token}`, JSON.stringify(payload), 'EX', ttl)
+  await redis.set(`${TOKEN_KEY_PREFIX}${token}`, superjson.stringify(payload), 'EX', ttl)
   return token
 }
 
@@ -40,7 +41,7 @@ export async function verifyCommentToken(token: string): Promise<CommentTokenPay
     return null
   }
   try {
-    return JSON.parse(raw) as CommentTokenPayload
+    return superjson.parse<CommentTokenPayload>(raw)
   } catch {
     return null
   }

@@ -1,8 +1,7 @@
 import type { ComponentProps } from 'react'
 
-import { cva, type VariantProps } from 'class-variance-authority'
-
 import { cn } from '@/ui/lib/cn'
+import { cva, type VariantProps } from '@/ui/lib/cva'
 
 // Adapted from the upstream `shadcn@latest add empty` registry item.
 // No behavioural changes vs. upstream — `Empty` is a pure composition

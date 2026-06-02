@@ -1,5 +1,4 @@
 import { PortableText, type PortableTextComponents, type PortableTextTypeComponentProps } from '@portabletext/react'
-import GithubSlugger from 'github-slugger'
 import { useMemo, type ReactNode } from 'react'
 
 import type {
@@ -13,6 +12,7 @@ import type {
 } from '@/shared/pt/schema'
 
 import { collectHeadingSlotsInPortableTextRenderOrder } from '@/shared/pt/utils'
+import { Slugger } from '@/shared/slug'
 import { Solution } from '@/ui/pt/blocks/Solution'
 import { FootnoteProvider, FootnotePreviewRegistrar } from '@/ui/pt/Footnotes'
 import { ImageMetaProvider, type ImageMetaMap } from '@/ui/pt/image-meta-context'
@@ -57,7 +57,7 @@ import {
 // `collectHeadingSlotsInPortableTextRenderOrder` (same order as this
 // renderer: main column + solution innards + twoColumn (left then right)
 // + footnotes). Precomputed slugs from the loader zip by index; any
-// gap uses `github-slugger` over the saved **plain** heading text —
+// gap uses `Slugger` over the saved **plain** heading text —
 // never `react` children, so SSR and hydration cannot disagree when a
 // heading wraps marks or decorators.
 //
@@ -80,7 +80,7 @@ export interface PortableTextBodyProps {
    *
    * When omitted (e.g. editor live-preview before the
    * server round-trip), the renderer falls back to a local
-   * `github-slugger` pass over the raw text — the anchor still
+   * `Slugger` pass over the raw text — the anchor still
    * disambiguates duplicates, but Han-only headings keep glyphs verbatim
    * instead of pinyin. The full SSR path
    * always supplies this prop, so the fallback is editor-only.
@@ -108,7 +108,7 @@ export function PortableTextBody({
   const headingIdByBlockKey = useMemo(() => {
     const slots = collectHeadingSlotsInPortableTextRenderOrder(body)
     const map = new Map<string, string>()
-    const fallbackSlugger = new GithubSlugger()
+    const fallbackSlugger = new Slugger()
     for (let i = 0; i < slots.length; i += 1) {
       const slot = slots[i]
       const pre = headingSlugs?.[i]

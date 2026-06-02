@@ -1,4 +1,3 @@
-import GithubSlugger from 'github-slugger'
 import { z } from 'zod'
 
 import type {
@@ -10,6 +9,8 @@ import type {
   StandardBlockStyle,
   TextBlock,
 } from '@/shared/pt/schema'
+
+import { Slugger } from '@/shared/slug'
 
 // --- Key generation ---------------------------------------------------------
 
@@ -107,16 +108,15 @@ export function collectHeadingSlotsInPortableTextRenderOrder(body: PortableTextB
  * into the new editor:
  *
  *   - `transform` (optional) is applied to the heading text BEFORE
- *     `github-slugger`. Server-side callers pass `deriveSlug` from
+ *     `Slugger`. Server-side callers pass `deriveSlug` from
  *     `@/server/slug` to romanise CJK via `pinyin-pro`. We can't
  *     import `pinyin-pro` directly here because this module ships
  *     to the client (`pt-bridge`, type re-exports), and pinyin-pro
  *     is ~150KB of CJK lookup tables.
- *   - `github-slugger` then lowercases, collapses non-alphanumerics
- *     into `-`, and dedups within the same body (`foo`, `foo-1`,
- *     `foo-2`, …).
+ *   - `Slugger` then lowercases, collapses non-alphanumerics into `-`,
+ *     and dedups within the same body (`foo`, `foo-1`, `foo-2`, …).
  *
- * Without `transform`, behaviour matches github-slugger-only output (Han
+ * Without `transform`, behaviour matches slugger-only output (Han
  * characters kept verbatim).
  * With it, you get the project-wide canonical slug — which is what
  * the SSR renderer wants. Order matches `collectHeadingSlotsInPortableTextRenderOrder`
@@ -126,7 +126,7 @@ export function collectHeadings(
   body: PortableTextBody,
   transform: (text: string) => string = (text) => text,
 ): PortableTextHeading[] {
-  const slugger = new GithubSlugger()
+  const slugger = new Slugger()
   const slots = collectHeadingSlotsInPortableTextRenderOrder(body)
   return slots.map(({ depth, plainText }) => ({
     depth,

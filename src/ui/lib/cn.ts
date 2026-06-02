@@ -1,5 +1,6 @@
-import { type ClassValue, clsx } from 'clsx'
 import { extendTailwindMerge } from 'tailwind-merge'
+
+import { type ClassValue, clsx } from '@/ui/lib/clsx'
 
 // Project-wide cn helper. Composes `clsx` with a project-customised
 // `tailwind-merge` that registers every `@theme` token so custom

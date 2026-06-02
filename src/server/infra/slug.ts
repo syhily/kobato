@@ -1,10 +1,9 @@
-import GithubSlugger from 'github-slugger'
 import { pinyin } from 'pinyin-pro'
 
-import { DERIVED_SLUG_PATTERN, SLUG_MAX } from '@/shared/slug'
+import { DERIVED_SLUG_PATTERN, SLUG_MAX, Slugger } from '@/shared/slug'
 
 // Single canonical slug helper for the entire blog. The pipeline is
-// `pinyin-pro` → `github-slugger`:
+// `pinyin-pro` → inline `Slugger`:
 //
 //   1. `pinyin(text)` rewrites every CJK glyph to its Hanyu Pinyin
 //      ASCII syllables ("编程" → "bian cheng"), leaves ASCII +
@@ -12,16 +11,15 @@ import { DERIVED_SLUG_PATTERN, SLUG_MAX } from '@/shared/slug'
 //      non-Han characters into a single chunk (`nonZh: 'consecutive'`).
 //      We strip tones (`toneType: 'none'`) because slugs are
 //      case-insensitive ASCII; tone diacritics would either round-trip
-//      through `github-slugger`'s lower-case + collapse pass losslessly
+//      through the slugger's lower-case + collapse pass losslessly
 //      or get lost depending on locale, and the tone signal is rarely
 //      worth the URL noise.
-//   2. `GithubSlugger().slug(text)` is the same algorithm
-//      `rehype-slug` uses on MDX posts: lowercases,
-//      collapses runs of non-alphanumerics into `-`, trims leading /
-//      trailing dashes, and Unicode-folds. Routing through it after
-//      pinyin means a Han-text input and an ASCII input go through
-//      ONE deterministic pass, so MDX-time anchors and DB-time
-//      tag/category slugs cannot drift.
+//   2. `new Slugger().slug(text)` lowercases, collapses runs of
+//      non-alphanumerics into `-`, trims leading / trailing dashes,
+//      and Unicode-folds. Routing through it after pinyin means a
+//      Han-text input and an ASCII input go through ONE deterministic
+//      pass, so MDX-time anchors and DB-time tag/category slugs
+//      cannot drift.
 //
 // The helper deliberately allocates a fresh slugger per call so it
 // is *stateless* (no cross-call dedup memory) — callers that need
@@ -51,8 +49,8 @@ import { DERIVED_SLUG_PATTERN, SLUG_MAX } from '@/shared/slug'
 //      each side of the Han run. So "Web 开发" becomes "Web  kai fa"
 //      (two spaces between `Web` and `kai`) — we collapse runs of
 //      whitespace into one before slugging.
-//   2. `github-slugger.slug()` lowercases + replaces a curated set
-//      of "control" punctuation with `-`, but it preserves dashes
+//   2. The slugger lowercases + replaces a curated set of
+//      "control" punctuation with `-`, but it preserves dashes
 //      literally. So an input of `--foo--bar--` round-trips as
 //      `--foo--bar--`. We collapse runs of dashes and trim leading /
 //      trailing dashes after the slugger pass for a canonical shape.
@@ -69,7 +67,7 @@ export function deriveSlug(text: string): string {
     nonZh: 'consecutive',
   })
   const collapsedSpaces = romanised.replace(/\s+/g, ' ').trim()
-  const slugged = new GithubSlugger().slug(collapsedSpaces)
+  const slugged = new Slugger().slug(collapsedSpaces)
   return slugged.replace(/-+/g, '-').replace(/^-|-$/g, '')
 }
 

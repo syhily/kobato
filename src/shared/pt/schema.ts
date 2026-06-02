@@ -34,7 +34,7 @@ import { z } from 'zod'
 //     after a future spec extension never produces "unrenderable"
 //     revisions in the wild.
 //
-// All ids (`_key`) are server-generated nanoids in the editor save
+// All ids (`_key`) are server-generated random ids in the editor save
 // path; the schema only checks they're non-empty strings (the editor
 // state machine owns uniqueness within a revision).
 

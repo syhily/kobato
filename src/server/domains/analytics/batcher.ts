@@ -1,5 +1,7 @@
 import type { Pool } from 'pg'
 
+import superjson from 'superjson'
+
 import type { EnrichedAccessEvent } from '@/server/domains/analytics/types'
 
 import { csvEscape } from '@/server/infra/csv'
@@ -11,7 +13,6 @@ import {
 } from '@/server/infra/db/copy-batcher'
 import { ANALYTICS_DEAD_LETTER_PATH } from '@/server/infra/env'
 import { getLogger } from '@/server/infra/logger'
-import { safeBigInt } from '@/shared/utils/tools'
 
 export { csvEscape }
 
@@ -22,17 +23,7 @@ function deadLetterPath(): string {
 }
 
 function serializeForDeadLetter(events: EnrichedAccessEvent[]): string {
-  return (
-    events
-      .map((e) =>
-        JSON.stringify({
-          ...e,
-          ts: e.ts.toISOString(),
-          entityId: e.entityId === null ? null : e.entityId.toString(),
-        }),
-      )
-      .join(DEAD_LETTER_SEP) + DEAD_LETTER_SEP
-  )
+  return events.map((e) => superjson.stringify(e)).join(DEAD_LETTER_SEP) + DEAD_LETTER_SEP
 }
 
 export function csvRow(e: EnrichedAccessEvent): string {
@@ -67,33 +58,7 @@ export function csvRow(e: EnrichedAccessEvent): string {
 
 function deserializeFromDeadLetter(line: string): EnrichedAccessEvent | null {
   try {
-    const raw = JSON.parse(line) as Record<string, unknown>
-    return {
-      ts: new Date(raw.ts as string),
-      visitorHash: raw.visitorHash as string,
-      sessionId: raw.sessionId as string | null,
-      ip: raw.ip as string | null,
-      path: raw.path as string,
-      entityType: raw.entityType as 'post' | 'page' | null,
-      entityId: raw.entityId === null ? null : safeBigInt(raw.entityId as string),
-      referer: raw.referer as string | null,
-      refererHost: raw.refererHost as string | null,
-      country: raw.country as string | null,
-      region: raw.region as string | null,
-      city: raw.city as string | null,
-      latitude: raw.latitude as number | null,
-      longitude: raw.longitude as number | null,
-      timezone: raw.timezone as string | null,
-      language: raw.language as string | null,
-      ua: raw.ua as string | null,
-      browser: raw.browser as string | null,
-      browserVersion: raw.browserVersion as string | null,
-      os: raw.os as string | null,
-      osVersion: raw.osVersion as string | null,
-      device: raw.device as string | null,
-      deviceType: raw.deviceType as string | null,
-      isBot: raw.isBot as boolean,
-    }
+    return superjson.parse<EnrichedAccessEvent>(line)
   } catch {
     return null
   }

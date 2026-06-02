@@ -87,6 +87,22 @@ export function groupBy<T, K extends string | number>(items: readonly T[], keyFn
   return result
 }
 
+/** Recursively clone an object and all its nested objects/arrays.
+ *  No-op for primitives and null. */
+export function deepClone<T>(obj: T): T {
+  if (obj === null || typeof obj !== 'object') {
+    return obj
+  }
+  if (Array.isArray(obj)) {
+    return obj.map(deepClone) as unknown as T
+  }
+  const cloned: Record<string, unknown> = {}
+  for (const key of Reflect.ownKeys(obj as object)) {
+    cloned[key as string] = deepClone((obj as Record<string, unknown>)[key as string])
+  }
+  return cloned as T
+}
+
 /** Recursively freeze an object and all its nested objects/arrays.
  *  No-op for primitives, null, or already-frozen objects. */
 export function deepFreeze<T>(obj: T): T {

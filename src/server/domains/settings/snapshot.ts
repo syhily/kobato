@@ -19,7 +19,7 @@ import { storage } from '@/server/infra/redis/storage'
 import { getBlogSettingsBundleSync, requireBlogSettingsBundle } from '@/shared/config/getters'
 import { BUNDLE_KEYS } from '@/shared/config/sections'
 import { BLOG_SETTINGS_SNAPSHOT_SLOT } from '@/shared/config/snapshot'
-import { deepFreeze } from '@/shared/utils/tools'
+import { deepClone, deepFreeze } from '@/shared/utils/tools'
 
 const log = getLogger('settings.snapshot')
 
@@ -295,7 +295,7 @@ export function warmBlogSettingsSnapshot(db: NodePgDatabase): void {
 
 /** Test-only: replace the snapshot synchronously. */
 export function setBlogSettingsBundleForTests(value: BlogSettingsBundle | null | undefined): void {
-  const frozen = value == null ? value : deepFreeze(value)
+  const frozen = value == null ? value : deepFreeze(deepClone(value))
   BLOG_SETTINGS_SNAPSHOT_SLOT.write(frozen)
   BLOG_SETTINGS_SNAPSHOT_SLOT.writeHydration(frozen === undefined ? undefined : Promise.resolve(frozen ?? null))
 }

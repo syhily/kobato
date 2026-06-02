@@ -3,6 +3,7 @@ import type { Pool } from 'pg'
 
 import { and, gt, gte, inArray, lt, sql } from 'drizzle-orm'
 import { createGzip } from 'node:zlib'
+import superjson from 'superjson'
 
 import type { ArchiveResult, CleanupResult } from '@/server/domains/audit/types'
 
@@ -128,17 +129,17 @@ async function archiveDay(db: NodePgDatabase, day: string, dayStart: Date, dayEn
     }
 
     const lines = rows.map((row) =>
-      JSON.stringify({
-        id: String(row.id),
+      superjson.stringify({
+        id: row.id,
         action: row.action,
-        actorId: row.actorId ? String(row.actorId) : null,
+        actorId: row.actorId,
         actorRole: row.actorRole,
         resourceType: row.resourceType,
         resourceId: row.resourceId,
         details: row.details,
         ipAddress: row.ipAddress,
         userAgent: row.userAgent,
-        createdAt: row.createdAt.toISOString(),
+        createdAt: row.createdAt,
       }),
     )
 

@@ -1,5 +1,5 @@
 import { HeartIcon } from 'lucide-react'
-import { startTransition, useEffect, useOptimistic, useState } from 'react'
+import { startTransition, useCallback, useEffect, useOptimistic, useRef, useState } from 'react'
 
 import type { DecreaseLikeOutput, IncreaseLikeOutput, ValidateLikeTokenOutput } from '@/shared/types/likes'
 
@@ -8,6 +8,7 @@ import { useSiteIdentity } from '@/shared/lib/blog-config-context'
 import { joinUrl } from '@/shared/utils/urls'
 import { Button } from '@/ui/components/button'
 import { IconButtonContent } from '@/ui/components/icon-button-content'
+import { NumberFlow } from '@/ui/components/number-flow'
 import { QQIcon, WechatIcon, WeiboIcon } from '@/ui/icons/brand-social-icons'
 import { cn } from '@/ui/lib/cn'
 import { QRDialog } from '@/ui/public/widgets/QRDialog'
@@ -20,7 +21,42 @@ export interface LikeButtonProps {
   likes: number
 }
 
-const tokenStorageKey = (permalink: string): string => permalink
+// Single localStorage key holding a JSON map of permalink → token.
+// One key per post was hitting the per-domain item limit; a single
+// key stays under the limit regardless of how many posts get liked.
+const LIKE_TOKENS_KEY = 'like-tokens'
+
+function readTokenMap(): Record<string, string> {
+  try {
+    const raw = localStorage.getItem(LIKE_TOKENS_KEY)
+    if (!raw) {
+      return {}
+    }
+    const parsed = JSON.parse(raw)
+    if (typeof parsed === 'object' && parsed !== null && !Array.isArray(parsed)) {
+      return parsed as Record<string, string>
+    }
+  } catch {
+    // Corrupt data — reset.
+  }
+  return {}
+}
+
+function readLikeToken(permalink: string): string | null {
+  return readTokenMap()[permalink] ?? null
+}
+
+function writeLikeToken(permalink: string, token: string): void {
+  const map = readTokenMap()
+  map[permalink] = token
+  localStorage.setItem(LIKE_TOKENS_KEY, JSON.stringify(map))
+}
+
+function removeLikeToken(permalink: string): void {
+  const map = readTokenMap()
+  delete map[permalink]
+  localStorage.setItem(LIKE_TOKENS_KEY, JSON.stringify(map))
+}
 
 export interface LikeButtonState {
   /** Mirrors the API wire `key` — the metric's public UUID. */
@@ -71,12 +107,23 @@ export function LikeButton({ permalink, commentKey, likes: initialLikes }: LikeB
   const [baseState, setBaseState] = useState(createLikeButtonState(commentKey, initialLikes))
   const [state, addOptimistic] = useOptimistic(baseState, applyLikeOptimistic)
 
+  // Hold the active like token in a ref so the unlike action doesn't depend
+  // solely on localStorage (which can fail silently due to quota, private
+  // browsing, or storage APIs being unavailable).
+  const tokenRef = useRef<string | null>(null)
+
   const validate = useMutation({
     ...orpcQuery.likes.validate.mutationOptions(),
     onSuccess: (data: ValidateLikeTokenOutput) => {
       setBaseState((prev) => (data.key === prev.commentKey ? { ...prev, liked: data.valid } : prev))
-      if (!data.valid) {
-        localStorage.removeItem(tokenStorageKey(permalink))
+      if (data.valid) {
+        const stored = readLikeToken(permalink)
+        if (stored) {
+          tokenRef.current = stored
+        }
+      } else {
+        tokenRef.current = null
+        removeLikeToken(permalink)
       }
     },
   })
@@ -86,7 +133,13 @@ export function LikeButton({ permalink, commentKey, likes: initialLikes }: LikeB
     onSuccess: (data: IncreaseLikeOutput) => {
       setBaseState((prev) => (data.key === prev.commentKey ? { ...prev, liked: true, likes: data.likes } : prev))
       if (data.token) {
-        localStorage.setItem(tokenStorageKey(permalink), data.token)
+        tokenRef.current = data.token
+        try {
+          writeLikeToken(permalink, data.token)
+        } catch {
+          // localStorage full or unavailable — the ref still holds the token
+          // so the unlike toggle works for the lifetime of this component.
+        }
       }
     },
   })
@@ -95,7 +148,8 @@ export function LikeButton({ permalink, commentKey, likes: initialLikes }: LikeB
     ...orpcQuery.likes.decrease.mutationOptions(),
     onSuccess: (data: DecreaseLikeOutput) => {
       setBaseState((prev) => (data.key === prev.commentKey ? { ...prev, liked: false, likes: data.likes } : prev))
-      localStorage.removeItem(tokenStorageKey(permalink))
+      tokenRef.current = null
+      removeLikeToken(permalink)
     },
   })
 
@@ -107,10 +161,12 @@ export function LikeButton({ permalink, commentKey, likes: initialLikes }: LikeB
 
   useEffect(() => {
     setBaseState(createLikeButtonState(commentKey, initialLikes))
-    const token = localStorage.getItem(tokenStorageKey(permalink))
+    const token = readLikeToken(permalink)
     if (!token) {
+      tokenRef.current = null
       return
     }
+    tokenRef.current = token
     validateMutate({ key: commentKey, token })
   }, [permalink, commentKey, initialLikes, validateMutate])
 
@@ -118,7 +174,7 @@ export function LikeButton({ permalink, commentKey, likes: initialLikes }: LikeB
   const increaseMutateAsync = increase.mutateAsync
   const decreaseMutateAsync = decrease.mutateAsync
 
-  const onClick = () => {
+  const onClick = useCallback(() => {
     if (isPending) {
       return
     }
@@ -127,7 +183,10 @@ export function LikeButton({ permalink, commentKey, likes: initialLikes }: LikeB
     // so we open one here and let it stay pending until `submitAsync`
     // resolves — see the contract comment above the hook calls.
     if (state.liked) {
-      const token = localStorage.getItem(tokenStorageKey(permalink))
+      // Prefer the in-memory ref (always available after a successful
+      // increase); fall back to the mapped localStorage for tokens that
+      // survived a page refresh via the validate path in useEffect.
+      const token = tokenRef.current ?? readLikeToken(permalink)
       if (!token) {
         return
       }
@@ -141,7 +200,7 @@ export function LikeButton({ permalink, commentKey, likes: initialLikes }: LikeB
         await increaseMutateAsync({ key: commentKey })
       })
     }
-  }
+  }, [isPending, state.liked, permalink, addOptimistic, decreaseMutateAsync, increaseMutateAsync, commentKey])
 
   return (
     <div className="mt-12 text-center">
@@ -179,7 +238,7 @@ export function LikeButton({ permalink, commentKey, likes: initialLikes }: LikeB
           strokeWidth={0}
           aria-hidden
         />
-        <span className="inline-block align-middle">{state.likes}</span>
+        <NumberFlow value={state.likes} />
       </Button>
     </div>
   )

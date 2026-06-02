@@ -1,11 +1,10 @@
 import type { ComponentProps } from 'react'
 
-import { cva, type VariantProps } from 'class-variance-authority'
-
 import { Button } from '@/ui/components/button'
 import { Input } from '@/ui/components/input'
 import { Textarea } from '@/ui/components/textarea'
 import { cn } from '@/ui/lib/cn'
+import { cva, type VariantProps } from '@/ui/lib/cva'
 
 // Adapted from the upstream `shadcn@latest add input-group` registry
 // item. The local diffs vs. upstream are:

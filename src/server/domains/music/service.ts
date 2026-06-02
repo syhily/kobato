@@ -1,6 +1,6 @@
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
-import { customAlphabet } from 'nanoid'
+import { randomBytes } from 'node:crypto'
 
 import type { MusicRow, NewMusic } from '@/server/infra/db/types'
 import type {
@@ -56,7 +56,15 @@ const log = getLogger('music.service')
 // `[a-z0-9]{16}` is enough entropy for 80 bits — collisions are
 // astronomically unlikely against the small music corpus, but we
 // still retry on a unique-key violation just to be defensive.
-const generatePlayerId = customAlphabet('abcdefghijklmnopqrstuvwxyz0123456789', 16)
+const PLAYER_ID_ALPHABET = 'abcdefghijklmnopqrstuvwxyz0123456789'
+function generatePlayerId(): string {
+  const bytes = randomBytes(16)
+  let id = ''
+  for (let i = 0; i < 16; i++) {
+    id += PLAYER_ID_ALPHABET[bytes[i] % PLAYER_ID_ALPHABET.length]
+  }
+  return id
+}
 const PLAYER_ID_RETRY_LIMIT = 5
 
 const MAX_AUDIO_BYTES = 25 * 1024 * 1024

@@ -1,5 +1,9 @@
 import { createContext, use, useCallback, useEffect, useMemo, useState } from 'react'
 
+import { getLogger } from '@/client/lib/logger'
+
+const logger = getLogger('theme')
+
 type Theme = 'dark' | 'light' | 'system'
 type Resolved = 'dark' | 'light'
 
@@ -85,7 +89,11 @@ export function ThemeProvider({ children, initialResolved = 'light' }: ThemeProv
   }, [theme, hydrated])
 
   const setTheme = useCallback((next: Theme) => {
-    localStorage.setItem(STORAGE_KEY, next)
+    try {
+      localStorage.setItem(STORAGE_KEY, next)
+    } catch (err) {
+      logger.warn('Failed to persist theme preference', { error: err, theme: next })
+    }
     setThemeState(next)
   }, [])
 

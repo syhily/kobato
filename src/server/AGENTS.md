@@ -57,8 +57,8 @@ directly.
 ## http/
 
 HTTP perimeter only. Procedure base (`orpc-base.ts`), context, composed
-router (`api-router.ts`), error hook (`errors.ts`), OpenAPI export
-(`openapi.ts`), Hono entry (`app.ts`); `middlewares/` (session, csrf,
+router (`api-router.ts`), error hook (`errors.ts`), Hono entry
+(`app.ts`); `middlewares/` (session, csrf,
 install-gate, rate-limit, trailing-slash, visitor-cookie, wp-decoy,
 hono-rbac); `controllers/` (per-domain `<name>.controller.ts`, admin
 under `controllers/admin/`); `resources/` (non-JSON: feed, sitemap,
@@ -106,9 +106,6 @@ and are merged onto the final `Response`.
 non-JSON output. RBAC via
 `server/http/middlewares/hono-rbac.ts::requireRoleMw`.
 
-**OpenAPI** at `/openapi.json` + `/docs`, auto-generated from `apiRouter`
-in development.
-
 **Audit permissions** with one grep:
 `grep -rn "adminProc\|authorProc\|authedProc\|publicProc" src/server/http/controllers/`.
 Smoke coverage in `tests/server.http.orpc-smoke.test.ts`.
@@ -141,7 +138,7 @@ the caller's responsibility.
   wraps React Router `createSessionStorage` with Redis persistence and
   a signed `__session` cookie. `SESSION_SECRET` required. Populates
   `c.var.session` and commits `Set-Cookie` after the response.
-- Server env: `@/server/infra/env` (`@t3-oss/env-core` + Zod). Adding
+- Server env: `@/server/infra/env` (inline `createEnv` + Zod). Adding
   an env var updates the schema, `src/env.d.ts`, and `.env.example`
   together.
 - The S3 toggle (`assets.storage.enabled`), credentials, bucket, asset
@@ -300,7 +297,7 @@ redeploying. Examples: `assets.storage.enabled`, `seo.og.width`,
 - Postgres `music` table; audio (`musics/<playerId>.mp3`) and 300×300
   JPEG covers (`musics/<playerId>.jpg`) in the same S3 bucket, gated on
   `assets.storage.enabled`.
-- PortableText references rows via a 16-char lowercase nanoid. Service
+- PortableText references rows via a 16-char lowercase random id. Service
   is `@meting/core` netease-only; `(source, sourceId)` is unique with
   `source` reserved as varchar for future providers. Lyrics live in
   `music.lyric` so the player avoids a second round trip.

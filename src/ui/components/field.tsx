@@ -1,9 +1,9 @@
-import { cva, type VariantProps } from 'class-variance-authority'
 import { type ComponentProps, useMemo } from 'react'
 
 import { Label } from '@/ui/components/label'
 import { Separator } from '@/ui/components/separator'
 import { cn } from '@/ui/lib/cn'
+import { cva, type VariantProps } from '@/ui/lib/cva'
 
 // Project-local copy of shadcn/ui's Field primitives, ported to the
 // ``-prefixed Tailwind v4 setup we use in the admin shell. The

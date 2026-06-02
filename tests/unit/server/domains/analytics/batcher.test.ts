@@ -1,4 +1,5 @@
 import { PassThrough } from 'node:stream'
+import superjson from 'superjson'
 import { describe, expect, it, vi } from 'vitest'
 
 import { initAccessLogBatcher, replayDeadLetterAccessLog } from '@/server/domains/analytics/batcher'
@@ -51,8 +52,8 @@ vi.mock('node:stream/promises', async () => {
 })
 
 const makeEvent = (path: string) =>
-  JSON.stringify({
-    ts: new Date().toISOString(),
+  superjson.stringify({
+    ts: new Date(),
     visitorHash: 'h',
     sessionId: null,
     ip: null,

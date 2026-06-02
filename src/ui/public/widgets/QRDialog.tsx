@@ -1,4 +1,3 @@
-import type { VariantProps } from 'class-variance-authority'
 // `qrcode.react` ships a non-trivial encoder (ECC math, alignment tables) that
 // is only needed once a reader actually opens a follow/share dialog. We pull
 // the type statically so editors and grep can see the dependency, but the
@@ -8,6 +7,8 @@ import type { QRCodeSVG as QRCodeSVGComponent } from 'qrcode.react'
 import type { ReactNode } from 'react'
 
 import { Suspense, lazy, useCallback, useEffect, useRef, useState } from 'react'
+
+import type { VariantProps } from '@/ui/lib/cva'
 
 import { Button, buttonVariants } from '@/ui/components/button'
 import { IconButtonContent } from '@/ui/components/icon-button-content'

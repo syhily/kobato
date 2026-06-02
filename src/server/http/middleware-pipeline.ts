@@ -20,7 +20,6 @@ import { buildRouteContexts, honoSessionMiddleware } from '@/server/http/middlew
 import { trailingSlashNormaliser } from '@/server/http/middlewares/trailing-slash'
 import { honoVisitorCookieMiddleware } from '@/server/http/middlewares/visitor-cookie'
 import { honoWpDecoyMiddleware } from '@/server/http/middlewares/wp-decoy'
-import { buildOpenApiDocument } from '@/server/http/openapi'
 import { analyticsEventsRouter } from '@/server/http/resources/analytics'
 import { assetsRouter } from '@/server/http/resources/assets'
 import { backupRouter } from '@/server/http/resources/backup'
@@ -33,7 +32,6 @@ import { getRestoreState, getServerPhase } from '@/server/infra/lifecycle'
 import { root } from '@/server/infra/logger'
 import { sanitizeReqHeaders, resBindings } from '@/server/infra/logger/sanitizer'
 import { isRedisHealthy, pingRedis } from '@/server/infra/redis/storage'
-import { buildOpenApiDocsHtml } from '@/server/render/openapi-docs'
 import { getBlogSettingsBundleSync } from '@/shared/config/getters'
 
 export function configureMiddleware(app: Hono<Env>): void {
@@ -169,12 +167,6 @@ export function configureMiddleware(app: Hono<Env>): void {
 
   // Admin branding resource routes
   app.route('/', brandingRouter)
-
-  // Dev-only API docs
-  if (!import.meta.env.PROD) {
-    app.get('/openapi.json', async (c) => c.json(await buildOpenApiDocument()))
-    app.get('/docs', (c) => c.html(buildOpenApiDocsHtml()))
-  }
 }
 
 export async function buildLoadContext(c: { var: Env['Variables']; req: { raw: Request; url: string } }) {

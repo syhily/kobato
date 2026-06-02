@@ -1,5 +1,4 @@
 import { useRender } from '@base-ui/react/use-render'
-import { type VariantProps, cva } from 'class-variance-authority'
 import { PanelLeft } from 'lucide-react'
 import { type ComponentProps, createContext, useCallback, use, useMemo, useState } from 'react'
 
@@ -8,6 +7,7 @@ import { Separator } from '@/ui/components/separator'
 import { Sheet, SheetContent } from '@/ui/components/sheet'
 import { Tooltip } from '@/ui/components/tooltip'
 import { cn } from '@/ui/lib/cn'
+import { type VariantProps, cva } from '@/ui/lib/cva'
 import { useMediaQuery } from '@/ui/lib/use-media-query'
 
 /* ------------------------------------------------------------------ */
