@@ -17,7 +17,8 @@
 .aplayer * {
   box-sizing: content-box;
 }
-.aplayer svg {
+.aplayer .aplayer-icon svg,
+.aplayer .aplayer-loading-icon svg {
   width: 100%;
   height: 100%;
 }
@@ -251,8 +252,8 @@
   margin: 0 -20px -20px 0;
 }
 .aplayer .aplayer-pic .aplayer-play svg {
-  height: 18px;
-  width: auto;
+  width: 20px;
+  height: 20px;
 }
 .aplayer .aplayer-pic .aplayer-pause {
   width: 24px;
@@ -263,8 +264,8 @@
   margin: 0 -14px -14px 0;
 }
 .aplayer .aplayer-pic .aplayer-pause svg {
-  height: 12px;
-  width: auto;
+  width: 14px;
+  height: 14px;
 }
 .aplayer .aplayer-info {
   margin-left: 66px;
