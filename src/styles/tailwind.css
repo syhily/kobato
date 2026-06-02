@@ -452,7 +452,6 @@
   border-radius: var(--radius-sm);
 }
 
-@import './aplayer-base.css' layer(components);
 @import './aplayer.css' layer(components);
 
 /* Tailwind theme bridge shadcn */
