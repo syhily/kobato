@@ -64,22 +64,42 @@ export async function cleanupExpiredTokens(cookie: CommentTokenCookie): Promise<
   const validEntries: Array<{ token: string; payload: CommentTokenPayload; expiresAt: number }> = []
   const now = Date.now()
 
+  // Collect all non-expired entries first so we can verify them in a
+  // single Redis MGET instead of N sequential round-trips.
+  const candidates: Array<{ pageKey: string; entry: CommentTokenCookieEntry }> = []
   for (const [pageKey, entries] of Object.entries(cookie)) {
-    const kept: CommentTokenCookieEntry[] = []
     for (const entry of entries) {
-      if (entry.expiresAt <= now) {
-        continue
+      if (entry.expiresAt > now) {
+        candidates.push({ pageKey, entry })
       }
-      const payload = await verifyCommentToken(entry.token)
-      if (payload === null) {
-        continue
-      }
-      kept.push(entry)
-      validEntries.push({ token: entry.token, payload, expiresAt: entry.expiresAt })
     }
-    if (kept.length > 0) {
-      cleaned[pageKey] = kept
+  }
+
+  if (candidates.length === 0) {
+    return { cleaned, validEntries }
+  }
+
+  const redis = redisInstance()
+  const keys = candidates.map((c) => `${TOKEN_KEY_PREFIX}${c.entry.token}`)
+  const rawResults = await redis.mget(...keys)
+
+  for (let i = 0; i < candidates.length; i++) {
+    const { pageKey, entry } = candidates[i]!
+    const raw = rawResults[i]
+    if (typeof raw !== 'string') {
+      continue
     }
+    let payload: CommentTokenPayload
+    try {
+      payload = JSON.parse(raw) as CommentTokenPayload
+    } catch {
+      continue
+    }
+    if (!cleaned[pageKey]) {
+      cleaned[pageKey] = []
+    }
+    cleaned[pageKey]!.push(entry)
+    validEntries.push({ token: entry.token, payload, expiresAt: entry.expiresAt })
   }
 
   return { cleaned, validEntries }

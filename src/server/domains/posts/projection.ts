@@ -2,7 +2,7 @@ import type { ContentRow, PostMetaRow } from '@/server/infra/db/types'
 import type { PortableTextBody } from '@/shared/pt/schema'
 import type { ClientPost, MarkdownHeading } from '@/shared/types/catalog'
 
-import { validatePortableTextBody } from '@/shared/pt/utils'
+import { readBody, readHeadings } from '@/server/domains/content/projection-helpers'
 import { readStringArray } from '@/shared/utils/tools'
 
 // --- Public catalog projection ----------------------------------------------
@@ -161,35 +161,4 @@ export function toAdminRevisionDto(row: ContentRow): AdminRevisionDto {
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
   }
-}
-
-// --- jsonb helpers ----------------------------------------------------------
-
-function readBody(value: unknown): PortableTextBody {
-  if (value === null || value === undefined) {
-    return []
-  }
-  return validatePortableTextBody(value)
-}
-
-function readHeadings(value: unknown): MarkdownHeading[] {
-  if (!Array.isArray(value)) {
-    return []
-  }
-  const out: MarkdownHeading[] = []
-  for (const entry of value) {
-    if (entry === null || typeof entry !== 'object') {
-      continue
-    }
-    const item = entry as Record<string, unknown>
-    if (typeof item.depth !== 'number' || typeof item.text !== 'string') {
-      continue
-    }
-    out.push({
-      depth: item.depth,
-      text: item.text,
-      slug: typeof item.slug === 'string' ? item.slug : '',
-    })
-  }
-  return out
 }

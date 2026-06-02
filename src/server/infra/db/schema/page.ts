@@ -74,7 +74,8 @@ export const page = pgTable(
     authorId: bigint('author_id', { mode: 'bigint' }),
   },
   (table) => [
-    index('idx_page_slug').on(table.slug),
+    // `slug` already has a UNIQUE constraint (implicit unique index);
+    // no need for a redundant non-unique index.
     index('idx_page_deleted_at').on(table.deletedAt),
     index('idx_page_first_published_at').on(table.firstPublishedAt),
     index('idx_page_catalog').on(table.deletedAt, table.published, table.firstPublishedAt),

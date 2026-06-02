@@ -46,8 +46,7 @@ export function resolveVisitorCookie(request: Request): VisitorCookieResolution 
     return { visitorId: existing, setCookie: null }
   }
   const visitorId = randomBytes(12).toString('hex')
-  const url = new URL(request.url)
-  const secure = url.protocol === 'https:'
+  const secure = import.meta.env.PROD
   const parts = [
     `${KOBATO_AID_COOKIE}=${visitorId}`,
     'Path=/',

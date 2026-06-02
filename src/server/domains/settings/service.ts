@@ -76,20 +76,45 @@ export async function updateBlogSettingsSection<S extends SettingsSection>(
     await validateFontPaths(parsed.data as FontsInput)
   }
 
-  const nextRow = await applySectionPatch(db, section, parsed.data)
+  return db.transaction(async (tx) => {
+    const nextRow = await applySectionPatch(tx, section, parsed.data)
 
-  encryptSecretsInPlace(section, nextRow)
-  await upsertSetting(db, nextRow, updatedBy, meta.scope)
+    const encryptedRow = encryptSecretsInRow(section, nextRow)
+    await upsertSetting(tx, encryptedRow, updatedBy, meta.scope)
 
-  if (section === 'backup') {
-    void rescheduleBackup().catch((e) => log.error('rescheduleBackup failed', { error: String(e) }))
+    if (section === 'backup') {
+      void rescheduleBackup().catch((e) => log.error('rescheduleBackup failed', { error: String(e) }))
+    }
+
+    if (section === 'limits') {
+      void rescheduleArchive(tx, pool).catch((e) => log.error('rescheduleArchive failed', { error: String(e) }))
+    }
+
+    return refreshBlogSettings(tx)
+  })
+}
+
+/**
+ * Return a shallow copy of the bundle with all secret fields redacted.
+ * Used by the admin settings read endpoint so the HTTP response never
+ * carries decrypted credentials.
+ */
+export function redactSecretsFromBundle(bundle: BlogSettingsBundle): BlogSettingsBundle {
+  const clone = { ...bundle } as Record<string, unknown>
+  for (const { bundleKey, path, field } of SECRET_FIELDS) {
+    const section = clone[bundleKey] as Record<string, unknown> | null
+    if (section === null) {
+      continue
+    }
+    const bucket = section[path] as Record<string, unknown> | undefined
+    if (bucket && typeof bucket[field] === 'string' && bucket[field] !== '') {
+      clone[bundleKey] = {
+        ...section,
+        [path]: { ...bucket, [field]: '' },
+      }
+    }
   }
-
-  if (section === 'limits') {
-    void rescheduleArchive(db, pool).catch((e) => log.error('rescheduleArchive failed', { error: String(e) }))
-  }
-
-  return refreshBlogSettings(db)
+  return clone as unknown as BlogSettingsBundle
 }
 
 // --- Internal helpers ------------------------------------------------------
@@ -165,19 +190,26 @@ async function preserveSecretOnPatch(
   return { ...record, [payloadPath]: nextPayload }
 }
 
-// Encrypt secret fields in-place before writing to the DB.
-function encryptSecretsInPlace(section: SettingsSection, row: Record<string, unknown>): void {
+// Encrypt secret fields, returning a new row object instead of mutating.
+function encryptSecretsInRow(section: SettingsSection, row: Record<string, unknown>): Record<string, unknown> {
   const config = SECRET_FIELDS.find((f) => f.section === section)
   if (!config) {
-    return
+    return row
   }
   const bucket = row[config.path] as Record<string, unknown> | undefined
   if (!bucket) {
-    return
+    return row
   }
   const value = bucket[config.field]
-  if (typeof value === 'string') {
-    bucket[config.field] = encryptIfNeeded(value)
+  if (typeof value !== 'string') {
+    return row
+  }
+  return {
+    ...row,
+    [config.path]: {
+      ...bucket,
+      [config.field]: encryptIfNeeded(value),
+    },
   }
 }
 

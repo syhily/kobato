@@ -26,6 +26,7 @@ import { seedTagsIfMissing } from '@/server/infra/db/operations/tag'
 import { post as postMetaTable } from '@/server/infra/db/schema/post'
 import { DomainError, isUniqueConstraintError } from '@/server/infra/http/errors'
 import { getLogger } from '@/server/infra/logger'
+import { invalidateSearchCache } from '@/server/infra/search/search'
 import { ensureSlugLegal, resolveSlug } from '@/server/infra/slug-validation'
 import { idFromString } from '@/shared/utils/id'
 
@@ -181,6 +182,9 @@ export async function deletePost(
   })
   if (deleted) {
     await clearPostMetasCache()
+    await invalidateSearchCache().catch((err: unknown) => {
+      log.warn('invalidate search cache failed', { postId: id, error: err })
+    })
   }
   return { deleted }
 }
@@ -211,6 +215,9 @@ export async function restorePost(
   })
   if (restored) {
     await clearPostMetasCache()
+    await invalidateSearchCache().catch((err: unknown) => {
+      log.warn('invalidate search cache failed', { postId: id, error: err })
+    })
     const restoredMeta = await findPostMetaById(db, id)
     if (restoredMeta !== null && restoredMeta.published && restoredMeta.publishedRevisionId !== null) {
       const revision = await findContentById(db, restoredMeta.publishedRevisionId)
@@ -241,6 +248,9 @@ export async function unpublishPost(db: NodePgDatabase, id: bigint, viewer?: Vie
     throw new DomainError('NOT_FOUND', '文章不存在或已被删除。')
   }
   await clearPostMetasCache()
+  await invalidateSearchCache().catch((err: unknown) => {
+    log.warn('invalidate search cache failed', { postId: id, error: err })
+  })
   await removePostIndex(db, id).catch((err: unknown) => {
     log.warn('remove post index failed', { postId: id, error: err })
   })

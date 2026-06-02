@@ -31,6 +31,10 @@ export interface BlogSessionData {
   // produce a stored session with `user` but missing role.
   user?: SessionUser
   csrfToken?: string
+  // Absolute session expiry (epoch ms). When present, the session is
+  // unconditionally invalid after this timestamp regardless of sliding
+  // cookie refreshes. This caps the maximum lifetime of a stolen cookie.
+  absoluteExpiry?: number
 }
 
 export type BlogSession = Session<BlogSessionData, BlogSessionData>
@@ -57,7 +61,7 @@ const storage = createSessionStorage<BlogSessionData>({
     path: '/',
     sameSite: 'lax',
     secure: import.meta.env.PROD,
-    secrets: [SESSION_SECRET],
+    secrets: SESSION_SECRET,
   },
   async createData(data, expires) {
     const id = crypto.randomUUID()

@@ -215,9 +215,9 @@ function buildPortableTextComponents(ctx: ComponentContext): PortableTextCompone
     },
     types: {
       image: ({ value }) => renderImageBlock(value as ImageBlock),
-      code: ({ value }) => renderCodeBlock(value as CodeBlock),
+      code: ({ value }) => renderCodeBlock(value as CodeBlock, ctx.isRss),
       mathBlock: ({ value }) => renderMathBlock(value as MathBlock, ctx.isRss),
-      mermaid: ({ value }) => renderMermaidBlock(value as MermaidBlock),
+      mermaid: ({ value }) => renderMermaidBlock(value as MermaidBlock, ctx.isRss),
       horizontalRule: () => '<hr />',
       musicPlayer: ({ value }) => renderMusicPlayer(value as MusicPlayerBlock, ctx),
       solution: ({ value }) => {
@@ -258,13 +258,14 @@ function renderImageBlock(value: ImageBlock): string {
   return `<figure><img src="${src}"${alt}${width}${height} />${caption}</figure>`
 }
 
-function renderCodeBlock(value: CodeBlock): string {
+function renderCodeBlock(value: CodeBlock, isRss: boolean): string {
   const langClass =
     value.language !== undefined && value.language !== '' ? ` class="language-${escapeHtml(value.language)}"` : ''
   const dataLang =
     value.language !== undefined && value.language !== '' ? ` data-language="${escapeHtml(value.language)}"` : ''
   if (value.highlightedHtml !== undefined && value.highlightedHtml !== '') {
-    return `<pre><code${langClass}${dataLang}>${value.highlightedHtml}</code></pre>`
+    const inner = isRss ? `<![CDATA[${value.highlightedHtml}]]>` : value.highlightedHtml
+    return `<pre><code${langClass}${dataLang}>${inner}</code></pre>`
   }
   return `<pre><code${langClass}${dataLang}>${escapeHtml(value.code)}</code></pre>`
 }
@@ -272,10 +273,10 @@ function renderCodeBlock(value: CodeBlock): string {
 function renderMathBlock(value: MathBlock, isRss: boolean): string {
   if (isRss) {
     if (value.mathml !== undefined && value.mathml !== '') {
-      return value.mathml
+      return `<![CDATA[${value.mathml}]]>`
     }
     if (value.svg !== undefined && value.svg !== '') {
-      return value.svg
+      return `<![CDATA[${value.svg}]]>`
     }
   } else {
     if (value.svg !== undefined && value.svg !== '') {
@@ -288,9 +289,9 @@ function renderMathBlock(value: MathBlock, isRss: boolean): string {
   return `<pre><code>${escapeHtml(value.tex)}</code></pre>`
 }
 
-function renderMermaidBlock(value: MermaidBlock): string {
+function renderMermaidBlock(value: MermaidBlock, isRss: boolean): string {
   if (value.svg !== undefined && value.svg !== '') {
-    return value.svg
+    return isRss ? `<![CDATA[${value.svg}]]>` : value.svg
   }
   return `<pre class="mermaid">${escapeHtml(value.code)}</pre>`
 }

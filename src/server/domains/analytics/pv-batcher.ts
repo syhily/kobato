@@ -26,6 +26,8 @@ const log = getLogger('metrics.batcher')
 
 class PageViewBatcher {
   private buffer = new Map<string, number>()
+  /** Counts from the last failed flush that still need to be written. */
+  private failed = new Map<string, number>()
   private timer: NodeJS.Timeout | null = null
   private flushing: Promise<void> | null = null
 
@@ -58,6 +60,16 @@ class PageViewBatcher {
     if (this.flushing) {
       return this.flushing
     }
+
+    // Merge any previously-failed counts back into the buffer before
+    // taking a new snapshot.  This keeps the failed queue isolated so
+    // increments that arrive while a flush is in flight never get mixed
+    // with the snapshot in a way that could double-count.
+    for (const [k, v] of this.failed) {
+      this.buffer.set(k, (this.buffer.get(k) ?? 0) + v)
+    }
+    this.failed.clear()
+
     if (this.buffer.size === 0) {
       return
     }
@@ -75,10 +87,11 @@ class PageViewBatcher {
         await incrementMetricPvBatch(this.db, snapshot)
         log.debug('flushed page views', { keys: snapshot.size })
       } catch (err) {
-        log.error('flush failed; restoring buffer', { err: String(err), keys: snapshot.size })
-        // Restore any counts that were lost so we try again on the next tick.
+        log.error('flush failed; queuing for retry', { err: String(err), keys: snapshot.size })
+        // Stash the snapshot in `failed` so the next flush attempt
+        // retries these counts without contaminating new increments.
         for (const [k, v] of snapshot) {
-          this.buffer.set(k, (this.buffer.get(k) ?? 0) + v)
+          this.failed.set(k, (this.failed.get(k) ?? 0) + v)
         }
       } finally {
         this.flushing = null

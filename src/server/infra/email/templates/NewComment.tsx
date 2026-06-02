@@ -1,5 +1,5 @@
 import { Link, Text } from '@/server/infra/email/render'
-import { SafeEmailHtml } from '@/server/infra/email/safe-html'
+import { RawEmailHtml } from '@/server/infra/email/safe-html'
 import { EmailLayout } from '@/server/infra/email/templates/layout/EmailLayout'
 import { requireBlogSettingsSection } from '@/shared/config/getters'
 
@@ -23,7 +23,7 @@ export function NewComment({ postTitle, postLink, commentNeedApproval, commentCo
         </Link>
       </Text>
       <div style={quoteBox}>
-        <SafeEmailHtml html={commentContent} style={quoteText} />
+        <RawEmailHtml html={commentContent} style={quoteText} />
       </div>
       <Text style={paragraph}>{commentNeedApproval ? '该留言需要审核，' : ''}您可以打开下方链接查看留言：</Text>
       <Link href={commentLink} target="_blank" rel="noreferrer" style={primaryLink}>

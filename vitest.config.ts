@@ -5,10 +5,7 @@ export default defineConfig({
     tsconfigPaths: true,
   },
   test: {
-    globals: false,
-    environment: 'node',
-    include: ['tests/**/*.test.{ts,tsx}'],
-    setupFiles: ['./tests/setup.ts'],
+    projects: ['tests/*/vitest.config.ts'],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'html'],

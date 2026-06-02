@@ -70,8 +70,7 @@ export async function generateFeeds(db: NodePgDatabase, options: FeedOptions = {
   if (category !== undefined && tag !== undefined) {
     throw new DomainError('BAD_REQUEST', 'Category and tag cannot be specified at the same time')
   }
-  const filtered = await selectFeedPosts(db, { includeHidden, includeScheduled, category, tag })
-  const feedPosts = filtered.slice(0, size)
+  const feedPosts = await selectFeedPosts(db, { includeHidden, includeScheduled, category, tag, limit: size })
 
   // Start to build the feed.
   const feed = new Feed({
@@ -173,11 +172,13 @@ async function selectFeedPosts(
   options: Pick<FeedOptions, 'category' | 'tag'> & {
     includeHidden: boolean
     includeScheduled: boolean
+    limit?: number
   },
 ): Promise<Post[]> {
   const visibility = {
     includeHidden: options.includeHidden,
     includeScheduled: options.includeScheduled,
+    limit: options.limit,
   }
 
   if (options.category !== undefined) {

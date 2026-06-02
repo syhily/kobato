@@ -4,7 +4,11 @@ import { z } from 'zod'
 import type { SettingsSection } from '@/shared/config/sections'
 
 import { recordAuditEventFromContext } from '@/server/domains/audit/service'
-import { getAdminBlogSettings, updateBlogSettingsSection } from '@/server/domains/settings/service'
+import {
+  getAdminBlogSettings,
+  redactSecretsFromBundle,
+  updateBlogSettingsSection,
+} from '@/server/domains/settings/service'
 import { getSupportedTimeZones } from '@/server/domains/settings/timezones'
 import { adminProc } from '@/server/http/orpc-base'
 import { DomainError } from '@/server/infra/http/errors'
@@ -15,7 +19,10 @@ import { safeBigInt } from '@/shared/utils/tools'
 const get = adminProc
   .route({ method: 'GET', path: '/admin/settings/get' })
   .output(z.object({ bundle: blogSettingsBundleDto.nullable() }))
-  .handler(({ context }) => getAdminBlogSettings(context.db))
+  .handler(async ({ context }) => {
+    const { bundle } = await getAdminBlogSettings(context.db)
+    return { bundle: bundle ? redactSecretsFromBundle(bundle) : null }
+  })
 
 const loadAll = adminProc
   .route({ method: 'GET', path: '/admin/settings/loadAll' })
@@ -27,7 +34,7 @@ const loadAll = adminProc
   )
   .handler(async ({ context }) => {
     const { bundle } = await getAdminBlogSettings(context.db)
-    return { bundle, timeZones: [...getSupportedTimeZones()] }
+    return { bundle: bundle ? redactSecretsFromBundle(bundle) : null, timeZones: [...getSupportedTimeZones()] }
   })
 
 const update = adminProc

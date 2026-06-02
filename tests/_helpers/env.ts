@@ -15,7 +15,7 @@ const REDIS_URL = `redis://localhost:6379/${REDIS_DB}`
 export const TEST_ENV = {
   DATABASE_URL: POSTGRES_BASE_URL,
   REDIS_URL,
-  SESSION_SECRET: 'vitest-session-secret',
+  SESSION_SECRET: 'vitest-session-secret-must-be-at-least-32-chars-long-ok',
 } as const
 
 export function ensureTestEnv(): void {

@@ -1,5 +1,5 @@
 import { Link, Text } from '@/server/infra/email/render'
-import { SafeEmailHtml } from '@/server/infra/email/safe-html'
+import { RawEmailHtml } from '@/server/infra/email/safe-html'
 import { EmailLayout } from '@/server/infra/email/templates/layout/EmailLayout'
 import { requireBlogSettingsSection } from '@/shared/config/getters'
 
@@ -29,11 +29,11 @@ export function NewReply({ receiver, postTitle, postLink, sourceContent, replyCo
       </Text>
       <Text style={label}>您的留言：</Text>
       <div style={quoteBox}>
-        <SafeEmailHtml html={sourceContent} style={quoteText} />
+        <RawEmailHtml html={sourceContent} style={quoteText} />
       </div>
       <Text style={label}>回复内容：</Text>
       <div style={quoteBox}>
-        <SafeEmailHtml html={replyContent} style={quoteText} />
+        <RawEmailHtml html={replyContent} style={quoteText} />
       </div>
       <Text style={paragraph}>您可以打开下方链接查看留言：</Text>
       <Link href={replyLink} target="_blank" rel="noreferrer" style={primaryLink}>

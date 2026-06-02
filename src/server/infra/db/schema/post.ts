@@ -45,7 +45,8 @@ export const post = pgTable(
     pinnedAt: timestamp('pinned_at', { withTimezone: true, mode: 'date' }),
   },
   (table) => [
-    index('idx_post_slug').on(table.slug),
+    // `slug` already has a UNIQUE constraint (implicit unique index);
+    // no need for a redundant non-unique index.
     index('idx_post_deleted_at').on(table.deletedAt),
     index('idx_post_category').on(table.category),
     index('idx_post_published_at').on(table.publishedAt),

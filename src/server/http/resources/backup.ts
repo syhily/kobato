@@ -4,6 +4,7 @@ import { bodyLimit } from 'hono/body-limit'
 import type { Env } from '@/server/http/context'
 
 import { recordAuditEvent } from '@/server/domains/audit/service'
+import { verifySetupToken } from '@/server/domains/auth/setup-token'
 import { performSafeRestore } from '@/server/domains/backup/restore-orchestrator'
 import {
   checkPgToolsAvailable,
@@ -40,6 +41,10 @@ export const backupRouter = new Hono<Env>()
   })
   .get('/api/admin/backup/download/:key{.+}', requireRoleMw('admin'), async (c) => {
     const key = c.req.param('key')
+    // Path-traversal guard: keys must start with the backup prefix.
+    if (!key.startsWith('backup/')) {
+      return c.json({ error: { message: 'Invalid backup key' } }, 400)
+    }
     const buffer = await getBackupBuffer(key)
     const fileName = key.split('/').pop() ?? 'backup.sql.gz'
     c.header('Content-Type', 'application/gzip')
@@ -82,6 +87,12 @@ export const backupRouter = new Hono<Env>()
     async (c) => {
       if (await hasAdmin(c.var.db)) {
         return c.json({ error: { message: '站点已安装，请直接登录后通过后台还原备份。' } }, 409)
+      }
+
+      // Require the one-time setup token to prove console access.
+      const setupToken = c.req.header('x-setup-token') ?? ''
+      if (!verifySetupToken(setupToken)) {
+        return c.json({ error: { message: '缺少或错误的 setup token，请查看服务器控制台输出。' } }, 403)
       }
 
       if (!(await isPgToolsAvailable())) {

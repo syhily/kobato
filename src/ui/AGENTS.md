@@ -52,6 +52,77 @@ parent.
   `blog-config-context`, `use-media-query`). shadcn's `aliases.lib` is
   pinned here. No `src/lib/` parallel.
 
+## Tailwind-merge tokens
+
+`cn.ts` extends `tailwind-merge` with every project token namespace so
+that custom `--text-*`, `--color-*`, `--shadow-*`, etc. tokens are
+classified into the correct merge group. Without this registration,
+`cn('text-toc-toggle text-ink-3')` would collapse to `'text-ink-3'`
+because tailwind-merge sees both as opaque `text-*` utilities and
+arbitrates them as the same group.
+
+### Token system
+
+`tailwind.css` layers tokens in three tiers, with one-way dataflow from
+the bottom up:
+
+1. **Raw brand tokens** — declared in `:root` and re-bound in `.dark { … }`.
+   They are the only place a hex value lives. Examples: `--brand`,
+   `--ink-1`, `--surface-body`, `--line-muted`, `--chip-bg`.
+
+2. **shadcn slot aliases** — also in `:root`, mapped onto the raw layer
+   by name so the shadcn primitives keep working unmodified:
+   `--background` ← `--surface-body`, `--foreground` ← `--ink-1`,
+   `--card` / `--popover` ← `--canvas`, `--muted` / `--secondary` ←
+   `--surface-dim`, `--accent` ← `--line`, `--border` ← `--line`,
+   `--input` ← `--line-widget`, `--ring` ← `--brand`.
+
+3. **`@theme inline` bridge** — the same names with a `--color-` (or
+   `--shadow-`, `--text-`, …) prefix so Tailwind v4 emits utilities for
+   them. `cn.ts` mirrors that prefix-stripped list. `inline` keeps the
+   tokens reactive to `.dark` rebinds in tier 1.
+
+Shadow tokens cannot be re-bound directly in `.dark { }` because
+`@theme inline` tokens are immutable once registered. That's why every
+shadow has a `*-value` indirection: `.dark` rewrites
+`--shadow-card-value`, and the bridge alias `--shadow-card =
+var(--shadow-card-value)` passes the new value through transparently.
+
+### Practical rule for adding a new theme-aware utility
+
+1. Define raw token in `:root` AND in `.dark { }` (`tailwind.css`).
+2. Bridge it in `@theme inline { --color-foo: var(--foo) }`.
+3. Add `'foo'` to the matching list in `cn.ts`.
+4. Consume as `bg-foo` / `text-foo` / … in TSX.
+
+Do NOT write `dark:bg-foo` on a token that lives in tier 1 — the
+`.dark { }` rebind already handles theme switching, so the `dark:`
+prefix is a no-op double declaration.
+
+### Dark surface lightness ladder
+
+Every adjacent tier carries 3 to 8 L of perceptible separation, and no
+`--line-*` token shares a value with any `--surface-*` token:
+
+| Token        | Hex       | L   | Usage                             |
+| ------------ | --------- | --- | --------------------------------- |
+| secondary    | `#0b1322` | 7   | image dimmer overlays only        |
+| aside-bg     | `#15203a` | 14  | recessed sidebar                  |
+| body         | `#1d2842` | 17  | page floor, cards rest here       |
+| canvas       | `#26314d` | 21  | card, popover, primary elevated   |
+| surface      | `#26314d` | 21  | sibling of canvas                 |
+| surface-soft | `#2a3553` | 23  | soft chip / hover-state fill      |
+| surface-dim  | `#303a5a` | 26  | muted / secondary fill, input bg  |
+| line-muted   | `#374566` | 30  | recessed divider                  |
+| line         | `#475672` | 38  | default border (cards, inputs, …) |
+| line-widget  | `#5b6b88` | 44  | strong border (input emphasis)    |
+
+The earlier release had `--line === --surface-soft` (both `#2a3553`),
+which made every `border-line` consumer vanish on top of the soft
+surface. Lifting the line trio out of the surface band fixes form-
+element visibility and restores `--accent` (which resolves to `--line`
+via the shadcn alias) as a perceptible hover-state.
+
 ## Component rules
 
 - Plain TSX with explicit props. No hidden reads from route params,

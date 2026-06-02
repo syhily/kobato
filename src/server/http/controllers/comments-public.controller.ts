@@ -7,6 +7,7 @@ import { recordAuditEventFromContext } from '@/server/domains/audit/service'
 import { userSession } from '@/server/domains/auth/primitives'
 import { asCommentItemWire, asCommentItemsWire } from '@/server/domains/comments/projection'
 import { findCommentWithUserById } from '@/server/domains/comments/repos/public-query'
+import { commentReplySchema } from '@/server/domains/comments/schema'
 import { getCommentById, updateComment } from '@/server/domains/comments/services/moderate'
 import { createComment } from '@/server/domains/comments/services/mutate'
 import { loadComments, parseComments } from '@/server/domains/comments/services/public-query'
@@ -20,29 +21,10 @@ import { commentItemDto } from '@/shared/contracts/comments'
 import { commentBodySchema } from '@/shared/pt/comment-schema'
 import { parseCommentTokensCookie, serializeCommentTokensCookie } from '@/shared/utils/comment-token'
 import { idFromString } from '@/shared/utils/id'
-import { httpUrlOrEmptyStringSchema } from '@/shared/utils/safe-url'
-
-const COMMENT_HONEYPOT_MAX_LEN = 240
-
-const replyInput = z
-  .object({
-    page_key: z.string(),
-    name: z.string(),
-    email: z.email(),
-    link: httpUrlOrEmptyStringSchema.optional(),
-    body: commentBodySchema,
-    rid: z.number().optional(),
-    subtitle: z.string().max(COMMENT_HONEYPOT_MAX_LEN).optional().default(''),
-  })
-  .superRefine((val, ctx) => {
-    if (val.subtitle.trim().length > 0) {
-      ctx.addIssue({ code: 'custom', message: '输入数据无效。', path: ['subtitle'] })
-    }
-  })
 
 const replyComment = publicProc
   .route({ method: 'POST', path: '/comments/reply' })
-  .input(replyInput)
+  .input(commentReplySchema)
   .output(z.object({ comment: commentItemDto }))
   .handler(async ({ input, context }) => {
     const { request, clientAddress, session, responseHeaders } = context

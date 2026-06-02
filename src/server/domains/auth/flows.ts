@@ -9,6 +9,7 @@ import type { AssetsSettings, SiteIdentitySettings } from '@/shared/config/types
 
 import { establishLoginSession, login } from '@/server/domains/auth/primitives'
 import { commitSessionWithMaxAge } from '@/server/domains/auth/session-storage'
+import { invalidateSetupToken } from '@/server/domains/auth/setup-token'
 import {
   ASSETS_STORAGE_INSTALL_DEFAULTS,
   buildDefaultSectionPayloads,
@@ -197,6 +198,7 @@ export async function signUpInitialAdminWithSession(
   }
 
   await refreshBlogSettings(db)
+  invalidateSetupToken()
 
   return {
     ok: true,
@@ -212,6 +214,7 @@ export async function processAuthFormSubmission<I>({
   defaultErrorMessage,
   redirectTo,
   run,
+  formData: providedFormData,
 }: {
   request: Request
   schema: ZodType<I>
@@ -219,8 +222,9 @@ export async function processAuthFormSubmission<I>({
   defaultErrorMessage: string
   redirectTo: string | undefined
   run: (input: I) => Promise<AuthFlowResult<{ redirectTo: string }>>
+  formData?: FormData
 }) {
-  const formData = await request.formData()
+  const formData = providedFormData ?? (await request.formData())
   const values: Record<string, FormDataEntryValue | null> = {}
   for (const field of fields) {
     values[field] = formData.get(field)

@@ -70,18 +70,17 @@ const loadAll = adminProc
     }),
   )
   .handler(async ({ input, context }) => {
-    const result = await loadAllComments(
-      context.db,
-      input.offset,
-      input.limit,
-      input.pageKey,
-      input.userId ? idFromString(input.userId) : undefined,
-      input.status,
-      input.q,
-      input.match,
-      input.createdAfter ? new Date(input.createdAfter) : undefined,
-      input.createdBefore ? new Date(input.createdBefore) : undefined,
-    )
+    const result = await loadAllComments(context.db, {
+      offset: input.offset,
+      limit: input.limit,
+      filterPublicId: input.pageKey,
+      filterUserId: input.userId ? idFromString(input.userId) : undefined,
+      status: input.status,
+      filterQ: input.q,
+      filterMatch: input.match,
+      filterCreatedAfter: input.createdAfter ? new Date(input.createdAfter) : undefined,
+      filterCreatedBefore: input.createdBefore ? new Date(input.createdBefore) : undefined,
+    })
     return {
       comments: asAdminCommentsWire(result.comments),
       total: result.total,

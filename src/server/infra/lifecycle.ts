@@ -33,34 +33,56 @@ interface ShutdownHook {
 
 type RefreshSettingsFn = (db: NodePgDatabase) => Promise<unknown>
 
-// ─── Internal state ──────────────────────────────────────
+// Typed DI container that replaces the previous 10 module-level `let`
+// bindings. The explicit interface makes the container shape reviewable
+// and lets contract tests assert that no state leaks to globalThis.
+export interface LifecycleContainer {
+  serverPhase: ServerPhase
+  httpServer: ServerType | null
+  shuttingDown: boolean
+  hooks: ShutdownHook[]
+  currentApp: Hono<Env> | null
+  currentDb: NodePgDatabase | null
+  restartQueue: Promise<void>
+  restartPromise: Promise<void> | null
+  restoreState: RestoreState
+  refreshSettingsFn: RefreshSettingsFn | null
+}
 
-let serverPhase: ServerPhase = 'booting'
-let httpServer: ServerType | null = null
-let shuttingDown = false
-let hooks: ShutdownHook[] = []
-let currentApp: Hono<Env> | null = null
-let currentDb: NodePgDatabase | null = null
-let restartPromise: Promise<void> | null = null
-let restartLock = false
-let restoreState: RestoreState = { phase: 'idle', startedAt: '' }
-let refreshSettingsFn: RefreshSettingsFn | null = null
+const container: LifecycleContainer = {
+  serverPhase: 'booting',
+  httpServer: null,
+  shuttingDown: false,
+  hooks: [],
+  currentApp: null,
+  currentDb: null,
+  restartQueue: Promise.resolve(),
+  restartPromise: null,
+  restoreState: { phase: 'idle', startedAt: '' },
+  refreshSettingsFn: null,
+}
+
+// Test-only surface so contract tests can inspect the container
+// without reaching into closure state.
+export function __getLifecycleContainer(): LifecycleContainer {
+  return container
+}
 
 // ─── HTTP Server ─────────────────────────────────────────
 
 export function setHttpServer(server: ServerType): void {
-  httpServer = server
+  container.httpServer = server
 }
 
 export async function closeHttpServer(timeoutMs = DEFAULT_CLOSE_TIMEOUT_MS): Promise<void> {
-  if (!httpServer) {
+  if (!container.httpServer) {
     return
   }
-  const nodeServer = httpServer as NodeHttpServer
+  const nodeServer = container.httpServer as NodeHttpServer
   nodeServer.closeIdleConnections?.()
 
   await new Promise<void>((resolve) => {
-    const server = httpServer
+    const server = container.httpServer
     const timer = setTimeout(() => {
       log.warn(`HTTP server close timed out after ${timeoutMs}ms, forcing remaining connections closed`)
       nodeServer.closeAllConnections?.()
@@ -85,19 +107,19 @@ export async function closeHttpServer(timeoutMs = DEFAULT_CLOSE_TIMEOUT_MS): Pro
  * Flush hooks: priority 100. Connection-close hooks: priority 0 (default).
  */
 export function registerShutdownHook(hook: () => Promise<void>, priority = 0): void {
-  if (shuttingDown) {
+  if (container.shuttingDown) {
     log.warn('Shutdown hook registered after shutdown started; ignoring')
     return
   }
-  hooks.push({ fn: hook, priority })
-  hooks.sort((a, b) => b.priority - a.priority)
+  container.hooks.push({ fn: hook, priority })
+  container.hooks.sort((a, b) => b.priority - a.priority)
 }
 
 export function requestShutdown(reason: string): void {
-  if (shuttingDown) {
+  if (container.shuttingDown) {
     return
   }
-  shuttingDown = true
+  container.shuttingDown = true
   setServerPhase('shutting-down')
   log.info('Shutdown requested', { reason })
   void performShutdown(reason)
@@ -112,7 +134,7 @@ async function performShutdown(reason: string): Promise<void> {
 
   await closeHttpServer(8_000)
 
-  for (const { fn } of hooks) {
+  for (const { fn } of container.hooks) {
     try {
       await fn()
     } catch (err) {
@@ -131,7 +153,7 @@ process.once('SIGINT', () => requestShutdown('SIGINT'))
 // ─── Server Phase ────────────────────────────────────────
 
 export function getServerPhase(): ServerPhase {
-  return serverPhase
+  return container.serverPhase
 }
 
 const VALID_TRANSITIONS: Record<ServerPhase, readonly ServerPhase[]> = {
@@ -143,81 +165,67 @@ const VALID_TRANSITIONS: Record<ServerPhase, readonly ServerPhase[]> = {
 }
 
 export function setServerPhase(newPhase: ServerPhase): void {
-  if (newPhase === serverPhase) {
+  if (newPhase === container.serverPhase) {
     return
   }
-  const allowed = VALID_TRANSITIONS[serverPhase]
+  const allowed = VALID_TRANSITIONS[container.serverPhase]
   if (!allowed.includes(newPhase)) {
-    log.warn('Invalid phase transition', { from: serverPhase, to: newPhase })
+    log.warn('Invalid phase transition', { from: container.serverPhase, to: newPhase })
     return
   }
-  serverPhase = newPhase
+  container.serverPhase = newPhase
   log.info('Server phase changed', { phase: newPhase })
 }
 
 // ─── Restore State ───────────────────────────────────────
 
 export function setRestoreState(phase: RestorePhase, error?: string): void {
-  restoreState = { phase, startedAt: new Date().toISOString(), error }
+  container.restoreState = { phase, startedAt: new Date().toISOString(), error }
   log.info('Restore state changed', { phase, err: error })
 }
 
 export function getRestoreState(): RestoreState {
-  return restoreState
+  return container.restoreState
 }
 
 export function resetRestoreState(): void {
-  restoreState = { phase: 'idle', startedAt: '' }
+  container.restoreState = { phase: 'idle', startedAt: '' }
 }
 
 // ─── DI setters ──────────────────────────────────────────
 
 export function setRestartApp(app: Hono<Env>): void {
-  currentApp = app
+  container.currentApp = app
 }
 
 export function setRestartDb(db: NodePgDatabase): void {
-  currentDb = db
+  container.currentDb = db
 }
 
 export function setRestartRefreshSettings(fn: RefreshSettingsFn): void {
-  refreshSettingsFn = fn
+  container.refreshSettingsFn = fn
 }
 
 // ─── Restart ─────────────────────────────────────────────
 
 export async function restartServer(): Promise<void> {
-  if (restartPromise) {
-    return restartPromise
-  }
-  if (restartLock) {
-    // Another caller is between the lock acquisition and the promise
-    // assignment. Yield until they publish it, then piggyback.
-    let promise: Promise<void> | null = null
-    do {
-      await new Promise((r) => setTimeout(r, 0))
-      promise = restartPromise
-    } while (!promise)
-    return promise
-  }
-  restartLock = true
-  if (!currentApp) {
-    restartLock = false
-    return
-  }
-  if (shuttingDown) {
-    restartLock = false
+  if (container.shuttingDown) {
     log.warn('Restart requested during shutdown; ignoring')
     return
   }
+  if (!container.currentApp) {
+    return
+  }
+  if (container.restartPromise) {
+    return container.restartPromise
+  }
 
-  const app = currentApp
+  const app = container.currentApp
 
-  setServerPhase('restarting')
-
-  restartPromise = (async () => {
+  const queued = (async () => {
     const restartLog = log.child({ component: 'restart' })
     restartLog.info('Graceful restart started')
+    setServerPhase('restarting')
 
     try {
       await closeHttpServer()
@@ -227,9 +235,9 @@ export async function restartServer(): Promise<void> {
       })
       setHttpServer(newServer)
 
-      if (currentDb && refreshSettingsFn) {
+      if (container.currentDb && container.refreshSettingsFn) {
         try {
-          await refreshSettingsFn(currentDb)
+          await container.refreshSettingsFn(container.currentDb)
         } catch (err) {
           restartLog.warn('refreshBlogSettings failed during restart; continuing', {
             err: err instanceof Error ? err.message : String(err),
@@ -248,10 +256,27 @@ export async function restartServer(): Promise<void> {
       setServerPhase('failed')
       throw err
     }
-  })().finally(() => {
-    restartPromise = null
-    restartLock = false
-  })
+  })()
 
-  return restartPromise
+  container.restartPromise = queued
+  // Queue restarts so they run sequentially, but swallow queue-chain
+  // rejections so they don't surface as unhandled. The caller awaiting
+  // `restartServer()` receives the original error via the returned
+  // `queued` promise.
+  container.restartQueue = container.restartQueue
+    .then(() => queued)
+    .catch(() => queued)
+    .catch(() => {
+      /* swallow queue-chain rejections */
+    })
+
+  queued
+    .finally(() => {
+      container.restartPromise = null
+    })
+    .catch(() => {
+      /* swallow — caller receives error via returned queued promise */
+    })
+
+  return queued
 }

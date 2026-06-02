@@ -38,47 +38,51 @@ export async function createPage(
   if (crossCollision !== null && crossCollision.entityType !== 'page') {
     throw new DomainError('CONFLICT', `slug "${slug}" 已被其它文章占用。`)
   }
-  const now = new Date()
-  let row: Awaited<ReturnType<typeof insertPageMeta>>
-  try {
-    row = await insertPageMeta(db, {
-      slug,
-      title: input.title,
-      summary: input.summary ?? '',
-      cover: input.cover ?? '',
-      og: input.og ?? null,
-      published: false,
-      commentsEnabled: input.commentsEnabled ?? true,
-      showToc: input.showToc ?? false,
-      showUpdated: input.showUpdated ?? false,
-      showFriends: input.showFriends ?? false,
-      publishedAt: input.publishedAt ?? now,
-      authorId,
-    })
-    await insertSlugRegistry(db, { slug, entityType: 'page', entityId: row.id })
-  } catch (err) {
-    if (isUniqueConstraintError(err, 'uq_slug_registry_slug')) {
-      throw new DomainError('CONFLICT', `slug "${slug}" 已被占用。`)
+
+  return db.transaction(async (tx) => {
+    const now = new Date()
+    let row: Awaited<ReturnType<typeof insertPageMeta>>
+    try {
+      row = await insertPageMeta(tx, {
+        slug,
+        title: input.title,
+        summary: input.summary ?? '',
+        cover: input.cover ?? '',
+        og: input.og ?? null,
+        published: false,
+        commentsEnabled: input.commentsEnabled ?? true,
+        showToc: input.showToc ?? false,
+        showUpdated: input.showUpdated ?? false,
+        showFriends: input.showFriends ?? false,
+        publishedAt: input.publishedAt ?? now,
+        authorId,
+      })
+      await insertSlugRegistry(tx, { slug, entityType: 'page', entityId: row.id })
+    } catch (err) {
+      if (isUniqueConstraintError(err, 'uq_slug_registry_slug')) {
+        throw new DomainError('CONFLICT', `slug "${slug}" 已被占用。`)
+      }
+      throw err
     }
-    throw err
-  }
-  await clearPagesCache()
-  return toAdminPageDto(row)
+    await clearPagesCache()
+    return toAdminPageDto(row)
+  })
 }
 
 export async function updatePageMeta(db: NodePgDatabase, input: UpsertPageMetaInput): Promise<AdminPageDto> {
   if (input.id === undefined) {
     throw new DomainError('BAD_REQUEST', 'updatePageMeta requires an id')
   }
+  const pageId = input.id
   const slug = resolveSlug(input.slug, input.title)
   ensureSlugLegal(slug, 'page')
-  const existing = await findPageMetaById(db, input.id)
+  const existing = await findPageMetaById(db, pageId)
   if (existing === null) {
     throw new DomainError('NOT_FOUND', '页面不存在或已被删除。')
   }
   if (existing.slug !== slug) {
     const collision = await findPageMetaBySlug(db, slug)
-    if (collision !== null && collision.id !== input.id) {
+    if (collision !== null && collision.id !== pageId) {
       throw new DomainError('CONFLICT', `slug "${slug}" 已被其它页面占用。`)
     }
     const crossCollision = await findSlugRegistryBySlug(db, slug)
@@ -86,34 +90,37 @@ export async function updatePageMeta(db: NodePgDatabase, input: UpsertPageMetaIn
       throw new DomainError('CONFLICT', `slug "${slug}" 已被其它文章占用。`)
     }
   }
-  let updated: Awaited<ReturnType<typeof updatePageMetaById>>
-  try {
-    updated = await updatePageMetaById(db, input.id, {
-      slug,
-      title: input.title,
-      summary: input.summary ?? existing.summary,
-      cover: input.cover ?? existing.cover,
-      og: input.og === undefined ? existing.og : input.og,
-      commentsEnabled: input.commentsEnabled ?? existing.commentsEnabled,
-      showToc: input.showToc ?? existing.showToc,
-      showUpdated: input.showUpdated ?? existing.showUpdated,
-      showFriends: input.showFriends ?? existing.showFriends,
-      publishedAt: input.publishedAt ?? existing.publishedAt,
-    })
-    if (existing.slug !== slug) {
-      await updateSlugRegistryByEntity(db, { entityType: 'page', entityId: input.id, slug })
+
+  return db.transaction(async (tx) => {
+    let updated: Awaited<ReturnType<typeof updatePageMetaById>>
+    try {
+      updated = await updatePageMetaById(tx, pageId, {
+        slug,
+        title: input.title,
+        summary: input.summary ?? existing.summary,
+        cover: input.cover ?? existing.cover,
+        og: input.og === undefined ? existing.og : input.og,
+        commentsEnabled: input.commentsEnabled ?? existing.commentsEnabled,
+        showToc: input.showToc ?? existing.showToc,
+        showUpdated: input.showUpdated ?? existing.showUpdated,
+        showFriends: input.showFriends ?? existing.showFriends,
+        publishedAt: input.publishedAt ?? existing.publishedAt,
+      })
+      if (existing.slug !== slug) {
+        await updateSlugRegistryByEntity(tx, { entityType: 'page', entityId: pageId, slug })
+      }
+    } catch (err) {
+      if (isUniqueConstraintError(err, 'uq_slug_registry_slug')) {
+        throw new DomainError('CONFLICT', `slug "${slug}" 已被占用。`)
+      }
+      throw err
     }
-  } catch (err) {
-    if (isUniqueConstraintError(err, 'uq_slug_registry_slug')) {
-      throw new DomainError('CONFLICT', `slug "${slug}" 已被占用。`)
+    if (updated === null) {
+      throw new DomainError('NOT_FOUND', '页面不存在或已被删除。')
     }
-    throw err
-  }
-  if (updated === null) {
-    throw new DomainError('NOT_FOUND', '页面不存在或已被删除。')
-  }
-  await clearPagesCache()
-  return toAdminPageDto(updated)
+    await clearPagesCache()
+    return toAdminPageDto(updated)
+  })
 }
 
 export async function deletePage(db: NodePgDatabase, id: bigint): Promise<{ deleted: boolean }> {

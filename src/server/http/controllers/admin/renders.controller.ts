@@ -6,9 +6,11 @@ import { reindexSearchBatch } from '@/server/domains/posts/reindex'
 import { getKatexRenderer, type KatexRenderer } from '@/server/domains/pt/katex-renderer'
 import { adminProc } from '@/server/http/orpc-base'
 
+const MAX_RENDER_INPUT_LENGTH = 10_000
+
 const math = adminProc
   .route({ method: 'POST', path: '/admin/renders/math' })
-  .input(z.object({ tex: z.string(), display: z.boolean().optional() }))
+  .input(z.object({ tex: z.string().max(MAX_RENDER_INPUT_LENGTH), display: z.boolean().optional() }))
   .output(z.object({ mathml: z.string(), error: z.string().nullable() }))
   .handler(async ({ input }) => {
     if (input.tex.trim() === '') {
@@ -30,7 +32,7 @@ const math = adminProc
 
 const mermaid = adminProc
   .route({ method: 'POST', path: '/admin/renders/mermaid' })
-  .input(z.object({ code: z.string() }))
+  .input(z.object({ code: z.string().max(MAX_RENDER_INPUT_LENGTH) }))
   .output(z.object({ svg: z.string(), error: z.string().nullable() }))
   .handler(async ({ input }) => {
     if (input.code.trim() === '') {

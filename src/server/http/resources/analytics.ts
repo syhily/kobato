@@ -9,6 +9,9 @@ import { getLogger } from '@/server/infra/logger'
 const POLL_INTERVAL_MS = 2_000
 const HEARTBEAT_INTERVAL_MS = 25_000
 const MAX_SSE_CONNECTIONS = 10
+// Node.js is single-threaded, so a simple `let` counter is safe.
+// If worker threads are ever introduced, this must become an Atomic
+// or live in the main thread only.
 let activeSSEConnections = 0
 
 export const analyticsEventsRouter = new Hono<Env>().get('/api/analytics/events', requireRoleMw('admin'), async (c) => {

@@ -9,13 +9,10 @@
 // values manually — using the standard key names is enough.
 //
 // Audit log convention: loggers named `audit.<domain>` (e.g. `audit.user`,
-// `audit.comment`, `audit.cms.posts`) MUST land in a durable sink before
-// they're trusted for compliance / forensic reads. **Today they go to
-// stdout only** — the same place every other log line lands — which is
-// placeholder behaviour. A follow-up PR will introduce a dedicated
-// `audit_log` DB table and a thin `recordAuditEvent()` helper that both
-// writes the row and logs the line; see RBAC-REVIEW.md §F13. Until that
-// ships, treat `getLogger('audit.*')` calls as informational only.
+// `audit.comment`, `audit.cms.posts`) are for operational visibility only.
+// Durable audit records are written via `recordAuditEvent()` to the
+// `audit_log` PostgreSQL table through a COPY batcher, not through this
+// logger. `getLogger('audit.*')` calls remain informational stdout output.
 
 import { Writable } from 'node:stream'
 import pino from 'pino'
@@ -141,6 +138,7 @@ export interface Logger {
   info(message: string, context?: LogContext): void
   warn(message: string, context?: LogContext): void
   error(message: string, context?: LogContext): void
+  fatal(message: string, context?: LogContext): void
   child(extra: LogContext): Logger
   withScope(scope: string): Logger
 }
@@ -154,6 +152,7 @@ function makeLogger(scope: string, base: LogContext = {}): Logger {
     info: (msg, ctx) => pinoChild.info(wrap(ctx), msg),
     warn: (msg, ctx) => pinoChild.warn(wrap(ctx), msg),
     error: (msg, ctx) => pinoChild.error(wrap(ctx), msg),
+    fatal: (msg, ctx) => pinoChild.fatal(wrap(ctx), msg),
     child: (extra) => makeLogger(scope, { ...base, ...extra }),
     withScope: (newScope) => makeLogger(newScope, base),
   }

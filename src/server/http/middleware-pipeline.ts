@@ -49,7 +49,21 @@ export function configureMiddleware(app: Hono<Env>): void {
   app.onError(onErrorHandler)
   app.use(requestId())
   app.use(compress())
-  app.use(secureHeaders())
+  app.use(
+    secureHeaders({
+      contentSecurityPolicy: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'", "'unsafe-inline'"],
+        styleSrc: ["'self'", "'unsafe-inline'"],
+        imgSrc: ["'self'", 'data:', 'blob:'],
+        fontSrc: ["'self'"],
+        connectSrc: ["'self'"],
+        objectSrc: ["'none'"],
+        frameAncestors: ["'none'"],
+        upgradeInsecureRequests: [],
+      },
+    }),
+  )
   app.use(corsMiddleware())
   app.use(
     pinoLogger({

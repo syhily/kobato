@@ -3,9 +3,10 @@ import { data, redirect } from 'react-router'
 
 import { recordAuditEvent } from '@/server/domains/audit/service'
 import { getDbFromContext, getPoolFromContext, getRouteRequestContext } from '@/server/domains/auth/context'
+import { validateCsrfForAction } from '@/server/domains/auth/csrf'
 import { processAuthFormSubmission, signInWithSession } from '@/server/domains/auth/flows'
 import { establishLoginSession, logout } from '@/server/domains/auth/primitives'
-import { signInSchema } from '@/server/domains/auth/schema'
+import { MIN_PASSWORD_LENGTH, signInSchema } from '@/server/domains/auth/schema'
 import { destroySession } from '@/server/domains/auth/session-storage'
 import { consumeToken, issueResetToken, peekToken } from '@/server/domains/auth/verification-tokens'
 import { countApprovedCommentsByUser } from '@/server/domains/comments/repos/public-query'
@@ -94,8 +95,14 @@ export async function action({ request, context }: Route.ActionArgs) {
   const redirectTo = safeRedirectPath(url.searchParams.get('redirect_to'), '/admin', url.origin)
   const action = url.searchParams.get('action')
 
+  const formData = await request.formData()
+
+  // CSRF guard for all non-GET auth form actions.
+  if (!validateCsrfForAction(session, request, formData)) {
+    return data({ error: '安全校验失败，请刷新页面后重试。' })
+  }
+
   if (action === 'lostpassword') {
-    const formData = await request.formData()
     const email = formFieldString(formData, 'email')
     // Rate-limit before any lookup to prevent abuse. Two additive
     // buckets: per-IP catches one attacker fanning out across many
@@ -154,13 +161,12 @@ export async function action({ request, context }: Route.ActionArgs) {
   }
 
   if (action === 'resetpassword' || action === 'accept-invite') {
-    const formData = await request.formData()
     const rawToken = formFieldString(formData, 'reset_token')
     const newPassword = formFieldString(formData, 'password')
     const purpose = action === 'resetpassword' ? 'password-reset' : 'author-invite'
 
-    if (!newPassword || newPassword.length < 6) {
-      return data({ error: '密码长度至少 6 位。' })
+    if (!newPassword || newPassword.length < MIN_PASSWORD_LENGTH) {
+      return data({ error: `密码长度至少 ${MIN_PASSWORD_LENGTH} 位。` })
     }
 
     const result = await consumeToken(db, rawToken, purpose)
@@ -206,6 +212,7 @@ export async function action({ request, context }: Route.ActionArgs) {
     redirectTo,
     run: (input: { email: string; password: string }) =>
       signInWithSession(db, pool, { ...input, session, request, clientAddress, redirectTo }),
+    formData,
   })
 }
 

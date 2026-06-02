@@ -39,9 +39,10 @@ export async function listPublicPostMetas(
 export async function listPublicPosts(
   db: NodePgDatabase,
   filters: ListPublicPostsFilters = {},
+  now = new Date(),
 ): Promise<PostMetaRow[]> {
   const col = filters.sortBy === 'updatedAt' ? postMetaTable.updatedAt : postMetaTable.firstPublishedAt
-  const where = buildPublicPostsWhere(filters)
+  const where = buildPublicPostsWhere(filters, now)
   let q = db.select().from(postMetaTable).where(where).orderBy(desc(col))
   if (filters.limit !== undefined) {
     q = q.limit(filters.limit) as typeof q
@@ -56,8 +57,9 @@ export async function listPublicPosts(
 export async function countPublicPosts(
   db: NodePgDatabase,
   filters: Omit<ListPublicPostsFilters, 'sortBy' | 'limit' | 'offset'> = {},
+  now = new Date(),
 ): Promise<number> {
-  const where = buildPublicPostsWhere(filters)
+  const where = buildPublicPostsWhere(filters, now)
   const rows = await db
     .select({ count: sql<number>`count(*)::int` })
     .from(postMetaTable)
@@ -90,16 +92,21 @@ export async function listPublicPostCardsPaginated(
 ): Promise<{ posts: ListingPostCard[]; total: number }> {
   const filters = buildPublicPostFilters(options)
   const offset = options?.offset ?? (pageNum - 1) * pageSize
+  const now = new Date()
   const [metas, total] = await Promise.all([
-    listPublicPosts(db, {
-      ...filters,
-      sortBy: options?.sortBy,
-      category: options?.category,
-      tag: options?.tag,
-      limit: pageSize,
-      offset,
-    }),
-    countPublicPosts(db, { ...filters, category: options?.category, tag: options?.tag }),
+    listPublicPosts(
+      db,
+      {
+        ...filters,
+        sortBy: options?.sortBy,
+        category: options?.category,
+        tag: options?.tag,
+        limit: pageSize,
+        offset,
+      },
+      now,
+    ),
+    countPublicPosts(db, { ...filters, category: options?.category, tag: options?.tag }, now),
   ])
   const posts = metas.map((meta) => toClientPostFromMeta(meta)).map(toListingPostCard)
   await hydrateImageRefs(
@@ -127,6 +134,7 @@ export async function listPublicPostsWithContent(
     category?: string
     tag?: string
     sortBy?: 'publishedAt' | 'updatedAt'
+    limit?: number
   },
 ): Promise<Post[]> {
   const filters = buildPublicPostFilters(options)
@@ -135,6 +143,7 @@ export async function listPublicPostsWithContent(
     category: options?.category,
     tag: options?.tag,
     sortBy: options?.sortBy,
+    limit: options?.limit,
   })
   return hydratePostMetasToFullPosts(db, metas)
 }
@@ -309,6 +318,22 @@ export async function selectFeaturePosts(db: NodePgDatabase, seed: string): Prom
   return result
 }
 
+// Cached seed for sidebar post randomisation. Rotated every 5 minutes so
+// the sidebar refreshes periodically without requiring a full `ORDER BY
+// random()` (which forces a sort of the entire result set).
+let sidebarSeed: string | undefined
+let sidebarSeedAt = 0
+const SIDEBAR_SEED_TTL_MS = 5 * 60 * 1000
+
+function getSidebarSeed(): string {
+  const now = Date.now()
+  if (sidebarSeed === undefined || now - sidebarSeedAt > SIDEBAR_SEED_TTL_MS) {
+    sidebarSeed = String(now)
+    sidebarSeedAt = now
+  }
+  return sidebarSeed
+}
+
 export async function selectSidebarPosts(db: NodePgDatabase, count: number): Promise<SidebarPostLink[]> {
   if (count <= 0) {
     return []
@@ -325,7 +350,7 @@ export async function selectSidebarPosts(db: NodePgDatabase, count: number): Pro
         sql`${postMetaTable.publishedAt} <= ${new Date()}`,
       ),
     )
-    .orderBy(sql`md5(${postMetaTable.id}::text)`)
+    .orderBy(sql`md5(${postMetaTable.id}::text || ${getSidebarSeed()})`)
     .limit(count)
   return metas.map((meta) => toClientPostFromMeta(meta)).map(toSidebarPostLink)
 }

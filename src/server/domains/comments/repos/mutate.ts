@@ -1,6 +1,6 @@
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
-import { eq } from 'drizzle-orm'
+import { and, eq } from 'drizzle-orm'
 
 import type { Comment, NewComment } from '@/server/infra/db/types'
 
@@ -35,8 +35,13 @@ export async function updateOwnCommentBody(
   id: bigint,
   body: NewComment['body'],
   content: string,
-): Promise<void> {
-  await db.update(comment).set({ body, content, updatedAt: new Date() }).where(eq(comment.id, id))
+  expectedUpdatedAt: Date,
+): Promise<number> {
+  const result = await db
+    .update(comment)
+    .set({ body, content, updatedAt: new Date() })
+    .where(and(eq(comment.id, id), eq(comment.updatedAt, expectedUpdatedAt)))
+  return result.rowCount ?? 0
 }
 
 // Re-pend variant of `comment.updateOwn`: when an owner edits their own
@@ -51,6 +56,11 @@ export async function updateOwnCommentBodyAndPending(
   id: bigint,
   body: NewComment['body'],
   content: string,
-): Promise<void> {
-  await db.update(comment).set({ body, content, isPending: true, updatedAt: new Date() }).where(eq(comment.id, id))
+  expectedUpdatedAt: Date,
+): Promise<number> {
+  const result = await db
+    .update(comment)
+    .set({ body, content, isPending: true, updatedAt: new Date() })
+    .where(and(eq(comment.id, id), eq(comment.updatedAt, expectedUpdatedAt)))
+  return result.rowCount ?? 0
 }

@@ -391,7 +391,11 @@ export function rgbaToDataURL(w: number, h: number, rgba: ArrayLike<number>): st
     bytes[end++] = c & 255
   }
 
-  return 'data:image/png;base64,' + btoa(String.fromCharCode(...bytes))
+  let binary = ''
+  for (let i = 0; i < bytes.length; i++) {
+    binary += String.fromCharCode(bytes[i]!)
+  }
+  return 'data:image/png;base64,' + btoa(binary)
 }
 
 /**

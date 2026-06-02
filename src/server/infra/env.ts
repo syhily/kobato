@@ -15,12 +15,23 @@ const envConfig = {
     DB_POOL_MAX: z.coerce.number().int().min(1).max(100).optional().default(20),
     DB_STATEMENT_TIMEOUT_MS: z.coerce.number().int().min(1_000).max(120_000).optional().default(30_000),
 
-    // Session cookie signing.
-    SESSION_SECRET: z.string().min(1),
+    // Session cookie signing. Minimum 32 characters to prevent trivial
+    // brute-force forgery of signed session cookies.
+    // Comma-separated list for secret rotation: the first secret is used
+    // for signing; all secrets are tried (in order) for verification.
+    SESSION_SECRET: z
+      .string()
+      .min(32)
+      .transform((val) => val.split(',').map((s) => s.trim())),
 
     // AES-256-GCM key for encrypting secrets stored in the DB (API keys,
     // S3 credentials). Optional: secrets remain plaintext until set.
     ENCRYPTION_KEY: z.string().min(1).optional(),
+
+    // When set to '1', suppresses the fatal exit when encrypted secrets exist
+    // but ENCRYPTION_KEY is missing. Use only when intentionally running without
+    // encryption (e.g. local development with a fresh database).
+    IGNORE_ENCRYPTION_WARNING: z.string().optional(),
 
     // Expected TimescaleDB extension version stamped in
     // `_timescaledb_catalog.metadata.timescaledb_version`. The
@@ -32,7 +43,14 @@ const envConfig = {
     // landed. Pin to whatever extension version the target Postgres
     // image ships. Optional: defaults to the version this codebase
     // is currently developed against.
-    TIMESCALEDB_VERSION: z.string().min(1).optional().default('2.27.0'),
+    TIMESCALEDB_VERSION: z
+      .string()
+      .regex(
+        /^\d+\.\d+(\.\d+)?(-[a-zA-Z0-9.]+)?$/,
+        'TIMESCALEDB_VERSION must be a valid semantic version (e.g. 2.27.0)',
+      )
+      .optional()
+      .default('2.27.0'),
 
     // Filesystem path to the MaxMind GeoLite2-City mmdb. Optional.
     MAXMIND_DB_PATH: z.string().min(1).optional(),
@@ -88,6 +106,7 @@ export const {
   ENCRYPTION_KEY,
   FONT_PATH,
   HOST,
+  IGNORE_ENCRYPTION_WARNING,
   LOG_LEVEL,
   MAXMIND_DB_PATH,
   NODE_ENV,

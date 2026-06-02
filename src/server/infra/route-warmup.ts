@@ -343,16 +343,24 @@ function findMatchingBrace(text: string, start: number): number {
 function parseServerManifest(serverBuildPath: string): RouteManifest | null {
   try {
     const src = readFileSync(serverBuildPath, 'utf-8')
-    // Extract the server_manifest_default object
+    // TODO(P2-6): This regex-based extraction is fragile — any change in
+    // the bundler's output format (minification, variable renaming, different
+    // var declaration syntax) will silently break warmup manifest generation.
+    // The proper fix is to read the structured manifest from Vite's build
+    // output directly instead of parsing minified JS.
     const startMarker = 'var server_manifest_default = '
     const startIdx = src.indexOf(startMarker)
     if (startIdx === -1) {
+      // oxlint-disable-next-line no-console
+      console.error('[route-warmup] server_manifest_default marker not found in built output', serverBuildPath)
       return null
     }
 
     const objectStart = startIdx + startMarker.length
     const endIdx = findMatchingBrace(src, objectStart)
     if (endIdx === -1) {
+      // oxlint-disable-next-line no-console
+      console.error('[route-warmup] could not find matching brace for server_manifest_default', serverBuildPath)
       return null
     }
 
@@ -362,7 +370,13 @@ function parseServerManifest(serverBuildPath: string): RouteManifest | null {
     // Also handle unquoted keys by wrapping them
     const quoted = jsonSafe.replace(/([{,]\s*)([a-zA-Z_$][a-zA-Z0-9_$]*)\s*:/g, '$1"$2":')
     return JSON.parse(quoted) as RouteManifest
-  } catch {
+  } catch (err) {
+    // oxlint-disable-next-line no-console
+    console.error(
+      '[route-warmup] failed to parse server manifest',
+      serverBuildPath,
+      err instanceof Error ? err.message : String(err),
+    )
     return null
   }
 }

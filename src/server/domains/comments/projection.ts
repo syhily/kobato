@@ -61,7 +61,6 @@ function projectPublicCommentBase(row: CommentAndUser): CommentItemWire {
     deleteAt: asNullableIso(row.deleteAt),
     deleteRequestedAt: row.deleteRequestedAt === undefined ? undefined : asNullableIso(row.deleteRequestedAt),
     body: row.body,
-    content: row.content,
     type: row.type,
     ownerId: asNullableString(row.ownerId),
     userId: asString(row.userId),
@@ -87,6 +86,7 @@ function projectAdminCommentBase(
 ): Omit<AdminCommentWire, 'pageTitle' | 'pagePublicId' | 'pageCover' | 'pagePermalink'> {
   return {
     ...projectPublicCommentBase(row),
+    content: row.content,
     ua: row.ua,
     ip: row.ip,
     email: row.email,

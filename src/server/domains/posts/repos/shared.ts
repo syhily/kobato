@@ -134,7 +134,7 @@ export function toClientPostFromMeta(meta: PostMetaRow): ClientPost {
   }
 }
 
-export function buildPublicPostsWhere(filters: ListPublicPostsFilters): SQL {
+export function buildPublicPostsWhere(filters: ListPublicPostsFilters, now = new Date()): SQL {
   const conditions: SQL[] = [
     isNull(postMetaTable.deletedAt),
     eq(postMetaTable.published, true),
@@ -145,7 +145,7 @@ export function buildPublicPostsWhere(filters: ListPublicPostsFilters): SQL {
     conditions.push(eq(postMetaTable.visible, true))
   }
   if (!filters.includeScheduled) {
-    conditions.push(sql`${postMetaTable.publishedAt} <= ${new Date()}`)
+    conditions.push(sql`${postMetaTable.publishedAt} <= ${now}`)
   }
   if (filters.category) {
     conditions.push(eq(postMetaTable.category, filters.category))

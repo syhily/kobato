@@ -6,9 +6,11 @@ import type { UserUpdate } from '@/server/infra/db/operations/user'
 
 import { recordAuditEventFromContext } from '@/server/domains/audit/service'
 import { findSessionMeta, revokeSessionById } from '@/server/domains/auth/repo'
+import { MIN_PASSWORD_LENGTH } from '@/server/domains/auth/schema'
 import { revokeAllSessionsOfUser } from '@/server/domains/auth/session-storage'
 import { authedProc } from '@/server/http/orpc-base'
 import { findUserById, PASSWORD_HASH_ROUNDS, updateUserById } from '@/server/infra/db/operations/user'
+import { tryRateLimit } from '@/server/infra/rate-limit'
 import { idFromString } from '@/shared/utils/id'
 
 // ─── Input schemas ──────────────────────────────────────
@@ -28,7 +30,7 @@ const updateProfileInput = z.object({
 
 const updatePasswordInput = z.object({
   oldPassword: z.string().min(1),
-  newPassword: z.string().min(6).max(128),
+  newPassword: z.string().min(MIN_PASSWORD_LENGTH).max(128),
 })
 
 const revokeSessionInput = z.object({
@@ -108,7 +110,13 @@ const updatePassword = authedProc
   .input(updatePasswordInput)
   .output(z.object({ success: z.boolean() }))
   .handler(async ({ input, context }) => {
-    const { viewer, session, db } = context
+    const { viewer, session, db, clientAddress } = context
+
+    const limit = await tryRateLimit(clientAddress)
+    if (limit.exceeded) {
+      throw new ORPCError('TOO_MANY_REQUESTS', { message: '操作过于频繁，请稍后再试。' })
+    }
+
     const dbUser = await findUserById(db, idFromString(viewer.userId))
     if (!dbUser) {
       throw new ORPCError('NOT_FOUND', { message: '用户不存在。' })

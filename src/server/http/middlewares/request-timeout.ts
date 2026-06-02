@@ -5,10 +5,11 @@ import { HTTPException } from 'hono/http-exception'
 import type { Env } from '@/server/http/context'
 
 // Per-request deadline. Creates an `AbortController` whose signal is
-// forwarded to `c.req.raw.signal` via `AbortSignal.any()`. When the
-// timeout fires, any in-flight `fetch()` / DB call that respects
-// `AbortSignal` is cancelled immediately, and this middleware converts
-// the abort into a clean 503.
+// merged with the client disconnect signal via `AbortSignal.any()`. The
+// combined signal is injected into the request by wrapping it in a new
+// `Request` — no Proxy needed. When the timeout fires, any in-flight
+// `fetch()` / DB call that respects `AbortSignal` is cancelled
+// immediately, and this middleware converts the abort into a clean 503.
 const DEFAULT_TIMEOUT_MS = 30_000
 
 export function requestTimeout(timeoutMs = DEFAULT_TIMEOUT_MS): MiddlewareHandler<Env> {
@@ -20,30 +21,22 @@ export function requestTimeout(timeoutMs = DEFAULT_TIMEOUT_MS): MiddlewareHandle
     // Merge our timeout signal with the client disconnect signal so
     // handlers and downstream calls (pg queries, fetch, etc.) that
     // read `c.req.raw.signal` are cancelled when either fires.
-    const combined = AbortSignal.any([c.req.raw.signal, controller.signal])
+    const clientSignal = c.req.raw.signal
+    const combined = AbortSignal.any([clientSignal, controller.signal])
 
-    // Override the request's signal so `c.req.raw.signal` carries the
-    // combined abort. We replace the getter rather than mutating the
-    // frozen `Request` — Hono reads `c.req.raw.signal` each time.
-    const originalRaw = c.req.raw
-    Object.defineProperty(c.req, 'raw', {
-      get() {
-        return new Proxy(originalRaw, {
-          get(target, prop) {
-            if (prop === 'signal') {
-              return combined
-            }
-            return Reflect.get(target, prop)
-          },
-        })
-      },
-      configurable: true,
-    })
+    // Replace the raw request with a wrapper that carries the combined
+    // signal. This is cleaner than the previous Proxy-based approach
+    // because it uses standard Request semantics rather than relying on
+    // Hono's internal property-access patterns.
+    c.req.raw = new Request(c.req.raw, { signal: combined })
 
     try {
       await next()
     } catch (err) {
-      if (controller.signal.aborted && !c.req.raw.signal.aborted) {
+      // Distinguish a timeout (our controller fired) from a client
+      // disconnect (the original signal fired) so we only emit 503
+      // for the timeout case.
+      if (controller.signal.aborted && !clientSignal.aborted) {
         throw new HTTPException(503, { message: '请求超时，请稍后再试。' })
       }
       throw err

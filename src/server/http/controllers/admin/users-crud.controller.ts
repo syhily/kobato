@@ -77,7 +77,26 @@ const update = adminProc
   )
   .output(successOutput)
   .handler(async ({ input, context }) => {
-    const { id, ...patch } = input
+    const { id, name, email, link, badgeName, badgeColor, badgeTextColor } = input
+    const patch: Parameters<typeof updateUserById>[2] = {}
+    if (name !== undefined) {
+      patch.name = name
+    }
+    if (email !== undefined) {
+      patch.email = email
+    }
+    if (link !== undefined) {
+      patch.link = link
+    }
+    if (badgeName !== undefined) {
+      patch.badgeName = badgeName
+    }
+    if (badgeColor !== undefined) {
+      patch.badgeColor = badgeColor
+    }
+    if (badgeTextColor !== undefined) {
+      patch.badgeTextColor = badgeTextColor
+    }
     const updated = await updateUserById(context.db, idFromString(id), patch)
     if (updated === null) {
       throw new ORPCError('NOT_FOUND', { message: '用户不存在' })

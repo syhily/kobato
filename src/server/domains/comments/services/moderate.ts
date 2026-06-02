@@ -15,6 +15,7 @@ import {
 } from '@/server/domains/comments/repos/mutate'
 import { findCommentWithUserById } from '@/server/domains/comments/repos/public-query'
 import { asCommentTarget } from '@/server/domains/comments/services/shared'
+import { DomainError } from '@/server/infra/http/errors'
 import { getLogger } from '@/server/infra/logger'
 import { idFromString } from '@/shared/utils/id'
 
@@ -67,10 +68,21 @@ export async function updateOwnComment(db: NodePgDatabase, rid: string, newBody:
   }
   const { body, content } = await canonicalizeCommentBody(newBody)
   const insideGrace = Date.now() - existing.createAt.getTime() < OWN_EDIT_GRACE_MS
+
+  // Optimistic-lock guard: if another request edited the same comment
+  // between our read and our write, the update will affect 0 rows and
+  // we reject the request so the client can retry with fresh state.
+  const graceUpdatedAt = existing.updatedAt ?? existing.createAt
   if (insideGrace) {
-    await updateOwnCommentBody(db, id, body, content)
+    const affected = await updateOwnCommentBody(db, id, body, content, graceUpdatedAt)
+    if (affected === 0) {
+      throw new DomainError('CONFLICT', '评论已被修改，请刷新后重试。')
+    }
   } else {
-    await updateOwnCommentBodyAndPending(db, id, body, content)
+    const affected = await updateOwnCommentBodyAndPending(db, id, body, content, graceUpdatedAt)
+    if (affected === 0) {
+      throw new DomainError('CONFLICT', '评论已被修改，请刷新后重试。')
+    }
   }
 
   const r = await findCommentWithUserById(db, id)

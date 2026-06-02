@@ -174,6 +174,9 @@ export async function deleteBackup(key: string): Promise<void> {
 
 export async function extractBackupSql(buffer: Buffer, fileName: string): Promise<string> {
   if (fileName.endsWith('.sql')) {
+    if (buffer.length > MAX_SQL_SIZE) {
+      throw new ActionFailure(400, '备份文件过大，请确认文件未损坏。')
+    }
     return buffer.toString('utf-8')
   }
 
@@ -187,7 +190,15 @@ export async function extractBackupSql(buffer: Buffer, fileName: string): Promis
     inputStream.pipe(gunzip)
 
     const chunks: Buffer[] = []
-    gunzip.on('data', (chunk: Buffer) => chunks.push(chunk))
+    let totalSize = 0
+    gunzip.on('data', (chunk: Buffer) => {
+      totalSize += chunk.length
+      if (totalSize > MAX_SQL_SIZE) {
+        gunzip.destroy(new Error('exceeded max decompressed size'))
+        return
+      }
+      chunks.push(chunk)
+    })
 
     await new Promise<void>((resolve, reject) => {
       gunzip.on('end', () => resolve())
@@ -201,12 +212,48 @@ export async function extractBackupSql(buffer: Buffer, fileName: string): Promis
   throw new ActionFailure(400, '不支持的备份文件格式，仅支持 .sql 或 .gz')
 }
 
+// Dangerous SQL patterns that must never be allowed in a restore file.
+// These are evaluated case-insensitively against the decompressed dump.
+// SQL comments (/* … */) can break naive word-boundary regexes, so we
+// use patterns that tolerate whitespace/comments between tokens.
+const BLOCKED_PATTERNS = [
+  /\bDROP\s+(?:\/\*[^]*?\*\/\s*)*DATABASE\b/i,
+  /\bDROP\s+(?:\/\*[^]*?\*\/\s*)*SCHEMA\b/i,
+  /\bDROP\s+(?:\/\*[^]*?\*\/\s*)*TABLE\b/i,
+  /\bTRUNCATE\s+(?:\/\*[^]*?\*\/\s*)*TABLE\b/i,
+  /\bALTER\s+(?:\/\*[^]*?\*\/\s*)*ROLE\b/i,
+  /\bDROP\s+(?:\/\*[^]*?\*\/\s*)*ROLE\b/i,
+  /\bALTER\s+(?:\/\*[^]*?\*\/\s*)*SYSTEM\b/i,
+  /\bCOPY\b[^;]*?\bTO\b[^;]*?\bPROGRAM\b/i,
+  /\bCREATE\s+(?:\/\*[^]*?\*\/\s*)*EXTENSION\b/i,
+  /\\!/i, // psql shell escape (e.g. \! rm -rf /)
+  /\\i\b/i, // psql \include — can pull arbitrary files
+  /\\include\b/i,
+  /\\copy\b/i,
+  /\\lo_import\b/i,
+  /\\lo_export\b/i,
+  /\\c\b/i, // \c connect to different database
+  /\\o\b/i, // \o redirect output to arbitrary file
+]
+
+// Decompressed SQL size cap: 500 MB. Anything larger is suspicious
+// and would likely OOM the Node process before reaching psql.
+const MAX_SQL_SIZE = 500 * 1024 * 1024
+
 export function validateBackupSql(sql: string): void {
+  if (sql.length > MAX_SQL_SIZE) {
+    throw new ActionFailure(400, '备份文件过大，请确认文件未损坏。')
+  }
   const hasPgDumpHeader = /PostgreSQL database dump/i.test(sql)
   const hasCreateTable = /CREATE\s+TABLE/i.test(sql)
   const hasInsert = /INSERT\s+INTO/i.test(sql)
   if (!hasPgDumpHeader && !hasCreateTable && !hasInsert) {
     throw new ActionFailure(400, '备份文件内容不符合数据库备份格式')
+  }
+  for (const pattern of BLOCKED_PATTERNS) {
+    if (pattern.test(sql)) {
+      throw new ActionFailure(400, '备份文件包含危险 SQL 命令，还原已中止。')
+    }
   }
 }
 
@@ -272,13 +319,15 @@ export async function restoreFromSql(db: NodePgDatabase, sql: string): Promise<v
   // could exit with code 0 and log "completed successfully" while
   // the data is only partially loaded and the TimescaleDB
   // post_restore hook was never called.
-  const psql = spawn('psql', ['--single-transaction', '-v', 'ON_ERROR_STOP=1', ...connArgs, '--echo-all'], {
+  const psql = spawn('psql', ['--single-transaction', '-v', 'ON_ERROR_STOP=1', ...connArgs], {
     env,
     stdio: ['pipe', 'inherit', 'inherit'],
   })
 
-  psql.stdin.write(`SET CONSTRAINTS ALL DEFERRED;\n${sql}\n`)
-  psql.stdin.end()
+  // Stream the SQL to psql stdin instead of buffering the entire dump
+  // in memory.  This also prevents --echo-all from leaking the dump
+  // (which may contain secrets) to stdout/stderr logs.
+  Readable.from([`SET CONSTRAINTS ALL DEFERRED;\n`, sql, '\n']).pipe(psql.stdin)
 
   // When ON_ERROR_STOP aborts psql early, the stdin pipe is closed
   // before all data has been flushed.  Without a listener the

@@ -6,8 +6,8 @@ import type { AdminPendingDashboardDto, AdminPendingItemDto } from '@/shared/typ
 
 import { withCommentBadgeTextColor } from '@/server/domains/comments/badge'
 import {
+  countAdminComments,
   countAdminPendingDashboard,
-  countAllComments,
   listAdminComments,
   listAdminPendingDashboard,
   searchCommentAuthors,
@@ -81,18 +81,34 @@ export async function loadAdminPendingDashboard(
   }
 }
 
+export interface LoadAllCommentsOptions {
+  offset: number
+  limit: number
+  filterPublicId?: string
+  filterUserId?: bigint
+  status?: 'all' | 'pending' | 'approved'
+  filterQ?: string
+  filterMatch?: 'contains' | 'does-not-contain'
+  filterCreatedAfter?: Date
+  filterCreatedBefore?: Date
+}
+
 export async function loadAllComments(
   db: NodePgDatabase,
-  offset: number,
-  limit: number,
-  filterPublicId?: string,
-  filterUserId?: bigint,
-  status?: 'all' | 'pending' | 'approved',
-  filterQ?: string,
-  filterMatch?: 'contains' | 'does-not-contain',
-  filterCreatedAfter?: Date,
-  filterCreatedBefore?: Date,
+  options: LoadAllCommentsOptions,
 ): Promise<AdminCommentsResult> {
+  const {
+    offset,
+    limit,
+    filterPublicId,
+    filterUserId,
+    status,
+    filterQ,
+    filterMatch,
+    filterCreatedAfter,
+    filterCreatedBefore,
+  } = options
+
   let target: { type: 'post' | 'page'; ownerId: bigint } | undefined
   if (filterPublicId) {
     const metricRow = await findMetricByPublicId(db, filterPublicId)
@@ -108,21 +124,20 @@ export async function loadAllComments(
       }
     }
   }
-  const baseFilters = { target, userId: filterUserId } satisfies AdminListFilters
+  const baseFilters = { target, userId: filterUserId } satisfies Omit<AdminListFilters, 'status'>
   const extraFilters = {
     q: filterQ,
     match: filterMatch,
     createdAfter: filterCreatedAfter,
     createdBefore: filterCreatedBefore,
-  } satisfies Partial<AdminListFilters>
+  } satisfies Omit<AdminListFilters, 'target' | 'userId' | 'status'>
   const filters: AdminListFilters = { ...baseFilters, status, ...extraFilters }
-  const [comments, allCount, pendingCount, approvedCount] = await Promise.all([
+  const [comments, statusCounts] = await Promise.all([
     listAdminComments(db, offset, limit, filters),
-    countAllComments(db, { ...baseFilters, status: 'all', ...extraFilters }),
-    countAllComments(db, { ...baseFilters, status: 'pending', ...extraFilters }),
-    countAllComments(db, { ...baseFilters, status: 'approved', ...extraFilters }),
+    countAdminComments(db, { ...baseFilters, ...extraFilters }),
   ])
-  const total = status === 'pending' ? pendingCount : status === 'approved' ? approvedCount : allCount
+  const total =
+    status === 'pending' ? statusCounts.pending : status === 'approved' ? statusCounts.approved : statusCounts.all
 
   return {
     comments: comments.map((c) => ({
@@ -134,6 +149,6 @@ export async function loadAllComments(
     })),
     total,
     hasMore: offset + limit < total,
-    statusCounts: { all: allCount, pending: pendingCount, approved: approvedCount },
+    statusCounts,
   }
 }

@@ -2,10 +2,12 @@ import { createHash } from 'node:crypto'
 
 import type { RateLimitBucket, RateLimitSettings } from '@/shared/config/types'
 
-import { DomainError } from '@/server/infra/http/errors'
+import { getLogger } from '@/server/infra/logger'
 import { redisInstance } from '@/server/infra/redis/storage'
 import { rateLimitDefaults } from '@/shared/config/defaults'
 import { getBlogSettingsBundleSync } from '@/shared/config/getters'
+
+const log = getLogger('rate-limit')
 
 // All keys live under the reserved `rate-limit:` namespace so the
 // admin cache panel can never SCAN/UNLINK them by accident — see the
@@ -72,12 +74,27 @@ export async function tryKeyedRateLimit(key: string, bucket: RateLimitBucket): P
   const pipeline = redis.pipeline()
   pipeline.incr(key)
   pipeline.expire(key, bucket.windowSeconds, 'NX')
-  const results = await pipeline.exec()
+  let results: [Error | null, unknown][] | null
+  try {
+    results = await pipeline.exec()
+  } catch (err) {
+    // Redis is unreachable (circuit open, network partition, OOM).
+    // Fail open — don't block legitimate traffic because the counter
+    // is unavailable.  The circuit breaker in redis/storage.ts already
+    // logs and tracks the failure.
+    log.warn('tryKeyedRateLimit: Redis pipeline failed, failing open', {
+      key,
+      err: err instanceof Error ? err.message : String(err),
+    })
+    return { count: 0, exceeded: false }
+  }
   const incrResult = results?.[0]
   if (!incrResult || incrResult[0]) {
-    throw new DomainError('INTERNAL', 'tryKeyedRateLimit: failed to increment counter', [
-      { message: String(incrResult?.[0] ?? 'unknown redis error'), path: ['redis'] },
-    ])
+    log.warn('tryKeyedRateLimit: failed to increment counter, failing open', {
+      key,
+      error: String(incrResult?.[0] ?? 'unknown redis error'),
+    })
+    return { count: 0, exceeded: false }
   }
   const count = Number(incrResult[1])
   return { count, exceeded: count > bucket.maxAttempts }

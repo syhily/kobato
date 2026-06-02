@@ -99,6 +99,30 @@ export async function countAllComments(db: NodePgDatabase, filters: AdminListFil
   return rows[0].counts
 }
 
+// Single-query variant that returns all three status counts at once,
+// avoiding the N-round-trip penalty of calling countAllComments three
+// times. The base conditions (target, userId, text filter, date bounds)
+// are applied in the WHERE; each SELECT arm further narrows by status.
+export async function countAdminComments(
+  db: NodePgDatabase,
+  baseFilters: Omit<AdminListFilters, 'status'>,
+): Promise<{ all: number; pending: number; approved: number }> {
+  const conditions = buildAdminListConditions({ ...baseFilters, status: 'all' })
+  const rows = await db
+    .select({
+      all: sql<number>`COUNT(*) FILTER (WHERE ${comment.deletedAt} IS NULL)`,
+      pending: sql<number>`COUNT(*) FILTER (WHERE ${comment.deletedAt} IS NULL AND ${comment.isPending} = TRUE)`,
+      approved: sql<number>`COUNT(*) FILTER (WHERE ${comment.deletedAt} IS NULL AND ${comment.isPending} = FALSE)`,
+    })
+    .from(comment)
+    .where(and(...conditions))
+  return {
+    all: Number(rows[0]?.all ?? 0),
+    pending: Number(rows[0]?.pending ?? 0),
+    approved: Number(rows[0]?.approved ?? 0),
+  }
+}
+
 export async function listAdminComments(db: NodePgDatabase, offset: number, limit: number, filters: AdminListFilters) {
   const conditions = buildAdminListConditions(filters)
   const entity = targetSlugTitleSubquery(db)

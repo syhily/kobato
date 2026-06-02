@@ -34,10 +34,15 @@ export async function increaseLikes(
 }
 
 export async function decreaseLikes(db: NodePgDatabase, target: EntityTarget, token: string) {
-  const consumed = await consumeActiveLikeToken(db, target, token)
-  if (consumed) {
-    await decrementMetricVotes(db, target)
-  }
+  // Transactional: consume + decrement run as one unit so a crash
+  // between them cannot leave the count inflated while the token is
+  // already gone.
+  await db.transaction(async (tx) => {
+    const consumed = await consumeActiveLikeToken(tx, target, token)
+    if (consumed) {
+      await decrementMetricVotes(tx, target)
+    }
+  })
 }
 
 export async function queryLikes(db: NodePgDatabase, target: EntityTarget): Promise<number> {

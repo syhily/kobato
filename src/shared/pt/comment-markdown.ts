@@ -79,7 +79,11 @@ function wrapLinkIfAny(text: string, marks: ReadonlyArray<string>, lookup: MarkD
   for (const name of marks) {
     const link = lookup.link.get(name)
     if (link !== undefined) {
-      return `[${text}](${link.href})`
+      // URLs containing parentheses break markdown link syntax; wrap
+      // the URL in angle brackets so the parser treats the whole URL
+      // as the destination.
+      const href = link.href.includes(')') ? `<${link.href}>` : link.href
+      return `[${text}](${href})`
     }
   }
   return text

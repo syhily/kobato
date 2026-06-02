@@ -23,7 +23,9 @@ export function corsMiddleware(): MiddlewareHandler<Env> {
     origin: (origin) => {
       const settings = getBlogSettingsBundleSync()?.security
       if (!settings || settings.cors.origins.length === 0) {
-        return origin ?? ''
+        // CORS is enabled but no origins are configured — refuse CORS entirely.
+        // Never reflect the request origin when credentials: true is set.
+        return ''
       }
       return settings.cors.origins.filter((o) => o.length > 0).includes(origin ?? '') ? (origin ?? '') : ''
     },

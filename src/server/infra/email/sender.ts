@@ -116,7 +116,7 @@ export async function sendEmail(
       ok: false,
       reason: 'upstream',
       status: response.status,
-      message: `${response.status} ${response.statusText}${body ? ` — ${body}` : ''}`,
+      message: `${response.status} ${response.statusText}`,
     }
   }
   return { ok: true }
@@ -225,7 +225,7 @@ export async function sendTestMail(to: string): Promise<SendResult> {
       ok: false,
       reason: 'upstream',
       status: response.status,
-      message: `${response.status} ${response.statusText}${body ? ` — ${body}` : ''}`,
+      message: `${response.status} ${response.statusText}`,
     }
   }
   return { ok: true }

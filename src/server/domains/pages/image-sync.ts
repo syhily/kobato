@@ -3,7 +3,7 @@ import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 import type { Block, ImageBlock, PortableTextBody } from '@/shared/pt/schema'
 
 import { getPublicBaseUrl } from '@/server/domains/images/storage'
-import { findImageById, updateImageNote } from '@/server/infra/db/operations/image'
+import { findImagesByIds, updateImageNote } from '@/server/infra/db/operations/image'
 import { idFromString } from '@/shared/utils/id'
 
 // Two-step sync for `image` blocks at save time.
@@ -33,18 +33,31 @@ export async function syncLibraryImageBlocks(db: NodePgDatabase, body: PortableT
     return
   }
 
+  // Batch-resolve imageIds to bigint ids so we can fetch all rows in one query.
+  const idTargets: { id: bigint; target: ImageBlock }[] = []
   for (const target of targets) {
     if (target.imageId === undefined || target.imageId === '') {
       continue
     }
-    let id: bigint
     try {
-      id = idFromString(target.imageId)
+      idTargets.push({ id: idFromString(target.imageId), target })
     } catch {
-      continue
+      // ignore malformed imageId
     }
-    const row = await findImageById(db, id).catch(() => null)
-    if (row === null) {
+  }
+  if (idTargets.length === 0) {
+    return
+  }
+
+  const rows = await findImagesByIds(
+    db,
+    idTargets.map((t) => t.id),
+  )
+  const byId = new Map(rows.map((r) => [r.id, r]))
+
+  for (const { id, target } of idTargets) {
+    const row = byId.get(id)
+    if (row === undefined) {
       continue
     }
     target.storagePath = row.storagePath

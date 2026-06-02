@@ -127,7 +127,7 @@ export async function insertAdmin(
   email: string,
   password: string,
   options: InsertAdminOptions = {},
-): Promise<User[]> {
+): Promise<SafeUser[]> {
   const hashedPassword = await bcrypt.hash(password, PASSWORD_HASH_ROUNDS)
   const admin: NewUser = {
     name,
@@ -143,7 +143,7 @@ export async function insertAdmin(
     badgeColor: '#008c95',
     receiveEmail: true,
   }
-  return db.insert(user).values(admin).returning()
+  return db.insert(user).values(admin).returning(safeUserColumns)
 }
 
 export async function insertAuthor(db: NodePgDatabase, name: string, email: string): Promise<User[]> {
@@ -210,7 +210,15 @@ export interface UserUpdate {
   receiveEmail?: boolean
 }
 
+const BCRYPT_HASH_RE = /^\$2[aby]?\$\d+\$/
+
 export async function updateUserById(db: NodePgDatabase, id: bigint, patch: UserUpdate): Promise<User | null> {
+  // Defensive: reject plaintext passwords that were not pre-hashed.
+  // Callers that intend to change a password must hash it with bcrypt
+  // before passing it here.
+  if (patch.password !== undefined && patch.password !== '' && !BCRYPT_HASH_RE.test(patch.password)) {
+    throw new Error('updateUserById: password must be a bcrypt hash, not plaintext')
+  }
   const updated = await db.update(user).set(patch).where(eq(user.id, id)).returning()
   return updated[0] ?? null
 }

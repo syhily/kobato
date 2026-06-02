@@ -1,5 +1,7 @@
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
+import { sql } from 'drizzle-orm'
+
 import type { BlogSession } from '@/server/domains/auth/session-storage'
 import type { MetricTarget } from '@/server/domains/comments/services/shared'
 import type { CommentAndUser, CommentReq } from '@/server/domains/comments/types'
@@ -101,43 +103,51 @@ async function persistComment(
   ua: string | null,
   ip: string,
 ): Promise<CommentAndUser> {
-  const approvedCount = await countApprovedCommentsByUser(db, sub.user.id)
-  const isPending = approvedCount === 0
+  // Transactional with advisory lock: two concurrent comment creations
+  // from the same user cannot both read count=0 and bypass moderation.
+  // The lock key is a 64-bit hash of the string 'comment_approval:<userId>'.
+  const lockKey = `comment_approval:${sub.user.id}`
+  return db.transaction(async (tx) => {
+    await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext(${lockKey}))`)
 
-  const newComment: NewComment = {
-    content: sub.markdownSnapshot,
-    body: sub.canonicalBody,
-    type: sub.target.type,
-    ownerId: sub.target.ownerId,
-    userId: sub.user.id,
-    isVerified: sub.user.emailVerified,
-    ua,
-    ip,
-    rid: commentReq.rid || 0,
-    isCollapsed: false,
-    isPending,
-    isPinned: false,
-    voteUp: 0,
-    voteDown: 0,
-    rootId: sub.rootId,
-  }
-  const cr = await insertComment(db, newComment)
-  if (cr === null) {
-    throw new DomainError('INTERNAL', '系统错误，评论创建失败。')
-  }
+    const approvedCount = await countApprovedCommentsByUser(tx, sub.user.id)
+    const isPending = approvedCount === 0
 
-  const { createdAt, deletedAt, ...commentRest } = cr
-  return withCommentBadgeTextColor({
-    ...commentRest,
-    createAt: createdAt,
-    deleteAt: deletedAt,
-    name: sub.user.name,
-    email: sub.user.email,
-    emailVerified: sub.user.emailVerified,
-    link: sub.user.link,
-    badgeName: sub.user.badgeName,
-    badgeColor: sub.user.badgeColor,
-    badgeTextColor: sub.user.badgeTextColor,
+    const newComment: NewComment = {
+      content: sub.markdownSnapshot,
+      body: sub.canonicalBody,
+      type: sub.target.type,
+      ownerId: sub.target.ownerId,
+      userId: sub.user.id,
+      isVerified: sub.user.emailVerified,
+      ua,
+      ip,
+      rid: commentReq.rid || 0,
+      isCollapsed: false,
+      isPending,
+      isPinned: false,
+      voteUp: 0,
+      voteDown: 0,
+      rootId: sub.rootId,
+    }
+    const cr = await insertComment(tx, newComment)
+    if (cr === null) {
+      throw new DomainError('INTERNAL', '系统错误，评论创建失败。')
+    }
+
+    const { createdAt, deletedAt, ...commentRest } = cr
+    return withCommentBadgeTextColor({
+      ...commentRest,
+      createAt: createdAt,
+      deleteAt: deletedAt,
+      name: sub.user.name,
+      email: sub.user.email,
+      emailVerified: sub.user.emailVerified,
+      link: sub.user.link,
+      badgeName: sub.user.badgeName,
+      badgeColor: sub.user.badgeColor,
+      badgeTextColor: sub.user.badgeTextColor,
+    })
   })
 }
 

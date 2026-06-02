@@ -1,135 +1,16 @@
 import { type ClassValue, clsx } from 'clsx'
 import { extendTailwindMerge } from 'tailwind-merge'
 
-// Project-wide cn helper. Composes clsx for falsy short-circuiting
-// and array/object flattening with tailwind-merge for last-wins
-// deduplication of conflicting Tailwind utilities.
+// Project-wide cn helper. Composes `clsx` with a project-customised
+// `tailwind-merge` that registers every `@theme` token so custom
+// utilities (e.g. `text-toc-toggle` vs `text-ink-3`) are classified
+// into the correct group instead of being collapsed as "same prefix".
 //
-// Why we extend tailwind-merge instead of using the default twMerge:
-//
-// Tailwind v4 looks at the namespace prefix of each --token to decide
-// what kind of utility a token can drive. --text-* drives font-size,
-// --color-* drives every text/bg/border/ring/decoration color slot,
-// --shadow-* drives box-shadow, and so on. The CSS pipeline therefore
-// already knows that text-toc-toggle is a font-size and that
-// text-ink-3 is a color, even though they share the text-*
-// utility prefix.
-//
-// tailwind-merge does not parse our @theme inline blocks. Out of the
-// box it only knows the stock Tailwind v4 token names. Any custom
-// token name -- text-toc-toggle, text-ink-3, shadow-card,
-// shadow-tooltip, font-code, animate-shake, ... -- falls into a
-// generic "unknown utility for prefix X" bucket and arbitrates
-// against every other class with the same prefix as if they were
-// the same group. The visible symptom is the bug we are fixing
-// here: cn('text-toc-toggle text-ink-3') used to collapse
-// to 'text-ink-3' alone, silently dropping the font-size.
-//
-// The fix is to register every project token name under the
-// matching tailwind-merge theme key. Once registered, tailwind-merge
-// classifies the utility into the correct group and the legacy
-// "same-prefix collision" goes away. We register every namespace
-// the project uses today even when no current cn() call site needs
-// it, so a future regression cannot reintroduce the bug for a
-// different token namespace.
-//
-// Token lists below mirror the @theme inline blocks in
-// src/styles/tailwind.css. Adding a new --text-foo, --color-foo
-// or --shadow-foo token there must be paired with a matching entry
-// here. The unit test in tests/unit.cn.test.ts pins the contract so
-// the regression is loud at CI time.
-//
-// Token system overview (read once, then forget):
-//
-//   tailwind.css layers tokens in three tiers, with one-way dataflow
-//   from the bottom up:
-//
-//     1. Raw brand tokens — declared in `:root` and re-bound in
-//        `.dark { … }`. They are the only place a hex value lives.
-//        Examples: --brand, --ink-1, --surface-body,
-//        --line-muted, --status-info-bg, --chip-bg, --btn-light-bg,
-//        --fab-bg.
-//
-//     2. shadcn slot aliases — also in `:root`, mapped onto the raw
-//        layer by name so the shadcn primitives (Button, Input,
-//        Card, …) keep working unmodified:
-//          --background ← --surface-body
-//          --foreground ← --ink-1
-//          --card / --popover ← --canvas
-//          --muted / --secondary ← --surface-dim
-//          --accent ← --line
-//          --border ← --line
-//          --input ← --line-widget
-//          --ring ← --brand
-//          --sidebar-* ← surface tier mirrors
-//
-//     3. `@theme inline` bridge — the same names with a `--color-`
-//        (or `--shadow-`, `--text-`, …) prefix so Tailwind v4 emits
-//        utilities for them. This file mirrors that prefix-stripped
-//        list. `inline` keeps the tokens reactive to `.dark` rebinds
-//        in tier 1, which is the whole point of the three-tier split.
-//
-//   Shadow tokens (e.g. --shadow-card) cannot be re-bound directly
-//   in `.dark { }` because `@theme inline` tokens are immutable once
-//   registered. That's why every shadow has a `*-value` indirection:
-//   `.dark` rewrites --shadow-card-value, and the bridge alias
-//   --shadow-card = var(--shadow-card-value) passes the new value
-//   through transparently.
-//
-//   Practical rule for adding a new theme-aware utility:
-//     a) define raw token in `:root` AND in `.dark { }` (tailwind.css)
-//     b) bridge it in `@theme inline { --color-foo: var(--foo) }`
-//     c) add 'foo' to the matching list below
-//     d) consume as `bg-foo`/`text-foo`/… in TSX
-//
-//   Do NOT write `dark:bg-foo` on a token that lives in tier 1 — the
-//   `.dark { }` rebind already handles theme switching, so the
-//   `dark:` prefix is a no-op double declaration.
-//
-// Dark surface lightness ladder (the "L 7 to L 44" reference in
-// `tailwind.css`'s comment above `--canvas`). Every adjacent tier
-// carries 3 to 8 L of perceptible separation, and no `--line-*`
-// token shares a value with any `--surface-*` token. The ladder
-// dictates which tokens can sit on top of which:
-//
-//     secondary    (#0b1322,  L  7) — image dimmer overlays only
-//     aside-bg     (#15203a,  L 14) — recessed sidebar
-//     body         (#1d2842,  L 17) — page floor, cards rest here
-//     canvas       (#26314d,  L 21) — card, popover, primary elevated
-//     surface      (#26314d,  L 21) — sibling of canvas
-//     surface-soft (#2a3553,  L 23) — soft chip / hover-state fill
-//     surface-dim  (#303a5a,  L 26) — muted / secondary fill, input bg
-//     line-muted   (#374566,  L 30) — recessed divider
-//     line         (#475672,  L 38) — default border (cards, inputs, …)
-//     line-widget  (#5b6b88,  L 44) — strong border (input emphasis)
-//
-// The earlier release had `--line === --surface-soft` (both
-// `#2a3553`), which made every `border-line` consumer (Input,
-// Textarea, SelectTrigger, sidebar dividers, accent hover fills)
-// vanish on top of the soft surface. Lifting the line trio out of
-// the surface band fixes form-element visibility, gives admin
-// `<Card border>` a real outline, and restores `--accent` (which
-// resolves to `--line` via the shadcn alias) as a perceptible
-// hover-state.
-//
-// `--shiki-light` aside: Shiki emits a CSS variable named
-// `--shiki-light` to carry its light-theme color. The project's
-// `.dark` block re-binds that name to `var(--ink-2)` so that when
-// Shiki's inline `--shiki-light` style is missing (e.g. body-text
-// inside a `pre` with no Shiki span), the fallback still reads as
-// foreground ink instead of literal white-on-dark.
-//
-// `--ink-on-dark` aside: this static near-white (`#e8e9ea`) does
-// double duty. It is the foreground colour the Button `dark`
-// variant uses on a dark navy fill (`text-ink-on-dark`), and it is
-// also the forced-light background the QR dialog applies via
-// `bg-ink-on-dark` so the rendered QR matrix stays scannable in
-// dark mode (camera apps need a white background regardless of
-// page theme). The name reads as "ink", but the second consumer
-// uses it as a surface. Splitting into two tokens
-// (`--ink-on-dark` + `--surface-static-light`) would be cleaner
-// but each token would still resolve to the same hex; one
-// consumer doesn't justify the extra registry entry.
+// Token lists below mirror the `@theme inline` blocks in
+// `src/styles/tailwind.css`. Adding a new `--<ns>-foo` token there
+// MUST be paired with a matching entry here — enforced by
+// `tests/contract.tailwind-tokens.test.ts`. For the full design-
+// system documentation see `src/ui/AGENTS.md` §Tailwind-merge tokens.
 
 // --text-* -- font-size scale
 const TEXT_TOKENS = [

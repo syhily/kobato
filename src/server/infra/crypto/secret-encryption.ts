@@ -1,22 +1,40 @@
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
-import { createDecipheriv, createHash, createCipheriv, randomBytes } from 'node:crypto'
+import { createDecipheriv, createHash, createCipheriv, hkdfSync, randomBytes } from 'node:crypto'
 
 import { SECRET_FIELDS } from '@/server/domains/settings/secrets'
 import { SECTION_REGISTRY } from '@/server/domains/settings/sections'
 import { findSettingsByScopePrefix, upsertSetting } from '@/server/infra/db/operations/setting'
-import { ENCRYPTION_KEY, isVitest } from '@/server/infra/env'
+import { ENCRYPTION_KEY, IGNORE_ENCRYPTION_WARNING, isVitest } from '@/server/infra/env'
 import { getLogger } from '@/server/infra/logger'
 
 const log = getLogger('crypto')
 
 const ALGORITHM = 'aes-256-gcm'
 const IV_BYTES = 12
-// Each encrypted value is stored as `enc:iv:authTag:ciphertext`, all hex-encoded.
+// Each encrypted value is stored as `enc2:iv:authTag:ciphertext`, all hex-encoded.
+// The legacy `enc:` prefix indicates the old SHA-256-derived key for backward
+// compatibility — existing secrets continue to decrypt until they are re-encrypted.
 const ENCRYPTED_PREFIX = 'enc:'
+const ENCRYPTED_V2_PREFIX = 'enc2:'
 
-// Lazy-derived key: computed once on first use, then cached.
+const HKDF_SALT = Buffer.from('kobato-secret-v2-salt')
+const HKDF_INFO = 'aes-256-gcm-key'
+
+// Lazy-derived keys: computed once on first use, then cached.
+let cachedLegacyKey: Buffer | undefined
 let cachedKey: Buffer | undefined
+
+function getLegacyKey(): Buffer {
+  if (cachedLegacyKey !== undefined) {
+    return cachedLegacyKey
+  }
+  if (!ENCRYPTION_KEY) {
+    throw new Error('ENCRYPTION_KEY env var is required for secret encryption')
+  }
+  cachedLegacyKey = createHash('sha256').update(ENCRYPTION_KEY).digest()
+  return cachedLegacyKey
+}
 
 function getKey(): Buffer {
   if (cachedKey !== undefined) {
@@ -25,7 +43,10 @@ function getKey(): Buffer {
   if (!ENCRYPTION_KEY) {
     throw new Error('ENCRYPTION_KEY env var is required for secret encryption')
   }
-  cachedKey = createHash('sha256').update(ENCRYPTION_KEY).digest()
+  // HKDF-SHA256: designed exactly for deriving a cryptographic key from
+  // an input keying material (the env var). Fixes the weak raw-SHA-256
+  // derivation flagged in the security review.
+  cachedKey = Buffer.from(hkdfSync('sha256', ENCRYPTION_KEY, HKDF_SALT, HKDF_INFO, 32))
   return cachedKey
 }
 
@@ -35,12 +56,14 @@ function encrypt(plaintext: string): string {
   const cipher = createCipheriv(ALGORITHM, key, iv)
   const encrypted = Buffer.concat([cipher.update(plaintext, 'utf8'), cipher.final()])
   const authTag = cipher.getAuthTag()
-  return `${ENCRYPTED_PREFIX}${iv.toString('hex')}:${authTag.toString('hex')}:${encrypted.toString('hex')}`
+  return `${ENCRYPTED_V2_PREFIX}${iv.toString('hex')}:${authTag.toString('hex')}:${encrypted.toString('hex')}`
 }
 
 function decrypt(ciphertext: string): string {
-  const key = getKey()
-  const parts = ciphertext.slice(ENCRYPTED_PREFIX.length).split(':')
+  const isV2 = ciphertext.startsWith(ENCRYPTED_V2_PREFIX)
+  const prefix = isV2 ? ENCRYPTED_V2_PREFIX : ENCRYPTED_PREFIX
+  const key = isV2 ? getKey() : getLegacyKey()
+  const parts = ciphertext.slice(prefix.length).split(':')
   if (parts.length !== 3) {
     throw new Error('Invalid encrypted secret format')
   }
@@ -53,10 +76,11 @@ function decrypt(ciphertext: string): string {
 }
 
 function isEncrypted(value: string): boolean {
-  if (!value.startsWith(ENCRYPTED_PREFIX)) {
+  if (!value.startsWith(ENCRYPTED_PREFIX) && !value.startsWith(ENCRYPTED_V2_PREFIX)) {
     return false
   }
-  const parts = value.slice(ENCRYPTED_PREFIX.length).split(':')
+  const prefix = value.startsWith(ENCRYPTED_V2_PREFIX) ? ENCRYPTED_V2_PREFIX : ENCRYPTED_PREFIX
+  const parts = value.slice(prefix.length).split(':')
   return parts.length === 3 && parts.every((p) => p.length > 0 && /^[0-9a-f]+$/i.test(p))
 }
 
@@ -68,6 +92,10 @@ export function encryptIfNeeded(plaintext: string): string {
       log.warn('ENCRYPTION_KEY not set — secrets will be stored as plaintext in the database')
       warnedMissingKey = true
     }
+    // Defensive: even without an encryption key, we still return the
+    // plaintext so the app doesn't crash on first write.  The startup
+    // migration (`migrateSecretsEncryption`) will already have logged
+    // a fatal error if encrypted rows exist without a key.
     return plaintext
   }
   if (isEncrypted(plaintext) || plaintext === '') {
@@ -105,19 +133,31 @@ export async function migrateSecretsEncryption(db: NodePgDatabase): Promise<void
     const rows = await findSettingsByScopePrefix(db, 'blog.')
     const byScope = new Map(rows.map((r) => [r.scope, r.data as Record<string, unknown>]))
     let encryptedCount = 0
+    let plaintextCount = 0
     for (const { section, path, field } of SECRET_FIELDS) {
       const scope = SECTION_REGISTRY[section].scope
       const bucket = byScope.get(scope)?.[path] as Record<string, unknown> | undefined
       const value = bucket?.[field]
       if (typeof value === 'string' && isEncrypted(value)) {
         encryptedCount++
+      } else if (typeof value === 'string' && value !== '') {
+        plaintextCount++
       }
     }
     if (encryptedCount > 0) {
-      log.error(
+      log.fatal(
         `${encryptedCount} encrypted secret(s) found in the database but ENCRYPTION_KEY is not set. ` +
           'The app will crash at runtime when these secrets are read. ' +
-          'Restore the key or clear the secrets from the database.',
+          'Set ENCRYPTION_KEY or set IGNORE_ENCRYPTION_WARNING=1 to acknowledge the risk.',
+      )
+      if (IGNORE_ENCRYPTION_WARNING !== '1') {
+        process.exit(1)
+      }
+    }
+    if (plaintextCount > 0) {
+      log.error(
+        `${plaintextCount} plaintext secret(s) found in the database and ENCRYPTION_KEY is not set. ` +
+          'Secrets will remain readable by anyone with database access.',
       )
     }
     return

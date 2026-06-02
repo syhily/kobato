@@ -134,7 +134,13 @@ export const storage = {
     })
   },
 
-  async getKeys(prefix?: string): Promise<string[]> {
+  /**
+   * Unbounded SCAN over all Redis keys matching `prefix`. Prefer the
+   * `scanKeys` async generator for large keyspaces to avoid blocking
+   * the event loop. A `maxCount` guard aborts early and logs a warning
+   * so runaway scans don't OOM the process.
+   */
+  async getKeys(prefix?: string, maxCount = 10_000): Promise<string[]> {
     const pattern = prefix ? `${prefix}*` : '*'
     const out: string[] = []
     let cursor = '0'
@@ -142,6 +148,14 @@ export const storage = {
       const [nextCursor, batch] = (await redis.scan(cursor, 'MATCH', pattern, 'COUNT', 500)) as [string, string[]]
       cursor = nextCursor
       out.push(...batch)
+      if (out.length > maxCount) {
+        getLogger('redis.storage').warn('getKeys exceeded maxCount; scan aborted', {
+          pattern,
+          maxCount,
+          returned: out.length,
+        })
+        break
+      }
     } while (cursor !== '0')
     return out
   },

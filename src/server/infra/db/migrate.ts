@@ -41,6 +41,13 @@ async function ensureTimescaleDbExtension(migrationDb: NodePgDatabase): Promise<
     return
   }
 
+  // Defensive: TIMESCALEDB_VERSION is validated by zod regex in env.ts,
+  // but we double-check here before interpolating into raw SQL.
+  const VERSION_RE = /^\d+\.\d+(\.\d+)?(-[a-zA-Z0-9.]+)?$/
+  if (!VERSION_RE.test(TIMESCALEDB_VERSION)) {
+    throw new Error(`Invalid TIMESCALEDB_VERSION: ${TIMESCALEDB_VERSION}`)
+  }
+
   if (installedVersion === null) {
     log.info('Creating timescaledb extension at pinned version', { version: TIMESCALEDB_VERSION })
     await migrationDb.execute(sql.raw(`CREATE EXTENSION timescaledb VERSION '${TIMESCALEDB_VERSION}'`))

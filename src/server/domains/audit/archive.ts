@@ -1,7 +1,7 @@
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 import type { Pool } from 'pg'
 
-import { and, gt, gte, lt, sql } from 'drizzle-orm'
+import { and, gt, gte, inArray, lt, sql } from 'drizzle-orm'
 import { createGzip } from 'node:zlib'
 
 import type { ArchiveResult, CleanupResult } from '@/server/domains/audit/types'
@@ -106,6 +106,7 @@ async function archiveDay(db: NodePgDatabase, day: string, dayStart: Date, dayEn
 
   let totalRows = 0
   let cursorId: bigint | undefined
+  const archivedIds: bigint[] = []
 
   // Paginate through the day's data in batches using id as cursor
   // (createdAt is not unique, so id is the tie-breaker).
@@ -143,6 +144,9 @@ async function archiveDay(db: NodePgDatabase, day: string, dayStart: Date, dayEn
 
     gzip.write(lines.join('\n') + '\n')
 
+    for (const row of rows) {
+      archivedIds.push(row.id)
+    }
     totalRows += rows.length
     if (rows.length < ARCHIVE_PAGE_SIZE) {
       break
@@ -165,10 +169,10 @@ async function archiveDay(db: NodePgDatabase, day: string, dayStart: Date, dayEn
   // Upload to S3
   await putS3Object(key, buffer, 'application/gzip')
 
-  // Only delete from DB after successful upload
-  const deleteResult = await db
-    .delete(auditLog)
-    .where(and(gte(auditLog.createdAt, dayStart), lt(auditLog.createdAt, dayEnd)))
+  // Only delete from DB after successful upload.
+  // Delete by the exact row IDs we collected so that events inserted
+  // between read and delete are not silently destroyed.
+  const deleteResult = await db.delete(auditLog).where(inArray(auditLog.id, archivedIds))
 
   const deleted = Number(deleteResult.rowCount ?? 0)
   return deleted

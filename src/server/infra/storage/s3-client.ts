@@ -191,7 +191,7 @@ function parseS3Contents(contents: _Object[] | undefined): S3ObjectMeta[] {
   return objects
 }
 
-export async function listS3Objects(prefix: string): Promise<S3ObjectMeta[]> {
+export async function listS3Objects(prefix: string, maxKeys = 10_000): Promise<S3ObjectMeta[]> {
   const sdk = await getAwsSdk()
   const { client, bucket } = await getS3StorageContext({ requireEnabled: false })
   const objects: S3ObjectMeta[] = []
@@ -206,6 +206,14 @@ export async function listS3Objects(prefix: string): Promise<S3ObjectMeta[]> {
     )
     objects.push(...parseS3Contents(response.Contents))
     continuationToken = response.NextContinuationToken
+    if (objects.length > maxKeys) {
+      getLogger('s3').warn('listS3Objects exceeded maxKeys; pagination aborted', {
+        prefix,
+        maxKeys,
+        returned: objects.length,
+      })
+      break
+    }
   } while (continuationToken)
   return objects
 }
@@ -233,17 +241,32 @@ export async function listS3ObjectsPaginated(
   return { objects: parseS3Contents(response.Contents), nextContinuationToken: response.NextContinuationToken }
 }
 
-export async function getS3ObjectBuffer(key: string): Promise<Buffer> {
+const MAX_S3_BUFFER_SIZE = 100 * 1024 * 1024 // 100 MB
+
+export async function getS3ObjectBuffer(key: string, maxSize = MAX_S3_BUFFER_SIZE): Promise<Buffer> {
   const sdk = await getAwsSdk()
   const { client, bucket } = await getS3StorageContext({ requireEnabled: false })
   const response = await client.send(new sdk.GetObjectCommand({ Bucket: bucket, Key: key }))
   if (response.Body === undefined) {
     throw new ActionFailure(404, 'S3 对象不存在或内容为空')
   }
+  const contentLength = response.ContentLength
+  if (contentLength !== undefined && contentLength > maxSize) {
+    throw new ActionFailure(413, `S3 对象过大 (${contentLength} 字节)，超出 ${maxSize} 字节限制`)
+  }
   const stream = response.Body as Readable
   const chunks: Buffer[] = []
+  let received = 0
   return new Promise((resolve, reject) => {
-    stream.on('data', (chunk: Buffer) => chunks.push(chunk))
+    stream.on('data', (chunk: Buffer) => {
+      received += chunk.length
+      if (received > maxSize) {
+        stream.destroy()
+        reject(new ActionFailure(413, `S3 对象流超出 ${maxSize} 字节限制`))
+        return
+      }
+      chunks.push(chunk)
+    })
     stream.on('end', () => resolve(Buffer.concat(chunks)))
     stream.on('error', (err: Error) => reject(err))
   })

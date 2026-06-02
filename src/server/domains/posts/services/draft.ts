@@ -23,6 +23,7 @@ import {
   type ViewerContext,
 } from '@/server/domains/posts/services/shared'
 import { getLogger } from '@/server/infra/logger'
+import { invalidateSearchCache } from '@/server/infra/search/search'
 import { deriveSlug } from '@/server/infra/slug'
 import { collectHeadings, collectImageStoragePaths } from '@/shared/pt/utils'
 
@@ -123,6 +124,9 @@ async function savePostBodyInternal(
   }
   if (mode === 'publish' && wroteSuccessfully) {
     await clearPostMetasCache()
+    await invalidateSearchCache().catch((err: unknown) => {
+      log.warn('invalidate search cache failed', { postId: input.postId, error: err })
+    })
     const publishedRevision = await findContentById(db, result.row.id)
     if (publishedRevision !== null) {
       const postMeta = await findPostMetaById(db, input.postId)

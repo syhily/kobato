@@ -37,7 +37,6 @@ export const commentBaseDto = z.object({
   deleteAt: isoDateTime.nullable(),
   deleteRequestedAt: isoDateTime.nullable().optional(),
   body: commentBodySchema,
-  content: z.string().nullable(),
   type: z.enum(['post', 'page']).nullable(),
   ownerId: idString.nullable(),
   userId: idString,
@@ -65,8 +64,9 @@ export const commentItemDto: z.ZodType<CommentItemWire> = commentBaseDto.extend(
   children: z.lazy(() => z.array(commentItemDto).optional()),
 }) as z.ZodType<CommentItemWire>
 
-// ─── admin comment wire (includes PII fields) ───
+// ─── admin comment wire (includes PII fields + content) ───
 export const adminCommentBaseDto = commentBaseDto.extend({
+  content: z.string().nullable(),
   ua: z.string().nullable(),
   ip: z.string().nullable(),
   email: z.string(),

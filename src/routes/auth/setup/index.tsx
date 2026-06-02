@@ -1,6 +1,7 @@
 import { data } from 'react-router'
 
 import { getDbFromContext, getPoolFromContext, getRouteRequestContext } from '@/server/domains/auth/context'
+import { validateCsrfForAction } from '@/server/domains/auth/csrf'
 import { processAuthFormSubmission, signUpInitialAdminWithSession } from '@/server/domains/auth/flows'
 import { signUpAdminSchema } from '@/server/domains/auth/schema'
 import { checkPgToolsAvailable } from '@/server/domains/backup/service'
@@ -35,6 +36,13 @@ export async function action({ request, context }: Route.ActionArgs) {
   await ensureNoAdminOrRedirect(db)
 
   const { session, clientAddress } = getRouteRequestContext({ request, context })
+
+  // CSRF guard for the setup form action.
+  const formData = await request.formData()
+  if (!validateCsrfForAction(session, request, formData)) {
+    return data({ error: '安全校验失败，请刷新页面后重试。' })
+  }
+
   return processAuthFormSubmission({
     request,
     schema: signUpAdminSchema,
@@ -42,6 +50,7 @@ export async function action({ request, context }: Route.ActionArgs) {
     defaultErrorMessage: '请填写完整的管理员账号信息。',
     redirectTo: undefined,
     run: (input) => signUpInitialAdminWithSession(db, pool, { ...input, session, request, clientAddress }),
+    formData,
   })
 }
 

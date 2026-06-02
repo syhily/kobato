@@ -1,6 +1,6 @@
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
-import { and, eq, inArray, isNotNull, isNull } from 'drizzle-orm'
+import { and, count, eq, inArray, isNotNull, isNull } from 'drizzle-orm'
 
 import type { PortableTextBody } from '@/shared/pt/schema'
 
@@ -33,6 +33,10 @@ export async function reindexSearchBatch(
   db: NodePgDatabase,
   input: ReindexBatchInput = {},
 ): Promise<ReindexBatchResult> {
+  const useBatching = input.batchSize !== undefined || input.offset !== undefined
+  const offset = input.offset ?? 0
+  const batchSize = input.batchSize ?? 50
+
   const rows = await db
     .select({
       id: post.id,
@@ -43,13 +47,16 @@ export async function reindexSearchBatch(
     .from(post)
     .where(and(isNull(post.deletedAt), eq(post.published, true), isNotNull(post.publishedRevisionId)))
     .orderBy(post.id)
+    .limit(batchSize)
+    .offset(offset)
 
-  const total = rows.length
+  const totalRows = await db
+    .select({ count: count() })
+    .from(post)
+    .where(and(isNull(post.deletedAt), eq(post.published, true), isNotNull(post.publishedRevisionId)))
+  const total = totalRows[0].count
 
-  const useBatching = input.batchSize !== undefined || input.offset !== undefined
-  const offset = input.offset ?? 0
-  const batchSize = input.batchSize ?? total
-  const batch = useBatching ? rows.slice(offset, offset + batchSize) : rows
+  const batch = rows
 
   const revisionIds = batch.map((r) => r.publishedRevisionId!).filter(Boolean)
   const contents = revisionIds.length > 0 ? await db.select().from(content).where(inArray(content.id, revisionIds)) : []

@@ -1,7 +1,7 @@
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 import type { Pool } from 'pg'
 
-import type { User } from '@/server/infra/db/types'
+import type { SafeUser } from '@/server/infra/db/operations/user'
 
 import { recordAuditEvent } from '@/server/domains/audit/service'
 import { type Role } from '@/server/domains/auth/rbac'
@@ -10,8 +10,10 @@ import {
   type BlogSession,
   buildSessionWithSid,
   commitSessionWithMaxAge,
+  destroySession,
   getRequestSession,
   revokeAllSessionsOfUser,
+  SESSION_MAX_AGE,
   type SessionUser,
 } from '@/server/domains/auth/session-storage'
 import { findUserById, updateLastLogin, verifyUserPassword } from '@/server/infra/db/operations/user'
@@ -61,7 +63,7 @@ export async function establishLoginSession(
   db: NodePgDatabase,
   pool: Pool,
   session: BlogSession,
-  dbUser: User,
+  dbUser: SafeUser,
   request: Request,
   clientAddress: string,
   options: EstablishLoginOptions = {},
@@ -75,6 +77,13 @@ export async function establishLoginSession(
   }
   if (options.revokeOtherSessions) {
     await revokeAllSessionsOfUser(dbUser.id)
+  }
+  // Rotate the session ID on every login.  A stolen session cookie
+  // from a previous session becomes invalid because we mint a fresh
+  // sid and destroy the old one.
+  if (session.id) {
+    await destroySession(session)
+    await redisInstance().srem(`user_sessions:${dbUser.id}`, session.id)
   }
   // We control the sid ourselves rather than letting React Router's
   // `createData` mint one inside `commitSession`. Reason: React Router's
@@ -94,12 +103,14 @@ export async function establishLoginSession(
     website: dbUser.link,
     role: dbUser.role,
   }
+  // Absolute timeout: 30 days from login, independent of sliding refresh.
+  const absoluteExpiry = Date.now() + SESSION_MAX_AGE * 1000
   // Mirror the new state into the inbound session object so the rest
   // of the request handler sees `userSession(session)` return the
   // freshly-authenticated user. The cookie itself is minted from the
   // sid-pinned `newSession` below.
   session.set('user', userData)
-  const newSession = buildSessionWithSid(sid, { user: userData })
+  const newSession = buildSessionWithSid(sid, { user: userData, absoluteExpiry })
   const setCookie = await commitSessionWithMaxAge(newSession)
   const userAgent = request.headers.get('User-Agent')
   await updateLastLogin(db, dbUser.id, clientAddress, userAgent)
@@ -220,6 +231,19 @@ export async function resolveSessionContext(
     } else if (dbReachable) {
       // Account confirmed gone-or-demoted: drop the session so they
       // re-login. Only on a successful DB read — see comment above.
+      session.unset('user')
+      user = undefined
+      dirty = true
+    }
+  }
+
+  // Absolute timeout check: regardless of sliding cookie refresh,
+  // sessions older than SESSION_MAX_AGE from their original login are
+  // unconditionally invalidated. This caps the blast radius of a
+  // stolen session cookie.
+  if (user) {
+    const absoluteExpiry = session.get('absoluteExpiry') as number | undefined
+    if (absoluteExpiry !== undefined && Date.now() > absoluteExpiry) {
       session.unset('user')
       user = undefined
       dirty = true

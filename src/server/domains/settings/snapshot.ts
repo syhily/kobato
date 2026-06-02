@@ -225,6 +225,14 @@ export async function hydrateBlogSettings(db: NodePgDatabase): Promise<BlogSetti
     if (cached === null) {
       return pending
     }
+    // Sync short-circuit: once the snapshot has been hydrated at least
+    // once, localSettingsVersion is known current.  In a single-process
+    // deployment the version only advances inside hydrateBlogSettings
+    // itself (or via refreshBlogSettings, which clears the pending
+    // promise first).  Skip the Redis GET on every request.
+    if (localSettingsVersion > 0) {
+      return pending
+    }
     const sharedVersion = await getSettingsVersion()
     if (sharedVersion <= localSettingsVersion) {
       return pending

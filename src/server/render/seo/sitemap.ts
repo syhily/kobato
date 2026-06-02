@@ -5,6 +5,10 @@ import { listAllPosts } from '@/server/domains/posts/repos/public-query'
 import { requireBlogSettingsSection } from '@/shared/config/getters'
 import { joinUrl } from '@/shared/utils/urls'
 
+function escapeXml(s: string): string {
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+}
+
 export async function buildSitemapXml(db: NodePgDatabase, _request: Request): Promise<string> {
   const [posts, pages] = await Promise.all([
     listAllPosts(db, { includeHidden: true, includeScheduled: false }),
@@ -18,16 +22,16 @@ export async function buildSitemapXml(db: NodePgDatabase, _request: Request): Pr
   const lines: string[] = [
     '<?xml version="1.0" encoding="UTF-8"?>',
     '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
-    `  <url><loc>${website}/</loc></url>`,
+    `  <url><loc>${escapeXml(website)}/</loc></url>`,
   ]
   for (const post of posts) {
     lines.push(
-      `  <url><loc>${joinUrl(website, post.permalink)}</loc><lastmod>${post.date.toISOString()}</lastmod></url>`,
+      `  <url><loc>${escapeXml(joinUrl(website, post.permalink))}</loc><lastmod>${post.date.toISOString()}</lastmod></url>`,
     )
   }
   for (const page of pages) {
     lines.push(
-      `  <url><loc>${joinUrl(website, page.permalink)}</loc><lastmod>${page.date.toISOString()}</lastmod></url>`,
+      `  <url><loc>${escapeXml(joinUrl(website, page.permalink))}</loc><lastmod>${page.date.toISOString()}</lastmod></url>`,
     )
   }
   lines.push('</urlset>')

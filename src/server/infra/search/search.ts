@@ -70,6 +70,22 @@ async function setCachedSearchResult(key: string, slugs: string[], ttlSeconds: n
   await storage.setItem(key, JSON.stringify(slugs), { ttl: ttlSeconds })
 }
 
+/**
+ * Invalidate all cached search results. Called whenever a post's
+ * published / deleted / restored state changes so stale result lists
+ * don't survive until their TTL expires.
+ */
+export async function invalidateSearchCache(): Promise<void> {
+  const bundle = getBlogSettingsBundleSync()
+  const prefix = bundle?.cache?.cache.searchResult?.prefix ?? CACHE_BUCKET_FALLBACKS.searchResult.prefix
+  const keys = await storage.getKeys(prefix, 1_000)
+  if (keys.length === 0) {
+    return
+  }
+  getLogger('search.cache').info('invalidating search result cache', { count: keys.length })
+  await Promise.all(keys.map((k) => storage.removeItem(k)))
+}
+
 // ---------------------------------------------------------------------------
 // Core search execution (no pagination — returns the full ordered list)
 // ---------------------------------------------------------------------------

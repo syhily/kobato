@@ -2,10 +2,13 @@ import { z } from 'zod'
 
 import { httpUrlOrEmptyStringSchema } from '@/shared/utils/safe-url'
 
+/** Minimum password length enforced everywhere (login, signup, reset, change). */
+export const MIN_PASSWORD_LENGTH = 10
+
 // Auth form schemas.
 export const signInSchema = z.object({
   email: z.email(),
-  password: z.string().min(10),
+  password: z.string().min(MIN_PASSWORD_LENGTH),
 })
 export type SignInInput = z.infer<typeof signInSchema>
 
@@ -13,7 +16,7 @@ export const signUpAdminSchema = z.object({
   title: z.string().min(1),
   name: z.string().min(1),
   email: z.email(),
-  password: z.string().min(10),
+  password: z.string().min(MIN_PASSWORD_LENGTH),
 })
 export type SignUpAdminInput = z.infer<typeof signUpAdminSchema>
 

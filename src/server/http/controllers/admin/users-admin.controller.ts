@@ -15,6 +15,7 @@ import {
   updateUserRole,
 } from '@/server/infra/db/operations/user'
 import { sendAuthorInvite, sendPasswordReset as sendPasswordResetEmail } from '@/server/infra/email/sender'
+import { getLogger } from '@/server/infra/logger'
 import {
   tryInviteByEmailRateLimit,
   tryInviteRateLimit,
@@ -109,14 +110,19 @@ const inviteAuthor = adminProc
     if (!sendResult.ok) {
       await revokeTokensFor(context.db, user.id, 'author-invite')
       await softDeleteUserById(context.db, user.id)
+      getLogger('users.invite').error('author invite email failed', {
+        email: input.email,
+        reason: sendResult.reason,
+        message: sendResult.message,
+      })
       recordAuditEventFromContext(context, {
         action: 'author_invite_rolled_back',
         resourceType: 'user',
         resourceId: String(user.id),
-        details: { email: input.email, reason: sendResult.reason, message: sendResult.message },
+        details: { email: input.email, reason: sendResult.reason },
       })
       throw new ORPCError('BAD_GATEWAY', {
-        message: `邮件发送失败，已回滚账户创建：${sendResult.message}`,
+        message: '邮件发送失败，已回滚账户创建。',
       })
     }
     recordAuditEventFromContext(context, {
