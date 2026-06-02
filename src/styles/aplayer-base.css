@@ -243,27 +243,27 @@
   display: none;
 }
 .aplayer .aplayer-pic .aplayer-play {
-  width: 26px;
-  height: 26px;
+  width: 36px;
+  height: 36px;
   border: 2px solid #fff;
   bottom: 50%;
   right: 50%;
-  margin: 0 -15px -15px 0;
+  margin: 0 -20px -20px 0;
 }
 .aplayer .aplayer-pic .aplayer-play svg {
-  height: 16px;
+  height: 18px;
   width: auto;
 }
 .aplayer .aplayer-pic .aplayer-pause {
-  width: 16px;
-  height: 16px;
+  width: 24px;
+  height: 24px;
   border: 2px solid #fff;
   bottom: 50%;
   right: 50%;
-  margin: 0 -10px -10px 0;
+  margin: 0 -14px -14px 0;
 }
 .aplayer .aplayer-pic .aplayer-pause svg {
-  height: 10px;
+  height: 12px;
   width: auto;
 }
 .aplayer .aplayer-info {
