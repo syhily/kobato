@@ -45,7 +45,7 @@ export const image = pgTable(
 //
 // Every row represents a song whose audio + cover have been
 // downloaded from a third-party music provider (currently only
-// `netease` via `@meting/core`) into the same S3 bucket the image
+// `netease` via the inline resolver) into the same S3 bucket the image
 // library uses. Audio lives at `musics/<playerId>.mp3`, cover at
 // `musics/<playerId>.jpg` (300×300 JPEG re-encoded by `sharp`).
 //

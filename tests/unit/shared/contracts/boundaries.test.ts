@@ -767,6 +767,11 @@ describe('contract: module and bundle boundaries', () => {
         file: 'src/server/infra/hono/dev.ts',
         specifier: './dev-server-ref',
       },
+      {
+        key: 'meting.ts -> ./netease-resolver',
+        file: 'src/server/domains/music/meting.ts',
+        specifier: './netease-resolver',
+      },
       // (routes.ts no longer imports api-actions since all API routes moved to Hono)
     ] as const
     const explicitAllowedHits = new Set<string>()

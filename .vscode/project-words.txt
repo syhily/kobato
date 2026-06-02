@@ -183,6 +183,7 @@ opposerif
 orama
 organised
 orpc
+osver
 overscroll
 owspace
 oxfmt
@@ -272,6 +273,7 @@ unlayered
 unpic
 unrecognised
 unsharp
+unstub
 uploadcare
 upyun
 urlset

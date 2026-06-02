@@ -298,7 +298,7 @@ redeploying. Examples: `assets.storage.enabled`, `seo.og.width`,
   JPEG covers (`musics/<playerId>.jpg`) in the same S3 bucket, gated on
   `assets.storage.enabled`.
 - PortableText references rows via a 16-char lowercase random id. Service
-  is `@meting/core` netease-only; `(source, sourceId)` is unique with
+  is netease-only via the inline `NeteaseResolver`; `(source, sourceId)` is unique with
   `source` reserved as varchar for future providers. Lyrics live in
   `music.lyric` so the player avoids a second round trip.
 

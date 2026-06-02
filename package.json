@@ -54,7 +54,6 @@
     "@dnd-kit/utilities": "^3.2.2",
     "@hono/node-server": "^2.0.4",
     "@maxmind/geoip2-node": "^6.3.4",
-    "@meting/core": "^1.6.1",
     "@napi-rs/canvas": "^1.0.0",
     "@orpc/client": "^1.14.4",
     "@orpc/react-query": "^1.14.4",

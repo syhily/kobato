@@ -1,22 +1,21 @@
-import Meting from '@meting/core'
 import { z } from 'zod'
 
 import { ActionFailure } from '@/server/infra/http/errors'
 import { getLogger } from '@/server/infra/logger'
 
-// Thin, netease-only wrapper around `@meting/core`. Every method
-// returns a Zod-validated payload so an upstream API drift surfaces as
-// a clear "Meting 返回异常" error instead of silently corrupting
-// downstream business code. The README's claimed signatures are
-// inaccurate (see `src/server/music/meting-types.d.ts`); the shapes
-// below were calibrated against the actual `1.6.x` runtime.
+import { NeteaseResolver } from './netease-resolver'
+
+// Thin, netease-only wrapper around the inline `NeteaseResolver`. Every
+// method returns a Zod-validated payload so an upstream API drift surfaces
+// as a clear "Meting 返回异常" error instead of silently corrupting
+// downstream business code.
 
 const log = getLogger('music.meting')
 
-// Provider-formatted song shape (after `format(true)`). NOTE the
-// difference from the README: `id` and `url_id` are *numbers*, not
-// strings. We coerce them at the boundary so the rest of the codebase
-// can treat sourceId as a string.
+// Provider-formatted song shape (after resolver formatting). NOTE: `id`
+// and `url_id` can be numbers in the raw upstream response; we coerce
+// them at the boundary so the rest of the codebase treats sourceId as a
+// string.
 const formattedSongSchema = z.object({
   id: z.union([z.number(), z.string()]).transform((v) => String(v)),
   name: z.string(),
@@ -56,12 +55,9 @@ export interface MetingSearchHit {
   lyricId: string
 }
 
-function client(): Meting {
-  // A fresh client per call mirrors the upstream test suite's pattern
-  // and keeps the wrapper stateless. The constructor is cheap (it just
-  // stores the server name); the actual HTTP work happens inside the
-  // method calls below.
-  return new Meting('netease').format(true)
+function client(): NeteaseResolver {
+  // A fresh resolver per call keeps the wrapper stateless.
+  return new NeteaseResolver()
 }
 
 function parseFormattedJson<T>(raw: unknown, schema: z.ZodType<T>, where: string): T {
