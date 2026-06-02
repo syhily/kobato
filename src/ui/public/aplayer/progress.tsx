@@ -54,10 +54,7 @@ export function ProgressBar({ themeColor, bufferedPercentage, playedPercentage, 
           <div className="aplayer-loaded" style={{ width: `${bufferedPercentage * 100}%` }} />
         ) : null}
         {typeof progress !== 'undefined' ? (
-          <div
-            className="aplayer-played"
-            style={{ width: `${progress * 100}%`, backgroundColor: themeColor }}
-          >
+          <div className="aplayer-played" style={{ width: `${progress * 100}%`, backgroundColor: themeColor }}>
             <span className="aplayer-thumb" style={{ backgroundColor: themeColor }}>
               <span className="aplayer-loading-icon">
                 <IconLoading />

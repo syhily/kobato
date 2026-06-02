@@ -15,7 +15,5 @@ export function formatAudioDuration(seconds: number | undefined): string {
   const hours = Math.trunc(min / 60)
   const minAdjust = Math.trunc(seconds / 60 - 60 * Math.trunc(seconds / 60 / 60))
 
-  return seconds >= 3600
-    ? `${pad0(hours)}:${pad0(minAdjust)}:${pad0(sec)}`
-    : `${pad0(min)}:${pad0(sec)}`
+  return seconds >= 3600 ? `${pad0(hours)}:${pad0(minAdjust)}:${pad0(sec)}` : `${pad0(min)}:${pad0(sec)}`
 }

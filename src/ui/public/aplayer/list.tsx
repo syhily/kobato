@@ -1,10 +1,10 @@
 /* eslint-disable jsx-a11y/no-noninteractive-element-interactions */
 import { useCallback, useEffect, useRef } from 'react'
 
-import { cn } from '@/ui/lib/cn'
-
-import { defaultThemeColor } from '@/ui/public/aplayer/constants'
 import type { ArtistInfo, AudioInfo } from '@/ui/public/aplayer/types'
+
+import { cn } from '@/ui/lib/cn'
+import { defaultThemeColor } from '@/ui/public/aplayer/constants'
 
 export type PlaylistProps = {
   open: boolean

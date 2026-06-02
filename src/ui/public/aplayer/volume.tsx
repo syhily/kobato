@@ -1,7 +1,6 @@
 import { useCallback, useRef, useState } from 'react'
 
 import { cn } from '@/ui/lib/cn'
-
 import { IconVolumeDown } from '@/ui/public/aplayer/icons/volume-down'
 import { IconVolumeOff } from '@/ui/public/aplayer/icons/volume-off'
 import { IconVolumeUp } from '@/ui/public/aplayer/icons/volume-up'
@@ -44,13 +43,7 @@ export function Volume({ themeColor, volume, muted, onToggleMuted, onChangeVolum
   return (
     <div className="aplayer-volume-wrap">
       <button type="button" className="aplayer-icon aplayer-icon-volume-down" onClick={() => onToggleMuted()}>
-        {muted || !volume ? (
-          <IconVolumeOff />
-        ) : volume >= 1 ? (
-          <IconVolumeUp />
-        ) : (
-          <IconVolumeDown />
-        )}
+        {muted || !volume ? <IconVolumeOff /> : volume >= 1 ? <IconVolumeUp /> : <IconVolumeDown />}
       </button>
       <div
         className={cn('aplayer-volume-bar-wrap', {

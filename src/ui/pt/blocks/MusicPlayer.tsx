@@ -1,13 +1,11 @@
 import { lazy, Suspense, useEffect, useState } from 'react'
 
+import type { AudioInfo } from '@/ui/public/aplayer/types'
+
 import { loadMusic } from '@/client/api/music'
 import { cn } from '@/ui/lib/cn'
 
-import type { AudioInfo } from '@/ui/public/aplayer/types'
-
-const APlayer = lazy(() =>
-  import('@/ui/public/aplayer/player').then((m) => ({ default: m.APlayer })),
-)
+const APlayer = lazy(() => import('@/ui/public/aplayer/player').then((m) => ({ default: m.APlayer })))
 
 export interface MusicPlayerProps {
   id: string

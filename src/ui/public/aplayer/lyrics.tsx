@@ -35,7 +35,10 @@ export function Lyrics({ show, lrcText, currentTime }: LyricsProps) {
       {lrcText ? (
         <div className="aplayer-lrc-contents" style={transformStyle}>
           {lines.map(([time, text], index) => (
-            <p key={`${time}-${text.slice(0, 20)}`} className={cn({ 'aplayer-lrc-current': index === currentLineIndex })}>
+            <p
+              key={`${time}-${text.slice(0, 20)}`}
+              className={cn({ 'aplayer-lrc-current': index === currentLineIndex })}
+            >
               {text}
             </p>
           ))}
@@ -69,9 +72,7 @@ export function parseLrc(lrcInput?: string): [time: number, text: string][] {
         }
         const min2sec = Number(oneTime[1]) * 60
         const sec2sec = parseInt(oneTime[2])
-        const msec2sec = oneTime[4]
-          ? parseInt(oneTime[4]) / ((oneTime[4] + '').length === 2 ? 100 : 1000)
-          : 0
+        const msec2sec = oneTime[4] ? parseInt(oneTime[4]) / ((oneTime[4] + '').length === 2 ? 100 : 1000) : 0
         const lrcTime = min2sec + sec2sec + msec2sec
         lrc.push([lrcTime, lrcText])
       }

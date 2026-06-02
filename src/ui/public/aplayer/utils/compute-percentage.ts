@@ -8,8 +8,7 @@ export function computePercentage(
     return 0
   }
   let percentage =
-    (eventTarget.clientX - progressBarRef.current.getBoundingClientRect().left) /
-    progressBarRef.current.clientWidth
+    (eventTarget.clientX - progressBarRef.current.getBoundingClientRect().left) / progressBarRef.current.clientWidth
   percentage = Math.max(percentage, 0)
   percentage = Math.min(percentage, 1)
   percentage = Math.floor(percentage * 100) / 100
@@ -24,9 +23,7 @@ export function computePercentageOfY(
     return 0
   }
   let percentage =
-    1 -
-    (eventTarget.clientY - volumeBarRef.current.getBoundingClientRect().top) /
-      volumeBarRef.current.clientHeight
+    1 - (eventTarget.clientY - volumeBarRef.current.getBoundingClientRect().top) / volumeBarRef.current.clientHeight
   percentage = Math.max(percentage, 0)
   percentage = Math.min(percentage, 1)
   percentage = Math.floor(percentage * 100) / 100

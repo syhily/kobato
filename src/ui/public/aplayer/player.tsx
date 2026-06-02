@@ -1,20 +1,20 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
-import { cn } from '@/ui/lib/cn'
+import type { ArtistInfo, AudioInfo } from '@/ui/public/aplayer/types'
 
-import { IconPause } from '@/ui/public/aplayer/icons/pause'
-import { IconPlay } from '@/ui/public/aplayer/icons/play'
-import { IconRight } from '@/ui/public/aplayer/icons/right'
-import { PlaybackControls } from '@/ui/public/aplayer/controller'
+import { cn } from '@/ui/lib/cn'
 import { defaultThemeColor } from '@/ui/public/aplayer/constants'
+import { PlaybackControls } from '@/ui/public/aplayer/controller'
 import { useAudioControl } from '@/ui/public/aplayer/hooks/use-audio-control'
 import { useNotice } from '@/ui/public/aplayer/hooks/use-notice'
 import { usePlaylist } from '@/ui/public/aplayer/hooks/use-playlist'
 import { useSafeTimeout } from '@/ui/public/aplayer/hooks/use-safe-timeout'
 import { useThemeColor } from '@/ui/public/aplayer/hooks/use-theme-color'
-import { Lyrics } from '@/ui/public/aplayer/lyrics'
+import { IconPause } from '@/ui/public/aplayer/icons/pause'
+import { IconPlay } from '@/ui/public/aplayer/icons/play'
+import { IconRight } from '@/ui/public/aplayer/icons/right'
 import { Playlist } from '@/ui/public/aplayer/list'
-import type { ArtistInfo, AudioInfo } from '@/ui/public/aplayer/types'
+import { Lyrics } from '@/ui/public/aplayer/lyrics'
 
 export type APlayerProps = {
   audio: AudioInfo | readonly AudioInfo[]
@@ -174,9 +174,7 @@ export function APlayer({
         </div>
         <div className="aplayer-info">
           <div className="aplayer-music">
-            <span className="aplayer-title">
-              {playlist.currentSong?.name ?? 'Audio name'}
-            </span>
+            <span className="aplayer-title">{playlist.currentSong?.name ?? 'Audio name'}</span>
             <span className="aplayer-author"> - {renderArtist(playlist.currentSong?.artist)}</span>
           </div>
           {appearance === 'fixed' ? null : (
@@ -237,11 +235,7 @@ export function APlayer({
         />
       ) : null}
       {appearance === 'fixed' && (
-        <Lyrics
-          show={displayLyrics}
-          lrcText={playlist.currentSong.lrc}
-          currentTime={audioControl.currentTime ?? 0}
-        />
+        <Lyrics show={displayLyrics} lrcText={playlist.currentSong.lrc} currentTime={audioControl.currentTime ?? 0} />
       )}
     </div>
   )

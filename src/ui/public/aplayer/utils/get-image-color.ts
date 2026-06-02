@@ -35,7 +35,10 @@ export function getImageColor(imageUrl: string): Promise<string> {
           resolve('#008c95')
           return
         }
-        const toHex = (n: number) => Math.round(n / count).toString(16).padStart(2, '0')
+        const toHex = (n: number) =>
+          Math.round(n / count)
+            .toString(16)
+            .padStart(2, '0')
         resolve(`#${toHex(r)}${toHex(g)}${toHex(b)}`)
       } catch {
         resolve('#008c95')

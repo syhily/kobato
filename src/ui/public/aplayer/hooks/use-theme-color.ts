@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
 
-import { defaultThemeColor } from '@/ui/public/aplayer/constants'
 import type { AudioInfo } from '@/ui/public/aplayer/types'
+
+import { defaultThemeColor } from '@/ui/public/aplayer/constants'
 import { getImageColor } from '@/ui/public/aplayer/utils/get-image-color'
 
 function shouldUseColorThief(song: AudioInfo | undefined, fallback = defaultThemeColor): boolean {
@@ -17,11 +18,13 @@ export function useThemeColor(song: AudioInfo | undefined, fallback = defaultThe
   useEffect(() => {
     if (shouldUseColorThief(song, fallback)) {
       const coverUrl = song!.cover!
-      void getImageColor(coverUrl).then((hex) => {
-        setCoverColorMap((prev) => ({ ...prev, [coverUrl]: hex }))
-      }).catch(() => {
-        // ignore color extraction failures
-      })
+      void getImageColor(coverUrl)
+        .then((hex) => {
+          setCoverColorMap((prev) => ({ ...prev, [coverUrl]: hex }))
+        })
+        .catch(() => {
+          // ignore color extraction failures
+        })
     }
   }, [song, fallback])
 

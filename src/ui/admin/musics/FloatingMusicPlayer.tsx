@@ -1,15 +1,13 @@
 import { ChevronRightIcon, Music2Icon, XIcon } from 'lucide-react'
 import { lazy, Suspense, useEffect, useState } from 'react'
 
+import type { AudioInfo } from '@/ui/public/aplayer/types'
+
 import { loadMusic } from '@/client/api/music'
 import { Button } from '@/ui/components/button'
 import { cn } from '@/ui/lib/cn'
 
-import type { AudioInfo } from '@/ui/public/aplayer/types'
-
-const APlayer = lazy(() =>
-  import('@/ui/public/aplayer/player').then((m) => ({ default: m.APlayer })),
-)
+const APlayer = lazy(() => import('@/ui/public/aplayer/player').then((m) => ({ default: m.APlayer })))
 
 export interface FloatingMusicPlayerTrack {
   /** Opaque player id (the one the public GET endpoint accepts). */
@@ -150,9 +148,7 @@ export function FloatingMusicPlayer({ track, onClose }: FloatingMusicPlayerProps
               加载失败，请刷新后再试。
             </div>
           ) : (
-            <Suspense
-              fallback={<div className="aplayer" data-id={track.playerId} />}
-            >
+            <Suspense fallback={<div className="aplayer" data-id={track.playerId} />}>
               {audio ? (
                 <APlayer audio={audio} autoPlay initialLoop="none" />
               ) : (
