@@ -1,5 +1,5 @@
 import { NodeViewWrapper, type NodeViewProps } from '@tiptap/react'
-import { ImageOffIcon, LinkIcon, RotateCcwIcon, TrashIcon } from 'lucide-react'
+import { ImageOffIcon, RotateCcwIcon, TrashIcon } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 
 import type { ImageBlockLayout } from '@/shared/pt/schema'
@@ -22,6 +22,10 @@ import { cn } from '@/ui/lib/cn'
 // the canonical PT body in the editor reducer stays in sync. There's
 // no save button on the inputs themselves — the autosave loop in the
 // outer shell flushes the whole body on idle.
+//
+// Manual external URL pasting is intentionally removed; every image
+// must come from the media library so the asset host stays predictable
+// and CSP `img-src` remains narrow.
 
 export function ImageNodeView(props: NodeViewProps) {
   const attrs = props.node.attrs as {
@@ -37,11 +41,6 @@ export function ImageNodeView(props: NodeViewProps) {
   }
   const [alt, setAlt] = useState(attrs.alt ?? '')
   const [caption, setCaption] = useState(attrs.caption ?? '')
-  const [externalUrl, setExternalUrl] = useState(
-    attrs.imageId === undefined && attrs.src !== undefined ? attrs.src : '',
-  )
-  const [showExternalForm, setShowExternalForm] = useState(false)
-  const isLibrary = attrs.imageId !== undefined && attrs.imageId !== ''
 
   const latestPropsRef = useRef(props)
   latestPropsRef.current = props
@@ -61,9 +60,6 @@ export function ImageNodeView(props: NodeViewProps) {
   useEffect(() => {
     setCaption(attrs.caption ?? '')
   }, [attrs.caption])
-  useEffect(() => {
-    setExternalUrl(attrs.imageId === undefined && attrs.src !== undefined ? attrs.src : '')
-  }, [attrs.imageId, attrs.src])
 
   useEffect(() => {
     return () => {
@@ -103,16 +99,6 @@ export function ImageNodeView(props: NodeViewProps) {
       layout: next === 'center' ? undefined : next,
     })
   }
-  const commitExternalUrl = (value: string) => {
-    props.updateAttributes({
-      src: value,
-      imageId: undefined,
-      storagePath: undefined,
-      thumbhash: undefined,
-      width: undefined,
-      height: undefined,
-    })
-  }
 
   return (
     <NodeViewWrapper
@@ -146,17 +132,6 @@ export function ImageNodeView(props: NodeViewProps) {
           variant="secondary"
           size="icon"
           type="button"
-          title="使用外部链接"
-          aria-label="使用外部链接"
-          aria-pressed={showExternalForm}
-          onClick={() => setShowExternalForm((v) => !v)}
-        >
-          <LinkIcon />
-        </Button>
-        <Button
-          variant="secondary"
-          size="icon"
-          type="button"
           title="删除图片块"
           aria-label="删除图片块"
           onClick={() => props.deleteNode()}
@@ -183,7 +158,7 @@ export function ImageNodeView(props: NodeViewProps) {
             draggable={false}
           />
           <span className="absolute top-1 left-1 rounded bg-black/60 px-1.5 py-0.5 text-(--text-nano) text-white">
-            {isLibrary ? '媒体库' : '外链'}
+            媒体库
           </span>
         </div>
       ) : (
@@ -217,33 +192,6 @@ export function ImageNodeView(props: NodeViewProps) {
           </label>
         </RadioGroup>
       </div>
-
-      {showExternalForm ? (
-        <div className="grid gap-1.5">
-          <Label className="text-xs" htmlFor={`img-${pos}-ext`}>
-            外部图片链接（不会写入媒体库）
-          </Label>
-          <div className="flex gap-2">
-            <Input
-              id={`img-${pos}-ext`}
-              value={externalUrl}
-              placeholder="https://example.com/image.jpg"
-              onChange={(event) => setExternalUrl(event.target.value)}
-            />
-            <Button
-              type="button"
-              size="sm"
-              onClick={() => {
-                commitExternalUrl(externalUrl.trim())
-                setShowExternalForm(false)
-              }}
-              disabled={externalUrl.trim() === ''}
-            >
-              使用
-            </Button>
-          </div>
-        </div>
-      ) : null}
 
       <div className="grid gap-1.5">
         <Label className="text-xs" htmlFor={`img-${pos}-alt`}>

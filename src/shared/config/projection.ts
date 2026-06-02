@@ -105,7 +105,7 @@ export function projectAssetsForAdmin(assets: {
       endpoint: assets.storage.endpoint ?? '',
       region: assets.storage.region ?? '',
       bucket: assets.storage.bucket ?? '',
-      accessKeyId: '',
+      accessKeyId: assets.storage.accessKeyId ?? '',
       forcePathStyle: assets.storage.forcePathStyle === true,
       urlTemplate: assets.storage.urlTemplate ?? '',
     },

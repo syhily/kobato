@@ -57,18 +57,12 @@ describe('PortableTextBody SSR renderer', () => {
         _key: 'math1',
         tex: 'a^2 + b^2 = c^2',
       },
-      {
-        _type: 'mermaid',
-        _key: 'm1',
-        code: 'graph TD\n  A --> B',
-      },
       { _type: 'horizontalRule', _key: 'hr1' },
     ]
     const html = stableHtml(renderInRouter(<PortableTextBodyComponent body={body} />))
     expect(html).toMatch(/<figure[^>]*>/)
     expect(html).toContain('<figcaption>caption text</figcaption>')
     expect(html).toMatch(/class="[^"]*math-display[^"]*"/)
-    expect(html).toContain('class="mermaid"')
     expect(html).toContain('<hr/>')
   })
 

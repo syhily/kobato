@@ -6,7 +6,7 @@ import { Readable } from 'node:stream'
 import { promisify } from 'node:util'
 import { createGunzip, createGzip } from 'node:zlib'
 
-import { DATABASE_URL, processEnv, TIMESCALEDB_VERSION } from '@/server/infra/env'
+import { DATABASE_URL, processEnv } from '@/server/infra/env'
 import { ActionFailure, DomainError } from '@/server/infra/http/errors'
 import { getLogger } from '@/server/infra/logger'
 import {
@@ -146,7 +146,8 @@ export async function listBackups(
     if (error instanceof ActionFailure) {
       return { files: [] }
     }
-    throw error
+    log.error('listBackups failed', { error: error instanceof Error ? error.message : String(error) })
+    return { files: [] }
   }
 }
 
@@ -218,14 +219,10 @@ export async function extractBackupSql(buffer: Buffer, fileName: string): Promis
 // use patterns that tolerate whitespace/comments between tokens.
 const BLOCKED_PATTERNS = [
   /\bDROP\s+(?:\/\*[^]*?\*\/\s*)*DATABASE\b/i,
-  /\bDROP\s+(?:\/\*[^]*?\*\/\s*)*SCHEMA\b/i,
-  /\bDROP\s+(?:\/\*[^]*?\*\/\s*)*TABLE\b/i,
-  /\bTRUNCATE\s+(?:\/\*[^]*?\*\/\s*)*TABLE\b/i,
   /\bALTER\s+(?:\/\*[^]*?\*\/\s*)*ROLE\b/i,
   /\bDROP\s+(?:\/\*[^]*?\*\/\s*)*ROLE\b/i,
   /\bALTER\s+(?:\/\*[^]*?\*\/\s*)*SYSTEM\b/i,
-  /\bCOPY\b[^;]*?\bTO\b[^;]*?\bPROGRAM\b/i,
-  /\bCREATE\s+(?:\/\*[^]*?\*\/\s*)*EXTENSION\b/i,
+  /\bCOPY\b[^\n;]*?\bTO\b[^\n;]*?\bPROGRAM\b/i,
   /\\!/i, // psql shell escape (e.g. \! rm -rf /)
   /\\i\b/i, // psql \include — can pull arbitrary files
   /\\include\b/i,
@@ -252,7 +249,7 @@ export function validateBackupSql(sql: string): void {
   }
   for (const pattern of BLOCKED_PATTERNS) {
     if (pattern.test(sql)) {
-      throw new ActionFailure(400, '备份文件包含危险 SQL 命令，还原已中止。')
+      throw new ActionFailure(400, `备份文件包含危险 SQL 命令（匹配：${pattern.source}），还原已中止。`)
     }
   }
 }
@@ -280,23 +277,7 @@ export async function restoreFromSql(db: NodePgDatabase, sql: string): Promise<v
 
   log.info('Starting restore')
 
-  // Fail fast on TimescaleDB version drift. The dump's
-  // `_timescaledb_catalog.metadata.timescaledb_version` row carries
-  // the source extension version; TimescaleDB's own
-  // `timescaledb_post_restore()` enforces a strict equality check
-  // against the running extension, but only after the dump has
-  // already been streamed through psql and `ON_ERROR_STOP=1` has
-  // partially landed rows. Surface the mismatch here so the operator
-  // gets a clear actionable error before any data is written.
   const dumpedVersion = readTimescaleVersionFromDump(sql)
-  if (dumpedVersion !== null && dumpedVersion !== TIMESCALEDB_VERSION) {
-    throw new ActionFailure(
-      400,
-      `TimescaleDB 版本不匹配：备份文件中的版本为 ${dumpedVersion}，当前环境期望 ${TIMESCALEDB_VERSION}。` +
-        `请在原始备份环境将 TIMESCALEDB_VERSION 设置为 '${TIMESCALEDB_VERSION}'，重启应用以触发自动版本对齐后重新备份。`,
-    )
-  }
-
   const timescaleEnabled = await hasTimescaleDbRestoreFunctions(db)
 
   // TimescaleDB pre/post restore hooks must run OUTSIDE the psql
@@ -350,6 +331,45 @@ export async function restoreFromSql(db: NodePgDatabase, sql: string): Promise<v
   })
 
   if (timescaleEnabled) {
+    // Align the extension version to what the dump expects before
+    // calling post_restore().  Upgrades are applied automatically;
+    // downgrades are skipped (unsafe during restore — would require
+    // DROP + CREATE which destroys hypertables).
+    if (dumpedVersion !== null) {
+      const extResult = await db.execute<{ extversion: string }>(
+        `SELECT extversion FROM pg_extension WHERE extname = 'timescaledb'`,
+      )
+      const installedVersion = extResult.rows[0]?.extversion ?? null
+      if (installedVersion !== null && installedVersion !== dumpedVersion) {
+        const currentParts = installedVersion.split('.').map((p) => parseInt(p, 10))
+        const targetParts = dumpedVersion.split('.').map((p) => parseInt(p, 10))
+        const isUpgrade =
+          currentParts[0] < targetParts[0] ||
+          (currentParts[0] === targetParts[0] && currentParts[1] < targetParts[1]) ||
+          (currentParts[0] === targetParts[0] &&
+            currentParts[1] === targetParts[1] &&
+            (currentParts[2] ?? 0) < (targetParts[2] ?? 0))
+        if (isUpgrade) {
+          log.info('Upgrading timescaledb extension before post_restore', {
+            from: installedVersion,
+            to: dumpedVersion,
+          })
+          try {
+            await db.execute(`ALTER EXTENSION timescaledb UPDATE TO '${dumpedVersion}'`)
+          } catch (err) {
+            log.warn('Failed to upgrade timescaledb extension before post_restore', {
+              err: err instanceof Error ? err.message : String(err),
+            })
+          }
+        } else {
+          log.warn('TimescaleDB downgrade skipped during restore', {
+            from: installedVersion,
+            to: dumpedVersion,
+          })
+        }
+      }
+    }
+
     try {
       await db.execute(drizzleSql`SELECT public.timescaledb_post_restore()`)
     } catch (err) {

@@ -1025,22 +1025,6 @@ body {
       overflow-wrap: normal;
     }
 
-    /* Mermaid diagrams shrink to column width like images */
-    :where(.flex:has(> .mermaid)) {
-      min-width: 0;
-    }
-
-    :where(.mermaid) {
-      max-width: 100%;
-      min-width: 0;
-    }
-
-    :where(.mermaid) :where(svg) {
-      display: block;
-      max-width: 100%;
-      height: auto;
-    }
-
     :where(svg) {
       display: block;
       max-width: 100%;

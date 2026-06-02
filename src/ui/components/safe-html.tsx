@@ -4,7 +4,7 @@ import DOMPurify from 'dompurify'
 
 import { cn } from '@/ui/lib/cn'
 
-export type SafeHtmlStrategy = 'shiki' | 'mermaid' | 'math' | 'email' | 'audit' | 'preview'
+export type SafeHtmlStrategy = 'shiki' | 'math' | 'email' | 'audit' | 'preview'
 
 interface SafeHtmlProps extends Omit<HTMLAttributes<HTMLElement>, 'dangerouslySetInnerHTML'> {
   html: string
@@ -18,10 +18,10 @@ interface SafeHtmlProps extends Omit<HTMLAttributes<HTMLElement>, 'dangerouslySe
  *
  * Every call site must declare a `strategy` that documents why the HTML is
  * considered safe.  The strategy controls the DOMPurify allow-list so
- * math SVGs, Mermaid diagrams, and Shiki-highlighted code each get the
- * minimum required permissions.  This is defence-in-depth: upstream
- * producers (Shiki, KaTeX, Mermaid, etc.) are trusted, but the sanitizer
- * catches any regression or bug that injects unexpected markup.
+ * math SVGs and Shiki-highlighted code each get the minimum required
+ * permissions.  This is defence-in-depth: upstream producers (Shiki,
+ * KaTeX, etc.) are trusted, but the sanitizer catches any regression or
+ * bug that injects unexpected markup.
  */
 export function SafeHtml({ html, strategy, tag = 'div', className, ...rest }: SafeHtmlProps) {
   const Tag = tag
@@ -200,75 +200,6 @@ function strategyToConfig(strategy: SafeHtmlStrategy): NonNullable<Parameters<ty
           'id',
           'href',
           'xlink:href',
-        ],
-      }
-
-    case 'mermaid':
-      return {
-        ...base,
-        ALLOWED_TAGS: [
-          ...(base.ALLOWED_TAGS ?? []),
-          'svg',
-          'g',
-          'path',
-          'rect',
-          'circle',
-          'ellipse',
-          'line',
-          'polyline',
-          'polygon',
-          'text',
-          'tspan',
-          'defs',
-          'marker',
-          'foreignObject',
-          'style',
-        ],
-        ALLOWED_ATTR: [
-          ...(base.ALLOWED_ATTR ?? []),
-          'xmlns',
-          'width',
-          'height',
-          'viewBox',
-          'preserveAspectRatio',
-          'x',
-          'y',
-          'x1',
-          'y1',
-          'x2',
-          'y2',
-          'cx',
-          'cy',
-          'r',
-          'rx',
-          'ry',
-          'points',
-          'd',
-          'fill',
-          'stroke',
-          'stroke-width',
-          'stroke-dasharray',
-          'stroke-linecap',
-          'stroke-linejoin',
-          'transform',
-          'marker',
-          'marker-start',
-          'marker-end',
-          'marker-mid',
-          'markerWidth',
-          'markerHeight',
-          'refX',
-          'refY',
-          'orient',
-          'id',
-          'href',
-          'xlink:href',
-          'type',
-          'text-anchor',
-          'dominant-baseline',
-          'font-family',
-          'font-size',
-          'font-weight',
         ],
       }
 

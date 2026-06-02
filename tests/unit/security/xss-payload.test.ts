@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest'
 import type { LinkMarkDef } from '@/shared/pt/schema'
 
 import { canonicalizeCommentBody } from '@/server/domains/comments/canonicalize'
-import { CodeBlockNodeComponent, MermaidBlockComponent } from '@/ui/pt/render-blocks'
+import { CodeBlockNodeComponent } from '@/ui/pt/render-blocks'
 import { LinkMark, renderMathMarkupOrTexFallback } from '@/ui/pt/render-marks'
 
 describe('security / XSS payload — canonicalizeCommentBody', () => {
@@ -106,22 +106,5 @@ describe('security / XSS payload — code block', () => {
       } as React.ComponentProps<typeof CodeBlockNodeComponent>),
     )
     expect(html).not.toContain('<script>')
-  })
-})
-
-describe('security / XSS payload — mermaid diagram', () => {
-  it('sanitizes mermaid diagram with HTML labels', () => {
-    const html = renderToStaticMarkup(
-      createElement(MermaidBlockComponent, {
-        value: {
-          _type: 'mermaid',
-          _key: 'm1',
-          code: 'graph TD; A["<img src=x onerror=alert(1)>"] --> B',
-        },
-      } as React.ComponentProps<typeof MermaidBlockComponent>),
-    )
-    // The raw HTML tags must be escaped so they appear as text, not DOM nodes
-    expect(html).toContain('&lt;img')
-    expect(html).toContain('&gt;')
   })
 })

@@ -109,7 +109,6 @@ const FULL_BODY: PortableTextBody = [
   IMAGE,
   CODE,
   { _type: 'mathBlock', _key: 'math-1', tex: 'a^2 + b^2 = c^2', svg: '<svg/>' },
-  { _type: 'mermaid', _key: 'mer-1', code: 'graph TD; A-->B', svg: '<svg/>' },
   { _type: 'horizontalRule', _key: 'hr-1' },
   MUSIC,
   SOLUTION,

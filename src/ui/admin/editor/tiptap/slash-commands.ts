@@ -18,7 +18,6 @@ import {
   type LucideIcon,
   TableIcon,
   Type as TypeIcon,
-  WorkflowIcon,
   Columns2Icon,
 } from 'lucide-react'
 
@@ -203,20 +202,6 @@ export const SLASH_COMMANDS: readonly SlashCommand[] = [
         _type: 'mathBlock',
         _key: generateBlockKey(),
         tex: DEFAULT_MATH_BLOCK_TEX,
-      })
-    },
-  },
-  {
-    id: 'mermaid',
-    title: 'Mermaid 流程图',
-    description: '声明式流程图 / 时序图',
-    icon: WorkflowIcon,
-    aliases: ['mermaid', 'diagram', 'flow', '流程图'],
-    command: ({ editor, range }) => {
-      insertCustomBlock(editor, range, {
-        _type: 'mermaid',
-        _key: generateBlockKey(),
-        code: 'graph TD\n  A --> B',
       })
     },
   },

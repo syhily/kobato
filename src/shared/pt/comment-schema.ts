@@ -28,7 +28,7 @@ import {
 //
 // What's NOT allowed (rejected at the perimeter):
 //   - Headings (h1-h4) — comment threads aren't sectioned content.
-//   - `image`, `mermaid`, `horizontalRule`, `musicPlayer`,
+//   - `image`, `horizontalRule`, `musicPlayer`,
 //     `table`, `solution`, `twoColumn`, `footnoteDefinition`.
 
 const COMMENT_LIST_MAX_LEVEL = 4

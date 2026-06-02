@@ -124,11 +124,10 @@ export function EditTagDialog({ tag, onClose, onSaved }: EditTagDialogProps) {
             <CoverInputRow
               label="OG 图"
               htmlFor="tag-og-image"
-              description="上传或填写 OG 图片 URL；留空则使用站点默认 OG 图。"
+              description="留空则使用站点默认 OG 图。"
               value={draft.ogImage}
               onChange={(value) => setDraft((prev) => ({ ...prev, ogImage: value }))}
               uploadKind={{ kind: 'generic' }}
-              expectedAutoUrl=""
               fallbackSrc="/images/open-graph.png"
               thumbnailClassName="aspect-[1200/630] w-full"
             />

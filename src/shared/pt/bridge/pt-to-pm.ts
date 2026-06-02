@@ -7,7 +7,6 @@ import { horizontalRuleBlockToPmNode } from '@/shared/pt/bridge/nodes/horizontal
 import { imageBlockToPmNode } from '@/shared/pt/bridge/nodes/image'
 import { consumeListStreak } from '@/shared/pt/bridge/nodes/list'
 import { mathBlockToPmNode } from '@/shared/pt/bridge/nodes/math'
-import { mermaidBlockToPmNode } from '@/shared/pt/bridge/nodes/mermaid'
 import { musicPlayerBlockToPmNode } from '@/shared/pt/bridge/nodes/musicPlayer'
 import { solutionBlockToPmNode } from '@/shared/pt/bridge/nodes/solution'
 import { tableBlockToPmNode } from '@/shared/pt/bridge/nodes/table'
@@ -83,8 +82,6 @@ function blockToPmNode(block: Block): PmBlockNode {
       return footnoteDefinitionBlockToPmNode(block, pushBlocks)
     case 'mathBlock':
       return mathBlockToPmNode(block)
-    case 'mermaid':
-      return mermaidBlockToPmNode(block)
     case 'musicPlayer':
       return musicPlayerBlockToPmNode(block)
     default:

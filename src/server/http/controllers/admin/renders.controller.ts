@@ -1,4 +1,3 @@
-import { renderMermaidSVGAsync } from 'beautiful-mermaid'
 import { z } from 'zod'
 
 import { recordAuditEventFromContext } from '@/server/domains/audit/service'
@@ -30,22 +29,6 @@ const math = adminProc
     }
   })
 
-const mermaid = adminProc
-  .route({ method: 'POST', path: '/admin/renders/mermaid' })
-  .input(z.object({ code: z.string().max(MAX_RENDER_INPUT_LENGTH) }))
-  .output(z.object({ svg: z.string(), error: z.string().nullable() }))
-  .handler(async ({ input }) => {
-    if (input.code.trim() === '') {
-      return { svg: '', error: null }
-    }
-    try {
-      const svg = await renderMermaidSVGAsync(input.code)
-      return { svg, error: null }
-    } catch (err) {
-      return { svg: '', error: err instanceof Error ? err.message : '图表渲染失败' }
-    }
-  })
-
 const reindexSearch = adminProc
   .route({ method: 'POST', path: '/admin/renders/reindex-search' })
   .input(z.object({ offset: z.number().optional(), batchSize: z.number().optional() }))
@@ -66,4 +49,4 @@ const reindexSearch = adminProc
     return result
   })
 
-export const adminRendersRouter = { math, mermaid, reindexSearch }
+export const adminRendersRouter = { math, reindexSearch }

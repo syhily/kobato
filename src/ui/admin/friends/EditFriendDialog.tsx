@@ -5,8 +5,7 @@ import { toast } from 'sonner'
 import type { AdminFriendDto, UpsertFriendInput } from '@/shared/types/friends'
 
 import { useMutation, orpcQuery } from '@/client/api/query'
-import { useAssetsSettingsOptional } from '@/shared/lib/blog-config-context'
-import { buildPublicBaseUrlFromStorage, extractFriendHostSafe } from '@/shared/types/images'
+import { extractFriendHostSafe } from '@/shared/types/images'
 import { CoverInputRow } from '@/ui/admin/shared/CoverInputRow'
 import { Button } from '@/ui/components/button'
 import { Checkbox } from '@/ui/components/checkbox'
@@ -85,25 +84,7 @@ export function EditFriendDialog({ friend, onClose, onSaved }: EditFriendDialogP
   const open = friend !== undefined
   const isEditing = friend !== null && friend !== undefined
 
-  // Read assets config so the cover row can preview the auto-managed
-  // public URL. Returns `null` while the upload toggle is off (or
-  // the section isn't configured yet); the dialog hides the preview
-  // and the upload button in that case so the operator immediately
-  // sees they need to enable S3 first.
-  const assetsSettings = useAssetsSettingsOptional()
   const friendHost = useMemo(() => extractFriendHostSafe(draft.homepage), [draft.homepage])
-  const expectedAutoUrl = useMemo(() => {
-    if (friendHost === null) {
-      return ''
-    }
-    const base = buildPublicBaseUrlFromStorage(
-      assetsSettings ? { storageEnabled: assetsSettings.storage.enabled, asset: assetsSettings.asset } : undefined,
-    )
-    if (base === null) {
-      return ''
-    }
-    return `${base}/images/links/${friendHost}.jpg`
-  }, [assetsSettings, friendHost])
   const homepageChanged = isEditing && friend && friend.homepage !== draft.homepage.trim()
 
   return (
@@ -171,7 +152,6 @@ export function EditFriendDialog({ friend, onClose, onSaved }: EditFriendDialogP
               value={draft.poster}
               onChange={(value) => setDraft((prev) => ({ ...prev, poster: value }))}
               uploadKind={friendHost === null ? null : { kind: 'friend', host: friendHost }}
-              expectedAutoUrl={expectedAutoUrl}
             />
           </div>
           <div className="flex flex-col gap-2 sm:col-span-2">

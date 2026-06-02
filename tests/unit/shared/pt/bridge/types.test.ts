@@ -359,11 +359,8 @@ describe('contract: pt-bridge — custom blocks pass through opaquely', () => {
     expect(back).toEqual(body)
   })
 
-  it('mathBlock and mermaid round-trip identically', () => {
-    const body: PortableTextBody = [
-      { _type: 'mathBlock', _key: 'mb-1', tex: 'E=mc^2' },
-      { _type: 'mermaid', _key: 'mr-1', code: 'graph TD;A-->B;', center: true },
-    ]
+  it('mathBlock round-trips identically', () => {
+    const body: PortableTextBody = [{ _type: 'mathBlock', _key: 'mb-1', tex: 'E=mc^2' }]
     const back = pmDocToBody(bodyToPmDoc(body))
     expect(back).toEqual(body)
   })

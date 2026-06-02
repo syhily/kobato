@@ -25,10 +25,27 @@ export function requestTimeout(timeoutMs = DEFAULT_TIMEOUT_MS): MiddlewareHandle
     const combined = AbortSignal.any([clientSignal, controller.signal])
 
     // Replace the raw request with a wrapper that carries the combined
-    // signal. This is cleaner than the previous Proxy-based approach
-    // because it uses standard Request semantics rather than relying on
-    // Hono's internal property-access patterns.
-    c.req.raw = new Request(c.req.raw, { signal: combined })
+    // signal. We try `new Request()` first (standard semantics), but some
+    // runtimes — e.g. @hono/node-server in Vite dev mode — provide a
+    // Request class whose internal private fields are invisible to the
+    // global undici Request constructor, causing a TypeError. In that
+    // case we fall back to a Proxy.
+    try {
+      c.req.raw = new Request(c.req.raw, { signal: combined })
+    } catch {
+      c.req.raw = new Proxy(c.req.raw, {
+        get(target, prop, receiver) {
+          if (prop === 'signal') {
+            return combined
+          }
+          const value = Reflect.get(target, prop, receiver)
+          if (typeof value === 'function') {
+            return value.bind(target)
+          }
+          return value
+        },
+      })
+    }
 
     try {
       await next()

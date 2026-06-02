@@ -65,7 +65,6 @@ function walkMainColumnFootnoteRefs(body: PortableTextBody, visit: (targetKey: s
       case 'horizontalRule':
       case 'image':
       case 'mathBlock':
-      case 'mermaid':
       case 'musicPlayer':
         return
     }
@@ -233,7 +232,6 @@ function syncBlock(block: Block, keyToIndex: Map<string, number>): Block {
     case 'horizontalRule':
     case 'image':
     case 'mathBlock':
-    case 'mermaid':
     case 'musicPlayer':
       return block
   }

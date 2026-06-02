@@ -24,9 +24,9 @@ describe('backup validation', () => {
     }
   })
 
-  it('rejects DROP SCHEMA', () => {
-    const sql = `-- PostgreSQL database dump\nDROP SCHEMA public CASCADE;\nCREATE TABLE users (id serial PRIMARY KEY);`
-    expect(() => validateBackupSql(sql)).toThrow(ActionFailure)
+  it('accepts DROP SCHEMA from pg_dump --clean', () => {
+    const sql = `-- PostgreSQL database dump\nDROP SCHEMA IF EXISTS drizzle;\nCREATE TABLE users (id serial PRIMARY KEY);`
+    expect(() => validateBackupSql(sql)).not.toThrow()
   })
 
   it('rejects psql shell escape \\!', () => {

@@ -4,6 +4,7 @@ import { getDbFromContext, getPoolFromContext, getRouteRequestContext } from '@/
 import { validateCsrfForAction } from '@/server/domains/auth/csrf'
 import { processAuthFormSubmission, signUpInitialAdminWithSession } from '@/server/domains/auth/flows'
 import { signUpAdminSchema } from '@/server/domains/auth/schema'
+import { getSetupToken } from '@/server/domains/auth/setup-token'
 import { checkPgToolsAvailable } from '@/server/domains/backup/service'
 import { ensureNoAdminOrRedirect } from '@/server/domains/settings/install-gate'
 import { bundleFromMatches, routeMeta } from '@/server/render/seo/meta'
@@ -23,7 +24,10 @@ export async function loader({ request, context }: Route.LoaderArgs) {
 
   // Pull the request context so we trip session middleware exactly once.
   getRouteRequestContext({ request, context })
-  return data({ pgToolsAvailable: await checkPgToolsAvailable() })
+  return data({
+    pgToolsAvailable: await checkPgToolsAvailable(),
+    setupToken: getSetupToken(),
+  })
 }
 
 export async function action({ request, context }: Route.ActionArgs) {
@@ -74,7 +78,7 @@ export default function AdminInstallRoute({ actionData, loaderData }: Route.Comp
         </div>
       ) : null}
 
-      <AdminInstallForm pgToolsAvailable={loaderData.pgToolsAvailable} />
+      <AdminInstallForm pgToolsAvailable={loaderData.pgToolsAvailable} setupToken={loaderData.setupToken} />
     </div>
   )
 }

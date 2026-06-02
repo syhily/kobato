@@ -7,7 +7,6 @@ import type {
   FootnoteDefinitionBlock,
   ImageBlock,
   MathBlock,
-  MermaidBlock,
   MusicPlayerBlock,
   PortableTextBlock,
   PortableTextBody as PortableTextBodyType,
@@ -217,7 +216,6 @@ function buildPortableTextComponents(ctx: ComponentContext): PortableTextCompone
       image: ({ value }) => renderImageBlock(value as ImageBlock),
       code: ({ value }) => renderCodeBlock(value as CodeBlock, ctx.isRss),
       mathBlock: ({ value }) => renderMathBlock(value as MathBlock, ctx.isRss),
-      mermaid: ({ value }) => renderMermaidBlock(value as MermaidBlock, ctx.isRss),
       horizontalRule: () => '<hr />',
       musicPlayer: ({ value }) => renderMusicPlayer(value as MusicPlayerBlock, ctx),
       solution: ({ value }) => {
@@ -287,13 +285,6 @@ function renderMathBlock(value: MathBlock, isRss: boolean): string {
     }
   }
   return `<pre><code>${escapeHtml(value.tex)}</code></pre>`
-}
-
-function renderMermaidBlock(value: MermaidBlock, isRss: boolean): string {
-  if (value.svg !== undefined && value.svg !== '') {
-    return isRss ? `<![CDATA[${value.svg}]]>` : value.svg
-  }
-  return `<pre class="mermaid">${escapeHtml(value.code)}</pre>`
 }
 
 function renderMusicPlayer(value: MusicPlayerBlock, ctx: ComponentContext): string {

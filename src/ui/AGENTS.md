@@ -159,7 +159,7 @@ scrolling past unrelated concerns."
 ## PortableText editor
 
 - Zod dialect: `@/shared/pt/schema` (text / list / heading / blockquote
-  - custom blocks `image`, `code`, `mathBlock`, `mermaid`,
+  - custom blocks `image`, `code`, `mathBlock`,
     `horizontalRule`, `musicPlayer`, `solution`, `footnoteDefinition`,
     `table`). Friends grid is NOT a body block — it's the
     `page.show_friends` toggle.

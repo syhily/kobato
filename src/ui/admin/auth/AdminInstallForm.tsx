@@ -1,6 +1,6 @@
 import { EyeIcon, EyeOffIcon, Loader2Icon } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
-import { Form, useNavigation } from 'react-router'
+import { Form, useNavigation, useRouteLoaderData } from 'react-router'
 
 import { Button } from '@/ui/components/button'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/ui/components/dialog'
@@ -14,14 +14,21 @@ const inputClasses =
 
 interface AdminInstallFormProps {
   pgToolsAvailable?: boolean
+  setupToken?: string
 }
 
 type InstallMode = 'install' | 'restore'
 
-export function AdminInstallForm({ pgToolsAvailable }: AdminInstallFormProps) {
+function useCsrfToken(): string | undefined {
+  const rootData = useRouteLoaderData<{ csrfToken?: string }>('root')
+  return rootData?.csrfToken
+}
+
+export function AdminInstallForm({ pgToolsAvailable, setupToken }: AdminInstallFormProps) {
   const navigation = useNavigation()
   const isSubmitting = navigation.state === 'submitting' && navigation.formMethod === 'POST'
   const [showPassword, setShowPassword] = useState(false)
+  const csrfToken = useCsrfToken()
 
   const [mode, setMode] = useState<InstallMode>('install')
   const [isRestoring, setIsRestoring] = useState(false)
@@ -97,10 +104,18 @@ export function AdminInstallForm({ pgToolsAvailable }: AdminInstallFormProps) {
     try {
       const form = e.currentTarget
       const formData = new FormData(form)
+      const headers: Record<string, string> = {}
+      if (setupToken) {
+        headers['x-setup-token'] = setupToken
+      }
+      if (csrfToken) {
+        headers['x-csrf-token'] = csrfToken
+      }
       const res = await fetch('/api/setup/restore', {
         method: 'POST',
         body: formData,
         credentials: 'include',
+        headers,
       })
 
       const json = (await res.json()) as { accepted?: boolean; error?: { message?: string } }
@@ -190,6 +205,7 @@ export function AdminInstallForm({ pgToolsAvailable }: AdminInstallFormProps) {
 
       {mode === 'install' ? (
         <Form method="post" id="adminInstallForm" className="flex w-full flex-col gap-6">
+          {csrfToken ? <input type="hidden" name="csrf_token" value={csrfToken} /> : null}
           <div className="flex w-full flex-col gap-2">
             <Label htmlFor="install-title" className="font-semibold text-(--text-admin-base)">
               站点名称
@@ -289,6 +305,7 @@ export function AdminInstallForm({ pgToolsAvailable }: AdminInstallFormProps) {
           encType="multipart/form-data"
           className="flex w-full flex-col gap-6"
         >
+          {csrfToken ? <input type="hidden" name="csrf_token" value={csrfToken} /> : null}
           <div className="flex w-full flex-col gap-2">
             <Label htmlFor="restore-file" className="font-semibold text-(--text-admin-base)">
               备份文件

@@ -5,8 +5,7 @@ import { toast } from 'sonner'
 import type { AdminCategoryDto, UpsertCategoryInput } from '@/shared/types/categories'
 
 import { useMutation, orpcQuery } from '@/client/api/query'
-import { useAssetsSettingsOptional } from '@/shared/lib/blog-config-context'
-import { buildPublicBaseUrlFromStorage, isSafeImageSegment } from '@/shared/types/images'
+import { isSafeImageSegment } from '@/shared/types/images'
 import { CoverInputRow } from '@/ui/admin/shared/CoverInputRow'
 import { Button } from '@/ui/components/button'
 import {
@@ -73,21 +72,7 @@ export function EditCategoryDialog({ category, onClose, onSaved }: EditCategoryD
   const open = category !== undefined
   const isEditing = category !== null && category !== undefined
 
-  const assetsSettings = useAssetsSettingsOptional()
   const slugSafe = useMemo(() => isSafeImageSegment(draft.slug), [draft.slug])
-  const expectedAutoUrl = useMemo(() => {
-    if (!slugSafe) {
-      return ''
-    }
-    const base = buildPublicBaseUrlFromStorage(
-      assetsSettings ? { storageEnabled: assetsSettings.storage.enabled, asset: assetsSettings.asset } : undefined,
-    )
-    if (base === null) {
-      return ''
-    }
-    const slug = draft.slug.trim().toLowerCase()
-    return `${base}/images/categories/${slug}.jpg`
-  }, [assetsSettings, slugSafe, draft.slug])
 
   const slugChanged = isEditing && category && category.slug !== draft.slug.trim()
   const slugForOg = draft.slug.trim().toLowerCase()
@@ -124,7 +109,7 @@ export function EditCategoryDialog({ category, onClose, onSaved }: EditCategoryD
             }
             submit(payload)
           }}
-          className="grid gap-4 sm:grid-cols-2"
+          className="grid items-start gap-4 sm:grid-cols-2"
         >
           <div className="flex flex-col gap-2 sm:col-span-1">
             <Label htmlFor="category-name">名称</Label>
@@ -163,7 +148,6 @@ export function EditCategoryDialog({ category, onClose, onSaved }: EditCategoryD
               value={draft.cover}
               onChange={(value) => setDraft((prev) => ({ ...prev, cover: value }))}
               uploadKind={slugSafe ? { kind: 'category', slug: slugForOg } : null}
-              expectedAutoUrl={expectedAutoUrl}
               thumbnailClassName="h-40 w-full"
             />
           </div>
@@ -171,11 +155,10 @@ export function EditCategoryDialog({ category, onClose, onSaved }: EditCategoryD
             <CoverInputRow
               label="OG 图"
               htmlFor="category-og"
-              description="留空时基于封面图自动生成 OG 图。"
+              description="默认基于封面图自动生成对应的 OG 图"
               value={draft.og}
               onChange={(value) => setDraft((prev) => ({ ...prev, og: value }))}
               uploadKind={slugSafe ? { kind: 'generic' } : null}
-              expectedAutoUrl=""
               fallbackSrc={ogFallbackSrc}
               thumbnailClassName="h-40 w-full"
             />

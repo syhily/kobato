@@ -21,7 +21,7 @@ describe('slash-commands', () => {
 
   it('includes media + custom-block pickers', () => {
     const ids = SLASH_COMMANDS.map((cmd) => cmd.id)
-    for (const expected of ['image', 'music', 'math-block', 'mermaid', 'solution', 'two-columns', 'footnote']) {
+    for (const expected of ['image', 'music', 'math-block', 'solution', 'two-columns', 'footnote']) {
       expect(ids).toContain(expected)
     }
   })
@@ -37,8 +37,8 @@ describe('slash-commands', () => {
   })
 
   it('matches by alias', () => {
-    const out = filterSlashCommands('flow')
-    expect(out.some((cmd) => cmd.id === 'mermaid')).toBe(true)
+    const out = filterSlashCommands('tex')
+    expect(out.some((cmd) => cmd.id === 'math-block')).toBe(true)
   })
 
   it('returns empty when nothing matches', () => {

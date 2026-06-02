@@ -4,7 +4,6 @@ import { reactRouter } from '@react-router/dev/vite'
 import tailwindcss from '@tailwindcss/vite'
 import { createRequire } from 'node:module'
 import { defineConfig } from 'vite'
-import babel from 'vite-plugin-babel'
 
 import { reactRouterHonoServer } from './src/server/infra/hono/dev.ts'
 import { routeWarmupPlugin } from './src/server/infra/route-warmup'
@@ -16,13 +15,6 @@ export default defineConfig({
   plugins: [
     reactRouterHonoServer(),
     ...(reactRouter() as Plugin[]),
-    babel({
-      include: /src\/.*\.[jt]sx?$/,
-      babelConfig: {
-        presets: ['@babel/preset-typescript'],
-        plugins: [['babel-plugin-react-compiler', {}]],
-      },
-    }),
     tailwindcss(),
     routeWarmupPlugin(),
   ] as PluginOption[],

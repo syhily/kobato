@@ -34,6 +34,7 @@ import { root } from '@/server/infra/logger'
 import { sanitizeReqHeaders, resBindings } from '@/server/infra/logger/sanitizer'
 import { isRedisHealthy, pingRedis } from '@/server/infra/redis/storage'
 import { buildOpenApiDocsHtml } from '@/server/render/openapi-docs'
+import { getBlogSettingsBundleSync } from '@/shared/config/getters'
 
 export function configureMiddleware(app: Hono<Env>): void {
   // Inject db and pool into every request's Hono context so
@@ -49,13 +50,57 @@ export function configureMiddleware(app: Hono<Env>): void {
   app.onError(onErrorHandler)
   app.use(requestId())
   app.use(compress())
+  // Dynamic CSP: extend the static policy with origins from blog settings
+  // (font CSS URLs and asset host) so externally-hosted fonts / images do
+  // not get blocked after an admin configures them.
+  //
+  // Registered BEFORE `secureHeaders` so its `next()` returns *after*
+  // `secureHeaders` has already set the static CSP header, letting us
+  // overwrite it with the dynamic value.
+  app.use(async (c, next) => {
+    await next()
+    const bundle = getBlogSettingsBundleSync()
+    if (!bundle) {
+      return
+    }
+    const origins = new Set<string>()
+    for (const url of [...(bundle.fonts?.globalCss ?? []), ...(bundle.fonts?.postCss ?? [])]) {
+      try {
+        origins.add(new URL(url).origin)
+      } catch {
+        // Invalid URL — skip.
+      }
+    }
+    if (bundle.assets?.asset?.host) {
+      origins.add(`https://${bundle.assets.asset.host}`)
+    }
+    if (origins.size === 0) {
+      return
+    }
+    const extra = [...origins].join(' ')
+    const csp = [
+      "default-src 'self'",
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+      `style-src 'self' 'unsafe-inline' ${extra}`,
+      `font-src 'self' ${extra}`,
+      `img-src 'self' data: blob: ${extra}`,
+      `media-src 'self' ${extra}`,
+      "connect-src 'self'",
+      "object-src 'none'",
+      "frame-ancestors 'none'",
+      'upgrade-insecure-requests',
+    ].join('; ')
+    c.res.headers.set('Content-Security-Policy', csp)
+  })
+
   app.use(
     secureHeaders({
       contentSecurityPolicy: {
         defaultSrc: ["'self'"],
-        scriptSrc: ["'self'", "'unsafe-inline'"],
+        scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
         styleSrc: ["'self'", "'unsafe-inline'"],
         imgSrc: ["'self'", 'data:', 'blob:'],
+        mediaSrc: ["'self'"],
         fontSrc: ["'self'"],
         connectSrc: ["'self'"],
         objectSrc: ["'none'"],

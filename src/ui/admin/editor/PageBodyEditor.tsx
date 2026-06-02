@@ -83,8 +83,8 @@ export interface PageBodyEditorProps {
 // Tiptap-based PortableText editor. The standard subset (paragraphs /
 // headings / blockquote / lists / inline marks / fenced code /
 // horizontal rule / link / table) is handled by Tiptap extensions;
-// custom block types: `solution` uses a nested PM node; `musicPlayer`,
-// `mathBlock`, and `mermaid` round-trip through `blockCard`.
+// custom block types: `solution` uses a nested PM node; `musicPlayer`
+// and `mathBlock` round-trip through `blockCard`.
 // `footnoteDefinition` rows are **not** loaded into PM — they merge on
 // save beside the prose slice so footnotes are authored via dialog + inline
 // refs only; the public page still renders a unified footnotes list from PT.

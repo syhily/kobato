@@ -1,8 +1,15 @@
 import type { z } from 'zod'
 
-import { zodResolver } from '@hookform/resolvers/zod'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { type DefaultValues, type FieldValues, type Resolver, type UseFormReturn, useForm } from 'react-hook-form'
+import {
+  type DefaultValues,
+  type FieldError,
+  type FieldErrors,
+  type FieldValues,
+  type Resolver,
+  type UseFormReturn,
+  useForm,
+} from 'react-hook-form'
 
 import type { SettingsSection } from '@/shared/config/sections'
 
@@ -77,6 +84,26 @@ function deepMerge<T extends object>(
   return result as T
 }
 
+function buildZodErrors<T extends FieldValues>(
+  issues: { code: string; message: string; path: PropertyKey[] }[],
+): FieldErrors<T> {
+  const errors: Record<string, unknown> = {}
+  for (const issue of issues) {
+    let current: Record<string, unknown> = errors
+    for (let i = 0; i < issue.path.length - 1; i++) {
+      const key = issue.path[i] as string | number
+      const nextKey = issue.path[i + 1]
+      if (current[key] === undefined) {
+        current[key] = typeof nextKey === 'number' ? [] : {}
+      }
+      current = current[key] as Record<string, unknown>
+    }
+    const lastKey = issue.path[issue.path.length - 1] as string | number
+    current[lastKey] = { type: issue.code, message: issue.message } as FieldError
+  }
+  return errors as FieldErrors<T>
+}
+
 export function useSettingsCard<TSource extends object, TState extends FieldValues>({
   section,
   source,
@@ -109,7 +136,13 @@ export function useSettingsCard<TSource extends object, TState extends FieldValu
     if (!schema) {
       return undefined
     }
-    return zodResolver(schema)
+    return async (values) => {
+      const result = await schema.safeParseAsync(values)
+      if (result.success) {
+        return { values: result.data, errors: {} }
+      }
+      return { values: {}, errors: buildZodErrors<TState>(result.error.issues) }
+    }
   }, [schema])
 
   const form = useForm<TState>({

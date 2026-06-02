@@ -1,6 +1,6 @@
 import { ArrowRightIcon, EyeIcon, EyeOffIcon, SendIcon } from 'lucide-react'
 import { useState } from 'react'
-import { Form, Link, useNavigation } from 'react-router'
+import { Form, Link, useNavigation, useRouteLoaderData } from 'react-router'
 
 import { Button } from '@/ui/components/button'
 import { Input } from '@/ui/components/input'
@@ -14,6 +14,11 @@ const inputClasses =
 function useAuthSubmitting(): boolean {
   const navigation = useNavigation()
   return navigation.state === 'submitting' && navigation.formMethod === 'POST'
+}
+
+function useCsrfToken(): string | undefined {
+  const rootData = useRouteLoaderData<{ csrfToken?: string }>('root')
+  return rootData?.csrfToken
 }
 
 function PasswordToggle({ show, onToggle }: { show: boolean; onToggle: () => void }) {
@@ -38,9 +43,11 @@ export interface LoginFormProps {
 export function LoginForm({ action }: LoginFormProps) {
   const isSubmitting = useAuthSubmitting()
   const [showPassword, setShowPassword] = useState(false)
+  const csrfToken = useCsrfToken()
 
   return (
     <Form method="post" action={action} id="loginForm" className="flex w-full flex-col gap-6">
+      {csrfToken ? <input type="hidden" name="csrf_token" value={csrfToken} /> : null}
       <div className="flex w-full flex-col gap-2">
         <Label htmlFor="loginForm-email" className="font-semibold text-(--text-admin-base)">
           邮箱
@@ -108,9 +115,11 @@ export interface LostPasswordFormProps {
 
 export function LostPasswordForm({ action }: LostPasswordFormProps) {
   const isSubmitting = useAuthSubmitting()
+  const csrfToken = useCsrfToken()
 
   return (
     <Form method="post" action={action} id="loginForm" className="flex w-full flex-col gap-6">
+      {csrfToken ? <input type="hidden" name="csrf_token" value={csrfToken} /> : null}
       <div className="flex w-full flex-col gap-2">
         <Label htmlFor="loginForm-email" className="font-semibold text-(--text-admin-base)">
           邮箱
@@ -158,10 +167,12 @@ export interface ResetPasswordFormProps {
 export function ResetPasswordForm({ action, token }: ResetPasswordFormProps) {
   const isSubmitting = useAuthSubmitting()
   const [showPassword, setShowPassword] = useState(false)
+  const csrfToken = useCsrfToken()
 
   return (
     <Form method="post" action={action} id="loginForm" className="flex w-full flex-col gap-6">
       <input type="hidden" name="reset_token" value={token} />
+      {csrfToken ? <input type="hidden" name="csrf_token" value={csrfToken} /> : null}
       <div className="flex w-full flex-col gap-2">
         <Label htmlFor="loginForm-password" className="font-semibold text-(--text-admin-base)">
           新密码

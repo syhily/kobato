@@ -1,5 +1,16 @@
+import {
+  closestCenter,
+  DndContext,
+  type DragEndEvent,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from '@dnd-kit/core'
+import { restrictToVerticalAxis } from '@dnd-kit/modifiers'
+import { SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { PlusIcon, SearchIcon } from 'lucide-react'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { toast } from 'sonner'
 
 import type { AdminCategoryDto } from '@/shared/types/categories'
@@ -18,7 +29,6 @@ export function CategoriesView() {
   const { state, dispatch } = useCategoriesController()
   const [editTarget, setEditTarget] = useState<EditTarget>(undefined)
   const [confirm, setConfirm] = useState<ConfirmState | null>(null)
-  const [draggingId, setDraggingId] = useState<string | null>(null)
 
   const listQuery = useQuery(
     orpcQuery.admin.categories.list.queryOptions({
@@ -80,40 +90,30 @@ export function CategoriesView() {
   const dndEnabled = state.rows.length > 1
   const isReorderPending = reorderMutation.isPending
 
-  const dragOriginRef = useRef<string | null>(null)
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  )
 
-  const onDragStart = useCallback((id: string) => {
-    dragOriginRef.current = id
-    setDraggingId(id)
-  }, [])
-
-  const onDragEnd = useCallback(() => {
-    dragOriginRef.current = null
-    setDraggingId(null)
-  }, [])
-
-  const onDropOnRow = useCallback(
-    (targetId: string) => {
-      const sourceId = dragOriginRef.current
-      dragOriginRef.current = null
-      setDraggingId(null)
-      if (sourceId === null || sourceId === targetId) {
-        return
+  const handleDragEnd = useCallback(
+    (event: DragEndEvent) => {
+      const { active, over } = event
+      if (over && active.id !== over.id) {
+        const ids = state.rows.map((row) => row.id)
+        const oldIndex = ids.indexOf(String(active.id))
+        const newIndex = ids.indexOf(String(over.id))
+        if (oldIndex < 0 || newIndex < 0) {
+          return
+        }
+        const next = ids.slice()
+        next.splice(oldIndex, 1)
+        next.splice(newIndex, 0, ids[oldIndex])
+        if (next.every((id, index) => id === ids[index])) {
+          return
+        }
+        dispatch({ type: 'reorderRows', orderedIds: next })
+        submitReorder({ orderedIds: next })
       }
-      const ids = state.rows.map((row) => row.id)
-      const fromIndex = ids.indexOf(sourceId)
-      const toIndex = ids.indexOf(targetId)
-      if (fromIndex < 0 || toIndex < 0) {
-        return
-      }
-      const next = ids.slice()
-      next.splice(fromIndex, 1)
-      next.splice(toIndex, 0, sourceId)
-      if (next.every((id, index) => id === ids[index])) {
-        return
-      }
-      dispatch({ type: 'reorderRows', orderedIds: next })
-      submitReorder({ orderedIds: next })
     },
     [dispatch, state.rows, submitReorder],
   )
@@ -156,30 +156,35 @@ export function CategoriesView() {
               </EmptyHeader>
             </Empty>
           ) : (
-            <div className="divide-y">
-              {state.rows.map((row) => (
-                <CategoryRow
-                  key={row.id}
-                  category={row}
-                  dragEnabled={dndEnabled && !isReorderPending}
-                  isDragging={draggingId === row.id}
-                  onDragStart={onDragStart}
-                  onDragEnd={onDragEnd}
-                  onDropOnRow={onDropOnRow}
-                  onEdit={() => setEditTarget(row)}
-                  onDelete={() =>
-                    setConfirm({
-                      title: `删除分类「${row.name}」？`,
-                      description:
-                        '此操作会从数据库直接删除该分类。如果仍有文章引用此分类，删除将被阻止；请先在 MDX frontmatter 中改写后再删除。',
-                      actionLabel: '删除',
-                      destructive: true,
-                      onConfirm: () => submitDelete({ id: row.id }),
-                    })
-                  }
-                />
-              ))}
-            </div>
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragEnd={handleDragEnd}
+              modifiers={[restrictToVerticalAxis]}
+            >
+              <SortableContext items={state.rows.map((row) => row.id)} strategy={verticalListSortingStrategy}>
+                <div className="divide-y">
+                  {state.rows.map((row) => (
+                    <CategoryRow
+                      key={row.id}
+                      category={row}
+                      sortEnabled={dndEnabled && !isReorderPending}
+                      onEdit={() => setEditTarget(row)}
+                      onDelete={() =>
+                        setConfirm({
+                          title: `删除分类「${row.name}」？`,
+                          description:
+                            '此操作会从数据库直接删除该分类。如果仍有文章引用此分类，删除将被阻止；请先在 MDX frontmatter 中改写后再删除。',
+                          actionLabel: '删除',
+                          destructive: true,
+                          onConfirm: () => submitDelete({ id: row.id }),
+                        })
+                      }
+                    />
+                  ))}
+                </div>
+              </SortableContext>
+            </DndContext>
           )}
         </AdminListPage.Body>
       </AdminListPage>

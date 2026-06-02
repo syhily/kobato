@@ -96,7 +96,7 @@ function decryptSecretsInBundle(bundle: BlogSettingsBundle): void {
       continue
     }
     const value = bucket[field]
-    if (typeof value === 'string' && value.startsWith('enc:')) {
+    if (typeof value === 'string') {
       bucket[field] = decryptIfNeeded(value)
     }
   }

@@ -13,15 +13,6 @@ import {
   stripMathArtifacts,
 } from '@/ui/admin/editor/tiptap/block-cards/MathBlock'
 import {
-  MermaidBlockOptions,
-  MermaidBlockSourceEditor,
-  MermaidBlockSummary,
-  mermaidBlockIcon,
-  mermaidBlockTitle,
-  patchMermaidCenterFlag,
-  stripMermaidArtifacts,
-} from '@/ui/admin/editor/tiptap/block-cards/MermaidBlock'
-import {
   MusicBlockSummary,
   musicBlockIcon,
   musicBlockTitle,
@@ -32,8 +23,8 @@ import { Button } from '@/ui/components/button'
 import { cn } from '@/ui/lib/cn'
 
 // Universal "block card" Tiptap node. The PortableText ↔ ProseMirror
-// bridge maps opaque PT custom blocks (`musicPlayer`, `mathBlock`,
-// `mermaid`) to a single `blockCard` PM node carrying the original PT
+// bridge maps opaque PT custom blocks (`musicPlayer`, `mathBlock`)
+// to a single `blockCard` PM node carrying the original PT
 // block in `attrs.payload`. **`solution`** uses a dedicated nested PM node
 // (`SolutionNode`). **`footnoteDefinition`** is omitted from the admin page
 // editor PM doc — see `@/shared/pt/footnote-merge`.
@@ -99,9 +90,6 @@ function BlockCardView(props: NodeViewProps) {
     if (cleaned._type === 'mathBlock' && editorRender !== undefined && editorRender !== '') {
       cleaned = { ...cleaned, mathml: editorRender }
     }
-    if (cleaned._type === 'mermaid' && editorRender !== undefined && editorRender !== '') {
-      cleaned = { ...cleaned, svg: editorRender }
-    }
     props.updateAttributes({ payload: cleaned })
     setEditing(false)
   }
@@ -149,17 +137,6 @@ function BlockCardView(props: NodeViewProps) {
                   }
                 />
               ) : null}
-              {payload !== null && payload._type === 'mermaid' ? (
-                <MermaidBlockOptions
-                  stableId={attrs._key}
-                  center={payload.center === true}
-                  onCenterChange={(enabled) =>
-                    props.updateAttributes({
-                      payload: patchMermaidCenterFlag(payload, enabled),
-                    })
-                  }
-                />
-              ) : null}
               <CardSummary payload={payload} />
             </>
           )}
@@ -180,7 +157,7 @@ function BlockCardView(props: NodeViewProps) {
 }
 
 function isInlineEditable(ptType: string): boolean {
-  return ptType === 'mathBlock' || ptType === 'mermaid'
+  return ptType === 'mathBlock'
 }
 
 // Drop the cached server-rendered fields when the user mutates the
@@ -188,14 +165,11 @@ function isInlineEditable(ptType: string): boolean {
 // place would silently desync source and preview.
 //
 // Exception: `commitPayload` may attach a fresh math render immediately
-// after `fetchRenderMath` / `fetchRenderMermaid` so the card shows
-// server-rendered output instead of raw source.
+// after `fetchRenderMath` so the card shows server-rendered output
+// instead of raw source.
 function stripPrerenderArtifacts(block: Block): Block {
   if (block._type === 'mathBlock') {
     return stripMathArtifacts(block)
-  }
-  if (block._type === 'mermaid') {
-    return stripMermaidArtifacts(block)
   }
   if (block._type === 'code') {
     const { highlightedHtml: _ignored, ...rest } = block as { highlightedHtml?: string } & Block
@@ -211,8 +185,6 @@ function CardIcon({ ptType }: { ptType: string }) {
       return musicBlockIcon(props)
     case 'mathBlock':
       return mathBlockIcon(props)
-    case 'mermaid':
-      return mermaidBlockIcon(props)
     default:
       return <FunctionSquareIcon {...props} />
   }
@@ -224,8 +196,6 @@ function cardTitle(ptType: string): string {
       return musicBlockTitle()
     case 'mathBlock':
       return mathBlockTitle()
-    case 'mermaid':
-      return mermaidBlockTitle()
     default:
       return `自定义块 (${ptType})`
   }
@@ -240,9 +210,6 @@ interface CardSourceEditorProps {
 function CardSourceEditor({ payload, onCommit, onCancel }: CardSourceEditorProps) {
   if (payload._type === 'mathBlock') {
     return <MathBlockSourceEditor payload={payload} onCommit={onCommit} onCancel={onCancel} />
-  }
-  if (payload._type === 'mermaid') {
-    return <MermaidBlockSourceEditor payload={payload} onCommit={onCommit} onCancel={onCancel} />
   }
   return null
 }
@@ -264,8 +231,6 @@ function CardSummary({ payload }: CardSummaryProps) {
       return <MusicBlockSummary payload={payload} />
     case 'mathBlock':
       return <MathBlockSummary payload={payload} />
-    case 'mermaid':
-      return <MermaidBlockSummary payload={payload} />
     default:
       return <div className="mt-1 text-xs text-muted-foreground">_type: {(payload as { _type: string })._type}</div>
   }

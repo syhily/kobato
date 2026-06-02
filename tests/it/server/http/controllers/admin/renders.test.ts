@@ -7,16 +7,11 @@ vi.mock('@/server/domains/pt/katex-renderer', () => ({
   getKatexRenderer: vi.fn(),
 }))
 
-vi.mock('beautiful-mermaid', () => ({
-  renderMermaidSVGAsync: vi.fn(),
-}))
-
 vi.mock('@/server/domains/posts/reindex', () => ({
   reindexSearchBatch: vi.fn(),
 }))
 
 const { getKatexRenderer } = await import('@/server/domains/pt/katex-renderer')
-const { renderMermaidSVGAsync } = await import('beautiful-mermaid')
 const { reindexSearchBatch } = await import('@/server/domains/posts/reindex')
 const { adminRendersRouter } = await import('@/server/http/controllers/admin/renders.controller')
 
@@ -35,23 +30,6 @@ describe('adminRendersRouter.math', () => {
     const ctx = makeAuthedCtx()
     const res = await call(adminRendersRouter.math, { tex: '\\frac{1}{2}' }, { context: ctx })
     expect(res.mathml).toBe('<mathml>\\frac{1}{2}</mathml>')
-    expect(res.error).toBeNull()
-  })
-})
-
-describe('adminRendersRouter.mermaid', () => {
-  it('returns empty svg for empty code', async () => {
-    const ctx = makeAuthedCtx()
-    const res = await call(adminRendersRouter.mermaid, { code: '' }, { context: ctx })
-    expect(res.svg).toBe('')
-    expect(res.error).toBeNull()
-  })
-
-  it('returns rendered svg for valid code', async () => {
-    vi.mocked(renderMermaidSVGAsync).mockResolvedValueOnce('<svg>diagram</svg>')
-    const ctx = makeAuthedCtx()
-    const res = await call(adminRendersRouter.mermaid, { code: 'graph TD; A-->B;' }, { context: ctx })
-    expect(res.svg).toBe('<svg>diagram</svg>')
     expect(res.error).toBeNull()
   })
 })

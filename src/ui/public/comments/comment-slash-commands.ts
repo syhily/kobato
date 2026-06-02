@@ -8,7 +8,7 @@ import { generateBlockKey } from '@/shared/pt/utils'
 // Slash command catalogue scoped to comment bodies. Mirrors the
 // shape of the admin catalogue (so the same `SlashCommandsExtension`
 // renderer can drive it) but stays narrow on purpose — no image /
-// music / table / footnote / mermaid / solution / twoColumn entries.
+// music / table / footnote / solution / twoColumn entries.
 // Heading commands are also excluded because comment threads aren't
 // sectioned content (`commentBodySchema` rejects h1-h4 anyway).
 

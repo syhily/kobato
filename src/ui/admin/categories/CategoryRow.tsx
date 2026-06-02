@@ -1,5 +1,7 @@
+import { useSortable } from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
 import { ExternalLinkIcon, GripVerticalIcon, SquarePenIcon, Trash2Icon } from 'lucide-react'
-import { type DragEvent, Fragment, memo } from 'react'
+import { Fragment, memo } from 'react'
 import { Link } from 'react-router'
 
 import type { AdminCategoryDto } from '@/shared/types/categories'
@@ -10,72 +12,44 @@ import { cn } from '@/ui/lib/cn'
 
 interface CategoryRowProps {
   category: AdminCategoryDto
-  dragEnabled: boolean
-  isDragging: boolean
-  onDragStart: (id: string) => void
-  onDragEnd: () => void
-  onDropOnRow: (id: string) => void
+  sortEnabled: boolean
   onEdit: () => void
   onDelete: () => void
 }
 
-export const CategoryRow = memo(function CategoryRow({
-  category,
-  dragEnabled,
-  isDragging,
-  onDragStart,
-  onDragEnd,
-  onDropOnRow,
-  onEdit,
-  onDelete,
-}: CategoryRowProps) {
-  const handleDragStart = (event: DragEvent<HTMLDivElement>) => {
-    if (!dragEnabled) {
-      return
-    }
-    event.dataTransfer.effectAllowed = 'move'
-    event.dataTransfer.setData('text/plain', category.id)
-    onDragStart(category.id)
-  }
-  const handleDragOver = (event: DragEvent<HTMLDivElement>) => {
-    if (!dragEnabled) {
-      return
-    }
-    event.preventDefault()
-    event.dataTransfer.dropEffect = 'move'
-  }
-  const handleDrop = (event: DragEvent<HTMLDivElement>) => {
-    if (!dragEnabled) {
-      return
-    }
-    event.preventDefault()
-    onDropOnRow(category.id)
+export const CategoryRow = memo(function CategoryRow({ category, sortEnabled, onEdit, onDelete }: CategoryRowProps) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: category.id,
+    disabled: !sortEnabled,
+  })
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
   }
 
   return (
     <div
-      draggable={dragEnabled}
-      onDragStart={handleDragStart}
-      onDragEnd={onDragEnd}
-      onDragOver={handleDragOver}
-      onDrop={handleDrop}
-      data-dragging={isDragging ? 'true' : undefined}
+      ref={setNodeRef}
+      style={style}
       className={cn(
         'group relative flex items-center gap-4 px-4 py-3 transition-colors hover:bg-muted/50',
         isDragging && 'opacity-50',
       )}
     >
       {/* Drag handle */}
-      <span
+      <button
+        type="button"
+        {...attributes}
+        {...listeners}
         className={
-          dragEnabled
+          sortEnabled
             ? 'flex size-6 shrink-0 cursor-grab items-center justify-center rounded-sm text-muted-foreground hover:bg-accent hover:text-foreground active:cursor-grabbing'
             : 'flex size-6 shrink-0 cursor-not-allowed items-center justify-center rounded-sm text-muted-foreground/40'
         }
         aria-label="拖拽排序"
       >
         <GripVerticalIcon className="size-4" />
-      </span>
+      </button>
 
       {/* Cover */}
       <div className="relative aspect-[16/10] w-(--spacing-admin-thumb) flex-shrink-0 overflow-hidden rounded-xl bg-muted">

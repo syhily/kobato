@@ -9,8 +9,8 @@ interface ThemeContextType {
   resolvedTheme: Resolved
 }
 
-const STORAGE_KEY = 'yf-blog-theme'
-export const THEME_COOKIE = 'yf-blog-theme'
+const STORAGE_KEY = 'kobato-blog-theme'
+export const THEME_COOKIE = 'kobato-blog-theme'
 
 const ThemeContext = createContext<ThemeContextType | null>(null)
 

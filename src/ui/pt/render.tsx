@@ -23,7 +23,6 @@ import {
   HorizontalRuleComponent,
   ImageBlockComponent,
   MathBlockComponent,
-  MermaidBlockComponent,
   MusicPlayerComponent,
   ParagraphBlock,
   TableBlockComponent,
@@ -43,7 +42,7 @@ import {
 // composable component map so the standard text/list/heading/decorator
 // pipeline (including consecutive list-item folding) is delegated to the
 // official toolkit, while every kobato-specific block / mark
-// (`image`, `code`, `mathBlock`, `mermaid`, `horizontalRule`,
+// (`image`, `code`, `mathBlock`, `horizontalRule`,
 // `musicPlayer`, `solution`, `twoColumn`, `footnoteDefinition`, `table`,
 // plus `mathInline` / `footnoteRef` mark defs) is handled in a sibling
 // `render-blocks.tsx` / `render-marks.tsx` (with `render-shared.ts` for
@@ -232,7 +231,6 @@ const portableTextComponents: PortableTextComponents = {
     image: ImageBlockComponent,
     code: CodeBlockNodeComponent,
     mathBlock: MathBlockComponent,
-    mermaid: MermaidBlockComponent,
     horizontalRule: HorizontalRuleComponent,
     musicPlayer: MusicPlayerComponent,
     solution: SolutionBlockComponent,

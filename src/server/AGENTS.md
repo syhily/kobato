@@ -43,7 +43,7 @@ Domains: `analytics`, `auth` (session-storage, csrf, rbac, flows,
 verification-tokens), `comments` (loader, moderation, projection, likes,
 token, badge, url, canonicalize), `friends`, `images` (schema, service,
 storage, key, process), `music`, `pages`, `posts`, `pt`
-(Shiki/KaTeX/Mermaid prerender, canonicalize, comment-to-html),
+(Shiki/KaTeX prerender, canonicalize, comment-to-html),
 `settings` (sections, snapshot, install-flow, install-gate),
 `taxonomies/{categories,tags}`, `users`. Plus `content-revisions.ts`
 and `audit.ts`.

@@ -8,14 +8,12 @@ import type {
   ImageBlockLayout,
   MarkDef,
   MathBlock,
-  MermaidBlock,
   MusicPlayerBlock,
   Span,
   TableBlock,
   TextBlock,
 } from '@/shared/pt/schema'
 
-import { SafeHtml } from '@/ui/components/safe-html'
 import { cn } from '@/ui/lib/cn'
 import { BlockImage } from '@/ui/pt/blocks/BlockImage'
 import { CodeBlock as CodeBlockComponent } from '@/ui/pt/blocks/CodeBlock'
@@ -122,26 +120,6 @@ export function CodeBlockNodeComponent({ value }: PortableTextTypeComponentProps
 
 export function MathBlockComponent({ value }: PortableTextTypeComponentProps<MathBlock>) {
   return renderMathMarkupOrTexFallback(value.tex, value.mathml, value.svg, 'display')
-}
-
-export function MermaidBlockComponent({ value }: PortableTextTypeComponentProps<MermaidBlock>) {
-  const center = value.center === true
-
-  if (value.svg !== undefined && value.svg !== '') {
-    const inner = (
-      <SafeHtml html={value.svg} strategy="mermaid" className={cn('mermaid', center && '[&_svg]:max-w-none')} />
-    )
-    if (!center) {
-      return inner
-    }
-    return <div className="flex max-w-full justify-center overflow-x-auto">{inner}</div>
-  }
-
-  const fallback = <pre className="mermaid">{value.code}</pre>
-  if (!center) {
-    return fallback
-  }
-  return <div className="flex max-w-full justify-center overflow-x-auto">{fallback}</div>
 }
 
 export function HorizontalRuleComponent(_props: PortableTextTypeComponentProps<HorizontalRuleBlock>) {

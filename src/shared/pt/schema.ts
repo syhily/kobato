@@ -13,7 +13,7 @@ import { z } from 'zod'
 // `strike-through`), `link` markDefs, and the canonical block styles
 // (`normal` / `h1`-`h4` / `blockquote`); on top of that we add a
 // hand-picked set of custom block types (`image`, `code`, `mathBlock`,
-// `mermaid`, `horizontalRule`, `musicPlayer`, `solution`, `twoColumn`)
+// `horizontalRule`, `musicPlayer`, `solution`, `twoColumn`)
 // and two custom inline marks (`mathInline`, `footnoteRef`) that
 // each map 1:1 onto an existing MDX-side React component.
 //
@@ -209,21 +209,6 @@ export const mathBlockSchema = z.object({
 })
 export type MathBlock = z.infer<typeof mathBlockSchema>
 
-// Mermaid diagram. `code` is the raw mermaid source, `svg` is the
-// pre-rendered SVG saved at editor save time. Mermaid is heavy
-// (Puppeteer / mermaid-cli on the server) so we *strongly prefer* the
-// pre-rendered svg; the renderer falls back to a `<pre>` placeholder
-// when it's missing.
-export const mermaidBlockSchema = z.object({
-  _type: z.literal('mermaid'),
-  _key: NON_EMPTY_KEY,
-  code: z.string(),
-  svg: z.string().optional(),
-  /** When true the diagram is horizontally centered (same flag as `musicPlayer`). */
-  center: z.boolean().optional(),
-})
-export type MermaidBlock = z.infer<typeof mermaidBlockSchema>
-
 // Horizontal rule (`---` / `<hr>`).
 export const horizontalRuleBlockSchema = z.object({
   _type: z.literal('horizontalRule'),
@@ -340,7 +325,6 @@ export type NonRecursiveBlock =
   | ImageBlock
   | CodeBlock
   | MathBlock
-  | MermaidBlock
   | HorizontalRuleBlock
   | MusicPlayerBlock
   | TableBlock
@@ -350,7 +334,6 @@ const nonRecursiveBlockSchema = z.discriminatedUnion('_type', [
   imageBlockSchema,
   codeBlockSchema,
   mathBlockSchema,
-  mermaidBlockSchema,
   horizontalRuleBlockSchema,
   musicPlayerBlockSchema,
   tableBlockSchema,
@@ -385,7 +368,6 @@ export const blockSchema = z.discriminatedUnion('_type', [
   imageBlockSchema,
   codeBlockSchema,
   mathBlockSchema,
-  mermaidBlockSchema,
   horizontalRuleBlockSchema,
   musicPlayerBlockSchema,
   solutionBlockSchema,

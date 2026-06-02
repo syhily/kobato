@@ -47,7 +47,7 @@ vi.mock('@/server/domains/comments/email', () => ({
   sendNewComment: vi.fn(async () => undefined),
 }))
 
-// The canonicalize pipeline runs Shiki / KaTeX / Mermaid / Markdown
+// The canonicalize pipeline runs Shiki / KaTeX / Markdown
 // projection — heavy, and orthogonal to the moderation-state branch
 // we're testing. Stub it to a deterministic shape.
 vi.mock('@/server/domains/comments/canonicalize', () => ({

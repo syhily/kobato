@@ -222,10 +222,6 @@ function pushBlockText(block: Block, out: string[]): void {
     }
     return
   }
-  if (block._type === 'mermaid') {
-    out.push(block.code)
-    return
-  }
   if (block._type === 'horizontalRule') {
     out.push('---')
     return

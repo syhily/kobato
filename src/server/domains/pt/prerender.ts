@@ -1,4 +1,3 @@
-import { renderMermaidSVGAsync } from 'beautiful-mermaid'
 import { bundledLanguages, createHighlighter } from 'shiki'
 
 import type { Block, MarkDef, PortableTextBody, TextBlock } from '@/shared/pt/schema'
@@ -12,12 +11,12 @@ const log = getLogger('pt.prerender')
 // Server-side pre-renderer for PortableText bodies.
 //
 // Why: the public SSR PortableText renderer expects pre-rendered
-// HTML / MathML / SVG for the heavy custom blocks (`code`, `mathBlock`,
-// `mermaid`) and inline marks (`mathInline`). Putting Shiki +
-// KaTeX + Mermaid on the request path of every public page render
-// would dwarf the actual rendering work — Shiki alone takes 80ms+
-// to bootstrap. So we run them once at save / publish time and cache
-// the output inside the saved PortableText.
+// HTML / MathML for the heavy custom blocks (`code`, `mathBlock`)
+// and inline marks (`mathInline`). Putting Shiki + KaTeX on the
+// request path of every public page render would dwarf the actual
+// rendering work — Shiki alone takes 80ms+ to bootstrap. So we run
+// them once at save / publish time and cache the output inside the
+// saved PortableText.
 //
 // What this does for each block / mark:
 //
@@ -26,17 +25,13 @@ const log = getLogger('pt.prerender')
 //     pipeline so the editor preview, the public site, and the
 //     archive feeds all look identical.
 //   - `mathBlock` → fill `mathml` with KaTeX-rendered MathML.
-//   - `mermaid` → fill `svg` with a beautiful-mermaid-rendered SVG.
-//     Renderer is slow on cold start (~500ms), so we run all
-//     mermaid blocks in parallel and accept that "save with many
-//     diagrams" can take a couple of seconds.
 //   - `mathInline` mark defs → fill `mathml` with KaTeX-rendered
 //     MathML so the public renderer can drop it straight into the run.
 //
 // All renderers swallow errors and leave the source field intact.
-// The public renderer falls back gracefully — `<pre class="mermaid">`
-// for mermaid, raw text for math, plain `<code>` for code blocks —
-// so a failed pre-render is never a hard failure.
+// The public renderer falls back gracefully — raw text for math,
+// plain `<code>` for code blocks — so a failed pre-render is never
+// a hard failure.
 //
 // The top-level entry point `prerenderPortableTextBody()` mutates
 // the passed body in place and returns the same reference. Callers
@@ -44,8 +39,7 @@ const log = getLogger('pt.prerender')
 // hand the result through to the repository layer unchanged.
 
 export async function prerenderPortableTextBody(body: PortableTextBody): Promise<PortableTextBody> {
-  // Collect work first so we can run code / math / mermaid renders
-  // in parallel.
+  // Collect work first so we can run code / math renders in parallel.
   const codeBlocks: {
     _type: 'code'
     _key: string
@@ -60,7 +54,6 @@ export async function prerenderPortableTextBody(body: PortableTextBody): Promise
     mathml?: string
     svg?: string
   }[] = []
-  const mermaidBlocks: { _type: 'mermaid'; _key: string; code: string; svg?: string }[] = []
   const mathInlineDefs: {
     _type: 'mathInline'
     _key: string
@@ -70,21 +63,17 @@ export async function prerenderPortableTextBody(body: PortableTextBody): Promise
   }[] = []
 
   for (const block of body) {
-    collectBlock(block, codeBlocks, mathBlocks, mermaidBlocks, mathInlineDefs)
+    collectBlock(block, codeBlocks, mathBlocks, mathInlineDefs)
   }
 
   // Short-circuit if nothing needs pre-rendering — the editor's
-  // hot path is "save a draft with no math / code / mermaid" and
+  // hot path is "save a draft with no math / code" and
   // we'd rather not pay any module-load cost for those saves.
-  if (codeBlocks.length === 0 && mathBlocks.length === 0 && mermaidBlocks.length === 0 && mathInlineDefs.length === 0) {
+  if (codeBlocks.length === 0 && mathBlocks.length === 0 && mathInlineDefs.length === 0) {
     return body
   }
 
-  await Promise.all([
-    runShikiPasses(codeBlocks),
-    runKatexPasses(mathBlocks, mathInlineDefs),
-    runMermaidPasses(mermaidBlocks),
-  ])
+  await Promise.all([runShikiPasses(codeBlocks), runKatexPasses(mathBlocks, mathInlineDefs)])
 
   return body
 }
@@ -97,7 +86,6 @@ function collectBlock(
   block: Block,
   codeBlocks: { _type: 'code'; code: string; language?: string; highlightedHtml?: string }[],
   mathBlocks: { _type: 'mathBlock'; tex: string; mathml?: string; svg?: string }[],
-  mermaidBlocks: { _type: 'mermaid'; code: string; svg?: string }[],
   mathInlineDefs: { _type: 'mathInline'; tex: string; mathml?: string; svg?: string }[],
 ): void {
   switch (block._type) {
@@ -111,11 +99,6 @@ function collectBlock(
         mathBlocks.push(block)
       }
       return
-    case 'mermaid':
-      if (block.code !== '' && (block.svg === undefined || block.svg === '')) {
-        mermaidBlocks.push(block)
-      }
-      return
     case 'block': {
       collectFromTextBlock(block, mathInlineDefs)
       return
@@ -126,22 +109,22 @@ function collectBlock(
       // pre-rendered too.
       if (Array.isArray(block.children)) {
         for (const child of block.children) {
-          collectBlock(child as Block, codeBlocks, mathBlocks, mermaidBlocks, mathInlineDefs)
+          collectBlock(child as Block, codeBlocks, mathBlocks, mathInlineDefs)
         }
       }
       return
     case 'twoColumn':
       for (const child of block.left) {
-        collectBlock(child as Block, codeBlocks, mathBlocks, mermaidBlocks, mathInlineDefs)
+        collectBlock(child as Block, codeBlocks, mathBlocks, mathInlineDefs)
       }
       for (const child of block.right) {
-        collectBlock(child as Block, codeBlocks, mathBlocks, mermaidBlocks, mathInlineDefs)
+        collectBlock(child as Block, codeBlocks, mathBlocks, mathInlineDefs)
       }
       return
     case 'table':
       // Tables only carry inline span content per
-      // `tableCellSchema`'s contract — no nested code / math /
-      // mermaid blocks, and `mathInline` / `footnoteRef` mark defs
+      // `tableCellSchema`'s contract — no nested code / math
+      // blocks, and `mathInline` / `footnoteRef` mark defs
       // are stripped by the bridge before they reach storage. So
       // the prerender pass has no work to do, but we still claim
       // the case explicitly to avoid an "unknown block type"
@@ -267,26 +250,4 @@ async function runKatexPasses(
       }
     }),
   ])
-}
-
-// ---------------------------------------------------------------------------
-// Mermaid — diagram blocks
-// ---------------------------------------------------------------------------
-
-async function runMermaidPasses(blocks: { code: string; svg?: string }[]): Promise<void> {
-  if (blocks.length === 0) {
-    return
-  }
-  await Promise.all(
-    blocks.map(async (block) => {
-      try {
-        block.svg = await renderMermaidSVGAsync(block.code)
-      } catch (err) {
-        // Leave svg unset; the renderer falls back to a `<pre>`
-        // mermaid placeholder so the diagram source is still
-        // recoverable.
-        log.warn('mermaid render failed', { error: String(err) })
-      }
-    }),
-  )
 }

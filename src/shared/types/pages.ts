@@ -361,15 +361,3 @@ export interface RenderMathOutput {
    */
   error: string | null
 }
-
-// --- mermaid (editor preview) ---------------------------------------------
-
-export interface RenderMermaidInput {
-  /** Raw Mermaid diagram source. Length-bounded by `renderMermaidSchema`. */
-  code: string
-}
-
-export interface RenderMermaidOutput {
-  svg: string
-  error: string | null
-}
