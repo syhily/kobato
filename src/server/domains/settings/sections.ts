@@ -276,6 +276,7 @@ export const SECTION_REGISTRY = {
       // specific origins when a CDN or third-party integration
       // needs cross-origin access.
       cors: { enabled: false, origins: [] },
+      otp: { enabled: false },
     },
   },
 } as const satisfies Record<SettingsSection, SectionMeta>

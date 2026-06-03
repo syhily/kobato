@@ -80,6 +80,30 @@ const BUCKET_META: Record<BucketKey, { title: string; description: string; windo
       windowHint: '60 秒 - 24 小时。默认 1 分钟（60）。',
       attemptsHint: '默认 60 次。',
     },
+    otpSendIp: {
+      title: 'OTP 发送限流（按 IP）',
+      description: '登录时发送 OTP 验证码邮件按客户端 IP 计数。',
+      windowHint: '60 秒 - 24 小时。默认 5 分钟（300）。',
+      attemptsHint: '默认 3 次。',
+    },
+    otpSendEmail: {
+      title: 'OTP 发送限流（按邮箱）',
+      description: '登录时发送 OTP 验证码邮件按目标邮箱计数。',
+      windowHint: '60 秒 - 24 小时。默认 5 分钟（300）。',
+      attemptsHint: '默认 1 次。',
+    },
+    otpVerifyIp: {
+      title: 'OTP 验证限流（按 IP）',
+      description: 'OTP 验证码校验按客户端 IP 计数。',
+      windowHint: '60 秒 - 24 小时。默认 5 分钟（300）。',
+      attemptsHint: '默认 5 次。',
+    },
+    otpVerifyEmail: {
+      title: 'OTP 验证限流（按邮箱）',
+      description: 'OTP 验证码校验按目标邮箱计数。',
+      windowHint: '60 秒 - 24 小时。默认 5 分钟（300）。',
+      attemptsHint: '默认 5 次。',
+    },
   }
 
 function RateLimitBucketCard({ bucketKey, rateLimit }: { bucketKey: BucketKey; rateLimit: RateLimitSettings }) {

@@ -13,6 +13,10 @@ import { z } from 'zod'
 //   * `passwordResetEmail`  — `tryPasswordResetByEmailRateLimit(email)`
 //   * `passwordResetTarget` — `tryPasswordResetByTargetRateLimit(userId)`
 //   * `resourceIp`          — `tryResourceRateLimit(ip)` (resource downloads)
+//   * `otpSendIp`           — `tryOtpSendRateLimit(ip)` (OTP send)
+//   * `otpSendEmail`        — `tryOtpSendByEmailRateLimit(email)` (OTP send per email)
+//   * `otpVerifyIp`         — `tryOtpVerifyRateLimit(ip)` (OTP verify)
+//   * `otpVerifyEmail`      — `tryOtpVerifyByEmailRateLimit(email)` (OTP verify per email)
 //
 // Bounds rationale:
 //
@@ -46,6 +50,10 @@ export const RATE_LIMIT_BUCKET_KEYS = [
   'passwordResetEmail',
   'passwordResetTarget',
   'resourceIp',
+  'otpSendIp',
+  'otpSendEmail',
+  'otpVerifyIp',
+  'otpVerifyEmail',
 ] as const
 
 export const rateLimitSchema = z.object(

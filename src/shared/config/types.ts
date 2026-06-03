@@ -214,6 +214,10 @@ export interface RateLimitSettings {
   passwordResetEmail: RateLimitBucket
   passwordResetTarget: RateLimitBucket
   resourceIp: RateLimitBucket
+  otpSendIp: RateLimitBucket
+  otpSendEmail: RateLimitBucket
+  otpVerifyIp: RateLimitBucket
+  otpVerifyEmail: RateLimitBucket
 }
 
 export interface SearchSettings {
@@ -271,6 +275,9 @@ export interface SecuritySettings {
   cors: {
     enabled: boolean
     origins: string[]
+  }
+  otp: {
+    enabled: boolean
   }
 }
 

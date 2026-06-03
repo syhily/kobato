@@ -33,6 +33,10 @@ const inviteEmailKey = (adminId: bigint, email: string) =>
   `${RATE_LIMIT_NAMESPACE}invite-email:${adminId.toString()}:${hashEmail(email)}`
 const passwordResetEmailKey = (email: string) => `${RATE_LIMIT_NAMESPACE}password-reset-email:${hashEmail(email)}`
 const likeIncreaseKey = (ip: string) => `${RATE_LIMIT_NAMESPACE}like-increase:${ip}`
+const otpSendIpKey = (ip: string) => `${RATE_LIMIT_NAMESPACE}otp-send:${ip}`
+const otpSendEmailKey = (email: string) => `${RATE_LIMIT_NAMESPACE}otp-send-email:${hashEmail(email)}`
+const otpVerifyIpKey = (ip: string) => `${RATE_LIMIT_NAMESPACE}otp-verify:${ip}`
+const otpVerifyEmailKey = (email: string) => `${RATE_LIMIT_NAMESPACE}otp-verify-email:${hashEmail(email)}`
 
 // Conservative fallbacks used ONLY when the settings snapshot has
 // not been hydrated yet (pre-install, or the very first request after
@@ -178,4 +182,20 @@ const resourceKey = (ip: string) => `${RATE_LIMIT_NAMESPACE}resource:${ip}`
 
 export async function tryResourceRateLimit(ip: string): Promise<RateLimitResult> {
   return tryKeyedRateLimit(resourceKey(ip), readBucket('resourceIp'))
+}
+
+export async function tryOtpSendRateLimit(ip: string): Promise<RateLimitResult> {
+  return tryKeyedRateLimit(otpSendIpKey(ip), readBucket('otpSendIp'))
+}
+
+export async function tryOtpSendByEmailRateLimit(email: string): Promise<RateLimitResult> {
+  return tryKeyedRateLimit(otpSendEmailKey(email), readBucket('otpSendEmail'))
+}
+
+export async function tryOtpVerifyRateLimit(ip: string): Promise<RateLimitResult> {
+  return tryKeyedRateLimit(otpVerifyIpKey(ip), readBucket('otpVerifyIp'))
+}
+
+export async function tryOtpVerifyByEmailRateLimit(email: string): Promise<RateLimitResult> {
+  return tryKeyedRateLimit(otpVerifyEmailKey(email), readBucket('otpVerifyEmail'))
 }

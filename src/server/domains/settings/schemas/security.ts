@@ -25,5 +25,10 @@ export const securitySchema = z.object({
       origins: z.array(z.string().trim().min(1).max(253)).max(20).default([]),
     })
     .default({ enabled: false, origins: [] }),
+  otp: z
+    .object({
+      enabled: coerceBoolean,
+    })
+    .default({ enabled: false }),
 })
 export type SecurityInput = z.infer<typeof securitySchema>

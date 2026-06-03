@@ -14,9 +14,11 @@ import { SECTION_REGISTRY, type SettingsSection } from '@/server/domains/setting
 import { hydrateBlogSettings, refreshBlogSettings } from '@/server/domains/settings/snapshot'
 import { decryptIfNeeded, encryptIfNeeded } from '@/server/infra/crypto/secret-encryption'
 import { findSettingByScope, upsertSetting } from '@/server/infra/db/operations/setting'
+import { checkMailReady } from '@/server/infra/email/sender'
 import { FONT_PATH } from '@/server/infra/env'
 import { DomainError } from '@/server/infra/http/errors'
 import { getLogger } from '@/server/infra/logger'
+import { getBlogSettingsBundleSync } from '@/shared/config/getters'
 
 const log = getLogger('settings.service')
 
@@ -74,6 +76,23 @@ export async function updateBlogSettingsSection<S extends SettingsSection>(
   // on disk before committing the setting row.
   if (section === 'fonts') {
     await validateFontPaths(parsed.data as FontsInput)
+  }
+
+  // Extra runtime validation for security: OTP cannot be enabled unless
+  // the mail service is fully configured.
+  if (section === 'security') {
+    const securityPayload = parsed.data as { otp?: { enabled?: boolean } }
+    if (securityPayload.otp?.enabled) {
+      const bundle = getBlogSettingsBundleSync()
+      const mail = bundle?.mail?.mail
+      if (!mail) {
+        throw new DomainError('BAD_REQUEST', '开启 OTP 前请先完成邮件服务配置（接入域名、API Key、发件人邮箱）')
+      }
+      const ready = checkMailReady(mail)
+      if (!ready.ready) {
+        throw new DomainError('BAD_REQUEST', `开启 OTP 前请先完成邮件服务配置：${ready.message}`)
+      }
+    }
   }
 
   return db.transaction(async (tx) => {

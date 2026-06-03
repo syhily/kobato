@@ -122,7 +122,7 @@ const SECTION_CONFIGS: {
   },
   {
     id: 'security',
-    render: (bundle) => <SecurityForm security={bundle.security} />,
+    render: (bundle) => <SecurityForm security={bundle.security} mail={bundle.mail.mail} />,
   },
   {
     id: 'backup',

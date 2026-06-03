@@ -1,7 +1,7 @@
 import { PlusIcon, Trash2Icon } from 'lucide-react'
 import { Controller, useFieldArray } from 'react-hook-form'
 
-import type { SecuritySettings } from '@/shared/config/types'
+import type { MailSettings, SecuritySettings } from '@/shared/config/types'
 
 import { SettingsRow } from '@/ui/admin/settings/SettingsSection'
 import { SettingGroup } from '@/ui/admin/settings/shell/SettingGroup'
@@ -25,17 +25,22 @@ interface OriginRow {
 
 interface SecurityFormProps {
   security: SecuritySettings
+  mail: MailSettings['mail']
 }
 
 const MAX_EXEMPT_PATHS = 20
 const MAX_ORIGINS = 20
 
-function CsrfToggleCard({ security }: SecurityFormProps) {
+function CsrfToggleCard({ security }: { security: SecuritySettings }) {
   const { mode, form, settingGroupProps, display } = useSettingsCard<SecuritySettings, { enabled: boolean }>({
     section: 'security',
     source: security,
     toState: (source) => ({ enabled: source.csrf.enabled }),
-    fromState: (state) => ({ csrf: { ...security.csrf, enabled: state.enabled }, cors: security.cors }),
+    fromState: (state) => ({
+      csrf: { ...security.csrf, enabled: state.enabled },
+      cors: security.cors,
+      otp: security.otp,
+    }),
   })
 
   return (
@@ -70,7 +75,7 @@ function CsrfToggleCard({ security }: SecurityFormProps) {
   )
 }
 
-function CsrfExemptPathsCard({ security }: SecurityFormProps) {
+function CsrfExemptPathsCard({ security }: { security: SecuritySettings }) {
   const { mode, form, settingGroupProps, display } = useSettingsCard<
     SecuritySettings,
     { exemptPaths: ExemptPathRow[] }
@@ -86,6 +91,7 @@ function CsrfExemptPathsCard({ security }: SecurityFormProps) {
         exemptPaths: state.exemptPaths.map((row) => row.path.trim()).filter((p) => p !== ''),
       },
       cors: security.cors,
+      otp: security.otp,
     }),
   })
 
@@ -161,7 +167,7 @@ function CsrfExemptPathsCard({ security }: SecurityFormProps) {
   )
 }
 
-function CorsPolicyCard({ security }: SecurityFormProps) {
+function CorsPolicyCard({ security }: { security: SecuritySettings }) {
   const { mode, form, settingGroupProps, display } = useSettingsCard<
     SecuritySettings,
     { enabled: boolean; origins: OriginRow[] }
@@ -178,6 +184,7 @@ function CorsPolicyCard({ security }: SecurityFormProps) {
         enabled: state.enabled,
         origins: state.origins.map((row) => row.url.trim()).filter((url) => url !== ''),
       },
+      otp: security.otp,
     }),
   })
 
@@ -272,12 +279,75 @@ function CorsPolicyCard({ security }: SecurityFormProps) {
   )
 }
 
-export function SecurityForm({ security }: SecurityFormProps) {
+function OtpToggleCard({ security, mail }: SecurityFormProps) {
+  const mailReady = mail.enabled && mail.host && mail.apiKey && mail.sender
+
+  const { mode, form, settingGroupProps, display } = useSettingsCard<SecuritySettings, { enabled: boolean }>({
+    section: 'security',
+    source: security,
+    toState: (source) => ({ enabled: source.otp?.enabled ?? false }),
+    fromState: (state) => ({
+      csrf: security.csrf,
+      cors: security.cors,
+      otp: { enabled: state.enabled },
+    }),
+  })
+
+  return (
+    <SettingGroup
+      title="登录 OTP 验证"
+      description="开启后，所有用户登录时需要额外输入邮箱收到的 6 位数字验证码。"
+      {...settingGroupProps}
+    >
+      {mode === 'edit' ? (
+        <SettingGroupContent>
+          <SettingsRow
+            label="启用 OTP 验证"
+            hint={mailReady ? '开启后密码验证通过将发送 OTP 邮件。' : '开启 OTP 前请先配置邮件服务。'}
+          >
+            <Controller
+              control={form.control}
+              name="enabled"
+              render={({ field }) => (
+                <div className="flex items-center gap-3">
+                  <Switch
+                    id="otp-enabled"
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
+                    disabled={!mailReady}
+                  />
+                  <FieldLabel htmlFor="otp-enabled" className="font-normal">
+                    {field.value ? '已开启' : '已关闭'}
+                  </FieldLabel>
+                </div>
+              )}
+            />
+          </SettingsRow>
+          {!mailReady && (
+            <p className="text-sm text-muted-foreground">
+              邮件服务未配置完整，无法开启 OTP。请先前往「邮件服务」配置接入域名、API Key 和发件人邮箱。
+            </p>
+          )}
+        </SettingGroupContent>
+      ) : (
+        <SettingGroupContent>
+          <SettingValue label="OTP 验证" value={display.otp?.enabled ? '已开启' : '已关闭'} />
+          {display.otp?.enabled && !mailReady && (
+            <p className="text-sm text-destructive">邮件服务未配置，OTP 当前未生效</p>
+          )}
+        </SettingGroupContent>
+      )}
+    </SettingGroup>
+  )
+}
+
+export function SecurityForm({ security, mail }: SecurityFormProps) {
   return (
     <div className="flex flex-col gap-5">
       <CsrfToggleCard security={security} />
       <CsrfExemptPathsCard security={security} />
       <CorsPolicyCard security={security} />
+      <OtpToggleCard security={security} mail={mail} />
     </div>
   )
 }
