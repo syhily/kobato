@@ -78,7 +78,7 @@
     "bcryptjs": "^3.0.3",
     "date-fns": "^4.4.0",
     "diff-match-patch": "^1.0.5",
-    "dompurify": "^3.4.7",
+    "dompurify": "^3.4.8",
     "drizzle-orm": "~1.0.0-rc.3",
     "feed": "^5.2.1",
     "hono": "^4.12.23",
