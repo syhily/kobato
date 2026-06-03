@@ -1,0 +1,278 @@
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
+import type { Pool } from 'pg'
+
+import { data, redirect } from 'react-router'
+
+import type { BlogSession } from '@/server/domains/auth/session-storage'
+
+import { recordAuditEvent } from '@/server/domains/audit/service'
+import { establishLoginSession } from '@/server/domains/auth/primitives'
+import { signInSchema } from '@/server/domains/auth/schema'
+import { commitSessionWithMaxAge } from '@/server/domains/auth/session-storage'
+import { issueOtpToken, verifyOtpToken } from '@/server/domains/auth/verification-tokens'
+import { findUserById, verifyUserPassword } from '@/server/infra/db/operations/user'
+import { checkMailReady, sendSignInOtp } from '@/server/infra/email/sender'
+import {
+  tryOtpSendByEmailRateLimit,
+  tryOtpSendRateLimit,
+  tryOtpVerifyByEmailRateLimit,
+  tryOtpVerifyRateLimit,
+  tryRateLimit,
+} from '@/server/infra/rate-limit'
+import { getBlogSettingsBundleSync } from '@/shared/config/getters'
+
+function formFieldString(formData: FormData, key: string): string {
+  const value = formData.get(key)
+  return typeof value === 'string' ? value : ''
+}
+
+/**
+ * Send an OTP email with fallback error handling.
+ * Catches both upstream failures (returned as `{ok:false}`) and
+ * unexpected exceptions (network / runtime errors).
+ */
+async function sendOtpSafely(
+  user: { name: string; email: string },
+  otpCode: string,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  try {
+    const result = await sendSignInOtp(user, otpCode)
+    if (!result.ok) {
+      return { ok: false, error: '验证码发送失败，请稍后重试。' }
+    }
+    return { ok: true }
+  } catch {
+    return { ok: false, error: '验证码发送失败，请稍后重试。' }
+  }
+}
+
+export async function handleOtpCancel(session: BlogSession, redirectTo: string) {
+  session.unset('pendingOtpUser')
+  session.unset('otpFailCount')
+  return redirect(`/admin/signin?redirect_to=${encodeURIComponent(redirectTo)}`, {
+    headers: { 'Set-Cookie': await commitSessionWithMaxAge(session) },
+  })
+}
+
+export async function handleOtpVerify(
+  db: NodePgDatabase,
+  pool: Pool,
+  session: BlogSession,
+  clientAddress: string,
+  request: Request,
+  formData: FormData,
+  redirectTo: string,
+) {
+  const pendingOtpUser = session.get('pendingOtpUser')
+  if (!pendingOtpUser) {
+    return data({ error: '请先完成登录。' }, { headers: { 'Set-Cookie': await commitSessionWithMaxAge(session) } })
+  }
+
+  const [ipLimit, emailLimit] = await Promise.all([
+    tryOtpVerifyRateLimit(clientAddress),
+    tryOtpVerifyByEmailRateLimit(pendingOtpUser.email),
+  ])
+  if (ipLimit.exceeded || emailLimit.exceeded) {
+    return data(
+      { error: '操作过于频繁，请稍后再试。' },
+      { headers: { 'Set-Cookie': await commitSessionWithMaxAge(session) } },
+    )
+  }
+
+  let userId: bigint
+  try {
+    userId = BigInt(pendingOtpUser.userId)
+  } catch {
+    session.unset('pendingOtpUser')
+    session.unset('otpFailCount')
+    return data(
+      { error: '登录状态异常，请重新登录。' },
+      { headers: { 'Set-Cookie': await commitSessionWithMaxAge(session) } },
+    )
+  }
+
+  const otpCode = formFieldString(formData, 'otp_code')
+  const result = await verifyOtpToken(db, userId, otpCode)
+
+  if (result === null) {
+    const failCount = (session.get('otpFailCount') ?? 0) + 1
+    session.set('otpFailCount', failCount)
+    if (failCount >= 3) {
+      session.unset('pendingOtpUser')
+      session.unset('otpFailCount')
+      recordAuditEvent({
+        action: 'otp_failed',
+        resourceType: 'user',
+        resourceId: String(pendingOtpUser.userId),
+        actorId: userId,
+        ipAddress: clientAddress,
+        userAgent: request.headers.get('User-Agent'),
+        details: { email: pendingOtpUser.email, failCount, lockedOut: true },
+      })
+      return data(
+        { error: '验证失败次数过多，请重新登录。' },
+        { headers: { 'Set-Cookie': await commitSessionWithMaxAge(session) } },
+      )
+    }
+    recordAuditEvent({
+      action: 'otp_failed',
+      resourceType: 'user',
+      resourceId: String(pendingOtpUser.userId),
+      actorId: userId,
+      ipAddress: clientAddress,
+      userAgent: request.headers.get('User-Agent'),
+      details: { email: pendingOtpUser.email, failCount },
+    })
+    return data(
+      { error: '验证码无效或已过期。' },
+      { headers: { 'Set-Cookie': await commitSessionWithMaxAge(session) } },
+    )
+  }
+
+  session.unset('pendingOtpUser')
+  session.unset('otpFailCount')
+
+  const dbUser = await findUserById(db, userId)
+  if (!dbUser || !dbUser.role) {
+    return data(
+      { error: '账户状态异常，无法登录。' },
+      { headers: { 'Set-Cookie': await commitSessionWithMaxAge(session) } },
+    )
+  }
+
+  const established = await establishLoginSession(db, pool, session, dbUser, request, clientAddress, {
+    authMethod: 'otp',
+  })
+  return redirect(redirectTo, { headers: { 'Set-Cookie': established.setCookie } })
+}
+
+export async function handleOtpResend(
+  db: NodePgDatabase,
+  session: BlogSession,
+  clientAddress: string,
+  request: Request,
+) {
+  const pendingOtpUser = session.get('pendingOtpUser')
+  if (!pendingOtpUser) {
+    return data({ error: '请先完成登录。' }, { headers: { 'Set-Cookie': await commitSessionWithMaxAge(session) } })
+  }
+
+  const [ipLimit, emailLimit] = await Promise.all([
+    tryOtpSendRateLimit(clientAddress),
+    tryOtpSendByEmailRateLimit(pendingOtpUser.email),
+  ])
+  if (ipLimit.exceeded || emailLimit.exceeded) {
+    return data(
+      { error: '发送过于频繁，请稍后再试。' },
+      { headers: { 'Set-Cookie': await commitSessionWithMaxAge(session) } },
+    )
+  }
+
+  const dbUser = await findUserById(db, BigInt(pendingOtpUser.userId))
+  if (!dbUser || !dbUser.role) {
+    return data({ error: '账户状态异常。' }, { headers: { 'Set-Cookie': await commitSessionWithMaxAge(session) } })
+  }
+
+  const { otpCode, expiresAt } = await issueOtpToken(db, dbUser.id)
+  const sendResult = await sendOtpSafely(dbUser, otpCode)
+  if (!sendResult.ok) {
+    return data({ error: sendResult.error }, { headers: { 'Set-Cookie': await commitSessionWithMaxAge(session) } })
+  }
+
+  session.set('pendingOtpUser', { ...pendingOtpUser, expiresAt: expiresAt.getTime(), sentAt: Date.now() })
+  session.set('otpFailCount', 0)
+
+  recordAuditEvent({
+    action: 'otp_sent',
+    resourceType: 'user',
+    resourceId: String(dbUser.id),
+    actorId: dbUser.id,
+    actorRole: dbUser.role,
+    ipAddress: clientAddress,
+    userAgent: request.headers.get('User-Agent'),
+    details: { email: dbUser.email, resend: true },
+  })
+  return data({ message: '验证码已重新发送。' }, { headers: { 'Set-Cookie': await commitSessionWithMaxAge(session) } })
+}
+
+export async function handleCredentialLogin(
+  db: NodePgDatabase,
+  pool: Pool,
+  session: BlogSession,
+  clientAddress: string,
+  request: Request,
+  formData: FormData,
+  redirectTo: string,
+) {
+  const email = formFieldString(formData, 'email')
+  const password = formFieldString(formData, 'password')
+
+  const parsed = signInSchema.safeParse({ email, password })
+  if (!parsed.success) {
+    return data({ error: '请填写正确的邮箱和密码。', redirectTo })
+  }
+
+  const loginLimit = await tryRateLimit(clientAddress)
+  if (loginLimit.exceeded) {
+    return data(
+      { error: '登录失败次数过多，请稍后再试。' },
+      { headers: { 'Set-Cookie': await commitSessionWithMaxAge(session) } },
+    )
+  }
+
+  const dbUser = await verifyUserPassword(db, parsed.data.email, parsed.data.password)
+  if (!dbUser || !dbUser.role) {
+    return data(
+      { error: '请填写正确的邮箱和密码。' },
+      { headers: { 'Set-Cookie': await commitSessionWithMaxAge(session) } },
+    )
+  }
+
+  const bundle = getBlogSettingsBundleSync()
+  const mail = bundle?.mail?.mail
+  const isOtpEnabled = bundle?.security?.otp?.enabled === true && mail !== undefined && checkMailReady(mail).ready
+
+  if (isOtpEnabled) {
+    const [ipLimit, emailLimit] = await Promise.all([
+      tryOtpSendRateLimit(clientAddress),
+      tryOtpSendByEmailRateLimit(parsed.data.email),
+    ])
+    if (ipLimit.exceeded || emailLimit.exceeded) {
+      return data(
+        { error: '发送过于频繁，请稍后再试。' },
+        { headers: { 'Set-Cookie': await commitSessionWithMaxAge(session) } },
+      )
+    }
+
+    const { otpCode, expiresAt } = await issueOtpToken(db, dbUser.id)
+    const sendResult = await sendOtpSafely(dbUser, otpCode)
+    if (!sendResult.ok) {
+      return data({ error: sendResult.error }, { headers: { 'Set-Cookie': await commitSessionWithMaxAge(session) } })
+    }
+
+    session.set('pendingOtpUser', {
+      userId: String(dbUser.id),
+      email: dbUser.email,
+      expiresAt: expiresAt.getTime(),
+      sentAt: Date.now(),
+    })
+    session.set('otpFailCount', 0)
+
+    recordAuditEvent({
+      action: 'otp_sent',
+      resourceType: 'user',
+      resourceId: String(dbUser.id),
+      actorId: dbUser.id,
+      actorRole: dbUser.role,
+      ipAddress: clientAddress,
+      userAgent: request.headers.get('User-Agent'),
+      details: { email: dbUser.email },
+    })
+    return redirect(`/admin/signin?action=verifyotp&redirect_to=${encodeURIComponent(redirectTo)}`, {
+      headers: { 'Set-Cookie': await commitSessionWithMaxAge(session) },
+    })
+  }
+
+  const established = await establishLoginSession(db, pool, session, dbUser, request, clientAddress)
+  return redirect(redirectTo, { headers: { 'Set-Cookie': established.setCookie } })
+}

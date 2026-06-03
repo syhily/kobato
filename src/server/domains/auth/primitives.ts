@@ -37,6 +37,8 @@ export interface EstablishLoginOptions {
    * pre-emptively burn down concurrent sessions.
    */
   revokeOtherSessions?: boolean
+  /** Override the method recorded in the login audit event. */
+  authMethod?: string
 }
 
 /**
@@ -140,7 +142,7 @@ export async function establishLoginSession(
     ipAddress: clientAddress,
     userAgent,
     details: {
-      method: options.revokeOtherSessions ? 'credential_rotation' : 'password',
+      method: options.authMethod ?? (options.revokeOtherSessions ? 'credential_rotation' : 'password'),
     },
   })
 

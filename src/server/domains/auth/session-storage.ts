@@ -25,12 +25,21 @@ export interface SessionUser {
   role: Role
 }
 
+export interface PendingOtpUser {
+  userId: string
+  email: string
+  expiresAt: number
+  sentAt: number
+}
+
 export interface BlogSessionData {
   // Invariant: if `user` is present, `user.role` is non-null.
   // The single writer is `establishLoginSession` (in `primitives.ts`),
   // which throws on `!dbUser.role` — so no callable code path can
   // produce a stored session with `user` but missing role.
   user?: SessionUser
+  pendingOtpUser?: PendingOtpUser
+  otpFailCount?: number
   csrfToken?: string
   // Absolute session expiry (epoch ms). When present, the session is
   // unconditionally invalid after this timestamp regardless of sliding

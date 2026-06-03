@@ -1,7 +1,7 @@
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
 import { and, eq, lt, sql } from 'drizzle-orm'
-import { createHash, randomBytes } from 'node:crypto'
+import { createHash, randomBytes, randomInt } from 'node:crypto'
 
 import { verification } from '@/server/infra/db/schema/user'
 import { getLogger } from '@/server/infra/logger'
@@ -21,7 +21,7 @@ const TOKEN_LEN_RE = /^[A-Za-z0-9_-]{43}$/
 // `varchar(32)` so the set has plenty of headroom for future flows
 // (e.g. `'email-change'`), but new values must be added here so the
 // type system catches typos at call sites.
-export type TokenPurpose = 'password-reset' | 'author-invite'
+export type TokenPurpose = 'password-reset' | 'author-invite' | 'signin-otp'
 
 function sha256(token: string): string {
   return createHash('sha256').update(token).digest('hex')
@@ -156,4 +156,106 @@ export async function revokeTokensFor(db: NodePgDatabase, userId: bigint, purpos
 export async function purgeExpired(db: NodePgDatabase): Promise<number> {
   const result = await db.delete(verification).where(lt(verification.expiresAt, sql`now() - interval '1 day'`))
   return result.rowCount ?? 0
+}
+
+// ── OTP (signin-otp) — separate path from generic tokens ───────────────────
+// 6-digit numeric OTPs have too little entropy (~20 bits) to be safely
+// stored as bare sha256 hashes.  We salt each OTP with a per-token
+// random 16-byte hex string so an attacker who reads the DB cannot
+// pre-compute a 1,000,000-entry rainbow table.
+
+export const OTP_TTL_MS = 5 * 60 * 1000
+export const OTP_TTL_MINUTES = OTP_TTL_MS / (60 * 1000)
+
+function generateOtpCode(): string {
+  return String(randomInt(0, 1000000)).padStart(6, '0')
+}
+
+function generateSalt(): string {
+  return randomBytes(16).toString('hex')
+}
+
+function hashOtp(otpCode: string, salt: string): string {
+  return createHash('sha256')
+    .update(salt + otpCode)
+    .digest('hex')
+}
+
+export interface OtpTokenResult {
+  otpCode: string
+  expiresAt: Date
+}
+
+/**
+ * Issue a 6-digit numeric OTP for login verification.
+ * Stored as `salt:hash` in the `value` column; queried by
+ * `(purpose='signin-otp', userId)` rather than by value.
+ */
+export async function issueOtpToken(db: NodePgDatabase, userId: bigint): Promise<OtpTokenResult> {
+  const otpCode = generateOtpCode()
+  const salt = generateSalt()
+  const value = `${salt}:${hashOtp(otpCode, salt)}`
+  const expiresAt = new Date(Date.now() + OTP_TTL_MS)
+  const id = generateToken().slice(0, 24)
+
+  await db
+    .insert(verification)
+    .values({ id, purpose: 'signin-otp', userId, value, expiresAt })
+    .onConflictDoUpdate({
+      target: [verification.purpose, verification.userId],
+      set: { id, value, expiresAt, updatedAt: new Date() },
+    })
+
+  return { otpCode, expiresAt }
+}
+
+/**
+ * Verify a raw 6-digit OTP code for the given user.
+ * Looks up by `(purpose='signin-otp', userId)`, compares the salted
+ * hash, and **deletes the row on success** (single-use).
+ */
+export async function verifyOtpToken(
+  db: NodePgDatabase,
+  userId: bigint,
+  rawOtpCode: string,
+): Promise<ValidatedToken | null> {
+  try {
+    return await db.transaction(async (tx) => {
+      const rows = await tx
+        .select({
+          id: verification.id,
+          userId: verification.userId,
+          value: verification.value,
+          expiresAt: verification.expiresAt,
+        })
+        .from(verification)
+        .where(and(eq(verification.purpose, 'signin-otp'), eq(verification.userId, userId)))
+        .limit(1)
+        .for('update')
+
+      const row = rows[0]
+      if (!row) {
+        return null
+      }
+      if (row.expiresAt.getTime() < Date.now()) {
+        await tx.delete(verification).where(eq(verification.id, row.id))
+        return null
+      }
+
+      const parts = row.value.split(':')
+      if (parts.length !== 2) {
+        return null
+      }
+      const [salt, storedHash] = parts
+      if (hashOtp(rawOtpCode, salt) !== storedHash) {
+        return null
+      }
+
+      await tx.delete(verification).where(eq(verification.id, row.id))
+      return { userId: row.userId }
+    })
+  } catch (error) {
+    log.error('verifyOtpToken failed', { error })
+    return null
+  }
 }

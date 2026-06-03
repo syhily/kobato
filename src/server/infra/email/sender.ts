@@ -1,6 +1,8 @@
+import { OTP_TTL_MINUTES } from '@/server/domains/auth/verification-tokens'
 import { render } from '@/server/infra/email/render'
 import AuthorInvite from '@/server/infra/email/templates/AuthorInvite'
 import PasswordReset from '@/server/infra/email/templates/PasswordReset'
+import SignInOtp from '@/server/infra/email/templates/SignInOtp'
 import { getLogger } from '@/server/infra/logger'
 import { requireBlogSettingsSection } from '@/shared/config/getters'
 
@@ -159,6 +161,19 @@ export async function sendPasswordReset(user: { name: string; email: string }, l
     }),
   )
   return sendEmail(user.email, `【${siteIdentity.title}】密码重置`, html)
+}
+
+// Sent when a user logs in with OTP enabled.
+export async function sendSignInOtp(user: { name: string; email: string }, otpCode: string): Promise<SendResult> {
+  const siteIdentity = requireBlogSettingsSection('siteIdentity')
+  const html = renderEmail(
+    SignInOtp({
+      receiver: user.name,
+      otpCode,
+      expiresMinutes: OTP_TTL_MINUTES,
+    }),
+  )
+  return sendEmail(user.email, `【${siteIdentity.title}】登录验证码`, html)
 }
 
 // Sent on demand from the admin "测试发送" button. Bypasses the

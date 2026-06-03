@@ -4,10 +4,15 @@ import { data, redirect } from 'react-router'
 import { recordAuditEvent } from '@/server/domains/audit/service'
 import { getDbFromContext, getPoolFromContext, getRouteRequestContext } from '@/server/domains/auth/context'
 import { validateCsrfForAction } from '@/server/domains/auth/csrf'
-import { processAuthFormSubmission, signInWithSession } from '@/server/domains/auth/flows'
+import {
+  handleCredentialLogin,
+  handleOtpCancel,
+  handleOtpResend,
+  handleOtpVerify,
+} from '@/server/domains/auth/otp-flow'
 import { establishLoginSession, logout } from '@/server/domains/auth/primitives'
-import { MIN_PASSWORD_LENGTH, signInSchema } from '@/server/domains/auth/schema'
-import { destroySession } from '@/server/domains/auth/session-storage'
+import { MIN_PASSWORD_LENGTH } from '@/server/domains/auth/schema'
+import { commitSessionWithMaxAge, destroySession } from '@/server/domains/auth/session-storage'
 import { consumeToken, issueResetToken, peekToken } from '@/server/domains/auth/verification-tokens'
 import { countApprovedCommentsByUser } from '@/server/domains/comments/repos/public-query'
 import { ensureInstalledOrRedirect } from '@/server/domains/settings/install-gate'
@@ -16,7 +21,7 @@ import { sendPasswordReset } from '@/server/infra/email/sender'
 import { tryPasswordResetByEmailRateLimit, tryPasswordResetRateLimit } from '@/server/infra/rate-limit'
 import { bundleFromMatches, routeMeta } from '@/server/render/seo/meta'
 import { safeRedirectPath } from '@/shared/utils/safe-url'
-import { LoginForm, LostPasswordForm, ResetPasswordForm } from '@/ui/admin/auth/AdminCredentialsForm'
+import { LoginForm, LostPasswordForm, OtpForm, ResetPasswordForm } from '@/ui/admin/auth/AdminCredentialsForm'
 import { BrandLogo } from '@/ui/public/chrome/BrandLogo'
 
 import type { Route } from './+types/signin'
@@ -30,9 +35,13 @@ function hasMessage(data: unknown): data is { message: string } {
   )
 }
 
-function formFieldString(formData: FormData, key: string): string {
-  const value = formData.get(key)
-  return typeof value === 'string' ? value : ''
+function hasError(data: unknown): data is { error: string } {
+  return (
+    typeof data === 'object' &&
+    data !== null &&
+    'error' in data &&
+    typeof (data as Record<string, unknown>).error === 'string'
+  )
 }
 
 export async function loader({ request, context }: Route.LoaderArgs) {
@@ -83,6 +92,27 @@ export async function loader({ request, context }: Route.LoaderArgs) {
     }
   }
 
+  // OTP pending state: if the user has already passed password check
+  // but not yet verified the OTP, show the OTP form instead.
+  const pendingOtpUser = session.get('pendingOtpUser')
+  if (pendingOtpUser) {
+    if (pendingOtpUser.expiresAt < Date.now()) {
+      session.unset('pendingOtpUser')
+      session.unset('otpFailCount')
+      throw redirect(`/admin/signin?redirect_to=${encodeURIComponent(redirectTo)}`, {
+        headers: { 'Set-Cookie': await commitSessionWithMaxAge(session) },
+      })
+    }
+    return data({
+      redirectTo,
+      action: 'verifyotp',
+      tokenError,
+      resetToken,
+      pendingOtpEmail: pendingOtpUser.email,
+      pendingOtpSentAt: pendingOtpUser.sentAt,
+    })
+  }
+
   return data({ redirectTo, action: action ?? 'login', tokenError, resetToken })
 }
 
@@ -103,7 +133,8 @@ export async function action({ request, context }: Route.ActionArgs) {
   }
 
   if (action === 'lostpassword') {
-    const email = formFieldString(formData, 'email')
+    const email = formData.get('email')
+    const emailStr = typeof email === 'string' ? email : ''
     // Rate-limit before any lookup to prevent abuse. Two additive
     // buckets: per-IP catches one attacker fanning out across many
     // mailboxes; per-email catches one attacker rotating IPs against
@@ -112,14 +143,14 @@ export async function action({ request, context }: Route.ActionArgs) {
     // (or even which email) was throttled.
     const [ipLimit, emailLimit] = await Promise.all([
       tryPasswordResetRateLimit(clientAddress),
-      email ? tryPasswordResetByEmailRateLimit(email) : Promise.resolve(null),
+      emailStr ? tryPasswordResetByEmailRateLimit(emailStr) : Promise.resolve(null),
     ])
     if (ipLimit.exceeded || emailLimit?.exceeded) {
       return data({ error: null, message: '如果该邮箱存在且符合要求，重置邮件已发送。' })
     }
     // Always appear to succeed to prevent email enumeration.
-    if (email) {
-      const u = await findUserByEmail(db, email)
+    if (emailStr) {
+      const u = await findUserByEmail(db, emailStr)
       if (u && u.role) {
         // Existing user with a role — send reset email.
         const { token } = await issueResetToken(db, u.id)
@@ -161,20 +192,22 @@ export async function action({ request, context }: Route.ActionArgs) {
   }
 
   if (action === 'resetpassword' || action === 'accept-invite') {
-    const rawToken = formFieldString(formData, 'reset_token')
-    const newPassword = formFieldString(formData, 'password')
+    const rawToken = formData.get('reset_token')
+    const newPassword = formData.get('password')
+    const rawTokenStr = typeof rawToken === 'string' ? rawToken : ''
+    const newPasswordStr = typeof newPassword === 'string' ? newPassword : ''
     const purpose = action === 'resetpassword' ? 'password-reset' : 'author-invite'
 
-    if (!newPassword || newPassword.length < MIN_PASSWORD_LENGTH) {
+    if (!newPasswordStr || newPasswordStr.length < MIN_PASSWORD_LENGTH) {
       return data({ error: `密码长度至少 ${MIN_PASSWORD_LENGTH} 位。` })
     }
 
-    const result = await consumeToken(db, rawToken, purpose)
+    const result = await consumeToken(db, rawTokenStr, purpose)
     if (result === null) {
       return data({ error: '链接无效或已过期。' })
     }
 
-    const hashed = await bcrypt.hash(newPassword, 12)
+    const hashed = await bcrypt.hash(newPasswordStr, 12)
     await updateUserById(db, result.userId, { password: hashed })
 
     const dbUser = await findUserById(db, result.userId)
@@ -204,16 +237,19 @@ export async function action({ request, context }: Route.ActionArgs) {
     return redirect(redirectTo, { headers: { 'Set-Cookie': established.setCookie } })
   }
 
-  return processAuthFormSubmission({
-    request,
-    schema: signInSchema,
-    fields: ['email', 'password'] as const,
-    defaultErrorMessage: '请填写正确的邮箱和密码。',
-    redirectTo,
-    run: (input: { email: string; password: string }) =>
-      signInWithSession(db, pool, { ...input, session, request, clientAddress, redirectTo }),
-    formData,
-  })
+  if (action === 'cancelotp') {
+    return handleOtpCancel(session, redirectTo)
+  }
+
+  if (action === 'verifyotp') {
+    return handleOtpVerify(db, pool, session, clientAddress, request, formData, redirectTo)
+  }
+
+  if (action === 'resendotp') {
+    return handleOtpResend(db, session, clientAddress, request)
+  }
+
+  return handleCredentialLogin(db, pool, session, clientAddress, request, formData, redirectTo)
 }
 
 export function meta({ matches }: Route.MetaArgs) {
@@ -227,9 +263,9 @@ export default function LoginRoute({ actionData, loaderData }: Route.ComponentPr
         <BrandLogo className="mx-auto mb-10 h-20 w-auto" />
       </header>
 
-      {actionData?.error || hasMessage(actionData) || loaderData.tokenError ? (
+      {hasError(actionData) || hasMessage(actionData) || loaderData.tokenError ? (
         <div className="text-center text-sm leading-relaxed">
-          {actionData?.error ? (
+          {hasError(actionData) ? (
             <p role="alert" aria-live="polite" className="text-destructive">
               {actionData.error}
             </p>
@@ -248,6 +284,9 @@ export default function LoginRoute({ actionData, loaderData }: Route.ComponentPr
       ) : null}
 
       {loaderData.action === 'login' && <LoginForm />}
+      {loaderData.action === 'verifyotp' && 'pendingOtpEmail' in loaderData && 'pendingOtpSentAt' in loaderData && (
+        <OtpForm email={loaderData.pendingOtpEmail as string} sentAt={loaderData.pendingOtpSentAt as number} />
+      )}
       {loaderData.action === 'lostpassword' && <LostPasswordForm />}
       {(loaderData.action === 'resetpassword' || loaderData.action === 'accept-invite') && loaderData.resetToken && (
         <ResetPasswordForm token={loaderData.resetToken} />
