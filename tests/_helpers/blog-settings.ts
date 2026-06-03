@@ -138,6 +138,10 @@ export const TEST_BLOG_SETTINGS_BUNDLE: BlogSettingsBundle = {
     passwordResetEmail: { windowSeconds: 60 * 5, maxAttempts: 1 },
     passwordResetTarget: { windowSeconds: 60, maxAttempts: 1 },
     resourceIp: { windowSeconds: 60, maxAttempts: 60 },
+    otpSendIp: { windowSeconds: 60 * 5, maxAttempts: 3 },
+    otpSendEmail: { windowSeconds: 60 * 5, maxAttempts: 1 },
+    otpVerifyIp: { windowSeconds: 60 * 5, maxAttempts: 5 },
+    otpVerifyEmail: { windowSeconds: 60 * 5, maxAttempts: 5 },
   },
   search: {
     search: {
@@ -171,5 +175,6 @@ export const TEST_BLOG_SETTINGS_BUNDLE: BlogSettingsBundle = {
   security: {
     csrf: { enabled: true, exemptPaths: [] },
     cors: { enabled: false, origins: [] },
+    otp: { enabled: false },
   },
 }
