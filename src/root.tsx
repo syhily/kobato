@@ -3,7 +3,7 @@ import type { MiddlewareFunction, ShouldRevalidateFunctionArgs } from 'react-rou
 import { dehydrate, HydrationBoundary, QueryClientProvider } from '@tanstack/react-query'
 import { lazy, Suspense, useLayoutEffect, useState } from 'react'
 import { preconnect, prefetchDNS } from 'react-dom'
-import { Links, Meta, Outlet, Scripts, ScrollRestoration, useRouteLoaderData } from 'react-router'
+import { Links, Meta, Outlet, Scripts, ScrollRestoration, useMatches, useRouteLoaderData } from 'react-router'
 
 import { setCsrfToken } from '@/client/api/client'
 import { makeQueryClient } from '@/client/api/query-client'
@@ -164,7 +164,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
     admin?: boolean
     theme?: 'dark' | 'light' | null
     blogSettings?: {
-      fonts?: { globalCss?: string[] } | null
+      fonts?: { globalCss?: string[]; postCss?: string[] } | null
       assets?: { asset?: { host?: string } | null } | null
       siteIdentity?: { locale?: string } | null
     } | null
@@ -207,6 +207,10 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
   const locale = rootData?.blogSettings?.siteIdentity?.locale ?? 'zh-CN'
 
+  const matches = useMatches()
+  const wantsPostFonts = matches.some((m) => (m.handle as RouteHandle | undefined)?.postFonts === true)
+  const postFontCss = wantsPostFonts ? (rootData?.blogSettings?.fonts?.postCss ?? []) : []
+
   return (
     <html lang={locale} className={theme ?? undefined}>
       <head>
@@ -214,6 +218,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <meta name="color-scheme" content={theme ?? 'light dark'} />
         {globalFontCss.map((url) => (
+          <link key={url} rel="stylesheet" href={url} />
+        ))}
+        {postFontCss.map((url) => (
           <link key={url} rel="stylesheet" href={url} />
         ))}
         <Meta />
@@ -240,6 +247,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
 export type RouteHandle = {
   layout?: 'admin'
   footer?: boolean
+  postFonts?: boolean
 }
 
 export default function App({ loaderData }: Route.ComponentProps) {

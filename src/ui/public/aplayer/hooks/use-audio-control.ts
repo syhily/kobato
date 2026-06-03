@@ -18,6 +18,7 @@ export function useAudioControl(options: UseAudioControlOptions) {
   const [volume, setVolumeState] = useState(options.initialVolume ?? 0.7)
   const [muted, setMutedState] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+  const [loop, setLoop] = useState(false)
 
   const onEndedRef = useRef(options.onEnded)
   const onErrorRef = useRef(options.onError)
@@ -135,6 +136,14 @@ export function useAudioControl(options: UseAudioControlOptions) {
     }
   }, [])
 
+  const toggleLoop = useCallback(() => {
+    const audio = audioRef.current
+    if (audio) {
+      audio.loop = !audio.loop
+      setLoop(audio.loop)
+    }
+  }, [])
+
   return {
     volume,
     setVolume,
@@ -148,5 +157,7 @@ export function useAudioControl(options: UseAudioControlOptions) {
     togglePlay,
     seek,
     isLoading,
+    loop,
+    toggleLoop,
   }
 }

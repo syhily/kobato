@@ -10,7 +10,6 @@ import { countUsers } from '@/server/infra/db/operations/user'
 import { getBlogSettingsBundleSync } from '@/shared/config/getters'
 import { AdminErrorFallback } from '@/ui/admin/shell/AdminErrorFallback'
 import { AdminShell } from '@/ui/admin/shell/AdminShell'
-import { PostFontLinks } from '@/ui/public/post/PostFontLinks'
 
 import type { Route } from './+types/layout'
 
@@ -21,7 +20,7 @@ import type { Route } from './+types/layout'
 // the project's "admin pages do not load public.css" contract.
 import '@/styles/admin.css'
 
-export const handle: RouteHandle = { layout: 'admin' }
+export const handle: RouteHandle = { layout: 'admin', postFonts: true }
 
 export async function loader({ request, context }: Route.LoaderArgs) {
   const { role, user, url } = getRouteRequestContext({ request, context })
@@ -58,13 +57,6 @@ export default function WpAdminLayoutRoute({ loaderData }: Route.ComponentProps)
   useDetachPublicCss()
   return (
     <>
-      {/*
-        globalCss already loads on every route via root.tsx's <Layout>;
-        admin additionally pulls in postCss so the page-body editor
-        preview and any in-admin `.prose-blog` rendering see the same
-        serif typography the public article surface gets.
-      */}
-      <PostFontLinks />
       <AdminShell
         currentUser={loaderData.currentUser}
         siteTitle={loaderData.siteTitle}

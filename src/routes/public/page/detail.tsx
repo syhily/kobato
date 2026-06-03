@@ -1,5 +1,7 @@
 import { data } from 'react-router'
 
+import type { RouteHandle } from '@/root'
+
 import { getDbFromContext } from '@/server/domains/auth/context'
 import { listAllFriends } from '@/server/domains/friends/service'
 import { loadPagePreview } from '@/server/domains/pages/loader'
@@ -11,11 +13,10 @@ import { resolveFootnotesSectionTitle } from '@/shared/utils/footnotes-section-t
 import { Friends } from '@/ui/pt/blocks/Friends'
 import { PortableTextBody } from '@/ui/pt/render'
 import { PageDetailBody } from '@/ui/public/post/PageDetailBody'
-import { PostFontLinks } from '@/ui/public/post/PostFontLinks'
 
 import type { Route } from './+types/detail'
 
-export const handle = { footer: false }
+export const handle: RouteHandle = { footer: false, postFonts: true }
 export const headers = detailHeaders
 export const shouldRevalidate = publicShouldRevalidate
 
@@ -67,7 +68,6 @@ export default function PageDetailRoute({ loaderData }: Route.ComponentProps) {
   const { page, body, friends, showFriends, draftMarker, detail, imageMeta, footnotesSectionTitle } = loaderData
   return (
     <>
-      <PostFontLinks />
       <PageDetailBody
         page={page}
         headings={page.headings}

@@ -1,5 +1,6 @@
 import { data } from 'react-router'
 
+import type { RouteHandle } from '@/root'
 import type { DraftMarker } from '@/ui/public/post/DetailBodyChrome'
 
 import { getDbFromContext, tryGetSessionContext } from '@/server/domains/auth/context'
@@ -21,10 +22,10 @@ import { canonicalPostPath } from '@/shared/utils/paths'
 import { hasAtLeast } from '@/shared/utils/roles'
 import { PortableTextBody } from '@/ui/pt/render'
 import { PostDetailBody } from '@/ui/public/post/PostDetailBody'
-import { PostFontLinks } from '@/ui/public/post/PostFontLinks'
 
 import type { Route } from './+types/detail'
 
+export const handle: RouteHandle = { postFonts: true }
 export const headers = detailHeaders
 export const shouldRevalidate = publicShouldRevalidate
 
@@ -106,7 +107,6 @@ export default function PostDetailRoute({ loaderData }: Route.ComponentProps) {
   const { post, body, visibleTags, sidebarPosts, tags, detail, imageMeta, draftMarker } = loaderData
   return (
     <>
-      <PostFontLinks />
       <PostDetailBody
         post={post}
         headings={post.headings}

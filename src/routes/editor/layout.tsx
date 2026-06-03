@@ -6,12 +6,11 @@ import { useDetachPublicCss } from '@/client/hooks/use-detach-public-css'
 import { getRouteRequestContext } from '@/server/domains/auth/context'
 import { hasAtLeast } from '@/server/domains/auth/rbac'
 import { AdminErrorFallback } from '@/ui/admin/shell/AdminErrorFallback'
-import { PostFontLinks } from '@/ui/public/post/PostFontLinks'
 
 import type { Route } from './+types/layout'
 import '@/styles/admin.css'
 
-export const handle: RouteHandle = { layout: 'admin' }
+export const handle: RouteHandle = { layout: 'admin', postFonts: true }
 
 export async function loader({ request, context }: Route.LoaderArgs) {
   const { role, user, url } = getRouteRequestContext({ request, context })
@@ -36,7 +35,6 @@ export default function EditorLayoutRoute({ loaderData }: Route.ComponentProps) 
   useDetachPublicCss()
   return (
     <>
-      <PostFontLinks />
       <Outlet context={{ currentUser: loaderData.currentUser }} />
     </>
   )

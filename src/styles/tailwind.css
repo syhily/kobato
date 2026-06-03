@@ -452,8 +452,6 @@
   border-radius: var(--radius-sm);
 }
 
-@import './aplayer.css' layer(components);
-
 /* Tailwind theme bridge shadcn */
 @theme inline {
   --color-background: var(--background);
@@ -603,6 +601,38 @@
   /* Editor spacing tokens */
   --spacing-editor-prose-min: 440px;
 
+  /* APlayer spacing tokens */
+  --spacing-aplayer-margin: 5px;
+  --spacing-aplayer-art-sm: 66px;
+  --spacing-aplayer-art-lg: 90px;
+  --spacing-aplayer-info-gap-sm: 76px;
+  --spacing-aplayer-info-gap-lg: 100px;
+  --spacing-aplayer-info-pad-x: 7px;
+  --spacing-aplayer-info-pad-top-lg: 10px;
+  --spacing-aplayer-music-gap: 13px;
+  --spacing-aplayer-music-indent: 5px;
+  --spacing-aplayer-time-height: 17px;
+  --spacing-aplayer-time-pad: 7px;
+  --spacing-aplayer-icon: 15px;
+  --spacing-aplayer-volume-indent: 3px;
+  --spacing-aplayer-volume-popup-right: 3px;
+  --spacing-aplayer-volume-popup-bottom: 15px;
+  --spacing-aplayer-volume-popup-width: 25px;
+  --spacing-aplayer-volume-bar-indent: 10px;
+  --spacing-aplayer-volume-bar-height: 35px;
+  --spacing-aplayer-volume-bar-track: 5px;
+  --spacing-aplayer-progress-indent: 5px;
+  --spacing-aplayer-thumb-offset: 5px;
+  --spacing-aplayer-notice-pad-y: 5px;
+  --spacing-aplayer-fixed-max: 400px;
+  --spacing-aplayer-miniswitcher-width: 18px;
+  --spacing-aplayer-lrc: 30px;
+  --spacing-aplayer-lrc-gap: 7px;
+  --text-aplayer-time: 11px;
+  --radius-aplayer-volume: 2.5px;
+  --color-aplayer-bar: #cdcdcd;
+  --color-aplayer-bar-loaded: #aaa;
+
   --container-popup-sm: 300px;
   --container-popup-md: 540px;
   --container-popup-lg: 960px;
@@ -729,6 +759,12 @@
   ::file-selector-button {
     border-color: var(--border);
   }
+}
+
+/* APlayer icon sizing — SVGs must fill their 15×15 px parent containers */
+.aplayer .aplayer-icon svg {
+  width: 100%;
+  height: 100%;
 }
 
 @media (prefers-reduced-motion: reduce) {

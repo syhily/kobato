@@ -1,0 +1,10 @@
+export function IconLoop(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 29 32" {...props}>
+      <path
+        d="M9.333 9.333h13.333v4l5.333-5.333-5.333-5.333v4h-16v8h2.667v-5.333zM22.667 22.667h-13.333v-4l-5.333 5.333 5.333 5.333v-4h16v-8h-2.667v5.333z"
+        fill="currentColor"
+      />
+    </svg>
+  )
+}

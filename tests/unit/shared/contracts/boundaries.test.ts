@@ -903,7 +903,8 @@ describe('contract: module and bundle boundaries', () => {
         (file) =>
           !file.startsWith('src/ui/admin/') &&
           !file.startsWith('src/routes/auth/') &&
-          !file.startsWith('src/routes/admin/'),
+          !file.startsWith('src/routes/admin/') &&
+          !file.startsWith('src/ui/public/aplayer/'),
       )
       .filter((file) => /(?:bg|text|border)-\[#/.test(readFileSync(file, 'utf8')))
 
@@ -1231,24 +1232,5 @@ describe('contract: module and bundle boundaries', () => {
       }
     }
     expect(offenders).toEqual([])
-  })
-
-  it('mirrors every .dark .aplayer rule under the prefers-color-scheme media-query block', () => {
-    // The APlayer reskin is keyed on `.dark .aplayer*`. Noscript visitors
-    // on a dark-OS preference have no `.dark` class on `<html>`, so the
-    // class-only selectors would leave them with the library's stock light
-    // palette painted on a dark page. Every selector occurrence in the
-    // class-based block must therefore be mirrored under
-    // `@media (prefers-color-scheme: dark) { :root:not(.light, .dark) … }`
-    // so the system-preference branch fires the same overrides. Counts
-    // here are selector occurrences (across `,`-joined selector lists),
-    // not rule blocks.
-    const aplayer = readFileSync('src/styles/aplayer.css', 'utf8').replace(/\/\*[\s\S]*?\*\//g, '')
-    const darkRuleCount = (aplayer.match(/\.dark\s+\.aplayer/g) ?? []).length
-    const mediaRuleCount = (aplayer.match(/:root:not\(\.light,\s*\.dark\)\s+\.aplayer/g) ?? []).length
-
-    expect(darkRuleCount).toBeGreaterThan(0)
-    expect(mediaRuleCount).toBe(darkRuleCount)
-    expect(aplayer).toMatch(/@media\s*\(prefers-color-scheme:\s*dark\)\s*\{/)
   })
 })

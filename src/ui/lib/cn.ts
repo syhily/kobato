@@ -17,6 +17,7 @@ import { type ClassValue, clsx } from '@/ui/lib/clsx'
 const TEXT_TOKENS = [
   'admin-sm',
   'admin-base',
+  'aplayer-time',
   'badge',
   'btn-lg',
   'empty-state-hero',
@@ -37,6 +38,8 @@ const COLOR_TOKENS = [
   'accent',
   'accent-foreground',
   'alert',
+  'aplayer-bar',
+  'aplayer-bar-loaded',
   'aside-bg',
   'background',
   'border',
@@ -143,7 +146,7 @@ const SHADOW_TOKENS = ['card', 'like-active', 'popup-close', 'toc-toggle', 'tool
 // the stock Tailwind v4 scale and tailwind-merge already knows them,
 // but redeclaring them here is harmless and protects against an
 // upstream key rename.
-const RADIUS_TOKENS = ['xs', 'sm', 'md', 'lg', 'xl', 'input'] as const
+const RADIUS_TOKENS = ['aplayer-volume', 'xs', 'sm', 'md', 'lg', 'xl', 'input'] as const
 
 // --font-* -- font-family scale
 const FONT_TOKENS = ['code'] as const
@@ -156,6 +159,32 @@ const ANIMATE_TOKENS = ['shake', 'comments-shimmer', 'comment-flash'] as const
 const SPACING_TOKENS = [
   'admin-col-narrow',
   'admin-thumb',
+  'aplayer-art-lg',
+  'aplayer-art-sm',
+  'aplayer-fixed-max',
+  'aplayer-icon',
+  'aplayer-info-gap-lg',
+  'aplayer-lrc',
+  'aplayer-lrc-gap',
+  'aplayer-info-gap-sm',
+  'aplayer-info-pad-top-lg',
+  'aplayer-info-pad-x',
+  'aplayer-margin',
+  'aplayer-miniswitcher-width',
+  'aplayer-music-gap',
+  'aplayer-music-indent',
+  'aplayer-notice-pad-y',
+  'aplayer-progress-indent',
+  'aplayer-thumb-offset',
+  'aplayer-time-height',
+  'aplayer-time-pad',
+  'aplayer-volume-bar-height',
+  'aplayer-volume-bar-indent',
+  'aplayer-volume-bar-track',
+  'aplayer-volume-indent',
+  'aplayer-volume-popup-bottom',
+  'aplayer-volume-popup-right',
+  'aplayer-volume-popup-width',
   'auth-btn',
   'auth-input',
   'auth-input-pad',
