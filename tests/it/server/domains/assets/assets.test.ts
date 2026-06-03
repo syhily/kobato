@@ -5,8 +5,8 @@ import type { BlogSettingsBundle, BrandingObjectRef } from '@/shared/config/type
 vi.mock('@/shared/config/getters', () => ({
   getBlogSettingsBundleSync: vi.fn(),
 }))
-vi.mock('@/server/domains/assets/storage', async (importActual) => {
-  const actual = (await importActual()) as typeof import('@/server/domains/assets/storage')
+vi.mock('@/server/domains/assets/repos/storage', async (importActual) => {
+  const actual = (await importActual()) as typeof import('@/server/domains/assets/repos/storage')
   return {
     ...actual,
     fetchBrandingObject: vi.fn(),
@@ -14,8 +14,8 @@ vi.mock('@/server/domains/assets/storage', async (importActual) => {
 })
 
 const { getBlogSettingsBundleSync } = await import('@/shared/config/getters')
-const { fetchBrandingObject } = await import('@/server/domains/assets/storage')
-const { resolveSiteAsset } = await import('@/server/domains/assets/service')
+const { fetchBrandingObject } = await import('@/server/domains/assets/repos/storage')
+const { resolveSiteAsset } = await import('@/server/domains/assets/services/routes')
 
 function bundleWith(branding: Record<string, unknown>): BlogSettingsBundle {
   return { assets: { branding } } as unknown as BlogSettingsBundle

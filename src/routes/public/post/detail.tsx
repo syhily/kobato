@@ -4,7 +4,7 @@ import type { RouteHandle } from '@/root'
 import type { DraftMarker } from '@/ui/public/post/DetailBodyChrome'
 
 import { getDbFromContext, tryGetSessionContext } from '@/server/domains/auth/context'
-import { resolveImageMetaBySources } from '@/server/domains/images/image-meta'
+import { resolveImageMetaBySources } from '@/server/domains/images/services/enhance'
 import { selectSidebarPosts } from '@/server/domains/posts/repos/public-query'
 import { findPostBySlug } from '@/server/domains/posts/repos/single'
 import { loadPostDraftPreviewBySlug } from '@/server/domains/posts/services/draft'

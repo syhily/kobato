@@ -3,14 +3,18 @@ import { describe, expect, it, vi } from 'vitest'
 
 import { makeAuthedCtx } from '#/_helpers/mock-ctx'
 
-vi.mock('@/server/domains/taxonomies/categories/service', () => ({
-  deleteAdminCategory: vi.fn(),
+vi.mock('@/server/domains/taxonomies/categories/services/query', () => ({
   listCategoriesForAdmin: vi.fn(),
+}))
+
+vi.mock('@/server/domains/taxonomies/categories/services/mutate', () => ({
+  deleteAdminCategory: vi.fn(),
   reorderAdminCategories: vi.fn(),
   upsertAdminCategory: vi.fn(),
 }))
 
-const service = await import('@/server/domains/taxonomies/categories/service')
+const queryService = await import('@/server/domains/taxonomies/categories/services/query')
+const mutateService = await import('@/server/domains/taxonomies/categories/services/mutate')
 const { adminCategoriesRouter } = await import('@/server/http/controllers/admin/categories.controller')
 
 const category = {
@@ -28,7 +32,7 @@ const category = {
 
 describe('adminCategoriesRouter.list', () => {
   it('returns categories and total', async () => {
-    vi.mocked(service.listCategoriesForAdmin).mockResolvedValueOnce({
+    vi.mocked(queryService.listCategoriesForAdmin).mockResolvedValueOnce({
       categories: [category],
       total: 1,
     })
@@ -39,7 +43,7 @@ describe('adminCategoriesRouter.list', () => {
   })
 
   it('works with empty input', async () => {
-    vi.mocked(service.listCategoriesForAdmin).mockResolvedValueOnce({
+    vi.mocked(queryService.listCategoriesForAdmin).mockResolvedValueOnce({
       categories: [],
       total: 0,
     })
@@ -52,7 +56,7 @@ describe('adminCategoriesRouter.list', () => {
 
 describe('adminCategoriesRouter.upsert', () => {
   it('returns the upserted category', async () => {
-    vi.mocked(service.upsertAdminCategory).mockResolvedValueOnce(category)
+    vi.mocked(mutateService.upsertAdminCategory).mockResolvedValueOnce(category)
     const ctx = makeAuthedCtx()
     const res = await call(
       adminCategoriesRouter.upsert,
@@ -65,14 +69,14 @@ describe('adminCategoriesRouter.upsert', () => {
 
 describe('adminCategoriesRouter.delete', () => {
   it('resolves to undefined on success', async () => {
-    vi.mocked(service.deleteAdminCategory).mockResolvedValueOnce(true)
+    vi.mocked(mutateService.deleteAdminCategory).mockResolvedValueOnce(true)
     const ctx = makeAuthedCtx()
     const res = await call(adminCategoriesRouter.delete, { id: '1' }, { context: ctx })
     expect(res).toBeUndefined()
   })
 
   it('throws NOT_FOUND when service returns false', async () => {
-    vi.mocked(service.deleteAdminCategory).mockResolvedValueOnce(false)
+    vi.mocked(mutateService.deleteAdminCategory).mockResolvedValueOnce(false)
     const ctx = makeAuthedCtx()
     await expect(call(adminCategoriesRouter.delete, { id: '999' }, { context: ctx })).rejects.toMatchObject({
       code: 'NOT_FOUND',
@@ -82,7 +86,7 @@ describe('adminCategoriesRouter.delete', () => {
 
 describe('adminCategoriesRouter.reorder', () => {
   it('returns reordered categories', async () => {
-    vi.mocked(service.reorderAdminCategories).mockResolvedValueOnce([category])
+    vi.mocked(mutateService.reorderAdminCategories).mockResolvedValueOnce([category])
     const ctx = makeAuthedCtx()
     const res = await call(adminCategoriesRouter.reorder, { orderedIds: ['1', '2'] }, { context: ctx })
     expect(res.categories).toHaveLength(1)

@@ -3,11 +3,11 @@ import { describe, expect, it, vi } from 'vitest'
 
 import { makePublicCtx } from '#/_helpers/mock-ctx'
 
-vi.mock('@/server/domains/music/service', () => ({
+vi.mock('@/server/domains/music/services/read', () => ({
   getMusicMetaForPlayer: vi.fn(),
 }))
 
-const musicService = await import('@/server/domains/music/service')
+const musicService = await import('@/server/domains/music/services/read')
 const { musicRouter } = await import('@/server/http/controllers/music.controller')
 
 describe('musicRouter.get', () => {

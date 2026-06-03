@@ -1,5 +1,5 @@
-import { getPublicBaseUrl } from '@/server/domains/images/storage'
 import { ActionFailure } from '@/server/infra/http/errors'
+import { getPublicBaseUrl } from '@/server/infra/storage/public-url'
 import { deleteS3Object, getS3StorageContext, putPublicS3Object } from '@/server/infra/storage/s3-client'
 
 // Music files share the same S3 bucket and the same `assets.storage`

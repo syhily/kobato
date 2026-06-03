@@ -19,15 +19,15 @@ vi.mock('@/server/email/templates/ApprovedComment', () => ({
 vi.mock('@/server/email/render', () => ({
   render: vi.fn(() => '<p>stub</p>'),
 }))
-vi.mock('@/server/domains/pt/comment-to-html', () => ({
+vi.mock('@/server/domains/pt/services/comment-to-html', () => ({
   commentBodyToHtml: vi.fn(() => '<p>stub</p>'),
 }))
 
 // `sender.ts` resolves the entity's current slug + title at send time.
 // Stub the lookup so the test doesn't need a real DB; the e2e tests pin
 // the full resolver path.
-vi.mock('@/server/domains/comments/url', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@/server/domains/comments/url')>()
+vi.mock('@/server/domains/comments/services/shared', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/server/domains/comments/services/shared')>()
   return {
     ...actual,
     findEntitySlugTitle: vi.fn(async () => ({ slug: 'hi', title: 'Hi' })),
@@ -37,7 +37,7 @@ vi.mock('@/server/domains/comments/url', async (importOriginal) => {
 const db = {} as NodePgDatabase
 
 const { setBlogSettingsBundleForTests } = await import('@/server/domains/settings/snapshot')
-const { sendNewComment } = await import('@/server/domains/comments/email')
+const { sendNewComment } = await import('@/server/domains/comments/services/email')
 const { sendTestMail } = await import('@/server/infra/email/sender')
 const { TEST_BLOG_SETTINGS_BUNDLE } = await import('#/_helpers/blog-settings')
 

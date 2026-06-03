@@ -1,6 +1,6 @@
 import { z } from 'zod'
 
-import { loadImageThumbhash } from '@/server/domains/images/image-meta'
+import { loadImageThumbhash } from '@/server/domains/images/services/cover'
 import { publicProc } from '@/server/http/orpc-base'
 
 const resolveThumbhash = publicProc

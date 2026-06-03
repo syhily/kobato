@@ -69,7 +69,6 @@ vi.mock('@/server/domains/auth/flows', async () => {
   const actual = await vi.importActual<typeof import('@/server/domains/auth/flows')>('@/server/domains/auth/flows')
   return {
     ...actual,
-    processAuthFormSubmission: vi.fn(async () => ({ ok: true })),
   }
 })
 

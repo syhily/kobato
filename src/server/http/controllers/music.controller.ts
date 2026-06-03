@@ -1,7 +1,7 @@
 import { ORPCError } from '@orpc/server'
 import { z } from 'zod'
 
-import { getMusicMetaForPlayer } from '@/server/domains/music/service'
+import { getMusicMetaForPlayer } from '@/server/domains/music/services/read'
 import { publicProc } from '@/server/http/orpc-base'
 import { publicMusicMetaDto } from '@/shared/contracts/music'
 

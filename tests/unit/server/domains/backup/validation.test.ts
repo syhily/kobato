@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { validateBackupSql } from '@/server/domains/backup/service'
+import { validateBackupSql } from '@/server/domains/backup/services/validate'
 import { ActionFailure } from '@/server/infra/http/errors'
 
 describe('backup validation', () => {

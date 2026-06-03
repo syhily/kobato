@@ -58,3 +58,4 @@ data/
 .claude/settings.local.json
 .codegraph/
 *.swp
+.agents/plans/

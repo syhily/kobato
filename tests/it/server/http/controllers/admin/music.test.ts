@@ -3,15 +3,23 @@ import { describe, expect, it, vi } from 'vitest'
 
 import { makeAuthedCtx } from '#/_helpers/mock-ctx'
 
-vi.mock('@/server/domains/music/service', () => ({
+vi.mock('@/server/domains/music/services/read', () => ({
   listMusicForAdmin: vi.fn(),
+}))
+
+vi.mock('@/server/domains/music/services/search', () => ({
   searchMusic: vi.fn(),
+}))
+
+vi.mock('@/server/domains/music/services/write', () => ({
   addMusic: vi.fn(),
   updateMusicMetadata: vi.fn(),
   deleteMusic: vi.fn(),
 }))
 
-const service = await import('@/server/domains/music/service')
+const readService = await import('@/server/domains/music/services/read')
+const searchService = await import('@/server/domains/music/services/search')
+const writeService = await import('@/server/domains/music/services/write')
 const { adminMusicRouter } = await import('@/server/http/controllers/admin/music.controller')
 
 const musicStub = {
@@ -35,7 +43,7 @@ const musicStub = {
 
 describe('adminMusicRouter.list', () => {
   it('returns musics, total and hasMore', async () => {
-    vi.mocked(service.listMusicForAdmin).mockResolvedValueOnce({
+    vi.mocked(readService.listMusicForAdmin).mockResolvedValueOnce({
       musics: [musicStub],
       total: 1,
       hasMore: false,
@@ -50,7 +58,7 @@ describe('adminMusicRouter.list', () => {
 
 describe('adminMusicRouter.search', () => {
   it('returns search results', async () => {
-    vi.mocked(service.searchMusic).mockResolvedValueOnce({
+    vi.mocked(searchService.searchMusic).mockResolvedValueOnce({
       results: [
         {
           source: 'netease' as const,
@@ -72,7 +80,7 @@ describe('adminMusicRouter.search', () => {
 
 describe('adminMusicRouter.add', () => {
   it('returns the added music', async () => {
-    vi.mocked(service.addMusic).mockResolvedValueOnce(musicStub)
+    vi.mocked(writeService.addMusic).mockResolvedValueOnce(musicStub)
     const ctx = makeAuthedCtx()
     const res = await call(adminMusicRouter.add, { source: 'netease', sourceId: '12345' }, { context: ctx })
     expect(res.music.id).toBe('1')
@@ -81,7 +89,7 @@ describe('adminMusicRouter.add', () => {
 
 describe('adminMusicRouter.update', () => {
   it('returns the updated music', async () => {
-    vi.mocked(service.updateMusicMetadata).mockResolvedValueOnce(musicStub)
+    vi.mocked(writeService.updateMusicMetadata).mockResolvedValueOnce(musicStub)
     const ctx = makeAuthedCtx()
     const res = await call(
       adminMusicRouter.update,
@@ -94,14 +102,16 @@ describe('adminMusicRouter.update', () => {
 
 describe('adminMusicRouter.delete', () => {
   it('resolves to undefined on success', async () => {
-    vi.mocked(service.deleteMusic).mockResolvedValueOnce(undefined)
+    vi.mocked(writeService.deleteMusic).mockResolvedValueOnce(undefined)
     const ctx = makeAuthedCtx()
     const res = await call(adminMusicRouter.delete, { id: '1' }, { context: ctx })
     expect(res).toBeUndefined()
   })
 
   it('throws NOT_FOUND when the music does not exist', async () => {
-    vi.mocked(service.deleteMusic).mockRejectedValueOnce(Object.assign(new Error('音乐不存在'), { code: 'NOT_FOUND' }))
+    vi.mocked(writeService.deleteMusic).mockRejectedValueOnce(
+      Object.assign(new Error('音乐不存在'), { code: 'NOT_FOUND' }),
+    )
     const ctx = makeAuthedCtx()
     await expect(call(adminMusicRouter.delete, { id: '999' }, { context: ctx })).rejects.toMatchObject({
       code: 'NOT_FOUND',

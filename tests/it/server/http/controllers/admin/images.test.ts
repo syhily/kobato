@@ -3,15 +3,22 @@ import { describe, expect, it, vi } from 'vitest'
 
 import { makeAuthedCtx } from '#/_helpers/mock-ctx'
 
-vi.mock('@/server/domains/images/service', () => ({
-  deleteImage: vi.fn(),
+vi.mock('@/server/domains/images/services/admin-read', () => ({
   listImagesForAdmin: vi.fn(),
+}))
+
+vi.mock('@/server/domains/images/services/admin-mutate', () => ({
+  deleteImage: vi.fn(),
   recalculateImageThumbhash: vi.fn(),
   updateImageNote: vi.fn(),
+}))
+
+vi.mock('@/server/domains/images/services/upload', () => ({
   uploadImage: vi.fn(),
 }))
 
-const service = await import('@/server/domains/images/service')
+const adminRead = await import('@/server/domains/images/services/admin-read')
+const adminMutate = await import('@/server/domains/images/services/admin-mutate')
 const { adminImagesRouter } = await import('@/server/http/controllers/admin/images.controller')
 
 const image = {
@@ -33,7 +40,7 @@ const image = {
 
 describe('adminImagesRouter.list', () => {
   it('returns images, total and hasMore', async () => {
-    vi.mocked(service.listImagesForAdmin).mockResolvedValueOnce({
+    vi.mocked(adminRead.listImagesForAdmin).mockResolvedValueOnce({
       images: [image],
       total: 1,
       hasMore: false,
@@ -48,7 +55,7 @@ describe('adminImagesRouter.list', () => {
 
 describe('adminImagesRouter.delete', () => {
   it('resolves to undefined on success', async () => {
-    vi.mocked(service.deleteImage).mockResolvedValueOnce(undefined)
+    vi.mocked(adminMutate.deleteImage).mockResolvedValueOnce(undefined)
     const ctx = makeAuthedCtx()
     const res = await call(adminImagesRouter.delete, { id: '1' }, { context: ctx })
     expect(res).toBeUndefined()
@@ -57,7 +64,7 @@ describe('adminImagesRouter.delete', () => {
 
 describe('adminImagesRouter.updateNote', () => {
   it('returns updated image', async () => {
-    vi.mocked(service.updateImageNote).mockResolvedValueOnce({
+    vi.mocked(adminMutate.updateImageNote).mockResolvedValueOnce({
       ...image,
       note: 'Updated note',
     })
@@ -69,7 +76,7 @@ describe('adminImagesRouter.updateNote', () => {
 
 describe('adminImagesRouter.recalculateThumbhash', () => {
   it('returns image with recalculated thumbhash', async () => {
-    vi.mocked(service.recalculateImageThumbhash).mockResolvedValueOnce(image)
+    vi.mocked(adminMutate.recalculateImageThumbhash).mockResolvedValueOnce(image)
     const ctx = makeAuthedCtx()
     const res = await call(adminImagesRouter.recalculateThumbhash, { id: '1' }, { context: ctx })
     expect(res.image.id).toBe('1')

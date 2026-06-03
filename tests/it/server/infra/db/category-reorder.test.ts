@@ -1,7 +1,7 @@
 import { asc } from 'drizzle-orm'
 import { describe, expect, it, afterAll, beforeEach } from 'vitest'
 
-import { reorderAdminCategories } from '@/server/domains/taxonomies/categories/service'
+import { reorderAdminCategories } from '@/server/domains/taxonomies/categories/services/mutate'
 import { reorderCategories } from '@/server/infra/db/operations/category'
 import { createDbPool, closePool } from '@/server/infra/db/pool'
 import { category } from '@/server/infra/db/schema/taxonomy'

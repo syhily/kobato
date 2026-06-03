@@ -1,6 +1,7 @@
 import { useLoaderData } from 'react-router'
 
-import { parseAnalyticsSearch, queryMetric } from '@/server/domains/analytics/query'
+import { queryMetric } from '@/server/domains/analytics/services/metric'
+import { parseAnalyticsSearch } from '@/server/domains/analytics/services/query-parser'
 import { getDbFromContext, getRouteRequestContext } from '@/server/domains/auth/context'
 import { requireRole } from '@/server/domains/auth/rbac'
 import { DateRangePicker } from '@/ui/admin/analytics/DateRangePicker'

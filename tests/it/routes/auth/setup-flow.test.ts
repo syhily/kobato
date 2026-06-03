@@ -67,19 +67,6 @@ beforeEach(async () => {
   await flushWorkerRedis()
 })
 
-// React Router's `redirect()` throws a Response object — catch it.
-async function catchResponse(promise: Promise<unknown>): Promise<Response> {
-  try {
-    await promise
-  } catch (error) {
-    if (error instanceof Response) {
-      return error
-    }
-    throw error
-  }
-  throw new Error('Expected route to throw a Response')
-}
-
 describe('integration: /admin/setup full install flow', () => {
   it('loader returns data and action redirects to /admin', async () => {
     const loaderResult = await loader({
@@ -99,18 +86,16 @@ describe('integration: /admin/setup full install flow', () => {
     formData.set('email', 'admin@example.com')
     formData.set('password', 'correcthorsebatterystaple')
 
-    const response = await catchResponse(
-      action({
-        request: new Request('http://localhost/admin/setup', {
-          method: 'POST',
-          body: formData,
-        }),
-        url: new URL('http://localhost/admin/setup'),
-        context: new Map(),
-        params: {},
-        pattern: 'admin/setup',
+    const response = (await action({
+      request: new Request('http://localhost/admin/setup', {
+        method: 'POST',
+        body: formData,
       }),
-    )
+      url: new URL('http://localhost/admin/setup'),
+      context: new Map(),
+      params: {},
+      pattern: 'admin/setup',
+    })) as Response
 
     expect(response.status).toBe(302)
     expect(response.headers.get('Location')).toBe('/admin')
@@ -163,24 +148,18 @@ describe('integration: /admin/setup full install flow', () => {
     formData.set('email', 'admin@example.com')
     formData.set('password', 'correcthorsebatterystaple')
 
-    // Successful setup throws a redirect Response.
-    let response: Response | undefined
-    try {
-      await action({
-        request: new Request('http://localhost/admin/setup', {
-          method: 'POST',
-          body: formData,
-        }),
-        url: new URL('http://localhost/admin/setup'),
-        context: new Map(),
-        params: {},
-        pattern: 'admin/setup',
-      })
-    } catch (caught) {
-      response = caught as Response
-    }
+    const response = (await action({
+      request: new Request('http://localhost/admin/setup', {
+        method: 'POST',
+        body: formData,
+      }),
+      url: new URL('http://localhost/admin/setup'),
+      context: new Map(),
+      params: {},
+      pattern: 'admin/setup',
+    })) as Response
 
-    expect(response!.status).toBe(302)
-    expect(response!.headers.get('Location')).toBe('/admin')
+    expect(response.status).toBe(302)
+    expect(response.headers.get('Location')).toBe('/admin')
   })
 })

@@ -2,14 +2,9 @@ import { z } from 'zod'
 
 import { recordAuditEvent, recordAuditEventFromContext } from '@/server/domains/audit/service'
 import { performSafeRestore } from '@/server/domains/backup/restore-orchestrator'
-import {
-  checkPgToolsAvailable,
-  createBackup,
-  deleteBackup,
-  getBackupBuffer,
-  listBackups,
-  restoreFromBackup,
-} from '@/server/domains/backup/service'
+import { createBackup, deleteBackup, getBackupBuffer, listBackups } from '@/server/domains/backup/services/backup'
+import { restoreFromBackup } from '@/server/domains/backup/services/restore'
+import { checkPgToolsAvailable } from '@/server/domains/backup/services/shared'
 import { adminProc } from '@/server/http/orpc-base'
 import { getLogger } from '@/server/infra/logger'
 import { getBlogSettingsBundleSync } from '@/shared/config/getters'

@@ -5,10 +5,10 @@ import { eq } from 'drizzle-orm'
 import type { PortableTextBody } from '@/shared/pt/schema'
 
 import { findContentById } from '@/server/domains/content/repo'
-import { indexPost, removePostIndex } from '@/server/domains/posts/indexer'
 import { toAdminPostDto, type AdminPostDto } from '@/server/domains/posts/projection'
 import { findPostMetaById, findPostMetaBySlug } from '@/server/domains/posts/repos/single'
 import { restorePostMeta, softDeletePostMeta, updatePostMetaById } from '@/server/domains/posts/repos/write'
+import { indexPost, removePostIndex } from '@/server/domains/posts/services/search-index'
 import {
   assertOwnPostOr404,
   clearPostMetasCache,

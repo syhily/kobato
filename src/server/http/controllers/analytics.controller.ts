@@ -1,13 +1,11 @@
 import { ORPCError } from '@orpc/server'
 import { z } from 'zod'
 
-import {
-  parseAnalyticsSearch,
-  queryCounters,
-  queryHeatmap,
-  queryMetric,
-  queryViews,
-} from '@/server/domains/analytics/query'
+import { queryCounters } from '@/server/domains/analytics/services/counters'
+import { queryHeatmap } from '@/server/domains/analytics/services/heatmap'
+import { queryMetric } from '@/server/domains/analytics/services/metric'
+import { parseAnalyticsSearch } from '@/server/domains/analytics/services/query-parser'
+import { queryViews } from '@/server/domains/analytics/services/views'
 import { adminProc } from '@/server/http/orpc-base'
 import { METRIC_TYPE_VALUES, METRIC_TYPES, PRESET_KEY_VALUES } from '@/shared/contracts/analytics'
 

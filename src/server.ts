@@ -3,7 +3,7 @@ import { serve } from '@hono/node-server'
 import type { Env } from '@/server/http/context'
 
 import { getDb, getPool } from '@/server/bootstrap/db-lifecycle'
-import { scheduleNextArchive } from '@/server/domains/audit/scheduler'
+import { scheduleNextArchive } from '@/server/domains/audit/services/scheduler'
 import { initBackupScheduler, scheduleNextBackup } from '@/server/domains/backup/scheduler'
 import { refreshBlogSettings } from '@/server/domains/settings/snapshot'
 import { wrapFetchWithLeakedResponseHandler } from '@/server/http/leaked-response'

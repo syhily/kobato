@@ -1,7 +1,7 @@
 import { ORPCError } from '@orpc/server'
 import { z } from 'zod'
 
-import { decreaseLikes, increaseLikes, queryLikes, validateLikeToken } from '@/server/domains/comments/likes'
+import { decreaseLikes, increaseLikes, queryLikes, validateLikeToken } from '@/server/domains/comments/services/likes'
 import { resolveMetricTarget, safeResolveMetricTarget } from '@/server/domains/comments/services/shared'
 import { publicProc } from '@/server/http/orpc-base'
 import { tryLikeIncreaseRateLimit } from '@/server/infra/rate-limit'

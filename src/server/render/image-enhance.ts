@@ -1,13 +1,14 @@
-// Re-exports from `domains/images/image-meta` for backwards compatibility.
-// All new code should import directly from `@/server/domains/images/image-meta`.
+// Re-exports from `domains/images/services/*` for backwards compatibility.
+// All new code should import directly from the service modules.
 export {
   buildPublicUrl,
   clearImageEnhanceCache,
-  hydrateImageRefs,
   invalidateImageEnhanceCacheFor,
-  loadImageThumbhash,
+} from '@/server/domains/images/services/cache'
+export {
+  hydrateImageRefs,
   resolveImageMetaBySources,
   resolveSrcToStoragePath,
-  type ImageThumbhashLookup,
   type ResolvedImageMeta,
-} from '@/server/domains/images/image-meta'
+} from '@/server/domains/images/services/enhance'
+export { loadImageThumbhash, type ImageThumbhashLookup } from '@/server/domains/images/services/cover'

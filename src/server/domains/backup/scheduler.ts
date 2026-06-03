@@ -1,5 +1,7 @@
 import { computeNextRun } from '@/server/domains/backup/scheduler-utils'
-import { checkPgToolsAvailable, cleanupOldBackups, createBackup } from '@/server/domains/backup/service'
+import { createBackup, cleanupOldBackups } from '@/server/domains/backup/services/backup'
+import { checkPgToolsAvailable } from '@/server/domains/backup/services/shared'
+import { registerSectionChangeHandler } from '@/server/domains/settings/service'
 import { registerShutdownHook } from '@/server/infra/lifecycle'
 import { getLogger } from '@/server/infra/logger'
 import { getBlogSettingsBundleSync } from '@/shared/config/getters'
@@ -100,3 +102,5 @@ export function initBackupScheduler(): void {
     stopBackupScheduler()
   }, 0)
 }
+
+registerSectionChangeHandler('backup', () => rescheduleBackup())

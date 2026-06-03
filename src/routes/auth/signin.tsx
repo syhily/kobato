@@ -5,6 +5,7 @@ import { recordAuditEvent } from '@/server/domains/audit/service'
 import { getDbFromContext, getPoolFromContext, getRouteRequestContext } from '@/server/domains/auth/context'
 import { validateCsrfForAction } from '@/server/domains/auth/csrf'
 import {
+  type AuthFlowResult,
   handleCredentialLogin,
   handleOtpCancel,
   handleOtpResend,
@@ -42,6 +43,21 @@ function hasError(data: unknown): data is { error: string } {
     'error' in data &&
     typeof (data as Record<string, unknown>).error === 'string'
   )
+}
+
+function toActionResult(result: AuthFlowResult, extraData?: Record<string, unknown>) {
+  const headers: Record<string, string> = {}
+  if (result.setCookie) {
+    headers['Set-Cookie'] = result.setCookie
+  }
+  switch (result.type) {
+    case 'redirect':
+      return redirect(result.to, { headers })
+    case 'error':
+      return data({ error: result.message, ...extraData }, { headers })
+    case 'success':
+      return data({ message: result.message, ...extraData }, { headers })
+  }
 }
 
 export async function loader({ request, context }: Route.LoaderArgs) {
@@ -238,18 +254,20 @@ export async function action({ request, context }: Route.ActionArgs) {
   }
 
   if (action === 'cancelotp') {
-    return handleOtpCancel(session, redirectTo)
+    return toActionResult(await handleOtpCancel(session, redirectTo))
   }
 
   if (action === 'verifyotp') {
-    return handleOtpVerify(db, pool, session, clientAddress, request, formData, redirectTo)
+    return toActionResult(await handleOtpVerify(db, pool, session, clientAddress, request, formData, redirectTo))
   }
 
   if (action === 'resendotp') {
-    return handleOtpResend(db, session, clientAddress, request)
+    return toActionResult(await handleOtpResend(db, session, clientAddress, request))
   }
 
-  return handleCredentialLogin(db, pool, session, clientAddress, request, formData, redirectTo)
+  return toActionResult(await handleCredentialLogin(db, pool, session, clientAddress, request, formData, redirectTo), {
+    redirectTo,
+  })
 }
 
 export function meta({ matches }: Route.MetaArgs) {

@@ -27,11 +27,11 @@ vi.mock('@/server/infra/db/operations/metric', () => ({
   findMetricByTarget: vi.fn(),
 }))
 
-vi.mock('@/server/domains/analytics/pv-batcher', () => ({
+vi.mock('@/server/domains/analytics/repos/pv-batcher', () => ({
   bumpPageView: vi.fn(),
 }))
 
-vi.mock('@/server/domains/comments/email', () => ({
+vi.mock('@/server/domains/comments/services/email', () => ({
   sendApprovedComment: vi.fn(async () => undefined),
   sendNewComment: vi.fn(async () => undefined),
   sendNewReply: vi.fn(async () => undefined),

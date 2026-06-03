@@ -3,7 +3,8 @@ import { data } from 'react-router'
 
 import type { DraftSummary } from '@/ui/admin/dashboard/types'
 
-import { queryCounters, queryViews } from '@/server/domains/analytics/query'
+import { queryCounters } from '@/server/domains/analytics/services/counters'
+import { queryViews } from '@/server/domains/analytics/services/views'
 import { getDbFromContext, getRouteRequestContext } from '@/server/domains/auth/context'
 import { requireRole } from '@/server/domains/auth/rbac'
 import { countMyComments } from '@/server/domains/comments/repos/admin-query'

@@ -4,13 +4,9 @@ import { z } from 'zod'
 import { recordAuditEventFromContext } from '@/server/domains/audit/service'
 import { userSession } from '@/server/domains/auth/primitives'
 import { uploadImageMetadataSchema } from '@/server/domains/images/schema'
-import {
-  deleteImage,
-  listImagesForAdmin,
-  recalculateImageThumbhash,
-  updateImageNote,
-  uploadImage,
-} from '@/server/domains/images/service'
+import { deleteImage, recalculateImageThumbhash, updateImageNote } from '@/server/domains/images/services/admin-mutate'
+import { listImagesForAdmin } from '@/server/domains/images/services/admin-read'
+import { uploadImage } from '@/server/domains/images/services/upload'
 import { authorProc } from '@/server/http/orpc-base'
 import { requireBlogSettingsSection } from '@/shared/config/getters'
 import { adminImageDto, listImagesOutputDto } from '@/shared/contracts/images'

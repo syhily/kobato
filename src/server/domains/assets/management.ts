@@ -10,7 +10,7 @@ import {
   ensureMatchesSlot,
   isBrandingSlot,
   putBrandingObject,
-} from '@/server/domains/assets/storage'
+} from '@/server/domains/assets/repos/storage'
 import { SECTION_REGISTRY } from '@/server/domains/settings/sections'
 import { refreshBlogSettings } from '@/server/domains/settings/snapshot'
 import { findSettingByScope, upsertSetting } from '@/server/infra/db/operations/setting'

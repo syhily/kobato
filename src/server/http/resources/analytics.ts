@@ -2,7 +2,7 @@ import { Hono } from 'hono'
 
 import type { Env } from '@/server/http/context'
 
-import { queryRealtimeTail } from '@/server/domains/analytics/query'
+import { queryRealtimeTail } from '@/server/domains/analytics/services/realtime'
 import { requireRoleMw } from '@/server/http/middlewares/hono-rbac'
 import { getLogger } from '@/server/infra/logger'
 

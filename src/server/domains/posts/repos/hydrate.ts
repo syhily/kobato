@@ -5,7 +5,7 @@ import type { PostMetaRow } from '@/server/infra/db/types'
 import type { ClientPost, Post, PostVisibilityOptions } from '@/shared/types/catalog'
 
 import { findContentsByIds } from '@/server/domains/content/repo'
-import { hydrateImageRefs } from '@/server/domains/images/image-meta'
+import { hydrateImageRefs } from '@/server/domains/images/services/enhance'
 import { toCmsPost } from '@/server/domains/posts/projection'
 
 export async function hydratePostImages(db: NodePgDatabase, posts: Post[]): Promise<void> {

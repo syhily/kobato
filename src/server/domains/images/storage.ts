@@ -59,22 +59,6 @@ export async function getImage(storagePath: string): Promise<Buffer> {
   return getS3ObjectBuffer(storagePath)
 }
 
-/**
- * Public base URL the runtime joins with `<storagePath>` to compute
- * `<img src>`. Returns the configured bucket URL even when the upload
- * toggle is OFF — that lets the SSR enhancer keep rendering existing
- * `s3` rows after an admin disables further uploads. Returns `null`
- * when the section is unconfigured (no `publicBaseUrl` to join with).
- */
-export function getPublicBaseUrl(): string | null {
-  const assets = requireBlogSettingsSection('assets')
-  const host = assets.asset.host.trim()
-  if (host === '') {
-    return null
-  }
-  return `${assets.asset.scheme}://${trimTrailingSlash(host)}`
-}
-
 /** Optional URL transform template used by the front-end image helper. */
 export function getPublicUrlTemplate(): string {
   return getImageStorage().urlTemplate.trim()
@@ -88,8 +72,4 @@ function ensureUploadReady(): void {
   if (storage.secretAccessKey === '') {
     throw new ActionFailure(503, '请先在 /admin/settings/assets 配置 S3 Secret Access Key')
   }
-}
-
-function trimTrailingSlash(value: string): string {
-  return value.endsWith('/') ? value.slice(0, -1) : value
 }

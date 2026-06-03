@@ -4,8 +4,6 @@ import type { CommentBody } from '@/shared/pt/comment-schema'
 
 import { withCommentBadgeTextColor } from '@/server/domains/comments/badge'
 import { clearLatestCommentsCache } from '@/server/domains/comments/cache'
-import { canonicalizeCommentBody } from '@/server/domains/comments/canonicalize'
-import { sendApprovedComment, sendNewComment } from '@/server/domains/comments/email'
 import { findCommentWithUserAndTarget } from '@/server/domains/comments/repos/admin-query'
 import { approveCommentById, deleteCommentById } from '@/server/domains/comments/repos/moderation'
 import {
@@ -14,6 +12,8 @@ import {
   updateOwnCommentBodyAndPending,
 } from '@/server/domains/comments/repos/mutate'
 import { findCommentWithUserById } from '@/server/domains/comments/repos/public-query'
+import { canonicalizeCommentBody } from '@/server/domains/comments/services/canonicalize'
+import { sendApprovedComment, sendNewComment } from '@/server/domains/comments/services/email'
 import { asCommentTarget } from '@/server/domains/comments/services/shared'
 import { DomainError } from '@/server/infra/http/errors'
 import { getLogger } from '@/server/infra/logger'

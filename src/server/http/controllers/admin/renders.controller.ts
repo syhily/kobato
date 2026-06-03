@@ -1,9 +1,9 @@
 import { z } from 'zod'
 
 import { recordAuditEventFromContext } from '@/server/domains/audit/service'
-import { reindexSearchBatch } from '@/server/domains/posts/reindex'
-import { getKatexRenderer, type KatexRenderer } from '@/server/domains/pt/katex-renderer'
+import { reindexSearchBatch } from '@/server/domains/posts/services/search-reindex'
 import { adminProc } from '@/server/http/orpc-base'
+import { getKatexRenderer, type KatexRenderer } from '@/server/infra/pt/katex-renderer'
 
 const MAX_RENDER_INPUT_LENGTH = 10_000
 

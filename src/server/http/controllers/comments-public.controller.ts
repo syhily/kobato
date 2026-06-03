@@ -12,7 +12,7 @@ import { getCommentById, updateComment } from '@/server/domains/comments/service
 import { createComment } from '@/server/domains/comments/services/mutate'
 import { loadComments, parseComments } from '@/server/domains/comments/services/public-query'
 import { resolveMetricTarget } from '@/server/domains/comments/services/shared'
-import { appendCommentToken, issueCommentToken, verifyCommentOwnership } from '@/server/domains/comments/token'
+import { appendCommentToken, issueCommentToken, verifyCommentOwnership } from '@/server/domains/comments/services/token'
 import { publicProc } from '@/server/http/orpc-base'
 import { getLogger } from '@/server/infra/logger'
 import { tryCommentPostRateLimit, tryCommentPostRateLimitByEmail } from '@/server/infra/rate-limit'

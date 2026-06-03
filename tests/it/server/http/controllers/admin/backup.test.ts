@@ -5,12 +5,18 @@ import type { BlogSettingsBundle } from '@/shared/config/types'
 
 import { makeAuthedCtx } from '#/_helpers/mock-ctx'
 
-vi.mock('@/server/domains/backup/service', () => ({
+vi.mock('@/server/domains/backup/services/shared', () => ({
   checkPgToolsAvailable: vi.fn(),
+}))
+
+vi.mock('@/server/domains/backup/services/backup', () => ({
   createBackup: vi.fn(),
   deleteBackup: vi.fn(),
   getBackupBuffer: vi.fn(),
   listBackups: vi.fn(),
+}))
+
+vi.mock('@/server/domains/backup/services/restore', () => ({
   restoreFromBackup: vi.fn(),
 }))
 
@@ -29,7 +35,8 @@ vi.mock('@/server/infra/lifecycle', () => ({
   restartServer: vi.fn(),
 }))
 
-const service = await import('@/server/domains/backup/service')
+const shared = await import('@/server/domains/backup/services/shared')
+const backupService = await import('@/server/domains/backup/services/backup')
 const orchestrator = await import('@/server/domains/backup/restore-orchestrator')
 const blogConfig = await import('@/shared/config/getters')
 const { adminBackupRouter } = await import('@/server/http/controllers/admin/backup.controller')
@@ -39,7 +46,7 @@ describe('adminBackupRouter.status', () => {
     vi.mocked(blogConfig.getBlogSettingsBundleSync).mockReturnValue({
       assets: { storage: { enabled: true } },
     } as unknown as BlogSettingsBundle)
-    vi.mocked(service.checkPgToolsAvailable).mockResolvedValueOnce(true)
+    vi.mocked(shared.checkPgToolsAvailable).mockResolvedValueOnce(true)
     const ctx = makeAuthedCtx()
     const res = await call(adminBackupRouter.status, undefined, { context: ctx })
     expect(res).toEqual({ s3Enabled: true, pgToolsAvailable: true })
@@ -56,7 +63,7 @@ describe('adminBackupRouter.list', () => {
         lastModified: '2026-01-01T00:00:00.000Z',
       },
     ]
-    vi.mocked(service.listBackups).mockResolvedValueOnce({ files, nextContinuationToken: undefined })
+    vi.mocked(backupService.listBackups).mockResolvedValueOnce({ files, nextContinuationToken: undefined })
     const ctx = makeAuthedCtx()
     const res = await call(adminBackupRouter.list, undefined, { context: ctx })
     expect(res.files).toHaveLength(1)
@@ -67,7 +74,7 @@ describe('adminBackupRouter.list', () => {
 
 describe('adminBackupRouter.create', () => {
   it('returns fileName and size on success', async () => {
-    vi.mocked(service.createBackup).mockResolvedValueOnce({
+    vi.mocked(backupService.createBackup).mockResolvedValueOnce({
       fileName: '2026-01-01.sql.gz',
       size: 2048,
     })
@@ -79,7 +86,7 @@ describe('adminBackupRouter.create', () => {
 
 describe('adminBackupRouter.delete', () => {
   it('returns success after deleting backup', async () => {
-    vi.mocked(service.deleteBackup).mockResolvedValueOnce(undefined)
+    vi.mocked(backupService.deleteBackup).mockResolvedValueOnce(undefined)
     const ctx = makeAuthedCtx()
     const res = await call(adminBackupRouter.delete, { key: 'backup/2026-01-01.sql.gz' }, { context: ctx })
     expect(res).toEqual({ success: true })
@@ -89,7 +96,7 @@ describe('adminBackupRouter.delete', () => {
 describe('adminBackupRouter.restore', () => {
   it('returns accepted after restoring backup', async () => {
     const buffer = Buffer.from('sql')
-    vi.mocked(service.getBackupBuffer).mockResolvedValueOnce(buffer)
+    vi.mocked(backupService.getBackupBuffer).mockResolvedValueOnce(buffer)
     const ctx = makeAuthedCtx()
     const res = await call(adminBackupRouter.restore, { key: 'backup/2026-01-01.sql.gz' }, { context: ctx })
     expect(res).toEqual({ accepted: true })

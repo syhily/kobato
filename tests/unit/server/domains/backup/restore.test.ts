@@ -1,7 +1,8 @@
 import { createGzip } from 'node:zlib'
 import { describe, expect, it } from 'vitest'
 
-import { extractBackupSql, validateBackupSql } from '@/server/domains/backup/service'
+import { extractBackupSql } from '@/server/domains/backup/services/restore'
+import { validateBackupSql } from '@/server/domains/backup/services/validate'
 import { ActionFailure } from '@/server/infra/http/errors'
 
 async function gzipString(input: string): Promise<Buffer> {

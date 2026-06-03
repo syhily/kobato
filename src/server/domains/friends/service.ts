@@ -4,7 +4,7 @@ import type { FriendRow } from '@/server/infra/db/types'
 import type { Friend } from '@/shared/types/catalog'
 import type { AdminFriendDto } from '@/shared/types/friends'
 
-import { hydrateImageRefs } from '@/server/domains/images/image-meta'
+import { hydrateImageRefs } from '@/server/domains/images/services/enhance'
 import {
   type AdminFriendsListFilters,
   countAdminFriends,

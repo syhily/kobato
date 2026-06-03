@@ -10,8 +10,6 @@ import type { NewComment } from '@/server/infra/db/types'
 import { userSession } from '@/server/domains/auth/primitives'
 import { withCommentBadgeTextColor } from '@/server/domains/comments/badge'
 import { clearLatestCommentsCache } from '@/server/domains/comments/cache'
-import { canonicalizeCommentBody } from '@/server/domains/comments/canonicalize'
-import { sendNewComment, sendNewReply } from '@/server/domains/comments/email'
 import { insertComment } from '@/server/domains/comments/repos/mutate'
 import {
   countApprovedCommentsByUser,
@@ -19,6 +17,8 @@ import {
   findCommentWithSourceUser,
   recentCommentsForUserDedupe,
 } from '@/server/domains/comments/repos/public-query'
+import { canonicalizeCommentBody } from '@/server/domains/comments/services/canonicalize'
+import { sendNewComment, sendNewReply } from '@/server/domains/comments/services/email'
 import { safeResolveMetricTarget } from '@/server/domains/comments/services/shared'
 import { hasRegisteredAccount, insertCommentUser, updateLastLogin } from '@/server/infra/db/operations/user'
 import { DomainError } from '@/server/infra/http/errors'

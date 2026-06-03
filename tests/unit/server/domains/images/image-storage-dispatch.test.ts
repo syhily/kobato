@@ -5,7 +5,8 @@ import type { AssetsSettings } from '@/shared/config/types'
 import { TEST_BLOG_SETTINGS_BUNDLE } from '#/_helpers/blog-settings'
 import { setBlogSettingsBundleForTests } from '@/server/domains/settings/snapshot'
 
-const { deleteImage, getPublicBaseUrl, isUploadEnabled, putImage } = await import('@/server/domains/images/storage')
+const { deleteImage, isUploadEnabled, putImage } = await import('@/server/domains/images/storage')
+const { getPublicBaseUrl } = await import('@/server/infra/storage/public-url')
 
 // Narrow once: the bundle types `assets` as nullable to express the
 // pre-install state, but the fixture always seeds it. Pulling the

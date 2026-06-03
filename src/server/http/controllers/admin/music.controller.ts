@@ -2,13 +2,9 @@ import { z } from 'zod'
 
 import { recordAuditEventFromContext } from '@/server/domains/audit/service'
 import { userSession } from '@/server/domains/auth/primitives'
-import {
-  addMusic,
-  deleteMusic,
-  listMusicForAdmin,
-  searchMusic,
-  updateMusicMetadata,
-} from '@/server/domains/music/service'
+import { listMusicForAdmin } from '@/server/domains/music/services/read'
+import { searchMusic } from '@/server/domains/music/services/search'
+import { addMusic, deleteMusic, updateMusicMetadata } from '@/server/domains/music/services/write'
 import { authorProc } from '@/server/http/orpc-base'
 import {
   addMusicOutputDto,

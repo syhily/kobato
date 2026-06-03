@@ -3,11 +3,11 @@ import { describe, expect, it, vi } from 'vitest'
 
 import { makePublicCtx } from '#/_helpers/mock-ctx'
 
-vi.mock('@/server/domains/images/image-meta', () => ({
+vi.mock('@/server/domains/images/services/cover', () => ({
   loadImageThumbhash: vi.fn(),
 }))
 
-const imageMeta = await import('@/server/domains/images/image-meta')
+const imageMeta = await import('@/server/domains/images/services/cover')
 const { imageRouter } = await import('@/server/http/controllers/image.controller')
 
 describe('imageRouter.resolveThumbhash', () => {

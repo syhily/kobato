@@ -41,7 +41,7 @@ const mocks = vi.hoisted(() => ({
 vi.mock('@/server/domains/taxonomies/tags/service', () => ({
   listAllTags: mocks.listAllTags,
 }))
-vi.mock('@/server/domains/taxonomies/categories/service', () => ({
+vi.mock('@/server/domains/taxonomies/categories/services/query', () => ({
   getCategoryLink: vi.fn((name: string) => (name === sampleCategory.name ? sampleCategory.permalink : '')),
   getCategoryLinks: vi.fn(async (_db: unknown, names: string[]) =>
     Object.fromEntries(names.filter((n) => n === sampleCategory.name).map((n) => [n, sampleCategory.permalink])),

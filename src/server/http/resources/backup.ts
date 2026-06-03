@@ -6,13 +6,10 @@ import type { Env } from '@/server/http/context'
 import { recordAuditEvent } from '@/server/domains/audit/service'
 import { verifySetupToken } from '@/server/domains/auth/setup-token'
 import { performSafeRestore } from '@/server/domains/backup/restore-orchestrator'
-import {
-  checkPgToolsAvailable,
-  extractBackupSql,
-  getBackupBuffer,
-  restoreFromSql,
-  validateBackupSql,
-} from '@/server/domains/backup/service'
+import { getBackupBuffer } from '@/server/domains/backup/services/backup'
+import { extractBackupSql, restoreFromSql } from '@/server/domains/backup/services/restore'
+import { checkPgToolsAvailable } from '@/server/domains/backup/services/shared'
+import { validateBackupSql } from '@/server/domains/backup/services/validate'
 import { refreshBlogSettings } from '@/server/domains/settings/snapshot'
 import { requireRoleMw } from '@/server/http/middlewares/hono-rbac'
 import { rateLimitByIp } from '@/server/http/middlewares/rate-limit'

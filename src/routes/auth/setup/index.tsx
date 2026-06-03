@@ -1,11 +1,11 @@
-import { data } from 'react-router'
+import { data, redirect } from 'react-router'
 
 import { getDbFromContext, getPoolFromContext, getRouteRequestContext } from '@/server/domains/auth/context'
 import { validateCsrfForAction } from '@/server/domains/auth/csrf'
-import { processAuthFormSubmission, signUpInitialAdminWithSession } from '@/server/domains/auth/flows'
+import { signUpInitialAdminWithSession } from '@/server/domains/auth/flows'
 import { signUpAdminSchema } from '@/server/domains/auth/schema'
 import { getSetupToken } from '@/server/domains/auth/setup-token'
-import { checkPgToolsAvailable } from '@/server/domains/backup/service'
+import { checkPgToolsAvailable } from '@/server/domains/backup/services/shared'
 import { ensureNoAdminOrRedirect } from '@/server/domains/settings/install-gate'
 import { bundleFromMatches, routeMeta } from '@/server/render/seo/meta'
 import { AdminInstallForm } from '@/ui/admin/auth/AdminInstallForm'
@@ -47,15 +47,37 @@ export async function action({ request, context }: Route.ActionArgs) {
     return data({ error: '安全校验失败，请刷新页面后重试。' })
   }
 
-  return processAuthFormSubmission({
+  const values: Record<string, FormDataEntryValue | null> = {}
+  for (const field of ADMIN_INSTALL_FIELDS) {
+    values[field] = formData.get(field)
+  }
+
+  const parsed = signUpAdminSchema.safeParse(values)
+  if (!parsed.success) {
+    return data({ error: '请填写完整的管理员账号信息。' })
+  }
+
+  const result = await signUpInitialAdminWithSession(db, pool, {
+    ...parsed.data,
+    session,
     request,
-    schema: signUpAdminSchema,
-    fields: ADMIN_INSTALL_FIELDS,
-    defaultErrorMessage: '请填写完整的管理员账号信息。',
-    redirectTo: undefined,
-    run: (input) => signUpInitialAdminWithSession(db, pool, { ...input, session, request, clientAddress }),
-    formData,
+    clientAddress,
   })
+
+  if (result.type === 'error') {
+    return data({ error: result.message })
+  }
+
+  if (result.type === 'redirect') {
+    const headers: Record<string, string> = {}
+    if (result.setCookie) {
+      headers['Set-Cookie'] = result.setCookie
+    }
+    return redirect(result.to, { headers })
+  }
+
+  // signUpInitialAdminWithSession never returns 'success'; this is defensive.
+  return data({ error: '未知错误' })
 }
 
 export function meta({ matches }: Route.MetaArgs) {

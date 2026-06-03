@@ -3,13 +3,11 @@ import { Link, useLoaderData } from 'react-router'
 
 import type { MetricGroup, MetricRow, MetricType } from '@/shared/contracts/analytics'
 
-import {
-  parseAnalyticsSearch,
-  queryCounters,
-  queryHeatmap,
-  queryMetric,
-  queryViews,
-} from '@/server/domains/analytics/query'
+import { queryCounters } from '@/server/domains/analytics/services/counters'
+import { queryHeatmap } from '@/server/domains/analytics/services/heatmap'
+import { queryMetric } from '@/server/domains/analytics/services/metric'
+import { parseAnalyticsSearch } from '@/server/domains/analytics/services/query-parser'
+import { queryViews } from '@/server/domains/analytics/services/views'
 import { getDbFromContext, getRouteRequestContext } from '@/server/domains/auth/context'
 import { requireRole } from '@/server/domains/auth/rbac'
 import { toAdminPostDto } from '@/server/domains/posts/projection'

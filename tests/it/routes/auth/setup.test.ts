@@ -3,14 +3,6 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { makeRouteContext } from '#/_helpers/context'
 import { emptySession } from '#/_helpers/session'
 
-const mocks = vi.hoisted(() => ({
-  processAuthFormSubmission: vi.fn(),
-}))
-
-// `getRouteRequestContext` lives in `@/server/domains/auth/context` and is
-// re-exported from `@/server/session`. The route module imports it
-// from the original path, so the mock has to land there to be
-// effective.
 vi.mock('@/server/domains/auth/context', async () => {
   const actual = await vi.importActual<typeof import('@/server/domains/auth/context')>('@/server/domains/auth/context')
   return {
@@ -29,7 +21,7 @@ vi.mock('@/server/domains/auth/flows', async () => {
   const actual = await vi.importActual<typeof import('@/server/domains/auth/flows')>('@/server/domains/auth/flows')
   return {
     ...actual,
-    processAuthFormSubmission: mocks.processAuthFormSubmission,
+    signUpInitialAdminWithSession: vi.fn(),
   }
 })
 
@@ -45,12 +37,13 @@ vi.mock('@/server/domains/settings/install-gate', () => ({
 }))
 
 const installGate = await import('@/server/domains/settings/install-gate')
+const flows = await import('@/server/domains/auth/flows')
 const { action, loader } = await import('@/routes/auth/setup/index')
 
 beforeEach(() => {
   vi.clearAllMocks()
   vi.mocked(installGate.ensureNoAdminOrRedirect).mockImplementation(async () => null)
-  mocks.processAuthFormSubmission.mockResolvedValue({ error: null })
+  vi.mocked(flows.signUpInitialAdminWithSession).mockResolvedValue({ type: 'redirect', to: '/admin' })
 })
 
 async function catchResponse(promise: Promise<unknown>): Promise<Response> {
@@ -102,14 +95,11 @@ describe('routes/setup', () => {
   })
 
   describe('action', () => {
-    it('calls processAuthFormSubmission with correct schema and fields', async () => {
+    it('returns error when schema validation fails', async () => {
       const formData = new FormData()
-      formData.set('title', 'My Blog')
-      formData.set('name', 'Admin')
-      formData.set('email', 'admin@example.com')
-      formData.set('password', 'correcthorsebatterystaple')
+      // missing required fields
 
-      await action({
+      const result = await action({
         request: new Request('http://localhost/admin/setup', {
           method: 'POST',
           body: formData,
@@ -120,15 +110,11 @@ describe('routes/setup', () => {
         pattern: 'admin/setup',
       })
 
-      expect(mocks.processAuthFormSubmission).toHaveBeenCalledOnce()
-      const call = mocks.processAuthFormSubmission.mock.calls[0]![0]
-      expect(call.schema).toBeDefined()
-      expect(call.fields).toEqual(['title', 'name', 'email', 'password'])
-      expect(call.defaultErrorMessage).toBe('请填写完整的管理员账号信息。')
-      expect(call.redirectTo).toBeUndefined()
+      const data = (result as { data?: Record<string, unknown> }).data
+      expect(data?.error).toBe('请填写完整的管理员账号信息。')
     })
 
-    it('passes session, request and clientAddress to signUpInitialAdminWithSession', async () => {
+    it('calls signUpInitialAdminWithSession with parsed data and context', async () => {
       const formData = new FormData()
       formData.set('title', 'Blog')
       formData.set('name', 'A')
@@ -146,10 +132,17 @@ describe('routes/setup', () => {
         pattern: 'admin/setup',
       })
 
-      const call = mocks.processAuthFormSubmission.mock.calls[0]![0]
-      expect(call.run).toBeDefined()
-      // `run` is a closure that spreads the parsed input with session/request/clientAddress
-      expect(typeof call.run).toBe('function')
+      expect(flows.signUpInitialAdminWithSession).toHaveBeenCalledOnce()
+      const call = vi.mocked(flows.signUpInitialAdminWithSession).mock.calls[0]!
+      expect(call[2]).toMatchObject({
+        title: 'Blog',
+        name: 'A',
+        email: 'a@b.com',
+        password: '1234567890',
+        session: expect.anything(),
+        request: expect.anything(),
+        clientAddress: '127.0.0.1',
+      })
     })
   })
 })

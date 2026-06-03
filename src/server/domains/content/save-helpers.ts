@@ -1,6 +1,6 @@
 import type { PortableTextBody } from '@/shared/pt/schema'
 
-import { canonicalizePortableTextBody } from '@/server/domains/pt/canonicalize'
+import { canonicalizePortableTextBody } from '@/server/domains/pt/services/canonicalize'
 import { DomainError } from '@/server/infra/http/errors'
 
 export async function canonicalizeBodyOrThrow(value: unknown): Promise<PortableTextBody> {

@@ -11,10 +11,10 @@ import {
   saveDraftRevision,
 } from '@/server/domains/content/repo'
 import { canonicalizeBodyOrThrow } from '@/server/domains/content/save-helpers'
-import { syncLibraryImageBlocks } from '@/server/domains/pages/image-sync'
-import { indexPost } from '@/server/domains/posts/indexer'
+import { syncLibraryImageBlocks } from '@/server/domains/pages/services/image-sync'
 import { toAdminRevisionDto, toCmsPost, type CmsPost } from '@/server/domains/posts/projection'
 import { findPostMetaById, findPublicPostMetaBySlug } from '@/server/domains/posts/repos/single'
+import { indexPost } from '@/server/domains/posts/services/search-index'
 import {
   assertOwnPostOr404,
   clearPostMetasCache,

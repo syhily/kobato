@@ -3,7 +3,6 @@ import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 import type { ContentRow, PageMetaRow } from '@/server/infra/db/types'
 
 import { canonicalizeBodyOrThrow } from '@/server/domains/content/save-helpers'
-import { syncLibraryImageBlocks } from '@/server/domains/pages/image-sync'
 import { toCmsPage, type CmsPage } from '@/server/domains/pages/projection'
 import {
   findContentById,
@@ -14,6 +13,7 @@ import {
   publishLatestRevision,
   saveDraftRevision,
 } from '@/server/domains/pages/repo'
+import { syncLibraryImageBlocks } from '@/server/domains/pages/services/image-sync'
 import {
   clearPagesCache,
   projectSaveResult,

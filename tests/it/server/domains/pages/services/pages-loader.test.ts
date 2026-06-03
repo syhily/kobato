@@ -83,7 +83,7 @@ vi.mock('@/server/infra/http/etag', () => ({
   weakEtag: () => 'etag',
   notModifiedResponse: (etag: string) => new Response(null, { status: 304, headers: { ETag: etag } }),
 }))
-vi.mock('@/server/domains/images/image-meta', () => ({
+vi.mock('@/server/domains/images/services/enhance', () => ({
   resolveImageMetaBySources: mocks.resolveImageMetaBySources,
 }))
 
@@ -110,10 +110,10 @@ beforeEach(() => {
   }))
 })
 
-let loadPagePreview: (typeof import('@/server/domains/pages/loader'))['loadPagePreview']
+let loadPagePreview: (typeof import('@/server/http/loaders/page-preview'))['loadPagePreview']
 
 beforeAll(async () => {
-  const mod = await import('@/server/domains/pages/loader')
+  const mod = await import('@/server/http/loaders/page-preview')
   loadPagePreview = mod.loadPagePreview
 })
 

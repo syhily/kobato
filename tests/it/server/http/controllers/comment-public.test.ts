@@ -20,7 +20,7 @@ vi.mock('@/server/infra/db/operations/user', () => ({
   findUserIdByEmail: vi.fn().mockResolvedValue(null),
 }))
 
-vi.mock('@/server/domains/comments/likes', () => ({
+vi.mock('@/server/domains/comments/services/likes', () => ({
   decreaseLikes: vi.fn(),
   increaseLikes: vi.fn().mockResolvedValue({ likes: 1, token: 't' }),
   queryLikes: vi.fn().mockResolvedValue(0),
@@ -51,7 +51,7 @@ vi.mock('@/server/render/avatar/cache', () => ({
   cacheAvatar: vi.fn(),
 }))
 
-vi.mock('@/server/domains/comments/token', () => ({
+vi.mock('@/server/domains/comments/services/token', () => ({
   appendCommentToken: vi.fn(),
   issueCommentToken: vi.fn(),
   verifyCommentOwnership: vi.fn().mockResolvedValue({ ok: false, cleaned: [] }),

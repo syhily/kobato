@@ -21,7 +21,7 @@ const db = { transaction: vi.fn(async (fn) => fn(db)) } as unknown as NodePgData
 const likeQueries = await import('@/server/infra/db/operations/like')
 const metricQueries = await import('@/server/infra/db/operations/metric')
 const { increaseLikes, decreaseLikes, purgeStaleLikeTokens, queryLikes, queryMetadata, validateLikeToken } =
-  await import('@/server/domains/comments/likes')
+  await import('@/server/domains/comments/services/likes')
 
 const POST_A = { type: 'post' as const, ownerId: 1n }
 const POST_B = { type: 'post' as const, ownerId: 2n }

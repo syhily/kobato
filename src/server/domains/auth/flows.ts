@@ -1,14 +1,11 @@
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 import type { Pool } from 'pg'
-import type { ZodType } from 'zod'
 
-import { data, redirect } from 'react-router'
-
+import type { AuthFlowResult } from '@/server/domains/auth/otp-flow'
 import type { BlogSession } from '@/server/domains/auth/session-storage'
 import type { AssetsSettings, SiteIdentitySettings } from '@/shared/config/types'
 
-import { establishLoginSession, login } from '@/server/domains/auth/primitives'
-import { commitSessionWithMaxAge } from '@/server/domains/auth/session-storage'
+import { establishLoginSession } from '@/server/domains/auth/primitives'
 import { invalidateSetupToken } from '@/server/domains/auth/setup-token'
 import {
   ASSETS_STORAGE_INSTALL_DEFAULTS,
@@ -19,80 +16,7 @@ import {
 import { refreshBlogSettings } from '@/server/domains/settings/snapshot'
 import { upsertSetting } from '@/server/infra/db/operations/setting'
 import { hasAdmin, insertAdmin } from '@/server/infra/db/operations/user'
-import { tryRateLimit } from '@/server/infra/rate-limit'
 import { idFromString } from '@/shared/utils/id'
-
-interface AuthFailure {
-  ok: false
-  status: number
-  message: string
-  headers: HeadersInit
-}
-
-interface AuthSuccess<T> {
-  ok: true
-  data: T
-  headers: HeadersInit
-}
-
-export type AuthFlowResult<T> = AuthFailure | AuthSuccess<T>
-
-async function commitHeaders(session: BlogSession, extraSetCookie?: string): Promise<HeadersInit> {
-  const sessionCookie = await commitSessionWithMaxAge(session)
-  if (extraSetCookie === undefined) {
-    return { 'Set-Cookie': sessionCookie }
-  }
-  const headers = new Headers()
-  headers.append('Set-Cookie', sessionCookie)
-  headers.append('Set-Cookie', extraSetCookie)
-  return headers
-}
-
-export async function signInWithSession(
-  db: NodePgDatabase,
-  pool: Pool,
-  {
-    email,
-    password,
-    session,
-    request,
-    clientAddress,
-    redirectTo,
-  }: {
-    email: string
-    password: string
-    session: BlogSession
-    request: Request
-    clientAddress: string
-    redirectTo: string
-  },
-): Promise<AuthFlowResult<{ redirectTo: string }>> {
-  const limit = await tryRateLimit(clientAddress)
-  if (limit.exceeded) {
-    return {
-      ok: false,
-      status: 429,
-      message: '登录失败次数过多，请稍后再试。',
-      headers: await commitHeaders(session),
-    }
-  }
-
-  const established = await login(db, pool, { email, password, session, request, clientAddress })
-  if (!established) {
-    return {
-      ok: false,
-      status: 403,
-      message: '登录凭证无效。',
-      headers: await commitHeaders(session),
-    }
-  }
-
-  return {
-    ok: true,
-    data: { redirectTo },
-    headers: { 'Set-Cookie': established.setCookie },
-  }
-}
 
 export interface SignUpAdminSeed {
   title: string
@@ -117,13 +41,11 @@ export async function signUpInitialAdminWithSession(
     request: Request
     clientAddress: string
   },
-): Promise<AuthFlowResult<{ redirectTo: string }>> {
+): Promise<AuthFlowResult> {
   if (await hasAdmin(db)) {
     return {
-      ok: false,
-      status: 409,
+      type: 'error',
       message: '管理员账号已存在，请直接登录后继续初始化。',
-      headers: await commitHeaders(session),
     }
   }
 
@@ -131,10 +53,8 @@ export async function signUpInitialAdminWithSession(
   const admin = users[0]
   if (!admin) {
     return {
-      ok: false,
-      status: 500,
+      type: 'error',
       message: '创建管理员账号失败',
-      headers: await commitHeaders(session),
     }
   }
 
@@ -181,10 +101,8 @@ export async function signUpInitialAdminWithSession(
       const first = check.error.issues[0]
       const path = first ? first.path.join('.') : '<unknown>'
       return {
-        ok: false,
-        status: 400,
+        type: 'error',
         message: `${meta.scope} 校验失败（${path}）：${first?.message ?? '未知错误'}`,
-        headers: await commitHeaders(session),
       }
     }
   }
@@ -201,46 +119,8 @@ export async function signUpInitialAdminWithSession(
   invalidateSetupToken()
 
   return {
-    ok: true,
-    data: { redirectTo: '/admin' },
-    headers: { 'Set-Cookie': established.setCookie },
+    type: 'redirect',
+    to: '/admin',
+    setCookie: established.setCookie,
   }
-}
-
-export async function processAuthFormSubmission<I>({
-  request,
-  schema,
-  fields,
-  defaultErrorMessage,
-  redirectTo,
-  run,
-  formData: providedFormData,
-}: {
-  request: Request
-  schema: ZodType<I>
-  fields: readonly string[]
-  defaultErrorMessage: string
-  redirectTo: string | undefined
-  run: (input: I) => Promise<AuthFlowResult<{ redirectTo: string }>>
-  formData?: FormData
-}) {
-  const formData = providedFormData ?? (await request.formData())
-  const values: Record<string, FormDataEntryValue | null> = {}
-  for (const field of fields) {
-    values[field] = formData.get(field)
-  }
-
-  const parsed = schema.safeParse(values)
-  if (!parsed.success) {
-    return redirectTo === undefined ? { error: defaultErrorMessage } : { error: defaultErrorMessage, redirectTo }
-  }
-
-  const result = await run(parsed.data)
-  if (!result.ok) {
-    return data(redirectTo === undefined ? { error: result.message } : { error: result.message, redirectTo }, {
-      headers: result.headers,
-    })
-  }
-
-  throw redirect(result.data.redirectTo, { headers: result.headers })
 }

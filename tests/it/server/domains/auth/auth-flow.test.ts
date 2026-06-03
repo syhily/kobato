@@ -57,7 +57,7 @@ const settingsSnapshot = await import('@/server/domains/settings/snapshot')
 const rateLimit = await import('@/server/infra/rate-limit')
 import type { User } from '@/server/infra/db/types'
 
-import { signInWithSession, signUpInitialAdminWithSession } from '@/server/domains/auth/flows'
+import { signUpInitialAdminWithSession } from '@/server/domains/auth/flows'
 
 const verifyUserPasswordMock = vi.mocked(userQuery.verifyUserPassword)
 
@@ -97,104 +97,9 @@ beforeEach(async () => {
   await flushWorkerRedis()
 })
 
-function setCookieHeaders(headers: HeadersInit): string[] {
-  if (headers instanceof Headers) {
-    return headers.getSetCookie()
-  }
-  const value = (headers as Record<string, string>)['Set-Cookie']
-  return value ? [value] : []
-}
-
 function buildRequest(): Request {
   return new Request('http://localhost/admin/signin', { method: 'POST' })
 }
-
-// `login()` reads the password through `verifyUserPassword`. Returning a
-// non-null record makes `login()` resolve `true`, returning `null` makes it
-// resolve `false` — without us having to spy on `login` itself.
-const stubUser = testUser({
-  id: 1n,
-  name: 'Admin',
-  email: 'admin@example.com',
-  link: null,
-  role: 'admin',
-})
-
-describe('services/auth/flow — signInWithSession', () => {
-  it('on success emits a session cookie', async () => {
-    verifyUserPasswordMock.mockResolvedValue(stubUser)
-    const request = buildRequest()
-
-    const result = await signInWithSession(db, pool, {
-      email: 'admin@example.com',
-      password: 'correct horse',
-      session: emptySession(),
-      request,
-      clientAddress: '127.0.0.1',
-      redirectTo: '/admin',
-    })
-
-    expect(result.ok).toBe(true)
-    const cookies = setCookieHeaders(result.headers)
-    expect(cookies.some((c) => c.startsWith('__session='))).toBe(true)
-  })
-
-  it('only round-trips Redis once per attempt (no separate exceedLimit GET)', async () => {
-    verifyUserPasswordMock.mockResolvedValue(stubUser)
-    const request = buildRequest()
-
-    await signInWithSession(db, pool, {
-      email: 'admin@example.com',
-      password: 'correct horse',
-      session: emptySession(),
-      request,
-      clientAddress: '127.0.0.1',
-      redirectTo: '/admin',
-    })
-
-    expect(rateLimit.tryRateLimit).toHaveBeenCalledTimes(1)
-    expect(rateLimit.tryRateLimit).toHaveBeenCalledWith('127.0.0.1')
-  })
-
-  it('returns 429 (and never invokes login) when the rate limiter trips', async () => {
-    vi.mocked(rateLimit.tryRateLimit).mockResolvedValue({ count: 99, exceeded: true })
-    const request = buildRequest()
-
-    const result = await signInWithSession(db, pool, {
-      email: 'admin@example.com',
-      password: 'correct horse',
-      session: emptySession(),
-      request,
-      clientAddress: '127.0.0.1',
-      redirectTo: '/admin',
-    })
-
-    expect(result.ok).toBe(false)
-    if (result.ok === false) {
-      expect(result.status).toBe(429)
-    }
-    expect(verifyUserPasswordMock).not.toHaveBeenCalled()
-  })
-
-  it('returns 403 on bad credentials', async () => {
-    verifyUserPasswordMock.mockResolvedValue(null)
-    const request = buildRequest()
-
-    const result = await signInWithSession(db, pool, {
-      email: 'admin@example.com',
-      password: 'wrong',
-      session: emptySession(),
-      request,
-      clientAddress: '127.0.0.1',
-      redirectTo: '/admin',
-    })
-
-    expect(result.ok).toBe(false)
-    if (result.ok === false) {
-      expect(result.status).toBe(403)
-    }
-  })
-})
 
 describe('services/auth/flow — signUpInitialAdminWithSession (install stage 1)', () => {
   const baseSeed = {
@@ -217,9 +122,9 @@ describe('services/auth/flow — signUpInitialAdminWithSession (install stage 1)
       clientAddress: '127.0.0.1',
     })
 
-    expect(result.ok).toBe(true)
-    if (result.ok === true) {
-      expect(result.data.redirectTo).toBe('/admin')
+    expect(result.type).toBe('redirect')
+    if (result.type === 'redirect') {
+      expect(result.to).toBe('/admin')
     }
     expect(userQuery.insertAdmin).toHaveBeenCalledWith(db, 'Admin', 'admin@example.com', baseSeed.password)
 
@@ -277,9 +182,9 @@ describe('services/auth/flow — signUpInitialAdminWithSession (install stage 1)
       clientAddress: '127.0.0.1',
     })
 
-    expect(result.ok).toBe(false)
-    if (result.ok === false) {
-      expect(result.status).toBe(409)
+    expect(result.type).toBe('error')
+    if (result.type === 'error') {
+      expect(result.message).toContain('管理员账号已存在')
     }
     expect(userQuery.insertAdmin).not.toHaveBeenCalled()
   })
@@ -308,9 +213,9 @@ describe('services/auth/flow — signUpInitialAdminWithSession (install stage 1)
       clientAddress: '127.0.0.1',
     })
 
-    expect(result.ok).toBe(false)
-    if (result.ok === false) {
-      expect(result.status).toBe(500)
+    expect(result.type).toBe('error')
+    if (result.type === 'error') {
+      expect(result.message).toContain('创建管理员账号失败')
     }
     expect(settingQuery.upsertSetting).not.toHaveBeenCalled()
     expect(settingsSnapshot.refreshBlogSettings).not.toHaveBeenCalled()

@@ -18,15 +18,15 @@ vi.mock('@/server/domains/comments/services/public-query', () => ({
   loadComments: vi.fn(),
   parseComments: vi.fn(async () => []),
 }))
-vi.mock('@/server/domains/comments/likes', () => ({ queryLikes: vi.fn() }))
+vi.mock('@/server/domains/comments/services/likes', () => ({ queryLikes: vi.fn() }))
 vi.mock('@/server/http/loaders/sidebar', () => ({ loadSidebarData: vi.fn() }))
-vi.mock('@/server/domains/analytics/pv-batcher', () => ({ bumpPageView: vi.fn() }))
+vi.mock('@/server/domains/analytics/repos/pv-batcher', () => ({ bumpPageView: vi.fn() }))
 
 const commentShared = await import('@/server/domains/comments/services/shared')
 const commentPublicQuery = await import('@/server/domains/comments/services/public-query')
-const likes = await import('@/server/domains/comments/likes')
+const likes = await import('@/server/domains/comments/services/likes')
 const sidebar = await import('@/server/http/loaders/sidebar')
-const metrics = await import('@/server/domains/analytics/pv-batcher')
+const metrics = await import('@/server/domains/analytics/repos/pv-batcher')
 const { loadDetailPageData } = await import('@/server/http/loaders/comments')
 
 const POST_TIMING = { type: 'post' as const, ownerId: 1n }

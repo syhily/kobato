@@ -1,7 +1,7 @@
 import type { EntityTarget } from '@/server/infra/db/target'
 
-import { pushAccessEvent } from '@/server/domains/analytics/batcher'
 import { enrichEvent } from '@/server/domains/analytics/enrich'
+import { pushAccessEvent } from '@/server/domains/analytics/repos/batcher'
 import { getLogger } from '@/server/infra/logger'
 import { getBlogSettingsBundleSync } from '@/shared/config/getters'
 import { getClientAddress } from '@/shared/utils/request'

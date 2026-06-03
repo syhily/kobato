@@ -47,7 +47,7 @@ vi.mock('pg-copy-streams', () => ({
 }))
 
 async function resetBatcher() {
-  const mod = await import('@/server/domains/audit/batcher')
+  const mod = await import('@/server/domains/audit/repos/batcher')
   mod.resetAuditLogBatcher()
   mod.initAuditLogBatcher(db, pool)
   return mod

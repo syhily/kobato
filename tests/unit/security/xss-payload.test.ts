@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest'
 
 import type { LinkMarkDef } from '@/shared/pt/schema'
 
-import { canonicalizeCommentBody } from '@/server/domains/comments/canonicalize'
+import { canonicalizeCommentBody } from '@/server/domains/comments/services/canonicalize'
 import { CodeBlockNodeComponent } from '@/ui/pt/render-blocks'
 import { LinkMark, renderMathMarkupOrTexFallback } from '@/ui/pt/render-marks'
 

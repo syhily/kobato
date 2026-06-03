@@ -42,7 +42,7 @@ vi.mock('@/server/infra/db/operations/metric', () => ({
   findMetricByPublicId: vi.fn(),
 }))
 
-vi.mock('@/server/domains/comments/email', () => ({
+vi.mock('@/server/domains/comments/services/email', () => ({
   sendApprovedComment: vi.fn(async () => undefined),
   sendNewComment: vi.fn(async () => undefined),
 }))
@@ -50,7 +50,7 @@ vi.mock('@/server/domains/comments/email', () => ({
 // The canonicalize pipeline runs Shiki / KaTeX / Markdown
 // projection — heavy, and orthogonal to the moderation-state branch
 // we're testing. Stub it to a deterministic shape.
-vi.mock('@/server/domains/comments/canonicalize', () => ({
+vi.mock('@/server/domains/comments/services/canonicalize', () => ({
   canonicalizeCommentBody: vi.fn(async (input: unknown) => ({
     body: input,
     content: 'edited markdown',
@@ -62,7 +62,7 @@ const db = {} as NodePgDatabase
 const queryRepo = await import('@/server/domains/comments/repos/public-query')
 await import('@/server/domains/comments/repos/admin-query')
 const mutateRepo = await import('@/server/domains/comments/repos/mutate')
-const emails = await import('@/server/domains/comments/email')
+const emails = await import('@/server/domains/comments/services/email')
 const { updateOwnComment } = await import('@/server/domains/comments/services/moderate')
 
 // `findCommentWithUserById` returns a deep Drizzle-inferred shape whose

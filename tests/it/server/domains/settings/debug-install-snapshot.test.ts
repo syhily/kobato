@@ -38,7 +38,7 @@ describe('install snapshot debug', () => {
       clientAddress: '127.0.0.1',
     })
 
-    expect(result.ok).toBe(true)
+    expect(result.type).toBe('redirect')
 
     const bundle = getBlogSettingsBundleSync()
     if (bundle) {

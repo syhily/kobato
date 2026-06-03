@@ -2,7 +2,7 @@ import { Hono } from 'hono'
 
 import type { Env } from '@/server/http/context'
 
-import { ASSET_ROUTES, resolveSiteAsset } from '@/server/domains/assets/service'
+import { ASSET_ROUTES, resolveSiteAsset } from '@/server/domains/assets/services/routes'
 import { getBlogSettingsBundleSync } from '@/shared/config/getters'
 
 export const assetsRouter = new Hono<Env>()

@@ -5,8 +5,8 @@ import { and, desc, eq, inArray, isNotNull, isNull, sql } from 'drizzle-orm'
 import type { PostMetaRow } from '@/server/infra/db/types'
 import type { ClientPost, ListingPostCard, Post, PostVisibilityOptions, SidebarPostLink } from '@/shared/types/catalog'
 
-import { queryMetadata } from '@/server/domains/comments/likes'
-import { hydrateImageRefs } from '@/server/domains/images/image-meta'
+import { queryMetadata } from '@/server/domains/comments/services/likes'
+import { hydrateImageRefs } from '@/server/domains/images/services/enhance'
 import {
   buildPublicPostFilters,
   hydrateClientPostCovers,

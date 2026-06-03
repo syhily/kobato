@@ -8,7 +8,7 @@ import type { Page } from '@/shared/types/catalog'
 
 import { findContentById, findContentsByIds } from '@/server/domains/content/repo'
 import { isCatalogVisible } from '@/server/domains/content/schema'
-import { hydrateImageRefs } from '@/server/domains/images/image-meta'
+import { hydrateImageRefs } from '@/server/domains/images/services/enhance'
 import { toCmsPage } from '@/server/domains/pages/projection'
 import { page as pageMetaTable } from '@/server/infra/db/schema/page'
 import { user } from '@/server/infra/db/schema/user'

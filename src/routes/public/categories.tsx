@@ -1,5 +1,5 @@
 import { getDbFromContext } from '@/server/domains/auth/context'
-import { listAllCategories } from '@/server/domains/taxonomies/categories/service'
+import { listAllCategories } from '@/server/domains/taxonomies/categories/services/query'
 import { listingHeaders, publicShouldRevalidate } from '@/server/http/loaders/route-exports'
 import { bundleFromMatches, routeMeta } from '@/server/render/seo/meta'
 import { CategoriesBody } from '@/ui/public/post/CategoriesBody'

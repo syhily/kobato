@@ -2,7 +2,7 @@ import { Buffer } from 'node:buffer'
 import { readFile } from 'node:fs/promises'
 import path from 'node:path'
 
-import { resolveSiteAsset } from '@/server/domains/assets/service'
+import { resolveSiteAsset } from '@/server/domains/assets/services/routes'
 import { FONT_PATH } from '@/server/infra/env'
 import { getLogger } from '@/server/infra/logger'
 import { requireBlogSettingsSection } from '@/shared/config/getters'

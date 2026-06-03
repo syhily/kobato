@@ -7,8 +7,6 @@ import path from 'node:path'
 import type { FontsInput } from '@/server/domains/settings/schemas/fonts'
 import type { BlogSettingsBundle } from '@/shared/config/types'
 
-import { rescheduleArchive } from '@/server/domains/audit/scheduler'
-import { rescheduleBackup } from '@/server/domains/backup/scheduler'
 import { SECRET_FIELDS } from '@/server/domains/settings/secrets'
 import { SECTION_REGISTRY, type SettingsSection } from '@/server/domains/settings/sections'
 import { hydrateBlogSettings, refreshBlogSettings } from '@/server/domains/settings/snapshot'
@@ -21,6 +19,19 @@ import { getLogger } from '@/server/infra/logger'
 import { getBlogSettingsBundleSync } from '@/shared/config/getters'
 
 const log = getLogger('settings.service')
+
+// Callback registry for section-change side effects.
+// Domains that need to react to a settings update (e.g. reschedule a
+// background job) register a handler here instead of being imported
+// directly by the settings service.
+const sectionChangeHandlers = new Map<SettingsSection, (db: NodePgDatabase, pool: Pool) => void | Promise<void>>()
+
+export function registerSectionChangeHandler(
+  section: SettingsSection,
+  handler: (db: NodePgDatabase, pool: Pool) => void | Promise<void>,
+): void {
+  sectionChangeHandlers.set(section, handler)
+}
 
 // DTO returned by the admin "get settings" endpoint. The codebase no
 // longer ships a `BlogConstants` block — date fields (`locale`,
@@ -101,12 +112,11 @@ export async function updateBlogSettingsSection<S extends SettingsSection>(
     const encryptedRow = encryptSecretsInRow(section, nextRow)
     await upsertSetting(tx, encryptedRow, updatedBy, meta.scope)
 
-    if (section === 'backup') {
-      void rescheduleBackup().catch((e) => log.error('rescheduleBackup failed', { error: String(e) }))
-    }
-
-    if (section === 'limits') {
-      void rescheduleArchive(tx, pool).catch((e) => log.error('rescheduleArchive failed', { error: String(e) }))
+    const handler = sectionChangeHandlers.get(section)
+    if (handler) {
+      void Promise.resolve(handler(tx, pool)).catch((e: unknown) =>
+        log.error('Section change handler failed', { section, error: String(e) }),
+      )
     }
 
     return refreshBlogSettings(tx)

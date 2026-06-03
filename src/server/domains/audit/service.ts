@@ -1,8 +1,8 @@
 import type { AuditEventInput } from '@/server/domains/audit/types'
 import type { HandlerContext } from '@/server/http/orpc-base'
 
-import { pushAuditEvent } from '@/server/domains/audit/batcher'
 import { tagL3InDetails } from '@/server/domains/audit/privacy'
+import { pushAuditEvent } from '@/server/domains/audit/repos/batcher'
 import { getLogger } from '@/server/infra/logger'
 
 const log = getLogger('audit.service')

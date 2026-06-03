@@ -93,12 +93,12 @@ vi.mock('@/server/domains/pages/repo', () => ({
   updatePageMetaById: vi.fn(async () => null),
 }))
 
-vi.mock('@/server/domains/posts/indexer', () => ({
+vi.mock('@/server/domains/posts/services/search-index', () => ({
   indexPost: vi.fn(),
   removePostIndex: vi.fn(),
 }))
 
-vi.mock('@/server/domains/pages/image-sync', () => ({
+vi.mock('@/server/domains/pages/services/image-sync', () => ({
   syncLibraryImageBlocks: vi.fn(),
 }))
 

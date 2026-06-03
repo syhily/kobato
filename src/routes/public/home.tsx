@@ -13,7 +13,7 @@ import {
   selectFeaturePosts,
   selectSidebarPosts,
 } from '@/server/domains/posts/repos/public-query'
-import { getCategoryLinks } from '@/server/domains/taxonomies/categories/service'
+import { getCategoryLinks } from '@/server/domains/taxonomies/categories/services/query'
 import { listAllTags } from '@/server/domains/taxonomies/tags/service'
 import { listingLoader } from '@/server/http/loaders/listing'
 import { listingHeaders, publicShouldRevalidate } from '@/server/http/loaders/route-exports'

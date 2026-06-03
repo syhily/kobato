@@ -4,10 +4,10 @@ import { z } from 'zod'
 import { recordAuditEventFromContext } from '@/server/domains/audit/service'
 import {
   deleteAdminCategory,
-  listCategoriesForAdmin,
   reorderAdminCategories,
   upsertAdminCategory,
-} from '@/server/domains/taxonomies/categories/service'
+} from '@/server/domains/taxonomies/categories/services/mutate'
+import { listCategoriesForAdmin } from '@/server/domains/taxonomies/categories/services/query'
 import { adminProc } from '@/server/http/orpc-base'
 import { adminCategoryDto } from '@/shared/contracts/categories'
 import { idFromString } from '@/shared/utils/id'

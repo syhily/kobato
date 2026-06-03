@@ -29,7 +29,7 @@ vi.mock('@/server/infra/db/operations/tag', () => ({
   findTagBySlug: mocks.findTagBySlug,
   findTagByName: mocks.findTagByName,
 }))
-vi.mock('@/server/domains/taxonomies/categories/service', () => ({
+vi.mock('@/server/domains/taxonomies/categories/services/query', () => ({
   listAllCategories: mocks.listAllCategories,
 }))
 vi.mock('@/server/domains/taxonomies/tags/service', () => ({

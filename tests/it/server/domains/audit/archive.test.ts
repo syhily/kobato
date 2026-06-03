@@ -44,7 +44,7 @@ const db = {
   select: dbSelect,
 } as any
 
-const { archiveExpiredAuditLogs, cleanupExpiredArchives } = await import('@/server/domains/audit/archive')
+const { archiveExpiredAuditLogs, cleanupExpiredArchives } = await import('@/server/domains/audit/services/archive')
 
 describe('audit/archive', () => {
   beforeEach(() => {
