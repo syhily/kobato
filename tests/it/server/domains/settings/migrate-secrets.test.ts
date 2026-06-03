@@ -44,7 +44,7 @@ function encryptWithKey(plaintext: string, key: string): string {
 }
 
 async function loadMigration() {
-  const mod = await import('@/server/infra/crypto/secret-encryption')
+  const mod = await import('@/server/domains/settings/services/migrate-secrets')
   return mod.migrateSecretsEncryption
 }
 
@@ -205,7 +205,6 @@ describe('migrateSecretsEncryption', () => {
   })
 
   it('decrypts legacy enc: values encrypted with the old SHA-256 key', async () => {
-    // Encrypt with the OLD key derivation (SHA-256) to simulate a legacy secret.
     const legacyCiphertext = encryptWithKey('legacy-secret', mockState.encryptionKey)
     expect(legacyCiphertext).toMatch(/^enc:/)
 
@@ -219,27 +218,11 @@ describe('migrateSecretsEncryption', () => {
     const migrate = await loadMigration()
     await migrate(db)
 
-    // The legacy value should be successfully decrypted and verified,
-    // so upsertSetting is NOT called (no re-encryption needed).
     expect(mockState.upsertSetting).not.toHaveBeenCalled()
     expect(mockState.logger.info).toHaveBeenCalledWith(expect.stringContaining('0 encrypted, 1 verified'))
   })
 
   it('throws when a secret fails to encrypt', async () => {
-    // Force getKey() to throw by clearing the key after the module has loaded.
-    // This is tricky because getKey() caches the derived key.  Instead we
-    // simulate a failure by making upsertSetting throw; but that happens
-    // after encryption.  To test encryption failure we need the encrypt()
-    // call itself to fail.  The only realistic way is a bad key state.
-    // We test the failure path by using a scope that exists but whose
-    // data shape causes an issue … actually encrypt() only fails if getKey()
-    // throws (ENCRYPTION_KEY missing).  Since we already test the missing-key
-    // path above, and the decrypt-failure path, the remaining risk is a
-    // runtime error inside the crypto module.  We'll simulate it by
-    // temporarily breaking the key after module load via module reset and
-    // a mock that returns an impossibly short key (not possible with SHA-256).
-    // Instead, we'll verify the outer error propagation by making
-    // findSettingsByScopePrefix throw.
     mockState.findSettingsByScopePrefix.mockRejectedValue(new Error('DB connection lost'))
 
     const migrate = await loadMigration()

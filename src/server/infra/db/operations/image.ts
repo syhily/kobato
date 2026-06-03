@@ -165,11 +165,6 @@ export async function findImagesByIds(db: NodePgDatabase, ids: readonly bigint[]
     .where(inArray(image.id, [...ids]))
 }
 
-export async function findImageByStoragePath(db: NodePgDatabase, storagePath: string): Promise<ImageRow | null> {
-  const rows = await db.select().from(image).where(eq(image.storagePath, storagePath)).limit(1)
-  return rows[0] ?? null
-}
-
 /** Batch-fetch by `storagePath`. Skips empty input arrays to avoid `IN ()` syntax errors. */
 export async function findImagesByStoragePaths(db: NodePgDatabase, paths: readonly string[]): Promise<ImageRow[]> {
   if (paths.length === 0) {

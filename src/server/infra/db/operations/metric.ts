@@ -81,16 +81,6 @@ export async function findMetricByTarget(db: NodePgDatabase, target: EntityTarge
   return rows[0] ?? null
 }
 
-export async function incrementMetricPv(db: NodePgDatabase, target: EntityTarget, delta = 1): Promise<void> {
-  if (delta <= 0) {
-    return
-  }
-  await db
-    .update(metric)
-    .set({ pv: sql`${metric.pv} + ${delta}` })
-    .where(whereTarget(target))
-}
-
 /**
  * Apply many `pv += delta` updates in a single SQL statement using
  * `UPDATE ... FROM (VALUES ...)` so the round-trip count is one

@@ -1,6 +1,6 @@
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
-import { and, count, desc, eq, ilike, or, type SQL, sql } from 'drizzle-orm'
+import { and, count, desc, eq, ilike, or, type SQL } from 'drizzle-orm'
 
 import type { FriendRow, NewFriend } from '@/server/infra/db/types'
 
@@ -128,16 +128,4 @@ export async function updateFriend(
 export async function deleteFriend(db: NodePgDatabase, id: bigint): Promise<boolean> {
   const result = await db.delete(friend).where(eq(friend.id, id)).returning({ id: friend.id })
   return result.length > 0
-}
-
-// Best-effort homepage de-dup for the install-time CLI: returns true
-// if any row matches the URL exactly. Callers that want fuzzier
-// matching should normalise both sides themselves.
-export async function homepageExists(db: NodePgDatabase, homepage: string): Promise<boolean> {
-  const rows = await db
-    .select({ exists: sql<number>`1` })
-    .from(friend)
-    .where(eq(friend.homepage, homepage))
-    .limit(1)
-  return rows.length > 0
 }

@@ -5,8 +5,6 @@ import type { Server as NodeHttpServer } from 'node:http'
 
 import { serve } from '@hono/node-server'
 
-import type { Env } from '@/server/http/context'
-
 import { PORT } from '@/server/infra/env'
 import { getLogger } from '@/server/infra/logger'
 
@@ -41,7 +39,7 @@ export interface LifecycleContainer {
   httpServer: ServerType | null
   shuttingDown: boolean
   hooks: ShutdownHook[]
-  currentApp: Hono<Env> | null
+  currentApp: Hono<any> | null
   currentDb: NodePgDatabase | null
   restartQueue: Promise<void>
   restartPromise: Promise<void> | null
@@ -194,7 +192,7 @@ export function resetRestoreState(): void {
 
 // ─── DI setters ──────────────────────────────────────────
 
-export function setRestartApp(app: Hono<Env>): void {
+export function setRestartApp(app: Hono<any>): void {
   container.currentApp = app
 }
 

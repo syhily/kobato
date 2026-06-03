@@ -85,20 +85,6 @@ export async function deleteCategory(db: NodePgDatabase, id: bigint): Promise<bo
 }
 
 // Idempotent insert used by the one-shot CLI seeder. `ON CONFLICT
-// (name) DO NOTHING` mirrors the YAML invariant — categories key off
-// `name` from MDX frontmatter, so a re-run of the seeder must never
-// silently overwrite a row an admin has since edited. Returns `true`
-// when a new row was inserted, `false` when it was skipped.
-export async function seedCategoryIfMissing(db: NodePgDatabase, values: NewCategory): Promise<boolean> {
-  const now = new Date()
-  const result = await db
-    .insert(category)
-    .values({ ...values, createdAt: now, updatedAt: now })
-    .onConflictDoNothing({ target: category.name })
-    .returning({ id: category.id })
-  return result.length > 0
-}
-
 // Bulk-rewrite `sort_order` so the rows match the order in which their
 // ids appear in `orderedIds`. Each row's `sort_order` becomes its
 // 0-based index in the supplied array, and `updated_at` is bumped to

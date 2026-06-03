@@ -1,4 +1,3 @@
-import { OTP_TTL_MINUTES } from '@/server/domains/auth/verification-tokens'
 import { render } from '@/server/infra/email/render'
 import AuthorInvite from '@/server/infra/email/templates/AuthorInvite'
 import PasswordReset from '@/server/infra/email/templates/PasswordReset'
@@ -7,6 +6,10 @@ import { getLogger } from '@/server/infra/logger'
 import { requireBlogSettingsSection } from '@/shared/config/getters'
 
 const log = getLogger('email')
+
+// OTP TTL mirrored from auth domain so the email layer does not import
+// a business domain. Kept in sync with OTP_TTL_MS in verification-tokens.ts.
+const OTP_TTL_MINUTES = 5
 
 export interface EmailMessage {
   to: string

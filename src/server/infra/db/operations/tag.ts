@@ -7,15 +7,6 @@ import type { NewTag, TagRow } from '@/server/infra/db/types'
 import { tag } from '@/server/infra/db/schema/taxonomy'
 import { escapeLikePattern } from '@/shared/utils/escape-like'
 
-// Public listing reads. Stable `name ASC` order so the `/tags`
-// catalogue (and any sidebar widget that surfaces the full list) has
-// a deterministic ordering. The post-derived `counts` projection
-// happens in `ContentCatalog`; everything that needs the
-// usage-sorted view (e.g. tag clouds) sorts there.
-export async function listPublicTagRows(db: NodePgDatabase): Promise<TagRow[]> {
-  return db.select().from(tag).orderBy(asc(tag.name))
-}
-
 export interface AdminTagsListFilters {
   q?: string
   /** Zero-based offset for pagination. Defaults to 0 when undefined. */
