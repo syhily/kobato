@@ -6,13 +6,12 @@ import type { CommentReq } from '@/shared/types/comments'
 import { recordAuditEventFromContext } from '@/server/domains/audit/service'
 import { userSession } from '@/server/domains/auth/primitives'
 import { asCommentItemWire, asCommentItemsWire } from '@/server/domains/comments/projection'
-import { findCommentWithUserById } from '@/server/domains/comments/repos/public-query/by-id'
-import { commentReplySchema } from '@/server/domains/comments/schema'
+import { verifyCommentAccess } from '@/server/domains/comments/services/access'
 import { getCommentById, updateComment } from '@/server/domains/comments/services/moderate'
 import { createComment } from '@/server/domains/comments/services/mutate'
 import { loadComments, parseComments } from '@/server/domains/comments/services/public-query'
 import { resolveMetricTarget } from '@/server/domains/comments/services/shared'
-import { appendCommentToken, issueCommentToken, verifyCommentOwnership } from '@/server/domains/comments/services/token'
+import { appendCommentToken, issueCommentToken } from '@/server/domains/comments/services/token'
 import { publicProc } from '@/server/http/orpc-base'
 import { getLogger } from '@/server/infra/logger'
 import { tryCommentPostRateLimit, tryCommentPostRateLimitByEmail } from '@/server/infra/rate-limit'
@@ -20,11 +19,19 @@ import { requireBlogSettingsSection } from '@/shared/config/getters'
 import { commentItemDto } from '@/shared/contracts/comments'
 import { commentBodySchema } from '@/shared/pt/comment-schema'
 import { parseCommentTokensCookie, serializeCommentTokensCookie } from '@/shared/utils/comment-token'
-import { idFromString } from '@/shared/utils/id'
 
 const replyComment = publicProc
   .route({ method: 'POST', path: '/comments/reply' })
-  .input(commentReplySchema)
+  .input(
+    z.object({
+      page_key: z.string(),
+      name: z.string(),
+      email: z.email(),
+      link: z.string().optional(),
+      body: commentBodySchema,
+      rid: z.number().optional(),
+    }),
+  )
   .output(z.object({ comment: commentItemDto }))
   .handler(async ({ input, context }) => {
     const { request, clientAddress, session, responseHeaders } = context
@@ -95,15 +102,13 @@ const getRaw = publicProc
   .output(z.object({ body: commentBodySchema }))
   .handler(async ({ input, context }) => {
     const { request, session, responseHeaders } = context
-    const admin = userSession(session)?.role === 'admin'
-    if (!admin) {
-      const cookie = parseCommentTokensCookie(request.headers.get('Cookie'))
-      const { ok, cleaned } = await verifyCommentOwnership(cookie, input.rid)
-      if (!ok) {
-        throw new ORPCError('FORBIDDEN', { message: '无权查看该评论' })
-      }
-      responseHeaders.append('Set-Cookie', serializeCommentTokensCookie(cleaned))
+    const sessionUser = userSession(session)
+    const cookie = parseCommentTokensCookie(request.headers.get('Cookie'))
+    const { ok, cleaned } = await verifyCommentAccess(context.db, cookie, input.rid, sessionUser)
+    if (!ok) {
+      throw new ORPCError('FORBIDDEN', { message: '无权查看该评论' })
     }
+    responseHeaders.append('Set-Cookie', serializeCommentTokensCookie(cleaned))
     const comment = await getCommentById(context.db, input.rid)
     if (!comment) {
       throw new ORPCError('NOT_FOUND', { message: '评论不存在' })
@@ -118,21 +123,12 @@ const edit = publicProc
   .handler(async ({ input, context }) => {
     const { request, session, responseHeaders } = context
     const sessionUser = userSession(session)
-    const isAdmin = sessionUser?.role === 'admin'
-    if (!isAdmin) {
-      const cookie = parseCommentTokensCookie(request.headers.get('Cookie'))
-      const { ok: ownerByToken, cleaned } = await verifyCommentOwnership(cookie, input.rid)
-      if (ownerByToken) {
-        responseHeaders.append('Set-Cookie', serializeCommentTokensCookie(cleaned))
-      } else {
-        const commentId = idFromString(input.rid)
-        const row = await findCommentWithUserById(context.db, commentId)
-        const ownerBySession = sessionUser !== undefined && row !== null && row.userId.toString() === sessionUser.id
-        if (!ownerBySession) {
-          throw new ORPCError('FORBIDDEN', { message: '无权编辑该评论' })
-        }
-      }
+    const cookie = parseCommentTokensCookie(request.headers.get('Cookie'))
+    const { ok, cleaned } = await verifyCommentAccess(context.db, cookie, input.rid, sessionUser)
+    if (!ok) {
+      throw new ORPCError('FORBIDDEN', { message: '无权编辑该评论' })
     }
+    responseHeaders.append('Set-Cookie', serializeCommentTokensCookie(cleaned))
     const updated = await updateComment(context.db, input.rid, input.body)
     if (!updated) {
       throw new ORPCError('NOT_FOUND', { message: '更新评论失败' })

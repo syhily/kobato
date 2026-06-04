@@ -1,15 +1,11 @@
 import { ORPCError } from '@orpc/server'
-import bcrypt from 'bcryptjs'
 import { z } from 'zod'
-
-import type { UserUpdate } from '@/server/infra/db/operations/user'
 
 import { recordAuditEventFromContext } from '@/server/domains/audit/service'
 import { findSessionMeta, revokeSessionById } from '@/server/domains/auth/repo'
 import { MIN_PASSWORD_LENGTH } from '@/server/domains/auth/schema'
-import { revokeAllSessionsOfUser } from '@/server/domains/auth/session-storage'
+import { updateAccountPassword, updateAccountProfile } from '@/server/domains/users/services/account'
 import { authedProc } from '@/server/http/orpc-base'
-import { findUserById, PASSWORD_HASH_ROUNDS, updateUserById } from '@/server/infra/db/operations/user'
 import { tryRateLimit } from '@/server/infra/rate-limit'
 import { idFromString } from '@/shared/utils/id'
 
@@ -59,37 +55,7 @@ const updateProfile = authedProc
   .output(z.object({ user: accountUserOutput }))
   .handler(async ({ input, context }) => {
     const { viewer, db } = context
-    const userId = idFromString(viewer.userId)
-    const dbUser = await findUserById(db, userId)
-    if (!dbUser) {
-      throw new ORPCError('NOT_FOUND', { message: '用户不存在。' })
-    }
-    const canSetBadge = viewer.role === 'admin' || viewer.role === 'author'
-    const patch: Partial<UserUpdate> = {}
-    if (input.name !== undefined) {
-      patch.name = input.name
-    }
-    if (input.link !== undefined) {
-      patch.link = input.link ?? undefined
-    }
-    if (input.receiveEmail !== undefined) {
-      patch.receiveEmail = input.receiveEmail
-    }
-    if (canSetBadge) {
-      if (input.badgeName !== undefined) {
-        patch.badgeName = input.badgeName ?? undefined
-      }
-      if (input.badgeColor !== undefined) {
-        patch.badgeColor = input.badgeColor ?? undefined
-      }
-      if (input.badgeTextColor !== undefined) {
-        patch.badgeTextColor = input.badgeTextColor ?? undefined
-      }
-    }
-    const updated = await updateUserById(db, userId, patch)
-    if (!updated) {
-      throw new ORPCError('NOT_FOUND', { message: '用户不存在。' })
-    }
+    const updated = await updateAccountProfile(db, idFromString(viewer.userId), input, viewer.role)
     return {
       user: {
         id: String(updated.id),
@@ -117,17 +83,7 @@ const updatePassword = authedProc
       throw new ORPCError('TOO_MANY_REQUESTS', { message: '操作过于频繁，请稍后再试。' })
     }
 
-    const dbUser = await findUserById(db, idFromString(viewer.userId))
-    if (!dbUser) {
-      throw new ORPCError('NOT_FOUND', { message: '用户不存在。' })
-    }
-    const ok = await bcrypt.compare(input.oldPassword, dbUser.password)
-    if (!ok) {
-      throw new ORPCError('FORBIDDEN', { message: '原密码错误。' })
-    }
-    const hashed = await bcrypt.hash(input.newPassword, PASSWORD_HASH_ROUNDS)
-    await updateUserById(db, dbUser.id, { password: hashed })
-    await revokeAllSessionsOfUser(dbUser.id, session.id)
+    await updateAccountPassword(db, idFromString(viewer.userId), input.oldPassword, input.newPassword, session.id)
     recordAuditEventFromContext(context, {
       action: 'password_changed',
       resourceType: 'user',

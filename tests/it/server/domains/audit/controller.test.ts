@@ -6,8 +6,9 @@ vi.mock('@/shared/config/getters', () => ({
   })),
 }))
 
-const { parseDate, clampDateToRetention, buildWhere, toItemDto, auditLogRouter } =
-  await import('@/server/http/controllers/admin/audit.controller')
+const { parseDate, clampDateToRetention, toAuditLogItemDto } = await import('@/server/domains/audit/projection')
+const { buildAuditLogWhere } = await import('@/server/domains/audit/repos/query')
+const { auditLogRouter } = await import('@/server/http/controllers/admin/audit.controller')
 
 describe('audit/controller helpers', () => {
   describe('parseDate', () => {
@@ -52,28 +53,28 @@ describe('audit/controller helpers', () => {
     })
   })
 
-  describe('buildWhere', () => {
+  describe('buildAuditLogWhere', () => {
     it('returns undefined for empty input', () => {
-      const result = buildWhere({})
+      const result = buildAuditLogWhere({})
       expect(result).toBeUndefined()
     })
 
     it('builds conditions for action and resourceType', () => {
-      const result = buildWhere({ action: 'login', resourceType: 'session' })
+      const result = buildAuditLogWhere({ action: 'login', resourceType: 'session' })
       expect(result).toBeDefined()
     })
 
-    it('throws BAD_REQUEST for invalid actorId', () => {
-      expect(() => buildWhere({ actorId: 'not-a-number' })).toThrow('actorId 格式无效')
+    it('throws for invalid actorId', () => {
+      expect(() => buildAuditLogWhere({ actorId: 'not-a-number' })).toThrow()
     })
 
     it('builds date range conditions', () => {
-      const result = buildWhere({ dateFrom: '2026-01-01', dateTo: '2026-01-31' })
+      const result = buildAuditLogWhere({ dateFrom: '2026-01-01', dateTo: '2026-01-31' })
       expect(result).toBeDefined()
     })
   })
 
-  describe('toItemDto', () => {
+  describe('toAuditLogItemDto', () => {
     it('maps a row to the item DTO', () => {
       const row = {
         id: 1n,
@@ -88,7 +89,7 @@ describe('audit/controller helpers', () => {
         createdAt: new Date('2026-05-20T12:00:00Z'),
       } as unknown as import('@/server/infra/db/schema/config').AuditLogRow
 
-      const dto = toItemDto(row, 'Alice')
+      const dto = toAuditLogItemDto(row, 'Alice')
       expect(dto.id).toBe('1')
       expect(dto.action).toBe('login')
       expect(dto.actorId).toBe('42')
@@ -113,7 +114,7 @@ describe('audit/controller helpers', () => {
         createdAt: new Date('2026-05-20T12:00:00Z'),
       } as unknown as import('@/server/infra/db/schema/config').AuditLogRow
 
-      const dto = toItemDto(row, null)
+      const dto = toAuditLogItemDto(row, null)
       expect(dto.actorId).toBeNull()
       expect(dto.actorName).toBeNull()
       expect(dto.ipAddressMasked).toBeNull()

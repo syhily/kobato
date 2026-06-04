@@ -2,11 +2,10 @@ import { ORPCError } from '@orpc/server'
 import { z } from 'zod'
 
 import { recordAuditEventFromContext } from '@/server/domains/audit/service'
-import { findSessionMeta, revokeSessionById } from '@/server/domains/auth/repo'
+import { revokeSessionWithGuard } from '@/server/domains/auth/service'
 import { revokeAllSessionsOfUser } from '@/server/domains/auth/session-storage'
-import { bulkApproveCommentsForUser, bulkDeleteCommentsForUser } from '@/server/domains/users/service'
+import { bulkApproveCommentsForUser, bulkDeleteCommentsForUser } from '@/server/domains/users/services/admin'
 import { adminProc } from '@/server/http/orpc-base'
-import { findSafeUserById } from '@/server/infra/db/operations/user'
 import { idFromString } from '@/shared/utils/id'
 
 const userIdInput = z.object({ userId: z.string().min(1) })
@@ -18,23 +17,12 @@ const revokeSession = adminProc
   .output(z.object({ success: z.boolean(), currentSession: z.boolean() }))
   .handler(async ({ input, context }) => {
     const currentSession = input.sessionId === context.session.id
-    const meta = await findSessionMeta(input.sessionId)
-    if (!meta) {
-      return { success: true, currentSession }
-    }
-    // Ownership check: an admin may not revoke another admin's session
-    // unless it is their own session. This prevents privilege escalation
-    // where a compromised admin account kicks out all other admins.
-    const targetUser = await findSafeUserById(context.db, meta.userId)
-    if (targetUser?.role === 'admin' && meta.userId.toString() !== context.viewer.userId) {
-      throw new ORPCError('FORBIDDEN', { message: '无权撤销其他管理员的会话。' })
-    }
-    await revokeSessionById(input.sessionId, meta.userId)
+    const result = await revokeSessionWithGuard(context.db, input.sessionId, context.viewer.userId, context.viewer.role)
     recordAuditEventFromContext(context, {
       action: 'session_revoked',
       resourceType: 'session',
       resourceId: input.sessionId,
-      details: { targetUserId: String(meta.userId), selfRevoke: currentSession },
+      details: { targetUserId: result.targetUserId ? String(result.targetUserId) : null, selfRevoke: currentSession },
     })
     return { success: true, currentSession }
   })
@@ -49,10 +37,6 @@ const revokeAllSessions = adminProc
       targetId = idFromString(input.userId)
     } catch {
       throw new ORPCError('BAD_REQUEST', { message: '用户 ID 无效。' })
-    }
-    const target = await findSafeUserById(context.db, targetId)
-    if (!target) {
-      throw new ORPCError('NOT_FOUND', { message: '用户不存在' })
     }
     await revokeAllSessionsOfUser(targetId)
     recordAuditEventFromContext(context, {

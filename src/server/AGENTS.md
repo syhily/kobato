@@ -39,6 +39,12 @@ per-use-case modules (e.g. `services/catalog.ts`, `repos/admin-query.ts`,
 or move to a `shared.ts` within the subdirectory. Callers import from
 the specific module rather than the monolithic file.
 
+**Consistency rule**: once a subdirectory exists for a base vocabulary
+file (e.g. `services/` or `repos/`), the corresponding root file
+(`service.ts` or `repo.ts`) MUST NOT coexist in the same domain.
+Move every export from the root file into the subdirectory so callers
+always import from one predictable location.
+
 Domains: `analytics`, `auth` (session-storage, csrf, rbac, flows,
 verification-tokens), `comments` (loader, moderation, projection, likes,
 token, badge, url, canonicalize), `friends`, `images` (schema, service,

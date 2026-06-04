@@ -2,16 +2,15 @@ import { ORPCError } from '@orpc/server'
 import { z } from 'zod'
 
 import { recordAuditEventFromContext } from '@/server/domains/audit/service'
-import { revokeAllSessionsOfUser } from '@/server/domains/auth/session-storage'
 import {
   fetchAdminUserDto,
   listUsersForAdmin,
   restoreAdminUser,
-  softDeleteAdminUser,
+  softDeleteUserWithGuard,
   toAdminUserDto,
-} from '@/server/domains/users/service'
+  updateUserByIdWithGuard,
+} from '@/server/domains/users/services/admin'
 import { adminProc } from '@/server/http/orpc-base'
-import { countAdmins, findUserById, updateUserById } from '@/server/infra/db/operations/user'
 import { adminUserDto } from '@/shared/contracts/users'
 import { idFromString } from '@/shared/utils/id'
 
@@ -78,26 +77,22 @@ const update = adminProc
   .output(successOutput)
   .handler(async ({ input, context }) => {
     const { id, name, email, link, badgeName, badgeColor, badgeTextColor } = input
-    const patch: Parameters<typeof updateUserById>[2] = {}
-    if (name !== undefined) {
-      patch.name = name
+    const patch = {
+      ...(name !== undefined && { name }),
+      ...(email !== undefined && { email }),
+      ...(link !== undefined && { link }),
+      ...(badgeName !== undefined && { badgeName }),
+      ...(badgeColor !== undefined && { badgeColor }),
+      ...(badgeTextColor !== undefined && { badgeTextColor }),
     }
-    if (email !== undefined) {
-      patch.email = email
-    }
-    if (link !== undefined) {
-      patch.link = link
-    }
-    if (badgeName !== undefined) {
-      patch.badgeName = badgeName
-    }
-    if (badgeColor !== undefined) {
-      patch.badgeColor = badgeColor
-    }
-    if (badgeTextColor !== undefined) {
-      patch.badgeTextColor = badgeTextColor
-    }
-    const updated = await updateUserById(context.db, idFromString(id), patch)
+    const updated = await updateUserByIdWithGuard(context.db, idFromString(id), {
+      name,
+      email,
+      link,
+      badgeName,
+      badgeColor,
+      badgeTextColor,
+    })
     if (updated === null) {
       throw new ORPCError('NOT_FOUND', { message: '用户不存在' })
     }
@@ -115,31 +110,12 @@ const softDelete = adminProc
   .input(idInput)
   .output(z.void())
   .handler(async ({ input, context }) => {
-    const userId = input.id
-    if (context.viewer.userId === userId) {
-      throw new ORPCError('FORBIDDEN', { message: '不能删除自己。' })
-    }
-    const targetId = idFromString(userId)
-    const target = await findUserById(context.db, targetId)
-    if (!target) {
-      throw new ORPCError('NOT_FOUND', { message: '用户不存在' })
-    }
-    if (target.role === 'admin') {
-      const adminCount = await countAdmins(context.db)
-      if (adminCount <= 1) {
-        throw new ORPCError('CONFLICT', { message: '不能删除唯一的管理员。' })
-      }
-    }
-    const ok = await softDeleteAdminUser(context.db, targetId)
-    if (!ok) {
-      throw new ORPCError('NOT_FOUND', { message: '用户不存在或已被删除' })
-    }
-    await revokeAllSessionsOfUser(targetId)
+    const result = await softDeleteUserWithGuard(context.db, idFromString(input.id), context.viewer.userId)
     recordAuditEventFromContext(context, {
       action: 'user_soft_deleted',
       resourceType: 'user',
-      resourceId: userId,
-      details: { previousRole: target.role },
+      resourceId: input.id,
+      details: { previousRole: result.previousRole },
     })
   })
 
