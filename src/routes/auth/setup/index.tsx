@@ -4,16 +4,21 @@ import { getDbFromContext, getPoolFromContext, getRouteRequestContext } from '@/
 import { validateCsrfForAction } from '@/server/domains/auth/csrf'
 import { signUpInitialAdminWithSession } from '@/server/domains/auth/flows'
 import { signUpAdminSchema } from '@/server/domains/auth/schema'
-import { getSetupToken } from '@/server/domains/auth/setup-token'
+import { commitSessionWithMaxAge } from '@/server/domains/auth/session-storage'
+import { isSetupTokenActive, verifySetupToken } from '@/server/domains/auth/setup-token'
 import { checkPgToolsAvailable } from '@/server/domains/backup/services/shared'
 import { ensureNoAdminOrRedirect } from '@/server/domains/settings/install-gate'
+import { tryKeyedRateLimit } from '@/server/infra/rate-limit'
 import { bundleFromMatches, routeMeta } from '@/server/render/seo/meta'
 import { AdminInstallForm } from '@/ui/admin/auth/AdminInstallForm'
+import { SetupTokenVerifyForm } from '@/ui/admin/auth/SetupTokenVerifyForm'
 import { BrandLogo } from '@/ui/public/chrome/BrandLogo'
 
 import type { Route } from './+types/index'
 
 const ADMIN_INSTALL_FIELDS = ['title', 'name', 'email', 'password'] as const
+
+const SETUP_VERIFY_BUCKET = { windowSeconds: 3600, maxAttempts: 10 }
 
 export async function loader({ request, context }: Route.LoaderArgs) {
   const db = getDbFromContext({ request, context })
@@ -23,10 +28,10 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   await ensureNoAdminOrRedirect(db)
 
   // Pull the request context so we trip session middleware exactly once.
-  getRouteRequestContext({ request, context })
+  const { session } = getRouteRequestContext({ request, context })
   return data({
     pgToolsAvailable: await checkPgToolsAvailable(),
-    setupToken: await getSetupToken(),
+    setupTokenVerified: session.get('setupTokenVerified') === true,
   })
 }
 
@@ -40,44 +45,94 @@ export async function action({ request, context }: Route.ActionArgs) {
   await ensureNoAdminOrRedirect(db)
 
   const { session, clientAddress } = getRouteRequestContext({ request, context })
-
-  // CSRF guard for the setup form action.
   const formData = await request.formData()
-  if (!validateCsrfForAction(session, request, formData)) {
-    return data({ error: '安全校验失败，请刷新页面后重试。' })
-  }
+  const intent = formData.get('intent')
 
-  const values: Record<string, FormDataEntryValue | null> = {}
-  for (const field of ADMIN_INSTALL_FIELDS) {
-    values[field] = formData.get(field)
-  }
-
-  const parsed = signUpAdminSchema.safeParse(values)
-  if (!parsed.success) {
-    return data({ error: '请填写完整的管理员账号信息。' })
-  }
-
-  const result = await signUpInitialAdminWithSession(db, pool, {
-    ...parsed.data,
-    session,
-    request,
-    clientAddress,
-  })
-
-  if (result.type === 'error') {
-    return data({ error: result.message })
-  }
-
-  if (result.type === 'redirect') {
-    const headers: Record<string, string> = {}
-    if (result.setCookie) {
-      headers['Set-Cookie'] = result.setCookie
+  // ── Intent: verify-token ───────────────────────────────────────────────
+  if (intent === 'verify-token') {
+    // CSRF guard for the setup token verification form.
+    if (!validateCsrfForAction(session, request, formData)) {
+      return data({ error: '安全校验失败，请刷新页面后重试。' })
     }
-    return redirect(result.to, { headers })
+
+    // Rate-limit before any token comparison to slow down automated scanners.
+    const { exceeded } = await tryKeyedRateLimit(`rate-limit:setup-verify:${clientAddress}`, SETUP_VERIFY_BUCKET)
+    if (exceeded) {
+      return data({ error: '请求过于频繁，请稍后再试。' }, { status: 429 })
+    }
+
+    const token = formData.get('setup_token')
+    if (typeof token !== 'string' || !token) {
+      return data({ error: '请输入 Setup Token。' })
+    }
+
+    const isValid = await verifySetupToken(token)
+    if (!isValid) {
+      return data({ error: 'Setup Token 错误，请查看服务器控制台输出。' })
+    }
+
+    session.set('setupTokenVerified', true)
+    // Manually commit the session here. React Router actions run inside
+    // Hono's `next()` so they cannot set `c.var.sessionDirty`. The Hono
+    // session middleware will also commit after `next()` returns when
+    // `sessionDirty` is true (e.g. for a fresh session that just got its
+    // CSRF token). This produces two Set-Cookie headers with equivalent
+    // content; browsers handle it correctly. The same pattern exists in
+    // `signin.tsx`.
+    return data({ setupTokenVerified: true }, { headers: { 'Set-Cookie': await commitSessionWithMaxAge(session) } })
   }
 
-  // signUpInitialAdminWithSession never returns 'success'; this is defensive.
-  return data({ error: '未知错误' })
+  // ── Intent: install (or no intent for backward compat) ─────────────────
+  if (intent === 'install' || intent === null) {
+    if (session.get('setupTokenVerified') !== true) {
+      return data({ error: '请先验证 Setup Token。' })
+    }
+
+    // Defense in depth: a stale session flag must not bypass a token that
+    // has expired or been invalidated in Redis.
+    if (!(await isSetupTokenActive())) {
+      return data({ error: 'Setup Token 已过期或失效，请重新验证。' })
+    }
+
+    // CSRF guard for the setup form action.
+    if (!validateCsrfForAction(session, request, formData)) {
+      return data({ error: '安全校验失败，请刷新页面后重试。' })
+    }
+
+    const values: Record<string, FormDataEntryValue | null> = {}
+    for (const field of ADMIN_INSTALL_FIELDS) {
+      values[field] = formData.get(field)
+    }
+
+    const parsed = signUpAdminSchema.safeParse(values)
+    if (!parsed.success) {
+      return data({ error: '请填写完整的管理员账号信息。' })
+    }
+
+    const result = await signUpInitialAdminWithSession(db, pool, {
+      ...parsed.data,
+      session,
+      request,
+      clientAddress,
+    })
+
+    if (result.type === 'error') {
+      return data({ error: result.message })
+    }
+
+    if (result.type === 'redirect') {
+      const headers: Record<string, string> = {}
+      if (result.setCookie) {
+        headers['Set-Cookie'] = result.setCookie
+      }
+      return redirect(result.to, { headers })
+    }
+
+    // signUpInitialAdminWithSession never returns 'success'; this is defensive.
+    return data({ error: '未知错误' })
+  }
+
+  return data({ error: '未知操作。' })
 }
 
 export function meta({ matches }: Route.MetaArgs) {
@@ -90,17 +145,27 @@ export default function AdminInstallRoute({ actionData, loaderData }: Route.Comp
       {/* Ghost-style welcome header */}
       <header className="text-center">
         <BrandLogo className="mx-auto mb-10 h-20 w-auto" />
-        <p className="text-base text-muted-foreground md:text-lg">填写以下信息，开启你的创作之旅。</p>
+        {!loaderData.setupTokenVerified ? (
+          <p className="text-base text-muted-foreground md:text-lg">验证 Setup Token 以继续。</p>
+        ) : (
+          <p className="text-base text-muted-foreground md:text-lg">填写以下信息，开启你的创作之旅。</p>
+        )}
       </header>
 
-      {/* Error message — centered, Ghost-style */}
-      {actionData?.error ? (
+      {/* Error message for install action — centered, Ghost-style.
+          SetupTokenVerifyForm renders its own errors, so we only show
+          this block when the install form is visible. */}
+      {loaderData.setupTokenVerified && actionData && 'error' in actionData && actionData.error ? (
         <div role="alert" aria-live="polite" className="text-center text-sm leading-relaxed text-destructive">
           {actionData.error}
         </div>
       ) : null}
 
-      <AdminInstallForm pgToolsAvailable={loaderData.pgToolsAvailable} setupToken={loaderData.setupToken} />
+      {!loaderData.setupTokenVerified ? (
+        <SetupTokenVerifyForm />
+      ) : (
+        <AdminInstallForm pgToolsAvailable={loaderData.pgToolsAvailable} />
+      )}
     </div>
   )
 }

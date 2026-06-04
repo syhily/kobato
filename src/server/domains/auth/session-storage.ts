@@ -45,6 +45,7 @@ export interface BlogSessionData {
   // unconditionally invalid after this timestamp regardless of sliding
   // cookie refreshes. This caps the maximum lifetime of a stolen cookie.
   absoluteExpiry?: number
+  setupTokenVerified?: boolean
 }
 
 export type BlogSession = Session<BlogSessionData, BlogSessionData>

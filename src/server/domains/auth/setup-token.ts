@@ -1,4 +1,4 @@
-import { randomBytes } from 'node:crypto'
+import { randomBytes, timingSafeEqual } from 'node:crypto'
 
 import { getLogger } from '@/server/infra/logger'
 import { redisInstance } from '@/server/infra/redis/storage'
@@ -7,6 +7,10 @@ const log = getLogger('auth.setup-token')
 
 const REDIS_KEY = 'setup_token'
 const TTL_SECONDS = 7 * 24 * 60 * 60 // 7 days
+
+/** Local fast-path flag. In multi-instance deployments this is only
+ * accurate on the instance that called invalidateSetupToken(); other
+ * instances rely on the Redis key being absent. */
 let tokenInvalidated = false
 
 /**
@@ -50,16 +54,17 @@ export async function verifySetupToken(candidate: string): Promise<boolean> {
   if (!token) {
     return false
   }
+  if (candidate.length !== token.length) {
+    return false
+  }
   return timingSafeEqual(Buffer.from(candidate), Buffer.from(token))
 }
 
-function timingSafeEqual(a: Buffer, b: Buffer): boolean {
-  if (a.length !== b.length) {
-    return false
-  }
-  let result = 0
-  for (let i = 0; i < a.length; i++) {
-    result |= a[i]! ^ b[i]!
-  }
-  return result === 0
+/** Check whether the setup token still exists in Redis (i.e. has not
+ * expired and has not been invalidated). Used as a second layer of
+ * defense so a stale session flag cannot bypass domain-level checks. */
+export async function isSetupTokenActive(): Promise<boolean> {
+  const redis = redisInstance()
+  const token = await redis.get(REDIS_KEY)
+  return token !== null
 }

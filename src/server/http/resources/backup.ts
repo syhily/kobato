@@ -4,7 +4,8 @@ import { bodyLimit } from 'hono/body-limit'
 import type { Env } from '@/server/http/context'
 
 import { recordAuditEvent } from '@/server/domains/audit/service'
-import { verifySetupToken } from '@/server/domains/auth/setup-token'
+import { CSRF_HEADER, validateCsrfToken } from '@/server/domains/auth/csrf'
+import { isSetupTokenActive } from '@/server/domains/auth/setup-token'
 import { performSafeRestore } from '@/server/domains/backup/restore-orchestrator'
 import { getBackupBuffer } from '@/server/domains/backup/services/backup'
 import { extractBackupSql, restoreFromSql } from '@/server/domains/backup/services/restore'
@@ -86,10 +87,24 @@ export const backupRouter = new Hono<Env>()
         return c.json({ error: { message: '站点已安装，请直接登录后通过后台还原备份。' } }, 409)
       }
 
-      // Require the one-time setup token to prove console access.
-      const setupToken = c.req.header('x-setup-token') ?? ''
-      if (!(await verifySetupToken(setupToken))) {
-        return c.json({ error: { message: '缺少或错误的 setup token，请查看服务器控制台输出。' } }, 403)
+      // Require a verified session to prove console access.
+      const setupTokenVerified = c.var.session.get('setupTokenVerified')
+      if (!setupTokenVerified) {
+        return c.json({ error: { message: 'Setup Token 验证已过期或未完成，请先返回安装页面完成验证。' } }, 403)
+      }
+
+      // Double-check the token is still active in Redis (defense against
+      // stale session flags after token expiration or invalidation).
+      if (!(await isSetupTokenActive())) {
+        return c.json({ error: { message: 'Setup Token 已过期或失效，请重新验证。' } }, 403)
+      }
+
+      // CSRF guard: the restore request carries the same session cookie
+      // as the setup flow, so we require the CSRF header to prevent
+      // cross-site form submission.
+      const csrfToken = c.req.header(CSRF_HEADER)
+      if (!validateCsrfToken(c.var.session, csrfToken)) {
+        return c.json({ error: { message: '安全校验失败，请刷新页面后重试。' } }, 403)
       }
 
       if (!(await isPgToolsAvailable())) {

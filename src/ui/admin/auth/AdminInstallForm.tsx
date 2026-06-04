@@ -14,7 +14,6 @@ const inputClasses =
 
 interface AdminInstallFormProps {
   pgToolsAvailable?: boolean
-  setupToken?: string
 }
 
 type InstallMode = 'install' | 'restore'
@@ -24,7 +23,7 @@ function useCsrfToken(): string | undefined {
   return rootData?.csrfToken
 }
 
-export function AdminInstallForm({ pgToolsAvailable, setupToken }: AdminInstallFormProps) {
+export function AdminInstallForm({ pgToolsAvailable }: AdminInstallFormProps) {
   const navigation = useNavigation()
   const isSubmitting = navigation.state === 'submitting' && navigation.formMethod === 'POST'
   const [showPassword, setShowPassword] = useState(false)
@@ -105,9 +104,6 @@ export function AdminInstallForm({ pgToolsAvailable, setupToken }: AdminInstallF
       const form = e.currentTarget
       const formData = new FormData(form)
       const headers: Record<string, string> = {}
-      if (setupToken) {
-        headers['x-setup-token'] = setupToken
-      }
       if (csrfToken) {
         headers['x-csrf-token'] = csrfToken
       }
@@ -205,6 +201,7 @@ export function AdminInstallForm({ pgToolsAvailable, setupToken }: AdminInstallF
 
       {mode === 'install' ? (
         <Form method="post" id="adminInstallForm" className="flex w-full flex-col gap-6">
+          <input type="hidden" name="intent" value="install" />
           {csrfToken ? <input type="hidden" name="csrf_token" value={csrfToken} /> : null}
           <div className="flex w-full flex-col gap-2">
             <Label htmlFor="install-title" className="font-semibold text-(--text-admin-base)">

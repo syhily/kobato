@@ -15,6 +15,10 @@
   "[javascriptreact]": { "editor.defaultFormatter": "oxc.oxc-vscode" },
   "[typescript]": { "editor.defaultFormatter": "oxc.oxc-vscode" },
   "[typescriptreact]": { "editor.defaultFormatter": "oxc.oxc-vscode" },
+  "[markdown]": {
+    "editor.formatOnSave": true,
+    "editor.formatOnPaste": true
+  },
   "oxc.disableNestedConfig": true,
   "oxc.requireConfig": true,
   "oxc.tsConfigPath": "${workspaceRoot}/tsconfig.json",
@@ -24,6 +28,7 @@
   "editor.formatOnSave": true,
   "editor.formatOnSaveMode": "file",
   "editor.codeActionsOnSave": {
+    "source.fixAll.markdownlint": "explicit",
     "source.format.oxc": "always",
     "source.fixAll.oxc": "always"
   },
