@@ -4,7 +4,7 @@ import type { PostMetaRow } from '@/server/infra/db/types'
 import type { ClientPost } from '@/shared/types/catalog'
 
 import { post as postMetaTable } from '@/server/infra/db/schema/post'
-import { escapeLikePattern } from '@/shared/utils/escape-like'
+import { ilikeEscape } from '@/shared/utils/escape-like'
 import { readStringArray } from '@/shared/utils/tools'
 
 export type PostMetaWithAuthor = PostMetaRow & { authorName: string | null }
@@ -58,8 +58,13 @@ export function buildPostsWhere(filters: ListPostsFilters): SQL | undefined {
     conditions.push(isNull(postMetaTable.deletedAt))
   }
   if (filters.q && filters.q.trim() !== '') {
-    const pattern = `%${escapeLikePattern(filters.q.trim())}%`
-    conditions.push(sql`(${postMetaTable.slug} ILIKE ${pattern} OR ${postMetaTable.title} ILIKE ${pattern})`)
+    const search = or(
+      ilikeEscape(postMetaTable.slug, filters.q.trim()),
+      ilikeEscape(postMetaTable.title, filters.q.trim()),
+    )
+    if (search) {
+      conditions.push(search)
+    }
   }
   if (filters.category) {
     conditions.push(eq(postMetaTable.category, filters.category))

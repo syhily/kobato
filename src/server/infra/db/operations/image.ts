@@ -1,12 +1,12 @@
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
-import { and, count, desc, eq, ilike, inArray, isNull, like, or, type SQL, sql } from 'drizzle-orm'
+import { and, count, desc, eq, inArray, isNull, like, or, type SQL, sql } from 'drizzle-orm'
 
 import type { ImageRow, NewImage } from '@/server/infra/db/types'
 
 import { image } from '@/server/infra/db/schema/media'
 import { user } from '@/server/infra/db/schema/user'
-import { escapeLikePattern } from '@/shared/utils/escape-like'
+import { ilikeEscape } from '@/shared/utils/escape-like'
 
 export interface AdminImagesListFilters {
   q?: string
@@ -63,8 +63,8 @@ function buildAdminImageWhere(filters: AdminImagesListFilters): SQL | undefined 
   }
 
   if (filters.q && filters.q.trim() !== '') {
-    const pattern = `%${escapeLikePattern(filters.q.trim())}%`
-    const search = or(ilike(image.storagePath, pattern), ilike(image.note, pattern))
+    const q = filters.q.trim()
+    const search = or(ilikeEscape(image.storagePath, q), ilikeEscape(image.note, q))
     if (search) {
       conditions.push(search)
     }

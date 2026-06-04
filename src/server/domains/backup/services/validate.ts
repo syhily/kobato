@@ -9,6 +9,10 @@ const BLOCKED_PATTERNS = [
   /\bALTER\s+(?:\/\*[^]*?\*\/\s*)*SYSTEM\b/i,
   /\bCOPY\b[^\n;]*?\bTO\b[^\n;]*?\bPROGRAM\b/i,
   /\bCREATE\s+(?:\/\*[^]*?\*\/\s*)*DATABASE\b/i,
+  /\bCREATE\s+(?:\/\*[^]*?\*\/\s*)*FUNCTION\b/i,
+  /\bCREATE\s+(?:\/\*[^]*?\*\/\s*)*PROCEDURE\b/i,
+  /\bCREATE\s+(?:\/\*[^]*?\*\/\s*)*EXTENSION\b/i,
+  /\bLANGUAGE\s+(?:\/\*[^]*?\*\/\s*)*(plpython3u|plperlu|pltclu|plsh|plc|pljava|plr)\b/i,
   /\bDO\s*\$\$/i,
   /\\!/i,
   /\\i\b/i,
@@ -42,12 +46,6 @@ const ALLOWED_PREFIXES = [
   'SAVEPOINT',
   'RELEASE',
   'TRUNCATE',
-  'ANALYZE',
-  'VACUUM',
-  'LOCK',
-  'UNLISTEN',
-  'LISTEN',
-  'NOTIFY',
 ]
 
 const ALLOWED_PREFIX_RE = new RegExp(

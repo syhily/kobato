@@ -92,6 +92,7 @@ iconfont
 idat
 iend
 ihdr
+ilike
 initdb
 inlines
 inspectable
@@ -203,6 +204,11 @@ pilgi
 plaiceholder
 playform
 playpause
+pljava
+plperlu
+plpython
+plsh
+pltclu
 portabletext
 prerender
 procfile

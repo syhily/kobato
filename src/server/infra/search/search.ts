@@ -1,6 +1,6 @@
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
-import { and, cosineDistance, desc, eq, gt, ilike, isNull, or, sql } from 'drizzle-orm'
+import { and, cosineDistance, desc, eq, gt, isNull, or, sql } from 'drizzle-orm'
 import { createHash } from 'node:crypto'
 
 import { postSearchIndex } from '@/server/infra/db/schema/content'
@@ -10,6 +10,7 @@ import { storage } from '@/server/infra/redis/storage'
 import { generateEmbedding } from '@/server/infra/search/openai'
 import { getBlogSettingsBundleSync } from '@/shared/config/getters'
 import { CACHE_BUCKET_FALLBACKS } from '@/shared/types/cache'
+import { ilikeEscape } from '@/shared/utils/escape-like'
 
 const DEFAULT_SEARCH_SETTINGS = {
   enabled: false,
@@ -96,14 +97,13 @@ async function executeSearch(
   query: string,
 ): Promise<string[]> {
   const trimmed = query.trim()
-  const pattern = `%${trimmed.replace(/[%_]/g, '\\$&')}%`
   const baseWhere = and(isNull(post.deletedAt), eq(post.published, true))
   const likeWhere = and(
     baseWhere,
     or(
-      ilike(post.title, pattern),
-      ilike(post.summary, pattern),
-      ilike(sql`COALESCE(${postSearchIndex.plainText}, '')`, pattern),
+      ilikeEscape(post.title, trimmed),
+      ilikeEscape(post.summary, trimmed),
+      ilikeEscape(sql`COALESCE(${postSearchIndex.plainText}, '')`, trimmed),
     ),
   )
 

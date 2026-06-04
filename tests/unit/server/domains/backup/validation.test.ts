@@ -63,4 +63,39 @@ describe('backup validation', () => {
     const sql = `-- PostgreSQL database dump\ndrop database kobato;\nCREATE TABLE users (id serial PRIMARY KEY);`
     expect(() => validateBackupSql(sql)).toThrow(ActionFailure)
   })
+
+  it('rejects CREATE FUNCTION', () => {
+    const sql = `-- PostgreSQL database dump\nCREATE FUNCTION evil() RETURNS void AS $$ BEGIN PERFORM pg_read_file('/etc/passwd'); END; $$ LANGUAGE plpgsql;\nCREATE TABLE users (id serial PRIMARY KEY);`
+    expect(() => validateBackupSql(sql)).toThrow(ActionFailure)
+  })
+
+  it('rejects CREATE PROCEDURE', () => {
+    const sql = `-- PostgreSQL database dump\nCREATE PROCEDURE evil() AS $$ BEGIN PERFORM pg_read_file('/etc/passwd'); END; $$ LANGUAGE plpgsql;\nCREATE TABLE users (id serial PRIMARY KEY);`
+    expect(() => validateBackupSql(sql)).toThrow(ActionFailure)
+  })
+
+  it('rejects CREATE EXTENSION', () => {
+    const sql = `-- PostgreSQL database dump\nCREATE EXTENSION IF NOT EXISTS file_fdw;\nCREATE TABLE users (id serial PRIMARY KEY);`
+    expect(() => validateBackupSql(sql)).toThrow(ActionFailure)
+  })
+
+  it('rejects LANGUAGE plpython3u', () => {
+    const sql = `-- PostgreSQL database dump\nCREATE FUNCTION evil() RETURNS void AS $$ import os $$ LANGUAGE plpython3u;\nCREATE TABLE users (id serial PRIMARY KEY);`
+    expect(() => validateBackupSql(sql)).toThrow(ActionFailure)
+  })
+
+  it('rejects LANGUAGE plperlu', () => {
+    const sql = `-- PostgreSQL database dump\nCREATE FUNCTION evil() RETURNS void AS $$ system("id") $$ LANGUAGE plperlu;\nCREATE TABLE users (id serial PRIMARY KEY);`
+    expect(() => validateBackupSql(sql)).toThrow(ActionFailure)
+  })
+
+  it('rejects disallowed statement prefixes like VACUUM', () => {
+    const sql = `-- PostgreSQL database dump\nVACUUM ANALYZE users;\nCREATE TABLE users (id serial PRIMARY KEY);`
+    expect(() => validateBackupSql(sql)).toThrow(ActionFailure)
+  })
+
+  it('rejects disallowed statement prefixes like NOTIFY', () => {
+    const sql = `-- PostgreSQL database dump\nNOTIFY channel, 'payload';\nCREATE TABLE users (id serial PRIMARY KEY);`
+    expect(() => validateBackupSql(sql)).toThrow(ActionFailure)
+  })
 })

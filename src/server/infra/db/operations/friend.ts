@@ -1,11 +1,11 @@
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
-import { and, count, desc, eq, ilike, or, type SQL } from 'drizzle-orm'
+import { and, count, desc, eq, or, type SQL } from 'drizzle-orm'
 
 import type { FriendRow, NewFriend } from '@/server/infra/db/types'
 
 import { friend } from '@/server/infra/db/schema/friend'
-import { escapeLikePattern } from '@/shared/utils/escape-like'
+import { ilikeEscape } from '@/shared/utils/escape-like'
 
 // Stable ascending id ordering for the public catalog. Output is fed
 // into `hydrateImages()` and the MDX `<Friends />` shuffle, so the
@@ -37,11 +37,11 @@ function buildAdminFriendWhere(filters: AdminFriendsListFilters): SQL | undefine
     conditions.push(eq(friend.visible, true))
   }
   if (filters.q && filters.q.trim() !== '') {
-    const pattern = `%${escapeLikePattern(filters.q.trim())}%`
+    const q = filters.q.trim()
     const search = or(
-      ilike(friend.website, pattern),
-      ilike(friend.description, pattern),
-      ilike(friend.homepage, pattern),
+      ilikeEscape(friend.website, q),
+      ilikeEscape(friend.description, q),
+      ilikeEscape(friend.homepage, q),
     )
     if (search) {
       conditions.push(search)

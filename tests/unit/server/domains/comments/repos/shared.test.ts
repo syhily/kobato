@@ -35,7 +35,8 @@ describe('buildAdminListConditions — text filter', () => {
     const conditions = buildAdminListConditions({ q: 'foo' })
     expect(conditions).toHaveLength(2)
     const { sql, params } = render(conditions[1]!)
-    expect(sql).toMatch(/\bcontent\b.*\bilike\b/)
+    expect(sql).toMatch(/\bcontent\b.*\bilike\b/i)
+    expect(sql).toMatch(/escape\s+'\\'/i)
     expect(sql).not.toMatch(/\bNOT\b/i)
     expect(params).toEqual(['%foo%'])
   })
@@ -44,7 +45,8 @@ describe('buildAdminListConditions — text filter', () => {
     const conditions = buildAdminListConditions({ q: 'foo', match: 'contains' })
     expect(conditions).toHaveLength(2)
     const { sql, params } = render(conditions[1]!)
-    expect(sql).toMatch(/\bcontent\b.*\bilike\b/)
+    expect(sql).toMatch(/\bcontent\b.*\bilike\b/i)
+    expect(sql).toMatch(/escape\s+'\\'/i)
     expect(sql).not.toMatch(/\bNOT\b/i)
     expect(params).toEqual(['%foo%'])
   })
@@ -54,7 +56,8 @@ describe('buildAdminListConditions — text filter', () => {
     expect(conditions).toHaveLength(2)
     const { sql, params } = render(conditions[1]!)
     expect(sql).toMatch(/\bNOT\b/i)
-    expect(sql).toMatch(/\bcontent\b.*\bilike\b/)
+    expect(sql).toMatch(/\bcontent\b.*\bilike\b/i)
+    expect(sql).toMatch(/escape\s+'\\'/i)
     expect(params).toEqual(['%spam%'])
   })
 
@@ -65,6 +68,14 @@ describe('buildAdminListConditions — text filter', () => {
     // The `%` from the user should be backslash-escaped; the wrapping
     // wildcards are added by the repo, not interpolated from input.
     expect(params).toEqual(['%50\\%%'])
+  })
+
+  it('escapes the backslash itself so searching for a literal backslash works', () => {
+    const conditions = buildAdminListConditions({ q: 'C:\\Users' })
+    expect(conditions).toHaveLength(2)
+    const { params } = render(conditions[1]!)
+    // Backslashes are doubled so PostgreSQL treats them as literal.
+    expect(params).toEqual(['%C:\\\\Users%'])
   })
 })
 

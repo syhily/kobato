@@ -16,11 +16,21 @@ import {
 
 const log = getLogger('backup.service')
 
+const TIMESTAMP_RE = /^\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}$/
+
+export function isValidBackupKey(key: string): boolean {
+  return TIMESTAMP_RE.test(key)
+}
+
+export function buildBackupS3Key(timestamp: string): string {
+  return `backup/backup-${timestamp}.sql.gz`
+}
+
 export async function createBackup(): Promise<{ fileName: string; size: number }> {
   await ensurePgTools()
   const { args: connArgs, env } = getPgConnectionOptions()
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19)
-  const key = `backup/backup-${timestamp}.sql.gz`
+  const key = buildBackupS3Key(timestamp)
 
   log.info('Starting backup', { key })
 
@@ -64,9 +74,14 @@ export async function listBackups(
     const { objects, nextContinuationToken } = await listS3ObjectsPaginated('backup/', limit, continuationToken)
     const files = objects
       .filter((o) => o.key.endsWith('.sql.gz'))
+      .map((o) => {
+        const timestamp = o.key.replace(/^backup\/backup-/, '').replace(/\.sql\.gz$/, '')
+        return { timestamp, fileName: o.key.split('/').pop()!, size: o.size, lastModified: o.lastModified }
+      })
+      .filter((o) => isValidBackupKey(o.timestamp))
       .map((o) => ({
-        key: o.key,
-        fileName: o.key.split('/').pop()!,
+        key: o.timestamp,
+        fileName: o.fileName,
         size: o.size,
         lastModified: o.lastModified.toISOString(),
       }))

@@ -1,6 +1,6 @@
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
-import { and, desc, eq, getColumns, isNotNull, isNull, sql, type SQL } from 'drizzle-orm'
+import { and, desc, eq, getColumns, isNotNull, isNull, or, sql, type SQL } from 'drizzle-orm'
 
 import type { CmsPage } from '@/server/domains/pages/projection'
 import type { NewPageMeta, PageMetaRow } from '@/server/infra/db/types'
@@ -12,7 +12,7 @@ import { hydrateImageRefs } from '@/server/domains/images/services/enhance'
 import { toCmsPage } from '@/server/domains/pages/projection'
 import { page as pageMetaTable } from '@/server/infra/db/schema/page'
 import { user } from '@/server/infra/db/schema/user'
-import { escapeLikePattern } from '@/shared/utils/escape-like'
+import { ilikeEscape } from '@/shared/utils/escape-like'
 
 export {
   findContentById,
@@ -65,8 +65,13 @@ function buildPagesWhere(filters: ListPagesFilters): SQL | undefined {
     conditions.push(eq(pageMetaTable.authorId, filters.authorId))
   }
   if (filters.q && filters.q.trim() !== '') {
-    const pattern = `%${escapeLikePattern(filters.q.trim())}%`
-    conditions.push(sql`(${pageMetaTable.slug} ILIKE ${pattern} OR ${pageMetaTable.title} ILIKE ${pattern})`)
+    const search = or(
+      ilikeEscape(pageMetaTable.slug, filters.q.trim()),
+      ilikeEscape(pageMetaTable.title, filters.q.trim()),
+    )
+    if (search) {
+      conditions.push(search)
+    }
   }
   if (conditions.length === 0) {
     return undefined

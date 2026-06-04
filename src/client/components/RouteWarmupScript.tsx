@@ -1,8 +1,9 @@
 interface RouteWarmupScriptProps {
   chunks: string[]
+  nonce?: string
 }
 
-export function RouteWarmupScript({ chunks }: RouteWarmupScriptProps) {
+export function RouteWarmupScript({ chunks, nonce }: RouteWarmupScriptProps) {
   if (import.meta.env.DEV) {
     return null
   }
@@ -10,7 +11,7 @@ export function RouteWarmupScript({ chunks }: RouteWarmupScriptProps) {
     return null
   }
 
-  return <script dangerouslySetInnerHTML={{ __html: buildIdleWarmupScript(chunks) }} />
+  return <script nonce={nonce} dangerouslySetInnerHTML={{ __html: buildIdleWarmupScript(chunks) }} />
 }
 
 function buildIdleWarmupScript(chunks: string[]): string {

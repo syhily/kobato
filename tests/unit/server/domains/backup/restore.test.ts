@@ -5,6 +5,7 @@ import {
   extractBackupSql,
   readTimescaleVersionFromDump,
   TIMESCALEDB_VERSION_RE,
+  validateSemverForSql,
 } from '@/server/domains/backup/services/restore'
 import { validateBackupSql } from '@/server/domains/backup/services/validate'
 import { ActionFailure } from '@/server/infra/http/errors'
@@ -110,6 +111,33 @@ describe('services/backup — readTimescaleVersionFromDump', () => {
     const sql =
       'COPY _timescaledb_catalog.metadata (key, value) FROM stdin;\n' + 'timescaledb_version\t2.11.202\n' + '\x5C.'
     expect(readTimescaleVersionFromDump(sql)).toBe('2.11.202')
+  })
+})
+
+describe('services/backup — validateSemverForSql', () => {
+  it('accepts clean three-part numeric versions', () => {
+    expect(validateSemverForSql('2.11.2')).toBe(true)
+    expect(validateSemverForSql('1.0.0')).toBe(true)
+    expect(validateSemverForSql('10.20.30')).toBe(true)
+  })
+
+  it('rejects versions with extra segments', () => {
+    expect(validateSemverForSql('2.11.2.1')).toBe(false)
+  })
+
+  it('rejects versions with non-numeric components', () => {
+    expect(validateSemverForSql('2.11.x')).toBe(false)
+    expect(validateSemverForSql('v2.11.2')).toBe(false)
+  })
+
+  it('rejects command injection payloads', () => {
+    expect(validateSemverForSql("2.11.2'; DROP TABLE users; --")).toBe(false)
+    expect(validateSemverForSql('2.11.2\n')).toBe(false)
+    expect(validateSemverForSql('2.11.2\t')).toBe(false)
+  })
+
+  it('rejects empty string', () => {
+    expect(validateSemverForSql('')).toBe(false)
   })
 })
 

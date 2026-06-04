@@ -1,6 +1,6 @@
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
-import { and, count, desc, eq, ilike, inArray, isNotNull, isNull, sql } from 'drizzle-orm'
+import { and, count, desc, eq, inArray, isNotNull, isNull, sql } from 'drizzle-orm'
 
 import type { EntityType } from '@/server/infra/db/target'
 
@@ -23,7 +23,7 @@ import {
 import { comment } from '@/server/infra/db/schema/comment'
 import { metric } from '@/server/infra/db/schema/metric'
 import { user } from '@/server/infra/db/schema/user'
-import { escapeLikePattern } from '@/shared/utils/escape-like'
+import { ilikeEscape } from '@/shared/utils/escape-like'
 
 export async function findCommentWithUserAndTarget(db: NodePgDatabase, id: bigint) {
   const entity = targetSlugTitleSubquery(db)
@@ -56,7 +56,7 @@ export async function searchPages(
   if (publicIds && publicIds.length > 0) {
     conditions.push(inArray(metric.publicId, publicIds))
   } else if (q) {
-    conditions.push(ilike(entity.title, `%${escapeLikePattern(q)}%`))
+    conditions.push(ilikeEscape(entity.title, q))
   }
   const rows = await db
     .select({ key: metric.publicId, title: entity.title })
@@ -79,7 +79,7 @@ export async function searchCommentAuthors(
   if (ids && ids.length > 0) {
     conditions.push(inArray(user.id, ids))
   } else if (q) {
-    conditions.push(ilike(user.name, `%${escapeLikePattern(q)}%`))
+    conditions.push(ilikeEscape(user.name, q))
   }
   return db
     .selectDistinct({ id: user.id, name: user.name })

@@ -1,9 +1,6 @@
 import { randomBytes, timingSafeEqual } from 'node:crypto'
 
-import { getLogger } from '@/server/infra/logger'
 import { redisInstance } from '@/server/infra/redis/storage'
-
-const log = getLogger('auth.setup-token')
 
 const REDIS_KEY = 'setup_token'
 const TTL_SECONDS = 7 * 24 * 60 * 60 // 7 days
@@ -18,6 +15,11 @@ let tokenInvalidated = false
  * the initial setup-restore endpoint. The token is stored in Redis so
  * multi-instance deployments share it; it is valid only until the first
  * admin is created.
+ *
+ * Security note: the full token is NEVER written to structured logs.
+ * Only a SHA-256 hash prefix is logged for troubleshooting; the actual
+ * token is returned to the caller (install wizard) so it can be shown
+ * in the UI or TTY console without entering the logging pipeline.
  */
 export async function getSetupToken(): Promise<string> {
   if (tokenInvalidated) {
@@ -30,10 +32,17 @@ export async function getSetupToken(): Promise<string> {
   }
   const token = randomBytes(32).toString('hex')
   await redis.set(REDIS_KEY, token, 'EX', TTL_SECONDS)
-  log.info('╔══════════════════════════════════════════════════════════════════╗')
-  log.info('║  Setup token generated (valid until first admin is created):     ║')
-  log.info(`║  ${token}  ║`)
-  log.info('╚══════════════════════════════════════════════════════════════════╝')
+  // Print the full token to stdout (not structured logs) so operators
+  // can read it from the terminal or `docker logs` while the SHA-256
+  // hash above is the only value that enters the logging pipeline.
+  // eslint-disable-next-line no-console
+  console.log('╔══════════════════════════════════════════════════════════════════╗')
+  // eslint-disable-next-line no-console
+  console.log('║  Setup token generated (valid until first admin is created):     ║')
+  // eslint-disable-next-line no-console
+  console.log(`║  ${token}  ║`)
+  // eslint-disable-next-line no-console
+  console.log('╚══════════════════════════════════════════════════════════════════╝')
   return token
 }
 

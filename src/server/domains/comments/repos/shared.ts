@@ -1,6 +1,6 @@
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
-import { and, eq, gte, ilike, isNotNull, isNull, lte, not, or, sql } from 'drizzle-orm'
+import { and, eq, gte, isNotNull, isNull, lte, not, or, sql } from 'drizzle-orm'
 
 import type { EntityTarget, EntityType } from '@/server/infra/db/target'
 import type { MyCommentsStatus } from '@/shared/types/comments'
@@ -11,7 +11,7 @@ import { comment } from '@/server/infra/db/schema/comment'
 import { page } from '@/server/infra/db/schema/page'
 import { post } from '@/server/infra/db/schema/post'
 import { user } from '@/server/infra/db/schema/user'
-import { escapeLikePattern } from '@/shared/utils/escape-like'
+import { ilikeEscape } from '@/shared/utils/escape-like'
 
 // Common projection: every comment column we expose to the application,
 // joined with the public user attributes. Keep the shape stable here so the
@@ -136,11 +136,11 @@ export function buildAdminListConditions(filters: AdminListFilters) {
     conditions.push(eq(comment.isPending, false))
   }
   if (filters.q && filters.q.trim() !== '') {
-    const pattern = `%${escapeLikePattern(filters.q.trim())}%`
+    const q = filters.q.trim()
     if (filters.match === 'does-not-contain') {
-      conditions.push(not(ilike(comment.content, pattern)))
+      conditions.push(not(ilikeEscape(comment.content, q)))
     } else {
-      conditions.push(ilike(comment.content, pattern))
+      conditions.push(ilikeEscape(comment.content, q))
     }
   }
   if (filters.createdAfter) {
@@ -248,7 +248,7 @@ export function mineWhere(userId: bigint, filters: MyCommentsFilters = {}) {
     // bounded by the soft-delete window, so a sequential filter is
     // acceptable here. Uses the typed `ilike` builder to match the
     // style of `buildAdminListConditions`.
-    clauses.push(ilike(comment.content, `%${escapeLikePattern(filters.q.trim())}%`))
+    clauses.push(ilikeEscape(comment.content, filters.q.trim()))
   }
   return and(...clauses)
 }

@@ -14,6 +14,7 @@ type BaseEnv = {
     viewer: ViewerContext | null
     db: NodePgDatabase
     pool: Pool
+    cspNonce: string
   }
 }
 

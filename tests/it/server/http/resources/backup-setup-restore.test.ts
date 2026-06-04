@@ -24,10 +24,14 @@ vi.mock('@/server/domains/auth/setup-token', () => ({
   isSetupTokenActive: (...args: unknown[]) => mockIsSetupTokenActive(...args),
 }))
 
-vi.mock('@/server/domains/auth/csrf', () => ({
-  validateCsrfToken: (...args: unknown[]) => mockValidateCsrfToken(...args),
-  CSRF_HEADER: 'x-csrf-token',
-}))
+vi.mock('@/server/domains/auth/csrf', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/server/domains/auth/csrf')>()
+  return {
+    ...actual,
+    validateCsrfToken: (...args: unknown[]) => mockValidateCsrfToken(...args),
+    CSRF_HEADER: 'x-csrf-token',
+  }
+})
 
 vi.mock('@/server/http/middlewares/rate-limit', () => ({
   rateLimitByIp: vi.fn(() => async (_c: unknown, next: () => unknown) => next()),
@@ -79,6 +83,80 @@ async function buildApp(session: ReturnType<typeof makeSession>) {
   app.route('/', backupRouter)
   return app
 }
+
+describe('/api/admin/backup/upload-restore', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    mockValidateCsrfToken.mockReturnValue(true)
+    mockExtractBackupSql.mockResolvedValue('CREATE TABLE test (id INT);')
+    mockPerformSafeRestore.mockImplementation(async (_ctx: unknown, fn: () => Promise<void>) => {
+      await fn()
+    })
+  })
+
+  it('returns 403 when CSRF token is missing or invalid', async () => {
+    mockValidateCsrfToken.mockReturnValue(false)
+    const { backupRouter } = await import('@/server/http/resources/backup')
+    const app = new Hono<Env>()
+    app.use('*', async (c, next) => {
+      c.set(
+        'session',
+        makeSession({
+          csrfToken: 'valid-csrf',
+          user: { id: '1', name: 'Admin', email: 'admin@test.com', website: null, role: 'admin' },
+        }) as unknown as Env['Variables']['session'],
+      )
+      c.set('clientAddress', '127.0.0.1')
+      c.set('db', {} as Env['Variables']['db'])
+      c.set('pool', {} as Env['Variables']['pool'])
+      await next()
+    })
+    app.route('/', backupRouter)
+
+    const formData = new FormData()
+    formData.set('file', new File(['content'], 'test.sql'))
+
+    const res = await app.request('/api/admin/backup/upload-restore', {
+      method: 'POST',
+      body: formData,
+      headers: { 'x-csrf-token': 'invalid-csrf' },
+    })
+
+    expect(res.status).toBe(403)
+  })
+
+  it('accepts upload when CSRF token is valid', async () => {
+    const { backupRouter } = await import('@/server/http/resources/backup')
+    const app = new Hono<Env>()
+    app.use('*', async (c, next) => {
+      c.set(
+        'session',
+        makeSession({
+          csrfToken: 'valid-csrf',
+          user: { id: '1', name: 'Admin', email: 'admin@test.com', website: null, role: 'admin' },
+        }) as unknown as Env['Variables']['session'],
+      )
+      c.set('clientAddress', '127.0.0.1')
+      c.set('db', {} as Env['Variables']['db'])
+      c.set('pool', {} as Env['Variables']['pool'])
+      await next()
+    })
+    app.route('/', backupRouter)
+
+    const formData = new FormData()
+    formData.set('file', new File(['content'], 'test.sql'))
+
+    const res = await app.request('/api/admin/backup/upload-restore', {
+      method: 'POST',
+      body: formData,
+      headers: { 'x-csrf-token': 'valid-csrf' },
+    })
+
+    expect(res.status).toBe(200)
+    const body = (await res.json()) as { accepted: boolean }
+    expect(body.accepted).toBe(true)
+  })
+})
 
 describe('/api/setup/restore', () => {
   beforeEach(() => {

@@ -19,6 +19,7 @@ export const sessionContext = createContext<SessionContext>()
 export const requestContext = createContext<RequestContextValue>()
 export const dbContext = createContext<NodePgDatabase>()
 export const poolContext = createContext<Pool>()
+export const cspNonceContext = createContext<string>()
 
 export function tryGetSessionContext(context: Readonly<RouterContextProvider> | undefined): SessionContext | undefined {
   if (context === undefined) {

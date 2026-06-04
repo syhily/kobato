@@ -4,17 +4,22 @@ import { describe, expect, it, vi } from 'vitest'
 import type { BlogSettingsBundle } from '@/shared/config/types'
 
 import { makeAuthedCtx } from '#/_helpers/mock-ctx'
+import { ActionFailure } from '@/server/infra/http/errors'
 
 vi.mock('@/server/domains/backup/services/shared', () => ({
   checkPgToolsAvailable: vi.fn(),
 }))
 
-vi.mock('@/server/domains/backup/services/backup', () => ({
-  createBackup: vi.fn(),
-  deleteBackup: vi.fn(),
-  getBackupBuffer: vi.fn(),
-  listBackups: vi.fn(),
-}))
+vi.mock('@/server/domains/backup/services/backup', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/server/domains/backup/services/backup')>()
+  return {
+    ...actual,
+    createBackup: vi.fn(),
+    deleteBackup: vi.fn(),
+    getBackupBuffer: vi.fn(),
+    listBackups: vi.fn(),
+  }
+})
 
 vi.mock('@/server/domains/backup/services/restore', () => ({
   restoreFromBackup: vi.fn(),
@@ -57,8 +62,8 @@ describe('adminBackupRouter.list', () => {
   it('returns files array', async () => {
     const files = [
       {
-        key: 'backup/2026-01-01.sql.gz',
-        fileName: '2026-01-01.sql.gz',
+        key: '2026-01-01T00-00-00',
+        fileName: 'backup-2026-01-01T00-00-00.sql.gz',
         size: 1024,
         lastModified: '2026-01-01T00:00:00.000Z',
       },
@@ -67,7 +72,7 @@ describe('adminBackupRouter.list', () => {
     const ctx = makeAuthedCtx()
     const res = await call(adminBackupRouter.list, undefined, { context: ctx })
     expect(res.files).toHaveLength(1)
-    expect(res.files[0].fileName).toBe('2026-01-01.sql.gz')
+    expect(res.files[0].fileName).toBe('backup-2026-01-01T00-00-00.sql.gz')
     expect(res.nextContinuationToken).toBeUndefined()
   })
 })
@@ -88,8 +93,15 @@ describe('adminBackupRouter.delete', () => {
   it('returns success after deleting backup', async () => {
     vi.mocked(backupService.deleteBackup).mockResolvedValueOnce(undefined)
     const ctx = makeAuthedCtx()
-    const res = await call(adminBackupRouter.delete, { key: 'backup/2026-01-01.sql.gz' }, { context: ctx })
+    const res = await call(adminBackupRouter.delete, { key: '2026-01-01T00-00-00' }, { context: ctx })
     expect(res).toEqual({ success: true })
+  })
+
+  it('rejects invalid key formats', async () => {
+    const ctx = makeAuthedCtx()
+    for (const badKey of ['../etc/passwd', 'backup/../../secret', 'backup/x.sql.gz', '', 'abc']) {
+      await expect(call(adminBackupRouter.delete, { key: badKey }, { context: ctx })).rejects.toThrow(ActionFailure)
+    }
   })
 })
 
@@ -98,11 +110,18 @@ describe('adminBackupRouter.restore', () => {
     const buffer = Buffer.from('sql')
     vi.mocked(backupService.getBackupBuffer).mockResolvedValueOnce(buffer)
     const ctx = makeAuthedCtx()
-    const res = await call(adminBackupRouter.restore, { key: 'backup/2026-01-01.sql.gz' }, { context: ctx })
+    const res = await call(adminBackupRouter.restore, { key: '2026-01-01T00-00-00' }, { context: ctx })
     expect(res).toEqual({ accepted: true })
     expect(orchestrator.performSafeRestore).toHaveBeenCalledWith(
       { pool: ctx.pool, log: expect.any(Object) },
       expect.any(Function),
     )
+  })
+
+  it('rejects invalid key formats', async () => {
+    const ctx = makeAuthedCtx()
+    for (const badKey of ['../etc/passwd', 'backup/../../secret', 'backup/x.sql.gz', '']) {
+      await expect(call(adminBackupRouter.restore, { key: badKey }, { context: ctx })).rejects.toThrow(ActionFailure)
+    }
   })
 })

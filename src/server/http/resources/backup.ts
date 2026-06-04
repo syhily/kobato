@@ -7,11 +7,12 @@ import { recordAuditEvent } from '@/server/domains/audit/service'
 import { CSRF_HEADER, validateCsrfToken } from '@/server/domains/auth/csrf'
 import { isSetupTokenActive } from '@/server/domains/auth/setup-token'
 import { performSafeRestore } from '@/server/domains/backup/restore-orchestrator'
-import { getBackupBuffer } from '@/server/domains/backup/services/backup'
+import { buildBackupS3Key, getBackupBuffer, isValidBackupKey } from '@/server/domains/backup/services/backup'
 import { extractBackupSql, restoreFromSql } from '@/server/domains/backup/services/restore'
 import { checkPgToolsAvailable } from '@/server/domains/backup/services/shared'
 import { validateBackupSql } from '@/server/domains/backup/services/validate'
 import { refreshBlogSettings } from '@/server/domains/settings/snapshot'
+import { csrfGuard } from '@/server/http/middlewares/csrf'
 import { requireRoleMw } from '@/server/http/middlewares/hono-rbac'
 import { rateLimitByIp } from '@/server/http/middlewares/rate-limit'
 import { hasAdmin, findFirstAdminUser } from '@/server/infra/db/operations/user'
@@ -37,14 +38,13 @@ export const backupRouter = new Hono<Env>()
     resetRestoreState()
     return c.json(restore)
   })
-  .get('/api/admin/backup/download/:key{.+}', requireRoleMw('admin'), async (c) => {
-    const key = c.req.param('key')
-    // Path-traversal guard: keys must start with the backup prefix.
-    if (!key.startsWith('backup/')) {
-      return c.json({ error: { message: 'Invalid backup key' } }, 400)
+  .get('/api/admin/backup/download/:timestamp{[^/]+}', requireRoleMw('admin'), async (c) => {
+    const timestamp = c.req.param('timestamp')
+    if (!isValidBackupKey(timestamp)) {
+      return c.json({ error: { message: '无效的备份标识。' } }, 400)
     }
-    const buffer = await getBackupBuffer(key)
-    const fileName = key.split('/').pop() ?? 'backup.sql.gz'
+    const buffer = await getBackupBuffer(buildBackupS3Key(timestamp))
+    const fileName = `backup-${timestamp}.sql.gz`
     c.header('Content-Type', 'application/gzip')
     c.header('Content-Disposition', `attachment; filename="${fileName}"`)
     return c.body(new Uint8Array(buffer))
@@ -52,6 +52,7 @@ export const backupRouter = new Hono<Env>()
   .post(
     '/api/admin/backup/upload-restore',
     requireRoleMw('admin'),
+    csrfGuard,
     bodyLimit({
       maxSize: 500 * 1024 * 1024, // 500 MB
       onError: (c) => c.json({ error: { message: '上传文件过大' } }, 413),

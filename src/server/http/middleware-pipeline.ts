@@ -4,12 +4,13 @@ import { pinoLogger } from 'hono-pino'
 import { compress } from 'hono/compress'
 import { requestId } from 'hono/request-id'
 import { secureHeaders } from 'hono/secure-headers'
+import { randomBytes } from 'node:crypto'
 import { RouterContextProvider } from 'react-router'
 
 import type { Env } from '@/server/http/context'
 
 import { getDb, getPool } from '@/server/bootstrap/db-lifecycle'
-import { dbContext, poolContext, requestContext, sessionContext } from '@/server/domains/auth/context'
+import { cspNonceContext, dbContext, poolContext, requestContext, sessionContext } from '@/server/domains/auth/context'
 import { hydrateBlogSettings } from '@/server/domains/settings/snapshot'
 import { createApiApp } from '@/server/http/app'
 import { onErrorHandler } from '@/server/http/errors'
@@ -42,43 +43,42 @@ export function configureMiddleware(app: Hono<Env>): void {
   app.use('*', async (c, next) => {
     c.set('db', getDb())
     c.set('pool', getPool())
+    c.set('cspNonce', randomBytes(16).toString('base64'))
     await next()
   })
 
   app.onError(onErrorHandler)
   app.use(requestId())
   app.use(compress())
-  // Dynamic CSP: extend the static policy with origins from blog settings
-  // (font CSS URLs and asset host) so externally-hosted fonts / images do
-  // not get blocked after an admin configures them.
+  // Dynamic CSP: generates a per-request nonce for script-src and extends
+  // the policy with origins from blog settings (font CSS URLs and asset
+  // host) so externally-hosted fonts / images do not get blocked after an
+  // admin configures them.
   //
   // Registered BEFORE `secureHeaders` so its `next()` returns *after*
   // `secureHeaders` has already set the static CSP header, letting us
-  // overwrite it with the dynamic value.
+  // overwrite it with the dynamic nonce-based value.
   app.use(async (c, next) => {
     await next()
     const bundle = getBlogSettingsBundleSync()
-    if (!bundle) {
-      return
-    }
     const origins = new Set<string>()
-    for (const url of [...(bundle.fonts?.globalCss ?? []), ...(bundle.fonts?.postCss ?? [])]) {
-      try {
-        origins.add(new URL(url).origin)
-      } catch {
-        // Invalid URL — skip.
+    if (bundle) {
+      for (const url of [...(bundle.fonts?.globalCss ?? []), ...(bundle.fonts?.postCss ?? [])]) {
+        try {
+          origins.add(new URL(url).origin)
+        } catch {
+          // Invalid URL — skip.
+        }
+      }
+      if (bundle.assets?.asset?.host) {
+        origins.add(`https://${bundle.assets.asset.host}`)
       }
     }
-    if (bundle.assets?.asset?.host) {
-      origins.add(`https://${bundle.assets.asset.host}`)
-    }
-    if (origins.size === 0) {
-      return
-    }
-    const extra = [...origins].join(' ')
+    const nonce = c.var.cspNonce
+    const extra = origins.size > 0 ? ' ' + [...origins].join(' ') : ''
     const csp = [
       "default-src 'self'",
-      "script-src 'self' 'unsafe-inline'",
+      `script-src 'self' 'nonce-${nonce}'`,
       `style-src 'self' 'unsafe-inline' ${extra}`,
       `font-src 'self' ${extra}`,
       `img-src 'self' data: blob: http://*.music.126.net https://*.music.126.net ${extra}`,
@@ -189,5 +189,6 @@ export async function buildLoadContext(c: { var: Env['Variables']; req: { raw: R
   context.set(requestContext, request)
   context.set(dbContext, db)
   context.set(poolContext, pool)
+  context.set(cspNonceContext, c.var.cspNonce)
   return context
 }

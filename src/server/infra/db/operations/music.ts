@@ -1,12 +1,12 @@
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
-import { and, count, desc, eq, ilike, isNull, or, type SQL } from 'drizzle-orm'
+import { and, count, desc, eq, isNull, or, type SQL } from 'drizzle-orm'
 
 import type { MusicRow, NewMusic } from '@/server/infra/db/types'
 
 import { music } from '@/server/infra/db/schema/media'
 import { user } from '@/server/infra/db/schema/user'
-import { escapeLikePattern } from '@/shared/utils/escape-like'
+import { ilikeEscape } from '@/shared/utils/escape-like'
 
 export interface AdminMusicListFilters {
   q?: string
@@ -53,13 +53,13 @@ function buildAdminMusicWhere(filters: AdminMusicListFilters): SQL | undefined {
   }
 
   if (filters.q && filters.q.trim() !== '') {
-    const pattern = `%${escapeLikePattern(filters.q.trim())}%`
+    const q = filters.q.trim()
     const search = or(
-      ilike(music.name, pattern),
-      ilike(music.artist, pattern),
-      ilike(music.album, pattern),
-      ilike(music.sourceId, pattern),
-      ilike(music.playerId, pattern),
+      ilikeEscape(music.name, q),
+      ilikeEscape(music.artist, q),
+      ilikeEscape(music.album, q),
+      ilikeEscape(music.sourceId, q),
+      ilikeEscape(music.playerId, q),
     )
     if (search) {
       conditions.push(search)

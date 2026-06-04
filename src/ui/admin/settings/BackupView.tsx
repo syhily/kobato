@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { useRouteLoaderData } from 'react-router'
 import { toast } from 'sonner'
 
 import type { BackupSettings } from '@/shared/config/types'
@@ -76,6 +77,9 @@ export function BackupView({ backup, timeZone }: BackupViewProps) {
   const [uploading, setUploading] = useState(false)
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const pollAbortRef = useRef<AbortController | null>(null)
+
+  const rootData = useRouteLoaderData<{ csrfToken?: string }>('root')
+  const csrfToken = rootData?.csrfToken
 
   const [backupFiles, setBackupFiles] = useState<BackupFileDto[]>([])
   const [nextToken, setNextToken] = useState<string | undefined>()
@@ -183,9 +187,14 @@ export function BackupView({ backup, timeZone }: BackupViewProps) {
     try {
       const formData = new FormData()
       formData.append('file', selectedFile)
+      const headers: Record<string, string> = {}
+      if (csrfToken) {
+        headers['x-csrf-token'] = csrfToken
+      }
       const res = await fetch('/api/admin/backup/upload-restore', {
         method: 'POST',
         body: formData,
+        headers,
       })
       const json = (await res.json()) as { accepted?: boolean; error?: { message?: string } }
       if (!res.ok) {
@@ -209,7 +218,7 @@ export function BackupView({ backup, timeZone }: BackupViewProps) {
         fileInputRef.current.value = ''
       }
     }
-  }, [selectedFile])
+  }, [selectedFile, csrfToken])
 
   const canConfigure = s3Enabled && pgToolsAvailable
 

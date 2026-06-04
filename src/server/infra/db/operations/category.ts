@@ -1,11 +1,11 @@
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
-import { and, asc, eq, ilike, inArray, or, sql } from 'drizzle-orm'
+import { and, asc, eq, inArray, or, sql } from 'drizzle-orm'
 
 import type { CategoryRow, NewCategory } from '@/server/infra/db/types'
 
 import { category } from '@/server/infra/db/schema/taxonomy'
-import { escapeLikePattern } from '@/shared/utils/escape-like'
+import { ilikeEscape } from '@/shared/utils/escape-like'
 
 // Public listing reads. Stable `(sort_order ASC, id ASC)` order so the
 // `/categories` listing has a deterministic admin-controlled ranking
@@ -30,9 +30,9 @@ export async function listAdminCategoryRows(
 ): Promise<CategoryRow[]> {
   const conditions = []
   if (filters.q && filters.q.trim() !== '') {
-    const pattern = `%${escapeLikePattern(filters.q.trim())}%`
+    const q = filters.q.trim()
     conditions.push(
-      or(ilike(category.name, pattern), ilike(category.slug, pattern), ilike(category.description, pattern)),
+      or(ilikeEscape(category.name, q), ilikeEscape(category.slug, q), ilikeEscape(category.description, q)),
     )
   }
   const where = conditions.length === 0 ? undefined : conditions.length === 1 ? conditions[0] : and(...conditions)

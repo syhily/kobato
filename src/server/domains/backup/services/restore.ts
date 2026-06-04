@@ -59,6 +59,11 @@ export async function extractBackupSql(buffer: Buffer, fileName: string): Promis
 
 export const TIMESCALEDB_VERSION_RE = /^\d+\.\d+\.\d+$/
 
+export function validateSemverForSql(version: string): boolean {
+  const parts = version.split('.')
+  return parts.length === 3 && parts.every((p) => /^\d+$/.test(p))
+}
+
 export function readTimescaleVersionFromDump(sql: string): string | null {
   const block = /COPY _timescaledb_catalog\.metadata[^\n]*\n([\s\S]*?)^\\\.$/m.exec(sql)
   if (!block) {
@@ -130,6 +135,9 @@ export async function restoreFromSql(db: NodePgDatabase, sql: string): Promise<v
             to: dumpedVersion,
           })
           try {
+            if (!validateSemverForSql(dumpedVersion)) {
+              throw new ActionFailure(400, 'TimescaleDB 版本号格式非法，无法执行扩展升级。')
+            }
             await db.execute(`ALTER EXTENSION timescaledb UPDATE TO '${dumpedVersion}'`)
           } catch (err) {
             log.warn('Failed to upgrade timescaledb extension before post_restore', {

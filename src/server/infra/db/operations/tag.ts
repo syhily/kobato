@@ -1,11 +1,11 @@
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
-import { asc, count, eq, ilike, or, type SQL } from 'drizzle-orm'
+import { asc, count, eq, or, type SQL } from 'drizzle-orm'
 
 import type { NewTag, TagRow } from '@/server/infra/db/types'
 
 import { tag } from '@/server/infra/db/schema/taxonomy'
-import { escapeLikePattern } from '@/shared/utils/escape-like'
+import { ilikeEscape } from '@/shared/utils/escape-like'
 
 export interface AdminTagsListFilters {
   q?: string
@@ -22,8 +22,8 @@ export interface AdminTagsListFilters {
 // returned page (and `hasMore` would lie).
 function buildAdminTagWhere(filters: AdminTagsListFilters): SQL | undefined {
   if (filters.q && filters.q.trim() !== '') {
-    const pattern = `%${escapeLikePattern(filters.q.trim())}%`
-    return or(ilike(tag.name, pattern), ilike(tag.slug, pattern))
+    const q = filters.q.trim()
+    return or(ilikeEscape(tag.name, q), ilikeEscape(tag.slug, q))
   }
   return undefined
 }

@@ -12,7 +12,7 @@ import { page } from '@/server/infra/db/schema/page'
 import { post } from '@/server/infra/db/schema/post'
 import { user } from '@/server/infra/db/schema/user'
 import { getBlogSettingsBundleSync } from '@/shared/config/getters'
-import { escapeLikePattern } from '@/shared/utils/escape-like'
+import { ilikeEscape } from '@/shared/utils/escape-like'
 
 export const PASSWORD_HASH_ROUNDS = 12
 
@@ -273,8 +273,8 @@ function buildAdminUsersConditions(filters: AdminUsersListFilters) {
     conditions.push(or(eq(user.role, 'author'), eq(user.role, 'visitor'), isNull(user.role)))
   }
   if (filters.q && filters.q.trim() !== '') {
-    const like = `%${escapeLikePattern(filters.q.trim())}%`
-    conditions.push(or(sql`${user.name} ILIKE ${like}`, sql`${user.email} ILIKE ${like}`))
+    const q = filters.q.trim()
+    conditions.push(or(ilikeEscape(user.name, q), ilikeEscape(user.email, q)))
   }
   if (filters.hasPosts) {
     conditions.push(sql`EXISTS (SELECT 1 FROM ${post} WHERE ${eq(post.authorId, user.id)})`)

@@ -80,4 +80,20 @@ describe('middleware-pipeline / buildLoadContext', () => {
 
     await expect(buildLoadContext(c)).rejects.toThrow('DB pool exhausted')
   })
+
+  it('threads the CSP nonce into the React Router context', async () => {
+    hydrateMock.mockResolvedValue(undefined)
+    BLOG_SETTINGS_SNAPSHOT_SLOT.write({ siteIdentity: { title: 'Test' } } as any)
+
+    const c = {
+      var: { session: { get: () => undefined }, clientAddress: '127.0.0.1', cspNonce: 'test-nonce-123' },
+      req: { raw: new Request('http://localhost/'), url: 'http://localhost/' },
+    } as any
+
+    await buildLoadContext(c)
+
+    // One of the context.set calls must carry the nonce value.
+    const values = routerContextSetMock.mock.calls.map((call) => call[1])
+    expect(values).toContain('test-nonce-123')
+  })
 })

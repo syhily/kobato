@@ -2,10 +2,18 @@ import { z } from 'zod'
 
 import { recordAuditEvent, recordAuditEventFromContext } from '@/server/domains/audit/service'
 import { performSafeRestore } from '@/server/domains/backup/restore-orchestrator'
-import { createBackup, deleteBackup, getBackupBuffer, listBackups } from '@/server/domains/backup/services/backup'
+import {
+  buildBackupS3Key,
+  createBackup,
+  deleteBackup,
+  getBackupBuffer,
+  isValidBackupKey,
+  listBackups,
+} from '@/server/domains/backup/services/backup'
 import { restoreFromBackup } from '@/server/domains/backup/services/restore'
 import { checkPgToolsAvailable } from '@/server/domains/backup/services/shared'
 import { adminProc } from '@/server/http/orpc-base'
+import { ActionFailure } from '@/server/infra/http/errors'
 import { getLogger } from '@/server/infra/logger'
 import { getBlogSettingsBundleSync } from '@/shared/config/getters'
 
@@ -55,7 +63,10 @@ const delete_ = adminProc
   .input(z.object({ key: z.string() }))
   .output(z.object({ success: z.boolean() }))
   .handler(async ({ input, context }) => {
-    await deleteBackup(input.key)
+    if (!isValidBackupKey(input.key)) {
+      throw new ActionFailure(400, '无效的备份标识。')
+    }
+    await deleteBackup(buildBackupS3Key(input.key))
     recordAuditEventFromContext(context, {
       action: 'backup_deleted',
       resourceType: 'backup',
@@ -69,8 +80,11 @@ const restore = adminProc
   .input(z.object({ key: z.string() }))
   .output(z.object({ accepted: z.boolean() }))
   .handler(async ({ input, context }) => {
+    if (!isValidBackupKey(input.key)) {
+      throw new ActionFailure(400, '无效的备份标识。')
+    }
     const { db, pool } = context
-    const buffer = await getBackupBuffer(input.key)
+    const buffer = await getBackupBuffer(buildBackupS3Key(input.key))
 
     const actorId = context.viewer?.userId
     const actorRole = context.viewer?.role ?? null
