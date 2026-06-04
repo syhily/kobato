@@ -2,18 +2,16 @@
  * Extract the client IP address from a Request, with proxy-aware parsing.
  *
  * Trust model:
- *   - `TRUSTED_PROXY_COUNT` env var controls how many proxy hops are trusted.
- *   - When 0 (default), no forwarding headers are trusted; the direct
- *     connection IP is used.
- *   - When N > 0, the rightmost N entries of `X-Forwarded-For` are trusted.
- *   - `CF-Connecting-IP` and `X-Real-IP` are only trusted when at least one
- *     proxy hop is configured.
+ *   - Proxy headers (X-Forwarded-For, X-Real-IP, CF-Connecting-IP) are
+ *     ONLY trusted when the direct TCP connection comes from localhost
+ *     (127.0.0.1/8 or ::1). This prevents remote clients from spoofing
+ *     their IP without requiring any env configuration.
+ *   - When the direct connection is remote, the direct IP is returned
+ *     verbatim and all forwarding headers are ignored.
  *
  * Falls back to `127.0.0.1` when no proxy headers are present and no
  * direct IP is provided.
  */
-
-import { TRUSTED_PROXY_COUNT } from '@/server/infra/env'
 
 const IPV4_RE = /^(?:(?:25[0-5]|2[0-4]\d|1?\d{1,2})\.){3}(?:25[0-5]|2[0-4]\d|1?\d{1,2})$/
 
@@ -29,12 +27,31 @@ function sanitizeIp(raw: string): string | null {
   return isValidIp(trimmed) ? trimmed : null
 }
 
+function isLoopback(ip: string): boolean {
+  if (ip === '127.0.0.1' || ip === '::1') {
+    return true
+  }
+  if (ip.startsWith('127.') && ip.split('.').length === 4) {
+    return true
+  }
+  if (ip.startsWith('::ffff:127.')) {
+    return true
+  }
+  return false
+}
+
 export function getClientAddress(request: Request, directIp?: string): string {
-  if (TRUSTED_PROXY_COUNT === 0) {
-    return directIp ?? '127.0.0.1'
+  const base = directIp ?? '127.0.0.1'
+
+  // Only trust proxy headers when the direct TCP connection is from
+  // localhost. Any remote client can forge X-Forwarded-For; we ignore
+  // it entirely unless a local reverse proxy (nginx, caddy, etc.) is
+  // sitting in front of the application.
+  if (!isLoopback(base)) {
+    return base
   }
 
-  // 1. Cloudflare-specific header — trusted only when behind proxies.
+  // 1. Cloudflare-specific header — most reliable when behind Cloudflare.
   const cfIp = request.headers.get('cf-connecting-ip')
   if (cfIp) {
     const sanitized = sanitizeIp(cfIp)
@@ -43,7 +60,7 @@ export function getClientAddress(request: Request, directIp?: string): string {
     }
   }
 
-  // 2. Single-hop proxy header — trusted only when behind proxies.
+  // 2. Single-hop proxy header — typically set by nginx/caddy on localhost.
   const realIp = request.headers.get('x-real-ip')
   if (realIp) {
     const sanitized = sanitizeIp(realIp)
@@ -52,12 +69,12 @@ export function getClientAddress(request: Request, directIp?: string): string {
     }
   }
 
-  // 3. Multi-hop proxy chain — trust the rightmost TRUSTED_PROXY_COUNT entries.
+  // 3. Multi-hop proxy chain — the rightmost entry was added by our
+  //    trusted localhost proxy, so it's the most reliable one.
   const forwarded = request.headers.get('x-forwarded-for')
   if (forwarded) {
     const hops = forwarded.split(',').map((h) => h.trim())
-    const start = Math.max(0, hops.length - TRUSTED_PROXY_COUNT)
-    for (let i = start; i < hops.length; i++) {
+    for (let i = hops.length - 1; i >= 0; i--) {
       const sanitized = sanitizeIp(hops[i]!)
       if (sanitized) {
         return sanitized
@@ -65,5 +82,5 @@ export function getClientAddress(request: Request, directIp?: string): string {
     }
   }
 
-  return directIp ?? '127.0.0.1'
+  return base
 }

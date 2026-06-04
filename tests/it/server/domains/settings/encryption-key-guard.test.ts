@@ -31,9 +31,6 @@ vi.mock('@/server/infra/env', () => ({
   get SESSION_SECRET() {
     return 'test-session-secret-must-be-32-chars-long!'
   },
-  get TRUSTED_PROXY_COUNT() {
-    return 0
-  },
   get HOST() {
     return '0.0.0.0'
   },
