@@ -4,7 +4,7 @@ import { and, count, desc, eq, ilike, inArray, isNotNull, isNull, sql } from 'dr
 
 import type { EntityType } from '@/server/infra/db/target'
 
-import { resolveEntitiesForComments } from '@/server/domains/comments/repos/public-query'
+import { resolveEntitiesForComments } from '@/server/domains/comments/repos/public-query/entities'
 import {
   adminPendingWhere,
   buildAdminListConditions,

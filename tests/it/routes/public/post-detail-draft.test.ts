@@ -76,8 +76,10 @@ vi.mock('@/server/domains/posts/repos/single', () => ({
     return null
   }),
 }))
-vi.mock('@/server/domains/posts/repos/public-query', () => ({
+vi.mock('@/server/domains/posts/repos/public-query/featured', () => ({
   selectSidebarPosts: vi.fn(async () => []),
+}))
+vi.mock('@/server/domains/posts/repos/public-query/listing', () => ({
   listPublicPostMetas: vi.fn(async () => []),
 }))
 vi.mock('@/server/domains/taxonomies/tags/service', () => ({

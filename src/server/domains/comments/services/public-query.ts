@@ -10,12 +10,14 @@ import { latestCommentsCache } from '@/server/domains/comments/cache'
 import {
   adminUserIds,
   commentsByIds,
+  latestDistinctCommentIds,
+  pendingComments as pendingCommentsRepo,
+} from '@/server/domains/comments/repos/public-query/admin'
+import {
   countCommentsAndRoots,
   findChildComments,
   findRootComments,
-  latestDistinctCommentIds,
-  pendingComments as pendingCommentsRepo,
-} from '@/server/domains/comments/repos/public-query'
+} from '@/server/domains/comments/repos/public-query/threads'
 import { toLatestComment, ensureCommentPage } from '@/server/domains/comments/services/shared'
 import { getLogger } from '@/server/infra/logger'
 import { requireBlogSettingsSection } from '@/shared/config/getters'

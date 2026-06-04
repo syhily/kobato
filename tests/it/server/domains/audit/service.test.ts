@@ -1,8 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const pushAuditEvent = vi.fn()
-const mockDb = {} as any
-const mockPool = {} as any
 const loggerMock = { error: vi.fn(), warn: vi.fn(), info: vi.fn(), debug: vi.fn() }
 const getLogger = vi.fn(() => loggerMock)
 
@@ -59,16 +57,14 @@ describe('audit/service', () => {
   })
 
   describe('buildAuditContext', () => {
-    it('extracts actor, role, ip and ua from HandlerContext', () => {
+    it('extracts actor, role, ip and ua from AuditContext', () => {
       const context = {
-        db: mockDb,
-        pool: mockPool,
         viewer: { userId: 1n, role: 'admin' },
         clientAddress: '192.168.1.1',
         request: new Request('http://localhost', {
           headers: { 'User-Agent': 'TestBot/1.0' },
         }),
-      } as unknown as import('@/server/http/orpc-base').HandlerContext
+      } as unknown as import('@/server/domains/audit/types').AuditContext
 
       const result = buildAuditContext(context)
       expect(result).toEqual({
@@ -81,12 +77,10 @@ describe('audit/service', () => {
 
     it('falls back to null for missing viewer or headers', () => {
       const context = {
-        db: mockDb,
-        pool: mockPool,
         viewer: null,
         clientAddress: '192.168.1.1',
         request: new Request('http://localhost'),
-      } as unknown as import('@/server/http/orpc-base').HandlerContext
+      } as unknown as import('@/server/domains/audit/types').AuditContext
 
       const result = buildAuditContext(context)
       expect(result).toEqual({
@@ -101,14 +95,12 @@ describe('audit/service', () => {
   describe('recordAuditEventFromContext', () => {
     it('combines buildAuditContext and recordAuditEvent', () => {
       const context = {
-        db: mockDb,
-        pool: mockPool,
         viewer: { userId: 42n, role: 'author' },
         clientAddress: '10.0.0.1',
         request: new Request('http://localhost', {
           headers: { 'User-Agent': 'Mozilla/5.0' },
         }),
-      } as unknown as import('@/server/http/orpc-base').HandlerContext
+      } as unknown as import('@/server/domains/audit/types').AuditContext
 
       recordAuditEventFromContext(context, {
         action: 'post_published',

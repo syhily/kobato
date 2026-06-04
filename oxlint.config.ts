@@ -94,7 +94,7 @@ export default defineConfig({
     'typescript/await-thenable': 'error',
     'typescript/no-array-delete': 'error',
     'typescript/no-confusing-void-expression': 'off',
-    'typescript/no-deprecated': 'warn',
+    'typescript/no-deprecated': 'error',
     'typescript/no-floating-promises': 'error',
     'typescript/no-for-in-array': 'error',
     'typescript/no-implied-eval': 'error',

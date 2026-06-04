@@ -4,7 +4,9 @@ import { recordAuditEventFromContext } from '@/server/domains/audit/service'
 import { userSession } from '@/server/domains/auth/primitives'
 import { listMusicForAdmin } from '@/server/domains/music/services/read'
 import { searchMusic } from '@/server/domains/music/services/search'
-import { addMusic, deleteMusic, updateMusicMetadata } from '@/server/domains/music/services/write'
+import { addMusic } from '@/server/domains/music/services/write/add'
+import { deleteMusic } from '@/server/domains/music/services/write/delete'
+import { updateMusicMetadata } from '@/server/domains/music/services/write/metadata'
 import { authorProc } from '@/server/http/orpc-base'
 import {
   addMusicOutputDto,

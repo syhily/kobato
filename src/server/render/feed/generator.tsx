@@ -4,7 +4,7 @@ import { Feed } from 'feed'
 
 import type { Page, Post } from '@/shared/types/catalog'
 
-import { listPublicPostsWithContent } from '@/server/domains/posts/repos/public-query'
+import { listPublicPostsWithContent } from '@/server/domains/posts/repos/public-query/feed'
 import { listAllCategories } from '@/server/domains/taxonomies/categories/services/query'
 import { getTagsByNames } from '@/server/domains/taxonomies/tags/service'
 import { findCategoryByName, findCategoryBySlug } from '@/server/infra/db/operations/category'

@@ -11,11 +11,13 @@ import { adminSession, regularSession } from '#/_helpers/session'
 // pin the contract by mocking the DB query module — the real Drizzle calls
 // are out of scope for this layer.
 
-vi.mock('@/server/domains/comments/repos/public-query', () => ({
+vi.mock('@/server/domains/comments/repos/public-query/admin', () => ({
   pendingComments: vi.fn(),
   adminUserIds: vi.fn(),
   latestDistinctCommentIds: vi.fn(),
   commentsByIds: vi.fn(),
+}))
+vi.mock('@/server/domains/comments/repos/public-query/threads', () => ({
   countCommentsAndRoots: vi.fn(),
   findRootComments: vi.fn(),
   findChildComments: vi.fn(),
@@ -67,7 +69,8 @@ vi.mock('@/shared/config/getters', () => ({
 
 const db = {} as NodePgDatabase
 
-const queries = await import('@/server/domains/comments/repos/public-query')
+const adminQueries = await import('@/server/domains/comments/repos/public-query/admin')
+const threadQueries = await import('@/server/domains/comments/repos/public-query/threads')
 const metricQueries = await import('@/server/infra/db/operations/metric')
 const { loadComments, latestComments, pendingComments } =
   await import('@/server/domains/comments/services/public-query')
@@ -118,7 +121,7 @@ function row(overrides: Record<string, unknown> = {}) {
 }
 
 beforeEach(() => {
-  for (const fn of Object.values({ ...queries, ...metricQueries })) {
+  for (const fn of Object.values({ ...adminQueries, ...threadQueries, ...metricQueries })) {
     if (typeof fn === 'function' && 'mockReset' in fn) {
       ;(fn as ReturnType<typeof vi.fn>).mockReset()
     }
@@ -127,33 +130,40 @@ beforeEach(() => {
 
 describe('services/comments/loader — loadComments', () => {
   it('non-admins only see approved comments (pending=[false])', async () => {
-    vi.mocked(queries.countCommentsAndRoots).mockResolvedValue({ total: 0, roots: 0 })
-    vi.mocked(queries.findRootComments).mockResolvedValue([])
-    vi.mocked(queries.findChildComments).mockResolvedValue([])
+    vi.mocked(threadQueries.countCommentsAndRoots).mockResolvedValue({ total: 0, roots: 0 })
+    vi.mocked(threadQueries.findRootComments).mockResolvedValue([])
+    vi.mocked(threadQueries.findChildComments).mockResolvedValue([])
     vi.mocked(metricQueries.ensureMetric).mockResolvedValue(seedMetric())
 
     await loadComments(db, regularSession(), POST_HELLO, 0)
 
-    expect(queries.countCommentsAndRoots).toHaveBeenCalledWith(db, POST_HELLO, [false], 2n)
-    expect(queries.findRootComments).toHaveBeenCalledWith(db, POST_HELLO, [false], 0, expect.any(Number), 2n)
+    expect(threadQueries.countCommentsAndRoots).toHaveBeenCalledWith(db, POST_HELLO, [false], 2n)
+    expect(threadQueries.findRootComments).toHaveBeenCalledWith(db, POST_HELLO, [false], 0, expect.any(Number), 2n)
   })
 
   it('admins additionally see pending comments (pending=[false,true])', async () => {
-    vi.mocked(queries.countCommentsAndRoots).mockResolvedValue({ total: 0, roots: 0 })
-    vi.mocked(queries.findRootComments).mockResolvedValue([])
-    vi.mocked(queries.findChildComments).mockResolvedValue([])
+    vi.mocked(threadQueries.countCommentsAndRoots).mockResolvedValue({ total: 0, roots: 0 })
+    vi.mocked(threadQueries.findRootComments).mockResolvedValue([])
+    vi.mocked(threadQueries.findChildComments).mockResolvedValue([])
     vi.mocked(metricQueries.ensureMetric).mockResolvedValue(seedMetric())
 
     await loadComments(db, adminSession(), POST_HELLO, 0)
 
-    expect(queries.countCommentsAndRoots).toHaveBeenCalledWith(db, POST_HELLO, [false, true], 1n)
-    expect(queries.findRootComments).toHaveBeenCalledWith(db, POST_HELLO, [false, true], 0, expect.any(Number), 1n)
+    expect(threadQueries.countCommentsAndRoots).toHaveBeenCalledWith(db, POST_HELLO, [false, true], 1n)
+    expect(threadQueries.findRootComments).toHaveBeenCalledWith(
+      db,
+      POST_HELLO,
+      [false, true],
+      0,
+      expect.any(Number),
+      1n,
+    )
   })
 
   it('returns the union of root + child comments and the aggregated counts', async () => {
-    vi.mocked(queries.countCommentsAndRoots).mockResolvedValue({ total: 5, roots: 2 })
-    vi.mocked(queries.findRootComments).mockResolvedValue([row({ id: 1n }), row({ id: 2n })])
-    vi.mocked(queries.findChildComments).mockResolvedValue([
+    vi.mocked(threadQueries.countCommentsAndRoots).mockResolvedValue({ total: 5, roots: 2 })
+    vi.mocked(threadQueries.findRootComments).mockResolvedValue([row({ id: 1n }), row({ id: 2n })])
+    vi.mocked(threadQueries.findChildComments).mockResolvedValue([
       row({ id: 3n, rid: 1, rootId: 1n }),
       row({ id: 4n, rid: 1, rootId: 1n }),
       row({ id: 5n, rid: 2, rootId: 2n }),
@@ -166,13 +176,13 @@ describe('services/comments/loader — loadComments', () => {
     expect(result?.roots_count).toBe(2)
     expect(result?.comments).toHaveLength(5)
     // Verify the join: child fetch was called with the root ids only.
-    expect(queries.findChildComments).toHaveBeenCalledWith(db, POST_HELLO, [false], [1n, 2n], 2n)
+    expect(threadQueries.findChildComments).toHaveBeenCalledWith(db, POST_HELLO, [false], [1n, 2n], 2n)
   })
 
   it('upserts the metric even when the page has zero comments', async () => {
-    vi.mocked(queries.countCommentsAndRoots).mockResolvedValue({ total: 0, roots: 0 })
-    vi.mocked(queries.findRootComments).mockResolvedValue([])
-    vi.mocked(queries.findChildComments).mockResolvedValue([])
+    vi.mocked(threadQueries.countCommentsAndRoots).mockResolvedValue({ total: 0, roots: 0 })
+    vi.mocked(threadQueries.findRootComments).mockResolvedValue([])
+    vi.mocked(threadQueries.findChildComments).mockResolvedValue([])
     vi.mocked(metricQueries.ensureMetric).mockResolvedValue(seedMetric())
 
     await loadComments(db, regularSession(), POST_NEW, 0)
@@ -194,9 +204,9 @@ describe('services/comments/loader — loadComments', () => {
       })
     }
     vi.mocked(metricQueries.ensureMetric).mockImplementation(() => tracked(seedMetric()))
-    vi.mocked(queries.countCommentsAndRoots).mockImplementation(() => tracked({ total: 0, roots: 0 }))
-    vi.mocked(queries.findRootComments).mockImplementation(() => tracked([]))
-    vi.mocked(queries.findChildComments).mockResolvedValue([])
+    vi.mocked(threadQueries.countCommentsAndRoots).mockImplementation(() => tracked({ total: 0, roots: 0 }))
+    vi.mocked(threadQueries.findRootComments).mockImplementation(() => tracked([]))
+    vi.mocked(threadQueries.findChildComments).mockResolvedValue([])
 
     await loadComments(db, regularSession(), POST_PARALLEL, 0)
 
@@ -206,9 +216,9 @@ describe('services/comments/loader — loadComments', () => {
 
 describe('services/comments/loader — latestComments / pendingComments', () => {
   it('latestComments resolves authors and skips admins from the pool', async () => {
-    vi.mocked(queries.adminUserIds).mockResolvedValue([99n])
-    vi.mocked(queries.latestDistinctCommentIds).mockResolvedValue([10n, 20n])
-    vi.mocked(queries.commentsByIds).mockResolvedValue([
+    vi.mocked(adminQueries.adminUserIds).mockResolvedValue([99n])
+    vi.mocked(adminQueries.latestDistinctCommentIds).mockResolvedValue([10n, 20n])
+    vi.mocked(adminQueries.commentsByIds).mockResolvedValue([
       {
         id: 10n,
         type: 'post',
@@ -231,8 +241,8 @@ describe('services/comments/loader — latestComments / pendingComments', () => 
 
     const list = await latestComments(db)
 
-    expect(queries.adminUserIds).toHaveBeenCalledOnce()
-    expect(queries.latestDistinctCommentIds).toHaveBeenCalledWith(db, [99n], expect.any(Number))
+    expect(adminQueries.adminUserIds).toHaveBeenCalledOnce()
+    expect(adminQueries.latestDistinctCommentIds).toHaveBeenCalledWith(db, [99n], expect.any(Number))
     expect(list).toHaveLength(2)
     expect(list[0].permalink).toBe('/posts/a/#user-comment-10')
     // Null author/title fall back to empty string (sidebar must never crash).
@@ -241,8 +251,8 @@ describe('services/comments/loader — latestComments / pendingComments', () => 
   })
 
   it('pendingComments forwards the configured sidebar size', async () => {
-    vi.mocked(queries.pendingComments).mockResolvedValue([])
+    vi.mocked(adminQueries.pendingComments).mockResolvedValue([])
     await pendingComments(db)
-    expect(queries.pendingComments).toHaveBeenCalledWith(db, expect.any(Number))
+    expect(adminQueries.pendingComments).toHaveBeenCalledWith(db, expect.any(Number))
   })
 })

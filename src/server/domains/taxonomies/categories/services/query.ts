@@ -6,7 +6,7 @@ import type { AdminCategoriesListResult } from '@/server/domains/taxonomies/cate
 import type { Category } from '@/shared/types/catalog'
 
 import { hydrateImageRefs } from '@/server/domains/images/services/enhance'
-import { listPublicPosts } from '@/server/domains/posts/repos/public-query'
+import { listPublicPosts } from '@/server/domains/posts/repos/public-query/listing'
 import { toAdminCategoryDto } from '@/server/domains/taxonomies/categories/projection'
 import { type AdminCategoriesListFilters, listAdminCategoryRows } from '@/server/infra/db/operations/category'
 import { post as postMetaTable } from '@/server/infra/db/schema/post'

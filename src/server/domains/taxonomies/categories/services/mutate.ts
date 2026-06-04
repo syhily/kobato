@@ -2,7 +2,7 @@ import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
 import type { AdminCategoryDto, UpsertCategoryInputs } from '@/server/domains/taxonomies/categories/projection'
 
-import { listPostsByCategory } from '@/server/domains/posts/repos/public-query'
+import { listPostsByCategory } from '@/server/domains/posts/repos/public-query/taxonomy'
 import { toAdminCategoryDto } from '@/server/domains/taxonomies/categories/projection'
 import {
   deleteAdminTaxonomy,

@@ -58,4 +58,5 @@ data/
 .claude/settings.local.json
 .codegraph/
 *.swp
+*.bak
 .agents/plans/

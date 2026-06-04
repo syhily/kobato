@@ -13,10 +13,10 @@ import { clearLatestCommentsCache } from '@/server/domains/comments/cache'
 import { insertComment } from '@/server/domains/comments/repos/mutate'
 import {
   countApprovedCommentsByUser,
-  findCommentRootId,
   findCommentWithSourceUser,
   recentCommentsForUserDedupe,
-} from '@/server/domains/comments/repos/public-query'
+} from '@/server/domains/comments/repos/public-query/by-id'
+import { findCommentRootId } from '@/server/domains/comments/repos/public-query/threads'
 import { canonicalizeCommentBody } from '@/server/domains/comments/services/canonicalize'
 import { sendNewComment, sendNewReply } from '@/server/domains/comments/services/email'
 import { safeResolveMetricTarget } from '@/server/domains/comments/services/shared'

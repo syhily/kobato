@@ -1,7 +1,7 @@
 import type { ListingPageLoaderData } from '@/server/http/loaders/listing'
 
 import { getDbFromContext } from '@/server/domains/auth/context'
-import { countPublicPosts, listPublicPostCardsPaginated } from '@/server/domains/posts/repos/public-query'
+import { countPublicPosts, listPublicPostCardsPaginated } from '@/server/domains/posts/repos/public-query/listing'
 import { listingLoader } from '@/server/http/loaders/listing'
 import { listingHeaders, publicShouldRevalidate } from '@/server/http/loaders/route-exports'
 import { findCategoryBySlug } from '@/server/infra/db/operations/category'

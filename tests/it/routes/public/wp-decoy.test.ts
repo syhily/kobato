@@ -41,7 +41,7 @@ fixtures.samplePage = {
 
 // catalog/catalog removed; pages/loader.ts now uses findPublicPostMetaBySlug +
 // findPageBySlug directly. Catalog slug routing is gone.
-vi.mock('@/server/domains/posts/repos/public-query', () => ({
+vi.mock('@/server/domains/posts/repos/public-query/listing', () => ({
   listPublicPostMetas: vi.fn(async () => []),
 }))
 vi.mock('@/server/domains/posts/repos/single', () => ({

@@ -160,7 +160,7 @@ async function seedAdminUser() {
   return inserted
 }
 
-function setContext(action: string | null, redirectTo = '/admin') {
+function setContext(action: string | null, redirectTo = '/admin', clientAddress = '127.0.0.1') {
   const params = new URLSearchParams()
   if (action) {
     params.set('action', action)
@@ -171,7 +171,7 @@ function setContext(action: string | null, redirectTo = '/admin') {
     session: testSession,
     user: undefined,
     role: null,
-    clientAddress: '127.0.0.1',
+    clientAddress,
     url,
   })
   return url
@@ -181,8 +181,9 @@ async function callAction(
   actionName: string | null,
   formData: FormData,
   redirectTo = '/admin',
+  clientAddress = '127.0.0.1',
 ): Promise<Response & { data?: any }> {
-  const url = setContext(actionName, redirectTo)
+  const url = setContext(actionName, redirectTo, clientAddress)
   const request = new Request('http://localhost/admin/signin', {
     method: 'POST',
     body: formData,
@@ -387,9 +388,12 @@ describe('integration: OTP login flow (real DB)', () => {
   it('rate limiting blocks after 3 OTP sends', async () => {
     await seedAdminUser()
 
+    // Use a unique IP so parallel tests don't share the same rate-limit bucket.
+    const uniqueIp = '127.0.0.99'
+
     // Send OTP 3 times (maxAttempts=3 for otpSendIp)
     for (let i = 0; i < 3; i++) {
-      await callAction(null, loginFormData())
+      await callAction(null, loginFormData(), '/admin', uniqueIp)
       testSession.unset('pendingOtpUser')
       testSession.unset('otpFailCount')
     }
@@ -397,7 +401,7 @@ describe('integration: OTP login flow (real DB)', () => {
     expect(mockHandles.sendSignInOtp).toHaveBeenCalledTimes(3)
 
     // 4th attempt blocked by rate limit
-    const result = await callAction(null, loginFormData())
+    const result = await callAction(null, loginFormData(), '/admin', uniqueIp)
     expect(result.data?.error).toBe('发送过于频繁，请稍后再试。')
   })
 

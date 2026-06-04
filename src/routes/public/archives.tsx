@@ -1,5 +1,5 @@
 import { getDbFromContext } from '@/server/domains/auth/context'
-import { getClientPostsWithMetadata, listClientPosts } from '@/server/domains/posts/repos/public-query'
+import { getClientPostsWithMetadata, listClientPosts } from '@/server/domains/posts/repos/public-query/listing'
 import { listingHeaders, publicShouldRevalidate } from '@/server/http/loaders/route-exports'
 import { bundleFromMatches, routeMeta } from '@/server/render/seo/meta'
 import { toListingPostCard } from '@/shared/types/catalog'

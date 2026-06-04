@@ -16,10 +16,12 @@ vi.mock('@/server/domains/auth/context', async () => {
   }
 })
 
-vi.mock('@/server/domains/posts/repos/public-query', () => ({
+vi.mock('@/server/domains/posts/repos/public-query/listing', () => ({
   listClientPosts: mocks.listClientPosts,
-  listAllPosts: mocks.listAllPosts,
   getClientPostsWithMetadata: mocks.getClientPostsWithMetadata,
+}))
+vi.mock('@/server/domains/posts/repos/public-query/misc', () => ({
+  listAllPosts: mocks.listAllPosts,
 }))
 vi.mock('@/shared/types/catalog', async () => {
   const actual = await vi.importActual<typeof import('@/shared/types/catalog')>('@/shared/types/catalog')

@@ -4,7 +4,7 @@ import { z } from 'zod'
 import { recordAuditEventFromContext } from '@/server/domains/audit/service'
 import { asAdminCommentsWire } from '@/server/domains/comments/projection'
 import { adminClearDeleteRequest, softDeleteCommentById } from '@/server/domains/comments/repos/moderation'
-import { findCommentWithUserById } from '@/server/domains/comments/repos/public-query'
+import { findCommentWithUserById } from '@/server/domains/comments/repos/public-query/by-id'
 import {
   loadAdminPendingDashboard,
   loadAllComments,

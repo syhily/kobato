@@ -7,7 +7,8 @@ import type { Tag } from '@/shared/types/catalog'
 import type { AdminTagDto } from '@/shared/types/tags'
 
 import { hasAtLeast, type Role } from '@/server/domains/auth/rbac'
-import { listPostsByTag, listPublicPosts } from '@/server/domains/posts/repos/public-query'
+import { listPublicPosts } from '@/server/domains/posts/repos/public-query/listing'
+import { listPostsByTag } from '@/server/domains/posts/repos/public-query/taxonomy'
 import {
   deleteAdminTaxonomy,
   ensureUniqueOnCreateTaxonomy,

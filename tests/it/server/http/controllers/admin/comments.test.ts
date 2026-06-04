@@ -27,7 +27,7 @@ vi.mock('@/server/domains/comments/repos/moderation', () => ({
   softDeleteCommentById: vi.fn(),
 }))
 
-vi.mock('@/server/domains/comments/repos/public-query', () => ({
+vi.mock('@/server/domains/comments/repos/public-query/by-id', () => ({
   findCommentWithUserById: vi.fn(),
 }))
 
@@ -35,7 +35,7 @@ const adminQuery = await import('@/server/domains/comments/services/admin-query'
 const moderate = await import('@/server/domains/comments/services/moderate')
 const projection = await import('@/server/domains/comments/projection')
 const moderationRepo = await import('@/server/domains/comments/repos/moderation')
-const queryRepo = await import('@/server/domains/comments/repos/public-query')
+const queryRepo = await import('@/server/domains/comments/repos/public-query/by-id')
 const { adminCommentsRouter } = await import('@/server/http/controllers/admin/comments.controller')
 
 beforeEach(() => {

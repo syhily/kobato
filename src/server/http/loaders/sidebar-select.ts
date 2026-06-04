@@ -2,7 +2,7 @@ import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
 import type { ClientTag, SidebarPostLink } from '@/shared/types/catalog'
 
-import { selectSidebarPosts as querySidebarPosts } from '@/server/domains/posts/repos/public-query'
+import { selectSidebarPosts as querySidebarPosts } from '@/server/domains/posts/repos/public-query/featured'
 import { requireBlogSettingsSection } from '@/shared/config/getters'
 import { getSidebarWidgetCount } from '@/shared/config/utils'
 import { sampleSize } from '@/shared/utils/tools'

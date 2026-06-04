@@ -36,16 +36,20 @@ vi.mock('@/shared/types/catalog', async () => {
   }
 })
 
-vi.mock('@/server/domains/posts/repos/public-query', () => ({
+vi.mock('@/server/domains/posts/repos/public-query/taxonomy', () => ({
   listPostsByCategory: vi.fn(async (_db: unknown, _name: string, options: { includeHidden?: boolean }) =>
     options?.includeHidden ? samplePosts : publicPosts,
   ),
   listPostsByTag: vi.fn(async (_db: unknown, _name: string, options: { includeHidden?: boolean }) =>
     options?.includeHidden ? samplePosts : publicPosts,
   ),
+}))
+vi.mock('@/server/domains/posts/repos/public-query/misc', () => ({
   getPostsBySlugs: vi.fn(async (_db: unknown, _slugs: string[], options: { includeHidden?: boolean }) =>
     options?.includeHidden ? samplePosts : publicPosts,
   ),
+}))
+vi.mock('@/server/domains/posts/repos/public-query/listing', () => ({
   countPublicPosts: vi.fn(
     async (_db: unknown, _filters: { includeHidden?: boolean; category?: string; tag?: string }) =>
       _filters?.includeHidden ? samplePosts.length : publicPosts.length,

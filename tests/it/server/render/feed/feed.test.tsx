@@ -18,7 +18,7 @@ const mocks = vi.hoisted(() => ({
   getTagsByNames: vi.fn(),
 }))
 
-vi.mock('@/server/domains/posts/repos/public-query', () => ({
+vi.mock('@/server/domains/posts/repos/public-query/feed', () => ({
   listPublicPostsWithContent: mocks.listPublicPostsWithContent,
 }))
 vi.mock('@/server/infra/db/operations/category', () => ({

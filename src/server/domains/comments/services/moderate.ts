@@ -11,7 +11,7 @@ import {
   updateOwnCommentBody,
   updateOwnCommentBodyAndPending,
 } from '@/server/domains/comments/repos/mutate'
-import { findCommentWithUserById } from '@/server/domains/comments/repos/public-query'
+import { findCommentWithUserById } from '@/server/domains/comments/repos/public-query/by-id'
 import { canonicalizeCommentBody } from '@/server/domains/comments/services/canonicalize'
 import { sendApprovedComment, sendNewComment } from '@/server/domains/comments/services/email'
 import { asCommentTarget } from '@/server/domains/comments/services/shared'

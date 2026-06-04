@@ -119,15 +119,15 @@ vi.mock('@/server/domains/auth/primitives', async () => {
   return {
     ...actual,
     establishLoginSession: vi.fn(async () => ({ sid: 'test-sid', setCookie: 'blog_session=test' })),
-    logout: vi.fn(async () => {}),
+    logout: vi.fn(async () => undefined),
   }
 })
 
 vi.mock('@/server/domains/audit/service', () => ({
-  recordAuditEvent: vi.fn(() => {}),
+  recordAuditEvent: vi.fn(() => undefined),
 }))
 
-vi.mock('@/server/domains/comments/repos/public-query', () => ({
+vi.mock('@/server/domains/comments/repos/public-query/by-id', () => ({
   countApprovedCommentsByUser: vi.fn(async () => 0),
 }))
 

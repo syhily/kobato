@@ -20,7 +20,7 @@ import type { CommentWithUser } from '@/server/domains/comments/repos/shared'
 // refetch → projection pipeline; the only differences are the SQL
 // helper picked and whether the email fires.
 
-vi.mock('@/server/domains/comments/repos/public-query', () => ({
+vi.mock('@/server/domains/comments/repos/public-query/by-id', () => ({
   findCommentWithUserById: vi.fn(),
 }))
 vi.mock('@/server/domains/comments/repos/admin-query', () => ({
@@ -59,7 +59,7 @@ vi.mock('@/server/domains/comments/services/canonicalize', () => ({
 
 const db = {} as NodePgDatabase
 
-const queryRepo = await import('@/server/domains/comments/repos/public-query')
+const queryRepo = await import('@/server/domains/comments/repos/public-query/by-id')
 await import('@/server/domains/comments/repos/admin-query')
 const mutateRepo = await import('@/server/domains/comments/repos/mutate')
 const emails = await import('@/server/domains/comments/services/email')

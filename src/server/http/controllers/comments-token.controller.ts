@@ -1,7 +1,7 @@
 import { z } from 'zod'
 
 import { asCommentItemsWire } from '@/server/domains/comments/projection'
-import { findCommentsByIds } from '@/server/domains/comments/repos/public-query'
+import { findCommentsByIds } from '@/server/domains/comments/repos/public-query/by-id'
 import { parseComments } from '@/server/domains/comments/services/public-query'
 import { cleanupExpiredTokens, revokeCommentToken } from '@/server/domains/comments/services/token'
 import { publicProc } from '@/server/http/orpc-base'

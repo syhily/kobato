@@ -4,7 +4,7 @@
 // `total` so the table can render the pager without re-counting.
 //
 // Currently scoped to a single provider (`netease`) — see
-// `MetingSource` in `@/server/domains/music/meting-types.d.ts`. Adding more
+// `MetingSource` in `@/server/domains/music/netease.ts`. Adding more
 // providers later means widening the union and adding a Zod entry on
 // the server side; the wire DTO already carries `source` so older
 // clients keep parsing.

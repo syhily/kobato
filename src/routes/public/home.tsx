@@ -7,12 +7,8 @@ import type { SidebarData } from '@/ui/public/Sidebar'
 import { trackAccess } from '@/server/domains/analytics/track'
 import { getDbFromContext, getRouteRequestContext } from '@/server/domains/auth/context'
 import { userSession } from '@/server/domains/auth/primitives'
-import {
-  countPublicPosts,
-  listPublicPostCardsPaginated,
-  selectFeaturePosts,
-  selectSidebarPosts,
-} from '@/server/domains/posts/repos/public-query'
+import { selectFeaturePosts, selectSidebarPosts } from '@/server/domains/posts/repos/public-query/featured'
+import { countPublicPosts, listPublicPostCardsPaginated } from '@/server/domains/posts/repos/public-query/listing'
 import { getCategoryLinks } from '@/server/domains/taxonomies/categories/services/query'
 import { listAllTags } from '@/server/domains/taxonomies/tags/service'
 import { listingLoader } from '@/server/http/loaders/listing'

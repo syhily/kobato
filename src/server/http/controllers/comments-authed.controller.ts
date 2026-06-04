@@ -10,7 +10,7 @@ import {
   listMyComments,
 } from '@/server/domains/comments/repos/admin-query'
 import { clearDeleteRequest, requestDeleteComment } from '@/server/domains/comments/repos/moderation'
-import { findCommentWithUserById } from '@/server/domains/comments/repos/public-query'
+import { findCommentWithUserById } from '@/server/domains/comments/repos/public-query/by-id'
 import { updateOwnComment } from '@/server/domains/comments/services/moderate'
 import { authedProc } from '@/server/http/orpc-base'
 import { commentItemDto } from '@/shared/contracts/comments'

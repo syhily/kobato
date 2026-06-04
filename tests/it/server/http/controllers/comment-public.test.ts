@@ -62,7 +62,7 @@ vi.mock('@/server/domains/comments/services/moderate', () => ({
   getCommentById: vi.fn(),
 }))
 
-vi.mock('@/server/domains/comments/repos/public-query', () => ({
+vi.mock('@/server/domains/comments/repos/public-query/by-id', () => ({
   findCommentWithUserById: vi.fn(),
 }))
 

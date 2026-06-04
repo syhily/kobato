@@ -58,7 +58,7 @@ vi.mock('@/shared/types/catalog', async () => {
   }
 })
 
-vi.mock('@/server/domains/posts/repos/public-query', () => ({
+vi.mock('@/server/domains/posts/repos/public-query/listing', () => ({
   listClientPosts: mocks.listClientPosts,
   countPublicPosts: vi.fn(async () => mocks.postCount),
   listPublicPostCardsPaginated: mocks.paginatedPosts,
@@ -68,6 +68,8 @@ vi.mock('@/server/domains/posts/repos/public-query', () => ({
       meta: { likes: 0, views: 0, comments: 0 },
     })),
   ),
+}))
+vi.mock('@/server/domains/posts/repos/public-query/featured', () => ({
   selectFeaturePosts: vi.fn(async () => []),
   selectSidebarPosts: vi.fn(async () => []),
 }))

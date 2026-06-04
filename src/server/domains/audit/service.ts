@@ -1,5 +1,4 @@
-import type { AuditEventInput } from '@/server/domains/audit/types'
-import type { HandlerContext } from '@/server/http/orpc-base'
+import type { AuditContext, AuditEventInput } from '@/server/domains/audit/types'
 
 import { tagL3InDetails } from '@/server/domains/audit/privacy'
 import { pushAuditEvent } from '@/server/domains/audit/repos/batcher'
@@ -46,11 +45,11 @@ export function recordAuditEvent(input: AuditEventInput): void {
 // ---------------------------------------------------------------------------
 
 /**
- * Extract audit-relevant fields from an oRPC HandlerContext.
+ * Extract audit-relevant fields from an AuditContext.
  * Useful when the caller already has a context object and wants to
  * avoid manual field extraction.
  */
-export function buildAuditContext(context: HandlerContext) {
+export function buildAuditContext(context: AuditContext) {
   return {
     actorId: context.viewer?.userId,
     actorRole: context.viewer?.role ?? null,
@@ -61,10 +60,10 @@ export function buildAuditContext(context: HandlerContext) {
 
 /**
  * Convenience wrapper that combines `buildAuditContext` + `recordAuditEvent`
- * for the common case where the caller has a HandlerContext.
+ * for the common case where the caller has an AuditContext.
  */
 export function recordAuditEventFromContext(
-  context: HandlerContext,
+  context: AuditContext,
   event: Omit<AuditEventInput, 'actorId' | 'actorRole' | 'ipAddress' | 'userAgent'>,
 ): void {
   const ctx = buildAuditContext(context)

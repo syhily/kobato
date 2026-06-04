@@ -7,7 +7,8 @@ import type { PortableTextBody as PortableTextBodyType } from '@/shared/pt/schem
 import { getDbFromContext, getRouteRequestContext } from '@/server/domains/auth/context'
 import { requireRole } from '@/server/domains/auth/rbac'
 import { countMyComments, listMyCommentEntities, listMyComments } from '@/server/domains/comments/repos/admin-query'
-import { findParentCommentsByIds, resolveEntitiesForComments } from '@/server/domains/comments/repos/public-query'
+import { findParentCommentsByIds } from '@/server/domains/comments/repos/public-query/by-id'
+import { resolveEntitiesForComments } from '@/server/domains/comments/repos/public-query/entities'
 import { bundleFromMatches, routeMeta } from '@/server/render/seo/meta'
 import { MyCommentsView } from '@/ui/admin/my/MyCommentsView'
 

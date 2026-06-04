@@ -40,7 +40,7 @@ vi.mock('@/server/domains/posts/repos/single', () => ({
   findPostMetaBySlug: vi.fn(),
   findPublicPostMetaBySlug: vi.fn(),
 }))
-vi.mock('@/server/domains/posts/repos/public-query', () => ({
+vi.mock('@/server/domains/posts/repos/public-query/listing', () => ({
   listPublicPostMetas: vi.fn(async () => []),
 }))
 vi.mock('@/server/domains/posts/repos/write', () => ({
@@ -156,7 +156,7 @@ beforeEach(async () => {
 
 describe('posts service cache clearing', () => {
   it('loadCatalogPostMetas returns cached data within TTL', async () => {
-    const publicQuery = await import('@/server/domains/posts/repos/public-query')
+    const publicQuery = await import('@/server/domains/posts/repos/public-query/listing')
     vi.mocked(publicQuery.listPublicPostMetas).mockImplementation(
       async () =>
         [
@@ -199,7 +199,7 @@ describe('posts service cache clearing', () => {
   })
 
   it('mutation clears cache so next load hits DB', async () => {
-    const publicQuery = await import('@/server/domains/posts/repos/public-query')
+    const publicQuery = await import('@/server/domains/posts/repos/public-query/listing')
     const single = await import('@/server/domains/posts/repos/single')
     vi.mocked(publicQuery.listPublicPostMetas).mockImplementation(
       async () =>
@@ -248,7 +248,7 @@ describe('posts service cache clearing', () => {
   })
 
   it('multiple mutations in sequence clear cache each time', async () => {
-    const publicQuery = await import('@/server/domains/posts/repos/public-query')
+    const publicQuery = await import('@/server/domains/posts/repos/public-query/listing')
     const single = await import('@/server/domains/posts/repos/single')
     vi.mocked(publicQuery.listPublicPostMetas).mockImplementation(
       async () =>

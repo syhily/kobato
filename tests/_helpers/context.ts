@@ -5,9 +5,8 @@ import { RouterContextProvider } from 'react-router'
 
 import type { BlogSession, SessionUser } from '@/server/domains/auth/session-storage'
 
+import { regularSession } from '#/_helpers/session'
 import { dbContext, poolContext, requestContext, sessionContext } from '@/server/domains/auth/context'
-
-import { regularSession } from './session'
 
 // Stand-in for the `RouterContextProvider` that `sessionMiddleware` populates
 // in production. Direct loader/action unit tests that bypass the router get

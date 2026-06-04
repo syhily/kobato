@@ -6,10 +6,9 @@ import { renderToStaticMarkup, renderToString } from 'react-dom/server'
 import { prerenderToNodeStream } from 'react-dom/static'
 import { createMemoryRouter, type RouteObject, RouterProvider } from 'react-router'
 
+import { TEST_BLOG_SETTINGS_BUNDLE } from '#/_helpers/blog-settings'
 import { BlogSettingsProvider } from '@/shared/lib/blog-config-context'
 import { ThemeProvider } from '@/ui/lib/ThemeProvider'
-
-import { TEST_BLOG_SETTINGS_BUNDLE } from './blog-settings'
 
 const testQueryClient = new QueryClient({
   defaultOptions: {

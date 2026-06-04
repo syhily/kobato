@@ -1,6 +1,6 @@
 import type { SearchMusicOutput } from '@/shared/types/music'
 
-import { searchSongsWithPreview } from '@/server/domains/music/meting'
+import { searchSongsWithPreview } from '@/server/domains/music/netease'
 
 export async function searchMusic(keyword: string, limit?: number): Promise<SearchMusicOutput> {
   const hits = await searchSongsWithPreview(keyword, limit)
