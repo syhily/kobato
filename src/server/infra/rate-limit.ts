@@ -83,22 +83,21 @@ export async function tryKeyedRateLimit(key: string, bucket: RateLimitBucket): P
     results = await pipeline.exec()
   } catch (err) {
     // Redis is unreachable (circuit open, network partition, OOM).
-    // Fail open — don't block legitimate traffic because the counter
-    // is unavailable.  The circuit breaker in redis/storage.ts already
-    // logs and tracks the failure.
-    log.warn('tryKeyedRateLimit: Redis pipeline failed, failing open', {
+    // Fail closed — deny requests when the rate-limit counter is
+    // unavailable to prevent brute-force attacks during degradation.
+    log.warn('tryKeyedRateLimit: Redis pipeline failed, failing closed', {
       key,
       err: err instanceof Error ? err.message : String(err),
     })
-    return { count: 0, exceeded: false }
+    return { count: Number.POSITIVE_INFINITY, exceeded: true }
   }
   const incrResult = results?.[0]
   if (!incrResult || incrResult[0]) {
-    log.warn('tryKeyedRateLimit: failed to increment counter, failing open', {
+    log.warn('tryKeyedRateLimit: failed to increment counter, failing closed', {
       key,
       error: String(incrResult?.[0] ?? 'unknown redis error'),
     })
-    return { count: 0, exceeded: false }
+    return { count: Number.POSITIVE_INFINITY, exceeded: true }
   }
   const count = Number(incrResult[1])
   return { count, exceeded: count > bucket.maxAttempts }

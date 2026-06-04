@@ -74,6 +74,11 @@ async function validateSubmission(
 
   const { body: canonicalBody, content: markdownSnapshot } = await canonicalizeCommentBody(commentReq.body)
 
+  const MAX_COMMENT_LENGTH = 10_000
+  if (markdownSnapshot.length > MAX_COMMENT_LENGTH) {
+    throw new DomainError('BAD_REQUEST', `评论内容过长，最多 ${MAX_COMMENT_LENGTH} 个字符。`)
+  }
+
   if (u.role !== 'admin') {
     const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
     const recent = await recentCommentsForUserDedupe(db, u.id, since, 20)

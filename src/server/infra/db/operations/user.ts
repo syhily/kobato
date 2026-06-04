@@ -252,8 +252,6 @@ export interface AdminUserRow {
   emailVerified: boolean
   createdAt: Date
   deletedAt: Date | null
-  lastIp: string | null
-  lastUa: string | null
   commentCount: number
   pendingCount: number
   lastCommentAt: Date | null
@@ -343,8 +341,6 @@ export async function listAdminUsers(
       emailVerified: user.emailVerified,
       createdAt: user.createdAt,
       deletedAt: user.deletedAt,
-      lastIp: user.lastIp,
-      lastUa: user.lastUa,
       commentCount: commentCountSql,
       pendingCount: sql<number>`COUNT(${comment.id}) FILTER (WHERE ${comment.deletedAt} IS NULL AND ${comment.isPending} = TRUE)`,
       lastCommentAt: lastCommentAtAggregate(),
@@ -385,8 +381,6 @@ export async function findAdminUserById(db: NodePgDatabase, id: bigint): Promise
       emailVerified: user.emailVerified,
       createdAt: user.createdAt,
       deletedAt: user.deletedAt,
-      lastIp: user.lastIp,
-      lastUa: user.lastUa,
       commentCount: sql<number>`COUNT(${comment.id}) FILTER (WHERE ${comment.deletedAt} IS NULL)`,
       pendingCount: sql<number>`COUNT(${comment.id}) FILTER (WHERE ${comment.deletedAt} IS NULL AND ${comment.isPending} = TRUE)`,
       lastCommentAt: lastCommentAtAggregate(),

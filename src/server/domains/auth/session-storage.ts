@@ -49,7 +49,7 @@ export interface BlogSessionData {
 
 export type BlogSession = Session<BlogSessionData, BlogSessionData>
 
-export const SESSION_MAX_AGE = 60 * 60 * 24 * 30
+export const SESSION_MAX_AGE = 60 * 60 * 24 * 14
 
 function resolveSessionMaxAge(): number {
   const bundle = getBlogSettingsBundleSync()

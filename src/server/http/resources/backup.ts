@@ -88,7 +88,7 @@ export const backupRouter = new Hono<Env>()
 
       // Require the one-time setup token to prove console access.
       const setupToken = c.req.header('x-setup-token') ?? ''
-      if (!verifySetupToken(setupToken)) {
+      if (!(await verifySetupToken(setupToken))) {
         return c.json({ error: { message: '缺少或错误的 setup token，请查看服务器控制台输出。' } }, 403)
       }
 

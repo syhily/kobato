@@ -3,7 +3,7 @@ import { z } from 'zod'
 
 import { recordAuditEventFromContext } from '@/server/domains/audit/service'
 import { findSessionMeta, revokeSessionById } from '@/server/domains/auth/repo'
-import { MIN_PASSWORD_LENGTH } from '@/server/domains/auth/schema'
+import { MIN_PASSWORD_LENGTH, PASSWORD_COMPLEXITY_RE } from '@/server/domains/auth/schema'
 import { updateAccountPassword, updateAccountProfile } from '@/server/domains/users/services/account'
 import { authedProc } from '@/server/http/orpc-base'
 import { tryRateLimit } from '@/server/infra/rate-limit'
@@ -26,7 +26,11 @@ const updateProfileInput = z.object({
 
 const updatePasswordInput = z.object({
   oldPassword: z.string().min(1),
-  newPassword: z.string().min(MIN_PASSWORD_LENGTH).max(128),
+  newPassword: z
+    .string()
+    .min(MIN_PASSWORD_LENGTH)
+    .max(128)
+    .regex(PASSWORD_COMPLEXITY_RE, '密码必须包含至少一个大写字母、一个小写字母和一个数字'),
 })
 
 const revokeSessionInput = z.object({

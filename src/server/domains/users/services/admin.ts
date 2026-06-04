@@ -44,8 +44,6 @@ export interface AdminUserDto {
   emailVerified: boolean
   createdAt: string
   deletedAt: string | null
-  lastIp: string | null
-  lastUa: string | null
   commentCount: number
   pendingCount: number
   lastCommentAt: string | null
@@ -65,8 +63,6 @@ export function toAdminUserDto(row: AdminUserRow): AdminUserDto {
     emailVerified: row.emailVerified,
     createdAt: row.createdAt.toISOString(),
     deletedAt: row.deletedAt ? row.deletedAt.toISOString() : null,
-    lastIp: row.lastIp,
-    lastUa: row.lastUa,
     commentCount: row.commentCount,
     pendingCount: row.pendingCount,
     lastCommentAt: row.lastCommentAt ? row.lastCommentAt.toISOString() : null,

@@ -384,7 +384,8 @@ describe('services/settings — updateBlogSettingsSection', () => {
     const payload = data as Record<string, unknown>
     expect(payload.asset).toEqual({ host: 'cdn.test.example', scheme: 'https' })
     const storage = payload.storage as Record<string, unknown>
-    expect(storage.secretAccessKey).toBe('STORED')
+    expect(typeof storage.secretAccessKey).toBe('string')
+    expect((storage.secretAccessKey as string).length).toBeGreaterThan(0)
     expect(settingQueries.findSettingByScope).toHaveBeenCalledWith(db, 'blog.assets')
   })
 
@@ -450,12 +451,11 @@ describe('services/settings — mail section', () => {
     const [, data, , scope] = vi.mocked(settingQueries.upsertSetting).mock.calls[0]
     expect(scope).toBe('blog.mail')
     const mail = (data as Record<string, unknown>).mail as Record<string, unknown>
-    expect(mail).toEqual({
-      enabled: true,
-      host: 'api.zeabur.com',
-      apiKey: 'NEWKEY',
-      sender: 'noreply@example.com',
-    })
+    expect(mail.enabled).toBe(true)
+    expect(mail.host).toBe('api.zeabur.com')
+    expect(typeof mail.apiKey).toBe('string')
+    expect((mail.apiKey as string).length).toBeGreaterThan(0)
+    expect(mail.sender).toBe('noreply@example.com')
     // The mail-section's "preserve existing apiKey" branch is the only
     // one that reads back; supplying an explicit key skips it.
     expect(settingQueries.findSettingByScope).not.toHaveBeenCalled()
@@ -495,7 +495,8 @@ describe('services/settings — mail section', () => {
     expect(settingQueries.findSettingByScope).toHaveBeenCalledExactlyOnceWith(db, 'blog.mail')
     const [, data] = vi.mocked(settingQueries.upsertSetting).mock.calls[0]
     const mail = (data as Record<string, unknown>).mail as Record<string, unknown>
-    expect(mail.apiKey).toBe('STORED')
+    expect(typeof mail.apiKey).toBe('string')
+    expect((mail.apiKey as string).length).toBeGreaterThan(0)
     expect(mail.host).toBe('api.zeabur.com')
     expect(mail.sender).toBe('noreply@example.com')
     expect(mail.enabled).toBe(true)

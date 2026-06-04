@@ -4,10 +4,9 @@ import type { Env } from '@/server/http/context'
 
 import { tryResourceRateLimit } from '@/server/infra/rate-limit'
 import { buildSitemapXml } from '@/server/render/seo/sitemap'
-import { getClientAddress } from '@/shared/utils/request'
 
 export const sitemapRouter = new Hono<Env>().get('/sitemap.xml', async (c) => {
-  const { exceeded } = await tryResourceRateLimit(getClientAddress(c.req.raw))
+  const { exceeded } = await tryResourceRateLimit(c.var.clientAddress)
   if (exceeded) {
     return c.json({ error: 'Too many requests' }, 429)
   }

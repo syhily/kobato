@@ -1,7 +1,7 @@
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
 import { and, eq, lt, sql } from 'drizzle-orm'
-import { createHash, randomBytes, randomInt } from 'node:crypto'
+import { createHash, randomBytes, randomInt, timingSafeEqual } from 'node:crypto'
 
 import { verification } from '@/server/infra/db/schema/user'
 import { getLogger } from '@/server/infra/logger'
@@ -247,7 +247,11 @@ export async function verifyOtpToken(
         return null
       }
       const [salt, storedHash] = parts
-      if (hashOtp(rawOtpCode, salt) !== storedHash) {
+      const computedHash = hashOtp(rawOtpCode, salt)
+      if (
+        computedHash.length !== storedHash.length ||
+        !timingSafeEqual(Buffer.from(computedHash), Buffer.from(storedHash))
+      ) {
         return null
       }
 

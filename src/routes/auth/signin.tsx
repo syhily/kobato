@@ -12,7 +12,7 @@ import {
   handleOtpVerify,
 } from '@/server/domains/auth/otp-flow'
 import { establishLoginSession, logout } from '@/server/domains/auth/primitives'
-import { MIN_PASSWORD_LENGTH } from '@/server/domains/auth/schema'
+import { MIN_PASSWORD_LENGTH, PASSWORD_COMPLEXITY_RE } from '@/server/domains/auth/schema'
 import { commitSessionWithMaxAge, destroySession } from '@/server/domains/auth/session-storage'
 import { consumeToken, issueResetToken, peekToken } from '@/server/domains/auth/verification-tokens'
 import { countApprovedCommentsByUser } from '@/server/domains/comments/repos/public-query/by-id'
@@ -216,6 +216,9 @@ export async function action({ request, context }: Route.ActionArgs) {
 
     if (!newPasswordStr || newPasswordStr.length < MIN_PASSWORD_LENGTH) {
       return data({ error: `密码长度至少 ${MIN_PASSWORD_LENGTH} 位。` })
+    }
+    if (!PASSWORD_COMPLEXITY_RE.test(newPasswordStr)) {
+      return data({ error: '密码必须包含至少一个大写字母、一个小写字母和一个数字。' })
     }
 
     const result = await consumeToken(db, rawTokenStr, purpose)

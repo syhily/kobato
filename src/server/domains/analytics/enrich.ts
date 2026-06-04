@@ -72,7 +72,9 @@ export async function enrichEvent(raw: RawAccessEvent): Promise<EnrichedAccessEv
     ts: raw.ts,
     visitorHash: hashIp(raw.ip),
     sessionId: raw.sessionId,
-    ip: raw.ip || null,
+    // Privacy: raw IP is used for geo lookup but not persisted.
+    // Only the salted visitorHash is stored for analytics.
+    ip: null,
     path: raw.path,
     entityType: raw.target?.type ?? null,
     entityId: raw.target?.ownerId ?? null,

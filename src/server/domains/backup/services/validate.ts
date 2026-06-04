@@ -8,6 +8,8 @@ const BLOCKED_PATTERNS = [
   /\bDROP\s+(?:\/\*[^]*?\*\/\s*)*ROLE\b/i,
   /\bALTER\s+(?:\/\*[^]*?\*\/\s*)*SYSTEM\b/i,
   /\bCOPY\b[^\n;]*?\bTO\b[^\n;]*?\bPROGRAM\b/i,
+  /\bCREATE\s+(?:\/\*[^]*?\*\/\s*)*DATABASE\b/i,
+  /\bDO\s*\$\$/i,
   /\\!/i,
   /\\i\b/i,
   /\\include\b/i,
@@ -15,8 +17,57 @@ const BLOCKED_PATTERNS = [
   /\\lo_import\b/i,
   /\\lo_export\b/i,
   /\\c\b/i,
+  /\\connect\b/i,
   /\\o\b/i,
 ]
+
+// Allowed statement prefixes. Every non-comment, non-empty line must start
+// with one of these. This complements the blocklist with a defence-in-depth
+// allowlist so only pg_dump-generated statements can pass.
+const ALLOWED_PREFIXES = [
+  'SET',
+  'SELECT',
+  'INSERT',
+  'UPDATE',
+  'DELETE',
+  'COPY',
+  'CREATE',
+  'ALTER',
+  'DROP',
+  'GRANT',
+  'REVOKE',
+  'COMMENT ON',
+  'BEGIN',
+  'COMMIT',
+  'SAVEPOINT',
+  'RELEASE',
+  'TRUNCATE',
+  'ANALYZE',
+  'VACUUM',
+  'LOCK',
+  'UNLISTEN',
+  'LISTEN',
+  'NOTIFY',
+]
+
+const ALLOWED_PREFIX_RE = new RegExp(
+  `^\\s*(?:${ALLOWED_PREFIXES.map((p) => p.replace(/\s/g, '\\s+')).join('|')})\\b`,
+  'i',
+)
+
+const COMMENT_OR_EMPTY_RE = /^\s*(?:--.*)?$/
+
+function containsDisallowedStatements(sql: string): boolean {
+  for (const line of sql.split('\n')) {
+    if (COMMENT_OR_EMPTY_RE.test(line)) {
+      continue
+    }
+    if (!ALLOWED_PREFIX_RE.test(line)) {
+      return true
+    }
+  }
+  return false
+}
 
 export function validateBackupSql(sql: string): void {
   if (sql.length > MAX_SQL_SIZE) {
@@ -32,5 +83,8 @@ export function validateBackupSql(sql: string): void {
     if (pattern.test(sql)) {
       throw new ActionFailure(400, `备份文件包含危险 SQL 命令（匹配：${pattern.source}），还原已中止。`)
     }
+  }
+  if (containsDisallowedStatements(sql)) {
+    throw new ActionFailure(400, '备份文件包含不允许的 SQL 语句类型，还原已中止。')
   }
 }

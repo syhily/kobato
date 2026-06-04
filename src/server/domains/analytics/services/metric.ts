@@ -5,7 +5,7 @@ import { sql } from 'drizzle-orm'
 import type { AnalyticsQueryInput } from '@/server/domains/analytics/services/query-parser'
 import type { MetricRow, MetricType } from '@/shared/contracts/analytics'
 
-import { whereClause, quoteIdent, METRIC_SET, METRIC_COLUMN } from '@/server/domains/analytics/services/shared-sql'
+import { whereClause, quoteIdent, METRIC_SET } from '@/server/domains/analytics/services/shared-sql'
 import { DomainError } from '@/server/infra/http/errors'
 
 export async function queryMetric(
@@ -17,9 +17,8 @@ export async function queryMetric(
   if (!METRIC_SET.has(type)) {
     throw new DomainError('BAD_REQUEST', `unknown metric type: ${type}`)
   }
-  const col = METRIC_COLUMN[type]
   const where = whereClause(input)
-  const groupExpr = sql`COALESCE(NULLIF(${quoteIdent(col)}, ''), '(unknown)')`
+  const groupExpr = sql`COALESCE(NULLIF(${quoteIdent(type)}, ''), '(unknown)')`
   const result = await db.execute(sql`
     SELECT
       ${groupExpr} AS name,

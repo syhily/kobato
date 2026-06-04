@@ -106,7 +106,7 @@ describe('services/auth/flow — signUpInitialAdminWithSession (install stage 1)
     title: 'My Blog',
     name: 'Admin',
     email: 'admin@example.com',
-    password: 'correct horse staple battery',
+    password: 'CorrectHorse1',
   }
 
   it('creates the admin row, seeds all settings, and redirects to /admin', async () => {

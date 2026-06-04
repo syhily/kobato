@@ -2,15 +2,18 @@
  * Extract the client IP address from a Request, with proxy-aware parsing.
  *
  * Trust model:
- *   1. `CF-Connecting-IP` — set by Cloudflare, trusted implicitly.
- *   2. `X-Real-IP` — set by the immediate reverse proxy, trusted implicitly.
- *   3. `X-Forwarded-For` — may contain multiple hops; we take the
- *      rightmost entry (the one added by the proxy closest to the app).
- *      If the app sits behind N proxies, the rightmost is the most
- *      reliable.  We also validate the result looks like an IP.
+ *   - `TRUSTED_PROXY_COUNT` env var controls how many proxy hops are trusted.
+ *   - When 0 (default), no forwarding headers are trusted; the direct
+ *     connection IP is used.
+ *   - When N > 0, the rightmost N entries of `X-Forwarded-For` are trusted.
+ *   - `CF-Connecting-IP` and `X-Real-IP` are only trusted when at least one
+ *     proxy hop is configured.
  *
- * Falls back to `127.0.0.1` when no proxy headers are present.
+ * Falls back to `127.0.0.1` when no proxy headers are present and no
+ * direct IP is provided.
  */
+
+import { TRUSTED_PROXY_COUNT } from '@/server/infra/env'
 
 const IPV4_RE = /^(?:(?:25[0-5]|2[0-4]\d|1?\d{1,2})\.){3}(?:25[0-5]|2[0-4]\d|1?\d{1,2})$/
 
@@ -26,8 +29,12 @@ function sanitizeIp(raw: string): string | null {
   return isValidIp(trimmed) ? trimmed : null
 }
 
-export function getClientAddress(request: Request): string {
-  // 1. Cloudflare-specific header — trusted because it's set by the edge.
+export function getClientAddress(request: Request, directIp?: string): string {
+  if (TRUSTED_PROXY_COUNT === 0) {
+    return directIp ?? '127.0.0.1'
+  }
+
+  // 1. Cloudflare-specific header — trusted only when behind proxies.
   const cfIp = request.headers.get('cf-connecting-ip')
   if (cfIp) {
     const sanitized = sanitizeIp(cfIp)
@@ -36,8 +43,7 @@ export function getClientAddress(request: Request): string {
     }
   }
 
-  // 2. Single-hop proxy header — trusted because only the immediate proxy
-  //    can set it without being overwritten by downstream hops.
+  // 2. Single-hop proxy header — trusted only when behind proxies.
   const realIp = request.headers.get('x-real-ip')
   if (realIp) {
     const sanitized = sanitizeIp(realIp)
@@ -46,13 +52,12 @@ export function getClientAddress(request: Request): string {
     }
   }
 
-  // 3. Multi-hop proxy chain — use the RIGHTMOST entry, which was added
-  //    by the proxy closest to the application (the most trustworthy).
+  // 3. Multi-hop proxy chain — trust the rightmost TRUSTED_PROXY_COUNT entries.
   const forwarded = request.headers.get('x-forwarded-for')
   if (forwarded) {
     const hops = forwarded.split(',').map((h) => h.trim())
-    // Walk right-to-left to find the first valid IP.
-    for (let i = hops.length - 1; i >= 0; i--) {
+    const start = Math.max(0, hops.length - TRUSTED_PROXY_COUNT)
+    for (let i = start; i < hops.length; i++) {
       const sanitized = sanitizeIp(hops[i]!)
       if (sanitized) {
         return sanitized
@@ -60,5 +65,5 @@ export function getClientAddress(request: Request): string {
     }
   }
 
-  return '127.0.0.1'
+  return directIp ?? '127.0.0.1'
 }

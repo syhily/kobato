@@ -10,11 +10,12 @@ const IV_BYTES = 12
 const ENCRYPTED_PREFIX = 'enc:'
 const ENCRYPTED_V2_PREFIX = 'enc2:'
 
-const HKDF_SALT = Buffer.from('kobato-secret-v2-salt')
+const LEGACY_HKDF_SALT = Buffer.from('kobato-secret-v2-salt')
 const HKDF_INFO = 'aes-256-gcm-key'
 
 let cachedLegacyKey: Buffer | undefined
-let cachedKey: Buffer | undefined
+let cachedLegacyV2Key: Buffer | undefined
+let cachedDeploymentKey: Buffer | undefined
 
 function getLegacyKey(): Buffer {
   if (cachedLegacyKey !== undefined) {
@@ -27,19 +28,37 @@ function getLegacyKey(): Buffer {
   return cachedLegacyKey
 }
 
-function getKey(): Buffer {
-  if (cachedKey !== undefined) {
-    return cachedKey
+function getLegacyV2Key(): Buffer {
+  if (cachedLegacyV2Key !== undefined) {
+    return cachedLegacyV2Key
   }
   if (!ENCRYPTION_KEY) {
     throw new Error('ENCRYPTION_KEY env var is required for secret encryption')
   }
-  cachedKey = Buffer.from(hkdfSync('sha256', ENCRYPTION_KEY, HKDF_SALT, HKDF_INFO, 32))
-  return cachedKey
+  cachedLegacyV2Key = Buffer.from(hkdfSync('sha256', ENCRYPTION_KEY, LEGACY_HKDF_SALT, HKDF_INFO, 32))
+  return cachedLegacyV2Key
+}
+
+function deriveDeploymentSalt(): Buffer {
+  if (!ENCRYPTION_KEY) {
+    return LEGACY_HKDF_SALT
+  }
+  return Buffer.from(createHash('sha256').update(ENCRYPTION_KEY).update('kobato-deployment-salt').digest('hex'))
+}
+
+function getDeploymentKey(): Buffer {
+  if (cachedDeploymentKey !== undefined) {
+    return cachedDeploymentKey
+  }
+  if (!ENCRYPTION_KEY) {
+    throw new Error('ENCRYPTION_KEY env var is required for secret encryption')
+  }
+  cachedDeploymentKey = Buffer.from(hkdfSync('sha256', ENCRYPTION_KEY, deriveDeploymentSalt(), HKDF_INFO, 32))
+  return cachedDeploymentKey
 }
 
 function encrypt(plaintext: string): string {
-  const key = getKey()
+  const key = getDeploymentKey()
   const iv = randomBytes(IV_BYTES)
   const cipher = createCipheriv(ALGORITHM, key, iv)
   const encrypted = Buffer.concat([cipher.update(plaintext, 'utf8'), cipher.final()])
@@ -47,10 +66,8 @@ function encrypt(plaintext: string): string {
   return `${ENCRYPTED_V2_PREFIX}${iv.toString('hex')}:${authTag.toString('hex')}:${encrypted.toString('hex')}`
 }
 
-function decrypt(ciphertext: string): string {
-  const isV2 = ciphertext.startsWith(ENCRYPTED_V2_PREFIX)
-  const prefix = isV2 ? ENCRYPTED_V2_PREFIX : ENCRYPTED_PREFIX
-  const key = isV2 ? getKey() : getLegacyKey()
+function tryDecrypt(ciphertext: string, key: Buffer): string {
+  const prefix = ciphertext.startsWith(ENCRYPTED_V2_PREFIX) ? ENCRYPTED_V2_PREFIX : ENCRYPTED_PREFIX
   const parts = ciphertext.slice(prefix.length).split(':')
   if (parts.length !== 3) {
     throw new Error('Invalid encrypted secret format')
@@ -61,6 +78,22 @@ function decrypt(ciphertext: string): string {
   const decipher = createDecipheriv(ALGORITHM, key, iv)
   decipher.setAuthTag(authTag)
   return Buffer.concat([decipher.update(encrypted), decipher.final()]).toString('utf8')
+}
+
+function decrypt(ciphertext: string): string {
+  if (ciphertext.startsWith(ENCRYPTED_V2_PREFIX)) {
+    // Prefer the per-deployment key for new encryption.
+    if (ENCRYPTION_KEY) {
+      try {
+        return tryDecrypt(ciphertext, getDeploymentKey())
+      } catch {
+        // Fall back to legacy v2 key for backward compatibility with
+        // secrets encrypted before the salt was deployment-specific.
+      }
+    }
+    return tryDecrypt(ciphertext, getLegacyV2Key())
+  }
+  return tryDecrypt(ciphertext, getLegacyKey())
 }
 
 export function isEncrypted(value: string): boolean {

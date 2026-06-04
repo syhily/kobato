@@ -26,7 +26,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   getRouteRequestContext({ request, context })
   return data({
     pgToolsAvailable: await checkPgToolsAvailable(),
-    setupToken: getSetupToken(),
+    setupToken: await getSetupToken(),
   })
 }
 

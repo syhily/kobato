@@ -1,43 +1,56 @@
 import { randomBytes } from 'node:crypto'
 
 import { getLogger } from '@/server/infra/logger'
+import { redisInstance } from '@/server/infra/redis/storage'
 
 const log = getLogger('auth.setup-token')
 
-let setupToken: string | null = null
+const REDIS_KEY = 'setup_token'
+const TTL_SECONDS = 7 * 24 * 60 * 60 // 7 days
 let tokenInvalidated = false
 
 /**
  * Generate (or retrieve) the one-time setup token used to authenticate
- * the initial setup-restore endpoint.  The token is printed to the
- * console once; it is valid only until the first admin is created.
+ * the initial setup-restore endpoint. The token is stored in Redis so
+ * multi-instance deployments share it; it is valid only until the first
+ * admin is created.
  */
-export function getSetupToken(): string {
+export async function getSetupToken(): Promise<string> {
   if (tokenInvalidated) {
     throw new Error('Setup token has been invalidated — an admin already exists')
   }
-  if (setupToken === null) {
-    setupToken = randomBytes(32).toString('hex')
-    log.info('╔══════════════════════════════════════════════════════════════════╗')
-    log.info('║  Setup token generated (valid until first admin is created):     ║')
-    log.info(`║  ${setupToken}  ║`)
-    log.info('╚══════════════════════════════════════════════════════════════════╝')
+  const redis = redisInstance()
+  const existing = await redis.get(REDIS_KEY)
+  if (existing) {
+    return existing
   }
-  return setupToken
+  const token = randomBytes(32).toString('hex')
+  await redis.set(REDIS_KEY, token, 'EX', TTL_SECONDS)
+  log.info('╔══════════════════════════════════════════════════════════════════╗')
+  log.info('║  Setup token generated (valid until first admin is created):     ║')
+  log.info(`║  ${token}  ║`)
+  log.info('╚══════════════════════════════════════════════════════════════════╝')
+  return token
 }
 
 /** Call after the first admin is created to invalidate the token. */
-export function invalidateSetupToken(): void {
+export async function invalidateSetupToken(): Promise<void> {
   tokenInvalidated = true
-  setupToken = null
+  const redis = redisInstance()
+  await redis.del(REDIS_KEY)
 }
 
 /** Verify a setup token presented by the client. */
-export function verifySetupToken(candidate: string): boolean {
-  if (tokenInvalidated || setupToken === null) {
+export async function verifySetupToken(candidate: string): Promise<boolean> {
+  if (tokenInvalidated) {
     return false
   }
-  return timingSafeEqual(Buffer.from(candidate), Buffer.from(setupToken))
+  const redis = redisInstance()
+  const token = await redis.get(REDIS_KEY)
+  if (!token) {
+    return false
+  }
+  return timingSafeEqual(Buffer.from(candidate), Buffer.from(token))
 }
 
 function timingSafeEqual(a: Buffer, b: Buffer): boolean {

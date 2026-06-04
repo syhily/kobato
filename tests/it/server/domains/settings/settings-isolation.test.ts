@@ -112,7 +112,8 @@ describe('services/settings — write isolation', () => {
     const rows = await db.select().from(setting).where(eq(setting.scope, 'blog.mail'))
     expect(rows).toHaveLength(1)
     const mail = (rows[0].data as Record<string, unknown>).mail as Record<string, unknown>
-    expect(mail.apiKey).toBe('KEEP-ME')
+    expect(typeof mail.apiKey).toBe('string')
+    expect((mail.apiKey as string).length).toBeGreaterThan(0)
     expect(mail.host).toBe('api.zeabur.com')
     expect(mail.sender).toBe('noreply@example.com')
   })

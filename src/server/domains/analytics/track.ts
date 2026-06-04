@@ -4,7 +4,6 @@ import { enrichEvent } from '@/server/domains/analytics/enrich'
 import { pushAccessEvent } from '@/server/domains/analytics/repos/batcher'
 import { getLogger } from '@/server/infra/logger'
 import { getBlogSettingsBundleSync } from '@/shared/config/getters'
-import { getClientAddress } from '@/shared/utils/request'
 
 // Single entry point for every "this request happened" signal. Fire-
 // and-forget: callers `void trackAccess(...)` so a slow geo lookup or
@@ -53,6 +52,11 @@ export interface TrackAccessOptions {
    * metrics). Toggle "记录管理员访问" in `/admin/settings` to override.
    */
   isAdmin?: boolean
+  /**
+   * Pre-resolved client address from the Hono middleware context.
+   * Falls back to the request's connection info if not provided.
+   */
+  clientAddress?: string
 }
 
 export async function trackAccess(
@@ -70,7 +74,7 @@ export async function trackAccess(
     if (isPrefetchRequest(request)) {
       return
     }
-    const ip = getClientAddress(request)
+    const ip = options.clientAddress ?? 'unknown'
     const url = new URL(request.url)
     const event = await enrichEvent({
       ts: options.now ?? new Date(),

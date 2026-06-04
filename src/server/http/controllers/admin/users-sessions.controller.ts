@@ -6,6 +6,7 @@ import { revokeSessionWithGuard } from '@/server/domains/auth/service'
 import { revokeAllSessionsOfUser } from '@/server/domains/auth/session-storage'
 import { bulkApproveCommentsForUser, bulkDeleteCommentsForUser } from '@/server/domains/users/services/admin'
 import { adminProc } from '@/server/http/orpc-base'
+import { findUserById } from '@/server/infra/db/operations/user'
 import { idFromString } from '@/shared/utils/id'
 
 const userIdInput = z.object({ userId: z.string().min(1) })
@@ -37,6 +38,11 @@ const revokeAllSessions = adminProc
       targetId = idFromString(input.userId)
     } catch {
       throw new ORPCError('BAD_REQUEST', { message: '用户 ID 无效。' })
+    }
+    // Guard: an admin may not bulk-revoke another admin's sessions.
+    const targetUser = await findUserById(context.db, targetId)
+    if (targetUser?.role === 'admin' && context.viewer.userId !== input.userId) {
+      throw new ORPCError('FORBIDDEN', { message: '无权撤销其他管理员的全部会话。' })
     }
     await revokeAllSessionsOfUser(targetId)
     recordAuditEventFromContext(context, {

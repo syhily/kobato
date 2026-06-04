@@ -78,7 +78,7 @@ export function configureMiddleware(app: Hono<Env>): void {
     const extra = [...origins].join(' ')
     const csp = [
       "default-src 'self'",
-      "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+      "script-src 'self' 'unsafe-inline'",
       `style-src 'self' 'unsafe-inline' ${extra}`,
       `font-src 'self' ${extra}`,
       `img-src 'self' data: blob: http://*.music.126.net https://*.music.126.net ${extra}`,
@@ -95,7 +95,7 @@ export function configureMiddleware(app: Hono<Env>): void {
     secureHeaders({
       contentSecurityPolicy: {
         defaultSrc: ["'self'"],
-        scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
+        scriptSrc: ["'self'", "'unsafe-inline'"],
         styleSrc: ["'self'", "'unsafe-inline'"],
         imgSrc: ["'self'", 'data:', 'blob:', 'http://*.music.126.net', 'https://*.music.126.net'],
         mediaSrc: ["'self'", 'http://*.music.126.net', 'https://*.music.126.net'],

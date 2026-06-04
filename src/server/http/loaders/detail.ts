@@ -5,7 +5,7 @@ import type { EntityTarget } from '@/server/infra/db/target'
 import type { ClientTag, SidebarPostLink } from '@/shared/types/catalog'
 
 import { trackAccess } from '@/server/domains/analytics/track'
-import { tryGetSessionContext } from '@/server/domains/auth/context'
+import { tryGetRequestContext, tryGetSessionContext } from '@/server/domains/auth/context'
 import { resolveSessionContext, userSession } from '@/server/domains/auth/primitives'
 import { type DetailPageComments, loadDetailPageStreaming } from '@/server/http/loaders/comments'
 import { notFound } from '@/server/infra/http/status'
@@ -68,7 +68,8 @@ export async function loadPublicDetailData(
   // and the analytics settings override both live inside
   // `trackAccess`. `void`d — never blocks the loader.
   if (trackView) {
-    void trackAccess(request, target, { isAdmin })
+    const reqCtx = tryGetRequestContext(context)
+    void trackAccess(request, target, { isAdmin, clientAddress: reqCtx?.clientAddress })
   }
 
   const [, streaming] = await Promise.all([preload(), loadDetailPageStreaming(db, session, target, { trackView })])

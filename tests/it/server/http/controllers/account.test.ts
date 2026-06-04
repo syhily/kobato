@@ -110,7 +110,7 @@ describe('accountRouter.updatePassword', () => {
     const ctx = makeAuthedCtx({ userId: '1', sessionId: 'keep-me' })
     const res = await call(
       accountRouter.updatePassword,
-      { oldPassword: 'whatever', newPassword: 'new-password-1' },
+      { oldPassword: 'whatever', newPassword: 'New-password-1' },
       { context: ctx },
     )
     expect(res.success).toBe(true)
@@ -128,7 +128,7 @@ describe('accountRouter.updatePassword', () => {
     vi.mocked(bcrypt.compare as (password: string, hash: string) => Promise<boolean>).mockResolvedValueOnce(false)
     const ctx = makeAuthedCtx({ userId: '1' })
     await expect(
-      call(accountRouter.updatePassword, { oldPassword: 'wrong', newPassword: 'new-password-1' }, { context: ctx }),
+      call(accountRouter.updatePassword, { oldPassword: 'wrong', newPassword: 'New-password-1' }, { context: ctx }),
     ).rejects.toMatchObject({ code: 'FORBIDDEN' })
   })
 
@@ -138,7 +138,7 @@ describe('accountRouter.updatePassword', () => {
 
     const ctx = makeAuthedCtx({ userId: '1' })
     await expect(
-      call(accountRouter.updatePassword, { oldPassword: 'old', newPassword: 'new-password-1' }, { context: ctx }),
+      call(accountRouter.updatePassword, { oldPassword: 'old', newPassword: 'New-password-1' }, { context: ctx }),
     ).rejects.toMatchObject({ code: 'TOO_MANY_REQUESTS' })
   })
 })

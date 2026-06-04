@@ -116,7 +116,7 @@ export async function signUpInitialAdminWithSession(
   }
 
   await refreshBlogSettings(db)
-  invalidateSetupToken()
+  await invalidateSetupToken()
 
   return {
     type: 'redirect',

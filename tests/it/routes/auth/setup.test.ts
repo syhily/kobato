@@ -119,7 +119,7 @@ describe('routes/setup', () => {
       formData.set('title', 'Blog')
       formData.set('name', 'A')
       formData.set('email', 'a@b.com')
-      formData.set('password', '1234567890')
+      formData.set('password', 'Password1234')
 
       await action({
         request: new Request('http://localhost/admin/setup', {
@@ -138,7 +138,7 @@ describe('routes/setup', () => {
         title: 'Blog',
         name: 'A',
         email: 'a@b.com',
-        password: '1234567890',
+        password: 'Password1234',
         session: expect.anything(),
         request: expect.anything(),
         clientAddress: '127.0.0.1',

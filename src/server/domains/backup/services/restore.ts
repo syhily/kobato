@@ -57,13 +57,19 @@ export async function extractBackupSql(buffer: Buffer, fileName: string): Promis
   throw new ActionFailure(400, '不支持的备份文件格式，仅支持 .sql 或 .gz')
 }
 
-function readTimescaleVersionFromDump(sql: string): string | null {
+export const TIMESCALEDB_VERSION_RE = /^\d+\.\d+\.\d+$/
+
+export function readTimescaleVersionFromDump(sql: string): string | null {
   const block = /COPY _timescaledb_catalog\.metadata[^\n]*\n([\s\S]*?)^\\\.$/m.exec(sql)
   if (!block) {
     return null
   }
   const match = /^timescaledb_version\t([^\t\n]+)/m.exec(block[1])
-  return match ? match[1] : null
+  const version = match ? match[1] : null
+  if (version !== null && !TIMESCALEDB_VERSION_RE.test(version)) {
+    throw new ActionFailure(400, '备份文件中的 TimescaleDB 版本号格式异常，还原已中止。')
+  }
+  return version
 }
 
 export async function restoreFromSql(db: NodePgDatabase, sql: string): Promise<void> {
@@ -79,7 +85,7 @@ export async function restoreFromSql(db: NodePgDatabase, sql: string): Promise<v
     await db.execute(drizzleSql`SELECT public.timescaledb_pre_restore()`)
   }
 
-  const psql = spawn('psql', ['--single-transaction', '-v', 'ON_ERROR_STOP=1', ...connArgs], {
+  const psql = spawn('psql', ['--no-psqlrc', '--single-transaction', '-v', 'ON_ERROR_STOP=1', ...connArgs], {
     env,
     stdio: ['pipe', 'inherit', 'inherit'],
   })

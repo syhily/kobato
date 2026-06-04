@@ -5,6 +5,19 @@ import { httpUrlOrEmptyStringSchema } from '@/shared/utils/safe-url'
 /** Minimum password length enforced everywhere (login, signup, reset, change). */
 export const MIN_PASSWORD_LENGTH = 10
 
+/**
+ * Password complexity regex: at least one uppercase, one lowercase,
+ * and one digit. Applied on top of the minimum length.
+ */
+export const PASSWORD_COMPLEXITY_RE = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$/
+
+function passwordSchema() {
+  return z
+    .string()
+    .min(MIN_PASSWORD_LENGTH)
+    .regex(PASSWORD_COMPLEXITY_RE, '密码必须包含至少一个大写字母、一个小写字母和一个数字')
+}
+
 // Auth form schemas.
 export const signInSchema = z.object({
   email: z.email(),
@@ -16,7 +29,7 @@ export const signUpAdminSchema = z.object({
   title: z.string().min(1),
   name: z.string().min(1),
   email: z.email(),
-  password: z.string().min(MIN_PASSWORD_LENGTH),
+  password: passwordSchema(),
 })
 export type SignUpAdminInput = z.infer<typeof signUpAdminSchema>
 

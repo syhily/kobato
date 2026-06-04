@@ -159,7 +159,7 @@ describe('routes/signin — password-reset session-revocation', () => {
     tokenMocks.consumeToken.mockResolvedValueOnce(null)
     const result = await readActionData<{ error: string | null }>(
       action({
-        request: resetRequest({ reset_token: 'rt', password: 'longenough' }),
+        request: resetRequest({ reset_token: 'rt', password: 'LongEnough1' }),
       } as unknown as Parameters<typeof action>[0]),
     )
     expect(result.error).toBe('链接无效或已过期。')
@@ -181,7 +181,7 @@ describe('routes/signin — password-reset session-revocation', () => {
     let caught: unknown
     try {
       await action({
-        request: resetRequest({ reset_token: 'rt', password: 'longenough' }),
+        request: resetRequest({ reset_token: 'rt', password: 'LongEnough1' }),
       } as unknown as Parameters<typeof action>[0])
     } catch (error) {
       caught = error

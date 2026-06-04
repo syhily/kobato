@@ -113,6 +113,12 @@ const envConfig = {
     // Filesystem path to the MaxMind GeoLite2-City mmdb. Optional.
     MAXMIND_DB_PATH: z.string().min(1).optional(),
 
+    // Number of trusted reverse proxies in front of the application.
+    // When 0 (default), no X-Forwarded-For / X-Real-IP / CF-Connecting-IP
+    // headers are trusted and the direct connection IP is used.
+    // When N > 0, the rightmost N entries of X-Forwarded-For are trusted.
+    TRUSTED_PROXY_COUNT: z.coerce.number().int().min(0).max(10).optional().default(0),
+
     // Filesystem directory containing TTF/OTF fonts for OG image and calendar
     // rendering. Admin settings specify filenames relative to this directory.
     // Optional: when unset, Canvas falls back to its built-in system CJK shaper.
@@ -171,6 +177,7 @@ export const {
   PORT,
   REDIS_URL,
   SESSION_SECRET,
+  TRUSTED_PROXY_COUNT,
 } = env
 
 export function isVitest(): boolean {

@@ -84,7 +84,7 @@ describe('integration: /admin/setup full install flow', () => {
     formData.set('title', 'My Blog')
     formData.set('name', 'Admin')
     formData.set('email', 'admin@example.com')
-    formData.set('password', 'correcthorsebatterystaple')
+    formData.set('password', 'CorrectHorse1')
 
     const response = (await action({
       request: new Request('http://localhost/admin/setup', {
@@ -146,7 +146,7 @@ describe('integration: /admin/setup full install flow', () => {
     formData.set('title', 'My Blog')
     formData.set('name', 'Admin')
     formData.set('email', 'admin@example.com')
-    formData.set('password', 'correcthorsebatterystaple')
+    formData.set('password', 'CorrectHorse1')
 
     const response = (await action({
       request: new Request('http://localhost/admin/setup', {

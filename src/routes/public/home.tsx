@@ -43,7 +43,10 @@ export async function loader({
   // admin-exemption (so the dashboard owner doesn't pollute their
   // own visitor metrics) lives inside `trackAccess`; pass `isAdmin`
   // so it can apply the exemption and honour the analytics settings.
-  void trackAccess(request, null, { isAdmin: userSession(session)?.role === 'admin' })
+  void trackAccess(request, null, {
+    isAdmin: userSession(session)?.role === 'admin',
+    clientAddress: getRouteRequestContext({ request, context }).clientAddress,
+  })
 
   const content = requireBlogSettingsSection('content')
   const homePageSize = content.pagination.posts

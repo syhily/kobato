@@ -18,8 +18,6 @@ export const adminUserDto = z.object({
   emailVerified: z.boolean(),
   createdAt: isoDateTime,
   deletedAt: isoDateTime.nullable(),
-  lastIp: z.string().nullable(),
-  lastUa: z.string().nullable(),
   commentCount: z.number().int().nonnegative(),
   pendingCount: z.number().int().nonnegative(),
   lastCommentAt: isoDateTime.nullable(),

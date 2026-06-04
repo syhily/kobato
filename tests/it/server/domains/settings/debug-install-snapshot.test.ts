@@ -32,7 +32,7 @@ describe('install snapshot debug', () => {
       title: 'My Blog',
       name: 'Admin',
       email: 'admin@example.com',
-      password: 'correcthorsebatterystaple',
+      password: 'CorrectHorse1',
       session,
       request,
       clientAddress: '127.0.0.1',

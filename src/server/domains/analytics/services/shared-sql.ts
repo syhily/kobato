@@ -1,13 +1,14 @@
 import { sql, type SQL } from 'drizzle-orm'
 
 import type { AnalyticsQueryInput } from '@/server/domains/analytics/services/query-parser'
+import type { MetricType } from '@/shared/contracts/analytics'
 
 import { DomainError } from '@/server/infra/http/errors'
 import { METRIC_TYPES, pickAggregateSource } from '@/shared/contracts/analytics'
 
 const METRIC_SET = new Set<string>(METRIC_TYPES)
 
-const METRIC_COLUMN: Record<import('@/shared/contracts/analytics').MetricType, string> = {
+const METRIC_COLUMN: Record<MetricType, string> = {
   country: 'country',
   region: 'region',
   city: 'city',
@@ -22,11 +23,17 @@ const METRIC_COLUMN: Record<import('@/shared/contracts/analytics').MetricType, s
   path: 'path',
 }
 
-export function quoteIdent(name: string): SQL {
-  if (!/^[a-z_][a-z0-9_]*$/.test(name)) {
+/**
+ * Quote a column identifier for use in raw SQL.
+ * The parameter type is constrained to MetricType so only columns from
+ * the hard-coded METRIC_COLUMN map can be passed — never user input.
+ */
+export function quoteIdent(name: MetricType): SQL {
+  const col = METRIC_COLUMN[name]
+  if (!col) {
     throw new DomainError('BAD_REQUEST', `invalid identifier: ${name}`)
   }
-  return sql.raw(`"${name}"`)
+  return sql.raw(`"${col}"`)
 }
 
 export function whereClause(input: AnalyticsQueryInput): SQL {
@@ -45,8 +52,7 @@ export function whereClause(input: AnalyticsQueryInput): SQL {
     if (!METRIC_SET.has(type) || !value) {
       continue
     }
-    const col = METRIC_COLUMN[type as import('@/shared/contracts/analytics').MetricType]
-    conditions.push(sql`${quoteIdent(col)} = ${value}`)
+    conditions.push(sql`${quoteIdent(type as MetricType)} = ${value}`)
   }
   return sql.join(conditions, sql` AND `)
 }
@@ -69,8 +75,7 @@ export function cagWhereClause(input: AnalyticsQueryInput): SQL {
     if (!usable.has(type) || !value) {
       continue
     }
-    const col = METRIC_COLUMN[type as import('@/shared/contracts/analytics').MetricType]
-    conditions.push(sql`${quoteIdent(col)} = ${value}`)
+    conditions.push(sql`${quoteIdent(type as MetricType)} = ${value}`)
   }
   return sql.join(conditions, sql` AND `)
 }

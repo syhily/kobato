@@ -33,8 +33,6 @@ export interface AdminUserDto {
   emailVerified: boolean
   createdAt: string
   deletedAt: string | null
-  lastIp: string | null
-  lastUa: string | null
   commentCount: number
   pendingCount: number
   lastCommentAt: string | null

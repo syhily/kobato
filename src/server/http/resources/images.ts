@@ -21,7 +21,6 @@ import {
 import { serveCalendar } from '@/server/render/calendar/serve'
 import { drawOpenGraph } from '@/server/render/og/render'
 import { getCacheSettings, requireBlogSettingsSection } from '@/shared/config/getters'
-import { getClientAddress } from '@/shared/utils/request'
 import { joinUrl } from '@/shared/utils/urls'
 
 // ─── OG image ─────────────────────────────────────────────────────
@@ -63,7 +62,7 @@ function stripPng(filename: string): string {
 
 export const imagesRouter = new Hono<Env>()
   .use(async (c, next) => {
-    const { exceeded } = await tryResourceRateLimit(getClientAddress(c.req.raw))
+    const { exceeded } = await tryResourceRateLimit(c.var.clientAddress)
     if (exceeded) {
       return c.json({ error: 'Too many requests' }, 429)
     }

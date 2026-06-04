@@ -10,10 +10,10 @@ import type { BlogSettingsBundle } from '@/shared/config/types'
 import { SECRET_FIELDS } from '@/server/domains/settings/secrets'
 import { SECTION_REGISTRY, type SettingsSection } from '@/server/domains/settings/sections'
 import { hydrateBlogSettings, refreshBlogSettings } from '@/server/domains/settings/snapshot'
-import { decryptIfNeeded, encryptIfNeeded } from '@/server/infra/crypto/secret-encryption'
+import { encryptIfNeeded } from '@/server/infra/crypto/secret-encryption'
 import { findSettingByScope, upsertSetting } from '@/server/infra/db/operations/setting'
 import { checkMailReady } from '@/server/infra/email/sender'
-import { FONT_PATH } from '@/server/infra/env'
+import { ENCRYPTION_KEY, FONT_PATH } from '@/server/infra/env'
 import { DomainError } from '@/server/infra/http/errors'
 import { getLogger } from '@/server/infra/logger'
 import { getBlogSettingsBundleSync } from '@/shared/config/getters'
@@ -106,6 +106,13 @@ export async function updateBlogSettingsSection<S extends SettingsSection>(
     }
   }
 
+  // Secret sections require ENCRYPTION_KEY so credentials are not stored
+  // as plaintext in the database.
+  const secretConfig = SECRET_FIELDS.find((f) => f.section === section)
+  if (secretConfig && !ENCRYPTION_KEY) {
+    throw new DomainError('BAD_REQUEST', 'ENCRYPTION_KEY 环境变量未设置，无法保存包含敏感信息的设置。')
+  }
+
   return db.transaction(async (tx) => {
     const nextRow = await applySectionPatch(tx, section, parsed.data)
 
@@ -194,6 +201,8 @@ async function preserveBrandingOnPatch(
 // When the editor omits a secret field (sends `undefined`), fold the
 // previous secret back in so the user doesn't have to re-paste it.
 // An explicit string (including empty) overwrites the stored value.
+// The existing encrypted value is passed through as-is so no decryption
+// happens in the service layer — secrets never flow through return values.
 async function preserveSecretOnPatch(
   db: NodePgDatabase,
   validated: unknown,
@@ -212,9 +221,9 @@ async function preserveSecretOnPatch(
     | Record<string, unknown>
     | undefined
 
-  // Decrypt the stored secret before returning it to the admin UI
-  const raw = typeof existingPayload?.[secretKey] === 'string' ? existingPayload[secretKey] : ''
-  const previousSecret = decryptIfNeeded(raw as string)
+  // Pass the existing ciphertext through unchanged. encryptSecretsInRow
+  // recognises the encrypted prefix and skips re-encryption.
+  const previousSecret = typeof existingPayload?.[secretKey] === 'string' ? existingPayload[secretKey] : ''
   const nextPayload: Record<string, unknown> = { ...incoming, [secretKey]: previousSecret }
   return { ...record, [payloadPath]: nextPayload }
 }
