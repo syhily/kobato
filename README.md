@@ -65,11 +65,12 @@ Settings are seeded automatically.
 Most settings are managed in the admin dashboard.
 Database and session secrets are configured via environment variables:
 
-| Variable         | Description                                                                  |
-| ---------------- | ---------------------------------------------------------------------------- |
-| `DATABASE_URL`   | PostgreSQL connection URL, e.g. `postgres://user:pass@localhost:5432/kobato` |
-| `REDIS_URL`      | Redis connection URL, e.g. `redis://localhost:6379`                          |
-| `SESSION_SECRET` | HMAC secret for cookies. Generate with `openssl rand -hex 32`                |
+| Variable           | Description                                                                  |
+| ------------------ | ---------------------------------------------------------------------------- |
+| `DATABASE_URL`     | PostgreSQL connection URL, e.g. `postgres://user:pass@localhost:5432/kobato` |
+| `REDIS_URL`        | Redis connection URL, e.g. `redis://localhost:6379`                          |
+| `SESSION_SECRET`   | HMAC secret for cookies. Generate with `openssl rand -hex 32`                |
+| `KOBATO_DATA_PATH` | Root data directory for fonts, dead-letter files, and MaxMind DB             |
 
 Optional but recommended for production:
 
@@ -130,7 +131,7 @@ docker run -p 4321:4321 \
 
 ### Zeabur
 
-Deploy with one click using the [Zeabur template](https://zeabur.com/templates/TK7XLK).
+[![Deploy on Zeabur](https://zeabur.com/button.svg)](https://zeabur.com/templates/TK7XLK?referralCode=syhily)
 
 ## Scripts
 

@@ -11,7 +11,7 @@ import { cva, type VariantProps } from '@/ui/lib/cva'
 //     input sits in the same row as a primary button.
 //   lg      (h-11) — public-site search bar; pairs with `<Button size="lg">`.
 const inputVariants = cva(
-  'flex w-full min-w-0 rounded-sm border border-line bg-transparent transition-[color,box-shadow] outline-none selection:bg-primary selection:text-primary-foreground file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 focus-visible:border-ring focus-visible:ring-(--ring-width) focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-destructive/20',
+  'flex w-full min-w-0 rounded-sm border border-line-muted bg-transparent transition-[color,box-shadow] outline-none selection:bg-primary selection:text-primary-foreground file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 focus-visible:border-ring focus-visible:ring-(--ring-width) focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-destructive/20',
   {
     variants: {
       size: {

@@ -76,9 +76,6 @@ spec:
           DATABASE_URL:
             default: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}
             expose: true
-          DATABASE_URL_UNPOOLED:
-            default: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}
-            expose: true
           POSTGRES_DB:
             default: kobato
             expose: true
@@ -137,7 +134,7 @@ spec:
           REDIS_PORT:
             default: ${DATABASE_PORT}
             expose: true
-          REDIS_URI:
+          REDIS_URL:
             default: ${REDIS_CONNECTION_STRING}
             expose: true
         configs:
@@ -162,16 +159,25 @@ spec:
           - id: web
             port: 4321
             type: HTTP
+        volumes:
+          - id: data
+            dir: /data
         env:
           HOST:
             default: 0.0.0.0
           PORT:
             default: '4321'
-          REDIS_URL:
-            default: ${REDIS_CONNECTION_STRING}
+          LOG_LEVEL:
+            default: info
+          DB_POOL_MAX:
+            default: '20'
+          DB_STATEMENT_TIMEOUT_MS:
+            default: '30000'
           SESSION_SECRET:
             default: ${PASSWORD}
           ENCRYPTION_KEY:
             default: ${PASSWORD}
+          KOBATO_DATA_PATH:
+            default: /data
           NODE_ENV:
             default: production

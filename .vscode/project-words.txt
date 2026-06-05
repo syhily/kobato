@@ -33,6 +33,7 @@ codegraph
 collisively
 colour
 commentform
+conffile
 csslintrc
 csvg
 ctan
@@ -49,6 +50,7 @@ duoshuo
 eliostruyf
 embedpdf
 emde
+envsubst
 eparams
 epub
 ethantw
@@ -83,6 +85,7 @@ heiti
 hiragino
 hmac
 hnsw
+hono
 honorbkk
 huaweiyal
 hypertable
@@ -280,6 +283,7 @@ ultrahtml
 unconfigured
 unlayered
 unpic
+unpooled
 unrecognised
 unsharp
 unstub

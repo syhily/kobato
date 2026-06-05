@@ -8,7 +8,6 @@ import type { FontsSettings } from '@/shared/config/types'
 import { SettingsRow } from '@/ui/admin/settings/SettingsSection'
 import { SettingGroup } from '@/ui/admin/settings/shell/SettingGroup'
 import { SettingGroupContent } from '@/ui/admin/settings/shell/SettingGroupContent'
-import { SettingValue } from '@/ui/admin/settings/shell/SettingValue'
 import { useSettingsCard } from '@/ui/admin/settings/shell/useSettingsCard'
 import { Button } from '@/ui/components/button'
 import { Input } from '@/ui/components/input'
@@ -33,17 +32,7 @@ async function uploadFont(slot: 'og' | 'calendar', file: File): Promise<void> {
   }
 }
 
-function FontUploadRow({
-  slot,
-  label,
-  family,
-  mode,
-}: {
-  slot: 'og' | 'calendar'
-  label: string
-  family: string
-  mode: 'read' | 'edit'
-}) {
+function FontUploadRow({ slot, label, family }: { slot: 'og' | 'calendar'; label: string; family: string }) {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [uploading, setUploading] = useState(false)
 
@@ -53,8 +42,8 @@ function FontUploadRow({
       toast.error('文件类型错误', { description: '仅支持 .ttf 或 .otf 字体文件' })
       return
     }
-    if (file.size > 20 * 1024 * 1024) {
-      toast.error('文件过大', { description: '字体文件大小上限为 20 MB' })
+    if (file.size > 60 * 1024 * 1024) {
+      toast.error('文件过大', { description: '字体文件大小上限为 60 MB' })
       return
     }
     setUploading(true)
@@ -84,25 +73,23 @@ function FontUploadRow({
           e.target.value = ''
         }}
       />
-      {mode === 'edit' && (
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          disabled={uploading}
-          onClick={() => fileInputRef.current?.click()}
-        >
-          <UploadIcon data-icon="sm" />
-          {uploading ? '上传中…' : '上传字体'}
-        </Button>
-      )}
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        disabled={uploading}
+        onClick={() => fileInputRef.current?.click()}
+      >
+        <UploadIcon data-icon="sm" />
+        {uploading ? '上传中…' : '上传字体'}
+      </Button>
       <span className="text-sm text-muted-foreground">{family ? `已配置族名：${family}` : '未配置族名'}</span>
     </div>
   )
 }
 
 function FontsCanvasCard({ fonts }: { fonts: FontsSettings }) {
-  const { mode, form, settingGroupProps, display } = useSettingsCard<
+  const { form, settingGroupProps, display } = useSettingsCard<
     FontsSettings,
     { ogFamily: string; calendarFamily: string }
   >({
@@ -124,45 +111,38 @@ function FontsCanvasCard({ fonts }: { fonts: FontsSettings }) {
       description="服务端渲染 OG 图与日历图时使用的本地 TTF/OTF 字体文件。上传字体后配置族名，留空时降级使用系统中文字体。"
       {...settingGroupProps}
     >
-      {mode === 'edit' ? (
-        <SettingGroupContent>
-          <SettingsRow label="OG 图字体" htmlFor="fonts-og-family">
-            <div className="flex flex-col gap-2">
-              <FontUploadRow slot="og" label="OG 图字体" family={display.og.family} mode={mode} />
-              <Input
-                id="fonts-og-family"
-                type="text"
-                placeholder="族名，例如 OPPOSans"
-                maxLength={100}
-                {...form.register('ogFamily')}
-              />
-            </div>
-          </SettingsRow>
-          <SettingsRow label="日历图字体" htmlFor="fonts-calendar-family">
-            <div className="flex flex-col gap-2">
-              <FontUploadRow slot="calendar" label="日历图字体" family={display.calendar.family} mode={mode} />
-              <Input
-                id="fonts-calendar-family"
-                type="text"
-                placeholder="族名，例如 OPPOSerif"
-                maxLength={100}
-                {...form.register('calendarFamily')}
-              />
-            </div>
-          </SettingsRow>
-        </SettingGroupContent>
-      ) : (
-        <SettingGroupContent>
-          <SettingValue label="OG 图字体" value={display.og.family || '—'} />
-          <SettingValue label="日历图字体" value={display.calendar.family || '—'} />
-        </SettingGroupContent>
-      )}
+      <SettingGroupContent>
+        <SettingsRow label="OG 图字体" htmlFor="fonts-og-family">
+          <div className="flex flex-col gap-2">
+            <FontUploadRow slot="og" label="OG 图字体" family={display.og.family} />
+            <Input
+              id="fonts-og-family"
+              type="text"
+              placeholder="族名，例如 OPPOSans"
+              maxLength={100}
+              {...form.register('ogFamily')}
+            />
+          </div>
+        </SettingsRow>
+        <SettingsRow label="日历图字体" htmlFor="fonts-calendar-family">
+          <div className="flex flex-col gap-2">
+            <FontUploadRow slot="calendar" label="日历图字体" family={display.calendar.family} />
+            <Input
+              id="fonts-calendar-family"
+              type="text"
+              placeholder="族名，例如 OPPOSerif"
+              maxLength={100}
+              {...form.register('calendarFamily')}
+            />
+          </div>
+        </SettingsRow>
+      </SettingGroupContent>
     </SettingGroup>
   )
 }
 
 function FontsGlobalCssCard({ fonts }: { fonts: FontsSettings }) {
-  const { mode, form, settingGroupProps, display } = useSettingsCard<FontsSettings, { globalCss: CssRow[] }>({
+  const { form, settingGroupProps } = useSettingsCard<FontsSettings, { globalCss: CssRow[] }>({
     section: 'fonts',
     source: fonts,
     toState: (source) => ({
@@ -181,62 +161,52 @@ function FontsGlobalCssCard({ fonts }: { fonts: FontsSettings }) {
       description="每个 URL 都会在所有页面的 <head> 注入一个 <link rel='stylesheet'>。"
       {...settingGroupProps}
     >
-      {mode === 'edit' ? (
-        <SettingGroupContent>
-          <div className="flex flex-col gap-3">
-            {rows.fields.length === 0 ? (
-              <p className="text-sm text-muted-foreground">还没有添加 CSS，点击下方按钮新增一项。</p>
-            ) : (
-              rows.fields.map((field, index) => (
-                <div key={field.id} className="flex items-center gap-2">
-                  <Input
-                    type="url"
-                    placeholder="https://assets.example.com/fonts/<name>.css"
-                    maxLength={500}
-                    className="flex-1"
-                    {...form.register(`globalCss.${index}.url` as const)}
-                  />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => rows.remove(index)}
-                    aria-label="删除此项"
-                  >
-                    <Trash2Icon className="text-destructive" />
-                  </Button>
-                </div>
-              ))
-            )}
-            <div>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                disabled={rows.fields.length >= 8}
-                onClick={() => rows.append({ clientId: crypto.randomUUID(), url: '' })}
-              >
-                <PlusIcon /> 添加全站 CSS
-              </Button>
-              {rows.fields.length >= 8 && <span className="ml-2 text-xs text-muted-foreground">上限 8 条</span>}
-            </div>
-          </div>
-        </SettingGroupContent>
-      ) : (
-        <SettingGroupContent>
-          {display.globalCss.length === 0 ? (
-            <p className="text-sm text-muted-foreground">未配置</p>
+      <SettingGroupContent>
+        <div className="flex flex-col gap-3">
+          {rows.fields.length === 0 ? (
+            <p className="text-sm text-muted-foreground">还没有添加 CSS，点击下方按钮新增一项。</p>
           ) : (
-            display.globalCss.map((url, i) => <SettingValue key={url} label={`CSS ${i + 1}`} value={url} />)
+            rows.fields.map((field, index) => (
+              <div key={field.id} className="flex items-center gap-2">
+                <Input
+                  type="url"
+                  placeholder="https://assets.example.com/fonts/<name>.css"
+                  maxLength={500}
+                  className="flex-1"
+                  {...form.register(`globalCss.${index}.url` as const)}
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => rows.remove(index)}
+                  aria-label="删除此项"
+                >
+                  <Trash2Icon className="text-destructive" />
+                </Button>
+              </div>
+            ))
           )}
-        </SettingGroupContent>
-      )}
+          <div>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={rows.fields.length >= 8}
+              onClick={() => rows.append({ clientId: crypto.randomUUID(), url: '' })}
+            >
+              <PlusIcon /> 添加全站 CSS
+            </Button>
+            {rows.fields.length >= 8 && <span className="ml-2 text-xs text-muted-foreground">上限 8 条</span>}
+          </div>
+        </div>
+      </SettingGroupContent>
     </SettingGroup>
   )
 }
 
 function FontsPostCssCard({ fonts }: { fonts: FontsSettings }) {
-  const { mode, form, settingGroupProps, display } = useSettingsCard<FontsSettings, { postCss: CssRow[] }>({
+  const { form, settingGroupProps } = useSettingsCard<FontsSettings, { postCss: CssRow[] }>({
     section: 'fonts',
     source: fonts,
     toState: (source) => ({
@@ -255,56 +225,46 @@ function FontsPostCssCard({ fonts }: { fonts: FontsSettings }) {
       description="仅在文章详情页的 <head> 注入。适合体积大、仅长文阅读需要的字体。"
       {...settingGroupProps}
     >
-      {mode === 'edit' ? (
-        <SettingGroupContent>
-          <div className="flex flex-col gap-3">
-            {rows.fields.length === 0 ? (
-              <p className="text-sm text-muted-foreground">还没有添加 CSS，点击下方按钮新增一项。</p>
-            ) : (
-              rows.fields.map((field, index) => (
-                <div key={field.id} className="flex items-center gap-2">
-                  <Input
-                    type="url"
-                    placeholder="https://assets.example.com/fonts/<name>.css"
-                    maxLength={500}
-                    className="flex-1"
-                    {...form.register(`postCss.${index}.url` as const)}
-                  />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => rows.remove(index)}
-                    aria-label="删除此项"
-                  >
-                    <Trash2Icon className="text-destructive" />
-                  </Button>
-                </div>
-              ))
-            )}
-            <div>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                disabled={rows.fields.length >= 8}
-                onClick={() => rows.append({ clientId: crypto.randomUUID(), url: '' })}
-              >
-                <PlusIcon /> 添加文章页 CSS
-              </Button>
-              {rows.fields.length >= 8 && <span className="ml-2 text-xs text-muted-foreground">上限 8 条</span>}
-            </div>
-          </div>
-        </SettingGroupContent>
-      ) : (
-        <SettingGroupContent>
-          {display.postCss.length === 0 ? (
-            <p className="text-sm text-muted-foreground">未配置</p>
+      <SettingGroupContent>
+        <div className="flex flex-col gap-3">
+          {rows.fields.length === 0 ? (
+            <p className="text-sm text-muted-foreground">还没有添加 CSS，点击下方按钮新增一项。</p>
           ) : (
-            display.postCss.map((url, i) => <SettingValue key={url} label={`CSS ${i + 1}`} value={url} />)
+            rows.fields.map((field, index) => (
+              <div key={field.id} className="flex items-center gap-2">
+                <Input
+                  type="url"
+                  placeholder="https://assets.example.com/fonts/<name>.css"
+                  maxLength={500}
+                  className="flex-1"
+                  {...form.register(`postCss.${index}.url` as const)}
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => rows.remove(index)}
+                  aria-label="删除此项"
+                >
+                  <Trash2Icon className="text-destructive" />
+                </Button>
+              </div>
+            ))
           )}
-        </SettingGroupContent>
-      )}
+          <div>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={rows.fields.length >= 8}
+              onClick={() => rows.append({ clientId: crypto.randomUUID(), url: '' })}
+            >
+              <PlusIcon /> 添加文章页 CSS
+            </Button>
+            {rows.fields.length >= 8 && <span className="ml-2 text-xs text-muted-foreground">上限 8 条</span>}
+          </div>
+        </div>
+      </SettingGroupContent>
     </SettingGroup>
   )
 }

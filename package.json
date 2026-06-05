@@ -36,6 +36,7 @@
     "docker:test": "docker compose -f docker/docker-compose.test.yml up -d",
     "docker:test:down": "docker compose -f docker/docker-compose.test.yml down",
     "gen:db": "drizzle-kit generate",
+    "gen:zeabur": "npx zeabur@latest template update -c TK7XLK -f zeabur-template.yml",
     "prepare": "npx husky",
     "start": "node ./build/server/index.js",
     "test": "vitest run",

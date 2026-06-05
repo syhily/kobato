@@ -14,7 +14,7 @@ import { resetFontCache } from '@/server/render/og/assets'
 const log = getLogger('fonts.http')
 
 const FONT_SLOTS = new Set(['og', 'calendar'])
-const FONT_MAX_BYTES = 20 * 1024 * 1024 // 20 MiB
+const FONT_MAX_BYTES = 60 * 1024 * 1024 // 60 MiB
 
 function isFontSlot(value: unknown): value is 'og' | 'calendar' {
   return typeof value === 'string' && FONT_SLOTS.has(value)

@@ -160,9 +160,11 @@ export function configureMiddleware(app: Hono<Env>): void {
     return c.json({ status: 'ok' })
   })
 
-  // Admin backup resource routes — mounted BEFORE createApiApp so
-  // large-file endpoints are not caught by the 10 MB body limit.
+  // Admin large-file resource routes — mounted BEFORE createApiApp so
+  // their bodyLimit middleware is not overridden by the 10 MB global limit.
   app.route('/', backupRouter)
+  app.route('/', fontsRouter)
+  app.route('/', maxmindRouter)
 
   // API (oRPC at /rpc/*)
   app.route('/', createApiApp())
@@ -180,8 +182,6 @@ export function configureMiddleware(app: Hono<Env>): void {
 
   // Admin branding resource routes
   app.route('/', brandingRouter)
-  app.route('/', fontsRouter)
-  app.route('/', maxmindRouter)
 }
 
 export async function buildLoadContext(c: { var: Env['Variables']; req: { raw: Request; url: string } }) {
