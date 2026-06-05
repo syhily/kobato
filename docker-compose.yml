@@ -1,0 +1,109 @@
+name: kobato
+
+services:
+  app:
+    image: ghcr.io/syhily/kobato:6.1.1
+    ports:
+      - "${PORT:-4321}:${PORT:-4321}"
+    environment:
+      # Server
+      NODE_ENV: production
+      HOST: ${HOST:-0.0.0.0}
+      PORT: ${PORT:-4321}
+      # Database
+      DATABASE_URL: postgres://postgres:${POSTGRES_PASSWORD}@postgres:5432/kobato
+      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379
+      DB_POOL_MAX: ${DB_POOL_MAX:-20}
+      DB_STATEMENT_TIMEOUT_MS: ${DB_STATEMENT_TIMEOUT_MS:-30000}
+      # Security
+      SESSION_SECRET: ${SESSION_SECRET:?SESSION_SECRET is required}
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY:-}
+      # Logging
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      # Data paths
+      FONT_PATH: /data/fonts
+      ANALYTICS_DEAD_LETTER_PATH: /data/analytics
+      AUDIT_DEAD_LETTER_PATH: /data/audit
+      MAXMIND_DB_PATH: /data/maxmind/GeoLite2-City.mmdb
+    volumes:
+      - kobato_data:/data
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    networks:
+      - kobato
+    deploy:
+      resources:
+        limits:
+          cpus: "2"
+          memory: 1G
+        reservations:
+          cpus: "0.5"
+          memory: 256M
+
+  postgres:
+    image: timescale/timescaledb-ha:pg17
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+      POSTGRES_DB: kobato
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - kobato
+    deploy:
+      resources:
+        limits:
+          cpus: "2"
+          memory: 1G
+        reservations:
+          cpus: "0.25"
+          memory: 256M
+
+  redis:
+    image: redis:7-alpine
+    command: redis-server --requirepass ${REDIS_PASSWORD:?REDIS_PASSWORD is required}
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    networks:
+      - kobato
+    deploy:
+      resources:
+        limits:
+          cpus: "1"
+          memory: 256M
+        reservations:
+          cpus: "0.1"
+          memory: 64M
+
+volumes:
+  postgres_data:
+  redis_data:
+  kobato_data:
+
+networks:
+  kobato:
+    driver: bridge
