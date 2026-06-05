@@ -198,3 +198,9 @@ export async function tryOtpVerifyRateLimit(ip: string): Promise<RateLimitResult
 export async function tryOtpVerifyByEmailRateLimit(email: string): Promise<RateLimitResult> {
   return tryKeyedRateLimit(otpVerifyEmailKey(email), readBucket('otpVerifyEmail'))
 }
+
+const signInEmailKey = (email: string) => `${RATE_LIMIT_NAMESPACE}signin-email:${hashEmail(email)}`
+
+export async function trySignInByEmailRateLimit(email: string): Promise<RateLimitResult> {
+  return tryKeyedRateLimit(signInEmailKey(email), readBucket('signInEmail'))
+}

@@ -110,6 +110,7 @@ vi.mock('@/server/infra/rate-limit', () => ({
   tryOtpSendByEmailRateLimit: vi.fn(async () => ({ count: 1, exceeded: false })),
   tryOtpVerifyRateLimit: vi.fn(async () => ({ count: 1, exceeded: false })),
   tryOtpVerifyByEmailRateLimit: vi.fn(async () => ({ count: 1, exceeded: false })),
+  trySignInByEmailRateLimit: vi.fn(async () => ({ count: 1, exceeded: false })),
 }))
 
 vi.mock('@/server/domains/auth/primitives', async () => {
@@ -346,7 +347,6 @@ describe('routes/signin — OTP', () => {
     expect(vi.mocked(establishLoginSession)).toHaveBeenCalledWith(
       expect.anything(),
       expect.anything(),
-      expect.anything(),
       expect.objectContaining({ id: BigInt(1) }),
       expect.anything(),
       expect.anything(),
@@ -468,13 +468,14 @@ describe('routes/signin — OTP', () => {
     expect(d.error).toBe('登录失败次数过多，请稍后再试。')
   })
 
-  it('wrong password returns error without triggering OTP', async () => {
+  it('wrong password returns redirect without triggering OTP', async () => {
     state.verifyUserPasswordResult = null
 
     const result = await action(postFormData(validLogin))
-    const d = extractData(result)
+    expect(result).toBeInstanceOf(Response)
+    expect((result as Response).status).toBe(302)
+    expect((result as Response).headers.get('Location')).toContain('error=invalid_credentials')
 
-    expect(d.error).toBe('请填写正确的邮箱和密码。')
     const { issueOtpToken } = await import('@/server/domains/auth/verification-tokens')
     expect(vi.mocked(issueOtpToken)).not.toHaveBeenCalled()
   })

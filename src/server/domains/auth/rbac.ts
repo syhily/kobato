@@ -82,20 +82,24 @@ export const isImageOwner = ownerOf('uploaderId')
 export const isMusicOwner = ownerOf('uploaderId')
 export const isCommentOwner = ownerOf('userId')
 
+export function isAdmin(viewer: { role: Role }): boolean {
+  return viewer.role === 'admin'
+}
+
 export function canEditPost(viewer: ViewerContext, post: { authorId: bigint | null }): boolean {
-  return viewer.role === 'admin' || isPostOwner(viewer, post)
+  return isAdmin(viewer) || isPostOwner(viewer, post)
 }
 
 export function canEditImage(viewer: ViewerContext, img: { uploaderId: bigint | null }): boolean {
-  return viewer.role === 'admin' || isImageOwner(viewer, img)
+  return isAdmin(viewer) || isImageOwner(viewer, img)
 }
 
 export function canEditMusic(viewer: ViewerContext, m: { uploaderId: bigint | null }): boolean {
-  return viewer.role === 'admin' || isMusicOwner(viewer, m)
+  return isAdmin(viewer) || isMusicOwner(viewer, m)
 }
 
 export function canManageComment(viewer: ViewerContext, c: { userId: bigint }): boolean {
-  return viewer.role === 'admin' || isCommentOwner(viewer, c)
+  return isAdmin(viewer) || isCommentOwner(viewer, c)
 }
 
 // Tag deletion is gated on the global reference count, not on ownership:
@@ -106,5 +110,5 @@ export function canManageComment(viewer: ViewerContext, c: { userId: bigint }): 
 // orphaning posts. This predicate captures the design-doc rule for
 // future callers; it does NOT relax the service-level guard.
 export function canDeleteTag(viewer: ViewerContext, postCount: number): boolean {
-  return viewer.role === 'admin' || postCount === 0
+  return isAdmin(viewer) || postCount === 0
 }

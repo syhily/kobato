@@ -16,6 +16,9 @@ import { ilikeEscape } from '@/shared/utils/escape-like'
 
 export const PASSWORD_HASH_ROUNDS = 12
 
+// Static dummy hash used for constant-time compare when email does not exist.
+const DUMMY_HASH = '$2b$12$EIX9MbHN0xG0yKqfNR4XPezHbhVzQzMn/37uD.LR8VgNTbQjD/II.'
+
 export async function hasAdmin(db: NodePgDatabase): Promise<boolean> {
   const res = await db
     .select({ count: count() })
@@ -74,7 +77,7 @@ export async function hasRegisteredAccount(db: NodePgDatabase, email: string): P
   const rows = await db
     .select({ id: user.id })
     .from(user)
-    .where(and(eq(user.email, email), ne(user.password, '')))
+    .where(and(eq(user.email, email), ne(user.password, ''), isNull(user.deletedAt)))
     .limit(1)
   return rows.length > 0
 }
@@ -92,12 +95,24 @@ export async function findUsersByIds(db: NodePgDatabase, ids: bigint[]): Promise
   return db.select().from(user).where(inArray(user.id, ids))
 }
 
+function timingFuzz(): Promise<void> {
+  const ms = 50 + Math.floor(Math.random() * 150)
+  return new Promise((resolve) => setTimeout(resolve, ms))
+}
+
 export async function verifyUserPassword(db: NodePgDatabase, email: string, password: string): Promise<User | null> {
   const u = await findUserByEmail(db, email)
-  if (u === null) {
+  if (u === null || u.deletedAt !== null || u.password === null || u.password === '') {
+    // Dummy compare + random delay to keep timing constant and prevent email enumeration.
+    await bcrypt.compare('dummy', DUMMY_HASH)
+    await timingFuzz()
     return null
   }
-  return (await bcrypt.compare(password, u.password)) ? u : null
+  const ok = await bcrypt.compare(password, u.password)
+  if (!ok) {
+    await timingFuzz()
+  }
+  return ok ? u : null
 }
 
 export async function findUserIdByEmail(db: NodePgDatabase, email: string): Promise<string | null> {
@@ -431,7 +446,10 @@ export async function setUserMuted(db: NodePgDatabase, id: bigint, muted: boolea
 }
 
 export async function countAdmins(db: NodePgDatabase): Promise<number> {
-  const rows = await db.select({ count: count() }).from(user).where(eq(user.role, 'admin'))
+  const rows = await db
+    .select({ count: count() })
+    .from(user)
+    .where(and(eq(user.role, 'admin'), isNull(user.deletedAt)))
   return rows[0]?.count ?? 0
 }
 

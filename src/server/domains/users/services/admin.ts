@@ -207,7 +207,7 @@ export async function sendPasswordResetToUser(
   origin: string,
 ): Promise<{ userId: bigint }> {
   const user = await findUserByEmail(db, email)
-  if (!user) {
+  if (!user || user.deletedAt) {
     throw new DomainError('NOT_FOUND', '用户不存在')
   }
   const limit = await tryPasswordResetByTargetRateLimit(user.id)

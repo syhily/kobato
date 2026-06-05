@@ -2,7 +2,7 @@ import bcrypt from 'bcryptjs'
 import { data, redirect } from 'react-router'
 
 import { recordAuditEvent } from '@/server/domains/audit/service'
-import { getDbFromContext, getPoolFromContext, getRouteRequestContext } from '@/server/domains/auth/context'
+import { getDbFromContext, getRouteRequestContext } from '@/server/domains/auth/context'
 import { validateCsrfForAction } from '@/server/domains/auth/csrf'
 import {
   type AuthFlowResult,
@@ -17,7 +17,7 @@ import { commitSessionWithMaxAge, destroySession } from '@/server/domains/auth/s
 import { consumeToken, issueResetToken, peekToken } from '@/server/domains/auth/verification-tokens'
 import { countApprovedCommentsByUser } from '@/server/domains/comments/repos/public-query/by-id'
 import { ensureInstalledOrRedirect } from '@/server/domains/settings/install-gate'
-import { findUserByEmail, findUserById, updateUserById } from '@/server/infra/db/operations/user'
+import { findUserByEmail, findUserById, PASSWORD_HASH_ROUNDS, updateUserById } from '@/server/infra/db/operations/user'
 import { sendPasswordReset } from '@/server/infra/email/sender'
 import { tryPasswordResetByEmailRateLimit, tryPasswordResetRateLimit } from '@/server/infra/rate-limit'
 import { bundleFromMatches, routeMeta } from '@/server/render/seo/meta'
@@ -126,15 +126,16 @@ export async function loader({ request, context }: Route.LoaderArgs) {
       resetToken,
       pendingOtpEmail: pendingOtpUser.email,
       pendingOtpSentAt: pendingOtpUser.sentAt,
+      authError: url.searchParams.get('error'),
     })
   }
 
-  return data({ redirectTo, action: action ?? 'login', tokenError, resetToken })
+  const authError = url.searchParams.get('error')
+  return data({ redirectTo, action: action ?? 'login', tokenError, resetToken, authError })
 }
 
 export async function action({ request, context }: Route.ActionArgs) {
   const db = getDbFromContext({ request, context })
-  const pool = getPoolFromContext({ request, context })
   await ensureInstalledOrRedirect(db)
 
   const { session, clientAddress, url } = getRouteRequestContext({ request, context })
@@ -167,7 +168,7 @@ export async function action({ request, context }: Route.ActionArgs) {
     // Always appear to succeed to prevent email enumeration.
     if (emailStr) {
       const u = await findUserByEmail(db, emailStr)
-      if (u && u.role) {
+      if (u && u.role && !u.deletedAt) {
         // Existing user with a role — send reset email.
         const { token } = await issueResetToken(db, u.id)
         const origin = new URL(request.url).origin
@@ -182,7 +183,7 @@ export async function action({ request, context }: Route.ActionArgs) {
           ipAddress: clientAddress,
           userAgent: request.headers.get('User-Agent'),
         })
-      } else if (u && !u.role && u.password === '') {
+      } else if (u && !u.role && u.password === '' && !u.deletedAt) {
         // Anonymous commenter with at least one approved comment can
         // claim the account by setting a password.
         const approved = await countApprovedCommentsByUser(db, u.id)
@@ -226,11 +227,11 @@ export async function action({ request, context }: Route.ActionArgs) {
       return data({ error: '链接无效或已过期。' })
     }
 
-    const hashed = await bcrypt.hash(newPasswordStr, 12)
+    const hashed = await bcrypt.hash(newPasswordStr, PASSWORD_HASH_ROUNDS)
     await updateUserById(db, result.userId, { password: hashed })
 
     const dbUser = await findUserById(db, result.userId)
-    if (!dbUser || !dbUser.role) {
+    if (!dbUser || !dbUser.role || dbUser.deletedAt) {
       return data({ error: '账户状态异常，无法登录。' })
     }
     // `{ revokeOtherSessions: true }` enforces invariant 2 at the top
@@ -241,7 +242,7 @@ export async function action({ request, context }: Route.ActionArgs) {
     // returned `setCookie` rather than re-committing the in-memory
     // session — calling `commitSession` after would mint a SECOND sid
     // and orphan the one we just wrote.
-    const established = await establishLoginSession(db, pool, session, dbUser, request, clientAddress, {
+    const established = await establishLoginSession(db, session, dbUser, request, clientAddress, {
       revokeOtherSessions: true,
     })
     recordAuditEvent({
@@ -261,14 +262,14 @@ export async function action({ request, context }: Route.ActionArgs) {
   }
 
   if (action === 'verifyotp') {
-    return toActionResult(await handleOtpVerify(db, pool, session, clientAddress, request, formData, redirectTo))
+    return toActionResult(await handleOtpVerify(db, session, clientAddress, request, formData, redirectTo))
   }
 
   if (action === 'resendotp') {
     return toActionResult(await handleOtpResend(db, session, clientAddress, request))
   }
 
-  return toActionResult(await handleCredentialLogin(db, pool, session, clientAddress, request, formData, redirectTo), {
+  return toActionResult(await handleCredentialLogin(db, session, clientAddress, request, formData, redirectTo), {
     redirectTo,
   })
 }
@@ -284,11 +285,16 @@ export default function LoginRoute({ actionData, loaderData }: Route.ComponentPr
         <BrandLogo className="mx-auto mb-10 h-20 w-auto" />
       </header>
 
-      {hasError(actionData) || hasMessage(actionData) || loaderData.tokenError ? (
+      {hasError(actionData) || hasMessage(actionData) || loaderData.tokenError || loaderData.authError ? (
         <div className="text-center text-sm leading-relaxed">
           {hasError(actionData) ? (
             <p role="alert" aria-live="polite" className="text-destructive">
               {actionData.error}
+            </p>
+          ) : null}
+          {loaderData.authError ? (
+            <p role="alert" aria-live="polite" className="text-destructive">
+              {loaderData.authError}
             </p>
           ) : null}
           {hasMessage(actionData) ? (

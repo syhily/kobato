@@ -264,7 +264,6 @@ describe('integration: OTP login flow (real DB)', () => {
 
     expect(mockHandles.establishLoginSession).toHaveBeenCalledWith(
       db,
-      pool,
       testSession,
       expect.objectContaining({ id: admin.id, role: 'admin' }),
       expect.any(Request),
@@ -356,7 +355,6 @@ describe('integration: OTP login flow (real DB)', () => {
     const newResult = await callAction('verifyotp', otpFormData(newOtp))
     expect(newResult.status).toBe(302)
     expect(mockHandles.establishLoginSession).toHaveBeenCalledWith(
-      expect.anything(),
       expect.anything(),
       expect.anything(),
       expect.objectContaining({ role: 'admin' }),

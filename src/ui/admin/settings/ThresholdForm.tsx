@@ -103,6 +103,12 @@ const BUCKET_META: Record<BucketKey, { title: string; description: string; windo
       windowHint: '60 秒 - 24 小时。默认 5 分钟（300）。',
       attemptsHint: '默认 1 次。',
     },
+    signInEmail: {
+      title: '登录限流（按邮箱）',
+      description: '登录页重试按目标邮箱计数。即使从多个 IP 提交，同一邮箱仍然受限。',
+      windowHint: '60 秒 - 24 小时。默认 30 分钟（1800）。',
+      attemptsHint: '默认 5 次。',
+    },
   }
 
 function RateLimitBucketCard({ bucketKey, rateLimit }: { bucketKey: BucketKey; rateLimit: RateLimitSettings }) {

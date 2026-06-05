@@ -218,6 +218,7 @@ export interface RateLimitSettings {
   otpSendEmail: RateLimitBucket
   otpVerifyIp: RateLimitBucket
   otpVerifyEmail: RateLimitBucket
+  signInEmail: RateLimitBucket
 }
 
 export interface SearchSettings {

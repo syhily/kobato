@@ -190,7 +190,7 @@ export async function revokeSessionWithGuard(
   // where a compromised admin account kicks out all other admins.
   if (actorRole === 'admin' && meta.userId.toString() !== actorId) {
     const targetUser = await findSafeUserById(db, meta.userId)
-    if (targetUser?.role === 'admin') {
+    if (targetUser && !targetUser.deletedAt && targetUser.role === 'admin') {
       throw new DomainError('FORBIDDEN', '无权撤销其他管理员的会话。')
     }
   }

@@ -109,6 +109,7 @@ const userQueryMocks = vi.hoisted(() => ({
   findUserById: vi.fn(),
   updateUserById: vi.fn(async () => ({ id: 42n })),
   findUserByEmail: vi.fn(async () => null),
+  PASSWORD_HASH_ROUNDS: 12,
 }))
 
 vi.mock('@/server/infra/db/operations/user', () => userQueryMocks)

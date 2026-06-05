@@ -22,7 +22,7 @@ export async function updateAccountProfile(
   viewerRole: string | null | undefined,
 ) {
   const dbUser = await findUserById(db, userId)
-  if (!dbUser) {
+  if (!dbUser || dbUser.deletedAt) {
     throw new DomainError('NOT_FOUND', '用户不存在。')
   }
 
@@ -64,7 +64,7 @@ export async function updateAccountPassword(
   currentSessionId?: string,
 ) {
   const dbUser = await findUserById(db, userId)
-  if (!dbUser) {
+  if (!dbUser || dbUser.deletedAt) {
     throw new DomainError('NOT_FOUND', '用户不存在。')
   }
   const ok = await bcrypt.compare(oldPassword, dbUser.password)

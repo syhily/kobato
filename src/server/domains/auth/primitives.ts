@@ -1,5 +1,4 @@
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-import type { Pool } from 'pg'
 
 import type { SafeUser } from '@/server/infra/db/operations/user'
 
@@ -13,7 +12,7 @@ import {
   destroySession,
   getRequestSession,
   revokeAllSessionsOfUser,
-  SESSION_MAX_AGE,
+  resolveSessionMaxAge,
   type SessionUser,
 } from '@/server/domains/auth/session-storage'
 import { findUserById, updateLastLogin, verifyUserPassword } from '@/server/infra/db/operations/user'
@@ -63,7 +62,6 @@ export interface EstablishedLoginSession {
 
 export async function establishLoginSession(
   db: NodePgDatabase,
-  pool: Pool,
   session: BlogSession,
   dbUser: SafeUser,
   request: Request,
@@ -106,7 +104,7 @@ export async function establishLoginSession(
     role: dbUser.role,
   }
   // Absolute timeout: 30 days from login, independent of sliding refresh.
-  const absoluteExpiry = Date.now() + SESSION_MAX_AGE * 1000
+  const absoluteExpiry = Date.now() + resolveSessionMaxAge() * 1000
   // Mirror the new state into the inbound session object so the rest
   // of the request handler sees `userSession(session)` return the
   // freshly-authenticated user. The cookie itself is minted from the
@@ -151,7 +149,6 @@ export async function establishLoginSession(
 
 export async function login(
   db: NodePgDatabase,
-  pool: Pool,
   {
     email,
     password,
@@ -171,7 +168,7 @@ export async function login(
     // Users without a role cannot log in (anonymous placeholder accounts).
     return null
   }
-  return establishLoginSession(db, pool, session, user, request, clientAddress)
+  return establishLoginSession(db, session, user, request, clientAddress)
 }
 
 export function userSession(session: BlogSession): SessionUser | undefined {
@@ -219,7 +216,7 @@ export async function resolveSessionContext(
       })
       dbReachable = false
     }
-    if (dbUser && dbUser.role) {
+    if (dbUser && dbUser.role && !dbUser.deletedAt) {
       const upgraded: SessionUser = {
         id: `${dbUser.id}`,
         name: dbUser.name,
@@ -240,7 +237,7 @@ export async function resolveSessionContext(
   }
 
   // Absolute timeout check: regardless of sliding cookie refresh,
-  // sessions older than SESSION_MAX_AGE from their original login are
+  // sessions older than their configured absolute expiry are
   // unconditionally invalidated. This caps the blast radius of a
   // stolen session cookie.
   if (user) {

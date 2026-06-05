@@ -1,5 +1,4 @@
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-import type { Pool } from 'pg'
 
 import type { BlogSession } from '@/server/domains/auth/session-storage'
 
@@ -16,6 +15,7 @@ import {
   tryOtpVerifyByEmailRateLimit,
   tryOtpVerifyRateLimit,
   tryRateLimit,
+  trySignInByEmailRateLimit,
 } from '@/server/infra/rate-limit'
 import { getBlogSettingsBundleSync } from '@/shared/config/getters'
 
@@ -26,7 +26,7 @@ export type AuthFlowResult =
 
 function formFieldString(formData: FormData, key: string): string {
   const value = formData.get(key)
-  return typeof value === 'string' ? value : ''
+  return typeof value === 'string' ? value.trim() : ''
 }
 
 /**
@@ -61,7 +61,6 @@ export async function handleOtpCancel(session: BlogSession, redirectTo: string):
 
 export async function handleOtpVerify(
   db: NodePgDatabase,
-  pool: Pool,
   session: BlogSession,
   clientAddress: string,
   request: Request,
@@ -142,7 +141,7 @@ export async function handleOtpVerify(
   session.unset('otpFailCount')
 
   const dbUser = await findUserById(db, userId)
-  if (!dbUser || !dbUser.role) {
+  if (!dbUser || !dbUser.role || dbUser.deletedAt) {
     return {
       type: 'error',
       message: '账户状态异常，无法登录。',
@@ -150,7 +149,7 @@ export async function handleOtpVerify(
     }
   }
 
-  const established = await establishLoginSession(db, pool, session, dbUser, request, clientAddress, {
+  const established = await establishLoginSession(db, session, dbUser, request, clientAddress, {
     authMethod: 'otp',
   })
   return { type: 'redirect', to: redirectTo, setCookie: established.setCookie }
@@ -179,8 +178,21 @@ export async function handleOtpResend(
     }
   }
 
-  const dbUser = await findUserById(db, BigInt(pendingOtpUser.userId))
-  if (!dbUser || !dbUser.role) {
+  let userId: bigint
+  try {
+    userId = BigInt(pendingOtpUser.userId)
+  } catch {
+    session.unset('pendingOtpUser')
+    session.unset('otpFailCount')
+    return {
+      type: 'error',
+      message: '登录状态异常，请重新登录。',
+      setCookie: await commitSessionWithMaxAge(session),
+    }
+  }
+
+  const dbUser = await findUserById(db, userId)
+  if (!dbUser || !dbUser.role || dbUser.deletedAt) {
     return { type: 'error', message: '账户状态异常。', setCookie: await commitSessionWithMaxAge(session) }
   }
 
@@ -212,7 +224,6 @@ export async function handleOtpResend(
 
 export async function handleCredentialLogin(
   db: NodePgDatabase,
-  pool: Pool,
   session: BlogSession,
   clientAddress: string,
   request: Request,
@@ -227,8 +238,11 @@ export async function handleCredentialLogin(
     return { type: 'error', message: '请填写正确的邮箱和密码。' }
   }
 
-  const loginLimit = await tryRateLimit(clientAddress)
-  if (loginLimit.exceeded) {
+  const [loginLimit, signInEmailLimit] = await Promise.all([
+    tryRateLimit(clientAddress),
+    trySignInByEmailRateLimit(parsed.data.email),
+  ])
+  if (loginLimit.exceeded || signInEmailLimit.exceeded) {
     return {
       type: 'error',
       message: '登录失败次数过多，请稍后再试。',
@@ -236,18 +250,25 @@ export async function handleCredentialLogin(
     }
   }
 
+  const bundle = getBlogSettingsBundleSync()
+  const mail = bundle?.mail?.mail
+  const isOtpEnabled = bundle?.security?.otp?.enabled === true && mail !== undefined && checkMailReady(mail).ready
+
   const dbUser = await verifyUserPassword(db, parsed.data.email, parsed.data.password)
   if (!dbUser || !dbUser.role) {
+    if (isOtpEnabled) {
+      return {
+        type: 'redirect',
+        to: `/admin/signin?error=invalid_credentials&redirect_to=${encodeURIComponent(redirectTo)}`,
+        setCookie: await commitSessionWithMaxAge(session),
+      }
+    }
     return {
       type: 'error',
       message: '请填写正确的邮箱和密码。',
       setCookie: await commitSessionWithMaxAge(session),
     }
   }
-
-  const bundle = getBlogSettingsBundleSync()
-  const mail = bundle?.mail?.mail
-  const isOtpEnabled = bundle?.security?.otp?.enabled === true && mail !== undefined && checkMailReady(mail).ready
 
   if (isOtpEnabled) {
     const [ipLimit, emailLimit] = await Promise.all([
@@ -293,6 +314,6 @@ export async function handleCredentialLogin(
     }
   }
 
-  const established = await establishLoginSession(db, pool, session, dbUser, request, clientAddress)
+  const established = await establishLoginSession(db, session, dbUser, request, clientAddress)
   return { type: 'redirect', to: redirectTo, setCookie: established.setCookie }
 }

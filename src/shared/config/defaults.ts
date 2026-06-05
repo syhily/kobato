@@ -15,4 +15,5 @@ export const rateLimitDefaults = {
   otpSendEmail: { windowSeconds: 60 * 5, maxAttempts: 1 },
   otpVerifyIp: { windowSeconds: 60 * 5, maxAttempts: 5 },
   otpVerifyEmail: { windowSeconds: 60 * 5, maxAttempts: 5 },
+  signInEmail: { windowSeconds: 60 * 30, maxAttempts: 5 },
 } as const

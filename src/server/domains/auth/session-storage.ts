@@ -144,33 +144,32 @@ export function buildSessionWithSid(sid: string, data: BlogSessionData): BlogSes
  * password change so the user is not logged out from the tab that just
  * saved the new password.
  */
+const REVOKE_SESSIONS_LUA = `
+local setKey = KEYS[1]
+local except = ARGV[1]
+local sids = redis.call('SMEMBERS', setKey)
+for i = 1, #sids do
+  local sid = sids[i]
+  if sid ~= except then
+    redis.call('DEL', 'session:' .. sid)
+    redis.call('DEL', 'session_meta:' .. sid)
+  end
+end
+if except == '' then
+  redis.call('DEL', setKey)
+else
+  for i = 1, #sids do
+    local sid = sids[i]
+    if sid ~= except then
+      redis.call('SREM', setKey, sid)
+    end
+  end
+end
+return #sids
+`
+
 export async function revokeAllSessionsOfUser(userId: bigint, exceptSessionId?: string): Promise<void> {
   const redis = redisInstance()
   const setKey = `user_sessions:${userId}`
-  const sessionIds = await redis.smembers(setKey)
-  const targets = exceptSessionId ? sessionIds.filter((sid) => sid !== exceptSessionId) : sessionIds
-  if (targets.length === 0) {
-    return
-  }
-  const pipeline = redis.pipeline()
-  for (const sid of targets) {
-    pipeline.del(`session:${sid}`)
-    // `session_meta:<sid>` is the parallel HSET that powers
-    // /admin/security/sessions and /my/sessions. It must die with the
-    // session it describes; without this DEL the meta hash would
-    // outlive the session for up to 30 days and the admin view
-    // would render "ghost" rows for sessions that no longer let
-    // anyone log in.
-    pipeline.del(`session_meta:${sid}`)
-  }
-  if (exceptSessionId === undefined) {
-    // Wholesale wipe: drop the whole index in one shot. Cheaper than
-    // N srem commands on a 50+ session user.
-    pipeline.del(setKey)
-  } else {
-    for (const sid of targets) {
-      pipeline.srem(setKey, sid)
-    }
-  }
-  await pipeline.exec()
+  await redis.eval(REVOKE_SESSIONS_LUA, 1, setKey, exceptSessionId ?? '')
 }

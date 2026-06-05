@@ -58,7 +58,7 @@ export async function signUpInitialAdminWithSession(
     }
   }
 
-  const established = await establishLoginSession(db, pool, session, admin, request, clientAddress)
+  const established = await establishLoginSession(db, session, admin, request, clientAddress)
 
   // ── Seed all settings sections in one pass ──
   const hostname = new URL(request.url).hostname

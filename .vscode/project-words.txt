@@ -135,6 +135,7 @@ liruifeng
 liruifengv
 lockfiles
 longluo
+lostpassword
 loveness
 lowlighter
 lucene
@@ -295,6 +296,7 @@ varchar
 vectordb
 velite
 vercel
+verifyotp
 viewbox
 vite
 vitest

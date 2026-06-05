@@ -5,6 +5,9 @@ import { httpUrlOrEmptyStringSchema } from '@/shared/utils/safe-url'
 /** Minimum password length enforced everywhere (login, signup, reset, change). */
 export const MIN_PASSWORD_LENGTH = 10
 
+/** Maximum password length to prevent DoS via oversized payloads. */
+export const MAX_PASSWORD_LENGTH = 128
+
 /**
  * Password complexity regex: at least one uppercase, one lowercase,
  * and one digit. Applied on top of the minimum length.
@@ -15,13 +18,14 @@ function passwordSchema() {
   return z
     .string()
     .min(MIN_PASSWORD_LENGTH)
+    .max(MAX_PASSWORD_LENGTH, `密码长度不能超过 ${MAX_PASSWORD_LENGTH} 位`)
     .regex(PASSWORD_COMPLEXITY_RE, '密码必须包含至少一个大写字母、一个小写字母和一个数字')
 }
 
 // Auth form schemas.
 export const signInSchema = z.object({
   email: z.email(),
-  password: z.string().min(MIN_PASSWORD_LENGTH),
+  password: z.string().min(1).max(MAX_PASSWORD_LENGTH),
 })
 export type SignInInput = z.infer<typeof signInSchema>
 

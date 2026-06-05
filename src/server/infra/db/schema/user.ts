@@ -66,7 +66,7 @@ export const verification = pgTable(
     purpose: varchar('purpose', { length: 32 }).notNull(),
     userId: bigint('user_id', { mode: 'bigint' }).notNull(),
     value: text('value').notNull(),
-    expiresAt: timestamp('expires_at').notNull(),
+    expiresAt: timestamp('expires_at', { withTimezone: true, mode: 'date' }).notNull(),
     createdAt: timestamp('created_at')
       .notNull()
       .$defaultFn(() => new Date()),
@@ -76,6 +76,7 @@ export const verification = pgTable(
   },
   (table) => [
     index('idx_verification_value').on(table.value),
+    index('idx_verification_expires_at').on(table.expiresAt),
     uniqueIndex('uq_verification_purpose_user').on(table.purpose, table.userId),
   ],
 )
