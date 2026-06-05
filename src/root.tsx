@@ -238,8 +238,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
       <body>
         {children}
         <ChunkReloadOverlay />
-        <ScrollRestoration />
-        <Scripts />
+        <ScrollRestoration nonce={rootData?.cspNonce} />
+        <Scripts nonce={rootData?.cspNonce} />
         <RouteWarmupScript chunks={tier2Chunks} nonce={rootData?.cspNonce} />
       </body>
     </html>

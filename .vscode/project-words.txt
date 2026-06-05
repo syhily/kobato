@@ -201,6 +201,7 @@ photoswipe
 phpinfo
 picimg
 pilgi
+Pipeable
 plaiceholder
 playform
 playpause

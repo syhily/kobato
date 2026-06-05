@@ -76,9 +76,14 @@ export function configureMiddleware(app: Hono<Env>): void {
     }
     const nonce = c.var.cspNonce
     const extra = origins.size > 0 ? ' ' + [...origins].join(' ') : ''
+    // In development Vite may inject inline scripts (HMR, module preloading,
+    // error overlay) that do not carry the request nonce.  Allow
+    // 'unsafe-inline' for scripts in dev mode so the dev server works
+    // correctly; production keeps the strict nonce-only policy.
+    const scriptSrc = import.meta.env.DEV ? "script-src 'self' 'unsafe-inline'" : `script-src 'self' 'nonce-${nonce}'`
     const csp = [
       "default-src 'self'",
-      `script-src 'self' 'nonce-${nonce}'`,
+      scriptSrc,
       `style-src 'self' 'unsafe-inline' ${extra}`,
       `font-src 'self' ${extra}`,
       `img-src 'self' data: blob: http://*.music.126.net https://*.music.126.net ${extra}`,
