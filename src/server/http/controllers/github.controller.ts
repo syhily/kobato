@@ -7,7 +7,9 @@ const AVATAR_URL = 'https://avatars.githubusercontent.com/u/1761698?s=32'
 
 function parseRepo(full: string): { owner: string; repo: string } | null {
   const m = full.match(/github\.com\/([^/]+)\/([^/]+)/)
-  if (!m) {return null}
+  if (!m) {
+    return null
+  }
   return { owner: m[1]!, repo: m[2]! }
 }
 

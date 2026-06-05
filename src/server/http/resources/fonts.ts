@@ -9,6 +9,7 @@ import { recordAuditEvent } from '@/server/domains/audit/service'
 import { requireRoleMw } from '@/server/http/middlewares/hono-rbac'
 import { getLogger } from '@/server/infra/logger'
 import { FONT_DIR } from '@/server/infra/paths'
+import { resetFontCache } from '@/server/render/og/assets'
 
 const log = getLogger('fonts.http')
 
@@ -59,8 +60,10 @@ export const fontsRouter = new Hono<Env>().post(
     }
 
     await mkdir(FONT_DIR, { recursive: true })
-    const dest = path.join(FONT_DIR, `${slot}.ttf`)
+    const ext = file.name.toLowerCase().endsWith('.otf') ? 'otf' : 'ttf'
+    const dest = path.join(FONT_DIR, `${slot}.${ext}`)
     await writeFile(dest, buffer)
+    resetFontCache()
 
     recordAuditEvent({
       action: 'font_uploaded',

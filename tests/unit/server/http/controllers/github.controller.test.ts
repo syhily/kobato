@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
 
 import { installFetch, jsonResponse } from '#/_helpers/fetch'
 import { makePublicCtx } from '#/_helpers/mock-ctx'
@@ -26,6 +26,11 @@ async function call(path: string, input: unknown) {
 describe('github controller', () => {
   const mockFetch = installFetch()
 
+  beforeEach(() => {
+    mockFetch.reset()
+    globalThis.fetch = mockFetch.fetch as unknown as typeof globalThis.fetch
+  })
+
   it('avatar returns base64 data URL on success', async () => {
     const buffer = new Uint8Array([0x89, 0x50, 0x4e, 0x47]).buffer
     mockFetch.enqueue(
@@ -37,7 +42,7 @@ describe('github controller', () => {
         }),
     )
 
-    const response = await call('/github/avatar', {})
+    const response = await call('/avatar', {})
     expect(response.status).toBe(200)
     const body = await parseRpcJson<{ avatar: string }>(response)
     expect(body.avatar).toMatch(/^data:image\/png;base64,/)
@@ -46,7 +51,7 @@ describe('github controller', () => {
   it('avatar returns empty string when upstream fails', async () => {
     mockFetch.enqueue(/avatars\.githubusercontent\.com/, new Response('not found', { status: 404 }))
 
-    const response = await call('/github/avatar', {})
+    const response = await call('/avatar', {})
     expect(response.status).toBe(200)
     const body = await parseRpcJson<{ avatar: string }>(response)
     expect(body.avatar).toBe('')
@@ -63,7 +68,7 @@ describe('github controller', () => {
       }),
     )
 
-    const response = await call('/github/release', {})
+    const response = await call('/release', {})
     expect(response.status).toBe(200)
     const body = await parseRpcJson<{
       tagName: string
@@ -83,7 +88,7 @@ describe('github controller', () => {
       new Response('not found', { status: 404 }),
     )
 
-    const response = await call('/github/release', {})
+    const response = await call('/release', {})
     expect(response.status).toBe(500)
   })
 })

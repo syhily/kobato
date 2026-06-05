@@ -1,5 +1,5 @@
 import { Buffer } from 'node:buffer'
-import { readFile } from 'node:fs/promises'
+import { access, readFile } from 'node:fs/promises'
 
 import { resolveSiteAsset } from '@/server/domains/assets/services/routes'
 import { getLogger } from '@/server/infra/logger'
@@ -21,12 +21,15 @@ export async function logoDark(): Promise<Buffer> {
 // -------- Canvas fonts (`fonts.og` / `fonts.calendar` from settings) --------
 //
 // TTF/OTF files are uploaded through the admin panel and stored under
-// FONT_DIR with fixed filenames: `og.ttf` and `calendar.ttf`. The admin
-// only configures the font-family name in `/admin/settings/fonts`.
+// FONT_DIR with fixed filenames: `og.{ttf,otf}` and `calendar.{ttf,otf}`.
+// The admin only configures the font-family name in `/admin/settings/fonts`.
+//
+// At render time, both extensions are probed (`.ttf` first, then `.otf`)
+// to find whichever file was uploaded.
 //
 // A single process-level Map caches the Buffer so repeated renders
-// don't re-read disk. Changing the file on disk requires a process
-// restart to pick up the new font.
+// don't re-read disk. Uploading a new font clears the cache so the
+// new file is picked up without a process restart.
 //
 // Failure mode is **null, not throw**. An admin who hasn't uploaded
 // the file, or a missing file, must NOT 500 the OG / calendar route.
@@ -42,8 +45,32 @@ export interface FontSlot {
 
 const inProcessByPath = new Map<string, Buffer>()
 
-function fontFilePath(slot: 'og' | 'calendar'): string {
-  return `${FONT_DIR}/${slot}.ttf`
+// Deduplicates the "no family configured" / "no font file found" logs so
+// operators see them once per replica, not on every render.
+const loggedEmpty = new Set<'og' | 'calendar'>()
+const loggedMissing = new Set<string>()
+
+async function resolveFontPath(slot: 'og' | 'calendar'): Promise<string | null> {
+  const ttf = `${FONT_DIR}/${slot}.ttf`
+  const otf = `${FONT_DIR}/${slot}.otf`
+  try {
+    await access(ttf)
+    return ttf
+  } catch {
+    // try .otf
+  }
+  try {
+    await access(otf)
+    return otf
+  } catch {
+    return null
+  }
+}
+
+/** Clear cached font buffers so newly-uploaded files are picked up. */
+export function resetFontCache(): void {
+  inProcessByPath.clear()
+  loggedMissing.clear()
 }
 
 async function loadFontSlot(slot: 'og' | 'calendar'): Promise<FontSlot | null> {
@@ -58,7 +85,15 @@ async function loadFontSlot(slot: 'og' | 'calendar'): Promise<FontSlot | null> {
   }
   loggedEmpty.delete(slot)
 
-  const fullPath = fontFilePath(slot)
+  const fullPath = await resolveFontPath(slot)
+  if (!fullPath) {
+    if (!loggedMissing.has(slot)) {
+      log.warn('No font file found for slot', { slot })
+      loggedMissing.add(slot)
+    }
+    return null
+  }
+  loggedMissing.delete(fullPath)
 
   const cached = inProcessByPath.get(fullPath)
   if (cached !== undefined) {
@@ -82,11 +117,6 @@ async function loadFontSlot(slot: 'og' | 'calendar'): Promise<FontSlot | null> {
     return null
   }
 }
-
-// Deduplicates the "no family configured" / "file missing" logs so
-// operators see them once per replica, not on every render.
-const loggedEmpty = new Set<'og' | 'calendar'>()
-const loggedMissing = new Set<string>()
 
 export function oppoSans(): Promise<FontSlot | null> {
   return loadFontSlot('og')
