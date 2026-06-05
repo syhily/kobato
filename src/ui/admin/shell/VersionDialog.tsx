@@ -9,24 +9,12 @@ import {
 } from 'lucide-react'
 import { useCallback, useState } from 'react'
 
-import {
-  APP_AUTHOR,
-  APP_DESCRIPTION,
-  APP_HOMEPAGE,
-  APP_NAME,
-  APP_REPOSITORY,
-  APP_VERSION,
-} from '@/shared/config/version'
+import { orpc } from '@/client/api/client'
+import { useQuery } from '@/client/api/query'
+import { APP_AUTHOR, APP_DESCRIPTION, APP_HOMEPAGE, APP_NAME, APP_VERSION } from '@/shared/config/version'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/ui/components/dialog'
 import { GithubIcon } from '@/ui/icons/brand'
 import { cn } from '@/ui/lib/cn'
-
-interface GitHubRelease {
-  tag_name: string
-  html_url: string
-  name: string
-  published_at: string
-}
 
 type CheckState = 'idle' | 'loading' | 'up-to-date' | 'available' | 'error'
 
@@ -40,24 +28,19 @@ export function VersionDialog({ open, onOpenChange }: VersionDialogProps) {
   const [latestVersion, setLatestVersion] = useState<string | null>(null)
   const [releaseUrl, setReleaseUrl] = useState<string | null>(null)
 
+  const { data: avatarData } = useQuery({
+    queryKey: ['github', 'avatar'],
+    queryFn: () => orpc.github.avatar({}),
+    staleTime: 1000 * 60 * 60,
+  })
+
   const handleCheckUpdate = useCallback(async () => {
     setCheckState('loading')
     try {
-      const match = APP_REPOSITORY.match(/github\.com\/([^/]+)\/([^/]+)/)
-      if (!match) {
-        setCheckState('error')
-        return
-      }
-      const [, owner, repo] = match
-      const response = await fetch(`https://api.github.com/repos/${owner}/${repo}/releases/latest`)
-      if (!response.ok) {
-        setCheckState('error')
-        return
-      }
-      const release = (await response.json()) as GitHubRelease
-      const latest = release.tag_name.replace(/^v/, '')
-      setLatestVersion(release.tag_name)
-      setReleaseUrl(release.html_url)
+      const release = await orpc.github.release({})
+      const latest = release.tagName.replace(/^v/, '')
+      setLatestVersion(release.tagName)
+      setReleaseUrl(release.htmlUrl)
       setCheckState(latest === APP_VERSION ? 'up-to-date' : 'available')
     } catch {
       setCheckState('error')
@@ -102,7 +85,13 @@ export function VersionDialog({ open, onOpenChange }: VersionDialogProps) {
           <div className="flex flex-wrap justify-center gap-2">
             <VersionLink
               href="https://yufan.me"
-              icon={<img src="https://avatars.githubusercontent.com/u/1761698?s=32" alt="" className="size-3.5" />}
+              icon={
+                avatarData?.avatar ? (
+                  <img src={avatarData.avatar} alt="" className="size-3.5" />
+                ) : (
+                  <div className="size-3.5 rounded-full bg-muted" />
+                )
+              }
             >
               {APP_AUTHOR.name}
             </VersionLink>

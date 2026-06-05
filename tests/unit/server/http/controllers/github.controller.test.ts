@@ -1,0 +1,89 @@
+import { describe, expect, it } from 'vitest'
+
+import { installFetch, jsonResponse } from '#/_helpers/fetch'
+import { makePublicCtx } from '#/_helpers/mock-ctx'
+import { parseRpcJson } from '#/_helpers/rpc-call'
+import { githubRouter } from '@/server/http/controllers/github.controller'
+
+const { RPCHandler } = await import('@orpc/server/fetch')
+const handler = new RPCHandler(githubRouter)
+
+async function call(path: string, input: unknown) {
+  const result = await handler.handle(
+    new Request(`http://localhost/rpc${path}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ json: input }),
+    }),
+    { prefix: '/rpc', context: makePublicCtx() },
+  )
+  if (!result.matched) {
+    throw new Error(`No route matched for ${path}`)
+  }
+  return result.response
+}
+
+describe('github controller', () => {
+  const mockFetch = installFetch()
+
+  it('avatar returns base64 data URL on success', async () => {
+    const buffer = new Uint8Array([0x89, 0x50, 0x4e, 0x47]).buffer
+    mockFetch.enqueue(
+      /avatars\.githubusercontent\.com/,
+      () =>
+        new Response(buffer, {
+          status: 200,
+          headers: { 'Content-Type': 'image/png' },
+        }),
+    )
+
+    const response = await call('/github/avatar', {})
+    expect(response.status).toBe(200)
+    const body = await parseRpcJson<{ avatar: string }>(response)
+    expect(body.avatar).toMatch(/^data:image\/png;base64,/)
+  })
+
+  it('avatar returns empty string when upstream fails', async () => {
+    mockFetch.enqueue(/avatars\.githubusercontent\.com/, new Response('not found', { status: 404 }))
+
+    const response = await call('/github/avatar', {})
+    expect(response.status).toBe(200)
+    const body = await parseRpcJson<{ avatar: string }>(response)
+    expect(body.avatar).toBe('')
+  })
+
+  it('release returns parsed release info on success', async () => {
+    mockFetch.enqueue(
+      /api\.github\.com\/repos\/[^/]+\/[^/]+\/releases\/latest/,
+      jsonResponse({
+        tag_name: 'v1.2.3',
+        html_url: 'https://github.com/syhily/kobato/releases/tag/v1.2.3',
+        name: 'Release 1.2.3',
+        published_at: '2024-01-01T00:00:00Z',
+      }),
+    )
+
+    const response = await call('/github/release', {})
+    expect(response.status).toBe(200)
+    const body = await parseRpcJson<{
+      tagName: string
+      htmlUrl: string
+      name: string
+      publishedAt: string
+    }>(response)
+    expect(body.tagName).toBe('v1.2.3')
+    expect(body.htmlUrl).toBe('https://github.com/syhily/kobato/releases/tag/v1.2.3')
+    expect(body.name).toBe('Release 1.2.3')
+    expect(body.publishedAt).toBe('2024-01-01T00:00:00Z')
+  })
+
+  it('release throws when upstream fails', async () => {
+    mockFetch.enqueue(
+      /api\.github\.com\/repos\/[^/]+\/[^/]+\/releases\/latest/,
+      new Response('not found', { status: 404 }),
+    )
+
+    const response = await call('/github/release', {})
+    expect(response.status).toBe(500)
+  })
+})

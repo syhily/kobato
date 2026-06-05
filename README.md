@@ -1,4 +1,4 @@
-<!-- markdownlint-disable MD001 MD033 MD041 -->
+<!-- markdownlint-disable MD033 MD041 -->
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="src/server/assets/defaults/images/blog-poster-dark.png">
   <img alt="Kobato" src="src/server/assets/defaults/images/blog-poster.png">
