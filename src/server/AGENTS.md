@@ -241,10 +241,10 @@ redeploying. Examples: `assets.storage.enabled`, `seo.og.width`,
   replicate this fallback and be covered by a unit test in
   `tests/service.cms-posts-projection.test.ts`.
 - **Draft post visibility gate.** A post is considered draft (invisible
-  to the public) when `published=false` OR `publishedRevisionId=null`.
+  to the public) when `status=draft` OR `publishedRevisionId=null`.
   The admin lifecycle filter treats both cases as draft; all public
   queries (`buildPublicPostsWhere`, `isCatalogVisible`, `findPostBySlug`)
-  MUST check both conditions. A post with `published=true` but no
+  MUST check both conditions. A post with `status=published` but no
   published revision must NOT appear on the home page, in listings,
   feeds, or sitemap.
 

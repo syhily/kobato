@@ -130,7 +130,7 @@ describe('loadPagePreview — slug redirect logic', () => {
     }
   })
 
-  it('does not redirect for an unpublished post (published=false)', async () => {
+  it('does not redirect for an unpublished post (status=draft)', async () => {
     mocks.findPublicPostMetaBySlug.mockImplementation(async () => makePostMeta({ published: false }))
 
     await expect(loadPagePreview(makeArgs('draft-post'))).rejects.toMatchObject({ status: 404 })

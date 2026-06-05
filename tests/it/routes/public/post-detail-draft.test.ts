@@ -8,7 +8,7 @@ import { adminSession, authorSession, regularSession } from '#/_helpers/session'
 
 // Draft-preview contract for `routes/post.detail`.
 //
-//   - `published=false` posts are invisible to anonymous/regular users (404).
+//   - `status=draft` posts are invisible to anonymous/regular users (404).
 //   - Admin and author users see the draft via `loadPostDraftPreviewBySlug`
 //     with a `【草稿】` marker in the title bar.
 
@@ -71,7 +71,7 @@ vi.mock('@/server/domains/posts/repos/single', () => ({
     if (slug === 'hello') {
       return publishedPost
     }
-    // never-published is published=true but publishedRevisionId=null;
+    // never-published is status=published but publishedRevisionId=null;
     // the real findPostBySlug now returns null for this case.
     return null
   }),
@@ -164,7 +164,7 @@ describe('routes/post.detail draft visibility', () => {
     expect(draftPreviewMock).not.toHaveBeenCalled()
   })
 
-  it('404s anonymous visitors on a draft post (published=false)', async () => {
+  it('404s anonymous visitors on a draft post (status=draft)', async () => {
     let thrown: unknown
     try {
       await postRoute.loader(
@@ -183,7 +183,7 @@ describe('routes/post.detail draft visibility', () => {
     expect(draftPreviewMock).not.toHaveBeenCalled()
   })
 
-  it('404s anonymous visitors on a post with published=true but no published revision', async () => {
+  it('404s anonymous visitors on a post with status=published but no published revision', async () => {
     let thrown: unknown
     try {
       await postRoute.loader(

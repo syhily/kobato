@@ -33,14 +33,14 @@ export function StatsGrid({ stats }: StatsGridProps) {
       <StatCard
         label="我的草稿"
         value={stats.draftCount}
-        href="/admin/posts?published=false"
+        href="/admin/posts?status=draft"
         icon={SquarePenIcon}
         tone="warn"
       />
       <StatCard
         label="已发布文章"
         value={stats.publishedCount}
-        href="/admin/posts?published=true"
+        href="/admin/posts?status=published"
         icon={FileCheck2Icon}
         tone="success"
       />

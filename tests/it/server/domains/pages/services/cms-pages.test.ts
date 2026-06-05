@@ -204,7 +204,7 @@ describe('cms/pages/service — createPage / updatePageMeta validation', () => {
     })
   })
 
-  it('createPage always inserts published=false even when input says true', async () => {
+  it('createPage always inserts status=draft even when input says true', async () => {
     vi.mocked(repo.findPageMetaBySlug).mockResolvedValue(null)
     vi.mocked(repo.insertPageMeta).mockResolvedValue(metaRow({ slug: 'new-page', published: false }))
 
@@ -214,7 +214,7 @@ describe('cms/pages/service — createPage / updatePageMeta validation', () => {
     expect(patch.published).toBe(false)
   })
 
-  it('createPage inserts published=false when input omits the field', async () => {
+  it('createPage inserts status=draft when input omits the field', async () => {
     vi.mocked(repo.findPageMetaBySlug).mockResolvedValue(null)
     vi.mocked(repo.insertPageMeta).mockResolvedValue(metaRow({ slug: 'new-page', published: false }))
 
@@ -514,7 +514,7 @@ describe('cms/pages/service — public catalog projection', () => {
     expect(await catalog.loadCatalogPageBySlug(db, 'gone')).toBeNull()
   })
 
-  it('loadCatalogPageBySlug 404s when meta.published=false', async () => {
+  it('loadCatalogPageBySlug 404s when meta.status=draft', async () => {
     vi.mocked(repo.findPublicPageMetaBySlug).mockResolvedValue(metaRow({ published: false }))
     expect(await catalog.loadCatalogPageBySlug(db, 'about')).toBeNull()
   })

@@ -23,7 +23,7 @@ beforeEach(async () => {
 })
 
 describe('cms/posts/service — createPost published guard', () => {
-  it('always creates with published=false even when input says true', async () => {
+  it('always creates with status=draft even when input says true', async () => {
     const dto = await service.createPost(db, { title: 'Test', published: true }, null)
 
     expect(dto.published).toBe(false)
@@ -32,7 +32,7 @@ describe('cms/posts/service — createPost published guard', () => {
     expect(rows[0]?.published).toBe(false)
   })
 
-  it('creates with published=false when input omits the field', async () => {
+  it('creates with status=draft when input omits the field', async () => {
     const dto = await service.createPost(db, { title: 'Test' }, null)
 
     expect(dto.published).toBe(false)
@@ -43,9 +43,9 @@ describe('cms/posts/service — createPost published guard', () => {
 })
 
 describe('cms/posts/service — updatePostMeta ignores published', () => {
-  it('leaves existing published=true untouched even when input says false', async () => {
+  it('leaves existing status=published untouched even when input says false', async () => {
     const created = await service.createPost(db, { title: 'Hello World', slug: 'hello-world' }, null)
-    // Manually set published=true in DB to simulate a published post
+    // Manually set status=published in DB to simulate a published post
     await db
       .update(postMetaTable)
       .set({ published: true })
@@ -66,7 +66,7 @@ describe('cms/posts/service — updatePostMeta ignores published', () => {
     expect(rows[0]?.published).toBe(true)
   })
 
-  it('leaves existing published=false untouched even when input says true', async () => {
+  it('leaves existing status=draft untouched even when input says true', async () => {
     const created = await service.createPost(db, { title: 'Hello World', slug: 'hello-world' }, null)
 
     const dto = await service.updatePostMeta(db, {

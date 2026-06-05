@@ -44,7 +44,7 @@ export async function loadCatalogPages(db: NodePgDatabase): Promise<CmsPage[]> {
 /**
  * Single-page lookup for the public detail route. Returns `null` when
  * the slug is unknown, soft-deleted, taken offline, or scheduled for
- * the future. Soft-deleted pages 404; pages with `published=false`
+ * the future. Soft-deleted pages 404; pages with `status=draft`
  * on the meta row also 404 — same semantics as MDX `published` on posts.
  * Scheduled (future-dated) pages 404 too so the catalog stays consistent
  * with `loadCatalogPages()`.

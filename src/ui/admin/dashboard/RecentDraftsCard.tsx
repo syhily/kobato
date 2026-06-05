@@ -10,7 +10,7 @@ export function RecentDraftsCard({ drafts }: { drafts: DraftSummary[] }) {
     <div className="rounded-xl border bg-card p-6">
       <div className="flex items-baseline justify-between gap-3">
         <h2 className="text-base font-medium">最近草稿</h2>
-        <Button type="button" variant="ghost" size="sm" render={<Link to="/admin/posts?published=false" />}>
+        <Button type="button" variant="ghost" size="sm" render={<Link to="/admin/posts?status=draft" />}>
           <span className="hidden sm:inline">全部草稿</span> <ArrowRightIcon data-icon />
         </Button>
       </div>

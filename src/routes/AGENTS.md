@@ -119,9 +119,9 @@ adopt React Router's segment-based filename convention.
   `sitemap.xml`, feeds, and category/tag listings and counts.
   Future-dated posts stay excluded until publish time.
 - **Draft post visibility gate.** A post is considered draft (invisible
-  to the public) when `published=false` OR `publishedRevisionId=null`.
+  to the public) when `status=draft` OR `publishedRevisionId=null`.
   All public queries MUST check both conditions. A post with
-  `published=true` but no published revision must NOT appear on the home
+  `status=published` but no published revision must NOT appear on the home
   page, in listings, feeds, or sitemap.
 
 ## Page draft preview
