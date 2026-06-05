@@ -194,6 +194,11 @@ export async function buildLoadContext(c: { var: Env['Variables']; req: { raw: R
   context.set(requestContext, request)
   context.set(dbContext, db)
   context.set(poolContext, pool)
-  context.set(cspNonceContext, c.var.cspNonce)
+  // Defensive: the `*` middleware should always set `cspNonce`, but
+  // sub-app routing in Hono can occasionally drop `c.var` values.
+  // Generate a fresh nonce here so `entry.server.tsx` never receives
+  // an empty string (which React DOM renders as `nonce=""`).
+  const cspNonce = c.var.cspNonce || randomBytes(16).toString('base64')
+  context.set(cspNonceContext, cspNonce)
   return context
 }

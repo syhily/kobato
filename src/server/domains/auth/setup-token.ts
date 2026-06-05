@@ -1,5 +1,6 @@
 import { randomBytes, timingSafeEqual } from 'node:crypto'
 
+import { boxLog } from '@/server/infra/logger/box-console'
 import { redisInstance } from '@/server/infra/redis/storage'
 
 const REDIS_KEY = 'setup_token'
@@ -35,14 +36,7 @@ export async function getSetupToken(): Promise<string> {
   // Print the full token to stdout (not structured logs) so operators
   // can read it from the terminal or `docker logs` while the SHA-256
   // hash above is the only value that enters the logging pipeline.
-  // eslint-disable-next-line no-console
-  console.log('╔══════════════════════════════════════════════════════════════════╗')
-  // eslint-disable-next-line no-console
-  console.log('║  Setup token generated (valid until first admin is created):     ║')
-  // eslint-disable-next-line no-console
-  console.log(`║  ${token}  ║`)
-  // eslint-disable-next-line no-console
-  console.log('╚══════════════════════════════════════════════════════════════════╝')
+  boxLog(['Setup token generated (valid until first admin is created):', token], { style: 'bold', align: 'center' })
   return token
 }
 

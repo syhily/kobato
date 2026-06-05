@@ -3,6 +3,7 @@ import type { EntryContext, RouterContextProvider } from 'react-router'
 
 import { createReadableStreamFromReadable } from '@react-router/node'
 import { isbot } from 'isbot'
+import { randomBytes } from 'node:crypto'
 import { PassThrough } from 'node:stream'
 import { renderToPipeableStream } from 'react-dom/server'
 import { ServerRouter } from 'react-router'
@@ -29,7 +30,11 @@ export default function handleRequest(
     })
   }
 
-  const nonce = loadContext.get(cspNonceContext)
+  let nonce = loadContext.get(cspNonceContext)
+  if (!nonce) {
+    log.warn('CSP nonce missing from load context; generating fallback nonce')
+    nonce = randomBytes(16).toString('base64')
+  }
 
   return new Promise<Response>((resolve, reject) => {
     let shellRendered = false
