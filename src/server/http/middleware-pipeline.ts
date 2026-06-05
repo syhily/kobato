@@ -26,7 +26,9 @@ import { assetsRouter } from '@/server/http/resources/assets'
 import { backupRouter } from '@/server/http/resources/backup'
 import { brandingRouter } from '@/server/http/resources/branding'
 import { feedRouter } from '@/server/http/resources/feed'
+import { fontsRouter } from '@/server/http/resources/fonts'
 import { imagesRouter } from '@/server/http/resources/images'
+import { maxmindRouter } from '@/server/http/resources/maxmind'
 import { redirectsRouter } from '@/server/http/resources/redirects'
 import { sitemapRouter } from '@/server/http/resources/sitemap'
 import { getRestoreState, getServerPhase } from '@/server/infra/lifecycle'
@@ -178,6 +180,8 @@ export function configureMiddleware(app: Hono<Env>): void {
 
   // Admin branding resource routes
   app.route('/', brandingRouter)
+  app.route('/', fontsRouter)
+  app.route('/', maxmindRouter)
 }
 
 export async function buildLoadContext(c: { var: Env['Variables']; req: { raw: Request; url: string } }) {
