@@ -1,5 +1,7 @@
-import { PlusIcon, Trash2Icon } from 'lucide-react'
+import { PlusIcon, Trash2Icon, UploadIcon } from 'lucide-react'
+import { useRef, useState } from 'react'
 import { useFieldArray } from 'react-hook-form'
+import { toast } from 'sonner'
 
 import type { FontsSettings } from '@/shared/config/types'
 
@@ -20,67 +22,130 @@ interface FontsFormProps {
   fonts: FontsSettings
 }
 
+async function uploadFont(slot: 'og' | 'calendar', file: File): Promise<void> {
+  const formData = new FormData()
+  formData.append('slot', slot)
+  formData.append('file', file)
+  const res = await fetch('/api/admin/fonts/upload', { method: 'POST', body: formData })
+  if (!res.ok) {
+    const data = (await res.json().catch(() => null)) as { error?: { message?: string } } | null
+    throw new Error(data?.error?.message ?? `上传失败 (${res.status})`)
+  }
+}
+
+function FontUploadRow({
+  slot,
+  label,
+  family,
+  mode,
+}: {
+  slot: 'og' | 'calendar'
+  label: string
+  family: string
+  mode: 'read' | 'edit'
+}) {
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [uploading, setUploading] = useState(false)
+
+  const handleFileChange = async (file: File) => {
+    const lower = file.name.toLowerCase()
+    if (!lower.endsWith('.ttf') && !lower.endsWith('.otf')) {
+      toast.error('文件类型错误', { description: '仅支持 .ttf 或 .otf 字体文件' })
+      return
+    }
+    if (file.size > 20 * 1024 * 1024) {
+      toast.error('文件过大', { description: '字体文件大小上限为 20 MB' })
+      return
+    }
+    setUploading(true)
+    try {
+      await uploadFont(slot, file)
+      toast.success(`${label} 已上传`)
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : '上传失败')
+    } finally {
+      setUploading(false)
+    }
+  }
+
+  return (
+    <div className="flex items-center gap-3">
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept=".ttf,.otf"
+        hidden
+        aria-label={`选择 ${label} 文件`}
+        onChange={(e) => {
+          const f = e.target.files?.[0]
+          if (f) {
+            void handleFileChange(f)
+          }
+          e.target.value = ''
+        }}
+      />
+      {mode === 'edit' && (
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          disabled={uploading}
+          onClick={() => fileInputRef.current?.click()}
+        >
+          <UploadIcon data-icon="sm" />
+          {uploading ? '上传中…' : '上传字体'}
+        </Button>
+      )}
+      <span className="text-sm text-muted-foreground">{family ? `已配置族名：${family}` : '未配置族名'}</span>
+    </div>
+  )
+}
+
 function FontsCanvasCard({ fonts }: { fonts: FontsSettings }) {
   const { mode, form, settingGroupProps, display } = useSettingsCard<
     FontsSettings,
-    { ogPath: string; ogFamily: string; calendarPath: string; calendarFamily: string }
+    { ogFamily: string; calendarFamily: string }
   >({
     section: 'fonts',
     source: fonts,
     toState: (source) => ({
-      ogPath: source.og.path,
       ogFamily: source.og.family,
-      calendarPath: source.calendar.path,
       calendarFamily: source.calendar.family,
     }),
     fromState: (state) => ({
-      og: { path: state.ogPath.trim(), family: state.ogFamily.trim() },
-      calendar: { path: state.calendarPath.trim(), family: state.calendarFamily.trim() },
+      og: { family: state.ogFamily.trim() },
+      calendar: { family: state.calendarFamily.trim() },
     }),
   })
 
   return (
     <SettingGroup
       title="Canvas 字体"
-      description="服务端渲染 OG 图与日历图时使用的本地 TTF/OTF 字体文件。留空时降级使用系统中文字体。"
+      description="服务端渲染 OG 图与日历图时使用的本地 TTF/OTF 字体文件。上传字体后配置族名，留空时降级使用系统中文字体。"
       {...settingGroupProps}
     >
       {mode === 'edit' ? (
         <SettingGroupContent>
-          <SettingsRow label="OG 图字体" htmlFor="fonts-og-path">
-            <div className="flex flex-col gap-2 sm:flex-row sm:gap-3">
+          <SettingsRow label="OG 图字体" htmlFor="fonts-og-family">
+            <div className="flex flex-col gap-2">
+              <FontUploadRow slot="og" label="OG 图字体" family={display.og.family} mode={mode} />
               <Input
-                id="fonts-og-path"
-                type="text"
-                placeholder="文件名，例如 opposans.ttf"
-                maxLength={200}
-                className="sm:flex-[2]"
-                {...form.register('ogPath')}
-              />
-              <Input
+                id="fonts-og-family"
                 type="text"
                 placeholder="族名，例如 OPPOSans"
                 maxLength={100}
-                className="sm:flex-1"
                 {...form.register('ogFamily')}
               />
             </div>
           </SettingsRow>
-          <SettingsRow label="日历图字体" htmlFor="fonts-calendar-path">
-            <div className="flex flex-col gap-2 sm:flex-row sm:gap-3">
+          <SettingsRow label="日历图字体" htmlFor="fonts-calendar-family">
+            <div className="flex flex-col gap-2">
+              <FontUploadRow slot="calendar" label="日历图字体" family={display.calendar.family} mode={mode} />
               <Input
-                id="fonts-calendar-path"
-                type="text"
-                placeholder="文件名，例如 opposerif.ttf"
-                maxLength={200}
-                className="sm:flex-[2]"
-                {...form.register('calendarPath')}
-              />
-              <Input
+                id="fonts-calendar-family"
                 type="text"
                 placeholder="族名，例如 OPPOSerif"
                 maxLength={100}
-                className="sm:flex-1"
                 {...form.register('calendarFamily')}
               />
             </div>
@@ -88,14 +153,8 @@ function FontsCanvasCard({ fonts }: { fonts: FontsSettings }) {
         </SettingGroupContent>
       ) : (
         <SettingGroupContent>
-          <SettingValue
-            label="OG 图字体"
-            value={display.og.path ? `${display.og.path}（${display.og.family}）` : '—'}
-          />
-          <SettingValue
-            label="日历图字体"
-            value={display.calendar.path ? `${display.calendar.path}（${display.calendar.family}）` : '—'}
-          />
+          <SettingValue label="OG 图字体" value={display.og.family || '—'} />
+          <SettingValue label="日历图字体" value={display.calendar.family || '—'} />
         </SettingGroupContent>
       )}
     </SettingGroup>

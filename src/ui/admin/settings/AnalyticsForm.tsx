@@ -1,4 +1,7 @@
+import { UploadIcon } from 'lucide-react'
+import { useRef, useState } from 'react'
 import { Controller } from 'react-hook-form'
+import { toast } from 'sonner'
 
 import type { AnalyticsSettings } from '@/shared/config/types'
 
@@ -7,11 +10,77 @@ import { SettingGroup } from '@/ui/admin/settings/shell/SettingGroup'
 import { SettingGroupContent } from '@/ui/admin/settings/shell/SettingGroupContent'
 import { SettingValue } from '@/ui/admin/settings/shell/SettingValue'
 import { useSettingsCard } from '@/ui/admin/settings/shell/useSettingsCard'
+import { Button } from '@/ui/components/button'
 import { FieldLabel } from '@/ui/components/field'
 import { Switch } from '@/ui/components/switch'
 
 interface AnalyticsFormProps {
   analytics: AnalyticsSettings
+}
+
+async function uploadMaxMind(file: File): Promise<void> {
+  const formData = new FormData()
+  formData.append('file', file)
+  const res = await fetch('/api/admin/maxmind/upload', { method: 'POST', body: formData })
+  if (!res.ok) {
+    const data = (await res.json().catch(() => null)) as { error?: { message?: string } } | null
+    throw new Error(data?.error?.message ?? `上传失败 (${res.status})`)
+  }
+}
+
+function MaxMindUploadRow() {
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [uploading, setUploading] = useState(false)
+
+  const handleFileChange = async (file: File) => {
+    if (!file.name.toLowerCase().endsWith('.mmdb')) {
+      toast.error('文件类型错误', { description: '仅支持 .mmdb 格式的 MaxMind 数据库文件' })
+      return
+    }
+    if (file.size > 100 * 1024 * 1024) {
+      toast.error('文件过大', { description: 'MaxMind 数据库文件大小上限为 100 MB' })
+      return
+    }
+    setUploading(true)
+    try {
+      await uploadMaxMind(file)
+      toast.success('MaxMind 数据库已上传')
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : '上传失败')
+    } finally {
+      setUploading(false)
+    }
+  }
+
+  return (
+    <div className="flex items-center gap-3">
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept=".mmdb"
+        hidden
+        aria-label="选择 MaxMind 数据库文件"
+        onChange={(e) => {
+          const f = e.target.files?.[0]
+          if (f) {
+            void handleFileChange(f)
+          }
+          e.target.value = ''
+        }}
+      />
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        disabled={uploading}
+        onClick={() => fileInputRef.current?.click()}
+      >
+        <UploadIcon data-icon="sm" />
+        {uploading ? '上传中…' : '上传 GeoLite2-City.mmdb'}
+      </Button>
+      <span className="text-sm text-muted-foreground">上传后 GeoIP 解析自动生效，无需重启服务</span>
+    </div>
+  )
 }
 
 export function AnalyticsForm({ analytics }: AnalyticsFormProps) {
@@ -80,6 +149,14 @@ export function AnalyticsForm({ analytics }: AnalyticsFormProps) {
             <SettingValue label="保留爬虫记录" value={display.analytics.keepBotRows ? '已开启' : '已关闭'} />
           </SettingGroupContent>
         )}
+      </SettingGroup>
+
+      <SettingGroup title="GeoIP 数据库" description="上传 MaxMind GeoLite2-City 数据库以启用访问者的地理位置解析。">
+        <SettingGroupContent>
+          <SettingsRow label="GeoLite2-City.mmdb">
+            <MaxMindUploadRow />
+          </SettingsRow>
+        </SettingGroupContent>
       </SettingGroup>
     </div>
   )
