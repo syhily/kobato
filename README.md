@@ -146,6 +146,10 @@ npm run docker:dev  # start dev components
 npm run docker:test # start test components
 ```
 
+## Design assets
+
+[`kobato.sketch`](kobato.sketch) is a Sketch template for the kobato favicon, logo, and branding assets.
+
 ## License
 
 [MIT](LICENSE)
