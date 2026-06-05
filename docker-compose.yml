@@ -20,11 +20,9 @@ services:
       ENCRYPTION_KEY: ${ENCRYPTION_KEY:-}
       # Logging
       LOG_LEVEL: ${LOG_LEVEL:-info}
-      # Data paths
-      FONT_PATH: /data/fonts
-      ANALYTICS_DEAD_LETTER_PATH: /data/analytics
-      AUDIT_DEAD_LETTER_PATH: /data/audit
-      MAXMIND_DB_PATH: /data/maxmind/GeoLite2-City.mmdb
+      # Data directory — fonts, dead-letter files, and MaxMind DB live in
+      # fixed subdirectories under this path.
+      KOBATO_DATA_PATH: /data
     volumes:
       - kobato_data:/data
     depends_on:
