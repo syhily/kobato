@@ -80,6 +80,15 @@ registerRestoreComplete(async (success, err) => {
   }
 
   try {
+    try {
+      await migrateDatabase()
+      root.info('Database migrations completed after restore')
+    } catch (migrateErr) {
+      root.error(
+        { err: migrateErr instanceof Error ? migrateErr.message : String(migrateErr) },
+        'Database migrations failed after restore',
+      )
+    }
     await restartServer()
     root.info('Restore completion finished, server back online')
   } catch (restartErr) {
