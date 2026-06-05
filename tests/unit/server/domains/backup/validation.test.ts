@@ -74,9 +74,14 @@ describe('backup validation', () => {
     expect(() => validateBackupSql(sql)).toThrow(ActionFailure)
   })
 
-  it('rejects CREATE EXTENSION', () => {
+  it('rejects CREATE EXTENSION for blocked extensions', () => {
     const sql = `-- PostgreSQL database dump\nCREATE EXTENSION IF NOT EXISTS file_fdw;\nCREATE TABLE users (id serial PRIMARY KEY);`
     expect(() => validateBackupSql(sql)).toThrow(ActionFailure)
+  })
+
+  it('accepts CREATE EXTENSION for allowed extensions', () => {
+    const sql = `-- PostgreSQL database dump\nCREATE EXTENSION IF NOT EXISTS vector WITH SCHEMA public;\nCREATE EXTENSION IF NOT EXISTS timescaledb WITH SCHEMA public;\nCREATE TABLE users (id serial PRIMARY KEY);`
+    expect(() => validateBackupSql(sql)).not.toThrow()
   })
 
   it('rejects LANGUAGE plpython3u', () => {

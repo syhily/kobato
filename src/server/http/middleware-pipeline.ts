@@ -81,9 +81,14 @@ export function configureMiddleware(app: Hono<Env>): void {
     // 'unsafe-inline' for scripts in dev mode so the dev server works
     // correctly; production keeps the strict nonce-only policy.
     const scriptSrc = import.meta.env.DEV ? "script-src 'self' 'unsafe-inline'" : `script-src 'self' 'nonce-${nonce}'`
+    // Vite's dev client may create blob workers (e.g. for HMR message
+    // handling).  Without worker-src the browser falls back to script-src,
+    // which does not include blob:.  Allow blob workers in dev only.
+    const workerSrc = import.meta.env.DEV ? "worker-src 'self' blob:" : "worker-src 'self'"
     const csp = [
       "default-src 'self'",
       scriptSrc,
+      workerSrc,
       `style-src 'self' 'unsafe-inline' ${extra}`,
       `font-src 'self' ${extra}`,
       `img-src 'self' data: blob: http://*.music.126.net https://*.music.126.net ${extra}`,
@@ -101,6 +106,7 @@ export function configureMiddleware(app: Hono<Env>): void {
       contentSecurityPolicy: {
         defaultSrc: ["'self'"],
         scriptSrc: ["'self'", "'unsafe-inline'"],
+        workerSrc: ["'self'", 'blob:'],
         styleSrc: ["'self'", "'unsafe-inline'"],
         imgSrc: ["'self'", 'data:', 'blob:', 'http://*.music.126.net', 'https://*.music.126.net'],
         mediaSrc: ["'self'", 'http://*.music.126.net', 'https://*.music.126.net'],

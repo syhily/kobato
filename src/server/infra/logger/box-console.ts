@@ -25,10 +25,6 @@ interface BoxLogOptions {
   align?: 'left' | 'center' | 'right'
 }
 
-// Overload declarations
-export function boxLog(line: string, options?: BoxLogOptions): void
-export function boxLog(lines: readonly string[], options?: BoxLogOptions): void
-
 // Implementation
 export function boxLog(lines: string | readonly string[], options: BoxLogOptions = {}): void {
   const { style = 'double', padding = 2, title, align = 'left' } = options

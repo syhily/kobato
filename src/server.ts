@@ -40,16 +40,19 @@ wrapFetchWithLeakedResponseHandler(app)
 setRestartApp(app)
 
 // ─── Scheduled tasks & startup migrations ────────────────
+//
+// Run migrations and hydrate settings before starting schedulers
+// so they never hit the "Settings not hydrated" race condition.
+// The entire block is HMR-safe (guarded by `secretsMigrated`).
 
-scheduleNextBackup()
-initBackupScheduler()
-scheduleNextArchive(getDb(), getPool())
-
-// Run the secrets migration once per process (HMR-safe via
-// import.meta.hot.data so dev reloads don't re-query the DB).
 if (!hmr?.secretsMigrated) {
   await migrateSecretsEncryption(getDb())
   await refreshBlogSettings(getDb())
+
+  scheduleNextBackup()
+  initBackupScheduler()
+  scheduleNextArchive(getDb(), getPool())
+
   if (hmr) {
     hmr.secretsMigrated = true
   }

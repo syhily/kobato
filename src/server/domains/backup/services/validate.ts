@@ -11,7 +11,6 @@ const BLOCKED_PATTERNS = [
   /\bCREATE\s+(?:\/\*[^]*?\*\/\s*)*DATABASE\b/i,
   /\bCREATE\s+(?:\/\*[^]*?\*\/\s*)*FUNCTION\b/i,
   /\bCREATE\s+(?:\/\*[^]*?\*\/\s*)*PROCEDURE\b/i,
-  /\bCREATE\s+(?:\/\*[^]*?\*\/\s*)*EXTENSION\b/i,
   /\bLANGUAGE\s+(?:\/\*[^]*?\*\/\s*)*(plpython3u|plperlu|pltclu|plsh|plc|pljava|plr)\b/i,
   /\bDO\s*\$\$/i,
   /\\!/i,
@@ -24,6 +23,61 @@ const BLOCKED_PATTERNS = [
   /\\connect\b/i,
   /\\o\b/i,
 ]
+
+// Extensions that are safe to CREATE EXTENSION in a restore file.
+// This replaces the blanket CREATE EXTENSION block so that standard pg_dump
+// output (which includes extensions like vector, timescaledb, etc.) can pass,
+// while still rejecting known dangerous extensions.
+const ALLOWED_EXTENSIONS = new Set([
+  // Project-required
+  'vector',
+  'timescaledb',
+  // Built-in / widely-used safe extensions
+  'pg_trgm',
+  'uuid-ossp',
+  'uuid_ossp',
+  'pgcrypto',
+  'citext',
+  'hstore',
+  'unaccent',
+  'intarray',
+  'ltree',
+  'cube',
+  'earthdistance',
+  'fuzzystrmatch',
+  'tablefunc',
+  'dict_xsyn',
+  'dict_int',
+  'pg_stat_statements',
+  'auto_explain',
+  'pg_prewarm',
+  'pg_buffercache',
+  'pg_freespacemap',
+  'pg_visibility',
+  'pageinspect',
+  'amcheck',
+  'bloom',
+  'hypopg',
+  'postgis',
+  'postgis_topology',
+  'postgis_raster',
+  'postgis_tiger_geocoder',
+  'address_standardizer',
+])
+
+const CREATE_EXTENSION_RE =
+  /\bCREATE\s+(?:\/\*[^]*?\*\/\s*)*EXTENSION\s+(?:IF\s+NOT\s+EXISTS\s+)?"?([a-zA-Z0-9_-]+)"?/gi
+
+function containsBlockedExtensions(sql: string): boolean {
+  let match: RegExpExecArray | null
+  while ((match = CREATE_EXTENSION_RE.exec(sql)) !== null) {
+    const ext = match[1].toLowerCase().replace(/-/g, '_')
+    if (!ALLOWED_EXTENSIONS.has(ext)) {
+      return true
+    }
+  }
+  return false
+}
 
 // Allowed statement prefixes. Every non-comment, non-empty line must start
 // with one of these. This complements the blocklist with a defence-in-depth
@@ -81,6 +135,9 @@ export function validateBackupSql(sql: string): void {
     if (pattern.test(sql)) {
       throw new ActionFailure(400, `备份文件包含危险 SQL 命令（匹配：${pattern.source}），还原已中止。`)
     }
+  }
+  if (containsBlockedExtensions(sql)) {
+    throw new ActionFailure(400, '备份文件包含不允许的数据库扩展，还原已中止。')
   }
   if (containsDisallowedStatements(sql)) {
     throw new ActionFailure(400, '备份文件包含不允许的 SQL 语句类型，还原已中止。')

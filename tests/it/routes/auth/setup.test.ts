@@ -33,6 +33,7 @@ vi.mock('@/server/domains/auth/setup-token', async (importOriginal) => {
   return {
     ...actual,
     verifySetupToken: vi.fn(),
+    getSetupToken: vi.fn(async () => 'test-setup-token'),
     isSetupTokenActive: vi.fn(async () => true),
   }
 })

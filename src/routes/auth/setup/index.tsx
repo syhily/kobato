@@ -5,7 +5,7 @@ import { validateCsrfForAction } from '@/server/domains/auth/csrf'
 import { signUpInitialAdminWithSession } from '@/server/domains/auth/flows'
 import { signUpAdminSchema } from '@/server/domains/auth/schema'
 import { commitSessionWithMaxAge } from '@/server/domains/auth/session-storage'
-import { isSetupTokenActive, verifySetupToken } from '@/server/domains/auth/setup-token'
+import { getSetupToken, isSetupTokenActive, verifySetupToken } from '@/server/domains/auth/setup-token'
 import { checkPgToolsAvailable } from '@/server/domains/backup/services/shared'
 import { ensureNoAdminOrRedirect } from '@/server/domains/settings/install-gate'
 import { tryKeyedRateLimit } from '@/server/infra/rate-limit'
@@ -26,6 +26,15 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   //   noAdmin   → render the admin-credentials form.
   //   installed → 303 → /admin/signin
   await ensureNoAdminOrRedirect(db)
+
+  // Ensure the setup token is visible in the server console whenever the
+  // install wizard is visited (covers restarts, log rotation, etc.).
+  try {
+    await getSetupToken()
+  } catch {
+    // Redis may be temporarily unreachable; the token will be lazily
+    // created on the next successful call.
+  }
 
   // Pull the request context so we trip session middleware exactly once.
   const { session } = getRouteRequestContext({ request, context })

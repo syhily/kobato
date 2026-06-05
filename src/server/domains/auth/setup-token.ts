@@ -27,12 +27,11 @@ export async function getSetupToken(): Promise<string> {
     throw new Error('Setup token has been invalidated — an admin already exists')
   }
   const redis = redisInstance()
-  const existing = await redis.get(REDIS_KEY)
-  if (existing) {
-    return existing
+  let token = await redis.get(REDIS_KEY)
+  if (!token) {
+    token = randomBytes(32).toString('hex')
+    await redis.set(REDIS_KEY, token, 'EX', TTL_SECONDS)
   }
-  const token = randomBytes(32).toString('hex')
-  await redis.set(REDIS_KEY, token, 'EX', TTL_SECONDS)
   // Print the full token to stdout (not structured logs) so operators
   // can read it from the terminal or `docker logs` while the SHA-256
   // hash above is the only value that enters the logging pipeline.
