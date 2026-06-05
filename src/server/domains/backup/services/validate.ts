@@ -79,8 +79,8 @@ function containsBlockedExtensions(sql: string): boolean {
   return false
 }
 
-// Allowed statement prefixes. Every non-comment, non-empty line must start
-// with one of these. This complements the blocklist with a defence-in-depth
+// Allowed statement prefixes. Every complete SQL statement must start with
+// one of these. This complements the blocklist with a defence-in-depth
 // allowlist so only pg_dump-generated statements can pass.
 const ALLOWED_PREFIXES = [
   'SET',
@@ -97,24 +97,99 @@ const ALLOWED_PREFIXES = [
   'COMMENT ON',
   'BEGIN',
   'COMMIT',
+  'END',
   'SAVEPOINT',
   'RELEASE',
   'TRUNCATE',
 ]
 
-const ALLOWED_PREFIX_RE = new RegExp(
-  `^\\s*(?:${ALLOWED_PREFIXES.map((p) => p.replace(/\s/g, '\\s+')).join('|')})\\b`,
-  'i',
-)
-
 const COMMENT_OR_EMPTY_RE = /^\s*(?:--.*)?$/
+const COPY_FROM_STDIN_RE = /^\s*COPY\b[^\n]*\bFROM\b[^\n]*\bstdin\b/i
+const COPY_END_RE = /^\\\.$/
+// pg_dump 17.6+ wraps dumps in \restrict / \unrestrict to prevent malicious
+// psql meta-commands from executing during restore. These are structural
+// markers, not SQL statements, and should be skipped.
+const RESTRICT_RE = /^\\restrict\b/
+const UNRESTRICT_RE = /^\\unrestrict\b/
 
-function containsDisallowedStatements(sql: string): boolean {
-  for (const line of sql.split('\n')) {
+/**
+ * Split SQL into individual statements, skipping COPY data blocks,
+ * comments, and pg_dump \restrict / \unrestrict markers. Handles multi-line
+ * DDL (CREATE TABLE, CREATE TYPE, etc.) and semicolons inside single-quoted
+ * strings.
+ */
+function splitStatements(sql: string): string[] {
+  const statements: string[] = []
+  let current = ''
+  let inString = false
+  let inCopyBlock = false
+
+  for (const rawLine of sql.split('\n')) {
+    const line = rawLine.trimEnd()
     if (COMMENT_OR_EMPTY_RE.test(line)) {
       continue
     }
-    if (!ALLOWED_PREFIX_RE.test(line)) {
+
+    const trimmedLine = line.trim()
+    if (RESTRICT_RE.test(trimmedLine) || UNRESTRICT_RE.test(trimmedLine)) {
+      continue
+    }
+
+    if (inCopyBlock) {
+      if (COPY_END_RE.test(trimmedLine)) {
+        inCopyBlock = false
+      }
+      continue
+    }
+
+    if (COPY_FROM_STDIN_RE.test(line)) {
+      inCopyBlock = true
+      continue
+    }
+
+    const trimmed = line.trim()
+    if (current) {
+      current += ' '
+    }
+    current += trimmed
+
+    // Track single-quoted strings so we don't split on semicolons inside them.
+    for (let i = 0; i < trimmed.length; i++) {
+      const ch = trimmed[i]
+      if (ch === "'") {
+        if (inString && i + 1 < trimmed.length && trimmed[i + 1] === "'") {
+          i++ // skip escaped quote ''
+        } else {
+          inString = !inString
+        }
+      }
+    }
+
+    if (!inString && trimmed.endsWith(';')) {
+      statements.push(current)
+      current = ''
+    }
+  }
+
+  if (current.trim()) {
+    statements.push(current)
+  }
+
+  return statements
+}
+
+function containsDisallowedStatements(sql: string): boolean {
+  const statements = splitStatements(sql)
+  for (const stmt of statements) {
+    const upper = stmt.trim().toUpperCase()
+    let allowed = false
+    for (const prefix of ALLOWED_PREFIXES) {
+      if (upper.startsWith(prefix)) {
+        allowed = true
+        break
+      }
+    }
+    if (!allowed) {
       return true
     }
   }
