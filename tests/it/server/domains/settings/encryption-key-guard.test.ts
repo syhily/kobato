@@ -18,10 +18,7 @@ vi.mock('@/server/infra/env', () => ({
   isVitest() {
     return false
   },
-  FONT_PATH: '/tmp/fonts',
-  get MAXMIND_DB_PATH() {
-    return undefined
-  },
+  KOBATO_DATA_PATH: '/tmp/kobato-data',
   get DATABASE_URL() {
     return 'postgresql://localhost:5432/test'
   },
@@ -48,12 +45,6 @@ vi.mock('@/server/infra/env', () => ({
   },
   get DB_STATEMENT_TIMEOUT_MS() {
     return 30000
-  },
-  get ANALYTICS_DEAD_LETTER_PATH() {
-    return undefined
-  },
-  get AUDIT_DEAD_LETTER_PATH() {
-    return undefined
   },
 }))
 

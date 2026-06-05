@@ -109,8 +109,8 @@ const fixture: BlogSettingsBundle = {
     },
   },
   fonts: {
-    og: { path: '', family: '' },
-    calendar: { path: '', family: '' },
+    og: { family: '' },
+    calendar: { family: '' },
     globalCss: [],
     postCss: [],
   },

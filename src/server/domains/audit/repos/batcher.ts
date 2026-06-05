@@ -8,8 +8,8 @@ import type { AuditEventInput } from '@/server/domains/audit/types'
 import { csvEscape } from '@/server/infra/csv'
 import { type FlushResult, CopyBatcher, replayDeadLetter, writeDeadLetter } from '@/server/infra/db/copy-batcher'
 import { auditLog } from '@/server/infra/db/schema/config'
-import { AUDIT_DEAD_LETTER_PATH } from '@/server/infra/env'
 import { getLogger } from '@/server/infra/logger'
+import { AUDIT_DEAD_LETTER_PATH } from '@/server/infra/paths'
 import { idFromString } from '@/shared/utils/id'
 
 const log = getLogger('audit.batcher')
@@ -17,7 +17,7 @@ const log = getLogger('audit.batcher')
 const DEAD_LETTER_SEP = '\n'
 
 function deadLetterPath(): string {
-  return AUDIT_DEAD_LETTER_PATH ?? '/tmp/kobato-audit-dead-letter.jsonl'
+  return AUDIT_DEAD_LETTER_PATH
 }
 
 function serializeForDeadLetter(events: AuditEventInput[]): string {

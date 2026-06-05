@@ -2,18 +2,14 @@ import type { City, ReaderModel } from '@maxmind/geoip2-node'
 
 import { Reader } from '@maxmind/geoip2-node'
 
-import { MAXMIND_DB_PATH } from '@/server/infra/env'
 import { getLogger } from '@/server/infra/logger'
+import { MAXMIND_DB_PATH } from '@/server/infra/paths'
 
 const log = getLogger('analytics.geoip')
 
 let readerPromise: Promise<ReaderModel | null> | undefined
 
 async function openReader(): Promise<ReaderModel | null> {
-  if (!MAXMIND_DB_PATH) {
-    log.debug('MAXMIND_DB_PATH unset — geo enrichment disabled')
-    return null
-  }
   try {
     const reader = await Reader.open(MAXMIND_DB_PATH)
     log.info('MaxMind GeoLite2 reader opened', { path: MAXMIND_DB_PATH })
@@ -31,6 +27,11 @@ export function getGeoReader(): Promise<ReaderModel | null> {
     readerPromise = openReader()
   }
   return readerPromise
+}
+
+/** Clear the cached reader so a newly-uploaded DB is picked up. */
+export function resetGeoReader(): void {
+  readerPromise = undefined
 }
 
 if (import.meta.hot) {

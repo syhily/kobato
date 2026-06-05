@@ -109,8 +109,8 @@ export const SECTION_REGISTRY = {
     schema: fontsSchema,
     key: 'fonts',
     defaults: {
-      og: { path: '', family: '' },
-      calendar: { path: '', family: '' },
+      og: { family: '' },
+      calendar: { family: '' },
       globalCss: [],
       postCss: [],
     },

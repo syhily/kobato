@@ -11,15 +11,15 @@ import {
   replayDeadLetter as replayFromInfra,
   writeDeadLetter,
 } from '@/server/infra/db/copy-batcher'
-import { ANALYTICS_DEAD_LETTER_PATH } from '@/server/infra/env'
 import { getLogger } from '@/server/infra/logger'
+import { ANALYTICS_DEAD_LETTER_PATH } from '@/server/infra/paths'
 
 export { csvEscape }
 
 const DEAD_LETTER_SEP = '\n'
 
 function deadLetterPath(): string {
-  return ANALYTICS_DEAD_LETTER_PATH ?? '/tmp/kobato-access-log-dead-letter.jsonl'
+  return ANALYTICS_DEAD_LETTER_PATH
 }
 
 function serializeForDeadLetter(events: EnrichedAccessEvent[]): string {

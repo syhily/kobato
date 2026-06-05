@@ -1,10 +1,6 @@
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 import type { Pool } from 'pg'
 
-import { access } from 'node:fs/promises'
-import path from 'node:path'
-
-import type { FontsInput } from '@/server/domains/settings/schemas/fonts'
 import type { BlogSettingsBundle } from '@/shared/config/types'
 
 import { SECRET_FIELDS } from '@/server/domains/settings/secrets'
@@ -13,7 +9,7 @@ import { hydrateBlogSettings, refreshBlogSettings } from '@/server/domains/setti
 import { encryptIfNeeded } from '@/server/infra/crypto/secret-encryption'
 import { findSettingByScope, upsertSetting } from '@/server/infra/db/operations/setting'
 import { checkMailReady } from '@/server/infra/email/sender'
-import { ENCRYPTION_KEY, FONT_PATH } from '@/server/infra/env'
+import { ENCRYPTION_KEY } from '@/server/infra/env'
 import { DomainError } from '@/server/infra/http/errors'
 import { getLogger } from '@/server/infra/logger'
 import { getBlogSettingsBundleSync } from '@/shared/config/getters'
@@ -83,12 +79,6 @@ export async function updateBlogSettingsSection<S extends SettingsSection>(
       })),
     )
   }
-  // Extra runtime validation for fonts: make sure referenced files exist
-  // on disk before committing the setting row.
-  if (section === 'fonts') {
-    await validateFontPaths(parsed.data as FontsInput)
-  }
-
   // Extra runtime validation for security: OTP cannot be enabled unless
   // the mail service is fully configured.
   if (section === 'security') {
@@ -248,42 +238,5 @@ function encryptSecretsInRow(section: SettingsSection, row: Record<string, unkno
       ...bucket,
       [config.field]: encryptIfNeeded(value),
     },
-  }
-}
-
-// Validate that every configured Canvas font path resolves to an existing
-// file inside FONT_PATH. Called during admin settings save so the operator
-// gets immediate feedback instead of a silent render-time fallback.
-async function validateFontPaths(data: FontsInput): Promise<void> {
-  if (!FONT_PATH) {
-    // If FONT_PATH is not configured, any non-empty font path is unusable.
-    if (data.og.path !== '' || data.calendar.path !== '') {
-      throw new DomainError('BAD_REQUEST', 'FONT_PATH 环境变量未设置，无法配置本地字体路径')
-    }
-    return
-  }
-
-  const basePath = path.resolve(FONT_PATH)
-  const slots: Array<{ name: string; relativePath: string }> = [
-    { name: 'OG 图字体', relativePath: data.og.path },
-    { name: '日历图字体', relativePath: data.calendar.path },
-  ]
-
-  for (const { name, relativePath } of slots) {
-    if (relativePath === '') {
-      continue
-    }
-
-    const fullPath = path.resolve(basePath, relativePath)
-    const relativeToBase = path.relative(basePath, fullPath)
-    if (relativeToBase.startsWith('..') || path.isAbsolute(relativeToBase)) {
-      throw new DomainError('BAD_REQUEST', `${name} 路径穿越不被允许: ${relativePath}`)
-    }
-
-    try {
-      await access(fullPath)
-    } catch {
-      throw new DomainError('BAD_REQUEST', `${name} 文件不存在或无法访问: ${relativePath}`)
-    }
   }
 }

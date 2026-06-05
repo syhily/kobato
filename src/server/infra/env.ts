@@ -110,18 +110,10 @@ const envConfig = {
     // encryption (e.g. local development with a fresh database).
     IGNORE_ENCRYPTION_WARNING: z.string().optional(),
 
-    // Filesystem path to the MaxMind GeoLite2-City mmdb. Optional.
-    MAXMIND_DB_PATH: z.string().min(1).optional(),
-
-    // Filesystem directory containing TTF/OTF fonts for OG image and calendar
-    // rendering. Admin settings specify filenames relative to this directory.
-    // Optional: when unset, Canvas falls back to its built-in system CJK shaper.
-    FONT_PATH: z.string().min(1).optional(),
-
-    // Dead-letter file paths for analytics and audit batchers.
-    // Optional: fall back to `/tmp/...` defaults when unset.
-    ANALYTICS_DEAD_LETTER_PATH: z.string().min(1).optional(),
-    AUDIT_DEAD_LETTER_PATH: z.string().min(1).optional(),
+    // Root data directory. All filesystem data (fonts, dead-letter files,
+    // MaxMind DB) lives in fixed subdirectories under this path.
+    // Required. Use `/data` in Docker, `./data` in local development.
+    KOBATO_DATA_PATH: z.string().min(1),
 
     NODE_ENV: z.enum(['development', 'production', 'test']).optional().default('production'),
   },
@@ -156,17 +148,14 @@ function loadEnv() {
 const env = loadEnv()
 
 export const {
-  ANALYTICS_DEAD_LETTER_PATH,
-  AUDIT_DEAD_LETTER_PATH,
   DATABASE_URL,
   DB_POOL_MAX,
   DB_STATEMENT_TIMEOUT_MS,
   ENCRYPTION_KEY,
-  FONT_PATH,
   HOST,
   IGNORE_ENCRYPTION_WARNING,
+  KOBATO_DATA_PATH,
   LOG_LEVEL,
-  MAXMIND_DB_PATH,
   NODE_ENV,
   PORT,
   REDIS_URL,

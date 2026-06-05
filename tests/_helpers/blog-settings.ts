@@ -154,8 +154,8 @@ export const TEST_BLOG_SETTINGS_BUNDLE: BlogSettingsBundle = {
     },
   },
   fonts: {
-    og: { path: '', family: '' },
-    calendar: { path: '', family: '' },
+    og: { family: '' },
+    calendar: { family: '' },
     globalCss: [],
     postCss: [],
   },

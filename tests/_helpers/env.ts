@@ -17,6 +17,7 @@ export const TEST_ENV = {
   REDIS_URL,
   SESSION_SECRET: 'vitest-session-secret-must-be-at-least-32-chars-long-ok',
   ENCRYPTION_KEY: 'vitest-encryption-key-must-be-at-least-32-chars-long-ok',
+  KOBATO_DATA_PATH: '/tmp/kobato-data',
 } as const
 
 export function ensureTestEnv(): void {
