@@ -49,7 +49,7 @@
     "sharp": "^0.34.5"
   },
   "devDependencies": {
-    "@aws-sdk/client-s3": "^3.1062.0",
+    "@aws-sdk/client-s3": "^3.1063.0",
     "@base-ui/react": "^1.5.0",
     "@date-fns/tz": "^1.5.0",
     "@dnd-kit/core": "^6.3.1",
@@ -100,7 +100,7 @@
     "hono": "^4.12.23",
     "hono-pino": "^0.10.3",
     "ioredis": "^5.11.1",
-    "isbot": "^5.1.40",
+    "isbot": "^5.1.41",
     "katex": "^0.17.0",
     "lint-staged": "^17.0.7",
     "lucide-react": "^1.17.0",
@@ -138,5 +138,10 @@
       "oxlint -c oxlint.config.ts --fix"
     ]
   },
-  "packageManager": "npm@11.16.0"
+  "packageManager": "npm@11.16.0",
+  "allowScripts": {
+    "fsevents": false,
+    "sharp": false,
+    "esbuild": false
+  }
 }
