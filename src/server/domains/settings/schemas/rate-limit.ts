@@ -41,6 +41,7 @@ const rateLimitBucketSchema = z.object({
 
 export const RATE_LIMIT_BUCKET_KEYS = [
   'signInIp',
+  'signInEmail',
   'commentPostIp',
   'commentPostEmail',
   'likeIncreaseIp',

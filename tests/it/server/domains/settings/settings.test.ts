@@ -544,6 +544,7 @@ describe('services/settings — rateLimit section', () => {
       'rateLimit',
       {
         signInIp: { windowSeconds: 600, maxAttempts: 3 },
+        signInEmail: { windowSeconds: 60 * 30, maxAttempts: 5 },
         commentPostIp: { windowSeconds: 60 * 30, maxAttempts: 6 },
         commentPostEmail: { windowSeconds: 60 * 30, maxAttempts: 4 },
         likeIncreaseIp: { windowSeconds: 60 * 5, maxAttempts: 100 },
