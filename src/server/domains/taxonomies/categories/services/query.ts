@@ -8,7 +8,11 @@ import type { Category } from '@/shared/types/catalog'
 import { hydrateImageRefs } from '@/server/domains/images/services/enhance'
 import { listPublicPosts } from '@/server/domains/posts/repos/public-query/listing'
 import { toAdminCategoryDto } from '@/server/domains/taxonomies/categories/projection'
-import { type AdminCategoriesListFilters, listAdminCategoryRows } from '@/server/infra/db/operations/category'
+import {
+  type AdminCategoriesListFilters,
+  findCategoryByName,
+  listAdminCategoryRows,
+} from '@/server/infra/db/operations/category'
 import { post as postMetaTable } from '@/server/infra/db/schema/post'
 import { category as categoryTable } from '@/server/infra/db/schema/taxonomy'
 
@@ -86,7 +90,6 @@ export async function listAllCategories(db: NodePgDatabase): Promise<Category[]>
 }
 
 export async function getCategoryLink(db: NodePgDatabase, name: string): Promise<string> {
-  const { findCategoryByName } = await import('@/server/infra/db/operations/category')
   const category = await findCategoryByName(db, name)
   return category ? `/cats/${category.slug}` : ''
 }

@@ -8,7 +8,7 @@ import { SettingValue } from '@/ui/admin/settings/shell/SettingValue'
 import { useSettingsCard } from '@/ui/admin/settings/shell/useSettingsCard'
 import { Input } from '@/ui/components/input'
 import { Label } from '@/ui/components/label'
-import { SOCIAL_NETWORK_ICONS } from '@/ui/icons/social-icons'
+import { SOCIAL_NETWORK_ICONS } from '@/ui/icons/brand'
 
 interface SocialsEditorProps {
   socials: SocialsSettings

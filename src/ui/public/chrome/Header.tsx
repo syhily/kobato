@@ -9,7 +9,7 @@ import { brandingVersion } from '@/shared/config/utils'
 import { useAssetsSettingsOptional, useSiteIdentity, useSocialsSettings } from '@/shared/lib/blog-config-context'
 import { Button } from '@/ui/components/button'
 import { IconButtonContent } from '@/ui/components/icon-button-content'
-import { SOCIAL_NETWORK_ICONS } from '@/ui/icons/social-icons'
+import { SOCIAL_NETWORK_ICONS } from '@/ui/icons/brand'
 import { cn } from '@/ui/lib/cn'
 import { BrandLogo } from '@/ui/public/chrome/BrandLogo'
 import { ThemeToggle } from '@/ui/public/chrome/ThemeToggle'
@@ -229,7 +229,7 @@ function isExternalNavTarget(menu: NavigationItem): boolean {
 // Public Header brand icon: looks up the icon component for the given
 // social network from the canonical `SOCIAL_NETWORK_ICONS` table shared
 // with the admin SocialsEditor. Adding a new network requires a single
-// edit in `@/ui/icons/social-icons.ts`.
+// edit in `@/ui/icons/brand.ts`.
 function SocialNavIcon({ network, className }: { network: SocialNetwork; className?: string }) {
   const Icon = SOCIAL_NETWORK_ICONS[network]
   return <Icon className={className} />

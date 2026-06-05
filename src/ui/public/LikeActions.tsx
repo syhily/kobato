@@ -9,7 +9,7 @@ import { joinUrl } from '@/shared/utils/urls'
 import { Button } from '@/ui/components/button'
 import { IconButtonContent } from '@/ui/components/icon-button-content'
 import { NumberFlow } from '@/ui/components/number-flow'
-import { QQIcon, WechatIcon, WeiboIcon } from '@/ui/icons/brand-social-icons'
+import { QQIcon, WechatIcon, WeiboIcon } from '@/ui/icons/brand'
 import { cn } from '@/ui/lib/cn'
 import { QRDialog } from '@/ui/public/widgets/QRDialog'
 

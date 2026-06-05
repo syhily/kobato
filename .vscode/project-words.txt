@@ -135,6 +135,7 @@ longluo
 loveness
 lowlighter
 lucene
+lucide
 luoli
 lxgw
 mathbb

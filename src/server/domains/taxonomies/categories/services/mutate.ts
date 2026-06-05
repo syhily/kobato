@@ -16,6 +16,7 @@ import {
   findCategoryByName,
   findCategoryBySlug,
   insertCategory,
+  listPublicCategoryRows,
   reorderCategories as reorderCategoryRows,
   updateCategory,
 } from '@/server/infra/db/operations/category'
@@ -93,7 +94,6 @@ export async function reorderAdminCategories(
     seen.add(id)
   }
 
-  const { listPublicCategoryRows } = await import('@/server/infra/db/operations/category')
   const liveRows = await listPublicCategoryRows(db)
   if (liveRows.length !== orderedIds.length) {
     throw new DomainError('CONFLICT', '排序与最新分类列表不一致，请刷新后重试')

@@ -1,9 +1,7 @@
 import { useCallback, useRef, useState } from 'react'
 
+import { VolumeDownIcon, VolumeOffIcon, VolumeUpIcon } from '@/ui/icons/aplayer'
 import { cn } from '@/ui/lib/cn'
-import { IconVolumeDown } from '@/ui/public/aplayer/icons/volume-down'
-import { IconVolumeOff } from '@/ui/public/aplayer/icons/volume-off'
-import { IconVolumeUp } from '@/ui/public/aplayer/icons/volume-up'
 import { computePercentageOfY } from '@/ui/public/aplayer/utils/compute-percentage'
 
 export type VolumeProps = {
@@ -47,7 +45,7 @@ export function Volume({ themeColor, volume, muted, onToggleMuted, onChangeVolum
         className="aplayer-icon aplayer-icon-volume-down flex h-aplayer-icon w-aplayer-icon items-center justify-center p-0 text-ink-3 hover:text-black dark:text-ink-3 dark:hover:text-ink-1"
         onClick={() => onToggleMuted()}
       >
-        {muted || !volume ? <IconVolumeOff /> : volume >= 1 ? <IconVolumeUp /> : <IconVolumeDown />}
+        {muted || !volume ? <VolumeOffIcon /> : volume >= 1 ? <VolumeUpIcon /> : <VolumeDownIcon />}
       </button>
       <div
         className={cn(

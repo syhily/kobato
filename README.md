@@ -137,11 +137,11 @@ The test compose uses tmpfs-backed storage and isolated `test` credentials so te
 ```bash
 npm run dev         # development server
 npm run build       # production build
-npm run typecheck   # TypeScript check
+npm run check:type  # TypeScript check
 npm run test        # run tests
-npm run lint        # lint
-npm run fmt:check   # check formatting
-npm run db:generate # generate Drizzle migrations
+npm run check:lint  # lint
+npm run check:fmt  # check formatting
+npm run gen:db      # generate Drizzle migrations
 npm run docker:dev  # start dev components
 npm run docker:test # start test components
 ```

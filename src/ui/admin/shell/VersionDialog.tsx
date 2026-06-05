@@ -18,7 +18,7 @@ import {
   APP_VERSION,
 } from '@/shared/config/version'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/ui/components/dialog'
-import { GithubIcon } from '@/ui/icons/brand-social-icons'
+import { GithubIcon } from '@/ui/icons/brand'
 import { cn } from '@/ui/lib/cn'
 
 interface GitHubRelease {

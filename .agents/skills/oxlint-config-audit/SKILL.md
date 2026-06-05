@@ -6,7 +6,7 @@ Trigger: user asks to "audit lint rules", "补齐 lint 规则", "enable missing 
 
 Find oxlint rules that are **supported by the installed oxlint version** but **not yet enabled in `oxlint.config.ts`**, evaluate whether they are valuable for this project, enable them, and fix the resulting violations. This is a complete workflow — not just documentation.
 
-> **Note:** oxlint is a direct devDependency. Run via `npm run lint` for standard checks. For flags (`--fix`, `--rules`, `--format`), use `npx oxlint <flags>` directly.
+> **Note:** oxlint is a direct devDependency. Run via `npm run check:lint` for standard checks. For flags (`--fix`, `--rules`, `--format`), use `npx oxlint <flags>` directly.
 
 ## Agent Protocol
 
@@ -51,15 +51,15 @@ For each priority group (P0, then P1, etc.), do:
 
 1. **Backup**: `cp oxlint.config.ts oxlint.config.ts.bak`
 2. **Inject**: Use `Edit` to append all rules in this group to the `rules:` object at level `error`.
-3. **Lint**: Run `npm run lint 2>&1 | tee /tmp/oxlint-batch.txt`
+3. **Lint**: Run `npm run check:lint 2>&1 | tee /tmp/oxlint-batch.txt`
 4. **Parse**: Count how many violations are reported **for rules in this group**.
    - A simple heuristic: grep the rule name in `/tmp/oxlint-batch.txt` and count occurrences.
    - If parsing is unreliable, run `npx oxlint --format=unix 2>&1 | grep '<rule-name>' | wc -l` for each rule.
 5. **Decide** per rule using the Decision table below.
 6. **Fix** auto-fixable violations: `npx oxlint --fix` (this fixes all auto-fixable errors at once).
-7. **Re-lint**: Run `npm run lint` again to see remaining violations.
+7. **Re-lint**: Run `npm run check:lint` again to see remaining violations.
 8. **Manual fix** remaining violations for rules kept at `error`, or downgrade to `warn` if too many.
-9. **Verify**: Run `npm run fmt:check && npm run lint && npm run typecheck` and `npm run test` before moving to the next priority group.
+9. **Verify**: Run `npm run check:fmt && npm run check:lint && npm run check:type` and `npm run test` before moving to the next priority group.
 10. **Commit or revert**: If the batch is clean, keep it and delete the backup. If it broke tests, restore from backup and retry rules one-by-one.
 
 ### Step 5 — Cleanup
@@ -263,10 +263,10 @@ When a rule produces violations that are NOT auto-fixable, use these patterns:
 
 ## Safety & rollback
 
-- Always keep `oxlint.config.ts.bak` until `npm run fmt:check && npm run lint && npm run typecheck` and `npm run test` pass.
+- Always keep `oxlint.config.ts.bak` until `npm run check:fmt && npm run check:lint && npm run check:type` and `npm run test` pass.
 - If a rule causes >50 violations and is not in the Priority table, it belongs in "Keep OFF" — revert it.
 - If fixing a rule introduces a runtime behavior change (e.g. `eqeqeq` changing `== null` to `=== null` where `undefined` is possible), add a unit test for that edge case before committing.
-- Never commit a lint config change that breaks `npm run fmt:check && npm run lint && npm run typecheck`.
+- Never commit a lint config change that breaks `npm run check:fmt && npm run check:lint && npm run check:type`.
 
 ## Last audited
 

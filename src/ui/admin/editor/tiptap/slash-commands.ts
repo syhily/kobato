@@ -1,5 +1,6 @@
 import type { Range } from '@tiptap/core'
 import type { Editor } from '@tiptap/react'
+import type { LucideIcon } from 'lucide-react'
 
 import {
   CodeIcon,
@@ -15,7 +16,6 @@ import {
   QuoteIcon,
   SigmaIcon,
   SuperscriptIcon,
-  type LucideIcon,
   TableIcon,
   Type as TypeIcon,
   Columns2Icon,

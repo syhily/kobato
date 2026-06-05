@@ -12,6 +12,11 @@ const require = createRequire(import.meta.url)
 const pkg = require('./package.json')
 
 export default defineConfig({
+  ssr: {
+    noExternal: true,
+    target: 'node',
+    external: ['sharp', '@napi-rs/canvas'],
+  },
   plugins: [
     reactRouterHonoServer(),
     ...(reactRouter() as Plugin[]),
@@ -24,19 +29,6 @@ export default defineConfig({
   build: {
     emptyOutDir: true,
     chunkSizeWarningLimit: 500,
-    rolldownOptions: {
-      output: {
-        manualChunks(id) {
-          if (id.includes('node_modules/@tiptap/') || id.includes('node_modules/prosemirror-')) {
-            return 'editor-tiptap'
-          }
-          if (id.includes('node_modules/@napi-rs/canvas')) {
-            return 'canvas'
-          }
-          return undefined
-        },
-      },
-    },
   },
   define: {
     __APP_NAME__: JSON.stringify(pkg.name),

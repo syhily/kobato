@@ -1,5 +1,5 @@
+import { LoopIcon } from '@/ui/icons/aplayer'
 import { cn } from '@/ui/lib/cn'
-import { IconLoop } from '@/ui/public/aplayer/icons/loop'
 import { ProgressBar } from '@/ui/public/aplayer/progress'
 import { formatAudioDuration } from '@/ui/public/aplayer/utils/format-duration'
 import { Volume } from '@/ui/public/aplayer/volume'
@@ -63,7 +63,7 @@ export function PlaybackControls({
           )}
           onClick={onToggleLoop}
         >
-          <IconLoop />
+          <LoopIcon />
         </button>
       </div>
     </div>

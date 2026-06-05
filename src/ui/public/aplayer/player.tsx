@@ -2,15 +2,13 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 
 import type { ArtistInfo, AudioInfo } from '@/ui/public/aplayer/types'
 
+import { PauseIcon, PlayIcon, RightIcon } from '@/ui/icons/aplayer'
 import { cn } from '@/ui/lib/cn'
 import { defaultThemeColor } from '@/ui/public/aplayer/constants'
 import { PlaybackControls } from '@/ui/public/aplayer/controller'
 import { useAudioControl } from '@/ui/public/aplayer/hooks/use-audio-control'
 import { useNotice } from '@/ui/public/aplayer/hooks/use-notice'
 import { useThemeColor } from '@/ui/public/aplayer/hooks/use-theme-color'
-import { IconPause } from '@/ui/public/aplayer/icons/pause'
-import { IconPlay } from '@/ui/public/aplayer/icons/play'
-import { IconRight } from '@/ui/public/aplayer/icons/right'
 import { Lyrics } from '@/ui/public/aplayer/lyrics'
 
 export type APlayerProps = {
@@ -116,9 +114,9 @@ export function APlayer({
             )}
           >
             {audioControl.isPlaying ? (
-              <IconPause className="absolute top-1.5 left-1.5 !h-3 !w-3" />
+              <PauseIcon className="absolute top-1.5 left-1.5 !h-3 !w-3" />
             ) : (
-              <IconPlay className="!h-5 !w-5" />
+              <PlayIcon className="!h-5 !w-5" />
             )}
           </div>
         </div>
@@ -165,7 +163,7 @@ export function APlayer({
             type="button"
             className="aplayer-icon h-full w-full rotate-y-180 text-ink-3 transition-all duration-300 hover:text-black dark:text-ink-3 dark:hover:text-ink-1"
           >
-            <IconRight />
+            <RightIcon />
           </button>
         </div>
       </div>

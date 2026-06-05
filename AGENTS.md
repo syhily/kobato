@@ -47,9 +47,9 @@ Skills win on conflict. Quote stable rule ids in PR review (e.g.
 
 ## Build & CI
 
-- `npm run dev`, `npm run fmt:check`, `npm run lint`, `npm run typecheck`,
+- `npm run dev`, `npm run check:fmt`, `npm run check:lint`, `npm run check:type`,
   `npm run test`, `npm run build`
-- Before committing: `npm run fmt:check && npm run lint && npm run typecheck`,
+- Before committing: `npm run check:fmt && npm run check:lint && npm run check:type`,
   `npm run test`, `npm run build`
 
 ## Route module prewarming

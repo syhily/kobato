@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 
-import { IconLoading } from '@/ui/public/aplayer/icons/loading'
+import { LoadingIcon } from '@/ui/icons/aplayer'
 import { computePercentage } from '@/ui/public/aplayer/utils/compute-percentage'
 
 export type ProgressBarProps = {
@@ -70,7 +70,7 @@ export function ProgressBar({ themeColor, bufferedPercentage, playedPercentage, 
               style={{ backgroundColor: themeColor }}
             >
               <span className="aplayer-loading-icon hidden animate-spin">
-                <IconLoading />
+                <LoadingIcon />
               </span>
             </span>
           </div>
