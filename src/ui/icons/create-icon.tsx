@@ -1,16 +1,13 @@
 import { createElement, forwardRef } from 'react'
 
 import type { IconNode, IconProps, LucideIcon } from '@/ui/icons/types'
+
 import { cn } from '@/ui/lib/cn'
 
 export function createIcon(iconName: string, viewBox: string, iconNode: IconNode): LucideIcon {
   const Component = forwardRef<SVGSVGElement, IconProps>(
     ({ className, size = '1em', title, children, ...rest }, ref) => {
-      const hasA11y =
-        title !== undefined ||
-        children !== undefined ||
-        'aria-label' in rest ||
-        'aria-labelledby' in rest
+      const hasA11y = title !== undefined || children !== undefined || 'aria-label' in rest || 'aria-labelledby' in rest
 
       return (
         <svg
@@ -27,9 +24,7 @@ export function createIcon(iconName: string, viewBox: string, iconNode: IconNode
           {...rest}
         >
           {title ? <title>{title}</title> : null}
-          {iconNode.map(([tag, attrs], index) =>
-            createElement(tag, { key: attrs.key ?? `node-${index}`, ...attrs }),
-          )}
+          {iconNode.map(([tag, attrs], index) => createElement(tag, { key: attrs.key ?? `node-${index}`, ...attrs }))}
           {children}
         </svg>
       )

@@ -8,4 +8,3 @@ export interface IconProps extends Omit<SVGProps<SVGSVGElement>, 'ref'> {
 export type LucideIcon = React.ForwardRefExoticComponent<IconProps & RefAttributes<SVGSVGElement>>
 
 export type IconNode = Array<[string, Record<string, string>]>
-

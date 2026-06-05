@@ -11,12 +11,15 @@ import { routeWarmupPlugin } from './src/server/infra/route-warmup'
 const require = createRequire(import.meta.url)
 const pkg = require('./package.json')
 
-export default defineConfig({
-  ssr: {
-    noExternal: true,
-    target: 'node',
-    external: ['sharp', '@napi-rs/canvas'],
-  },
+export default defineConfig(({ command }) => ({
+  ssr:
+    command === 'serve'
+      ? {}
+      : {
+          noExternal: true,
+          target: 'node',
+          external: ['sharp', '@napi-rs/canvas'],
+        },
   plugins: [
     reactRouterHonoServer(),
     ...(reactRouter() as Plugin[]),
@@ -44,4 +47,4 @@ export default defineConfig({
       clientFiles: ['./src/root.tsx', './src/routes.ts', './src/routes/**/*.{ts,tsx}'],
     },
   },
-})
+}))
