@@ -8,7 +8,6 @@ import { useSiteIdentity } from '@/shared/lib/blog-config-context'
 import { SettingsRow } from '@/ui/admin/settings/SettingsSection'
 import { SettingGroup } from '@/ui/admin/settings/shell/SettingGroup'
 import { SettingGroupContent } from '@/ui/admin/settings/shell/SettingGroupContent'
-import { SettingValue } from '@/ui/admin/settings/shell/SettingValue'
 import { useSettingsCard } from '@/ui/admin/settings/shell/useSettingsCard'
 import { Button } from '@/ui/components/button'
 import { FieldLabel } from '@/ui/components/field'
@@ -34,7 +33,7 @@ interface TestStatus {
 const idleTestStatus: TestStatus = { state: 'idle', message: null }
 
 function MailToggleCard({ mail }: { mail: MailLoaderShape }) {
-  const { mode, form, settingGroupProps, display } = useSettingsCard<MailLoaderShape, { enabled: boolean }>({
+  const { form, settingGroupProps, save } = useSettingsCard<MailLoaderShape, { enabled: boolean }>({
     section: 'mail',
     source: mail,
     toState: (source) => ({ enabled: source.enabled }),
@@ -49,34 +48,35 @@ function MailToggleCard({ mail }: { mail: MailLoaderShape }) {
       description="关闭后，所有评论通知 / 回复通知 / 审核通过通知都不会再发送（不会报错，仅记录 debug 日志）。"
       {...settingGroupProps}
     >
-      {mode === 'edit' ? (
-        <SettingGroupContent>
-          <SettingsRow label="启用邮件发送" hint="生产环境推荐先用「测试发送」确认连接，再打开此开关。">
-            <div className="flex items-center gap-3">
-              <Controller
-                control={form.control}
-                name="enabled"
-                render={({ field }) => (
-                  <Switch id="mail-enabled" checked={field.value} onCheckedChange={field.onChange} />
-                )}
-              />
-              <FieldLabel htmlFor="mail-enabled" className="font-normal">
-                发送通知邮件
-              </FieldLabel>
-            </div>
-          </SettingsRow>
-        </SettingGroupContent>
-      ) : (
-        <SettingGroupContent>
-          <SettingValue label="邮件发送" value={display.enabled ? '已开启' : '已关闭'} />
-        </SettingGroupContent>
-      )}
+      <SettingGroupContent>
+        <SettingsRow label="启用邮件发送" hint="生产环境推荐先用「测试发送」确认连接，再打开此开关。">
+          <div className="flex items-center gap-3">
+            <Controller
+              control={form.control}
+              name="enabled"
+              render={({ field }) => (
+                <Switch
+                  id="mail-enabled"
+                  checked={field.value}
+                  onCheckedChange={(val) => {
+                    field.onChange(val)
+                    save()
+                  }}
+                />
+              )}
+            />
+            <FieldLabel htmlFor="mail-enabled" className="font-normal">
+              发送通知邮件
+            </FieldLabel>
+          </div>
+        </SettingsRow>
+      </SettingGroupContent>
     </SettingGroup>
   )
 }
 
 function MailConfigCard({ mail }: { mail: MailLoaderShape }) {
-  const { mode, form, settingGroupProps, display } = useSettingsCard<
+  const { form, settingGroupProps, display } = useSettingsCard<
     MailLoaderShape,
     { host: string; sender: string; apiKey: string }
   >({
@@ -104,46 +104,38 @@ function MailConfigCard({ mail }: { mail: MailLoaderShape }) {
       description="配置 Zeabur ZSend 的接入地址、API Key 和发件人邮箱。修改后立即生效。"
       {...settingGroupProps}
     >
-      {mode === 'edit' ? (
-        <SettingGroupContent>
-          <SettingsRow label="接入域名" htmlFor="mail-host" hint="不带协议，例如 api.zeabur.com。">
-            <Input id="mail-host" placeholder="api.zeabur.com" maxLength={253} {...form.register('host')} />
-          </SettingsRow>
-          <SettingsRow
-            label="API Key"
-            htmlFor="mail-api-key"
-            hint={
-              apiKeyConfigured
-                ? `当前已配置（结尾 …${display.apiKeyMask}）。留空保存表示保留现有 Key。`
-                : '尚未配置。在 Zeabur 控制台 ZSend 服务页面生成的密钥。'
-            }
-          >
-            <Input
-              id="mail-api-key"
-              type="password"
-              {...form.register('apiKey')}
-              placeholder={apiKeyConfigured ? '保留现有 Key' : '粘贴 Zeabur ZSend API Key'}
-              maxLength={512}
-              autoComplete="new-password"
-            />
-          </SettingsRow>
-          <SettingsRow label="发件人邮箱" htmlFor="mail-sender" hint="必须是 Zeabur 已验证过的发件域。">
-            <Input
-              id="mail-sender"
-              type="email"
-              placeholder="noreply@send.example.com"
-              maxLength={253}
-              {...form.register('sender')}
-            />
-          </SettingsRow>
-        </SettingGroupContent>
-      ) : (
-        <SettingGroupContent>
-          <SettingValue label="接入域名" value={display.host} />
-          <SettingValue label="API Key" value={apiKeyConfigured ? `已配置（结尾 …${display.apiKeyMask}）` : '未配置'} />
-          <SettingValue label="发件人邮箱" value={display.sender} />
-        </SettingGroupContent>
-      )}
+      <SettingGroupContent>
+        <SettingsRow label="接入域名" htmlFor="mail-host" hint="不带协议，例如 api.zeabur.com。">
+          <Input id="mail-host" placeholder="api.zeabur.com" maxLength={253} {...form.register('host')} />
+        </SettingsRow>
+        <SettingsRow
+          label="API Key"
+          htmlFor="mail-api-key"
+          hint={
+            apiKeyConfigured
+              ? `当前已配置（结尾 …${display.apiKeyMask}）。留空保存表示保留现有 Key。`
+              : '尚未配置。在 Zeabur 控制台 ZSend 服务页面生成的密钥。'
+          }
+        >
+          <Input
+            id="mail-api-key"
+            type="password"
+            {...form.register('apiKey')}
+            placeholder={apiKeyConfigured ? '保留现有 Key' : '粘贴 Zeabur ZSend API Key'}
+            maxLength={512}
+            autoComplete="new-password"
+          />
+        </SettingsRow>
+        <SettingsRow label="发件人邮箱" htmlFor="mail-sender" hint="必须是 Zeabur 已验证过的发件域。">
+          <Input
+            id="mail-sender"
+            type="email"
+            placeholder="noreply@send.example.com"
+            maxLength={253}
+            {...form.register('sender')}
+          />
+        </SettingsRow>
+      </SettingGroupContent>
     </SettingGroup>
   )
 }

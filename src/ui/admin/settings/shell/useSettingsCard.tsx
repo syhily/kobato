@@ -36,24 +36,19 @@ interface UseSettingsCardOptions<TSource extends object, TState extends FieldVal
    * `fromState` must return the complete section payload.
    */
   mode?: 'patch' | 'full'
+  /** Debounce delay for auto-save in ms. Default 500. */
+  debounceMs?: number
 }
 
 interface UseSettingsCardResult<TSource extends object, TState extends FieldValues> {
-  mode: 'read' | 'edit'
-  setMode: (mode: 'read' | 'edit') => void
   form: UseFormReturn<TState>
+  isSaving: boolean
+  /** Immediate save — call from switch onCheckedChange. */
   save: () => void
-  cancel: () => void
-  isPending: boolean
-  status: 'idle' | 'saving' | 'saved' | 'error'
-  /** Resolved display data: optimistic if pending, else server source. */
+  /** Resolved display data: optimistic if saving, else server source. */
   display: TSource
-  /** Spread into <SettingGroup> to wire up edit/save/cancel/status. */
+  /** Spread into <SettingGroup> for the saving indicator. */
   settingGroupProps: {
-    mode: 'read' | 'edit'
-    onModeChange: (mode: 'read' | 'edit') => void
-    onSave: () => void
-    onCancel: () => void
     saveState: 'idle' | 'saving' | 'saved' | 'error'
   }
 }
@@ -111,15 +106,11 @@ export function useSettingsCard<TSource extends object, TState extends FieldValu
   fromState,
   schema,
   mode: mergeMode = 'patch',
+  debounceMs = 500,
 }: UseSettingsCardOptions<TSource, TState>): UseSettingsCardResult<TSource, TState> {
-  const [mode, setMode] = useState<'read' | 'edit'>('read')
   const [optimisticSource, setOptimisticSource] = useState<TSource | null>(null)
-  const { commit, resetStatus, isPending, status } = useSettingsMutation()
+  const { commit, isPending, status } = useSettingsMutation()
 
-  // Stable references: callers pass module-level functions for `toState`
-  // and `fromState`, so identity is stable across renders. Use refs to
-  // avoid adding them to useMemo/useCallback dependency arrays (which
-  // would cause unnecessary recalculations when callers inline arrows).
   const toStateRef = useRef(toState)
   const fromStateRef = useRef(fromState)
   const sourceRef = useRef(source)
@@ -148,71 +139,91 @@ export function useSettingsCard<TSource extends object, TState extends FieldValu
   const form = useForm<TState>({
     defaultValues: initialValues,
     resolver,
-    mode: 'onBlur',
+    mode: 'onChange',
   })
-  const { reset, handleSubmit } = form
+  const { reset, handleSubmit, getValues } = form
 
   // Re-seed form when source changes (after a save in another card, after revert, etc.)
-  // Only when not editing to avoid clobbering the user's current edits.
   const [lastSourceSnapshot, setLastSourceSnapshot] = useState<TSource>(source)
   useEffect(() => {
     if (source !== lastSourceSnapshot) {
       setLastSourceSnapshot(source)
-      if (mode === 'read') {
-        reset(initialValues)
-      }
-      // Real source has caught up (e.g. after revalidation); clear optimistic.
+      reset(initialValues)
+      lastCommittedRef.current = initialValues
       if (optimisticSource !== null) {
         setOptimisticSource(null)
       }
     }
-  }, [source, lastSourceSnapshot, mode, initialValues, reset, optimisticSource])
+  }, [source, lastSourceSnapshot, initialValues, reset, optimisticSource])
 
-  const save = useCallback(() => {
+  // --- Auto-save ---
+  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const isSavingRef = useRef(false)
+  const lastCommittedRef = useRef<DefaultValues<TState>>(initialValues)
+
+  useEffect(() => {
+    isSavingRef.current = isPending
+  }, [isPending])
+
+  const performSave = useCallback(() => {
     void handleSubmit(
       async (values) => {
         const patchPayload = fromStateRef.current(values)
         const payload: TSource =
           mergeMode === 'patch' ? deepMerge(sourceRef.current, patchPayload) : (patchPayload as TSource)
-        // Optimistic update: immediately reflect the submitted values in read mode
-        // while the async request + revalidation happen in the background.
         setOptimisticSource(payload)
-        setMode('read')
+        lastCommittedRef.current = values as DefaultValues<TState>
         const ok = await commit(section, payload as Record<string, unknown>)
         if (!ok) {
-          // Rollback: the server rejected the payload (validation, missing
-          // file, etc.). Clear the optimistic overlay so the UI reverts to
-          // the last known server state.
           setOptimisticSource(null)
         }
       },
       (errors) => {
-        log.debug('Form validation failed', { errors })
+        log.debug('Auto-save validation failed, skipping', { errors })
       },
     )()
   }, [handleSubmit, mergeMode, section, commit])
 
-  const cancel = useCallback(() => {
-    reset(initialValues)
-    resetStatus()
-    setMode('read')
-    setOptimisticSource(null)
-  }, [initialValues, reset, resetStatus])
+  // Debounced auto-save triggered by form changes
+  const watchedValues = form.watch()
+  useEffect(() => {
+    // Compare against last committed values instead of formState.isDirty
+    // to avoid needing reset() which causes Switch UI flicker.
+    const current = getValues()
+    if (JSON.stringify(current) === JSON.stringify(lastCommittedRef.current)) {
+      return
+    }
+    if (isSavingRef.current) {
+      return
+    }
+
+    if (debounceTimerRef.current !== null) {
+      clearTimeout(debounceTimerRef.current)
+    }
+    debounceTimerRef.current = setTimeout(performSave, debounceMs)
+
+    return () => {
+      if (debounceTimerRef.current !== null) {
+        clearTimeout(debounceTimerRef.current)
+      }
+    }
+  }, [watchedValues, getValues, performSave, debounceMs])
+
+  // Immediate save for switches — clears debounce and fires now
+  const save = useCallback(() => {
+    if (debounceTimerRef.current !== null) {
+      clearTimeout(debounceTimerRef.current)
+      debounceTimerRef.current = null
+    }
+    performSave()
+  }, [performSave])
 
   return {
-    mode,
-    setMode,
     form,
+    isSaving: isPending,
     save,
-    cancel,
-    isPending,
-    status,
     display: optimisticSource ?? source,
     settingGroupProps: {
-      mode,
-      onModeChange: setMode,
-      onSave: save,
-      onCancel: cancel,
       saveState: status,
     },
   }

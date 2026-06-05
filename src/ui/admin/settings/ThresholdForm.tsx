@@ -3,7 +3,6 @@ import type { RateLimitSettings } from '@/shared/config/types'
 import { SettingsRow } from '@/ui/admin/settings/SettingsSection'
 import { SettingGroup } from '@/ui/admin/settings/shell/SettingGroup'
 import { SettingGroupContent } from '@/ui/admin/settings/shell/SettingGroupContent'
-import { SettingValue } from '@/ui/admin/settings/shell/SettingValue'
 import { useSettingsCard } from '@/ui/admin/settings/shell/useSettingsCard'
 import { Input } from '@/ui/components/input'
 
@@ -102,13 +101,13 @@ const BUCKET_META: Record<BucketKey, { title: string; description: string; windo
       title: 'OTP 验证限流（按邮箱）',
       description: 'OTP 验证码校验按目标邮箱计数。',
       windowHint: '60 秒 - 24 小时。默认 5 分钟（300）。',
-      attemptsHint: '默认 5 次。',
+      attemptsHint: '默认 1 次。',
     },
   }
 
 function RateLimitBucketCard({ bucketKey, rateLimit }: { bucketKey: BucketKey; rateLimit: RateLimitSettings }) {
   const meta = BUCKET_META[bucketKey]
-  const { mode, form, settingGroupProps, display } = useSettingsCard<
+  const { form, settingGroupProps } = useSettingsCard<
     RateLimitSettings,
     { windowSeconds: number; maxAttempts: number }
   >({
@@ -123,37 +122,28 @@ function RateLimitBucketCard({ bucketKey, rateLimit }: { bucketKey: BucketKey; r
     }),
   })
 
-  const bucket = display[bucketKey]
-
   return (
     <SettingGroup title={meta.title} description={meta.description} {...settingGroupProps}>
-      {mode === 'edit' ? (
-        <SettingGroupContent>
-          <SettingsRow label="时间窗口（秒）" htmlFor={`rate-limit-${bucketKey}-window`} hint={meta.windowHint}>
-            <Input
-              id={`rate-limit-${bucketKey}-window`}
-              type="number"
-              min={BOUNDS.windowSeconds.min}
-              max={BOUNDS.windowSeconds.max}
-              {...form.register('windowSeconds', { valueAsNumber: true })}
-            />
-          </SettingsRow>
-          <SettingsRow label="窗口内最多次数" htmlFor={`rate-limit-${bucketKey}-attempts`} hint={meta.attemptsHint}>
-            <Input
-              id={`rate-limit-${bucketKey}-attempts`}
-              type="number"
-              min={BOUNDS.maxAttempts.min}
-              max={BOUNDS.maxAttempts.max}
-              {...form.register('maxAttempts', { valueAsNumber: true })}
-            />
-          </SettingsRow>
-        </SettingGroupContent>
-      ) : (
-        <SettingGroupContent>
-          <SettingValue label="时间窗口" value={`${bucket.windowSeconds.toLocaleString()} 秒`} />
-          <SettingValue label="最大尝试次数" value={`${bucket.maxAttempts}`} />
-        </SettingGroupContent>
-      )}
+      <SettingGroupContent>
+        <SettingsRow label="时间窗口（秒）" htmlFor={`rate-limit-${bucketKey}-window`} hint={meta.windowHint}>
+          <Input
+            id={`rate-limit-${bucketKey}-window`}
+            type="number"
+            min={BOUNDS.windowSeconds.min}
+            max={BOUNDS.windowSeconds.max}
+            {...form.register('windowSeconds', { valueAsNumber: true })}
+          />
+        </SettingsRow>
+        <SettingsRow label="窗口内最多次数" htmlFor={`rate-limit-${bucketKey}-attempts`} hint={meta.attemptsHint}>
+          <Input
+            id={`rate-limit-${bucketKey}-attempts`}
+            type="number"
+            min={BOUNDS.maxAttempts.min}
+            max={BOUNDS.maxAttempts.max}
+            {...form.register('maxAttempts', { valueAsNumber: true })}
+          />
+        </SettingsRow>
+      </SettingGroupContent>
     </SettingGroup>
   )
 }

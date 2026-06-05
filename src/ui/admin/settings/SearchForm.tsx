@@ -9,7 +9,6 @@ import { orpc } from '@/client/api/client'
 import { SettingsRow } from '@/ui/admin/settings/SettingsSection'
 import { SettingGroup } from '@/ui/admin/settings/shell/SettingGroup'
 import { SettingGroupContent } from '@/ui/admin/settings/shell/SettingGroupContent'
-import { SettingValue } from '@/ui/admin/settings/shell/SettingValue'
 import { useSettingsCard } from '@/ui/admin/settings/shell/useSettingsCard'
 import { Button } from '@/ui/components/button'
 import { FieldLabel } from '@/ui/components/field'
@@ -33,7 +32,7 @@ interface ReindexProgress {
 }
 
 function SearchModeCard({ search }: { search: SearchLoaderShape }) {
-  const { mode, form, settingGroupProps, display } = useSettingsCard<
+  const { form, settingGroupProps, save } = useSettingsCard<
     SearchLoaderShape,
     { enabled: boolean; mode: 'vector' | 'like' }
   >({
@@ -55,60 +54,57 @@ function SearchModeCard({ search }: { search: SearchLoaderShape }) {
       description="选择文章搜索的底层实现。LIKE 模式仅依赖 Postgres，无需外部 API；向量模式需要 OpenAI API Key。"
       {...settingGroupProps}
     >
-      {mode === 'edit' ? (
-        <SettingGroupContent>
-          <SettingsRow label="启用 AI 向量搜索" hint="关闭时所有搜索请求都会降级为 Postgres LIKE 查询。">
-            <Controller
-              control={form.control}
-              name="enabled"
-              render={({ field }) => (
-                <div className="flex items-center gap-3">
-                  <Switch id="search-enabled" checked={field.value} onCheckedChange={field.onChange} />
-                  <FieldLabel htmlFor="search-enabled" className="font-normal">
-                    {field.value ? '已开启' : '已关闭'}
+      <SettingGroupContent>
+        <SettingsRow label="启用 AI 向量搜索" hint="关闭时所有搜索请求都会降级为 Postgres LIKE 查询。">
+          <Controller
+            control={form.control}
+            name="enabled"
+            render={({ field }) => (
+              <div className="flex items-center gap-3">
+                <Switch
+                  id="search-enabled"
+                  checked={field.value}
+                  onCheckedChange={(val) => {
+                    field.onChange(val)
+                    save()
+                  }}
+                />
+                <FieldLabel htmlFor="search-enabled" className="font-normal">
+                  {field.value ? '已开启' : '已关闭'}
+                </FieldLabel>
+              </div>
+            )}
+          />
+        </SettingsRow>
+        <SettingsRow label="搜索模式" htmlFor="search-mode">
+          <Controller
+            control={form.control}
+            name="mode"
+            render={({ field }) => (
+              <RadioGroup value={field.value} onValueChange={field.onChange} className="flex items-center gap-4">
+                <div className="flex items-center gap-2">
+                  <RadioGroupItem value="like" id="search-mode-like" />
+                  <FieldLabel htmlFor="search-mode-like" className="font-normal">
+                    LIKE（纯 Postgres）
                   </FieldLabel>
                 </div>
-              )}
-            />
-          </SettingsRow>
-          <SettingsRow label="搜索模式" htmlFor="search-mode">
-            <Controller
-              control={form.control}
-              name="mode"
-              render={({ field }) => (
-                <RadioGroup value={field.value} onValueChange={field.onChange} className="flex items-center gap-4">
-                  <div className="flex items-center gap-2">
-                    <RadioGroupItem value="like" id="search-mode-like" />
-                    <FieldLabel htmlFor="search-mode-like" className="font-normal">
-                      LIKE（纯 Postgres）
-                    </FieldLabel>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <RadioGroupItem value="vector" id="search-mode-vector" />
-                    <FieldLabel htmlFor="search-mode-vector" className="font-normal">
-                      向量（OpenAI + pgvector）
-                    </FieldLabel>
-                  </div>
-                </RadioGroup>
-              )}
-            />
-          </SettingsRow>
-        </SettingGroupContent>
-      ) : (
-        <SettingGroupContent>
-          <SettingValue label="AI 向量搜索" value={display.search.enabled ? '已开启' : '已关闭'} />
-          <SettingValue
-            label="搜索模式"
-            value={display.search.mode === 'vector' ? '向量（OpenAI + pgvector）' : 'LIKE（纯 Postgres）'}
+                <div className="flex items-center gap-2">
+                  <RadioGroupItem value="vector" id="search-mode-vector" />
+                  <FieldLabel htmlFor="search-mode-vector" className="font-normal">
+                    向量（OpenAI + pgvector）
+                  </FieldLabel>
+                </div>
+              </RadioGroup>
+            )}
           />
-        </SettingGroupContent>
-      )}
+        </SettingsRow>
+      </SettingGroupContent>
     </SettingGroup>
   )
 }
 
 function SearchOpenAiCard({ search }: { search: SearchLoaderShape }) {
-  const { mode, form, settingGroupProps, display } = useSettingsCard<
+  const { form, settingGroupProps, display } = useSettingsCard<
     SearchLoaderShape,
     { endpoint: string; apiKey: string; model: string; similarityThreshold: number }
   >({
@@ -134,63 +130,54 @@ function SearchOpenAiCard({ search }: { search: SearchLoaderShape }) {
   const apiKeyConfigured = display.apiKeyMask !== null
   return (
     <SettingGroup title="OpenAI 配置" description="向量搜索需要调用 OpenAI Embedding API。" {...settingGroupProps}>
-      {mode === 'edit' ? (
-        <SettingGroupContent>
-          <SettingsRow
-            label="API Endpoint"
-            htmlFor="search-endpoint"
-            hint="留空表示使用官方 OpenAI 接口。支持任意兼容 OpenAI API 规范的第三方服务。"
-          >
-            <Input
-              id="search-endpoint"
-              type="url"
-              placeholder="https://api.openai.com/v1"
-              maxLength={253}
-              {...form.register('endpoint')}
-            />
-          </SettingsRow>
-          <SettingsRow
-            label="API Key"
-            htmlFor="search-api-key"
-            hint={
-              apiKeyConfigured ? `当前已配置（结尾 …${display.apiKeyMask}）。留空保存表示保留现有 Key。` : '尚未配置。'
-            }
-          >
-            <Input
-              id="search-api-key"
-              type="password"
-              {...form.register('apiKey')}
-              placeholder={apiKeyConfigured ? '保留现有 Key' : '粘贴 OpenAI API Key'}
-              maxLength={512}
-              autoComplete="new-password"
-            />
-          </SettingsRow>
-          <SettingsRow label="模型" htmlFor="search-model" hint="默认 text-embedding-3-small，性价比最高。">
-            <Input id="search-model" placeholder="text-embedding-3-small" maxLength={80} {...form.register('model')} />
-          </SettingsRow>
-          <SettingsRow
-            label="相似度阈值"
-            htmlFor="search-threshold"
-            hint="0–1 之间。越高结果越精准，但可能漏掉部分内容。建议 0.5–0.7。"
-          >
-            <Input
-              id="search-threshold"
-              type="number"
-              min={0}
-              max={1}
-              step={0.05}
-              {...form.register('similarityThreshold', { valueAsNumber: true })}
-            />
-          </SettingsRow>
-        </SettingGroupContent>
-      ) : (
-        <SettingGroupContent>
-          <SettingValue label="API Endpoint" value={display.search.endpoint || 'https://api.openai.com/v1（默认）'} />
-          <SettingValue label="API Key" value={apiKeyConfigured ? `已配置（结尾 …${display.apiKeyMask}）` : '未配置'} />
-          <SettingValue label="模型" value={display.search.model} />
-          <SettingValue label="相似度阈值" value={`${display.search.similarityThreshold}`} />
-        </SettingGroupContent>
-      )}
+      <SettingGroupContent>
+        <SettingsRow
+          label="API Endpoint"
+          htmlFor="search-endpoint"
+          hint="留空表示使用官方 OpenAI 接口。支持任意兼容 OpenAI API 规范的第三方服务。"
+        >
+          <Input
+            id="search-endpoint"
+            type="url"
+            placeholder="https://api.openai.com/v1"
+            maxLength={253}
+            {...form.register('endpoint')}
+          />
+        </SettingsRow>
+        <SettingsRow
+          label="API Key"
+          htmlFor="search-api-key"
+          hint={
+            apiKeyConfigured ? `当前已配置（结尾 …${display.apiKeyMask}）。留空保存表示保留现有 Key。` : '尚未配置。'
+          }
+        >
+          <Input
+            id="search-api-key"
+            type="password"
+            {...form.register('apiKey')}
+            placeholder={apiKeyConfigured ? '保留现有 Key' : '粘贴 OpenAI API Key'}
+            maxLength={512}
+            autoComplete="new-password"
+          />
+        </SettingsRow>
+        <SettingsRow label="模型" htmlFor="search-model" hint="默认 text-embedding-3-small，性价比最高。">
+          <Input id="search-model" placeholder="text-embedding-3-small" maxLength={80} {...form.register('model')} />
+        </SettingsRow>
+        <SettingsRow
+          label="相似度阈值"
+          htmlFor="search-threshold"
+          hint="0–1 之间。越高结果越精准，但可能漏掉部分内容。建议 0.5–0.7。"
+        >
+          <Input
+            id="search-threshold"
+            type="number"
+            min={0}
+            max={1}
+            step={0.05}
+            {...form.register('similarityThreshold', { valueAsNumber: true })}
+          />
+        </SettingsRow>
+      </SettingGroupContent>
     </SettingGroup>
   )
 }

@@ -15,7 +15,7 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { ArrowDownIcon, ArrowUpIcon, GripVerticalIcon, PlusIcon, Trash2Icon } from 'lucide-react'
+import { GripVerticalIcon, PlusIcon, Trash2Icon } from 'lucide-react'
 import { Controller, useFieldArray } from 'react-hook-form'
 
 const VERTICAL_AXIS_ONLY = [restrictToVerticalAxis]
@@ -25,7 +25,6 @@ import type { FooterNavItem, NavigationSettings, SocialItem } from '@/shared/con
 
 import { SOCIAL_NETWORK_META, SOCIAL_NETWORKS } from '@/shared/config/socials'
 import { SettingGroup } from '@/ui/admin/settings/shell/SettingGroup'
-import { SettingValue } from '@/ui/admin/settings/shell/SettingValue'
 import { useSettingsCard } from '@/ui/admin/settings/shell/useSettingsCard'
 import { Button } from '@/ui/components/button'
 import { Checkbox } from '@/ui/components/checkbox'
@@ -60,145 +59,159 @@ const TYPE_LABELS: Record<FooterNavItem['type'], string> = {
 // Side Navigation Card
 // ---------------------------------------------------------------------------
 
+function SortableSideNavRow({
+  field,
+  index,
+  form,
+  onRemove,
+}: {
+  field: SideNavRow
+  index: number
+  form: ReturnType<typeof useSettingsCard<NavigationSettings, { sideNavRows: SideNavRow[] }>>['form']
+  onRemove: (index: number) => void
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: field.clientId,
+  })
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  }
+
+  return (
+    <div ref={setNodeRef} style={style} className="flex items-center gap-3 rounded-xl border bg-muted/30 p-3">
+      <button
+        type="button"
+        {...attributes}
+        {...listeners}
+        className="shrink-0 cursor-grab text-muted-foreground active:cursor-grabbing"
+        aria-label="拖拽排序"
+      >
+        <GripVerticalIcon className="size-4" />
+      </button>
+      <div className="flex flex-1 flex-col gap-2 sm:flex-row">
+        <div className="flex flex-col gap-1 sm:flex-1">
+          <Label htmlFor={`nav-text-${index}`}>显示文本</Label>
+          <Input id={`nav-text-${index}`} maxLength={40} {...form.register(`sideNavRows.${index}.text`)} />
+        </div>
+        <div className="flex flex-col gap-1 sm:flex-1">
+          <Label htmlFor={`nav-link-${index}`}>链接</Label>
+          <Input
+            id={`nav-link-${index}`}
+            maxLength={200}
+            placeholder="/about 或 https://example.com"
+            {...form.register(`sideNavRows.${index}.link`)}
+          />
+        </div>
+        <div className="flex items-center gap-3">
+          <Field orientation="horizontal" className="w-fit">
+            <Controller
+              control={form.control}
+              name={`sideNavRows.${index}.newTab` as const}
+              render={({ field }) => (
+                <Checkbox id={`nav-newtab-${index}`} checked={field.value} onCheckedChange={field.onChange} />
+              )}
+            />
+            <FieldLabel htmlFor={`nav-newtab-${index}`} className="font-normal">
+              新窗口
+            </FieldLabel>
+          </Field>
+          <Button
+            type="button"
+            variant="destructive-soft"
+            size="icon"
+            onClick={() => onRemove(index)}
+            aria-label="删除"
+          >
+            <Trash2Icon data-icon />
+          </Button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function SideNavCard({ navigation }: { navigation: NavigationSettings }) {
-  const { mode, form, settingGroupProps, display } = useSettingsCard<NavigationSettings, { sideNavRows: SideNavRow[] }>(
-    {
-      section: 'navigation',
-      source: navigation,
-      toState: (source) => ({
-        sideNavRows: source.navigation.sideNav.map((item, i) => ({
-          clientId: `sidenav-${i}`,
-          text: item.text,
-          link: item.link,
-          newTab: item.target === '_blank',
+  const { form, settingGroupProps } = useSettingsCard<NavigationSettings, { sideNavRows: SideNavRow[] }>({
+    section: 'navigation',
+    source: navigation,
+    toState: (source) => ({
+      sideNavRows: source.navigation.sideNav.map((item, i) => ({
+        clientId: `sidenav-${i}`,
+        text: item.text,
+        link: item.link,
+        newTab: item.target === '_blank',
+      })),
+    }),
+    fromState: (state) => ({
+      navigation: {
+        sideNav: state.sideNavRows.map((row) => ({
+          text: row.text.trim(),
+          link: row.link.trim(),
+          ...(row.newTab ? { target: '_blank' } : {}),
         })),
-      }),
-      fromState: (state) => ({
-        navigation: {
-          sideNav: state.sideNavRows.map((row) => ({
-            text: row.text.trim(),
-            link: row.link.trim(),
-            ...(row.newTab ? { target: '_blank' } : {}),
-          })),
-        },
-      }),
-    },
+      },
+    }),
+  })
+
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   )
 
   const rows = useFieldArray({ control: form.control, name: 'sideNavRows' })
 
-  const moveRow = (index: number, direction: -1 | 1) => {
-    const target = index + direction
-    if (target >= 0 && target < rows.fields.length) {
-      rows.move(index, target)
+  function handleSideNavDragEnd(event: DragEndEvent) {
+    const { active, over } = event
+    if (over && active.id !== over.id) {
+      const oldIndex = rows.fields.findIndex((i) => i.clientId === active.id)
+      const newIndex = rows.fields.findIndex((i) => i.clientId === over.id)
+      rows.move(oldIndex, newIndex)
     }
   }
 
   return (
     <SettingGroup
       title="侧边导航菜单"
-      description="侧边栏导航条目。顺序、标题、链接均可调整。最多 20 个。"
+      description="侧边栏导航条目。拖拽调整顺序，标题、链接均可修改。最多 20 个。"
       {...settingGroupProps}
     >
-      {mode === 'edit' ? (
-        <div className="flex flex-col gap-3">
-          {rows.fields.length === 0 ? (
-            <p className="text-sm text-muted-foreground">还没有任何菜单条目，点下方按钮新增一项。</p>
-          ) : (
-            rows.fields.map((field, index) => (
-              <div
-                key={field.id}
-                className="flex flex-col gap-3 rounded-xl border bg-muted/30 p-3 sm:flex-row sm:items-end"
-              >
-                <div className="flex flex-1 flex-col gap-2 sm:flex-row">
-                  <div className="flex flex-col gap-1 sm:flex-1">
-                    <Label htmlFor={`nav-text-${index}`}>显示文本</Label>
-                    <Input id={`nav-text-${index}`} maxLength={40} {...form.register(`sideNavRows.${index}.text`)} />
-                  </div>
-                  <div className="flex flex-col gap-1 sm:flex-1">
-                    <Label htmlFor={`nav-link-${index}`}>链接</Label>
-                    <Input
-                      id={`nav-link-${index}`}
-                      maxLength={200}
-                      placeholder="/about 或 https://example.com"
-                      {...form.register(`sideNavRows.${index}.link`)}
-                    />
-                  </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <Field orientation="horizontal" className="w-fit">
-                    <Controller
-                      control={form.control}
-                      name={`sideNavRows.${index}.newTab` as const}
-                      render={({ field }) => (
-                        <Checkbox id={`nav-newtab-${index}`} checked={field.value} onCheckedChange={field.onChange} />
-                      )}
-                    />
-                    <FieldLabel htmlFor={`nav-newtab-${index}`} className="font-normal">
-                      新窗口打开
-                    </FieldLabel>
-                  </Field>
-                  <div className="flex gap-1">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="icon"
-                      disabled={index === 0}
-                      onClick={() => moveRow(index, -1)}
-                      aria-label="上移"
-                    >
-                      <ArrowUpIcon data-icon />
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="icon"
-                      disabled={index === rows.fields.length - 1}
-                      onClick={() => moveRow(index, 1)}
-                      aria-label="下移"
-                    >
-                      <ArrowDownIcon data-icon />
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="destructive-soft"
-                      size="icon"
-                      onClick={() => rows.remove(index)}
-                      aria-label="删除"
-                    >
-                      <Trash2Icon data-icon />
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            ))
-          )}
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => rows.append({ clientId: crypto.randomUUID(), text: '', link: '/', newTab: false })}
-            disabled={rows.fields.length >= 20}
+      <div className="flex flex-col gap-3">
+        {rows.fields.length === 0 ? (
+          <p className="text-sm text-muted-foreground">还没有任何菜单条目，点下方按钮新增一项。</p>
+        ) : (
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={handleSideNavDragEnd}
+            modifiers={VERTICAL_AXIS_ONLY}
           >
-            <PlusIcon data-icon /> 添加菜单项
-          </Button>
-        </div>
-      ) : (
-        <div className="flex flex-col gap-2">
-          {display.navigation.sideNav.length === 0 ? (
-            <p className="text-sm text-muted-foreground">未配置</p>
-          ) : (
-            display.navigation.sideNav.map((item) => (
-              <SettingValue
-                key={item.link}
-                label={item.text}
-                value={item.link}
-                hint={item.target === '_blank' ? '新窗口打开' : undefined}
-              />
-            ))
-          )}
-        </div>
-      )}
+            <SortableContext items={rows.fields.map((i) => i.clientId)} strategy={verticalListSortingStrategy}>
+              <div className="flex flex-col gap-3">
+                {rows.fields.map((field, index) => (
+                  <SortableSideNavRow
+                    key={field.clientId}
+                    field={field as SideNavRow}
+                    index={index}
+                    form={form}
+                    onRemove={(i) => rows.remove(i)}
+                  />
+                ))}
+              </div>
+            </SortableContext>
+          </DndContext>
+        )}
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={() => rows.append({ clientId: crypto.randomUUID(), text: '', link: '/', newTab: false })}
+          disabled={rows.fields.length >= 20}
+        >
+          <PlusIcon data-icon /> 添加菜单项
+        </Button>
+      </div>
     </SettingGroup>
   )
 }
@@ -251,7 +264,9 @@ function SortableFooterNavRow({
             }
           >
             <SelectTrigger id={`footer-item-type-${index}`}>
-              <SelectValue />
+              <SelectValue>
+                {(value: string | null) => (value ? (TYPE_LABELS[value as FooterNavItem['type']] ?? value) : '请选择')}
+              </SelectValue>
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="social">{TYPE_LABELS.social}</SelectItem>
@@ -268,7 +283,11 @@ function SortableFooterNavRow({
               onValueChange={(value) => onUpdate(index, { network: value as SocialNetwork })}
             >
               <SelectTrigger id={`footer-item-network-${index}`}>
-                <SelectValue />
+                <SelectValue>
+                  {(value: string | null) =>
+                    value ? (SOCIAL_NETWORK_META[value as SocialNetwork]?.label ?? value) : '请选择'
+                  }
+                </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 {SOCIAL_NETWORKS.map((network) => (
@@ -289,10 +308,7 @@ function SortableFooterNavRow({
 }
 
 function FooterNavCard({ navigation, socials }: { navigation: NavigationSettings; socials: SocialItem[] }) {
-  const { mode, form, settingGroupProps, display } = useSettingsCard<
-    NavigationSettings,
-    { footerNavItems: FooterNavItemRowState[] }
-  >({
+  const { form, settingGroupProps } = useSettingsCard<NavigationSettings, { footerNavItems: FooterNavItemRowState[] }>({
     section: 'navigation',
     source: navigation,
     toState: (source) => ({
@@ -337,62 +353,46 @@ function FooterNavCard({ navigation, socials }: { navigation: NavigationSettings
       description="页脚中显示的快捷按钮。可选择社交链接、主题切换或搜索。最多 5 项，拖拽可调整顺序。"
       {...settingGroupProps}
     >
-      {mode === 'edit' ? (
-        <div className="flex flex-col gap-3">
-          {rows.fields.length === 0 ? (
-            <p className="text-sm text-muted-foreground">还没有任何导航条目，点下方按钮新增一项。</p>
-          ) : (
-            <DndContext
-              sensors={sensors}
-              collisionDetection={closestCenter}
-              onDragEnd={handleFooterDragEnd}
-              modifiers={VERTICAL_AXIS_ONLY}
-            >
-              <SortableContext items={rows.fields.map((i) => i.clientId)} strategy={verticalListSortingStrategy}>
-                <div className="flex flex-col gap-3">
-                  {rows.fields.map((item, index) => (
-                    <SortableFooterNavRow
-                      key={item.clientId}
-                      item={item as FooterNavItemRowState}
-                      index={index}
-                      onUpdate={updateFooterItem}
-                      onRemove={(i) => rows.remove(i)}
-                    />
-                  ))}
-                </div>
-              </SortableContext>
-            </DndContext>
-          )}
-          <div className="flex items-center gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => rows.append({ type: 'social', network: 'github', clientId: crypto.randomUUID() })}
-              disabled={rows.fields.length >= 5}
-            >
-              <PlusIcon data-icon /> 添加导航项
-            </Button>
-            {rows.fields.some(
-              (item) => item.type === 'social' && item.network && !configuredNetworks.has(item.network),
-            ) && <span className="text-sm text-destructive">部分社交链接尚未配置，保存后不会在页脚显示。</span>}
-          </div>
+      <div className="flex flex-col gap-3">
+        {rows.fields.length === 0 ? (
+          <p className="text-sm text-muted-foreground">还没有任何导航条目，点下方按钮新增一项。</p>
+        ) : (
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={handleFooterDragEnd}
+            modifiers={VERTICAL_AXIS_ONLY}
+          >
+            <SortableContext items={rows.fields.map((i) => i.clientId)} strategy={verticalListSortingStrategy}>
+              <div className="flex flex-col gap-3">
+                {rows.fields.map((item, index) => (
+                  <SortableFooterNavRow
+                    key={item.clientId}
+                    item={item as FooterNavItemRowState}
+                    index={index}
+                    onUpdate={updateFooterItem}
+                    onRemove={(i) => rows.remove(i)}
+                  />
+                ))}
+              </div>
+            </SortableContext>
+          </DndContext>
+        )}
+        <div className="flex items-center gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => rows.append({ type: 'social', network: 'github', clientId: crypto.randomUUID() })}
+            disabled={rows.fields.length >= 5}
+          >
+            <PlusIcon data-icon /> 添加导航项
+          </Button>
+          {rows.fields.some(
+            (item) => item.type === 'social' && item.network && !configuredNetworks.has(item.network),
+          ) && <span className="text-sm text-destructive">部分社交链接尚未配置，保存后不会在页脚显示。</span>}
         </div>
-      ) : (
-        <div className="flex flex-col gap-2">
-          {display.navigation.footerNav.length === 0 ? (
-            <p className="text-sm text-muted-foreground">未配置</p>
-          ) : (
-            display.navigation.footerNav.map((item, i) => (
-              <SettingValue
-                key={`${item.type}-${item.network ?? ''}`}
-                label={`${i + 1}. ${TYPE_LABELS[item.type]}`}
-                value={item.type === 'social' && item.network ? SOCIAL_NETWORK_META[item.network].label : '—'}
-              />
-            ))
-          )}
-        </div>
-      )}
+      </div>
     </SettingGroup>
   )
 }

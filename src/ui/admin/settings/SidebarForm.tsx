@@ -25,7 +25,6 @@ import type { SidebarSettings, SidebarWidget, SidebarWidgetType } from '@/shared
 import { SettingsRow } from '@/ui/admin/settings/SettingsSection'
 import { SettingGroup } from '@/ui/admin/settings/shell/SettingGroup'
 import { SettingGroupContent } from '@/ui/admin/settings/shell/SettingGroupContent'
-import { SettingValue } from '@/ui/admin/settings/shell/SettingValue'
 import { useSettingsCard } from '@/ui/admin/settings/shell/useSettingsCard'
 import { FieldLabel } from '@/ui/components/field'
 import { Input } from '@/ui/components/input'
@@ -55,10 +54,12 @@ function SortableWidgetRow({
   widget,
   index,
   form,
+  save,
 }: {
   widget: SidebarWidget
   index: number
   form: ReturnType<typeof useSettingsCard<SidebarSettings, { widgets: SidebarWidget[] }>>['form']
+  save: () => void
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: widget.type,
@@ -88,7 +89,14 @@ function SortableWidgetRow({
               control={form.control}
               name={`widgets.${index}.enabled` as const}
               render={({ field }) => (
-                <Switch id={`sidebar-${widget.type}`} checked={field.value} onCheckedChange={field.onChange} />
+                <Switch
+                  id={`sidebar-${widget.type}`}
+                  checked={field.value}
+                  onCheckedChange={(val) => {
+                    field.onChange(val)
+                    save()
+                  }}
+                />
               )}
             />
             <FieldLabel htmlFor={`sidebar-${widget.type}`} className="font-normal">
@@ -115,7 +123,7 @@ function SortableWidgetRow({
 }
 
 export function SidebarForm({ sidebar }: SidebarFormProps) {
-  const { mode, form, settingGroupProps, display } = useSettingsCard<SidebarSettings, { widgets: SidebarWidget[] }>({
+  const { form, settingGroupProps, save } = useSettingsCard<SidebarSettings, { widgets: SidebarWidget[] }>({
     section: 'sidebar',
     source: sidebar,
     toState: (source) => ({ widgets: [...source.sidebar.widgets] }),
@@ -144,36 +152,28 @@ export function SidebarForm({ sidebar }: SidebarFormProps) {
       description="控制侧边栏的功能模块。拖拽可调整顺序，取消勾选则隐藏对应模块。"
       {...settingGroupProps}
     >
-      {mode === 'edit' ? (
-        <SettingGroupContent>
-          <DndContext
-            sensors={sensors}
-            collisionDetection={closestCenter}
-            onDragEnd={handleDragEnd}
-            modifiers={VERTICAL_AXIS_ONLY}
-          >
-            <SortableContext items={rows.fields.map((w) => w.type)} strategy={verticalListSortingStrategy}>
-              <div className="flex flex-col gap-3">
-                {rows.fields.map((widget, index) => (
-                  <SortableWidgetRow key={widget.type} widget={widget as SidebarWidget} index={index} form={form} />
-                ))}
-              </div>
-            </SortableContext>
-          </DndContext>
-        </SettingGroupContent>
-      ) : (
-        <SettingGroupContent>
-          {display.sidebar.widgets.map((widget) => (
-            <SettingValue
-              key={widget.type}
-              label={WIDGET_LABELS[widget.type]}
-              value={
-                widget.enabled ? `已启用${widget.count !== undefined ? `（显示 ${widget.count} 条）` : ''}` : '已禁用'
-              }
-            />
-          ))}
-        </SettingGroupContent>
-      )}
+      <SettingGroupContent>
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragEnd={handleDragEnd}
+          modifiers={VERTICAL_AXIS_ONLY}
+        >
+          <SortableContext items={rows.fields.map((w) => w.type)} strategy={verticalListSortingStrategy}>
+            <div className="flex flex-col gap-3">
+              {rows.fields.map((widget, index) => (
+                <SortableWidgetRow
+                  key={widget.type}
+                  widget={widget as SidebarWidget}
+                  index={index}
+                  form={form}
+                  save={save}
+                />
+              ))}
+            </div>
+          </SortableContext>
+        </DndContext>
+      </SettingGroupContent>
     </SettingGroup>
   )
 }

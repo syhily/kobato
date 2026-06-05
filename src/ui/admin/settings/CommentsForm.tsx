@@ -3,7 +3,6 @@ import type { CommentsSettings } from '@/shared/config/types'
 import { SettingsRow } from '@/ui/admin/settings/SettingsSection'
 import { SettingGroup } from '@/ui/admin/settings/shell/SettingGroup'
 import { SettingGroupContent } from '@/ui/admin/settings/shell/SettingGroupContent'
-import { SettingValue } from '@/ui/admin/settings/shell/SettingValue'
 import { useSettingsCard } from '@/ui/admin/settings/shell/useSettingsCard'
 import { Input } from '@/ui/components/input'
 
@@ -12,7 +11,7 @@ interface CommentsFormProps {
 }
 
 function CommentsPaginationCard({ comments }: { comments: CommentsSettings }) {
-  const { mode, form, settingGroupProps, display } = useSettingsCard<CommentsSettings, { size: number }>({
+  const { form, settingGroupProps } = useSettingsCard<CommentsSettings, { size: number }>({
     section: 'comments',
     source: comments,
     toState: (source) => ({ size: source.comments.size }),
@@ -25,32 +24,23 @@ function CommentsPaginationCard({ comments }: { comments: CommentsSettings }) {
 
   return (
     <SettingGroup title="评论分页" description="控制文章页面下方的评论列表加载行为。" {...settingGroupProps}>
-      {mode === 'edit' ? (
-        <SettingGroupContent>
-          <SettingsRow label="每页评论数" htmlFor="comments-size" hint="客户端「加载更多」每次抓取的根评论数量。">
-            <Input
-              id="comments-size"
-              type="number"
-              min={1}
-              max={100}
-              {...form.register('size', { valueAsNumber: true })}
-            />
-          </SettingsRow>
-        </SettingGroupContent>
-      ) : (
-        <SettingGroupContent>
-          <SettingValue label="每页评论数" value={`${display.comments.size}`} />
-        </SettingGroupContent>
-      )}
+      <SettingGroupContent>
+        <SettingsRow label="每页评论数" htmlFor="comments-size" hint="客户端「加载更多」每次抓取的根评论数量。">
+          <Input
+            id="comments-size"
+            type="number"
+            min={1}
+            max={100}
+            {...form.register('size', { valueAsNumber: true })}
+          />
+        </SettingsRow>
+      </SettingGroupContent>
     </SettingGroup>
   )
 }
 
 function CommentsAvatarCard({ comments }: { comments: CommentsSettings }) {
-  const { mode, form, settingGroupProps, display } = useSettingsCard<
-    CommentsSettings,
-    { avatarMirror: string; avatarSize: number }
-  >({
+  const { form, settingGroupProps } = useSettingsCard<CommentsSettings, { avatarMirror: string; avatarSize: number }>({
     section: 'comments',
     source: comments,
     toState: (source) => ({
@@ -70,37 +60,30 @@ function CommentsAvatarCard({ comments }: { comments: CommentsSettings }) {
       description="访客头像通过 Gravatar 协议拉取。镜像 URL 用于绕过 gravatar.com 的访问限制。"
       {...settingGroupProps}
     >
-      {mode === 'edit' ? (
-        <SettingGroupContent>
-          <SettingsRow
-            label="Gravatar 镜像 URL"
-            htmlFor="comments-avatar-mirror"
-            hint="例如 https://gravatar.loli.net/avatar，结尾不带斜杠。"
-          >
-            <Input id="comments-avatar-mirror" type="url" {...form.register('avatarMirror')} />
-          </SettingsRow>
-          <SettingsRow label="头像尺寸 (px)" htmlFor="comments-avatar-size">
-            <Input
-              id="comments-avatar-size"
-              type="number"
-              min={16}
-              max={512}
-              {...form.register('avatarSize', { valueAsNumber: true })}
-            />
-          </SettingsRow>
-        </SettingGroupContent>
-      ) : (
-        <SettingGroupContent>
-          <SettingValue label="镜像 URL" value={display.comments.avatar.mirror} />
-          <SettingValue label="头像尺寸" value={`${display.comments.avatar.size}px`} />
-        </SettingGroupContent>
-      )}
+      <SettingGroupContent>
+        <SettingsRow
+          label="Gravatar 镜像 URL"
+          htmlFor="comments-avatar-mirror"
+          hint="例如 https://gravatar.loli.net/avatar，结尾不带斜杠。"
+        >
+          <Input id="comments-avatar-mirror" type="url" {...form.register('avatarMirror')} />
+        </SettingsRow>
+        <SettingsRow label="头像尺寸 (px)" htmlFor="comments-avatar-size">
+          <Input
+            id="comments-avatar-size"
+            type="number"
+            min={16}
+            max={512}
+            {...form.register('avatarSize', { valueAsNumber: true })}
+          />
+        </SettingsRow>
+      </SettingGroupContent>
     </SettingGroup>
   )
 }
 
 function CommentsTokenCard({ comments }: { comments: CommentsSettings }) {
-  const { mode, form, settingGroupProps, display } = useSettingsCard<CommentsSettings, { tokenTtlSeconds: number }>({
+  const { form, settingGroupProps } = useSettingsCard<CommentsSettings, { tokenTtlSeconds: number }>({
     section: 'comments',
     source: comments,
     toState: (source) => ({ tokenTtlSeconds: source.comments.tokenTtlSeconds }),
@@ -117,31 +100,21 @@ function CommentsTokenCard({ comments }: { comments: CommentsSettings }) {
       description="控制匿名评论者发表后可编辑自己评论的时间窗口。"
       {...settingGroupProps}
     >
-      {mode === 'edit' ? (
-        <SettingGroupContent>
-          <SettingsRow
-            label="Token 有效期 (秒)"
-            htmlFor="comments-token-ttl"
-            hint="默认 1800 秒（30 分钟）。范围 60–86400 秒。"
-          >
-            <Input
-              id="comments-token-ttl"
-              type="number"
-              min={60}
-              max={86400}
-              {...form.register('tokenTtlSeconds', { valueAsNumber: true })}
-            />
-          </SettingsRow>
-        </SettingGroupContent>
-      ) : (
-        <SettingGroupContent>
-          <SettingValue
-            label="Token 有效期"
-            value={`${display.comments.tokenTtlSeconds} 秒`}
-            hint={`约 ${Math.round(display.comments.tokenTtlSeconds / 60)} 分钟`}
+      <SettingGroupContent>
+        <SettingsRow
+          label="Token 有效期 (秒)"
+          htmlFor="comments-token-ttl"
+          hint="默认 1800 秒（30 分钟）。范围 60–86400 秒。"
+        >
+          <Input
+            id="comments-token-ttl"
+            type="number"
+            min={60}
+            max={86400}
+            {...form.register('tokenTtlSeconds', { valueAsNumber: true })}
           />
-        </SettingGroupContent>
-      )}
+        </SettingsRow>
+      </SettingGroupContent>
     </SettingGroup>
   )
 }

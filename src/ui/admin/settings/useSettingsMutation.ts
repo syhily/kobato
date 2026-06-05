@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useRevalidator } from 'react-router'
 import { toast } from 'sonner'
 
@@ -22,6 +22,13 @@ export function useSettingsMutation(): UseSettingsMutationResult {
   const revalidator = useRevalidator()
   const [status, setStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
 
+  useEffect(() => {
+    if (status === 'saved') {
+      const timer = setTimeout(() => setStatus('idle'), 2000)
+      return () => clearTimeout(timer)
+    }
+  }, [status])
+
   const updateMutation = useMutation({
     mutationFn: ({ section, payload }: { section: SettingsSection; payload: Record<string, unknown> }) =>
       orpc.admin.settings.update({ section, payload }),
@@ -33,7 +40,6 @@ export function useSettingsMutation(): UseSettingsMutationResult {
       try {
         await updateMutation.mutateAsync({ section, payload })
         setStatus('saved')
-        toast.success('已保存')
         void revalidator.revalidate()
         return true
       } catch (error: unknown) {
