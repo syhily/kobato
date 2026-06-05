@@ -4,11 +4,13 @@ import type { Env } from '@/server/http/context'
 
 import { getDb, getPool } from '@/server/bootstrap/db-lifecycle'
 import { scheduleNextArchive } from '@/server/domains/audit/services/scheduler'
+import { getSetupToken } from '@/server/domains/auth/setup-token'
 import { initBackupScheduler, scheduleNextBackup } from '@/server/domains/backup/scheduler'
 import { migrateSecretsEncryption } from '@/server/domains/settings/services/migrate-secrets'
 import { refreshBlogSettings } from '@/server/domains/settings/snapshot'
 import { wrapFetchWithLeakedResponseHandler } from '@/server/http/leaked-response'
 import { buildLoadContext, configureMiddleware } from '@/server/http/middleware-pipeline'
+import { hasAdmin } from '@/server/infra/db/operations/user'
 import { PORT } from '@/server/infra/env'
 import { createHonoServer } from '@/server/infra/hono/node'
 import { setHttpServer, setRestartApp, setServerPhase } from '@/server/infra/lifecycle'
@@ -51,6 +53,23 @@ if (!hmr?.secretsMigrated) {
   if (hmr) {
     hmr.secretsMigrated = true
   }
+}
+
+// ─── Setup token (uninstalled deployments only) ──────────
+// Generate the one-time setup token on startup so operators can
+// read it from the console / docker logs before visiting the
+// install wizard.  Swallow errors (e.g. Redis unreachable) — the
+// token will be lazily created on the first visit to /admin/setup.
+
+try {
+  if (!(await hasAdmin(getDb()))) {
+    await getSetupToken()
+  }
+} catch (err) {
+  root.warn(
+    { err: err instanceof Error ? err.message : String(err) },
+    'Failed to generate setup token on startup; will retry on first visit to /admin/setup',
+  )
 }
 
 // ─── Start HTTP server ───────────────────────────────────
