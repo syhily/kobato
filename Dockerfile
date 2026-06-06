@@ -16,10 +16,9 @@ RUN apk add --no-cache tini postgresql-client font-noto-cjk && \
     cp /usr/share/fonts/noto/NotoSansCJK-Regular.ttc /data/fonts/og.ttf && \
     cp /usr/share/fonts/noto/NotoSansCJK-Regular.ttc /data/fonts/calendar.ttf && \
     chown -R node:node /data/fonts
-# Only production deps (sharp + @napi-rs/canvas native bindings).
-COPY package.json package-lock.json ./
+# Only native deps that cannot be bundled by Vite SSR.
 RUN --mount=type=cache,target=/root/.npm \
-    npm ci --omit=dev
+    npm install --no-save @napi-rs/canvas sharp
 COPY --from=build /app/build ./build
 COPY --from=build /app/drizzle ./drizzle
 ENV NODE_ENV=production

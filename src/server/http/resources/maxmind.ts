@@ -1,6 +1,7 @@
+import { Reader } from '@maxmind/geoip2-node'
 import { Hono } from 'hono'
 import { bodyLimit } from 'hono/body-limit'
-import { mkdir, writeFile } from 'node:fs/promises'
+import { mkdir, unlink, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 
 import type { Env } from '@/server/http/context'
@@ -44,10 +45,8 @@ export const maxmindRouter = new Hono<Env>().post(
     // Validate the file by attempting to open it. If it fails, delete the
     // corrupt file and return an error so the admin knows immediately.
     try {
-      const { Reader } = await import('@maxmind/geoip2-node')
       await Reader.open(MAXMIND_DB_PATH)
     } catch {
-      const { unlink } = await import('node:fs/promises')
       await unlink(MAXMIND_DB_PATH).catch(() => {
         /* already deleted */
       })

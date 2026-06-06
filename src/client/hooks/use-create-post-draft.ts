@@ -2,32 +2,22 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 
 import type { PortableTextBody } from '@/shared/pt/schema'
 
-// Local-Storage backed draft persistence for the **create** flow of
-// the Post editor. Distinct from `usePageLocalDraft` — that one keys
-// on the server-assigned page id + revision token, which is exactly
-// what's missing while a new post hasn't been saved yet.
-//
-// **Goal**: the user can author a brand-new post without first being
-// forced to fill the metadata form and click "create". Body + meta
-// are mirrored into LS keyed on a per-tab `sessionId`; on first save
-// the caller hands the slot the freshly-assigned page id and we
-// migrate the LS slot to the canonical `cms-post-draft:<id>:<token>`
-// key shape so the edit-mode hook picks it up seamlessly.
-//
-// **Key shape** `cms-post-draft:new:<sessionId>`
-//
-// **Versioning** every payload carries `version: 1`; mismatches drop
-// the slot.
+import { getDraft, removeDraft, setDraft, type DraftRecord } from '@/client/lib/draft-store'
+
+// IndexedDB draft persistence for the **create** post flow.
+// Keys on a per-tab `sessionId` since there's no server id yet.
+// On first save the slot migrates to the canonical edit key.
 
 const STORAGE_VERSION = 1
 const STORAGE_KEY_PREFIX = 'cms-post-draft:new:'
 const SESSION_KEY = 'cms-post-draft:new:session'
+const BROADCAST_NAME = 'cms-post-draft'
 
-// Mirror of `PageMetaDraft` from the editor. We keep a structural
-// copy here because the boundary contract forbids `client` from
-// reaching into the component layer. Adding a field requires
-// updating both shapes — a one-time tax that's worth keeping the
-// layering pure.
+interface BroadcastMessage {
+  kind: 'cleared'
+  key: string
+}
+
 export interface CreatePostDraftMeta {
   slug: string
   title: string
@@ -60,25 +50,12 @@ export interface UseCreatePostDraftOptions {
 }
 
 export interface UseCreatePostDraftResult {
-  /** Stable per-tab session id used as the LS key suffix. */
   sessionId: string
-  /** Loaded draft from a previous session, or null when no slot exists. */
   loadedDraft: StoredCreateDraft | null
-  /**
-   * Move the LS slot to a canonical edit-mode key shape so
-   * `usePageLocalDraft` picks it up after the first save. Must be
-   * called immediately before the navigation to `/edit` so the
-   * server-side `clientRevisionToken` matches what's in LS.
-   */
   migrateToEditKey: (postId: string, clientRevisionToken: string, body: PortableTextBody) => void
-  /** Drop the create slot. Used after a successful first save. */
   clearDraft: () => void
 }
 
-// Read once and memoise the session id so a single tab keeps writing
-// to the same slot across re-mounts. Different tabs get different
-// session ids so two new posts can be drafted in parallel without
-// stomping each other.
 function readOrCreateSessionId(): string {
   if (typeof window === 'undefined') {
     return ''
@@ -88,9 +65,6 @@ function readOrCreateSessionId(): string {
     if (existing !== null && existing !== '') {
       return existing
     }
-    // sessionStorage scopes to the tab, which matches the "one new
-    // page per tab" mental model. Crypto-grade randomness isn't
-    // required; collisions only matter within a tab.
     const fresh = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`
     window.sessionStorage.setItem(SESSION_KEY, fresh)
     return fresh
@@ -110,106 +84,120 @@ export function useCreatePostDraft({ body, meta }: UseCreatePostDraftOptions): U
   const [loadedDraft, setLoadedDraft] = useState<StoredCreateDraft | null>(null)
   const didReadRef = useRef(false)
 
-  // Read once on mount.
   useEffect(() => {
     if (didReadRef.current) {
       return
     }
     didReadRef.current = true
-    try {
-      const raw = window.localStorage.getItem(key)
-      if (raw === null) {
-        setLoadedDraft(null)
-        return
-      }
-      const parsed = JSON.parse(raw) as Partial<StoredCreateDraft>
-      if (parsed.version !== STORAGE_VERSION || !Array.isArray(parsed.body) || parsed.meta === undefined) {
-        window.localStorage.removeItem(key)
-        setLoadedDraft(null)
-        return
-      }
-      setLoadedDraft(parsed as StoredCreateDraft)
-    } catch {
+
+    let cancelled = false
+
+    void (async () => {
       try {
-        window.localStorage.removeItem(key)
+        const record = await getDraft(key)
+        if (cancelled) {
+          return
+        }
+        if (record === null) {
+          setLoadedDraft(null)
+          return
+        }
+        if (record.version !== STORAGE_VERSION || !Array.isArray(record.body) || record.meta === undefined) {
+          await removeDraft(key)
+          if (!cancelled) {
+            setLoadedDraft(null)
+          }
+          return
+        }
+        setLoadedDraft(record as unknown as StoredCreateDraft)
       } catch {
-        // Ignore secondary failures.
+        if (!cancelled) {
+          setLoadedDraft(null)
+        }
       }
-      setLoadedDraft(null)
+    })()
+
+    return () => {
+      cancelled = true
     }
   }, [key])
 
-  // Mirror current body + meta into LS on every change. Pure
-  // synchronous writes — `localStorage` doesn't yield, but the
-  // autosave hook upstream already debounces editor updates so this
-  // doesn't fire on every keystroke.
   useEffect(() => {
-    const payload: StoredCreateDraft = {
-      version: STORAGE_VERSION,
-      sessionId,
+    const payload: DraftRecord = {
+      key,
+      type: 'post-create',
       body,
       meta,
       savedAt: Date.now(),
+      version: STORAGE_VERSION,
     }
-    try {
-      window.localStorage.setItem(key, JSON.stringify(payload))
-    } catch {
-      // Quota or disabled storage — silently ignore.
-    }
-  }, [key, sessionId, body, meta])
 
-  // Listen for peer-tab `storage` events so a "cleared" event in
-  // another tab updates this tab's `loadedDraft` to null. Body
-  // contents are intentionally not merged — the create flow assumes
-  // one tab owns the draft.
-  useEffect(() => {
-    function onStorage(event: StorageEvent) {
-      if (event.key !== key) {
-        return
+    let cancelled = false
+
+    void (async () => {
+      try {
+        if (!cancelled) {
+          await setDraft(key, payload)
+        }
+      } catch {
+        // Quota or disabled storage — silently ignore.
       }
-      if (event.newValue === null) {
-        setLoadedDraft(null)
-      }
+    })()
+
+    return () => {
+      cancelled = true
     }
-    window.addEventListener('storage', onStorage)
-    return () => window.removeEventListener('storage', onStorage)
+  }, [key, body, meta])
+
+  useEffect(() => {
+    let bc: BroadcastChannel | null = null
+    try {
+      bc = new BroadcastChannel(BROADCAST_NAME)
+      bc.addEventListener('message', (event: MessageEvent<BroadcastMessage>) => {
+        if (event.data?.kind === 'cleared' && event.data.key === key) {
+          setLoadedDraft(null)
+        }
+      })
+    } catch {
+      // BroadcastChannel unavailable (older Safari).
+    }
+    return () => {
+      bc?.close()
+    }
   }, [key])
 
   const clearDraft = useCallback(() => {
+    void removeDraft(key)
+    setLoadedDraft(null)
     try {
-      window.localStorage.removeItem(key)
+      const bc = new BroadcastChannel(BROADCAST_NAME)
+      const msg: BroadcastMessage = { kind: 'cleared', key }
+      bc.postMessage(msg)
+      bc.close()
     } catch {
       // Ignore.
     }
-    setLoadedDraft(null)
   }, [key])
 
-  // Migrate the LS slot from `cms-post-draft:new:<sessionId>` to
-  // `cms-post-draft:<postId>:<token>` so the edit-mode hook treats
-  // the just-saved page exactly the same as any other page that's
-  // been opened with an existing LS slot. Best-effort: failures
-  // (quota, disabled storage) are non-fatal because the body has
-  // already been pushed to the server in the same transaction.
   const migrateToEditKey = useCallback(
     (postId: string, clientRevisionToken: string, latestBody: PortableTextBody) => {
       const editKey = `cms-post-draft:${postId}:${clientRevisionToken}`
-      const editPayload = {
-        version: STORAGE_VERSION,
-        postId,
-        clientRevisionToken,
+      const editPayload: DraftRecord = {
+        key: editKey,
+        type: 'post-edit',
         body: latestBody,
         savedAt: Date.now(),
+        version: STORAGE_VERSION,
       }
-      try {
-        window.localStorage.setItem(editKey, JSON.stringify(editPayload))
-        window.localStorage.removeItem(key)
-        // Also burn the per-tab session id so a fresh "/editor/page/new"
-        // starts a clean slot rather than reviving the just-migrated
-        // draft.
-        window.sessionStorage.removeItem(SESSION_KEY)
-      } catch {
-        // Ignore.
-      }
+      void (async () => {
+        try {
+          await setDraft(editKey, editPayload)
+          await removeDraft(key)
+          window.sessionStorage.removeItem(SESSION_KEY)
+        } catch {
+          // Ignore.
+        }
+      })()
     },
     [key],
   )
