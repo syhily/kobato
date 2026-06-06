@@ -313,15 +313,16 @@ function isValidPasskeyDomain(website: string): boolean {
       return false
     }
     const hostname = url.hostname
-    if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '::1') {
+    if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '::1' || hostname === '[::1]') {
       return false
     }
     // Reject private IPv4 ranges
     if (/^(10\.|172\.(1[6-9]|2[0-9]|3[01])\.|192\.168\.|127\.|169\.254\.)/.test(hostname)) {
       return false
     }
-    // Reject IPv6 ULA / link-local
-    if (/^[fcfd]/i.test(hostname) || hostname.startsWith('fe80:')) {
+    // Reject IPv6 ULA / link-local — strip brackets, only match actual IPv6 addresses
+    const bare = hostname.startsWith('[') && hostname.endsWith(']') ? hostname.slice(1, -1) : hostname
+    if (bare.includes(':') && /^(fc|fd|fe80)/i.test(bare)) {
       return false
     }
     return true

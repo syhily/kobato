@@ -114,7 +114,7 @@ const clearPasskeys = adminProc
   .output(z.object({ user: adminUserDto }))
   .handler(async ({ input, context }) => {
     if (!isPasskeyEnabled()) {
-      throw new ORPCError('BAD_REQUEST', { message: 'Passkey is not enabled.' })
+      throw new ORPCError('BAD_REQUEST', { message: 'Passkey 登录未启用。' })
     }
     const targetId = idFromString(input.id)
     await deleteAllCredentials(context.db, targetId)

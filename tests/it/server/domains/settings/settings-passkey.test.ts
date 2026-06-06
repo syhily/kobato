@@ -134,4 +134,30 @@ describe('services/settings — passkey domain validation', () => {
       updateBlogSettingsSection(db, pool, 'security', { passkey: { enabled: true } }, null),
     ).rejects.toBeInstanceOf(DomainError)
   })
+
+  it('allows domains starting with fc/fd that are not IPv6', async () => {
+    setBlogSettingsBundleForTests({
+      siteIdentity: { title: 'Test', website: 'https://fcbarcelona.com' },
+    } as any)
+
+    await expect(
+      updateBlogSettingsSection(
+        db,
+        pool,
+        'security',
+        { csrf: { enabled: true, exemptPaths: [] }, passkey: { enabled: true } },
+        null,
+      ),
+    ).resolves.toBeDefined()
+  })
+
+  it('rejects IPv6 ULA fc00::1', async () => {
+    setBlogSettingsBundleForTests({
+      siteIdentity: { title: 'Test', website: 'https://[fc00::1]' },
+    } as any)
+
+    await expect(
+      updateBlogSettingsSection(db, pool, 'security', { passkey: { enabled: true } }, null),
+    ).rejects.toBeInstanceOf(DomainError)
+  })
 })

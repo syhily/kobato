@@ -24,6 +24,7 @@ import { DomainError, isUniqueConstraintError } from '@/server/infra/http/errors
 import { getLogger } from '@/server/infra/logger'
 import { redisInstance } from '@/server/infra/redis/storage'
 import { requireBlogSettingsBundle } from '@/shared/config/getters'
+import { isPrivateIp, tryParseUrl } from '@/shared/utils/safe-url'
 
 const log = getLogger('auth.passkey')
 
@@ -35,23 +36,18 @@ function rpConfig() {
   const bundle = requireBlogSettingsBundle()
   const website = bundle.siteIdentity?.website ?? ''
   const title = bundle.siteIdentity?.title ?? 'Kobato'
-  const url = safeParseUrl(website)
+  const url = tryParseUrl(website)
   if (!url) {
     throw new DomainError('BAD_REQUEST', '站点域名未配置，无法使用 Passkey。')
   }
+  if (url.protocol !== 'https:') {
+    throw new DomainError('BAD_REQUEST', 'Passkey 要求站点使用 HTTPS 协议。')
+  }
   const rpID = url.hostname
-  if (rpID === 'localhost' || rpID === '127.0.0.1' || rpID === '::1') {
-    throw new DomainError('BAD_REQUEST', 'Passkey 不支持 localhost 或 IP 地址作为站点域名。')
+  if (rpID === 'localhost' || rpID === '127.0.0.1' || rpID === '::1' || rpID === '[::1]' || isPrivateIp(rpID)) {
+    throw new DomainError('BAD_REQUEST', 'Passkey 需要公开可访问的 HTTPS 域名，不能使用 localhost 或私有地址。')
   }
   return { rpID, rpName: title, origin: website }
-}
-
-function safeParseUrl(raw: string): URL | null {
-  try {
-    return new URL(raw)
-  } catch {
-    return null
-  }
 }
 
 async function storeChallenge(prefix: string, challenge: string, data: Record<string, unknown>): Promise<void> {

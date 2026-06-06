@@ -34,6 +34,10 @@ vi.mock('@/shared/config/getters', () => ({
   requireBlogSettingsBundle: vi.fn(() => ({
     siteIdentity: { title: 'Test', website: 'https://example.com' },
   })),
+  getBlogSettingsBundleSync: vi.fn(() => ({
+    siteIdentity: { title: 'Test', website: 'https://example.com' },
+    security: { passkey: { enabled: true } },
+  })),
 }))
 
 vi.mock('@/server/infra/db/operations/user', () => ({
@@ -534,5 +538,52 @@ describe('passkey-service — credential management', () => {
     await passkeyService.setPasskeyForce(dbWithUpdate, 1n, true)
     const force = await passkeyService.getPasskeyForce(dbWithUpdate, 1n)
     expect(force).toBe(true)
+  })
+})
+
+describe('passkey-service — rpConfig validation', () => {
+  it('rejects non-HTTPS origin', async () => {
+    const { requireBlogSettingsBundle } = await import('@/shared/config/getters')
+    vi.mocked(requireBlogSettingsBundle).mockReturnValueOnce({
+      siteIdentity: { title: 'Test', website: 'http://example.com' },
+    } as any)
+
+    await expect(passkeyService.generateRegistrationOptions(db, testUser())).rejects.toBeInstanceOf(DomainError)
+  })
+
+  it('rejects private IPv4 192.168.x', async () => {
+    const { requireBlogSettingsBundle } = await import('@/shared/config/getters')
+    vi.mocked(requireBlogSettingsBundle).mockReturnValueOnce({
+      siteIdentity: { title: 'Test', website: 'https://192.168.1.1' },
+    } as any)
+
+    await expect(passkeyService.generateRegistrationOptions(db, testUser())).rejects.toBeInstanceOf(DomainError)
+  })
+
+  it('rejects IPv6 ULA fc00::1', async () => {
+    const { requireBlogSettingsBundle } = await import('@/shared/config/getters')
+    vi.mocked(requireBlogSettingsBundle).mockReturnValueOnce({
+      siteIdentity: { title: 'Test', website: 'https://[fc00::1]' },
+    } as any)
+
+    await expect(passkeyService.generateRegistrationOptions(db, testUser())).rejects.toBeInstanceOf(DomainError)
+  })
+
+  it('allows valid public HTTPS domain', async () => {
+    const { requireBlogSettingsBundle } = await import('@/shared/config/getters')
+    vi.mocked(requireBlogSettingsBundle).mockReturnValueOnce({
+      siteIdentity: { title: 'Test', website: 'https://example.com' },
+    } as any)
+    swaMocks.generateRegistrationOptions.mockResolvedValue({
+      challenge: 'c',
+      rp: { name: 'Test', id: 'example.com' },
+    })
+
+    const dbEmptySelect = {
+      select: vi.fn(() => ({ from: vi.fn(() => ({ where: vi.fn(() => []) })) })),
+    } as unknown as NodePgDatabase
+
+    const result = await passkeyService.generateRegistrationOptions(dbEmptySelect, testUser())
+    expect(result.options).toBeDefined()
   })
 })

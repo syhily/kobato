@@ -13,6 +13,7 @@ import { ENCRYPTION_KEY } from '@/server/infra/env'
 import { DomainError } from '@/server/infra/http/errors'
 import { getLogger } from '@/server/infra/logger'
 import { getBlogSettingsBundleSync } from '@/shared/config/getters'
+import { isPrivateIp, tryParseUrl } from '@/shared/utils/safe-url'
 
 const log = getLogger('settings.service')
 
@@ -77,7 +78,13 @@ export async function updateBlogSettingsSection<S extends SettingsSection>(
         throw new DomainError('BAD_REQUEST', '开启 Passkey 需要站点使用 HTTPS 协议')
       }
       const hostname = url.hostname
-      if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '::1' || isPrivateIp(hostname)) {
+      if (
+        hostname === 'localhost' ||
+        hostname === '127.0.0.1' ||
+        hostname === '::1' ||
+        hostname === '[::1]' ||
+        isPrivateIp(hostname)
+      ) {
         throw new DomainError(
           'BAD_REQUEST',
           '开启 Passkey 需要站点使用公开可访问的 HTTPS 域名（不能使用 localhost 或 IP 地址）',
@@ -203,25 +210,4 @@ function encryptSecretsInRow(section: SettingsSection, row: Record<string, unkno
       [config.field]: encryptIfNeeded(value),
     },
   }
-}
-
-function tryParseUrl(raw: string): URL | null {
-  try {
-    return new URL(raw)
-  } catch {
-    return null
-  }
-}
-
-function isPrivateIp(hostname: string): boolean {
-  // IPv4 private ranges per RFC 1918 + loopback/link-local
-  const ipv4Private = /^(10\.|172\.(1[6-9]|2[0-9]|3[01])\.|192\.168\.|127\.|169\.254\.|0\.|22[4-9]\.|2[3-5][0-9]\.)/
-  if (ipv4Private.test(hostname)) {
-    return true
-  }
-  // IPv6 loopback / link-local / unique-local
-  if (hostname.startsWith('fc') || hostname.startsWith('fd') || hostname.startsWith('fe80:')) {
-    return true
-  }
-  return false
 }

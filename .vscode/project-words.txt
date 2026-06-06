@@ -33,6 +33,7 @@ codegen
 codegraph
 collisively
 colour
+columnstore
 commentform
 conffile
 csslintrc
@@ -57,6 +58,7 @@ epub
 ethantw
 extversion
 firis
+fkey
 flexdinesh
 flexsearch
 flink
@@ -206,6 +208,7 @@ pefc
 penheulim
 pglite
 pgpassword
+pgvector
 photoswipe
 phpinfo
 picimg
@@ -234,6 +237,7 @@ quan
 recma
 recognise
 redmi
+referer
 regclass
 rehype
 requirepass
@@ -246,6 +250,7 @@ scann
 sched
 schemaname
 sefc
+segmentby
 segoe
 serialised
 shadcn
@@ -289,6 +294,7 @@ tsgolint
 tview
 twofei
 typegen
+typname
 ultrahtml
 unconfigured
 unlayered
