@@ -5,16 +5,6 @@ import { CheckIcon, ChevronDownIcon, SearchIcon } from 'lucide-react'
 
 import { cn } from '@/ui/lib/cn'
 
-// shadcn-style wrapper around Base UI's `Combobox` primitive. The visual
-// language mirrors `select.tsx` (same trigger / popup / item shapes) but
-// the popup is a *searchable* listbox: a `Combobox.Input` lives inside
-// the popup, and Base UI handles substring filtering against the `items`
-// prop on `Combobox.Root`.
-//
-// Use this when a Select would otherwise have many entries and the user
-// would benefit from typing to filter. For short, fixed lists prefer
-// `select.tsx` so the keyboard interaction stays a plain dropdown.
-
 function Combobox<Value>(props: ComponentProps<typeof BaseCombobox.Root<Value, false>>) {
   return <BaseCombobox.Root data-slot="combobox" {...props} />
 }
@@ -52,11 +42,6 @@ interface ComboboxContentProps<Item = unknown> extends Omit<ComponentProps<typeo
   sideOffset?: number
   inputPlaceholder?: string
   emptyMessage?: string
-  // Render prop matching `Combobox.List`'s function-child contract: when
-  // `Combobox.Root` receives an `items` prop, the list iterates over the
-  // *filtered* subset and invokes this for each matching entry. The
-  // `Item` generic is best supplied by the caller (e.g. `<ComboboxContent<Page>>`)
-  // so the render closure stays type-safe per call site.
   children: (item: Item, index: number) => React.ReactNode
 }
 

@@ -13,9 +13,6 @@ import { post } from '@/server/infra/db/schema/post'
 import { user } from '@/server/infra/db/schema/user'
 import { ilikeEscape } from '@/shared/utils/escape-like'
 
-// Common projection: every comment column we expose to the application,
-// joined with the public user attributes. Keep the shape stable here so the
-// CommentAndUser DTO upstream stays in sync via TypeScript inference.
 export const commentWithUser = {
   id: comment.id,
   createAt: comment.createdAt,
@@ -47,12 +44,6 @@ export const commentWithUser = {
   badgeTextColor: user.badgeTextColor,
 }
 
-// Pure type derived from the projection above via Drizzle's column-shape
-// inference. Re-exported by `services/comments/types.ts` so downstream
-// non-server code can refer to it without importing this `.server.ts`
-// module directly. Inferring from the projection keeps the DTO and the
-// SQL projection in lockstep — adding or removing a column from
-// `commentWithUser` propagates to consumers automatically.
 export type CommentWithUser = {
   [K in keyof typeof commentWithUser]: (typeof commentWithUser)[K]['_']['notNull'] extends true
     ? (typeof commentWithUser)[K]['_']['data']
@@ -73,9 +64,6 @@ export interface PendingCommentRow {
   authorLink: string | null
 }
 
-// Post + page UNION used by `pendingComments` / `commentsByIds` and any
-// admin surface that wants to project `(type, owner_id)` back to a
-// human-readable slug + title without a polymorphic JOIN.
 export function targetSlugTitleSubquery(db: NodePgDatabase) {
   return db
     .select({
@@ -101,7 +89,6 @@ export function targetSlugTitleSubquery(db: NodePgDatabase) {
 }
 
 export interface PageOption {
-  /** `metric.public_id`. Wire field is named `key` because the Combobox API stays stable. */
   key: string
   title: string
 }
@@ -152,19 +139,6 @@ export function buildAdminListConditions(filters: AdminListFilters) {
   return conditions
 }
 
-// Welcome-dashboard pending queue. Rolls TWO concerns into a single
-// list so the admin landing page can offer a unified inbox:
-//
-//   - `approval`: `is_pending = true` AND no delete request — newly
-//                 posted (first-time author) OR re-pended after an
-//                 author edit. Approve / reject buttons act on these.
-//   - `deletion`: `delete_requested_at IS NOT NULL` — the author asked
-//                 to remove their own row and the admin still has to
-//                 accept or refuse. Accept / refuse buttons act on
-//                 these.
-//
-// A row that's both pending-approval AND has a delete request reports as
-// `deletion` because that's the more urgent state.
 export type AdminPendingKind = 'all' | 'approval' | 'deletion'
 
 export function adminPendingWhere(kind: AdminPendingKind) {
@@ -182,8 +156,6 @@ export interface AdminPendingRow {
   id: bigint
   createdAt: Date
   deleteRequestedAt: Date | null
-  // Mirrors the DB column nullability — `comment.is_pending` is
-  // declared nullable so legacy seed rows could be backfilled.
   isPending: boolean | null
   content: string | null
   type: EntityType | null
@@ -194,13 +166,6 @@ export interface AdminPendingRow {
   authorLink: string | null
 }
 
-// Comments soft-deleted within this many milliseconds remain visible
-// in `/my/*` so the user can see what was removed (with a「已删除」
-// badge) before the row drops off entirely. Shared between
-// `listMyComments` and `countMyComments` — drift here previously
-// caused `hasMore = offset + comments.length < counts.total` to
-// underestimate the total and either truncate the last page or hide a
-// "load more" button mid-list (see RBAC-REVIEW §O7).
 export const MY_COMMENTS_SOFT_DELETE_GRACE_MS = 7 * 24 * 60 * 60 * 1000
 
 export function mineVisibleClause(userId: bigint) {
@@ -220,12 +185,6 @@ export interface MyCommentsFilters {
   entity?: { type: EntityType; ownerId: bigint }
 }
 
-// Single source of truth for the visitor-self-service query predicate.
-// Wraps `mineVisibleClause` so the soft-delete grace window stays in
-// lockstep across list/count, and adds the optional tab-status / text
-// filters. Keep the first line literally `mineVisibleClause(userId)`
-// so the contract test in `tests/service.my-comments.test.ts` can still
-// grep for the shared visibility helper inside this function body.
 export function mineWhere(userId: bigint, filters: MyCommentsFilters = {}) {
   const clauses = [mineVisibleClause(userId)]
   if (filters.status === 'pending') {
@@ -240,14 +199,6 @@ export function mineWhere(userId: bigint, filters: MyCommentsFilters = {}) {
     clauses.push(eq(comment.ownerId, filters.entity.ownerId))
   }
   if (filters.q && filters.q.trim() !== '') {
-    // ILIKE against the markdown snapshot column `comment.content`
-    // (already a plain-text rollback of the PortableText body), so the
-    // search hits the same words the user sees rendered. Drizzle
-    // parameterises the bound literal so the `%pattern%` interpolation
-    // is not a SQL-injection vector; the per-user row volume is
-    // bounded by the soft-delete window, so a sequential filter is
-    // acceptable here. Uses the typed `ilike` builder to match the
-    // style of `buildAdminListConditions`.
     clauses.push(ilikeEscape(comment.content, filters.q.trim()))
   }
   return and(...clauses)
@@ -260,9 +211,6 @@ export interface MyCommentEntity {
   title: string
 }
 
-// Cap so the Combobox doesn't try to render thousands of options;
-// the title-search input below narrows further when the user has
-// commented on more than this.
 export const MY_COMMENT_ENTITY_LIMIT = 20
 
 export interface EntitySlugTitle {
@@ -271,10 +219,6 @@ export interface EntitySlugTitle {
   title: string
 }
 
-// Batch helper: returns the parent comment row (joined with its
-// author's `user.name`) for every id in `ids`. Used by the `/my/comments`
-// loader to surface the「回复 «name»: «excerpt»」block above each reply
-// without issuing one round-trip per row.
 export interface ParentCommentRow {
   id: bigint
   userId: bigint

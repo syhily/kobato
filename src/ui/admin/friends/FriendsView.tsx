@@ -39,18 +39,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Skeleton } from '@/ui/components/skeleton'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/ui/components/table'
 
-// Same step ladder the comment moderation and tag tables use, so the
-// three admin list pages feel identical when an editor jumps between
-// them. 10 is the default (set in `useFriendsController`).
 const PAGE_SIZE_OPTIONS: { value: string; label: string }[] = [10, 20, 50, 100].map((n) => ({
   value: String(n),
   label: `${n} 条`,
 }))
 
-// `EditFriendDialog`'s prop discriminator:
-//   undefined → dialog closed
-//   null      → dialog open in "new friend" mode
-//   AdminFriendDto → dialog open in "edit existing" mode
 type EditTarget = AdminFriendDto | null | undefined
 
 export function FriendsView() {
@@ -112,7 +105,6 @@ export function FriendsView() {
   // (the full list pre-pagination). Now `state.rows` only holds the
   // current page, so the split would only describe the current
   // 10-row slice — misleading. Drop the breakdown from the header
-  // and let the "包含已隐藏友链" toggle remain the single source of
   // truth for what's in scope.
 
   return (

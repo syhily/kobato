@@ -22,29 +22,6 @@ import {
 import { Button } from '@/ui/components/button'
 import { cn } from '@/ui/lib/cn'
 
-// Universal "block card" Tiptap node. The PortableText ↔ ProseMirror
-// bridge maps opaque PT custom blocks (`musicPlayer`, `mathBlock`)
-// to a single `blockCard` PM node carrying the original PT
-// block in `attrs.payload`. **`solution`** uses a dedicated nested PM node
-// (`SolutionNode`). **`footnoteDefinition`** is omitted from the admin page
-// editor PM doc — see `@/shared/pt/footnote-merge`.
-// This Node spec is what makes the editor round-trip
-// those blocks safely:
-//
-// * Without a Node spec, Tiptap silently drops unknown PM nodes, so
-//   loading a body with any custom block would lose data on the
-//   first save.
-// * Marking the node `atom: true` keeps ProseMirror from recursing
-//   into the payload — the whole card is a single, indivisible unit
-//   from the editor's perspective. Edits happen through dedicated
-//   dialog panels (TODO milestones), not by typing into the card.
-// * `selectable: true` lets the user select the card with a click and
-//   delete it with `Delete` / `Backspace`, which is the expected
-//   keyboard model for editor-as-document.
-//
-// The render path uses a React NodeView so we can show a preview
-// (lucide icon + payload summary) instead of a placeholder bar.
-
 export interface BlockCardAttrs {
   _key: string
   _ptType: string
@@ -65,9 +42,6 @@ export const BlockCardNode = Node.create({
     }
   },
   parseHTML() {
-    // Pasting a `<div data-pt-block-card="…">` is unusual but harmless —
-    // we still register a parse rule so paste from another editor
-    // panel survives without error.
     return [{ tag: 'div[data-pt-block-card]' }]
   },
   renderHTML({ node }) {
@@ -160,13 +134,6 @@ function isInlineEditable(ptType: string): boolean {
   return ptType === 'mathBlock'
 }
 
-// Drop the cached server-rendered fields when the user mutates the
-// source. The save path repopulates them; leaving stale renders in
-// place would silently desync source and preview.
-//
-// Exception: `commitPayload` may attach a fresh math render immediately
-// after `fetchRenderMath` so the card shows server-rendered output
-// instead of raw source.
 function stripPrerenderArtifacts(block: Block): Block {
   if (block._type === 'mathBlock') {
     return stripMathArtifacts(block)
@@ -222,9 +189,6 @@ function CardSummary({ payload }: CardSummaryProps) {
   if (payload === null) {
     return <div className="text-xs text-muted-foreground">无效的负载</div>
   }
-  // 3 block types get specialized summaries; every other PT block type
-  // falls through to the generic `_type: …` debug label. Enumerating
-  // each fallback case explicitly buys nothing here.
   // oxlint-disable-next-line typescript/switch-exhaustiveness-check
   switch (payload._type) {
     case 'musicPlayer':

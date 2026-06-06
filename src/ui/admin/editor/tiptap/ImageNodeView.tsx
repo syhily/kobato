@@ -11,22 +11,6 @@ import { Label } from '@/ui/components/label'
 import { RadioGroup, RadioGroupItem } from '@/ui/components/radio-group'
 import { cn } from '@/ui/lib/cn'
 
-// React NodeView for the image block. Replaces the bare `<img>` that
-// Tiptap's default Image extension renders so the operator can edit
-// alt + caption inline (matching the public renderer's `<figcaption>`)
-// and swap the bytes via the existing image library picker.
-//
-// **State strategy**: alt + caption are double-bound (state ↔ node
-// attrs). Local state keeps the inputs responsive while the user
-// types; on every change we push back through `updateAttributes` so
-// the canonical PT body in the editor reducer stays in sync. There's
-// no save button on the inputs themselves — the autosave loop in the
-// outer shell flushes the whole body on idle.
-//
-// Manual external URL pasting is intentionally removed; every image
-// must come from the media library so the asset host stays predictable
-// and CSP `img-src` remains narrow.
-
 export function ImageNodeView(props: NodeViewProps) {
   const attrs = props.node.attrs as {
     src?: string
@@ -48,12 +32,6 @@ export function ImageNodeView(props: NodeViewProps) {
   const altTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const captionTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  // Keep local state in sync when attrs change from outside this view —
-  // e.g. undo/redo, the library picker callback overwriting the whole
-  // node, or scripted bulk edits. Without these, the inputs keep
-  // showing the stale value the user typed before the external change.
-  // When `commitAlt` echoes back through `updateAttributes`, the synced
-  // value matches local state and `setAlt` becomes a no-op.
   useEffect(() => {
     setAlt(attrs.alt ?? '')
   }, [attrs.alt])

@@ -29,9 +29,7 @@ function resolveLevel(): Level {
   return meta?.PROD === true ? 'info' : 'debug'
 }
 
-// ---------------------------------------------------------------------------
 // Privacy tagging — L3 (direct identifier) fields
-// ---------------------------------------------------------------------------
 
 export const L3_KEYS = new Set([
   'email',
@@ -55,9 +53,7 @@ function tagL3(value: unknown): unknown {
   return str === '' ? str : `{E}${str}{/E}`
 }
 
-// ---------------------------------------------------------------------------
 // Error serialization — preserves cause chains and extra props
-// ---------------------------------------------------------------------------
 
 function serializeError(err: Error): Record<string, unknown> {
   const out: Record<string, unknown> = {
@@ -92,9 +88,7 @@ function applyPrivacyTags(context: LogContext): LogContext {
   return tagged
 }
 
-// ---------------------------------------------------------------------------
 // Pino root instance
-// ---------------------------------------------------------------------------
 
 interface LogContext {
   [key: string]: unknown
@@ -129,9 +123,7 @@ export const root = pino(
   stdout,
 )
 
-// ---------------------------------------------------------------------------
 // Public Logger interface — unchanged from the custom logger
-// ---------------------------------------------------------------------------
 
 export interface Logger {
   debug(message: string, context?: LogContext): void

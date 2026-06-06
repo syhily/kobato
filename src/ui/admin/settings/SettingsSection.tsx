@@ -24,11 +24,6 @@ interface SettingsRowProps {
   children: SettingsRowChildren
 }
 
-// Two-column field row: label on the left, control + hint + error on
-// the right. Composed on top of shadcn's `<Field>` primitives so the
-// row inherits the upstream `data-invalid` / `aria-describedby`
-// semantics. On narrow viewports the columns collapse into a stacked
-// vertical block.
 export function SettingsRow({ label, htmlFor, hint, error, children }: SettingsRowProps) {
   const generatedId = useId()
   const descriptionId = hint ? `${generatedId}-description` : undefined
@@ -77,11 +72,6 @@ interface SettingsCheckboxRowProps {
   disabled?: boolean
 }
 
-// Two-column row whose right side is the canonical "checkbox +
-// inline label" pair. Replaces the old hand-rolled
-// `<div className="flex items-center gap-2"><Checkbox/><label/></div>`
-// markup so the same a11y / `data-invalid` semantics that
-// `SettingsRow` provides apply here too.
 export function SettingsCheckboxRow({
   rowLabel,
   hint,
@@ -114,10 +104,6 @@ interface ReadOnlyFieldProps {
   hint?: ReactNode
 }
 
-// Shows a value the editor cannot change (bucket-A / env-only fields).
-// Renders the value in a muted card-style box so it visually reads as
-// "this is what's currently in effect" rather than "this is a form
-// control you forgot to interact with".
 export function ReadOnlyField({ label, value, hint }: ReadOnlyFieldProps) {
   return (
     <SettingsRow label={label} hint={hint}>

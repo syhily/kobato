@@ -11,20 +11,6 @@ export interface PaginationProps {
   rootPath: string
 }
 
-// Public-site Pagination ---------------------------------------------------
-//
-// Visual contract is shared with the admin shell pagination
-// (`src/ui/components/pagination.tsx`). Both surfaces compose the
-// same `chipBase + chipResting/chipActive` Tailwind chains so a chip
-// reads identically in `/page/2` and in `/admin/posts`, and share
-// the same windowing algorithm (`computePageWindow` in
-// `@/shared/utils/pagination`) so the rendered chip sequence is identical
-// for any (current, total) tuple. The only differences are:
-//
-//   * Element shape — public chips are `<Link>` (real navigation) and
-//     `<span>` (ellipsis / current page); admin chips are `<button>`
-//     (callback-driven). The chip class treats both as equivalent.
-//   * Neither view renders prev/next.
 export function Pagination({ current, total, rootPath }: PaginationProps) {
   const items = computePageWindow({ current, total })
   if (items.length === 0) {
@@ -35,9 +21,6 @@ export function Pagination({ current, total, rootPath }: PaginationProps) {
       <ul data-slot="pagination-content" className="flex flex-row flex-wrap items-center justify-center gap-2">
         {items.map((item, i) =>
           item === 'ellipsis' ? (
-            // Index suffix because the same array can carry two ellipses
-            // (left + right) in the windowed layout; the page-number key
-            // is unique only inside the number subset.
             // oxlint-disable-next-line react/no-array-index-key
             <Ellipsis key={`ellipsis-${i}`} />
           ) : (
@@ -55,9 +38,6 @@ function Ellipsis() {
       <span
         aria-hidden
         data-slot="pagination-ellipsis"
-        // Ellipsis stays on the resting palette but suppresses the
-        // hover swap — there's nothing to navigate to. `cursor-default`
-        // overrides the link/button cursor users expect on a chip.
         className={cn(chipBase, chipResting, 'cursor-default hover:bg-chip-hover-bg hover:text-chip-hover-fg')}
       >
         <MoreHorizontalIcon className="size-4" aria-hidden />
@@ -86,9 +66,6 @@ function PageItem({ current, pageNum, rootPath }: PageItemProps) {
   }
   const base = rootPath.endsWith('/') ? rootPath.slice(0, -1) : rootPath
   const to = pageNum === 1 ? rootPath : `${base}/page/${pageNum}`
-  // Adjacent pages (±1) are very likely the user's next destination, so we
-  // ask React Router to prefetch them on render. Other windowed entries use
-  // intent-based prefetching to keep the network quiet.
   const prefetch = Math.abs(pageNum - current) === 1 ? 'render' : 'intent'
   return (
     <li data-slot="pagination-item">

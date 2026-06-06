@@ -11,13 +11,6 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/ui/components/popover
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/components/select'
 import { cn } from '@/ui/lib/cn'
 
-// Combined date + time picker, modelled on
-// https://github.com/rudrodip/shadcn-date-time-picker — single Popover
-// holding a `<Calendar>` next to three scroll columns (小时 / 分钟
-// / 上午下午). The AM/PM column is localised to 上午 / 下午 per the
-// review brief; the wire contract stays the 24h `YYYY-MM-DDTHH:mm`
-// string the rest of the editor reads.
-
 export interface DateTimePickerProps {
   value: string
   onChange: (next: string) => void
@@ -40,13 +33,6 @@ export function DateTimePicker({ value, onChange, disabled, id }: DateTimePicker
   const parsed = parseLocal(value)
   const triggerId = id ?? 'datetime-picker'
 
-  // Year-dropdown range. The native `<select>` opens scrolled to its
-  // current value, so giving it a generous backward range lets the
-  // operator scroll up to pick older years while the most recent
-  // five (current year + the four before) sit at the bottom of the
-  // initial viewport — matching the "recent 5 by default, scroll for
-  // older" UX brief. We extend the upper bound slightly so a future
-  // 计划发布 can still aim a year or two ahead.
   const { startMonth, endMonth } = useMemo(() => {
     const now = new Date()
     const currentYear = now.getFullYear()

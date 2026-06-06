@@ -6,13 +6,8 @@ import { CheckIcon } from 'lucide-react'
 import { cn } from '@/ui/lib/cn'
 
 function Checkbox({ className, ...props }: ComponentProps<typeof BaseCheckbox.Root>) {
-  // Base UI's `Checkbox.Root` renders a `<span role="checkbox">`, not a
-  // `<button>` like Radix does (intentional change to fix wrapping-label
-  // a11y, see base-ui PR #3205). On a span, `width` / `height` from
-  // `size-4` are ignored unless we promote the box to a block-level
-  // formatting context. Without `inline-flex`, the box collapses to
-  // a 1px tall vertical line in the rendered DOM (visible in the user
-  // table screenshot before this fix).
+  // Base UI renders `<span role="checkbox">` (not `<button>`), so we need
+  // `inline-flex` to give `size-4` a block-level formatting context.
   return (
     <BaseCheckbox.Root
       data-slot="checkbox"

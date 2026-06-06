@@ -38,11 +38,6 @@ interface BucketCardProps {
   onClear: () => void
 }
 
-// Self-contained card for a single Redis bucket: shows the SCAN
-// stats, exposes an inline edit form for prefix + TTL, and surfaces
-// a destructive "清空该分组" action. Each card owns its own draft +
-// fetcher so a per-card save never blocks (or accidentally overwrites)
-// a sibling card's in-flight edits.
 export function BucketCard({ bucket, settings, allBuckets, isClearPending, clearStatus, onClear }: BucketCardProps) {
   const [isEditing, setIsEditing] = useState(false)
   const [snapshot, setSnapshot] = useState<BucketDraft>(() => snapshotFromSettings(settings))
@@ -55,12 +50,6 @@ export function BucketCard({ bucket, settings, allBuckets, isClearPending, clear
   // this one.
   const [savingFromHere, setSavingFromHere] = useState(false)
 
-  // Re-baseline both snapshot and draft when the parent loader serves
-  // a new authoritative value (e.g. after this card's own save, or
-  // after another card's save which also revalidates the layout).
-  // We only re-baseline the draft when NOT editing — otherwise a
-  // sibling card's revalidation would silently overwrite the editor's
-  // typed-but-unsaved values.
   useEffect(() => {
     const fresh = snapshotFromSettings(settings)
     submittedDraftRef.current = null
@@ -91,9 +80,6 @@ export function BucketCard({ bucket, settings, allBuckets, isClearPending, clear
     [commit, onSaved],
   )
 
-  // Auto-exit the edit mode on a successful save originated from this
-  // card. The "saved" status sticks until the next submission, so we
-  // gate on the `savingFromHere` flag (cleared once we've reacted).
   useEffect(() => {
     if (saveStatus === 'saved' && savingFromHere) {
       setIsEditing(false)
@@ -101,9 +87,6 @@ export function BucketCard({ bucket, settings, allBuckets, isClearPending, clear
     }
   }, [saveStatus, savingFromHere])
 
-  // Build the "other buckets" view from the parent's `allBuckets`
-  // every render — that way if a sibling card just saved a rename, the
-  // conflict check on this card immediately reflects the new value.
   const otherBuckets = useMemo(() => {
     const all: { id: CacheBucketId; prefix: string }[] = [
       { id: 'og', prefix: allBuckets.og.prefix },
@@ -130,9 +113,6 @@ export function BucketCard({ bucket, settings, allBuckets, isClearPending, clear
       ttlHours: draft.ttlHours,
     }
     submittedDraftRef.current = { value: submittedDraft }
-    // The cache section is atomic on the server — re-send the other
-    // two buckets exactly as they came from the loader so a per-card
-    // save can't accidentally clobber a sibling bucket.
     void save({
       cache: {
         ...allBuckets,
@@ -150,10 +130,6 @@ export function BucketCard({ bucket, settings, allBuckets, isClearPending, clear
   }
 
   const onEdit = () => {
-    // Re-baseline draft to the latest server snapshot before opening
-    // the form so the editor sees what's actually in effect (matters
-    // when a sibling save just revalidated this card's `settings`
-    // while in read-only mode).
     setDraft(snapshot)
     setIsEditing(true)
   }
@@ -162,16 +138,6 @@ export function BucketCard({ bucket, settings, allBuckets, isClearPending, clear
   const prefixId = `cache-${bucket.id}-prefix`
   const ttlId = `cache-${bucket.id}-ttl`
 
-  // Shared action-bar buttons rendered in BOTH read-only AND edit
-  // modes. Visual ordering, left-to-right:
-  //   1. "取消" (edit mode) / "编辑" (read-only mode) — entry / exit
-  //      affordance for the form.
-  //   2. "保存配置" (edit mode only) — the form's submit. Adjacent to
-  //      its inverse (取消) so the pair reads as a single decision.
-  //   3. "清空该分组" — pinned LAST so it always sits on the far
-  //      right, regardless of whether the form is open. The
-  //      destructive action stays in a stable spot the editor can
-  //      always reach without scanning the bar's contents.
   const actionButtons = (
     <>
       {isEditing ? (
@@ -199,10 +165,6 @@ export function BucketCard({ bucket, settings, allBuckets, isClearPending, clear
     </>
   )
 
-  // Status line that lives next to the action buttons. In edit mode
-  // it surfaces the form-level status (尚未保存 / 保存中 / 配置冲突
-  // / 已保存 / 错误信息); in read-only mode it surfaces clear-status
-  // or the post-save "配置已更新" hint.
   const statusLine = isEditing ? (
     <BucketSaveStatus
       isDirty={isDirty}
@@ -218,11 +180,6 @@ export function BucketCard({ bucket, settings, allBuckets, isClearPending, clear
     />
   )
 
-  // Bottom action bar shared by both modes. The submit button (only
-  // present in edit mode) is rendered through `actionButtons` above
-  // and naturally resolves to the surrounding `<form>` when editing
-  // because the action bar lives inside that form. In read-only mode
-  // the same markup is rendered as a plain footer div.
   const actionBar = (
     <div className="flex flex-wrap items-center justify-end gap-3 border-t pt-4">
       {statusLine ? <div className="mr-auto">{statusLine}</div> : null}

@@ -2,17 +2,9 @@ import { describe, expect, it } from 'vitest'
 
 import { computePageWindow, DENSE_THRESHOLD } from '@/shared/utils/pagination'
 
-// Pins the page-window algorithm shared between the public site
-// (`src/ui/post/pagination/Pagination.tsx`) and the admin shell
-// the two surfaces onto this single function so the rendered chip
-// ladder is identical for any `(current, total)` tuple.
-//
-// The behaviour is anchored to public's pre-3c-iii implementation
-// (DENSE up to 6, three windowed branches: nearStart / nearEnd /
-// middle). Admin's previous `buildPageList` was REPLACED by this
-// function, so legacy admin chip sequences are intentionally
-// not preserved. If the admin sequence regresses here, that is a
-// real defect — file a fix; do NOT update these tests blindly.
+// Pins the page-window algorithm shared between the public site and
+// the admin shell so the rendered chip ladder is identical for any
+// `(current, total)` tuple.
 describe('computePageWindow', () => {
   describe('edge cases', () => {
     it('returns [] for total <= 1 (caller renders nothing)', () => {
@@ -26,8 +18,6 @@ describe('computePageWindow', () => {
     })
 
     it('keeps DENSE_THRESHOLD pinned at 6', () => {
-      // The threshold is part of the visual contract — two surfaces
-      // depend on the same chip count near the boundary.
       expect(DENSE_THRESHOLD).toBe(6)
     })
   })
@@ -87,8 +77,7 @@ describe('computePageWindow', () => {
 
       it('renders nearEnd layout for current=4..7', () => {
         // current=4 is also nearStart-eligible (4 < 5); nearStart wins
-        // because the algorithm checks it first. current=5 is the first
-        // pure nearEnd case for total=7 (since total - 4 = 3, current=5 > 3).
+        // because the algorithm checks it first.
         expect(computePageWindow({ current: 5, total: 7 })).toEqual([1, 'ellipsis', 3, 4, 5, 6, 7])
         expect(computePageWindow({ current: 7, total: 7 })).toEqual([1, 'ellipsis', 3, 4, 5, 6, 7])
       })
@@ -116,11 +105,8 @@ describe('computePageWindow', () => {
     })
 
     it('emits exactly 7 chips in windowed mode (5 numbers + 2 ellipses, or 7 numbers w/ 1 ellipsis)', () => {
-      // nearStart: 5 leading numbers + ellipsis + last = 7
       expect(computePageWindow({ current: 1, total: 100 }).length).toBe(7)
-      // nearEnd: first + ellipsis + 5 trailing numbers = 7
       expect(computePageWindow({ current: 100, total: 100 }).length).toBe(7)
-      // middle: first + ellipsis + 3 mid + ellipsis + last = 7
       expect(computePageWindow({ current: 50, total: 100 }).length).toBe(7)
     })
   })

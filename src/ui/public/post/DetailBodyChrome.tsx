@@ -81,16 +81,6 @@ export function DetailBodyChrome({
       {mode === 'admin' && editHref && (
         <Link
           to={editHref}
-          // The parent card uses `p-4 md:p-8`, so anchoring the icon
-          // at `top-4/right-4` (and `top-8/right-8` on md+) makes the
-          // button's top edge meet the title's top edge — i.e. on the
-          // same horizontal line — while staying flush with the
-          // title's right edge instead of poking into the card's
-          // outer padding. Translate-y nudges the button down so its
-          // vertical center sits closer to the title's optical
-          // baseline (the h1's line-height is ~1.6× of `text-[1.5rem]`,
-          // and the button is 8/8 — half the line height minus half
-          // the button is roughly +2px / +6px at each breakpoint).
           className="absolute top-4 right-4 inline-flex h-8 w-8 translate-y-0.5 items-center justify-center rounded-md text-ink-4 transition-colors hover:bg-surface-soft hover:text-ink-1 md:top-8 md:right-8 md:translate-y-1"
           aria-label="编辑"
           title="编辑"
@@ -126,10 +116,6 @@ export function DetailBodyChrome({
       </div>
       <TableOfContents headings={headings} toc={toc} />
       <div className={contentWrapperClassName}>
-        {/* `post-content` is the compound suffix targeted by
-            `@utility prose-blog { &.post-content {…} }` in
-            `tailwind.css` for code-block / shiki / inline-code
-            typography fine-tuning on rendered MDX bodies. */}
         <div ref={postContentRef} className={cn('post-content', 'prose-blog prose prose-lg max-w-none')}>
           {children}
         </div>

@@ -1,5 +1,3 @@
-// utils/boxLog.ts
-
 type BoxStyle = 'single' | 'double' | 'round' | 'bold'
 
 interface BoxChars {
@@ -25,7 +23,6 @@ interface BoxLogOptions {
   align?: 'left' | 'center' | 'right'
 }
 
-// Implementation
 export function boxLog(lines: string | readonly string[], options: BoxLogOptions = {}): void {
   const { style = 'double', padding = 2, title, align = 'left' } = options
 

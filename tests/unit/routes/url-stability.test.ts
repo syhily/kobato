@@ -3,7 +3,6 @@ import { describe, expect, it } from 'vitest'
 import routes from '@/routes'
 
 // External URL contract. AGENTS.md is explicit: "public URL / feed URL /
-// image endpoint / sitemap / WordPress 兼容路由 / SEO meta 输出 must remain
 // stable". A regression here is potentially user-visible (broken bookmarks,
 // search engine deindex, RSS reader churn). This file pins every public
 // route in the manifest so any rename forces an explicit test update.

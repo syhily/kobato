@@ -44,7 +44,6 @@ export function resolveSlugForTaxonomy(explicit: string | undefined, name: strin
 }
 
 // Pre-flight uniqueness guard for create. `entityLabel` is the
-// user-facing noun (e.g. "分类", "标签") used in the 409 body.
 export async function ensureUniqueOnCreateTaxonomy<T extends { id: bigint }>(
   findByName: (name: string) => Promise<T | null>,
   findBySlug: (slug: string) => Promise<T | null>,

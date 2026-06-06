@@ -1,12 +1,3 @@
-// Display labels for the `language-*` class that lands on `<pre>` /
-// `<code>` after Shiki / Markdown pre-render. Used by `CodeBlock` to
-// render the small badge in the code chrome. Living in `@/ui/lib` so
-// the 4KB map doesn't bloat the component file (it's data, not view).
-//
-// Keep entries lowercase — `LANGUAGE_CLASS` in CodeBlock.tsx is the
-// `/i` regex that extracts the raw identifier; we normalise to lower
-// before the lookup so a user-typed `language-TypeScript` still
-// matches `ts` / `typescript`.
 export const LANGUAGE_MAP: Record<string, string> = {
   html: 'HTML',
   htm: 'HTML',

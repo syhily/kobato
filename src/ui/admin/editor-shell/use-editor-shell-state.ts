@@ -53,7 +53,6 @@ export function useEditorShellState<
   const shellArgs =
     isEditing && detail ? { isEditing: true as const, detail } : { isEditing: false as const, detail: undefined }
 
-  // --- Sub-hooks ------------------------------------------------------------
   const bodyState = useEditorBodyState(shellArgs)
   const { body, setBody, bodyKey, initialBody, lastSavedBodyRef, replaceBody, markBodySaved } = bodyState
 
@@ -63,11 +62,9 @@ export function useEditorShellState<
   const revisionManager = useEditorRevisionManager(shellArgs)
   const { expectedToken, latestRevision, publishedRevision, updateAfterSave } = revisionManager
 
-  // --- Live preview pane ----------------------------------------------------
   const { previewOpen, setPreviewOpen, metaOpen, setMetaOpen, isLg, editorScrollRef, previewScrollRef } =
     useEditorShellLayout()
 
-  // --- Status chip ---------------------------------------------------------
   const [status, setStatus] = useState<EditorShellStatus>({ kind: 'idle' })
   const [displaySaveAtMs, setDisplaySaveAtMs] = useState<number | null>(() => {
     if (!isEditing || detail === undefined) {

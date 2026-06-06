@@ -3,9 +3,6 @@ import type { ComponentProps } from 'react'
 import { cn } from '@/ui/lib/cn'
 import { cva, type VariantProps } from '@/ui/lib/cva'
 
-// Adapted from the upstream `shadcn@latest add empty` registry item.
-// No behavioural changes vs. upstream — `Empty` is a pure composition
-// of Tailwind utilities so the project picks it up verbatim.
 function Empty({ className, ...props }: ComponentProps<'div'>) {
   return (
     <div

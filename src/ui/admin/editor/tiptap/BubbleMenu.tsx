@@ -24,18 +24,6 @@ import { Button } from '@/ui/components/button'
 import { Separator } from '@/ui/components/separator'
 import { cn } from '@/ui/lib/cn'
 
-// BubbleMenu surface: floats above the **non-empty** text selection with
-// the most common inline-format affordances + the link popover toggle.
-// While a `mathInline` mark is active under a collapsed caret we still
-// show the menu so the operator can edit TeX (`MathInlinePanel`).
-//
-// Footnote refs open the dedicated dialog when the operator **clicks**
-// the superscript in the canvas (`PageBodyEditor` handleClick); insert
-// stays on the Toolbar and `/` slash menu only.
-//
-// **shouldShow** hides inside tables (`TableBubbleMenu`), code blocks
-// (`CodeBlockBubbleMenu`), and on atom node selections.
-
 export interface PageBubbleMenuProps {
   editor: Editor
 }
@@ -75,10 +63,6 @@ function targetAllowsNativeFocusInsideBubble(event: { target: EventTarget | null
 export function PageBubbleMenu({ editor }: PageBubbleMenuProps) {
   const [linkOpen, setLinkOpen] = useState(false)
 
-  // BubbleMenu portals its children without a React parent update: the menu
-  // chrome repositions via ProseMirror, but `mathInlinePanelApplies` would
-  // otherwise read stale closures unless we subscribe to transactions.
-  // Each selector returns a primitive so referential equality is stable.
   const showMathPanel = useEditorState({
     editor,
     selector: ({ editor: ed }) => mathInlinePanelApplies(ed),
@@ -99,36 +83,20 @@ export function PageBubbleMenu({ editor }: PageBubbleMenuProps) {
         if (instance.isActive('table')) {
           return false
         }
-        // Hide inside code blocks — Tiptap's `codeBlock` ignores
-        // every inline mark we offer here, and the dedicated
-        // `CodeBlockBubbleMenu` handles language selection in this
-        // context.
         if (instance.isActive('codeBlock')) {
           return false
         }
-        // Hide when an atom node is the active selection (image,
-        // blockCard, …). Those nodes own their own NodeView UI for
-        // editing — the inline-format affordances in this menu would
-        // float uselessly above them and trap focus.
         const nodeSelection = (state.selection as { node?: { isAtom?: boolean } }).node
         if (nodeSelection?.isAtom === true) {
           return false
         }
-        // Require a real text range for the format row; collapsed caret
-        // only surfaces the math edit panel (see below).
         if (!state.selection.empty) {
           return true
         }
         return mathInlinePanelApplies(instance)
       }}
-      // Tiptap renders the menu element as a positioned wrapper; we
-      // style it minimally and let the inner row handle visuals.
       className="z-50 rounded-xl border bg-popover text-popover-foreground shadow-md"
     >
-      {/* Capture mousedown so the editor keeps its ProseMirror selection
-       * while the operator clicks Σ / bold / … — without this, focus
-       * jumps to the button and insertMathInline sees a collapsed
-       * selection (or the wrong range). */}
       <div
         className="contents"
         onMouseDownCapture={(event) => {
@@ -264,10 +232,6 @@ function Toggle({ title, state, onClick, disabled, children }: ToggleProps) {
   )
 }
 
-// Insert a fresh `mathInline` mark at the current selection. We
-// route through the existing `MathInlineMark` spec so the round-trip
-// stays clean even when the operator never opens the inline-mark
-// panel to edit the TeX source.
 async function insertMathInline(editor: Editor) {
   if (mathInlinePanelApplies(editor)) {
     return
@@ -303,8 +267,6 @@ async function insertMathInline(editor: Editor) {
     })
     .run()
 
-  // Select the inserted run so the bubble swaps to the TeX panel and
-  // extendMarkRange keeps a stable target for Apply.
   const end = editor.state.selection.from
   const start = end - tex.length
   if (start >= 0 && tex.length > 0) {

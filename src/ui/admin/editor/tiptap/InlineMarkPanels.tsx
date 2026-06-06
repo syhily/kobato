@@ -12,12 +12,6 @@ import { Label } from '@/ui/components/label'
 import { SafeHtml } from '@/ui/components/safe-html'
 import { Textarea } from '@/ui/components/textarea'
 
-// Inline-mark editing panels that swap into the BubbleMenu when the
-// active selection sits on a `mathInline` mark.
-//
-// Live preview uses `useAdminMathPreview` → `admin.renderMath` (same
-// KaTeX renderer as the save-time prerender pass).
-
 interface MathInlinePanelProps {
   editor: Editor
 }
@@ -45,18 +39,10 @@ function snapshotMathInlineTex(ed: Editor): string {
 export function MathInlinePanel({ editor }: MathInlinePanelProps) {
   const [tex, setTex] = useState('')
   const [applying, setApplying] = useState(false)
-  // TeX when this editing session began (caret last matched the formula in PM).
-  // While focus sits in the textarea, PM selection can drift; cancel restores
-  // this baseline and re-syncs the textarea + preview.
   const baselineTexRef = useRef('')
-  // Track in-flight `fetchRenderMath` so a rapid double-Apply discards the
-  // earlier render before its `insertContent` would clobber the newer one.
   const applyAbortRef = useRef<AbortController | null>(null)
   const { previewHtml, renderError, showSpinner } = useAdminMathPreview(tex, false)
 
-  // Align panel TeX with the document slice (attrs can lag behind the
-  // visible text until Apply). Run after paint so the bubble menu has
-  // already restored the selection from the Σ click.
   useLayoutEffect(() => {
     editor.commands.extendMarkRange('mathInline')
     const snap = snapshotMathInlineTex(editor)
@@ -66,9 +52,6 @@ export function MathInlinePanel({ editor }: MathInlinePanelProps) {
 
   const apply = () => {
     void (async () => {
-      // Abort any in-flight render from a prior Apply click. The
-      // signal is checked after `await fetchRenderMath` so a stale
-      // response is dropped instead of overwriting the new one.
       applyAbortRef.current?.abort()
       const controller = new AbortController()
       applyAbortRef.current = controller
@@ -76,9 +59,6 @@ export function MathInlinePanel({ editor }: MathInlinePanelProps) {
       editor.chain().focus().extendMarkRange('mathInline').run()
       const prev = editor.getAttributes('mathInline') as { _key?: string }
       const nextKey = prev._key !== undefined && prev._key !== '' ? prev._key : generateBlockKey()
-      // Pin the PM range we matched up front. If the user clicks back
-      // into the document during the await, PM selection moves and a
-      // naïve `deleteSelection()` would corrupt the wrong span.
       const pinnedRange = (() => {
         const markType = editor.state.schema.marks.mathInline
         if (markType === undefined) {
@@ -136,10 +116,6 @@ export function MathInlinePanel({ editor }: MathInlinePanelProps) {
   }
 
   const cancel = () => {
-    // While typing in the textarea the browser focus leaves ProseMirror; without
-    // `focus()` + `extendMarkRange` the stored selection often doesn't cover the
-    // whole formula, so snapshotting the doc reads the wrong TeX (cancel looked
-    // like a no-op). Then jump past the mark so the bubble menu hides.
     editor.chain().focus().extendMarkRange('mathInline').run()
     let restored = snapshotMathInlineTex(editor)
     if (restored.trim() === '') {

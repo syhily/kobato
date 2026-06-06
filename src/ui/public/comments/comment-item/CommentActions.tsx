@@ -41,7 +41,6 @@ export function CommentActions({ comment, mode: propMode, onEditAdmin, onEditOwn
     onSuccess: () => leaf.onDeleted(comment.id),
   })
 
-  // Visitor-scoped delete-request toggles.
   const requestDelete = useMutation({
     ...orpcQuery.comments.requestDeleteOwn.mutationOptions(),
     onSuccess: () => void revalidator.revalidate(),
@@ -53,8 +52,6 @@ export function CommentActions({ comment, mode: propMode, onEditAdmin, onEditOwn
 
   const isOwnedByCurrentUser = leaf.currentUserId !== null && String(comment.userId) === leaf.currentUserId
   const hasPendingDelete = comment.deleteRequestedAt !== null && comment.deleteRequestedAt !== undefined
-  // Admin already has the admin-edit affordance below; don't duplicate
-  // the button for an admin who happens to also own the row.
   const showOwnAffordances = isOwnedByCurrentUser && !leaf.admin
   const ownEditDisabled = hasPendingDelete || requestDelete.isPending || cancelDelete.isPending
   const deleteToggleDisabled = requestDelete.isPending || cancelDelete.isPending
@@ -72,12 +69,6 @@ export function CommentActions({ comment, mode: propMode, onEditAdmin, onEditOwn
         type="button"
         className={cn(commentFooterButtonClass, 'hover:text-brand')}
         data-rid={comment.id}
-        // Keep the currently-focused reply/edit editor focused while the
-        // click resolves. Without this, mousedown blurs the
-        // contenteditable, `:focus-within` on the editor wrapper drops,
-        // the toolbar collapses from `flex` to `hidden`, and the layout
-        // shift between mousedown and mouseup makes the click miss the
-        // button — the user has to click "回复" twice.
         onMouseDown={(event) => event.preventDefault()}
         onClick={handleReply}
       >

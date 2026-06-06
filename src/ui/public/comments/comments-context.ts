@@ -3,21 +3,10 @@ import { createContext, use } from 'react'
 import type { CommentItemWire as CommentItemType } from '@/shared/contracts/comments'
 import type { CommentFormUser } from '@/shared/types/catalog'
 
-// Public-detail comments island state, lifted into a Context so the recursive
-// `<CommentItem>` tree no longer threads `actions={…}` / `replyForm` /
-// `replyToId` through every level via render-prop callbacks.
-//
-// The reducer / `createCommentTreeState` factory live in `Comments.tsx`
-// alongside the orchestrator that owns them; this module ships only the
-// types and the consumer hook, so leaf components don't import the reducer.
-
 export interface CommentTreeState {
   items: CommentItemType[]
-  /** Currently visible "root" count for "load more" pagination. */
   rootsLoaded: number
-  /** Total root comments according to the latest server response. */
   rootsTotal: number
-  /** Currently active reply target id, or 0 when replying to the root. */
   replyToId: number
 }
 
@@ -34,37 +23,20 @@ export type CommentTreeAction =
 export interface CommentsContextValue {
   commentKey: string
   totalCount: number
-  /** Pre-resolved admin flag so leaf components don't re-derive it. */
   admin: boolean
   user?: CommentFormUser
   state: CommentTreeState
-  /** Reply target id resolved against the visible tree, or `0` when none. */
   activeReplyToId: number
-  /** Set of comment ids owned by the current anonymous token holder. */
   myCommentIds: Set<string>
-  /** Per-comment token expiration timestamp (ms) for editable-hint rendering. */
   myCommentExpiresAt: Map<string, number>
-  /**
-   * The logged-in viewer's user id (stringified `user.id`) when a
-   * session is mounted, or `null` for anonymous renders. Drives the
-   * inline self-edit / 申请删除 affordances on rows authored by the
-   * current user. Separate from the legacy anonymous-token mechanism
-   * (`myCommentIds`) — both can be active at once and they target
-   * different API surfaces (visitor-scoped `comment.updateOwn` vs.
-   * legacy token-scoped `comment.edit`).
-   */
   currentUserId: string | null
-  /** Actions surfaced to leaf components (no render-prop drilling). */
   onReply: (rid: number) => void
   onCancelReply: () => void
   onEdited: (comment: CommentItemType) => void
   onApproved: (id: bigint | string) => void
   onDeleted: (id: bigint | string) => void
-  /** Dismiss the editable-hint for a comment and revoke its token cookie. */
   onDismissMyComment: (id: bigint | string) => void
-  /** Forwarded so `<Comments.LoadMore>` can append to the visible tree. */
   dispatch: React.Dispatch<CommentTreeAction>
-  /** The reply form node, rendered inline at the active reply target. */
   replyForm: React.ReactNode
 }
 

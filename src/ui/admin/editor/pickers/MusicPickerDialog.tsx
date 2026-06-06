@@ -10,7 +10,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Input } from '@/ui/components/input'
 
 // Music picker. Pulls from the local admin library, with an inline
-// "添加音乐" affordance that opens the same `AddMusicDialog` used at
 // `/admin/library/music`. Newly added tracks are prepended to the picker
 // list so the operator can pick them straight into the article without
 // leaving the editor — `addMusic` already downloads the audio + cover

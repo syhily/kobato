@@ -19,9 +19,6 @@ import {
 import { Input } from '@/ui/components/input'
 import { Label } from '@/ui/components/label'
 
-// Default text colour offered to admins the moment they enable the
-// override. Matches the public site's "dark navy on light badge" pairing
-// so the picker lands on a sensible value rather than `#000000`.
 const DEFAULT_BADGE_TEXT_COLOR = '#ffffff'
 
 export interface EditUserDialogProps {
@@ -43,13 +40,6 @@ export function EditUserDialog({ comment, onClose, onSaved }: EditUserDialogProp
   const [link, setLink] = useState('')
   const [badgeName, setBadgeName] = useState('')
   const [badgeColor, setBadgeColor] = useState('#008c95')
-  // Two-state UX for the optional text-colour override:
-  //   `useTextOverride === false` → send `null` to clear the override
-  //                                  (server falls back to WCAG auto-pick).
-  //   `useTextOverride === true`  → send the picked hex verbatim.
-  // The colour picker stays mounted either way so toggling on doesn't
-  // wipe the previously selected swatch — only the form submission
-  // payload reads `useTextOverride`.
   const [useTextOverride, setUseTextOverride] = useState(false)
   const [badgeTextColor, setBadgeTextColor] = useState(DEFAULT_BADGE_TEXT_COLOR)
 

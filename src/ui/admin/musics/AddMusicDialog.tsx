@@ -21,11 +21,6 @@ import { Label } from '@/ui/components/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/components/select'
 import { Skeleton } from '@/ui/components/skeleton'
 
-// Result-count options. The schema caps `limit` at 30 server-side
-// (see `searchMusicSchema` in `@/server/domains/music/schema`); the upper
-// bound here mirrors that. 10 is the default because the netease
-// front-end usually returns ~10 high-relevance hits before quality
-// drops off — going higher mostly adds longer-tail noise.
 const RESULT_LIMIT_OPTIONS: { value: string; label: string }[] = [5, 10, 15, 20, 30].map((n) => ({
   value: String(n),
   label: `${n} 条`,
@@ -34,27 +29,8 @@ const RESULT_LIMIT_OPTIONS: { value: string; label: string }[] = [5, 10, 15, 20,
 export interface AddMusicDialogProps {
   open: boolean
   onClose: () => void
-  /**
-   * Fires after each successful "添加" so the parent list can prepend
-   * the new row. The dialog stays open after each add to support
-   * adding several songs in sequence.
-   */
   onAdded: (music: AdminMusicDto) => void
 }
-
-// Add-music dialog. Search is keyed on the netease provider only —
-// see `MetingSource` in `@/shared/types/music` and the rationale in the
-// plan: meting's per-provider responses diverge enough that we
-// commit to a single provider for the first iteration.
-//
-// Workflow:
-//   1. Operator types a keyword → `searchMusic` returns 10 hits, each
-//      pre-resolved with `coverUrl` (small thumb) and `previewUrl`
-//      (short-lived netease CDN link).
-//   2. Operator clicks "试听" → an inline `<audio>` plays the preview
-//      URL directly. We never persist the previewUrl.
-//   3. Operator clicks "添加" → `addMusic({ source, sourceId })` and
-//      the row gets prepended to the parent list. Dialog stays open.
 
 export function AddMusicDialog({ open, onClose, onAdded }: AddMusicDialogProps) {
   const [keyword, setKeyword] = useState('')
@@ -86,7 +62,6 @@ export function AddMusicDialog({ open, onClose, onAdded }: AddMusicDialogProps) 
       setErrorMessage(null)
       setAddingSourceId(null)
       onAdded(payload.music)
-      // Mark the just-added hit so the list shows a clear "已添加" cue.
       setResults(
         (prev) =>
           prev.map((hit) => (hit.sourceId === payload.music.sourceId ? { ...hit, _added: true } : hit)) as typeof prev,
@@ -144,18 +119,11 @@ export function AddMusicDialog({ open, onClose, onAdded }: AddMusicDialogProps) 
       audio.src = previewUrl
       audio.play().catch(() => undefined)
       setPreviewSourceId(hit.sourceId)
-      // Reset progress immediately; the `loadedmetadata` listener
-      // below populates `duration` once the headers come in, and
-      // `timeupdate` then drives `currentTime`.
       setPreviewProgress(INITIAL_PREVIEW_PROGRESS)
     },
     [previewSourceId],
   )
 
-  // Seek by clicking the progress bar of the currently-playing hit.
-  // The handler is at the top level so each row's progress bar can
-  // close over the same audio ref; the `disabled` styling on the
-  // bar prevents seeks before metadata arrives.
   const onSeek = useCallback((event: MouseEvent<HTMLDivElement>) => {
     const audio = audioRef.current
     if (audio === null || !Number.isFinite(audio.duration) || audio.duration <= 0) {

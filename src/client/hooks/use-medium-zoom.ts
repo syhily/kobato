@@ -18,7 +18,6 @@ import { type RefObject, useEffect } from 'react'
 //   late-arriving images (Suspense-streamed MDX, lazy-imported MDX
 //   components, IntersectionObserver-driven reveal animations, etc.)
 //   are picked up the moment they enter the container — fixing the
-//   "时灵时不灵" race that previously depended on whether the MDX body
 //   had committed before the first effect ran.
 // - Cleanup detaches everything currently attached and disconnects the
 //   observer, so a route swap (or the container element being

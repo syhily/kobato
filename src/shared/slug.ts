@@ -12,9 +12,7 @@ export const DERIVED_SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
 // magic number.
 export const SLUG_MAX = 80
 
-// ---------------------------------------------------------------------------
 // Slugger — github-slugger replacement backed by `slugify`
-// ---------------------------------------------------------------------------
 
 const SLUGIFY_OPTIONS = {
   lower: true,

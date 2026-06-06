@@ -46,32 +46,6 @@ export interface ToolbarProps {
   className?: string
 }
 
-// Toolbar layered into a stack of `ToolbarGroup`s (see groups below).
-// Undo / redo only render in 'full' density. Tiptap's History
-// extension wires Cmd/Ctrl+Z and Cmd/Ctrl+Shift+Z in every mode, so
-// 'compact' falls back to the keyboard to save the two slots.
-//
-// Full density: the outer container is `flex flex-wrap` so groups
-// flow to extra rows when space is tight (whole groups stay together).
-// Compact density uses the same wrap rules with Select + 「插入」Popover.
-//
-// Each `ToolbarGroup` is `flex flex-nowrap` with a trailing separator.
-// The picker triggers (image / music) own their own picker dialogs,
-// so we MUST mount the inserts buttons exactly once per render to
-// avoid duplicate dialog state. That's why we branch on `density`
-// first and pick a single branch, instead of rendering both
-// branches and toggling visibility with CSS.
-//
-// The slash menu (`/`) and bubble menu still cover the same surface
-// for keyboard-first authoring; the toolbar exists so the editor
-// looks self-evidently capable on first open.
-// `<sm` (= `<640px`) collapses every density-branched control to its
-// icon-only form, regardless of the operator's stored density
-// preference. Forcing `'full'` keeps every button as a single icon,
-// drops the 「插入 ▼」 popover wrapper, and lets the toolbar live as a
-// one-row, horizontally-scrollable strip — the standard mobile
-// editor pattern. The density toggle is hidden in the same window so
-// the operator can't toggle into a state we'd silently override.
 function useMobileToolbar(): boolean {
   const [isMobile, setIsMobile] = useState(false)
   useEffect(() => {
@@ -127,8 +101,6 @@ export function Toolbar(props: ToolbarProps) {
               aria-label="链接"
               aria-pressed={editor.isActive('link')}
               onMouseDownCapture={(event) => {
-                // Match BubbleMenu / LinkPopover: keep ProseMirror selection
-                // when the trigger is pressed so setLink still has a range.
                 event.preventDefault()
               }}
             >
@@ -236,11 +208,6 @@ export function Toolbar(props: ToolbarProps) {
     </>
   )
 
-  // The density toggle is the operator's runtime knob between
-  // `'full'` (icon-button matrix) and `'compact'` (Select + Popover);
-  // on `<sm` we already pin density to `'full'` (see
-  // `useMobileToolbar`), so the toggle is hidden there to avoid
-  // surfacing a control that would be silently overridden.
   const densityRail = isMobile ? null : (
     <DensityToggleButton density={props.density} onChange={props.onDensityChange} disabled={disabled} />
   )
@@ -251,10 +218,6 @@ export function Toolbar(props: ToolbarProps) {
     <div
       className={cn(
         'flex w-full max-w-full min-w-0 items-center gap-x-0.5 border-b p-2',
-        // On `<sm` the toolbar is a single-row, horizontally-scrollable
-        // strip even in full density — otherwise the ~25 icon buttons
-        // would wrap to several rows and balloon the floating pill's
-        // height past the FAB row.
         isCompact || isMobile ? 'flex-nowrap overflow-x-auto' : 'flex-wrap gap-y-1',
         className,
       )}
@@ -271,21 +234,7 @@ export function Toolbar(props: ToolbarProps) {
 
 interface ToolbarGroupProps {
   children: React.ReactNode
-  /**
-   * Set on the last group in the toolbar so we don't print a
-   * dangling separator at the right edge. Internal groups always
-   * print their own trailing separator — that separator stays
-   * inside the group's `flex-nowrap` box, so wrapping occurs
-   * BETWEEN groups (between separator and next group), never
-   * leaving a separator marooned at row start or row end.
-   */
   hideTrailingSeparator?: boolean
-  /**
-   * Extra classes — used by the Toolbar to flip a group between
-   * inline (`flex`) and hidden (`hidden`) variants for the
-   * full / compact density swap. The default `flex` is overridden
-   * if the caller provides `flex` or `hidden` of their own.
-   */
   className?: string
 }
 

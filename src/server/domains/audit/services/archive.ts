@@ -18,9 +18,7 @@ const log = getLogger('audit.archive')
 const S3_ARCHIVE_PREFIX = 'audit-log/archive/'
 const ARCHIVE_PAGE_SIZE = 5000
 
-// ---------------------------------------------------------------------------
 // Archive expired audit logs to S3
-// ---------------------------------------------------------------------------
 
 export async function archiveExpiredAuditLogs(db: NodePgDatabase): Promise<ArchiveResult> {
   const bundle = getBlogSettingsBundleSync()
@@ -179,9 +177,7 @@ async function archiveDay(db: NodePgDatabase, day: string, dayStart: Date, dayEn
   return deleted
 }
 
-// ---------------------------------------------------------------------------
 // Clean up expired S3 archives
-// ---------------------------------------------------------------------------
 
 export async function cleanupExpiredArchives(): Promise<CleanupResult> {
   const bundle = getBlogSettingsBundleSync()
@@ -213,9 +209,7 @@ export async function cleanupExpiredArchives(): Promise<CleanupResult> {
   return { deletedFiles: toDelete.length }
 }
 
-// ---------------------------------------------------------------------------
 // Run the full archive job
-// ---------------------------------------------------------------------------
 
 export async function runArchiveJob(db: NodePgDatabase, _pool: Pool): Promise<void> {
   try {

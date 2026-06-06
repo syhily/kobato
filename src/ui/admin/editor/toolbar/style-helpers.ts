@@ -65,7 +65,6 @@ export function applyBlockStyle(editor: Editor, value: string): void {
       return
     case 'blockquote':
       // toggle vs set: setting blockquote when already inside it is a
-      // no-op in tiptap, so prefer toggle so re-selecting "引用" lifts
       // the wrapper. Same goes for codeBlock below.
       if (!editor.isActive('blockquote')) {
         chain.toggleBlockquote().run()

@@ -79,9 +79,7 @@ class AuditLogBatcher extends CopyBatcher<AuditEventInput> {
   }
 }
 
-// ---------------------------------------------------------------------------
 // Fallback — per-row INSERT via Drizzle (slower but maximally safe)
-// ---------------------------------------------------------------------------
 
 async function insertPerRow(db: NodePgDatabase, events: AuditEventInput[]): Promise<FlushResult> {
   // Fast path: try a single batch insert first.
@@ -155,9 +153,7 @@ async function insertPerRow(db: NodePgDatabase, events: AuditEventInput[]): Prom
   return { committed: successCount, deadLettered: failedEvents.length }
 }
 
-// ---------------------------------------------------------------------------
 // Singleton — global batcher instance
-// ---------------------------------------------------------------------------
 
 let batcher: AuditLogBatcher | undefined
 

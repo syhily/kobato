@@ -9,8 +9,6 @@ import { LinkPopover } from '@/ui/admin/editor/tiptap/LinkPopover'
 // BubbleMenu (wrap / edit selection). Static SSR checks keep the
 // dependency footprint minimal vs @testing-library.
 //
-// Guards: correct labels per variant, URL input shape, 移除 only when
-// editing an existing link in selection mode, and 插入 vs 应用 copy.
 
 interface LinkChain {
   focus: () => LinkChain

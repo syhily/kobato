@@ -2,25 +2,8 @@ import { isRouteErrorResponse } from 'react-router'
 
 import { NotWordPressView } from '@/ui/public/chrome/NotWordPressView'
 
-// Mirror of `NOT_WORDPRESS_STATUS_TEXT` from
-// `@/server/http/wp-decoy.ts`. The contract is "a 404
-// `Response` whose `statusText` is exactly this string is a WordPress
-// probe decoy". The literal lives in two places so this UI module can
-// live under `src/ui/` without dragging a server import (which the
-// `tests/contract.boundaries.test.ts` boundary rule forbids); the
-// boundary test asserts they stay in sync.
 const NOT_WORDPRESS_STATUS_TEXT = 'Not WordPress'
 
-// Shared error body for both `root.tsx` and `routes/public/layout.tsx`
-// boundaries. Both call sites used to inline a near-identical
-// `isRouteErrorResponse` switch: WP-decoy 404 → `<NotWordPressView />`,
-// real 404 → "未找到页面 / 404", everything else → "内部错误 / 500"
-// (with the dev-mode override that swaps in `error.message`).
-//
-// Centralising it here keeps the chrome decisions (lazy chrome vs.
-// static chrome, provider re-binding, etc.) at the call sites where
-// they actually differ, while guaranteeing the body cannot drift
-// between the two boundaries.
 export interface ErrorViewProps {
   error: unknown
   isDev?: boolean

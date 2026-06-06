@@ -19,22 +19,6 @@ export interface PublishStatusRowProps {
   disabled?: boolean
 }
 
-// "Publish status + publish time" widget shown at the top of 基本信息.
-//
-// The status badge tells the operator where the post sits in its
-// lifecycle ("尚未保存" / "已下线" / "已计划" / "已发布" /
-// "已发布（有未发布草稿）"). The publish-time radio toggles between two presets:
-//
-//   - 立即发布 — `publishedAt` is cleared. The publish action
-//     reads "no override" and the server stamps `now()`. (For an
-//     already-published post this means "leave the existing
-//     timestamp alone"; the publish flow on the editor toolbar
-//     re-stamps `now()` if the operator hits 发布 again.)
-//
-//   - 定时发布 — exposes a `<input type="datetime-local">` so the
-//     operator can pick a future time. Sending that to 发布 parks
-//     the post as "scheduled" — the public site 404s it until the
-//     timestamp arrives.
 export function PublishStatusRow({
   status,
   revisionSummary,
@@ -72,10 +56,6 @@ export function PublishStatusRow({
             if (isScheduled) {
               return
             }
-            // Default to "tomorrow at 09:00 local" when the
-            // operator first switches into schedule mode, so
-            // the picker isn't fighting with the "now" they
-            // just opted out of.
             const d = new Date()
             d.setDate(d.getDate() + 1)
             d.setHours(9, 0, 0, 0)
@@ -169,12 +149,6 @@ function PublishBadge({ status, isFuture }: { status: SidebarPublishStatus; isFu
         </Badge>
       )
     case 'live':
-      // The picker may show "立即发布" while the server is already
-      // live; the badge stays "已发布". When the operator switches
-      // to a future time the badge alone wouldn't reflect that yet
-      // (it only flips on save). Keep it deterministic so the
-      // header doesn't flicker as the operator toys with the
-      // picker.
       void isFuture
       return (
         <Badge variant="outline" className="border-status-success-border bg-status-success-bg text-status-success-fg">
@@ -213,9 +187,6 @@ function formatSavedAtLocal(ms: number): string {
   return `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日 ${pad(d.getHours())}:${pad(d.getMinutes())}`
 }
 
-// Helper used by the schedule-mode radio to drop the operator
-// straight into "tomorrow 09:00" — sharing the same
-// `YYYY-MM-DDTHH:mm` shape the picker reads from `draft.publishedAt`.
 function dateToLocalInputValue(d: Date): string {
   const pad = (n: number) => n.toString().padStart(2, '0')
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`

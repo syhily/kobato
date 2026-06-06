@@ -5,7 +5,6 @@ import { cn } from '@/ui/lib/cn'
 // Sink's preset chip row. Plain buttons rather than a popover —
 // the seven canonical ranges cover ~95% of dashboard usage, so we
 // don't ship the calendar surface yet. Custom ranges are addressed
-// in §11 (Phase 4 polish: a date-picker behind a `自定义` chip).
 
 const PRESET_LABEL: Record<PresetKey, string> = {
   'last-1h': '最近 1 小时',

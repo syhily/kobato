@@ -33,17 +33,13 @@ export interface MyCommentItem {
   deleteRequestedAtIso: string | null
   isPending: boolean
   /**
-   * Post / page the comment was posted under. Mirrors the moderation
-   * widget projection: missing entry (`null`) means the underlying
-   * `post` / `page` row has been deleted and the link target is gone.
+   * Post / page the comment was posted under. Missing entry (`null`)
+   * means the underlying row has been deleted.
    */
   entity: { title: string; permalink: string } | null
   /**
-   * Set when the row is a reply (`comment.rid !== 0`). The parent's
-   * author name and an 80-codepoint excerpt of the markdown snapshot.
-   * If the parent has been soft-deleted, `isDeleted` is true and the
-   * name / excerpt are blank so the UI can render the「已删除」
-   * placeholder.
+   * Set when the row is a reply. If the parent has been soft-deleted,
+   * `isDeleted` is true and the name / excerpt are blank.
    */
   parent: { name: string; excerpt: string; isDeleted: boolean } | null
 }
@@ -59,13 +55,8 @@ function makeExcerpt(raw: string): string {
   if (trimmed === '') {
     return ''
   }
-  // Iterate over Unicode codepoints (via `Array.from`, which uses the
-  // string's `@@iterator` and splits per code point) so a CJK-heavy
-  // snippet doesn't slice a surrogate pair in half. We intentionally
-  // accept code-point — not grapheme — granularity here: an 80-cp
-  // excerpt is a moderation hint, not a typographically perfect
-  // shortening, and pulling in `Intl.Segmenter` for that would be
-  // overkill.
+  // Iterate over Unicode codepoints so a CJK-heavy snippet doesn't
+  // slice a surrogate pair in half.
   const codepoints = Array.from(trimmed)
   if (codepoints.length <= EXCERPT_LIMIT) {
     return trimmed
@@ -83,8 +74,7 @@ function parseStatus(raw: string | null): MyCommentsStatus {
 }
 
 // `?entity=<type>:<ownerId>` → `{ type, ownerId }`. Malformed values
-// are dropped silently so a hand-edited URL just renders the unfiltered
-// list rather than a 4xx page.
+// are dropped silently so a hand-edited URL renders the unfiltered list.
 function parseEntityParam(raw: string | null): { type: EntityType; ownerId: bigint } | null {
   if (!raw) {
     return null
@@ -110,10 +100,7 @@ function parseEntityParam(raw: string | null): { type: EntityType; ownerId: bigi
 
 export async function loader({ request, context }: Route.LoaderArgs) {
   const ctx = getRouteRequestContext({ request, context })
-  // Self-service path — any logged-in role (admin/author/visitor) can
-  // see their own comments. The admin layout already enforces a
-  // `visitor` floor; keep the per-route guard explicit so future
-  // refactors of the layout cannot accidentally widen access.
+  // Self-service path — any logged-in role can see their own comments.
   requireRole(ctx, 'visitor')
   const db = getDbFromContext({ request, context })
   const userId = BigInt(ctx.user.id)
@@ -124,32 +111,22 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   const q = (url.searchParams.get('q') ?? '').trim()
   const entity = parseEntityParam(url.searchParams.get('entity'))
   const filters = { status, q: q || undefined, entity: entity ?? undefined }
-  // Status-counts policy:
-  //   - When `entity` is unset, `totalCounts` reflects the user's
-  //     entire history (so a "pending · 3" pill is visible even if
-  //     they're currently on the "deleted" tab).
-  //   - When `entity` is set, the tab pills should describe the
-  //     entity-scoped view ("show me how many pending comments I left
-  //     under THIS post"), so we reuse the filtered `counts` for both.
+  // When `entity` is unset, `totalCounts` reflects the user's entire
+  // history. When `entity` is set, reuse `counts` for both.
   const [rows, counts, totalCountsRaw, entityOptionsRaw] = await Promise.all([
     listMyComments(db, userId, offset, limit, filters),
     countMyComments(db, userId, filters),
-    // When an entity filter is active, the tab pills should describe
-    // the entity-scoped view, so skip the second roundtrip and reuse
-    // `counts` below. We still issue a placeholder promise here so the
-    // Promise.all shape stays static.
     entity ? Promise.resolve(null) : countMyComments(db, userId),
     listMyCommentEntities(db, userId),
   ])
   const totalCounts = totalCountsRaw ?? counts
   // Batch entity and parent-comment lookups so a page of N rows only
-  // triggers at most two extra round-trips, not 2N.
+  // triggers at most two extra round-trips.
   const entityPairs = rows
     .filter((c): c is typeof c & { type: EntityType; ownerId: bigint } => c.type !== null && c.ownerId !== null)
     .map((c) => ({ type: c.type, ownerId: c.ownerId }))
   // `rid` is stored as `bigint(mode='number')`, but a real parent id may
-  // exceed the safe-integer range under heavy load — go through the
-  // string projection to round-trip safely.
+  // exceed the safe-integer range — go through the string projection.
   const parentIds = Array.from(
     new Set(
       rows
@@ -185,11 +162,8 @@ export async function loader({ request, context }: Route.LoaderArgs) {
       parent,
     }
   })
-  // Build the Combobox option list. If the URL pins an entity that
-  // isn't in the (capped, title-search-filtered) result set above, do
-  // a single follow-up `resolveEntitiesForComments` lookup so the
-  // trigger can render the human-readable title instead of the
-  // opaque "post:42" value on direct-URL navigation.
+  // If the URL pins an entity that isn't in the result set, do a
+  // follow-up lookup so the trigger can render the human-readable title.
   const entityOptions: MyCommentEntityOption[] = entityOptionsRaw.map((e) => ({
     value: `${e.type}:${e.ownerId}`,
     label: e.title,

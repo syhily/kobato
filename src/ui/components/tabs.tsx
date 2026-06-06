@@ -9,12 +9,6 @@ function Tabs({ className, ...props }: ComponentProps<typeof BaseTabs.Root>) {
 }
 
 function TabsList({ className, ...props }: ComponentProps<typeof BaseTabs.List>) {
-  // Render the track as a hairline-bordered surface with explicit gaps
-  // between tabs. The default shadcn track uses `bg-muted` (oklch ≈ 0.97)
-  // against a white card, which makes it nearly invisible and collapses
-  // the three tabs into one shape. A subtle border + per-tab gap makes
-  // the segmented control unambiguously read as multiple buttons even
-  // when only one is selected.
   return (
     <BaseTabs.List
       data-slot="tabs-list"
@@ -28,18 +22,8 @@ function TabsList({ className, ...props }: ComponentProps<typeof BaseTabs.List>)
 }
 
 function TabsTrigger({ className, ...props }: ComponentProps<typeof BaseTabs.Tab>) {
-  // Selected tab: solid `bg-background` (white) + visible border + shadow
-  // so it pops above the track. Unselected tabs stay text-only with a
-  // hover affordance, which preserves the segmented-control affordance
-  // on light backgrounds where `bg-muted` and `bg-background` are close.
-  //
-  // ATTRIBUTE NOTE: Base UI v1.x renamed the active-tab attribute from
-  // `data-selected` to `data-active` (PR mui/base-ui#3024). Selectors
-  // that still target `data-selected` silently match nothing — which
-  // looks exactly like "the active state has no styling at all" because
-  // the tab keeps its default unselected classes. Keep the variant
-  // tokens on `data-[active]:*` so the segmented control actually
-  // highlights the chosen tab.
+  // Base UI v1.x renamed `data-selected` to `data-active` (mui/base-ui#3024).
+  // Keep selectors on `data-[active]:*` so the active state actually highlights.
   return (
     <BaseTabs.Tab
       data-slot="tabs-trigger"

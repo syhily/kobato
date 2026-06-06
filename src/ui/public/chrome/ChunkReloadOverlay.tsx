@@ -4,16 +4,6 @@ import { subscribeChunkReload } from '@/client/hooks/use-chunk-error-recovery'
 import { cn } from '@/ui/lib/cn'
 import { BrandLogo } from '@/ui/public/chrome/BrandLogo'
 
-// Render an opaque brand splash the moment a stale-deploy chunk error
-// is detected, so the user sees a calm loading state instead of the
-// previous-deploy DOM (or a flash of unstyled blank) while the
-// triggered `location.reload()` fetches the new document. The reload
-// itself is scheduled by `triggerChunkReload()` across two animation
-// frames so this overlay has a chance to paint first.
-//
-// Mount once in `root.tsx`'s `Layout` (the only ancestor common to
-// both the App tree and the ErrorBoundary tree) so the splash works
-// regardless of which path tripped the recovery.
 export function ChunkReloadOverlay() {
   const [pending, setPending] = useState(false)
 

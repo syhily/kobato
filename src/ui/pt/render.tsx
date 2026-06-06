@@ -38,61 +38,18 @@ import {
   PT_INLINE,
 } from '@/ui/pt/render-shared'
 
-// SSR/CSR renderer for PortableText. Built on top of `@portabletext/react`'s
-// composable component map so the standard text/list/heading/decorator
-// pipeline (including consecutive list-item folding) is delegated to the
-// official toolkit, while every kobato-specific block / mark
-// (`image`, `code`, `mathBlock`, `horizontalRule`,
-// `musicPlayer`, `solution`, `twoColumn`, `footnoteDefinition`, `table`,
-// plus `mathInline` / `footnoteRef` mark defs) is handled in a sibling
-// `render-blocks.tsx` / `render-marks.tsx` (with `render-shared.ts` for
-// the inline-class constants and React contexts).
+// PortableText renderer delegating standard pipeline to `@portabletext/react`
+// and kobato-specific blocks/marks to sibling modules.
 //
-// **Component reuse**: every custom block type maps onto a sibling
-// `@/ui/pt/blocks/*` component so the renderer composes the same React
-// tree across pages and posts.
-//
-// **Anchors**: each heading uses the Portable Text block `_key` to look
-// up a stable id. Slots are collected with
-// `collectHeadingSlotsInPortableTextRenderOrder` (same order as this
-// renderer: main column + solution innards + twoColumn (left then right)
-// + footnotes). Precomputed slugs from the loader zip by index; any
-// gap uses `Slugger` over the saved **plain** heading text —
-// never `react` children, so SSR and hydration cannot disagree when a
-// heading wraps marks or decorators.
-//
-// **Why split now?** The renderer had grown past 700 LOC. We split
-// once on a stable seam: marks (3 renderers), standard + custom blocks
-// (12 renderers), and shared constants/contexts. The components map
-// stays inline in this file so the toolkit still receives a single
-// frozen map (no per-render allocation).
+// Headings use precomputed slugs zipped by index; fallback `Slugger` runs over
+// plain text (never React children) so SSR/hydration stay in sync.
 
 export interface PortableTextBodyProps {
   body: PortableTextBodyType
   /** Optional thumbhash hydration map. Mirrors the MDX `<PostBody>` prop. */
   imageMeta?: ImageMetaMap
-  /**
-   * Precomputed heading anchor IDs, in the order this body's heading
-   * blocks appear. SSR loaders pass `collectHeadings(body, deriveSlug)
-   * .map(h => h.slug)` so anchors line up with the canonical pinyin
-   * pipeline (and stay byte-identical to the MDX `rehype-slug` output
-   * for ASCII headings).
-   *
-   * When omitted (e.g. editor live-preview before the
-   * server round-trip), the renderer falls back to a local
-   * `Slugger` pass over the raw text — the anchor still
-   * disambiguates duplicates, but Han-only headings keep glyphs verbatim
-   * instead of pinyin. The full SSR path
-   * always supplies this prop, so the fallback is editor-only.
-   */
   headingSlugs?: readonly string[]
-  /**
-   * When `'suppressed'`, every `musicPlayer` block renders with autoplay
-   * forced off so admin surfaces (live preview pane, SSR preview HTML)
-   * stay silent while still honouring `alignment` for layout.
-   */
   musicAutoplay?: 'suppressed' | 'default'
-  /** Visible `<h3>` above the footnotes list; defaults to 「尾声礼记」 when omitted. */
   footnotesSectionTitle?: string
 }
 
@@ -121,9 +78,7 @@ export function PortableTextBody({
     return map
   }, [body, headingSlugs])
 
-  // Footnote definitions (block type `footnoteDefinition`) are
-  // rendered together at the bottom of the body — never inline —
-  // matching the GFM `<section data-footnotes>` convention.
+  // Footnote definitions render at the bottom — never inline.
   const inlineBody = useMemo(() => body.filter((block) => block._type !== 'footnoteDefinition'), [body])
   const footnotes = useMemo(
     () => body.filter((block): block is FootnoteDefinitionBlock => block._type === 'footnoteDefinition'),
@@ -160,10 +115,6 @@ export function PortableTextBody({
   )
 }
 
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
 function collectFootnoteDefinitions(body: PortableTextBodyType): Map<string, FootnoteDefinitionBlock> {
   const out = new Map<string, FootnoteDefinitionBlock>()
   for (const block of body) {
@@ -173,10 +124,6 @@ function collectFootnoteDefinitions(body: PortableTextBodyType): Map<string, Foo
   }
   return out
 }
-
-// ---------------------------------------------------------------------------
-// PortableText component map (built once at module load — frozen reference)
-// ---------------------------------------------------------------------------
 
 const portableTextComponents: PortableTextComponents = {
   block: {
@@ -203,12 +150,6 @@ const portableTextComponents: PortableTextComponents = {
     normal: ({ children, value }) => <ParagraphBlock value={value as TextBlock}>{children}</ParagraphBlock>,
     blockquote: ({ children, value }) => <BlockquoteBlock value={value as TextBlock}>{children}</BlockquoteBlock>,
   },
-  // `@portabletext/react` collapses consecutive list items sharing the
-  // same `listItem` + `level` into a single `<ul>` / `<ol>` for us;
-  // we just declare the wrapper. Nested lists are handled because the
-  // bridge writes higher-level items into `level: 2 / 3 / …` — the
-  // toolkit nests them automatically when `listNestingMode` is the
-  // default `html`.
   list: {
     bullet: ({ children }) => <ul>{children}</ul>,
     number: ({ children }) => <ol>{children}</ol>,
@@ -251,14 +192,7 @@ const portableTextComponents: PortableTextComponents = {
   unknownListItem: ({ children }) => <li>{children}</li>,
 }
 
-// ---------------------------------------------------------------------------
-// Recursive blocks (need access to portableTextComponents above)
-// ---------------------------------------------------------------------------
-
 function SolutionBlockComponent({ value }: PortableTextTypeComponentProps<SolutionBlock>) {
-  // Solution children are themselves a (one-deep) PortableText body.
-  // Recurse through `<PortableText>` so list-folding etc. continue to
-  // work inside the solution wrapper.
   return (
     <Solution>
       <PortableText value={value.children as PortableTextBlock[]} components={portableTextComponents} />
@@ -278,10 +212,6 @@ function TwoColumnBlockComponent({ value }: PortableTextTypeComponentProps<TwoCo
     </section>
   )
 }
-
-// ---------------------------------------------------------------------------
-// Footnotes section
-// ---------------------------------------------------------------------------
 
 function lastNormalParagraphKey(children: readonly NonRecursiveBlock[]): string | null {
   for (let i = children.length - 1; i >= 0; i--) {

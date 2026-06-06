@@ -16,15 +16,6 @@ import {
 
 import { user } from '@/server/infra/db/schema/user'
 
-// Section-scoped store for the editable blog configuration. One row per
-// `scope`; the admin panel writes one row per settings section, named
-// `blog.<section>` (e.g. `blog.general`, `blog.assets`,
-// `blog.mail`, …). Splitting the previously-singleton `blog` row this
-// way means a save to one section never reads, merges, or rewrites the
-// JSONB belonging to any other section, so concurrent edits on
-// different tabs cannot race each other. The full snapshot is
-// reassembled in memory by `hydrateBlogSettings()` via a single
-// `WHERE scope LIKE 'blog.%'` SELECT.
 export const setting = pgTable('setting', {
   id: bigserial('id', { mode: 'bigint' }).primaryKey().notNull(),
   scope: varchar('scope', { length: 64 }).unique().notNull().default('blog'),
@@ -37,30 +28,7 @@ export const setting = pgTable('setting', {
   updatedBy: bigint('updated_by', { mode: 'bigint' }),
 })
 
-// Append-only time-series access log feeding the analytics dashboard
-// (`/admin/analytics`). One row per non-bot SSR request to a content
-// route. Backed by a TimescaleDB hypertable created in the companion
-// `*_access_log_timescale` migration; the Drizzle definition only
-// declares the relational shape.
-//
-// Two columns deserve a comment block:
-//
-// - `(entity_type, entity_id)` discriminator mirrors the convention the
-//   `metric` / `like` / `comment` tables already use. Plain Postgres
-//   columns (no FK) because Timescale hypertables can't reference
-//   non-hypertable rows; orphan rows after a hard-delete of a post /
-//   page are accepted (the rare admin hard-delete already invalidates
-//   counter rows the same way).
-//
-// - `visitor_hash` is a SHA-256 of `(ip || dailySalt)` truncated to 32
-//   hex chars. UV counting `COUNT(DISTINCT visitor_hash)` on a 32-char
-//   text column is materially faster than `COUNT(DISTINCT ip)` on
-//   `inet`, and the hash survives a future "drop raw IP" pivot without
-//   breaking the dashboards. We deliberately store both — see
-//   `docs/blog-analytics-plan.md §6.1`.
-//
-// Retention / compression / continuous aggregates live in the Timescale
-// migration; do NOT replicate those policies in Drizzle DDL.
+// TimescaleDB hypertable; retention/compression live in the migration.
 export const accessLog = pgTable(
   'access_log',
   {
@@ -100,9 +68,6 @@ export const accessLog = pgTable(
     isBot: boolean('is_bot').notNull().default(false),
   },
   (table) => [
-    // Compound indexes covering the common dashboard query shapes.
-    // Timescale also auto-creates `(ts DESC)` per chunk so we don't
-    // duplicate that here.
     index('idx_access_log_entity_ts').on(table.entityType, table.entityId, table.ts),
     index('idx_access_log_path_ts').on(table.path, table.ts),
     index('idx_access_log_country_ts').on(table.country, table.ts),
@@ -115,11 +80,6 @@ export const accessLog = pgTable(
 export type AccessLogRow = typeof accessLog.$inferSelect
 export type NewAccessLog = typeof accessLog.$inferInsert
 
-// ---------------------------------------------------------------------------
-// Audit log — durable record of admin mutations, auth events, and settings
-// changes. Written asynchronously (fire-and-forget) so the hot path never
-// blocks on the insert.
-// ---------------------------------------------------------------------------
 export const auditLog = pgTable(
   'audit_log',
   {
@@ -147,15 +107,7 @@ export const auditLog = pgTable(
   ],
 )
 
-// ---------------------------------------------------------------------------
-// Slug registry — global uniqueness enforcement for page ↔ post slugs.
-//
-// Both `page` and `post` have their own `UNIQUE(slug)`, but that only
-// catches collisions within the same table.  This registry guarantees
-// cross-table uniqueness at the database level, eliminating the race
-// condition that the old application-level `validateSlugFence` could not
-// prevent.
-// ---------------------------------------------------------------------------
+// Cross-table slug uniqueness guard (complements per-table UNIQUE).
 export const slugRegistry = pgTable(
   'slug_registry',
   {

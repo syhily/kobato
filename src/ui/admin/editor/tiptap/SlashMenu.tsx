@@ -9,9 +9,6 @@ import { createPortal } from 'react-dom'
 import { filterSlashCommands, SLASH_COMMANDS, type SlashCommand } from '@/ui/admin/editor/tiptap/slash-commands'
 import { cn } from '@/ui/lib/cn'
 
-// Re-export the command shape so embedders building a custom catalogue
-// (e.g. the public comment editor) can share the type without pulling
-// in the admin command implementations.
 export type { SlashCommand }
 
 interface SlashCommandsExtensionOptions {
@@ -23,30 +20,6 @@ interface SlashCommandsExtensionOptions {
    */
   commands: readonly SlashCommand[]
 }
-
-// Slash command extension for Tiptap. The wiring is the standard
-// `@tiptap/suggestion` pattern:
-//   1. The Extension below registers a ProseMirror plugin that watches
-//      for `/` followed by a query.
-//   2. `render()` mounts a `ReactRenderer` whose React component is
-//      `SlashMenuList` — it owns the list, keyboard navigation, and
-//      hover styling. The component is a forward-ref so the
-//      extension can call `.onKeyDown` from the suggestion
-//      lifecycle without involving `editor.commands`.
-//   3. Positioning: the suggestion plugin gives us a `clientRect()`
-//      pointing at the inserted `/`. We drive a `position: fixed`
-//      portal off that rect — no third-party anchor primitive
-//      required, which keeps the editor bundle free of any new
-//      direct dependency on a popover library. The trade-off vs.
-//      `@floating-ui` is that we don't auto-flip when the menu
-//      would clip the viewport; we cap height + scroll instead,
-//      which matches the emdash slash menu UX and is plenty given
-//      the editor canvas usually has whitespace below the cursor.
-//
-// The component lives in this file (not split into a sibling) because
-// it would otherwise need a barrel re-export to make the suggestion
-// plugin reach it — and AGENTS.md's `bundle-barrel-imports` rule
-// forbids that. The list cap + state machine are emdash-tested.
 
 interface SlashMenuRendererRef {
   onKeyDown: (props: SuggestionKeyDownProps) => boolean
@@ -69,9 +42,6 @@ export const SlashCommandsExtension = Extension.create<SlashCommandsExtensionOpt
         allowSpaces: false,
         items: ({ query }) => [...filterSlashCommands(query, catalogue)],
         command: ({ editor, range, props }) => {
-          // Suggestion's `command` runs the user's chosen slash
-          // command. Each entry in `slash-commands.ts` is responsible
-          // for any range-deletion / focus juggling.
           props.command({ editor, range })
         },
         render: () => {
@@ -138,21 +108,12 @@ function SlashMenuList(props: SlashMenuListProps) {
   const activeIndexRef = useRef(activeIndex)
   itemsRef.current = items
   activeIndexRef.current = activeIndex
-  // Reset the active highlight whenever the filtered list shrinks
-  // out from under it — emdash hit a re-render loop here, the fix
-  // is to track items + active idx in refs and only commit through
-  // setState when the user navigates.
   useEffect(() => {
     if (activeIndex >= items.length && items.length > 0) {
       setActiveIndex(0)
     }
   }, [items, activeIndex])
 
-  // Track the anchor rect so the menu follows the cursor as the user
-  // types more characters. `clientRect()` queries layout (a layout
-  // read forces a flush on Chromium). We read it inside useLayoutEffect
-  // so the measurement happens after paint but before the browser
-  // commits the next frame, avoiding a layout read during render.
   const [rect, setRect] = useState<DOMRect | null>(null)
   useLayoutEffect(() => {
     setRect(clientRect ? clientRect() : null)
@@ -195,9 +156,6 @@ function SlashMenuList(props: SlashMenuListProps) {
   if (items.length === 0) {
     return createPortal(
       <div
-        // Combobox-style suggestion popup, not a form select. The
-        // <select> alternative the lint rule suggests has incompatible
-        // keyboard model and can't be styled this way.
         role="listbox"
         className="fixed z-[1600] w-72 rounded-xl border bg-popover p-2 text-sm text-muted-foreground shadow-md"
         style={positionStyle(rect)}
@@ -245,11 +203,6 @@ function SlashMenuList(props: SlashMenuListProps) {
   )
 }
 
-// Anchor the menu just below the suggestion `/` glyph. We cap left
-// at viewport edge - 320px so the menu can't render off-screen when
-// the user types `/` in the right margin of a wide layout. Vertical
-// offset matches the line-height of body copy so the menu doesn't
-// crowd the cursor.
 function positionStyle(rect: DOMRect): React.CSSProperties {
   const margin = 8
   const menuWidth = 288

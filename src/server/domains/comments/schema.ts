@@ -68,7 +68,6 @@ export type LoadAllCommentsInput = z.infer<typeof loadAllCommentsSchema>
 // caller wants to "rehydrate" (e.g. when restoring a Combobox
 // selection from a `?userId=2232` URL parameter — the URL only carries
 // the value, never the human label, so the client needs a one-shot
-// lookup to render "雨帆" instead of "2232" in the trigger). When
 // `ids` is present the authors endpoint returns an exact-match by id
 // and ignores `q` to avoid mixing two query intents in one round-trip.
 //

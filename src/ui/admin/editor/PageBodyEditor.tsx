@@ -80,27 +80,6 @@ export interface PageBodyEditorProps {
   floatingActions?: React.ReactNode
 }
 
-// Tiptap-based PortableText editor. The standard subset (paragraphs /
-// headings / blockquote / lists / inline marks / fenced code /
-// horizontal rule / link / table) is handled by Tiptap extensions;
-// custom block types: `solution` uses a nested PM node; `musicPlayer`
-// and `mathBlock` round-trip through `blockCard`.
-// `footnoteDefinition` rows are **not** loaded into PM — they merge on
-// save beside the prose slice so footnotes are authored via dialog + inline
-// refs only; the public page still renders a unified footnotes list from PT.
-//
-// The user-facing surface area lives in three layers:
-//   * **Toolbar** (this file): mouse-friendly row at the top of the
-//     scroll stack in normal mode (duplicates at the bottom center
-//     while scrolled); pinned above the canvas when live preview is on.
-//   * **BubbleMenu** (`tiptap/BubbleMenu.tsx`): inline format affordances
-//     above any selection, including a link popover and inline-mark
-//     editing panels for `mathInline`. Footnote refs open the shell dialog
-//     when clicked in the canvas (`handleClick`).
-//   * **SlashMenu** (`tiptap/SlashMenu.tsx`): keyboard-driven `/`
-//     command launcher covering every block type.
-//   * Inline triggers: `` `…` `` → code, `$…$` → math (`InlineMarks`), `^ `
-//     → footnote dialog (`footnote-caret-trigger`).
 export function PageBodyEditor({
   initialBody,
   bodyKey,
@@ -131,26 +110,15 @@ export function PageBodyEditor({
       }),
       Typography,
       TextAlign.configure({ types: ['heading', 'paragraph', 'blockquote'] }),
-      // TipTap Focus decorations must not use the bare token has-focus (Tailwind has variant collision risk).
       Focus.configure({ className: 'tiptap-focus-node', mode: 'all' }),
       Link.configure({
         openOnClick: false,
         autolink: true,
-        // Upstream defaults force target _blank on every link; override so same-tab
-        // is the default and operators opt into new-tab explicitly in LinkPopover.
         HTMLAttributes: { class: null, target: null, rel: null },
       }),
       Placeholder.configure({
         placeholder: '在此处开始编写内容…（/ 命令菜单，^ 空格插入脚注）',
       }),
-      // Tables use the upstream Tiptap extensions; resizable=false
-      // keeps the column-width UX out of scope for this iteration
-      // (handled by future work per plan §六).
-      //
-      // `View: null` disables the default TableView node view. TableView
-      // builds the DOM with createElement and never applies
-      // `HTMLAttributes.class`, so our portable-text stylesheet hook
-      // `table.pt-table` never matched in the editor canvas.
       Table.configure({
         resizable: false,
         View: null,
@@ -159,9 +127,6 @@ export function PageBodyEditor({
       TableRow,
       TableHeader,
       TableCell,
-      // Custom Node + Mark specs that mirror the PT ↔ PM bridge so
-      // every PortableText shape round-trips losslessly through the
-      // editor.
       ImageNode,
       TwoColumnPaneNode,
       TwoColumnNode,
@@ -214,7 +179,6 @@ export function PageBodyEditor({
     }
   }, [editor, mathInlineClickEditorRef])
 
-  // Reset content whenever the upstream `bodyKey` changes.
   const lastResetKey = useRef<string | null>(null)
   useEffect(() => {
     if (editor === null) {
@@ -228,8 +192,6 @@ export function PageBodyEditor({
     onBodyChangeRef.current(mergedCanon)
   }, [editor, bodyKey, initialBody, footnotes])
 
-  // Keep `editable` in sync with the disabled prop. Tiptap exposes this
-  // imperatively rather than as a reactive option.
   useEffect(() => {
     if (editor === null) {
       return
@@ -239,8 +201,6 @@ export function PageBodyEditor({
 
   const pickers = useEditorPickers(editor)
 
-  // Wire picker openers into the editor's action storage so slash
-  // commands and toolbar buttons can trigger them without prop drilling.
   useEffect(() => {
     if (editor === null) {
       return
@@ -310,10 +270,6 @@ export function PageBodyEditor({
       <EditorContent
         editor={editor}
         className={cn(
-          // `post-content` pairs with `@utility prose-blog { &.post-content {…} }`
-          // so code/pre match public page + preview pane typography.
-          // `pt-body-editor` narrows the math-inline chip tint to the Tiptap
-          // canvas only (preview stays on the shared post-content styles).
           'post-content pt-body-editor prose-blog prose prose-lg max-w-none focus:outline-none',
           'min-h-editor-min [&_.ProseMirror]:min-h-editor-prose-min',
           '[&_.ProseMirror]:focus:outline-none',
@@ -391,7 +347,6 @@ export function PageBodyEditor({
             // crashing into the centered toolbar pill. Tied to the
             // same `showFloatingToolbar` gate as the toolbar pill so
             // the FAB only surfaces once the inline header toolbar
-            // (which carries its own 发布草稿 button) has scrolled out
             // of view.
             <div className="pointer-events-auto fixed right-4 bottom-6 z-40 touch-manipulation sm:bottom-8 lg:right-6">
               {floatingActions}

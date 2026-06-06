@@ -25,17 +25,7 @@ import type { Block } from '@/shared/pt/schema'
 
 import { generateBlockKey } from '@/shared/pt/utils'
 
-// Default `mathBlock` TeX when inserting from `/` — mirrors typical lecture
-// notes (`align*` derivations) rather than a one-line identity; authors
-// replace the placeholder lines or switch to `gather*` etc.
 const DEFAULT_MATH_BLOCK_TEX = ['\\begin{align*}', '    a &= b\\\\', '    c &= d', '\\end{align*}'].join('\n')
-
-// Slash menu command catalogue. Each entry knows how to filter
-// itself against a query string + how to mutate the editor when
-// chosen. The list is intentionally flat (one-per-action) so the
-// suggestion dropdown can walk it linearly without per-group
-// rendering — emdash had a similar layout and it kept the menu
-// keyboard-navigable without needing arrow-down-to-section UX.
 
 export interface SlashCommand {
   /** Stable identifier (used for React keys + tests). */
@@ -52,10 +42,6 @@ export interface SlashCommand {
   command: (props: { editor: Editor; range: Range }) => void
 }
 
-// Insert a PortableText custom block at the slash range. We piggy-
-// back on the bridge's `blockCard` PM node so a single round-trip
-// path stays authoritative — consistent with `PageBodyEditor`'s
-// existing `insertCustomBlock` helper.
 function insertCustomBlock(editor: Editor, range: Range, payload: Block): void {
   editor
     .chain()

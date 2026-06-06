@@ -24,18 +24,14 @@ import type {
 
 import { BUNDLE_KEYS } from '@/shared/config/sections'
 
-// Per-section React contexts. The keys are derived from the canonical
-// `BUNDLE_KEYS` listing in `@/shared/config/settings`, so adding a new
+// Per-section React contexts derived from `BUNDLE_KEYS`. Adding a new
 // settings section is a one-line edit there — this file picks up the
-// new context automatically and the matching strict-hook export below
-// is the only call-site touch.
+// new context automatically.
 //
 // Why one context per section (rather than one bundle context):
 // `<BlogSettingsProvider>` re-renders once per save, but the
 // per-section split means a save to `cache` never invalidates the
-// component that subscribed to `footer`. The provider is a left-fold
-// over the contexts so the JSX wedding cake stays size-O(1) in the
-// number of sections.
+// component that subscribed to `footer`.
 type SectionContextMap = {
   [K in BundleKey]: Context<NonNullable<BlogSettingsBundle[K]> | undefined>
 }
@@ -69,26 +65,16 @@ const SECTION_CONTEXTS: SectionContextMap = {
 interface BlogSettingsProviderProps {
   /**
    * Live settings bundle from the root loader. `undefined` indicates a
-   * pre-install deployment (the install gate should have intercepted
-   * the request, so this only matters for the install split-screen
-   * itself).
+   * pre-install deployment.
    */
   value: BlogSettingsBundle | undefined
   children: ReactNode
 }
 
-// Iteration order mirrors `SETTINGS_SECTIONS` (via `BUNDLE_KEYS`). The
-// resulting nested-provider tree is bottom-up but structurally
-// equivalent to the previous hand-rolled wedding cake.
-//
-// Erase the discriminated `Context<S1> | Context<S2> | …` union into
-// `Context<unknown>` for the loop body. TypeScript would otherwise
-// fold the union's `value` parameter into `S1 & S2 & …` (contravariant
-// position), which never matches any real section payload. The
-// per-section type safety is still enforced at the hook layer below
-// via `useSection<K>`/`useSectionOptional<K>`; the provider just
-// shovels the right slice into the right context, which is a runtime
-// guarantee from the matching `key`.
+// Erase the discriminated union into `Context<unknown>` for the loop
+// body. TypeScript would otherwise fold the union's `value` parameter
+// into `S1 & S2 & …` (contravariant position), which never matches
+// any real section payload.
 const SECTION_ENTRIES = BUNDLE_KEYS.map((key) => [key, SECTION_CONTEXTS[key]] as const) as Array<
   [BundleKey, Context<unknown>]
 >
@@ -116,17 +102,11 @@ export function BlogSettingsProvider({ value, children }: BlogSettingsProviderPr
   return tree
 }
 
-// ---------------------------------------------------------------------------
 // Per-section accessors. Each section ships a strict variant that
-// throws when the section hasn't been seeded — fine for sections the
-// install flow always populates and the consumer renders after the
-// install gate has cleared. A handful of accessors that run BEFORE
-// the install completes (`siteIdentity`, `assets`) or that have to
-// gracefully degrade for legacy markdown trees (`seo`) also expose
-// an `…Optional` variant that returns `undefined`. New unused
-// `Optional` variants should NOT be added — call `use(<sectionContext>)`
-// directly if you genuinely need the lenient read.
-// ---------------------------------------------------------------------------
+// throws when the section hasn't been seeded. A handful of accessors
+// that run before the install completes or that gracefully degrade
+// also expose an `…Optional` variant. New `Optional` variants should
+// NOT be added — call `use(<sectionContext>)` directly if needed.
 
 function useSection<K extends BundleKey>(name: string, key: K): NonNullable<BlogSettingsBundle[K]> {
   const slice = use(SECTION_CONTEXTS[key])
@@ -193,12 +173,7 @@ export function useCacheSettings(): CacheSettings {
 }
 
 // `rateLimit` is admin-only today (no public chrome reads it), but
-// the matching context + hooks land here for symmetry with the other
-// sections — adding a future "rate limit dashboard widget" is a one
-// line `useRateLimitSettings()` call away. The strict variant fires
-// when the install seeded the row (default behaviour today); the
-// `…Optional` variant tolerates a pre-install / partially-truncated
-// snapshot and is reserved for the rare diagnostic surface.
+// the matching context + hooks land here for symmetry.
 export function useRateLimitSettings(): RateLimitSettings {
   return useSection('useRateLimitSettings', 'rateLimit')
 }

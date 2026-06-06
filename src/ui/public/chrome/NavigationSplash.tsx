@@ -4,22 +4,9 @@ import { useNavigation } from 'react-router'
 import { cn } from '@/ui/lib/cn'
 import { BrandLogo } from '@/ui/public/chrome/BrandLogo'
 
-// React Router 7 SSR client navigation fetches the new route's `.data`
-// payload over the wire. On slow loaders the old page stays painted
-// with no feedback. This component overlays an opaque splash that hides
-// the previous page entirely, then eases a logo-covering layer from
-// fully opaque to mostly transparent so the logo gradually surfaces —
-// the page background underneath stays hidden by the outer mask.
-//
-// We watch `useNavigation()` only (covers `loading` + `submitting`,
-// including back/forward and POST→revalidate). `useFetchers()` is
-// intentionally not included — `useMutation` flows (likes, comment
-// posts, admin saves) own their own pending UI; a global splash on
-// those would be a visual lie about page change.
-//
-// SSR safety: `useNavigation()` returns `idle` on the server, so we
-// render `null` on first paint and on first client render — no
-// hydration mismatch.
+// Global navigation splash — overlays the page on slow route transitions.
+// Watches `useNavigation()` only; `useMutation` flows own their own pending UI.
+// SSR-safe: `useNavigation()` is `idle` on the server, so we render `null`.
 
 const THRESHOLD_MS = 300
 const MIN_VISIBLE_MS = 300
@@ -62,9 +49,6 @@ export function NavigationSplash() {
     }
 
     if (isPending) {
-      // A navigation may resume while we're still fading out from the
-      // previous one. Cancel the pending teardown and let the existing
-      // overlay keep running.
       clearHide()
       clearFade()
 
@@ -72,9 +56,6 @@ export function NavigationSplash() {
         showTimer.current = setTimeout(() => {
           showTimer.current = null
           shownAt.current = performance.now()
-          // Reset to a fully opaque veil, then start the slow ease
-          // toward the cap. Two effect ticks via `requestAnimationFrame`
-          // so the transition observes the starting value.
           setVeilMs(VEIL_DURATION_MS)
           setVeil(1)
           setVisible(true)
@@ -92,7 +73,6 @@ export function NavigationSplash() {
 
         hideTimer.current = setTimeout(() => {
           hideTimer.current = null
-          // Snap the veil to fully transparent with a fast finish.
           setVeilMs(VEIL_FINISH_MS)
           setVeil(0)
           fadeTimer.current = setTimeout(() => {
@@ -103,11 +83,7 @@ export function NavigationSplash() {
       }
     }
 
-    return () => {
-      // The visible / wipe state only changes through the branches
-      // above, so we don't want to clear running timers on every
-      // re-render. The component-unmount cleanup below catches that.
-    }
+    return () => {}
   }, [isPending, visible])
 
   useEffect(
@@ -135,11 +111,6 @@ export function NavigationSplash() {
       aria-label="页面加载中"
       className={cn(
         'fixed inset-0 flex items-center justify-center',
-        // Use the page floor so the splash reads as a continuation of the
-        // page in both themes instead of an elevated "card" tone — light
-        // canvas (#ffffff) is invisible on the public body anyway, but in
-        // dark mode --canvas (#26314d) sits 4 L lighter than --surface-body
-        // (#1d2842) and pops as a mismatched lighter overlay.
         'bg-surface-body',
         'z-(--z-nav-splash)',
         'transition-opacity ease-out',

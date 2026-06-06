@@ -11,9 +11,7 @@ const L3_CLOSE = '{/E}'
 // tag names, etc.) even though the logger does tag them.
 const AUDIT_L3_KEYS = new Set([...L3_KEYS].filter((k) => k !== 'name'))
 
-// ---------------------------------------------------------------------------
 // Tagging — wraps L3 values in {E}…{/E}
-// ---------------------------------------------------------------------------
 
 function tagL3(value: string): string {
   if (value === '') {
@@ -79,9 +77,7 @@ function tagValueRecursive(key: string, value: unknown): unknown {
   return value
 }
 
-// ---------------------------------------------------------------------------
 // Stripping — removes {E}…{/E} wrappers for display
-// ---------------------------------------------------------------------------
 
 /**
  * Check whether a string is wrapped in `{E}…{/E}`.

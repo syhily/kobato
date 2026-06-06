@@ -1,27 +1,8 @@
 // Date formatter primitives shared between SSR and the client bundle.
 //
-// The `Intl.DateTimeFormat` instance can no longer be cached at module
-// scope because the locale / time zone come from the runtime DB-backed
-// blog config — the value an admin picks in `/admin/settings/general`
-// must take effect on the next render without restarting the server.
-//
-// Callers thread the relevant slice of the config in explicitly:
-//
-// ```ts
-// // SSR / server callers
-// import { requireBlogSettingsSection } from '@/shared/config/getters'
-// formatLocalDate(post.date, undefined, requireBlogSettingsSection('siteIdentity'))
-// // UI components
-// const siteIdentity = useSiteIdentity()
-// formatShowDate(post.date, siteIdentity, loaderListingNowIso?)
-// ```
-//
-// Either a `SiteIdentitySettings` (flat — only `locale` / `timeZone` /
-// `timeFormat` are read) or a legacy aggregated wrapper
-// (`{ settings: { locale, timeZone, timeFormat } }`) is accepted. The
-// flat shape is preferred for new code so the caller pulls only the
-// section it actually needs; the wrapped shape is kept around so the
-// formatter test fixtures don't have to be reshaped.
+// `Intl.DateTimeFormat` can't be cached at module scope because the
+// locale / time zone come from the runtime DB-backed blog config.
+// Callers thread the relevant slice of the config in explicitly.
 
 export type FormatterLocale =
   | { locale: string; timeZone: string; timeFormat: string }
@@ -60,9 +41,7 @@ function makeFormatter(locale: string, timeZone: string): Intl.DateTimeFormat {
 
 // Tiny LRU keyed by `${locale}|${timeZone}` so repeated formatter calls
 // for the same deployment do not pay the `Intl.DateTimeFormat` ctor
-// cost on every invocation. The cap is generous enough for any real
-// deployment; admin-side experimentation that flips locales rapidly is
-// the only realistic source of churn.
+// cost on every invocation.
 const formatterCache = new Map<string, Intl.DateTimeFormat>()
 const FORMATTER_CACHE_MAX = 8
 
@@ -116,17 +95,9 @@ function pad(value: number): string {
 }
 
 export interface SlicePostsOptions {
-  // Optional tail-merge guard. When set to a positive integer M and the
-  // natural last page would render fewer than M posts, that last page is
-  // merged into its predecessor i.e. the predecessor absorbs the orphan
-  // posts via the existing "the last page is open-ended" branch below.
-  // The result is a smaller totalPage and a fatter last page; the route
-  // helper then 301-redirects any out-of-range :num back to the new
-  // last page through the shared overflow handler. Defaults to 0
-  // disabled, which is the historical behaviour every listing route
-  // except home opts into. Home uses pageSize - 2 so a tail of one or
-  // two orphaned posts collapses, but a near-full tail e.g. 8 of 10
-  // keeps its own page.
+  // When set to a positive integer M and the natural last page would
+  // render fewer than M posts, that last page is merged into its
+  // predecessor. Defaults to 0 (disabled).
   mergeTailWhenLessThan?: number
 }
 
@@ -155,9 +126,7 @@ export function slicePosts<Type>(
 // Returns the post-merge totalPage. When `threshold` is 0 or the natural
 // last page is already large enough, the natural totalPage is returned
 // unchanged. The merge is only valid when there are at least two pages
-// to begin with totalPage >= 2; a single-page listing has nothing to
-// merge into. The single-page guard also protects callers from a
-// near-empty catalog where the entire listing would otherwise be hidden.
+// to begin with.
 function applyTailMerge(postCount: number, pageSize: number, naturalTotalPage: number, threshold: number): number {
   if (threshold <= 0 || naturalTotalPage < 2) {
     return naturalTotalPage
@@ -204,4 +173,15 @@ export function formatLocalDate(source: string | Date, format: string | undefine
     .replaceAll('dd', pad(parts.day))
     .replaceAll('HH', pad(parts.hour))
     .replaceAll('mm', pad(parts.minute))
+}
+
+/** Format a duration in seconds into a Chinese human-readable string. */
+export function formatDuration(seconds: number): string {
+  if (seconds >= 3600) {
+    return `${Math.floor(seconds / 3600)} 小时`
+  }
+  if (seconds >= 60) {
+    return `${Math.floor(seconds / 60)} 分钟`
+  }
+  return `${seconds} 秒`
 }

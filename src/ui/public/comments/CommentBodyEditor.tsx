@@ -20,18 +20,7 @@ import { COMMENT_SLASH_COMMANDS } from '@/ui/public/comments/comment-slash-comma
 import { CommentEditorHint } from '@/ui/public/comments/CommentEditorHint'
 import { CommentEditorToolbar } from '@/ui/public/comments/CommentEditorToolbar'
 
-// Simplified Tiptap editor for comment bodies. Mirrors the admin
-// `PageBodyEditor` shape but loads only the extensions needed for the
-// comment dialect: paragraphs / lists / blockquote / inline marks /
-// fenced code / inline math (`$…$` shortcut) / block math (slash
-// menu). No headings, no image library, no music picker, no tables,
-// no footnotes — those are filtered out at the slash menu, the
-// `commentBodySchema` perimeter rejects any rogue blocks that slip
-// past the editor UI.
-//
-// Round-tripping uses the same PT ↔ ProseMirror bridge as posts /
-// pages, since `CommentBody` is a strict subset of the upstream PT
-// dialect.
+// Simplified Tiptap editor for comment bodies. Loads only extensions the comment dialect allows.
 
 export interface CommentBodyEditorProps {
   /** Initial PortableText body. Read on first mount + when `bodyKey` changes. */
@@ -70,9 +59,6 @@ export function CommentBodyEditor({
   placeholder,
   className,
 }: CommentBodyEditorProps) {
-  // Pin the latest `onBodyChange` so re-renders from the parent don't
-  // tear the editor's transaction handler. Same pattern as
-  // TanStack Query mutations and `PageBodyEditor`.
   const onBodyChangeRef = useRef(onBodyChange)
   onBodyChangeRef.current = onBodyChange
 
@@ -81,13 +67,7 @@ export function CommentBodyEditor({
   const extensions = useMemo(
     () => [
       StarterKit.configure({
-        // Comments are unstructured prose — headings would let one
-        // commenter visually outweigh the rest of the thread.
         heading: false,
-        // No native image support; comments don't carry media uploads.
-        // The PT schema rejects `image` blocks anyway.
-        // StarterKit doesn't include an image extension by default,
-        // so nothing to disable here, but list it for clarity.
         horizontalRule: false,
         link: false,
         dropcursor: { color: '#3b82f6', width: 2 },
@@ -98,11 +78,7 @@ export function CommentBodyEditor({
         HTMLAttributes: { class: null, target: null, rel: null },
       }),
       Placeholder.configure({ placeholder: placeholderText }),
-      // `mathInline` mark + `$…$` input rule.
       MathInlineMark,
-      // PM node for any `mathBlock` payloads round-tripping through
-      // the bridge. The shared editor node view ships with a math
-      // preview surface that's perfectly usable in the comment form.
       BlockCardNode,
       SlashCommandsExtension.configure({ commands: COMMENT_SLASH_COMMANDS }),
     ],
@@ -119,26 +95,16 @@ export function CommentBodyEditor({
       const result = safeValidateCommentBody(body)
       if (result.ok) {
         onBodyChangeRef.current(result.body)
-      } else {
-        // Editor produced a transient state that violates the comment
-        // schema (rare — typically only between two transactions on a
-        // freshly-inserted block). The save-side `canonicalizeCommentBody`
-        // will surface a precise error if the body is still invalid at
-        // submit time; for live updates we propagate the parent's most
-        // recent valid body by skipping this tick.
       }
     },
   })
 
-  // Reset content when `bodyKey` changes (form submit clears the editor,
-  // switching the edited comment loads a different body).
+  // Reset editor content when `bodyKey` changes.
   useEffect(() => {
     if (editor === null) {
       return
     }
     editor.commands.setContent(safeBodyToPmDoc(initialBody) as JSONContent, { emitUpdate: false })
-    // `initialBody` ref isn't a stable dep — keying on `bodyKey` is
-    // the documented contract for resetting.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bodyKey, editor])
 
@@ -151,9 +117,6 @@ export function CommentBodyEditor({
   return (
     <div
       className={cn(
-        // `group/comment-editor` lets the toolbar listen for
-        // `focus-within` on this wrapper without grabbing the focus
-        // state itself.
         'group/comment-editor',
         'rounded-md border border-line bg-background',
         'focus-within:border-brand focus-within:ring-1 focus-within:ring-brand/40',
@@ -167,16 +130,7 @@ export function CommentBodyEditor({
           'prose-blog prose prose-sm max-w-none px-3 py-2',
           'min-h-[6rem]',
           'wrap-break-word whitespace-normal',
-          // Tiptap injects `.ProseMirror` on the contenteditable host.
           '[&_.ProseMirror]:min-h-[5rem] [&_.ProseMirror]:outline-none',
-          // The Tailwind Typography plugin gives every `<p>` a top
-          // margin via `.prose > :first-child` reset that only fires
-          // for direct children — but our `<p>` sits inside the
-          // injected `.ProseMirror` wrapper, so the reset misses and
-          // the first paragraph picks up both the editor `py-2` AND
-          // the prose-sm `<p>` margin. Zero out the first/last child
-          // margins inside `.ProseMirror` so the caret hugs the
-          // padding box instead of floating below it.
           '[&_.ProseMirror>:first-child]:mt-0 [&_.ProseMirror>:last-child]:mb-0',
         )}
       />
@@ -185,8 +139,6 @@ export function CommentBodyEditor({
   )
 }
 
-// Helper exposed so the consuming form can detect "no actual content" without
-// poking into the editor instance directly.
 export function isCommentBodyBlank(body: CommentBody): boolean {
   if (body.length === 0) {
     return true
@@ -209,9 +161,6 @@ export function isCommentBodyBlank(body: CommentBody): boolean {
   return true
 }
 
-// Re-export so callers that already import the editor can grab the empty
-// body sentinel without a second import path.
 export const EMPTY_COMMENT_BODY: CommentBody = EMPTY_BODY
 
-// Avoid an unused-var lint error if a caller imports `Editor` from this module.
 export type { Editor }

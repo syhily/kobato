@@ -10,7 +10,6 @@ import { adminSession, authorSession, regularSession } from '#/_helpers/session'
 //
 //   - `status=draft` posts are invisible to anonymous/regular users (404).
 //   - Admin and author users see the draft via `loadPostDraftPreviewBySlug`
-//     with a `【草稿】` marker in the title bar.
 
 const publishedBody: PortableTextBody = [
   {

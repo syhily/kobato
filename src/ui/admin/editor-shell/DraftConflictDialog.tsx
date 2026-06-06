@@ -6,18 +6,6 @@ import { diffBodies, DiffPanel } from '@/ui/admin/editor/portable-text-diff'
 import { Button } from '@/ui/components/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/ui/components/dialog'
 
-// "Local vs server" diff resolver. Renders when the editor opens a
-// page and both Local Storage AND the server have a draft, but their
-// PortableText bodies differ. The author picks one — the loser is
-// discarded. There's no merge: PT body diffing is structural, but
-// merging two structural docs requires user-driven block-level
-// resolution, which is overkill for our scale.
-//
-// Diff strategy: align blocks by `_key` via `diffBodies`. The
-// rendering primitive (`DiffPanel`) is shared with the revision
-// history drawer, which uses the same alignment to compare any
-// historical revision against the editor's current body.
-
 export interface DraftConflictDialogProps {
   open: boolean
   /** PT body that was just loaded from Local Storage. */
@@ -43,9 +31,6 @@ export function DraftConflictDialog({
   onChooseLocal,
   onChooseServer,
 }: DraftConflictDialogProps) {
-  // Server is on the *left*, local on the *right*: the right column
-  // gets the green "added" highlights so the operator can scan the
-  // delta they've authored at a glance.
   const diff = diffBodies(serverBody, localBody)
 
   return (

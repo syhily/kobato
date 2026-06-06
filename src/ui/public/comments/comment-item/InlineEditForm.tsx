@@ -35,20 +35,13 @@ export function InlineEditForm({ commentId, onCancel, onSaved }: InlineEditFormP
   const editAction = useMutation({
     ...orpcQuery.comments.edit.mutationOptions(),
     onSuccess: (payload: CommentEditOutput) => {
-      // Drive the parent reducer first so the freshly-edited content appears
-      // in the tree before the editor closes (keeps the post-save flicker
-      // confined to the edit area instead of the whole row).
       leaf.onEdited(payload.comment)
       onSaved(payload.comment)
     },
   })
 
-  // Load the raw PT body on first mount.
   useEffect(() => {
     raw.mutate({ rid: String(commentId) })
-    // `raw` object reference is unstable across renders; only `mutate`
-    // is memoised. Keying solely on `commentId` prevents a re-fetch
-    // loop that would keep resetting the editor cursor to the end.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [commentId])
 

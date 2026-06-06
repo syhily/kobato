@@ -22,18 +22,6 @@ interface ConfirmClearDialogProps {
   onCancel: () => void
 }
 
-// Confirmation modal shared by both the per-bucket clear buttons and
-// the "清空全部缓存" CTA. The dialog is rendered with `open` driven
-// by the parent's `confirmTarget !== null`. When the user clicks
-// 取消 the parent flips `confirmTarget` back to `null`, which (a)
-// starts the close animation and (b) immediately resets every prop
-// derived from `target`. Without a snapshot the title would morph
-// from "清空全部缓存？" to "清空「」缓存？" and the action button
-// from "确认清空全部" to "确认清空" *during* the fade-out — exactly
-// the regression #2403 reported. We cache the last truthy `target`
-// so the in-flight close animation keeps rendering the contents the
-// user just saw, without ever crossing back to a stale value once
-// the dialog reopens.
 export function ConfirmClearDialog({ open, target, buckets, onConfirm, onCancel }: ConfirmClearDialogProps) {
   const lastTargetRef = useRef<ClearCacheTarget | null>(target)
   if (target !== null) {

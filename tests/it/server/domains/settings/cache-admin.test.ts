@@ -91,7 +91,6 @@ describe('service: cache admin', () => {
       embeddingSearch: 0,
       searchResult: 0,
     })
-    // Out-of-bucket keys survive a "全部清空".
     const remaining = await remainingOwnKeys(ownKeys)
     expect(remaining).toEqual(['session:xyz'])
   })

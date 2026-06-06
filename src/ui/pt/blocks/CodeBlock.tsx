@@ -92,12 +92,6 @@ export function CodeBlock({ children, className, copyText, dangerouslySetInnerHT
         </button>
       </div>
       {dangerouslySetInnerHTML !== undefined ? (
-        // Shiki `codeToHtml` already emits `<pre class="shiki">…</pre>` — host
-        // it in a div so we do not nest `<pre>` inside `<pre>`.
-        //
-        // SAFETY: `dangerouslySetInnerHTML` carries HTML produced by Shiki's
-        // `codeToHtml`, which HTML-escapes the raw source code. No untrusted
-        // user input reaches this path without escaping.
         <div
           className={cn(
             '[&>pre]:mt-0 [&>pre]:mb-0 [&>pre]:rounded-t-none [&>pre]:border-t-0',
@@ -110,14 +104,6 @@ export function CodeBlock({ children, className, copyText, dangerouslySetInnerHT
       ) : (
         <pre
           {...props}
-          // Resets the parent prose `:where(pre)` margins / top-radius so the
-          // pre tucks flush under `.code-header`. Mirrors the legacy
-          // `.code-block-wrapper > pre` and `.code-header + pre` rules.
-          // The utilities below land in `@layer utilities`, which beats
-          // `@tailwindcss/typography`'s prose styles in `@layer components`
-          // per the W3C cascade-layers spec — so no `!` is needed (Stage
-          // 11 P2). Inside `.comment-content` the wrapper already
-          // collapses pre margins to 0.
           className={cn(className, 'mt-0 mb-0 rounded-t-none border-t-0', 'in-[.comment-content]:m-0')}
           data-language={language}
         >

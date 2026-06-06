@@ -5,12 +5,6 @@ import { Separator } from '@/ui/components/separator'
 import { cn } from '@/ui/lib/cn'
 import { cva, type VariantProps } from '@/ui/lib/cva'
 
-// Project-local copy of shadcn/ui's Field primitives, ported to the
-// ``-prefixed Tailwind v4 setup we use in the admin shell. The
-// upstream component is the canonical anchor for Skill rule
-// "Forms use FieldGroup + Field" (skills/shadcn/rules/forms.md). Source:
-// https://github.com/shadcn-ui/ui/blob/main/apps/v4/registry/new-york-v4/ui/field.tsx
-
 function FieldSet({ className, ...props }: ComponentProps<'fieldset'>) {
   return (
     <fieldset

@@ -1,7 +1,3 @@
-// ---------------------------------------------------------------------------
-// Audit Log 类型定义
-// ---------------------------------------------------------------------------
-
 export interface AuditContext {
   viewer: { userId: bigint | string; role?: string } | null
   clientAddress: string

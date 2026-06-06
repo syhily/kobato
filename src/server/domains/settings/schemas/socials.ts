@@ -10,7 +10,6 @@ import { httpUrlOrEmptyStringSchema } from '@/shared/utils/safe-url'
 // defence against a hand-crafted payload that tries to mix and match.
 //
 // The `superRefine` then enforces uniqueness so every platform appears
-// at most once: the editor's "添加社交链接" menu already hides used
 // platforms, but a stale tab or a direct API call could otherwise sneak
 // duplicates past the UI.
 export const socialsSchema = z

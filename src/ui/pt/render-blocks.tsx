@@ -22,8 +22,6 @@ import { FootnoteReference } from '@/ui/pt/Footnotes'
 import { renderMathMarkupOrTexFallback } from '@/ui/pt/render-marks'
 import { HeadingIdByBlockKeyContext, MusicPresentationContext, PT_INLINE } from '@/ui/pt/render-shared'
 
-// --- Layout helpers ---------------------------------------------------------
-
 export function alignClass(align: string | undefined): string | undefined {
   if (align === 'center') {
     return 'text-center'
@@ -46,8 +44,6 @@ function imageFigureLayoutClass(layout: ImageBlock['layout']): string {
     l === 'right' && 'mr-0 ml-auto w-fit',
   )
 }
-
-// --- Standard text blocks ---------------------------------------------------
 
 export function HeadingBlock({
   children,
@@ -77,8 +73,6 @@ export function BlockquoteBlock({ value, children }: { value: TextBlock; childre
   const cls = alignClass(value.align)
   return <blockquote className={cls}>{children}</blockquote>
 }
-
-// --- Custom-block renderers -------------------------------------------------
 
 export function ImageBlockComponent({ value }: PortableTextTypeComponentProps<ImageBlock>) {
   return (
@@ -137,8 +131,6 @@ export function MusicPlayerComponent({ value }: PortableTextTypeComponentProps<M
   )
 }
 
-// --- Table block + inline-only cell content --------------------------------
-
 export function TableBlockComponent({ value }: PortableTextTypeComponentProps<TableBlock>) {
   const rows = value.rows ?? []
   const hasHeader = value.hasHeaderRow ?? false
@@ -173,11 +165,6 @@ export function TableBlockComponent({ value }: PortableTextTypeComponentProps<Ta
   )
 }
 
-// Render a flat span list (with an outer markDefs registry) without
-// going through `<PortableText>` itself — table cells are NOT block
-// arrays in our dialect (they only carry inline spans + mark defs),
-// so wrapping them in a virtual block just to feed them back through
-// the toolkit would be wasteful and would also force a `<p>` wrapper.
 function renderSpansInline(spans: readonly Span[], markDefs: readonly MarkDef[]): ReactNode {
   return spans.map((span) => <SpanInline key={span._key} span={span} markDefs={markDefs} />)
 }
@@ -187,8 +174,6 @@ function SpanInline({ span, markDefs }: { span: Span; markDefs: readonly MarkDef
   if (marks.length === 0) {
     return <>{span.text}</>
   }
-  // Wrap innermost-out so the last mark name becomes the outermost
-  // wrapper, matching the toolkit's mark stacking semantics.
   let node: ReactNode = span.text
   for (const markName of marks) {
     node = applyInlineMark(node, markName, markDefs)

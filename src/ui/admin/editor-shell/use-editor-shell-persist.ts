@@ -96,8 +96,6 @@ export function useEditorShellPersist<
     createDraft,
   } = args
 
-  // --- Mutations (hook-owned so onSuccess can wire into reducers
-  //     without TDZ) -------------------------------------------------------
   const upsertMetaMutation = useMutation({
     mutationFn: upsertMetaFn,
     onSuccess: (saved) => onMetaSaved(saved),
@@ -112,10 +110,6 @@ export function useEditorShellPersist<
     mutationFn: publishFn,
     onSuccess: (payload) => {
       onBodySaved(payload)
-      // Server-side publish flips `meta.published = true` in the
-      // same transaction as promoting the revision. Mirror locally
-      // so the badge + toolbar swap immediately, without waiting
-      // for a route refresh.
       if (payload.status === 'saved') {
         setMeta((m) => ({ ...m, published: true }))
       }

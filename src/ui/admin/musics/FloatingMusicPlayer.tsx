@@ -10,12 +10,9 @@ import { cn } from '@/ui/lib/cn'
 const APlayer = lazy(() => import('@/ui/public/aplayer/player').then((m) => ({ default: m.APlayer })))
 
 export interface FloatingMusicPlayerTrack {
-  /** Opaque player id (the one the public GET endpoint accepts). */
   playerId: string
-  /** Display fallback shown while the metadata round-trip is in flight. */
   name: string
   artist: string[]
-  /** Pre-resolved cover URL; used by the collapsed pill. */
   coverUrl: string
 }
 
@@ -54,15 +51,9 @@ export function FloatingMusicPlayer({ track, onClose }: FloatingMusicPlayerProps
     return () => {
       cancelled = true
     }
-    // Intentional: the parent passes a fresh `track` object every
-    // mount via `key={track.playerId}`, so this hook only ever runs
-    // once per mount.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // Display preferences: prefer the resolved meta once it lands so
-  // collapsed state matches what APlayer is actually playing, but
-  // fall back to the row-derived hints during the initial fetch.
   const displayName = audio?.name ?? track.name
   const displayArtist =
     (typeof audio?.artist === 'string'
@@ -76,8 +67,6 @@ export function FloatingMusicPlayer({ track, onClose }: FloatingMusicPlayerProps
     <section
       aria-label="浮动音乐播放器"
       className={cn(
-        // Right-middle pin. `top-1/2 -translate-y-1/2` keeps the dock
-        // vertically centred regardless of the player card height. The
         // z-index sits between the admin header (`z-30`) and the
         // scroll-to-top button (`z-40`) — same band as the back-to-top
         // affordance so neither steals focus from the other.

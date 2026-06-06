@@ -12,8 +12,6 @@ import { formatLocalDate } from '@/shared/utils/formatter'
 import { Badge } from '@/ui/components/badge'
 import { Button } from '@/ui/components/button'
 
-// Empty-state copy. Picked once in the SSR loader so the same line is
-// used during hydration — no hydration mismatch.
 export const EMPTY_STATE_LINES: ReadonlyArray<string> = [
   '审核台空空如也，今日得清闲。',
   '万事妥帖，可以安心写新东西了。',
@@ -27,15 +25,8 @@ export function pickEmptyStateLine(): string {
 }
 
 const PAGE_SIZE = 3
-// Compact metadata timestamp shown next to the author. Year is omitted
-// to keep the row light — the full ISO sits in the `<time title>` for
-// hover and a11y readers.
 const ROW_DATE_FORMAT = 'LL-dd HH:mm'
 
-// Welcome-page moderation inbox. The two pending-comment queues
-// (pending-approval + pending-delete-request) are folded into a
-// single chronological list ordered by most-recent activity — the
-// row's badge tells the admin which queue surfaced it.
 export interface PendingModerationPanelProps {
   initial: ListPendingDashboardOutput
   emptyStateLine: string
@@ -62,8 +53,6 @@ export function PendingModerationPanel({ initial, emptyStateLine }: PendingModer
     setOffset(nextOffset)
   }
 
-  // Refetches the current view. Used after each per-row mutation so the
-  // approved/rejected row falls off the list and the counts update.
   const refresh = useCallback(() => {
     void refetch()
   }, [refetch])
@@ -299,10 +288,6 @@ function PendingRow({ item, disabled, onApprove, onReject, onApproveDeletion, on
   )
 }
 
-// "All clear" celebration block. Big amber lightbulb (status-warn fg
-// for a warm glow that reads as a friendly hint, not a neutral icon)
-// over a soft tinted disc, with a randomised one-liner underneath so
-// the panel feels alive rather than mechanically empty.
 function EmptyState({ line }: { line: string }) {
   return (
     <div className="flex flex-col items-center gap-4 py-10 text-center">

@@ -23,18 +23,6 @@ export function Friends({ friends }: FriendsProps) {
     )
   }
 
-  // The Friends grid renders inside an MDX page body, which is
-  // wrapped in `prose-blog prose prose-lg` by `PageDetailBody`. The
-  // `prose` cascade injects `:where(img) { margin-top: 2em; margin-
-  // bottom: 2em }` (and similar rules on `<h2>`, paragraphs, etc.)
-  // onto every descendant — including the `<img>` inside each
-  // friend card's `absolute inset-0` poster slot, which pushes
-  // the image down inside its 3:1 frame and produces the visible
-  // gap at the top of every card. The card grid is its own visual
-  // domain (cards, not flowing prose), so opt the whole subtree out
-  // with `not-prose`. The `:where(...) :not(:where([class~="not-
-  // prose"], [class~="not-prose"] *))` exclusion in
-  // `@tailwindcss/typography`'s rules then skips this entire tree.
   return (
     <div className="not-prose mt-10 px-4 md:mt-8 md:px-0">
       <h2 className="mb-6 text-xl text-ink-4 md:mb-4 md:text-2xl">

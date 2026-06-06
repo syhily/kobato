@@ -45,7 +45,6 @@ export function requireRole(
   requireUserRole(ctx.user, min)
 }
 
-// ---------------------------------------------------------------------------
 // Permission predicates
 //
 // Two families:
@@ -62,7 +61,6 @@ export function requireRole(
 //
 // Keeping the two families separate avoids the "for-the-sake-of-DRY"
 // trap of collapsing them into one — see RBAC-REVIEW §R1.
-// ---------------------------------------------------------------------------
 
 // Factory: build an ownership predicate keyed off a single bigint(-or-null)
 // column. `bigint` is assignable to `bigint | null`, so non-null callers

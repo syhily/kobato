@@ -179,7 +179,6 @@ export async function sendSignInOtp(user: { name: string; email: string }, otpCo
   return sendEmail(user.email, `【${siteIdentity.title}】登录验证码`, html)
 }
 
-// Sent on demand from the admin "测试发送" button. Bypasses the
 // `enabled` master switch on purpose: an editor needs to verify the
 // connection to upstream BEFORE flipping the public toggle. The
 // `unconfigured` guard still applies — there's no point round-tripping

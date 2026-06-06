@@ -1,33 +1,13 @@
 import type { MetaDescriptor } from 'react-router'
 
-// IMPORTANT: this module is imported by every route's `meta()` export
-// and `meta()` runs on the client too (after client-side navigation).
-// That means anything imported here ends up in the client bundle, so
-// we read settings through the **shared** snapshot reader on SSR — never
-// through `@/server/*`, which would drag Drizzle/Postgres into the
-// browser.
-//
-// On the server the snapshot is hydrated once at boot by the settings
-// service. On the client we no longer keep a parallel `globalThis`
-// snapshot in sync — instead, every `meta()` callback reads the bundle
-// from `Route.MetaArgs.matches[0].data.blogSettings` (the root
-// loader's payload). `metaWithFallback` is the canonical helper that
-// performs that extraction, but per-route `meta()` callbacks can also
-// pass an explicit `bundle` to `routeMeta()` / `pageTitle()`.
-//
-// A `null` bundle is possible only on the install split-screen (the
-// install gate intercepts every other path); each helper handles it
-// defensively.
+// This module runs on both server and client (via `meta()`), so it only
+// imports from `@/shared/*` — never `@/server/*` which would bloat the bundle.
 import type { BlogSettingsBundle } from '@/shared/config/types'
 
 import { getBlogSettingsBundleSync } from '@/shared/config/getters'
 import { brandingVersion, extractXHandle } from '@/shared/config/utils'
 import { joinUrl } from '@/shared/utils/urls'
 
-// Minimal sentinel rendered before the install flow has populated the
-// settings row. The admin SPA never reaches `routeMeta` (it owns its
-// own meta), so the only consumer is the install split-screen — a few
-// generic tags is plenty until the editor finishes installing.
 const PRE_INSTALL_TITLE = '正在安装'
 
 interface ArticleSeo {
@@ -40,15 +20,8 @@ interface ArticleSeo {
 type SeoVariant = { kind: 'page'; article: ArticleSeo } | { kind: 'post'; article: ArticleSeo } | { kind: 'website' }
 
 export interface FeedLinkOptions {
-  /** RSS feed URL (absolute or root-relative). */
   rss?: string
-  /** Atom feed URL (absolute or root-relative). */
   atom?: string
-  /**
-   * Optional `<link title>` shown by feed readers. When omitted, falls back
-   * to the page title so readers can distinguish per-category/per-tag feeds
-   * from the site-wide one.
-   */
   title?: string
 }
 
@@ -63,11 +36,6 @@ export interface RouteSeoOptions {
   prevUrl?: string
   nextUrl?: string
   noindex?: boolean
-  /**
-   * Additional `<link rel="alternate">` entries advertising scoped feeds
-   * (per-category, per-tag, …). These append to — never replace — the
-   * site-wide feeds emitted by `baseTags()`.
-   */
   feedLinks?: FeedLinkOptions
 }
 
@@ -241,10 +209,6 @@ function toIsoString(value: Date | string): string {
   return value instanceof Date ? value.toISOString() : new Date(value).toISOString()
 }
 
-// Pure helpers consumed by detail-page `meta()` callbacks. Shaping the SEO
-// payload here means detail loaders no longer need to ship a denormalised
-// `seo: {...}` field over the wire on every client navigation — `meta()`
-// reads the post/page directly and projects it into `RouteSeoOptions`.
 export interface PostMetaShape {
   title: string
   slug: string
@@ -404,33 +368,6 @@ interface RootLoaderData {
   blogSettings?: BlogSettingsBundle | null
 }
 
-// Match shape minimally compatible with `Route.MetaArgs.matches`.
-// Per-route `Route.MetaArgs.matches` is a readonly tuple of richly
-// typed match descriptors (with `id: "root"` literal types and
-// branded `data`). We only need `id` and `data` to read the root
-// match — accept anything that exposes those fields via `unknown`,
-// then narrow at the call site.
-//
-// Why `unknown` instead of a structural object: React Router's
-// per-route match tuples are NOT assignable to a wider object array
-// because of TypeScript variance (readonly tuples preserve element
-// literal types like `id: "root"` that don't widen to `string`).
-// `unknown[]` accepts the tuple without a manual `as` cast at the
-// route, which is the whole point of this helper.
-
-/**
- * Extract the `BlogSettingsBundle` the root loader handed down so a
- * route's `meta()` can read it without touching `globalThis`. Returns
- * `undefined` when there's no root match in scope (which only happens
- * during the install split-screen, where the meta defaults already
- * cover us).
- *
- * `meta()` runs on the client after a client-side navigation, before
- * the root component re-mounts and any React-side context updates
- * land. Passing the bundle explicitly through `matches` is the
- * standard React Router pattern and replaces the previous
- * `globalThis`-snapshot pump in `App` / `metaWithFallback`.
- */
 export function bundleFromMatches(matches: readonly unknown[]): BlogSettingsBundle | null | undefined {
   const rootMatch = matches.find(
     (m): m is { id: string; data: unknown } =>
@@ -443,21 +380,6 @@ export function bundleFromMatches(matches: readonly unknown[]): BlogSettingsBund
   return rootLoader.blogSettings ?? null
 }
 
-/**
- * Helper for routes whose loader optionally pre-computes a `seo`
- * descriptor array (`listingSeo()`, `seoForPost()`, …). When the
- * loader produced one, it wins; otherwise this falls back to
- * `routeMeta()` with the bundle pulled out of `matches`.
- *
- * Centralising this glue keeps every listing route's `meta()` body to
- * a single line and ensures the bundle lookup can't go missing on a
- * future route.
- *
- * Pass an explicit `fallback` factory when the route wants to hand
- * `routeMeta()` extra options (e.g. a custom title); the factory
- * receives the resolved bundle so callers don't have to extract it a
- * second time.
- */
 export function metaWithFallback<TLoader extends { seo?: MetaDescriptor[] } | undefined>({
   loaderData,
   matches,

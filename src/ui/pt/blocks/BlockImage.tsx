@@ -11,9 +11,6 @@ import { useImageMeta } from '@/ui/pt/image-meta-context'
 import { DARK_IMAGE_DIM_CLASS } from '@/ui/public/widgets/Image'
 import { useImageLoaded } from '@/ui/public/widgets/use-image-loaded'
 
-// `<img>` override for PortableText image blocks. Wires the thumbhash
-// placeholder into the tree and lazily resolves missing hashes through a
-// small GET endpoint, cached by image `src`.
 export type BlockImageProps = Omit<ImgHTMLAttributes<HTMLImageElement>, 'ref'> & {
   'data-thumbhash'?: string
   ref?: Ref<HTMLImageElement>
@@ -25,14 +22,6 @@ interface ResolvedImageMeta {
   height?: number
 }
 
-// Cap the cache so a long-running tab that browses through many posts
-// doesn't keep every resolved thumbhash in memory. The eviction
-// behaviour is insertion-order: when the cap is hit, the oldest entry
-// drops out so the newest can land. We don't bother with true LRU
-// (touching a key on read to move it to the end) — same-page revisits
-// would defeat eviction anyway because the resolved meta is also held
-// by the rendered component's state, so the cache is only consulted
-// on the first paint of a new instance.
 const META_CACHE_LIMIT = 256
 const imageMetaBySrcCache = new Map<string, ResolvedImageMeta>()
 

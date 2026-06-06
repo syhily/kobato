@@ -13,9 +13,7 @@ let archiveTimer: NodeJS.Timeout | null = null
 let archivedDb: NodePgDatabase | undefined
 let archivedPool: Pool | undefined
 
-// ---------------------------------------------------------------------------
 // Scheduler — daily at 04:00
-// ---------------------------------------------------------------------------
 
 function computeNextRun(now: Date, hour: number, minute: number): Date {
   const next = new Date(now)

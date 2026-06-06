@@ -21,34 +21,13 @@ const ImageEditorCanvas = lazy(() =>
   import('@/ui/admin/shared/ImageEditorCanvas').then((m) => ({ default: m.ImageEditorCanvas })),
 )
 
-// Upload variants. The fixed-aspect variants pre-set the locked
-// 1280×425 ratio used by category covers and friend posters; the
-// generic variant lets the operator pick a free crop.
-//
-// `kind` carries the discriminator field the backend expects in the
-// metadata block, plus the supplementary key (slug or host) that
-// determines the target S3 object key.
 export type UploadKind = { kind: 'generic' } | { kind: 'category'; slug: string } | { kind: 'friend'; host: string }
 
 export interface UploadImageDialogProps {
   open: boolean
-  /**
-   * Discriminator that decides three things at once:
-   *   - the locked aspect ratio for the cropper (or "free")
-   *   - the metadata key sent in the multipart body
-   *   - the dialog title shown to the operator
-   *
-   * Closing the dialog should reset this on the parent so the editor
-   * canvas unloads its bitmap.
-   */
   kind: UploadKind
   onClose: () => void
   onUploaded: (image: AdminImageDto) => void
-  /**
-   * When provided, the dialog seeds its editor with this file on open
-   * instead of waiting for the user to pick one through the file input.
-   * Used by drag-and-drop flows.
-   */
   initialFile?: File
 }
 
@@ -62,28 +41,12 @@ export function UploadImageDialog({ open, kind, onClose, onUploaded, initialFile
   const [jpegQuality, setJpegQuality] = useState<number>(82)
   const [note, setNote] = useState('')
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
-  // `cropWidth` is the current source-pixel width of the crop
-  // rectangle reported by `<ImageEditorCanvas onCropChange>`. It's
-  // the upper bound for the operator-visible "目标宽度" input below
-  // (resizing larger than the crop would upscale and add nothing).
-  // `targetWidth` is null for "no resize" — the encoder writes the
-  // crop at its native resolution.
   const [cropWidth, setCropWidth] = useState<number | null>(null)
   const [targetWidth, setTargetWidth] = useState<number | null>(null)
-  // Operator-visible value for the width input. Kept separate from
-  // the committed `targetWidth` so an in-progress edit (e.g. "12"
-  // on the way to "1280") doesn't immediately clamp / re-encode.
   const [targetWidthDraft, setTargetWidthDraft] = useState<string>('')
   const encoderRef = useRef<(() => Promise<{ blob: Blob; width: number; height: number }>) | null>(null)
   const [isPending, setIsPending] = useState(false)
 
-  // Reset internal state every time the dialog opens. Without this, the
-  // previous selection's preview would flash for a moment when the
-  // operator reopens the dialog with a fresh `kind`. Keyed on `open`
-  // alone — `kind` changes between renders are not interesting (the
-  // discriminator only flips when the parent rebuilds the dialog), and
-  // including a fresh-each-render `kind` object would re-fire the
-  // reset on every parent render.
   useEffect(() => {
     if (!open) {
       return
@@ -114,11 +77,6 @@ export function UploadImageDialog({ open, kind, onClose, onUploaded, initialFile
     encoderRef.current = encoder
   }, [])
 
-  // Snap the committed `targetWidth` down whenever the operator
-  // resizes the crop rectangle below it. The draft string is left
-  // alone so a partial edit ("12" on the way to "1280") survives a
-  // crop nudge — the input commits on blur / Enter through the
-  // helper below.
   const handleCropChange = useCallback((nextCropWidth: number, _nextCropHeight: number) => {
     const rounded = Math.max(1, Math.round(nextCropWidth))
     setCropWidth(rounded)
@@ -160,8 +118,6 @@ export function UploadImageDialog({ open, kind, onClose, onUploaded, initialFile
     setIsPending(true)
     try {
       const encoded = await encoderRef.current()
-      // oRPC's RPC link serializes Blob inputs as `multipart/form-data`
-      // automatically; metadata travels alongside in the same envelope.
       const trimmedNote = note.trim()
       const metadata =
         kind.kind === 'category'

@@ -18,38 +18,12 @@ export interface ImageFieldProps {
   value: string
   onChange: (next: string) => void
   disabled?: boolean
-  /**
-   * Tailwind aspect class controlling the click-target shape. Cover
-   * fields use `aspect-[16/9]` (the list-card preview shape); OG
-   * fields use `aspect-[1200/630]` (the default OG render dimensions
-   * declared in `setting('blog.seo')`). Hard-coding the aspect at
-   * the call site keeps every preview tile pixel-perfect for its
-   * downstream surface.
-   */
   aspect: string
-  /** Placeholder shown inside the collapsed "粘贴 URL" `<input>`. */
   urlPlaceholder: string
-  /**
-   * Optional empty-state surface rendered *inside* the click target
-   * when `value === ''`. The OG field uses this to drop the live
-   * `<GeneratedOgPreview />` underneath the click overlay so the
-   * operator sees the auto-generated OG card and can click anywhere
-   * on it to override. When omitted, the empty-state shows a
-   * plus-icon placeholder.
-   */
   emptyContent?: ReactNode
-  /**
-   * One-line hint rendered below the click target. Cover and OG use
-   * this to explain the click affordance and (for OG) to clarify
-   * whether the displayed preview is a generated default or the
-   * operator's override.
-   */
   emptyHint?: string
 }
 
-// Image-first metadata field — see the post-side twin at
-// `@/ui/admin/posts/meta/ImageField` for the full state-machine
-// rationale. Kept verbatim here so each entity owns its own meta tree.
 export function ImageField({
   id,
   label,

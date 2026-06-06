@@ -1,9 +1,7 @@
 import process from 'node:process'
 import { z } from 'zod'
 
-// ---------------------------------------------------------------------------
 // Minimal t3-env replacement — Zod-only, server-only
-// ---------------------------------------------------------------------------
 
 type ServerSchema = Record<string, z.ZodType>
 
@@ -75,9 +73,7 @@ export function createEnv<TServer extends ServerSchema>(opts: CreateEnvOptions<T
   return result as InferOutput<TServer>
 }
 
-// ---------------------------------------------------------------------------
 // Project environment schema
-// ---------------------------------------------------------------------------
 
 const envConfig = {
   server: {

@@ -6,10 +6,6 @@ import { useIsActiveLink } from '@/ui/admin/shell/use-is-active-link'
 import { SidebarMenuButton, SidebarMenuItem, useSidebar } from '@/ui/components/sidebar'
 import { cn } from '@/ui/lib/cn'
 
-/* ------------------------------------------------------------------ */
-/*  Collapsible context                                                */
-/* ------------------------------------------------------------------ */
-
 interface CollapsibleContextValue {
   expanded: boolean
   id: string
@@ -26,17 +22,9 @@ function useCollapsibleContext() {
   return ctx
 }
 
-/* ------------------------------------------------------------------ */
-/*  NavMenuItem root                                                   */
-/* ------------------------------------------------------------------ */
-
 function NavMenuItemRoot({ children, ...props }: ComponentProps<typeof SidebarMenuItem>) {
   return <SidebarMenuItem {...props}>{children}</SidebarMenuItem>
 }
-
-/* ------------------------------------------------------------------ */
-/*  NavMenuLink                                                        */
-/* ------------------------------------------------------------------ */
 
 interface NavMenuLinkProps extends ComponentProps<typeof SidebarMenuButton> {
   to?: string
@@ -99,10 +87,6 @@ function NavMenuLink({
   )
 }
 
-/* ------------------------------------------------------------------ */
-/*  NavMenuLabel                                                       */
-/* ------------------------------------------------------------------ */
-
 function NavMenuLabel({ children, className, ...props }: ComponentProps<'span'>) {
   return (
     <span className={cn('truncate', className)} {...props}>
@@ -111,18 +95,10 @@ function NavMenuLabel({ children, className, ...props }: ComponentProps<'span'>)
   )
 }
 
-/* ------------------------------------------------------------------ */
-/*  useMatchAny                                                        */
-/* ------------------------------------------------------------------ */
-
 function useMatchAny(paths: string[]): boolean {
   const { pathname } = useLocation()
   return paths.some((path) => matchPath({ path, end: false }, pathname) != null)
 }
-
-/* ------------------------------------------------------------------ */
-/*  NavMenuCollapsible                                                 */
-/* ------------------------------------------------------------------ */
 
 interface NavMenuCollapsibleProps {
   children: ReactNode
@@ -143,10 +119,6 @@ function NavMenuCollapsible({ children, id, paths = [] }: NavMenuCollapsibleProp
   const value = useMemo(() => ({ expanded, id, onExpandedChange: setExpanded }), [expanded, id])
   return <CollapsibleContext.Provider value={value}>{children}</CollapsibleContext.Provider>
 }
-
-/* ------------------------------------------------------------------ */
-/*  NavMenuCollapsibleItem                                             */
-/* ------------------------------------------------------------------ */
 
 interface NavMenuCollapsibleItemProps {
   ariaLabel: string
@@ -188,10 +160,6 @@ function NavMenuCollapsibleItem({ ariaLabel, children, action }: NavMenuCollapsi
   )
 }
 
-/* ------------------------------------------------------------------ */
-/*  NavMenuCollapsibleMenu                                             */
-/* ------------------------------------------------------------------ */
-
 interface NavMenuCollapsibleMenuProps {
   children: ReactNode
 }
@@ -211,10 +179,6 @@ function NavMenuCollapsibleMenu({ children }: NavMenuCollapsibleMenuProps) {
     </fieldset>
   )
 }
-
-/* ------------------------------------------------------------------ */
-/*  Namespace assembly                                                 */
-/* ------------------------------------------------------------------ */
 
 const NavMenuItem = Object.assign(NavMenuItemRoot, {
   Link: NavMenuLink,

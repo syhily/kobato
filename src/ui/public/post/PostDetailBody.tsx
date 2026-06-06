@@ -49,13 +49,6 @@ export function PostDetailBody({
       <div className="mx-auto w-full px-3 sm:max-w-sm md:max-w-md lg:max-w-lg xl:max-w-xl 2xl:max-w-2xl">
         <div className="-mx-3 flex flex-wrap">
           <div className="box-border w-full max-w-full shrink-0 px-3 xl:w-[71%]">
-            {/* Collapsed the historical two-layer DOM (outer
-                `<div class="post flex flex-col …">` holding the card
-                chrome, inner `<div class="flex-1 p-4 md:p-8">`
-                holding the body padding) into a single wrapper since
-                the bare `.post` class attaches no CSS rule. The
-                inner wrapper's `flex-1` / `p-4 md:p-8` utilities
-                migrated to the same element. */}
             <div className="relative mb-5 flex min-w-0 flex-col bg-canvas p-4 wrap-break-word shadow-card md:p-8">
               <DetailBodyChrome
                 siteIdentity={config}

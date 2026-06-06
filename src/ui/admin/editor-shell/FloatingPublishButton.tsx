@@ -2,7 +2,6 @@ import { Loader2Icon, SendIcon } from 'lucide-react'
 
 import { Button } from '@/ui/components/button'
 
-// Renders the 发布草稿 control as a circular paper-plane button. The
 // component is positioning-agnostic — the floating layout lives inside
 // `PageBodyEditor`'s `floatingActions` slot, which docks the button
 // immediately to the right of the floating editor toolbar so the two

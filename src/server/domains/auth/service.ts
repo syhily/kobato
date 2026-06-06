@@ -171,9 +171,7 @@ export async function listAllSessions(db: NodePgDatabase): Promise<SessionWithUs
   })
 }
 
-// ---------------------------------------------------------------------------
 // Revoke session with RBAC guard
-// ---------------------------------------------------------------------------
 
 export async function revokeSessionWithGuard(
   db: NodePgDatabase,

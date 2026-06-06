@@ -1,7 +1,3 @@
-// Rendered by `src/root.tsx`'s ErrorBoundary when a request matches the
-// WordPress probe pattern (see `src/routes/_shared/wp-decoy.ts`). Reuses the
-// regular 404 view's vertical-centred 50vh shell so layout stays consistent;
-// only the copy changes.
 export function NotWordPressView() {
   return (
     <div className="flex h-(--size-empty-state) flex-auto flex-col text-center">

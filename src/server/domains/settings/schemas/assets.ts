@@ -4,7 +4,6 @@ const coerceBoolean = z
   .union([z.boolean(), z.literal('true'), z.literal('false')])
   .transform((v) => (typeof v === 'boolean' ? v : v === 'true'))
 
-// Merged "存储配置" section: the music CDN host (consumed by
 // `<MusicPlayer>` to fetch APlayer audio + lyrics), the S3-compatible
 // storage credentials, and the upload limits for the admin image
 // library. Image public URLs share the same `asset.scheme://asset.host`

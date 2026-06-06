@@ -1,13 +1,4 @@
-// Wire-format DTOs for the music management endpoints. Mirrors the
-// images shared module: stringified bigints, public projection
-// separate from the row, paginated list responses carry an explicit
-// `total` so the table can render the pager without re-counting.
-//
-// Currently scoped to a single provider (`netease`) — see
-// `MetingSource` in `@/server/domains/music/netease.ts`. Adding more
-// providers later means widening the union and adding a Zod entry on
-// the server side; the wire DTO already carries `source` so older
-// clients keep parsing.
+// Wire-format DTOs for the music management endpoints.
 
 export type MetingSource = 'netease'
 
@@ -89,11 +80,8 @@ export interface DeleteMusicOutput {
   success: boolean
 }
 
-// Metadata-only edit. Audio / cover bytes, provider id triplet
-// (source, sourceId, playerId), uploader, and timestamps are NOT
-// editable from this surface — only the human-curated columns the
-// admin actually wants to override. `lyric === ''` clears the
-// stored lyric (server-side normalised to NULL).
+// Metadata-only edit. Audio / cover bytes, provider id triplet,
+// uploader, and timestamps are NOT editable from this surface.
 export interface UpdateMusicInput {
   id: string
   name: string
@@ -107,11 +95,7 @@ export interface UpdateMusicOutput {
 }
 
 // Public GET payload — what `/api/music/get?id=...` returns
-// to the browser-side `<MusicPlayer />` so APlayer can render. Kept
-// intentionally aligned with the historical `MusicMeta` shape from
-// the static `assets.example.com/musics/<id>.json` files so the legacy
-// client code can switch to the new endpoint with a one-line URL
-// change.
+// to the browser-side `<MusicPlayer />` so APlayer can render.
 export interface PublicMusicMeta {
   id: string
   name: string

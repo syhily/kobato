@@ -32,7 +32,7 @@ export function parseCommentTokensCookie(cookieHeader: string | null): CommentTo
 
 export function serializeCommentTokensCookie(payload: CommentTokenCookie): string {
   const value = encodeURIComponent(JSON.stringify(payload))
-  const maxAge = 60 * 60 * 24 * 7 // 7 days兜底
+  const maxAge = 60 * 60 * 24 * 7
   return `${COMMENT_TOKEN_COOKIE_NAME}=${value}; Path=/; SameSite=Lax; Max-Age=${maxAge}`
 }
 

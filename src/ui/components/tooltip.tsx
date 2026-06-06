@@ -3,21 +3,7 @@ import { type ComponentProps, type ReactNode, createContext, use } from 'react'
 
 import { cn } from '@/ui/lib/cn'
 
-// Unified tooltip built on `@base-ui/react/tooltip`.
-// White pill + CSS ::before arrow + drop shadow.
-// Used by sidebar widgets, footnote references, and admin components.
-//
-// Public API:
-//   <Tooltip placement="top">
-//     <Tooltip.Trigger as="span">…</Tooltip.Trigger>
-//     <Tooltip.Content>…</Tooltip.Content>
-//   </Tooltip>
-//
-// Also exports the flat `TooltipProvider` for shadcn-style composition.
-
 export type TooltipPlacement = 'top' | 'left'
-
-// --- Visual chrome constants ---
 
 const PUBLIC_BASE_CLASS =
   'pointer-events-none relative z-(--z-tooltip) w-max max-w-[min(24rem,calc(100vw-1rem))] rounded-xs bg-canvas px-2.5 py-1.5 text-admin-sm leading-[1.6] text-ink-1 shadow-tooltip'
@@ -37,17 +23,11 @@ const ARROW_CLASS =
   ' data-[side=right]:before:border-y-[6px] data-[side=right]:before:border-r-[6px] data-[side=right]:before:border-l-0' +
   ' data-[side=right]:before:border-y-transparent data-[side=right]:before:border-r-(--canvas)'
 
-// --- Placement context ---
-
 const PlacementContext = createContext<TooltipPlacement>('top')
-
-// --- TooltipProvider (standalone, for shadcn-style composition) ---
 
 function TooltipProvider({ delay = 0, ...props }: ComponentProps<typeof BaseTooltip.Provider>) {
   return <BaseTooltip.Provider data-slot="tooltip-provider" delay={delay} {...props} />
 }
-
-// --- Compound-component internals ---
 
 export interface TooltipRootProps {
   children: ReactNode
@@ -93,7 +73,6 @@ function TooltipContent({ children }: TooltipContentProps) {
   )
 }
 
-// Compound-component namespace.
 export const Tooltip = Object.assign(TooltipRoot, {
   Root: TooltipRoot,
   Trigger: TooltipTrigger,

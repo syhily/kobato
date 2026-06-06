@@ -11,28 +11,6 @@ import { Input } from '@/ui/components/input'
 import { cn } from '@/ui/lib/cn'
 import { Popup } from '@/ui/public/widgets/Popup'
 
-// Sidebar search: real GET form first, React Router navigation second.
-
-// `<input>` chip. Replaces the legacy `.widget-search .search-field
-// { position: relative; display: block; width: 100%; padding: 0.5rem
-// 1rem; border: 0; border-radius: var(--radius-sm); background-color:
-// var(--bg-light); box-shadow: none; transition: background-color/
-// box-shadow 0.15s ease-in-out }` + `:hover, :focus { border-color:
-// var(--border-muted); box-shadow: none; outline: 0 }` rules. The
-// base `var(--bg-light)` → `bg-surface`; the `:hover/:focus`
-// `border-color: var(--border-muted)` is a no-op (the chip starts
-// with `border: 0`, so changing its border-color leaves nothing to
-// colour) — preserved for parity with the legacy class.
-//
-// `box-shadow: none` and `outline: 0` are both already the browser
-// default for `<input type="search">` (Chromium ships no shadow,
-// Safari/Firefox `<input>` outlines are owned by `input { outline:
-// 0 }` in reset.css L86); preserved as `focus:shadow-none
-// focus:outline-0` for parity. The `transition` line was a
-// duplicated 3-rule fallback for ancient `-webkit-` prefix support;
-// today's targets accept the unprefixed form, so a single
-// `transition-colors` at the default `150ms ease-in-out` is the
-// 1:1 modern equivalent.
 const sidebarSearchInputClass = cn(
   'relative block w-full',
   'rounded-sm border-0 px-4 py-2',
@@ -81,11 +59,8 @@ export function SearchBar() {
   )
 }
 
-// Stable `data-popup-id` for the global search popup so the
-// outside-click test below can scope to a single element.
 const SEARCH_POPUP_ID = 'global-search'
 
-// Header search icon: opens a centered popup containing a search form.
 export function SearchIconButton() {
   const [open, setOpen] = useState(false)
   const triggerRef = useRef<HTMLButtonElement>(null)

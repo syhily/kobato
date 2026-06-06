@@ -59,9 +59,6 @@ export interface MyCommentsViewProps {
   entityOptions: MyCommentEntityOption[]
 }
 
-// Small "X 清除" button mirrored from `CommentsView`. Kept local so
-// the file doesn't take a dependency on the moderation view just to
-// share an 8-line component.
 function ClearFilterButton({ onClick }: { onClick: () => void }) {
   return (
     <Button
@@ -92,10 +89,6 @@ export function MyCommentsView({
   const navigate = useNavigate()
   const revalidator = useRevalidator()
 
-  // URL is the source of truth — every filter change navigates to a
-  // new search-param tuple, which re-runs the loader. We mirror the
-  // loader-derived values into `useDebouncedSearch` only so the input
-  // box can debounce keystrokes before patching the URL.
   const updateParams = useCallback(
     (patch: Record<string, string | null>) => {
       const next = new URLSearchParams(searchParams)
@@ -115,9 +108,6 @@ export function MyCommentsView({
     initial: q,
     delayMs: SEARCH_DEBOUNCE_MS,
     onChange: (value) => {
-      // Skip the mount-time fire when the value already matches the
-      // URL — otherwise the navigate() below would clobber the
-      // back-stack with an identical entry on every page render.
       if (value === q) {
         return
       }
@@ -125,10 +115,6 @@ export function MyCommentsView({
     },
   })
 
-  // Server-truth → input box: if the user hits "back" or otherwise
-  // changes `q` outside this widget, keep the controlled value in
-  // sync. The debounce hook is internally controlled, so we have to
-  // call setter explicitly.
   useEffect(() => {
     setSearchInput(q)
     // We only want to react to loader-driven `q` changes, not to
@@ -136,12 +122,6 @@ export function MyCommentsView({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [q])
 
-  // Entity Combobox: client-filtered against the (capped) loader option
-  // list, so we don't need a debounced server fetch. The selected
-  // `FilterItem` is derived from the URL-driven `entity` string plus
-  // the matching label in `entityOptions` — `entityOptions` always
-  // includes the selected entity even if it would have been truncated
-  // by the server-side limit (the loader does a follow-up resolve).
   const selectedEntity = useMemo<MyCommentEntityOption | null>(() => {
     if (!entity) {
       return null
@@ -346,9 +326,6 @@ function MyCommentRow({ item, submitting, onEdit, onRequestDelete, onCancelDelet
   const isDeleted = item.deletedAtIso !== null
   const hasPendingDelete = item.deleteRequestedAtIso !== null
   const createdAt = item.createdAtIso ? formatLocalDate(new Date(item.createdAtIso), ADMIN_DATE_FORMAT, config) : ''
-  // Editing is forbidden once a delete is pending or the row is gone.
-  // Server enforces both (`comment.updateOwn` returns 409 / 404 in those
-  // cases); the button hides as the matching UX cue.
   const canEdit = !isDeleted && !hasPendingDelete
 
   return (
@@ -415,13 +392,6 @@ function MyCommentRow({ item, submitting, onEdit, onRequestDelete, onCancelDelet
             </div>
           )}
         </div>
-        {/*
-         * Body wrapper mirrors the public `<CommentItem>` root-row
-         * classes so the visitor view of their own comment renders the
-         * exact typography they see attached to the post — same
-         * `prose-blog` palette, same line rhythm, same
-         * `comment-content` hook for code-block tweaks in `tailwind.css`.
-         */}
         {item.parent && (
           <div className="rounded-xl border border-l-4 bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
             {item.parent.isDeleted ? (
@@ -447,7 +417,6 @@ function MyCommentsSkeleton() {
   return (
     <>
       {Array.from({ length: 3 }).map((_, i) => (
-        // Skeleton cards — identical placeholders, swapped wholesale on load.
         // oxlint-disable-next-line react/no-array-index-key
         <Card key={i}>
           <CardContent className="flex flex-col gap-3">

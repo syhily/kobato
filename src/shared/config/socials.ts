@@ -16,7 +16,6 @@ export type SocialDisplayType = 'link' | 'qrcode'
 //   - render the "add a platform" menu (label, fixed display type),
 //   - decide whether the row needs a URL input or a QR-code title input,
 //   - seed the user-visible name (`socials[].name`) so an editor never
-//     has to type "GitHub" / "微信" themselves.
 //
 // `linkPlaceholder` is a hint string (not validation) showing the
 // expected URL shape for that network.

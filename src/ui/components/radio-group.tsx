@@ -5,13 +5,6 @@ import { RadioGroup as BaseRadioGroup } from '@base-ui/react/radio-group'
 
 import { cn } from '@/ui/lib/cn'
 
-// shadcn-style RadioGroup primitive bound to `@base-ui/react`. The
-// surface mirrors the upstream radio-group recipe (see
-// `npx shadcn@latest view @shadcn/radio-group`) but written without
-// the `tw:` class prefix the CLI scaffold inserts — the rest of the
-// project's ui primitives live in unprefixed Tailwind v4 land, and
-// staying consistent matters more than CLI parity here.
-
 function RadioGroup({ className, ...props }: ComponentProps<typeof BaseRadioGroup>) {
   return <BaseRadioGroup data-slot="radio-group" className={cn('grid w-full gap-3', className)} {...props} />
 }

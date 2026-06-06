@@ -13,17 +13,6 @@ import {
 import { Button, buttonVariants } from '@/ui/components/button'
 import { cn } from '@/ui/lib/cn'
 
-// shadcn/ui v4 Calendar — bound to `react-day-picker` v10. The
-// project's shadcn primitives ride on `@base-ui/react`, not radix,
-// so the Calendar surface is hand-mirrored from the upstream
-// new-york / base-vega registry rather than scaffolded by the CLI
-// (the CLI install collides with our esbuild pin via its
-// `npm install react-day-picker` step). Class payload is verbatim
-// from the upstream registry so the visual output matches the
-// published demos byte-for-byte; do not refactor the className
-// strings without diffing against
-// `npx shadcn@latest add calendar --diff calendar.tsx` first.
-
 export type CalendarProps = ComponentProps<typeof DayPicker> & {
   buttonVariant?: ComponentProps<typeof Button>['variant']
 }

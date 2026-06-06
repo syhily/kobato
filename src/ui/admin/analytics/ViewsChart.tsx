@@ -4,13 +4,6 @@ import type { ViewsPoint } from '@/shared/contracts/analytics'
 
 import { cn } from '@/ui/lib/cn'
 
-// Inline SVG area + line chart for the dashboard. We could ship
-// `@unovis/react` (Sink's choice) but a 100-line SVG is enough for
-// this surface and saves ~80 KB of runtime. The exterior API matches
-// Sink's Views.vue: an array of `{ time, visits, visitors }` points,
-// area for visits, line for visitors, single Y-axis, gradient fill,
-// hover crosshair + tooltip.
-
 export interface ViewsChartProps {
   data: ViewsPoint[]
   className?: string
@@ -54,9 +47,6 @@ export function ViewsChart({ data, className, height = 220 }: ViewsChartProps) {
   }
 
   if (data.length === 1) {
-    // Sink degrades to a grouped bar chart for a single bucket. We
-    // do the same with a much simpler shape: render the values as
-    // tall vertical bars under their labels.
     const only = data[0]!
     return (
       <div className={cn('flex h-56 items-end justify-center gap-12', className)}>

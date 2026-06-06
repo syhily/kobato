@@ -3,9 +3,7 @@ import type { Plugin } from 'vite'
 import { existsSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs'
 import { basename, join, resolve } from 'node:path'
 
-// ---------------------------------------------------------------------------
 // Route tier configuration
-// ---------------------------------------------------------------------------
 
 const TIER1_ROUTES = ['root', 'routes/public/layout', 'routes/public/home', 'home-page', 'routes/public/post/detail']
 
@@ -68,9 +66,7 @@ const EDITOR_ONLY_PATTERN = /^editor-tiptap-/
 
 const IDLE_SIZE_LIMIT = 100 * 1024 // 100 KB
 
-// ---------------------------------------------------------------------------
 // Types
-// ---------------------------------------------------------------------------
 
 interface RouteManifest {
   entry: { module: string; imports: string[] }
@@ -96,9 +92,7 @@ interface WarmupManifest {
   tier2_auth: string[]
 }
 
-// ---------------------------------------------------------------------------
 // Helpers
-// ---------------------------------------------------------------------------
 
 function collectChunks(manifest: RouteManifest, routeIds: string[]): string[] {
   const chunks = new Set<string>()
@@ -140,9 +134,7 @@ function matchesAny(chunk: string, patterns: RegExp[]): boolean {
   return patterns.some((p) => p.test(name))
 }
 
-// ---------------------------------------------------------------------------
 // Plugin
-// ---------------------------------------------------------------------------
 
 export function routeWarmupPlugin(): Plugin {
   return {
@@ -293,9 +285,7 @@ export function routeWarmupPlugin(): Plugin {
   }
 }
 
-// ---------------------------------------------------------------------------
 // Manifest parser
-// ---------------------------------------------------------------------------
 
 function findMatchingBrace(text: string, start: number): number {
   let depth = 0

@@ -21,9 +21,6 @@ export interface LikeButtonProps {
   likes: number
 }
 
-// Single localStorage key holding a JSON map of permalink → token.
-// One key per post was hitting the per-domain item limit; a single
-// key stays under the limit regardless of how many posts get liked.
 const LIKE_TOKENS_KEY = 'like-tokens'
 
 function readTokenMap(): Record<string, string> {
@@ -77,39 +74,12 @@ export function applyLikeOptimistic(state: LikeButtonState, action: 'like' | 'un
   return { ...state, liked: false, likes: Math.max(0, state.likes - 1) }
 }
 
-// React 19 client island: replaces the imperative
-// `src/assets/scripts/features/like-button.ts` glue. The button hydrates on
-// the post / page detail pages, validates any cached like token in
-// `localStorage`, and uses one `useMutation` per direction so the SSR
-// HTML (count / heart) stays the source of truth on first paint.
 export function LikeButton({ permalink, commentKey, likes: initialLikes }: LikeButtonProps) {
-  // baseState is the server-confirmed view. `useOptimistic` layers the
-  // pending toggle on top of it for the duration of the in-flight transition
-  // so the heart and counter flip the instant the user clicks.
-  //
-  // Contract that makes this work: `addOptimistic` MUST be dispatched
-  // inside a transition (React 19 reverts the update on the next render
-  // otherwise, which used to manifest as "the click does nothing"), and the
-  // transition MUST stay pending until `onSuccess` has committed the
-  // confirmed `baseState`. We achieve both by wrapping the dispatch in
-  // `startTransition(async () => { … })` and awaiting `submit`, whose
-  // returned promise resolves only after React Router finishes revalidation
-  // — by which point the `useFetcherResult` effect has already drained
-  // `fetcher.data` and called `onSuccess`, so `baseState` already matches
-  // the optimistic value and the transition can end without a flicker.
-  //
-  // Wire-vs-storage key split: the like API actions key off the metric's
-  // `public_id` UUID (`commentKey`), but the local like-token cache is
-  // keyed off the URL (`permalink`) so it survives DB id churn between
-  // deployments. Confuse the two and `findMetricByPublicId` 404s the
-  // permalink string — that was the original bug surfaced by clicking
-  // the heart.
+  // `useOptimistic` must be dispatched inside a transition and stay pending
+  // until `onSuccess` commits, otherwise React 19 reverts the update.
   const [baseState, setBaseState] = useState(createLikeButtonState(commentKey, initialLikes))
   const [state, addOptimistic] = useOptimistic(baseState, applyLikeOptimistic)
 
-  // Hold the active like token in a ref so the unlike action doesn't depend
-  // solely on localStorage (which can fail silently due to quota, private
-  // browsing, or storage APIs being unavailable).
   const tokenRef = useRef<string | null>(null)
 
   const validate = useMutation({
@@ -153,10 +123,7 @@ export function LikeButton({ permalink, commentKey, likes: initialLikes }: LikeB
     },
   })
 
-  // Sync local island state to React Router loader data. Detail routes reuse
-  // the same component instance when navigating `/posts/a` -> `/posts/b`, so
-  // both the counter and local "liked" flag must be reset before validating
-  // the new page's cached token.
+  // Reset state when navigating between detail routes (same component instance).
   const validateMutate = validate.mutate
 
   useEffect(() => {
@@ -179,13 +146,7 @@ export function LikeButton({ permalink, commentKey, likes: initialLikes }: LikeB
       return
     }
 
-    // The optimistic dispatch only survives while a transition is pending,
-    // so we open one here and let it stay pending until `submitAsync`
-    // resolves — see the contract comment above the hook calls.
     if (state.liked) {
-      // Prefer the in-memory ref (always available after a successful
-      // increase); fall back to the mapped localStorage for tokens that
-      // survived a page refresh via the validate path in useEffect.
       const token = tokenRef.current ?? readLikeToken(permalink)
       if (!token) {
         return
@@ -208,19 +169,8 @@ export function LikeButton({ permalink, commentKey, likes: initialLikes }: LikeB
         variant="dark"
         size="lg"
         shape="pill"
-        // - `px-10` widens the pill horizontally to match the
-        //   legacy `padding-inline: 2.5rem` from the post-like rule.
-        // - `data-[liked=true]:…` swaps the chrome to the red
-        //   like-active state when the post is liked. The
-        //   `[data-liked=true]` attribute selector adds 1 to
-        //   selector specificity, so the data-state utilities
-        //   win over the unconditional colourway by
-        //   specificity at runtime.
         className={cn(
           'px-10',
-          // Resting state rides the dedicated `--like-bg` token so dark
-          // mode can swap the brand navy for a grayish light blue without
-          // affecting every other `variant="dark"` button on the site.
           'border-like-bg bg-like-bg hover:border-like-bg-hover hover:bg-like-bg-hover',
           'hover:animate-shake hover:will-change-transform',
           'data-[liked=true]:border-like-active data-[liked=true]:bg-like-active data-[liked=true]:text-white data-[liked=true]:shadow-like-active',
@@ -244,8 +194,6 @@ export function LikeButton({ permalink, commentKey, likes: initialLikes }: LikeB
   )
 }
 
-// Only the four fields the social-share intents need. Keeps the prop
-// boundary loose so detail/listing projections don't have to widen here.
 export interface LikeShareProps {
   post: {
     title: string

@@ -27,9 +27,7 @@ export function parsePortableTextBodyForEditor(input: unknown): PmDoc {
 export function bodyToPmDoc(body: PortableTextBody): PmDoc {
   const content: PmNode[] = []
   pushBlocks(content, body)
-  // ProseMirror's `doc` schema disallows an empty body. Insert a
-  // single empty paragraph so freshly-created pages can be opened in
-  // the editor without bouncing on the schema validator.
+  // ProseMirror's `doc` schema disallows an empty body.
   if (content.length === 0) {
     content.push({ type: 'paragraph' })
   }
@@ -37,18 +35,11 @@ export function bodyToPmDoc(body: PortableTextBody): PmDoc {
 }
 
 export function pushBlocks(out: PmNode[], blocks: readonly Block[]): void {
-  // PortableText represents lists as a flat sequence of `block`s
-  // tagged with `listItem` (`bullet` | `number`) + a `level` (1 …).
-  // ProseMirror needs them as nested `bulletList` / `orderedList`
-  // trees. The state machine here scans consecutive list items and
-  // emits a single root list node per "list streak" with deeper
-  // levels nested inside the previous level's last `<li>`.
-  //
-  // Two streaks are joined into the same root list as long as the
-  // root-level kind matches; switching from `bullet` to `number` at
-  // level 1 starts a new root node. The same rule applies at deeper
-  // levels — switching kinds at level 2 means the new sub-list lives
-  // alongside (not inside) the previous one.
+  // PortableText represents lists as a flat sequence of `block`s tagged
+  // with `listItem` + `level`. ProseMirror needs nested list trees.
+  // The state machine scans consecutive list items and emits a single
+  // root list node per "streak" with deeper levels nested inside the
+  // previous level's last `<li>`.
   let i = 0
   while (i < blocks.length) {
     const block = blocks[i]
@@ -91,8 +82,7 @@ function blockToPmNode(block: Block): PmBlockNode {
 
 function customBlockToPmNode(block: Block): PmBlockNode {
   // Pass-through node. Tiptap renders these with a generic
-  // "block-card" view that reads `attrs.payload` and dispatches to
-  // the right per-`_type` React component.
+  // "block-card" view that reads `attrs.payload`.
   return {
     type: 'blockCard',
     attrs: { _key: block._key, _ptType: block._type, payload: block },

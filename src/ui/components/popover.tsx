@@ -4,13 +4,6 @@ import { Popover as BasePopover } from '@base-ui/react/popover'
 
 import { cn } from '@/ui/lib/cn'
 
-// Popover primitive bound to `@base-ui/react`'s positioner. Mirrors
-// the shadcn/ui Popover API (Trigger / Content / etc.) so the
-// shadcn date-picker recipe (which composes Popover + Calendar)
-// drops in unchanged. Animation hooks (`data-starting-style` /
-// `data-ending-style`) come from base-ui — we only need to declare
-// the open/close state classes; base-ui flips the data attributes.
-
 function Popover({ ...props }: ComponentProps<typeof BasePopover.Root>) {
   return <BasePopover.Root data-slot="popover" {...props} />
 }

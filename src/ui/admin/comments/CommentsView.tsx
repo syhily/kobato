@@ -127,21 +127,8 @@ export function CommentsView({ currentUserName, currentUserEmail, initialFilters
     dispatch({ type: 'renameFilter', field: 'page', label: pageRehydrateData.pages[0].title || '无标题' })
   }, [pageRehydrateData, dispatch])
 
-  // Map<id, comment> for cheap "Replied to" lookups in the row.
   const parentLookup = useMemo(() => new Map(state.comments.map((c) => [idStr(c.id), c])), [state.comments])
 
-  // Round-trip filter state into the URL so the page is shareable and
-  // back/forward restore the active filter set. Debounced to coalesce
-  // rapid filter changes (e.g. typing in the text filter) into a single
-  // history entry replacement.
-  //
-  // Only updates the URL when the serialized filter state actually
-  // differs from what's already in the address bar. Without this guard
-  // the initial mount fires `setSearchParams` after 300ms even when
-  // the URL is already clean, which triggers an unnecessary loader
-  // revalidation (a second `.data` request) and causes React Router to
-  // re-render the route component while the initial load is
-  // still in flight.
   const [searchParams, setSearchParams] = useSearchParams()
   const currentSearchRef = useRef(searchParams)
   currentSearchRef.current = searchParams
@@ -227,7 +214,6 @@ export function CommentsView({ currentUserName, currentUserEmail, initialFilters
     reload()
   }, [reload])
 
-  // Infinite scroll: load more via imperative API call
   const [loadingMore, setLoadingMore] = useState(false)
   const sentinelRef = useRef<HTMLDivElement>(null)
 
@@ -250,9 +236,6 @@ export function CommentsView({ currentUserName, currentUserEmail, initialFilters
     }
   }, [loadingMore, hasMore, buildQueryInput, state.comments.length, dispatch])
 
-  // Keep a stable ref so the IntersectionObserver callback always has
-  // access to the latest `loadMore` closure without needing to re-create
-  // the observer every time `loadMore` changes identity.
   const loadMoreRef = useRef(loadMore)
   loadMoreRef.current = loadMore
 
@@ -340,9 +323,6 @@ export function CommentsView({ currentUserName, currentUserEmail, initialFilters
   const hasActiveFilters = state.filters.length > 0
   const isLoading = isCommentsLoading
 
-  // The bar lives in the header next to the title when there's
-  // nothing to show, and moves into the body once chips need the
-  // room to wrap. One instance, two slots.
   const filterBar = (
     <CommentsFilterBar
       filters={state.filters}
@@ -410,10 +390,7 @@ export function CommentsView({ currentUserName, currentUserEmail, initialFilters
             )}
           </div>
 
-          {/* Sentinel for infinite scroll */}
           {hasMore && <div ref={sentinelRef} className="h-1" />}
-
-          {/* Bottom status */}
           {(loadingMore || (!hasMore && state.comments.length > 0)) && (
             <div className="py-6 text-center text-sm text-muted-foreground">
               {loadingMore ? (

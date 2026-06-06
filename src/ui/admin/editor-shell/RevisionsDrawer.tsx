@@ -12,24 +12,6 @@ import { Button } from '@/ui/components/button'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/ui/components/sheet'
 import { cn } from '@/ui/lib/cn'
 
-// Revision history drawer. Two stages:
-//
-//   1. List view — all revisions, newest-first, with status,
-//      timestamps, and a structural summary (heading / image
-//      counts). Clicking a row drops into the detail view for
-//      that revision.
-//
-//   2. Detail view — single-column diff between the selected
-//      historical revision (left/red) and the editor's current
-//      body (right/green). Below the diff: a "选择此版本"
-//      button that adopts the historical body into the editor.
-//      Adopting does NOT write to the server — it loads the body
-//      into the editor pane so the operator can save a new draft
-//      revision (or publish) on top of it.
-//
-// The drawer is intentionally wide enough for the diff
-// (`w-[640px]`) but renders the list on smaller widths fine.
-
 export interface RevisionHistoryDrawerProps {
   type: 'page' | 'post'
   ownerId: string
@@ -37,12 +19,6 @@ export interface RevisionHistoryDrawerProps {
   currentToken: string | null
   /** PortableText body currently displayed in the editor. */
   currentBody: PortableTextBody
-  /**
-   * Adopt the historical revision's body into the editor pane.
-   * Implementation owned by the editor shell — typically `setBody`
-   * + `setBodyKey` to force a remount, leaving the autosave layer
-   * to push the adopted body through `saveDraft`.
-   */
   onAdoptRevision: (revision: AdminRevisionDto) => void
 }
 
@@ -85,8 +61,6 @@ export function RevisionHistoryDrawer({
 
   const isPending = listQuery.isFetching
 
-  // Clear the selected detail view whenever the drawer closes so
-  // the next open starts on the list.
   useEffect(() => {
     if (!open) {
       setSelectedId(null)
@@ -159,8 +133,6 @@ export function RevisionHistoryDrawer({
     </Sheet>
   )
 }
-
-// --- List view -------------------------------------------------------------
 
 interface RevisionListViewProps {
   revisions: AdminRevisionDto[] | null
@@ -239,8 +211,6 @@ function RevisionRow({ revision, isCurrent, onClick }: RevisionRowProps) {
   )
 }
 
-// --- Detail (diff) view ----------------------------------------------------
-
 interface RevisionDetailViewProps {
   revision: AdminRevisionDto
   currentBody: PortableTextBody
@@ -249,12 +219,6 @@ interface RevisionDetailViewProps {
 }
 
 function RevisionDetailView({ revision, currentBody, isCurrent, onAdopt }: RevisionDetailViewProps) {
-  // Historical on the *left* (red / removed if it differs from
-  // current), editor's current on the *right* (green / added).
-  // We render only the right side: a single column diff is enough
-  // for the operator's "should I adopt this?" question. The
-  // historical view is implicit (deletions show through line-
-  // through styling on changed text blocks).
   const diff = useMemo(() => diffBodies(revision.body, currentBody), [revision.body, currentBody])
   const changedCount = diff.filter((entry) => entry.status !== 'unchanged').length
 

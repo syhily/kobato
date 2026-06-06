@@ -24,23 +24,11 @@ import { TitleSlugStrip } from '@/ui/admin/posts/TitleSlugStrip'
 import { cn } from '@/ui/lib/cn'
 
 export interface PostEditorShellProps {
-  /**
-   * Discriminator: `'create'` opens the editor in "new post" mode
-   * (POSTs metadata first, then redirects to the edit URL). `'edit'`
-   * loads the existing detail DTO and supports save/publish on the
-   * body.
-   */
   mode: 'create' | 'edit'
-  /** Pre-loaded detail DTO. Only consulted when `mode === 'edit'`. */
   detail?: AdminPostDetailDto
-  /** Navigation function injected from the route module. */
   navigate: NavigateFunction
 }
 
-// Build the upsertMeta payload from a post meta draft. Post-specific
-// fields (`pinnedAt`, `category`, `tags`, `alias`) sit on top of the
-// common skeleton. `publishedAt` is omitted when `null` so the server
-// preserves the persisted value.
 function buildPostUpsertPayload({
   meta,
   id,
@@ -69,14 +57,7 @@ function buildPostUpsertPayload({
   }
 }
 
-// Top-level orchestrator for the post authoring screen. All shared
-// state lives in `useEditorShellState`; this Shell wires the
-// entity-specific mutations + LS hooks + sidebar component and
-// renders the toolbar / layout / dialog markup.
 export function PostEditorShell({ mode, detail, navigate }: PostEditorShellProps) {
-  // Local narrowing flag so TS knows `detail` is defined in the
-  // `isEditing` JSX branches below. `isEditing` is just a
-  // `boolean` and can't carry the type guard.
   const isEditing = mode === 'edit' && detail !== undefined
 
   // --- Shared state hook ---------------------------------------------------

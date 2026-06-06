@@ -35,15 +35,11 @@ export function Lyrics({ show, lrcText, currentTime }: LyricsProps) {
       className={cn(
         'aplayer-lrc relative -mt-2.5 mb-aplayer-lrc-gap hidden h-aplayer-lrc overflow-hidden text-center',
         show && 'block',
-        // Shared pseudo-element base styles
         "before:absolute before:z-1 before:block before:w-full before:overflow-hidden before:content-[''] after:absolute after:z-1 after:block after:w-full after:overflow-hidden after:content-['']",
-        // :before gradient mask (top)
         'before:top-0 before:h-[10%]',
         'before:[background-image:var(--aplayer-lrc-top,linear-gradient(180deg,_#fff_0,_hsla(0,_0%,_100%,_0)))]',
-        // :after gradient mask (bottom)
         'after:bottom-0 after:h-[33%]',
         'after:[background-image:var(--aplayer-lrc-bottom,linear-gradient(180deg,_hsla(0,_0%,_100%,_0)_0,_hsla(0,_0%,_100%,_0.8)))]',
-        // Dark mode overrides
         'dark:[--aplayer-lrc-top:linear-gradient(to_bottom,var(--surface)_0%,color-mix(in_oklab,var(--surface)_0%,transparent)_100%)]',
         'dark:[--aplayer-lrc-bottom:linear-gradient(to_bottom,color-mix(in_oklab,var(--surface)_0%,transparent)_0%,color-mix(in_oklab,var(--surface)_80%,transparent)_100%)]',
       )}

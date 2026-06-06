@@ -170,11 +170,6 @@ export function createCommentTreeState(items: CommentItemType[], rootsCount: num
 
 export const commentTreeReducer = reducer
 
-// Public entry. Validates the loader payload and otherwise delegates to the
-// orchestrator (`CommentsRoot`) + compound subcomponents
-// (`Comments.Header`, `Comments.ReplyFormSlot`, `Comments.List`,
-// `Comments.LoadMore`). Leaf components consume the shared
-// `CommentsContext` instead of accepting render-prop callbacks.
 export function Comments({ commentKey, comments, items, user }: CommentsProps) {
   if (comments == null) {
     return (
@@ -213,9 +208,6 @@ interface CommentsRootProps {
 function CommentsRoot({ commentKey, initialItems, rootsCount, totalCount, user, children }: CommentsRootProps) {
   const [state, dispatch] = useReducer(reducer, createCommentTreeState(initialItems, rootsCount))
 
-  // Scroll the reply form into view after a Reply click. The Tiptap
-  // editor inside the form auto-focuses on mount; we just need to
-  // surface its container so the operator sees the staged reply box.
   const focusReplyForm = useCallback(() => {
     if (typeof document === 'undefined') {
       return
@@ -293,8 +285,6 @@ function CommentsRoot({ commentKey, initialItems, rootsCount, totalCount, user, 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [commentKey, admin, user])
 
-  // The same reply form JSX flows through context to whichever depth
-  // currently owns it (top-level or nested under the active comment).
   const replyForm = useMemo(
     () => (
       <CommentReplyForm
@@ -367,9 +357,6 @@ function CommentsHeader() {
   )
 }
 
-// Renders the reply form only when no comment is the active reply target —
-// i.e. the top-level "Leave a reply" position. Reply forms anchored under a
-// specific comment travel through the recursive `CommentItem` tree.
 function CommentsReplyFormSlot() {
   const ctx = useCommentsContext('Comments.ReplyFormSlot')
   if (ctx.activeReplyToId !== 0) {
@@ -394,8 +381,6 @@ function CommentsLoadMore() {
   const { comments } = useCommentsSettings()
   const pageSize = comments.size
 
-  // Pin the latest `rootsLoaded` so the success callback can compute the
-  // new offset without forcing the hook to remount on every dispatch.
   const rootsLoadedRef = useRef(ctx.state.rootsLoaded)
   rootsLoadedRef.current = ctx.state.rootsLoaded
 

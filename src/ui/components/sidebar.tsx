@@ -10,10 +10,6 @@ import { cn } from '@/ui/lib/cn'
 import { type VariantProps, cva } from '@/ui/lib/cva'
 import { useMediaQuery } from '@/ui/lib/use-media-query'
 
-/* ------------------------------------------------------------------ */
-/*  Context                                                            */
-/* ------------------------------------------------------------------ */
-
 interface SidebarContextValue {
   state: 'expanded' | 'collapsed'
   open: boolean
@@ -33,10 +29,6 @@ function useSidebar() {
   }
   return context
 }
-
-/* ------------------------------------------------------------------ */
-/*  Provider                                                           */
-/* ------------------------------------------------------------------ */
 
 interface SidebarProviderProps extends ComponentProps<'div'> {
   defaultOpen?: boolean
@@ -102,10 +94,6 @@ function SidebarProvider({
   )
 }
 
-/* ------------------------------------------------------------------ */
-/*  Sidebar (responsive container)                                     */
-/* ------------------------------------------------------------------ */
-
 interface SidebarProps extends ComponentProps<'div'> {
   side?: 'left' | 'right'
   variant?: 'sidebar' | 'floating' | 'inset'
@@ -164,14 +152,12 @@ function Sidebar({
       data-state={state}
       data-variant={variant}
     >
-      {/* spacer that handles the sidebar gap */}
       <div
         className={cn(
           'relative h-full w-(--sidebar-width) bg-transparent',
           'group-data-[collapsible=offcanvas]:w-0',
           variant === 'floating' || variant === 'inset'
-            ? // 1.6rem = floating/inset sidebar inner padding (p-2 = 0.5rem × 2 sides + 0.6rem gap)
-              'group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)_+_1.6rem)]'
+            ? 'group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)_+_1.6rem)]'
             : 'group-data-[collapsible=icon]:w-(--sidebar-width-icon)',
         )}
       />
@@ -183,8 +169,7 @@ function Sidebar({
             ? 'left-0 group-data-[collapsible=offcanvas]:left-[calc(var(--sidebar-width)*-1)]'
             : 'right-0 group-data-[collapsible=offcanvas]:right-[calc(var(--sidebar-width)*-1)]',
           variant === 'floating' || variant === 'inset'
-            ? // 1.6rem = floating/inset sidebar inner padding; +2px accounts for the border width
-              'p-2 group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)_+_1.6rem_+_2px)]'
+            ? 'p-2 group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)_+_1.6rem_+_2px)]'
             : 'border-sidebar-border group-data-[collapsible=icon]:w-(--sidebar-width-icon) group-data-[side=left]:border-r group-data-[side=right]:border-l',
           className,
         )}
@@ -200,10 +185,6 @@ function Sidebar({
     </nav>
   )
 }
-
-/* ------------------------------------------------------------------ */
-/*  SidebarTrigger                                                     */
-/* ------------------------------------------------------------------ */
 
 function SidebarTrigger({ className, onClick, ref, ...props }: ComponentProps<typeof Button>) {
   const { toggleSidebar } = useSidebar()
@@ -227,17 +208,9 @@ function SidebarTrigger({ className, onClick, ref, ...props }: ComponentProps<ty
   )
 }
 
-/* ------------------------------------------------------------------ */
-/*  SidebarInset                                                       */
-/* ------------------------------------------------------------------ */
-
 function SidebarInset({ className, ref, ...props }: ComponentProps<'div'>) {
   return <div ref={ref} className={cn('relative flex h-full flex-1 flex-col bg-background', className)} {...props} />
 }
-
-/* ------------------------------------------------------------------ */
-/*  Layout slots                                                       */
-/* ------------------------------------------------------------------ */
 
 function SidebarHeader({ className, ref, ...props }: ComponentProps<'div'>) {
   return <div ref={ref} data-slot="sidebar-header" className={cn('flex flex-col gap-2 p-2', className)} {...props} />
@@ -257,10 +230,6 @@ function SidebarContent({ className, ref, ...props }: ComponentProps<'div'>) {
     />
   )
 }
-
-/* ------------------------------------------------------------------ */
-/*  Menu primitives                                                    */
-/* ------------------------------------------------------------------ */
 
 function SidebarGroup({ className, ref, ...props }: ComponentProps<'div'>) {
   return (
@@ -291,10 +260,6 @@ function SidebarMenu({ className, ref, ...props }: ComponentProps<'ul'>) {
 function SidebarMenuItem({ className, ref, ...props }: ComponentProps<'li'>) {
   return <li ref={ref} data-slot="sidebar-menu-item" className={cn('group/menu-item relative', className)} {...props} />
 }
-
-/* ------------------------------------------------------------------ */
-/*  SidebarMenuButton                                                  */
-/* ------------------------------------------------------------------ */
 
 const sidebarMenuButtonVariants = cva(
   'peer/menu-button flex w-full items-center gap-3 overflow-hidden rounded-md px-3 py-2 pl-4 text-left text-md font-medium text-sidebar-foreground ring-sidebar-ring outline-hidden transition-all hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 active:bg-sidebar-accent active:text-sidebar-accent-foreground disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50 data-[active=true]:bg-sidebar-accent data-[active=true]:text-sidebar-accent-foreground [&>span:last-child]:truncate [&>svg]:size-4 [&>svg]:shrink-0',
@@ -361,10 +326,6 @@ function SidebarMenuButton({
   )
 }
 
-/* ------------------------------------------------------------------ */
-/*  SidebarMenuBadge                                                   */
-/* ------------------------------------------------------------------ */
-
 function SidebarMenuBadge({ className, ref, ...props }: ComponentProps<'div'>) {
   return (
     <div
@@ -383,10 +344,6 @@ function SidebarMenuBadge({ className, ref, ...props }: ComponentProps<'div'>) {
     />
   )
 }
-
-/* ------------------------------------------------------------------ */
-/*  SidebarMenuAction                                                  */
-/* ------------------------------------------------------------------ */
 
 function SidebarMenuAction({
   className,
@@ -415,10 +372,6 @@ function SidebarMenuAction({
   )
 }
 
-/* ------------------------------------------------------------------ */
-/*  SidebarSeparator                                                   */
-/* ------------------------------------------------------------------ */
-
 function SidebarSeparator({ className, ref, ...props }: ComponentProps<typeof Separator>) {
   return (
     <Separator
@@ -429,10 +382,6 @@ function SidebarSeparator({ className, ref, ...props }: ComponentProps<typeof Se
     />
   )
 }
-
-/* ------------------------------------------------------------------ */
-/*  Exports                                                            */
-/* ------------------------------------------------------------------ */
 
 export {
   Sidebar,

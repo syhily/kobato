@@ -6,17 +6,6 @@ import { Textarea } from '@/ui/components/textarea'
 import { cn } from '@/ui/lib/cn'
 import { cva, type VariantProps } from '@/ui/lib/cva'
 
-// Adapted from the upstream `shadcn@latest add input-group` registry
-// item. The local diffs vs. upstream are:
-//   1. `"use client"` directive dropped — the public site uses
-//      React Router 7 framework mode and there is no RSC boundary.
-//   2. The internal addon container's `[&>svg:not([class*='size-'])]`
-//      selector keeps the upstream `'size-'` brace-class probe so any
-//      caller that wants a custom-sized icon can opt out via `size-X`.
-//   3. We do NOT bring in `radix-ui`'s `Slot`. The project's `Button`
-//      already exposes a Base UI `useRender` slot, so the
-//      `InputGroupButton` wrapper passes through normal `Button`
-//      props without needing any extra primitive.
 function InputGroup({ className, ...props }: ComponentProps<'fieldset'>) {
   return (
     <fieldset

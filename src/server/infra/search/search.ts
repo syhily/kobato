@@ -25,7 +25,6 @@ function getSearchSettings() {
   return bundle?.search?.search ?? DEFAULT_SEARCH_SETTINGS
 }
 
-// ---------------------------------------------------------------------------
 // Search-result cache
 //
 // The full ordered slug list for a query is cached so pagination never
@@ -37,7 +36,6 @@ function getSearchSettings() {
 //   - embedding model (vector mode only)
 //
 // Value is JSON.stringify(slugs[]) — short strings, negligible overhead.
-// ---------------------------------------------------------------------------
 
 function searchCacheKey(settings: ReturnType<typeof getSearchSettings>, query: string): string {
   const bundle = getBlogSettingsBundleSync()
@@ -87,9 +85,7 @@ export async function invalidateSearchCache(): Promise<void> {
   await Promise.all(keys.map((k) => storage.removeItem(k)))
 }
 
-// ---------------------------------------------------------------------------
 // Core search execution (no pagination — returns the full ordered list)
-// ---------------------------------------------------------------------------
 
 async function executeSearch(
   db: NodePgDatabase,
@@ -183,9 +179,7 @@ async function executeSearch(
   return rows.map((r) => r.slug)
 }
 
-// ---------------------------------------------------------------------------
 // Public API
-// ---------------------------------------------------------------------------
 
 export async function searchPosts(
   db: NodePgDatabase,

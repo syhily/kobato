@@ -13,9 +13,7 @@ import { adminProc } from '@/server/http/orpc-base'
 import { auditLogActorsOutput, auditLogListInput, auditLogListOutput } from '@/shared/contracts/audit'
 import { idFromString } from '@/shared/utils/id'
 
-// ---------------------------------------------------------------------------
 // Helpers
-// ---------------------------------------------------------------------------
 
 const FORMULA_PREFIXES = new Set(['=', '+', '-', '@'])
 
@@ -34,9 +32,7 @@ export function csvEscapeDisplay(value: string | number | null | undefined): str
 
 const EXPORT_MAX_ROWS = 10_000
 
-// ---------------------------------------------------------------------------
 // List
-// ---------------------------------------------------------------------------
 
 const list = adminProc
   .route({ method: 'GET', path: '/admin/audit-log/list' })
@@ -69,9 +65,7 @@ const list = adminProc
     }
   })
 
-// ---------------------------------------------------------------------------
 // Export (CSV)
-// ---------------------------------------------------------------------------
 
 const exportCsv = adminProc
   .route({ method: 'POST', path: '/admin/audit-log/export' })
@@ -136,9 +130,7 @@ const exportCsv = adminProc
     return '\uFEFF' + lines.join('\n') + '\n'
   })
 
-// ---------------------------------------------------------------------------
 // Actors (distinct users with audit log entries)
-// ---------------------------------------------------------------------------
 
 const actors = adminProc
   .route({ method: 'GET', path: '/admin/audit-log/actors' })

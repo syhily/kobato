@@ -5,13 +5,6 @@ import type { SlashCommand } from '@/ui/admin/editor/tiptap/SlashMenu'
 
 import { generateBlockKey } from '@/shared/pt/utils'
 
-// Slash command catalogue scoped to comment bodies. Mirrors the
-// shape of the admin catalogue (so the same `SlashCommandsExtension`
-// renderer can drive it) but stays narrow on purpose — no image /
-// music / table / footnote / solution / twoColumn entries.
-// Heading commands are also excluded because comment threads aren't
-// sectioned content (`commentBodySchema` rejects h1-h4 anyway).
-
 const DEFAULT_MATH_BLOCK_TEX = ['\\begin{align*}', '    a &= b\\\\', '    c &= d', '\\end{align*}'].join('\n')
 
 export const COMMENT_SLASH_COMMANDS: readonly SlashCommand[] = [

@@ -1,9 +1,5 @@
 import { mergeAttributes, Node } from '@tiptap/core'
 
-// 左右分栏在存储层是 `_type: 'twoColumn'` 的 PT，`left` / `right` 各为一层
-// NonRecursiveBlock 数组；PM 侧用 `twoColumn` + 两个 `twoColumnPane` 嵌套承载，
-// 往返由 `pt-bridge` 负责。
-
 export const TwoColumnPaneNode = Node.create({
   name: 'twoColumnPane',
   group: 'twoColumnPane',

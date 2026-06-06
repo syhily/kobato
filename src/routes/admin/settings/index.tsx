@@ -47,7 +47,6 @@ const SECTION_CONFIGS: {
   id: keyof typeof SECTION_DISPLAY
   render: (bundle: SettingsOutletContext['bundle'], tz: readonly string[]) => React.ReactNode
 }[] = [
-  // 站点
   {
     id: 'general',
     render: (bundle, tz) => <GeneralForm siteIdentity={bundle.siteIdentity} timeZones={tz} />,
@@ -60,7 +59,6 @@ const SECTION_CONFIGS: {
     id: 'fonts',
     render: (bundle) => <FontsForm fonts={bundle.fonts} />,
   },
-  // 内容与展示
   {
     id: 'content',
     render: (bundle) => <ContentForm content={bundle.content} />,
@@ -85,7 +83,6 @@ const SECTION_CONFIGS: {
     id: 'socials',
     render: (bundle) => <SocialsEditor socials={bundle.socials} />,
   },
-  // 服务集成
   {
     id: 'mail',
     render: (bundle) => (
@@ -103,7 +100,6 @@ const SECTION_CONFIGS: {
     id: 'search',
     render: (bundle) => <SearchForm search={projectSearchForAdmin(bundle.search)} />,
   },
-  // 系统运维
   {
     id: 'cache',
     render: (bundle) => <CacheView cache={bundle.cache.cache} />,

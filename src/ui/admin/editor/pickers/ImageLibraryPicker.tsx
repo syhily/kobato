@@ -11,7 +11,6 @@ import { Input } from '@/ui/components/input'
 import { cn } from '@/ui/lib/cn'
 
 // Image picker dialog driven by `admin.listImages`. The trigger is a
-// caller-supplied React element (defaults to a "选择图片" button) so
 // the dialog can sit anywhere — embedded in a row of the editor
 // toolbar or in a property panel. `onPick` receives the full
 // `AdminImageDto` so the caller has both `publicUrl` and

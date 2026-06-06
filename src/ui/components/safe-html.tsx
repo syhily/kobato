@@ -13,15 +13,9 @@ interface SafeHtmlProps extends Omit<HTMLAttributes<HTMLElement>, 'dangerouslySe
 }
 
 /**
- * Centralised wrapper for `dangerouslySetInnerHTML` with runtime
- * sanitisation via DOMPurify.
- *
- * Every call site must declare a `strategy` that documents why the HTML is
- * considered safe.  The strategy controls the DOMPurify allow-list so
- * math SVGs and Shiki-highlighted code each get the minimum required
- * permissions.  This is defence-in-depth: upstream producers (Shiki,
- * KaTeX, etc.) are trusted, but the sanitizer catches any regression or
- * bug that injects unexpected markup.
+ * `dangerouslySetInnerHTML` wrapper with DOMPurify runtime sanitisation.
+ * The `strategy` prop selects the minimum required allow-list so each
+ * producer (Shiki, KaTeX, etc.) gets only the permissions it needs.
  */
 export function SafeHtml({ html, strategy, tag = 'div', className, ...rest }: SafeHtmlProps) {
   const Tag = tag

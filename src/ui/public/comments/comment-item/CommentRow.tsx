@@ -29,13 +29,6 @@ interface CommentRowProps {
 }
 
 export function CommentRow({ comment, depth, pending, mode: propMode, children }: CommentRowProps) {
-  // `editing` is a small state machine — only one kind of editor can be
-  // open at a time. `admin` opens the admin/legacy-token-backed
-  // `<InlineEditForm>` (which round-trips through `comment.getRaw` /
-  // `comment.edit`); `own` opens the visitor-scoped `<InlineOwnEditForm>`
-  // (which posts to `comment.updateOwn` with the body the SSR already
-  // shipped, no extra fetch). The footer picks the discriminator based
-  // on which button the operator clicks.
   const [editing, setEditing] = useState<'admin' | 'own' | false>(false)
   const leaf = useCommentsLeafContext(propMode)
   const isMyComment = leaf.myCommentIds.has(asKey(comment.id))

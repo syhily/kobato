@@ -14,11 +14,6 @@ export type { DraftMarker }
 export interface PageDetailBodyProps {
   page: DetailPageShell
   headings: MarkdownHeading[]
-  /**
-   * Admin-preview badge state. `null` (or omitted) for the standard
-   * public render. See `DraftMarker` above for the three preview
-   * cases the page-detail route distinguishes.
-   */
   draftMarker?: DraftMarker
   likes: number
   commentKey: string

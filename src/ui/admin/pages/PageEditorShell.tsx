@@ -44,23 +44,11 @@ import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '
 import { cn } from '@/ui/lib/cn'
 
 export interface PageEditorShellProps {
-  /**
-   * Discriminator: `'create'` opens the editor in "new page" mode
-   * (POSTs metadata first, then redirects to the edit URL). `'edit'`
-   * loads the existing detail DTO and supports save/publish on the
-   * body.
-   */
   mode: 'create' | 'edit'
-  /** Pre-loaded detail DTO. Only consulted when `mode === 'edit'`. */
   detail?: AdminPageDetailDto
-  /** Navigation function injected from the route module. */
   navigate: NavigateFunction
 }
 
-// Build the upsertMeta payload from a page meta draft. Page-specific
-// fields (`showFriends`) sit on top of the common skeleton.
-// `publishedAt` is omitted when `null` so the server preserves the
-// persisted value.
 function buildPageUpsertPayload({
   meta,
   id,

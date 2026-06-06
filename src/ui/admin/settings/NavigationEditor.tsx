@@ -55,9 +55,7 @@ const TYPE_LABELS: Record<FooterNavItem['type'], string> = {
   search: '搜索',
 }
 
-// ---------------------------------------------------------------------------
 // Side Navigation Card
-// ---------------------------------------------------------------------------
 
 function SortableSideNavRow({
   field,
@@ -216,9 +214,7 @@ function SideNavCard({ navigation }: { navigation: NavigationSettings }) {
   )
 }
 
-// ---------------------------------------------------------------------------
 // Footer Navigation Card
-// ---------------------------------------------------------------------------
 
 function SortableFooterNavRow({
   item,

@@ -36,11 +36,6 @@ const PAGE_SIZE_OPTIONS: { value: string; label: string }[] = [10, 20, 50, 100].
   label: `${n} 条`,
 }))
 
-// Music admin page orchestrator. The list table omits the `source`
-// column on purpose — every row is `netease` for now (see plan §10),
-// so showing it would just add noise. `playerId` is what the admin
-// pastes into MDX as `<MusicPlayer id="..." />`, so the table makes
-// it easy to copy.
 export function MusicsView() {
   const { state, dispatch } = useMusicsController()
   const [confirm, setConfirm] = useState<ConfirmState | null>(null)

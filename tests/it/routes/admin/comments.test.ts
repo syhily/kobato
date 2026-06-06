@@ -19,7 +19,6 @@ describe('parseCommentFiltersFromSearchParams — status / page / author', () =>
 
   it('falls back to 已审核 for any non-all status string (preserves the URL value verbatim)', () => {
     // The route can't enumerate every status — unknown statuses
-    // still get a chip with the URL value, just labelled "已审核"
     // by default. The controller will reject the bad value at the
     // Zod layer; this just means the chip stays visible until then.
     const filters = parseCommentFiltersFromSearchParams(new URLSearchParams('status=approved'))

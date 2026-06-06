@@ -22,32 +22,17 @@ interface UseSettingsCardOptions<TSource extends object, TState extends FieldVal
   section: SettingsSection
   source: TSource
   toState: (source: TSource) => TState
-  /**
-   * Project the editable form state into the payload sent to the server.
-   * In patch mode (default), return only the fields this card edits — the
-   * hook auto-merges with `source` to produce a full section payload.
-   * When `mode: 'full'`, return the full section payload manually.
-   */
   fromState: (state: TState) => Record<string, unknown>
   schema?: z.ZodType<TState, any>
-  /**
-   * When `'patch'` (default), `fromState` only needs to return the changed
-   * sub-tree; the hook deep-merges it with `source`. When `'full'`,
-   * `fromState` must return the complete section payload.
-   */
   mode?: 'patch' | 'full'
-  /** Debounce delay for auto-save in ms. Default 500. */
   debounceMs?: number
 }
 
 interface UseSettingsCardResult<TSource extends object, TState extends FieldValues> {
   form: UseFormReturn<TState>
   isSaving: boolean
-  /** Immediate save — call from switch onCheckedChange. */
   save: () => void
-  /** Resolved display data: optimistic if saving, else server source. */
   display: TSource
-  /** Spread into <SettingGroup> for the saving indicator. */
   settingGroupProps: {
     saveState: 'idle' | 'saving' | 'saved' | 'error'
   }

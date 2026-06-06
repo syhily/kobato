@@ -10,7 +10,6 @@ export interface ActionBannerProps {
   onClose: () => void
 }
 
-// Persistent banner shown after a manual 保存草稿 / 发布草稿
 // succeeds. The operator dismisses it manually; a follow-up
 // successful action replaces the banner in place.
 export function ActionBanner({ kind, slug, basePath, onClose }: ActionBannerProps) {

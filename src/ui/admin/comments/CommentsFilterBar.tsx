@@ -40,8 +40,6 @@ import { cn } from '@/ui/lib/cn'
 
 type FieldIcon = ComponentType<SVGProps<SVGSVGElement>>
 
-// Ghost-style filter field definitions. `icon` renders next to the
-// label in the add-filter popover and in the active-filter chip.
 const FILTER_FIELDS: { key: FilterFieldKey; label: string; icon: FieldIcon }[] = [
   { key: 'status', label: '状态', icon: ListChecksIcon },
   { key: 'page', label: '文章', icon: FileTextIcon },
@@ -135,10 +133,6 @@ export function CommentsFilterBar({
   )
 }
 
-// Ghost's "Add filter" popover: clicking a field in the list either
-// adds a chip in one step (text/date, since the chip itself is the
-// editor) or opens a sub-picker for fields that need an initial
-// value (status/page/author).
 function FilterAddButton({
   filters,
   onAddFilter,
@@ -262,10 +256,6 @@ function FilterAddButton({
   )
 }
 
-// Value picker panel shown after selecting a field in the add-filter popover.
-// Matches Ghost's sub-picker: header with back button + field label, then value input.
-// `text` and `date` are added in a single step from `FilterAddButton` (the chip
-// itself is the editor), so this picker only hosts `status` / `page` / `author`.
 function FieldValuePicker({
   field,
   onBack,
@@ -289,7 +279,6 @@ function FieldValuePicker({
 }) {
   const fieldLabel = FILTER_FIELDS.find((f) => f.key === field)?.label ?? field
 
-  // Status: fixed option list
   if (field === 'status') {
     return (
       <div className="flex flex-col">
@@ -310,7 +299,6 @@ function FieldValuePicker({
     )
   }
 
-  // Page/Author: searchable select
   const items = field === 'page' ? pageItems : authorItems
   const searchFn = field === 'page' ? onPageSearch : onAuthorSearch
   const isPending = field === 'page' ? isPagesPending : isAuthorsPending
@@ -348,20 +336,6 @@ function PickerHeader({ label, onBack }: { label: string; onBack: () => void }) 
   )
 }
 
-// Shared date-filter editor: operator dropdown + YYYY-MM-DD text
-// input + calendar popover. Used by the inline pill — every change
-// to `value` flows straight into the filter via `onValueChange`
-// (no 应用 button).
-//
-// The wrapper is a single-row layout that matches the active-filter
-// pill — operator trigger on the left, date input + calendar on the
-// right, no gap between them, no outer borders (the pill's segment
-// provides the border).
-//
-// The text input keeps a small local buffer so the segment-edit
-// cursor stays intact across URL round-trips; commits fire on
-// Enter / blur / calendar pick with a malformed-input fallback to
-// today's date (matches Ghost's `FilterDatePicker`).
 function DateFilterEditor({
   value,
   onChange,
@@ -375,8 +349,6 @@ function DateFilterEditor({
   const inputRef = useRef<HTMLInputElement>(null)
   const lastLocalCommitRef = useRef(value?.date ?? '')
 
-  // Sync the input buffer from upstream changes (URL deep-link, chip
-  // removal/clear, etc.) only when the user isn't actively editing.
   useEffect(() => {
     const committed = value?.date ?? ''
     if (committed === lastLocalCommitRef.current) {
@@ -389,11 +361,6 @@ function DateFilterEditor({
   }, [value])
 
   const parsedDate = useMemo(() => parseDateInput(localDate), [localDate])
-  // Track the visible calendar month in state so the left/right
-  // navigation buttons actually move the grid. Computing it
-  // directly from `parsedDate` would make `month` a controlled
-  // prop that resets to the typed date on every render — the
-  // navigation would visually flicker and then snap back.
   const [calendarMonth, setCalendarMonth] = useState<Date>(() => parsedDate ?? new Date())
   useEffect(() => {
     if (parsedDate) {
@@ -410,8 +377,6 @@ function DateFilterEditor({
 
   const handleBlur = () => {
     if (localDate && !parsedDate) {
-      // Partial / malformed input — fall back to today so the buffer
-      // doesn't strand an unparseable string (matches Ghost).
       commitDate(new Date())
     } else if (parsedDate) {
       commitDate(parsedDate)
@@ -433,12 +398,6 @@ function DateFilterEditor({
   }
 
   const handleOperatorChange = (nextOp: DateFilterOperator) => {
-    // Prefer the committed date, then the parsed in-buffer date, then
-    // empty. Operator change is a "commit now" — like blur — so we
-    // don't want to silently drop an in-progress date the user has
-    // typed but not yet blurred. An empty fallback is safe: the
-    // bounds resolver returns no bounds for an invalid date, so the
-    // server filter is a no-op until the user actually picks a date.
     const date = value?.date ?? (parsedDate ? formatDateInput(parsedDate) : '')
     onChange({ date, op: nextOp })
   }
@@ -483,10 +442,6 @@ function DateFilterEditor({
   )
 }
 
-// Operator dropdown trigger used inside the date filter editor.
-// Bordered by default; pass a `className` to override (e.g. the
-// inline pill uses a borderless look that blends into the pill's
-// own borders).
 function DateOperatorTrigger({
   value,
   onChange,
@@ -525,28 +480,11 @@ function DateOperatorTrigger({
   )
 }
 
-// Inline text-filter editor: operator dropdown + free-text input.
-// Always paired with a non-null `value` (the pill always provides
-// one — single-step add sets a default `{ op, value: '' }`).
-//
-// Commit semantics:
-//   - Enter / blur on the input → commit with the trimmed text
-//     (preserves the operator, even when the value is empty, so
-//     clearing the input doesn't reset the operator back to default).
-//   - Operator change → commit immediately, keeping the current
-//     text value intact.
-//
-// A small local buffer (`localValue` + `lastLocalCommitRef`) keeps
-// the segment-edit cursor intact when the URL round-trip fires
-// mid-edit (matches `DateFilterEditor`).
 function TextFilterEditor({ value, onChange }: { value: TextFilterValue; onChange: (next: TextFilterValue) => void }) {
   const inputRef = useRef<HTMLInputElement>(null)
   const [localValue, setLocalValue] = useState(value.value)
   const lastLocalCommitRef = useRef(value.value)
 
-  // Sync the local buffer from upstream changes (URL deep-link,
-  // chip removal/clear, etc.) only when the user isn't actively
-  // editing.
   useEffect(() => {
     if (value.value === lastLocalCommitRef.current) {
       return
@@ -597,9 +535,6 @@ function TextFilterEditor({ value, onChange }: { value: TextFilterValue; onChang
   )
 }
 
-// Operator dropdown trigger for the text filter (包含 / 不包含).
-// Mirrors `DateOperatorTrigger` so the two filter chips share the
-// same visual rhythm inside the pill.
 function TextOperatorTrigger({
   value,
   onChange,
@@ -638,11 +573,6 @@ function TextOperatorTrigger({
   )
 }
 
-// Strict YYYY-MM-DD parser. Returns a local-time `Date` for
-// well-formed, in-range inputs (e.g. 2026-02-30 is rejected because
-// the round-trip through `new Date()` would silently roll it forward)
-// and `undefined` for empty / malformed values. Ghost's
-// `parseFilterDateValue` uses the same round-trip check.
 function parseDateInput(value: string): Date | undefined {
   if (!value) {
     return undefined
@@ -721,7 +651,6 @@ function InlineSearchableList({
   )
 }
 
-// A single filter pill with 3 segments: label | value (clickable) | remove.
 function FilterPill({
   filter,
   onRemove,
@@ -747,11 +676,6 @@ function FilterPill({
   const fieldLabel = fieldDef?.label ?? filter.field
   const FieldIcon = fieldDef?.icon
 
-  // Parse the date filter value once so the inline editor can mount
-  // with the right operator/date. Falls back to the default operator
-  // + today's date if the value is malformed (shouldn't happen in
-  // practice — the URL hydration path validates with
-  // `isDateFilterOperator`).
   const dateValue = useMemo(
     () =>
       filter.field === 'date'
@@ -763,9 +687,6 @@ function FilterPill({
     [filter.field, filter.value],
   )
 
-  // Same fallback strategy for the text filter: malformed chip
-  // values resolve to the default operator + empty string so the
-  // pill always has a valid editor mount-point.
   const textValue = useMemo(
     () =>
       filter.field === 'text' ? (parseTextFilter(filter.value) ?? { op: DEFAULT_TEXT_OPERATOR, value: '' }) : null,

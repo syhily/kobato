@@ -13,14 +13,7 @@ export interface PopupProps {
   onClose: () => void
   /** Body max-width preset. Defaults to `sm` (300px / fit-content). */
   size?: PopupSize
-  /**
-   * Optional unique identifier surfaced as `data-popup-id` on the
-   * outer container so callers that need outside-click detection can
-   * disambiguate sibling popups via a `[data-popup-id="…"]` selector
-   * (the click happens on the document root, so a class hook on the
-   * popup element is the standard way to scope the test). Without
-   * this prop the popup still renders, just without a stable hook.
-   */
+  /** Optional identifier surfaced as `data-popup-id` for outside-click detection. */
   popupId?: string
   /** Forwarded to the dialog container for screen reader naming. */
   'aria-label'?: string
@@ -29,8 +22,6 @@ export interface PopupProps {
   children: ReactNode
 }
 
-// CSS selector matching tabbable / focusable controls. Used by the
-// focus trap to find the first / last candidate inside the dialog.
 const FOCUSABLE_SELECTOR = [
   'a[href]',
   'button:not([disabled])',
@@ -47,31 +38,18 @@ function getFocusable(container: HTMLElement): HTMLElement[] {
   )
 }
 
-// Tailwind utility chains for the body's `max-width` ladder. `lg` is
-// kept for API completeness but no consumer uses it today (only the QR
-// dialog (`sm`) and header search (`md`) ship in the public bundle).
-// The mobile fallback (`w-popup-mobile`) is identical across sizes
-// because the responsive cap is a property of the viewport, not of
-// the size preset. All three pixel values live in `tailwind.css`'s
-// `--container-popup-*` block.
 const BODY_SIZE_CLASS: Record<PopupSize, string> = {
   sm: 'max-w-popup-sm w-auto',
   md: 'max-w-popup-md',
   lg: 'max-w-popup-lg',
 }
 
-// Content card padding is symmetric (`1.75rem = p-7`) for md/lg, but
-// the narrower 300px `sm` card opens its X axis to `2.5rem = px-10`
-// so the inner content doesn't feel pinned to the chrome.
 const CONTENT_SIZE_CLASS: Record<PopupSize, string> = {
   sm: 'py-7 px-10',
   md: 'p-7',
   lg: 'p-7',
 }
 
-// Floating "X" close button that sits half-overlapping the bottom of
-// the popup card. Split into layout / box / colour / motion / state
-// rows so the open hover / focus-visible flips read at a glance.
 const popupCloseButtonClass = cn(
   'fixed bottom-0 left-1/2 z-99 flex items-center justify-center',
   '-translate-x-1/2 translate-y-1/2',
@@ -81,17 +59,8 @@ const popupCloseButtonClass = cn(
   'hover:bg-popup-close-hover focus-visible:bg-popup-close-hover',
 )
 
-// Centered modal shell. We defer flipping on the "open" state by one
-// frame so the CSS transition plays — without the rAF gate the
-// browser would commit the open opacity/translate in the same paint
-// as the initial mount and skip the transition entirely.
-//
-// Callers that need to focus a control inside the popup should call
-// `ref.focus()` synchronously after `setOpen(true)` (typically wrapped
-// in `flushSync` so the popup body has been mounted by then). Focus
-// commits before the rAF below fires, so the input is interactive
-// from the moment the user sees the dialog and the entrance
-// animation still plays its full ~300ms cycle.
+// rAF-defer the open state so CSS transition plays on mount.
+// Callers that need immediate focus should call `ref.focus()` inside `flushSync`.
 export function Popup({
   open,
   onClose,
@@ -118,12 +87,8 @@ export function Popup({
     if (!open) {
       return
     }
-    // Save the element that opened the popup so we can restore focus on close.
     previouslyFocusedRef.current = document.activeElement as HTMLElement | null
 
-    // Focus the first focusable child after the dialog has rendered. We poll
-    // through one rAF because the close button is fixed-positioned and only
-    // becomes focusable once the entrance transition allows pointer-events.
     const raf = window.requestAnimationFrame(() => {
       const root = dialogRef.current
       if (root === null) {
@@ -169,8 +134,6 @@ export function Popup({
     return () => {
       document.removeEventListener('keydown', onKeyDown)
       window.cancelAnimationFrame(raf)
-      // Restore focus to whatever opened the popup so the page stays
-      // navigable for keyboard / screen reader users.
       previouslyFocusedRef.current?.focus({ preventScroll: true })
     }
   }, [open, onClose])

@@ -6,18 +6,12 @@ import { Button } from '@/ui/components/button'
 import { cn } from '@/ui/lib/cn'
 
 export interface PreviewProgress {
-  /** Total clip length in seconds; `null` while metadata is still loading. */
   duration: number | null
-  /** Playhead position in seconds. */
   currentTime: number
 }
 
 export const INITIAL_PREVIEW_PROGRESS: PreviewProgress = { duration: null, currentTime: 0 }
 
-// Format a seconds value into `m:ss`. Negative / non-finite inputs
-// fall through to `--:--` so the UI doesn't flash NaN while audio
-// metadata is still loading. Hours are intentionally not handled —
-// preview clips are 30 s netease snippets, never longer than ~10 min.
 function formatSeconds(value: number | null): string {
   if (value === null || !Number.isFinite(value) || value < 0) {
     return '--:--'
@@ -57,9 +51,6 @@ export function SearchResultItem({
     <div className="flex flex-col gap-2 rounded-xl border bg-card px-3 py-2">
       <div className="flex items-center gap-3">
         {hit.coverUrl !== '' ? (
-          // The cover URL is a third-party CDN link; rendered
-          // directly because the search list does not benefit
-          // from going through the local image pipeline.
           <img src={hit.coverUrl} alt="" className="size-12 shrink-0 rounded object-cover" loading="lazy" />
         ) : (
           <div className="size-12 shrink-0 rounded bg-muted" />

@@ -26,12 +26,6 @@ export interface CommentReplyFormProps {
   onReplied: (comment: CommentItemType, rid: number) => void
 }
 
-// Reply form — body is authored in the simplified Tiptap editor and
-// submitted as JSON to `comment.replyComment`. The legacy
-// `<fetcher.Form>` path was retired alongside the markdown pipeline:
-// PortableText bodies can't be cleanly form-encoded, and the editor
-// already lifts the body up as React state, so going through
-// `useMutation` is both simpler and lighter-weight.
 export function CommentReplyForm({
   commentKey,
   user,
@@ -44,8 +38,6 @@ export function CommentReplyForm({
   const isGuestMode = !user && guestProfile !== null
 
   const [body, setBody] = useState<CommentBody>(EMPTY_COMMENT_BODY)
-  // Bumping `bodyKey` forces the editor to reset its internal PM doc
-  // from `initialBody` (used to clear after a successful submit).
   const [bodyKey, setBodyKey] = useState(0)
   const [submitError, setSubmitError] = useState<string | null>(null)
   const formRef = useRef<HTMLFormElement | null>(null)
@@ -59,7 +51,6 @@ export function CommentReplyForm({
     return '/images/default-avatar.png'
   })
 
-  // Sync avatarSrc when guest profile loads or clears after hydration.
   useEffect(() => {
     if (user) {
       return
@@ -76,7 +67,6 @@ export function CommentReplyForm({
     onSuccess: (data: ReplyCommentOutput, variables: ReplyCommentInput) => {
       setSubmitError(null)
       onReplied(data.comment, replyToId)
-      // Persist guest info for future visits.
       if (!user) {
         saveGuestProfile({
           name: data.comment.name,
@@ -85,7 +75,6 @@ export function CommentReplyForm({
           avatar: avatarSrc,
         })
       }
-      // Clear the editor + remount via bodyKey bump.
       setBody(EMPTY_COMMENT_BODY)
       setBodyKey((k) => k + 1)
       formRef.current?.reset()
@@ -195,10 +184,6 @@ export function CommentReplyForm({
               <Button
                 variant="light"
                 id="cancel-comment-reply-link"
-                // See CommentItem.tsx — keep the contenteditable focused
-                // through mousedown so the editor toolbar doesn't
-                // collapse between mousedown and mouseup and steal the
-                // click away from this button.
                 onMouseDown={(event) => event.preventDefault()}
                 onClick={onCancel}
               >
@@ -232,11 +217,6 @@ interface ReplyOverlayProps {
   originalContent: string
 }
 
-// The "回复 @name: …" chip floats over the staged reply editor,
-// pinned 0.4 rem from the top and 0.75 rem from each horizontal
-// edge. `pointer-events-none` keeps the chip click-through so the
-// editor below stays focusable even when the overlay extends beyond
-// a single line.
 const replyingToOverlayClass = cn(
   'pointer-events-none absolute top-[0.4rem] right-3 left-3 z-2',
   'flex items-center gap-1',

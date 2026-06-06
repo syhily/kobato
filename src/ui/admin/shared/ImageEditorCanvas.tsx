@@ -3,18 +3,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { cn } from '@/ui/lib/cn'
 
-// Browser-side image editor used by `<UploadImageDialog>`. Loads the
-// selected file, renders it onto a canvas, and lets the operator:
-//   - rotate (90° / 180° / 270° presets via the dialog header buttons)
-//   - drag a crop rectangle (free aspect for `kind=generic`, locked
-//     1280×425 aspect for `kind=category` / `kind=friend`)
-//   - tweak the JPEG quality slider
-//   - re-encode to a JPEG `Blob` ready to ship through multipart upload
-//
-// The component is dependency-free (no `react-image-crop` or similar):
-// the upload surface is small enough that a 200-line custom crop
-// implementation is cheaper than another runtime dep.
-
 const MAX_PREVIEW_DIMENSION = 1600
 
 export interface CropRect {
@@ -120,9 +108,6 @@ export function ImageEditorCanvas({
     cssScale: number
   } | null>(null)
 
-  // Load the selected file into an HTMLImageElement once. Re-running on
-  // file change handles the "operator picked another file from the
-  // browser dialog without closing the editor" path.
   useEffect(() => {
     let cancelled = false
     setError(null)
@@ -146,8 +131,6 @@ export function ImageEditorCanvas({
     }
   }, [file])
 
-  // Compute on-screen layout: the canvas mirrors the rotated source
-  // dimensions, scaled down to fit `MAX_PREVIEW_DIMENSION`.
   const displayLayout = useMemo(() => {
     if (source === null) {
       return null
@@ -163,17 +146,6 @@ export function ImageEditorCanvas({
     }
   }, [source, rotation])
 
-  // Reset / clamp the crop rectangle whenever the rotated source
-  // dimensions change. For locked-aspect modes, drop the crop to a
-  // centred maximally-large rectangle that respects the ratio. For
-  // free-aspect (`generic`), seed the rectangle to the FULL source —
-  // the operator's most common gesture is "upload as-is" (the
-  // generic library is a CDN paste-source), so defaulting to the
-  // entire image saves a redundant drag for the common path. The
-  // move handler clamps + the bottom-right resize handle still works
-  // immediately because the handle is rendered at the rectangle's
-  // bottom-right corner regardless of whether that coincides with
-  // the source's bottom-right edge.
   useEffect(() => {
     if (displayLayout === null) {
       setCrop(null)
@@ -207,10 +179,6 @@ export function ImageEditorCanvas({
     })
   }, [displayLayout, locked])
 
-  // Stash the latest `onCropChange` in a ref so the report effect
-  // below can stay keyed on the crop rectangle alone. Parents
-  // typically pass an inline arrow; including it in the dep list
-  // would re-fire the callback on every parent render.
   const onCropChangeRef = useRef(onCropChange)
   onCropChangeRef.current = onCropChange
   useEffect(() => {
@@ -220,8 +188,6 @@ export function ImageEditorCanvas({
     onCropChangeRef.current?.(crop.width, crop.height)
   }, [crop])
 
-  // Paint the canvas: clear, apply rotation, draw the bitmap, then
-  // overlay the crop rectangle dimming.
   useEffect(() => {
     const canvas = canvasRef.current
     if (canvas === null || source === null || displayLayout === null) {
@@ -264,8 +230,6 @@ export function ImageEditorCanvas({
     }
   }, [source, displayLayout, rotation, crop])
 
-  // Encode the cropped + rotated region into a JPEG blob. Done via an
-  // off-screen canvas so the on-screen preview canvas isn't disturbed.
   const encode = useCallback(async (): Promise<{ blob: Blob; width: number; height: number }> => {
     if (source === null || crop === null || displayLayout === null) {
       throw new Error('图片尚未加载完成')
@@ -277,11 +241,6 @@ export function ImageEditorCanvas({
       encodedWidth = locked.width
       encodedHeight = locked.height
     } else if (outputWidth !== undefined && outputWidth > 0 && outputWidth < crop.width) {
-      // Resize proportionally so the encoded width matches the
-      // operator's target. Height is derived from the crop's aspect
-      // ratio to avoid stretching. Values at or above `crop.width`
-      // are treated as "no resize" — the operator's intent is "cap
-      // the width", not "upscale".
       const ratio = crop.height / crop.width
       encodedWidth = Math.round(outputWidth)
       encodedHeight = Math.max(1, Math.round(encodedWidth * ratio))
@@ -326,19 +285,9 @@ export function ImageEditorCanvas({
     })
   }, [source, crop, displayLayout, rotation, locked, outputWidth, jpegQuality])
 
-  // Expose the encoder to the parent. Re-runs whenever any input
-  // changes so the parent always sees an up-to-date snapshot.
   useEffect(() => {
     onReady(encode)
   }, [encode, onReady])
-
-  // ---- Crop drag handlers --------------------------------------------------
-  // These run in source-coordinate space (i.e. the rotated source
-  // dimensions) so the crop math doesn't get tangled with the display
-  // scale factor. Pointer deltas (CSS pixels) are converted to source
-  // pixels via `dragState.cssScale`, which is sampled from the canvas's
-  // actual rendered width at drag start so the math stays correct even
-  // when `max-w-full` shrinks the canvas inside the dialog.
 
   const beginDrag = useCallback(
     (event: React.PointerEvent, mode: 'move' | 'resize') => {
@@ -373,8 +322,6 @@ export function ImageEditorCanvas({
         next.x = clamp(next.x + dx, 0, displayLayout.sourceWidth - next.width)
         next.y = clamp(next.y + dy, 0, displayLayout.sourceHeight - next.height)
       } else {
-        // Resize from the bottom-right handle. For locked aspect, drive
-        // by the larger dimension and re-derive the smaller.
         let nextW = clamp(dragState.startCrop.width + dx, 32, displayLayout.sourceWidth - next.x)
         let nextH = clamp(dragState.startCrop.height + dy, 32, displayLayout.sourceHeight - next.y)
         if (locked !== undefined) {
@@ -424,21 +371,6 @@ export function ImageEditorCanvas({
           onPointerUp={endDrag}
           onPointerCancel={endDrag}
         />
-        {/* Resize handle anchored at the bottom-right of the cropped
-            region. Rendered as a lucide diagonal-arrow icon — visually
-            lighter than a filled square while still reading as an
-            affordance against both light (overexposed) and dark (dimmed)
-            background regions thanks to the dark drop-shadow.
-
-            Positioned in PERCENTAGES of the canvas's source dimensions,
-            not in canvas-internal pixels: the canvas itself is
-            downscaled by `max-w-full` whenever the intrinsic width
-            (up to MAX_PREVIEW_DIMENSION = 1600px) exceeds the dialog
-            content width (≈ max-w-3xl). Using internal pixel offsets
-            here used to push the handle hundreds of CSS pixels outside
-            the dialog so the operator never saw it. Translated
-            -50% / -50% so the icon is centred on the actual corner of
-            the crop rectangle. */}
         {crop !== null && (
           <button
             type="button"
@@ -475,9 +407,6 @@ function clamp(value: number, min: number, max: number): number {
   return Math.min(Math.max(value, min), max)
 }
 
-// Locked aspect always wins so the operator sees the final encoded
-// placeholder during the brief render between source load and the
-// crop effect populating its initial rectangle.
 function formatCropSize(crop: CropRect | null, locked: LockedAspect | undefined): string {
   if (locked !== undefined) {
     return `${locked.width}×${locked.height}`

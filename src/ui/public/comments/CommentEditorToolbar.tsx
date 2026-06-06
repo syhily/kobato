@@ -30,17 +30,6 @@ export interface CommentEditorToolbarProps {
   disabled: boolean
 }
 
-// Inline formatting toolbar. Hidden by default; revealed only while
-// the wrapping `<div>` carries `:focus-within` (i.e. while the
-// contenteditable, the slash menu, or any toolbar button itself
-// has focus). The button-bar lives inside the same wrapper, so
-// clicking a button preserves `focus-within` — no flicker between
-// "editor focused" and "button focused" states.
-//
-// Markdown-shortcut hints (`**bold**`, `*italic*`, …) turned out to
-// be unreliable: Tiptap's StarterKit only wires a subset of GFM
-// shortcuts and the comment dialect deliberately disables a few of
-// them. Surfacing the actual buttons removes the guesswork.
 export function CommentEditorToolbar({ editor, disabled }: CommentEditorToolbarProps) {
   const state = useEditorState({
     editor,
@@ -57,10 +46,6 @@ export function CommentEditorToolbar({ editor, disabled }: CommentEditorToolbarP
     }),
   })
 
-  // Replaces the legacy `window.prompt` flow. The toolbar seeds the
-  // dialog with the link href under the current selection; the dialog
-  // owns the apply / remove / cancel branches and calls into the
-  // editor on confirm so the toolbar handler stays synchronous.
   const [linkPromptSeed, setLinkPromptSeed] = useState<string | null>(null)
 
   const promptLink = () => {
@@ -72,9 +57,6 @@ export function CommentEditorToolbar({ editor, disabled }: CommentEditorToolbarP
     <>
       <div
         className={cn(
-          // Hidden by default; revealed when the wrapping div carries
-          // `:focus-within` (the editor, slash menu, or any toolbar
-          // button is focused).
           'hidden flex-wrap items-center gap-0.5 border-b border-line/60 px-2 py-1',
           'group-focus-within/comment-editor:flex',
         )}
@@ -174,11 +156,6 @@ interface LinkPromptDialogProps {
   onConfirm: (href: string | null) => void
 }
 
-// Small inline dialog that replaces the native `window.prompt` flow
-// for the link bubble. Mounted next to the toolbar; the toolbar
-// owns the seed value (read from the active selection) and the
-// editor instance is closed over by `onConfirm`, so the dialog
-// itself stays UI-only.
 function LinkPromptDialog({ seed, onClose, onConfirm }: LinkPromptDialogProps) {
   const [value, setValue] = useState('')
 
@@ -243,11 +220,6 @@ function ToolButton({ title, disabled, state, onClick, children }: ToolButtonPro
       title={title}
       disabled={disabled}
       aria-pressed={isActive}
-      // Prevent the button from stealing focus on mousedown so the
-      // contenteditable selection stays intact while the formatting
-      // command runs. Without this the caret would briefly jump out
-      // of the editor and the toggled mark would land on whatever
-      // came next instead of the active selection.
       onMouseDown={(event) => event.preventDefault()}
       onClick={onClick}
       className={cn(

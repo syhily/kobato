@@ -7,12 +7,6 @@ import { bodyToPlainText } from '@/shared/pt/utils'
 import { Badge } from '@/ui/components/badge'
 import { cn } from '@/ui/lib/cn'
 
-// Shared block-level diff primitives used by both the
-// `DraftConflictDialog` (local-vs-server) and the
-// `RevisionHistoryDrawer` (any-revision-vs-current). Living in a
-// dedicated module keeps the diff renderer reusable without
-// pulling DialogContent / Sheet hierarchy into either consumer.
-
 export interface DiffEntry {
   key: string
   status: 'unchanged' | 'changed' | 'leftOnly' | 'rightOnly'
@@ -20,47 +14,19 @@ export interface DiffEntry {
   rightBlock: Block | null
 }
 
-// Singleton — diff-match-patch is stateless after construction and
-// the cleanup defaults are tuned for our short editor blocks.
 const dmp = new diff_match_patch()
 
 interface InlineDiffPart {
-  // 1 = insertion (only on the right side); -1 = deletion (only on
-  // the left side); 0 = unchanged on both sides.
   op: -1 | 0 | 1
   text: string
 }
 
 export function inlineCharDiff(left: string, right: string): InlineDiffPart[] {
   const result = dmp.diff_main(left, right)
-  // Word-level cleanup is the closest match to "show me what the
-  // user actually changed" — the per-character output of diff_main
-  // looks like alphabet soup on Chinese prose.
   dmp.diff_cleanupSemantic(result)
   return result.map(([op, text]) => ({ op: op as -1 | 0 | 1, text }))
 }
 
-// Align two bodies in-order so inserted / deleted blocks render at
-// their actual position. Strategy, in priority order:
-//
-//   1. Compute the longest common subsequence (LCS) over a per-block
-//      "anchor" — the `_key` if both sides agree on it, otherwise a
-//      content fingerprint (`_type` + normalised text / JSON). This
-//      anchors blocks that survived a Tiptap → PT round-trip even
-//      when the editor regenerated a key on save.
-//   2. Walk both sides in order. Anchored pairs become `unchanged`
-//      (or `changed` when the JSON differs but the anchor matches).
-//      The blocks between two consecutive anchors form a "gap"; we
-//      pair them up greedily as `changed` (when the per-block text
-//      similarity is high enough to be a clear edit), and emit any
-//      remainder as `leftOnly` / `rightOnly` interleaved at the gap
-//      position.
-//
-// This mirrors what jsdiff / react-diff-viewer / VS Code's diff
-// editor do at the line level — a Myers/Hunt LCS gives you the
-// proper inline placement of an inserted run instead of pushing
-// every later block off-by-one. Bodies are small (≤ a few hundred
-// blocks) so the O(n·m) LCS table is comfortably fine.
 export function diffBodies(leftBody: PortableTextBody, rightBody: PortableTextBody): DiffEntry[] {
   const leftAnchors = leftBody.map((block) => anchorFor(block))
   const rightAnchors = rightBody.map((block) => anchorFor(block))
@@ -73,8 +39,6 @@ export function diffBodies(leftBody: PortableTextBody, rightBody: PortableTextBo
     flushGap(leftBody.slice(li, matchedLeft), rightBody.slice(ri, matchedRight), entries)
     const left = leftBody[matchedLeft]
     const right = rightBody[matchedRight]
-    // LCS-matched anchors are equal under `canonicalize` /
-    // `resolveMarks`, so the rendered content matches by construction.
     entries.push({ key: left._key, status: 'unchanged', leftBlock: left, rightBlock: right })
     li = matchedLeft + 1
     ri = matchedRight + 1
@@ -83,12 +47,6 @@ export function diffBodies(leftBody: PortableTextBody, rightBody: PortableTextBo
   return entries
 }
 
-// Pair up the blocks inside a single gap between two LCS anchors.
-// Same-position blocks with high textual similarity become `changed`
-// (typing inside an existing block); the leftover tail emits in
-// place as `leftOnly` / `rightOnly` so an inserted run shows up as
-// a contiguous green strip on the right and a matching dashed
-// placeholder on the left.
 function flushGap(leftGap: Block[], rightGap: Block[], entries: DiffEntry[]): void {
   const pairs = Math.min(leftGap.length, rightGap.length)
   let paired = 0
@@ -111,13 +69,6 @@ function flushGap(leftGap: Block[], rightGap: Block[], entries: DiffEntry[]): vo
   }
 }
 
-// Two blocks are paired as a `changed` edit (rather than rendered
-// as a delete + insert) when their types match AND we can argue
-// they're the "same" block at different states. Different `_type`s
-// always split. Same-`_key` always pairs (the editor explicitly
-// kept the identity). Otherwise text blocks pair when they share a
-// reasonable token overlap so a paragraph rewrite still shows
-// inline char-level diff instead of a wholesale red/green swap.
 function shouldPairAsChanged(left: Block, right: Block): boolean {
   if (left._type !== right._type) {
     return false
@@ -133,10 +84,6 @@ function shouldPairAsChanged(left: Block, right: Block): boolean {
   return false
 }
 
-// Cheap Sørensen–Dice over the union of word tokens. Returns 1 for
-// identical strings and 0 for fully disjoint ones. Good enough to
-// distinguish "small edit on the same paragraph" from "two
-// unrelated paragraphs that happened to land in the same gap".
 function textSimilarity(a: string, b: string): number {
   if (a === b) {
     return 1
@@ -165,8 +112,6 @@ function tokenize(text: string): Set<string> {
       tokens.add(word)
     }
   }
-  // Add CJK character bigrams so similarity works on Chinese text
-  // that has no spaces. ASCII words above already cover Latin prose.
   const cjk = text.match(/[\p{Script=Han}]+/gu) ?? []
   for (const run of cjk) {
     for (let i = 0; i < run.length - 1; i++) {
@@ -179,10 +124,6 @@ function tokenize(text: string): Set<string> {
   return tokens
 }
 
-// Hunt–Szymanski-ish LCS: for short anchor sequences (the docs we
-// diff have ≤ a few hundred blocks each) the textbook O(n·m) DP is
-// fast enough and far simpler than the patience / Myers variants.
-// Returns the matched index pairs in left-then-right order.
 function lcsMatches(left: readonly string[], right: readonly string[]): Array<[number, number]> {
   const n = left.length
   const m = right.length
@@ -226,10 +167,6 @@ export interface DiffPanelProps {
   side: 'left' | 'right'
 }
 
-// Renders one side of a block-level diff as a vertical list. Equal
-// blocks render dimmed; changed blocks highlight char-level edits;
-// blocks unique to the *other* side render as `（无）` placeholders
-// so two stacked panels stay row-aligned.
 export function DiffPanel({ diff, side }: DiffPanelProps) {
   return (
     <ol className="flex flex-col gap-2">
@@ -253,7 +190,6 @@ export function DiffPanel({ diff, side }: DiffPanelProps) {
         }
         return (
           <li
-            // Same composite-key reasoning as the `onlyOtherSide` branch above.
             // oxlint-disable-next-line react/no-array-index-key
             key={`${entry.key}-${idx}`}
             className={cn(
@@ -293,22 +229,12 @@ interface BlockInlineDiffProps {
   side: 'left' | 'right'
 }
 
-// Highlight char-level insertions / deletions inside a text block
-// pair. The right panel highlights insertions (green); the left
-// panel highlights deletions (red, struck-through). Equal runs
-// render as plain text.
 function BlockInlineDiff({ leftBlock, rightBlock, side }: BlockInlineDiffProps) {
   const leftText = bodyToPlainText([leftBlock]).trim()
   const rightText = bodyToPlainText([rightBlock]).trim()
   const parts = inlineCharDiff(leftText, rightText)
   return (
     <p className="line-clamp-6 leading-relaxed wrap-break-word">
-      {/*
-        `parts` comes from diff-match-patch — opaque `{op, text}`
-        tuples with no stable identity beyond their position in the
-        diff sequence. The list is recomputed wholesale on every
-        re-render so index keys are the stable identity here.
-      */}
       {parts.map((part, idx) => {
         if (part.op === 0) {
           // oxlint-disable-next-line react/no-array-index-key

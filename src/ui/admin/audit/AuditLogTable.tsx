@@ -23,9 +23,7 @@ const RESOURCE_LABEL_MAP = new Map(RESOURCE_TYPE_OPTIONS.map((o) => [o.value, o.
 
 const SHIKI_THEMES = { light: 'solarized-light', dark: 'solarized-dark' } as const
 
-// ---------------------------------------------------------------------------
 // Shiki singleton — lazy-initialised, reused across rows
-// ---------------------------------------------------------------------------
 
 let shikiPromise: Promise<void> | null = null
 let shikiResolve: (() => void) | null = null
@@ -75,9 +73,7 @@ function renderJson(json: string): string {
   })
 }
 
-// ---------------------------------------------------------------------------
 // Table
-// ---------------------------------------------------------------------------
 
 export function AuditLogTable({ rows, isLoading }: AuditLogTableProps) {
   const [expandedId, setExpandedId] = useState<string | null>(null)
@@ -140,9 +136,7 @@ export function AuditLogTable({ rows, isLoading }: AuditLogTableProps) {
   )
 }
 
-// ---------------------------------------------------------------------------
 // Row
-// ---------------------------------------------------------------------------
 
 interface AuditLogRowProps {
   row: AuditLogItemDto
@@ -209,9 +203,7 @@ function ChevronIcon({ expanded }: { expanded: boolean }) {
   )
 }
 
-// ---------------------------------------------------------------------------
 // JSON detail row (Shiki-highlighted)
-// ---------------------------------------------------------------------------
 
 function JsonDetailRow({ details }: { details: Record<string, unknown> | null }) {
   const ready = useSyncExternalStore(subscribeShiki, getShikiSnapshot, getShikiSnapshot)

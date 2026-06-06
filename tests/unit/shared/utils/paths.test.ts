@@ -22,7 +22,6 @@ describe('routes/_shared/canonicalPostPath', () => {
   })
 
   it('treats Chinese slug differences as redirect-worthy', () => {
-    // Real example: /posts/旧-标题 → /posts/new-title
     expect(canonicalPostPath('旧-标题', 'new-title')).toBe('/posts/new-title')
   })
 

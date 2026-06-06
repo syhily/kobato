@@ -4,16 +4,13 @@ import type { RouteHandle } from '@/root'
 
 import { useDetachPublicCss } from '@/client/hooks/use-detach-public-css'
 import { AdminErrorFallback } from '@/ui/admin/shell/AdminErrorFallback'
-// The login / install screen is admin chrome — same shadcn / Tailwind v4
-// cascade the admin SPA uses, so import `tailwind.css` directly. This
-// keeps the public-site Bootstrap cascade (`public.css`) and the
-// historical `admin.css` Bootstrap split-screen rules out of this route's
-// chunk, matching the project's "admin pages do not load public.css"
-// contract.
+// The login / install screen uses the same shadcn / Tailwind v4 cascade
+// as the admin SPA. Importing `tailwind.css` directly keeps the public
+// site's `public.css` out of this route's chunk.
 import '@/styles/admin.css'
 
-// Tells `root.tsx` to skip rendering `<BaseLayout>` for any descendant route
-// so the admin / login stack can own its own chrome.
+// Tells `root.tsx` to skip rendering `<BaseLayout>` for any descendant
+// route so the admin / login stack can own its own chrome.
 export const handle: RouteHandle = { layout: 'admin' }
 
 export { AdminErrorFallback as ErrorBoundary }

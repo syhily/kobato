@@ -19,10 +19,6 @@ const PAGE_SIZE = 30
 
 type EditTarget = AdminTagDto | null | undefined
 
-// Tags admin page orchestrator. Owns fetcher state, the dialog-based
-// edit / create flow, and the soft-delete confirmation flow.
-// Per-row presentation lives in `./TagRows.tsx` so this file only owns
-// orchestration.
 export function TagsView() {
   const { state, dispatch } = useTagsController()
   const [confirm, setConfirm] = useState<ConfirmState | null>(null)
@@ -59,7 +55,6 @@ export function TagsView() {
     }
   }, [listError])
 
-  // --- Infinite scroll: load more ---
   const [loadingMore, setLoadingMore] = useState(false)
   const sentinelRef = useRef<HTMLDivElement>(null)
   const hasMore = state.hasMore

@@ -7,18 +7,6 @@ export interface TocItemsProps {
   depth?: number
 }
 
-// `TocItems` recurses through every heading on a long post; on hydration and
-// every subsequent re-render (e.g. `useLocation` changes for nav highlight)
-// React would re-walk the whole tree even though the headings array is
-// loader-stable. Wrapping in `React.memo` with reference equality short-
-// circuits the tree at the root unless the headings actually change.
-//
-// `depth` drives the per-level indentation of `.menu-content`. The legacy
-// CSS used descendant selectors to apply `padding-left: 2rem` at depth 1
-// and `4rem` at depth 2 (deeper levels were never styled). Threading the
-// depth through the recursion makes the indent class statically present in
-// the source — it satisfies `bundle-analyzable-paths` and lets Tailwind
-// pick the literal `pl-*` classes up at build time.
 const MENU_CONTENT_INDENT = ['', 'pl-8', 'pl-16'] as const
 
 function TocItemsImpl({ items, depth = 0 }: TocItemsProps) {

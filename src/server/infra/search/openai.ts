@@ -45,11 +45,9 @@ function getConfig(): OpenAiConfig | null {
   return { apiKey: settings.apiKey, baseURL }
 }
 
-// ---------------------------------------------------------------------------
 // Embedding cache: binary Float32Array storage to minimise serialisation cost
 // and memory footprint. 1536 floats @ 4 bytes each = 6144 bytes per key,
 // versus ~12 KB for JSON stringified number[].
-// ---------------------------------------------------------------------------
 
 const embeddingInflight = createInflight<number[] | null>()
 

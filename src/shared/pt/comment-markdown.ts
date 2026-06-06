@@ -1,21 +1,9 @@
 import type { CommentBlock, CommentBody, CommentTextBlock } from '@/shared/pt/comment-schema'
 import type { Span } from '@/shared/pt/schema'
 
-// Serialise a comment PortableText body back into the same markdown
-// dialect the legacy comment pipeline accepted. The output is stored
-// in `comment.content` as a rollback / plain-text snapshot — every
-// successful save writes BOTH the PT `body` (canonical, used by the
-// renderer) and this markdown projection (the safety net), so the
-// site can fall back to markdown rendering if the PT pipeline is
-// ever rolled back, and external integrations (email templates,
-// search, future export tools) get a portable representation.
-//
-// Round-trip stability: for inputs originally produced by the
-// `markdown → mdast → commentBody` migration script, this function
-// must produce a markdown string that — when re-fed through that
-// pipeline — yields a semantically-equivalent PT body. The unit test
-// (`tests/shared.comment-markdown.test.ts`) enforces this for every
-// dialect feature.
+// Serialise a comment PortableText body back into markdown. The output
+// is stored in `comment.content` as a rollback snapshot — every save
+// writes BOTH the PT `body` (canonical) and this markdown projection.
 
 const NEWLINE = '\n'
 const INDENT_STEP = '  '
@@ -49,14 +37,9 @@ function renderSpan(span: Span, lookup: MarkDefLookup): string {
     }
   }
   let text = escapeInline(span.text)
-  // Decorators wrap from innermost to outermost so a span with
-  // marks=['strong', 'em', 'code'] renders `**_\`text\`_**`. The
-  // tex-style escape isn't strictly canonical but matches what the
-  // legacy parser tolerates.
+  // Decorators wrap from innermost to outermost.
   if (marks.includes('code')) {
-    // `code` decorator wins over other decorators on the same span
-    // (markdown inline code doesn't honour ** _ etc. inside backticks),
-    // so emit `\`text\`` and skip the remaining inline wrappers.
+    // `code` wins over other decorators on the same span.
     text = `\`${span.text}\``
     return wrapLinkIfAny(text, marks, lookup)
   }
@@ -79,9 +62,7 @@ function wrapLinkIfAny(text: string, marks: ReadonlyArray<string>, lookup: MarkD
   for (const name of marks) {
     const link = lookup.link.get(name)
     if (link !== undefined) {
-      // URLs containing parentheses break markdown link syntax; wrap
-      // the URL in angle brackets so the parser treats the whole URL
-      // as the destination.
+      // URLs containing parentheses break markdown link syntax.
       const href = link.href.includes(')') ? `<${link.href}>` : link.href
       return `[${text}](${href})`
     }
@@ -91,10 +72,8 @@ function wrapLinkIfAny(text: string, marks: ReadonlyArray<string>, lookup: MarkD
 
 function escapeInline(text: string): string {
   // Escape the four markdown characters that would otherwise re-parse
-  // when the snapshot is fed back through `marked`. We deliberately
-  // do NOT escape `<` / `>` — `<u>` is the only inline HTML we emit
-  // (for underline), and breaking arbitrary `<` characters in user
-  // text would corrupt content that already passed schema validation.
+  // when the snapshot is fed back through `marked`. We deliberately do
+  // NOT escape `<` / `>` — `<u>` is the only inline HTML we emit.
   return text.replace(/([\\`*_])/g, '\\$1')
 }
 
@@ -145,8 +124,7 @@ function renderBlock(block: CommentBlock): string[] {
 }
 
 // Adjacent list items render without a blank line between them; every
-// other block boundary takes a blank line so the snapshot is readable
-// AND `marked` re-parses it back into the same logical block structure.
+// other block boundary takes a blank line.
 function shouldSeparateWithBlankLine(prev: CommentBlock, next: CommentBlock): boolean {
   if (prev._type === 'block' && next._type === 'block') {
     const prevIsList = prev.listItem !== undefined

@@ -55,9 +55,7 @@ export async function renderPortableTextToHtml(
   return html
 }
 
-// ---------------------------------------------------------------------------
 // Heading ID map
-// ---------------------------------------------------------------------------
 
 function buildHeadingIdMap(body: PortableTextBodyType, headingSlugs: readonly string[]): Map<string, string> {
   const slots = collectHeadingSlotsInPortableTextRenderOrder(body)
@@ -71,9 +69,7 @@ function buildHeadingIdMap(body: PortableTextBodyType, headingSlugs: readonly st
   return map
 }
 
-// ---------------------------------------------------------------------------
 // Music player resolution
-// ---------------------------------------------------------------------------
 
 interface MusicMeta {
   name: string
@@ -132,9 +128,7 @@ function collectMusicPlayerIds(body: PortableTextBodyType): string[] {
   return ids
 }
 
-// ---------------------------------------------------------------------------
 // HTML components
-// ---------------------------------------------------------------------------
 
 interface ComponentContext {
   headingIdByBlockKey: Map<string, string>
@@ -242,9 +236,7 @@ function buildPortableTextComponents(ctx: ComponentContext): PortableTextCompone
   }
 }
 
-// ---------------------------------------------------------------------------
 // Block renderers
-// ---------------------------------------------------------------------------
 
 function renderImageBlock(value: ImageBlock): string {
   const src = escapeHtml(value.src)
@@ -298,9 +290,7 @@ function renderMusicPlayer(value: MusicPlayerBlock, ctx: ComponentContext): stri
   return `<figure><audio controls preload="none" src="${src}"></audio><figcaption>🎵 ${name} — ${artist}</figcaption></figure>`
 }
 
-// ---------------------------------------------------------------------------
 // Table block
-// ---------------------------------------------------------------------------
 
 function renderTableBlock(value: TableBlock): string {
   const rows = value.rows ?? []
@@ -430,9 +420,7 @@ function applyInlineMarkHtml(
   return text
 }
 
-// ---------------------------------------------------------------------------
 // Footnotes section
-// ---------------------------------------------------------------------------
 
 function renderFootnotesSection(
   definitions: readonly FootnoteDefinitionBlock[],
@@ -451,9 +439,7 @@ function renderFootnotesSection(
   return html
 }
 
-// ---------------------------------------------------------------------------
 // HTML escape helper
-// ---------------------------------------------------------------------------
 
 function escapeHtml(str: string): string {
   return str

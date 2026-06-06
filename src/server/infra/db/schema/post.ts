@@ -21,7 +21,6 @@ export const post = pgTable(
     commentsEnabled: boolean('comments_enabled').notNull().default(true),
     showToc: boolean('show_toc').notNull().default(false),
     // Same semantics as `page.show_updated` — defaults false; flip on
-    // for the rare post that wants its「修改于 XXXX」 secondary date
     // displayed in the meta row.
     showUpdated: boolean('show_updated').notNull().default(false),
     visible: boolean('visible').notNull().default(true),

@@ -10,8 +10,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/ui/components/card'
 import { Label } from '@/ui/components/label'
 import { Textarea } from '@/ui/components/textarea'
 
-// --- Meta draft re-exports ------------------------------------------------
-
 export type { PageMetaDraft } from '@/shared/types/pages'
 export const EMPTY_META_DRAFT = EMPTY_PAGE_META_DRAFT
 export const metaDraftsEqual = pageMetaDraftsEqual
@@ -28,15 +26,6 @@ export function metaDraftFromPage(page: AdminPageDto): PageMetaDraft {
     showToc: page.showToc,
     showUpdated: page.showUpdated,
     showFriends: page.showFriends,
-    // The picker treats the non-empty datetime-local string as "the
-    // operator has opted into 定时发布 mode". For an already-published
-    // page sitting in the past, leaving the string non-empty would
-    // misleadingly start the editor in "schedule mode" with a past
-    // time. Default-blank the field when the stored timestamp is at
-    // or before "now" so the sidebar opens in 立即发布 mode (matching
-    // the wire convention: empty ⇒ omit on publish ⇒ server stamps
-    // `now()`). Future timestamps surface verbatim so the operator
-    // can edit / cancel a pending schedule.
     publishedAt: futureLocalInputValueOrEmpty(page.publishedAt),
   }
 }
@@ -80,14 +69,6 @@ export function localInputValueToIso(value: string): string | null {
   return new Date(ms).toISOString()
 }
 
-// --- Sidebar projection types ----------------------------------------------
-
-/**
- * Revision-side projection of where the page sits in its versioning
- * lifecycle. Independent of `SidebarPublishStatus` — that one tracks
- * visibility (offline / scheduled / live), this one tracks the
- * draft↔published version relationship.
- */
 export type SidebarRevisionSummary =
   | { kind: 'no-revision' }
   | { kind: 'published-current'; revisionNo: number }
@@ -102,10 +83,6 @@ export type SidebarSaveStatus =
   | { kind: 'conflict' }
   | { kind: 'info'; message: string }
 
-// High-level "where is this page in its lifecycle?" used to render
-// the badge inside the 基本信息 card. The shell derives the value
-// from server state + `meta.published` + `meta.publishedAt` and hands
-// it in; the sidebar stays free of any business logic.
 export type SidebarPublishStatus = 'never-saved' | 'offline' | 'scheduled' | 'live' | 'live-with-draft-ahead'
 
 export interface MetaSidebarProps {
@@ -143,12 +120,6 @@ export interface MetaSidebarProps {
   extras?: ReactNode
 }
 
-// --- Main component --------------------------------------------------------
-
-// Right-pane metadata panel for the page editor. Sub-components
-// (ImageField, PublishStatusRow, ToggleRow, GeneratedOgPreview) live
-// as siblings under `pages/meta/`. Pages omit the post-only category /
-// tags / alias fields — fewer cards, smaller draft.
 export function MetaSidebar({
   draft,
   onChange,

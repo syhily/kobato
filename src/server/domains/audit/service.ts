@@ -6,9 +6,7 @@ import { getLogger } from '@/server/infra/logger'
 
 const log = getLogger('audit.service')
 
-// ---------------------------------------------------------------------------
 // Public API
-// ---------------------------------------------------------------------------
 
 /**
  * Record an audit event.
@@ -40,9 +38,7 @@ export function recordAuditEvent(input: AuditEventInput): void {
   }
 }
 
-// ---------------------------------------------------------------------------
 // Context helpers
-// ---------------------------------------------------------------------------
 
 /**
  * Extract audit-relevant fields from an AuditContext.

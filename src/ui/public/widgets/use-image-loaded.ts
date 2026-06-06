@@ -1,22 +1,5 @@
 import { useCallback, useLayoutEffect, useRef, useState, type Ref, type SyntheticEvent } from 'react'
 
-// Shared internals for image components that drive a thumbhash placeholder
-// and need to know when the underlying `<img>` finishes painting.
-//
-// Two concerns are bundled together because they cannot live apart:
-//
-//   1. A ref-merger callback that forwards into both an internal ref
-//      (used by `useLayoutEffect` to check `node.complete`) and an
-//      optional external ref provided by the parent.
-//   2. A `loaded` flag that flips true the moment the browser has the
-//      pixels — either via `<img onLoad>` or, for already-cached
-//      images, by inspecting `node.complete` synchronously on attach
-//      AND in a layout effect to cover hydration cases where the
-//      ref callback ran before the network finished.
-//
-// Both `<RawImage>` and `<BlockImage>` used to inline 20 identical
-// lines for this; the hook keeps a single source of truth so any
-// future tweak (e.g. tracking decode timing) lands in one place.
 export interface ImageLoadedHook {
   ref: (node: HTMLImageElement | null) => void
   loaded: boolean

@@ -1,14 +1,5 @@
 import { cn } from '@/ui/lib/cn'
 
-// Lightweight placeholder shown while the comments promise streams in via
-// React Router's `<Await>` boundary. Mirrors the outer chrome of `Comments`
-// so the layout doesn't shift when the real island hydrates.
-//
-// Visual contract: three pulsing horizontal bars (full / 60% / full). The
-// shimmer keyframes + `--animate-comments-shimmer` token live in
-// `@/styles/tailwind.css` so Tailwind tree-shakes them when this
-// component is not on the page; `motion-reduce:animate-none` honours
-// `prefers-reduced-motion: reduce`.
 const SHIMMER_LINE_CLASS =
   'h-4 rounded-input bg-[linear-gradient(90deg,var(--skeleton-start)_0%,var(--skeleton-end)_50%,var(--skeleton-start)_100%)] bg-[length:200%_100%] animate-comments-shimmer motion-reduce:animate-none'
 

@@ -2,10 +2,6 @@ import type { ComponentProps } from 'react'
 
 import { cn } from '@/ui/lib/cn'
 
-// Generic shadcn label primitive — consumers always supply either an
-// `htmlFor` pointing at a sibling control or wrap the label around the
-// control directly. The accessibility rule cannot statically prove that
-// here, so it is silenced for this single base component.
 function Label({ className, ...props }: ComponentProps<'label'>) {
   return (
     // oxlint-disable-next-line jsx-a11y/label-has-associated-control

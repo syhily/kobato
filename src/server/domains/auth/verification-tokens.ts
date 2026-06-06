@@ -58,7 +58,6 @@ async function issueToken(
   // Single-token-per-(purpose, user) invariant. The unique index
   // `uq_verification_purpose_user` enforces this; we use UPSERT to
   // rotate the live token in-place when an admin re-clicks
-  // "发送邀请" without leaving stale rows behind.
   await db
     .insert(verification)
     .values({ id, purpose, userId, value, expiresAt })

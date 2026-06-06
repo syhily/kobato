@@ -29,13 +29,6 @@ export interface FootnoteItem {
   children: FootnoteDefinitionBlock['children']
 }
 
-// Structural equality for the editor's footnote-definition cache. The
-// previous implementation diffed via `JSON.stringify(a) !== JSON.stringify(b)`
-// on every onUpdate tick, which traversed and allocated the entire
-// footnote tree per keystroke. A two-array walk over `_key + index`
-// catches the same drift (reorder, add, remove, index renumber) without
-// any allocations — body edits don't change a definition's identity, so
-// child content can shift freely without flagging the cache.
 function footnoteDefsEqual(a: FootnoteDefinitionBlock[], b: FootnoteDefinitionBlock[]): boolean {
   if (a.length !== b.length) {
     return false
@@ -49,31 +42,18 @@ function footnoteDefsEqual(a: FootnoteDefinitionBlock[], b: FootnoteDefinitionBl
 }
 
 export interface UseEditorFootnotesResult {
-  /** Current footnote definitions extracted from the document. */
   footnotes: FootnoteDefinitionBlock[]
-  /** Whether the footnote dialog is open. */
   dialogOpen: boolean
-  /** Dialog mode — create vs edit. */
   dialogMode: 'create' | 'edit'
-  /** Seed text when the dialog opens in edit mode. */
   dialogInitialText: string
-  /** Key of the footnote currently being edited (null in create mode). */
   editTargetKey: string | null
-  /** Open the dialog to insert a new footnote. */
   openInsertDialog: () => void
-  /** Open the dialog to edit an existing footnote. */
   openEditDialog: (targetKey: string) => void
-  /** Close or toggle the dialog. */
   setDialogOpen: (open: boolean) => void
-  /** Insert (or update) a footnote and return the merged PT body. */
   insertFootnote: (plainText: string) => PortableTextBody | null
-  /** Remove a footnote by target key and return the merged PT body. */
   removeFootnote: (targetKey: string) => PortableTextBody | null
-  /** Reindex footnotes after an external change and return the merged PT body. */
   reindexFootnotes: () => PortableTextBody | null
-  /** Process an editor update event, sync footnote state, and return the merged PT body. */
   handleEditorUpdate: (instance: Editor) => PortableTextBody
-  /** Reset footnote state from an initial body (e.g. when bodyKey changes). */
   resetFootnotes: (body: PortableTextBody) => PortableTextBody
 }
 
@@ -84,7 +64,6 @@ interface FootnoteRenumberChange {
   attrs: Record<string, unknown>
 }
 
-/** Build targetKey → newIndex map from a synced body. */
 function buildKeyToIndexMap(syncedBody: PortableTextBody): Map<string, number> {
   const map = new Map<string, number>()
   for (const block of syncedBody) {
@@ -95,11 +74,6 @@ function buildKeyToIndexMap(syncedBody: PortableTextBody): Map<string, number> {
   return map
 }
 
-/**
- * Apply only the index/text changes needed after footnote renumbering,
- * using ProseMirror transactions instead of `setContent`. This preserves
- * selection and avoids a full re-parse.
- */
 function applyFootnoteRenumberTransaction(instance: Editor, syncedBody: PortableTextBody): boolean {
   const keyToIndex = buildKeyToIndexMap(syncedBody)
   const markType = instance.schema.marks.footnoteRef
@@ -137,7 +111,6 @@ function applyFootnoteRenumberTransaction(instance: Editor, syncedBody: Portable
     return false
   }
 
-  // Process from back to front so earlier positions remain stable.
   changes.sort((a, b) => b.from - a.from)
 
   let tr = instance.state.tr
@@ -192,7 +165,6 @@ export function useEditorFootnotes(editor: Editor | null): UseEditorFootnotesRes
       const synced = synchronizeFootnoteIndices(merged)
       const applied = applyFootnoteRenumberTransaction(instance, synced)
       if (!applied) {
-        // Fallback to full reset when transaction produces no changes.
         instance.commands.setContent(bodyToPmDoc(stripFootnoteDefinitionsForEditor(synced)) as JSONContent, {
           emitUpdate: false,
         })
@@ -205,7 +177,6 @@ export function useEditorFootnotes(editor: Editor | null): UseEditorFootnotesRes
   const handleEditorUpdate = useCallback(
     (instance: Editor): PortableTextBody => {
       if (isSyncingFootnotesRef.current) {
-        // Return last-known merged body when re-entering during a sync transaction.
         return mergeProseBodyWithFootnoteDefinitions(pmDocToBody(instance.getJSON() as PmDoc), footnoteDefsRef.current)
       }
       const merged = mergeProseBodyWithFootnoteDefinitions(
