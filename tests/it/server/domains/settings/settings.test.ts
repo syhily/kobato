@@ -541,6 +541,7 @@ describe('services/settings — rateLimit section', () => {
         passkeyRegisterBeginIp: { windowSeconds: 60 * 5, maxAttempts: 10 },
         passkeyRegisterFinishIp: { windowSeconds: 60 * 5, maxAttempts: 10 },
         passkeySetForceIp: { windowSeconds: 60 * 5, maxAttempts: 10 },
+        passkeyDeleteIp: { windowSeconds: 60 * 5, maxAttempts: 10 },
       },
       11n,
     )
