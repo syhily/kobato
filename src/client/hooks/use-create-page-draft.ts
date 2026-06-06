@@ -68,12 +68,14 @@ export function useCreatePageDraft({ body, meta }: UseCreatePageDraftOptions): U
 
   const [loadedDraft, setLoadedDraft] = useState<StoredCreateDraft | null>(null)
   const didReadRef = useRef(false)
+  const loadCompleteRef = useRef(false)
 
   useEffect(() => {
     if (didReadRef.current) {
       return
     }
     didReadRef.current = true
+    loadCompleteRef.current = false
 
     let cancelled = false
 
@@ -85,6 +87,7 @@ export function useCreatePageDraft({ body, meta }: UseCreatePageDraftOptions): U
         }
         if (record === null) {
           setLoadedDraft(null)
+          loadCompleteRef.current = true
           return
         }
         if (record.version !== STORAGE_VERSION || !Array.isArray(record.body) || record.meta === undefined) {
@@ -92,13 +95,16 @@ export function useCreatePageDraft({ body, meta }: UseCreatePageDraftOptions): U
           if (!cancelled) {
             setLoadedDraft(null)
           }
+          loadCompleteRef.current = true
           return
         }
         setLoadedDraft(record as unknown as StoredCreateDraft)
+        loadCompleteRef.current = true
       } catch {
         if (!cancelled) {
           setLoadedDraft(null)
         }
+        loadCompleteRef.current = true
       }
     })()
 
@@ -108,7 +114,10 @@ export function useCreatePageDraft({ body, meta }: UseCreatePageDraftOptions): U
   }, [key])
 
   useEffect(() => {
-    const payload: DraftRecord = {
+    if (!loadCompleteRef.current) {
+      return
+    }
+    const payload: DraftRecord<PortableTextBody, PageMetaDraft> = {
       key,
       type: 'page-create',
       body,
@@ -167,7 +176,7 @@ export function useCreatePageDraft({ body, meta }: UseCreatePageDraftOptions): U
   const migrateToEditKey = useCallback(
     (pageId: string, clientRevisionToken: string, latestBody: PortableTextBody) => {
       const editKey = `cms-page-draft:${pageId}:${clientRevisionToken}`
-      const editPayload: DraftRecord = {
+      const editPayload: DraftRecord<PortableTextBody> = {
         key: editKey,
         type: 'page-edit',
         body: latestBody,

@@ -95,7 +95,20 @@ export async function restoreFromSql(db: NodePgDatabase, sql: string): Promise<v
     stdio: ['pipe', 'inherit', 'inherit'],
   })
 
-  Readable.from([`SET CONSTRAINTS ALL DEFERRED;\n`, sql, '\n']).pipe(psql.stdin)
+  // Clear the public schema before applying the dump so that tables added
+  // after the backup was taken (e.g. by later migrations) do not block
+  // drops of older objects via foreign-key dependencies.  Because psql is
+  // run with --single-transaction this cleanup is atomic: if the restore
+  // fails the transaction rolls back and the pre-existing tables remain.
+  const preRestoreCleanup = `DO $$ DECLARE
+  r RECORD;
+BEGIN
+  FOR r IN (SELECT tablename FROM pg_tables WHERE schemaname = 'public') LOOP
+    EXECUTE 'DROP TABLE IF EXISTS public.' || quote_ident(r.tablename) || ' CASCADE';
+  END LOOP;
+END $$;`
+
+  Readable.from([`SET CONSTRAINTS ALL DEFERRED;\n`, preRestoreCleanup, '\n', sql, '\n']).pipe(psql.stdin)
 
   psql.stdin.on('error', (err) => {
     if ((err as NodeJS.ErrnoException).code !== 'EPIPE') {

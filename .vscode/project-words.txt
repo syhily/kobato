@@ -23,6 +23,7 @@ blurhash
 bradlc
 buildx
 bxaw
+bytea
 captainofphb
 cfilter
 cimage
@@ -243,6 +244,7 @@ sauvignon
 scalafmt
 scann
 sched
+schemaname
 sefc
 segoe
 serialised
@@ -263,6 +265,7 @@ srem
 stylesheet
 suus
 tabindex
+tablename
 tagcloud
 taza
 temml

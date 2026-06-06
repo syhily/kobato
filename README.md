@@ -65,12 +65,12 @@ Settings are seeded automatically.
 Most settings are managed in the admin dashboard.
 Database and session secrets are configured via environment variables:
 
-| Variable           | Description                                                                  |
-| ------------------ | ---------------------------------------------------------------------------- |
-| `DATABASE_URL`     | PostgreSQL connection URL, e.g. `postgres://user:pass@localhost:5432/kobato` |
-| `REDIS_URL`        | Redis connection URL, e.g. `redis://localhost:6379`                          |
-| `SESSION_SECRET`   | HMAC secret for cookies. Generate with `openssl rand -hex 32`                |
-| `KOBATO_DATA_PATH` | Root data directory for fonts, dead-letter files, and MaxMind DB             |
+| Variable         | Description                                                                  |
+| ---------------- | ---------------------------------------------------------------------------- |
+| `DATABASE_URL`   | PostgreSQL connection URL, e.g. `postgres://user:pass@localhost:5432/kobato` |
+| `REDIS_URL`      | Redis connection URL, e.g. `redis://localhost:6379`                          |
+| `SESSION_SECRET` | HMAC secret for cookies. Generate with `openssl rand -hex 32`                |
+| `DATA_PATH`      | Root data directory for fonts, dead-letter files, and MaxMind DB             |
 
 Optional but recommended for production:
 

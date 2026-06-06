@@ -9,6 +9,7 @@ const mockRedis = {
   set: vi.fn(),
   get: vi.fn(),
   del: vi.fn(),
+  eval: vi.fn(),
 }
 
 const swaMocks = {
@@ -73,6 +74,7 @@ beforeEach(() => {
   mockRedis.set.mockResolvedValue('OK')
   mockRedis.get.mockResolvedValue(null)
   mockRedis.del.mockResolvedValue(1)
+  mockRedis.eval.mockResolvedValue(null)
 })
 
 describe('passkey-service — generateRegistrationOptions', () => {
@@ -116,7 +118,7 @@ describe('passkey-service — generateRegistrationOptions', () => {
 
 describe('passkey-service — verifyRegistrationResponse', () => {
   it('verifies response and inserts credential', async () => {
-    mockRedis.get.mockResolvedValue(JSON.stringify({ userId: '1', deviceName: 'My Device' }))
+    mockRedis.eval.mockResolvedValue(JSON.stringify({ userId: '1', deviceName: 'My Device' }))
 
     swaMocks.verifyRegistrationResponse.mockResolvedValue({
       verified: true,
@@ -165,11 +167,11 @@ describe('passkey-service — verifyRegistrationResponse', () => {
     })
 
     expect(result.credentialId).toBe('cred-id')
-    expect(mockRedis.del).toHaveBeenCalledWith('passkey:reg-challenge:test-challenge')
+    expect(mockRedis.eval).toHaveBeenCalledWith(expect.any(String), 1, 'passkey:reg-challenge:test-challenge')
   })
 
   it('throws DomainError when challenge is expired', async () => {
-    mockRedis.get.mockResolvedValue(null)
+    mockRedis.eval.mockResolvedValue(null)
 
     await expect(
       passkeyService.verifyRegistrationResponse(db, testUser(), {
@@ -186,7 +188,7 @@ describe('passkey-service — verifyRegistrationResponse', () => {
   })
 
   it('throws DomainError on duplicate credential', async () => {
-    mockRedis.get.mockResolvedValue(JSON.stringify({ userId: '1' }))
+    mockRedis.eval.mockResolvedValue(JSON.stringify({ userId: '1' }))
     swaMocks.verifyRegistrationResponse.mockResolvedValue({
       verified: true,
       registrationInfo: {
@@ -211,6 +213,43 @@ describe('passkey-service — verifyRegistrationResponse', () => {
         response: {
           id: 'dup',
           rawId: 'dup',
+          response: { clientDataJSON: '', attestationObject: '' },
+          clientExtensionResults: {},
+          type: 'public-key',
+        },
+        challenge: 'c',
+      }),
+    ).rejects.toBeInstanceOf(DomainError)
+  })
+
+  it('throws DomainError when challenge belongs to a different user', async () => {
+    mockRedis.eval.mockResolvedValue(JSON.stringify({ userId: '999' }))
+
+    await expect(
+      passkeyService.verifyRegistrationResponse(db, testUser({ id: 1n } as any), {
+        response: {
+          id: 'x',
+          rawId: 'x',
+          response: { clientDataJSON: '', attestationObject: '' },
+          clientExtensionResults: {},
+          type: 'public-key',
+        },
+        challenge: 'wrong-user',
+      }),
+    ).rejects.toBeInstanceOf(DomainError)
+  })
+
+  it('throws DomainError when SWA verification returns verified: false', async () => {
+    mockRedis.eval.mockResolvedValue(JSON.stringify({ userId: '1' }))
+    swaMocks.verifyRegistrationResponse.mockResolvedValue({
+      verified: false,
+    })
+
+    await expect(
+      passkeyService.verifyRegistrationResponse(db, testUser(), {
+        response: {
+          id: 'x',
+          rawId: 'x',
           response: { clientDataJSON: '', attestationObject: '' },
           clientExtensionResults: {},
           type: 'public-key',
@@ -265,7 +304,7 @@ describe('passkey-service — generateAuthenticationOptions', () => {
 
 describe('passkey-service — verifyAuthenticationResponse', () => {
   it('verifies and updates counter', async () => {
-    mockRedis.get.mockResolvedValue(JSON.stringify({ email: 'test@example.com' }))
+    mockRedis.eval.mockResolvedValue(JSON.stringify({ email: 'test@example.com' }))
 
     swaMocks.verifyAuthenticationResponse.mockResolvedValue({
       verified: true,
@@ -326,7 +365,7 @@ describe('passkey-service — verifyAuthenticationResponse', () => {
   })
 
   it('throws DomainError when challenge is expired', async () => {
-    mockRedis.get.mockResolvedValue(null)
+    mockRedis.eval.mockResolvedValue(null)
 
     await expect(
       passkeyService.verifyAuthenticationResponse(
@@ -339,6 +378,77 @@ describe('passkey-service — verifyAuthenticationResponse', () => {
           type: 'public-key',
         },
         'expired',
+      ),
+    ).rejects.toBeInstanceOf(DomainError)
+  })
+
+  it('throws DomainError when credential not found', async () => {
+    mockRedis.eval.mockResolvedValue(JSON.stringify({ email: 'test@example.com' }))
+
+    const dbEmptySelect = {
+      select: vi.fn(() => ({
+        from: vi.fn(() => ({
+          where: vi.fn(() => ({
+            limit: vi.fn(() => []),
+          })),
+        })),
+      })),
+    } as unknown as NodePgDatabase
+
+    await expect(
+      passkeyService.verifyAuthenticationResponse(
+        dbEmptySelect,
+        {
+          id: 'nonexistent',
+          rawId: 'raw',
+          response: { clientDataJSON: '', authenticatorData: '', signature: '' },
+          clientExtensionResults: {},
+          type: 'public-key',
+        },
+        'auth-c',
+      ),
+    ).rejects.toBeInstanceOf(DomainError)
+  })
+
+  it('throws DomainError when SWA verification returns verified: false', async () => {
+    mockRedis.eval.mockResolvedValue(JSON.stringify({ email: 'test@example.com' }))
+    swaMocks.verifyAuthenticationResponse.mockResolvedValue({
+      verified: false,
+    })
+
+    const dbWithOps = {
+      select: vi.fn(() => ({
+        from: vi.fn(() => ({
+          where: vi.fn(() => ({
+            limit: vi.fn(() => [
+              {
+                id: 1n,
+                userId: 1n,
+                credentialId: 'cred-1',
+                publicKey: Buffer.from([1, 2, 3]),
+                counter: 0,
+                transports: ['internal'],
+                deviceName: null,
+                backedUp: false,
+                createdAt: new Date(),
+              },
+            ]),
+          })),
+        })),
+      })),
+    } as unknown as NodePgDatabase
+
+    await expect(
+      passkeyService.verifyAuthenticationResponse(
+        dbWithOps,
+        {
+          id: 'cred-1',
+          rawId: 'raw',
+          response: { clientDataJSON: '', authenticatorData: '', signature: '' },
+          clientExtensionResults: {},
+          type: 'public-key',
+        },
+        'auth-c',
       ),
     ).rejects.toBeInstanceOf(DomainError)
   })

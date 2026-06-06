@@ -56,6 +56,7 @@ export const RATE_LIMIT_BUCKET_KEYS = [
   'otpVerifyIp',
   'otpVerifyEmail',
   'passkeyAuthBeginIp',
+  'passkeyAuthFinishIp',
   'passkeyRegisterBeginIp',
 ] as const
 

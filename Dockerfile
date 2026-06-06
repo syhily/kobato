@@ -23,7 +23,7 @@ COPY --from=build /app/build ./build
 COPY --from=build /app/drizzle ./drizzle
 ENV NODE_ENV=production
 ENV HOST=0.0.0.0
-ENV CANVAS_FALLBACK_FONT_PATH=/usr/share/fonts/noto/NotoSansCJK-Regular.ttc
+ENV DEFAULT_FONT_PATH=/usr/share/fonts/noto/NotoSansCJK-Regular.ttc
 ENV PORT=4321
 EXPOSE 4321
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \

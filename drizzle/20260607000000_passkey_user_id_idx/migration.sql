@@ -1,0 +1,1 @@
+CREATE INDEX "passkey_credential_user_id_idx" ON "passkey_credential" ("user_id");

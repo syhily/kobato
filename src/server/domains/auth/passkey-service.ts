@@ -20,7 +20,7 @@ import type { PasskeyCredentialRow } from '@/server/infra/db/types'
 import { findUserByEmail, findUserById } from '@/server/infra/db/operations/user'
 import { passkeyCredential } from '@/server/infra/db/schema/passkey'
 import { user } from '@/server/infra/db/schema/user'
-import { DomainError } from '@/server/infra/http/errors'
+import { DomainError, isUniqueConstraintError } from '@/server/infra/http/errors'
 import { getLogger } from '@/server/infra/logger'
 import { redisInstance } from '@/server/infra/redis/storage'
 import { requireBlogSettingsBundle } from '@/shared/config/getters'
@@ -36,7 +36,13 @@ function rpConfig() {
   const website = bundle.siteIdentity?.website ?? ''
   const title = bundle.siteIdentity?.title ?? 'Kobato'
   const url = safeParseUrl(website)
-  const rpID = url?.hostname ?? 'localhost'
+  if (!url) {
+    throw new DomainError('BAD_REQUEST', '站点域名未配置，无法使用 Passkey。')
+  }
+  const rpID = url.hostname
+  if (rpID === 'localhost' || rpID === '127.0.0.1' || rpID === '::1') {
+    throw new DomainError('BAD_REQUEST', 'Passkey 不支持 localhost 或 IP 地址作为站点域名。')
+  }
   return { rpID, rpName: title, origin: website }
 }
 
@@ -53,15 +59,26 @@ async function storeChallenge(prefix: string, challenge: string, data: Record<st
   await redis.set(`${prefix}${challenge}`, JSON.stringify(data), 'EX', CHALLENGE_TTL_SECONDS)
 }
 
+// Atomic GET-and-DELETE to prevent challenge replay under concurrency.
+const CONSUME_CHALLENGE_LUA = `
+local raw = redis.call('GET', KEYS[1])
+if raw then
+  redis.call('DEL', KEYS[1])
+  return raw
+end
+return nil
+`
+
 async function consumeChallenge(prefix: string, challenge: string): Promise<Record<string, unknown> | null> {
   const redis = redisInstance()
   const key = `${prefix}${challenge}`
-  const raw = await redis.get(key)
-  if (!raw) {
-    return null
-  }
-  await redis.del(key)
   try {
+    // EVAL script numkeys key — traditional syntax is portable across
+    // ioredis versions and test mocks.
+    const raw = (await redis.eval(CONSUME_CHALLENGE_LUA, 1, key)) as string | null
+    if (!raw) {
+      return null
+    }
     return JSON.parse(raw) as Record<string, unknown>
   } catch {
     return null
@@ -126,6 +143,9 @@ export async function verifyRegistrationResponse(
   if (!challengeData) {
     throw new DomainError('BAD_REQUEST', '注册挑战已过期或无效，请重试。')
   }
+  if (challengeData.userId !== String(dbUser.id)) {
+    throw new DomainError('BAD_REQUEST', '注册挑战与当前用户不匹配。')
+  }
 
   const verification = await swaVerifyRegistrationResponse({
     response: input.response,
@@ -160,7 +180,7 @@ export async function verifyRegistrationResponse(
     return inserted
   } catch (err) {
     // Graceful duplicate handling
-    if (err instanceof Error && err.message.includes('unique constraint')) {
+    if (isUniqueConstraintError(err)) {
       throw new DomainError('CONFLICT', '该 Passkey 凭据已注册。')
     }
     log.error('passkey registration insert failed', { err: err instanceof Error ? err.message : String(err) })
@@ -254,10 +274,10 @@ export async function verifyAuthenticationResponse(
     throw new DomainError('BAD_REQUEST', 'Passkey 验证失败。')
   }
 
-  // Update counter
+  // Update counter and timestamp
   await db
     .update(passkeyCredential)
-    .set({ counter: Number(verification.authenticationInfo.newCounter) })
+    .set({ counter: Number(verification.authenticationInfo.newCounter), updatedAt: new Date() })
     .where(eq(passkeyCredential.id, cred.id))
 
   const dbUser = await findUserById(db, cred.userId)

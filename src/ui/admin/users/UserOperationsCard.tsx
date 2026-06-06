@@ -22,6 +22,7 @@ type Role = NonNullable<AdminUserDto['role']>
 interface UserOperationsCardProps {
   user: AdminUserDto
   currentUserId: string
+  passkeyEnabled: boolean
   roleDraft: Role | ''
   setRoleDraft: (v: Role | '') => void
   setConfirm: (v: ConfirmState | null) => void
@@ -57,6 +58,7 @@ interface UserOperationsCardProps {
 export function UserOperationsCard({
   user,
   currentUserId,
+  passkeyEnabled,
   roleDraft,
   setRoleDraft,
   setConfirm,
@@ -144,7 +146,7 @@ export function UserOperationsCard({
             <LogOutIcon /> 强制全部登出
           </Button>
         )}
-        {user.role !== null && user.deletedAt === null && user.passkeyCount > 0 && (
+        {passkeyEnabled && user.role !== null && user.deletedAt === null && user.passkeyCount > 0 && (
           <Button
             type="button"
             variant="outline"

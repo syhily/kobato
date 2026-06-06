@@ -177,9 +177,9 @@ spec:
             default: ${PASSWORD}
           ENCRYPTION_KEY:
             default: ${PASSWORD}
-          KOBATO_DATA_PATH:
+          DATA_PATH:
             default: /data
-          CANVAS_FALLBACK_FONT_PATH:
+          DEFAULT_FONT_PATH:
             default: /usr/share/fonts/noto/NotoSansCJK-Regular.ttc
           NODE_ENV:
             default: production

@@ -45,7 +45,7 @@ export interface LoginFormProps {
   passkeyEnabled?: boolean
 }
 
-function useWebAuthnSupported(): boolean {
+export function useWebAuthnSupported(): boolean {
   const [supported, setSupported] = useState(false)
   useEffect(() => {
     setSupported(typeof window !== 'undefined' && 'PublicKeyCredential' in window)
@@ -89,7 +89,16 @@ export function LoginForm({ action, passkeyEnabled }: LoginFormProps) {
       form.action = `${action ?? ''}?action=passkey`
       form.requestSubmit()
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Passkey 登录失败，请重试。'
+      let message = 'Passkey 登录失败，请重试。'
+      if (err instanceof DOMException) {
+        if (err.name === 'NotAllowedError') {
+          message = 'Passkey 验证被取消或超时。'
+        } else if (err.name === 'SecurityError') {
+          message = 'Passkey 验证因安全原因被拒绝。'
+        }
+      } else if (err instanceof Error && err.message) {
+        message = err.message
+      }
       setPasskeyError(message)
     }
   }
@@ -168,7 +177,11 @@ export function LoginForm({ action, passkeyEnabled }: LoginFormProps) {
             <FingerprintIcon className="mr-1 inline-block" size={18} />
             使用 Passkey 登录
           </Button>
-          {passkeyError && <p className="text-center text-sm text-destructive">{passkeyError}</p>}
+          {passkeyError && (
+            <p role="alert" aria-live="polite" className="text-center text-sm text-destructive">
+              {passkeyError}
+            </p>
+          )}
         </div>
       )}
     </>

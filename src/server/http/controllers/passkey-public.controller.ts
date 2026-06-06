@@ -24,11 +24,11 @@ const authBegin = publicProc
   .output(z.object({ options: z.any() }))
   .handler(async ({ input, context }) => {
     if (!isPasskeyEnabled()) {
-      throw new DomainError('BAD_REQUEST', 'Passkey is not enabled.')
+      throw new DomainError('BAD_REQUEST', 'Passkey 登录未启用。')
     }
     const limit = await tryPasskeyAuthBeginRateLimit(context.clientAddress)
     if (limit.exceeded) {
-      throw new DomainError('RATE_LIMITED', 'Too many attempts. Please try again later.')
+      throw new DomainError('RATE_LIMITED', '操作过于频繁，请稍后再试。')
     }
     const { options } = await generateAuthenticationOptions(context.db, input.email)
     return { options }

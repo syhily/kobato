@@ -21,7 +21,7 @@ services:
       # Logging
       LOG_LEVEL: ${LOG_LEVEL:-info}
       # Data directory
-      KOBATO_DATA_PATH: /data
+      DATA_PATH: /data
     volumes:
       - kobato_data:/data
     depends_on:

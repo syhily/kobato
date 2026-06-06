@@ -204,6 +204,7 @@ export interface RateLimitSettings {
   otpVerifyEmail: RateLimitBucket
   signInEmail: RateLimitBucket
   passkeyAuthBeginIp: RateLimitBucket
+  passkeyAuthFinishIp: RateLimitBucket
   passkeyRegisterBeginIp: RateLimitBucket
 }
 

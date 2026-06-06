@@ -28,7 +28,7 @@ import {
 } from '@/server/infra/db/operations/user'
 import { sendPasswordReset } from '@/server/infra/email/sender'
 import {
-  tryPasskeyAuthBeginRateLimit,
+  tryPasskeyAuthFinishRateLimit,
   tryPasswordResetByEmailRateLimit,
   tryPasswordResetRateLimit,
 } from '@/server/infra/rate-limit'
@@ -295,6 +295,9 @@ export async function action({ request, context }: Route.ActionArgs) {
   }
 
   if (action === 'passkey') {
+    if (!isPasskeyEnabled()) {
+      return data({ error: 'Passkey 登录未启用。' })
+    }
     const rawResponse = formData.get('passkey_response')
     const rawChallenge = formData.get('passkey_challenge')
     if (!rawResponse || typeof rawResponse !== 'string' || !rawChallenge || typeof rawChallenge !== 'string') {
@@ -306,7 +309,7 @@ export async function action({ request, context }: Route.ActionArgs) {
     } catch {
       return data({ error: 'Passkey 响应格式错误。' })
     }
-    const limit = await tryPasskeyAuthBeginRateLimit(clientAddress)
+    const limit = await tryPasskeyAuthFinishRateLimit(clientAddress)
     if (limit.exceeded) {
       return data({ error: '操作过于频繁，请稍后再试。' })
     }
@@ -332,7 +335,7 @@ export async function action({ request, context }: Route.ActionArgs) {
       })
       return redirect(redirectTo, { headers: { 'Set-Cookie': established.setCookie } })
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Passkey verification failed. Please try again.'
+      const message = err instanceof Error ? err.message : 'Passkey 验证失败，请重试。'
       return data({ error: message })
     }
   }

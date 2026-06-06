@@ -6,11 +6,11 @@ const STORE_NAME = 'drafts'
 
 export type DraftType = 'post-edit' | 'page-edit' | 'post-create' | 'page-create'
 
-export interface DraftRecord {
+export interface DraftRecord<TBody = unknown, TMeta = unknown> {
   key: string
   type: DraftType
-  body: unknown
-  meta?: unknown
+  body: TBody
+  meta?: TMeta
   savedAt: number
   version: number
 }
@@ -124,10 +124,15 @@ function getDb(): Promise<IDBPDatabase<DraftsDB>> {
           store.createIndex('bySavedAt', 'savedAt')
         }
       },
-    }).then(async (db) => {
-      await migrateFromLocalStorage(db)
-      return db
     })
+      .then(async (db) => {
+        await migrateFromLocalStorage(db)
+        return db
+      })
+      .catch((err) => {
+        dbPromise = null
+        throw err
+      })
   }
   return dbPromise
 }

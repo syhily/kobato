@@ -1,6 +1,7 @@
 import { data } from 'react-router'
 
 import { getDbFromContext, getRouteRequestContext } from '@/server/domains/auth/context'
+import { isPasskeyEnabled } from '@/server/domains/auth/passkey-gate'
 import { requireRole } from '@/server/domains/auth/rbac'
 import { countMyComments } from '@/server/domains/comments/repos/admin-query'
 import { findUserById } from '@/server/infra/db/operations/user'
@@ -38,9 +39,10 @@ export async function loader({ request, context }: Route.LoaderArgs) {
       passkeyForce: dbUser?.passkeyForce ?? false,
     },
     counts,
+    passkeyEnabled: isPasskeyEnabled(),
   })
 }
 
 export default function WpAdminMyProfileRoute({ loaderData }: Route.ComponentProps) {
-  return <MyProfileView user={loaderData.user} counts={loaderData.counts} />
+  return <MyProfileView user={loaderData.user} counts={loaderData.counts} passkeyEnabled={loaderData.passkeyEnabled} />
 }

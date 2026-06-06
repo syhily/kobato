@@ -37,11 +37,14 @@ vi.mock('@simplewebauthn/server', () => ({
 
 vi.mock('@/shared/config/getters', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/shared/config/getters')>()
+  const testBundle = {
+    siteIdentity: { title: 'Test', website: 'https://example.com' },
+    security: { passkey: { enabled: true } },
+  }
   return {
     ...actual,
-    requireBlogSettingsBundle: vi.fn(() => ({
-      siteIdentity: { title: 'Test', website: 'https://example.com' },
-    })),
+    requireBlogSettingsBundle: vi.fn(() => testBundle),
+    getBlogSettingsBundleSync: vi.fn(() => testBundle),
   }
 })
 
@@ -294,5 +297,96 @@ describe('passkey — password reset clears passkeys', () => {
       .limit(1)
       .then((r) => r[0])
     expect(dbUser.passkeyForce).toBe(false)
+  })
+})
+
+describe('passkey — replay attack prevention', () => {
+  it('rejects reuse of a consumed authentication challenge', async () => {
+    const userId = await seedUser({ email: 'replay@example.com' })
+
+    // Register a credential
+    swaMocks.generateRegistrationOptions.mockResolvedValue({
+      challenge: 'replay-reg-c',
+      rp: { name: 'Test', id: 'example.com' },
+    })
+    const dbUser = await db
+      .select()
+      .from(user)
+      .where(eq(user.id, userId))
+      .limit(1)
+      .then((r) => r[0])
+    await passkeyService.generateRegistrationOptions(db, dbUser)
+
+    swaMocks.verifyRegistrationResponse.mockResolvedValue({
+      verified: true,
+      registrationInfo: {
+        credential: {
+          id: 'cred-replay',
+          publicKey: new Uint8Array([7, 8, 9]),
+          counter: 0,
+          transports: ['internal'],
+        },
+        credentialBackedUp: false,
+      },
+    })
+    await passkeyService.verifyRegistrationResponse(db, dbUser, {
+      response: {
+        id: 'cred-replay',
+        rawId: 'raw',
+        response: { clientDataJSON: '', attestationObject: '' },
+        clientExtensionResults: {},
+        type: 'public-key',
+      },
+      challenge: 'replay-reg-c',
+    })
+
+    // Begin authentication
+    swaMocks.generateAuthenticationOptions.mockResolvedValue({
+      challenge: 'replay-auth-c',
+      rpId: 'example.com',
+    })
+    await passkeyService.generateAuthenticationOptions(db, 'replay@example.com')
+
+    swaMocks.verifyAuthenticationResponse.mockResolvedValue({
+      verified: true,
+      authenticationInfo: {
+        credentialID: 'cred-replay',
+        newCounter: 1,
+        userVerified: true,
+        credentialDeviceType: 'singleDevice',
+        credentialBackedUp: false,
+        origin: 'https://example.com',
+        rpID: 'example.com',
+      },
+    })
+
+    // First use succeeds
+    const firstResult = await passkeyService.verifyAuthenticationResponse(
+      db,
+      {
+        id: 'cred-replay',
+        rawId: 'raw',
+        response: { clientDataJSON: '', authenticatorData: '', signature: '' },
+        clientExtensionResults: {},
+        type: 'public-key',
+      },
+      'replay-auth-c',
+    )
+    expect(firstResult.authMethod).toBe('passkey')
+
+    // Second use with the same challenge must fail
+    await expect(
+      passkeyService.verifyAuthenticationResponse(
+        db,
+        {
+          id: 'cred-replay',
+          rawId: 'raw',
+          response: { clientDataJSON: '', authenticatorData: '', signature: '' },
+          clientExtensionResults: {},
+          type: 'public-key',
+        },
+        'replay-auth-c',
+      ),
+    ).rejects.toThrow()
   })
 })

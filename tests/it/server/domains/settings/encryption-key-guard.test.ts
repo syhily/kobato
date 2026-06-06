@@ -18,7 +18,7 @@ vi.mock('@/server/infra/env', () => ({
   isVitest() {
     return false
   },
-  KOBATO_DATA_PATH: '/tmp/kobato-data',
+  DATA_PATH: '/tmp/kobato-data',
   get DATABASE_URL() {
     return 'postgresql://localhost:5432/test'
   },
@@ -49,7 +49,7 @@ vi.mock('@/server/infra/env', () => ({
   get REDIS_KEY_PREFIX() {
     return undefined
   },
-  get CANVAS_FALLBACK_FONT_PATH() {
+  get DEFAULT_FONT_PATH() {
     return undefined
   },
 }))

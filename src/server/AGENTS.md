@@ -173,7 +173,7 @@ in the database (or must be encrypted if they do). Examples: `DATABASE_URL`,
 
 **Category 3 — Env var (deployment-local filesystem paths)**
 Paths that are specific to the Docker/host environment and meaningless to change
-at runtime. Example: `KOBATO_DATA_PATH`.
+at runtime. Example: `DATA_PATH`.
 
 **What belongs in database settings**
 Everything else: feature toggles, thresholds, URLs, CDN hosts, pagination sizes,

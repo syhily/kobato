@@ -33,9 +33,10 @@ const DATE_FORMAT = 'yyyy-LL-dd HH:mm'
 export interface UserDetailViewProps {
   userId: string
   navigate: NavigateFunction
+  passkeyEnabled: boolean
 }
 
-export function UserDetailView({ userId, navigate }: UserDetailViewProps) {
+export function UserDetailView({ userId, navigate, passkeyEnabled }: UserDetailViewProps) {
   const config = useSiteIdentity()
 
   const [confirm, setConfirm] = useState<ConfirmState | null>(null)
@@ -242,16 +243,19 @@ export function UserDetailView({ userId, navigate }: UserDetailViewProps) {
                   <span className="text-muted-foreground">注册时间</span>
                   <span>{formatLocalDate(new Date(user.createdAt), DATE_FORMAT, config)}</span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Passkey</span>
-                  <span className="font-medium">{user.passkeyCount}</span>
-                </div>
+                {passkeyEnabled && (
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Passkey</span>
+                    <span className="font-medium">{user.passkeyCount}</span>
+                  </div>
+                )}
               </CardContent>
             </Card>
 
             <UserOperationsCard
               user={user}
               currentUserId={userId}
+              passkeyEnabled={passkeyEnabled}
               roleDraft={roleDraft}
               setRoleDraft={setRoleDraft}
               setConfirm={setConfirm}

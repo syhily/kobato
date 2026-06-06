@@ -48,6 +48,7 @@ export function usePostLocalDraft({
   // Loaded once at mount per key so saves don't re-trigger the "found older draft" prompt.
   const [loadedDraft, setLoadedDraft] = useState<StoredDraft | null>(null)
   const lastReadKeyRef = useRef<string | null>(null)
+  const loadCompleteRef = useRef(false)
 
   const key =
     !disabled && postId !== null && clientRevisionToken !== null
@@ -58,12 +59,14 @@ export function usePostLocalDraft({
     if (key === null) {
       setLoadedDraft(null)
       lastReadKeyRef.current = null
+      loadCompleteRef.current = false
       return
     }
     if (lastReadKeyRef.current === key) {
       return
     }
     lastReadKeyRef.current = key
+    loadCompleteRef.current = false
 
     let cancelled = false
 
@@ -75,6 +78,7 @@ export function usePostLocalDraft({
         }
         if (record === null) {
           setLoadedDraft(null)
+          loadCompleteRef.current = true
           return
         }
         if (record.version !== STORAGE_VERSION || !Array.isArray(record.body)) {
@@ -82,13 +86,16 @@ export function usePostLocalDraft({
           if (!cancelled) {
             setLoadedDraft(null)
           }
+          loadCompleteRef.current = true
           return
         }
-        setLoadedDraft(record as unknown as StoredDraft)
+        setLoadedDraft(record as unknown as StoredDraft) // type retained via IDB structured clone
+        loadCompleteRef.current = true
       } catch {
         if (!cancelled) {
           setLoadedDraft(null)
         }
+        loadCompleteRef.current = true
       }
     })()
 
@@ -101,7 +108,10 @@ export function usePostLocalDraft({
     if (key === null || postId === null || clientRevisionToken === null) {
       return
     }
-    const payload: DraftRecord = {
+    if (!loadCompleteRef.current) {
+      return
+    }
+    const payload: DraftRecord<PortableTextBody> = {
       key,
       type: 'post-edit',
       body,

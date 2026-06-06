@@ -198,6 +198,17 @@ export const BUCKET_META: Record<
       { label: '30分', seconds: 1800 },
     ],
   },
+  passkeyAuthFinishIp: {
+    title: 'Passkey 认证完成',
+    description: 'Passkey 认证完成请求按客户端 IP 计数。',
+    group: '认证与登录',
+    quickWindowOptions: [
+      { label: '1分', seconds: 60 },
+      { label: '5分', seconds: 300 },
+      { label: '15分', seconds: 900 },
+      { label: '30分', seconds: 1800 },
+    ],
+  },
   passkeyRegisterBeginIp: {
     title: 'Passkey 注册限流（按 IP）',
     description: 'Passkey 注册挑战请求按客户端 IP 计数。',

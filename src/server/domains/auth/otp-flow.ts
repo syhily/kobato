@@ -7,7 +7,7 @@ import { establishLoginSession } from '@/server/domains/auth/primitives'
 import { signInSchema } from '@/server/domains/auth/schema'
 import { commitSessionWithMaxAge } from '@/server/domains/auth/session-storage'
 import { issueOtpToken, verifyOtpToken } from '@/server/domains/auth/verification-tokens'
-import { findUserById, verifyUserPassword } from '@/server/infra/db/operations/user'
+import { findUserByEmail, findUserById, verifyUserPassword } from '@/server/infra/db/operations/user'
 import { checkMailReady, sendSignInOtp } from '@/server/infra/email/sender'
 import {
   tryOtpSendByEmailRateLimit,
@@ -254,6 +254,18 @@ export async function handleCredentialLogin(
   const mail = bundle?.mail?.mail
   const isOtpEnabled = bundle?.security?.otp?.enabled === true && mail !== undefined && checkMailReady(mail).ready
 
+  // Check passkey force BEFORE verifying password to avoid leaking password validity
+  if (bundle?.security?.passkey?.enabled === true) {
+    const existingUser = await findUserByEmail(db, parsed.data.email)
+    if (existingUser && existingUser.passkeyForce && existingUser.role) {
+      return {
+        type: 'error',
+        message: '该账户已强制使用 Passkey 登录，请使用 Passkey 方式登录。',
+        setCookie: await commitSessionWithMaxAge(session),
+      }
+    }
+  }
+
   const dbUser = await verifyUserPassword(db, parsed.data.email, parsed.data.password)
   if (!dbUser || !dbUser.role) {
     if (isOtpEnabled) {
@@ -266,14 +278,6 @@ export async function handleCredentialLogin(
     return {
       type: 'error',
       message: '请填写正确的邮箱和密码。',
-      setCookie: await commitSessionWithMaxAge(session),
-    }
-  }
-
-  if (dbUser.passkeyForce) {
-    return {
-      type: 'error',
-      message: '该账户已强制使用 Passkey 登录，请使用 Passkey 方式登录。',
       setCookie: await commitSessionWithMaxAge(session),
     }
   }

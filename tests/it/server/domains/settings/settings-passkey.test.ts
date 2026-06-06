@@ -104,4 +104,34 @@ describe('services/settings — passkey domain validation', () => {
       ),
     ).resolves.toBeDefined()
   })
+
+  it('rejects passkey enable for ::1 (IPv6 loopback)', async () => {
+    setBlogSettingsBundleForTests({
+      siteIdentity: { title: 'Test', website: 'https://[::1]' },
+    } as any)
+
+    await expect(
+      updateBlogSettingsSection(db, pool, 'security', { passkey: { enabled: true } }, null),
+    ).rejects.toBeInstanceOf(DomainError)
+  })
+
+  it('rejects passkey enable for 10.x private range', async () => {
+    setBlogSettingsBundleForTests({
+      siteIdentity: { title: 'Test', website: 'https://10.0.0.1' },
+    } as any)
+
+    await expect(
+      updateBlogSettingsSection(db, pool, 'security', { passkey: { enabled: true } }, null),
+    ).rejects.toBeInstanceOf(DomainError)
+  })
+
+  it('rejects passkey enable for 172.16.x private range', async () => {
+    setBlogSettingsBundleForTests({
+      siteIdentity: { title: 'Test', website: 'https://172.16.0.1' },
+    } as any)
+
+    await expect(
+      updateBlogSettingsSection(db, pool, 'security', { passkey: { enabled: true } }, null),
+    ).rejects.toBeInstanceOf(DomainError)
+  })
 })

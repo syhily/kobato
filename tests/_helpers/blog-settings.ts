@@ -144,6 +144,7 @@ export const TEST_BLOG_SETTINGS_BUNDLE: BlogSettingsBundle = {
     otpVerifyEmail: { windowSeconds: 60 * 5, maxAttempts: 5 },
     signInEmail: { windowSeconds: 60 * 30, maxAttempts: 5 },
     passkeyAuthBeginIp: { windowSeconds: 60 * 5, maxAttempts: 10 },
+    passkeyAuthFinishIp: { windowSeconds: 60 * 5, maxAttempts: 10 },
     passkeyRegisterBeginIp: { windowSeconds: 60 * 5, maxAttempts: 10 },
   },
   search: {

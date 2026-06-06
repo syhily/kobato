@@ -287,7 +287,7 @@ function OtpToggleCard({ security, mail }: SecurityFormProps) {
                     field.onChange(val)
                     save()
                   }}
-                  disabled={!mailReady}
+                  disabled={!mailReady && !field.value}
                 />
                 <FieldLabel htmlFor="otp-enabled" className="font-normal">
                   {field.value ? '已开启' : '已关闭'}
@@ -374,7 +374,7 @@ function PasskeyToggleCard({ security }: { security: SecuritySettings }) {
                     field.onChange(val)
                     save()
                   }}
-                  disabled={!domainValid}
+                  disabled={!domainValid && !field.value}
                 />
                 <FieldLabel htmlFor="passkey-enabled" className="font-normal">
                   {field.value ? '已开启' : '已关闭'}

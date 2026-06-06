@@ -2,6 +2,7 @@ import { ORPCError } from '@orpc/server'
 import { z } from 'zod'
 
 import { recordAuditEventFromContext } from '@/server/domains/audit/service'
+import { isPasskeyEnabled } from '@/server/domains/auth/passkey-gate'
 import { deleteAllCredentials, setPasskeyForce } from '@/server/domains/auth/passkey-service'
 import {
   fetchAdminUserDto,
@@ -112,6 +113,9 @@ const clearPasskeys = adminProc
   .input(z.object({ id: z.string().min(1) }))
   .output(z.object({ user: adminUserDto }))
   .handler(async ({ input, context }) => {
+    if (!isPasskeyEnabled()) {
+      throw new ORPCError('BAD_REQUEST', { message: 'Passkey is not enabled.' })
+    }
     const targetId = idFromString(input.id)
     await deleteAllCredentials(context.db, targetId)
     await setPasskeyForce(context.db, targetId, false)

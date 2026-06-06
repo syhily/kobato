@@ -2,13 +2,14 @@ import type { PublicKeyCredentialCreationOptionsJSON, RegistrationResponseJSON }
 
 import { startRegistration } from '@simplewebauthn/browser'
 import { EyeIcon, EyeOffIcon, FingerprintIcon, KeyRoundIcon, SaveIcon, Trash2Icon } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useRevalidator } from 'react-router'
 
 import { useMutation, orpcQuery, useQuery, useQueryClient } from '@/client/api/query'
 import { useSiteIdentity } from '@/shared/lib/blog-config-context'
 import { formatLocalDate } from '@/shared/utils/formatter'
 import { roleLabel } from '@/shared/utils/roles'
+import { useWebAuthnSupported } from '@/ui/admin/auth/AdminCredentialsForm'
 import { AdminListPage } from '@/ui/admin/shared/AdminListPage'
 import { Avatar, AvatarFallback, AvatarImage } from '@/ui/components/avatar'
 import { Badge } from '@/ui/components/badge'
@@ -45,6 +46,7 @@ export interface MyProfileCounts {
 export interface MyProfileViewProps {
   user: MyProfileUser
   counts: MyProfileCounts
+  passkeyEnabled: boolean
 }
 
 function usePasskeyManagement(_userId: string, revalidator: ReturnType<typeof useRevalidator>) {
@@ -61,7 +63,7 @@ function usePasskeyManagement(_userId: string, revalidator: ReturnType<typeof us
   const registerFinishMutation = useMutation({
     ...orpcQuery.account.passkeyRegisterFinish.mutationOptions(),
     onSuccess: () => {
-      setRegisterMessage('Passkey registered successfully.')
+      setRegisterMessage('Passkey 注册成功。')
       void queryClient.invalidateQueries({ queryKey: orpcQuery.account.passkeyList.key() })
     },
   })
@@ -69,6 +71,7 @@ function usePasskeyManagement(_userId: string, revalidator: ReturnType<typeof us
     ...orpcQuery.account.passkeyDelete.mutationOptions(),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: orpcQuery.account.passkeyList.key() })
+      void revalidator.revalidate()
     },
   })
   const setForceMutation = useMutation({
@@ -92,7 +95,18 @@ function usePasskeyManagement(_userId: string, revalidator: ReturnType<typeof us
         challenge: opts.challenge,
       })
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Passkey 注册失败，请重试。'
+      let message = 'Passkey 注册失败，请重试。'
+      if (err instanceof DOMException) {
+        if (err.name === 'NotAllowedError') {
+          message = 'Passkey 注册被取消或超时。'
+        } else if (err.name === 'InvalidStateError') {
+          message = '该设备已注册 Passkey。'
+        } else if (err.name === 'SecurityError') {
+          message = 'Passkey 注册因安全原因被拒绝。'
+        }
+      } else if (err instanceof Error && err.message) {
+        message = err.message
+      }
       setRegisterError(message)
     }
   }
@@ -114,7 +128,7 @@ function usePasskeyManagement(_userId: string, revalidator: ReturnType<typeof us
   }
 }
 
-export function MyProfileView({ user, counts }: MyProfileViewProps) {
+export function MyProfileView({ user, counts, passkeyEnabled }: MyProfileViewProps) {
   const config = useSiteIdentity()
   const revalidator = useRevalidator()
 
@@ -147,11 +161,8 @@ export function MyProfileView({ user, counts }: MyProfileViewProps) {
   const [profileMessage, setProfileMessage] = useState<string | null>(null)
   const [passwordMessage, setPasswordMessage] = useState<string | null>(null)
   const [deviceNameInput, setDeviceNameInput] = useState('')
-  const [webAuthnSupported, setWebAuthnSupported] = useState(false)
 
-  useEffect(() => {
-    setWebAuthnSupported(typeof window !== 'undefined' && 'PublicKeyCredential' in window)
-  }, [])
+  const webAuthnSupported = useWebAuthnSupported()
 
   const passkey = usePasskeyManagement(user.id, revalidator)
 
@@ -401,7 +412,7 @@ export function MyProfileView({ user, counts }: MyProfileViewProps) {
             </CardContent>
           </Card>
 
-          {webAuthnSupported && (
+          {passkeyEnabled && webAuthnSupported && (
             <Card>
               <CardHeader>
                 <CardTitle>Passkey 管理</CardTitle>

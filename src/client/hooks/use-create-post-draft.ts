@@ -83,12 +83,14 @@ export function useCreatePostDraft({ body, meta }: UseCreatePostDraftOptions): U
 
   const [loadedDraft, setLoadedDraft] = useState<StoredCreateDraft | null>(null)
   const didReadRef = useRef(false)
+  const loadCompleteRef = useRef(false)
 
   useEffect(() => {
     if (didReadRef.current) {
       return
     }
     didReadRef.current = true
+    loadCompleteRef.current = false
 
     let cancelled = false
 
@@ -100,6 +102,7 @@ export function useCreatePostDraft({ body, meta }: UseCreatePostDraftOptions): U
         }
         if (record === null) {
           setLoadedDraft(null)
+          loadCompleteRef.current = true
           return
         }
         if (record.version !== STORAGE_VERSION || !Array.isArray(record.body) || record.meta === undefined) {
@@ -107,13 +110,16 @@ export function useCreatePostDraft({ body, meta }: UseCreatePostDraftOptions): U
           if (!cancelled) {
             setLoadedDraft(null)
           }
+          loadCompleteRef.current = true
           return
         }
         setLoadedDraft(record as unknown as StoredCreateDraft)
+        loadCompleteRef.current = true
       } catch {
         if (!cancelled) {
           setLoadedDraft(null)
         }
+        loadCompleteRef.current = true
       }
     })()
 
@@ -123,7 +129,10 @@ export function useCreatePostDraft({ body, meta }: UseCreatePostDraftOptions): U
   }, [key])
 
   useEffect(() => {
-    const payload: DraftRecord = {
+    if (!loadCompleteRef.current) {
+      return
+    }
+    const payload: DraftRecord<PortableTextBody, CreatePostDraftMeta> = {
       key,
       type: 'post-create',
       body,
@@ -182,7 +191,7 @@ export function useCreatePostDraft({ body, meta }: UseCreatePostDraftOptions): U
   const migrateToEditKey = useCallback(
     (postId: string, clientRevisionToken: string, latestBody: PortableTextBody) => {
       const editKey = `cms-post-draft:${postId}:${clientRevisionToken}`
-      const editPayload: DraftRecord = {
+      const editPayload: DraftRecord<PortableTextBody> = {
         key: editKey,
         type: 'post-edit',
         body: latestBody,

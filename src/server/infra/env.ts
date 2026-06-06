@@ -109,14 +109,14 @@ const envConfig = {
     // Root data directory. All filesystem data (fonts, dead-letter files,
     // MaxMind DB) lives in fixed subdirectories under this path.
     // Required. Use `/data` in Docker, `./data` in local development.
-    KOBATO_DATA_PATH: z.string().min(1),
+    DATA_PATH: z.string().min(1),
 
     NODE_ENV: z.enum(['development', 'production', 'test']).optional().default('production'),
 
     // Canvas fallback font path. When set and the /data/fonts/ directory
     // is empty (e.g. bind-mounted), the file is copied at startup as the
     // default OG / calendar font. The Docker image ships with font-noto-cjk.
-    CANVAS_FALLBACK_FONT_PATH: z.string().min(1).optional(),
+    DEFAULT_FONT_PATH: z.string().min(1).optional(),
 
     // Optional prefix added to every Redis key by ioredis.
     // Primarily used in tests to isolate parallel workers.
@@ -153,14 +153,14 @@ function loadEnv() {
 const env = loadEnv()
 
 export const {
-  CANVAS_FALLBACK_FONT_PATH,
+  DEFAULT_FONT_PATH,
   DATABASE_URL,
   DB_POOL_MAX,
   DB_STATEMENT_TIMEOUT_MS,
   ENCRYPTION_KEY,
   HOST,
   IGNORE_ENCRYPTION_WARNING,
-  KOBATO_DATA_PATH,
+  DATA_PATH,
   LOG_LEVEL,
   NODE_ENV,
   PORT,

@@ -4,6 +4,7 @@ import { ORPCError } from '@orpc/server'
 import { z } from 'zod'
 
 import { recordAuditEventFromContext } from '@/server/domains/audit/service'
+import { isPasskeyEnabled } from '@/server/domains/auth/passkey-gate'
 import {
   deleteCredential,
   generateRegistrationOptions,
@@ -147,6 +148,9 @@ const passkeyList = authedProc
     }),
   )
   .handler(async ({ context }) => {
+    if (!isPasskeyEnabled()) {
+      throw new ORPCError('BAD_REQUEST', { message: 'Passkey 登录未启用。' })
+    }
     const { db, viewer } = context
     const credentials = await listCredentials(db, idFromString(viewer.userId))
     return {
@@ -164,6 +168,9 @@ const passkeyRegisterBegin = authedProc
   .input(z.object({ deviceName: z.string().max(100).optional() }))
   .output(z.object({ options: z.any() }))
   .handler(async ({ input, context }) => {
+    if (!isPasskeyEnabled()) {
+      throw new ORPCError('BAD_REQUEST', { message: 'Passkey 登录未启用。' })
+    }
     const { db, viewer, clientAddress } = context
     const limit = await tryPasskeyRegisterBeginRateLimit(clientAddress)
     if (limit.exceeded) {
@@ -189,6 +196,9 @@ const passkeyRegisterFinish = authedProc
   )
   .output(z.object({ success: z.boolean() }))
   .handler(async ({ input, context }) => {
+    if (!isPasskeyEnabled()) {
+      throw new ORPCError('BAD_REQUEST', { message: 'Passkey 登录未启用。' })
+    }
     const { db, viewer } = context
     const dbUser = await findUserById(db, idFromString(viewer.userId))
     if (!dbUser) {
@@ -213,6 +223,9 @@ const passkeyDelete = authedProc
   .input(z.object({ credentialId: z.string().min(1) }))
   .output(z.object({ success: z.boolean() }))
   .handler(async ({ input, context }) => {
+    if (!isPasskeyEnabled()) {
+      throw new ORPCError('BAD_REQUEST', { message: 'Passkey 登录未启用。' })
+    }
     const { db, viewer } = context
     const ok = await deleteCredential(db, input.credentialId, idFromString(viewer.userId))
     if (!ok) {
@@ -231,6 +244,9 @@ const passkeySetForce = authedProc
   .input(z.object({ force: z.boolean() }))
   .output(z.object({ success: z.boolean() }))
   .handler(async ({ input, context }) => {
+    if (!isPasskeyEnabled()) {
+      throw new ORPCError('BAD_REQUEST', { message: 'Passkey 登录未启用。' })
+    }
     const { db, viewer } = context
     if (input.force) {
       const creds = await listCredentials(db, idFromString(viewer.userId))

@@ -115,6 +115,12 @@ const BUCKET_META: Record<BucketKey, { title: string; description: string; windo
       windowHint: '60 秒 - 24 小时。默认 5 分钟（300）。',
       attemptsHint: '默认 10 次。',
     },
+    passkeyAuthFinishIp: {
+      title: 'Passkey 认证完成',
+      description: 'Passkey 认证完成请求按客户端 IP 计数。',
+      windowHint: '60 秒 - 24 小时。默认 5 分钟（300）。',
+      attemptsHint: '默认 10 次。',
+    },
     passkeyRegisterBeginIp: {
       title: 'Passkey 注册限流（按 IP）',
       description: 'Passkey 注册挑战请求按客户端 IP 计数。',
