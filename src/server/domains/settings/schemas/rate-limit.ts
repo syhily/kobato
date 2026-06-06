@@ -58,6 +58,9 @@ export const RATE_LIMIT_BUCKET_KEYS = [
   'passkeyAuthBeginIp',
   'passkeyAuthFinishIp',
   'passkeyRegisterBeginIp',
+  'passkeyRegisterFinishIp',
+  'passkeySetForceIp',
+  'passkeyDeleteIp',
 ] as const
 
 export const rateLimitSchema = z.object(

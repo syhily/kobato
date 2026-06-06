@@ -105,18 +105,22 @@ describe('passkey-service — generateRegistrationOptions', () => {
     )
   })
 
-  it('passes excludeCredentials from existing credentials', async () => {
+  it('passes excludeCredentials with stored transports', async () => {
     swaMocks.generateRegistrationOptions.mockResolvedValue({ challenge: 'c2', rp: { name: 'T', id: 'x' } })
 
     const dbWithSelect = {
-      select: vi.fn(() => ({ from: vi.fn(() => ({ where: vi.fn(() => [{ credentialId: 'cred-1' }]) })) })),
+      select: vi.fn(() => ({
+        from: vi.fn(() => ({
+          where: vi.fn(() => [{ credentialId: 'cred-1', transports: ['internal'] }]),
+        })),
+      })),
     } as unknown as NodePgDatabase
 
     await passkeyService.generateRegistrationOptions(dbWithSelect, testUser())
 
     expect(swaMocks.generateRegistrationOptions).toHaveBeenCalledOnce()
     const callArg = swaMocks.generateRegistrationOptions.mock.calls[0][0]
-    expect(callArg.excludeCredentials).toEqual([{ id: 'cred-1', transports: [] }])
+    expect(callArg.excludeCredentials).toEqual([{ id: 'cred-1', transports: ['internal'] }])
   })
 })
 
@@ -506,38 +510,16 @@ describe('passkey-service — credential management', () => {
     expect(result).toBe(2)
   })
 
-  it('counts credentials', async () => {
-    const dbWithCount = {
-      select: vi.fn(() => ({
-        from: vi.fn(() => ({
-          where: vi.fn(() => [{ count: 3 }]),
-        })),
+  it('sets passkeyForce', async () => {
+    const updateSpy = vi.fn(() => ({
+      set: vi.fn(() => ({
+        where: vi.fn(() => Promise.resolve()),
       })),
-    } as unknown as NodePgDatabase
-
-    const result = await passkeyService.countCredentials(dbWithCount, 1n)
-    expect(result).toBe(3)
-  })
-
-  it('sets and gets passkeyForce', async () => {
-    const dbWithUpdate = {
-      update: vi.fn(() => ({
-        set: vi.fn(() => ({
-          where: vi.fn(() => Promise.resolve()),
-        })),
-      })),
-      select: vi.fn(() => ({
-        from: vi.fn(() => ({
-          where: vi.fn(() => ({
-            limit: vi.fn(() => [{ passkeyForce: true }]),
-          })),
-        })),
-      })),
-    } as unknown as NodePgDatabase
+    }))
+    const dbWithUpdate = { update: updateSpy } as unknown as NodePgDatabase
 
     await passkeyService.setPasskeyForce(dbWithUpdate, 1n, true)
-    const force = await passkeyService.getPasskeyForce(dbWithUpdate, 1n)
-    expect(force).toBe(true)
+    expect(updateSpy).toHaveBeenCalledTimes(1)
   })
 })
 

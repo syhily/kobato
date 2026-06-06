@@ -4,6 +4,7 @@ import { Controller, useFieldArray } from 'react-hook-form'
 import type { MailSettings, SecuritySettings } from '@/shared/config/types'
 
 import { useSiteIdentity } from '@/shared/lib/blog-config-context'
+import { isValidPasskeyDomain } from '@/shared/utils/safe-url'
 import { SettingsRow } from '@/ui/admin/settings/SettingsSection'
 import { SettingGroup } from '@/ui/admin/settings/shell/SettingGroup'
 import { SettingGroupContent } from '@/ui/admin/settings/shell/SettingGroupContent'
@@ -40,6 +41,7 @@ function CsrfToggleCard({ security }: { security: SecuritySettings }) {
       csrf: { ...security.csrf, enabled: state.enabled },
       cors: security.cors,
       otp: security.otp,
+      passkey: security.passkey,
     }),
   })
 
@@ -90,6 +92,7 @@ function CsrfExemptPathsCard({ security }: { security: SecuritySettings }) {
       },
       cors: security.cors,
       otp: security.otp,
+      passkey: security.passkey,
     }),
   })
 
@@ -166,6 +169,7 @@ function CorsPolicyCard({ security }: { security: SecuritySettings }) {
         origins: state.origins.map((row) => row.url.trim()).filter((url) => url !== ''),
       },
       otp: security.otp,
+      passkey: security.passkey,
     }),
   })
 
@@ -304,31 +308,6 @@ function OtpToggleCard({ security, mail }: SecurityFormProps) {
       </SettingGroupContent>
     </SettingGroup>
   )
-}
-
-function isValidPasskeyDomain(website: string): boolean {
-  try {
-    const url = new URL(website)
-    if (url.protocol !== 'https:') {
-      return false
-    }
-    const hostname = url.hostname
-    if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '::1' || hostname === '[::1]') {
-      return false
-    }
-    // Reject private IPv4 ranges
-    if (/^(10\.|172\.(1[6-9]|2[0-9]|3[01])\.|192\.168\.|127\.|169\.254\.)/.test(hostname)) {
-      return false
-    }
-    // Reject IPv6 ULA / link-local — strip brackets, only match actual IPv6 addresses
-    const bare = hostname.startsWith('[') && hostname.endsWith(']') ? hostname.slice(1, -1) : hostname
-    if (bare.includes(':') && /^(fc|fd|fe80)/i.test(bare)) {
-      return false
-    }
-    return true
-  } catch {
-    return false
-  }
 }
 
 function PasskeyToggleCard({ security }: { security: SecuritySettings }) {

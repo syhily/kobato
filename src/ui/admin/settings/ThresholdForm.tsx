@@ -127,6 +127,24 @@ const BUCKET_META: Record<BucketKey, { title: string; description: string; windo
       windowHint: '60 秒 - 24 小时。默认 5 分钟（300）。',
       attemptsHint: '默认 10 次。',
     },
+    passkeyRegisterFinishIp: {
+      title: 'Passkey 注册完成限流（按 IP）',
+      description: 'Passkey 注册完成请求按客户端 IP 计数。',
+      windowHint: '60 秒 - 24 小时。默认 5 分钟（300）。',
+      attemptsHint: '默认 10 次。',
+    },
+    passkeySetForceIp: {
+      title: 'Passkey 强制开关限流（按 IP）',
+      description: 'Passkey 强制登录开关操作按客户端 IP 计数。',
+      windowHint: '60 秒 - 24 小时。默认 5 分钟（300）。',
+      attemptsHint: '默认 10 次。',
+    },
+    passkeyDeleteIp: {
+      title: 'Passkey 删除限流（按 IP）',
+      description: 'Passkey 凭据删除操作按客户端 IP 计数。',
+      windowHint: '60 秒 - 24 小时。默认 5 分钟（300）。',
+      attemptsHint: '默认 10 次。',
+    },
   }
 
 function RateLimitBucketCard({ bucketKey, rateLimit }: { bucketKey: BucketKey; rateLimit: RateLimitSettings }) {

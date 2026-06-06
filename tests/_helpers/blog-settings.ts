@@ -146,6 +146,9 @@ export const TEST_BLOG_SETTINGS_BUNDLE: BlogSettingsBundle = {
     passkeyAuthBeginIp: { windowSeconds: 60 * 5, maxAttempts: 10 },
     passkeyAuthFinishIp: { windowSeconds: 60 * 5, maxAttempts: 10 },
     passkeyRegisterBeginIp: { windowSeconds: 60 * 5, maxAttempts: 10 },
+    passkeyRegisterFinishIp: { windowSeconds: 60 * 5, maxAttempts: 10 },
+    passkeySetForceIp: { windowSeconds: 60 * 5, maxAttempts: 10 },
+    passkeyDeleteIp: { windowSeconds: 60 * 5, maxAttempts: 10 },
   },
   search: {
     search: {

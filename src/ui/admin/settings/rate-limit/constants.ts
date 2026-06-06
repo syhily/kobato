@@ -220,12 +220,58 @@ export const BUCKET_META: Record<
       { label: '30分', seconds: 1800 },
     ],
   },
+  passkeyRegisterFinishIp: {
+    title: 'Passkey 注册完成限流（按 IP）',
+    description: 'Passkey 注册完成请求按客户端 IP 计数。',
+    group: '认证与登录',
+    quickWindowOptions: [
+      { label: '1分', seconds: 60 },
+      { label: '5分', seconds: 300 },
+      { label: '15分', seconds: 900 },
+      { label: '30分', seconds: 1800 },
+    ],
+  },
+  passkeySetForceIp: {
+    title: 'Passkey 强制开关限流（按 IP）',
+    description: 'Passkey 强制登录开关操作按客户端 IP 计数。',
+    group: '认证与登录',
+    quickWindowOptions: [
+      { label: '1分', seconds: 60 },
+      { label: '5分', seconds: 300 },
+      { label: '15分', seconds: 900 },
+      { label: '30分', seconds: 1800 },
+    ],
+  },
+  passkeyDeleteIp: {
+    title: 'Passkey 删除限流（按 IP）',
+    description: 'Passkey 凭据删除操作按客户端 IP 计数。',
+    group: '认证与登录',
+    quickWindowOptions: [
+      { label: '1分', seconds: 60 },
+      { label: '5分', seconds: 300 },
+      { label: '15分', seconds: 900 },
+      { label: '30分', seconds: 1800 },
+    ],
+  },
 }
 
 export const GROUPS: { label: string; keys: BucketKey[] }[] = [
   {
     label: '认证与登录',
-    keys: ['signInIp', 'signInEmail', 'otpSendIp', 'otpSendEmail', 'otpVerifyIp', 'otpVerifyEmail'],
+    keys: [
+      'signInIp',
+      'signInEmail',
+      'otpSendIp',
+      'otpSendEmail',
+      'otpVerifyIp',
+      'otpVerifyEmail',
+      'passkeyAuthBeginIp',
+      'passkeyAuthFinishIp',
+      'passkeyRegisterBeginIp',
+      'passkeyRegisterFinishIp',
+      'passkeySetForceIp',
+      'passkeyDeleteIp',
+    ],
   },
   { label: '密码重置', keys: ['passwordResetIp', 'passwordResetEmail', 'passwordResetTarget'] },
   { label: '评论互动', keys: ['commentPostIp', 'commentPostEmail', 'likeIncreaseIp'] },

@@ -206,6 +206,9 @@ export interface RateLimitSettings {
   passkeyAuthBeginIp: RateLimitBucket
   passkeyAuthFinishIp: RateLimitBucket
   passkeyRegisterBeginIp: RateLimitBucket
+  passkeyRegisterFinishIp: RateLimitBucket
+  passkeySetForceIp: RateLimitBucket
+  passkeyDeleteIp: RateLimitBucket
 }
 
 export interface SearchSettings {

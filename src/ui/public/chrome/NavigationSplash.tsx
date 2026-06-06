@@ -82,8 +82,6 @@ export function NavigationSplash() {
         }, wait)
       }
     }
-
-    return () => {}
   }, [isPending, visible])
 
   useEffect(

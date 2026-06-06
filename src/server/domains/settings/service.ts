@@ -13,7 +13,7 @@ import { ENCRYPTION_KEY } from '@/server/infra/env'
 import { DomainError } from '@/server/infra/http/errors'
 import { getLogger } from '@/server/infra/logger'
 import { getBlogSettingsBundleSync } from '@/shared/config/getters'
-import { isPrivateIp, tryParseUrl } from '@/shared/utils/safe-url'
+import { isValidPasskeyDomain } from '@/shared/utils/safe-url'
 
 const log = getLogger('settings.service')
 
@@ -73,18 +73,7 @@ export async function updateBlogSettingsSection<S extends SettingsSection>(
       if (!website) {
         throw new DomainError('BAD_REQUEST', '开启 Passkey 前请先配置站点域名（网站信息设置中的「站点地址」）')
       }
-      const url = tryParseUrl(website)
-      if (!url || url.protocol !== 'https:') {
-        throw new DomainError('BAD_REQUEST', '开启 Passkey 需要站点使用 HTTPS 协议')
-      }
-      const hostname = url.hostname
-      if (
-        hostname === 'localhost' ||
-        hostname === '127.0.0.1' ||
-        hostname === '::1' ||
-        hostname === '[::1]' ||
-        isPrivateIp(hostname)
-      ) {
+      if (!isValidPasskeyDomain(website)) {
         throw new DomainError(
           'BAD_REQUEST',
           '开启 Passkey 需要站点使用公开可访问的 HTTPS 域名（不能使用 localhost 或 IP 地址）',

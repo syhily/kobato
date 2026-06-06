@@ -96,7 +96,7 @@ async function migrateFromLocalStorage(db: IDBPDatabase<DraftsDB>): Promise<void
         continue
       }
 
-      await store.put({
+      void store.put({
         key,
         type,
         body: record.body,

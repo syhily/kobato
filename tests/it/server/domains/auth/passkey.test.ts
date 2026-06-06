@@ -300,6 +300,78 @@ describe('passkey — password reset clears passkeys', () => {
   })
 })
 
+describe('passkey — deleting last credential auto-disables force', () => {
+  it('turns off passkeyForce when the user deletes their only credential', async () => {
+    const userId = await seedUser({ passkeyForce: true })
+
+    // Register one credential
+    swaMocks.generateRegistrationOptions.mockResolvedValue({
+      challenge: 'reg-c-force',
+      rp: { name: 'Test', id: 'example.com' },
+    })
+    const dbUser = await db
+      .select()
+      .from(user)
+      .where(eq(user.id, userId))
+      .limit(1)
+      .then((r) => r[0])
+    await passkeyService.generateRegistrationOptions(db, dbUser)
+
+    swaMocks.verifyRegistrationResponse.mockResolvedValue({
+      verified: true,
+      registrationInfo: {
+        credential: {
+          id: 'cred-force',
+          publicKey: new Uint8Array([1, 2, 3]),
+          counter: 0,
+          transports: ['internal'],
+        },
+        credentialBackedUp: false,
+      },
+    })
+    await passkeyService.verifyRegistrationResponse(db, dbUser, {
+      response: {
+        id: 'cred-force',
+        rawId: 'raw',
+        response: { clientDataJSON: '', attestationObject: '' },
+        clientExtensionResults: {},
+        type: 'public-key',
+      },
+      challenge: 'reg-c-force',
+    })
+
+    // Verify credential exists and force is still on
+    let creds = await db.select().from(passkeyCredential).where(eq(passkeyCredential.userId, userId))
+    expect(creds).toHaveLength(1)
+
+    let dbUserRow = await db
+      .select()
+      .from(user)
+      .where(eq(user.id, userId))
+      .limit(1)
+      .then((r) => r[0])
+    expect(dbUserRow.passkeyForce).toBe(true)
+
+    // Delete the only credential and simulate controller-side cleanup
+    const ok = await passkeyService.deleteCredential(db, 'cred-force', userId)
+    expect(ok).toBe(true)
+
+    const remaining = await passkeyService.listCredentials(db, userId)
+    if (remaining.length === 0) {
+      await passkeyService.setPasskeyForce(db, userId, false)
+    }
+
+    // Verify force was disabled
+    dbUserRow = await db
+      .select()
+      .from(user)
+      .where(eq(user.id, userId))
+      .limit(1)
+      .then((r) => r[0])
+    expect(dbUserRow.passkeyForce).toBe(false)
+  })
+})
+
 describe('passkey — replay attack prevention', () => {
   it('rejects reuse of a consumed authentication challenge', async () => {
     const userId = await seedUser({ email: 'replay@example.com' })

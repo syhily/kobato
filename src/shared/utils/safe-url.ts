@@ -94,3 +94,22 @@ export const httpUrlOrEmptyStringSchema = z.preprocess(
   },
   z.union([z.literal(''), httpUrlSchema]),
 )
+
+/** Validates that a website URL meets Passkey RP requirements:
+ *  HTTPS protocol, public hostname (no localhost / private IP / IPv6 ULA).
+ */
+export function isValidPasskeyDomain(website: string): boolean {
+  try {
+    const url = new URL(website)
+    if (url.protocol !== 'https:') {
+      return false
+    }
+    const hostname = url.hostname
+    if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '::1' || hostname === '[::1]') {
+      return false
+    }
+    return !isPrivateIp(hostname)
+  } catch {
+    return false
+  }
+}

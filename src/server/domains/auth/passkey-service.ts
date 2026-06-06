@@ -12,7 +12,7 @@ import {
   verifyAuthenticationResponse as swaVerifyAuthenticationResponse,
   verifyRegistrationResponse as swaVerifyRegistrationResponse,
 } from '@simplewebauthn/server'
-import { and, eq, sql } from 'drizzle-orm'
+import { and, eq } from 'drizzle-orm'
 
 import type { SafeUser } from '@/server/infra/db/operations/user'
 import type { PasskeyCredentialRow } from '@/server/infra/db/types'
@@ -24,7 +24,7 @@ import { DomainError, isUniqueConstraintError } from '@/server/infra/http/errors
 import { getLogger } from '@/server/infra/logger'
 import { redisInstance } from '@/server/infra/redis/storage'
 import { requireBlogSettingsBundle } from '@/shared/config/getters'
-import { isPrivateIp, tryParseUrl } from '@/shared/utils/safe-url'
+import { isValidPasskeyDomain, tryParseUrl } from '@/shared/utils/safe-url'
 
 const log = getLogger('auth.passkey')
 
@@ -37,17 +37,10 @@ function rpConfig() {
   const website = bundle.siteIdentity?.website ?? ''
   const title = bundle.siteIdentity?.title ?? 'Kobato'
   const url = tryParseUrl(website)
-  if (!url) {
-    throw new DomainError('BAD_REQUEST', '站点域名未配置，无法使用 Passkey。')
-  }
-  if (url.protocol !== 'https:') {
-    throw new DomainError('BAD_REQUEST', 'Passkey 要求站点使用 HTTPS 协议。')
-  }
-  const rpID = url.hostname
-  if (rpID === 'localhost' || rpID === '127.0.0.1' || rpID === '::1' || rpID === '[::1]' || isPrivateIp(rpID)) {
+  if (!url || !isValidPasskeyDomain(website)) {
     throw new DomainError('BAD_REQUEST', 'Passkey 需要公开可访问的 HTTPS 域名，不能使用 localhost 或私有地址。')
   }
-  return { rpID, rpName: title, origin: website }
+  return { rpID: url.hostname, rpName: title, origin: website }
 }
 
 async function storeChallenge(prefix: string, challenge: string, data: Record<string, unknown>): Promise<void> {
@@ -94,7 +87,7 @@ export async function generateRegistrationOptions(
 ): Promise<RegistrationBeginResult> {
   const { rpID, rpName } = rpConfig()
   const existing = await db
-    .select({ credentialId: passkeyCredential.credentialId })
+    .select({ credentialId: passkeyCredential.credentialId, transports: passkeyCredential.transports })
     .from(passkeyCredential)
     .where(eq(passkeyCredential.userId, dbUser.id))
 
@@ -110,7 +103,7 @@ export async function generateRegistrationOptions(
     },
     excludeCredentials: existing.map((c) => ({
       id: c.credentialId,
-      transports: [] as ('ble' | 'hybrid' | 'internal' | 'nfc' | 'usb')[],
+      transports: (c.transports as ('ble' | 'hybrid' | 'internal' | 'nfc' | 'usb')[] | undefined) ?? [],
     })),
   })
 
@@ -270,16 +263,17 @@ export async function verifyAuthenticationResponse(
     throw new DomainError('BAD_REQUEST', 'Passkey 验证失败。')
   }
 
+  // Verify user state BEFORE mutating the credential counter.
+  const dbUser = await findUserById(db, cred.userId)
+  if (!dbUser || !dbUser.role || dbUser.deletedAt) {
+    throw new DomainError('BAD_REQUEST', '账户状态异常，无法登录。')
+  }
+
   // Update counter and timestamp
   await db
     .update(passkeyCredential)
     .set({ counter: Number(verification.authenticationInfo.newCounter), updatedAt: new Date() })
     .where(eq(passkeyCredential.id, cred.id))
-
-  const dbUser = await findUserById(db, cred.userId)
-  if (!dbUser || !dbUser.role || dbUser.deletedAt) {
-    throw new DomainError('BAD_REQUEST', '账户状态异常，无法登录。')
-  }
 
   // Return SafeUser shape
   const { password: _p, lastIp: _li, lastUa: _lu, ...safeUser } = dbUser
@@ -332,19 +326,6 @@ export async function deleteAllCredentials(db: NodePgDatabase, userId: bigint): 
   return result.length
 }
 
-export async function countCredentials(db: NodePgDatabase, userId: bigint): Promise<number> {
-  const rows = await db
-    .select({ count: sql<number>`count(*)` })
-    .from(passkeyCredential)
-    .where(eq(passkeyCredential.userId, userId))
-  return rows[0]?.count ?? 0
-}
-
 export async function setPasskeyForce(db: NodePgDatabase, userId: bigint, force: boolean): Promise<void> {
   await db.update(user).set({ passkeyForce: force }).where(eq(user.id, userId))
-}
-
-export async function getPasskeyForce(db: NodePgDatabase, userId: bigint): Promise<boolean> {
-  const rows = await db.select({ passkeyForce: user.passkeyForce }).from(user).where(eq(user.id, userId)).limit(1)
-  return rows[0]?.passkeyForce ?? false
 }

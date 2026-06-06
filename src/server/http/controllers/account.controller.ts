@@ -17,7 +17,13 @@ import { MIN_PASSWORD_LENGTH, PASSWORD_COMPLEXITY_RE } from '@/server/domains/au
 import { updateAccountPassword, updateAccountProfile } from '@/server/domains/users/services/account'
 import { authedProc } from '@/server/http/orpc-base'
 import { findUserById } from '@/server/infra/db/operations/user'
-import { tryPasskeyRegisterBeginRateLimit, tryRateLimit } from '@/server/infra/rate-limit'
+import {
+  tryPasskeyDeleteRateLimit,
+  tryPasskeyRegisterBeginRateLimit,
+  tryPasskeyRegisterFinishRateLimit,
+  tryPasskeySetForceRateLimit,
+  tryRateLimit,
+} from '@/server/infra/rate-limit'
 import { idFromString } from '@/shared/utils/id'
 
 // ─── Input schemas ──────────────────────────────────────
@@ -199,7 +205,11 @@ const passkeyRegisterFinish = authedProc
     if (!isPasskeyEnabled()) {
       throw new ORPCError('BAD_REQUEST', { message: 'Passkey 登录未启用。' })
     }
-    const { db, viewer } = context
+    const { db, viewer, clientAddress } = context
+    const limit = await tryPasskeyRegisterFinishRateLimit(clientAddress)
+    if (limit.exceeded) {
+      throw new ORPCError('TOO_MANY_REQUESTS', { message: '操作过于频繁，请稍后再试。' })
+    }
     const dbUser = await findUserById(db, idFromString(viewer.userId))
     if (!dbUser) {
       throw new ORPCError('NOT_FOUND', { message: '用户不存在。' })
@@ -226,10 +236,21 @@ const passkeyDelete = authedProc
     if (!isPasskeyEnabled()) {
       throw new ORPCError('BAD_REQUEST', { message: 'Passkey 登录未启用。' })
     }
-    const { db, viewer } = context
-    const ok = await deleteCredential(db, input.credentialId, idFromString(viewer.userId))
+    const { db, viewer, clientAddress } = context
+    const limit = await tryPasskeyDeleteRateLimit(clientAddress)
+    if (limit.exceeded) {
+      throw new ORPCError('TOO_MANY_REQUESTS', { message: '操作过于频繁，请稍后再试。' })
+    }
+    const userId = idFromString(viewer.userId)
+    const ok = await deleteCredential(db, input.credentialId, userId)
     if (!ok) {
       throw new ORPCError('NOT_FOUND', { message: '凭据不存在。' })
+    }
+    // Auto-disable passkeyForce when the last credential is removed so
+    // the user does not lock themselves out.
+    const remaining = await listCredentials(db, userId)
+    if (remaining.length === 0) {
+      await setPasskeyForce(db, userId, false)
     }
     recordAuditEventFromContext(context, {
       action: 'passkey_deleted',
@@ -247,7 +268,11 @@ const passkeySetForce = authedProc
     if (!isPasskeyEnabled()) {
       throw new ORPCError('BAD_REQUEST', { message: 'Passkey 登录未启用。' })
     }
-    const { db, viewer } = context
+    const { db, viewer, clientAddress } = context
+    const limit = await tryPasskeySetForceRateLimit(clientAddress)
+    if (limit.exceeded) {
+      throw new ORPCError('TOO_MANY_REQUESTS', { message: '操作过于频繁，请稍后再试。' })
+    }
     if (input.force) {
       const creds = await listCredentials(db, idFromString(viewer.userId))
       if (creds.length === 0) {

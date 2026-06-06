@@ -40,6 +40,9 @@ const otpVerifyEmailKey = (email: string) => `${RATE_LIMIT_NAMESPACE}otp-verify-
 const passkeyAuthBeginIpKey = (ip: string) => `${RATE_LIMIT_NAMESPACE}passkey-auth-begin:${ip}`
 const passkeyAuthFinishIpKey = (ip: string) => `${RATE_LIMIT_NAMESPACE}passkey-auth-finish:${ip}`
 const passkeyRegisterBeginIpKey = (ip: string) => `${RATE_LIMIT_NAMESPACE}passkey-register-begin:${ip}`
+const passkeyRegisterFinishIpKey = (ip: string) => `${RATE_LIMIT_NAMESPACE}passkey-register-finish:${ip}`
+const passkeySetForceIpKey = (ip: string) => `${RATE_LIMIT_NAMESPACE}passkey-set-force:${ip}`
+const passkeyDeleteIpKey = (ip: string) => `${RATE_LIMIT_NAMESPACE}passkey-delete:${ip}`
 
 // Conservative fallbacks used ONLY when the settings snapshot has
 // not been hydrated yet (pre-install, or the very first request after
@@ -218,4 +221,16 @@ export async function tryPasskeyAuthFinishRateLimit(ip: string): Promise<RateLim
 
 export async function tryPasskeyRegisterBeginRateLimit(ip: string): Promise<RateLimitResult> {
   return tryKeyedRateLimit(passkeyRegisterBeginIpKey(ip), readBucket('passkeyRegisterBeginIp'))
+}
+
+export async function tryPasskeyRegisterFinishRateLimit(ip: string): Promise<RateLimitResult> {
+  return tryKeyedRateLimit(passkeyRegisterFinishIpKey(ip), readBucket('passkeyRegisterFinishIp'))
+}
+
+export async function tryPasskeySetForceRateLimit(ip: string): Promise<RateLimitResult> {
+  return tryKeyedRateLimit(passkeySetForceIpKey(ip), readBucket('passkeySetForceIp'))
+}
+
+export async function tryPasskeyDeleteRateLimit(ip: string): Promise<RateLimitResult> {
+  return tryKeyedRateLimit(passkeyDeleteIpKey(ip), readBucket('passkeyDeleteIp'))
 }
