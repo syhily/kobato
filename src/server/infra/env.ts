@@ -116,6 +116,15 @@ const envConfig = {
     KOBATO_DATA_PATH: z.string().min(1),
 
     NODE_ENV: z.enum(['development', 'production', 'test']).optional().default('production'),
+
+    // Canvas fallback font path. When set and the /data/fonts/ directory
+    // is empty (e.g. bind-mounted), the file is copied at startup as the
+    // default OG / calendar font. The Docker image ships with font-noto-cjk.
+    CANVAS_FALLBACK_FONT_PATH: z.string().min(1).optional(),
+
+    // Optional prefix added to every Redis key by ioredis.
+    // Primarily used in tests to isolate parallel workers.
+    REDIS_KEY_PREFIX: z.string().min(1).optional(),
   },
   runtimeEnv: process.env,
   emptyStringAsUndefined: true,
@@ -148,6 +157,7 @@ function loadEnv() {
 const env = loadEnv()
 
 export const {
+  CANVAS_FALLBACK_FONT_PATH,
   DATABASE_URL,
   DB_POOL_MAX,
   DB_STATEMENT_TIMEOUT_MS,
@@ -158,6 +168,7 @@ export const {
   LOG_LEVEL,
   NODE_ENV,
   PORT,
+  REDIS_KEY_PREFIX,
   REDIS_URL,
   SESSION_SECRET,
 } = env

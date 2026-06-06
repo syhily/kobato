@@ -1,7 +1,7 @@
-import { mkdirSync } from 'node:fs'
+import { copyFileSync, existsSync, mkdirSync } from 'node:fs'
 import path from 'node:path'
 
-import { KOBATO_DATA_PATH } from '@/server/infra/env'
+import { CANVAS_FALLBACK_FONT_PATH, KOBATO_DATA_PATH } from '@/server/infra/env'
 
 export const FONT_DIR = path.resolve(KOBATO_DATA_PATH, 'fonts')
 export const ANALYTICS_DEAD_LETTER_PATH = path.resolve(KOBATO_DATA_PATH, 'analytics', 'dead-letter.jsonl')
@@ -18,3 +18,35 @@ for (const dir of [
 ]) {
   mkdirSync(dir, { recursive: true })
 }
+
+// Seed default Canvas fonts from the system package when the data directory
+// is empty (e.g. bind-mounted). Skips if files already exist so user uploads
+// are never overwritten.
+function seedDefaultFonts(): void {
+  if (!CANVAS_FALLBACK_FONT_PATH) {
+    return
+  }
+  if (!existsSync(CANVAS_FALLBACK_FONT_PATH)) {
+    return
+  }
+
+  const og = path.resolve(FONT_DIR, 'og.ttf')
+  const calendar = path.resolve(FONT_DIR, 'calendar.ttf')
+
+  if (!existsSync(og)) {
+    try {
+      copyFileSync(CANVAS_FALLBACK_FONT_PATH, og)
+    } catch {
+      // ignore
+    }
+  }
+  if (!existsSync(calendar)) {
+    try {
+      copyFileSync(CANVAS_FALLBACK_FONT_PATH, calendar)
+    } catch {
+      // ignore
+    }
+  }
+}
+
+seedDefaultFonts()

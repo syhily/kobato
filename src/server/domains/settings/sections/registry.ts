@@ -109,8 +109,8 @@ export const SECTION_REGISTRY = {
     schema: fontsSchema,
     key: 'fonts',
     defaults: {
-      og: { family: '' },
-      calendar: { family: '' },
+      og: { family: 'NotoSansCJK' },
+      calendar: { family: 'NotoSansCJK' },
       globalCss: [],
       postCss: [],
     },

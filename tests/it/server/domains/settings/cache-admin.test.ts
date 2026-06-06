@@ -6,10 +6,12 @@ import { TEST_BLOG_SETTINGS_BUNDLE } from '#/_helpers/blog-settings'
 import { flushWorkerRedis } from '#/_helpers/redis'
 import { setBlogSettingsBundleForTests } from '@/server/domains/settings/snapshot'
 import { clearAdminCache, getAdminCacheStats } from '@/server/infra/redis/admin-ops'
-import { redisInstance } from '@/server/infra/redis/storage'
+import { redisInstance, storage } from '@/server/infra/redis/storage'
 
 async function remainingOwnKeys(ownKeys: string[]): Promise<string[]> {
-  const all = await redisInstance().keys('*')
+  // Use storage.getKeys so the returned key names are stripped of any
+  // global Redis prefix, matching the plain names in ownKeys.
+  const all = await storage.getKeys()
   return all.filter((k) => ownKeys.includes(k)).sort()
 }
 

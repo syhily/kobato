@@ -1,5 +1,6 @@
 import type { CacheBucket, CacheBucketId, CacheBucketStats, ReservedCacheBucketStats } from '@/shared/types/cache'
 
+import { REDIS_KEY_PREFIX } from '@/server/infra/env'
 import { getLogger } from '@/server/infra/logger'
 import { redisInstance } from '@/server/infra/redis/storage'
 import { getCacheSettings } from '@/shared/config/getters'
@@ -104,15 +105,24 @@ export function getBucket(id: CacheBucketId): CacheBucket | undefined {
 // while typical buckets (OG / avatar) finish in 1–2 round-trips.
 const SCAN_COUNT = 500
 
-/** Async generator over every key matching `pattern`, in SCAN batches. */
+/** Async generator over every key matching `pattern`, in SCAN batches.
+ *  ioredis does NOT add keyPrefix to SCAN's MATCH argument, so we prepend
+ *  it manually. Returned keys are stripped of the prefix so callers see
+ *  the same key names they would without a global prefix. */
 async function* scanKeys(pattern: string): AsyncGenerator<string[]> {
   const redis = redisInstance()
+  const rawPattern = REDIS_KEY_PREFIX ? `${REDIS_KEY_PREFIX}${pattern}` : pattern
   let cursor = '0'
   do {
-    const [nextCursor, batch] = (await redis.scan(cursor, 'MATCH', pattern, 'COUNT', SCAN_COUNT)) as [string, string[]]
+    const [nextCursor, batch] = (await redis.scan(cursor, 'MATCH', rawPattern, 'COUNT', SCAN_COUNT)) as [
+      string,
+      string[],
+    ]
     cursor = nextCursor
     if (batch.length > 0) {
-      yield batch
+      const prefix = REDIS_KEY_PREFIX
+      const stripped = prefix ? batch.map((k) => (k.startsWith(prefix) ? k.slice(prefix.length) : k)) : batch
+      yield stripped
     }
   } while (cursor !== '0')
 }

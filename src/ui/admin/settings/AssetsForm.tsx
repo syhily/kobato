@@ -306,7 +306,7 @@ function AssetsRobotsTxtCard({ assets }: { assets: AssetsLoaderShape }) {
   return (
     <SettingGroup
       title="robots.txt"
-      description="爬虫规则。留空时由 siteIdentity.website 自动生成包含 Sitemap 行的默认值。"
+      description="爬虫规则。留空时由网站地址自动生成包含 Sitemap 行的默认值。"
       {...settingGroupProps}
     >
       <SettingGroupContent>

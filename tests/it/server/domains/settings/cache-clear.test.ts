@@ -4,6 +4,7 @@ import type { Pool } from 'pg'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { clearAllTables } from '#/_helpers/integration-db'
+import { flushWorkerRedis } from '#/_helpers/redis'
 import { createDbPool, closePool } from '@/server/infra/db/pool'
 
 // Tests that the inline cache clearing in posts/pages services works
@@ -150,8 +151,7 @@ beforeEach(async () => {
   vi.resetModules()
   vi.clearAllMocks()
   await clearAllTables(db)
-  const { redisInstance } = await import('@/server/infra/redis/storage')
-  await redisInstance().flushdb()
+  await flushWorkerRedis()
 })
 
 describe('posts service cache clearing', () => {

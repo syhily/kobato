@@ -13,18 +13,13 @@ import {
   tryLikeIncreaseRateLimit,
   tryRateLimit,
 } from '@/server/infra/rate-limit'
-import { redisInstance } from '@/server/infra/redis/storage'
+import { redisInstance, storage } from '@/server/infra/redis/storage'
 
 async function clearRateLimitKeys(): Promise<void> {
-  const redis = redisInstance()
-  let cursor = '0'
-  do {
-    const [nextCursor, keys] = await redis.scan(cursor, 'MATCH', 'rate-limit:*', 'COUNT', 100)
-    cursor = nextCursor
-    if (keys.length > 0) {
-      await redis.del(...keys)
-    }
-  } while (cursor !== '0')
+  const keys = await storage.getKeys('rate-limit:')
+  for (const key of keys) {
+    await storage.removeItem(key)
+  }
 }
 
 beforeEach(async () => {
@@ -105,8 +100,7 @@ describe('server/rate-limit — config-driven thresholds', () => {
     await tryCommentPostRateLimitByEmail('alice@example.com')
     await tryLikeIncreaseRateLimit('11.11.11.11')
 
-    const redis = redisInstance()
-    const keys = await redis.keys('rate-limit:*')
+    const keys = await storage.getKeys('rate-limit:')
     const namespaces = keys.map((key) => key.split(':').slice(0, 2).join(':'))
     expect(new Set(namespaces)).toEqual(
       new Set(['rate-limit:signin', 'rate-limit:comment-post', 'rate-limit:comment-email', 'rate-limit:like-increase']),

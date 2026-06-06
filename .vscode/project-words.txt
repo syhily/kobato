@@ -99,6 +99,7 @@ ilike
 initdb
 inlines
 inspectable
+ioredis
 iosevka
 iroha
 iseeklife
@@ -223,6 +224,7 @@ prosemirror
 psql
 pswp
 pwsz
+pxat
 qdrant
 qiniu
 qrcode
@@ -252,8 +254,10 @@ shmily
 skia
 skrs
 slugignore
+smembers
 sqlx
 srcset
+srem
 stylesheet
 suus
 tabindex

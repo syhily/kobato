@@ -3,7 +3,7 @@ import type { Cluster, Redis } from 'ioredis'
 import { Redis as RedisClient } from 'ioredis'
 import superjson from 'superjson'
 
-import { REDIS_URL } from '@/server/infra/env'
+import { REDIS_KEY_PREFIX, REDIS_URL } from '@/server/infra/env'
 import { registerShutdownHook } from '@/server/infra/lifecycle'
 import { getLogger } from '@/server/infra/logger'
 
@@ -58,6 +58,7 @@ export function isRedisHealthy(): boolean {
 
 const redis = new RedisClient(REDIS_URL, {
   lazyConnect: true,
+  keyPrefix: REDIS_KEY_PREFIX,
 })
 
 redis.on('error', (err) => {
@@ -142,13 +143,19 @@ export const storage = {
    * so runaway scans don't OOM the process.
    */
   async getKeys(prefix?: string, maxCount = 10_000): Promise<string[]> {
-    const pattern = prefix ? `${prefix}*` : '*'
+    const rawPattern = prefix ? `${prefix}*` : '*'
+    // ioredis does NOT add keyPrefix to SCAN's MATCH argument, so we
+    // prepend it manually. Returned keys include the prefix, so we strip
+    // it before returning to keep the API consistent.
+    const pattern = REDIS_KEY_PREFIX ? `${REDIS_KEY_PREFIX}${rawPattern}` : rawPattern
     const out: string[] = []
     let cursor = '0'
     do {
       const [nextCursor, batch] = (await redis.scan(cursor, 'MATCH', pattern, 'COUNT', 500)) as [string, string[]]
       cursor = nextCursor
-      out.push(...batch)
+      const prefix = REDIS_KEY_PREFIX
+      const stripped = prefix ? batch.map((k) => (k.startsWith(prefix) ? k.slice(prefix.length) : k)) : batch
+      out.push(...stripped)
       if (out.length > maxCount) {
         getLogger('redis.storage').warn('getKeys exceeded maxCount; scan aborted', {
           pattern,

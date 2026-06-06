@@ -146,13 +146,15 @@ export function buildSessionWithSid(sid: string, data: BlogSessionData): BlogSes
  */
 const REVOKE_SESSIONS_LUA = `
 local setKey = KEYS[1]
+local sessionPrefix = KEYS[2]
+local sessionMetaPrefix = KEYS[3]
 local except = ARGV[1]
 local sids = redis.call('SMEMBERS', setKey)
 for i = 1, #sids do
   local sid = sids[i]
   if sid ~= except then
-    redis.call('DEL', 'session:' .. sid)
-    redis.call('DEL', 'session_meta:' .. sid)
+    redis.call('DEL', sessionPrefix .. sid)
+    redis.call('DEL', sessionMetaPrefix .. sid)
   end
 end
 if except == '' then
@@ -171,5 +173,5 @@ return #sids
 export async function revokeAllSessionsOfUser(userId: bigint, exceptSessionId?: string): Promise<void> {
   const redis = redisInstance()
   const setKey = `user_sessions:${userId}`
-  await redis.eval(REVOKE_SESSIONS_LUA, 1, setKey, exceptSessionId ?? '')
+  await redis.eval(REVOKE_SESSIONS_LUA, 3, setKey, 'session:', 'session_meta:', exceptSessionId ?? '')
 }

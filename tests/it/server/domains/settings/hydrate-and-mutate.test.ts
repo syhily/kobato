@@ -5,6 +5,7 @@ import { afterAll, beforeEach, describe, expect, it } from 'vitest'
 
 import { clearAllTables } from '#/_helpers/integration-db'
 import { makeAuthedCtx, makePublicCtx } from '#/_helpers/mock-ctx'
+import { flushWorkerRedis } from '#/_helpers/redis'
 import { callRpc, parseRpcJson } from '#/_helpers/rpc-call'
 import { createDbPool, closePool } from '@/server/infra/db/pool'
 import { setting } from '@/server/infra/db/schema/config'
@@ -19,8 +20,7 @@ afterAll(async () => {
 
 beforeEach(async () => {
   await clearAllTables(db)
-  const { redisInstance } = await import('@/server/infra/redis/storage')
-  await redisInstance().flushdb()
+  await flushWorkerRedis()
   // Evict the in-process settings snapshot so tests don't reuse a
   // stale hydration promise from a previous worker.
   const { BLOG_SETTINGS_SNAPSHOT_SLOT } = await import('@/shared/config/snapshot')

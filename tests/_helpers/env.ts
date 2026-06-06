@@ -6,15 +6,18 @@
 // in `tests/setup.ts` via `createWorkerDatabase()`.
 const POSTGRES_BASE_URL = 'postgres://test:test@localhost:5432/test'
 
-// Redis URL mapped to a distinct database per Vitest worker (0–15)
-// so parallel workers never share keys.
+// Redis URL. All workers share DB 0; isolation is achieved via
+// per-worker key prefixes rather than separate DB numbers (which
+// overflow once there are more than 16 parallel workers).
+const REDIS_URL = 'redis://localhost:6379'
+
 const workerId = Number(process.env.VITEST_WORKER_ID || '0')
-const REDIS_DB = workerId % 16
-const REDIS_URL = `redis://localhost:6379/${REDIS_DB}`
+const REDIS_KEY_PREFIX = `test:w${workerId}:`
 
 export const TEST_ENV = {
   DATABASE_URL: POSTGRES_BASE_URL,
   REDIS_URL,
+  REDIS_KEY_PREFIX,
   SESSION_SECRET: 'vitest-session-secret-must-be-at-least-32-chars-long-ok',
   ENCRYPTION_KEY: 'vitest-encryption-key-must-be-at-least-32-chars-long-ok',
   KOBATO_DATA_PATH: '/tmp/kobato-data',

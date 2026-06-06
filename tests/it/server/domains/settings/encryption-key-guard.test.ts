@@ -46,6 +46,12 @@ vi.mock('@/server/infra/env', () => ({
   get DB_STATEMENT_TIMEOUT_MS() {
     return 30000
   },
+  get REDIS_KEY_PREFIX() {
+    return undefined
+  },
+  get CANVAS_FALLBACK_FONT_PATH() {
+    return undefined
+  },
 }))
 
 vi.mock('@/server/infra/logger', () => ({
