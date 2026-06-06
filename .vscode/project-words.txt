@@ -96,6 +96,7 @@ idat
 iend
 ihdr
 ilike
+indexeddb
 initdb
 inlines
 inspectable
@@ -251,6 +252,7 @@ shiki
 shikijs
 shinmun
 shmily
+simplewebauthn
 skia
 skrs
 slugignore

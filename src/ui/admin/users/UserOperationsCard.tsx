@@ -1,5 +1,6 @@
 import {
   CheckCheckIcon,
+  FingerprintIcon,
   LogOutIcon,
   MailIcon,
   RotateCcwIcon,
@@ -48,6 +49,9 @@ interface UserOperationsCardProps {
   bulkDeleteMutation: {
     mutate: (vars: { userId: string }) => void
   }
+  clearPasskeysMutation: {
+    mutate: (vars: { userId: string }) => void
+  }
 }
 
 export function UserOperationsCard({
@@ -64,6 +68,7 @@ export function UserOperationsCard({
   deleteMutation,
   restoreMutation,
   bulkDeleteMutation,
+  clearPasskeysMutation,
 }: UserOperationsCardProps) {
   return (
     <Card>
@@ -137,6 +142,24 @@ export function UserOperationsCard({
             }
           >
             <LogOutIcon /> 强制全部登出
+          </Button>
+        )}
+        {user.role !== null && user.deletedAt === null && user.passkeyCount > 0 && (
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() =>
+              setConfirm({
+                title: `清除 ${user.name} 的 Passkey？`,
+                description: '清除后该用户的所有 Passkey 将被删除，强制登录开关也将关闭。',
+                actionLabel: '清除',
+                destructive: true,
+                actionIcon: <FingerprintIcon data-icon />,
+                onConfirm: () => clearPasskeysMutation.mutate({ userId: user.id }),
+              })
+            }
+          >
+            <FingerprintIcon /> 清除 Passkey ({user.passkeyCount})
           </Button>
         )}
         {user.role !== 'admin' && (

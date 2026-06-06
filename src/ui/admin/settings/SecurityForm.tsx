@@ -3,6 +3,7 @@ import { Controller, useFieldArray } from 'react-hook-form'
 
 import type { MailSettings, SecuritySettings } from '@/shared/config/types'
 
+import { useSiteIdentity } from '@/shared/lib/blog-config-context'
 import { SettingsRow } from '@/ui/admin/settings/SettingsSection'
 import { SettingGroup } from '@/ui/admin/settings/shell/SettingGroup'
 import { SettingGroupContent } from '@/ui/admin/settings/shell/SettingGroupContent'
@@ -259,6 +260,7 @@ function OtpToggleCard({ security, mail }: SecurityFormProps) {
       csrf: security.csrf,
       cors: security.cors,
       otp: { enabled: state.enabled },
+      passkey: security.passkey,
     }),
   })
 
@@ -304,6 +306,93 @@ function OtpToggleCard({ security, mail }: SecurityFormProps) {
   )
 }
 
+function isValidPasskeyDomain(website: string): boolean {
+  try {
+    const url = new URL(website)
+    if (url.protocol !== 'https:') {
+      return false
+    }
+    const hostname = url.hostname
+    if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '::1') {
+      return false
+    }
+    // Reject private IPv4 ranges
+    if (/^(10\.|172\.(1[6-9]|2[0-9]|3[01])\.|192\.168\.|127\.|169\.254\.)/.test(hostname)) {
+      return false
+    }
+    // Reject IPv6 ULA / link-local
+    if (/^[fcfd]/i.test(hostname) || hostname.startsWith('fe80:')) {
+      return false
+    }
+    return true
+  } catch {
+    return false
+  }
+}
+
+function PasskeyToggleCard({ security }: { security: SecuritySettings }) {
+  const siteIdentity = useSiteIdentity()
+  const website = siteIdentity?.website ?? ''
+  const domainValid = isValidPasskeyDomain(website)
+
+  const { form, settingGroupProps, save } = useSettingsCard<SecuritySettings, { enabled: boolean }>({
+    section: 'security',
+    source: security,
+    toState: (source) => ({ enabled: source.passkey?.enabled ?? false }),
+    fromState: (state) => ({
+      csrf: security.csrf,
+      cors: security.cors,
+      otp: security.otp,
+      passkey: { enabled: state.enabled },
+    }),
+  })
+
+  return (
+    <SettingGroup
+      title="Passkey 登录"
+      description="开启后，用户可以使用 Passkey（指纹、面容识别、硬件密钥等）进行免密登录。"
+      {...settingGroupProps}
+    >
+      <SettingGroupContent>
+        <SettingsRow
+          label="启用 Passkey 登录"
+          hint={
+            domainValid
+              ? '开启后用户可在个人资料中注册 Passkey。'
+              : '开启 Passkey 需要站点使用公开可访问的 HTTPS 域名。'
+          }
+        >
+          <Controller
+            control={form.control}
+            name="enabled"
+            render={({ field }) => (
+              <div className="flex items-center gap-3">
+                <Switch
+                  id="passkey-enabled"
+                  checked={field.value}
+                  onCheckedChange={(val) => {
+                    field.onChange(val)
+                    save()
+                  }}
+                  disabled={!domainValid}
+                />
+                <FieldLabel htmlFor="passkey-enabled" className="font-normal">
+                  {field.value ? '已开启' : '已关闭'}
+                </FieldLabel>
+              </div>
+            )}
+          />
+        </SettingsRow>
+        {!domainValid && (
+          <p className="text-sm text-muted-foreground">
+            当前站点域名不满足 Passkey 要求（需要公开 HTTPS 域名，不能使用 localhost 或 IP 地址）。
+          </p>
+        )}
+      </SettingGroupContent>
+    </SettingGroup>
+  )
+}
+
 export function SecurityForm({ security, mail }: SecurityFormProps) {
   return (
     <div className="flex flex-col gap-5">
@@ -311,6 +400,7 @@ export function SecurityForm({ security, mail }: SecurityFormProps) {
       <CsrfExemptPathsCard security={security} />
       <CorsPolicyCard security={security} />
       <OtpToggleCard security={security} mail={mail} />
+      <PasskeyToggleCard security={security} />
     </div>
   )
 }

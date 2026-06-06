@@ -5,11 +5,13 @@ import type { friend } from '@/server/infra/db/schema/friend'
 import type { image, music } from '@/server/infra/db/schema/media'
 import type { like, metric } from '@/server/infra/db/schema/metric'
 import type { page } from '@/server/infra/db/schema/page'
+import type { passkeyCredential } from '@/server/infra/db/schema/passkey'
 import type { post } from '@/server/infra/db/schema/post'
 import type { category, tag } from '@/server/infra/db/schema/taxonomy'
 import type { user, verification } from '@/server/infra/db/schema/user'
 
 // Types for insert
+export type NewPasskeyCredential = typeof passkeyCredential.$inferInsert
 export type NewMetric = typeof metric.$inferInsert
 export type NewUser = typeof user.$inferInsert
 export type NewLike = typeof like.$inferInsert
@@ -26,6 +28,7 @@ export type NewPostMeta = typeof post.$inferInsert
 export type NewContent = typeof content.$inferInsert
 
 // Types for select
+export type PasskeyCredentialRow = typeof passkeyCredential.$inferSelect
 export type MetricRow = typeof metric.$inferSelect
 export type User = typeof user.$inferSelect
 export type Like = typeof like.$inferSelect

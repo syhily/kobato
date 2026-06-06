@@ -35,6 +35,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
       createdAt: dbUser?.createdAt ? dbUser.createdAt.toISOString() : null,
       lastIp: dbUser?.lastIp ?? null,
       lastUa: dbUser?.lastUa ?? null,
+      passkeyForce: dbUser?.passkeyForce ?? false,
     },
     counts,
   })

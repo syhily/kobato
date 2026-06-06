@@ -3,13 +3,9 @@ import type { SocialNetwork } from '@/shared/config/socials'
 // Per-section DTOs for the editable blog configuration.
 //
 // The runtime config used to live in a single fat aggregated shape;
-// it has since been split so that each settings page (general /
-// localization / navigation / …) owns an isolated DTO. The DB layer
-// stores one row per section (`scope='blog.<section>'`) and
-// `BlogSettingsBundle` is the in-memory composition of those rows.
-//
-// Pre-install deployments observe `null` everywhere; the install gate
-// catches those requests before any consumer reaches for a section.
+// it has since been split so that each settings page owns an isolated
+// DTO. The DB stores one row per section and `BlogSettingsBundle` is
+// the in-memory composition of those rows.
 
 export interface SiteIdentitySettings {
   title: string
@@ -91,13 +87,13 @@ export interface SidebarSettings {
 
 export interface CommentsSettings {
   comments: {
-    /** Page size for the inline comment thread (used on both client and server). */
+    /** Page size for the inline comment thread. */
     size: number
     avatar: {
       mirror: string
       size: number
     }
-    /** TTL for the temporary comment edit token issued to anonymous commenters (seconds). */
+    /** TTL for the temporary comment edit token (seconds). */
     tokenTtlSeconds: number
   }
 }
@@ -141,11 +137,8 @@ export interface CacheSettings {
 }
 
 // Metadata kept in the settings row for each S3-backed branding asset.
-// Every branding slot — text and binary alike — stores its content in
-// S3 under `branding/<kebab-slot>` and records this ref in the assets
-// settings row. `etag` is the sha256 of the uploaded bytes; we use it
-// both as the HTTP ETag value and as the in-process cache key for the
-// buffer.
+// `etag` is the sha256 of the uploaded bytes; used as the HTTP ETag
+// value and as the in-process cache key.
 export interface BrandingObjectRef {
   etag: string
   contentType: string
@@ -154,17 +147,11 @@ export interface BrandingObjectRef {
 }
 
 export interface SiteAssetBranding {
-  // User-uploaded asset slots (SVG + binary). Bytes live in S3 under
-  // `branding/<kebab-slot>`; admins upload / clear through the
-  // `/api/admin/branding/upload` and `/clear` endpoints.
   faviconSvg?: BrandingObjectRef
   logoSvg?: BrandingObjectRef
   logoDarkSvg?: BrandingObjectRef
   logoLargeSvg?: BrandingObjectRef
   logoLargeDarkSvg?: BrandingObjectRef
-  // `faviconIco` / `appleTouchIcon` / `icon192` / `icon512` are auto-
-  // derived from `faviconSvg` at upload time; the other four binaries
-  // are independent admin uploads.
   faviconIco?: BrandingObjectRef
   appleTouchIcon?: BrandingObjectRef
   icon192?: BrandingObjectRef
@@ -173,9 +160,6 @@ export interface SiteAssetBranding {
   blogPoster?: BrandingObjectRef
   blogPosterDark?: BrandingObjectRef
   defaultAvatar?: BrandingObjectRef
-
-  // Configuration text, not a user asset — stays inline in the
-  // settings row so the admin form can edit it in a textarea.
   robotsTxt?: string
 }
 
@@ -219,6 +203,8 @@ export interface RateLimitSettings {
   otpVerifyIp: RateLimitBucket
   otpVerifyEmail: RateLimitBucket
   signInEmail: RateLimitBucket
+  passkeyAuthBeginIp: RateLimitBucket
+  passkeyRegisterBeginIp: RateLimitBucket
 }
 
 export interface SearchSettings {
@@ -278,6 +264,9 @@ export interface SecuritySettings {
     origins: string[]
   }
   otp: {
+    enabled: boolean
+  }
+  passkey: {
     enabled: boolean
   }
 }

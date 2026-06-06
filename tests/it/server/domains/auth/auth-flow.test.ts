@@ -77,6 +77,7 @@ function testUser(partial: Partial<User> = {}): User {
     badgeTextColor: null,
     lastIp: null,
     lastUa: null,
+    passkeyForce: false,
     role: 'admin',
     isMuted: false,
     receiveEmail: true,

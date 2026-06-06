@@ -25,6 +25,7 @@ import { githubRouter } from '@/server/http/controllers/github.controller'
 import { imageRouter } from '@/server/http/controllers/image.controller'
 import { likesRouter } from '@/server/http/controllers/likes.controller'
 import { musicRouter } from '@/server/http/controllers/music.controller'
+import { passkeyPublicRouter } from '@/server/http/controllers/passkey-public.controller'
 
 // The composed oRPC router. The shape is the audit surface for the
 // permission matrix — each leaf's guard comes from the base procedure
@@ -41,6 +42,7 @@ export const apiRouter = {
   image: imageRouter,
   likes: likesRouter,
   music: musicRouter,
+  passkey: passkeyPublicRouter,
   admin: {
     users: { ...adminUsersCrudRouter, ...adminUsersAdminRouter, ...adminUsersSessionsRouter },
     auditLog: auditLogRouter,

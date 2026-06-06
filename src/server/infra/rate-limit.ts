@@ -37,6 +37,8 @@ const otpSendIpKey = (ip: string) => `${RATE_LIMIT_NAMESPACE}otp-send:${ip}`
 const otpSendEmailKey = (email: string) => `${RATE_LIMIT_NAMESPACE}otp-send-email:${hashEmail(email)}`
 const otpVerifyIpKey = (ip: string) => `${RATE_LIMIT_NAMESPACE}otp-verify:${ip}`
 const otpVerifyEmailKey = (email: string) => `${RATE_LIMIT_NAMESPACE}otp-verify-email:${hashEmail(email)}`
+const passkeyAuthBeginIpKey = (ip: string) => `${RATE_LIMIT_NAMESPACE}passkey-auth-begin:${ip}`
+const passkeyRegisterBeginIpKey = (ip: string) => `${RATE_LIMIT_NAMESPACE}passkey-register-begin:${ip}`
 
 // Conservative fallbacks used ONLY when the settings snapshot has
 // not been hydrated yet (pre-install, or the very first request after
@@ -203,4 +205,12 @@ const signInEmailKey = (email: string) => `${RATE_LIMIT_NAMESPACE}signin-email:$
 
 export async function trySignInByEmailRateLimit(email: string): Promise<RateLimitResult> {
   return tryKeyedRateLimit(signInEmailKey(email), readBucket('signInEmail'))
+}
+
+export async function tryPasskeyAuthBeginRateLimit(ip: string): Promise<RateLimitResult> {
+  return tryKeyedRateLimit(passkeyAuthBeginIpKey(ip), readBucket('passkeyAuthBeginIp'))
+}
+
+export async function tryPasskeyRegisterBeginRateLimit(ip: string): Promise<RateLimitResult> {
+  return tryKeyedRateLimit(passkeyRegisterBeginIpKey(ip), readBucket('passkeyRegisterBeginIp'))
 }

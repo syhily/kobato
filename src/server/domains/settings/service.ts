@@ -16,10 +16,6 @@ import { getBlogSettingsBundleSync } from '@/shared/config/getters'
 
 const log = getLogger('settings.service')
 
-// Callback registry for section-change side effects.
-// Domains that need to react to a settings update (e.g. reschedule a
-// background job) register a handler here instead of being imported
-// directly by the settings service.
 const sectionChangeHandlers = new Map<SettingsSection, (db: NodePgDatabase, pool: Pool) => void | Promise<void>>()
 
 export function registerSectionChangeHandler(
@@ -29,37 +25,15 @@ export function registerSectionChangeHandler(
   sectionChangeHandlers.set(section, handler)
 }
 
-// DTO returned by the admin "get settings" endpoint. The codebase no
-// longer ships a `BlogConstants` block — date fields (`locale`,
-// `timeZone`, `timeFormat`) live on the `general` section and the
-// `asset` host / S3 storage / upload limits live on the `assets`
-// section. The DTO can be `null` only on a deployment that has not
-// been installed yet, but in practice the install gate already
-// redirected the request away from the admin shell, so callers may
-// safely treat `null` as a programmer error.
-//
-// The on-disk shape is bucketed (`BlogSettingsBundle`) and the admin
-// layout forwards a strengthened (non-null-per-section) projection to
-// each child form through the outlet context. Per-section forms read
-// `bundle.footer`, `bundle.cache`, etc., so nothing here needs the
-// legacy aggregated view anymore.
 export interface AdminBlogSettingsDto {
   bundle: BlogSettingsBundle | null
 }
 
 export async function getAdminBlogSettings(db: NodePgDatabase): Promise<AdminBlogSettingsDto> {
-  // Delegates to the snapshot hydrator, which re-reads from DB when the
-  // Redis version counter has advanced (set by `refreshBlogSettings`
-  // after every admin write) or shares an in-flight promise otherwise.
   const bundle = await hydrateBlogSettings(db)
   return { bundle }
 }
 
-// Apply a section-scoped patch by writing ONLY the row that owns the
-// section. Each section has its own `setting('blog.<section>')` row, so
-// concurrent edits to different sections never read, merge, or
-// overwrite each other's JSONB. The on-disk row is the validated
-// payload verbatim — no nested merge with the rest of the document.
 export async function updateBlogSettingsSection<S extends SettingsSection>(
   db: NodePgDatabase,
   pool: Pool,
@@ -79,10 +53,8 @@ export async function updateBlogSettingsSection<S extends SettingsSection>(
       })),
     )
   }
-  // Extra runtime validation for security: OTP cannot be enabled unless
-  // the mail service is fully configured.
   if (section === 'security') {
-    const securityPayload = parsed.data as { otp?: { enabled?: boolean } }
+    const securityPayload = parsed.data as { otp?: { enabled?: boolean }; passkey?: { enabled?: boolean } }
     if (securityPayload.otp?.enabled) {
       const bundle = getBlogSettingsBundleSync()
       const mail = bundle?.mail?.mail
@@ -94,10 +66,26 @@ export async function updateBlogSettingsSection<S extends SettingsSection>(
         throw new DomainError('BAD_REQUEST', `开启 OTP 前请先完成邮件服务配置：${ready.message}`)
       }
     }
+    if (securityPayload.passkey?.enabled) {
+      const bundle = getBlogSettingsBundleSync()
+      const website = bundle?.siteIdentity?.website
+      if (!website) {
+        throw new DomainError('BAD_REQUEST', '开启 Passkey 前请先配置站点域名（网站信息设置中的「站点地址」）')
+      }
+      const url = tryParseUrl(website)
+      if (!url || url.protocol !== 'https:') {
+        throw new DomainError('BAD_REQUEST', '开启 Passkey 需要站点使用 HTTPS 协议')
+      }
+      const hostname = url.hostname
+      if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '::1' || isPrivateIp(hostname)) {
+        throw new DomainError(
+          'BAD_REQUEST',
+          '开启 Passkey 需要站点使用公开可访问的 HTTPS 域名（不能使用 localhost 或 IP 地址）',
+        )
+      }
+    }
   }
 
-  // Secret sections require ENCRYPTION_KEY so credentials are not stored
-  // as plaintext in the database.
   const secretConfig = SECRET_FIELDS.find((f) => f.section === section)
   if (secretConfig && !ENCRYPTION_KEY) {
     throw new DomainError('BAD_REQUEST', 'ENCRYPTION_KEY 环境变量未设置，无法保存包含敏感信息的设置。')
@@ -120,11 +108,6 @@ export async function updateBlogSettingsSection<S extends SettingsSection>(
   })
 }
 
-/**
- * Return a shallow copy of the bundle with all secret fields redacted.
- * Used by the admin settings read endpoint so the HTTP response never
- * carries decrypted credentials.
- */
 export function redactSecretsFromBundle(bundle: BlogSettingsBundle): BlogSettingsBundle {
   const clone = { ...bundle } as Record<string, unknown>
   for (const { bundleKey, path, field } of SECRET_FIELDS) {
@@ -143,13 +126,6 @@ export function redactSecretsFromBundle(bundle: BlogSettingsBundle): BlogSetting
   return clone as unknown as BlogSettingsBundle
 }
 
-// --- Internal helpers ------------------------------------------------------
-
-// Build the row's `data` payload for the given section. Most sections
-// just return the validated payload verbatim; `mail`, `assets`, and
-// `search` fold in the existing secret when the editor omits it. The
-// `assets` section additionally preserves `branding` (managed by the
-// /admin/branding/upload endpoints, never sent through this PATCH).
 async function applySectionPatch(
   db: NodePgDatabase,
   section: SettingsSection,
@@ -166,12 +142,6 @@ async function applySectionPatch(
   return row
 }
 
-// Merge the persisted `branding` map into the assets row before upsert.
-// The admin form only sends `robotsTxt` through the settings PATCH —
-// asset uploads (SVG/binary) go through `/admin/branding/upload` and
-// write their ObjectRefs directly. We have to splice the persisted
-// ObjectRefs back in, then layer the patch on top, so neither side
-// wipes the other.
 async function preserveBrandingOnPatch(
   db: NodePgDatabase,
   row: Record<string, unknown>,
@@ -188,11 +158,6 @@ async function preserveBrandingOnPatch(
   return { ...row, branding: merged }
 }
 
-// When the editor omits a secret field (sends `undefined`), fold the
-// previous secret back in so the user doesn't have to re-paste it.
-// An explicit string (including empty) overwrites the stored value.
-// The existing encrypted value is passed through as-is so no decryption
-// happens in the service layer — secrets never flow through return values.
 async function preserveSecretOnPatch(
   db: NodePgDatabase,
   validated: unknown,
@@ -218,7 +183,6 @@ async function preserveSecretOnPatch(
   return { ...record, [payloadPath]: nextPayload }
 }
 
-// Encrypt secret fields, returning a new row object instead of mutating.
 function encryptSecretsInRow(section: SettingsSection, row: Record<string, unknown>): Record<string, unknown> {
   const config = SECRET_FIELDS.find((f) => f.section === section)
   if (!config) {
@@ -239,4 +203,25 @@ function encryptSecretsInRow(section: SettingsSection, row: Record<string, unkno
       [config.field]: encryptIfNeeded(value),
     },
   }
+}
+
+function tryParseUrl(raw: string): URL | null {
+  try {
+    return new URL(raw)
+  } catch {
+    return null
+  }
+}
+
+function isPrivateIp(hostname: string): boolean {
+  // IPv4 private ranges per RFC 1918 + loopback/link-local
+  const ipv4Private = /^(10\.|172\.(1[6-9]|2[0-9]|3[01])\.|192\.168\.|127\.|169\.254\.|0\.|22[4-9]\.|2[3-5][0-9]\.)/
+  if (ipv4Private.test(hostname)) {
+    return true
+  }
+  // IPv6 loopback / link-local / unique-local
+  if (hostname.startsWith('fc') || hostname.startsWith('fd') || hostname.startsWith('fe80:')) {
+    return true
+  }
+  return false
 }

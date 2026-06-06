@@ -11,15 +11,27 @@ import {
   handleOtpResend,
   handleOtpVerify,
 } from '@/server/domains/auth/otp-flow'
+import { isPasskeyEnabled } from '@/server/domains/auth/passkey-gate'
+import { deleteAllCredentials, verifyAuthenticationResponse } from '@/server/domains/auth/passkey-service'
 import { establishLoginSession, logout } from '@/server/domains/auth/primitives'
 import { MIN_PASSWORD_LENGTH, PASSWORD_COMPLEXITY_RE } from '@/server/domains/auth/schema'
 import { commitSessionWithMaxAge, destroySession } from '@/server/domains/auth/session-storage'
 import { consumeToken, issueResetToken, peekToken } from '@/server/domains/auth/verification-tokens'
 import { countApprovedCommentsByUser } from '@/server/domains/comments/repos/public-query/by-id'
 import { ensureInstalledOrRedirect } from '@/server/domains/settings/install-gate'
-import { findUserByEmail, findUserById, PASSWORD_HASH_ROUNDS, updateUserById } from '@/server/infra/db/operations/user'
+import {
+  findUserByEmail,
+  findUserById,
+  PASSWORD_HASH_ROUNDS,
+  updateLastLogin,
+  updateUserById,
+} from '@/server/infra/db/operations/user'
 import { sendPasswordReset } from '@/server/infra/email/sender'
-import { tryPasswordResetByEmailRateLimit, tryPasswordResetRateLimit } from '@/server/infra/rate-limit'
+import {
+  tryPasskeyAuthBeginRateLimit,
+  tryPasswordResetByEmailRateLimit,
+  tryPasswordResetRateLimit,
+} from '@/server/infra/rate-limit'
 import { bundleFromMatches, routeMeta } from '@/server/render/seo/meta'
 import { safeRedirectPath } from '@/shared/utils/safe-url'
 import { LoginForm, LostPasswordForm, OtpForm, ResetPasswordForm } from '@/ui/admin/auth/AdminCredentialsForm'
@@ -127,11 +139,19 @@ export async function loader({ request, context }: Route.LoaderArgs) {
       pendingOtpEmail: pendingOtpUser.email,
       pendingOtpSentAt: pendingOtpUser.sentAt,
       authError: url.searchParams.get('error'),
+      passkeyEnabled: isPasskeyEnabled(),
     })
   }
 
   const authError = url.searchParams.get('error')
-  return data({ redirectTo, action: action ?? 'login', tokenError, resetToken, authError })
+  return data({
+    redirectTo,
+    action: action ?? 'login',
+    tokenError,
+    resetToken,
+    authError,
+    passkeyEnabled: isPasskeyEnabled(),
+  })
 }
 
 export async function action({ request, context }: Route.ActionArgs) {
@@ -228,7 +248,12 @@ export async function action({ request, context }: Route.ActionArgs) {
     }
 
     const hashed = await bcrypt.hash(newPasswordStr, PASSWORD_HASH_ROUNDS)
-    await updateUserById(db, result.userId, { password: hashed })
+    await updateUserById(db, result.userId, { password: hashed, passkeyForce: false })
+    try {
+      await deleteAllCredentials(db, result.userId)
+    } catch {
+      // Best-effort: don't block password reset if passkey cleanup fails.
+    }
 
     const dbUser = await findUserById(db, result.userId)
     if (!dbUser || !dbUser.role || dbUser.deletedAt) {
@@ -267,6 +292,49 @@ export async function action({ request, context }: Route.ActionArgs) {
 
   if (action === 'resendotp') {
     return toActionResult(await handleOtpResend(db, session, clientAddress, request))
+  }
+
+  if (action === 'passkey') {
+    const rawResponse = formData.get('passkey_response')
+    const rawChallenge = formData.get('passkey_challenge')
+    if (!rawResponse || typeof rawResponse !== 'string' || !rawChallenge || typeof rawChallenge !== 'string') {
+      return data({ error: 'Passkey 响应缺失。' })
+    }
+    let response: unknown
+    try {
+      response = JSON.parse(rawResponse)
+    } catch {
+      return data({ error: 'Passkey 响应格式错误。' })
+    }
+    const limit = await tryPasskeyAuthBeginRateLimit(clientAddress)
+    if (limit.exceeded) {
+      return data({ error: '操作过于频繁，请稍后再试。' })
+    }
+    try {
+      const result = await verifyAuthenticationResponse(
+        db,
+        response as Parameters<typeof verifyAuthenticationResponse>[1],
+        rawChallenge,
+      )
+      const established = await establishLoginSession(db, session, result.user, request, clientAddress, {
+        authMethod: 'passkey',
+      })
+      await updateLastLogin(db, BigInt(result.user.id), clientAddress, request.headers.get('User-Agent'))
+      recordAuditEvent({
+        action: 'login',
+        resourceType: 'session',
+        resourceId: session.id,
+        actorId: BigInt(result.user.id),
+        actorRole: result.user.role,
+        ipAddress: clientAddress,
+        userAgent: request.headers.get('User-Agent'),
+        details: { method: 'passkey' },
+      })
+      return redirect(redirectTo, { headers: { 'Set-Cookie': established.setCookie } })
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Passkey verification failed. Please try again.'
+      return data({ error: message })
+    }
   }
 
   return toActionResult(await handleCredentialLogin(db, session, clientAddress, request, formData, redirectTo), {
@@ -310,7 +378,7 @@ export default function LoginRoute({ actionData, loaderData }: Route.ComponentPr
         </div>
       ) : null}
 
-      {loaderData.action === 'login' && <LoginForm />}
+      {loaderData.action === 'login' && <LoginForm passkeyEnabled={loaderData.passkeyEnabled} />}
       {loaderData.action === 'verifyotp' && 'pendingOtpEmail' in loaderData && 'pendingOtpSentAt' in loaderData && (
         <OtpForm email={loaderData.pendingOtpEmail as string} sentAt={loaderData.pendingOtpSentAt as number} />
       )}

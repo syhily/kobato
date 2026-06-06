@@ -21,6 +21,8 @@ export const adminUserDto = z.object({
   commentCount: z.number().int().nonnegative(),
   pendingCount: z.number().int().nonnegative(),
   lastCommentAt: isoDateTime.nullable(),
+  passkeyCount: z.number().int().nonnegative(),
+  passkeyForce: z.boolean(),
 })
 
 // ─── parity assertion ──────────────────────────────────

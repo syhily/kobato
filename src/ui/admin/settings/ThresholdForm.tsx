@@ -109,6 +109,18 @@ const BUCKET_META: Record<BucketKey, { title: string; description: string; windo
       windowHint: '60 秒 - 24 小时。默认 30 分钟（1800）。',
       attemptsHint: '默认 5 次。',
     },
+    passkeyAuthBeginIp: {
+      title: 'Passkey 登录限流（按 IP）',
+      description: 'Passkey 认证挑战请求按客户端 IP 计数。',
+      windowHint: '60 秒 - 24 小时。默认 5 分钟（300）。',
+      attemptsHint: '默认 10 次。',
+    },
+    passkeyRegisterBeginIp: {
+      title: 'Passkey 注册限流（按 IP）',
+      description: 'Passkey 注册挑战请求按客户端 IP 计数。',
+      windowHint: '60 秒 - 24 小时。默认 5 分钟（300）。',
+      attemptsHint: '默认 10 次。',
+    },
   }
 
 function RateLimitBucketCard({ bucketKey, rateLimit }: { bucketKey: BucketKey; rateLimit: RateLimitSettings }) {

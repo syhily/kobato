@@ -2,6 +2,7 @@ import { ORPCError } from '@orpc/server'
 import { z } from 'zod'
 
 import { recordAuditEventFromContext } from '@/server/domains/audit/service'
+import { deleteAllCredentials, setPasskeyForce } from '@/server/domains/auth/passkey-service'
 import {
   fetchAdminUserDto,
   inviteAuthorWithRollback,
@@ -106,9 +107,30 @@ const sendPasswordReset = adminProc
     return { success: true }
   })
 
+const clearPasskeys = adminProc
+  .route({ method: 'POST', path: '/admin/users/clear-passkeys' })
+  .input(z.object({ id: z.string().min(1) }))
+  .output(z.object({ user: adminUserDto }))
+  .handler(async ({ input, context }) => {
+    const targetId = idFromString(input.id)
+    await deleteAllCredentials(context.db, targetId)
+    await setPasskeyForce(context.db, targetId, false)
+    const dto = await fetchAdminUserDto(context.db, targetId)
+    if (!dto) {
+      throw new ORPCError('NOT_FOUND', { message: '用户不存在' })
+    }
+    recordAuditEventFromContext(context, {
+      action: 'passkeys_cleared',
+      resourceType: 'user',
+      resourceId: input.id,
+    })
+    return { user: dto }
+  })
+
 export const adminUsersAdminRouter = {
   mute,
   updateRole,
   inviteAuthor,
   sendPasswordReset,
+  clearPasskeys,
 }

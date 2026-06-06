@@ -78,6 +78,8 @@ describe('adminUsersRouter.list', () => {
       commentCount: 0,
       pendingCount: 0,
       lastCommentAt: null,
+      passkeyCount: 0,
+      passkeyForce: false,
     }
     vi.mocked(usersService.listUsersForAdmin).mockResolvedValueOnce({
       users: [userRow as unknown as AdminUserRow],

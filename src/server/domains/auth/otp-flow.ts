@@ -270,6 +270,14 @@ export async function handleCredentialLogin(
     }
   }
 
+  if (dbUser.passkeyForce) {
+    return {
+      type: 'error',
+      message: '该账户已强制使用 Passkey 登录，请使用 Passkey 方式登录。',
+      setCookie: await commitSessionWithMaxAge(session),
+    }
+  }
+
   if (isOtpEnabled) {
     const [ipLimit, emailLimit] = await Promise.all([
       tryOtpSendRateLimit(clientAddress),

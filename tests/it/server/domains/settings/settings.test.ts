@@ -48,10 +48,9 @@ const { BLOG_SETTINGS_SNAPSHOT_SLOT } = await import('@/shared/config/snapshot')
 const { DomainError } = await import('@/server/infra/http/errors')
 const { getCacheSettings } = await import('@/shared/config/getters')
 
-// Bucketed settings fixture. The on-disk DB stores one row per section
-// (`blog.general`, `blog.assets`, …) so `bundleRows()` projects this
-// fully-populated bundle into the per-row format that
-// `findSettingsByScopePrefix` returns.
+// Bucketed settings fixture. The DB stores one row per section so
+// `bundleRows()` projects this fully-populated bundle into the per-row
+// format that `findSettingsByScopePrefix` returns.
 const fixtureBundle: BlogSettingsBundle = {
   siteIdentity: {
     title: 'fixture title',
@@ -64,12 +63,6 @@ const fixtureBundle: BlogSettingsBundle = {
     timeFormat: 'yyyy-LL-dd HH:mm',
     initialYear: 2024,
   },
-  // The merged `assets` bucket carries the music CDN host, the S3
-  // storage credentials, and the upload limits. The fixture mirrors
-  // the registry default for storage/upload (toggle OFF, every bucket
-  // field empty) so the snapshot loader's lazy backfill stays a no-op
-  // for these tests — leaving the section `null` here would make every
-  // `updateBlogSettingsSection` call write TWO rows.
   assets: {
     asset: { host: 'cdn.example.com', scheme: 'https' },
     storage: {
@@ -141,6 +134,8 @@ const fixtureBundle: BlogSettingsBundle = {
     otpVerifyIp: { windowSeconds: 60 * 5, maxAttempts: 5 },
     otpVerifyEmail: { windowSeconds: 60 * 5, maxAttempts: 5 },
     signInEmail: { windowSeconds: 60 * 30, maxAttempts: 5 },
+    passkeyAuthBeginIp: { windowSeconds: 60 * 5, maxAttempts: 10 },
+    passkeyRegisterBeginIp: { windowSeconds: 60 * 5, maxAttempts: 10 },
   },
   search: {
     search: {
@@ -175,11 +170,10 @@ const fixtureBundle: BlogSettingsBundle = {
     csrf: { enabled: true, exemptPaths: [] },
     cors: { enabled: false, origins: [] },
     otp: { enabled: false },
+    passkey: { enabled: false },
   },
 }
 
-// Decompose the bundle into the actual `Setting[]` rows the DB would
-// return — one row per non-null section, keyed by the registry scope.
 function bundleRows(bundle: BlogSettingsBundle): Setting[] {
   const map: Record<keyof BlogSettingsBundle, string> = {
     siteIdentity: 'blog.general',
@@ -275,13 +269,8 @@ describe('services/settings — updateBlogSettingsSection', () => {
     expect(settingQueries.upsertSetting).not.toHaveBeenCalled()
   })
 
-  it("writes the validated general payload (including locale + timeZone + timeFormat) to scope='blog.general' verbatim", async () => {
-    // The mock has to react to the upsert so that the post-write
-    // re-hydration sees the new value: the service writes through
-    // `upsertSetting()`, then immediately calls
-    // `findSettingsByScopePrefix()` to refresh the snapshot. Without
-    // this projection the hydrate would return the *old* fixture and
-    // the legacy aggregated wrapper would echo the stale title.
+  it("writes the validated general payload to scope='blog.general' verbatim", async () => {
+    // Mock react-to upsert so post-write re-hydration sees the new value.
     let currentRows = bundleRows(fixtureBundle)
     vi.mocked(settingQueries.findSettingsByScopePrefix).mockImplementation(async () => currentRows)
     vi.mocked(settingQueries.upsertSetting).mockImplementation(async (_db, data, updatedBy, scope) => {
@@ -321,19 +310,12 @@ describe('services/settings — updateBlogSettingsSection', () => {
     const [, data, updatedBy, scope] = vi.mocked(settingQueries.upsertSetting).mock.calls[0]
     expect(scope).toBe('blog.general')
     expect((data as Record<string, unknown>).title).toBe('雨帆')
-    // The row contents are the validated payload verbatim — no legacy
-    // `settings` nesting.
     expect((data as Record<string, unknown>).settings).toBeUndefined()
     expect(updatedBy).toBe(42n)
-    // The service now returns the refreshed bundle; the bucket
-    // corresponding to the saved section echoes the persisted payload.
     expect(next?.siteIdentity?.title).toBe('雨帆')
   })
 
   it("writes the assets patch to scope='blog.assets' only and preserves the unchanged secret", async () => {
-    // Seed the existing row with a non-empty secret so the
-    // "secretAccessKey omitted ⇒ keep existing" branch in
-    // `applyAssetsPatch` has something to copy back.
     const existing = bundleRows(fixtureBundle).map((row) =>
       row.scope === 'blog.assets'
         ? ({
@@ -408,9 +390,6 @@ describe('services/settings — updateBlogSettingsSection', () => {
       null,
     )
 
-    // The non-mail path never queries the existing row — the bug the
-    // refactor fixed (`SELECT ... merge ... UPSERT` racing concurrent
-    // edits) is no longer reachable.
     expect(settingQueries.findSettingByScope).not.toHaveBeenCalled()
 
     const [, data, , scope] = vi.mocked(settingQueries.upsertSetting).mock.calls[0]
@@ -424,7 +403,6 @@ describe('services/settings — updateBlogSettingsSection', () => {
 
 describe('services/settings — mail section', () => {
   it("writes the full mail patch to scope='blog.mail' when an apiKey is provided", async () => {
-    // The non-omitted-apiKey path doesn't read the existing row.
     vi.mocked(settingQueries.findSettingsByScopePrefix).mockResolvedValue(bundleRows(fixtureBundle))
     vi.mocked(settingQueries.upsertSetting).mockResolvedValue({
       id: 1n,
@@ -457,8 +435,6 @@ describe('services/settings — mail section', () => {
     expect(typeof mail.apiKey).toBe('string')
     expect((mail.apiKey as string).length).toBeGreaterThan(0)
     expect(mail.sender).toBe('noreply@example.com')
-    // The mail-section's "preserve existing apiKey" branch is the only
-    // one that reads back; supplying an explicit key skips it.
     expect(settingQueries.findSettingByScope).not.toHaveBeenCalled()
   })
 
@@ -491,8 +467,6 @@ describe('services/settings — mail section', () => {
       null,
     )
 
-    // The keep-existing branch fetches ONLY the mail row; no other
-    // section's row is touched.
     expect(settingQueries.findSettingByScope).toHaveBeenCalledExactlyOnceWith(db, 'blog.mail')
     const [, data] = vi.mocked(settingQueries.upsertSetting).mock.calls[0]
     const mail = (data as Record<string, unknown>).mail as Record<string, unknown>
@@ -558,6 +532,8 @@ describe('services/settings — rateLimit section', () => {
         otpSendEmail: { windowSeconds: 60 * 5, maxAttempts: 1 },
         otpVerifyIp: { windowSeconds: 60 * 5, maxAttempts: 5 },
         otpVerifyEmail: { windowSeconds: 60 * 5, maxAttempts: 5 },
+        passkeyAuthBeginIp: { windowSeconds: 60 * 5, maxAttempts: 10 },
+        passkeyRegisterBeginIp: { windowSeconds: 60 * 5, maxAttempts: 10 },
       },
       11n,
     )
@@ -569,8 +545,6 @@ describe('services/settings — rateLimit section', () => {
       signInIp: { windowSeconds: 600, maxAttempts: 3 },
       likeIncreaseIp: { windowSeconds: 60 * 5, maxAttempts: 100 },
     })
-    // The post-write refresh round-trips through the same fixture, so
-    // the returned bundle echoes the saved bucket.
     expect(next?.rateLimit?.signInIp).toEqual({ windowSeconds: 600, maxAttempts: 3 })
   })
 
@@ -967,11 +941,8 @@ describe('services/settings — snapshot reader', () => {
 
   it('hydrate rejects legacy 3-bucket cache rows so the registry default backfills the section', async () => {
     // Reproduces the prod crash where a legacy `blog.cache` row stored
-    // before `imageMeta` was added passed the old
-    // (object-only) probe, then crashed `<BucketCard>` on
-    // `allBuckets.imageMeta.prefix`. The strengthened probe rejects
-    // the row, the bucket is left null after the SELECT pass, and the
-    // backfill path writes the registry default in its place.
+    // before `imageMeta` was added passed the old probe, then crashed
+    // `<BucketCard>` on `allBuckets.imageMeta.prefix`.
     const legacyRow: Setting = {
       id: 99n,
       scope: 'blog.cache',
@@ -1009,14 +980,10 @@ describe('services/settings — warmBlogSettingsSnapshot', () => {
   it('catches a failed hydration without leaking an unhandled rejection', async () => {
     vi.mocked(settingQueries.findSettingsByScopePrefix).mockRejectedValue(new Error('DB pool exhausted'))
 
-    // Must not throw synchronously
     expect(() => warmBlogSettingsSnapshot(db)).not.toThrow()
 
-    // Allow the rejected microtask to propagate through .catch().
-    // If the rejection were not caught, Node would emit an unhandledRejection.
     await new Promise((resolve) => setTimeout(resolve, 0))
 
-    // The failed promise is evicted from the cache so the next request retries.
     expect(BLOG_SETTINGS_SNAPSHOT_SLOT.readHydration()).toBeUndefined()
   })
 })

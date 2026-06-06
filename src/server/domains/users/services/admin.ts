@@ -47,6 +47,8 @@ export interface AdminUserDto {
   commentCount: number
   pendingCount: number
   lastCommentAt: string | null
+  passkeyCount: number
+  passkeyForce: boolean
 }
 
 export function toAdminUserDto(row: AdminUserRow): AdminUserDto {
@@ -66,6 +68,8 @@ export function toAdminUserDto(row: AdminUserRow): AdminUserDto {
     commentCount: row.commentCount,
     pendingCount: row.pendingCount,
     lastCommentAt: row.lastCommentAt ? row.lastCommentAt.toISOString() : null,
+    passkeyCount: row.passkeyCount,
+    passkeyForce: row.passkeyForce,
   }
 }
 
@@ -122,9 +126,7 @@ export async function bulkDeleteCommentsForUser(db: NodePgDatabase, userId: bigi
   return { deleted }
 }
 
-// ---------------------------------------------------------------------------
 // Role update with guard
-// ---------------------------------------------------------------------------
 
 export async function updateUserRoleWithGuard(
   db: NodePgDatabase,
@@ -152,9 +154,7 @@ export async function updateUserRoleWithGuard(
   return updated
 }
 
-// ---------------------------------------------------------------------------
 // Invite author with rollback on email failure
-// ---------------------------------------------------------------------------
 
 export interface InviteAuthorResult {
   success: true
@@ -197,9 +197,7 @@ export async function inviteAuthorWithRollback(
   return { success: true, userId: user.id }
 }
 
-// ---------------------------------------------------------------------------
 // Send password reset
-// ---------------------------------------------------------------------------
 
 export async function sendPasswordResetToUser(
   db: NodePgDatabase,
@@ -220,9 +218,7 @@ export async function sendPasswordResetToUser(
   return { userId: user.id }
 }
 
-// ---------------------------------------------------------------------------
 // Update user by ID (admin patch)
-// ---------------------------------------------------------------------------
 
 export interface AdminUserPatch {
   name?: string
@@ -260,9 +256,7 @@ export async function updateUserByIdWithGuard(
   return updateUserById(db, targetId, dbPatch)
 }
 
-// ---------------------------------------------------------------------------
 // Soft delete user with guard
-// ---------------------------------------------------------------------------
 
 export async function softDeleteUserWithGuard(
   db: NodePgDatabase,

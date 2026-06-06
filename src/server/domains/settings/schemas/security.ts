@@ -30,5 +30,10 @@ export const securitySchema = z.object({
       enabled: coerceBoolean,
     })
     .default({ enabled: false }),
+  passkey: z
+    .object({
+      enabled: coerceBoolean,
+    })
+    .default({ enabled: false }),
 })
 export type SecurityInput = z.infer<typeof securitySchema>

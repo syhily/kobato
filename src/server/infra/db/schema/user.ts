@@ -38,6 +38,7 @@ export const user = pgTable(
     role: userRoleEnum('role'),
     isMuted: boolean('is_muted').default(false).notNull(),
     receiveEmail: boolean('receive_email').default(true),
+    passkeyForce: boolean('passkey_force').default(false).notNull(),
   },
   (table) => [
     index('idx_users_email').on(table.email),

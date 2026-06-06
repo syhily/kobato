@@ -16,7 +16,6 @@ import { ilikeEscape } from '@/shared/utils/escape-like'
 
 export const PASSWORD_HASH_ROUNDS = 12
 
-// Static dummy hash used for constant-time compare when email does not exist.
 const DUMMY_HASH = '$2b$12$EIX9MbHN0xG0yKqfNR4XPezHbhVzQzMn/37uD.LR8VgNTbQjD/II.'
 
 export async function hasAdmin(db: NodePgDatabase): Promise<boolean> {
@@ -61,6 +60,7 @@ const safeUserColumns = {
   role: user.role,
   isMuted: user.isMuted,
   receiveEmail: user.receiveEmail,
+  passkeyForce: user.passkeyForce,
 }
 
 export async function findSafeUserByEmail(db: NodePgDatabase, email: string): Promise<SafeUser | null> {
@@ -103,7 +103,6 @@ function timingFuzz(): Promise<void> {
 export async function verifyUserPassword(db: NodePgDatabase, email: string, password: string): Promise<User | null> {
   const u = await findUserByEmail(db, email)
   if (u === null || u.deletedAt !== null || u.password === null || u.password === '') {
-    // Dummy compare + random delay to keep timing constant and prevent email enumeration.
     await bcrypt.compare('dummy', DUMMY_HASH)
     await timingFuzz()
     return null
@@ -126,13 +125,6 @@ export async function findEmailById(db: NodePgDatabase, id: bigint): Promise<str
 }
 
 export interface InsertAdminOptions {
-  /**
-   * Optional homepage URL stored on the admin row. The install flow
-   * threads in the freshly-collected `website` field directly because
-   * the settings snapshot has not been written yet at that point. Other
-   * call sites (none today, but kept for symmetry) can omit this and
-   * fall back to the snapshot value, ultimately the empty string.
-   */
   link?: string
 }
 
@@ -148,9 +140,6 @@ export async function insertAdmin(
     name,
     email,
     emailVerified: false,
-    // The install flow passes `link` explicitly because the settings
-    // snapshot is not hydrated yet. Other callers fall back to the
-    // already-installed `website` value (or empty string pre-install).
     link: options.link ?? getBlogSettingsBundleSync()?.siteIdentity?.website ?? '',
     role: 'admin',
     password: hashedPassword,
@@ -223,6 +212,7 @@ export interface UserUpdate {
   // (which means "do not touch the column on this update").
   badgeTextColor?: string | null
   receiveEmail?: boolean
+  passkeyForce?: boolean
 }
 
 const BCRYPT_HASH_RE = /^\$2[aby]?\$\d+\$/
@@ -237,12 +227,6 @@ export async function updateUserById(db: NodePgDatabase, id: bigint, patch: User
   const updated = await db.update(user).set(patch).where(eq(user.id, id)).returning()
   return updated[0] ?? null
 }
-
-// --- Admin user-management helpers ----------------------------------------
-//
-// Everything below this line is consumed by the admin SPA only. The
-// public site never references these helpers, so they can evolve
-// independently without worrying about the public bundle surface.
 
 export type UserRoleFilter = 'all' | 'admin' | 'author' | 'visitor' | 'normal'
 
@@ -270,6 +254,8 @@ export interface AdminUserRow {
   commentCount: number
   pendingCount: number
   lastCommentAt: Date | null
+  passkeyCount: number
+  passkeyForce: boolean
 }
 
 function buildAdminUsersConditions(filters: AdminUsersListFilters) {
@@ -311,16 +297,6 @@ export async function countAdminUsers(db: NodePgDatabase, filters: AdminUsersLis
 
 export type AdminUsersSortOrder = 'recent' | 'commentCount'
 
-// Drizzle 1.0 wires aggregate functions (`max`, `min`, …) to call
-// `column.mapFromDriverValue()` on the result. `PgTimestamp` does not
-// override that hook — its driver-value normalisation lives on the
-// dialect codec layer instead, which the aggregate path bypasses. The
-// `node-postgres` session also disables pg's built-in TIMESTAMP/TIMESTAMPTZ
-// type parsers (so the column codec layer can handle them uniformly), so
-// without this coercion the raw text from pg leaks all the way out to
-// callers that expect a `Date` (manifesting as
-// `lastCommentAt.toISOString is not a function`). A fresh SQL fragment is
-// returned per call to avoid sharing decoder state across query builds.
 function lastCommentAtAggregate() {
   return max(comment.createdAt).mapWith((value: Date | string) => (value instanceof Date ? value : new Date(value)))
 }
@@ -333,14 +309,6 @@ export async function listAdminUsers(
   sortBy: AdminUsersSortOrder = 'recent',
 ): Promise<AdminUserRow[]> {
   const conditions = buildAdminUsersConditions(filters)
-  // Aggregate comment counts and last-comment timestamp per user via a
-  // single LEFT JOIN + GROUP BY, so the listing query stays at one
-  // round-trip even with the comment metadata columns.
-  //
-  // The aggregated `commentCount` column is reused by the optional
-  // `commentCount` sort below — we name it explicitly with `sql.raw` so
-  // we can ORDER BY the alias instead of repeating the FILTER clause
-  // (PostgreSQL accepts `ORDER BY <alias>` after `GROUP BY`).
   const commentCountSql = sql<number>`COUNT(${comment.id}) FILTER (WHERE ${comment.deletedAt} IS NULL)`
   const rows = await db
     .select({
@@ -359,14 +327,13 @@ export async function listAdminUsers(
       commentCount: commentCountSql,
       pendingCount: sql<number>`COUNT(${comment.id}) FILTER (WHERE ${comment.deletedAt} IS NULL AND ${comment.isPending} = TRUE)`,
       lastCommentAt: lastCommentAtAggregate(),
+      passkeyCount: sql<number>`(SELECT COUNT(*) FROM passkey_credential WHERE passkey_credential.user_id = ${user.id})`,
+      passkeyForce: user.passkeyForce,
     })
     .from(user)
     .leftJoin(comment, eq(comment.userId, user.id))
     .where(conditions.length ? and(...conditions) : undefined)
     .groupBy(user.id)
-    // Tiebreak with `user.id` desc in both modes so paginated results
-    // stay deterministic when several users share the same primary key
-    // (zero comments → identical `commentCount`; identical createdAt).
     .orderBy(
       ...(sortBy === 'commentCount' ? [desc(commentCountSql), desc(user.id)] : [desc(user.createdAt), desc(user.id)]),
     )
@@ -378,6 +345,7 @@ export async function listAdminUsers(
     role: row.role ?? null,
     commentCount: Number(row.commentCount ?? 0),
     pendingCount: Number(row.pendingCount ?? 0),
+    passkeyCount: Number(row.passkeyCount ?? 0),
   }))
 }
 
@@ -399,6 +367,8 @@ export async function findAdminUserById(db: NodePgDatabase, id: bigint): Promise
       commentCount: sql<number>`COUNT(${comment.id}) FILTER (WHERE ${comment.deletedAt} IS NULL)`,
       pendingCount: sql<number>`COUNT(${comment.id}) FILTER (WHERE ${comment.deletedAt} IS NULL AND ${comment.isPending} = TRUE)`,
       lastCommentAt: lastCommentAtAggregate(),
+      passkeyCount: sql<number>`(SELECT COUNT(*) FROM passkey_credential WHERE passkey_credential.user_id = ${user.id})`,
+      passkeyForce: user.passkeyForce,
     })
     .from(user)
     .leftJoin(comment, eq(comment.userId, user.id))
@@ -414,6 +384,7 @@ export async function findAdminUserById(db: NodePgDatabase, id: bigint): Promise
     role: row.role ?? null,
     commentCount: Number(row.commentCount ?? 0),
     pendingCount: Number(row.pendingCount ?? 0),
+    passkeyCount: Number(row.passkeyCount ?? 0),
   }
 }
 
@@ -432,11 +403,6 @@ export async function restoreUserById(db: NodePgDatabase, id: bigint): Promise<b
 }
 
 export async function setUserMuted(db: NodePgDatabase, id: bigint, muted: boolean): Promise<User | null> {
-  // Admins are exempt from muting; the admin UI hides the action, but
-  // this guard makes the rule explicit at the storage boundary so it
-  // cannot be bypassed by a hand-crafted API request. Reverse-asserts
-  // on `role != 'admin'` so future roles (e.g. `editor`) inherit the
-  // mute-eligibility without a one-by-one update here.
   const updated = await db
     .update(user)
     .set({ isMuted: muted })

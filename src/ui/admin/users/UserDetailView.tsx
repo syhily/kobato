@@ -139,6 +139,13 @@ export function UserDetailView({ userId, navigate }: UserDetailViewProps) {
     },
   })
 
+  const clearPasskeysMutation = useMutation({
+    mutationFn: (vars: { userId: string }) => orpc.admin.users.clearPasskeys({ id: vars.userId }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['admin', 'user'] })
+    },
+  })
+
   if (!user) {
     return <UserDetailSkeleton />
   }
@@ -235,6 +242,10 @@ export function UserDetailView({ userId, navigate }: UserDetailViewProps) {
                   <span className="text-muted-foreground">注册时间</span>
                   <span>{formatLocalDate(new Date(user.createdAt), DATE_FORMAT, config)}</span>
                 </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Passkey</span>
+                  <span className="font-medium">{user.passkeyCount}</span>
+                </div>
               </CardContent>
             </Card>
 
@@ -252,6 +263,7 @@ export function UserDetailView({ userId, navigate }: UserDetailViewProps) {
               deleteMutation={deleteMutation}
               restoreMutation={restoreMutation}
               bulkDeleteMutation={bulkDeleteMutation}
+              clearPasskeysMutation={clearPasskeysMutation}
             />
           </div>
 

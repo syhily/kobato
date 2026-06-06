@@ -55,6 +55,8 @@ export const RATE_LIMIT_BUCKET_KEYS = [
   'otpSendEmail',
   'otpVerifyIp',
   'otpVerifyEmail',
+  'passkeyAuthBeginIp',
+  'passkeyRegisterBeginIp',
 ] as const
 
 export const rateLimitSchema = z.object(

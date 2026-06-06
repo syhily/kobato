@@ -36,6 +36,8 @@ export interface AdminUserDto {
   commentCount: number
   pendingCount: number
   lastCommentAt: string | null
+  passkeyCount: number
+  passkeyForce: boolean
 }
 
 export interface UpdateUserInput {
