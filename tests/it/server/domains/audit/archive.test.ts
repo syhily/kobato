@@ -37,7 +37,7 @@ vi.mock('@/server/infra/logger', () => ({
   getLogger: () => ({ error: vi.fn(), warn: vi.fn(), info: vi.fn(), debug: vi.fn() }),
 }))
 
-vi.mock('@/server/domains/audit/service', () => ({ recordAuditEvent: vi.fn() }))
+vi.mock('@/server/domains/audit/services/record', () => ({ recordAuditEvent: vi.fn() }))
 
 const db = {
   delete: vi.fn(() => ({ where: dbDeleteWhere })),

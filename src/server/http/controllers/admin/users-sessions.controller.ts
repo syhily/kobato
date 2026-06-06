@@ -1,12 +1,15 @@
 import { ORPCError } from '@orpc/server'
 import { z } from 'zod'
 
-import { recordAuditEventFromContext } from '@/server/domains/audit/service'
+import { recordAuditEventFromContext } from '@/server/domains/audit/services/record'
 import { revokeSessionWithGuard } from '@/server/domains/auth/service'
 import { revokeAllSessionsOfUser } from '@/server/domains/auth/session-storage'
-import { bulkApproveCommentsForUser, bulkDeleteCommentsForUser } from '@/server/domains/users/services/admin'
+import {
+  bulkApproveCommentsForUser,
+  bulkDeleteCommentsForUser,
+  findUserById,
+} from '@/server/domains/users/services/admin'
 import { adminProc } from '@/server/http/orpc-base'
-import { findUserById } from '@/server/infra/db/operations/user'
 import { idFromString } from '@/shared/utils/id'
 
 const userIdInput = z.object({ userId: z.string().min(1) })

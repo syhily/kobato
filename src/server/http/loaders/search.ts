@@ -5,7 +5,7 @@ import { redirect } from 'react-router'
 
 import type { ListingPageLoaderData } from '@/server/http/loaders/listing'
 
-import { recordAuditEvent } from '@/server/domains/audit/service'
+import { recordAuditEvent } from '@/server/domains/audit/services/record'
 import { getClientPostsWithMetadata } from '@/server/domains/posts/repos/public-query/listing'
 import { getPostsBySlugs } from '@/server/domains/posts/repos/public-query/misc'
 import { parseListingPage } from '@/server/http/loaders/pagination'

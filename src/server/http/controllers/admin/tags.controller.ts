@@ -1,7 +1,7 @@
 import { ORPCError } from '@orpc/server'
 import { z } from 'zod'
 
-import { recordAuditEventFromContext } from '@/server/domains/audit/service'
+import { recordAuditEventFromContext } from '@/server/domains/audit/services/record'
 import { deleteAdminTag, listTagsForAdmin, upsertAdminTag } from '@/server/domains/taxonomies/tags/service'
 import { authorProc } from '@/server/http/orpc-base'
 import { adminTagDto } from '@/shared/contracts/tags'

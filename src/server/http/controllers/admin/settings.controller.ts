@@ -3,12 +3,12 @@ import { z } from 'zod'
 
 import type { SettingsSection } from '@/shared/config/sections'
 
-import { recordAuditEventFromContext } from '@/server/domains/audit/service'
+import { recordAuditEventFromContext } from '@/server/domains/audit/services/record'
 import {
   getAdminBlogSettings,
   redactSecretsFromBundle,
   updateBlogSettingsSection,
-} from '@/server/domains/settings/service'
+} from '@/server/domains/settings/services/core'
 import { getSupportedTimeZones } from '@/server/domains/settings/timezones'
 import { adminProc } from '@/server/http/orpc-base'
 import { DomainError } from '@/server/infra/http/errors'

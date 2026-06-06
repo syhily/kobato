@@ -4,7 +4,7 @@ import { bodyLimit } from 'hono/body-limit'
 import type { Env } from '@/server/http/context'
 
 import { clearBrandingAsset, isBrandingSlot, uploadBrandingAsset } from '@/server/domains/assets/management'
-import { recordAuditEvent } from '@/server/domains/audit/service'
+import { recordAuditEvent } from '@/server/domains/audit/services/record'
 import { requireRoleMw } from '@/server/http/middlewares/hono-rbac'
 import { getLogger } from '@/server/infra/logger'
 

@@ -58,7 +58,7 @@ vi.mock('@/server/domains/settings/snapshot', () => ({
   refreshBlogSettings: (...args: unknown[]) => mockRefreshBlogSettings(...args),
 }))
 
-vi.mock('@/server/domains/audit/service', () => ({
+vi.mock('@/server/domains/audit/services/record', () => ({
   recordAuditEvent: (...args: unknown[]) => mockRecordAuditEvent(...args),
 }))
 

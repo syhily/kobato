@@ -17,7 +17,7 @@ import { describe, expect, it, vi } from 'vitest'
 
 // Stub the heavy backends so we can assert routing without running the
 // real rendering pipeline.
-vi.mock('@/server/render/avatar/cache', () => ({
+vi.mock('@/server/http/resources/avatar-cache', () => ({
   AvatarStatus: { HAVE_AVATAR: 0, NO_AVATAR: 1 },
   cacheAvatar: vi.fn(),
   loadAvatar: vi.fn().mockResolvedValue(null),
@@ -34,7 +34,7 @@ vi.mock('@/server/render/avatar/fetch', () => ({
 vi.mock('@/server/render/og/render', () => ({
   drawOpenGraph: vi.fn().mockResolvedValue(Buffer.from([0x89, 0x50, 0x4e, 0x47])),
 }))
-vi.mock('@/server/render/calendar/serve', () => ({
+vi.mock('@/server/http/resources/calendar', () => ({
   serveCalendar: vi.fn().mockImplementation(
     async (params: { year?: string; time?: string }) =>
       new Response(JSON.stringify(params), {
@@ -105,13 +105,13 @@ describe('imagesRouter og', () => {
 
 describe('imagesRouter calendar', () => {
   it('extracts year + time from `/images/calendar/<year>/<time>.png`', async () => {
-    const { serveCalendar } = await import('@/server/render/calendar/serve')
+    const { serveCalendar } = await import('@/server/http/resources/calendar')
     await imagesRouter.request('/images/calendar/2024/12-25.png')
     expect(vi.mocked(serveCalendar)).toHaveBeenCalledWith({ year: '2024', time: '12-25' }, 'light', expect.anything())
   })
 
   it('routes the dark variant to the dark theme', async () => {
-    const { serveCalendar } = await import('@/server/render/calendar/serve')
+    const { serveCalendar } = await import('@/server/http/resources/calendar')
     await imagesRouter.request('/images/calendar/dark/2024/01-01.png')
     expect(vi.mocked(serveCalendar)).toHaveBeenCalledWith({ year: '2024', time: '01-01' }, 'dark', expect.anything())
   })

@@ -1,7 +1,7 @@
 import { ORPCError } from '@orpc/server'
 import { z } from 'zod'
 
-import { recordAuditEventFromContext } from '@/server/domains/audit/service'
+import { recordAuditEventFromContext } from '@/server/domains/audit/services/record'
 import {
   deleteAdminCategory,
   reorderAdminCategories,

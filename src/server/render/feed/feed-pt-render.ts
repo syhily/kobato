@@ -16,8 +16,8 @@ import type {
   TwoColumnBlock,
 } from '@/shared/pt/schema'
 
+import { findMusicByPlayerIds } from '@/server/domains/music/services/read'
 import { safeBuildMusicPublicUrl } from '@/server/domains/music/storage'
-import { findMusicByPlayerIds } from '@/server/infra/db/operations/music'
 import { deriveSlug } from '@/server/infra/slug'
 import { requireBlogSettingsSection } from '@/shared/config/getters'
 import { collectHeadingSlotsInPortableTextRenderOrder } from '@/shared/pt/utils'

@@ -2,7 +2,7 @@ import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
 import type { ContentRow } from '@/server/infra/db/types'
 
-import { findContentById, findContentsByIds } from '@/server/domains/content/repo'
+import { findContentById, findContentsByIds } from '@/server/domains/content/repos/query'
 import { isCatalogVisible } from '@/server/domains/content/schema'
 import { toCmsPost, type CmsPost } from '@/server/domains/posts/projection'
 import { listPublicPostMetas } from '@/server/domains/posts/repos/public-query/listing'

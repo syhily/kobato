@@ -7,7 +7,7 @@ import superjson from 'superjson'
 
 import type { ArchiveResult, CleanupResult } from '@/server/domains/audit/types'
 
-import { recordAuditEvent } from '@/server/domains/audit/service'
+import { recordAuditEvent } from '@/server/domains/audit/services/record'
 import { auditLog } from '@/server/infra/db/schema/config'
 import { getLogger } from '@/server/infra/logger'
 import { deleteS3Objects, listS3Objects, putS3Object } from '@/server/infra/storage/s3-client'

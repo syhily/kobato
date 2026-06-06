@@ -2,7 +2,7 @@ import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
 import type { BlogSession } from '@/server/domains/auth/session-storage'
 
-import { recordAuditEvent } from '@/server/domains/audit/service'
+import { recordAuditEvent } from '@/server/domains/audit/services/record'
 import { establishLoginSession } from '@/server/domains/auth/primitives'
 import { signInSchema } from '@/server/domains/auth/schema'
 import { commitSessionWithMaxAge } from '@/server/domains/auth/session-storage'

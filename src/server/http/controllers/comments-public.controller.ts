@@ -3,7 +3,7 @@ import { z } from 'zod'
 
 import type { CommentReq } from '@/shared/types/comments'
 
-import { recordAuditEventFromContext } from '@/server/domains/audit/service'
+import { recordAuditEventFromContext } from '@/server/domains/audit/services/record'
 import { userSession } from '@/server/domains/auth/primitives'
 import { asCommentItemWire, asCommentItemsWire } from '@/server/domains/comments/projection'
 import { verifyCommentAccess } from '@/server/domains/comments/services/access'

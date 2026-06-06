@@ -4,12 +4,8 @@ import type { PublishLatestResult, SaveDraftResult } from '@/server/domains/page
 import type { ContentRow, PostMetaRow } from '@/server/infra/db/types'
 import type { PortableTextBody } from '@/shared/pt/schema'
 
-import {
-  findContentById,
-  findLatestDraft,
-  publishLatestRevision,
-  saveDraftRevision,
-} from '@/server/domains/content/repo'
+import { publishLatestRevision, saveDraftRevision } from '@/server/domains/content/repos/mutate'
+import { findContentById, findLatestDraft } from '@/server/domains/content/repos/query'
 import { canonicalizeBodyOrThrow } from '@/server/domains/content/save-helpers'
 import { syncLibraryImageBlocks } from '@/server/domains/pages/services/image-sync'
 import { toAdminRevisionDto, toCmsPost, type CmsPost } from '@/server/domains/posts/projection'

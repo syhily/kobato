@@ -1,7 +1,7 @@
 import { computeNextRun } from '@/server/domains/backup/scheduler-utils'
 import { createBackup, cleanupOldBackups } from '@/server/domains/backup/services/backup'
 import { checkPgToolsAvailable } from '@/server/domains/backup/services/shared'
-import { registerSectionChangeHandler } from '@/server/domains/settings/service'
+import { registerSectionChangeHandler } from '@/server/domains/settings/services/core'
 import { registerShutdownHook } from '@/server/infra/lifecycle'
 import { getLogger } from '@/server/infra/logger'
 import { getBlogSettingsBundleSync } from '@/shared/config/getters'

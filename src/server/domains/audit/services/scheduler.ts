@@ -2,7 +2,7 @@ import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 import type { Pool } from 'pg'
 
 import { runArchiveJob } from '@/server/domains/audit/services/archive'
-import { registerSectionChangeHandler } from '@/server/domains/settings/service'
+import { registerSectionChangeHandler } from '@/server/domains/settings/services/core'
 import { registerShutdownHook } from '@/server/infra/lifecycle'
 import { getLogger } from '@/server/infra/logger'
 import { getBlogSettingsBundleSync } from '@/shared/config/getters'

@@ -3,7 +3,12 @@ import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 import bcrypt from 'bcryptjs'
 
 import { revokeAllSessionsOfUser } from '@/server/domains/auth/session-storage'
-import { findUserById, PASSWORD_HASH_ROUNDS, updateUserById } from '@/server/infra/db/operations/user'
+import {
+  findUserById,
+  findUserIdByEmail,
+  PASSWORD_HASH_ROUNDS,
+  updateUserById,
+} from '@/server/infra/db/operations/user'
 import { DomainError } from '@/server/infra/http/errors'
 
 export interface AccountProfileInput {
@@ -75,3 +80,5 @@ export async function updateAccountPassword(
   await updateUserById(db, dbUser.id, { password: hashed })
   await revokeAllSessionsOfUser(dbUser.id, currentSessionId)
 }
+
+export { findUserById, findUserIdByEmail }

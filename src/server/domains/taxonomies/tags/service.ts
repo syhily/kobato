@@ -282,3 +282,5 @@ export async function getTagsByNames(db: NodePgDatabase, names: readonly string[
 
   return uniqueNames.map((name) => tagMap.get(name)).filter(Boolean) as Tag[]
 }
+
+export { findTagByName, findTagBySlug }

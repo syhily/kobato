@@ -2,7 +2,7 @@ import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
 import type { ListPostsFilters } from '@/server/domains/posts/repos/shared'
 
-import { findContentById, findLatestRevision, listRevisions } from '@/server/domains/content/repo'
+import { findContentById, findLatestRevision, listRevisions } from '@/server/domains/content/repos/query'
 import {
   toAdminPostDto,
   toAdminRevisionDto,

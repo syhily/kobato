@@ -5,10 +5,12 @@ import { Feed } from 'feed'
 import type { Page, Post } from '@/shared/types/catalog'
 
 import { listPublicPostsWithContent } from '@/server/domains/posts/repos/public-query/feed'
-import { listAllCategories } from '@/server/domains/taxonomies/categories/services/query'
-import { getTagsByNames } from '@/server/domains/taxonomies/tags/service'
-import { findCategoryByName, findCategoryBySlug } from '@/server/infra/db/operations/category'
-import { findTagByName, findTagBySlug } from '@/server/infra/db/operations/tag'
+import {
+  findCategoryByName,
+  findCategoryBySlug,
+  listAllCategories,
+} from '@/server/domains/taxonomies/categories/services/query'
+import { findTagByName, findTagBySlug, getTagsByNames } from '@/server/domains/taxonomies/tags/service'
 import { DomainError } from '@/server/infra/http/errors'
 import { renderPortableTextToHtml } from '@/server/render/feed/feed-pt-render'
 import { requireBlogSettingsSection } from '@/shared/config/getters'

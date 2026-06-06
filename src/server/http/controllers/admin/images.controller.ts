@@ -1,7 +1,7 @@
 import { ORPCError } from '@orpc/server'
 import { z } from 'zod'
 
-import { recordAuditEventFromContext } from '@/server/domains/audit/service'
+import { recordAuditEventFromContext } from '@/server/domains/audit/services/record'
 import { userSession } from '@/server/domains/auth/primitives'
 import { uploadImageMetadataSchema } from '@/server/domains/images/schema'
 import { deleteImage, recalculateImageThumbhash, updateImageNote } from '@/server/domains/images/services/admin-mutate'

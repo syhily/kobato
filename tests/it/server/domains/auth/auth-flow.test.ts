@@ -42,7 +42,7 @@ vi.mock('@/server/infra/rate-limit', () => ({
   tryRateLimit: vi.fn(async () => ({ count: 1, exceeded: false })),
 }))
 
-vi.mock('@/server/domains/audit/service', () => ({
+vi.mock('@/server/domains/audit/services/record', () => ({
   recordAuditEvent: vi.fn(),
   buildAuditContext: vi.fn(),
   recordAuditEventFromContext: vi.fn(),

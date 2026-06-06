@@ -2,7 +2,7 @@ import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
 import { Buffer } from 'node:buffer'
 
-import { findEmailById } from '@/server/infra/db/operations/user'
+import { findEmailById } from '@/server/domains/users/services/admin'
 import { compressImage } from '@/server/render/image-compress'
 import { requireBlogSettingsSection } from '@/shared/config/getters'
 import { idFromString } from '@/shared/utils/id'

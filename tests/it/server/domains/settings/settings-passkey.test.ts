@@ -19,7 +19,7 @@ beforeEach(async () => {
   await db.delete(setting)
 })
 
-const { updateBlogSettingsSection } = await import('@/server/domains/settings/service')
+const { updateBlogSettingsSection } = await import('@/server/domains/settings/services/core')
 const { setBlogSettingsBundleForTests } = await import('@/server/domains/settings/snapshot')
 
 describe('services/settings — passkey domain validation', () => {

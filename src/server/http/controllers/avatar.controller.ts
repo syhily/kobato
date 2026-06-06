@@ -1,8 +1,8 @@
 import { z } from 'zod'
 
+import { findUserIdByEmail } from '@/server/domains/users/services/account'
 import { publicProc } from '@/server/http/orpc-base'
-import { findUserIdByEmail } from '@/server/infra/db/operations/user'
-import { AvatarStatus, cacheAvatar } from '@/server/render/avatar/cache'
+import { AvatarStatus, cacheAvatar } from '@/server/http/resources/avatar-cache'
 import { fetchQQAvatarImage, isQQEmail } from '@/server/render/avatar/fetch'
 import { requireBlogSettingsSection } from '@/shared/config/getters'
 import { encodedEmail } from '@/shared/utils/security'

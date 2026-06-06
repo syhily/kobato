@@ -1,6 +1,6 @@
 import { z } from 'zod'
 
-import { recordAuditEventFromContext } from '@/server/domains/audit/service'
+import { recordAuditEventFromContext } from '@/server/domains/audit/services/record'
 import { reindexSearchBatch } from '@/server/domains/posts/services/search-reindex'
 import { adminProc } from '@/server/http/orpc-base'
 import { getKatexRenderer, type KatexRenderer } from '@/server/infra/pt/katex-renderer'

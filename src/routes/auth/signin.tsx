@@ -1,7 +1,7 @@
 import bcrypt from 'bcryptjs'
 import { data, redirect } from 'react-router'
 
-import { recordAuditEvent } from '@/server/domains/audit/service'
+import { recordAuditEvent } from '@/server/domains/audit/services/record'
 import { getDbFromContext, getRouteRequestContext } from '@/server/domains/auth/context'
 import { validateCsrfForAction } from '@/server/domains/auth/csrf'
 import {

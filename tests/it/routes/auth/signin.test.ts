@@ -124,7 +124,7 @@ vi.mock('@/server/domains/auth/primitives', async () => {
   }
 })
 
-vi.mock('@/server/domains/audit/service', () => ({
+vi.mock('@/server/domains/audit/services/record', () => ({
   recordAuditEvent: vi.fn(() => undefined),
 }))
 

@@ -21,19 +21,15 @@ const mocks = vi.hoisted(() => ({
 vi.mock('@/server/domains/posts/repos/public-query/feed', () => ({
   listPublicPostsWithContent: mocks.listPublicPostsWithContent,
 }))
-vi.mock('@/server/infra/db/operations/category', () => ({
+vi.mock('@/server/domains/taxonomies/categories/services/query', () => ({
+  listAllCategories: mocks.listAllCategories,
   findCategoryBySlug: mocks.findCategoryBySlug,
   findCategoryByName: mocks.findCategoryByName,
 }))
-vi.mock('@/server/infra/db/operations/tag', () => ({
-  findTagBySlug: mocks.findTagBySlug,
-  findTagByName: mocks.findTagByName,
-}))
-vi.mock('@/server/domains/taxonomies/categories/services/query', () => ({
-  listAllCategories: mocks.listAllCategories,
-}))
 vi.mock('@/server/domains/taxonomies/tags/service', () => ({
   getTagsByNames: mocks.getTagsByNames,
+  findTagBySlug: mocks.findTagBySlug,
+  findTagByName: mocks.findTagByName,
 }))
 
 const db = {} as NodePgDatabase

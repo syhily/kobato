@@ -3,7 +3,7 @@ import type { RegistrationResponseJSON } from '@simplewebauthn/server'
 import { ORPCError } from '@orpc/server'
 import { z } from 'zod'
 
-import { recordAuditEventFromContext } from '@/server/domains/audit/service'
+import { recordAuditEventFromContext } from '@/server/domains/audit/services/record'
 import { isPasskeyEnabled } from '@/server/domains/auth/passkey-gate'
 import {
   deleteCredential,
@@ -14,9 +14,8 @@ import {
 } from '@/server/domains/auth/passkey-service'
 import { findSessionMeta, revokeSessionById } from '@/server/domains/auth/repo'
 import { MIN_PASSWORD_LENGTH, PASSWORD_COMPLEXITY_RE } from '@/server/domains/auth/schema'
-import { updateAccountPassword, updateAccountProfile } from '@/server/domains/users/services/account'
+import { findUserById, updateAccountPassword, updateAccountProfile } from '@/server/domains/users/services/account'
 import { authedProc } from '@/server/http/orpc-base'
-import { findUserById } from '@/server/infra/db/operations/user'
 import {
   tryPasskeyDeleteRateLimit,
   tryPasskeyRegisterBeginRateLimit,

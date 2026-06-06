@@ -62,7 +62,7 @@ vi.mock('@/server/domains/auth/primitives', async (importOriginal) => {
   }
 })
 
-vi.mock('@/server/domains/audit/service', () => ({
+vi.mock('@/server/domains/audit/services/record', () => ({
   recordAuditEvent: mockHandles.recordAuditEvent,
 }))
 

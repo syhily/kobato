@@ -1,6 +1,6 @@
 import { z } from 'zod'
 
-import { recordAuditEventFromContext } from '@/server/domains/audit/service'
+import { recordAuditEventFromContext } from '@/server/domains/audit/services/record'
 import { adminProc } from '@/server/http/orpc-base'
 import { clearAdminCache, getAdminCacheStats } from '@/server/infra/redis/admin-ops'
 import { adminCacheStatsDto, clearCacheResultDto } from '@/shared/contracts/cache'

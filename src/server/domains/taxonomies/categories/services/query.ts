@@ -11,6 +11,7 @@ import { toAdminCategoryDto } from '@/server/domains/taxonomies/categories/proje
 import {
   type AdminCategoriesListFilters,
   findCategoryByName,
+  findCategoryBySlug,
   listAdminCategoryRows,
 } from '@/server/infra/db/operations/category'
 import { post as postMetaTable } from '@/server/infra/db/schema/post'
@@ -111,3 +112,5 @@ export async function getCategoryLinks(db: NodePgDatabase, names: readonly strin
   }
   return result
 }
+
+export { findCategoryByName, findCategoryBySlug }

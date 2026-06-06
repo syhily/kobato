@@ -69,7 +69,7 @@ const db = {
 } as unknown as NodePgDatabase
 const pool = {} as any
 
-const { updateBlogSettingsSection } = await import('@/server/domains/settings/service')
+const { updateBlogSettingsSection } = await import('@/server/domains/settings/services/core')
 
 describe('settings service — ENCRYPTION_KEY guard', () => {
   beforeEach(() => {

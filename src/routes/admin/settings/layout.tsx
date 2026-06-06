@@ -6,7 +6,7 @@ type BundleWithIndex = BlogSettingsBundle & Record<string, unknown>
 
 import { getDbFromContext } from '@/server/domains/auth/context'
 import { SECTION_REGISTRY, SETTINGS_SECTIONS } from '@/server/domains/settings/sections'
-import { getAdminBlogSettings } from '@/server/domains/settings/service'
+import { getAdminBlogSettings } from '@/server/domains/settings/services/core'
 import { getSupportedTimeZones } from '@/server/domains/settings/timezones'
 import { upsertSetting } from '@/server/infra/db/operations/setting'
 import { SECTION_TO_BUNDLE_KEY } from '@/shared/config/sections'

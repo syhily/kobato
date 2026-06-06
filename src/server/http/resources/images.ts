@@ -7,10 +7,11 @@ import type { Env } from '@/server/http/context'
 
 import { findPageBySlug } from '@/server/domains/pages/repo'
 import { findPostBySlug } from '@/server/domains/posts/repos/single'
-import { findCategoryBySlug } from '@/server/infra/db/operations/category'
+import { findCategoryBySlug } from '@/server/domains/taxonomies/categories/services/query'
+import { AvatarStatus, cacheAvatar, loadAvatar } from '@/server/http/resources/avatar-cache'
+import { serveCalendar } from '@/server/http/resources/calendar'
 import { tryResourceRateLimit } from '@/server/infra/rate-limit'
 import { loadBuffer } from '@/server/infra/redis/buffer-cache'
-import { AvatarStatus, cacheAvatar, loadAvatar } from '@/server/render/avatar/cache'
 import {
   defaultAvatarUrl,
   fetchAvatarImage,
@@ -18,7 +19,6 @@ import {
   isQQEmail,
   resolveAvatarInfo,
 } from '@/server/render/avatar/fetch'
-import { serveCalendar } from '@/server/render/calendar/serve'
 import { drawOpenGraph } from '@/server/render/og/render'
 import { getCacheSettings, requireBlogSettingsSection } from '@/shared/config/getters'
 import { joinUrl } from '@/shared/utils/urls'

@@ -5,7 +5,7 @@ import path from 'node:path'
 
 import type { Env } from '@/server/http/context'
 
-import { recordAuditEvent } from '@/server/domains/audit/service'
+import { recordAuditEvent } from '@/server/domains/audit/services/record'
 import { requireRoleMw } from '@/server/http/middlewares/hono-rbac'
 import { getLogger } from '@/server/infra/logger'
 import { FONT_DIR } from '@/server/infra/paths'

@@ -2,7 +2,7 @@ import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
 import type { SafeUser } from '@/server/infra/db/operations/user'
 
-import { recordAuditEvent } from '@/server/domains/audit/service'
+import { recordAuditEvent } from '@/server/domains/audit/services/record'
 import { type Role } from '@/server/domains/auth/rbac'
 import { recordSessionActivity, recordSessionLogin } from '@/server/domains/auth/repo'
 import {

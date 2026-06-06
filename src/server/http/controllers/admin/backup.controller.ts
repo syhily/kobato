@@ -1,6 +1,6 @@
 import { z } from 'zod'
 
-import { recordAuditEvent, recordAuditEventFromContext } from '@/server/domains/audit/service'
+import { recordAuditEvent, recordAuditEventFromContext } from '@/server/domains/audit/services/record'
 import { performSafeRestore } from '@/server/domains/backup/restore-orchestrator'
 import {
   buildBackupS3Key,

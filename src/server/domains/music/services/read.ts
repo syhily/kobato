@@ -9,6 +9,7 @@ import {
   countAdminMusic,
   findAdminMusicRowById,
   findMusicByPlayerId,
+  findMusicByPlayerIds,
   listAdminMusicRows,
 } from '@/server/infra/db/operations/music'
 
@@ -79,3 +80,5 @@ function clampLimit(value: number | undefined): number {
   }
   return Math.max(1, Math.min(100, Math.floor(value)))
 }
+
+export { findMusicByPlayerIds }

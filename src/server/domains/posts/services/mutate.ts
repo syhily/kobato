@@ -4,7 +4,7 @@ import { eq } from 'drizzle-orm'
 
 import type { PortableTextBody } from '@/shared/pt/schema'
 
-import { findContentById } from '@/server/domains/content/repo'
+import { findContentById } from '@/server/domains/content/repos/query'
 import { toAdminPostDto, type AdminPostDto } from '@/server/domains/posts/projection'
 import { findPostMetaById, findPostMetaBySlug } from '@/server/domains/posts/repos/single'
 import { restorePostMeta, softDeletePostMeta, updatePostMetaById } from '@/server/domains/posts/repos/write'

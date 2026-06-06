@@ -1,6 +1,6 @@
 import { z } from 'zod'
 
-import { recordAuditEventFromContext } from '@/server/domains/audit/service'
+import { recordAuditEventFromContext } from '@/server/domains/audit/services/record'
 import { userSession } from '@/server/domains/auth/primitives'
 import { listMusicForAdmin } from '@/server/domains/music/services/read'
 import { searchMusic } from '@/server/domains/music/services/search'

@@ -12,8 +12,11 @@ import {
   countAdmins,
   countAdminUsers,
   findAdminUserById,
+  findEmailById,
+  findFirstAdminUser,
   findUserByEmail,
   findUserById,
+  hasAdmin,
   insertAuthor,
   listAdminUsers,
   restoreUserById,
@@ -283,3 +286,5 @@ export async function softDeleteUserWithGuard(
   await revokeAllSessionsOfUser(targetId)
   return { previousRole: target.role }
 }
+
+export { findEmailById, findFirstAdminUser, findUserById, hasAdmin }

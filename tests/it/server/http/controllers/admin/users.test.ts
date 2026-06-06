@@ -19,6 +19,7 @@ vi.mock('@/server/domains/users/services/admin', () => ({
   bulkApproveCommentsForUser: vi.fn().mockResolvedValue(0),
   bulkDeleteCommentsForUser: vi.fn().mockResolvedValue(0),
   fetchAdminUserDto: vi.fn(),
+  findUserById: vi.fn(),
   listUsersForAdmin: vi.fn(),
   muteAdminUser: vi.fn(),
   restoreAdminUser: vi.fn().mockResolvedValue(true),
@@ -156,7 +157,7 @@ describe('adminUsersRouter.update', () => {
   })
 })
 
-const userQuery = await import('@/server/infra/db/operations/user')
+const userQuery = await import('@/server/domains/users/services/admin')
 
 describe('adminUsersRouter.revokeAllSessions', () => {
   it('allows an admin to revoke their own sessions', async () => {

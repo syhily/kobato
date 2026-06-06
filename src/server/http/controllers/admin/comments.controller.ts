@@ -1,7 +1,7 @@
 import { ORPCError } from '@orpc/server'
 import { z } from 'zod'
 
-import { recordAuditEventFromContext } from '@/server/domains/audit/service'
+import { recordAuditEventFromContext } from '@/server/domains/audit/services/record'
 import { asAdminCommentsWire } from '@/server/domains/comments/projection'
 import { adminClearDeleteRequest, softDeleteCommentById } from '@/server/domains/comments/repos/moderation'
 import { findCommentWithUserById } from '@/server/domains/comments/repos/public-query/by-id'

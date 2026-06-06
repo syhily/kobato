@@ -4,7 +4,7 @@ import type { ListPublicPostsFilters } from '@/server/domains/posts/repos/shared
 import type { PostMetaRow } from '@/server/infra/db/types'
 import type { ClientPost, Post, PostVisibilityOptions } from '@/shared/types/catalog'
 
-import { findContentsByIds } from '@/server/domains/content/repo'
+import { findContentsByIds } from '@/server/domains/content/repos/query'
 import { hydrateImageRefs } from '@/server/domains/images/services/enhance'
 import { toCmsPost } from '@/server/domains/posts/projection'
 

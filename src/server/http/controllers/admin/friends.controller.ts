@@ -1,7 +1,7 @@
 import { ORPCError } from '@orpc/server'
 import { z } from 'zod'
 
-import { recordAuditEventFromContext } from '@/server/domains/audit/service'
+import { recordAuditEventFromContext } from '@/server/domains/audit/services/record'
 import { deleteAdminFriend, listFriendsForAdmin, upsertAdminFriend } from '@/server/domains/friends/service'
 import { adminProc } from '@/server/http/orpc-base'
 import { adminFriendDto } from '@/shared/contracts/friends'

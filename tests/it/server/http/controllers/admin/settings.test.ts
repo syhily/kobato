@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { makeAuthedCtx } from '#/_helpers/mock-ctx'
 import { DomainError } from '@/server/infra/http/errors'
 
-vi.mock('@/server/domains/settings/service', () => ({
+vi.mock('@/server/domains/settings/services/core', () => ({
   getAdminBlogSettings: vi.fn(),
   updateBlogSettingsSection: vi.fn(),
   redactSecretsFromBundle: vi.fn((bundle: unknown) => bundle),
@@ -15,7 +15,7 @@ vi.mock('@/server/domains/settings/timezones', () => ({
   isSupportedTimeZone: vi.fn(() => true),
 }))
 
-const { getAdminBlogSettings, updateBlogSettingsSection } = await import('@/server/domains/settings/service')
+const { getAdminBlogSettings, updateBlogSettingsSection } = await import('@/server/domains/settings/services/core')
 const { getSupportedTimeZones } = await import('@/server/domains/settings/timezones')
 const { adminSettingsRouter } = await import('@/server/http/controllers/admin/settings.controller')
 

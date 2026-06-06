@@ -23,7 +23,7 @@ vi.mock('@/server/infra/logger', () => ({
 }))
 
 const { recordAuditEvent, buildAuditContext, recordAuditEventFromContext } =
-  await import('@/server/domains/audit/service')
+  await import('@/server/domains/audit/services/record')
 
 describe('audit/service', () => {
   beforeEach(() => {
