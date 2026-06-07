@@ -4,9 +4,9 @@ import { and, count, desc, eq, isNull, or, type SQL } from 'drizzle-orm'
 
 import type { MusicRow, NewMusic } from '@/server/infra/db/types'
 
+import { ilikeEscape } from '@/server/infra/db/ilike-escape'
 import { music } from '@/server/infra/db/schema/media'
 import { user } from '@/server/infra/db/schema/user'
-import { ilikeEscape } from '@/shared/utils/escape-like'
 
 export interface AdminMusicListFilters {
   q?: string

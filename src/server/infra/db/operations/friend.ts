@@ -4,8 +4,8 @@ import { and, count, desc, eq, or, type SQL } from 'drizzle-orm'
 
 import type { FriendRow, NewFriend } from '@/server/infra/db/types'
 
+import { ilikeEscape } from '@/server/infra/db/ilike-escape'
 import { friend } from '@/server/infra/db/schema/friend'
-import { ilikeEscape } from '@/shared/utils/escape-like'
 
 // Stable ascending id ordering for the public catalog. Output is fed
 // into `hydrateImages()` and the MDX `<Friends />` shuffle, so the

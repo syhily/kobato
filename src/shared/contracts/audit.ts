@@ -1,5 +1,8 @@
 import { z } from 'zod'
 
+import type { Assert, Equals } from '@/shared/contracts/primitives'
+import type { AuditLogActorDto, AuditLogItemDto, AuditLogListInput, AuditLogListOutput } from '@/shared/types/audit'
+
 // Audit Log DTOs
 
 export const auditLogItemDto = z.object({
@@ -46,7 +49,10 @@ export const auditLogActorDto = z.object({
 
 export const auditLogActorsOutput = z.array(auditLogActorDto)
 
-export type AuditLogItemDto = z.infer<typeof auditLogItemDto>
-export type AuditLogListInput = z.infer<typeof auditLogListInput>
-export type AuditLogListOutput = z.infer<typeof auditLogListOutput>
-export type AuditLogActorDto = z.infer<typeof auditLogActorDto>
+export type { AuditLogActorDto, AuditLogItemDto, AuditLogListInput, AuditLogListOutput } from '@/shared/types/audit'
+
+// ─── parity assertions ─────────────────────────────────
+type _auditLogItemDtoParity = Assert<Equals<z.infer<typeof auditLogItemDto>, AuditLogItemDto>>
+type _auditLogListInputParity = Assert<Equals<z.infer<typeof auditLogListInput>, AuditLogListInput>>
+type _auditLogListOutputParity = Assert<Equals<z.infer<typeof auditLogListOutput>, AuditLogListOutput>>
+type _auditLogActorDtoParity = Assert<Equals<z.infer<typeof auditLogActorDto>, AuditLogActorDto>>

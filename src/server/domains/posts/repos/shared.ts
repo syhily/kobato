@@ -3,8 +3,8 @@ import { and, asc, desc, eq, isNotNull, isNull, or, sql, type SQL } from 'drizzl
 import type { PostMetaRow } from '@/server/infra/db/types'
 import type { ClientPost } from '@/shared/types/catalog'
 
+import { ilikeEscape } from '@/server/infra/db/ilike-escape'
 import { post as postMetaTable } from '@/server/infra/db/schema/post'
-import { ilikeEscape } from '@/shared/utils/escape-like'
 import { readStringArray } from '@/shared/utils/tools'
 
 export type PostMetaWithAuthor = PostMetaRow & { authorName: string | null }

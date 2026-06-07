@@ -10,9 +10,9 @@ import { findContentById, findContentsByIds } from '@/server/domains/content/rep
 import { isCatalogVisible } from '@/server/domains/content/schema'
 import { hydrateImageRefs } from '@/server/domains/images/services/enhance'
 import { toCmsPage } from '@/server/domains/pages/projection'
+import { ilikeEscape } from '@/server/infra/db/ilike-escape'
 import { page as pageMetaTable } from '@/server/infra/db/schema/page'
 import { user } from '@/server/infra/db/schema/user'
-import { ilikeEscape } from '@/shared/utils/escape-like'
 
 export {
   findContentById,

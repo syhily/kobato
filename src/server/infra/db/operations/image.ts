@@ -4,9 +4,9 @@ import { and, count, desc, eq, inArray, isNull, like, or, type SQL, sql } from '
 
 import type { ImageRow, NewImage } from '@/server/infra/db/types'
 
+import { ilikeEscape } from '@/server/infra/db/ilike-escape'
 import { image } from '@/server/infra/db/schema/media'
 import { user } from '@/server/infra/db/schema/user'
-import { ilikeEscape } from '@/shared/utils/escape-like'
 
 export interface AdminImagesListFilters {
   q?: string

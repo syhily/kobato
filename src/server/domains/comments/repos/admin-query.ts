@@ -20,10 +20,10 @@ import {
   type MyCommentsFilters,
   type PageOption,
 } from '@/server/domains/comments/repos/shared'
+import { ilikeEscape } from '@/server/infra/db/ilike-escape'
 import { comment } from '@/server/infra/db/schema/comment'
 import { metric } from '@/server/infra/db/schema/metric'
 import { user } from '@/server/infra/db/schema/user'
-import { ilikeEscape } from '@/shared/utils/escape-like'
 
 export async function findCommentWithUserAndTarget(db: NodePgDatabase, id: bigint) {
   const entity = targetSlugTitleSubquery(db)

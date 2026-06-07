@@ -1,7 +1,7 @@
 import { z } from 'zod'
 
 import type { Assert, Equals } from '@/shared/contracts/primitives'
-import type { AdminPendingDashboardDto } from '@/shared/types/comments'
+import type { AdminCommentWire, AdminPendingDashboardDto, CommentItemWire } from '@/shared/types/comments'
 
 import { idString, isoDateTime } from '@/shared/contracts/primitives'
 import { commentBodySchema } from '@/shared/pt/comment-schema'
@@ -56,10 +56,6 @@ export const commentBaseDto = z.object({
   badgeTextColor: z.string().nullable(),
 })
 
-export type CommentItemWire = z.infer<typeof commentBaseDto> & {
-  children?: CommentItemWire[]
-}
-
 export const commentItemDto: z.ZodType<CommentItemWire> = commentBaseDto.extend({
   children: z.lazy(() => z.array(commentItemDto).optional()),
 }) as z.ZodType<CommentItemWire>
@@ -79,7 +75,10 @@ export const adminCommentDto = adminCommentBaseDto.extend({
   pagePermalink: z.string().nullable(),
 })
 
-export type AdminCommentWire = z.infer<typeof adminCommentDto>
+// ─── re-exports ────────────────────────────────────────
+export type { AdminCommentWire, CommentItemWire } from '@/shared/types/comments'
 
-// ─── parity assertion ──────────────────────────────────
+// ─── parity assertions ─────────────────────────────────
 type _adminPendingDashboardParity = Assert<Equals<z.infer<typeof adminPendingDashboardDto>, AdminPendingDashboardDto>>
+type _commentItemWireParity = Assert<Equals<z.infer<typeof commentItemDto>, CommentItemWire>>
+type _adminCommentWireParity = Assert<Equals<z.infer<typeof adminCommentDto>, AdminCommentWire>>

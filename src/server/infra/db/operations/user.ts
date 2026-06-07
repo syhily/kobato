@@ -7,12 +7,12 @@ export type SafeUser = Omit<User, 'password' | 'lastIp' | 'lastUa'>
 
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
+import { ilikeEscape } from '@/server/infra/db/ilike-escape'
 import { comment } from '@/server/infra/db/schema/comment'
 import { page } from '@/server/infra/db/schema/page'
 import { post } from '@/server/infra/db/schema/post'
 import { user } from '@/server/infra/db/schema/user'
 import { getBlogSettingsBundleSync } from '@/shared/config/getters'
-import { ilikeEscape } from '@/shared/utils/escape-like'
 
 export const PASSWORD_HASH_ROUNDS = 12
 

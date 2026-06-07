@@ -186,7 +186,67 @@ export interface FilterAutocompleteInput {
 // what `JSON.stringify` actually emits: bigint ids stringified, Date
 // timestamps ISO-encoded. The earlier interfaces are kept for the
 // server-side query layer.
-import type { AdminCommentWire, CommentItemWire } from '@/shared/contracts/comments'
+
+export interface CommentItemWire {
+  id: string
+  createAt: string
+  updatedAt: string
+  deleteAt: string | null
+  deleteRequestedAt?: string | null
+  body: CommentBody
+  type: 'post' | 'page' | null
+  ownerId: string | null
+  userId: string
+  isVerified: boolean | null
+  rid: number
+  isCollapsed: boolean | null
+  isPending: boolean | null
+  isPinned: boolean | null
+  voteUp: number | null
+  voteDown: number | null
+  rootId: string | null
+  name: string
+  emailVerified: boolean
+  link: string | null
+  badgeName: string | null
+  badgeColor: string | null
+  badgeTextColor: string | null
+  children?: CommentItemWire[]
+}
+
+export interface AdminCommentWire {
+  id: string
+  createAt: string
+  updatedAt: string
+  deleteAt: string | null
+  deleteRequestedAt?: string | null
+  body: CommentBody
+  type: 'post' | 'page' | null
+  ownerId: string | null
+  userId: string
+  isVerified: boolean | null
+  rid: number
+  isCollapsed: boolean | null
+  isPending: boolean | null
+  isPinned: boolean | null
+  voteUp: number | null
+  voteDown: number | null
+  rootId: string | null
+  name: string
+  emailVerified: boolean
+  link: string | null
+  badgeName: string | null
+  badgeColor: string | null
+  badgeTextColor: string | null
+  content: string | null
+  ua: string | null
+  ip: string | null
+  email: string
+  pageTitle: string | null
+  pagePublicId: string | null
+  pageCover: string | null
+  pagePermalink: string | null
+}
 
 export interface ReplyCommentOutput {
   comment: CommentItemWire

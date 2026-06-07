@@ -4,8 +4,8 @@ import { and, asc, eq, inArray, or, sql } from 'drizzle-orm'
 
 import type { CategoryRow, NewCategory } from '@/server/infra/db/types'
 
+import { ilikeEscape } from '@/server/infra/db/ilike-escape'
 import { category } from '@/server/infra/db/schema/taxonomy'
-import { ilikeEscape } from '@/shared/utils/escape-like'
 
 // Public listing reads. Stable `(sort_order ASC, id ASC)` order so the
 // `/categories` listing has a deterministic admin-controlled ranking

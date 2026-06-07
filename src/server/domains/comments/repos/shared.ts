@@ -7,11 +7,11 @@ import type { MyCommentsStatus } from '@/shared/types/comments'
 
 export type { MyCommentsStatus }
 
+import { ilikeEscape } from '@/server/infra/db/ilike-escape'
 import { comment } from '@/server/infra/db/schema/comment'
 import { page } from '@/server/infra/db/schema/page'
 import { post } from '@/server/infra/db/schema/post'
 import { user } from '@/server/infra/db/schema/user'
-import { ilikeEscape } from '@/shared/utils/escape-like'
 
 export const commentWithUser = {
   id: comment.id,

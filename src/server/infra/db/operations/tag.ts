@@ -4,8 +4,8 @@ import { asc, count, eq, or, type SQL } from 'drizzle-orm'
 
 import type { NewTag, TagRow } from '@/server/infra/db/types'
 
+import { ilikeEscape } from '@/server/infra/db/ilike-escape'
 import { tag } from '@/server/infra/db/schema/taxonomy'
-import { ilikeEscape } from '@/shared/utils/escape-like'
 
 export interface AdminTagsListFilters {
   q?: string

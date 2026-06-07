@@ -3,6 +3,7 @@ import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 import { and, cosineDistance, desc, eq, gt, isNull, or, sql } from 'drizzle-orm'
 import { createHash } from 'node:crypto'
 
+import { ilikeEscape } from '@/server/infra/db/ilike-escape'
 import { postSearchIndex } from '@/server/infra/db/schema/content'
 import { post } from '@/server/infra/db/schema/post'
 import { getLogger } from '@/server/infra/logger'
@@ -10,7 +11,6 @@ import { storage } from '@/server/infra/redis/storage'
 import { generateEmbedding } from '@/server/infra/search/openai'
 import { getBlogSettingsBundleSync } from '@/shared/config/getters'
 import { CACHE_BUCKET_FALLBACKS } from '@/shared/types/cache'
-import { ilikeEscape } from '@/shared/utils/escape-like'
 
 const DEFAULT_SEARCH_SETTINGS = {
   enabled: false,
