@@ -20,7 +20,7 @@ the server or client boundary catch and log it.
 - `types/` — DTO interfaces (parity-checked against `contracts/`).
 - `pt/` — PortableText schema, bridge, semantics, comment markdown,
   footnote-merge.
-- `utils/` — `urls`, `safe-url`, `request`, `security`, `tools`,
+- `utils/` — `urls`, `safe-url`, `security`, `tools`,
   `formatter`, `pagination`, `toc`, `paths`, `roles`, `user-agent`,
   `chunk-error`, `comment-token`, `footnotes-section-title`.
 

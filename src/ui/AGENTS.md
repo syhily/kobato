@@ -49,21 +49,9 @@ parent.
 - `ui/icons/` — Static-export icon library. Named imports only — no
   `<Icon name="..." />` string lookups.
 
-  **Icon source policy:** `lucide-react` is a dev-only dependency.
-  All used icons are extracted into `src/ui/icons/lucide.tsx` as
-  standalone `forwardRef` SVG components. The source file is generated
-  by `scripts/extract-lucide-icons.ts`, which scans the codebase for
-  imports from `@/ui/icons/lucide`, reads the original SVG nodes from
-  the installed `lucide-react` package, and writes a single flat module.
-
-  When you need a new lucide icon:
-  1. Add the import to your component: `import { SomeIcon } from '@/ui/icons/lucide'`.
-  2. Run `npx tsx scripts/extract-lucide-icons.ts` to regenerate `lucide.tsx`.
-  3. Do NOT import directly from `lucide-react` in production code.
-
-  This keeps the production bundle free of the 13 MB (pruned) lucide
-  icon package — only the ~150 actually-used icons (~30 KB gzipped)
-  ship to browsers.
+  **Icon source policy:** Import icons directly from `lucide-react`.
+  The build pipeline tree-shakes unused icons so only the ones
+  referenced in source code ship to browsers.
 
 - `ui/lib/` — UI utilities (`cn`, `code-languages`, `ThemeProvider`,
   `blog-config-context`, `use-media-query`). shadcn's `aliases.lib` is
