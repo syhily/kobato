@@ -100,17 +100,16 @@ etc.) to keep the warmup manifest in sync.
 ## Release workflow
 
 Use `/release <version>` (e.g., `/release 6.3.0`). The command is defined
-in `.claude/commands/release.md` and drives the full workflow:
+in `.claude/commands/release.md` and drives the full lifecycle:
 
-1. **On `develop`**: analyze commits since last tag, draft release notes,
-   bump version (`scripts/release.ts bump`), commit.
-2. **PR `develop` → `main`**: CI validates, then merge.
-3. **On `main`**: `/release:tag` — creates git tag and GitHub release
-   (`scripts/release.ts tag`). Docker image builds automatically via
-   `.github/workflows/docker.yml`.
-4. **On `develop`**: `/release:prepare-next` — syncs from `main`, bumps
-   patch version, sets `docker-compose.yml` to `latest`
-   (`scripts/release.ts prepare-next`).
+1. Analyze commits since last tag, draft AI-generated release notes
+   (user reviews and approves).
+2. Bump version, push develop, fast-forward merge to main, push main.
+3. Create git tag + GitHub release (Docker image builds automatically
+   via `.github/workflows/docker.yml`).
+4. Switch back to develop, prepare next patch version, push.
+
+No PRs — direct fast-forward merge from develop to main.
 
 Version is baked at build time via `vite.config.ts` `define.__APP_VERSION__`.
 `docker-compose.yml` image tag is synced by the bump/prepare-next scripts.
