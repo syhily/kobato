@@ -4,14 +4,15 @@ import type { Pool } from 'pg'
 import { and } from 'drizzle-orm'
 import { afterAll, beforeEach, describe, expect, it } from 'vitest'
 
+import { clearAllTables } from '#/_helpers/integration-db'
 import { buildAdminListConditions } from '@/server/domains/comments/repos/shared'
+import { ilikeEscape } from '@/server/infra/db/ilike-escape'
 import { createDbPool, closePool } from '@/server/infra/db/pool'
 import { comment } from '@/server/infra/db/schema/comment'
 import { postSearchIndex } from '@/server/infra/db/schema/content'
 import { post } from '@/server/infra/db/schema/post'
 import { user } from '@/server/infra/db/schema/user'
 import { invalidateSearchCache, searchPosts } from '@/server/infra/search/search'
-import { ilikeEscape } from '@/shared/utils/escape-like'
 
 const poolManager = createDbPool()
 const db: NodePgDatabase = poolManager.db
@@ -22,10 +23,7 @@ afterAll(async () => {
 })
 
 beforeEach(async () => {
-  await db.delete(postSearchIndex)
-  await db.delete(post)
-  await db.delete(comment)
-  await db.delete(user)
+  await clearAllTables(db)
   await invalidateSearchCache()
 })
 

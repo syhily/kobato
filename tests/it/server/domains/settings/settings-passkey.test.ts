@@ -3,8 +3,8 @@ import type { Pool } from 'pg'
 
 import { afterAll, beforeEach, describe, expect, it } from 'vitest'
 
+import { clearAllTables } from '#/_helpers/integration-db'
 import { createDbPool, closePool } from '@/server/infra/db/pool'
-import { setting } from '@/server/infra/db/schema/config'
 import { DomainError } from '@/server/infra/http/errors'
 
 const poolManager = createDbPool()
@@ -16,7 +16,7 @@ afterAll(async () => {
 })
 
 beforeEach(async () => {
-  await db.delete(setting)
+  await clearAllTables(db)
 })
 
 const { updateBlogSettingsSection } = await import('@/server/domains/settings/services/core')

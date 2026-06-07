@@ -6,6 +6,7 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 
 import { TEST_BLOG_SETTINGS_BUNDLE } from '#/_helpers/blog-settings'
+import { flushWorkerRedis } from '#/_helpers/redis'
 import { setBlogSettingsBundleForTests } from '@/server/domains/settings/snapshot'
 import {
   tryCommentPostRateLimit,
@@ -15,15 +16,8 @@ import {
 } from '@/server/infra/rate-limit'
 import { redisInstance, storage } from '@/server/infra/redis/storage'
 
-async function clearRateLimitKeys(): Promise<void> {
-  const keys = await storage.getKeys('rate-limit:')
-  for (const key of keys) {
-    await storage.removeItem(key)
-  }
-}
-
 beforeEach(async () => {
-  await clearRateLimitKeys()
+  await flushWorkerRedis()
   setBlogSettingsBundleForTests(TEST_BLOG_SETTINGS_BUNDLE)
 })
 

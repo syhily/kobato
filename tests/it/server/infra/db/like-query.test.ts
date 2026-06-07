@@ -4,6 +4,7 @@ import type { Pool } from 'pg'
 import { eq } from 'drizzle-orm'
 import { afterAll, beforeEach, describe, expect, it } from 'vitest'
 
+import { clearAllTables } from '#/_helpers/integration-db'
 import { consumeActiveLikeToken, existsActiveLikeToken, purgeOldLikeTokens } from '@/server/infra/db/operations/like'
 import { createDbPool, closePool } from '@/server/infra/db/pool'
 import { like } from '@/server/infra/db/schema/metric'
@@ -19,7 +20,7 @@ afterAll(async () => {
 const POST_A = { type: 'post' as const, ownerId: 1n }
 
 beforeEach(async () => {
-  await db.delete(like)
+  await clearAllTables(db)
 })
 
 describe('db/query/like.server', () => {

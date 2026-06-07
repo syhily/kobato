@@ -3,6 +3,7 @@ import type { Pool } from 'pg'
 
 import { afterAll, beforeEach, describe, expect, it } from 'vitest'
 
+import { clearAllTables } from '#/_helpers/integration-db'
 import { hasAdmin, findFirstAdminUser } from '@/server/infra/db/operations/user'
 import { createDbPool, closePool } from '@/server/infra/db/pool'
 import { user } from '@/server/infra/db/schema/user'
@@ -16,7 +17,7 @@ afterAll(async () => {
 })
 
 beforeEach(async () => {
-  await db.delete(user)
+  await clearAllTables(db)
 })
 
 describe('db/operations/user — hasAdmin', () => {

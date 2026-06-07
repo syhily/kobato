@@ -4,6 +4,7 @@ import type { Pool } from 'pg'
 import { and, eq } from 'drizzle-orm'
 import { afterAll, beforeEach, describe, expect, it } from 'vitest'
 
+import { clearAllTables } from '#/_helpers/integration-db'
 import { incrementMetricPvBatch } from '@/server/infra/db/operations/metric'
 import { createDbPool, closePool } from '@/server/infra/db/pool'
 import { metric } from '@/server/infra/db/schema/metric'
@@ -17,7 +18,7 @@ afterAll(async () => {
 })
 
 beforeEach(async () => {
-  await db.delete(metric)
+  await clearAllTables(db)
 })
 
 describe('db/query/metric', () => {

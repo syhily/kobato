@@ -3,6 +3,7 @@ import type { Pool } from 'pg'
 
 import { afterAll, beforeEach, describe, expect, it } from 'vitest'
 
+import { clearAllTables } from '#/_helpers/integration-db'
 import {
   findMusicByPlayerId,
   findMusicBySourceAndId,
@@ -10,7 +11,6 @@ import {
   softDeleteMusic,
 } from '@/server/infra/db/operations/music'
 import { createDbPool, closePool } from '@/server/infra/db/pool'
-import { music } from '@/server/infra/db/schema/media'
 
 const poolManager = createDbPool()
 const db: NodePgDatabase = poolManager.db
@@ -21,7 +21,7 @@ afterAll(async () => {
 })
 
 beforeEach(async () => {
-  await db.delete(music)
+  await clearAllTables(db)
 })
 
 describe('db/query/music — insertMusic', () => {

@@ -4,6 +4,7 @@ import type { Pool } from 'pg'
 import { eq } from 'drizzle-orm'
 import { afterAll, beforeEach, describe, expect, it } from 'vitest'
 
+import { clearAllTables } from '#/_helpers/integration-db'
 import { insertImageIfMissing, upsertImageByStoragePath } from '@/server/infra/db/operations/image'
 import { createDbPool, closePool } from '@/server/infra/db/pool'
 import { image } from '@/server/infra/db/schema/media'
@@ -17,7 +18,7 @@ afterAll(async () => {
 })
 
 beforeEach(async () => {
-  await db.delete(image)
+  await clearAllTables(db)
 })
 
 describe('db/query/image — upsertImageByStoragePath', () => {

@@ -4,6 +4,7 @@ import type { Pool } from 'pg'
 import { eq } from 'drizzle-orm'
 import { afterAll, beforeEach, describe, expect, it } from 'vitest'
 
+import { clearAllTables } from '#/_helpers/integration-db'
 import { updateBlogSettingsSection } from '@/server/domains/settings/services/core'
 import { setBlogSettingsBundleForTests } from '@/server/domains/settings/snapshot'
 import { createDbPool, closePool } from '@/server/infra/db/pool'
@@ -18,7 +19,7 @@ afterAll(async () => {
 })
 
 beforeEach(async () => {
-  await db.delete(setting)
+  await clearAllTables(db)
   setBlogSettingsBundleForTests(undefined)
 })
 

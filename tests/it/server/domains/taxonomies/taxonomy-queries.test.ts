@@ -3,8 +3,8 @@ import type { Pool } from 'pg'
 
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { clearAllTables } from '#/_helpers/integration-db'
 import { createDbPool, closePool } from '@/server/infra/db/pool'
-import { post } from '@/server/infra/db/schema/post'
 import { category, tag } from '@/server/infra/db/schema/taxonomy'
 
 vi.mock('@/server/domains/images/services/enhance', () => ({
@@ -20,9 +20,7 @@ afterAll(async () => {
 })
 
 beforeEach(async () => {
-  await db.delete(post)
-  await db.delete(category)
-  await db.delete(tag)
+  await clearAllTables(db)
 })
 
 describe('listAllCategories', () => {
