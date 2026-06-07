@@ -1,7 +1,7 @@
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
-import type { Role } from '@/server/domains/auth/rbac'
 import type { AdminMusicDto } from '@/shared/types/music'
+import type { Role } from '@/shared/utils/roles'
 
 import { toAdminMusicDto } from '@/server/domains/music/projection'
 import { findAdminMusicRowById, findMusicById, updateMusic } from '@/server/infra/db/operations/music'

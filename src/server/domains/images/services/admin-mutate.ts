@@ -3,7 +3,6 @@ import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 import type { AdminImageDto } from '@/shared/types/images'
 
 import { canEditImage, type ViewerContext } from '@/server/domains/auth/rbac'
-import { processImageBuffer } from '@/server/domains/images/process'
 import { toAdminImageDto } from '@/server/domains/images/services/admin-read'
 import { invalidateImageEnhanceCacheFor } from '@/server/domains/images/services/cache'
 import { deleteImage as deleteStoredImage, getImage } from '@/server/domains/images/storage'
@@ -15,6 +14,7 @@ import {
   updateImageThumbhashWithUploader,
 } from '@/server/infra/db/operations/image'
 import { DomainError, ErrorMessages } from '@/server/infra/http/errors'
+import { processImageBuffer } from '@/server/infra/image/process'
 import { getLogger } from '@/server/infra/logger'
 
 const log = getLogger('images.service')

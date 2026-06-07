@@ -34,9 +34,6 @@ import { DomainError } from '@/server/infra/http/errors'
 import { rateLimitDefaults } from '@/shared/config/defaults'
 import { SETTINGS_SECTIONS } from '@/shared/config/sections'
 
-export { SETTINGS_SECTIONS }
-export type { SettingsSection }
-
 export interface SectionMeta<
   S extends z.ZodType = z.ZodType,
   K extends keyof BlogSettingsBundle = keyof BlogSettingsBundle,

@@ -4,7 +4,7 @@ import type { RouteHandle } from '@/root'
 
 import { useDetachPublicCss } from '@/client/hooks/use-detach-public-css'
 import { getRouteRequestContext } from '@/server/domains/auth/context'
-import { hasAtLeast } from '@/server/domains/auth/rbac'
+import { hasAtLeast } from '@/shared/utils/roles'
 import { AdminErrorFallback } from '@/ui/admin/shell/AdminErrorFallback'
 
 import type { Route } from './+types/layout'

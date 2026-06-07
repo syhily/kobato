@@ -131,6 +131,11 @@ beforeEach(() => {
       ;(fn as ReturnType<typeof vi.fn>).mockReset()
     }
   }
+  for (const fn of Object.values(contentMutate)) {
+    if (typeof fn === 'function' && 'mockReset' in fn) {
+      ;(fn as ReturnType<typeof vi.fn>).mockReset()
+    }
+  }
 })
 
 describe('cms/pages/service — listPagesForAdmin / getPageDetailForAdmin', () => {

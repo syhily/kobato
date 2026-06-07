@@ -5,7 +5,6 @@ import type { CommentAndUser, CommentItem, Comments, LatestComment } from '@/ser
 import type { EntityTarget } from '@/server/infra/db/target'
 
 import { userSession } from '@/server/domains/auth/primitives'
-import { hasAtLeast } from '@/server/domains/auth/rbac'
 import { latestCommentsCache } from '@/server/domains/comments/cache'
 import {
   adminUserIds,
@@ -23,6 +22,7 @@ import { getLogger } from '@/server/infra/logger'
 import { requireBlogSettingsSection } from '@/shared/config/getters'
 import { getSidebarWidgetCount } from '@/shared/config/utils'
 import { idFromString } from '@/shared/utils/id'
+import { hasAtLeast } from '@/shared/utils/roles'
 import { groupBy } from '@/shared/utils/tools'
 
 const log = getLogger('comments.parse')

@@ -1,6 +1,6 @@
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
-import type { BundleKey } from '@/shared/config/sections'
+import type { BundleKey, SettingsSection } from '@/shared/config/sections'
 import type { BlogSettingsBundle } from '@/shared/config/types'
 
 import { SECRET_FIELDS } from '@/server/domains/settings/secrets'
@@ -9,7 +9,6 @@ import {
   SECTION_REGISTRY,
   sectionFromScope,
   SETTINGS_SCOPE_PREFIX,
-  type SettingsSection,
 } from '@/server/domains/settings/sections/registry'
 import {
   bumpSettingsVersion,

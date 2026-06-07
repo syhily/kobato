@@ -76,5 +76,3 @@ export function projectSaveResult(result: SaveDraftResult | PublishLatestResult,
   }
   return { status: 'saved', revision: toAdminRevisionDto(result.row), warning }
 }
-
-export type { AdminPageDetailDto, AdminPageDto } from '@/server/domains/pages/projection'

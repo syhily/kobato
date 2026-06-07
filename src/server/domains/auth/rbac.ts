@@ -1,12 +1,7 @@
 import type { SessionUser } from '@/server/domains/auth/session-storage'
 
 import { ActionFailure, ErrorMessages } from '@/server/infra/http/errors'
-import { hasAtLeast, type Role, type RoleOrNull, ROLE_LEVELS } from '@/shared/utils/roles'
-
-// Server-only re-exports for files that already import the role
-// primitives via `@/server/domains/auth/rbac`. The isomorphic source of
-// truth is `@/shared/utils/roles` — server adds the throwing guards on top.
-export { hasAtLeast, ROLE_LEVELS, type Role, type RoleOrNull }
+import { hasAtLeast, type Role, type RoleOrNull } from '@/shared/utils/roles'
 
 /**
  * Per-request viewer identity. Built once by `defineGuardedApiAction`

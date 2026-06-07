@@ -3,10 +3,11 @@ import type { Pool } from 'pg'
 
 import { ORPCError, os } from '@orpc/server'
 
+import type { ViewerContext } from '@/server/domains/auth/rbac'
 import type { Env } from '@/server/http/context'
 
-import { hasAtLeast, type Role, type ViewerContext } from '@/server/domains/auth/rbac'
 import { DomainError, domainStatus, ErrorMessages } from '@/server/infra/http/errors'
+import { hasAtLeast, type Role } from '@/shared/utils/roles'
 
 // Context every oRPC procedure sees. The Hono `/rpc/*` bridge in
 // `app.ts` builds this from `c.var` after the perimeter middleware

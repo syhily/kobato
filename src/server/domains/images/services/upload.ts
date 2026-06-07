@@ -4,12 +4,12 @@ import type { ImageRow } from '@/server/infra/db/types'
 import type { AdminImageDto } from '@/shared/types/images'
 
 import { type ImageKindSpec, buildObjectKey } from '@/server/domains/images/key'
-import { processImageBuffer } from '@/server/domains/images/process'
 import { toAdminImageDto } from '@/server/domains/images/services/admin-read'
 import { invalidateImageEnhanceCacheFor } from '@/server/domains/images/services/cache'
 import { putImage } from '@/server/domains/images/storage'
 import { insertImage, upsertImageByStoragePath } from '@/server/infra/db/operations/image'
 import { DomainError } from '@/server/infra/http/errors'
+import { processImageBuffer } from '@/server/infra/image/process'
 import { getLogger } from '@/server/infra/logger'
 
 const log = getLogger('images.service')

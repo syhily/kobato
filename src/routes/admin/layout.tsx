@@ -4,10 +4,10 @@ import type { RouteHandle } from '@/root'
 
 import { useDetachPublicCss } from '@/client/hooks/use-detach-public-css'
 import { getDbFromContext, getRouteRequestContext } from '@/server/domains/auth/context'
-import { hasAtLeast } from '@/server/domains/auth/rbac'
 import { countAdminPendingDashboard } from '@/server/domains/comments/repos/admin-query'
 import { countUsers } from '@/server/infra/db/operations/user'
 import { getBlogSettingsBundleSync } from '@/shared/config/getters'
+import { hasAtLeast } from '@/shared/utils/roles'
 import { AdminErrorFallback } from '@/ui/admin/shell/AdminErrorFallback'
 import { AdminShell } from '@/ui/admin/shell/AdminShell'
 
