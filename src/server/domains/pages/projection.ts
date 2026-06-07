@@ -1,6 +1,8 @@
 import type { ContentRow, PageMetaRow } from '@/server/infra/db/types'
 import type { PortableTextBody } from '@/shared/pt/schema'
-import type { ClientPage, MarkdownHeading } from '@/shared/types/catalog'
+import type { ClientPage } from '@/shared/types/catalog'
+import type { AdminRevisionDto } from '@/shared/types/revision'
+export type { AdminRevisionDto }
 
 import { readBody, readHeadings } from '@/server/domains/content/projection-helpers'
 import { DomainError } from '@/server/infra/http/errors'
@@ -155,19 +157,6 @@ export interface AdminPageDetailDto {
   page: AdminPageDto
   latestRevision: AdminRevisionDto | null
   publishedRevision: AdminRevisionDto | null
-}
-
-export interface AdminRevisionDto {
-  id: string
-  revisionNo: number
-  status: 'draft' | 'published'
-  body: PortableTextBody
-  imageSources: string[]
-  headings: MarkdownHeading[]
-  authorId: string | null
-  clientRevisionToken: string
-  createdAt: string
-  updatedAt: string
 }
 
 export function toAdminRevisionDto(row: ContentRow): AdminRevisionDto {

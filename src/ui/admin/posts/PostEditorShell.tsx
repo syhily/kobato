@@ -5,13 +5,14 @@ import type { AdminPostDetailDto, AdminPostDto, UpsertPostMetaInput } from '@/sh
 import { orpc } from '@/client/api/client'
 import { useCreatePostDraft } from '@/client/hooks/use-create-post-draft'
 import { usePostLocalDraft } from '@/client/hooks/use-post-local-draft'
+import { CreateModeBanner } from '@/ui/admin/editor-shared/CreateModeBanner'
+import { TitleSlugStrip } from '@/ui/admin/editor-shared/TitleSlugStrip'
 import { ActionBanner } from '@/ui/admin/editor-shell/ActionBanner'
 import { DraftConflictDialog } from '@/ui/admin/editor-shell/DraftConflictDialog'
 import { FloatingPublishButton } from '@/ui/admin/editor-shell/FloatingPublishButton'
 import { PreviewPane } from '@/ui/admin/editor-shell/PreviewPanel'
 import { useEditorShellState } from '@/ui/admin/editor-shell/use-editor-shell-state'
 import { PageBodyEditor } from '@/ui/admin/editor/PageBodyEditor'
-import { CreateModeBanner } from '@/ui/admin/posts/CreateModeBanner'
 import { PostEditorMetaAside, PostEditorMetaSheet } from '@/ui/admin/posts/PostEditorMetaPanel'
 import { PostEditorToolbar } from '@/ui/admin/posts/PostEditorToolbar'
 import {
@@ -20,7 +21,6 @@ import {
   metaDraftsEqual,
   type PostMetaDraft,
 } from '@/ui/admin/posts/PostMetaSidebar'
-import { TitleSlugStrip } from '@/ui/admin/posts/TitleSlugStrip'
 import { cn } from '@/ui/lib/cn'
 
 export interface PostEditorShellProps {
@@ -128,9 +128,10 @@ export function PostEditorShell({ mode, detail, navigate }: PostEditorShellProps
         )}
       >
         <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-2">
-          {mode === 'create' ? <CreateModeBanner draftSavedAt={state.createDraftSavedAt} /> : null}
+          {mode === 'create' ? <CreateModeBanner entityLabel="文章" draftSavedAt={state.createDraftSavedAt} /> : null}
           {!state.previewOpen ? (
             <TitleSlugStrip
+              entityLabel="文章"
               title={state.meta.title}
               slug={state.meta.slug}
               onTitleChange={(value) => state.setMeta((m) => ({ ...m, title: value }))}

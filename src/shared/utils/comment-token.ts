@@ -1,9 +1,14 @@
-export interface CommentTokenCookieEntry {
-  token: string
-  expiresAt: number
-}
+import { z } from 'zod'
 
-export type CommentTokenCookie = Record<string, CommentTokenCookieEntry[]>
+export const commentTokenEntrySchema = z.object({
+  token: z.string(),
+  expiresAt: z.number(),
+})
+
+export const commentTokenCookieSchema = z.record(z.string(), z.array(commentTokenEntrySchema))
+
+export type CommentTokenCookieEntry = z.infer<typeof commentTokenEntrySchema>
+export type CommentTokenCookie = z.infer<typeof commentTokenCookieSchema>
 
 const COMMENT_TOKEN_COOKIE_NAME = '__comment_tokens'
 
@@ -20,10 +25,8 @@ export function parseCommentTokensCookie(cookieHeader: string | null): CommentTo
   }
   try {
     const raw = decodeURIComponent(match.slice(`${COMMENT_TOKEN_COOKIE_NAME}=`.length))
-    const parsed = JSON.parse(raw) as unknown
-    if (typeof parsed === 'object' && parsed !== null) {
-      return parsed as CommentTokenCookie
-    }
+    const parsed: unknown = JSON.parse(raw)
+    return commentTokenCookieSchema.parse(parsed)
   } catch {
     // malformed cookie — treat as empty
   }

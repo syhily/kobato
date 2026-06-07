@@ -3,12 +3,12 @@ import { type ReactNode } from 'react'
 import type { AdminPostDto } from '@/shared/types/posts'
 
 import { POST_META_TOGGLE_FIELDS } from '@/shared/types/posts'
+import { GeneratedOgPreview, ImageField } from '@/ui/admin/editor-shared/ImageField'
+import { PublishStatusRow } from '@/ui/admin/editor-shared/PublishStatusRow'
+import { ToggleRow } from '@/ui/admin/editor-shared/ToggleRow'
 import { AliasField } from '@/ui/admin/posts/meta/AliasField'
 import { CategoryField } from '@/ui/admin/posts/meta/CategoryField'
-import { GeneratedOgPreview, ImageField } from '@/ui/admin/posts/meta/ImageField'
-import { PublishStatusRow } from '@/ui/admin/posts/meta/PublishStatusRow'
 import { TagsField } from '@/ui/admin/posts/meta/TagsField'
-import { ToggleRow } from '@/ui/admin/posts/meta/ToggleRow'
 import { Card, CardContent, CardHeader, CardTitle } from '@/ui/components/card'
 import { Label } from '@/ui/components/label'
 import { Textarea } from '@/ui/components/textarea'
@@ -118,20 +118,12 @@ export function localInputValueToIso(value: string): string | null {
   return new Date(ms).toISOString()
 }
 
-export type SidebarRevisionSummary =
-  | { kind: 'no-revision' }
-  | { kind: 'published-current'; revisionNo: number }
-  | { kind: 'draft-ahead'; draftRevisionNo: number; publishedRevisionNo: number | null }
-
-export type SidebarSaveStatus =
-  | { kind: 'unsaved' }
-  | { kind: 'saving' }
-  | { kind: 'saved'; atMs: number }
-  | { kind: 'error'; message: string }
-  | { kind: 'conflict' }
-  | { kind: 'info'; message: string }
-
-export type SidebarPublishStatus = 'never-saved' | 'offline' | 'scheduled' | 'live' | 'live-with-draft-ahead'
+import type {
+  SidebarRevisionSummary,
+  SidebarSaveStatus,
+  SidebarPublishStatus,
+} from '@/ui/admin/editor-shared/sidebar-types'
+export type { SidebarRevisionSummary, SidebarSaveStatus, SidebarPublishStatus }
 
 export interface MetaSidebarProps {
   draft: PostMetaDraft

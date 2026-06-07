@@ -20,6 +20,8 @@ import type { AdminPageDetailDto, AdminPageDto, UpsertPageMetaInput } from '@/sh
 import { orpc } from '@/client/api/client'
 import { useCreatePageDraft } from '@/client/hooks/use-create-page-draft'
 import { usePageLocalDraft } from '@/client/hooks/use-page-local-draft'
+import { CreateModeBanner } from '@/ui/admin/editor-shared/CreateModeBanner'
+import { TitleSlugStrip } from '@/ui/admin/editor-shared/TitleSlugStrip'
 import { ActionBanner } from '@/ui/admin/editor-shell/ActionBanner'
 import { DraftConflictDialog } from '@/ui/admin/editor-shell/DraftConflictDialog'
 import { FloatingPublishButton } from '@/ui/admin/editor-shell/FloatingPublishButton'
@@ -28,7 +30,6 @@ import { RevisionHistoryDrawer } from '@/ui/admin/editor-shell/RevisionsDrawer'
 import { useEditorShellState } from '@/ui/admin/editor-shell/use-editor-shell-state'
 import { PageBodyEditor } from '@/ui/admin/editor/PageBodyEditor'
 import { buildPageUpsertPayload } from '@/ui/admin/pages/build-page-upsert-payload'
-import { CreateModeBanner } from '@/ui/admin/pages/CreateModeBanner'
 import {
   EMPTY_META_DRAFT,
   metaDraftFromPage,
@@ -36,7 +37,6 @@ import {
   MetaSidebar,
   type PageMetaDraft,
 } from '@/ui/admin/pages/MetaSidebar'
-import { TitleSlugStrip } from '@/ui/admin/pages/TitleSlugStrip'
 import { usePageDeleteRestore } from '@/ui/admin/pages/use-page-delete-restore'
 import { ConfirmDialog } from '@/ui/admin/shared/ConfirmDialog'
 import { Button } from '@/ui/components/button'
@@ -236,9 +236,10 @@ export function PageEditorShell({ mode, detail, navigate }: PageEditorShellProps
         )}
       >
         <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-2">
-          {mode === 'create' ? <CreateModeBanner draftSavedAt={state.createDraftSavedAt} /> : null}
+          {mode === 'create' ? <CreateModeBanner entityLabel="页面" draftSavedAt={state.createDraftSavedAt} /> : null}
           {!state.previewOpen ? (
             <TitleSlugStrip
+              entityLabel="页面"
               title={state.meta.title}
               slug={state.meta.slug}
               onTitleChange={(value) => state.setMeta((m) => ({ ...m, title: value }))}

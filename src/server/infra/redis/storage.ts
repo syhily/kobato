@@ -59,6 +59,7 @@ export function isRedisHealthy(): boolean {
 const redis = new RedisClient(REDIS_URL, {
   lazyConnect: true,
   keyPrefix: REDIS_KEY_PREFIX,
+  commandTimeout: 10_000,
 })
 
 redis.on('error', (err) => {
@@ -129,7 +130,7 @@ export const storage = {
         return { key, value: null }
       }
       try {
-        return { key, value: JSON.parse(raw) as T }
+        return { key, value: superjson.parse<T>(raw) }
       } catch {
         return { key, value: null }
       }

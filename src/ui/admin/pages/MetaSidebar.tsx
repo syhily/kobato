@@ -3,9 +3,9 @@ import { type ReactNode } from 'react'
 import type { AdminPageDto, PageMetaDraft } from '@/shared/types/pages'
 
 import { EMPTY_PAGE_META_DRAFT, PAGE_META_TOGGLE_FIELDS, pageMetaDraftsEqual } from '@/shared/types/pages'
-import { GeneratedOgPreview, ImageField } from '@/ui/admin/pages/meta/ImageField'
-import { PublishStatusRow } from '@/ui/admin/pages/meta/PublishStatusRow'
-import { ToggleRow } from '@/ui/admin/pages/meta/ToggleRow'
+import { GeneratedOgPreview, ImageField } from '@/ui/admin/editor-shared/ImageField'
+import { PublishStatusRow } from '@/ui/admin/editor-shared/PublishStatusRow'
+import { ToggleRow } from '@/ui/admin/editor-shared/ToggleRow'
 import { Card, CardContent, CardHeader, CardTitle } from '@/ui/components/card'
 import { Label } from '@/ui/components/label'
 import { Textarea } from '@/ui/components/textarea'
@@ -69,21 +69,12 @@ export function localInputValueToIso(value: string): string | null {
   return new Date(ms).toISOString()
 }
 
-export type SidebarRevisionSummary =
-  | { kind: 'no-revision' }
-  | { kind: 'published-current'; revisionNo: number }
-  | { kind: 'draft-ahead'; draftRevisionNo: number; publishedRevisionNo: number | null }
-
-/** Right-rail save-state line — derived in `PageEditorShell`, rendered under 发布状态. */
-export type SidebarSaveStatus =
-  | { kind: 'unsaved' }
-  | { kind: 'saving' }
-  | { kind: 'saved'; atMs: number }
-  | { kind: 'error'; message: string }
-  | { kind: 'conflict' }
-  | { kind: 'info'; message: string }
-
-export type SidebarPublishStatus = 'never-saved' | 'offline' | 'scheduled' | 'live' | 'live-with-draft-ahead'
+import type {
+  SidebarRevisionSummary,
+  SidebarSaveStatus,
+  SidebarPublishStatus,
+} from '@/ui/admin/editor-shared/sidebar-types'
+export type { SidebarRevisionSummary, SidebarSaveStatus, SidebarPublishStatus }
 
 export interface MetaSidebarProps {
   draft: PageMetaDraft

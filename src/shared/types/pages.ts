@@ -1,5 +1,7 @@
 import type { PortableTextBody } from '@/shared/pt/schema'
 import type { MarkdownHeading } from '@/shared/types/catalog'
+import type { AdminRevisionDto } from '@/shared/types/revision'
+export type { AdminRevisionDto }
 
 // Wire-format DTOs for the `/admin/pages` editor and the
 // `/api/admin/list-pages` oRPC procedure. Lives in `@/shared`
@@ -34,22 +36,6 @@ export interface AdminPageDto {
   commentCount: number
   /** The page's `metric.public_id` UUID — used by the admin comment-count link. */
   commentPublicId: string
-}
-
-export interface AdminRevisionDto {
-  id: string
-  revisionNo: number
-  status: 'draft' | 'published'
-  body: PortableTextBody
-  /** Storage paths captured at save time for the storage-GC pass. */
-  imageSources: string[]
-  headings: MarkdownHeading[]
-  /** User id of whoever saved this revision. */
-  authorId: string | null
-  /** Optimistic-concurrency token; client must echo on next save. */
-  clientRevisionToken: string
-  createdAt: string
-  updatedAt: string
 }
 
 export interface AdminPageDetailDto {

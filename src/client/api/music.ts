@@ -10,7 +10,8 @@ export async function loadMusic(id: string): Promise<MusicMeta | null> {
   try {
     const res = await orpc.music.get({ id })
     return (res.music as MusicMeta | null) ?? null
-  } catch {
+  } catch (err) {
+    console.warn('Failed to load music:', err)
     return null
   }
 }

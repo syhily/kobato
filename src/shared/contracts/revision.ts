@@ -1,7 +1,7 @@
 import { z } from 'zod'
 
 import type { Assert, Equals } from '@/shared/contracts/primitives'
-import type { AdminRevisionDto } from '@/shared/types/posts'
+import type { AdminRevisionDto } from '@/shared/types/revision'
 
 import { idString, isoDateTime, markdownHeadingDto } from '@/shared/contracts/primitives'
 import { portableTextBodySchema } from '@/shared/pt/schema'
