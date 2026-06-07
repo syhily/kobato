@@ -151,7 +151,7 @@ END $$;`
             if (!validateSemverForSql(dumpedVersion)) {
               throw new ActionFailure(400, 'TimescaleDB 版本号格式非法，无法执行扩展升级。')
             }
-            await db.execute(`ALTER EXTENSION timescaledb UPDATE TO '${dumpedVersion}'`)
+            await db.execute(drizzleSql`ALTER EXTENSION timescaledb UPDATE TO ${dumpedVersion}`)
           } catch (err) {
             log.warn('Failed to upgrade timescaledb extension before post_restore', {
               err: err instanceof Error ? err.message : String(err),
