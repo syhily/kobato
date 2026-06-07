@@ -15,6 +15,7 @@ import type {
 } from '@/shared/pt/schema'
 
 import { cn } from '@/ui/lib/cn'
+import { sanitizeHtml } from '@/ui/lib/sanitize-html'
 import { BlockImage } from '@/ui/pt/blocks/BlockImage'
 import { CodeBlock as CodeBlockComponent } from '@/ui/pt/blocks/CodeBlock'
 import { MusicPlayer } from '@/ui/pt/blocks/MusicPlayer'
@@ -96,7 +97,7 @@ export function CodeBlockNodeComponent({ value }: PortableTextTypeComponentProps
         className={value.language !== undefined ? `language-${value.language}` : undefined}
         copyText={value.code}
         data-language={value.language}
-        dangerouslySetInnerHTML={{ __html: value.highlightedHtml }}
+        dangerouslySetInnerHTML={{ __html: sanitizeHtml(value.highlightedHtml, 'shiki') }}
       />
     )
   }

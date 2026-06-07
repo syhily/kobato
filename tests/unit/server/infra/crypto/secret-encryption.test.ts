@@ -85,13 +85,6 @@ describe('secret-encryption', () => {
       expect(encryptIfNeeded('')).toBe('')
     })
 
-    it('returns plaintext as-is when ENCRYPTION_KEY is not set', async () => {
-      const { encryptIfNeeded, decryptIfNeeded } = await importModule(undefined)
-      const plain = 'plaintext-no-key'
-      expect(encryptIfNeeded(plain)).toBe(plain)
-      expect(decryptIfNeeded(plain)).toBe(plain)
-    })
-
     it('decryptIfNeeded returns non-encrypted values unchanged', async () => {
       const { decryptIfNeeded } = await importModule(MOCK_KEY)
       expect(decryptIfNeeded('not-encrypted')).toBe('not-encrypted')

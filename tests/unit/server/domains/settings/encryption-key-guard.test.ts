@@ -12,9 +12,6 @@ vi.mock('@/server/infra/env', () => ({
   get ENCRYPTION_KEY() {
     return mockState.encryptionKey
   },
-  get IGNORE_ENCRYPTION_WARNING() {
-    return undefined
-  },
   isVitest() {
     return false
   },
@@ -78,25 +75,7 @@ describe('settings service — ENCRYPTION_KEY guard', () => {
     mockState.upsertSetting.mockReset()
   })
 
-  it('throws BAD_REQUEST when saving a secret section without ENCRYPTION_KEY', async () => {
-    mockState.encryptionKey = undefined
-    mockState.findSettingsByScopePrefix.mockResolvedValue([])
-
-    await expect(
-      updateBlogSettingsSection(
-        db,
-        pool,
-        'mail',
-        { mail: { enabled: true, host: 'api.example.com', apiKey: 'secret', sender: 'a@b.co' } },
-        null,
-      ),
-    ).rejects.toMatchObject({
-      code: 'BAD_REQUEST',
-      message: expect.stringContaining('ENCRYPTION_KEY'),
-    })
-  })
-
-  it('allows saving a non-secret section without ENCRYPTION_KEY', async () => {
+  it('allows saving a non-secret section', async () => {
     mockState.encryptionKey = undefined
     mockState.findSettingsByScopePrefix.mockResolvedValue([])
     mockState.upsertSetting.mockResolvedValue({

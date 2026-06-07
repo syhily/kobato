@@ -48,6 +48,7 @@ cp .env.example .env
 # DATABASE_URL=postgres://postgres:postgres@localhost:5433/kobato
 # REDIS_URL=redis://localhost:6380
 # SESSION_SECRET=$(openssl rand -hex 32)
+# ENCRYPTION_KEY=$(openssl rand -hex 32)
 ```
 
 Install dependencies and start the dev server:
@@ -70,13 +71,8 @@ Database and session secrets are configured via environment variables:
 | `DATABASE_URL`   | PostgreSQL connection URL, e.g. `postgres://user:pass@localhost:5432/kobato` |
 | `REDIS_URL`      | Redis connection URL, e.g. `redis://localhost:6379`                          |
 | `SESSION_SECRET` | HMAC secret for cookies. Generate with `openssl rand -hex 32`                |
-| `DATA_PATH`      | Root data directory for fonts, dead-letter files, and MaxMind DB             |
-
-Optional but recommended for production:
-
-| Variable         | Description                                                                                  |
-| ---------------- | -------------------------------------------------------------------------------------------- |
 | `ENCRYPTION_KEY` | AES-256-GCM key for encrypting secrets in the database. Generate with `openssl rand -hex 32` |
+| `DATA_PATH`      | Root data directory for fonts, dead-letter files, and MaxMind DB             |
 
 See `.env.example` for the full list of options.
 
@@ -126,6 +122,7 @@ docker run -p 4321:4321 \
   -e DATABASE_URL=... \
   -e REDIS_URL=... \
   -e SESSION_SECRET=... \
+  -e ENCRYPTION_KEY=... \
   kobato
 ```
 

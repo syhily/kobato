@@ -15,9 +15,6 @@ vi.mock('@/server/infra/env', () => ({
   get ENCRYPTION_KEY() {
     return mockState.encryptionKey
   },
-  get IGNORE_ENCRYPTION_WARNING() {
-    return undefined
-  },
   isVitest() {
     return mockState.vitest
   },
@@ -66,36 +63,6 @@ describe('migrateSecretsEncryption', () => {
     const migrate = await loadMigration()
     await migrate(db)
     expect(mockState.findSettingsByScopePrefix).not.toHaveBeenCalled()
-  })
-
-  it('warns and returns when ENCRYPTION_KEY is not set', async () => {
-    mockState.encryptionKey = ''
-    mockState.findSettingsByScopePrefix.mockResolvedValue([])
-    const migrate = await loadMigration()
-    await migrate(db)
-    expect(mockState.logger.warn).toHaveBeenCalledWith(expect.stringContaining('ENCRYPTION_KEY is not set'))
-    expect(mockState.findSettingsByScopePrefix).toHaveBeenCalledWith(db, 'blog.')
-  })
-
-  it('logs a fatal error and exits when ENCRYPTION_KEY is missing but encrypted secrets exist', async () => {
-    const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => undefined as never)
-    mockState.encryptionKey = ''
-    const ciphertext = encryptWithKey('secret', 'some-other-key-32-chars-long!!')
-    mockState.findSettingsByScopePrefix.mockResolvedValue([
-      {
-        scope: 'blog.mail',
-        data: { mail: { apiKey: ciphertext } },
-      },
-    ])
-
-    const migrate = await loadMigration()
-    await migrate(db)
-
-    expect(mockState.logger.fatal).toHaveBeenCalledWith(
-      expect.stringContaining('encrypted secret(s) found in the database but ENCRYPTION_KEY is not set'),
-    )
-    expect(exitSpy).toHaveBeenCalledWith(1)
-    exitSpy.mockRestore()
   })
 
   it('encrypts plaintext secrets and upserts dirty scopes', async () => {

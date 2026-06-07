@@ -98,13 +98,8 @@ const envConfig = {
       .transform((val) => val.split(',').map((s) => s.trim())),
 
     // AES-256-GCM key for encrypting secrets stored in the DB (API keys,
-    // S3 credentials). Optional: secrets remain plaintext until set.
-    ENCRYPTION_KEY: z.string().min(1).optional(),
-
-    // When set to '1', suppresses the fatal exit when encrypted secrets exist
-    // but ENCRYPTION_KEY is missing. Use only when intentionally running without
-    // encryption (e.g. local development with a fresh database).
-    IGNORE_ENCRYPTION_WARNING: z.string().optional(),
+    // S3 credentials). Generate with: openssl rand -hex 32
+    ENCRYPTION_KEY: z.string().min(1),
 
     // Root data directory. All filesystem data (fonts, dead-letter files,
     // MaxMind DB) lives in fixed subdirectories under this path.
@@ -159,7 +154,6 @@ export const {
   DB_STATEMENT_TIMEOUT_MS,
   ENCRYPTION_KEY,
   HOST,
-  IGNORE_ENCRYPTION_WARNING,
   DATA_PATH,
   LOG_LEVEL,
   NODE_ENV,

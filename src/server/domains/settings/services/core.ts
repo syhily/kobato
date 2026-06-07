@@ -9,7 +9,6 @@ import { hydrateBlogSettings, refreshBlogSettings } from '@/server/domains/setti
 import { encryptIfNeeded } from '@/server/infra/crypto/secret-encryption'
 import { findSettingByScope, upsertSetting } from '@/server/infra/db/operations/setting'
 import { checkMailReady } from '@/server/infra/email/sender'
-import { ENCRYPTION_KEY } from '@/server/infra/env'
 import { DomainError } from '@/server/infra/http/errors'
 import { getLogger } from '@/server/infra/logger'
 import { getBlogSettingsBundleSync } from '@/shared/config/getters'
@@ -80,11 +79,6 @@ export async function updateBlogSettingsSection<S extends SettingsSection>(
         )
       }
     }
-  }
-
-  const secretConfig = SECRET_FIELDS.find((f) => f.section === section)
-  if (secretConfig && !ENCRYPTION_KEY) {
-    throw new DomainError('BAD_REQUEST', 'ENCRYPTION_KEY 环境变量未设置，无法保存包含敏感信息的设置。')
   }
 
   return db.transaction(async (tx) => {

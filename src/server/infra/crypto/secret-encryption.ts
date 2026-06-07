@@ -21,9 +21,6 @@ function getLegacyKey(): Buffer {
   if (cachedLegacyKey !== undefined) {
     return cachedLegacyKey
   }
-  if (!ENCRYPTION_KEY) {
-    throw new Error('ENCRYPTION_KEY env var is required for secret encryption')
-  }
   cachedLegacyKey = createHash('sha256').update(ENCRYPTION_KEY).digest()
   return cachedLegacyKey
 }
@@ -32,26 +29,17 @@ function getLegacyV2Key(): Buffer {
   if (cachedLegacyV2Key !== undefined) {
     return cachedLegacyV2Key
   }
-  if (!ENCRYPTION_KEY) {
-    throw new Error('ENCRYPTION_KEY env var is required for secret encryption')
-  }
   cachedLegacyV2Key = Buffer.from(hkdfSync('sha256', ENCRYPTION_KEY, LEGACY_HKDF_SALT, HKDF_INFO, 32))
   return cachedLegacyV2Key
 }
 
 function deriveDeploymentSalt(): Buffer {
-  if (!ENCRYPTION_KEY) {
-    return LEGACY_HKDF_SALT
-  }
   return Buffer.from(createHash('sha256').update(ENCRYPTION_KEY).update('kobato-deployment-salt').digest('hex'))
 }
 
 function getDeploymentKey(): Buffer {
   if (cachedDeploymentKey !== undefined) {
     return cachedDeploymentKey
-  }
-  if (!ENCRYPTION_KEY) {
-    throw new Error('ENCRYPTION_KEY env var is required for secret encryption')
   }
   cachedDeploymentKey = Buffer.from(hkdfSync('sha256', ENCRYPTION_KEY, deriveDeploymentSalt(), HKDF_INFO, 32))
   return cachedDeploymentKey
@@ -82,14 +70,11 @@ function tryDecrypt(ciphertext: string, key: Buffer): string {
 
 function decrypt(ciphertext: string): string {
   if (ciphertext.startsWith(ENCRYPTED_V2_PREFIX)) {
-    // Prefer the per-deployment key for new encryption.
-    if (ENCRYPTION_KEY) {
-      try {
-        return tryDecrypt(ciphertext, getDeploymentKey())
-      } catch {
-        // Fall back to legacy v2 key for backward compatibility with
-        // secrets encrypted before the salt was deployment-specific.
-      }
+    try {
+      return tryDecrypt(ciphertext, getDeploymentKey())
+    } catch {
+      // Fall back to legacy v2 key for backward compatibility with
+      // secrets encrypted before the salt was deployment-specific.
     }
     return tryDecrypt(ciphertext, getLegacyV2Key())
   }
@@ -105,16 +90,7 @@ export function isEncrypted(value: string): boolean {
   return parts.length === 3 && parts.every((p) => p.length > 0 && /^[0-9a-f]+$/i.test(p))
 }
 
-let warnedMissingKey = false
-
 export function encryptIfNeeded(plaintext: string): string {
-  if (!ENCRYPTION_KEY) {
-    if (!warnedMissingKey) {
-      log.warn('ENCRYPTION_KEY not set — secrets will be stored as plaintext in the database')
-      warnedMissingKey = true
-    }
-    return plaintext
-  }
   if (isEncrypted(plaintext) || plaintext === '') {
     return plaintext
   }
