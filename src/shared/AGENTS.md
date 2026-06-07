@@ -6,6 +6,12 @@ Forbidden: `node:*`, `ioredis`, `drizzle-orm`, DOM-only APIs, direct
 
 Imports `shared/*` only. Runs in both bundles without polyfills.
 
+Every module in `shared/` is globally importable from any layer
+(`server/`, `client/`, `ui/`, `routes/`). Consumers **must** import
+directly from the source file — never through a re-export in an
+intermediate module. No `export { X } from 'y'` or
+`export type { X } from 'y'` patterns.
+
 ## Error handling
 
 Never use `console.error`, `console.warn`, or `console.log` in shared

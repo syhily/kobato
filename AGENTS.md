@@ -145,6 +145,12 @@ React hooks/components under `src/client/` and `src/ui/`.
 - `routes/*` may import from any layer; route components must accept
   plain props.
 - Avoid barrel `index.ts` files (`bundle-barrel-imports`).
+- No `export { X } from 'y'` or `export type { X } from 'y'` re-exports
+  anywhere in the project. Import directly from the source module
+  (`import { X } from '@/shared/types/foo'`, not via an intermediate
+  file that re-exports it). `shared/*` is isomorphic and globally
+  importable — there is never a reason to facade it through another
+  module.
 - Do not use inline `import('module').Type` syntax for type annotations;
   always import types at the top of the file (`import type { Type }`).
 - Refactor from architectural correctness, not minimal diff size. Necessary
