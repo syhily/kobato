@@ -21,6 +21,7 @@ blogroll
 blogster
 blurhash
 bradlc
+braindamage
 buildx
 bxaw
 bytea
@@ -28,6 +29,7 @@ captainofphb
 cfilter
 cimage
 ckenh
+cking
 cnip
 codegen
 codegraph
@@ -147,6 +149,7 @@ lucene
 lucide
 luoli
 lxgw
+malloc
 mathbb
 mathml
 maxmind
