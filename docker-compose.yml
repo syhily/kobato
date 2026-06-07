@@ -2,7 +2,7 @@ name: kobato
 
 services:
   app:
-    image: ghcr.io/syhily/kobato:latest
+    image: ghcr.io/syhily/kobato:6.2.2
     ports:
       - '${PORT:-4321}:${PORT:-4321}'
     environment:
