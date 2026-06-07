@@ -152,7 +152,7 @@ export function PasskeyManagementCard({ userId, passkeyForce, passkeyEnabled }: 
         )}
 
         <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
-          <div className="flex-1">
+          <div className="flex flex-1 flex-col gap-2">
             <Label htmlFor="passkey-device-name">设备名称（可选）</Label>
             <Input
               id="passkey-device-name"
