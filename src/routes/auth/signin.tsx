@@ -349,6 +349,16 @@ export function meta({ matches }: Route.MetaArgs) {
   return routeMeta({ title: '用户登陆' }, bundleFromMatches(matches))
 }
 
+function localizeAuthError(error: string | null): string | null {
+  if (error === null) {
+    return null
+  }
+  if (error === 'invalid_credentials') {
+    return '用户名或密码不正确。'
+  }
+  return error
+}
+
 export default function LoginRoute({ actionData, loaderData }: Route.ComponentProps) {
   const navigation = useNavigation()
   const isSubmitting = navigation.state === 'submitting' && navigation.formMethod === 'POST'
@@ -371,7 +381,7 @@ export default function LoginRoute({ actionData, loaderData }: Route.ComponentPr
           ) : null}
           {loaderData.authError ? (
             <p role="alert" aria-live="polite" className="text-destructive">
-              {loaderData.authError}
+              {localizeAuthError(loaderData.authError)}
             </p>
           ) : null}
           {hasMessage(actionData) ? (
