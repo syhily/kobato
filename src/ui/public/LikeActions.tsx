@@ -224,36 +224,36 @@ export function LikeShare({ post }: LikeShareProps) {
     <div className="mt-6 text-center">
       <Button
         variant="light"
-        size="iconMd"
+        size="iconSm"
         shape="circle"
         className="mx-1"
         render={<a href={`https://connect.qq.com/widget/shareqq/index.html?${qq}`} aria-label="分享到 QQ 空间" />}
         title="分享到 QQ 空间"
       >
         <IconButtonContent>
-          <QQIcon size={20} />
+          <QQIcon className="m-icon-inset" />
         </IconButtonContent>
       </Button>
       <QRDialog
         url={postURL}
         name="在微信中请长按二维码"
         title="微信扫一扫 分享朋友圈"
-        trigger={<WechatIcon size={20} />}
+        trigger={<WechatIcon className="m-icon-inset" />}
         variant="light"
-        size="iconMd"
+        size="iconSm"
         shape="circle"
         className="mx-1"
       />
       <Button
         variant="light"
-        size="iconMd"
+        size="iconSm"
         shape="circle"
         className="mx-1"
         render={<a href={`https://service.weibo.com/share/share.php?${weibo}`} aria-label="分享到微博" />}
         title="分享到微博"
       >
         <IconButtonContent>
-          <WeiboIcon size={20} />
+          <WeiboIcon className="m-icon-inset" />
         </IconButtonContent>
       </Button>
     </div>
