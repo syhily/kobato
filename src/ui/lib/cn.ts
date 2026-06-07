@@ -130,6 +130,8 @@ const ANIMATE_TOKENS = ['shake', 'comments-shimmer', 'comment-flash'] as const
 const SPACING_TOKENS = [
   'admin-col-narrow',
   'admin-thumb',
+  'popup-mobile',
+  'qr-dialog',
   'aplayer-art-lg',
   'aplayer-art-sm',
   'aplayer-fixed-max',
@@ -179,6 +181,13 @@ const SPACING_TOKENS = [
   'toc-drawer',
   'toc-drawer-edge',
   'toc-toggle-edge-open',
+  'admin-content-min',
+  'dialog-max-h',
+  'dialog-max-h-sm',
+  'editor-pad-bottom',
+  'content-main',
+  'content-side',
+  'dialog-popup-md',
 ] as const
 
 const customTwMerge = extendTailwindMerge({
@@ -191,6 +200,9 @@ const customTwMerge = extendTailwindMerge({
       font: [...FONT_TOKENS],
       animate: [...ANIMATE_TOKENS],
       spacing: [...SPACING_TOKENS],
+    },
+    classGroups: {
+      z: ['z-tooltip'],
     },
   },
 })

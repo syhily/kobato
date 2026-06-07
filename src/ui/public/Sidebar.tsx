@@ -68,7 +68,7 @@ export function Sidebar({ data }: SidebarProps) {
   }
 
   return (
-    <aside className="box-border hidden w-full max-w-full shrink-0 px-3 xl:ml-auto xl:block xl:w-[29%] xl:max-w-[370px]">
+    <aside className="box-border hidden w-full max-w-full shrink-0 px-3 xl:ml-auto xl:block xl:w-content-side xl:max-w-[370px]">
       <div className={sidebarInnerClass}>
         {enabledWidgets.map((widget) => {
           switch (widget.type) {

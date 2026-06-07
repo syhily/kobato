@@ -161,7 +161,7 @@ export function CommentReplyForm({
               bodyKey={`reply-${bodyKey}`}
               onBodyChange={setBody}
               disabled={isPending}
-              className={isReplying ? 'pt-10' : undefined}
+              className={cn(isReplying && 'pt-10')}
             />
             {isReplying && (
               <ReplyOverlay

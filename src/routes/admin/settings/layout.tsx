@@ -118,7 +118,7 @@ export function ErrorBoundary() {
       : '未知错误'
 
   return (
-    <div className="flex min-h-[calc(100vh-4rem)] items-start justify-center pt-20">
+    <div className="flex min-h-admin-content-min items-start justify-center pt-20">
       <div className="w-full max-w-lg space-y-2 rounded-lg border border-destructive/30 bg-destructive/5 p-6">
         <h2 className="text-lg font-semibold text-destructive">{title}</h2>
         <p className="text-sm text-muted-foreground">{message}</p>

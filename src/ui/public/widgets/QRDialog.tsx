@@ -71,7 +71,7 @@ export function QRDialog({ url, name, title, trigger, variant, size, shape, clas
           <div className="text-center">
             <div className="text-xl leading-tight font-semibold">{title}</div>
             <p className="mt-1 mb-2 text-base">{name}</p>
-            <div className="mx-auto flex size-qr-dialog items-center justify-center rounded-md bg-canvas p-2 text-brand-dark dark:bg-ink-on-dark">
+            <div className="mx-auto flex h-qr-dialog w-qr-dialog items-center justify-center rounded-md bg-canvas p-2 text-brand-dark dark:bg-ink-on-dark">
               <Suspense fallback={null}>
                 <QRCodeSVG
                   value={url}

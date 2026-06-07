@@ -351,7 +351,7 @@ function CommentsRoot({ commentKey, initialItems, rootsCount, totalCount, user, 
 function CommentsHeader() {
   const ctx = useCommentsContext('Comments.Header')
   return (
-    <div className="mb-6 text-xl leading-[1.4] font-semibold">
+    <div className="mb-6 text-xl leading-body font-semibold">
       评论 <small className="font-theme text-sm">({ctx.totalCount})</small>
     </div>
   )

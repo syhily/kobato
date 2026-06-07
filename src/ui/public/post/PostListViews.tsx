@@ -69,7 +69,7 @@ export function HomeLayoutBody({
 function EmptyHomeState({ currentUser, hasSidebar }: { currentUser?: { role: string } | null; hasSidebar: boolean }) {
   const canWrite = currentUser?.role === 'admin' || currentUser?.role === 'author'
   return (
-    <div className={cn('box-border w-full max-w-full shrink-0 px-3', hasSidebar ? 'xl:w-[71%]' : 'xl:w-full')}>
+    <div className={cn('box-border w-full max-w-full shrink-0 px-3', hasSidebar ? 'xl:w-content-main' : 'xl:w-full')}>
       <div className="flex h-(--size-empty-state) flex-auto flex-col text-center">
         <div className="my-auto">
           <div className="mb-2 inline-flex size-16 items-center justify-center rounded-full bg-brand/10 text-brand">
@@ -202,7 +202,7 @@ function FeaturePost({ post, first = false }: { post: ListingPostCard; first?: b
         <div className="flex flex-none flex-col">
           <Link
             to={post.permalink}
-            className="m-0 mb-2 line-clamp-2 block text-base leading-[1.4] font-semibold text-ink-on-dark hover:text-ink-on-dark hover:[text-shadow:var(--brand)_1px_0_4px] md:text-xl"
+            className="m-0 mb-2 line-clamp-2 block text-base leading-body font-semibold text-ink-on-dark hover:text-ink-on-dark hover:[text-shadow:var(--brand)_1px_0_4px] md:text-xl"
             prefetch="intent"
           >
             {post.title}
@@ -235,7 +235,7 @@ export function PostCards({
     <div
       className={cn(
         'box-border w-full max-w-full shrink-0 px-3',
-        layout === 'with-sidebar' ? 'xl:w-[71%]' : 'xl:w-full',
+        layout === 'with-sidebar' ? 'xl:w-content-main' : 'xl:w-full',
       )}
     >
       <div>
@@ -274,7 +274,7 @@ export function PostCards({
               <div className="flex-1">
                 <Link
                   to={post.permalink}
-                  className="m-0 block text-base leading-[1.4] font-semibold text-inherit hover:text-brand md:text-xl"
+                  className="m-0 block text-base leading-body font-semibold text-inherit hover:text-brand md:text-xl"
                   prefetch="intent"
                 >
                   <div className="line-clamp-2">
@@ -367,7 +367,7 @@ export function PostSquare({ post, first, listingNowIso }: PostSquareProps) {
         </div>
         <div className="absolute inset-x-0 bottom-0 z-1 flex flex-none flex-col p-2 md:px-4 md:py-3">
           <Link to={post.permalink} className="flex flex-none flex-col" prefetch="intent">
-            <div className="m-0 mb-2 line-clamp-2 block leading-[1.4] font-semibold text-ink-on-dark hover:text-ink-on-dark hover:[text-shadow:var(--brand)_1px_0_4px]">
+            <div className="m-0 mb-2 line-clamp-2 block leading-body font-semibold text-ink-on-dark hover:text-ink-on-dark hover:[text-shadow:var(--brand)_1px_0_4px]">
               {post.title}
             </div>
             <div className="font-number flex flex-1 text-sm text-ink-on-dark">

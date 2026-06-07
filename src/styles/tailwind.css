@@ -81,6 +81,11 @@
   --size-empty-state: 50vh;
   --size-sidebar-item: 34px;
   --size-search-trigger: 38px;
+  --size-admin-thumb: 100px;
+  --size-admin-col-narrow: 52px;
+  --size-auth-input: 54px;
+  --size-auth-btn: 52px;
+  --size-editor-min: 480px;
   --mobile-navbar-height: 64px;
   --z-aside-drawer: 1020;
   --z-modal: 1050;
@@ -504,19 +509,12 @@
   --container-2xl: 1320px;
   --container-admin: 1480px;
 
-  --size-admin-thumb: 100px;
-  --size-admin-col-narrow: 52px;
-
   --text-admin-sm: 0.8125rem;
   --text-admin-base: 0.9375rem;
   --text-micro: 0.6875rem;
   --text-nano: 0.625rem;
 
   --ring-width: 3px;
-
-  --size-auth-input: 54px;
-  --size-auth-btn: 52px;
-  --size-editor-min: 480px;
 
   --spacing-admin-thumb: var(--size-admin-thumb);
   --spacing-admin-col-narrow: var(--size-admin-col-narrow);
@@ -636,11 +634,31 @@
   --container-popup-sm: 300px;
   --container-popup-md: 540px;
   --container-popup-lg: 960px;
-  --width-popup-mobile: 95%;
+  --spacing-popup-mobile: 95%;
   --shadow-popup-close: 0 2px 6px rgba(0, 0, 0, 0.2);
   --color-popup-close-hover: var(--popup-close-hover);
 
-  --size-qr-dialog: 210px;
+  --spacing-qr-dialog: 210px;
+
+  /* Admin content minimum height */
+  --spacing-admin-content-min: calc(100vh - 4rem);
+
+  /* Dialog max heights */
+  --spacing-dialog-max-h: 90vh;
+  --spacing-dialog-max-h-sm: 60vh;
+
+  /* Editor padding bottom for scroll */
+  --spacing-editor-pad-bottom: 60vh;
+
+  /* Content layout proportions */
+  --spacing-content-main: 71%;
+  --spacing-content-side: 29%;
+
+  /* Body line height */
+  --leading-body: 1.4;
+
+  /* Dialog popup max width */
+  --spacing-dialog-popup-md: calc(var(--container-popup-md));
 
   --shadow-card: var(--shadow-card-value);
   --shadow-tooltip: var(--shadow-tooltip-value);
@@ -710,9 +728,6 @@
   --color-diff-delete-bg: var(--diff-delete-bg);
   --color-diff-delete-fg: var(--diff-delete-fg);
   --color-diff-delete-border: var(--diff-delete-border);
-
-  /* Z-index tokens */
-  --z-tooltip: var(--z-tooltip);
 
   --color-chip-bg: var(--chip-bg);
   --color-chip-fg: var(--chip-fg);

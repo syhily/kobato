@@ -48,7 +48,7 @@ export function PostDetailBody({
     <div className="py-4 md:py-6 lg:px-2 2xl:px-12 2xl:py-12">
       <div className="mx-auto w-full px-3 sm:max-w-sm md:max-w-md lg:max-w-lg xl:max-w-xl 2xl:max-w-2xl">
         <div className="-mx-3 flex flex-wrap">
-          <div className="box-border w-full max-w-full shrink-0 px-3 xl:w-[71%]">
+          <div className="box-border w-full max-w-full shrink-0 px-3 xl:w-content-main">
             <div className="relative mb-5 flex min-w-0 flex-col bg-canvas p-4 wrap-break-word shadow-card md:p-8">
               <DetailBodyChrome
                 siteIdentity={config}

@@ -46,7 +46,7 @@ export function CategoriesBody({ title, categories }: CategoriesBodyProps) {
                   <div className="flex-1">
                     <Link
                       to={category.permalink}
-                      className="m-0 block text-base leading-[1.4] font-semibold text-inherit hover:text-brand md:text-xl"
+                      className="m-0 block text-base leading-body font-semibold text-inherit hover:text-brand md:text-xl"
                       prefetch="intent"
                     >
                       {category.name}

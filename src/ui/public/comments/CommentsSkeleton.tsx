@@ -6,7 +6,7 @@ const SHIMMER_LINE_CLASS =
 export function CommentsSkeleton() {
   return (
     <div id="comments" className="pt-12" aria-busy="true" aria-live="polite">
-      <div className="mb-6 text-xl leading-[1.4] font-semibold">
+      <div className="mb-6 text-xl leading-body font-semibold">
         评论 <small className="font-theme text-sm text-ink-4">(加载中…)</small>
       </div>
       <div className="flex flex-col gap-3">

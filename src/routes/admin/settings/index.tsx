@@ -283,7 +283,7 @@ function SettingsPageInner() {
         id="settings-content-scroller"
         className="relative h-full flex-1 overflow-y-auto bg-background pt-12 lg:basis-[800px]"
       >
-        <div className="px-8 pt-16 pb-[60vh] lg:max-w-[760px] lg:px-14 lg:pt-0">
+        <div className="px-8 pt-16 pb-editor-pad-bottom lg:max-w-[760px] lg:px-14 lg:pt-0">
           <div className="flex flex-col gap-16">
             {(['site', 'content', 'service', 'system'] as const).map((group) => (
               <SettingsGroup key={group} title={NAV_GROUP_LABEL[group]}>
