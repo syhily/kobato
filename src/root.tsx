@@ -1,3 +1,4 @@
+import '@/shared/zod-config'
 import type { MiddlewareFunction, ShouldRevalidateFunctionArgs } from 'react-router'
 
 import { dehydrate, HydrationBoundary, QueryClientProvider } from '@tanstack/react-query'

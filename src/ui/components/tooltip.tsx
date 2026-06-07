@@ -48,11 +48,12 @@ export interface TooltipTriggerProps extends React.ButtonHTMLAttributes<HTMLElem
   /** Element type to render. Defaults to `<span>` since tooltips usually wrap inline content. */
   as?: keyof React.JSX.IntrinsicElements
   children: ReactNode
+  closeOnClick?: boolean
 }
 
-function TooltipTrigger({ as = 'span', children, ...rest }: TooltipTriggerProps) {
+function TooltipTrigger({ as = 'span', children, closeOnClick, ...rest }: TooltipTriggerProps) {
   const Comp = as as React.ElementType
-  return <BaseTooltip.Trigger render={<Comp {...rest}>{children}</Comp>} />
+  return <BaseTooltip.Trigger closeOnClick={closeOnClick} render={<Comp {...rest}>{children}</Comp>} />
 }
 
 export interface TooltipContentProps {

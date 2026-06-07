@@ -1,202 +1,163 @@
+import type { UseFormReturn } from 'react-hook-form'
+
+import { ChevronDownIcon, InfoIcon } from 'lucide-react'
+import { Fragment, useState } from 'react'
+
 import type { RateLimitSettings } from '@/shared/config/types'
 
-import { SettingsRow } from '@/ui/admin/settings/SettingsSection'
+import { BOUNDS, BUCKET_META, GROUPS, type BucketKey } from '@/ui/admin/settings/rate-limit/constants'
 import { SettingGroup } from '@/ui/admin/settings/shell/SettingGroup'
-import { SettingGroupContent } from '@/ui/admin/settings/shell/SettingGroupContent'
 import { useSettingsCard } from '@/ui/admin/settings/shell/useSettingsCard'
 import { Input } from '@/ui/components/input'
-
-const BOUNDS = {
-  windowSeconds: { min: 60, max: 60 * 60 * 24 },
-  maxAttempts: { min: 1, max: 1000 },
-} as const
+import { Popover, PopoverContent, PopoverTrigger } from '@/ui/components/popover'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/ui/components/table'
+import { cn } from '@/ui/lib/cn'
 
 interface RateLimitFormProps {
   rateLimit: RateLimitSettings
 }
 
-type BucketKey = keyof RateLimitSettings
+function WindowEditCell({ bucketKey, form }: { bucketKey: BucketKey; form: UseFormReturn<RateLimitSettings> }) {
+  const meta = BUCKET_META[bucketKey]
+  const fieldName = `${bucketKey}.windowSeconds` as const
+  const currentValue = form.watch(fieldName)
+  const matchedOption = meta.quickWindowOptions.find((opt) => opt.seconds === currentValue)
+  const [open, setOpen] = useState(false)
 
-const BUCKET_META: Record<BucketKey, { title: string; description: string; windowHint: string; attemptsHint: string }> =
-  {
-    signInIp: {
-      title: '登录限流（按 IP）',
-      description: '登录页重试上限。无论登录成功失败都计入计数；失败次数过多会临时锁定该 IP。',
-      windowHint: '60 秒 - 24 小时。历史默认 30 分钟（1800）。',
-      attemptsHint: '历史默认 5 次。',
-    },
-    commentPostIp: {
-      title: '评论限流（按 IP）',
-      description: '匿名评论 / 留言提交按访客 IP 计数。已登录管理员不受限制。',
-      windowHint: '60 秒 - 24 小时。历史默认 1 小时（3600）。',
-      attemptsHint: '历史默认 12 次。',
-    },
-    commentPostEmail: {
-      title: '评论限流（按邮箱）',
-      description: '评论作者邮箱级别的限流。即使从多个 IP 提交，同一邮箱仍然受限。',
-      windowHint: '60 秒 - 24 小时。历史默认 1 小时（3600）。',
-      attemptsHint: '历史默认 8 次。',
-    },
-    likeIncreaseIp: {
-      title: '点赞限流（按 IP）',
-      description: '文章 / 页面「喜欢」按 IP 计数，仅限制新增操作；取消点赞不消耗计数。',
-      windowHint: '60 秒 - 24 小时。默认 1 小时（3600）。',
-      attemptsHint: '默认 30 次。',
-    },
-    inviteIp: {
-      title: '邀请限流（按 IP）',
-      description: '管理员邀请新作者按客户端 IP 计数，避免短时间内被滥用。',
-      windowHint: '60 秒 - 24 小时。默认 1 小时（3600）。',
-      attemptsHint: '默认 5 次。',
-    },
-    inviteEmail: {
-      title: '邀请限流（按管理员 + 目标邮箱）',
-      description: '按「发起邀请的管理员 ID + 目标邮箱」计数。',
-      windowHint: '60 秒 - 24 小时。默认 1 小时（3600）。',
-      attemptsHint: '默认 1 次。',
-    },
-    passwordResetIp: {
-      title: '密码重置限流（按 IP）',
-      description: '公共 lostpassword 表单按客户端 IP 计数。',
-      windowHint: '60 秒 - 24 小时。默认 30 分钟（1800）。',
-      attemptsHint: '默认 3 次。',
-    },
-    passwordResetEmail: {
-      title: '密码重置限流（按目标邮箱）',
-      description: '公共 lostpassword 表单按目标邮箱计数。',
-      windowHint: '60 秒 - 24 小时。默认 5 分钟（300）。',
-      attemptsHint: '默认 1 次。',
-    },
-    passwordResetTarget: {
-      title: '密码重置限流（按目标用户）',
-      description: '管理员触发的"发送密码重置"操作按目标用户 ID 计数。',
-      windowHint: '60 秒 - 1 小时。默认 60 秒。',
-      attemptsHint: '默认 1 次。',
-    },
-    resourceIp: {
-      title: '公共资源限流（按 IP）',
-      description: 'RSS、站点地图、OG 图片、头像等公共资源的访问按客户端 IP 计数。',
-      windowHint: '60 秒 - 24 小时。默认 1 分钟（60）。',
-      attemptsHint: '默认 60 次。',
-    },
-    otpSendIp: {
-      title: 'OTP 发送限流（按 IP）',
-      description: '登录时发送 OTP 验证码邮件按客户端 IP 计数。',
-      windowHint: '60 秒 - 24 小时。默认 5 分钟（300）。',
-      attemptsHint: '默认 3 次。',
-    },
-    otpSendEmail: {
-      title: 'OTP 发送限流（按邮箱）',
-      description: '登录时发送 OTP 验证码邮件按目标邮箱计数。',
-      windowHint: '60 秒 - 24 小时。默认 5 分钟（300）。',
-      attemptsHint: '默认 1 次。',
-    },
-    otpVerifyIp: {
-      title: 'OTP 验证限流（按 IP）',
-      description: 'OTP 验证码校验按客户端 IP 计数。',
-      windowHint: '60 秒 - 24 小时。默认 5 分钟（300）。',
-      attemptsHint: '默认 5 次。',
-    },
-    otpVerifyEmail: {
-      title: 'OTP 验证限流（按邮箱）',
-      description: 'OTP 验证码校验按目标邮箱计数。',
-      windowHint: '60 秒 - 24 小时。默认 5 分钟（300）。',
-      attemptsHint: '默认 1 次。',
-    },
-    signInEmail: {
-      title: '登录限流（按邮箱）',
-      description: '登录页重试按目标邮箱计数。即使从多个 IP 提交，同一邮箱仍然受限。',
-      windowHint: '60 秒 - 24 小时。默认 30 分钟（1800）。',
-      attemptsHint: '默认 5 次。',
-    },
-    passkeyAuthBeginIp: {
-      title: 'Passkey 登录限流（按 IP）',
-      description: 'Passkey 认证挑战请求按客户端 IP 计数。',
-      windowHint: '60 秒 - 24 小时。默认 5 分钟（300）。',
-      attemptsHint: '默认 10 次。',
-    },
-    passkeyAuthFinishIp: {
-      title: 'Passkey 认证完成',
-      description: 'Passkey 认证完成请求按客户端 IP 计数。',
-      windowHint: '60 秒 - 24 小时。默认 5 分钟（300）。',
-      attemptsHint: '默认 10 次。',
-    },
-    passkeyRegisterBeginIp: {
-      title: 'Passkey 注册限流（按 IP）',
-      description: 'Passkey 注册挑战请求按客户端 IP 计数。',
-      windowHint: '60 秒 - 24 小时。默认 5 分钟（300）。',
-      attemptsHint: '默认 10 次。',
-    },
-    passkeyRegisterFinishIp: {
-      title: 'Passkey 注册完成限流（按 IP）',
-      description: 'Passkey 注册完成请求按客户端 IP 计数。',
-      windowHint: '60 秒 - 24 小时。默认 5 分钟（300）。',
-      attemptsHint: '默认 10 次。',
-    },
-    passkeySetForceIp: {
-      title: 'Passkey 强制开关限流（按 IP）',
-      description: 'Passkey 强制登录开关操作按客户端 IP 计数。',
-      windowHint: '60 秒 - 24 小时。默认 5 分钟（300）。',
-      attemptsHint: '默认 10 次。',
-    },
-    passkeyDeleteIp: {
-      title: 'Passkey 删除限流（按 IP）',
-      description: 'Passkey 凭据删除操作按客户端 IP 计数。',
-      windowHint: '60 秒 - 24 小时。默认 5 分钟（300）。',
-      attemptsHint: '默认 10 次。',
-    },
+  const applyValue = (val: number) => {
+    form.setValue(fieldName, val, { shouldDirty: true, shouldValidate: true })
+    setOpen(false)
   }
 
-function RateLimitBucketCard({ bucketKey, rateLimit }: { bucketKey: BucketKey; rateLimit: RateLimitSettings }) {
-  const meta = BUCKET_META[bucketKey]
-  const { form, settingGroupProps } = useSettingsCard<
-    RateLimitSettings,
-    { windowSeconds: number; maxAttempts: number }
-  >({
-    section: 'rateLimit',
-    source: rateLimit,
-    toState: (source) => ({
-      windowSeconds: source[bucketKey].windowSeconds,
-      maxAttempts: source[bucketKey].maxAttempts,
-    }),
-    fromState: (state) => ({
-      [bucketKey]: { windowSeconds: state.windowSeconds, maxAttempts: state.maxAttempts },
-    }),
-  })
-
   return (
-    <SettingGroup title={meta.title} description={meta.description} {...settingGroupProps}>
-      <SettingGroupContent>
-        <SettingsRow label="时间窗口（秒）" htmlFor={`rate-limit-${bucketKey}-window`} hint={meta.windowHint}>
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger
+        className={cn(
+          'flex h-7 items-center justify-between gap-1 rounded-md border border-line bg-transparent px-2 text-xs shadow-xs transition-[color,box-shadow] outline-none',
+          'focus-visible:border-ring focus-visible:ring-(--ring-width) focus-visible:ring-ring/50',
+        )}
+      >
+        <span className="min-w-[3ch]">{matchedOption?.label ?? `${currentValue}秒`}</span>
+        <ChevronDownIcon className="size-3.5 shrink-0 opacity-50" />
+      </PopoverTrigger>
+      <PopoverContent className="w-52 p-2" align="start">
+        <div className="flex flex-col gap-2">
           <Input
-            id={`rate-limit-${bucketKey}-window`}
             type="number"
             min={BOUNDS.windowSeconds.min}
             max={BOUNDS.windowSeconds.max}
-            {...form.register('windowSeconds', { valueAsNumber: true })}
+            className="h-7 text-xs"
+            value={currentValue}
+            onChange={(e) => {
+              const val = e.target.value === '' ? BOUNDS.windowSeconds.min : Number(e.target.value)
+              form.setValue(fieldName, val, { shouldDirty: true, shouldValidate: true })
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                setOpen(false)
+              }
+            }}
           />
-        </SettingsRow>
-        <SettingsRow label="窗口内最多次数" htmlFor={`rate-limit-${bucketKey}-attempts`} hint={meta.attemptsHint}>
-          <Input
-            id={`rate-limit-${bucketKey}-attempts`}
-            type="number"
-            min={BOUNDS.maxAttempts.min}
-            max={BOUNDS.maxAttempts.max}
-            {...form.register('maxAttempts', { valueAsNumber: true })}
-          />
-        </SettingsRow>
-      </SettingGroupContent>
-    </SettingGroup>
+          <div className="flex flex-wrap gap-1">
+            {meta.quickWindowOptions.map((opt) => (
+              <button
+                key={opt.seconds}
+                type="button"
+                className={cn(
+                  'rounded-sm px-2 py-1 text-xs transition-colors',
+                  opt.seconds === currentValue ? 'bg-accent text-accent-foreground' : 'hover:bg-muted',
+                )}
+                onClick={() => applyValue(opt.seconds)}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      </PopoverContent>
+    </Popover>
+  )
+}
+
+function AttemptsEditCell({ bucketKey, form }: { bucketKey: BucketKey; form: UseFormReturn<RateLimitSettings> }) {
+  const fieldName = `${bucketKey}.maxAttempts` as const
+  const currentValue = form.watch(fieldName)
+  const error = (form.formState.errors[bucketKey] as { maxAttempts?: { message?: string } } | undefined)?.maxAttempts
+    ?.message
+
+  return (
+    <Input
+      type="number"
+      min={BOUNDS.maxAttempts.min}
+      max={BOUNDS.maxAttempts.max}
+      className={cn('h-7 w-16 text-xs', error && 'border-destructive')}
+      value={currentValue}
+      onChange={(e) => {
+        const val = e.target.value === '' ? BOUNDS.maxAttempts.min : Number(e.target.value)
+        form.setValue(fieldName, val, { shouldDirty: true, shouldValidate: true })
+      }}
+    />
   )
 }
 
 export function ThresholdForm({ rateLimit }: RateLimitFormProps) {
-  const keys = Object.keys(BUCKET_META) as BucketKey[]
+  const { form, settingGroupProps } = useSettingsCard<RateLimitSettings, RateLimitSettings>({
+    section: 'rateLimit',
+    source: rateLimit,
+    toState: (source) => source,
+    fromState: (state) => ({ ...state }) as Record<string, unknown>,
+    mode: 'full',
+  })
+
   return (
-    <div className="flex flex-col gap-5">
-      {keys.map((key) => (
-        <RateLimitBucketCard key={key} bucketKey={key} rateLimit={rateLimit} />
-      ))}
-    </div>
+    <SettingGroup
+      title="流控设置"
+      description="各业务场景的限流策略配置。时间窗口内超过最大尝试次数的请求将被拒绝。"
+      {...settingGroupProps}
+    >
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead className="min-w-[140px]">场景</TableHead>
+            <TableHead>时间窗口</TableHead>
+            <TableHead className="w-24 text-right">最大尝试次数</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {GROUPS.map((group) => (
+            <Fragment key={group.label}>
+              <TableRow className="bg-muted/50 hover:bg-muted/50">
+                <TableCell colSpan={3} className="font-medium text-muted-foreground">
+                  {group.label}
+                </TableCell>
+              </TableRow>
+              {group.keys.map((key) => (
+                <TableRow key={key}>
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium">{BUCKET_META[key].title}</span>
+                      <Popover>
+                        <PopoverTrigger className="inline-flex cursor-help">
+                          <InfoIcon className="size-3.5 text-muted-foreground" />
+                        </PopoverTrigger>
+                        <PopoverContent side="top" className="w-max max-w-xs px-3 py-2 text-xs">
+                          {BUCKET_META[key].description}
+                        </PopoverContent>
+                      </Popover>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <WindowEditCell bucketKey={key} form={form} />
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <AttemptsEditCell bucketKey={key} form={form} />
+                  </TableCell>
+                </TableRow>
+              ))}
+            </Fragment>
+          ))}
+        </TableBody>
+      </Table>
+    </SettingGroup>
   )
 }

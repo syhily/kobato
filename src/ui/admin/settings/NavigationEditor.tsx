@@ -71,6 +71,7 @@ function SortableSideNavRow({
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: field.clientId,
   })
+  const { 'aria-describedby': _, ...dragAttributes } = attributes
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
@@ -81,7 +82,7 @@ function SortableSideNavRow({
     <div ref={setNodeRef} style={style} className="flex items-center gap-3 rounded-xl border bg-muted/30 p-3">
       <button
         type="button"
-        {...attributes}
+        {...dragAttributes}
         {...listeners}
         className="shrink-0 cursor-grab text-muted-foreground active:cursor-grabbing"
         aria-label="拖拽排序"
@@ -230,6 +231,7 @@ function SortableFooterNavRow({
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: item.clientId,
   })
+  const { 'aria-describedby': _, ...dragAttributes } = attributes
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
@@ -237,12 +239,12 @@ function SortableFooterNavRow({
   }
 
   return (
-    <div ref={setNodeRef} style={style} className="flex items-center gap-3 rounded-xl border border-line bg-canvas p-3">
+    <div ref={setNodeRef} style={style} className="flex items-center gap-3 rounded-xl border bg-muted/30 p-3">
       <button
         type="button"
-        {...attributes}
+        {...dragAttributes}
         {...listeners}
-        className="shrink-0 cursor-grab text-ink-4 active:cursor-grabbing"
+        className="shrink-0 cursor-grab text-muted-foreground active:cursor-grabbing"
         aria-label="拖拽排序"
       >
         <GripVerticalIcon className="size-4" />

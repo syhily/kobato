@@ -14,13 +14,21 @@ function PopoverTrigger({ ...props }: ComponentProps<typeof BasePopover.Trigger>
 
 interface PopoverContentProps extends ComponentProps<typeof BasePopover.Popup> {
   align?: 'start' | 'center' | 'end'
+  side?: 'top' | 'right' | 'bottom' | 'left'
   sideOffset?: number
 }
 
-function PopoverContent({ className, align = 'center', sideOffset = 4, children, ...props }: PopoverContentProps) {
+function PopoverContent({
+  className,
+  align = 'center',
+  side,
+  sideOffset = 4,
+  children,
+  ...props
+}: PopoverContentProps) {
   return (
     <BasePopover.Portal>
-      <BasePopover.Positioner sideOffset={sideOffset} align={align} className="z-(--z-modal)">
+      <BasePopover.Positioner side={side} sideOffset={sideOffset} align={align} className="z-(--z-modal)">
         <BasePopover.Popup
           data-slot="popover-content"
           className={cn(
