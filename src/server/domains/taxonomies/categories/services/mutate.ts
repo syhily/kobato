@@ -11,6 +11,7 @@ import {
   resolveSlugForTaxonomy,
 } from '@/server/domains/taxonomies/shared'
 import {
+  countPostsByCategory,
   deleteCategory as deleteCategoryRow,
   findCategoryById,
   findCategoryByName,
@@ -22,13 +23,6 @@ import {
 } from '@/server/infra/db/operations/category'
 import { DomainError } from '@/server/infra/http/errors'
 import { idFromString } from '@/shared/utils/id'
-
-async function categoryPostCounter(db: NodePgDatabase): Promise<(name: string) => Promise<number>> {
-  return async (name: string) => {
-    const posts = await listPostsByCategory(db, name, { includeHidden: true, includeScheduled: true })
-    return posts.length
-  }
-}
 
 export async function upsertAdminCategory(db: NodePgDatabase, input: UpsertCategoryInputs): Promise<AdminCategoryDto> {
   const slug = resolveSlugForTaxonomy(input.slug, input.name)
@@ -49,8 +43,8 @@ export async function upsertAdminCategory(db: NodePgDatabase, input: UpsertCateg
       description: input.description,
       ...(input.sortOrder !== undefined ? { sortOrder: input.sortOrder } : {}),
     })
-    const countOf = await categoryPostCounter(db)
-    return toAdminCategoryDto(row, await countOf(row.name))
+    const counts = await countPostsByCategory(db)
+    return toAdminCategoryDto(row, counts.get(row.name) ?? 0)
   }
 
   const existing = await findCategoryById(db, input.id)
@@ -78,8 +72,8 @@ export async function upsertAdminCategory(db: NodePgDatabase, input: UpsertCateg
   if (updated === null) {
     throw new DomainError('NOT_FOUND', '分类不存在')
   }
-  const countOf = await categoryPostCounter(db)
-  return toAdminCategoryDto(updated, await countOf(updated.name))
+  const counts = await countPostsByCategory(db)
+  return toAdminCategoryDto(updated, counts.get(updated.name) ?? 0)
 }
 
 export async function reorderAdminCategories(
@@ -105,12 +99,14 @@ export async function reorderAdminCategories(
     }
   }
 
-  const updated = await reorderCategoryRows(
-    db,
-    orderedIds.map((id) => idFromString(id)),
-  )
-  const countOf = await categoryPostCounter(db)
-  return Promise.all(updated.map(async (row) => toAdminCategoryDto(row, await countOf(row.name))))
+  const [updated, counts] = await Promise.all([
+    reorderCategoryRows(
+      db,
+      orderedIds.map((id) => idFromString(id)),
+    ),
+    countPostsByCategory(db),
+  ])
+  return updated.map((row) => toAdminCategoryDto(row, counts.get(row.name) ?? 0))
 }
 
 export async function deleteAdminCategory(db: NodePgDatabase, id: bigint): Promise<boolean> {

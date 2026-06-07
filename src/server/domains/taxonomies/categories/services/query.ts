@@ -10,6 +10,7 @@ import { listPublicPosts } from '@/server/domains/posts/repos/public-query/listi
 import { toAdminCategoryDto } from '@/server/domains/taxonomies/categories/projection'
 import {
   type AdminCategoriesListFilters,
+  findCategoriesByNames,
   findCategoryByName,
   findCategoryBySlug,
   listAdminCategoryRows,
@@ -113,4 +114,4 @@ export async function getCategoryLinks(db: NodePgDatabase, names: readonly strin
   return result
 }
 
-export { findCategoryByName, findCategoryBySlug }
+export { findCategoriesByNames, findCategoryByName, findCategoryBySlug }

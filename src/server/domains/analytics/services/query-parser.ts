@@ -38,8 +38,10 @@ export function parseAnalyticsSearch(searchParams: URLSearchParams): AnalyticsQu
   }
 
   const filters: Filters = {}
+  const MAX_FILTERS_PAYLOAD_BYTES = 10 * 1024
+
   const filtersRaw = searchParams.get('filters')
-  if (filtersRaw) {
+  if (filtersRaw && filtersRaw.length <= MAX_FILTERS_PAYLOAD_BYTES) {
     try {
       const parsed = JSON.parse(filtersRaw) as Record<string, unknown>
       for (const [key, value] of Object.entries(parsed)) {

@@ -49,7 +49,7 @@ function ensureFonts(): Promise<void> {
 
 async function fetchDailyQuote(date: Date) {
   const url = `https://apiv3.shanbay.com/weapps/dailyquote/quote?date=${format(date, 'yyyy-MM-dd')}`
-  const res = await fetch(url)
+  const res = await fetch(url, { signal: AbortSignal.timeout(30_000) })
   if (!res.ok) {
     throw new DomainError('INTERNAL', `API 请求失败: ${res.status}`)
   }

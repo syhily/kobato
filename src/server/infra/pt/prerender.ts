@@ -5,6 +5,7 @@ import type { Block, MarkDef, PortableTextBody, TextBlock } from '@/shared/pt/sc
 import { getLogger } from '@/server/infra/logger'
 import { getKatexRenderer, type KatexRenderer } from '@/server/infra/pt/katex-renderer'
 import { SHIKI_THEMES, shikiTransformers } from '@/server/infra/pt/shiki'
+import { HIGHLIGHT_LANGUAGES } from '@/shared/constants/languages'
 
 const log = getLogger('pt.prerender')
 
@@ -116,7 +117,7 @@ let shikiHighlighterPromise: ReturnType<typeof createHighlighter> | null = null
 function getShikiHighlighter(): ReturnType<typeof createHighlighter> {
   if (shikiHighlighterPromise === null) {
     shikiHighlighterPromise = createHighlighter({
-      langs: Object.keys(bundledLanguages),
+      langs: HIGHLIGHT_LANGUAGES.filter((lang) => lang in bundledLanguages),
       themes: [SHIKI_THEMES.light, SHIKI_THEMES.dark],
     }).catch((err) => {
       // Reset so a later save can retry instead of poisoning the cache.

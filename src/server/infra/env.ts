@@ -99,7 +99,7 @@ const envConfig = {
 
     // AES-256-GCM key for encrypting secrets stored in the DB (API keys,
     // S3 credentials). Generate with: openssl rand -hex 32
-    ENCRYPTION_KEY: z.string().min(1),
+    ENCRYPTION_KEY: z.string().min(16),
 
     // Root data directory. All filesystem data (fonts, dead-letter files,
     // MaxMind DB) lives in fixed subdirectories under this path.

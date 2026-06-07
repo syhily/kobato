@@ -6,6 +6,7 @@ import type { Page, Post } from '@/shared/types/catalog'
 
 import { listPublicPostsWithContent } from '@/server/domains/posts/repos/public-query/feed'
 import {
+  findCategoriesByNames,
   findCategoryByName,
   findCategoryBySlug,
   listAllCategories,
@@ -104,7 +105,7 @@ export async function generateFeeds(db: NodePgDatabase, options: FeedOptions = {
 
   const [allTags, allCategories, contents] = await Promise.all([
     getTagsByNames(db, allTagNames),
-    Promise.all(allCategoryNames.map((name) => findCategoryByName(db, name))),
+    findCategoriesByNames(db, allCategoryNames),
     Promise.all(feedPosts.map((post) => renderEntryContent(db, post))),
   ])
 

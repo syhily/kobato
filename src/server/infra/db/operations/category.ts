@@ -1,10 +1,11 @@
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
-import { and, asc, eq, inArray, or, sql } from 'drizzle-orm'
+import { and, asc, eq, inArray, isNull, or, sql } from 'drizzle-orm'
 
 import type { CategoryRow, NewCategory } from '@/server/infra/db/types'
 
 import { ilikeEscape } from '@/server/infra/db/ilike-escape'
+import { post } from '@/server/infra/db/schema/post'
 import { category } from '@/server/infra/db/schema/taxonomy'
 
 // Public listing reads. Stable `(sort_order ASC, id ASC)` order so the
@@ -112,4 +113,19 @@ export async function reorderCategories(db: NodePgDatabase, orderedIds: readonly
     const byId = new Map(rows.map((r) => [r.id, r]))
     return orderedIds.map((id) => byId.get(id)!).filter(Boolean)
   })
+}
+
+export async function countPostsByCategory(db: NodePgDatabase): Promise<Map<string, number>> {
+  const rows = await db
+    .select({ category: post.category, count: sql<number>`count(*)::int` })
+    .from(post)
+    .where(isNull(post.deletedAt))
+    .groupBy(post.category)
+  return new Map(rows.map((r) => [r.category, r.count]))
+}
+
+export async function findCategoriesByNames(db: NodePgDatabase, names: readonly string[]): Promise<CategoryRow[]> {
+  if (names.length === 0) {return []}
+  const unique = [...new Set(names)]
+  return db.select().from(category).where(inArray(category.name, unique))
 }

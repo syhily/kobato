@@ -26,7 +26,7 @@ const avatar = publicProc
   .route({ method: 'GET', path: '/github/avatar' })
   .output(z.object({ avatar: z.string() }))
   .handler(async () => {
-    const res = await fetch(AVATAR_URL)
+    const res = await fetch(AVATAR_URL, { signal: AbortSignal.timeout(30_000) })
     if (!res.ok) {
       return { avatar: '' }
     }
@@ -52,7 +52,9 @@ const release = publicProc
       throw new Error('Invalid repository format')
     }
     const { owner, repo } = parsed
-    const res = await fetch(`https://api.github.com/repos/${owner}/${repo}/releases/latest`)
+    const res = await fetch(`https://api.github.com/repos/${owner}/${repo}/releases/latest`, {
+      signal: AbortSignal.timeout(30_000),
+    })
     if (!res.ok) {
       throw new Error('Failed to fetch release')
     }

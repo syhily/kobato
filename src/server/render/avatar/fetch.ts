@@ -51,7 +51,7 @@ export async function fetchAvatarImage(hash: string): Promise<Buffer | null> {
 
   let currentLink = initialLink
   for (let hop = 0; hop <= MAX_REDIRECT_HOPS; hop++) {
-    const resp = await fetch(currentLink, { redirect: 'manual', headers })
+    const resp = await fetch(currentLink, { redirect: 'manual', headers, signal: AbortSignal.timeout(30_000) })
 
     if (resp.status >= 300 && resp.status < 400) {
       const location = resp.headers.get('location')
@@ -104,6 +104,7 @@ export async function fetchQQAvatarImage(email: string): Promise<Buffer | null> 
 
   const resp = await fetch(url, {
     headers: { Accept: 'image/png,image/jpeg,image/webp,*/*' },
+    signal: AbortSignal.timeout(30_000),
   })
   if (!resp.ok) {
     return null

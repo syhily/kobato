@@ -11,7 +11,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 const mocks = vi.hoisted(() => ({
   listPublicPostsWithContent: vi.fn(),
   findCategoryBySlug: vi.fn(),
-  findCategoryByName: vi.fn(),
+  findCategoriesByNames: vi.fn(),
   findTagBySlug: vi.fn(),
   findTagByName: vi.fn(),
   listAllCategories: vi.fn(),
@@ -24,7 +24,7 @@ vi.mock('@/server/domains/posts/repos/public-query/feed', () => ({
 vi.mock('@/server/domains/taxonomies/categories/services/query', () => ({
   listAllCategories: mocks.listAllCategories,
   findCategoryBySlug: mocks.findCategoryBySlug,
-  findCategoryByName: mocks.findCategoryByName,
+  findCategoriesByNames: mocks.findCategoriesByNames,
 }))
 vi.mock('@/server/domains/taxonomies/tags/service', () => ({
   getTagsByNames: mocks.getTagsByNames,
@@ -49,8 +49,8 @@ function fakeCatalog(
   mocks.findCategoryBySlug.mockImplementation((_db: unknown, slug: string) =>
     categories.find((cat) => cat.slug === slug),
   )
-  mocks.findCategoryByName.mockImplementation((_db: unknown, name: string) =>
-    categories.find((cat) => cat.name === name),
+  mocks.findCategoriesByNames.mockImplementation((_db: unknown, names: string[]) =>
+    names.map((name) => categories.find((cat) => cat.name === name)).filter(Boolean),
   )
   mocks.findTagBySlug.mockImplementation((_db: unknown, slug: string) => tags.find((tag) => tag.slug === slug))
   mocks.findTagByName.mockImplementation((_db: unknown, name: string) => tags.find((tag) => tag.name === name))

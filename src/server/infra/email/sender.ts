@@ -101,6 +101,7 @@ export async function sendEmail(
         subject,
         html,
       }),
+      signal: AbortSignal.timeout(30_000),
     })
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error)
@@ -223,6 +224,7 @@ export async function sendTestMail(to: string): Promise<SendResult> {
         Authorization: `Bearer ${mail.apiKey}`,
       },
       body: JSON.stringify({ from: mail.sender, to: [to], subject, html }),
+      signal: AbortSignal.timeout(30_000),
     })
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error)

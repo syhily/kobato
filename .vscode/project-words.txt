@@ -239,6 +239,7 @@ qrcode
 quan
 recma
 recognise
+rediscli
 redmi
 referer
 regclass

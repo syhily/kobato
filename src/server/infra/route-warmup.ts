@@ -1,6 +1,6 @@
 import type { Plugin } from 'vite'
 
-import { existsSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs'
+import { existsSync, readdirSync, statSync, writeFileSync } from 'node:fs'
 import { basename, join, resolve } from 'node:path'
 
 // Route tier configuration
@@ -143,7 +143,7 @@ export function routeWarmupPlugin(): Plugin {
 
     writeBundle: {
       order: 'post',
-      async handler(options, _bundle) {
+      async handler(options, bundle) {
         // With v8_viteEnvironmentApi, the client build fires first,
         // then the SSR build. Run in the SSR environment so both
         // client assets and the server manifest are available.
@@ -170,15 +170,28 @@ export function routeWarmupPlugin(): Plugin {
           return
         }
 
-        // Locate server manifest
-        const serverBuildPath = join(serverOutDir, 'assets', 'server-build.js')
-        if (!existsSync(serverBuildPath)) {
+        // Extract manifest from the in-memory bundle chunks
+        let src: string | undefined
+        for (const chunk of Object.values(bundle)) {
+          if (chunk.type === 'chunk' && chunk.fileName.endsWith('server-build.js')) {
+            src = chunk.code
+            break
+          }
+        }
+
+        if (!src) {
           return
         }
 
         // Parse manifest from server build
-        const manifest = parseServerManifest(serverBuildPath)
+        const manifest = parseServerManifest(src)
         if (!manifest) {
+          return
+        }
+
+        if (Object.keys(manifest.routes).length === 0) {
+          // oxlint-disable-next-line no-console
+          console.error('[route-warmup] parsed manifest has 0 routes — likely a parser regression')
           return
         }
 
@@ -330,9 +343,8 @@ function findMatchingBrace(text: string, start: number): number {
   return -1
 }
 
-function parseServerManifest(serverBuildPath: string): RouteManifest | null {
+function parseServerManifest(src: string): RouteManifest | null {
   try {
-    const src = readFileSync(serverBuildPath, 'utf-8')
     // TODO(P2-6): This regex-based extraction is fragile — any change in
     // the bundler's output format (minification, variable renaming, different
     // var declaration syntax) will silently break warmup manifest generation.
@@ -342,7 +354,7 @@ function parseServerManifest(serverBuildPath: string): RouteManifest | null {
     const startIdx = src.indexOf(startMarker)
     if (startIdx === -1) {
       // oxlint-disable-next-line no-console
-      console.error('[route-warmup] server_manifest_default marker not found in built output', serverBuildPath)
+      console.error('[route-warmup] server_manifest_default marker not found in built output')
       return null
     }
 
@@ -350,7 +362,7 @@ function parseServerManifest(serverBuildPath: string): RouteManifest | null {
     const endIdx = findMatchingBrace(src, objectStart)
     if (endIdx === -1) {
       // oxlint-disable-next-line no-console
-      console.error('[route-warmup] could not find matching brace for server_manifest_default', serverBuildPath)
+      console.error('[route-warmup] could not find matching brace for server_manifest_default')
       return null
     }
 
@@ -362,11 +374,7 @@ function parseServerManifest(serverBuildPath: string): RouteManifest | null {
     return JSON.parse(quoted) as RouteManifest
   } catch (err) {
     // oxlint-disable-next-line no-console
-    console.error(
-      '[route-warmup] failed to parse server manifest',
-      serverBuildPath,
-      err instanceof Error ? err.message : String(err),
-    )
+    console.error('[route-warmup] failed to parse server manifest', err instanceof Error ? err.message : String(err))
     return null
   }
 }
