@@ -147,8 +147,10 @@ function cmdPrepareNext(): void {
 
   const pkg = readJson(pkgPath)
   const oldVersion = pkg['version'] as string
-  const parts = oldVersion.split('.').map(Number)
-  const nextVersion = `${parts[0]}.${parts[1]}.${parts[2] + 1}`
+  // Strip any prerelease suffix from the old version to get the base
+  const baseVersion = oldVersion.split('-')[0]
+  const parts = baseVersion.split('.').map(Number)
+  const nextVersion = `${parts[0]}.${parts[1]}.${parts[2] + 1}-dev`
 
   // Update package.json
   pkg['version'] = nextVersion

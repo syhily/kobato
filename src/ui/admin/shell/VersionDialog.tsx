@@ -17,7 +17,9 @@ import { GithubIcon } from '@/ui/icons/brand'
 import { cn } from '@/ui/lib/cn'
 import { Image } from '@/ui/public/widgets/Image'
 
-type CheckState = 'idle' | 'loading' | 'up-to-date' | 'available' | 'error'
+type CheckState = 'idle' | 'loading' | 'up-to-date' | 'available' | 'dev' | 'error'
+
+const IS_DEV_BUILD = APP_VERSION.includes('-dev')
 
 interface VersionDialogProps {
   open: boolean
@@ -36,6 +38,10 @@ export function VersionDialog({ open, onOpenChange }: VersionDialogProps) {
   })
 
   const handleCheckUpdate = useCallback(async () => {
+    if (IS_DEV_BUILD) {
+      setCheckState('dev')
+      return
+    }
     setCheckState('loading')
     try {
       const release = await orpc.github.release({})
@@ -75,7 +81,14 @@ export function VersionDialog({ open, onOpenChange }: VersionDialogProps) {
             </div>
             <div className="flex items-center gap-2">
               <div className="text-lg font-semibold">{APP_NAME.charAt(0).toUpperCase() + APP_NAME.slice(1)}</div>
-              <span className="rounded-xl bg-status-success-bg px-2 py-0.5 text-xs font-semibold text-status-success-fg">
+              <span
+                className={cn(
+                  'rounded-xl px-2 py-0.5 text-xs font-semibold',
+                  IS_DEV_BUILD
+                    ? 'bg-status-warning-bg text-status-warning-fg'
+                    : 'bg-status-success-bg text-status-success-fg',
+                )}
+              >
                 v{APP_VERSION}
               </span>
             </div>
@@ -176,6 +189,15 @@ function UpdateStatus({
       <div className="mt-2 flex items-center gap-1.5 text-xs text-status-success-fg">
         <CheckCircleIcon className="size-3.5" />
         当前已是最新版本
+      </div>
+    )
+  }
+
+  if (state === 'dev') {
+    return (
+      <div className="text-status-warning-fg mt-2 flex items-center gap-1.5 text-xs">
+        <AlertCircleIcon className="size-3.5" />
+        当前为开发版本，更新检查已跳过
       </div>
     )
   }
