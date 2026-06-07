@@ -25,6 +25,7 @@ Run `gh release view <last-tag>` to read the most recent release notes body. Thi
 Also read the second-most-recent release for additional context: run `gh release view <tag-before-that>`.
 
 Internalize these style rules:
+
 - **Title**: `## Kobato X.Y.Z` (h2, with "Kobato" prefix)
 - **Lead paragraph**: 1–2 sentences summarizing the release themes, with **bolded** feature names inline
 - **Sections**: Use `###` headers with emoji prefixes — `### ✨ New Features`, `### 🛡️ Security Hardening`, `### 🏗️ Architecture & Refactoring`, `### 🔧 Build & Dependencies`, `### 🐛 Fixes`. Only include sections that have entries. Add extra sections (e.g., `### 🎨 UI Redesign`, `### 🎵 Music Player`) if a thematic grouping makes sense.
@@ -36,7 +37,7 @@ Internalize these style rules:
 
 ### Step 4: Draft release notes
 
-Based on the commit analysis and the established style, draft the release notes. Group related commits under thematic sub-headers. Expand terse commit messages into descriptive bullets — the reader should understand *what* changed and *why* without reading the code.
+Based on the commit analysis and the established style, draft the release notes. Group related commits under thematic sub-headers. Expand terse commit messages into descriptive bullets — the reader should understand _what_ changed and _why_ without reading the code.
 
 For commits that are purely internal (e.g., `refactor: move X to Y`), collapse related ones into a single bullet rather than listing each individually.
 
@@ -53,6 +54,7 @@ node --experimental-strip-types scripts/release.ts bump <version>
 where `<version>` is the argument the user provided to `/release`.
 
 Verify the commit was created:
+
 - Run `git log -1 --format="%h %s"` — should show `build: release <version>`.
 
 ### Step 6: Publish

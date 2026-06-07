@@ -125,7 +125,9 @@ export async function countPostsByCategory(db: NodePgDatabase): Promise<Map<stri
 }
 
 export async function findCategoriesByNames(db: NodePgDatabase, names: readonly string[]): Promise<CategoryRow[]> {
-  if (names.length === 0) {return []}
+  if (names.length === 0) {
+    return []
+  }
   const unique = [...new Set(names)]
   return db.select().from(category).where(inArray(category.name, unique))
 }
