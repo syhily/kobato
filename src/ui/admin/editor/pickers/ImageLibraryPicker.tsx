@@ -65,7 +65,7 @@ export function ImageLibraryPicker({ trigger, onPick, open: openProp, onOpenChan
             }
           />
         ) : null}
-        <DialogContent className="max-h-[90vh] max-w-3xl">
+        <DialogContent className="max-h-dialog-max-h max-w-3xl">
           <DialogHeader>
             <DialogTitle>从图片库选择</DialogTitle>
           </DialogHeader>
@@ -90,7 +90,7 @@ export function ImageLibraryPicker({ trigger, onPick, open: openProp, onOpenChan
               <UploadIcon /> 上传图片
             </Button>
           </div>
-          <div className="max-h-[60vh] overflow-y-auto">
+          <div className="max-h-dialog-max-h-sm overflow-y-auto">
             {listQuery.isPending ? (
               <div className="p-8 text-center text-sm text-muted-foreground">加载中…</div>
             ) : listQuery.data?.images.length === 0 ? (

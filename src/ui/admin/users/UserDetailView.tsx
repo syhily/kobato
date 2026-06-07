@@ -22,6 +22,7 @@ import { Button } from '@/ui/components/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/ui/components/card'
 import { Separator } from '@/ui/components/separator'
 import { Skeleton } from '@/ui/components/skeleton'
+import { cn } from '@/ui/lib/cn'
 import { PortableTextBody } from '@/ui/pt/render'
 
 type Role = NonNullable<AdminUserDto['role']>
@@ -227,7 +228,7 @@ export function UserDetailView({ userId, navigate, passkeyEnabled }: UserDetailV
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">待审核</span>
-                  <span className={user.pendingCount > 0 ? 'font-medium text-destructive' : 'font-medium'}>
+                  <span className={cn('font-medium', user.pendingCount > 0 && 'text-destructive')}>
                     {user.pendingCount}
                   </span>
                 </div>

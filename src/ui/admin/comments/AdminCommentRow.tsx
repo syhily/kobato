@@ -3,9 +3,8 @@ import { CheckIcon, ImageIcon, LinkIcon, ReplyIcon, SquarePenIcon, Trash2Icon, U
 import type { AdminCommentWire as AdminComment } from '@/shared/contracts/comments'
 
 import { useMutation, orpcQuery } from '@/client/api/query'
-import { useAssetsSettings, useSiteIdentity } from '@/shared/lib/blog-config-context'
+import { useSiteIdentity } from '@/shared/lib/blog-config-context'
 import { bodyToPlainText } from '@/shared/pt/utils'
-import { getImageUrl } from '@/shared/types/images'
 import { formatLocalDate } from '@/shared/utils/formatter'
 import { safeHref } from '@/shared/utils/safe-url'
 import { idStr } from '@/shared/utils/tools'
@@ -13,6 +12,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/ui/components/avatar'
 import { Badge } from '@/ui/components/badge'
 import { Button } from '@/ui/components/button'
 import { PortableTextBody } from '@/ui/pt/render'
+import { Image } from '@/ui/public/widgets/Image'
 
 const ADMIN_DATE_FORMAT = 'yyyy-LL-dd HH:mm'
 const REPLY_SNIPPET_MAX = 60
@@ -45,19 +45,7 @@ export function AdminCommentRow({
   onFilterByAuthor,
 }: AdminCommentRowProps) {
   const config = useSiteIdentity()
-  const { asset, storage } = useAssetsSettings()
   const authorHref = safeHref(comment.link)
-
-  const thumbSrc = comment.pageCover
-    ? getImageUrl({
-        src: comment.pageCover,
-        width: 200,
-        height: 125,
-        quality: 80,
-        assetHost: asset.host,
-        urlTemplate: storage.urlTemplate,
-      })
-    : ''
 
   const approveMutation = useMutation({
     ...orpcQuery.admin.comments.approve.mutationOptions(),
@@ -242,9 +230,16 @@ export function AdminCommentRow({
       </div>
 
       {/* Cover thumbnail */}
-      {thumbSrc ? (
+      {comment.pageCover ? (
         <div className="hidden aspect-[16/10] w-(--spacing-admin-thumb) shrink-0 self-start overflow-hidden rounded-xl bg-muted md:block">
-          <img src={thumbSrc} alt="" className="size-full object-cover" loading="lazy" />
+          <Image
+            src={comment.pageCover}
+            alt=""
+            width={200}
+            height={125}
+            className="size-full object-cover"
+            loading="lazy"
+          />
         </div>
       ) : comment.pageTitle ? (
         <div className="hidden aspect-[16/10] w-(--spacing-admin-thumb) shrink-0 items-center justify-center self-start rounded-xl bg-muted text-muted-foreground md:flex">

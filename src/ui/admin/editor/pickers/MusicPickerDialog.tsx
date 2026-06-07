@@ -90,7 +90,7 @@ export function MusicPickerDialog({ trigger, onPick, open: openProp, onOpenChang
             }
           />
         ) : null}
-        <DialogContent className="max-h-[90vh] max-w-2xl">
+        <DialogContent className="max-h-dialog-max-h max-w-2xl">
           <DialogHeader>
             <DialogTitle>选择音乐</DialogTitle>
           </DialogHeader>
@@ -107,7 +107,7 @@ export function MusicPickerDialog({ trigger, onPick, open: openProp, onOpenChang
               <PlusIcon /> 添加音乐
             </Button>
           </div>
-          <div className="max-h-[60vh] overflow-y-auto">
+          <div className="max-h-dialog-max-h-sm overflow-y-auto">
             {musics === null ? (
               <div className="p-8 text-center text-sm text-muted-foreground">加载中…</div>
             ) : musics.length === 0 ? (

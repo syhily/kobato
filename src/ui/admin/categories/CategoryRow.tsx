@@ -9,6 +9,7 @@ import type { AdminCategoryDto } from '@/shared/types/categories'
 import { Skeleton } from '@/ui/components/skeleton'
 import { Tooltip } from '@/ui/components/tooltip'
 import { cn } from '@/ui/lib/cn'
+import { Image } from '@/ui/public/widgets/Image'
 
 interface CategoryRowProps {
   category: AdminCategoryDto
@@ -54,7 +55,14 @@ export const CategoryRow = memo(function CategoryRow({ category, sortEnabled, on
       {/* Cover */}
       <div className="relative aspect-[16/10] w-(--spacing-admin-thumb) flex-shrink-0 overflow-hidden rounded-xl bg-muted">
         {category.cover ? (
-          <img src={category.cover} alt={category.name} className="size-full object-cover" loading="lazy" />
+          <Image
+            src={category.cover}
+            alt={category.name}
+            width={200}
+            height={125}
+            className="size-full object-cover"
+            loading="lazy"
+          />
         ) : null}
       </div>
 

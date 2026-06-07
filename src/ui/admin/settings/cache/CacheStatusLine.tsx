@@ -2,6 +2,7 @@ import type { ClearCacheTarget } from '@/shared/types/cache'
 import type { ClearStatus } from '@/ui/admin/settings/cache/cache-status'
 
 import { formatTimestamp } from '@/ui/admin/settings/cache/cache-formatters'
+import { cn } from '@/ui/lib/cn'
 
 interface CacheStatusLineProps {
   status: ClearStatus
@@ -20,7 +21,7 @@ export function CacheStatusLine({ status, target, generatedAt }: CacheStatusLine
         ? `数据采集时间：${formatTimestamp(generatedAt)}`
         : ''
   return (
-    <output aria-live="polite" className={isError ? 'text-xs text-destructive' : 'text-xs text-muted-foreground'}>
+    <output aria-live="polite" className={cn('text-xs', isError ? 'text-destructive' : 'text-muted-foreground')}>
       {message}
     </output>
   )
@@ -40,7 +41,7 @@ export function ReadOnlyStatusLine({ clearStatus, target, savedHint }: ReadOnlyS
   }
   const message = isSuccess ? clearStatus.message : isError ? clearStatus.message : savedHint
   return (
-    <output aria-live="polite" className={isError ? 'text-xs text-destructive' : 'text-xs text-muted-foreground'}>
+    <output aria-live="polite" className={cn('text-xs', isError ? 'text-destructive' : 'text-muted-foreground')}>
       {message}
     </output>
   )
@@ -72,7 +73,7 @@ export function BucketSaveStatus({ isDirty, isPending, status, validationError }
   return (
     <output
       aria-live="polite"
-      className={tone === 'error' ? 'text-sm text-destructive' : 'text-sm text-muted-foreground'}
+      className={cn('text-sm', tone === 'error' ? 'text-destructive' : 'text-muted-foreground')}
     >
       {message}
     </output>

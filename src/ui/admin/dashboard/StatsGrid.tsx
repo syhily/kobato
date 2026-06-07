@@ -1,7 +1,7 @@
-import type { LucideIcon } from 'lucide-react'
-
 import { ClockIcon, FileCheck2Icon, MessageSquareIcon, SquarePenIcon } from 'lucide-react'
 import { Link } from 'react-router'
+
+import type { LucideIcon } from '@/ui/icons/types'
 
 import { cn } from '@/ui/lib/cn'
 

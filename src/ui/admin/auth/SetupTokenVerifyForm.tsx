@@ -1,4 +1,4 @@
-import { Form, useActionData, useNavigation, useRouteLoaderData } from 'react-router'
+import { Form } from 'react-router'
 
 import { Button } from '@/ui/components/button'
 import { Input } from '@/ui/components/input'
@@ -8,17 +8,13 @@ import { Label } from '@/ui/components/label'
 const inputClasses =
   'h-(--spacing-auth-input) rounded-xl border-0 bg-muted/50 px-4 text-xl md:text-xl placeholder:text-muted-foreground/50 focus-visible:bg-background focus-visible:ring-2 focus-visible:ring-primary/25 focus-visible:border-primary'
 
-function useCsrfToken(): string | undefined {
-  const rootData = useRouteLoaderData<{ csrfToken?: string }>('root')
-  return rootData?.csrfToken
+export interface SetupTokenVerifyFormProps {
+  isSubmitting: boolean
+  csrfToken?: string
+  actionData?: { error?: string; setupTokenVerified?: boolean } | null
 }
 
-export function SetupTokenVerifyForm() {
-  const navigation = useNavigation()
-  const isSubmitting = navigation.state === 'submitting' && navigation.formMethod === 'POST'
-  const csrfToken = useCsrfToken()
-  const actionData = useActionData<{ error?: string; setupTokenVerified?: boolean }>()
-
+export function SetupTokenVerifyForm({ isSubmitting, csrfToken, actionData }: SetupTokenVerifyFormProps) {
   return (
     <div className="flex w-full flex-col gap-6">
       <p className="text-center text-sm text-muted-foreground">请输入服务器控制台中显示的 Setup Token。</p>

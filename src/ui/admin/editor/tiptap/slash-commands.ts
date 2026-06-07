@@ -1,6 +1,5 @@
 import type { Range } from '@tiptap/core'
 import type { Editor } from '@tiptap/react'
-import type { LucideIcon } from 'lucide-react'
 
 import {
   CodeIcon,
@@ -22,6 +21,7 @@ import {
 } from 'lucide-react'
 
 import type { Block } from '@/shared/pt/schema'
+import type { LucideIcon } from '@/ui/icons/types'
 
 import { generateBlockKey } from '@/shared/pt/utils'
 

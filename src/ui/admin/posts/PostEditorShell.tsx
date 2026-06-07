@@ -99,7 +99,7 @@ export function PostEditorShell({ mode, detail, navigate }: PostEditorShellProps
     <div
       className={cn(
         'flex flex-col gap-0 p-2 md:gap-4 md:p-4',
-        state.previewOpen ? 'min-h-0 flex-1' : 'min-h-[calc(100vh-4rem)]',
+        state.previewOpen ? 'min-h-0 flex-1' : 'min-h-admin-content-min',
       )}
     >
       <PostEditorToolbar mode={mode} detail={detail} state={state} />

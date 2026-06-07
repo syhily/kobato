@@ -11,6 +11,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/ui/components/alert-dialog'
+import { cn } from '@/ui/lib/cn'
 
 export interface ConfirmState {
   title: string
@@ -72,7 +73,7 @@ export function ConfirmDialog({ state, onClose }: ConfirmDialogProps) {
             <XIcon data-icon /> 取消
           </AlertDialogCancel>
           <AlertDialogAction
-            className={renderState?.destructive ? 'bg-destructive hover:bg-destructive/90' : undefined}
+            className={cn(renderState?.destructive && 'bg-destructive hover:bg-destructive/90')}
             onClick={() => {
               renderState?.onConfirm()
               onClose()

@@ -30,6 +30,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Skeleton } from '@/ui/components/skeleton'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/ui/components/table'
 import { cn } from '@/ui/lib/cn'
+import { Image } from '@/ui/public/widgets/Image'
 
 const PAGE_SIZE_OPTIONS: { value: string; label: string }[] = [10, 20, 50, 100].map((n) => ({
   value: String(n),
@@ -215,11 +216,14 @@ export function MusicsView() {
                     <TableRow key={row.id}>
                       <TableCell className="pl-4">
                         {row.coverUrl !== '' ? (
-                          <>
-                            {/* Admin table thumbnail: the cover is already a public S3 URL
-                                and does not need CDN transform for a 40×40 list preview. */}
-                            <img src={row.coverUrl} alt="" className="size-10 rounded object-cover" loading="lazy" />
-                          </>
+                          <Image
+                            src={row.coverUrl}
+                            alt=""
+                            width={40}
+                            height={40}
+                            className="size-10 rounded object-cover"
+                            loading="lazy"
+                          />
                         ) : (
                           <div className="size-10 rounded bg-muted" />
                         )}

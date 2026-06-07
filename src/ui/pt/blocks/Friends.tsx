@@ -50,9 +50,7 @@ export function Friends({ friends }: FriendsProps) {
               </div>
               <div className="flex flex-1 flex-col justify-center px-4 pt-3 pb-4">
                 <div className="flex-1">
-                  <div className="m-0 line-clamp-1 block leading-[1.4] font-semibold text-inherit">
-                    {friend.website}
-                  </div>
+                  <div className="m-0 line-clamp-1 block leading-body font-semibold text-inherit">{friend.website}</div>
                   <div className="mt-1 line-clamp-2 text-sm text-ink-3">
                     {friend.description ? friend.description : ' '}
                   </div>

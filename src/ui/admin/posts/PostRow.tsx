@@ -3,9 +3,8 @@ import { Link } from 'react-router'
 
 import type { AdminPostDto } from '@/shared/types/posts'
 
-import { useAssetsSettings } from '@/shared/lib/blog-config-context'
-import { getImageUrl } from '@/shared/types/images'
 import { cn } from '@/ui/lib/cn'
+import { Image } from '@/ui/public/widgets/Image'
 
 interface PostRowProps {
   post: AdminPostDto
@@ -63,19 +62,8 @@ function PostStatusText({ post }: { post: AdminPostDto }) {
 
 export function PostRow({ post, onFilterCategory }: PostRowProps) {
   const isDeleted = post.deletedAt !== null
-  const { asset, storage } = useAssetsSettings()
 
   const dateText = `${formatPostDateLabel(post)} ${formatPostDate(post)}`
-  const thumbSrc = post.cover
-    ? getImageUrl({
-        src: post.cover,
-        width: 200,
-        height: 125,
-        quality: 80,
-        assetHost: asset.host,
-        urlTemplate: storage.urlTemplate,
-      })
-    : ''
 
   return (
     <div
@@ -87,8 +75,8 @@ export function PostRow({ post, onFilterCategory }: PostRowProps) {
     >
       {/* Thumbnail */}
       <div className="relative aspect-[16/10] w-(--spacing-admin-thumb) flex-shrink-0 overflow-hidden rounded-xl bg-muted">
-        {thumbSrc ? (
-          <img src={thumbSrc} alt="" className="size-full object-cover" loading="lazy" />
+        {post.cover ? (
+          <Image src={post.cover} alt="" width={200} height={125} className="size-full object-cover" loading="lazy" />
         ) : (
           <div className="flex size-full items-center justify-center text-muted-foreground">
             <ImageIcon className="size-5" />

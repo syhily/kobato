@@ -295,14 +295,14 @@ export function PageBodyEditor({
           <div className="sticky top-0 z-20 shrink-0 border-b bg-card">
             <Toolbar {...toolbarProps} />
           </div>
-          {/* Bottom padding (`pb-[60vh]`) gives the operator a generous
+          {/* Bottom padding (`pb-editor-pad-bottom`) gives the operator a generous
               scroll runway past the end of the document. Without it the
               last paragraph hugs the container edge, which leaves the
               slash menu (anchored below the caret) clipped or overlapped
               by the surrounding chrome when authoring near the bottom. */}
           <div
             ref={scrollContainerRef}
-            className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto px-3 pt-6 pb-[60vh] md:px-6"
+            className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto px-3 pt-6 pb-editor-pad-bottom md:px-6"
           >
             {editorCanvas}
           </div>
@@ -317,7 +317,7 @@ export function PageBodyEditor({
             >
               <Toolbar {...toolbarProps} />
             </div>
-            <div className="min-h-0 grow px-3 pt-6 pb-[60vh] md:px-6">{editorCanvas}</div>
+            <div className="min-h-0 grow px-3 pt-6 pb-editor-pad-bottom md:px-6">{editorCanvas}</div>
           </div>
           {showFloatingToolbar ? (
             // Centered toolbar pill, anchored at the same `bottom-*`

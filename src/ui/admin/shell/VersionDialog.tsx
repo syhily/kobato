@@ -15,6 +15,7 @@ import { APP_AUTHOR, APP_DESCRIPTION, APP_HOMEPAGE, APP_NAME, APP_VERSION } from
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/ui/components/dialog'
 import { GithubIcon } from '@/ui/icons/brand'
 import { cn } from '@/ui/lib/cn'
+import { Image } from '@/ui/public/widgets/Image'
 
 type CheckState = 'idle' | 'loading' | 'up-to-date' | 'available' | 'error'
 
@@ -87,7 +88,7 @@ export function VersionDialog({ open, onOpenChange }: VersionDialogProps) {
               href="https://yufan.me"
               icon={
                 avatarData?.avatar ? (
-                  <img src={avatarData.avatar} alt="" className="size-3.5" />
+                  <Image src={avatarData.avatar} alt="" width={14} height={14} className="size-3.5" loading="lazy" />
                 ) : (
                   <div className="size-3.5 rounded-full bg-muted" />
                 )

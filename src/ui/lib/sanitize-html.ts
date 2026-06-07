@@ -1,35 +1,9 @@
-import type { HTMLAttributes } from 'react'
-
 import DOMPurify from 'dompurify'
-
-import { cn } from '@/ui/lib/cn'
 
 export type SafeHtmlStrategy = 'shiki' | 'math' | 'email' | 'audit' | 'preview'
 
-interface SafeHtmlProps extends Omit<HTMLAttributes<HTMLElement>, 'dangerouslySetInnerHTML'> {
-  html: string
-  strategy: SafeHtmlStrategy
-  tag?: 'div' | 'span' | 'pre' | 'code' | 'p' | 'td'
-}
-
-/**
- * `dangerouslySetInnerHTML` wrapper with DOMPurify runtime sanitisation.
- * The `strategy` prop selects the minimum required allow-list so each
- * producer (Shiki, KaTeX, etc.) gets only the permissions it needs.
- */
-export function SafeHtml({ html, strategy, tag = 'div', className, ...rest }: SafeHtmlProps) {
-  const Tag = tag
-  const sanitised = DOMPurify.sanitize(html, strategyToConfig(strategy))
-  return (
-    <Tag
-      className={cn(className)}
-      data-safe-html-strategy={strategy}
-      // SAFETY: HTML has been run through DOMPurify with a
-      // strategy-specific allow-list before injection.
-      dangerouslySetInnerHTML={{ __html: sanitised }}
-      {...rest}
-    />
-  )
+export function sanitizeHtml(html: string, strategy: SafeHtmlStrategy): string {
+  return DOMPurify.sanitize(html, strategyToConfig(strategy)) as string
 }
 
 function strategyToConfig(strategy: SafeHtmlStrategy): NonNullable<Parameters<typeof DOMPurify.sanitize>[1]> {

@@ -3,7 +3,7 @@ import type { PublicKeyCredentialRequestOptionsJSON } from '@simplewebauthn/brow
 import { startAuthentication } from '@simplewebauthn/browser'
 import { ArrowRightIcon, EyeIcon, EyeOffIcon, FingerprintIcon, RotateCcwIcon, SendIcon } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
-import { Form, Link, useActionData, useNavigation, useRouteLoaderData } from 'react-router'
+import { Form, Link } from 'react-router'
 
 import { orpc } from '@/client/api/client'
 import { Button } from '@/ui/components/button'
@@ -14,16 +14,6 @@ import { cn } from '@/ui/lib/cn'
 // Shared auth input styling across login / install / reset forms.
 const inputClasses =
   'h-(--spacing-auth-input) rounded-xl border-0 bg-muted/50 px-4 text-xl md:text-xl placeholder:text-muted-foreground/50 focus-visible:bg-background focus-visible:ring-2 focus-visible:ring-primary/25 focus-visible:border-primary'
-
-function useAuthSubmitting(): boolean {
-  const navigation = useNavigation()
-  return navigation.state === 'submitting' && navigation.formMethod === 'POST'
-}
-
-function useCsrfToken(): string | undefined {
-  const rootData = useRouteLoaderData<{ csrfToken?: string }>('root')
-  return rootData?.csrfToken
-}
 
 function PasswordToggle({ show, onToggle }: { show: boolean; onToggle: () => void }) {
   return (
@@ -43,6 +33,8 @@ function PasswordToggle({ show, onToggle }: { show: boolean; onToggle: () => voi
 export interface LoginFormProps {
   action?: string
   passkeyEnabled?: boolean
+  isSubmitting: boolean
+  csrfToken?: string
 }
 
 export function useWebAuthnSupported(): boolean {
@@ -53,10 +45,8 @@ export function useWebAuthnSupported(): boolean {
   return supported
 }
 
-export function LoginForm({ action, passkeyEnabled }: LoginFormProps) {
-  const isSubmitting = useAuthSubmitting()
+export function LoginForm({ action, passkeyEnabled, isSubmitting, csrfToken }: LoginFormProps) {
   const [showPassword, setShowPassword] = useState(false)
-  const csrfToken = useCsrfToken()
   const webAuthnSupported = useWebAuthnSupported()
   const [passkeyError, setPasskeyError] = useState<string | null>(null)
   const emailRef = useRef<HTMLInputElement>(null)
@@ -192,12 +182,11 @@ export function LoginForm({ action, passkeyEnabled }: LoginFormProps) {
 
 export interface LostPasswordFormProps {
   action?: string
+  isSubmitting: boolean
+  csrfToken?: string
 }
 
-export function LostPasswordForm({ action }: LostPasswordFormProps) {
-  const isSubmitting = useAuthSubmitting()
-  const csrfToken = useCsrfToken()
-
+export function LostPasswordForm({ action, isSubmitting, csrfToken }: LostPasswordFormProps) {
   return (
     <Form method="post" action={action} id="loginForm" className="flex w-full flex-col gap-6">
       {csrfToken ? <input type="hidden" name="csrf_token" value={csrfToken} /> : null}
@@ -243,12 +232,12 @@ export function LostPasswordForm({ action }: LostPasswordFormProps) {
 export interface ResetPasswordFormProps {
   action?: string
   token: string
+  isSubmitting: boolean
+  csrfToken?: string
 }
 
-export function ResetPasswordForm({ action, token }: ResetPasswordFormProps) {
-  const isSubmitting = useAuthSubmitting()
+export function ResetPasswordForm({ action, token, isSubmitting, csrfToken }: ResetPasswordFormProps) {
   const [showPassword, setShowPassword] = useState(false)
-  const csrfToken = useCsrfToken()
 
   return (
     <Form method="post" action={action} id="loginForm" className="flex w-full flex-col gap-6">
@@ -297,6 +286,9 @@ export function ResetPasswordForm({ action, token }: ResetPasswordFormProps) {
 export interface OtpFormProps {
   email: string
   sentAt: number
+  isSubmitting: boolean
+  csrfToken?: string
+  actionData?: { message?: string; error?: string } | null
 }
 
 const RESEND_COOLDOWN_SECONDS = 60
@@ -306,10 +298,7 @@ function calcInitialCooldown(sentAt: number): number {
   return Math.max(0, Math.ceil(RESEND_COOLDOWN_SECONDS - elapsed))
 }
 
-export function OtpForm({ email, sentAt }: OtpFormProps) {
-  const isSubmitting = useAuthSubmitting()
-  const csrfToken = useCsrfToken()
-  const actionData = useActionData<{ message?: string; error?: string }>()
+export function OtpForm({ email, sentAt, isSubmitting, csrfToken, actionData }: OtpFormProps) {
   const [cooldown, setCooldown] = useState(() => calcInitialCooldown(sentAt))
 
   const shouldTick = cooldown > 0

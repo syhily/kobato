@@ -1,4 +1,4 @@
-import type { LucideIcon } from 'lucide-react'
+import type { LucideIcon } from '@/ui/icons/types'
 
 import { createIcon } from '@/ui/icons/create-icon'
 

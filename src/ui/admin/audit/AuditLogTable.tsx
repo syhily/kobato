@@ -10,8 +10,9 @@ import { Badge } from '@/ui/components/badge'
 import { Button } from '@/ui/components/button'
 import { Card } from '@/ui/components/card'
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@/ui/components/empty'
-import { SafeHtml } from '@/ui/components/safe-html'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/ui/components/table'
+import { cn } from '@/ui/lib/cn'
+import { sanitizeHtml } from '@/ui/lib/sanitize-html'
 
 interface AuditLogTableProps {
   rows: AuditLogItemDto[]
@@ -148,7 +149,7 @@ function AuditLogRow({ row, isExpanded, onToggle }: AuditLogRowProps) {
   const config = useSiteIdentity()
 
   return (
-    <TableRow className={isExpanded ? 'bg-muted/30 hover:bg-muted/30' : undefined}>
+    <TableRow className={cn(isExpanded && 'bg-muted/30 hover:bg-muted/30')}>
       <TableCell className="text-xs text-muted-foreground tabular-nums">
         {formatLocalDate(new Date(row.createdAt), undefined, config)}
       </TableCell>
@@ -226,10 +227,9 @@ function JsonDetailRow({ details }: { details: Record<string, unknown> | null })
       <TableCell colSpan={6} className="p-0">
         <div className="max-h-64 overflow-auto border-t">
           {html ? (
-            <SafeHtml
-              html={html}
-              strategy="audit"
+            <div
               className="[&>pre]:m-0 [&>pre]:rounded-none [&>pre]:border-0 [&>pre]:bg-transparent [&>pre]:px-4 [&>pre]:py-3 [&>pre]:text-xs [&>pre]:leading-relaxed"
+              dangerouslySetInnerHTML={{ __html: sanitizeHtml(html, 'audit') }}
             />
           ) : (
             <pre className="px-4 py-3 text-xs leading-relaxed">{json}</pre>

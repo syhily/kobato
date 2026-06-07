@@ -14,6 +14,7 @@ import {
 } from '@/ui/components/dialog'
 import { Input } from '@/ui/components/input'
 import { Label } from '@/ui/components/label'
+import { cn } from '@/ui/lib/cn'
 
 interface ImageDetailDialogProps {
   image: AdminImageDto | null
@@ -213,7 +214,7 @@ export function ImageDetailDialog({
                 onClick={() => onRecalculateThumbhash(image)}
                 disabled={isRecalculatingThumbhash}
               >
-                <RefreshCwIcon data-icon className={isRecalculatingThumbhash ? 'animate-spin' : ''} />{' '}
+                <RefreshCwIcon data-icon className={cn(isRecalculatingThumbhash && 'animate-spin')} />{' '}
                 {isRecalculatingThumbhash ? '计算中…' : '重新计算 thumbhash'}
               </Button>
               <Button type="button" variant="outline" size="sm" className="w-full sm:w-auto" onClick={onClose}>

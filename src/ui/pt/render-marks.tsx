@@ -3,8 +3,8 @@ import { type ReactNode } from 'react'
 
 import type { FootnoteRefMarkDef, LinkMarkDef, MathInlineMarkDef } from '@/shared/pt/schema'
 
-import { SafeHtml } from '@/ui/components/safe-html'
 import { cn } from '@/ui/lib/cn'
+import { sanitizeHtml } from '@/ui/lib/sanitize-html'
 import { FootnoteReference } from '@/ui/pt/Footnotes'
 import { PT_INLINE } from '@/ui/pt/render-shared'
 
@@ -17,13 +17,17 @@ export function renderMathMarkupOrTexFallback(
   const markup = mathml !== undefined && mathml !== '' ? mathml : legacySvg
   if (markup !== undefined && markup !== '') {
     if (layout === 'inline') {
-      return <SafeHtml html={markup} strategy="math" tag="span" className="math-inline inline-block align-middle" />
+      return (
+        <span
+          className="math-inline inline-block align-middle"
+          dangerouslySetInnerHTML={{ __html: sanitizeHtml(markup, 'math') }}
+        />
+      )
     }
     return (
-      <SafeHtml
-        html={markup}
-        strategy="math"
+      <div
         className="math math-display text-center [&_svg]:mx-auto [&_svg]:block [&_svg]:max-w-none"
+        dangerouslySetInnerHTML={{ __html: sanitizeHtml(markup, 'math') }}
       />
     )
   }

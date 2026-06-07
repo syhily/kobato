@@ -35,7 +35,7 @@ export function DraftConflictDialog({
 
   return (
     <Dialog open={open}>
-      <DialogContent className="max-h-[90vh] max-w-5xl">
+      <DialogContent className="max-h-dialog-max-h max-w-5xl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <ArrowRightLeftIcon className="size-4" />

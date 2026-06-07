@@ -27,7 +27,7 @@ export function PostEditorRoute({ postId, navigate }: PostEditorRouteProps) {
 
 function PostEditorError({ message }: { message: string }) {
   return (
-    <div className="flex min-h-[60vh] flex-col items-center justify-center gap-4 p-8 text-center">
+    <div className="flex min-h-dialog-max-h-sm flex-col items-center justify-center gap-4 p-8 text-center">
       <AlertTriangleIcon className="size-10 text-destructive" />
       <h1 className="text-lg font-semibold">无法打开文章编辑器</h1>
       <p className="max-w-md text-sm text-muted-foreground">{message}</p>
@@ -45,7 +45,7 @@ function PostEditorError({ message }: { message: string }) {
 
 function PostEditorSkeleton() {
   return (
-    <div className="flex min-h-[calc(100vh-4rem)] flex-col gap-0 p-2 md:gap-4 md:p-4">
+    <div className="flex min-h-admin-content-min flex-col gap-0 p-2 md:gap-4 md:p-4">
       <div className="flex items-center gap-3">
         <Skeleton className="h-9 w-24" />
         <Skeleton className="h-5 w-48" />

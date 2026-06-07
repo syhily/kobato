@@ -17,6 +17,7 @@ import {
 import { Input } from '@/ui/components/input'
 import { Label } from '@/ui/components/label'
 import { Textarea } from '@/ui/components/textarea'
+import { Image } from '@/ui/public/widgets/Image'
 
 // Discriminator: `music === undefined` keeps the dialog closed; a
 // populated `music` opens it in "edit existing" mode. The parent
@@ -115,9 +116,14 @@ export function EditMusicDialog({ music, onClose, onSaved }: EditMusicDialogProp
             <div className="grid grid-cols-[80px_1fr] items-center gap-3 sm:col-span-2">
               {music.coverUrl !== '' ? (
                 <>
-                  {/* Admin preview thumbnail: the cover is already a small public S3 URL
-                      and does not need CDN transform for an 80×80 dialog preview. */}
-                  <img src={music.coverUrl} alt="" className="size-20 rounded-xl object-cover" loading="lazy" />
+                  <Image
+                    src={music.coverUrl}
+                    alt=""
+                    width={80}
+                    height={80}
+                    className="size-20 rounded-xl object-cover"
+                    loading="lazy"
+                  />
                 </>
               ) : (
                 <div className="size-20 rounded-xl bg-muted" />

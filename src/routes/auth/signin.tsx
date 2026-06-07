@@ -1,5 +1,5 @@
 import bcrypt from 'bcryptjs'
-import { data, redirect } from 'react-router'
+import { data, redirect, useActionData, useNavigation, useRouteLoaderData } from 'react-router'
 
 import { recordAuditEvent } from '@/server/domains/audit/services/record'
 import { getDbFromContext, getRouteRequestContext } from '@/server/domains/auth/context'
@@ -350,6 +350,12 @@ export function meta({ matches }: Route.MetaArgs) {
 }
 
 export default function LoginRoute({ actionData, loaderData }: Route.ComponentProps) {
+  const navigation = useNavigation()
+  const isSubmitting = navigation.state === 'submitting' && navigation.formMethod === 'POST'
+  const rootData = useRouteLoaderData<{ csrfToken?: string }>('root')
+  const csrfToken = rootData?.csrfToken
+  const otpActionData = useActionData<{ message?: string; error?: string }>()
+
   return (
     <div className="flex flex-col gap-8">
       <header className="text-center">
@@ -381,13 +387,21 @@ export default function LoginRoute({ actionData, loaderData }: Route.ComponentPr
         </div>
       ) : null}
 
-      {loaderData.action === 'login' && <LoginForm passkeyEnabled={loaderData.passkeyEnabled} />}
-      {loaderData.action === 'verifyotp' && 'pendingOtpEmail' in loaderData && 'pendingOtpSentAt' in loaderData && (
-        <OtpForm email={loaderData.pendingOtpEmail as string} sentAt={loaderData.pendingOtpSentAt as number} />
+      {loaderData.action === 'login' && (
+        <LoginForm passkeyEnabled={loaderData.passkeyEnabled} isSubmitting={isSubmitting} csrfToken={csrfToken} />
       )}
-      {loaderData.action === 'lostpassword' && <LostPasswordForm />}
+      {loaderData.action === 'verifyotp' && 'pendingOtpEmail' in loaderData && 'pendingOtpSentAt' in loaderData && (
+        <OtpForm
+          email={loaderData.pendingOtpEmail as string}
+          sentAt={loaderData.pendingOtpSentAt as number}
+          isSubmitting={isSubmitting}
+          csrfToken={csrfToken}
+          actionData={otpActionData}
+        />
+      )}
+      {loaderData.action === 'lostpassword' && <LostPasswordForm isSubmitting={isSubmitting} csrfToken={csrfToken} />}
       {(loaderData.action === 'resetpassword' || loaderData.action === 'accept-invite') && loaderData.resetToken && (
-        <ResetPasswordForm token={loaderData.resetToken} />
+        <ResetPasswordForm token={loaderData.resetToken} isSubmitting={isSubmitting} csrfToken={csrfToken} />
       )}
     </div>
   )

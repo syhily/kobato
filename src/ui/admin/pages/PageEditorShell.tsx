@@ -13,14 +13,11 @@ import {
   Undo2Icon,
   UploadIcon,
 } from 'lucide-react'
-import { useState } from 'react'
-import { Link, useNavigate } from 'react-router'
-import { toast } from 'sonner'
+import { Link } from 'react-router'
 
 import type { AdminPageDetailDto, AdminPageDto, UpsertPageMetaInput } from '@/shared/types/pages'
 
 import { orpc } from '@/client/api/client'
-import { useMutation } from '@/client/api/query'
 import { useCreatePageDraft } from '@/client/hooks/use-create-page-draft'
 import { usePageLocalDraft } from '@/client/hooks/use-page-local-draft'
 import { ActionBanner } from '@/ui/admin/editor-shell/ActionBanner'
@@ -30,6 +27,8 @@ import { PreviewPane } from '@/ui/admin/editor-shell/PreviewPanel'
 import { RevisionHistoryDrawer } from '@/ui/admin/editor-shell/RevisionsDrawer'
 import { useEditorShellState } from '@/ui/admin/editor-shell/use-editor-shell-state'
 import { PageBodyEditor } from '@/ui/admin/editor/PageBodyEditor'
+import { buildPageUpsertPayload } from '@/ui/admin/pages/build-page-upsert-payload'
+import { CreateModeBanner } from '@/ui/admin/pages/CreateModeBanner'
 import {
   EMPTY_META_DRAFT,
   metaDraftFromPage,
@@ -37,9 +36,10 @@ import {
   MetaSidebar,
   type PageMetaDraft,
 } from '@/ui/admin/pages/MetaSidebar'
-import { type ConfirmState, ConfirmDialog } from '@/ui/admin/shared/ConfirmDialog'
+import { TitleSlugStrip } from '@/ui/admin/pages/TitleSlugStrip'
+import { usePageDeleteRestore } from '@/ui/admin/pages/use-page-delete-restore'
+import { ConfirmDialog } from '@/ui/admin/shared/ConfirmDialog'
 import { Button } from '@/ui/components/button'
-import { Input } from '@/ui/components/input'
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/ui/components/sheet'
 import { cn } from '@/ui/lib/cn'
 
@@ -47,86 +47,6 @@ export interface PageEditorShellProps {
   mode: 'create' | 'edit'
   detail?: AdminPageDetailDto
   navigate: NavigateFunction
-}
-
-function buildPageUpsertPayload({
-  meta,
-  id,
-  publishedAt,
-}: {
-  meta: PageMetaDraft
-  id?: string
-  publishedAt: string | null
-}): UpsertPageMetaInput {
-  return {
-    ...(id !== undefined ? { id } : {}),
-    ...(meta.slug.trim() !== '' ? { slug: meta.slug.trim() } : {}),
-    title: meta.title.trim(),
-    summary: meta.summary.trim(),
-    cover: meta.cover.trim(),
-    og: meta.og.trim() === '' ? null : meta.og.trim(),
-    commentsEnabled: meta.commentsEnabled,
-    showToc: meta.showToc,
-    showUpdated: meta.showUpdated,
-    showFriends: meta.showFriends,
-    ...(publishedAt !== null ? { publishedAt } : {}),
-  }
-}
-
-function usePageDeleteRestore(detail: AdminPageDetailDto | undefined) {
-  const navigate = useNavigate()
-  const [confirm, setConfirm] = useState<ConfirmState | null>(null)
-
-  const page = detail?.page
-
-  const deleteApi = useMutation({
-    mutationFn: (id: string) => orpc.admin.pages.delete({ id }),
-    onSuccess: () => {
-      toast.success('页面已删除')
-      void navigate('/admin/pages')
-    },
-    onError: (error) => {
-      setConfirm({
-        title: '删除失败',
-        description: error.message,
-        actionLabel: '我知道了',
-        destructive: false,
-        onConfirm: () => undefined,
-      })
-    },
-  })
-
-  const restoreApi = useMutation({
-    mutationFn: (id: string) => orpc.admin.pages.restore({ id }),
-    onSuccess: () => {
-      toast.success('页面已恢复')
-      void navigate(0)
-    },
-    onError: (error) => {
-      setConfirm({
-        title: '恢复失败',
-        description: error.message,
-        actionLabel: '我知道了',
-        destructive: false,
-        onConfirm: () => undefined,
-      })
-    },
-  })
-
-  const handleDelete = page
-    ? () =>
-        setConfirm({
-          title: `删除页面「${page.title}」？`,
-          description: '页面会被软删除（30 天内可恢复）。已发布的链接将立即返回 404。',
-          actionLabel: '删除',
-          destructive: true,
-          onConfirm: () => deleteApi.mutate(page.id),
-        })
-    : undefined
-
-  const handleRestore = page ? () => restoreApi.mutate(page.id) : undefined
-
-  return { confirm, setConfirm, handleDelete, handleRestore }
 }
 
 // Top-level orchestrator for the page authoring screen. All shared
@@ -490,57 +410,6 @@ export function PageEditorShell({ mode, detail, navigate }: PageEditorShellProps
           onChooseServer={state.adoptServerVersion}
         />
       ) : null}
-    </div>
-  )
-}
-
-interface CreateModeBannerProps {
-  draftSavedAt: number | null
-}
-
-function CreateModeBanner({ draftSavedAt }: CreateModeBannerProps) {
-  return (
-    <div className="flex items-center justify-between rounded-xl border border-destructive/10 bg-destructive/5 px-3 py-2 text-xs text-muted-foreground">
-      <span>新页面正文仅本地保留，点击「创建页面」后才会同步到服务器。</span>
-      {draftSavedAt !== null ? (
-        <span className="font-mono">已恢复本地草稿 · {new Date(draftSavedAt).toLocaleTimeString('zh-CN')}</span>
-      ) : null}
-    </div>
-  )
-}
-
-interface TitleSlugStripProps {
-  title: string
-  slug: string
-  onTitleChange: (value: string) => void
-  onSlugChange: (value: string) => void
-  disabled?: boolean
-}
-
-function TitleSlugStrip({ title, slug, onTitleChange, onSlugChange, disabled }: TitleSlugStripProps) {
-  return (
-    <div className="flex flex-col gap-2 rounded-xl border bg-card p-3">
-      <Input
-        aria-label="页面标题"
-        value={title}
-        onChange={(e) => onTitleChange(e.target.value)}
-        placeholder="页面标题"
-        maxLength={200}
-        disabled={disabled}
-        className="h-auto border-0 bg-transparent px-0 text-2xl leading-tight font-bold tracking-tight shadow-none focus-visible:ring-0 md:text-3xl dark:bg-transparent"
-      />
-      <div className="flex items-center gap-2 font-mono text-xs text-muted-foreground">
-        <span>/</span>
-        <Input
-          aria-label="URL slug"
-          value={slug}
-          onChange={(e) => onSlugChange(e.target.value)}
-          placeholder="留空将根据标题按拼音生成"
-          maxLength={80}
-          disabled={disabled}
-          className="h-7 grow border-0 bg-transparent px-0 text-xs shadow-none focus-visible:ring-0 dark:bg-transparent"
-        />
-      </div>
     </div>
   )
 }

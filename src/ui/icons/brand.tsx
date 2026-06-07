@@ -1,6 +1,5 @@
-import type { LucideIcon } from 'lucide-react'
-
 import type { SocialNetwork } from '@/shared/config/socials'
+import type { LucideIcon } from '@/ui/icons/types'
 
 import { createIcon } from '@/ui/icons/create-icon'
 

@@ -4,6 +4,7 @@ import type { MetingSearchHit } from '@/shared/types/music'
 
 import { Button } from '@/ui/components/button'
 import { cn } from '@/ui/lib/cn'
+import { Image } from '@/ui/public/widgets/Image'
 
 export interface PreviewProgress {
   duration: number | null
@@ -51,7 +52,14 @@ export function SearchResultItem({
     <div className="flex flex-col gap-2 rounded-xl border bg-card px-3 py-2">
       <div className="flex items-center gap-3">
         {hit.coverUrl !== '' ? (
-          <img src={hit.coverUrl} alt="" className="size-12 shrink-0 rounded object-cover" loading="lazy" />
+          <Image
+            src={hit.coverUrl}
+            alt=""
+            width={48}
+            height={48}
+            className="size-12 shrink-0 rounded object-cover"
+            loading="lazy"
+          />
         ) : (
           <div className="size-12 shrink-0 rounded bg-muted" />
         )}

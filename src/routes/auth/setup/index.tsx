@@ -1,4 +1,4 @@
-import { data, redirect } from 'react-router'
+import { data, redirect, useActionData, useNavigation, useRouteLoaderData } from 'react-router'
 
 import { getDbFromContext, getPoolFromContext, getRouteRequestContext } from '@/server/domains/auth/context'
 import { validateCsrfForAction } from '@/server/domains/auth/csrf'
@@ -149,6 +149,12 @@ export function meta({ matches }: Route.MetaArgs) {
 }
 
 export default function AdminInstallRoute({ actionData, loaderData }: Route.ComponentProps) {
+  const navigation = useNavigation()
+  const isSubmitting = navigation.state === 'submitting' && navigation.formMethod === 'POST'
+  const rootData = useRouteLoaderData<{ csrfToken?: string }>('root')
+  const csrfToken = rootData?.csrfToken
+  const verifyActionData = useActionData<{ error?: string; setupTokenVerified?: boolean }>()
+
   return (
     <div className="flex flex-col gap-8">
       {/* Ghost-style welcome header */}
@@ -171,7 +177,7 @@ export default function AdminInstallRoute({ actionData, loaderData }: Route.Comp
       ) : null}
 
       {!loaderData.setupTokenVerified ? (
-        <SetupTokenVerifyForm />
+        <SetupTokenVerifyForm isSubmitting={isSubmitting} csrfToken={csrfToken} actionData={verifyActionData} />
       ) : (
         <AdminInstallForm pgToolsAvailable={loaderData.pgToolsAvailable} />
       )}

@@ -9,8 +9,8 @@ import { generateBlockKey } from '@/shared/pt/utils'
 import { useAdminMathPreview } from '@/ui/admin/editor/tiptap/use-admin-math-preview'
 import { Button } from '@/ui/components/button'
 import { Label } from '@/ui/components/label'
-import { SafeHtml } from '@/ui/components/safe-html'
 import { Textarea } from '@/ui/components/textarea'
+import { sanitizeHtml } from '@/ui/lib/sanitize-html'
 
 interface MathInlinePanelProps {
   editor: Editor
@@ -150,11 +150,9 @@ export function MathInlinePanel({ editor }: MathInlinePanelProps) {
         {showSpinner ? (
           <span className="ml-2 text-xs text-muted-foreground">渲染中…</span>
         ) : (
-          <SafeHtml
-            html={previewHtml}
-            strategy="preview"
-            tag="span"
+          <span
             className="ml-2 inline-flex min-h-[1.25em] max-w-full items-center overflow-x-auto align-middle"
+            dangerouslySetInnerHTML={{ __html: sanitizeHtml(previewHtml, 'preview') }}
           />
         )}
       </div>
