@@ -1,6 +1,7 @@
 import type { PublicMusicMeta as MusicMeta } from '@/shared/types/music'
 
 import { orpc } from '@/client/api/client'
+import { logger } from '@/client/lib/logger'
 
 /**
  * Fetch music metadata by id for the browser-side APlayer.
@@ -11,7 +12,7 @@ export async function loadMusic(id: string): Promise<MusicMeta | null> {
     const res = await orpc.music.get({ id })
     return (res.music as MusicMeta | null) ?? null
   } catch (err) {
-    console.warn('Failed to load music:', err)
+    logger.warn('Failed to load music:', { error: err })
     return null
   }
 }
