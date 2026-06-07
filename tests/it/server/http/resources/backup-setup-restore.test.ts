@@ -54,7 +54,7 @@ vi.mock('@/server/domains/backup/restore-orchestrator', () => ({
   performSafeRestore: (...args: unknown[]) => mockPerformSafeRestore(...args),
 }))
 
-vi.mock('@/server/domains/settings/snapshot', () => ({
+vi.mock('@/server/domains/settings/services/hydrate', () => ({
   refreshBlogSettings: (...args: unknown[]) => mockRefreshBlogSettings(...args),
 }))
 

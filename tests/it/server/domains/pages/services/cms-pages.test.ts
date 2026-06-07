@@ -15,21 +15,27 @@ import type { ContentRow } from '@/server/infra/db/types'
 
 vi.mock('@/server/domains/pages/repo', () => ({
   countPageMetas: vi.fn(async () => 0),
-  findContentById: vi.fn(),
-  findLatestDraft: vi.fn(),
-  findLatestRevision: vi.fn(),
   findPageMetaById: vi.fn(),
   findPageMetaBySlug: vi.fn(),
   findPublicPageMetaBySlug: vi.fn(),
   insertPageMeta: vi.fn(),
   listPageMetas: vi.fn(async () => []),
   listPublicPageMetas: vi.fn(async () => []),
-  listRevisions: vi.fn(async () => []),
-  publishLatestRevision: vi.fn(),
   restorePageMeta: vi.fn(),
-  saveDraftRevision: vi.fn(),
   softDeletePageMeta: vi.fn(),
   updatePageMetaById: vi.fn(),
+}))
+vi.mock('@/server/domains/content/repos/query', () => ({
+  findContentById: vi.fn(),
+  findContentsByIds: vi.fn(async () => []),
+  findLatestDraft: vi.fn(),
+  findLatestRevision: vi.fn(),
+  listRevisions: vi.fn(async () => []),
+  maxRevisionNo: vi.fn(async () => 0),
+}))
+vi.mock('@/server/domains/content/repos/mutate', () => ({
+  publishLatestRevision: vi.fn(),
+  saveDraftRevision: vi.fn(),
 }))
 
 // `listPagesForAdmin` ensures a metric row per listed page and reads
@@ -59,6 +65,8 @@ const db = {
 } as unknown as NodePgDatabase
 
 const repo = await import('@/server/domains/pages/repo')
+const query = await import('@/server/domains/content/repos/query')
+const contentMutate = await import('@/server/domains/content/repos/mutate')
 const { DomainError } = await import('@/server/infra/http/errors')
 const adminQuery = await import('@/server/domains/pages/services/admin-query')
 const mutate = await import('@/server/domains/pages/services/mutate')
@@ -151,8 +159,8 @@ describe('cms/pages/service — listPagesForAdmin / getPageDetailForAdmin', () =
     const draft = contentRow({ id: 201n, ownerId: 7n, revisionNo: 4, status: 'draft' })
     const published = contentRow({ id: 200n, ownerId: 7n, revisionNo: 3, status: 'published' })
     vi.mocked(repo.findPageMetaById).mockResolvedValue(meta)
-    vi.mocked(repo.findLatestRevision).mockResolvedValue(draft)
-    vi.mocked(repo.findContentById).mockResolvedValue(published)
+    vi.mocked(query.findLatestRevision).mockResolvedValue(draft)
+    vi.mocked(query.findContentById).mockResolvedValue(published)
 
     const detail = await adminQuery.getPageDetailForAdmin(db, 7n)
     expect(detail?.page.id).toBe('7')
@@ -250,7 +258,7 @@ describe('cms/pages/service — saveDraft / publishLatest body validation', () =
     await expect(
       draft.saveDraft(db, { pageId: 1n, body: [{ _type: 'unknown', _key: 'k' }], authorId: null }),
     ).rejects.toMatchObject({ code: 'BAD_REQUEST' })
-    expect(repo.saveDraftRevision).not.toHaveBeenCalled()
+    expect(contentMutate.saveDraftRevision).not.toHaveBeenCalled()
   })
 
   it('rejects when the page row is missing without touching the transaction', async () => {
@@ -258,12 +266,12 @@ describe('cms/pages/service — saveDraft / publishLatest body validation', () =
     await expect(draft.saveDraft(db, { pageId: 1n, body: VALID_BODY, authorId: null })).rejects.toMatchObject({
       code: 'NOT_FOUND',
     })
-    expect(repo.saveDraftRevision).not.toHaveBeenCalled()
+    expect(contentMutate.saveDraftRevision).not.toHaveBeenCalled()
   })
 
   it('forwards body, derived imageSources, and derived headings into the repository call', async () => {
     vi.mocked(repo.findPageMetaById).mockResolvedValue(metaRow({ id: 1n }))
-    vi.mocked(repo.saveDraftRevision).mockResolvedValue({
+    vi.mocked(contentMutate.saveDraftRevision).mockResolvedValue({
       status: 'saved',
       row: contentRow({ revisionNo: 1, status: 'draft' }),
     })
@@ -284,7 +292,7 @@ describe('cms/pages/service — saveDraft / publishLatest body validation', () =
     ]
     await draft.saveDraft(db, { pageId: 1n, body, authorId: 42n })
 
-    const arg = vi.mocked(repo.saveDraftRevision).mock.calls[0][2]
+    const arg = vi.mocked(contentMutate.saveDraftRevision).mock.calls[0][2]
     expect(arg.ownerId).toBe(1n)
     expect(arg.imageSources).toEqual(['images/2026/05/foo.jpg'])
     expect(arg.headings).toEqual([{ depth: 2, text: 'Hello', slug: 'hello' }])
@@ -299,7 +307,7 @@ describe('cms/pages/service — saveDraft / publishLatest body validation', () =
       status: 'draft',
       clientRevisionToken: '11111111-2222-3333-4444-555555555555',
     })
-    vi.mocked(repo.saveDraftRevision).mockResolvedValue({
+    vi.mocked(contentMutate.saveDraftRevision).mockResolvedValue({
       status: 'conflict',
       latest,
       expectedToken: latest.clientRevisionToken,
@@ -321,7 +329,7 @@ describe('cms/pages/service — saveDraft / publishLatest body validation', () =
 
   it('publishLatest projects the saved revision back as a "saved" wire DTO', async () => {
     vi.mocked(repo.findPageMetaById).mockResolvedValue(metaRow({ id: 1n }))
-    vi.mocked(repo.publishLatestRevision).mockResolvedValue({
+    vi.mocked(contentMutate.publishLatestRevision).mockResolvedValue({
       status: 'published',
       row: contentRow({ revisionNo: 7, status: 'published' }),
     })
@@ -337,7 +345,7 @@ describe('cms/pages/service — saveDraft / publishLatest body validation', () =
 describe('cms/pages/service — saveDraft / publishLatest CAS + force', () => {
   it('saveDraft forwards expectedClientRevisionToken untouched into the repo call', async () => {
     vi.mocked(repo.findPageMetaById).mockResolvedValue(metaRow({ id: 1n }))
-    vi.mocked(repo.saveDraftRevision).mockResolvedValue({
+    vi.mocked(contentMutate.saveDraftRevision).mockResolvedValue({
       status: 'saved',
       row: contentRow({ revisionNo: 1, status: 'draft' }),
     })
@@ -349,7 +357,7 @@ describe('cms/pages/service — saveDraft / publishLatest CAS + force', () => {
       expectedClientRevisionToken: 'expected-token-abc',
     })
 
-    const arg = vi.mocked(repo.saveDraftRevision).mock.calls[0][2]
+    const arg = vi.mocked(contentMutate.saveDraftRevision).mock.calls[0][2]
     expect(arg.expectedClientRevisionToken).toBe('expected-token-abc')
     expect(arg.force).toBeUndefined()
   })
@@ -358,7 +366,7 @@ describe('cms/pages/service — saveDraft / publishLatest CAS + force', () => {
     const writeSpy = vi.spyOn(process.stdout, 'write').mockImplementation(() => true)
 
     vi.mocked(repo.findPageMetaById).mockResolvedValue(metaRow({ id: 7n }))
-    vi.mocked(repo.findLatestRevision).mockResolvedValue(
+    vi.mocked(query.findLatestRevision).mockResolvedValue(
       contentRow({
         id: 600n,
         ownerId: 7n,
@@ -367,7 +375,7 @@ describe('cms/pages/service — saveDraft / publishLatest CAS + force', () => {
         clientRevisionToken: 'server-side-newer',
       }),
     )
-    vi.mocked(repo.saveDraftRevision).mockResolvedValue({
+    vi.mocked(contentMutate.saveDraftRevision).mockResolvedValue({
       status: 'saved',
       row: contentRow({ id: 601n, ownerId: 7n, revisionNo: 9, status: 'draft' }),
     })
@@ -380,7 +388,7 @@ describe('cms/pages/service — saveDraft / publishLatest CAS + force', () => {
       force: true,
     })
 
-    const repoArg = vi.mocked(repo.saveDraftRevision).mock.calls[0][2]
+    const repoArg = vi.mocked(contentMutate.saveDraftRevision).mock.calls[0][2]
     expect(repoArg.force).toBe(true)
 
     // Audit log line emitted exactly once for the genuine overwrite.
@@ -408,7 +416,7 @@ describe('cms/pages/service — saveDraft / publishLatest CAS + force', () => {
 
     vi.mocked(repo.findPageMetaById).mockResolvedValue(metaRow({ id: 7n }))
     const same = 'aligned-token'
-    vi.mocked(repo.findLatestRevision).mockResolvedValue(
+    vi.mocked(query.findLatestRevision).mockResolvedValue(
       contentRow({
         id: 700n,
         ownerId: 7n,
@@ -417,7 +425,7 @@ describe('cms/pages/service — saveDraft / publishLatest CAS + force', () => {
         clientRevisionToken: same,
       }),
     )
-    vi.mocked(repo.saveDraftRevision).mockResolvedValue({
+    vi.mocked(contentMutate.saveDraftRevision).mockResolvedValue({
       status: 'saved',
       row: contentRow({ id: 701n, ownerId: 7n, revisionNo: 3, status: 'draft' }),
     })
@@ -446,7 +454,7 @@ describe('cms/pages/service — saveDraft / publishLatest CAS + force', () => {
       status: 'draft',
       clientRevisionToken: 'newer-than-client',
     })
-    vi.mocked(repo.publishLatestRevision).mockResolvedValue({
+    vi.mocked(contentMutate.publishLatestRevision).mockResolvedValue({
       status: 'conflict',
       latest: stale,
       expectedToken: stale.clientRevisionToken,
@@ -465,7 +473,7 @@ describe('cms/pages/service — saveDraft / publishLatest CAS + force', () => {
       expect(result.expectedToken).toBe('newer-than-client')
     }
 
-    const repoArg = vi.mocked(repo.publishLatestRevision).mock.calls[0][2]
+    const repoArg = vi.mocked(contentMutate.publishLatestRevision).mock.calls[0][2]
     expect(repoArg.force).toBe(false)
     expect(repoArg.expectedClientRevisionToken).toBe('stale-client')
   })
@@ -474,7 +482,7 @@ describe('cms/pages/service — saveDraft / publishLatest CAS + force', () => {
     const writeSpy = vi.spyOn(process.stdout, 'write').mockImplementation(() => true)
 
     vi.mocked(repo.findPageMetaById).mockResolvedValue(metaRow({ id: 11n }))
-    vi.mocked(repo.findLatestRevision).mockResolvedValue(
+    vi.mocked(query.findLatestRevision).mockResolvedValue(
       contentRow({
         id: 900n,
         ownerId: 11n,
@@ -483,7 +491,7 @@ describe('cms/pages/service — saveDraft / publishLatest CAS + force', () => {
         clientRevisionToken: 'srv-token',
       }),
     )
-    vi.mocked(repo.publishLatestRevision).mockResolvedValue({
+    vi.mocked(contentMutate.publishLatestRevision).mockResolvedValue({
       status: 'published',
       row: contentRow({ id: 901n, ownerId: 11n, revisionNo: 12, status: 'published' }),
     })
@@ -526,7 +534,7 @@ describe('cms/pages/service — public catalog projection', () => {
 
   it('loadCatalogPageBySlug joins the published revision body when present', async () => {
     vi.mocked(repo.findPublicPageMetaBySlug).mockResolvedValue(metaRow({ id: 1n, publishedRevisionId: 200n }))
-    vi.mocked(repo.findContentById).mockResolvedValue(
+    vi.mocked(query.findContentById).mockResolvedValue(
       contentRow({
         id: 200n,
         revisionNo: 3,

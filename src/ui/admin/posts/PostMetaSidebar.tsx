@@ -119,11 +119,10 @@ export function localInputValueToIso(value: string): string | null {
 }
 
 import type {
+  SidebarPublishStatus,
   SidebarRevisionSummary,
   SidebarSaveStatus,
-  SidebarPublishStatus,
 } from '@/ui/admin/editor-shared/sidebar-types'
-export type { SidebarRevisionSummary, SidebarSaveStatus, SidebarPublishStatus }
 
 export interface MetaSidebarProps {
   draft: PostMetaDraft

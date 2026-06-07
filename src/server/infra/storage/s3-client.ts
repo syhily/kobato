@@ -306,7 +306,7 @@ export async function deleteS3Objects(keys: string[]): Promise<void> {
   )
 }
 
-// `buildPublicUrl` lives in `@/server/render/image-enhance` and
+// `buildPublicUrl` lives in `@/server/domains/images/services/cache` and
 // reads the live `publicBaseUrl` through `@/server/domains/images/storage`'s
 // dispatcher. Keeping it out of this module is what allows the SSR
 // enhancer to stay free of the AWS SDK in code paths that only need

@@ -1,3 +1,4 @@
+import { useMutation } from '@tanstack/react-query'
 import { RefreshCwIcon, RotateCcwIcon, SearchIcon, SquarePenIcon, Trash2Icon, XIcon } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate, useRevalidator, useSearchParams } from 'react-router'
@@ -6,7 +7,7 @@ import type { MyCommentEntityOption, MyCommentItem } from '@/routes/admin/me/com
 import type { CommentBody } from '@/shared/pt/comment-schema'
 import type { MyCommentsStatus } from '@/shared/types/comments'
 
-import { useMutation, orpcQuery } from '@/client/api/query'
+import { orpcQuery } from '@/client/api/orpc-query'
 import { useSiteIdentity } from '@/shared/lib/blog-config-context'
 import { formatLocalDate } from '@/shared/utils/formatter'
 import { MyEditCommentDialog } from '@/ui/admin/my/MyEditCommentDialog'

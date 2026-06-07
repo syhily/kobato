@@ -1,7 +1,7 @@
 import { createContext, use } from 'react'
 
-import type { CommentItemWire as CommentItemType } from '@/shared/contracts/comments'
 import type { CommentFormUser } from '@/shared/types/catalog'
+import type { CommentItemWire as CommentItemType } from '@/shared/types/comments'
 
 export interface CommentTreeState {
   items: CommentItemType[]

@@ -1,4 +1,4 @@
-import type { CommentItemWire as CommentItemType } from '@/shared/contracts/comments'
+import type { CommentItemWire as CommentItemType } from '@/shared/types/comments'
 
 import { CommentRow } from '@/ui/public/comments/comment-item/CommentRow'
 import { asKey, childrenListClass, useCommentsLeafContext } from '@/ui/public/comments/comment-item/helpers'

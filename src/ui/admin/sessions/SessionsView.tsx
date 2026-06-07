@@ -1,10 +1,11 @@
+import { useMutation } from '@tanstack/react-query'
 import { LogOutIcon, MonitorIcon, RefreshCwIcon, SearchIcon } from 'lucide-react'
 import { useCallback, useState } from 'react'
 import { Link, useNavigate, useRevalidator, useSearchParams } from 'react-router'
 
 import type { AdminSessionItem } from '@/routes/admin/security/sessions'
 
-import { useMutation, orpcQuery } from '@/client/api/query'
+import { orpcQuery } from '@/client/api/orpc-query'
 import { useSiteIdentity } from '@/shared/lib/blog-config-context'
 import { formatLocalDate } from '@/shared/utils/formatter'
 import { roleLabel } from '@/shared/utils/roles'

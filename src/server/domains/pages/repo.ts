@@ -14,23 +14,6 @@ import { ilikeEscape } from '@/server/infra/db/ilike-escape'
 import { page as pageMetaTable } from '@/server/infra/db/schema/page'
 import { user } from '@/server/infra/db/schema/user'
 
-export {
-  findContentById,
-  findContentsByIds,
-  findLatestDraft,
-  findLatestRevision,
-  listRevisions,
-  maxRevisionNo,
-} from '@/server/domains/content/repos/query'
-export { publishLatestRevision, saveDraftRevision } from '@/server/domains/content/repos/mutate'
-export type {
-  ContentType,
-  PublishLatestInput,
-  PublishLatestResult,
-  SaveDraftInput,
-  SaveDraftResult,
-} from '@/server/domains/content/schema'
-
 // --- Reads -------------------------------------------------------------------
 
 export type PageMetaWithAuthor = PageMetaRow & { authorName: string | null }

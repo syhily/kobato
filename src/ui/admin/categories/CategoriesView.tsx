@@ -9,13 +9,14 @@ import {
 } from '@dnd-kit/core'
 import { restrictToVerticalAxis } from '@dnd-kit/modifiers'
 import { SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable'
+import { useMutation, useQuery } from '@tanstack/react-query'
 import { PlusIcon, SearchIcon } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 import { toast } from 'sonner'
 
 import type { AdminCategoryDto } from '@/shared/types/categories'
 
-import { orpcQuery, useMutation, useQuery } from '@/client/api/query'
+import { orpcQuery } from '@/client/api/orpc-query'
 import { CategoriesSkeleton, CategoryRow } from '@/ui/admin/categories/CategoryRow'
 import { EditCategoryDialog } from '@/ui/admin/categories/EditCategoryDialog'
 import { useCategoriesController } from '@/ui/admin/categories/useCategoriesController'

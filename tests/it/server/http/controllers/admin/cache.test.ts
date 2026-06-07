@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { TEST_BLOG_SETTINGS_BUNDLE } from '#/_helpers/blog-settings'
 import { makeAuthedCtx } from '#/_helpers/mock-ctx'
 import { flushWorkerRedis } from '#/_helpers/redis'
-import { setBlogSettingsBundleForTests } from '@/server/domains/settings/snapshot'
+import { setBlogSettingsBundleForTests } from '@/server/domains/settings/services/test-utils'
 import { adminCacheRouter } from '@/server/http/controllers/admin/cache.controller'
 import { redisInstance } from '@/server/infra/redis/storage'
 

@@ -16,7 +16,7 @@ vi.mock('@/server/bootstrap/db-lifecycle', () => ({
   getPool: () => ({ id: 'pool-mock' }),
 }))
 
-vi.mock('@/server/domains/settings/snapshot', () => ({
+vi.mock('@/server/domains/settings/services/hydrate', () => ({
   hydrateBlogSettings: hydrateMock,
 }))
 

@@ -1,8 +1,9 @@
+import { useMutation } from '@tanstack/react-query'
 import { CheckIcon, ImageIcon, LinkIcon, ReplyIcon, SquarePenIcon, Trash2Icon, UserIcon } from 'lucide-react'
 
-import type { AdminCommentWire as AdminComment } from '@/shared/contracts/comments'
+import type { AdminCommentWire as AdminComment } from '@/shared/types/comments'
 
-import { useMutation, orpcQuery } from '@/client/api/query'
+import { orpcQuery } from '@/client/api/orpc-query'
 import { useSiteIdentity } from '@/shared/lib/blog-config-context'
 import { bodyToPlainText } from '@/shared/pt/utils'
 import { formatLocalDate } from '@/shared/utils/formatter'

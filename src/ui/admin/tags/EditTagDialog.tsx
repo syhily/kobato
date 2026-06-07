@@ -1,10 +1,11 @@
+import { useMutation } from '@tanstack/react-query'
 import { SaveIcon, XIcon } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 
 import type { AdminTagDto, UpsertTagInput } from '@/shared/types/tags'
 
-import { useMutation, orpcQuery } from '@/client/api/query'
+import { orpcQuery } from '@/client/api/orpc-query'
 import { CoverInputRow } from '@/ui/admin/shared/CoverInputRow'
 import { Button } from '@/ui/components/button'
 import {

@@ -11,8 +11,8 @@ import {
   isBrandingSlot,
   putBrandingObject,
 } from '@/server/domains/assets/repos/storage'
-import { SECTION_REGISTRY } from '@/server/domains/settings/sections'
-import { refreshBlogSettings } from '@/server/domains/settings/snapshot'
+import { SECTION_REGISTRY } from '@/server/domains/settings/sections/registry'
+import { refreshBlogSettings } from '@/server/domains/settings/services/hydrate'
 import { findSettingByScope, upsertSetting } from '@/server/infra/db/operations/setting'
 import { ActionFailure } from '@/server/infra/http/errors'
 import { getLogger } from '@/server/infra/logger'

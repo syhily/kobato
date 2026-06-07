@@ -138,7 +138,7 @@ vi.mock('@/shared/config/getters', () => ({
   }),
 }))
 
-vi.mock('@/server/domains/settings/sections', () => ({
+vi.mock('@/server/domains/settings/sections/registry', () => ({
   SECTION_REGISTRY: {},
 }))
 

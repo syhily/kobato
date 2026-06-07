@@ -10,8 +10,6 @@ import {
   snapshotReservedBuckets,
 } from '@/server/infra/redis/buckets'
 
-export type { AdminCacheStatsDto, ClearCacheResultDto, ClearCacheTarget } from '@/shared/types/cache'
-
 export async function getAdminCacheStats(): Promise<AdminCacheStatsDto> {
   const [buckets, reserved] = await Promise.all([snapshotAllBuckets(), snapshotReservedBuckets()])
   const total = buckets.reduce((sum, bucket) => sum + bucket.keyCount, 0)

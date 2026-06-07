@@ -26,7 +26,7 @@ vi.mock('@/server/infra/search/openai', () => ({
 }))
 
 const { searchPosts } = await import('@/server/infra/search/search')
-const { setBlogSettingsBundleForTests } = await import('@/server/domains/settings/snapshot')
+const { setBlogSettingsBundleForTests } = await import('@/server/domains/settings/services/test-utils')
 const { TEST_BLOG_SETTINGS_BUNDLE } = await import('#/_helpers/blog-settings')
 
 beforeEach(async () => {

@@ -15,7 +15,7 @@ import {
 } from 'lucide-react'
 import { Link } from 'react-router'
 
-import type { AdminPageDetailDto, AdminPageDto, UpsertPageMetaInput } from '@/shared/types/pages'
+import type { AdminPageDetailDto, AdminPageDto, PageMetaDraft, UpsertPageMetaInput } from '@/shared/types/pages'
 
 import { orpc } from '@/client/api/client'
 import { useCreatePageDraft } from '@/client/hooks/use-create-page-draft'
@@ -30,13 +30,7 @@ import { RevisionHistoryDrawer } from '@/ui/admin/editor-shell/RevisionsDrawer'
 import { useEditorShellState } from '@/ui/admin/editor-shell/use-editor-shell-state'
 import { PageBodyEditor } from '@/ui/admin/editor/PageBodyEditor'
 import { buildPageUpsertPayload } from '@/ui/admin/pages/build-page-upsert-payload'
-import {
-  EMPTY_META_DRAFT,
-  metaDraftFromPage,
-  metaDraftsEqual,
-  MetaSidebar,
-  type PageMetaDraft,
-} from '@/ui/admin/pages/MetaSidebar'
+import { EMPTY_META_DRAFT, metaDraftFromPage, metaDraftsEqual, MetaSidebar } from '@/ui/admin/pages/MetaSidebar'
 import { usePageDeleteRestore } from '@/ui/admin/pages/use-page-delete-restore'
 import { ConfirmDialog } from '@/ui/admin/shared/ConfirmDialog'
 import { Button } from '@/ui/components/button'

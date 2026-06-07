@@ -42,11 +42,11 @@ const pool = {} as any
 
 const settingQueries = await import('@/server/infra/db/operations/setting')
 const { getAdminBlogSettings, updateBlogSettingsSection } = await import('@/server/domains/settings/services/core')
-const { setBlogSettingsBundleForTests, getBlogSettingsBundleSync, warmBlogSettingsSnapshot } =
-  await import('@/server/domains/settings/snapshot')
+const { setBlogSettingsBundleForTests, warmBlogSettingsSnapshot } =
+  await import('@/server/domains/settings/services/test-utils')
+const { getBlogSettingsBundleSync, getCacheSettings } = await import('@/shared/config/getters')
 const { BLOG_SETTINGS_SNAPSHOT_SLOT } = await import('@/shared/config/snapshot')
 const { DomainError } = await import('@/server/infra/http/errors')
-const { getCacheSettings } = await import('@/shared/config/getters')
 
 // Bucketed settings fixture. The DB stores one row per section so
 // `bundleRows()` projects this fully-populated bundle into the per-row

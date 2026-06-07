@@ -9,7 +9,8 @@ import { createDbPool, closePool } from '@/server/infra/db/pool'
 import { image } from '@/server/infra/db/schema/media'
 import { redisInstance } from '@/server/infra/redis/storage'
 
-const { clearImageEnhanceCache, loadImageThumbhash } = await import('@/server/render/image-enhance')
+const { clearImageEnhanceCache } = await import('@/server/domains/images/services/cache')
+const { loadImageThumbhash } = await import('@/server/domains/images/services/cover')
 
 const poolManager = createDbPool()
 const db: NodePgDatabase = poolManager.db
@@ -18,7 +19,7 @@ const pool: Pool = poolManager.pool
 afterAll(async () => {
   await closePool(pool)
 })
-const { setBlogSettingsBundleForTests } = await import('@/server/domains/settings/snapshot')
+const { setBlogSettingsBundleForTests } = await import('@/server/domains/settings/services/test-utils')
 const { TEST_BLOG_SETTINGS_BUNDLE } = await import('#/_helpers/blog-settings')
 
 beforeEach(async () => {

@@ -8,8 +8,6 @@ import type { MetricRow, NewMetric } from '@/server/infra/db/types'
 import { metric } from '@/server/infra/db/schema/metric'
 import { targetKey } from '@/server/infra/db/target'
 
-export type { MetricRow } from '@/server/infra/db/types'
-
 // Filter clause used everywhere we look up a metric by entity target.
 // Drizzle's `and(eq, eq)` plus the partial-unique index
 // `uq_metric_owner` (on `(type, owner_id) WHERE … NOT NULL`) keeps

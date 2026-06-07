@@ -1,14 +1,15 @@
 import type { NavigateFunction } from 'react-router'
 
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { ArrowLeftIcon } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router'
 
-import type { AdminCommentWire as AdminComment } from '@/shared/contracts/comments'
+import type { AdminCommentWire as AdminComment } from '@/shared/types/comments'
 import type { AdminUserDto } from '@/shared/types/users'
 
 import { orpc } from '@/client/api/client'
-import { orpcQuery, useMutation, useQuery, useQueryClient } from '@/client/api/query'
+import { orpcQuery } from '@/client/api/orpc-query'
 import { useSiteIdentity } from '@/shared/lib/blog-config-context'
 import { formatLocalDate } from '@/shared/utils/formatter'
 import { idStr } from '@/shared/utils/tools'

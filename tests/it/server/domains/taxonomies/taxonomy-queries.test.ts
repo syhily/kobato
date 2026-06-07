@@ -53,7 +53,7 @@ describe('listAllCategories', () => {
     const { listAllCategories } = await import('@/server/domains/taxonomies/categories/services/query')
     await listAllCategories(db)
 
-    const { hydrateImageRefs } = await import('@/server/render/image-enhance')
+    const { hydrateImageRefs } = await import('@/server/domains/images/services/enhance')
     expect(hydrateImageRefs).toHaveBeenCalled()
   })
 

@@ -17,5 +17,3 @@ export type {
   Span,
   TextBlock,
 } from '@/shared/pt/schema'
-
-export type { CommentBlock, CommentBody, CommentTextBlock } from '@/shared/pt/comment-schema'

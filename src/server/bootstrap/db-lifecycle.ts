@@ -4,7 +4,7 @@ import { flushAuditLog, initAuditLogBatcher, resetAuditLogBatcher } from '@/serv
 import { scheduleNextArchive } from '@/server/domains/audit/services/scheduler'
 import { registerRestoreComplete } from '@/server/domains/backup/restore-orchestrator'
 import { resetLikeTokenSweep, startLikeTokenSweep } from '@/server/domains/comments/services/likes'
-import { refreshBlogSettings } from '@/server/domains/settings/snapshot'
+import { refreshBlogSettings } from '@/server/domains/settings/services/hydrate'
 import { migrateDatabase } from '@/server/infra/db/migrate'
 import { createDbPool, closePool } from '@/server/infra/db/pool'
 import { isVitest } from '@/server/infra/env'

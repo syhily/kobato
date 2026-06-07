@@ -3,14 +3,13 @@ import type { LoaderFunctionArgs } from 'react-router'
 
 import type { EntityTarget } from '@/server/infra/db/target'
 import type { ClientTag, SidebarPostLink } from '@/shared/types/catalog'
+import type { DetailPageComments } from '@/shared/types/comments'
 
 import { trackAccess } from '@/server/domains/analytics/track'
 import { tryGetRequestContext, tryGetSessionContext } from '@/server/domains/auth/context'
 import { resolveSessionContext, userSession } from '@/server/domains/auth/primitives'
-import { type DetailPageComments, loadDetailPageStreaming } from '@/server/http/loaders/comments'
+import { loadDetailPageStreaming } from '@/server/http/loaders/comments'
 import { notFound } from '@/server/infra/http/status'
-
-export { redirectPermanent } from '@/server/infra/http/redirects'
 
 export type PublicDetailCritical = Awaited<ReturnType<typeof loadDetailPageStreaming>>['critical']
 

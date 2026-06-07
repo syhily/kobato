@@ -1,7 +1,8 @@
+import { useQuery } from '@tanstack/react-query'
 import { XIcon } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 
-import { orpcQuery, useQuery } from '@/client/api/query'
+import { orpcQuery } from '@/client/api/orpc-query'
 import { Badge } from '@/ui/components/badge'
 import { Button } from '@/ui/components/button'
 import { Input } from '@/ui/components/input'

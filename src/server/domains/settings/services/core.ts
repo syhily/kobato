@@ -1,11 +1,12 @@
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 import type { Pool } from 'pg'
 
+import type { SettingsSection } from '@/shared/config/sections'
 import type { BlogSettingsBundle } from '@/shared/config/types'
 
 import { SECRET_FIELDS } from '@/server/domains/settings/secrets'
-import { SECTION_REGISTRY, type SettingsSection } from '@/server/domains/settings/sections'
-import { hydrateBlogSettings, refreshBlogSettings } from '@/server/domains/settings/snapshot'
+import { SECTION_REGISTRY } from '@/server/domains/settings/sections/registry'
+import { hydrateBlogSettings, refreshBlogSettings } from '@/server/domains/settings/services/hydrate'
 import { encryptIfNeeded } from '@/server/infra/crypto/secret-encryption'
 import { findSettingByScope, upsertSetting } from '@/server/infra/db/operations/setting'
 import { checkMailReady } from '@/server/infra/email/sender'

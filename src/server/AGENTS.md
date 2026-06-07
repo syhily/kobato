@@ -50,7 +50,7 @@ verification-tokens), `comments` (loader, moderation, projection, likes,
 token, badge, url, canonicalize), `friends`, `images` (schema, service,
 storage, key, process), `music`, `pages`, `posts`, `pt`
 (Shiki/KaTeX prerender, canonicalize, comment-to-html),
-`settings` (sections, snapshot, install-flow, install-gate),
+`settings` (install-flow, install-gate),
 `taxonomies/{categories,tags}`, `users`. Plus `content-revisions.ts`
 and `audit.ts`.
 
@@ -193,7 +193,7 @@ redeploying. Examples: `assets.storage.enabled`, `seo.og.width`,
   `limits`, `analytics`.
   Per-section splitting avoids races between concurrent admin tabs.
 - Section ↔ DB scope ↔ Zod schema ↔ bundle key mapping lives in
-  `@/server/domains/settings/sections.ts`'s `SECTION_REGISTRY`.
+  `@/server/domains/settings/sections/registry.ts`'s `SECTION_REGISTRY`.
 - In-memory composition: `BlogSettingsBundle` (`@/shared/config/blog`).
   SSR uses `requireBlogSettingsSection('<key>')`; UI uses the matching
   per-section hook. **New UI MUST NOT** read the aggregated
@@ -294,7 +294,7 @@ redeploying. Examples: `assets.storage.enabled`, `seo.og.width`,
   `images/yyyy/MM/<timestamp>.jpg`), plus inline upload in
   `EditCategoryDialog` (`images/categories/<slug>.jpg`) and
   `EditFriendDialog` (`images/links/<host>.jpg`), both 1280×425.
-- `@/server/render/image-enhance` post-processes generated HTML for
+- `@/server/domains/images/services/enhance` post-processes generated HTML for
   feeds and synchronously resolves cover thumbhashes via a process-level
   LRU cache.
 

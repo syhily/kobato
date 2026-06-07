@@ -1,13 +1,14 @@
+import { useQuery } from '@tanstack/react-query'
 import { LoaderIcon, SearchIcon } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router'
 import { toast } from 'sonner'
 
-import type { AdminCommentWire as AdminComment } from '@/shared/contracts/comments'
+import type { AdminCommentWire as AdminComment } from '@/shared/types/comments'
 import type { ActiveFilter, FilterFieldKey, FilterItem } from '@/ui/admin/comments/useCommentsController'
 
 import { orpc } from '@/client/api/client'
-import { orpcQuery, useQuery } from '@/client/api/query'
+import { orpcQuery } from '@/client/api/orpc-query'
 import { idStr } from '@/shared/utils/tools'
 import { AdminCommentRow } from '@/ui/admin/comments/AdminCommentRow'
 import { CommentsFilterBar } from '@/ui/admin/comments/CommentsFilterBar'

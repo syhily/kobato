@@ -1,7 +1,11 @@
 import { CalendarClockIcon, CheckCircle2Icon, CircleDashedIcon, EyeOffIcon } from 'lucide-react'
 import { useId } from 'react'
 
-import type { SidebarPublishStatus, SidebarRevisionSummary, SidebarSaveStatus } from '@/ui/admin/posts/PostMetaSidebar'
+import type {
+  SidebarPublishStatus,
+  SidebarRevisionSummary,
+  SidebarSaveStatus,
+} from '@/ui/admin/editor-shared/sidebar-types'
 
 import { DateTimePicker } from '@/ui/admin/editor-shell/DateTimePicker'
 import { Badge } from '@/ui/components/badge'

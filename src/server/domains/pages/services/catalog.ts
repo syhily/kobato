@@ -2,14 +2,10 @@ import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
 import type { ContentRow } from '@/server/infra/db/types'
 
+import { findContentById, findContentsByIds } from '@/server/domains/content/repos/query'
 import { isCatalogVisible } from '@/server/domains/content/schema'
 import { toCmsPage, type CmsPage } from '@/server/domains/pages/projection'
-import {
-  findContentById,
-  findContentsByIds,
-  findPublicPageMetaBySlug,
-  listPublicPageMetas,
-} from '@/server/domains/pages/repo'
+import { findPublicPageMetaBySlug, listPublicPageMetas } from '@/server/domains/pages/repo'
 import { pagesCache } from '@/server/domains/pages/services/shared'
 
 /** All non-deleted, non-scheduled, published pages joined with their content. */

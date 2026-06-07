@@ -1,9 +1,10 @@
+import { useQuery } from '@tanstack/react-query'
 import { Music2Icon, PlusIcon, SearchIcon } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 
 import type { AdminMusicDto } from '@/shared/types/music'
 
-import { orpcQuery, useQuery } from '@/client/api/query'
+import { orpcQuery } from '@/client/api/orpc-query'
 import { AddMusicDialog } from '@/ui/admin/musics/AddMusicDialog'
 import { Button } from '@/ui/components/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/ui/components/dialog'

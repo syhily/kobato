@@ -1,9 +1,10 @@
 import type { NavigateFunction } from 'react-router'
 
+import { useQuery } from '@tanstack/react-query'
 import { ArrowLeftIcon, AlertTriangleIcon } from 'lucide-react'
 import { Link } from 'react-router'
 
-import { orpcQuery, useQuery } from '@/client/api/query'
+import { orpcQuery } from '@/client/api/orpc-query'
 import { PageEditorShell } from '@/ui/admin/pages/PageEditorShell'
 import { Button } from '@/ui/components/button'
 import { Skeleton } from '@/ui/components/skeleton'

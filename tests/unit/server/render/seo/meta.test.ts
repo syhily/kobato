@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 
 import type { BlogSettingsBundle } from '@/shared/config/types'
 
-import { setBlogSettingsBundleForTests } from '@/server/domains/settings/snapshot'
+import { setBlogSettingsBundleForTests } from '@/server/domains/settings/services/test-utils'
 import { pageTitle, routeMeta } from '@/server/render/seo/meta'
 
 // `routeMeta` and `pageTitle` consult the snapshot reader for the

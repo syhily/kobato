@@ -33,5 +33,3 @@ export function usePageLocalDraft({
     disabled,
   })
 }
-
-export type { StoredDraft }

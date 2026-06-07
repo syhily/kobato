@@ -110,8 +110,10 @@ vi.mock('@/server/http/loaders/comments', () => ({
 
 // Image-meta resolution would otherwise hit Postgres for the
 // thumbhash lookup; we don't need it for this contract.
-vi.mock('@/server/render/image-enhance', () => ({
+vi.mock('@/server/domains/images/services/enhance', () => ({
   resolveImageMetaBySources: vi.fn(async () => new Map()),
+}))
+vi.mock('@/server/domains/images/services/cover', () => ({
   loadImageThumbhash: vi.fn(async () => null),
 }))
 

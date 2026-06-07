@@ -1,3 +1,4 @@
+import { useMutation, useQuery } from '@tanstack/react-query'
 import {
   CopyIcon,
   MusicIcon,
@@ -14,7 +15,7 @@ import { toast } from 'sonner'
 import type { AdminMusicDto } from '@/shared/types/music'
 
 import { orpc } from '@/client/api/client'
-import { orpcQuery, useMutation, useQuery } from '@/client/api/query'
+import { orpcQuery } from '@/client/api/orpc-query'
 import { AddMusicDialog } from '@/ui/admin/musics/AddMusicDialog'
 import { EditMusicDialog } from '@/ui/admin/musics/EditMusicDialog'
 import { FloatingMusicPlayer, type FloatingMusicPlayerTrack } from '@/ui/admin/musics/FloatingMusicPlayer'

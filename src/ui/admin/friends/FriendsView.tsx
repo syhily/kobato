@@ -1,3 +1,4 @@
+import { useMutation, useQuery } from '@tanstack/react-query'
 import {
   SquarePenIcon,
   ExternalLinkIcon,
@@ -15,7 +16,7 @@ import { toast } from 'sonner'
 import type { AdminFriendDto, DeleteFriendInput } from '@/shared/types/friends'
 
 import { orpc } from '@/client/api/client'
-import { orpcQuery, useMutation, useQuery } from '@/client/api/query'
+import { orpcQuery } from '@/client/api/orpc-query'
 import { safeHref } from '@/shared/utils/safe-url'
 import { EditFriendDialog } from '@/ui/admin/friends/EditFriendDialog'
 import { useFriendsController } from '@/ui/admin/friends/useFriendsController'

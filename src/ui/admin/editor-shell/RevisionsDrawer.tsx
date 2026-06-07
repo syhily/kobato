@@ -1,11 +1,12 @@
+import { useQuery } from '@tanstack/react-query'
 import { ArrowLeftIcon, CheckIcon, HistoryIcon, RefreshCcwIcon } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { toast } from 'sonner'
 
 import type { PortableTextBody } from '@/shared/pt/schema'
-import type { AdminRevisionDto } from '@/shared/types/pages'
+import type { AdminRevisionDto } from '@/shared/types/revision'
 
-import { orpcQuery, useQuery } from '@/client/api/query'
+import { orpcQuery } from '@/client/api/orpc-query'
 import { diffBodies, DiffPanel } from '@/ui/admin/editor/portable-text-diff'
 import { Badge } from '@/ui/components/badge'
 import { Button } from '@/ui/components/button'

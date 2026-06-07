@@ -75,9 +75,6 @@ export const adminCommentDto = adminCommentBaseDto.extend({
   pagePermalink: z.string().nullable(),
 })
 
-// ─── re-exports ────────────────────────────────────────
-export type { AdminCommentWire, CommentItemWire } from '@/shared/types/comments'
-
 // ─── parity assertions ─────────────────────────────────
 type _adminPendingDashboardParity = Assert<Equals<z.infer<typeof adminPendingDashboardDto>, AdminPendingDashboardDto>>
 type _commentItemWireParity = Assert<Equals<z.infer<typeof commentItemDto>, CommentItemWire>>

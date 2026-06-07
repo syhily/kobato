@@ -3,17 +3,14 @@ import type { Pool } from 'pg'
 
 import type { AuthFlowResult } from '@/server/domains/auth/otp-flow'
 import type { BlogSession } from '@/server/domains/auth/session-storage'
+import type { SettingsSection } from '@/shared/config/sections'
 import type { AssetsSettings, SiteIdentitySettings } from '@/shared/config/types'
 
 import { establishLoginSession } from '@/server/domains/auth/primitives'
 import { invalidateSetupToken } from '@/server/domains/auth/setup-token'
-import {
-  ASSETS_STORAGE_INSTALL_DEFAULTS,
-  buildDefaultSectionPayloads,
-  SECTION_REGISTRY,
-  type SettingsSection,
-} from '@/server/domains/settings/sections'
-import { refreshBlogSettings } from '@/server/domains/settings/snapshot'
+import { ASSETS_STORAGE_INSTALL_DEFAULTS } from '@/server/domains/settings/sections/defaults'
+import { buildDefaultSectionPayloads, SECTION_REGISTRY } from '@/server/domains/settings/sections/registry'
+import { refreshBlogSettings } from '@/server/domains/settings/services/hydrate'
 import { upsertSetting } from '@/server/infra/db/operations/setting'
 import { hasAdmin, insertAdmin } from '@/server/infra/db/operations/user'
 import { idFromString } from '@/shared/utils/id'

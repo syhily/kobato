@@ -1,3 +1,4 @@
+import { useMutation } from '@tanstack/react-query'
 import { LogOutIcon, MonitorIcon, RefreshCwIcon } from 'lucide-react'
 import { useState } from 'react'
 import { useRevalidator } from 'react-router'
@@ -5,7 +6,6 @@ import { useRevalidator } from 'react-router'
 import type { MySessionItem } from '@/routes/admin/me/sessions'
 
 import { orpc } from '@/client/api/client'
-import { useMutation } from '@/client/api/query'
 import { useSiteIdentity } from '@/shared/lib/blog-config-context'
 import { formatLocalDate } from '@/shared/utils/formatter'
 import { formatUserAgentLabel } from '@/shared/utils/user-agent'

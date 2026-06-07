@@ -1,7 +1,7 @@
 import { XIcon } from 'lucide-react'
 import { useState, type ReactNode } from 'react'
 
-import type { CommentItemWire as CommentItemType } from '@/shared/contracts/comments'
+import type { CommentItemWire as CommentItemType } from '@/shared/types/comments'
 
 import { PortableTextBody } from '@/ui/pt/render'
 import { CommentActions } from '@/ui/public/comments/comment-item/CommentActions'

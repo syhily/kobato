@@ -1,16 +1,17 @@
+import { useMutation } from '@tanstack/react-query'
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { flushSync } from 'react-dom'
 
-import type { CommentItemWire as CommentItemType } from '@/shared/contracts/comments'
 import type { CommentFormUser } from '@/shared/types/catalog'
 import type {
   Comments as CommentsData,
+  CommentItemWire as CommentItemType,
   LoadCommentsInput,
   LoadCommentsOutput,
   MyCommentsOutput,
 } from '@/shared/types/comments'
 
-import { useMutation, orpcQuery } from '@/client/api/query'
+import { orpcQuery } from '@/client/api/orpc-query'
 import { useCommentsSettings } from '@/shared/lib/blog-config-context'
 import { Button } from '@/ui/components/button'
 import { CommentItem } from '@/ui/public/comments/comment-item/CommentItem'

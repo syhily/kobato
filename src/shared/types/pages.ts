@@ -1,7 +1,6 @@
 import type { PortableTextBody } from '@/shared/pt/schema'
 import type { MarkdownHeading } from '@/shared/types/catalog'
 import type { AdminRevisionDto } from '@/shared/types/revision'
-export type { AdminRevisionDto }
 
 // Wire-format DTOs for the `/admin/pages` editor and the
 // `/api/admin/list-pages` oRPC procedure. Lives in `@/shared`

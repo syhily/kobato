@@ -1,3 +1,4 @@
+import { useMutation, useQuery } from '@tanstack/react-query'
 import { ImageOffIcon, PlusIcon, RefreshCwIcon, SearchIcon } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
@@ -5,7 +6,7 @@ import { toast } from 'sonner'
 import type { AdminImageDto, AdminImageKind } from '@/shared/types/images'
 
 import { orpc } from '@/client/api/client'
-import { orpcQuery, useMutation, useQuery } from '@/client/api/query'
+import { orpcQuery } from '@/client/api/orpc-query'
 import { ImageCard } from '@/ui/admin/images/ImageCard'
 import { ImageDetailDialog } from '@/ui/admin/images/ImageDetailDialog'
 import { useImagesController } from '@/ui/admin/images/useImagesController'

@@ -1,5 +1,4 @@
-import type { UpsertPageMetaInput } from '@/shared/types/pages'
-import type { PageMetaDraft } from '@/ui/admin/pages/MetaSidebar'
+import type { PageMetaDraft, UpsertPageMetaInput } from '@/shared/types/pages'
 
 export function buildPageUpsertPayload({
   meta,

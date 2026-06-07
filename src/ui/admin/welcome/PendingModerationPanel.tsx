@@ -1,3 +1,4 @@
+import { useMutation, useQuery } from '@tanstack/react-query'
 import { ArrowRightIcon, CheckIcon, LightbulbIcon, RefreshCwIcon, Trash2Icon, XIcon } from 'lucide-react'
 import { useCallback, useState } from 'react'
 import { Link } from 'react-router'
@@ -6,7 +7,7 @@ import { toast } from 'sonner'
 import type { AdminPendingItemDto, ListPendingDashboardOutput } from '@/shared/types/comments'
 
 import { orpc } from '@/client/api/client'
-import { orpcQuery, useMutation, useQuery } from '@/client/api/query'
+import { orpcQuery } from '@/client/api/orpc-query'
 import { useSiteIdentity } from '@/shared/lib/blog-config-context'
 import { formatLocalDate } from '@/shared/utils/formatter'
 import { Badge } from '@/ui/components/badge'

@@ -1,5 +1,6 @@
 import type { NavigateFunction } from 'react-router'
 
+import { useMutation } from '@tanstack/react-query'
 import { useCallback, useRef, useState } from 'react'
 
 import type { PortableTextBody } from '@/shared/pt/schema'
@@ -11,7 +12,6 @@ import type {
   UseEditorShellStateArgs,
 } from '@/ui/admin/editor-shell/editor-shell-types'
 
-import { useMutation } from '@/client/api/query'
 import { useAutosave, type AutosaveStatus } from '@/client/hooks/use-autosave'
 import { arePortableTextBodiesEquivalent } from '@/shared/pt/bridge/canonicalize'
 import { isPendingForAutosave } from '@/ui/admin/editor-shell/editor-shell-derived'

@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it } from 'vitest'
 import type { AssetsSettings } from '@/shared/config/types'
 
 import { TEST_BLOG_SETTINGS_BUNDLE } from '#/_helpers/blog-settings'
-import { setBlogSettingsBundleForTests } from '@/server/domains/settings/snapshot'
+import { setBlogSettingsBundleForTests } from '@/server/domains/settings/services/test-utils'
 
 const { deleteImage, isUploadEnabled, putImage } = await import('@/server/domains/images/storage')
 const { getPublicBaseUrl } = await import('@/server/infra/storage/public-url')

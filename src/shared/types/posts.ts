@@ -1,7 +1,6 @@
 import type { PortableTextBody } from '@/shared/pt/schema'
 import type { AdminRevisionDto } from '@/shared/types/revision'
 import type { MarkdownHeading } from '@/shared/utils/toc'
-export type { AdminRevisionDto }
 
 export interface AdminPostDto {
   id: string

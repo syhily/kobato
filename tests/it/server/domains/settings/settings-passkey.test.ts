@@ -20,7 +20,7 @@ beforeEach(async () => {
 })
 
 const { updateBlogSettingsSection } = await import('@/server/domains/settings/services/core')
-const { setBlogSettingsBundleForTests } = await import('@/server/domains/settings/snapshot')
+const { setBlogSettingsBundleForTests } = await import('@/server/domains/settings/services/test-utils')
 
 describe('services/settings — passkey domain validation', () => {
   it('rejects passkey enable when website is not set', async () => {

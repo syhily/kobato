@@ -1,6 +1,7 @@
+import { useMutation, useQuery } from '@tanstack/react-query'
 import { useCallback, useMemo } from 'react'
 
-import { orpcQuery, useMutation, useQuery } from '@/client/api/query'
+import { orpcQuery } from '@/client/api/orpc-query'
 import { AuditLogTable } from '@/ui/admin/audit/AuditLogTable'
 import { AuditLogToolbar } from '@/ui/admin/audit/AuditLogToolbar'
 import { useAuditLogController } from '@/ui/admin/audit/useAuditLogController'

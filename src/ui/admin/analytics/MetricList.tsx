@@ -1,6 +1,8 @@
+import { useQuery } from '@tanstack/react-query'
+
 import type { MetricRow, MetricType } from '@/shared/contracts/analytics'
 
-import { orpcQuery, useQuery } from '@/client/api/query'
+import { orpcQuery } from '@/client/api/orpc-query'
 import { useAnalyticsState } from '@/ui/admin/analytics/use-analytics-state'
 import { Skeleton } from '@/ui/components/skeleton'
 import { cn } from '@/ui/lib/cn'

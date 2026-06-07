@@ -1,3 +1,4 @@
+import { useMutation } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useNavigate } from 'react-router'
 import { toast } from 'sonner'
@@ -5,7 +6,6 @@ import { toast } from 'sonner'
 import type { AdminPageDetailDto } from '@/shared/types/pages'
 
 import { orpc } from '@/client/api/client'
-import { useMutation } from '@/client/api/query'
 import { type ConfirmState } from '@/ui/admin/shared/ConfirmDialog'
 
 export function usePageDeleteRestore(detail: AdminPageDetailDto | undefined) {

@@ -1,9 +1,9 @@
+import { useMutation } from '@tanstack/react-query'
 import { SendIcon } from 'lucide-react'
 import { useCallback, useState } from 'react'
 import { Controller } from 'react-hook-form'
 
 import { orpc } from '@/client/api/client'
-import { useMutation } from '@/client/api/query'
 import { useSiteIdentity } from '@/shared/lib/blog-config-context'
 import { SettingsRow } from '@/ui/admin/settings/SettingsSection'
 import { SettingGroup } from '@/ui/admin/settings/shell/SettingGroup'

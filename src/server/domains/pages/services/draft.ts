@@ -2,17 +2,11 @@ import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
 import type { ContentRow, PageMetaRow } from '@/server/infra/db/types'
 
+import { publishLatestRevision, saveDraftRevision } from '@/server/domains/content/repos/mutate'
+import { findContentById, findLatestDraft, findLatestRevision } from '@/server/domains/content/repos/query'
 import { canonicalizeBodyOrThrow } from '@/server/domains/content/save-helpers'
 import { toCmsPage, type CmsPage } from '@/server/domains/pages/projection'
-import {
-  findContentById,
-  findLatestDraft,
-  findLatestRevision,
-  findPageMetaById,
-  findPublicPageMetaBySlug,
-  publishLatestRevision,
-  saveDraftRevision,
-} from '@/server/domains/pages/repo'
+import { findPageMetaById, findPublicPageMetaBySlug } from '@/server/domains/pages/repo'
 import { syncLibraryImageBlocks } from '@/server/domains/pages/services/image-sync'
 import {
   clearPagesCache,

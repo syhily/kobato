@@ -2,7 +2,6 @@ import type { ContentRow, PageMetaRow } from '@/server/infra/db/types'
 import type { PortableTextBody } from '@/shared/pt/schema'
 import type { ClientPage } from '@/shared/types/catalog'
 import type { AdminRevisionDto } from '@/shared/types/revision'
-export type { AdminRevisionDto }
 
 import { readBody, readHeadings } from '@/server/domains/content/projection-helpers'
 import { DomainError } from '@/server/infra/http/errors'

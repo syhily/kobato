@@ -1,4 +1,4 @@
-import type { CommentItemWire as CommentItemType } from '@/shared/contracts/comments'
+import type { CommentItemWire as CommentItemType } from '@/shared/types/comments'
 
 import { safeHref } from '@/shared/utils/safe-url'
 import { joinUrl } from '@/shared/utils/urls'

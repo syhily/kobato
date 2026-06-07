@@ -32,7 +32,7 @@ vi.mock('@/server/domains/settings/install-gate', () => ({
   getInstallState: vi.fn(async () => 'noAdmin' as const),
 }))
 
-vi.mock('@/server/domains/settings/snapshot', () => ({
+vi.mock('@/server/domains/settings/services/hydrate', () => ({
   refreshBlogSettings: vi.fn(async () => null),
 }))
 

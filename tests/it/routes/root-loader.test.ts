@@ -6,8 +6,10 @@ import { cspNonceContext } from '@/server/domains/auth/context'
 
 const session = makeSession({ csrfToken: 'test-csrf-token' })
 
-vi.mock('@/server/domains/settings/snapshot', () => ({
+vi.mock('@/shared/config/getters', () => ({
   getBlogSettingsBundleSync: vi.fn(() => null),
+}))
+vi.mock('@/server/domains/settings/services/hydrate', () => ({
   hydrateBlogSettings: vi.fn(() => Promise.resolve()),
 }))
 

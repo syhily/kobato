@@ -1,6 +1,7 @@
+import { useMutation } from '@tanstack/react-query'
 import { useEffect, useRef, useState } from 'react'
 
-import { useMutation, orpcQuery } from '@/client/api/query'
+import { orpcQuery } from '@/client/api/orpc-query'
 
 const DEBOUNCE_MS = 200
 

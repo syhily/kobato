@@ -1,11 +1,12 @@
 import type { PublicKeyCredentialCreationOptionsJSON, RegistrationResponseJSON } from '@simplewebauthn/browser'
 
 import { startRegistration } from '@simplewebauthn/browser'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { FingerprintIcon, Trash2Icon } from 'lucide-react'
 import { useState } from 'react'
 import { useRevalidator } from 'react-router'
 
-import { orpcQuery, useMutation, useQuery, useQueryClient } from '@/client/api/query'
+import { orpcQuery } from '@/client/api/orpc-query'
 import { useSiteIdentity } from '@/shared/lib/blog-config-context'
 import { formatLocalDate } from '@/shared/utils/formatter'
 import { useWebAuthnSupported } from '@/ui/admin/auth/AdminCredentialsForm'

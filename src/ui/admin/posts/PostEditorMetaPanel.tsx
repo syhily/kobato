@@ -1,3 +1,4 @@
+import { useMutation } from '@tanstack/react-query'
 import { Trash2Icon, Undo2Icon } from 'lucide-react'
 import { useState } from 'react'
 import { useNavigate } from 'react-router'
@@ -8,7 +9,6 @@ import type { UseEditorShellStateOutput } from '@/ui/admin/editor-shell/editor-s
 import type { PostMetaDraft } from '@/ui/admin/posts/PostMetaSidebar'
 
 import { orpc } from '@/client/api/client'
-import { useMutation } from '@/client/api/query'
 import { useContentSettings } from '@/shared/lib/blog-config-context'
 import { RevisionHistoryDrawer } from '@/ui/admin/editor-shell/RevisionsDrawer'
 import { PostMetaSidebar } from '@/ui/admin/posts/PostMetaSidebar'

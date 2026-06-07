@@ -1,8 +1,9 @@
+import { useQuery } from '@tanstack/react-query'
 import { FileTextIcon, Loader2Icon, NotebookPenIcon, SearchIcon } from 'lucide-react'
 import { type ComponentType, type ReactNode, memo, useEffect, useRef, useState, useTransition } from 'react'
 import { useNavigate } from 'react-router'
 
-import { orpcQuery, useQuery } from '@/client/api/query'
+import { orpcQuery } from '@/client/api/orpc-query'
 import { Dialog, DialogContent, DialogTitle } from '@/ui/components/dialog'
 import { cn } from '@/ui/lib/cn'
 

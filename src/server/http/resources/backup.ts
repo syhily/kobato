@@ -11,7 +11,7 @@ import { buildBackupS3Key, getBackupBuffer, isValidBackupKey } from '@/server/do
 import { extractBackupSql, restoreFromSql } from '@/server/domains/backup/services/restore'
 import { checkPgToolsAvailable } from '@/server/domains/backup/services/shared'
 import { validateBackupSql } from '@/server/domains/backup/services/validate'
-import { refreshBlogSettings } from '@/server/domains/settings/snapshot'
+import { refreshBlogSettings } from '@/server/domains/settings/services/hydrate'
 import { findFirstAdminUser, hasAdmin } from '@/server/domains/users/services/admin'
 import { csrfGuard } from '@/server/http/middlewares/csrf'
 import { requireRoleMw } from '@/server/http/middlewares/hono-rbac'

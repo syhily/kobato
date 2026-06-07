@@ -1,3 +1,4 @@
+import { useMutation, useQuery } from '@tanstack/react-query'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useRouteLoaderData } from 'react-router'
 import { toast } from 'sonner'
@@ -6,7 +7,6 @@ import type { BackupSettings } from '@/shared/config/types'
 import type { BackupFileDto } from '@/shared/types/backup'
 
 import { orpc } from '@/client/api/client'
-import { useMutation, useQuery } from '@/client/api/query'
 import { BackupFileList } from '@/ui/admin/settings/BackupFileList'
 import { BackupRestoreDialog } from '@/ui/admin/settings/BackupRestoreDialog'
 import { BackupScheduleForm } from '@/ui/admin/settings/BackupScheduleForm'

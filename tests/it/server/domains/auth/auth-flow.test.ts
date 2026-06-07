@@ -34,7 +34,7 @@ vi.mock('@/server/infra/db/operations/setting', () => ({
   findSettingByScope: vi.fn(async () => null),
 }))
 
-vi.mock('@/server/domains/settings/snapshot', () => ({
+vi.mock('@/server/domains/settings/services/hydrate', () => ({
   refreshBlogSettings: vi.fn(async () => null),
 }))
 
@@ -53,7 +53,7 @@ const pool = {} as any
 
 const userQuery = await import('@/server/infra/db/operations/user')
 const settingQuery = await import('@/server/infra/db/operations/setting')
-const settingsSnapshot = await import('@/server/domains/settings/snapshot')
+const settingsSnapshot = await import('@/server/domains/settings/services/hydrate')
 const rateLimit = await import('@/server/infra/rate-limit')
 import type { User } from '@/server/infra/db/types'
 

@@ -36,7 +36,7 @@ vi.mock('@/server/domains/comments/services/shared', async (importOriginal) => {
 
 const db = {} as NodePgDatabase
 
-const { setBlogSettingsBundleForTests } = await import('@/server/domains/settings/snapshot')
+const { setBlogSettingsBundleForTests } = await import('@/server/domains/settings/services/test-utils')
 const { sendNewComment } = await import('@/server/domains/comments/services/email')
 const { sendTestMail } = await import('@/server/infra/email/sender')
 const { TEST_BLOG_SETTINGS_BUNDLE } = await import('#/_helpers/blog-settings')

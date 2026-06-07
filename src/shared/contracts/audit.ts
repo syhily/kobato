@@ -49,8 +49,6 @@ export const auditLogActorDto = z.object({
 
 export const auditLogActorsOutput = z.array(auditLogActorDto)
 
-export type { AuditLogActorDto, AuditLogItemDto, AuditLogListInput, AuditLogListOutput } from '@/shared/types/audit'
-
 // ─── parity assertions ─────────────────────────────────
 type _auditLogItemDtoParity = Assert<Equals<z.infer<typeof auditLogItemDto>, AuditLogItemDto>>
 type _auditLogListInputParity = Assert<Equals<z.infer<typeof auditLogListInput>, AuditLogListInput>>

@@ -1,7 +1,8 @@
+import { useMutation } from '@tanstack/react-query'
 import { EyeIcon, EyeOffIcon, KeyRoundIcon } from 'lucide-react'
 import { useState } from 'react'
 
-import { orpcQuery, useMutation } from '@/client/api/query'
+import { orpcQuery } from '@/client/api/orpc-query'
 import { Button } from '@/ui/components/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/ui/components/card'
 import { Input } from '@/ui/components/input'

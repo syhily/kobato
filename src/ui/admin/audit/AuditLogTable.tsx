@@ -1,7 +1,7 @@
 import { Fragment, useEffect, useState, useSyncExternalStore } from 'react'
 import { createHighlighter } from 'shiki'
 
-import type { AuditLogItemDto } from '@/shared/contracts/audit'
+import type { AuditLogItemDto } from '@/shared/types/audit'
 
 import { useSiteIdentity } from '@/shared/lib/blog-config-context'
 import { formatLocalDate } from '@/shared/utils/formatter'

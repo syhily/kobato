@@ -33,5 +33,3 @@ export function usePostLocalDraft({
     disabled,
   })
 }
-
-export type { StoredDraft }

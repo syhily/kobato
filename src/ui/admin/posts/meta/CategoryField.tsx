@@ -1,4 +1,6 @@
-import { orpcQuery, useQuery } from '@/client/api/query'
+import { useQuery } from '@tanstack/react-query'
+
+import { orpcQuery } from '@/client/api/orpc-query'
 import { Label } from '@/ui/components/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/components/select'
 

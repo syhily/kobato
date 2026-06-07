@@ -1,7 +1,8 @@
+import { useMutation } from '@tanstack/react-query'
 import { SendIcon, XIcon } from 'lucide-react'
 import { useState } from 'react'
 
-import { useMutation, orpcQuery } from '@/client/api/query'
+import { orpcQuery } from '@/client/api/orpc-query'
 import { Button } from '@/ui/components/button'
 import {
   Dialog,

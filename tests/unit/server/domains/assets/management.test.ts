@@ -18,7 +18,7 @@ vi.mock('@/server/infra/db/operations/setting', () => ({
   findSettingByScope: vi.fn(),
   upsertSetting: vi.fn(),
 }))
-vi.mock('@/server/domains/settings/snapshot', () => ({
+vi.mock('@/server/domains/settings/services/hydrate', () => ({
   refreshBlogSettings: vi.fn(),
 }))
 vi.mock('@/server/domains/assets/generate', () => ({

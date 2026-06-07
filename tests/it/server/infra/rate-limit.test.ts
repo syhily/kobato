@@ -7,7 +7,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 
 import { TEST_BLOG_SETTINGS_BUNDLE } from '#/_helpers/blog-settings'
 import { flushWorkerRedis } from '#/_helpers/redis'
-import { setBlogSettingsBundleForTests } from '@/server/domains/settings/snapshot'
+import { setBlogSettingsBundleForTests } from '@/server/domains/settings/services/test-utils'
 import {
   tryCommentPostRateLimit,
   tryCommentPostRateLimitByEmail,

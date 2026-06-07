@@ -1,9 +1,10 @@
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { LoaderIcon, MailIcon, SearchIcon } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
 
 import { orpc } from '@/client/api/client'
-import { orpcQuery, useQuery, useQueryClient } from '@/client/api/query'
+import { orpcQuery } from '@/client/api/orpc-query'
 import { useSiteIdentity } from '@/shared/lib/blog-config-context'
 import { useDebouncedSearch } from '@/ui/admin/shared/useDebouncedSearch'
 import { InviteAuthorDialog } from '@/ui/admin/users/InviteAuthorDialog'

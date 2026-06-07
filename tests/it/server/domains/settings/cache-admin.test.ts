@@ -4,7 +4,7 @@ import type { ClearCacheTarget } from '@/shared/types/cache'
 
 import { TEST_BLOG_SETTINGS_BUNDLE } from '#/_helpers/blog-settings'
 import { flushWorkerRedis } from '#/_helpers/redis'
-import { setBlogSettingsBundleForTests } from '@/server/domains/settings/snapshot'
+import { setBlogSettingsBundleForTests } from '@/server/domains/settings/services/test-utils'
 import { clearAdminCache, getAdminCacheStats } from '@/server/infra/redis/admin-ops'
 import { redisInstance, storage } from '@/server/infra/redis/storage'
 

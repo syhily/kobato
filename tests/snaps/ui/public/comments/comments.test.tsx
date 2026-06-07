@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import type { CommentItemWire as CommentItemType } from '@/shared/contracts/comments'
+import type { CommentItemWire as CommentItemType } from '@/shared/types/comments'
 
 import { renderInRouter } from '#/_helpers/render'
 import { Comment } from '@/ui/public/comments/Comment'

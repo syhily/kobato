@@ -1,5 +1,6 @@
-import type { AdminPostDto, AdminRevisionDto, CmsPost } from '@/server/domains/posts/projection'
+import type { AdminPostDto, CmsPost } from '@/server/domains/posts/projection'
 import type { PostMetaRow } from '@/server/infra/db/types'
+import type { AdminRevisionDto } from '@/shared/types/revision'
 
 import { canEditPost, type ViewerContext as RbacViewerContext } from '@/server/domains/auth/rbac'
 import { createRedisCache } from '@/server/infra/cache/redis-cache'

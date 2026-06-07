@@ -54,7 +54,7 @@ vi.mock('@/server/domains/backup/restore-orchestrator', () => ({
   resetRestoreComplete: mockResetRestoreComplete,
 }))
 
-vi.mock('@/server/domains/settings/snapshot', () => ({
+vi.mock('@/server/domains/settings/services/hydrate', () => ({
   refreshBlogSettings: mockRefreshBlogSettings,
 }))
 

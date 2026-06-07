@@ -1,8 +1,9 @@
+import { useMutation } from '@tanstack/react-query'
 import { SaveIcon } from 'lucide-react'
 import { useState } from 'react'
 import { useRevalidator } from 'react-router'
 
-import { orpcQuery, useMutation } from '@/client/api/query'
+import { orpcQuery } from '@/client/api/orpc-query'
 import { useSiteIdentity } from '@/shared/lib/blog-config-context'
 import { formatLocalDate } from '@/shared/utils/formatter'
 import { roleLabel } from '@/shared/utils/roles'

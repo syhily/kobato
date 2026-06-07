@@ -1,12 +1,17 @@
+import { useMutation } from '@tanstack/react-query'
 import { PencilIcon } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 
-import type { CommentItemWire as CommentItemType } from '@/shared/contracts/comments'
 import type { CommentBody } from '@/shared/pt/comment-schema'
 import type { CommentFormUser } from '@/shared/types/catalog'
-import type { FindAvatarOutput, ReplyCommentInput, ReplyCommentOutput } from '@/shared/types/comments'
+import type {
+  CommentItemWire as CommentItemType,
+  FindAvatarOutput,
+  ReplyCommentInput,
+  ReplyCommentOutput,
+} from '@/shared/types/comments'
 
-import { useMutation, orpcQuery } from '@/client/api/query'
+import { orpcQuery } from '@/client/api/orpc-query'
 import { useCommentGuest } from '@/client/hooks/use-comment-guest'
 import { bodyToPlainText } from '@/shared/pt/utils'
 import { joinUrl } from '@/shared/utils/urls'

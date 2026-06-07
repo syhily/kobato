@@ -10,7 +10,7 @@
   `api.<domain>.<endpoint>(flatInput)` from `@/client/api/client`. The
   typed client is built from `typeof apiRouter`. `unwrap()` translates
   oRPC `ORPCError` rejections into `ApiError`. TanStack Query wrappers
-  in `@/client/api/orpc-query` and `@/client/api/query`.
+  in `@/client/api/orpc-query`.
 
 ## Patterns
 

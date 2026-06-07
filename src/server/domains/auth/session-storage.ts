@@ -12,8 +12,6 @@ import { getBlogSettingsBundleSync } from '@/shared/config/getters'
 
 const log = getLogger('auth.session-storage')
 
-export type { Role } from '@/shared/utils/roles'
-
 export interface SessionUser {
   id: string
   name: string

@@ -1,3 +1,4 @@
+import { useMutation } from '@tanstack/react-query'
 import { useCallback, useEffect, useState } from 'react'
 import { useRevalidator } from 'react-router'
 import { toast } from 'sonner'
@@ -5,7 +6,6 @@ import { toast } from 'sonner'
 import type { SettingsSection } from '@/shared/config/sections'
 
 import { orpc } from '@/client/api/client'
-import { useMutation } from '@/client/api/query'
 
 export interface UseSettingsMutationResult {
   /** Commit a section payload. Sets status to 'saving', calls mutateAsync + revalidation. Returns `true` on success, `false` on error. */

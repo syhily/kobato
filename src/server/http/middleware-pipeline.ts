@@ -11,7 +11,7 @@ import type { Env } from '@/server/http/context'
 
 import { getDb, getPool } from '@/server/bootstrap/db-lifecycle'
 import { cspNonceContext, dbContext, poolContext, requestContext, sessionContext } from '@/server/domains/auth/context'
-import { hydrateBlogSettings } from '@/server/domains/settings/snapshot'
+import { hydrateBlogSettings } from '@/server/domains/settings/services/hydrate'
 import { createApiApp } from '@/server/http/app'
 import { onErrorHandler } from '@/server/http/errors'
 import { corsMiddleware } from '@/server/http/middlewares/cors'

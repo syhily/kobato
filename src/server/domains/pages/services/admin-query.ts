@@ -1,17 +1,11 @@
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
-import type { AdminPageDetailDto, AdminPageDto, AdminRevisionDto } from '@/server/domains/pages/projection'
+import type { AdminPageDetailDto, AdminPageDto } from '@/server/domains/pages/projection'
+import type { AdminRevisionDto } from '@/shared/types/revision'
 
+import { findContentById, findLatestRevision, listRevisions } from '@/server/domains/content/repos/query'
 import { toAdminPageDto, toAdminRevisionDto } from '@/server/domains/pages/projection'
-import {
-  countPageMetas,
-  findContentById,
-  findLatestRevision,
-  findPageMetaById,
-  listPageMetas,
-  listRevisions,
-  type ListPagesFilters,
-} from '@/server/domains/pages/repo'
+import { countPageMetas, findPageMetaById, listPageMetas, type ListPagesFilters } from '@/server/domains/pages/repo'
 import { commentCountsByOwnerIds, metricsByOwnerIds } from '@/server/infra/db/operations/like'
 import { ensureMetricsBatch } from '@/server/infra/db/operations/metric'
 

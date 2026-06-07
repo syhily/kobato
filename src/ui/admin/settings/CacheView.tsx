@@ -1,3 +1,4 @@
+import { useMutation, useQuery } from '@tanstack/react-query'
 import { Trash2Icon } from 'lucide-react'
 import { useCallback, useState } from 'react'
 
@@ -5,7 +6,6 @@ import type { CacheSettings } from '@/shared/config/types'
 import type { CacheBucketId, ClearCacheTarget, ReservedCacheBucketStats } from '@/shared/types/cache'
 
 import { orpc } from '@/client/api/client'
-import { useMutation, useQuery } from '@/client/api/query'
 import { BucketCard } from '@/ui/admin/settings/cache/BucketCard'
 import { type ClearStatus, idleClearStatus } from '@/ui/admin/settings/cache/cache-status'
 import { CacheStatusLine } from '@/ui/admin/settings/cache/CacheStatusLine'

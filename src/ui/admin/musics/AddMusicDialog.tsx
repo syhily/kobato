@@ -1,10 +1,11 @@
+import { useMutation } from '@tanstack/react-query'
 import { Loader2Icon, SearchIcon, XIcon } from 'lucide-react'
 import { type MouseEvent, useCallback, useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
 
 import type { AdminMusicDto, MetingSearchHit } from '@/shared/types/music'
 
-import { useMutation, orpcQuery } from '@/client/api/query'
+import { orpcQuery } from '@/client/api/orpc-query'
 import { AudioPreviewPlayer } from '@/ui/admin/musics/AudioPreviewPlayer'
 import { INITIAL_PREVIEW_PROGRESS, type PreviewProgress, SearchResultItem } from '@/ui/admin/musics/SearchResultItem'
 import { Button } from '@/ui/components/button'

@@ -26,7 +26,6 @@ const log = getLogger('cache.buckets')
 //
 // Patterns talk to `redisInstance()` directly so the SCAN MATCH
 // expression matches whatever shape the writers currently emit.
-export type { CacheBucket, CacheBucketId, CacheBucketStats } from '@/shared/types/cache'
 
 // Static metadata. The dynamic prefix / TTL / pattern slots are filled
 // in by `getCacheBuckets()` from the live snapshot. `as const` keeps
@@ -213,6 +212,3 @@ export async function clearAllBuckets(): Promise<Record<CacheBucketId, number>> 
   const entries = await Promise.all(buckets.map(async (bucket) => [bucket.id, await clearBucket(bucket)] as const))
   return Object.fromEntries(entries) as Record<CacheBucketId, number>
 }
-
-/** Immutable list of bucket IDs in registration order. */
-export { CACHE_BUCKET_IDS } from '@/shared/types/cache'

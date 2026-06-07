@@ -10,7 +10,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/ui/components/card'
 import { Label } from '@/ui/components/label'
 import { Textarea } from '@/ui/components/textarea'
 
-export type { PageMetaDraft } from '@/shared/types/pages'
 export const EMPTY_META_DRAFT = EMPTY_PAGE_META_DRAFT
 export const metaDraftsEqual = pageMetaDraftsEqual
 
@@ -70,11 +69,10 @@ export function localInputValueToIso(value: string): string | null {
 }
 
 import type {
+  SidebarPublishStatus,
   SidebarRevisionSummary,
   SidebarSaveStatus,
-  SidebarPublishStatus,
 } from '@/ui/admin/editor-shared/sidebar-types'
-export type { SidebarRevisionSummary, SidebarSaveStatus, SidebarPublishStatus }
 
 export interface MetaSidebarProps {
   draft: PageMetaDraft

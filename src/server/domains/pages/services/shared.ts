@@ -1,5 +1,6 @@
-import type { AdminRevisionDto, CmsPage } from '@/server/domains/pages/projection'
-import type { SaveDraftResult, PublishLatestResult } from '@/server/domains/pages/repo'
+import type { SaveDraftResult, PublishLatestResult } from '@/server/domains/content/schema'
+import type { CmsPage } from '@/server/domains/pages/projection'
+import type { AdminRevisionDto } from '@/shared/types/revision'
 
 import { toAdminRevisionDto } from '@/server/domains/pages/projection'
 import { createRedisCache } from '@/server/infra/cache/redis-cache'

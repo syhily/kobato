@@ -1,10 +1,10 @@
+import { useMutation } from '@tanstack/react-query'
 import { SaveIcon, XIcon } from 'lucide-react'
 import { useEffect, useState } from 'react'
 
-import type { AdminCommentWire as AdminComment } from '@/shared/contracts/comments'
+import type { AdminCommentWire as AdminComment } from '@/shared/types/comments'
 
 import { orpc } from '@/client/api/client'
-import { useMutation } from '@/client/api/query'
 import { idStr } from '@/shared/utils/tools'
 import { Button } from '@/ui/components/button'
 import { Checkbox } from '@/ui/components/checkbox'

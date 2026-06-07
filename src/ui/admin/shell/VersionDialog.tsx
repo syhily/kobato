@@ -1,3 +1,4 @@
+import { useQuery } from '@tanstack/react-query'
 import {
   AlertCircleIcon,
   ArrowUpCircleIcon,
@@ -10,7 +11,6 @@ import {
 import { useCallback, useState } from 'react'
 
 import { orpc } from '@/client/api/client'
-import { useQuery } from '@/client/api/query'
 import { APP_AUTHOR, APP_DESCRIPTION, APP_HOMEPAGE, APP_NAME, APP_VERSION } from '@/shared/config/version'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/ui/components/dialog'
 import { GithubIcon } from '@/ui/icons/brand'

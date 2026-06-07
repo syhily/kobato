@@ -1,6 +1,6 @@
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
-import type { PublishLatestResult, SaveDraftResult } from '@/server/domains/pages/repo'
+import type { PublishLatestResult, SaveDraftResult } from '@/server/domains/content/schema'
 import type { ContentRow, PostMetaRow } from '@/server/infra/db/types'
 import type { PortableTextBody } from '@/shared/pt/schema'
 

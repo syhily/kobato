@@ -1,3 +1,4 @@
+import { useQuery } from '@tanstack/react-query'
 import { LoaderIcon, PlusIcon, SearchIcon, XIcon } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router'
@@ -6,7 +7,7 @@ import { toast } from 'sonner'
 import type { AdminUserDto } from '@/shared/types/users'
 
 import { orpc } from '@/client/api/client'
-import { orpcQuery, useQuery } from '@/client/api/query'
+import { orpcQuery } from '@/client/api/orpc-query'
 import { PageRow } from '@/ui/admin/pages/PageRow'
 import { PagesSkeleton } from '@/ui/admin/pages/PagesSkeleton'
 import { type PageStatusFilter, usePagesController } from '@/ui/admin/pages/usePagesController'

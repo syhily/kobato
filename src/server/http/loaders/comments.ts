@@ -30,8 +30,6 @@ function toCommentFormUser(user: SessionUser | undefined): CommentFormUser | und
   }
 }
 
-export type { DetailPageComments } from '@/shared/types/comments'
-
 // Comments split out so the loader can stream them via React Router's
 // `<Await>` while the rest of the detail (likes, sidebar, post body)
 // renders immediately. PT bodies are stored pre-rendered, so the
