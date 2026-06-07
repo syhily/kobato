@@ -1,6 +1,7 @@
-import { Link, Text } from '@/server/infra/email/render'
+import { Hr, Link, Text } from '@/server/infra/email/render'
 import { RawEmailHtml } from '@/server/infra/email/safe-html'
 import { EmailLayout } from '@/server/infra/email/templates/layout/EmailLayout'
+import { light } from '@/server/infra/email/templates/styles/tokens'
 import { requireBlogSettingsSection } from '@/shared/config/getters'
 
 interface Props {
@@ -18,29 +19,153 @@ export function NewReply({ receiver, postTitle, postLink, sourceContent, replyCo
   // `siteIdentity.website` keeps the origin in sync with whatever the
   // operator configured in `/admin/settings/general`.
   const resetPasswordLink = `${requireBlogSettingsSection('siteIdentity').website}/admin/signin?action=lostpassword`
+
   return (
-    <EmailLayout receiver={receiver}>
-      <Text style={paragraph}>
-        您在《
-        <Link href={postLink} style={inlineLink}>
+    <EmailLayout receiver={receiver} preview={`在《${postTitle}》中你的留言有了新回复`}>
+      <Text
+        style={{
+          fontSize: 26,
+          fontWeight: 'bold',
+          color: light.textPrimary,
+          lineHeight: 1.25,
+          margin: '0 0 20px',
+        }}
+        className="dark-text-primary"
+      >
+        你的留言有了新回复
+      </Text>
+
+      <Text
+        style={{
+          fontSize: 16,
+          color: light.textSecondary,
+          lineHeight: 1.5,
+          margin: '0 0 16px',
+        }}
+        className="dark-text-secondary"
+      >
+        你在《
+        <Link
+          href={postLink}
+          style={{
+            color: light.textPrimary,
+            textDecoration: 'underline',
+            fontWeight: 'bold',
+          }}
+          className="dark-text-primary"
+        >
           {postTitle}
         </Link>
         》中的留言，有了新回复
       </Text>
-      <Text style={label}>您的留言：</Text>
-      <div style={quoteBox}>
-        <RawEmailHtml html={sourceContent} style={quoteText} />
+
+      <Text
+        style={{
+          fontSize: 14,
+          color: light.textSecondary,
+          lineHeight: 1.5,
+          margin: '8px 0 6px',
+        }}
+        className="dark-text-secondary"
+      >
+        你的留言：
+      </Text>
+      <div
+        style={{
+          backgroundColor: light.cardBg,
+          borderRadius: 8,
+          padding: '16px 20px',
+          marginBottom: 16,
+        }}
+        className="dark-card"
+      >
+        <RawEmailHtml
+          html={sourceContent}
+          style={{
+            fontSize: 16,
+            color: light.textSecondary,
+            lineHeight: 1.7,
+            margin: 0,
+          }}
+        />
       </div>
-      <Text style={label}>回复内容：</Text>
-      <div style={quoteBox}>
-        <RawEmailHtml html={replyContent} style={quoteText} />
+
+      <Text
+        style={{
+          fontSize: 14,
+          color: light.textSecondary,
+          lineHeight: 1.5,
+          margin: '8px 0 6px',
+        }}
+        className="dark-text-secondary"
+      >
+        回复内容：
+      </Text>
+      <div
+        style={{
+          backgroundColor: light.cardBgAlt,
+          borderRadius: 8,
+          padding: '16px 20px',
+          marginBottom: 16,
+        }}
+        className="dark-card-alt"
+      >
+        <RawEmailHtml
+          html={replyContent}
+          style={{
+            fontSize: 16,
+            color: light.textSecondary,
+            lineHeight: 1.7,
+            margin: 0,
+          }}
+        />
       </div>
-      <Text style={paragraph}>您可以打开下方链接查看留言：</Text>
-      <Link href={replyLink} target="_blank" rel="noreferrer" style={primaryLink}>
-        {replyLink}
-      </Link>
-      <Text style={paragraph}>想要查看与管理你的所有历史评论？通过此链接重置密码登录即可：</Text>
-      <Link href={resetPasswordLink} target="_blank" rel="noreferrer" style={primaryLink}>
+
+      <div style={{ paddingTop: 12, paddingBottom: 12 }}>
+        <Link
+          href={replyLink}
+          target="_blank"
+          rel="noreferrer"
+          style={{
+            display: 'inline-block',
+            padding: '9px 22px 10px',
+            backgroundColor: light.ctaBg,
+            color: light.ctaText,
+            textDecoration: 'none',
+            borderRadius: 5,
+            fontSize: 16,
+          }}
+          className="dark-cta"
+        >
+          查看回复
+        </Link>
+      </div>
+
+      <Hr />
+
+      <Text
+        style={{
+          fontSize: 16,
+          color: light.textMuted,
+          lineHeight: 1.5,
+          margin: '0 0 10px',
+        }}
+        className="dark-text-muted"
+      >
+        想要查看与管理你的所有历史评论？通过此链接重置密码登录即可：
+      </Text>
+      <Link
+        href={resetPasswordLink}
+        target="_blank"
+        rel="noreferrer"
+        style={{
+          fontSize: 15,
+          color: light.textSecondary,
+          textDecoration: 'none',
+          wordBreak: 'break-all',
+        }}
+        className="dark-text-secondary"
+      >
         {resetPasswordLink}
       </Link>
     </EmailLayout>
@@ -48,41 +173,3 @@ export function NewReply({ receiver, postTitle, postLink, sourceContent, replyCo
 }
 
 export default NewReply
-
-const paragraph: React.CSSProperties = {
-  fontSize: 14,
-  color: '#333333',
-  lineHeight: 1.5,
-  margin: '0 0 10px',
-}
-
-const label: React.CSSProperties = {
-  fontSize: 14,
-  color: '#333333',
-  lineHeight: 1.5,
-  margin: '0 0 5px',
-}
-
-const inlineLink: React.CSSProperties = {
-  color: '#666666',
-  textDecoration: 'none',
-}
-
-const primaryLink: React.CSSProperties = {
-  fontSize: 14,
-  color: '#008c95',
-  textDecoration: 'none',
-}
-
-const quoteBox: React.CSSProperties = {
-  background: 'rgba(141,141,141,0.05)',
-  borderRadius: 8,
-  padding: '10px 15px',
-  marginBottom: 15,
-}
-
-const quoteText: React.CSSProperties = {
-  fontSize: 14,
-  color: '#333333',
-  lineHeight: 1.7,
-}
