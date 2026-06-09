@@ -183,6 +183,7 @@ export default defineConfig({
     // P2 — Pedantic (strict, incremental).
     'no-throw-literal': 'error',
     'no-case-declarations': 'error',
+    'prefer-ts-expect-error': 'error',
     'prefer-includes': 'warn',
     'return-await': 'warn',
 
