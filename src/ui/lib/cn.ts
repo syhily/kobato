@@ -125,7 +125,23 @@ const RADIUS_TOKENS = ['aplayer-volume', 'xs', 'sm', 'md', 'lg', 'xl', 'input'] 
 
 const FONT_TOKENS = ['code'] as const
 
-const ANIMATE_TOKENS = ['shake', 'comments-shimmer', 'comment-flash'] as const
+const ANIMATE_TOKENS = [
+  'shake',
+  'comments-shimmer',
+  'comment-flash',
+  'equalizer',
+  'equalizer-delay-1',
+  'equalizer-delay-2',
+  'detail-enter',
+  'detail-cover',
+  'detail-fade-up',
+  'slow-zoom',
+  'float',
+  'float-delay-1',
+  'float-delay-2',
+  'float-delay-3',
+  'pulse-glow',
+] as const
 
 const SPACING_TOKENS = [
   'admin-col-narrow',

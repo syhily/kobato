@@ -11,6 +11,8 @@ export const listMusicSchema = z.object({
   q: z.string().trim().max(100).optional(),
   offset: z.coerce.number().int().min(0).optional(),
   limit: z.coerce.number().int().min(1).max(100).optional(),
+  sortBy: z.enum(['createdAt', 'updatedAt', 'name', 'artist', 'album']).optional(),
+  sortOrder: z.enum(['asc', 'desc']).optional(),
 })
 
 export const searchMusicSchema = z.object({

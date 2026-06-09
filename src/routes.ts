@@ -44,6 +44,8 @@ export default [
     route('admin/taxonomy/tags', 'routes/admin/taxonomy/tags.tsx'),
     route('admin/library/images', 'routes/admin/library/images.tsx'),
     route('admin/library/music', 'routes/admin/library/music.tsx'),
+    route('admin/library/music/add', 'routes/admin/library/music/add.tsx'),
+    route('admin/library/music/:id', 'routes/admin/library/music/detail.tsx'),
     route('admin/library/branding', 'routes/admin/library/branding.tsx'),
     route('admin/library/friends', 'routes/admin/library/friends.tsx'),
     route('admin/security/users', 'routes/admin/security/users/index.tsx'),

@@ -690,6 +690,21 @@
 
   --animate-comment-flash: comment-flash 3s ease-out forwards;
 
+  --animate-equalizer: equalizer 0.8s ease-in-out infinite;
+  --animate-equalizer-delay-1: equalizer 0.8s ease-in-out infinite 0.1s;
+  --animate-equalizer-delay-2: equalizer 0.8s ease-in-out infinite 0.2s;
+
+  --animate-detail-enter: detail-enter 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
+  --animate-detail-cover: detail-cover 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+  --animate-detail-fade-up: detail-fade-up 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+
+  --animate-slow-zoom: slow-zoom 20s ease-in-out infinite alternate;
+  --animate-float: float 10s ease-in-out infinite;
+  --animate-float-delay-1: float 12s ease-in-out infinite 1.5s;
+  --animate-float-delay-2: float 9s ease-in-out infinite 3s;
+  --animate-float-delay-3: float 11s ease-in-out infinite 4.5s;
+  --animate-pulse-glow: pulse-glow 6s ease-in-out infinite alternate;
+
   @keyframes comment-flash {
     0%,
     25% {
@@ -1203,5 +1218,107 @@ body {
 
   .post-content.prose-blog.prose table.pt-table tbody tr:nth-child(even) td {
     background-color: var(--prose-blog-table-stripe);
+  }
+}
+
+/* ─── View Transition styles ───────────────────────────── */
+@supports (view-transition-name: none) {
+  ::view-transition-group(*) {
+    animation-duration: 350ms;
+    animation-timing-function: cubic-bezier(0.3, 0, 0, 1);
+  }
+
+  ::view-transition-old(music-cover-*),
+  ::view-transition-new(music-cover-*) {
+    animation: none;
+  }
+
+  ::view-transition-new(music-title-*),
+  ::view-transition-new(music-artist-*) {
+    animation: slideUpFade 300ms ease-out;
+  }
+}
+
+@keyframes slideUpFade {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes equalizer {
+  0%,
+  100% {
+    height: 3px;
+  }
+  50% {
+    height: 14px;
+  }
+}
+
+@keyframes detail-enter {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes detail-cover {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes detail-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slow-zoom {
+  from {
+    transform: scale(1.05);
+  }
+  to {
+    transform: scale(1.2);
+  }
+}
+
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes pulse-glow {
+  from {
+    opacity: 0.4;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0.7;
+    transform: scale(1.1);
   }
 }

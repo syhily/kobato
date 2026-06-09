@@ -21,6 +21,8 @@ export async function listMusicForAdmin(db: NodePgDatabase, input: ListMusicInpu
     q: input.q,
     offset,
     limit,
+    sortBy: input.sortBy,
+    sortOrder: input.sortOrder,
   }
 
   const [rows, total] = await Promise.all([listAdminMusicRows(db, filters), countAdminMusic(db, { q: input.q })])

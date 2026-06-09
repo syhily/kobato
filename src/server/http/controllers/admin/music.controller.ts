@@ -1,8 +1,9 @@
+import { ORPCError } from '@orpc/server'
 import { z } from 'zod'
 
 import { recordAuditEventFromContext } from '@/server/domains/audit/services/record'
 import { userSession } from '@/server/domains/auth/primitives'
-import { listMusicForAdmin } from '@/server/domains/music/services/read'
+import { findMusicDtoById, listMusicForAdmin } from '@/server/domains/music/services/read'
 import { searchMusic } from '@/server/domains/music/services/search'
 import { addMusic } from '@/server/domains/music/services/write/add'
 import { deleteMusic } from '@/server/domains/music/services/write/delete'
@@ -10,6 +11,7 @@ import { updateMusicMetadata } from '@/server/domains/music/services/write/metad
 import { authorProc } from '@/server/http/orpc-base'
 import {
   addMusicOutputDto,
+  getMusicOutputDto,
   listMusicOutputDto,
   searchMusicOutputDto,
   updateMusicOutputDto,
@@ -23,11 +25,19 @@ const list = authorProc
       q: z.string().optional(),
       offset: z.coerce.number().optional(),
       limit: z.coerce.number().optional(),
+      sortBy: z.enum(['createdAt', 'updatedAt', 'name', 'artist', 'album']).optional(),
+      sortOrder: z.enum(['asc', 'desc']).optional(),
     }),
   )
   .output(listMusicOutputDto)
   .handler(({ input, context }) =>
-    listMusicForAdmin(context.db, { q: input.q, offset: input.offset, limit: input.limit }),
+    listMusicForAdmin(context.db, {
+      q: input.q,
+      offset: input.offset,
+      limit: input.limit,
+      sortBy: input.sortBy,
+      sortOrder: input.sortOrder,
+    }),
   )
 
 const search = authorProc
@@ -85,6 +95,18 @@ const update = authorProc
     return { music }
   })
 
+const get = authorProc
+  .route({ method: 'GET', path: '/admin/music/get' })
+  .input(z.object({ id: z.string().min(1) }))
+  .output(getMusicOutputDto)
+  .handler(async ({ input, context }) => {
+    const music = await findMusicDtoById(context.db, idFromString(input.id))
+    if (music === null) {
+      throw new ORPCError('NOT_FOUND', { message: '音乐不存在或已删除' })
+    }
+    return { music }
+  })
+
 const remove = authorProc
   .route({ method: 'POST', path: '/admin/music/remove' })
   .input(z.object({ id: z.string().min(1) }))
@@ -101,4 +123,4 @@ const remove = authorProc
     })
   })
 
-export const adminMusicRouter = { list, search, add, update, delete: remove }
+export const adminMusicRouter = { list, search, add, get, update, delete: remove }

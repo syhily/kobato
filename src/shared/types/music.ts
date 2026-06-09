@@ -45,6 +45,8 @@ export interface ListMusicInput {
   q?: string
   offset?: number
   limit?: number
+  sortBy?: 'createdAt' | 'updatedAt' | 'name' | 'artist' | 'album'
+  sortOrder?: 'asc' | 'desc'
 }
 
 export interface ListMusicOutput {

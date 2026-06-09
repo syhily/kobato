@@ -138,6 +138,7 @@ function loadEnv() {
         '    REDIS_URL      — Redis connection URL',
         '    SESSION_SECRET — Session signing secret',
         '    ENCRYPTION_KEY - The encryption key for sensitive content',
+        '    DATA_PATH      - Root directory for all local filesystem data',
         '',
       ].join('\n'),
     )

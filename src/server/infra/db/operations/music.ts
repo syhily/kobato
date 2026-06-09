@@ -1,6 +1,6 @@
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
-import { and, count, desc, eq, isNull, or, type SQL } from 'drizzle-orm'
+import { and, asc, count, desc, eq, isNull, or, type SQL } from 'drizzle-orm'
 
 import type { MusicRow, NewMusic } from '@/server/infra/db/types'
 
@@ -12,6 +12,8 @@ export interface AdminMusicListFilters {
   q?: string
   offset?: number
   limit?: number
+  sortBy?: 'createdAt' | 'updatedAt' | 'name' | 'artist' | 'album'
+  sortOrder?: 'asc' | 'desc'
   /** Default `false`: list view hides soft-deleted rows. */
   includeDeleted?: boolean
 }
@@ -75,6 +77,21 @@ function buildAdminMusicWhere(filters: AdminMusicListFilters): SQL | undefined {
   return and(...conditions)
 }
 
+function buildOrderBy(filters: AdminMusicListFilters): SQL {
+  const col =
+    filters.sortBy === 'updatedAt'
+      ? music.updatedAt
+      : filters.sortBy === 'name'
+        ? music.name
+        : filters.sortBy === 'artist'
+          ? music.artist
+          : filters.sortBy === 'album'
+            ? music.album
+            : music.createdAt
+
+  return filters.sortOrder === 'asc' ? asc(col) : desc(col)
+}
+
 export async function listAdminMusicRows(
   db: NodePgDatabase,
   filters: AdminMusicListFilters = {},
@@ -85,7 +102,7 @@ export async function listAdminMusicRows(
     .from(music)
     .leftJoin(user, eq(user.id, music.uploaderId))
 
-  let q = where ? baseQuery.where(where).orderBy(desc(music.createdAt)) : baseQuery.orderBy(desc(music.createdAt))
+  let q = where ? baseQuery.where(where).orderBy(buildOrderBy(filters)) : baseQuery.orderBy(buildOrderBy(filters))
   if (filters.limit !== undefined) {
     q = q.limit(filters.limit) as typeof q
   }

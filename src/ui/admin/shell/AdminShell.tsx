@@ -1,5 +1,8 @@
 import { createContext, type ReactNode, use, useEffect, useMemo, useRef, useState } from 'react'
 
+import { AdminMusicPlayerBar } from '@/ui/admin/musics/AdminMusicPlayerBar'
+import { AdminMusicPlayerFloat } from '@/ui/admin/musics/AdminMusicPlayerFloat'
+import { MusicPlayerProvider } from '@/ui/admin/musics/MusicPlayerContext'
 import { AdminScrollTopButton } from '@/ui/admin/shell/AdminScrollTopButton'
 import { AppSidebar } from '@/ui/admin/shell/AppSidebar'
 import { MobileNavBar } from '@/ui/admin/shell/MobileNavBar'
@@ -75,6 +78,29 @@ export interface AdminShellProps {
   children: ReactNode
 }
 
+function MusicPlayerAwareMain({
+  focused,
+  mainScrollRef,
+  children,
+}: {
+  focused: boolean
+  mainScrollRef: React.RefObject<HTMLElement | null>
+  children: ReactNode
+}) {
+  return (
+    <main id="admin-main-content" ref={mainScrollRef} className="flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto">
+      <div
+        className={cn(
+          focused && 'flex min-h-0 flex-1 flex-col',
+          focused ? 'w-full p-2 lg:p-4' : 'mx-auto w-full max-w-(--container-admin) p-4 lg:p-6',
+        )}
+      >
+        {children}
+      </div>
+    </main>
+  )
+}
+
 export function AdminShell({ currentUser, siteTitle, pendingCommentCount, userCount, children }: AdminShellProps) {
   const [focused, setFocused] = useState(false)
   const [scrollTopLifted, setScrollTopLifted] = useState(false)
@@ -85,50 +111,43 @@ export function AdminShell({ currentUser, siteTitle, pendingCommentCount, userCo
   )
 
   return (
-    <AdminChromeContext.Provider value={chromeValue}>
-      <div className="flex h-dvh flex-col overflow-hidden bg-background text-foreground">
-        <a
-          href="#admin-main-content"
-          className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-50 focus:rounded-xl focus:bg-foreground focus:px-4 focus:py-2 focus:text-background focus:shadow-lg"
-        >
-          跳转到主要内容
-        </a>
-        <SidebarProvider>
-          <AppSidebar
-            currentUser={currentUser}
-            siteTitle={siteTitle}
-            pendingCommentCount={pendingCommentCount}
-            userCount={userCount}
-          />
-          <SidebarInset
-            className={cn(
-              'overflow-x-hidden overflow-y-auto',
-              !focused && 'max-h-[calc(100%_-_var(--mobile-navbar-height))] md:max-h-full',
-            )}
+    <MusicPlayerProvider>
+      <AdminChromeContext.Provider value={chromeValue}>
+        <div className="flex h-dvh flex-col overflow-hidden bg-background text-foreground">
+          <a
+            href="#admin-main-content"
+            className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-50 focus:rounded-xl focus:bg-foreground focus:px-4 focus:py-2 focus:text-background focus:shadow-lg"
           >
-            <main
-              id="admin-main-content"
-              ref={mainScrollRef}
-              className={cn('flex min-h-0 min-w-0 flex-1 flex-col', focused ? 'overflow-y-auto' : '')}
+            跳转到主要内容
+          </a>
+          <SidebarProvider>
+            <AppSidebar
+              currentUser={currentUser}
+              siteTitle={siteTitle}
+              pendingCommentCount={pendingCommentCount}
+              userCount={userCount}
+            />
+            <SidebarInset
+              className={cn(
+                'overflow-x-hidden',
+                !focused && 'max-h-[calc(100%_-_var(--mobile-navbar-height))] md:max-h-full',
+              )}
             >
-              <div
-                className={cn(
-                  focused && 'flex min-h-0 flex-1 flex-col',
-                  focused ? 'w-full p-2 lg:p-4' : 'mx-auto w-full max-w-(--container-admin) p-4 lg:p-6',
-                )}
-              >
+              <MusicPlayerAwareMain focused={focused} mainScrollRef={mainScrollRef}>
                 {children}
-              </div>
-            </main>
-            <MobileNavBar />
-          </SidebarInset>
-        </SidebarProvider>
-        <AdminScrollTopButton
-          lifted={focused || scrollTopLifted}
-          {...(focused ? { scrollRootRef: mainScrollRef } : {})}
-        />
-        <Toaster />
-      </div>
-    </AdminChromeContext.Provider>
+              </MusicPlayerAwareMain>
+              <AdminMusicPlayerBar />
+              <MobileNavBar />
+            </SidebarInset>
+          </SidebarProvider>
+          <AdminMusicPlayerFloat />
+          <AdminScrollTopButton
+            lifted={focused || scrollTopLifted}
+            {...(focused ? { scrollRootRef: mainScrollRef } : {})}
+          />
+          <Toaster />
+        </div>
+      </AdminChromeContext.Provider>
+    </MusicPlayerProvider>
   )
 }

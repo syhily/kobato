@@ -1,13 +1,13 @@
 import { useMutation } from '@tanstack/react-query'
 import { Loader2Icon, SearchIcon, XIcon } from 'lucide-react'
-import { type MouseEvent, useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { toast } from 'sonner'
 
 import type { AdminMusicDto, MetingSearchHit } from '@/shared/types/music'
 
 import { orpcQuery } from '@/client/api/orpc-query'
-import { AudioPreviewPlayer } from '@/ui/admin/musics/AudioPreviewPlayer'
-import { INITIAL_PREVIEW_PROGRESS, type PreviewProgress, SearchResultItem } from '@/ui/admin/musics/SearchResultItem'
+import { useMusicPlayer } from '@/ui/admin/musics/MusicPlayerContext'
+import { SearchResultItem } from '@/ui/admin/musics/SearchResultItem'
 import { Button } from '@/ui/components/button'
 import {
   Dialog,
@@ -27,6 +27,31 @@ const RESULT_LIMIT_OPTIONS: { value: string; label: string }[] = [5, 10, 15, 20,
   label: `${n} 条`,
 }))
 
+function hitToPreviewTrack(hit: MetingSearchHit & { previewUrl?: string }): AdminMusicDto {
+  return {
+    id: `preview:${hit.sourceId}`,
+    source: hit.source,
+    sourceId: hit.sourceId,
+    playerId: `preview:${hit.sourceId}`,
+    name: hit.name,
+    artist: hit.artist,
+    album: hit.album,
+    audioStoragePath: '',
+    audioUrl: hit.previewUrl ?? '',
+    coverStoragePath: '',
+    coverUrl: hit.coverUrl,
+    lyric: null,
+    uploaderId: null,
+    uploaderName: null,
+    createdAt: '',
+    updatedAt: '',
+  }
+}
+
+function isPreviewId(id: string | undefined): boolean {
+  return id !== undefined && id.startsWith('preview:')
+}
+
 export interface AddMusicDialogProps {
   open: boolean
   onClose: () => void
@@ -39,10 +64,8 @@ export function AddMusicDialog({ open, onClose, onAdded }: AddMusicDialogProps) 
   const [results, setResults] = useState<MetingSearchHit[]>([])
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [addingSourceId, setAddingSourceId] = useState<string | null>(null)
-  const [previewSourceId, setPreviewSourceId] = useState<string | null>(null)
-  const [previewProgress, setPreviewProgress] = useState<PreviewProgress>(INITIAL_PREVIEW_PROGRESS)
 
-  const audioRef = useRef<HTMLAudioElement | null>(null)
+  const { currentTrack, isPlaying, toggle, close, load } = useMusicPlayer()
 
   const searchMutation = useMutation({
     ...orpcQuery.admin.music.search.mutationOptions(),
@@ -75,22 +98,19 @@ export function AddMusicDialog({ open, onClose, onAdded }: AddMusicDialogProps) 
   })
   const { mutate: submitAdd } = addMutation
 
+  // Reset state on dialog close and stop any active preview
   useEffect(() => {
     if (!open) {
       setKeyword('')
       setResults([])
       setErrorMessage(null)
       setAddingSourceId(null)
-      setPreviewSourceId(null)
-      setPreviewProgress(INITIAL_PREVIEW_PROGRESS)
-      const audio = audioRef.current
-      if (audio !== null) {
-        audio.pause()
-        audio.removeAttribute('src')
-        audio.load()
+      // Stop preview if currently playing a search result
+      if (currentTrack && isPreviewId(currentTrack.id)) {
+        close()
       }
     }
-  }, [open])
+  }, [open, currentTrack, close])
 
   const triggerSearch = useCallback(() => {
     const trimmed = keyword.trim()
@@ -104,40 +124,17 @@ export function AddMusicDialog({ open, onClose, onAdded }: AddMusicDialogProps) 
 
   const onPreview = useCallback(
     (hit: MetingSearchHit & { previewUrl?: string }) => {
-      const audio = audioRef.current
-      const previewUrl = hit.previewUrl
-      if (audio === null || previewUrl === undefined || previewUrl === '') {
+      const previewId = `preview:${hit.sourceId}`
+      if (currentTrack?.id === previewId) {
+        toggle()
         return
       }
-      if (previewSourceId === hit.sourceId) {
-        audio.pause()
-        audio.removeAttribute('src')
-        audio.load()
-        setPreviewSourceId(null)
-        setPreviewProgress(INITIAL_PREVIEW_PROGRESS)
-        return
+      if (hit.previewUrl) {
+        load(hitToPreviewTrack(hit))
       }
-      audio.src = previewUrl
-      audio.play().catch(() => undefined)
-      setPreviewSourceId(hit.sourceId)
-      setPreviewProgress(INITIAL_PREVIEW_PROGRESS)
     },
-    [previewSourceId],
+    [currentTrack, toggle, load],
   )
-
-  const onSeek = useCallback((event: MouseEvent<HTMLDivElement>) => {
-    const audio = audioRef.current
-    if (audio === null || !Number.isFinite(audio.duration) || audio.duration <= 0) {
-      return
-    }
-    const rect = event.currentTarget.getBoundingClientRect()
-    if (rect.width === 0) {
-      return
-    }
-    const ratio = Math.min(1, Math.max(0, (event.clientX - rect.left) / rect.width))
-    audio.currentTime = ratio * audio.duration
-    setPreviewProgress((prev) => ({ ...prev, currentTime: ratio * audio.duration }))
-  }, [])
 
   const onAdd = useCallback(
     (hit: MetingSearchHit) => {
@@ -152,15 +149,6 @@ export function AddMusicDialog({ open, onClose, onAdded }: AddMusicDialogProps) 
 
   return (
     <Dialog open={open} onOpenChange={(next) => (next ? undefined : onClose())}>
-      {/*
-       * Fixed-size dialog: a clamped width keeps the search hits at a
-       * comfortable line length on wide monitors (instead of stretching
-       * across the screen), and `h-[80vh]` plus `flex-col` carve the
-       * popup into a fixed header + toolbar + scroll-region + footer.
-       * The scroll region is the ONLY part that grows; the rest stays
-       * pinned so the search input is always one click away regardless
-       * of how far the operator has scrolled.
-       */}
       <DialogContent className="flex h-[80vh] max-h-[640px] w-full flex-col gap-0 p-0 sm:max-w-xl">
         <DialogHeader className="border-b px-6 py-4">
           <DialogTitle>添加音乐</DialogTitle>
@@ -215,11 +203,6 @@ export function AddMusicDialog({ open, onClose, onAdded }: AddMusicDialogProps) 
           </div>
         </div>
 
-        {/*
-         * Scroll region. `min-h-0` is load-bearing — without it the
-         * flex child's intrinsic content height defeats `flex-1` and
-         * the dialog footer floats off-screen on long result lists.
-         */}
         <div className="min-h-0 flex-1 overflow-y-auto px-6 py-4">
           {errorMessage !== null ? (
             <p className="mb-3 rounded-xl bg-destructive/10 px-3 py-2 text-sm text-destructive">{errorMessage}</p>
@@ -228,7 +211,6 @@ export function AddMusicDialog({ open, onClose, onAdded }: AddMusicDialogProps) 
           <div className="flex flex-col gap-2">
             {isSearching && results.length === 0 ? (
               Array.from({ length: 3 }).map((_, index) => (
-                // Skeleton placeholders — identical, swapped wholesale on load.
                 // oxlint-disable-next-line react/no-array-index-key
                 <Skeleton key={index} className="h-16 w-full rounded-xl" />
               ))
@@ -240,46 +222,22 @@ export function AddMusicDialog({ open, onClose, onAdded }: AddMusicDialogProps) 
                   previewUrl?: string
                   _added?: boolean
                 }
+                const previewId = `preview:${hit.sourceId}`
                 return (
                   <SearchResultItem
                     key={hit.sourceId}
                     hit={decorated}
-                    previewActive={previewSourceId === hit.sourceId}
+                    previewActive={currentTrack?.id === previewId && isPlaying}
                     adding={addingSourceId === hit.sourceId}
                     added={decorated._added === true}
-                    previewProgress={previewSourceId === hit.sourceId ? previewProgress : null}
                     onPreview={onPreview}
                     onAdd={onAdd}
-                    onSeek={onSeek}
                   />
                 )
               })
             )}
           </div>
         </div>
-
-        <AudioPreviewPlayer
-          audioRef={audioRef}
-          onLoadedMetadata={(duration) => {
-            setPreviewProgress((prev) => ({
-              ...prev,
-              duration: duration > 0 ? duration : null,
-            }))
-          }}
-          onTimeUpdate={(currentTime) => {
-            setPreviewProgress((prev) => ({ ...prev, currentTime }))
-          }}
-          onEnded={() => {
-            setPreviewSourceId(null)
-            setPreviewProgress(INITIAL_PREVIEW_PROGRESS)
-          }}
-          onPause={(currentTime) => {
-            if (currentTime === 0) {
-              setPreviewSourceId(null)
-              setPreviewProgress(INITIAL_PREVIEW_PROGRESS)
-            }
-          }}
-        />
 
         <DialogFooter className="border-t px-6 py-3">
           <Button type="button" variant="outline" onClick={onClose}>
