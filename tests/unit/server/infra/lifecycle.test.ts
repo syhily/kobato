@@ -1,3 +1,4 @@
+import { Server as NodeHttpServer } from 'node:http'
 import { describe, expect, it, vi } from 'vitest'
 
 describe('server/infra/lifecycle', () => {
@@ -9,7 +10,8 @@ describe('server/infra/lifecycle', () => {
       const { setHttpServer, requestShutdown } = await import('@/server/infra/lifecycle')
 
       const closeMock = vi.fn((cb: () => void) => cb())
-      const fakeServer = { close: closeMock } as unknown as import('@hono/node-server').ServerType
+      const fakeServer = new NodeHttpServer()
+      Object.assign(fakeServer, { close: closeMock })
 
       setHttpServer(fakeServer)
       requestShutdown('test')

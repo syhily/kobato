@@ -1,5 +1,6 @@
 import type { ServerType } from '@hono/node-server'
 
+import { Server as NodeHttpServer } from 'node:http'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { getServerPhase, restartServer, setHttpServer, setRestartApp, setServerPhase } from '@/server/infra/lifecycle'
@@ -37,14 +38,15 @@ describe('server/http/restart — restartServer', () => {
 
   it('does nothing when already restarting', async () => {
     const closeMock = vi.fn((cb: () => void) => cb())
-    const fakeServer = {
+    const fakeServer = new NodeHttpServer()
+    Object.assign(fakeServer, {
       close: closeMock,
       closeIdleConnections: vi.fn(),
-    } as unknown as ServerType
+    })
 
     const fakeApp = { fetch: vi.fn() } as unknown as Parameters<typeof setRestartApp>[0]
 
-    setHttpServer(fakeServer)
+    setHttpServer(fakeServer as unknown as ServerType)
     setRestartApp(fakeApp)
     setServerPhase('restarting')
 
@@ -60,17 +62,18 @@ describe('server/http/restart — restartServer', () => {
 
   it('sets phase to failed when restart crashes', async () => {
     const closeMock = vi.fn((cb: () => void) => cb())
-    const fakeServer = {
+    const fakeServer = new NodeHttpServer()
+    Object.assign(fakeServer, {
       close: closeMock,
       closeIdleConnections: vi.fn(),
-    } as unknown as ServerType
+    })
 
     serveMock.mockImplementationOnce(() => {
       throw new Error('port in use')
     })
 
     const fakeApp = { fetch: vi.fn() } as unknown as Parameters<typeof setRestartApp>[0]
-    setHttpServer(fakeServer)
+    setHttpServer(fakeServer as unknown as ServerType)
     setRestartApp(fakeApp)
     setServerPhase('restarting')
 
