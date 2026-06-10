@@ -6,7 +6,7 @@ import { toast } from 'sonner'
 import type { AdminMusicDto, MetingSearchHit } from '@/shared/types/music'
 
 import { orpcQuery } from '@/client/api/orpc-query'
-import { useMusicPlayer } from '@/ui/admin/musics/MusicPlayerContext'
+import { useMusicPlayerActions, useMusicPlayerState } from '@/ui/admin/musics/MusicPlayerContext'
 import { SearchResultItem } from '@/ui/admin/musics/SearchResultItem'
 import { Button } from '@/ui/components/button'
 import {
@@ -65,7 +65,8 @@ export function AddMusicDialog({ open, onClose, onAdded }: AddMusicDialogProps) 
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [addingSourceId, setAddingSourceId] = useState<string | null>(null)
 
-  const { currentTrack, isPlaying, toggle, close, load } = useMusicPlayer()
+  const { currentTrack, isPlaying } = useMusicPlayerState()
+  const { toggle, close, load } = useMusicPlayerActions()
 
   const searchMutation = useMutation({
     ...orpcQuery.admin.music.search.mutationOptions(),

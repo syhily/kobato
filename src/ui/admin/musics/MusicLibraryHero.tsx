@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 
 import type { AdminMusicDto } from '@/shared/types/music'
 
-import { useMusicPlayer } from '@/ui/admin/musics/MusicPlayerContext'
+import { useMusicPlayerState } from '@/ui/admin/musics/MusicPlayerContext'
 import { cn } from '@/ui/lib/cn'
 
 interface MusicLibraryHeroProps {
@@ -271,17 +271,13 @@ function EmptyBackground() {
 }
 
 export function MusicLibraryHero({ musics, total, title = '音乐库', children }: MusicLibraryHeroProps) {
-  const { currentTrack, isPlaying, extractedColor } = useMusicPlayer()
+  const { currentTrack, isPlaying, extractedColor } = useMusicPlayerState()
   const hasPlayingTrack = currentTrack && isPlaying
 
-  const computedUrls = useMemo(
+  const allCoverUrls = useMemo(
     () => [...new Set(musics.map((m) => m.coverUrl).filter((url): url is string => Boolean(url)))].sort(),
     [musics],
   )
-
-  const allCoverUrls = computedUrls
-
-  const displayTotal = total
 
   const hasBackground = allCoverUrls.length > 0
 
@@ -313,7 +309,7 @@ export function MusicLibraryHero({ musics, total, title = '音乐库', children 
           {title}
         </h1>
         <p className="mt-2 text-sm text-white/80" style={{ textShadow: '0 1px 8px rgba(0,0,0,0.35)' }}>
-          {displayTotal > 0 && <>共 {displayTotal} 首歌曲</>}
+          {total > 0 && <>共 {total} 首歌曲</>}
           {hasPlayingTrack && (
             <span className="ml-2 inline-flex items-center gap-1.5 text-white">
               <span className="inline-block size-2 animate-pulse rounded-full bg-current" />

@@ -8,7 +8,7 @@ import type { AdminMusicDto, MetingSearchHit } from '@/shared/types/music'
 
 import { orpcQuery } from '@/client/api/orpc-query'
 import { MusicLibraryHero } from '@/ui/admin/musics/MusicLibraryHero'
-import { useMusicPlayer } from '@/ui/admin/musics/MusicPlayerContext'
+import { useMusicPlayerActions, useMusicPlayerState } from '@/ui/admin/musics/MusicPlayerContext'
 import { SearchAlbumCard } from '@/ui/admin/musics/SearchAlbumCard'
 function hitToPreviewTrack(hit: MetingSearchHit): AdminMusicDto {
   return {
@@ -43,7 +43,8 @@ export function AddMusicView() {
   const [addingSourceId, setAddingSourceId] = useState<string | null>(null)
   const [addedSourceIds, setAddedSourceIds] = useState<Set<string>>(new Set())
 
-  const { currentTrack, isPlaying, load, toggle, close } = useMusicPlayer()
+  const { currentTrack, isPlaying } = useMusicPlayerState()
+  const { load, toggle, close } = useMusicPlayerActions()
 
   const libraryInput = useMemo(() => ({ offset: 0, limit: 30 }), [])
   const libraryQuery = useQuery(

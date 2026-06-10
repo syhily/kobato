@@ -16,7 +16,7 @@ import { useNavigate } from 'react-router'
 import { orpc } from '@/client/api/client'
 import { AlbumCard } from '@/ui/admin/musics/AlbumCard'
 import { MusicLibraryHero } from '@/ui/admin/musics/MusicLibraryHero'
-import { useMusicPlayer } from '@/ui/admin/musics/MusicPlayerContext'
+import { useMusicPlayerActions } from '@/ui/admin/musics/MusicPlayerContext'
 import { type MusicSortBy, useMusicsController } from '@/ui/admin/musics/useMusicsController'
 import { useDebouncedSearch } from '@/ui/admin/shared/useDebouncedSearch'
 import { cn } from '@/ui/lib/cn'
@@ -51,7 +51,7 @@ function SortIcon({ sortBy, sortOrder }: { sortBy: MusicSortBy; sortOrder: 'asc'
 export function MusicsView() {
   const navigate = useNavigate()
   const { state, dispatch } = useMusicsController()
-  const { load } = useMusicPlayer()
+  const { load } = useMusicPlayerActions()
   const [sortMenuOpen, setSortMenuOpen] = useState(false)
   const sortMenuId = useId()
   const sortTriggerRef = useRef<HTMLButtonElement>(null)

@@ -7,7 +7,7 @@ import { toast } from 'sonner'
 import { orpc } from '@/client/api/client'
 import { orpcQuery } from '@/client/api/orpc-query'
 import { LyricsDisplay } from '@/ui/admin/musics/LyricsDisplay'
-import { useMusicPlayer } from '@/ui/admin/musics/MusicPlayerContext'
+import { useMusicPlayerActions, useMusicPlayerState, useMusicPlayerTime } from '@/ui/admin/musics/MusicPlayerContext'
 import { ConfirmDialog, type ConfirmState } from '@/ui/admin/shared/ConfirmDialog'
 import { cn } from '@/ui/lib/cn'
 import { Image } from '@/ui/public/widgets/Image'
@@ -16,7 +16,9 @@ export function MusicDetailView() {
   const params = useParams()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
-  const { load, currentTrack, isPlaying, toggle, currentTime } = useMusicPlayer()
+  const { load, toggle } = useMusicPlayerActions()
+  const { currentTrack, isPlaying } = useMusicPlayerState()
+  const currentTime = useMusicPlayerTime()
   const [confirm, setConfirm] = useState<ConfirmState | null>(null)
   const [copied, setCopied] = useState(false)
   const [editing, setEditing] = useState(false)

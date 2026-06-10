@@ -3,7 +3,7 @@ import { Play, Pause } from 'lucide-react'
 import type { AdminMusicDto } from '@/shared/types/music'
 
 import { Equalizer } from '@/ui/admin/musics/Equalizer'
-import { useMusicPlayer } from '@/ui/admin/musics/MusicPlayerContext'
+import { useMusicPlayerActions, useMusicPlayerState } from '@/ui/admin/musics/MusicPlayerContext'
 import { cn } from '@/ui/lib/cn'
 import { Image } from '@/ui/public/widgets/Image'
 
@@ -13,7 +13,8 @@ export interface AlbumCardProps {
 }
 
 export function AlbumCard({ music, viewTransitionName }: AlbumCardProps) {
-  const { currentTrack, isPlaying, load, toggle } = useMusicPlayer()
+  const { currentTrack, isPlaying } = useMusicPlayerState()
+  const { load, toggle } = useMusicPlayerActions()
   const isCurrent = currentTrack?.id === music.id
   const isCurrentPlaying = isCurrent && isPlaying
 

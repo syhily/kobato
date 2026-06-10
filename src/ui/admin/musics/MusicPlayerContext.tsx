@@ -8,7 +8,6 @@ interface MusicPlayerState {
   currentTrack: AdminMusicDto | null
   isPlaying: boolean
   duration: number
-  currentTime: number
   volume: number
   muted: boolean
   extractedColor: string | null
@@ -27,20 +26,15 @@ interface MusicPlayerActions {
   close: () => void
 }
 
-type MusicPlayerContextValue = MusicPlayerState & MusicPlayerActions
+interface MusicPlayerTimeValue {
+  currentTime: number
+}
 
-const MusicPlayerContext = createContext<MusicPlayerContextValue | null>(null)
+const MusicPlayerActionsContext = createContext<MusicPlayerActions | null>(null)
+const MusicPlayerStateContext = createContext<MusicPlayerState | null>(null)
+const MusicPlayerTimeContext = createContext<MusicPlayerTimeValue | null>(null)
 
-const NOOP_CTX: MusicPlayerContextValue = {
-  currentTrack: null,
-  isPlaying: false,
-  duration: 0,
-  currentTime: 0,
-  volume: 0.7,
-  muted: false,
-  extractedColor: null,
-  playlist: [],
-  currentIndex: -1,
+const NOOP_ACTIONS: MusicPlayerActions = {
   load: () => undefined,
   playIndex: () => undefined,
   toggle: () => undefined,
@@ -51,9 +45,30 @@ const NOOP_CTX: MusicPlayerContextValue = {
   close: () => undefined,
 }
 
-export function useMusicPlayer(): MusicPlayerContextValue {
-  const ctx = use(MusicPlayerContext)
-  return ctx ?? NOOP_CTX
+const DEFAULT_STATE: MusicPlayerState = {
+  currentTrack: null,
+  isPlaying: false,
+  duration: 0,
+  volume: 0.7,
+  muted: false,
+  extractedColor: null,
+  playlist: [],
+  currentIndex: -1,
+}
+
+export function useMusicPlayerActions(): MusicPlayerActions {
+  const ctx = use(MusicPlayerActionsContext)
+  return ctx ?? NOOP_ACTIONS
+}
+
+export function useMusicPlayerState(): MusicPlayerState {
+  const ctx = use(MusicPlayerStateContext)
+  return ctx ?? DEFAULT_STATE
+}
+
+export function useMusicPlayerTime(): number {
+  const ctx = use(MusicPlayerTimeContext)
+  return ctx?.currentTime ?? 0
 }
 
 export interface MusicPlayerProviderProps {
@@ -78,8 +93,6 @@ export function MusicPlayerProvider({ children }: MusicPlayerProviderProps) {
   const lastLoadIdRef = useRef(0)
   const getDominantColor = useDominantColor()
 
-  // Keep refs in sync so audio event listeners can read the latest state
-  // without re-registering the listeners on every state change.
   useEffect(() => {
     playlistRef.current = playlist
   }, [playlist])
@@ -96,8 +109,6 @@ export function MusicPlayerProvider({ children }: MusicPlayerProviderProps) {
     }
   }, [])
 
-  // Throttle currentTime updates to ~10fps to avoid re-rendering the entire
-  // admin shell at 60fps during playback.
   const startTimeLoop = useCallback(() => {
     stopTimeLoop()
     timeLoopRef.current = setInterval(() => {
@@ -115,7 +126,6 @@ export function MusicPlayerProvider({ children }: MusicPlayerProviderProps) {
         return
       }
 
-      // Clean up any pending canplay listener from a previous load
       if (canPlayListenerRef.current) {
         audio.removeEventListener('canplay', canPlayListenerRef.current)
         canPlayListenerRef.current = null
@@ -140,7 +150,6 @@ export function MusicPlayerProvider({ children }: MusicPlayerProviderProps) {
         setCurrentIndex(0)
       }
 
-      // Extract dominant color — guard against race conditions from rapid switches
       const loadId = ++lastLoadIdRef.current
       void getDominantColor(track.coverUrl).then((color) => {
         if (loadId === lastLoadIdRef.current) {
@@ -148,7 +157,6 @@ export function MusicPlayerProvider({ children }: MusicPlayerProviderProps) {
         }
       })
 
-      // Auto-play when ready
       const tryPlay = () => {
         void audio.play().catch(() => {
           setIsPlaying(false)
@@ -247,8 +255,6 @@ export function MusicPlayerProvider({ children }: MusicPlayerProviderProps) {
     stopTimeLoop()
   }, [stopTimeLoop])
 
-  // Setup audio element and event listeners — runs once on mount.
-  // playlistRef is used inside listeners so we never need to re-register.
   useEffect(() => {
     const audio = new Audio()
     audio.volume = 0.7
@@ -298,17 +304,8 @@ export function MusicPlayerProvider({ children }: MusicPlayerProviderProps) {
     }
   }, [startTimeLoop, stopTimeLoop, playIndex])
 
-  const value = useMemo<MusicPlayerContextValue>(
+  const actions = useMemo<MusicPlayerActions>(
     () => ({
-      currentTrack,
-      isPlaying,
-      duration,
-      currentTime,
-      volume,
-      muted,
-      extractedColor,
-      playlist,
-      currentIndex,
       load,
       playIndex,
       toggle,
@@ -318,26 +315,30 @@ export function MusicPlayerProvider({ children }: MusicPlayerProviderProps) {
       toggleMute,
       close,
     }),
-    [
+    [load, playIndex, toggle, pause, seek, setVolume, toggleMute, close],
+  )
+
+  const state = useMemo<MusicPlayerState>(
+    () => ({
       currentTrack,
       isPlaying,
       duration,
-      currentTime,
       volume,
       muted,
       extractedColor,
       playlist,
       currentIndex,
-      load,
-      playIndex,
-      toggle,
-      pause,
-      seek,
-      setVolume,
-      toggleMute,
-      close,
-    ],
+    }),
+    [currentTrack, isPlaying, duration, volume, muted, extractedColor, playlist, currentIndex],
   )
 
-  return <MusicPlayerContext.Provider value={value}>{children}</MusicPlayerContext.Provider>
+  const timeValue = useMemo<MusicPlayerTimeValue>(() => ({ currentTime }), [currentTime])
+
+  return (
+    <MusicPlayerActionsContext value={actions}>
+      <MusicPlayerStateContext value={state}>
+        <MusicPlayerTimeContext value={timeValue}>{children}</MusicPlayerTimeContext>
+      </MusicPlayerStateContext>
+    </MusicPlayerActionsContext>
+  )
 }

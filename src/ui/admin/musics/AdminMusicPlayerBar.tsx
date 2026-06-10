@@ -3,7 +3,7 @@ import { useCallback, useMemo } from 'react'
 import { useLocation } from 'react-router'
 
 import { formatTime } from '@/ui/admin/musics/format-time'
-import { useMusicPlayer } from '@/ui/admin/musics/MusicPlayerContext'
+import { useMusicPlayerActions, useMusicPlayerState, useMusicPlayerTime } from '@/ui/admin/musics/MusicPlayerContext'
 import { ProgressSlider } from '@/ui/admin/musics/ProgressSlider'
 import { cn } from '@/ui/lib/cn'
 import { Image } from '@/ui/public/widgets/Image'
@@ -11,23 +11,10 @@ import { Image } from '@/ui/public/widgets/Image'
 export function AdminMusicPlayerBar() {
   const location = useLocation()
   const isMusicPage = location.pathname.startsWith('/admin/library/music')
-  const {
-    currentTrack,
-    isPlaying,
-    duration,
-    currentTime,
-    volume,
-    muted,
-    extractedColor,
-    toggle,
-    seek,
-    setVolume,
-    toggleMute,
-    close,
-    playIndex,
-    currentIndex,
-    playlist,
-  } = useMusicPlayer()
+  const { currentTrack, isPlaying, duration, volume, muted, extractedColor, playlist, currentIndex } =
+    useMusicPlayerState()
+  const currentTime = useMusicPlayerTime()
+  const { toggle, seek, setVolume, toggleMute, close, playIndex } = useMusicPlayerActions()
 
   const visible = currentTrack !== null && isMusicPage
 
