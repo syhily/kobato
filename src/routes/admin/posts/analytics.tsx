@@ -1,6 +1,10 @@
 import { useState } from 'react'
 import { Link, useLoaderData } from 'react-router'
 
+function isChartTab(value: string): value is 'views' | 'heatmap' {
+  return value === 'views' || value === 'heatmap'
+}
+
 import type { MetricGroup, MetricRow, MetricType } from '@/shared/contracts/analytics'
 
 import { queryCounters } from '@/server/domains/analytics/services/counters'
@@ -87,7 +91,14 @@ export default function PostAnalyticsPage() {
 
       <Card className="gap-2">
         <CardContent className="flex flex-col gap-3 px-4 pb-4">
-          <Tabs value={chartTab} onValueChange={(v) => setChartTab(v as 'views' | 'heatmap')}>
+          <Tabs
+            value={chartTab}
+            onValueChange={(v) => {
+              if (typeof v === 'string' && isChartTab(v)) {
+                setChartTab(v)
+              }
+            }}
+          >
             <TabsList className="h-8">
               <TabsTrigger value="views">趋势</TabsTrigger>
               <TabsTrigger value="heatmap">热力</TabsTrigger>

@@ -8,6 +8,7 @@ import { Solar } from 'lunar-typescript'
 import { DomainError } from '@/server/infra/http/errors'
 import { compressImage } from '@/server/render/image-compress'
 import { oppoSerif, type FontSlot } from '@/server/render/og/assets'
+import { isRecord } from '@/shared/utils/type-guards'
 
 const WIDTH = 600
 const HEIGHT = 880
@@ -47,13 +48,24 @@ function ensureFonts(): Promise<void> {
   return calendarFontReady
 }
 
+function isQuotePayload(value: unknown): value is { content: string; translation: string; author: string } {
+  if (!isRecord(value)) {
+    return false
+  }
+  return typeof value.content === 'string' && typeof value.translation === 'string' && typeof value.author === 'string'
+}
+
 async function fetchDailyQuote(date: Date) {
   const url = `https://apiv3.shanbay.com/weapps/dailyquote/quote?date=${format(date, 'yyyy-MM-dd')}`
   const res = await fetch(url, { signal: AbortSignal.timeout(30_000) })
   if (!res.ok) {
     throw new DomainError('INTERNAL', `API 请求失败: ${res.status}`)
   }
-  return res.json() as Promise<{ content: string; translation: string; author: string }>
+  const parsed: unknown = await res.json()
+  if (!isQuotePayload(parsed)) {
+    throw new DomainError('INTERNAL', 'API 响应格式异常')
+  }
+  return parsed
 }
 
 function getMonthLabel(date: Date) {

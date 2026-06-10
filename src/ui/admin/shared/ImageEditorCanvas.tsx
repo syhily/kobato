@@ -297,7 +297,7 @@ export function ImageEditorCanvas({
       const canvas = canvasRef.current
       const renderedWidth = canvas?.clientWidth ?? displayLayout.drawWidth
       const cssScale = renderedWidth / displayLayout.sourceWidth
-      ;(event.target as Element).setPointerCapture(event.pointerId)
+      event.currentTarget.setPointerCapture(event.pointerId)
       setDragState({
         mode,
         pointerId: event.pointerId,
@@ -343,7 +343,7 @@ export function ImageEditorCanvas({
   const endDrag = useCallback(
     (event: React.PointerEvent) => {
       if (dragState !== null && dragState.pointerId === event.pointerId) {
-        ;(event.target as Element).releasePointerCapture?.(event.pointerId)
+        event.currentTarget.releasePointerCapture?.(event.pointerId)
         setDragState(null)
       }
     },

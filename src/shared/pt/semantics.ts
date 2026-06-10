@@ -1,3 +1,4 @@
+/* oxlint-disable typescript/no-unsafe-type-assertion */
 import type { Block } from '@/shared/pt/schema'
 
 // Normalisation shared by PortableText semantic equality (`pt-bridge`

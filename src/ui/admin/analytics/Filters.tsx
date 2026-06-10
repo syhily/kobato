@@ -1,7 +1,6 @@
 import { XIcon } from 'lucide-react'
 
-import type { Filters, MetricType } from '@/shared/contracts/analytics'
-
+import { METRIC_TYPES, type Filters, type MetricType } from '@/shared/contracts/analytics'
 import { Badge } from '@/ui/components/badge'
 import { Button } from '@/ui/components/button'
 import { cn } from '@/ui/lib/cn'
@@ -29,7 +28,13 @@ export interface FiltersBarProps {
 }
 
 export function FiltersBar({ filters, onClear, onClearAll, className }: FiltersBarProps) {
-  const entries = Object.entries(filters) as [MetricType, string][]
+  const entries: [MetricType, string][] = []
+  for (const type of METRIC_TYPES) {
+    const value = filters[type]
+    if (typeof value === 'string') {
+      entries.push([type, value])
+    }
+  }
   if (entries.length === 0) {
     return null
   }

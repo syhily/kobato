@@ -53,7 +53,7 @@ export function FilterAddButton({
       if (e.key !== 'f' || e.metaKey || e.ctrlKey || e.altKey) {
         return
       }
-      const target = e.target as HTMLElement | null
+      const target = e.target instanceof HTMLElement ? e.target : null
       if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) {
         return
       }

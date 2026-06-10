@@ -2,14 +2,23 @@ import type { Plugin, PluginOption } from 'vite'
 
 import { reactRouter } from '@react-router/dev/vite'
 import tailwindcss from '@tailwindcss/vite'
-import { createRequire } from 'node:module'
+import { readFileSync } from 'node:fs'
 import { defineConfig } from 'vite'
+import { z } from 'zod'
 
 import { reactRouterHonoServer } from './src/server/infra/hono/dev.ts'
 import { routeWarmupPlugin } from './src/server/infra/route-warmup'
 
-const require = createRequire(import.meta.url)
-const pkg = require('./package.json')
+const pkgSchema = z.object({
+  name: z.string(),
+  version: z.string(),
+  description: z.string(),
+  author: z.object({ name: z.string() }),
+  homepage: z.string(),
+  repository: z.object({ url: z.string() }),
+})
+
+const pkg = pkgSchema.parse(JSON.parse(readFileSync('./package.json', 'utf-8')))
 
 export default defineConfig(({ command }) => ({
   ssr:

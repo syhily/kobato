@@ -210,5 +210,16 @@ export async function snapshotReservedBuckets(): Promise<ReservedCacheBucketStat
 export async function clearAllBuckets(): Promise<Record<CacheBucketId, number>> {
   const buckets = getCacheBuckets()
   const entries = await Promise.all(buckets.map(async (bucket) => [bucket.id, await clearBucket(bucket)] as const))
-  return Object.fromEntries(entries) as Record<CacheBucketId, number>
+  const result: Record<CacheBucketId, number> = {
+    avatar: 0,
+    calendar: 0,
+    embeddingSearch: 0,
+    imageMeta: 0,
+    og: 0,
+    searchResult: 0,
+  }
+  for (const [id, count] of entries) {
+    result[id] = count
+  }
+  return result
 }

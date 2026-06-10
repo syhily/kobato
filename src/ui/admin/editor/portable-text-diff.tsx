@@ -24,7 +24,7 @@ interface InlineDiffPart {
 export function inlineCharDiff(left: string, right: string): InlineDiffPart[] {
   const result = dmp.diff_main(left, right)
   dmp.diff_cleanupSemantic(result)
-  return result.map(([op, text]) => ({ op: op as -1 | 0 | 1, text }))
+  return result.map(([op, text]) => ({ op: op === -1 ? -1 : op === 1 ? 1 : 0, text }))
 }
 
 export function diffBodies(leftBody: PortableTextBody, rightBody: PortableTextBody): DiffEntry[] {

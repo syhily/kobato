@@ -70,7 +70,9 @@ function SettingsNavItem({ id, label, icon, keywords }: SettingsNavItemProps) {
   return (
     <li>
       <button
-        ref={ref as React.RefObject<HTMLButtonElement | null>}
+        ref={(node) => {
+          ref.current = node
+        }}
         type="button"
         onClick={() => scrollToSection(id)}
         className={cn(
@@ -126,7 +128,7 @@ interface SettingsNavProps {
 export function SettingsNav({ items }: SettingsNavProps) {
   const { noResult } = useSettingsSearch()
 
-  const groups = items.reduce(
+  const groups = items.reduce<Record<SettingsNavGroup, typeof items>>(
     (acc, item) => {
       if (!acc[item.group]) {
         acc[item.group] = []
@@ -134,7 +136,7 @@ export function SettingsNav({ items }: SettingsNavProps) {
       acc[item.group].push(item)
       return acc
     },
-    {} as Record<SettingsNavGroup, typeof items>,
+    { site: [], content: [], service: [], system: [] },
   )
 
   const groupOrder: SettingsNavGroup[] = ['site', 'content', 'service', 'system']

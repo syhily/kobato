@@ -1,7 +1,8 @@
 import { Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, X, ChevronUp, ChevronDown } from 'lucide-react'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation } from 'react-router'
 
+import { formatTime } from '@/ui/admin/musics/format-time'
 import { useMusicPlayer } from '@/ui/admin/musics/MusicPlayerContext'
 import { ProgressSlider } from '@/ui/admin/musics/ProgressSlider'
 import { cn } from '@/ui/lib/cn'
@@ -14,22 +15,20 @@ interface PlayerPosition {
   y: number
 }
 
-function formatTime(seconds: number): string {
-  if (!Number.isFinite(seconds) || seconds < 0) {
-    return '0:00'
-  }
-  const m = Math.floor(seconds / 60)
-  const s = Math.floor(seconds % 60)
-  return `${m}:${String(s).padStart(2, '0')}`
-}
-
 function loadPosition(): PlayerPosition {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
     if (raw) {
-      const parsed = JSON.parse(raw) as PlayerPosition
-      if (typeof parsed.x === 'number' && typeof parsed.y === 'number') {
-        return parsed
+      const parsed: unknown = JSON.parse(raw)
+      if (
+        typeof parsed === 'object' &&
+        parsed !== null &&
+        'x' in parsed &&
+        'y' in parsed &&
+        typeof parsed.x === 'number' &&
+        typeof parsed.y === 'number'
+      ) {
+        return { x: parsed.x, y: parsed.y }
       }
     }
   } catch {
@@ -148,11 +147,12 @@ export function AdminMusicPlayerFloat() {
     }
   }, [currentIndex, playlist.length, playIndex])
 
+  const accent = extractedColor ?? 'var(--brand)'
+  const accentStyle = useMemo(() => ({ backgroundColor: accent }), [accent])
+
   if (!visible) {
     return null
   }
-
-  const accent = extractedColor ?? 'var(--brand)'
 
   return (
     <div
@@ -191,8 +191,7 @@ export function AdminMusicPlayerFloat() {
                 alt=""
                 width={40}
                 height={40}
-                className={cn('size-10 rounded-full object-cover', isPlaying && 'animate-spin')}
-                style={{ animationDuration: '6s' }}
+                className={cn('size-10 rounded-full object-cover', isPlaying && 'animate-spin-slow')}
               />
             ) : (
               <div className="size-10 rounded-full bg-surface-dim" />
@@ -300,7 +299,7 @@ export function AdminMusicPlayerFloat() {
               onMouseDown={stopPropagation}
               onTouchStart={stopPropagation}
               className="flex size-12 items-center justify-center rounded-full text-primary-foreground transition-transform hover:scale-105"
-              style={{ backgroundColor: accent }}
+              style={accentStyle}
               aria-label={isPlaying ? '暂停' : '播放'}
             >
               {isPlaying ? <Pause className="size-6 fill-current" /> : <Play className="size-6 fill-current" />}

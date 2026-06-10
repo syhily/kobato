@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router'
 import { toast } from 'sonner'
 
-import type { AdminPostDetailDto } from '@/shared/types/posts'
+import type { AdminPostDetailDto, AdminPostDto } from '@/shared/types/posts'
 import type { UseEditorShellStateOutput } from '@/ui/admin/editor-shell/editor-shell-types'
 import type { PostMetaDraft } from '@/ui/admin/posts/PostMetaSidebar'
 
@@ -19,7 +19,7 @@ import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '
 interface PostEditorMetaPanelProps {
   mode: 'create' | 'edit'
   detail?: AdminPostDetailDto
-  state: UseEditorShellStateOutput<PostMetaDraft>
+  state: UseEditorShellStateOutput<PostMetaDraft, AdminPostDto>
 }
 
 function MetaExtras({
@@ -33,7 +33,7 @@ function MetaExtras({
   if (!isEditing) {
     return null
   }
-  const post = detail!.post
+  const post = detail.post
   const isDeleted = post.deletedAt !== null
   return (
     <>
@@ -143,7 +143,7 @@ export function PostEditorMetaAside({ mode, detail, state }: PostEditorMetaPanel
           onChange={state.setMeta}
           disabled={state.isPending}
           publishStatus={state.sidebarPublishStatus}
-          ogPreviewSlug={isEditing ? detail!.post.slug : null}
+          ogPreviewSlug={detail?.post.slug ?? null}
           revisionSummary={state.sidebarRevisionSummary}
           saveStatus={state.sidebarSaveStatus}
           featureGate={featureEnabled ? 'enabled' : 'disabled'}
@@ -177,7 +177,7 @@ export function PostEditorMetaSheet({ mode, detail, state }: PostEditorMetaPanel
               onChange={state.setMeta}
               disabled={state.isPending}
               publishStatus={state.sidebarPublishStatus}
-              ogPreviewSlug={isEditing ? detail!.post.slug : null}
+              ogPreviewSlug={detail?.post.slug ?? null}
               revisionSummary={state.sidebarRevisionSummary}
               saveStatus={state.sidebarSaveStatus}
               featureGate={featureEnabled ? 'enabled' : 'disabled'}

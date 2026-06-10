@@ -12,11 +12,12 @@ import { RouteWarmupScript } from '@/client/components/RouteWarmupScript'
 import { useChunkErrorRecovery, useReloadOnChunkError } from '@/client/hooks/use-chunk-error-recovery'
 import { useFocusHash } from '@/client/hooks/use-focus-hash'
 import { useIosNoZoomOnFocus } from '@/client/hooks/use-ios-no-zoom'
-import { cspNonceContext, getRouteRequestContext } from '@/server/domains/auth/context'
+import { getCspNonceFromContext, getRouteRequestContext } from '@/server/domains/auth/context'
 import { bundleFromMatches, routeMeta } from '@/server/render/seo/meta'
 import { getWarmupManifest } from '@/server/render/warmup/manifest'
 import { getBlogSettingsBundleSync } from '@/shared/config/getters'
 import { BlogSettingsProvider } from '@/shared/lib/blog-config-context'
+import { isRecord } from '@/shared/utils/type-guards'
 import { ThemeProvider, THEME_COOKIE } from '@/ui/lib/ThemeProvider'
 import { ChunkReloadOverlay } from '@/ui/public/chrome/ChunkReloadOverlay'
 import { ErrorView } from '@/ui/public/chrome/ErrorView'
@@ -82,7 +83,7 @@ export function loader({ request, context }: Route.LoaderArgs) {
   const tier1Links = warmupManifest?.tier1 ?? []
   const tier2Chunks = warmupManifest ? collectTier2Chunks(warmupManifest, admin) : []
 
-  const cspNonce = (context as any).get(cspNonceContext)
+  const cspNonce = getCspNonceFromContext({ request, context })
 
   return { admin, currentUser, blogSettings, theme, csrfToken, dehydratedState, tier1Links, tier2Chunks, cspNonce }
 }
@@ -138,7 +139,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const locale = rootData?.blogSettings?.siteIdentity?.locale ?? 'zh-CN'
 
   const matches = useMatches()
-  const wantsPostFonts = matches.some((m) => (m.handle as RouteHandle | undefined)?.postFonts === true)
+  const wantsPostFonts = matches.some((m) => isRecord(m.handle) && m.handle.postFonts === true)
   const postFontCss = wantsPostFonts ? (rootData?.blogSettings?.fonts?.postCss ?? []) : []
 
   return (

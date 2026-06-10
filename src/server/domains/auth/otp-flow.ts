@@ -9,6 +9,7 @@ import { commitSessionWithMaxAge } from '@/server/domains/auth/session-storage'
 import { issueOtpToken, verifyOtpToken } from '@/server/domains/auth/verification-tokens'
 import { findUserByEmail, findUserById, verifyUserPassword } from '@/server/infra/db/operations/user'
 import { checkMailReady, sendSignInOtp } from '@/server/infra/email/sender'
+import { getLogger } from '@/server/infra/logger'
 import {
   tryOtpSendByEmailRateLimit,
   tryOtpSendRateLimit,
@@ -18,6 +19,8 @@ import {
   trySignInByEmailRateLimit,
 } from '@/server/infra/rate-limit'
 import { getBlogSettingsBundleSync } from '@/shared/config/getters'
+
+const log = getLogger('auth.otp')
 
 export type AuthFlowResult =
   | { type: 'redirect'; to: string; setCookie?: string }
@@ -44,7 +47,8 @@ async function sendOtpSafely(
       return { ok: false, error: '验证码发送失败，请稍后重试。' }
     }
     return { ok: true }
-  } catch {
+  } catch (error) {
+    log.error('OTP send failed unexpectedly', { email: user.email, error })
     return { ok: false, error: '验证码发送失败，请稍后重试。' }
   }
 }

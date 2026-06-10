@@ -80,33 +80,31 @@ export const cva =
 
     const { variants, defaultVariants } = config
 
-    const getVariantClassNames = Object.keys(variants).map((variant: keyof typeof variants) => {
-      const variantProp = props?.[variant as keyof typeof props]
-      const defaultVariantProp = defaultVariants?.[variant]
+    const propsRecord = props as Record<string, unknown> | undefined
+    const defaultVariantsRecord = defaultVariants as Record<string, unknown> | undefined
+    const getVariantClassNames = Object.keys(variants).map((variant) => {
+      const variantProp = propsRecord?.[variant]
+      const defaultVariantProp = defaultVariantsRecord?.[variant]
 
       if (variantProp === null) {
         return null
       }
 
-      const variantKey = (falsyToString(variantProp) ||
-        falsyToString(defaultVariantProp)) as keyof (typeof variants)[typeof variant]
+      const variantKey = String(falsyToString(variantProp) || falsyToString(defaultVariantProp))
 
       return variants[variant][variantKey]
     })
 
     const propsWithoutUndefined =
       props &&
-      Object.entries(props).reduce(
-        (acc, [key, value]) => {
-          if (value === undefined) {
-            return acc
-          }
-
-          acc[key] = value
+      Object.entries(props).reduce<Record<string, unknown>>((acc, [key, value]) => {
+        if (value === undefined) {
           return acc
-        },
-        {} as Record<string, unknown>,
-      )
+        }
+
+        acc[key] = value
+        return acc
+      }, {})
 
     const getCompoundVariantClassNames = config?.compoundVariants?.reduce(
       (acc, { class: cvClass, className: cvClassName, ...compoundVariantOptions }) =>

@@ -49,7 +49,8 @@ export function CommentEditorToolbar({ editor, disabled }: CommentEditorToolbarP
   const [linkPromptSeed, setLinkPromptSeed] = useState<string | null>(null)
 
   const promptLink = () => {
-    const current = (editor.getAttributes('link').href as string | undefined) ?? ''
+    const attrs = editor.getAttributes('link')
+    const current = typeof attrs.href === 'string' ? attrs.href : ''
     setLinkPromptSeed(current)
   }
 

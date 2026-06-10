@@ -115,12 +115,15 @@ export async function listAdminImageRows(
     .from(image)
     .leftJoin(user, eq(user.id, image.uploaderId))
 
-  let q = where ? baseQuery.where(where).orderBy(desc(image.createdAt)) : baseQuery.orderBy(desc(image.createdAt))
+  const q = where ? baseQuery.where(where).orderBy(desc(image.createdAt)) : baseQuery.orderBy(desc(image.createdAt))
   if (filters.limit !== undefined) {
-    q = q.limit(filters.limit) as typeof q
+    if (filters.offset !== undefined && filters.offset > 0) {
+      return q.limit(filters.limit).offset(filters.offset)
+    }
+    return q.limit(filters.limit)
   }
   if (filters.offset !== undefined && filters.offset > 0) {
-    q = q.offset(filters.offset) as typeof q
+    return q.offset(filters.offset)
   }
   return q
 }

@@ -6,6 +6,7 @@ import type { AnalyticsQueryInput } from '@/server/domains/analytics/services/qu
 import type { HeatmapCell } from '@/shared/contracts/analytics'
 
 import { whereClause } from '@/server/domains/analytics/services/shared-sql'
+import { isRecord } from '@/shared/utils/type-guards'
 
 export async function queryHeatmap(db: NodePgDatabase, input: AnalyticsQueryInput): Promise<HeatmapCell[]> {
   const where = whereClause(input)
@@ -20,12 +21,14 @@ export async function queryHeatmap(db: NodePgDatabase, input: AnalyticsQueryInpu
     GROUP BY weekday, hour
   `)
   return result.rows.map((row) => {
-    const r = row as { weekday: number; hour: number; visits: string | number; visitors: string | number }
+    if (!isRecord(row)) {
+      return { weekday: 0, hour: 0, visits: 0, visitors: 0 }
+    }
     return {
-      weekday: r.weekday,
-      hour: r.hour,
-      visits: Number(r.visits),
-      visitors: Number(r.visitors),
+      weekday: Number(row.weekday),
+      hour: Number(row.hour),
+      visits: Number(row.visits),
+      visitors: Number(row.visitors),
     }
   })
 }

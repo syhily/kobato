@@ -33,12 +33,18 @@ export async function listPublicPosts(
 ): Promise<PostMetaRow[]> {
   const col = filters.sortBy === 'updatedAt' ? postMetaTable.updatedAt : postMetaTable.firstPublishedAt
   const where = buildPublicPostsWhere(filters, now)
-  let q = db.select().from(postMetaTable).where(where).orderBy(desc(col))
+  const q = db.select().from(postMetaTable).where(where).orderBy(desc(col))
   if (filters.limit !== undefined) {
-    q = q.limit(filters.limit) as typeof q
+    if (filters.offset !== undefined && filters.offset > 0) {
+      const result = await q.limit(filters.limit).offset(filters.offset)
+      return result
+    }
+    const result = await q.limit(filters.limit)
+    return result
   }
   if (filters.offset !== undefined && filters.offset > 0) {
-    q = q.offset(filters.offset) as typeof q
+    const result = await q.offset(filters.offset)
+    return result
   }
   const result = await q
   return result

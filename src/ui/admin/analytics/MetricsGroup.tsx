@@ -3,6 +3,23 @@ import { useState } from 'react'
 import type { MetricGroup, MetricRow, MetricType } from '@/shared/contracts/analytics'
 
 import { METRIC_GROUP_TABS } from '@/shared/contracts/analytics'
+
+function isMetricType(value: string): value is MetricType {
+  return (
+    value === 'country' ||
+    value === 'region' ||
+    value === 'city' ||
+    value === 'referer' ||
+    value === 'language' ||
+    value === 'timezone' ||
+    value === 'os' ||
+    value === 'browser' ||
+    value === 'browserType' ||
+    value === 'device' ||
+    value === 'deviceType' ||
+    value === 'path'
+  )
+}
 import { MetricList } from '@/ui/admin/analytics/MetricList'
 import { Card, CardContent, CardHeader, CardTitle } from '@/ui/components/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/ui/components/tabs'
@@ -48,7 +65,14 @@ export function MetricsGroup({ group, initial, className, entityType, entityId }
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
           <CardTitle className="text-sm font-semibold text-foreground">{GROUP_LABEL[group]}</CardTitle>
-          <Tabs value={active} onValueChange={(v) => setActive(v as MetricType)}>
+          <Tabs
+            value={active}
+            onValueChange={(v: string) => {
+              if (isMetricType(v)) {
+                setActive(v)
+              }
+            }}
+          >
             <TabsList className="h-7">
               {tabs.map((t) => (
                 <TabsTrigger key={t} value={t} className="px-2 py-1 text-xs">

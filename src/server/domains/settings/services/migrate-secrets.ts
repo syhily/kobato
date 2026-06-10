@@ -6,6 +6,7 @@ import { decryptIfNeeded, encryptIfNeeded, isEncrypted } from '@/server/infra/cr
 import { findSettingsByScopePrefix, upsertSetting } from '@/server/infra/db/operations/setting'
 import { isVitest } from '@/server/infra/env'
 import { getLogger } from '@/server/infra/logger'
+import { isRecord } from '@/shared/utils/type-guards'
 
 const log = getLogger('settings.migrate-secrets')
 
@@ -16,7 +17,12 @@ export async function migrateSecretsEncryption(db: NodePgDatabase): Promise<void
 
   try {
     const rows = await findSettingsByScopePrefix(db, 'blog.')
-    const byScope = new Map(rows.map((r) => [r.scope, r.data as Record<string, unknown>]))
+    const byScope = new Map<string, Record<string, unknown>>()
+    for (const r of rows) {
+      if (isRecord(r.data)) {
+        byScope.set(r.scope, r.data)
+      }
+    }
 
     let encrypted = 0
     let verified = 0
@@ -30,8 +36,8 @@ export async function migrateSecretsEncryption(db: NodePgDatabase): Promise<void
         continue
       }
 
-      const bucket = data[path] as Record<string, unknown> | undefined
-      if (!bucket) {
+      const bucket = data[path]
+      if (!isRecord(bucket)) {
         continue
       }
 
@@ -63,7 +69,10 @@ export async function migrateSecretsEncryption(db: NodePgDatabase): Promise<void
     }
 
     for (const scope of dirtyScopes) {
-      await upsertSetting(db, byScope.get(scope)!, null, scope)
+      const data = byScope.get(scope)
+      if (data) {
+        await upsertSetting(db, data, null, scope)
+      }
     }
 
     if (failures.length > 0) {

@@ -1,9 +1,9 @@
 import type { ServerType } from '@hono/node-server'
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 import type { Hono } from 'hono'
-import type { Server as NodeHttpServer } from 'node:http'
 
 import { serve } from '@hono/node-server'
+import { Server as NodeHttpServer } from 'node:http'
 
 import { PORT } from '@/server/infra/env'
 import { getLogger } from '@/server/infra/logger'
@@ -73,20 +73,19 @@ export function setHttpServer(server: ServerType): void {
 }
 
 export async function closeHttpServer(timeoutMs = DEFAULT_CLOSE_TIMEOUT_MS): Promise<void> {
-  if (!container.httpServer) {
+  if (!container.httpServer || !(container.httpServer instanceof NodeHttpServer)) {
     return
   }
-  const nodeServer = container.httpServer as NodeHttpServer
+  const nodeServer = container.httpServer
   nodeServer.closeIdleConnections?.()
 
   await new Promise<void>((resolve) => {
-    const server = container.httpServer
     const timer = setTimeout(() => {
       log.warn(`HTTP server close timed out after ${timeoutMs}ms, forcing remaining connections closed`)
       nodeServer.closeAllConnections?.()
     }, timeoutMs)
 
-    server!.close((err) => {
+    nodeServer.close((err) => {
       clearTimeout(timer)
       if (err) {
         log.warn('HTTP server close error', { err: String(err) })

@@ -3,6 +3,7 @@
 // carry the same `{E}…{/E}` markers as stdout log lines.
 
 import { L3_KEYS } from '@/server/infra/logger'
+import { isRecord } from '@/shared/utils/type-guards'
 
 const L3_OPEN = '{E}'
 const L3_CLOSE = '{/E}'
@@ -70,8 +71,8 @@ function tagValueRecursive(key: string, value: unknown): unknown {
     return value.map((item) => tagValueRecursive(key, item))
   }
 
-  if (typeof value === 'object') {
-    return tagL3InDetails(value as Record<string, unknown>)
+  if (isRecord(value)) {
+    return tagL3InDetails(value)
   }
 
   return value
@@ -116,9 +117,9 @@ export function stripL3Markers(value: unknown): unknown {
     return value.map(stripL3Markers)
   }
 
-  if (typeof value === 'object') {
+  if (isRecord(value)) {
     const out: Record<string, unknown> = {}
-    for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
+    for (const [k, v] of Object.entries(value)) {
       out[k] = stripL3Markers(v)
     }
     return out

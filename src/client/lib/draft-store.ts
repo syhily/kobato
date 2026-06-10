@@ -1,5 +1,7 @@
 import { openDB, type DBSchema, type IDBPDatabase } from 'idb'
 
+import { isRecord } from '@/shared/utils/type-guards'
+
 const DB_NAME = 'kobato-drafts'
 const DB_VERSION = 1
 const STORE_NAME = 'drafts'
@@ -79,11 +81,11 @@ async function migrateFromLocalStorage(db: IDBPDatabase<DraftsDB>): Promise<void
     }
 
     try {
-      const parsed = JSON.parse(raw) as unknown
-      if (typeof parsed !== 'object' || parsed === null) {
+      const parsed: unknown = JSON.parse(raw)
+      if (!isRecord(parsed)) {
         continue
       }
-      const record = parsed as Record<string, unknown>
+      const record = parsed
       if (record.version !== 1) {
         continue
       }

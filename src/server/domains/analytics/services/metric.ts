@@ -7,6 +7,7 @@ import type { MetricRow, MetricType } from '@/shared/contracts/analytics'
 
 import { whereClause, quoteIdent, METRIC_SET } from '@/server/domains/analytics/services/shared-sql'
 import { DomainError } from '@/server/infra/http/errors'
+import { isRecord } from '@/shared/utils/type-guards'
 
 export async function queryMetric(
   db: NodePgDatabase,
@@ -31,11 +32,13 @@ export async function queryMetric(
     LIMIT ${limit}
   `)
   return result.rows.map((row) => {
-    const r = row as { name: string; visits: string | number; visitors: string | number }
+    if (!isRecord(row)) {
+      return { name: '', visits: 0, visitors: 0 }
+    }
     return {
-      name: r.name,
-      visits: Number(r.visits),
-      visitors: Number(r.visitors),
+      name: typeof row.name === 'string' ? row.name : '',
+      visits: Number(row.visits),
+      visitors: Number(row.visitors),
     }
   })
 }

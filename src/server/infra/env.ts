@@ -1,3 +1,4 @@
+/* oxlint-disable typescript/no-unsafe-type-assertion */
 import process from 'node:process'
 import { z } from 'zod'
 

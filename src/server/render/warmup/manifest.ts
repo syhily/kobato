@@ -2,6 +2,8 @@ import { existsSync, readFileSync } from 'node:fs'
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { isRecord } from '@/shared/utils/type-guards'
+
 export interface WarmupManifest {
   version: number
   tier1: string[]
@@ -9,6 +11,24 @@ export interface WarmupManifest {
   tier2_admin: string[]
   tier2_editor: string[]
   tier2_auth: string[]
+}
+
+function isStringArray(value: unknown): value is string[] {
+  return Array.isArray(value) && value.every((item) => typeof item === 'string')
+}
+
+function isWarmupManifest(value: unknown): value is WarmupManifest {
+  if (!isRecord(value)) {
+    return false
+  }
+  return (
+    typeof value.version === 'number' &&
+    isStringArray(value.tier1) &&
+    isStringArray(value.tier2_public) &&
+    isStringArray(value.tier2_admin) &&
+    isStringArray(value.tier2_editor) &&
+    isStringArray(value.tier2_auth)
+  )
 }
 
 let cached: WarmupManifest | null | undefined
@@ -32,7 +52,12 @@ export function getWarmupManifest(): WarmupManifest | null {
     }
 
     const raw = readFileSync(manifestPath, 'utf-8')
-    cached = JSON.parse(raw) as WarmupManifest
+    const parsed: unknown = JSON.parse(raw)
+    if (!isWarmupManifest(parsed)) {
+      cached = null
+      return null
+    }
+    cached = parsed
     return cached
   } catch {
     cached = null

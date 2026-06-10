@@ -45,7 +45,7 @@ export function ThemeProvider({ children, initialResolved = 'light' }: ThemeProv
   const [hydrated, setHydrated] = useState(false)
 
   useEffect(() => {
-    const stored = localStorage.getItem(STORAGE_KEY) as Theme | null
+    const stored = localStorage.getItem(STORAGE_KEY)
     if (stored === 'dark' || stored === 'light' || stored === 'system') {
       setThemeState(stored)
     }

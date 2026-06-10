@@ -7,6 +7,7 @@ import { clearBrandingAsset, isBrandingSlot, uploadBrandingAsset } from '@/serve
 import { recordAuditEvent } from '@/server/domains/audit/services/record'
 import { requireRoleMw } from '@/server/http/middlewares/hono-rbac'
 import { getLogger } from '@/server/infra/logger'
+import { isRecord } from '@/shared/utils/type-guards'
 
 const log = getLogger('branding.http')
 
@@ -48,7 +49,8 @@ export const brandingRouter = new Hono<Env>()
     },
   )
   .post('/api/admin/branding/clear', requireRoleMw('admin'), async (c) => {
-    const body = (await c.req.json().catch(() => null)) as { slot?: unknown } | null
+    const parsed: unknown = await c.req.json().catch(() => null)
+    const body = isRecord(parsed) ? parsed : null
     const slot = body?.slot
     if (typeof slot !== 'string' || !isBrandingSlot(slot)) {
       return c.json({ error: { message: '未知的品牌素材槽位' } }, 400)

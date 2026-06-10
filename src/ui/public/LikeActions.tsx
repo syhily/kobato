@@ -24,15 +24,27 @@ export interface LikeButtonProps {
 
 const LIKE_TOKENS_KEY = 'like-tokens'
 
+function isRecordOfStrings(value: unknown): value is Record<string, string> {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) {
+    return false
+  }
+  for (const [, v] of Object.entries(value)) {
+    if (typeof v !== 'string') {
+      return false
+    }
+  }
+  return true
+}
+
 function readTokenMap(): Record<string, string> {
   try {
     const raw = localStorage.getItem(LIKE_TOKENS_KEY)
     if (!raw) {
       return {}
     }
-    const parsed = JSON.parse(raw)
-    if (typeof parsed === 'object' && parsed !== null && !Array.isArray(parsed)) {
-      return parsed as Record<string, string>
+    const parsed: unknown = JSON.parse(raw)
+    if (isRecordOfStrings(parsed)) {
+      return parsed
     }
   } catch {
     // Corrupt data — reset.

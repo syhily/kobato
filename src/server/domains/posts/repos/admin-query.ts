@@ -18,12 +18,15 @@ export async function listPostMetas(db: NodePgDatabase, filters: ListPostsFilter
     .from(postMetaTable)
     .leftJoin(user, eq(user.id, postMetaTable.authorId))
     .orderBy(buildPostsOrderBy(filters))
-  let q = where ? base.where(where) : base
+  const q = where ? base.where(where) : base
   if (filters.limit !== undefined) {
-    q = q.limit(filters.limit) as typeof q
+    if (filters.offset !== undefined && filters.offset > 0) {
+      return q.limit(filters.limit).offset(filters.offset)
+    }
+    return q.limit(filters.limit)
   }
   if (filters.offset !== undefined && filters.offset > 0) {
-    q = q.offset(filters.offset) as typeof q
+    return q.offset(filters.offset)
   }
   return q
 }

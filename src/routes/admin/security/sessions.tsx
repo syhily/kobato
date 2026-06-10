@@ -14,11 +14,13 @@ export function meta({ matches }: Route.MetaArgs) {
 
 type SortKey = 'lastActive' | 'loginTime' | 'userName'
 
-const SORT_VALUES: ReadonlySet<SortKey> = new Set<SortKey>(['lastActive', 'loginTime', 'userName'])
+function isSortKey(value: string): value is SortKey {
+  return value === 'lastActive' || value === 'loginTime' || value === 'userName'
+}
 
 function parseSort(raw: string | null): SortKey {
-  if (raw && SORT_VALUES.has(raw as SortKey)) {
-    return raw as SortKey
+  if (raw && isSortKey(raw)) {
+    return raw
   }
   return 'lastActive'
 }

@@ -14,12 +14,8 @@ export function AlignSelect({ editor, disabled }: AlignSelectProps) {
     <Select
       value={active}
       onValueChange={(value: string | null) => {
-        if (typeof value === 'string') {
-          editor
-            .chain()
-            .focus()
-            .setTextAlign(value as 'left' | 'center' | 'right')
-            .run()
+        if (value === 'left' || value === 'center' || value === 'right') {
+          editor.chain().focus().setTextAlign(value).run()
         }
       }}
       disabled={disabled}

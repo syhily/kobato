@@ -316,6 +316,7 @@ export async function action({ request, context }: Route.ActionArgs) {
     try {
       const result = await verifyAuthenticationResponse(
         db,
+        // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- parsed JSON validated by verifyAuthenticationResponse
         response as Parameters<typeof verifyAuthenticationResponse>[1],
         rawChallenge,
       )
@@ -402,7 +403,9 @@ export default function LoginRoute({ actionData, loaderData }: Route.ComponentPr
       )}
       {loaderData.action === 'verifyotp' && 'pendingOtpEmail' in loaderData && 'pendingOtpSentAt' in loaderData && (
         <OtpForm
+          // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- narrowed by 'in' check above
           email={loaderData.pendingOtpEmail as string}
+          // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- narrowed by 'in' check above
           sentAt={loaderData.pendingOtpSentAt as number}
           isSubmitting={isSubmitting}
           csrfToken={csrfToken}

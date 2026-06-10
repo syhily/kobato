@@ -64,11 +64,13 @@ function makeExcerpt(raw: string): string {
   return `${codepoints.slice(0, EXCERPT_LIMIT).join('')}…`
 }
 
-const STATUS_VALUES: ReadonlySet<MyCommentsStatus> = new Set(['all', 'pending', 'deleteRequested', 'deleted'])
+function isMyCommentsStatus(value: string): value is MyCommentsStatus {
+  return value === 'all' || value === 'pending' || value === 'deleteRequested' || value === 'deleted'
+}
 
 function parseStatus(raw: string | null): MyCommentsStatus {
-  if (raw && (STATUS_VALUES as Set<string>).has(raw)) {
-    return raw as MyCommentsStatus
+  if (raw && isMyCommentsStatus(raw)) {
+    return raw
   }
   return 'all'
 }

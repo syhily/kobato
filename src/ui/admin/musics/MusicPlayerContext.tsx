@@ -72,7 +72,7 @@ export function MusicPlayerProvider({ children }: MusicPlayerProviderProps) {
   const [currentIndex, setCurrentIndex] = useState(-1)
 
   const audioRef = useRef<HTMLAudioElement | null>(null)
-  const rafRef = useRef<number>(0)
+  const timeLoopRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const canPlayListenerRef = useRef<(() => void) | null>(null)
   const playlistRef = useRef<AdminMusicDto[]>([])
   const lastLoadIdRef = useRef(0)
@@ -90,26 +90,22 @@ export function MusicPlayerProvider({ children }: MusicPlayerProviderProps) {
   }, [currentIndex])
 
   const stopTimeLoop = useCallback(() => {
-    if (rafRef.current) {
-      cancelAnimationFrame(rafRef.current)
-      rafRef.current = 0
+    if (timeLoopRef.current) {
+      clearInterval(timeLoopRef.current)
+      timeLoopRef.current = null
     }
   }, [])
 
-  // Smooth currentTime updates via rAF
+  // Throttle currentTime updates to ~10fps to avoid re-rendering the entire
+  // admin shell at 60fps during playback.
   const startTimeLoop = useCallback(() => {
     stopTimeLoop()
-    const tick = () => {
-      if (rafRef.current === 0) {
-        return
-      }
+    timeLoopRef.current = setInterval(() => {
       const audio = audioRef.current
       if (audio) {
         setCurrentTime(audio.currentTime)
       }
-      rafRef.current = requestAnimationFrame(tick)
-    }
-    rafRef.current = requestAnimationFrame(tick)
+    }, 100)
   }, [stopTimeLoop])
 
   const load = useCallback(
@@ -176,15 +172,16 @@ export function MusicPlayerProvider({ children }: MusicPlayerProviderProps) {
 
   const playIndex = useCallback(
     (index: number) => {
-      if (index < 0 || index >= playlist.length) {
+      const pl = playlistRef.current
+      if (index < 0 || index >= pl.length) {
         return
       }
-      const track = playlist[index]
+      const track = pl[index]
       if (track) {
-        load(track, playlist)
+        load(track, pl)
       }
     },
-    [playlist, load],
+    [load],
   )
 
   const toggle = useCallback(() => {
@@ -273,32 +270,12 @@ export function MusicPlayerProvider({ children }: MusicPlayerProviderProps) {
       setMutedState(audio.muted)
     }
     const handleEnded = () => {
-      setIsPlaying(false)
       stopTimeLoop()
-      const currentPlaylist = playlistRef.current
       const next = currentIndexRef.current + 1
-      if (next < currentPlaylist.length) {
-        const nextTrack = currentPlaylist[next]
-        if (nextTrack) {
-          audio.src = nextTrack.audioUrl
-          audio.load()
-          setCurrentTrack(nextTrack)
-          setCurrentIndex(next)
-          const onCanPlay = () => {
-            audio.removeEventListener('canplay', onCanPlay)
-            canPlayListenerRef.current = null
-            void audio.play().catch(() => {
-              // Play interrupted or autoplay policy rejection
-            })
-          }
-          canPlayListenerRef.current = onCanPlay
-          audio.addEventListener('canplay', onCanPlay)
-          if (audio.readyState >= HTMLMediaElement.HAVE_FUTURE_DATA) {
-            void audio.play().catch(() => {
-              // Play interrupted or autoplay policy rejection
-            })
-          }
-        }
+      if (next < playlistRef.current.length) {
+        playIndex(next)
+      } else {
+        setIsPlaying(false)
       }
     }
 
@@ -319,7 +296,7 @@ export function MusicPlayerProvider({ children }: MusicPlayerProviderProps) {
       audio.src = ''
       audioRef.current = null
     }
-  }, [startTimeLoop, stopTimeLoop])
+  }, [startTimeLoop, stopTimeLoop, playIndex])
 
   const value = useMemo<MusicPlayerContextValue>(
     () => ({

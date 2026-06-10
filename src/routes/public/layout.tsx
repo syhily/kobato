@@ -3,6 +3,7 @@ import { Outlet, useLocation, useMatches, useRouteLoaderData } from 'react-route
 import type { RouteHandle } from '@/root'
 
 import { useReloadOnChunkError } from '@/client/hooks/use-chunk-error-recovery'
+import { isRecord } from '@/shared/utils/type-guards'
 import { ErrorView } from '@/ui/public/chrome/ErrorView'
 import { PublicChrome } from '@/ui/public/chrome/PublicChrome'
 
@@ -24,6 +25,10 @@ interface RootChromeData {
   currentUser?: { id: string; name: string; role: 'admin' | 'author' | 'visitor' } | null
 }
 
+function isRouteHandle(value: unknown): value is RouteHandle {
+  return isRecord(value) && typeof value.footer === 'boolean'
+}
+
 function useResolvedChromeProps(): {
   currentUser: NonNullable<RootChromeData['currentUser']> | null
   footer: boolean
@@ -33,7 +38,7 @@ function useResolvedChromeProps(): {
   const currentUser = rootData?.currentUser ?? null
 
   const footer = matches.reduce<boolean>((acc, match) => {
-    const handle = match.handle as RouteHandle | undefined
+    const handle = isRouteHandle(match.handle) ? match.handle : undefined
     if (handle?.footer === false) {
       return false
     }

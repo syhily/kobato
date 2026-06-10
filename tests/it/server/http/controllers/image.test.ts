@@ -3,6 +3,10 @@ import { describe, expect, it, vi } from 'vitest'
 
 import { makePublicCtx } from '#/_helpers/mock-ctx'
 
+vi.mock('@/server/infra/rate-limit', () => ({
+  tryResourceRateLimit: vi.fn().mockResolvedValue({ exceeded: false }),
+}))
+
 vi.mock('@/server/domains/images/services/cover', () => ({
   loadImageThumbhash: vi.fn(),
 }))

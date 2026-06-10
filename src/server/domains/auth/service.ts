@@ -11,8 +11,16 @@ import { findSafeUserById, findUsersByIds } from '@/server/infra/db/operations/u
 import { DomainError } from '@/server/infra/http/errors'
 import { getLogger } from '@/server/infra/logger'
 import { redisInstance } from '@/server/infra/redis/storage'
+import { isRecord } from '@/shared/utils/type-guards'
 
 const log = getLogger('auth.sessions')
+
+function isStringRecord(value: unknown): value is Record<string, string> {
+  if (!isRecord(value)) {
+    return false
+  }
+  return Object.values(value).every((v) => typeof v === 'string')
+}
 
 function cleanOrphanMetas(orphanSids: string[]): void {
   if (orphanSids.length === 0) {
@@ -93,7 +101,7 @@ export async function listSessionsByUser(db: NodePgDatabase, userId: bigint): Pr
   const metaResults = await metaPipeline.exec()
   const metas = liveSids.map((sid, i) => {
     const [, hash] = metaResults?.[i] ?? [null, {}]
-    return parseMeta(sid, hash as Record<string, string>)
+    return isStringRecord(hash) ? parseMeta(sid, hash) : null
   })
   return metas.filter((meta): meta is SessionMeta => meta !== null && meta.userId === userId)
 }
@@ -150,7 +158,7 @@ export async function listAllSessions(db: NodePgDatabase): Promise<SessionWithUs
   const metaResults = await metaPipeline.exec()
   const metas = liveSids.map((sid, i) => {
     const [, hash] = metaResults?.[i] ?? [null, {}]
-    return parseMeta(sid, hash as Record<string, string>)
+    return isStringRecord(hash) ? parseMeta(sid, hash) : null
   })
   const validMetas = metas.filter((meta): meta is SessionMeta => meta !== null)
   cleanOrphanMetas(orphanSids)

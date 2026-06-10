@@ -9,7 +9,7 @@ export function useChunkErrorRecovery(): void {
     }
 
     const onError = (event: ErrorEvent) => {
-      const payload = event.error ?? event.message
+      const payload: unknown = event.error ?? event.message
       if (!isChunkLoadError(payload)) {
         return
       }

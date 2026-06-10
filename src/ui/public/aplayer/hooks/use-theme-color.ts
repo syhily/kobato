@@ -16,8 +16,8 @@ export function useThemeColor(song: AudioInfo | undefined, fallback = defaultThe
   const [coverColorMap, setCoverColorMap] = useState<Record<string, string>>({})
 
   useEffect(() => {
-    if (shouldUseColorThief(song, fallback)) {
-      const coverUrl = song!.cover!
+    const coverUrl = song?.cover
+    if (coverUrl && shouldUseColorThief(song, fallback)) {
       void getImageColor(coverUrl)
         .then((hex) => {
           setCoverColorMap((prev) => ({ ...prev, [coverUrl]: hex }))
@@ -33,7 +33,10 @@ export function useThemeColor(song: AudioInfo | undefined, fallback = defaultThe
   }
 
   if (shouldUseColorThief(song, fallback)) {
-    return coverColorMap[song.cover!] ?? (fallback === 'auto' ? defaultThemeColor : fallback)
+    const cover = song?.cover
+    if (cover) {
+      return coverColorMap[cover] ?? (fallback === 'auto' ? defaultThemeColor : fallback)
+    }
   }
 
   return song.theme ?? (fallback === 'auto' ? defaultThemeColor : fallback)

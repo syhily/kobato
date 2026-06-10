@@ -6,6 +6,7 @@ import { Button } from '@/ui/components/button'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/ui/components/dialog'
 import { Input } from '@/ui/components/input'
 import { Label } from '@/ui/components/label'
+import { extractApiErrorMessage, isApiAccepted } from '@/ui/lib/api-error'
 import { cn } from '@/ui/lib/cn'
 
 // Shared auth input styling — must match AdminCredentialsForm.
@@ -114,14 +115,16 @@ export function AdminInstallForm({ pgToolsAvailable }: AdminInstallFormProps) {
         headers,
       })
 
-      const json = (await res.json()) as { accepted?: boolean; error?: { message?: string } }
+      const json: unknown = await res.json()
+      const errorMessage = extractApiErrorMessage(json)
+      const accepted = isApiAccepted(json)
 
       if (!res.ok) {
-        setRestoreError(json.error?.message ?? '恢复失败，请检查备份文件后重试。')
+        setRestoreError(errorMessage ?? '恢复失败，请检查备份文件后重试。')
         return
       }
 
-      if (json.accepted) {
+      if (accepted) {
         setWaitingForRestart(true)
         setWaitStatus('polling')
         pollAbortRef.current = new AbortController()

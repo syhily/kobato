@@ -4,6 +4,7 @@ import type { CommentBody } from '@/shared/pt/comment-schema'
 import type { AdminCommentWire as AdminComment } from '@/shared/types/comments'
 
 import { idStr } from '@/shared/utils/tools'
+import { isRecord } from '@/shared/utils/type-guards'
 
 export type FilterStatus = 'all' | 'pending' | 'approved'
 
@@ -22,6 +23,10 @@ export const DEFAULT_DATE_OPERATOR: DateFilterOperator = 'is-or-less'
 
 export function isDateFilterOperator(value: unknown): value is DateFilterOperator {
   return value === 'is-less' || value === 'is-or-less' || value === 'is-greater' || value === 'is-or-greater'
+}
+
+function isFilterStatus(value: unknown): value is FilterStatus {
+  return value === 'all' || value === 'pending' || value === 'approved'
 }
 
 export type TextFilterOperator = 'contains' | 'does-not-contain'
@@ -58,12 +63,12 @@ export function parseDateFilter(value: string | undefined): DateFilterValue | nu
     return null
   }
   try {
-    const parsed = JSON.parse(value) as unknown
-    if (!parsed || typeof parsed !== 'object') {
+    const parsed: unknown = JSON.parse(value)
+    if (!isRecord(parsed)) {
       return null
     }
-    const date = typeof (parsed as { date?: unknown }).date === 'string' ? (parsed as { date: string }).date : ''
-    const op = (parsed as { op?: unknown }).op
+    const date = typeof parsed.date === 'string' ? parsed.date : ''
+    const op = parsed.op
     if (!date || !isDateFilterOperator(op)) {
       return null
     }
@@ -254,7 +259,7 @@ export function useCommentsController({ initialFilters }: UseCommentsControllerO
     dispatch,
     pageSize: PAGE_SIZE,
     hasMore: state.comments.length < state.total,
-    filterStatus: (statusFilter?.value ?? 'all') as FilterStatus,
+    filterStatus: isFilterStatus(statusFilter?.value) ? statusFilter.value : 'all',
     filterPageKey: pageFilter?.value ?? '',
     filterAuthorId: authorFilter?.value ?? '',
     filterText: textRange,

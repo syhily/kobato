@@ -22,7 +22,8 @@ export const ImageNode = Image.extend({
           return Number.isFinite(parsed) && parsed > 0 ? parsed : undefined
         },
         renderHTML(attrs) {
-          return attrs.width === undefined ? {} : { width: attrs.width }
+          const width = typeof attrs.width === 'number' ? attrs.width : undefined
+          return width === undefined ? {} : { width }
         },
       },
       height: {
@@ -36,7 +37,8 @@ export const ImageNode = Image.extend({
           return Number.isFinite(parsed) && parsed > 0 ? parsed : undefined
         },
         renderHTML(attrs) {
-          return attrs.height === undefined ? {} : { height: attrs.height }
+          const height = typeof attrs.height === 'number' ? attrs.height : undefined
+          return height === undefined ? {} : { height }
         },
       },
       thumbhash: { default: undefined },

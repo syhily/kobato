@@ -2,12 +2,11 @@ import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
 import { and, count, eq, inArray, isNotNull, isNull } from 'drizzle-orm'
 
-import type { PortableTextBody } from '@/shared/pt/schema'
-
 import { indexPost } from '@/server/domains/posts/services/search-index'
 import { content } from '@/server/infra/db/schema/content'
 import { post } from '@/server/infra/db/schema/post'
 import { getLogger } from '@/server/infra/logger'
+import { portableTextBodySchema } from '@/shared/pt/schema'
 
 const log = getLogger('search.reindex')
 
@@ -68,7 +67,11 @@ export async function reindexSearchBatch(
     const rev = contentMap.get(row.publishedRevisionId!)
     if (rev) {
       try {
-        await indexPost(db, row.id, row.title, row.summary, rev.body as PortableTextBody)
+        const body = portableTextBodySchema.safeParse(rev.body)
+        if (!body.success) {
+          throw new Error('Invalid body format')
+        }
+        await indexPost(db, row.id, row.title, row.summary, body.data)
         processed++
       } catch (err) {
         log.error('Index post failed', {

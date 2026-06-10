@@ -1,3 +1,4 @@
+/* oxlint-disable typescript/no-unsafe-type-assertion */
 import { createHash } from 'node:crypto'
 
 // Fallback site assets bundled into the server build via Vite's glob

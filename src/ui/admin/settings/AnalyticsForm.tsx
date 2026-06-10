@@ -12,6 +12,7 @@ import { useSettingsCard } from '@/ui/admin/settings/shell/useSettingsCard'
 import { Button } from '@/ui/components/button'
 import { FieldLabel } from '@/ui/components/field'
 import { Switch } from '@/ui/components/switch'
+import { extractApiErrorMessage } from '@/ui/lib/api-error'
 
 interface AnalyticsFormProps {
   analytics: AnalyticsSettings
@@ -22,8 +23,9 @@ async function uploadMaxMind(file: File): Promise<void> {
   formData.append('file', file)
   const res = await fetch('/api/admin/maxmind/upload', { method: 'POST', body: formData })
   if (!res.ok) {
-    const data = (await res.json().catch(() => null)) as { error?: { message?: string } } | null
-    throw new Error(data?.error?.message ?? `上传失败 (${res.status})`)
+    const data: unknown = await res.json().catch(() => null)
+    const message = extractApiErrorMessage(data)
+    throw new Error(message ?? `上传失败 (${res.status})`)
   }
 }
 

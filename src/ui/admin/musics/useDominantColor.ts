@@ -1,11 +1,21 @@
 import { useCallback } from 'react'
 
+// In-memory cache so repeated switches to the same track avoid re-downloading
+// and re-decoding the cover image just to sample its dominant color.
+const colorCache = new Map<string, string | null>()
+
 /**
  * Extract a dominant color from an image URL using a canvas.
  * Returns a hex color string or null if extraction fails.
+ * Results are cached per URL to avoid redundant work on repeated track switches.
  */
 export function useDominantColor() {
   return useCallback((imageUrl: string): Promise<string | null> => {
+    const cached = colorCache.get(imageUrl)
+    if (cached !== undefined) {
+      return Promise.resolve(cached)
+    }
+
     return new Promise((resolve) => {
       const img = new Image()
       img.crossOrigin = 'anonymous'
@@ -14,9 +24,11 @@ export function useDominantColor() {
           const canvas = document.createElement('canvas')
           const ctx = canvas.getContext('2d')
           if (!ctx) {
+            colorCache.set(imageUrl, null)
             resolve(null)
             return
           }
+          // Sample at 64×64 — no need to process full-resolution data.
           canvas.width = 64
           canvas.height = 64
           ctx.drawImage(img, 0, 0, 64, 64)
@@ -47,6 +59,7 @@ export function useDominantColor() {
             count++
           }
           if (count === 0) {
+            colorCache.set(imageUrl, null)
             resolve(null)
             return
           }
@@ -57,12 +70,17 @@ export function useDominantColor() {
             .padStart(2, '0')}${Math.round(b / count)
             .toString(16)
             .padStart(2, '0')}`
+          colorCache.set(imageUrl, hex)
           resolve(hex)
         } catch {
+          colorCache.set(imageUrl, null)
           resolve(null)
         }
       }
-      img.onerror = () => resolve(null)
+      img.onerror = () => {
+        colorCache.set(imageUrl, null)
+        resolve(null)
+      }
       img.src = imageUrl
     })
   }, [])

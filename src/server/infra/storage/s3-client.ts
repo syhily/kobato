@@ -1,3 +1,4 @@
+/* oxlint-disable typescript/no-unsafe-type-assertion */
 import type { ServiceInputTypes, ServiceOutputTypes, _Object } from '@aws-sdk/client-s3'
 import type { FinalizeRequestMiddleware, HandlerExecutionContext } from '@smithy/types'
 

@@ -118,11 +118,15 @@ export function FootnoteDefinition({ children, id, ...props }: ComponentProps<'l
   )
 }
 
+function isReactNodeArray(value: unknown): value is ReactNode[] {
+  return Array.isArray(value)
+}
+
 function footnoteReferenceHref(node: ReactNode): string | undefined {
   if (node === null || node === undefined || typeof node === 'boolean') {
     return undefined
   }
-  if (Array.isArray(node)) {
+  if (isReactNodeArray(node)) {
     for (const child of node) {
       const href = footnoteReferenceHref(child)
       if (href !== undefined) {

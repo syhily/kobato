@@ -5,12 +5,27 @@ import type { DateRange, Filters, MetricType, PresetKey } from '@/shared/contrac
 
 import { PRESET_KEYS, computeDateRange } from '@/shared/contracts/analytics'
 
+function isMetricType(key: string): key is MetricType {
+  return (
+    key === 'country' ||
+    key === 'region' ||
+    key === 'city' ||
+    key === 'referer' ||
+    key === 'language' ||
+    key === 'timezone' ||
+    key === 'os' ||
+    key === 'browser' ||
+    key === 'browserType' ||
+    key === 'device' ||
+    key === 'deviceType' ||
+    key === 'path'
+  )
+}
+
 // URL-synced state hook for the analytics dashboard. The dashboard's
 // loader reads the same `?preset=` / `?startAt=` / `?endAt=` /
 // `?filters=` search params, so navigating with these setters
 // triggers React Router's revalidation pass automatically.
-
-const PRESET_SET = new Set<string>(PRESET_KEYS)
 
 export interface AnalyticsState {
   preset: PresetKey | null
@@ -28,7 +43,7 @@ export function useAnalyticsState(): AnalyticsState {
 
   const preset = useMemo<PresetKey | null>(() => {
     const raw = params.get('preset')
-    return raw && PRESET_SET.has(raw) ? (raw as PresetKey) : null
+    return PRESET_KEYS.find((key) => key === raw) ?? null
   }, [params])
 
   const startAt = params.get('startAt')
@@ -51,11 +66,14 @@ export function useAnalyticsState(): AnalyticsState {
       return {}
     }
     try {
-      const parsed = JSON.parse(raw) as Record<string, unknown>
+      const parsed: unknown = JSON.parse(raw)
+      if (typeof parsed !== 'object' || parsed === null) {
+        return {}
+      }
       const out: Filters = {}
       for (const [key, value] of Object.entries(parsed)) {
-        if (typeof value === 'string' && value.length > 0) {
-          ;(out as Record<string, string>)[key] = value
+        if (typeof value === 'string' && value.length > 0 && isMetricType(key)) {
+          out[key] = value
         }
       }
       return out

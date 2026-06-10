@@ -14,7 +14,11 @@ import { resolveMetricTarget } from '@/server/domains/comments/services/shared'
 import { appendCommentToken, issueCommentToken } from '@/server/domains/comments/services/token'
 import { publicProc } from '@/server/http/orpc-base'
 import { getLogger } from '@/server/infra/logger'
-import { tryCommentPostRateLimit, tryCommentPostRateLimitByEmail } from '@/server/infra/rate-limit'
+import {
+  tryCommentPostRateLimit,
+  tryCommentPostRateLimitByEmail,
+  tryResourceRateLimit,
+} from '@/server/infra/rate-limit'
 import { requireBlogSettingsSection } from '@/shared/config/getters'
 import { commentItemDto } from '@/shared/contracts/comments'
 import { commentBodySchema } from '@/shared/pt/comment-schema'
@@ -121,7 +125,11 @@ const edit = publicProc
   .input(z.object({ rid: z.string(), body: commentBodySchema }))
   .output(z.object({ comment: commentItemDto }))
   .handler(async ({ input, context }) => {
-    const { request, session, responseHeaders } = context
+    const { request, session, responseHeaders, clientAddress } = context
+    const rateLimit = await tryResourceRateLimit(clientAddress)
+    if (rateLimit.exceeded) {
+      throw new ORPCError('TOO_MANY_REQUESTS', { message: '请求过于频繁，请稍后再试。' })
+    }
     const sessionUser = userSession(session)
     const cookie = parseCommentTokensCookie(request.headers.get('Cookie'))
     const { ok, cleaned } = await verifyCommentAccess(context.db, cookie, input.rid, sessionUser)

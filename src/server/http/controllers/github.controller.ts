@@ -1,7 +1,9 @@
 import { z } from 'zod'
 
 import { publicProc } from '@/server/http/orpc-base'
+import { tryResourceRateLimit } from '@/server/infra/rate-limit'
 import { APP_REPOSITORY } from '@/shared/config/version'
+import { isRecord } from '@/shared/utils/type-guards'
 
 const AVATAR_URL = 'https://avatars.githubusercontent.com/u/1761698?s=32'
 
@@ -11,6 +13,20 @@ function parseRepo(full: string): { owner: string; repo: string } | null {
     return null
   }
   return { owner: m[1]!, repo: m[2]! }
+}
+
+function isGitHubRelease(
+  value: unknown,
+): value is { tag_name: string; html_url: string; name: string; published_at: string } {
+  if (!isRecord(value)) {
+    return false
+  }
+  return (
+    typeof value.tag_name === 'string' &&
+    typeof value.html_url === 'string' &&
+    typeof value.name === 'string' &&
+    typeof value.published_at === 'string'
+  )
 }
 
 function arrayBufferToBase64(buffer: ArrayBuffer): string {
@@ -25,7 +41,11 @@ function arrayBufferToBase64(buffer: ArrayBuffer): string {
 const avatar = publicProc
   .route({ method: 'GET', path: '/github/avatar' })
   .output(z.object({ avatar: z.string() }))
-  .handler(async () => {
+  .handler(async ({ context }) => {
+    const rateLimit = await tryResourceRateLimit(context.clientAddress)
+    if (rateLimit.exceeded) {
+      throw new Error('请求过于频繁，请稍后再试。')
+    }
     const res = await fetch(AVATAR_URL, { signal: AbortSignal.timeout(30_000) })
     if (!res.ok) {
       return { avatar: '' }
@@ -46,7 +66,11 @@ const release = publicProc
       publishedAt: z.string(),
     }),
   )
-  .handler(async () => {
+  .handler(async ({ context }) => {
+    const rateLimit = await tryResourceRateLimit(context.clientAddress)
+    if (rateLimit.exceeded) {
+      throw new Error('请求过于频繁，请稍后再试。')
+    }
     const parsed = parseRepo(APP_REPOSITORY)
     if (!parsed) {
       throw new Error('Invalid repository format')
@@ -58,17 +82,15 @@ const release = publicProc
     if (!res.ok) {
       throw new Error('Failed to fetch release')
     }
-    const data = (await res.json()) as {
-      tag_name: string
-      html_url: string
-      name: string
-      published_at: string
+    const json: unknown = await res.json()
+    if (!isGitHubRelease(json)) {
+      throw new Error('Unexpected response format from GitHub API')
     }
     return {
-      tagName: data.tag_name,
-      htmlUrl: data.html_url,
-      name: data.name,
-      publishedAt: data.published_at,
+      tagName: json.tag_name,
+      htmlUrl: json.html_url,
+      name: json.name,
+      publishedAt: json.published_at,
     }
   })
 

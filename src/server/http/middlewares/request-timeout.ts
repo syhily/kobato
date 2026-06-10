@@ -1,3 +1,4 @@
+/* oxlint-disable typescript/no-unsafe-assignment, typescript/no-unsafe-call, typescript/no-unsafe-member-access, typescript/no-unsafe-return */
 import type { MiddlewareHandler } from 'hono'
 
 import { HTTPException } from 'hono/http-exception'

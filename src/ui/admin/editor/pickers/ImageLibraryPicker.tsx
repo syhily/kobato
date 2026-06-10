@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { ImageIcon, SearchIcon, UploadIcon } from 'lucide-react'
-import { useState } from 'react'
+import { isValidElement, useState } from 'react'
 
 import type { AdminImageDto } from '@/shared/types/images'
 
@@ -56,8 +56,8 @@ export function ImageLibraryPicker({ trigger, onPick, open: openProp, onOpenChan
         {openProp === undefined ? (
           <DialogTrigger
             render={
-              trigger !== undefined ? (
-                (trigger as React.ReactElement)
+              trigger !== undefined && isValidElement(trigger) ? (
+                trigger
               ) : (
                 <Button variant="outline" type="button">
                   <ImageIcon /> 选择图片

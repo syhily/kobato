@@ -11,6 +11,10 @@ import {
 import { cn } from '@/ui/lib/cn'
 import { LANGUAGE_MAP } from '@/ui/lib/code-languages'
 
+function isReactNodeArray(value: unknown): value is ReactNode[] {
+  return Array.isArray(value)
+}
+
 const COPY_LABEL = 'Copy'
 const COPIED_LABEL = 'Copied'
 const FAILED_LABEL = 'Failed'
@@ -148,7 +152,7 @@ function codeDataLanguage(children: ReactNode): string | undefined {
 }
 
 function firstCodeElement(children: ReactNode): ReactElement<CodeElementProps> | undefined {
-  const childList = Array.isArray(children) ? children : [children]
+  const childList = isReactNodeArray(children) ? children : [children]
   for (const child of childList) {
     if (isValidElement<CodeElementProps>(child) && child.type === 'code') {
       return child

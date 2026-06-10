@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { Music2Icon, PlusIcon, SearchIcon } from 'lucide-react'
-import { useEffect, useRef, useState } from 'react'
+import { isValidElement, useEffect, useRef, useState } from 'react'
 
 import type { AdminMusicDto } from '@/shared/types/music'
 
@@ -81,8 +81,8 @@ export function MusicPickerDialog({ trigger, onPick, open: openProp, onOpenChang
         {openProp === undefined ? (
           <DialogTrigger
             render={
-              trigger !== undefined ? (
-                (trigger as React.ReactElement)
+              trigger !== undefined && isValidElement(trigger) ? (
+                trigger
               ) : (
                 <Button variant="outline" type="button">
                   <Music2Icon /> 选择音乐

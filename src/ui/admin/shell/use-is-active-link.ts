@@ -2,8 +2,9 @@ import { useLocation, useMatch } from 'react-router'
 
 export function useIsActiveLink(path?: string, activeOnSubpath = false, end = false): boolean {
   const qIdx = path?.indexOf('?') ?? -1
-  const pathPart = qIdx >= 0 ? path!.slice(0, qIdx) : (path ?? '')
-  const searchPart = qIdx >= 0 ? path!.slice(qIdx + 1) : ''
+  const safePath = path ?? ''
+  const pathPart = qIdx >= 0 ? safePath.slice(0, qIdx) : safePath
+  const searchPart = qIdx >= 0 ? safePath.slice(qIdx + 1) : ''
 
   const pattern = pathPart ? (activeOnSubpath ? `${pathPart}/*` : pathPart) : ''
   const match = useMatch({ path: pattern, end })

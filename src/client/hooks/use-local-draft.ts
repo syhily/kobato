@@ -1,8 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 
-import type { PortableTextBody } from '@/shared/pt/schema'
-
 import { getDraft, removeDraft, setDraft, type DraftRecord, type DraftType } from '@/client/lib/draft-store'
+import { portableTextBodySchema, type PortableTextBody } from '@/shared/pt/schema'
 
 export interface LocalDraftConfig {
   keyPrefix: string
@@ -76,6 +75,9 @@ export function useLocalDraft(
           loadCompleteRef.current = true
           return
         }
+        if (entityId === null || clientRevisionToken === null) {
+          return
+        }
         if (record.version !== STORAGE_VERSION || !Array.isArray(record.body)) {
           await removeDraft(key)
           if (!cancelled) {
@@ -84,7 +86,22 @@ export function useLocalDraft(
           loadCompleteRef.current = true
           return
         }
-        setLoadedDraft(record as unknown as StoredDraft)
+        const bodyResult = portableTextBodySchema.safeParse(record.body)
+        if (!bodyResult.success) {
+          await removeDraft(key)
+          if (!cancelled) {
+            setLoadedDraft(null)
+          }
+          loadCompleteRef.current = true
+          return
+        }
+        setLoadedDraft({
+          version: record.version,
+          entityId,
+          clientRevisionToken,
+          body: bodyResult.data,
+          savedAt: record.savedAt,
+        })
         loadCompleteRef.current = true
       } catch {
         if (!cancelled) {
@@ -97,7 +114,7 @@ export function useLocalDraft(
     return () => {
       cancelled = true
     }
-  }, [key])
+  }, [key, entityId, clientRevisionToken])
 
   useEffect(() => {
     if (key === null || entityId === null || clientRevisionToken === null) {

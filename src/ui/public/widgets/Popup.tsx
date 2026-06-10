@@ -87,7 +87,7 @@ export function Popup({
     if (!open) {
       return
     }
-    previouslyFocusedRef.current = document.activeElement as HTMLElement | null
+    previouslyFocusedRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null
 
     const raf = window.requestAnimationFrame(() => {
       const root = dialogRef.current

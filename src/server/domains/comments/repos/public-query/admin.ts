@@ -8,6 +8,7 @@ import { targetSlugTitleSubquery, type PendingCommentRow } from '@/server/domain
 import { comment } from '@/server/infra/db/schema/comment'
 import { user } from '@/server/infra/db/schema/user'
 import { idFromString } from '@/shared/utils/id'
+import { isRecord } from '@/shared/utils/type-guards'
 
 export async function pendingComments(db: NodePgDatabase, limit: number): Promise<PendingCommentRow[]> {
   const entity = targetSlugTitleSubquery(db)
@@ -66,7 +67,10 @@ export async function latestDistinctCommentIds(
   ORDER BY  created_at DESC
   LIMIT     ${limit}`
   const result = await db.execute(query)
-  return result.rows.map((row) => idFromString(String((row as { id: unknown }).id)))
+  return result.rows.map((row) => {
+    const id = isRecord(row) ? row.id : undefined
+    return idFromString(String(id))
+  })
 }
 
 export async function commentsByIds(db: NodePgDatabase, ids: bigint[], limit: number): Promise<PendingCommentRow[]> {

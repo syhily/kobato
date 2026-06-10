@@ -3,8 +3,12 @@ import superjson from 'superjson'
 
 import type { CommentTokenCookie, CommentTokenCookieEntry } from '@/shared/utils/comment-token'
 
+import { getLogger } from '@/server/infra/logger'
 import { redisInstance } from '@/server/infra/redis/storage'
 import { requireBlogSettingsSection } from '@/shared/config/getters'
+import { isRecord } from '@/shared/utils/type-guards'
+
+const log = getLogger('comments.token')
 
 const TOKEN_KEY_PREFIX = 'comment:token:'
 
@@ -13,6 +17,18 @@ export interface CommentTokenPayload {
   userId: string
   pageKey: string
   createdAt: number
+}
+
+function isCommentTokenPayload(value: unknown): value is CommentTokenPayload {
+  if (!isRecord(value)) {
+    return false
+  }
+  return (
+    typeof value.commentId === 'string' &&
+    typeof value.userId === 'string' &&
+    typeof value.pageKey === 'string' &&
+    typeof value.createdAt === 'number'
+  )
 }
 
 export async function issueCommentToken(
@@ -42,7 +58,8 @@ export async function verifyCommentToken(token: string): Promise<CommentTokenPay
   }
   try {
     return superjson.parse<CommentTokenPayload>(raw)
-  } catch {
+  } catch (error) {
+    log.warn('Failed to parse comment token payload', { token: token.slice(0, 8), error })
     return null
   }
 }
@@ -92,8 +109,14 @@ export async function cleanupExpiredTokens(cookie: CommentTokenCookie): Promise<
     }
     let payload: CommentTokenPayload
     try {
-      payload = JSON.parse(raw) as CommentTokenPayload
-    } catch {
+      const parsed: unknown = JSON.parse(raw)
+      if (!isCommentTokenPayload(parsed)) {
+        log.warn('Invalid comment token payload from Redis', { key: keys[i]?.slice(0, 8) })
+        continue
+      }
+      payload = parsed
+    } catch (error) {
+      log.warn('Failed to parse comment token from Redis during cleanup', { key: keys[i]?.slice(0, 8), error })
       continue
     }
     if (!cleaned[pageKey]) {

@@ -10,7 +10,7 @@ import {
   Plus,
   Search,
 } from 'lucide-react'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router'
 
 import { orpc } from '@/client/api/client'
@@ -27,6 +27,11 @@ const SORT_LABELS: Record<MusicSortBy, string> = {
   name: '歌曲名称',
   artist: '艺人',
   album: '专辑',
+}
+
+function sortLabelEntries(): [MusicSortBy, string][] {
+  // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- Object.entries on Record<T, V> always returns [string, V][]
+  return Object.entries(SORT_LABELS) as [MusicSortBy, string][]
 }
 
 function SortIcon({ sortBy, sortOrder }: { sortBy: MusicSortBy; sortOrder: 'asc' | 'desc' }) {
@@ -48,7 +53,70 @@ export function MusicsView() {
   const { state, dispatch } = useMusicsController()
   const { load } = useMusicPlayer()
   const [sortMenuOpen, setSortMenuOpen] = useState(false)
+  const sortMenuId = useId()
+  const sortTriggerRef = useRef<HTMLButtonElement>(null)
+  const sortItemRefs = useRef<(HTMLButtonElement | null)[]>([])
   const sentinelRef = useRef<HTMLDivElement>(null)
+
+  // Close sort menu on click outside
+  useEffect(() => {
+    if (!sortMenuOpen) {
+      return
+    }
+    const handler = (e: MouseEvent) => {
+      const target = e.target instanceof Node ? e.target : null
+      const menu = sortTriggerRef.current?.closest('[data-sort-menu]')
+      if (target && menu && !menu.contains(target)) {
+        setSortMenuOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [sortMenuOpen])
+
+  const focusSortItem = useCallback((index: number) => {
+    const item = sortItemRefs.current[index]
+    if (item) {
+      item.focus()
+    }
+  }, [])
+
+  const handleSortTriggerKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLButtonElement>) => {
+      if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+        e.preventDefault()
+        setSortMenuOpen(true)
+        requestAnimationFrame(() => {
+          const idx = e.key === 'ArrowDown' ? 0 : sortItemRefs.current.length - 1
+          focusSortItem(idx)
+        })
+      }
+    },
+    [focusSortItem],
+  )
+
+  const handleSortItemKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLButtonElement>, index: number) => {
+      if (e.key === 'ArrowDown') {
+        e.preventDefault()
+        focusSortItem(Math.min(index + 1, sortItemRefs.current.length - 1))
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault()
+        focusSortItem(Math.max(index - 1, 0))
+      } else if (e.key === 'Home') {
+        e.preventDefault()
+        focusSortItem(0)
+      } else if (e.key === 'End') {
+        e.preventDefault()
+        focusSortItem(sortItemRefs.current.length - 1)
+      } else if (e.key === 'Escape') {
+        e.preventDefault()
+        setSortMenuOpen(false)
+        sortTriggerRef.current?.focus()
+      }
+    },
+    [focusSortItem],
+  )
 
   const [qInput, setQInput] = useDebouncedSearch({
     delayMs: 300,
@@ -170,20 +238,18 @@ export function MusicsView() {
           </button>
 
           {/* Sort */}
-          <div
-            className="relative shrink-0"
-            onBlur={(e) => {
-              if (!e.currentTarget.contains(e.relatedTarget as Node)) {
-                setSortMenuOpen(false)
-              }
-            }}
-          >
+          <div className="relative shrink-0" data-sort-menu>
             <div className="flex items-center overflow-hidden rounded-full bg-surface-dim">
               <button
+                ref={sortTriggerRef}
                 type="button"
                 onClick={() => setSortMenuOpen((v) => !v)}
+                onKeyDown={handleSortTriggerKeyDown}
                 className="flex items-center gap-2 px-3 py-2.5 text-sm font-medium text-ink-1 transition-colors hover:bg-surface sm:px-4"
                 aria-label="排序"
+                aria-haspopup="menu"
+                aria-expanded={sortMenuOpen}
+                aria-controls={sortMenuId}
               >
                 <SortIcon sortBy={state.sortBy} sortOrder={state.sortOrder} />
                 <span className="hidden sm:inline">{SORT_LABELS[state.sortBy]}</span>
@@ -199,12 +265,22 @@ export function MusicsView() {
             </div>
 
             {sortMenuOpen && (
-              <div className="absolute top-full left-0 z-50 mt-1 w-40 overflow-hidden rounded-lg bg-popover py-1 shadow-xl ring-1 ring-line-muted">
-                {(Object.entries(SORT_LABELS) as [MusicSortBy, string][]).map(([key, label]) => (
+              <div
+                id={sortMenuId}
+                role="menu"
+                className="absolute top-full left-0 z-50 mt-1 w-40 overflow-hidden rounded-lg bg-popover py-1 shadow-xl ring-1 ring-line-muted"
+              >
+                {sortLabelEntries().map(([key, label], index) => (
                   <button
                     key={key}
+                    ref={(el) => {
+                      sortItemRefs.current[index] = el
+                    }}
                     type="button"
+                    role="menuitem"
+                    tabIndex={-1}
                     onClick={() => handleSortChange(key)}
+                    onKeyDown={(e) => handleSortItemKeyDown(e, index)}
                     className={cn(
                       'flex w-full items-center justify-between px-3 py-2 text-left text-sm transition-colors',
                       state.sortBy === key ? 'text-ink-1' : 'text-ink-3 hover:bg-surface hover:text-ink-1',

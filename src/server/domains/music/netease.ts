@@ -1,3 +1,4 @@
+/* oxlint-disable typescript/no-unsafe-type-assertion */
 import { createCipheriv, createHash, randomBytes } from 'node:crypto'
 import { z } from 'zod'
 

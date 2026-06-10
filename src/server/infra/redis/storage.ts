@@ -1,3 +1,4 @@
+/* oxlint-disable typescript/no-unsafe-type-assertion */
 import type { Cluster, Redis } from 'ioredis'
 
 import { Redis as RedisClient } from 'ioredis'

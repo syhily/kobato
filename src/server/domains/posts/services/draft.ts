@@ -2,7 +2,6 @@ import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
 import type { PublishLatestResult, SaveDraftResult } from '@/server/domains/content/schema'
 import type { ContentRow, PostMetaRow } from '@/server/infra/db/types'
-import type { PortableTextBody } from '@/shared/pt/schema'
 
 import { publishLatestRevision, saveDraftRevision } from '@/server/domains/content/repos/mutate'
 import { findContentById, findLatestDraft } from '@/server/domains/content/repos/query'
@@ -21,6 +20,7 @@ import {
 import { getLogger } from '@/server/infra/logger'
 import { invalidateSearchCache } from '@/server/infra/search/search'
 import { deriveSlug } from '@/server/infra/slug'
+import { portableTextBodySchema } from '@/shared/pt/schema'
 import { collectHeadings, collectImageStoragePaths } from '@/shared/pt/utils'
 
 const log = getLogger('posts.service')
@@ -127,11 +127,14 @@ async function savePostBodyInternal(
     if (publishedRevision !== null) {
       const postMeta = await findPostMetaById(db, input.postId)
       if (postMeta !== null) {
-        try {
-          await indexPost(db, postMeta.id, postMeta.title, postMeta.summary, publishedRevision.body as PortableTextBody)
-        } catch (err: unknown) {
-          log.warn('index post failed', { postId: postMeta.id, error: err })
-          warnings.push('搜索索引更新失败，该文章可能不会出现在搜索结果中。')
+        const body = portableTextBodySchema.safeParse(publishedRevision.body)
+        if (body.success) {
+          try {
+            await indexPost(db, postMeta.id, postMeta.title, postMeta.summary, body.data)
+          } catch (err: unknown) {
+            log.warn('index post failed', { postId: postMeta.id, error: err })
+            warnings.push('搜索索引更新失败，该文章可能不会出现在搜索结果中。')
+          }
         }
       }
     }

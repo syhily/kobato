@@ -40,14 +40,17 @@ export async function listAdminTagRows(db: NodePgDatabase, filters: AdminTagsLis
   // so we keep the chain expression and only branch on offset/limit at
   // the very end. `0` is a legitimate offset value, so we test for
   // `!== undefined` rather than truthiness.
-  let q = where
+  const q = where
     ? db.select().from(tag).where(where).orderBy(asc(tag.name))
     : db.select().from(tag).orderBy(asc(tag.name))
   if (filters.limit !== undefined) {
-    q = q.limit(filters.limit) as typeof q
+    if (filters.offset !== undefined && filters.offset > 0) {
+      return q.limit(filters.limit).offset(filters.offset)
+    }
+    return q.limit(filters.limit)
   }
   if (filters.offset !== undefined && filters.offset > 0) {
-    q = q.offset(filters.offset) as typeof q
+    return q.offset(filters.offset)
   }
   return q
 }

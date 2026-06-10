@@ -54,9 +54,9 @@ export function useEditorShellPersist<
   navigate: NavigateFunction
   metaDraftFromEntity: (entity: TEntity) => TMeta
 
-  onMetaSaved: (entity: EntityLike) => void
+  onMetaSaved: (entity: TEntity) => void
   onBodySaved: (payload: SaveBodyOutput) => void
-  onUnpublishSaved: (entity: EntityLike, freshMeta: TMeta) => void
+  onUnpublishSaved: (entity: TEntity, freshMeta: TMeta) => void
   noteError: (message: string) => void
 
   setStatus: React.Dispatch<React.SetStateAction<EditorShellStatus>>
@@ -118,7 +118,7 @@ export function useEditorShellPersist<
   })
   const unpublishMutation = useMutation({
     mutationFn: unpublishFn,
-    onSuccess: (saved) => onUnpublishSaved(saved, metaDraftFromEntity(saved as TEntity)),
+    onSuccess: (saved) => onUnpublishSaved(saved, metaDraftFromEntity(saved)),
     onError: (error) => noteError(error.message),
   })
 
@@ -141,12 +141,12 @@ export function useEditorShellPersist<
 
   const flushAutosave = useCallback(
     async (snapshot: PortableTextBody) => {
-      if (!isEditing) {
+      if (!isEditing || !detail) {
         return
       }
       try {
         const result = await directSaveDraft({
-          id: detail!.entity.id,
+          id: detail.entity.id,
           body: snapshot,
           expectedClientRevisionToken: expectedToken,
         })
@@ -184,9 +184,9 @@ export function useEditorShellPersist<
     setStatus({ kind: 'saving' })
 
     const publishedAt = localInputValueToIso(meta.publishedAt)
-    let savedEntity: EntityLike
+    let savedEntity: TEntity
     try {
-      savedEntity = (await upsertMetaMutation.mutateAsync(buildUpsertMetaPayload({ meta, publishedAt }))) as EntityLike
+      savedEntity = await upsertMetaMutation.mutateAsync(buildUpsertMetaPayload({ meta, publishedAt }))
     } catch (error) {
       setStatus({ kind: 'error', message: error instanceof Error ? error.message : '保存失败' })
       setIsCreating(false)
@@ -238,7 +238,7 @@ export function useEditorShellPersist<
   ])
 
   const persistSave = useCallback(() => {
-    if (!isEditing) {
+    if (!isEditing || !detail) {
       return
     }
     setStatus({ kind: 'saving' })
@@ -247,10 +247,10 @@ export function useEditorShellPersist<
     const publishedAt = pickerIso !== null ? pickerIso : serverIsScheduled ? new Date().toISOString() : null
     const bodyDiverged = !arePortableTextBodiesEquivalent(body, lastSavedBodyRef.current)
     pendingActionRef.current = { kind: 'draft', remaining: bodyDiverged ? 2 : 1 }
-    upsertMetaMutation.mutate(buildUpsertMetaPayload({ meta, id: detail!.entity.id, publishedAt }))
+    upsertMetaMutation.mutate(buildUpsertMetaPayload({ meta, id: detail.entity.id, publishedAt }))
     if (bodyDiverged) {
       saveDraftMutation.mutate({
-        id: detail!.entity.id,
+        id: detail.entity.id,
         body,
         expectedClientRevisionToken: expectedToken,
       })
@@ -271,7 +271,7 @@ export function useEditorShellPersist<
   ])
 
   const persistPublish = useCallback(() => {
-    if (!isEditing) {
+    if (!isEditing || !detail) {
       setStatus({ kind: 'error', message: '请先保存基本信息再发布。' })
       return
     }
@@ -279,7 +279,7 @@ export function useEditorShellPersist<
     const publishedAtIso = localInputValueToIso(meta.publishedAt)
     pendingActionRef.current = { kind: 'published', remaining: 1 }
     publishMutation.mutate({
-      id: detail!.entity.id,
+      id: detail.entity.id,
       body,
       expectedClientRevisionToken: expectedToken,
       ...(publishedAtIso !== null ? { publishedAt: publishedAtIso } : {}),
@@ -298,11 +298,11 @@ export function useEditorShellPersist<
   ])
 
   const persistUnpublish = useCallback(() => {
-    if (!isEditing) {
+    if (!isEditing || !detail) {
       return
     }
     setStatus({ kind: 'saving' })
-    unpublishMutation.mutate({ id: detail!.entity.id })
+    unpublishMutation.mutate({ id: detail.entity.id })
   }, [isEditing, detail, unpublishMutation, setStatus])
 
   // --- Mutation pending flags ----------------------------------------------

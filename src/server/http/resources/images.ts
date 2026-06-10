@@ -91,10 +91,13 @@ export const imagesRouter = new Hono<Env>()
       return c.body(new Uint8Array(buffer))
     }
 
-    const summary = page!.summary || requireBlogSettingsSection('siteIdentity').description
+    if (!page) {
+      return ogFallback(c)
+    }
+    const summary = page.summary || requireBlogSettingsSection('siteIdentity').description
     const buffer = await loadBuffer(
-      ogCacheKey(slug, page!.title, summary, page!.cover),
-      () => drawOpenGraph({ title: page!.title, summary, cover: page!.cover }),
+      ogCacheKey(slug, page.title, summary, page.cover),
+      () => drawOpenGraph({ title: page.title, summary, cover: page.cover }),
       ttl,
     )
     c.header('Content-Type', 'image/png')

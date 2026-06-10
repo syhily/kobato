@@ -12,13 +12,13 @@ import type {
   SaveDraftResult,
 } from '@/server/domains/content/schema'
 import type { ContentRow, NewContent } from '@/server/infra/db/types'
-import type { PortableTextBody } from '@/shared/pt/schema'
 
 import { content as contentTable } from '@/server/infra/db/schema/content'
 import { page as pageMetaTable } from '@/server/infra/db/schema/page'
 import { post as postMetaTable } from '@/server/infra/db/schema/post'
 import { DomainError } from '@/server/infra/http/errors'
 import { arePortableTextBodiesEquivalent } from '@/shared/pt/bridge/canonicalize'
+import { portableTextBodySchema } from '@/shared/pt/schema'
 
 function metaTableFor(type: ContentType) {
   return type === 'page' ? pageMetaTable : postMetaTable
@@ -87,10 +87,14 @@ export async function saveDraftRevision(
       return { status: 'conflict' as const, latest, expectedToken: latest.clientRevisionToken }
     }
 
+    const inputBody = portableTextBodySchema.safeParse(input.body)
+    const latestBody = latest !== undefined ? portableTextBodySchema.safeParse(latest.body) : null
     if (
       latest !== undefined &&
       latest.status === 'published' &&
-      arePortableTextBodiesEquivalent(input.body as PortableTextBody, latest.body as PortableTextBody) &&
+      inputBody.success &&
+      latestBody?.success &&
+      arePortableTextBodiesEquivalent(inputBody.data, latestBody.data) &&
       isDeepStrictEqual(input.imageSources, latest.imageSources) &&
       isDeepStrictEqual(input.headings, latest.headings)
     ) {

@@ -2,8 +2,6 @@ import { isRouteErrorResponse, Outlet, useOutletContext, useRouteError } from 'r
 
 import type { BlogSettingsBundle } from '@/shared/config/types'
 
-type BundleWithIndex = BlogSettingsBundle & Record<string, unknown>
-
 import { getDbFromContext } from '@/server/domains/auth/context'
 import { SECTION_REGISTRY } from '@/server/domains/settings/sections/registry'
 import { getAdminBlogSettings } from '@/server/domains/settings/services/core'
@@ -62,6 +60,19 @@ export interface SettingsOutletContext extends ParentContext {
 // truncated a row by hand. Surfacing the regression at the layer that
 // actually owns the seed contract lets every per-section route trust
 // the bundle is fully populated and avoid re-stating the same guard.
+function assertSettingsBundle(value: Record<string, unknown>): asserts value is SettingsBundle {
+  const missing = Object.entries(value)
+    .filter(([, v]) => v === null)
+    .map(([k]) => k)
+  if (missing.length > 0) {
+    throw new Response(
+      `设置数据不完整，缺少以下 section：${missing.join('、')}。` +
+        '安装流程本应写入所有设置行，因此这通常意味着某行被手动删除。请重新运行安装流程或从备份还原。',
+      { status: 503 },
+    )
+  }
+}
+
 export async function loader({ request, context }: Route.LoaderArgs) {
   const db = getDbFromContext({ request, context })
   const { bundle } = await getAdminBlogSettings(db)
@@ -73,15 +84,18 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   // gets written to DB and populated in the bundle before we check.
   // This prevents newly-added optional sections (e.g. backup) from breaking
   // the entire admin panel on existing deployments whose DB predates them.
-  const dyn = bundle as BundleWithIndex
+  const mutable: Record<string, unknown> = {}
+  for (const [key, value] of Object.entries(bundle)) {
+    mutable[key] = value
+  }
   for (const section of SETTINGS_SECTIONS) {
-    const key: string = SECTION_TO_BUNDLE_KEY[section]
-    if (dyn[key] === null) {
+    const key = SECTION_TO_BUNDLE_KEY[section]
+    if (mutable[key] === null) {
       const meta = SECTION_REGISTRY[section]
       if (meta.defaults !== null) {
         try {
           await upsertSetting(db, meta.defaults, null, meta.scope)
-          dyn[key] = meta.defaults
+          mutable[key] = meta.defaults
         } catch {
           // Best-effort; if it fails we'll surface it below.
         }
@@ -89,18 +103,9 @@ export async function loader({ request, context }: Route.LoaderArgs) {
     }
   }
 
-  const missing = Object.entries(bundle)
-    .filter(([, value]) => value === null)
-    .map(([key]) => key)
-  if (missing.length > 0) {
-    throw new Response(
-      `设置数据不完整，缺少以下 section：${missing.join('、')}。` +
-        '安装流程本应写入所有设置行，因此这通常意味着某行被手动删除。请重新运行安装流程或从备份还原。',
-      { status: 503 },
-    )
-  }
+  assertSettingsBundle(mutable)
   return {
-    bundle: bundle as SettingsBundle,
+    bundle: mutable,
     timeZones: getSupportedTimeZones(),
   }
 }

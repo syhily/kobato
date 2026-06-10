@@ -112,7 +112,7 @@ const UserRow = memo(function UserRow({ user, config }: UserRowProps) {
     <TableRow
       className="cursor-pointer"
       onClick={(e) => {
-        if ((e.target as HTMLElement).closest('a, button, [role="menuitem"]')) {
+        if (e.target instanceof Element && e.target.closest('a, button, [role="menuitem"]')) {
           return
         }
         void navigate(detailPath)

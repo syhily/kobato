@@ -10,17 +10,29 @@ const ROOT = resolve(__dirname, '..')
 
 // --- Utilities ---
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null
+}
+
 function run(cmd: string): string {
   try {
     return execSync(cmd, { cwd: ROOT, encoding: 'utf-8', stdio: ['pipe', 'pipe', 'pipe'] }).trim()
   } catch (e: unknown) {
-    const msg = e instanceof Error && 'stderr' in e ? (e.stderr as Buffer).toString().trim() : String(e)
+    const msg =
+      e instanceof Error && 'stderr' in e && e.stderr instanceof Buffer ? e.stderr.toString().trim() : String(e)
     throw new Error(`Command failed: ${cmd}\n${msg}`)
   }
 }
 
-function readJson(path: string): Record<string, unknown> {
+function readJson(path: string): unknown {
   return JSON.parse(readFileSync(resolve(ROOT, path), 'utf-8'))
+}
+
+function requireString(obj: unknown, key: string): string {
+  if (!isRecord(obj) || typeof obj[key] !== 'string') {
+    throw new Error(`Missing or invalid ${key}`)
+  }
+  return obj[key]
 }
 
 function writeJson(path: string, data: Record<string, unknown>): void {
@@ -58,17 +70,23 @@ function cmdBump(version: string): void {
 
   // Bump package.json
   const pkg = readJson(pkgPath)
-  const oldVersion = pkg['version'] as string
+  if (!isRecord(pkg)) {
+    throw new Error('Invalid package.json')
+  }
+  const oldVersion = requireString(pkg, 'version')
   pkg['version'] = version
   writeJson(pkgPath, pkg)
 
   // Bump package-lock.json
   if (existsSync(resolve(ROOT, lockPath))) {
     const lock = readJson(lockPath)
+    if (!isRecord(lock)) {
+      throw new Error('Invalid package-lock.json')
+    }
     lock['version'] = version
-    if (lock['packages'] && typeof lock['packages'] === 'object') {
-      const packages = lock['packages'] as Record<string, Record<string, unknown>>
-      if (packages['']) {
+    if (isRecord(lock['packages'])) {
+      const packages = lock['packages']
+      if (isRecord(packages[''])) {
         packages['']['version'] = version
       }
     }
@@ -98,7 +116,10 @@ function cmdTag(args: string[]): void {
   validateClean()
 
   const pkg = readJson('package.json')
-  const version = pkg['version'] as string
+  if (!isRecord(pkg)) {
+    throw new Error('Invalid package.json')
+  }
+  const version = requireString(pkg, 'version')
 
   // Check tag doesn't already exist
   const tags = run('git tag --list').split('\n')
@@ -146,7 +167,10 @@ function cmdPrepareNext(): void {
   const composePath = 'docker-compose.yml'
 
   const pkg = readJson(pkgPath)
-  const oldVersion = pkg['version'] as string
+  if (!isRecord(pkg)) {
+    throw new Error('Invalid package.json')
+  }
+  const oldVersion = requireString(pkg, 'version')
   // Strip any prerelease suffix from the old version to get the base
   const baseVersion = oldVersion.split('-')[0]
   const parts = baseVersion.split('.').map(Number)
@@ -159,10 +183,13 @@ function cmdPrepareNext(): void {
   // Update package-lock.json
   if (existsSync(resolve(ROOT, lockPath))) {
     const lock = readJson(lockPath)
+    if (!isRecord(lock)) {
+      throw new Error('Invalid package-lock.json')
+    }
     lock['version'] = nextVersion
-    if (lock['packages'] && typeof lock['packages'] === 'object') {
-      const packages = lock['packages'] as Record<string, Record<string, unknown>>
-      if (packages['']) {
+    if (isRecord(lock['packages'])) {
+      const packages = lock['packages']
+      if (isRecord(packages[''])) {
         packages['']['version'] = nextVersion
       }
     }

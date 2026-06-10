@@ -280,7 +280,7 @@ export async function getTagsByNames(db: NodePgDatabase, names: readonly string[
     ]),
   )
 
-  return uniqueNames.map((name) => tagMap.get(name)).filter(Boolean) as Tag[]
+  return uniqueNames.map((name) => tagMap.get(name)).filter((t): t is Tag => t !== undefined)
 }
 
 export { findTagByName, findTagBySlug }

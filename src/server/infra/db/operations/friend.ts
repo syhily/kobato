@@ -68,14 +68,17 @@ export async function listAdminFriendRows(
   filters: AdminFriendsListFilters = {},
 ): Promise<FriendRow[]> {
   const where = buildAdminFriendWhere(filters)
-  let q = where
+  const q = where
     ? db.select().from(friend).where(where).orderBy(desc(friend.createdAt))
     : db.select().from(friend).orderBy(desc(friend.createdAt))
   if (filters.limit !== undefined) {
-    q = q.limit(filters.limit) as typeof q
+    if (filters.offset !== undefined && filters.offset > 0) {
+      return q.limit(filters.limit).offset(filters.offset)
+    }
+    return q.limit(filters.limit)
   }
   if (filters.offset !== undefined && filters.offset > 0) {
-    q = q.offset(filters.offset) as typeof q
+    return q.offset(filters.offset)
   }
   return q
 }

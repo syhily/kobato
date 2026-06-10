@@ -9,6 +9,7 @@ import type { ActiveFilter, FilterFieldKey, FilterItem } from '@/ui/admin/commen
 
 import { orpc } from '@/client/api/client'
 import { orpcQuery } from '@/client/api/orpc-query'
+import { getLogger } from '@/client/lib/logger'
 import { idStr } from '@/shared/utils/tools'
 import { AdminCommentRow } from '@/ui/admin/comments/AdminCommentRow'
 import { CommentsFilterBar } from '@/ui/admin/comments/CommentsFilterBar'
@@ -23,6 +24,7 @@ import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@/ui/components/empt
 import { Skeleton } from '@/ui/components/skeleton'
 
 const FILTER_QUERY_DEBOUNCE_MS = 250
+const log = getLogger('comments.CommentsView')
 
 export interface CommentsViewProps {
   currentUserName: string
@@ -61,7 +63,7 @@ export function CommentsView({ currentUserName, currentUserEmail, initialFilters
           statusCounts: result.statusCounts,
         })
       } catch (error) {
-        toast.error('加载评论列表失败', { description: (error as Error).message })
+        toast.error('加载评论列表失败', { description: error instanceof Error ? error.message : String(error) })
       } finally {
         setIsCommentsLoading(false)
       }
@@ -149,6 +151,7 @@ export function CommentsView({ currentUserName, currentUserEmail, initialFilters
           next.set('userId', filter.value)
         } else if (filter.field === 'text' && filter.value) {
           try {
+            // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- parsed JSON validated immediately below
             const range = JSON.parse(filter.value) as { value?: string; op?: string }
             if (range.value) {
               next.set('q', range.value)
@@ -161,6 +164,7 @@ export function CommentsView({ currentUserName, currentUserEmail, initialFilters
           }
         } else if (filter.field === 'date' && filter.value) {
           try {
+            // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- parsed JSON validated immediately below
             const range = JSON.parse(filter.value) as { date?: string; op?: string }
             if (range.date) {
               next.set('date', range.date)
@@ -230,8 +234,9 @@ export function CommentsView({ currentUserName, currentUserEmail, initialFilters
         comments: result.comments,
         total: result.total,
       })
-    } catch {
+    } catch (error) {
       toast.error('加载更多评论失败')
+      log.warn('Failed to load more comments', { error })
     } finally {
       setLoadingMore(false)
     }

@@ -1,3 +1,4 @@
+/* oxlint-disable typescript/no-unsafe-type-assertion */
 import type { PmBlockNode, PmNode } from '@/shared/pt/bridge/types'
 import type {
   Block,

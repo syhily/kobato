@@ -10,6 +10,7 @@ vi.mock('@/server/infra/rate-limit', () => ({
   tryLikeIncreaseRateLimit: vi.fn().mockResolvedValue({ exceeded: false }),
   tryCommentPostRateLimit: vi.fn(),
   tryCommentPostRateLimitByEmail: vi.fn(),
+  tryResourceRateLimit: vi.fn().mockResolvedValue({ exceeded: false }),
 }))
 
 vi.mock('@/server/infra/db/operations/metric', () => ({

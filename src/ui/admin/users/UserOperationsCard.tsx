@@ -89,7 +89,10 @@ export function UserOperationsCard({
                   setRoleDraft('')
                   return
                 }
-                const nextRole = value as Role
+                const nextRole: Role | '' = value === 'admin' || value === 'author' || value === 'visitor' ? value : ''
+                if (nextRole === '') {
+                  return
+                }
                 setRoleDraft(nextRole)
                 setConfirm({
                   title: `修改角色为「${nextRole === 'admin' ? '管理员' : nextRole === 'author' ? '作者' : '访客'}」？`,

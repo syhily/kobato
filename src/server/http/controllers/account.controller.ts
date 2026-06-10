@@ -24,6 +24,21 @@ import {
   tryRateLimit,
 } from '@/server/infra/rate-limit'
 import { idFromString } from '@/shared/utils/id'
+import { isRecord } from '@/shared/utils/type-guards'
+
+function isRegistrationResponseJSON(value: unknown): value is RegistrationResponseJSON {
+  if (!isRecord(value)) {
+    return false
+  }
+  const id = value.id
+  const rawId = value.rawId
+  const resp = value.response
+  const type = value.type
+  if (typeof id !== 'string' || typeof rawId !== 'string' || typeof type !== 'string' || !isRecord(resp)) {
+    return false
+  }
+  return typeof resp.clientDataJSON === 'string' && typeof resp.attestationObject === 'string'
+}
 
 // ─── Input schemas ──────────────────────────────────────
 // Kept inline (was previously in `src/shared/contracts/account.ts`,
@@ -214,8 +229,11 @@ const passkeyRegisterFinish = authedProc
       throw new ORPCError('NOT_FOUND', { message: '用户不存在。' })
     }
     const { password: _p, lastIp: _li, lastUa: _lu, ...safeUser } = dbUser
-    await verifyRegistrationResponse(db, safeUser as typeof safeUser, {
-      response: input.response as RegistrationResponseJSON,
+    if (!isRegistrationResponseJSON(input.response)) {
+      throw new ORPCError('BAD_REQUEST', { message: '无效的 Passkey 响应格式。' })
+    }
+    await verifyRegistrationResponse(db, safeUser, {
+      response: input.response,
       deviceName: input.deviceName,
       challenge: input.challenge,
     })

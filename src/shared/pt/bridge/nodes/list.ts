@@ -1,10 +1,13 @@
 import type { PmNode, PmListNode, PmBlockNode } from '@/shared/pt/bridge/types'
-import type { Block, TextBlock } from '@/shared/pt/schema'
+import type { Block } from '@/shared/pt/schema'
 
 import { paragraphToTextBlock, textBlockToPmNode } from '@/shared/pt/bridge/nodes/text'
 
 export function consumeListStreak(out: PmNode[], blocks: readonly Block[], start: number): number {
-  const first = blocks[start] as TextBlock
+  const first = blocks[start]
+  if (first._type !== 'block' || first.listItem === undefined) {
+    throw new Error('consumeListStreak called with non-list block')
+  }
   const rootKind: 'bullet' | 'number' = first.listItem === 'bullet' ? 'bullet' : 'number'
   const root: PmListNode = {
     type: rootKind === 'bullet' ? 'bulletList' : 'orderedList',
@@ -47,7 +50,7 @@ export function consumeListStreak(out: PmNode[], blocks: readonly Block[], start
     }
     target.content.push({
       type: 'listItem',
-      content: [textBlockToPmNode(block as TextBlock, /* asListItemChild */ true)],
+      content: [textBlockToPmNode(block, /* asListItemChild */ true)],
     })
     i += 1
   }

@@ -10,6 +10,7 @@ import { createDbPool, closePool } from '@/server/infra/db/pool'
 import { isVitest } from '@/server/infra/env'
 import { registerShutdownHook, restartServer, setRestartDb, setRestartRefreshSettings } from '@/server/infra/lifecycle'
 import { root } from '@/server/infra/logger'
+import { isRecord } from '@/shared/utils/type-guards'
 
 // ─── HMR-safe resource creation ──────────────────────────
 // In dev, React Router re-evaluates server.ts on every HMR cycle.
@@ -17,13 +18,23 @@ import { root } from '@/server/infra/logger'
 // Pool, Drizzle instance, and migration flag survive without
 // leaking connections or re-running completed migrations.
 
-const hmr = import.meta.hot?.data as
-  | {
-      pool?: ReturnType<typeof createDbPool>['pool']
-      db?: ReturnType<typeof createDbPool>['db']
-      migrationsRan?: boolean
-    }
-  | undefined
+function isHmrData(value: unknown): value is {
+  pool?: ReturnType<typeof createDbPool>['pool']
+  db?: ReturnType<typeof createDbPool>['db']
+  migrationsRan?: boolean
+} {
+  if (!isRecord(value)) {
+    return false
+  }
+  const { pool, db, migrationsRan } = value
+  return (
+    (pool === undefined || typeof pool === 'object') &&
+    (db === undefined || typeof db === 'object') &&
+    (migrationsRan === undefined || typeof migrationsRan === 'boolean')
+  )
+}
+
+const hmr = isHmrData(import.meta.hot?.data) ? import.meta.hot.data : undefined
 
 let db!: ReturnType<typeof createDbPool>['db']
 let pool!: ReturnType<typeof createDbPool>['pool']

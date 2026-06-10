@@ -10,9 +10,3 @@ export function makeQueryClient(): QueryClient {
     },
   })
 }
-
-/**
- * Browser singleton for SPA navigations after initial hydration.
- * On the server a fresh instance should be created per request.
- */
-export const browserQueryClient = makeQueryClient()

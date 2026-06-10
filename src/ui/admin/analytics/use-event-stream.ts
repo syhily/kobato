@@ -2,6 +2,17 @@ import { useEffect, useRef, useState } from 'react'
 
 import type { RealtimeEvent } from '@/shared/contracts/analytics'
 
+function isRealtimeEvent(value: unknown): value is RealtimeEvent {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    'ts' in value &&
+    typeof (value as Record<string, unknown>).ts === 'string' &&
+    'path' in value &&
+    typeof (value as Record<string, unknown>).path === 'string'
+  )
+}
+
 // EventSource subscription hook for the realtime tail. Maintains a
 // rolling buffer of the latest `bufferSize` events and exposes the
 // connection state so the UI can show a "connecting / live / lost"
@@ -36,7 +47,14 @@ export function useEventStream({ bufferSize = 100, enabled = true }: UseEventStr
 
     source.addEventListener('events', (raw) => {
       try {
-        const incoming = JSON.parse((raw as MessageEvent).data) as RealtimeEvent[]
+        if (!(raw instanceof MessageEvent)) {
+          return
+        }
+        const data: unknown = JSON.parse(String(raw.data))
+        if (!Array.isArray(data)) {
+          return
+        }
+        const incoming = data.filter(isRealtimeEvent)
         if (incoming.length === 0) {
           return
         }

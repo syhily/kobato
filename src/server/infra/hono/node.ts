@@ -75,7 +75,7 @@ export type HonoServerOptions<E extends Env = BlankEnv> = HonoNodeServerOptions<
 export async function createHonoServer<E extends Env = BlankEnv>(options?: HonoServerOptions<E>) {
   const startTime = Date.now()
   const build = await importBuild()
-  const basename = import.meta.env.REACT_ROUTER_HONO_SERVER_BASENAME
+  const basename = String(import.meta.env.REACT_ROUTER_HONO_SERVER_BASENAME ?? '/')
   const mergedOptions: HonoServerOptions<E> = {
     ...options,
     listeningListener:
@@ -134,14 +134,14 @@ export async function createHonoServer<E extends Env = BlankEnv>(options?: HonoS
   })
 
   reactRouterApp.use((c, next) => {
-    return createMiddleware(async (c) => {
+    return createMiddleware<E>(async (ctx) => {
       const requestHandler = createRequestHandler(build, mode)
-      const loadContext = mergedOptions.getLoadContext?.(c, { build, mode })
-      return requestHandler(c.req.raw, loadContext instanceof Promise ? await loadContext : loadContext)
+      const loadContext = mergedOptions.getLoadContext?.(ctx, { build, mode })
+      return requestHandler(ctx.req.raw, loadContext instanceof Promise ? await loadContext : loadContext)
     })(c, next)
   })
 
-  app.route(`${basename}`, reactRouterApp)
+  app.route(basename, reactRouterApp)
 
   // Patch https://github.com/remix-run/react-router/issues/12295
   if (basename) {

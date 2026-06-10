@@ -56,7 +56,8 @@ export function TagsField({ values, onChange, disabled }: TagsFieldProps) {
       return
     }
     function handleClick(event: MouseEvent) {
-      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+      const target = event.target instanceof Node ? event.target : null
+      if (containerRef.current && target && !containerRef.current.contains(target)) {
         setOpen(false)
       }
     }

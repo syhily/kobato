@@ -4,11 +4,11 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate, useRevalidator, useSearchParams } from 'react-router'
 
 import type { MyCommentEntityOption, MyCommentItem } from '@/routes/admin/me/comments'
-import type { CommentBody } from '@/shared/pt/comment-schema'
 import type { MyCommentsStatus } from '@/shared/types/comments'
 
 import { orpcQuery } from '@/client/api/orpc-query'
 import { useSiteIdentity } from '@/shared/lib/blog-config-context'
+import { commentBodySchema } from '@/shared/pt/comment-schema'
 import { formatLocalDate } from '@/shared/utils/formatter'
 import { MyEditCommentDialog } from '@/ui/admin/my/MyEditCommentDialog'
 import { AdminListPage } from '@/ui/admin/shared/AdminListPage'
@@ -183,7 +183,7 @@ export function MyCommentsView({
       <AdminListPage.Toolbar>
         <Tabs
           value={status}
-          onValueChange={(value) => {
+          onValueChange={(value: string) => {
             updateParams({ status: value === 'all' ? null : value, offset: null })
           }}
         >
@@ -298,12 +298,14 @@ export function MyCommentsView({
       />
 
       <MyEditCommentDialog
-        // `MyCommentItem.body` carries the full PortableText dialect for
-        // wire-symmetry with the rest of the catalog; comment rows in
-        // particular are always validated against the narrower
-        // `commentBodySchema` at write time, so the runtime invariant
-        // holds and the cast is safe.
-        target={editTarget ? { id: editTarget.id, body: editTarget.body as CommentBody } : null}
+        target={
+          editTarget
+            ? (() => {
+                const parsed = commentBodySchema.safeParse(editTarget.body)
+                return parsed.success ? { id: editTarget.id, body: parsed.data } : null
+              })()
+            : null
+        }
         onClose={() => setEditTarget(null)}
         onSaved={() => {
           setEditTarget(null)

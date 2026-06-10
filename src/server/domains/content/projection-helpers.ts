@@ -1,6 +1,7 @@
 import type { MarkdownHeading, PortableTextBody } from '@/shared/types/catalog'
 
 import { validatePortableTextBody } from '@/shared/pt/utils'
+import { isRecord } from '@/shared/utils/type-guards'
 
 // `content.body` is `jsonb` so Drizzle hands it to us as `unknown`.
 // We round-trip through `validatePortableTextBody` so the SSR /
@@ -21,17 +22,16 @@ export function readHeadings(value: unknown): MarkdownHeading[] {
   }
   const out: MarkdownHeading[] = []
   for (const entry of value) {
-    if (entry === null || typeof entry !== 'object') {
+    if (!isRecord(entry)) {
       continue
     }
-    const item = entry as Record<string, unknown>
-    if (typeof item.depth !== 'number' || typeof item.text !== 'string') {
+    if (typeof entry.depth !== 'number' || typeof entry.text !== 'string') {
       continue
     }
     out.push({
-      depth: item.depth,
-      text: item.text,
-      slug: typeof item.slug === 'string' ? item.slug : '',
+      depth: entry.depth,
+      text: entry.text,
+      slug: typeof entry.slug === 'string' ? entry.slug : '',
     })
   }
   return out

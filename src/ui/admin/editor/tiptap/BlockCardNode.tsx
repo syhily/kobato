@@ -45,7 +45,8 @@ export const BlockCardNode = Node.create({
     return [{ tag: 'div[data-pt-block-card]' }]
   },
   renderHTML({ node }) {
-    const ptType = (node.attrs as BlockCardAttrs)._ptType
+    const rawAttrs: Record<string, unknown> = node.attrs
+    const ptType = typeof rawAttrs._ptType === 'string' ? rawAttrs._ptType : ''
     return ['div', { 'data-pt-block-card': ptType, contenteditable: 'false' }, 0]
   },
   addNodeView() {
@@ -53,11 +54,29 @@ export const BlockCardNode = Node.create({
   },
 })
 
+function getStringProperty(value: unknown, key: string): string | undefined {
+  if (typeof value !== 'object' || value === null) {
+    return undefined
+  }
+  for (const [k, v] of Object.entries(value)) {
+    if (k === key && typeof v === 'string') {
+      return v
+    }
+  }
+  return undefined
+}
+
+function isBlock(value: unknown): value is Block {
+  return typeof value === 'object' && value !== null && '_type' in value
+}
+
 function BlockCardView(props: NodeViewProps) {
-  const attrs = props.node.attrs as BlockCardAttrs
-  const payload = attrs.payload
+  const rawAttrs = props.node.attrs
+  const _ptType = typeof rawAttrs._ptType === 'string' ? rawAttrs._ptType : ''
+  const payload: unknown = rawAttrs.payload
   const [editing, setEditing] = useState(false)
-  const editable = payload !== null && isInlineEditable(payload._type)
+  const payloadType = getStringProperty(payload, '_type')
+  const editable = payloadType !== undefined && isInlineEditable(payloadType)
 
   const commitPayload = (next: Block, editorRender?: string) => {
     let cleaned = stripPrerenderArtifacts(next)
@@ -70,7 +89,7 @@ function BlockCardView(props: NodeViewProps) {
 
   return (
     <NodeViewWrapper
-      data-pt-block-card={attrs._ptType}
+      data-pt-block-card={_ptType}
       className={cn(
         'group relative my-3 rounded-xl border-2 border-dashed bg-muted/30 p-4 text-sm',
         props.selected ? 'border-primary' : 'border-border',
@@ -78,10 +97,10 @@ function BlockCardView(props: NodeViewProps) {
       contentEditable={false}
     >
       <div className="flex items-start gap-3">
-        <CardIcon ptType={attrs._ptType} />
+        <CardIcon ptType={_ptType} />
         <div className="grow">
           <div className="flex items-center gap-2">
-            <span className="font-medium">{cardTitle(attrs._ptType)}</span>
+            <span className="font-medium">{cardTitle(_ptType)}</span>
             {editable && !editing ? (
               <Button
                 variant="ghost"
@@ -95,13 +114,18 @@ function BlockCardView(props: NodeViewProps) {
               </Button>
             ) : null}
           </div>
-          {editing && payload !== null ? (
+          {editing && isBlock(payload) ? (
             <CardSourceEditor payload={payload} onCommit={commitPayload} onCancel={() => setEditing(false)} />
           ) : (
             <>
-              {payload !== null && payload._type === 'musicPlayer' ? (
+              {payload !== null &&
+              typeof payload === 'object' &&
+              'auto' in payload &&
+              'center' in payload &&
+              getStringProperty(payload, '_type') === 'musicPlayer' &&
+              isBlock(payload) ? (
                 <MusicPlayerOptions
-                  stableId={attrs._key}
+                  stableId={typeof rawAttrs._key === 'string' ? rawAttrs._key : ''}
                   auto={payload.auto === true}
                   center={payload.center === true}
                   onFlagChange={(flag, enabled) =>
@@ -181,12 +205,8 @@ function CardSourceEditor({ payload, onCommit, onCancel }: CardSourceEditorProps
   return null
 }
 
-interface CardSummaryProps {
-  payload: Block | null
-}
-
-function CardSummary({ payload }: CardSummaryProps) {
-  if (payload === null) {
+function CardSummary({ payload }: { payload: unknown }) {
+  if (!isBlock(payload)) {
     return <div className="text-xs text-muted-foreground">无效的负载</div>
   }
   // oxlint-disable-next-line typescript/switch-exhaustiveness-check
@@ -196,6 +216,6 @@ function CardSummary({ payload }: CardSummaryProps) {
     case 'mathBlock':
       return <MathBlockSummary payload={payload} />
     default:
-      return <div className="mt-1 text-xs text-muted-foreground">_type: {(payload as { _type: string })._type}</div>
+      return <div className="mt-1 text-xs text-muted-foreground">_type: {String(payload._type)}</div>
   }
 }

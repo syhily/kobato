@@ -78,8 +78,10 @@ export function applyBlockStyle(editor: Editor, value: string): void {
     default: {
       const match = /^h([2-5])$/.exec(value)
       if (match) {
-        const level = Number(match[1]) as 2 | 3 | 4 | 5
-        chain.setHeading({ level }).run()
+        const level = Number(match[1])
+        if (level === 2 || level === 3 || level === 4 || level === 5) {
+          chain.setHeading({ level }).run()
+        }
       }
     }
   }

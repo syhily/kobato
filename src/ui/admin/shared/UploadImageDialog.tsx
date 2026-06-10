@@ -202,7 +202,15 @@ export function UploadImageDialog({ open, kind, onClose, onUploaded, initialFile
                       type="button"
                       variant="outline"
                       size="sm"
-                      onClick={() => setRotation((prev) => ((prev + 90) % 360) as 0 | 90 | 180 | 270)}
+                      onClick={() =>
+                        setRotation((prev) => {
+                          const next = (prev + 90) % 360
+                          if (next === 0 || next === 90 || next === 180 || next === 270) {
+                            return next
+                          }
+                          return prev
+                        })
+                      }
                     >
                       <RotateCwIcon data-icon /> 旋转 90°
                     </Button>
@@ -246,7 +254,9 @@ export function UploadImageDialog({ open, kind, onClose, onUploaded, initialFile
                       onKeyDown={(event) => {
                         if (event.key === 'Enter') {
                           event.preventDefault()
-                          commitTargetWidth((event.target as HTMLInputElement).value)
+                          if (event.target instanceof HTMLInputElement) {
+                            commitTargetWidth(event.target.value)
+                          }
                         }
                       }}
                       placeholder={`留空则使用裁剪宽度 ${cropWidth}`}

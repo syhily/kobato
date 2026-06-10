@@ -12,7 +12,7 @@ import {
 } from 'lucide-react'
 import { Link } from 'react-router'
 
-import type { AdminPostDetailDto } from '@/shared/types/posts'
+import type { AdminPostDetailDto, AdminPostDto } from '@/shared/types/posts'
 import type { UseEditorShellStateOutput } from '@/ui/admin/editor-shell/editor-shell-types'
 import type { PostMetaDraft } from '@/ui/admin/posts/PostMetaSidebar'
 
@@ -22,11 +22,12 @@ import { cn } from '@/ui/lib/cn'
 interface PostEditorToolbarProps {
   mode: 'create' | 'edit'
   detail?: AdminPostDetailDto
-  state: UseEditorShellStateOutput<PostMetaDraft>
+  state: UseEditorShellStateOutput<PostMetaDraft, AdminPostDto>
 }
 
 export function PostEditorToolbar({ mode, detail, state }: PostEditorToolbarProps) {
   const isEditing = mode === 'edit' && detail !== undefined
+  const post = isEditing ? detail.post : null
   return (
     <header className="flex flex-wrap items-center gap-2 text-sm">
       <div className="flex min-w-0 items-center gap-2">
@@ -46,7 +47,7 @@ export function PostEditorToolbar({ mode, detail, state }: PostEditorToolbarProp
               variant="ghost"
               size="sm"
               render={
-                <Link to={`/posts/${detail!.post.slug}`} target="_blank" rel="noreferrer">
+                <Link to={`/posts/${post?.slug}`} target="_blank" rel="noreferrer">
                   <ExternalLinkIcon />
                   <span className="sr-only lg:not-sr-only">公开预览</span>
                 </Link>
@@ -56,7 +57,7 @@ export function PostEditorToolbar({ mode, detail, state }: PostEditorToolbarProp
               variant="ghost"
               size="sm"
               render={
-                <Link to={`/editor/post/${detail!.post.id}/analytics`}>
+                <Link to={`/editor/post/${post?.id}/analytics`}>
                   <ChartLineIcon />
                   <span className="sr-only lg:not-sr-only">分析</span>
                 </Link>

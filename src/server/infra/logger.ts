@@ -1,3 +1,4 @@
+/* oxlint-disable typescript/no-unsafe-return, typescript/no-unsafe-type-assertion */
 // Structured JSON logger backed by pino. The public API (Logger interface,
 // getLogger, logger singleton) is the only stable surface — consumers never
 // touch pino directly, so the underlying transport can be swapped without
@@ -45,11 +46,19 @@ export const L3_KEYS = new Set([
   'name',
 ])
 
+function safeStringify(value: unknown): string {
+  try {
+    return JSON.stringify(value) ?? ''
+  } catch {
+    return '[object with circular reference]'
+  }
+}
+
 function tagL3(value: unknown): unknown {
   if (value === null || value === undefined) {
     return value
   }
-  const str = typeof value === 'string' ? value : (JSON.stringify(value) ?? '')
+  const str = typeof value === 'string' ? value : safeStringify(value)
   return str === '' ? str : `{E}${str}{/E}`
 }
 
@@ -76,11 +85,21 @@ function serializeError(err: Error): Record<string, unknown> {
   return out
 }
 
-function applyPrivacyTags(context: LogContext): LogContext {
+function applyPrivacyTagsRecursive(context: LogContext): LogContext {
   const tagged: LogContext = {}
   for (const [key, value] of Object.entries(context)) {
     if (value instanceof Error) {
       tagged[key] = serializeError(value)
+    } else if (Array.isArray(value)) {
+      tagged[key] = value.map((item) =>
+        typeof item === 'object' && item !== null && !(item instanceof Error)
+          ? applyPrivacyTagsRecursive(item as LogContext)
+          : L3_KEYS.has(key)
+            ? tagL3(item)
+            : item,
+      )
+    } else if (typeof value === 'object' && value !== null) {
+      tagged[key] = applyPrivacyTagsRecursive(value as LogContext)
     } else {
       tagged[key] = L3_KEYS.has(key) ? tagL3(value) : value
     }
@@ -137,7 +156,7 @@ export interface Logger {
 
 function makeLogger(scope: string, base: LogContext = {}): Logger {
   const pinoChild = root.child({ scope, ...base })
-  const wrap = (ctx?: LogContext): Record<string, unknown> => (ctx ? applyPrivacyTags(ctx) : {})
+  const wrap = (ctx?: LogContext): Record<string, unknown> => (ctx ? applyPrivacyTagsRecursive(ctx) : {})
 
   return {
     debug: (msg, ctx) => pinoChild.debug(wrap(ctx), msg),

@@ -1,3 +1,4 @@
+/* oxlint-disable typescript/no-unsafe-type-assertion */
 import { createMiddleware } from 'hono/factory'
 
 import type { Env } from '@/server/http/context'

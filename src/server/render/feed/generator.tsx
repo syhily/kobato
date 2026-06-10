@@ -110,18 +110,18 @@ export async function generateFeeds(db: NodePgDatabase, options: FeedOptions = {
   ])
 
   const tagMap = new Map(allTags.map((t) => [t.name, t]))
-  const catMap = new Map(allCategories.filter(Boolean).map((c) => [c!.name, c!]))
+  const catMap = new Map(allCategories.filter((c): c is NonNullable<typeof c> => Boolean(c)).map((c) => [c.name, c]))
 
   for (let i = 0; i < feedPosts.length; i++) {
     const post = feedPosts[i]
     const itemCategories = post.tags
       .map((name) => tagMap.get(name))
-      .filter(Boolean)
+      .filter((t): t is NonNullable<typeof t> => Boolean(t))
       .map((t) => ({
-        name: t!.name,
-        domain: joinUrl(siteIdentity.website, `/tags/${t!.slug}`),
+        name: t.name,
+        domain: joinUrl(siteIdentity.website, `/tags/${t.slug}`),
         scheme: 'https',
-        term: t!.name,
+        term: t.name,
       }))
     const postCategory = post.category ? (catMap.get(post.category) ?? null) : null
     if (postCategory !== null) {

@@ -1,3 +1,4 @@
+/* oxlint-disable typescript/no-unsafe-type-assertion */
 // Parse a string to BigInt, returning null on failure instead of throwing.
 export function safeBigInt(value: string): bigint | null {
   try {

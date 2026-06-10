@@ -1219,6 +1219,16 @@ body {
   .post-content.prose-blog.prose table.pt-table tbody tr:nth-child(even) td {
     background-color: var(--prose-blog-table-stripe);
   }
+
+  /* Music player slow-spin cover animation */
+  .animate-spin-slow {
+    animation: spin 6s linear infinite;
+  }
+
+  /* Thin scrollbar for lyrics panel */
+  .scrollbar-thin {
+    scrollbar-width: thin;
+  }
 }
 
 /* ─── View Transition styles ───────────────────────────── */

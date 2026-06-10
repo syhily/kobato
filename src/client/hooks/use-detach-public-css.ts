@@ -21,9 +21,9 @@ function isPublicStylesheet(el: Element): boolean {
     const devId = el.getAttribute('data-vite-dev-id') ?? ''
     return /[/\\]public\.css(?:[?#]|$)/.test(devId)
   }
-  if (el.tagName === 'LINK') {
+  if (el instanceof HTMLLinkElement) {
     // Production build emits a hashed `<link rel="stylesheet" href="…/assets/public-XXXX.css">`.
-    const href = (el as HTMLLinkElement).getAttribute('href') ?? ''
+    const href = el.getAttribute('href') ?? ''
     return /(?:\/|^)public(?:\.|-)[^/]*\.css(?:[?#]|$)/.test(href)
   }
   return false

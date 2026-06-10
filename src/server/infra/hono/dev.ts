@@ -1,3 +1,4 @@
+/* oxlint-disable typescript/no-unsafe-type-assertion */
 import type { Config as ReactRouterConfig } from '@react-router/dev/config'
 import type { IncomingMessage, ServerResponse } from 'node:http'
 import type { Plugin, UserConfig, ViteDevServer } from 'vite'

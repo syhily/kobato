@@ -130,7 +130,7 @@ export interface UseEditorShellStateArgs<
   navigate: NavigateFunction
 }
 
-export interface UseEditorShellStateOutput<TMeta> {
+export interface UseEditorShellStateOutput<TMeta, TEntity extends EntityLike = EntityLike> {
   meta: TMeta
   setMeta: React.Dispatch<React.SetStateAction<TMeta>>
   body: PortableTextBody
@@ -170,8 +170,8 @@ export interface UseEditorShellStateOutput<TMeta> {
   adoptLocalDraft: () => Promise<void>
   adoptServerVersion: () => void
   adoptRevisionFromHistory: (revision: { body: PortableTextBody; revisionNo: number }) => void
-  onMetaSaved: (entity: EntityLike) => void
+  onMetaSaved: (entity: TEntity) => void
   onBodySaved: (payload: SaveBodyOutput) => void
-  onUnpublishSaved: (entity: EntityLike, freshMeta: TMeta) => void
+  onUnpublishSaved: (entity: TEntity, freshMeta: TMeta) => void
   noteError: (message: string) => void
 }

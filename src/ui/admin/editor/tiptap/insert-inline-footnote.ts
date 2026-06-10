@@ -2,6 +2,8 @@ import type { Editor } from '@tiptap/core'
 
 import type { FootnoteDefinitionBlock } from '@/shared/pt/schema'
 
+import { isRecord } from '@/shared/utils/type-guards'
+
 /** Footnote refs are inline marks; tables/code blocks cannot carry them on save (see pt-bridge). */
 export function canInsertFootnoteMark(editor: Editor): boolean {
   if (!editor.isEditable) {
@@ -26,9 +28,10 @@ export function computeNextFootnoteIndex(editor: Editor, defs: readonly Footnote
   }
   editor.state.doc.descendants((node) => {
     if (node.type.name === 'blockCard') {
-      const payload = node.attrs.payload as { _type?: string; index?: number } | undefined
+      const payload: unknown = node.attrs.payload
       if (
-        payload?._type === 'footnoteDefinition' &&
+        isRecord(payload) &&
+        payload._type === 'footnoteDefinition' &&
         typeof payload.index === 'number' &&
         Number.isFinite(payload.index)
       ) {
@@ -39,7 +42,8 @@ export function computeNextFootnoteIndex(editor: Editor, defs: readonly Footnote
     if (node.isText) {
       for (const mark of node.marks) {
         if (mark.type.name === 'footnoteRef') {
-          const idx = mark.attrs.index
+          const attrs: Record<string, unknown> = mark.attrs
+          const idx = attrs.index
           if (typeof idx === 'number' && Number.isFinite(idx)) {
             max = Math.max(max, Math.floor(idx))
           }

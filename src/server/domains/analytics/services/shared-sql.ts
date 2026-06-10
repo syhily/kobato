@@ -8,6 +8,23 @@ import { METRIC_TYPES, pickAggregateSource } from '@/shared/contracts/analytics'
 
 const METRIC_SET = new Set<string>(METRIC_TYPES)
 
+function isMetricType(key: string): key is MetricType {
+  return (
+    key === 'country' ||
+    key === 'region' ||
+    key === 'city' ||
+    key === 'referer' ||
+    key === 'language' ||
+    key === 'timezone' ||
+    key === 'os' ||
+    key === 'browser' ||
+    key === 'browserType' ||
+    key === 'device' ||
+    key === 'deviceType' ||
+    key === 'path'
+  )
+}
+
 const METRIC_COLUMN: Record<MetricType, string> = {
   country: 'country',
   region: 'region',
@@ -49,10 +66,10 @@ export function whereClause(input: AnalyticsQueryInput): SQL {
     conditions.push(sql`entity_id = ${input.entityId}`)
   }
   for (const [type, value] of Object.entries(input.filters)) {
-    if (!METRIC_SET.has(type) || !value) {
+    if (!isMetricType(type) || !value) {
       continue
     }
-    conditions.push(sql`${quoteIdent(type as MetricType)} = ${value}`)
+    conditions.push(sql`${quoteIdent(type)} = ${value}`)
   }
   return sql.join(conditions, sql` AND `)
 }
@@ -72,10 +89,10 @@ export function cagWhereClause(input: AnalyticsQueryInput): SQL {
     const hourlyDims = new Set(['country', 'browser', 'os', 'deviceType', 'path'])
     const dailyDims = new Set(['country', 'path'])
     const usable = pickAggregateSource(input.range) === 'stats_hourly' ? hourlyDims : dailyDims
-    if (!usable.has(type) || !value) {
+    if (!isMetricType(type) || !value || !usable.has(type)) {
       continue
     }
-    conditions.push(sql`${quoteIdent(type as MetricType)} = ${value}`)
+    conditions.push(sql`${quoteIdent(type)} = ${value}`)
   }
   return sql.join(conditions, sql` AND `)
 }

@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 
+import { isRecord } from '@/shared/utils/type-guards'
+
 export interface CommentGuestProfile {
   name: string
   email: string
@@ -8,6 +10,25 @@ export interface CommentGuestProfile {
 }
 
 const STORAGE_KEY = 'comment-guest-profile'
+
+function isCommentGuestProfile(value: unknown): value is CommentGuestProfile {
+  if (!isRecord(value)) {
+    return false
+  }
+  if (typeof value.name !== 'string') {
+    return false
+  }
+  if (typeof value.email !== 'string') {
+    return false
+  }
+  if (value.link !== undefined && typeof value.link !== 'string') {
+    return false
+  }
+  if (value.avatar !== undefined && typeof value.avatar !== 'string') {
+    return false
+  }
+  return true
+}
 
 function readProfile(): CommentGuestProfile | null {
   if (typeof window === 'undefined') {
@@ -18,14 +39,9 @@ function readProfile(): CommentGuestProfile | null {
     if (!raw) {
       return null
     }
-    const parsed = JSON.parse(raw) as unknown
-    if (
-      typeof parsed === 'object' &&
-      parsed !== null &&
-      typeof (parsed as { name?: unknown }).name === 'string' &&
-      typeof (parsed as { email?: unknown }).email === 'string'
-    ) {
-      return parsed as CommentGuestProfile
+    const parsed: unknown = JSON.parse(raw)
+    if (isCommentGuestProfile(parsed)) {
+      return parsed
     }
   } catch {
     // ignore malformed storage

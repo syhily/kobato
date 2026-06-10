@@ -2,8 +2,6 @@ import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
 import { eq } from 'drizzle-orm'
 
-import type { PortableTextBody } from '@/shared/pt/schema'
-
 import { findContentById } from '@/server/domains/content/repos/query'
 import { toAdminPostDto, type AdminPostDto } from '@/server/domains/posts/projection'
 import { findPostMetaById, findPostMetaBySlug } from '@/server/domains/posts/repos/single'
@@ -28,6 +26,7 @@ import { DomainError, isUniqueConstraintError } from '@/server/infra/http/errors
 import { getLogger } from '@/server/infra/logger'
 import { invalidateSearchCache } from '@/server/infra/search/search'
 import { ensureSlugLegal, resolveSlug } from '@/server/infra/slug-validation'
+import { portableTextBodySchema } from '@/shared/pt/schema'
 import { idFromString } from '@/shared/utils/id'
 
 const log = getLogger('posts.service')
@@ -222,17 +221,14 @@ export async function restorePost(
     if (restoredMeta !== null && restoredMeta.published && restoredMeta.publishedRevisionId !== null) {
       const revision = await findContentById(db, restoredMeta.publishedRevisionId)
       if (revision !== null) {
-        try {
-          await indexPost(
-            db,
-            restoredMeta.id,
-            restoredMeta.title,
-            restoredMeta.summary,
-            revision.body as PortableTextBody,
-          )
-        } catch (err: unknown) {
-          log.warn('index post failed', { postId: restoredMeta.id, error: err })
-          warning = '搜索索引更新失败，该文章可能不会出现在搜索结果中。'
+        const bodyResult = portableTextBodySchema.safeParse(revision.body)
+        if (bodyResult.success) {
+          try {
+            await indexPost(db, restoredMeta.id, restoredMeta.title, restoredMeta.summary, bodyResult.data)
+          } catch (err: unknown) {
+            log.warn('index post failed', { postId: restoredMeta.id, error: err })
+            warning = '搜索索引更新失败，该文章可能不会出现在搜索结果中。'
+          }
         }
       }
     }

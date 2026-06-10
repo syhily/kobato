@@ -39,11 +39,12 @@ export function QRDialog({ url, name, title, trigger, variant, size, shape, clas
       return
     }
     const onDocClick = (event: MouseEvent) => {
-      if (triggerRef.current?.contains(event.target as Node)) {
+      const target = event.target instanceof Node ? event.target : null
+      if (target && triggerRef.current?.contains(target)) {
         return
       }
       const popup = document.querySelector<HTMLElement>(`[data-popup-id="${QR_POPUP_ID}"]`)
-      if (popup?.contains(event.target as Node)) {
+      if (target && popup?.contains(target)) {
         return
       }
       setOpen(false)

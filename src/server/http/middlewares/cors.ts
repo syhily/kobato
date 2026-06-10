@@ -14,8 +14,8 @@ import { getBlogSettingsBundleSync } from '@/shared/config/getters'
 //     CORS headers are added. Same-origin requests work as usual.
 //   - `security.cors.enabled === true` + non-empty `origins` → only listed
 //     origins receive CORS headers.
-//   - `security.cors.enabled === true` + empty `origins` → mirror mode: the
-//     request's Origin header is reflected back.
+//   - `security.cors.enabled === true` + empty `origins` → refuse CORS entirely.
+//     Never reflect the request origin when credentials: true is set.
 //   - Pre-install (bundle is null) → no-op so the install wizard
 //     works without CORS side effects.
 export function corsMiddleware(): MiddlewareHandler<Env> {

@@ -403,11 +403,11 @@ describe('contract: module and bundle boundaries', () => {
   it('keeps blog settings provider split by section context', () => {
     const source = readFileSync('src/shared/lib/blog-config-context.tsx', 'utf8')
 
-    expect(source).toContain('SECTION_CONTEXTS')
-    expect(source).toContain("makeContext('siteIdentity')")
-    expect(source).toContain("makeContext('cache')")
-    expect(source).toContain("makeContext('rateLimit')")
-    expect((source.match(/makeContext\(/g) ?? []).length).toBeGreaterThanOrEqual(12)
+    expect(source).toContain('SECTION_CONTEXTS_ANY')
+    expect(source).toContain("makeCtx<SiteIdentitySettings>('siteIdentityContext')")
+    expect(source).toContain("makeCtx<CacheSettings>('cacheContext')")
+    expect(source).toContain("makeCtx<RateLimitSettings>('rateLimitContext')")
+    expect((source.match(/makeCtx</g) ?? []).length).toBeGreaterThanOrEqual(12)
     expect(source).not.toContain('BlogSettingsBundleContext')
   })
 

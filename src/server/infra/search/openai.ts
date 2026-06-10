@@ -5,6 +5,7 @@ import { createInflight } from '@/server/infra/redis/inflight'
 import { storage } from '@/server/infra/redis/storage'
 import { getBlogSettingsBundleSync } from '@/shared/config/getters'
 import { CACHE_BUCKET_FALLBACKS } from '@/shared/types/cache'
+import { isRecord } from '@/shared/utils/type-guards'
 
 interface OpenAiConfig {
   apiKey: string
@@ -20,6 +21,17 @@ function isAllowedBaseURL(url: string): boolean {
   } catch {
     return false
   }
+}
+
+function isEmbeddingResponse(value: unknown): value is { data: Array<{ embedding?: number[] }> } {
+  if (!isRecord(value)) {
+    return false
+  }
+  const data = value.data
+  if (!Array.isArray(data)) {
+    return false
+  }
+  return data.every((item) => isRecord(item) && (item.embedding === undefined || Array.isArray(item.embedding)))
 }
 
 function getConfig(): OpenAiConfig | null {
@@ -124,15 +136,18 @@ export async function generateEmbedding(text: string): Promise<number[] | null> 
         })
         return null
       }
-      const json = (await response.json()) as {
-        data?: Array<{ embedding?: number[] }>
+      const parsed: unknown = await response.json()
+      const json = isEmbeddingResponse(parsed) ? parsed : null
+      if (json === null) {
+        getLogger('search.openai').error('Embedding generation returned invalid JSON', { model })
+        return null
       }
       getLogger('search.openai').info('Embedding response', {
         model,
-        dataLength: json.data?.length,
-        firstDimensions: json.data?.[0]?.embedding?.length,
+        dataLength: json.data.length,
+        firstDimensions: json.data[0]?.embedding?.length,
       })
-      const embedding = json.data?.[0]?.embedding
+      const embedding = json.data[0]?.embedding
       if (!Array.isArray(embedding) || embedding.length === 0) {
         getLogger('search.openai').error('Embedding generation returned invalid data', {
           model,

@@ -19,5 +19,14 @@ export default defineConfig({
     environment: 'node',
     include: ['**/*.test.{ts,tsx}'],
     setupFiles: ['./setup.ts'],
+    coverage: {
+      provider: 'v8',
+      thresholds: {
+        lines: 50,
+        functions: 50,
+        branches: 40,
+        statements: 50,
+      },
+    },
   },
 })

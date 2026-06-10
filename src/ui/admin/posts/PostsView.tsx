@@ -272,10 +272,15 @@ export function PostsView() {
                   return
                 }
                 const dashIdx = value.indexOf('-')
-                const sortBy = value.slice(0, dashIdx) as 'publishedAt' | 'updatedAt'
-                const sortOrder = value.slice(dashIdx + 1) as 'asc' | 'desc'
-                dispatch({ type: 'setSortBy', value: sortBy })
-                dispatch({ type: 'setSortOrder', value: sortOrder })
+                const rawSortBy = value.slice(0, dashIdx)
+                const rawSortOrder = value.slice(dashIdx + 1)
+                if (
+                  (rawSortBy === 'publishedAt' || rawSortBy === 'updatedAt') &&
+                  (rawSortOrder === 'asc' || rawSortOrder === 'desc')
+                ) {
+                  dispatch({ type: 'setSortBy', value: rawSortBy })
+                  dispatch({ type: 'setSortOrder', value: rawSortOrder })
+                }
               }}
             >
               <SelectTrigger className={pill}>

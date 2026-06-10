@@ -1,3 +1,4 @@
+/* oxlint-disable typescript/no-unsafe-type-assertion */
 import type { Editor } from '@tiptap/core'
 
 import { getMarkRange } from '@tiptap/core'

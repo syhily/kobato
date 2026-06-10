@@ -92,6 +92,12 @@ const upload = authorProc
   )
   .output(z.object({ image: adminImageDto }))
   .handler(async ({ input, context }) => {
+    const allowedMimeTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/avif', 'image/gif']
+    if (!allowedMimeTypes.includes(input.file.type)) {
+      throw new ORPCError('BAD_REQUEST', {
+        message: '不支持的图片格式，请上传 JPEG、PNG、WebP、AVIF 或 GIF 格式的图片',
+      })
+    }
     const settings = requireBlogSettingsSection('assets')
     if (input.file.size > settings.upload.maxBytes) {
       throw new ORPCError('PAYLOAD_TOO_LARGE', {

@@ -29,7 +29,7 @@ export function useEditorShellState<
   TMeta extends { title: string; slug: string; published: boolean; publishedAt: string },
   TEntity extends EntityLike,
   TUpsertMetaInput = Record<string, unknown>,
->(args: UseEditorShellStateArgs<TMeta, TEntity, TUpsertMetaInput>): UseEditorShellStateOutput<TMeta> {
+>(args: UseEditorShellStateArgs<TMeta, TEntity, TUpsertMetaInput>): UseEditorShellStateOutput<TMeta, TEntity> {
   const {
     mode,
     entityKind: _entityKind,
@@ -148,9 +148,9 @@ export function useEditorShellState<
 
   // --- Save reducers -------------------------------------------------------
   const onMetaSaved = useCallback(
-    (saved: EntityLike) => {
+    (saved: TEntity) => {
       setStatus({ kind: 'saved', at: new Date() })
-      const freshMeta = metaDraftFromEntity(saved as TEntity)
+      const freshMeta = metaDraftFromEntity(saved)
       resetMeta(freshMeta, saved.publishedAt)
       const saveMs = Date.parse(saved.updatedAt)
       if (!Number.isNaN(saveMs)) {
@@ -182,7 +182,7 @@ export function useEditorShellState<
   )
 
   const onUnpublishSaved = useCallback(
-    (saved: EntityLike, freshMeta: TMeta) => {
+    (saved: TEntity, freshMeta: TMeta) => {
       setStatus({ kind: 'saved', at: new Date() })
       resetMeta(freshMeta, saved.publishedAt)
       const saveMs = Date.parse(saved.updatedAt)
@@ -276,16 +276,16 @@ export function useEditorShellState<
 
   // --- Conflict / history adoption handlers -------------------------------
   const adoptLocalDraft = useCallback(async () => {
-    if (conflict === null || !isEditing) {
+    if (conflict === null || !isEditing || !detail) {
       return
     }
-    replaceBody(conflict.localBody, `${detail!.entity.id}:adopt-local:${Date.now()}`)
+    replaceBody(conflict.localBody, `${detail.entity.id}:adopt-local:${Date.now()}`)
     setConflict(null)
     setConflictResolved(true)
     setStatus({ kind: 'saving' })
     try {
       const result = await directSaveDraft({
-        id: detail!.entity.id,
+        id: detail.entity.id,
         body: conflict.localBody,
         expectedClientRevisionToken: expectedToken,
         force: true,
@@ -306,10 +306,10 @@ export function useEditorShellState<
 
   const adoptRevisionFromHistory = useCallback(
     (revision: { body: PortableTextBody; revisionNo: number }) => {
-      if (!isEditing) {
+      if (!isEditing || !detail) {
         return
       }
-      replaceBody(revision.body, `${detail!.entity.id}:adopt-revision:${revision.revisionNo}:${Date.now()}`)
+      replaceBody(revision.body, `${detail.entity.id}:adopt-revision:${revision.revisionNo}:${Date.now()}`)
       setStatus({ kind: 'info', message: `已载入 R${revision.revisionNo}，记得保存或发布以生效。` })
     },
     [isEditing, detail, replaceBody],

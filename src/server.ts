@@ -15,8 +15,17 @@ import { PORT } from '@/server/infra/env'
 import { createHonoServer } from '@/server/infra/hono/node'
 import { setHttpServer, setRestartApp, setServerPhase } from '@/server/infra/lifecycle'
 import { root } from '@/server/infra/logger'
+import { isRecord } from '@/shared/utils/type-guards'
 
-const hmr = import.meta.hot?.data as { secretsMigrated?: boolean } | undefined
+function isHmrData(value: unknown): value is { secretsMigrated?: boolean } {
+  if (!isRecord(value)) {
+    return false
+  }
+  const sm = value.secretsMigrated
+  return sm === undefined || typeof sm === 'boolean'
+}
+
+const hmr = isHmrData(import.meta.hot?.data) ? import.meta.hot.data : undefined
 
 // ─── Server assembly ─────────────────────────────────────
 

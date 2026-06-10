@@ -77,18 +77,16 @@ function buildAdminMusicWhere(filters: AdminMusicListFilters): SQL | undefined {
   return and(...conditions)
 }
 
-function buildOrderBy(filters: AdminMusicListFilters): SQL {
-  const col =
-    filters.sortBy === 'updatedAt'
-      ? music.updatedAt
-      : filters.sortBy === 'name'
-        ? music.name
-        : filters.sortBy === 'artist'
-          ? music.artist
-          : filters.sortBy === 'album'
-            ? music.album
-            : music.createdAt
+const COLUMN_MAP = {
+  createdAt: music.createdAt,
+  updatedAt: music.updatedAt,
+  name: music.name,
+  artist: music.artist,
+  album: music.album,
+} as const
 
+function buildOrderBy(filters: AdminMusicListFilters): SQL {
+  const col = COLUMN_MAP[filters.sortBy ?? 'createdAt']
   return filters.sortOrder === 'asc' ? asc(col) : desc(col)
 }
 
@@ -102,12 +100,15 @@ export async function listAdminMusicRows(
     .from(music)
     .leftJoin(user, eq(user.id, music.uploaderId))
 
-  let q = where ? baseQuery.where(where).orderBy(buildOrderBy(filters)) : baseQuery.orderBy(buildOrderBy(filters))
+  const q = where ? baseQuery.where(where).orderBy(buildOrderBy(filters)) : baseQuery.orderBy(buildOrderBy(filters))
   if (filters.limit !== undefined) {
-    q = q.limit(filters.limit) as typeof q
+    if (filters.offset !== undefined && filters.offset > 0) {
+      return q.limit(filters.limit).offset(filters.offset)
+    }
+    return q.limit(filters.limit)
   }
   if (filters.offset !== undefined && filters.offset > 0) {
-    q = q.offset(filters.offset) as typeof q
+    return q.offset(filters.offset)
   }
   return q
 }

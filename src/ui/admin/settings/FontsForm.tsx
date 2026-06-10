@@ -11,6 +11,7 @@ import { SettingGroupContent } from '@/ui/admin/settings/shell/SettingGroupConte
 import { useSettingsCard } from '@/ui/admin/settings/shell/useSettingsCard'
 import { Button } from '@/ui/components/button'
 import { Input } from '@/ui/components/input'
+import { extractApiErrorMessage } from '@/ui/lib/api-error'
 
 interface CssRow {
   clientId: string
@@ -27,8 +28,9 @@ async function uploadFont(slot: 'og' | 'calendar', file: File): Promise<void> {
   formData.append('file', file)
   const res = await fetch('/api/admin/fonts/upload', { method: 'POST', body: formData })
   if (!res.ok) {
-    const data = (await res.json().catch(() => null)) as { error?: { message?: string } } | null
-    throw new Error(data?.error?.message ?? `上传失败 (${res.status})`)
+    const data: unknown = await res.json().catch(() => null)
+    const message = extractApiErrorMessage(data)
+    throw new Error(message ?? `上传失败 (${res.status})`)
   }
 }
 

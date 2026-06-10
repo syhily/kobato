@@ -1,3 +1,4 @@
+/* oxlint-disable typescript/no-unsafe-type-assertion */
 import { PortableText, type PortableTextComponents, type PortableTextTypeComponentProps } from '@portabletext/react'
 import { useMemo, type ReactNode } from 'react'
 

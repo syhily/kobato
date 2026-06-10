@@ -1,4 +1,4 @@
-import type { PublicKeyCredentialCreationOptionsJSON, RegistrationResponseJSON } from '@simplewebauthn/browser'
+import type { PublicKeyCredentialCreationOptionsJSON } from '@simplewebauthn/browser'
 
 import { startRegistration } from '@simplewebauthn/browser'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
@@ -9,6 +9,7 @@ import { useRevalidator } from 'react-router'
 import { orpcQuery } from '@/client/api/orpc-query'
 import { useSiteIdentity } from '@/shared/lib/blog-config-context'
 import { formatLocalDate } from '@/shared/utils/formatter'
+import { isRecord } from '@/shared/utils/type-guards'
 import { useWebAuthnSupported } from '@/ui/admin/auth/AdminCredentialsForm'
 import { Button } from '@/ui/components/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/ui/components/card'
@@ -52,15 +53,25 @@ function usePasskeyManagement(_userId: string, revalidator: ReturnType<typeof us
     },
   })
 
+  function isPublicKeyCredentialCreationOptionsJSON(value: unknown): value is PublicKeyCredentialCreationOptionsJSON {
+    return isRecord(value) && typeof value.challenge === 'string'
+  }
+
   const handleRegister = async (deviceName?: string) => {
     setRegisterError(null)
     setRegisterMessage(null)
     try {
-      const { options } = await registerBeginMutation.mutateAsync({ deviceName })
-      const opts = options as PublicKeyCredentialCreationOptionsJSON
-      const response = await startRegistration({ optionsJSON: opts })
+      const response = await registerBeginMutation.mutateAsync({ deviceName })
+      if (!response || typeof response !== 'object' || !('options' in response)) {
+        throw new Error('Invalid registration response')
+      }
+      const opts = isPublicKeyCredentialCreationOptionsJSON(response.options) ? response.options : null
+      if (opts === null) {
+        throw new Error('Invalid registration options')
+      }
+      const registrationResponse = await startRegistration({ optionsJSON: opts })
       await registerFinishMutation.mutateAsync({
-        response: response as RegistrationResponseJSON,
+        response: registrationResponse,
         deviceName,
         challenge: opts.challenge,
       })

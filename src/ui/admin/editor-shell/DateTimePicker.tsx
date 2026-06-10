@@ -1,6 +1,5 @@
 import type { DropdownProps } from 'react-day-picker'
 
-import { format } from 'date-fns'
 import { zhCN } from 'date-fns/locale'
 import { CalendarIcon } from 'lucide-react'
 import { useMemo, useState } from 'react'
@@ -8,7 +7,6 @@ import { useMemo, useState } from 'react'
 import { Button } from '@/ui/components/button'
 import { Calendar } from '@/ui/components/calendar'
 import { Popover, PopoverContent, PopoverTrigger } from '@/ui/components/popover'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/components/select'
 import { cn } from '@/ui/lib/cn'
 
 export interface DateTimePickerProps {
@@ -22,7 +20,7 @@ const HOURS_12 = Array.from({ length: 12 }, (_, i) => i + 1)
 const MINUTES = Array.from({ length: 12 }, (_, i) => i * 5)
 
 const CALENDAR_FORMATTERS = {
-  formatMonthDropdown: (date: Date) => format(date, 'LLLL', { locale: zhCN }),
+  formatMonthDropdown: (date: Date) => new Intl.DateTimeFormat('zh-CN', { month: 'long' }).format(date),
   formatYearDropdown: (date: Date) => `${date.getFullYear()} 年`,
 }
 
@@ -90,7 +88,7 @@ export function DateTimePicker({ value, onChange, disabled, id }: DateTimePicker
   const display =
     parsed === null
       ? '选择日期与时间'
-      : `${format(parsed, 'PPP', { locale: zhCN })} ${parsed.getHours() < 12 ? '上午' : '下午'} ${pad(((parsed.getHours() + 11) % 12) + 1)}:${pad(parsed.getMinutes())}`
+      : `${new Intl.DateTimeFormat('zh-CN', { year: 'numeric', month: 'long', day: 'numeric' }).format(parsed)} ${parsed.getHours() < 12 ? '上午' : '下午'} ${pad(((parsed.getHours() + 11) % 12) + 1)}:${pad(parsed.getMinutes())}`
 
   const currentHour12 = parsed === null ? null : ((parsed.getHours() + 11) % 12) + 1
   const currentMinute = parsed?.getMinutes() ?? null
@@ -172,33 +170,22 @@ export function DateTimePicker({ value, onChange, disabled, id }: DateTimePicker
   )
 }
 
-function CalendarDropdown({ options, className: _className, ...selectProps }: DropdownProps) {
-  const selected = options?.find(({ value }) => value === selectProps.value)
+function CalendarDropdown({ options, ...selectProps }: DropdownProps) {
   return (
-    <span data-disabled={selectProps.disabled} className="relative">
-      <Select
-        value={String(selectProps.value ?? '')}
-        onValueChange={(v) => {
-          selectProps.onChange?.(
-            Object.assign({} as React.ChangeEvent<HTMLSelectElement>, {
-              target: { value: Number(v), name: selectProps.name },
-            }),
-          )
-        }}
-        disabled={selectProps.disabled}
-      >
-        <SelectTrigger className="h-8 w-auto gap-1 px-2 text-sm">
-          <SelectValue placeholder={selected?.label} />
-        </SelectTrigger>
-        <SelectContent>
-          {options?.map(({ value, label, disabled }) => (
-            <SelectItem key={value} value={String(value)} disabled={disabled}>
-              {label}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-    </span>
+    <select
+      {...selectProps}
+      value={String(selectProps.value ?? '')}
+      className={cn(
+        'h-8 w-auto appearance-none rounded-md border border-input bg-background px-2 pr-6 text-sm shadow-sm transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50',
+        selectProps.className,
+      )}
+    >
+      {options?.map(({ value, label, disabled }) => (
+        <option key={value} value={String(value)} disabled={disabled}>
+          {label}
+        </option>
+      ))}
+    </select>
   )
 }
 

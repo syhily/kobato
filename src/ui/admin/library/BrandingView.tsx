@@ -7,6 +7,7 @@ import type { AssetsLoaderShape, BrandingSlotStatus } from '@/shared/config/proj
 import { AdminListPage } from '@/ui/admin/shared/AdminListPage'
 import { Button } from '@/ui/components/button'
 import { Card, CardContent } from '@/ui/components/card'
+import { extractApiErrorMessage } from '@/ui/lib/api-error'
 import { cn } from '@/ui/lib/cn'
 
 // Per-slot UI metadata. `publicPath` matches the server-side
@@ -295,8 +296,9 @@ function SlotRow({
         formData.append('file', file)
         const res = await fetch('/api/admin/branding/upload', { method: 'POST', body: formData })
         if (!res.ok) {
-          const data = (await res.json().catch(() => null)) as { error?: { message?: string } } | null
-          throw new Error(data?.error?.message ?? `上传失败 (${res.status})`)
+          const data: unknown = await res.json().catch(() => null)
+          const message = extractApiErrorMessage(data)
+          throw new Error(message ?? `上传失败 (${res.status})`)
         }
         toast.success(`${meta.label} 已上传`)
         await revalidator.revalidate()
@@ -318,8 +320,9 @@ function SlotRow({
         body: JSON.stringify({ slot: meta.slot }),
       })
       if (!res.ok) {
-        const data = (await res.json().catch(() => null)) as { error?: { message?: string } } | null
-        throw new Error(data?.error?.message ?? `清除失败 (${res.status})`)
+        const data: unknown = await res.json().catch(() => null)
+        const message = extractApiErrorMessage(data)
+        throw new Error(message ?? `清除失败 (${res.status})`)
       }
       toast.success(`${meta.label} 已清除`)
       await revalidator.revalidate()

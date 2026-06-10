@@ -25,10 +25,16 @@ export interface ProcessedImage {
   thumbhash: string
 }
 
+const MAX_INPUT_PIXELS = 16384 * 16384
+
 export async function processImageBuffer(input: ProcessImageInput): Promise<ProcessedImage> {
   let pipeline: sharp.Sharp
   try {
-    pipeline = sharp(input.buffer, { failOn: 'error' }).rotate()
+    pipeline = sharp(input.buffer, {
+      failOn: 'error',
+      limitInputPixels: MAX_INPUT_PIXELS,
+      sequentialRead: true,
+    }).rotate()
   } catch (error) {
     throw new DomainError('BAD_REQUEST', '无法解析图片数据', [
       { message: error instanceof Error ? error.message : String(error) },

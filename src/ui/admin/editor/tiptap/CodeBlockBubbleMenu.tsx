@@ -129,7 +129,7 @@ interface LanguageSelectProps {
 }
 
 function LanguageSelect({ editor }: LanguageSelectProps) {
-  const raw = editor.getAttributes('codeBlock').language
+  const raw: unknown = editor.getAttributes('codeBlock').language
   const current = typeof raw === 'string' && raw !== '' ? raw : PLACEHOLDER_VALUE
   const isKnown = KNOWN_VALUES.has(current)
   return (
@@ -145,7 +145,7 @@ function LanguageSelect({ editor }: LanguageSelectProps) {
     >
       <SelectTrigger size="sm" className="h-7 min-w-32" aria-label="代码语言">
         <SelectValue placeholder="选择语言">
-          {(value) => labelFor(typeof value === 'string' ? value : '') ?? (isKnown ? '' : (current as string))}
+          {(value) => labelFor(typeof value === 'string' ? value : '') ?? (isKnown ? '' : current)}
         </SelectValue>
       </SelectTrigger>
       <SelectContent>

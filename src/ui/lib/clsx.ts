@@ -1,6 +1,6 @@
-export type ClassDictionary = Record<string, any>
+export type ClassDictionary = Record<string, unknown>
 export type ClassArray = ClassValue[]
-export type ClassValue = ClassArray | ClassDictionary | string | number | bigint | null | boolean | undefined
+export type ClassValue = ClassArray | ClassDictionary | string | number | bigint | null | boolean | undefined | Function
 
 function toVal(mix: ClassValue): string {
   let str = ''
@@ -11,8 +11,9 @@ function toVal(mix: ClassValue): string {
     if (Array.isArray(mix)) {
       const len = mix.length
       for (let k = 0; k < len; k++) {
-        if (mix[k]) {
-          const y = toVal(mix[k])
+        const item = mix[k]
+        if (item) {
+          const y = toVal(item)
           if (y) {
             if (str) {
               str += ' '

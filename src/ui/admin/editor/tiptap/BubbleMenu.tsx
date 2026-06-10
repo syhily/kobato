@@ -86,8 +86,13 @@ export function PageBubbleMenu({ editor }: PageBubbleMenuProps) {
         if (instance.isActive('codeBlock')) {
           return false
         }
-        const nodeSelection = (state.selection as { node?: { isAtom?: boolean } }).node
-        if (nodeSelection?.isAtom === true) {
+        if (
+          'node' in state.selection &&
+          typeof state.selection.node === 'object' &&
+          state.selection.node !== null &&
+          'isAtom' in state.selection.node &&
+          state.selection.node.isAtom === true
+        ) {
           return false
         }
         if (!state.selection.empty) {
@@ -190,8 +195,8 @@ function ActionRow({ editor, sigmaToggleActive, onLink }: ActionRowProps) {
 }
 
 function OpenLinkPreview({ editor }: { editor: Editor }) {
-  const attrs = editor.getAttributes('link') as { href?: string; target?: string }
-  const href = attrs.href ?? '#'
+  const attrs: Record<string, unknown> = editor.getAttributes('link')
+  const href = typeof attrs.href === 'string' ? attrs.href : '#'
   const newTab = attrs.target === '_blank'
   return (
     <a

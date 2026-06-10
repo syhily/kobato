@@ -7,6 +7,7 @@ import type { ViewsPoint } from '@/shared/contracts/analytics'
 
 import { whereClause, cagWhereClause } from '@/server/domains/analytics/services/shared-sql'
 import { pickAggregateSource, pickTimeBucket } from '@/shared/contracts/analytics'
+import { isRecord } from '@/shared/utils/type-guards'
 
 export async function queryViews(db: NodePgDatabase, input: AnalyticsQueryInput): Promise<ViewsPoint[]> {
   const bucket = pickTimeBucket(input.range)
@@ -49,11 +50,16 @@ export async function queryViews(db: NodePgDatabase, input: AnalyticsQueryInput)
 
   const result = await db.execute(select)
   return result.rows.map((row) => {
-    const r = row as { time: Date | string; visits: string | number; visitors: string | number }
+    if (!isRecord(row)) {
+      return { time: '', visits: 0, visitors: 0 }
+    }
+    const time = row.time
+    const visits = row.visits
+    const visitors = row.visitors
     return {
-      time: (r.time instanceof Date ? r.time : new Date(r.time)).toISOString(),
-      visits: Number(r.visits),
-      visitors: Number(r.visitors),
+      time: (time instanceof Date ? time : new Date(String(time))).toISOString(),
+      visits: Number(visits),
+      visitors: Number(visitors),
     }
   })
 }

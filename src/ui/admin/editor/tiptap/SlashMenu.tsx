@@ -41,7 +41,7 @@ export const SlashCommandsExtension = Extension.create<SlashCommandsExtensionOpt
         startOfLine: false,
         allowSpaces: false,
         items: ({ query }) => [...filterSlashCommands(query, catalogue)],
-        command: ({ editor, range, props }) => {
+        command: ({ editor, range, props }: { editor: Editor; range: Range; props: SlashCommand }) => {
           props.command({ editor, range })
         },
         render: () => {

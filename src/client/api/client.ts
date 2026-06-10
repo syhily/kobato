@@ -5,10 +5,10 @@ import { RPCLink } from '@orpc/client/fetch'
 
 import type { ApiRouter } from '@/server/http/api-router'
 
-let csrfToken: string | null = null
+const csrfStore = { token: null as string | null }
 
 export function setCsrfToken(token: string) {
-  csrfToken = token
+  csrfStore.token = token
 }
 
 /**
@@ -35,8 +35,8 @@ const link = new RPCLink({
   url: () => `${globalThis.location?.origin ?? 'http://localhost'}/rpc`,
   headers: () => {
     const h: Record<string, string> = {}
-    if (csrfToken) {
-      h['X-CSRF-Token'] = csrfToken
+    if (csrfStore.token) {
+      h['X-CSRF-Token'] = csrfStore.token
     }
     return h
   },

@@ -72,3 +72,8 @@ export function getPoolFromContext(args: AnyRouteArgs): Pool {
   const context = args.context as Readonly<RouterContextProvider>
   return context.get(poolContext)
 }
+
+export function getCspNonceFromContext(args: AnyRouteArgs): string {
+  const context = args.context as Readonly<RouterContextProvider>
+  return context.get(cspNonceContext)
+}

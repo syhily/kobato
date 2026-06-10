@@ -48,8 +48,12 @@ export async function canonicalizeCommentBody(input: unknown): Promise<{ body: C
   }
 
   const body = await prerenderPortableTextBody(parsed)
-  const content = commentBodyToMarkdown(body as CommentBody)
-  return { body: body as CommentBody, content }
+  const revalidated = commentBodySchema.safeParse(body)
+  if (!revalidated.success) {
+    throw new DomainError('BAD_REQUEST', '评论预渲染后格式异常。')
+  }
+  const content = commentBodyToMarkdown(revalidated.data)
+  return { body: revalidated.data, content }
 }
 
 function countLinks(body: CommentBody): number {

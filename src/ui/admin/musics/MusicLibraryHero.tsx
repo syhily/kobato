@@ -133,12 +133,13 @@ function CollageBackground({ allCoverUrls }: { allCoverUrls: string[] }) {
       return
     }
 
-    const timeouts: ReturnType<typeof setTimeout>[] = []
+    let refreshTimer: ReturnType<typeof setTimeout> | null = null
+    let fadeTimer: ReturnType<typeof setTimeout> | null = null
     let running = true
 
     const scheduleNext = () => {
       const nextDelay = 2000 + Math.random() * 1000 // 2–3 s between refreshes
-      const t = setTimeout(() => {
+      refreshTimer = setTimeout(() => {
         if (!running) {
           return
         }
@@ -171,7 +172,7 @@ function CollageBackground({ allCoverUrls }: { allCoverUrls: string[] }) {
 
         // 300–1200 ms later: swap covers and fade in
         const refreshDelay = 300 + Math.random() * 900
-        const t2 = setTimeout(() => {
+        fadeTimer = setTimeout(() => {
           if (!running) {
             return
           }
@@ -192,18 +193,20 @@ function CollageBackground({ allCoverUrls }: { allCoverUrls: string[] }) {
           })
         }, refreshDelay)
 
-        timeouts.push(t2)
         scheduleNext()
       }, nextDelay)
-
-      timeouts.push(t)
     }
 
     scheduleNext()
 
     return () => {
       running = false
-      timeouts.forEach(clearTimeout)
+      if (refreshTimer) {
+        clearTimeout(refreshTimer)
+      }
+      if (fadeTimer) {
+        clearTimeout(fadeTimer)
+      }
     }
   }, [grid.count])
 

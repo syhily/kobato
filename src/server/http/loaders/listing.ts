@@ -158,7 +158,7 @@ export async function listingLoader<TExtra = undefined>(
   })
 
   const resolvedExtra: TExtra =
-    computeExtra !== undefined ? await computeExtra({ resolvedPosts, pageNum, totalPage }) : (extra as TExtra)
+    computeExtra !== undefined ? await computeExtra({ resolvedPosts, pageNum, totalPage }) : extra!
 
   const seo =
     seoMode === 'skip-on-first-page' && pageNum === 1

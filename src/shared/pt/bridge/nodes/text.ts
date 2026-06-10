@@ -117,7 +117,8 @@ export function paragraphToTextBlock(
       marks: marks.length > 0 ? marks : undefined,
     })
   }
-  const align = node.attrs?.textAlign as string | undefined
+  const rawAlign = node.attrs?.textAlign
+  const align = typeof rawAlign === 'string' ? rawAlign : undefined
   return {
     _type: 'block',
     _key: ensureKey(node.attrs),

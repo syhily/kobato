@@ -6,6 +6,7 @@ import type { BlogSettingsBundle } from '@/shared/config/types'
 
 import { getBlogSettingsBundleSync } from '@/shared/config/getters'
 import { brandingVersion, extractXHandle } from '@/shared/config/utils'
+import { isRecord } from '@/shared/utils/type-guards'
 import { joinUrl } from '@/shared/utils/urls'
 
 const PRE_INSTALL_TITLE = '正在安装'
@@ -368,13 +369,26 @@ interface RootLoaderData {
   blogSettings?: BlogSettingsBundle | null
 }
 
+function isRootLoaderData(value: unknown): value is RootLoaderData {
+  if (!isRecord(value)) {
+    return false
+  }
+  const bs = value.blogSettings
+  return bs === undefined || bs === null || isRecord(bs)
+}
+
 export function bundleFromMatches(matches: readonly unknown[]): BlogSettingsBundle | null | undefined {
-  const rootMatch = matches.find(
-    (m): m is { id: string; data: unknown } =>
-      typeof m === 'object' && m !== null && (m as { id?: unknown }).id === 'root',
-  )
-  const rootLoader = rootMatch?.data as RootLoaderData | undefined
-  if (rootLoader === undefined) {
+  const rootMatch = matches.find((m) => {
+    if (!isRecord(m)) {
+      return false
+    }
+    return m.id === 'root'
+  })
+  if (!isRecord(rootMatch)) {
+    return undefined
+  }
+  const rootLoader = rootMatch.data
+  if (!isRootLoaderData(rootLoader)) {
     return undefined
   }
   return rootLoader.blogSettings ?? null

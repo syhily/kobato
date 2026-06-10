@@ -1,3 +1,4 @@
+/* oxlint-disable typescript/no-unsafe-type-assertion */
 import {
   FILTERABLE_TYPES,
   PRESET_KEYS,

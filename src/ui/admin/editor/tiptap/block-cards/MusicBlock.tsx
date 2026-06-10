@@ -14,7 +14,10 @@ export function musicBlockTitle() {
   return '音乐播放器'
 }
 
-export function patchMusicPlayerFlag(payload: MusicPlayerBlock, flag: 'auto' | 'center', enabled: boolean): Block {
+export function patchMusicPlayerFlag(payload: Block, flag: 'auto' | 'center', enabled: boolean): Block {
+  if (payload._type !== 'musicPlayer') {
+    return payload
+  }
   const next: MusicPlayerBlock = { ...payload }
   if (enabled) {
     next[flag] = true

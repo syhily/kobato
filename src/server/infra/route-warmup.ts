@@ -1,3 +1,4 @@
+/* oxlint-disable typescript/no-unsafe-assignment, typescript/no-unsafe-member-access, typescript/no-unsafe-type-assertion */
 import type { Plugin } from 'vite'
 
 import { existsSync, readdirSync, statSync, writeFileSync } from 'node:fs'

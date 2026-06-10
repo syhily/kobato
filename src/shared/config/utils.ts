@@ -1,6 +1,8 @@
 import type { SocialNetwork } from '@/shared/config/socials'
 import type { SiteAssetBranding, SidebarSettings } from '@/shared/config/types'
 
+import { isRecord } from '@/shared/utils/type-guards'
+
 export function getSidebarWidgetCount(
   settings: SidebarSettings,
   type: 'recentPosts' | 'recentComments' | 'randomTags',
@@ -40,8 +42,8 @@ export function brandingVersion(branding: SiteAssetBranding | undefined | null):
   }
   const etags: string[] = []
   for (const ref of Object.values(branding)) {
-    if (ref && typeof ref === 'object' && typeof (ref as { etag?: unknown }).etag === 'string') {
-      etags.push((ref as { etag: string }).etag)
+    if (isRecord(ref) && 'etag' in ref && typeof ref.etag === 'string') {
+      etags.push(ref.etag)
     }
   }
   if (etags.length === 0) {

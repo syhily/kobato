@@ -1,3 +1,4 @@
+/* oxlint-disable typescript/no-unsafe-type-assertion */
 import type {
   AuthenticationResponseJSON,
   PublicKeyCredentialCreationOptionsJSON,
@@ -69,7 +70,8 @@ async function consumeChallenge(prefix: string, challenge: string): Promise<Reco
       return null
     }
     return JSON.parse(raw) as Record<string, unknown>
-  } catch {
+  } catch (error) {
+    log.error('Redis EVAL failed while consuming passkey challenge', { key, error })
     return null
   }
 }

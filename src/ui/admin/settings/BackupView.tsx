@@ -12,6 +12,7 @@ import { BackupRestoreDialog } from '@/ui/admin/settings/BackupRestoreDialog'
 import { BackupScheduleForm } from '@/ui/admin/settings/BackupScheduleForm'
 import { SettingGroup } from '@/ui/admin/settings/shell/SettingGroup'
 import { Button } from '@/ui/components/button'
+import { extractApiErrorMessage, isApiAccepted } from '@/ui/lib/api-error'
 
 type RestorePhase = 'confirm' | 'waiting'
 
@@ -44,11 +45,24 @@ async function pollReady(onTimeout: () => void, signal: AbortSignal) {
             signal,
           })
           if (statusRes.ok) {
-            const status = (await statusRes.json()) as { phase: string; error?: string }
-            if (status.phase === 'completed') {
+            const status: unknown = await statusRes.json()
+            if (
+              typeof status === 'object' &&
+              status !== null &&
+              'phase' in status &&
+              typeof status.phase === 'string' &&
+              status.phase === 'completed'
+            ) {
               toast.success('还原成功')
-            } else if (status.phase === 'failed') {
-              toast.error('还原失败', { description: status.error })
+            } else if (
+              typeof status === 'object' &&
+              status !== null &&
+              'phase' in status &&
+              typeof status.phase === 'string' &&
+              status.phase === 'failed'
+            ) {
+              const error = 'error' in status && typeof status.error === 'string' ? status.error : undefined
+              toast.error('还原失败', { description: error })
             }
           }
         } catch {
@@ -196,11 +210,13 @@ export function BackupView({ backup, timeZone }: BackupViewProps) {
         body: formData,
         headers,
       })
-      const json = (await res.json()) as { accepted?: boolean; error?: { message?: string } }
+      const json: unknown = await res.json()
+      const errorMessage = extractApiErrorMessage(json)
       if (!res.ok) {
-        throw new Error(json.error?.message ?? '上传还原失败')
+        throw new Error(errorMessage ?? '上传还原失败')
       }
-      if (json.accepted) {
+      const accepted = isApiAccepted(json)
+      if (accepted) {
         setRestorePhase('waiting')
         setRestoreKey('upload-restore')
         pollAbortRef.current = new AbortController()

@@ -125,12 +125,11 @@ export function LyricsDisplay({ lrcText, currentTime }: LyricsDisplayProps) {
   }
 
   return (
-    <div ref={containerRef} className="relative max-h-[60vh] overflow-y-auto py-8" style={{ scrollbarWidth: 'thin' }}>
+    <div ref={containerRef} className="relative max-h-[60vh] scrollbar-thin overflow-y-auto py-8">
       <div className="flex flex-col items-center gap-4 px-4">
         {lines.map(([time, text], index) => (
           <p
-            // oxlint-disable-next-line react/no-array-index-key
-            key={`${index}-${time}-${text.slice(0, 20)}`}
+            key={`${time}-${text.slice(0, 20)}`}
             ref={index === currentLineIndex ? currentLineRef : undefined}
             className={cn(
               'text-center text-base transition-all duration-300',

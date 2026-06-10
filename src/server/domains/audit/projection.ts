@@ -6,6 +6,7 @@ import { stripL3Markers } from '@/server/domains/audit/privacy'
 import { maskIp, maskUserAgent } from '@/server/domains/audit/utils'
 import { getBlogSettingsBundleSync } from '@/shared/config/getters'
 import { auditLogItemDto } from '@/shared/contracts/audit'
+import { isRecord } from '@/shared/utils/type-guards'
 
 export function parseDate(dateStr: string | undefined): Date | undefined {
   if (!dateStr) {
@@ -42,7 +43,12 @@ export function toAuditLogItemDto(
     actorRole: row.actorRole ?? null,
     resourceType: row.resourceType,
     resourceId: row.resourceId ?? null,
-    details: row.details ? (stripL3Markers(row.details) as Record<string, unknown> | null) : null,
+    details: row.details
+      ? (() => {
+          const v = stripL3Markers(row.details)
+          return isRecord(v) ? v : null
+        })()
+      : null,
     ipAddressMasked: row.ipAddress ? maskIp(row.ipAddress) : null,
     userAgentMasked: row.userAgent ? maskUserAgent(row.userAgent) : null,
     createdAt: row.createdAt.toISOString(),

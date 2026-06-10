@@ -1,3 +1,4 @@
+/* oxlint-disable typescript/no-unsafe-type-assertion */
 import type { RefObject, SubmitEventHandler } from 'react'
 
 import { SearchIcon } from 'lucide-react'

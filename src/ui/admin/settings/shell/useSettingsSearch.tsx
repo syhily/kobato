@@ -1,9 +1,13 @@
 import { type ReactNode, createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 
-export type SearchComponentId = string & { __brand: 'SearchComponentId' }
+function isReactNodeArray(value: unknown): value is ReactNode[] {
+  return Array.isArray(value)
+}
+
+export type SearchComponentId = string
 
 export function createSearchComponentId(base: string, unique: string): SearchComponentId {
-  return `${base}-${unique}` as SearchComponentId
+  return `${base}-${unique}`
 }
 
 // Split Context: high-frequency filter state vs low-frequency search API.
@@ -134,7 +138,7 @@ export function SettingsSearchProvider({ children }: { children: ReactNode }) {
           return result
         }, [])
       }
-      if (Array.isArray(text)) {
+      if (isReactNodeArray(text)) {
         return text.reduce<ReactNode[]>((result, part) => {
           result.push(<span key={`span-${result.length}`}>{highlightKeywords(part)}</span>)
           return result

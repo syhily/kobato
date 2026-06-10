@@ -1,20 +1,12 @@
 import { Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, X } from 'lucide-react'
-import { useCallback } from 'react'
+import { useCallback, useMemo } from 'react'
 import { useLocation } from 'react-router'
 
+import { formatTime } from '@/ui/admin/musics/format-time'
 import { useMusicPlayer } from '@/ui/admin/musics/MusicPlayerContext'
 import { ProgressSlider } from '@/ui/admin/musics/ProgressSlider'
 import { cn } from '@/ui/lib/cn'
 import { Image } from '@/ui/public/widgets/Image'
-
-function formatTime(seconds: number): string {
-  if (!Number.isFinite(seconds) || seconds < 0) {
-    return '0:00'
-  }
-  const m = Math.floor(seconds / 60)
-  const s = Math.floor(seconds % 60)
-  return `${m}:${String(s).padStart(2, '0')}`
-}
 
 export function AdminMusicPlayerBar() {
   const location = useLocation()
@@ -51,11 +43,12 @@ export function AdminMusicPlayerBar() {
     }
   }, [currentIndex, playlist.length, playIndex])
 
+  const accent = extractedColor ?? 'var(--brand)'
+  const playButtonStyle = useMemo(() => ({ backgroundColor: accent }), [accent])
+
   if (!visible) {
     return null
   }
-
-  const accent = extractedColor ?? 'var(--brand)'
 
   return (
     <div className={cn('relative z-[1100] h-20 shrink-0 border-t border-line', 'bg-canvas/95 backdrop-blur-xl')}>
@@ -95,7 +88,7 @@ export function AdminMusicPlayerBar() {
               type="button"
               onClick={toggle}
               className="flex size-10 items-center justify-center rounded-full text-primary-foreground transition-transform hover:scale-105"
-              style={{ backgroundColor: accent }}
+              style={playButtonStyle}
               aria-label={isPlaying ? '暂停' : '播放'}
             >
               {isPlaying ? <Pause className="size-5 fill-current" /> : <Play className="size-5 fill-current" />}

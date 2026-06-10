@@ -8,13 +8,23 @@ import type { HonoServerOptionsBase } from '@/server/infra/hono/types/hono-serve
 
 type SocketInfo = Partial<IncomingMessage['socket']>
 
+interface SocketEnv extends Env {
+  Bindings: {
+    server?: {
+      incoming: {
+        socket: SocketInfo
+      }
+    }
+  }
+}
+
 /**
  * Bind socket info from the headers to the Hono context
  *
  * Unlock the usage of https://hono.dev/docs/helpers/conninfo in dev
  */
 export function bindIncomingRequestSocketInfo() {
-  return createMiddleware((c, next) => {
+  return createMiddleware<SocketEnv>((c, next) => {
     c.env.server = {
       incoming: {
         socket: {

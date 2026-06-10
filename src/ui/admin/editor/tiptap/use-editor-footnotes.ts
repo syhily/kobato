@@ -90,8 +90,9 @@ function applyFootnoteRenumberTransaction(instance: Editor, syncedBody: Portable
     }
     for (const mark of node.marks) {
       if (mark.type.name === 'footnoteRef') {
-        const targetKey = mark.attrs.targetKey as string
-        const currentIndex = mark.attrs.index as number
+        const attrs: Record<string, unknown> = mark.attrs
+        const targetKey = typeof attrs.targetKey === 'string' ? attrs.targetKey : ''
+        const currentIndex = typeof attrs.index === 'number' ? attrs.index : 0
         const newIndex = keyToIndex.get(targetKey)
         if (newIndex !== undefined && newIndex !== currentIndex) {
           changes.push({
