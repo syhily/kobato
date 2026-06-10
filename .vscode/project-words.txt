@@ -209,6 +209,7 @@ pathed
 pcss
 pefc
 penheulim
+pgcrypto
 pglite
 pgpassword
 pgvector
