@@ -32,7 +32,6 @@ function metaRow(overrides: Partial<PostMetaRow> = {}): PostMetaRow {
     firstPublishedAt: overrides.firstPublishedAt ?? null,
     authorId: overrides.authorId ?? null,
     category: overrides.category ?? 'general',
-    tags: overrides.tags ?? [],
     alias: overrides.alias ?? [],
     pinnedAt: overrides.pinnedAt ?? null,
     createdAt: now,

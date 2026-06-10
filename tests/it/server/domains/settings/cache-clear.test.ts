@@ -39,6 +39,7 @@ vi.mock('@/server/domains/content/repo', () => ({
 vi.mock('@/server/domains/posts/repos/single', () => ({
   findPostMetaById: vi.fn(),
   findPostMetaBySlug: vi.fn(),
+  findPostMetaBySlugForUpdate: vi.fn(async () => null),
   findPublicPostMetaBySlug: vi.fn(),
 }))
 vi.mock('@/server/domains/posts/repos/public-query/listing', () => ({
@@ -82,6 +83,7 @@ vi.mock('@/server/domains/pages/repo', () => ({
   findLatestRevision: vi.fn(),
   findPageMetaById: vi.fn(),
   findPageMetaBySlug: vi.fn(async () => null),
+  findPageMetaBySlugForUpdate: vi.fn(async () => null),
   findPublicPageMetaBySlug: vi.fn(),
   insertPageMeta: vi.fn(async () => makeMockPageRow()),
   listPageMetas: vi.fn(async () => []),
@@ -105,6 +107,17 @@ vi.mock('@/server/domains/pages/services/image-sync', () => ({
 
 vi.mock('@/server/infra/db/operations/tag', () => ({
   seedTagIfMissing: vi.fn(),
+  findTagsByNames: vi.fn(async () => []),
+}))
+vi.mock('@/server/infra/db/operations/post-tag', () => ({
+  setPostTags: vi.fn(),
+  findTagNamesByPostIds: vi.fn(async () => new Map()),
+  findTagNamesByPostId: vi.fn(async () => []),
+}))
+vi.mock('@/server/infra/db/operations/slug-registry', () => ({
+  findSlugRegistryBySlug: vi.fn(async () => null),
+  findSlugRegistryBySlugForUpdate: vi.fn(async () => null),
+  insertSlugRegistry: vi.fn(),
 }))
 
 vi.mock('@/server/infra/db/operations/metric', () => ({

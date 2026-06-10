@@ -17,6 +17,7 @@ vi.mock('@/server/domains/pages/repo', () => ({
   countPageMetas: vi.fn(async () => 0),
   findPageMetaById: vi.fn(),
   findPageMetaBySlug: vi.fn(),
+  findPageMetaBySlugForUpdate: vi.fn(async () => null),
   findPublicPageMetaBySlug: vi.fn(),
   insertPageMeta: vi.fn(),
   listPageMetas: vi.fn(async () => []),
@@ -58,6 +59,7 @@ vi.mock('@/server/infra/db/operations/slug-registry', () => ({
     void 0
   }),
   findSlugRegistryBySlug: vi.fn(async () => null),
+  findSlugRegistryBySlugForUpdate: vi.fn(async () => null),
 }))
 
 const db = {
@@ -188,7 +190,7 @@ describe('cms/pages/service — createPage / updatePageMeta validation', () => {
   })
 
   it('rejects an existing slug on create with HTTP 409 semantics', async () => {
-    vi.mocked(repo.findPageMetaBySlug).mockResolvedValue(metaRow({ slug: 'about' }))
+    vi.mocked(repo.findPageMetaBySlugForUpdate).mockResolvedValue(metaRow({ slug: 'about' }))
     await expect(mutate.createPage(db, { slug: 'about', title: 't' }, null)).rejects.toMatchObject({
       code: 'CONFLICT',
     })
@@ -199,12 +201,12 @@ describe('cms/pages/service — createPage / updatePageMeta validation', () => {
     vi.mocked(repo.updatePageMetaById).mockResolvedValue(metaRow({ id: 7n, slug: 'about', title: 'new' }))
     const dto = await mutate.updatePageMeta(db, { id: 7n, slug: 'about', title: 'new' })
     expect(dto.title).toBe('new')
-    expect(repo.findPageMetaBySlug).not.toHaveBeenCalled()
+    expect(repo.findPageMetaBySlugForUpdate).not.toHaveBeenCalled()
   })
 
   it('updatePageMeta blocks renaming to a slug already used by a different page', async () => {
     vi.mocked(repo.findPageMetaById).mockResolvedValue(metaRow({ id: 7n, slug: 'about' }))
-    vi.mocked(repo.findPageMetaBySlug).mockResolvedValue(metaRow({ id: 99n, slug: 'guestbook' }))
+    vi.mocked(repo.findPageMetaBySlugForUpdate).mockResolvedValue(metaRow({ id: 99n, slug: 'guestbook' }))
     await expect(mutate.updatePageMeta(db, { id: 7n, slug: 'guestbook', title: 't' })).rejects.toMatchObject({
       code: 'CONFLICT',
     })
@@ -218,7 +220,7 @@ describe('cms/pages/service — createPage / updatePageMeta validation', () => {
   })
 
   it('createPage always inserts status=draft even when input says true', async () => {
-    vi.mocked(repo.findPageMetaBySlug).mockResolvedValue(null)
+    vi.mocked(repo.findPageMetaBySlugForUpdate).mockResolvedValue(null)
     vi.mocked(repo.insertPageMeta).mockResolvedValue(metaRow({ slug: 'new-page', published: false }))
 
     await mutate.createPage(db, { title: 'New Page', published: true }, null)
@@ -228,7 +230,7 @@ describe('cms/pages/service — createPage / updatePageMeta validation', () => {
   })
 
   it('createPage inserts status=draft when input omits the field', async () => {
-    vi.mocked(repo.findPageMetaBySlug).mockResolvedValue(null)
+    vi.mocked(repo.findPageMetaBySlugForUpdate).mockResolvedValue(null)
     vi.mocked(repo.insertPageMeta).mockResolvedValue(metaRow({ slug: 'new-page', published: false }))
 
     await mutate.createPage(db, { title: 'New Page' }, null)
