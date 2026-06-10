@@ -226,6 +226,87 @@ export async function handleOtpResend(
   }
 }
 
+function parseLoginInput(formData: FormData): { email: string; password: string } | null {
+  const email = formFieldString(formData, 'email')
+  const password = formFieldString(formData, 'password')
+  const parsed = signInSchema.safeParse({ email, password })
+  return parsed.success ? parsed.data : null
+}
+
+function isOtpEnabled(): boolean {
+  const bundle = getBlogSettingsBundleSync()
+  const mail = bundle?.mail?.mail
+  return bundle?.security?.otp?.enabled === true && mail !== undefined && checkMailReady(mail).ready
+}
+
+async function checkLoginRateLimits(clientAddress: string, email: string): Promise<{ exceeded: boolean }> {
+  const [loginLimit, signInEmailLimit] = await Promise.all([
+    tryRateLimit(clientAddress),
+    trySignInByEmailRateLimit(email),
+  ])
+  return { exceeded: loginLimit.exceeded || signInEmailLimit.exceeded }
+}
+
+async function checkPasskeyForce(db: NodePgDatabase, email: string): Promise<boolean> {
+  const bundle = getBlogSettingsBundleSync()
+  if (bundle?.security?.passkey?.enabled !== true) {
+    return false
+  }
+  const existingUser = await findUserByEmail(db, email)
+  return existingUser !== null && Boolean(existingUser.passkeyForce) && Boolean(existingUser.role)
+}
+
+async function sendOtpAndStageSession(
+  db: NodePgDatabase,
+  session: BlogSession,
+  clientAddress: string,
+  request: Request,
+  dbUser: { id: bigint; name: string; email: string; role: string | null },
+  redirectTo: string,
+): Promise<AuthFlowResult> {
+  const [ipLimit, emailLimit] = await Promise.all([
+    tryOtpSendRateLimit(clientAddress),
+    tryOtpSendByEmailRateLimit(dbUser.email),
+  ])
+  if (ipLimit.exceeded || emailLimit.exceeded) {
+    return {
+      type: 'error',
+      message: '发送过于频繁，请稍后再试。',
+      setCookie: await commitSessionWithMaxAge(session),
+    }
+  }
+
+  const { otpCode, expiresAt } = await issueOtpToken(db, dbUser.id)
+  const sendResult = await sendOtpSafely(dbUser, otpCode)
+  if (!sendResult.ok) {
+    return { type: 'error', message: sendResult.error, setCookie: await commitSessionWithMaxAge(session) }
+  }
+
+  session.set('pendingOtpUser', {
+    userId: String(dbUser.id),
+    email: dbUser.email,
+    expiresAt: expiresAt.getTime(),
+    sentAt: Date.now(),
+  })
+  session.set('otpFailCount', 0)
+
+  recordAuditEvent({
+    action: 'otp_sent',
+    resourceType: 'user',
+    resourceId: String(dbUser.id),
+    actorId: dbUser.id,
+    actorRole: dbUser.role,
+    ipAddress: clientAddress,
+    userAgent: request.headers.get('User-Agent'),
+    details: { email: dbUser.email },
+  })
+  return {
+    type: 'redirect',
+    to: `/admin/signin?action=verifyotp&redirect_to=${encodeURIComponent(redirectTo)}`,
+    setCookie: await commitSessionWithMaxAge(session),
+  }
+}
+
 export async function handleCredentialLogin(
   db: NodePgDatabase,
   session: BlogSession,
@@ -234,19 +315,13 @@ export async function handleCredentialLogin(
   formData: FormData,
   redirectTo: string,
 ): Promise<AuthFlowResult> {
-  const email = formFieldString(formData, 'email')
-  const password = formFieldString(formData, 'password')
-
-  const parsed = signInSchema.safeParse({ email, password })
-  if (!parsed.success) {
+  const input = parseLoginInput(formData)
+  if (!input) {
     return { type: 'error', message: '请填写正确的邮箱和密码。' }
   }
 
-  const [loginLimit, signInEmailLimit] = await Promise.all([
-    tryRateLimit(clientAddress),
-    trySignInByEmailRateLimit(parsed.data.email),
-  ])
-  if (loginLimit.exceeded || signInEmailLimit.exceeded) {
+  const rateLimit = await checkLoginRateLimits(clientAddress, input.email)
+  if (rateLimit.exceeded) {
     return {
       type: 'error',
       message: '登录失败次数过多，请稍后再试。',
@@ -254,25 +329,18 @@ export async function handleCredentialLogin(
     }
   }
 
-  const bundle = getBlogSettingsBundleSync()
-  const mail = bundle?.mail?.mail
-  const isOtpEnabled = bundle?.security?.otp?.enabled === true && mail !== undefined && checkMailReady(mail).ready
-
-  // Check passkey force BEFORE verifying password to avoid leaking password validity
-  if (bundle?.security?.passkey?.enabled === true) {
-    const existingUser = await findUserByEmail(db, parsed.data.email)
-    if (existingUser && existingUser.passkeyForce && existingUser.role) {
-      return {
-        type: 'error',
-        message: '该账户已强制使用 Passkey 登录，请使用 Passkey 方式登录。',
-        setCookie: await commitSessionWithMaxAge(session),
-      }
+  const passkeyForced = await checkPasskeyForce(db, input.email)
+  if (passkeyForced) {
+    return {
+      type: 'error',
+      message: '该账户已强制使用 Passkey 登录，请使用 Passkey 方式登录。',
+      setCookie: await commitSessionWithMaxAge(session),
     }
   }
 
-  const dbUser = await verifyUserPassword(db, parsed.data.email, parsed.data.password)
+  const dbUser = await verifyUserPassword(db, input.email, input.password)
   if (!dbUser || !dbUser.role) {
-    if (isOtpEnabled) {
+    if (isOtpEnabled()) {
       return {
         type: 'redirect',
         to: `/admin/signin?error=invalid_credentials&redirect_to=${encodeURIComponent(redirectTo)}`,
@@ -286,48 +354,8 @@ export async function handleCredentialLogin(
     }
   }
 
-  if (isOtpEnabled) {
-    const [ipLimit, emailLimit] = await Promise.all([
-      tryOtpSendRateLimit(clientAddress),
-      tryOtpSendByEmailRateLimit(parsed.data.email),
-    ])
-    if (ipLimit.exceeded || emailLimit.exceeded) {
-      return {
-        type: 'error',
-        message: '发送过于频繁，请稍后再试。',
-        setCookie: await commitSessionWithMaxAge(session),
-      }
-    }
-
-    const { otpCode, expiresAt } = await issueOtpToken(db, dbUser.id)
-    const sendResult = await sendOtpSafely(dbUser, otpCode)
-    if (!sendResult.ok) {
-      return { type: 'error', message: sendResult.error, setCookie: await commitSessionWithMaxAge(session) }
-    }
-
-    session.set('pendingOtpUser', {
-      userId: String(dbUser.id),
-      email: dbUser.email,
-      expiresAt: expiresAt.getTime(),
-      sentAt: Date.now(),
-    })
-    session.set('otpFailCount', 0)
-
-    recordAuditEvent({
-      action: 'otp_sent',
-      resourceType: 'user',
-      resourceId: String(dbUser.id),
-      actorId: dbUser.id,
-      actorRole: dbUser.role,
-      ipAddress: clientAddress,
-      userAgent: request.headers.get('User-Agent'),
-      details: { email: dbUser.email },
-    })
-    return {
-      type: 'redirect',
-      to: `/admin/signin?action=verifyotp&redirect_to=${encodeURIComponent(redirectTo)}`,
-      setCookie: await commitSessionWithMaxAge(session),
-    }
+  if (isOtpEnabled()) {
+    return sendOtpAndStageSession(db, session, clientAddress, request, dbUser, redirectTo)
   }
 
   const established = await establishLoginSession(db, session, dbUser, request, clientAddress)

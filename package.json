@@ -98,7 +98,7 @@
     "bcryptjs": "^3.0.3",
     "date-fns": "^4.4.0",
     "diff-match-patch": "^1.0.5",
-    "dompurify": "^3.4.8",
+    "dompurify": "^3.4.9",
     "drizzle-kit": "~1.0.0-rc.3",
     "drizzle-orm": "~1.0.0-rc.3",
     "fake-indexeddb": "^6.2.5",

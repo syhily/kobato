@@ -188,6 +188,13 @@ export async function deletePost(
   return { deleted }
 }
 
+interface IndexablePostData {
+  id: bigint
+  title: string
+  summary: string
+  body: unknown
+}
+
 export async function restorePost(
   db: NodePgDatabase,
   id: bigint,
@@ -196,8 +203,12 @@ export async function restorePost(
   const meta = await findPostMetaById(db, id)
   assertOwnPostOr404(meta, viewer)
   let warning: string | undefined
-  const restored = await db.transaction(async (tx) => {
+
+  // Gather everything needed for search indexing inside the transaction
+  // so that if the DB restore fails we never touch the external index.
+  const { restored, indexable } = await db.transaction(async (tx) => {
     const ok = await restorePostMeta(tx, id)
+    let data: IndexablePostData | null = null
     if (ok) {
       const restoredMeta = await findPostMetaById(tx, id)
       if (restoredMeta !== null) {
@@ -208,27 +219,35 @@ export async function restorePost(
             throw err
           }
         }
+        if (restoredMeta.published && restoredMeta.publishedRevisionId !== null) {
+          const revision = await findContentById(tx, restoredMeta.publishedRevisionId)
+          if (revision !== null) {
+            data = {
+              id: restoredMeta.id,
+              title: restoredMeta.title,
+              summary: restoredMeta.summary,
+              body: revision.body,
+            }
+          }
+        }
       }
     }
-    return ok
+    return { restored: ok, indexable: data }
   })
+
   if (restored) {
     await clearPostMetasCache()
     await invalidateSearchCache().catch((err: unknown) => {
       log.warn('invalidate search cache failed', { postId: id, error: err })
     })
-    const restoredMeta = await findPostMetaById(db, id)
-    if (restoredMeta !== null && restoredMeta.published && restoredMeta.publishedRevisionId !== null) {
-      const revision = await findContentById(db, restoredMeta.publishedRevisionId)
-      if (revision !== null) {
-        const bodyResult = portableTextBodySchema.safeParse(revision.body)
-        if (bodyResult.success) {
-          try {
-            await indexPost(db, restoredMeta.id, restoredMeta.title, restoredMeta.summary, bodyResult.data)
-          } catch (err: unknown) {
-            log.warn('index post failed', { postId: restoredMeta.id, error: err })
-            warning = '搜索索引更新失败，该文章可能不会出现在搜索结果中。'
-          }
+    if (indexable !== null) {
+      const bodyResult = portableTextBodySchema.safeParse(indexable.body)
+      if (bodyResult.success) {
+        try {
+          await indexPost(db, indexable.id, indexable.title, indexable.summary, bodyResult.data)
+        } catch (err: unknown) {
+          log.warn('index post failed', { postId: indexable.id, error: err })
+          warning = '搜索索引更新失败，该文章可能不会出现在搜索结果中。'
         }
       }
     }
