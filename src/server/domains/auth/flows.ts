@@ -91,6 +91,7 @@ export async function signUpInitialAdminWithSession(
 
   // Validate every section against its schema before writing any.
   const updatedBy = idFromString(admin.id)
+  const parsedSections: { payload: Record<string, unknown>; scope: string }[] = []
   for (const { section, payload } of sections) {
     const meta = SECTION_REGISTRY[section]
     const check = meta.schema.safeParse(payload)
@@ -102,14 +103,11 @@ export async function signUpInitialAdminWithSession(
         message: `${meta.scope} 校验失败（${path}）：${first?.message ?? '未知错误'}`,
       }
     }
+    parsedSections.push({ payload: check.data as Record<string, unknown>, scope: meta.scope })
   }
 
-  for (const { section, payload } of sections) {
-    const meta = SECTION_REGISTRY[section]
-    const check = meta.schema.safeParse(payload)
-    if (check.success) {
-      await upsertSetting(db, check.data as Record<string, unknown>, updatedBy, meta.scope)
-    }
+  for (const { payload, scope } of parsedSections) {
+    await upsertSetting(db, payload, updatedBy, scope)
   }
 
   await refreshBlogSettings(db)

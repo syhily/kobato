@@ -39,13 +39,6 @@ export function validateCsrfToken(session: BlogSession, headerValue: string | nu
   return timingSafeEqual(expectedBuf, headerBuf)
 }
 
-export function isCsrfEnabled(): boolean {
-  // CSRF is mandatory for authenticated routes. The `enabled` toggle in
-  // security settings is ignored — an admin cannot accidentally (or
-  // maliciously) disable CSRF protection at runtime.
-  return true
-}
-
 export function isPathExempt(path: string): boolean {
   const exemptPaths = getBlogSettingsBundleSync()?.security?.csrf.exemptPaths ?? []
   return exemptPaths.some((prefix) => path.startsWith(prefix))

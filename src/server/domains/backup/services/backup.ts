@@ -1,4 +1,5 @@
 import { spawn } from 'node:child_process'
+import { Transform } from 'node:stream'
 import { createGzip } from 'node:zlib'
 
 import type { BackupFileDto } from '@/shared/types/backup'
@@ -43,27 +44,33 @@ export async function createBackup(): Promise<{ fileName: string; size: number }
   const gzip = createGzip()
   pgDump.stdout.pipe(gzip)
 
-  const chunks: Buffer[] = []
-  gzip.on('data', (chunk: Buffer) => chunks.push(chunk))
+  let uploadedBytes = 0
+  const counter = new Transform({
+    transform(chunk: Buffer, _encoding, callback) {
+      uploadedBytes += chunk.length
+      callback(null, chunk)
+    },
+  })
+  gzip.pipe(counter)
 
-  await new Promise<void>((resolve, reject) => {
+  const pgDumpDone = new Promise<void>((resolve, reject) => {
     pgDump.on('error', reject)
     pgDump.on('close', (code) => {
       if (code !== 0) {
         reject(new Error(`pg_dump 退出码 ${code}`))
       } else {
         gzip.end()
+        resolve()
       }
     })
-    gzip.on('end', () => resolve())
-    gzip.on('error', reject)
   })
 
-  const buffer = Buffer.concat(chunks)
-  await putS3Object(key, buffer, 'application/gzip')
+  const uploadDone = putS3Object(key, counter, 'application/gzip')
 
-  log.info('Backup completed', { key, size: buffer.length })
-  return { fileName: key.split('/').pop()!, size: buffer.length }
+  await Promise.all([pgDumpDone, uploadDone])
+
+  log.info('Backup completed', { key, size: uploadedBytes })
+  return { fileName: key.split('/').pop()!, size: uploadedBytes }
 }
 
 export async function listBackups(

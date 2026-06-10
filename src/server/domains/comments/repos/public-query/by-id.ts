@@ -16,7 +16,7 @@ export async function countApprovedCommentsByUser(db: NodePgDatabase, userId: bi
 
 export async function recentCommentsForUserDedupe(db: NodePgDatabase, userId: bigint, since: Date, limit: number) {
   return db
-    .select({ content: comment.content })
+    .select({ contentHash: comment.contentHash })
     .from(comment)
     .where(and(eq(comment.userId, userId), gte(comment.createdAt, since)))
     .orderBy(desc(comment.createdAt), desc(comment.id))

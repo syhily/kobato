@@ -53,17 +53,17 @@ export async function createPost(
   }
   const slug = resolveSlug(input.slug, input.title)
   ensureSlugLegal(slug, 'post')
-  const collision = await findPostMetaBySlug(db, slug)
-  if (collision !== null) {
-    throw new DomainError('CONFLICT', `slug "${slug}" 已被其它文章占用。`)
-  }
-  const crossCollision = await findSlugRegistryBySlug(db, slug)
-  if (crossCollision !== null && crossCollision.entityType !== 'post') {
-    throw new DomainError('CONFLICT', `slug "${slug}" 已被其它页面占用。`)
-  }
   const now = new Date()
   try {
     const row = await db.transaction(async (tx) => {
+      const collision = await findPostMetaBySlug(tx, slug)
+      if (collision !== null) {
+        throw new DomainError('CONFLICT', `slug "${slug}" 已被其它文章占用。`)
+      }
+      const crossCollision = await findSlugRegistryBySlug(tx, slug)
+      if (crossCollision !== null && crossCollision.entityType !== 'post') {
+        throw new DomainError('CONFLICT', `slug "${slug}" 已被其它页面占用。`)
+      }
       await ensureTagsExist(tx, input.tags ?? [])
       const [inserted] = await tx
         .insert(postMetaTable)
@@ -112,18 +112,18 @@ export async function updatePostMeta(
   ensureSlugLegal(slug, 'post')
   const existing = await findPostMetaById(db, id)
   assertOwnPostOr404(existing, viewer)
-  if (existing.slug !== slug) {
-    const collision = await findPostMetaBySlug(db, slug)
-    if (collision !== null && collision.id !== id) {
-      throw new DomainError('CONFLICT', `slug "${slug}" 已被其它文章占用。`)
-    }
-    const crossCollision = await findSlugRegistryBySlug(db, slug)
-    if (crossCollision !== null && crossCollision.entityType !== 'post') {
-      throw new DomainError('CONFLICT', `slug "${slug}" 已被其它页面占用。`)
-    }
-  }
   try {
     const updated = await db.transaction(async (tx) => {
+      if (existing.slug !== slug) {
+        const collision = await findPostMetaBySlug(tx, slug)
+        if (collision !== null && collision.id !== id) {
+          throw new DomainError('CONFLICT', `slug "${slug}" 已被其它文章占用。`)
+        }
+        const crossCollision = await findSlugRegistryBySlug(tx, slug)
+        if (crossCollision !== null && crossCollision.entityType !== 'post') {
+          throw new DomainError('CONFLICT', `slug "${slug}" 已被其它页面占用。`)
+        }
+      }
       await ensureTagsExist(tx, input.tags ?? [])
       const [result] = await tx
         .update(postMetaTable)

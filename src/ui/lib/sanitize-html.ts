@@ -38,7 +38,7 @@ function strategyToConfig(strategy: SafeHtmlStrategy): NonNullable<Parameters<ty
       'td',
       'th',
     ],
-    ALLOWED_ATTR: ['class', 'style', 'href', 'title', 'alt', 'target', 'rel', 'data-*'],
+    ALLOWED_ATTR: ['class', 'href', 'title', 'alt', 'target', 'rel', 'data-*'],
     ALLOW_DATA_ATTR: true,
   }
 

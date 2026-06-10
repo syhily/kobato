@@ -29,8 +29,9 @@ export const comment = pgTable(
     isCollapsed: boolean('is_collapsed').default(false),
     isPending: boolean('is_pending').default(false),
     isPinned: boolean('is_pinned').default(false),
-    voteUp: bigint('vote_up', { mode: 'number' }),
-    voteDown: bigint('vote_down', { mode: 'number' }),
+    contentHash: varchar('content_hash', { length: 64 }),
+    voteUp: bigint('vote_up', { mode: 'number' }).notNull().default(0),
+    voteDown: bigint('vote_down', { mode: 'number' }).notNull().default(0),
     rootId: bigint('root_id', { mode: 'bigint' }),
     deleteRequestedAt: timestamp('delete_requested_at', { withTimezone: true, mode: 'date' }),
     deleteRequestedBy: bigint('delete_requested_by', { mode: 'bigint' }),
@@ -43,5 +44,6 @@ export const comment = pgTable(
     index('idx_comment_deleted_at').on(table.deletedAt),
     index('idx_comment_delete_requested_at').on(table.deleteRequestedAt),
     index('idx_comment_thread').on(table.type, table.ownerId, table.rootId),
+    index('idx_comment_content_hash').on(table.contentHash),
   ],
 )

@@ -100,7 +100,7 @@ const envConfig = {
 
     // AES-256-GCM key for encrypting secrets stored in the DB (API keys,
     // S3 credentials). Generate with: openssl rand -hex 32
-    ENCRYPTION_KEY: z.string().min(16),
+    ENCRYPTION_KEY: z.string().min(32),
 
     // Root data directory. All filesystem data (fonts, dead-letter files,
     // MaxMind DB) lives in fixed subdirectories under this path.
@@ -171,5 +171,5 @@ export function isVitest(): boolean {
 
 /** Full `process.env` snapshot (undefined values filtered) for child-process spawning (e.g. pg_dump). */
 export const processEnv: Record<string, string> = Object.fromEntries(
-  Object.entries(process.env).filter(([, v]) => v !== undefined),
-) as Record<string, string>
+  Object.entries(process.env).filter((entry): entry is [string, string] => entry[1] !== undefined),
+)

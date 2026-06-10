@@ -4,11 +4,9 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { BlogSessionData } from '@/server/domains/auth/session-storage'
 import type { Env } from '@/server/http/context'
 
-const mockIsCsrfEnabled = vi.fn().mockReturnValue(true)
 const mockIsPathExempt = vi.fn().mockReturnValue(false)
 
 vi.mock('@/server/domains/auth/csrf', () => ({
-  isCsrfEnabled: () => mockIsCsrfEnabled(),
   isPathExempt: (path: string) => mockIsPathExempt(path),
   validateCsrfToken: (session: { get: (k: string) => string | undefined }, header: string | null) => {
     const token = session.get('csrfToken')
@@ -24,7 +22,6 @@ function makeSession(data: Partial<BlogSessionData> = {}) {
 describe('csrfGuard middleware', () => {
   beforeEach(async () => {
     vi.clearAllMocks()
-    mockIsCsrfEnabled.mockReturnValue(true)
     mockIsPathExempt.mockReturnValue(false)
   })
 
@@ -64,13 +61,6 @@ describe('csrfGuard middleware', () => {
       method: 'POST',
       headers: { 'X-CSRF-Token': 'valid-token' },
     })
-    expect(res.status).toBe(200)
-  })
-
-  it('passes through when CSRF is disabled', async () => {
-    mockIsCsrfEnabled.mockReturnValue(false)
-    const app = await setupApp()
-    const res = await app.request('/rpc/test', { method: 'POST' })
     expect(res.status).toBe(200)
   })
 

@@ -1,6 +1,7 @@
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
 import { sql } from 'drizzle-orm'
+import { createHash } from 'node:crypto'
 
 import type { BlogSession } from '@/server/domains/auth/session-storage'
 import type { MetricTarget } from '@/server/domains/comments/services/shared'
@@ -28,6 +29,10 @@ import { idFromString } from '@/shared/utils/id'
 
 const log = getLogger('comments.loader')
 
+function hashContent(content: string): string {
+  return createHash('sha256').update(content).digest('hex')
+}
+
 // --- Step 1: Validate -------------------------------------------------------
 
 interface ValidatedSubmission {
@@ -35,6 +40,7 @@ interface ValidatedSubmission {
   user: NonNullable<Awaited<ReturnType<typeof insertCommentUser>>>
   canonicalBody: NewComment['body']
   markdownSnapshot: string
+  contentHash: string
   rootId: bigint
 }
 
@@ -79,10 +85,12 @@ async function validateSubmission(
     throw new DomainError('BAD_REQUEST', `评论内容过长，最多 ${MAX_COMMENT_LENGTH} 个字符。`)
   }
 
+  const contentHash = hashContent(markdownSnapshot)
+
   if (u.role !== 'admin') {
     const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
     const recent = await recentCommentsForUserDedupe(db, u.id, since, 20)
-    if (recent.some((c) => c.content === markdownSnapshot)) {
+    if (recent.some((c) => c.contentHash === contentHash)) {
       throw new DomainError('CONFLICT', '重复评论，你已经有了相同的留言，如果在页面看不到，说明它正在等待站长审核。')
     }
   }
@@ -96,7 +104,7 @@ async function validateSubmission(
     rootId = parentRoot !== null && parentRoot !== 0n ? parentRoot : ridBig
   }
 
-  return { target, user: u, canonicalBody, markdownSnapshot, rootId }
+  return { target, user: u, canonicalBody, markdownSnapshot, contentHash, rootId }
 }
 
 // --- Step 2: Persist --------------------------------------------------------
@@ -131,6 +139,7 @@ async function persistComment(
       isCollapsed: false,
       isPending,
       isPinned: false,
+      contentHash: sub.contentHash,
       voteUp: 0,
       voteDown: 0,
       rootId: sub.rootId,
