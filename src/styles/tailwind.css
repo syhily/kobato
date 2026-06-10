@@ -74,6 +74,7 @@
   --radius-lg: 10px;
 
   /* Misc primitives */
+  --editor-accent: rgb(59 130 246);
   --font-code: 'Iosevka', monospace;
   --code-bg: rgb(253, 246, 227);
   --code-inline-fg: #24292e;
@@ -234,6 +235,8 @@
   --line-muted: #374566;
   --line-widget: #5b6b88;
 
+  --editor-accent: rgb(59 130 246);
+
   /* Code dark inversion */
   --code-bg: #1a1f2e;
   --code-inline-fg: #c8ccd6;
@@ -363,6 +366,8 @@
     --line: #475672;
     --line-muted: #374566;
     --line-widget: #5b6b88;
+
+    --editor-accent: rgb(59 130 246);
 
     --code-bg: #1a1f2e;
     --code-inline-fg: #c8ccd6;
@@ -760,6 +765,7 @@
   --color-btn-primary-bg: var(--btn-primary-bg);
   --color-btn-hover-bg: var(--btn-hover-bg);
   --color-btn-hover-fg: var(--btn-hover-fg);
+  --color-editor-accent: var(--editor-accent);
 
   @keyframes comments-shimmer {
     0% {
@@ -1099,9 +1105,9 @@ body {
 
     /* Editor canvas tweaks */
     &.pt-body-editor :where(span[data-math-inline]) {
-      background-color: color-mix(in oklab, rgb(59 130 246) 16%, var(--canvas));
+      background-color: color-mix(in oklab, var(--editor-accent) 16%, var(--canvas));
       color: var(--ink-2);
-      border: 1px solid color-mix(in oklab, rgb(59 130 246) 8%, var(--canvas));
+      border: 1px solid color-mix(in oklab, var(--editor-accent) 8%, var(--canvas));
     }
 
     &.pt-body-editor :where(.react-renderer.node-image) :where(input[data-slot='input']) {

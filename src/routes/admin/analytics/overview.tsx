@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import { useLoaderData } from 'react-router'
 
 function isChartTab(value: string): value is 'views' | 'heatmap' {
   return value === 'views' || value === 'heatmap'
@@ -60,8 +59,8 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   return { counters, views, heatmap, initialMetrics }
 }
 
-export default function WpAdminAnalyticsOverview() {
-  const { counters, views, heatmap, initialMetrics } = useLoaderData<typeof loader>()
+export default function WpAdminAnalyticsOverview({ loaderData }: Route.ComponentProps) {
+  const { counters, views, heatmap, initialMetrics } = loaderData
   const state = useAnalyticsState()
   const [chartTab, setChartTab] = useState<'views' | 'heatmap'>('views')
 

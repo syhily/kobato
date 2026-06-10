@@ -24,6 +24,7 @@ const TEXT_TOKENS = [
 const COLOR_TOKENS = [
   'accent',
   'accent-foreground',
+  'editor-accent',
   'alert',
   'aplayer-bar',
   'aplayer-bar-loaded',

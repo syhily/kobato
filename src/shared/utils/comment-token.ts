@@ -36,9 +36,9 @@ export function parseCommentTokensCookie(cookieHeader: string | null): CommentTo
 export function serializeCommentTokensCookie(payload: CommentTokenCookie): string {
   const value = encodeURIComponent(JSON.stringify(payload))
   const maxAge = 60 * 60 * 24 * 7
-  return `${COMMENT_TOKEN_COOKIE_NAME}=${value}; Path=/; SameSite=Lax; Max-Age=${maxAge}`
+  return `${COMMENT_TOKEN_COOKIE_NAME}=${value}; Path=/; SameSite=Lax; HttpOnly; Secure; Max-Age=${maxAge}`
 }
 
 export function clearCommentTokensCookie(): string {
-  return `${COMMENT_TOKEN_COOKIE_NAME}=; Path=/; SameSite=Lax; Max-Age=0`
+  return `${COMMENT_TOKEN_COOKIE_NAME}=; Path=/; SameSite=Lax; HttpOnly; Secure; Max-Age=0`
 }

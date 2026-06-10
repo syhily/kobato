@@ -183,7 +183,11 @@ export function CommentReplyForm({
             onEmailBlur={onEmailBlur}
           />
           {!admin && <CommentFormHoneypot />}
-          {!!submitError && <div className="mb-2 text-xs text-alert">{submitError}</div>}
+          {!!submitError && (
+            <div className="mb-2 text-xs text-alert" role="alert" aria-live="assertive">
+              {submitError}
+            </div>
+          )}
           <div className="flex justify-end gap-2">
             {replyToId !== 0 && (
               <Button

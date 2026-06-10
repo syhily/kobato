@@ -3,7 +3,12 @@ import { use, type ReactNode } from 'react'
 import type { CommentItemWire as CommentItemType } from '@/shared/types/comments'
 
 import { cn } from '@/ui/lib/cn'
-import { CommentsContext, type CommentsContextValue } from '@/ui/public/comments/comments-context'
+import {
+  CommentsActionsContext,
+  CommentsStateContext,
+  type CommentsActionsContextValue,
+  type CommentsStateContextValue,
+} from '@/ui/public/comments/comments-context'
 
 export interface LeafContext {
   admin: boolean
@@ -24,9 +29,10 @@ function noop() {
 }
 
 export function useCommentsLeafContext(propMode: 'admin' | 'public' | undefined): LeafContext {
-  const ctx = use(CommentsContext)
-  if (ctx !== null) {
-    return adapt(ctx)
+  const state = use(CommentsStateContext)
+  const actions = use(CommentsActionsContext)
+  if (state !== null && actions !== null) {
+    return adapt(state, actions)
   }
   return {
     admin: propMode === 'admin',
@@ -43,19 +49,19 @@ export function useCommentsLeafContext(propMode: 'admin' | 'public' | undefined)
   }
 }
 
-function adapt(ctx: CommentsContextValue): LeafContext {
+function adapt(state: CommentsStateContextValue, actions: CommentsActionsContextValue): LeafContext {
   return {
-    admin: ctx.admin,
-    myCommentIds: ctx.myCommentIds,
-    myCommentExpiresAt: ctx.myCommentExpiresAt,
-    currentUserId: ctx.currentUserId,
-    activeReplyToId: ctx.activeReplyToId,
-    replyForm: ctx.replyForm,
-    onReply: ctx.onReply,
-    onEdited: ctx.onEdited,
-    onApproved: ctx.onApproved,
-    onDeleted: ctx.onDeleted,
-    onDismissMyComment: ctx.onDismissMyComment,
+    admin: state.admin,
+    myCommentIds: state.myCommentIds,
+    myCommentExpiresAt: state.myCommentExpiresAt,
+    currentUserId: state.currentUserId,
+    activeReplyToId: state.activeReplyToId,
+    replyForm: state.replyForm,
+    onReply: actions.onReply,
+    onEdited: actions.onEdited,
+    onApproved: actions.onApproved,
+    onDeleted: actions.onDeleted,
+    onDismissMyComment: actions.onDismissMyComment,
   }
 }
 

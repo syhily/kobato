@@ -8,7 +8,6 @@ import {
   deleteAdminTaxonomy,
   ensureUniqueOnCreateTaxonomy,
   ensureUniqueOnUpdateTaxonomy,
-  resolveSlugForTaxonomy,
 } from '@/server/domains/taxonomies/shared'
 import {
   countPostsByCategory,
@@ -22,6 +21,7 @@ import {
   updateCategory,
 } from '@/server/infra/db/operations/category'
 import { DomainError } from '@/server/infra/http/errors'
+import { resolveSlugForTaxonomy } from '@/server/infra/slug'
 import { idFromString } from '@/shared/utils/id'
 
 export async function upsertAdminCategory(db: NodePgDatabase, input: UpsertCategoryInputs): Promise<AdminCategoryDto> {

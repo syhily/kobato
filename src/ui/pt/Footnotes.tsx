@@ -57,9 +57,9 @@ export function FootnoteProvider({ children }: { children: ReactNode }) {
 
   const value = useMemo(() => ({ previews }), [previews])
   return (
-    <FootnoteRegisterContext.Provider value={register}>
-      <FootnotePreviewContext.Provider value={value}>{children}</FootnotePreviewContext.Provider>
-    </FootnoteRegisterContext.Provider>
+    <FootnoteRegisterContext value={register}>
+      <FootnotePreviewContext value={value}>{children}</FootnotePreviewContext>
+    </FootnoteRegisterContext>
   )
 }
 

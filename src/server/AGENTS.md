@@ -56,9 +56,6 @@ and `audit.ts`.
 
 Domains may import from `shared/`, `infra/`, and other `domains/`.
 `tests/contract.cookie.test.ts` pins `domains/auth/session-storage.ts`.
-`src/server/session.ts` is a deprecated barrel preserved for
-`vi.mock('@/server/session')`; production code imports `domains/auth/*`
-directly.
 
 ## http/
 

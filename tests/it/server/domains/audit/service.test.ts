@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import type { AuditContext } from '@/server/domains/audit/types'
+
 const pushAuditEvent = vi.fn()
 const loggerMock = { error: vi.fn(), warn: vi.fn(), info: vi.fn(), debug: vi.fn() }
 const getLogger = vi.fn(() => loggerMock)
@@ -64,7 +66,7 @@ describe('audit/service', () => {
         request: new Request('http://localhost', {
           headers: { 'User-Agent': 'TestBot/1.0' },
         }),
-      } as unknown as import('@/server/domains/audit/types').AuditContext
+      } as unknown as AuditContext
 
       const result = buildAuditContext(context)
       expect(result).toEqual({
@@ -80,7 +82,7 @@ describe('audit/service', () => {
         viewer: null,
         clientAddress: '192.168.1.1',
         request: new Request('http://localhost'),
-      } as unknown as import('@/server/domains/audit/types').AuditContext
+      } as unknown as AuditContext
 
       const result = buildAuditContext(context)
       expect(result).toEqual({
@@ -100,7 +102,7 @@ describe('audit/service', () => {
         request: new Request('http://localhost', {
           headers: { 'User-Agent': 'Mozilla/5.0' },
         }),
-      } as unknown as import('@/server/domains/audit/types').AuditContext
+      } as unknown as AuditContext
 
       recordAuditEventFromContext(context, {
         action: 'post_published',

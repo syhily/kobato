@@ -138,6 +138,7 @@ export function DateTimePicker({ value, onChange, disabled, id }: DateTimePicker
                   active={currentHour12 === hour}
                   onClick={() => handleHour(hour)}
                   disabled={disabled}
+                  aria-label={`${hour} 时`}
                 >
                   {pad(hour)}
                 </SlotButton>
@@ -150,16 +151,27 @@ export function DateTimePicker({ value, onChange, disabled, id }: DateTimePicker
                   active={currentMinute === minute}
                   onClick={() => handleMinute(minute)}
                   disabled={disabled}
+                  aria-label={`${minute} 分`}
                 >
                   {pad(minute)}
                 </SlotButton>
               ))}
             </ColumnScroller>
             <ColumnScroller>
-              <SlotButton active={currentIsPm === false} onClick={() => handleAmPm('am')} disabled={disabled}>
+              <SlotButton
+                active={currentIsPm === false}
+                onClick={() => handleAmPm('am')}
+                disabled={disabled}
+                aria-label="上午"
+              >
                 上午
               </SlotButton>
-              <SlotButton active={currentIsPm === true} onClick={() => handleAmPm('pm')} disabled={disabled}>
+              <SlotButton
+                active={currentIsPm === true}
+                onClick={() => handleAmPm('pm')}
+                disabled={disabled}
+                aria-label="下午"
+              >
                 下午
               </SlotButton>
             </ColumnScroller>
@@ -175,6 +187,7 @@ function CalendarDropdown({ options, ...selectProps }: DropdownProps) {
     <select
       {...selectProps}
       value={String(selectProps.value ?? '')}
+      aria-label="选择月份或年份"
       className={cn(
         'h-8 w-auto appearance-none rounded-md border border-input bg-background px-2 pr-6 text-sm shadow-sm transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50',
         selectProps.className,
@@ -198,9 +211,10 @@ interface SlotButtonProps {
   onClick: () => void
   disabled?: boolean
   children: React.ReactNode
+  'aria-label'?: string
 }
 
-function SlotButton({ active, onClick, disabled, children }: SlotButtonProps) {
+function SlotButton({ active, onClick, disabled, children, 'aria-label': ariaLabel }: SlotButtonProps) {
   return (
     <Button
       type="button"
@@ -209,6 +223,7 @@ function SlotButton({ active, onClick, disabled, children }: SlotButtonProps) {
       onClick={onClick}
       disabled={disabled}
       className="w-full shrink-0 font-mono"
+      aria-label={ariaLabel}
     >
       {children}
     </Button>

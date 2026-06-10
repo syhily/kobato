@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import { data } from 'react-router'
 
 import type { RouteHandle } from '@/root'
@@ -106,6 +107,15 @@ export function meta({ loaderData, matches }: Route.MetaArgs) {
 
 export default function PostDetailRoute({ loaderData }: Route.ComponentProps) {
   const { post, body, visibleTags, sidebarPosts, tags, detail, imageMeta, draftMarker } = loaderData
+  const headingSlugs = useMemo(() => post.headings.map((h) => h.slug), [post.headings])
+  const sidebar = useMemo(
+    () => ({
+      posts: sidebarPosts,
+      tags,
+      recentComments: detail.recentComments,
+    }),
+    [sidebarPosts, tags, detail.recentComments],
+  )
   return (
     <>
       <PostDetailBody
@@ -118,13 +128,9 @@ export default function PostDetailRoute({ loaderData }: Route.ComponentProps) {
         commentsPromise={detail.comments}
         currentUser={detail.currentUser}
         draftMarker={draftMarker}
-        sidebar={{
-          posts: sidebarPosts,
-          tags,
-          recentComments: detail.recentComments,
-        }}
+        sidebar={sidebar}
       >
-        <PortableTextBody body={body} headingSlugs={post.headings.map((h) => h.slug)} imageMeta={imageMeta} />
+        <PortableTextBody body={body} headingSlugs={headingSlugs} imageMeta={imageMeta} />
       </PostDetailBody>
     </>
   )

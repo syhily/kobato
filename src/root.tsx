@@ -1,7 +1,7 @@
 import '@/shared/zod-config'
 import type { MiddlewareFunction, ShouldRevalidateFunctionArgs } from 'react-router'
 
-import { dehydrate, HydrationBoundary, QueryClientProvider } from '@tanstack/react-query'
+import { QueryClientProvider } from '@tanstack/react-query'
 import { lazy, Suspense, useLayoutEffect, useState } from 'react'
 import { preconnect, prefetchDNS } from 'react-dom'
 import { Links, Meta, Outlet, Scripts, ScrollRestoration, useMatches, useRouteLoaderData } from 'react-router'
@@ -13,6 +13,7 @@ import { useChunkErrorRecovery, useReloadOnChunkError } from '@/client/hooks/use
 import { useFocusHash } from '@/client/hooks/use-focus-hash'
 import { useIosNoZoomOnFocus } from '@/client/hooks/use-ios-no-zoom'
 import { getCspNonceFromContext, getRouteRequestContext } from '@/server/domains/auth/context'
+import { redactSecretsFromBundle } from '@/server/domains/settings/services/core'
 import { bundleFromMatches, routeMeta } from '@/server/render/seo/meta'
 import { getWarmupManifest } from '@/server/render/warmup/manifest'
 import { getBlogSettingsBundleSync } from '@/shared/config/getters'
@@ -74,10 +75,8 @@ export function loader({ request, context }: Route.LoaderArgs) {
   const cookieValue = themeMatch?.[1]
   const theme: 'dark' | 'light' | null = cookieValue === 'dark' ? 'dark' : cookieValue === 'light' ? 'light' : null
 
-  const blogSettings = getBlogSettingsBundleSync()
-
-  const queryClient = makeQueryClient()
-  const dehydratedState = dehydrate(queryClient)
+  const rawBundle = getBlogSettingsBundleSync()
+  const blogSettings = rawBundle ? redactSecretsFromBundle(rawBundle) : null
 
   const warmupManifest = getWarmupManifest()
   const tier1Links = warmupManifest?.tier1 ?? []
@@ -85,7 +84,7 @@ export function loader({ request, context }: Route.LoaderArgs) {
 
   const cspNonce = getCspNonceFromContext({ request, context })
 
-  return { admin, currentUser, blogSettings, theme, csrfToken, dehydratedState, tier1Links, tier2Chunks, cspNonce }
+  return { admin, currentUser, blogSettings, theme, csrfToken, tier1Links, tier2Chunks, cspNonce }
 }
 
 export function shouldRevalidate({ formAction, defaultShouldRevalidate }: ShouldRevalidateFunctionArgs) {
@@ -193,14 +192,12 @@ export default function App({ loaderData }: Route.ComponentProps) {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <HydrationBoundary state={loaderData.dehydratedState}>
-        <ThemeProvider initialResolved={loaderData.theme ?? undefined}>
-          <BlogSettingsProvider value={loaderData.blogSettings ?? undefined}>
-            <NavigationSplash />
-            <Outlet />
-          </BlogSettingsProvider>
-        </ThemeProvider>
-      </HydrationBoundary>
+      <ThemeProvider initialResolved={loaderData.theme ?? undefined}>
+        <BlogSettingsProvider value={loaderData.blogSettings ?? undefined}>
+          <NavigationSplash />
+          <Outlet />
+        </BlogSettingsProvider>
+      </ThemeProvider>
     </QueryClientProvider>
   )
 }

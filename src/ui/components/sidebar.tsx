@@ -86,11 +86,11 @@ function SidebarProvider({
   )
 
   return (
-    <SidebarContext.Provider value={contextValue}>
+    <SidebarContext value={contextValue}>
       <div ref={ref} className={cn('group/sidebar-wrapper relative flex h-full w-full', className)} {...props}>
         {children}
       </div>
-    </SidebarContext.Provider>
+    </SidebarContext>
   )
 }
 
@@ -116,10 +116,7 @@ function Sidebar({
       <Sheet open={openMobile} onOpenChange={setOpenMobile}>
         <SheetContent
           side="left"
-          className={cn(
-            'w-[90vw] max-w-[24rem] border-r-0 bg-sidebar p-0 text-sidebar-foreground',
-            '[&_[data-slot=sheet-close-button]]:hidden',
-          )}
+          className={cn('w-[90vw] max-w-[24rem] border-r-0 bg-sidebar p-0 text-sidebar-foreground')}
           data-mobile="true"
           data-sidebar="sidebar"
         >

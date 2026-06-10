@@ -11,7 +11,6 @@ import {
   deleteAdminTaxonomy,
   ensureUniqueOnCreateTaxonomy,
   ensureUniqueOnUpdateTaxonomy,
-  resolveSlugForTaxonomy,
 } from '@/server/domains/taxonomies/shared'
 import { createRedisCache } from '@/server/infra/cache/redis-cache'
 import {
@@ -30,6 +29,7 @@ import { postTag } from '@/server/infra/db/schema/post-tag'
 import { tag as tagTable } from '@/server/infra/db/schema/taxonomy'
 import { DomainError, ErrorMessages } from '@/server/infra/http/errors'
 import { createInflight } from '@/server/infra/redis/inflight'
+import { resolveSlugForTaxonomy } from '@/server/infra/slug'
 import { hasAtLeast, type Role } from '@/shared/utils/roles'
 
 // Wire-format DTO for every admin tag endpoint. `postCount` is

@@ -1,4 +1,4 @@
-import { useNavigate, useParams } from 'react-router'
+import { useNavigate } from 'react-router'
 
 import { getRouteRequestContext } from '@/server/domains/auth/context'
 import { requireRole } from '@/server/domains/auth/rbac'
@@ -16,8 +16,7 @@ export function meta({ matches }: Route.MetaArgs) {
   return routeMeta({ title: '编辑文章' }, bundleFromMatches(matches))
 }
 
-export default function WpAdminPostEditRoute() {
-  const { id } = useParams()
+export default function WpAdminPostEditRoute({ params }: Route.ComponentProps) {
   const navigate = useNavigate()
-  return <PostEditorRoute postId={id ?? ''} navigate={navigate} />
+  return <PostEditorRoute postId={params.id ?? ''} navigate={navigate} />
 }

@@ -117,7 +117,7 @@ function NavMenuCollapsible({ children, id, paths = [] }: NavMenuCollapsibleProp
   }, [isActive])
 
   const value = useMemo(() => ({ expanded, id, onExpandedChange: setExpanded }), [expanded, id])
-  return <CollapsibleContext.Provider value={value}>{children}</CollapsibleContext.Provider>
+  return <CollapsibleContext value={value}>{children}</CollapsibleContext>
 }
 
 interface NavMenuCollapsibleItemProps {

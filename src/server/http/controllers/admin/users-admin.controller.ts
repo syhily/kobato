@@ -13,6 +13,7 @@ import {
 } from '@/server/domains/users/services/admin'
 import { adminProc } from '@/server/http/orpc-base'
 import { tryInviteByEmailRateLimit, tryInviteRateLimit } from '@/server/infra/rate-limit'
+import { getBlogSettingsBundleSync } from '@/shared/config/getters'
 import { adminUserDto } from '@/shared/contracts/users'
 import { idFromString } from '@/shared/utils/id'
 
@@ -71,7 +72,8 @@ const inviteAuthor = adminProc
       throw new ORPCError('TOO_MANY_REQUESTS', { message: '邀请发送过于频繁，请稍后再试。' })
     }
 
-    const origin = new URL(context.request.url).origin
+    const bundle = getBlogSettingsBundleSync()
+    const origin = bundle?.siteIdentity?.website ?? new URL(context.request.url).origin
     const inviterSession = context.session.get('user')
     const inviterName = inviterSession?.name ?? '管理员'
 
@@ -98,7 +100,11 @@ const sendPasswordReset = adminProc
   .input(z.object({ email: z.email().min(1) }))
   .output(successOutput)
   .handler(async ({ input, context }) => {
-    const user = await sendPasswordResetToUser(context.db, input.email, new URL(context.request.url).origin)
+    const user = await sendPasswordResetToUser(
+      context.db,
+      input.email,
+      getBlogSettingsBundleSync()?.siteIdentity?.website ?? new URL(context.request.url).origin,
+    )
 
     recordAuditEventFromContext(context, {
       action: 'password_reset_sent',

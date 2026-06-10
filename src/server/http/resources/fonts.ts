@@ -6,6 +6,7 @@ import path from 'node:path'
 import type { Env } from '@/server/http/context'
 
 import { recordAuditEvent } from '@/server/domains/audit/services/record'
+import { csrfGuard } from '@/server/http/middlewares/csrf'
 import { requireRoleMw } from '@/server/http/middlewares/hono-rbac'
 import { getLogger } from '@/server/infra/logger'
 import { FONT_DIR } from '@/server/infra/paths'
@@ -34,6 +35,7 @@ function fontContentType(fileName: string): 'font/ttf' | 'font/otf' | null {
 export const fontsRouter = new Hono<Env>().post(
   '/api/admin/fonts/upload',
   requireRoleMw('admin'),
+  csrfGuard,
   bodyLimit({
     maxSize: FONT_MAX_BYTES,
     onError: (c) => c.json({ error: { message: '上传文件过大' } }, 413),

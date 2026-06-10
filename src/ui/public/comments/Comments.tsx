@@ -17,11 +17,12 @@ import { Button } from '@/ui/components/button'
 import { CommentItem } from '@/ui/public/comments/comment-item/CommentItem'
 import { CommentReplyForm } from '@/ui/public/comments/CommentReplyForm'
 import {
-  CommentsContext,
-  type CommentsContextValue,
+  CommentsActionsContext,
+  CommentsStateContext,
   type CommentTreeAction,
   type CommentTreeState,
-  useCommentsContext,
+  useCommentsActions,
+  useCommentsState,
 } from '@/ui/public/comments/comments-context'
 
 export interface CommentsProps {
@@ -300,7 +301,7 @@ function CommentsRoot({ commentKey, initialItems, rootsCount, totalCount, user, 
     [commentKey, activeReplyToId, replyTarget, user, onCancelReply, onReplied],
   )
 
-  const value = useMemo<CommentsContextValue>(
+  const stateValue = useMemo(
     () => ({
       commentKey,
       totalCount,
@@ -311,24 +312,13 @@ function CommentsRoot({ commentKey, initialItems, rootsCount, totalCount, user, 
       myCommentIds,
       myCommentExpiresAt,
       currentUserId: user?.id != null ? String(user.id) : null,
-      onReply,
-      onCancelReply,
-      onEdited,
-      onApproved,
-      onDeleted,
-      onDismissMyComment,
-      dispatch,
       replyForm,
     }),
-    [
-      commentKey,
-      totalCount,
-      admin,
-      user,
-      state,
-      activeReplyToId,
-      myCommentIds,
-      myCommentExpiresAt,
+    [commentKey, totalCount, admin, user, state, activeReplyToId, myCommentIds, myCommentExpiresAt, replyForm],
+  )
+
+  const actionsValue = useMemo(
+    () => ({
       onReply,
       onCancelReply,
       onEdited,
@@ -336,21 +326,23 @@ function CommentsRoot({ commentKey, initialItems, rootsCount, totalCount, user, 
       onDeleted,
       onDismissMyComment,
       dispatch,
-      replyForm,
-    ],
+    }),
+    [onReply, onCancelReply, onEdited, onApproved, onDeleted, onDismissMyComment, dispatch],
   )
 
   return (
-    <CommentsContext.Provider value={value}>
-      <div id="comments" className="pt-12">
-        {children}
-      </div>
-    </CommentsContext.Provider>
+    <CommentsStateContext value={stateValue}>
+      <CommentsActionsContext value={actionsValue}>
+        <div id="comments" className="pt-12">
+          {children}
+        </div>
+      </CommentsActionsContext>
+    </CommentsStateContext>
   )
 }
 
 function CommentsHeader() {
-  const ctx = useCommentsContext('Comments.Header')
+  const ctx = useCommentsState('Comments.Header')
   return (
     <div className="mb-6 text-xl leading-body font-semibold">
       评论 <small className="font-theme text-sm">({ctx.totalCount})</small>
@@ -359,7 +351,7 @@ function CommentsHeader() {
 }
 
 function CommentsReplyFormSlot() {
-  const ctx = useCommentsContext('Comments.ReplyFormSlot')
+  const ctx = useCommentsState('Comments.ReplyFormSlot')
   if (ctx.activeReplyToId !== 0) {
     return null
   }
@@ -367,7 +359,7 @@ function CommentsReplyFormSlot() {
 }
 
 function CommentsList() {
-  const ctx = useCommentsContext('Comments.List')
+  const ctx = useCommentsState('Comments.List')
   return (
     <ul className="comment-list">
       {ctx.state.items.map((item) => (
@@ -378,17 +370,18 @@ function CommentsList() {
 }
 
 function CommentsLoadMore() {
-  const ctx = useCommentsContext('Comments.LoadMore')
+  const state = useCommentsState('Comments.LoadMore')
+  const actions = useCommentsActions('Comments.LoadMore')
   const { comments } = useCommentsSettings()
   const pageSize = comments.size
 
-  const rootsLoadedRef = useRef(ctx.state.rootsLoaded)
-  rootsLoadedRef.current = ctx.state.rootsLoaded
+  const rootsLoadedRef = useRef(state.state.rootsLoaded)
+  rootsLoadedRef.current = state.state.rootsLoaded
 
   const loadMore = useMutation({
     ...orpcQuery.comments.loadComments.mutationOptions(),
     onSuccess: (payload: LoadCommentsOutput) => {
-      ctx.dispatch({
+      actions.dispatch({
         type: 'append',
         items: payload.comments,
         rootsLoaded: rootsLoadedRef.current + payload.comments.length,
@@ -396,7 +389,7 @@ function CommentsLoadMore() {
     },
   })
 
-  if (ctx.state.rootsLoaded >= ctx.state.rootsTotal) {
+  if (state.state.rootsLoaded >= state.state.rootsTotal) {
     return null
   }
 
@@ -406,8 +399,8 @@ function CommentsLoadMore() {
       return
     }
     loadMore.mutate({
-      page_key: ctx.commentKey,
-      offset: ctx.state.rootsLoaded,
+      page_key: state.commentKey,
+      offset: state.state.rootsLoaded,
     } satisfies LoadCommentsInput)
   }
 
@@ -417,9 +410,9 @@ function CommentsLoadMore() {
         variant="light"
         onClick={onLoadMore}
         disabled={moreLoading}
-        data-key={ctx.commentKey}
+        data-key={state.commentKey}
         data-size={pageSize}
-        data-offset={ctx.state.rootsLoaded}
+        data-offset={state.state.rootsLoaded}
       >
         {moreLoading ? '加载中...' : '加载更多'}
       </Button>

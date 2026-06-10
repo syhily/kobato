@@ -1,4 +1,4 @@
-import { data, redirect, useActionData, useNavigation, useRouteLoaderData } from 'react-router'
+import { data, redirect, useNavigation } from 'react-router'
 
 import { getDbFromContext, getPoolFromContext, getRouteRequestContext } from '@/server/domains/auth/context'
 import { validateCsrfForAction } from '@/server/domains/auth/csrf'
@@ -41,6 +41,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   return data({
     pgToolsAvailable: await checkPgToolsAvailable(),
     setupTokenVerified: session.get('setupTokenVerified') === true,
+    csrfToken: session.get('csrfToken'),
   })
 }
 
@@ -151,9 +152,7 @@ export function meta({ matches }: Route.MetaArgs) {
 export default function AdminInstallRoute({ actionData, loaderData }: Route.ComponentProps) {
   const navigation = useNavigation()
   const isSubmitting = navigation.state === 'submitting' && navigation.formMethod === 'POST'
-  const rootData = useRouteLoaderData<{ csrfToken?: string }>('root')
-  const csrfToken = rootData?.csrfToken
-  const verifyActionData = useActionData<{ error?: string; setupTokenVerified?: boolean }>()
+  const csrfToken = loaderData.csrfToken
 
   return (
     <div className="flex flex-col gap-8">
@@ -177,7 +176,7 @@ export default function AdminInstallRoute({ actionData, loaderData }: Route.Comp
       ) : null}
 
       {!loaderData.setupTokenVerified ? (
-        <SetupTokenVerifyForm isSubmitting={isSubmitting} csrfToken={csrfToken} actionData={verifyActionData} />
+        <SetupTokenVerifyForm isSubmitting={isSubmitting} csrfToken={csrfToken} actionData={actionData} />
       ) : (
         <AdminInstallForm pgToolsAvailable={loaderData.pgToolsAvailable} />
       )}

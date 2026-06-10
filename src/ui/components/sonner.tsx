@@ -9,6 +9,8 @@ export function Toaster({ ...props }: ToasterProps) {
     <Sonner
       position="top-center"
       closeButton
+      visibleToasts={5}
+      containerAriaLabel="通知"
       toastOptions={{
         classNames: {
           toast: 'group',

@@ -1,4 +1,4 @@
-import { type ReactNode, createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
+import { type ReactNode, createContext, use, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 interface ScrollSpyContextData {
   updateSection: (id: string, element: HTMLDivElement) => void
@@ -184,11 +184,11 @@ export function ScrollSpyProvider({ children }: { children: ReactNode }) {
     [updateSection, updateNav, currentSection, scrollTo],
   )
 
-  return <ScrollSpyContext.Provider value={value}>{children}</ScrollSpyContext.Provider>
+  return <ScrollSpyContext value={value}>{children}</ScrollSpyContext>
 }
 
 export function useScrollSpyContext() {
-  return useContext(ScrollSpyContext)
+  return use(ScrollSpyContext)
 }
 
 export function useScrollSpy(id?: string) {

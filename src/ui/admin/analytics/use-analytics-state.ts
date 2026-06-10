@@ -147,5 +147,8 @@ export function useAnalyticsState(): AnalyticsState {
 
   const clearAllFilters = useCallback(() => writeFilters({}), [writeFilters])
 
-  return { preset, range, filters, setPreset, setRange, setFilter, clearFilter, clearAllFilters }
+  return useMemo(
+    () => ({ preset, range, filters, setPreset, setRange, setFilter, clearFilter, clearAllFilters }),
+    [preset, range, filters, setPreset, setRange, setFilter, clearFilter, clearAllFilters],
+  )
 }

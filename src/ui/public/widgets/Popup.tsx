@@ -72,6 +72,7 @@ export function Popup({
 }: PopupProps) {
   const [entered, setEntered] = useState(false)
   const dialogRef = useRef<HTMLDivElement | null>(null)
+  const portalRef = useRef<HTMLDivElement | null>(null)
   const previouslyFocusedRef = useRef<HTMLElement | null>(null)
 
   useEffect(() => {
@@ -131,9 +132,22 @@ export function Popup({
     }
 
     document.addEventListener('keydown', onKeyDown)
+
+    const portal = portalRef.current
+    const inerted: Element[] = []
+    if (portal) {
+      Array.from(document.body.children).forEach((child) => {
+        if (child !== portal) {
+          child.setAttribute('inert', '')
+          inerted.push(child)
+        }
+      })
+    }
+
     return () => {
       document.removeEventListener('keydown', onKeyDown)
       window.cancelAnimationFrame(raf)
+      inerted.forEach((child) => child.removeAttribute('inert'))
       previouslyFocusedRef.current?.focus({ preventScroll: true })
     }
   }, [open, onClose])
@@ -144,6 +158,7 @@ export function Popup({
 
   return createPortal(
     <div
+      ref={portalRef}
       data-popup-id={popupId}
       className={cn(
         'fixed inset-0 z-1500 flex items-center justify-center overflow-x-hidden overflow-y-auto',

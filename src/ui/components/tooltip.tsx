@@ -25,7 +25,7 @@ const ARROW_CLASS =
 
 const PlacementContext = createContext<TooltipPlacement>('top')
 
-function TooltipProvider({ delay = 0, ...props }: ComponentProps<typeof BaseTooltip.Provider>) {
+function TooltipProvider({ delay = 150, ...props }: ComponentProps<typeof BaseTooltip.Provider>) {
   return <BaseTooltip.Provider data-slot="tooltip-provider" delay={delay} {...props} />
 }
 
@@ -36,24 +36,33 @@ export interface TooltipRootProps {
 
 function TooltipRoot({ children, placement = 'top' }: TooltipRootProps) {
   return (
-    <TooltipProvider delay={0}>
+    <TooltipProvider delay={150}>
       <BaseTooltip.Root>
-        <PlacementContext.Provider value={placement}>{children}</PlacementContext.Provider>
+        <PlacementContext value={placement}>{children}</PlacementContext>
       </BaseTooltip.Root>
     </TooltipProvider>
   )
 }
 
 export interface TooltipTriggerProps extends React.ButtonHTMLAttributes<HTMLElement> {
-  /** Element type to render. Defaults to `<span>` since tooltips usually wrap inline content. */
+  /** Element type to render. Defaults to `<button type="button">`. */
   as?: keyof React.JSX.IntrinsicElements
   children: ReactNode
   closeOnClick?: boolean
 }
 
-function TooltipTrigger({ as = 'span', children, closeOnClick, ...rest }: TooltipTriggerProps) {
+function TooltipTrigger({ as = 'button', type = 'button', children, closeOnClick, ...rest }: TooltipTriggerProps) {
   const Comp = as as React.ElementType
-  return <BaseTooltip.Trigger closeOnClick={closeOnClick} render={<Comp {...rest}>{children}</Comp>} />
+  return (
+    <BaseTooltip.Trigger
+      closeOnClick={closeOnClick}
+      render={
+        <Comp type={as === 'button' ? type : undefined} {...rest}>
+          {children}
+        </Comp>
+      }
+    />
+  )
 }
 
 export interface TooltipContentProps {

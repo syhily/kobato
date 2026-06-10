@@ -50,6 +50,17 @@ export async function feedResponse(
   return new Response(body, { headers: feedHeaders(kind) })
 }
 
+// Minimal server-side HTML sanitizer for feed output. Strips script tags,
+// event handler attributes, and javascript: URLs since feed HTML is served
+// to external aggregators without additional filtering.
+function sanitizeFeedHtml(html: string): string {
+  return html
+    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+    .replace(/\s+on\w+\s*=\s*(?:"[^"]*"|'[^']*'|`[^`]*`|[^\s>]*)/gi, '')
+    .replace(/(href|src|action)\s*=\s*"\s*javascript:[^"]*"/gi, '$1="#"')
+    .replace(/(href|src|action)\s*=\s*'\s*javascript:[^']*'/gi, "$1='#'")
+}
+
 async function renderEntryContent(db: NodePgDatabase, entry: Post | Page): Promise<string> {
   // Feed items ship as HTML (RSS/Atom can't carry a React tree). We prerender
   // the body but skip the image-enhancement pipeline: feed readers don't
@@ -58,12 +69,13 @@ async function renderEntryContent(db: NodePgDatabase, entry: Post | Page): Promi
   // `rssMode` degrades interactive blocks (musicPlayer, etc.) to static HTML
   // so feed readers without JavaScript still get meaningful content.
   // Both pages and posts now live in Postgres and carry a PortableText body.
-  return renderPortableTextToHtml(
+  const html = await renderPortableTextToHtml(
     db,
     entry.body,
     entry.headings.map((h) => h.slug),
     { rssMode: true },
   )
+  return sanitizeFeedHtml(html)
 }
 
 export async function generateFeeds(db: NodePgDatabase, options: FeedOptions = {}) {

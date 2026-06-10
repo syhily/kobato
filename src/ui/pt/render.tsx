@@ -98,20 +98,20 @@ export function PortableTextBody({
 
   return (
     <ImageMetaProvider value={imageMeta}>
-      <MusicPresentationContext.Provider value={musicPresentation}>
+      <MusicPresentationContext value={musicPresentation}>
         <FootnoteProvider>
-          <FootnoteRefContext.Provider value={footnoteCtx}>
-            <HeadingIdByBlockKeyContext.Provider value={headingIdByBlockKey}>
+          <FootnoteRefContext value={footnoteCtx}>
+            <HeadingIdByBlockKeyContext value={headingIdByBlockKey}>
               <div className="portable-text-body">
                 <PortableText value={inlineBody as PortableTextBlock[]} components={portableTextComponents} />
                 {footnotes.length > 0 ? (
                   <FootnotesSection definitions={footnotes} sectionTitle={resolvedFootnotesHeading} />
                 ) : null}
               </div>
-            </HeadingIdByBlockKeyContext.Provider>
-          </FootnoteRefContext.Provider>
+            </HeadingIdByBlockKeyContext>
+          </FootnoteRefContext>
         </FootnoteProvider>
-      </MusicPresentationContext.Provider>
+      </MusicPresentationContext>
     </ImageMetaProvider>
   )
 }

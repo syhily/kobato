@@ -13,7 +13,6 @@ import {
   type UpsertPostMetaInput,
   type ViewerContext,
 } from '@/server/domains/posts/services/shared'
-import { resolveSlugForTaxonomy } from '@/server/domains/taxonomies/shared'
 import { findTagNamesByPostId, setPostTags } from '@/server/infra/db/operations/post-tag'
 import {
   deleteSlugRegistryByEntity,
@@ -26,6 +25,7 @@ import { post as postMetaTable } from '@/server/infra/db/schema/post'
 import { DomainError, isUniqueConstraintError } from '@/server/infra/http/errors'
 import { getLogger } from '@/server/infra/logger'
 import { invalidateSearchCache } from '@/server/infra/search/search'
+import { resolveSlugForTaxonomy } from '@/server/infra/slug'
 import { ensureSlugLegal, resolveSlug } from '@/server/infra/slug-validation'
 import { portableTextBodySchema } from '@/shared/pt/schema'
 import { idFromString } from '@/shared/utils/id'

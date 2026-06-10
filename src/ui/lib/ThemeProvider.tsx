@@ -83,7 +83,7 @@ export function ThemeProvider({ children, initialResolved = 'light' }: ThemeProv
 
   const value = useMemo(() => ({ theme, setTheme, resolvedTheme }), [theme, setTheme, resolvedTheme])
 
-  return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>
+  return <ThemeContext value={value}>{children}</ThemeContext>
 }
 
 export function useTheme(): ThemeContextType {

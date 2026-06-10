@@ -1,3 +1,5 @@
+import { useMemo } from 'react'
+
 import type { Friend } from '@/shared/types/catalog'
 
 import { shuffle } from '@/shared/utils/tools'
@@ -8,9 +10,9 @@ export interface FriendsProps {
 }
 
 export function Friends({ friends }: FriendsProps) {
-  const list = shuffle(
-    [...friends],
-    `friends:${friends.map((friend) => `${friend.website}:${friend.homepage}`).join('|')}`,
+  const list = useMemo(
+    () => shuffle([...friends], `friends:${friends.map((friend) => `${friend.website}:${friend.homepage}`).join('|')}`),
+    [friends],
   )
 
   if (list.length === 0) {

@@ -1,10 +1,15 @@
 import { isRouteErrorResponse, Outlet, useOutletContext, useRouteError } from 'react-router'
 
+import type { SecretMasks } from '@/server/domains/settings/services/core'
 import type { BlogSettingsBundle } from '@/shared/config/types'
 
 import { getDbFromContext } from '@/server/domains/auth/context'
 import { SECTION_REGISTRY } from '@/server/domains/settings/sections/registry'
-import { getAdminBlogSettings } from '@/server/domains/settings/services/core'
+import {
+  computeSecretMasks,
+  getAdminBlogSettings,
+  redactSecretsFromBundle,
+} from '@/server/domains/settings/services/core'
 import { getSupportedTimeZones } from '@/server/domains/settings/timezones'
 import { upsertSetting } from '@/server/infra/db/operations/setting'
 import { SECTION_TO_BUNDLE_KEY, SETTINGS_SECTIONS } from '@/shared/config/sections'
@@ -36,6 +41,8 @@ export interface SettingsOutletContext extends ParentContext {
    *
    * Every bucket is non-null: the layout loader enforces the invariant
    * before it forwards the bundle to children.
+   *
+   * Secrets are redacted (empty strings) — use `masks` for UI hints.
    */
   bundle: SettingsBundle
   /**
@@ -45,6 +52,11 @@ export interface SettingsOutletContext extends ParentContext {
    * we pay the `Intl.supportedValuesOf` cost once per process.
    */
   timeZones: readonly string[]
+  /**
+   * Pre-computed secret masks so the admin UI can show "…last4" hints
+   * without receiving the actual plaintext keys.
+   */
+  masks: SecretMasks
 }
 
 // Single loader read shared by every section route below the shell. The
@@ -104,9 +116,13 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   }
 
   assertSettingsBundle(mutable)
+  const masks = computeSecretMasks(mutable as BlogSettingsBundle)
+  /* oxlint-disable-next-line typescript/no-unsafe-type-assertion */
+  const redacted = redactSecretsFromBundle(mutable as BlogSettingsBundle) as SettingsBundle
   return {
-    bundle: mutable,
+    bundle: redacted,
     timeZones: getSupportedTimeZones(),
+    masks,
   }
 }
 
@@ -138,6 +154,7 @@ export default function AdminSettingsLayoutRoute({ loaderData }: Route.Component
     ...parent,
     bundle: loaderData.bundle,
     timeZones: loaderData.timeZones,
+    masks: loaderData.masks,
   }
   return <Outlet context={context} />
 }

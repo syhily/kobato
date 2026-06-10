@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link, useLoaderData } from 'react-router'
+import { Link } from 'react-router'
 
 function isChartTab(value: string): value is 'views' | 'heatmap' {
   return value === 'views' || value === 'heatmap'
@@ -64,8 +64,8 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
   return { post, counters, views, heatmap, initialMetrics }
 }
 
-export default function PostAnalyticsPage() {
-  const { post, counters, views, heatmap, initialMetrics } = useLoaderData<typeof loader>()
+export default function PostAnalyticsPage({ loaderData }: Route.ComponentProps) {
+  const { post, counters, views, heatmap, initialMetrics } = loaderData
   const state = useAnalyticsState()
   const [chartTab, setChartTab] = useState<'views' | 'heatmap'>('views')
 

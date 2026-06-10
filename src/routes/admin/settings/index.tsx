@@ -2,6 +2,7 @@ import { Children, useCallback, useEffect, useSyncExternalStore } from 'react'
 import { useNavigate, useOutletContext } from 'react-router'
 
 import type { SettingsOutletContext } from '@/routes/admin/settings/layout'
+import type { SecretMasks } from '@/server/domains/settings/services/core'
 
 import { getRouteRequestContext } from '@/server/domains/auth/context'
 import { requireRole } from '@/server/domains/auth/rbac'
@@ -45,7 +46,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
 
 const SECTION_CONFIGS: {
   id: keyof typeof SECTION_DISPLAY
-  render: (bundle: SettingsOutletContext['bundle'], tz: readonly string[]) => React.ReactNode
+  render: (bundle: SettingsOutletContext['bundle'], tz: readonly string[], masks: SecretMasks) => React.ReactNode
 }[] = [
   {
     id: 'general',
@@ -53,7 +54,9 @@ const SECTION_CONFIGS: {
   },
   {
     id: 'assets',
-    render: (bundle) => <AssetsForm assets={projectAssetsForAdmin(bundle.assets)} />,
+    render: (bundle, _tz, masks) => (
+      <AssetsForm assets={projectAssetsForAdmin(bundle.assets, masks.assetsSecretAccessKeyMask)} />
+    ),
   },
   {
     id: 'fonts',
@@ -85,20 +88,22 @@ const SECTION_CONFIGS: {
   },
   {
     id: 'mail',
-    render: (bundle) => (
+    render: (bundle, _tz, masks) => (
       <MailForm
         mail={{
           enabled: bundle.mail.mail.enabled,
           host: bundle.mail.mail.host,
           sender: bundle.mail.mail.sender,
-          apiKeyMask: bundle.mail.mail.apiKey === '' ? null : bundle.mail.mail.apiKey.slice(-4),
+          apiKeyMask: masks.mailApiKeyMask,
         }}
       />
     ),
   },
   {
     id: 'search',
-    render: (bundle) => <SearchForm search={projectSearchForAdmin(bundle.search)} />,
+    render: (bundle, _tz, masks) => (
+      <SearchForm search={projectSearchForAdmin(bundle.search, masks.searchApiKeyMask)} />
+    ),
   },
   {
     id: 'cache',
@@ -201,7 +206,7 @@ function SettingsGroup({ title, children }: SettingsGroupProps) {
 
 function SettingsPageInner() {
   const navigate = useNavigate()
-  const { bundle, timeZones } = useOutletContext<SettingsOutletContext>()
+  const { bundle, timeZones, masks } = useOutletContext<SettingsOutletContext>()
   const settings = bundle
   const tz = timeZones
   const { checkVisible, filter } = useSettingsSearchContext()
@@ -295,7 +300,7 @@ function SettingsPageInner() {
                       title={SECTION_DISPLAY[s.id].label}
                       icon={SECTION_DISPLAY[s.id].icon}
                     >
-                      {s.render(settings, tz)}
+                      {s.render(settings, tz, masks)}
                     </SectionWrapper>
                   ) : null,
                 )}

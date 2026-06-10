@@ -1,3 +1,5 @@
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
+
 import { RouterContextProvider } from 'react-router'
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -49,7 +51,7 @@ function makeDbPage(overrides: Record<string, unknown> = {}) {
   }
 }
 
-const mockDb = {} as import('drizzle-orm/node-postgres').NodePgDatabase
+const mockDb = {} as NodePgDatabase
 
 const mocks = vi.hoisted(() => ({
   findPublicPostMetaBySlug: vi.fn(async (): Promise<unknown> => null),

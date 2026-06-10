@@ -6,7 +6,7 @@ import { CheckIcon, ChevronDownIcon, ChevronUpIcon } from 'lucide-react'
 import { cn } from '@/ui/lib/cn'
 
 function Select<Value>(props: ComponentProps<typeof BaseSelect.Root<Value>>) {
-  return <BaseSelect.Root data-slot="select" {...props} />
+  return <BaseSelect.Root data-slot="select" highlightItemOnHover {...props} />
 }
 
 function SelectGroup({ ...props }: ComponentProps<typeof BaseSelect.Group>) {

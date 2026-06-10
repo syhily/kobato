@@ -189,6 +189,8 @@ export function LikeButton({ permalink, commentKey, likes: initialLikes }: LikeB
           'data-[liked=true]:border-like-active data-[liked=true]:bg-like-active data-[liked=true]:text-white data-[liked=true]:shadow-like-active',
         )}
         title="Do you like me?"
+        aria-pressed={state.liked}
+        aria-label={state.liked ? '取消点赞' : '点赞'}
         data-permalink={permalink}
         data-liked={state.liked ? 'true' : 'false'}
         onClick={onClick}

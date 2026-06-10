@@ -112,7 +112,7 @@ export function AdminShell({ currentUser, siteTitle, pendingCommentCount, userCo
 
   return (
     <MusicPlayerProvider>
-      <AdminChromeContext.Provider value={chromeValue}>
+      <AdminChromeContext value={chromeValue}>
         <div className="flex h-dvh flex-col overflow-hidden bg-background text-foreground">
           <a
             href="#admin-main-content"
@@ -147,7 +147,7 @@ export function AdminShell({ currentUser, siteTitle, pendingCommentCount, userCo
           />
           <Toaster />
         </div>
-      </AdminChromeContext.Provider>
+      </AdminChromeContext>
     </MusicPlayerProvider>
   )
 }

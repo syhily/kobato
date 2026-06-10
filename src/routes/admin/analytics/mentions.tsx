@@ -1,5 +1,3 @@
-import { useLoaderData } from 'react-router'
-
 import { queryMetric } from '@/server/domains/analytics/services/metric'
 import { parseAnalyticsSearch } from '@/server/domains/analytics/services/query-parser'
 import { getDbFromContext, getRouteRequestContext } from '@/server/domains/auth/context'
@@ -23,8 +21,8 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   return { referers }
 }
 
-export default function MentionsPage() {
-  const { referers } = useLoaderData<typeof loader>()
+export default function MentionsPage({ loaderData }: Route.ComponentProps) {
+  const { referers } = loaderData
   const state = useAnalyticsState()
 
   return (

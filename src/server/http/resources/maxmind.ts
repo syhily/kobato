@@ -8,6 +8,7 @@ import type { Env } from '@/server/http/context'
 
 import { resetGeoReader } from '@/server/domains/analytics/geoip'
 import { recordAuditEvent } from '@/server/domains/audit/services/record'
+import { csrfGuard } from '@/server/http/middlewares/csrf'
 import { requireRoleMw } from '@/server/http/middlewares/hono-rbac'
 import { getLogger } from '@/server/infra/logger'
 import { MAXMIND_DB_PATH } from '@/server/infra/paths'
@@ -19,6 +20,7 @@ const MAXMIND_MAX_BYTES = 100 * 1024 * 1024 // 100 MiB
 export const maxmindRouter = new Hono<Env>().post(
   '/api/admin/maxmind/upload',
   requireRoleMw('admin'),
+  csrfGuard,
   bodyLimit({
     maxSize: MAXMIND_MAX_BYTES,
     onError: (c) => c.json({ error: { message: '上传文件过大' } }, 413),

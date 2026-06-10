@@ -70,6 +70,36 @@ export function AdminSearchDialog({ open, onOpenChange }: AdminSearchDialogProps
         showCloseButton={false}
         // top-[12vh] positions the dialog 12% from the viewport top — no design-token equivalent for vh units.
         className="top-[12vh] -translate-y-0 overflow-hidden rounded-xl border-0 p-0 shadow-2xl sm:max-w-[var(--container-popup-md)]"
+        onKeyDown={(event) => {
+          if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp' && event.key !== 'Enter') {
+            return
+          }
+          const items = event.currentTarget.querySelectorAll<HTMLButtonElement>('[role="option"]')
+          if (!items.length) {
+            return
+          }
+
+          const active = document.activeElement
+          let idx = active instanceof HTMLButtonElement ? Array.from(items).indexOf(active) : -1
+
+          if (event.key === 'Enter') {
+            if (idx >= 0 && active !== inputRef.current) {
+              event.preventDefault()
+              items[idx].click()
+            }
+            return
+          }
+
+          if (event.key === 'ArrowDown') {
+            event.preventDefault()
+            idx = idx < items.length - 1 ? idx + 1 : 0
+          } else if (event.key === 'ArrowUp') {
+            event.preventDefault()
+            idx = idx > 0 ? idx - 1 : items.length - 1
+          }
+
+          items[idx]?.focus()
+        }}
       >
         <DialogTitle className="sr-only">全站搜索</DialogTitle>
 
@@ -98,43 +128,49 @@ export function AdminSearchDialog({ open, onOpenChange }: AdminSearchDialogProps
         {hasQuery && <div className="h-px bg-border" />}
 
         {/* Results */}
-        <section className="max-h-empty-state overflow-y-auto overscroll-contain" aria-live="polite">
+        <div className="max-h-empty-state overflow-y-auto overscroll-contain">
           {!hasQuery && (
-            <div className="px-5 pt-2 pb-5 text-center text-sm text-muted-foreground">输入关键词搜索文章或页面</div>
+            <div className="px-5 pt-2 pb-5 text-center text-sm text-muted-foreground" role="status">
+              输入关键词搜索文章或页面
+            </div>
           )}
 
           {hasQuery && !hasResults && !isSearching && (
-            <div className="px-5 py-10 text-center text-sm text-muted-foreground">
+            <div className="px-5 py-10 text-center text-sm text-muted-foreground" role="status">
               未找到「{debouncedQuery}」相关的结果
             </div>
           )}
 
-          {posts.length > 0 && (
-            <SearchGroup label="文章" icon={NotebookPenIcon}>
-              {posts.map((post) => (
-                <SearchResultItem
-                  key={post.id}
-                  title={post.title || post.slug}
-                  published={post.published}
-                  onClick={() => handleSelect('post', post.id)}
-                />
-              ))}
-            </SearchGroup>
-          )}
+          {hasResults && (
+            <div role="listbox" aria-label="搜索结果">
+              {posts.length > 0 && (
+                <SearchGroup label="文章" icon={NotebookPenIcon}>
+                  {posts.map((post) => (
+                    <SearchResultItem
+                      key={post.id}
+                      title={post.title || post.slug}
+                      published={post.published}
+                      onClick={() => handleSelect('post', post.id)}
+                    />
+                  ))}
+                </SearchGroup>
+              )}
 
-          {pages.length > 0 && (
-            <SearchGroup label="页面" icon={FileTextIcon}>
-              {pages.map((page) => (
-                <SearchResultItem
-                  key={page.id}
-                  title={page.title || page.slug}
-                  published={page.published}
-                  onClick={() => handleSelect('page', page.id)}
-                />
-              ))}
-            </SearchGroup>
+              {pages.length > 0 && (
+                <SearchGroup label="页面" icon={FileTextIcon}>
+                  {pages.map((page) => (
+                    <SearchResultItem
+                      key={page.id}
+                      title={page.title || page.slug}
+                      published={page.published}
+                      onClick={() => handleSelect('page', page.id)}
+                    />
+                  ))}
+                </SearchGroup>
+              )}
+            </div>
           )}
-        </section>
+        </div>
       </DialogContent>
     </Dialog>
   )
@@ -154,7 +190,7 @@ function SearchGroup({
   children: ReactNode
 }) {
   return (
-    <div className="pt-2">
+    <div className="pt-2" role="group" aria-label={label}>
       <div className="flex items-center gap-2 px-5 pb-1 text-xs font-semibold tracking-wide text-muted-foreground/70 uppercase">
         <Icon className="size-3.5" />
         {label}
@@ -176,6 +212,8 @@ const SearchResultItem = memo(function SearchResultItem({
   return (
     <button
       type="button"
+      role="option"
+      aria-selected={false}
       className={cn(
         'flex items-center justify-between gap-3 rounded-xl px-2 py-2.5 text-left text-sm transition-colors',
         'hover:bg-accent hover:text-accent-foreground',

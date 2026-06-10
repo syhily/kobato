@@ -4,6 +4,11 @@ import { Switch as BaseSwitch } from '@base-ui/react/switch'
 
 import { cn } from '@/ui/lib/cn'
 
+/**
+ * Base UI Switch wrapper. When used inside native forms, ensure you pass
+ * `uncheckedValue` (or control the value via RHF Controller) so the unchecked
+ * state is submitted correctly.
+ */
 function Switch({ className, ...props }: ComponentProps<typeof BaseSwitch.Root>) {
   return (
     <BaseSwitch.Root

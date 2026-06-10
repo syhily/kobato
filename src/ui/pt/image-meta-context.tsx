@@ -11,7 +11,7 @@ export type ImageMetaMap = Record<string, ResolvedImageMeta>
 const ImageMetaContext = createContext<ImageMetaMap | undefined>(undefined)
 
 export function ImageMetaProvider({ children, value }: { children: ReactNode; value?: ImageMetaMap }) {
-  return <ImageMetaContext.Provider value={value}>{children}</ImageMetaContext.Provider>
+  return <ImageMetaContext value={value}>{children}</ImageMetaContext>
 }
 
 export function useImageMeta(): ImageMetaMap | undefined {

@@ -66,36 +66,39 @@ function statusOf(ref: RawBrandingRef | undefined | null): BrandingSlotStatus {
   return { etag: typeof ref?.etag === 'string' ? ref.etag : '' }
 }
 
-export function projectAssetsForAdmin(assets: {
-  asset: { host: string; scheme: 'http' | 'https' }
-  storage: {
-    enabled?: boolean
-    endpoint?: string
-    region?: string
-    bucket?: string
-    accessKeyId?: string
-    secretAccessKey?: string
-    forcePathStyle?: boolean
-    urlTemplate?: string
-  }
-  upload: { maxBytes?: number; jpegQuality?: number }
-  branding?: {
-    faviconSvg?: RawBrandingRef
-    faviconIco?: RawBrandingRef
-    appleTouchIcon?: RawBrandingRef
-    icon192?: RawBrandingRef
-    icon512?: RawBrandingRef
-    logoSvg?: RawBrandingRef
-    logoDarkSvg?: RawBrandingRef
-    logoLargeSvg?: RawBrandingRef
-    logoLargeDarkSvg?: RawBrandingRef
-    openGraph?: RawBrandingRef
-    blogPoster?: RawBrandingRef
-    blogPosterDark?: RawBrandingRef
-    defaultAvatar?: RawBrandingRef
-    robotsTxt?: string
-  }
-}): AssetsLoaderShape {
+export function projectAssetsForAdmin(
+  assets: {
+    asset: { host: string; scheme: 'http' | 'https' }
+    storage: {
+      enabled?: boolean
+      endpoint?: string
+      region?: string
+      bucket?: string
+      accessKeyId?: string
+      secretAccessKey?: string
+      forcePathStyle?: boolean
+      urlTemplate?: string
+    }
+    upload: { maxBytes?: number; jpegQuality?: number }
+    branding?: {
+      faviconSvg?: RawBrandingRef
+      faviconIco?: RawBrandingRef
+      appleTouchIcon?: RawBrandingRef
+      icon192?: RawBrandingRef
+      icon512?: RawBrandingRef
+      logoSvg?: RawBrandingRef
+      logoDarkSvg?: RawBrandingRef
+      logoLargeSvg?: RawBrandingRef
+      logoLargeDarkSvg?: RawBrandingRef
+      openGraph?: RawBrandingRef
+      blogPoster?: RawBrandingRef
+      blogPosterDark?: RawBrandingRef
+      defaultAvatar?: RawBrandingRef
+      robotsTxt?: string
+    }
+  },
+  secretAccessKeyMask?: string | null,
+): AssetsLoaderShape {
   const secretAccessKey = typeof assets.storage.secretAccessKey === 'string' ? assets.storage.secretAccessKey : ''
   const b = assets.branding ?? {}
   return {
@@ -109,7 +112,7 @@ export function projectAssetsForAdmin(assets: {
       forcePathStyle: assets.storage.forcePathStyle === true,
       urlTemplate: assets.storage.urlTemplate ?? '',
     },
-    secretAccessKeyMask: secretAccessKey === '' ? null : secretAccessKey.slice(-4),
+    secretAccessKeyMask: secretAccessKeyMask ?? (secretAccessKey === '' ? null : secretAccessKey.slice(-4)),
     upload: {
       maxBytes: assets.upload.maxBytes ?? 8 * 1024 * 1024,
       jpegQuality: assets.upload.jpegQuality ?? 82,
@@ -150,6 +153,7 @@ export function projectSearchForAdmin(
         }
       }
     | undefined,
+  apiKeyMask?: string | null,
 ): SearchLoaderShape {
   const s = search ?? {
     search: {
@@ -171,6 +175,6 @@ export function projectSearchForAdmin(
       model: s.search.model ?? 'text-embedding-3-small',
       similarityThreshold: s.search.similarityThreshold ?? 0.5,
     },
-    apiKeyMask: apiKey === '' ? null : apiKey.slice(-4),
+    apiKeyMask: apiKeyMask ?? (apiKey === '' ? null : apiKey.slice(-4)),
   }
 }

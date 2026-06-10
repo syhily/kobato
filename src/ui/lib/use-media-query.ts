@@ -1,26 +1,17 @@
-import { useEffect, useState } from 'react'
+import { useSyncExternalStore } from 'react'
 
 /**
- * Reactive `window.matchMedia` boolean. Initial value is synchronous
- * (client: `window.matchMedia`, server: `defaultMatch`) to avoid
- * post-hydration flashes and portal-based dialog glitches.
+ * Reactive `window.matchMedia` boolean. Uses `useSyncExternalStore`
+ * with a server snapshot to avoid hydration mismatches.
  */
 export function useMediaQuery(query: string, defaultMatch = false): boolean {
-  const [matches, setMatches] = useState(() => {
-    if (typeof window === 'undefined') {
-      return defaultMatch
-    }
-    return window.matchMedia(query).matches
-  })
-  useEffect(() => {
-    const mql = window.matchMedia(query)
-    // Re-sync in case the resolved match changed between the lazy
-    // initial read and the effect (rare — but possible if `query`
-    // changed across renders).
-    setMatches(mql.matches)
-    const update = (event: MediaQueryListEvent) => setMatches(event.matches)
-    mql.addEventListener('change', update)
-    return () => mql.removeEventListener('change', update)
-  }, [query])
-  return matches
+  return useSyncExternalStore(
+    (cb) => {
+      const mql = window.matchMedia(query)
+      mql.addEventListener('change', cb)
+      return () => mql.removeEventListener('change', cb)
+    },
+    () => window.matchMedia(query).matches,
+    () => defaultMatch,
+  )
 }

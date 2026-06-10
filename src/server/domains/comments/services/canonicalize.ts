@@ -47,6 +47,10 @@ export async function canonicalizeCommentBody(input: unknown): Promise<{ body: C
     throw new DomainError('BAD_REQUEST', `评论中链接过多（最多 ${COMMENT_MAX_HTTP_URLS} 个）。`)
   }
 
+  // Strip any client-supplied pre-rendered fields to prevent stored XSS.
+  // The server will re-generate these from tex/code after this call.
+  stripClientRenderedFields(parsed)
+
   const body = await prerenderPortableTextBody(parsed)
   const revalidated = commentBodySchema.safeParse(body)
   if (!revalidated.success) {
@@ -54,6 +58,26 @@ export async function canonicalizeCommentBody(input: unknown): Promise<{ body: C
   }
   const content = commentBodyToMarkdown(revalidated.data)
   return { body: revalidated.data, content }
+}
+
+function stripClientRenderedFields(body: CommentBody): void {
+  for (const block of body) {
+    if (block._type === 'code') {
+      block.highlightedHtml = undefined
+    }
+    if (block._type === 'mathBlock') {
+      block.mathml = undefined
+      block.svg = undefined
+    }
+    if (block._type === 'block' && Array.isArray(block.markDefs)) {
+      for (const def of block.markDefs) {
+        if (def._type === 'mathInline') {
+          def.mathml = undefined
+          def.svg = undefined
+        }
+      }
+    }
+  }
 }
 
 function countLinks(body: CommentBody): number {

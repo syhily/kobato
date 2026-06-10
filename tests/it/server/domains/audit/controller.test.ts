@@ -1,5 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 
+import type { AuditLogRow } from '@/server/infra/db/schema/config'
+
 vi.mock('@/shared/config/getters', () => ({
   getBlogSettingsBundleSync: vi.fn(() => ({
     limits: { auditLogDbRetentionDays: 30, auditLogArchiveRetentionDays: 180 },
@@ -87,7 +89,7 @@ describe('audit/controller helpers', () => {
         ipAddress: '192.168.1.1',
         userAgent: 'Mozilla/5.0',
         createdAt: new Date('2026-05-20T12:00:00Z'),
-      } as unknown as import('@/server/infra/db/schema/config').AuditLogRow
+      } as unknown as AuditLogRow
 
       const dto = toAuditLogItemDto(row, 'Alice')
       expect(dto.id).toBe('1')
@@ -112,7 +114,7 @@ describe('audit/controller helpers', () => {
         ipAddress: null,
         userAgent: null,
         createdAt: new Date('2026-05-20T12:00:00Z'),
-      } as unknown as import('@/server/infra/db/schema/config').AuditLogRow
+      } as unknown as AuditLogRow
 
       const dto = toAuditLogItemDto(row, null)
       expect(dto.actorId).toBeNull()

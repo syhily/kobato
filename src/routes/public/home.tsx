@@ -1,5 +1,3 @@
-import { useRouteLoaderData } from 'react-router'
-
 import type { ListingPageLoaderData } from '@/server/http/loaders/listing'
 import type { ListingPostCard } from '@/shared/types/catalog'
 import type { SidebarData } from '@/ui/public/Sidebar'
@@ -124,9 +122,9 @@ export function meta({ loaderData, matches }: Route.MetaArgs) {
   return metaWithFallback({ loaderData, matches })
 }
 
-export default function HomeRoute({ loaderData }: Route.ComponentProps) {
+export default function HomeRoute({ loaderData, matches }: Route.ComponentProps) {
   const { pageNum, totalPage, resolvedPosts, extra } = loaderData
-  const rootData = useRouteLoaderData<{ currentUser?: { role: string } | null }>('root')
+  const rootData = matches[0]?.loaderData as { currentUser?: { role: string } | null } | undefined
   return (
     <HomeLayoutBody
       resolvedPosts={resolvedPosts}

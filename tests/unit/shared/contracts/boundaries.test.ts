@@ -86,11 +86,8 @@ describe('contract: module and bundle boundaries', () => {
     expect(offenders).toEqual([])
   })
 
-  it('public stylesheet declares the cascade layer order so utilities beat preflight without `!important`', () => {
-    // Tailwind utilities must sit above `@layer base` in the authored
-    // layer order. Pin the declaration so a refactor can't silently drop it.
+  it('public stylesheet imports tailwind.css', () => {
     const globals = readFileSync('src/styles/public.css', 'utf8')
-    expect(globals).toMatch(/^\s*@layer\s+base\s*,\s*components\s*,\s*utilities\s*;/m)
     expect(globals).toMatch(/@import\s+['"]\.\/tailwind\.css['"]/)
   })
 

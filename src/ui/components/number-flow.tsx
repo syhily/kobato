@@ -1,6 +1,7 @@
 import { useRef } from 'react'
 
 import { cn } from '@/ui/lib/cn'
+import { useMediaQuery } from '@/ui/lib/use-media-query'
 
 function usePrevious<T>(value: T): T {
   const ref = useRef<T>(value)
@@ -20,10 +21,19 @@ interface NumberFlowProps {
  */
 export function NumberFlow({ value, className }: NumberFlowProps) {
   const previousValue = usePrevious(value)
+  const prefersReducedMotion = useMediaQuery('(prefers-reduced-motion: reduce)', false)
 
   const digits = String(value).split('')
   const prevDigits = String(previousValue).split('')
   const maxLen = Math.max(digits.length, prevDigits.length)
+
+  if (prefersReducedMotion) {
+    return (
+      <span className={cn('inline-block align-middle', className)} aria-label={String(value)}>
+        {value}
+      </span>
+    )
+  }
 
   return (
     <span className={cn('inline-block align-middle', className)} aria-label={String(value)}>
@@ -46,6 +56,7 @@ function DigitColumn({ digit }: { digit: number }) {
       <span
         className="absolute inset-x-0 top-0 flex flex-col transition-transform duration-500 ease-out"
         style={{ transform: `translateY(-${digit}em)` }}
+        aria-hidden
       >
         {DIGITS.map((d) => (
           <span key={d} className="flex h-[1em] items-center justify-center leading-none tabular-nums">

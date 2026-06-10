@@ -84,8 +84,16 @@ export function PasswordChangeForm() {
               </button>
             </div>
           </div>
-          {!!passwordError && <div className="text-sm text-destructive sm:col-span-2">{passwordError}</div>}
-          {!!passwordMessage && <div className="text-sm text-status-success-fg sm:col-span-2">{passwordMessage}</div>}
+          {!!passwordError && (
+            <div className="text-sm text-destructive sm:col-span-2" role="alert" aria-live="assertive">
+              {passwordError}
+            </div>
+          )}
+          {!!passwordMessage && (
+            <div className="text-sm text-status-success-fg sm:col-span-2" role="status">
+              {passwordMessage}
+            </div>
+          )}
           <div className="flex justify-end gap-2 sm:col-span-2">
             <Button type="submit" variant="outline" disabled={passwordMutation.isPending}>
               <KeyRoundIcon data-icon /> {passwordMutation.isPending ? '更新中…' : '修改密码'}

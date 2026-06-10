@@ -4,7 +4,8 @@ import { cn } from '@/ui/lib/cn'
 
 function Table({ className, ...props }: ComponentProps<'table'>) {
   return (
-    <div data-slot="table-container" className="relative w-full overflow-x-auto">
+    // oxlint-disable-next-line jsx-a11y/no-noninteractive-tabindex -- intentional: makes horizontally scrollable tables keyboard-accessible
+    <div data-slot="table-container" className="relative w-full overflow-x-auto" tabIndex={0} aria-label="数据表格">
       <table data-slot="table" className={cn('w-full caption-bottom text-sm', className)} {...props} />
     </div>
   )

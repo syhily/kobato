@@ -1,3 +1,5 @@
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
+
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { seedMetric } from '#/_helpers/db'
@@ -34,7 +36,7 @@ const POST_EMPTY = { type: 'post' as const, ownerId: 2n }
 const POST_ONE_UPSERT = { type: 'post' as const, ownerId: 3n }
 const POST_NO_TRACK = { type: 'post' as const, ownerId: 4n }
 
-const mockDb = {} as import('drizzle-orm/node-postgres').NodePgDatabase
+const mockDb = {} as NodePgDatabase
 
 function delay<T>(value: T, ms: number): Promise<T> {
   return new Promise((resolve) => setTimeout(() => resolve(value), ms))

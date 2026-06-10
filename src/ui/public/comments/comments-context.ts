@@ -20,7 +20,7 @@ export type CommentTreeAction =
   | { type: 'setReplyTo'; rid: number }
   | { type: 'mergeMyComments'; comments: CommentItemType[]; expiresAt: Record<string, number> }
 
-export interface CommentsContextValue {
+export interface CommentsStateContextValue {
   commentKey: string
   totalCount: number
   admin: boolean
@@ -30,6 +30,10 @@ export interface CommentsContextValue {
   myCommentIds: Set<string>
   myCommentExpiresAt: Map<string, number>
   currentUserId: string | null
+  replyForm: React.ReactNode
+}
+
+export interface CommentsActionsContextValue {
   onReply: (rid: number) => void
   onCancelReply: () => void
   onEdited: (comment: CommentItemType) => void
@@ -37,13 +41,21 @@ export interface CommentsContextValue {
   onDeleted: (id: bigint | string) => void
   onDismissMyComment: (id: bigint | string) => void
   dispatch: React.Dispatch<CommentTreeAction>
-  replyForm: React.ReactNode
 }
 
-export const CommentsContext = createContext<CommentsContextValue | null>(null)
+export const CommentsStateContext = createContext<CommentsStateContextValue | null>(null)
+export const CommentsActionsContext = createContext<CommentsActionsContextValue | null>(null)
 
-export function useCommentsContext(component: string): CommentsContextValue {
-  const ctx = use(CommentsContext)
+export function useCommentsState(component: string): CommentsStateContextValue {
+  const ctx = use(CommentsStateContext)
+  if (ctx === null) {
+    throw new Error(`<${component}> must be rendered inside <Comments>`)
+  }
+  return ctx
+}
+
+export function useCommentsActions(component: string): CommentsActionsContextValue {
+  const ctx = use(CommentsActionsContext)
   if (ctx === null) {
     throw new Error(`<${component}> must be rendered inside <Comments>`)
   }

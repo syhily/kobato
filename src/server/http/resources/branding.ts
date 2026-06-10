@@ -5,6 +5,7 @@ import type { Env } from '@/server/http/context'
 
 import { clearBrandingAsset, isBrandingSlot, uploadBrandingAsset } from '@/server/domains/assets/management'
 import { recordAuditEvent } from '@/server/domains/audit/services/record'
+import { csrfGuard } from '@/server/http/middlewares/csrf'
 import { requireRoleMw } from '@/server/http/middlewares/hono-rbac'
 import { getLogger } from '@/server/infra/logger'
 import { isRecord } from '@/shared/utils/type-guards'
@@ -18,6 +19,7 @@ export const brandingRouter = new Hono<Env>()
   .post(
     '/api/admin/branding/upload',
     requireRoleMw('admin'),
+    csrfGuard,
     bodyLimit({
       maxSize: 2 * 1024 * 1024,
       onError: (c) => c.json({ error: { message: '上传文件过大' } }, 413),
@@ -48,7 +50,7 @@ export const brandingRouter = new Hono<Env>()
       return c.json({ slot, ref })
     },
   )
-  .post('/api/admin/branding/clear', requireRoleMw('admin'), async (c) => {
+  .post('/api/admin/branding/clear', requireRoleMw('admin'), csrfGuard, async (c) => {
     const parsed: unknown = await c.req.json().catch(() => null)
     const body = isRecord(parsed) ? parsed : null
     const slot = body?.slot

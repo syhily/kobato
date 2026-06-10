@@ -1,5 +1,5 @@
 /* oxlint-disable typescript/no-unsafe-type-assertion */
-import type { RefObject, SubmitEventHandler } from 'react'
+import type { RefObject } from 'react'
 
 import { SearchIcon } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
@@ -21,27 +21,22 @@ const sidebarSearchInputClass = cn(
   'focus:shadow-none focus:outline-0',
 )
 
-function useSearchSubmit() {
-  const navigate = useNavigate()
-  return useCallback(
-    ((event) => {
-      event.preventDefault()
-      const formData = new FormData(event.currentTarget)
-      const q = String((formData.get('q') as string | null) ?? '').trim()
-      if (q) {
-        void navigate(`/search/${encodeURIComponent(q)}`)
-      }
-    }) satisfies SubmitEventHandler<HTMLFormElement>,
-    [navigate],
-  )
-}
-
 export function SearchBar() {
-  const onSubmit = useSearchSubmit()
-
+  const navigate = useNavigate()
   return (
     <div id="search" className="mb-10">
-      <Form method="get" action="/search" onSubmit={onSubmit}>
+      <Form
+        method="get"
+        action="/search"
+        onSubmit={(e) => {
+          e.preventDefault()
+          const form = e.currentTarget
+          const q = new FormData(form).get('q') as string
+          if (q.trim()) {
+            void navigate(`/search/${encodeURIComponent(q.trim())}`)
+          }
+        }}
+      >
         <label htmlFor="sidebar-search-input" className="sr-only">
           文章寻踪
         </label>
@@ -121,22 +116,22 @@ interface SearchPopupProps {
 
 function SearchPopup({ open, onClose, inputRef }: SearchPopupProps) {
   const navigate = useNavigate()
-  const handleSubmit = useCallback(
-    ((event) => {
-      event.preventDefault()
-      const formData = new FormData(event.currentTarget)
-      const q = String((formData.get('q') as string | null) ?? '').trim()
-      onClose()
-      if (q) {
-        void navigate(`/search/${encodeURIComponent(q)}`)
-      }
-    }) satisfies SubmitEventHandler<HTMLFormElement>,
-    [navigate, onClose],
-  )
-
   return (
     <Popup open={open} onClose={onClose} size="md" popupId={SEARCH_POPUP_ID} aria-label="搜索文章">
-      <Form className="text-center" method="get" action="/search" onSubmit={handleSubmit}>
+      <Form
+        className="text-center"
+        method="get"
+        action="/search"
+        onSubmit={(e) => {
+          e.preventDefault()
+          const form = e.currentTarget
+          const q = new FormData(form).get('q') as string
+          if (q.trim()) {
+            void navigate(`/search/${encodeURIComponent(q.trim())}`)
+            onClose()
+          }
+        }}
+      >
         <div className="px-4 py-4 md:px-12 md:py-8">
           <div className="mx-auto max-w-sm">
             <div className="mb-4 md:mb-6">
@@ -149,6 +144,7 @@ function SearchPopup({ open, onClose, inputRef }: SearchPopupProps) {
                 size="lg"
                 className="bg-canvas text-center"
                 placeholder="搜索并回车"
+                aria-label="搜索文章"
               />
             </div>
             <Button type="submit" variant="default" size="lg" block>

@@ -207,6 +207,10 @@ function CorsPolicyCard({ security }: { security: SecuritySettings }) {
           label="允许的来源"
           hint={`每个来源必须是完整的 URL（如 https://example.com），最多 ${MAX_ORIGINS} 条。留空表示镜像模式。`}
         >
+          <p className="rounded-md border border-status-warn-border bg-status-warn-bg px-3 py-2 text-sm text-status-warn-fg">
+            安全提示：当前 CORS 配置允许携带身份凭证（cookies）。添加不可信的第三方来源可能导致会话劫持或 CSRF
+            攻击，请仅添加受信任的域名。
+          </p>
           <div className="flex flex-col gap-3">
             {rows.fields.length === 0 ? (
               <p className="text-sm text-muted-foreground">镜像模式：将自动允许所有请求来源。</p>

@@ -98,6 +98,8 @@ export function configureMiddleware(app: Hono<Env>): void {
       "connect-src 'self'",
       "object-src 'none'",
       "frame-ancestors 'none'",
+      "form-action 'self'",
+      "base-uri 'self'",
       'upgrade-insecure-requests',
     ].join('; ')
     c.res.headers.set('Content-Security-Policy', csp)

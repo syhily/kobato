@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import { data } from 'react-router'
 
 import type { RouteHandle } from '@/root'
@@ -66,6 +67,7 @@ export function meta({ loaderData, matches }: Route.MetaArgs) {
 
 export default function PageDetailRoute({ loaderData }: Route.ComponentProps) {
   const { page, body, friends, showFriends, draftMarker, detail, imageMeta, footnotesSectionTitle } = loaderData
+  const headingSlugs = useMemo(() => page.headings.map((h) => h.slug), [page.headings])
   return (
     <>
       <PageDetailBody
@@ -81,10 +83,10 @@ export default function PageDetailRoute({ loaderData }: Route.ComponentProps) {
         <PortableTextBody
           body={body}
           imageMeta={imageMeta}
-          headingSlugs={page.headings.map((h) => h.slug)}
+          headingSlugs={headingSlugs}
           footnotesSectionTitle={footnotesSectionTitle}
         />
-        {showFriends && <Friends friends={[...friends]} />}
+        {showFriends && <Friends friends={friends} />}
       </PageDetailBody>
     </>
   )

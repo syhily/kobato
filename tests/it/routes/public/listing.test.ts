@@ -1,3 +1,6 @@
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
+import type { Pool } from 'pg'
+
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { makeCategory, makePost, makePostList, makeTag } from '#/_helpers/catalog'
@@ -15,8 +18,8 @@ vi.mock('@/server/domains/auth/context', async () => {
   const actual = await vi.importActual<typeof import('@/server/domains/auth/context')>('@/server/domains/auth/context')
   return {
     ...actual,
-    getDbFromContext: vi.fn(() => ({}) as import('drizzle-orm/node-postgres').NodePgDatabase),
-    getPoolFromContext: vi.fn(() => ({}) as import('pg').Pool),
+    getDbFromContext: vi.fn(() => ({}) as NodePgDatabase),
+    getPoolFromContext: vi.fn(() => ({}) as Pool),
   }
 })
 

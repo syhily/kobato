@@ -44,7 +44,9 @@ beforeEach(() => {
   mocks.findPageBySlug.mockImplementation(async () => null)
 })
 
-let imagesRouter: typeof import('@/server/http/resources/images').imagesRouter
+import type { imagesRouter as ImagesRouter } from '@/server/http/resources/images'
+
+let imagesRouter: typeof ImagesRouter
 
 beforeEach(async () => {
   if (!imagesRouter) {

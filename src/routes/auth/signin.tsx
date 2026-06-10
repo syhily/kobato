@@ -1,5 +1,5 @@
 import bcrypt from 'bcryptjs'
-import { data, redirect, useActionData, useNavigation, useRouteLoaderData } from 'react-router'
+import { data, redirect, useNavigation } from 'react-router'
 
 import { recordAuditEvent } from '@/server/domains/audit/services/record'
 import { getDbFromContext, getRouteRequestContext } from '@/server/domains/auth/context'
@@ -33,6 +33,7 @@ import {
   tryPasswordResetRateLimit,
 } from '@/server/infra/rate-limit'
 import { bundleFromMatches, routeMeta } from '@/server/render/seo/meta'
+import { getBlogSettingsBundleSync } from '@/shared/config/getters'
 import { safeRedirectPath } from '@/shared/utils/safe-url'
 import { LoginForm, LostPasswordForm, OtpForm, ResetPasswordForm } from '@/ui/admin/auth/AdminCredentialsForm'
 import { BrandLogo } from '@/ui/public/chrome/BrandLogo'
@@ -140,6 +141,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
       pendingOtpSentAt: pendingOtpUser.sentAt,
       authError: url.searchParams.get('error'),
       passkeyEnabled: isPasskeyEnabled(),
+      csrfToken: session.get('csrfToken'),
     })
   }
 
@@ -151,6 +153,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
     resetToken,
     authError,
     passkeyEnabled: isPasskeyEnabled(),
+    csrfToken: session.get('csrfToken'),
   })
 }
 
@@ -191,7 +194,7 @@ export async function action({ request, context }: Route.ActionArgs) {
       if (u && u.role && !u.deletedAt) {
         // Existing user with a role — send reset email.
         const { token } = await issueResetToken(db, u.id)
-        const origin = new URL(request.url).origin
+        const origin = getBlogSettingsBundleSync()?.siteIdentity?.website ?? new URL(request.url).origin
         const link = `${origin}/admin/signin?action=resetpassword&token=${encodeURIComponent(token)}`
         await sendPasswordReset(u, link)
         recordAuditEvent({
@@ -210,7 +213,7 @@ export async function action({ request, context }: Route.ActionArgs) {
         if (approved >= 1) {
           await updateUserById(db, u.id, { role: 'visitor' })
           const { token } = await issueResetToken(db, u.id)
-          const origin = new URL(request.url).origin
+          const origin = getBlogSettingsBundleSync()?.siteIdentity?.website ?? new URL(request.url).origin
           const link = `${origin}/admin/signin?action=resetpassword&token=${encodeURIComponent(token)}`
           await sendPasswordReset(u, link)
           recordAuditEvent({
@@ -363,9 +366,7 @@ function localizeAuthError(error: string | null): string | null {
 export default function LoginRoute({ actionData, loaderData }: Route.ComponentProps) {
   const navigation = useNavigation()
   const isSubmitting = navigation.state === 'submitting' && navigation.formMethod === 'POST'
-  const rootData = useRouteLoaderData<{ csrfToken?: string }>('root')
-  const csrfToken = rootData?.csrfToken
-  const otpActionData = useActionData<{ message?: string; error?: string }>()
+  const csrfToken = loaderData.csrfToken
 
   return (
     <div className="flex flex-col gap-8">
@@ -409,7 +410,7 @@ export default function LoginRoute({ actionData, loaderData }: Route.ComponentPr
           sentAt={loaderData.pendingOtpSentAt as number}
           isSubmitting={isSubmitting}
           csrfToken={csrfToken}
-          actionData={otpActionData}
+          actionData={actionData}
         />
       )}
       {loaderData.action === 'lostpassword' && <LostPasswordForm isSubmitting={isSubmitting} csrfToken={csrfToken} />}

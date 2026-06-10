@@ -18,11 +18,13 @@ function AvatarImage({ className, ...props }: ComponentProps<typeof BaseAvatar.I
   return <BaseAvatar.Image data-slot="avatar-image" className={cn('aspect-square size-full', className)} {...props} />
 }
 
-function AvatarFallback({ className, ...props }: ComponentProps<typeof BaseAvatar.Fallback>) {
+function AvatarFallback({ className, 'aria-label': ariaLabel, ...props }: ComponentProps<typeof BaseAvatar.Fallback>) {
   return (
     <BaseAvatar.Fallback
       data-slot="avatar-fallback"
       className={cn('flex size-full items-center justify-center rounded-full bg-muted', className)}
+      aria-hidden={ariaLabel ? undefined : true}
+      aria-label={ariaLabel}
       {...props}
     />
   )

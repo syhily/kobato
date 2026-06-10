@@ -103,9 +103,9 @@ export function BlogSettingsProvider({ value, children }: BlogSettingsProviderPr
     const slice = getSlice(value, key)
     const Context = SECTION_CONTEXTS_ANY[key]
     tree = (
-      <Context.Provider key={key} value={slice}>
+      <Context key={key} value={slice}>
         {tree}
-      </Context.Provider>
+      </Context>
     )
   }
   return tree

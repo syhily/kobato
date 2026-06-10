@@ -6,7 +6,7 @@ import { CheckIcon, ChevronRightIcon, CircleIcon } from 'lucide-react'
 import { cn } from '@/ui/lib/cn'
 
 function DropdownMenu({ ...props }: ComponentProps<typeof BaseMenu.Root>) {
-  return <BaseMenu.Root data-slot="dropdown-menu" {...props} />
+  return <BaseMenu.Root data-slot="dropdown-menu" loopFocus highlightItemOnHover {...props} />
 }
 
 function DropdownMenuPortal({ ...props }: ComponentProps<typeof BaseMenu.Portal>) {

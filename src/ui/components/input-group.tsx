@@ -50,23 +50,28 @@ const inputGroupAddonVariants = cva(
 function InputGroupAddon({
   className,
   align = 'inline-start',
+  onClick,
+  'aria-label': ariaLabel,
   ...props
 }: ComponentProps<'button'> & VariantProps<typeof inputGroupAddonVariants>) {
-  return (
-    <button
-      type="button"
-      data-slot="input-group-addon"
-      data-align={align}
-      className={cn('appearance-none border-0 bg-transparent text-left', inputGroupAddonVariants({ align }), className)}
-      onClick={(e) => {
-        if (e.target instanceof Element && e.target.closest('button')) {
-          return
-        }
-        e.currentTarget.parentElement?.querySelector('input')?.focus()
-      }}
-      {...props}
-    />
-  )
+  const isInteractive = onClick !== undefined
+  const baseClass = cn(inputGroupAddonVariants({ align }), className)
+
+  if (isInteractive) {
+    return (
+      <button
+        type="button"
+        data-slot="input-group-addon"
+        data-align={align}
+        className={cn('appearance-none border-0 bg-transparent text-left', baseClass)}
+        onClick={onClick}
+        aria-label={ariaLabel}
+        {...props}
+      />
+    )
+  }
+
+  return <span data-slot="input-group-addon" data-align={align} className={baseClass} {...props} />
 }
 
 const inputGroupButtonVariants = cva('flex items-center gap-2 text-sm shadow-none', {

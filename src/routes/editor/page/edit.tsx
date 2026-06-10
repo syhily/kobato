@@ -1,4 +1,4 @@
-import { useNavigate, useParams } from 'react-router'
+import { useNavigate } from 'react-router'
 
 import { getRouteRequestContext } from '@/server/domains/auth/context'
 import { requireRole } from '@/server/domains/auth/rbac'
@@ -17,8 +17,7 @@ export function meta({ matches }: Route.MetaArgs) {
   return routeMeta({ title: '编辑页面' }, bundleFromMatches(matches))
 }
 
-export default function WpAdminPageEditRoute() {
-  const { id } = useParams()
+export default function WpAdminPageEditRoute({ params }: Route.ComponentProps) {
   const navigate = useNavigate()
-  return <PageEditorRoute pageId={id ?? ''} navigate={navigate} />
+  return <PageEditorRoute pageId={params.id ?? ''} navigate={navigate} />
 }

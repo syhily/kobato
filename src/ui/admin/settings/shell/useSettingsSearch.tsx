@@ -1,4 +1,4 @@
-import { type ReactNode, createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
+import { type ReactNode, createContext, use, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 function isReactNodeArray(value: unknown): value is ReactNode[] {
   return Array.isArray(value)
@@ -172,20 +172,20 @@ export function SettingsSearchProvider({ children }: { children: ReactNode }) {
   )
 
   return (
-    <FilterContext.Provider value={filterState}>
-      <SearchApiContext.Provider value={apiState}>{children}</SearchApiContext.Provider>
-    </FilterContext.Provider>
+    <FilterContext value={filterState}>
+      <SearchApiContext value={apiState}>{children}</SearchApiContext>
+    </FilterContext>
   )
 }
 
 export function useSettingsSearchFilter() {
-  return useContext(FilterContext)
+  return use(FilterContext)
 }
 
 export function useSettingsSearch() {
-  return useContext(SearchApiContext)
+  return use(SearchApiContext)
 }
 
 export function useSettingsSearchContext() {
-  return { ...useContext(FilterContext), ...useContext(SearchApiContext) }
+  return { ...use(FilterContext), ...use(SearchApiContext) }
 }
