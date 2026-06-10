@@ -21,6 +21,7 @@ export function toCmsPost(
     coverThumbhash?: string
     coverWidth?: number
     coverHeight?: number
+    tags?: string[]
   } = {},
 ): CmsPost {
   const body = publishedRevision !== null ? readBody(publishedRevision.body) : []
@@ -35,7 +36,7 @@ export function toCmsPost(
     updated: meta.publishedAt,
     comments: meta.commentsEnabled,
     alias: readStringArray(meta.alias),
-    tags: readStringArray(meta.tags),
+    tags: options.tags ?? [],
     category: meta.category,
     summary: meta.summary,
     cover: meta.cover || '/images/open-graph.png',
@@ -99,7 +100,7 @@ export interface AdminPostDto {
 
 export function toAdminPostDto(
   row: PostMetaRow & { authorName?: string | null },
-  options: { commentCount?: number; commentPublicId?: string } = {},
+  options: { commentCount?: number; commentPublicId?: string; tags?: string[] } = {},
 ): AdminPostDto {
   return {
     id: String(row.id),
@@ -119,7 +120,7 @@ export function toAdminPostDto(
     updatedAt: row.updatedAt.toISOString(),
     deletedAt: row.deletedAt === null ? null : row.deletedAt.toISOString(),
     category: row.category,
-    tags: readStringArray(row.tags),
+    tags: options.tags ?? [],
     alias: readStringArray(row.alias),
     authorId: row.authorId === null ? null : String(row.authorId),
     authorName: (row as { authorName?: string | null }).authorName ?? null,

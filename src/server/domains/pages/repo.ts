@@ -109,6 +109,11 @@ export async function findPageMetaBySlug(db: NodePgDatabase, slug: string): Prom
   return rows[0] ?? null
 }
 
+export async function findPageMetaBySlugForUpdate(db: NodePgDatabase, slug: string): Promise<PageMetaRow | null> {
+  const rows = await db.select().from(pageMetaTable).where(eq(pageMetaTable.slug, slug)).for('update').limit(1)
+  return rows[0] ?? null
+}
+
 /**
  * Slug-keyed lookup that **excludes** soft-deleted rows. Used by the
  * public catalog where deleted pages should 404 even if they share a

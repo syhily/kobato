@@ -8,6 +8,7 @@ import { toCmsPost, type CmsPost } from '@/server/domains/posts/projection'
 import { listPublicPostMetas } from '@/server/domains/posts/repos/public-query/listing'
 import { findPublicPostMetaBySlug } from '@/server/domains/posts/repos/single'
 import { postMetaCache } from '@/server/domains/posts/services/shared'
+import { findTagNamesByPostId, findTagNamesByPostIds } from '@/server/infra/db/operations/post-tag'
 import { requireBlogSettingsSection } from '@/shared/config/getters'
 
 export async function loadCatalogPostMetas(db: NodePgDatabase): Promise<CmsPost[]> {
@@ -32,9 +33,13 @@ export async function loadCatalogPostMetas(db: NodePgDatabase): Promise<CmsPost[
       revisionMap.set(row.id, row)
     }
   }
+  const tagMap = await findTagNamesByPostIds(
+    db,
+    visible.map((m) => m.id),
+  )
   const result = visible.map((meta) => {
     const revision = meta.publishedRevisionId === null ? null : (revisionMap.get(meta.publishedRevisionId) ?? null)
-    return toCmsPost(meta, revision)
+    return toCmsPost(meta, revision, { tags: tagMap.get(meta.id) ?? [] })
   })
 
   await postMetaCache.set(result)
@@ -46,6 +51,9 @@ export async function loadCatalogPostBySlug(db: NodePgDatabase, slug: string): P
   if (meta === null || !isCatalogVisible(meta)) {
     return null
   }
-  const revision = meta.publishedRevisionId === null ? null : await findContentById(db, meta.publishedRevisionId)
-  return toCmsPost(meta, revision)
+  const [revision, tags] = await Promise.all([
+    meta.publishedRevisionId === null ? Promise.resolve(null) : findContentById(db, meta.publishedRevisionId),
+    findTagNamesByPostId(db, meta.id),
+  ])
+  return toCmsPost(meta, revision, { tags })
 }

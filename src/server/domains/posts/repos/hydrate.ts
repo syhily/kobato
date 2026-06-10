@@ -7,6 +7,7 @@ import type { ClientPost, Post, PostVisibilityOptions } from '@/shared/types/cat
 import { findContentsByIds } from '@/server/domains/content/repos/query'
 import { hydrateImageRefs } from '@/server/domains/images/services/enhance'
 import { toCmsPost } from '@/server/domains/posts/projection'
+import { findTagNamesByPostIds } from '@/server/infra/db/operations/post-tag'
 
 export async function hydratePostImages(db: NodePgDatabase, posts: Post[]): Promise<void> {
   await hydrateImageRefs(
@@ -58,9 +59,13 @@ export async function hydratePostMetasToFullPosts(db: NodePgDatabase, metas: Pos
       revisionMap.set(row.id, row)
     }
   }
+  const tagMap = await findTagNamesByPostIds(
+    db,
+    metas.map((m) => m.id),
+  )
   const posts = metas.map((meta) => {
     const revision = meta.publishedRevisionId === null ? null : (revisionMap.get(meta.publishedRevisionId) ?? null)
-    return toCmsPost(meta, revision)
+    return toCmsPost(meta, revision, { tags: tagMap.get(meta.id) ?? [] })
   })
   await hydratePostImages(db, posts)
   return posts

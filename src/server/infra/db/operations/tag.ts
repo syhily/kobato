@@ -1,6 +1,6 @@
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
-import { asc, count, eq, or, type SQL } from 'drizzle-orm'
+import { asc, count, eq, inArray, or, type SQL } from 'drizzle-orm'
 
 import type { NewTag, TagRow } from '@/server/infra/db/types'
 
@@ -80,6 +80,13 @@ export async function findTagByName(db: NodePgDatabase, name: string): Promise<T
 export async function findTagBySlug(db: NodePgDatabase, slug: string): Promise<TagRow | null> {
   const rows = await db.select().from(tag).where(eq(tag.slug, slug)).limit(1)
   return rows[0] ?? null
+}
+
+export async function findTagsByNames(db: NodePgDatabase, names: string[]): Promise<TagRow[]> {
+  if (names.length === 0) {
+    return []
+  }
+  return db.select().from(tag).where(inArray(tag.name, names)).orderBy(tag.name)
 }
 
 export async function insertTag(db: NodePgDatabase, values: NewTag): Promise<TagRow> {

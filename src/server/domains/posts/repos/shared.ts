@@ -5,6 +5,8 @@ import type { ClientPost } from '@/shared/types/catalog'
 
 import { ilikeEscape } from '@/server/infra/db/ilike-escape'
 import { post as postMetaTable } from '@/server/infra/db/schema/post'
+import { postTag } from '@/server/infra/db/schema/post-tag'
+import { tag } from '@/server/infra/db/schema/taxonomy'
 import { readStringArray } from '@/shared/utils/tools'
 
 export type PostMetaWithAuthor = PostMetaRow & { authorName: string | null }
@@ -70,7 +72,13 @@ export function buildPostsWhere(filters: ListPostsFilters): SQL | undefined {
     conditions.push(eq(postMetaTable.category, filters.category))
   }
   if (filters.tag) {
-    conditions.push(sql`${postMetaTable.tags} @> ${JSON.stringify([filters.tag])}::jsonb`)
+    conditions.push(
+      sql`EXISTS (
+        SELECT 1 FROM ${postTag}
+        INNER JOIN ${tag} ON ${eq(postTag.tagId, tag.id)}
+        WHERE ${eq(postTag.postId, postMetaTable.id)} AND ${eq(tag.name, filters.tag)}
+      )`,
+    )
   }
   if (filters.published !== undefined) {
     conditions.push(eq(postMetaTable.published, filters.published))
@@ -114,7 +122,7 @@ export interface ListPublicPostsFilters {
 }
 
 /** Public `date` is first publication time; falls back to `published_at` before the first publish. */
-export function toClientPostFromMeta(meta: PostMetaRow): ClientPost {
+export function toClientPostFromMeta(meta: PostMetaRow, tags: string[] = []): ClientPost {
   const date = meta.firstPublishedAt ?? meta.publishedAt
   return {
     id: String(meta.id),
@@ -123,7 +131,7 @@ export function toClientPostFromMeta(meta: PostMetaRow): ClientPost {
     updated: meta.publishedAt,
     comments: meta.commentsEnabled,
     alias: readStringArray(meta.alias),
-    tags: readStringArray(meta.tags),
+    tags,
     category: meta.category,
     summary: meta.summary,
     cover: meta.cover || '/images/open-graph.png',
@@ -156,7 +164,13 @@ export function buildPublicPostsWhere(filters: ListPublicPostsFilters, now = new
     conditions.push(eq(postMetaTable.category, filters.category))
   }
   if (filters.tag) {
-    conditions.push(sql`${postMetaTable.tags} @> ${JSON.stringify([filters.tag])}::jsonb`)
+    conditions.push(
+      sql`EXISTS (
+        SELECT 1 FROM ${postTag}
+        INNER JOIN ${tag} ON ${eq(postTag.tagId, tag.id)}
+        WHERE ${eq(postTag.postId, postMetaTable.id)} AND ${eq(tag.name, filters.tag)}
+      )`,
+    )
   }
 
   return and(...conditions)!

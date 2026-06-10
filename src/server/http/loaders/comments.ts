@@ -88,8 +88,8 @@ export async function loadDetailPageStreaming(
   target: EntityTarget,
   options?: { trackView?: boolean },
 ) {
-  const critical = await loadDetailPageCritical(db, session, target, options)
   const comments = loadCommentsAndItems(db, session, target)
+  const critical = await loadDetailPageCritical(db, session, target, options)
   return { critical, comments }
 }
 

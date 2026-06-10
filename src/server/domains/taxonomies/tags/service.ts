@@ -1,12 +1,11 @@
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
-import { asc, inArray, sql } from 'drizzle-orm'
+import { and, asc, eq, inArray, isNull, sql } from 'drizzle-orm'
 
 import type { TagRow } from '@/server/infra/db/types'
 import type { Tag } from '@/shared/types/catalog'
 import type { AdminTagDto } from '@/shared/types/tags'
 
-import { listPublicPosts } from '@/server/domains/posts/repos/public-query/listing'
 import { listPostsByTag } from '@/server/domains/posts/repos/public-query/taxonomy'
 import {
   deleteAdminTaxonomy,
@@ -27,11 +26,11 @@ import {
   updateTag,
 } from '@/server/infra/db/operations/tag'
 import { post as postMetaTable } from '@/server/infra/db/schema/post'
+import { postTag } from '@/server/infra/db/schema/post-tag'
 import { tag as tagTable } from '@/server/infra/db/schema/taxonomy'
 import { DomainError, ErrorMessages } from '@/server/infra/http/errors'
 import { createInflight } from '@/server/infra/redis/inflight'
 import { hasAtLeast, type Role } from '@/shared/utils/roles'
-import { readStringArray } from '@/shared/utils/tools'
 
 // Wire-format DTO for every admin tag endpoint. `postCount` is
 // projected by the caller from the live `ContentCatalog` (mirrors
@@ -69,13 +68,18 @@ async function tagPostCounter(db: NodePgDatabase): Promise<(name: string) => Pro
 // Replaces the N+1 `tagPostCounter` for list views while keeping the
 // per-tag helper for single-row upserts.
 async function countPostsByTags(db: NodePgDatabase): Promise<Map<string, number>> {
-  const metas = await listPublicPosts(db, { includeHidden: true, includeScheduled: true })
+  const rows = await db
+    .select({ name: tagTable.name, count: sql<number>`count(${postMetaTable.id})::int` })
+    .from(tagTable)
+    .leftJoin(postTag, eq(postTag.tagId, tagTable.id))
+    .leftJoin(
+      postMetaTable,
+      and(eq(postMetaTable.id, postTag.postId), isNull(postMetaTable.deletedAt), eq(postMetaTable.published, true)),
+    )
+    .groupBy(tagTable.name)
   const counts = new Map<string, number>()
-  for (const meta of metas) {
-    const tags = readStringArray(meta.tags)
-    for (const tag of tags) {
-      counts.set(tag, (counts.get(tag) ?? 0) + 1)
-    }
+  for (const row of rows) {
+    counts.set(row.name, row.count)
   }
   return counts
 }
@@ -205,20 +209,25 @@ export async function listAllTags(db: NodePgDatabase): Promise<Tag[]> {
       return []
     }
 
-    const countsResult = await db.execute<{ tag_name: string; counts: number }>(sql`
-      SELECT jsonb_array_elements_text(${postMetaTable.tags}) AS tag_name,
-             COUNT(*)::int AS counts
-      FROM ${postMetaTable}
-      WHERE ${postMetaTable.deletedAt} IS NULL
-        AND ${postMetaTable.published} = true
-        AND ${postMetaTable.visible} = true
-        AND ${postMetaTable.publishedAt} <= ${now}
-      GROUP BY jsonb_array_elements_text(${postMetaTable.tags})
-    `)
+    const countsResult = await db
+      .select({ name: tagTable.name, count: sql<number>`count(${postMetaTable.id})::int` })
+      .from(tagTable)
+      .leftJoin(postTag, eq(postTag.tagId, tagTable.id))
+      .leftJoin(
+        postMetaTable,
+        and(
+          eq(postMetaTable.id, postTag.postId),
+          isNull(postMetaTable.deletedAt),
+          eq(postMetaTable.published, true),
+          eq(postMetaTable.visible, true),
+          sql`${postMetaTable.publishedAt} <= ${now}`,
+        ),
+      )
+      .groupBy(tagTable.name)
 
     const countsMap = new Map<string, number>()
-    for (const row of countsResult.rows) {
-      countsMap.set(row.tag_name, row.counts)
+    for (const row of countsResult) {
+      countsMap.set(row.name, row.count)
     }
 
     const tags = tagRows.map((row) => ({
@@ -244,28 +253,31 @@ export async function getTagsByNames(db: NodePgDatabase, names: readonly string[
     .select({ name: tagTable.name, slug: tagTable.slug })
     .from(tagTable)
     .where(inArray(tagTable.name, uniqueNames))
-  const countsResultPromise = db.execute<{ tag_name: string; counts: number }>(sql`
-    SELECT jsonb_array_elements_text(${postMetaTable.tags}) AS tag_name,
-           COUNT(*)::int AS counts
-    FROM ${postMetaTable}
-    WHERE ${postMetaTable.deletedAt} IS NULL
-      AND ${postMetaTable.published} = true
-      AND ${postMetaTable.visible} = true
-      AND ${postMetaTable.publishedAt} <= ${now}
-    GROUP BY jsonb_array_elements_text(${postMetaTable.tags})
-  `)
-  const [tagRows, countsResult] = (await Promise.all([tagRowsPromise, countsResultPromise])) as [
-    Awaited<typeof tagRowsPromise>,
-    Awaited<typeof countsResultPromise>,
-  ]
+  const countsResultPromise = db
+    .select({ name: tagTable.name, count: sql<number>`count(${postMetaTable.id})::int` })
+    .from(tagTable)
+    .leftJoin(postTag, eq(postTag.tagId, tagTable.id))
+    .leftJoin(
+      postMetaTable,
+      and(
+        eq(postMetaTable.id, postTag.postId),
+        isNull(postMetaTable.deletedAt),
+        eq(postMetaTable.published, true),
+        eq(postMetaTable.visible, true),
+        sql`${postMetaTable.publishedAt} <= ${now}`,
+      ),
+    )
+    .where(inArray(tagTable.name, uniqueNames))
+    .groupBy(tagTable.name)
+  const [tagRows, countsResult] = await Promise.all([tagRowsPromise, countsResultPromise])
 
   if (tagRows.length === 0) {
     return []
   }
 
   const countsMap = new Map<string, number>()
-  for (const row of countsResult.rows) {
-    countsMap.set(row.tag_name, row.counts)
+  for (const row of countsResult) {
+    countsMap.set(row.name, row.count)
   }
 
   const tagMap = new Map(

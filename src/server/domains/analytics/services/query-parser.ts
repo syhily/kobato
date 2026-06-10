@@ -1,10 +1,10 @@
-/* oxlint-disable typescript/no-unsafe-type-assertion */
 import {
   FILTERABLE_TYPES,
   PRESET_KEYS,
   computeDateRange,
   type DateRange,
   type Filters,
+  type MetricType,
   type PresetKey,
 } from '@/shared/contracts/analytics'
 import { idFromString } from '@/shared/utils/id'
@@ -17,6 +17,10 @@ export interface AnalyticsQueryInput {
 }
 
 const FILTERABLE_SET = new Set<string>(FILTERABLE_TYPES)
+
+function isPresetKey(value: string): value is PresetKey {
+  return (PRESET_KEYS as readonly string[]).includes(value)
+}
 
 export function parseAnalyticsSearch(searchParams: URLSearchParams): AnalyticsQueryInput {
   const preset = searchParams.get('preset')
@@ -32,8 +36,8 @@ export function parseAnalyticsSearch(searchParams: URLSearchParams): AnalyticsQu
     } else {
       range = computeDateRange('last-7d')
     }
-  } else if (preset && (PRESET_KEYS as readonly string[]).includes(preset)) {
-    range = computeDateRange(preset as PresetKey)
+  } else if (preset && isPresetKey(preset)) {
+    range = computeDateRange(preset)
   } else {
     range = computeDateRange('last-7d')
   }
@@ -44,10 +48,14 @@ export function parseAnalyticsSearch(searchParams: URLSearchParams): AnalyticsQu
   const filtersRaw = searchParams.get('filters')
   if (filtersRaw && filtersRaw.length <= MAX_FILTERS_PAYLOAD_BYTES) {
     try {
-      const parsed = JSON.parse(filtersRaw) as Record<string, unknown>
-      for (const [key, value] of Object.entries(parsed)) {
-        if (FILTERABLE_SET.has(key) && typeof value === 'string' && value.length > 0) {
-          filters[key as import('@/shared/contracts/analytics').MetricType] = value
+      const parsed: unknown = JSON.parse(filtersRaw)
+      if (typeof parsed === 'object' && parsed !== null) {
+        for (const [key, value] of Object.entries(parsed)) {
+          if (typeof value === 'string' && value.length > 0 && FILTERABLE_SET.has(key)) {
+            // FILTERABLE_SET is built from FILTERABLE_TYPES, so key is a valid MetricType.
+            // oxlint-disable-next-line typescript/no-unsafe-type-assertion
+            filters[key as MetricType] = value
+          }
         }
       }
     } catch {

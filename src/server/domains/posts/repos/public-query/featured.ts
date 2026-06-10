@@ -6,6 +6,7 @@ import type { ClientPost, SidebarPostLink } from '@/shared/types/catalog'
 
 import { hydrateClientPostCovers } from '@/server/domains/posts/repos/hydrate'
 import { toClientPostFromMeta } from '@/server/domains/posts/repos/shared'
+import { findTagNamesByPostIds } from '@/server/infra/db/operations/post-tag'
 import { post as postMetaTable } from '@/server/infra/db/schema/post'
 import { requireBlogSettingsSection } from '@/shared/config/getters'
 import { toSidebarPostLink } from '@/shared/types/catalog'
@@ -35,7 +36,11 @@ export async function selectFeaturePosts(db: NodePgDatabase, seed: string): Prom
     .orderBy(desc(postMetaTable.pinnedAt))
     .limit(FEATURE_POST_COUNT)
 
-  const pinned = pinnedMetas.map((meta) => toClientPostFromMeta(meta))
+  const pinnedTagMap = await findTagNamesByPostIds(
+    db,
+    pinnedMetas.map((m) => m.id),
+  )
+  const pinned = pinnedMetas.map((meta) => toClientPostFromMeta(meta, pinnedTagMap.get(meta.id) ?? []))
   if (pinned.length === FEATURE_POST_COUNT) {
     await hydrateClientPostCovers(db, pinned)
     return pinned
@@ -61,9 +66,11 @@ export async function selectFeaturePosts(db: NodePgDatabase, seed: string): Prom
 
   const recentIds = new Set(recentMetas.map((r) => r.id))
   const pinnedSlugs = new Set(pinned.map((p) => p.slug))
+  const candidateIds = allWithCover.filter((m) => !pinnedSlugs.has(m.slug) && !recentIds.has(m.id)).map((m) => m.id)
+  const candidateTagMap = await findTagNamesByPostIds(db, candidateIds)
   const candidates = allWithCover
     .filter((m) => !pinnedSlugs.has(m.slug) && !recentIds.has(m.id))
-    .map((meta) => toClientPostFromMeta(meta))
+    .map((meta) => toClientPostFromMeta(meta, candidateTagMap.get(meta.id) ?? []))
 
   const withCover = candidates.filter((post) => post.cover)
   const pool = withCover.length >= FEATURE_POST_COUNT - pinned.length ? withCover : candidates
@@ -115,5 +122,9 @@ export async function selectSidebarPosts(db: NodePgDatabase, count: number): Pro
     )
     .orderBy(sql`md5(${postMetaTable.id}::text || ${getSidebarSeed()})`)
     .limit(count)
-  return metas.map((meta) => toClientPostFromMeta(meta)).map(toSidebarPostLink)
+  const tagMap = await findTagNamesByPostIds(
+    db,
+    metas.map((m) => m.id),
+  )
+  return metas.map((meta) => toClientPostFromMeta(meta, tagMap.get(meta.id) ?? [])).map(toSidebarPostLink)
 }

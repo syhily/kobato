@@ -8,6 +8,7 @@ import type { Post } from '@/shared/types/catalog'
 import { toCmsPost } from '@/server/domains/posts/projection'
 import { hydratePostImages } from '@/server/domains/posts/repos/hydrate'
 import { toClientPostFromMeta } from '@/server/domains/posts/repos/shared'
+import { findTagNamesByPostId } from '@/server/infra/db/operations/post-tag'
 import { content as contentTable } from '@/server/infra/db/schema/content'
 import { post as postMetaTable } from '@/server/infra/db/schema/post'
 
@@ -21,6 +22,11 @@ export async function findPostMetaBySlug(db: NodePgDatabase, slug: string): Prom
   return rows[0] ?? null
 }
 
+export async function findPostMetaBySlugForUpdate(db: NodePgDatabase, slug: string): Promise<PostMetaRow | null> {
+  const rows = await db.select().from(postMetaTable).where(eq(postMetaTable.slug, slug)).for('update').limit(1)
+  return rows[0] ?? null
+}
+
 export async function findPublicPostMetaBySlug(db: NodePgDatabase, slug: string): Promise<PostMetaRow | null> {
   const rows = await db
     .select()
@@ -30,9 +36,9 @@ export async function findPublicPostMetaBySlug(db: NodePgDatabase, slug: string)
   return rows[0] ?? null
 }
 
-export function toPostFromMeta(meta: PostMetaRow): Post {
+export function toPostFromMeta(meta: PostMetaRow, tags: string[] = []): Post {
   return {
-    ...toClientPostFromMeta(meta),
+    ...toClientPostFromMeta(meta, tags),
     body: [],
     imageSources: [],
     publishedRevisionId: meta.publishedRevisionId,
@@ -62,7 +68,8 @@ export async function findPostBySlug(db: NodePgDatabase, slug: string): Promise<
   if (result === null || !result.meta.published || result.meta.publishedRevisionId === null) {
     return null
   }
-  const post = toCmsPost(result.meta, result.revision)
+  const tags = await findTagNamesByPostId(db, result.meta.id)
+  const post = toCmsPost(result.meta, result.revision, { tags })
   await hydratePostImages(db, [post])
   return post
 }
@@ -72,7 +79,8 @@ export async function findPostBySlugForAdmin(db: NodePgDatabase, slug: string): 
   if (result === null) {
     return null
   }
-  const post = toCmsPost(result.meta, result.revision)
+  const tags = await findTagNamesByPostId(db, result.meta.id)
+  const post = toCmsPost(result.meta, result.revision, { tags })
   await hydratePostImages(db, [post])
   return post
 }

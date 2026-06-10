@@ -5,7 +5,7 @@ import type { AdminPageDto } from '@/server/domains/pages/projection'
 import { toAdminPageDto } from '@/server/domains/pages/projection'
 import {
   findPageMetaById,
-  findPageMetaBySlug,
+  findPageMetaBySlugForUpdate,
   insertPageMeta,
   restorePageMeta,
   softDeletePageMeta,
@@ -14,7 +14,7 @@ import {
 import { clearPagesCache, type UpsertPageMetaInput } from '@/server/domains/pages/services/shared'
 import {
   deleteSlugRegistryByEntity,
-  findSlugRegistryBySlug,
+  findSlugRegistryBySlugForUpdate,
   insertSlugRegistry,
   updateSlugRegistryByEntity,
 } from '@/server/infra/db/operations/slug-registry'
@@ -28,18 +28,18 @@ export async function createPage(
 ): Promise<AdminPageDto> {
   const slug = resolveSlug(input.slug, input.title)
   ensureSlugLegal(slug, 'page')
-  // page↔page collision; the cross-table page↔post fence runs in the
-  // catalog snapshot rebuild after invalidate.
-  const collision = await findPageMetaBySlug(db, slug)
-  if (collision !== null) {
-    throw new DomainError('CONFLICT', `slug "${slug}" 已被其它页面占用。`)
-  }
-  const crossCollision = await findSlugRegistryBySlug(db, slug)
-  if (crossCollision !== null && crossCollision.entityType !== 'page') {
-    throw new DomainError('CONFLICT', `slug "${slug}" 已被其它文章占用。`)
-  }
 
   return db.transaction(async (tx) => {
+    // Lock slug rows so concurrent creation with the same slug serialises.
+    const collision = await findPageMetaBySlugForUpdate(tx, slug)
+    if (collision !== null) {
+      throw new DomainError('CONFLICT', `slug "${slug}" 已被其它页面占用。`)
+    }
+    const crossCollision = await findSlugRegistryBySlugForUpdate(tx, slug)
+    if (crossCollision !== null && crossCollision.entityType !== 'page') {
+      throw new DomainError('CONFLICT', `slug "${slug}" 已被其它文章占用。`)
+    }
+
     const now = new Date()
     let row: Awaited<ReturnType<typeof insertPageMeta>>
     try {
@@ -80,18 +80,19 @@ export async function updatePageMeta(db: NodePgDatabase, input: UpsertPageMetaIn
   if (existing === null) {
     throw new DomainError('NOT_FOUND', '页面不存在或已被删除。')
   }
-  if (existing.slug !== slug) {
-    const collision = await findPageMetaBySlug(db, slug)
-    if (collision !== null && collision.id !== pageId) {
-      throw new DomainError('CONFLICT', `slug "${slug}" 已被其它页面占用。`)
-    }
-    const crossCollision = await findSlugRegistryBySlug(db, slug)
-    if (crossCollision !== null && crossCollision.entityType !== 'page') {
-      throw new DomainError('CONFLICT', `slug "${slug}" 已被其它文章占用。`)
-    }
-  }
 
   return db.transaction(async (tx) => {
+    if (existing.slug !== slug) {
+      const collision = await findPageMetaBySlugForUpdate(tx, slug)
+      if (collision !== null && collision.id !== pageId) {
+        throw new DomainError('CONFLICT', `slug "${slug}" 已被其它页面占用。`)
+      }
+      const crossCollision = await findSlugRegistryBySlugForUpdate(tx, slug)
+      if (crossCollision !== null && crossCollision.entityType !== 'page') {
+        throw new DomainError('CONFLICT', `slug "${slug}" 已被其它文章占用。`)
+      }
+    }
+
     let updated: Awaited<ReturnType<typeof updatePageMetaById>>
     try {
       updated = await updatePageMetaById(tx, pageId, {

@@ -57,3 +57,8 @@ export async function findSlugRegistryBySlug(db: NodePgDatabase, slug: string) {
   const rows = await db.select().from(slugRegistry).where(eq(slugRegistry.slug, slug)).limit(1)
   return rows[0] ?? null
 }
+
+export async function findSlugRegistryBySlugForUpdate(db: NodePgDatabase, slug: string) {
+  const rows = await db.select().from(slugRegistry).where(eq(slugRegistry.slug, slug)).for('update').limit(1)
+  return rows[0] ?? null
+}

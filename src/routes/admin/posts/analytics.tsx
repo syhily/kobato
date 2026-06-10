@@ -16,6 +16,7 @@ import { getDbFromContext, getRouteRequestContext } from '@/server/domains/auth/
 import { requireRole } from '@/server/domains/auth/rbac'
 import { toAdminPostDto } from '@/server/domains/posts/projection'
 import { findPostMetaById } from '@/server/domains/posts/repos/single'
+import { findTagNamesByPostId } from '@/server/infra/db/operations/post-tag'
 import { METRIC_GROUPS, METRIC_GROUP_TABS } from '@/shared/contracts/analytics'
 import { Counters } from '@/ui/admin/analytics/Counters'
 import { DateRangePicker } from '@/ui/admin/analytics/DateRangePicker'
@@ -40,7 +41,8 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
   if (meta === null) {
     throw new Response('文章不存在', { status: 404 })
   }
-  const post = toAdminPostDto(meta)
+  const tags = await findTagNamesByPostId(db, postId)
+  const post = toAdminPostDto(meta, { tags })
 
   const url = new URL(request.url)
   const input = parseAnalyticsSearch(url.searchParams)

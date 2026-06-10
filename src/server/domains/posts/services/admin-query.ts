@@ -14,6 +14,7 @@ import {
 } from '@/server/domains/posts/services/shared'
 import { commentCountsByOwnerIds, metricsByOwnerIds } from '@/server/infra/db/operations/like'
 import { ensureMetricsBatch } from '@/server/infra/db/operations/metric'
+import { findTagNamesByPostId, findTagNamesByPostIds } from '@/server/infra/db/operations/post-tag'
 import { idFromString } from '@/shared/utils/id'
 
 export async function listPostsForAdmin(
@@ -39,9 +40,10 @@ export async function listPostsForAdmin(
     db,
     rows.map((row) => ({ type: 'post', ownerId: row.id })),
   )
-  const [metrics, countRows] = await Promise.all([
+  const [metrics, countRows, tagMap] = await Promise.all([
     metricsByOwnerIds(db, 'post', ownerIds),
     commentCountsByOwnerIds(db, 'post', ownerIds),
+    findTagNamesByPostIds(db, ownerIds),
   ])
   const publicIdByOwner = new Map(metrics.map((m) => [String(m.ownerId), m.publicId]))
   const countByOwner = new Map(countRows.map((r) => [String(r.ownerId), r.count]))
@@ -50,6 +52,7 @@ export async function listPostsForAdmin(
       toAdminPostDto(row, {
         commentCount: countByOwner.get(String(row.id)) ?? 0,
         commentPublicId: publicIdByOwner.get(String(row.id)) ?? '',
+        tags: tagMap.get(row.id) ?? [],
       }),
     ),
     total,
@@ -64,12 +67,13 @@ export async function getPostDetailForAdmin(
 ): Promise<AdminPostDetailDto | null> {
   const meta = await findPostMetaById(db, id)
   assertOwnPostOr404(meta, viewer)
-  const [latest, published] = await Promise.all([
+  const [latest, published, tags] = await Promise.all([
     findLatestRevision(db, 'post', meta.id),
     meta.publishedRevisionId === null ? Promise.resolve(null) : findContentById(db, meta.publishedRevisionId),
+    findTagNamesByPostId(db, meta.id),
   ])
   return {
-    post: toAdminPostDto(meta),
+    post: toAdminPostDto(meta, { tags }),
     latestRevision: latest === null ? null : toAdminRevisionDto(latest),
     publishedRevision: published === null ? null : toAdminRevisionDto(published),
   }

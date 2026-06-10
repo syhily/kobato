@@ -34,7 +34,7 @@ export async function loader({
   context,
   params,
 }: Route.LoaderArgs): Promise<ListingPageLoaderData<HomeExtra>> {
-  const { session } = getRouteRequestContext({ request, context })
+  const { session, clientAddress } = getRouteRequestContext({ request, context })
   const db = getDbFromContext({ request, context })
 
   // Time-series access-log write for the analytics dashboard. The
@@ -45,7 +45,7 @@ export async function loader({
   // so it can apply the exemption and honour the analytics settings.
   void trackAccess(request, null, {
     isAdmin: userSession(session)?.role === 'admin',
-    clientAddress: getRouteRequestContext({ request, context }).clientAddress,
+    clientAddress,
   })
 
   const content = requireBlogSettingsSection('content')

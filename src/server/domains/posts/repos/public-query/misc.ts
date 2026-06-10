@@ -7,6 +7,7 @@ import type { Post, PostVisibilityOptions } from '@/shared/types/catalog'
 import { buildPublicPostFilters, hydratePostImages } from '@/server/domains/posts/repos/hydrate'
 import { listPublicPosts } from '@/server/domains/posts/repos/public-query/listing'
 import { toPostFromMeta } from '@/server/domains/posts/repos/single'
+import { findTagNamesByPostIds } from '@/server/infra/db/operations/post-tag'
 import { post as postMetaTable } from '@/server/infra/db/schema/post'
 
 export async function getPostsBySlugs(
@@ -25,13 +26,16 @@ export async function getPostsBySlugs(
     .orderBy(desc(postMetaTable.firstPublishedAt))
 
   const now = new Date()
-  const posts = rows
-    .filter((meta) => {
-      const visible = filters.includeHidden || meta.visible
-      const published = filters.includeScheduled || meta.publishedAt <= now
-      return visible && published && meta.published
-    })
-    .map((meta) => toPostFromMeta(meta))
+  const filteredRows = rows.filter((meta) => {
+    const visible = filters.includeHidden || meta.visible
+    const published = filters.includeScheduled || meta.publishedAt <= now
+    return visible && published && meta.published
+  })
+  const tagMap = await findTagNamesByPostIds(
+    db,
+    filteredRows.map((m) => m.id),
+  )
+  const posts = filteredRows.map((meta) => toPostFromMeta(meta, tagMap.get(meta.id) ?? []))
   await hydratePostImages(db, posts)
   return posts
 }
@@ -39,7 +43,11 @@ export async function getPostsBySlugs(
 export async function listAllPosts(db: NodePgDatabase, options?: PostVisibilityOptions): Promise<Post[]> {
   const filters = buildPublicPostFilters(options)
   const metas = await listPublicPosts(db, { ...filters })
-  const posts = metas.map((meta) => toPostFromMeta(meta))
+  const tagMap = await findTagNamesByPostIds(
+    db,
+    metas.map((m) => m.id),
+  )
+  const posts = metas.map((meta) => toPostFromMeta(meta, tagMap.get(meta.id) ?? []))
   await hydratePostImages(db, posts)
   return posts
 }

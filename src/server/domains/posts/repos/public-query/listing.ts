@@ -13,6 +13,7 @@ import {
   toClientPostFromMeta,
   type ListPublicPostsFilters,
 } from '@/server/domains/posts/repos/shared'
+import { findTagNamesByPostIds } from '@/server/infra/db/operations/post-tag'
 import { post as postMetaTable } from '@/server/infra/db/schema/post'
 import { toListingPostCard } from '@/shared/types/catalog'
 import { idFromString } from '@/shared/utils/id'
@@ -69,7 +70,11 @@ export async function listPublicPostCards(
 ): Promise<ListingPostCard[]> {
   const filters = buildPublicPostFilters(options)
   const metas = await listPublicPosts(db, { ...filters, sortBy: options?.sortBy })
-  return metas.map((meta) => toClientPostFromMeta(meta)).map(toListingPostCard)
+  const tagMap = await findTagNamesByPostIds(
+    db,
+    metas.map((m) => m.id),
+  )
+  return metas.map((meta) => toClientPostFromMeta(meta, tagMap.get(meta.id) ?? [])).map(toListingPostCard)
 }
 
 export async function listPublicPostCardsPaginated(
@@ -104,7 +109,11 @@ export async function listPublicPostCardsPaginated(
     ),
     countPublicPosts(db, { ...filters, category: options?.category, tag: options?.tag }, now),
   ])
-  const posts = metas.map((meta) => toClientPostFromMeta(meta)).map(toListingPostCard)
+  const tagMap = await findTagNamesByPostIds(
+    db,
+    metas.map((m) => m.id),
+  )
+  const posts = metas.map((meta) => toClientPostFromMeta(meta, tagMap.get(meta.id) ?? [])).map(toListingPostCard)
   await hydrateImageRefs(
     db,
     posts,
@@ -125,7 +134,11 @@ export async function listClientPosts(
 ): Promise<ClientPost[]> {
   const filters = buildPublicPostFilters(options)
   const metas = await listPublicPosts(db, { ...filters, limit: options?.limit ?? 5000 })
-  const posts = metas.map((meta) => toClientPostFromMeta(meta))
+  const tagMap = await findTagNamesByPostIds(
+    db,
+    metas.map((m) => m.id),
+  )
+  const posts = metas.map((meta) => toClientPostFromMeta(meta, tagMap.get(meta.id) ?? []))
   await hydrateImageRefs(
     db,
     posts,
