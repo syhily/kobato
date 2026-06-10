@@ -34,9 +34,6 @@ export const post = pgTable(
     authorId: bigint('author_id', { mode: 'bigint' }),
     // Post-specific taxonomy fields
     category: varchar('category', { length: 20 }).notNull().default(''),
-    tags: jsonb('tags')
-      .notNull()
-      .default(sql`'[]'::jsonb`),
     alias: jsonb('alias')
       .notNull()
       .default(sql`'[]'::jsonb`),
