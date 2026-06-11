@@ -137,14 +137,16 @@ export function AddMusicView() {
     // Auto-load next page if sentinel is still inside viewport and more pages exist
     if (hasMoreData && !searchQuery.isFetching) {
       requestAnimationFrame(() => {
-        if (!sentinelRef.current) {return}
+        if (!sentinelRef.current) {
+          return
+        }
         const rect = sentinelRef.current.getBoundingClientRect()
         if (rect.top < window.innerHeight) {
           loadMore()
         }
       })
     }
-  }, [searchQuery.data])
+  }, [searchQuery.data]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleAdd = useCallback(
     (hit: MetingSearchHit) => {
@@ -314,31 +316,33 @@ export function AddMusicView() {
             <p className="mt-1 text-sm">支持歌曲名称、艺人、专辑搜索</p>
           </div>
         ) : (
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
-            {results.map((hit) => {
-              const isCurrent = currentPreviewSourceId === hit.sourceId
-              return (
-                <SearchAlbumCard
-                  key={`${hit.source}:${hit.sourceId}`}
-                  hit={hit}
-                  adding={addingSourceId === hit.sourceId}
-                  added={addedSourceIds.has(hit.sourceId)}
-                  isCurrent={isCurrent}
-                  isPlaying={isCurrent && isPlaying}
-                  onAdd={handleAdd}
-                  onPreview={onPreview}
-                />
-              )
-            })}
-          </div>
+          <>
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+              {results.map((hit) => {
+                const isCurrent = currentPreviewSourceId === hit.sourceId
+                return (
+                  <SearchAlbumCard
+                    key={`${hit.source}:${hit.sourceId}`}
+                    hit={hit}
+                    adding={addingSourceId === hit.sourceId}
+                    added={addedSourceIds.has(hit.sourceId)}
+                    isCurrent={isCurrent}
+                    isPlaying={isCurrent && isPlaying}
+                    onAdd={handleAdd}
+                    onPreview={onPreview}
+                  />
+                )
+              })}
+            </div>
+            {/* Sentinel for infinite scroll */}
+            <div ref={sentinelRef} className="h-4" />
+            {isLoadingMore ? (
+              <div className="flex justify-center py-4">
+                <Loader2 className="size-6 animate-spin text-ink-4" />
+              </div>
+            ) : null}
+          </>
         )}
-        {/* Sentinel for infinite scroll */}
-        <div ref={sentinelRef} className="h-4" />
-        {isLoadingMore ? (
-          <div className="flex justify-center py-4">
-            <Loader2 className="size-6 animate-spin text-ink-4" />
-          </div>
-        ) : null}
       </motion.div>
     </motion.div>
   )

@@ -176,11 +176,6 @@ const QUALITY_MAP: Array<[keyof RawTencentFile, number, string, string]> = [
   ['size_24aac', 24, 'C100', 'm4a'],
 ]
 
-function extractUin(cookie: string): string {
-  const match = cookie.match(/uin=(\d+)/)
-  return match?.[1] ?? '0'
-}
-
 // ── Provider implementation ─────────────────────────────────────────────────
 
 export const tencentProvider: MusicProvider = {
@@ -334,7 +329,7 @@ export const tencentProvider: MusicProvider = {
     }
 
     const guid = Math.floor(Math.random() * 1_000_000_000)
-    const uin = extractUin(TENCENT_HEADERS.Cookie ?? '')
+    const uin = '0'
 
     // Step 2: Request vkey from the vkey server
     const payload = {
@@ -421,7 +416,8 @@ export const tencentProvider: MusicProvider = {
     const text = await res.text()
 
     // Strip JSONP wrapper (various callback names)
-    const jsonStr = text.replace(/^(?:callback|MusicJsonCallback|jsonCallback)\(|\)$/g, '')
+    const jsonpMatch = text.match(/^(?:callback|MusicJsonCallback|jsonCallback)\(([\s\S]*)\)$/)
+    const jsonStr = jsonpMatch?.[1] ?? text
 
     let data: Record<string, unknown>
     try {
