@@ -94,7 +94,7 @@ export function configureMiddleware(app: Hono<Env>): void {
       `style-src 'self' 'unsafe-inline' ${extra}`,
       `font-src 'self' ${extra}`,
       `img-src 'self' data: blob: http://*.music.126.net https://*.music.126.net https://y.gtimg.cn ${extra}`,
-      `media-src 'self' http://*.music.126.net https://*.music.126.net https://*.stream.qqmusic.qq.com ${extra}`,
+      `media-src 'self' http://*.music.126.net https://*.music.126.net *.tc.qq.com ${extra}`,
       "connect-src 'self'",
       "object-src 'none'",
       "frame-ancestors 'none'",
