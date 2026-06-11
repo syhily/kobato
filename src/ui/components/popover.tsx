@@ -2,6 +2,7 @@ import type { ComponentProps } from 'react'
 
 import { Popover as BasePopover } from '@base-ui/react/popover'
 
+import { motion, transitions } from '@/client/lib/motion'
 import { cn } from '@/ui/lib/cn'
 
 function Popover({ ...props }: ComponentProps<typeof BasePopover.Root>) {
@@ -33,14 +34,21 @@ function PopoverContent({
           data-slot="popover-content"
           className={cn(
             'z-(--z-modal) w-72 origin-[var(--transform-origin)] rounded-md border bg-popover p-4 text-popover-foreground shadow-md outline-none',
+            'transition-all duration-[250ms] ease-[cubic-bezier(0.16,1,0.3,1)]',
             'data-[ending-style]:scale-95 data-[ending-style]:opacity-0',
             'data-[starting-style]:scale-95 data-[starting-style]:opacity-0',
-            'transition-[transform,opacity] duration-150',
             className,
           )}
           {...props}
         >
-          {children}
+          <motion.div
+            initial={{ y: 6, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ ...transitions.menu, delay: 0.02 }}
+            className="contents"
+          >
+            {children}
+          </motion.div>
         </BasePopover.Popup>
       </BasePopover.Positioner>
     </BasePopover.Portal>

@@ -3,6 +3,7 @@ import type { ComponentProps } from 'react'
 import { Dialog as BaseDialog } from '@base-ui/react/dialog'
 import { XIcon } from 'lucide-react'
 
+import { motion, transitions } from '@/client/lib/motion'
 import { cn } from '@/ui/lib/cn'
 
 function Dialog({ ...props }: ComponentProps<typeof BaseDialog.Root>) {
@@ -26,7 +27,7 @@ function DialogBackdrop({ className, ...props }: ComponentProps<typeof BaseDialo
     <BaseDialog.Backdrop
       data-slot="dialog-backdrop"
       className={cn(
-        'fixed inset-0 z-(--z-modal) bg-scrim transition-opacity duration-150 data-[ending-style]:opacity-0 data-[starting-style]:opacity-0',
+        'fixed inset-0 z-(--z-modal) bg-scrim/80 backdrop-blur-sm transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] data-[ending-style]:opacity-0 data-[starting-style]:opacity-0',
         className,
       )}
       {...props}
@@ -46,12 +47,19 @@ function DialogContent({
       <BaseDialog.Popup
         data-slot="dialog-content"
         className={cn(
-          'fixed top-[50%] left-[50%] z-(--z-modal) grid w-full max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 gap-4 overflow-y-auto overscroll-contain rounded-lg border bg-background p-6 shadow-lg duration-200 data-[ending-style]:scale-95 data-[ending-style]:opacity-0 data-[starting-style]:scale-95 data-[starting-style]:opacity-0 sm:max-w-md',
+          'fixed top-[50%] left-[50%] z-(--z-modal) grid w-full max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 gap-4 overflow-y-auto overscroll-contain rounded-lg border bg-background p-6 shadow-lg duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] data-[ending-style]:scale-95 data-[ending-style]:opacity-0 data-[starting-style]:scale-95 data-[starting-style]:opacity-0 sm:max-w-md',
           className,
         )}
         {...props}
       >
-        {children}
+        <motion.div
+          initial={{ y: 12, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ ...transitions.popup, delay: 0.04 }}
+          className="contents"
+        >
+          {children}
+        </motion.div>
         {showCloseButton && (
           <BaseDialog.Close
             data-slot="dialog-close"

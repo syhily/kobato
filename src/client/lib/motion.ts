@@ -17,4 +17,10 @@ export const transitions = {
   slowLoop: { repeat: Infinity, duration: 20, ease: 'easeInOut' as const },
   /** 脉冲循环 */
   pulseLoop: { repeat: Infinity, duration: 6, ease: 'easeInOut' as const, repeatType: 'reverse' as const },
+  /** 弹窗内容 spring — 比通用更弹更短 */
+  popup: { type: 'spring' as const, stiffness: 450, damping: 32 },
+  /** 弹窗 backdrop 淡入 — 比通用 fade 略慢 */
+  popupFade: { duration: 0.35, ease: [0.16, 1, 0.3, 1] as [number, number, number, number] },
+  /** 菜单 / 下拉 spring — 更紧实 */
+  menu: { type: 'spring' as const, stiffness: 500, damping: 35 },
 }

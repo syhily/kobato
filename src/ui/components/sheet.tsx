@@ -3,6 +3,7 @@ import type { ComponentProps } from 'react'
 import { Dialog as BaseDialog } from '@base-ui/react/dialog'
 import { XIcon } from 'lucide-react'
 
+import { motion, transitions } from '@/client/lib/motion'
 import { cn } from '@/ui/lib/cn'
 
 function Sheet({ ...props }: ComponentProps<typeof BaseDialog.Root>) {
@@ -26,7 +27,7 @@ function SheetBackdrop({ className, ...props }: ComponentProps<typeof BaseDialog
     <BaseDialog.Backdrop
       data-slot="sheet-backdrop"
       className={cn(
-        'fixed inset-0 z-(--z-modal) bg-scrim transition-opacity duration-200 data-[ending-style]:opacity-0 data-[starting-style]:opacity-0',
+        'fixed inset-0 z-(--z-modal) bg-scrim/80 backdrop-blur-sm transition-all duration-350 ease-[cubic-bezier(0.16,1,0.3,1)] data-[ending-style]:opacity-0 data-[starting-style]:opacity-0',
         className,
       )}
       {...props}
@@ -56,13 +57,24 @@ function SheetContent({
         data-slot="sheet-content"
         data-side={side}
         className={cn(
-          'fixed z-(--z-modal) flex flex-col gap-4 bg-background shadow-lg transition duration-300 ease-in-out',
+          'fixed z-(--z-modal) flex flex-col gap-4 bg-background shadow-lg transition-all duration-350 ease-[cubic-bezier(0.16,1,0.3,1)]',
           sideClasses[side],
           className,
         )}
         {...props}
       >
-        {children}
+        <motion.div
+          initial={{
+            opacity: 0,
+            y: side === 'top' || side === 'bottom' ? 8 : 0,
+            x: side === 'left' || side === 'right' ? (side === 'left' ? -8 : 8) : 0,
+          }}
+          animate={{ opacity: 1, y: 0, x: 0 }}
+          transition={{ ...transitions.popup, delay: 0.05 }}
+          className="contents"
+        >
+          {children}
+        </motion.div>
         <BaseDialog.Close
           data-slot="sheet-close-button"
           className="absolute top-4 right-4 rounded-xs opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-hidden disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*=size-])]:size-4"

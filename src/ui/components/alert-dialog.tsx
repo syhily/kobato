@@ -2,6 +2,7 @@ import type { ComponentProps } from 'react'
 
 import { AlertDialog as BaseAlertDialog } from '@base-ui/react/alert-dialog'
 
+import { motion, transitions } from '@/client/lib/motion'
 import { Button, buttonVariants } from '@/ui/components/button'
 import { cn } from '@/ui/lib/cn'
 
@@ -22,7 +23,7 @@ function AlertDialogBackdrop({ className, ...props }: ComponentProps<typeof Base
     <BaseAlertDialog.Backdrop
       data-slot="alert-dialog-backdrop"
       className={cn(
-        'fixed inset-0 z-(--z-modal) bg-scrim transition-opacity duration-150 data-[ending-style]:opacity-0 data-[starting-style]:opacity-0',
+        'fixed inset-0 z-(--z-modal) bg-scrim/80 backdrop-blur-sm transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] data-[ending-style]:opacity-0 data-[starting-style]:opacity-0',
         className,
       )}
       {...props}
@@ -30,18 +31,27 @@ function AlertDialogBackdrop({ className, ...props }: ComponentProps<typeof Base
   )
 }
 
-function AlertDialogContent({ className, ...props }: ComponentProps<typeof BaseAlertDialog.Popup>) {
+function AlertDialogContent({ className, children, ...props }: ComponentProps<typeof BaseAlertDialog.Popup>) {
   return (
     <AlertDialogPortal>
       <AlertDialogBackdrop />
       <BaseAlertDialog.Popup
         data-slot="alert-dialog-content"
         className={cn(
-          'fixed top-[50%] left-[50%] z-(--z-modal) grid w-full max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 gap-4 rounded-lg border bg-background p-6 shadow-lg duration-200 data-[ending-style]:scale-95 data-[ending-style]:opacity-0 data-[starting-style]:scale-95 data-[starting-style]:opacity-0 sm:max-w-md',
+          'fixed top-[50%] left-[50%] z-(--z-modal) grid w-full max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 gap-4 rounded-lg border bg-background p-6 shadow-lg duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] data-[ending-style]:scale-95 data-[ending-style]:opacity-0 data-[starting-style]:scale-95 data-[starting-style]:opacity-0 sm:max-w-md',
           className,
         )}
         {...props}
-      />
+      >
+        <motion.div
+          initial={{ y: 12, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ ...transitions.popup, delay: 0.04 }}
+          className="contents"
+        >
+          {children}
+        </motion.div>
+      </BaseAlertDialog.Popup>
     </AlertDialogPortal>
   )
 }

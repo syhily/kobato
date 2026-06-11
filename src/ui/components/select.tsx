@@ -3,6 +3,7 @@ import type { ComponentProps } from 'react'
 import { Select as BaseSelect } from '@base-ui/react/select'
 import { CheckIcon, ChevronDownIcon, ChevronUpIcon } from 'lucide-react'
 
+import { motion, transitions } from '@/client/lib/motion'
 import { cn } from '@/ui/lib/cn'
 
 function Select<Value>(props: ComponentProps<typeof BaseSelect.Root<Value>>) {
@@ -82,12 +83,19 @@ function SelectContent({
         <BaseSelect.Popup
           data-slot="select-content"
           className={cn(
-            'relative z-(--z-modal) max-h-[var(--available-height)] min-w-[max(8rem,var(--anchor-width))] origin-[var(--transform-origin)] overflow-x-hidden overflow-y-auto rounded-md border bg-popover p-1 text-popover-foreground shadow-md data-[ending-style]:scale-95 data-[ending-style]:opacity-0 data-[starting-style]:scale-95 data-[starting-style]:opacity-0',
+            'relative z-(--z-modal) max-h-[var(--available-height)] min-w-[max(8rem,var(--anchor-width))] origin-[var(--transform-origin)] overflow-x-hidden overflow-y-auto rounded-md border bg-popover p-1 text-popover-foreground shadow-md transition-all duration-[250ms] ease-[cubic-bezier(0.16,1,0.3,1)] data-[ending-style]:scale-95 data-[ending-style]:opacity-0 data-[starting-style]:scale-95 data-[starting-style]:opacity-0',
             className,
           )}
           {...props}
         >
-          <SelectGroup>{children}</SelectGroup>
+          <motion.div
+            initial={{ y: 6, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ ...transitions.menu, delay: 0.02 }}
+            className="contents"
+          >
+            <SelectGroup>{children}</SelectGroup>
+          </motion.div>
         </BaseSelect.Popup>
         <BaseSelect.ScrollDownArrow className="flex cursor-default items-center justify-center py-1">
           <ChevronDownIcon className="size-4" />

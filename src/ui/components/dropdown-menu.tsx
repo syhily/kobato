@@ -3,6 +3,7 @@ import type { ComponentProps } from 'react'
 import { Menu as BaseMenu } from '@base-ui/react/menu'
 import { CheckIcon, ChevronRightIcon, CircleIcon } from 'lucide-react'
 
+import { motion, transitions } from '@/client/lib/motion'
 import { cn } from '@/ui/lib/cn'
 
 function DropdownMenu({ ...props }: ComponentProps<typeof BaseMenu.Root>) {
@@ -33,12 +34,19 @@ function DropdownMenuContent({
         <BaseMenu.Popup
           data-slot="dropdown-menu-content"
           className={cn(
-            'z-(--z-modal) max-h-[var(--available-height)] min-w-[8rem] origin-[var(--transform-origin)] overflow-x-hidden overflow-y-auto rounded-md border bg-popover p-1 text-popover-foreground shadow-md data-[ending-style]:scale-95 data-[ending-style]:opacity-0 data-[starting-style]:scale-95 data-[starting-style]:opacity-0',
+            'z-(--z-modal) max-h-[var(--available-height)] min-w-[8rem] origin-[var(--transform-origin)] overflow-x-hidden overflow-y-auto rounded-md border bg-popover p-1 text-popover-foreground shadow-md transition-all duration-[250ms] ease-[cubic-bezier(0.16,1,0.3,1)] data-[ending-style]:scale-95 data-[ending-style]:opacity-0 data-[starting-style]:scale-95 data-[starting-style]:opacity-0',
             className,
           )}
           {...props}
         >
-          <DropdownMenuGroup>{children}</DropdownMenuGroup>
+          <motion.div
+            initial={{ y: 6, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ ...transitions.menu, delay: 0.02 }}
+            className="contents"
+          >
+            <DropdownMenuGroup>{children}</DropdownMenuGroup>
+          </motion.div>
         </BaseMenu.Popup>
       </BaseMenu.Positioner>
     </DropdownMenuPortal>
@@ -177,18 +185,27 @@ function DropdownMenuSubTrigger({
   )
 }
 
-function DropdownMenuSubContent({ className, ...props }: ComponentProps<typeof BaseMenu.Popup>) {
+function DropdownMenuSubContent({ className, children, ...props }: ComponentProps<typeof BaseMenu.Popup>) {
   return (
     <BaseMenu.Portal>
       <BaseMenu.Positioner className="z-(--z-modal)">
         <BaseMenu.Popup
           data-slot="dropdown-menu-sub-content"
           className={cn(
-            'z-(--z-modal) min-w-[8rem] origin-[var(--transform-origin)] overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-lg data-[ending-style]:scale-95 data-[ending-style]:opacity-0 data-[starting-style]:scale-95 data-[starting-style]:opacity-0',
+            'z-(--z-modal) min-w-[8rem] origin-[var(--transform-origin)] overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-lg transition-all duration-[250ms] ease-[cubic-bezier(0.16,1,0.3,1)] data-[ending-style]:scale-95 data-[ending-style]:opacity-0 data-[starting-style]:scale-95 data-[starting-style]:opacity-0',
             className,
           )}
           {...props}
-        />
+        >
+          <motion.div
+            initial={{ y: 4, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ ...transitions.menu, delay: 0.02 }}
+            className="contents"
+          >
+            {children}
+          </motion.div>
+        </BaseMenu.Popup>
       </BaseMenu.Positioner>
     </BaseMenu.Portal>
   )
