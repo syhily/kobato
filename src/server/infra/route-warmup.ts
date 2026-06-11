@@ -1,7 +1,7 @@
 /* oxlint-disable typescript/no-unsafe-assignment, typescript/no-unsafe-member-access, typescript/no-unsafe-type-assertion */
 import type { Plugin } from 'vite'
 
-import { existsSync, readdirSync, statSync, writeFileSync } from 'node:fs'
+import { existsSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs'
 import { basename, join, resolve } from 'node:path'
 
 // Route tier configuration
@@ -135,6 +135,33 @@ function matchesAny(chunk: string, patterns: RegExp[]): boolean {
   return patterns.some((p) => p.test(name))
 }
 
+function loadServerManifest(clientAssetsDir: string): RouteManifest | null {
+  try {
+    const files = readdirSync(clientAssetsDir)
+    const manifestFile = files.find((f) => f.startsWith('manifest-') && f.endsWith('.js'))
+    if (!manifestFile) {
+      // oxlint-disable-next-line no-console
+      console.error('[route-warmup] React Router client manifest not found in', clientAssetsDir)
+      return null
+    }
+
+    const content = readFileSync(join(clientAssetsDir, manifestFile), 'utf-8')
+    const prefix = 'window.__reactRouterManifest='
+    if (!content.startsWith(prefix)) {
+      // oxlint-disable-next-line no-console
+      console.error('[route-warmup] React Router client manifest has unexpected format')
+      return null
+    }
+
+    const jsonText = content.slice(prefix.length).replace(/;\s*$/, '')
+    return JSON.parse(jsonText) as RouteManifest
+  } catch (err) {
+    // oxlint-disable-next-line no-console
+    console.error('[route-warmup] failed to load server manifest', err instanceof Error ? err.message : String(err))
+    return null
+  }
+}
+
 // Plugin
 
 export function routeWarmupPlugin(): Plugin {
@@ -144,7 +171,7 @@ export function routeWarmupPlugin(): Plugin {
 
     writeBundle: {
       order: 'post',
-      async handler(options, bundle) {
+      async handler(options, _bundle) {
         // With v8_viteEnvironmentApi, the client build fires first,
         // then the SSR build. Run in the SSR environment so both
         // client assets and the server manifest are available.
@@ -171,21 +198,10 @@ export function routeWarmupPlugin(): Plugin {
           return
         }
 
-        // Extract manifest from the in-memory bundle chunks
-        let src: string | undefined
-        for (const chunk of Object.values(bundle)) {
-          if (chunk.type === 'chunk' && chunk.fileName.endsWith('server-build.js')) {
-            src = chunk.code
-            break
-          }
-        }
-
-        if (!src) {
-          return
-        }
-
-        // Parse manifest from server build
-        const manifest = parseServerManifest(src)
+        // Read the structured React Router client manifest from disk.
+        // The client build fires before the SSR build, so the manifest is
+        // already written by the time this SSR writeBundle hook runs.
+        const manifest = loadServerManifest(clientAssetsDir)
         if (!manifest) {
           return
         }
@@ -300,82 +316,3 @@ export function routeWarmupPlugin(): Plugin {
 }
 
 // Manifest parser
-
-function findMatchingBrace(text: string, start: number): number {
-  let depth = 0
-  let inString = false
-  let escape = false
-  let stringChar = ''
-
-  for (let i = start; i < text.length; i++) {
-    const char = text[i]
-
-    if (inString) {
-      if (escape) {
-        escape = false
-        continue
-      }
-      if (char === '\\') {
-        escape = true
-        continue
-      }
-      if (char === stringChar) {
-        inString = false
-      }
-      continue
-    }
-
-    if (char === '"' || char === "'") {
-      inString = true
-      stringChar = char
-      continue
-    }
-
-    if (char === '{') {
-      depth++
-    } else if (char === '}') {
-      depth--
-      if (depth === 0) {
-        return i
-      }
-    }
-  }
-
-  return -1
-}
-
-function parseServerManifest(src: string): RouteManifest | null {
-  try {
-    // TODO(P2-6): This regex-based extraction is fragile — any change in
-    // the bundler's output format (minification, variable renaming, different
-    // var declaration syntax) will silently break warmup manifest generation.
-    // The proper fix is to read the structured manifest from Vite's build
-    // output directly instead of parsing minified JS.
-    const startMarker = 'var server_manifest_default = '
-    const startIdx = src.indexOf(startMarker)
-    if (startIdx === -1) {
-      // oxlint-disable-next-line no-console
-      console.error('[route-warmup] server_manifest_default marker not found in built output')
-      return null
-    }
-
-    const objectStart = startIdx + startMarker.length
-    const endIdx = findMatchingBrace(src, objectStart)
-    if (endIdx === -1) {
-      // oxlint-disable-next-line no-console
-      console.error('[route-warmup] could not find matching brace for server_manifest_default')
-      return null
-    }
-
-    const objectText = src.slice(objectStart, endIdx + 1)
-    // Replace `void 0` with `null` for JSON.parse compatibility
-    const jsonSafe = objectText.replace(/\bvoid 0\b/g, 'null')
-    // Also handle unquoted keys by wrapping them
-    const quoted = jsonSafe.replace(/([{,]\s*)([a-zA-Z_$][a-zA-Z0-9_$]*)\s*:/g, '$1"$2":')
-    return JSON.parse(quoted) as RouteManifest
-  } catch (err) {
-    // oxlint-disable-next-line no-console
-    console.error('[route-warmup] failed to parse server manifest', err instanceof Error ? err.message : String(err))
-    return null
-  }
-}
