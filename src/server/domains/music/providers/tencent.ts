@@ -11,14 +11,28 @@ const log = getLogger('music.tencent')
 // ── HTTP helpers ────────────────────────────────────────────────────────────
 
 const TENCENT_HEADERS: Record<string, string> = {
-  Referer: 'http://y.qq.com',
-  Cookie:
-    'pgv_pvi=22038528; pgv_si=s3156287488; pgv_pvid=5535248600; yplayer_open=1; ts_last=y.qq.com/portal/player.html; ts_uid=4847550686; yq_index=0; qqmusic_fromtag=66; player_exist=1',
-  'User-Agent': 'QQ%E9%9F%B3%E4%B9%90/54409 CFNetwork/901.1 Darwin/17.6.0 (x86_64)',
+  Referer: 'https://y.qq.com',
+  'User-Agent':
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
   Accept: '*/*',
-  'Accept-Language': 'zh-CN,zh;q=0.8,gl;q=0.6,zh-TW;q=0.4',
+  'Accept-Language': 'zh-CN,zh;q=0.9',
   Connection: 'keep-alive',
-  'Content-Type': 'application/x-www-form-urlencoded',
+}
+
+async function tencentPost(url: string, body: unknown): Promise<unknown> {
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: {
+      ...TENCENT_HEADERS,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(body),
+    signal: AbortSignal.timeout(30000),
+  })
+  if (!res.ok) {
+    throw new Error(`Tencent API returned ${res.status} ${res.statusText}`)
+  }
+  return res.json()
 }
 
 async function tencentGet(url: string, params: Record<string, string>): Promise<unknown> {
@@ -26,7 +40,10 @@ async function tencentGet(url: string, params: Record<string, string>): Promise<
   const fullUrl = `${url}?${qs}`
   const res = await fetch(fullUrl, {
     method: 'GET',
-    headers: TENCENT_HEADERS,
+    headers: {
+      ...TENCENT_HEADERS,
+      'Content-Type': 'application/x-www-form-urlencoded',
+    },
     signal: AbortSignal.timeout(30000),
   })
   if (!res.ok) {
@@ -87,35 +104,45 @@ interface RawTencentFile {
 
 interface RawTencentSong {
   mid: string
-  name: string
+  name?: string
+  title?: string
+  songname?: string
   singer: RawTencentSinger[]
   album: RawTencentAlbum
   file: RawTencentFile
-  type: number
+  type?: number
 }
 
 function toTrack(song: RawTencentSong): ProviderTrack {
   return {
     source: 'tencent',
     sourceId: song.mid,
-    name: song.name,
+    name: song.title ?? song.name ?? song.songname ?? '',
     artist: song.singer.map((s) => s.name),
-    album: song.album.title.trim(),
-    picId: song.album.mid,
+    album: (song.album?.title ?? '').trim(),
+    picId: song.album?.mid ?? '',
     urlId: song.mid,
     lyricId: song.mid,
   }
 }
 
-// ── Zod schemas ─────────────────────────────────────────────────────────────
+// ── Zod schemas for musicu.fcg responses ────────────────────────────────────
 
-const searchResponseSchema = z
+const musicuSearchResponseSchema = z
   .object({
-    data: z
+    req_1: z
       .object({
-        song: z
+        data: z
           .object({
-            list: z.array(z.any()),
+            body: z
+              .object({
+                song: z
+                  .object({
+                    list: z.array(z.any()),
+                  })
+                  .optional(),
+              })
+              .optional(),
           })
           .optional(),
       })
@@ -123,9 +150,17 @@ const searchResponseSchema = z
   })
   .loose()
 
-const songDetailResponseSchema = z
+const musicuSongDetailResponseSchema = z
   .object({
-    data: z.array(z.any()).optional(),
+    songinfo: z
+      .object({
+        data: z
+          .object({
+            track_info: z.any().optional(),
+          })
+          .optional(),
+      })
+      .optional(),
   })
   .loose()
 
@@ -141,6 +176,11 @@ const QUALITY_MAP: Array<[keyof RawTencentFile, number, string, string]> = [
   ['size_24aac', 24, 'C100', 'm4a'],
 ]
 
+function extractUin(cookie: string): string {
+  const match = cookie.match(/uin=(\d+)/)
+  return match?.[1] ?? '0'
+}
+
 // ── Provider implementation ─────────────────────────────────────────────────
 
 export const tencentProvider: MusicProvider = {
@@ -155,24 +195,27 @@ export const tencentProvider: MusicProvider = {
     const safeLimit = Math.min(Math.max(1, Math.floor(limit)), 30)
     const page = Math.floor((offset ?? 0) / safeLimit) + 1
 
-    const res = await tencentGet('https://c.y.qq.com/soso/fcgi-bin/client_search_cp', {
-      format: 'json',
-      w: trimmed,
-      n: String(safeLimit),
-      p: String(page),
-      aggr: '1',
-      lossless: '1',
-      cr: '1',
-      new_json: '1',
+    const res = await tencentPost('https://u.y.qq.com/cgi-bin/musicu.fcg', {
+      comm: { ct: 24, cv: 0 },
+      req_1: {
+        method: 'DoSearchForQQMusicDesktop',
+        module: 'music.search.SearchCgiService',
+        param: {
+          num_per_page: safeLimit,
+          page_num: page,
+          query: trimmed,
+          search_type: 0,
+        },
+      },
     })
 
-    const parsed = searchResponseSchema.safeParse(res)
+    const parsed = musicuSearchResponseSchema.safeParse(res)
     if (!parsed.success) {
       log.error('Tencent search response failed schema validation', { issues: parsed.error.issues })
       throw new ActionFailure(502, '上游音乐服务返回异常，请稍后再试')
     }
 
-    const songs = (parsed.data.data?.song?.list ?? []) as RawTencentSong[]
+    const songs = (parsed.data.req_1?.data?.body?.song?.list ?? []) as RawTencentSong[]
     const tracks = songs.map(toTrack)
 
     // Resolve preview URLs and cover URLs for each hit.
@@ -202,38 +245,51 @@ export const tencentProvider: MusicProvider = {
   },
 
   async getTrack(sourceId: string): Promise<ProviderTrack | null> {
-    const res = await tencentGet('https://c.y.qq.com/v8/fcg-bin/fcg_play_single_song.fcg', {
-      songmid: sourceId,
-      platform: 'yqq',
-      format: 'json',
+    const res = await tencentPost('https://u.y.qq.com/cgi-bin/musicu.fcg', {
+      comm: { ct: 24, cv: 0 },
+      songinfo: {
+        method: 'get_song_detail_yqq',
+        module: 'music.pf_song_detail_svr',
+        param: {
+          song_mid: sourceId,
+        },
+      },
     })
 
-    const parsed = songDetailResponseSchema.safeParse(res)
+    const parsed = musicuSongDetailResponseSchema.safeParse(res)
     if (!parsed.success) {
       log.error('Tencent song detail response failed schema validation', { issues: parsed.error.issues })
       throw new ActionFailure(502, '上游音乐服务返回异常，请稍后再试')
     }
 
-    const songs = (parsed.data.data ?? []) as RawTencentSong[]
-    const first = songs[0]
-    return first ? toTrack(first) : null
+    const trackInfo = parsed.data.songinfo?.data?.track_info as RawTencentSong | undefined
+    return trackInfo ? toTrack(trackInfo) : null
   },
 
   async resolveAudioUrl(track: ProviderTrack): Promise<string> {
     // Step 1: Get song detail to obtain file info
-    const detailRes = await tencentGet('https://c.y.qq.com/v8/fcg-bin/fcg_play_single_song.fcg', {
-      songmid: track.urlId,
-      platform: 'yqq',
-      format: 'json',
+    const detailRes = await tencentPost('https://u.y.qq.com/cgi-bin/musicu.fcg', {
+      comm: { ct: 24, cv: 0 },
+      songinfo: {
+        method: 'get_song_detail_yqq',
+        module: 'music.pf_song_detail_svr',
+        param: {
+          song_mid: track.urlId,
+        },
+      },
     })
 
-    const detailParsed = songDetailResponseSchema.safeParse(detailRes)
-    if (!detailParsed.success || !detailParsed.data.data?.length) {
-      throw new ActionFailure(404, '上游未返回歌曲详情')
+    const typedDetail = detailRes as Record<string, unknown>
+    const songinfo = typedDetail.songinfo as Record<string, unknown> | undefined
+    const data = songinfo?.data as Record<string, unknown> | undefined
+    const songData = data?.track_info as RawTencentSong | undefined
+
+    if (!songData?.file?.media_mid) {
+      throw new ActionFailure(404, '上游未返回完整的歌曲文件信息')
     }
 
-    const songData = detailParsed.data.data[0] as RawTencentSong
     const guid = Math.floor(Math.random() * 1_000_000_000)
+    const uin = extractUin(TENCENT_HEADERS.Cookie ?? '')
 
     // Step 2: Request vkey from the vkey server
     const payload = {
@@ -244,16 +300,29 @@ export const tencentProvider: MusicProvider = {
           guid: String(guid),
           songmid: QUALITY_MAP.map(() => songData.mid),
           filename: QUALITY_MAP.map(([, , prefix, ext]) => `${prefix}${songData.file.media_mid}.${ext}`),
-          songtype: QUALITY_MAP.map(() => songData.type),
-          uin: '0',
+          songtype: QUALITY_MAP.map(() => songData.type ?? 0),
+          uin,
           loginflag: 1,
           platform: '20',
         },
       },
+      comm: {
+        uin,
+        format: 'json',
+        ct: 19,
+        cv: 0,
+        authst: '',
+      },
     }
 
     const vkeyRes = await tencentGet('https://u.y.qq.com/cgi-bin/musicu.fcg', {
+      '-': 'getplaysongvkey',
+      g_tk: '5381',
+      loginUin: uin,
+      hostUin: '0',
       format: 'json',
+      inCharset: 'utf8',
+      outCharset: 'utf-8',
       platform: 'yqq.json',
       needNewCode: '0',
       data: JSON.stringify(payload),
@@ -289,10 +358,13 @@ export const tencentProvider: MusicProvider = {
 
   async getLyric(track: ProviderTrack): Promise<string | null> {
     const res = await fetch(
-      `https://c.y.qq.com/lyric/fcgi-bin/fcg_query_lyric_new.fcg?songmid=${track.lyricId}&g_tk=5381`,
+      `https://c.y.qq.com/lyric/fcgi-bin/fcg_query_lyric_new.fcg?songmid=${track.lyricId}&g_tk=5381&loginUin=0&hostUin=0&inCharset=utf8&outCharset=utf-8&notice=0&platform=yqq&needNewCode=0`,
       {
         method: 'GET',
-        headers: TENCENT_HEADERS,
+        headers: {
+          ...TENCENT_HEADERS,
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
         signal: AbortSignal.timeout(30000),
       },
     )
@@ -303,8 +375,8 @@ export const tencentProvider: MusicProvider = {
 
     const text = await res.text()
 
-    // Strip MusicJsonCallback(...) wrapper
-    const jsonStr = text.startsWith('MusicJsonCallback(') ? text.slice(18, -1) : text
+    // Strip JSONP wrapper (various callback names)
+    const jsonStr = text.replace(/^(?:callback|MusicJsonCallback|jsonCallback)\(|\)$/g, '')
 
     let data: Record<string, unknown>
     try {
