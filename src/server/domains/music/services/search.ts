@@ -1,12 +1,14 @@
-import type { SearchMusicOutput } from '@/shared/types/music'
+/* oxlint-disable typescript/no-unsafe-type-assertion */
+import type { MetingSource, SearchMusicOutput } from '@/shared/types/music'
 
-import { searchSongsWithPreview } from '@/server/domains/music/netease'
+import { getProvider } from '@/server/domains/music/providers/registry'
 
-export async function searchMusic(keyword: string, limit?: number): Promise<SearchMusicOutput> {
-  const hits = await searchSongsWithPreview(keyword, limit)
+export async function searchMusic(source: string, keyword: string, limit?: number): Promise<SearchMusicOutput> {
+  const provider = getProvider(source)
+  const hits = await provider.search(keyword, limit ?? 10)
   return {
     results: hits.map((hit) => ({
-      source: hit.source,
+      source: hit.source as MetingSource,
       sourceId: hit.sourceId,
       name: hit.name,
       artist: hit.artist,

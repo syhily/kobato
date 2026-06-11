@@ -5,7 +5,7 @@ import { z } from 'zod'
 // compatible with future providers — adding `'tencent'` later means
 // widening this union and supplying a matching Meting wrapper.
 
-export const metingSourceSchema = z.literal('netease')
+export const metingSourceSchema = z.enum(['netease', 'tencent'])
 
 export const listMusicSchema = z.object({
   q: z.string().trim().max(100).optional(),

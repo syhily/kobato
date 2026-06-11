@@ -42,13 +42,19 @@ const list = authorProc
 
 const search = authorProc
   .route({ method: 'GET', path: '/admin/music/search' })
-  .input(z.object({ keyword: z.string(), limit: z.coerce.number().optional() }))
+  .input(
+    z.object({
+      source: z.enum(['netease', 'tencent']).optional(),
+      keyword: z.string(),
+      limit: z.coerce.number().optional(),
+    }),
+  )
   .output(searchMusicOutputDto)
-  .handler(({ input, context: _context }) => searchMusic(input.keyword, input.limit))
+  .handler(({ input, context: _context }) => searchMusic(input.source ?? 'netease', input.keyword, input.limit))
 
 const add = authorProc
   .route({ method: 'POST', path: '/admin/music/add' })
-  .input(z.object({ source: z.literal('netease'), sourceId: z.string().trim().min(1).max(64) }))
+  .input(z.object({ source: z.enum(['netease', 'tencent']), sourceId: z.string().trim().min(1).max(64) }))
   .output(addMusicOutputDto)
   .handler(async ({ input, context }) => {
     const music = await addMusic(context.db, {

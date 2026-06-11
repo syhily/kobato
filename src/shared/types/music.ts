@@ -1,6 +1,6 @@
 // Wire-format DTOs for the music management endpoints.
 
-export type MetingSource = 'netease'
+export type MetingSource = 'netease' | 'tencent'
 
 export interface MetingSearchHit {
   source: MetingSource

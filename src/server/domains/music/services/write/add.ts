@@ -1,16 +1,11 @@
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
+import type { ProviderTrack } from '@/server/domains/music/providers/types'
 import type { MusicRow, NewMusic } from '@/server/infra/db/types'
 import type { AdminMusicDto } from '@/shared/types/music'
 
-import {
-  getCoverUrl,
-  getLyric,
-  getSong,
-  getStreamUrl,
-  type MetingSearchHit as InternalMetingHit,
-} from '@/server/domains/music/netease'
 import { toAdminMusicDto } from '@/server/domains/music/projection'
+import { getProvider } from '@/server/domains/music/providers/registry'
 import {
   COVER_JPEG_QUALITY,
   COVER_SIZE,
@@ -33,7 +28,7 @@ import { getLogger } from '@/server/infra/logger'
 const log = getLogger('music.service')
 
 export interface AddMusicInputs {
-  source: 'netease'
+  source: string
   sourceId: string
   uploader: { id: bigint; name: string } | null
   /**
@@ -74,15 +69,14 @@ export async function addMusic(db: NodePgDatabase, input: AddMusicInputs): Promi
     return toAdminMusicDto({ ...existing, uploaderName: input.uploader?.name ?? null }, input.uploader?.name ?? null)
   }
 
-  // Resolve the canonical Meting hit. Even when the importer supplies
-  // a prefill we still need the upstream id triplet (pic_id, url_id,
-  // lyric_id) to be able to fall back when a prefilled URL 404s.
-  const hit = await getSong(input.sourceId)
-  if (hit === null) {
+  // Resolve the canonical track from the provider.
+  const provider = getProvider(input.source)
+  const track = await provider.getTrack(input.sourceId)
+  if (track === null) {
     throw new DomainError('NOT_FOUND', `上游未找到 sourceId=${input.sourceId} 的歌曲`)
   }
 
-  const metadata = mergeMetadata(hit, input.prefill)
+  const metadata = mergeMetadata(track, input.prefill)
 
   const playerId = await generateUniquePlayerId(db)
   const audioStoragePath = `musics/${playerId}.mp3`
@@ -90,14 +84,14 @@ export async function addMusic(db: NodePgDatabase, input: AddMusicInputs): Promi
 
   // Resolve URLs, download binaries, and fetch lyric in parallel.
   const [audioUrl, coverUrl] = await Promise.all([
-    input.prefill?.audioUrl ?? getStreamUrl(hit.urlId),
-    input.prefill?.coverUrl ?? getCoverUrl(hit.picId, COVER_SIZE),
+    input.prefill?.audioUrl ?? provider.resolveAudioUrl(track),
+    input.prefill?.coverUrl ?? provider.resolveCoverUrl(track),
   ])
 
   const [audioBuffer, coverSrcBuffer, lyricText] = await Promise.all([
     downloadBinary(audioUrl, MAX_AUDIO_BYTES, 'audio'),
     downloadBinary(coverUrl, MAX_COVER_BYTES, 'cover'),
-    input.prefill?.lyric === undefined ? getLyric(hit.lyricId) : input.prefill.lyric,
+    input.prefill?.lyric === undefined ? provider.getLyric(track) : input.prefill.lyric,
   ])
 
   // Re-encode cover to 300x300 JPEG before uploading.
@@ -147,12 +141,12 @@ export async function addMusic(db: NodePgDatabase, input: AddMusicInputs): Promi
 }
 
 function mergeMetadata(
-  hit: InternalMetingHit,
+  track: ProviderTrack,
   prefill: AddMusicPrefill | undefined,
 ): { name: string; artist: string[]; album: string } {
-  const name = pickNonEmpty(prefill?.name, hit.name)
-  const album = pickNonEmpty(prefill?.album, hit.album)
-  const artist = prefill?.artist !== undefined && prefill.artist.length > 0 ? prefill.artist : hit.artist
+  const name = pickNonEmpty(prefill?.name, track.name)
+  const album = pickNonEmpty(prefill?.album, track.album)
+  const artist = prefill?.artist !== undefined && prefill.artist.length > 0 ? prefill.artist : track.artist
   return { name, artist, album }
 }
 

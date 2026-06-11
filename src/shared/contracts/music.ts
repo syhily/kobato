@@ -12,7 +12,7 @@ import type {
 
 import { idString, isoDateTime } from '@/shared/contracts/primitives'
 
-const metingSource = z.enum(['netease'])
+const metingSource = z.enum(['netease', 'tencent'])
 
 export const publicMusicMetaDto = z.object({
   id: z.string(),

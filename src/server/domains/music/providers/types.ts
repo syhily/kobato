@@ -14,6 +14,9 @@ export interface ProviderTrack {
   name: string
   artist: string[]
   album: string
+  picId: string
+  urlId: string
+  lyricId: string
 }
 
 export interface MusicProvider {

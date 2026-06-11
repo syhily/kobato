@@ -8,7 +8,7 @@ export function toAdminMusicDto(
   uploaderNameOverride?: string | null,
 ): AdminMusicDto {
   const uploaderName = uploaderNameOverride !== undefined ? uploaderNameOverride : (row.uploaderName ?? null)
-  if (row.source !== 'netease') {
+  if (row.source !== 'netease' && row.source !== 'tencent') {
     throw new Error(`Unsupported music source: ${row.source}`)
   }
   return {
