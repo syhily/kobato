@@ -63,7 +63,7 @@ function AdminListPagePageNavigation({ totalPages, currentPage, onChange }: Page
 }
 
 interface FilterFieldProps {
-  /** Column label rendered above the control. Stays 28px tall to align with sibling columns that show a "X 清除" button. */
+  /** Column label rendered above the control. Stays 28px tall to align with sibling columns that show a "X clear" button. */
   label: string
   /**
    * Optional trailing button rendered on the same row as the label

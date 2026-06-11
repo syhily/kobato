@@ -96,11 +96,11 @@ export interface MetaSidebarProps {
   ogPreviewSlug?: string | null
   /**
    * Revision-versioning summary rendered alongside the visibility
-   * badge. `null` or `no-revision` renders as 「当前还没有保存的版本」
+   * badge. `null` or `no-revision` renders as "no saved version yet"
    * inline.
    */
   revisionSummary?: SidebarRevisionSummary | null
-  /** Shell-derived draft / persist lifecycle for the 保存状态 row. */
+  /** Shell-derived draft / persist lifecycle for the save-status row. */
   saveStatus: SidebarSaveStatus
   /**
    * Optional extra slot rendered at the bottom of the panel. Used by

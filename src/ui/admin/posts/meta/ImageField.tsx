@@ -19,7 +19,7 @@ export interface ImageFieldProps {
   onChange: (next: string) => void
   disabled?: boolean
   aspect: string
-  /** Placeholder shown inside the collapsed "粘贴 URL" `<input>`. */
+  /** Placeholder shown inside the collapsed "paste URL" `<input>`. */
   urlPlaceholder: string
   emptyContent?: ReactNode
   emptyHint?: string

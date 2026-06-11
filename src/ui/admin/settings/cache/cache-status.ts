@@ -4,7 +4,7 @@ import type { ClearCacheTarget } from '@/shared/types/cache'
 // `CacheView` owns one of these; per-bucket cards read it to render
 export interface ClearStatus {
   state: 'idle' | 'pending' | 'success' | 'error'
-  /** Last-clicked target so the per-bucket button can show "清空中…" only on itself. */
+  /** Last-clicked target so the per-bucket button can show "clearing…" only on itself. */
   target: ClearCacheTarget | null
   message: string | null
 }

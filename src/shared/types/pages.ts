@@ -17,7 +17,7 @@ export interface AdminPageDto {
   published: boolean
   commentsEnabled: boolean
   showToc: boolean
-  /** Render the「修改于 XXXX」secondary timestamp on the public detail page. */
+  /** Render the "Updated on XXXX" secondary timestamp on the public detail page. */
   showUpdated: boolean
   /** Render the global friends grid at the bottom of the page detail route. */
   showFriends: boolean
@@ -91,7 +91,7 @@ export interface UpsertPageMetaInput {
   published?: boolean
   commentsEnabled?: boolean
   showToc?: boolean
-  /** Toggle the「修改于 XXXX」secondary timestamp on the public detail page. */
+  /** Toggle the "Updated on XXXX" secondary timestamp on the public detail page. */
   showUpdated?: boolean
   /** Toggle the page-bottom friends grid. */
   showFriends?: boolean

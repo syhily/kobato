@@ -6,7 +6,7 @@ import { asKey, childrenListClass, useCommentsLeafContext } from '@/ui/public/co
 export interface CommentItemProps {
   depth: number
   comment: CommentItemType
-  /** Renders the "等待审核" hint over the body. Falls back to `comment.isPending`. */
+  /** Renders the "pending review" hint over the body. Falls back to `comment.isPending`. */
   pending?: boolean
   /**
    * Standalone admin override. When `<CommentItem>` is rendered outside the

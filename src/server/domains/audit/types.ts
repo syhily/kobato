@@ -17,20 +17,20 @@ export interface AuditEventInput {
   createdAt?: Date
 }
 
-/** Batcher 配置选项 */
+/** Batcher configuration options. */
 export interface BatcherOptions {
   flushIntervalMs: number
   flushThreshold: number
 }
 
-/** 归档任务执行结果 */
+/** Archive task execution result. */
 export interface ArchiveResult {
   archivedDays: number
   archivedRows: number
   deletedRows: number
 }
 
-/** S3 清理结果 */
+/** S3 cleanup result. */
 export interface CleanupResult {
   deletedFiles: number
 }

@@ -79,7 +79,7 @@ export interface ClientPost {
   published: boolean
   visible: boolean
   toc: boolean
-  /** See `ClientPage.showUpdated`. Toggles「修改于 XXXX」on the public detail. */
+  /** See `ClientPage.showUpdated`. Toggles "Updated on XXXX" on the public detail. */
   showUpdated: boolean
   slug: string
   permalink: string
@@ -121,7 +121,7 @@ export interface ListingPostCard {
   permalink: string
   category: string
   date: Date
-  /** Drafts get a "【草稿】" prefix in the listing title. */
+  /** Drafts get a "[Draft]" prefix in the listing title. */
   published: boolean
 }
 
@@ -138,7 +138,7 @@ export interface DetailPostShell {
   category: string
   tags: string[]
   date: Date
-  /** Catalog: `published_at` for 「最近修改」, not row `updated_at`. */
+  /** Catalog: `published_at` for "last modified", not row `updated_at`. */
   updated?: Date
   og?: string
   comments: boolean
@@ -160,7 +160,7 @@ export interface DetailPageShell {
   coverHeight?: number
   permalink: string
   date: Date
-  /** Catalog: `published_at` for 「最近修改」, not row `updated_at`. */
+  /** Catalog: `published_at` for "last modified", not row `updated_at`. */
   updated?: Date
   og?: string
   comments: boolean
