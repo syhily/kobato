@@ -18,11 +18,9 @@ export async function searchMusic(
 ): Promise<SearchMusicOutput> {
   const provider = getProvider(source)
   const safeLimit = limit ?? 10
-  const hits = await provider.search(keyword, safeLimit + 1, offset ?? 0)
-  const hasMore = hits.length > safeLimit
-  const results = hasMore ? hits.slice(0, safeLimit) : hits
+  const { hits, hasMore } = await provider.search(keyword, safeLimit, offset ?? 0)
   return {
-    results: results.map((hit) => ({
+    results: hits.map((hit) => ({
       // oxlint-disable-next-line typescript/no-unsafe-type-assertion
       source: hit.source as MetingSource,
       sourceId: hit.sourceId,

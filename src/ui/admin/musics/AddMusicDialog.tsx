@@ -126,9 +126,7 @@ export function AddMusicDialog({ open, onClose, onAdded }: AddMusicDialogProps) 
     }
     setResults([])
     setNextOffset(0)
-    setEnabled(false)
-    // use setTimeout to let react batch the reset state before enabling
-    setTimeout(() => setEnabled(true), 0)
+    setEnabled(true)
   }, [keyword])
 
   // Handle search results — accumulate for pagination
@@ -137,26 +135,44 @@ export function AddMusicDialog({ open, onClose, onAdded }: AddMusicDialogProps) 
       return
     }
     const newResults = searchQuery.data.results
+    const hasMoreData = searchQuery.data.hasMore
     setResults((prev) => {
-      if (nextOffset === 0) {
+      if (prev.length === 0) {
         return newResults
       }
       // Deduplicate by source+sourceId
       const existing = new Set(prev.map((r) => `${r.source}:${r.sourceId}`))
       return [...prev, ...newResults.filter((r) => !existing.has(`${r.source}:${r.sourceId}`))]
     })
-    setHasMore(searchQuery.data.hasMore)
-    if (!searchQuery.data.hasMore) {
+    setHasMore(hasMoreData)
+    if (!hasMoreData) {
       setEnabled(false)
     }
-  }, [searchQuery.data]) // eslint-disable-line react-hooks/exhaustive-deps
+    // Auto-load next page if sentinel is still inside scroll container and more pages exist
+    if (hasMoreData && !searchQuery.isFetching) {
+      requestAnimationFrame(() => {
+        if (!sentinelRef.current || !scrollRef.current) {return}
+        const sentinelRect = sentinelRef.current.getBoundingClientRect()
+        const scrollRect = scrollRef.current.getBoundingClientRect()
+        if (sentinelRect.top < scrollRect.bottom) {
+          loadMore()
+        }
+      })
+    }
+  }, [searchQuery.data])
+
+  // Keep latest flags in refs so loadMore reference is stable.
+  const hasMoreRef = useRef(hasMore)
+  hasMoreRef.current = hasMore
+  const isFetchingRef = useRef(searchQuery.isFetching)
+  isFetchingRef.current = searchQuery.isFetching
 
   const loadMore = useCallback(() => {
-    if (!hasMore || searchQuery.isFetching) {
+    if (!hasMoreRef.current || isFetchingRef.current) {
       return
     }
     setNextOffset((prev) => prev + SEARCH_LIMIT)
-  }, [hasMore, searchQuery.isFetching])
+  }, [])
 
   const onPreview = useCallback(
     (hit: MetingSearchHit & { previewUrl?: string }) => {
@@ -187,7 +203,7 @@ export function AddMusicDialog({ open, onClose, onAdded }: AddMusicDialogProps) 
   const scrollRef = useRef<HTMLDivElement>(null)
   const sentinelRef = useRef<HTMLDivElement>(null)
   useEffect(() => {
-    if (!sentinelRef.current || !scrollRef.current) {
+    if (!open || !sentinelRef.current || !scrollRef.current) {
       return
     }
     const observer = new IntersectionObserver(
@@ -200,7 +216,7 @@ export function AddMusicDialog({ open, onClose, onAdded }: AddMusicDialogProps) 
     )
     observer.observe(sentinelRef.current)
     return () => observer.disconnect()
-  }, [loadMore])
+  }, [loadMore, open])
 
   const isSearching = searchQuery.isFetching && nextOffset === 0
   const isLoadingMore = searchQuery.isFetching && nextOffset > 0
@@ -285,7 +301,7 @@ export function AddMusicDialog({ open, onClose, onAdded }: AddMusicDialogProps) 
           ) : null}
 
           <div className="flex flex-col gap-2">
-            {isSearching && results.length === 0 ? (
+            {(isSearching || isLoadingMore) && results.length === 0 ? (
               Array.from({ length: 3 }).map((_, index) => (
                 // oxlint-disable-next-line react/no-array-index-key
                 <Skeleton key={index} className="h-16 w-full rounded-xl" />

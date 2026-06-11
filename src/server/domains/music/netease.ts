@@ -123,7 +123,12 @@ const rawNeteaseSongSchema = z.object({
 
 const searchResponseSchema = z
   .object({
-    result: z.object({ songs: z.array(rawNeteaseSongSchema) }).optional(),
+    result: z
+      .object({
+        songs: z.array(rawNeteaseSongSchema).optional(),
+        songCount: z.number().optional(),
+      })
+      .optional(),
   })
   .loose()
 
@@ -170,10 +175,14 @@ export interface MetingSearchHitWithPreview extends MetingSearchHit {
 
 // ── High-level API ─────────────────────────────────────────────────────────
 
-export async function searchSongs(keyword: string, limit = 10, offset = 0): Promise<MetingSearchHit[]> {
+export async function searchSongs(
+  keyword: string,
+  limit = 10,
+  offset = 0,
+): Promise<{ hits: MetingSearchHit[]; hasMore: boolean }> {
   const trimmed = keyword.trim()
   if (trimmed === '') {
-    return []
+    return { hits: [], hasMore: false }
   }
   const safeLimit = Math.min(Math.max(1, Math.floor(limit)), 30)
 
@@ -194,7 +203,10 @@ export async function searchSongs(keyword: string, limit = 10, offset = 0): Prom
   }
 
   const songs = parsed.data.result?.songs ?? []
-  return songs.map(toHit)
+  const songCount = parsed.data.result?.songCount ?? 0
+  const hits = songs.map(toHit)
+  const hasMore = offset + hits.length < songCount
+  return { hits, hasMore }
 }
 
 export async function getSong(sourceId: string): Promise<MetingSearchHit | null> {
@@ -266,9 +278,9 @@ export async function searchSongsWithPreview(
   keyword: string,
   limit = 10,
   offset = 0,
-): Promise<MetingSearchHitWithPreview[]> {
-  const hits = await searchSongs(keyword, limit, offset)
-  return Promise.all(
+): Promise<{ hits: MetingSearchHitWithPreview[]; hasMore: boolean }> {
+  const { hits, hasMore } = await searchSongs(keyword, limit, offset)
+  const hitsWithPreview = await Promise.all(
     hits.map(async (hit) => {
       const [previewUrl, coverUrl] = await Promise.all([
         getStreamUrl(hit.urlId).catch((error: unknown) => {
@@ -289,4 +301,5 @@ export async function searchSongsWithPreview(
       return { ...hit, previewUrl, coverUrl }
     }),
   )
+  return { hits: hitsWithPreview, hasMore }
 }

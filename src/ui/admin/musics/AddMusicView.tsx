@@ -93,32 +93,18 @@ export function AddMusicView() {
   })
   const { mutate: submitAdd } = addMutation
 
-  // Handle search results — accumulate for pagination
-  useEffect(() => {
-    if (!searchQuery.data) {
-      return
-    }
-    const newResults = searchQuery.data.results
-    setResults((prev) => {
-      if (nextOffset === 0) {
-        return newResults
-      }
-      // Deduplicate by source+sourceId
-      const existing = new Set(prev.map((r) => `${r.source}:${r.sourceId}`))
-      return [...prev, ...newResults.filter((r) => !existing.has(`${r.source}:${r.sourceId}`))]
-    })
-    setHasMore(searchQuery.data.hasMore)
-    if (!searchQuery.data.hasMore) {
-      setEnabled(false)
-    }
-  }, [searchQuery.data]) // eslint-disable-line react-hooks/exhaustive-deps
+  // Keep latest flags in refs so loadMore reference is stable.
+  const hasMoreRef = useRef(hasMore)
+  hasMoreRef.current = hasMore
+  const isFetchingRef = useRef(searchQuery.isFetching)
+  isFetchingRef.current = searchQuery.isFetching
 
   const loadMore = useCallback(() => {
-    if (!hasMore || searchQuery.isFetching) {
+    if (!hasMoreRef.current || isFetchingRef.current) {
       return
     }
     setNextOffset((prev) => prev + SEARCH_LIMIT)
-  }, [hasMore, searchQuery.isFetching])
+  }, [])
 
   const triggerSearch = useCallback(() => {
     if (keyword.trim() === '') {
@@ -126,9 +112,39 @@ export function AddMusicView() {
     }
     setResults([])
     setNextOffset(0)
-    setEnabled(false)
-    setTimeout(() => setEnabled(true), 0)
+    setEnabled(true)
   }, [keyword])
+
+  // Handle search results — accumulate for pagination
+  useEffect(() => {
+    if (!searchQuery.data) {
+      return
+    }
+    const newResults = searchQuery.data.results
+    const hasMoreData = searchQuery.data.hasMore
+    setResults((prev) => {
+      if (prev.length === 0) {
+        return newResults
+      }
+      // Deduplicate by source+sourceId
+      const existing = new Set(prev.map((r) => `${r.source}:${r.sourceId}`))
+      return [...prev, ...newResults.filter((r) => !existing.has(`${r.source}:${r.sourceId}`))]
+    })
+    setHasMore(hasMoreData)
+    if (!hasMoreData) {
+      setEnabled(false)
+    }
+    // Auto-load next page if sentinel is still inside viewport and more pages exist
+    if (hasMoreData && !searchQuery.isFetching) {
+      requestAnimationFrame(() => {
+        if (!sentinelRef.current) {return}
+        const rect = sentinelRef.current.getBoundingClientRect()
+        if (rect.top < window.innerHeight) {
+          loadMore()
+        }
+      })
+    }
+  }, [searchQuery.data])
 
   const handleAdd = useCallback(
     (hit: MetingSearchHit) => {
@@ -290,7 +306,7 @@ export function AddMusicView() {
           <p className="mb-4 rounded-xl bg-destructive/10 px-3 py-2 text-sm text-destructive">{errorMessage}</p>
         )}
 
-        {isSearching && results.length === 0 ? (
+        {(isSearching || isLoadingMore) && results.length === 0 ? (
           <GridSkeleton />
         ) : results.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-32 text-ink-4">
@@ -298,33 +314,31 @@ export function AddMusicView() {
             <p className="mt-1 text-sm">支持歌曲名称、艺人、专辑搜索</p>
           </div>
         ) : (
-          <>
-            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
-              {results.map((hit) => {
-                const isCurrent = currentPreviewSourceId === hit.sourceId
-                return (
-                  <SearchAlbumCard
-                    key={`${hit.source}:${hit.sourceId}`}
-                    hit={hit}
-                    adding={addingSourceId === hit.sourceId}
-                    added={addedSourceIds.has(hit.sourceId)}
-                    isCurrent={isCurrent}
-                    isPlaying={isCurrent && isPlaying}
-                    onAdd={handleAdd}
-                    onPreview={onPreview}
-                  />
-                )
-              })}
-            </div>
-            {/* Sentinel for infinite scroll */}
-            <div ref={sentinelRef} className="h-4" />
-            {isLoadingMore ? (
-              <div className="flex justify-center py-4">
-                <Loader2 className="size-6 animate-spin text-ink-4" />
-              </div>
-            ) : null}
-          </>
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+            {results.map((hit) => {
+              const isCurrent = currentPreviewSourceId === hit.sourceId
+              return (
+                <SearchAlbumCard
+                  key={`${hit.source}:${hit.sourceId}`}
+                  hit={hit}
+                  adding={addingSourceId === hit.sourceId}
+                  added={addedSourceIds.has(hit.sourceId)}
+                  isCurrent={isCurrent}
+                  isPlaying={isCurrent && isPlaying}
+                  onAdd={handleAdd}
+                  onPreview={onPreview}
+                />
+              )
+            })}
+          </div>
         )}
+        {/* Sentinel for infinite scroll */}
+        <div ref={sentinelRef} className="h-4" />
+        {isLoadingMore ? (
+          <div className="flex justify-center py-4">
+            <Loader2 className="size-6 animate-spin text-ink-4" />
+          </div>
+        ) : null}
       </motion.div>
     </motion.div>
   )

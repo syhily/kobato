@@ -56,9 +56,9 @@ describe('searchSongs', () => {
       },
     })
 
-    const hits = await searchSongs('hello', 10)
-    expect(hits).toHaveLength(1)
-    expect(hits[0]).toEqual({
+    const result = await searchSongs('hello', 10)
+    expect(result.hits).toHaveLength(1)
+    expect(result.hits[0]).toEqual({
       source: 'netease',
       sourceId: '101',
       name: 'Hello',
@@ -68,19 +68,20 @@ describe('searchSongs', () => {
       urlId: '101',
       lyricId: '101',
     })
+    expect(result.hasMore).toBe(false)
 
     vi.unstubAllGlobals()
   })
 
-  it('returns empty array for empty keyword', async () => {
-    const hits = await searchSongs('  ')
-    expect(hits).toEqual([])
+  it('returns empty result for empty keyword', async () => {
+    const result = await searchSongs('  ')
+    expect(result).toEqual({ hits: [], hasMore: false })
   })
 
-  it('returns empty array when API has no songs', async () => {
+  it('returns empty result when API has no songs', async () => {
     mockFetch({})
-    const hits = await searchSongs('nope')
-    expect(hits).toEqual([])
+    const result = await searchSongs('nope')
+    expect(result).toEqual({ hits: [], hasMore: false })
     vi.unstubAllGlobals()
   })
 
@@ -91,8 +92,8 @@ describe('searchSongs', () => {
       },
     })
 
-    const hits = await searchSongs('test')
-    expect(hits[0]?.picId).toBe('999')
+    const result = await searchSongs('test')
+    expect(result.hits[0]?.picId).toBe('999')
     vi.unstubAllGlobals()
   })
 })

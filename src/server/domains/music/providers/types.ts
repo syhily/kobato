@@ -19,10 +19,15 @@ export interface ProviderTrack {
   lyricId: string
 }
 
+export interface ProviderSearchResult {
+  hits: ProviderSearchHit[]
+  hasMore: boolean
+}
+
 export interface MusicProvider {
   readonly source: string
 
-  search(keyword: string, limit: number, offset?: number): Promise<ProviderSearchHit[]>
+  search(keyword: string, limit: number, offset?: number): Promise<ProviderSearchResult>
 
   getTrack(sourceId: string): Promise<ProviderTrack | null>
 

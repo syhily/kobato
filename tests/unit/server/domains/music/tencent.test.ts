@@ -191,9 +191,9 @@ describe('tencent provider search', () => {
       }),
     )
 
-    const hits = await tencentProvider.search('test song', 10)
-    expect(hits).toHaveLength(1)
-    expect(hits[0]).toEqual({
+    const result = await tencentProvider.search('test song', 10)
+    expect(result.hits).toHaveLength(1)
+    expect(result.hits[0]).toEqual({
       source: 'tencent',
       sourceId: '001ABCDEF',
       name: 'Test Song',
@@ -202,19 +202,20 @@ describe('tencent provider search', () => {
       coverUrl: 'https://y.gtimg.cn/music/photo_new/T002R300x300M000albumMid001.jpg?max_age=2592000',
       previewUrl: 'https://dl.stream.qqmusic.qq.com/M800mediaMid001.mp3?vkey=vkey1',
     })
+    expect(result.hasMore).toBe(true)
 
     vi.unstubAllGlobals()
   })
 
-  it('returns empty array for empty keyword', async () => {
-    const hits = await tencentProvider.search('  ', 10)
-    expect(hits).toEqual([])
+  it('returns empty result for empty keyword', async () => {
+    const result = await tencentProvider.search('  ', 10)
+    expect(result).toEqual({ hits: [], hasMore: false })
   })
 
-  it('returns empty array when API has no songs', async () => {
+  it('returns empty result when API has no songs', async () => {
     mockFetchJson({ req_1: { data: { body: { song: { list: [] } } } } })
-    const hits = await tencentProvider.search('nope', 10)
-    expect(hits).toEqual([])
+    const result = await tencentProvider.search('nope', 10)
+    expect(result).toEqual({ hits: [], hasMore: false })
     vi.unstubAllGlobals()
   })
 })
