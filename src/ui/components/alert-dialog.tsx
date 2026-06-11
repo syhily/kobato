@@ -46,7 +46,7 @@ function AlertDialogContent({ className, children, ...props }: ComponentProps<ty
         <motion.div
           initial={{ y: 12, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          transition={{ ...transitions.popup, delay: 0.04 }}
+          transition={{ ...transitions.dialog, delay: 0.04 }}
           className="contents"
         >
           {children}
