@@ -2,6 +2,14 @@ import type { MetingSource, SearchMusicOutput } from '@/shared/types/music'
 
 import { getProvider } from '@/server/domains/music/providers/registry'
 
+function toProxyCoverUrl(source: MetingSource, sourceId: string): string {
+  return `/admin/music/proxy/cover?source=${source}&sourceId=${encodeURIComponent(sourceId)}`
+}
+
+function toProxyAudioUrl(source: MetingSource, sourceId: string): string {
+  return `/admin/music/proxy/audio?source=${source}&sourceId=${encodeURIComponent(sourceId)}`
+}
+
 export async function searchMusic(
   source: MetingSource,
   keyword: string,
@@ -21,8 +29,8 @@ export async function searchMusic(
       name: hit.name,
       artist: hit.artist,
       album: hit.album,
-      coverUrl: hit.coverUrl,
-      previewUrl: hit.previewUrl,
+      coverUrl: toProxyCoverUrl(source, hit.sourceId),
+      previewUrl: toProxyAudioUrl(source, hit.sourceId),
     })),
     hasMore,
   }

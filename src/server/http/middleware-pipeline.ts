@@ -29,6 +29,7 @@ import { feedRouter } from '@/server/http/resources/feed'
 import { fontsRouter } from '@/server/http/resources/fonts'
 import { imagesRouter } from '@/server/http/resources/images'
 import { maxmindRouter } from '@/server/http/resources/maxmind'
+import { musicProxyRouter } from '@/server/http/resources/music-proxy'
 import { redirectsRouter } from '@/server/http/resources/redirects'
 import { sitemapRouter } from '@/server/http/resources/sitemap'
 import { getRestoreState, getServerPhase } from '@/server/infra/lifecycle'
@@ -93,8 +94,8 @@ export function configureMiddleware(app: Hono<Env>): void {
       workerSrc,
       `style-src 'self' 'unsafe-inline' ${extra}`,
       `font-src 'self' ${extra}`,
-      `img-src 'self' data: blob: *.music.126.net https://y.gtimg.cn ${extra}`,
-      `media-src 'self' *.music.126.net *.tc.qq.com ${extra}`,
+      `img-src 'self' data: blob: ${extra}`,
+      `media-src 'self' ${extra}`,
       "connect-src 'self'",
       "object-src 'none'",
       "frame-ancestors 'none'",
@@ -112,8 +113,8 @@ export function configureMiddleware(app: Hono<Env>): void {
         scriptSrc: ["'self'", "'unsafe-inline'"],
         workerSrc: ["'self'", 'blob:'],
         styleSrc: ["'self'", "'unsafe-inline'"],
-        imgSrc: ["'self'", 'data:', 'blob:', 'http://*.music.126.net', 'https://*.music.126.net'],
-        mediaSrc: ["'self'", 'http://*.music.126.net', 'https://*.music.126.net'],
+        imgSrc: ["'self'", 'data:', 'blob:'],
+        mediaSrc: ["'self'"],
         fontSrc: ["'self'"],
         connectSrc: ["'self'"],
         objectSrc: ["'none'"],
@@ -167,6 +168,7 @@ export function configureMiddleware(app: Hono<Env>): void {
   app.route('/', backupRouter)
   app.route('/', fontsRouter)
   app.route('/', maxmindRouter)
+  app.route('/', musicProxyRouter)
 
   // API (oRPC at /rpc/*)
   app.route('/', createApiApp())
