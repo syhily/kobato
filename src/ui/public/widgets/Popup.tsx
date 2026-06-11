@@ -164,9 +164,14 @@ export function Popup({
   return createPortal(
     <AnimatePresence>
       {open && mounted && (
-        <div
+        <motion.div
+          key="popup-wrapper"
           ref={portalRef}
           data-popup-id={popupId}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={transitions.popupFade}
           className="fixed inset-0 z-1500 flex items-center justify-center overflow-x-hidden overflow-y-auto"
         >
           <motion.div
@@ -180,22 +185,30 @@ export function Popup({
             onClick={onClose}
             aria-hidden="true"
           />
-          <motion.div
-            key="popup-dialog"
+          <div
             ref={dialogRef}
             role="dialog"
             aria-modal="true"
             aria-label={ariaLabelledBy === undefined ? ariaLabel : undefined}
             aria-labelledby={ariaLabelledBy}
             tabIndex={-1}
-            variants={contentVariants}
-            initial="hidden"
-            animate="visible"
-            exit="exit"
-            transition={transitions.popup}
-            className={cn('relative w-popup-mobile py-8 focus:outline-none md:w-full', BODY_SIZE_CLASS[size])}
+            className={cn(
+              'relative w-popup-mobile translate-y-0 py-8 focus:outline-none md:w-full',
+              BODY_SIZE_CLASS[size],
+            )}
           >
+            <motion.div
+              key="popup-content"
+              variants={contentVariants}
+              initial="hidden"
+              animate="visible"
+              exit="exit"
+              transition={transitions.popup}
+            >
+              <div className={cn('relative rounded-lg bg-canvas text-ink-1', CONTENT_SIZE_CLASS[size])}>{children}</div>
+            </motion.div>
             <motion.button
+              key="popup-close"
               type="button"
               aria-label="关闭"
               variants={closeButtonVariants}
@@ -220,9 +233,8 @@ export function Popup({
             >
               <XIcon size={22} aria-hidden className="inline-block align-middle text-ink-4" />
             </motion.button>
-            <div className={cn('relative rounded-lg bg-canvas text-ink-1', CONTENT_SIZE_CLASS[size])}>{children}</div>
-          </motion.div>
-        </div>
+          </div>
+        </motion.div>
       )}
     </AnimatePresence>,
     document.body,
