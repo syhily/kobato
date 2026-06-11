@@ -56,13 +56,17 @@ export interface ListMusicOutput {
 }
 
 export interface SearchMusicInput {
+  source?: MetingSource
   keyword: string
   /** Defaults to 10, capped at 30 server-side. */
   limit?: number
+  /** Number of results to skip for pagination. Defaults to 0. */
+  offset?: number
 }
 
 export interface SearchMusicOutput {
   results: MetingSearchHit[]
+  hasMore: boolean
 }
 
 export interface AddMusicInput {

@@ -1,13 +1,21 @@
-/* oxlint-disable typescript/no-unsafe-type-assertion */
 import type { MetingSource, SearchMusicOutput } from '@/shared/types/music'
 
 import { getProvider } from '@/server/domains/music/providers/registry'
 
-export async function searchMusic(source: string, keyword: string, limit?: number): Promise<SearchMusicOutput> {
+export async function searchMusic(
+  source: MetingSource,
+  keyword: string,
+  limit?: number,
+  offset?: number,
+): Promise<SearchMusicOutput> {
   const provider = getProvider(source)
-  const hits = await provider.search(keyword, limit ?? 10)
+  const safeLimit = limit ?? 10
+  const hits = await provider.search(keyword, safeLimit + 1, offset ?? 0)
+  const hasMore = hits.length > safeLimit
+  const results = hasMore ? hits.slice(0, safeLimit) : hits
   return {
-    results: hits.map((hit) => ({
+    results: results.map((hit) => ({
+      // oxlint-disable-next-line typescript/no-unsafe-type-assertion
       source: hit.source as MetingSource,
       sourceId: hit.sourceId,
       name: hit.name,
@@ -16,5 +24,6 @@ export async function searchMusic(source: string, keyword: string, limit?: numbe
       coverUrl: hit.coverUrl,
       previewUrl: hit.previewUrl,
     })),
+    hasMore,
   }
 }

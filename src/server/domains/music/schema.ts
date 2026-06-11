@@ -16,8 +16,10 @@ export const listMusicSchema = z.object({
 })
 
 export const searchMusicSchema = z.object({
+  source: metingSourceSchema.optional(),
   keyword: z.string().trim().min(1, '请输入搜索关键词').max(100),
   limit: z.coerce.number().int().min(1).max(30).optional(),
+  offset: z.coerce.number().int().min(0).optional(),
 })
 
 export const addMusicSchema = z.object({

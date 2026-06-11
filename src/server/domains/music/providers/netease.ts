@@ -5,8 +5,8 @@ import { getCoverUrl, getLyric, getSong, getStreamUrl, searchSongsWithPreview } 
 export const neteaseProvider: MusicProvider = {
   source: 'netease',
 
-  async search(keyword: string, limit: number): Promise<ProviderSearchHit[]> {
-    return searchSongsWithPreview(keyword, limit)
+  async search(keyword: string, limit: number, offset?: number): Promise<ProviderSearchHit[]> {
+    return searchSongsWithPreview(keyword, limit, offset)
   },
 
   async getTrack(sourceId: string): Promise<ProviderTrack | null> {

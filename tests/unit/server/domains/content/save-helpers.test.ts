@@ -38,13 +38,7 @@ describe('content/save-helpers — extractZodIssues', () => {
 
   it('filters out non-object entries in issues array', () => {
     const error = {
-      issues: [
-        { message: 'Valid issue', path: ['field'] },
-        null,
-        42,
-        'bad',
-        { message: 'Another valid', path: [] },
-      ],
+      issues: [{ message: 'Valid issue', path: ['field'] }, null, 42, 'bad', { message: 'Another valid', path: [] }],
     }
     const result = extractZodIssues(error)
     expect(result).toEqual([

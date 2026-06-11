@@ -1,16 +1,24 @@
-import { useMutation, useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Loader2, Search, X } from 'lucide-react'
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router'
 import { toast } from 'sonner'
 
-import type { AdminMusicDto, MetingSearchHit } from '@/shared/types/music'
+import type { AdminMusicDto, MetingSource, MetingSearchHit } from '@/shared/types/music'
 
 import { orpcQuery } from '@/client/api/orpc-query'
 import { motion, transitions } from '@/client/lib/motion'
 import { MusicLibraryHero } from '@/ui/admin/musics/MusicLibraryHero'
 import { useMusicPlayerActions, useMusicPlayerState } from '@/ui/admin/musics/MusicPlayerContext'
 import { SearchAlbumCard } from '@/ui/admin/musics/SearchAlbumCard'
+import { Label } from '@/ui/components/label'
+import { Select, SelectContent, SelectItem, SelectTrigger } from '@/ui/components/select'
+
+const SOURCE_OPTIONS: { value: string; label: string }[] = [
+  { value: 'netease', label: '网易云' },
+  { value: 'tencent', label: 'QQ音乐' },
+]
+
 function hitToPreviewTrack(hit: MetingSearchHit): AdminMusicDto {
   return {
     id: `preview:${hit.sourceId}`,
@@ -36,16 +44,22 @@ function isPreviewId(id: string | undefined): boolean {
   return id !== undefined && id.startsWith('preview:')
 }
 
+const SEARCH_LIMIT = 24
+
 export function AddMusicView() {
   const navigate = useNavigate()
   const [keyword, setKeyword] = useState('')
+  const [source, setSource] = useState<MetingSource>('netease')
   const [results, setResults] = useState<MetingSearchHit[]>([])
-  const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const [hasMore, setHasMore] = useState(false)
+  const [nextOffset, setNextOffset] = useState(0)
+  const [enabled, setEnabled] = useState(false)
   const [addingSourceId, setAddingSourceId] = useState<string | null>(null)
   const [addedSourceIds, setAddedSourceIds] = useState<Set<string>>(new Set())
 
   const { currentTrack, isPlaying } = useMusicPlayerState()
   const { load, toggle, close } = useMusicPlayerActions()
+  const queryClient = useQueryClient()
 
   const libraryInput = useMemo(() => ({ offset: 0, limit: 30 }), [])
   const libraryQuery = useQuery(
@@ -58,17 +72,13 @@ export function AddMusicView() {
   const libraryMusics = libraryQuery.data?.musics ?? []
   const libraryTotal = libraryQuery.data?.total ?? 0
 
-  const searchMutation = useMutation({
-    ...orpcQuery.admin.music.search.mutationOptions(),
-    onSuccess: (payload) => {
-      setErrorMessage(null)
-      setResults(payload.results)
-    },
-    onError: (error) => {
-      setErrorMessage(error.message)
-    },
+  const searchQuery = useQuery({
+    ...orpcQuery.admin.music.search.queryOptions({
+      input: { source, keyword, limit: SEARCH_LIMIT, offset: nextOffset },
+      staleTime: 0,
+    }),
+    enabled,
   })
-  const { mutate: loadSearch, isPending: isSearching } = searchMutation
 
   const addMutation = useMutation({
     ...orpcQuery.admin.music.add.mutationOptions(),
@@ -78,20 +88,47 @@ export function AddMusicView() {
     },
     onError: (error) => {
       setAddingSourceId(null)
-      setErrorMessage(error.message)
+      toast.error(error.message)
     },
   })
   const { mutate: submitAdd } = addMutation
 
-  const triggerSearch = useCallback(() => {
-    const trimmed = keyword.trim()
-    if (trimmed === '') {
-      setResults([])
-      setErrorMessage(null)
+  // Handle search results — accumulate for pagination
+  useEffect(() => {
+    if (!searchQuery.data) {
       return
     }
-    loadSearch({ keyword: trimmed, limit: 24 })
-  }, [keyword, loadSearch])
+    const newResults = searchQuery.data.results
+    setResults((prev) => {
+      if (nextOffset === 0) {
+        return newResults
+      }
+      // Deduplicate by source+sourceId
+      const existing = new Set(prev.map((r) => `${r.source}:${r.sourceId}`))
+      return [...prev, ...newResults.filter((r) => !existing.has(`${r.source}:${r.sourceId}`))]
+    })
+    setHasMore(searchQuery.data.hasMore)
+    if (!searchQuery.data.hasMore) {
+      setEnabled(false)
+    }
+  }, [searchQuery.data]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const loadMore = useCallback(() => {
+    if (!hasMore || searchQuery.isFetching) {
+      return
+    }
+    setNextOffset((prev) => prev + SEARCH_LIMIT)
+  }, [hasMore, searchQuery.isFetching])
+
+  const triggerSearch = useCallback(() => {
+    if (keyword.trim() === '') {
+      return
+    }
+    setResults([])
+    setNextOffset(0)
+    setEnabled(false)
+    setTimeout(() => setEnabled(true), 0)
+  }, [keyword])
 
   const handleAdd = useCallback(
     (hit: MetingSearchHit) => {
@@ -132,6 +169,28 @@ export function AddMusicView() {
     return null
   }, [currentTrack])
 
+  // Infinite scroll via IntersectionObserver
+  const sentinelRef = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    if (!sentinelRef.current) {
+      return
+    }
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          loadMore()
+        }
+      },
+      { threshold: 0 },
+    )
+    observer.observe(sentinelRef.current)
+    return () => observer.disconnect()
+  }, [loadMore])
+
+  const isSearching = searchQuery.isFetching && nextOffset === 0
+  const isLoadingMore = searchQuery.isFetching && nextOffset > 0
+  const errorMessage = searchQuery.error?.message ?? null
+
   return (
     <motion.div
       className="relative min-h-full"
@@ -143,7 +202,6 @@ export function AddMusicView() {
       <button
         type="button"
         onClick={() => {
-          // Stop preview when leaving the page so it doesn't leak into the library
           if (currentTrack && isPreviewId(currentTrack.id)) {
             close()
           }
@@ -188,7 +246,10 @@ export function AddMusicView() {
                   onClick={() => {
                     setKeyword('')
                     setResults([])
-                    setErrorMessage(null)
+                    setEnabled(false)
+                    queryClient.removeQueries({
+                      queryKey: orpcQuery.admin.music.search.key({ input: {} }),
+                    })
                   }}
                   className="absolute top-1/2 right-3 -translate-y-1/2 text-ink-4 transition-colors hover:text-ink-2"
                 >
@@ -197,6 +258,25 @@ export function AddMusicView() {
               ) : null}
             </div>
           </form>
+          <div className="flex shrink-0 items-center gap-2">
+            <Label htmlFor="add-music-source-full" className="text-xs whitespace-nowrap text-white/80">
+              来源
+            </Label>
+            <Select
+              items={SOURCE_OPTIONS}
+              value={source}
+              onValueChange={(value) => setSource((value ?? 'netease') as MetingSource)}
+            >
+              <SelectTrigger id="add-music-source-full" size="sm" className="w-28 bg-surface-dim" />
+              <SelectContent>
+                {SOURCE_OPTIONS.map((item) => (
+                  <SelectItem key={item.value} value={item.value}>
+                    {item.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </motion.div>
       </MusicLibraryHero>
 
@@ -218,23 +298,32 @@ export function AddMusicView() {
             <p className="mt-1 text-sm">支持歌曲名称、艺人、专辑搜索</p>
           </div>
         ) : (
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
-            {results.map((hit) => {
-              const isCurrent = currentPreviewSourceId === hit.sourceId
-              return (
-                <SearchAlbumCard
-                  key={hit.sourceId}
-                  hit={hit}
-                  adding={addingSourceId === hit.sourceId}
-                  added={addedSourceIds.has(hit.sourceId)}
-                  isCurrent={isCurrent}
-                  isPlaying={isCurrent && isPlaying}
-                  onAdd={handleAdd}
-                  onPreview={onPreview}
-                />
-              )
-            })}
-          </div>
+          <>
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+              {results.map((hit) => {
+                const isCurrent = currentPreviewSourceId === hit.sourceId
+                return (
+                  <SearchAlbumCard
+                    key={`${hit.source}:${hit.sourceId}`}
+                    hit={hit}
+                    adding={addingSourceId === hit.sourceId}
+                    added={addedSourceIds.has(hit.sourceId)}
+                    isCurrent={isCurrent}
+                    isPlaying={isCurrent && isPlaying}
+                    onAdd={handleAdd}
+                    onPreview={onPreview}
+                  />
+                )
+              })}
+            </div>
+            {/* Sentinel for infinite scroll */}
+            <div ref={sentinelRef} className="h-4" />
+            {isLoadingMore ? (
+              <div className="flex justify-center py-4">
+                <Loader2 className="size-6 animate-spin text-ink-4" />
+              </div>
+            ) : null}
+          </>
         )}
       </motion.div>
     </motion.div>

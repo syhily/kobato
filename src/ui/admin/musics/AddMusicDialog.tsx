@@ -1,9 +1,9 @@
-import { useMutation } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Loader2Icon, SearchIcon, XIcon } from 'lucide-react'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
 
-import type { AdminMusicDto, MetingSearchHit } from '@/shared/types/music'
+import type { AdminMusicDto, MetingSource, MetingSearchHit } from '@/shared/types/music'
 
 import { orpcQuery } from '@/client/api/orpc-query'
 import { useMusicPlayerActions, useMusicPlayerState } from '@/ui/admin/musics/MusicPlayerContext'
@@ -21,6 +21,11 @@ import { InputGroup, InputGroupAddon, InputGroupInput } from '@/ui/components/in
 import { Label } from '@/ui/components/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/components/select'
 import { Skeleton } from '@/ui/components/skeleton'
+
+const SOURCE_OPTIONS: { value: string; label: string }[] = [
+  { value: 'netease', label: '网易云' },
+  { value: 'tencent', label: 'QQ音乐' },
+]
 
 const RESULT_LIMIT_OPTIONS: { value: string; label: string }[] = [5, 10, 15, 20, 30].map((n) => ({
   value: String(n),
@@ -58,70 +63,100 @@ export interface AddMusicDialogProps {
   onAdded: (music: AdminMusicDto) => void
 }
 
+const SEARCH_LIMIT = 10
+
 export function AddMusicDialog({ open, onClose, onAdded }: AddMusicDialogProps) {
   const [keyword, setKeyword] = useState('')
-  const [resultLimit, setResultLimit] = useState(10)
+  const [source, setSource] = useState<MetingSource>('netease')
   const [results, setResults] = useState<MetingSearchHit[]>([])
-  const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const [hasMore, setHasMore] = useState(false)
+  const [nextOffset, setNextOffset] = useState(0)
+  const [enabled, setEnabled] = useState(false)
   const [addingSourceId, setAddingSourceId] = useState<string | null>(null)
+  const [addedSourceIds, setAddedSourceIds] = useState<Set<string>>(new Set())
 
   const { currentTrack, isPlaying } = useMusicPlayerState()
   const { toggle, close, load } = useMusicPlayerActions()
+  const queryClient = useQueryClient()
 
-  const searchMutation = useMutation({
-    ...orpcQuery.admin.music.search.mutationOptions(),
-    onSuccess: (payload) => {
-      setErrorMessage(null)
-      setResults(payload.results)
-    },
-    onError: (error) => {
-      setErrorMessage(error.message)
-    },
+  const searchQuery = useQuery({
+    ...orpcQuery.admin.music.search.queryOptions({
+      input: { source, keyword, limit: SEARCH_LIMIT, offset: nextOffset },
+      staleTime: 0,
+    }),
+    enabled,
   })
-  const { mutate: loadSearch, isPending: isSearching } = searchMutation
 
   const addMutation = useMutation({
     ...orpcQuery.admin.music.add.mutationOptions(),
     onSuccess: (payload) => {
       toast.success('音乐已添加')
-      setErrorMessage(null)
       setAddingSourceId(null)
       onAdded(payload.music)
-      setResults(
-        (prev) =>
-          prev.map((hit) => (hit.sourceId === payload.music.sourceId ? { ...hit, _added: true } : hit)) as typeof prev,
-      )
+      setAddedSourceIds((prev) => new Set(prev).add(payload.music.sourceId))
     },
     onError: (error) => {
       setAddingSourceId(null)
-      setErrorMessage(error.message)
+      toast.error(error.message)
     },
   })
   const { mutate: submitAdd } = addMutation
 
-  // Reset state on dialog close and stop any active preview
+  // Reset on dialog close
   useEffect(() => {
     if (!open) {
       setKeyword('')
+      setSource('netease')
       setResults([])
-      setErrorMessage(null)
+      setHasMore(false)
+      setNextOffset(0)
+      setEnabled(false)
+      setAddedSourceIds(new Set())
       setAddingSourceId(null)
-      // Stop preview if currently playing a search result
+      queryClient.removeQueries({ queryKey: orpcQuery.admin.music.search.key({ input: {} }) })
       if (currentTrack && isPreviewId(currentTrack.id)) {
         close()
       }
     }
-  }, [open, currentTrack, close])
+  }, [open]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const triggerSearch = useCallback(() => {
-    const trimmed = keyword.trim()
-    if (trimmed === '') {
-      setResults([])
-      setErrorMessage(null)
+    if (keyword.trim() === '') {
       return
     }
-    loadSearch({ keyword: trimmed, limit: resultLimit })
-  }, [keyword, loadSearch, resultLimit])
+    setResults([])
+    setNextOffset(0)
+    setEnabled(false)
+    // use setTimeout to let react batch the reset state before enabling
+    setTimeout(() => setEnabled(true), 0)
+  }, [keyword])
+
+  // Handle search results — accumulate for pagination
+  useEffect(() => {
+    if (!searchQuery.data) {
+      return
+    }
+    const newResults = searchQuery.data.results
+    setResults((prev) => {
+      if (nextOffset === 0) {
+        return newResults
+      }
+      // Deduplicate by source+sourceId
+      const existing = new Set(prev.map((r) => `${r.source}:${r.sourceId}`))
+      return [...prev, ...newResults.filter((r) => !existing.has(`${r.source}:${r.sourceId}`))]
+    })
+    setHasMore(searchQuery.data.hasMore)
+    if (!searchQuery.data.hasMore) {
+      setEnabled(false)
+    }
+  }, [searchQuery.data]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const loadMore = useCallback(() => {
+    if (!hasMore || searchQuery.isFetching) {
+      return
+    }
+    setNextOffset((prev) => prev + SEARCH_LIMIT)
+  }, [hasMore, searchQuery.isFetching])
 
   const onPreview = useCallback(
     (hit: MetingSearchHit & { previewUrl?: string }) => {
@@ -148,13 +183,36 @@ export function AddMusicDialog({ open, onClose, onAdded }: AddMusicDialogProps) 
     [addingSourceId, submitAdd],
   )
 
+  // Infinite scroll via IntersectionObserver
+  const scrollRef = useRef<HTMLDivElement>(null)
+  const sentinelRef = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    if (!sentinelRef.current || !scrollRef.current) {
+      return
+    }
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          loadMore()
+        }
+      },
+      { root: scrollRef.current, threshold: 0 },
+    )
+    observer.observe(sentinelRef.current)
+    return () => observer.disconnect()
+  }, [loadMore])
+
+  const isSearching = searchQuery.isFetching && nextOffset === 0
+  const isLoadingMore = searchQuery.isFetching && nextOffset > 0
+  const errorMessage = searchQuery.error?.message ?? null
+
   return (
     <Dialog open={open} onOpenChange={(next) => (next ? undefined : onClose())}>
       <DialogContent className="flex h-[80vh] max-h-[640px] w-full flex-col gap-0 p-0 sm:max-w-xl">
         <DialogHeader className="border-b px-6 py-4">
           <DialogTitle>添加音乐</DialogTitle>
           <DialogDescription>
-            通过 NetEase 搜索；点击「试听」可在浏览器中预览，「添加」会下载音频与封面到本站 S3 并入库。
+            搜索并添加音乐到曲库。点击「试听」可在浏览器中预览，「添加」会下载音频与封面到本站 S3 并入库。
           </DialogDescription>
         </DialogHeader>
 
@@ -181,30 +239,47 @@ export function AddMusicDialog({ open, onClose, onAdded }: AddMusicDialogProps) 
               {isSearching ? <Loader2Icon className="animate-spin" /> : <SearchIcon />} 搜索
             </Button>
           </form>
-          <div className="flex shrink-0 items-center gap-2">
-            <Label htmlFor="add-music-limit" className="text-xs whitespace-nowrap text-muted-foreground">
-              结果数
-            </Label>
-            <Select
-              items={RESULT_LIMIT_OPTIONS}
-              value={String(resultLimit)}
-              onValueChange={(value) => setResultLimit(Number.parseInt(value ?? '10', 10))}
-            >
-              <SelectTrigger id="add-music-limit" size="sm" className="w-24">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {RESULT_LIMIT_OPTIONS.map((item) => (
-                  <SelectItem key={item.value} value={item.value}>
-                    {item.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          <div className="flex shrink-0 items-center gap-4">
+            <div className="flex items-center gap-2">
+              <Label htmlFor="add-music-source" className="text-xs whitespace-nowrap text-muted-foreground">
+                来源
+              </Label>
+              <Select
+                items={SOURCE_OPTIONS}
+                value={source}
+                onValueChange={(value) => setSource((value ?? 'netease') as MetingSource)}
+              >
+                <SelectTrigger id="add-music-source" size="sm" className="w-28" />
+                <SelectContent>
+                  {SOURCE_OPTIONS.map((item) => (
+                    <SelectItem key={item.value} value={item.value}>
+                      {item.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex items-center gap-2">
+              <Label htmlFor="add-music-limit" className="text-xs whitespace-nowrap text-muted-foreground">
+                每页
+              </Label>
+              <Select items={RESULT_LIMIT_OPTIONS} value={String(SEARCH_LIMIT)} onValueChange={() => void 0}>
+                <SelectTrigger id="add-music-limit" size="sm" className="w-20" disabled>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {RESULT_LIMIT_OPTIONS.map((item) => (
+                    <SelectItem key={item.value} value={item.value}>
+                      {item.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </div>
 
-        <div className="min-h-0 flex-1 overflow-y-auto px-6 py-4">
+        <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto px-6 py-4">
           {errorMessage !== null ? (
             <p className="mb-3 rounded-xl bg-destructive/10 px-3 py-2 text-sm text-destructive">{errorMessage}</p>
           ) : null}
@@ -226,17 +301,24 @@ export function AddMusicDialog({ open, onClose, onAdded }: AddMusicDialogProps) 
                 const previewId = `preview:${hit.sourceId}`
                 return (
                   <SearchResultItem
-                    key={hit.sourceId}
+                    key={`${hit.source}:${hit.sourceId}`}
                     hit={decorated}
                     previewActive={currentTrack?.id === previewId && isPlaying}
                     adding={addingSourceId === hit.sourceId}
-                    added={decorated._added === true}
+                    added={addedSourceIds.has(hit.sourceId)}
                     onPreview={onPreview}
                     onAdd={onAdd}
                   />
                 )
               })
             )}
+            {/* Sentinel for infinite scroll */}
+            <div ref={sentinelRef} className="h-1" />
+            {isLoadingMore ? (
+              <div className="flex justify-center py-2">
+                <Loader2Icon className="size-5 animate-spin text-muted-foreground" />
+              </div>
+            ) : null}
           </div>
         </div>
 

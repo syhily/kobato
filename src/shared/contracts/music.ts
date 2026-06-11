@@ -61,6 +61,7 @@ export const searchMusicOutputDto = z.object({
       previewUrl: z.string(),
     }),
   ),
+  hasMore: z.boolean(),
 })
 
 export const addMusicOutputDto = z.object({

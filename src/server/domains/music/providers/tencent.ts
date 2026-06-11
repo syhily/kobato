@@ -146,19 +146,20 @@ const QUALITY_MAP: Array<[keyof RawTencentFile, number, string, string]> = [
 export const tencentProvider: MusicProvider = {
   source: 'tencent',
 
-  async search(keyword: string, limit: number): Promise<ProviderSearchHit[]> {
+  async search(keyword: string, limit: number, offset?: number): Promise<ProviderSearchHit[]> {
     const trimmed = keyword.trim()
     if (trimmed === '') {
       return []
     }
 
     const safeLimit = Math.min(Math.max(1, Math.floor(limit)), 30)
+    const page = Math.floor((offset ?? 0) / safeLimit) + 1
 
     const res = await tencentGet('https://c.y.qq.com/soso/fcgi-bin/client_search_cp', {
       format: 'json',
       w: trimmed,
       n: String(safeLimit),
-      p: '1',
+      p: String(page),
       aggr: '1',
       lossless: '1',
       cr: '1',

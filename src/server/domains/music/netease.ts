@@ -114,10 +114,18 @@ const rawNeteaseSongSchema = z.object({
   id: z.number(),
   name: z.string(),
   ar: z.array(z.object({ name: z.string() })),
-  al: z.object({ name: z.string(), pic: z.number().optional(), pic_str: z.string().optional() }),
+  al: z.object({
+    name: z.string(),
+    pic: z.number().optional(),
+    pic_str: z.string().optional(),
+  }),
 })
 
-const searchResponseSchema = z.object({ result: z.object({ songs: z.array(rawNeteaseSongSchema) }).optional() }).loose()
+const searchResponseSchema = z
+  .object({
+    result: z.object({ songs: z.array(rawNeteaseSongSchema) }).optional(),
+  })
+  .loose()
 
 const songDetailResponseSchema = z.object({ songs: z.array(rawNeteaseSongSchema).optional() }).loose()
 
@@ -128,7 +136,7 @@ const streamUrlResponseSchema = z
         z
           .object({
             url: z.string().optional().nullable(),
-            uf: z.object({ url: z.string() }).optional(),
+            uf: z.union([z.object({ url: z.string() }), z.null()]).optional(),
           })
           .loose(),
       )
@@ -162,7 +170,7 @@ export interface MetingSearchHitWithPreview extends MetingSearchHit {
 
 // ── High-level API ─────────────────────────────────────────────────────────
 
-export async function searchSongs(keyword: string, limit = 10): Promise<MetingSearchHit[]> {
+export async function searchSongs(keyword: string, limit = 10, offset = 0): Promise<MetingSearchHit[]> {
   const trimmed = keyword.trim()
   if (trimmed === '') {
     return []
@@ -174,12 +182,14 @@ export async function searchSongs(keyword: string, limit = 10): Promise<MetingSe
     type: 1,
     limit: safeLimit,
     total: 'true',
-    offset: 0,
+    offset,
   })
 
   const parsed = searchResponseSchema.safeParse(res)
   if (!parsed.success) {
-    log.error('Netease search response failed schema validation', { issues: parsed.error.issues })
+    log.error('Netease search response failed schema validation', {
+      issues: parsed.error.issues,
+    })
     throw new ActionFailure(502, '上游音乐服务返回异常，请稍后再试')
   }
 
@@ -194,7 +204,9 @@ export async function getSong(sourceId: string): Promise<MetingSearchHit | null>
 
   const parsed = songDetailResponseSchema.safeParse(res)
   if (!parsed.success) {
-    log.error('Netease song detail response failed schema validation', { issues: parsed.error.issues })
+    log.error('Netease song detail response failed schema validation', {
+      issues: parsed.error.issues,
+    })
     throw new ActionFailure(502, '上游音乐服务返回异常，请稍后再试')
   }
 
@@ -211,7 +223,9 @@ export async function getStreamUrl(urlId: string, bitrate = 320): Promise<string
 
   const parsed = streamUrlResponseSchema.safeParse(res)
   if (!parsed.success) {
-    log.error('Netease stream URL response failed schema validation', { issues: parsed.error.issues })
+    log.error('Netease stream URL response failed schema validation', {
+      issues: parsed.error.issues,
+    })
     throw new ActionFailure(502, '上游音乐服务返回异常，请稍后再试')
   }
 
@@ -234,7 +248,9 @@ export async function getLyric(lyricId: string): Promise<string | null> {
 
   const parsed = lyricResponseSchema.safeParse(res)
   if (!parsed.success) {
-    log.error('Netease lyric response failed schema validation', { issues: parsed.error.issues })
+    log.error('Netease lyric response failed schema validation', {
+      issues: parsed.error.issues,
+    })
     throw new ActionFailure(502, '上游音乐服务返回异常，请稍后再试')
   }
 
@@ -246,17 +262,27 @@ export async function getCoverUrl(picId: string, size = 300): Promise<string> {
   return `https://p3.music.126.net/${encryptId(picId)}/${picId}.jpg?param=${size}y${size}`
 }
 
-export async function searchSongsWithPreview(keyword: string, limit = 10): Promise<MetingSearchHitWithPreview[]> {
-  const hits = await searchSongs(keyword, limit)
+export async function searchSongsWithPreview(
+  keyword: string,
+  limit = 10,
+  offset = 0,
+): Promise<MetingSearchHitWithPreview[]> {
+  const hits = await searchSongs(keyword, limit, offset)
   return Promise.all(
     hits.map(async (hit) => {
       const [previewUrl, coverUrl] = await Promise.all([
         getStreamUrl(hit.urlId).catch((error: unknown) => {
-          log.warn('Preview URL resolution failed', { sourceId: hit.sourceId, error })
+          log.warn('Preview URL resolution failed', {
+            sourceId: hit.sourceId,
+            error,
+          })
           return ''
         }),
         getCoverUrl(hit.picId).catch((error: unknown) => {
-          log.warn('Cover URL resolution failed', { sourceId: hit.sourceId, error })
+          log.warn('Cover URL resolution failed', {
+            sourceId: hit.sourceId,
+            error,
+          })
           return ''
         }),
       ])

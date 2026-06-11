@@ -34,7 +34,7 @@ function SelectTrigger({
       )}
       {...props}
     >
-      {children}
+      {children ?? <SelectValue />}
       <BaseSelect.Icon>
         <ChevronDownIcon className="size-4 opacity-50" />
       </BaseSelect.Icon>

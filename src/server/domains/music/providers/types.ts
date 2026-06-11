@@ -22,7 +22,7 @@ export interface ProviderTrack {
 export interface MusicProvider {
   readonly source: string
 
-  search(keyword: string, limit: number): Promise<ProviderSearchHit[]>
+  search(keyword: string, limit: number, offset?: number): Promise<ProviderSearchHit[]>
 
   getTrack(sourceId: string): Promise<ProviderTrack | null>
 

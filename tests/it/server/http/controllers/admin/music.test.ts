@@ -76,6 +76,7 @@ describe('adminMusicRouter.search', () => {
           previewUrl: 'https://cdn.example.com/preview.mp3',
         },
       ],
+      hasMore: false,
     })
     const ctx = makeAuthedCtx()
     const res = await call(adminMusicRouter.search, { keyword: 'Song' }, { context: ctx })

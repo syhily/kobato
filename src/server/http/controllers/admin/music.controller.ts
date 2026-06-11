@@ -47,10 +47,13 @@ const search = authorProc
       source: z.enum(['netease', 'tencent']).optional(),
       keyword: z.string(),
       limit: z.coerce.number().optional(),
+      offset: z.coerce.number().int().nonnegative().optional(),
     }),
   )
   .output(searchMusicOutputDto)
-  .handler(({ input, context: _context }) => searchMusic(input.source ?? 'netease', input.keyword, input.limit))
+  .handler(({ input, context: _context }) =>
+    searchMusic(input.source ?? 'netease', input.keyword, input.limit, input.offset),
+  )
 
 const add = authorProc
   .route({ method: 'POST', path: '/admin/music/add' })
