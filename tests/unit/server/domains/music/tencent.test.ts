@@ -95,7 +95,7 @@ describe('decodeHtmlEntities', () => {
 describe('tencent provider getTrack', () => {
   it('maps raw song fields to ProviderTrack', async () => {
     const rawSong = makeRawSong()
-    mockFetchJson({ data: [rawSong] })
+    mockFetchJson({ songinfo: { data: { track_info: rawSong } } })
 
     const track = await tencentProvider.getTrack('001ABCDEF')
     expect(track).not.toBeNull()
@@ -114,7 +114,7 @@ describe('tencent provider getTrack', () => {
   })
 
   it('returns null when no songs found', async () => {
-    mockFetchJson({ data: [] })
+    mockFetchJson({ songinfo: { data: { track_info: null } } })
     const track = await tencentProvider.getTrack('nonexistent')
     expect(track).toBeNull()
     vi.unstubAllGlobals()
@@ -150,7 +150,7 @@ describe('tencent provider search', () => {
             ok: true,
             json: () =>
               Promise.resolve({
-                data: { song: { list: [rawSong] } },
+                req_1: { data: { body: { song: { list: [rawSong] } } } },
               }),
             text: () => Promise.resolve(''),
           }
@@ -161,7 +161,7 @@ describe('tencent provider search', () => {
             ok: true,
             json: () =>
               Promise.resolve({
-                data: [rawSong],
+                songinfo: { data: { track_info: rawSong } },
               }),
             text: () => Promise.resolve(''),
           }
@@ -212,7 +212,7 @@ describe('tencent provider search', () => {
   })
 
   it('returns empty array when API has no songs', async () => {
-    mockFetchJson({ data: { song: { list: [] } } })
+    mockFetchJson({ req_1: { data: { body: { song: { list: [] } } } } })
     const hits = await tencentProvider.search('nope', 10)
     expect(hits).toEqual([])
     vi.unstubAllGlobals()
@@ -242,7 +242,7 @@ describe('tencent provider resolveAudioUrl', () => {
           // Song detail
           return {
             ok: true,
-            json: () => Promise.resolve({ data: [rawSong] }),
+            json: () => Promise.resolve({ songinfo: { data: { track_info: rawSong } } }),
             text: () => Promise.resolve(''),
           }
         }
@@ -300,7 +300,7 @@ describe('tencent provider resolveAudioUrl', () => {
         if (callCount === 1) {
           return {
             ok: true,
-            json: () => Promise.resolve({ data: [rawSong] }),
+            json: () => Promise.resolve({ songinfo: { data: { track_info: rawSong } } }),
             text: () => Promise.resolve(''),
           }
         }

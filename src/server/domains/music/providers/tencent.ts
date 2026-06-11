@@ -11,7 +11,7 @@ const log = getLogger('music.tencent')
 // ── HTTP helpers ────────────────────────────────────────────────────────────
 
 const TENCENT_HEADERS: Record<string, string> = {
-  Referer: 'https://y.qq.com',
+  Referer: 'https://y.qq.com/',
   'User-Agent':
     'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
   Accept: '*/*',
@@ -196,7 +196,6 @@ export const tencentProvider: MusicProvider = {
     const page = Math.floor((offset ?? 0) / safeLimit) + 1
 
     const res = await tencentPost('https://u.y.qq.com/cgi-bin/musicu.fcg', {
-      comm: { ct: 24, cv: 0 },
       req_1: {
         method: 'DoSearchForQQMusicDesktop',
         module: 'music.search.SearchCgiService',
@@ -215,7 +214,15 @@ export const tencentProvider: MusicProvider = {
       throw new ActionFailure(502, '上游音乐服务返回异常，请稍后再试')
     }
 
-    const songs = (parsed.data.req_1?.data?.body?.song?.list ?? []) as RawTencentSong[]
+    // Support both req_1 (batch key) and music.search.SearchCgiService (service key) response shapes.
+    const typedRes = res as Record<string, unknown>
+    const batchData = typedRes.req_1 as Record<string, unknown> | undefined
+    const serviceData = typedRes['music.search.SearchCgiService'] as Record<string, unknown> | undefined
+    const dataBlock = (batchData ?? serviceData) as Record<string, unknown> | undefined
+    const innerData = dataBlock?.data as Record<string, unknown> | undefined
+    const body = innerData?.body as Record<string, unknown> | undefined
+    const song = body?.song as Record<string, unknown> | undefined
+    const songs = (song?.list as RawTencentSong[] | undefined) ?? []
     const tracks = songs.map(toTrack)
 
     // Resolve preview URLs and cover URLs for each hit.
