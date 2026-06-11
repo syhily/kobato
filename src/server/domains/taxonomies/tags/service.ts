@@ -34,7 +34,7 @@ import { hasAtLeast, type Role } from '@/shared/utils/roles'
 
 // Wire-format DTO for every admin tag endpoint. `postCount` is
 // projected by the caller from the live `ContentCatalog` (mirrors
-// the category service shape). See `tagPostCounter`.
+// the category service shape). See `countPostsByTag`.
 export function toAdminTagDto(row: TagRow, postCount: number): AdminTagDto {
   return {
     id: String(row.id),
@@ -54,19 +54,7 @@ export interface AdminTagsListResult {
   hasMore: boolean
 }
 
-// Single catalog snapshot + per-row map lookup. Counts include
-// hidden + scheduled posts so the column matches what the
-// delete-block guard sees.
-async function tagPostCounter(db: NodePgDatabase): Promise<(name: string) => Promise<number>> {
-  return async (name: string) => {
-    const posts = await listPostsByTag(db, name, { includeHidden: true, includeScheduled: true })
-    return posts.length
-  }
-}
-
 // Bulk-count posts per tag in a single query, then project into a Map.
-// Replaces the N+1 `tagPostCounter` for list views while keeping the
-// per-tag helper for single-row upserts.
 async function countPostsByTags(db: NodePgDatabase): Promise<Map<string, number>> {
   const rows = await db
     .select({ name: tagTable.name, count: sql<number>`count(${postMetaTable.id})::int` })
@@ -82,6 +70,16 @@ async function countPostsByTags(db: NodePgDatabase): Promise<Map<string, number>
     counts.set(row.name, row.count)
   }
   return counts
+}
+
+async function countPostsByTag(db: NodePgDatabase, name: string): Promise<number> {
+  const [row] = await db
+    .select({ count: sql<number>`count(${postMetaTable.id})::int` })
+    .from(tagTable)
+    .leftJoin(postTag, eq(postTag.tagId, tagTable.id))
+    .leftJoin(postMetaTable, eq(postMetaTable.id, postTag.postId))
+    .where(eq(tagTable.name, name))
+  return row?.count ?? 0
 }
 
 // Server-side pagination: parallel `[rows, total, postCounter]` so we
@@ -134,8 +132,7 @@ export async function upsertAdminTag(
       '标签',
     )
     const row = await insertTag(db, { name: input.name, slug, ogImage: input.ogImage ?? '' })
-    const countOf = await tagPostCounter(db)
-    return toAdminTagDto(row, await countOf(row.name))
+    return toAdminTagDto(row, await countPostsByTag(db, row.name))
   }
 
   // Authors may only create tags; renaming is admin-only.
@@ -161,8 +158,7 @@ export async function upsertAdminTag(
   if (updated === null) {
     throw new DomainError('NOT_FOUND', '标签不存在')
   }
-  const countOf = await tagPostCounter(db)
-  return toAdminTagDto(updated, await countOf(updated.name))
+  return toAdminTagDto(updated, await countPostsByTag(db, updated.name))
 }
 
 // Block-only deletion regardless of role. `deleteAdminTaxonomy` refuses
