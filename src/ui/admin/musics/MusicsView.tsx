@@ -18,7 +18,6 @@ import { AlbumCard } from '@/ui/admin/musics/AlbumCard'
 import { MusicLibraryHero } from '@/ui/admin/musics/MusicLibraryHero'
 import { useMusicPlayerActions } from '@/ui/admin/musics/MusicPlayerContext'
 import { type MusicSortBy, useMusicsController } from '@/ui/admin/musics/useMusicsController'
-import { useDebouncedSearch } from '@/ui/admin/shared/useDebouncedSearch'
 import { cn } from '@/ui/lib/cn'
 
 const SORT_LABELS: Record<MusicSortBy, string> = {
@@ -118,10 +117,7 @@ export function MusicsView() {
     [focusSortItem],
   )
 
-  const [qInput, setQInput] = useDebouncedSearch({
-    delayMs: 300,
-    onChange: (value) => dispatch({ type: 'setQ', value }),
-  })
+  const [qInput, setQInput] = useState('')
 
   const queryKey = useMemo(
     () => ['admin', 'music', 'list', { q: state.q, sortBy: state.sortBy, sortOrder: state.sortOrder }],
@@ -296,7 +292,13 @@ export function MusicsView() {
             )}
           </div>
 
-          <div className="relative min-w-0 flex-1 sm:ml-auto sm:flex-none">
+          <form
+            className="relative min-w-0 flex-1 sm:ml-auto sm:flex-none"
+            onSubmit={(e) => {
+              e.preventDefault()
+              dispatch({ type: 'setQ', value: qInput })
+            }}
+          >
             <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-ink-4" />
             <input
               type="search"
@@ -306,7 +308,7 @@ export function MusicsView() {
               aria-label="搜索歌曲"
               className="h-10 w-full rounded-full bg-surface-dim py-2 pr-4 pl-10 text-sm text-ink-1 transition-colors outline-none placeholder:text-ink-4 focus:bg-surface sm:w-64"
             />
-          </div>
+          </form>
         </div>
       </MusicLibraryHero>
 

@@ -53,7 +53,7 @@ export function AddMusicView() {
   const [results, setResults] = useState<MetingSearchHit[]>([])
   const [hasMore, setHasMore] = useState(false)
   const [nextOffset, setNextOffset] = useState(0)
-  const [enabled, setEnabled] = useState(false)
+  const [searchedKeyword, setSearchedKeyword] = useState('')
   const [addingSourceId, setAddingSourceId] = useState<string | null>(null)
   const [addedSourceIds, setAddedSourceIds] = useState<Set<string>>(new Set())
 
@@ -74,10 +74,10 @@ export function AddMusicView() {
 
   const searchQuery = useQuery({
     ...orpcQuery.admin.music.search.queryOptions({
-      input: { source, keyword, limit: SEARCH_LIMIT, offset: nextOffset },
+      input: { source, keyword: searchedKeyword, limit: SEARCH_LIMIT, offset: nextOffset },
       staleTime: 0,
     }),
-    enabled,
+    enabled: searchedKeyword.length > 0,
   })
 
   const addMutation = useMutation({
@@ -107,12 +107,13 @@ export function AddMusicView() {
   }, [])
 
   const triggerSearch = useCallback(() => {
-    if (keyword.trim() === '') {
+    const trimmed = keyword.trim()
+    if (trimmed === '') {
       return
     }
     setResults([])
     setNextOffset(0)
-    setEnabled(true)
+    setSearchedKeyword(trimmed)
   }, [keyword])
 
   // Handle search results — accumulate for pagination
@@ -131,21 +132,7 @@ export function AddMusicView() {
       return [...prev, ...newResults.filter((r) => !existing.has(`${r.source}:${r.sourceId}`))]
     })
     setHasMore(hasMoreData)
-    if (!hasMoreData) {
-      setEnabled(false)
-    }
-    // Auto-load next page if sentinel is still inside viewport and more pages exist
-    if (hasMoreData && !searchQuery.isFetching) {
-      requestAnimationFrame(() => {
-        if (!sentinelRef.current) {
-          return
-        }
-        const rect = sentinelRef.current.getBoundingClientRect()
-        if (rect.top < window.innerHeight) {
-          loadMore()
-        }
-      })
-    }
+    hasMoreRef.current = hasMoreData
   }, [searchQuery.data]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleAdd = useCallback(
@@ -190,7 +177,8 @@ export function AddMusicView() {
   // Infinite scroll via IntersectionObserver
   const sentinelRef = useRef<HTMLDivElement>(null)
   useEffect(() => {
-    if (!sentinelRef.current) {
+    const el = sentinelRef.current
+    if (!el || !hasMore || searchQuery.isFetching) {
       return
     }
     const observer = new IntersectionObserver(
@@ -199,11 +187,11 @@ export function AddMusicView() {
           loadMore()
         }
       },
-      { threshold: 0 },
+      { rootMargin: '200px', threshold: 0 },
     )
-    observer.observe(sentinelRef.current)
+    observer.observe(el)
     return () => observer.disconnect()
-  }, [loadMore])
+  }, [loadMore, hasMore, searchQuery.isFetching, results.length])
 
   const isSearching = searchQuery.isFetching && nextOffset === 0
   const isLoadingMore = searchQuery.isFetching && nextOffset > 0
@@ -263,8 +251,9 @@ export function AddMusicView() {
                   type="button"
                   onClick={() => {
                     setKeyword('')
+                    setSearchedKeyword('')
                     setResults([])
-                    setEnabled(false)
+                    setNextOffset(0)
                     queryClient.removeQueries({
                       queryKey: orpcQuery.admin.music.search.key({ input: {} }),
                     })
