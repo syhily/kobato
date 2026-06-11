@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 
 import type { AdminMusicDto } from '@/shared/types/music'
 
+import { AnimatePresence, motion, transitions } from '@/client/lib/motion'
 import { useMusicPlayerState } from '@/ui/admin/musics/MusicPlayerContext'
 import { cn } from '@/ui/lib/cn'
 
@@ -48,7 +49,6 @@ function urlsEqual(a: string[], b: string[]): boolean {
 interface GridCell {
   id: number
   url: string
-  visible: boolean
 }
 
 interface GridSize {
@@ -61,9 +61,6 @@ function CollageBackground({ allCoverUrls }: { allCoverUrls: string[] }) {
   const containerRef = useRef<HTMLDivElement>(null)
   const [grid, setGrid] = useState<GridSize>({ cols: 6, rows: 2, count: 12 })
   const [cells, setCells] = useState<GridCell[]>([])
-
-  const cellsRef = useRef(cells)
-  cellsRef.current = cells
 
   const urlsRef = useRef(allCoverUrls)
   urlsRef.current = allCoverUrls
@@ -122,7 +119,6 @@ function CollageBackground({ allCoverUrls }: { allCoverUrls: string[] }) {
       Array.from({ length: grid.count }, (_, i) => ({
         id: i,
         url: pool[i % pool.length]!,
-        visible: true,
       })),
     )
   }, [allCoverUrls, grid.count, cells.length])
@@ -134,7 +130,6 @@ function CollageBackground({ allCoverUrls }: { allCoverUrls: string[] }) {
     }
 
     let refreshTimer: ReturnType<typeof setTimeout> | null = null
-    let fadeTimer: ReturnType<typeof setTimeout> | null = null
     let running = true
 
     const scheduleNext = () => {
@@ -159,39 +154,19 @@ function CollageBackground({ allCoverUrls }: { allCoverUrls: string[] }) {
         const batchSize = 1 + Math.floor(Math.random() * 4)
         const indices = shuffle(Array.from({ length: currentGrid.count }, (_, i) => i)).slice(0, batchSize)
 
-        // Fade out all selected cells simultaneously
         setCells((prev) => {
           const next = [...prev]
           for (const idx of indices) {
-            if (next[idx]) {
-              next[idx] = { ...next[idx], visible: false }
+            if (!next[idx]) {
+              continue
             }
+            const currentSet = new Set(next.map((c) => c.url))
+            const available = pool.filter((u) => !currentSet.has(u))
+            const source = available.length > 0 ? available : pool
+            next[idx] = { ...next[idx], url: pickRandom(source) }
           }
           return next
         })
-
-        // 300–1200 ms later: swap covers and fade in
-        const refreshDelay = 300 + Math.random() * 900
-        fadeTimer = setTimeout(() => {
-          if (!running) {
-            return
-          }
-
-          const currentPool = urlsRef.current
-          setCells((prev) => {
-            const next = [...prev]
-            for (const idx of indices) {
-              if (!next[idx]) {
-                continue
-              }
-              const currentSet = new Set(next.map((c) => c.url))
-              const available = currentPool.filter((u) => !currentSet.has(u))
-              const source = available.length > 0 ? available : currentPool
-              next[idx] = { ...next[idx], url: pickRandom(source), visible: true }
-            }
-            return next
-          })
-        }, refreshDelay)
 
         scheduleNext()
       }, nextDelay)
@@ -204,9 +179,6 @@ function CollageBackground({ allCoverUrls }: { allCoverUrls: string[] }) {
       if (refreshTimer) {
         clearTimeout(refreshTimer)
       }
-      if (fadeTimer) {
-        clearTimeout(fadeTimer)
-      }
     }
   }, [grid.count])
 
@@ -215,15 +187,19 @@ function CollageBackground({ allCoverUrls }: { allCoverUrls: string[] }) {
       {cells.length > 0 && grid.count > 0 && (
         <div className="grid w-full" style={{ gridTemplateColumns: `repeat(${grid.cols}, 1fr)` }}>
           {cells.map((cell) => (
-            <div
-              key={cell.id}
-              className={cn(
-                'aspect-square overflow-hidden',
-                'transition-all duration-500 ease-in-out',
-                cell.visible ? 'scale-100 opacity-100' : 'scale-90 opacity-0',
-              )}
-            >
-              <img src={cell.url} alt="" className="h-full w-full object-cover" loading="lazy" />
+            <div key={cell.id} className="relative aspect-square overflow-hidden">
+              <AnimatePresence>
+                <motion.div
+                  key={`${cell.id}-${cell.url}`}
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.9 }}
+                  transition={transitions.fade}
+                  className="absolute inset-0"
+                >
+                  <img src={cell.url} alt="" className="h-full w-full object-cover" loading="lazy" />
+                </motion.div>
+              </AnimatePresence>
             </div>
           ))}
         </div>
@@ -239,20 +215,22 @@ function PlayingBackground({ coverUrl, extractedColor }: { coverUrl: string; ext
   return (
     <div className="absolute inset-0 overflow-hidden">
       {/* Blurred cover backdrop — scale compensates blur edge fade */}
-      <div className="absolute inset-0 animate-slow-zoom">
+      <motion.div className="absolute inset-0" animate={{ scale: [1.05, 1.2] }} transition={transitions.slowLoop}>
         <img src={coverUrl} alt="" className="h-full w-full scale-125 object-cover" style={{ filter: 'blur(48px)' }} />
-      </div>
+      </motion.div>
 
       {/* Dark base overlay */}
       <div className="absolute inset-0 bg-black/50" />
 
       {/* Extracted-color radial glow */}
       {extractedColor && (
-        <div
-          className="absolute inset-0 animate-pulse-glow"
+        <motion.div
+          className="absolute inset-0"
           style={{
             background: `radial-gradient(ellipse at 50% 30%, ${extractedColor}40 0%, transparent 60%)`,
           }}
+          animate={{ opacity: [0.4, 0.7], scale: [1, 1.1] }}
+          transition={transitions.pulseLoop}
         />
       )}
     </div>

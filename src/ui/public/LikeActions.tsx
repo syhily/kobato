@@ -5,6 +5,7 @@ import { startTransition, useCallback, useEffect, useOptimistic, useRef, useStat
 import type { DecreaseLikeOutput, IncreaseLikeOutput, ValidateLikeTokenOutput } from '@/shared/types/likes'
 
 import { orpcQuery } from '@/client/api/orpc-query'
+import { motion } from '@/client/lib/motion'
 import { useSiteIdentity } from '@/shared/lib/blog-config-context'
 import { joinUrl } from '@/shared/utils/urls'
 import { Button } from '@/ui/components/button'
@@ -178,33 +179,34 @@ export function LikeButton({ permalink, commentKey, likes: initialLikes }: LikeB
 
   return (
     <div className="mt-12 text-center">
-      <Button
-        variant="dark"
-        size="lg"
-        shape="pill"
-        className={cn(
-          'px-10',
-          'border-like-bg bg-like-bg hover:border-like-bg-hover hover:bg-like-bg-hover',
-          'hover:animate-shake hover:will-change-transform',
-          'data-[liked=true]:border-like-active data-[liked=true]:bg-like-active data-[liked=true]:text-white data-[liked=true]:shadow-like-active',
-        )}
-        title="Do you like me?"
-        aria-pressed={state.liked}
-        aria-label={state.liked ? '取消点赞' : '点赞'}
-        data-permalink={permalink}
-        data-liked={state.liked ? 'true' : 'false'}
-        onClick={onClick}
-        disabled={isPending}
-      >
-        <HeartIcon
-          className="me-1 mt-[-2px] size-[1.1em] align-middle"
-          fill="currentColor"
-          size="1em"
-          strokeWidth={0}
-          aria-hidden
-        />
-        <NumberFlow value={state.likes} />
-      </Button>
+      <motion.div whileHover={{ x: [-1, 2, -2, 2, -1] }} transition={{ duration: 0.82 }}>
+        <Button
+          variant="dark"
+          size="lg"
+          shape="pill"
+          className={cn(
+            'px-10',
+            'border-like-bg bg-like-bg hover:border-like-bg-hover hover:bg-like-bg-hover',
+            'data-[liked=true]:border-like-active data-[liked=true]:bg-like-active data-[liked=true]:text-white data-[liked=true]:shadow-like-active',
+          )}
+          title="Do you like me?"
+          aria-pressed={state.liked}
+          aria-label={state.liked ? '取消点赞' : '点赞'}
+          data-permalink={permalink}
+          data-liked={state.liked ? 'true' : 'false'}
+          onClick={onClick}
+          disabled={isPending}
+        >
+          <HeartIcon
+            className="me-1 mt-[-2px] size-[1.1em] align-middle"
+            fill="currentColor"
+            size="1em"
+            strokeWidth={0}
+            aria-hidden
+          />
+          <NumberFlow value={state.likes} />
+        </Button>
+      </motion.div>
     </div>
   )
 }

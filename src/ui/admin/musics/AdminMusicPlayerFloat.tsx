@@ -2,6 +2,7 @@ import { Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, X, ChevronUp, Che
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation } from 'react-router'
 
+import { AnimatePresence, motion } from '@/client/lib/motion'
 import { formatTime } from '@/ui/admin/musics/format-time'
 import { useMusicPlayerActions, useMusicPlayerState, useMusicPlayerTime } from '@/ui/admin/musics/MusicPlayerContext'
 import { ProgressSlider } from '@/ui/admin/musics/ProgressSlider'
@@ -161,186 +162,202 @@ export function AdminMusicPlayerFloat() {
         bottom: position.y ? 'auto' : undefined,
       }}
     >
-      {!expanded ? (
-        // Collapsed pill
-        <div
-          className={cn(
-            'flex h-14 items-center gap-2 rounded-full',
-            'bg-canvas/80 shadow-xl ring-1 ring-line-muted backdrop-blur-2xl',
-            'w-56 pr-4 pl-1',
-          )}
-        >
-          {/* Spinning cover */}
-          <div className="relative shrink-0">
-            {currentTrack.coverUrl ? (
-              <Image
-                src={currentTrack.coverUrl}
-                alt=""
-                width={40}
-                height={40}
-                className={cn('size-10 rounded-full object-cover', isPlaying && 'animate-spin-slow')}
-              />
-            ) : (
-              <div className="size-10 rounded-full bg-surface-dim" />
+      <AnimatePresence mode="wait">
+        {!expanded ? (
+          <motion.div
+            key="collapsed"
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            transition={{ duration: 0.2 }}
+            className={cn(
+              'flex h-14 items-center gap-2 rounded-full',
+              'bg-canvas/80 shadow-xl ring-1 ring-line-muted backdrop-blur-2xl',
+              'w-56 pr-4 pl-1',
             )}
-          </div>
-
-          <div className="flex min-w-0 flex-1 flex-col justify-center">
-            <p className="truncate text-xs font-medium text-ink-1">{currentTrack.name}</p>
-            <p className="truncate text-nano text-ink-4">{currentTrack.artist.join(' / ')}</p>
-          </div>
-
-          <button
-            type="button"
-            onClick={toggle}
-            onMouseDown={stopPropagation}
-            onTouchStart={stopPropagation}
-            className="ml-1 shrink-0 text-ink-3 transition-colors hover:text-ink-1"
-            aria-label={isPlaying ? '暂停' : '播放'}
           >
-            {isPlaying ? <Pause className="size-5 fill-current" /> : <Play className="size-5 fill-current" />}
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setExpanded(true)}
-            onMouseDown={stopPropagation}
-            onTouchStart={stopPropagation}
-            className="shrink-0 text-ink-4 transition-colors hover:text-ink-1"
-            aria-label="展开播放器"
-          >
-            <ChevronUp className="size-4" />
-          </button>
-        </div>
-      ) : (
-        // Expanded card
-        <div
-          className={cn(
-            'flex flex-col gap-3 rounded-2xl p-4',
-            'bg-canvas/80 shadow-xl ring-1 ring-line-muted backdrop-blur-2xl',
-          )}
-        >
-          {/* Header */}
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-ink-4">正在播放</span>
-            <div className="flex items-center gap-1">
-              <button
-                type="button"
-                onClick={() => setExpanded(false)}
-                onMouseDown={stopPropagation}
-                onTouchStart={stopPropagation}
-                className="text-ink-4 transition-colors hover:text-ink-1"
-                aria-label="收起播放器"
-              >
-                <ChevronDown className="size-4" />
-              </button>
-              <button
-                type="button"
-                onClick={close}
-                onMouseDown={stopPropagation}
-                onTouchStart={stopPropagation}
-                className="text-ink-4 transition-colors hover:text-ink-1"
-                aria-label="关闭播放器"
-              >
-                <X className="size-4" />
-              </button>
+            {/* Spinning cover */}
+            <div className="relative shrink-0">
+              {currentTrack.coverUrl ? (
+                <motion.div
+                  className="size-10 overflow-hidden rounded-full"
+                  animate={isPlaying ? { rotate: 360 } : { rotate: 0 }}
+                  transition={isPlaying ? { repeat: Infinity, duration: 6, ease: 'linear' } : { duration: 0.3 }}
+                >
+                  <Image
+                    src={currentTrack.coverUrl}
+                    alt=""
+                    width={40}
+                    height={40}
+                    className="size-10 rounded-full object-cover"
+                  />
+                </motion.div>
+              ) : (
+                <div className="size-10 rounded-full bg-surface-dim" />
+              )}
             </div>
-          </div>
 
-          {/* Cover + Info */}
-          <div className="flex items-center gap-3">
-            {currentTrack.coverUrl ? (
-              <Image
-                src={currentTrack.coverUrl}
-                alt=""
-                width={80}
-                height={80}
-                className="size-20 rounded-lg object-cover shadow-lg"
-              />
-            ) : (
-              <div className="size-20 rounded-lg bg-surface-dim" />
-            )}
-            <div className="min-w-0">
-              <p className="truncate text-sm font-semibold text-ink-1">{currentTrack.name}</p>
-              <p className="truncate text-xs text-ink-3">{currentTrack.artist.join(' / ')}</p>
-              <p className="truncate text-xs text-ink-4">{currentTrack.album}</p>
+            <div className="flex min-w-0 flex-1 flex-col justify-center">
+              <p className="truncate text-xs font-medium text-ink-1">{currentTrack.name}</p>
+              <p className="truncate text-nano text-ink-4">{currentTrack.artist.join(' / ')}</p>
             </div>
-          </div>
 
-          {/* Controls */}
-          <div className="flex items-center justify-center gap-4">
-            <button
-              type="button"
-              onClick={handlePrev}
-              onMouseDown={stopPropagation}
-              onTouchStart={stopPropagation}
-              disabled={currentIndex <= 0}
-              className="text-ink-3 transition-colors hover:text-ink-1 disabled:opacity-30"
-              aria-label="上一首"
-            >
-              <SkipBack className="size-5 fill-current" />
-            </button>
             <button
               type="button"
               onClick={toggle}
               onMouseDown={stopPropagation}
               onTouchStart={stopPropagation}
-              className="flex size-12 items-center justify-center rounded-full text-primary-foreground transition-transform hover:scale-105"
-              style={accentStyle}
+              className="ml-1 shrink-0 text-ink-3 transition-colors hover:text-ink-1"
               aria-label={isPlaying ? '暂停' : '播放'}
             >
-              {isPlaying ? <Pause className="size-6 fill-current" /> : <Play className="size-6 fill-current" />}
+              {isPlaying ? <Pause className="size-5 fill-current" /> : <Play className="size-5 fill-current" />}
             </button>
+
             <button
               type="button"
-              onClick={handleNext}
+              onClick={() => setExpanded(true)}
               onMouseDown={stopPropagation}
               onTouchStart={stopPropagation}
-              disabled={currentIndex >= playlist.length - 1}
-              className="text-ink-3 transition-colors hover:text-ink-1 disabled:opacity-30"
-              aria-label="下一首"
+              className="shrink-0 text-ink-4 transition-colors hover:text-ink-1"
+              aria-label="展开播放器"
             >
-              <SkipForward className="size-5 fill-current" />
+              <ChevronUp className="size-4" />
             </button>
-          </div>
+          </motion.div>
+        ) : (
+          <motion.div
+            key="expanded"
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            transition={{ duration: 0.2 }}
+            className={cn(
+              'flex flex-col gap-3 rounded-2xl p-4',
+              'bg-canvas/80 shadow-xl ring-1 ring-line-muted backdrop-blur-2xl',
+            )}
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-medium text-ink-4">正在播放</span>
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={() => setExpanded(false)}
+                  onMouseDown={stopPropagation}
+                  onTouchStart={stopPropagation}
+                  className="text-ink-4 transition-colors hover:text-ink-1"
+                  aria-label="收起播放器"
+                >
+                  <ChevronDown className="size-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={close}
+                  onMouseDown={stopPropagation}
+                  onTouchStart={stopPropagation}
+                  className="text-ink-4 transition-colors hover:text-ink-1"
+                  aria-label="关闭播放器"
+                >
+                  <X className="size-4" />
+                </button>
+              </div>
+            </div>
 
-          {/* Progress */}
-          <div className="flex items-center gap-2">
-            <span className="w-9 text-right text-nano text-ink-4">{formatTime(currentTime)}</span>
-            <ProgressSlider
-              value={currentTime}
-              max={duration || 100}
-              onChange={seek}
-              accent={accent}
-              className="flex-1"
-              ariaLabel="播放进度"
-            />
-            <span className="w-9 text-nano text-ink-4">{formatTime(duration)}</span>
-          </div>
+            {/* Cover + Info */}
+            <div className="flex items-center gap-3">
+              {currentTrack.coverUrl ? (
+                <Image
+                  src={currentTrack.coverUrl}
+                  alt=""
+                  width={80}
+                  height={80}
+                  className="size-20 rounded-lg object-cover shadow-lg"
+                />
+              ) : (
+                <div className="size-20 rounded-lg bg-surface-dim" />
+              )}
+              <div className="min-w-0">
+                <p className="truncate text-sm font-semibold text-ink-1">{currentTrack.name}</p>
+                <p className="truncate text-xs text-ink-3">{currentTrack.artist.join(' / ')}</p>
+                <p className="truncate text-xs text-ink-4">{currentTrack.album}</p>
+              </div>
+            </div>
 
-          {/* Volume */}
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={toggleMute}
-              onMouseDown={stopPropagation}
-              onTouchStart={stopPropagation}
-              className="text-ink-3 transition-colors hover:text-ink-1"
-              aria-label={muted ? '取消静音' : '静音'}
-            >
-              {muted || volume === 0 ? <VolumeX className="size-4" /> : <Volume2 className="size-4" />}
-            </button>
-            <ProgressSlider
-              value={muted ? 0 : volume}
-              max={1}
-              onChange={setVolume}
-              accent={accent}
-              className="flex-1"
-              ariaLabel="音量"
-            />
-          </div>
-        </div>
-      )}
+            {/* Controls */}
+            <div className="flex items-center justify-center gap-4">
+              <button
+                type="button"
+                onClick={handlePrev}
+                onMouseDown={stopPropagation}
+                onTouchStart={stopPropagation}
+                disabled={currentIndex <= 0}
+                className="text-ink-3 transition-colors hover:text-ink-1 disabled:opacity-30"
+                aria-label="上一首"
+              >
+                <SkipBack className="size-5 fill-current" />
+              </button>
+              <button
+                type="button"
+                onClick={toggle}
+                onMouseDown={stopPropagation}
+                onTouchStart={stopPropagation}
+                className="flex size-12 items-center justify-center rounded-full text-primary-foreground transition-transform hover:scale-105"
+                style={accentStyle}
+                aria-label={isPlaying ? '暂停' : '播放'}
+              >
+                {isPlaying ? <Pause className="size-6 fill-current" /> : <Play className="size-6 fill-current" />}
+              </button>
+              <button
+                type="button"
+                onClick={handleNext}
+                onMouseDown={stopPropagation}
+                onTouchStart={stopPropagation}
+                disabled={currentIndex >= playlist.length - 1}
+                className="text-ink-3 transition-colors hover:text-ink-1 disabled:opacity-30"
+                aria-label="下一首"
+              >
+                <SkipForward className="size-5 fill-current" />
+              </button>
+            </div>
+
+            {/* Progress */}
+            <div className="flex items-center gap-2">
+              <span className="w-9 text-right text-nano text-ink-4">{formatTime(currentTime)}</span>
+              <ProgressSlider
+                value={currentTime}
+                max={duration || 100}
+                onChange={seek}
+                accent={accent}
+                className="flex-1"
+                ariaLabel="播放进度"
+              />
+              <span className="w-9 text-nano text-ink-4">{formatTime(duration)}</span>
+            </div>
+
+            {/* Volume */}
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={toggleMute}
+                onMouseDown={stopPropagation}
+                onTouchStart={stopPropagation}
+                className="text-ink-3 transition-colors hover:text-ink-1"
+                aria-label={muted ? '取消静音' : '静音'}
+              >
+                {muted || volume === 0 ? <VolumeX className="size-4" /> : <Volume2 className="size-4" />}
+              </button>
+              <ProgressSlider
+                value={muted ? 0 : volume}
+                max={1}
+                onChange={setVolume}
+                accent={accent}
+                className="flex-1"
+                ariaLabel="音量"
+              />
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }

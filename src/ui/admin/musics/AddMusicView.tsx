@@ -7,6 +7,7 @@ import { toast } from 'sonner'
 import type { AdminMusicDto, MetingSearchHit } from '@/shared/types/music'
 
 import { orpcQuery } from '@/client/api/orpc-query'
+import { motion, transitions } from '@/client/lib/motion'
 import { MusicLibraryHero } from '@/ui/admin/musics/MusicLibraryHero'
 import { useMusicPlayerActions, useMusicPlayerState } from '@/ui/admin/musics/MusicPlayerContext'
 import { SearchAlbumCard } from '@/ui/admin/musics/SearchAlbumCard'
@@ -132,7 +133,12 @@ export function AddMusicView() {
   }, [currentTrack])
 
   return (
-    <div className="relative min-h-full animate-detail-enter">
+    <motion.div
+      className="relative min-h-full"
+      initial={{ opacity: 0, y: 30 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={transitions.detailFade}
+    >
       {/* Close button */}
       <button
         type="button"
@@ -151,9 +157,11 @@ export function AddMusicView() {
 
       {/* Hero */}
       <MusicLibraryHero musics={libraryMusics} total={libraryTotal} title="添加音乐">
-        <div
-          className="mx-auto flex max-w-sm animate-detail-fade-up items-center gap-2"
-          style={{ animationDelay: '0.1s' }}
+        <motion.div
+          className="mx-auto flex max-w-sm items-center gap-2"
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ ...transitions.detailFade, delay: 0.1 }}
         >
           <form
             className="flex w-full"
@@ -189,11 +197,15 @@ export function AddMusicView() {
               ) : null}
             </div>
           </form>
-        </div>
+        </motion.div>
       </MusicLibraryHero>
 
       {/* Results */}
-      <div className="animate-detail-fade-up" style={{ animationDelay: '0.2s' }}>
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ ...transitions.detailFade, delay: 0.2 }}
+      >
         {errorMessage !== null && (
           <p className="mb-4 rounded-xl bg-destructive/10 px-3 py-2 text-sm text-destructive">{errorMessage}</p>
         )}
@@ -224,8 +236,8 @@ export function AddMusicView() {
             })}
           </div>
         )}
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   )
 }
 

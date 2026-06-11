@@ -6,6 +6,7 @@ import { toast } from 'sonner'
 
 import { orpc } from '@/client/api/client'
 import { orpcQuery } from '@/client/api/orpc-query'
+import { motion, transitions } from '@/client/lib/motion'
 import { LyricsDisplay } from '@/ui/admin/musics/LyricsDisplay'
 import { useMusicPlayerActions, useMusicPlayerState, useMusicPlayerTime } from '@/ui/admin/musics/MusicPlayerContext'
 import { ConfirmDialog, type ConfirmState } from '@/ui/admin/shared/ConfirmDialog'
@@ -188,7 +189,12 @@ export function MusicDetailView() {
   }
 
   return (
-    <div className="relative min-h-full animate-detail-enter">
+    <motion.div
+      className="relative min-h-full"
+      initial={{ opacity: 0, y: 30 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={transitions.detailFade}
+    >
       {/* Close button */}
       <button
         type="button"
@@ -208,9 +214,12 @@ export function MusicDetailView() {
       >
         <div className="flex flex-col items-start gap-6 sm:flex-row sm:items-end">
           {/* Cover */}
-          <div
-            className="shrink-0 animate-detail-cover"
-            style={{ viewTransitionName: `music-cover-${music.id}`, animationDelay: '0.05s' }}
+          <motion.div
+            className="shrink-0"
+            style={{ viewTransitionName: `music-cover-${music.id}` }}
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ ...transitions.detailFade, delay: 0.05 }}
           >
             {music.coverUrl ? (
               <Image
@@ -223,19 +232,26 @@ export function MusicDetailView() {
             ) : (
               <div className="size-56 rounded-lg bg-surface-dim shadow-2xl" />
             )}
-          </div>
+          </motion.div>
 
           {/* Info / Edit Form */}
           <div className="flex min-w-0 flex-1 flex-col gap-3">
-            <span
-              className="animate-detail-fade-up text-xs font-medium tracking-wider text-ink-4 uppercase"
-              style={{ animationDelay: '0.1s' }}
+            <motion.span
+              className="text-xs font-medium tracking-wider text-ink-4 uppercase"
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ ...transitions.detailFade, delay: 0.1 }}
             >
               单曲
-            </span>
+            </motion.span>
 
             {editing ? (
-              <div className="flex animate-detail-fade-up flex-col gap-3">
+              <motion.div
+                className="flex flex-col gap-3"
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={transitions.detailFade}
+              >
                 <input
                   type="text"
                   value={draftName}
@@ -263,32 +279,48 @@ export function MusicDetailView() {
                     className="min-w-0 flex-1 border-b-2 border-line-muted bg-transparent pb-1 transition-colors outline-none placeholder:text-ink-4/40 focus:border-primary"
                   />
                 </div>
-              </div>
+              </motion.div>
             ) : (
               <>
-                <h1
-                  className="animate-detail-fade-up text-4xl font-black tracking-tight text-ink-1 sm:text-5xl lg:text-6xl"
-                  style={{ viewTransitionName: `music-title-${music.id}`, animationDelay: '0.15s' }}
+                <motion.h1
+                  className="text-4xl font-black tracking-tight text-ink-1 sm:text-5xl lg:text-6xl"
+                  style={{ viewTransitionName: `music-title-${music.id}` }}
+                  initial={{ opacity: 0, y: 16 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ ...transitions.detailFade, delay: 0.15 }}
                 >
                   {music.name}
-                </h1>
-                <p
-                  className="animate-detail-fade-up text-base text-ink-2"
-                  style={{ viewTransitionName: `music-artist-${music.id}`, animationDelay: '0.2s' }}
+                </motion.h1>
+                <motion.p
+                  className="text-base text-ink-2"
+                  style={{ viewTransitionName: `music-artist-${music.id}` }}
+                  initial={{ opacity: 0, y: 16 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ ...transitions.detailFade, delay: 0.2 }}
                 >
                   {music.artist.join(' / ')} · {music.album}
-                </p>
+                </motion.p>
               </>
             )}
-            <p className="animate-detail-fade-up text-sm text-ink-4" style={{ animationDelay: '0.25s' }}>
+            <motion.p
+              className="text-sm text-ink-4"
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ ...transitions.detailFade, delay: 0.25 }}
+            >
               {music.source} · {music.uploaderName ?? '—'} · {formatDate(music.createdAt)}
-            </p>
+            </motion.p>
           </div>
         </div>
       </div>
 
       {/* Action Bar */}
-      <div className="mb-8 flex animate-detail-fade-up items-center gap-3" style={{ animationDelay: '0.3s' }}>
+      <motion.div
+        className="mb-8 flex items-center gap-3"
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ ...transitions.detailFade, delay: 0.3 }}
+      >
         {!editing && (
           <>
             <button
@@ -351,13 +383,15 @@ export function MusicDetailView() {
             </button>
           </>
         )}
-      </div>
+      </motion.div>
 
       {/* Metadata */}
       {!editing && (
-        <div
-          className="mb-8 grid animate-detail-fade-up grid-cols-2 gap-4 text-sm text-ink-4 sm:grid-cols-4"
-          style={{ animationDelay: '0.35s' }}
+        <motion.div
+          className="mb-8 grid grid-cols-2 gap-4 text-sm text-ink-4 sm:grid-cols-4"
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ ...transitions.detailFade, delay: 0.35 }}
         >
           <div>
             <span className="block text-xs text-ink-4/70">playerId</span>
@@ -375,11 +409,16 @@ export function MusicDetailView() {
             <span className="block text-xs text-ink-4/70">更新时间</span>
             <span>{formatDate(music.updatedAt)}</span>
           </div>
-        </div>
+        </motion.div>
       )}
 
       {/* Lyrics */}
-      <div className="animate-detail-fade-up border-t border-line pt-8" style={{ animationDelay: '0.4s' }}>
+      <motion.div
+        className="border-t border-line pt-8"
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ ...transitions.detailFade, delay: 0.4 }}
+      >
         <h2 className="mb-6 text-xl font-bold text-ink-1">歌词</h2>
         {editing ? (
           <textarea
@@ -392,10 +431,10 @@ export function MusicDetailView() {
         ) : (
           <LyricsDisplay lrcText={music.lyric} currentTime={isCurrent ? currentTime : 0} />
         )}
-      </div>
+      </motion.div>
 
       <ConfirmDialog state={confirm} onClose={() => setConfirm(null)} />
-    </div>
+    </motion.div>
   )
 }
 
