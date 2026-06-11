@@ -39,7 +39,35 @@ export async function generateUniquePlayerId(db: NodePgDatabase): Promise<string
   throw new DomainError('INTERNAL', 'playerId 生成失败：连续 5 次冲突')
 }
 
+function assertDownloadableUrl(url: string, what: 'audio' | 'cover'): void {
+  let parsed: URL
+  try {
+    parsed = new URL(url)
+  } catch {
+    throw new DomainError('BAD_REQUEST', `${what === 'audio' ? '音频' : '封面'}地址无效`)
+  }
+  if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+    throw new DomainError('BAD_REQUEST', `${what === 'audio' ? '音频' : '封面'}地址协议不被支持`)
+  }
+  const host = parsed.hostname.toLowerCase()
+  const blocked =
+    host === 'localhost' ||
+    host === '0.0.0.0' ||
+    host === '[::1]' ||
+    host === '::1' ||
+    host.endsWith('.localhost') ||
+    host.startsWith('127.') ||
+    host.startsWith('10.') ||
+    host.startsWith('192.168.') ||
+    host.startsWith('169.254.') ||
+    /^172\.(1[6-9]|2\d|3[0-1])\./.test(host)
+  if (blocked) {
+    throw new DomainError('BAD_REQUEST', `${what === 'audio' ? '音频' : '封面'}地址指向了内网或本机`)
+  }
+}
+
 export async function downloadBinary(url: string, maxBytes: number, what: 'audio' | 'cover'): Promise<Buffer> {
+  assertDownloadableUrl(url, what)
   let response: Response
   try {
     response = await fetch(url, {
