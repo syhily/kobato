@@ -1,4 +1,3 @@
-/* oxlint-disable typescript/no-unsafe-type-assertion */
 import { createCipheriv, createHash, randomBytes } from 'node:crypto'
 import { z } from 'zod'
 
@@ -111,9 +110,37 @@ function toHit(song: RawNeteaseSong): MetingSearchHit {
 
 // ── Zod schemas for raw API responses ──────────────────────────────────────
 
-const searchResponseSchema = z.object({ result: z.object({ songs: z.array(z.any()) }).optional() }).loose()
+const rawNeteaseSongSchema = z.object({
+  id: z.number(),
+  name: z.string(),
+  ar: z.array(z.object({ name: z.string() })),
+  al: z.object({ name: z.string(), pic: z.number().optional(), pic_str: z.string().optional() }),
+})
 
-const songDetailResponseSchema = z.object({ songs: z.array(z.any()).optional() }).loose()
+const searchResponseSchema = z.object({ result: z.object({ songs: z.array(rawNeteaseSongSchema) }).optional() }).loose()
+
+const songDetailResponseSchema = z.object({ songs: z.array(rawNeteaseSongSchema).optional() }).loose()
+
+const streamUrlResponseSchema = z
+  .object({
+    data: z
+      .array(
+        z
+          .object({
+            url: z.string().optional().nullable(),
+            uf: z.object({ url: z.string() }).optional(),
+          })
+          .loose(),
+      )
+      .optional(),
+  })
+  .loose()
+
+const lyricResponseSchema = z
+  .object({
+    lrc: z.object({ lyric: z.string() }).optional(),
+  })
+  .loose()
 
 // ── Public types ───────────────────────────────────────────────────────────
 
@@ -156,7 +183,7 @@ export async function searchSongs(keyword: string, limit = 10): Promise<MetingSe
     throw new ActionFailure(502, '上游音乐服务返回异常，请稍后再试')
   }
 
-  const songs = (parsed.data.result?.songs ?? []) as RawNeteaseSong[]
+  const songs = parsed.data.result?.songs ?? []
   return songs.map(toHit)
 }
 
@@ -171,7 +198,7 @@ export async function getSong(sourceId: string): Promise<MetingSearchHit | null>
     throw new ActionFailure(502, '上游音乐服务返回异常，请稍后再试')
   }
 
-  const songs = (parsed.data.songs ?? []) as RawNeteaseSong[]
+  const songs = parsed.data.songs ?? []
   const first = songs[0]
   return first ? toHit(first) : null
 }
@@ -182,9 +209,14 @@ export async function getStreamUrl(urlId: string, bitrate = 320): Promise<string
     br: bitrate * 1000,
   })
 
-  const data = (res as Record<string, unknown>)?.data as Array<Record<string, unknown>> | undefined
-  const first = data?.[0]
-  const url = (first?.url as string | undefined) || (first?.uf as Record<string, string> | undefined)?.url || ''
+  const parsed = streamUrlResponseSchema.safeParse(res)
+  if (!parsed.success) {
+    log.error('Netease stream URL response failed schema validation', { issues: parsed.error.issues })
+    throw new ActionFailure(502, '上游音乐服务返回异常，请稍后再试')
+  }
+
+  const first = parsed.data.data?.[0]
+  const url = first?.url || first?.uf?.url || ''
   if (url.trim() === '') {
     throw new ActionFailure(404, '上游未返回可用的音频地址（可能版权受限）')
   }
@@ -200,8 +232,13 @@ export async function getLyric(lyricId: string): Promise<string | null> {
     tv: -1,
   })
 
-  const typed = res as Record<string, unknown>
-  const text = ((typed?.lrc as Record<string, string> | undefined)?.lyric ?? '').trim()
+  const parsed = lyricResponseSchema.safeParse(res)
+  if (!parsed.success) {
+    log.error('Netease lyric response failed schema validation', { issues: parsed.error.issues })
+    throw new ActionFailure(502, '上游音乐服务返回异常，请稍后再试')
+  }
+
+  const text = (parsed.data.lrc?.lyric ?? '').trim()
   return text === '' ? null : text
 }
 

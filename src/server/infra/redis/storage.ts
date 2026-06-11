@@ -1,4 +1,3 @@
-/* oxlint-disable typescript/no-unsafe-type-assertion */
 import type { Cluster, Redis } from 'ioredis'
 
 import { Redis as RedisClient } from 'ioredis'
@@ -105,13 +104,19 @@ export const storage = {
     if (raw === null) {
       return null
     }
+    // generic Buffer-to-T cast is intrinsic to the raw API
+    // oxlint-disable-next-line typescript/no-unsafe-type-assertion
     return raw as T
   },
 
   async setItemRaw(key: string, value: unknown, opts?: { ttl?: number }): Promise<void> {
     if (opts?.ttl) {
+      // ioredis set() accepts string | Buffer
+      // oxlint-disable-next-line typescript/no-unsafe-type-assertion
       await redis.set(key, value as string | Buffer, 'EX', opts.ttl)
     } else {
+      // ioredis set() accepts string | Buffer
+      // oxlint-disable-next-line typescript/no-unsafe-type-assertion
       await redis.set(key, value as string | Buffer)
     }
   },
