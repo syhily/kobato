@@ -13,6 +13,7 @@ import { buildDefaultSectionPayloads, SECTION_REGISTRY } from '@/server/domains/
 import { refreshBlogSettings } from '@/server/domains/settings/services/hydrate'
 import { upsertSetting } from '@/server/infra/db/operations/setting'
 import { hasAdmin, insertAdmin } from '@/server/infra/db/operations/user'
+import { DomainError } from '@/server/infra/http/errors'
 import { idFromString } from '@/shared/utils/id'
 
 export interface SignUpAdminSeed {
@@ -46,17 +47,6 @@ export async function signUpInitialAdminWithSession(
     }
   }
 
-  const users = await insertAdmin(db, name, email, password)
-  const admin = users[0]
-  if (!admin) {
-    return {
-      type: 'error',
-      message: '创建管理员账号失败',
-    }
-  }
-
-  const established = await establishLoginSession(db, session, admin, request, clientAddress)
-
   // ── Seed all settings sections in one pass ──
   const hostname = new URL(request.url).hostname
   const siteIdentity: SiteIdentitySettings = {
@@ -64,7 +54,7 @@ export async function signUpInitialAdminWithSession(
     description: 'Welcome',
     website: `https://${hostname}`,
     keywords: [],
-    author: { name: admin.name, email: admin.email, url: `https://${hostname}` },
+    author: { name, email, url: `https://${hostname}` },
     locale: 'zh-CN',
     timeZone: 'Asia/Shanghai',
     timeFormat: 'yyyy-LL-dd HH:mm',
@@ -90,7 +80,6 @@ export async function signUpInitialAdminWithSession(
   ]
 
   // Validate every section against its schema before writing any.
-  const updatedBy = idFromString(admin.id)
   const parsedSections: { payload: Record<string, unknown>; scope: string }[] = []
   for (const { section, payload } of sections) {
     const meta = SECTION_REGISTRY[section]
@@ -106,9 +95,20 @@ export async function signUpInitialAdminWithSession(
     parsedSections.push({ payload: check.data as Record<string, unknown>, scope: meta.scope })
   }
 
-  for (const { payload, scope } of parsedSections) {
-    await upsertSetting(db, payload, updatedBy, scope)
-  }
+  const admin = await db.transaction(async (tx) => {
+    const users = await insertAdmin(tx, name, email, password)
+    const admin = users[0]
+    if (!admin) {
+      throw new DomainError('INTERNAL', '创建管理员账号失败')
+    }
+    const updatedBy = idFromString(admin.id)
+    for (const { payload, scope } of parsedSections) {
+      await upsertSetting(tx, payload, updatedBy, scope)
+    }
+    return admin
+  })
+
+  const established = await establishLoginSession(db, session, admin, request, clientAddress)
 
   await refreshBlogSettings(db)
   await invalidateSetupToken()

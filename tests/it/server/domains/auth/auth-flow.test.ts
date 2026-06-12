@@ -48,7 +48,9 @@ vi.mock('@/server/domains/audit/services/record', () => ({
   recordAuditEventFromContext: vi.fn(),
 }))
 
-const db = {} as NodePgDatabase
+const db = {
+  transaction: async <T>(callback: (tx: NodePgDatabase) => Promise<T>) => callback(db as NodePgDatabase),
+} as NodePgDatabase
 const pool = {} as any
 
 const userQuery = await import('@/server/infra/db/operations/user')
@@ -190,34 +192,30 @@ describe('services/auth/flow — signUpInitialAdminWithSession (install stage 1)
     expect(userQuery.insertAdmin).not.toHaveBeenCalled()
   })
 
-  it('returns 400 when the request body is invalid', async () => {
-    const result = await signUpInitialAdminWithSession(db, pool, {
-      ...baseSeed,
-      session: emptySession(),
-      request: new Request('http://localhost/admin/setup', { method: 'POST' }),
-      clientAddress: '127.0.0.1',
-    })
-
-    // Without CSRF, an empty POST body fails schema validation
-    // and returns the default error wrapped in a 400-level response.
-    expect(result).toBeDefined()
+  it('returns 500 when the request body is invalid', async () => {
+    await expect(
+      signUpInitialAdminWithSession(db, pool, {
+        ...baseSeed,
+        session: emptySession(),
+        request: new Request('http://localhost/admin/setup', { method: 'POST' }),
+        clientAddress: '127.0.0.1',
+      }),
+    ).rejects.toThrow('创建管理员账号失败')
   })
 
   it('returns 500 and never seeds when insertAdmin yields an empty result', async () => {
     vi.mocked(userQuery.insertAdmin).mockResolvedValue([])
     const request = buildRequest()
 
-    const result = await signUpInitialAdminWithSession(db, pool, {
-      ...baseSeed,
-      session: emptySession(),
-      request,
-      clientAddress: '127.0.0.1',
-    })
+    await expect(
+      signUpInitialAdminWithSession(db, pool, {
+        ...baseSeed,
+        session: emptySession(),
+        request,
+        clientAddress: '127.0.0.1',
+      }),
+    ).rejects.toThrow('创建管理员账号失败')
 
-    expect(result.type).toBe('error')
-    if (result.type === 'error') {
-      expect(result.message).toContain('创建管理员账号失败')
-    }
     expect(settingQuery.upsertSetting).not.toHaveBeenCalled()
     expect(settingsSnapshot.refreshBlogSettings).not.toHaveBeenCalled()
   })
