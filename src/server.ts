@@ -60,7 +60,7 @@ if (!hmr?.secretsMigrated) {
 
   scheduleNextBackup()
   initBackupScheduler()
-  scheduleNextArchive(getDb(), getPool())
+  scheduleNextArchive(getPool())
 
   if (hmr) {
     hmr.secretsMigrated = true

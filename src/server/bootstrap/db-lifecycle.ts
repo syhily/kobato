@@ -81,7 +81,7 @@ registerRestoreComplete(async (success, err) => {
 
   if (recreated) {
     try {
-      scheduleNextArchive(db, pool)
+      scheduleNextArchive(pool)
     } catch (schedErr) {
       root.warn(
         { err: schedErr instanceof Error ? schedErr.message : String(schedErr) },

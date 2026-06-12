@@ -18,11 +18,11 @@ import { isValidPasskeyDomain } from '@/shared/utils/safe-url'
 
 const log = getLogger('settings.service')
 
-const sectionChangeHandlers = new Map<SettingsSection, (db: NodePgDatabase, pool: Pool) => void | Promise<void>>()
+const sectionChangeHandlers = new Map<SettingsSection, (pool: Pool) => void | Promise<void>>()
 
 export function registerSectionChangeHandler(
   section: SettingsSection,
-  handler: (db: NodePgDatabase, pool: Pool) => void | Promise<void>,
+  handler: (pool: Pool) => void | Promise<void>,
 ): void {
   sectionChangeHandlers.set(section, handler)
 }
@@ -91,7 +91,7 @@ export async function updateBlogSettingsSection<S extends SettingsSection>(
 
     const handler = sectionChangeHandlers.get(section)
     if (handler) {
-      void Promise.resolve(handler(tx, pool)).catch((e: unknown) =>
+      void Promise.resolve(handler(pool)).catch((e: unknown) =>
         log.error('Section change handler failed', { section, error: String(e) }),
       )
     }
