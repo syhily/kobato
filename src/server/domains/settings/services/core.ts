@@ -83,21 +83,25 @@ export async function updateBlogSettingsSection<S extends SettingsSection>(
     }
   }
 
-  return db.transaction(async (tx) => {
+  const bundle = await db.transaction(async (tx) => {
     const nextRow = await applySectionPatch(tx, section, parsed.data)
 
     const encryptedRow = encryptSecretsInRow(section, nextRow)
     await upsertSetting(tx, encryptedRow, updatedBy, meta.scope)
 
-    const handler = sectionChangeHandlers.get(section)
-    if (handler) {
-      void Promise.resolve(handler(pool)).catch((e: unknown) =>
-        log.error('Section change handler failed', { section, error: String(e) }),
-      )
-    }
-
     return refreshBlogSettings(tx)
   })
+
+  const handler = sectionChangeHandlers.get(section)
+  if (handler) {
+    try {
+      await handler(pool)
+    } catch (e: unknown) {
+      log.error('Section change handler failed', { section, error: String(e) })
+    }
+  }
+
+  return bundle
 }
 
 export interface SecretMasks {
