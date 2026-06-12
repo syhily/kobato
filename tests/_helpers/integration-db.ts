@@ -33,10 +33,10 @@ function getAdminPool(): Pool {
 async function detectAvailableExtensions(db: ReturnType<typeof drizzle>): Promise<Set<string>> {
   try {
     const result = await db.execute(sql`
-      SELECT extname FROM pg_available_extensions
-      WHERE extname IN ('timescaledb', 'vector')
+      SELECT name FROM pg_available_extensions
+      WHERE name IN ('timescaledb', 'vector')
     `)
-    return new Set((result.rows as { extname: string }[]).map((r) => r.extname))
+    return new Set((result.rows as { name: string }[]).map((r) => r.name))
   } catch {
     return new Set()
   }

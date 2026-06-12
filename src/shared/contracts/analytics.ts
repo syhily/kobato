@@ -68,12 +68,23 @@ export function pickTimeBucket(range: DateRange): TimeBucket {
 
 export type AggregateSource = 'access_log' | 'stats_hourly' | 'stats_daily'
 
+/**
+ * Choose the source table/materialized view for aggregate analytics queries.
+ *
+ * Thresholds are intentionally conservative so that boundary rounding from
+ * hourly/daily buckets does not affect the small ranges where dashboards care
+ * about precision, while longer ranges benefit from pre-rolled aggregates:
+ *
+ * - Short (≤ 24 h): raw `access_log`
+ * - Medium (1–30 days): `stats_hourly`
+ * - Long (> 30 days): `stats_daily`
+ */
 export function pickAggregateSource(range: DateRange): AggregateSource {
   const span = range.endAt - range.startAt
-  if (span <= 2 * DAY) {
+  if (span <= DAY) {
     return 'access_log'
   }
-  if (span <= 60 * DAY) {
+  if (span <= 30 * DAY) {
     return 'stats_hourly'
   }
   return 'stats_daily'

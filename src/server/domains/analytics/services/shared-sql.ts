@@ -1,7 +1,7 @@
 import { sql, type SQL } from 'drizzle-orm'
 
 import type { AnalyticsQueryInput } from '@/server/domains/analytics/services/query-parser'
-import type { MetricType } from '@/shared/contracts/analytics'
+import type { AggregateSource, MetricType } from '@/shared/contracts/analytics'
 
 import { DomainError } from '@/server/infra/http/errors'
 import { METRIC_TYPES, pickAggregateSource } from '@/shared/contracts/analytics'
@@ -74,7 +74,21 @@ export function whereClause(input: AnalyticsQueryInput): SQL {
   return sql.join(conditions, sql` AND `)
 }
 
-export function cagWhereClause(input: AnalyticsQueryInput): SQL {
+/** Dimensions available in the hourly continuous aggregate. */
+export const STATS_HOURLY_DIMENSIONS = new Set<MetricType>([
+  'country',
+  'browser',
+  'browserType',
+  'os',
+  'deviceType',
+  'path',
+])
+
+/** Dimensions available in the daily continuous aggregate. */
+export const STATS_DAILY_DIMENSIONS = new Set<MetricType>(['country', 'path'])
+
+export function cagWhereClause(input: AnalyticsQueryInput, source?: AggregateSource): SQL {
+  const effectiveSource = source ?? pickAggregateSource(input.range)
   const conditions: SQL[] = [
     sql`bucket >= to_timestamp(${input.range.startAt})`,
     sql`bucket < to_timestamp(${input.range.endAt})`,
@@ -85,10 +99,13 @@ export function cagWhereClause(input: AnalyticsQueryInput): SQL {
   if (input.entityId !== undefined) {
     conditions.push(sql`entity_id = ${input.entityId}`)
   }
+  const usable =
+    effectiveSource === 'stats_hourly'
+      ? STATS_HOURLY_DIMENSIONS
+      : effectiveSource === 'stats_daily'
+        ? STATS_DAILY_DIMENSIONS
+        : new Set<MetricType>(METRIC_TYPES)
   for (const [type, value] of Object.entries(input.filters)) {
-    const hourlyDims = new Set(['country', 'browser', 'os', 'deviceType', 'path'])
-    const dailyDims = new Set(['country', 'path'])
-    const usable = pickAggregateSource(input.range) === 'stats_hourly' ? hourlyDims : dailyDims
     if (!isMetricType(type) || !value || !usable.has(type)) {
       continue
     }
