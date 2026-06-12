@@ -51,9 +51,9 @@ jobs:
           node-version: 24
           cache: 'npm'
       - run: npm ci
-      - run: npm run check:type
-      - run: npm run check:fmt
-      - run: npm run check:lint
+      - run: npm run type
+      - run: npm run fmt
+      - run: npm run lint
       - run: npm run test -- --coverage
       - uses: actions/upload-artifact@v7
         with:
