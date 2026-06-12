@@ -86,6 +86,21 @@ describe('auth/primitives — resolveSessionContext', () => {
     expect(findUserById).not.toHaveBeenCalled()
   })
 
+  it('returns dirty=true and clears user when findUserById throws', async () => {
+    const legacyUser = { id: '1', name: 'legacy', email: 'legacy@example.com', website: null }
+    const session = createSession({ user: legacyUser }, 'test-sid')
+
+    getRequestSession.mockResolvedValueOnce(session)
+    findUserById.mockRejectedValueOnce(new Error('connection lost'))
+
+    const { resolveSessionContext } = await import('@/server/domains/auth/primitives')
+    const result = await resolveSessionContext({} as any, new Request('http://localhost/'))
+
+    expect(result.dirty).toBe(true)
+    expect(result.user).toBeUndefined()
+    expect(session.get('user')).toBeUndefined()
+  })
+
   it('returns dirty=false for an anonymous request', async () => {
     const session = createSession({}, 'test-sid')
 

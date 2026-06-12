@@ -154,7 +154,6 @@ export async function resolveSessionContext(
 
   if (user && typeof (user as { role?: Role }).role !== 'string') {
     let dbUser: Awaited<ReturnType<typeof findUserById>> = null
-    let dbReachable = true
     try {
       dbUser = await findUserById(db, idFromString(user.id))
     } catch (err) {
@@ -162,7 +161,6 @@ export async function resolveSessionContext(
         err: err instanceof Error ? err.message : String(err),
         userId: user.id,
       })
-      dbReachable = false
     }
     if (dbUser && dbUser.role && !dbUser.deletedAt) {
       const upgraded: SessionUser = {
@@ -175,7 +173,7 @@ export async function resolveSessionContext(
       session.set('user', upgraded)
       user = upgraded
       dirty = true
-    } else if (dbReachable) {
+    } else {
       session.unset('user')
       user = undefined
       dirty = true
