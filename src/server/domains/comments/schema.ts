@@ -14,7 +14,7 @@ const COMMENT_HONEYPOT_MAX_LEN = 240
 export const commentReplySchema = z
   .object({
     page_key: z.string(),
-    name: z.string(),
+    name: z.string().max(100),
     email: z.email(),
     link: httpUrlOrEmptyStringSchema.optional(),
     body: commentBodySchema,

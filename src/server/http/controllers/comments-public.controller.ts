@@ -6,6 +6,7 @@ import type { CommentReq } from '@/shared/types/comments'
 import { recordAuditEventFromContext } from '@/server/domains/audit/services/record'
 import { userSession } from '@/server/domains/auth/primitives'
 import { asCommentItemWire, asCommentItemsWire } from '@/server/domains/comments/projection'
+import { commentReplySchema } from '@/server/domains/comments/schema'
 import { verifyCommentAccess } from '@/server/domains/comments/services/access'
 import { getCommentById, updateComment } from '@/server/domains/comments/services/moderate'
 import { createComment } from '@/server/domains/comments/services/mutate'
@@ -26,16 +27,7 @@ import { parseCommentTokensCookie, serializeCommentTokensCookie } from '@/shared
 
 const replyComment = publicProc
   .route({ method: 'POST', path: '/comments/reply' })
-  .input(
-    z.object({
-      page_key: z.string(),
-      name: z.string(),
-      email: z.email(),
-      link: z.string().optional(),
-      body: commentBodySchema,
-      rid: z.number().optional(),
-    }),
-  )
+  .input(commentReplySchema)
   .output(z.object({ comment: commentItemDto }))
   .handler(async ({ input, context }) => {
     const { request, clientAddress, session, responseHeaders } = context

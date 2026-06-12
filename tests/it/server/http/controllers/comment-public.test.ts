@@ -1,5 +1,5 @@
 import { call } from '@orpc/server'
-import { describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { makePublicCtx } from '#/_helpers/mock-ctx'
 
@@ -83,10 +83,56 @@ vi.mock('@/shared/config/getters', () => ({
 const rateLimitMod = await import('@/server/infra/rate-limit')
 const publicQuery = await import('@/server/domains/comments/services/public-query')
 const shared = await import('@/server/domains/comments/services/shared')
+const mutate = await import('@/server/domains/comments/services/mutate')
+const token = await import('@/server/domains/comments/services/token')
 const { avatarRouter } = await import('@/server/http/controllers/avatar.controller')
 const { commentsPublicRouter } = await import('@/server/http/controllers/comments-public.controller')
 const commentsRouter = commentsPublicRouter
 const { likesRouter } = await import('@/server/http/controllers/likes.controller')
+
+const validBody = [
+  { _type: 'block' as const, _key: 'b1', children: [{ _type: 'span' as const, _key: 's1', text: 'hello' }] },
+]
+
+function makeValidReplyInput() {
+  return {
+    page_key: 'https://example.test/post/1',
+    name: 'Alice',
+    email: 'alice@example.com',
+    body: validBody,
+  }
+}
+
+function makeMockComment(input: { page_key: string; name: string; email: string; body: unknown; rid?: number }) {
+  return {
+    id: 1n,
+    createAt: new Date(),
+    updatedAt: new Date(),
+    deleteAt: null,
+    body: input.body,
+    type: 'post' as const,
+    ownerId: null,
+    userId: 1n,
+    isVerified: false,
+    rid: input.rid ?? 0,
+    isCollapsed: false,
+    isPending: true,
+    isPinned: false,
+    voteUp: 0,
+    voteDown: 0,
+    rootId: null,
+    name: input.name,
+    emailVerified: false,
+    link: null,
+    badgeName: null,
+    badgeColor: null,
+    badgeTextColor: null,
+    content: null,
+    ua: null,
+    ip: '127.0.0.1',
+    email: input.email,
+  } as import('@/shared/types/comments').CommentAndUser
+}
 
 describe('likesRouter.increase', () => {
   it('throws TOO_MANY_REQUESTS when the per-IP rate limit is exceeded', async () => {
@@ -130,5 +176,37 @@ describe('commentsRouter.loadComments', () => {
     await expect(
       call(commentsRouter.loadComments, { page_key: 'pk-1', offset: 0 }, { context: ctx }),
     ).rejects.toMatchObject({ code: 'BAD_GATEWAY' })
+  })
+})
+
+describe('commentsRouter.replyComment', () => {
+  beforeEach(() => {
+    vi.mocked(rateLimitMod.tryCommentPostRateLimit).mockResolvedValue({ exceeded: false, count: 0 })
+    vi.mocked(rateLimitMod.tryCommentPostRateLimitByEmail).mockResolvedValue({ exceeded: false, count: 0 })
+    vi.mocked(token.issueCommentToken).mockResolvedValue('token-1')
+    vi.mocked(token.appendCommentToken).mockReturnValue({})
+  })
+
+  it('throws BAD_REQUEST when link is not an HTTP URL', async () => {
+    const ctx = makePublicCtx()
+    await expect(
+      call(commentsRouter.replyComment, { ...makeValidReplyInput(), link: 'javascript:alert(1)' }, { context: ctx }),
+    ).rejects.toMatchObject({ code: 'BAD_REQUEST' })
+  })
+
+  it('throws BAD_REQUEST when name exceeds 100 characters', async () => {
+    const ctx = makePublicCtx()
+    await expect(
+      call(commentsRouter.replyComment, { ...makeValidReplyInput(), name: 'a'.repeat(101) }, { context: ctx }),
+    ).rejects.toMatchObject({ code: 'BAD_REQUEST' })
+  })
+
+  it('succeeds with a valid HTTP link and normal name', async () => {
+    const input = { ...makeValidReplyInput(), link: 'https://example.test/about' }
+    vi.mocked(mutate.createComment).mockResolvedValueOnce(makeMockComment(input))
+    const ctx = makePublicCtx()
+    const res = await call(commentsRouter.replyComment, input, { context: ctx })
+    expect(res).toMatchObject({ comment: expect.objectContaining({ name: 'Alice', link: null }) })
+    expect(mutate.createComment).toHaveBeenCalledOnce()
   })
 })
