@@ -80,7 +80,7 @@ describe('backup validation', () => {
   })
 
   it('accepts CREATE EXTENSION for allowed extensions', () => {
-    const sql = `-- PostgreSQL database dump\nCREATE EXTENSION IF NOT EXISTS vector WITH SCHEMA public;\nCREATE EXTENSION IF NOT EXISTS timescaledb WITH SCHEMA public;\nCREATE TABLE users (id serial PRIMARY KEY);`
+    const sql = `-- PostgreSQL database dump\nCREATE EXTENSION IF NOT EXISTS vector WITH SCHEMA public;\nCREATE EXTENSION IF NOT EXISTS timescaledb WITH SCHEMA public;\nCREATE EXTENSION IF NOT EXISTS timescaledb_toolkit WITH SCHEMA public;\nCREATE TABLE users (id serial PRIMARY KEY);`
     expect(() => validateBackupSql(sql)).not.toThrow()
   })
 

@@ -33,6 +33,7 @@ const ALLOWED_EXTENSIONS = new Set([
   // Project-required
   'vector',
   'timescaledb',
+  'timescaledb_toolkit',
   // Built-in / widely-used safe extensions
   'pg_trgm',
   'uuid-ossp',
