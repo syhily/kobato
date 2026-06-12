@@ -210,3 +210,21 @@ describe('commentsRouter.replyComment', () => {
     expect(mutate.createComment).toHaveBeenCalledOnce()
   })
 })
+
+describe('commentsRouter.getRaw', () => {
+  it('throws BAD_REQUEST when rid is not numeric', async () => {
+    const ctx = makePublicCtx()
+    await expect(call(commentsRouter.getRaw, { rid: 'not-a-number' }, { context: ctx })).rejects.toMatchObject({
+      code: 'BAD_REQUEST',
+    })
+  })
+})
+
+describe('commentsRouter.edit', () => {
+  it('throws BAD_REQUEST when rid is not numeric', async () => {
+    const ctx = makePublicCtx()
+    await expect(call(commentsRouter.edit, { rid: 'not-a-number', body: [] }, { context: ctx })).rejects.toMatchObject({
+      code: 'BAD_REQUEST',
+    })
+  })
+})

@@ -34,7 +34,9 @@ export const commentReplySchema = z
   })
 export type CommentReplyInput = z.infer<typeof commentReplySchema>
 
-export const commentRidSchema = z.object({ rid: z.string() })
+export const commentRidSchema = z.object({
+  rid: z.string().regex(/^\d+$/, { message: '评论 ID 必须是数字' }),
+})
 export type CommentRidInput = z.infer<typeof commentRidSchema>
 
 export const commentEditSchema = z.object({ rid: z.string(), body: commentBodySchema })

@@ -6,7 +6,7 @@ import type { CommentReq } from '@/shared/types/comments'
 import { recordAuditEventFromContext } from '@/server/domains/audit/services/record'
 import { userSession } from '@/server/domains/auth/primitives'
 import { asCommentItemWire, asCommentItemsWire } from '@/server/domains/comments/projection'
-import { commentReplySchema } from '@/server/domains/comments/schema'
+import { commentReplySchema, commentRidSchema } from '@/server/domains/comments/schema'
 import { verifyCommentAccess } from '@/server/domains/comments/services/access'
 import { getCommentById, updateComment } from '@/server/domains/comments/services/moderate'
 import { createComment } from '@/server/domains/comments/services/mutate'
@@ -94,7 +94,7 @@ const list = publicProc
 
 const getRaw = publicProc
   .route({ method: 'GET', path: '/comments/get-raw' })
-  .input(z.object({ rid: z.string() }))
+  .input(commentRidSchema)
   .output(z.object({ body: commentBodySchema }))
   .handler(async ({ input, context }) => {
     const { request, session, responseHeaders } = context
@@ -114,7 +114,7 @@ const getRaw = publicProc
 
 const edit = publicProc
   .route({ method: 'POST', path: '/comments/edit' })
-  .input(z.object({ rid: z.string(), body: commentBodySchema }))
+  .input(commentRidSchema.extend({ body: commentBodySchema }))
   .output(z.object({ comment: commentItemDto }))
   .handler(async ({ input, context }) => {
     const { request, session, responseHeaders, clientAddress } = context
