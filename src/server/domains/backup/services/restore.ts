@@ -90,17 +90,18 @@ export async function restoreFromSql(db: NodePgDatabase, sql: string): Promise<v
     await db.execute(drizzleSql`SELECT public.timescaledb_pre_restore()`)
   }
 
-  const psql = spawn('psql', ['--no-psqlrc', '--single-transaction', '-v', 'ON_ERROR_STOP=1', ...connArgs], {
-    env,
-    stdio: ['pipe', 'inherit', 'inherit'],
-  })
+  try {
+    const psql = spawn('psql', ['--no-psqlrc', '--single-transaction', '-v', 'ON_ERROR_STOP=1', ...connArgs], {
+      env,
+      stdio: ['pipe', 'inherit', 'inherit'],
+    })
 
-  // Clear the public schema before applying the dump so that tables added
-  // after the backup was taken (e.g. by later migrations) do not block
-  // drops of older objects via foreign-key dependencies.  Because psql is
-  // run with --single-transaction this cleanup is atomic: if the restore
-  // fails the transaction rolls back and the pre-existing tables remain.
-  const preRestoreCleanup = `DO $$ DECLARE
+    // Clear the public schema before applying the dump so that tables added
+    // after the backup was taken (e.g. by later migrations) do not block
+    // drops of older objects via foreign-key dependencies.  Because psql is
+    // run with --single-transaction this cleanup is atomic: if the restore
+    // fails the transaction rolls back and the pre-existing tables remain.
+    const preRestoreCleanup = `DO $$ DECLARE
   r RECORD;
 BEGIN
   FOR r IN (SELECT tablename FROM pg_tables WHERE schemaname = 'public') LOOP
@@ -108,77 +109,77 @@ BEGIN
   END LOOP;
 END $$;`
 
-  Readable.from([`SET CONSTRAINTS ALL DEFERRED;\n`, preRestoreCleanup, '\n', sql, '\n']).pipe(psql.stdin)
+    Readable.from([`SET CONSTRAINTS ALL DEFERRED;\n`, preRestoreCleanup, '\n', sql, '\n']).pipe(psql.stdin)
 
-  psql.stdin.on('error', (err) => {
-    if ((err as NodeJS.ErrnoException).code !== 'EPIPE') {
-      log.warn('psql stdin error', { err: err.message })
-    }
-  })
-
-  await new Promise<void>((resolve, reject) => {
-    psql.on('error', reject)
-    psql.on('close', (code) => {
-      if (code !== 0) {
-        reject(new DomainError('INTERNAL', `数据库还原失败，psql 退出码 ${code}`))
-      } else {
-        resolve()
+    psql.stdin.on('error', (err) => {
+      if ((err as NodeJS.ErrnoException).code !== 'EPIPE') {
+        log.warn('psql stdin error', { err: err.message })
       }
     })
-  })
 
-  if (timescaleEnabled) {
-    if (dumpedVersion !== null) {
-      const extResult = await db.execute<{ extversion: string }>(
-        `SELECT extversion FROM pg_extension WHERE extname = 'timescaledb'`,
-      )
-      const installedVersion = extResult.rows[0]?.extversion ?? null
-      if (installedVersion !== null && installedVersion !== dumpedVersion) {
-        const currentParts = installedVersion.split('.').map((p) => parseInt(p, 10))
-        const targetParts = dumpedVersion.split('.').map((p) => parseInt(p, 10))
-        const isUpgrade =
-          currentParts[0] < targetParts[0] ||
-          (currentParts[0] === targetParts[0] && currentParts[1] < targetParts[1]) ||
-          (currentParts[0] === targetParts[0] &&
-            currentParts[1] === targetParts[1] &&
-            (currentParts[2] ?? 0) < (targetParts[2] ?? 0))
-        if (isUpgrade) {
-          log.info('Upgrading timescaledb extension before post_restore', {
-            from: installedVersion,
-            to: dumpedVersion,
-          })
-          try {
-            if (!validateSemverForSql(dumpedVersion)) {
-              throw new ActionFailure(400, 'TimescaleDB 版本号格式非法，无法执行扩展升级。')
+    await new Promise<void>((resolve, reject) => {
+      psql.on('error', reject)
+      psql.on('close', (code) => {
+        if (code !== 0) {
+          reject(new DomainError('INTERNAL', `数据库还原失败，psql 退出码 ${code}`))
+        } else {
+          resolve()
+        }
+      })
+    })
+
+    if (timescaleEnabled) {
+      if (dumpedVersion !== null) {
+        const extResult = await db.execute<{ extversion: string }>(
+          `SELECT extversion FROM pg_extension WHERE extname = 'timescaledb'`,
+        )
+        const installedVersion = extResult.rows[0]?.extversion ?? null
+        if (installedVersion !== null && installedVersion !== dumpedVersion) {
+          const currentParts = installedVersion.split('.').map((p) => parseInt(p, 10))
+          const targetParts = dumpedVersion.split('.').map((p) => parseInt(p, 10))
+          const isUpgrade =
+            currentParts[0] < targetParts[0] ||
+            (currentParts[0] === targetParts[0] && currentParts[1] < targetParts[1]) ||
+            (currentParts[0] === targetParts[0] &&
+              currentParts[1] === targetParts[1] &&
+              (currentParts[2] ?? 0) < (targetParts[2] ?? 0))
+          if (isUpgrade) {
+            log.info('Upgrading timescaledb extension before post_restore', {
+              from: installedVersion,
+              to: dumpedVersion,
+            })
+            try {
+              if (!validateSemverForSql(dumpedVersion)) {
+                throw new ActionFailure(400, 'TimescaleDB 版本号格式非法，无法执行扩展升级。')
+              }
+              await db.execute(drizzleSql`ALTER EXTENSION timescaledb UPDATE TO ${dumpedVersion}`)
+            } catch (err) {
+              log.warn('Failed to upgrade timescaledb extension before post_restore', {
+                err: err instanceof Error ? err.message : String(err),
+              })
             }
-            await db.execute(drizzleSql`ALTER EXTENSION timescaledb UPDATE TO ${dumpedVersion}`)
-          } catch (err) {
-            log.warn('Failed to upgrade timescaledb extension before post_restore', {
-              err: err instanceof Error ? err.message : String(err),
+          } else {
+            log.warn('TimescaleDB downgrade skipped during restore', {
+              from: installedVersion,
+              to: dumpedVersion,
             })
           }
-        } else {
-          log.warn('TimescaleDB downgrade skipped during restore', {
-            from: installedVersion,
-            to: dumpedVersion,
-          })
         }
       }
     }
 
-    try {
-      await db.execute(drizzleSql`SELECT public.timescaledb_post_restore()`)
-    } catch (err) {
-      log.warn(
-        'timescaledb_post_restore() failed; the SQL dump was already applied successfully, but TimescaleDB metadata may be inconsistent.',
-        {
+    log.info('Restore completed successfully')
+  } finally {
+    if (timescaleEnabled) {
+      try {
+        await db.execute(drizzleSql`SELECT public.timescaledb_post_restore()`)
+      } catch (err) {
+        log.warn('timescaledb_post_restore() failed during restore cleanup', {
           err: err instanceof Error ? err.message : String(err),
-        },
-      )
+        })
+      }
     }
   }
-
-  log.info('Restore completed successfully')
 }
 
 export async function restoreFromBackup(db: NodePgDatabase, buffer: Buffer, fileName: string): Promise<void> {
