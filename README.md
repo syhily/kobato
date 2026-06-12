@@ -78,7 +78,13 @@ See `.env.example` for the full list of options.
 
 ## Testing
 
-Tests use an ephemeral docker compose stack (tmpfs-backed Postgres and Redis that are discarded on stop):
+For fast local feedback without Docker, run unit tests and snapshot tests only:
+
+```bash
+npm run test:fast
+```
+
+Full coverage uses an ephemeral docker compose stack (tmpfs-backed Postgres and Redis that are discarded on stop):
 
 ```bash
 npm run docker:test
@@ -136,6 +142,7 @@ docker run -p 4321:4321 \
 npm run dev         # development server
 npm run build       # production build
 npm run test        # run tests
+npm run test:fast   # run unit and snapshot tests without Docker
 npm run check:fmt   # formatting
 npm run check:lint  # lint
 npm run check:type  # TypeScript check

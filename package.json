@@ -43,6 +43,7 @@
     "release:tag": "node --experimental-strip-types scripts/release.ts tag",
     "start": "node ./build/server/index.js",
     "test": "vitest run",
+    "test:fast": "vitest run --project unit --project snaps",
     "test:it": "vitest run --project it",
     "test:snaps": "vitest run --project snaps",
     "test:unit": "vitest run --project unit"
