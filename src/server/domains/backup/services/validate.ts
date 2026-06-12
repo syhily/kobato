@@ -179,18 +179,135 @@ function splitStatements(sql: string): string[] {
   return statements
 }
 
+/**
+ * Remove SQL comments while preserving single-quoted string literals.
+ * Used before statement-level security checks so comment obfuscation
+ * (e.g. SET ROLE with an inline block comment) cannot bypass the validator.
+ */
+function normalizeStatement(stmt: string): string {
+  let result = ''
+  let i = 0
+  while (i < stmt.length) {
+    const ch = stmt[i]
+    const next = stmt[i + 1]
+
+    if (ch === "'") {
+      result += ch
+      i++
+      while (i < stmt.length) {
+        result += stmt[i]
+        if (stmt[i] === "'") {
+          if (stmt[i + 1] === "'") {
+            result += stmt[i + 1]
+            i += 2
+            continue
+          }
+          i++
+          break
+        }
+        i++
+      }
+      continue
+    }
+
+    if (ch === '-' && next === '-') {
+      while (i < stmt.length && stmt[i] !== '\n') {
+        i++
+      }
+      result += ' '
+      continue
+    }
+
+    if (ch === '/' && next === '*') {
+      i += 2
+      while (i < stmt.length - 1 && (stmt[i] !== '*' || stmt[i + 1] !== '/')) {
+        i++
+      }
+      i += 2
+      result += ' '
+      continue
+    }
+
+    result += ch
+    i++
+  }
+
+  return result.replace(/\s+/g, ' ').trim().toUpperCase()
+}
+
+function isAllowedPrefix(normalized: string): boolean {
+  for (const prefix of ALLOWED_PREFIXES) {
+    if (normalized.startsWith(prefix)) {
+      return true
+    }
+  }
+  return false
+}
+
+function isDangerousStatement(normalized: string): boolean {
+  // Block non-stdin COPY FROM (file path or PROGRAM).
+  if (/^COPY\b/i.test(normalized) && /\bFROM\b/i.test(normalized) && !/\bFROM\s+STDIN\b/i.test(normalized)) {
+    return true
+  }
+
+  // Block privilege escalation via SET/RESET ROLE or SESSION AUTHORIZATION.
+  if (/^SET\s+ROLE\b/i.test(normalized)) {
+    return true
+  }
+  if (/^SET\s+SESSION\s+AUTHORIZATION\b/i.test(normalized)) {
+    return true
+  }
+  if (/^RESET\s+ROLE\b/i.test(normalized)) {
+    return true
+  }
+  if (/^RESET\s+SESSION\s+AUTHORIZATION\b/i.test(normalized)) {
+    return true
+  }
+
+  // Block dangerous GRANT/REVOKE (role membership or broad ALL PRIVILEGES).
+  if (/^(GRANT|REVOKE)\b/i.test(normalized)) {
+    if (/\b(ON\s+ROLE|TO\s+GROUP|FROM\s+GROUP)\b/i.test(normalized)) {
+      return true
+    }
+    if (
+      /\bALL\s+(?:PRIVILEGES\s+)?ON\s+(DATABASE|SCHEMA|ALL\s+(?:TABLES|SEQUENCES|FUNCTIONS|PROCEDURES|ROUTINES))\b/i.test(
+        normalized,
+      )
+    ) {
+      return true
+    }
+  }
+
+  // Block executable server-side objects that can run arbitrary SQL.
+  if (/^CREATE\s+(?:OR\s+REPLACE\s+)?(?:CONSTRAINT\s+)?TRIGGER\b/i.test(normalized)) {
+    return true
+  }
+  if (/^CREATE\s+(?:OR\s+REPLACE\s+)?RULE\b/i.test(normalized)) {
+    return true
+  }
+  if (/^CREATE\s+EVENT\s+TRIGGER\b/i.test(normalized)) {
+    return true
+  }
+
+  // Block standalone EXECUTE statements.
+  if (/^EXECUTE\b/i.test(normalized)) {
+    return true
+  }
+
+  return false
+}
+
 function containsDisallowedStatements(sql: string): boolean {
   const statements = splitStatements(sql)
   for (const stmt of statements) {
-    const upper = stmt.trim().toUpperCase()
-    let allowed = false
-    for (const prefix of ALLOWED_PREFIXES) {
-      if (upper.startsWith(prefix)) {
-        allowed = true
-        break
-      }
+    const normalized = normalizeStatement(stmt)
+    if (!normalized) {
+      continue
     }
-    if (!allowed) {
+    if (!isAllowedPrefix(normalized)) {
+      return true
+    }
+    if (isDangerousStatement(normalized)) {
       return true
     }
   }

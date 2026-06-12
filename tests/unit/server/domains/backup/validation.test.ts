@@ -153,4 +153,63 @@ CREATE TABLE users (id serial PRIMARY KEY);
 \\unrestrict abc123`
     expect(() => validateBackupSql(sql)).not.toThrow()
   })
+
+  it('rejects COPY FROM a file path', () => {
+    const sql = `-- PostgreSQL database dump
+COPY users (email) FROM '/etc/passwd';
+CREATE TABLE users (id serial PRIMARY KEY);`
+    expect(() => validateBackupSql(sql)).toThrow(ActionFailure)
+  })
+
+  it('rejects SET ROLE', () => {
+    const sql = `-- PostgreSQL database dump
+SET ROLE postgres;
+CREATE TABLE users (id serial PRIMARY KEY);`
+    expect(() => validateBackupSql(sql)).toThrow(ActionFailure)
+  })
+
+  it('rejects SET SESSION AUTHORIZATION', () => {
+    const sql = `-- PostgreSQL database dump
+SET SESSION AUTHORIZATION 'postgres';
+CREATE TABLE users (id serial PRIMARY KEY);`
+    expect(() => validateBackupSql(sql)).toThrow(ActionFailure)
+  })
+
+  it('rejects GRANT ALL PRIVILEGES at database level', () => {
+    const sql = `-- PostgreSQL database dump
+GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO PUBLIC;
+CREATE TABLE users (id serial PRIMARY KEY);`
+    expect(() => validateBackupSql(sql)).toThrow(ActionFailure)
+  })
+
+  it('rejects CREATE EXTENSION for dangerous extension plpython3u', () => {
+    const sql = `-- PostgreSQL database dump
+CREATE EXTENSION IF NOT EXISTS plpython3u;
+CREATE TABLE users (id serial PRIMARY KEY);`
+    expect(() => validateBackupSql(sql)).toThrow(ActionFailure)
+  })
+
+  it('rejects comment-obfuscated SET ROLE', () => {
+    const sql = `-- PostgreSQL database dump
+SET /* foo */ ROLE postgres;
+CREATE TABLE users (id serial PRIMARY KEY);`
+    expect(() => validateBackupSql(sql)).toThrow(ActionFailure)
+  })
+
+  it('accepts representative pg_dump output', () => {
+    const sql = `-- PostgreSQL database dump
+SET statement_timeout = 0;
+SET client_encoding = 'UTF8';
+CREATE EXTENSION IF NOT EXISTS vector WITH SCHEMA public;
+CREATE TABLE public.users (
+    id bigint NOT NULL,
+    email character varying(255) NOT NULL
+);
+COPY public.users (id, email) FROM stdin;
+1	alice@example.com
+2	bob@example.com
+\\.
+INSERT INTO public.users (id, email) VALUES (3, 'charlie@example.com');`
+    expect(() => validateBackupSql(sql)).not.toThrow()
+  })
 })
