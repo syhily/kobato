@@ -133,7 +133,7 @@ export function AddMusicView() {
     })
     setHasMore(hasMoreData)
     hasMoreRef.current = hasMoreData
-  }, [searchQuery.data]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [searchQuery.data])
 
   const handleAdd = useCallback(
     (hit: MetingSearchHit) => {

@@ -129,6 +129,19 @@ export function AddMusicDialog({ open, onClose, onAdded }: AddMusicDialogProps) 
     setEnabled(true)
   }, [keyword])
 
+  // Keep latest flags in refs so loadMore reference is stable.
+  const hasMoreRef = useRef(hasMore)
+  hasMoreRef.current = hasMore
+  const isFetchingRef = useRef(searchQuery.isFetching)
+  isFetchingRef.current = searchQuery.isFetching
+
+  const loadMore = useCallback(() => {
+    if (!hasMoreRef.current || isFetchingRef.current) {
+      return
+    }
+    setNextOffset((prev) => prev + SEARCH_LIMIT)
+  }, [])
+
   // Handle search results — accumulate for pagination
   useEffect(() => {
     if (!searchQuery.data) {
@@ -151,7 +164,9 @@ export function AddMusicDialog({ open, onClose, onAdded }: AddMusicDialogProps) 
     // Auto-load next page if sentinel is still inside scroll container and more pages exist
     if (hasMoreData && !searchQuery.isFetching) {
       requestAnimationFrame(() => {
-        if (!sentinelRef.current || !scrollRef.current) {return}
+        if (!sentinelRef.current || !scrollRef.current) {
+          return
+        }
         const sentinelRect = sentinelRef.current.getBoundingClientRect()
         const scrollRect = scrollRef.current.getBoundingClientRect()
         if (sentinelRect.top < scrollRect.bottom) {
@@ -159,20 +174,7 @@ export function AddMusicDialog({ open, onClose, onAdded }: AddMusicDialogProps) 
         }
       })
     }
-  }, [searchQuery.data])
-
-  // Keep latest flags in refs so loadMore reference is stable.
-  const hasMoreRef = useRef(hasMore)
-  hasMoreRef.current = hasMore
-  const isFetchingRef = useRef(searchQuery.isFetching)
-  isFetchingRef.current = searchQuery.isFetching
-
-  const loadMore = useCallback(() => {
-    if (!hasMoreRef.current || isFetchingRef.current) {
-      return
-    }
-    setNextOffset((prev) => prev + SEARCH_LIMIT)
-  }, [])
+  }, [loadMore, searchQuery.data, searchQuery.isFetching])
 
   const onPreview = useCallback(
     (hit: MetingSearchHit & { previewUrl?: string }) => {
