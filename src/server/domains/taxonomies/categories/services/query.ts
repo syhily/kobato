@@ -1,12 +1,11 @@
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
-import { asc, inArray, sql } from 'drizzle-orm'
+import { and, asc, eq, inArray, isNull, sql } from 'drizzle-orm'
 
 import type { AdminCategoriesListResult } from '@/server/domains/taxonomies/categories/projection'
 import type { Category } from '@/shared/types/catalog'
 
 import { hydrateImageRefs } from '@/server/domains/images/services/enhance'
-import { listPublicPosts } from '@/server/domains/posts/repos/public-query/listing'
 import { toAdminCategoryDto } from '@/server/domains/taxonomies/categories/projection'
 import {
   type AdminCategoriesListFilters,
@@ -19,12 +18,18 @@ import { post as postMetaTable } from '@/server/infra/db/schema/post'
 import { category as categoryTable } from '@/server/infra/db/schema/taxonomy'
 
 async function countPostsByCategories(db: NodePgDatabase): Promise<Map<string, number>> {
-  const metas = await listPublicPosts(db, { includeHidden: true, includeScheduled: true })
+  const rows = await db
+    .select({
+      category: postMetaTable.category,
+      count: sql<number>`count(${postMetaTable.id})::int`,
+    })
+    .from(postMetaTable)
+    .where(and(isNull(postMetaTable.deletedAt), eq(postMetaTable.published, true)))
+    .groupBy(postMetaTable.category)
   const counts = new Map<string, number>()
-  for (const meta of metas) {
-    const cat = meta.category
-    if (cat) {
-      counts.set(cat, (counts.get(cat) ?? 0) + 1)
+  for (const row of rows) {
+    if (row.category) {
+      counts.set(row.category, row.count)
     }
   }
   return counts
