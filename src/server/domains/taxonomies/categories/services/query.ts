@@ -68,29 +68,41 @@ export async function listAllCategories(db: NodePgDatabase): Promise<Category[]>
       slug: categoryTable.slug,
       cover: categoryTable.cover,
       description: categoryTable.description,
-      counts: sql<number>`COALESCE((
-        SELECT COUNT(*)::int FROM ${postMetaTable}
-        WHERE ${postMetaTable.category} = ${categoryTable.name}
-          AND ${postMetaTable.deletedAt} IS NULL
-          AND ${postMetaTable.published} = true
-          AND ${postMetaTable.visible} = true
-          AND ${postMetaTable.publishedAt} <= ${now}
-      ), 0)`.as('counts'),
     })
     .from(categoryTable)
     .orderBy(asc(categoryTable.sortOrder), asc(categoryTable.id))
 
-  const categories: Category[] = []
-  for (const row of rows) {
-    categories.push({
-      name: row.name,
-      slug: row.slug,
-      cover: row.cover,
-      description: row.description,
-      counts: row.counts,
-      permalink: `/cats/${row.slug}`,
+  const countsResult = await db
+    .select({
+      category: postMetaTable.category,
+      count: sql<number>`count(${postMetaTable.id})::int`,
     })
+    .from(postMetaTable)
+    .where(
+      and(
+        isNull(postMetaTable.deletedAt),
+        eq(postMetaTable.published, true),
+        eq(postMetaTable.visible, true),
+        sql`${postMetaTable.publishedAt} <= ${now}`,
+      ),
+    )
+    .groupBy(postMetaTable.category)
+
+  const countsMap = new Map<string, number>()
+  for (const row of countsResult) {
+    if (row.category) {
+      countsMap.set(row.category, row.count)
+    }
   }
+
+  const categories: Category[] = rows.map((row) => ({
+    name: row.name,
+    slug: row.slug,
+    cover: row.cover,
+    description: row.description,
+    counts: countsMap.get(row.name) ?? 0,
+    permalink: `/cats/${row.slug}`,
+  }))
 
   await hydrateCategoryImages(db, categories)
   return categories
