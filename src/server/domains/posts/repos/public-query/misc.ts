@@ -1,6 +1,6 @@
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
-import { and, desc, inArray, isNull } from 'drizzle-orm'
+import { and, desc, eq, inArray, isNotNull, isNull, sql } from 'drizzle-orm'
 
 import type { Post, PostVisibilityOptions } from '@/shared/types/catalog'
 
@@ -9,6 +9,41 @@ import { listPublicPosts } from '@/server/domains/posts/repos/public-query/listi
 import { toPostFromMeta } from '@/server/domains/posts/repos/single'
 import { findTagNamesByPostIds } from '@/server/infra/db/operations/post-tag'
 import { post as postMetaTable } from '@/server/infra/db/schema/post'
+
+/** Slim row for sitemap generation — only the fields needed to derive `permalink` + `lastmod`. */
+export interface SitemapPostRow {
+  slug: string
+  firstPublishedAt: Date | null
+  publishedAt: Date
+}
+
+/**
+ * Sitemap-only projection of published posts. Mirrors the visibility
+ * gate used by `listAllPosts({ includeHidden: true, includeScheduled:
+ * false })` — i.e. every published, non-deleted row with a published
+ * revision whose `published_at` is not in the future — but selects
+ * only `slug` + `firstPublishedAt` + `publishedAt` to avoid the
+ * revision-join + image-hydration fan-out the full `listAllPosts`
+ * path performs.
+ */
+export async function listSitemapPosts(db: NodePgDatabase, now = new Date()): Promise<SitemapPostRow[]> {
+  return db
+    .select({
+      slug: postMetaTable.slug,
+      firstPublishedAt: postMetaTable.firstPublishedAt,
+      publishedAt: postMetaTable.publishedAt,
+    })
+    .from(postMetaTable)
+    .where(
+      and(
+        isNull(postMetaTable.deletedAt),
+        eq(postMetaTable.published, true),
+        isNotNull(postMetaTable.publishedRevisionId),
+        sql`${postMetaTable.publishedAt} <= ${now}`,
+      ),
+    )
+    .orderBy(desc(postMetaTable.firstPublishedAt))
+}
 
 export async function getPostsBySlugs(
   db: NodePgDatabase,

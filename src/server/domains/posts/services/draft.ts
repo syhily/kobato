@@ -18,6 +18,7 @@ import {
   type ViewerContext,
 } from '@/server/domains/posts/services/shared'
 import { clearFeedCache } from '@/server/infra/cache/feed-cache'
+import { clearSitemapCache } from '@/server/infra/cache/sitemap-cache'
 import { getLogger } from '@/server/infra/logger'
 import { invalidateSearchCache } from '@/server/infra/search/search'
 import { deriveSlug } from '@/server/infra/slug'
@@ -123,6 +124,9 @@ async function savePostBodyInternal(
     await clearPostMetasCache()
     await clearFeedCache().catch((err: unknown) => {
       log.warn('clear feed cache failed', { postId: input.postId, error: err })
+    })
+    await clearSitemapCache().catch((err: unknown) => {
+      log.warn('clear sitemap cache failed', { postId: input.postId, error: err })
     })
     await invalidateSearchCache().catch((err: unknown) => {
       log.warn('invalidate search cache failed', { postId: input.postId, error: err })

@@ -1,7 +1,7 @@
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
-import { listAllPages } from '@/server/domains/pages/repo'
-import { listAllPosts } from '@/server/domains/posts/repos/public-query/misc'
+import { listSitemapPages } from '@/server/domains/pages/repo'
+import { listSitemapPosts } from '@/server/domains/posts/repos/public-query/misc'
 import { requireBlogSettingsSection } from '@/shared/config/getters'
 import { joinUrl } from '@/shared/utils/urls'
 
@@ -10,10 +10,7 @@ function escapeXml(s: string): string {
 }
 
 export async function buildSitemapXml(db: NodePgDatabase, _request: Request): Promise<string> {
-  const [posts, pages] = await Promise.all([
-    listAllPosts(db, { includeHidden: true, includeScheduled: false }),
-    listAllPages(db),
-  ])
+  const [posts, pages] = await Promise.all([listSitemapPosts(db), listSitemapPages(db)])
 
   // Build via array join so the response starts with `<?xml ... ?>` on the
   // first byte. The previous template-literal version left a leading newline
@@ -25,13 +22,15 @@ export async function buildSitemapXml(db: NodePgDatabase, _request: Request): Pr
     `  <url><loc>${escapeXml(website)}/</loc></url>`,
   ]
   for (const post of posts) {
+    const date = post.firstPublishedAt ?? post.publishedAt
     lines.push(
-      `  <url><loc>${escapeXml(joinUrl(website, post.permalink))}</loc><lastmod>${post.date.toISOString()}</lastmod></url>`,
+      `  <url><loc>${escapeXml(joinUrl(website, `/posts/${post.slug}`))}</loc><lastmod>${date.toISOString()}</lastmod></url>`,
     )
   }
   for (const page of pages) {
+    const date = page.firstPublishedAt ?? page.publishedAt
     lines.push(
-      `  <url><loc>${escapeXml(joinUrl(website, page.permalink))}</loc><lastmod>${page.date.toISOString()}</lastmod></url>`,
+      `  <url><loc>${escapeXml(joinUrl(website, `/${page.slug}`))}</loc><lastmod>${date.toISOString()}</lastmod></url>`,
     )
   }
   lines.push('</urlset>')

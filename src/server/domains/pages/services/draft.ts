@@ -14,6 +14,7 @@ import {
   type SavePageBodyInput,
   type SavePageResult,
 } from '@/server/domains/pages/services/shared'
+import { clearSitemapCache } from '@/server/infra/cache/sitemap-cache'
 import { DomainError } from '@/server/infra/http/errors'
 import { getLogger } from '@/server/infra/logger'
 import { deriveSlug } from '@/server/infra/slug'
@@ -121,6 +122,9 @@ async function savePageBodyInternal(
   }
   if (mode === 'publish' && wroteSuccessfully) {
     await clearPagesCache()
+    await clearSitemapCache().catch((err: unknown) => {
+      log.warn('clear sitemap cache failed', { pageId: input.pageId, error: err })
+    })
   }
   return projectSaveResult(result, warnings.length > 0 ? warnings.join(' ') : undefined)
 }

@@ -14,6 +14,7 @@ import {
   type ViewerContext,
 } from '@/server/domains/posts/services/shared'
 import { clearFeedCache } from '@/server/infra/cache/feed-cache'
+import { clearSitemapCache } from '@/server/infra/cache/sitemap-cache'
 import { findTagNamesByPostId, setPostTags } from '@/server/infra/db/operations/post-tag'
 import {
   deleteSlugRegistryByEntity,
@@ -37,6 +38,9 @@ async function clearPostCaches(postId?: bigint): Promise<void> {
   await clearPostMetasCache()
   await clearFeedCache().catch((err: unknown) => {
     log.warn('clear feed cache failed', { postId: postId?.toString(), error: err })
+  })
+  await clearSitemapCache().catch((err: unknown) => {
+    log.warn('clear sitemap cache failed', { postId: postId?.toString(), error: err })
   })
 }
 

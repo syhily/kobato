@@ -12,6 +12,7 @@ import {
   updatePageMetaById,
 } from '@/server/domains/pages/repo'
 import { clearPagesCache, type UpsertPageMetaInput } from '@/server/domains/pages/services/shared'
+import { clearSitemapCache } from '@/server/infra/cache/sitemap-cache'
 import {
   deleteSlugRegistryByEntity,
   findSlugRegistryBySlugForUpdate,
@@ -19,7 +20,17 @@ import {
   updateSlugRegistryByEntity,
 } from '@/server/infra/db/operations/slug-registry'
 import { DomainError, isUniqueConstraintError } from '@/server/infra/http/errors'
+import { getLogger } from '@/server/infra/logger'
 import { ensureSlugLegal, resolveSlug } from '@/server/infra/slug-validation'
+
+const log = getLogger('pages.service')
+
+async function clearPageCaches(pageId?: bigint): Promise<void> {
+  await clearPagesCache()
+  await clearSitemapCache().catch((err: unknown) => {
+    log.warn('clear sitemap cache failed', { pageId: pageId?.toString(), error: err })
+  })
+}
 
 export async function createPage(
   db: NodePgDatabase,
@@ -64,7 +75,7 @@ export async function createPage(
       }
       throw err
     }
-    await clearPagesCache()
+    await clearPageCaches(row.id)
     return toAdminPageDto(row)
   })
 }
@@ -119,7 +130,7 @@ export async function updatePageMeta(db: NodePgDatabase, input: UpsertPageMetaIn
     if (updated === null) {
       throw new DomainError('NOT_FOUND', '页面不存在或已被删除。')
     }
-    await clearPagesCache()
+    await clearPageCaches(pageId)
     return toAdminPageDto(updated)
   })
 }
@@ -129,7 +140,7 @@ export async function deletePage(db: NodePgDatabase, id: bigint): Promise<{ dele
     const deleted = await softDeletePageMeta(tx, id)
     if (deleted) {
       await deleteSlugRegistryByEntity(tx, { entityType: 'page', entityId: id })
-      await clearPagesCache()
+      await clearPageCaches(id)
     }
     return { deleted }
   })
@@ -149,7 +160,7 @@ export async function restorePage(db: NodePgDatabase, id: bigint): Promise<{ res
           }
         }
       }
-      await clearPagesCache()
+      await clearPageCaches(id)
     }
     return { restored }
   })
@@ -164,6 +175,6 @@ export async function unpublishPage(db: NodePgDatabase, id: bigint): Promise<Adm
   if (updated === null) {
     throw new DomainError('NOT_FOUND', '页面不存在或已被删除。')
   }
-  await clearPagesCache()
+  await clearPageCaches(id)
   return toAdminPageDto(updated)
 }

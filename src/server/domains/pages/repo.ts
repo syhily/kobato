@@ -143,6 +143,40 @@ export async function listPublicPageMetas(db: NodePgDatabase, limit = 500): Prom
     .limit(limit)
 }
 
+/** Slim row for sitemap generation — only the fields needed to derive `permalink` + `lastmod`. */
+export interface SitemapPageRow {
+  slug: string
+  firstPublishedAt: Date | null
+  publishedAt: Date
+}
+
+/**
+ * Sitemap-only projection of published pages. Mirrors the visibility
+ * gate enforced by `isCatalogVisible` (used inside `listAllPages`) —
+ * not deleted, published, has a published revision, `published_at`
+ * not in the future — but selects only `slug` + `firstPublishedAt` +
+ * `publishedAt` to skip the revision-join + image-hydration the full
+ * `listAllPages` path performs.
+ */
+export async function listSitemapPages(db: NodePgDatabase, now = new Date()): Promise<SitemapPageRow[]> {
+  return db
+    .select({
+      slug: pageMetaTable.slug,
+      firstPublishedAt: pageMetaTable.firstPublishedAt,
+      publishedAt: pageMetaTable.publishedAt,
+    })
+    .from(pageMetaTable)
+    .where(
+      and(
+        isNull(pageMetaTable.deletedAt),
+        eq(pageMetaTable.published, true),
+        isNotNull(pageMetaTable.publishedRevisionId),
+        sql`${pageMetaTable.publishedAt} <= ${now}`,
+      ),
+    )
+    .orderBy(desc(pageMetaTable.firstPublishedAt))
+}
+
 // --- Writes ------------------------------------------------------------------
 
 export async function insertPageMeta(db: NodePgDatabase, values: NewPageMeta): Promise<PageMetaRow> {
