@@ -45,7 +45,13 @@ export function getPgConnectionOptions(): { args: string[]; env: Record<string, 
     throw new DomainError('INTERNAL', 'DATABASE_URL 未配置')
   }
   const parsed = new URL(url)
-  const env: Record<string, string> = { ...processEnv }
+  const env: Record<string, string> = {
+    PATH: processEnv.PATH ?? '',
+    PGHOST: parsed.hostname,
+    PGPORT: parsed.port || '5432',
+    PGDATABASE: parsed.pathname.slice(1),
+    PGUSER: parsed.username,
+  }
   if (parsed.password) {
     env.PGPASSWORD = parsed.password
   }
