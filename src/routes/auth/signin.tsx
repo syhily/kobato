@@ -111,13 +111,17 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   let tokenError: string | null = null
   let resetToken: string | null = null
   if ((action === 'resetpassword' || action === 'accept-invite') && url.searchParams.has('token')) {
-    const rawToken = url.searchParams.get('token')!
-    const purpose = action === 'resetpassword' ? 'password-reset' : 'author-invite'
-    const result = await peekToken(db, rawToken, purpose)
-    if (result === null) {
+    const rawToken = url.searchParams.get('token')
+    if (!rawToken) {
       tokenError = '链接无效或已过期。'
     } else {
-      resetToken = rawToken
+      const purpose = action === 'resetpassword' ? 'password-reset' : 'author-invite'
+      const result = await peekToken(db, rawToken, purpose)
+      if (result === null) {
+        tokenError = '链接无效或已过期。'
+      } else {
+        resetToken = rawToken
+      }
     }
   }
 
