@@ -1,6 +1,8 @@
 import type { CommentBlock, CommentBody, CommentTextBlock } from '@/shared/pt/comment-schema'
 import type { LinkMarkDef, MathInlineMarkDef, Span } from '@/shared/pt/schema'
 
+import { escapeHtml } from '@/shared/utils/security'
+
 // Email-friendly server renderer for comment bodies. Produces a
 // compact HTML string suitable for embedding in transactional email
 // templates via `dangerouslySetInnerHTML`.
@@ -23,15 +25,6 @@ import type { LinkMarkDef, MathInlineMarkDef, Span } from '@/shared/pt/schema'
 // post / page rendering path stays on `<PortableTextBody>`.
 
 const NEWLINE = '\n'
-
-function escapeHtml(input: string): string {
-  return input
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;')
-}
 
 function escapeAttr(input: string): string {
   return escapeHtml(input)

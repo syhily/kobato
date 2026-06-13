@@ -23,6 +23,7 @@ import { deriveSlug } from '@/server/infra/slug'
 import { requireBlogSettingsSection } from '@/shared/config/getters'
 import { collectHeadingSlotsInPortableTextRenderOrder } from '@/shared/pt/utils'
 import { resolveFootnotesSectionTitle } from '@/shared/utils/footnotes-section-title'
+import { escapeHtml } from '@/shared/utils/security'
 
 export interface RenderPortableTextToHtmlOptions {
   rssMode?: boolean
@@ -433,15 +434,4 @@ function renderFootnotesSection(
   }
   html += '</ol></section>'
   return html
-}
-
-// HTML escape helper
-
-function escapeHtml(str: string): string {
-  return str
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;')
 }

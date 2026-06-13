@@ -27,3 +27,12 @@ export async function encodedEmail(email: string): Promise<string> {
   const digest = await crypto.subtle.digest('SHA-256', input)
   return Array.from(new Uint8Array(digest), (value) => value.toString(16).padStart(2, '0')).join('')
 }
+
+/**
+ * Escape the four HTML entities that matter for double-quoted attribute
+ * values and text content: `&`, `<`, `>` and `"`. Keep this the single
+ * canonical implementation so security fixes only need to land in one place.
+ */
+export function escapeHtml(input: string): string {
+  return input.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+}

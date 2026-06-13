@@ -4,6 +4,7 @@ import PasswordReset from '@/server/infra/email/templates/PasswordReset'
 import SignInOtp from '@/server/infra/email/templates/SignInOtp'
 import { getLogger } from '@/server/infra/logger'
 import { requireBlogSettingsSection } from '@/shared/config/getters'
+import { escapeHtml } from '@/shared/utils/security'
 
 const log = getLogger('email')
 
@@ -248,10 +249,4 @@ export async function sendTestMail(to: string): Promise<SendResult> {
     }
   }
   return { ok: true }
-}
-
-// Tiny escape used only by the test-mail HTML — the comment templates
-// already run through React Email which handles escaping for us.
-function escapeHtml(value: string): string {
-  return value.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;')
 }
