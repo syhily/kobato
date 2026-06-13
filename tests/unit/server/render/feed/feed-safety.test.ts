@@ -15,6 +15,13 @@ describe('feed-safety', () => {
       expect(sanitizeFeedHtml(input)).toBe('<p>hello</p><p>world</p>')
     })
 
+    // Regression: the old regex required a closing </script> tag, so an
+    // unclosed `<script>` survived intact and ran in feed readers.
+    it('strips unclosed <script> tags', () => {
+      const input = '<p>hello</p><script>alert(1)'
+      expect(sanitizeFeedHtml(input)).toBe('<p>hello</p>')
+    })
+
     it('removes event handler attributes', () => {
       const input = '<img src="x" onerror="alert(1)"><p onclick="evil()">text</p>'
       const out = sanitizeFeedHtml(input)
@@ -23,31 +30,92 @@ describe('feed-safety', () => {
       expect(out).not.toContain('evil')
     })
 
-    it('neutralizes javascript: URLs', () => {
-      const input = '<a href="javascript:alert(1)">click</a>'
-      expect(sanitizeFeedHtml(input)).toBe('<a href="#">click</a>')
+    // Regression: the old regex required whitespace before on\w+, so
+    // `<img/onerror=...>` and `<img onerror=...>` (no quotes) bypassed it.
+    it('strips event handlers regardless of separator (space, slash, none)', () => {
+      const inputs = [
+        '<img src="x" onerror="alert(1)">',
+        '<img/onerror="alert(1)" src="x">',
+        '<img onerror=alert(1) src="x">',
+      ]
+      for (const input of inputs) {
+        expect(sanitizeFeedHtml(input)).not.toContain('onerror')
+        expect(sanitizeFeedHtml(input)).not.toContain('alert')
+      }
     })
 
-    it('neutralizes data: URLs', () => {
-      const input = '<a href="data:text/html,<script>alert(1)</script>">click</a>'
-      expect(sanitizeFeedHtml(input)).toBe('<a href="#">click</a>')
-    })
-
-    it('strips SVG tags and their content', () => {
-      const input = '<p>before</p><svg><animate onbegin="alert(1)" /></svg><p>after</p>'
-      expect(sanitizeFeedHtml(input)).toBe('<p>before</p><p>after</p>')
-    })
-
-    it('strips MathML tags and their content', () => {
-      const input = '<p>before</p><math><mi>x</mi></math><p>after</p>'
-      expect(sanitizeFeedHtml(input)).toBe('<p>before</p><p>after</p>')
-    })
-
-    it('strips foreignObject, animate, animateMotion, animateTransform, and set tags', () => {
+    it('strips <iframe>, <object>, <embed>, <form>, and <base> tags', () => {
       const input =
-        '<svg><foreignObject><script>alert(1)</script></foreignObject>' +
-        '<animate attributeName="x" /><animateMotion /><animateTransform /><set /></svg>'
-      expect(sanitizeFeedHtml(input)).toBe('')
+        '<iframe src="javascript:alert(1)"></iframe>' +
+        '<object data="evil.swf"></object>' +
+        '<embed src="evil.swf">' +
+        '<form action="javascript:alert(1)"><button>x</button></form>' +
+        '<base href="javascript:alert(1)">'
+      const out = sanitizeFeedHtml(input)
+      expect(out).not.toContain('<iframe')
+      expect(out).not.toContain('<object')
+      expect(out).not.toContain('<embed')
+      expect(out).not.toContain('<form')
+      expect(out).not.toContain('<base')
+      expect(out).not.toContain('alert')
+    })
+
+    it('strips <svg> entirely (including nested scripts and event handlers)', () => {
+      const input = '<svg><script>alert(1)</script><animate onbegin="alert(1)" /></svg>'
+      const out = sanitizeFeedHtml(input)
+      expect(out).not.toContain('<svg')
+      expect(out).not.toContain('<script')
+      expect(out).not.toContain('<animate')
+      expect(out).not.toContain('alert')
+    })
+
+    it('strips <math> and its child tags', () => {
+      const input = '<p>before</p><math><mi>x</mi></math><p>after</p>'
+      const out = sanitizeFeedHtml(input)
+      expect(out).not.toContain('<math')
+      expect(out).not.toContain('<mi>')
+    })
+
+    it('neutralizes javascript: URLs (drops href, keeps link text)', () => {
+      const input = '<a href="javascript:alert(1)">click</a>'
+      // sanitize-html removes the disallowed scheme attribute rather than
+      // rewriting it to "#", which is the safer behaviour (no dead anchor).
+      const out = sanitizeFeedHtml(input)
+      expect(out).not.toContain('javascript:')
+      expect(out).toContain('click')
+    })
+
+    it('neutralizes data: URLs on anchors (drops href, keeps link text)', () => {
+      const input = '<a href="data:text/html,<script>alert(1)</script>">click</a>'
+      const out = sanitizeFeedHtml(input)
+      expect(out).not.toContain('data:')
+      expect(out).not.toContain('<script')
+      expect(out).toContain('click')
+    })
+
+    it('preserves legitimate HTML structure', () => {
+      const input =
+        '<h2 id="intro">Intro</h2><p>Hello <strong>world</strong> with ' +
+        '<a href="https://example.com" rel="noopener noreferrer nofollow" target="_blank">a link</a>.</p>' +
+        '<ul><li>one</li><li>two</li></ul>'
+      const out = sanitizeFeedHtml(input)
+      expect(out).toContain('<h2 id="intro">Intro</h2>')
+      expect(out).toContain('<strong>world</strong>')
+      expect(out).toContain('href="https://example.com"')
+      expect(out).toContain('target="_blank"')
+      expect(out).toContain('rel="noopener noreferrer nofollow"')
+      expect(out).toContain('<ul><li>one</li><li>two</li></ul>')
+    })
+
+    it('preserves images with https src', () => {
+      const input =
+        '<figure><img src="https://example.com/a.png" alt="A" width="100" height="50"><figcaption>cap</figcaption></figure>'
+      const out = sanitizeFeedHtml(input)
+      expect(out).toContain('<img')
+      expect(out).toContain('src="https://example.com/a.png"')
+      expect(out).toContain('alt="A"')
+      expect(out).toContain('width="100"')
+      expect(out).toContain('<figcaption>cap</figcaption>')
     })
   })
 

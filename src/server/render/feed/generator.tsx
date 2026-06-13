@@ -1,6 +1,7 @@
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
 import { Feed } from 'feed'
+import sanitizeHtml from 'sanitize-html'
 
 import type { Page, Post } from '@/shared/types/catalog'
 
@@ -51,26 +52,68 @@ export async function feedResponse(
   return new Response(body, { headers: feedHeaders(kind) })
 }
 
-// Minimal server-side HTML sanitizer for feed output. Strips script tags,
-// event handler attributes, javascript:/data: URLs, and SVG/MathML tags since
-// feed HTML is served to external aggregators without additional filtering.
-// DOMPurify is not used here because server-side rendering requires jsdom,
-// which is not a project dependency.
+// Allowlist-based server-side HTML sanitizer for feed output. Strips script
+// tags, event handler attributes, javascript:/data: URLs, and SVG/MathML tags
+// since feed HTML is served to external aggregators without additional
+// filtering. `sanitize-html` is a pure-JS parser (no jsdom dependency), which
+// closes the bypasses the previous regex chain had (unclosed `<script>`,
+// slash-separated event handlers, etc.).
 export function sanitizeFeedHtml(html: string): string {
-  return html
-    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
-    .replace(/<svg\b[^>]*>[\s\S]*?<\/svg>/gi, '')
-    .replace(/<math\b[^>]*>[\s\S]*?<\/math>/gi, '')
-    .replace(/<foreignObject\b[^>]*>[\s\S]*?<\/foreignObject>/gi, '')
-    .replace(/<animate\b[^>]*\/?>/gi, '')
-    .replace(/<animateMotion\b[^>]*\/?>/gi, '')
-    .replace(/<animateTransform\b[^>]*\/?>/gi, '')
-    .replace(/<set\b[^>]*\/?>/gi, '')
-    .replace(/\s+on\w+\s*=\s*(?:"[^"]*"|'[^']*'|`[^`]*`|[^\s>]*)/gi, '')
-    .replace(/\b(href|src|action)\s*=\s*"\s*javascript:[^"]*"/gi, '$1="#"')
-    .replace(/\b(href|src|action)\s*=\s*'\s*javascript:[^']*'/gi, "$1='#'")
-    .replace(/\b(href|src|action)\s*=\s*"\s*data:[^"]*"/gi, '$1="#"')
-    .replace(/\b(href|src|action)\s*=\s*'\s*data:[^']*'/gi, "$1='#'")
+  return sanitizeHtml(html, {
+    allowedTags: [
+      'p',
+      'br',
+      'hr',
+      'strong',
+      'em',
+      'u',
+      's',
+      'code',
+      'pre',
+      'blockquote',
+      'ul',
+      'ol',
+      'li',
+      'h1',
+      'h2',
+      'h3',
+      'h4',
+      'h5',
+      'h6',
+      'a',
+      'img',
+      'sup',
+      'sub',
+      'figure',
+      'figcaption',
+      'audio',
+      'table',
+      'thead',
+      'tbody',
+      'tr',
+      'th',
+      'td',
+      'section',
+      'div',
+    ],
+    allowedAttributes: {
+      a: ['href', 'title', 'name', 'rel', 'target'],
+      img: ['src', 'alt', 'title', 'width', 'height'],
+      audio: ['src', 'controls', 'preload'],
+      // `id` is emitted by headings, footnote anchors, and the footnotes section.
+      '*': ['id', 'class', 'data-language', 'data-footnotes', 'data-footnote-backref', 'aria-labelledby', 'aria-label'],
+    },
+    allowedSchemes: ['http', 'https', 'mailto'],
+    allowedSchemesByTag: { img: ['http', 'https', 'data'] },
+    disallowedTagsMode: 'discard',
+    allowProtocolRelative: false,
+    transformTags: {
+      a: (_tagName, attribs) =>
+        attribs.target === '_blank'
+          ? { tagName: 'a', attribs: { ...attribs, rel: 'noopener noreferrer nofollow' } }
+          : { tagName: 'a', attribs },
+    },
+  })
 }
 
 async function renderEntryContent(db: NodePgDatabase, entry: Post | Page): Promise<string> {
