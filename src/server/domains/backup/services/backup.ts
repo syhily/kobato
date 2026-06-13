@@ -1,5 +1,6 @@
 import { spawn } from 'node:child_process'
 import { Transform } from 'node:stream'
+import { pipeline } from 'node:stream/promises'
 import { createGzip } from 'node:zlib'
 
 import type { BackupFileDto } from '@/shared/types/backup'
@@ -42,7 +43,6 @@ export async function createBackup(): Promise<{ fileName: string; size: number }
   )
 
   const gzip = createGzip()
-  pgDump.stdout.pipe(gzip)
 
   let uploadedBytes = 0
   const counter = new Transform({
@@ -51,7 +51,8 @@ export async function createBackup(): Promise<{ fileName: string; size: number }
       callback(null, chunk)
     },
   })
-  gzip.pipe(counter)
+
+  const streamDone = pipeline(pgDump.stdout, gzip, counter)
 
   const pgDumpDone = new Promise<void>((resolve, reject) => {
     pgDump.on('error', reject)
@@ -59,7 +60,6 @@ export async function createBackup(): Promise<{ fileName: string; size: number }
       if (code !== 0) {
         reject(new Error(`pg_dump 退出码 ${code}`))
       } else {
-        gzip.end()
         resolve()
       }
     })
@@ -67,7 +67,7 @@ export async function createBackup(): Promise<{ fileName: string; size: number }
 
   const uploadDone = putS3Object(key, counter, 'application/gzip')
 
-  await Promise.all([pgDumpDone, uploadDone])
+  await Promise.all([streamDone, pgDumpDone, uploadDone])
 
   log.info('Backup completed', { key, size: uploadedBytes })
   return { fileName: key.split('/').pop()!, size: uploadedBytes }
