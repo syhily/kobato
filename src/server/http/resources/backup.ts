@@ -58,6 +58,10 @@ export const backupRouter = new Hono<Env>()
       onError: (c) => c.json({ error: { message: '上传文件过大' } }, 413),
     }),
     async (c) => {
+      if (getRestoreState().phase !== 'idle') {
+        return c.json({ error: { message: '已有还原任务正在进行，请等待完成后再试。' } }, 409)
+      }
+
       const body = await c.req.parseBody({ all: false })
       const file = body.file
       if (!(file instanceof File)) {
@@ -116,6 +120,10 @@ export const backupRouter = new Hono<Env>()
       const file = body.file
       if (!(file instanceof File)) {
         return c.json({ error: { message: '请上传文件' } }, 400)
+      }
+
+      if (getRestoreState().phase !== 'idle') {
+        return c.json({ error: { message: '已有还原任务正在进行，请等待完成后再试。' } }, 409)
       }
 
       const buffer = Buffer.from(await file.arrayBuffer())

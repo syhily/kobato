@@ -14,6 +14,7 @@ const mockValidateBackupSql = vi.fn()
 const mockPerformSafeRestore = vi.fn()
 const mockRefreshBlogSettings = vi.fn()
 const mockRecordAuditEvent = vi.fn()
+const mockGetRestoreState = vi.fn()
 
 vi.mock('@/server/infra/db/operations/user', () => ({
   hasAdmin: (...args: unknown[]) => mockHasAdmin(...args),
@@ -62,6 +63,15 @@ vi.mock('@/server/domains/audit/services/record', () => ({
   recordAuditEvent: (...args: unknown[]) => mockRecordAuditEvent(...args),
 }))
 
+vi.mock('@/server/infra/lifecycle', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/server/infra/lifecycle')>()
+  return {
+    ...actual,
+    getRestoreState: () => mockGetRestoreState(),
+    resetRestoreState: vi.fn(),
+  }
+})
+
 import { createSession } from 'react-router'
 
 import type { BlogSessionData } from '@/server/domains/auth/session-storage'
@@ -87,6 +97,7 @@ async function buildApp(session: ReturnType<typeof makeSession>) {
 describe('/api/admin/backup/upload-restore', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    mockGetRestoreState.mockReturnValue({ phase: 'idle' })
     mockValidateCsrfToken.mockReturnValue(true)
     mockExtractBackupSql.mockResolvedValue('CREATE TABLE test (id INT);')
     mockPerformSafeRestore.mockImplementation(async (_ctx: unknown, fn: () => Promise<void>) => {
@@ -156,11 +167,45 @@ describe('/api/admin/backup/upload-restore', () => {
     const body = (await res.json()) as { accepted: boolean }
     expect(body.accepted).toBe(true)
   })
+
+  it('returns 409 when a restore is already running', async () => {
+    mockGetRestoreState.mockReturnValue({ phase: 'restoring' })
+    const { backupRouter } = await import('@/server/http/resources/backup')
+    const app = new Hono<Env>()
+    app.use('*', async (c, next) => {
+      c.set(
+        'session',
+        makeSession({
+          csrfToken: 'valid-csrf',
+          user: { id: '1', name: 'Admin', email: 'admin@test.com', website: null, role: 'admin' },
+        }) as unknown as Env['Variables']['session'],
+      )
+      c.set('clientAddress', '127.0.0.1')
+      c.set('db', {} as Env['Variables']['db'])
+      c.set('pool', {} as Env['Variables']['pool'])
+      await next()
+    })
+    app.route('/', backupRouter)
+
+    const formData = new FormData()
+    formData.set('file', new File(['content'], 'test.sql'))
+
+    const res = await app.request('/api/admin/backup/upload-restore', {
+      method: 'POST',
+      body: formData,
+      headers: { 'x-csrf-token': 'valid-csrf' },
+    })
+
+    expect(res.status).toBe(409)
+    const body = (await res.json()) as { error: { message: string } }
+    expect(body.error.message).toBe('已有还原任务正在进行，请等待完成后再试。')
+  })
 })
 
 describe('/api/setup/restore', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    mockGetRestoreState.mockReturnValue({ phase: 'idle' })
     mockHasAdmin.mockResolvedValue(false)
     mockIsSetupTokenActive.mockResolvedValue(true)
     mockValidateCsrfToken.mockReturnValue(true)
@@ -253,5 +298,22 @@ describe('/api/setup/restore', () => {
     const body = (await res.json()) as { accepted: boolean }
     expect(body.accepted).toBe(true)
     expect(mockPerformSafeRestore).toHaveBeenCalledOnce()
+  })
+
+  it('returns 409 when a restore is already running', async () => {
+    mockGetRestoreState.mockReturnValue({ phase: 'restoring' })
+    const app = await buildApp(makeSession({ setupTokenVerified: true, csrfToken: 'valid-csrf' }))
+    const formData = new FormData()
+    formData.set('file', new File(['content'], 'test.sql'))
+
+    const res = await app.request('/api/setup/restore', {
+      method: 'POST',
+      body: formData,
+      headers: { 'x-csrf-token': 'valid-csrf' },
+    })
+
+    expect(res.status).toBe(409)
+    const body = (await res.json()) as { error: { message: string } }
+    expect(body.error.message).toBe('已有还原任务正在进行，请等待完成后再试。')
   })
 })

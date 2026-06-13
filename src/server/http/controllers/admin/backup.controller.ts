@@ -14,6 +14,7 @@ import { restoreFromBackup } from '@/server/domains/backup/services/restore'
 import { checkPgToolsAvailable } from '@/server/domains/backup/services/shared'
 import { adminProc } from '@/server/http/orpc-base'
 import { ActionFailure } from '@/server/infra/http/errors'
+import { getRestoreState } from '@/server/infra/lifecycle'
 import { getLogger } from '@/server/infra/logger'
 import { getBlogSettingsBundleSync } from '@/shared/config/getters'
 
@@ -83,6 +84,10 @@ const restore = adminProc
     if (!isValidBackupKey(input.key)) {
       throw new ActionFailure(400, '无效的备份标识。')
     }
+    if (getRestoreState().phase !== 'idle') {
+      throw new ActionFailure(409, '已有还原任务正在进行，请等待完成后再试。')
+    }
+
     const { db, pool } = context
     const buffer = await getBackupBuffer(buildBackupS3Key(input.key))
 

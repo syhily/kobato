@@ -38,6 +38,7 @@ vi.mock('@/server/infra/lifecycle', () => ({
   registerShutdownHook: vi.fn(),
   setServerPhase: vi.fn(),
   restartServer: vi.fn(),
+  getRestoreState: vi.fn(() => ({ phase: 'idle' })),
 }))
 
 const shared = await import('@/server/domains/backup/services/shared')
@@ -123,5 +124,16 @@ describe('adminBackupRouter.restore', () => {
     for (const badKey of ['../etc/passwd', 'backup/../../secret', 'backup/x.sql.gz', '']) {
       await expect(call(adminBackupRouter.restore, { key: badKey }, { context: ctx })).rejects.toThrow(ActionFailure)
     }
+  })
+
+  it('rejects concurrent restore requests', async () => {
+    const lifecycle = await import('@/server/infra/lifecycle')
+    vi.mocked(lifecycle.getRestoreState).mockReturnValueOnce({ phase: 'restoring' } as ReturnType<
+      typeof lifecycle.getRestoreState
+    >)
+    const ctx = makeAuthedCtx()
+    await expect(call(adminBackupRouter.restore, { key: '2026-01-01T00-00-00' }, { context: ctx })).rejects.toThrow(
+      ActionFailure,
+    )
   })
 })
