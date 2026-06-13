@@ -150,8 +150,8 @@
   },
   "lint-staged": {
     "*.{ts,tsx}": [
-      "oxfmt --config oxfmt.config.ts --write",
-      "oxlint -c oxlint.config.ts --fix"
+      "oxfmt -c oxfmt.config.ts --write",
+      "oxlint -c oxlint.config.ts --fix --no-error-on-unmatched-pattern"
     ]
   },
   "packageManager": "npm@11.17.0",

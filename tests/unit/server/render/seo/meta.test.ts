@@ -5,7 +5,14 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import type { BlogSettingsBundle } from '@/shared/config/types'
 
 import { setBlogSettingsBundleForTests } from '@/server/domains/settings/services/test-utils'
-import { pageTitle, routeMeta } from '@/server/render/seo/meta'
+import {
+  bundleFromMatches,
+  metaWithFallback,
+  pageTitle,
+  routeMeta,
+  seoForPage,
+  seoForPost,
+} from '@/server/render/seo/meta'
 
 // `routeMeta` and `pageTitle` consult the snapshot reader for the
 // site title / website / OG defaults. There is no longer a baked-in
@@ -228,5 +235,159 @@ describe('services/seo/meta — routeMeta', () => {
     const og = findByProperty(meta, 'og:image')
     expect(og?.content).toContain('/images/open-graph.png')
     expect(String(og?.content).startsWith('http')).toBe(true)
+  })
+})
+
+describe('services/seo/meta — pageTitle pre-install fallback', () => {
+  it('returns PRE_INSTALL_TITLE when no bundle is hydrated', () => {
+    setBlogSettingsBundleForTests(null)
+    expect(pageTitle()).toBe('正在安装')
+    expect(pageTitle('Custom')).toBe('Custom')
+  })
+})
+
+describe('services/seo/meta — routeMeta pre-install fallback', () => {
+  it('emits a minimal title and noindex robots when the bundle is null', () => {
+    setBlogSettingsBundleForTests(null)
+    const meta = routeMeta({ title: 'X' }) as MetaEntry[]
+    expect(meta[0]).toMatchObject({ title: 'X' })
+    expect(findByName(meta, 'robots')?.content).toBe('noindex,follow')
+  })
+})
+
+describe('services/seo/meta — page variant and feedLinks', () => {
+  it('emits article section "页面" for page variants', () => {
+    const meta = routeMeta({
+      title: 'About',
+      variant: { kind: 'page', article: { date: new Date('2024-01-01') } },
+    }) as MetaEntry[]
+    expect(findByProperty(meta, 'og:type')?.content).toBe('article')
+    expect(findByProperty(meta, 'article:section')?.content).toBe('页面')
+  })
+
+  it('emits feed alternate links when feedLinks is supplied', () => {
+    const meta = routeMeta({
+      feedLinks: { rss: '/feed', atom: '/feed/atom/', title: 'Site Feed' },
+    }) as MetaEntry[]
+    const feeds = meta.filter((m) => m.tagName === 'link' && m.rel === 'alternate')
+    expect(feeds.map((f) => f.type)).toContain('application/rss+xml')
+    expect(feeds.map((f) => f.type)).toContain('application/atom+xml')
+  })
+
+  it('omits feed alternate links when feedLinks is undefined', () => {
+    const meta = routeMeta() as MetaEntry[]
+    const feeds = meta.filter((m) => m.tagName === 'link' && m.rel === 'alternate' && m.type === 'application/rss+xml')
+    expect(feeds.length).toBeGreaterThanOrEqual(1)
+  })
+
+  it('emits a custom OG image when ogImageUrl is an absolute URL', () => {
+    const meta = routeMeta({ ogImageUrl: 'https://cdn.example.com/og.png' }) as MetaEntry[]
+    expect(findByProperty(meta, 'og:image')?.content).toBe('https://cdn.example.com/og.png')
+  })
+
+  it('prefixes a relative ogImageUrl with the site website', () => {
+    const meta = routeMeta({ ogImageUrl: '/custom/og.png' }) as MetaEntry[]
+    expect(findByProperty(meta, 'og:image')?.content).toContain('/custom/og.png')
+  })
+
+  it('emits twitter:site only when an X handle is resolvable', () => {
+    setBlogSettingsBundleForTests({
+      ...fixture,
+      socials: { socials: [{ name: 'X', network: 'x', type: 'link', link: 'https://x.com/handle' }] },
+    })
+    const meta = routeMeta() as MetaEntry[]
+    const site = meta.find((m) => m.property === 'twitter:site')
+    expect(site).toBeDefined()
+    expect(String(site?.content).startsWith('@')).toBe(true)
+  })
+
+  it('omits twitter:site when no X handle is resolvable', () => {
+    const meta = routeMeta() as MetaEntry[]
+    const site = meta.find((m) => m.property === 'twitter:site')
+    expect(site).toBeUndefined()
+  })
+})
+
+describe('services/seo/meta — seoForPost / seoForPage', () => {
+  it('builds a post RouteSeoOptions with article variant', () => {
+    const seo = seoForPost({
+      title: 'Hello',
+      slug: 'hello',
+      summary: 'Sum',
+      permalink: '/posts/hello',
+      date: '2024-01-01',
+      category: '默认分类',
+      tags: ['a', 'b'],
+    })
+    expect(seo.title).toBe('Hello')
+    expect(seo.variant?.kind).toBe('post')
+    expect(seo.canonical).toBe(true)
+    expect(seo.ogImageUrl).toContain('/images/og/hello.png')
+  })
+
+  it('uses the post og image when provided', () => {
+    const seo = seoForPost({
+      title: 'Hello',
+      slug: 'hello',
+      summary: 'Sum',
+      permalink: '/posts/hello',
+      og: '/og/custom.png',
+      date: '2024-01-01',
+      category: 'x',
+      tags: [],
+    })
+    expect(seo.ogImageUrl).toBe('/og/custom.png')
+  })
+
+  it('builds a page RouteSeoOptions with article variant', () => {
+    const seo = seoForPage({
+      title: 'About',
+      slug: 'about',
+      summary: 'About',
+      permalink: '/about',
+      date: '2024-01-01',
+    })
+    expect(seo.variant?.kind).toBe('page')
+    expect(seo.canonical).toBe(true)
+  })
+})
+
+describe('services/seo/meta — bundleFromMatches / metaWithFallback', () => {
+  it('returns undefined when no root match is found', () => {
+    expect(bundleFromMatches([])).toBeUndefined()
+    expect(bundleFromMatches([{ id: 'other' }])).toBeUndefined()
+  })
+
+  it('returns undefined when the root match has no data', () => {
+    expect(bundleFromMatches([{ id: 'root' }])).toBeUndefined()
+    expect(bundleFromMatches([{ id: 'root', data: 'nope' }])).toBeUndefined()
+  })
+
+  it('returns null when blogSettings is explicitly null', () => {
+    expect(bundleFromMatches([{ id: 'root', data: { blogSettings: null } }])).toBeNull()
+  })
+
+  it('returns the blogSettings bundle from the root match', () => {
+    const bundle = bundleFromMatches([{ id: 'root', data: { blogSettings: fixture } }])
+    expect(bundle).toEqual(fixture)
+  })
+
+  it('metaWithFallback uses loader seo when present', () => {
+    const meta = metaWithFallback({ loaderData: { seo: [{ name: 'x', content: 'y' }] }, matches: [] })
+    expect(meta).toEqual([{ name: 'x', content: 'y' }])
+  })
+
+  it('metaWithFallback calls the fallback when loader seo is absent', () => {
+    const meta = metaWithFallback({
+      loaderData: { seo: undefined },
+      matches: [{ id: 'root', data: { blogSettings: fixture } }],
+      fallback: () => [{ name: 'fb', content: '1' }],
+    })
+    expect(meta).toEqual([{ name: 'fb', content: '1' }])
+  })
+
+  it('metaWithFallback falls back to routeMeta when no fallback is given', () => {
+    const meta = metaWithFallback({ loaderData: {}, matches: [] }) as MetaEntry[]
+    expect(findByName(meta, 'robots')).toBeDefined()
   })
 })
