@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import { computeNextRun } from '@/server/domains/backup/scheduler-utils'
+import { DomainError } from '@/server/infra/http/errors'
 
 describe('services/backup — scheduler', () => {
   const timeZone = 'Asia/Shanghai'
@@ -66,5 +67,45 @@ describe('services/backup — scheduler', () => {
     const now = new Date('2024-01-15T10:00:00+08:00')
     const next = computeNextRun({ frequency: 'weekly', hour: 3, minute: 0, dayOfWeek: 7 }, timeZone, now)
     expect(next.toISOString()).toBe('2024-01-21T03:00:00.000+08:00')
+  })
+
+  it('throws when weekly schedule lacks dayOfWeek', () => {
+    const now = new Date('2024-01-15T10:00:00+08:00')
+    expect(() => computeNextRun({ frequency: 'weekly', hour: 3, minute: 0 }, timeZone, now)).toThrow(DomainError)
+  })
+
+  it('throws when weekly dayOfWeek is out of range', () => {
+    const now = new Date('2024-01-15T10:00:00+08:00')
+    expect(() => computeNextRun({ frequency: 'weekly', hour: 3, minute: 0, dayOfWeek: 0 }, timeZone, now)).toThrow(
+      DomainError,
+    )
+    expect(() => computeNextRun({ frequency: 'weekly', hour: 3, minute: 0, dayOfWeek: 8 }, timeZone, now)).toThrow(
+      DomainError,
+    )
+  })
+
+  it('throws when monthly schedule lacks dayOfMonth', () => {
+    const now = new Date('2024-01-15T10:00:00+08:00')
+    expect(() => computeNextRun({ frequency: 'monthly', hour: 3, minute: 0 }, timeZone, now)).toThrow(DomainError)
+  })
+
+  it('throws when monthly dayOfMonth is out of range', () => {
+    const now = new Date('2024-01-15T10:00:00+08:00')
+    expect(() => computeNextRun({ frequency: 'monthly', hour: 3, minute: 0, dayOfMonth: 0 }, timeZone, now)).toThrow(
+      DomainError,
+    )
+    expect(() => computeNextRun({ frequency: 'monthly', hour: 3, minute: 0, dayOfMonth: 32 }, timeZone, now)).toThrow(
+      DomainError,
+    )
+  })
+
+  it('ignores day fields for daily schedule', () => {
+    const now = new Date('2024-01-15T10:00:00+08:00')
+    const next = computeNextRun(
+      { frequency: 'daily', hour: 14, minute: 30, dayOfWeek: 99, dayOfMonth: 99 },
+      timeZone,
+      now,
+    )
+    expect(next.toISOString()).toBe('2024-01-15T14:30:00.000+08:00')
   })
 })
