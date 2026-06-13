@@ -1,5 +1,4 @@
 import { Fragment, useEffect, useState, useSyncExternalStore } from 'react'
-import { createHighlighter } from 'shiki'
 
 import type { AuditLogItemDto } from '@/shared/types/audit'
 
@@ -47,19 +46,27 @@ function notifyShikiListeners() {
   }
 }
 
-let highlighterInstance: Awaited<ReturnType<typeof createHighlighter>> | null = null
+type ShikiHighlighter = {
+  codeToHtml: (code: string, options: { lang: string; themes: { light: string; dark: string } }) => string
+}
+
+let highlighterInstance: ShikiHighlighter | null = null
 
 function getHighlighter() {
   if (!shikiPromise) {
-    shikiPromise = createHighlighter({
-      themes: [SHIKI_THEMES.light, SHIKI_THEMES.dark],
-      langs: ['json'],
-    }).then((h) => {
-      highlighterInstance = h
-      shikiReady = true
-      shikiResolve?.()
-      notifyShikiListeners()
-    })
+    shikiPromise = import('shiki')
+      .then(({ createHighlighter }) =>
+        createHighlighter({
+          themes: [SHIKI_THEMES.light, SHIKI_THEMES.dark],
+          langs: ['json'],
+        }),
+      )
+      .then((h) => {
+        highlighterInstance = h
+        shikiReady = true
+        shikiResolve?.()
+        notifyShikiListeners()
+      })
   }
   return shikiPromise
 }
