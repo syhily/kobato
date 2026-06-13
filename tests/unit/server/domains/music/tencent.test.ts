@@ -73,6 +73,18 @@ describe('decodeHtmlEntities', () => {
     expect(decodeHtmlEntities('it&#x27;s')).toBe("it's")
   })
 
+  it('decodes astral-plane decimal entities (emoji)', () => {
+    expect(decodeHtmlEntities('hi &#128512;')).toBe('hi 😀')
+  })
+
+  it('decodes astral-plane hex entities (emoji)', () => {
+    expect(decodeHtmlEntities('hi &#x1F600;')).toBe('hi 😀')
+  })
+
+  it('leaves an out-of-range codepoint entity intact', () => {
+    expect(decodeHtmlEntities('&#9999999999;')).toBe('&#9999999999;')
+  })
+
   it('decodes &quot;', () => {
     expect(decodeHtmlEntities('say &quot;hello&quot;')).toBe('say "hello"')
   })

@@ -71,12 +71,16 @@ export function decodeHtmlEntities(text: string): string {
   for (const [entity, char] of Object.entries(ENTITY_MAP)) {
     decoded = decoded.replace(new RegExp(entity, 'g'), char)
   }
-  // Decimal entities &#39;
-  decoded = decoded.replace(/&#(\d+);/g, (_match, dec: string) => String.fromCharCode(Number.parseInt(dec, 10)))
+  // Decimal entities &#39; (leave the original text on an out-of-range codepoint)
+  decoded = decoded.replace(/&#(\d+);/g, (match, dec: string) => {
+    const cp = Number.parseInt(dec, 10)
+    return cp <= 0x10ffff ? String.fromCodePoint(cp) : match
+  })
   // Hex entities &#x27;
-  decoded = decoded.replace(/&#x([0-9a-fA-F]+);/g, (_match, hex: string) =>
-    String.fromCharCode(Number.parseInt(hex, 16)),
-  )
+  decoded = decoded.replace(/&#x([0-9a-fA-F]+);/g, (match, hex: string) => {
+    const cp = Number.parseInt(hex, 16)
+    return cp <= 0x10ffff ? String.fromCodePoint(cp) : match
+  })
   return decoded
 }
 
