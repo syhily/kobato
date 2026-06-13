@@ -1,4 +1,4 @@
-import type { Hono } from 'hono'
+import type { Context, Hono } from 'hono'
 
 import { pinoLogger } from 'hono-pino'
 import { compress } from 'hono/compress'
@@ -151,7 +151,7 @@ export function configureMiddleware(app: Hono<Env>): void {
     pinoLogger({
       pino: root,
       http: {
-        onReqBindings: (c) => ({
+        onReqBindings: (c: Context<Env>) => ({
           requestId: c.var.requestId,
           req: {
             url: c.req.path,

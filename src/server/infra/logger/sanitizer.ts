@@ -1,6 +1,15 @@
 import type { Context } from 'hono'
 
 /**
+ * Structural shape of the Hono context slice `resBindings` reads. Avoids
+ * parameterising on the project's `Env` (which lives under `http/`) so the
+ * infra layer keeps no upwards dependency.
+ */
+type ResBindingsContext = Context<{
+  Variables: { requestId: string }
+}>
+
+/**
  * Privacy-aware request header sanitisation for Pino HTTP logging.
  *
  * L5: authorization tokens must NEVER reach logs — they are redacted entirely.
@@ -33,7 +42,7 @@ export function sanitizeReqHeaders(headers: Record<string, string | undefined>):
   return out
 }
 
-export function resBindings(c: Context) {
+export function resBindings(c: ResBindingsContext) {
   const headers: Record<string, string> = {}
   c.res.headers.forEach((value, key) => {
     headers[key] = key.toLowerCase() === 'set-cookie' && value ? `{E}${value}{/E}` : value
