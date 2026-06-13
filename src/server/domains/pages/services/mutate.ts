@@ -125,30 +125,34 @@ export async function updatePageMeta(db: NodePgDatabase, input: UpsertPageMetaIn
 }
 
 export async function deletePage(db: NodePgDatabase, id: bigint): Promise<{ deleted: boolean }> {
-  const deleted = await softDeletePageMeta(db, id)
-  if (deleted) {
-    await deleteSlugRegistryByEntity(db, { entityType: 'page', entityId: id })
-    await clearPagesCache()
-  }
-  return { deleted }
+  return db.transaction(async (tx) => {
+    const deleted = await softDeletePageMeta(tx, id)
+    if (deleted) {
+      await deleteSlugRegistryByEntity(tx, { entityType: 'page', entityId: id })
+      await clearPagesCache()
+    }
+    return { deleted }
+  })
 }
 
 export async function restorePage(db: NodePgDatabase, id: bigint): Promise<{ restored: boolean }> {
-  const restored = await restorePageMeta(db, id)
-  if (restored) {
-    const meta = await findPageMetaById(db, id)
-    if (meta !== null) {
-      try {
-        await insertSlugRegistry(db, { slug: meta.slug, entityType: 'page', entityId: id })
-      } catch (err) {
-        if (!isUniqueConstraintError(err, 'uq_slug_registry_slug')) {
-          throw err
+  return db.transaction(async (tx) => {
+    const restored = await restorePageMeta(tx, id)
+    if (restored) {
+      const meta = await findPageMetaById(tx, id)
+      if (meta !== null) {
+        try {
+          await insertSlugRegistry(tx, { slug: meta.slug, entityType: 'page', entityId: id })
+        } catch (err) {
+          if (!isUniqueConstraintError(err, 'uq_slug_registry_slug')) {
+            throw err
+          }
         }
       }
+      await clearPagesCache()
     }
-    await clearPagesCache()
-  }
-  return { restored }
+    return { restored }
+  })
 }
 
 export async function unpublishPage(db: NodePgDatabase, id: bigint): Promise<AdminPageDto> {
