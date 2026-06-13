@@ -9,16 +9,18 @@ import { bulkApprovePendingByUser, bulkSoftDeleteCommentsByUser } from '@/server
 import {
   type AdminUserRow,
   type AdminUsersListFilters,
-  countAdmins,
   countAdminUsers,
   findAdminUserById,
+  listAdminUsers,
+} from '@/server/domains/users/repos/admin-query'
+import {
+  countAdmins,
   findEmailById,
   findFirstAdminUser,
   findUserByEmail,
   findUserById,
   hasAdmin,
   insertAuthor,
-  listAdminUsers,
   restoreUserById,
   setUserMuted,
   softDeleteUserById,

@@ -1,7 +1,7 @@
 import { call } from '@orpc/server'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type { AdminUserRow } from '@/server/infra/db/operations/user'
+import type { AdminUserRow } from '@/server/domains/users/repos/admin-query'
 
 import { makeAuthedCtx } from '#/_helpers/mock-ctx'
 import { DomainError } from '@/server/infra/http/errors'
