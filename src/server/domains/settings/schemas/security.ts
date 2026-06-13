@@ -4,7 +4,7 @@ import { coerceBoolean } from '@/server/domains/settings/schemas/shared'
 
 function isDangerousExemptPath(path: string): boolean {
   const normalized = path.trim()
-  return normalized === '/rpc' || normalized === '/rpc/'
+  return normalized === '/' || normalized === '/rpc' || normalized === '/rpc/' || normalized.startsWith('/rpc/')
 }
 
 export const securitySchema = z.object({

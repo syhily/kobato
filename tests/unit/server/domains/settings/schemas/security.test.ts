@@ -5,7 +5,7 @@ import { securitySchema } from '@/server/domains/settings/schemas/security'
 describe('securitySchema', () => {
   it('accepts a valid payload', () => {
     const result = securitySchema.safeParse({
-      csrf: { enabled: true, exemptPaths: ['/rpc/webhook'] },
+      csrf: { enabled: true, exemptPaths: ['/api/webhook'] },
       cors: { enabled: false, origins: [] },
     })
     expect(result.success).toBe(true)
@@ -58,6 +58,34 @@ describe('securitySchema', () => {
       csrf: { enabled: true, exemptPaths: ['/rpc'] },
     })
     expect(result.success).toBe(false)
+  })
+
+  it('rejects /rpc/ subpaths as exempt paths', () => {
+    const result = securitySchema.safeParse({
+      csrf: { enabled: true, exemptPaths: ['/rpc/admin'] },
+    })
+    expect(result.success).toBe(false)
+  })
+
+  it('rejects nested /rpc/ subpaths as exempt paths', () => {
+    const result = securitySchema.safeParse({
+      csrf: { enabled: true, exemptPaths: ['/rpc/admin/nested'] },
+    })
+    expect(result.success).toBe(false)
+  })
+
+  it('rejects / as an exempt path', () => {
+    const result = securitySchema.safeParse({
+      csrf: { enabled: true, exemptPaths: ['/'] },
+    })
+    expect(result.success).toBe(false)
+  })
+
+  it('accepts non-rpc api paths as exempt paths', () => {
+    const result = securitySchema.safeParse({
+      csrf: { enabled: true, exemptPaths: ['/api/public'] },
+    })
+    expect(result.success).toBe(true)
   })
 
   it('accepts string "true" for enabled (coerceBoolean)', () => {
