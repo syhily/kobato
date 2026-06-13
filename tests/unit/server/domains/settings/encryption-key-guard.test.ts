@@ -17,10 +17,10 @@ vi.mock('@/server/infra/env', () => ({
   },
   DATA_PATH: '/tmp/kobato-data',
   get DATABASE_URL() {
-    return 'postgresql://localhost:5432/test'
+    return 'postgresql://localhost:5434/test'
   },
   get REDIS_URL() {
-    return 'redis://localhost:6379'
+    return 'redis://localhost:6381'
   },
   get SESSION_SECRET() {
     return 'test-session-secret-must-be-32-chars-long!'

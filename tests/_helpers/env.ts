@@ -4,12 +4,12 @@
 
 // Postgres base URL — the actual test database URL is created per-worker
 // in `tests/setup.ts` via `createWorkerDatabase()`.
-const POSTGRES_BASE_URL = 'postgres://test:test@localhost:5432/test'
+const POSTGRES_BASE_URL = 'postgres://test:test@localhost:5434/test'
 
 // Redis URL. All workers share DB 0; isolation is achieved via
 // per-worker key prefixes rather than separate DB numbers (which
 // overflow once there are more than 16 parallel workers).
-const REDIS_URL = 'redis://localhost:6379'
+const REDIS_URL = 'redis://localhost:6381'
 
 const workerId = Number(process.env.VITEST_WORKER_ID || '0')
 const REDIS_KEY_PREFIX = `test:w${workerId}:`

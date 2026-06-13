@@ -36,7 +36,7 @@ Only `tests/it/` is hard-dependent on real Postgres and Redis. `tests/unit/` and
 Start the test infrastructure:
 
 ```bash
-docker compose -f docker-compose.test.yml up -d
+docker compose -f docker/docker-compose.test.yml up -d
 ```
 
 Then run tests normally:
