@@ -1,6 +1,5 @@
 import { z } from 'zod'
 
-import { findUserIdByEmail } from '@/server/domains/users/services/account'
 import { publicProc } from '@/server/http/orpc-base'
 import { AvatarStatus, cacheAvatar } from '@/server/http/resources/avatar-cache'
 import { tryResourceRateLimit } from '@/server/infra/rate-limit'
@@ -18,15 +17,13 @@ const findAvatar = publicProc
     if (rateLimit.exceeded) {
       throw new Error('请求过于频繁，请稍后再试。')
     }
-    const id = await findUserIdByEmail(context.db, input.email)
-    const hash = id === null ? await encodedEmail(input.email) : id
+    const hash = await encodedEmail(input.email)
     if (isQQEmail(input.email)) {
-      const canonicalHash = await encodedEmail(input.email)
       const buffer = await fetchQQAvatarImage(input.email)
       if (buffer !== null) {
-        await cacheAvatar({ email: canonicalHash, status: AvatarStatus.HAVE_AVATAR, buffer })
+        await cacheAvatar({ email: hash, status: AvatarStatus.HAVE_AVATAR, buffer })
       } else {
-        await cacheAvatar({ email: canonicalHash, status: AvatarStatus.NO_AVATAR })
+        await cacheAvatar({ email: hash, status: AvatarStatus.NO_AVATAR })
       }
     }
     return {
