@@ -4,7 +4,7 @@ import type { UserSortOrder } from '@/server/domains/users/schema'
 import type { User } from '@/server/infra/db/types'
 
 import { revokeAllSessionsOfUser } from '@/server/domains/auth/session-storage'
-import { issueResetToken, issueSetupToken, revokeTokensFor } from '@/server/domains/auth/verification-tokens'
+import { issueResetToken, issueSetupToken } from '@/server/domains/auth/verification-tokens'
 import { bulkApprovePendingByUser, bulkSoftDeleteCommentsByUser } from '@/server/domains/comments/repos/moderation'
 import {
   type AdminUserRow,
@@ -177,19 +177,35 @@ export async function inviteAuthorWithRollback(
     throw new DomainError('CONFLICT', '该邮箱已被注册。')
   }
 
-  const [user] = await insertAuthor(db, name, email)
-  if (!user) {
-    throw new DomainError('INTERNAL', '创建作者账户失败。')
-  }
+  // Phase 1: atomic DB writes. `insertAuthor` + `issueSetupToken` are
+  // enrolled in a single transaction so a failure in either rolls both
+  // back — no orphaned user rows or setup tokens can survive.
+  const { user, token } = await db.transaction(async (tx) => {
+    const [inserted] = await insertAuthor(tx, name, email)
+    if (!inserted) {
+      throw new DomainError('INTERNAL', '创建作者账户失败。')
+    }
+    const { token } = await issueSetupToken(tx, inserted.id)
+    return { user: inserted, token }
+  })
 
-  const { token } = await issueSetupToken(db, user.id)
+  // Phase 2: external side effect AFTER commit. If the email send fails
+  // the only compensation needed is to soft-delete the user row — the
+  // setup token was never committed, so there is nothing to revoke.
   const link = `${origin}/admin/signin?action=accept-invite&token=${encodeURIComponent(token)}`
-
   const sendResult = await sendAuthorInvite(user, link, inviterName, inviterEmail)
   if (!sendResult.ok) {
-    await revokeTokensFor(db, user.id, 'author-invite')
-    await softDeleteUserById(db, user.id)
-    log.error('author invite email failed', {
+    try {
+      await softDeleteUserById(db, user.id)
+    } catch (cleanupErr) {
+      log.error('author invite cleanup failed — orphaned user row', {
+        userId: String(user.id),
+        email,
+        cleanupErr,
+      })
+      throw new DomainError('INTERNAL', '邮件发送失败，且账户清理失败。该邮箱已被占用，请手动处理。')
+    }
+    log.error('author invite email failed — user soft-deleted', {
       email,
       reason: sendResult.reason,
       message: sendResult.message,
