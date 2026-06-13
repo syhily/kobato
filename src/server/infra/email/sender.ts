@@ -1,10 +1,19 @@
+import type { MailTransport, SendOptions, SendResult } from '@/server/infra/email/types'
+
 import { render } from '@/server/infra/email/render'
 import AuthorInvite from '@/server/infra/email/templates/AuthorInvite'
 import PasswordReset from '@/server/infra/email/templates/PasswordReset'
 import SignInOtp from '@/server/infra/email/templates/SignInOtp'
+import { ZeaburZSendTransport } from '@/server/infra/email/transports/zeabur-zsend'
 import { getLogger } from '@/server/infra/logger'
 import { requireBlogSettingsSection } from '@/shared/config/getters'
 import { escapeHtml } from '@/shared/utils/security'
+
+// Re-export the shared transport types so existing call sites that
+// imported them from `sender.ts` keep working after the move to
+// `@/server/infra/email/types`. Adding new transports does not require
+// touching this file.
+export type { EmailMessage, SendOptions, SendResult } from '@/server/infra/email/types'
 
 const log = getLogger('email')
 
@@ -12,23 +21,13 @@ const log = getLogger('email')
 // a business domain. Kept in sync with OTP_TTL_MS in verification-tokens.ts.
 const OTP_TTL_MINUTES = 5
 
-export interface EmailMessage {
-  to: string
-  subject: string
-  html: string
-}
-
-export type SendResult =
-  | { ok: true }
-  | { ok: false; reason: 'disabled' | 'unconfigured'; message: string }
-  | { ok: false; reason: 'upstream'; status: number; message: string }
-  | { ok: false; reason: 'network'; message: string }
-
 interface MailConfig {
   enabled: boolean
   host: string
   apiKey: string
   sender: string
+  /** Vendor selector — `'zeabur'` is the only wired backend for now. */
+  transport?: 'zeabur' | 'smtp'
 }
 
 // Read the live mail slice straight from the snapshot. Mail senders only
@@ -64,69 +63,34 @@ interface InternalSendOptions {
   bcc?: string[]
 }
 
+// Resolve the live transport from the configured mail slice. The
+// `transport` selector is a new field; only `'zeabur'` is wired today
+// — any other value (including `'smtp'`, which is a spike stub right
+// now) falls back to the Zeabur impl with a warning so a half-migrated
+// deployment still sends instead of failing silently.
+function getTransport(): MailTransport {
+  const mail = readMailConfig()
+  const transport = mail.transport ?? 'zeabur'
+  if (transport !== 'zeabur') {
+    log.warn('Mail transport not yet wired, falling back to Zeabur ZSend', { transport })
+  }
+  return new ZeaburZSendTransport({
+    enabled: mail.enabled,
+    sender: mail.sender,
+    host: mail.host,
+    apiKey: mail.apiKey,
+  })
+}
+
 export async function sendEmail(
   to: string,
   subject: string,
   html: string,
   options: InternalSendOptions = {},
 ): Promise<SendResult> {
-  const mail = readMailConfig()
-  const ready = checkMailReady(mail)
-  if (!ready.ready) {
-    // Skip path used to be an `error`-level log because the only way
-    // to land here was a misconfigured deployment. Now that an editor
-    // can intentionally pause notifications, the disabled branch is
-    // demoted to `debug` and the unconfigured branch stays `warn` so
-    // it's still visible in CI / production logs.
-    if (ready.reason === 'disabled') {
-      log.debug('Mail send skipped: disabled', { to, subject })
-    } else {
-      log.warn('Mail send skipped: unconfigured', { to, subject })
-    }
-    return { ok: false, reason: ready.reason, message: ready.message }
-  }
-
-  const url = `https://${mail.host}/api/v1/zsend/emails`
-  let response: Response
-  try {
-    response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${mail.apiKey}`,
-      },
-      body: JSON.stringify({
-        from: mail.sender,
-        to: [to],
-        ...(options.bcc && options.bcc.length > 0 ? { bcc: options.bcc } : {}),
-        subject,
-        html,
-      }),
-      signal: AbortSignal.timeout(30_000),
-    })
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error)
-    log.error('Mail send failed: network error', { to, subject, error })
-    return { ok: false, reason: 'network', message }
-  }
-
-  if (!response.ok) {
-    const body = await response.text().catch(() => '')
-    log.error('Mail send failed: upstream rejected', {
-      status: response.status,
-      statusText: response.statusText,
-      body,
-      to,
-      subject,
-    })
-    return {
-      ok: false,
-      reason: 'upstream',
-      status: response.status,
-      message: `${response.status} ${response.statusText}`,
-    }
-  }
-  return { ok: true }
+  const transport = getTransport()
+  const sendOptions: SendOptions = options.bcc ? { bcc: options.bcc } : {}
+  return transport.send({ to, subject, html }, sendOptions)
 }
 
 // Re-export render so domain email composers can build HTML from React

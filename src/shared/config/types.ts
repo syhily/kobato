@@ -122,6 +122,8 @@ export interface MailSettings {
     host: string
     apiKey: string
     sender: string
+    /** Vendor selector — `'zeabur'` is wired, `'smtp'` is a spike stub. */
+    transport?: 'zeabur' | 'smtp'
   }
 }
 

@@ -29,7 +29,13 @@ const seoDefaults = {
   og: { width: 1200, height: 630 },
 } as const
 const mailDefaults = {
-  mail: { enabled: false, host: 'api.zeabur.com', apiKey: '', sender: 'noreply@example.com' },
+  mail: {
+    enabled: false,
+    host: 'api.zeabur.com',
+    apiKey: '',
+    sender: 'noreply@example.com',
+    transport: 'zeabur',
+  },
 } as const
 const cacheDefaults = {
   cache: {

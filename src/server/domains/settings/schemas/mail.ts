@@ -20,6 +20,12 @@ export const mailSchema = z.object({
     host: z.string().trim().min(1).max(253),
     apiKey: z.string().trim().max(512).optional(),
     sender: z.union([z.literal(''), z.email()]),
+    // Vendor selector for the mail dispatcher. `'zeabur'` is the only
+    // fully wired backend today; `'smtp'` exists so the schema can
+    // carry the selection before the dispatcher routes to it. The
+    // `.default('zeabur')` backfills any stored snapshot that predates
+    // this field so existing deployments don't break on read.
+    transport: z.enum(['zeabur', 'smtp']).default('zeabur'),
   }),
 })
 export type MailInput = z.infer<typeof mailSchema>
