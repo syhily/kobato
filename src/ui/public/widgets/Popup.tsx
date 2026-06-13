@@ -1,10 +1,11 @@
 import type { ReactNode } from 'react'
 
 import { XIcon } from 'lucide-react'
+import { AnimatePresence, motion } from 'motion/react'
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 
-import { AnimatePresence, motion, transitions } from '@/client/lib/motion'
+import { transitions } from '@/client/lib/motion'
 import { cn } from '@/ui/lib/cn'
 
 export type PopupSize = 'sm' | 'md' | 'lg'

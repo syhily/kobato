@@ -2,8 +2,9 @@ import type { ComponentProps } from 'react'
 
 import { Dialog as BaseDialog } from '@base-ui/react/dialog'
 import { XIcon } from 'lucide-react'
+import { motion } from 'motion/react'
 
-import { motion, transitions } from '@/client/lib/motion'
+import { transitions } from '@/client/lib/motion'
 import { cn } from '@/ui/lib/cn'
 
 function Dialog({ ...props }: ComponentProps<typeof BaseDialog.Root>) {

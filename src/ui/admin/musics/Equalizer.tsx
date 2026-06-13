@@ -1,4 +1,4 @@
-import { motion } from '@/client/lib/motion'
+import { motion } from 'motion/react'
 
 const BAR_HEIGHTS = [3, 14, 3] as const
 const BAR_BASES = [3, 2, 4] as const

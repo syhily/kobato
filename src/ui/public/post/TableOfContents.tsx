@@ -1,10 +1,11 @@
 import { ChevronLeftIcon } from 'lucide-react'
+import { AnimatePresence, motion } from 'motion/react'
 import { useCallback, useEffect, useState } from 'react'
 
 import type { MarkdownHeading } from '@/shared/types/catalog'
 import type { TocOpts } from '@/shared/utils/toc'
 
-import { AnimatePresence, motion, transitions } from '@/client/lib/motion'
+import { transitions } from '@/client/lib/motion'
 import { useSeoSettingsOptional } from '@/shared/lib/blog-config-context'
 import { generateToC } from '@/shared/utils/toc'
 import { cn } from '@/ui/lib/cn'

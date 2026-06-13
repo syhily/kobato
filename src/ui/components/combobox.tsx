@@ -2,8 +2,9 @@ import type { ComponentProps } from 'react'
 
 import { Combobox as BaseCombobox } from '@base-ui/react/combobox'
 import { CheckIcon, ChevronDownIcon, SearchIcon } from 'lucide-react'
+import { motion } from 'motion/react'
 
-import { motion, transitions } from '@/client/lib/motion'
+import { transitions } from '@/client/lib/motion'
 import { cn } from '@/ui/lib/cn'
 
 function Combobox<Value>(props: ComponentProps<typeof BaseCombobox.Root<Value, false>>) {

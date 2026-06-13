@@ -1,8 +1,8 @@
 import { Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, X, ChevronUp, ChevronDown } from 'lucide-react'
+import { AnimatePresence, motion } from 'motion/react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation } from 'react-router'
 
-import { AnimatePresence, motion } from '@/client/lib/motion'
 import { formatTime } from '@/ui/admin/musics/format-time'
 import { useMusicPlayerActions, useMusicPlayerState, useMusicPlayerTime } from '@/ui/admin/musics/MusicPlayerContext'
 import { ProgressSlider } from '@/ui/admin/musics/ProgressSlider'

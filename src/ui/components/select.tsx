@@ -2,8 +2,9 @@ import type { ComponentProps } from 'react'
 
 import { Select as BaseSelect } from '@base-ui/react/select'
 import { CheckIcon, ChevronDownIcon, ChevronUpIcon } from 'lucide-react'
+import { motion } from 'motion/react'
 
-import { motion, transitions } from '@/client/lib/motion'
+import { transitions } from '@/client/lib/motion'
 import { cn } from '@/ui/lib/cn'
 
 function Select<Value>(props: ComponentProps<typeof BaseSelect.Root<Value>>) {

@@ -1,10 +1,11 @@
 import type { ReactNode } from 'react'
 
+import { AnimatePresence, motion } from 'motion/react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 
 import type { AdminMusicDto } from '@/shared/types/music'
 
-import { AnimatePresence, motion, transitions } from '@/client/lib/motion'
+import { transitions } from '@/client/lib/motion'
 import { useMusicPlayerState } from '@/ui/admin/musics/MusicPlayerContext'
 import { cn } from '@/ui/lib/cn'
 

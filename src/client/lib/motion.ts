@@ -1,5 +1,3 @@
-export { motion, AnimatePresence, useAnimation, useMotionValue, useTransform, useSpring } from 'motion/react'
-
 export const transitions = {
   /** General spring — tight feel. */
   spring: { type: 'spring' as const, stiffness: 300, damping: 30 },

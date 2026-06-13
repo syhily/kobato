@@ -1,8 +1,9 @@
 import type { ComponentProps } from 'react'
 
 import { Popover as BasePopover } from '@base-ui/react/popover'
+import { motion } from 'motion/react'
 
-import { motion, transitions } from '@/client/lib/motion'
+import { transitions } from '@/client/lib/motion'
 import { cn } from '@/ui/lib/cn'
 
 function Popover({ ...props }: ComponentProps<typeof BasePopover.Root>) {

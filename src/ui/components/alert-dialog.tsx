@@ -1,8 +1,9 @@
 import type { ComponentProps } from 'react'
 
 import { AlertDialog as BaseAlertDialog } from '@base-ui/react/alert-dialog'
+import { motion } from 'motion/react'
 
-import { motion, transitions } from '@/client/lib/motion'
+import { transitions } from '@/client/lib/motion'
 import { Button, buttonVariants } from '@/ui/components/button'
 import { cn } from '@/ui/lib/cn'
 

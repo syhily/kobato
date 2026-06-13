@@ -1,11 +1,11 @@
 import { useMutation } from '@tanstack/react-query'
 import { HeartIcon } from 'lucide-react'
+import { motion } from 'motion/react'
 import { startTransition, useCallback, useEffect, useOptimistic, useRef, useState } from 'react'
 
 import type { DecreaseLikeOutput, IncreaseLikeOutput, ValidateLikeTokenOutput } from '@/shared/types/likes'
 
 import { orpcQuery } from '@/client/api/orpc-query'
-import { motion } from '@/client/lib/motion'
 import { useSiteIdentity } from '@/shared/lib/blog-config-context'
 import { joinUrl } from '@/shared/utils/urls'
 import { Button } from '@/ui/components/button'

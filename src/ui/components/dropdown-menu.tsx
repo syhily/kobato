@@ -2,8 +2,9 @@ import type { ComponentProps } from 'react'
 
 import { Menu as BaseMenu } from '@base-ui/react/menu'
 import { CheckIcon, ChevronRightIcon, CircleIcon } from 'lucide-react'
+import { motion } from 'motion/react'
 
-import { motion, transitions } from '@/client/lib/motion'
+import { transitions } from '@/client/lib/motion'
 import { cn } from '@/ui/lib/cn'
 
 function DropdownMenu({ ...props }: ComponentProps<typeof BaseMenu.Root>) {
