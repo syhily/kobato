@@ -4,6 +4,7 @@ import type { AdminCategoryDto, UpsertCategoryInputs } from '@/server/domains/ta
 
 import { listPostsByCategory } from '@/server/domains/posts/repos/public-query/taxonomy'
 import { toAdminCategoryDto } from '@/server/domains/taxonomies/categories/projection'
+import { categoriesCache } from '@/server/domains/taxonomies/categories/services/query'
 import {
   deleteAdminTaxonomy,
   ensureUniqueOnCreateTaxonomy,
@@ -43,6 +44,7 @@ export async function upsertAdminCategory(db: NodePgDatabase, input: UpsertCateg
       description: input.description,
       ...(input.sortOrder !== undefined ? { sortOrder: input.sortOrder } : {}),
     })
+    await categoriesCache.clear()
     const counts = await countPostsByCategory(db)
     return toAdminCategoryDto(row, counts.get(row.name) ?? 0)
   }
@@ -72,6 +74,7 @@ export async function upsertAdminCategory(db: NodePgDatabase, input: UpsertCateg
   if (updated === null) {
     throw new DomainError('NOT_FOUND', '分类不存在')
   }
+  await categoriesCache.clear()
   const counts = await countPostsByCategory(db)
   return toAdminCategoryDto(updated, counts.get(updated.name) ?? 0)
 }
@@ -106,13 +109,18 @@ export async function reorderAdminCategories(
     ),
     countPostsByCategory(db),
   ])
+  await categoriesCache.clear()
   return updated.map((row) => toAdminCategoryDto(row, counts.get(row.name) ?? 0))
 }
 
 export async function deleteAdminCategory(db: NodePgDatabase, id: bigint): Promise<boolean> {
-  return deleteAdminTaxonomy(id, '分类', {
+  const result = await deleteAdminTaxonomy(id, '分类', {
     findById: (id) => findCategoryById(db, id),
     deleteRow: (id) => deleteCategoryRow(db, id),
     listPostsBy: (name) => listPostsByCategory(db, name),
   })
+  if (result) {
+    await categoriesCache.clear()
+  }
+  return result
 }

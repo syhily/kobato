@@ -7,6 +7,7 @@ import type { Category } from '@/shared/types/catalog'
 
 import { hydrateImageRefs } from '@/server/domains/images/services/enhance'
 import { toAdminCategoryDto } from '@/server/domains/taxonomies/categories/projection'
+import { createRedisCache } from '@/server/infra/cache/redis-cache'
 import {
   type AdminCategoriesListFilters,
   findCategoriesByNames,
@@ -16,6 +17,7 @@ import {
 } from '@/server/infra/db/operations/category'
 import { post as postMetaTable } from '@/server/infra/db/schema/post'
 import { category as categoryTable } from '@/server/infra/db/schema/taxonomy'
+import { createInflight } from '@/server/infra/redis/inflight'
 
 async function countPostsByCategories(db: NodePgDatabase): Promise<Map<string, number>> {
   const rows = await db
@@ -60,7 +62,30 @@ async function hydrateCategoryImages(db: NodePgDatabase, categories: Category[])
   )
 }
 
+const categoriesCache = createRedisCache<Category[]>('categories:all', { ttlMs: 30_000 })
+const categoriesInflight = createInflight<Category[]>()
+
+export { categoriesCache }
+
 export async function listAllCategories(db: NodePgDatabase): Promise<Category[]> {
+  const cached = await categoriesCache.get()
+  if (cached !== null) {
+    return cached
+  }
+
+  return categoriesInflight('listAllCategories', async () => {
+    const cachedInner = await categoriesCache.get()
+    if (cachedInner !== null) {
+      return cachedInner
+    }
+
+    const categories = await queryAllCategories(db)
+    await categoriesCache.set(categories)
+    return categories
+  })
+}
+
+async function queryAllCategories(db: NodePgDatabase): Promise<Category[]> {
   const now = new Date()
   const rows = await db
     .select({
