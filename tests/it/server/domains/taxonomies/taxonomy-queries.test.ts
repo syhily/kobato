@@ -4,6 +4,7 @@ import type { Pool } from 'pg'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { clearAllTables } from '#/_helpers/integration-db'
+import { flushWorkerRedis } from '#/_helpers/redis'
 import { createDbPool, closePool } from '@/server/infra/db/pool'
 import { category, tag } from '@/server/infra/db/schema/taxonomy'
 
@@ -21,6 +22,7 @@ afterAll(async () => {
 
 beforeEach(async () => {
   await clearAllTables(db)
+  await flushWorkerRedis()
 })
 
 describe('listAllCategories', () => {
