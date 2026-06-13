@@ -15,7 +15,7 @@ import { loadSidebarData } from '@/server/http/loaders/sidebar'
 import { selectSidebarTags } from '@/server/http/loaders/sidebar-select'
 import { metaWithFallback } from '@/server/render/seo/meta'
 import { requireBlogSettingsSection } from '@/shared/config/getters'
-import { getSidebarWidgetCount } from '@/shared/config/utils'
+import { getSidebarWidgetCount, isSidebarWidgetEnabled } from '@/shared/config/utils'
 import { formatLocalDate } from '@/shared/utils/formatter'
 import { HomeLayoutBody } from '@/ui/public/post/PostListViews'
 
@@ -55,6 +55,10 @@ export async function loader({
     includeScheduled: import.meta.env.DEV,
   }
 
+  const sidebarSettings = requireBlogSettingsSection('sidebar')
+  const recentPostsEnabled = isSidebarWidgetEnabled(sidebarSettings, 'recentPosts')
+  const randomTagsEnabled = isSidebarWidgetEnabled(sidebarSettings, 'randomTags')
+
   const [totalPosts, sidebar, featureSeed] = await Promise.all([
     countPublicPosts(db, filters),
     loadSidebarData(db, session),
@@ -63,11 +67,10 @@ export async function loader({
 
   // Kick off independent queries in parallel with the listing pipeline.
   const featurePromise = selectFeaturePosts(db, featureSeed)
-  const sidebarPostsPromise = selectSidebarPosts(
-    db,
-    getSidebarWidgetCount(requireBlogSettingsSection('sidebar'), 'recentPosts'),
-  )
-  const tagsPromise = listAllTags(db)
+  const sidebarPostsPromise = recentPostsEnabled
+    ? selectSidebarPosts(db, getSidebarWidgetCount(sidebarSettings, 'recentPosts'))
+    : Promise.resolve([])
+  const tagsPromise = randomTagsEnabled ? listAllTags(db) : Promise.resolve([])
 
   return listingLoader<HomeExtra>(db, {
     rawNum: params.num,

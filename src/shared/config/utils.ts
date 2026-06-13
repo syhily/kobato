@@ -1,5 +1,5 @@
 import type { SocialNetwork } from '@/shared/config/socials'
-import type { SiteAssetBranding, SidebarSettings } from '@/shared/config/types'
+import type { SidebarSettings, SidebarWidgetType, SiteAssetBranding } from '@/shared/config/types'
 
 import { isRecord } from '@/shared/utils/type-guards'
 
@@ -12,6 +12,10 @@ export function getSidebarWidgetCount(
     return 0
   }
   return widget.count ?? 0
+}
+
+export function isSidebarWidgetEnabled(settings: SidebarSettings, type: SidebarWidgetType): boolean {
+  return settings.sidebar.widgets.some((w) => w.type === type && w.enabled)
 }
 
 export function extractXHandle(socials: Array<{ network: SocialNetwork; link: string }>): string | undefined {
