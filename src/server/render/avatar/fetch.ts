@@ -3,9 +3,11 @@ import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 import { Buffer } from 'node:buffer'
 
 import { findEmailById } from '@/server/domains/users/services/admin'
+import { getLogger } from '@/server/infra/logger'
 import { compressImage } from '@/server/render/image-compress'
 import { requireBlogSettingsSection } from '@/shared/config/getters'
 import { idFromString } from '@/shared/utils/id'
+import { isAllowedMirrorUrl } from '@/shared/utils/safe-url'
 import { encodedEmail } from '@/shared/utils/security'
 import { isNumeric } from '@/shared/utils/tools'
 import { joinUrl } from '@/shared/utils/urls'
@@ -39,6 +41,13 @@ export function defaultAvatarUrl(): string {
 export async function fetchAvatarImage(hash: string): Promise<Buffer | null> {
   const siteIdentity = requireBlogSettingsSection('siteIdentity')
   const comments = requireBlogSettingsSection('comments')
+  // SSRF guard: reject mirror URLs that are not on the gravatar allowlist
+  // before we ever issue a fetch. Do NOT log the offending URL — it may
+  // contain the internal hostname an admin (or attacker) is probing.
+  if (!isAllowedMirrorUrl(comments.comments.avatar.mirror)) {
+    getLogger('avatar').warn('avatar mirror url rejected by ssrf guard')
+    return null
+  }
   const defaultLink = defaultAvatarUrl()
   const initialLink = joinUrl(
     comments.comments.avatar.mirror,

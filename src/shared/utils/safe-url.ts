@@ -113,3 +113,37 @@ export function isValidPasskeyDomain(website: string): boolean {
     return false
   }
 }
+
+// Known Gravatar mirror hosts. The avatar mirror URL is admin-configurable
+// and fetched by the public `/images/avatar/:filename.png` endpoint, so an
+// admin (or compromised admin cookie) could otherwise point it at a cloud
+// metadata endpoint or any internal address and let visitors trigger the
+// fetch — an SSRF primitive.
+const ALLOWED_GRAVATAR_HOSTS = new Set([
+  'gravatar.com',
+  'www.gravatar.com',
+  'cn.gravatar.com',
+  'en.gravatar.com',
+  'secure.gravatar.com',
+  'i.gravatar.com',
+])
+
+/** Return `true` only when `rawUrl` is an HTTPS URL on a known Gravatar
+ *  mirror host that is NOT a loopback / private / link-local address.
+ *  Defence in depth: the allowlist already excludes unknown hosts, but we
+ *  also scan for private IP ranges so a future DNS rebinding of an allowed
+ *  hostname to an internal IP cannot slip through. */
+export function isAllowedMirrorUrl(rawUrl: string): boolean {
+  const parsed = tryParseUrl(rawUrl)
+  if (parsed === null) {
+    return false
+  }
+  if (parsed.protocol !== 'https:') {
+    return false
+  }
+  const host = parsed.hostname.toLowerCase()
+  if (!ALLOWED_GRAVATAR_HOSTS.has(host)) {
+    return false
+  }
+  return !isPrivateIp(host)
+}

@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest'
 
-import { httpUrlOrEmptyStringSchema, optionalHttpUrlSchema, safeHref, safeRedirectPath } from '@/shared/utils/safe-url'
+import {
+  httpUrlOrEmptyStringSchema,
+  isAllowedMirrorUrl,
+  optionalHttpUrlSchema,
+  safeHref,
+  safeRedirectPath,
+} from '@/shared/utils/safe-url'
 
 describe('client: safe-url utilities', () => {
   describe('safeHref', () => {
@@ -79,6 +85,37 @@ describe('client: safe-url utilities', () => {
 
     it('rejects invalid URL', () => {
       expect(() => httpUrlOrEmptyStringSchema.parse('not-a-url')).toThrow()
+    })
+  })
+
+  describe('isAllowedMirrorUrl', () => {
+    it('accepts known gravatar mirrors over https', () => {
+      expect(isAllowedMirrorUrl('https://gravatar.com/avatar/')).toBe(true)
+      expect(isAllowedMirrorUrl('https://cn.gravatar.com/avatar/')).toBe(true)
+    })
+
+    it('rejects non-gravatar hosts', () => {
+      expect(isAllowedMirrorUrl('https://example.com/avatar/')).toBe(false)
+      expect(isAllowedMirrorUrl('https://evil.com/')).toBe(false)
+    })
+
+    it('rejects cloud metadata endpoints', () => {
+      expect(isAllowedMirrorUrl('http://169.254.169.254/latest/meta-data/')).toBe(false)
+    })
+
+    it('rejects loopback / private ranges', () => {
+      expect(isAllowedMirrorUrl('https://127.0.0.1/')).toBe(false)
+      expect(isAllowedMirrorUrl('https://10.0.0.1/')).toBe(false)
+      expect(isAllowedMirrorUrl('https://192.168.1.1/')).toBe(false)
+    })
+
+    it('rejects http (non-tls) urls', () => {
+      expect(isAllowedMirrorUrl('http://gravatar.com/avatar/')).toBe(false)
+    })
+
+    it('rejects malformed urls', () => {
+      expect(isAllowedMirrorUrl('not-a-url')).toBe(false)
+      expect(isAllowedMirrorUrl('')).toBe(false)
     })
   })
 })
