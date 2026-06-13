@@ -7,7 +7,7 @@ import { getLogger } from '@/server/infra/logger'
 import { compressImage } from '@/server/render/image-compress'
 import { requireBlogSettingsSection } from '@/shared/config/getters'
 import { idFromString } from '@/shared/utils/id'
-import { isAllowedMirrorUrl } from '@/shared/utils/safe-url'
+import { isAllowedMirrorUrl, isBlockedFetchHost } from '@/shared/utils/safe-url'
 import { encodedEmail } from '@/shared/utils/security'
 import { isNumeric } from '@/shared/utils/tools'
 import { joinUrl } from '@/shared/utils/urls'
@@ -67,8 +67,15 @@ export async function fetchAvatarImage(hash: string): Promise<Buffer | null> {
       if (location === null) {
         return null
       }
-      const nextLink = new URL(location, currentLink).toString()
+      const nextUrl = new URL(location, currentLink)
+      const nextLink = nextUrl.toString()
       if (nextLink === defaultLink) {
+        return null
+      }
+      // SSRF guard: a malicious / compromised mirror can 302 us toward an
+      // internal address. Re-validate every hop, not just the initial URL.
+      if ((nextUrl.protocol !== 'https:' && nextUrl.protocol !== 'http:') || isBlockedFetchHost(nextUrl.hostname)) {
+        getLogger('avatar').warn('avatar redirect target rejected by ssrf guard')
         return null
       }
       currentLink = nextLink

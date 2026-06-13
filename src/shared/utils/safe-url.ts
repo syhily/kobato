@@ -64,6 +64,19 @@ export function tryParseUrl(raw: string): URL | null {
 
 const IPV4_PRIVATE = /^(10\.|172\.(1[6-9]|2[0-9]|3[01])\.|192\.168\.|127\.|169\.254\.|0\.|22[4-9]\.|2[3-5][0-9]\.)/
 
+/** Hostnames that must never be the target of an admin-influenced server-side
+ *  outbound fetch (SSRF guard). Combines the IP-literal check in `isPrivateIp`
+ *  with the loopback/`0.0.0.0`/`*.localhost` *names* that `isPrivateIp` does not
+ *  cover. Pass `URL.hostname` (already lowercased by `URL`, but we lowercase
+ *  defensively). */
+export function isBlockedFetchHost(hostname: string): boolean {
+  const host = hostname.toLowerCase()
+  if (host === 'localhost' || host === '0.0.0.0' || host === '::1' || host === '[::1]' || host.endsWith('.localhost')) {
+    return true
+  }
+  return isPrivateIp(host)
+}
+
 /** Check whether a hostname is a private/reserved IP address. Only applies to
  *  actual IP addresses — domain names like `fcbarcelona.com` are NOT flagged.
  *  Handles bracketed IPv6 format from URL.hostname (e.g. `[fc00::1]`). */

@@ -113,6 +113,14 @@ describe('render/avatar/fetch — fetchAvatarImage', () => {
     expect(await withAllowedMirror(() => fetchAvatarImage('hash'))).not.toBeNull()
   })
 
+  it('rejects a redirect to an internal address (SSRF)', async () => {
+    const fetchFn = mockFetch([
+      new Response(null, { status: 302, headers: { location: 'http://169.254.169.254/latest/meta-data/' } }),
+    ])
+    expect(await withAllowedMirror(() => fetchAvatarImage('hash'))).toBeNull()
+    expect(fetchFn).toHaveBeenCalledTimes(1)
+  })
+
   it('returns null on a 4xx response', async () => {
     mockFetch([new Response(null, { status: 404 })])
     expect(await withAllowedMirror(() => fetchAvatarImage('hash'))).toBeNull()

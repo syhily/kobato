@@ -4,16 +4,21 @@ import { downloadBinary } from '@/server/domains/music/services/write/shared'
 import { DomainError } from '@/server/infra/http/errors'
 
 describe('downloadBinary', () => {
-  function stubFetch(arrayBuffer?: ArrayBuffer) {
+  function stubFetch(responses: Array<{ status?: number; headers?: Headers; arrayBuffer?: ArrayBuffer }>) {
+    let i = 0
     vi.stubGlobal(
       'fetch',
-      vi.fn(() =>
-        Promise.resolve({
-          ok: true,
-          headers: new Headers(),
-          arrayBuffer: async () => arrayBuffer ?? new ArrayBuffer(4),
-        }),
-      ),
+      vi.fn(() => {
+        const r = responses[i] ?? { arrayBuffer: new ArrayBuffer(4) }
+        i += 1
+        const status = r.status ?? 200
+        return Promise.resolve({
+          ok: status >= 200 && status < 300,
+          status,
+          headers: r.headers ?? new Headers(),
+          arrayBuffer: async () => r.arrayBuffer ?? new ArrayBuffer(4),
+        })
+      }),
     )
   }
 
@@ -70,10 +75,17 @@ describe('downloadBinary', () => {
   })
 
   it('allows a public https CDN URL', async () => {
-    stubFetch(new ArrayBuffer(4))
+    stubFetch([{ arrayBuffer: new ArrayBuffer(4) }])
     const result = await downloadBinary('https://p3.music.126.net/abc/123.jpg', 1000, 'cover')
     expect(result).toBeInstanceOf(Buffer)
     expect(result.length).toBe(4)
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-call
+    expect(vi.mocked(fetch)).toHaveBeenCalledTimes(1)
+  })
+
+  it('rejects a redirect to an internal address (SSRF)', async () => {
+    stubFetch([{ status: 302, headers: new Headers({ location: 'http://169.254.169.254/' }) }])
+    await expect(downloadBinary('https://p3.music.126.net/abc/123.jpg', 1000, 'cover')).rejects.toThrow(DomainError)
     // eslint-disable-next-line @typescript-eslint/no-unsafe-call
     expect(vi.mocked(fetch)).toHaveBeenCalledTimes(1)
   })

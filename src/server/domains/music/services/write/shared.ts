@@ -5,6 +5,7 @@ import { randomBytes } from 'node:crypto'
 import { findMusicByPlayerId } from '@/server/infra/db/operations/music'
 import { DomainError } from '@/server/infra/http/errors'
 import { getLogger } from '@/server/infra/logger'
+import { isBlockedFetchHost } from '@/shared/utils/safe-url'
 
 const log = getLogger('music.service')
 
@@ -26,6 +27,11 @@ export const MAX_AUDIO_BYTES = 25 * 1024 * 1024
 export const MAX_COVER_BYTES = 5 * 1024 * 1024
 export const COVER_SIZE = 300
 export const COVER_JPEG_QUALITY = 85
+
+// netease and friends often blacklist the default Node user agent for direct
+// CDN downloads; spoof a stock browser UA so we land on the regular CDN path.
+const MUSIC_DOWNLOAD_UA =
+  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36'
 
 export async function generateUniquePlayerId(db: NodePgDatabase): Promise<string> {
   for (let attempt = 0; attempt < PLAYER_ID_RETRY_LIMIT; attempt += 1) {
@@ -50,39 +56,40 @@ function assertDownloadableUrl(url: string, what: 'audio' | 'cover'): void {
     throw new DomainError('BAD_REQUEST', `${what === 'audio' ? '音频' : '封面'}地址协议不被支持`)
   }
   const host = parsed.hostname.toLowerCase()
-  const blocked =
-    host === 'localhost' ||
-    host === '0.0.0.0' ||
-    host === '[::1]' ||
-    host === '::1' ||
-    host.endsWith('.localhost') ||
-    host.startsWith('127.') ||
-    host.startsWith('10.') ||
-    host.startsWith('192.168.') ||
-    host.startsWith('169.254.') ||
-    /^172\.(1[6-9]|2\d|3[0-1])\./.test(host)
-  if (blocked) {
+  if (isBlockedFetchHost(host)) {
     throw new DomainError('BAD_REQUEST', `${what === 'audio' ? '音频' : '封面'}地址指向了内网或本机`)
   }
 }
 
 export async function downloadBinary(url: string, maxBytes: number, what: 'audio' | 'cover'): Promise<Buffer> {
   assertDownloadableUrl(url, what)
+  const MAX_REDIRECTS = 5
+  let currentUrl = url
   let response: Response
-  try {
-    response = await fetch(url, {
-      signal: AbortSignal.timeout(30_000),
-      headers: {
-        // netease and friends often blacklist the default Node user
-        // agent for direct CDN downloads; spoof a stock browser UA so
-        // we land on the regular CDN path.
-        'User-Agent':
-          'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36',
-      },
-    })
-  } catch (error) {
-    log.error('Music asset fetch failed', { url, what, error })
-    throw new DomainError('INTERNAL', `${what === 'audio' ? '下载音频' : '下载封面'}失败，请稍后再试`)
+  for (let hop = 0; ; hop++) {
+    try {
+      response = await fetch(currentUrl, {
+        redirect: 'manual',
+        signal: AbortSignal.timeout(30_000),
+        headers: { 'User-Agent': MUSIC_DOWNLOAD_UA },
+      })
+    } catch (error) {
+      log.error('Music asset fetch failed', { url: currentUrl, what, error })
+      throw new DomainError('INTERNAL', `${what === 'audio' ? '下载音频' : '下载封面'}失败，请稍后再试`)
+    }
+    if (response.status < 300 || response.status >= 400) {
+      break
+    }
+    if (hop >= MAX_REDIRECTS) {
+      throw new DomainError('BAD_REQUEST', `${what === 'audio' ? '音频' : '封面'}地址重定向次数过多`)
+    }
+    const location = response.headers.get('location')
+    if (location === null) {
+      throw new DomainError('INTERNAL', `${what === 'audio' ? '下载音频' : '下载封面'}失败，请稍后再试`)
+    }
+    currentUrl = new URL(location, currentUrl).toString()
+    // Re-validate every hop: a remote CDN can 302 toward an internal address.
+    assertDownloadableUrl(currentUrl, what)
   }
   if (!response.ok) {
     log.error('Music asset fetch returned non-2xx', { url, what, status: response.status })

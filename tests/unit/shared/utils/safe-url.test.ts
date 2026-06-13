@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest'
 import {
   httpUrlOrEmptyStringSchema,
   isAllowedMirrorUrl,
+  isBlockedFetchHost,
   optionalHttpUrlSchema,
   safeHref,
   safeRedirectPath,
@@ -85,6 +86,38 @@ describe('client: safe-url utilities', () => {
 
     it('rejects invalid URL', () => {
       expect(() => httpUrlOrEmptyStringSchema.parse('not-a-url')).toThrow()
+    })
+  })
+
+  describe('isBlockedFetchHost', () => {
+    it('blocks localhost names and loopback IPs', () => {
+      expect(isBlockedFetchHost('localhost')).toBe(true)
+      expect(isBlockedFetchHost('foo.localhost')).toBe(true)
+      expect(isBlockedFetchHost('0.0.0.0')).toBe(true)
+      expect(isBlockedFetchHost('::1')).toBe(true)
+      expect(isBlockedFetchHost('[::1]')).toBe(true)
+      expect(isBlockedFetchHost('127.0.0.1')).toBe(true)
+    })
+
+    it('blocks private IPv4 ranges', () => {
+      expect(isBlockedFetchHost('10.0.0.1')).toBe(true)
+      expect(isBlockedFetchHost('192.168.1.1')).toBe(true)
+      expect(isBlockedFetchHost('169.254.169.254')).toBe(true)
+      expect(isBlockedFetchHost('172.16.0.1')).toBe(true)
+    })
+
+    it('blocks IPv6 ULA / link-local ranges', () => {
+      expect(isBlockedFetchHost('fc00::1')).toBe(true)
+      expect(isBlockedFetchHost('fd12::1')).toBe(true)
+      expect(isBlockedFetchHost('fe80::1')).toBe(true)
+      expect(isBlockedFetchHost('[fc00::1]')).toBe(true)
+    })
+
+    it('allows public hosts and IPs', () => {
+      expect(isBlockedFetchHost('gravatar.com')).toBe(false)
+      expect(isBlockedFetchHost('p3.music.126.net')).toBe(false)
+      expect(isBlockedFetchHost('example.com')).toBe(false)
+      expect(isBlockedFetchHost('8.8.8.8')).toBe(false)
     })
   })
 
