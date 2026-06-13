@@ -13,6 +13,7 @@ import { buildLoadContext, configureMiddleware } from '@/server/http/middleware-
 import { hasAdmin } from '@/server/infra/db/operations/user'
 import { PORT } from '@/server/infra/env'
 import { createHonoServer } from '@/server/infra/hono/node'
+import { getProcessPool } from '@/server/infra/image/process-pool'
 import { setHttpServer, setRestartApp, setServerPhase } from '@/server/infra/lifecycle'
 import { root } from '@/server/infra/logger'
 import { isRecord } from '@/shared/utils/type-guards'
@@ -82,6 +83,23 @@ try {
     { err: err instanceof Error ? err.message : String(err) },
     'Failed to generate setup token on startup; will retry on first visit to /admin/setup',
   )
+}
+
+// ─── Eagerly warm the sharp worker pool (prod only) ──────
+//
+// In production we start the worker_threads pool up-front so the first
+// upload doesn't pay the ~50ms-per-worker spawn tax. The pool is lazy
+// by default (see `getProcessPool`), so this is an optimisation, not a
+// hard requirement. Dev skips it — the dev path runs sharp inline.
+if (import.meta.env.PROD) {
+  try {
+    await getProcessPool()
+  } catch (err) {
+    root.warn(
+      { err: err instanceof Error ? err.message : String(err) },
+      'Failed to warm sharp process pool on startup; will lazy-init on first upload',
+    )
+  }
 }
 
 // ─── Start HTTP server ───────────────────────────────────

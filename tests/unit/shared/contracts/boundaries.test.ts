@@ -479,9 +479,19 @@ describe('contract: module and bundle boundaries', () => {
         specifier: './src/server/infra/route-warmup',
       },
       {
+        key: 'vite.config.ts -> ./src/server/infra/image/worker-entry-plugin',
+        file: 'vite.config.ts',
+        specifier: './src/server/infra/image/worker-entry-plugin',
+      },
+      {
         key: 'dev.ts -> ./dev-server-ref',
         file: 'src/server/infra/hono/dev.ts',
         specifier: './dev-server-ref',
+      },
+      {
+        key: 'process-worker.ts -> ../../../shared/utils/thumbhash.ts',
+        file: 'src/server/infra/image/process-worker.ts',
+        specifier: '../../../shared/utils/thumbhash.ts',
       },
     ] as const
     const explicitAllowedHits = new Set<string>()

@@ -7,6 +7,7 @@ import { defineConfig } from 'vite'
 import { z } from 'zod'
 
 import { reactRouterHonoServer } from './src/server/infra/hono/dev.ts'
+import { processWorkerEntryPlugin } from './src/server/infra/image/worker-entry-plugin'
 import { routeWarmupPlugin } from './src/server/infra/route-warmup'
 
 const pkgSchema = z.object({
@@ -33,6 +34,7 @@ export default defineConfig(({ command }) => ({
     reactRouterHonoServer(),
     ...(reactRouter() as Plugin[]),
     tailwindcss(),
+    processWorkerEntryPlugin(),
     routeWarmupPlugin(),
   ] as PluginOption[],
   resolve: {

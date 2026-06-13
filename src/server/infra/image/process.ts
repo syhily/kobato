@@ -1,108 +1,51 @@
-import sharp from 'sharp'
+import type { ProcessImageInput, ProcessImageResize, ProcessedImage } from '@/server/infra/image/process-worker'
 
-import { DomainError } from '@/server/infra/http/errors'
-import { rgbaToThumbHash } from '@/shared/utils/thumbhash'
+import { DOMAIN_ERROR_CODES, DomainError, type DomainErrorCode } from '@/server/infra/http/errors'
+import { getProcessPool } from '@/server/infra/image/process-pool'
+import { processImageInWorker, WorkerDomainError } from '@/server/infra/image/process-worker'
 
-const THUMBHASH_MAX_DIMENSION = 100
+// Re-export the public types so existing callers that import from this
+// module continue to compile without touching their import sites.
+export type { ProcessImageInput, ProcessImageResize, ProcessedImage }
 
-export interface ProcessImageResize {
-  width: number
-  height: number
-  fit?: 'cover' | 'contain' | 'inside' | 'outside' | 'fill'
-}
-
-export interface ProcessImageInput {
-  buffer: Buffer
-  jpegQuality: number
-  resize?: ProcessImageResize
-}
-
-export interface ProcessedImage {
-  buffer: Buffer
-  width: number
-  height: number
-  byteSize: number
-  thumbhash: string
-}
-
-const MAX_INPUT_PIXELS = 16384 * 16384
-
+/**
+ * Process an uploaded image buffer: decode, optional resize, re-encode to
+ * progressive mozjpeg JPEG, and compute a ThumbHash placeholder.
+ *
+ * In production the work runs inside a `worker_threads` pool (see
+ * `process-pool.ts`) so the decode + resize + re-encode + thumbhash
+ * pipeline — typically 200–800ms — never blocks the request thread.
+ *
+ * In development the same pure function runs inline to keep HMR fast and
+ * avoid worker spawn churn on every reload. `WorkerDomainError` thrown
+ * by the inline path is re-thrown as a real `DomainError` so callers see
+ * the exact same exception type in both modes.
+ */
 export async function processImageBuffer(input: ProcessImageInput): Promise<ProcessedImage> {
-  let pipeline: sharp.Sharp
-  try {
-    pipeline = sharp(input.buffer, {
-      failOn: 'error',
-      limitInputPixels: MAX_INPUT_PIXELS,
-      sequentialRead: true,
-    }).rotate()
-  } catch (error) {
-    throw new DomainError('BAD_REQUEST', '无法解析图片数据', [
-      { message: error instanceof Error ? error.message : String(error) },
-    ])
-  }
-
-  let normalisedBuffer: Buffer
-  try {
-    let staged = pipeline.clone()
-    if (input.resize !== undefined) {
-      staged = staged.resize({
-        width: input.resize.width,
-        height: input.resize.height,
-        fit: input.resize.fit ?? 'cover',
-        withoutEnlargement: false,
-      })
+  if (import.meta.env.DEV) {
+    try {
+      return await processImageInWorker(input)
+    } catch (err) {
+      throw rehydrateDomainError(err)
     }
-    normalisedBuffer = await staged.jpeg({ quality: input.jpegQuality, mozjpeg: true, progressive: true }).toBuffer()
-  } catch (error) {
-    throw new DomainError('BAD_REQUEST', '图片重新编码失败', [
-      { message: error instanceof Error ? error.message : String(error) },
-    ])
   }
-
-  const normalisedMeta = await sharp(normalisedBuffer, { failOn: 'error' }).metadata()
-  const width = normalisedMeta.width
-  const height = normalisedMeta.height
-  if (!Number.isFinite(width) || width <= 0 || !Number.isFinite(height) || height <= 0) {
-    throw new DomainError('BAD_REQUEST', '图片尺寸无效')
-  }
-
-  const thumbhash = await computeThumbhash(normalisedBuffer, width, height)
-
-  return {
-    buffer: normalisedBuffer,
-    width,
-    height,
-    byteSize: normalisedBuffer.byteLength,
-    thumbhash,
-  }
+  const pool = await getProcessPool()
+  return pool.process(input)
 }
 
-async function computeThumbhash(imageBuffer: Buffer, sourceWidth: number, sourceHeight: number): Promise<string> {
-  const { width, height } = fitInside(sourceWidth, sourceHeight, THUMBHASH_MAX_DIMENSION, THUMBHASH_MAX_DIMENSION)
-
-  const { data, info } = await sharp(imageBuffer, { failOn: 'error' })
-    .resize({
-      width,
-      height,
-      fit: 'inside',
-      withoutEnlargement: true,
-    })
-    .ensureAlpha()
-    .raw()
-    .toBuffer({ resolveWithObject: true })
-
-  const hash = rgbaToThumbHash(info.width, info.height, data)
-  return Buffer.from(hash).toString('base64')
+/**
+ * Convert a `WorkerDomainError` (used inside the worker isolate to avoid
+ * importing the real `DomainError` class, which pulls in `pg`) back into a
+ * proper `DomainError` on the main thread. Non-domain errors pass through
+ * unchanged.
+ */
+function rehydrateDomainError(err: unknown): unknown {
+  if (err instanceof WorkerDomainError && isDomainErrorCode(err.code)) {
+    return new DomainError(err.code, err.message, err.issues)
+  }
+  return err
 }
 
-function fitInside(
-  width: number,
-  height: number,
-  maxWidth: number,
-  maxHeight: number,
-): { width: number; height: number } {
-  const scale = Math.min(1, maxWidth / width, maxHeight / height)
-  const targetWidth = Math.max(1, Math.round(width * scale))
-  const targetHeight = Math.max(1, Math.round(height * scale))
-  return { width: targetWidth, height: targetHeight }
+function isDomainErrorCode(code: string): code is DomainErrorCode {
+  return (DOMAIN_ERROR_CODES as readonly string[]).includes(code)
 }
