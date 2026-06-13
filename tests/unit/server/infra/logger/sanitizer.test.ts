@@ -78,6 +78,7 @@ describe('resBindings', () => {
     }
     return {
       res: { status, headers: headersObj },
+      var: { requestId: 'req-test-id' },
     } as any
   }
 
@@ -105,5 +106,11 @@ describe('resBindings', () => {
     const result = resBindings(c)
     expect(result.res.headers).toEqual({})
     expect(result.res.status).toBe(200)
+  })
+
+  it('binds the request id at the top level for log correlation', () => {
+    const c = mockContext({})
+    const result = resBindings(c)
+    expect(result.requestId).toBe('req-test-id')
   })
 })

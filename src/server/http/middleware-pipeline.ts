@@ -129,6 +129,7 @@ export function configureMiddleware(app: Hono<Env>): void {
       pino: root,
       http: {
         onReqBindings: (c) => ({
+          requestId: c.var.requestId,
           req: {
             url: c.req.path,
             method: c.req.method,

@@ -38,5 +38,5 @@ export function resBindings(c: Context) {
   c.res.headers.forEach((value, key) => {
     headers[key] = key.toLowerCase() === 'set-cookie' && value ? `{E}${value}{/E}` : value
   })
-  return { res: { status: c.res.status, headers } }
+  return { requestId: c.var.requestId, res: { status: c.res.status, headers } }
 }
