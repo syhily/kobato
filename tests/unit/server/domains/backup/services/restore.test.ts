@@ -110,4 +110,27 @@ describe('services/backup — restoreFromSql', () => {
     expect(findExecuteCalls('timescaledb_pre_restore()')).toHaveLength(1)
     expect(findExecuteCalls('timescaledb_post_restore()')).toHaveLength(1)
   })
+
+  it('upgrades timescaledb with a literal version when dump is newer', async () => {
+    const dumpSql = [
+      'CREATE TABLE users (id INT);',
+      'COPY _timescaledb_catalog.metadata (key, value) FROM stdin;',
+      'timescaledb_version\t2.15.0',
+      '\\.',
+    ].join('\n')
+    mockDb.execute.mockImplementation(async (query: unknown) => {
+      const text = typeof query === 'string' ? query : extractSqlText(query)
+      if (text.includes('extversion')) {
+        return { rows: [{ extversion: '2.14.0' }] }
+      }
+      return { rows: [] }
+    })
+    mockSpawn.mockReturnValue(createMockChildProcess(0))
+
+    await expect(restoreFromSql(mockDb as any, dumpSql)).resolves.toBeUndefined()
+
+    expect(findExecuteCalls("ALTER EXTENSION timescaledb UPDATE TO '2.15.0'")).toHaveLength(1)
+    expect(findExecuteCalls('ALTER EXTENSION timescaledb UPDATE TO $1')).toHaveLength(0)
+    expect(findExecuteCalls('timescaledb_post_restore()')).toHaveLength(1)
+  })
 })

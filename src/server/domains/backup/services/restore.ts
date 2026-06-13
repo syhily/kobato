@@ -152,7 +152,11 @@ END $$;`
               if (!validateSemverForSql(dumpedVersion)) {
                 throw new ActionFailure(400, 'TimescaleDB 版本号格式非法，无法执行扩展升级。')
               }
-              await db.execute(drizzleSql`ALTER EXTENSION timescaledb UPDATE TO ${dumpedVersion}`)
+              // dumpedVersion is validated to /^\d+\.\d+\.\d+$/ above, so it is
+              // safe to inline as a literal. ALTER EXTENSION ... UPDATE TO does
+              // NOT accept a bind parameter, so drizzleSql`... ${v}` (which emits
+              // `$1`) fails at runtime — use sql.raw with the validated literal.
+              await db.execute(drizzleSql.raw(`ALTER EXTENSION timescaledb UPDATE TO '${dumpedVersion}'`))
             } catch (err) {
               log.warn('Failed to upgrade timescaledb extension before post_restore', {
                 err: err instanceof Error ? err.message : String(err),
