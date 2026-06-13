@@ -119,6 +119,9 @@ async function persistComment(
   // Transactional with advisory lock: two concurrent comment creations
   // from the same user cannot both read count=0 and bypass moderation.
   // The lock key is a 64-bit hash of the string 'comment_approval:<userId>'.
+  // Scope is per-user (not per-post) so the gate also covers cross-post
+  // first-comments. `pg_advisory_xact_lock` is released automatically when
+  // the transaction commits or rolls back — no explicit unlock needed.
   const lockKey = `comment_approval:${sub.user.id}`
   return db.transaction(async (tx) => {
     await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext(${lockKey}))`)
