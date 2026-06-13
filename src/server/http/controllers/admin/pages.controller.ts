@@ -69,7 +69,7 @@ const remove = adminProc
 const restore = adminProc
   .route({ method: 'POST', path: '/admin/pages/restore' })
   .input(idInput)
-  .output(z.object({ success: z.boolean() }))
+  .output(z.object({ success: z.boolean(), warning: z.string().optional() }))
   .handler(async ({ input, context }) => {
     const result = await restorePage(context.db, idFromString(input.id))
     if (!result.restored) {
@@ -80,7 +80,7 @@ const restore = adminProc
       resourceType: 'page',
       resourceId: input.id,
     })
-    return { success: true }
+    return { success: true, warning: result.warning }
   })
 
 const unpublish = adminProc

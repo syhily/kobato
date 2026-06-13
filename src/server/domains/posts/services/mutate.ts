@@ -232,17 +232,25 @@ export async function restorePost(
 
   // Gather everything needed for search indexing inside the transaction
   // so that if the DB restore fails we never touch the external index.
-  const { restored, indexable } = await db.transaction(async (tx) => {
+  const { restored, indexable, slugWarning } = await db.transaction(async (tx) => {
     const ok = await restorePostMeta(tx, id)
     let data: IndexablePostData | null = null
+    let slugConflict: string | undefined
     if (ok) {
       const restoredMeta = await findPostMetaById(tx, id)
       if (restoredMeta !== null) {
-        try {
-          await insertSlugRegistry(tx, { slug: restoredMeta.slug, entityType: 'post', entityId: id })
-        } catch (err) {
-          if (!isUniqueConstraintError(err, 'uq_slug_registry_slug')) {
-            throw err
+        const existing = await findSlugRegistryBySlugForUpdate(tx, restoredMeta.slug)
+        if (existing !== null && !(existing.entityType === 'post' && existing.entityId === id)) {
+          const otherEntity = existing.entityType === 'page' ? '页面' : '文章'
+          slugConflict = `slug "${restoredMeta.slug}" 已被另一个${otherEntity}占用，恢复后该 URL 不会指向此文章。请修改 slug 或先处理占用方。`
+        } else {
+          try {
+            await insertSlugRegistry(tx, { slug: restoredMeta.slug, entityType: 'post', entityId: id })
+          } catch (err) {
+            if (!isUniqueConstraintError(err, 'uq_slug_registry_slug')) {
+              throw err
+            }
+            slugConflict = `slug "${restoredMeta.slug}" 在恢复过程中被其它内容占用，URL 不会指向此文章。`
           }
         }
         if (restoredMeta.published && restoredMeta.publishedRevisionId !== null) {
@@ -258,7 +266,7 @@ export async function restorePost(
         }
       }
     }
-    return { restored: ok, indexable: data }
+    return { restored: ok, indexable: data, slugWarning: slugConflict }
   })
 
   if (restored) {
@@ -273,10 +281,14 @@ export async function restorePost(
           await indexPost(db, indexable.id, indexable.title, indexable.summary, bodyResult.data)
         } catch (err: unknown) {
           log.warn('index post failed', { postId: indexable.id, error: err })
-          warning = '搜索索引更新失败，该文章可能不会出现在搜索结果中。'
+          const indexWarning = '搜索索引更新失败，该文章可能不会出现在搜索结果中。'
+          warning = warning !== undefined ? `${warning} ${indexWarning}` : indexWarning
         }
       }
     }
+  }
+  if (slugWarning !== undefined) {
+    warning = warning !== undefined ? `${slugWarning} ${warning}` : slugWarning
   }
   return { restored, warning }
 }

@@ -146,17 +146,31 @@ export async function deletePage(db: NodePgDatabase, id: bigint): Promise<{ dele
   })
 }
 
-export async function restorePage(db: NodePgDatabase, id: bigint): Promise<{ restored: boolean }> {
+export async function restorePage(db: NodePgDatabase, id: bigint): Promise<{ restored: boolean; warning?: string }> {
   return db.transaction(async (tx) => {
     const restored = await restorePageMeta(tx, id)
     if (restored) {
       const meta = await findPageMetaById(tx, id)
       if (meta !== null) {
+        const existing = await findSlugRegistryBySlugForUpdate(tx, meta.slug)
+        if (existing !== null && !(existing.entityType === 'page' && existing.entityId === id)) {
+          const otherEntity = existing.entityType === 'post' ? '文章' : '页面'
+          await clearPageCaches(id)
+          return {
+            restored: true,
+            warning: `slug "${meta.slug}" 已被另一个${otherEntity}占用，恢复后该 URL 不会指向此页面。请修改 slug 或先处理占用方。`,
+          }
+        }
         try {
           await insertSlugRegistry(tx, { slug: meta.slug, entityType: 'page', entityId: id })
         } catch (err) {
           if (!isUniqueConstraintError(err, 'uq_slug_registry_slug')) {
             throw err
+          }
+          await clearPageCaches(id)
+          return {
+            restored: true,
+            warning: `slug "${meta.slug}" 在恢复过程中被其它内容占用，URL 不会指向此页面。`,
           }
         }
       }
