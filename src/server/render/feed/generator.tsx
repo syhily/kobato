@@ -12,6 +12,7 @@ import {
   listAllCategories,
 } from '@/server/domains/taxonomies/categories/services/query'
 import { findTagByName, findTagBySlug, getTagsByNames } from '@/server/domains/taxonomies/tags/service'
+import { feedCacheFor } from '@/server/infra/cache/feed-cache'
 import { DomainError } from '@/server/infra/http/errors'
 import { renderPortableTextToHtml } from '@/server/render/feed/feed-pt-render'
 import { requireBlogSettingsSection } from '@/shared/config/getters'
@@ -79,6 +80,13 @@ async function renderEntryContent(db: NodePgDatabase, entry: Post | Page): Promi
 }
 
 export async function generateFeeds(db: NodePgDatabase, options: FeedOptions = {}) {
+  const cacheKey = options.category ?? options.tag ?? 'all'
+  const feedCache = feedCacheFor(cacheKey)
+  const cached = await feedCache.get()
+  if (cached !== null) {
+    return cached
+  }
+
   const siteIdentity = requireBlogSettingsSection('siteIdentity')
   const content = requireBlogSettingsSection('content')
   const { includeHidden = true, includeScheduled = false, size = content.feed.size, category, tag } = options
@@ -170,7 +178,7 @@ export async function generateFeeds(db: NodePgDatabase, options: FeedOptions = {
     feed.addCategory(cat.name)
   }
 
-  return {
+  const result = {
     rss: feed.rss2(),
     // Hotfix the adding the xml:lang attribute to the atom feed
     atom: feed
@@ -180,6 +188,9 @@ export async function generateFeeds(db: NodePgDatabase, options: FeedOptions = {
         '<feed xml:lang="zh-CN" xmlns="http://www.w3.org/2005/Atom">',
       ),
   }
+
+  await feedCache.set(result)
+  return result
 }
 
 async function selectFeedPosts(

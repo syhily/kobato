@@ -34,6 +34,7 @@ vi.mock('@/server/domains/taxonomies/tags/service', () => ({
 
 const db = {} as NodePgDatabase
 
+const { clearFeedCache } = await import('@/server/infra/cache/feed-cache')
 const { feedResponse, generateFeeds } = await import('@/server/render/feed/generator')
 
 function fakeCatalog(
@@ -61,10 +62,11 @@ function fakeCatalog(
   }
 }
 
-beforeEach(() => {
+beforeEach(async () => {
   for (const mock of Object.values(mocks)) {
     mock.mockReset()
   }
+  await clearFeedCache()
 })
 
 describe('services/feed — generateFeeds (channel envelope)', () => {

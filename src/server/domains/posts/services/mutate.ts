@@ -13,6 +13,7 @@ import {
   type UpsertPostMetaInput,
   type ViewerContext,
 } from '@/server/domains/posts/services/shared'
+import { clearFeedCache } from '@/server/infra/cache/feed-cache'
 import { findTagNamesByPostId, setPostTags } from '@/server/infra/db/operations/post-tag'
 import {
   deleteSlugRegistryByEntity,
@@ -31,6 +32,13 @@ import { portableTextBodySchema } from '@/shared/pt/schema'
 import { idFromString } from '@/shared/utils/id'
 
 const log = getLogger('posts.service')
+
+async function clearPostCaches(postId?: bigint): Promise<void> {
+  await clearPostMetasCache()
+  await clearFeedCache().catch((err: unknown) => {
+    log.warn('clear feed cache failed', { postId: postId?.toString(), error: err })
+  })
+}
 
 async function ensureTagsExist(db: NodePgDatabase, tagNames: string[]): Promise<void> {
   if (tagNames.length === 0) {
@@ -194,7 +202,7 @@ export async function deletePost(
     return ok
   })
   if (deleted) {
-    await clearPostMetasCache()
+    await clearPostCaches(id)
     await invalidateSearchCache().catch((err: unknown) => {
       log.warn('invalidate search cache failed', { postId: id, error: err })
     })
@@ -250,7 +258,7 @@ export async function restorePost(
   })
 
   if (restored) {
-    await clearPostMetasCache()
+    await clearPostCaches(id)
     await invalidateSearchCache().catch((err: unknown) => {
       log.warn('invalidate search cache failed', { postId: id, error: err })
     })
@@ -279,7 +287,7 @@ export async function unpublishPost(db: NodePgDatabase, id: bigint, viewer?: Vie
   if (updated === null) {
     throw new DomainError('NOT_FOUND', '文章不存在或已被删除。')
   }
-  await clearPostMetasCache()
+  await clearPostCaches(id)
   await invalidateSearchCache().catch((err: unknown) => {
     log.warn('invalidate search cache failed', { postId: id, error: err })
   })
