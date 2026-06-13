@@ -184,19 +184,13 @@ function buildPortableTextComponents(ctx: ComponentContext): PortableTextCompone
       },
       mathInline: ({ value, children }) => {
         if (ctx.isRss) {
-          if (value?.mathml !== undefined && value.mathml !== '') {
-            return value.mathml
-          }
-          if (value?.svg !== undefined && value.svg !== '') {
-            return value.svg
-          }
-        } else {
-          if (value?.svg !== undefined && value.svg !== '') {
-            return value.svg
-          }
-          if (value?.mathml !== undefined && value.mathml !== '') {
-            return value.mathml
-          }
+          return `<code>${value?.tex ? escapeHtml(value.tex) : children}</code>`
+        }
+        if (value?.svg !== undefined && value.svg !== '') {
+          return value.svg
+        }
+        if (value?.mathml !== undefined && value.mathml !== '') {
+          return value.mathml
         }
         return `<code>${value?.tex ? escapeHtml(value.tex) : children}</code>`
       },
@@ -226,7 +220,7 @@ function buildPortableTextComponents(ctx: ComponentContext): PortableTextCompone
         }
         return `<div>${left}${right}</div>`
       },
-      table: ({ value }) => renderTableBlock(value as TableBlock),
+      table: ({ value }) => renderTableBlock(value as TableBlock, ctx.isRss),
     },
     hardBreak: () => '<br />',
     unknownType: () => '',
@@ -263,19 +257,13 @@ function renderCodeBlock(value: CodeBlock, isRss: boolean): string {
 
 function renderMathBlock(value: MathBlock, isRss: boolean): string {
   if (isRss) {
-    if (value.mathml !== undefined && value.mathml !== '') {
-      return `<![CDATA[${value.mathml}]]>`
-    }
-    if (value.svg !== undefined && value.svg !== '') {
-      return `<![CDATA[${value.svg}]]>`
-    }
-  } else {
-    if (value.svg !== undefined && value.svg !== '') {
-      return value.svg
-    }
-    if (value.mathml !== undefined && value.mathml !== '') {
-      return value.mathml
-    }
+    return `<pre><code>${escapeHtml(value.tex)}</code></pre>`
+  }
+  if (value.svg !== undefined && value.svg !== '') {
+    return value.svg
+  }
+  if (value.mathml !== undefined && value.mathml !== '') {
+    return value.mathml
   }
   return `<pre><code>${escapeHtml(value.tex)}</code></pre>`
 }
@@ -293,7 +281,7 @@ function renderMusicPlayer(value: MusicPlayerBlock, ctx: ComponentContext): stri
 
 // Table block
 
-function renderTableBlock(value: TableBlock): string {
+function renderTableBlock(value: TableBlock, isRss: boolean): string {
   const rows = value.rows ?? []
   const hasHeader = value.hasHeaderRow ?? false
   const headRows = hasHeader ? rows.slice(0, 1) : []
@@ -305,7 +293,7 @@ function renderTableBlock(value: TableBlock): string {
     for (const row of headRows) {
       html += '<tr>'
       for (const cell of row.cells) {
-        html += `<th>${renderSpansInline(cell.content, cell.markDefs ?? [])}</th>`
+        html += `<th>${renderSpansInline(cell.content, cell.markDefs ?? [], isRss)}</th>`
       }
       html += '</tr>'
     }
@@ -316,7 +304,7 @@ function renderTableBlock(value: TableBlock): string {
     html += '<tr>'
     for (const cell of row.cells) {
       const tag = cell.isHeader === true ? 'th' : 'td'
-      html += `<${tag}>${renderSpansInline(cell.content, cell.markDefs ?? [])}</${tag}>`
+      html += `<${tag}>${renderSpansInline(cell.content, cell.markDefs ?? [], isRss)}</${tag}>`
     }
     html += '</tr>'
   }
@@ -337,8 +325,9 @@ function renderSpansInline(
     svg?: string
     index?: number
   }[],
+  isRss: boolean,
 ): string {
-  return spans.map((span) => renderSpanInline(span, markDefs)).join('')
+  return spans.map((span) => renderSpanInline(span, markDefs, isRss)).join('')
 }
 
 function renderSpanInline(
@@ -354,6 +343,7 @@ function renderSpanInline(
     svg?: string
     index?: number
   }[],
+  isRss: boolean,
 ): string {
   const marks = span.marks ?? []
   if (marks.length === 0) {
@@ -361,7 +351,7 @@ function renderSpanInline(
   }
   let html = escapeHtml(span.text)
   for (const markName of marks) {
-    html = applyInlineMarkHtml(html, markName, markDefs)
+    html = applyInlineMarkHtml(html, markName, markDefs, isRss)
   }
   return html
 }
@@ -380,6 +370,7 @@ function applyInlineMarkHtml(
     svg?: string
     index?: number
   }[],
+  isRss: boolean,
 ): string {
   switch (markName) {
     case 'strong':
@@ -405,13 +396,17 @@ function applyInlineMarkHtml(
       return `<a href="${escapeHtml(href)}"${rel}${target}>${text}</a>`
     }
     case 'mathInline': {
-      // RSS prefers MathML (better reader support); web prefers SVG
-      // (better browser rendering consistency).
-      if (def.mathml !== undefined && def.mathml !== '') {
-        return def.mathml
+      // Feed readers cannot safely consume raw MathML/SVG (active elements,
+      // event attributes, external references), so RSS mode falls back to
+      // plain TeX inside <code>. The web path prefers SVG for consistency.
+      if (isRss) {
+        return `<code>${def.tex ? escapeHtml(def.tex) : text}</code>`
       }
       if (def.svg !== undefined && def.svg !== '') {
         return def.svg
+      }
+      if (def.mathml !== undefined && def.mathml !== '') {
+        return def.mathml
       }
       return `<code>${def.tex ? escapeHtml(def.tex) : text}</code>`
     }

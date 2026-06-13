@@ -52,14 +52,25 @@ export async function feedResponse(
 }
 
 // Minimal server-side HTML sanitizer for feed output. Strips script tags,
-// event handler attributes, and javascript: URLs since feed HTML is served
-// to external aggregators without additional filtering.
-function sanitizeFeedHtml(html: string): string {
+// event handler attributes, javascript:/data: URLs, and SVG/MathML tags since
+// feed HTML is served to external aggregators without additional filtering.
+// DOMPurify is not used here because server-side rendering requires jsdom,
+// which is not a project dependency.
+export function sanitizeFeedHtml(html: string): string {
   return html
     .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+    .replace(/<svg\b[^>]*>[\s\S]*?<\/svg>/gi, '')
+    .replace(/<math\b[^>]*>[\s\S]*?<\/math>/gi, '')
+    .replace(/<foreignObject\b[^>]*>[\s\S]*?<\/foreignObject>/gi, '')
+    .replace(/<animate\b[^>]*\/?>/gi, '')
+    .replace(/<animateMotion\b[^>]*\/?>/gi, '')
+    .replace(/<animateTransform\b[^>]*\/?>/gi, '')
+    .replace(/<set\b[^>]*\/?>/gi, '')
     .replace(/\s+on\w+\s*=\s*(?:"[^"]*"|'[^']*'|`[^`]*`|[^\s>]*)/gi, '')
-    .replace(/(href|src|action)\s*=\s*"\s*javascript:[^"]*"/gi, '$1="#"')
-    .replace(/(href|src|action)\s*=\s*'\s*javascript:[^']*'/gi, "$1='#'")
+    .replace(/\b(href|src|action)\s*=\s*"\s*javascript:[^"]*"/gi, '$1="#"')
+    .replace(/\b(href|src|action)\s*=\s*'\s*javascript:[^']*'/gi, "$1='#'")
+    .replace(/\b(href|src|action)\s*=\s*"\s*data:[^"]*"/gi, '$1="#"')
+    .replace(/\b(href|src|action)\s*=\s*'\s*data:[^']*'/gi, "$1='#'")
 }
 
 async function renderEntryContent(db: NodePgDatabase, entry: Post | Page): Promise<string> {
