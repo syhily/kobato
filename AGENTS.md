@@ -135,6 +135,31 @@ These patterns are banned:
 `src/assets/scripts` is intentionally absent. All interactivity lives in
 React hooks/components under `src/client/` and `src/ui/`.
 
+## Dependencies
+
+Only packages that are **required at production runtime AND ship a native
+dynamic library** (or otherwise need to be re-installed from the lockfile
+inside the production Docker image — see `Dockerfile:21-23` and commit
+`ed83a5a`) belong in `package.json`'s `dependencies`. The current entries
+are the canonical examples:
+
+- `@napi-rs/canvas`, `sharp`, `sharp-ico` — native binaries fetched per
+  platform.
+
+Every other dependency belongs in `devDependencies`, even if the server or
+client bundle imports it in production. The production Docker image is
+built with `npm ci` (full deps) then the runtime stage runs
+`npm ci --omit=dev` against `package-lock.json`, so anything in
+`devDependencies` is still resolvable from the build and bundled into the
+server / client output. Putting it in `dependencies` instead leads to
+`npm ci --omit=dev` reinstalling it unnecessarily at runtime, bloating the
+image and re-pinning versions outside the tested build.
+
+Examples: `react`, `hono`, `drizzle-orm`, `ioredis`, `nodemailer`,
+`sanitize-html`, `feed`, `pg`, `bcryptjs`, `dompurify`, `fast-xml-parser` —
+all `devDependencies`, despite being production imports. Only the native
+runtime deps go in `dependencies`.
+
 ## Layering
 
 - `server/*` may import `shared/*` and other `server/*`. Not `client/*`
