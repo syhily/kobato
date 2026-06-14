@@ -67,26 +67,16 @@ export function VersionDialog({ open, onOpenChange }: VersionDialogProps) {
         <div className="flex flex-col gap-5">
           {/* Logo */}
           <div className="flex flex-col items-center gap-3">
-            <div className="flex items-center gap-3">
-              <div className="size-16">
-                <img
-                  src="/logo.svg?original"
-                  alt="站点图标"
-                  className="h-full w-full rounded-xl object-cover dark:hidden"
-                />
-                <img
-                  src="/logo-dark.svg?original"
-                  alt="站点图标"
-                  className="hidden h-full w-full rounded-xl object-cover dark:block"
-                />
-              </div>
+            <div className="size-16">
               <img
-                src="/images/fable-5-verified-pill-badge.png"
-                alt="Fable 5 Verified"
-                width={128}
-                height={42}
-                className="h-10 w-auto rounded-xl"
-                loading="lazy"
+                src="/logo.svg?original"
+                alt="站点图标"
+                className="h-full w-full rounded-xl object-cover dark:hidden"
+              />
+              <img
+                src="/logo-dark.svg?original"
+                alt="站点图标"
+                className="hidden h-full w-full rounded-xl object-cover dark:block"
               />
             </div>
             <div className="flex flex-wrap items-center justify-center gap-2">
@@ -102,6 +92,14 @@ export function VersionDialog({ open, onOpenChange }: VersionDialogProps) {
                 v{APP_VERSION}
               </span>
             </div>
+            <img
+              src="/images/fable-5-verified-pill-badge.png"
+              alt="Fable 5 Verified"
+              width={128}
+              height={42}
+              className="h-9 w-auto rounded-xl"
+              loading="lazy"
+            />
             <div className="text-center text-sm text-muted-foreground">{APP_DESCRIPTION}</div>
           </div>
 
