@@ -32,7 +32,7 @@ const svgModules = import.meta.glob('./defaults/**/*.svg', {
   eager: true,
 }) as Record<string, string>
 
-const binaryModules = import.meta.glob(['./defaults/**/*.png', './defaults/**/*.ico', '!./defaults/badges/**'], {
+const binaryModules = import.meta.glob(['./defaults/**/*.png', './defaults/**/*.ico'], {
   query: '?inline',
   import: 'default',
   eager: true,

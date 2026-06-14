@@ -21,13 +21,7 @@ interface BinaryRoute {
   slot: BinarySlot
 }
 
-interface StaticRoute {
-  kind: 'static'
-  contentType: string
-  resolve: () => ResolvedAsset
-}
-
-export type AssetRoute = SvgRoute | BinaryRoute | StaticRoute
+export type AssetRoute = SvgRoute | BinaryRoute
 
 // Single source of truth for the public asset map. The router imports
 // `ASSET_ROUTES` to register every path; `resolveSiteAsset` reads it to
@@ -77,9 +71,6 @@ export async function resolveSiteAsset(path: string, options?: { original?: bool
   }
   if (route.kind === 'svg') {
     return resolveSvg(route.slot, options?.original)
-  }
-  if (route.kind === 'static') {
-    return route.resolve()
   }
   return resolveBinary(route.slot)
 }

@@ -19,7 +19,6 @@ export default defineConfig({
         'src/entry.client.tsx',
         'src/entry.server.tsx',
         'src/root.tsx',
-        'src/ui/**',
       ],
       thresholds: {
         lines: 60,
