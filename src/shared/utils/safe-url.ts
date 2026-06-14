@@ -127,11 +127,11 @@ export function isValidPasskeyDomain(website: string): boolean {
   }
 }
 
-// Known Gravatar mirror hosts. The avatar mirror URL is admin-configurable
-// and fetched by the public `/images/avatar/:filename.png` endpoint, so an
-// admin (or compromised admin cookie) could otherwise point it at a cloud
-// metadata endpoint or any internal address and let visitors trigger the
-// fetch — an SSRF primitive.
+// Known Gravatar-compatible mirror hosts. The avatar mirror URL is
+// admin-configurable and fetched by the public `/images/avatar/:filename.png`
+// endpoint, so an admin (or compromised admin cookie) could otherwise point
+// it at a cloud metadata endpoint or any internal address and let visitors
+// trigger the fetch — an SSRF primitive.
 const ALLOWED_GRAVATAR_HOSTS = new Set([
   'gravatar.com',
   'www.gravatar.com',
@@ -139,6 +139,15 @@ const ALLOWED_GRAVATAR_HOSTS = new Set([
   'en.gravatar.com',
   'secure.gravatar.com',
   'i.gravatar.com',
+  // Public Gravatar-compatible mirrors commonly used in China / by the
+  // community. Keep this list explicit; do not open it to arbitrary hosts.
+  'cdn.v2ex.com',
+  'sdn.geekzu.org',
+  'gravatar.loli.net',
+  'cravatar.cn',
+  'seccdn.libravatar.org',
+  'weavatar.com',
+  'gravatar.webp.se',
 ])
 
 /** Return `true` only when `rawUrl` is an HTTPS URL on a known Gravatar

@@ -38,6 +38,7 @@ colour
 columnstore
 commentform
 conffile
+cravatar
 csslintrc
 csvg
 ctan
@@ -74,6 +75,7 @@ footgun
 forencrypt
 fouc
 fumadocs
+geekzu
 genyo
 giscus
 godalming
@@ -135,12 +137,14 @@ lantinghei
 laojieli
 lastmod
 lazyload
+libravatar
 libvips
 linguaphone
 linuxapi
 liruifeng
 liruifengv
 lockfiles
+loli
 longluo
 lostpassword
 loveness
@@ -256,6 +260,7 @@ scalafmt
 scann
 sched
 schemaname
+seccdn
 sefc
 segmentby
 segoe
@@ -326,6 +331,7 @@ vkey
 voidzero
 wangdaodao
 weapi
+weavatar
 wechat
 weibo
 wlwmanifest

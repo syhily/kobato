@@ -127,6 +127,16 @@ describe('client: safe-url utilities', () => {
       expect(isAllowedMirrorUrl('https://cn.gravatar.com/avatar/')).toBe(true)
     })
 
+    it('accepts common community gravatar-compatible mirrors', () => {
+      expect(isAllowedMirrorUrl('https://cdn.v2ex.com/gravatar/')).toBe(true)
+      expect(isAllowedMirrorUrl('https://sdn.geekzu.org/avatar/')).toBe(true)
+      expect(isAllowedMirrorUrl('https://gravatar.loli.net/avatar/')).toBe(true)
+      expect(isAllowedMirrorUrl('https://cravatar.cn/avatar/')).toBe(true)
+      expect(isAllowedMirrorUrl('https://seccdn.libravatar.org/avatar/')).toBe(true)
+      expect(isAllowedMirrorUrl('https://weavatar.com/avatar/')).toBe(true)
+      expect(isAllowedMirrorUrl('https://gravatar.webp.se/avatar/')).toBe(true)
+    })
+
     it('rejects non-gravatar hosts', () => {
       expect(isAllowedMirrorUrl('https://example.com/avatar/')).toBe(false)
       expect(isAllowedMirrorUrl('https://evil.com/')).toBe(false)
