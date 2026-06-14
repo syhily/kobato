@@ -9,9 +9,9 @@ type CompleteFn = (success: boolean, error?: Error) => Promise<void>
 let completeFn: CompleteFn | null = null
 
 export function registerRestoreComplete(fn: CompleteFn): void {
-  if (completeFn) {
-    throw new Error('registerRestoreComplete called twice; only one completion handler is supported')
-  }
+  // Allow overwrite so HMR / Vite dev server restarts can re-register the
+  // completion handler when server.ts is re-evaluated. In production this
+  // module is loaded once, so the handler is never replaced.
   completeFn = fn
 }
 

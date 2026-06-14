@@ -114,4 +114,22 @@ describe('backup/restore-orchestrator', () => {
       expect.objectContaining({ err: 'sync crash' }),
     )
   })
+
+  it('allows re-registering the completion handler for HMR safety', async () => {
+    const { performSafeRestore, registerRestoreComplete } = await import('@/server/domains/backup/restore-orchestrator')
+    const first = vi.fn().mockResolvedValue(undefined)
+    const second = vi.fn().mockResolvedValue(undefined)
+
+    registerRestoreComplete(first)
+    registerRestoreComplete(second)
+
+    const restoreFn = vi.fn().mockResolvedValue(undefined)
+    const log = { error: vi.fn(), warn: vi.fn(), info: vi.fn() } as any
+
+    performSafeRestore({ pool: {} as any, log }, restoreFn)
+    await new Promise((r) => setTimeout(r, 50))
+
+    expect(first).not.toHaveBeenCalled()
+    expect(second).toHaveBeenCalledWith(true, undefined)
+  })
 })
