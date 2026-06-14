@@ -38,7 +38,9 @@ export function BaseLayout({ navigation, footer, currentUser, pathname, search, 
       </a>
       <Header navigation={resolvedNavigation} currentUser={currentUser} pathname={pathname} search={search} />
       {currentUser && (
-        <div className="fixed top-4 right-4 z-50 hidden lg:block">
+        // Raise above the right-side cover image used on detail pages
+        // (z-aside-drawer / 1020) so the avatar and its dropdown stay reachable.
+        <div className="fixed top-4 right-4 z-(--z-modal) hidden lg:block">
           <UserMenu currentUser={currentUser} logoutQuery={logoutQuery} />
         </div>
       )}
