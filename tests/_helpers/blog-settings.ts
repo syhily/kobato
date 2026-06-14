@@ -108,7 +108,18 @@ export const TEST_BLOG_SETTINGS_BUNDLE: BlogSettingsBundle = {
   },
 
   mail: {
-    mail: { enabled: false, host: 'api.zeabur.com', apiKey: '', sender: 'noreply@example.com' },
+    mail: {
+      enabled: false,
+      host: 'api.zeabur.com',
+      apiKey: '',
+      sender: 'noreply@example.com',
+      transport: 'zeabur',
+      smtpHost: '',
+      smtpPort: 587,
+      smtpUser: '',
+      smtpPass: '',
+      smtpSecure: false,
+    },
   },
   cache: {
     cache: {

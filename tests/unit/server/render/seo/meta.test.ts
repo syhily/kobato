@@ -77,7 +77,20 @@ const fixture: BlogSettingsBundle = {
     og: { width: 1200, height: 630 },
   },
 
-  mail: { mail: { enabled: false, host: '', apiKey: '', sender: '' } },
+  mail: {
+    mail: {
+      enabled: false,
+      host: '',
+      apiKey: '',
+      sender: '',
+      transport: 'zeabur',
+      smtpHost: '',
+      smtpPort: 587,
+      smtpUser: '',
+      smtpPass: '',
+      smtpSecure: false,
+    },
+  },
   cache: {
     cache: {
       og: { prefix: 'og:', ttlSeconds: 3600 },

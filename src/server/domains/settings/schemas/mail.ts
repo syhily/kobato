@@ -2,30 +2,47 @@ import { z } from 'zod'
 
 import { coerceBoolean } from '@/server/domains/settings/schemas/shared'
 
-// Mail / Zeabur ZSend integration. The host is bounded to a hostname
-// (no scheme — the sender hard-codes `https://`), the API key is left
-// permissive because Zeabur tokens have no documented format, and the
-// sender must be a valid email so the upstream API doesn't 4xx the
-// payload before we get any feedback.
+// Mail provider configuration. Supports Zeabur ZSend (HTTP) and SMTP.
 //
-// `apiKey` is optional so the admin form can save other fields without
-// re-pasting the secret on every edit: the perimeter treats `undefined`
-// (or omitted) as "keep the existing value" and any string (including
-// empty) as a deliberate overwrite. The "always overwrite empty" pivot
-// happens in `applySectionPatch`, not here, so the schema stays a pure
-// shape validator.
-export const mailSchema = z.object({
-  mail: z.object({
-    enabled: coerceBoolean,
-    host: z.string().trim().min(1).max(253),
-    apiKey: z.string().trim().max(512).optional(),
-    sender: z.union([z.literal(''), z.email()]),
-    // Vendor selector for the mail dispatcher. `'zeabur'` is the only
-    // fully wired backend today; `'smtp'` exists so the schema can
-    // carry the selection before the dispatcher routes to it. The
-    // `.default('zeabur')` backfills any stored snapshot that predates
-    // this field so existing deployments don't break on read.
-    transport: z.enum(['zeabur', 'smtp']).default('zeabur'),
-  }),
-})
+// `apiKey` and `smtpPass` are optional so the admin form can save other
+// fields without re-pasting the secret on every edit: the perimeter treats
+// `undefined` (or omitted) as "keep the existing value" and any string
+// (including empty) as a deliberate overwrite. The "always overwrite empty"
+// pivot happens in `applySectionPatch`, not here, so the schema stays a
+// pure shape validator.
+export const mailSchema = z
+  .object({
+    mail: z.object({
+      enabled: coerceBoolean,
+      // Zeabur ZSend fields
+      host: z.string().trim().max(253).default(''),
+      apiKey: z.string().trim().max(512).optional(),
+      sender: z.union([z.literal(''), z.email()]).default(''),
+      // Vendor selector for the mail dispatcher.
+      transport: z.enum(['zeabur', 'smtp']).default('zeabur'),
+      // SMTP fields
+      smtpHost: z.string().trim().max(253).default(''),
+      smtpPort: z.coerce.number().int().min(1).max(65535).default(587),
+      smtpUser: z.string().trim().max(512).default(''),
+      smtpPass: z.string().trim().max(512).optional(),
+      smtpSecure: coerceBoolean.default(false),
+    }),
+  })
+  .superRefine((data, ctx) => {
+    const { transport, host, smtpHost } = data.mail
+    if (transport === 'zeabur' && host.trim() === '') {
+      ctx.addIssue({
+        code: 'custom',
+        message: 'Zeabur 模式下接入域名不能为空',
+        path: ['mail', 'host'],
+      })
+    }
+    if (transport === 'smtp' && smtpHost.trim() === '') {
+      ctx.addIssue({
+        code: 'custom',
+        message: 'SMTP 模式下服务器地址不能为空',
+        path: ['mail', 'smtpHost'],
+      })
+    }
+  })
 export type MailInput = z.infer<typeof mailSchema>

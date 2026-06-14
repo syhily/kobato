@@ -14,6 +14,7 @@ export interface SecretFieldConfig {
 // from this array so a new secret field only needs to be added once.
 export const SECRET_FIELDS: readonly SecretFieldConfig[] = [
   { section: 'mail', bundleKey: 'mail', path: 'mail', field: 'apiKey' },
+  { section: 'mail', bundleKey: 'mail', path: 'mail', field: 'smtpPass' },
   { section: 'assets', bundleKey: 'assets', path: 'storage', field: 'secretAccessKey' },
   { section: 'search', bundleKey: 'search', path: 'search', field: 'apiKey' },
 ]

@@ -258,7 +258,13 @@ function CorsPolicyCard({ security }: { security: SecuritySettings }) {
 }
 
 function OtpToggleCard({ security, mail }: SecurityFormProps) {
-  const mailReady = mail.enabled && mail.host && mail.apiKey && mail.sender
+  const isSmtp = mail.transport === 'smtp'
+  const mailReady = isSmtp
+    ? mail.enabled && mail.smtpHost && mail.smtpUser && mail.smtpPass && mail.sender
+    : mail.enabled && mail.host && mail.apiKey && mail.sender
+  const missingHint = isSmtp
+    ? '邮件服务未配置完整，无法开启 OTP。请先前往「邮件服务」选择 SMTP 并配置服务器地址、用户名、密码和发件人邮箱。'
+    : '邮件服务未配置完整，无法开启 OTP。请先前往「邮件服务」选择 Zeabur ZSend 并配置接入域名、API Key 和发件人邮箱。'
 
   const { form, settingGroupProps, save } = useSettingsCard<SecuritySettings, { enabled: boolean }>({
     section: 'security',
@@ -304,11 +310,7 @@ function OtpToggleCard({ security, mail }: SecurityFormProps) {
             )}
           />
         </SettingsRow>
-        {!mailReady && (
-          <p className="text-sm text-muted-foreground">
-            邮件服务未配置完整，无法开启 OTP。请先前往「邮件服务」配置接入域名、API Key 和发件人邮箱。
-          </p>
-        )}
+        {!mailReady && <p className="text-sm text-muted-foreground">{missingHint}</p>}
       </SettingGroupContent>
     </SettingGroup>
   )

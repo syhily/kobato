@@ -2,11 +2,21 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const transportSendMock = vi.fn<(payload: unknown, opts: unknown) => Promise<unknown>>()
 const ZeaburCtorMock = vi.fn()
+const SmtpCtorMock = vi.fn()
 
 vi.mock('@/server/infra/email/transports/zeabur-zsend', () => ({
   ZeaburZSendTransport: class {
     constructor(config: unknown) {
       ZeaburCtorMock(config)
+    }
+    send = transportSendMock
+  },
+}))
+
+vi.mock('@/server/infra/email/transports/smtp', () => ({
+  SmtpTransport: class {
+    constructor(config: unknown) {
+      SmtpCtorMock(config)
     }
     send = transportSendMock
   },
@@ -42,6 +52,7 @@ import {
 beforeEach(() => {
   transportSendMock.mockReset()
   ZeaburCtorMock.mockReset()
+  SmtpCtorMock.mockReset()
   transportSendMock.mockResolvedValue({ ok: true })
   vi.unstubAllGlobals()
   setBlogSettingsBundleForTests({
@@ -52,6 +63,12 @@ beforeEach(() => {
         host: 'api.zeabur.com',
         apiKey: 'k',
         sender: 'noreply@example.com',
+        transport: 'zeabur',
+        smtpHost: '',
+        smtpPort: 587,
+        smtpUser: '',
+        smtpPass: '',
+        smtpSecure: false,
       },
     },
   })
@@ -63,31 +80,135 @@ afterEach(() => {
 
 describe('infra/email/sender — checkMailReady', () => {
   it('returns disabled when enabled is false', () => {
-    const result = checkMailReady({ enabled: false, host: '', apiKey: '', sender: '' })
+    const result = checkMailReady({
+      enabled: false,
+      host: '',
+      apiKey: '',
+      sender: '',
+      transport: 'zeabur',
+      smtpHost: '',
+      smtpPort: 587,
+      smtpUser: '',
+      smtpPass: '',
+      smtpSecure: false,
+    })
     expect(result.ready).toBe(false)
     if (!result.ready) {
       expect(result.reason).toBe('disabled')
     }
   })
 
-  it('returns unconfigured when host/apiKey/sender is missing', () => {
-    const result = checkMailReady({ enabled: true, host: '', apiKey: '', sender: '' })
+  it('returns unconfigured when zeabur fields are missing', () => {
+    const result = checkMailReady({
+      enabled: true,
+      host: '',
+      apiKey: '',
+      sender: '',
+      transport: 'zeabur',
+      smtpHost: '',
+      smtpPort: 587,
+      smtpUser: '',
+      smtpPass: '',
+      smtpSecure: false,
+    })
     expect(result.ready).toBe(false)
     if (!result.ready) {
       expect(result.reason).toBe('unconfigured')
     }
   })
 
-  it('returns ready when all fields are set', () => {
-    const result = checkMailReady({ enabled: true, host: 'h', apiKey: 'k', sender: 's' })
+  it('returns ready when zeabur fields are set', () => {
+    const result = checkMailReady({
+      enabled: true,
+      host: 'h',
+      apiKey: 'k',
+      sender: 's',
+      transport: 'zeabur',
+      smtpHost: '',
+      smtpPort: 587,
+      smtpUser: '',
+      smtpPass: '',
+      smtpSecure: false,
+    })
+    expect(result.ready).toBe(true)
+  })
+
+  it('returns unconfigured when smtp fields are missing', () => {
+    const result = checkMailReady({
+      enabled: true,
+      host: '',
+      apiKey: '',
+      sender: '',
+      transport: 'smtp',
+      smtpHost: '',
+      smtpPort: 587,
+      smtpUser: '',
+      smtpPass: '',
+      smtpSecure: false,
+    })
+    expect(result.ready).toBe(false)
+    if (!result.ready) {
+      expect(result.reason).toBe('unconfigured')
+    }
+  })
+
+  it('returns ready when smtp fields are set', () => {
+    const result = checkMailReady({
+      enabled: true,
+      host: '',
+      apiKey: '',
+      sender: 's',
+      transport: 'smtp',
+      smtpHost: 'smtp.example.com',
+      smtpPort: 587,
+      smtpUser: 'u',
+      smtpPass: 'p',
+      smtpSecure: false,
+    })
     expect(result.ready).toBe(true)
   })
 })
 
 describe('infra/email/sender — sendEmail', () => {
-  it('delegates to the transport', async () => {
+  it('delegates to the zeabur transport by default', async () => {
     const result = await sendEmail('to@x.com', 'subj', '<p>hi</p>')
     expect(transportSendMock).toHaveBeenCalledTimes(1)
+    expect(ZeaburCtorMock).toHaveBeenCalledTimes(1)
+    expect(SmtpCtorMock).not.toHaveBeenCalled()
+    expect(result.ok).toBe(true)
+  })
+
+  it('uses smtp transport when transport is smtp', async () => {
+    setBlogSettingsBundleForTests({
+      ...TEST_BLOG_SETTINGS_BUNDLE,
+      mail: {
+        mail: {
+          enabled: true,
+          host: '',
+          apiKey: '',
+          sender: 'noreply@example.com',
+          transport: 'smtp',
+          smtpHost: 'smtp.example.com',
+          smtpPort: 587,
+          smtpUser: 'user',
+          smtpPass: 'pass',
+          smtpSecure: false,
+        },
+      },
+    })
+    const result = await sendEmail('to@x.com', 'subj', '<p>hi</p>')
+    expect(transportSendMock).toHaveBeenCalledTimes(1)
+    expect(SmtpCtorMock).toHaveBeenCalledTimes(1)
+    expect(SmtpCtorMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        host: 'smtp.example.com',
+        port: 587,
+        user: 'user',
+        pass: 'pass',
+        secure: false,
+        sender: 'noreply@example.com',
+      }),
+    )
     expect(result.ok).toBe(true)
   })
 
@@ -128,17 +249,30 @@ describe('infra/email/sender — sendPasswordReset / sendSignInOtp', () => {
 })
 
 describe('infra/email/sender — sendTestMail', () => {
-  it('returns unconfigured when host/apiKey/sender is missing', async () => {
+  it('returns unconfigured when required fields are missing', async () => {
     setBlogSettingsBundleForTests({
       ...TEST_BLOG_SETTINGS_BUNDLE,
-      mail: { mail: { enabled: true, host: '', apiKey: '', sender: '' } },
+      mail: {
+        mail: {
+          enabled: true,
+          host: '',
+          apiKey: '',
+          sender: '',
+          transport: 'zeabur',
+          smtpHost: '',
+          smtpPort: 587,
+          smtpUser: '',
+          smtpPass: '',
+          smtpSecure: false,
+        },
+      },
     })
     const result = await sendTestMail('to@x.com')
     expect(result.ok).toBe(false)
   })
 
-  it('returns network error when fetch throws', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('timeout')))
+  it('returns network error when transport throws', async () => {
+    transportSendMock.mockRejectedValueOnce(new Error('timeout'))
     const result = await sendTestMail('to@x.com')
     expect(result.ok).toBe(false)
     if (!result.ok) {
@@ -146,8 +280,13 @@ describe('infra/email/sender — sendTestMail', () => {
     }
   })
 
-  it('returns upstream error on non-2xx response', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('bad', { status: 422 })))
+  it('returns upstream error on non-2xx transport result', async () => {
+    transportSendMock.mockResolvedValueOnce({
+      ok: false,
+      reason: 'upstream',
+      status: 422,
+      message: '422 Unprocessable Entity',
+    })
     const result = await sendTestMail('to@x.com')
     expect(result.ok).toBe(false)
     if (!result.ok) {
@@ -155,9 +294,33 @@ describe('infra/email/sender — sendTestMail', () => {
     }
   })
 
-  it('returns ok on a 2xx response', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('', { status: 200 })))
+  it('returns ok on successful transport result', async () => {
+    transportSendMock.mockResolvedValueOnce({ ok: true })
     const result = await sendTestMail('to@x.com')
+    expect(result.ok).toBe(true)
+  })
+
+  it('uses smtp transport when configured', async () => {
+    setBlogSettingsBundleForTests({
+      ...TEST_BLOG_SETTINGS_BUNDLE,
+      mail: {
+        mail: {
+          enabled: true,
+          host: '',
+          apiKey: '',
+          sender: 'noreply@example.com',
+          transport: 'smtp',
+          smtpHost: 'smtp.example.com',
+          smtpPort: 587,
+          smtpUser: 'user',
+          smtpPass: 'pass',
+          smtpSecure: false,
+        },
+      },
+    })
+    transportSendMock.mockResolvedValueOnce({ ok: true })
+    const result = await sendTestMail('to@x.com')
+    expect(SmtpCtorMock).toHaveBeenCalledTimes(1)
     expect(result.ok).toBe(true)
   })
 })

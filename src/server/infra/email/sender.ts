@@ -4,6 +4,7 @@ import { render } from '@/server/infra/email/render'
 import AuthorInvite from '@/server/infra/email/templates/AuthorInvite'
 import PasswordReset from '@/server/infra/email/templates/PasswordReset'
 import SignInOtp from '@/server/infra/email/templates/SignInOtp'
+import { SmtpTransport } from '@/server/infra/email/transports/smtp'
 import { ZeaburZSendTransport } from '@/server/infra/email/transports/zeabur-zsend'
 import { getLogger } from '@/server/infra/logger'
 import { requireBlogSettingsSection } from '@/shared/config/getters'
@@ -26,8 +27,12 @@ interface MailConfig {
   host: string
   apiKey: string
   sender: string
-  /** Vendor selector — `'zeabur'` is the only wired backend for now. */
-  transport?: 'zeabur' | 'smtp'
+  transport: 'zeabur' | 'smtp'
+  smtpHost: string
+  smtpPort: number
+  smtpUser: string
+  smtpPass: string
+  smtpSecure: boolean
 }
 
 // Read the live mail slice straight from the snapshot. Mail senders only
@@ -39,20 +44,39 @@ function readMailConfig(): MailConfig {
   return requireBlogSettingsSection('mail').mail
 }
 
+interface CheckMailReadyOptions {
+  /** Test sends bypass the master switch so editors can verify connectivity first. */
+  ignoreEnabled?: boolean
+}
+
 // Single source of truth for "should this notification actually fire?"
-// — used both internally by the comment-fired senders below and by the
-// admin "send test" action so the UI can surface the same skip reason.
+// — used both internally by the comment-fired senders and by the admin
+// "send test" action so the UI can surface the same skip reason.
+// Test sends pass `{ ignoreEnabled: true }` so they can verify the
+// connection before the master toggle is flipped on.
 export function checkMailReady(
   mail: MailConfig,
+  options: CheckMailReadyOptions = {},
 ): { ready: true } | { ready: false; reason: 'disabled' | 'unconfigured'; message: string } {
-  if (!mail.enabled) {
+  if (!options.ignoreEnabled && !mail.enabled) {
     return { ready: false, reason: 'disabled', message: '邮件发送已在管理面板中关闭' }
+  }
+  const transport = mail.transport ?? 'zeabur'
+  if (transport === 'smtp') {
+    if (!mail.smtpHost || !mail.smtpUser || !mail.smtpPass || !mail.sender) {
+      return {
+        ready: false,
+        reason: 'unconfigured',
+        message: 'SMTP 服务尚未配置完整（缺少服务器地址 / 用户名 / 密码 / 发件人）',
+      }
+    }
+    return { ready: true }
   }
   if (!mail.host || !mail.apiKey || !mail.sender) {
     return {
       ready: false,
       reason: 'unconfigured',
-      message: '邮件服务尚未配置完整（缺少 Host / API Key / 发件人）',
+      message: 'Zeabur 邮件服务尚未配置完整（缺少 Host / API Key / 发件人）',
     }
   }
   return { ready: true }
@@ -63,16 +87,23 @@ interface InternalSendOptions {
   bcc?: string[]
 }
 
-// Resolve the live transport from the configured mail slice. The
-// `transport` selector is a new field; only `'zeabur'` is wired today
-// — any other value (including `'smtp'`, which is a spike stub right
-// now) falls back to the Zeabur impl with a warning so a half-migrated
-// deployment still sends instead of failing silently.
+// Resolve the live transport from the configured mail slice.
 function getTransport(): MailTransport {
   const mail = readMailConfig()
   const transport = mail.transport ?? 'zeabur'
+  if (transport === 'smtp') {
+    return new SmtpTransport({
+      enabled: mail.enabled,
+      sender: mail.sender,
+      host: mail.smtpHost,
+      port: mail.smtpPort,
+      user: mail.smtpUser,
+      pass: mail.smtpPass,
+      secure: mail.smtpSecure,
+    })
+  }
   if (transport !== 'zeabur') {
-    log.warn('Mail transport not yet wired, falling back to Zeabur ZSend', { transport })
+    log.warn('Unknown mail transport, falling back to Zeabur ZSend', { transport })
   }
   return new ZeaburZSendTransport({
     enabled: mail.enabled,
@@ -148,27 +179,24 @@ export async function sendSignInOtp(user: { name: string; email: string }, otpCo
 // `enabled` master switch on purpose: an editor needs to verify the
 // connection to upstream BEFORE flipping the public toggle. The
 // `unconfigured` guard still applies — there's no point round-tripping
-// to Zeabur with an empty key.
+// to the provider with an empty key.
 export async function sendTestMail(to: string): Promise<SendResult> {
   const mail = readMailConfig()
-  if (!mail.host || !mail.apiKey || !mail.sender) {
-    log.warn('Test mail skipped: unconfigured', { to })
-    return {
-      ok: false,
-      reason: 'unconfigured',
-      message: '邮件服务尚未配置完整（缺少 Host / API Key / 发件人）',
-    }
+  const ready = checkMailReady(mail, { ignoreEnabled: true })
+  if (!ready.ready) {
+    log.warn('Test mail skipped', { to, reason: ready.reason })
+    return { ok: false, reason: ready.reason, message: ready.message }
   }
 
   const siteIdentity = requireBlogSettingsSection('siteIdentity')
   const subject = `【${siteIdentity.title}】管理员邮件测试`
   const sentAt = new Date().toISOString()
   // Keep the test body intentionally plain (no React Email render) so a
-  // failure here points at the SMTP/HTTP plumbing rather than the
+  // failure here points at the transport plumbing rather than the
   // template renderer.
   const html = [
     `<p>这是一封来自 <strong>${escapeHtml(siteIdentity.title)}</strong> 后台的邮件发送测试。</p>`,
-    `<p>如果你收到了这封邮件，说明 Zeabur ZSend 配置工作正常。</p>`,
+    `<p>如果你收到了这封邮件，说明邮件服务配置工作正常。</p>`,
     `<ul>`,
     `<li>站点：${escapeHtml(siteIdentity.website)}</li>`,
     `<li>发件人：${escapeHtml(mail.sender)}</li>`,
@@ -176,41 +204,36 @@ export async function sendTestMail(to: string): Promise<SendResult> {
     `</ul>`,
   ].join('\n')
 
-  // Send through a direct fetch instead of `sendEmail` so we report
-  // the upstream status verbatim — the admin UI surfaces it for
-  // troubleshooting.
-  const url = `https://${mail.host}/api/v1/zsend/emails`
-  let response: Response
+  // Send through the configured transport so the test exercises the
+  // same code path as production notifications, but force `enabled: true`
+  // so editors can verify connectivity before flipping the public toggle.
+  const transport = buildTransportForTest(mail)
   try {
-    response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${mail.apiKey}`,
-      },
-      body: JSON.stringify({ from: mail.sender, to: [to], subject, html }),
-      signal: AbortSignal.timeout(30_000),
-    })
+    return await transport.send({ to, subject, html })
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error)
-    log.error('Test mail send failed: network error', { to, error })
+    log.error('Test mail send failed: transport error', { to, error })
     return { ok: false, reason: 'network', message }
   }
+}
 
-  if (!response.ok) {
-    const body = await response.text().catch(() => '')
-    log.error('Test mail send failed: upstream rejected', {
-      status: response.status,
-      statusText: response.statusText,
-      body,
-      to,
+function buildTransportForTest(mail: MailConfig): MailTransport {
+  const transport = mail.transport ?? 'zeabur'
+  if (transport === 'smtp') {
+    return new SmtpTransport({
+      enabled: true,
+      sender: mail.sender,
+      host: mail.smtpHost,
+      port: mail.smtpPort,
+      user: mail.smtpUser,
+      pass: mail.smtpPass,
+      secure: mail.smtpSecure,
     })
-    return {
-      ok: false,
-      reason: 'upstream',
-      status: response.status,
-      message: `${response.status} ${response.statusText}`,
-    }
   }
-  return { ok: true }
+  return new ZeaburZSendTransport({
+    enabled: true,
+    sender: mail.sender,
+    host: mail.host,
+    apiKey: mail.apiKey,
+  })
 }

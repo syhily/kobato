@@ -89,7 +89,7 @@ export const SECTION_DISPLAY: Record<SettingsSection, SectionDisplayMeta> = {
   mail: {
     to: '/admin/settings',
     label: '邮件服务',
-    description: 'Zeabur ZSend 配置 / 测试发送',
+    description: 'Zeabur ZSend 或 SMTP 配置 / 测试发送',
     group: 'service',
     icon: 'Mail',
   },

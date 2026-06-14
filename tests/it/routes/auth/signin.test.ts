@@ -139,7 +139,20 @@ vi.mock('@/shared/config/getters', () => ({
       csrf: { enabled: true, exemptPaths: [] },
       cors: { enabled: false, origins: [] },
     },
-    mail: { mail: { enabled: state.mailReady, host: 'api.zeabur.com', apiKey: 'key', sender: 'noreply@example.com' } },
+    mail: {
+      mail: {
+        enabled: state.mailReady,
+        host: 'api.zeabur.com',
+        apiKey: 'key',
+        sender: 'noreply@example.com',
+        transport: 'zeabur',
+        smtpHost: '',
+        smtpPort: 587,
+        smtpUser: '',
+        smtpPass: '',
+        smtpSecure: false,
+      },
+    },
   })),
 }))
 

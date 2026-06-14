@@ -12,6 +12,7 @@ import { useSettingsCard } from '@/ui/admin/settings/shell/useSettingsCard'
 import { Button } from '@/ui/components/button'
 import { FieldLabel } from '@/ui/components/field'
 import { Input } from '@/ui/components/input'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/components/select'
 import { Switch } from '@/ui/components/switch'
 
 export interface MailLoaderShape {
@@ -19,6 +20,12 @@ export interface MailLoaderShape {
   host: string
   sender: string
   apiKeyMask: string | null
+  transport: 'zeabur' | 'smtp'
+  smtpHost: string
+  smtpPort: number
+  smtpUser: string
+  smtpPassMask: string | null
+  smtpSecure: boolean
 }
 
 interface MailFormProps {
@@ -31,6 +38,11 @@ interface TestStatus {
 }
 
 const idleTestStatus: TestStatus = { state: 'idle', message: null }
+
+const TRANSPORT_OPTIONS: { value: MailLoaderShape['transport']; label: string }[] = [
+  { value: 'zeabur', label: 'Zeabur ZSend' },
+  { value: 'smtp', label: 'SMTP' },
+]
 
 function MailToggleCard({ mail }: { mail: MailLoaderShape }) {
   const { form, settingGroupProps, save } = useSettingsCard<MailLoaderShape, { enabled: boolean }>({
@@ -75,7 +87,64 @@ function MailToggleCard({ mail }: { mail: MailLoaderShape }) {
   )
 }
 
-function MailConfigCard({ mail }: { mail: MailLoaderShape }) {
+function ProviderSelectCard({ mail }: { mail: MailLoaderShape }) {
+  const { form, settingGroupProps, save } = useSettingsCard<
+    MailLoaderShape,
+    { transport: MailLoaderShape['transport'] }
+  >({
+    section: 'mail',
+    source: mail,
+    toState: (source) => ({ transport: source.transport }),
+    fromState: (state) => ({
+      transport: state.transport,
+    }),
+  })
+
+  return (
+    <SettingGroup
+      title="邮件服务提供商"
+      description="选择发送邮件所用的服务商。切换后下方的配置项会相应变化。"
+      {...settingGroupProps}
+    >
+      <SettingGroupContent>
+        <SettingsRow
+          label="提供商"
+          htmlFor="mail-transport"
+          hint="Zeabur ZSend 适合 Zeabur 部署，SMTP 适合自有邮件服务器。"
+        >
+          <Controller
+            control={form.control}
+            name="transport"
+            render={({ field }) => (
+              <Select
+                value={field.value}
+                onValueChange={(value) => {
+                  if (value === 'zeabur' || value === 'smtp') {
+                    field.onChange(value)
+                    save()
+                  }
+                }}
+              >
+                <SelectTrigger id="mail-transport" className="w-full sm:w-56">
+                  <SelectValue placeholder="选择提供商" />
+                </SelectTrigger>
+                <SelectContent>
+                  {TRANSPORT_OPTIONS.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+          />
+        </SettingsRow>
+      </SettingGroupContent>
+    </SettingGroup>
+  )
+}
+
+function ZeaburConfigCard({ mail }: { mail: MailLoaderShape }) {
   const { form, settingGroupProps, display } = useSettingsCard<
     MailLoaderShape,
     { host: string; sender: string; apiKey: string }
@@ -140,9 +209,117 @@ function MailConfigCard({ mail }: { mail: MailLoaderShape }) {
   )
 }
 
+function SmtpConfigCard({ mail }: { mail: MailLoaderShape }) {
+  const { form, settingGroupProps, display, save } = useSettingsCard<
+    MailLoaderShape,
+    { smtpHost: string; smtpPort: number; smtpUser: string; smtpPass: string; smtpSecure: boolean; sender: string }
+  >({
+    section: 'mail',
+    source: mail,
+    toState: (source) => ({
+      smtpHost: source.smtpHost,
+      smtpPort: source.smtpPort,
+      smtpUser: source.smtpUser,
+      smtpPass: '',
+      smtpSecure: source.smtpSecure,
+      sender: source.sender,
+    }),
+    fromState: (state) => {
+      const trimmedPass = state.smtpPass.trim()
+      return {
+        smtpHost: state.smtpHost.trim(),
+        smtpPort: Number.isFinite(state.smtpPort) ? state.smtpPort : 587,
+        smtpUser: state.smtpUser.trim(),
+        smtpSecure: state.smtpSecure,
+        sender: state.sender.trim(),
+        ...(trimmedPass ? { smtpPass: trimmedPass } : {}),
+      }
+    },
+  })
+
+  const passConfigured = display.smtpPassMask !== null
+  return (
+    <SettingGroup
+      title="SMTP 配置"
+      description="配置 SMTP 服务器地址、端口、认证信息和发件人邮箱。修改后立即生效。"
+      {...settingGroupProps}
+    >
+      <SettingGroupContent>
+        <SettingsRow label="服务器地址" htmlFor="mail-smtp-host" hint="例如 smtp.example.com。">
+          <Input id="mail-smtp-host" placeholder="smtp.example.com" maxLength={253} {...form.register('smtpHost')} />
+        </SettingsRow>
+        <SettingsRow label="端口" htmlFor="mail-smtp-port" hint="常见端口：25、587、465。">
+          <Input
+            id="mail-smtp-port"
+            type="number"
+            min={1}
+            max={65535}
+            {...form.register('smtpPort', { valueAsNumber: true })}
+          />
+        </SettingsRow>
+        <SettingsRow label="用户名" htmlFor="mail-smtp-user" hint="SMTP 登录账号，通常是一个邮箱地址。">
+          <Input
+            id="mail-smtp-user"
+            type="text"
+            placeholder="postmaster@example.com"
+            maxLength={512}
+            {...form.register('smtpUser')}
+          />
+        </SettingsRow>
+        <SettingsRow
+          label="密码"
+          htmlFor="mail-smtp-pass"
+          hint={
+            passConfigured ? `当前已配置（结尾 …${display.smtpPassMask}）。留空保存表示保留现有密码。` : '尚未配置。'
+          }
+        >
+          <Input
+            id="mail-smtp-pass"
+            type="password"
+            {...form.register('smtpPass')}
+            placeholder={passConfigured ? '保留现有密码' : '输入 SMTP 密码'}
+            maxLength={512}
+            autoComplete="new-password"
+          />
+        </SettingsRow>
+        <SettingsRow label="发件人邮箱" htmlFor="mail-sender" hint="收件人看到的 From 地址。">
+          <Input
+            id="mail-sender"
+            type="email"
+            placeholder="noreply@example.com"
+            maxLength={253}
+            {...form.register('sender')}
+          />
+        </SettingsRow>
+        <SettingsRow label="使用 TLS" hint="465 端口通常需要开启，587 端口视服务器配置而定。">
+          <div className="flex items-center gap-3">
+            <Controller
+              control={form.control}
+              name="smtpSecure"
+              render={({ field }) => (
+                <Switch
+                  id="mail-smtp-secure"
+                  checked={field.value}
+                  onCheckedChange={(val) => {
+                    field.onChange(val)
+                    save()
+                  }}
+                />
+              )}
+            />
+            <FieldLabel htmlFor="mail-smtp-secure" className="font-normal">
+              启用 TLS（SSL）
+            </FieldLabel>
+          </div>
+        </SettingsRow>
+      </SettingGroupContent>
+    </SettingGroup>
+  )
+}
+
 function MailTestCard({ mail }: { mail: MailLoaderShape }) {
   const { author } = useSiteIdentity()
-  const [testTo, setTestTo] = useState<string>(author.email)
+  const [testTo, setTestTo] = useState<string>(author?.email ?? '')
   const [testStatus, setTestStatus] = useState<TestStatus>(idleTestStatus)
 
   const testMutation = useMutation({
@@ -150,7 +327,7 @@ function MailTestCard({ mail }: { mail: MailLoaderShape }) {
     onSuccess: () =>
       setTestStatus({
         state: 'success',
-        message: '测试邮件已通过 Zeabur ZSend 发送，请到收件箱确认。',
+        message: '测试邮件已发送，请到收件箱确认。',
       }),
     onError: (error) => setTestStatus({ state: 'error', message: error.message ?? '测试发送失败' }),
   })
@@ -161,9 +338,19 @@ function MailTestCard({ mail }: { mail: MailLoaderShape }) {
   }, [testMutation, testTo])
 
   const isTestPending = testMutation.isPending
-  const apiKeyConfigured = mail.apiKeyMask !== null
-  const canSendTest =
-    !isTestPending && mail.host.trim() !== '' && mail.sender.trim() !== '' && apiKeyConfigured && isLikelyEmail(testTo)
+  const isZeabur = mail.transport === 'zeabur'
+  const zeaburReady = mail.host.trim() !== '' && mail.sender.trim() !== '' && mail.apiKeyMask !== null
+  const smtpReady =
+    mail.smtpHost.trim() !== '' &&
+    mail.smtpUser.trim() !== '' &&
+    mail.smtpPassMask !== null &&
+    mail.sender.trim() !== ''
+  const configured = isZeabur ? zeaburReady : smtpReady
+  const canSendTest = !isTestPending && configured && isLikelyEmail(testTo)
+
+  const missingHint = isZeabur
+    ? '请先填入并保存 Zeabur 接入域名、API Key 和发件人邮箱'
+    : '请先填入并保存 SMTP 服务器地址、用户名、密码和发件人邮箱'
 
   return (
     <SettingGroup title="测试发送" description="不依赖「启用邮件发送」开关，可在配置完成后立即验证连接。">
@@ -183,13 +370,7 @@ function MailTestCard({ mail }: { mail: MailLoaderShape }) {
               variant="secondary"
               disabled={!canSendTest}
               onClick={submitTest}
-              title={
-                !apiKeyConfigured
-                  ? '请先填入并保存 API Key'
-                  : !isLikelyEmail(testTo)
-                    ? '请填写一个合法的邮箱地址'
-                    : undefined
-              }
+              title={!configured ? missingHint : !isLikelyEmail(testTo) ? '请填写一个合法的邮箱地址' : undefined}
             >
               <SendIcon data-icon /> {isTestPending ? '发送中…' : '测试发送'}
             </Button>
@@ -210,7 +391,8 @@ export function MailForm({ mail }: MailFormProps) {
   return (
     <div className="flex flex-col gap-5">
       <MailToggleCard mail={mail} />
-      <MailConfigCard mail={mail} />
+      <ProviderSelectCard mail={mail} />
+      {mail.transport === 'smtp' ? <SmtpConfigCard mail={mail} /> : <ZeaburConfigCard mail={mail} />}
       <MailTestCard mail={mail} />
     </div>
   )

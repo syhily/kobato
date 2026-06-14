@@ -35,6 +35,11 @@ const mailDefaults = {
     apiKey: '',
     sender: 'noreply@example.com',
     transport: 'zeabur',
+    smtpHost: '',
+    smtpPort: 587,
+    smtpUser: '',
+    smtpPass: '',
+    smtpSecure: false,
   },
 } as const
 const cacheDefaults = {

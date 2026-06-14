@@ -95,6 +95,12 @@ const SECTION_CONFIGS: {
           host: bundle.mail.mail.host,
           sender: bundle.mail.mail.sender,
           apiKeyMask: masks.mailApiKeyMask,
+          transport: bundle.mail.mail.transport,
+          smtpHost: bundle.mail.mail.smtpHost,
+          smtpPort: bundle.mail.mail.smtpPort,
+          smtpUser: bundle.mail.mail.smtpUser,
+          smtpPassMask: masks.mailSmtpPassMask,
+          smtpSecure: bundle.mail.mail.smtpSecure,
         }}
       />
     ),
