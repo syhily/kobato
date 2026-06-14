@@ -128,6 +128,8 @@ const FONT_TOKENS = ['code'] as const
 
 const ANIMATE_TOKENS = ['comments-shimmer', 'comment-flash'] as const
 
+const Z_INDEX_TOKENS = ['modal', 'aside-drawer'] as const
+
 const SPACING_TOKENS = [
   'admin-col-narrow',
   'admin-thumb',
@@ -203,7 +205,7 @@ const customTwMerge = extendTailwindMerge({
       spacing: [...SPACING_TOKENS],
     },
     classGroups: {
-      z: ['z-tooltip'],
+      z: ['z-tooltip', 'z-modal', 'z-aside-drawer'],
     },
   },
 })
@@ -223,6 +225,7 @@ export const __TOKENS_FOR_TESTS = {
     font: FONT_TOKENS,
     animate: ANIMATE_TOKENS,
     spacing: SPACING_TOKENS,
+    'z-index': Z_INDEX_TOKENS,
   } satisfies Record<string, ReadonlyArray<string>>,
   omitted: ['leading'] as const,
 } as const

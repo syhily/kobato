@@ -7,6 +7,7 @@ import type { CommentBody } from '@/shared/pt/comment-schema'
 import { countMyComments, listMyComments } from '@/server/domains/comments/repos/admin-query'
 import { findParentCommentsByIds } from '@/server/domains/comments/repos/public-query/by-id'
 import { resolveEntitiesForComments } from '@/server/domains/comments/repos/public-query/entities'
+import { mineSoftDeleteCutoff } from '@/server/domains/comments/repos/shared'
 
 export interface MineCommentItem {
   id: string
@@ -23,12 +24,6 @@ export interface LoadMineCommentsResult {
   items: MineCommentItem[]
   total: number
   hasMore: boolean
-  counts: {
-    total: number
-    pending: number
-    deleteRequested: number
-    deleted: number
-  }
 }
 
 const EXCERPT_LIMIT = 80
@@ -56,9 +51,12 @@ export async function loadMineCommentsPage(
   limit: number,
   filters: MyCommentsFilters = {},
 ): Promise<LoadMineCommentsResult> {
+  // Compute the soft-delete cutoff once so the parallel list/count
+  // queries see the same set of visible comments.
+  const cutoff = mineSoftDeleteCutoff()
   const [rows, counts] = await Promise.all([
-    listMyComments(db, userId, offset, limit, filters),
-    countMyComments(db, userId, filters),
+    listMyComments(db, userId, offset, limit, filters, cutoff),
+    countMyComments(db, userId, filters, cutoff),
   ])
 
   const entityPairs = rows
@@ -110,6 +108,5 @@ export async function loadMineCommentsPage(
     items,
     total: counts.total,
     hasMore: offset + rows.length < counts.total,
-    counts,
   }
 }

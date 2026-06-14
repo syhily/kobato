@@ -116,6 +116,15 @@ describe('infra/storage/s3-client — getS3StorageContext', () => {
     expect(a.client).toBe(b.client)
   })
 
+  it('configures checksum settings for streaming compatibility', async () => {
+    const { getS3StorageContext } = await importS3()
+    const ctx = await getS3StorageContext()
+    expect(ctx.client.config).toMatchObject({
+      requestChecksumCalculation: 'WHEN_REQUIRED',
+      responseChecksumValidation: 'WHEN_REQUIRED',
+    })
+  })
+
   it('destroys the stale client when the fingerprint changes', async () => {
     const { getS3StorageContext } = await importS3()
     await getS3StorageContext()

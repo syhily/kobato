@@ -39,7 +39,15 @@ function parseThemeBlocks(css: string): ParsedThemeBlocks {
     const blockEnd = i - 1
     const block = css.slice(blockStart, blockEnd)
 
-    const declRe = /(?:^|\n)\s*--([a-z]+)-([a-z0-9-]+)\s*:/g
+    const knownNamespaces = [
+      ...new Set([
+        ...Object.keys(__TOKENS_FOR_TESTS.registered),
+        ...__TOKENS_FOR_TESTS.omitted,
+        ...BELOW_THE_LINE_NAMESPACES,
+        'z-index',
+      ]),
+    ].sort((a, b) => b.length - a.length)
+    const declRe = new RegExp(`(?:^|\n)\\s*--(${knownNamespaces.join('|')})-([a-z0-9-]+)\\s*:`, 'g')
     let decl: RegExpExecArray | null
     decl = declRe.exec(block)
     while (decl !== null) {

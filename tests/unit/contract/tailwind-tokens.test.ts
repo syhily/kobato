@@ -31,6 +31,7 @@ const KNOWN_THEME_NAMESPACES = [
   'font',
   'size',
   'text',
+  'z-index',
   'z',
 ] as const
 

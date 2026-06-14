@@ -8,6 +8,7 @@ import { requireRole } from '@/server/domains/auth/rbac'
 import { listMyCommentEntities } from '@/server/domains/comments/repos/admin-query'
 import { resolveEntitiesForComments } from '@/server/domains/comments/repos/public-query/entities'
 import { bundleFromMatches, routeMeta } from '@/server/render/seo/meta'
+import { parseCommentEntity, serializeCommentEntity } from '@/shared/utils/comments'
 import { MyCommentsView } from '@/ui/admin/my/MyCommentsView'
 
 import type { Route } from './+types/comments'
@@ -53,31 +54,6 @@ function parseStatus(raw: string | null): MyCommentsStatus {
   return 'all'
 }
 
-// `?entity=<type>:<ownerId>` → `{ type, ownerId }`. Malformed values
-// are dropped silently so a hand-edited URL renders the unfiltered list.
-function parseEntityParam(raw: string | null): { type: 'post' | 'page'; ownerId: bigint } | null {
-  if (!raw) {
-    return null
-  }
-  const idx = raw.indexOf(':')
-  if (idx <= 0) {
-    return null
-  }
-  const type = raw.slice(0, idx)
-  if (type !== 'post' && type !== 'page') {
-    return null
-  }
-  const rest = raw.slice(idx + 1)
-  if (!/^\d+$/.test(rest)) {
-    return null
-  }
-  try {
-    return { type, ownerId: BigInt(rest) }
-  } catch {
-    return null
-  }
-}
-
 export async function loader({ request, context }: Route.LoaderArgs) {
   const ctx = getRouteRequestContext({ request, context })
   // Self-service path — any logged-in role can see their own comments.
@@ -87,12 +63,12 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   const url = new URL(request.url)
   const status = parseStatus(url.searchParams.get('status'))
   const q = (url.searchParams.get('q') ?? '').trim()
-  const entity = parseEntityParam(url.searchParams.get('entity'))
-  const entityValue = entity ? `${entity.type}:${entity.ownerId}` : null
+  const entity = parseCommentEntity(url.searchParams.get('entity'))
+  const entityValue = entity ? serializeCommentEntity(entity) : null
 
   const entityOptionsRaw = await listMyCommentEntities(db, userId)
   const entityOptions: MyCommentEntityOption[] = entityOptionsRaw.map((e) => ({
-    value: `${e.type}:${e.ownerId}`,
+    value: serializeCommentEntity({ type: e.type, ownerId: e.ownerId }),
     label: e.title,
   }))
 
@@ -100,9 +76,9 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   // follow-up lookup so the trigger can render the human-readable title.
   if (entity && !entityOptions.some((o) => o.value === entityValue)) {
     const resolved = await resolveEntitiesForComments(db, [entity])
-    const row = resolved.get(`${entity.type}:${entity.ownerId}`)
+    const row = resolved.get(serializeCommentEntity(entity))
     if (row) {
-      entityOptions.unshift({ value: `${entity.type}:${entity.ownerId}`, label: row.title })
+      entityOptions.unshift({ value: serializeCommentEntity(entity), label: row.title })
     }
   }
 

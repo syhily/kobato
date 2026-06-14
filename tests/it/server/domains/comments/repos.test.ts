@@ -702,6 +702,28 @@ describe('comments/repos/admin-query — listMyCommentEntities', () => {
     const rows = await listMyCommentEntities(db, u1)
     expect(rows[0]?.slug).toBe('p28')
   })
+
+  it('filters by title at the SQL layer', async () => {
+    const u1 = await seedUser({ name: 'S2', email: 's2@x.com' })
+    const alpha = await seedPost('alpha-q')
+    const beta = await seedPost('beta-q')
+    await seedComment({ userId: u1, ownerId: alpha })
+    await seedComment({ userId: u1, ownerId: beta })
+
+    const rows = await listMyCommentEntities(db, u1, { q: 'beta' })
+    expect(rows).toHaveLength(1)
+    expect(rows[0]?.slug).toBe('beta-q')
+  })
+
+  it('caps the result at MY_COMMENT_ENTITY_LIMIT', async () => {
+    const u1 = await seedUser({ name: 'S3', email: 's3@x.com' })
+    for (let i = 0; i < 25; i++) {
+      const pid = await seedPost(`cap-${i}`)
+      await seedComment({ userId: u1, ownerId: pid })
+    }
+    const rows = await listMyCommentEntities(db, u1)
+    expect(rows).toHaveLength(20)
+  })
 })
 
 describe('comments/repos/admin-query — countMyComments', () => {

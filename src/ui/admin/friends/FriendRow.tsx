@@ -43,11 +43,12 @@ export const FriendRow = memo(function FriendRow({ friend, disabled, onEdit, onD
           type="button"
           onClick={onEdit}
           disabled={disabled}
-          className="truncate font-semibold text-(--text-admin-base) hover:underline disabled:cursor-not-allowed disabled:opacity-50"
+          aria-label={`编辑友链 ${friend.website}`}
+          className="truncate text-admin-base font-semibold hover:underline disabled:cursor-not-allowed disabled:opacity-50"
         >
           {friend.website}
         </button>
-        <p className="mt-0.5 flex items-center gap-2 truncate text-(--text-admin-sm) text-muted-foreground">
+        <p className="mt-0.5 flex items-center gap-2 truncate text-admin-sm text-muted-foreground">
           {homepageHref ? (
             <a
               href={homepageHref}
@@ -71,7 +72,7 @@ export const FriendRow = memo(function FriendRow({ friend, disabled, onEdit, onD
       </div>
 
       {/* Visibility */}
-      <div className="hidden w-(--spacing-admin-col-narrow) shrink-0 justify-end md:flex">
+      <div className="hidden w-admin-col-narrow shrink-0 justify-end md:flex">
         {friend.visible ? (
           <Badge variant="secondary" className="gap-1">
             <EyeIcon className="size-3" /> 显示
@@ -88,9 +89,8 @@ export const FriendRow = memo(function FriendRow({ friend, disabled, onEdit, onD
         type="button"
         onClick={onEdit}
         disabled={disabled}
-        className="inline-flex h-(--spacing-sidebar-item) w-(--spacing-admin-col-narrow) shrink-0 items-center justify-center rounded-xl border border-border text-muted-foreground transition-colors hover:border-foreground/30 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
+        className="inline-flex h-sidebar-item w-admin-col-narrow shrink-0 items-center justify-center rounded-xl border border-border text-muted-foreground transition-colors hover:border-foreground/30 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
         title="编辑"
-        aria-label={`编辑友链 ${friend.website}`}
       >
         <SquarePenIcon className="size-4" />
       </button>
@@ -100,7 +100,7 @@ export const FriendRow = memo(function FriendRow({ friend, disabled, onEdit, onD
         type="button"
         onClick={onDelete}
         disabled={disabled}
-        className="inline-flex h-(--spacing-sidebar-item) w-(--spacing-admin-col-narrow) shrink-0 items-center justify-center rounded-xl border border-border text-muted-foreground transition-colors hover:border-destructive/30 hover:text-destructive disabled:cursor-not-allowed disabled:opacity-50"
+        className="inline-flex h-sidebar-item w-admin-col-narrow shrink-0 items-center justify-center rounded-xl border border-border text-muted-foreground transition-colors hover:border-destructive/30 hover:text-destructive disabled:cursor-not-allowed disabled:opacity-50"
         title="删除"
         aria-label={`删除友链 ${friend.website}`}
       >
@@ -120,7 +120,7 @@ function FriendDescription({ description }: FriendDescriptionProps) {
       <Tooltip.Trigger
         as="button"
         type="button"
-        className="cursor-help truncate text-left text-(--text-admin-sm) text-muted-foreground hover:text-foreground focus-visible:rounded-sm focus-visible:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+        className="cursor-help truncate text-left text-admin-sm text-muted-foreground hover:text-foreground focus-visible:rounded-sm focus-visible:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
       >
         {description}
       </Tooltip.Trigger>
@@ -139,9 +139,9 @@ export function FriendsSkeleton() {
             <Skeleton className="h-4 w-1/3" />
             <Skeleton className="h-3 w-1/4" />
           </div>
-          <Skeleton className="hidden h-(--spacing-sidebar-item) w-(--spacing-admin-col-narrow) md:block" />
-          <Skeleton className="h-(--spacing-sidebar-item) w-(--spacing-admin-col-narrow) rounded-xl" />
-          <Skeleton className="h-(--spacing-sidebar-item) w-(--spacing-admin-col-narrow) rounded-xl" />
+          <Skeleton className="hidden h-sidebar-item w-admin-col-narrow md:block" />
+          <Skeleton className="h-sidebar-item w-admin-col-narrow rounded-xl" />
+          <Skeleton className="h-sidebar-item w-admin-col-narrow rounded-xl" />
         </div>
       ))}
     </div>

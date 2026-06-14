@@ -521,6 +521,9 @@
 
   --ring-width: 3px;
 
+  --z-index-modal: var(--z-modal);
+  --z-index-aside-drawer: var(--z-aside-drawer);
+
   --spacing-admin-thumb: var(--size-admin-thumb);
   --spacing-admin-col-narrow: var(--size-admin-col-narrow);
   --spacing-auth-input: var(--size-auth-input);

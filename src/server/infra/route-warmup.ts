@@ -33,7 +33,7 @@ const TIER2_ADMIN_ROUTES = [
   'routes/admin/library/images',
   'routes/admin/library/music',
   'routes/admin/library/branding',
-  'routes/admin/library/friends',
+  'routes/admin/taxonomy/friends',
   'routes/admin/security/users/index',
   'routes/admin/security/users/detail',
   'routes/admin/me/profile',

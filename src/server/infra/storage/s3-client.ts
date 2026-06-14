@@ -131,6 +131,10 @@ export async function getS3StorageContext(options?: { requireEnabled?: boolean }
     // header x-amz-decoded-content-length" and surfaces as "An error was
     // encountered in a non-retryable streaming request." WHEN_REQUIRED keeps
     // checksums off unless the caller explicitly opts in.
+    //
+    // Note: this setting applies to every S3 upload (images, music, backups).
+    // Callers that upload known-length Buffers and want request integrity must
+    // pass `ChecksumAlgorithm` on the individual command.
     requestChecksumCalculation: 'WHEN_REQUIRED' as const,
   }
   const client = new sdk.S3Client(config)

@@ -1,4 +1,4 @@
-import { motion } from 'motion/react'
+import { motion, useReducedMotion } from 'motion/react'
 import { useMemo } from 'react'
 
 import type { AdminImageDto } from '@/shared/types/images'
@@ -6,6 +6,7 @@ import type { AdminImageDto } from '@/shared/types/images'
 import { transitions } from '@/client/lib/motion'
 import { getImageUrl } from '@/shared/types/images'
 import { cn } from '@/ui/lib/cn'
+import { useDevicePixelRatio } from '@/ui/lib/use-device-pixel-ratio'
 import { useElementWidth } from '@/ui/lib/use-element-width'
 
 export interface JustifiedImageGridProps {
@@ -32,13 +33,6 @@ interface Row {
 function aspectRatio(image: AdminImageDto): number {
   if (image.width > 0 && image.height > 0) {
     return image.width / image.height
-  }
-  return 1
-}
-
-function devicePixelRatio(): number {
-  if (typeof window !== 'undefined' && window.devicePixelRatio) {
-    return window.devicePixelRatio
   }
   return 1
 }
@@ -154,7 +148,8 @@ export function JustifiedImageGrid({
   const { ref, width } = useElementWidth()
   const targetHeight = targetRowHeight ?? targetRowHeightForWidth(width)
   const rows = useMemo(() => buildJustifiedRows(images, width, targetHeight, gap), [images, width, targetHeight, gap])
-  const dpr = devicePixelRatio()
+  const dpr = useDevicePixelRatio()
+  const prefersReducedMotion = useReducedMotion()
 
   return (
     <div ref={ref} className={cn('flex flex-col', className)} style={{ gap }}>
@@ -178,14 +173,18 @@ export function JustifiedImageGrid({
                   key={item.image.id}
                   type="button"
                   onClick={() => onSelect(item.image)}
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{
-                    ...transitions.fade,
-                    delay: (rowIndex * 0.02 + itemIndex * 0.01) % 0.2,
-                  }}
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
+                  initial={prefersReducedMotion ? undefined : { opacity: 0, y: 8 }}
+                  animate={prefersReducedMotion ? undefined : { opacity: 1, y: 0 }}
+                  transition={
+                    prefersReducedMotion
+                      ? undefined
+                      : {
+                          ...transitions.fade,
+                          delay: (rowIndex * 0.02 + itemIndex * 0.01) % 0.2,
+                        }
+                  }
+                  whileHover={prefersReducedMotion ? undefined : { scale: 1.02 }}
+                  whileTap={prefersReducedMotion ? undefined : { scale: 0.98 }}
                   className={cn(
                     'group relative block overflow-hidden rounded-xl border bg-muted',
                     'focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none',
@@ -224,26 +223,32 @@ function skeletonWidths(seed: number): number[] {
 }
 
 export function JustifiedImageGridSkeleton({ targetRowHeight = 200, gap = 12, className }: SkeletonProps) {
+  const prefersReducedMotion = useReducedMotion()
   return (
     <div className={cn('flex flex-col', className)} style={{ gap }}>
       {Array.from({ length: 4 }).map((_, rowIndex) => (
         // oxlint-disable-next-line react/no-array-index-key
         <div key={rowIndex} className="flex" style={{ gap, height: targetRowHeight }}>
-          {skeletonWidths(rowIndex).map((span, itemIndex) => (
-            <motion.div
-              // oxlint-disable-next-line react/no-array-index-key
-              key={`${rowIndex}-${itemIndex}`}
-              className="rounded-xl bg-muted"
-              style={{ flex: span }}
-              animate={{ opacity: [0.5, 0.8, 0.5] }}
-              transition={{
-                duration: 1.5,
-                repeat: Infinity,
-                ease: 'easeInOut',
-                delay: (rowIndex * 0.15 + itemIndex * 0.05) % 0.5,
-              }}
-            />
-          ))}
+          {skeletonWidths(rowIndex).map((span, itemIndex) => {
+            const key = `${rowIndex}-${itemIndex}`
+            const style = { flex: span }
+            return prefersReducedMotion ? (
+              <div key={key} className="rounded-xl bg-muted" style={style} />
+            ) : (
+              <motion.div
+                key={key}
+                className="rounded-xl bg-muted"
+                style={style}
+                animate={{ opacity: [0.5, 0.8, 0.5] }}
+                transition={{
+                  duration: 1.5,
+                  repeat: Infinity,
+                  ease: 'easeInOut',
+                  delay: (rowIndex * 0.15 + itemIndex * 0.05) % 0.5,
+                }}
+              />
+            )
+          })}
         </div>
       ))}
     </div>

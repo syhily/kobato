@@ -10,6 +10,7 @@ import { loadMineCommentsPage } from '@/server/domains/comments/services/mine-co
 import { updateOwnComment } from '@/server/domains/comments/services/moderate'
 import { authedProc } from '@/server/http/orpc-base'
 import { commentBodySchema } from '@/shared/pt/comment-schema'
+import { parseCommentEntity, serializeCommentEntity } from '@/shared/utils/comments'
 import { idFromString } from '@/shared/utils/id'
 
 const successOutput = z.object({ success: z.boolean() })
@@ -104,17 +105,11 @@ const loadMine = authedProc
       ),
       total: z.number().int(),
       hasMore: z.boolean(),
-      counts: z.object({
-        total: z.number().int(),
-        pending: z.number().int(),
-        deleteRequested: z.number().int(),
-        deleted: z.number().int(),
-      }),
     }),
   )
   .handler(async ({ input, context }) => {
     const userId = idFromString(context.viewer.userId)
-    const entity = input.entity ? parseEntityParam(input.entity) : null
+    const entity = input.entity ? parseCommentEntity(input.entity) : null
     const filters = {
       status: input.status,
       q: input.q,
@@ -131,29 +126,12 @@ const searchMineEntities = authedProc
     const userId = idFromString(context.viewer.userId)
     const rows = await listMyCommentEntities(context.db, userId, { q: input.q })
     return {
-      entities: rows.map((e) => ({ value: `${e.type}:${e.ownerId}`, label: e.title })),
+      entities: rows.map((e) => ({
+        value: serializeCommentEntity({ type: e.type, ownerId: e.ownerId }),
+        label: e.title,
+      })),
     }
   })
-
-function parseEntityParam(raw: string): { type: 'post' | 'page'; ownerId: bigint } | null {
-  const idx = raw.indexOf(':')
-  if (idx <= 0) {
-    return null
-  }
-  const type = raw.slice(0, idx)
-  if (type !== 'post' && type !== 'page') {
-    return null
-  }
-  const rest = raw.slice(idx + 1)
-  if (!/^\d+$/.test(rest)) {
-    return null
-  }
-  try {
-    return { type, ownerId: BigInt(rest) }
-  } catch {
-    return null
-  }
-}
 
 export const commentsAuthedRouter = {
   updateOwn,

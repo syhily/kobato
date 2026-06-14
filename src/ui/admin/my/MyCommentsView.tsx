@@ -1,4 +1,4 @@
-import { useMutation, useQuery } from '@tanstack/react-query'
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   FileTextIcon,
   ListChecksIcon,
@@ -9,10 +9,10 @@ import {
   Trash2Icon,
 } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { useNavigate, useRevalidator, useSearchParams } from 'react-router'
+import { useSearchParams } from 'react-router'
 import { toast } from 'sonner'
 
-import type { MyCommentEntityOption, MyCommentItem } from '@/routes/admin/me/comments'
+import type { MyCommentItem } from '@/routes/admin/me/comments'
 import type { MyCommentsStatus } from '@/shared/types/comments'
 
 import { orpc } from '@/client/api/client'
@@ -55,6 +55,11 @@ const MY_STATUS_OPTIONS: { value: Exclude<MyCommentsStatus, 'all'>; label: strin
   { value: 'deleted', label: '已删除' },
 ]
 
+export interface MyCommentEntityOption {
+  value: string
+  label: string
+}
+
 export interface MyCommentsViewProps {
   status: MyCommentsStatus
   q: string
@@ -96,17 +101,10 @@ function buildActiveFilters({
 }
 
 export function MyCommentsView({ status, q, entity, entityOptions, currentUser }: MyCommentsViewProps) {
-  const [searchParams] = useSearchParams()
-  const navigate = useNavigate()
-  const revalidator = useRevalidator()
+  const [searchParams, setSearchParams] = useSearchParams()
+  const queryClient = useQueryClient()
 
-  const [items, setItems] = useState<MyCommentItem[]>([])
-  const [total, setTotal] = useState(0)
-  const [hasMore, setHasMore] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
-  const [loadingMore, setLoadingMore] = useState(false)
   const [textFilterDraft, setTextFilterDraft] = useState<ActiveFilter | null>(null)
-
   const [debouncedEntityQuery, setDebouncedEntityQuery] = useState('')
   const [, setEntityQuery] = useDebouncedSearch({
     delayMs: FILTER_QUERY_DEBOUNCE_MS,
@@ -116,10 +114,10 @@ export function MyCommentsView({ status, q, entity, entityOptions, currentUser }
   const { data: entitiesData, isLoading: isEntitiesPending } = useQuery(
     orpcQuery.comments.searchMineEntities.queryOptions({
       input: debouncedEntityQuery ? { q: debouncedEntityQuery } : {},
+      enabled: debouncedEntityQuery !== '',
     }),
   )
 
-  const lastQueryKeyRef = useRef<string | null>(null)
   const sentinelRef = useRef<HTMLDivElement>(null)
 
   const updateParams = useCallback(
@@ -132,9 +130,13 @@ export function MyCommentsView({ status, q, entity, entityOptions, currentUser }
           next.set(key, value)
         }
       }
-      void navigate({ search: next.toString() ? `?${next.toString()}` : '' }, { replace: false })
+      // Use React Router's setSearchParams so the loader re-runs and the
+      // component props (status/q/entity) stay in sync with the URL.
+      // `replace: true` keeps the history stack clean; `preventScrollReset`
+      // avoids the page jumping back to the top on every filter change.
+      setSearchParams(next, { replace: true, preventScrollReset: true })
     },
-    [navigate, searchParams],
+    [searchParams, setSearchParams],
   )
 
   const filters = useMemo(() => {
@@ -146,7 +148,12 @@ export function MyCommentsView({ status, q, entity, entityOptions, currentUser }
   }, [status, q, entity, entityOptions, textFilterDraft])
 
   const pageItems: FilterItem[] = useMemo(() => {
-    const fetched = entitiesData?.entities ?? []
+    // When the user is actively searching, prefer the live search results.
+    // Otherwise fall back to the loader-provided entity list so the dropdown
+    // isn't empty on first open.
+    const fetched = debouncedEntityQuery
+      ? (entitiesData?.entities ?? [])
+      : entityOptions.map((o) => ({ value: o.value, label: o.label }))
     const items = fetched.map((e) => ({ value: e.value, label: e.label }))
     const current = entity
       ? { value: entity, label: entityOptions.find((o) => o.value === entity)?.label ?? entity }
@@ -155,27 +162,7 @@ export function MyCommentsView({ status, q, entity, entityOptions, currentUser }
       items.unshift(current)
     }
     return items
-  }, [entitiesData, entity, entityOptions])
-
-  const handleAddFilter = useCallback(
-    (field: FilterFieldKey, value: string, _label: string) => {
-      if (field === 'status') {
-        updateParams({ status: value === 'all' ? null : value })
-      } else if (field === 'page') {
-        updateParams({ entity: value })
-      } else if (field === 'text') {
-        try {
-          // oxlint-disable-next-line typescript/no-unsafe-type-assertion
-          const parsed = JSON.parse(value) as { value?: string; op?: string }
-          setTextFilterDraft({ field: 'text', value, label: _label })
-          updateParams({ q: parsed.value ?? null })
-        } catch {
-          // ignore malformed value
-        }
-      }
-    },
-    [updateParams],
-  )
+  }, [debouncedEntityQuery, entitiesData, entity, entityOptions])
 
   const handleRemoveFilter = useCallback(
     (field: FilterFieldKey) => {
@@ -191,76 +178,74 @@ export function MyCommentsView({ status, q, entity, entityOptions, currentUser }
     [updateParams],
   )
 
+  const handleAddFilter = useCallback(
+    (field: FilterFieldKey, value: string, _label: string) => {
+      if (field === 'status') {
+        updateParams({ status: value === 'all' ? null : value })
+      } else if (field === 'page') {
+        updateParams({ entity: value })
+      } else if (field === 'text') {
+        try {
+          // oxlint-disable-next-line typescript/no-unsafe-type-assertion
+          const parsed = JSON.parse(value) as { value?: string; op?: string }
+          const text = parsed.value?.trim() ?? ''
+          if (text === '') {
+            handleRemoveFilter('text')
+            return
+          }
+          setTextFilterDraft({ field: 'text', value, label: _label })
+          updateParams({ q: text })
+        } catch {
+          // ignore malformed value
+        }
+      }
+    },
+    [updateParams, handleRemoveFilter],
+  )
+
   const handleClearFilters = useCallback(() => {
     setTextFilterDraft(null)
     updateParams({ status: null, entity: null, q: null })
   }, [updateParams])
 
-  const buildQueryInput = useCallback(
-    (offset: number) => ({
-      offset,
-      limit: PAGE_SIZE,
-      ...(status !== 'all' ? { status } : {}),
-      ...(q.trim() ? { q: q.trim() } : {}),
-      ...(entity ? { entity } : {}),
-    }),
-    [status, q, entity],
-  )
-
-  const load = useCallback(
-    async (force = false) => {
-      const input = buildQueryInput(0)
-      const key = JSON.stringify(input)
-      if (!force && key === lastQueryKeyRef.current) {
-        return
+  const listQuery = useInfiniteQuery({
+    queryKey: ['comments', 'loadMine', { status, q, entity }],
+    queryFn: async ({ pageParam }) =>
+      orpc.comments.loadMine({
+        offset: pageParam,
+        limit: PAGE_SIZE,
+        ...(status !== 'all' ? { status } : {}),
+        ...(q.trim() ? { q: q.trim() } : {}),
+        ...(entity ? { entity } : {}),
+      }),
+    getNextPageParam: (lastPage, _allPages, lastPageParam) => {
+      if (!lastPage.hasMore) {
+        return undefined
       }
-      lastQueryKeyRef.current = key
-      setIsLoading(true)
-      try {
-        const result = await orpc.comments.loadMine(input)
-        setItems(result.items)
-        setTotal(result.total)
-        setHasMore(result.hasMore)
-      } catch (error) {
-        toast.error('加载评论失败', { description: error instanceof Error ? error.message : String(error) })
-      } finally {
-        setIsLoading(false)
-      }
+      return (lastPageParam ?? 0) + PAGE_SIZE
     },
-    [buildQueryInput],
-  )
+    initialPageParam: 0,
+  })
 
-  const loadMore = useCallback(async () => {
-    if (loadingMore || !hasMore) {
-      return
-    }
-    setLoadingMore(true)
-    try {
-      const result = await orpc.comments.loadMine(buildQueryInput(items.length))
-      setItems((prev) => [...prev, ...result.items])
-      setHasMore(result.hasMore)
-    } catch (error) {
-      toast.error('加载更多评论失败', { description: error instanceof Error ? error.message : String(error) })
-    } finally {
-      setLoadingMore(false)
-    }
-  }, [loadingMore, hasMore, buildQueryInput, items.length])
-
-  const loadMoreRef = useRef(loadMore)
-  loadMoreRef.current = loadMore
+  const { hasNextPage, isFetchingNextPage, fetchNextPage, isLoading } = listQuery
+  const items = useMemo(() => listQuery.data?.pages.flatMap((page) => page.items) ?? [], [listQuery.data])
+  const total = listQuery.data?.pages[0]?.total ?? 0
 
   useEffect(() => {
-    void load()
-  }, [load])
+    if (listQuery.error) {
+      toast.error('加载评论失败', { description: listQuery.error.message })
+    }
+  }, [listQuery.error])
 
   useEffect(() => {
-    if (!hasMore) {
-      return
-    }
     const el = sentinelRef.current
-    if (!el) {
+    if (!el || !hasNextPage || isFetchingNextPage) {
       return
     }
+
+    const loadMoreRef = { current: fetchNextPage }
+    loadMoreRef.current = fetchNextPage
+
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry?.isIntersecting) {
@@ -271,18 +256,28 @@ export function MyCommentsView({ status, q, entity, entityOptions, currentUser }
     )
     observer.observe(el)
     return () => observer.disconnect()
-  }, [hasMore])
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage])
+
+  const invalidateList = useCallback(() => {
+    void queryClient.invalidateQueries({ queryKey: ['comments', 'loadMine'], exact: false })
+  }, [queryClient])
 
   const requestDelete = useMutation({
     ...orpcQuery.comments.requestDeleteOwn.mutationOptions(),
     onSuccess: () => {
-      void revalidator.revalidate()
+      invalidateList()
+    },
+    onError: (error) => {
+      toast.error('申请删除失败', { description: error.message })
     },
   })
   const cancelDelete = useMutation({
     ...orpcQuery.comments.cancelDeleteOwn.mutationOptions(),
     onSuccess: () => {
-      void revalidator.revalidate()
+      invalidateList()
+    },
+    onError: (error) => {
+      toast.error('撤回删除申请失败', { description: error.message })
     },
   })
 
@@ -325,6 +320,7 @@ export function MyCommentsView({ status, q, entity, entityOptions, currentUser }
   return (
     <AdminListPage>
       <AdminListPage.Header title="我的评论" description="查看与管理我发表的全部评论。">
+        {/* Header slot only when no filters are active — body slot below takes over otherwise. */}
         <div className="flex items-center gap-2">{!hasActiveFilters && filterBar}</div>
       </AdminListPage.Header>
 
@@ -364,10 +360,10 @@ export function MyCommentsView({ status, q, entity, entityOptions, currentUser }
           )}
         </div>
 
-        {hasMore && <div ref={sentinelRef} className="h-1" />}
-        {(loadingMore || (!hasMore && items.length > 0)) && (
+        {hasNextPage && <div ref={sentinelRef} className="h-1" />}
+        {(isFetchingNextPage || (!hasNextPage && items.length > 0)) && (
           <div className="py-6 text-center text-sm text-muted-foreground">
-            {loadingMore ? (
+            {isFetchingNextPage ? (
               <span className="inline-flex items-center gap-2">
                 <LoaderIcon className="size-4 animate-spin" />
                 加载中…
@@ -391,7 +387,7 @@ export function MyCommentsView({ status, q, entity, entityOptions, currentUser }
         onClose={() => setEditTarget(null)}
         onSaved={() => {
           setEditTarget(null)
-          void revalidator.revalidate()
+          invalidateList()
         }}
       />
     </AdminListPage>
@@ -441,7 +437,7 @@ function MyCommentRow({
           </div>
 
           {/* Meta: date + page */}
-          <p className="mt-0.5 truncate text-(--text-admin-sm) text-muted-foreground">
+          <p className="mt-0.5 truncate text-admin-sm text-muted-foreground">
             {createdAt}
             {item.entity && (
               <>

@@ -1,6 +1,11 @@
 import { Buffer } from 'node:buffer'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+const { warnMock } = vi.hoisted(() => ({ warnMock: vi.fn() }))
+vi.mock('@/server/infra/logger', () => ({
+  getLogger: () => ({ warn: warnMock }),
+}))
+
 vi.mock('@/server/render/image-compress', () => ({
   compressImage: (buf: Buffer) => Promise.resolve(buf),
 }))
@@ -17,6 +22,7 @@ import {
 
 beforeEach(() => {
   setBlogSettingsBundleForTests(TEST_BLOG_SETTINGS_BUNDLE)
+  warnMock.mockClear()
 })
 
 function withAllowedMirror<T>(fn: () => Promise<T>): Promise<T> {
@@ -138,6 +144,7 @@ describe('render/avatar/fetch — fetchAvatarImage', () => {
       },
     ])
     expect(await withAllowedMirror(() => fetchAvatarImage('hash'))).toBeNull()
+    expect(warnMock).toHaveBeenCalledWith('avatar fetch failed', { error: 'fetch failed' })
   })
 })
 
@@ -171,5 +178,14 @@ describe('render/avatar/fetch — fetchQQAvatarImage', () => {
       },
     ])
     expect(await fetchQQAvatarImage('12345@qq.com')).toBeNull()
+    expect(warnMock).toHaveBeenCalledWith('avatar fetch failed', { error: 'fetch failed' })
+  })
+
+  it('rejects a redirect response instead of following it', async () => {
+    const fetchFn = mockFetch([
+      new Response(null, { status: 302, headers: { location: 'https://evil.example/avatar.png' } }),
+    ])
+    expect(await fetchQQAvatarImage('12345@qq.com')).toBeNull()
+    expect(fetchFn).toHaveBeenCalledTimes(1)
   })
 })

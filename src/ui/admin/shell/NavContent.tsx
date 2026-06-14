@@ -95,7 +95,7 @@ export function NavContent({ role, pendingCommentCount = 0, userCount }: NavCont
           {showAuthorItems && (
             <NavMenuItem.Collapsible
               id="taxonomy-submenu"
-              paths={['/admin/taxonomy/categories', '/admin/taxonomy/tags']}
+              paths={['/admin/taxonomy/categories', '/admin/taxonomy/tags', '/admin/taxonomy/friends']}
             >
               <NavMenuItem.CollapsibleItem ariaLabel="展开分门别类子菜单">
                 <LibraryIcon />
@@ -115,6 +115,13 @@ export function NavContent({ role, pendingCommentCount = 0, userCount }: NavCont
                     <NavMenuItem.Label>标签管理</NavMenuItem.Label>
                   </NavMenuItem.Link>
                 </NavMenuItem>
+                {showAdminItems && (
+                  <NavMenuItem>
+                    <NavMenuItem.Link to="/admin/taxonomy/friends" className="pl-11">
+                      <NavMenuItem.Label>友链管理</NavMenuItem.Label>
+                    </NavMenuItem.Link>
+                  </NavMenuItem>
+                )}
               </NavMenuItem.CollapsibleMenu>
             </NavMenuItem.Collapsible>
           )}
@@ -122,12 +129,7 @@ export function NavContent({ role, pendingCommentCount = 0, userCount }: NavCont
           {showAuthorItems && (
             <NavMenuItem.Collapsible
               id="media-submenu"
-              paths={[
-                '/admin/library/images',
-                '/admin/library/music',
-                '/admin/library/branding',
-                '/admin/library/friends',
-              ]}
+              paths={['/admin/library/images', '/admin/library/music', '/admin/library/branding']}
             >
               <NavMenuItem.CollapsibleItem ariaLabel="展开媒体管理子菜单">
                 <ImagesIcon />
@@ -149,13 +151,6 @@ export function NavContent({ role, pendingCommentCount = 0, userCount }: NavCont
                   <NavMenuItem>
                     <NavMenuItem.Link to="/admin/library/branding" className="pl-11">
                       <NavMenuItem.Label>品牌素材</NavMenuItem.Label>
-                    </NavMenuItem.Link>
-                  </NavMenuItem>
-                )}
-                {showAdminItems && (
-                  <NavMenuItem>
-                    <NavMenuItem.Link to="/admin/library/friends" className="pl-11">
-                      <NavMenuItem.Label>友链管理</NavMenuItem.Label>
                     </NavMenuItem.Link>
                   </NavMenuItem>
                 )}

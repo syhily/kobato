@@ -4,9 +4,11 @@ import {
   httpUrlOrEmptyStringSchema,
   isAllowedMirrorUrl,
   isBlockedFetchHost,
+  isValidPasskeyDomain,
   optionalHttpUrlSchema,
   safeHref,
   safeRedirectPath,
+  tryParseUrl,
 } from '@/shared/utils/safe-url'
 
 describe('client: safe-url utilities', () => {
@@ -118,6 +120,46 @@ describe('client: safe-url utilities', () => {
       expect(isBlockedFetchHost('p3.music.126.net')).toBe(false)
       expect(isBlockedFetchHost('example.com')).toBe(false)
       expect(isBlockedFetchHost('8.8.8.8')).toBe(false)
+    })
+  })
+
+  describe('tryParseUrl', () => {
+    it('returns a URL object for valid URLs', () => {
+      const parsed = tryParseUrl('https://example.com/path?foo=1#bar')
+      expect(parsed).not.toBeNull()
+      expect(parsed?.hostname).toBe('example.com')
+      expect(parsed?.pathname).toBe('/path')
+    })
+
+    it('returns null for invalid URLs', () => {
+      expect(tryParseUrl('not-a-url')).toBeNull()
+      expect(tryParseUrl('')).toBeNull()
+    })
+  })
+
+  describe('isValidPasskeyDomain', () => {
+    it('accepts a public https origin', () => {
+      expect(isValidPasskeyDomain('https://example.com')).toBe(true)
+    })
+
+    it('rejects http origins', () => {
+      expect(isValidPasskeyDomain('http://example.com')).toBe(false)
+    })
+
+    it('rejects localhost and loopback addresses', () => {
+      expect(isValidPasskeyDomain('https://localhost')).toBe(false)
+      expect(isValidPasskeyDomain('https://127.0.0.1')).toBe(false)
+      expect(isValidPasskeyDomain('https://[::1]')).toBe(false)
+    })
+
+    it('rejects private IPv4 ranges', () => {
+      expect(isValidPasskeyDomain('https://10.0.0.1')).toBe(false)
+      expect(isValidPasskeyDomain('https://192.168.1.1')).toBe(false)
+    })
+
+    it('rejects malformed input', () => {
+      expect(isValidPasskeyDomain('not-a-url')).toBe(false)
+      expect(isValidPasskeyDomain('')).toBe(false)
     })
   })
 

@@ -1,5 +1,5 @@
 import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { ImageOffIcon, PlusIcon, RefreshCwIcon, SearchIcon } from 'lucide-react'
+import { ImageOffIcon, PlusIcon, SearchIcon } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { toast } from 'sonner'
 
@@ -68,7 +68,7 @@ export function ImagesView() {
     initialPageParam: 0,
   })
 
-  const { hasNextPage, isFetchingNextPage, fetchNextPage, isFetching, isLoading } = listQuery
+  const { hasNextPage, isFetchingNextPage, fetchNextPage, isLoading } = listQuery
 
   useEffect(() => {
     const el = sentinelRef.current
@@ -97,10 +97,6 @@ export function ImagesView() {
       toast.error('加载图片列表失败', { description: listQuery.error.message })
     }
   }, [listQuery.error])
-
-  const reload = useCallback(() => {
-    void listQuery.refetch()
-  }, [listQuery])
 
   const invalidateList = useCallback(() => {
     void queryClient.invalidateQueries({ queryKey: ['admin', 'images', 'list'], exact: false })
@@ -196,9 +192,6 @@ export function ImagesView() {
     <>
       <AdminListPage>
         <AdminListPage.Header title="图片管理" description={`共 ${total} 条。删除时同步移除 S3 中的原始对象。`}>
-          <Button type="button" variant="outline" className="border-ink-4" onClick={reload} disabled={isFetching}>
-            <RefreshCwIcon /> 刷新
-          </Button>
           <Button type="button" onClick={() => setUploadOpen(true)}>
             <PlusIcon /> 上传图片
           </Button>

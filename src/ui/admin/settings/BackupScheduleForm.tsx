@@ -22,11 +22,6 @@ interface FormState {
   retentionDays: number
 }
 
-const FREQUENCY_LABELS: Record<FormState['frequency'], string> = {
-  daily: '每天',
-  weekly: '每周',
-  monthly: '每月',
-}
 const WEEKDAY_LABELS = ['周一', '周二', '周三', '周四', '周五', '周六', '周日']
 const HOURS = Array.from({ length: 24 }, (_, i) => i)
 const MINUTES = [0, 30]
@@ -105,13 +100,7 @@ export function BackupScheduleForm({ backup, canConfigure }: BackupScheduleFormP
                 render={({ field }) => (
                   <Select value={field.value} onValueChange={field.onChange} disabled={!canConfigure}>
                     <SelectTrigger>
-                      <SelectValue>
-                        {(value: string | null) =>
-                          value && (value === 'daily' || value === 'weekly' || value === 'monthly')
-                            ? FREQUENCY_LABELS[value]
-                            : ''
-                        }
-                      </SelectValue>
+                      <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="daily">每天</SelectItem>
@@ -135,9 +124,7 @@ export function BackupScheduleForm({ backup, canConfigure }: BackupScheduleFormP
                       disabled={!canConfigure}
                     >
                       <SelectTrigger className="w-24">
-                        <SelectValue>
-                          {(value: string | null) => (value ? String(Number(value)).padStart(2, '0') : '')}
-                        </SelectValue>
+                        <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
                         {HOURS.map((h) => (
@@ -160,9 +147,7 @@ export function BackupScheduleForm({ backup, canConfigure }: BackupScheduleFormP
                       disabled={!canConfigure}
                     >
                       <SelectTrigger className="w-24">
-                        <SelectValue>
-                          {(value: string | null) => (value ? String(Number(value)).padStart(2, '0') : '')}
-                        </SelectValue>
+                        <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
                         {MINUTES.map((m) => (
@@ -189,9 +174,7 @@ export function BackupScheduleForm({ backup, canConfigure }: BackupScheduleFormP
                       disabled={!canConfigure}
                     >
                       <SelectTrigger>
-                        <SelectValue>
-                          {(value: string | null) => (value ? WEEKDAY_LABELS[Number(value) - 1] : '')}
-                        </SelectValue>
+                        <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
                         {WEEKDAY_LABELS.map((label, idx) => (
@@ -218,7 +201,7 @@ export function BackupScheduleForm({ backup, canConfigure }: BackupScheduleFormP
                       disabled={!canConfigure}
                     >
                       <SelectTrigger>
-                        <SelectValue>{(value: string | null) => (value ? `${value} 日` : '')}</SelectValue>
+                        <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
                         {Array.from({ length: 28 }, (_, i) => i + 1).map((d) => (

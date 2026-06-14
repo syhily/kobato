@@ -2,13 +2,12 @@ import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
 import { and, count, desc, eq, inArray, isNotNull, isNull, sql } from 'drizzle-orm'
 
-import type { EntityType } from '@/server/infra/db/target'
-
-import { resolveEntitiesForComments } from '@/server/domains/comments/repos/public-query/entities'
 import {
   adminPendingWhere,
   buildAdminListConditions,
   commentWithUser,
+  mineSoftDeleteCutoff,
+  mineVisibleClause,
   mineWhere,
   targetSlugTitleSubquery,
   type AdminListFilters,
@@ -16,6 +15,7 @@ import {
   type AdminPendingRow,
   type CommentAuthor,
   type CommentWithUser,
+  MY_COMMENT_ENTITY_LIMIT,
   type MyCommentEntity,
   type MyCommentsFilters,
   type PageOption,
@@ -223,12 +223,13 @@ export async function listMyComments(
   offset: number,
   limit: number,
   filters: MyCommentsFilters = {},
+  cutoff: Date = mineSoftDeleteCutoff(),
 ): Promise<CommentWithUser[]> {
   return db
     .select(commentWithUser)
     .from(comment)
     .innerJoin(user, eq(comment.userId, user.id))
-    .where(mineWhere(userId, filters))
+    .where(mineWhere(userId, filters, cutoff))
     .orderBy(desc(comment.createdAt))
     .limit(limit)
     .offset(offset)
@@ -237,36 +238,39 @@ export async function listMyComments(
 export async function listMyCommentEntities(
   db: NodePgDatabase,
   userId: bigint,
-  options: { q?: string } = {},
+  options: { q?: string; cutoff?: Date } = {},
 ): Promise<MyCommentEntity[]> {
-  const pairs = await db
-    .selectDistinct({ type: comment.type, ownerId: comment.ownerId })
-    .from(comment)
-    .where(mineWhere(userId))
-  const resolvable = pairs
-    .filter((p): p is { type: EntityType; ownerId: bigint } => p.type !== null && p.ownerId !== null)
-    .map((p) => ({ type: p.type, ownerId: p.ownerId }))
-  const entityMap = await resolveEntitiesForComments(db, resolvable)
-  const q = options.q?.trim().toLowerCase() ?? ''
-  const out: MyCommentEntity[] = []
-  for (const p of resolvable) {
-    const row = entityMap.get(`${p.type}:${p.ownerId}`)
-    if (!row) {
-      continue
-    }
-    if (q !== '' && !row.title.toLowerCase().includes(q)) {
-      continue
-    }
-    out.push({ type: row.type, ownerId: p.ownerId, slug: row.slug, title: row.title })
+  const q = options.q?.trim() ?? ''
+  const entity = targetSlugTitleSubquery(db)
+  const conditions = [mineVisibleClause(userId, options.cutoff ?? mineSoftDeleteCutoff())]
+  if (q !== '') {
+    conditions.push(ilikeEscape(entity.title, q))
   }
-  out.sort((a, b) => a.title.localeCompare(b.title))
-  return out.slice(0, 20)
+  const rows = await db
+    .selectDistinct({
+      type: entity.type,
+      ownerId: entity.ownerId,
+      slug: entity.slug,
+      title: entity.title,
+    })
+    .from(comment)
+    .innerJoin(entity, and(eq(entity.type, comment.type), eq(entity.ownerId, comment.ownerId)))
+    .where(and(...conditions))
+    .orderBy(entity.title)
+    .limit(MY_COMMENT_ENTITY_LIMIT)
+  return rows.map((row) => ({
+    type: row.type,
+    ownerId: row.ownerId,
+    slug: row.slug ?? '',
+    title: row.title ?? '',
+  }))
 }
 
 export async function countMyComments(
   db: NodePgDatabase,
   userId: bigint,
   filters: MyCommentsFilters = {},
+  cutoff: Date = mineSoftDeleteCutoff(),
 ): Promise<{ total: number; pending: number; deleteRequested: number; deleted: number }> {
   const rows = await db
     .select({
@@ -276,7 +280,7 @@ export async function countMyComments(
       deleted: sql<number>`COUNT(*) FILTER (WHERE ${comment.deletedAt} IS NOT NULL)`,
     })
     .from(comment)
-    .where(mineWhere(userId, filters))
+    .where(mineWhere(userId, filters, cutoff))
   return {
     total: Number(rows[0]?.total ?? 0),
     pending: Number(rows[0]?.pending ?? 0),

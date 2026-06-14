@@ -171,11 +171,17 @@ export interface AdminPendingRow {
 
 export const MY_COMMENTS_SOFT_DELETE_GRACE_MS = 7 * 24 * 60 * 60 * 1000
 
-export function mineVisibleClause(userId: bigint) {
-  return and(
-    eq(comment.userId, userId),
-    or(isNull(comment.deletedAt), gte(comment.deletedAt, new Date(Date.now() - MY_COMMENTS_SOFT_DELETE_GRACE_MS))),
-  )
+/** Compute the soft-delete cutoff (comments deleted after this instant
+ *  are still visible to their author). Defaults to "now minus the grace
+ *  period" — pass an explicit `cutoff` when a handler runs several
+ *  mine-where queries in parallel so they all share the same instant
+ *  instead of drifting by a few ms across calls. */
+export function mineSoftDeleteCutoff(now: Date = new Date()): Date {
+  return new Date(now.getTime() - MY_COMMENTS_SOFT_DELETE_GRACE_MS)
+}
+
+export function mineVisibleClause(userId: bigint, cutoff: Date = mineSoftDeleteCutoff()) {
+  return and(eq(comment.userId, userId), or(isNull(comment.deletedAt), gte(comment.deletedAt, cutoff)))
 }
 
 export interface MyCommentsFilters {
@@ -188,8 +194,8 @@ export interface MyCommentsFilters {
   entity?: { type: EntityType; ownerId: bigint }
 }
 
-export function mineWhere(userId: bigint, filters: MyCommentsFilters = {}) {
-  const clauses = [mineVisibleClause(userId)]
+export function mineWhere(userId: bigint, filters: MyCommentsFilters = {}, cutoff: Date = mineSoftDeleteCutoff()) {
+  const clauses = [mineVisibleClause(userId, cutoff)]
   if (filters.status === 'pending') {
     clauses.push(eq(comment.isPending, true))
   } else if (filters.status === 'deleteRequested') {

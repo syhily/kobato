@@ -32,7 +32,7 @@ export function BaseLayout({ navigation, footer, currentUser, pathname, search, 
     <div className="flex flex-col lg:flex-row">
       <a
         href="#main-content"
-        className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-50 focus:rounded-md focus:bg-foreground focus:px-4 focus:py-2 focus:text-background focus:shadow-lg"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-modal focus:rounded-md focus:bg-foreground focus:px-4 focus:py-2 focus:text-background focus:shadow-lg"
       >
         跳转到主要内容
       </a>
@@ -40,7 +40,7 @@ export function BaseLayout({ navigation, footer, currentUser, pathname, search, 
       {currentUser && (
         // Raise above the right-side cover image used on detail pages
         // (z-aside-drawer / 1020) so the avatar and its dropdown stay reachable.
-        <div className="fixed top-4 right-4 z-(--z-modal) hidden lg:block">
+        <div className="fixed top-4 right-4 z-modal hidden lg:block">
           <UserMenu currentUser={currentUser} logoutQuery={logoutQuery} />
         </div>
       )}

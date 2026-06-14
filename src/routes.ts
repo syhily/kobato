@@ -47,7 +47,7 @@ export default [
     route('admin/library/music/add', 'routes/admin/library/music/add.tsx'),
     route('admin/library/music/:id', 'routes/admin/library/music/detail.tsx'),
     route('admin/library/branding', 'routes/admin/library/branding.tsx'),
-    route('admin/library/friends', 'routes/admin/library/friends.tsx'),
+    route('admin/taxonomy/friends', 'routes/admin/taxonomy/friends.tsx'),
     route('admin/security/users', 'routes/admin/security/users/index.tsx'),
     route('admin/security/users/:id', 'routes/admin/security/users/detail.tsx'),
     route('admin/me/profile', 'routes/admin/me/profile.tsx'),

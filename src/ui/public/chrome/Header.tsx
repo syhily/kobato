@@ -38,7 +38,7 @@ const asideShellClass = cn(
   'max-lg:fixed max-lg:size-full',
   'max-lg:pointer-events-none max-lg:invisible max-lg:opacity-0',
   'max-lg:transition-all max-lg:duration-500',
-  'z-(--z-aside-drawer)',
+  'z-aside-drawer',
   'max-lg:data-[state=open]:opacity-100',
   'max-lg:data-[state=open]:visible',
   'max-lg:data-[state=open]:pointer-events-auto',
