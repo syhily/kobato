@@ -91,16 +91,18 @@ const SECTION_CONFIGS: {
     render: (bundle, _tz, masks) => (
       <MailForm
         mail={{
-          enabled: bundle.mail.mail.enabled,
-          host: bundle.mail.mail.host,
-          sender: bundle.mail.mail.sender,
-          apiKeyMask: masks.mailApiKeyMask,
-          transport: bundle.mail.mail.transport,
-          smtpHost: bundle.mail.mail.smtpHost,
-          smtpPort: bundle.mail.mail.smtpPort,
-          smtpUser: bundle.mail.mail.smtpUser,
-          smtpPassMask: masks.mailSmtpPassMask,
-          smtpSecure: bundle.mail.mail.smtpSecure,
+          mail: {
+            enabled: bundle.mail.mail.enabled,
+            host: bundle.mail.mail.host,
+            sender: bundle.mail.mail.sender,
+            apiKeyMask: masks.mailApiKeyMask,
+            transport: bundle.mail.mail.transport,
+            smtpHost: bundle.mail.mail.smtpHost,
+            smtpPort: bundle.mail.mail.smtpPort,
+            smtpUser: bundle.mail.mail.smtpUser,
+            smtpPassMask: masks.mailSmtpPassMask,
+            smtpSecure: bundle.mail.mail.smtpSecure,
+          },
         }}
       />
     ),

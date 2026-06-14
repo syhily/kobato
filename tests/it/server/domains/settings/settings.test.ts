@@ -419,7 +419,7 @@ describe('services/settings — updateBlogSettingsSection', () => {
 })
 
 describe('services/settings — mail section', () => {
-  it("writes the full mail patch to scope='blog.mail' when an apiKey is provided", async () => {
+  it("writes the full mail patch to scope='blog.mail' without reading existing when every secret is provided", async () => {
     vi.mocked(settingQueries.findSettingsByScopePrefix).mockResolvedValue(bundleRows(fixtureBundle))
     vi.mocked(settingQueries.upsertSetting).mockResolvedValue({
       id: 1n,
@@ -438,6 +438,7 @@ describe('services/settings — mail section', () => {
           enabled: true,
           host: 'api.zeabur.com',
           apiKey: 'NEWKEY',
+          smtpPass: 'NEWSMTPPASS',
           sender: 'noreply@example.com',
         },
       },
@@ -451,6 +452,9 @@ describe('services/settings — mail section', () => {
     expect(mail.host).toBe('api.zeabur.com')
     expect(typeof mail.apiKey).toBe('string')
     expect((mail.apiKey as string).length).toBeGreaterThan(0)
+    expect(String(mail.apiKey).startsWith('enc2:')).toBe(true)
+    expect(typeof mail.smtpPass).toBe('string')
+    expect(String(mail.smtpPass).startsWith('enc2:')).toBe(true)
     expect(mail.sender).toBe('noreply@example.com')
     expect(settingQueries.findSettingByScope).not.toHaveBeenCalled()
   })
@@ -565,7 +569,12 @@ describe('services/settings — mail section', () => {
     expect(mail.smtpHost).toBe('smtp.example.com')
     expect(mail.smtpUser).toBe('user')
     expect(mail.smtpSecure).toBe(true)
-    expect(mail.apiKey).toBe('ZEABURKEY')
+    // apiKey is preserved (not in the patch) and then re-encrypted
+    // alongside smtpPass — both secrets in the mail section are now
+    // routed through `encryptSecretsInRow`, not just the first one.
+    expect(typeof mail.apiKey).toBe('string')
+    expect(mail.apiKey).not.toBe('ZEABURKEY')
+    expect(String(mail.apiKey).startsWith('enc2:')).toBe(true)
   })
 })
 

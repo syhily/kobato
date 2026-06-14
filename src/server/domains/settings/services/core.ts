@@ -2,6 +2,7 @@
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 import type { Pool } from 'pg'
 
+import type { Setting } from '@/server/infra/db/types'
 import type { SettingsSection } from '@/shared/config/sections'
 import type { BlogSettingsBundle } from '@/shared/config/types'
 
@@ -149,13 +150,29 @@ async function applySectionPatch(
 ): Promise<Record<string, unknown>> {
   let row = validated as Record<string, unknown>
   const secretConfigs = SECRET_FIELDS.filter((f) => f.section === section)
-  for (const secretConfig of secretConfigs) {
-    row = await preserveSecretOnPatch(db, row, section, secretConfig.path, secretConfig.field)
+  if (secretConfigs.length > 0) {
+    // Only hit the DB when at least one secret is missing from the
+    // incoming patch — a patch that includes every secret is a
+    // full overwrite and has nothing to preserve.
+    const needsExisting = secretConfigs.some((config) => !hasSecretInRow(row, config.path, config.field))
+    if (needsExisting) {
+      // Read once and reuse for every secret in the section, so mail
+      // (apiKey + smtpPass) costs one SELECT instead of two.
+      const existingRow = await findSettingByScope(db, SECTION_REGISTRY[section].scope)
+      for (const secretConfig of secretConfigs) {
+        row = preserveSecretOnPatch(row, existingRow, secretConfig.path, secretConfig.field)
+      }
+    }
   }
   if (section === 'assets') {
     row = await preserveBrandingOnPatch(db, row)
   }
   return row
+}
+
+function hasSecretInRow(row: Record<string, unknown>, payloadPath: string, secretKey: string): boolean {
+  const bucket = row[payloadPath] as Record<string, unknown> | undefined
+  return bucket !== undefined && secretKey in bucket && bucket[secretKey] !== undefined
 }
 
 async function preserveBrandingOnPatch(
@@ -174,20 +191,18 @@ async function preserveBrandingOnPatch(
   return { ...row, branding: merged }
 }
 
-async function preserveSecretOnPatch(
-  db: NodePgDatabase,
+function preserveSecretOnPatch(
   validated: unknown,
-  section: SettingsSection,
+  existingRow: Setting | null,
   payloadPath: string,
   secretKey: string,
-): Promise<Record<string, unknown>> {
+): Record<string, unknown> {
   const record = validated as Record<string, unknown>
   const incoming = (record[payloadPath] as Record<string, unknown>) ?? {}
   if (secretKey in incoming && incoming[secretKey] !== undefined) {
     return record
   }
 
-  const existingRow = await findSettingByScope(db, SECTION_REGISTRY[section].scope)
   const existingPayload = (existingRow?.data as Record<string, unknown> | undefined)?.[payloadPath] as
     | Record<string, unknown>
     | undefined
@@ -200,23 +215,21 @@ async function preserveSecretOnPatch(
 }
 
 function encryptSecretsInRow(section: SettingsSection, row: Record<string, unknown>): Record<string, unknown> {
-  const config = SECRET_FIELDS.find((f) => f.section === section)
-  if (!config) {
+  const configs = SECRET_FIELDS.filter((f) => f.section === section)
+  if (configs.length === 0) {
     return row
   }
-  const bucket = row[config.path] as Record<string, unknown> | undefined
-  if (!bucket) {
-    return row
+  const next: Record<string, unknown> = { ...row }
+  for (const config of configs) {
+    const bucket = next[config.path] as Record<string, unknown> | undefined
+    if (!bucket) {
+      continue
+    }
+    const value = bucket[config.field]
+    if (typeof value !== 'string') {
+      continue
+    }
+    Object.assign(bucket, { [config.field]: encryptIfNeeded(value) })
   }
-  const value = bucket[config.field]
-  if (typeof value !== 'string') {
-    return row
-  }
-  return {
-    ...row,
-    [config.path]: {
-      ...bucket,
-      [config.field]: encryptIfNeeded(value),
-    },
-  }
+  return next
 }

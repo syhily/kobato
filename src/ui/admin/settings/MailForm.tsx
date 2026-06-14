@@ -15,17 +15,23 @@ import { Input } from '@/ui/components/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/components/select'
 import { Switch } from '@/ui/components/switch'
 
+// Mirrors `MailSettings` but with `apiKeyMask` / `smtpPassMask` swapped in
+// for the encrypted secrets so the form never receives ciphertext. The
+// outer `mail:` wrapper matches `mailSchema` so the patches produced by
+// `useSettingsCard` validate on the server without translation.
 export interface MailLoaderShape {
-  enabled: boolean
-  host: string
-  sender: string
-  apiKeyMask: string | null
-  transport: 'zeabur' | 'smtp'
-  smtpHost: string
-  smtpPort: number
-  smtpUser: string
-  smtpPassMask: string | null
-  smtpSecure: boolean
+  mail: {
+    enabled: boolean
+    host: string
+    sender: string
+    apiKeyMask: string | null
+    transport: 'zeabur' | 'smtp'
+    smtpHost: string
+    smtpPort: number
+    smtpUser: string
+    smtpPassMask: string | null
+    smtpSecure: boolean
+  }
 }
 
 interface MailFormProps {
@@ -39,7 +45,7 @@ interface TestStatus {
 
 const idleTestStatus: TestStatus = { state: 'idle', message: null }
 
-const TRANSPORT_OPTIONS: { value: MailLoaderShape['transport']; label: string }[] = [
+const TRANSPORT_OPTIONS: { value: MailLoaderShape['mail']['transport']; label: string }[] = [
   { value: 'zeabur', label: 'Zeabur ZSend' },
   { value: 'smtp', label: 'SMTP' },
 ]
@@ -48,9 +54,9 @@ function MailToggleCard({ mail }: { mail: MailLoaderShape }) {
   const { form, settingGroupProps, save } = useSettingsCard<MailLoaderShape, { enabled: boolean }>({
     section: 'mail',
     source: mail,
-    toState: (source) => ({ enabled: source.enabled }),
+    toState: (source) => ({ enabled: source.mail.enabled }),
     fromState: (state) => ({
-      enabled: state.enabled,
+      mail: { enabled: state.enabled },
     }),
   })
 
@@ -90,13 +96,13 @@ function MailToggleCard({ mail }: { mail: MailLoaderShape }) {
 function ProviderSelectCard({ mail }: { mail: MailLoaderShape }) {
   const { form, settingGroupProps, save } = useSettingsCard<
     MailLoaderShape,
-    { transport: MailLoaderShape['transport'] }
+    { transport: MailLoaderShape['mail']['transport'] }
   >({
     section: 'mail',
     source: mail,
-    toState: (source) => ({ transport: source.transport }),
+    toState: (source) => ({ transport: source.mail.transport }),
     fromState: (state) => ({
-      transport: state.transport,
+      mail: { transport: state.transport },
     }),
   })
 
@@ -126,7 +132,11 @@ function ProviderSelectCard({ mail }: { mail: MailLoaderShape }) {
                 }}
               >
                 <SelectTrigger id="mail-transport" className="w-full sm:w-56">
-                  <SelectValue placeholder="选择提供商" />
+                  <SelectValue placeholder="选择提供商">
+                    {(value: MailLoaderShape['mail']['transport'] | null) =>
+                      TRANSPORT_OPTIONS.find((option) => option.value === value)?.label ?? value ?? ''
+                    }
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   {TRANSPORT_OPTIONS.map((option) => (
@@ -152,21 +162,23 @@ function ZeaburConfigCard({ mail }: { mail: MailLoaderShape }) {
     section: 'mail',
     source: mail,
     toState: (source) => ({
-      host: source.host,
-      sender: source.sender,
+      host: source.mail.host,
+      sender: source.mail.sender,
       apiKey: '',
     }),
     fromState: (state) => {
       const trimmedKey = state.apiKey.trim()
       return {
-        host: state.host.trim(),
-        sender: state.sender.trim(),
-        ...(trimmedKey ? { apiKey: trimmedKey } : {}),
+        mail: {
+          host: state.host.trim(),
+          sender: state.sender.trim(),
+          ...(trimmedKey ? { apiKey: trimmedKey } : {}),
+        },
       }
     },
   })
 
-  const apiKeyConfigured = display.apiKeyMask !== null
+  const apiKeyConfigured = display.mail.apiKeyMask !== null
   return (
     <SettingGroup
       title="Zeabur ZSend 配置"
@@ -182,7 +194,7 @@ function ZeaburConfigCard({ mail }: { mail: MailLoaderShape }) {
           htmlFor="mail-api-key"
           hint={
             apiKeyConfigured
-              ? `当前已配置（结尾 …${display.apiKeyMask}）。留空保存表示保留现有 Key。`
+              ? `当前已配置（结尾 …${display.mail.apiKeyMask}）。留空保存表示保留现有 Key。`
               : '尚未配置。在 Zeabur 控制台 ZSend 服务页面生成的密钥。'
           }
         >
@@ -217,27 +229,29 @@ function SmtpConfigCard({ mail }: { mail: MailLoaderShape }) {
     section: 'mail',
     source: mail,
     toState: (source) => ({
-      smtpHost: source.smtpHost,
-      smtpPort: source.smtpPort,
-      smtpUser: source.smtpUser,
+      smtpHost: source.mail.smtpHost,
+      smtpPort: source.mail.smtpPort,
+      smtpUser: source.mail.smtpUser,
       smtpPass: '',
-      smtpSecure: source.smtpSecure,
-      sender: source.sender,
+      smtpSecure: source.mail.smtpSecure,
+      sender: source.mail.sender,
     }),
     fromState: (state) => {
       const trimmedPass = state.smtpPass.trim()
       return {
-        smtpHost: state.smtpHost.trim(),
-        smtpPort: Number.isFinite(state.smtpPort) ? state.smtpPort : 587,
-        smtpUser: state.smtpUser.trim(),
-        smtpSecure: state.smtpSecure,
-        sender: state.sender.trim(),
-        ...(trimmedPass ? { smtpPass: trimmedPass } : {}),
+        mail: {
+          smtpHost: state.smtpHost.trim(),
+          smtpPort: Number.isFinite(state.smtpPort) ? state.smtpPort : 587,
+          smtpUser: state.smtpUser.trim(),
+          smtpSecure: state.smtpSecure,
+          sender: state.sender.trim(),
+          ...(trimmedPass ? { smtpPass: trimmedPass } : {}),
+        },
       }
     },
   })
 
-  const passConfigured = display.smtpPassMask !== null
+  const passConfigured = display.mail.smtpPassMask !== null
   return (
     <SettingGroup
       title="SMTP 配置"
@@ -270,7 +284,9 @@ function SmtpConfigCard({ mail }: { mail: MailLoaderShape }) {
           label="密码"
           htmlFor="mail-smtp-pass"
           hint={
-            passConfigured ? `当前已配置（结尾 …${display.smtpPassMask}）。留空保存表示保留现有密码。` : '尚未配置。'
+            passConfigured
+              ? `当前已配置（结尾 …${display.mail.smtpPassMask}）。留空保存表示保留现有密码。`
+              : '尚未配置。'
           }
         >
           <Input
@@ -337,14 +353,15 @@ function MailTestCard({ mail }: { mail: MailLoaderShape }) {
     testMutation.mutate({ to: testTo.trim() })
   }, [testMutation, testTo])
 
+  const inner = mail.mail
   const isTestPending = testMutation.isPending
-  const isZeabur = mail.transport === 'zeabur'
-  const zeaburReady = mail.host.trim() !== '' && mail.sender.trim() !== '' && mail.apiKeyMask !== null
+  const isZeabur = inner.transport === 'zeabur'
+  const zeaburReady = inner.host.trim() !== '' && inner.sender.trim() !== '' && inner.apiKeyMask !== null
   const smtpReady =
-    mail.smtpHost.trim() !== '' &&
-    mail.smtpUser.trim() !== '' &&
-    mail.smtpPassMask !== null &&
-    mail.sender.trim() !== ''
+    inner.smtpHost.trim() !== '' &&
+    inner.smtpUser.trim() !== '' &&
+    inner.smtpPassMask !== null &&
+    inner.sender.trim() !== ''
   const configured = isZeabur ? zeaburReady : smtpReady
   const canSendTest = !isTestPending && configured && isLikelyEmail(testTo)
 
@@ -392,7 +409,7 @@ export function MailForm({ mail }: MailFormProps) {
     <div className="flex flex-col gap-5">
       <MailToggleCard mail={mail} />
       <ProviderSelectCard mail={mail} />
-      {mail.transport === 'smtp' ? <SmtpConfigCard mail={mail} /> : <ZeaburConfigCard mail={mail} />}
+      {mail.mail.transport === 'smtp' ? <SmtpConfigCard mail={mail} /> : <ZeaburConfigCard mail={mail} />}
       <MailTestCard mail={mail} />
     </div>
   )
