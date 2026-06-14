@@ -36,10 +36,11 @@ const coerceBoolean = z
 
 // Branding user-asset slots (SVGs / binaries) are managed through the
 // dedicated `/admin/branding/upload` and `/admin/branding/clear`
-// endpoints. The schema below only declares `robotsTxt` — the only
-// piece of branding that's plain text configuration rather than an
-// uploaded asset. The service layer merges this PATCH with the
-// persisted binary/SVG ObjectRefs so they aren't wiped.
+// endpoints. Only `robotsTxt` is plain text configuration written
+// through this PATCH — the binary slots come back through the schema
+// during hydration, so they have to be declared here or Zod would
+// strip them on read and the uploaded ObjectRefs would silently
+// disappear from the bundle.
 const ROBOTS_PRINTABLE = /^[\t\n\r -~]*$/
 const robotsTxt = z
   .string()
@@ -47,6 +48,13 @@ const robotsTxt = z
   .refine((v) => v === '' || ROBOTS_PRINTABLE.test(v), {
     message: 'robots.txt 只能包含可打印 ASCII 字符',
   })
+
+const brandingObjectRef = z.object({
+  etag: z.string().min(1).max(128),
+  contentType: z.string().min(1).max(128),
+  size: z.number().int().min(0),
+  updatedAt: z.string().min(1).max(64),
+})
 
 export const assetsSchema = z
   .object({
@@ -79,6 +87,24 @@ export const assetsSchema = z
     }),
     branding: z
       .object({
+        // The 5 SVG + 8 binary slots managed by
+        // `/admin/branding/upload` + `/admin/branding/clear`. Each
+        // stores a `BrandingObjectRef` after upload; not present until
+        // the admin uploads one. Slot names mirror
+        // `src/server/assets/defaults.ts`.
+        faviconSvg: brandingObjectRef.optional(),
+        logoSvg: brandingObjectRef.optional(),
+        logoDarkSvg: brandingObjectRef.optional(),
+        logoLargeSvg: brandingObjectRef.optional(),
+        logoLargeDarkSvg: brandingObjectRef.optional(),
+        faviconIco: brandingObjectRef.optional(),
+        appleTouchIcon: brandingObjectRef.optional(),
+        icon192: brandingObjectRef.optional(),
+        icon512: brandingObjectRef.optional(),
+        openGraph: brandingObjectRef.optional(),
+        blogPoster: brandingObjectRef.optional(),
+        blogPosterDark: brandingObjectRef.optional(),
+        defaultAvatar: brandingObjectRef.optional(),
         robotsTxt: robotsTxt.optional(),
       })
       .optional(),

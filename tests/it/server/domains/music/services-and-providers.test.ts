@@ -256,7 +256,13 @@ describe('music/services/write/add — addMusic', () => {
     })
 
     const fetchMock = vi.fn(async () => ({
+      // `downloadBinary` follows redirects manually and reads `.status`
+      // to decide whether the response is a 2xx/4xx (terminal) or a 3xx
+      // (follow the Location). A plain object literal omits `status`, so
+      // we have to set it explicitly or the loop misreads the response
+      // as a redirect without a Location header.
       ok: true,
+      status: 200,
       headers: new Headers({ 'content-length': '4' }),
       arrayBuffer: async () => new ArrayBuffer(4),
     })) as unknown as typeof fetch
