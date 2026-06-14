@@ -1,14 +1,14 @@
-import { useMutation, useQuery } from '@tanstack/react-query'
+import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { ImageOffIcon, PlusIcon, RefreshCwIcon, SearchIcon } from 'lucide-react'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { toast } from 'sonner'
 
 import type { AdminImageDto, AdminImageKind } from '@/shared/types/images'
 
 import { orpc } from '@/client/api/client'
-import { orpcQuery } from '@/client/api/orpc-query'
-import { ImageCard } from '@/ui/admin/images/ImageCard'
+import { useAssetsSettings } from '@/shared/lib/blog-config-context'
 import { ImageDetailDialog } from '@/ui/admin/images/ImageDetailDialog'
+import { JustifiedImageGrid, JustifiedImageGridSkeleton } from '@/ui/admin/images/JustifiedImageGrid'
 import { useImagesController } from '@/ui/admin/images/useImagesController'
 import { AdminListPage } from '@/ui/admin/shared/AdminListPage'
 import { type ConfirmState, ConfirmDialog } from '@/ui/admin/shared/ConfirmDialog'
@@ -19,12 +19,7 @@ import { Card } from '@/ui/components/card'
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@/ui/components/empty'
 import { InputGroup, InputGroupAddon, InputGroupInput } from '@/ui/components/input-group'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/components/select'
-import { Skeleton } from '@/ui/components/skeleton'
 
-// Grid mode shows pure square thumbnails — far more rows fit per page
-// than the old table layout, so the page-size options stay generous.
-// The default is 30 which still loads quickly because each thumb is
-// downsampled to 300×300 through the configured image transform.
 const PAGE_SIZE_OPTIONS: { value: string; label: string }[] = [30, 60, 120].map((n) => ({
   value: String(n),
   label: `${n} 张`,
@@ -37,40 +32,65 @@ const KIND_OPTIONS: { value: AdminImageKind | 'all'; label: string }[] = [
   { value: 'friend', label: '友链海报' },
 ]
 
-// Image library admin page orchestrator. Owns fetcher state, the
-// detail-dialog selection, and the confirm-dialog reducer. Per-card
-// presentation lives in `./ImageCard.tsx` (memoized so a state tick
-// on one card doesn't reconcile every other card). Per-image meta
-// + note edit + URL copy live in `./ImageDetailDialog.tsx`, opened
-// when the operator clicks a card.
+// Infinite-scroll image library. Filter state lives in `useImagesController`;
+// the actual pages are fetched via `useInfiniteQuery` and laid out by
+// `JustifiedImageGrid` using a Google Photos-style justified-row algorithm.
 export function ImagesView() {
   const { state, dispatch } = useImagesController()
+  const { asset, storage } = useAssetsSettings()
+  const queryClient = useQueryClient()
   const [confirm, setConfirm] = useState<ConfirmState | null>(null)
   const [uploadOpen, setUploadOpen] = useState(false)
   const [selectedImage, setSelectedImage] = useState<AdminImageDto | null>(null)
   const [copiedId, setCopiedId] = useState<string | null>(null)
+  const sentinelRef = useRef<HTMLDivElement>(null)
 
-  const listQuery = useQuery(
-    orpcQuery.admin.images.list.queryOptions({
-      input: {
-        q: state.q || undefined,
-        kind: state.kind === 'all' ? undefined : state.kind,
-        offset: state.currentPage * state.pageSize,
-        limit: state.pageSize,
-      },
-    }),
+  const queryKey = useMemo(
+    () => ['admin', 'images', 'list', { q: state.q, kind: state.kind, pageSize: state.pageSize }],
+    [state.q, state.kind, state.pageSize],
   )
 
+  const listQuery = useInfiniteQuery({
+    queryKey,
+    queryFn: async ({ pageParam }) =>
+      orpc.admin.images.list({
+        q: state.q || undefined,
+        kind: state.kind === 'all' ? undefined : state.kind,
+        offset: pageParam,
+        limit: state.pageSize,
+      }),
+    getNextPageParam: (lastPage, _allPages, lastPageParam) => {
+      if (!lastPage.hasMore) {
+        return undefined
+      }
+      return (lastPageParam ?? 0) + state.pageSize
+    },
+    initialPageParam: 0,
+  })
+
+  const { hasNextPage, isFetchingNextPage, fetchNextPage, isFetching, isLoading } = listQuery
+
   useEffect(() => {
-    if (listQuery.data) {
-      dispatch({
-        type: 'loaded',
-        rows: listQuery.data.images,
-        total: listQuery.data.total,
-        hasMore: listQuery.data.hasMore,
-      })
+    const el = sentinelRef.current
+    if (!el || !hasNextPage || isFetchingNextPage) {
+      return
     }
-  }, [listQuery.data, dispatch])
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) {
+          void fetchNextPage()
+        }
+      },
+      { rootMargin: '200px' },
+    )
+
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage])
+
+  const allImages = useMemo(() => listQuery.data?.pages.flatMap((page) => page.images) ?? [], [listQuery.data])
+  const total = listQuery.data?.pages[0]?.total ?? 0
 
   useEffect(() => {
     if (listQuery.error) {
@@ -78,15 +98,20 @@ export function ImagesView() {
     }
   }, [listQuery.error])
 
-  const isListPending = listQuery.isFetching
   const reload = useCallback(() => {
     void listQuery.refetch()
   }, [listQuery])
 
+  const invalidateList = useCallback(() => {
+    void queryClient.invalidateQueries({ queryKey: ['admin', 'images', 'list'], exact: false })
+  }, [queryClient])
+
   const deleteMutation = useMutation({
     mutationFn: (id: string) => orpc.admin.images.delete({ id }),
     onSuccess: () => {
+      setSelectedImage(null)
       toast.success('删除成功')
+      invalidateList()
     },
     onError: (error) => {
       toast.error('删除图片失败', { description: error.message })
@@ -98,9 +123,9 @@ export function ImagesView() {
     mutationFn: (vars: { id: string; note: string | null }) =>
       orpc.admin.images.updateNote({ id: vars.id, note: vars.note }),
     onSuccess: (payload) => {
-      dispatch({ type: 'patchImage', image: payload.image })
       setSelectedImage((prev) => (prev !== null && prev.id === payload.image.id ? payload.image : prev))
       toast.success('更新备注成功')
+      invalidateList()
     },
     onError: (error) => {
       toast.error('更新图片备注失败', { description: error.message })
@@ -112,9 +137,9 @@ export function ImagesView() {
   const recalculateMutation = useMutation({
     mutationFn: (id: string) => orpc.admin.images.recalculateThumbhash({ id }),
     onSuccess: (payload) => {
-      dispatch({ type: 'patchImage', image: payload.image })
       setSelectedImage((prev) => (prev !== null && prev.id === payload.image.id ? payload.image : prev))
       toast.success('重新计算缩略图成功')
+      invalidateList()
     },
     onError: (error) => {
       toast.error('重新计算缩略图失败', { description: error.message })
@@ -127,9 +152,6 @@ export function ImagesView() {
     delayMs: 300,
     onChange: (value) => dispatch({ type: 'setQ', value }),
   })
-
-  const isLoading = isListPending && state.rows.length === 0
-  const totalPages = useMemo(() => Math.max(1, Math.ceil(state.total / state.pageSize)), [state.total, state.pageSize])
 
   const onCopyUrl = useCallback((image: AdminImageDto) => {
     void navigator.clipboard.writeText(image.publicUrl).then(() => {
@@ -155,13 +177,12 @@ export function ImagesView() {
         actionLabel: '删除',
         destructive: true,
         onConfirm: () => {
-          dispatch({ type: 'removeImage', id: image.id })
           submitDelete(image.id)
           setSelectedImage(null)
         },
       })
     },
-    [dispatch, submitDelete],
+    [submitDelete],
   )
 
   const onRecalculateThumbhash = useCallback(
@@ -174,8 +195,8 @@ export function ImagesView() {
   return (
     <>
       <AdminListPage>
-        <AdminListPage.Header title="图片管理" description={`共 ${state.total} 条。删除时同步移除 S3 中的原始对象。`}>
-          <Button type="button" variant="outline" className="border-ink-4" onClick={reload} disabled={isListPending}>
+        <AdminListPage.Header title="图片管理" description={`共 ${total} 条。删除时同步移除 S3 中的原始对象。`}>
+          <Button type="button" variant="outline" className="border-ink-4" onClick={reload} disabled={isFetching}>
             <RefreshCwIcon /> 刷新
           </Button>
           <Button type="button" onClick={() => setUploadOpen(true)}>
@@ -220,7 +241,7 @@ export function ImagesView() {
                 </SelectContent>
               </Select>
             </AdminListPage.FilterField>
-            <AdminListPage.FilterField label="每页显示">
+            <AdminListPage.FilterField label="每次加载">
               <Select
                 items={PAGE_SIZE_OPTIONS}
                 value={String(state.pageSize)}
@@ -243,8 +264,8 @@ export function ImagesView() {
 
         <AdminListPage.Body>
           {isLoading ? (
-            <ImagesGridSkeleton />
-          ) : state.rows.length === 0 ? (
+            <JustifiedImageGridSkeleton />
+          ) : allImages.length === 0 ? (
             <Card className="p-0">
               <Empty className="border-0">
                 <EmptyHeader>
@@ -256,19 +277,27 @@ export function ImagesView() {
               </Empty>
             </Card>
           ) : (
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8">
-              {state.rows.map((row) => (
-                <ImageCard key={row.id} image={row} onClick={() => setSelectedImage(row)} />
-              ))}
-            </div>
+            <>
+              <JustifiedImageGrid
+                images={allImages}
+                assetHost={asset.host}
+                urlTemplate={storage.urlTemplate}
+                onSelect={setSelectedImage}
+              />
+              <div ref={sentinelRef} className="mt-8 flex items-center justify-center">
+                {isFetchingNextPage && (
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <div className="size-4 animate-spin rounded-full border-2 border-muted border-t-primary" />
+                    加载中…
+                  </div>
+                )}
+                {!hasNextPage && allImages.length > 0 && (
+                  <p className="text-sm text-muted-foreground">已加载全部 {total} 张图片</p>
+                )}
+              </div>
+            </>
           )}
         </AdminListPage.Body>
-
-        <AdminListPage.PageNavigation
-          totalPages={totalPages}
-          currentPage={state.currentPage}
-          onChange={(page) => dispatch({ type: 'setCurrentPage', value: page })}
-        />
       </AdminListPage>
 
       <ImageDetailDialog
@@ -288,25 +317,13 @@ export function ImagesView() {
         open={uploadOpen}
         kind={{ kind: 'generic' }}
         onClose={() => setUploadOpen(false)}
-        onUploaded={(image) => {
-          dispatch({ type: 'prependImage', image })
+        onUploaded={() => {
           setUploadOpen(false)
+          invalidateList()
         }}
       />
 
       <ConfirmDialog state={confirm} onClose={() => setConfirm(null)} />
     </>
-  )
-}
-
-function ImagesGridSkeleton() {
-  return (
-    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8">
-      {Array.from({ length: 24 }).map((_, i) => (
-        // Skeleton tiles — identical placeholders, swapped wholesale on load.
-        // oxlint-disable-next-line react/no-array-index-key
-        <Skeleton key={i} className="aspect-square w-full rounded-xl" />
-      ))}
-    </div>
   )
 }
