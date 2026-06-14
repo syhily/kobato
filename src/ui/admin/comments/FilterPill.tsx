@@ -2,7 +2,7 @@ import { XIcon } from 'lucide-react'
 import { useMemo, useState } from 'react'
 
 import { DateFilterEditor, formatDateInput } from '@/ui/admin/comments/DateFilterEditor'
-import { FILTER_FIELDS, STATUS_OPTIONS } from '@/ui/admin/comments/filter-constants'
+import { type FieldDefinition, FILTER_FIELDS, STATUS_OPTIONS } from '@/ui/admin/comments/filter-constants'
 import { TextFilterEditor } from '@/ui/admin/comments/TextFilterEditor'
 import {
   DEFAULT_DATE_OPERATOR,
@@ -13,6 +13,7 @@ import {
   textFilterLabel,
   type ActiveFilter,
   type FilterItem,
+  type TextFilterOperator,
 } from '@/ui/admin/comments/useCommentsController'
 import { Combobox, ComboboxContent, ComboboxItem, ComboboxTrigger, ComboboxValue } from '@/ui/components/combobox'
 import { Popover, PopoverContent, PopoverTrigger } from '@/ui/components/popover'
@@ -28,10 +29,21 @@ interface FilterPillProps {
   onAuthorSearch: (query: string) => void
   isPagesPending?: boolean
   isAuthorsPending?: boolean
+  fields?: FieldDefinition[]
+  statusOptions?: { value: string; label: string }[]
+  textFilterOperators?: readonly { value: TextFilterOperator; label: string }[]
 }
 
-function StatusValuePicker({ value, onChange }: { value: string; onChange: (value: string, label: string) => void }) {
-  const currentLabel = STATUS_OPTIONS.find((o) => o.value === value)?.label ?? value
+function StatusValuePicker({
+  value,
+  onChange,
+  statusOptions,
+}: {
+  value: string
+  onChange: (value: string, label: string) => void
+  statusOptions: { value: string; label: string }[]
+}) {
+  const currentLabel = statusOptions.find((o) => o.value === value)?.label ?? value
   const [open, setOpen] = useState(false)
 
   return (
@@ -45,7 +57,7 @@ function StatusValuePicker({ value, onChange }: { value: string; onChange: (valu
         {currentLabel}
       </PopoverTrigger>
       <PopoverContent align="start" className="w-32 p-1">
-        {STATUS_OPTIONS.map((option) => (
+        {statusOptions.map((option) => (
           <button
             key={option.value}
             type="button"
@@ -82,17 +94,23 @@ function ComboboxValuePicker({
   inputPlaceholder: string
   emptyMessage: string
 }) {
+  const [inputValue, setInputValue] = useState('')
+
   return (
     <Combobox<FilterItem>
       items={items}
       value={{ value, label }}
       onValueChange={(item) => {
+        setInputValue('')
         if (item) {
           onValueChange(item.value, item.label)
         }
       }}
-      inputValue=""
-      onInputValueChange={onSearch}
+      inputValue={inputValue}
+      onInputValueChange={(nextValue) => {
+        setInputValue(nextValue)
+        onSearch(nextValue)
+      }}
       filter={null}
     >
       <ComboboxTrigger className="h-full border-0 px-3 shadow-none data-[popup-open]:ring-0">
@@ -119,8 +137,11 @@ export function FilterPill({
   onAuthorSearch,
   isPagesPending,
   isAuthorsPending,
+  fields = FILTER_FIELDS,
+  statusOptions = STATUS_OPTIONS,
+  textFilterOperators,
 }: FilterPillProps) {
-  const fieldDef = FILTER_FIELDS.find((f) => f.key === filter.field)
+  const fieldDef = fields.find((f) => f.key === filter.field)
   const fieldLabel = fieldDef?.label ?? filter.field
   const FieldIcon = fieldDef?.icon
 
@@ -149,7 +170,7 @@ export function FilterPill({
       </div>
       <div className="flex h-9 items-center border border-r-0 border-border bg-background">
         {filter.field === 'status' ? (
-          <StatusValuePicker value={filter.value} onChange={onValueChange} />
+          <StatusValuePicker value={filter.value} onChange={onValueChange} statusOptions={statusOptions} />
         ) : filter.field === 'page' ? (
           <ComboboxValuePicker
             items={pageItems}
@@ -186,6 +207,7 @@ export function FilterPill({
           <TextFilterEditor
             value={textValue}
             onChange={(next) => onValueChange(JSON.stringify(next), textFilterLabel(next))}
+            operators={textFilterOperators}
           />
         ) : null}
       </div>

@@ -3,17 +3,12 @@ import { z } from 'zod'
 
 import { recordAuditEventFromContext } from '@/server/domains/audit/services/record'
 import { isCommentOwner } from '@/server/domains/auth/rbac'
-import { asCommentItemsWire } from '@/server/domains/comments/projection'
-import {
-  countApprovedRepliesOfComment,
-  countMyComments,
-  listMyComments,
-} from '@/server/domains/comments/repos/admin-query'
+import { countApprovedRepliesOfComment, listMyCommentEntities } from '@/server/domains/comments/repos/admin-query'
 import { clearDeleteRequest, requestDeleteComment } from '@/server/domains/comments/repos/moderation'
 import { findCommentWithUserById } from '@/server/domains/comments/repos/public-query/by-id'
+import { loadMineCommentsPage } from '@/server/domains/comments/services/mine-comments'
 import { updateOwnComment } from '@/server/domains/comments/services/moderate'
 import { authedProc } from '@/server/http/orpc-base'
-import { commentItemDto } from '@/shared/contracts/comments'
 import { commentBodySchema } from '@/shared/pt/comment-schema'
 import { idFromString } from '@/shared/utils/id'
 
@@ -82,40 +77,88 @@ const cancelDeleteOwn = authedProc
     return { success: true }
   })
 
-const listMine = authedProc
-  .route({ method: 'GET', path: '/comments/list-mine' })
+const loadMine = authedProc
+  .route({ method: 'GET', path: '/comments/load-mine' })
   .input(
-    z.object({ offset: z.coerce.number().min(0).default(0), limit: z.coerce.number().min(1).max(100).default(20) }),
+    z.object({
+      offset: z.coerce.number().min(0).default(0),
+      limit: z.coerce.number().min(1).max(100).default(20),
+      status: z.enum(['all', 'pending', 'deleteRequested', 'deleted']).optional(),
+      q: z.string().trim().max(200).optional(),
+      entity: z.string().max(2048).optional(),
+    }),
   )
   .output(
     z.object({
-      comments: z.array(commentItemDto),
+      items: z.array(
+        z.object({
+          id: z.string(),
+          body: commentBodySchema,
+          createdAtIso: z.string(),
+          deletedAtIso: z.string().nullable(),
+          deleteRequestedAtIso: z.string().nullable(),
+          isPending: z.boolean(),
+          entity: z.object({ title: z.string(), permalink: z.string() }).nullable(),
+          parent: z.object({ name: z.string(), excerpt: z.string(), isDeleted: z.boolean() }).nullable(),
+        }),
+      ),
       total: z.number().int(),
-      pending: z.number().int(),
-      deleteRequested: z.number().int(),
       hasMore: z.boolean(),
+      counts: z.object({
+        total: z.number().int(),
+        pending: z.number().int(),
+        deleteRequested: z.number().int(),
+        deleted: z.number().int(),
+      }),
     }),
   )
   .handler(async ({ input, context }) => {
     const userId = idFromString(context.viewer.userId)
-    const offset = input.offset
-    const limit = Math.min(input.limit, 100)
-    const [comments, counts] = await Promise.all([
-      listMyComments(context.db, userId, offset, limit),
-      countMyComments(context.db, userId),
-    ])
+    const entity = input.entity ? parseEntityParam(input.entity) : null
+    const filters = {
+      status: input.status,
+      q: input.q,
+      entity: entity ?? undefined,
+    }
+    return loadMineCommentsPage(context.db, userId, input.offset, Math.min(input.limit, 100), filters)
+  })
+
+const searchMineEntities = authedProc
+  .route({ method: 'GET', path: '/comments/search-mine-entities' })
+  .input(z.object({ q: z.string().trim().max(100).optional() }))
+  .output(z.object({ entities: z.array(z.object({ value: z.string(), label: z.string() })) }))
+  .handler(async ({ input, context }) => {
+    const userId = idFromString(context.viewer.userId)
+    const rows = await listMyCommentEntities(context.db, userId, { q: input.q })
     return {
-      comments: asCommentItemsWire(comments),
-      total: counts.total,
-      pending: counts.pending,
-      deleteRequested: counts.deleteRequested,
-      hasMore: offset + comments.length < counts.total,
+      entities: rows.map((e) => ({ value: `${e.type}:${e.ownerId}`, label: e.title })),
     }
   })
+
+function parseEntityParam(raw: string): { type: 'post' | 'page'; ownerId: bigint } | null {
+  const idx = raw.indexOf(':')
+  if (idx <= 0) {
+    return null
+  }
+  const type = raw.slice(0, idx)
+  if (type !== 'post' && type !== 'page') {
+    return null
+  }
+  const rest = raw.slice(idx + 1)
+  if (!/^\d+$/.test(rest)) {
+    return null
+  }
+  try {
+    return { type, ownerId: BigInt(rest) }
+  } catch {
+    return null
+  }
+}
 
 export const commentsAuthedRouter = {
   updateOwn,
   requestDeleteOwn,
   cancelDeleteOwn,
-  listMine,
+  loadMine,
+  searchMineEntities,
 }

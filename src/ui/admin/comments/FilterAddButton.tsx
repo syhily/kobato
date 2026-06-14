@@ -2,7 +2,7 @@ import { FunnelIcon, FunnelPlusIcon } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 
 import { FieldValuePicker } from '@/ui/admin/comments/FieldValuePicker'
-import { FILTER_FIELDS } from '@/ui/admin/comments/filter-constants'
+import { type FieldDefinition, FILTER_FIELDS, STATUS_OPTIONS } from '@/ui/admin/comments/filter-constants'
 import {
   DEFAULT_DATE_OPERATOR,
   DEFAULT_TEXT_OPERATOR,
@@ -22,6 +22,8 @@ interface FilterAddButtonProps {
   onAuthorSearch: (query: string) => void
   isPagesPending?: boolean
   isAuthorsPending?: boolean
+  fields?: FieldDefinition[]
+  statusOptions?: { value: string; label: string }[]
 }
 
 export function FilterAddButton({
@@ -33,6 +35,8 @@ export function FilterAddButton({
   onAuthorSearch,
   isPagesPending,
   isAuthorsPending,
+  fields = FILTER_FIELDS,
+  statusOptions = STATUS_OPTIONS,
 }: FilterAddButtonProps) {
   const [open, setOpen] = useState(false)
   const [selectedField, setSelectedField] = useState<FilterFieldKey | null>(null)
@@ -40,8 +44,8 @@ export function FilterAddButton({
   const hasFilters = filters.length > 0
 
   const availableFields = useMemo(
-    () => FILTER_FIELDS.filter((f) => !filters.some((active) => active.field === f.key)),
-    [filters],
+    () => fields.filter((f) => !filters.some((active) => active.field === f.key)),
+    [filters, fields],
   )
 
   const resetPopover = () => {
@@ -100,6 +104,8 @@ export function FilterAddButton({
             onAuthorSearch={onAuthorSearch}
             isPagesPending={isPagesPending}
             isAuthorsPending={isAuthorsPending}
+            fields={fields}
+            statusOptions={statusOptions}
           />
         ) : (
           <div className="max-h-60 overflow-y-auto p-1">

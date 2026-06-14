@@ -50,9 +50,10 @@ function TextOperatorTrigger({
 interface TextFilterEditorProps {
   value: TextFilterValue
   onChange: (next: TextFilterValue) => void
+  operators?: readonly { value: TextFilterOperator; label: string }[]
 }
 
-export function TextFilterEditor({ value, onChange }: TextFilterEditorProps) {
+export function TextFilterEditor({ value, onChange, operators = TEXT_FILTER_OPERATORS }: TextFilterEditorProps) {
   const inputRef = useRef<HTMLInputElement>(null)
   const [localValue, setLocalValue] = useState(value.value)
   const lastLocalCommitRef = useRef(value.value)
@@ -86,9 +87,13 @@ export function TextFilterEditor({ value, onChange }: TextFilterEditorProps) {
     onChange({ op: nextOp, value: value.value })
   }
 
+  const showOperator = operators.length > 1
+
   return (
     <div className="flex h-full w-full items-stretch">
-      <TextOperatorTrigger value={value.op} onChange={handleOperatorChange} className="border-r border-border" />
+      {showOperator && (
+        <TextOperatorTrigger value={value.op} onChange={handleOperatorChange} className="border-r border-border" />
+      )}
       <div className="flex flex-1 items-stretch">
         <input
           ref={inputRef}

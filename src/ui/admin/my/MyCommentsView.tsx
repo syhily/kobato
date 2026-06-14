@@ -1,51 +1,61 @@
-import { useMutation } from '@tanstack/react-query'
-import { RefreshCwIcon, RotateCcwIcon, SearchIcon, SquarePenIcon, Trash2Icon, XIcon } from 'lucide-react'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useMutation, useQuery } from '@tanstack/react-query'
+import {
+  FileTextIcon,
+  ListChecksIcon,
+  LoaderIcon,
+  RotateCcwIcon,
+  SearchIcon,
+  SquarePenIcon,
+  Trash2Icon,
+} from 'lucide-react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useRevalidator, useSearchParams } from 'react-router'
+import { toast } from 'sonner'
 
 import type { MyCommentEntityOption, MyCommentItem } from '@/routes/admin/me/comments'
 import type { MyCommentsStatus } from '@/shared/types/comments'
 
+import { orpc } from '@/client/api/client'
 import { orpcQuery } from '@/client/api/orpc-query'
 import { useSiteIdentity } from '@/shared/lib/blog-config-context'
 import { commentBodySchema } from '@/shared/pt/comment-schema'
 import { formatLocalDate } from '@/shared/utils/formatter'
+import { CommentsFilterBar } from '@/ui/admin/comments/CommentsFilterBar'
+import { type FieldDefinition } from '@/ui/admin/comments/filter-constants'
+import {
+  DEFAULT_TEXT_OPERATOR,
+  textFilterLabel,
+  type ActiveFilter,
+  type FilterFieldKey,
+  type FilterItem,
+} from '@/ui/admin/comments/useCommentsController'
 import { MyEditCommentDialog } from '@/ui/admin/my/MyEditCommentDialog'
 import { AdminListPage } from '@/ui/admin/shared/AdminListPage'
 import { useDebouncedSearch } from '@/ui/admin/shared/useDebouncedSearch'
+import { Avatar, AvatarFallback, AvatarImage } from '@/ui/components/avatar'
 import { Badge } from '@/ui/components/badge'
 import { Button } from '@/ui/components/button'
-import { Card, CardContent } from '@/ui/components/card'
-import { Combobox, ComboboxContent, ComboboxItem, ComboboxTrigger, ComboboxValue } from '@/ui/components/combobox'
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@/ui/components/empty'
-import { Input } from '@/ui/components/input'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/components/select'
 import { Skeleton } from '@/ui/components/skeleton'
-import { Tabs, TabsList, TabsTrigger } from '@/ui/components/tabs'
 import { PortableTextBody } from '@/ui/pt/render'
 
 const ADMIN_DATE_FORMAT = 'yyyy-LL-dd HH:mm'
+const PAGE_SIZE = 20
+const FILTER_QUERY_DEBOUNCE_MS = 250
 
-const SEARCH_DEBOUNCE_MS = 250
+const MY_COMMENT_FIELDS: FieldDefinition[] = [
+  { key: 'status', label: '状态', icon: ListChecksIcon },
+  { key: 'page', label: '文章', icon: FileTextIcon },
+  { key: 'text', label: '内容', icon: SearchIcon },
+]
 
-const PAGE_SIZE_OPTIONS: { value: string; label: string }[] = [10, 20, 50, 100].map((n) => ({
-  value: String(n),
-  label: `${n} 条`,
-}))
-
-interface Counts {
-  total: number
-  pending: number
-  deleteRequested: number
-  deleted: number
-}
+const MY_STATUS_OPTIONS: { value: Exclude<MyCommentsStatus, 'all'>; label: string }[] = [
+  { value: 'pending', label: '待审' },
+  { value: 'deleteRequested', label: '申请删除' },
+  { value: 'deleted', label: '已删除' },
+]
 
 export interface MyCommentsViewProps {
-  items: MyCommentItem[]
-  counts: Counts
-  totalCounts: Counts
-  offset: number
-  limit: number
   status: MyCommentsStatus
   q: string
   /** `${type}:${ownerId}` if the URL pins a specific post / page, else null. */
@@ -53,42 +63,64 @@ export interface MyCommentsViewProps {
   /**
    * Posts / pages the user has commented on, plus the currently-selected
    * entity (when the URL pins one that isn't in the capped result set).
-   * The Combobox filters this list client-side — the option count is
-   * bounded by `MY_COMMENT_ENTITY_LIMIT` server-side, so debouncing a
-   * server search isn't worth the complexity here.
    */
   entityOptions: MyCommentEntityOption[]
+  currentUser: { id: string; name: string; email: string }
 }
 
-function ClearFilterButton({ onClick }: { onClick: () => void }) {
-  return (
-    <Button
-      type="button"
-      variant="destructive-soft"
-      size="sm"
-      onClick={onClick}
-      className="h-7 gap-1 px-2 py-0 text-xs"
-    >
-      <XIcon data-icon="sm" />
-      清除
-    </Button>
-  )
-}
-
-export function MyCommentsView({
-  items,
-  counts,
-  totalCounts,
-  offset,
-  limit,
+function buildActiveFilters({
   status,
   q,
   entity,
   entityOptions,
-}: MyCommentsViewProps) {
+}: {
+  status: MyCommentsStatus
+  q: string
+  entity: string | null
+  entityOptions: MyCommentEntityOption[]
+}): ActiveFilter[] {
+  const filters: ActiveFilter[] = []
+  if (status !== 'all') {
+    const label = MY_STATUS_OPTIONS.find((o) => o.value === status)?.label ?? status
+    filters.push({ field: 'status', value: status, label })
+  }
+  if (entity) {
+    const match = entityOptions.find((o) => o.value === entity)
+    filters.push({ field: 'page', value: entity, label: match?.label ?? entity })
+  }
+  if (q.trim()) {
+    const value = JSON.stringify({ op: DEFAULT_TEXT_OPERATOR, value: q.trim() })
+    filters.push({ field: 'text', value, label: textFilterLabel({ op: DEFAULT_TEXT_OPERATOR, value: q.trim() }) })
+  }
+  return filters
+}
+
+export function MyCommentsView({ status, q, entity, entityOptions, currentUser }: MyCommentsViewProps) {
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
   const revalidator = useRevalidator()
+
+  const [items, setItems] = useState<MyCommentItem[]>([])
+  const [total, setTotal] = useState(0)
+  const [hasMore, setHasMore] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
+  const [loadingMore, setLoadingMore] = useState(false)
+  const [textFilterDraft, setTextFilterDraft] = useState<ActiveFilter | null>(null)
+
+  const [debouncedEntityQuery, setDebouncedEntityQuery] = useState('')
+  const [, setEntityQuery] = useDebouncedSearch({
+    delayMs: FILTER_QUERY_DEBOUNCE_MS,
+    onChange: (value) => setDebouncedEntityQuery(value),
+  })
+
+  const { data: entitiesData, isLoading: isEntitiesPending } = useQuery(
+    orpcQuery.comments.searchMineEntities.queryOptions({
+      input: debouncedEntityQuery ? { q: debouncedEntityQuery } : {},
+    }),
+  )
+
+  const lastQueryKeyRef = useRef<string | null>(null)
+  const sentinelRef = useRef<HTMLDivElement>(null)
 
   const updateParams = useCallback(
     (patch: Record<string, string | null>) => {
@@ -105,31 +137,141 @@ export function MyCommentsView({
     [navigate, searchParams],
   )
 
-  const [searchInput, setSearchInput] = useDebouncedSearch({
-    initial: q,
-    delayMs: SEARCH_DEBOUNCE_MS,
-    onChange: (value) => {
-      if (value === q) {
+  const filters = useMemo(() => {
+    const base = buildActiveFilters({ status, q, entity, entityOptions })
+    if (textFilterDraft && !base.some((f) => f.field === 'text')) {
+      return [...base, textFilterDraft]
+    }
+    return base
+  }, [status, q, entity, entityOptions, textFilterDraft])
+
+  const pageItems: FilterItem[] = useMemo(() => {
+    const fetched = entitiesData?.entities ?? []
+    const items = fetched.map((e) => ({ value: e.value, label: e.label }))
+    const current = entity
+      ? { value: entity, label: entityOptions.find((o) => o.value === entity)?.label ?? entity }
+      : null
+    if (current && !items.some((i) => i.value === current.value)) {
+      items.unshift(current)
+    }
+    return items
+  }, [entitiesData, entity, entityOptions])
+
+  const handleAddFilter = useCallback(
+    (field: FilterFieldKey, value: string, _label: string) => {
+      if (field === 'status') {
+        updateParams({ status: value === 'all' ? null : value })
+      } else if (field === 'page') {
+        updateParams({ entity: value })
+      } else if (field === 'text') {
+        try {
+          // oxlint-disable-next-line typescript/no-unsafe-type-assertion
+          const parsed = JSON.parse(value) as { value?: string; op?: string }
+          setTextFilterDraft({ field: 'text', value, label: _label })
+          updateParams({ q: parsed.value ?? null })
+        } catch {
+          // ignore malformed value
+        }
+      }
+    },
+    [updateParams],
+  )
+
+  const handleRemoveFilter = useCallback(
+    (field: FilterFieldKey) => {
+      if (field === 'status') {
+        updateParams({ status: null })
+      } else if (field === 'page') {
+        updateParams({ entity: null })
+      } else if (field === 'text') {
+        setTextFilterDraft(null)
+        updateParams({ q: null })
+      }
+    },
+    [updateParams],
+  )
+
+  const handleClearFilters = useCallback(() => {
+    setTextFilterDraft(null)
+    updateParams({ status: null, entity: null, q: null })
+  }, [updateParams])
+
+  const buildQueryInput = useCallback(
+    (offset: number) => ({
+      offset,
+      limit: PAGE_SIZE,
+      ...(status !== 'all' ? { status } : {}),
+      ...(q.trim() ? { q: q.trim() } : {}),
+      ...(entity ? { entity } : {}),
+    }),
+    [status, q, entity],
+  )
+
+  const load = useCallback(
+    async (force = false) => {
+      const input = buildQueryInput(0)
+      const key = JSON.stringify(input)
+      if (!force && key === lastQueryKeyRef.current) {
         return
       }
-      updateParams({ q: value || null, offset: null })
+      lastQueryKeyRef.current = key
+      setIsLoading(true)
+      try {
+        const result = await orpc.comments.loadMine(input)
+        setItems(result.items)
+        setTotal(result.total)
+        setHasMore(result.hasMore)
+      } catch (error) {
+        toast.error('加载评论失败', { description: error instanceof Error ? error.message : String(error) })
+      } finally {
+        setIsLoading(false)
+      }
     },
-  })
+    [buildQueryInput],
+  )
+
+  const loadMore = useCallback(async () => {
+    if (loadingMore || !hasMore) {
+      return
+    }
+    setLoadingMore(true)
+    try {
+      const result = await orpc.comments.loadMine(buildQueryInput(items.length))
+      setItems((prev) => [...prev, ...result.items])
+      setHasMore(result.hasMore)
+    } catch (error) {
+      toast.error('加载更多评论失败', { description: error instanceof Error ? error.message : String(error) })
+    } finally {
+      setLoadingMore(false)
+    }
+  }, [loadingMore, hasMore, buildQueryInput, items.length])
+
+  const loadMoreRef = useRef(loadMore)
+  loadMoreRef.current = loadMore
 
   useEffect(() => {
-    setSearchInput(q)
-    // We only want to react to loader-driven `q` changes, not to
-    // local keystrokes.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [q])
+    void load()
+  }, [load])
 
-  const selectedEntity = useMemo<MyCommentEntityOption | null>(() => {
-    if (!entity) {
-      return null
+  useEffect(() => {
+    if (!hasMore) {
+      return
     }
-    const match = entityOptions.find((o) => o.value === entity)
-    return match ?? { value: entity, label: entity }
-  }, [entity, entityOptions])
+    const el = sentinelRef.current
+    if (!el) {
+      return
+    }
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry?.isIntersecting) {
+          void loadMoreRef.current()
+        }
+      },
+      { rootMargin: '200px' },
+    )
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [hasMore])
 
   const requestDelete = useMutation({
     ...orpcQuery.comments.requestDeleteOwn.mutationOptions(),
@@ -159,110 +301,43 @@ export function MyCommentsView({
     [cancelDelete],
   )
 
-  const totalPages = useMemo(() => Math.max(1, Math.ceil(counts.total / limit)), [counts.total, limit])
-  const currentPage = Math.floor(offset / limit)
-
-  const isLoading = revalidator.state !== 'idle'
-
   const [editTarget, setEditTarget] = useState<MyCommentItem | null>(null)
+
+  const filterBar = (
+    <CommentsFilterBar
+      filters={filters}
+      onAddFilter={handleAddFilter}
+      onRemoveFilter={handleRemoveFilter}
+      onClearFilters={handleClearFilters}
+      pageItems={pageItems}
+      authorItems={[]}
+      onPageSearch={setEntityQuery}
+      onAuthorSearch={() => undefined}
+      isPagesPending={isEntitiesPending}
+      fields={MY_COMMENT_FIELDS}
+      statusOptions={MY_STATUS_OPTIONS}
+      textFilterOperators={[{ value: DEFAULT_TEXT_OPERATOR, label: '包含' }]}
+    />
+  )
+
+  const hasActiveFilters = filters.length > 0
 
   return (
     <AdminListPage>
       <AdminListPage.Header title="我的评论" description="查看与管理我发表的全部评论。">
-        <Button
-          type="button"
-          variant="outline"
-          className="border-ink-4"
-          onClick={() => void revalidator.revalidate()}
-          disabled={revalidator.state !== 'idle'}
-        >
-          <RefreshCwIcon data-icon="inline-start" /> 刷新
-        </Button>
+        <div className="flex items-center gap-2">{!hasActiveFilters && filterBar}</div>
       </AdminListPage.Header>
 
-      <AdminListPage.Toolbar>
-        <Tabs
-          value={status}
-          onValueChange={(value: string) => {
-            updateParams({ status: value === 'all' ? null : value, offset: null })
-          }}
-        >
-          <TabsList>
-            <TabsTrigger value="all">全部 · {totalCounts.total}</TabsTrigger>
-            <TabsTrigger value="pending">待审 · {totalCounts.pending}</TabsTrigger>
-            <TabsTrigger value="deleteRequested">申请删除 · {totalCounts.deleteRequested}</TabsTrigger>
-            <TabsTrigger value="deleted">已删除 · {totalCounts.deleted}</TabsTrigger>
-          </TabsList>
-        </Tabs>
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          <AdminListPage.FilterField label="搜索内容">
-            <div className="relative">
-              <SearchIcon className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                type="text"
-                value={searchInput}
-                onChange={(e) => setSearchInput(e.target.value)}
-                placeholder="搜索我的评论…"
-                className="pl-9"
-              />
-            </div>
-          </AdminListPage.FilterField>
-          <AdminListPage.FilterField
-            label="按文章筛选"
-            action={
-              selectedEntity ? (
-                <ClearFilterButton onClick={() => updateParams({ entity: null, offset: null })} />
-              ) : undefined
-            }
-          >
-            <Combobox<MyCommentEntityOption>
-              items={entityOptions}
-              value={selectedEntity}
-              onValueChange={(item) => {
-                updateParams({ entity: item ? item.value : null, offset: null })
-              }}
-            >
-              <ComboboxTrigger className="w-full">
-                <ComboboxValue placeholder="全部文章" />
-              </ComboboxTrigger>
-              <ComboboxContent<MyCommentEntityOption>
-                inputPlaceholder="搜索文章…"
-                emptyMessage={entityOptions.length === 0 ? '暂无可筛选的文章' : '无匹配文章'}
-              >
-                {(item) => (
-                  <ComboboxItem key={item.value} value={item}>
-                    {item.label}
-                  </ComboboxItem>
-                )}
-              </ComboboxContent>
-            </Combobox>
-          </AdminListPage.FilterField>
-          <AdminListPage.FilterField label="每页显示">
-            <Select
-              items={PAGE_SIZE_OPTIONS}
-              value={String(limit)}
-              onValueChange={(value) => {
-                const next = Number.parseInt(value ?? '10', 10)
-                updateParams({ limit: String(next), offset: null })
-              }}
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {PAGE_SIZE_OPTIONS.map((item) => (
-                  <SelectItem key={item.value} value={item.value}>
-                    {item.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </AdminListPage.FilterField>
+      {hasActiveFilters && filterBar}
+
+      <div className="flex items-center justify-between gap-3">
+        <div className="text-sm text-muted-foreground">
+          共 <span className="font-medium text-foreground">{total}</span> 条评论
         </div>
-      </AdminListPage.Toolbar>
+      </div>
 
       <AdminListPage.Body>
-        <div className="flex flex-col gap-3">
+        <div className="divide-y">
           {isLoading ? (
             <MyCommentsSkeleton />
           ) : items.length === 0 ? (
@@ -279,6 +354,7 @@ export function MyCommentsView({
               <MyCommentRow
                 key={item.id}
                 item={item}
+                currentUser={currentUser}
                 submitting={submitting}
                 onEdit={() => setEditTarget(item)}
                 onRequestDelete={onRequestDelete}
@@ -287,15 +363,21 @@ export function MyCommentsView({
             ))
           )}
         </div>
-      </AdminListPage.Body>
 
-      <AdminListPage.PageNavigation
-        totalPages={totalPages}
-        currentPage={currentPage}
-        onChange={(page) => {
-          updateParams({ offset: page === 0 ? null : String(page * limit) })
-        }}
-      />
+        {hasMore && <div ref={sentinelRef} className="h-1" />}
+        {(loadingMore || (!hasMore && items.length > 0)) && (
+          <div className="py-6 text-center text-sm text-muted-foreground">
+            {loadingMore ? (
+              <span className="inline-flex items-center gap-2">
+                <LoaderIcon className="size-4 animate-spin" />
+                加载中…
+              </span>
+            ) : (
+              '已加载全部评论'
+            )}
+          </div>
+        )}
+      </AdminListPage.Body>
 
       <MyEditCommentDialog
         target={
@@ -316,103 +398,127 @@ export function MyCommentsView({
   )
 }
 
-interface MyCommentRowProps {
+function MyCommentRow({
+  item,
+  currentUser,
+  submitting,
+  onEdit,
+  onRequestDelete,
+  onCancelDelete,
+}: {
   item: MyCommentItem
+  currentUser: { id: string; name: string; email: string }
   submitting: boolean
   onEdit: () => void
   onRequestDelete: (id: string) => void
   onCancelDelete: (id: string) => void
-}
-
-function MyCommentRow({ item, submitting, onEdit, onRequestDelete, onCancelDelete }: MyCommentRowProps) {
+}) {
   const config = useSiteIdentity()
   const isDeleted = item.deletedAtIso !== null
   const hasPendingDelete = item.deleteRequestedAtIso !== null
   const createdAt = item.createdAtIso ? formatLocalDate(new Date(item.createdAtIso), ADMIN_DATE_FORMAT, config) : ''
   const canEdit = !isDeleted && !hasPendingDelete
+  const initial = (currentUser.name || currentUser.email || '?').slice(0, 1).toUpperCase()
 
   return (
-    <Card data-slot="my-comment-row">
-      <CardContent className="flex flex-col gap-3">
-        {/*
-         * Top row collapses metadata (time + status badges) on the left
-         * with the action cluster on the right. Both columns wrap onto
-         * their own line under `sm` so a long status badge stack never
-         * pushes the action buttons off-screen.
-         */}
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="text-sm text-muted-foreground">{createdAt}</span>
-              {item.isPending && <Badge variant="destructive">待审</Badge>}
-              {hasPendingDelete && !isDeleted && <Badge variant="outline">已申请删除</Badge>}
-              {isDeleted && <Badge variant="secondary">已删除</Badge>}
-            </div>
-            <span className="text-sm text-muted-foreground">
-              评论于：
-              {item.entity ? (
-                <a
-                  href={item.entity.permalink}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="text-foreground hover:text-primary hover:underline"
-                >
+    <div
+      data-slot="my-comment-row"
+      className="group grid grid-cols-1 gap-4 px-4 py-3 transition-colors hover:bg-muted/50"
+    >
+      <div className="flex min-w-0 items-start gap-3">
+        <Avatar className="size-10 shrink-0">
+          <AvatarImage src={`/images/avatar/${currentUser.id}.png`} alt={currentUser.name} />
+          <AvatarFallback className="bg-muted text-sm font-semibold text-muted-foreground">{initial}</AvatarFallback>
+        </Avatar>
+
+        <div className="min-w-0 flex-1">
+          {/* Header: name + badges */}
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="font-semibold">{currentUser.name}</span>
+            {item.isPending && <Badge variant="secondary">待审核</Badge>}
+            {hasPendingDelete && !isDeleted && <Badge variant="outline">已申请删除</Badge>}
+            {isDeleted && <Badge variant="secondary">已删除</Badge>}
+          </div>
+
+          {/* Meta: date + page */}
+          <p className="mt-0.5 truncate text-(--text-admin-sm) text-muted-foreground">
+            {createdAt}
+            {item.entity && (
+              <>
+                {' · '}
+                <a href={item.entity.permalink} target="_blank" rel="noreferrer" className="hover:text-foreground">
                   {item.entity.title}
                 </a>
+              </>
+            )}
+          </p>
+
+          {/* Parent reply hint */}
+          {item.parent && (
+            <p className="mt-1 truncate text-sm text-muted-foreground">
+              回复 <span className="underline-offset-2 hover:underline">{item.parent.name}</span>：
+              {item.parent.isDeleted ? (
+                <span className="italic">一条已删除的评论</span>
               ) : (
-                <span className="text-muted-foreground italic">已删除文章</span>
+                <span className="text-foreground/70"> “{item.parent.excerpt}”</span>
               )}
-            </span>
+            </p>
+          )}
+
+          {/* Body */}
+          <div className="comment-content prose-blog prose prose-sm mt-2 max-w-none leading-[1.85] wrap-break-word whitespace-normal">
+            <PortableTextBody body={item.body} />
           </div>
+
+          {/* Action row */}
           {!isDeleted && (
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="mt-4 flex flex-row flex-wrap items-center gap-2">
               {canEdit && (
-                <Button type="button" size="sm" variant="outline" disabled={submitting} onClick={onEdit}>
-                  <SquarePenIcon data-icon="inline-start" /> 修改
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="ghost"
+                  onClick={onEdit}
+                  disabled={submitting}
+                  aria-label="修改评论"
+                  className="h-7 px-2.5 text-xs text-muted-foreground hover:text-foreground"
+                >
+                  <SquarePenIcon data-icon="sm" />
+                  <span className="hidden sm:inline">修改</span>
                 </Button>
               )}
               {hasPendingDelete ? (
                 <Button
                   type="button"
                   size="sm"
-                  variant="outline"
-                  disabled={submitting}
+                  variant="ghost"
                   onClick={() => onCancelDelete(item.id)}
+                  disabled={submitting}
+                  aria-label="撤回删除"
+                  className="h-7 px-2.5 text-xs text-muted-foreground hover:text-foreground"
                 >
-                  <RotateCcwIcon data-icon="inline-start" /> 撤回删除
+                  <RotateCcwIcon data-icon="sm" />
+                  <span className="hidden sm:inline">撤回删除</span>
                 </Button>
               ) : (
                 <Button
                   type="button"
                   size="sm"
-                  variant="outline"
-                  disabled={submitting}
+                  variant="ghost"
                   onClick={() => onRequestDelete(item.id)}
+                  disabled={submitting}
+                  aria-label="申请删除"
+                  className="h-7 px-2.5 text-xs text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
                 >
-                  <Trash2Icon data-icon="inline-start" /> 申请删除
+                  <Trash2Icon data-icon="sm" />
+                  <span className="hidden sm:inline">申请删除</span>
                 </Button>
               )}
             </div>
           )}
         </div>
-        {item.parent && (
-          <div className="rounded-xl border border-l-4 bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
-            {item.parent.isDeleted ? (
-              <span className="italic">回复一条已删除的评论</span>
-            ) : (
-              <>
-                <span>回复 </span>
-                <span className="font-medium text-foreground">{item.parent.name}</span>
-                <span>：{item.parent.excerpt}</span>
-              </>
-            )}
-          </div>
-        )}
-        <div className="comment-content prose-blog my-2 prose prose-sm mt-3 max-w-none leading-[1.85] wrap-break-word whitespace-normal">
-          <PortableTextBody body={item.body} />
-        </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   )
 }
 
@@ -421,16 +527,14 @@ function MyCommentsSkeleton() {
     <>
       {Array.from({ length: 3 }).map((_, i) => (
         // oxlint-disable-next-line react/no-array-index-key
-        <Card key={i}>
-          <CardContent className="flex flex-col gap-3">
-            <div className="flex items-center justify-between gap-2">
-              <Skeleton className="h-4 w-32" />
-              <Skeleton className="h-5 w-16" />
-            </div>
-            <Skeleton className="h-16 w-full" />
-            <Skeleton className="h-8 w-24" />
-          </CardContent>
-        </Card>
+        <div key={i} className="flex gap-3 px-4 py-3">
+          <Skeleton className="size-10 shrink-0 rounded-full" />
+          <div className="flex flex-1 flex-col gap-2">
+            <Skeleton className="h-4 w-1/4" />
+            <Skeleton className="h-3 w-1/3" />
+            <Skeleton className="h-12 w-full" />
+          </div>
+        </div>
       ))}
     </>
   )

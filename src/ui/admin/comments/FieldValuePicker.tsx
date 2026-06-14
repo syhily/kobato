@@ -1,5 +1,6 @@
 import { ArrowLeftIcon } from 'lucide-react'
 
+import type { FieldDefinition } from '@/ui/admin/comments/filter-constants'
 import type { FilterFieldKey, FilterItem } from '@/ui/admin/comments/useCommentsController'
 
 import { FILTER_FIELDS, STATUS_OPTIONS } from '@/ui/admin/comments/filter-constants'
@@ -35,6 +36,8 @@ interface FieldValuePickerProps {
   onAuthorSearch: (query: string) => void
   isPagesPending?: boolean
   isAuthorsPending?: boolean
+  fields?: FieldDefinition[]
+  statusOptions?: { value: string; label: string }[]
 }
 
 export function FieldValuePicker({
@@ -47,15 +50,18 @@ export function FieldValuePicker({
   onAuthorSearch,
   isPagesPending,
   isAuthorsPending,
+  fields = FILTER_FIELDS,
+  statusOptions = STATUS_OPTIONS,
 }: FieldValuePickerProps) {
-  const fieldLabel = FILTER_FIELDS.find((f) => f.key === field)?.label ?? field
+  const fieldDef = fields.find((f) => f.key === field)
+  const fieldLabel = fieldDef?.label ?? field
 
   if (field === 'status') {
     return (
       <div className="flex flex-col">
         <PickerHeader label={fieldLabel} onBack={onBack} />
         <div className="p-1">
-          {STATUS_OPTIONS.map((option) => (
+          {statusOptions.map((option) => (
             <button
               key={option.value}
               type="button"
