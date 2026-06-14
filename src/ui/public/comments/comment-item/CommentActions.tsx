@@ -58,8 +58,8 @@ export function CommentActions({ comment, mode: propMode, onEditAdmin, onEditOwn
   const deleteToggleDisabled = requestDelete.isPending || cancelDelete.isPending
 
   const handleReply = () => leaf.onReply(Number(comment.id))
-  const handleApprove = () => approve.mutate({ rid: String(comment.id) })
-  const handleDelete = () => remove.mutate({ rid: String(comment.id) })
+  const handleApprove = () => approve.mutate({ commentId: String(comment.id) })
+  const handleDelete = () => remove.mutate({ commentId: String(comment.id) })
   const handleRequestDelete = () => requestDelete.mutate({ commentId: String(comment.id) })
   const handleCancelDelete = () => cancelDelete.mutate({ commentId: String(comment.id) })
 

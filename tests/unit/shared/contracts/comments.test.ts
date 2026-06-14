@@ -64,12 +64,12 @@ function emptyState(overrides: Partial<CommentsState> = {}): CommentsState {
     comments: [],
     total: 0,
     filters: [],
-    statusCounts: { all: 0, pending: 0, approved: 0 },
+    statusCounts: { all: 0, pending: 0, approved: 0, deleteRequested: 0 },
     ...overrides,
   }
 }
 
-const statusCounts: StatusCounts = { all: 100, pending: 20, approved: 80 }
+const statusCounts: StatusCounts = { all: 100, pending: 20, approved: 80, deleteRequested: 0 }
 
 describe('commentsReducer — loaded', () => {
   it('sets comments, total, and statusCounts from the payload', () => {

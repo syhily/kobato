@@ -147,6 +147,7 @@ export interface StatusCounts {
   all: number
   pending: number
   approved: number
+  deleteRequested: number
 }
 
 const PAGE_SIZE = 10
@@ -176,7 +177,7 @@ export type CommentsAction =
   | { type: 'addFilter'; field: FilterFieldKey; value: string; label: string }
   | { type: 'removeFilter'; field: FilterFieldKey }
   | { type: 'renameFilter'; field: FilterFieldKey; label: string }
-  | { type: 'clearFilterDeleteRequest'; id: string }
+  | { type: 'clearDeleteRequest'; id: string; isPending: boolean }
   | { type: 'clearFilters' }
 
 export function commentsReducer(state: CommentsState, action: CommentsAction): CommentsState {
@@ -194,17 +195,35 @@ export function commentsReducer(state: CommentsState, action: CommentsAction): C
         comments: [...state.comments, ...action.comments],
         total: action.total,
       }
-    case 'removeComment':
+    case 'removeComment': {
+      const removed = state.comments.find((comment) => idStr(comment.id) === action.id)
+      const nextStatusCounts = { ...state.statusCounts, all: Math.max(0, state.statusCounts.all - 1) }
+      if (removed) {
+        if (removed.deleteRequestedAt !== null) {
+          nextStatusCounts.deleteRequested = Math.max(0, nextStatusCounts.deleteRequested - 1)
+        } else if (removed.isPending) {
+          nextStatusCounts.pending = Math.max(0, nextStatusCounts.pending - 1)
+        } else {
+          nextStatusCounts.approved = Math.max(0, nextStatusCounts.approved - 1)
+        }
+      }
       return {
         ...state,
         comments: state.comments.filter((comment) => idStr(comment.id) !== action.id),
+        statusCounts: nextStatusCounts,
       }
+    }
     case 'approveComment':
       return {
         ...state,
         comments: state.comments.map((comment) =>
           idStr(comment.id) === action.id ? { ...comment, isPending: false } : comment,
         ),
+        statusCounts: {
+          ...state.statusCounts,
+          pending: Math.max(0, state.statusCounts.pending - 1),
+          approved: state.statusCounts.approved + 1,
+        },
       }
     case 'updateCommentContent':
       return {
@@ -228,13 +247,24 @@ export function commentsReducer(state: CommentsState, action: CommentsAction): C
       next[idx] = { ...next[idx]!, label: action.label }
       return { ...state, filters: next }
     }
-    case 'clearFilterDeleteRequest':
+    case 'clearDeleteRequest': {
+      const nextStatusCounts = {
+        ...state.statusCounts,
+        deleteRequested: Math.max(0, state.statusCounts.deleteRequested - 1),
+      }
+      if (action.isPending) {
+        nextStatusCounts.pending = state.statusCounts.pending + 1
+      } else {
+        nextStatusCounts.approved = state.statusCounts.approved + 1
+      }
       return {
         ...state,
         comments: state.comments.map((comment) =>
           idStr(comment.id) === action.id ? { ...comment, deleteRequestedAt: null } : comment,
         ),
+        statusCounts: nextStatusCounts,
       }
+    }
     case 'clearFilters':
       return { ...state, filters: [] }
   }
@@ -249,7 +279,7 @@ export function useCommentsController({ initialFilters }: UseCommentsControllerO
     comments: [],
     total: 0,
     filters: initialFilters,
-    statusCounts: { all: 0, pending: 0, approved: 0 },
+    statusCounts: { all: 0, pending: 0, approved: 0, deleteRequested: 0 },
   })
 
   const statusFilter = state.filters.find((f) => f.field === 'status')

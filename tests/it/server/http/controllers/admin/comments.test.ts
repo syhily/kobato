@@ -79,7 +79,7 @@ describe('adminCommentsRouter.approve', () => {
   it('resolves to undefined on success', async () => {
     vi.mocked(moderate.approveComment).mockResolvedValueOnce(undefined)
     const ctx = makeAuthedCtx()
-    const res = await call(adminCommentsRouter.approve, { rid: '1' }, { context: ctx })
+    const res = await call(adminCommentsRouter.approve, { commentId: '1' }, { context: ctx })
     expect(res).toBeUndefined()
   })
 })
@@ -88,7 +88,7 @@ describe('adminCommentsRouter.delete', () => {
   it('resolves to undefined on success', async () => {
     vi.mocked(moderate.deleteComment).mockResolvedValueOnce(undefined)
     const ctx = makeAuthedCtx()
-    const res = await call(adminCommentsRouter.delete, { rid: '1' }, { context: ctx })
+    const res = await call(adminCommentsRouter.delete, { commentId: '1' }, { context: ctx })
     expect(res).toBeUndefined()
   })
 })
@@ -293,6 +293,22 @@ describe('adminCommentsRouter.approveCommentDeletion', () => {
     await expect(
       call(adminCommentsRouter.approveCommentDeletion, { commentId: '1', approve: true }, { context: ctx }),
     ).rejects.toMatchObject({ code: 'CONFLICT' })
+  })
+
+  it('clears the delete request when rejecting deletion', async () => {
+    vi.mocked(queryRepo.findCommentWithUserById).mockResolvedValueOnce({
+      deleteRequestedAt: new Date(),
+    } as unknown as Awaited<ReturnType<typeof queryRepo.findCommentWithUserById>>)
+    vi.mocked(moderationRepo.adminClearDeleteRequest).mockResolvedValueOnce(true)
+    const ctx = makeAuthedCtx()
+    const res = await call(
+      adminCommentsRouter.approveCommentDeletion,
+      { commentId: '1', approve: false },
+      { context: ctx },
+    )
+    expect(res).toEqual({ success: true })
+    expect(moderationRepo.adminClearDeleteRequest).toHaveBeenCalledWith(ctx.db, 1n)
+    expect(moderationRepo.softDeleteCommentById).not.toHaveBeenCalled()
   })
 })
 

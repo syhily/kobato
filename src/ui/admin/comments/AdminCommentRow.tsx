@@ -1,5 +1,6 @@
 import { useMutation } from '@tanstack/react-query'
 import { CheckIcon, ImageIcon, LinkIcon, ReplyIcon, SquarePenIcon, Trash2Icon, UserIcon, XIcon } from 'lucide-react'
+import { toast } from 'sonner'
 
 import type { AdminCommentWire as AdminComment } from '@/shared/types/comments'
 
@@ -26,7 +27,7 @@ export interface AdminCommentRowProps {
   onEditUser: () => void
   onApproved: () => void
   onDeleted: () => void
-  onDeleteRequestResolved: (approved: boolean) => void
+  onDeleteRequestResolved: (approved: boolean, isPending: boolean) => void
   onConfirmApprove: (action: () => void) => void
   onConfirmDelete: (action: () => void) => void
   onConfirmApproveDeletion: (action: () => void) => void
@@ -64,14 +65,17 @@ export function AdminCommentRow({
   })
   const approveDeletionMutation = useMutation({
     ...orpcQuery.admin.comments.approveCommentDeletion.mutationOptions(),
-    onSuccess: (_, variables) => onDeleteRequestResolved(variables.approve),
+    onSuccess: (_, variables) => onDeleteRequestResolved(variables.approve, comment.isPending === true),
+    onError: (error) => {
+      toast.error('处理删除申请失败', { description: error.message })
+    },
   })
 
   const submitApprove = () => {
-    approveMutation.mutate({ rid: idStr(comment.id) })
+    approveMutation.mutate({ commentId: idStr(comment.id) })
   }
   const submitDelete = () => {
-    deleteMutation.mutate({ rid: idStr(comment.id) })
+    deleteMutation.mutate({ commentId: idStr(comment.id) })
   }
   const submitApproveDeletion = () => {
     approveDeletionMutation.mutate({ commentId: idStr(comment.id), approve: true })
@@ -140,7 +144,7 @@ export function AdminCommentRow({
           </div>
 
           {/* Meta: date + page */}
-          <p className="mt-0.5 truncate text-(--text-admin-sm) text-muted-foreground">
+          <p className="mt-0.5 truncate text-admin-sm text-muted-foreground">
             {comment.createAt ? formatLocalDate(comment.createAt, ADMIN_DATE_FORMAT, config) : ''}
             {comment.pageTitle && (
               <>

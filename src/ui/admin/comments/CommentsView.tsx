@@ -349,11 +349,11 @@ export function CommentsView({ currentUserName, currentUserEmail, initialFilters
   }, [dispatch])
 
   const handleDeleteRequestResolved = useCallback(
-    (id: string, approved: boolean) => {
+    (id: string, approved: boolean, isPending: boolean) => {
       if (approved) {
         dispatch({ type: 'removeComment', id })
       } else {
-        dispatch({ type: 'clearFilterDeleteRequest', id })
+        dispatch({ type: 'clearDeleteRequest', id, isPending })
       }
     },
     [dispatch],
@@ -381,6 +381,7 @@ export function CommentsView({ currentUserName, currentUserEmail, initialFilters
     <>
       <AdminListPage>
         <AdminListPage.Header title="评论管理" description="审核、回复、编辑站点评论。">
+          {/* Header slot only when no filters are active — body slot below takes over otherwise. */}
           <div className="flex items-center gap-2">{!hasActiveFilters && filterBar}</div>
         </AdminListPage.Header>
 
@@ -410,7 +411,9 @@ export function CommentsView({ currentUserName, currentUserEmail, initialFilters
                   onEditUser={() => setEditUserTarget(comment)}
                   onApproved={() => dispatch({ type: 'approveComment', id: idStr(comment.id) })}
                   onDeleted={() => dispatch({ type: 'removeComment', id: idStr(comment.id) })}
-                  onDeleteRequestResolved={(approved) => handleDeleteRequestResolved(idStr(comment.id), approved)}
+                  onDeleteRequestResolved={(approved) =>
+                    handleDeleteRequestResolved(idStr(comment.id), approved, comment.isPending === true)
+                  }
                   onConfirmApprove={askApprove}
                   onConfirmDelete={askDelete}
                   onConfirmApproveDeletion={askApproveDeletion}

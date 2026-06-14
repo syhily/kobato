@@ -18,27 +18,27 @@ import { idFromString } from '@/shared/utils/id'
 
 const approve = adminProc
   .route({ method: 'POST', path: '/comment-admin/approve' })
-  .input(z.object({ rid: z.string() }))
+  .input(z.object({ commentId: z.string() }))
   .output(z.void())
   .handler(async ({ input, context }) => {
-    await approveComment(context.db, input.rid)
+    await approveComment(context.db, input.commentId)
     recordAuditEventFromContext(context, {
       action: 'comment_approved',
       resourceType: 'comment',
-      resourceId: input.rid,
+      resourceId: input.commentId,
     })
   })
 
 const deleteOne = adminProc
   .route({ method: 'POST', path: '/comment-admin/delete' })
-  .input(z.object({ rid: z.string() }))
+  .input(z.object({ commentId: z.string() }))
   .output(z.void())
   .handler(async ({ input, context }) => {
-    await deleteComment(context.db, input.rid)
+    await deleteComment(context.db, input.commentId)
     recordAuditEventFromContext(context, {
       action: 'comment_deleted',
       resourceType: 'comment',
-      resourceId: input.rid,
+      resourceId: input.commentId,
     })
   })
 

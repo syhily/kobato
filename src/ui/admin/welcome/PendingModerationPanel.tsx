@@ -59,7 +59,7 @@ export function PendingModerationPanel({ initial, emptyStateLine }: PendingModer
   }, [refetch])
 
   const approveApi = useMutation({
-    mutationFn: (vars: { rid: string }) => orpc.admin.comments.approve({ rid: vars.rid }),
+    mutationFn: (vars: { commentId: string }) => orpc.admin.comments.approve({ commentId: vars.commentId }),
     onSuccess: () => {
       toast.success('已通过该评论。')
       refresh()
@@ -67,7 +67,7 @@ export function PendingModerationPanel({ initial, emptyStateLine }: PendingModer
     onError: () => toast.error('操作失败'),
   })
   const rejectApi = useMutation({
-    mutationFn: (vars: { rid: string }) => orpc.admin.comments.delete({ rid: vars.rid }),
+    mutationFn: (vars: { commentId: string }) => orpc.admin.comments.delete({ commentId: vars.commentId }),
     onSuccess: () => {
       toast.success('已拒绝并删除该评论。')
       refresh()
@@ -84,10 +84,10 @@ export function PendingModerationPanel({ initial, emptyStateLine }: PendingModer
   })
 
   const onApprove = (item: AdminPendingItemDto) => {
-    approveApi.mutate({ rid: item.id })
+    approveApi.mutate({ commentId: item.id })
   }
   const onReject = (item: AdminPendingItemDto) => {
-    rejectApi.mutate({ rid: item.id })
+    rejectApi.mutate({ commentId: item.id })
   }
   const onApproveDeletion = (item: AdminPendingItemDto) => {
     approveDeletionApi.mutate({ commentId: item.id, approve: true })
