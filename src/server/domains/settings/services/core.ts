@@ -148,8 +148,8 @@ async function applySectionPatch(
   validated: unknown,
 ): Promise<Record<string, unknown>> {
   let row = validated as Record<string, unknown>
-  const secretConfig = SECRET_FIELDS.find((f) => f.section === section)
-  if (secretConfig) {
+  const secretConfigs = SECRET_FIELDS.filter((f) => f.section === section)
+  for (const secretConfig of secretConfigs) {
     row = await preserveSecretOnPatch(db, row, section, secretConfig.path, secretConfig.field)
   }
   if (section === 'assets') {

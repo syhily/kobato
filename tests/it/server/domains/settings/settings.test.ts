@@ -508,6 +508,65 @@ describe('services/settings — mail section', () => {
     ).rejects.toBeInstanceOf(DomainError)
     expect(settingQueries.upsertSetting).not.toHaveBeenCalled()
   })
+
+  it("preserves the existing smtpPass by reading scope='blog.mail' when omitted", async () => {
+    vi.mocked(settingQueries.findSettingByScope).mockResolvedValueOnce({
+      id: 1n,
+      scope: 'blog.mail',
+      data: {
+        mail: {
+          enabled: true,
+          host: 'api.zeabur.com',
+          apiKey: 'ZEABURKEY',
+          sender: 'a@b.co',
+          transport: 'smtp',
+          smtpHost: 'smtp.old.com',
+          smtpPort: 587,
+          smtpUser: 'olduser',
+          smtpPass: 'STOREDSMTPPASS',
+          smtpSecure: false,
+        },
+      },
+      updatedAt: new Date(),
+      updatedBy: null,
+    } as Setting)
+    vi.mocked(settingQueries.findSettingsByScopePrefix).mockResolvedValue(bundleRows(fixtureBundle))
+    vi.mocked(settingQueries.upsertSetting).mockResolvedValue({
+      id: 1n,
+      scope: 'blog.general',
+      data: {},
+      updatedAt: new Date(),
+      updatedBy: null,
+    } as Setting)
+
+    await updateBlogSettingsSection(
+      db,
+      pool,
+      'mail',
+      {
+        mail: {
+          enabled: true,
+          host: 'api.zeabur.com',
+          sender: 'noreply@example.com',
+          transport: 'smtp',
+          smtpHost: 'smtp.example.com',
+          smtpPort: 587,
+          smtpUser: 'user',
+          smtpSecure: true,
+        },
+      },
+      null,
+    )
+
+    const [, data] = vi.mocked(settingQueries.upsertSetting).mock.calls[0]
+    const mail = (data as Record<string, unknown>).mail as Record<string, unknown>
+    expect(typeof mail.smtpPass).toBe('string')
+    expect((mail.smtpPass as string).length).toBeGreaterThan(0)
+    expect(mail.smtpHost).toBe('smtp.example.com')
+    expect(mail.smtpUser).toBe('user')
+    expect(mail.smtpSecure).toBe(true)
+    expect(mail.apiKey).toBe('ZEABURKEY')
+  })
 })
 
 describe('services/settings — rateLimit section', () => {

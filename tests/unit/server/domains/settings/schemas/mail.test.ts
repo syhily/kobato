@@ -83,4 +83,29 @@ describe('settings/schemas/mail', () => {
     expect(result.data.mail.apiKey).toBeUndefined()
     expect(result.data.mail.smtpPass).toBeUndefined()
   })
+
+  it('allows switching transport without the other provider fields filled', () => {
+    const toSmtp = mailSchema.safeParse({
+      mail: {
+        enabled: true,
+        host: 'api.zeabur.com',
+        apiKey: 'key',
+        sender: 'noreply@example.com',
+        transport: 'smtp',
+      },
+    })
+    expect(toSmtp.success).toBe(true)
+
+    const toZeabur = mailSchema.safeParse({
+      mail: {
+        enabled: true,
+        sender: 'noreply@example.com',
+        transport: 'zeabur',
+        smtpHost: 'smtp.example.com',
+        smtpUser: 'user',
+        smtpPass: 'secret',
+      },
+    })
+    expect(toZeabur.success).toBe(true)
+  })
 })

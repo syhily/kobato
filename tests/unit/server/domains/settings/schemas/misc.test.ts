@@ -68,8 +68,8 @@ describe('settings/schemas/mail', () => {
     ).toBe(false)
   })
 
-  it('rejects an empty host', () => {
-    expect(mailSchema.safeParse({ mail: { enabled: false, host: '', sender: '' } }).success).toBe(false)
+  it('allows an empty host so the provider can be switched without filling fields first', () => {
+    expect(mailSchema.safeParse({ mail: { enabled: false, host: '', sender: '' } }).success).toBe(true)
   })
 })
 
