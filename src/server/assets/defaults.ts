@@ -38,13 +38,6 @@ const binaryModules = import.meta.glob(['./defaults/**/*.png', './defaults/**/*.
   eager: true,
 }) as Record<string, string>
 
-import fable5VerifiedPillBadgeDataUri from '@/server/assets/defaults/badges/fable-5-verified-pill-badge.png?inline'
-
-export const FABLE_5_VERIFIED_PILL_BADGE: Buffer = dataUriToBuffer(fable5VerifiedPillBadgeDataUri)
-export const FABLE_5_VERIFIED_PILL_BADGE_ETAG: string = createHash('sha256')
-  .update(FABLE_5_VERIFIED_PILL_BADGE)
-  .digest('hex')
-
 // `favicon.svg` -> `faviconSvg`, `logo-large-dark.svg` -> `logoLargeDarkSvg`,
 // `apple-touch-icon.png` -> `appleTouchIcon`, `favicon.ico` -> `faviconIco`.
 function keyForFile(path: string): string {

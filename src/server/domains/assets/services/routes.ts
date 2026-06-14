@@ -5,8 +5,6 @@ import {
   DEFAULT_BINARY_ETAG,
   DEFAULT_SVG,
   DEFAULT_SVG_ETAG,
-  FABLE_5_VERIFIED_PILL_BADGE,
-  FABLE_5_VERIFIED_PILL_BADGE_ETAG,
   type SvgSlot,
 } from '@/server/assets/defaults'
 import { fetchBrandingObject, SLOT_CONTENT_TYPE } from '@/server/domains/assets/repos/storage'
@@ -49,15 +47,6 @@ export const ASSET_ROUTES: Readonly<Record<string, AssetRoute>> = {
   '/images/blog-poster.png': { kind: 'binary', slot: 'blogPoster' },
   '/images/blog-poster-dark.png': { kind: 'binary', slot: 'blogPosterDark' },
   '/images/default-avatar.png': { kind: 'binary', slot: 'defaultAvatar' },
-  '/images/fable-5-verified-pill-badge.png': {
-    kind: 'static',
-    contentType: 'image/png',
-    resolve: () => ({
-      content: FABLE_5_VERIFIED_PILL_BADGE,
-      contentType: 'image/png',
-      etag: FABLE_5_VERIFIED_PILL_BADGE_ETAG,
-    }),
-  },
 }
 
 // Defensive sanity check: every BinarySlot must have exactly one route.
