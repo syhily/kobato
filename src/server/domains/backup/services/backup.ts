@@ -1,5 +1,5 @@
 import { spawn } from 'node:child_process'
-import { Transform } from 'node:stream'
+import { PassThrough, Transform } from 'node:stream'
 import { pipeline } from 'node:stream/promises'
 import { createGzip } from 'node:zlib'
 
@@ -52,20 +52,35 @@ export async function createBackup(): Promise<{ fileName: string; size: number }
     },
   })
 
-  const streamDone = pipeline(pgDump.stdout, gzip, counter)
+  // Decouple the S3 upload stream from the pipeline destination so the AWS
+  // SDK is the sole consumer of the readable side. Using the same Transform
+  // as both the pipeline destination and the S3 Body caused the SDK to fail
+  // with "An error was encountered in a non-retryable streaming request"
+  // because pipeline could end/destroy the stream while the SDK was still
+  // reading from it.
+  const uploadStream = new PassThrough()
+
+  const streamDone = pipeline(pgDump.stdout, gzip, counter, uploadStream)
+
+  const stderrChunks: Buffer[] = []
+  pgDump.stderr.on('data', (chunk: Buffer) => {
+    stderrChunks.push(chunk)
+  })
 
   const pgDumpDone = new Promise<void>((resolve, reject) => {
     pgDump.on('error', reject)
     pgDump.on('close', (code) => {
       if (code !== 0) {
-        reject(new Error(`pg_dump 退出码 ${code}`))
+        const stderr = Buffer.concat(stderrChunks).toString('utf-8').trim()
+        log.error('pg_dump failed', { code, key, stderr: stderr || undefined })
+        reject(new Error(`pg_dump 退出码 ${code}${stderr ? `: ${stderr}` : ''}`))
       } else {
         resolve()
       }
     })
   })
 
-  const uploadDone = putS3Object(key, counter, 'application/gzip')
+  const uploadDone = putS3Object(key, uploadStream, 'application/gzip')
 
   await Promise.all([streamDone, pgDumpDone, uploadDone])
 

@@ -124,6 +124,14 @@ export async function getS3StorageContext(options?: { requireEnabled?: boolean }
     // GetObject. WHEN_REQUIRED skips automatic response validation unless
     // the caller explicitly asks for it (ChecksumMode: ENABLED).
     responseChecksumValidation: 'WHEN_REQUIRED' as const,
+    // AWS SDK v3 (>= 3.729.0) defaults to computing request checksums for
+    // every PutObject. For streams of unknown length (e.g. the gzipped
+    // pg_dump backup) the checksum middleware sets `x-amz-decoded-content-length`
+    // to `undefined`, which Node rejects with "Invalid value undefined for
+    // header x-amz-decoded-content-length" and surfaces as "An error was
+    // encountered in a non-retryable streaming request." WHEN_REQUIRED keeps
+    // checksums off unless the caller explicitly opts in.
+    requestChecksumCalculation: 'WHEN_REQUIRED' as const,
   }
   const client = new sdk.S3Client(config)
   installDeleteObjectsMd5Fallback(sdk, client)
