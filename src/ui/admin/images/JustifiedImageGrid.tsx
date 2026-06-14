@@ -156,50 +156,50 @@ export function JustifiedImageGrid({
   const rows = useMemo(() => buildJustifiedRows(images, width, targetHeight, gap), [images, width, targetHeight, gap])
   const dpr = devicePixelRatio()
 
-  if (width <= 0) {
-    return <JustifiedImageGridSkeleton targetRowHeight={targetHeight} gap={gap} className={className} />
-  }
-
   return (
     <div ref={ref} className={cn('flex flex-col', className)} style={{ gap }}>
-      {rows.map((row, rowIndex) => (
-        <div key={row.items[0]!.image.id} className="flex" style={{ gap, height: row.height }}>
-          {row.items.map((item, itemIndex) => {
-            const thumbUrl = getImageUrl({
-              src: item.image.publicUrl,
-              width: Math.ceil(item.width * dpr),
-              height: Math.ceil(item.height * dpr),
-              quality: 80,
-              assetHost,
-              urlTemplate,
-            })
+      {width <= 0 ? (
+        <JustifiedImageGridSkeleton targetRowHeight={targetHeight} gap={gap} />
+      ) : (
+        rows.map((row, rowIndex) => (
+          <div key={row.items[0]!.image.id} className="flex" style={{ gap, height: row.height }}>
+            {row.items.map((item, itemIndex) => {
+              const thumbUrl = getImageUrl({
+                src: item.image.publicUrl,
+                width: Math.ceil(item.width * dpr),
+                height: Math.ceil(item.height * dpr),
+                quality: 80,
+                assetHost,
+                urlTemplate,
+              })
 
-            return (
-              <motion.button
-                key={item.image.id}
-                type="button"
-                onClick={() => onSelect(item.image)}
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{
-                  ...transitions.fade,
-                  delay: (rowIndex * 0.02 + itemIndex * 0.01) % 0.2,
-                }}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                className={cn(
-                  'group relative block overflow-hidden rounded-xl border bg-muted',
-                  'focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none',
-                )}
-                style={{ width: item.width, height: item.height }}
-                aria-label={`查看图片 ${item.image.storagePath}`}
-              >
-                <img src={thumbUrl} alt="" loading="lazy" decoding="async" className="size-full object-cover" />
-              </motion.button>
-            )
-          })}
-        </div>
-      ))}
+              return (
+                <motion.button
+                  key={item.image.id}
+                  type="button"
+                  onClick={() => onSelect(item.image)}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{
+                    ...transitions.fade,
+                    delay: (rowIndex * 0.02 + itemIndex * 0.01) % 0.2,
+                  }}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  className={cn(
+                    'group relative block overflow-hidden rounded-xl border bg-muted',
+                    'focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none',
+                  )}
+                  style={{ width: item.width, height: item.height }}
+                  aria-label={`查看图片 ${item.image.storagePath}`}
+                >
+                  <img src={thumbUrl} alt="" loading="lazy" decoding="async" className="size-full object-cover" />
+                </motion.button>
+              )
+            })}
+          </div>
+        ))
+      )}
     </div>
   )
 }

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useLayoutEffect, useRef, useState } from 'react'
 
 interface UseElementWidthResult<T extends HTMLElement> {
   ref: React.RefObject<T | null>
@@ -13,7 +13,7 @@ export function useElementWidth<T extends HTMLElement = HTMLDivElement>(): UseEl
   const ref = useRef<T>(null)
   const [width, setWidth] = useState(0)
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const el = ref.current
     if (!el) {
       return
@@ -21,8 +21,8 @@ export function useElementWidth<T extends HTMLElement = HTMLDivElement>(): UseEl
 
     let raf: number
     const update = () => {
-      const rect = el.getBoundingClientRect()
-      setWidth((prev) => (prev === rect.width ? prev : rect.width))
+      const next = el.clientWidth
+      setWidth((prev) => (prev === next ? prev : next))
     }
 
     const observer = new ResizeObserver(() => {
