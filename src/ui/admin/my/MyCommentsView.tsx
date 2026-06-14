@@ -189,10 +189,9 @@ export function MyCommentsView({ status, q, entity, entityOptions, currentUser }
           // oxlint-disable-next-line typescript/no-unsafe-type-assertion
           const parsed = JSON.parse(value) as { value?: string; op?: string }
           const text = parsed.value?.trim() ?? ''
-          if (text === '') {
-            handleRemoveFilter('text')
-            return
-          }
+          // Always show the pill via the draft so the user can type into it.
+          // Sync the URL in both directions: non-empty text sets q, empty text
+          // clears it (so the result list isn't filtered by a stale value).
           setTextFilterDraft({ field: 'text', value, label: _label })
           updateParams({ q: text })
         } catch {
@@ -200,7 +199,7 @@ export function MyCommentsView({ status, q, entity, entityOptions, currentUser }
         }
       }
     },
-    [updateParams, handleRemoveFilter],
+    [updateParams],
   )
 
   const handleClearFilters = useCallback(() => {
