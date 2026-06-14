@@ -1,5 +1,5 @@
 import { useCallback, useRef, useState } from 'react'
-import { useRevalidator } from 'react-router'
+import { useRevalidator, useRouteLoaderData } from 'react-router'
 import { toast } from 'sonner'
 
 import type { AssetsLoaderShape, BrandingSlotStatus } from '@/shared/config/projection'
@@ -272,6 +272,8 @@ function SlotRow({
   const revalidator = useRevalidator()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [pending, setPending] = useState<'upload' | 'clear' | null>(null)
+  const rootData = useRouteLoaderData<{ csrfToken?: string }>('root')
+  const csrfToken = rootData?.csrfToken
 
   const configured = status.etag !== ''
   const previewUrl = configured ? `${meta.publicPath}?v=${status.etag}` : meta.publicPath
@@ -294,7 +296,11 @@ function SlotRow({
         const formData = new FormData()
         formData.append('slot', meta.slot)
         formData.append('file', file)
-        const res = await fetch('/api/admin/branding/upload', { method: 'POST', body: formData })
+        const headers: Record<string, string> = {}
+        if (csrfToken) {
+          headers['x-csrf-token'] = csrfToken
+        }
+        const res = await fetch('/api/admin/branding/upload', { method: 'POST', body: formData, headers })
         if (!res.ok) {
           const data: unknown = await res.json().catch(() => null)
           const message = extractApiErrorMessage(data)
@@ -308,15 +314,19 @@ function SlotRow({
         setPending(null)
       }
     },
-    [meta, revalidator],
+    [csrfToken, meta, revalidator],
   )
 
   const handleClear = useCallback(async () => {
     setPending('clear')
     try {
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+      if (csrfToken) {
+        headers['x-csrf-token'] = csrfToken
+      }
       const res = await fetch('/api/admin/branding/clear', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({ slot: meta.slot }),
       })
       if (!res.ok) {
@@ -331,7 +341,7 @@ function SlotRow({
     } finally {
       setPending(null)
     }
-  }, [meta, revalidator])
+  }, [csrfToken, meta, revalidator])
 
   return (
     <div className="flex flex-col gap-4 p-4 sm:flex-row sm:items-start">

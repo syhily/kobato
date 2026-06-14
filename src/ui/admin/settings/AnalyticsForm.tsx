@@ -1,6 +1,7 @@
 import { UploadIcon } from 'lucide-react'
 import { useRef, useState } from 'react'
 import { Controller } from 'react-hook-form'
+import { useRouteLoaderData } from 'react-router'
 import { toast } from 'sonner'
 
 import type { AnalyticsSettings } from '@/shared/config/types'
@@ -18,10 +19,14 @@ interface AnalyticsFormProps {
   analytics: AnalyticsSettings
 }
 
-async function uploadMaxMind(file: File): Promise<void> {
+async function uploadMaxMind(file: File, csrfToken: string | undefined): Promise<void> {
   const formData = new FormData()
   formData.append('file', file)
-  const res = await fetch('/api/admin/maxmind/upload', { method: 'POST', body: formData })
+  const headers: Record<string, string> = {}
+  if (csrfToken) {
+    headers['x-csrf-token'] = csrfToken
+  }
+  const res = await fetch('/api/admin/maxmind/upload', { method: 'POST', body: formData, headers })
   if (!res.ok) {
     const data: unknown = await res.json().catch(() => null)
     const message = extractApiErrorMessage(data)
@@ -32,6 +37,8 @@ async function uploadMaxMind(file: File): Promise<void> {
 function MaxMindUploadRow() {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [uploading, setUploading] = useState(false)
+  const rootData = useRouteLoaderData<{ csrfToken?: string }>('root')
+  const csrfToken = rootData?.csrfToken
 
   const handleFileChange = async (file: File) => {
     if (!file.name.toLowerCase().endsWith('.mmdb')) {
@@ -44,7 +51,7 @@ function MaxMindUploadRow() {
     }
     setUploading(true)
     try {
-      await uploadMaxMind(file)
+      await uploadMaxMind(file, csrfToken)
       toast.success('MaxMind 数据库已上传')
     } catch (err) {
       toast.error(err instanceof Error ? err.message : '上传失败')

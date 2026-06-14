@@ -1,6 +1,7 @@
 import { PlusIcon, Trash2Icon, UploadIcon } from 'lucide-react'
 import { useRef, useState } from 'react'
 import { useFieldArray } from 'react-hook-form'
+import { useRouteLoaderData } from 'react-router'
 import { toast } from 'sonner'
 
 import type { FontsSettings } from '@/shared/config/types'
@@ -22,11 +23,15 @@ interface FontsFormProps {
   fonts: FontsSettings
 }
 
-async function uploadFont(slot: 'og' | 'calendar', file: File): Promise<void> {
+async function uploadFont(slot: 'og' | 'calendar', file: File, csrfToken: string | undefined): Promise<void> {
   const formData = new FormData()
   formData.append('slot', slot)
   formData.append('file', file)
-  const res = await fetch('/api/admin/fonts/upload', { method: 'POST', body: formData })
+  const headers: Record<string, string> = {}
+  if (csrfToken) {
+    headers['x-csrf-token'] = csrfToken
+  }
+  const res = await fetch('/api/admin/fonts/upload', { method: 'POST', body: formData, headers })
   if (!res.ok) {
     const data: unknown = await res.json().catch(() => null)
     const message = extractApiErrorMessage(data)
@@ -37,6 +42,8 @@ async function uploadFont(slot: 'og' | 'calendar', file: File): Promise<void> {
 function FontUploadRow({ slot, label, family }: { slot: 'og' | 'calendar'; label: string; family: string }) {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [uploading, setUploading] = useState(false)
+  const rootData = useRouteLoaderData<{ csrfToken?: string }>('root')
+  const csrfToken = rootData?.csrfToken
 
   const handleFileChange = async (file: File) => {
     const lower = file.name.toLowerCase()
@@ -50,7 +57,7 @@ function FontUploadRow({ slot, label, family }: { slot: 'og' | 'calendar'; label
     }
     setUploading(true)
     try {
-      await uploadFont(slot, file)
+      await uploadFont(slot, file, csrfToken)
       toast.success(`${label} 已上传`)
     } catch (err) {
       toast.error(err instanceof Error ? err.message : '上传失败')
