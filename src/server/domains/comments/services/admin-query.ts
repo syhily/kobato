@@ -86,7 +86,7 @@ export interface LoadAllCommentsOptions {
   limit: number
   filterPublicId?: string
   filterUserId?: bigint
-  status?: 'all' | 'pending' | 'approved'
+  status?: 'all' | 'pending' | 'approved' | 'deleteRequested'
   filterQ?: string
   filterMatch?: 'contains' | 'does-not-contain'
   filterCreatedAfter?: Date
@@ -120,7 +120,7 @@ export async function loadAllComments(
         comments: [],
         total: 0,
         hasMore: false,
-        statusCounts: { all: 0, pending: 0, approved: 0 },
+        statusCounts: { all: 0, pending: 0, approved: 0, deleteRequested: 0 },
       }
     }
   }
@@ -137,7 +137,13 @@ export async function loadAllComments(
     countAdminComments(db, { ...baseFilters, ...extraFilters }),
   ])
   const total =
-    status === 'pending' ? statusCounts.pending : status === 'approved' ? statusCounts.approved : statusCounts.all
+    status === 'pending'
+      ? statusCounts.pending
+      : status === 'approved'
+        ? statusCounts.approved
+        : status === 'deleteRequested'
+          ? statusCounts.deleteRequested
+          : statusCounts.all
 
   return {
     comments: comments.map((c) => ({

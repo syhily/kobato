@@ -37,8 +37,12 @@ export function parseCommentFiltersFromSearchParams(searchParams: URLSearchParam
 
   const status = searchParams.get('status')
   if (status && status !== 'all') {
-    const label = status === 'pending' ? '待审核' : '已审核'
-    initialFilters.push({ field: 'status', value: status, label })
+    const statusLabel: Record<string, string> = {
+      pending: '待审核',
+      approved: '已审核',
+      deleteRequested: '申请删除',
+    }
+    initialFilters.push({ field: 'status', value: status, label: statusLabel[status] ?? status })
   }
 
   const pageKey = searchParams.get('pageKey')

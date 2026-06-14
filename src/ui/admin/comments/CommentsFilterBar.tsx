@@ -1,6 +1,12 @@
 import { XIcon } from 'lucide-react'
 
-import type { ActiveFilter, FilterFieldKey, FilterItem } from '@/ui/admin/comments/useCommentsController'
+import type { FieldDefinition } from '@/ui/admin/comments/filter-constants'
+import type {
+  ActiveFilter,
+  FilterFieldKey,
+  FilterItem,
+  TextFilterOperator,
+} from '@/ui/admin/comments/useCommentsController'
 
 import { FilterAddButton } from '@/ui/admin/comments/FilterAddButton'
 import { FilterPill } from '@/ui/admin/comments/FilterPill'
@@ -16,6 +22,9 @@ interface CommentsFilterBarProps {
   onAuthorSearch: (query: string) => void
   isPagesPending?: boolean
   isAuthorsPending?: boolean
+  fields?: FieldDefinition[]
+  statusOptions?: { value: string; label: string }[]
+  textFilterOperators?: readonly { value: TextFilterOperator; label: string }[]
 }
 
 export function CommentsFilterBar({
@@ -29,6 +38,9 @@ export function CommentsFilterBar({
   onAuthorSearch,
   isPagesPending,
   isAuthorsPending,
+  fields,
+  statusOptions,
+  textFilterOperators,
 }: CommentsFilterBarProps) {
   const hasFilters = filters.length > 0
 
@@ -43,6 +55,8 @@ export function CommentsFilterBar({
         onAuthorSearch={onAuthorSearch}
         isPagesPending={isPagesPending}
         isAuthorsPending={isAuthorsPending}
+        fields={fields}
+        statusOptions={statusOptions}
       />
     )
   }
@@ -61,6 +75,9 @@ export function CommentsFilterBar({
           onAuthorSearch={onAuthorSearch}
           isPagesPending={isPagesPending}
           isAuthorsPending={isAuthorsPending}
+          fields={fields}
+          statusOptions={statusOptions}
+          textFilterOperators={textFilterOperators}
         />
       ))}
       <FilterAddButton
@@ -72,6 +89,8 @@ export function CommentsFilterBar({
         onAuthorSearch={onAuthorSearch}
         isPagesPending={isPagesPending}
         isAuthorsPending={isAuthorsPending}
+        fields={fields}
+        statusOptions={statusOptions}
       />
       <button
         type="button"

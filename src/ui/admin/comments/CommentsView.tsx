@@ -307,6 +307,28 @@ export function CommentsView({ currentUserName, currentUserEmail, initialFilters
       }),
     [],
   )
+  const askApproveDeletion = useCallback(
+    (run: () => void) =>
+      setConfirm({
+        title: '同意删除该评论？',
+        description: '同意后评论会被标记为已删除，并从前后台隐藏。',
+        actionLabel: '同意删除',
+        destructive: true,
+        onConfirm: run,
+      }),
+    [],
+  )
+  const askRejectDeletion = useCallback(
+    (run: () => void) =>
+      setConfirm({
+        title: '拒绝删除申请？',
+        description: '拒绝后该评论会恢复为正常状态，作者需要重新申请才能再次删除。',
+        actionLabel: '拒绝删除',
+        destructive: false,
+        onConfirm: run,
+      }),
+    [],
+  )
 
   const handleAddFilter = useCallback(
     (field: FilterFieldKey, value: string, label: string) => {
@@ -325,6 +347,17 @@ export function CommentsView({ currentUserName, currentUserEmail, initialFilters
   const handleClearFilters = useCallback(() => {
     dispatch({ type: 'clearFilters' })
   }, [dispatch])
+
+  const handleDeleteRequestResolved = useCallback(
+    (id: string, approved: boolean) => {
+      if (approved) {
+        dispatch({ type: 'removeComment', id })
+      } else {
+        dispatch({ type: 'clearFilterDeleteRequest', id })
+      }
+    },
+    [dispatch],
+  )
 
   const hasActiveFilters = state.filters.length > 0
   const isLoading = isCommentsLoading
@@ -377,8 +410,11 @@ export function CommentsView({ currentUserName, currentUserEmail, initialFilters
                   onEditUser={() => setEditUserTarget(comment)}
                   onApproved={() => dispatch({ type: 'approveComment', id: idStr(comment.id) })}
                   onDeleted={() => dispatch({ type: 'removeComment', id: idStr(comment.id) })}
+                  onDeleteRequestResolved={(approved) => handleDeleteRequestResolved(idStr(comment.id), approved)}
                   onConfirmApprove={askApprove}
                   onConfirmDelete={askDelete}
+                  onConfirmApproveDeletion={askApproveDeletion}
+                  onConfirmRejectDeletion={askRejectDeletion}
                   onFilterByPage={(pageKey, pageTitle) => {
                     dispatch({ type: 'addFilter', field: 'page', value: pageKey, label: pageTitle })
                     if (typeof window !== 'undefined') {

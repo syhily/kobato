@@ -62,7 +62,7 @@ const baseComment = {
   deleteRequestedBy: null,
 }
 
-function setupRepoMocks(counts: { all: number; pending: number; approved: number }) {
+function setupRepoMocks(counts: { all: number; pending: number; approved: number; deleteRequested: number }) {
   vi.mocked(adminQueryRepo.listAdminComments).mockResolvedValueOnce([baseComment])
   vi.mocked(adminQueryRepo.countAdminComments).mockResolvedValueOnce(counts)
 }
@@ -77,7 +77,7 @@ beforeEach(() => {
 
 describe('loadAllComments — text filter propagation', () => {
   it('forwards `q` + `match: "contains"` to list and the single count query', async () => {
-    setupRepoMocks({ all: 5, pending: 2, approved: 3 })
+    setupRepoMocks({ all: 5, pending: 2, approved: 3, deleteRequested: 0 })
     await loadAllComments(makeFakeDb(), {
       offset: 0,
       limit: 20,
@@ -97,7 +97,7 @@ describe('loadAllComments — text filter propagation', () => {
   })
 
   it('forwards `match: "does-not-contain"` so the status counts respect the filter', async () => {
-    setupRepoMocks({ all: 0, pending: 0, approved: 0 })
+    setupRepoMocks({ all: 0, pending: 0, approved: 0, deleteRequested: 0 })
     await loadAllComments(makeFakeDb(), {
       offset: 0,
       limit: 20,
@@ -112,7 +112,7 @@ describe('loadAllComments — text filter propagation', () => {
   })
 
   it('leaves `match` undefined when the caller does not provide one (default → ILIKE)', async () => {
-    setupRepoMocks({ all: 1, pending: 0, approved: 1 })
+    setupRepoMocks({ all: 1, pending: 0, approved: 1, deleteRequested: 0 })
     await loadAllComments(makeFakeDb(), { offset: 0, limit: 20, status: 'all', filterQ: 'foo' })
 
     const listFilters = vi.mocked(adminQueryRepo.listAdminComments).mock.calls[0]![3]
@@ -128,7 +128,7 @@ describe('loadAllComments — text filter propagation', () => {
     // `extraFilters` would make the status counts inconsistent with
     // the list — the user would see "3 pending" in the tab but the
     // list would only show 1 row.
-    setupRepoMocks({ all: 10, pending: 3, approved: 7 })
+    setupRepoMocks({ all: 10, pending: 3, approved: 7, deleteRequested: 0 })
     const result: AdminCommentsResult = await loadAllComments(makeFakeDb(), {
       offset: 0,
       limit: 20,
@@ -136,7 +136,7 @@ describe('loadAllComments — text filter propagation', () => {
       filterQ: 'foo',
       filterMatch: 'contains',
     })
-    expect(result.statusCounts).toEqual({ all: 10, pending: 3, approved: 7 })
+    expect(result.statusCounts).toEqual({ all: 10, pending: 3, approved: 7, deleteRequested: 0 })
     expect(result.total).toBe(3)
   })
 })
@@ -146,7 +146,7 @@ describe('loadAllComments — date filter propagation', () => {
   const before = new Date('2026-06-30T23:59:59.999Z')
 
   it('forwards `filterCreatedAfter` and `filterCreatedBefore` to list and the single count query', async () => {
-    setupRepoMocks({ all: 4, pending: 1, approved: 3 })
+    setupRepoMocks({ all: 4, pending: 1, approved: 3, deleteRequested: 0 })
     await loadAllComments(makeFakeDb(), {
       offset: 0,
       limit: 20,
@@ -164,7 +164,7 @@ describe('loadAllComments — date filter propagation', () => {
   })
 
   it('leaves date bounds undefined in extraFilters when not provided (default — no date narrowing)', async () => {
-    setupRepoMocks({ all: 0, pending: 0, approved: 0 })
+    setupRepoMocks({ all: 0, pending: 0, approved: 0, deleteRequested: 0 })
     await loadAllComments(makeFakeDb(), { offset: 0, limit: 20 })
 
     const listFilters = vi.mocked(adminQueryRepo.listAdminComments).mock.calls[0]![3]
@@ -178,7 +178,7 @@ describe('loadAllComments — date filter propagation', () => {
     // bounds included) as the list — otherwise the tabs would
     // mislead the user about how many rows the active filter
     // produces.
-    setupRepoMocks({ all: 5, pending: 2, approved: 3 })
+    setupRepoMocks({ all: 5, pending: 2, approved: 3, deleteRequested: 0 })
     const result: AdminCommentsResult = await loadAllComments(makeFakeDb(), {
       offset: 0,
       limit: 20,
@@ -186,7 +186,7 @@ describe('loadAllComments — date filter propagation', () => {
       filterCreatedAfter: after,
       filterCreatedBefore: before,
     })
-    expect(result.statusCounts).toEqual({ all: 5, pending: 2, approved: 3 })
+    expect(result.statusCounts).toEqual({ all: 5, pending: 2, approved: 3, deleteRequested: 0 })
     expect(result.total).toBe(3)
   })
 })
@@ -205,7 +205,7 @@ describe('loadAllComments — options object shape', () => {
     expect(result.comments).toEqual([])
     expect(result.total).toBe(0)
     expect(result.hasMore).toBe(false)
-    expect(result.statusCounts).toEqual({ all: 0, pending: 0, approved: 0 })
+    expect(result.statusCounts).toEqual({ all: 0, pending: 0, approved: 0, deleteRequested: 0 })
     expect(adminQueryRepo.listAdminComments).not.toHaveBeenCalled()
     expect(adminQueryRepo.countAdminComments).not.toHaveBeenCalled()
   })

@@ -99,7 +99,7 @@ describe('adminCommentsRouter.loadAll', () => {
       comments: [comment as unknown as AdminComment],
       total: 1,
       hasMore: false,
-      statusCounts: { all: 1, pending: 0, approved: 1 },
+      statusCounts: { all: 1, pending: 0, approved: 1, deleteRequested: 0 },
     })
     vi.mocked(projection.asAdminCommentsWire).mockReturnValue([comment as unknown as AdminCommentWire])
     const ctx = makeAuthedCtx()
@@ -110,12 +110,28 @@ describe('adminCommentsRouter.loadAll', () => {
     expect(res.statusCounts.all).toBe(1)
   })
 
+  it('accepts `status: "deleteRequested"` and forwards it to loadAllComments', async () => {
+    vi.mocked(adminQuery.loadAllComments).mockResolvedValueOnce({
+      comments: [],
+      total: 0,
+      hasMore: false,
+      statusCounts: { all: 0, pending: 0, approved: 0, deleteRequested: 0 },
+    })
+    vi.mocked(projection.asAdminCommentsWire).mockReturnValue([])
+    const ctx = makeAuthedCtx()
+    await call(adminCommentsRouter.loadAll, { offset: 0, limit: 20, status: 'deleteRequested' }, { context: ctx })
+    expect(adminQuery.loadAllComments).toHaveBeenCalledWith(
+      ctx.db,
+      expect.objectContaining({ status: 'deleteRequested' }),
+    )
+  })
+
   it('forwards `q` and `match: "contains"` to loadAllComments', async () => {
     vi.mocked(adminQuery.loadAllComments).mockResolvedValueOnce({
       comments: [],
       total: 0,
       hasMore: false,
-      statusCounts: { all: 0, pending: 0, approved: 0 },
+      statusCounts: { all: 0, pending: 0, approved: 0, deleteRequested: 0 },
     })
     vi.mocked(projection.asAdminCommentsWire).mockReturnValue([])
     const ctx = makeAuthedCtx()
@@ -133,7 +149,7 @@ describe('adminCommentsRouter.loadAll', () => {
       comments: [],
       total: 0,
       hasMore: false,
-      statusCounts: { all: 0, pending: 0, approved: 0 },
+      statusCounts: { all: 0, pending: 0, approved: 0, deleteRequested: 0 },
     })
     vi.mocked(projection.asAdminCommentsWire).mockReturnValue([])
     const ctx = makeAuthedCtx()
@@ -167,7 +183,7 @@ describe('adminCommentsRouter.loadAll', () => {
       comments: [],
       total: 0,
       hasMore: false,
-      statusCounts: { all: 0, pending: 0, approved: 0 },
+      statusCounts: { all: 0, pending: 0, approved: 0, deleteRequested: 0 },
     })
     vi.mocked(projection.asAdminCommentsWire).mockReturnValue([])
     const ctx = makeAuthedCtx()
@@ -185,7 +201,7 @@ describe('adminCommentsRouter.loadAll', () => {
       comments: [],
       total: 0,
       hasMore: false,
-      statusCounts: { all: 0, pending: 0, approved: 0 },
+      statusCounts: { all: 0, pending: 0, approved: 0, deleteRequested: 0 },
     })
     vi.mocked(projection.asAdminCommentsWire).mockReturnValue([])
     const ctx = makeAuthedCtx()

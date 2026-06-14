@@ -50,7 +50,7 @@ const loadAll = adminProc
       limit: z.number().min(1).max(100),
       pageKey: z.string().optional(),
       userId: z.string().optional(),
-      status: z.enum(['all', 'pending', 'approved']).optional(),
+      status: z.enum(['all', 'pending', 'approved', 'deleteRequested']).optional(),
       q: z.string().trim().max(200).optional(),
       match: z.enum(['contains', 'does-not-contain']).optional(),
       createdAfter: z.iso.datetime().optional(),
@@ -66,6 +66,7 @@ const loadAll = adminProc
         all: z.number().int(),
         pending: z.number().int(),
         approved: z.number().int(),
+        deleteRequested: z.number().int(),
       }),
     }),
   )

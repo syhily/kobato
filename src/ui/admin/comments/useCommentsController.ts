@@ -6,7 +6,7 @@ import type { AdminCommentWire as AdminComment } from '@/shared/types/comments'
 import { idStr } from '@/shared/utils/tools'
 import { isRecord } from '@/shared/utils/type-guards'
 
-export type FilterStatus = 'all' | 'pending' | 'approved'
+export type FilterStatus = 'all' | 'pending' | 'approved' | 'deleteRequested'
 
 export type FilterFieldKey = 'status' | 'page' | 'author' | 'text' | 'date'
 
@@ -26,7 +26,7 @@ export function isDateFilterOperator(value: unknown): value is DateFilterOperato
 }
 
 function isFilterStatus(value: unknown): value is FilterStatus {
-  return value === 'all' || value === 'pending' || value === 'approved'
+  return value === 'all' || value === 'pending' || value === 'approved' || value === 'deleteRequested'
 }
 
 export type TextFilterOperator = 'contains' | 'does-not-contain'
@@ -176,6 +176,7 @@ export type CommentsAction =
   | { type: 'addFilter'; field: FilterFieldKey; value: string; label: string }
   | { type: 'removeFilter'; field: FilterFieldKey }
   | { type: 'renameFilter'; field: FilterFieldKey; label: string }
+  | { type: 'clearFilterDeleteRequest'; id: string }
   | { type: 'clearFilters' }
 
 export function commentsReducer(state: CommentsState, action: CommentsAction): CommentsState {
@@ -227,6 +228,13 @@ export function commentsReducer(state: CommentsState, action: CommentsAction): C
       next[idx] = { ...next[idx]!, label: action.label }
       return { ...state, filters: next }
     }
+    case 'clearFilterDeleteRequest':
+      return {
+        ...state,
+        comments: state.comments.map((comment) =>
+          idStr(comment.id) === action.id ? { ...comment, deleteRequestedAt: null } : comment,
+        ),
+      }
     case 'clearFilters':
       return { ...state, filters: [] }
   }

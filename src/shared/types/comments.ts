@@ -112,10 +112,10 @@ export interface AdminCommentsResult {
   hasMore: boolean
   /**
    * Per-status row counts under the current page/author filter context.
-   * Always populated so the moderation segmented control can render its
-   * three badges in one round-trip.
+   * Always populated so the moderation filter can render its badges in
+   * one round-trip.
    */
-  statusCounts: { all: number; pending: number; approved: number }
+  statusCounts: { all: number; pending: number; approved: number; deleteRequested: number }
 }
 
 export interface DetailPageComments {
@@ -166,7 +166,7 @@ export interface LoadAllCommentsInput {
   limit: number
   pageKey?: string
   userId?: string
-  status?: 'all' | 'pending' | 'approved'
+  status?: 'all' | 'pending' | 'approved' | 'deleteRequested'
   q?: string
   match?: 'contains' | 'does-not-contain'
   createdAfter?: string
@@ -295,10 +295,10 @@ export interface LoadAllOutput {
   /**
    * Counts for each status filter under the SAME page/user filter
    * context. The currently-selected tab's count equals `total`, but we
-   * ship all three so the unselected tabs can still render their badges
+   * ship all four so the unselected tabs can still render their badges
    * without an extra round-trip.
    */
-  statusCounts: { all: number; pending: number; approved: number }
+  statusCounts: { all: number; pending: number; approved: number; deleteRequested: number }
 }
 
 export interface FindAvatarInput {

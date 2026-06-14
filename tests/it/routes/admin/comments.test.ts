@@ -17,12 +17,21 @@ describe('parseCommentFiltersFromSearchParams — status / page / author', () =>
     expect(filters).toEqual([{ field: 'status', value: 'pending', label: '待审核' }])
   })
 
-  it('falls back to 已审核 for any non-all status string (preserves the URL value verbatim)', () => {
-    // The route can't enumerate every status — unknown statuses
-    // by default. The controller will reject the bad value at the
-    // Zod layer; this just means the chip stays visible until then.
+  it('maps `status=approved` to an 已审核 chip', () => {
     const filters = parseCommentFiltersFromSearchParams(new URLSearchParams('status=approved'))
     expect(filters[0]).toEqual({ field: 'status', value: 'approved', label: '已审核' })
+  })
+
+  it('maps `status=deleteRequested` to an 申请删除 chip', () => {
+    const filters = parseCommentFiltersFromSearchParams(new URLSearchParams('status=deleteRequested'))
+    expect(filters[0]).toEqual({ field: 'status', value: 'deleteRequested', label: '申请删除' })
+  })
+
+  it('falls back to the raw value for unknown statuses', () => {
+    // Unknown statuses stay visible in the chip; the controller will
+    // reject the bad value at the Zod layer.
+    const filters = parseCommentFiltersFromSearchParams(new URLSearchParams('status=bogus'))
+    expect(filters[0]).toEqual({ field: 'status', value: 'bogus', label: 'bogus' })
   })
 
   it('maps `pageKey` to a page chip', () => {

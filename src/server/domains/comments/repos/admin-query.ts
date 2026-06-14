@@ -106,13 +106,14 @@ export async function countAllComments(db: NodePgDatabase, filters: AdminListFil
 export async function countAdminComments(
   db: NodePgDatabase,
   baseFilters: Omit<AdminListFilters, 'status'>,
-): Promise<{ all: number; pending: number; approved: number }> {
+): Promise<{ all: number; pending: number; approved: number; deleteRequested: number }> {
   const conditions = buildAdminListConditions({ ...baseFilters, status: 'all' })
   const rows = await db
     .select({
       all: sql<number>`COUNT(*) FILTER (WHERE ${comment.deletedAt} IS NULL)`,
-      pending: sql<number>`COUNT(*) FILTER (WHERE ${comment.deletedAt} IS NULL AND ${comment.isPending} = TRUE)`,
-      approved: sql<number>`COUNT(*) FILTER (WHERE ${comment.deletedAt} IS NULL AND ${comment.isPending} = FALSE)`,
+      pending: sql<number>`COUNT(*) FILTER (WHERE ${comment.deletedAt} IS NULL AND ${comment.isPending} = TRUE AND ${comment.deleteRequestedAt} IS NULL)`,
+      approved: sql<number>`COUNT(*) FILTER (WHERE ${comment.deletedAt} IS NULL AND ${comment.isPending} = FALSE AND ${comment.deleteRequestedAt} IS NULL)`,
+      deleteRequested: sql<number>`COUNT(*) FILTER (WHERE ${comment.deletedAt} IS NULL AND ${comment.deleteRequestedAt} IS NOT NULL)`,
     })
     .from(comment)
     .where(and(...conditions))
@@ -120,6 +121,7 @@ export async function countAdminComments(
     all: Number(rows[0]?.all ?? 0),
     pending: Number(rows[0]?.pending ?? 0),
     approved: Number(rows[0]?.approved ?? 0),
+    deleteRequested: Number(rows[0]?.deleteRequested ?? 0),
   }
 }
 

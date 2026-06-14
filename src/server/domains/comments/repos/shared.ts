@@ -101,7 +101,7 @@ export interface CommentAuthor {
 export interface AdminListFilters {
   target?: EntityTarget
   userId?: bigint
-  status?: 'all' | 'pending' | 'approved'
+  status?: 'all' | 'pending' | 'approved' | 'deleteRequested'
   q?: string
   match?: 'contains' | 'does-not-contain'
   createdAfter?: Date
@@ -117,10 +117,13 @@ export function buildAdminListConditions(filters: AdminListFilters) {
     conditions.push(eq(comment.userId, filters.userId))
   }
   if (filters.status === 'pending') {
-    conditions.push(eq(comment.isPending, true))
+    conditions.push(eq(comment.isPending, true), isNull(comment.deleteRequestedAt))
   }
   if (filters.status === 'approved') {
-    conditions.push(eq(comment.isPending, false))
+    conditions.push(eq(comment.isPending, false), isNull(comment.deleteRequestedAt))
+  }
+  if (filters.status === 'deleteRequested') {
+    conditions.push(isNotNull(comment.deleteRequestedAt))
   }
   if (filters.q && filters.q.trim() !== '') {
     const q = filters.q.trim()

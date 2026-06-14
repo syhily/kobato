@@ -6,7 +6,13 @@ import type { FilterFieldKey } from '@/ui/admin/comments/useCommentsController'
 
 export type FieldIcon = ComponentType<SVGProps<SVGSVGElement>>
 
-export const FILTER_FIELDS: { key: FilterFieldKey; label: string; icon: FieldIcon }[] = [
+export interface FieldDefinition {
+  key: FilterFieldKey
+  label: string
+  icon: FieldIcon
+}
+
+export const FILTER_FIELDS: FieldDefinition[] = [
   { key: 'status', label: '状态', icon: ListChecksIcon },
   { key: 'page', label: '文章', icon: FileTextIcon },
   { key: 'author', label: '评论人', icon: UserIcon },
@@ -17,4 +23,5 @@ export const FILTER_FIELDS: { key: FilterFieldKey; label: string; icon: FieldIco
 export const STATUS_OPTIONS: { value: string; label: string }[] = [
   { value: 'pending', label: '待审核' },
   { value: 'approved', label: '已审核' },
+  { value: 'deleteRequested', label: '申请删除' },
 ]

@@ -1,5 +1,5 @@
 import { useMutation } from '@tanstack/react-query'
-import { CheckIcon, ImageIcon, LinkIcon, ReplyIcon, SquarePenIcon, Trash2Icon, UserIcon } from 'lucide-react'
+import { CheckIcon, ImageIcon, LinkIcon, ReplyIcon, SquarePenIcon, Trash2Icon, UserIcon, XIcon } from 'lucide-react'
 
 import type { AdminCommentWire as AdminComment } from '@/shared/types/comments'
 
@@ -26,8 +26,11 @@ export interface AdminCommentRowProps {
   onEditUser: () => void
   onApproved: () => void
   onDeleted: () => void
+  onDeleteRequestResolved: (approved: boolean) => void
   onConfirmApprove: (action: () => void) => void
   onConfirmDelete: (action: () => void) => void
+  onConfirmApproveDeletion: (action: () => void) => void
+  onConfirmRejectDeletion: (action: () => void) => void
   onFilterByPage: (pageKey: string, pageTitle: string) => void
   onFilterByAuthor: (userId: string, name: string) => void
 }
@@ -40,8 +43,11 @@ export function AdminCommentRow({
   onEditUser,
   onApproved,
   onDeleted,
+  onDeleteRequestResolved,
   onConfirmApprove,
   onConfirmDelete,
+  onConfirmApproveDeletion,
+  onConfirmRejectDeletion,
   onFilterByPage,
   onFilterByAuthor,
 }: AdminCommentRowProps) {
@@ -56,12 +62,22 @@ export function AdminCommentRow({
     ...orpcQuery.admin.comments.delete.mutationOptions(),
     onSuccess: () => onDeleted(),
   })
+  const approveDeletionMutation = useMutation({
+    ...orpcQuery.admin.comments.approveCommentDeletion.mutationOptions(),
+    onSuccess: (_, variables) => onDeleteRequestResolved(variables.approve),
+  })
 
   const submitApprove = () => {
     approveMutation.mutate({ rid: idStr(comment.id) })
   }
   const submitDelete = () => {
     deleteMutation.mutate({ rid: idStr(comment.id) })
+  }
+  const submitApproveDeletion = () => {
+    approveDeletionMutation.mutate({ commentId: idStr(comment.id), approve: true })
+  }
+  const submitRejectDeletion = () => {
+    approveDeletionMutation.mutate({ commentId: idStr(comment.id), approve: false })
   }
 
   const initial = (comment.name || comment.email || '?').slice(0, 1).toUpperCase()
@@ -112,7 +128,15 @@ export function AdminCommentRow({
                 {comment.badgeName}
               </Badge>
             )}
-            {comment.isPending ? <Badge variant="secondary">待审核</Badge> : <Badge variant="secondary">已审核</Badge>}
+            {comment.deleteRequestedAt ? (
+              <Badge variant="outline" className="border-destructive/50 text-destructive">
+                申请删除
+              </Badge>
+            ) : comment.isPending ? (
+              <Badge variant="secondary">待审核</Badge>
+            ) : (
+              <Badge variant="secondary">已审核</Badge>
+            )}
           </div>
 
           {/* Meta: date + page */}
@@ -226,6 +250,34 @@ export function AdminCommentRow({
               <Trash2Icon data-icon="sm" />
               <span className="hidden sm:inline">删除评论</span>
             </Button>
+            {comment.deleteRequestedAt && (
+              <>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  disabled={approveDeletionMutation.isPending}
+                  onClick={() => onConfirmRejectDeletion(submitRejectDeletion)}
+                  aria-label="拒绝删除申请"
+                  className="h-7 px-2.5 text-xs"
+                >
+                  <XIcon data-icon="sm" />
+                  <span className="hidden sm:inline">拒绝删除</span>
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="destructive"
+                  disabled={approveDeletionMutation.isPending}
+                  onClick={() => onConfirmApproveDeletion(submitApproveDeletion)}
+                  aria-label="同意删除申请"
+                  className="h-7 px-2.5 text-xs"
+                >
+                  <CheckIcon data-icon="sm" />
+                  <span className="hidden sm:inline">同意删除</span>
+                </Button>
+              </>
+            )}
           </div>
         </div>
       </div>

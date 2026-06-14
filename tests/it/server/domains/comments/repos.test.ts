@@ -554,13 +554,26 @@ describe('comments/repos/admin-query — countAllComments', () => {
 })
 
 describe('comments/repos/admin-query — countAdminComments', () => {
-  it('splits counts across all/pending/approved', async () => {
+  it('splits counts across all/pending/approved/deleteRequested', async () => {
     const u1 = await seedUser({ name: 'K', email: 'k@x.com' })
     const pid = await seedPost('p18')
     await seedComment({ userId: u1, ownerId: pid, isPending: true })
     await seedComment({ userId: u1, ownerId: pid, isPending: false })
+    const id = await seedComment({ userId: u1, ownerId: pid, isPending: false })
+    await requestDeleteComment(db, id, u1)
     const r = await countAdminComments(db, {})
-    expect(r).toEqual({ all: 2, pending: 1, approved: 1 })
+    expect(r).toEqual({ all: 3, pending: 1, approved: 1, deleteRequested: 1 })
+  })
+
+  it('excludes delete-requested rows from pending and approved counts', async () => {
+    const u1 = await seedUser({ name: 'K2', email: 'k2@x.com' })
+    const pid = await seedPost('p18b')
+    const pendingId = await seedComment({ userId: u1, ownerId: pid, isPending: true })
+    await requestDeleteComment(db, pendingId, u1)
+    const approvedId = await seedComment({ userId: u1, ownerId: pid, isPending: false })
+    await requestDeleteComment(db, approvedId, u1)
+    const r = await countAdminComments(db, {})
+    expect(r).toEqual({ all: 2, pending: 0, approved: 0, deleteRequested: 2 })
   })
 })
 
@@ -571,6 +584,18 @@ describe('comments/repos/admin-query — listAdminComments', () => {
     await seedComment({ userId: u1, ownerId: pid })
     const rows = await listAdminComments(db, 0, 10, {})
     expect(rows).toHaveLength(1)
+  })
+
+  it('filters by deleteRequested status', async () => {
+    const u1 = await seedUser({ name: 'L2', email: 'l2@x.com' })
+    const pid = await seedPost('p19b')
+    const normalId = await seedComment({ userId: u1, ownerId: pid })
+    const requestedId = await seedComment({ userId: u1, ownerId: pid })
+    await requestDeleteComment(db, requestedId, u1)
+    const rows = await listAdminComments(db, 0, 10, { status: 'deleteRequested' })
+    expect(rows).toHaveLength(1)
+    expect(rows[0]!.id).toBe(requestedId)
+    expect(rows.every((r) => r.id !== normalId)).toBe(true)
   })
 })
 

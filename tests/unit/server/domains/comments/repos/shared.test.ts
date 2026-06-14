@@ -79,11 +79,29 @@ describe('buildAdminListConditions — text filter', () => {
   })
 })
 
-describe('buildAdminListConditions — text + status filter', () => {
+describe('buildAdminListConditions — status filter', () => {
+  it('stacks the pending predicate and excludes delete-requested rows', () => {
+    const conditions = buildAdminListConditions({ status: 'pending' })
+    // deletedAt + isPending + deleteRequestedAt IS NULL
+    expect(conditions).toHaveLength(3)
+  })
+
+  it('stacks the approved predicate and excludes delete-requested rows', () => {
+    const conditions = buildAdminListConditions({ status: 'approved' })
+    // deletedAt + isPending=false + deleteRequestedAt IS NULL
+    expect(conditions).toHaveLength(3)
+  })
+
+  it('stacks the delete-requested predicate', () => {
+    const conditions = buildAdminListConditions({ status: 'deleteRequested' })
+    // deletedAt + deleteRequestedAt IS NOT NULL
+    expect(conditions).toHaveLength(2)
+  })
+
   it('stacks the text predicate alongside the pending-status predicate', () => {
     const conditions = buildAdminListConditions({ q: 'foo', status: 'pending' })
-    // deletedAt + isPending + text
-    expect(conditions).toHaveLength(3)
+    // deletedAt + isPending + deleteRequestedAt IS NULL + text
+    expect(conditions).toHaveLength(4)
   })
 })
 
@@ -134,7 +152,7 @@ describe('buildAdminListConditions — date filter', () => {
       createdBefore: before,
       status: 'pending',
     })
-    // deletedAt + isPending + gte + lte
-    expect(conditions).toHaveLength(4)
+    // deletedAt + isPending + deleteRequestedAt IS NULL + gte + lte
+    expect(conditions).toHaveLength(5)
   })
 })

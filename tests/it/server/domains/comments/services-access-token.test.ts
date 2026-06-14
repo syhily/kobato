@@ -167,7 +167,7 @@ describe('comments/services/admin-query — loadAllComments', () => {
     const r = await loadAllComments(db, { offset: 0, limit: 10, status: 'pending' })
     expect(r.total).toBe(0)
     expect(r.hasMore).toBe(false)
-    expect(r.statusCounts).toEqual({ all: 0, pending: 0, approved: 0 })
+    expect(r.statusCounts).toEqual({ all: 0, pending: 0, approved: 0, deleteRequested: 0 })
   })
   it('returns rows + statusCounts', async () => {
     const u1 = await seedUser()
