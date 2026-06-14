@@ -95,9 +95,9 @@ export function VersionDialog({ open, onOpenChange }: VersionDialogProps) {
             <img
               src="/images/fable-5-verified-pill-badge.png"
               alt="Fable 5 Verified"
-              width={128}
-              height={42}
-              className="h-9 w-auto rounded-xl"
+              width={168}
+              height={56}
+              className="h-14 w-auto rounded-xl"
               loading="lazy"
             />
             <div className="text-center text-sm text-muted-foreground">{APP_DESCRIPTION}</div>
