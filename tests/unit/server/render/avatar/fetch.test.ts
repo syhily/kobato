@@ -130,6 +130,15 @@ describe('render/avatar/fetch — fetchAvatarImage', () => {
     mockFetch([new Response(null, { status: 302 })])
     expect(await withAllowedMirror(() => fetchAvatarImage('hash'))).toBeNull()
   })
+
+  it('returns null when fetch throws a network error', async () => {
+    mockFetch([
+      () => {
+        throw new TypeError('fetch failed', { cause: new AggregateError([], 'ETIMEDOUT') })
+      },
+    ])
+    expect(await withAllowedMirror(() => fetchAvatarImage('hash'))).toBeNull()
+  })
 })
 
 describe('render/avatar/fetch — fetchQQAvatarImage', () => {
@@ -152,6 +161,15 @@ describe('render/avatar/fetch — fetchQQAvatarImage', () => {
 
   it('returns null on a non-2xx response', async () => {
     mockFetch([new Response(null, { status: 500 })])
+    expect(await fetchQQAvatarImage('12345@qq.com')).toBeNull()
+  })
+
+  it('returns null when fetch throws a network error', async () => {
+    mockFetch([
+      () => {
+        throw new TypeError('fetch failed', { cause: new AggregateError([], 'ETIMEDOUT') })
+      },
+    ])
     expect(await fetchQQAvatarImage('12345@qq.com')).toBeNull()
   })
 })

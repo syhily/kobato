@@ -35,9 +35,10 @@ export function defaultAvatarUrl(): string {
 
 /** Fetch the avatar PNG bytes from the configured gravatar mirror.
  *  Returns `null` when the mirror reports "no avatar" (either via 4xx,
- *  via a redirect back to the default-avatar URL, or after the redirect
- *  budget is exhausted). The buffer is compressed before being handed
- *  back so the cache layer stores the smaller payload. */
+ *  via a redirect back to the default-avatar URL, after the redirect
+ *  budget is exhausted, or when the upstream network call fails). The
+ *  buffer is compressed before being handed back so the cache layer
+ *  stores the smaller payload. */
 export async function fetchAvatarImage(hash: string): Promise<Buffer | null> {
   const siteIdentity = requireBlogSettingsSection('siteIdentity')
   const comments = requireBlogSettingsSection('comments')
@@ -60,7 +61,16 @@ export async function fetchAvatarImage(hash: string): Promise<Buffer | null> {
 
   let currentLink = initialLink
   for (let hop = 0; hop <= MAX_REDIRECT_HOPS; hop++) {
-    const resp = await fetch(currentLink, { redirect: 'manual', headers, signal: AbortSignal.timeout(30_000) })
+    let resp: Response
+    try {
+      resp = await fetch(currentLink, { redirect: 'manual', headers, signal: AbortSignal.timeout(30_000) })
+    } catch (err) {
+      // Network-level failures (ETIMEDOUT, ECONNREFUSED, DNS failures,
+      // aborts) should degrade to the default avatar instead of 500ing
+      // the whole route. Do not log the URL/hash — they are user data.
+      getLogger('avatar').warn('avatar fetch failed', { error: err })
+      return null
+    }
 
     if (resp.status >= 300 && resp.status < 400) {
       const location = resp.headers.get('location')
@@ -118,10 +128,18 @@ export async function fetchQQAvatarImage(email: string): Promise<Buffer | null> 
     return null
   }
 
-  const resp = await fetch(url, {
-    headers: { Accept: 'image/png,image/jpeg,image/webp,*/*' },
-    signal: AbortSignal.timeout(30_000),
-  })
+  let resp: Response
+  try {
+    resp = await fetch(url, {
+      headers: { Accept: 'image/png,image/jpeg,image/webp,*/*' },
+      signal: AbortSignal.timeout(30_000),
+    })
+  } catch (err) {
+    // Network-level failures should degrade to the default avatar instead
+    // of 500ing the route. Do not log the URL/email — they are user data.
+    getLogger('avatar').warn('qq avatar fetch failed', { error: err })
+    return null
+  }
   if (!resp.ok) {
     return null
   }
