@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useState, useSyncExternalStore } from 'react'
+import { Fragment, useState } from 'react'
 
 import type { AuditLogItemDto } from '@/shared/types/audit'
 
@@ -21,81 +21,10 @@ interface AuditLogTableProps {
 const ACTION_LABEL_MAP = new Map(ACTION_OPTIONS.map((o) => [o.value, o.label]))
 const RESOURCE_LABEL_MAP = new Map(RESOURCE_TYPE_OPTIONS.map((o) => [o.value, o.label]))
 
-const SHIKI_THEMES = { light: 'solarized-light', dark: 'solarized-dark' } as const
-
-// Shiki singleton — lazy-initialised, reused across rows
-
-let shikiPromise: Promise<void> | null = null
-let shikiResolve: (() => void) | null = null
-let shikiReady = false
-
-const shikiListeners = new Set<() => void>()
-
-function subscribeShiki(listener: () => void) {
-  shikiListeners.add(listener)
-  return () => shikiListeners.delete(listener)
-}
-
-function getShikiSnapshot() {
-  return shikiReady
-}
-
-function notifyShikiListeners() {
-  for (const listener of shikiListeners) {
-    listener()
-  }
-}
-
-type ShikiHighlighter = {
-  codeToHtml: (code: string, options: { lang: string; themes: { light: string; dark: string } }) => string
-}
-
-let highlighterInstance: ShikiHighlighter | null = null
-
-function getHighlighter() {
-  if (!shikiPromise) {
-    shikiPromise = Promise.all([
-      import('shiki/core'),
-      import('shiki/engine/javascript'),
-      import('@shikijs/langs/json'),
-      import('@shikijs/themes/solarized-light'),
-      import('@shikijs/themes/solarized-dark'),
-    ])
-      .then(([{ createHighlighterCore }, { createJavaScriptRegexEngine }, jsonMod, lightMod, darkMod]) =>
-        createHighlighterCore({
-          themes: [lightMod.default, darkMod.default],
-          langs: [jsonMod.default],
-          engine: createJavaScriptRegexEngine(),
-        }),
-      )
-      .then((h) => {
-        highlighterInstance = h
-        shikiReady = true
-        shikiResolve?.()
-        notifyShikiListeners()
-      })
-  }
-  return shikiPromise
-}
-
-function renderJson(json: string): string {
-  if (!highlighterInstance) {
-    return json
-  }
-  return highlighterInstance.codeToHtml(json, {
-    lang: 'json',
-    themes: { light: SHIKI_THEMES.light, dark: SHIKI_THEMES.dark },
-  })
-}
-
 // Table
 
 export function AuditLogTable({ rows, isLoading }: AuditLogTableProps) {
   const [expandedId, setExpandedId] = useState<string | null>(null)
-
-  useEffect(() => {
-    void getHighlighter()
-  }, [])
 
   if (isLoading && rows.length === 0) {
     return (
@@ -141,7 +70,7 @@ export function AuditLogTable({ rows, isLoading }: AuditLogTableProps) {
                   isExpanded={isExpanded}
                   onToggle={() => setExpandedId(isExpanded ? null : row.id)}
                 />
-                {isExpanded && <JsonDetailRow details={row.details} />}
+                {isExpanded && <JsonDetailRow row={row} />}
               </Fragment>
             )
           })}
@@ -218,12 +147,10 @@ function ChevronIcon({ expanded }: { expanded: boolean }) {
   )
 }
 
-// JSON detail row (Shiki-highlighted)
+// JSON detail row (SSR Shiki-highlighted)
 
-function JsonDetailRow({ details }: { details: Record<string, unknown> | null }) {
-  const ready = useSyncExternalStore(subscribeShiki, getShikiSnapshot, getShikiSnapshot)
-
-  if (!details) {
+function JsonDetailRow({ row }: { row: AuditLogItemDto }) {
+  if (!row.details) {
     return (
       <TableRow className="bg-muted/30 hover:bg-muted/30">
         <TableCell colSpan={6} className="py-3 text-center text-xs text-muted-foreground">
@@ -233,17 +160,16 @@ function JsonDetailRow({ details }: { details: Record<string, unknown> | null })
     )
   }
 
-  const json = JSON.stringify(details, null, 2)
-  const html = ready ? renderJson(json) : null
+  const json = JSON.stringify(row.details, null, 2)
 
   return (
     <TableRow className="bg-muted/30 hover:bg-muted/30">
       <TableCell colSpan={6} className="p-0">
         <div className="max-h-64 overflow-auto border-t">
-          {html ? (
+          {row.detailsHtml ? (
             <div
               className="[&>pre]:m-0 [&>pre]:rounded-none [&>pre]:border-0 [&>pre]:bg-transparent [&>pre]:px-4 [&>pre]:py-3 [&>pre]:text-xs [&>pre]:leading-relaxed"
-              dangerouslySetInnerHTML={{ __html: sanitizeHtml(html, 'audit') }}
+              dangerouslySetInnerHTML={{ __html: sanitizeHtml(row.detailsHtml, 'shiki') }}
             />
           ) : (
             <pre className="px-4 py-3 text-xs leading-relaxed">{json}</pre>

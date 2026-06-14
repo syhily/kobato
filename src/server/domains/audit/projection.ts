@@ -49,6 +49,7 @@ export function toAuditLogItemDto(
           return isRecord(v) ? v : null
         })()
       : null,
+    detailsHtml: null,
     ipAddressMasked: row.ipAddress ? maskIp(row.ipAddress) : null,
     userAgentMasked: row.userAgent ? maskUserAgent(row.userAgent) : null,
     createdAt: row.createdAt.toISOString(),

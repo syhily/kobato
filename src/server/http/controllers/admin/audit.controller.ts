@@ -1,6 +1,7 @@
 import { ORPCError } from '@orpc/server'
 import { z } from 'zod'
 
+import { highlightAuditLogDetails } from '@/server/domains/audit/highlight'
 import { toAuditLogItemDto } from '@/server/domains/audit/projection'
 import {
   countAuditLogs,
@@ -56,6 +57,12 @@ const list = adminProc
 
     const items = rows.map((row) =>
       toAuditLogItemDto(row, row.actorId ? (actorMap.get(String(row.actorId)) ?? null) : null),
+    )
+
+    await Promise.all(
+      items.map(async (item) => {
+        item.detailsHtml = await highlightAuditLogDetails(item.details)
+      }),
     )
 
     return {

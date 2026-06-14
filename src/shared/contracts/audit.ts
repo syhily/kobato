@@ -14,6 +14,7 @@ export const auditLogItemDto = z.object({
   resourceType: z.string(),
   resourceId: z.string().nullable(),
   details: z.record(z.string(), z.unknown()).nullable(),
+  detailsHtml: z.string().nullable(),
   ipAddressMasked: z.string().nullable(),
   userAgentMasked: z.string().nullable(),
   createdAt: z.string(), // ISO-8601

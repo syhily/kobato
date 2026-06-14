@@ -7,6 +7,7 @@ export interface AuditLogItemDto {
   resourceType: string
   resourceId: string | null
   details: Record<string, unknown> | null
+  detailsHtml: string | null
   ipAddressMasked: string | null
   userAgentMasked: string | null
   createdAt: string
