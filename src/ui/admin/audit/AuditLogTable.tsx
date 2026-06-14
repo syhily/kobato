@@ -54,11 +54,18 @@ let highlighterInstance: ShikiHighlighter | null = null
 
 function getHighlighter() {
   if (!shikiPromise) {
-    shikiPromise = import('shiki')
-      .then(({ createHighlighter }) =>
-        createHighlighter({
-          themes: [SHIKI_THEMES.light, SHIKI_THEMES.dark],
-          langs: ['json'],
+    shikiPromise = Promise.all([
+      import('shiki/core'),
+      import('shiki/engine/javascript'),
+      import('@shikijs/langs/json'),
+      import('@shikijs/themes/solarized-light'),
+      import('@shikijs/themes/solarized-dark'),
+    ])
+      .then(([{ createHighlighterCore }, { createJavaScriptRegexEngine }, jsonMod, lightMod, darkMod]) =>
+        createHighlighterCore({
+          themes: [lightMod.default, darkMod.default],
+          langs: [jsonMod.default],
+          engine: createJavaScriptRegexEngine(),
         }),
       )
       .then((h) => {
