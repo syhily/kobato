@@ -73,11 +73,12 @@ async function loadSettingsFromDb(db: NodePgDatabase): Promise<BlogSettingsBundl
       continue
     }
     const meta = SECTION_REGISTRY[section]
-    if (!meta.schema.safeParse(data).success) {
+    const parsed = meta.schema.safeParse(data)
+    if (!parsed.success) {
       log.warn('Setting row failed schema validation; skipping', { scope: row.scope })
       continue
     }
-    bundleSet(bundle, meta.key, data)
+    bundleSet(bundle, meta.key, parsed.data)
   }
 
   if (bundle.siteIdentity === null || bundle.assets === null) {
