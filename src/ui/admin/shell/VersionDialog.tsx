@@ -85,7 +85,7 @@ export function VersionDialog({ open, onOpenChange }: VersionDialogProps) {
                 className={cn(
                   'rounded-xl px-2 py-0.5 text-xs font-semibold',
                   IS_DEV_BUILD
-                    ? 'bg-status-warning-bg text-status-warning-fg'
+                    ? 'bg-status-warn-bg text-status-warn-fg'
                     : 'bg-status-success-bg text-status-success-fg',
                 )}
               >
@@ -203,7 +203,7 @@ function UpdateStatus({
 
   if (state === 'dev') {
     return (
-      <div className="text-status-warning-fg mt-2 flex items-center gap-1.5 text-xs">
+      <div className="mt-2 flex items-center gap-1.5 text-xs text-status-warn-fg">
         <AlertCircleIcon className="size-3.5" />
         当前为开发版本，更新检查已跳过
       </div>
