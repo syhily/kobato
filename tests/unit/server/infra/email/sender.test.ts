@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 const transportSendMock = vi.fn<(payload: unknown, opts: unknown) => Promise<unknown>>()
 const ZeaburCtorMock = vi.fn()
 const SmtpCtorMock = vi.fn()
+const MailgunCtorMock = vi.fn()
 
 vi.mock('@/server/infra/email/transports/zeabur-zsend', () => ({
   ZeaburZSendTransport: class {
@@ -17,6 +18,15 @@ vi.mock('@/server/infra/email/transports/smtp', () => ({
   SmtpTransport: class {
     constructor(config: unknown) {
       SmtpCtorMock(config)
+    }
+    send = transportSendMock
+  },
+}))
+
+vi.mock('@/server/infra/email/transports/mailgun', () => ({
+  MailgunTransport: class {
+    constructor(config: unknown) {
+      MailgunCtorMock(config)
     }
     send = transportSendMock
   },
@@ -53,6 +63,7 @@ beforeEach(() => {
   transportSendMock.mockReset()
   ZeaburCtorMock.mockReset()
   SmtpCtorMock.mockReset()
+  MailgunCtorMock.mockReset()
   transportSendMock.mockResolvedValue({ ok: true })
   vi.unstubAllGlobals()
   setBlogSettingsBundleForTests({
@@ -69,6 +80,8 @@ beforeEach(() => {
         smtpUser: '',
         smtpPass: '',
         smtpSecure: false,
+        mailgunDomain: '',
+        mailgunApiKey: '',
       },
     },
   })
@@ -91,6 +104,8 @@ describe('infra/email/sender — checkMailReady', () => {
       smtpUser: '',
       smtpPass: '',
       smtpSecure: false,
+      mailgunDomain: '',
+      mailgunApiKey: '',
     })
     expect(result.ready).toBe(false)
     if (!result.ready) {
@@ -110,6 +125,8 @@ describe('infra/email/sender — checkMailReady', () => {
       smtpUser: '',
       smtpPass: '',
       smtpSecure: false,
+      mailgunDomain: '',
+      mailgunApiKey: '',
     })
     expect(result.ready).toBe(false)
     if (!result.ready) {
@@ -129,6 +146,8 @@ describe('infra/email/sender — checkMailReady', () => {
       smtpUser: '',
       smtpPass: '',
       smtpSecure: false,
+      mailgunDomain: '',
+      mailgunApiKey: '',
     })
     expect(result.ready).toBe(true)
   })
@@ -145,6 +164,8 @@ describe('infra/email/sender — checkMailReady', () => {
       smtpUser: '',
       smtpPass: '',
       smtpSecure: false,
+      mailgunDomain: '',
+      mailgunApiKey: '',
     })
     expect(result.ready).toBe(false)
     if (!result.ready) {
@@ -164,6 +185,47 @@ describe('infra/email/sender — checkMailReady', () => {
       smtpUser: 'u',
       smtpPass: 'p',
       smtpSecure: false,
+      mailgunDomain: '',
+      mailgunApiKey: '',
+    })
+    expect(result.ready).toBe(true)
+  })
+
+  it('returns unconfigured when mailgun fields are missing', () => {
+    const result = checkMailReady({
+      enabled: true,
+      host: '',
+      apiKey: '',
+      sender: '',
+      transport: 'mailgun',
+      smtpHost: '',
+      smtpPort: 587,
+      smtpUser: '',
+      smtpPass: '',
+      smtpSecure: false,
+      mailgunDomain: '',
+      mailgunApiKey: '',
+    })
+    expect(result.ready).toBe(false)
+    if (!result.ready) {
+      expect(result.reason).toBe('unconfigured')
+    }
+  })
+
+  it('returns ready when mailgun fields are set', () => {
+    const result = checkMailReady({
+      enabled: true,
+      host: '',
+      apiKey: '',
+      sender: 's',
+      transport: 'mailgun',
+      smtpHost: '',
+      smtpPort: 587,
+      smtpUser: '',
+      smtpPass: '',
+      smtpSecure: false,
+      mailgunDomain: 'mg.example.com',
+      mailgunApiKey: 'k',
     })
     expect(result.ready).toBe(true)
   })
@@ -193,6 +255,8 @@ describe('infra/email/sender — sendEmail', () => {
           smtpUser: 'user',
           smtpPass: 'pass',
           smtpSecure: false,
+          mailgunDomain: '',
+          mailgunApiKey: '',
         },
       },
     })
@@ -207,6 +271,39 @@ describe('infra/email/sender — sendEmail', () => {
         pass: 'pass',
         secure: false,
         sender: 'noreply@example.com',
+      }),
+    )
+    expect(result.ok).toBe(true)
+  })
+
+  it('uses mailgun transport when transport is mailgun', async () => {
+    setBlogSettingsBundleForTests({
+      ...TEST_BLOG_SETTINGS_BUNDLE,
+      mail: {
+        mail: {
+          enabled: true,
+          host: '',
+          apiKey: '',
+          sender: 'noreply@mg.example.com',
+          transport: 'mailgun',
+          smtpHost: '',
+          smtpPort: 587,
+          smtpUser: '',
+          smtpPass: '',
+          smtpSecure: false,
+          mailgunDomain: 'mg.example.com',
+          mailgunApiKey: 'mg-key',
+        },
+      },
+    })
+    const result = await sendEmail('to@x.com', 'subj', '<p>hi</p>')
+    expect(transportSendMock).toHaveBeenCalledTimes(1)
+    expect(MailgunCtorMock).toHaveBeenCalledTimes(1)
+    expect(MailgunCtorMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        domain: 'mg.example.com',
+        apiKey: 'mg-key',
+        sender: 'noreply@mg.example.com',
       }),
     )
     expect(result.ok).toBe(true)
@@ -264,6 +361,8 @@ describe('infra/email/sender — sendTestMail', () => {
           smtpUser: '',
           smtpPass: '',
           smtpSecure: false,
+          mailgunDomain: '',
+          mailgunApiKey: '',
         },
       },
     })
@@ -315,12 +414,40 @@ describe('infra/email/sender — sendTestMail', () => {
           smtpUser: 'user',
           smtpPass: 'pass',
           smtpSecure: false,
+          mailgunDomain: '',
+          mailgunApiKey: '',
         },
       },
     })
     transportSendMock.mockResolvedValueOnce({ ok: true })
     const result = await sendTestMail('to@x.com')
     expect(SmtpCtorMock).toHaveBeenCalledTimes(1)
+    expect(result.ok).toBe(true)
+  })
+
+  it('uses mailgun transport when configured', async () => {
+    setBlogSettingsBundleForTests({
+      ...TEST_BLOG_SETTINGS_BUNDLE,
+      mail: {
+        mail: {
+          enabled: true,
+          host: '',
+          apiKey: '',
+          sender: 'noreply@mg.example.com',
+          transport: 'mailgun',
+          smtpHost: '',
+          smtpPort: 587,
+          smtpUser: '',
+          smtpPass: '',
+          smtpSecure: false,
+          mailgunDomain: 'mg.example.com',
+          mailgunApiKey: 'mg-key',
+        },
+      },
+    })
+    transportSendMock.mockResolvedValueOnce({ ok: true })
+    const result = await sendTestMail('to@x.com')
+    expect(MailgunCtorMock).toHaveBeenCalledTimes(1)
     expect(result.ok).toBe(true)
   })
 })

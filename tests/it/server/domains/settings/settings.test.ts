@@ -119,6 +119,8 @@ const fixtureBundle: BlogSettingsBundle = {
       smtpUser: '',
       smtpPass: '',
       smtpSecure: false,
+      mailgunDomain: '',
+      mailgunApiKey: '',
     },
   },
   cache: {
@@ -439,6 +441,7 @@ describe('services/settings — mail section', () => {
           host: 'api.zeabur.com',
           apiKey: 'NEWKEY',
           smtpPass: 'NEWSMTPPASS',
+          mailgunApiKey: 'NEWMAILGUNKEY',
           sender: 'noreply@example.com',
         },
       },
@@ -455,6 +458,8 @@ describe('services/settings — mail section', () => {
     expect(String(mail.apiKey).startsWith('enc2:')).toBe(true)
     expect(typeof mail.smtpPass).toBe('string')
     expect(String(mail.smtpPass).startsWith('enc2:')).toBe(true)
+    expect(typeof mail.mailgunApiKey).toBe('string')
+    expect(String(mail.mailgunApiKey).startsWith('enc2:')).toBe(true)
     expect(mail.sender).toBe('noreply@example.com')
     expect(settingQueries.findSettingByScope).not.toHaveBeenCalled()
   })
@@ -574,6 +579,67 @@ describe('services/settings — mail section', () => {
     // routed through `encryptSecretsInRow`, not just the first one.
     expect(typeof mail.apiKey).toBe('string')
     expect(mail.apiKey).not.toBe('ZEABURKEY')
+    expect(String(mail.apiKey).startsWith('enc2:')).toBe(true)
+  })
+
+  it("preserves the existing mailgunApiKey by reading scope='blog.mail' when omitted", async () => {
+    vi.mocked(settingQueries.findSettingByScope).mockResolvedValueOnce({
+      id: 1n,
+      scope: 'blog.mail',
+      data: {
+        mail: {
+          enabled: true,
+          host: 'api.zeabur.com',
+          apiKey: 'ZEABURKEY',
+          sender: 'a@b.co',
+          transport: 'mailgun',
+          smtpHost: '',
+          smtpPort: 587,
+          smtpUser: '',
+          smtpPass: '',
+          smtpSecure: false,
+          mailgunDomain: 'mg.old.com',
+          mailgunApiKey: 'STOREDMAILGUNKEY',
+        },
+      },
+      updatedAt: new Date(),
+      updatedBy: null,
+    } as Setting)
+    vi.mocked(settingQueries.findSettingsByScopePrefix).mockResolvedValue(bundleRows(fixtureBundle))
+    vi.mocked(settingQueries.upsertSetting).mockResolvedValue({
+      id: 1n,
+      scope: 'blog.general',
+      data: {},
+      updatedAt: new Date(),
+      updatedBy: null,
+    } as Setting)
+
+    await updateBlogSettingsSection(
+      db,
+      pool,
+      'mail',
+      {
+        mail: {
+          enabled: true,
+          host: 'api.zeabur.com',
+          sender: 'noreply@mg.example.com',
+          transport: 'mailgun',
+          mailgunDomain: 'mg.example.com',
+        },
+      },
+      null,
+    )
+
+    const [, data] = vi.mocked(settingQueries.upsertSetting).mock.calls[0]
+    const mail = (data as Record<string, unknown>).mail as Record<string, unknown>
+    expect(mail.mailgunDomain).toBe('mg.example.com')
+    expect(mail.sender).toBe('noreply@mg.example.com')
+    // mailgunApiKey was omitted from the patch and preserved from the
+    // existing row, then routed through encryptSecretsInRow.
+    expect(typeof mail.mailgunApiKey).toBe('string')
+    expect(mail.mailgunApiKey).not.toBe('STOREDMAILGUNKEY')
+    expect(String(mail.mailgunApiKey).startsWith('enc2:')).toBe(true)
+    // The other two mail secrets were preserved too.
     expect(String(mail.apiKey).startsWith('enc2:')).toBe(true)
   })
 })

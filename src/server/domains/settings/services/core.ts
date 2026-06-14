@@ -108,6 +108,7 @@ export async function updateBlogSettingsSection<S extends SettingsSection>(
 export interface SecretMasks {
   mailApiKeyMask: string | null
   mailSmtpPassMask: string | null
+  mailMailgunApiKeyMask: string | null
   assetsSecretAccessKeyMask: string | null
   searchApiKeyMask: string | null
 }
@@ -115,11 +116,14 @@ export interface SecretMasks {
 export function computeSecretMasks(bundle: BlogSettingsBundle): SecretMasks {
   const mailApiKey = bundle.mail?.mail.apiKey
   const mailSmtpPass = bundle.mail?.mail.smtpPass
+  const mailMailgunApiKey = bundle.mail?.mail.mailgunApiKey
   const assetsSecret = bundle.assets?.storage.secretAccessKey
   const searchApiKey = bundle.search?.search.apiKey
   return {
     mailApiKeyMask: typeof mailApiKey === 'string' && mailApiKey !== '' ? mailApiKey.slice(-4) : null,
     mailSmtpPassMask: typeof mailSmtpPass === 'string' && mailSmtpPass !== '' ? mailSmtpPass.slice(-4) : null,
+    mailMailgunApiKeyMask:
+      typeof mailMailgunApiKey === 'string' && mailMailgunApiKey !== '' ? mailMailgunApiKey.slice(-4) : null,
     assetsSecretAccessKeyMask: typeof assetsSecret === 'string' && assetsSecret !== '' ? assetsSecret.slice(-4) : null,
     searchApiKeyMask: typeof searchApiKey === 'string' && searchApiKey !== '' ? searchApiKey.slice(-4) : null,
   }

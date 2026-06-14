@@ -25,12 +25,14 @@ export interface MailLoaderShape {
     host: string
     sender: string
     apiKeyMask: string | null
-    transport: 'zeabur' | 'smtp'
+    transport: 'zeabur' | 'smtp' | 'mailgun'
     smtpHost: string
     smtpPort: number
     smtpUser: string
     smtpPassMask: string | null
     smtpSecure: boolean
+    mailgunDomain: string
+    mailgunApiKeyMask: string | null
   }
 }
 
@@ -48,6 +50,7 @@ const idleTestStatus: TestStatus = { state: 'idle', message: null }
 const TRANSPORT_OPTIONS: { value: MailLoaderShape['mail']['transport']; label: string }[] = [
   { value: 'zeabur', label: 'Zeabur ZSend' },
   { value: 'smtp', label: 'SMTP' },
+  { value: 'mailgun', label: 'Mailgun' },
 ]
 
 function MailToggleCard({ mail }: { mail: MailLoaderShape }) {
@@ -125,7 +128,7 @@ function ProviderSelectCard({ mail }: { mail: MailLoaderShape }) {
               <Select
                 value={field.value}
                 onValueChange={(value) => {
-                  if (value === 'zeabur' || value === 'smtp') {
+                  if (value === 'zeabur' || value === 'smtp' || value === 'mailgun') {
                     field.onChange(value)
                     save()
                   }
@@ -212,6 +215,82 @@ function ZeaburConfigCard({ mail }: { mail: MailLoaderShape }) {
             id="mail-sender"
             type="email"
             placeholder="noreply@send.example.com"
+            maxLength={253}
+            {...form.register('sender')}
+          />
+        </SettingsRow>
+      </SettingGroupContent>
+    </SettingGroup>
+  )
+}
+
+function MailgunConfigCard({ mail }: { mail: MailLoaderShape }) {
+  const { form, settingGroupProps, display } = useSettingsCard<
+    MailLoaderShape,
+    { mailgunDomain: string; mailgunApiKey: string; sender: string }
+  >({
+    section: 'mail',
+    source: mail,
+    toState: (source) => ({
+      mailgunDomain: source.mail.mailgunDomain,
+      mailgunApiKey: '',
+      sender: source.mail.sender,
+    }),
+    fromState: (state) => {
+      const trimmedKey = state.mailgunApiKey.trim()
+      return {
+        mail: {
+          mailgunDomain: state.mailgunDomain.trim(),
+          sender: state.sender.trim(),
+          ...(trimmedKey ? { mailgunApiKey: trimmedKey } : {}),
+        },
+      }
+    },
+  })
+
+  const apiKeyConfigured = display.mail.mailgunApiKeyMask !== null
+  return (
+    <SettingGroup
+      title="Mailgun 配置"
+      description="配置 Mailgun 的发送域名、API Key 和发件人邮箱。修改后立即生效。仅支持美国（US）区域。"
+      {...settingGroupProps}
+    >
+      <SettingGroupContent>
+        <SettingsRow
+          label="发送域名"
+          htmlFor="mail-mailgun-domain"
+          hint="在 Mailgun 控制台已验证的域名，例如 mg.example.com。"
+        >
+          <Input
+            id="mail-mailgun-domain"
+            placeholder="mg.example.com"
+            maxLength={253}
+            {...form.register('mailgunDomain')}
+          />
+        </SettingsRow>
+        <SettingsRow
+          label="API Key"
+          htmlFor="mail-mailgun-api-key"
+          hint={
+            apiKeyConfigured
+              ? `当前已配置（结尾 …${display.mail.mailgunApiKeyMask}）。留空保存表示保留现有 Key。`
+              : '尚未配置。在 Mailgun 控制台「Settings → API Keys」页面生成的私钥（key-... 或 MG_... 形式）。'
+          }
+        >
+          <Input
+            id="mail-mailgun-api-key"
+            type="password"
+            {...form.register('mailgunApiKey')}
+            placeholder={apiKeyConfigured ? '保留现有 Key' : '粘贴 Mailgun Private API Key'}
+            maxLength={512}
+            autoComplete="new-password"
+          />
+        </SettingsRow>
+        <SettingsRow label="发件人邮箱" htmlFor="mail-mailgun-sender" hint="必须是 Mailgun 已验证过的发件域。">
+          <Input
+            id="mail-mailgun-sender"
+            type="email"
+            placeholder="noreply@mg.example.com"
             maxLength={253}
             {...form.register('sender')}
           />
@@ -356,18 +435,23 @@ function MailTestCard({ mail }: { mail: MailLoaderShape }) {
   const inner = mail.mail
   const isTestPending = testMutation.isPending
   const isZeabur = inner.transport === 'zeabur'
+  const isMailgun = inner.transport === 'mailgun'
   const zeaburReady = inner.host.trim() !== '' && inner.sender.trim() !== '' && inner.apiKeyMask !== null
   const smtpReady =
     inner.smtpHost.trim() !== '' &&
     inner.smtpUser.trim() !== '' &&
     inner.smtpPassMask !== null &&
     inner.sender.trim() !== ''
-  const configured = isZeabur ? zeaburReady : smtpReady
+  const mailgunReady =
+    inner.mailgunDomain.trim() !== '' && inner.mailgunApiKeyMask !== null && inner.sender.trim() !== ''
+  const configured = isZeabur ? zeaburReady : isMailgun ? mailgunReady : smtpReady
   const canSendTest = !isTestPending && configured && isLikelyEmail(testTo)
 
   const missingHint = isZeabur
     ? '请先填入并保存 Zeabur 接入域名、API Key 和发件人邮箱'
-    : '请先填入并保存 SMTP 服务器地址、用户名、密码和发件人邮箱'
+    : isMailgun
+      ? '请先填入并保存 Mailgun 发送域名、API Key 和发件人邮箱'
+      : '请先填入并保存 SMTP 服务器地址、用户名、密码和发件人邮箱'
 
   return (
     <SettingGroup title="测试发送" description="不依赖「启用邮件发送」开关，可在配置完成后立即验证连接。">
@@ -405,11 +489,18 @@ function MailTestCard({ mail }: { mail: MailLoaderShape }) {
 }
 
 export function MailForm({ mail }: MailFormProps) {
+  const transport = mail.mail.transport
   return (
     <div className="flex flex-col gap-5">
       <MailToggleCard mail={mail} />
       <ProviderSelectCard mail={mail} />
-      {mail.mail.transport === 'smtp' ? <SmtpConfigCard mail={mail} /> : <ZeaburConfigCard mail={mail} />}
+      {transport === 'smtp' ? (
+        <SmtpConfigCard mail={mail} />
+      ) : transport === 'mailgun' ? (
+        <MailgunConfigCard mail={mail} />
+      ) : (
+        <ZeaburConfigCard mail={mail} />
+      )}
       <MailTestCard mail={mail} />
     </div>
   )

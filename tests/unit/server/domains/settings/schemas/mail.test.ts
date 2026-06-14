@@ -54,6 +54,23 @@ describe('settings/schemas/mail', () => {
     expect(result.success).toBe(false)
   })
 
+  it('accepts mailgun transport with domain and api key', () => {
+    const result = mailSchema.safeParse({
+      mail: {
+        enabled: true,
+        sender: 'noreply@mg.example.com',
+        transport: 'mailgun',
+        mailgunDomain: 'mg.example.com',
+        mailgunApiKey: 'mg-key',
+      },
+    })
+    expect(result.success).toBe(true)
+    if (!result.success) return
+    expect(result.data.mail.transport).toBe('mailgun')
+    expect(result.data.mail.mailgunDomain).toBe('mg.example.com')
+    expect(result.data.mail.mailgunApiKey).toBe('mg-key')
+  })
+
   it('rejects smtp port out of range', () => {
     const result = mailSchema.safeParse({
       mail: {

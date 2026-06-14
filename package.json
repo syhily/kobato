@@ -117,6 +117,7 @@
     "lint-staged": "^17.0.7",
     "lucide-react": "^1.18.0",
     "lunar-typescript": "^1.8.6",
+    "mailgun.js": "^13.2.0",
     "medium-zoom": "^1.1.0",
     "motion": "^12.40.0",
     "nodemailer": "^8.0.11",

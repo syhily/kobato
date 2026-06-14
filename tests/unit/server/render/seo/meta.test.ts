@@ -89,6 +89,8 @@ const fixture: BlogSettingsBundle = {
       smtpUser: '',
       smtpPass: '',
       smtpSecure: false,
+      mailgunDomain: '',
+      mailgunApiKey: '',
     },
   },
   cache: {

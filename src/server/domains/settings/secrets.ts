@@ -15,6 +15,7 @@ export interface SecretFieldConfig {
 export const SECRET_FIELDS: readonly SecretFieldConfig[] = [
   { section: 'mail', bundleKey: 'mail', path: 'mail', field: 'apiKey' },
   { section: 'mail', bundleKey: 'mail', path: 'mail', field: 'smtpPass' },
+  { section: 'mail', bundleKey: 'mail', path: 'mail', field: 'mailgunApiKey' },
   { section: 'assets', bundleKey: 'assets', path: 'storage', field: 'secretAccessKey' },
   { section: 'search', bundleKey: 'search', path: 'search', field: 'apiKey' },
 ]

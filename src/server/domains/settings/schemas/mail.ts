@@ -18,13 +18,16 @@ export const mailSchema = z.object({
     apiKey: z.string().trim().max(512).optional(),
     sender: z.union([z.literal(''), z.email()]).default(''),
     // Vendor selector for the mail dispatcher.
-    transport: z.enum(['zeabur', 'smtp']).default('zeabur'),
+    transport: z.enum(['zeabur', 'smtp', 'mailgun']).default('zeabur'),
     // SMTP fields
     smtpHost: z.string().trim().max(253).default(''),
     smtpPort: z.coerce.number().int().min(1).max(65535).default(587),
     smtpUser: z.string().trim().max(512).default(''),
     smtpPass: z.string().trim().max(512).optional(),
     smtpSecure: coerceBoolean.default(false),
+    // Mailgun fields
+    mailgunDomain: z.string().trim().max(253).default(''),
+    mailgunApiKey: z.string().trim().max(512).optional(),
   }),
 })
 export type MailInput = z.infer<typeof mailSchema>

@@ -122,13 +122,15 @@ export interface MailSettings {
     host: string
     apiKey: string
     sender: string
-    /** Vendor selector — `'zeabur'` or `'smtp'`. */
-    transport: 'zeabur' | 'smtp'
+    /** Vendor selector — `'zeabur'`, `'smtp'`, or `'mailgun'`. */
+    transport: 'zeabur' | 'smtp' | 'mailgun'
     smtpHost: string
     smtpPort: number
     smtpUser: string
     smtpPass: string
     smtpSecure: boolean
+    mailgunDomain: string
+    mailgunApiKey: string
   }
 }
 

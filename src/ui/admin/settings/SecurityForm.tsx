@@ -1,6 +1,7 @@
 import { PlusIcon, Trash2Icon } from 'lucide-react'
 import { Controller, useFieldArray } from 'react-hook-form'
 
+import type { SecretMasks } from '@/server/domains/settings/services/core'
 import type { MailSettings, SecuritySettings } from '@/shared/config/types'
 
 import { useSiteIdentity } from '@/shared/lib/blog-config-context'
@@ -27,6 +28,7 @@ interface OriginRow {
 interface SecurityFormProps {
   security: SecuritySettings
   mail: MailSettings['mail']
+  mailMasks: Pick<SecretMasks, 'mailApiKeyMask' | 'mailSmtpPassMask' | 'mailMailgunApiKeyMask'>
 }
 
 const MAX_EXEMPT_PATHS = 20
@@ -257,14 +259,20 @@ function CorsPolicyCard({ security }: { security: SecuritySettings }) {
   )
 }
 
-function OtpToggleCard({ security, mail }: SecurityFormProps) {
-  const isSmtp = mail.transport === 'smtp'
-  const mailReady = isSmtp
-    ? mail.enabled && mail.smtpHost && mail.smtpUser && mail.smtpPass && mail.sender
-    : mail.enabled && mail.host && mail.apiKey && mail.sender
-  const missingHint = isSmtp
-    ? '邮件服务未配置完整，无法开启 OTP。请先前往「邮件服务」选择 SMTP 并配置服务器地址、用户名、密码和发件人邮箱。'
-    : '邮件服务未配置完整，无法开启 OTP。请先前往「邮件服务」选择 Zeabur ZSend 并配置接入域名、API Key 和发件人邮箱。'
+function OtpToggleCard({ security, mail, mailMasks }: SecurityFormProps) {
+  const transport = mail.transport
+  const mailReady =
+    transport === 'smtp'
+      ? mail.enabled && mail.smtpHost && mail.smtpUser && mailMasks.mailSmtpPassMask !== null && mail.sender
+      : transport === 'mailgun'
+        ? mail.enabled && mail.mailgunDomain && mailMasks.mailMailgunApiKeyMask !== null && mail.sender
+        : mail.enabled && mail.host && mailMasks.mailApiKeyMask !== null && mail.sender
+  const missingHint =
+    transport === 'smtp'
+      ? '邮件服务未配置完整，无法开启 OTP。请先前往「邮件服务」选择 SMTP 并配置服务器地址、用户名、密码和发件人邮箱。'
+      : transport === 'mailgun'
+        ? '邮件服务未配置完整，无法开启 OTP。请先前往「邮件服务」选择 Mailgun 并配置发送域名、API Key 和发件人邮箱。'
+        : '邮件服务未配置完整，无法开启 OTP。请先前往「邮件服务」选择 Zeabur ZSend 并配置接入域名、API Key 和发件人邮箱。'
 
   const { form, settingGroupProps, save } = useSettingsCard<SecuritySettings, { enabled: boolean }>({
     section: 'security',
@@ -379,13 +387,13 @@ function PasskeyToggleCard({ security }: { security: SecuritySettings }) {
   )
 }
 
-export function SecurityForm({ security, mail }: SecurityFormProps) {
+export function SecurityForm({ security, mail, mailMasks }: SecurityFormProps) {
   return (
     <div className="flex flex-col gap-5">
       <CsrfToggleCard security={security} />
       <CsrfExemptPathsCard security={security} />
       <CorsPolicyCard security={security} />
-      <OtpToggleCard security={security} mail={mail} />
+      <OtpToggleCard security={security} mail={mail} mailMasks={mailMasks} />
       <PasskeyToggleCard security={security} />
     </div>
   )

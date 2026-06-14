@@ -40,6 +40,8 @@ const mailDefaults = {
     smtpUser: '',
     smtpPass: '',
     smtpSecure: false,
+    mailgunDomain: '',
+    mailgunApiKey: '',
   },
 } as const
 const cacheDefaults = {

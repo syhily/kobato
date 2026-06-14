@@ -119,6 +119,8 @@ export const TEST_BLOG_SETTINGS_BUNDLE: BlogSettingsBundle = {
       smtpUser: '',
       smtpPass: '',
       smtpSecure: false,
+      mailgunDomain: '',
+      mailgunApiKey: '',
     },
   },
   cache: {

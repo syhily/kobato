@@ -102,6 +102,8 @@ const SECTION_CONFIGS: {
             smtpUser: bundle.mail.mail.smtpUser,
             smtpPassMask: masks.mailSmtpPassMask,
             smtpSecure: bundle.mail.mail.smtpSecure,
+            mailgunDomain: bundle.mail.mail.mailgunDomain,
+            mailgunApiKeyMask: masks.mailMailgunApiKeyMask,
           },
         }}
       />
@@ -131,7 +133,9 @@ const SECTION_CONFIGS: {
   },
   {
     id: 'security',
-    render: (bundle) => <SecurityForm security={bundle.security} mail={bundle.mail.mail} />,
+    render: (bundle, _tz, masks) => (
+      <SecurityForm security={bundle.security} mail={bundle.mail.mail} mailMasks={masks} />
+    ),
   },
   {
     id: 'backup',

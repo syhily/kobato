@@ -4,6 +4,7 @@ import { render } from '@/server/infra/email/render'
 import AuthorInvite from '@/server/infra/email/templates/AuthorInvite'
 import PasswordReset from '@/server/infra/email/templates/PasswordReset'
 import SignInOtp from '@/server/infra/email/templates/SignInOtp'
+import { MailgunTransport } from '@/server/infra/email/transports/mailgun'
 import { SmtpTransport } from '@/server/infra/email/transports/smtp'
 import { ZeaburZSendTransport } from '@/server/infra/email/transports/zeabur-zsend'
 import { getLogger } from '@/server/infra/logger'
@@ -27,12 +28,14 @@ interface MailConfig {
   host: string
   apiKey: string
   sender: string
-  transport: 'zeabur' | 'smtp'
+  transport: 'zeabur' | 'smtp' | 'mailgun'
   smtpHost: string
   smtpPort: number
   smtpUser: string
   smtpPass: string
   smtpSecure: boolean
+  mailgunDomain: string
+  mailgunApiKey: string
 }
 
 // Read the live mail slice straight from the snapshot. Mail senders only
@@ -72,6 +75,16 @@ export function checkMailReady(
     }
     return { ready: true }
   }
+  if (transport === 'mailgun') {
+    if (!mail.mailgunDomain || !mail.mailgunApiKey || !mail.sender) {
+      return {
+        ready: false,
+        reason: 'unconfigured',
+        message: 'Mailgun 服务尚未配置完整（缺少 Domain / API Key / 发件人）',
+      }
+    }
+    return { ready: true }
+  }
   if (!mail.host || !mail.apiKey || !mail.sender) {
     return {
       ready: false,
@@ -100,6 +113,14 @@ function getTransport(): MailTransport {
       user: mail.smtpUser,
       pass: mail.smtpPass,
       secure: mail.smtpSecure,
+    })
+  }
+  if (transport === 'mailgun') {
+    return new MailgunTransport({
+      enabled: mail.enabled,
+      sender: mail.sender,
+      domain: mail.mailgunDomain,
+      apiKey: mail.mailgunApiKey,
     })
   }
   if (transport !== 'zeabur') {
@@ -228,6 +249,14 @@ function buildTransportForTest(mail: MailConfig): MailTransport {
       user: mail.smtpUser,
       pass: mail.smtpPass,
       secure: mail.smtpSecure,
+    })
+  }
+  if (transport === 'mailgun') {
+    return new MailgunTransport({
+      enabled: true,
+      sender: mail.sender,
+      domain: mail.mailgunDomain,
+      apiKey: mail.mailgunApiKey,
     })
   }
   return new ZeaburZSendTransport({
