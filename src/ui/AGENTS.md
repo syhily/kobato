@@ -152,6 +152,20 @@ via the shadcn alias) as a perceptible hover-state.
 - Use `<Image />` from `@/ui/public/widgets/Image` for transformed
   remote images.
 
+## Shiki syntax highlighting
+
+- **Shiki is SSR-only.** Do not import `shiki`, `@shikijs/langs`, or
+  `@shikijs/themes` in any `src/ui/` component. Shiki's Oniguruma engine
+  loads a `.wasm` module that violates our strict `script-src` CSP when
+  instantiated in the browser.
+- When a UI component needs highlighted code, the server procedure or
+  loader must pre-render the HTML and pass it in the DTO (e.g.
+  `detailsHtml` on audit-log items).
+- Render pre-highlighted HTML with `dangerouslySetInnerHTML` and run it
+  through `sanitizeHtml(html, 'shiki')` from `@/ui/lib/sanitize-html` so
+  inline `style` attributes and shiki CSS classes are preserved while
+  everything else is stripped.
+
 ## LOC ceiling
 
 Stateful orchestrators (editor shells, multi-stage forms, comment
