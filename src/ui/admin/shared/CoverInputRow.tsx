@@ -41,6 +41,12 @@ export interface CoverInputRowProps {
    * Defaults to `h-24 w-full` when omitted.
    */
   thumbnailClassName?: string
+  /**
+   * Object-fit strategy for the preview image. Defaults to `cover`.
+   * Use `contain` when the image has a fixed aspect ratio and should
+   * be shown in full (e.g. friend link banners at 1280×425).
+   */
+  objectFit?: 'cover' | 'contain'
 }
 
 export function CoverInputRow({
@@ -52,6 +58,7 @@ export function CoverInputRow({
   uploadKind,
   fallbackSrc,
   thumbnailClassName,
+  objectFit = 'cover',
 }: CoverInputRowProps) {
   const [uploadOpen, setUploadOpen] = useState(false)
   const assetsSettings = useAssetsSettingsOptional()
@@ -112,7 +119,7 @@ export function CoverInputRow({
               alt={label}
               loading="lazy"
               decoding="async"
-              className="h-full w-full object-cover"
+              className={cn('h-full w-full', objectFit === 'contain' ? 'object-contain' : 'object-cover')}
               onError={(e) => {
                 ;(e.currentTarget as HTMLImageElement).style.visibility = 'hidden'
               }}
@@ -123,7 +130,7 @@ export function CoverInputRow({
               alt={`${label} 预览`}
               loading="lazy"
               decoding="async"
-              className="h-full w-full object-cover"
+              className={cn('h-full w-full', objectFit === 'contain' ? 'object-contain' : 'object-cover')}
               onError={(e) => {
                 ;(e.currentTarget as HTMLImageElement).style.visibility = 'hidden'
               }}

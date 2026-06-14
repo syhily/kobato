@@ -8,47 +8,46 @@ interface FriendsState {
   hasMore: boolean
   q: string
   includeHidden: boolean
-  /** Zero-based current page. Mirrors the comment / tag controllers. */
-  currentPage: number
-  pageSize: number
 }
 
 type FriendsAction =
   | { type: 'loaded'; rows: AdminFriendDto[]; total: number; hasMore: boolean }
+  | { type: 'appended'; rows: AdminFriendDto[]; total: number; hasMore: boolean }
   | { type: 'setQ'; value: string }
   | { type: 'setIncludeHidden'; value: boolean }
-  | { type: 'setCurrentPage'; value: number }
-  | { type: 'setPageSize'; value: number }
   | { type: 'patchFriend'; friend: AdminFriendDto }
   | { type: 'removeFriend'; id: string }
   | { type: 'prependFriend'; friend: AdminFriendDto }
+
+const PAGE_SIZE = 30
 
 function friendsReducer(state: FriendsState, action: FriendsAction): FriendsState {
   switch (action.type) {
     case 'loaded':
       return { ...state, rows: action.rows, total: action.total, hasMore: action.hasMore }
+    case 'appended':
+      return {
+        ...state,
+        rows: [...state.rows, ...action.rows],
+        total: action.total,
+        hasMore: action.hasMore,
+      }
     case 'setQ':
-      // Reset to page 0 when the filter changes — the previous page
-      // index is meaningless against the new result set.
-      return { ...state, q: action.value, currentPage: 0 }
+      // Reset list to first page when the filter changes — the previous
+      // offset is meaningless against the new result set.
+      return { ...state, q: action.value }
     case 'setIncludeHidden':
       // Same reset rationale: toggling visibility scope changes the
-      // result set out from under the current page index.
-      return { ...state, includeHidden: action.value, currentPage: 0 }
-    case 'setCurrentPage':
-      return { ...state, currentPage: action.value }
-    case 'setPageSize':
-      // Different page size → "page 3" no longer lines up with anything
-      // stable; reset to page 0.
-      return { ...state, pageSize: action.value, currentPage: 0 }
+      // result set out from under the current offset.
+      return { ...state, includeHidden: action.value }
     case 'patchFriend':
       return {
         ...state,
         rows: state.rows.map((row) => (row.id === action.friend.id ? { ...row, ...action.friend } : row)),
       }
     case 'removeFriend':
-      // Optimistic removal: drop the row from the visible page and
-      // decrement `total`. The next reload re-syncs.
+      // Optimistic removal: drop the row from the visible list and
+      // decrement `total`. The next scroll/load re-syncs if needed.
       return {
         ...state,
         rows: state.rows.filter((row) => row.id !== action.id),
@@ -66,10 +65,10 @@ export function useFriendsController() {
     hasMore: false,
     q: '',
     includeHidden: false,
-    currentPage: 0,
-    pageSize: 10,
   })
   return { state, dispatch }
 }
 
 export type FriendsControllerDispatch = ReturnType<typeof useFriendsController>['dispatch']
+
+export { PAGE_SIZE }

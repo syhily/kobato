@@ -153,6 +153,8 @@ export function EditFriendDialog({ friend, onClose, onSaved }: EditFriendDialogP
               value={draft.poster}
               onChange={(value) => setDraft((prev) => ({ ...prev, poster: value }))}
               uploadKind={friendHost === null ? null : { kind: 'friend', host: friendHost }}
+              objectFit="contain"
+              thumbnailClassName="aspect-3/1 w-full"
             />
           </div>
           <div className="flex flex-col gap-2 sm:col-span-2">
