@@ -67,19 +67,29 @@ export function VersionDialog({ open, onOpenChange }: VersionDialogProps) {
         <div className="flex flex-col gap-5">
           {/* Logo */}
           <div className="flex flex-col items-center gap-3">
-            <div className="size-16">
+            <div className="flex items-center gap-3">
+              <div className="size-16">
+                <img
+                  src="/logo.svg?original"
+                  alt="站点图标"
+                  className="h-full w-full rounded-xl object-cover dark:hidden"
+                />
+                <img
+                  src="/logo-dark.svg?original"
+                  alt="站点图标"
+                  className="hidden h-full w-full rounded-xl object-cover dark:block"
+                />
+              </div>
               <img
-                src="/logo.svg?original"
-                alt="站点图标"
-                className="h-full w-full rounded-xl object-cover dark:hidden"
-              />
-              <img
-                src="/logo-dark.svg?original"
-                alt="站点图标"
-                className="hidden h-full w-full rounded-xl object-cover dark:block"
+                src="/images/fable-5-verified-pill-badge.png"
+                alt="Fable 5 Verified"
+                width={128}
+                height={42}
+                className="h-10 w-auto rounded-xl"
+                loading="lazy"
               />
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center justify-center gap-2">
               <div className="text-lg font-semibold">{APP_NAME.charAt(0).toUpperCase() + APP_NAME.slice(1)}</div>
               <span
                 className={cn(

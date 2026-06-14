@@ -5,6 +5,8 @@ import {
   DEFAULT_BINARY_ETAG,
   DEFAULT_SVG,
   DEFAULT_SVG_ETAG,
+  FABLE_5_VERIFIED_PILL_BADGE,
+  FABLE_5_VERIFIED_PILL_BADGE_ETAG,
   type SvgSlot,
 } from '@/server/assets/defaults'
 import { fetchBrandingObject, SLOT_CONTENT_TYPE } from '@/server/domains/assets/repos/storage'
@@ -21,7 +23,13 @@ interface BinaryRoute {
   slot: BinarySlot
 }
 
-export type AssetRoute = SvgRoute | BinaryRoute
+interface StaticRoute {
+  kind: 'static'
+  contentType: string
+  resolve: () => ResolvedAsset
+}
+
+export type AssetRoute = SvgRoute | BinaryRoute | StaticRoute
 
 // Single source of truth for the public asset map. The router imports
 // `ASSET_ROUTES` to register every path; `resolveSiteAsset` reads it to
@@ -41,6 +49,15 @@ export const ASSET_ROUTES: Readonly<Record<string, AssetRoute>> = {
   '/images/blog-poster.png': { kind: 'binary', slot: 'blogPoster' },
   '/images/blog-poster-dark.png': { kind: 'binary', slot: 'blogPosterDark' },
   '/images/default-avatar.png': { kind: 'binary', slot: 'defaultAvatar' },
+  '/images/fable-5-verified-pill-badge.png': {
+    kind: 'static',
+    contentType: 'image/png',
+    resolve: () => ({
+      content: FABLE_5_VERIFIED_PILL_BADGE,
+      contentType: 'image/png',
+      etag: FABLE_5_VERIFIED_PILL_BADGE_ETAG,
+    }),
+  },
 }
 
 // Defensive sanity check: every BinarySlot must have exactly one route.
@@ -71,6 +88,9 @@ export async function resolveSiteAsset(path: string, options?: { original?: bool
   }
   if (route.kind === 'svg') {
     return resolveSvg(route.slot, options?.original)
+  }
+  if (route.kind === 'static') {
+    return route.resolve()
   }
   return resolveBinary(route.slot)
 }
