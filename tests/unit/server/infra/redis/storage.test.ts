@@ -2,30 +2,66 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const redisData = new Map<string, string>()
 
-const mockRedis = {
-  get: vi.fn(async (key: string) => redisData.get(key) ?? null),
-  set: vi.fn(async (key: string, value: string, ..._args: unknown[]) => {
-    redisData.set(key, value)
-  }),
-  del: vi.fn(async (key: string) => {
-    redisData.delete(key)
-  }),
-}
+vi.mock('ioredis', () => ({
+  Redis: class MockRedis {
+    private listeners: Record<string, Array<(...args: unknown[]) => void>> = {}
 
-vi.mock('@/server/infra/redis/storage', async () => {
-  const actual = await vi.importActual<typeof import('@/server/infra/redis/storage')>('@/server/infra/redis/storage')
-  return {
-    ...actual,
-    redisInstance: () => mockRedis,
-  }
-})
+    constructor() {
+      // lazyConnect: true means the constructor does not connect.
+    }
+
+    on(event: string, cb: (...args: unknown[]) => void): this {
+      if (!this.listeners[event]) {
+        this.listeners[event] = []
+      }
+      this.listeners[event].push(cb)
+      return this
+    }
+
+    async get(key: string): Promise<string | null> {
+      return redisData.get(key) ?? null
+    }
+
+    async set(key: string, value: string, ..._args: unknown[]): Promise<void> {
+      redisData.set(key, value)
+    }
+
+    async getBuffer(key: string): Promise<Buffer | null> {
+      const value = redisData.get(key)
+      return value ? Buffer.from(value) : null
+    }
+
+    async del(key: string): Promise<void> {
+      redisData.delete(key)
+    }
+
+    async mget(...keys: string[]): Promise<(string | null)[]> {
+      return keys.map((key) => redisData.get(key) ?? null)
+    }
+
+    async scan(
+      cursor: string,
+      _command: string,
+      _pattern: string,
+      _countCommand: string,
+      _count: number,
+    ): Promise<[string, string[]]> {
+      return [cursor, []]
+    }
+
+    async quit(): Promise<void> {}
+
+    async ping(): Promise<string> {
+      return 'PONG'
+    }
+  },
+}))
 
 import { storage } from '@/server/infra/redis/storage'
 
 describe('redis storage — superjson round-trip', () => {
   beforeEach(() => {
     redisData.clear()
-    vi.clearAllMocks()
   })
 
   it('round-trips plain objects', async () => {
