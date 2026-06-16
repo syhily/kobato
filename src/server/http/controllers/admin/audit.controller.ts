@@ -11,7 +11,12 @@ import {
   type AuditLogFilterInput,
 } from '@/server/domains/audit/repos/query'
 import { adminProc } from '@/server/http/orpc-base'
-import { auditLogActorsOutput, auditLogListInput, auditLogListOutput } from '@/shared/contracts/audit'
+import {
+  auditLogActorsOutput,
+  auditLogExportInput,
+  auditLogListInput,
+  auditLogListOutput,
+} from '@/shared/contracts/audit'
 import { idFromString } from '@/shared/utils/id'
 
 // Helpers
@@ -76,7 +81,7 @@ const list = adminProc
 
 const exportCsv = adminProc
   .route({ method: 'POST', path: '/admin/audit-log/export' })
-  .input(auditLogListInput.omit({ offset: true, limit: true }))
+  .input(auditLogExportInput)
   .output(z.string())
   .handler(async ({ input, context }) => {
     const { db } = context
@@ -110,7 +115,7 @@ const exportCsv = adminProc
       'resourceType',
       'resourceId',
       'details',
-      'ipAddressMasked',
+      'ipAddress',
       'userAgentMasked',
       'createdAt',
     ]
@@ -127,7 +132,7 @@ const exportCsv = adminProc
         csvEscapeDisplay(dto.resourceType),
         csvEscapeDisplay(dto.resourceId ?? ''),
         csvEscapeDisplay(dto.details ? JSON.stringify(dto.details) : ''),
-        csvEscapeDisplay(dto.ipAddressMasked ?? ''),
+        csvEscapeDisplay(input.includeFullIp ? (row.ipAddress ?? '') : (dto.ipAddressMasked ?? '')),
         csvEscapeDisplay(dto.userAgentMasked ?? ''),
         csvEscapeDisplay(dto.createdAt),
       ]

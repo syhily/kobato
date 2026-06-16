@@ -1,6 +1,6 @@
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
-import { and, count, desc, eq, gte, inArray, isNotNull, lt } from 'drizzle-orm'
+import { and, count, desc, eq, gte, ilike, inArray, isNotNull, lt, sql } from 'drizzle-orm'
 
 import { clampDateToRetention, parseDate } from '@/server/domains/audit/projection'
 import { auditLog } from '@/server/infra/db/schema/config'
@@ -11,6 +11,7 @@ export interface AuditLogFilterInput {
   action?: string
   resourceType?: string
   actorId?: string
+  ip?: string
   dateFrom?: string
   dateTo?: string
 }
@@ -26,6 +27,9 @@ export function buildAuditLogWhere(input: AuditLogFilterInput) {
   }
   if (input.actorId) {
     conditions.push(eq(auditLog.actorId, idFromString(input.actorId)))
+  }
+  if (input.ip) {
+    conditions.push(ilike(sql`${auditLog.ipAddress}::text`, `%${input.ip}%`))
   }
   const dateFrom = clampDateToRetention(parseDate(input.dateFrom))
   if (dateFrom) {

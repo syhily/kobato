@@ -26,6 +26,7 @@ export const auditLogListInput = z.object({
   action: z.string().trim().max(50).optional(),
   resourceType: z.string().trim().max(50).optional(),
   actorId: z.string().trim().optional(),
+  ip: z.string().trim().max(100).optional(),
   dateFrom: z
     .string()
     .regex(/^\d{4}-\d{2}-\d{2}$/)
@@ -34,6 +35,10 @@ export const auditLogListInput = z.object({
     .string()
     .regex(/^\d{4}-\d{2}-\d{2}$/)
     .optional(),
+})
+
+export const auditLogExportInput = auditLogListInput.omit({ offset: true, limit: true }).extend({
+  includeFullIp: z.boolean().optional(),
 })
 
 export const auditLogListOutput = z.object({
