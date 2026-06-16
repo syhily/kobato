@@ -9,7 +9,9 @@ build
 coverage
 dist
 docker
+data
 node_modules
+plans
 tests
 .editorconfig
 .env
