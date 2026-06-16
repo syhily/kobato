@@ -17,7 +17,7 @@ services:
       DB_STATEMENT_TIMEOUT_MS: ${DB_STATEMENT_TIMEOUT_MS:-30000}
       # Security
       SESSION_SECRET: ${SESSION_SECRET:?SESSION_SECRET is required}
-      ENCRYPTION_KEY: ${ENCRYPTION_KEY:-}
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY:?ENCRYPTION_KEY is required}
       # Logging
       LOG_LEVEL: ${LOG_LEVEL:-info}
       # Data directory
