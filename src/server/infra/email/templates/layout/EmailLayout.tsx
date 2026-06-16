@@ -1,7 +1,7 @@
 import { TZDate } from '@date-fns/tz'
 import { getYear } from 'date-fns'
 
-import { Body, Container, Html, Img, Link, Section, Text } from '@/server/infra/email/render'
+import { Body, Container, Html, Link, Section, Text } from '@/server/infra/email/render'
 import { light } from '@/server/infra/email/templates/styles/tokens'
 import { requireBlogSettingsSection } from '@/shared/config/getters'
 
@@ -14,20 +14,6 @@ interface Props {
 export function EmailLayout({ receiver, preview, children }: Props) {
   const siteIdentity = requireBlogSettingsSection('siteIdentity')
   const year = getYear(new TZDate(Date.now(), siteIdentity.timeZone))
-
-  // Optional site icon: use apple-touch-icon when a custom one is uploaded.
-  let siteIconUrl: string | undefined
-  try {
-    const assets = requireBlogSettingsSection('assets')
-    const branding = assets.branding
-    const hasCustomIcon = branding?.appleTouchIcon?.etag || branding?.faviconIco?.etag
-    if (hasCustomIcon) {
-      const base = siteIdentity.website.replace(/\/$/, '')
-      siteIconUrl = `${base}/apple-touch-icon.png`
-    }
-  } catch {
-    // skip icon when assets section is unavailable
-  }
 
   const fontFamily = "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif"
 
@@ -57,18 +43,36 @@ export function EmailLayout({ receiver, preview, children }: Props) {
             </div>
           )}
 
-          {/* Optional site icon */}
-          {siteIconUrl && (
-            <Section style={{ textAlign: 'center', marginBottom: 56 }}>
-              <Img
-                src={siteIconUrl}
-                alt={siteIdentity.title}
-                width={48}
-                height={48}
-                style={{ borderRadius: '999px', display: 'inline-block' }}
-              />
-            </Section>
-          )}
+          {/* Brand masthead */}
+          <Section
+            style={{
+              textAlign: 'center',
+              paddingTop: 8,
+              paddingBottom: 28,
+              marginBottom: 40,
+              borderBottomWidth: 1,
+              borderBottomStyle: 'solid',
+              borderBottomColor: light.borderColor,
+            }}
+            className="dark-border"
+          >
+            <Link
+              href={siteIdentity.website}
+              target="_blank"
+              rel="noreferrer"
+              style={{
+                display: 'inline-block',
+                fontSize: 28,
+                fontWeight: 'bold',
+                color: light.accentColor,
+                textDecoration: 'none',
+                letterSpacing: '0.04em',
+              }}
+              className="dark-cta-text"
+            >
+              {siteIdentity.title}
+            </Link>
+          </Section>
 
           {/* Greeting */}
           <Section>
