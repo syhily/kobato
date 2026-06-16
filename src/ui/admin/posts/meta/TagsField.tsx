@@ -20,6 +20,8 @@ export function TagsField({ values, onChange, disabled }: TagsFieldProps) {
   const [open, setOpen] = useState(false)
   const [highlighted, setHighlighted] = useState(0)
   const containerRef = useRef<HTMLDivElement>(null)
+  const inputRef = useRef<HTMLInputElement>(null)
+  const isComposingRef = useRef(false)
   const tagsQuery = useQuery(orpcQuery.admin.tags.list.queryOptions({ input: { limit: 100 } }))
   const tags = tagsQuery.data?.tags ?? []
 
@@ -32,6 +34,16 @@ export function TagsField({ values, onChange, disabled }: TagsFieldProps) {
       onChange([...values, name])
       setInput('')
       setOpen(false)
+      setHighlighted(0)
+      isComposingRef.current = false
+      // Mobile Chinese IMEs may keep an active composition session after the
+      // previous tag is added (especially when the dropdown is clicked). Reset
+      // the IME state so the next tag can be typed and searched normally.
+      const el = inputRef.current
+      if (el && document.activeElement === el) {
+        el.blur()
+        el.focus()
+      }
     },
     [values, onChange],
   )
@@ -92,13 +104,23 @@ export function TagsField({ values, onChange, disabled }: TagsFieldProps) {
       <div className="flex gap-2">
         <div className="relative flex-1">
           <Input
+            ref={inputRef}
             value={input}
             onChange={(e) => {
               setInput(e.target.value)
               setOpen(e.target.value.trim().length > 0)
             }}
+            onCompositionStart={() => {
+              isComposingRef.current = true
+            }}
+            onCompositionEnd={(e) => {
+              isComposingRef.current = false
+              const value = e.currentTarget.value
+              setInput(value)
+              setOpen(value.trim().length > 0)
+            }}
             onKeyDown={(e) => {
-              if (e.key === 'Enter') {
+              if (e.key === 'Enter' && !isComposingRef.current) {
                 e.preventDefault()
                 if (open && filtered.length > 0) {
                   addTag(filtered[highlighted]?.name ?? input)
