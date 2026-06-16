@@ -63,8 +63,12 @@ export function scheduleNextBackup(): void {
     log.warn('Calculated next backup time is in the past; scheduling in 1 minute')
     backupTimer = setTimeout(() => {
       void (async () => {
-        await runBackupJob()
-        scheduleNextBackup()
+        try {
+          await runBackupJob()
+          scheduleNextBackup()
+        } catch (error) {
+          log.error('Backup scheduler callback failed', { error })
+        }
       })()
     }, 60_000)
     return
@@ -78,8 +82,12 @@ export function scheduleNextBackup(): void {
 
   backupTimer = setTimeout(() => {
     void (async () => {
-      await runBackupJob()
-      scheduleNextBackup()
+      try {
+        await runBackupJob()
+        scheduleNextBackup()
+      } catch (error) {
+        log.error('Backup scheduler callback failed', { error })
+      }
     })()
   }, delayMs)
 }
