@@ -21,7 +21,7 @@ import { idFromString } from '@/shared/utils/id'
 export async function listPublicPostMetas(
   db: NodePgDatabase,
   sortBy: 'publishedAt' | 'updatedAt' = 'publishedAt',
-  limit = 5000,
+  limit = 200,
 ): Promise<PostMetaRow[]> {
   const col = sortBy === 'updatedAt' ? postMetaTable.updatedAt : postMetaTable.firstPublishedAt
   return db.select().from(postMetaTable).where(isNull(postMetaTable.deletedAt)).orderBy(desc(col)).limit(limit)
@@ -133,7 +133,7 @@ export async function listClientPosts(
   options?: PostVisibilityOptions & { limit?: number },
 ): Promise<ClientPost[]> {
   const filters = buildPublicPostFilters(options)
-  const metas = await listPublicPosts(db, { ...filters, limit: options?.limit ?? 5000 })
+  const metas = await listPublicPosts(db, { ...filters, limit: options?.limit ?? 200 })
   const tagMap = await findTagNamesByPostIds(
     db,
     metas.map((m) => m.id),
