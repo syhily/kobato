@@ -493,6 +493,11 @@ describe('contract: module and bundle boundaries', () => {
         file: 'src/server/infra/image/process-worker.ts',
         specifier: '../../../shared/utils/thumbhash.ts',
       },
+      {
+        key: 'LazyCommentBodyEditor.tsx -> ./CommentBodyEditor',
+        file: 'src/ui/public/comments/LazyCommentBodyEditor.tsx',
+        specifier: './CommentBodyEditor',
+      },
     ] as const
     const explicitAllowedHits = new Set<string>()
 

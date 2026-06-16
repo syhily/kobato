@@ -18,7 +18,8 @@ import {
   DialogTitle,
 } from '@/ui/components/dialog'
 import { Label } from '@/ui/components/label'
-import { CommentBodyEditor, EMPTY_COMMENT_BODY, isCommentBodyBlank } from '@/ui/public/comments/CommentBodyEditor'
+import { EMPTY_COMMENT_BODY, isCommentBodyBlank } from '@/ui/public/comments/comment-body-helpers'
+import { CommentBodyEditor } from '@/ui/public/comments/CommentBodyEditor'
 
 export interface EditCommentDialogProps {
   comment: AdminComment | null

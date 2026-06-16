@@ -7,7 +7,8 @@ import type { CommentItemWire as CommentItemType } from '@/shared/types/comments
 
 import { orpcQuery } from '@/client/api/orpc-query'
 import { Button } from '@/ui/components/button'
-import { CommentBodyEditor, isCommentBodyBlank } from '@/ui/public/comments/CommentBodyEditor'
+import { isCommentBodyBlank } from '@/ui/public/comments/comment-body-helpers'
+import { LazyCommentBodyEditor } from '@/ui/public/comments/LazyCommentBodyEditor'
 
 interface InlineOwnEditFormProps {
   comment: CommentItemType
@@ -39,7 +40,7 @@ export function InlineOwnEditForm({ comment, onCancel, onSaved }: InlineOwnEditF
 
   return (
     <div className="mt-2 block w-full">
-      <CommentBodyEditor
+      <LazyCommentBodyEditor
         initialBody={seed}
         bodyKey={`own-edit-${comment.id}-${bodyKey}`}
         onBodyChange={(next) => {

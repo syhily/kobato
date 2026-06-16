@@ -16,6 +16,7 @@ import { BlockCardNode } from '@/ui/admin/editor/tiptap/BlockCardNode'
 import { MathInlineMark } from '@/ui/admin/editor/tiptap/InlineMarks'
 import { SlashCommandsExtension } from '@/ui/admin/editor/tiptap/SlashMenu'
 import { cn } from '@/ui/lib/cn'
+import { EMPTY_COMMENT_BODY } from '@/ui/public/comments/comment-body-helpers'
 import { COMMENT_SLASH_COMMANDS } from '@/ui/public/comments/comment-slash-commands'
 import { CommentEditorHint } from '@/ui/public/comments/CommentEditorHint'
 import { CommentEditorToolbar } from '@/ui/public/comments/CommentEditorToolbar'
@@ -43,11 +44,9 @@ export interface CommentBodyEditorProps {
 
 const DEFAULT_PLACEHOLDER = '写下你的评论…  / 命令，$ 公式'
 
-const EMPTY_BODY: CommentBody = []
-
 function safeBodyToPmDoc(body: CommentBody): PmDoc {
   const result = safeValidateCommentBody(body)
-  const safe = result.ok ? result.body : EMPTY_BODY
+  const safe = result.ok ? result.body : EMPTY_COMMENT_BODY
   return bodyToPmDoc(safe as PortableTextBody)
 }
 
@@ -138,29 +137,5 @@ export function CommentBodyEditor({
     </div>
   )
 }
-
-export function isCommentBodyBlank(body: CommentBody): boolean {
-  if (body.length === 0) {
-    return true
-  }
-  for (const block of body) {
-    if (block._type === 'code' && block.code.trim().length > 0) {
-      return false
-    }
-    if (block._type === 'mathBlock' && block.tex.trim().length > 0) {
-      return false
-    }
-    if (block._type === 'block') {
-      for (const span of block.children) {
-        if (span.text.trim().length > 0) {
-          return false
-        }
-      }
-    }
-  }
-  return true
-}
-
-export const EMPTY_COMMENT_BODY: CommentBody = EMPTY_BODY
 
 export type { Editor }

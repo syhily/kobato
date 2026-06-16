@@ -6,8 +6,9 @@ import type { CommentEditOutput, CommentItemWire as CommentItemType, CommentRawO
 
 import { orpcQuery } from '@/client/api/orpc-query'
 import { Button } from '@/ui/components/button'
+import { EMPTY_COMMENT_BODY, isCommentBodyBlank } from '@/ui/public/comments/comment-body-helpers'
 import { useCommentsLeafContext } from '@/ui/public/comments/comment-item/helpers'
-import { CommentBodyEditor, EMPTY_COMMENT_BODY, isCommentBodyBlank } from '@/ui/public/comments/CommentBodyEditor'
+import { LazyCommentBodyEditor } from '@/ui/public/comments/LazyCommentBodyEditor'
 
 interface InlineEditFormProps {
   commentId: bigint | string
@@ -56,7 +57,7 @@ export function InlineEditForm({ commentId, onCancel, onSaved }: InlineEditFormP
 
   return (
     <div className="mt-2 block w-full">
-      <CommentBodyEditor
+      <LazyCommentBodyEditor
         initialBody={initialBody}
         bodyKey={`edit-${commentId}-${bodyKey}`}
         onBodyChange={setBody}
