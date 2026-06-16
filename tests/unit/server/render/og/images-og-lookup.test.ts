@@ -19,6 +19,12 @@ vi.mock('@/server/domains/pages/repo', () => ({
 vi.mock('@/server/render/og/render', () => ({
   drawOpenGraph: mocks.drawOpenGraph,
 }))
+vi.mock('@/server/infra/rate-limit', () => ({
+  tryResourceRateLimit: vi.fn(async () => ({ exceeded: false })),
+}))
+vi.mock('@/server/infra/redis/buffer-cache', () => ({
+  loadBuffer: vi.fn(async (_key: unknown, loader: () => Promise<unknown>) => loader()),
+}))
 vi.mock('@/shared/config/getters', () => ({
   requireBlogSettingsSection: vi.fn((section: string) => {
     if (section === 'cache') {
