@@ -31,6 +31,40 @@ vi.mock('@/server/domains/taxonomies/tags/service', () => ({
   findTagBySlug: mocks.findTagBySlug,
   findTagByName: mocks.findTagByName,
 }))
+vi.mock('@/server/infra/cache/feed-cache', () => ({
+  clearFeedCache: vi.fn(async () => {}),
+  feedCacheFor: vi.fn(() => {
+    let cached: { rss: string; atom: string } | null = null
+    return {
+      get: vi.fn(async () => cached),
+      set: vi.fn(async (value: { rss: string; atom: string }) => {
+        cached = value
+      }),
+      clear: vi.fn(async () => {
+        cached = null
+      }),
+    }
+  }),
+}))
+vi.mock('@/shared/config/getters', () => ({
+  requireBlogSettingsSection: vi.fn((section: string) => {
+    if (section === 'siteIdentity') {
+      return {
+        title: 'Test Blog',
+        description: 'A test blog',
+        website: 'https://example.com',
+        initialYear: 2024,
+        author: { name: 'Tester', email: 'test@example.com', url: 'https://example.com/about' },
+      }
+    }
+    if (section === 'content') {
+      return { feed: { size: 20 } }
+    }
+    return {}
+  }),
+  getCacheSettings: vi.fn(() => ({ cache: { og: { prefix: 'og:', ttlSeconds: 3600 } } })),
+  getBlogSettingsBundleSync: vi.fn(() => ({})),
+}))
 
 const db = {} as NodePgDatabase
 
