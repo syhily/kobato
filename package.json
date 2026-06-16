@@ -146,6 +146,9 @@
     "vitest": "^4.1.9",
     "zod": "^4.4.3"
   },
+  "overrides": {
+    "esbuild": "^0.28.1"
+  },
   "lint-staged": {
     "*.{ts,tsx}": [
       "oxfmt -c oxfmt.config.ts --write",
