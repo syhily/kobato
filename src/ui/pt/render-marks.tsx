@@ -4,6 +4,7 @@ import { type ReactNode } from 'react'
 import type { FootnoteRefMarkDef, LinkMarkDef, MathInlineMarkDef } from '@/shared/pt/schema'
 
 import { cn } from '@/ui/lib/cn'
+import { safeRel } from '@/ui/lib/link'
 import { sanitizeHtml } from '@/ui/lib/sanitize-html'
 import { FootnoteReference } from '@/ui/pt/Footnotes'
 import { PT_INLINE } from '@/ui/pt/render-shared'
@@ -54,7 +55,7 @@ export function LinkMark({ value, children }: PortableTextMarkComponentProps<Lin
   // executable JavaScript or data URLs in the public renderer.
   const href = /^\s*(javascript|data):/i.test(def.href) ? '#' : def.href
   return (
-    <a href={href} rel={def.rel} target={def.target} className={PT_INLINE.link}>
+    <a href={href} rel={safeRel(def.target, def.rel)} target={def.target} className={PT_INLINE.link}>
       {children}
     </a>
   )

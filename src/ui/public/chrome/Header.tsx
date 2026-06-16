@@ -11,6 +11,7 @@ import { Button } from '@/ui/components/button'
 import { IconButtonContent } from '@/ui/components/icon-button-content'
 import { SOCIAL_NETWORK_ICONS } from '@/ui/icons/brand'
 import { cn } from '@/ui/lib/cn'
+import { safeRel } from '@/ui/lib/link'
 import { BrandLogo } from '@/ui/public/chrome/BrandLogo'
 import { ThemeToggle } from '@/ui/public/chrome/ThemeToggle'
 import { UserMenu } from '@/ui/public/chrome/UserMenu'
@@ -187,7 +188,12 @@ export function Header({ navigation, currentUser, pathname, search }: HeaderProp
               {navigation.map((menu) => (
                 <li key={`menu-${menu.link}`} className={siteMenuItemClass}>
                   {isExternalNavTarget(menu) ? (
-                    <a href={menu.link} target={menu.target} className={siteMenuLinkClass}>
+                    <a
+                      href={menu.link}
+                      target={menu.target}
+                      rel={safeRel(menu.target, undefined)}
+                      className={siteMenuLinkClass}
+                    >
                       {menu.text}
                     </a>
                   ) : (

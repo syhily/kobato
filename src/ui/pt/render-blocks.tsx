@@ -15,6 +15,7 @@ import type {
 } from '@/shared/pt/schema'
 
 import { cn } from '@/ui/lib/cn'
+import { safeRel } from '@/ui/lib/link'
 import { sanitizeHtml } from '@/ui/lib/sanitize-html'
 import { BlockImage } from '@/ui/pt/blocks/BlockImage'
 import { CodeBlock as CodeBlockComponent } from '@/ui/pt/blocks/CodeBlock'
@@ -205,7 +206,7 @@ function applyInlineMark(node: ReactNode, markName: string, markDefs: readonly M
       // even if the schema filter is somehow bypassed.
       const href = /^\s*(javascript|data):/i.test(def.href) ? '#' : def.href
       return (
-        <a href={href} rel={def.rel} target={def.target} className={PT_INLINE.link}>
+        <a href={href} rel={safeRel(def.target, def.rel)} target={def.target} className={PT_INLINE.link}>
           {node}
         </a>
       )

@@ -7,6 +7,59 @@ import type { LinkMarkDef } from '@/shared/pt/schema'
 import { CodeBlockNodeComponent } from '@/ui/pt/render-blocks'
 import { LinkMark, renderMathMarkupOrTexFallback } from '@/ui/pt/render-marks'
 
+describe('security / tabnabbing — LinkMark rel on target="_blank"', () => {
+  it('adds noopener noreferrer when target is _blank', () => {
+    const value: LinkMarkDef = {
+      _type: 'link',
+      _key: 'k1',
+      href: 'https://example.com',
+      target: '_blank',
+    }
+    const html = renderToStaticMarkup(
+      createElement(LinkMark, {
+        value,
+        children: 'blank link',
+      } as React.ComponentProps<typeof LinkMark>),
+    )
+    expect(html).toContain('rel="noopener noreferrer"')
+  })
+
+  it('merges noopener noreferrer into existing rel', () => {
+    const value: LinkMarkDef = {
+      _type: 'link',
+      _key: 'k1',
+      href: 'https://example.com',
+      rel: 'nofollow',
+      target: '_blank',
+    }
+    const html = renderToStaticMarkup(
+      createElement(LinkMark, {
+        value,
+        children: 'nofollow blank link',
+      } as React.ComponentProps<typeof LinkMark>),
+    )
+    expect(html).toMatch(/rel="[^"]*noopener[^"]*"/)
+    expect(html).toMatch(/rel="[^"]*noreferrer[^"]*"/)
+    expect(html).toMatch(/rel="[^"]*nofollow[^"]*"/)
+  })
+
+  it('preserves existing rel when target is not _blank', () => {
+    const value: LinkMarkDef = {
+      _type: 'link',
+      _key: 'k1',
+      href: 'https://example.com',
+      rel: 'nofollow',
+    }
+    const html = renderToStaticMarkup(
+      createElement(LinkMark, {
+        value,
+        children: 'same-tab link',
+      } as React.ComponentProps<typeof LinkMark>),
+    )
+    expect(html).toContain('rel="nofollow"')
+  })
+})
+
 describe('security / XSS payload — PT renderer defense-in-depth', () => {
   it('LinkMark renders safe href unchanged', () => {
     const value: LinkMarkDef = {
