@@ -60,6 +60,33 @@ vi.mock('@/server/infra/db/operations/setting', () => ({
   findSettingsByScopePrefix: mockState.findSettingsByScopePrefix,
   upsertSetting: mockState.upsertSetting,
 }))
+vi.mock('@/server/domains/settings/services/hydrate', () => ({
+  hydrateBlogSettings: vi.fn(async () => null),
+  refreshBlogSettings: vi.fn(async () => ({
+    siteIdentity: {
+      title: 'Test Blog',
+      description: 'A test blog',
+      website: 'https://example.com',
+      initialYear: 2024,
+      author: { name: 'Tester', email: 'test@example.com', url: 'https://example.com' },
+      locale: 'zh-CN',
+      timeZone: 'Asia/Shanghai',
+      timeFormat: 'yyyy-LL-dd HH:mm',
+    },
+    assets: null,
+    general: {
+      title: 'Test',
+      description: 'A test blog',
+      website: 'https://example.com',
+      keywords: [],
+      author: { name: 'Tester', email: 'test@example.com', url: 'https://example.com' },
+      locale: 'zh-CN',
+      timeZone: 'Asia/Shanghai',
+      timeFormat: 'yyyy-LL-dd HH:mm',
+      initialYear: 2024,
+    },
+  })),
+}))
 
 const db = {
   transaction: vi.fn(async (fn: (tx: NodePgDatabase) => Promise<unknown>) => fn(db as unknown as NodePgDatabase)),
