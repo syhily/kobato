@@ -37,7 +37,7 @@ export type AuditLogAction =
   | { type: 'renameFilter'; field: AuditLogFilterFieldKey; label: string }
   | { type: 'clearFilters' }
 
-function auditLogReducer(state: AuditLogState, action: AuditLogAction): AuditLogState {
+export function auditLogReducer(state: AuditLogState, action: AuditLogAction): AuditLogState {
   switch (action.type) {
     case 'loaded':
       return {
