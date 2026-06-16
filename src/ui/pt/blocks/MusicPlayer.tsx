@@ -1,14 +1,17 @@
-import { lazy, Suspense, useEffect, useState } from 'react'
+import { lazy, Suspense } from 'react'
 
+import type { MusicPlayerBlockMeta } from '@/shared/types/music'
 import type { AudioInfo } from '@/ui/public/aplayer/types'
 
-import { loadMusic } from '@/client/api/music'
 import { cn } from '@/ui/lib/cn'
 
 const APlayer = lazy(() => import('@/ui/public/aplayer/player').then((m) => ({ default: m.APlayer })))
 
 export interface MusicPlayerProps {
-  id: string
+  /** Resolved metadata from SSR. When provided the player renders immediately. */
+  meta?: MusicPlayerBlockMeta
+  /** Legacy player id used as a fallback placeholder in contexts without SSR meta. */
+  id?: string
   auto?: boolean
   alignment?: 'center' | 'start'
 }
@@ -77,44 +80,37 @@ export function scheduleMusicPlayerInit(
   }
 }
 
-export function MusicPlayer({ id, auto, alignment: center }: MusicPlayerProps) {
-  const [audio, setAudio] = useState<AudioInfo | null>(null)
+function toAudioInfo(meta: MusicPlayerBlockMeta): AudioInfo {
+  return {
+    name: meta.name,
+    artist: meta.artist,
+    url: meta.audioUrl,
+    cover: meta.cover,
+    lrc: meta.lyric,
+    theme: '#008c95',
+  }
+}
 
-  useEffect(() => {
-    if (!id) {
-      return
-    }
-    let cancelled = false
+export function MusicPlayer({ meta, id, auto, alignment: center }: MusicPlayerProps) {
+  const wrapperClass = cn(
+    'mt-5 mb-[1.375rem] max-w-[21.875rem] max-xl:mx-auto max-md:mx-0 max-md:mt-0 max-md:mb-5 max-md:max-w-full',
+    center && 'mx-auto max-md:mx-auto',
+  )
 
-    void (async () => {
-      const meta = await loadMusic(id)
-      if (cancelled || meta === null) {
-        return
-      }
-      setAudio({
-        name: meta.name,
-        artist: meta.artist,
-        url: meta.url,
-        cover: meta.pic,
-        lrc: meta.lyric,
-        theme: '#008c95',
-      })
-    })()
+  if (meta === undefined) {
+    return (
+      <div className={wrapperClass}>
+        <div className="aplayer" data-id={id} />
+      </div>
+    )
+  }
 
-    return () => {
-      cancelled = true
-    }
-  }, [id])
+  const audio = toAudioInfo(meta)
 
   return (
-    <div
-      className={cn(
-        'mt-5 mb-[1.375rem] max-w-[21.875rem] max-xl:mx-auto max-md:mx-0 max-md:mt-0 max-md:mb-5 max-md:max-w-full',
-        center && 'mx-auto max-md:mx-auto',
-      )}
-    >
-      <Suspense fallback={<div className="aplayer" data-id={id} />}>
-        {audio ? <APlayer audio={audio} autoPlay={auto ?? false} /> : null}
+    <div className={wrapperClass}>
+      <Suspense fallback={<div className="aplayer" data-id={meta.id} />}>
+        <APlayer audio={audio} autoPlay={auto ?? false} />
       </Suspense>
     </div>
   )

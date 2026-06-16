@@ -111,3 +111,14 @@ export interface PublicMusicMeta {
   pic: string
   lyric: string
 }
+
+// Resolved metadata embedded into a `musicPlayer` PortableText block at SSR time.
+// Field names match the props expected by `<APlayer audio={...} />`.
+export interface MusicPlayerBlockMeta {
+  id: string
+  name: string
+  artist: string
+  cover: string
+  audioUrl: string
+  lyric: string
+}

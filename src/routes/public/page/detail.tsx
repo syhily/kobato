@@ -5,6 +5,7 @@ import type { RouteHandle } from '@/root'
 
 import { getDbFromContext } from '@/server/domains/auth/context'
 import { listAllFriends } from '@/server/domains/friends/service'
+import { prerenderMusicPlayerBlocks } from '@/server/domains/pt/prerender'
 import { loadPublicDetailData } from '@/server/http/loaders/detail'
 import { loadPagePreview } from '@/server/http/loaders/page-preview'
 import { detailHeaders, publicShouldRevalidate } from '@/server/http/loaders/route-exports'
@@ -32,6 +33,7 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
   ])
 
   const footnotesSectionTitle = resolveFootnotesSectionTitle(requireBlogSettingsSection('content'))
+  const enrichedBody = await prerenderMusicPlayerBlocks(db, preview.body)
 
   const { detail } = await loadPublicDetailData(db, {
     request,
@@ -43,7 +45,7 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
   return data(
     {
       page: preview.page,
-      body: preview.body,
+      body: enrichedBody ?? preview.body,
       friends,
       showFriends: preview.showFriends,
       draftMarker: preview.draftMarker,

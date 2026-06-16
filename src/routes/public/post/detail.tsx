@@ -9,6 +9,7 @@ import { resolveImageMetaBySources } from '@/server/domains/images/services/enha
 import { selectSidebarPosts } from '@/server/domains/posts/repos/public-query/featured'
 import { findPostBySlug } from '@/server/domains/posts/repos/single'
 import { loadPostDraftPreviewBySlug } from '@/server/domains/posts/services/draft'
+import { prerenderMusicPlayerBlocks } from '@/server/domains/pt/prerender'
 import { getTagsByNames, listAllTags } from '@/server/domains/taxonomies/tags/service'
 import { loadPublicDetailData } from '@/server/http/loaders/detail'
 import { detailHeaders, publicShouldRevalidate } from '@/server/http/loaders/route-exports'
@@ -67,11 +68,12 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
     throw notModifiedResponse(etag)
   }
 
-  const [visibleTags, imageMeta, sidebarTags, sidebarPosts] = await Promise.all([
+  const [visibleTags, imageMeta, sidebarTags, sidebarPosts, enrichedBody] = await Promise.all([
     getTagsByNames(db, post.tags),
     resolveImageMetaBySources(db, sourcePost.imageSources).then((r) => Object.fromEntries(r)),
     listAllTags(db).then(selectSidebarTags),
     selectSidebarPosts(db, getSidebarWidgetCount(requireBlogSettingsSection('sidebar'), 'recentPosts')),
+    prerenderMusicPlayerBlocks(db, sourcePost.body),
   ])
 
   const { detail } = await loadPublicDetailData(db, {
@@ -85,7 +87,7 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
   return data(
     {
       post,
-      body: sourcePost.body,
+      body: enrichedBody ?? sourcePost.body,
       visibleTags,
       sidebarPosts,
       tags: sidebarTags,
