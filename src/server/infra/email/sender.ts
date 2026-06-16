@@ -100,9 +100,44 @@ interface InternalSendOptions {
   bcc?: string[]
 }
 
+let cachedTransport: { transport: MailTransport; fingerprint: string } | null = null
+
+function computeMailFingerprint(mail: MailConfig): string {
+  return JSON.stringify({
+    transport: mail.transport,
+    enabled: mail.enabled,
+    sender: mail.sender,
+    host: mail.host,
+    apiKey: mail.apiKey,
+    smtpHost: mail.smtpHost,
+    smtpPort: mail.smtpPort,
+    smtpUser: mail.smtpUser,
+    smtpSecure: mail.smtpSecure,
+    mailgunDomain: mail.mailgunDomain,
+    mailgunApiKey: mail.mailgunApiKey,
+  })
+}
+
+export function invalidateMailTransportCache(): void {
+  cachedTransport = null
+}
+
 // Resolve the live transport from the configured mail slice.
+// The transport is cached and reused while the mail config fingerprint
+// stays the same, so SMTP connection pools and Mailgun clients survive
+// across individual notification sends.
 function getTransport(): MailTransport {
   const mail = readMailConfig()
+  const fingerprint = computeMailFingerprint(mail)
+  if (cachedTransport?.fingerprint === fingerprint) {
+    return cachedTransport.transport
+  }
+  const transport = buildTransport(mail)
+  cachedTransport = { transport, fingerprint }
+  return transport
+}
+
+function buildTransport(mail: MailConfig): MailTransport {
   const transport = mail.transport ?? 'zeabur'
   if (transport === 'smtp') {
     return new SmtpTransport({

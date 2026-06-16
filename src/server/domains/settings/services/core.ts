@@ -13,7 +13,7 @@ import { SECTION_REGISTRY } from '@/server/domains/settings/sections/registry'
 import { hydrateBlogSettings, refreshBlogSettings } from '@/server/domains/settings/services/hydrate'
 import { encryptIfNeeded } from '@/server/infra/crypto/secret-encryption'
 import { findSettingByScope, upsertSetting } from '@/server/infra/db/operations/setting'
-import { checkMailReady } from '@/server/infra/email/sender'
+import { checkMailReady, invalidateMailTransportCache } from '@/server/infra/email/sender'
 import { DomainError } from '@/server/infra/http/errors'
 import { getLogger } from '@/server/infra/logger'
 import { getBlogSettingsBundleSync } from '@/shared/config/getters'
@@ -94,6 +94,10 @@ export async function updateBlogSettingsSection<S extends SettingsSection>(
 
     return refreshBlogSettings(tx)
   })
+
+  if (section === 'mail') {
+    invalidateMailTransportCache()
+  }
 
   const handler = sectionChangeHandlers.get(section)
   if (handler) {

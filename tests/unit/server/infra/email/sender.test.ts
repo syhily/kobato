@@ -52,6 +52,7 @@ import { TEST_BLOG_SETTINGS_BUNDLE } from '#/_helpers/blog-settings'
 import { setBlogSettingsBundleForTests } from '@/server/domains/settings/services/test-utils'
 import {
   checkMailReady,
+  invalidateMailTransportCache,
   sendAuthorInvite,
   sendEmail,
   sendPasswordReset,
@@ -89,6 +90,7 @@ beforeEach(() => {
 
 afterEach(() => {
   vi.unstubAllGlobals()
+  invalidateMailTransportCache()
 })
 
 describe('infra/email/sender — checkMailReady', () => {
@@ -313,6 +315,47 @@ describe('infra/email/sender — sendEmail', () => {
     await sendEmail('to@x.com', 'subj', '<p>hi</p>', { bcc: ['bcc@x.com'] })
     const args = transportSendMock.mock.calls[0]!
     expect(args[1]).toMatchObject({ bcc: ['bcc@x.com'] })
+  })
+
+  it('reuses the same transport instance across sends with identical config', async () => {
+    await sendEmail('a@x.com', 'subj 1', '<p>one</p>')
+    await sendEmail('b@x.com', 'subj 2', '<p>two</p>')
+    expect(transportSendMock).toHaveBeenCalledTimes(2)
+    expect(ZeaburCtorMock).toHaveBeenCalledTimes(1)
+  })
+
+  it('rebuilds the transport when the mail config changes', async () => {
+    await sendEmail('a@x.com', 'subj 1', '<p>one</p>')
+    setBlogSettingsBundleForTests({
+      ...TEST_BLOG_SETTINGS_BUNDLE,
+      mail: {
+        mail: {
+          enabled: true,
+          host: 'api.zeabur.com',
+          apiKey: 'k2',
+          sender: 'noreply@example.com',
+          transport: 'zeabur',
+          smtpHost: '',
+          smtpPort: 587,
+          smtpUser: '',
+          smtpPass: '',
+          smtpSecure: false,
+          mailgunDomain: '',
+          mailgunApiKey: '',
+        },
+      },
+    })
+    await sendEmail('b@x.com', 'subj 2', '<p>two</p>')
+    expect(transportSendMock).toHaveBeenCalledTimes(2)
+    expect(ZeaburCtorMock).toHaveBeenCalledTimes(2)
+  })
+
+  it('rebuilds the transport after the cache is invalidated', async () => {
+    await sendEmail('a@x.com', 'subj 1', '<p>one</p>')
+    invalidateMailTransportCache()
+    await sendEmail('b@x.com', 'subj 2', '<p>two</p>')
+    expect(transportSendMock).toHaveBeenCalledTimes(2)
+    expect(ZeaburCtorMock).toHaveBeenCalledTimes(2)
   })
 })
 
