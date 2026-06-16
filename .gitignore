@@ -28,6 +28,9 @@ coverage/
 # scratch / probe scripts (e.g. tmp/meting-probe.mjs)
 tmp/
 
+# generated email previews (scripts/generate-emails.ts)
+scripts/emails/
+
 # Local data directory
 data/
 

@@ -34,6 +34,7 @@
     "docker:dev:down": "docker compose -f docker/docker-compose.dev.yml down",
     "docker:test": "docker compose -f docker/docker-compose.test.yml up -d",
     "docker:test:down": "docker compose -f docker/docker-compose.test.yml down",
+    "emails:generate": "npx vite-node scripts/generate-emails.ts",
     "fmt": "oxfmt -c oxfmt.config.ts --write",
     "fmt:check": "oxfmt -c oxfmt.config.ts --check",
     "lint": "oxlint -c oxlint.config.ts",
@@ -49,7 +50,8 @@
     "test:snaps": "vitest run --project snaps",
     "test:unit": "vitest run --project unit",
     "type": "react-router typegen && tsc",
-    "zeabur": "npx zeabur@latest template update -c TK7XLK -f zeabur-template.yml"
+    "zeabur:login": "npx zeabur@latest auth login",
+    "zeabur:publish": "npx zeabur@latest template update -c TK7XLK -f zeabur-template.yml"
   },
   "dependencies": {
     "@napi-rs/canvas": "^1.0.0",

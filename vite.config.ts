@@ -3,6 +3,8 @@ import type { Plugin, PluginOption } from 'vite'
 import { reactRouter } from '@react-router/dev/vite'
 import tailwindcss from '@tailwindcss/vite'
 import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { defineConfig } from 'vite'
 import { z } from 'zod'
 
@@ -20,6 +22,8 @@ const pkgSchema = z.object({
 })
 
 const pkg = pkgSchema.parse(JSON.parse(readFileSync('./package.json', 'utf-8')))
+
+const projectRoot = fileURLToPath(new URL('.', import.meta.url))
 
 export default defineConfig(({ command }) => ({
   ssr:
@@ -39,6 +43,10 @@ export default defineConfig(({ command }) => ({
   ] as PluginOption[],
   resolve: {
     tsconfigPaths: true,
+    alias: {
+      '@': resolve(projectRoot, 'src'),
+      '#': resolve(projectRoot, 'tests'),
+    },
   },
   build: {
     emptyOutDir: true,
