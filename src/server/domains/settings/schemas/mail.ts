@@ -25,6 +25,8 @@ export const mailSchema = z.object({
     smtpUser: z.string().trim().max(512).default(''),
     smtpPass: z.string().trim().max(512).optional(),
     smtpSecure: coerceBoolean.default(false),
+    smtpRequireTls: coerceBoolean.default(true),
+    smtpRejectUnauthorized: coerceBoolean.default(true),
     // Mailgun fields
     mailgunDomain: z.string().trim().max(253).default(''),
     mailgunApiKey: z.string().trim().max(512).optional(),

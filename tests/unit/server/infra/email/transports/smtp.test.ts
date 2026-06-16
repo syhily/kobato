@@ -3,9 +3,16 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 // Mock nodemailer at the import boundary so the test never opens a real
 // SMTP socket. `createTransport` returns a stub transporter whose
 // `sendMail` we assert against.
-const sendMailMock = vi.fn()
+const { sendMailMock, createTransportMock } = vi.hoisted(() => {
+  const sendMail = vi.fn()
+  return {
+    sendMailMock: sendMail,
+    createTransportMock: vi.fn(() => ({ sendMail })),
+  }
+})
+
 vi.mock('nodemailer', () => ({
-  default: { createTransport: () => ({ sendMail: sendMailMock }) },
+  default: { createTransport: createTransportMock },
 }))
 
 import type { SmtpConfig } from '@/server/infra/email/transports/smtp'
@@ -30,6 +37,7 @@ const baseConfig: SmtpConfig = {
 
 beforeEach(() => {
   sendMailMock.mockReset()
+  createTransportMock.mockClear()
 })
 
 afterEach(() => {
@@ -139,5 +147,29 @@ describe('SmtpTransport', () => {
   it('exposes name=smtp', () => {
     const transport = new SmtpTransport(baseConfig)
     expect(transport.name).toBe('smtp')
+  })
+
+  describe('transport options', () => {
+    it('defaults requireTLS and tls.rejectUnauthorized to true', () => {
+      new SmtpTransport(baseConfig)
+      expect(createTransportMock).toHaveBeenCalledTimes(1)
+      const options = createTransportMock.mock.calls[0][0] as {
+        requireTLS?: unknown
+        tls?: { rejectUnauthorized?: unknown }
+      }
+      expect(options.requireTLS).toBe(true)
+      expect(options.tls).toEqual({ rejectUnauthorized: true })
+    })
+
+    it('respects explicit requireTls=false and rejectUnauthorized=false', () => {
+      new SmtpTransport({ ...baseConfig, requireTls: false, rejectUnauthorized: false })
+      expect(createTransportMock).toHaveBeenCalledTimes(1)
+      const options = createTransportMock.mock.calls[0][0] as {
+        requireTLS?: unknown
+        tls?: { rejectUnauthorized?: unknown }
+      }
+      expect(options.requireTLS).toBe(false)
+      expect(options.tls).toEqual({ rejectUnauthorized: false })
+    })
   })
 })

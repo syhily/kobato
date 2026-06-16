@@ -42,6 +42,8 @@ export interface SmtpConfig extends MailTransportConfig {
   user: string
   pass: string
   secure?: boolean
+  requireTls?: boolean
+  rejectUnauthorized?: boolean
 }
 
 export class SmtpTransport implements MailTransport {
@@ -54,6 +56,10 @@ export class SmtpTransport implements MailTransport {
       host: config.host,
       port: config.port,
       secure: config.secure ?? config.port === 465,
+      requireTLS: config.requireTls ?? true,
+      tls: {
+        rejectUnauthorized: config.rejectUnauthorized ?? true,
+      },
       auth: { user: config.user, pass: config.pass },
     })
   }

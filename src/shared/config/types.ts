@@ -129,6 +129,8 @@ export interface MailSettings {
     smtpUser: string
     smtpPass: string
     smtpSecure: boolean
+    smtpRequireTls?: boolean
+    smtpRejectUnauthorized?: boolean
     mailgunDomain: string
     mailgunApiKey: string
   }

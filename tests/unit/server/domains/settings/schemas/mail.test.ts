@@ -19,6 +19,8 @@ describe('settings/schemas/mail', () => {
     expect(result.data.mail.smtpPort).toBe(587)
     expect(result.data.mail.smtpUser).toBe('')
     expect(result.data.mail.smtpSecure).toBe(false)
+    expect(result.data.mail.smtpRequireTls).toBe(true)
+    expect(result.data.mail.smtpRejectUnauthorized).toBe(true)
   })
 
   it('accepts smtp transport with all fields', () => {

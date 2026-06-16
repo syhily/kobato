@@ -40,6 +40,8 @@ const mailDefaults = {
     smtpUser: '',
     smtpPass: '',
     smtpSecure: false,
+    smtpRequireTls: true,
+    smtpRejectUnauthorized: true,
     mailgunDomain: '',
     mailgunApiKey: '',
   },
