@@ -43,6 +43,8 @@ beforeEach(() => {
 function createMockChildProcess(exitCode: number | null): ChildProcess {
   const cp = new EventEmitter() as ChildProcess
   const stdin = new EventEmitter()
+  const stdout = new EventEmitter()
+  const stderr = new EventEmitter()
   Object.assign(stdin, {
     writable: true,
     write: vi.fn(),
@@ -50,9 +52,9 @@ function createMockChildProcess(exitCode: number | null): ChildProcess {
   })
   Object.assign(cp, {
     stdin,
-    stdout: null,
-    stderr: null,
-    stdio: [stdin, null, null] as any,
+    stdout,
+    stderr,
+    stdio: [stdin, stdout, stderr] as any,
   })
   process.nextTick(() => {
     cp.emit('close', exitCode)

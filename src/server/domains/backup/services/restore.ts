@@ -98,9 +98,28 @@ export async function restoreFromSql(db: NodePgDatabase, sql: string): Promise<v
       ['--no-psqlrc', '--single-transaction', '-v', 'ON_ERROR_STOP=1', ...roleArgs, ...connArgs],
       {
         env,
-        stdio: ['pipe', 'inherit', 'inherit'],
+        stdio: ['pipe', 'pipe', 'pipe'],
       },
     )
+
+    // Capture psql output instead of inheriting stdout/stderr.  In production
+    // this keeps restore noise out of the service logs; in tests it prevents
+    // `setval`/`ALTER TABLE`/`CREATE INDEX` output from polluting the runner.
+    const MAX_OUTPUT = 1024 * 1024
+    let stdoutBuf = ''
+    let stderrBuf = ''
+
+    psql.stdout.on('data', (chunk: Buffer) => {
+      if (stdoutBuf.length < MAX_OUTPUT) {
+        stdoutBuf += chunk.toString('utf-8')
+      }
+    })
+
+    psql.stderr.on('data', (chunk: Buffer) => {
+      if (stderrBuf.length < MAX_OUTPUT) {
+        stderrBuf += chunk.toString('utf-8')
+      }
+    })
 
     // Clear the public schema before applying the dump so that tables added
     // after the backup was taken (e.g. by later migrations) do not block
@@ -130,8 +149,12 @@ END $$;`
       psql.on('error', reject)
       psql.on('close', (code) => {
         if (code !== 0) {
-          reject(new DomainError('INTERNAL', `数据库还原失败，psql 退出码 ${code}`))
+          const detail = stderrBuf.trim() || stdoutBuf.trim() || undefined
+          reject(new DomainError('INTERNAL', `数据库还原失败，psql 退出码 ${code}${detail ? `: ${detail}` : ''}`))
         } else {
+          if (stdoutBuf || stderrBuf) {
+            log.debug('psql restore output', { stdout: stdoutBuf, stderr: stderrBuf })
+          }
           resolve()
         }
       })
