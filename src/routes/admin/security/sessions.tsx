@@ -4,47 +4,18 @@ import { getDbFromContext, getRouteRequestContext } from '@/server/domains/auth/
 import { requireRole } from '@/server/domains/auth/rbac'
 import { listAllSessions } from '@/server/domains/auth/service'
 import { bundleFromMatches, routeMeta } from '@/server/render/seo/meta'
+import {
+  DEFAULT_ADMIN_SORT,
+  SESSION_SORT_OPTIONS,
+  parseSessionSort,
+  type SessionSortState,
+} from '@/shared/utils/sessions-sort'
 import { SessionsView } from '@/ui/admin/sessions/SessionsView'
 
 import type { Route } from './+types/sessions'
 
 export function meta({ matches }: Route.MetaArgs) {
   return routeMeta({ title: '会话管理' }, bundleFromMatches(matches))
-}
-
-type SortKey = 'lastActive' | 'loginTime' | 'userName'
-
-function isSortKey(value: string): value is SortKey {
-  return value === 'lastActive' || value === 'loginTime' || value === 'userName'
-}
-
-function parseSort(raw: string | null): SortKey {
-  if (raw && isSortKey(raw)) {
-    return raw
-  }
-  return 'lastActive'
-}
-
-function parseDateBoundary(raw: string | null, edge: 'start' | 'end'): number | null {
-  if (!raw) {
-    return null
-  }
-  // `<Input type="date">` returns YYYY-MM-DD; parse as local midnight
-  // for the "from" bound and local end-of-day for the "to" bound so
-  // a single-day filter is inclusive on both ends.
-  const match = raw.match(/^(\d{4})-(\d{2})-(\d{2})$/)
-  if (!match) {
-    return null
-  }
-  const [, y, m, d] = match
-  const date = new Date(Number(y), Number(m) - 1, Number(d))
-  if (Number.isNaN(date.getTime())) {
-    return null
-  }
-  if (edge === 'end') {
-    date.setHours(23, 59, 59, 999)
-  }
-  return date.getTime()
 }
 
 export interface AdminSessionItem {
@@ -67,36 +38,31 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   const ctx = getRouteRequestContext({ request, context })
   requireRole(ctx, 'admin')
   const url = new URL(request.url)
-  const q = (url.searchParams.get('q') ?? '').trim().toLowerCase()
-  const sort = parseSort(url.searchParams.get('sort'))
-  const from = parseDateBoundary(url.searchParams.get('from'), 'start')
-  const to = parseDateBoundary(url.searchParams.get('to'), 'end')
+  const sort: SessionSortState<'lastActive' | 'loginTime' | 'userName'> = parseSessionSort(
+    url.searchParams.get('sort'),
+    SESSION_SORT_OPTIONS,
+    DEFAULT_ADMIN_SORT,
+  )
 
   const all = await listAllSessions(db)
-  let filtered = all
-  if (q) {
-    filtered = filtered.filter((s) => s.userName.toLowerCase().includes(q) || s.userEmail.toLowerCase().includes(q))
-  }
-  if (from !== null) {
-    filtered = filtered.filter((s) => s.loginAt.getTime() >= from)
-  }
-  if (to !== null) {
-    filtered = filtered.filter((s) => s.loginAt.getTime() <= to)
-  }
-
-  filtered.sort((a, b) => {
-    switch (sort) {
+  const sorted = [...all].sort((a, b) => {
+    let cmp = 0
+    switch (sort.field) {
       case 'loginTime':
-        return b.loginAt.getTime() - a.loginAt.getTime()
+        cmp = a.loginAt.getTime() - b.loginAt.getTime()
+        break
       case 'userName':
-        return a.userName.localeCompare(b.userName, 'zh-Hans-CN')
+        cmp = a.userName.localeCompare(b.userName, 'zh-Hans-CN')
+        break
       case 'lastActive':
       default:
-        return b.lastActiveAt.getTime() - a.lastActiveAt.getTime()
+        cmp = a.lastActiveAt.getTime() - b.lastActiveAt.getTime()
+        break
     }
+    return sort.direction === 'asc' ? cmp : -cmp
   })
 
-  const items: AdminSessionItem[] = filtered.map((s) => ({
+  const items: AdminSessionItem[] = sorted.map((s) => ({
     sid: s.sid,
     userId: s.userId.toString(),
     userName: s.userName,
@@ -110,17 +76,9 @@ export async function loader({ request, context }: Route.LoaderArgs) {
     expiresAtIso: s.expiresAt.toISOString(),
     isCurrent: s.sid === ctx.session.id,
   }))
-  return data({
-    items,
-    filters: {
-      q: url.searchParams.get('q') ?? '',
-      from: url.searchParams.get('from') ?? '',
-      to: url.searchParams.get('to') ?? '',
-      sort,
-    },
-  })
+  return data({ items })
 }
 
 export default function WpAdminSessionsRoute({ loaderData }: Route.ComponentProps) {
-  return <SessionsView items={loaderData.items} filters={loaderData.filters} />
+  return <SessionsView items={loaderData.items} />
 }
