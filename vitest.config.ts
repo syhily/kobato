@@ -5,6 +5,7 @@ export default defineConfig({
     tsconfigPaths: true,
   },
   test: {
+    silent: 'passed-only',
     projects: ['tests/*/vitest.config.ts'],
     coverage: {
       provider: 'v8',

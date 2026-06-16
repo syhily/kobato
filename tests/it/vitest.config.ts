@@ -16,6 +16,7 @@ export default defineConfig({
   },
   test: {
     globals: false,
+    silent: 'passed-only',
     environment: 'node',
     include: ['**/*.test.{ts,tsx}'],
     setupFiles: ['./setup.ts'],

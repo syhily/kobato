@@ -45,10 +45,10 @@ vi.mock('@/server/http/resources/calendar', () => ({
 }))
 vi.mock('@/server/domains/pages/repo', () => ({
   listPublicPageMetas: vi.fn(async () => []),
-  findPageBySlug: vi.fn(),
+  findPublicPageMetaBySlug: vi.fn(),
 }))
 vi.mock('@/server/domains/posts/repos/single', () => ({
-  findPostBySlug: vi.fn().mockResolvedValue({ title: 'T', summary: 'S', cover: 'C' }),
+  findPublicPostMetaBySlug: vi.fn(),
 }))
 vi.mock('@/shared/config/getters', () => ({
   requireBlogSettingsSection: (section: string) => {
@@ -94,12 +94,12 @@ describe('imagesRouter avatar', () => {
 })
 
 describe('imagesRouter og', () => {
-  it('looks up slug via findPostBySlug and findPageBySlug in parallel', async () => {
-    const { findPostBySlug } = await import('@/server/domains/posts/repos/single')
-    const { findPageBySlug } = await import('@/server/domains/pages/repo')
+  it('looks up slug via findPublicPostMetaBySlug and findPublicPageMetaBySlug in parallel', async () => {
+    const { findPublicPostMetaBySlug } = await import('@/server/domains/posts/repos/single')
+    const { findPublicPageMetaBySlug } = await import('@/server/domains/pages/repo')
     await imagesRouter.request('/images/og/hello-world.png')
-    expect(vi.mocked(findPostBySlug)).toHaveBeenCalledWith(undefined, 'hello-world')
-    expect(vi.mocked(findPageBySlug)).toHaveBeenCalledWith(undefined, 'hello-world')
+    expect(vi.mocked(findPublicPostMetaBySlug)).toHaveBeenCalledWith(undefined, 'hello-world')
+    expect(vi.mocked(findPublicPageMetaBySlug)).toHaveBeenCalledWith(undefined, 'hello-world')
   })
 })
 

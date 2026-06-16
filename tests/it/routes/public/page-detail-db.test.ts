@@ -116,6 +116,12 @@ vi.mock('@/server/domains/images/services/enhance', () => ({
 vi.mock('@/server/domains/images/services/cover', () => ({
   loadImageThumbhash: vi.fn(async () => null),
 }))
+// The music prerender would hit Postgres via findMusicByPlayerId; this
+// test pins the page-body contract, not music resolution, so pass the
+// body straight through.
+vi.mock('@/server/domains/pt/prerender', () => ({
+  prerenderMusicPlayerBlocks: vi.fn(async (_db: unknown, body: unknown) => body),
+}))
 
 const pageRoute = await import('@/routes/public/page/detail')
 
