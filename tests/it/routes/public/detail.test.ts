@@ -150,6 +150,20 @@ describe('routes/post.detail loader', () => {
     ).rejects.toMatchObject({ status: 404 })
   })
 
+  it('404s when the slug is missing and no session context is present', async () => {
+    const context = new RouterContextProvider()
+    context.set(dbContext, {} as NodePgDatabase)
+    context.set(poolContext, {} as Pool)
+
+    await expect(
+      postRoute.loader({
+        request: new Request('http://localhost/posts/missing'),
+        context,
+        params: { slug: 'missing' },
+      } as unknown as Parameters<typeof postRoute.loader>[0]),
+    ).rejects.toMatchObject({ status: 404 })
+  })
+
   it('returns the canonical post payload for a real slug', async () => {
     const data = unwrapLoaderData<{
       post: { title: string; permalink: string }

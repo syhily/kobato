@@ -40,7 +40,7 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
   if (sourcePost === undefined) {
     const sessionContext = tryGetSessionContext(context)
     if (!sessionContext) {
-      throw new Error('Session context missing in post detail loader')
+      throw notFound()
     }
     if (hasAtLeast(sessionContext.role, 'author')) {
       const preview = await loadPostDraftPreviewBySlug(db, params.slug)
