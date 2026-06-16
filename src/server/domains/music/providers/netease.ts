@@ -1,24 +1,13 @@
 import type { MusicProvider, ProviderSearchResult, ProviderTrack } from '@/server/domains/music/providers/types'
 
-import { getCoverUrl, getLyric, getSong, getStreamUrl, searchSongsWithPreview } from '@/server/domains/music/netease'
+import { getCoverUrl, getLyric, getSong, getStreamUrl, searchSongs } from '@/server/domains/music/netease'
 
 export const neteaseProvider: MusicProvider = {
   source: 'netease',
 
   async search(keyword: string, limit: number, offset?: number): Promise<ProviderSearchResult> {
-    const { hits, hasMore } = await searchSongsWithPreview(keyword, limit, offset)
-    return {
-      hits: hits.map((hit) => ({
-        source: hit.source,
-        sourceId: hit.sourceId,
-        name: hit.name,
-        artist: hit.artist,
-        album: hit.album,
-        coverUrl: hit.coverUrl,
-        previewUrl: hit.previewUrl,
-      })),
-      hasMore,
-    }
+    const { hits, hasMore } = await searchSongs(keyword, limit, offset)
+    return { hits, hasMore }
   },
 
   async getTrack(sourceId: string): Promise<ProviderTrack | null> {

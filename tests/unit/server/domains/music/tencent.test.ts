@@ -143,64 +143,19 @@ describe('tencent provider getTrack', () => {
 // ── search ──────────────────────────────────────────────────────────────────
 
 describe('tencent provider search', () => {
-  it('returns correctly mapped hits', async () => {
+  it('returns metadata-only hits without resolved URLs', async () => {
     const rawSong = makeRawSong()
 
-    // First call: search API
-    // Second call: resolveAudioUrl (get song detail)
-    // Third call: resolveAudioUrl (get vkey)
-    // Fourth call: resolveCoverUrl (direct URL, no fetch)
-
-    let callCount = 0
     vi.stubGlobal(
       'fetch',
-      vi.fn(async () => {
-        callCount++
-        if (callCount === 1) {
-          // Search response
-          return {
-            ok: true,
-            json: () =>
-              Promise.resolve({
-                req_1: { data: { body: { song: { list: [rawSong] } } } },
-              }),
-            text: () => Promise.resolve(''),
-          }
-        }
-        if (callCount === 2) {
-          // Song detail for URL resolution
-          return {
-            ok: true,
-            json: () =>
-              Promise.resolve({
-                songinfo: { data: { track_info: rawSong } },
-              }),
-            text: () => Promise.resolve(''),
-          }
-        }
-        // Vkey response
-        return {
-          ok: true,
-          json: () =>
-            Promise.resolve({
-              req_0: {
-                data: {
-                  sip: ['https://dl.stream.qqmusic.qq.com/'],
-                  midurlinfo: [
-                    { vkey: 'vkey0', purl: 'F000mediaMid001.flac?vkey=vkey0' },
-                    { vkey: 'vkey1', purl: 'M800mediaMid001.mp3?vkey=vkey1' },
-                    { vkey: '', purl: '' },
-                    { vkey: '', purl: '' },
-                    { vkey: '', purl: '' },
-                    { vkey: '', purl: '' },
-                    { vkey: '', purl: '' },
-                  ],
-                },
-              },
-            }),
-          text: () => Promise.resolve(''),
-        }
-      }),
+      vi.fn(async () => ({
+        ok: true,
+        json: () =>
+          Promise.resolve({
+            req_1: { data: { body: { song: { list: [rawSong] } } } },
+          }),
+        text: () => Promise.resolve(''),
+      })),
     )
 
     const result = await tencentProvider.search('test song', 10)
@@ -211,8 +166,9 @@ describe('tencent provider search', () => {
       name: 'Test Song',
       artist: ['Artist A', 'Artist B'],
       album: 'Test Album',
-      coverUrl: 'https://y.gtimg.cn/music/photo_new/T002R300x300M000albumMid001.jpg?max_age=2592000',
-      previewUrl: 'https://dl.stream.qqmusic.qq.com/M800mediaMid001.mp3?vkey=vkey1',
+      picId: 'albumMid001',
+      urlId: '001ABCDEF',
+      lyricId: '001ABCDEF',
     })
     expect(result.hasMore).toBe(true)
 

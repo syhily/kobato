@@ -224,68 +224,8 @@ export const tencentProvider: MusicProvider = {
     const songs = (song?.list as RawTencentSong[] | undefined) ?? []
     const tracks = songs.map(toTrack)
 
-    // Eagerly resolve audio URLs and filter out tracks that fail resolution.
-    const audioResults = await Promise.all(
-      tracks.map(async (track) => {
-        try {
-          const previewUrl = await tencentProvider.resolveAudioUrl(track)
-          if (!previewUrl) {
-            log.warn('Audio URL resolved to empty, filtering out song', { sourceId: track.sourceId })
-            return null
-          }
-          return { track, previewUrl }
-        } catch (error: unknown) {
-          log.warn('Audio URL resolution failed, filtering out song', { sourceId: track.sourceId, error })
-          return null
-        }
-      }),
-    )
-
-    const validHits = audioResults.filter((r): r is NonNullable<typeof r> => r !== null)
-
-    // Resolve cover URLs and filter out tracks with unreachable covers.
-    const hitChecks = await Promise.all(
-      validHits.map(async ({ track, previewUrl }) => {
-        const coverUrl = await tencentProvider.resolveCoverUrl(track).catch((error: unknown) => {
-          log.warn('Cover URL resolution failed', { sourceId: track.sourceId, error })
-          return ''
-        })
-        if (!coverUrl) {
-          log.warn('Cover URL empty, filtering out song', { sourceId: track.sourceId })
-          return null
-        }
-        try {
-          const headRes = await fetch(coverUrl, {
-            method: 'HEAD',
-            headers: TENCENT_HEADERS,
-            signal: AbortSignal.timeout(5000),
-          })
-          if (!headRes.ok) {
-            log.warn('Cover URL returned non-2xx, filtering out song', {
-              sourceId: track.sourceId,
-              status: headRes.status,
-            })
-            return null
-          }
-        } catch (error: unknown) {
-          log.warn('Cover URL check failed, filtering out song', { sourceId: track.sourceId, error })
-          return null
-        }
-        return {
-          source: track.source,
-          sourceId: track.sourceId,
-          name: track.name,
-          artist: track.artist,
-          album: track.album,
-          coverUrl,
-          previewUrl,
-        }
-      }),
-    )
-    const hits = hitChecks.filter((r): r is NonNullable<typeof r> => r !== null)
-
     const hasMore = songs.length > 0
-    return { hits, hasMore }
+    return { hits: tracks, hasMore }
   },
 
   async getTrack(sourceId: string): Promise<ProviderTrack | null> {

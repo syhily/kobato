@@ -258,12 +258,14 @@ describe('music/services/write/add — addMusic', () => {
       urlId: 'url',
       lyricId: 'lyric',
     }
+    const resolveAudioUrl = vi.fn(async () => 'https://up.example.com/audio.mp3')
+    const resolveCoverUrl = vi.fn(async () => 'https://up.example.com/cover.jpg')
     vi.spyOn(registry, 'getProvider').mockReturnValueOnce({
       source: 'netease',
       search: vi.fn(),
       getTrack: vi.fn(async () => track),
-      resolveAudioUrl: vi.fn(async () => 'https://up.example.com/audio.mp3'),
-      resolveCoverUrl: vi.fn(async () => 'https://up.example.com/cover.jpg'),
+      resolveAudioUrl,
+      resolveCoverUrl,
       getLyric: vi.fn(async () => '[00:00] Hi'),
     })
 
@@ -284,6 +286,10 @@ describe('music/services/write/add — addMusic', () => {
     expect(r.name).toBe('New Song')
     expect(r.sourceId).toBe('new-song')
     expect(r.lyric).toBe('[00:00] Hi')
+    expect(resolveAudioUrl).toHaveBeenCalledTimes(1)
+    expect(resolveAudioUrl).toHaveBeenCalledWith(track)
+    expect(resolveCoverUrl).toHaveBeenCalledTimes(1)
+    expect(resolveCoverUrl).toHaveBeenCalledWith(track)
   })
 })
 
@@ -349,7 +355,9 @@ describe('music/providers/tencent — tencentProvider', () => {
 })
 
 describe('music/services/search — searchMusic', () => {
-  it('delegates to the provider and rewrites URLs to proxy form', async () => {
+  it('delegates to the provider and rewrites URLs to proxy form without resolving them', async () => {
+    const resolveAudioUrl = vi.fn()
+    const resolveCoverUrl = vi.fn()
     vi.spyOn(registry, 'getProvider').mockReturnValueOnce({
       source: 'netease',
       search: vi.fn(async () => ({
@@ -360,15 +368,16 @@ describe('music/services/search — searchMusic', () => {
             name: 'Hit',
             artist: ['Singer'],
             album: 'Album',
-            coverUrl: 'https://cover',
-            previewUrl: 'https://audio',
+            picId: 'pic123',
+            urlId: 'url123',
+            lyricId: 'lyric123',
           },
         ],
         hasMore: false,
       })),
       getTrack: vi.fn(),
-      resolveAudioUrl: vi.fn(),
-      resolveCoverUrl: vi.fn(),
+      resolveAudioUrl,
+      resolveCoverUrl,
       getLyric: vi.fn(),
     })
 
@@ -376,5 +385,7 @@ describe('music/services/search — searchMusic', () => {
     expect(r.results).toHaveLength(1)
     expect(r.results[0].coverUrl).toContain('/admin/music/proxy/cover')
     expect(r.results[0].previewUrl).toContain('/admin/music/proxy/audio')
+    expect(resolveAudioUrl).not.toHaveBeenCalled()
+    expect(resolveCoverUrl).not.toHaveBeenCalled()
   })
 })

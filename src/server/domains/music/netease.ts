@@ -1,6 +1,8 @@
 import { createCipheriv, createHash, randomBytes } from 'node:crypto'
 import { z } from 'zod'
 
+import type { ProviderSearchHit } from '@/server/domains/music/providers/types'
+
 import { ActionFailure } from '@/server/infra/http/errors'
 import { getLogger } from '@/server/infra/logger'
 
@@ -95,7 +97,7 @@ interface RawNeteaseSong {
   al: { name: string; pic?: number; pic_str?: string }
 }
 
-function toHit(song: RawNeteaseSong): MetingSearchHit {
+function toHit(song: RawNeteaseSong): ProviderSearchHit {
   return {
     source: 'netease',
     sourceId: String(song.id),
@@ -155,31 +157,13 @@ const lyricResponseSchema = z
   })
   .loose()
 
-// ── Public types ───────────────────────────────────────────────────────────
-
-export interface MetingSearchHit {
-  source: 'netease'
-  sourceId: string
-  name: string
-  artist: string[]
-  album: string
-  picId: string
-  urlId: string
-  lyricId: string
-}
-
-export interface MetingSearchHitWithPreview extends MetingSearchHit {
-  previewUrl: string
-  coverUrl: string
-}
-
 // ── High-level API ─────────────────────────────────────────────────────────
 
 export async function searchSongs(
   keyword: string,
   limit = 10,
   offset = 0,
-): Promise<{ hits: MetingSearchHit[]; hasMore: boolean }> {
+): Promise<{ hits: ProviderSearchHit[]; hasMore: boolean }> {
   const trimmed = keyword.trim()
   if (trimmed === '') {
     return { hits: [], hasMore: false }
@@ -209,7 +193,7 @@ export async function searchSongs(
   return { hits, hasMore }
 }
 
-export async function getSong(sourceId: string): Promise<MetingSearchHit | null> {
+export async function getSong(sourceId: string): Promise<ProviderSearchHit | null> {
   const res = await eapi('/api/v3/song/detail/', {
     c: `[{"id":${sourceId},"v":0}]`,
   })
@@ -272,34 +256,4 @@ export async function getLyric(lyricId: string): Promise<string | null> {
 
 export async function getCoverUrl(picId: string, size = 300): Promise<string> {
   return `https://p3.music.126.net/${encryptId(picId)}/${picId}.jpg?param=${size}y${size}`
-}
-
-export async function searchSongsWithPreview(
-  keyword: string,
-  limit = 10,
-  offset = 0,
-): Promise<{ hits: MetingSearchHitWithPreview[]; hasMore: boolean }> {
-  const { hits, hasMore } = await searchSongs(keyword, limit, offset)
-  const hitsWithPreview = await Promise.all(
-    hits.map(async (hit) => {
-      const [previewUrl, coverUrl] = await Promise.all([
-        getStreamUrl(hit.urlId).catch((error: unknown) => {
-          log.warn('Preview URL resolution failed', {
-            sourceId: hit.sourceId,
-            error,
-          })
-          return ''
-        }),
-        getCoverUrl(hit.picId).catch((error: unknown) => {
-          log.warn('Cover URL resolution failed', {
-            sourceId: hit.sourceId,
-            error,
-          })
-          return ''
-        }),
-      ])
-      return { ...hit, previewUrl, coverUrl }
-    }),
-  )
-  return { hits: hitsWithPreview, hasMore }
 }

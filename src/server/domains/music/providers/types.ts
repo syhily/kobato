@@ -4,8 +4,9 @@ export interface ProviderSearchHit {
   name: string
   artist: string[]
   album: string
-  coverUrl: string
-  previewUrl: string
+  picId: string
+  urlId: string
+  lyricId: string
 }
 
 export interface ProviderTrack {
