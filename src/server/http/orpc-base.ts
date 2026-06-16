@@ -6,7 +6,7 @@ import { ORPCError, os } from '@orpc/server'
 import type { ViewerContext } from '@/server/domains/auth/rbac'
 import type { Env } from '@/server/http/context'
 
-import { DomainError, domainStatus, ErrorMessages } from '@/server/infra/http/errors'
+import { ActionFailure, DomainError, domainStatus, ErrorMessages } from '@/server/infra/http/errors'
 import { hasAtLeast, type Role } from '@/shared/utils/roles'
 
 // Context every oRPC procedure sees. The Hono `/rpc/*` bridge in
@@ -52,6 +52,12 @@ const domainErrorGuard = root.middleware(async ({ next }) => {
   } catch (error) {
     if (error instanceof DomainError) {
       throw new ORPCError(error.code, { status: domainStatus(error), message: error.message })
+    }
+    if (error instanceof ActionFailure) {
+      throw new ORPCError('INTERNAL_SERVER_ERROR', {
+        status: error.status,
+        message: error.message,
+      })
     }
     throw error
   }
