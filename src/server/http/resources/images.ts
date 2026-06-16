@@ -5,8 +5,9 @@ import crypto from 'node:crypto'
 
 import type { Env } from '@/server/http/context'
 
-import { findPageBySlug } from '@/server/domains/pages/repo'
-import { findPostBySlug } from '@/server/domains/posts/repos/single'
+import { isCatalogVisible } from '@/server/domains/content/schema'
+import { findPublicPageMetaBySlug } from '@/server/domains/pages/repo'
+import { findPublicPostMetaBySlug } from '@/server/domains/posts/repos/single'
 import { findCategoryBySlug } from '@/server/domains/taxonomies/categories/services/query'
 import { AvatarStatus, cacheAvatar, loadAvatar } from '@/server/http/resources/avatar-cache'
 import { serveCalendar } from '@/server/http/resources/calendar'
@@ -75,7 +76,12 @@ export const imagesRouter = new Hono<Env>()
     }
 
     const ttl = getCacheSettings().cache.og.ttlSeconds
-    const [post, page] = await Promise.all([findPostBySlug(c.var.db, slug), findPageBySlug(c.var.db, slug)])
+    const [postMeta, pageMeta] = await Promise.all([
+      findPublicPostMetaBySlug(c.var.db, slug),
+      findPublicPageMetaBySlug(c.var.db, slug),
+    ])
+    const post = postMeta && postMeta.published && postMeta.publishedRevisionId !== null ? postMeta : null
+    const page = pageMeta && isCatalogVisible(pageMeta) ? pageMeta : null
     if (!post && !page) {
       return ogFallback(c)
     }

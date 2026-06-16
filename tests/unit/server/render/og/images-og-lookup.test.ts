@@ -1,19 +1,24 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 // Tests for the OG image route slug resolution in `imagesRouter`.
-// After removing getEntryBySlug, the route now uses parallel lookups
-// (findPostBySlug + findPageBySlug).
+// The route uses slim public-meta lookups (findPublicPostMetaBySlug +
+// findPublicPageMetaBySlug) instead of the heavier findPostBySlug /
+// findPageBySlug.
 
 const mocks = vi.hoisted(() => ({
+  findPublicPostMetaBySlug: vi.fn(async (): Promise<unknown> => null),
+  findPublicPageMetaBySlug: vi.fn(async (): Promise<unknown> => null),
   findPostBySlug: vi.fn(async (): Promise<unknown> => null),
   findPageBySlug: vi.fn(async (): Promise<unknown> => null),
   drawOpenGraph: vi.fn(() => Buffer.from('og-image')),
 }))
 
 vi.mock('@/server/domains/posts/repos/single', () => ({
+  findPublicPostMetaBySlug: mocks.findPublicPostMetaBySlug,
   findPostBySlug: mocks.findPostBySlug,
 }))
 vi.mock('@/server/domains/pages/repo', () => ({
+  findPublicPageMetaBySlug: mocks.findPublicPageMetaBySlug,
   findPageBySlug: mocks.findPageBySlug,
 }))
 vi.mock('@/server/render/og/render', () => ({
@@ -46,8 +51,8 @@ vi.mock('@/shared/config/getters', () => ({
 
 beforeEach(() => {
   vi.clearAllMocks()
-  mocks.findPostBySlug.mockImplementation(async () => null)
-  mocks.findPageBySlug.mockImplementation(async () => null)
+  mocks.findPublicPostMetaBySlug.mockImplementation(async () => null)
+  mocks.findPublicPageMetaBySlug.mockImplementation(async () => null)
 })
 
 import type { imagesRouter as ImagesRouter } from '@/server/http/resources/images'
@@ -66,25 +71,37 @@ async function requestOg(slug: string) {
   return res
 }
 
+const publicPostMeta = {
+  title: 'Hello',
+  summary: 'World',
+  cover: '/cover.png',
+  published: true,
+  publishedRevisionId: 1n,
+  publishedAt: new Date('2020-01-01'),
+  deletedAt: null,
+}
+
+const publicPageMeta = {
+  title: 'About',
+  summary: 'About page',
+  cover: '/about.png',
+  published: true,
+  publishedRevisionId: 1n,
+  publishedAt: new Date('2020-01-01'),
+  deletedAt: null,
+}
+
 describe('OG image slug resolution', () => {
-  it('returns PNG when slug matches a post', async () => {
-    mocks.findPostBySlug.mockImplementation(async () => ({
-      title: 'Hello',
-      summary: 'World',
-      cover: '/cover.png',
-    }))
+  it('returns PNG when slug matches a public post', async () => {
+    mocks.findPublicPostMetaBySlug.mockImplementation(async () => publicPostMeta)
 
     const res = await requestOg('hello')
     expect(res.status).toBe(200)
     expect(res.headers.get('Content-Type')).toBe('image/png')
   })
 
-  it('returns PNG when slug matches a page', async () => {
-    mocks.findPageBySlug.mockImplementation(async () => ({
-      title: 'About',
-      summary: 'About page',
-      cover: '/about.png',
-    }))
+  it('returns PNG when slug matches a public page', async () => {
+    mocks.findPublicPageMetaBySlug.mockImplementation(async () => publicPageMeta)
 
     const res = await requestOg('about')
     expect(res.status).toBe(200)
@@ -96,17 +113,29 @@ describe('OG image slug resolution', () => {
     expect(res.status).toBe(302)
   })
 
+  it('falls back when post is not public', async () => {
+    mocks.findPublicPostMetaBySlug.mockImplementation(async () => ({
+      ...publicPostMeta,
+      published: false,
+    }))
+
+    const res = await requestOg('draft-post')
+    expect(res.status).toBe(302)
+  })
+
+  it('falls back when page is not catalog visible', async () => {
+    mocks.findPublicPageMetaBySlug.mockImplementation(async () => ({
+      ...publicPageMeta,
+      publishedAt: new Date('2099-01-01'),
+    }))
+
+    const res = await requestOg('scheduled-page')
+    expect(res.status).toBe(302)
+  })
+
   it('uses post data when both post and page match (post wins)', async () => {
-    mocks.findPostBySlug.mockImplementation(async () => ({
-      title: 'Post Title',
-      summary: 'Post Summary',
-      cover: '/post-cover.png',
-    }))
-    mocks.findPageBySlug.mockImplementation(async () => ({
-      title: 'Page Title',
-      summary: 'Page Summary',
-      cover: '/page-cover.png',
-    }))
+    mocks.findPublicPostMetaBySlug.mockImplementation(async () => publicPostMeta)
+    mocks.findPublicPageMetaBySlug.mockImplementation(async () => publicPageMeta)
 
     const res = await requestOg('collision')
     expect(res.status).toBe(200)
@@ -114,11 +143,19 @@ describe('OG image slug resolution', () => {
     expect(mocks.drawOpenGraph).toHaveBeenCalledTimes(1)
     expect(mocks.drawOpenGraph).toHaveBeenCalledWith(
       expect.objectContaining({
-        title: 'Post Title',
-        summary: 'Post Summary',
-        cover: '/post-cover.png',
+        title: 'Hello',
+        summary: 'World',
+        cover: '/cover.png',
       }),
     )
+  })
+
+  it('does not call full findPostBySlug / findPageBySlug loaders', async () => {
+    mocks.findPublicPostMetaBySlug.mockImplementation(async () => publicPostMeta)
+
+    await requestOg('hello')
+    expect(mocks.findPostBySlug).not.toHaveBeenCalled()
+    expect(mocks.findPageBySlug).not.toHaveBeenCalled()
   })
 
   it('404 for empty slug (route pattern mismatch)', async () => {
@@ -126,7 +163,7 @@ describe('OG image slug resolution', () => {
     // so `/images/og/.png` does not match and returns 404 without hitting the handler.
     const res = await requestOg('')
     expect(res.status).toBe(404)
-    expect(mocks.findPostBySlug).not.toHaveBeenCalled()
-    expect(mocks.findPageBySlug).not.toHaveBeenCalled()
+    expect(mocks.findPublicPostMetaBySlug).not.toHaveBeenCalled()
+    expect(mocks.findPublicPageMetaBySlug).not.toHaveBeenCalled()
   })
 })
