@@ -284,6 +284,14 @@ export interface SecuritySettings {
   }
 }
 
+export interface SecretMasks {
+  mailApiKeyMask: string | null
+  mailSmtpPassMask: string | null
+  mailMailgunApiKeyMask: string | null
+  assetsSecretAccessKeyMask: string | null
+  searchApiKeyMask: string | null
+}
+
 export interface BlogSettingsBundle {
   siteIdentity: SiteIdentitySettings | null
   assets: AssetsSettings | null

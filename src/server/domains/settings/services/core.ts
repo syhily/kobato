@@ -4,7 +4,9 @@ import type { Pool } from 'pg'
 
 import type { Setting } from '@/server/infra/db/types'
 import type { SettingsSection } from '@/shared/config/sections'
-import type { BlogSettingsBundle } from '@/shared/config/types'
+import type { BlogSettingsBundle, SecretMasks } from '@/shared/config/types'
+
+export type { SecretMasks }
 
 import { SECRET_FIELDS } from '@/server/domains/settings/secrets'
 import { SECTION_REGISTRY } from '@/server/domains/settings/sections/registry'
@@ -103,14 +105,6 @@ export async function updateBlogSettingsSection<S extends SettingsSection>(
   }
 
   return bundle
-}
-
-export interface SecretMasks {
-  mailApiKeyMask: string | null
-  mailSmtpPassMask: string | null
-  mailMailgunApiKeyMask: string | null
-  assetsSecretAccessKeyMask: string | null
-  searchApiKeyMask: string | null
 }
 
 export function computeSecretMasks(bundle: BlogSettingsBundle): SecretMasks {

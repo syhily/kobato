@@ -1,8 +1,7 @@
 import { PlusIcon, Trash2Icon } from 'lucide-react'
 import { Controller, useFieldArray } from 'react-hook-form'
 
-import type { SecretMasks } from '@/server/domains/settings/services/core'
-import type { MailSettings, SecuritySettings } from '@/shared/config/types'
+import type { MailSettings, SecretMasks, SecuritySettings } from '@/shared/config/types'
 
 import { useSiteIdentity } from '@/shared/lib/blog-config-context'
 import { isValidPasskeyDomain } from '@/shared/utils/safe-url'
