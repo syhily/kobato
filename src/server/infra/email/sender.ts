@@ -11,12 +11,6 @@ import { getLogger } from '@/server/infra/logger'
 import { requireBlogSettingsSection } from '@/shared/config/getters'
 import { escapeHtml } from '@/shared/utils/security'
 
-// Re-export the shared transport types so existing call sites that
-// imported them from `sender.ts` keep working after the move to
-// `@/server/infra/email/types`. Adding new transports does not require
-// touching this file.
-export type { EmailMessage, SendOptions, SendResult } from '@/server/infra/email/types'
-
 const log = getLogger('email')
 
 // OTP TTL mirrored from auth domain so the email layer does not import

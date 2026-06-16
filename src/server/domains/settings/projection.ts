@@ -3,8 +3,6 @@ import type { AssetsSettings, SearchSettings } from '@/shared/config/types'
 
 import { projectAssetsForAdmin, projectSearchForAdmin } from '@/shared/config/projection'
 
-export { projectAssetsForAdmin, projectSearchForAdmin }
-
 /**
  * @deprecated Use `projectAssetsForAdmin` from `@/shared/config/settings` directly.
  * Re-exported here for backwards compatibility with existing server imports.
