@@ -126,12 +126,15 @@ export function TableOfContents({ headings, toc = 'disabled' }: TableOfContentsP
         initial={false}
         animate={{ x: visible ? 0 : '100%' }}
         transition={transitions.drawer}
+        inert={!visible}
+        aria-hidden={!visible}
+        tabIndex={visible ? undefined : -1}
       >
         <div className="absolute top-0 -right-12 bottom-0 left-0 overflow-x-hidden overflow-y-auto overscroll-contain">
           <div className="mr-12 pt-11.5">
             <h2 className="w-full px-10 text-left text-toc-title leading-[3.6rem] font-bold text-ink-1">文章目录</h2>
             <div className="pt-8">
-              <TocItems items={items} />
+              <TocItems items={items} tabIndex={visible ? 0 : -1} />
             </div>
           </div>
         </div>

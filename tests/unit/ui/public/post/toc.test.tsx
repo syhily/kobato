@@ -24,4 +24,11 @@ describe('ui/post/toc/TableOfContents', () => {
       setBlogSettingsBundleForTests(previous)
     }
   })
+
+  it('marks the closed drawer as inert and removes its links from the tab order', () => {
+    const html = renderToStaticMarkup(<TableOfContents headings={headings} toc="enabled" />)
+    expect(html).toContain('inert')
+    expect(html).toContain('aria-hidden="true"')
+    expect(html).toContain('tabindex="-1"')
+  })
 })
