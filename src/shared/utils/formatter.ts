@@ -25,6 +25,7 @@ interface LocalDateParts {
   day: number
   hour: number
   minute: number
+  second: number
 }
 
 function makeFormatter(locale: string, timeZone: string): Intl.DateTimeFormat {
@@ -35,6 +36,7 @@ function makeFormatter(locale: string, timeZone: string): Intl.DateTimeFormat {
     day: '2-digit',
     hour: '2-digit',
     minute: '2-digit',
+    second: '2-digit',
     hourCycle: 'h23',
   })
 }
@@ -77,6 +79,7 @@ function localDateParts(source: Date, locale: string, timeZone: string): LocalDa
     day: parts.day,
     hour: parts.hour,
     minute: parts.minute,
+    second: parts.second,
   }
 }
 
@@ -173,6 +176,7 @@ export function formatLocalDate(source: string | Date, format: string | undefine
     .replaceAll('dd', pad(parts.day))
     .replaceAll('HH', pad(parts.hour))
     .replaceAll('mm', pad(parts.minute))
+    .replaceAll('ss', pad(parts.second))
 }
 
 /** Format a duration in seconds into a Chinese human-readable string. */
