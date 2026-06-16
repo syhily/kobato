@@ -10,14 +10,11 @@ const BLOCKED_PATTERNS = [
   /\bALTER\s+(?:\/\*[^]*?\*\/\s*)*ROLE\b/i,
   /\bDROP\s+(?:\/\*[^]*?\*\/\s*)*ROLE\b/i,
   /\bALTER\s+(?:\/\*[^]*?\*\/\s*)*SYSTEM\b/i,
-  /\bCOPY\b[\s\S]*?\bTO\b[\s\S]*?\bPROGRAM\b/i,
-  /\bCOPY\b[\s\S]*?\bTO\b[\s\S]*?;/i,
   /\bCREATE\s+(?:\/\*[^]*?\*\/\s*)*DATABASE\b/i,
   /\bCREATE\s+(?:OR\s+REPLACE\s+)?(?:\/\*[^]*?\*\/\s*)*FUNCTION\b/i,
   /\bCREATE\s+(?:\/\*[^]*?\*\/\s*)*PROCEDURE\b/i,
   /\bLANGUAGE\s+(?:\/\*[^]*?\*\/\s*)*(plpython3u|plperlu|pltclu|plsh|plc|pljava|plr)\b/i,
   /\bSECURITY\s+DEFINER\b/i,
-  /\bEXECUTE\b[\s\S]*?\|\|[\s\S]*?;/i,
   /\bDO\s*\$\$/i,
   /\\!/i,
   /\\i\b/i,
@@ -260,6 +257,12 @@ function isDangerousStatement(normalized: string): boolean {
     return true
   }
 
+  // Block COPY TO (file path or PROGRAM). Per-statement check avoids false
+  // positives where a later unrelated "PROGRAM" word crosses statement bounds.
+  if (/^COPY\b/i.test(normalized) && /\bTO\b/i.test(normalized)) {
+    return true
+  }
+
   // Block privilege escalation via SET/RESET ROLE or SESSION AUTHORIZATION.
   if (/^SET\s+ROLE\b/i.test(normalized)) {
     return true
@@ -299,7 +302,8 @@ function isDangerousStatement(normalized: string): boolean {
     return true
   }
 
-  // Block standalone EXECUTE statements.
+  // Block standalone EXECUTE statements, especially ones built with string
+  // concatenation (e.g. EXECUTE 'DROP TABLE ' || tablename || ' CASCADE').
   if (/^EXECUTE\b/i.test(normalized)) {
     return true
   }

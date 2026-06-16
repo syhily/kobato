@@ -165,6 +165,31 @@ CREATE TABLE users (id serial PRIMARY KEY);`
     expect(() => validateBackupSql(sql)).toThrow(ActionFailure)
   })
 
+  it('rejects COPY TO a file path', () => {
+    const sql = `-- PostgreSQL database dump
+COPY users (email) TO '/tmp/users.csv';
+CREATE TABLE users (id serial PRIMARY KEY);`
+    expect(() => validateBackupSql(sql)).toThrow(ActionFailure)
+  })
+
+  it('rejects COPY TO PROGRAM', () => {
+    const sql = `-- PostgreSQL database dump
+COPY users (email) TO PROGRAM 'cat > /tmp/users.csv';
+CREATE TABLE users (id serial PRIMARY KEY);`
+    expect(() => validateBackupSql(sql)).toThrow(ActionFailure)
+  })
+
+  it('does not reject COPY FROM stdin when an unrelated PROGRAM word appears later', () => {
+    const sql = `-- PostgreSQL database dump
+COPY public.users (id, email) FROM stdin;
+1	alice@example.com
+2	bob@example.com
+\\.
+-- This backup program is safe
+CREATE TABLE users (id serial PRIMARY KEY);`
+    expect(() => validateBackupSql(sql)).not.toThrow()
+  })
+
   it('rejects SET ROLE', () => {
     const sql = `-- PostgreSQL database dump
 SET ROLE postgres;
@@ -251,6 +276,15 @@ CREATE TABLE users (id serial PRIMARY KEY);`
 EXECUTE 'DROP TABLE ' || tablename || ' CASCADE';
 CREATE TABLE users (id serial PRIMARY KEY);`
     expect(() => validateBackupSql(sql)).toThrow(ActionFailure)
+  })
+
+  it('does not reject user content containing execute and || inside COPY data', () => {
+    const sql = `-- PostgreSQL database dump
+COPY public.comments (id, body) FROM stdin;
+1	execute the query || run the program;
+\\.
+CREATE TABLE users (id serial PRIMARY KEY);`
+    expect(() => validateBackupSql(sql)).not.toThrow()
   })
 
   it('blocks dangerous extension consistently on repeated validation', () => {
