@@ -1,5 +1,6 @@
 import { useState } from 'react'
 
+import { formatBytes } from '@/shared/utils/formatter'
 import { SettingGroup } from '@/ui/admin/settings/shell/SettingGroup'
 import { type ConfirmState, ConfirmDialog } from '@/ui/admin/shared/ConfirmDialog'
 import { Button } from '@/ui/components/button'
@@ -25,19 +26,6 @@ interface BackupFileListProps {
   onLoadMore: () => void
   isLoadingMore: boolean
   hasMore: boolean
-}
-
-function formatBytes(bytes: number): string {
-  if (bytes < 1024) {
-    return `${bytes} B`
-  }
-  if (bytes < 1024 * 1024) {
-    return `${(bytes / 1024).toFixed(1)} KB`
-  }
-  if (bytes < 1024 * 1024 * 1024) {
-    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
-  }
-  return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)} GB`
 }
 
 const BASE_OPTS: Intl.DateTimeFormatOptions = {

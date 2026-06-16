@@ -5,6 +5,7 @@ import type { AdminImageDto } from '@/shared/types/images'
 import type { LockedAspect } from '@/ui/admin/shared/ImageEditorCanvas'
 
 import { orpc } from '@/client/api/client'
+import { formatBytes } from '@/shared/utils/formatter'
 import { Button } from '@/ui/components/button'
 import {
   Dialog,
@@ -321,14 +322,4 @@ function titleFor(kind: UploadKind): string {
     case 'generic':
       return '上传图片'
   }
-}
-
-function formatBytes(bytes: number): string {
-  if (bytes >= 1024 * 1024) {
-    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
-  }
-  if (bytes >= 1024) {
-    return `${Math.round(bytes / 1024)} KB`
-  }
-  return `${bytes} B`
 }

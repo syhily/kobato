@@ -10,17 +10,8 @@ import { uploadImage } from '@/server/domains/images/services/upload'
 import { authorProc } from '@/server/http/orpc-base'
 import { requireBlogSettingsSection } from '@/shared/config/getters'
 import { adminImageDto, listImagesOutputDto } from '@/shared/contracts/images'
+import { formatBytes } from '@/shared/utils/formatter'
 import { idFromString } from '@/shared/utils/id'
-
-function formatBytes(bytes: number): string {
-  if (bytes >= 1024 * 1024) {
-    return `${Math.round(bytes / (1024 * 1024))} MB`
-  }
-  if (bytes >= 1024) {
-    return `${Math.round(bytes / 1024)} KB`
-  }
-  return `${bytes} B`
-}
 
 const list = authorProc
   .route({ method: 'GET', path: '/admin/images/list' })

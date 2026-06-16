@@ -11,6 +11,7 @@ import { insertImage, upsertImageByStoragePath } from '@/server/infra/db/operati
 import { DomainError } from '@/server/infra/http/errors'
 import { processImageBuffer } from '@/server/infra/image/process'
 import { getLogger } from '@/server/infra/logger'
+import { formatBytes } from '@/shared/utils/formatter'
 
 const log = getLogger('images.service')
 
@@ -155,14 +156,4 @@ function toKeySpec(kind: UploadKind): ImageKindSpec {
     case 'friend':
       return { kind: 'friend', host: kind.host }
   }
-}
-
-function formatBytes(bytes: number): string {
-  if (bytes >= 1024 * 1024) {
-    return `${Math.round(bytes / (1024 * 1024))} MB`
-  }
-  if (bytes >= 1024) {
-    return `${Math.round(bytes / 1024)} KB`
-  }
-  return `${bytes} B`
 }
