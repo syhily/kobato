@@ -7,7 +7,7 @@ const { sendMailMock, createTransportMock } = vi.hoisted(() => {
   const sendMail = vi.fn()
   return {
     sendMailMock: sendMail,
-    createTransportMock: vi.fn(() => ({ sendMail })),
+    createTransportMock: vi.fn<(options: unknown) => { sendMail: typeof sendMail }>(() => ({ sendMail })),
   }
 })
 
@@ -153,7 +153,7 @@ describe('SmtpTransport', () => {
     it('defaults requireTLS and tls.rejectUnauthorized to true', () => {
       new SmtpTransport(baseConfig)
       expect(createTransportMock).toHaveBeenCalledTimes(1)
-      const options = createTransportMock.mock.calls[0][0] as {
+      const options = createTransportMock.mock.calls[0][0] as unknown as {
         requireTLS?: unknown
         tls?: { rejectUnauthorized?: unknown }
       }
@@ -164,7 +164,7 @@ describe('SmtpTransport', () => {
     it('respects explicit requireTls=false and rejectUnauthorized=false', () => {
       new SmtpTransport({ ...baseConfig, requireTls: false, rejectUnauthorized: false })
       expect(createTransportMock).toHaveBeenCalledTimes(1)
-      const options = createTransportMock.mock.calls[0][0] as {
+      const options = createTransportMock.mock.calls[0][0] as unknown as {
         requireTLS?: unknown
         tls?: { rejectUnauthorized?: unknown }
       }

@@ -8,6 +8,16 @@ export const ANALYTICS_DEAD_LETTER_PATH = path.resolve(DATA_PATH, 'analytics', '
 export const AUDIT_DEAD_LETTER_PATH = path.resolve(DATA_PATH, 'audit', 'dead-letter.jsonl')
 export const MAXMIND_DB_PATH = path.resolve(DATA_PATH, 'maxmind', 'GeoLite2-City.mmdb')
 
+/**
+ * Returns true when `target` resolves to a path inside `root`. Used to harden
+ * derived paths (e.g. `MAXMIND_DB_PATH`) against a misconfigured `DATA_PATH`
+ * that would point readers at files outside the data directory.
+ */
+export function isPathInside(target: string, root: string): boolean {
+  const relative = path.relative(root, target)
+  return relative !== '' && !relative.startsWith('..') && !path.isAbsolute(relative)
+}
+
 // Ensure subdirectories exist at startup so that dead-letter writers and
 // upload endpoints don't fail on first write due to a missing parent dir.
 for (const dir of [

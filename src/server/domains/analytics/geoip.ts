@@ -1,15 +1,28 @@
 import type { City, ReaderModel } from '@maxmind/geoip2-node'
 
 import { Reader } from '@maxmind/geoip2-node'
+import { existsSync } from 'node:fs'
 
+import { DATA_PATH } from '@/server/infra/env'
 import { getLogger } from '@/server/infra/logger'
-import { MAXMIND_DB_PATH } from '@/server/infra/paths'
+import { MAXMIND_DB_PATH, isPathInside } from '@/server/infra/paths'
 
 const log = getLogger('analytics.geoip')
 
 let readerPromise: Promise<ReaderModel | null> | undefined
 
 async function openReader(): Promise<ReaderModel | null> {
+  if (!isPathInside(MAXMIND_DB_PATH, DATA_PATH)) {
+    log.warn('MaxMind DB path is outside data directory; geo enrichment disabled', {
+      path: MAXMIND_DB_PATH,
+      dataPath: DATA_PATH,
+    })
+    return null
+  }
+  if (!existsSync(MAXMIND_DB_PATH)) {
+    log.debug('MaxMind DB not found; geo enrichment disabled', { path: MAXMIND_DB_PATH })
+    return null
+  }
   try {
     const reader = await Reader.open(MAXMIND_DB_PATH)
     log.info('MaxMind GeoLite2 reader opened', { path: MAXMIND_DB_PATH })
