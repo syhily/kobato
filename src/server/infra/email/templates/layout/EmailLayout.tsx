@@ -1,5 +1,6 @@
 import { TZDate } from '@date-fns/tz'
 import { getYear } from 'date-fns'
+import { useState } from 'react'
 
 import { Body, Container, Html, Link, Section, Text } from '@/server/infra/email/render'
 import { light } from '@/server/infra/email/templates/styles/tokens'
@@ -13,7 +14,7 @@ interface Props {
 
 export function EmailLayout({ receiver, preview, children }: Props) {
   const siteIdentity = requireBlogSettingsSection('siteIdentity')
-  const year = getYear(new TZDate(Date.now(), siteIdentity.timeZone))
+  const [year] = useState(() => getYear(new TZDate(Date.now(), siteIdentity.timeZone)))
 
   const fontFamily = "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif"
 

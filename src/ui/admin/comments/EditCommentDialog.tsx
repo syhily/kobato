@@ -1,6 +1,6 @@
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { SaveIcon, XIcon } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { toast } from 'sonner'
 
 import type { CommentBody } from '@/shared/pt/comment-schema'
@@ -32,6 +32,8 @@ export function EditCommentDialog({ comment, onClose, onSaved }: EditCommentDial
   const [body, setBody] = useState<CommentBody>(EMPTY_COMMENT_BODY)
   const [bodyKey, setBodyKey] = useState(0)
   const [loaded, setLoaded] = useState(false)
+  const [lastCommentId, setLastCommentId] = useState(comment?.id)
+  const [lastRawData, setLastRawData] = useState<typeof rawData>(undefined)
 
   const { data: rawData } = useQuery(
     orpcQuery.comments.getRaw.queryOptions({
@@ -45,28 +47,24 @@ export function EditCommentDialog({ comment, onClose, onSaved }: EditCommentDial
     onSuccess: (payload) => onSaved({ body: payload.comment.body }),
   })
 
-  useEffect(() => {
-    if (!comment) {
-      setLoaded(false)
-      setInitialBody(EMPTY_COMMENT_BODY)
-      setBody(EMPTY_COMMENT_BODY)
-      return
-    }
+  // Reset the editor when the target comment changes; only refetch on id change.
+  if (comment?.id !== lastCommentId) {
+    setLastCommentId(comment?.id)
     setLoaded(false)
-    // intentionally only refetch when comment id changes
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [comment?.id])
-
-  useEffect(() => {
-    if (!comment || !rawData) {
-      return
+    setInitialBody(EMPTY_COMMENT_BODY)
+    setBody(EMPTY_COMMENT_BODY)
+  }
+  // Apply raw body once it arrives (or differs from what we last applied).
+  if (rawData !== lastRawData) {
+    setLastRawData(rawData)
+    if (comment && rawData) {
+      const loadedBody = (rawData.body ?? []) as CommentBody
+      setInitialBody(loadedBody)
+      setBody(loadedBody)
+      setBodyKey((k) => k + 1)
+      setLoaded(true)
     }
-    const loadedBody = (rawData.body ?? []) as CommentBody
-    setInitialBody(loadedBody)
-    setBody(loadedBody)
-    setBodyKey((k) => k + 1)
-    setLoaded(true)
-  }, [rawData, comment])
+  }
 
   const open = comment !== null
   const submitting = editMutation.isPending

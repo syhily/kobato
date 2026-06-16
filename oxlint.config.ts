@@ -62,6 +62,9 @@ export default defineConfig({
     // Oxc performance lints.
     'oxc/no-accumulating-spread': 'warn',
 
+    // React Compiler — lint-only diagnostics matching eslint-plugin-react-compiler.
+    'react/react-compiler': 'error',
+
     // React and React Hooks.
     'react/exhaustive-deps': 'warn',
     'react/rules-of-hooks': 'error',

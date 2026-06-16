@@ -22,12 +22,13 @@ interface UseDebouncedSearchOptions<T> {
  */
 export function useDebouncedSearch<T>({ initial = '', delayMs = 250, onChange }: UseDebouncedSearchOptions<T>) {
   const [value, setValue] = useState(initial)
-
-  // Reset internal value when the external initial value changes
-  // (e.g. browser back/forward updates URL search params).
-  useEffect(() => {
+  const [lastInitial, setLastInitial] = useState(initial)
+  // Reset internal value when the external initial value changes (e.g.
+  // browser back/forward updates URL search params).
+  if (initial !== lastInitial) {
+    setLastInitial(initial)
     setValue(initial)
-  }, [initial])
+  }
 
   useEffect(() => {
     const handle = window.setTimeout(() => {

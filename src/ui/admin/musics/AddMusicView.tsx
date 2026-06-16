@@ -96,9 +96,11 @@ export function AddMusicView() {
 
   // Keep latest flags in refs so loadMore reference is stable.
   const hasMoreRef = useRef(hasMore)
-  hasMoreRef.current = hasMore
   const isFetchingRef = useRef(searchQuery.isFetching)
-  isFetchingRef.current = searchQuery.isFetching
+  useEffect(() => {
+    hasMoreRef.current = hasMore
+    isFetchingRef.current = searchQuery.isFetching
+  })
 
   const loadMore = useCallback(() => {
     if (!hasMoreRef.current || isFetchingRef.current) {
@@ -117,24 +119,27 @@ export function AddMusicView() {
     setSearchedKeyword(trimmed)
   }, [keyword])
 
-  // Handle search results — accumulate for pagination
-  useEffect(() => {
-    if (!searchQuery.data) {
-      return
+  // Handle search results — accumulate for pagination. Adjust state during
+  // render when the data reference changes, instead of in an effect.
+  const [lastAppliedData, setLastAppliedData] = useState(searchQuery.data)
+  if (searchQuery.data !== lastAppliedData) {
+    setLastAppliedData(searchQuery.data)
+    if (searchQuery.data) {
+      const newResults = searchQuery.data.results
+      const hasMoreData = searchQuery.data.hasMore
+      setResults((prev) => {
+        if (prev.length === 0) {
+          return newResults
+        }
+        const existing = new Set(prev.map((r) => `${r.source}:${r.sourceId}`))
+        return [...prev, ...newResults.filter((r) => !existing.has(`${r.source}:${r.sourceId}`))]
+      })
+      setHasMore(hasMoreData)
     }
-    const newResults = searchQuery.data.results
-    const hasMoreData = searchQuery.data.hasMore
-    setResults((prev) => {
-      if (prev.length === 0) {
-        return newResults
-      }
-      // Deduplicate by source+sourceId
-      const existing = new Set(prev.map((r) => `${r.source}:${r.sourceId}`))
-      return [...prev, ...newResults.filter((r) => !existing.has(`${r.source}:${r.sourceId}`))]
-    })
-    setHasMore(hasMoreData)
-    hasMoreRef.current = hasMoreData
-  }, [searchQuery.data])
+  }
+  useEffect(() => {
+    hasMoreRef.current = hasMore
+  }, [hasMore])
 
   const handleAdd = useCallback(
     (hit: MetingSearchHit) => {

@@ -34,20 +34,28 @@ export function useAutosave({
   onStatusChange,
 }: UseAutosaveOptions): { forceFlush: () => Promise<void> } {
   const flushRef = useRef(flush)
-  flushRef.current = flush
   const bodyRef = useRef(body)
-  bodyRef.current = body
   const enabledRef = useRef(enabled)
-  enabledRef.current = enabled
   const onStatusRef = useRef(onStatusChange)
-  onStatusRef.current = onStatusChange
   const retryDelaysRef = useRef(retryDelaysMs)
-  retryDelaysRef.current = retryDelaysMs
+  // Keep latest props in refs without writing during render — effects run after
+  // commit, so callbacks always read the freshest values via these refs.
+  useEffect(() => {
+    flushRef.current = flush
+    bodyRef.current = body
+    enabledRef.current = enabled
+    onStatusRef.current = onStatusChange
+    retryDelaysRef.current = retryDelaysMs
+  })
+
   const lastPersistedRef = useRef<PortableTextBody | null>(null)
   const inFlightRef = useRef<Promise<void> | null>(null)
   const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const hardCapTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const retryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  // Breaks the recursive self-reference inside doFlush's retry path so the
+  // compiler doesn't have to capture `doFlush` before it's declared.
+  const doFlushRef = useRef<(attempt?: number) => Promise<void>>(() => Promise.resolve())
 
   const emit = useCallback((status: AutosaveStatus) => {
     onStatusRef.current?.(status)
@@ -101,7 +109,7 @@ export function useAutosave({
         }
         retryTimerRef.current = setTimeout(() => {
           retryTimerRef.current = null
-          void doFlush(attempt + 1)
+          void doFlushRef.current(attempt + 1)
         }, delay)
       } finally {
         if (inFlightRef.current === promise) {
@@ -111,6 +119,10 @@ export function useAutosave({
     },
     [emit],
   )
+
+  useEffect(() => {
+    doFlushRef.current = doFlush
+  }, [doFlush])
 
   useEffect(() => {
     if (!enabled) {

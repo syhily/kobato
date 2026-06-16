@@ -21,7 +21,6 @@ export function useEditorShellLayout() {
   const [metaOpen, setMetaOpen] = useState(isLg)
   useEffect(() => {
     const mql = window.matchMedia('(min-width: 1024px)')
-    setIsLg(mql.matches)
     const handleChange = (event: MediaQueryListEvent) => {
       setIsLg(event.matches)
       if (!event.matches) {

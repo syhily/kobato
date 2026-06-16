@@ -128,16 +128,17 @@ export function Header({ navigation, currentUser, pathname, search }: HeaderProp
   useEffect(() => {
     const mql = window.matchMedia('(min-width: 1024px)')
     const update = () => setIsDesktop(mql.matches)
-    update()
     mql.addEventListener('change', update)
     return () => mql.removeEventListener('change', update)
   }, [])
   const triggerRef = useRef<HTMLButtonElement | null>(null)
   const menuLabelId = useId()
 
-  useEffect(() => {
+  const [lastPathname, setLastPathname] = useState(pathname)
+  if (pathname !== lastPathname) {
+    setLastPathname(pathname)
     setMenuOpen(false)
-  }, [pathname])
+  }
   useEffect(() => {
     if (!menuOpen) {
       return

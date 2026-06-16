@@ -139,9 +139,12 @@ export function LikeButton({ permalink, commentKey, likes: initialLikes }: LikeB
 
   // Reset state when navigating between detail routes (same component instance).
   const validateMutate = validate.mutate
-
-  useEffect(() => {
+  const [lastPermalink, setLastPermalink] = useState(permalink)
+  if (permalink !== lastPermalink) {
+    setLastPermalink(permalink)
     setBaseState(createLikeButtonState(commentKey, initialLikes))
+  }
+  useEffect(() => {
     const token = readLikeToken(permalink)
     if (!token) {
       tokenRef.current = null
@@ -149,7 +152,8 @@ export function LikeButton({ permalink, commentKey, likes: initialLikes }: LikeB
     }
     tokenRef.current = token
     validateMutate({ key: commentKey, token })
-  }, [permalink, commentKey, initialLikes, validateMutate])
+    // Re-validate when permalink changes; identity-stable refs only.
+  }, [permalink, commentKey, validateMutate])
 
   const isPending = increase.isPending || decrease.isPending
   const increaseMutateAsync = increase.mutateAsync

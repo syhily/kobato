@@ -3,7 +3,7 @@ import type { Editor } from '@tiptap/core'
 
 import { getMarkRange } from '@tiptap/core'
 import { CheckIcon, EraserIcon, XIcon } from 'lucide-react'
-import { useLayoutEffect, useRef, useState } from 'react'
+import { useRef, useState } from 'react'
 
 import { orpc } from '@/client/api/client'
 import { generateBlockKey } from '@/shared/pt/utils'
@@ -44,12 +44,13 @@ export function MathInlinePanel({ editor }: MathInlinePanelProps) {
   const applyAbortRef = useRef<AbortController | null>(null)
   const { previewHtml, renderError, showSpinner } = useAdminMathPreview(tex, false)
 
-  useLayoutEffect(() => {
+  const [lastEditor, setLastEditor] = useState(editor)
+  if (editor !== lastEditor) {
+    setLastEditor(editor)
     editor.commands.extendMarkRange('mathInline')
     const snap = snapshotMathInlineTex(editor)
     setTex(snap)
-    baselineTexRef.current = snap
-  }, [editor])
+  }
 
   const apply = () => {
     void (async () => {

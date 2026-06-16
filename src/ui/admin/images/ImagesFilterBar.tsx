@@ -36,10 +36,11 @@ function SearchFilterPill({
 }) {
   const inputRef = useRef<HTMLInputElement>(null)
   const [draft, setDraft] = useState(value)
-
-  useEffect(() => {
+  const [lastValue, setLastValue] = useState(value)
+  if (value !== lastValue) {
+    setLastValue(value)
     setDraft(value)
-  }, [value])
+  }
 
   const commit = (next: string) => {
     const trimmed = next.trim()

@@ -22,8 +22,10 @@ export function useAudioControl(options: UseAudioControlOptions) {
 
   const onEndedRef = useRef(options.onEnded)
   const onErrorRef = useRef(options.onError)
-  onEndedRef.current = options.onEnded
-  onErrorRef.current = options.onError
+  useEffect(() => {
+    onEndedRef.current = options.onEnded
+    onErrorRef.current = options.onError
+  })
 
   useEffect(() => {
     const audio = document.createElement('audio')

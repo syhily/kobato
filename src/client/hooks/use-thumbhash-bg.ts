@@ -1,4 +1,4 @@
-import { useEffect, useState, type CSSProperties } from 'react'
+import { useState, type CSSProperties } from 'react'
 
 import { thumbHashToDataURL } from '@/shared/utils/thumbhash'
 
@@ -29,25 +29,27 @@ export function useThumbhashBackground(thumbhash: string | undefined, loaded = f
     return styleFromCache(thumbhash)
   })
 
-  useEffect(() => {
+  const [lastKey, setLastKey] = useState<{ thumbhash: string | undefined; loaded: boolean }>({ thumbhash, loaded })
+  // Adjust style synchronously when inputs change so we don't cascade renders.
+  if (lastKey.thumbhash !== thumbhash || lastKey.loaded !== loaded) {
+    setLastKey({ thumbhash, loaded })
     if (loaded || !thumbhash) {
       setStyle(undefined)
-      return
+    } else {
+      const cached = thumbhashUrlCache.get(thumbhash)
+      if (cached !== undefined) {
+        setStyle(buildStyle(cached))
+      } else {
+        try {
+          const dataUrl = thumbHashToDataURL(base64ToBytes(thumbhash))
+          thumbhashUrlCache.set(thumbhash, dataUrl)
+          setStyle(buildStyle(dataUrl))
+        } catch {
+          setStyle(undefined)
+        }
+      }
     }
-    const cached = thumbhashUrlCache.get(thumbhash)
-    if (cached !== undefined) {
-      setStyle(buildStyle(cached))
-      return
-    }
-
-    try {
-      const dataUrl = thumbHashToDataURL(base64ToBytes(thumbhash))
-      thumbhashUrlCache.set(thumbhash, dataUrl)
-      setStyle(buildStyle(dataUrl))
-    } catch {
-      setStyle(undefined)
-    }
-  }, [thumbhash, loaded])
+  }
 
   return style
 }

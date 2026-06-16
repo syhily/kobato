@@ -133,8 +133,6 @@ export function CommentsView({ currentUserName, currentUserEmail, initialFilters
   const parentLookup = useMemo(() => new Map(state.comments.map((c) => [idStr(c.id), c])), [state.comments])
 
   const [searchParams, setSearchParams] = useSearchParams()
-  const currentSearchRef = useRef(searchParams)
-  currentSearchRef.current = searchParams
   const urlSyncTimerRef = useRef<number | null>(null)
   useEffect(() => {
     if (urlSyncTimerRef.current !== null) {
@@ -177,7 +175,7 @@ export function CommentsView({ currentUserName, currentUserEmail, initialFilters
           }
         }
       }
-      if (next.toString() !== currentSearchRef.current.toString()) {
+      if (next.toString() !== searchParams.toString()) {
         setSearchParams(next, { replace: true, preventScrollReset: true })
       }
     }, 300)
@@ -186,7 +184,7 @@ export function CommentsView({ currentUserName, currentUserEmail, initialFilters
         window.clearTimeout(urlSyncTimerRef.current)
       }
     }
-  }, [state.filters, setSearchParams])
+  }, [state.filters, setSearchParams, searchParams])
 
   const buildQueryInput = useCallback(
     (offset: number) => ({
@@ -242,9 +240,6 @@ export function CommentsView({ currentUserName, currentUserEmail, initialFilters
     }
   }, [loadingMore, hasMore, buildQueryInput, state.comments.length, dispatch])
 
-  const loadMoreRef = useRef(loadMore)
-  loadMoreRef.current = loadMore
-
   useEffect(() => {
     if (!hasMore) {
       return
@@ -256,14 +251,14 @@ export function CommentsView({ currentUserName, currentUserEmail, initialFilters
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry?.isIntersecting) {
-          void loadMoreRef.current()
+          void loadMore()
         }
       },
       { rootMargin: '200px' },
     )
     observer.observe(el)
     return () => observer.disconnect()
-  }, [hasMore])
+  }, [hasMore, loadMore])
 
   const pageItems = useMemo<FilterItem[]>(() => {
     const fetched = pagesData?.pages ?? []

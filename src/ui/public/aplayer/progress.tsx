@@ -27,22 +27,22 @@ export function ProgressBar({ themeColor, bufferedPercentage, playedPercentage, 
       const percentage = computePercentage(e, progressBarRef)
       setProgress(percentage)
 
+      const controller = new AbortController()
       const handleMouseMove = (e: MouseEvent) => {
         const percentage = computePercentage(e, progressBarRef)
         setProgress(percentage)
       }
 
       const handleMouseUp = (e: MouseEvent) => {
-        document.removeEventListener('mousemove', handleMouseMove)
-        document.removeEventListener('mouseup', handleMouseUp)
+        controller.abort()
         const percentage = computePercentage(e, progressBarRef)
         setProgress(percentage)
         onSeek?.(percentage)
         isDraggingRef.current = false
       }
 
-      document.addEventListener('mousemove', handleMouseMove)
-      document.addEventListener('mouseup', handleMouseUp)
+      document.addEventListener('mousemove', handleMouseMove, { signal: controller.signal })
+      document.addEventListener('mouseup', handleMouseUp, { signal: controller.signal })
     },
     [onSeek],
   )

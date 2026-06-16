@@ -1,6 +1,6 @@
 import { useMutation } from '@tanstack/react-query'
 import { SaveIcon, XIcon } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { toast } from 'sonner'
 
 import type { AdminTagDto, UpsertTagInput } from '@/shared/types/tags'
@@ -34,6 +34,7 @@ const EMPTY_DRAFT = {
 export function EditTagDialog({ tag, onClose, onSaved }: EditTagDialogProps) {
   const [draft, setDraft] = useState(EMPTY_DRAFT)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const [lastTag, setLastTag] = useState<typeof tag>(tag)
 
   const upsertMutation = useMutation({
     ...orpcQuery.admin.tags.upsert.mutationOptions(),
@@ -48,21 +49,22 @@ export function EditTagDialog({ tag, onClose, onSaved }: EditTagDialogProps) {
   })
   const { mutate: submit, isPending } = upsertMutation
 
-  useEffect(() => {
+  if (tag !== lastTag) {
+    setLastTag(tag)
     if (tag === undefined) {
-      return
-    }
-    setErrorMessage(null)
-    if (tag === null) {
+      // closed — leave current draft for animation continuity
+    } else if (tag === null) {
+      setErrorMessage(null)
       setDraft(EMPTY_DRAFT)
-      return
+    } else {
+      setErrorMessage(null)
+      setDraft({
+        name: tag.name,
+        slug: tag.slug,
+        ogImage: tag.ogImage,
+      })
     }
-    setDraft({
-      name: tag.name,
-      slug: tag.slug,
-      ogImage: tag.ogImage,
-    })
-  }, [tag])
+  }
 
   const open = tag !== undefined
   const isEditing = tag !== null && tag !== undefined

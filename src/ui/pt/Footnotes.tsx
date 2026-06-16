@@ -6,7 +6,6 @@ import {
   useCallback,
   useEffect,
   useMemo,
-  useRef,
   useState,
   type ComponentProps,
   type ReactElement,
@@ -83,16 +82,14 @@ export function FootnoteReference({ children, ...props }: ComponentProps<'sup'>)
 
 export function FootnotePreviewRegistrar({ anchorId, preview }: { anchorId: string; preview: ReactNode }) {
   const register = use(FootnoteRegisterContext)
-  const previewRef = useRef(preview)
-  previewRef.current = preview
 
   useEffect(() => {
     if (register === null) {
       return
     }
     const href = `#${anchorId}`
-    return register(href, previewRef.current)
-  }, [anchorId, register])
+    return register(href, preview)
+  }, [anchorId, register, preview])
 
   return null
 }
@@ -101,15 +98,13 @@ export function FootnoteDefinition({ children, id, ...props }: ComponentProps<'l
   const register = use(FootnoteRegisterContext)
   const isFootnote = typeof id === 'string' && id.startsWith(FOOTNOTE_ID_PREFIX)
   const preview = useMemo(() => stripBackrefs(children), [children])
-  const previewRef = useRef(preview)
-  previewRef.current = preview
 
   useEffect(() => {
     if (!isFootnote || register === null || typeof id !== 'string') {
       return
     }
-    return register(`#${id}`, previewRef.current)
-  }, [id, isFootnote, register])
+    return register(`#${id}`, preview)
+  }, [id, isFootnote, register, preview])
 
   return (
     <li {...props} id={id}>

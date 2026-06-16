@@ -48,11 +48,13 @@ export function RevisionHistoryDrawer({
         }),
   )
 
-  useEffect(() => {
+  const [lastAppliedData, setLastAppliedData] = useState(listQuery.data)
+  if (listQuery.data !== lastAppliedData) {
+    setLastAppliedData(listQuery.data)
     if (listQuery.data) {
       setRevisions(listQuery.data.revisions)
     }
-  }, [listQuery.data])
+  }
 
   useEffect(() => {
     if (listQuery.error) {
@@ -62,11 +64,13 @@ export function RevisionHistoryDrawer({
 
   const isPending = listQuery.isFetching
 
-  useEffect(() => {
+  const [wasOpen, setWasOpen] = useState(open)
+  if (open !== wasOpen) {
+    setWasOpen(open)
     if (!open) {
       setSelectedId(null)
     }
-  }, [open])
+  }
 
   const selectedRevision = useMemo<AdminRevisionDto | null>(
     () => revisions?.find((r) => r.id === selectedId) ?? null,

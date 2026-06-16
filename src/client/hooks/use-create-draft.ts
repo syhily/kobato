@@ -56,11 +56,7 @@ export function useCreateDraft<TMeta>(
   config: CreateDraftConfig,
   { body, meta }: UseCreateDraftOptions<TMeta>,
 ): UseCreateDraftResult<TMeta> {
-  const sessionIdRef = useRef<string>('')
-  if (sessionIdRef.current === '') {
-    sessionIdRef.current = readOrCreateSessionId(config.sessionKey)
-  }
-  const sessionId = sessionIdRef.current
+  const [sessionId] = useState(() => readOrCreateSessionId(config.sessionKey))
   const key = `${config.keyPrefix}${sessionId}`
 
   const [loadedDraft, setLoadedDraft] = useState<{ body: PortableTextBody; meta: TMeta; savedAt: number } | null>(null)

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { data } from 'react-router'
 
 import type { DraftSummary } from '@/ui/admin/dashboard/types'
@@ -119,22 +119,25 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   })
 }
 
+function greetingForHour(hour: number): string {
+  if (hour >= 23 || hour < 5) {
+    return '夜深了，还没睡么？记得早点休息'
+  }
+  if (hour < 11) {
+    return '早上好，新的一天开始啦'
+  }
+  if (hour < 14) {
+    return '中午好，记得吃午饭'
+  }
+  if (hour < 18) {
+    return '下午好'
+  }
+  return '晚上好'
+}
+
 function useGreeting() {
-  const [greeting, setGreeting] = useState('你好')
-  useEffect(() => {
-    const hour = new Date().getHours()
-    if (hour >= 23 || hour < 5) {
-      setGreeting('夜深了，还没睡么？记得早点休息')
-    } else if (hour < 11) {
-      setGreeting('早上好，新的一天开始啦')
-    } else if (hour < 14) {
-      setGreeting('中午好，记得吃午饭')
-    } else if (hour < 18) {
-      setGreeting('下午好')
-    } else {
-      setGreeting('晚上好')
-    }
-  }, [])
+  // Lazy initializer computes once on mount without setState-in-effect.
+  const [greeting] = useState(() => greetingForHour(new Date().getHours()))
   return greeting
 }
 

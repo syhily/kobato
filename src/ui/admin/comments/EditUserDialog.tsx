@@ -1,6 +1,6 @@
 import { useMutation } from '@tanstack/react-query'
 import { SaveIcon, XIcon } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 
 import type { AdminCommentWire as AdminComment } from '@/shared/types/comments'
 
@@ -35,26 +35,26 @@ export function EditUserDialog({ comment, onClose, onSaved }: EditUserDialogProp
     },
     onSuccess: () => onSaved(),
   })
-  const [name, setName] = useState('')
-  const [email, setEmail] = useState('')
-  const [link, setLink] = useState('')
-  const [badgeName, setBadgeName] = useState('')
-  const [badgeColor, setBadgeColor] = useState('#008c95')
-  const [useTextOverride, setUseTextOverride] = useState(false)
-  const [badgeTextColor, setBadgeTextColor] = useState(DEFAULT_BADGE_TEXT_COLOR)
-
-  useEffect(() => {
-    if (!comment) {
-      return
+  const [lastCommentId, setLastCommentId] = useState(comment?.id)
+  const [name, setName] = useState(comment?.name ?? '')
+  const [email, setEmail] = useState(comment?.email ?? '')
+  const [link, setLink] = useState(comment?.link ?? '')
+  const [badgeName, setBadgeName] = useState(comment?.badgeName ?? '')
+  const [badgeColor, setBadgeColor] = useState(comment?.badgeColor ?? '#008c95')
+  const [useTextOverride, setUseTextOverride] = useState(comment?.badgeTextColor != null)
+  const [badgeTextColor, setBadgeTextColor] = useState(comment?.badgeTextColor ?? DEFAULT_BADGE_TEXT_COLOR)
+  if (comment?.id !== lastCommentId) {
+    setLastCommentId(comment?.id)
+    if (comment) {
+      setName(comment.name)
+      setEmail(comment.email)
+      setLink(comment.link ?? '')
+      setBadgeName(comment.badgeName ?? '')
+      setBadgeColor(comment.badgeColor ?? '#008c95')
+      setUseTextOverride(comment.badgeTextColor !== null && comment.badgeTextColor !== undefined)
+      setBadgeTextColor(comment.badgeTextColor ?? DEFAULT_BADGE_TEXT_COLOR)
     }
-    setName(comment.name)
-    setEmail(comment.email)
-    setLink(comment.link ?? '')
-    setBadgeName(comment.badgeName ?? '')
-    setBadgeColor(comment.badgeColor ?? '#008c95')
-    setUseTextOverride(comment.badgeTextColor !== null && comment.badgeTextColor !== undefined)
-    setBadgeTextColor(comment.badgeTextColor ?? DEFAULT_BADGE_TEXT_COLOR)
-  }, [comment])
+  }
 
   const open = comment !== null
   const submitting = mutation.isPending

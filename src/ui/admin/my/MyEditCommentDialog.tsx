@@ -1,6 +1,6 @@
 import { useMutation } from '@tanstack/react-query'
 import { SaveIcon, XIcon } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { toast } from 'sonner'
 
 import type { CommentBody } from '@/shared/pt/comment-schema'
@@ -40,20 +40,20 @@ export function MyEditCommentDialog({ target, onClose, onSaved }: MyEditCommentD
   const [initialBody, setInitialBody] = useState<CommentBody>(EMPTY_COMMENT_BODY)
   const [body, setBody] = useState<CommentBody>(EMPTY_COMMENT_BODY)
   const [bodyKey, setBodyKey] = useState(0)
-
-  useEffect(() => {
+  const [lastTargetId, setLastTargetId] = useState(target?.id)
+  // Reset on identity change, not on every render — `target` is freshly
+  // constructed by the parent on each row click.
+  if (target?.id !== lastTargetId) {
+    setLastTargetId(target?.id)
     if (!target) {
       setInitialBody(EMPTY_COMMENT_BODY)
       setBody(EMPTY_COMMENT_BODY)
-      return
+    } else {
+      setInitialBody(target.body)
+      setBody(target.body)
+      setBodyKey((k) => k + 1)
     }
-    setInitialBody(target.body)
-    setBody(target.body)
-    setBodyKey((k) => k + 1)
-    // Reset on identity change, not on every render — `target` is
-    // freshly constructed by the parent on each row click.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [target?.id])
+  }
 
   const open = target !== null
   const submitting = update.isPending

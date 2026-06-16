@@ -1,5 +1,5 @@
 import { SaveIcon, SquarePenIcon, Trash2Icon, XIcon } from 'lucide-react'
-import { type SubmitEventHandler, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { type SubmitEventHandler, useCallback, useMemo, useRef, useState } from 'react'
 
 import type { CacheSettings } from '@/shared/config/types'
 import type { CacheBucketId, CacheBucketStats } from '@/shared/types/cache'
@@ -50,14 +50,20 @@ export function BucketCard({ bucket, settings, allBuckets, isClearPending, clear
   // this one.
   const [savingFromHere, setSavingFromHere] = useState(false)
 
-  useEffect(() => {
+  // Sync snapshot/draft to settings via the React-blessed "adjust state
+  // during render" pattern instead of setState-in-effect.
+  const [lastSettingsRef, setLastSettingsRef] = useState<{ settings: typeof settings; isEditing: boolean }>({
+    settings,
+    isEditing,
+  })
+  if (lastSettingsRef.settings !== settings || lastSettingsRef.isEditing !== isEditing) {
+    setLastSettingsRef({ settings, isEditing })
     const fresh = snapshotFromSettings(settings)
-    submittedDraftRef.current = null
     setSnapshot(fresh)
     if (!isEditing) {
       setDraft(fresh)
     }
-  }, [settings, isEditing])
+  }
 
   const isDirty = !draftsEqual(draft, snapshot)
   const onSaved = useCallback(() => {
@@ -80,12 +86,17 @@ export function BucketCard({ bucket, settings, allBuckets, isClearPending, clear
     [commit, onSaved],
   )
 
-  useEffect(() => {
+  const [lastSaveStatus, setLastSaveStatus] = useState<{ status: typeof saveStatus; saving: boolean }>({
+    status: saveStatus,
+    saving: savingFromHere,
+  })
+  if (lastSaveStatus.status !== saveStatus || lastSaveStatus.saving !== savingFromHere) {
+    setLastSaveStatus({ status: saveStatus, saving: savingFromHere })
     if (saveStatus === 'saved' && savingFromHere) {
       setIsEditing(false)
       setSavingFromHere(false)
     }
-  }, [saveStatus, savingFromHere])
+  }
 
   const otherBuckets = useMemo(() => {
     const all: { id: CacheBucketId; prefix: string }[] = [

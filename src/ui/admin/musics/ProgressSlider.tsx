@@ -54,21 +54,20 @@ export function ProgressSlider({
       const newValue = computeValueFromEvent(e.clientX, e.clientY)
       onChange(newValue)
 
+      const controller = new AbortController()
       const handlePointerMove = (moveEvent: PointerEvent) => {
         const v = computeValueFromEvent(moveEvent.clientX, moveEvent.clientY)
         onChange(v)
       }
 
       const handlePointerUp = () => {
+        controller.abort()
         setDragging(false)
-        window.removeEventListener('pointermove', handlePointerMove)
-        window.removeEventListener('pointerup', handlePointerUp)
-        window.removeEventListener('pointercancel', handlePointerUp)
       }
 
-      window.addEventListener('pointermove', handlePointerMove)
-      window.addEventListener('pointerup', handlePointerUp)
-      window.addEventListener('pointercancel', handlePointerUp)
+      window.addEventListener('pointermove', handlePointerMove, { signal: controller.signal })
+      window.addEventListener('pointerup', handlePointerUp, { signal: controller.signal })
+      window.addEventListener('pointercancel', handlePointerUp, { signal: controller.signal })
     },
     [computeValueFromEvent, onChange],
   )

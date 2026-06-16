@@ -1,6 +1,6 @@
 import { useMutation } from '@tanstack/react-query'
 import { PencilIcon } from 'lucide-react'
-import { useEffect, useRef, useState } from 'react'
+import { useRef, useState } from 'react'
 
 import type { CommentBody } from '@/shared/pt/comment-schema'
 import type { CommentFormUser } from '@/shared/types/catalog'
@@ -57,16 +57,17 @@ export function CommentReplyForm({
     return '/images/default-avatar.png'
   })
 
-  useEffect(() => {
-    if (user) {
-      return
+  const [lastAvatarInputs, setLastAvatarInputs] = useState({ guestProfile, user })
+  if (lastAvatarInputs.guestProfile !== guestProfile || lastAvatarInputs.user !== user) {
+    setLastAvatarInputs({ guestProfile, user })
+    if (!user) {
+      if (guestProfile?.avatar) {
+        setAvatarSrc(guestProfile.avatar)
+      } else {
+        setAvatarSrc('/images/default-avatar.png')
+      }
     }
-    if (guestProfile?.avatar) {
-      setAvatarSrc(guestProfile.avatar)
-    } else {
-      setAvatarSrc('/images/default-avatar.png')
-    }
-  }, [guestProfile, user])
+  }
 
   const reply = useMutation({
     ...orpcQuery.comments.replyComment.mutationOptions(),

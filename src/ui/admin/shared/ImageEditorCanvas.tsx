@@ -110,7 +110,6 @@ export function ImageEditorCanvas({
 
   useEffect(() => {
     let cancelled = false
-    setError(null)
     loadImage(file)
       .then((img) => {
         if (cancelled) {
@@ -146,12 +145,17 @@ export function ImageEditorCanvas({
     }
   }, [source, rotation])
 
-  useEffect(() => {
+  // Compute the crop rectangle from displayLayout + locked aspect
+  // synchronously during render so we don't trigger a cascading render.
+  const [lastCropInputs, setLastCropInputs] = useState<{ displayLayout: typeof displayLayout; locked: typeof locked }>({
+    displayLayout,
+    locked,
+  })
+  if (lastCropInputs.displayLayout !== displayLayout || lastCropInputs.locked !== locked) {
+    setLastCropInputs({ displayLayout, locked })
     if (displayLayout === null) {
       setCrop(null)
-      return
-    }
-    if (locked !== undefined) {
+    } else if (locked !== undefined) {
       const targetRatio = locked.width / locked.height
       const sourceRatio = displayLayout.sourceWidth / displayLayout.sourceHeight
       let cropW: number
@@ -169,24 +173,22 @@ export function ImageEditorCanvas({
         width: cropW,
         height: cropH,
       })
-      return
+    } else {
+      setCrop({
+        x: 0,
+        y: 0,
+        width: displayLayout.sourceWidth,
+        height: displayLayout.sourceHeight,
+      })
     }
-    setCrop({
-      x: 0,
-      y: 0,
-      width: displayLayout.sourceWidth,
-      height: displayLayout.sourceHeight,
-    })
-  }, [displayLayout, locked])
+  }
 
-  const onCropChangeRef = useRef(onCropChange)
-  onCropChangeRef.current = onCropChange
   useEffect(() => {
     if (crop === null) {
       return
     }
-    onCropChangeRef.current?.(crop.width, crop.height)
-  }, [crop])
+    onCropChange?.(crop.width, crop.height)
+  }, [crop, onCropChange])
 
   useEffect(() => {
     const canvas = canvasRef.current

@@ -88,7 +88,7 @@ export function MusicPlayerProvider({ children }: MusicPlayerProviderProps) {
 
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const timeLoopRef = useRef<ReturnType<typeof setInterval> | null>(null)
-  const canPlayListenerRef = useRef<(() => void) | null>(null)
+  const canPlayAbortRef = useRef<AbortController | null>(null)
   const playlistRef = useRef<AdminMusicDto[]>([])
   const lastLoadIdRef = useRef(0)
   const getDominantColor = useDominantColor()
@@ -126,9 +126,9 @@ export function MusicPlayerProvider({ children }: MusicPlayerProviderProps) {
         return
       }
 
-      if (canPlayListenerRef.current) {
-        audio.removeEventListener('canplay', canPlayListenerRef.current)
-        canPlayListenerRef.current = null
+      if (canPlayAbortRef.current) {
+        canPlayAbortRef.current.abort()
+        canPlayAbortRef.current = null
       }
 
       stopTimeLoop()
@@ -166,13 +166,14 @@ export function MusicPlayerProvider({ children }: MusicPlayerProviderProps) {
       if (audio.readyState >= HTMLMediaElement.HAVE_FUTURE_DATA) {
         tryPlay()
       } else {
+        const controller = new AbortController()
         const onCanPlay = () => {
-          audio.removeEventListener('canplay', onCanPlay)
-          canPlayListenerRef.current = null
+          controller.abort()
+          canPlayAbortRef.current = null
           tryPlay()
         }
-        canPlayListenerRef.current = onCanPlay
-        audio.addEventListener('canplay', onCanPlay)
+        canPlayAbortRef.current = controller
+        audio.addEventListener('canplay', onCanPlay, { signal: controller.signal })
       }
     },
     [getDominantColor, stopTimeLoop],

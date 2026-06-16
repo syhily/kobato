@@ -19,10 +19,16 @@ export function AdminSearchDialog({ open, onOpenChange }: AdminSearchDialogProps
   const navigate = useNavigate()
   const [, startTransition] = useTransition()
 
-  useEffect(() => {
+  const [wasOpen, setWasOpen] = useState(open)
+  if (open !== wasOpen) {
+    setWasOpen(open)
     if (!open) {
       setQuery('')
       setDebouncedQuery('')
+    }
+  }
+  useEffect(() => {
+    if (!open) {
       return
     }
     const id = requestAnimationFrame(() => inputRef.current?.focus())

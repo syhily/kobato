@@ -49,9 +49,17 @@ export function useLocalDraft(
       ? `${config.keyPrefix}${entityId}:${clientRevisionToken}`
       : null
 
-  useEffect(() => {
+  // Synchronously clear state when key becomes null (e.g. dialog closed).
+  const [lastKey, setLastKey] = useState(key)
+  if (key !== lastKey) {
+    setLastKey(key)
     if (key === null) {
       setLoadedDraft(null)
+    }
+  }
+
+  useEffect(() => {
+    if (key === null) {
       lastReadKeyRef.current = null
       loadCompleteRef.current = false
       return

@@ -75,6 +75,9 @@ export function AddMusicDialog({ open, onClose, onAdded }: AddMusicDialogProps) 
   const [addingSourceId, setAddingSourceId] = useState<string | null>(null)
   const [addedSourceIds, setAddedSourceIds] = useState<Set<string>>(new Set())
 
+  const scrollRef = useRef<HTMLDivElement>(null)
+  const sentinelRef = useRef<HTMLDivElement>(null)
+
   const { currentTrack, isPlaying } = useMusicPlayerState()
   const { toggle, close, load } = useMusicPlayerActions()
   const queryClient = useQueryClient()
@@ -103,7 +106,9 @@ export function AddMusicDialog({ open, onClose, onAdded }: AddMusicDialogProps) 
   const { mutate: submitAdd } = addMutation
 
   // Reset on dialog close
-  useEffect(() => {
+  const [wasOpen, setWasOpen] = useState(open)
+  if (open !== wasOpen) {
+    setWasOpen(open)
     if (!open) {
       setKeyword('')
       setSource('netease')
@@ -118,7 +123,7 @@ export function AddMusicDialog({ open, onClose, onAdded }: AddMusicDialogProps) 
         close()
       }
     }
-  }, [open]) // eslint-disable-line react-hooks/exhaustive-deps
+  }
 
   const triggerSearch = useCallback(() => {
     if (keyword.trim() === '') {
@@ -131,9 +136,11 @@ export function AddMusicDialog({ open, onClose, onAdded }: AddMusicDialogProps) 
 
   // Keep latest flags in refs so loadMore reference is stable.
   const hasMoreRef = useRef(hasMore)
-  hasMoreRef.current = hasMore
   const isFetchingRef = useRef(searchQuery.isFetching)
-  isFetchingRef.current = searchQuery.isFetching
+  useEffect(() => {
+    hasMoreRef.current = hasMore
+    isFetchingRef.current = searchQuery.isFetching
+  })
 
   const loadMore = useCallback(() => {
     if (!hasMoreRef.current || isFetchingRef.current) {
@@ -142,39 +149,47 @@ export function AddMusicDialog({ open, onClose, onAdded }: AddMusicDialogProps) 
     setNextOffset((prev) => prev + SEARCH_LIMIT)
   }, [])
 
-  // Handle search results — accumulate for pagination
+  // Handle search results — accumulate for pagination. Track the last
+  // applied `data` reference so we adjust state during render instead of
+  // cascading through an effect.
+  const [lastAppliedData, setLastAppliedData] = useState(searchQuery.data)
+  if (searchQuery.data !== lastAppliedData) {
+    setLastAppliedData(searchQuery.data)
+    if (searchQuery.data) {
+      const newResults = searchQuery.data.results
+      const hasMoreData = searchQuery.data.hasMore
+      setResults((prev) => {
+        if (prev.length === 0) {
+          return newResults
+        }
+        const existing = new Set(prev.map((r) => `${r.source}:${r.sourceId}`))
+        return [...prev, ...newResults.filter((r) => !existing.has(`${r.source}:${r.sourceId}`))]
+      })
+      setHasMore(hasMoreData)
+      if (!hasMoreData) {
+        setEnabled(false)
+      }
+    }
+  }
+  // Auto-load next page if sentinel is still inside scroll container and
+  // more pages exist. Reads geometry in an effect (post-render) so we
+  // don't touch refs during render.
   useEffect(() => {
-    if (!searchQuery.data) {
+    if (!searchQuery.data || !searchQuery.data.hasMore || searchQuery.isFetching) {
       return
     }
-    const newResults = searchQuery.data.results
-    const hasMoreData = searchQuery.data.hasMore
-    setResults((prev) => {
-      if (prev.length === 0) {
-        return newResults
+    const id = requestAnimationFrame(() => {
+      if (!sentinelRef.current || !scrollRef.current) {
+        return
       }
-      // Deduplicate by source+sourceId
-      const existing = new Set(prev.map((r) => `${r.source}:${r.sourceId}`))
-      return [...prev, ...newResults.filter((r) => !existing.has(`${r.source}:${r.sourceId}`))]
+      const sentinelRect = sentinelRef.current.getBoundingClientRect()
+      const scrollRect = scrollRef.current.getBoundingClientRect()
+      if (sentinelRect.top < scrollRect.bottom) {
+        loadMore()
+      }
     })
-    setHasMore(hasMoreData)
-    if (!hasMoreData) {
-      setEnabled(false)
-    }
-    // Auto-load next page if sentinel is still inside scroll container and more pages exist
-    if (hasMoreData && !searchQuery.isFetching) {
-      requestAnimationFrame(() => {
-        if (!sentinelRef.current || !scrollRef.current) {
-          return
-        }
-        const sentinelRect = sentinelRef.current.getBoundingClientRect()
-        const scrollRect = scrollRef.current.getBoundingClientRect()
-        if (sentinelRect.top < scrollRect.bottom) {
-          loadMore()
-        }
-      })
-    }
-  }, [loadMore, searchQuery.data, searchQuery.isFetching])
+    return () => cancelAnimationFrame(id)
+  }, [searchQuery.data, searchQuery.isFetching, loadMore])
 
   const onPreview = useCallback(
     (hit: MetingSearchHit & { previewUrl?: string }) => {
@@ -202,8 +217,6 @@ export function AddMusicDialog({ open, onClose, onAdded }: AddMusicDialogProps) 
   )
 
   // Infinite scroll via IntersectionObserver
-  const scrollRef = useRef<HTMLDivElement>(null)
-  const sentinelRef = useRef<HTMLDivElement>(null)
   useEffect(() => {
     if (!open || !sentinelRef.current || !scrollRef.current) {
       return

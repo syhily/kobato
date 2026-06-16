@@ -132,9 +132,6 @@ export function AuditLogView({ retentionDays }: AuditLogViewProps) {
     }
   }, [loadingMore, state.hasMore, buildQueryInput, state.items.length, dispatch])
 
-  const loadMoreRef = useRef(loadMore)
-  loadMoreRef.current = loadMore
-
   useEffect(() => {
     if (!state.hasMore) {
       return
@@ -146,14 +143,14 @@ export function AuditLogView({ retentionDays }: AuditLogViewProps) {
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry?.isIntersecting) {
-          void loadMoreRef.current()
+          void loadMore()
         }
       },
       { rootMargin: '200px' },
     )
     observer.observe(el)
     return () => observer.disconnect()
-  }, [state.hasMore])
+  }, [state.hasMore, loadMore])
 
   const handleExport = useCallback(async () => {
     try {

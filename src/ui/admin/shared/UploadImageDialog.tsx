@@ -47,22 +47,26 @@ export function UploadImageDialog({ open, kind, onClose, onUploaded, initialFile
   const [targetWidthDraft, setTargetWidthDraft] = useState<string>('')
   const encoderRef = useRef<(() => Promise<{ blob: Blob; width: number; height: number }>) | null>(null)
   const [isPending, setIsPending] = useState(false)
-
+  const [lastOpen, setLastOpen] = useState<{ open: boolean; initialFile: File | undefined } | null>(null)
+  if (lastOpen === null || lastOpen.open !== open || lastOpen.initialFile !== initialFile) {
+    setLastOpen({ open, initialFile })
+    if (open) {
+      setFile(initialFile ?? null)
+      setRotation(0)
+      setJpegQuality(82)
+      setNote('')
+      setErrorMessage(null)
+      setCropWidth(null)
+      setTargetWidth(null)
+      setTargetWidthDraft('')
+      setIsPending(false)
+    }
+  }
   useEffect(() => {
     if (!open) {
-      return
+      encoderRef.current = null
     }
-    setFile(initialFile ?? null)
-    setRotation(0)
-    setJpegQuality(82)
-    setNote('')
-    setErrorMessage(null)
-    setCropWidth(null)
-    setTargetWidth(null)
-    setTargetWidthDraft('')
-    encoderRef.current = null
-    setIsPending(false)
-  }, [open, initialFile])
+  }, [open])
 
   const onSelectFile = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     const next = event.target.files?.[0] ?? null

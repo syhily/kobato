@@ -1,5 +1,5 @@
 import { MaximizeIcon, MinimizeIcon } from 'lucide-react'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useState } from 'react'
 
 import { ToolbarButton } from '@/ui/admin/editor/toolbar/ToolbarButton'
 
@@ -12,10 +12,9 @@ const TOOLBAR_DENSITY_STORAGE_KEY = 'kobato/admin/page-editor/toolbar-density'
 // grows to more rows when space is tight. Compact mode uses Select +
 // so SSR + hydration agree on the initial 'full' default.
 export function useToolbarDensityPreference(): [ToolbarDensity, (next: ToolbarDensity) => void] {
-  const [density, setDensityState] = useState<ToolbarDensity>('full')
-  useEffect(() => {
-    setDensityState(readDensity())
-  }, [])
+  // Lazy initializer so SSR + first client render agree on the default
+  // (the linter-friendly alternative to setState-in-effect).
+  const [density, setDensityState] = useState<ToolbarDensity>(readDensity)
   const setDensity = useCallback((next: ToolbarDensity) => {
     setDensityState(next)
     if (typeof window === 'undefined') {

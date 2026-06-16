@@ -27,17 +27,23 @@ export function ImageNodeView(props: NodeViewProps) {
   const [caption, setCaption] = useState(attrs.caption ?? '')
 
   const latestPropsRef = useRef(props)
-  latestPropsRef.current = props
+  useEffect(() => {
+    latestPropsRef.current = props
+  })
 
   const altTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const captionTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  useEffect(() => {
+  const [lastAlt, setLastAlt] = useState(attrs.alt)
+  if (attrs.alt !== lastAlt) {
+    setLastAlt(attrs.alt)
     setAlt(attrs.alt ?? '')
-  }, [attrs.alt])
-  useEffect(() => {
+  }
+  const [lastCaption, setLastCaption] = useState(attrs.caption)
+  if (attrs.caption !== lastCaption) {
+    setLastCaption(attrs.caption)
     setCaption(attrs.caption ?? '')
-  }, [attrs.caption])
+  }
 
   useEffect(() => {
     return () => {

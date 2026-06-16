@@ -10,7 +10,7 @@ import {
   StrikethroughIcon,
   UnderlineIcon,
 } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 
 import { Button } from '@/ui/components/button'
 import {
@@ -159,12 +159,13 @@ interface LinkPromptDialogProps {
 
 function LinkPromptDialog({ seed, onClose, onConfirm }: LinkPromptDialogProps) {
   const [value, setValue] = useState('')
-
-  useEffect(() => {
+  const [lastSeed, setLastSeed] = useState(seed)
+  if (seed !== lastSeed) {
+    setLastSeed(seed)
     if (seed !== null) {
       setValue(seed)
     }
-  }, [seed])
+  }
 
   const open = seed !== null
 

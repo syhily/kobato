@@ -1,5 +1,5 @@
 import { CheckIcon, Trash2Icon, XIcon } from 'lucide-react'
-import { type ReactNode, useRef } from 'react'
+import { type ReactNode, useState } from 'react'
 
 import {
   AlertDialog,
@@ -45,20 +45,16 @@ export interface ConfirmDialogProps {
  *
  * Without a snapshot the title would flash to the empty string and the
  * action button would lose its label and red tint mid-animation. Cache
- * the last truthy `state` in a ref so the in-flight close animation
- * keeps rendering the contents the user just saw, and don't blow that
- * snapshot away when the parent reopens with new content (the new
- * truthy `state` overwrites the ref before render reads it).
+ * the last truthy `state` so the in-flight close animation keeps
+ * rendering the contents the user just saw. The cache is updated via
+ * the React-blessed "adjust state during render" pattern.
  */
 export function ConfirmDialog({ state, onClose }: ConfirmDialogProps) {
-  const lastStateRef = useRef<ConfirmState | null>(state)
-  if (state !== null) {
-    lastStateRef.current = state
+  const [lastState, setLastState] = useState<ConfirmState | null>(state)
+  if (state !== null && state !== lastState) {
+    setLastState(state)
   }
-  const renderState = state ?? lastStateRef.current
-  // Icon defaulting mirrors the rules above. We compute it during the
-  // close animation as well (using the snapshot ref) so the icon
-  // doesn't flash to a different glyph mid-fadeout.
+  const renderState = state ?? lastState
   const actionIcon =
     renderState?.actionIcon ?? (renderState?.destructive ? <Trash2Icon data-icon /> : <CheckIcon data-icon />)
   return (

@@ -40,17 +40,18 @@ export interface ThemeProviderProps {
 }
 
 export function ThemeProvider({ children, initialResolved = 'light' }: ThemeProviderProps) {
-  const [theme, setThemeState] = useState<Theme>('system')
   const [resolvedTheme, setResolvedTheme] = useState<Resolved>(initialResolved)
-  const [hydrated, setHydrated] = useState(false)
-
-  useEffect(() => {
+  const [hydrated] = useState(() => typeof window !== 'undefined')
+  const [theme, setThemeState] = useState<Theme>(() => {
+    if (typeof window === 'undefined') {
+      return 'system'
+    }
     const stored = localStorage.getItem(STORAGE_KEY)
     if (stored === 'dark' || stored === 'light' || stored === 'system') {
-      setThemeState(stored)
+      return stored
     }
-    setHydrated(true)
-  }, [])
+    return 'system'
+  })
 
   useEffect(() => {
     if (!hydrated) {
@@ -63,13 +64,14 @@ export function ThemeProvider({ children, initialResolved = 'light' }: ThemeProv
       setThemeCookie(next)
       setResolvedTheme(next)
     }
-    resolve()
 
     if (theme === 'system') {
       const mql = window.matchMedia('(prefers-color-scheme: dark)')
+      resolve()
       mql.addEventListener('change', resolve)
       return () => mql.removeEventListener('change', resolve)
     }
+    resolve()
   }, [theme, hydrated])
 
   const setTheme = useCallback((next: Theme) => {

@@ -18,8 +18,6 @@ import { Link } from 'react-router'
 import type { AdminPageDetailDto, AdminPageDto, PageMetaDraft, UpsertPageMetaInput } from '@/shared/types/pages'
 
 import { orpc } from '@/client/api/client'
-import { useCreatePageDraft } from '@/client/hooks/use-create-page-draft'
-import { usePageLocalDraft } from '@/client/hooks/use-page-local-draft'
 import { CreateModeBanner } from '@/ui/admin/editor-shared/CreateModeBanner'
 import { TitleSlugStrip } from '@/ui/admin/editor-shared/TitleSlugStrip'
 import { ActionBanner } from '@/ui/admin/editor-shell/ActionBanner'
@@ -41,6 +39,21 @@ export interface PageEditorShellProps {
   mode: 'create' | 'edit'
   detail?: AdminPageDetailDto
   navigate: NavigateFunction
+}
+
+const PAGE_LOCAL_DRAFT_CONFIG = {
+  keyPrefix: 'cms-page-draft:',
+  broadcastName: 'cms-page-draft',
+  editType: 'page-edit' as const,
+}
+
+const PAGE_CREATE_DRAFT_CONFIG = {
+  keyPrefix: 'cms-page-draft:new:',
+  sessionKey: 'cms-page-draft:new:session',
+  broadcastName: 'cms-page-draft',
+  createType: 'page-create' as const,
+  editType: 'page-edit' as const,
+  editKeyPrefix: 'cms-page-draft:',
 }
 
 // Top-level orchestrator for the page authoring screen. All shared
@@ -69,9 +82,8 @@ export function PageEditorShell({ mode, detail, navigate }: PageEditorShellProps
     emptyMeta: EMPTY_META_DRAFT,
     metaDraftFromEntity: metaDraftFromPage,
     metaDraftsEqual,
-    useLocalDraftHook: ({ entityId, clientRevisionToken, body, disabled }) =>
-      usePageLocalDraft({ pageId: entityId, clientRevisionToken, body, disabled }),
-    useCreateDraftHook: ({ body, meta }) => useCreatePageDraft({ body, meta }),
+    localDraftConfig: PAGE_LOCAL_DRAFT_CONFIG,
+    createDraftConfig: PAGE_CREATE_DRAFT_CONFIG,
     upsertMetaFn: async (input) => {
       const result = await orpc.admin.pages.upsertMeta(input)
       return result.page

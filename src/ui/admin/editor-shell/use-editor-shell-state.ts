@@ -11,6 +11,8 @@ import type {
   UseEditorShellStateOutput,
 } from '@/ui/admin/editor-shell/editor-shell-types'
 
+import { useCreateDraft } from '@/client/hooks/use-create-draft'
+import { useLocalDraft } from '@/client/hooks/use-local-draft'
 import { arePortableTextBodiesEquivalent } from '@/shared/pt/bridge/canonicalize'
 import {
   derivePublishState,
@@ -37,8 +39,8 @@ export function useEditorShellState<
     emptyMeta,
     metaDraftFromEntity,
     metaDraftsEqual,
-    useLocalDraftHook,
-    useCreateDraftHook,
+    localDraftConfig,
+    createDraftConfig,
     upsertMetaFn,
     saveDraftFn,
     publishFn,
@@ -54,10 +56,10 @@ export function useEditorShellState<
     isEditing && detail ? { isEditing: true as const, detail } : { isEditing: false as const, detail: undefined }
 
   const bodyState = useEditorBodyState(shellArgs)
-  const { body, setBody, bodyKey, initialBody, lastSavedBodyRef, replaceBody, markBodySaved } = bodyState
+  const { body, setBody, bodyKey, initialBody, lastSavedBody, replaceBody, markBodySaved } = bodyState
 
   const metaState = useEditorMetaState(shellArgs, emptyMeta, metaDraftFromEntity)
-  const { meta, setMeta, lastPersistedMetaRef, serverPublishedAtIso, resetMeta } = metaState
+  const { meta, setMeta, lastPersistedMeta, serverPublishedAtIso, resetMeta } = metaState
 
   const revisionManager = useEditorRevisionManager(shellArgs)
   const { expectedToken, latestRevision, publishedRevision, updateAfterSave } = revisionManager
@@ -76,13 +78,13 @@ export function useEditorShellState<
   })
 
   // --- LS draft hooks -------------------------------------------------------
-  const { loadedDraft: loadedLocalDraft, clearDraft: clearLocalDraft } = useLocalDraftHook({
+  const { loadedDraft: loadedLocalDraft, clearDraft: clearLocalDraft } = useLocalDraft(localDraftConfig, {
     entityId: isEditing ? detail.entity.id : null,
     clientRevisionToken: expectedToken,
     body,
     disabled: !isEditing,
   })
-  const createDraft = useCreateDraftHook({ body, meta })
+  const createDraft = useCreateDraft(createDraftConfig, { body, meta })
 
   // --- Banner (post-save preview link) -------------------------------------
   const pendingActionRef = useRef<{ kind: 'draft' | 'published'; remaining: number } | null>(null)
@@ -133,18 +135,25 @@ export function useEditorShellState<
     localSavedAt: number
   } | null>(null)
   const [conflictResolved, setConflictResolved] = useState(false)
-  useEffect(() => {
-    if (conflictResolved) {
-      return
+  const [lastConflictCheck, setLastConflictCheck] = useState({
+    loadedLocalDraft,
+    initialBody,
+    conflictResolved,
+  })
+  if (
+    lastConflictCheck.loadedLocalDraft !== loadedLocalDraft ||
+    lastConflictCheck.initialBody !== initialBody ||
+    lastConflictCheck.conflictResolved !== conflictResolved
+  ) {
+    setLastConflictCheck({ loadedLocalDraft, initialBody, conflictResolved })
+    if (
+      !conflictResolved &&
+      loadedLocalDraft !== null &&
+      !arePortableTextBodiesEquivalent(loadedLocalDraft.body, initialBody)
+    ) {
+      setConflict({ localBody: loadedLocalDraft.body, localSavedAt: loadedLocalDraft.savedAt })
     }
-    if (loadedLocalDraft === null) {
-      return
-    }
-    if (arePortableTextBodiesEquivalent(loadedLocalDraft.body, initialBody)) {
-      return
-    }
-    setConflict({ localBody: loadedLocalDraft.body, localSavedAt: loadedLocalDraft.savedAt })
-  }, [loadedLocalDraft, initialBody, conflictResolved])
+  }
 
   // --- Save reducers -------------------------------------------------------
   const onMetaSaved = useCallback(
@@ -237,7 +246,8 @@ export function useEditorShellState<
     setStatus,
     setMeta,
     setServerPublishedAtIso: metaState.setServerPublishedAtIso,
-    lastSavedBodyRef,
+    lastSavedBody,
+    markBodySaved,
     pendingActionRef,
     createDraft,
   })
@@ -256,8 +266,8 @@ export function useEditorShellState<
     if (publishState.kind === 'draft-ahead') {
       return true
     }
-    return !arePortableTextBodiesEquivalent(body, lastSavedBodyRef.current)
-  }, [isEditing, body, publishState, lastSavedBodyRef])
+    return !arePortableTextBodiesEquivalent(body, lastSavedBody)
+  }, [isEditing, body, publishState, lastSavedBody])
 
   const sidebarPublishStatus = useMemo<SidebarPublishStatus | null>(
     () => deriveSidebarPublishStatus({ isEditing, publishState, publishedAt: meta.publishedAt }),
@@ -319,8 +329,8 @@ export function useEditorShellState<
   const canPersistMeta = meta.title.trim() !== ''
   const canPublish = isEditing && publishState.kind !== 'published-current'
   const sidebarRevisionSummary = deriveSidebarRevisionSummary({ isEditing, publishState })
-  const isBodyDirty = !arePortableTextBodiesEquivalent(body, lastSavedBodyRef.current)
-  const isMetaDirty = !metaDraftsEqual(meta, lastPersistedMetaRef.current)
+  const isBodyDirty = !arePortableTextBodiesEquivalent(body, lastSavedBody)
+  const isMetaDirty = !metaDraftsEqual(meta, lastPersistedMeta)
   const sidebarSaveStatus = deriveSidebarSaveStatus({ status, isEditing, isBodyDirty, isMetaDirty, displaySaveAtMs })
 
   return {

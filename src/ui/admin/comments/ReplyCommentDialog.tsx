@@ -1,6 +1,6 @@
 import { useMutation } from '@tanstack/react-query'
 import { SendIcon, XIcon } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { toast } from 'sonner'
 
 import type { CommentBody } from '@/shared/pt/comment-schema'
@@ -36,22 +36,17 @@ export function ReplyCommentDialog({ comment, authorName, authorEmail, onClose, 
       onReplied()
     },
   })
-  // Reply body is PortableText, not plain text — the public reply form
-  // posts the same shape, and the API perimeter validates against
-  // `commentBodySchema`. Keeping the admin reply on the same editor
-  // means the admin sees a live preview of badges / code / math /
-  // footnotes exactly as a visitor would author them.
   const [body, setBody] = useState<CommentBody>(EMPTY_COMMENT_BODY)
   const [bodyKey, setBodyKey] = useState(0)
-
-  useEffect(() => {
-    // Reset the editor body whenever the dialog opens for a new
-    // comment, or closes. Bumping `bodyKey` forces `CommentBodyEditor`
-    // to remount its Tiptap instance so the previous reply doesn't
-    // leak into the next one.
+  const [lastCommentId, setLastCommentId] = useState(comment?.id)
+  // Reset the editor body whenever the dialog opens for a new comment, or
+  // closes. Bumping `bodyKey` forces `CommentBodyEditor` to remount its
+  // Tiptap instance so the previous reply doesn't leak into the next one.
+  if (comment?.id !== lastCommentId) {
+    setLastCommentId(comment?.id)
     setBody(EMPTY_COMMENT_BODY)
     setBodyKey((k) => k + 1)
-  }, [comment?.id])
+  }
 
   const open = comment !== null
   const submitting = mutation.isPending

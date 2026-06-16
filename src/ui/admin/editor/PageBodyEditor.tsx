@@ -16,6 +16,7 @@ import { useMediumZoom } from '@/client/hooks/use-medium-zoom'
 import { bodyToPmDoc } from '@/shared/pt/bridge/pt-to-pm'
 import { stripFootnoteDefinitionsForEditor } from '@/shared/pt/footnote-merge'
 import { validatePortableTextBody } from '@/shared/pt/utils'
+import { setEditorAction } from '@/ui/admin/editor/editor-actions-setter'
 import { FootnoteEditorDialog } from '@/ui/admin/editor/FootnoteEditorDialog'
 import { ImageLibraryPicker } from '@/ui/admin/editor/pickers/ImageLibraryPicker'
 import { MusicPickerDialog } from '@/ui/admin/editor/pickers/MusicPickerDialog'
@@ -90,7 +91,9 @@ export function PageBodyEditor({
   floatingActions,
 }: PageBodyEditorProps) {
   const onBodyChangeRef = useRef(onBodyChange)
-  onBodyChangeRef.current = onBodyChange
+  useEffect(() => {
+    onBodyChangeRef.current = onBodyChange
+  })
 
   const editorZoomContainerRef = useRef<HTMLDivElement>(null)
   useMediumZoom(editorZoomContainerRef)
@@ -147,7 +150,9 @@ export function PageBodyEditor({
   })
 
   const footnotes = useEditorFootnotes(editor)
-  openFootnoteEditDialogRef.current = footnotes.openEditDialog
+  useEffect(() => {
+    openFootnoteEditDialogRef.current = footnotes.openEditDialog
+  })
 
   const confirmFootnoteDialog = useCallback(
     (plainText: string) => {
@@ -209,13 +214,16 @@ export function PageBodyEditor({
     if (actions === undefined) {
       return
     }
-    actions.openImagePicker = () => pickers.setImagePickerOpen(true)
-    actions.openMusicPicker = () => pickers.setMusicPickerOpen(true)
-    actions.openFootnoteDialog = () => footnotes.openInsertDialog()
+    const openImagePicker = () => pickers.setImagePickerOpen(true)
+    const openMusicPicker = () => pickers.setMusicPickerOpen(true)
+    const openFootnoteDialog = () => footnotes.openInsertDialog()
+    setEditorAction(actions, 'openImagePicker', openImagePicker)
+    setEditorAction(actions, 'openMusicPicker', openMusicPicker)
+    setEditorAction(actions, 'openFootnoteDialog', openFootnoteDialog)
     return () => {
-      actions.openImagePicker = undefined
-      actions.openMusicPicker = undefined
-      actions.openFootnoteDialog = undefined
+      setEditorAction(actions, 'openImagePicker', undefined)
+      setEditorAction(actions, 'openMusicPicker', undefined)
+      setEditorAction(actions, 'openFootnoteDialog', undefined)
     }
   }, [editor, footnotes, pickers])
 
@@ -224,9 +232,23 @@ export function PageBodyEditor({
   const inlineToolbarRef = useRef<HTMLDivElement>(null)
   const [showFloatingToolbar, setShowFloatingToolbar] = useState(false)
 
-  useEffect(() => {
+  const [lastFloatInputs, setLastFloatInputs] = useState({
+    editor,
+    livePreviewOpen,
+    bodyKey,
+  })
+  if (
+    lastFloatInputs.editor !== editor ||
+    lastFloatInputs.livePreviewOpen !== livePreviewOpen ||
+    lastFloatInputs.bodyKey !== bodyKey
+  ) {
+    setLastFloatInputs({ editor, livePreviewOpen, bodyKey })
     if (editor === null || livePreviewOpen) {
       setShowFloatingToolbar(false)
+    }
+  }
+  useEffect(() => {
+    if (editor === null || livePreviewOpen) {
       return
     }
     const target = inlineToolbarRef.current

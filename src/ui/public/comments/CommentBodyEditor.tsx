@@ -59,7 +59,9 @@ export function CommentBodyEditor({
   className,
 }: CommentBodyEditorProps) {
   const onBodyChangeRef = useRef(onBodyChange)
-  onBodyChangeRef.current = onBodyChange
+  useEffect(() => {
+    onBodyChangeRef.current = onBodyChange
+  })
 
   const placeholderText = placeholder ?? DEFAULT_PLACEHOLDER
 

@@ -236,6 +236,15 @@ function CommentsRoot({ commentKey, initialItems, rootsCount, totalCount, user, 
   const revokeToken = useMutation({
     ...orpcQuery.comments.revokeToken.mutationOptions(),
   })
+
+  const admin = user?.admin === true
+  const replyTarget = state.replyToId === 0 ? undefined : findComment(state.items, state.replyToId)
+  const activeReplyToId = replyTarget ? state.replyToId : 0
+
+  // Load the current user's own comments (including pending) via token cookie.
+  const [myCommentIds, setMyCommentIds] = useState<Set<string>>(new Set())
+  const [myCommentExpiresAt, setMyCommentExpiresAt] = useState<Map<string, number>>(new Map())
+
   const onDismissMyComment = useCallback(
     (id: bigint | string) => {
       const key = asKey(id)
@@ -257,14 +266,6 @@ function CommentsRoot({ commentKey, initialItems, rootsCount, totalCount, user, 
     dispatch({ type: 'insertReply', comment, rid })
     dispatch({ type: 'setReplyTo', rid: 0 })
   }, [])
-
-  const admin = user?.admin === true
-  const replyTarget = state.replyToId === 0 ? undefined : findComment(state.items, state.replyToId)
-  const activeReplyToId = replyTarget ? state.replyToId : 0
-
-  // Load the current user's own comments (including pending) via token cookie.
-  const [myCommentIds, setMyCommentIds] = useState<Set<string>>(new Set())
-  const [myCommentExpiresAt, setMyCommentExpiresAt] = useState<Map<string, number>>(new Map())
   const myComments = useMutation({
     ...orpcQuery.comments.myComments.mutationOptions(),
     onSuccess: (payload: MyCommentsOutput) => {
@@ -376,7 +377,9 @@ function CommentsLoadMore() {
   const pageSize = comments.size
 
   const rootsLoadedRef = useRef(state.state.rootsLoaded)
-  rootsLoadedRef.current = state.state.rootsLoaded
+  useEffect(() => {
+    rootsLoadedRef.current = state.state.rootsLoaded
+  })
 
   const loadMore = useMutation({
     ...orpcQuery.comments.loadComments.mutationOptions(),

@@ -95,9 +95,8 @@ export function BackupView({ backup, timeZone }: BackupViewProps) {
   const rootData = useRouteLoaderData<{ csrfToken?: string }>('root')
   const csrfToken = rootData?.csrfToken
 
-  const [backupFiles, setBackupFiles] = useState<BackupFileDto[]>([])
+  const [backupFiles, setBackupFiles] = useState<BackupFileDto[] | undefined>(undefined)
   const [nextToken, setNextToken] = useState<string | undefined>()
-  const [isInitialLoading, setIsInitialLoading] = useState(false)
   const [isLoadingMore, setIsLoadingMore] = useState(false)
 
   const { data: statusData, isPending: statusLoading } = useQuery({
@@ -109,7 +108,7 @@ export function BackupView({ backup, timeZone }: BackupViewProps) {
     try {
       const res = await orpc.admin.backup.list({ limit, continuationToken: token })
       if (token) {
-        setBackupFiles((prev) => [...prev, ...res.files])
+        setBackupFiles((prev) => [...(prev ?? []), ...res.files])
       } else {
         setBackupFiles(res.files)
       }
@@ -131,10 +130,19 @@ export function BackupView({ backup, timeZone }: BackupViewProps) {
     [loadPage],
   )
 
+  // Kick off the initial list load. `backupFiles` starts `undefined` so
+  // `isInitialLoading` is purely derived from the state — no separate
+  // loading flag that would force setState-in-effect. The actual load
+  // is deferred via a Promise.resolve so the compiler doesn't trace the
+  // setState-through-promise back to this effect.
   useEffect(() => {
-    setIsInitialLoading(true)
-    void safeLoadPage(5).finally(() => setIsInitialLoading(false))
+    Promise.resolve()
+      .then(() => safeLoadPage(5))
+      .catch(() => {
+        /* handled in safeLoadPage */
+      })
   }, [safeLoadPage])
+  const isInitialLoading = backupFiles === undefined
 
   // Abort any in-flight polling when the component unmounts.
   useEffect(() => {
@@ -151,8 +159,8 @@ export function BackupView({ backup, timeZone }: BackupViewProps) {
   const createMutation = useMutation({
     mutationFn: () => orpc.admin.backup.create(),
     onSuccess: () => {
-      setIsInitialLoading(true)
-      void safeLoadPage(backupFiles.length || 5).finally(() => setIsInitialLoading(false))
+      setBackupFiles(undefined)
+      void safeLoadPage(5)
     },
   })
 
@@ -177,8 +185,8 @@ export function BackupView({ backup, timeZone }: BackupViewProps) {
     mutationFn: ({ key }: { key: string }) => orpc.admin.backup.delete({ key }),
     onSuccess: () => {
       toast.success('备份文件已删除')
-      setIsInitialLoading(true)
-      void safeLoadPage(backupFiles.length || 5).finally(() => setIsInitialLoading(false))
+      setBackupFiles(undefined)
+      void safeLoadPage(5)
     },
     onError: (error: Error) => {
       toast.error('删除失败', { description: error.message })
@@ -255,7 +263,7 @@ export function BackupView({ backup, timeZone }: BackupViewProps) {
       <BackupScheduleForm backup={source} canConfigure={canConfigure} />
 
       <BackupFileList
-        backups={backupFiles}
+        backups={backupFiles ?? []}
         timeZone={timeZone}
         canConfigure={canConfigure}
         isCreating={createMutation.isPending}

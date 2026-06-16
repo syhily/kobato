@@ -1,4 +1,4 @@
-import { useEffect, useReducer, useRef } from 'react'
+import { useEffect, useReducer } from 'react'
 import { useLocation } from 'react-router'
 
 import type { AdminPostDto } from '@/shared/types/posts'
@@ -142,35 +142,26 @@ export function usePostsController() {
     sortOrder: 'desc',
   })
 
-  const statusRef = useRef(state.status)
-  statusRef.current = state.status
-
-  const tagRef = useRef(state.tag)
-  tagRef.current = state.tag
-
-  const categoryRef = useRef(state.category)
-  categoryRef.current = state.category
-
   useEffect(() => {
     const urlStatus = getInitialStatusFromSearch(search)
-    if (urlStatus !== statusRef.current) {
+    if (urlStatus !== state.status) {
       dispatch({ type: 'setStatus', value: urlStatus })
     }
-  }, [search])
+  }, [search, state.status])
 
   useEffect(() => {
     const urlTag = getInitialTagFromSearch(search)
-    if (urlTag !== tagRef.current) {
+    if (urlTag !== state.tag) {
       dispatch({ type: 'setTag', value: urlTag })
     }
-  }, [search])
+  }, [search, state.tag])
 
   useEffect(() => {
     const urlCategory = getInitialCategoryFromSearch(search)
-    if (urlCategory !== categoryRef.current) {
+    if (urlCategory !== state.category) {
       dispatch({ type: 'setCategory', value: urlCategory })
     }
-  }, [search])
+  }, [search, state.category])
 
   return { state, dispatch }
 }

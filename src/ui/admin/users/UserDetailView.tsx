@@ -2,7 +2,7 @@ import type { NavigateFunction } from 'react-router'
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { ArrowLeftIcon } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { Link } from 'react-router'
 
 import type { AdminCommentWire as AdminComment } from '@/shared/types/comments'
@@ -65,7 +65,9 @@ export function UserDetailView({ userId, navigate, passkeyEnabled }: UserDetailV
   const user = userQuery.data?.user ?? null
   const comments: AdminComment[] = commentsQuery.data?.comments ?? []
 
-  useEffect(() => {
+  const [lastUser, setLastUser] = useState(user)
+  if (user !== lastUser) {
+    setLastUser(user)
     if (user) {
       setName(user.name)
       setEmail(user.email)
@@ -75,7 +77,7 @@ export function UserDetailView({ userId, navigate, passkeyEnabled }: UserDetailV
       setUseTextOverride(user.badgeTextColor !== null)
       setBadgeTextColor(user.badgeTextColor ?? DEFAULT_BADGE_TEXT_COLOR)
     }
-  }, [user])
+  }
 
   const updateMutation = useMutation({
     mutationFn: (vars: Record<string, string | null> & { userId: string }) => {

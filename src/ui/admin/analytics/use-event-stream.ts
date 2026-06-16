@@ -41,7 +41,6 @@ export function useEventStream({ bufferSize = 100, enabled = true }: UseEventStr
     }
     const source = new EventSource(url.toString(), { withCredentials: true })
 
-    setState('connecting')
     source.onopen = () => setState('live')
     source.onerror = () => setState('lost')
 

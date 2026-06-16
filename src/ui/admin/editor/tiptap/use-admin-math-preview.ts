@@ -1,5 +1,5 @@
 import { useMutation } from '@tanstack/react-query'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 
 import { orpcQuery } from '@/client/api/orpc-query'
 
@@ -18,9 +18,9 @@ export function useAdminMathPreview(
   renderError: string | null
   showSpinner: boolean
 } {
-  const lastValidMathml = useRef('')
   const [previewMathml, setPreviewMathml] = useState('')
   const [renderError, setRenderError] = useState<string | null>(null)
+  const [lastValidHtml, setLastValidHtml] = useState('')
 
   const renderMath = useMutation({
     ...orpcQuery.admin.renders.math.mutationOptions(),
@@ -30,7 +30,6 @@ export function useAdminMathPreview(
         return
       }
       setRenderError(null)
-      lastValidMathml.current = result.mathml
       setPreviewMathml(result.mathml)
     },
     onError: () => {
@@ -38,11 +37,27 @@ export function useAdminMathPreview(
     },
   })
 
-  useEffect(() => {
+  // Clear preview when tex becomes empty, and track the last valid render
+  // for continuity. Both run as render-phase adjustments to avoid
+  // setState-in-effect cascades.
+  const [lastTex, setLastTex] = useState(tex)
+  if (tex !== lastTex) {
+    setLastTex(tex)
     if (tex.trim() === '') {
-      lastValidMathml.current = ''
       setPreviewMathml('')
       setRenderError(null)
+    }
+  }
+  const [lastPreviewMathml, setLastPreviewMathml] = useState(previewMathml)
+  if (previewMathml !== lastPreviewMathml) {
+    setLastPreviewMathml(previewMathml)
+    if (previewMathml !== '') {
+      setLastValidHtml(previewMathml)
+    }
+  }
+
+  useEffect(() => {
+    if (tex.trim() === '') {
       return
     }
     const timer = setTimeout(() => {
@@ -55,7 +70,7 @@ export function useAdminMathPreview(
   }, [tex, display, renderMath.mutate])
 
   const showSpinner = previewMathml === '' && renderMath.isPending
-  const previewHtml = previewMathml !== '' ? previewMathml : lastValidMathml.current
+  const previewHtml = previewMathml !== '' ? previewMathml : lastValidHtml
 
   return { previewHtml, renderError, showSpinner }
 }

@@ -3,7 +3,7 @@ import type { Editor, Range } from '@tiptap/core'
 import { Extension } from '@tiptap/core'
 import { ReactRenderer } from '@tiptap/react'
 import Suggestion, { type SuggestionProps, type SuggestionKeyDownProps } from '@tiptap/suggestion'
-import { useEffect, useImperativeHandle, useLayoutEffect, useRef, useState, type Ref } from 'react'
+import { useEffect, useImperativeHandle, useRef, useState, type Ref } from 'react'
 import { createPortal } from 'react-dom'
 
 import { filterSlashCommands, SLASH_COMMANDS, type SlashCommand } from '@/ui/admin/editor/tiptap/slash-commands'
@@ -106,18 +106,24 @@ function SlashMenuList(props: SlashMenuListProps) {
   const [activeIndex, setActiveIndex] = useState(0)
   const itemsRef = useRef<readonly SlashCommand[]>(items)
   const activeIndexRef = useRef(activeIndex)
-  itemsRef.current = items
-  activeIndexRef.current = activeIndex
   useEffect(() => {
+    itemsRef.current = items
+    activeIndexRef.current = activeIndex
+  })
+  const [lastItems, setLastItems] = useState(items)
+  if (items !== lastItems) {
+    setLastItems(items)
     if (activeIndex >= items.length && items.length > 0) {
       setActiveIndex(0)
     }
-  }, [items, activeIndex])
+  }
 
-  const [rect, setRect] = useState<DOMRect | null>(null)
-  useLayoutEffect(() => {
+  const [rect, setRect] = useState<DOMRect | null>(() => (clientRect ? clientRect() : null))
+  const [lastRectKey, setLastRectKey] = useState({ clientRect, query })
+  if (lastRectKey.clientRect !== clientRect || lastRectKey.query !== query) {
+    setLastRectKey({ clientRect, query })
     setRect(clientRect ? clientRect() : null)
-  }, [clientRect, query])
+  }
 
   useImperativeHandle(ref, () => ({
     onKeyDown: ({ event }) => {

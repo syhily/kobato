@@ -39,10 +39,8 @@ export interface LoginFormProps {
 }
 
 export function useWebAuthnSupported(): boolean {
-  const [supported, setSupported] = useState(false)
-  useEffect(() => {
-    setSupported(typeof window !== 'undefined' && 'PublicKeyCredential' in window)
-  }, [])
+  // Lazy initializer runs once on mount; avoids setState-in-effect.
+  const [supported] = useState(() => typeof window !== 'undefined' && 'PublicKeyCredential' in window)
   return supported
 }
 
@@ -313,11 +311,13 @@ export function OtpForm({ email, sentAt, isSubmitting, csrfToken, actionData }: 
     return () => clearInterval(id)
   }, [shouldTick])
 
-  useEffect(() => {
+  const [lastActionData, setLastActionData] = useState(actionData)
+  if (actionData !== lastActionData) {
+    setLastActionData(actionData)
     if (actionData?.message === '验证码已重新发送。') {
       setCooldown(RESEND_COOLDOWN_SECONDS)
     }
-  }, [actionData])
+  }
 
   return (
     <div className="flex w-full flex-col gap-6">

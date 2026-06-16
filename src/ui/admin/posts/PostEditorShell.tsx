@@ -3,8 +3,6 @@ import type { NavigateFunction } from 'react-router'
 import type { AdminPostDetailDto, AdminPostDto, UpsertPostMetaInput } from '@/shared/types/posts'
 
 import { orpc } from '@/client/api/client'
-import { useCreatePostDraft } from '@/client/hooks/use-create-post-draft'
-import { usePostLocalDraft } from '@/client/hooks/use-post-local-draft'
 import { CreateModeBanner } from '@/ui/admin/editor-shared/CreateModeBanner'
 import { TitleSlugStrip } from '@/ui/admin/editor-shared/TitleSlugStrip'
 import { ActionBanner } from '@/ui/admin/editor-shell/ActionBanner'
@@ -27,6 +25,21 @@ export interface PostEditorShellProps {
   mode: 'create' | 'edit'
   detail?: AdminPostDetailDto
   navigate: NavigateFunction
+}
+
+const POST_LOCAL_DRAFT_CONFIG = {
+  keyPrefix: 'cms-post-draft:',
+  broadcastName: 'cms-post-draft',
+  editType: 'post-edit' as const,
+}
+
+const POST_CREATE_DRAFT_CONFIG = {
+  keyPrefix: 'cms-post-draft:new:',
+  sessionKey: 'cms-post-draft:new:session',
+  broadcastName: 'cms-post-draft',
+  createType: 'post-create' as const,
+  editType: 'post-edit' as const,
+  editKeyPrefix: 'cms-post-draft:',
 }
 
 function buildPostUpsertPayload({
@@ -76,9 +89,8 @@ export function PostEditorShell({ mode, detail, navigate }: PostEditorShellProps
     emptyMeta: EMPTY_POST_META_DRAFT,
     metaDraftFromEntity: metaDraftFromPost,
     metaDraftsEqual,
-    useLocalDraftHook: ({ entityId, clientRevisionToken, body, disabled }) =>
-      usePostLocalDraft({ postId: entityId, clientRevisionToken, body, disabled }),
-    useCreateDraftHook: ({ body, meta }) => useCreatePostDraft({ body, meta }),
+    localDraftConfig: POST_LOCAL_DRAFT_CONFIG,
+    createDraftConfig: POST_CREATE_DRAFT_CONFIG,
     upsertMetaFn: async (input) => {
       const result = await orpc.admin.posts.upsertMeta(input)
       return result.post

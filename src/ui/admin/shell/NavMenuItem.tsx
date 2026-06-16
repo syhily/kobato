@@ -1,5 +1,5 @@
 import { ChevronRightIcon } from 'lucide-react'
-import { type ComponentProps, type ReactNode, createContext, use, useEffect, useMemo, useState } from 'react'
+import { type ComponentProps, type ReactNode, createContext, use, useMemo, useState } from 'react'
 import { Link, matchPath, useLocation } from 'react-router'
 
 import { useIsActiveLink } from '@/ui/admin/shell/use-is-active-link'
@@ -109,12 +109,13 @@ interface NavMenuCollapsibleProps {
 function NavMenuCollapsible({ children, id, paths = [] }: NavMenuCollapsibleProps) {
   const isActive = useMatchAny(paths)
   const [expanded, setExpanded] = useState(isActive)
-
-  useEffect(() => {
+  const [wasActive, setWasActive] = useState(isActive)
+  if (isActive !== wasActive) {
+    setWasActive(isActive)
     if (isActive) {
       setExpanded(true)
     }
-  }, [isActive])
+  }
 
   const value = useMemo(() => ({ expanded, id, onExpandedChange: setExpanded }), [expanded, id])
   return <CollapsibleContext value={value}>{children}</CollapsibleContext>

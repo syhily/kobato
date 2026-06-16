@@ -64,10 +64,11 @@ function CollageBackground({ allCoverUrls }: { allCoverUrls: string[] }) {
   const [cells, setCells] = useState<GridCell[]>([])
 
   const urlsRef = useRef(allCoverUrls)
-  urlsRef.current = allCoverUrls
-
   const gridRef = useRef(grid)
-  gridRef.current = grid
+  useEffect(() => {
+    urlsRef.current = allCoverUrls
+    gridRef.current = grid
+  })
 
   // Track previous urls to avoid re-initialising when only the array reference changes
   const prevUrlsRef = useRef<string[]>([])

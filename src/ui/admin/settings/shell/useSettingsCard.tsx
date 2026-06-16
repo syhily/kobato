@@ -10,6 +10,7 @@ import {
   type Resolver,
   type UseFormReturn,
   useForm,
+  useWatch,
 } from 'react-hook-form'
 
 import type { SettingsSection } from '@/shared/config/sections'
@@ -97,17 +98,7 @@ export function useSettingsCard<TSource extends object, TState extends FieldValu
   const [optimisticSource, setOptimisticSource] = useState<TSource | null>(null)
   const { commit, isPending, status } = useSettingsMutation()
 
-  const toStateRef = useRef(toState)
-  const fromStateRef = useRef(fromState)
-  const sourceRef = useRef(source)
-
-  useEffect(() => {
-    toStateRef.current = toState
-    fromStateRef.current = fromState
-    sourceRef.current = source
-  })
-
-  const initialValues = useMemo(() => toStateRef.current(source) as DefaultValues<TState>, [source])
+  const initialValues = useMemo(() => toState(source) as DefaultValues<TState>, [source, toState])
 
   const resolver = useMemo<Resolver<TState> | undefined>(() => {
     if (!schema) {
@@ -129,23 +120,21 @@ export function useSettingsCard<TSource extends object, TState extends FieldValu
   })
   const { reset, handleSubmit, getValues } = form
 
-  // Re-seed form when source changes (after a save in another card, after revert, etc.)
-  const [lastSourceSnapshot, setLastSourceSnapshot] = useState<TSource>(source)
-  useEffect(() => {
-    if (source !== lastSourceSnapshot) {
-      setLastSourceSnapshot(source)
-      reset(initialValues)
-      lastCommittedRef.current = initialValues
-      if (optimisticSource !== null) {
-        setOptimisticSource(null)
-      }
-    }
-  }, [source, lastSourceSnapshot, initialValues, reset, optimisticSource])
-
   // --- Auto-save ---
   const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const isSavingRef = useRef(false)
-  const lastCommittedRef = useRef<DefaultValues<TState>>(initialValues)
+  const [lastCommitted, setLastCommitted] = useState<DefaultValues<TState>>(initialValues)
+
+  // Re-seed form when source changes (after a save in another card, after revert, etc.)
+  const [lastSourceSnapshot, setLastSourceSnapshot] = useState<TSource>(source)
+  if (source !== lastSourceSnapshot) {
+    setLastSourceSnapshot(source)
+    reset(initialValues)
+    setLastCommitted(initialValues)
+    if (optimisticSource !== null) {
+      setOptimisticSource(null)
+    }
+  }
 
   useEffect(() => {
     isSavingRef.current = isPending
@@ -154,11 +143,10 @@ export function useSettingsCard<TSource extends object, TState extends FieldValu
   const performSave = useCallback(() => {
     void handleSubmit(
       async (values) => {
-        const patchPayload = fromStateRef.current(values)
-        const payload: TSource =
-          mergeMode === 'patch' ? deepMerge(sourceRef.current, patchPayload) : (patchPayload as TSource)
+        const patchPayload = fromState(values)
+        const payload: TSource = mergeMode === 'patch' ? deepMerge(source, patchPayload) : (patchPayload as TSource)
         setOptimisticSource(payload)
-        lastCommittedRef.current = values as DefaultValues<TState>
+        setLastCommitted(values as DefaultValues<TState>)
         const ok = await commit(section, payload as Record<string, unknown>)
         if (!ok) {
           setOptimisticSource(null)
@@ -168,15 +156,15 @@ export function useSettingsCard<TSource extends object, TState extends FieldValu
         log.debug('Auto-save validation failed, skipping', { errors })
       },
     )()
-  }, [handleSubmit, mergeMode, section, commit])
+  }, [handleSubmit, mergeMode, section, commit, fromState, source])
 
-  // Debounced auto-save triggered by form changes
-  const watchedValues = form.watch()
+  // Debounced auto-save triggered by form changes. useWatch returns the
+  // current values reactively without the function-call API the React
+  // Compiler can't analyze.
+  const watchedValues = useWatch({ control: form.control })
   useEffect(() => {
-    // Compare against last committed values instead of formState.isDirty
-    // to avoid needing reset() which causes Switch UI flicker.
     const current = getValues()
-    if (JSON.stringify(current) === JSON.stringify(lastCommittedRef.current)) {
+    if (JSON.stringify(current) === JSON.stringify(lastCommitted)) {
       return
     }
     if (isSavingRef.current) {
@@ -193,7 +181,7 @@ export function useSettingsCard<TSource extends object, TState extends FieldValu
         clearTimeout(debounceTimerRef.current)
       }
     }
-  }, [watchedValues, getValues, performSave, debounceMs])
+  }, [watchedValues, getValues, performSave, debounceMs, lastCommitted])
 
   // Immediate save for switches — clears debounce and fires now
   const save = useCallback(() => {

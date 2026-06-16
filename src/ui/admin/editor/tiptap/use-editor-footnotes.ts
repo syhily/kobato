@@ -1,6 +1,6 @@
 import type { Editor, JSONContent } from '@tiptap/core'
 
-import { useCallback, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 
 import type { PmDoc } from '@/shared/pt/bridge/types'
 import type { FootnoteDefinitionBlock, PortableTextBody } from '@/shared/pt/schema'
@@ -127,7 +127,9 @@ function applyFootnoteRenumberTransaction(instance: Editor, syncedBody: Portable
 export function useEditorFootnotes(editor: Editor | null): UseEditorFootnotesResult {
   const [footnoteDefs, setFootnoteDefs] = useState<FootnoteDefinitionBlock[]>([])
   const footnoteDefsRef = useRef(footnoteDefs)
-  footnoteDefsRef.current = footnoteDefs
+  useEffect(() => {
+    footnoteDefsRef.current = footnoteDefs
+  })
 
   const editorFootnoteSigRef = useRef<string | null>(null)
   const isSyncingFootnotesRef = useRef(false)
@@ -135,10 +137,10 @@ export function useEditorFootnotes(editor: Editor | null): UseEditorFootnotesRes
   const [dialogOpen, setDialogOpen] = useState(false)
   const [dialogMode, setDialogMode] = useState<'create' | 'edit'>('create')
   const [dialogInitialText, setDialogInitialText] = useState('')
-  const footnoteEditTargetKeyRef = useRef<string | null>(null)
+  const [footnoteEditTargetKey, setFootnoteEditTargetKey] = useState<string | null>(null)
 
   const openInsertDialog = useCallback(() => {
-    footnoteEditTargetKeyRef.current = null
+    setFootnoteEditTargetKey(null)
     setDialogMode('create')
     setDialogInitialText('')
     setDialogOpen(true)
@@ -146,7 +148,7 @@ export function useEditorFootnotes(editor: Editor | null): UseEditorFootnotesRes
 
   const openEditDialog = useCallback((targetKey: string) => {
     const def = footnoteDefsRef.current.find((d) => d._key === targetKey)
-    footnoteEditTargetKeyRef.current = targetKey
+    setFootnoteEditTargetKey(targetKey)
     setDialogMode('edit')
     setDialogInitialText(def !== undefined ? footnoteChildrenToPlainText(def.children) : '')
     setDialogOpen(true)
@@ -187,7 +189,6 @@ export function useEditorFootnotes(editor: Editor | null): UseEditorFootnotesRes
       const nextDefs = extractFootnoteDefinitionBlocks(merged)
       if (!footnoteDefsEqual(nextDefs, footnoteDefsRef.current)) {
         setFootnoteDefs(nextDefs)
-        footnoteDefsRef.current = nextDefs
       }
       syncFootnotesToEditor(instance, merged)
       return merged
@@ -200,14 +201,13 @@ export function useEditorFootnotes(editor: Editor | null): UseEditorFootnotesRes
       if (editor === null) {
         return null
       }
-      const editKey = footnoteEditTargetKeyRef.current
+      const editKey = footnoteEditTargetKey
       if (editKey !== null) {
         const nextDefs = footnoteDefsRef.current.map((d) =>
           d._key === editKey ? { ...d, children: plainTextToFootnoteChildren(plainText) } : d,
         )
         setFootnoteDefs(nextDefs)
-        footnoteDefsRef.current = nextDefs
-        footnoteEditTargetKeyRef.current = null
+        setFootnoteEditTargetKey(null)
         const merged = mergeProseBodyWithFootnoteDefinitions(pmDocToBody(editor.getJSON() as PmDoc), nextDefs)
         syncFootnotesToEditor(editor, merged)
         return merged
@@ -226,13 +226,12 @@ export function useEditorFootnotes(editor: Editor | null): UseEditorFootnotesRes
       }
       const nextDefs = [...footnoteDefsRef.current, newDef]
       setFootnoteDefs(nextDefs)
-      footnoteDefsRef.current = nextDefs
       insertFootnoteReferenceAtCaret(editor, { defKey, refMarkKey, index: nextIndex })
       const merged = mergeProseBodyWithFootnoteDefinitions(pmDocToBody(editor.getJSON() as PmDoc), nextDefs)
       syncFootnotesToEditor(editor, merged)
       return merged
     },
-    [editor, syncFootnotesToEditor],
+    [editor, syncFootnotesToEditor, footnoteEditTargetKey],
   )
 
   const removeFootnote = useCallback(
@@ -244,7 +243,6 @@ export function useEditorFootnotes(editor: Editor | null): UseEditorFootnotesRes
       // correct state and avoids a second sync pass.
       const nextDefs = footnoteDefsRef.current.filter((d) => d._key !== targetKey)
       setFootnoteDefs(nextDefs)
-      footnoteDefsRef.current = nextDefs
 
       removeFootnoteReferencesToTargetKey(editor, targetKey)
       const merged = mergeProseBodyWithFootnoteDefinitions(pmDocToBody(editor.getJSON() as PmDoc), nextDefs)
@@ -272,7 +270,6 @@ export function useEditorFootnotes(editor: Editor | null): UseEditorFootnotesRes
       const mergedCanon = mergeProseBodyWithFootnoteDefinitions(stripFootnoteDefinitionsForEditor(body), defs)
       const syncedDefs = extractFootnoteDefinitionBlocks(mergedCanon)
       setFootnoteDefs(syncedDefs)
-      footnoteDefsRef.current = syncedDefs
       editorFootnoteSigRef.current = footnoteSyncSignature(mergedCanon)
       if (editor) {
         editor.commands.setContent(bodyToPmDoc(stripFootnoteDefinitionsForEditor(mergedCanon)) as JSONContent, {
@@ -289,7 +286,7 @@ export function useEditorFootnotes(editor: Editor | null): UseEditorFootnotesRes
     dialogOpen,
     dialogMode,
     dialogInitialText,
-    editTargetKey: footnoteEditTargetKeyRef.current,
+    editTargetKey: footnoteEditTargetKey,
     openInsertDialog,
     openEditDialog,
     setDialogOpen,

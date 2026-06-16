@@ -1,7 +1,7 @@
 import type { NavigateFunction } from 'react-router'
 
 import { useMutation } from '@tanstack/react-query'
-import { useCallback, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 
 import type { PortableTextBody } from '@/shared/pt/schema'
 import type {
@@ -63,7 +63,8 @@ export function useEditorShellPersist<
   setMeta: React.Dispatch<React.SetStateAction<TMeta>>
   setServerPublishedAtIso: React.Dispatch<React.SetStateAction<string | null>>
 
-  lastSavedBodyRef: React.RefObject<PortableTextBody>
+  lastSavedBody: PortableTextBody
+  markBodySaved: (savedBody: PortableTextBody) => void
   pendingActionRef: React.RefObject<{ kind: 'draft' | 'published'; remaining: number } | null>
   createDraft: { migrateToEditKey: (id: string, token: string, body: PortableTextBody) => void }
 }) {
@@ -91,7 +92,8 @@ export function useEditorShellPersist<
     setStatus,
     setMeta,
     setServerPublishedAtIso,
-    lastSavedBodyRef,
+    lastSavedBody,
+    markBodySaved,
     pendingActionRef,
     createDraft,
   } = args
@@ -137,7 +139,9 @@ export function useEditorShellPersist<
   // autosave flush always picks up the latest values without forcing
   // every keystroke to recreate the flush callback.
   const handleBodySavedRef = useRef<(payload: SaveBodyOutput) => void>(() => undefined)
-  handleBodySavedRef.current = onBodySaved
+  useEffect(() => {
+    handleBodySavedRef.current = onBodySaved
+  })
 
   const flushAutosave = useCallback(
     async (snapshot: PortableTextBody) => {
@@ -217,7 +221,7 @@ export function useEditorShellPersist<
     }
 
     createDraft.migrateToEditKey(savedEntity.id, draftResult.revision.clientRevisionToken, body)
-    lastSavedBodyRef.current = draftResult.revision.body
+    markBodySaved(draftResult.revision.body)
 
     setStatus({ kind: 'saved', at: new Date() })
     setIsCreating(false)
@@ -234,7 +238,7 @@ export function useEditorShellPersist<
     editPath,
     navigate,
     setStatus,
-    lastSavedBodyRef,
+    markBodySaved,
   ])
 
   const persistSave = useCallback(() => {
@@ -245,7 +249,7 @@ export function useEditorShellPersist<
     const pickerIso = localInputValueToIso(meta.publishedAt)
     const serverIsScheduled = serverPublishedAtIso !== null && (Date.parse(serverPublishedAtIso) || 0) > Date.now()
     const publishedAt = pickerIso !== null ? pickerIso : serverIsScheduled ? new Date().toISOString() : null
-    const bodyDiverged = !arePortableTextBodiesEquivalent(body, lastSavedBodyRef.current)
+    const bodyDiverged = !arePortableTextBodiesEquivalent(body, lastSavedBody)
     pendingActionRef.current = { kind: 'draft', remaining: bodyDiverged ? 2 : 1 }
     upsertMetaMutation.mutate(buildUpsertMetaPayload({ meta, id: detail.entity.id, publishedAt }))
     if (bodyDiverged) {
@@ -267,7 +271,7 @@ export function useEditorShellPersist<
     buildUpsertMetaPayload,
     setStatus,
     pendingActionRef,
-    lastSavedBodyRef,
+    lastSavedBody,
   ])
 
   const persistPublish = useCallback(() => {

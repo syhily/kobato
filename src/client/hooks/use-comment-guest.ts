@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useState } from 'react'
 
 import { isRecord } from '@/shared/utils/type-guards'
 
@@ -64,11 +64,9 @@ function removeProfile(): void {
 }
 
 export function useCommentGuest() {
-  const [profile, setProfileState] = useState<CommentGuestProfile | null>(null)
-
-  useEffect(() => {
-    setProfileState(readProfile())
-  }, [])
+  // Lazy initializer reads from localStorage exactly once on mount (client
+  // only — guarded inside readProfile) without a render+effect cycle.
+  const [profile, setProfileState] = useState<CommentGuestProfile | null>(() => readProfile())
 
   const saveProfile = useCallback((next: CommentGuestProfile) => {
     writeProfile(next)

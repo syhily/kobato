@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Play, Pause, Trash2, X, Copy, Pencil, Check, RotateCcw } from 'lucide-react'
 import { motion } from 'motion/react'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useState } from 'react'
 import { useParams, useNavigate } from 'react-router'
 import { toast } from 'sonner'
 
@@ -28,11 +28,13 @@ export function MusicDetailView() {
   const id = params.id ?? ''
 
   // Reset editing state when navigating between different songs
-  useEffect(() => {
+  const [lastId, setLastId] = useState(id)
+  if (id !== lastId) {
+    setLastId(id)
     setEditing(false)
     setConfirm(null)
     setCopied(false)
-  }, [id])
+  }
 
   const musicQuery = useQuery(
     orpcQuery.admin.music.get.queryOptions({

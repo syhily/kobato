@@ -54,17 +54,23 @@ export function ImageDetailDialog({
 }: ImageDetailDialogProps) {
   const [editingNote, setEditingNote] = useState(false)
   const [noteDraft, setNoteDraft] = useState('')
+  const [lastKey, setLastKey] = useState<{ open: boolean; imageId: string | null }>({
+    open,
+    imageId: image?.id ?? null,
+  })
   const inputRef = useRef<HTMLInputElement>(null)
 
-  useEffect(() => {
+  const nextKey = { open, imageId: image?.id ?? null }
+  if (nextKey.open !== lastKey.open || nextKey.imageId !== lastKey.imageId) {
+    setLastKey(nextKey)
     if (!open || image === null) {
       setEditingNote(false)
       setNoteDraft('')
-      return
+    } else {
+      setEditingNote(false)
+      setNoteDraft(image.note ?? '')
     }
-    setEditingNote(false)
-    setNoteDraft(image.note ?? '')
-  }, [open, image])
+  }
 
   useEffect(() => {
     if (editingNote) {

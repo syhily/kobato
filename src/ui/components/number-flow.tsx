@@ -1,13 +1,14 @@
-import { useRef } from 'react'
+import { useState } from 'react'
 
 import { cn } from '@/ui/lib/cn'
 import { useMediaQuery } from '@/ui/lib/use-media-query'
 
 function usePrevious<T>(value: T): T {
-  const ref = useRef<T>(value)
-  const prev = ref.current
-  ref.current = value
-  return prev
+  const [state, setState] = useState<{ current: T; previous: T } | null>(null)
+  if (state === null || state.current !== value) {
+    setState({ current: value, previous: state === null ? value : state.current })
+  }
+  return state === null ? value : state.previous
 }
 
 interface NumberFlowProps {

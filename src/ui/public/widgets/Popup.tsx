@@ -80,15 +80,12 @@ export function Popup({
   const dialogRef = useRef<HTMLDivElement | null>(null)
   const portalRef = useRef<HTMLDivElement | null>(null)
   const previouslyFocusedRef = useRef<HTMLElement | null>(null)
-  const [mounted, setMounted] = useState(false)
-
-  useEffect(() => {
-    if (!open) {
-      setMounted(false)
-      return
-    }
-    setMounted(true)
-  }, [open])
+  const [mounted, setMounted] = useState(open)
+  const [wasOpen, setWasOpen] = useState(open)
+  if (open !== wasOpen) {
+    setWasOpen(open)
+    setMounted(open)
+  }
 
   useEffect(() => {
     if (!open || !mounted) {

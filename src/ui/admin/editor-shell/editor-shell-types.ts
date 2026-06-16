@@ -1,5 +1,7 @@
 import type { NavigateFunction } from 'react-router'
 
+import type { CreateDraftConfig } from '@/client/hooks/use-create-draft'
+import type { LocalDraftConfig } from '@/client/hooks/use-local-draft'
 import type { PortableTextBody } from '@/shared/pt/schema'
 
 export type EditorShellStatus =
@@ -88,16 +90,8 @@ export interface UseEditorShellStateArgs<
   emptyMeta: TMeta
   metaDraftFromEntity: (entity: TEntity) => TMeta
   metaDraftsEqual: (a: TMeta, b: TMeta) => boolean
-  useLocalDraftHook: (input: {
-    entityId: string | null
-    clientRevisionToken: string | null
-    body: PortableTextBody
-    disabled: boolean
-  }) => { loadedDraft: { body: PortableTextBody; savedAt: number } | null; clearDraft: () => void }
-  useCreateDraftHook: (input: { body: PortableTextBody; meta: TMeta }) => {
-    loadedDraft: { meta: TMeta; body: PortableTextBody; savedAt: number } | null
-    migrateToEditKey: (id: string, token: string, body: PortableTextBody) => void
-  }
+  localDraftConfig: LocalDraftConfig
+  createDraftConfig: CreateDraftConfig
 
   upsertMetaFn: (input: TUpsertMetaInput) => Promise<TEntity>
   saveDraftFn: (input: SaveBodyInput) => Promise<SaveBodyOutput>

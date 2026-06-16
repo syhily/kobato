@@ -1,5 +1,5 @@
 import { Trash2Icon, XIcon } from 'lucide-react'
-import { useRef } from 'react'
+import { useState } from 'react'
 
 import type { CacheBucketStats, ClearCacheTarget } from '@/shared/types/cache'
 
@@ -23,11 +23,11 @@ interface ConfirmClearDialogProps {
 }
 
 export function ConfirmClearDialog({ open, target, buckets, onConfirm, onCancel }: ConfirmClearDialogProps) {
-  const lastTargetRef = useRef<ClearCacheTarget | null>(target)
-  if (target !== null) {
-    lastTargetRef.current = target
+  const [lastTarget, setLastTarget] = useState<ClearCacheTarget | null>(target)
+  if (target !== null && target !== lastTarget) {
+    setLastTarget(target)
   }
-  const renderTarget = target ?? lastTargetRef.current
+  const renderTarget = target ?? lastTarget
   const isAll = renderTarget === 'all'
   const bucket = !isAll && renderTarget ? buckets.find((entry) => entry.id === renderTarget) : null
   const total = isAll ? buckets.reduce((sum, entry) => sum + entry.keyCount, 0) : (bucket?.keyCount ?? 0)

@@ -21,19 +21,19 @@ export function Volume({ themeColor, volume, muted, onToggleMuted, onChangeVolum
       onChangeVolume(computePercentageOfY(e, volumeBarRef))
       setDragging(true)
 
+      const controller = new AbortController()
       const handleMouseMove = (e: MouseEvent) => {
         onChangeVolume(computePercentageOfY(e, volumeBarRef))
       }
 
       const handleMouseUp = (e: MouseEvent) => {
-        document.removeEventListener('mouseup', handleMouseUp)
-        document.removeEventListener('mousemove', handleMouseMove)
+        controller.abort()
         setDragging(false)
         onChangeVolume(computePercentageOfY(e, volumeBarRef))
       }
 
-      document.addEventListener('mousemove', handleMouseMove)
-      document.addEventListener('mouseup', handleMouseUp)
+      document.addEventListener('mousemove', handleMouseMove, { signal: controller.signal })
+      document.addEventListener('mouseup', handleMouseUp, { signal: controller.signal })
     },
     [onChangeVolume],
   )

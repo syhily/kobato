@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react'
+import { useMemo, useState } from 'react'
 
 import type { PortableTextBody } from '@/shared/pt/schema'
 import type { EditorShellArgs, EntityLike } from '@/ui/admin/editor-shell/editor-shell-types'
@@ -8,7 +8,7 @@ export interface EditorBodyState {
   setBody: React.Dispatch<React.SetStateAction<PortableTextBody>>
   bodyKey: string
   initialBody: PortableTextBody
-  lastSavedBodyRef: React.RefObject<PortableTextBody>
+  lastSavedBody: PortableTextBody
   replaceBody: (body: PortableTextBody, key: string) => void
   markBodySaved: (savedBody: PortableTextBody) => void
 }
@@ -32,7 +32,7 @@ export function useEditorBodyState<TEntity extends EntityLike>(args: EditorShell
   }, [args])
 
   const [bodyKey, setBodyKey] = useState(initialBodyKey)
-  const lastSavedBodyRef = useRef<PortableTextBody>(initialBody)
+  const [lastSavedBody, setLastSavedBody] = useState<PortableTextBody>(initialBody)
 
   const replaceBody = (newBody: PortableTextBody, key: string) => {
     setBody(newBody)
@@ -40,8 +40,8 @@ export function useEditorBodyState<TEntity extends EntityLike>(args: EditorShell
   }
 
   const markBodySaved = (savedBody: PortableTextBody) => {
-    lastSavedBodyRef.current = savedBody
+    setLastSavedBody(savedBody)
   }
 
-  return { body, setBody, bodyKey, initialBody, lastSavedBodyRef, replaceBody, markBodySaved }
+  return { body, setBody, bodyKey, initialBody, lastSavedBody, replaceBody, markBodySaved }
 }

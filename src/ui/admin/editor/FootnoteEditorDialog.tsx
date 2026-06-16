@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 
 import { Button } from '@/ui/components/button'
 import {
@@ -34,12 +34,13 @@ export function FootnoteEditorDialog({
   onDelete,
 }: FootnoteEditorDialogProps) {
   const [draft, setDraft] = useState(initialPlainText)
-
-  useEffect(() => {
+  const [lastSeed, setLastSeed] = useState<{ open: boolean; text: string } | null>(null)
+  if (lastSeed === null || lastSeed.open !== open || lastSeed.text !== initialPlainText) {
+    setLastSeed({ open, text: initialPlainText })
     if (open) {
       setDraft(initialPlainText)
     }
-  }, [open, initialPlainText])
+  }
 
   const title = mode === 'create' ? '插入脚注' : '编辑脚注'
   const description =

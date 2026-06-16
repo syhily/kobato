@@ -1,6 +1,6 @@
 import { useMutation } from '@tanstack/react-query'
 import { SaveIcon, XIcon } from 'lucide-react'
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { toast } from 'sonner'
 
 import type { AdminCategoryDto, UpsertCategoryInput } from '@/shared/types/categories'
@@ -38,6 +38,7 @@ const EMPTY_DRAFT = {
 export function EditCategoryDialog({ category, onClose, onSaved }: EditCategoryDialogProps) {
   const [draft, setDraft] = useState(EMPTY_DRAFT)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const [lastCategory, setLastCategory] = useState<typeof category>(category)
 
   const upsertMutation = useMutation({
     ...orpcQuery.admin.categories.upsert.mutationOptions(),
@@ -52,23 +53,24 @@ export function EditCategoryDialog({ category, onClose, onSaved }: EditCategoryD
   })
   const { mutate: submit, isPending } = upsertMutation
 
-  useEffect(() => {
+  if (category !== lastCategory) {
+    setLastCategory(category)
     if (category === undefined) {
-      return
-    }
-    setErrorMessage(null)
-    if (category === null) {
+      // closed — leave current draft for animation continuity
+    } else if (category === null) {
+      setErrorMessage(null)
       setDraft(EMPTY_DRAFT)
-      return
+    } else {
+      setErrorMessage(null)
+      setDraft({
+        name: category.name,
+        slug: category.slug,
+        cover: category.cover,
+        og: category.og ?? '',
+        description: category.description,
+      })
     }
-    setDraft({
-      name: category.name,
-      slug: category.slug,
-      cover: category.cover,
-      og: category.og ?? '',
-      description: category.description,
-    })
-  }, [category])
+  }
 
   const open = category !== undefined
   const isEditing = category !== null && category !== undefined

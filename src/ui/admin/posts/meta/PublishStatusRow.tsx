@@ -1,5 +1,5 @@
 import { CalendarClockIcon, CheckCircle2Icon, CircleDashedIcon, EyeOffIcon } from 'lucide-react'
-import { useId } from 'react'
+import { useId, useState } from 'react'
 
 import type {
   SidebarPublishStatus,
@@ -33,7 +33,8 @@ export function PublishStatusRow({
 }: PublishStatusRowProps) {
   const fieldId = useId()
   const isScheduled = publishedAt !== ''
-  const isFuture = isScheduled && (Date.parse(publishedAt) || 0) > Date.now()
+  const [now] = useState(() => Date.now())
+  const isFuture = isScheduled && (Date.parse(publishedAt) || 0) > now
 
   return (
     <div className="grid gap-3 rounded-xl border bg-muted/30 p-3">

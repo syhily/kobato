@@ -78,9 +78,11 @@ export function TagsField({ values, onChange, disabled }: TagsFieldProps) {
   }, [open])
 
   // Reset highlight when the filtered list changes.
-  useEffect(() => {
+  const [lastInput, setLastInput] = useState(input)
+  if (lastInput !== input) {
+    setLastInput(input)
     setHighlighted(0)
-  }, [input])
+  }
 
   return (
     <div className="grid gap-2" ref={containerRef}>

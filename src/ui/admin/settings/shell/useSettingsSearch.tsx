@@ -1,4 +1,37 @@
-import { type ReactNode, createContext, use, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { type ReactNode, createContext, use, useCallback, useMemo, useState } from 'react'
+
+function highlightTextArray(text: string, regex: RegExp, words: string[]): ReactNode[] {
+  const parts = text.split(regex)
+  return parts.reduce<ReactNode[]>((result, part) => {
+    if (words.includes(part.toLowerCase())) {
+      result.push(
+        <mark key={`mark-${result.length}`} className="rounded-sm bg-yellow-500/40">
+          {part}
+        </mark>,
+      )
+    } else {
+      result.push(part)
+    }
+    return result
+  }, [])
+}
+
+function highlightNodeList(text: ReactNode[], regex: RegExp, words: string[]): ReactNode[] {
+  return text.reduce<ReactNode[]>((result, part) => {
+    result.push(<span key={`span-${result.length}`}>{highlightNode(part, regex, words)}</span>)
+    return result
+  }, [])
+}
+
+function highlightNode(text: ReactNode, regex: RegExp, words: string[]): ReactNode {
+  if (typeof text === 'string') {
+    return highlightTextArray(text, regex, words)
+  }
+  if (isReactNodeArray(text)) {
+    return highlightNodeList(text, regex, words)
+  }
+  return text
+}
 
 function isReactNodeArray(value: unknown): value is ReactNode[] {
   return Array.isArray(value)
@@ -58,8 +91,20 @@ const SearchApiContext = createContext<SearchApiState>({
 export function SettingsSearchProvider({ children }: { children: ReactNode }) {
   const [filter, setFilter] = useState('')
   const [noResult, setNoResult] = useState(false)
-  const registeredComponents = useRef<Map<SearchComponentId, string[]>>(new Map())
-  const [visibleComponents, setVisibleComponents] = useState<Set<SearchComponentId>>(new Set())
+  const [registeredComponents, setRegisteredComponents] = useState<Map<SearchComponentId, string[]>>(() => new Map())
+
+  // Derive visible components purely from registered + filter, no effect.
+  const visibleComponents = useMemo(() => {
+    const newVisible = new Set<SearchComponentId>()
+    const lowerFilter = filter.toLowerCase()
+    registeredComponents.forEach((keywords, id) => {
+      const isVisible = !filter || keywords.some((keyword) => keyword.toLowerCase().includes(lowerFilter))
+      if (isVisible) {
+        newVisible.add(id)
+      }
+    })
+    return newVisible
+  }, [filter, registeredComponents])
 
   const checkVisible = useCallback(
     (keywords: string[]) => {
@@ -72,37 +117,24 @@ export function SettingsSearchProvider({ children }: { children: ReactNode }) {
     [filter],
   )
 
-  const registerComponent = useCallback(
-    (id: SearchComponentId, keywords: string[]) => {
-      registeredComponents.current.set(id, keywords)
-      const isVisible = !filter || keywords.some((keyword) => keyword.toLowerCase().includes(filter.toLowerCase()))
-      if (isVisible) {
-        setVisibleComponents((prev) => new Set(prev).add(id))
-      }
-    },
-    [filter],
-  )
-
-  const unregisterComponent = useCallback((id: SearchComponentId) => {
-    registeredComponents.current.delete(id)
-    setVisibleComponents((prev) => {
-      const next = new Set(prev)
-      next.delete(id)
+  const registerComponent = useCallback((id: SearchComponentId, keywords: string[]) => {
+    setRegisteredComponents((prev) => {
+      const next = new Map(prev)
+      next.set(id, keywords)
       return next
     })
   }, [])
 
-  useEffect(() => {
-    const newVisible = new Set<SearchComponentId>()
-    const lowerFilter = filter.toLowerCase()
-    registeredComponents.current.forEach((keywords, id) => {
-      const isVisible = !filter || keywords.some((keyword) => keyword.toLowerCase().includes(lowerFilter))
-      if (isVisible) {
-        newVisible.add(id)
+  const unregisterComponent = useCallback((id: SearchComponentId) => {
+    setRegisteredComponents((prev) => {
+      if (!prev.has(id)) {
+        return prev
       }
+      const next = new Map(prev)
+      next.delete(id)
+      return next
     })
-    setVisibleComponents(newVisible)
-  }, [filter])
+  }, [])
 
   const isOnlyVisibleComponent = useCallback(
     (id: SearchComponentId) => {
@@ -115,38 +147,18 @@ export function SettingsSearchProvider({ children }: { children: ReactNode }) {
     return visibleComponents
   }, [visibleComponents])
 
-  const highlightKeywords = useMemo(() => {
-    if (!filter) {
-      return (text: ReactNode): ReactNode => text
-    }
-    const words = filter.split(/\s+/).map((word) => word.toLowerCase())
-    const wordsPattern = words.map((word) => word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')
-    const regex = new RegExp(`(${wordsPattern})`, 'gi')
-    return (text: ReactNode): ReactNode => {
-      if (typeof text === 'string') {
-        const parts = text.split(regex)
-        return parts.reduce<ReactNode[]>((result, part) => {
-          if (words.includes(part.toLowerCase())) {
-            result.push(
-              <mark key={`mark-${result.length}`} className="rounded-sm bg-yellow-500/40">
-                {part}
-              </mark>,
-            )
-          } else {
-            result.push(part)
-          }
-          return result
-        }, [])
+  const highlightKeywords = useCallback(
+    (text: ReactNode): ReactNode => {
+      if (!filter) {
+        return text
       }
-      if (isReactNodeArray(text)) {
-        return text.reduce<ReactNode[]>((result, part) => {
-          result.push(<span key={`span-${result.length}`}>{highlightKeywords(part)}</span>)
-          return result
-        }, [])
-      }
-      return text
-    }
-  }, [filter])
+      const words = filter.split(/\s+/).map((word) => word.toLowerCase())
+      const wordsPattern = words.map((word) => word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')
+      const regex = new RegExp(`(${wordsPattern})`, 'gi')
+      return highlightNode(text, regex, words)
+    },
+    [filter],
+  )
 
   const filterState = useMemo(() => ({ filter, setFilter }), [filter])
   const apiState = useMemo(

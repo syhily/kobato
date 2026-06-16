@@ -48,11 +48,13 @@ export function MusicPickerDialog({ trigger, onPick, open: openProp, onOpenChang
     }),
   )
 
-  useEffect(() => {
+  const [lastAppliedData, setLastAppliedData] = useState(listQuery.data)
+  if (listQuery.data !== lastAppliedData) {
+    setLastAppliedData(listQuery.data)
     if (listQuery.data) {
       setMusics(listQuery.data.musics)
     }
-  }, [listQuery.data])
+  }
 
   const lastFetchedQRef = useRef<string | null>(null)
   useEffect(() => {

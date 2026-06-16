@@ -1,6 +1,6 @@
 import { useMutation } from '@tanstack/react-query'
 import { SaveIcon, XIcon } from 'lucide-react'
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { toast } from 'sonner'
 
 import type { AdminFriendDto, UpsertFriendInput } from '@/shared/types/friends'
@@ -44,6 +44,7 @@ const EMPTY_DRAFT = {
 export function EditFriendDialog({ friend, onClose, onSaved }: EditFriendDialogProps) {
   const [draft, setDraft] = useState(EMPTY_DRAFT)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const [lastFriend, setLastFriend] = useState<typeof friend>(friend)
 
   const upsertMutation = useMutation({
     ...orpcQuery.admin.friends.upsert.mutationOptions(),
@@ -63,24 +64,25 @@ export function EditFriendDialog({ friend, onClose, onSaved }: EditFriendDialogP
   // animation doesn't blank the fields the user just saw. `friend ===
   // null` is the "open for new" trigger; a populated `friend` is the
   // "open for edit" trigger.
-  useEffect(() => {
+  if (friend !== lastFriend) {
+    setLastFriend(friend)
     if (friend === undefined) {
-      return
-    }
-    setErrorMessage(null)
-    if (friend === null) {
+      // closed — leave current draft for animation continuity
+    } else if (friend === null) {
+      setErrorMessage(null)
       setDraft(EMPTY_DRAFT)
-      return
+    } else {
+      setErrorMessage(null)
+      setDraft({
+        website: friend.website,
+        description: friend.description ?? '',
+        homepage: friend.homepage,
+        poster: friend.poster,
+        rssUrl: friend.rssUrl ?? '',
+        visible: friend.visible,
+      })
     }
-    setDraft({
-      website: friend.website,
-      description: friend.description ?? '',
-      homepage: friend.homepage,
-      poster: friend.poster,
-      rssUrl: friend.rssUrl ?? '',
-      visible: friend.visible,
-    })
-  }, [friend])
+  }
 
   const open = friend !== undefined
   const isEditing = friend !== null && friend !== undefined

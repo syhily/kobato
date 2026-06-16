@@ -1,5 +1,5 @@
 import { CalendarIcon, CheckIcon, ChevronDownIcon } from 'lucide-react'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 
 import {
   DATE_FILTER_OPERATORS,
@@ -85,32 +85,33 @@ export function DateFilterEditor({ value, onChange }: DateFilterEditorProps) {
   const op = value?.op ?? DEFAULT_DATE_OPERATOR
   const [localDate, setLocalDate] = useState(value?.date ?? '')
   const [calendarOpen, setCalendarOpen] = useState(false)
+  const [isFocused, setIsFocused] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
-  const lastLocalCommitRef = useRef(value?.date ?? '')
 
-  useEffect(() => {
-    const committed = value?.date ?? ''
-    if (committed === lastLocalCommitRef.current) {
-      return
+  const [lastCommitted, setLastCommitted] = useState(value?.date ?? '')
+  // Sync local date when the external `value` changes — but only when
+  // the input is NOT focused, so we don't clobber in-flight edits.
+  if ((value?.date ?? '') !== lastCommitted) {
+    setLastCommitted(value?.date ?? '')
+    if (!isFocused) {
+      setLocalDate(value?.date ?? '')
     }
-    if (document.activeElement !== inputRef.current) {
-      setLocalDate(committed)
-      lastLocalCommitRef.current = committed
-    }
-  }, [value])
+  }
 
   const parsedDate = useMemo(() => parseDateInput(localDate), [localDate])
   const [calendarMonth, setCalendarMonth] = useState<Date>(() => parsedDate ?? new Date())
-  useEffect(() => {
+  const [lastParsedDate, setLastParsedDate] = useState(parsedDate)
+  if (parsedDate !== lastParsedDate) {
+    setLastParsedDate(parsedDate)
     if (parsedDate) {
       setCalendarMonth(parsedDate)
     }
-  }, [parsedDate])
+  }
 
   const commitDate = (date: Date) => {
     const formatted = formatDateInput(date)
     setLocalDate(formatted)
-    lastLocalCommitRef.current = formatted
+    setLastCommitted(formatted)
     onChange({ date: formatted, op })
   }
 
@@ -155,7 +156,9 @@ export function DateFilterEditor({ value, onChange }: DateFilterEditorProps) {
           type="text"
           value={localDate}
           onChange={(e) => setLocalDate(e.target.value)}
+          onFocus={() => setIsFocused(true)}
           onBlur={handleBlur}
+          onBlurCapture={() => setIsFocused(false)}
           onKeyDown={handleKeyDown}
           className="min-w-0 flex-1 bg-transparent px-2.5 text-sm outline-none placeholder:text-muted-foreground"
         />
