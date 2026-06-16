@@ -1,13 +1,14 @@
 import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { ImageOffIcon, PlusIcon, SearchIcon } from 'lucide-react'
+import { ImageOffIcon, PlusIcon } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { toast } from 'sonner'
 
-import type { AdminImageDto, AdminImageKind } from '@/shared/types/images'
+import type { AdminImageDto } from '@/shared/types/images'
 
 import { orpc } from '@/client/api/client'
 import { useAssetsSettings } from '@/shared/lib/blog-config-context'
 import { ImageDetailDialog } from '@/ui/admin/images/ImageDetailDialog'
+import { ImagesFilterBar } from '@/ui/admin/images/ImagesFilterBar'
 import { JustifiedImageGrid, JustifiedImageGridSkeleton } from '@/ui/admin/images/JustifiedImageGrid'
 import { useImagesController } from '@/ui/admin/images/useImagesController'
 import { AdminListPage } from '@/ui/admin/shared/AdminListPage'
@@ -17,26 +18,12 @@ import { useDebouncedSearch } from '@/ui/admin/shared/useDebouncedSearch'
 import { Button } from '@/ui/components/button'
 import { Card } from '@/ui/components/card'
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@/ui/components/empty'
-import { InputGroup, InputGroupAddon, InputGroupInput } from '@/ui/components/input-group'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/components/select'
-
-const PAGE_SIZE_OPTIONS: { value: string; label: string }[] = [30, 60, 120].map((n) => ({
-  value: String(n),
-  label: `${n} 张`,
-}))
-
-const KIND_OPTIONS: { value: AdminImageKind | 'all'; label: string }[] = [
-  { value: 'all', label: '全部用途' },
-  { value: 'generic', label: '普通图片' },
-  { value: 'category', label: '分类封面' },
-  { value: 'friend', label: '友链海报' },
-]
 
 // Infinite-scroll image library. Filter state lives in `useImagesController`;
 // the actual pages are fetched via `useInfiniteQuery` and laid out by
 // `JustifiedImageGrid` using a Google Photos-style justified-row algorithm.
 export function ImagesView() {
-  const { state, dispatch } = useImagesController()
+  const { q, kind, dispatch, pageSize, activeFilters } = useImagesController()
   const { asset, storage } = useAssetsSettings()
   const queryClient = useQueryClient()
   const [confirm, setConfirm] = useState<ConfirmState | null>(null)
@@ -45,25 +32,22 @@ export function ImagesView() {
   const [copiedId, setCopiedId] = useState<string | null>(null)
   const sentinelRef = useRef<HTMLDivElement>(null)
 
-  const queryKey = useMemo(
-    () => ['admin', 'images', 'list', { q: state.q, kind: state.kind, pageSize: state.pageSize }],
-    [state.q, state.kind, state.pageSize],
-  )
+  const queryKey = useMemo(() => ['admin', 'images', 'list', { q, kind }], [q, kind])
 
   const listQuery = useInfiniteQuery({
     queryKey,
     queryFn: async ({ pageParam }) =>
       orpc.admin.images.list({
-        q: state.q || undefined,
-        kind: state.kind === 'all' ? undefined : state.kind,
+        q: q || undefined,
+        kind: kind === 'all' ? undefined : kind,
         offset: pageParam,
-        limit: state.pageSize,
+        limit: pageSize,
       }),
     getNextPageParam: (lastPage, _allPages, lastPageParam) => {
       if (!lastPage.hasMore) {
         return undefined
       }
-      return (lastPageParam ?? 0) + state.pageSize
+      return (lastPageParam ?? 0) + pageSize
     },
     initialPageParam: 0,
   })
@@ -144,10 +128,35 @@ export function ImagesView() {
   const submitRecalculate = recalculateMutation.mutate
   const isRecalculating = recalculateMutation.isPending
 
-  const [qInput, setQInput] = useDebouncedSearch({
+  const [, setQInput] = useDebouncedSearch({
     delayMs: 300,
     onChange: (value) => dispatch({ type: 'setQ', value }),
   })
+
+  const handleAddFilter = useCallback(
+    (field: 'q' | 'kind', value: string, label: string) => {
+      dispatch({ type: 'addFilter', field, value, label })
+      if (field === 'q') {
+        setQInput(value)
+      }
+    },
+    [dispatch, setQInput],
+  )
+
+  const handleRemoveFilter = useCallback(
+    (field: 'q' | 'kind') => {
+      dispatch({ type: 'removeFilter', field })
+      if (field === 'q') {
+        setQInput('')
+      }
+    },
+    [dispatch, setQInput],
+  )
+
+  const handleClearFilters = useCallback(() => {
+    setQInput('')
+    dispatch({ type: 'clearFilters' })
+  }, [dispatch, setQInput])
 
   const onCopyUrl = useCallback((image: AdminImageDto) => {
     void navigator.clipboard.writeText(image.publicUrl).then(() => {
@@ -197,63 +206,12 @@ export function ImagesView() {
           </Button>
         </AdminListPage.Header>
 
-        <AdminListPage.Toolbar>
-          <div className="grid gap-3 sm:grid-cols-4">
-            <div className="sm:col-span-2">
-              <AdminListPage.FilterField label="搜索（路径 / 备注）">
-                <InputGroup>
-                  <InputGroupAddon>
-                    <SearchIcon />
-                  </InputGroupAddon>
-                  <InputGroupInput
-                    type="search"
-                    value={qInput}
-                    onChange={(e) => setQInput(e.target.value)}
-                    placeholder="输入关键字 — 例：images/2024 / 备注"
-                  />
-                </InputGroup>
-              </AdminListPage.FilterField>
-            </div>
-            <AdminListPage.FilterField label="用途">
-              <Select
-                items={KIND_OPTIONS}
-                value={state.kind}
-                onValueChange={(value) =>
-                  dispatch({ type: 'setKind', value: (value ?? 'all') as AdminImageKind | 'all' })
-                }
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {KIND_OPTIONS.map((item) => (
-                    <SelectItem key={item.value} value={item.value}>
-                      {item.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </AdminListPage.FilterField>
-            <AdminListPage.FilterField label="每次加载">
-              <Select
-                items={PAGE_SIZE_OPTIONS}
-                value={String(state.pageSize)}
-                onValueChange={(value) => dispatch({ type: 'setPageSize', value: Number.parseInt(value ?? '60', 10) })}
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {PAGE_SIZE_OPTIONS.map((item) => (
-                    <SelectItem key={item.value} value={item.value}>
-                      {item.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </AdminListPage.FilterField>
-          </div>
-        </AdminListPage.Toolbar>
+        <ImagesFilterBar
+          filters={activeFilters}
+          onAddFilter={handleAddFilter}
+          onRemoveFilter={handleRemoveFilter}
+          onClearFilters={handleClearFilters}
+        />
 
         <AdminListPage.Body>
           {isLoading ? (
