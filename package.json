@@ -1,6 +1,6 @@
 {
   "name": "kobato",
-  "version": "6.4.1",
+  "version": "6.4.2-dev",
   "private": true,
   "description": "A self-hosted blog CMS built with React Router 7, Hono, and oRPC",
   "keywords": [
