@@ -6,19 +6,17 @@ import type { ContentRow, PostMetaRow } from '@/server/infra/db/types'
 import { publishLatestRevision, saveDraftRevision } from '@/server/domains/content/repos/mutate'
 import { findContentById, findLatestDraft } from '@/server/domains/content/repos/query'
 import { canonicalizeBodyOrThrow } from '@/server/domains/content/save-helpers'
+import { clearContentCaches } from '@/server/domains/content/shared'
 import { syncLibraryImageBlocks } from '@/server/domains/pages/services/image-sync'
 import { toAdminRevisionDto, toCmsPost, type CmsPost } from '@/server/domains/posts/projection'
 import { findPostMetaById, findPublicPostMetaBySlug } from '@/server/domains/posts/repos/single'
 import { indexPost } from '@/server/domains/posts/services/search-index'
 import {
   assertOwnPostOr404,
-  clearPostMetasCache,
   type SavePostBodyInput,
   type SavePostResult,
   type ViewerContext,
 } from '@/server/domains/posts/services/shared'
-import { clearFeedCache } from '@/server/infra/cache/feed-cache'
-import { clearSitemapCache } from '@/server/infra/cache/sitemap-cache'
 import { getLogger } from '@/server/infra/logger'
 import { invalidateSearchCache } from '@/server/infra/search/search'
 import { deriveSlug } from '@/server/infra/slug'
@@ -121,13 +119,7 @@ async function savePostBodyInternal(
     }
   }
   if (mode === 'publish' && wroteSuccessfully) {
-    await clearPostMetasCache()
-    await clearFeedCache().catch((err: unknown) => {
-      log.warn('clear feed cache failed', { postId: input.postId, error: err })
-    })
-    await clearSitemapCache().catch((err: unknown) => {
-      log.warn('clear sitemap cache failed', { postId: input.postId, error: err })
-    })
+    await clearContentCaches('post', input.postId)
     await invalidateSearchCache().catch((err: unknown) => {
       log.warn('invalidate search cache failed', { postId: input.postId, error: err })
     })

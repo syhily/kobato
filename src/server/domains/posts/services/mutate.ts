@@ -3,6 +3,7 @@ import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 import { eq } from 'drizzle-orm'
 
 import { findContentById } from '@/server/domains/content/repos/query'
+import { clearContentCaches } from '@/server/domains/content/shared'
 import { toAdminPostDto, type AdminPostDto } from '@/server/domains/posts/projection'
 import { findPostMetaById, findPostMetaBySlugForUpdate } from '@/server/domains/posts/repos/single'
 import { restorePostMeta, softDeletePostMeta, updatePostMetaById } from '@/server/domains/posts/repos/write'
@@ -13,8 +14,6 @@ import {
   type UpsertPostMetaInput,
   type ViewerContext,
 } from '@/server/domains/posts/services/shared'
-import { clearFeedCache } from '@/server/infra/cache/feed-cache'
-import { clearSitemapCache } from '@/server/infra/cache/sitemap-cache'
 import { findTagNamesByPostId, setPostTags } from '@/server/infra/db/operations/post-tag'
 import {
   deleteSlugRegistryByEntity,
@@ -29,20 +28,11 @@ import { getLogger } from '@/server/infra/logger'
 import { invalidateSearchCache } from '@/server/infra/search/search'
 import { resolveSlugForTaxonomy } from '@/server/infra/slug'
 import { ensureSlugLegal, resolveSlug } from '@/server/infra/slug-validation'
+import { reserveSlugInTransaction } from '@/server/infra/slug/reservation'
 import { portableTextBodySchema } from '@/shared/pt/schema'
 import { idFromString } from '@/shared/utils/id'
 
 const log = getLogger('posts.service')
-
-async function clearPostCaches(postId?: bigint): Promise<void> {
-  await clearPostMetasCache()
-  await clearFeedCache().catch((err: unknown) => {
-    log.warn('clear feed cache failed', { postId: postId?.toString(), error: err })
-  })
-  await clearSitemapCache().catch((err: unknown) => {
-    log.warn('clear sitemap cache failed', { postId: postId?.toString(), error: err })
-  })
-}
 
 async function ensureTagsExist(db: NodePgDatabase, tagNames: string[]): Promise<void> {
   if (tagNames.length === 0) {
@@ -79,14 +69,9 @@ export async function createPost(
   const now = new Date()
   try {
     const row = await db.transaction(async (tx) => {
-      const collision = await findPostMetaBySlugForUpdate(tx, slug)
-      if (collision !== null) {
-        throw new DomainError('CONFLICT', `slug "${slug}" 已被其它文章占用。`)
-      }
-      const crossCollision = await findSlugRegistryBySlugForUpdate(tx, slug)
-      if (crossCollision !== null && crossCollision.entityType !== 'post') {
-        throw new DomainError('CONFLICT', `slug "${slug}" 已被其它页面占用。`)
-      }
+      await reserveSlugInTransaction(tx, 'post', slug, undefined, {
+        findOwnMetaBySlugForUpdate: findPostMetaBySlugForUpdate,
+      })
       await ensureTagsExist(tx, tagNames)
       const tagIds = await resolveTagIdsForNames(tx, tagNames)
       const [inserted] = await tx
@@ -140,14 +125,9 @@ export async function updatePostMeta(
   try {
     const updated = await db.transaction(async (tx) => {
       if (existing.slug !== slug) {
-        const collision = await findPostMetaBySlugForUpdate(tx, slug)
-        if (collision !== null && collision.id !== id) {
-          throw new DomainError('CONFLICT', `slug "${slug}" 已被其它文章占用。`)
-        }
-        const crossCollision = await findSlugRegistryBySlugForUpdate(tx, slug)
-        if (crossCollision !== null && crossCollision.entityType !== 'post') {
-          throw new DomainError('CONFLICT', `slug "${slug}" 已被其它页面占用。`)
-        }
+        await reserveSlugInTransaction(tx, 'post', slug, id, {
+          findOwnMetaBySlugForUpdate: findPostMetaBySlugForUpdate,
+        })
       }
       await ensureTagsExist(tx, tagNames)
       const tagIds = await resolveTagIdsForNames(tx, tagNames)
@@ -206,7 +186,7 @@ export async function deletePost(
     return ok
   })
   if (deleted) {
-    await clearPostCaches(id)
+    await clearContentCaches('post', id)
     await invalidateSearchCache().catch((err: unknown) => {
       log.warn('invalidate search cache failed', { postId: id, error: err })
     })
@@ -270,7 +250,7 @@ export async function restorePost(
   })
 
   if (restored) {
-    await clearPostCaches(id)
+    await clearContentCaches('post', id)
     await invalidateSearchCache().catch((err: unknown) => {
       log.warn('invalidate search cache failed', { postId: id, error: err })
     })
@@ -303,7 +283,7 @@ export async function unpublishPost(db: NodePgDatabase, id: bigint, viewer?: Vie
   if (updated === null) {
     throw new DomainError('NOT_FOUND', '文章不存在或已被删除。')
   }
-  await clearPostCaches(id)
+  await clearContentCaches('post', id)
   await invalidateSearchCache().catch((err: unknown) => {
     log.warn('invalidate search cache failed', { postId: id, error: err })
   })

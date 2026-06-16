@@ -2,6 +2,7 @@ import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
 import type { AdminPageDto } from '@/server/domains/pages/projection'
 
+import { clearContentCaches } from '@/server/domains/content/shared'
 import { toAdminPageDto } from '@/server/domains/pages/projection'
 import {
   findPageMetaById,
@@ -11,8 +12,7 @@ import {
   softDeletePageMeta,
   updatePageMetaById,
 } from '@/server/domains/pages/repo'
-import { clearPagesCache, type UpsertPageMetaInput } from '@/server/domains/pages/services/shared'
-import { clearSitemapCache } from '@/server/infra/cache/sitemap-cache'
+import { type UpsertPageMetaInput } from '@/server/domains/pages/services/shared'
 import {
   deleteSlugRegistryByEntity,
   findSlugRegistryBySlugForUpdate,
@@ -20,17 +20,8 @@ import {
   updateSlugRegistryByEntity,
 } from '@/server/infra/db/operations/slug-registry'
 import { DomainError, isUniqueConstraintError } from '@/server/infra/http/errors'
-import { getLogger } from '@/server/infra/logger'
 import { ensureSlugLegal, resolveSlug } from '@/server/infra/slug-validation'
-
-const log = getLogger('pages.service')
-
-async function clearPageCaches(pageId?: bigint): Promise<void> {
-  await clearPagesCache()
-  await clearSitemapCache().catch((err: unknown) => {
-    log.warn('clear sitemap cache failed', { pageId: pageId?.toString(), error: err })
-  })
-}
+import { reserveSlugInTransaction } from '@/server/infra/slug/reservation'
 
 export async function createPage(
   db: NodePgDatabase,
@@ -42,14 +33,9 @@ export async function createPage(
 
   return db.transaction(async (tx) => {
     // Lock slug rows so concurrent creation with the same slug serialises.
-    const collision = await findPageMetaBySlugForUpdate(tx, slug)
-    if (collision !== null) {
-      throw new DomainError('CONFLICT', `slug "${slug}" 已被其它页面占用。`)
-    }
-    const crossCollision = await findSlugRegistryBySlugForUpdate(tx, slug)
-    if (crossCollision !== null && crossCollision.entityType !== 'page') {
-      throw new DomainError('CONFLICT', `slug "${slug}" 已被其它文章占用。`)
-    }
+    await reserveSlugInTransaction(tx, 'page', slug, undefined, {
+      findOwnMetaBySlugForUpdate: findPageMetaBySlugForUpdate,
+    })
 
     const now = new Date()
     let row: Awaited<ReturnType<typeof insertPageMeta>>
@@ -75,7 +61,7 @@ export async function createPage(
       }
       throw err
     }
-    await clearPageCaches(row.id)
+    await clearContentCaches('page', row.id)
     return toAdminPageDto(row)
   })
 }
@@ -94,14 +80,9 @@ export async function updatePageMeta(db: NodePgDatabase, input: UpsertPageMetaIn
 
   return db.transaction(async (tx) => {
     if (existing.slug !== slug) {
-      const collision = await findPageMetaBySlugForUpdate(tx, slug)
-      if (collision !== null && collision.id !== pageId) {
-        throw new DomainError('CONFLICT', `slug "${slug}" 已被其它页面占用。`)
-      }
-      const crossCollision = await findSlugRegistryBySlugForUpdate(tx, slug)
-      if (crossCollision !== null && crossCollision.entityType !== 'page') {
-        throw new DomainError('CONFLICT', `slug "${slug}" 已被其它文章占用。`)
-      }
+      await reserveSlugInTransaction(tx, 'page', slug, pageId, {
+        findOwnMetaBySlugForUpdate: findPageMetaBySlugForUpdate,
+      })
     }
 
     let updated: Awaited<ReturnType<typeof updatePageMetaById>>
@@ -130,7 +111,7 @@ export async function updatePageMeta(db: NodePgDatabase, input: UpsertPageMetaIn
     if (updated === null) {
       throw new DomainError('NOT_FOUND', '页面不存在或已被删除。')
     }
-    await clearPageCaches(pageId)
+    await clearContentCaches('page', pageId)
     return toAdminPageDto(updated)
   })
 }
@@ -140,7 +121,7 @@ export async function deletePage(db: NodePgDatabase, id: bigint): Promise<{ dele
     const deleted = await softDeletePageMeta(tx, id)
     if (deleted) {
       await deleteSlugRegistryByEntity(tx, { entityType: 'page', entityId: id })
-      await clearPageCaches(id)
+      await clearContentCaches('page', id)
     }
     return { deleted }
   })
@@ -155,7 +136,7 @@ export async function restorePage(db: NodePgDatabase, id: bigint): Promise<{ res
         const existing = await findSlugRegistryBySlugForUpdate(tx, meta.slug)
         if (existing !== null && !(existing.entityType === 'page' && existing.entityId === id)) {
           const otherEntity = existing.entityType === 'post' ? '文章' : '页面'
-          await clearPageCaches(id)
+          await clearContentCaches('page', id)
           return {
             restored: true,
             warning: `slug "${meta.slug}" 已被另一个${otherEntity}占用，恢复后该 URL 不会指向此页面。请修改 slug 或先处理占用方。`,
@@ -167,14 +148,14 @@ export async function restorePage(db: NodePgDatabase, id: bigint): Promise<{ res
           if (!isUniqueConstraintError(err, 'uq_slug_registry_slug')) {
             throw err
           }
-          await clearPageCaches(id)
+          await clearContentCaches('page', id)
           return {
             restored: true,
             warning: `slug "${meta.slug}" 在恢复过程中被其它内容占用，URL 不会指向此页面。`,
           }
         }
       }
-      await clearPageCaches(id)
+      await clearContentCaches('page', id)
     }
     return { restored }
   })
@@ -189,6 +170,6 @@ export async function unpublishPage(db: NodePgDatabase, id: bigint): Promise<Adm
   if (updated === null) {
     throw new DomainError('NOT_FOUND', '页面不存在或已被删除。')
   }
-  await clearPageCaches(id)
+  await clearContentCaches('page', id)
   return toAdminPageDto(updated)
 }
