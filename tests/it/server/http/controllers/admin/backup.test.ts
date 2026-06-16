@@ -1,10 +1,9 @@
-import { call } from '@orpc/server'
+import { call, ORPCError } from '@orpc/server'
 import { describe, expect, it, vi } from 'vitest'
 
 import type { BlogSettingsBundle } from '@/shared/config/types'
 
 import { makeAuthedCtx } from '#/_helpers/mock-ctx'
-import { ActionFailure } from '@/server/infra/http/errors'
 
 vi.mock('@/server/domains/backup/services/shared', () => ({
   checkPgToolsAvailable: vi.fn(),
@@ -101,7 +100,7 @@ describe('adminBackupRouter.delete', () => {
   it('rejects invalid key formats', async () => {
     const ctx = makeAuthedCtx()
     for (const badKey of ['../etc/passwd', 'backup/../../secret', 'backup/x.sql.gz', '', 'abc']) {
-      await expect(call(adminBackupRouter.delete, { key: badKey }, { context: ctx })).rejects.toThrow(ActionFailure)
+      await expect(call(adminBackupRouter.delete, { key: badKey }, { context: ctx })).rejects.toThrow(ORPCError)
     }
   })
 })
@@ -122,7 +121,7 @@ describe('adminBackupRouter.restore', () => {
   it('rejects invalid key formats', async () => {
     const ctx = makeAuthedCtx()
     for (const badKey of ['../etc/passwd', 'backup/../../secret', 'backup/x.sql.gz', '']) {
-      await expect(call(adminBackupRouter.restore, { key: badKey }, { context: ctx })).rejects.toThrow(ActionFailure)
+      await expect(call(adminBackupRouter.restore, { key: badKey }, { context: ctx })).rejects.toThrow(ORPCError)
     }
   })
 
@@ -133,7 +132,7 @@ describe('adminBackupRouter.restore', () => {
     >)
     const ctx = makeAuthedCtx()
     await expect(call(adminBackupRouter.restore, { key: '2026-01-01T00-00-00' }, { context: ctx })).rejects.toThrow(
-      ActionFailure,
+      ORPCError,
     )
   })
 })
