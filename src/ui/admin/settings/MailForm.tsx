@@ -160,15 +160,11 @@ function ProviderSelectCard({ mail }: { mail: MailLoaderShape }) {
 }
 
 function ZeaburConfigCard({ mail }: { mail: MailLoaderShape }) {
-  const { form, settingGroupProps, display } = useSettingsCard<
-    MailLoaderShape,
-    { host: string; sender: string; apiKey: string }
-  >({
+  const { form, settingGroupProps, display } = useSettingsCard<MailLoaderShape, { host: string; apiKey: string }>({
     section: 'mail',
     source: mail,
     toState: (source) => ({
       host: source.mail.host,
-      sender: source.mail.sender,
       apiKey: '',
     }),
     fromState: (state) => {
@@ -176,7 +172,6 @@ function ZeaburConfigCard({ mail }: { mail: MailLoaderShape }) {
       return {
         mail: {
           host: state.host.trim(),
-          sender: state.sender.trim(),
           ...(trimmedKey ? { apiKey: trimmedKey } : {}),
         },
       }
@@ -187,7 +182,7 @@ function ZeaburConfigCard({ mail }: { mail: MailLoaderShape }) {
   return (
     <SettingGroup
       title="Zeabur ZSend 配置"
-      description="配置 Zeabur ZSend 的接入地址、API Key 和发件人邮箱。修改后立即生效。"
+      description="配置 Zeabur ZSend 的接入地址和 API Key。修改后立即生效。"
       {...settingGroupProps}
     >
       <SettingGroupContent>
@@ -212,15 +207,6 @@ function ZeaburConfigCard({ mail }: { mail: MailLoaderShape }) {
             autoComplete="new-password"
           />
         </SettingsRow>
-        <SettingsRow label="发件人邮箱" htmlFor="mail-sender" hint="必须是 Zeabur 已验证过的发件域。">
-          <Input
-            id="mail-sender"
-            type="email"
-            placeholder="noreply@send.example.com"
-            maxLength={253}
-            {...form.register('sender')}
-          />
-        </SettingsRow>
       </SettingGroupContent>
     </SettingGroup>
   )
@@ -229,21 +215,19 @@ function ZeaburConfigCard({ mail }: { mail: MailLoaderShape }) {
 function MailgunConfigCard({ mail }: { mail: MailLoaderShape }) {
   const { form, settingGroupProps, display } = useSettingsCard<
     MailLoaderShape,
-    { mailgunDomain: string; mailgunApiKey: string; sender: string }
+    { mailgunDomain: string; mailgunApiKey: string }
   >({
     section: 'mail',
     source: mail,
     toState: (source) => ({
       mailgunDomain: source.mail.mailgunDomain,
       mailgunApiKey: '',
-      sender: source.mail.sender,
     }),
     fromState: (state) => {
       const trimmedKey = state.mailgunApiKey.trim()
       return {
         mail: {
           mailgunDomain: state.mailgunDomain.trim(),
-          sender: state.sender.trim(),
           ...(trimmedKey ? { mailgunApiKey: trimmedKey } : {}),
         },
       }
@@ -254,7 +238,7 @@ function MailgunConfigCard({ mail }: { mail: MailLoaderShape }) {
   return (
     <SettingGroup
       title="Mailgun 配置"
-      description="配置 Mailgun 的发送域名、API Key 和发件人邮箱。修改后立即生效。仅支持美国（US）区域。"
+      description="配置 Mailgun 的发送域名和 API Key。修改后立即生效。仅支持美国（US）区域。"
       {...settingGroupProps}
     >
       <SettingGroupContent>
@@ -288,15 +272,6 @@ function MailgunConfigCard({ mail }: { mail: MailLoaderShape }) {
             autoComplete="new-password"
           />
         </SettingsRow>
-        <SettingsRow label="发件人邮箱" htmlFor="mail-mailgun-sender" hint="必须是 Mailgun 已验证过的发件域。">
-          <Input
-            id="mail-mailgun-sender"
-            type="email"
-            placeholder="noreply@mg.example.com"
-            maxLength={253}
-            {...form.register('sender')}
-          />
-        </SettingsRow>
       </SettingGroupContent>
     </SettingGroup>
   )
@@ -313,7 +288,6 @@ function SmtpConfigCard({ mail }: { mail: MailLoaderShape }) {
       smtpSecure: boolean
       smtpRequireTls: boolean
       smtpRejectUnauthorized: boolean
-      sender: string
     }
   >({
     section: 'mail',
@@ -326,7 +300,6 @@ function SmtpConfigCard({ mail }: { mail: MailLoaderShape }) {
       smtpSecure: source.mail.smtpSecure,
       smtpRequireTls: source.mail.smtpRequireTls ?? true,
       smtpRejectUnauthorized: source.mail.smtpRejectUnauthorized ?? true,
-      sender: source.mail.sender,
     }),
     fromState: (state) => {
       const trimmedPass = state.smtpPass.trim()
@@ -338,7 +311,6 @@ function SmtpConfigCard({ mail }: { mail: MailLoaderShape }) {
           smtpSecure: state.smtpSecure,
           smtpRequireTls: state.smtpRequireTls,
           smtpRejectUnauthorized: state.smtpRejectUnauthorized,
-          sender: state.sender.trim(),
           ...(trimmedPass ? { smtpPass: trimmedPass } : {}),
         },
       }
@@ -349,7 +321,7 @@ function SmtpConfigCard({ mail }: { mail: MailLoaderShape }) {
   return (
     <SettingGroup
       title="SMTP 配置"
-      description="配置 SMTP 服务器地址、端口、认证信息和发件人邮箱。修改后立即生效。"
+      description="配置 SMTP 服务器地址、端口和认证信息。修改后立即生效。"
       {...settingGroupProps}
     >
       <SettingGroupContent>
@@ -390,15 +362,6 @@ function SmtpConfigCard({ mail }: { mail: MailLoaderShape }) {
             placeholder={passConfigured ? '保留现有密码' : '输入 SMTP 密码'}
             maxLength={512}
             autoComplete="new-password"
-          />
-        </SettingsRow>
-        <SettingsRow label="发件人邮箱" htmlFor="mail-sender" hint="收件人看到的 From 地址。">
-          <Input
-            id="mail-sender"
-            type="email"
-            placeholder="noreply@example.com"
-            maxLength={253}
-            {...form.register('sender')}
           />
         </SettingsRow>
         <SettingsRow label="使用 TLS" hint="465 端口通常需要开启，587 端口视服务器配置而定。">
@@ -443,7 +406,10 @@ function SmtpConfigCard({ mail }: { mail: MailLoaderShape }) {
             </FieldLabel>
           </div>
         </SettingsRow>
-        <SettingsRow label="验证证书" hint="验证 SMTP 服务器 TLS 证书。关闭后可能遭受中间人攻击，仅用于自签名证书调试。">
+        <SettingsRow
+          label="验证证书"
+          hint="验证 SMTP 服务器 TLS 证书。关闭后可能遭受中间人攻击，仅用于自签名证书调试。"
+        >
           <div className="flex items-center gap-3">
             <Controller
               control={form.control}
@@ -463,6 +429,37 @@ function SmtpConfigCard({ mail }: { mail: MailLoaderShape }) {
               验证 TLS 证书
             </FieldLabel>
           </div>
+        </SettingsRow>
+      </SettingGroupContent>
+    </SettingGroup>
+  )
+}
+
+function SenderFieldCard({ mail }: { mail: MailLoaderShape }) {
+  const { form, settingGroupProps } = useSettingsCard<MailLoaderShape, { sender: string }>({
+    section: 'mail',
+    source: mail,
+    toState: (source) => ({ sender: source.mail.sender }),
+    fromState: (state) => ({
+      mail: { sender: state.sender.trim() },
+    }),
+  })
+
+  return (
+    <SettingGroup
+      title="发件人邮箱"
+      description="收件人看到的 From 地址。对所有服务商通用，独立保存，不会因切换提供商而丢失。"
+      {...settingGroupProps}
+    >
+      <SettingGroupContent>
+        <SettingsRow label="发件人邮箱" htmlFor="mail-sender" hint="必须是当前服务商已验证过的发件域。">
+          <Input
+            id="mail-sender"
+            type="email"
+            placeholder="noreply@example.com"
+            maxLength={253}
+            {...form.register('sender')}
+          />
         </SettingsRow>
       </SettingGroupContent>
     </SettingGroup>
@@ -551,6 +548,7 @@ export function MailForm({ mail }: MailFormProps) {
     <div className="flex flex-col gap-5">
       <MailToggleCard mail={mail} />
       <ProviderSelectCard mail={mail} />
+      <SenderFieldCard mail={mail} />
       {transport === 'smtp' ? (
         <SmtpConfigCard mail={mail} />
       ) : transport === 'mailgun' ? (
