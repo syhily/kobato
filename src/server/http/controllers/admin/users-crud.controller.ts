@@ -13,6 +13,7 @@ import {
 import { adminProc } from '@/server/http/orpc-base'
 import { adminUserDto } from '@/shared/contracts/users'
 import { idFromString } from '@/shared/utils/id'
+import { optionalHttpUrlSchema } from '@/shared/utils/safe-url'
 
 const idInput = z.object({ id: z.string().min(1) })
 const successOutput = z.object({ success: z.boolean() })
@@ -68,7 +69,7 @@ const update = adminProc
       id: z.string().min(1),
       name: z.string().min(1).optional(),
       email: z.email().optional(),
-      link: z.string().optional(),
+      link: optionalHttpUrlSchema,
       badgeName: z.string().optional(),
       badgeColor: z.string().optional(),
       badgeTextColor: z.union([z.string(), z.null()]).optional(),
@@ -85,14 +86,7 @@ const update = adminProc
       ...(badgeColor !== undefined && { badgeColor }),
       ...(badgeTextColor !== undefined && { badgeTextColor }),
     }
-    const updated = await updateUserByIdWithGuard(context.db, idFromString(id), {
-      name,
-      email,
-      link,
-      badgeName,
-      badgeColor,
-      badgeTextColor,
-    })
+    const updated = await updateUserByIdWithGuard(context.db, idFromString(id), patch)
     if (updated === null) {
       throw new ORPCError('NOT_FOUND', { message: '用户不存在' })
     }
