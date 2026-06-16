@@ -74,6 +74,7 @@ export async function establishLoginSession(
   const newSession = buildSessionWithSid(sid, { user: userData, absoluteExpiry })
   const setCookie = await commitSessionWithMaxAge(newSession)
   const userAgent = request.headers.get('User-Agent')
+  const platformHint = request.headers.get('Sec-CH-UA-Platform')
   await updateLastLogin(db, dbUser.id, clientAddress, userAgent)
   await redisInstance().sadd(`user_sessions:${dbUser.id}`, sid)
   try {
@@ -81,6 +82,7 @@ export async function establishLoginSession(
       sid,
       userId: dbUser.id,
       userAgent,
+      platformHint,
       ip: clientAddress,
     })
   } catch {

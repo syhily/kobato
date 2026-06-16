@@ -29,6 +29,14 @@ describe('shared/utils/user-agent — formatUserAgentLabel', () => {
     expect(label).toContain('iOS')
   })
 
+  it('prefers the UA-CH platform hint over the parsed UA os', () => {
+    const ua =
+      'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15'
+    const label = formatUserAgentLabel(ua, 'iOS')
+    expect(label).toContain('iOS')
+    expect(label).not.toContain('macOS')
+  })
+
   it('truncates an unparseable UA to the cap and appends ellipsis', () => {
     const long = 'x'.repeat(120)
     const label = formatUserAgentLabel(long)

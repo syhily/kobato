@@ -120,7 +120,7 @@ interface SessionRowProps {
 }
 
 function SessionRow({ item, submitting, onRevoke, dateFormat, config }: SessionRowProps) {
-  const label = formatUserAgentLabel(item.userAgent)
+  const label = formatUserAgentLabel(item.userAgent, item.platformHint)
   return (
     <Card data-slot="my-session-row">
       <CardContent className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">

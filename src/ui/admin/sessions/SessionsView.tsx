@@ -211,7 +211,7 @@ interface RowProps {
 }
 
 function AdminSessionRow({ item, submitting, onRevoke, config }: RowProps) {
-  const label = formatUserAgentLabel(item.userAgent)
+  const label = formatUserAgentLabel(item.userAgent, item.platformHint)
   const initial = (item.userName || item.userEmail || '?').slice(0, 1).toUpperCase()
   return (
     <Card data-slot="admin-session-row">

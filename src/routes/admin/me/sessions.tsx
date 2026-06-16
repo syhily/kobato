@@ -15,6 +15,7 @@ export function meta({ matches }: Route.MetaArgs) {
 export interface MySessionItem {
   sid: string
   userAgent: string
+  platformHint: string | null
   ip: string
   loginAtIso: string
   lastActiveAtIso: string
@@ -37,6 +38,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   const items: MySessionItem[] = sessions.map((s) => ({
     sid: s.sid,
     userAgent: s.userAgent,
+    platformHint: s.platformHint,
     ip: s.ip,
     loginAtIso: s.loginAt.toISOString(),
     lastActiveAtIso: s.lastActiveAt.toISOString(),

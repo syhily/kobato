@@ -24,6 +24,7 @@ export interface SessionMeta {
   sid: string
   userId: bigint
   userAgent: string
+  platformHint: string | null
   ip: string
   loginAt: Date
   lastActiveAt: Date
@@ -40,6 +41,7 @@ interface RecordLoginInput {
   sid: string
   userId: bigint
   userAgent: string | null
+  platformHint?: string | null
   ip: string
   /** Defaults to now. Overridable for tests. */
   loginAt?: Date
@@ -66,6 +68,7 @@ export async function recordSessionLogin(input: RecordLoginInput): Promise<void>
   const fields = {
     userId: input.userId.toString(),
     userAgent: truncateUserAgent(input.userAgent),
+    platformHint: input.platformHint ?? '',
     ip: input.ip,
     loginAt: String(loginMs),
     lastActiveAt: String(loginMs),
@@ -121,6 +124,7 @@ function parseMeta(sid: string, hash: Record<string, string>): SessionMeta | nul
     sid,
     userId,
     userAgent: hash.userAgent ?? '',
+    platformHint: hash.platformHint || null,
     ip: hash.ip ?? '',
     loginAt: new Date(loginAt),
     lastActiveAt: new Date(lastActiveAt),

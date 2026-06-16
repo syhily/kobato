@@ -19,6 +19,7 @@ export interface AuditLogListInput {
   action?: string
   resourceType?: string
   actorId?: string
+  ip?: string
   dateFrom?: string
   dateTo?: string
 }

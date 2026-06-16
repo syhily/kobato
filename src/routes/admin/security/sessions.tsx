@@ -54,6 +54,7 @@ export interface AdminSessionItem {
   userEmail: string
   userRole: 'admin' | 'author' | 'visitor' | null
   userAgent: string
+  platformHint: string | null
   ip: string
   loginAtIso: string
   lastActiveAtIso: string
@@ -102,6 +103,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
     userEmail: s.userEmail,
     userRole: s.userRole,
     userAgent: s.userAgent,
+    platformHint: s.platformHint,
     ip: s.ip,
     loginAtIso: s.loginAt.toISOString(),
     lastActiveAtIso: s.lastActiveAt.toISOString(),

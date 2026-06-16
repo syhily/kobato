@@ -57,6 +57,13 @@ function collectTier2Chunks(
 
 export const middleware: MiddlewareFunction<Response>[] = []
 
+export function headers() {
+  return new Headers({
+    'Accept-CH': 'Sec-CH-UA-Platform',
+    Vary: 'Sec-CH-UA-Platform',
+  })
+}
+
 export function meta({ loaderData, matches }: Route.MetaArgs) {
   return routeMeta(undefined, loaderData?.blogSettings ?? bundleFromMatches(matches))
 }
