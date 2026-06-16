@@ -1,9 +1,13 @@
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { installFetch, jsonResponse } from '#/_helpers/fetch'
 import { makePublicCtx } from '#/_helpers/mock-ctx'
 import { parseRpcJson } from '#/_helpers/rpc-call'
 import { githubRouter } from '@/server/http/controllers/github.controller'
+
+vi.mock('@/server/infra/rate-limit', () => ({
+  tryResourceRateLimit: vi.fn(async () => ({ exceeded: false })),
+}))
 
 const { RPCHandler } = await import('@orpc/server/fetch')
 const handler = new RPCHandler(githubRouter)
