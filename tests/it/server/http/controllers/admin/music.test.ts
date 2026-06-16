@@ -105,6 +105,27 @@ describe('adminMusicRouter.update', () => {
     )
     expect(res.music.name).toBe('Song')
   })
+
+  it('passes the viewer context to the service', async () => {
+    vi.mocked(metadataService.updateMusicMetadata).mockResolvedValueOnce(musicStub)
+    const ctx = makeAuthedCtx({ userId: '42', role: 'author' })
+    await call(
+      adminMusicRouter.update,
+      { id: '1', name: 'Updated Song', artist: ['Artist'], album: 'Album', lyric: '[00:00] Hi' },
+      { context: ctx },
+    )
+    expect(metadataService.updateMusicMetadata).toHaveBeenCalledWith(
+      ctx.db,
+      {
+        id: 1n,
+        name: 'Updated Song',
+        artist: ['Artist'],
+        album: 'Album',
+        lyric: '[00:00] Hi',
+      },
+      { userId: '42', role: 'author' },
+    )
+  })
 })
 
 describe('adminMusicRouter.delete', () => {

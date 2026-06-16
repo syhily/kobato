@@ -89,13 +89,20 @@ const update = authorProc
   )
   .output(updateMusicOutputDto)
   .handler(async ({ input, context }) => {
-    const music = await updateMusicMetadata(context.db, {
-      id: idFromString(input.id),
-      name: input.name,
-      artist: input.artist,
-      album: input.album,
-      lyric: input.lyric ?? null,
-    })
+    const music = await updateMusicMetadata(
+      context.db,
+      {
+        id: idFromString(input.id),
+        name: input.name,
+        artist: input.artist,
+        album: input.album,
+        lyric: input.lyric ?? null,
+      },
+      {
+        userId: context.viewer.userId,
+        role: context.viewer.role,
+      },
+    )
     recordAuditEventFromContext(context, {
       action: 'music_updated',
       resourceType: 'music',

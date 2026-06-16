@@ -183,16 +183,28 @@ describe('music/services/write/metadata — updateMusicMetadata', () => {
     ).rejects.toThrow()
   })
 
-  it('updates metadata and returns the projected dto', async () => {
-    const m = await seedMusic({ name: 'Old' })
+  it('allows the original uploader (author) to update their own track', async () => {
+    const uploader = await seedUploader()
+    const m = await seedMusic({ uploaderId: uploader.id, name: 'Old' })
     const dto = await metadataMod.updateMusicMetadata(
       db,
       { id: m.id, name: 'New', artist: ['A', 'B'], album: 'Alb', lyric: '[00:00] Hello' },
-      { userId: '1', role: 'admin' },
+      { userId: String(uploader.id), role: 'author' },
     )
     expect(dto.name).toBe('New')
     expect(dto.artist).toEqual(['A', 'B'])
     expect(dto.lyric).toBe('[00:00] Hello')
+  })
+
+  it('allows an admin to update another users track', async () => {
+    const uploader = await seedUploader()
+    const m = await seedMusic({ uploaderId: uploader.id, name: 'Old' })
+    const dto = await metadataMod.updateMusicMetadata(
+      db,
+      { id: m.id, name: 'Admin Edit', artist: ['Admin'], album: 'Admin', lyric: null },
+      { userId: '999', role: 'admin' },
+    )
+    expect(dto.name).toBe('Admin Edit')
   })
 })
 
