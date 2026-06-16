@@ -56,6 +56,10 @@ const SHIKI_ALLOWED_STYLES: Record<string, Record<string, RegExp[]>> = {
     'font-weight': [/^\d{3}$/],
     'font-style': [/^(italic|normal|oblique)$/i],
     'text-decoration': [/^(underline|line-through|none)$/i],
+    '--shiki-light': [/^#?[0-9a-fA-F]+$/],
+    '--shiki-dark': [/^#?[0-9a-fA-F]+$/],
+    '--shiki-light-bg': [/^#?[0-9a-fA-F]+$/],
+    '--shiki-dark-bg': [/^#?[0-9a-fA-F]+$/],
   },
 }
 

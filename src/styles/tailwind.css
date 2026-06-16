@@ -327,6 +327,15 @@
   --sidebar-ring: var(--brand);
 }
 
+/* Shiki token colors and background outside .prose-blog (e.g. audit-log details) */
+pre.shiki {
+  color: var(--shiki-light);
+  background-color: var(--shiki-light-bg);
+}
+pre.shiki span {
+  color: var(--shiki-light);
+}
+
 /* Shiki dual theme dark override */
 .dark pre.shiki {
   color: var(--shiki-dark) !important;
