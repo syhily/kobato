@@ -341,9 +341,11 @@ redeploying. Examples: `assets.storage.enabled`, `seo.og.width`,
   throughput. On COPY failure the batch falls back to per-row INSERT.
   Events in the buffer at process shutdown are flushed on `SIGTERM` /
   `SIGINT` / `beforeExit`.
-- **UI sync checklist**: When adding a new action, update
-  `ACTION_OPTIONS` in `src/ui/admin/audit/AuditLogToolbar.tsx` so the
-  admin filter list stays in sync with emitted events.
+- **UI sync checklist**: When adding a new action, add a Chinese
+  translation to `ACTION_OPTIONS` in
+  `src/ui/admin/audit/filter-constants.ts`. Untranslated actions fall
+  back to the raw slug in the admin list and filter, so keep the list
+  in sync with every emitted event.
 
 ## Server layering constraints
 

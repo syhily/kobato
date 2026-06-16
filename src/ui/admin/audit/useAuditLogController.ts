@@ -1,67 +1,158 @@
-import { useReducer } from 'react'
+import { useMemo, useReducer } from 'react'
 
-interface AuditLogState {
-  currentPage: number
-  pageSize: number
-  action: string
-  resourceType: string
-  actorId: string
-  dateFrom: string
-  dateTo: string
+import type { AuditLogActorDto, AuditLogItemDto } from '@/shared/types/audit'
+
+import { isRecord } from '@/shared/utils/type-guards'
+
+export type AuditLogFilterFieldKey = 'action' | 'resourceType' | 'actor' | 'ip' | 'date'
+
+export interface ActiveFilter {
+  field: AuditLogFilterFieldKey
+  value: string
+  label: string
 }
 
-type AuditLogAction =
-  | { type: 'setPage'; value: number }
-  | { type: 'setPageSize'; value: number }
-  | { type: 'setAction'; value: string }
-  | { type: 'setResourceType'; value: string }
-  | { type: 'setActorId'; value: string }
-  | { type: 'setDateFrom'; value: string }
-  | { type: 'setDateTo'; value: string }
-  | { type: 'setDateRange'; from: string; to: string }
-  | { type: 'resetFilters' }
+export interface DateFilterValue {
+  from: string
+  to: string
+}
 
-function auditLogReducer(state: AuditLogState, action: AuditLogAction): AuditLogState {
-  switch (action.type) {
-    case 'setPage':
-      return { ...state, currentPage: action.value }
-    case 'setPageSize':
-      return { ...state, pageSize: action.value, currentPage: 0 }
-    case 'setAction':
-      return { ...state, action: action.value, currentPage: 0 }
-    case 'setResourceType':
-      return { ...state, resourceType: action.value, currentPage: 0 }
-    case 'setActorId':
-      return { ...state, actorId: action.value, currentPage: 0 }
-    case 'setDateFrom':
-      return { ...state, dateFrom: action.value, currentPage: 0 }
-    case 'setDateTo':
-      return { ...state, dateTo: action.value, currentPage: 0 }
-    case 'setDateRange':
-      return { ...state, dateFrom: action.from, dateTo: action.to, currentPage: 0 }
-    case 'resetFilters':
-      return {
-        ...state,
-        action: '',
-        resourceType: '',
-        actorId: '',
-        dateFrom: '',
-        dateTo: '',
-        currentPage: 0,
-      }
+export function parseDateFilter(value: string | undefined): DateFilterValue | null {
+  if (!value) {
+    return null
+  }
+  try {
+    const parsed: unknown = JSON.parse(value)
+    if (!isRecord(parsed)) {
+      return null
+    }
+    const from = typeof parsed.from === 'string' ? parsed.from : ''
+    const to = typeof parsed.to === 'string' ? parsed.to : ''
+    if (!from && !to) {
+      return null
+    }
+    return { from, to }
+  } catch {
+    return null
   }
 }
 
-export function useAuditLogController() {
+export function dateFilterLabel(value: DateFilterValue): string {
+  if (value.from && value.to) {
+    return `${value.from} ~ ${value.to}`
+  }
+  if (value.from) {
+    return `自 ${value.from}`
+  }
+  if (value.to) {
+    return `至 ${value.to}`
+  }
+  return '时间'
+}
+
+export function resolveDateFilterBounds(value: DateFilterValue | null): {
+  from: string | undefined
+  to: string | undefined
+} {
+  if (!value) {
+    return { from: undefined, to: undefined }
+  }
+  return {
+    from: value.from || undefined,
+    to: value.to || undefined,
+  }
+}
+
+const PAGE_SIZE = 20
+
+export interface AuditLogState {
+  items: AuditLogItemDto[]
+  total: number
+  hasMore: boolean
+  filters: ActiveFilter[]
+}
+
+export type AuditLogAction =
+  | { type: 'loaded'; items: AuditLogItemDto[]; total: number; hasMore: boolean }
+  | { type: 'appended'; items: AuditLogItemDto[]; total: number; hasMore: boolean }
+  | { type: 'addFilter'; field: AuditLogFilterFieldKey; value: string; label: string }
+  | { type: 'removeFilter'; field: AuditLogFilterFieldKey }
+  | { type: 'renameFilter'; field: AuditLogFilterFieldKey; label: string }
+  | { type: 'clearFilters' }
+
+function auditLogReducer(state: AuditLogState, action: AuditLogAction): AuditLogState {
+  switch (action.type) {
+    case 'loaded':
+      return {
+        ...state,
+        items: action.items,
+        total: action.total,
+        hasMore: action.hasMore,
+      }
+    case 'appended':
+      return {
+        ...state,
+        items: [...state.items, ...action.items],
+        total: action.total,
+        hasMore: action.hasMore,
+      }
+    case 'addFilter': {
+      const next = state.filters.filter((f) => f.field !== action.field)
+      return { ...state, filters: [...next, { field: action.field, value: action.value, label: action.label }] }
+    }
+    case 'removeFilter':
+      return { ...state, filters: state.filters.filter((f) => f.field !== action.field) }
+    case 'renameFilter': {
+      const idx = state.filters.findIndex((f) => f.field === action.field)
+      if (idx === -1) {
+        return state
+      }
+      const next = [...state.filters]
+      next[idx] = { ...next[idx]!, label: action.label }
+      return { ...state, filters: next }
+    }
+    case 'clearFilters':
+      return { ...state, filters: [] }
+  }
+}
+
+export interface UseAuditLogControllerOptions {
+  initialFilters?: ActiveFilter[]
+}
+
+export function useAuditLogController({ initialFilters = [] }: UseAuditLogControllerOptions = {}) {
   const [state, dispatch] = useReducer(auditLogReducer, {
-    currentPage: 0,
-    pageSize: 20,
-    action: '',
-    resourceType: '',
-    actorId: '',
-    dateFrom: '',
-    dateTo: '',
+    items: [],
+    total: 0,
+    hasMore: false,
+    filters: initialFilters,
   })
 
-  return { state, dispatch }
+  const actionFilter = state.filters.find((f) => f.field === 'action')
+  const resourceTypeFilter = state.filters.find((f) => f.field === 'resourceType')
+  const actorFilter = state.filters.find((f) => f.field === 'actor')
+  const dateFilter = state.filters.find((f) => f.field === 'date')
+
+  const dateRange = useMemo(() => (dateFilter ? parseDateFilter(dateFilter.value) : null), [dateFilter])
+  const dateBounds = useMemo(() => resolveDateFilterBounds(dateRange), [dateRange])
+
+  return {
+    state,
+    dispatch,
+    pageSize: PAGE_SIZE,
+    hasMore: state.hasMore,
+    filterAction: actionFilter?.value ?? '',
+    filterResourceType: resourceTypeFilter?.value ?? '',
+    filterActorId: actorFilter?.value ?? '',
+    filterDateFrom: dateBounds.from ?? '',
+    filterDateTo: dateBounds.to ?? '',
+  }
+}
+
+export function findActorLabel(actors: AuditLogActorDto[] | undefined, actorId: string): string {
+  if (!actorId || !actors) {
+    return ''
+  }
+  const actor = actors.find((a) => a.actorId === actorId)
+  return actor?.email ?? actor?.actorName ?? actorId
 }
