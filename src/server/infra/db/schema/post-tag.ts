@@ -1,4 +1,4 @@
-import { bigint, pgTable, primaryKey } from 'drizzle-orm/pg-core'
+import { bigint, index, pgTable, primaryKey } from 'drizzle-orm/pg-core'
 
 import { post } from '@/server/infra/db/schema/post'
 import { tag } from '@/server/infra/db/schema/taxonomy'
@@ -13,5 +13,8 @@ export const postTag = pgTable(
       .notNull()
       .references(() => tag.id, { onDelete: 'cascade' }),
   },
-  (table) => [primaryKey({ columns: [table.postId, table.tagId] })],
+  (table) => [
+    primaryKey({ columns: [table.postId, table.tagId] }),
+    index('idx_post_tag_tag_id').on(table.tagId),
+  ],
 )
