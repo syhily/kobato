@@ -23,6 +23,7 @@ import { BLOG_SETTINGS_SNAPSHOT_SLOT } from '@/shared/config/snapshot'
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const OUT_DIR = join(__dirname, 'emails')
 
+// oxlint-disable-next-line typescript/no-unsafe-type-assertion
 BLOG_SETTINGS_SNAPSHOT_SLOT.write({
   siteIdentity: {
     title: 'Kobato',
