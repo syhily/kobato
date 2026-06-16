@@ -146,7 +146,7 @@ npm run test:fast   # run unit and snapshot tests without Docker
 npm run fmt   # formatting
 npm run lint  # lint
 npm run type  # TypeScript check
-npm run gen:db      # generate Drizzle migrations
+npm run db:gen      # generate Drizzle migrations
 npm run docker:dev  # start dev components
 npm run docker:test # start test components
 ```
