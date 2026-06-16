@@ -7,8 +7,10 @@ import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { clearAllTables } from '#/_helpers/integration-db'
 import { createBackup } from '@/server/domains/backup/services/backup'
 import { extractBackupSql, restoreFromBackup } from '@/server/domains/backup/services/restore'
+import { BACKUP_HEADER_MARKER } from '@/server/domains/backup/services/validate'
 import { createDbPool, closePool } from '@/server/infra/db/pool'
 import { category } from '@/server/infra/db/schema/taxonomy'
+import { ActionFailure } from '@/server/infra/http/errors'
 
 const s3Mock = vi.hoisted(() => {
   const store = new Map<string, Buffer>()
@@ -96,5 +98,28 @@ describe('backup and restore integration', () => {
     await expect(extractBackupSql(Buffer.from([0x00, 0x00]), 'not-a-backup.sql.gz')).rejects.toThrow(
       '备份文件格式不正确',
     )
+  })
+
+  it('rejects a backup without the project signature', async () => {
+    const sql = `-- PostgreSQL database dump\nCREATE TABLE users (id serial PRIMARY KEY);`
+    await expect(restoreFromBackup(db, Buffer.from(sql), 'unsigned.sql')).rejects.toThrow(ActionFailure)
+    await expect(restoreFromBackup(db, Buffer.from(sql), 'unsigned.sql')).rejects.toThrow('项目签名')
+  })
+
+  it('rejects a backup containing a blocked plpython3u extension', async () => {
+    const sql = `${BACKUP_HEADER_MARKER}\n-- PostgreSQL database dump\nCREATE EXTENSION IF NOT EXISTS plpython3u;\nCREATE TABLE users (id serial PRIMARY KEY);`
+    await expect(restoreFromBackup(db, Buffer.from(sql), 'evil-ext.sql')).rejects.toThrow(ActionFailure)
+    await expect(restoreFromBackup(db, Buffer.from(sql), 'evil-ext.sql')).rejects.toThrow('不允许的数据库扩展')
+  })
+
+  it('rejects a backup containing COPY FROM a file path', async () => {
+    const sql = `${BACKUP_HEADER_MARKER}\n-- PostgreSQL database dump\nCOPY users (email) FROM '/etc/passwd';\nCREATE TABLE users (id serial PRIMARY KEY);`
+    await expect(restoreFromBackup(db, Buffer.from(sql), 'evil-copy.sql')).rejects.toThrow(ActionFailure)
+  })
+
+  it('rejects a backup containing a SECURITY DEFINER function', async () => {
+    const sql = `${BACKUP_HEADER_MARKER}\n-- PostgreSQL database dump\nCREATE FUNCTION evil() RETURNS void SECURITY DEFINER AS $$ BEGIN PERFORM pg_read_file('/etc/passwd'); END; $$ LANGUAGE plpgsql;\nCREATE TABLE users (id serial PRIMARY KEY);`
+    await expect(restoreFromBackup(db, Buffer.from(sql), 'evil-function.sql')).rejects.toThrow(ActionFailure)
+    await expect(restoreFromBackup(db, Buffer.from(sql), 'evil-function.sql')).rejects.toThrow('危险 SQL')
   })
 })

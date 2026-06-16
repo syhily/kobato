@@ -11,7 +11,7 @@ import {
   hasTimescaleDbRestoreFunctions,
   MAX_SQL_SIZE,
 } from '@/server/domains/backup/services/shared'
-import { validateBackupSql } from '@/server/domains/backup/services/validate'
+import { validateBackupHeader, validateBackupSql } from '@/server/domains/backup/services/validate'
 import { ActionFailure, DomainError } from '@/server/infra/http/errors'
 import { getLogger } from '@/server/infra/logger'
 
@@ -91,10 +91,16 @@ export async function restoreFromSql(db: NodePgDatabase, sql: string): Promise<v
   }
 
   try {
-    const psql = spawn('psql', ['--no-psqlrc', '--single-transaction', '-v', 'ON_ERROR_STOP=1', ...connArgs], {
-      env,
-      stdio: ['pipe', 'inherit', 'inherit'],
-    })
+    const restoreRole = env.RESTORE_ROLE
+    const roleArgs = restoreRole ? ['--role=' + restoreRole, '--no-owner'] : []
+    const psql = spawn(
+      'psql',
+      ['--no-psqlrc', '--single-transaction', '-v', 'ON_ERROR_STOP=1', ...roleArgs, ...connArgs],
+      {
+        env,
+        stdio: ['pipe', 'inherit', 'inherit'],
+      },
+    )
 
     // Clear the public schema before applying the dump so that tables added
     // after the backup was taken (e.g. by later migrations) do not block
@@ -109,7 +115,10 @@ BEGIN
   END LOOP;
 END $$;`
 
-    Readable.from([`SET CONSTRAINTS ALL DEFERRED;\n`, preRestoreCleanup, '\n', sql, '\n']).pipe(psql.stdin)
+    const streamPrefix = restoreRole ? [`SET ROLE "${restoreRole}";\n`] : []
+    Readable.from([...streamPrefix, `SET CONSTRAINTS ALL DEFERRED;\n`, preRestoreCleanup, '\n', sql, '\n']).pipe(
+      psql.stdin,
+    )
 
     psql.stdin.on('error', (err) => {
       if ((err as NodeJS.ErrnoException).code !== 'EPIPE') {
@@ -188,6 +197,7 @@ END $$;`
 
 export async function restoreFromBackup(db: NodePgDatabase, buffer: Buffer, fileName: string): Promise<void> {
   const sql = await extractBackupSql(buffer, fileName)
+  validateBackupHeader(sql)
   validateBackupSql(sql)
   await restoreFromSql(db, sql)
 }

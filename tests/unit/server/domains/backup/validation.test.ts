@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { validateBackupSql } from '@/server/domains/backup/services/validate'
+import { BACKUP_HEADER_MARKER, validateBackupHeader, validateBackupSql } from '@/server/domains/backup/services/validate'
 import { ActionFailure } from '@/server/infra/http/errors'
 
 describe('backup validation', () => {
@@ -211,5 +211,49 @@ COPY public.users (id, email) FROM stdin;
 \\.
 INSERT INTO public.users (id, email) VALUES (3, 'charlie@example.com');`
     expect(() => validateBackupSql(sql)).not.toThrow()
+  })
+
+  it('validates project header', () => {
+    expect(() => validateBackupHeader(`${BACKUP_HEADER_MARKER}\nCREATE TABLE users (id INT);`)).not.toThrow()
+  })
+
+  it('rejects backup without project header', () => {
+    expect(() => validateBackupHeader('CREATE TABLE users (id INT);')).toThrow(ActionFailure)
+  })
+
+  it('rejects SECURITY DEFINER function', () => {
+    const sql = `-- PostgreSQL database dump
+CREATE FUNCTION evil() RETURNS void SECURITY DEFINER AS $$ BEGIN PERFORM pg_read_file('/etc/passwd'); END; $$ LANGUAGE plpgsql;
+CREATE TABLE users (id serial PRIMARY KEY);`
+    expect(() => validateBackupSql(sql)).toThrow(ActionFailure)
+  })
+
+  it('rejects psql \\du meta-command', () => {
+    const sql = `-- PostgreSQL database dump
+\\du
+CREATE TABLE users (id serial PRIMARY KEY);`
+    expect(() => validateBackupSql(sql)).toThrow(ActionFailure)
+  })
+
+  it('rejects psql \\dp meta-command', () => {
+    const sql = `-- PostgreSQL database dump
+\\dp
+CREATE TABLE users (id serial PRIMARY KEY);`
+    expect(() => validateBackupSql(sql)).toThrow(ActionFailure)
+  })
+
+  it('rejects EXECUTE with string concatenation', () => {
+    const sql = `-- PostgreSQL database dump
+EXECUTE 'DROP TABLE ' || tablename || ' CASCADE';
+CREATE TABLE users (id serial PRIMARY KEY);`
+    expect(() => validateBackupSql(sql)).toThrow(ActionFailure)
+  })
+
+  it('blocks dangerous extension consistently on repeated validation', () => {
+    const sql = `-- PostgreSQL database dump
+CREATE EXTENSION IF NOT EXISTS plpython3u;
+CREATE TABLE users (id serial PRIMARY KEY);`
+    expect(() => validateBackupSql(sql)).toThrow(ActionFailure)
+    expect(() => validateBackupSql(sql)).toThrow(ActionFailure)
   })
 })

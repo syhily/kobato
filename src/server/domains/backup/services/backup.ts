@@ -6,6 +6,7 @@ import { createGzip } from 'node:zlib'
 import type { BackupFileDto } from '@/shared/types/backup'
 
 import { ensurePgTools, getPgConnectionOptions } from '@/server/domains/backup/services/shared'
+import { BACKUP_HEADER_MARKER } from '@/server/domains/backup/services/validate'
 import { getLogger } from '@/server/infra/logger'
 import {
   deleteS3Object,
@@ -44,6 +45,20 @@ export async function createBackup(): Promise<{ fileName: string; size: number }
 
   const gzip = createGzip()
 
+  // Prepend the project-specific header so restore can verify the file origin.
+  const header = Buffer.from(BACKUP_HEADER_MARKER + '\n')
+  let headerSent = false
+  const headerTransform = new Transform({
+    transform(chunk: Buffer, _encoding, callback) {
+      if (!headerSent) {
+        headerSent = true
+        callback(null, Buffer.concat([header, chunk]))
+      } else {
+        callback(null, chunk)
+      }
+    },
+  })
+
   let uploadedBytes = 0
   const counter = new Transform({
     transform(chunk: Buffer, _encoding, callback) {
@@ -60,7 +75,7 @@ export async function createBackup(): Promise<{ fileName: string; size: number }
   // reading from it.
   const uploadStream = new PassThrough()
 
-  const streamDone = pipeline(pgDump.stdout, gzip, counter, uploadStream)
+  const streamDone = pipeline(pgDump.stdout, headerTransform, gzip, counter, uploadStream)
 
   const stderrChunks: Buffer[] = []
   pgDump.stderr.on('data', (chunk: Buffer) => {

@@ -1,6 +1,9 @@
 import { MAX_SQL_SIZE } from '@/server/domains/backup/services/shared'
 import { ActionFailure } from '@/server/infra/http/errors'
 
+// Project-specific marker emitted by createBackup and required on restore.
+export const BACKUP_HEADER_MARKER = '-- Kobato database backup'
+
 // Dangerous SQL patterns that must never be allowed in a restore file.
 const BLOCKED_PATTERNS = [
   /\bDROP\s+(?:\/\*[^]*?\*\/\s*)*DATABASE\b/i,
@@ -13,6 +16,8 @@ const BLOCKED_PATTERNS = [
   /\bCREATE\s+(?:OR\s+REPLACE\s+)?(?:\/\*[^]*?\*\/\s*)*FUNCTION\b/i,
   /\bCREATE\s+(?:\/\*[^]*?\*\/\s*)*PROCEDURE\b/i,
   /\bLANGUAGE\s+(?:\/\*[^]*?\*\/\s*)*(plpython3u|plperlu|pltclu|plsh|plc|pljava|plr)\b/i,
+  /\bSECURITY\s+DEFINER\b/i,
+  /\bEXECUTE\b[\s\S]*?\|\|[\s\S]*?;/i,
   /\bDO\s*\$\$/i,
   /\\!/i,
   /\\i\b/i,
@@ -23,6 +28,8 @@ const BLOCKED_PATTERNS = [
   /\\c\b/i,
   /\\connect\b/i,
   /\\o\b/i,
+  /\\du\b/i,
+  /\\dp\b/i,
 ]
 
 // Extensions that are safe to CREATE EXTENSION in a restore file.
@@ -71,6 +78,8 @@ const CREATE_EXTENSION_RE =
   /\bCREATE\s+(?:\/\*[^]*?\*\/\s*)*EXTENSION\s+(?:IF\s+NOT\s+EXISTS\s+)?"?([a-zA-Z0-9_-]+)"?/gi
 
 function containsBlockedExtensions(sql: string): boolean {
+  // Reset global regex state so repeated validations are deterministic.
+  CREATE_EXTENSION_RE.lastIndex = 0
   let match: RegExpExecArray | null
   while ((match = CREATE_EXTENSION_RE.exec(sql)) !== null) {
     const ext = match[1].toLowerCase().replace(/-/g, '_')
@@ -313,6 +322,12 @@ function containsDisallowedStatements(sql: string): boolean {
     }
   }
   return false
+}
+
+export function validateBackupHeader(sql: string): void {
+  if (!sql.includes(BACKUP_HEADER_MARKER)) {
+    throw new ActionFailure(400, '备份文件缺少项目签名，无法确认来源。')
+  }
 }
 
 export function validateBackupSql(sql: string): void {

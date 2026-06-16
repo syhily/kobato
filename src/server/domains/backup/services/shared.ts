@@ -55,6 +55,9 @@ export function getPgConnectionOptions(): { args: string[]; env: Record<string, 
   if (parsed.password) {
     env.PGPASSWORD = parsed.password
   }
+  if (processEnv.RESTORE_ROLE) {
+    env.RESTORE_ROLE = processEnv.RESTORE_ROLE
+  }
   const args = [
     `--host=${parsed.hostname}`,
     `--port=${parsed.port || '5432'}`,
