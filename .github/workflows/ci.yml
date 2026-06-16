@@ -50,6 +50,7 @@ jobs:
         with:
           node-version: 24
           cache: 'npm'
+      - run: npm install -g npm@11.17.0
       - run: npm ci
       - name: Install PostgreSQL 17 client tools
         run: |
@@ -79,5 +80,6 @@ jobs:
         with:
           node-version: 24
           cache: 'npm'
+      - run: npm install -g npm@11.17.0
       - run: npm ci
       - run: npm run build

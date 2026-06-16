@@ -1,6 +1,7 @@
 FROM node:24-alpine AS build
 WORKDIR /app
 COPY . .
+RUN npm install -g npm@11.17.0
 RUN --mount=type=cache,target=/root/.npm \
     npm ci
 RUN NODE_ENV=production npm run build
@@ -19,6 +20,7 @@ RUN apk add --no-cache tini postgresql-client font-noto-cjk && \
 # Install runtime native deps from the lockfile so production images use the
 # exact versions tested locally, not the latest matching semver range.
 COPY package.json package-lock.json ./
+RUN npm install -g npm@11.17.0
 RUN --mount=type=cache,target=/root/.npm \
     npm ci --omit=dev
 COPY --from=build /app/build ./build
