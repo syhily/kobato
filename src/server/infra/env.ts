@@ -79,7 +79,7 @@ export function createEnv<TServer extends ServerSchema>(opts: CreateEnvOptions<T
 const envConfig = {
   server: {
     // Default configuration. Normally let it as it is.
-    LOG_LEVEL: z.enum(['debug', 'info', 'warn', 'error']).optional(),
+    LOG_LEVEL: z.enum(['debug', 'info', 'warn', 'error', 'silent']).optional(),
     HOST: z.string().min(1).default('0.0.0.0'),
     PORT: z.coerce.number().int().min(1).max(65535).default(4321),
 

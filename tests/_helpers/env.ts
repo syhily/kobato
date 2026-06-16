@@ -21,6 +21,7 @@ export const TEST_ENV = {
   SESSION_SECRET: 'vitest-session-secret-must-be-at-least-32-chars-long-ok',
   ENCRYPTION_KEY: 'vitest-encryption-key-must-be-at-least-32-chars-long-ok',
   DATA_PATH: '/tmp/kobato-data',
+  LOG_LEVEL: 'silent',
 } as const
 
 export function ensureTestEnv(): void {
