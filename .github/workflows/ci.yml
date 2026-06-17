@@ -3,8 +3,14 @@ name: CI
 on:
   push:
     branches: [main, develop]
+    paths:
+      - 'src/**'
+      - 'tests/**'
   pull_request:
     branches: [main]
+    paths:
+      - 'src/**'
+      - 'tests/**'
 
 # Cancel superseded runs on the same branch so PR pushes don't queue up
 # duplicate jobs. Each run still emits a status check.
