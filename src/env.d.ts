@@ -28,3 +28,10 @@ declare module '@hono/node-server/serve-static' {
   const serveStatic: <E extends Env = Env>(options?: ServeStaticOptions<E>) => MiddlewareHandler
   export { serveStatic }
 }
+
+// Provided by `routeWarmupPlugin` (src/server/infra/route-warmup.ts): the
+// bundled + minified route-warmup inline script. Empty string in dev.
+declare module 'virtual:route-warmup-script' {
+  const script: string
+  export default script
+}

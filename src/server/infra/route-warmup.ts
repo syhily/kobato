@@ -3,6 +3,9 @@ import type { Plugin } from 'vite'
 
 import { existsSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs'
 import { basename, join, resolve } from 'node:path'
+import { build } from 'vite'
+
+import { CHUNKS_SENTINEL } from '../../shared/constants/route-warmup'
 
 // Route tier configuration
 
@@ -162,12 +165,87 @@ function loadServerManifest(clientAssetsDir: string): RouteManifest | null {
   }
 }
 
+// --- Inline warmup script (bundled + minified at build time) ---------------
+
+const WARMUP_ENTRY = resolve(process.cwd(), 'src/client/scripts/route-warmup.entry.ts')
+const VIRTUAL_ID = 'virtual:route-warmup-script'
+const RESOLVED_VIRTUAL_ID = `\0${VIRTUAL_ID}`
+
+// The inline script is static per build, so bundle it once and reuse across
+// the client and SSR environments. Cached as a promise so concurrent loads
+// dedupe to a single nested build.
+let compiledWarmupPromise: Promise<string> | null = null
+
+function bundleWarmupScript(): Promise<string> {
+  if (!compiledWarmupPromise) {
+    compiledWarmupPromise = (async () => {
+      // Isolated build (no project plugins) — same pattern as
+      // `processWorkerEntryPlugin`. Output is a single self-contained IIFE.
+      const result = await build({
+        configFile: false,
+        logLevel: 'warn',
+        build: {
+          write: false,
+          minify: true,
+          sourcemap: false,
+          target: 'es2020',
+          rollupOptions: {
+            input: WARMUP_ENTRY,
+            output: { format: 'iife' },
+          },
+        },
+        resolve: {
+          alias: { '@': resolve(process.cwd(), 'src') },
+        },
+      })
+
+      const outputs = (Array.isArray(result) ? result : [result]).flatMap((r) => ('output' in r ? r.output : []))
+      for (const chunk of outputs) {
+        if (chunk.type === 'chunk' && chunk.fileName.endsWith('.js')) {
+          // Guards against minifier surprises and sentinel drift.
+          if (!chunk.code.includes(CHUNKS_SENTINEL)) {
+            throw new Error(
+              '[route-warmup] bundled inline script is missing the chunk sentinel — did the minifier config change?',
+            )
+          }
+          return chunk.code
+        }
+      }
+      throw new Error('[route-warmup] inline script build produced no JS chunk')
+    })()
+  }
+  return compiledWarmupPromise
+}
+
 // Plugin
 
 export function routeWarmupPlugin(): Plugin {
+  let isServe = false
   return {
     name: 'route-warmup',
     enforce: 'post',
+
+    config(_config, { command }) {
+      isServe = command === 'serve'
+    },
+
+    resolveId(id) {
+      if (id === VIRTUAL_ID) {
+        return RESOLVED_VIRTUAL_ID
+      }
+    },
+
+    async load(id) {
+      if (id !== RESOLVED_VIRTUAL_ID) {
+        return
+      }
+      // No warmup <script> in dev — the component short-circuits on DEV too.
+      if (isServe) {
+        return 'export default ""\n'
+      }
+      const code = await bundleWarmupScript()
+      return `export default ${JSON.stringify(code)}\n`
+    },
 
     writeBundle: {
       order: 'post',

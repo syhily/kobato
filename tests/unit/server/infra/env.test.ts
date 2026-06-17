@@ -31,6 +31,11 @@ describe('createEnv', () => {
   })
 
   it('throws on validation errors with descriptive issues', () => {
+    // The default handler reports to stderr before throwing. `process.stderr.write`
+    // bypasses Vitest's `silent` capture and would otherwise leak into the reporter
+    // output, so intercept it — and assert the report while we're at it.
+    const stderrWrite = vi.spyOn(process.stderr, 'write').mockImplementation(() => true)
+
     expect(() =>
       createEnv({
         server: {
@@ -39,6 +44,10 @@ describe('createEnv', () => {
         runtimeEnv: { DATABASE_URL: 'not-a-url' },
       }),
     ).toThrow('Invalid environment variables')
+
+    expect(stderrWrite).toHaveBeenCalledOnce()
+    expect(String(stderrWrite.mock.calls[0]?.[0])).toContain('Invalid environment variables')
+    stderrWrite.mockRestore()
   })
 
   it('calls custom onValidationError when provided', () => {

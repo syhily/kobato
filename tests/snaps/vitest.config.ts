@@ -1,10 +1,13 @@
 import { createRequire } from 'node:module'
 import { defineConfig } from 'vitest/config'
 
+import { routeWarmupScriptStubPlugin } from '../_helpers/virtual-modules'
+
 const require = createRequire(import.meta.url)
 const pkg = require('../../package.json')
 
 export default defineConfig({
+  plugins: [routeWarmupScriptStubPlugin()],
   resolve: { tsconfigPaths: true },
   // Mirror the root vite.config.ts define block so route modules that
   // transitively import `@/shared/config/version` (e.g. AdminShell →

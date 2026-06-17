@@ -494,6 +494,13 @@ describe('contract: module and bundle boundaries', () => {
         specifier: '../../../shared/utils/thumbhash.ts',
       },
       {
+        // Config-graph file: `@/` aliases are not resolved while Vite loads
+        // vite.config.ts, so this must stay relative (see process-worker above).
+        key: 'route-warmup.ts -> ../../shared/constants/route-warmup',
+        file: 'src/server/infra/route-warmup.ts',
+        specifier: '../../shared/constants/route-warmup',
+      },
+      {
         key: 'LazyCommentBodyEditor.tsx -> ./CommentBodyEditor',
         file: 'src/ui/public/comments/LazyCommentBodyEditor.tsx',
         specifier: './CommentBodyEditor',

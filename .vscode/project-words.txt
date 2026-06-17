@@ -233,6 +233,7 @@ plpython
 plsh
 pltclu
 portabletext
+prefetcher
 prerender
 procfile
 prosemirror
