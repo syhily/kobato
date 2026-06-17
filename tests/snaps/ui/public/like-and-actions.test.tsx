@@ -1,0 +1,408 @@
+import { type ReactNode } from 'react'
+import { describe, expect, it, vi } from 'vitest'
+
+import type { CommentItemWire as CommentItemType } from '@/shared/types/comments'
+
+import { renderInRouter, renderToHtml, stableHtml } from '#/_helpers/render'
+import { CommentActions } from '@/ui/public/comments/comment-item/CommentActions'
+import { CommentReplyForm } from '@/ui/public/comments/CommentReplyForm'
+import {
+  CommentsActionsContext,
+  CommentsStateContext,
+  type CommentsActionsContextValue,
+  type CommentsStateContextValue,
+} from '@/ui/public/comments/comments-context'
+import { LikeButton, LikeShare } from '@/ui/public/LikeActions'
+
+// LikeButton + CommentActions + CommentReplyForm each drive `useMutation`
+// against the like / comment oRPC procedures. We mock `@tanstack/react-
+// query`'s `useMutation` to an inert pending-toggleable singleton (same
+// hoisted-singleton pattern as musics-view) so the views never issue real
+// network calls and the pending branch is reachable per-test.
+const mutationState = vi.hoisted(() => ({ isPending: false, mutate: vi.fn(), mutateAsync: vi.fn() }))
+vi.mock('@tanstack/react-query', async () => {
+  const actual = await vi.importActual<typeof import('@tanstack/react-query')>('@tanstack/react-query')
+  return {
+    ...actual,
+    useMutation: () => mutationState,
+  }
+})
+
+// `orpcQuery` builds mutation option objects; mocked inert so the option
+// builders never execute their network path.
+vi.mock('@/client/api/orpc-query', () => ({
+  orpcQuery: {
+    likes: {
+      validate: { mutationOptions: () => ({ mutationKey: ['likes', 'validate'] }) },
+      increase: { mutationOptions: () => ({ mutationKey: ['likes', 'increase'] }) },
+      decrease: { mutationOptions: () => ({ mutationKey: ['likes', 'decrease'] }) },
+    },
+    admin: {
+      comments: {
+        approve: { mutationOptions: () => ({ mutationKey: ['admin', 'comments', 'approve'] }) },
+        delete: { mutationOptions: () => ({ mutationKey: ['admin', 'comments', 'delete'] }) },
+      },
+    },
+    comments: {
+      replyComment: { mutationOptions: () => ({ mutationKey: ['comments', 'reply'] }) },
+      requestDeleteOwn: { mutationOptions: () => ({ mutationKey: ['comments', 'requestDeleteOwn'] }) },
+      cancelDeleteOwn: { mutationOptions: () => ({ mutationKey: ['comments', 'cancelDeleteOwn'] }) },
+    },
+    avatar: { find: { mutationOptions: () => ({ mutationKey: ['avatar', 'find'] }) } },
+  },
+}))
+
+// `sonner` toast is imported by the reply form. SSR safe to no-op.
+vi.mock('sonner', () => ({ toast: { error: vi.fn(), success: vi.fn() } }))
+
+// `useCommentGuest` (read by CommentReplyForm) reads localStorage; supply a
+// stable no-guest default so the SSR render does not touch storage.
+vi.mock('@/client/hooks/use-comment-guest', () => ({
+  useCommentGuest: () => ({
+    profile: null,
+    saveProfile: vi.fn(),
+    clearProfile: vi.fn(),
+  }),
+}))
+
+// `LazyCommentBodyEditor` lazy-imports a TipTap-backed editor on the client;
+// its SSR placeholder is a textarea, which is what we want. Replace it with a
+// deterministic element so the snapshot never depends on the lazy boundary.
+vi.mock('@/ui/public/comments/LazyCommentBodyEditor', () => ({
+  LazyCommentBodyEditor: ({ bodyKey }: { bodyKey: string }) => (
+    <textarea data-test="comment-body-editor" data-body-key={bodyKey} />
+  ),
+}))
+
+// ──────────────────────────── fixtures ────────────────────────────
+
+function makeComment(overrides: Partial<CommentItemType> = {}): CommentItemType {
+  return {
+    id: '1',
+    createAt: '2024-01-15T08:30:00.000Z',
+    updatedAt: '2024-01-15T08:30:00.000Z',
+    deleteAt: null,
+    body: [
+      {
+        _type: 'block',
+        _key: 'b1',
+        style: 'normal',
+        children: [{ _type: 'span', _key: 's1', text: 'Hello, world.' }],
+      },
+    ],
+    type: 'post' as const,
+    ownerId: '1',
+    userId: '42',
+    isVerified: true,
+    rid: 0,
+    isCollapsed: false,
+    isPending: false,
+    isPinned: false,
+    voteUp: 0,
+    voteDown: 0,
+    rootId: null,
+    name: 'Alice',
+    emailVerified: true,
+    link: 'https://alice.example.com',
+    badgeName: null,
+    badgeColor: null,
+    badgeTextColor: null,
+    children: [],
+    ...overrides,
+  }
+}
+
+/** Wrap children in the Comments context so CommentActions sees a fully
+ *  populated leaf (admin flag, myCommentIds, currentUserId, callbacks). */
+function withCommentsContext(
+  node: ReactNode,
+  state: Partial<CommentsStateContextValue> = {},
+  actions: Partial<CommentsActionsContextValue> = {},
+): ReactNode {
+  const fullState: CommentsStateContextValue = {
+    commentKey: 'post-1',
+    totalCount: 0,
+    admin: false,
+    state: { items: [], rootsLoaded: 0, rootsTotal: 0, replyToId: 0 },
+    activeReplyToId: 0,
+    myCommentIds: new Set<string>(),
+    myCommentExpiresAt: new Map<string, number>(),
+    currentUserId: null,
+    replyForm: null,
+    ...state,
+  }
+  const fullActions: CommentsActionsContextValue = {
+    onReply: () => undefined,
+    onCancelReply: () => undefined,
+    onEdited: () => undefined,
+    onApproved: () => undefined,
+    onDeleted: () => undefined,
+    onDismissMyComment: () => undefined,
+    dispatch: () => undefined,
+    ...actions,
+  }
+  return (
+    <CommentsStateContext.Provider value={fullState}>
+      <CommentsActionsContext.Provider value={fullActions}>{node}</CommentsActionsContext.Provider>
+    </CommentsStateContext.Provider>
+  )
+}
+
+// ─────────────────────────── LikeButton ───────────────────────────
+
+describe('snapshot: LikeButton', () => {
+  it('renders the not-liked state with the like count', () => {
+    const html = stableHtml(renderToHtml(<LikeButton permalink="/posts/hello" commentKey="post-1" likes={42} />))
+    // The like button copy is fully present.
+    expect(html).toContain('点赞')
+    expect(html).toContain('aria-label="点赞"')
+    expect(html).toContain('aria-pressed="false"')
+    expect(html).toContain('data-liked="false"')
+    // NumberFlow renders each digit as a column with aria-label carrying the
+    // full value.
+    expect(html).toContain('aria-label="42"')
+    // Permalink is surfaced via the data attribute the click handler reads.
+    expect(html).toContain('data-permalink="/posts/hello"')
+  })
+
+  it('renders the zero-count state without crashing', () => {
+    const html = stableHtml(renderToHtml(<LikeButton permalink="/posts/hello" commentKey="post-1" likes={0} />))
+    expect(html).toContain('aria-label="0"')
+    expect(html).toContain('点赞')
+    // Button is not disabled in the idle (non-pending) state.
+    expect(html).not.toContain('disabled=""')
+  })
+
+  it('disables the button while a like/unlike request is pending', () => {
+    mutationState.isPending = true
+    try {
+      const html = stableHtml(renderToHtml(<LikeButton permalink="/posts/hello" commentKey="post-1" likes={42} />))
+      expect(html).toContain('disabled=""')
+      // Copy stays the same; only the disabled flag toggles.
+      expect(html).toContain('点赞')
+    } finally {
+      mutationState.isPending = false
+    }
+  })
+})
+
+// ───────────────────────────── LikeShare ──────────────────────────
+// `LikeShare` is already covered in `like-actions.test.tsx`. We re-assert
+// here only the permalink-driven share URL shape for a page (not post) so
+// the branch that joins the website root with the relative permalink has a
+// neighbour test in the same file.
+
+describe('snapshot: LikeShare (page permalink)', () => {
+  it('renders share buttons with the absolute page URL', () => {
+    const html = stableHtml(
+      renderToHtml(
+        <LikeShare
+          post={{
+            title: '关于',
+            summary: 'About this blog.',
+            cover: 'https://example.com/about.png',
+            permalink: '/about',
+          }}
+        />,
+      ),
+    )
+    // The QQ / Weibo share URLs embed the absolute URL (joined with the
+    // test-bundle website `https://example.com`).
+    expect(html).toContain('url=https%3A%2F%2Fexample.com%2Fabout')
+    // The weibo share title wraps the post title — `【关于】About this blog.`
+    // — which is URL-encoded inside the href query string.
+    expect(html).toContain('title=%E3%80%90%E5%85%B3%E4%BA%8E%E3%80%91')
+  })
+})
+
+// ────────────────────────── CommentActions ────────────────────────
+
+describe('snapshot: CommentActions', () => {
+  it('renders only the reply affordance in public mode for a foreign comment', () => {
+    const html = stableHtml(
+      renderInRouter(
+        withCommentsContext(
+          <CommentActions comment={makeComment()} mode="public" onEditAdmin={() => {}} onEditOwn={() => {}} />,
+        ),
+        '/posts/1',
+      ),
+    )
+    expect(html).toContain('回复')
+    // Foreign comment + non-admin viewer => edit / own-edit / delete hidden.
+    expect(html).not.toContain('编辑')
+    expect(html).not.toContain('修改')
+    expect(html).not.toContain('申请删除')
+    expect(html).not.toContain('通过')
+    expect(html).not.toContain('删除')
+  })
+
+  it('renders the admin edit / approve / delete affordances for a pending comment', () => {
+    const html = stableHtml(
+      renderInRouter(
+        withCommentsContext(
+          <CommentActions
+            comment={makeComment({ id: '7', isPending: true })}
+            mode="admin"
+            onEditAdmin={() => {}}
+            onEditOwn={() => {}}
+          />,
+          { admin: true } as Partial<CommentsStateContextValue>,
+        ),
+        '/admin',
+      ),
+    )
+    // Reply + admin edit (admin viewer → admin branch of the edit gate).
+    expect(html).toContain('回复')
+    expect(html).toContain('编辑')
+    // isPending=true → the "通过" approve button renders.
+    expect(html).toContain('通过')
+    // Admin delete affordance. AlertDialog content is portalled and only
+    // mounts when open, so on SSR we assert only on the trigger button copy.
+    expect(html).toContain('删除')
+  })
+
+  it('hides the approve button for an already-approved comment', () => {
+    const html = stableHtml(
+      renderInRouter(
+        withCommentsContext(
+          <CommentActions
+            comment={makeComment({ isPending: false })}
+            mode="admin"
+            onEditAdmin={() => {}}
+            onEditOwn={() => {}}
+          />,
+          { admin: true } as Partial<CommentsStateContextValue>,
+        ),
+        '/admin',
+      ),
+    )
+    expect(html).toContain('编辑')
+    expect(html).toContain('删除')
+    // Approved → no "通过" approve affordance.
+    expect(html).not.toContain('通过')
+  })
+
+  it('renders the visitor own-edit + request-delete affordances for an owned comment', () => {
+    const html = stableHtml(
+      renderInRouter(
+        withCommentsContext(
+          <CommentActions
+            comment={makeComment({ id: '42', userId: '42' })}
+            mode="public"
+            onEditAdmin={() => {}}
+            onEditOwn={() => {}}
+          />,
+          {
+            currentUserId: '42',
+            admin: false,
+          } as Partial<CommentsStateContextValue>,
+        ),
+        '/posts/1',
+      ),
+    )
+    // Owned by the current viewer → own-edit + request-delete show, the admin
+    // edit / approve / delete branches stay hidden.
+    expect(html).toContain('回复')
+    expect(html).toContain('修改')
+    expect(html).toContain('申请删除')
+    expect(html).not.toContain('通过')
+    expect(html).not.toContain('删除评论？')
+  })
+
+  it('renders the cancel-delete affordance when the visitor already requested deletion', () => {
+    const html = stableHtml(
+      renderInRouter(
+        withCommentsContext(
+          <CommentActions
+            comment={makeComment({ id: '42', userId: '42', deleteRequestedAt: '2024-06-01T00:00:00.000Z' })}
+            mode="public"
+            onEditAdmin={() => {}}
+            onEditOwn={() => {}}
+          />,
+          { currentUserId: '42', admin: false } as Partial<CommentsStateContextValue>,
+        ),
+        '/posts/1',
+      ),
+    )
+    // Pending delete → own-edit hidden, request-delete replaced by cancel.
+    expect(html).toContain('撤回删除')
+    expect(html).not.toContain('修改')
+    expect(html).not.toContain('申请删除')
+  })
+})
+
+// ───────────────────────── CommentReplyForm ───────────────────────
+
+describe('snapshot: CommentReplyForm', () => {
+  it('renders the top-level (no reply target) form with name / email / link fields', () => {
+    const html = stableHtml(
+      renderInRouter(
+        <CommentReplyForm commentKey="post-1" replyToId={0} onCancel={() => {}} onReplied={() => {}} />,
+        '/posts/1',
+      ),
+    )
+    // Avatar + body editor stub.
+    expect(html).toContain('/images/default-avatar.png')
+    expect(html).toContain('data-test="comment-body-editor"')
+    // Anonymous-mode identity inputs are visible (not hidden).
+    expect(html).toContain('id="comment-name"')
+    expect(html).toContain('id="comment-email"')
+    expect(html).toContain('id="comment-url"')
+    // No reply target → the "再想想" cancel button is omitted.
+    expect(html).not.toContain('再想想')
+    // Submit copy + honeypot (non-admin viewers see the honeypot).
+    expect(html).toContain('发表评论')
+    expect(html).toContain('name="subtitle"')
+  })
+
+  it('renders the reply-target overlay and the cancel button when replyToId is set', () => {
+    const replyTarget = makeComment({
+      id: '42',
+      name: '雨帆',
+      body: [
+        {
+          _type: 'block',
+          _key: 'b1',
+          style: 'normal',
+          children: [{ _type: 'span', _key: 's1', text: '回复内容片段。' }],
+        },
+      ],
+    })
+    const html = stableHtml(
+      renderInRouter(
+        <CommentReplyForm
+          commentKey="post-1"
+          replyToId={42}
+          replyTarget={replyTarget}
+          onCancel={() => {}}
+          onReplied={() => {}}
+        />,
+        '/posts/1',
+      ),
+    )
+    // Reply overlay quotes the target author + a clipped snippet.
+    expect(html).toContain('回复 @雨帆')
+    expect(html).toContain('回复内容片段。')
+    // Reply mode → the cancel button shows.
+    expect(html).toContain('再想想')
+    // The hidden rid input carries the target id.
+    expect(html).toContain('value="42"')
+  })
+
+  it('renders the submitting (pending) state', () => {
+    mutationState.isPending = true
+    try {
+      const html = stableHtml(
+        renderInRouter(
+          <CommentReplyForm commentKey="post-1" replyToId={0} onCancel={() => {}} onReplied={() => {}} />,
+          '/posts/1',
+        ),
+      )
+      // Pending mutation → submit copy flips + the textarea is disabled.
+      expect(html).toContain('发表中…')
+      expect(html).toContain('disabled=""')
+    } finally {
+      mutationState.isPending = false
+    }
+  })
+})

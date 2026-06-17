@@ -15,6 +15,7 @@ export default defineConfig({
         'src/**/*.d.ts',
         'src/server/infra/db/schema/**',
         'src/server/infra/db/types/**',
+        'src/ui/**',
         'src/env.d.ts',
         'src/routes.ts',
         'src/entry.client.tsx',

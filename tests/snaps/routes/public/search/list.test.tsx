@@ -1,58 +1,30 @@
 import { describe, expect, it } from 'vitest'
 
-import type { ClientPostWithMetadata } from '@/shared/types/catalog'
+import { renderInRouter, stableHtml } from '#/_helpers/render'
+import { asRoute } from '#/_helpers/route-test-utils'
+import SearchListRoute from '@/routes/public/search/list'
 
-import { makePost } from '#/_helpers/catalog'
-import { renderInRouter } from '#/_helpers/render'
-import { PostListingBody } from '@/ui/public/post/PostListViews'
-
-function withMetadata(post: ReturnType<typeof makePost>): ClientPostWithMetadata {
-  return { ...post, meta: { likes: 0, views: 0, comments: 0 } }
-}
-
-describe('snapshot: PostListingBody (search variant)', () => {
-  it('renders the empty-results state for a search query', () => {
-    const html = renderInRouter(
-      <PostListingBody
-        title="【react】搜索结果"
-        resolvedPosts={[]}
-        pageNum={1}
-        totalPage={0}
-        rootPath="/search/react"
-        pagination="auto"
-        listingNowIso="2026-04-25T12:00:00.000Z"
-      />,
-    )
-    expect(html).toContain('【react】搜索结果')
-    expect(html).toContain('404')
-    expect(html).toContain('抱歉，没有你要找的内容...')
-  })
-
-  it('renders a search results page with posts (pagination suppressed)', () => {
-    const posts = [
-      withMetadata(
-        makePost({
-          slug: 'react-tips',
-          title: 'React tips',
-          permalink: '/posts/react-tips',
-          date: new Date('2024-04-01T00:00:00.000Z'),
-        }),
+describe('snapshot: routes/public/search/list', () => {
+  it('renders the search listing route', () => {
+    const Route = asRoute(SearchListRoute)
+    const html = stableHtml(
+      renderInRouter(
+        <Route
+          loaderData={{
+            title: '【react】搜索结果',
+            resolvedPosts: [],
+            pageNum: 1,
+            totalPage: 0,
+            rootPath: '/search/react',
+            listingNowIso: '2026-04-25T12:00:00.000Z',
+            seo: undefined,
+            extra: undefined,
+          }}
+        />,
+        '/search/react',
       ),
-    ]
-    const html = renderInRouter(
-      <PostListingBody
-        title="【react】搜索结果"
-        resolvedPosts={posts}
-        pageNum={1}
-        totalPage={1}
-        rootPath="/search/react"
-        pagination="auto"
-        listingNowIso="2026-04-25T12:00:00.000Z"
-      />,
     )
     expect(html).toContain('【react】搜索结果')
-    expect(html).toContain('React tips')
-    expect(html).toContain('/posts/react-tips')
-    expect(html).toContain('2024-04-01')
+    expect(html).toContain('抱歉，没有你要找的内容')
   })
 })

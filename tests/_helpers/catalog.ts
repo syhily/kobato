@@ -1,6 +1,7 @@
 import { afterEach } from 'vitest'
 
 import type { ClientCategory, ClientPage, ClientPost, ClientTag } from '@/shared/types/catalog'
+import type { AdminPostDto } from '@/shared/types/posts'
 
 let counter = 0
 function nextId(prefix: string): string {
@@ -79,6 +80,38 @@ export function makePage(overrides: Partial<ClientPage> = {}): ClientPage {
     slug,
     permalink: overrides.permalink ?? `/${slug}`,
     headings: overrides.headings ?? [],
+    ...overrides,
+  }
+}
+
+export function makeAdminPost(overrides: Partial<AdminPostDto> = {}): AdminPostDto {
+  const slug = overrides.slug ?? nextId('admin-post')
+  return {
+    id: overrides.id ?? nextNumericId(),
+    slug,
+    title: overrides.title ?? `Admin Post ${slug}`,
+    summary: overrides.summary ?? 'summary',
+    cover: overrides.cover ?? '/images/cover.png',
+    og: overrides.og ?? null,
+    published: overrides.published ?? true,
+    commentsEnabled: overrides.commentsEnabled ?? true,
+    showToc: overrides.showToc ?? true,
+    showUpdated: overrides.showUpdated ?? false,
+    visible: overrides.visible ?? true,
+    publishedAt: overrides.publishedAt ?? '2024-01-01T00:00:00.000Z',
+    publishedRevisionId: overrides.publishedRevisionId ?? 'revision-1',
+    createdAt: overrides.createdAt ?? '2024-01-01T00:00:00.000Z',
+    updatedAt: overrides.updatedAt ?? '2024-01-02T00:00:00.000Z',
+    deletedAt: overrides.deletedAt ?? null,
+    category: overrides.category ?? 'general',
+    tags: overrides.tags ?? [],
+    alias: overrides.alias ?? [],
+    authorId: overrides.authorId ?? null,
+    authorName: overrides.authorName ?? 'author',
+    pinnedAt: overrides.pinnedAt ?? null,
+    firstPublishedAt: overrides.firstPublishedAt ?? '2024-01-01T00:00:00.000Z',
+    commentCount: overrides.commentCount ?? 0,
+    commentPublicId: overrides.commentPublicId ?? '',
     ...overrides,
   }
 }

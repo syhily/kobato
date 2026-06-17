@@ -1,0 +1,391 @@
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+
+import { makeAuthedCtx } from '#/_helpers/mock-ctx'
+import { parseRpcJson } from '#/_helpers/rpc-call'
+
+// Stub every service-layer dep the account controller reaches for. The
+// handlers themselves stay real — we exercise their branching (rate-limit,
+// passkey-enabled gate, ownership check, missing-user, invalid-response,
+// last-credential auto-disable, force-with-no-creds) by shaping the mock
+// return values per test.
+
+const tryRateLimitMock = vi.hoisted(() => vi.fn(async () => ({ exceeded: false })))
+const tryPasskeyRegisterBeginRateLimitMock = vi.hoisted(() => vi.fn(async () => ({ exceeded: false })))
+const tryPasskeyRegisterFinishRateLimitMock = vi.hoisted(() => vi.fn(async () => ({ exceeded: false })))
+const tryPasskeyDeleteRateLimitMock = vi.hoisted(() => vi.fn(async () => ({ exceeded: false })))
+const tryPasskeySetForceRateLimitMock = vi.hoisted(() => vi.fn(async () => ({ exceeded: false })))
+
+const isPasskeyEnabledMock = vi.hoisted(() => vi.fn(() => true))
+
+const updateAccountProfileMock = vi.hoisted(() => vi.fn())
+const updateAccountPasswordMock = vi.hoisted(() => vi.fn())
+const findUserByIdMock = vi.hoisted(() => vi.fn())
+const findSessionMetaMock = vi.hoisted(() => vi.fn())
+const revokeSessionByIdMock = vi.hoisted(() => vi.fn())
+
+const generateRegistrationOptionsMock = vi.hoisted(() => vi.fn())
+const verifyRegistrationResponseMock = vi.hoisted(() => vi.fn())
+const listCredentialsMock = vi.hoisted(() => vi.fn())
+const deleteCredentialMock = vi.hoisted(() => vi.fn())
+const setPasskeyForceMock = vi.hoisted(() => vi.fn())
+
+const recordAuditEventFromContextMock = vi.hoisted(() => vi.fn())
+
+vi.mock('@/server/infra/rate-limit', () => ({
+  tryRateLimit: tryRateLimitMock,
+  tryPasskeyRegisterBeginRateLimit: tryPasskeyRegisterBeginRateLimitMock,
+  tryPasskeyRegisterFinishRateLimit: tryPasskeyRegisterFinishRateLimitMock,
+  tryPasskeyDeleteRateLimit: tryPasskeyDeleteRateLimitMock,
+  tryPasskeySetForceRateLimit: tryPasskeySetForceRateLimitMock,
+}))
+
+vi.mock('@/server/domains/auth/passkey-gate', () => ({ isPasskeyEnabled: isPasskeyEnabledMock }))
+
+vi.mock('@/server/domains/users/services/account', () => ({
+  findUserById: findUserByIdMock,
+  updateAccountPassword: updateAccountPasswordMock,
+  updateAccountProfile: updateAccountProfileMock,
+}))
+
+vi.mock('@/server/domains/auth/repo', () => ({
+  findSessionMeta: findSessionMetaMock,
+  revokeSessionById: revokeSessionByIdMock,
+}))
+
+vi.mock('@/server/domains/auth/passkey-service', () => ({
+  deleteCredential: deleteCredentialMock,
+  generateRegistrationOptions: generateRegistrationOptionsMock,
+  listCredentials: listCredentialsMock,
+  setPasskeyForce: setPasskeyForceMock,
+  verifyRegistrationResponse: verifyRegistrationResponseMock,
+}))
+
+vi.mock('@/server/domains/audit/services/record', () => ({
+  recordAuditEventFromContext: recordAuditEventFromContextMock,
+}))
+
+const { RPCHandler } = await import('@orpc/server/fetch')
+const { accountRouter } = await import('@/server/http/controllers/account.controller')
+const handler = new RPCHandler(accountRouter)
+
+async function call(path: string, input: unknown, sessionId = 'session-1') {
+  const result = await handler.handle(
+    new Request(`http://localhost/rpc${path}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ json: input }),
+    }),
+    { prefix: '/rpc', context: makeAuthedCtx({ role: 'admin', sessionId }) },
+  )
+  if (!result.matched) {
+    throw new Error(`No route matched for ${path}`)
+  }
+  return result.response
+}
+
+function regResponse(overrides: Record<string, unknown> = {}) {
+  return {
+    id: 'cred-id',
+    rawId: 'cred-rawid',
+    type: 'public-key',
+    response: { clientDataJSON: 'cdj', attestationObject: 'ao' },
+    ...overrides,
+  }
+}
+
+describe('account controller', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    isPasskeyEnabledMock.mockReturnValue(true)
+    tryRateLimitMock.mockResolvedValue({ exceeded: false })
+    tryPasskeyRegisterBeginRateLimitMock.mockResolvedValue({ exceeded: false })
+    tryPasskeyRegisterFinishRateLimitMock.mockResolvedValue({ exceeded: false })
+    tryPasskeyDeleteRateLimitMock.mockResolvedValue({ exceeded: false })
+    tryPasskeySetForceRateLimitMock.mockResolvedValue({ exceeded: false })
+    findSessionMetaMock.mockResolvedValue(null)
+    revokeSessionByIdMock.mockResolvedValue(undefined)
+    listCredentialsMock.mockResolvedValue([])
+    deleteCredentialMock.mockResolvedValue(true)
+    setPasskeyForceMock.mockResolvedValue(undefined)
+    generateRegistrationOptionsMock.mockResolvedValue({ options: { challenge: 'c' } })
+    verifyRegistrationResponseMock.mockResolvedValue(undefined)
+    updateAccountProfileMock.mockResolvedValue({
+      id: 1n,
+      name: 'n',
+      email: 'e',
+      link: null,
+      badgeName: null,
+      badgeColor: null,
+      badgeTextColor: null,
+      role: 'admin',
+      emailVerified: true,
+    })
+    updateAccountPasswordMock.mockResolvedValue(undefined)
+    findUserByIdMock.mockResolvedValue({
+      id: 1n,
+      name: 'n',
+      email: 'e',
+      password: 'x',
+      lastIp: '1.1.1.1',
+      lastUa: 'ua',
+    })
+  })
+
+  // ─── updateProfile ───────────────────────────────────────
+  describe('updateProfile', () => {
+    it('returns the safe user projection on success', async () => {
+      const response = await call('/updateProfile', { name: 'Alice', receiveEmail: true })
+      expect(response.status).toBe(200)
+      const body = await parseRpcJson<{ user: { id: string; role: string } }>(response)
+      expect(body.user.id).toBe('1')
+      expect(body.user.role).toBe('admin')
+      expect(updateAccountProfileMock).toHaveBeenCalledWith(
+        expect.anything(),
+        1n,
+        expect.objectContaining({ name: 'Alice' }),
+        'admin',
+      )
+    })
+  })
+
+  // ─── updatePassword ──────────────────────────────────────
+  describe('updatePassword', () => {
+    it('changes the password and records an audit event when under the rate limit', async () => {
+      const response = await call('/updatePassword', {
+        oldPassword: 'OldPass1234',
+        newPassword: 'NewPassword1',
+      })
+      expect(response.status).toBe(200)
+      const body = await parseRpcJson<{ success: boolean }>(response)
+      expect(body.success).toBe(true)
+      expect(updateAccountPasswordMock).toHaveBeenCalledWith(
+        expect.anything(),
+        1n,
+        'OldPass1234',
+        'NewPassword1',
+        'session-1',
+      )
+      expect(recordAuditEventFromContextMock).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({ action: 'password_changed' }),
+      )
+    })
+
+    it('rejects with TOO_MANY_REQUESTS when the rate limit is exceeded', async () => {
+      tryRateLimitMock.mockResolvedValue({ exceeded: true })
+      const response = await call('/updatePassword', {
+        oldPassword: 'OldPass1234',
+        newPassword: 'NewPassword1',
+      })
+      expect(response.status).toBe(429)
+      expect(updateAccountPasswordMock).not.toHaveBeenCalled()
+    })
+
+    it('rejects a weak new password with a validation error', async () => {
+      const response = await call('/updatePassword', {
+        oldPassword: 'x',
+        newPassword: 'weak',
+      })
+      expect(response.status).toBe(400)
+    })
+  })
+
+  // ─── revokeSession ───────────────────────────────────────
+  describe('revokeSession', () => {
+    it('returns success when the target session meta is missing (no-op)', async () => {
+      findSessionMetaMock.mockResolvedValue(null)
+      const response = await call('/revokeSession', { id: 'sess-other' }, 'session-current')
+      expect(response.status).toBe(200)
+      const body = await parseRpcJson<{ success: boolean; currentSession: boolean }>(response)
+      expect(body.success).toBe(true)
+      expect(body.currentSession).toBe(false)
+      expect(revokeSessionByIdMock).not.toHaveBeenCalled()
+    })
+
+    it('revokes a session owned by the viewer and reports currentSession=true when id matches', async () => {
+      findSessionMetaMock.mockResolvedValue({ userId: 1n })
+      const response = await call('/revokeSession', { id: 'session-1' }, 'session-1')
+      expect(response.status).toBe(200)
+      const body = await parseRpcJson<{ success: boolean; currentSession: boolean }>(response)
+      expect(body.currentSession).toBe(true)
+      expect(revokeSessionByIdMock).toHaveBeenCalledWith('session-1', 1n)
+    })
+
+    it('throws FORBIDDEN when the target session belongs to a different user', async () => {
+      findSessionMetaMock.mockResolvedValue({ userId: 999n })
+      const response = await call('/revokeSession', { id: 'sess-other' }, 'session-1')
+      expect(response.status).toBe(403)
+      expect(revokeSessionByIdMock).not.toHaveBeenCalled()
+    })
+  })
+
+  // ─── passkey list ────────────────────────────────────────
+  describe('passkeyList', () => {
+    it('throws BAD_REQUEST when passkeys are disabled', async () => {
+      isPasskeyEnabledMock.mockReturnValue(false)
+      const response = await call('/passkeyList', {})
+      expect(response.status).toBe(400)
+      expect(listCredentialsMock).not.toHaveBeenCalled()
+    })
+
+    it('returns the credential projection with ISO timestamps', async () => {
+      const ts = new Date('2024-01-01T00:00:00Z')
+      listCredentialsMock.mockResolvedValue([
+        { id: 'c1', deviceName: 'Phone', createdAt: ts, backedUp: true },
+        { id: 'c2', deviceName: null, createdAt: ts, backedUp: false },
+      ])
+      const response = await call('/passkeyList', {})
+      expect(response.status).toBe(200)
+      const body = await parseRpcJson<{ credentials: Array<{ id: string; createdAt: string; backedUp: boolean }> }>(
+        response,
+      )
+      expect(body.credentials).toHaveLength(2)
+      expect(body.credentials[0]!.createdAt).toBe(ts.toISOString())
+      expect(body.credentials[1]!.backedUp).toBe(false)
+    })
+  })
+
+  // ─── passkey register begin ──────────────────────────────
+  describe('passkeyRegisterBegin', () => {
+    it('throws BAD_REQUEST when passkeys are disabled', async () => {
+      isPasskeyEnabledMock.mockReturnValue(false)
+      const response = await call('/passkeyRegisterBegin', {})
+      expect(response.status).toBe(400)
+    })
+
+    it('throws TOO_MANY_REQUESTS when rate-limited', async () => {
+      tryPasskeyRegisterBeginRateLimitMock.mockResolvedValue({ exceeded: true })
+      const response = await call('/passkeyRegisterBegin', {})
+      expect(response.status).toBe(429)
+    })
+
+    it('throws NOT_FOUND when the viewer user cannot be loaded', async () => {
+      findUserByIdMock.mockResolvedValue(null)
+      const response = await call('/passkeyRegisterBegin', {})
+      expect(response.status).toBe(404)
+    })
+
+    it('forwards the safe user (without password/lastIp/lastUa) to generateRegistrationOptions', async () => {
+      const response = await call('/passkeyRegisterBegin', { deviceName: 'YubiKey' })
+      expect(response.status).toBe(200)
+      const body = await parseRpcJson<{ options: unknown }>(response)
+      expect(body.options).toEqual({ challenge: 'c' })
+      const passedUser = generateRegistrationOptionsMock.mock.calls[0]![1]
+      expect(passedUser).not.toHaveProperty('password')
+      expect(passedUser).not.toHaveProperty('lastIp')
+      expect(passedUser).not.toHaveProperty('lastUa')
+    })
+  })
+
+  // ─── passkey register finish ─────────────────────────────
+  describe('passkeyRegisterFinish', () => {
+    const validFinish = {
+      response: regResponse(),
+      deviceName: 'Phone',
+      challenge: 'stored-challenge',
+    }
+
+    it('throws BAD_REQUEST when passkeys are disabled', async () => {
+      isPasskeyEnabledMock.mockReturnValue(false)
+      const response = await call('/passkeyRegisterFinish', validFinish)
+      expect(response.status).toBe(400)
+    })
+
+    it('throws TOO_MANY_REQUESTS when rate-limited', async () => {
+      tryPasskeyRegisterFinishRateLimitMock.mockResolvedValue({ exceeded: true })
+      const response = await call('/passkeyRegisterFinish', validFinish)
+      expect(response.status).toBe(429)
+    })
+
+    it('throws NOT_FOUND when the viewer user is missing', async () => {
+      findUserByIdMock.mockResolvedValue(null)
+      const response = await call('/passkeyRegisterFinish', validFinish)
+      expect(response.status).toBe(404)
+    })
+
+    it('throws BAD_REQUEST when the response shape is invalid', async () => {
+      const response = await call('/passkeyRegisterFinish', {
+        response: { not: 'a registration' },
+        challenge: 'c',
+      })
+      expect(response.status).toBe(400)
+      expect(verifyRegistrationResponseMock).not.toHaveBeenCalled()
+    })
+
+    it('records an audit event on successful verification', async () => {
+      const response = await call('/passkeyRegisterFinish', validFinish)
+      expect(response.status).toBe(200)
+      expect(verifyRegistrationResponseMock).toHaveBeenCalled()
+      expect(recordAuditEventFromContextMock).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({ action: 'passkey_registered' }),
+      )
+    })
+  })
+
+  // ─── passkey delete ──────────────────────────────────────
+  describe('passkeyDelete', () => {
+    it('throws NOT_FOUND when the credential does not exist', async () => {
+      deleteCredentialMock.mockResolvedValue(false)
+      const response = await call('/passkeyDelete', { credentialId: 'nope' })
+      expect(response.status).toBe(404)
+      expect(setPasskeyForceMock).not.toHaveBeenCalled()
+    })
+
+    it('auto-disables passkeyForce when the last credential is removed', async () => {
+      deleteCredentialMock.mockResolvedValue(true)
+      listCredentialsMock.mockResolvedValue([]) // remaining is empty
+      const response = await call('/passkeyDelete', { credentialId: 'c1' })
+      expect(response.status).toBe(200)
+      expect(setPasskeyForceMock).toHaveBeenCalledWith(expect.anything(), 1n, false)
+    })
+
+    it('keeps passkeyForce when credentials remain after deletion', async () => {
+      deleteCredentialMock.mockResolvedValue(true)
+      listCredentialsMock.mockResolvedValue([{ id: 'other' }])
+      const response = await call('/passkeyDelete', { credentialId: 'c1' })
+      expect(response.status).toBe(200)
+      expect(setPasskeyForceMock).not.toHaveBeenCalled()
+    })
+
+    it('throws BAD_REQUEST when passkeys are disabled', async () => {
+      isPasskeyEnabledMock.mockReturnValue(false)
+      const response = await call('/passkeyDelete', { credentialId: 'c1' })
+      expect(response.status).toBe(400)
+    })
+  })
+
+  // ─── passkey set-force ───────────────────────────────────
+  describe('passkeySetForce', () => {
+    it('throws BAD_REQUEST when forcing on with no credentials', async () => {
+      listCredentialsMock.mockResolvedValue([])
+      const response = await call('/passkeySetForce', { force: true })
+      expect(response.status).toBe(400)
+      expect(setPasskeyForceMock).not.toHaveBeenCalled()
+    })
+
+    it('enables force when at least one credential exists', async () => {
+      listCredentialsMock.mockResolvedValue([{ id: 'c1' }])
+      const response = await call('/passkeySetForce', { force: true })
+      expect(response.status).toBe(200)
+      expect(setPasskeyForceMock).toHaveBeenCalledWith(expect.anything(), 1n, true)
+      expect(recordAuditEventFromContextMock).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({ action: 'passkey_force_changed', details: { force: true } }),
+      )
+    })
+
+    it('disables force without checking credentials', async () => {
+      const response = await call('/passkeySetForce', { force: false })
+      expect(response.status).toBe(200)
+      expect(listCredentialsMock).not.toHaveBeenCalled()
+      expect(setPasskeyForceMock).toHaveBeenCalledWith(expect.anything(), 1n, false)
+    })
+
+    it('throws TOO_MANY_REQUESTS when rate-limited', async () => {
+      tryPasskeySetForceRateLimitMock.mockResolvedValue({ exceeded: true })
+      const response = await call('/passkeySetForce', { force: false })
+      expect(response.status).toBe(429)
+    })
+  })
+})

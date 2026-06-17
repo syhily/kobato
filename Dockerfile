@@ -10,13 +10,7 @@ FROM node:24-alpine AS runtime
 WORKDIR /app
 # tini — PID 1 init for proper signal handling.
 # postgresql-client — for pg_dump / pg_restore in backup jobs.
-# font-noto-cjk — system fallback CJK fonts for @napi-rs/canvas.
-RUN apk add --no-cache tini postgresql-client font-noto-cjk && \
-    fc-cache -fv && \
-    mkdir -p /data/fonts && \
-    cp /usr/share/fonts/noto/NotoSansCJK-Regular.ttc /data/fonts/og.ttf && \
-    cp /usr/share/fonts/noto/NotoSansCJK-Regular.ttc /data/fonts/calendar.ttf && \
-    chown -R node:node /data/fonts
+RUN apk add --no-cache tini postgresql-client
 # Install runtime native deps from the lockfile so production images use the
 # exact versions tested locally, not the latest matching semver range.
 COPY package.json package-lock.json ./
@@ -27,7 +21,6 @@ COPY --from=build /app/build ./build
 COPY --from=build /app/drizzle ./drizzle
 ENV NODE_ENV=production
 ENV HOST=0.0.0.0
-ENV DEFAULT_FONT_PATH=/usr/share/fonts/noto/NotoSansCJK-Regular.ttc
 ENV PORT=4321
 EXPOSE 4321
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \

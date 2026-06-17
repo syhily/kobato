@@ -1,0 +1,430 @@
+import { describe, expect, it, vi } from 'vitest'
+
+import type {
+  CacheSettings,
+  FontsSettings,
+  FooterNavItem,
+  MailSettings,
+  NavigationSettings,
+  SecuritySettings,
+  SocialItem,
+} from '@/shared/config/types'
+import type { AdminCacheStatsDto, ClearCacheResultDto } from '@/shared/types/cache'
+
+import { renderToHtml, stableHtml } from '#/_helpers/render'
+import { CacheView } from '@/ui/admin/settings/CacheView'
+import { FontsForm } from '@/ui/admin/settings/FontsForm'
+import { NavigationEditor } from '@/ui/admin/settings/NavigationEditor'
+import { SecurityForm } from '@/ui/admin/settings/SecurityForm'
+
+// `useSettingsMutation` powers every `useSettingsCard` and would otherwise
+// fire a `useMutation` against the settings ORPC endpoint. Stubbed inert so
+// forms render without a network stack.
+vi.mock('@/ui/admin/settings/useSettingsMutation', () => ({
+  useSettingsMutation: () => ({
+    commit: vi.fn(),
+    resetStatus: vi.fn(),
+    revalidate: vi.fn(),
+    isPending: false,
+    status: 'idle',
+  }),
+}))
+
+// `FontsForm` reads a csrf token off the root loader; supply a stable one.
+vi.mock('react-router', async () => {
+  const actual = await vi.importActual<typeof import('react-router')>('react-router')
+  return {
+    ...actual,
+    useRevalidator: () => ({ revalidate: vi.fn() }),
+    useRouteLoaderData: () => ({ csrfToken: 'test-csrf-token' }),
+  }
+})
+
+vi.mock('sonner', () => ({ toast: { error: vi.fn(), success: vi.fn() } }))
+
+// `CacheView` queries cache stats via `@tanstack/react-query` and the orpc
+// client. We hoist singletons (mirroring musics-view) so each test can swap
+// the resolved stats / mutation result without re-mocking.
+const cacheQueryMocks = vi.hoisted(() => ({
+  query: {
+    data: null as AdminCacheStatsDto | null,
+    isPending: false,
+    error: null as unknown,
+  },
+  mutation: {
+    mutate: vi.fn(),
+    isPending: false,
+  },
+}))
+
+vi.mock('@tanstack/react-query', async () => {
+  const actual = await vi.importActual<typeof import('@tanstack/react-query')>('@tanstack/react-query')
+  return {
+    ...actual,
+    useQuery: () => cacheQueryMocks.query,
+    useMutation: () => cacheQueryMocks.mutation,
+  }
+})
+
+// The orpc client is only reached when the query / mutation actually fires;
+// the react-query mock above intercepts before invocation, but keep the
+// import resolvable & side-effect free.
+vi.mock('@/client/api/client', () => ({
+  orpc: {
+    admin: {
+      cache: {
+        getStats: vi.fn(async () => ({})),
+        clear: vi.fn(async () => ({})),
+      },
+    },
+  },
+}))
+
+// ───────────────────────────── fixtures ─────────────────────────────
+
+const baseMail: MailSettings['mail'] = {
+  enabled: true,
+  host: 'api.zeabur.com',
+  apiKey: 'key',
+  sender: 'noreply@example.com',
+  transport: 'zeabur',
+  smtpHost: '',
+  smtpPort: 587,
+  smtpUser: '',
+  smtpPass: '',
+  smtpSecure: false,
+  smtpRequireTls: true,
+  smtpRejectUnauthorized: true,
+  mailgunDomain: '',
+  mailgunApiKey: '',
+}
+
+const mailMasks = {
+  mailApiKeyMask: '••••key',
+  mailSmtpPassMask: null,
+  mailMailgunApiKeyMask: null,
+} as const
+
+// ────────────────────────────── FontsForm ───────────────────────────
+
+const populatedFonts: FontsSettings = {
+  og: { family: 'OPPOSans' },
+  calendar: { family: 'OPPOSerif' },
+  globalCss: ['https://assets.example.com/fonts/global.css'],
+  postCss: ['https://assets.example.com/fonts/post.css'],
+}
+
+const emptyFonts: FontsSettings = {
+  og: { family: '' },
+  calendar: { family: '' },
+  globalCss: [],
+  postCss: [],
+}
+
+describe('snapshot: FontsForm', () => {
+  it('renders canvas, global-css and post-css cards with populated config', () => {
+    const html = stableHtml(renderToHtml(<FontsForm fonts={populatedFonts} />))
+    // Canvas card headings + family inputs
+    expect(html).toContain('Canvas 字体')
+    expect(html).toContain('OG 图字体')
+    expect(html).toContain('日历图字体')
+    expect(html).toContain('id="fonts-og-family"')
+    expect(html).toContain('id="fonts-calendar-family"')
+    // Upload affordances + the populated family name is reflected via the
+    // FontUploadRow `family` prop (a <span>, not a form-controlled input).
+    expect(html).toContain('上传字体')
+    expect(html).toContain('已配置族名：OPPOSans')
+    expect(html).toContain('已配置族名：OPPOSerif')
+    // Global / post CSS cards with populated rows: each row emits an input
+    // with the field-array `name` and a delete affordance. The URL value
+    // itself is uncontrolled (react-hook-form `register`), so it won't be
+    // in the static HTML — assert on row presence instead.
+    expect(html).toContain('全站字体 CSS')
+    expect(html).toContain('文章页字体 CSS')
+    expect(html).toContain('name="globalCss.0.url"')
+    expect(html).toContain('name="postCss.0.url"')
+    expect(html).toContain('添加全站 CSS')
+    expect(html).toContain('添加文章页 CSS')
+    expect(html).toContain('aria-label="删除此项"')
+  })
+
+  it('renders empty-state copy when no CSS rows are configured', () => {
+    const html = stableHtml(renderToHtml(<FontsForm fonts={emptyFonts} />))
+    // Empty family -> FontUploadRow shows the "未配置族名" fallback span.
+    expect(html).toContain('未配置族名')
+    // Each CSS card shows its empty hint (no rows -> the empty <p> branch).
+    expect(html).toContain('还没有添加 CSS，点击下方按钮新增一项。')
+    // No populated field-array rows are emitted.
+    expect(html).not.toContain('name="globalCss.0.url"')
+    expect(html).not.toContain('name="postCss.0.url"')
+    // Add buttons still present and not disabled (under the 8-row cap).
+    expect(html).toContain('添加全站 CSS')
+    expect(html).toContain('添加文章页 CSS')
+  })
+})
+
+// ───────────────────────────── SecurityForm ────────────────────────
+
+describe('snapshot: SecurityForm', () => {
+  it('renders CSRF enabled, CORS disabled, OTP ready and Passkey eligible states', () => {
+    const security: SecuritySettings = {
+      csrf: { enabled: true, exemptPaths: ['/rpc/public.comments'] },
+      cors: { enabled: false, origins: [] },
+      otp: { enabled: false },
+      passkey: { enabled: false },
+    }
+    const html = stableHtml(renderToHtml(<SecurityForm security={security} mail={baseMail} mailMasks={mailMasks} />))
+    // CSRF card: switch id + exempt-paths card heading + populated row.
+    // (Toggle label text comes from Controller field.value which hydrates
+    // post-render, so assert on structural signals instead.)
+    expect(html).toContain('CSRF 防护')
+    expect(html).toContain('id="csrf-enabled"')
+    expect(html).toContain('路径豁免')
+    expect(html).toContain('name="exemptPaths.0.path"')
+    expect(html).toContain('添加路径')
+    // CORS card: disabled + mirror-mode hint (no rows -> the empty <p>).
+    expect(html).toContain('CORS 策略')
+    expect(html).toContain('镜像模式：将自动允许所有请求来源。')
+    expect(html).toContain('添加来源')
+    // OTP card: mail is ready (zeabur transport, enabled + sender + key mask),
+    // so the "未配置完整" warning must NOT show and the hint is the ready copy.
+    expect(html).toContain('登录 OTP 验证')
+    expect(html).toContain('开启后密码验证通过将发送 OTP 邮件。')
+    expect(html).not.toContain('邮件服务未配置完整')
+    // Passkey card: test blog fixture has a valid https domain.
+    expect(html).toContain('Passkey 登录')
+    expect(html).toContain('开启后用户可在个人资料中注册 Passkey。')
+  })
+
+  it('renders CSRF disabled, CORS enabled with origins, and OTP / Passkey blocked states', () => {
+    const security: SecuritySettings = {
+      csrf: { enabled: false, exemptPaths: [] },
+      cors: {
+        enabled: true,
+        origins: ['https://friend.example.com', 'https://alt.example.com'],
+      },
+      otp: { enabled: true },
+      passkey: { enabled: true },
+    }
+    // Mail is NOT ready: disabled + no API key mask. This forces the OTP
+    // card down its "未配置完整" branch for the zeabur transport.
+    const unreadyMail: MailSettings['mail'] = { ...baseMail, enabled: false, apiKey: '' }
+    const unreadyMasks = { ...mailMasks, mailApiKeyMask: null }
+    const html = stableHtml(
+      renderToHtml(<SecurityForm security={security} mail={unreadyMail} mailMasks={unreadyMasks} />),
+    )
+    // Empty exempt paths copy (no rows -> the empty <p> branch).
+    expect(html).toContain('无豁免路径。所有 /rpc/* 请求均需携带令牌。')
+    // CORS enabled: two origin rows emitted (values themselves are
+    // uncontrolled, so assert on the field-array row names instead).
+    expect(html).toContain('name="origins.0.url"')
+    expect(html).toContain('name="origins.1.url"')
+    // OTP card blocked because mail not ready — shows the zeabur hint +
+    // warning text (these are static <p> nodes, not form values).
+    expect(html).toContain('开启 OTP 前请先配置邮件服务。')
+    expect(html).toContain('邮件服务未配置完整，无法开启 OTP。')
+    expect(html).toContain('请先前往「邮件服务」选择 Zeabur ZSend')
+    // The passkey domain is still valid, so the invalid-domain warning is absent.
+    expect(html).not.toContain('当前站点域名不满足 Passkey 要求')
+  })
+
+  it('shows the SMTP transport hint when mail is incomplete via SMTP', () => {
+    const security: SecuritySettings = {
+      csrf: { enabled: true, exemptPaths: [] },
+      cors: { enabled: false, origins: [] },
+      otp: { enabled: false },
+      passkey: { enabled: false },
+    }
+    const smtpMail: MailSettings['mail'] = {
+      ...baseMail,
+      transport: 'smtp',
+      enabled: true,
+      smtpHost: '',
+      smtpUser: '',
+    }
+    const html = stableHtml(renderToHtml(<SecurityForm security={security} mail={smtpMail} mailMasks={mailMasks} />))
+    expect(html).toContain('请先前往「邮件服务」选择 SMTP 并配置服务器地址')
+  })
+
+  it('shows the Mailgun transport hint when mail is incomplete via Mailgun', () => {
+    const security: SecuritySettings = {
+      csrf: { enabled: true, exemptPaths: [] },
+      cors: { enabled: false, origins: [] },
+      otp: { enabled: false },
+      passkey: { enabled: false },
+    }
+    const mailgunMail: MailSettings['mail'] = {
+      ...baseMail,
+      transport: 'mailgun',
+      enabled: true,
+      mailgunDomain: '',
+    }
+    const html = stableHtml(renderToHtml(<SecurityForm security={security} mail={mailgunMail} mailMasks={mailMasks} />))
+    expect(html).toContain('请先前往「邮件服务」选择 Mailgun 并配置发送域名')
+  })
+})
+
+// ──────────────────────────── NavigationEditor ─────────────────────
+
+const sideNavItems: NavigationSettings = {
+  navigation: {
+    sideNav: [
+      { text: '首页', link: '/' },
+      { text: '关于', link: '/about', target: '_blank' },
+    ],
+    footerNav: [{ type: 'social', network: 'github' }, { type: 'themeToggle' }, { type: 'search' }],
+  },
+}
+
+const emptyNav: NavigationSettings = {
+  navigation: { sideNav: [], footerNav: [] },
+}
+
+const socials: SocialItem[] = [{ name: 'GitHub', network: 'github', type: 'link', link: 'https://github.com/syhly' }]
+
+describe('snapshot: NavigationEditor', () => {
+  it('renders side nav and footer nav rows with populated fixtures', () => {
+    const html = stableHtml(renderToHtml(<NavigationEditor navigation={sideNavItems} socials={socials} />))
+    // Side nav card — multiple rows + add button. Row text/link values are
+    // uncontrolled inputs (won't appear in SSR), so assert on row ids and
+    // the field-array names which reflect that rows were seeded.
+    expect(html).toContain('侧边导航菜单')
+    expect(html).toContain('id="nav-text-0"')
+    expect(html).toContain('id="nav-text-1"')
+    expect(html).toContain('id="nav-link-1"')
+    expect(html).toContain('name="sideNavRows.0.text"')
+    expect(html).toContain('name="sideNavRows.1.text"')
+    expect(html).toContain('添加菜单项')
+    // Footer nav card — the populated rows emit type Select triggers; the
+    // SelectValue render-prop label doesn't run during SSR but the select
+    // `id`s and the hidden social-network input do. github is configured
+    // so the unconfigured-network warning must NOT show.
+    expect(html).toContain('底部导航菜单')
+    expect(html).toContain('id="footer-item-type-0"')
+    expect(html).toContain('id="footer-item-type-2"')
+    expect(html).toContain('value="github"')
+    expect(html).toContain('添加导航项')
+    expect(html).not.toContain('部分社交链接尚未配置')
+  })
+
+  it('warns when a footer social references an unconfigured network', () => {
+    const nav: NavigationSettings = {
+      navigation: {
+        sideNav: [],
+        footerNav: [{ type: 'social', network: 'wechat' } as FooterNavItem],
+      },
+    }
+    const html = stableHtml(renderToHtml(<NavigationEditor navigation={nav} socials={socials} />))
+    expect(html).toContain('部分社交链接尚未配置，保存后不会在页脚显示。')
+  })
+
+  it('renders empty-state copy when no nav items exist', () => {
+    const html = stableHtml(renderToHtml(<NavigationEditor navigation={emptyNav} socials={socials} />))
+    expect(html).toContain('还没有任何菜单条目，点下方按钮新增一项。')
+    expect(html).toContain('还没有任何导航条目，点下方按钮新增一项。')
+    // Add buttons still present
+    expect(html).toContain('添加菜单项')
+    expect(html).toContain('添加导航项')
+  })
+})
+
+// ─────────────────────────────── CacheView ─────────────────────────
+
+const baseCacheSlice: CacheSettings['cache'] = {
+  og: { prefix: 'og:', ttlSeconds: 604800 },
+  calendar: { prefix: 'calendar:', ttlSeconds: 86400 },
+  avatar: { prefix: 'avatar:', ttlSeconds: 604800 },
+  imageMeta: { prefix: 'image-meta:', ttlSeconds: 3600 },
+  embeddingSearch: { prefix: 'embedding:', ttlSeconds: 3600 },
+  searchResult: { prefix: 'search:', ttlSeconds: 3600 },
+}
+
+function makePopulatedStats(): AdminCacheStatsDto {
+  return {
+    total: 142,
+    generatedAt: '2026-06-17T00:00:00.000Z',
+    buckets: [
+      {
+        id: 'og',
+        label: 'OG 图缓存',
+        description: '服务端渲染的社交分享图缓存。',
+        prefix: 'og:',
+        ttlSeconds: 604800,
+        pattern: 'og:*',
+        keyCount: 42,
+      },
+      {
+        id: 'avatar',
+        label: '头像缓存',
+        description: '远程头像镜像缓存。',
+        prefix: 'avatar:',
+        ttlSeconds: 604800,
+        pattern: 'avatar:*',
+        keyCount: 100,
+      },
+    ],
+    reserved: [
+      {
+        id: 'session',
+        label: '登录会话',
+        description: '已登录用户的服务端会话 blob。',
+        prefix: 'session:',
+        pattern: 'session:*',
+        keyCount: 13,
+      },
+    ],
+  }
+}
+
+describe('snapshot: CacheView', () => {
+  it('renders the clear-all card, bucket cards and reserved section when stats resolve', () => {
+    cacheQueryMocks.query = {
+      data: makePopulatedStats(),
+      isPending: false,
+      error: null,
+    }
+    const html = stableHtml(renderToHtml(<CacheView cache={baseCacheSlice} />))
+    // Clear-all card with populated key total
+    expect(html).toContain('一键清空')
+    expect(html).toContain('当前共 142 个键')
+    expect(html).toContain('清空全部缓存')
+    expect(html).toContain('Session 与限流计数不会受影响')
+    // Bucket cards (id-keyed settings render the bucket label)
+    expect(html).toContain('OG 图缓存')
+    expect(html).toContain('头像缓存')
+    // Reserved section with the session bucket copy + key count
+    expect(html).toContain('受保护的缓存（只读）')
+    expect(html).toContain('登录会话')
+    expect(html).toContain('当前键数：')
+    expect(html).toContain('13')
+  })
+
+  it('renders the loading description when stats are still pending', () => {
+    cacheQueryMocks.query = { data: null, isPending: true, error: null }
+    const html = stableHtml(renderToHtml(<CacheView cache={baseCacheSlice} />))
+    expect(html).toContain('正在读取缓存统计…')
+    // Reserved section always renders (empty list)
+    expect(html).toContain('受保护的缓存（只读）')
+  })
+
+  it('renders the error description when stats fail to load', () => {
+    cacheQueryMocks.query = {
+      data: null,
+      isPending: false,
+      error: new Error('boom'),
+    }
+    const html = stableHtml(renderToHtml(<CacheView cache={baseCacheSlice} />))
+    expect(html).toContain('读取缓存统计失败')
+  })
+
+  it('renders an empty (zero-key) cache with the clear-all button disabled', () => {
+    cacheQueryMocks.query = {
+      data: { ...makePopulatedStats(), total: 0, buckets: [], reserved: [] },
+      isPending: false,
+      error: null,
+    }
+    const html = stableHtml(renderToHtml(<CacheView cache={baseCacheSlice} />))
+    expect(html).toContain('当前共 0 个键')
+    expect(html).toContain('disabled=""')
+  })
+})
