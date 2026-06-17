@@ -27,6 +27,7 @@
   "type": "module",
   "scripts": {
     "build": "react-router build",
+    "bump": "taze && npm update",
     "db:gen": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "dev": "react-router dev",
@@ -142,6 +143,7 @@
     "superjson": "^2.2.6",
     "tailwind-merge": "^3.6.0",
     "tailwindcss": "^4.3.1",
+    "taze": "^19.14.1",
     "typescript": "^6.0.3",
     "ua-parser-js": "^2.0.10",
     "vite": "^8.0.16",

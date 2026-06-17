@@ -286,6 +286,7 @@ tabindex
 tablename
 tagcloud
 taza
+taze
 temml
 teruteru
 textnodes
