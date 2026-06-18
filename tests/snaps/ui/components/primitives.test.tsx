@@ -38,7 +38,6 @@ import {
   InputGroupTextarea,
 } from '@/ui/components/input-group'
 import { Label } from '@/ui/components/label'
-import { NumberFlow } from '@/ui/components/number-flow'
 import {
   Pagination,
   PaginationContent,
@@ -289,14 +288,6 @@ describe('snapshot: Label primitive', () => {
     const html = renderToHtml(<Label htmlFor="name">Name</Label>)
     expect(html).toContain('data-slot="label"')
     expect(html).toContain('Name')
-  })
-})
-
-describe('snapshot: NumberFlow primitive', () => {
-  it('renders a numeric value as digit columns', () => {
-    const html = renderToHtml(<NumberFlow value={42} />)
-    expect(html).toContain('aria-label="42"')
-    expect(html).toContain('42')
   })
 })
 

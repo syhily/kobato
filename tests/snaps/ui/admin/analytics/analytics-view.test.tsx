@@ -102,10 +102,8 @@ describe('snapshot: Counters', () => {
     expect(html).toContain('访问量')
     expect(html).toContain('访客数')
     expect(html).toContain('来源域名')
-    // NumberFlow exposes the value via aria-label (the animated digit
-    // roll renders per-digit slots, so the contiguous number is only
-    // present on the wrapping span's accessible name).
-    expect(html).toContain('aria-label="1234"')
+    // @number-flow/react renders a web component with locale-formatted aria-label.
+    expect(html).toContain('aria-label="1,234"')
     expect(html).toContain('aria-label="567"')
     expect(html).toContain('aria-label="89"')
   })

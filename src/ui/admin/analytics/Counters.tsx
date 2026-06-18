@@ -1,7 +1,8 @@
+import NumberFlow from '@number-flow/react'
+
 import type { CountersDto } from '@/shared/contracts/analytics'
 
 import { Card } from '@/ui/components/card'
-import { NumberFlow } from '@/ui/components/number-flow'
 import { cn } from '@/ui/lib/cn'
 
 // Three KPI cards (visits / visitors / referers). Pure-props — the
@@ -32,7 +33,7 @@ export function Counters({ data, className }: CountersProps) {
           </div>
           <div className="text-3xl font-bold tabular-nums">
             {data ? (
-              <NumberFlow value={data[card.key]} />
+              <NumberFlow value={data[card.key]} format={{ notation: 'standard' }} />
             ) : (
               <span className="inline-block h-9 w-24 animate-pulse rounded bg-muted" aria-hidden />
             )}
