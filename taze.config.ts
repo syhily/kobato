@@ -24,5 +24,7 @@ export default defineConfig({
   // Keep @types/node within the current major line (24.x).
   packageMode: {
     '@types/node': 'minor',
+    'drizzle-kit': 'rc',
+    'drizzle-orm': 'rc',
   },
 })

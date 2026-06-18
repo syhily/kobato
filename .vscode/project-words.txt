@@ -235,6 +235,7 @@ plperlu
 plpython
 plsh
 pltclu
+pnpx
 portabletext
 prefetcher
 prerender

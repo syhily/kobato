@@ -7,7 +7,7 @@ export default defineConfig({
     node: true,
     es2022: true,
   },
-  ignorePatterns: ['.agents/skills/*', 'drizzle/**/*', 'tests/**/*'],
+  ignorePatterns: ['.agents/skills/*', 'drizzle/**/*', 'tests/**/*', 'taze.config.ts'],
   settings: {
     react: {
       version: '19.2.5',
