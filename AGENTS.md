@@ -60,35 +60,43 @@ proactively loads high-priority route chunks:
 
 | Tier          | What                                      | Mechanism                                     |
 | ------------- | ----------------------------------------- | --------------------------------------------- |
-| tier 1        | Public layout + home + post detail        | `<link rel="modulepreload">` in HTML `<head>` |
+| critical path | Matched launch route only                 | `<link rel="modulepreload">` in HTML `<head>` |
+| tier 1        | Public layout + home (fallback)           | `<link rel="modulepreload">` in HTML `<head>` |
 | tier 2 public | Archives, categories, tags, search, pages | Idle `modulepreload` via inline `<script>`    |
 | tier 2 admin  | Dashboard, posts, settings, etc.          | Idle warmup (only for authenticated admins)   |
 | tier 2 editor | Editor shells                             | Idle warmup (only for admins)                 |
 | tier 2 auth   | Signin, setup                             | Idle warmup (all visitors)                    |
 
 The plugin runs in the SSR `writeBundle` hook (after both client and server
-builds finish), reads `server_manifest_default` from
-`build/server/assets/server-build.js`, and writes
+builds finish), reads the React Router client manifest from
+`build/client/assets/manifest-*.js`, and writes
 `build/client/assets/warmup-manifest.json`.
+
+At request time, `src/server/render/warmup/manifest.ts` re-reads the client
+manifest, matches the request pathname with `matchRoutes`, and emits the
+critical preloads for the matched route and its ancestor layouts. This keeps
+the first-screen preload tight instead of widening it with unrelated routes.
 
 **Key files:**
 
 | File                                          | Role                                            |
 | --------------------------------------------- | ----------------------------------------------- |
 | `src/server/infra/route-warmup.ts`            | Vite plugin — manifest generation               |
-| `src/server/render/warmup/manifest.ts`        | Server-side manifest reader (disk-cached)       |
+| `src/server/render/warmup/manifest.ts`        | Server-side manifest reader + route matcher     |
 | `src/client/components/RouteWarmupScript.tsx` | Presentational — renders idle-warmup `<script>` |
-| `src/root.tsx`                                | Layout wires tier-1 links + tier-2 script       |
+| `src/root.tsx`                                | Layout wires critical links + tier-2 script     |
 
-**Exclusion rules:** Shiki grammar chunks are excluded (not in any route's
-`imports` array). `editor-tiptap-*` is excluded from public/admin tiers.
-Chunks > 100 KB are excluded from idle warmup. The idle script respects
+**Exclusion rules:** Heavy lazy-only chunks are excluded from both critical
+and idle preloads (`canvas-*`, `ImageEditorCanvas-*`, `qrcode*`, `player-*`).
+`editor-tiptap-*` is allowed only in the editor idle tier. Shiki grammar
+chunks are excluded (not in any route's `imports` array). Chunks > 100 KB are
+excluded from idle warmup. The idle script respects
 `navigator.connection.saveData`, skips 2g, and defers until the page is
 visible.
 
 When adding or removing routes from `src/routes.ts`, update the tier arrays
-in `src/server/infra/route-warmup.ts` (`TIER1_ROUTES`, `TIER2_PUBLIC_ROUTES`,
-etc.) to keep the warmup manifest in sync.
+in `src/server/infra/route-warmup.ts` (`TIER2_PUBLIC_ROUTES`,
+`TIER2_ADMIN_ROUTES`, etc.) to keep the warmup manifest in sync.
 
 ## Git
 

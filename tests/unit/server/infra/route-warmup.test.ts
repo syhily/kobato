@@ -192,15 +192,20 @@ describe('route-warmup plugin — writeBundle handler', () => {
     expect(typeof raw).toBe('string')
     const manifest = JSON.parse(raw as string)
 
-    // tier1 contains the root route, the home route (root path of TIER1),
-    // home's imports, and the entry module's own imports (runtime).
+    // tier1 is the public launch route: root + home + entry imports.
     expect(manifest.tier1).toEqual(
-      expect.arrayContaining(['/assets/root.js', '/assets/home.js', '/assets/home-loader.js', '/assets/runtime.js']),
+      expect.arrayContaining([
+        '/assets/root.js',
+        '/assets/home.js',
+        '/assets/home-loader.js',
+        '/assets/runtime.js',
+        '/assets/shared.js',
+      ]),
     )
-    // The home route's shared dependency is collected into tier1, so
-    // tier2_public (which also routes through home) dedups it out.
-    expect(manifest.tier1).toContain('/assets/shared.js')
-    expect(manifest.tier2_public).not.toContain('/assets/shared.js')
+
+    // tier2_public is empty in this minimal manifest because no secondary
+    // public routes are defined.
+    expect(manifest.tier2_public).toEqual([])
 
     // tier2_admin excludes editor-only chunks; the editor tier keeps them.
     expect(manifest.tier2_admin).toContain('/assets/dashboard.js')
@@ -208,7 +213,7 @@ describe('route-warmup plugin — writeBundle handler', () => {
     expect(manifest.tier2_editor).toContain('/assets/editor-post.js')
     expect(manifest.tier2_editor).toContain('/assets/editor-tiptap-core.js')
 
-    // Canvas chunks are excluded from every tier.
+    // Lazy-only / native canvas chunks are excluded from every tier.
     for (const tier of ['tier1', 'tier2_public', 'tier2_admin', 'tier2_editor', 'tier2_auth']) {
       expect(manifest[tier]).not.toContain('/assets/canvas-hl.js')
     }

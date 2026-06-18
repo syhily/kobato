@@ -22,6 +22,7 @@ vi.mock('@tanstack/react-query', () => ({
 }))
 
 vi.mock('@/server/render/warmup/manifest', () => ({
+  getCriticalChunksForPathname: vi.fn(() => null),
   getWarmupManifest: vi.fn(() => null),
 }))
 

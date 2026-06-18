@@ -1,62 +1,60 @@
-import { useState, type CSSProperties } from 'react'
+import { useSyncExternalStore, type CSSProperties } from 'react'
 
 import { thumbHashToDataURL } from '@/shared/utils/thumbhash'
 
-// In-process cache of decoded thumbhash data URLs. `BlockImage` mounts can fire
-// many times for the same hash on a single page (post listing thumbnails,
-// repeated images), so we avoid re-running the decode per mount. Keyed on
-// the raw thumbhash string for a constant-size hit.
-const thumbhashUrlCache = new Map<string, string>()
+// In-process cache of decoded thumbhash style objects. `BlockImage` mounts can
+// fire many times for the same hash on a single page (post listing thumbnails,
+// repeated images), so we avoid re-running the decode per mount. Keyed on the
+// raw thumbhash string for a constant-size hit.
+const thumbhashStyleCache = new Map<string, CSSProperties>()
 
-// Lazily decodes a thumbhash string into a data URL and returns it as a CSS
-// style chunk so the placeholder fades behind the real image while it
-// downloads. Returns `undefined` until the decode finishes, then a stable
-// style object that the host element merges via the `style` prop.
+// Lazily decodes a thumbhash string into a CSS style object so the placeholder
+// fades behind the real image while it downloads. Returns `undefined` until the
+// decode finishes, then a stable style object that the host element merges via
+// the `style` prop.
 //
 // The thumbhash itself is injected at SSR time by the detail-page loader
 // (`imageMeta` → `ImageMetaProvider` → `BlockImage`) as `data-thumbhash`
 // on the HTML, keyed off the matching row in the runtime `image` table.
 // Consumers only need to pass that attribute through to this hook.
 //
-// This stays a hook (useState + useEffect) rather than a synchronous helper
-// because thumbhash decode should only run in the browser. Running it during
-// SSR would waste CPU and could leak module-level cache across requests.
+// `useSyncExternalStore` is used here because:
+//   * the server snapshot always returns `undefined`, keeping decode work out
+//     of SSR and avoiding hydration mismatches.
+//   * the client snapshot can compute synchronously on mount, so the
+//     placeholder appears immediately without a render delay.
+//   * the cached style object is stable across renders, preventing cascading
+//     re-renders from returning a fresh object every time.
 export function useThumbhashBackground(thumbhash: string | undefined, loaded = false): CSSProperties | undefined {
-  const [style, setStyle] = useState<CSSProperties | undefined>(() => {
-    if (loaded || thumbhash === undefined) {
-      return undefined
-    }
-    return styleFromCache(thumbhash)
-  })
-
-  const [lastKey, setLastKey] = useState<{ thumbhash: string | undefined; loaded: boolean }>({ thumbhash, loaded })
-  // Adjust style synchronously when inputs change so we don't cascade renders.
-  if (lastKey.thumbhash !== thumbhash || lastKey.loaded !== loaded) {
-    setLastKey({ thumbhash, loaded })
-    if (loaded || !thumbhash) {
-      setStyle(undefined)
-    } else {
-      const cached = thumbhashUrlCache.get(thumbhash)
-      if (cached !== undefined) {
-        setStyle(buildStyle(cached))
-      } else {
-        try {
-          const dataUrl = thumbHashToDataURL(base64ToBytes(thumbhash))
-          thumbhashUrlCache.set(thumbhash, dataUrl)
-          setStyle(buildStyle(dataUrl))
-        } catch {
-          setStyle(undefined)
-        }
-      }
-    }
-  }
-
-  return style
+  return useSyncExternalStore(
+    emptySubscribe,
+    () => buildThumbhashStyle(thumbhash, loaded),
+    () => undefined,
+  )
 }
 
-function styleFromCache(thumbhash: string): CSSProperties | undefined {
-  const cached = thumbhashUrlCache.get(thumbhash)
-  return cached !== undefined ? buildStyle(cached) : undefined
+function emptySubscribe(): () => void {
+  return () => undefined
+}
+
+function buildThumbhashStyle(thumbhash: string | undefined, loaded: boolean): CSSProperties | undefined {
+  if (loaded || thumbhash === undefined) {
+    return undefined
+  }
+
+  const cached = thumbhashStyleCache.get(thumbhash)
+  if (cached !== undefined) {
+    return cached
+  }
+
+  try {
+    const dataUrl = thumbHashToDataURL(base64ToBytes(thumbhash))
+    const style = buildStyle(dataUrl)
+    thumbhashStyleCache.set(thumbhash, style)
+    return style
+  } catch {
+    return undefined
+  }
 }
 
 function buildStyle(dataUrl: string): CSSProperties {

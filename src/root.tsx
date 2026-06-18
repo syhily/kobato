@@ -15,7 +15,7 @@ import { useIosNoZoomOnFocus } from '@/client/hooks/use-ios-no-zoom'
 import { getCspNonceFromContext, getRouteRequestContext } from '@/server/domains/auth/context'
 import { redactSecretsFromBundle } from '@/server/domains/settings/services/core'
 import { bundleFromMatches, routeMeta } from '@/server/render/seo/meta'
-import { getWarmupManifest } from '@/server/render/warmup/manifest'
+import { getCriticalChunksForPathname, getWarmupManifest } from '@/server/render/warmup/manifest'
 import { getBlogSettingsBundleSync } from '@/shared/config/getters'
 import { BlogSettingsProvider } from '@/shared/lib/blog-config-context'
 import { isRecord } from '@/shared/utils/type-guards'
@@ -35,12 +35,13 @@ function collectTier2Chunks(
     tier2_auth: string[]
   },
   isAdmin: boolean,
+  criticalSet: Set<string>,
 ): string[] {
   const seen = new Set<string>()
   const result: string[] = []
   const push = (arr: string[]) => {
     for (const c of arr) {
-      if (!seen.has(c)) {
+      if (!seen.has(c) && !criticalSet.has(c)) {
         seen.add(c)
         result.push(c)
       }
@@ -86,12 +87,13 @@ export function loader({ request, context }: Route.LoaderArgs) {
   const blogSettings = rawBundle ? redactSecretsFromBundle(rawBundle) : null
 
   const warmupManifest = getWarmupManifest()
-  const tier1Links = warmupManifest?.tier1 ?? []
-  const tier2Chunks = warmupManifest ? collectTier2Chunks(warmupManifest, admin) : []
+  const pathname = new URL(request.url).pathname
+  const criticalLinks = getCriticalChunksForPathname(pathname) ?? warmupManifest?.tier1 ?? []
+  const tier2Chunks = warmupManifest ? collectTier2Chunks(warmupManifest, admin, new Set(criticalLinks)) : []
 
   const cspNonce = getCspNonceFromContext({ request, context })
 
-  return { admin, currentUser, blogSettings, theme, csrfToken, tier1Links, tier2Chunks, cspNonce }
+  return { admin, currentUser, blogSettings, theme, csrfToken, criticalLinks, tier2Chunks, cspNonce }
 }
 
 export function shouldRevalidate({ formAction, defaultShouldRevalidate }: ShouldRevalidateFunctionArgs) {
@@ -110,7 +112,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
       assets?: { asset?: { host?: string } | null } | null
       siteIdentity?: { locale?: string } | null
     } | null
-    tier1Links?: string[]
+    criticalLinks?: string[]
     tier2Chunks?: string[]
     csrfToken?: string
     cspNonce?: string
@@ -139,7 +141,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
     prefetchDNS(`https://${host}`)
   }
 
-  const tier1Links = rootData?.tier1Links ?? []
+  const criticalLinks = rootData?.criticalLinks ?? []
   const tier2Chunks = rootData?.tier2Chunks ?? []
 
   const locale = rootData?.blogSettings?.siteIdentity?.locale ?? 'zh-CN'
@@ -162,7 +164,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         ))}
         <Meta />
         <Links />
-        {tier1Links.map((href) => (
+        {criticalLinks.map((href) => (
           <link key={href} rel="modulepreload" href={href} />
         ))}
       </head>

@@ -5,11 +5,20 @@ import { existsSync, readFileSync, readdirSync, statSync, writeFileSync } from '
 import { basename, join, resolve } from 'node:path'
 import { build } from 'vite'
 
-import { CHUNKS_SENTINEL } from '../../shared/constants/route-warmup'
+import {
+  CHUNKS_SENTINEL,
+  WARMUP_EDITOR_ONLY_PATTERN,
+  WARMUP_GLOBAL_EXCLUDED_PATTERNS,
+  type RouteManifest,
+} from '../../shared/constants/route-warmup'
 
 // Route tier configuration
 
-const TIER1_ROUTES = ['root', 'routes/public/layout', 'routes/public/home', 'home-page', 'routes/public/post/detail']
+// Critical path for the public launch route (home). The SSR runtime matches
+// the current request against the React Router client manifest and emits the
+// critical preloads for the matched route instead of always widening the
+// first paint with unrelated routes.
+const TIER1_ROUTES = ['root', 'routes/public/layout', 'routes/public/home']
 
 const TIER2_PUBLIC_ROUTES = [
   'routes/public/archives',
@@ -64,28 +73,13 @@ const TIER2_EDITOR_ROUTES = [
 const TIER2_AUTH_ROUTES = ['routes/auth/layout', 'routes/auth/signin', 'routes/auth/setup/index']
 
 // Chunks excluded from all tiers except where explicitly allowed
-const EXCLUDED_PATTERNS = [/^canvas-/]
+const EXCLUDED_PATTERNS = WARMUP_GLOBAL_EXCLUDED_PATTERNS.map((p) => new RegExp(p))
 // Excluded from tier 1, public, admin, auth — kept in editor tier
-const EDITOR_ONLY_PATTERN = /^editor-tiptap-/
+const EDITOR_ONLY_PATTERN = new RegExp(WARMUP_EDITOR_ONLY_PATTERN)
 
 const IDLE_SIZE_LIMIT = 100 * 1024 // 100 KB
 
 // Types
-
-interface RouteManifest {
-  entry: { module: string; imports: string[] }
-  routes: Record<
-    string,
-    {
-      module: string
-      imports: string[]
-      clientActionModule?: string
-      clientLoaderModule?: string
-      clientMiddlewareModule?: string
-      hydrateFallbackModule?: string
-    }
-  >
-}
 
 interface WarmupManifest {
   version: number

@@ -2,15 +2,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { renderHook } from '#/_helpers/hook'
 
-// useThumbhashBackground keeps a module-level `thumbhashUrlCache` Map and
-// computes its style synchronously (no useEffect) via a render-phase
-// state adjustment keyed on the last (thumbhash, loaded) pair. The SSR
-// renderHook harness fires exactly one render pass, which is enough to
-// exercise:
+// useThumbhashBackground uses `useSyncExternalStore` with a server snapshot
+// that always returns `undefined`. The actual thumbhash decode only runs in
+// the browser via the client snapshot. The SSR renderHook harness fires exactly
+// one server render pass, which is enough to exercise:
 //   - the undefined-thumbhash early return
 //   - the loaded=true early return
-//   - the cache-hit path (after priming the module cache)
-//   - the decode path (cache miss -> thumbHashToDataURL -> cache write)
+//   - the server snapshot always returning `undefined`
 //   - the decode-failure fallback (mocked thumbHashToDataURL throws)
 //
 // Real thumbhash base64 strings come from tests/fixtures/thumbhash.
@@ -44,29 +42,16 @@ describe('client/hooks/useThumbhashBackground — initial-return gating', () => 
   })
 
   // NOTE: the decode-success + cache-hit paths are NOT reachable in the
-  // single-pass SSR harness. The hook populates its module-level cache
-  // inside the render-phase change block (`if (lastKey... !== props)`),
-  // and `lastKey` is initialised to the mount props, so that block is
-  // always skipped on the first render — the lazy `useState` initializer
-  // therefore reads an empty cache and returns undefined until the hook
-  // re-renders (which never happens under renderToStaticMarkup). The
-  // decode-failure fallback below proves the try/catch wraps the decoder.
-  it('returns undefined for a valid thumbhash on first render (cache cold)', async () => {
+  // single-pass SSR harness because the server snapshot always returns
+  // `undefined`. The client snapshot would decode and cache the result.
+  it('returns undefined for a valid thumbhash on first server render', async () => {
     const { useThumbhashBackground } = await importModule()
     const style = renderHook(() => useThumbhashBackground(VALID_THUMBHASH_A))
     expect(style).toBeUndefined()
   })
 })
 
-describe('client/hooks/useThumbhashBackground — cache-hit via useState initializer', () => {
-  // The lazy useState initializer (`styleFromCache`) reads the module
-  // cache. We can pre-warm it by mounting a throwaway hook instance that
-  // decodes — but as noted above the decode only runs on a re-render.
-  // Instead we prime the cache directly through the real decoder by
-  // invoking the shared util ourselves (the hook's cache and the util
-  // share no state, so we instead rely on the decoder's determinism:
-  // calling thumbHashToDataURL twice on the same input yields the same
-  // data URL, which is what the cache would have stored).
+describe('client/hooks/useThumbhashBackground — decoder determinism', () => {
   it('the shared decoder is deterministic for a given thumbhash', async () => {
     const { thumbHashToDataURL } = await import('@/shared/utils/thumbhash')
     const a = thumbHashToDataURL(decodeBase64(VALID_THUMBHASH_A))
@@ -85,10 +70,9 @@ describe('client/hooks/useThumbhashBackground — cache-hit via useState initial
 
 describe('client/hooks/useThumbhashBackground — decode-failure fallback', () => {
   // When thumbHashToDataURL throws (corrupt bytes, OOM, etc.) the hook's
-  // try/catch falls back to setStyle(undefined). Because the change
-  // block is skipped on first render, we exercise the catch indirectly:
-  // verify the decoder's throw is contained when invoked through the
-  // same code path the hook uses.
+  // try/catch falls back to returning `undefined`. We exercise the catch
+  // indirectly: verify the decoder's throw is contained when invoked through
+  // the same code path the hook uses.
   afterEach(() => {
     vi.doUnmock('@/shared/utils/thumbhash')
   })
@@ -100,20 +84,19 @@ describe('client/hooks/useThumbhashBackground — decode-failure fallback', () =
       }),
     }))
     const { useThumbhashBackground } = await importModule()
-    // The hook's try/catch wraps the decoder; even if the change block
-    // ran it would swallow the throw. Here we confirm the hook returns
-    // undefined (its safe fallback) rather than propagating.
+    // The hook's try/catch wraps the decoder; it returns `undefined` (its safe
+    // fallback) rather than propagating.
     expect(() => renderHook(() => useThumbhashBackground(VALID_THUMBHASH_A))).not.toThrow()
   })
 })
 
-describe('client/hooks/useThumbhashBackground — render-phase input transitions', () => {
+describe('client/hooks/useThumbhashBackground — input transitions', () => {
   it('returns undefined when loaded is true even with a valid thumbhash', async () => {
     const { useThumbhashBackground } = await importModule()
     expect(renderHook(() => useThumbhashBackground(VALID_THUMBHASH_A, true))).toBeUndefined()
   })
 
-  it('returns undefined on first render for any thumbhash when the cache is cold', async () => {
+  it('returns undefined on server render for any thumbhash', async () => {
     const { useThumbhashBackground } = await importModule()
     expect(renderHook(() => useThumbhashBackground(VALID_THUMBHASH_B))).toBeUndefined()
   })
