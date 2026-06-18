@@ -88,26 +88,14 @@ export async function selectFeaturePosts(db: NodePgDatabase, seed: string): Prom
   return result
 }
 
-// Cached seed for sidebar post randomisation. Rotated every 5 minutes so
-// the sidebar refreshes periodically without requiring a full `ORDER BY
-// random()` (which forces a sort of the entire result set).
-let sidebarSeed: string | undefined
-let sidebarSeedAt = 0
-const SIDEBAR_SEED_TTL_MS = 5 * 60 * 1000
-
-function getSidebarSeed(): string {
-  const now = Date.now()
-  if (sidebarSeed === undefined || now - sidebarSeedAt > SIDEBAR_SEED_TTL_MS) {
-    sidebarSeed = String(now)
-    sidebarSeedAt = now
-  }
-  return sidebarSeed
-}
-
 export async function selectSidebarPosts(db: NodePgDatabase, count: number): Promise<SidebarPostLink[]> {
   if (count <= 0) {
     return []
   }
+  // Per-request seed so the sidebar randomises on every page load, matching
+  // the tag-cloud behaviour. Avoids module-level shared state between SSR
+  // requests while keeping the deterministic md5 ordering.
+  const seed = `${Date.now()}:${Math.random()}`
   const metas = await db
     .select()
     .from(postMetaTable)
@@ -120,7 +108,7 @@ export async function selectSidebarPosts(db: NodePgDatabase, count: number): Pro
         sql`${postMetaTable.publishedAt} <= ${new Date()}`,
       ),
     )
-    .orderBy(sql`md5(${postMetaTable.id}::text || ${getSidebarSeed()})`)
+    .orderBy(sql`md5(${postMetaTable.id}::text || ${seed})`)
     .limit(count)
   const tagMap = await findTagNamesByPostIds(
     db,
