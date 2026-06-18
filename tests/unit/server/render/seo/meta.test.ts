@@ -373,17 +373,17 @@ describe('services/seo/meta — bundleFromMatches / metaWithFallback', () => {
     expect(bundleFromMatches([{ id: 'other' }])).toBeUndefined()
   })
 
-  it('returns undefined when the root match has no data', () => {
+  it('returns undefined when the root match has no loaderData', () => {
     expect(bundleFromMatches([{ id: 'root' }])).toBeUndefined()
-    expect(bundleFromMatches([{ id: 'root', data: 'nope' }])).toBeUndefined()
+    expect(bundleFromMatches([{ id: 'root', loaderData: 'nope' }])).toBeUndefined()
   })
 
   it('returns null when blogSettings is explicitly null', () => {
-    expect(bundleFromMatches([{ id: 'root', data: { blogSettings: null } }])).toBeNull()
+    expect(bundleFromMatches([{ id: 'root', loaderData: { blogSettings: null } }])).toBeNull()
   })
 
   it('returns the blogSettings bundle from the root match', () => {
-    const bundle = bundleFromMatches([{ id: 'root', data: { blogSettings: fixture } }])
+    const bundle = bundleFromMatches([{ id: 'root', loaderData: { blogSettings: fixture } }])
     expect(bundle).toEqual(fixture)
   })
 
@@ -395,7 +395,7 @@ describe('services/seo/meta — bundleFromMatches / metaWithFallback', () => {
   it('metaWithFallback calls the fallback when loader seo is absent', () => {
     const meta = metaWithFallback({
       loaderData: { seo: undefined },
-      matches: [{ id: 'root', data: { blogSettings: fixture } }],
+      matches: [{ id: 'root', loaderData: { blogSettings: fixture } }],
       fallback: () => [{ name: 'fb', content: '1' }],
     })
     expect(meta).toEqual([{ name: 'fb', content: '1' }])

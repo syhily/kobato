@@ -387,7 +387,7 @@ export function bundleFromMatches(matches: readonly unknown[]): BlogSettingsBund
   if (!isRecord(rootMatch)) {
     return undefined
   }
-  const rootLoader = rootMatch.data
+  const rootLoader = rootMatch.loaderData
   if (!isRootLoaderData(rootLoader)) {
     return undefined
   }
