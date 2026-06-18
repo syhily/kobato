@@ -38,7 +38,7 @@ This repository is the complete product: public site, admin SPA, API, SSR render
 Docker is recommended for local development.
 
 ```bash
-npm run docker:dev
+pnpm run docker:dev
 ```
 
 Copy `.env.example` to `.env` and set the database and Redis URLs:
@@ -54,8 +54,8 @@ cp .env.example .env
 Install dependencies and start the dev server:
 
 ```bash
-npm install
-npm run dev
+pnpm install
+pnpm run dev
 ```
 
 On first boot, open `/admin/setup` and enter the setup token printed in the console to create the admin account.
@@ -81,14 +81,14 @@ See `.env.example` for the full list of options.
 For fast local feedback without Docker, run unit tests and snapshot tests only:
 
 ```bash
-npm run test:fast
+pnpm run test:fast
 ```
 
 Full coverage uses an ephemeral docker compose stack (tmpfs-backed Postgres and Redis that are discarded on stop):
 
 ```bash
-npm run docker:test
-npm run test
+pnpm run docker:test
+pnpm run test
 ```
 
 ## Deployment
@@ -139,16 +139,16 @@ docker run -p 4321:4321 \
 ## Scripts
 
 ```bash
-npm run dev         # development server
-npm run build       # production build
-npm run test        # run tests
-npm run test:fast   # run unit and snapshot tests without Docker
-npm run fmt   # formatting
-npm run lint  # lint
-npm run type  # TypeScript check
-npm run db:gen      # generate Drizzle migrations
-npm run docker:dev  # start dev components
-npm run docker:test # start test components
+pnpm run dev         # development server
+pnpm run build       # production build
+pnpm run test        # run tests
+pnpm run test:fast   # run unit and snapshot tests without Docker
+pnpm run fmt   # formatting
+pnpm run lint  # lint
+pnpm run type  # TypeScript check
+pnpm run db:gen      # generate Drizzle migrations
+pnpm run docker:dev  # start dev components
+pnpm run docker:test # start test components
 ```
 
 ## Design assets

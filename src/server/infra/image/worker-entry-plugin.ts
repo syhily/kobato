@@ -21,7 +21,7 @@ import { build } from 'vite'
  */
 
 const WORKER_ENTRY = resolve(process.cwd(), 'src/server/infra/image/process-worker.ts')
-const OUTPUT_DIR = resolve(process.cwd(), 'build/server/assets')
+const OUTPUT_DIR = resolve(process.cwd(), 'build/server')
 const OUTPUT_FILE = 'process-worker.js'
 
 export function processWorkerEntryPlugin(): Plugin {

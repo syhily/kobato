@@ -34,6 +34,18 @@ export default defineConfig(({ command }) => ({
           target: 'node',
           external: ['sharp', '@napi-rs/canvas'],
         },
+  environments:
+    command === 'build'
+      ? {
+          ssr: {
+            build: {
+              rollupOptions: {
+                input: 'src/server.ts',
+              },
+            },
+          },
+        }
+      : undefined,
   plugins: [
     reactRouterHonoServer(),
     ...(reactRouter() as Plugin[]),

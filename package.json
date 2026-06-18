@@ -1,6 +1,6 @@
 {
   "name": "kobato",
-  "version": "6.4.2-dev",
+  "version": "6.4.2",
   "private": true,
   "description": "A self-hosted blog CMS built with React Router 7, Hono, and oRPC",
   "keywords": [
@@ -27,7 +27,7 @@
   "type": "module",
   "scripts": {
     "build": "react-router build",
-    "bump": "taze && npm update",
+    "bump": "taze && pnpm update",
     "db:gen": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "dev": "react-router dev",
@@ -79,6 +79,7 @@
     "@shikijs/transformers": "^4.2.0",
     "@simplewebauthn/browser": "^13.3.0",
     "@simplewebauthn/server": "^13.3.1",
+    "@smithy/types": "^4.15.0",
     "@tailwindcss/typography": "^0.5.20",
     "@tailwindcss/vite": "^4.3.1",
     "@tanstack/react-query": "^5.101.0",
@@ -109,7 +110,7 @@
     "drizzle-orm": "1.0.0-rc.4-5d5b77c",
     "fake-indexeddb": "^6.2.5",
     "feed": "^5.2.1",
-    "hono": "^4.12.25",
+    "hono": "^4.12.26",
     "hono-pino": "^0.10.3",
     "idb": "^8.0.3",
     "ioredis": "^5.11.1",
@@ -150,19 +151,11 @@
     "vitest": "^4.1.9",
     "zod": "^4.4.3"
   },
-  "overrides": {
-    "esbuild": "^0.28.1"
-  },
   "lint-staged": {
     "*.{ts,tsx}": [
       "oxfmt -c oxfmt.config.ts --write",
       "oxlint -c oxlint.config.ts --fix --no-error-on-unmatched-pattern"
     ]
   },
-  "packageManager": "npm@11.17.0",
-  "allowScripts": {
-    "fsevents": false,
-    "sharp": false,
-    "esbuild": false
-  }
+  "packageManager": "pnpm@11.7.0"
 }

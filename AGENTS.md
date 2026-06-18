@@ -47,10 +47,10 @@ Skills win on conflict. Quote stable rule ids in PR review (e.g.
 
 ## Build & CI
 
-- `npm run dev`, `npm run fmt`, `npm run lint`, `npm run type`,
-  `npm run test`, `npm run build`
-- Before committing: `npm run fmt && npm run lint && npm run type`,
-  `npm run test`, `npm run build`
+- `pnpm run dev`, `pnpm run fmt`, `pnpm run lint`, `pnpm run type`,
+  `pnpm run test`, `pnpm run build`
+- Before committing: `pnpm run fmt && pnpm run lint && pnpm run type`,
+  `pnpm run test`, `pnpm run build`
 
 ## Route module prewarming
 
@@ -148,12 +148,13 @@ are the canonical examples:
 
 Every other dependency belongs in `devDependencies`, even if the server or
 client bundle imports it in production. The production Docker image is
-built with `npm ci` (full deps) then the runtime stage runs
-`npm ci --omit=dev` against `package-lock.json`, so anything in
-`devDependencies` is still resolvable from the build and bundled into the
-server / client output. Putting it in `dependencies` instead leads to
-`npm ci --omit=dev` reinstalling it unnecessarily at runtime, bloating the
-image and re-pinning versions outside the tested build.
+built with `pnpm install --frozen-lockfile` (full deps) then the runtime
+stage runs `pnpm install --prod --frozen-lockfile` against `pnpm-lock.yaml`,
+so anything in `devDependencies` is still resolvable from the build and
+bundled into the server / client output. Putting it in `dependencies`
+instead leads to `pnpm install --prod --frozen-lockfile` reinstalling it
+unnecessarily at runtime, bloating the image and re-pinning versions outside
+the tested build.
 
 Examples: `react`, `hono`, `drizzle-orm`, `ioredis`, `nodemailer`,
 `sanitize-html`, `feed`, `pg`, `bcryptjs`, `dompurify`, `fast-xml-parser` —

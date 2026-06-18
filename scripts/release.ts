@@ -65,7 +65,7 @@ function cmdBump(version: string): void {
   validateClean()
 
   const pkgPath = 'package.json'
-  const lockPath = 'package-lock.json'
+  const lockPath = 'pnpm-lock.yaml'
   const composePath = 'docker-compose.yml'
 
   // Bump package.json
@@ -76,22 +76,6 @@ function cmdBump(version: string): void {
   const oldVersion = requireString(pkg, 'version')
   pkg['version'] = version
   writeJson(pkgPath, pkg)
-
-  // Bump package-lock.json
-  if (existsSync(resolve(ROOT, lockPath))) {
-    const lock = readJson(lockPath)
-    if (!isRecord(lock)) {
-      throw new Error('Invalid package-lock.json')
-    }
-    lock['version'] = version
-    if (isRecord(lock['packages'])) {
-      const packages = lock['packages']
-      if (isRecord(packages[''])) {
-        packages['']['version'] = version
-      }
-    }
-    writeJson(lockPath, lock)
-  }
 
   // Update docker-compose.yml image tag
   if (existsSync(resolve(ROOT, composePath))) {
@@ -163,7 +147,7 @@ function cmdPrepareNext(): void {
   validateClean()
 
   const pkgPath = 'package.json'
-  const lockPath = 'package-lock.json'
+  const lockPath = 'pnpm-lock.yaml'
   const composePath = 'docker-compose.yml'
 
   const pkg = readJson(pkgPath)
@@ -179,22 +163,6 @@ function cmdPrepareNext(): void {
   // Update package.json
   pkg['version'] = nextVersion
   writeJson(pkgPath, pkg)
-
-  // Update package-lock.json
-  if (existsSync(resolve(ROOT, lockPath))) {
-    const lock = readJson(lockPath)
-    if (!isRecord(lock)) {
-      throw new Error('Invalid package-lock.json')
-    }
-    lock['version'] = nextVersion
-    if (isRecord(lock['packages'])) {
-      const packages = lock['packages']
-      if (isRecord(packages[''])) {
-        packages['']['version'] = nextVersion
-      }
-    }
-    writeJson(lockPath, lock)
-  }
 
   // Update docker-compose.yml to latest
   if (existsSync(resolve(ROOT, composePath))) {

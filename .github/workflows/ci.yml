@@ -52,12 +52,14 @@ jobs:
       SESSION_SECRET: ci-session-secret
     steps:
       - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.7.0
       - uses: actions/setup-node@v6
         with:
           node-version: 24
-          cache: 'npm'
-      - run: npm install -g npm@11.17.0
-      - run: npm ci
+          cache: 'pnpm'
+      - run: pnpm install --frozen-lockfile
       - name: Install PostgreSQL 17 client tools
         run: |
           sudo install -d /usr/share/postgresql-common/pgdg
@@ -65,10 +67,10 @@ jobs:
           echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" | sudo tee /etc/apt/sources.list.d/pgdg.list
           sudo apt-get update
           sudo apt-get install -y postgresql-client-17
-      - run: npm run type
-      - run: npm run fmt:check
-      - run: npm run lint
-      - run: npm run test -- --coverage
+      - run: pnpm run type
+      - run: pnpm run fmt:check
+      - run: pnpm run lint
+      - run: pnpm run test -- --coverage
       - uses: actions/upload-artifact@v7
         with:
           name: coverage-report
@@ -82,10 +84,12 @@ jobs:
     needs: check
     steps:
       - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.7.0
       - uses: actions/setup-node@v6
         with:
           node-version: 24
-          cache: 'npm'
-      - run: npm install -g npm@11.17.0
-      - run: npm ci
-      - run: npm run build
+          cache: 'pnpm'
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm run build

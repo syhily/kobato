@@ -42,7 +42,7 @@ docker compose -f docker/docker-compose.test.yml up -d
 Then run tests normally:
 
 ```bash
-npm run test
+pnpm run test
 ```
 
 Or run a single project:

@@ -58,6 +58,7 @@ emde
 envsubst
 eparams
 epub
+esbuild
 ethantw
 extversion
 firis
@@ -74,6 +75,7 @@ fontsource
 footgun
 forencrypt
 fouc
+fsevents
 fumadocs
 geekzu
 genyo
