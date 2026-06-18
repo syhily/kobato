@@ -39,6 +39,17 @@ export default function handleRequest(
     nonce = randomBytes(16).toString('base64')
   }
 
+  // WORKAROUND: React Router v8's HydratedRouter does not include `nonce` in
+  // FrameworkContext on the client, while ServerRouter does on the server. The
+  // dev-mode critical CSS `<link>` rendered by `<Links />` therefore ends up
+  // with a nonce attribute in the server HTML but not after client hydration,
+  // causing a hydration mismatch. In development we omit the FrameworkContext
+  // nonce so both sides render the link consistently without a nonce. The
+  // `renderToPipeableStream` nonce is kept for React's own inline scripts, and
+  // `<Scripts>` / `<ScrollRestoration>` still receive an explicit nonce prop.
+  // https://github.com/remix-run/react-router/issues/14666
+  const serverRouterNonce = import.meta.env.DEV ? undefined : nonce
+
   return new Promise<Response>((resolve, reject) => {
     let shellRendered = false
     let statusCode = responseStatusCode
@@ -54,7 +65,7 @@ export default function handleRequest(
     let timeoutId: ReturnType<typeof setTimeout> | undefined = setTimeout(() => abort(), streamTimeout + 1000)
 
     const { pipe, abort } = renderToPipeableStream(
-      <ServerRouter context={routerContext} url={request.url} nonce={nonce} />,
+      <ServerRouter context={routerContext} url={request.url} nonce={serverRouterNonce} />,
       {
         nonce,
         [readyOption]() {

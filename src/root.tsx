@@ -161,7 +161,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
           <link key={url} rel="stylesheet" href={url} />
         ))}
         <Meta />
-        <Links nonce={rootData?.cspNonce} />
+        <Links />
         {tier1Links.map((href) => (
           <link key={href} rel="modulepreload" href={href} />
         ))}
