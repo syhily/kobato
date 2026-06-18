@@ -59,7 +59,7 @@
     "sharp": "^0.35.1"
   },
   "devDependencies": {
-    "@aws-sdk/client-s3": "^3.1070.0",
+    "@aws-sdk/client-s3": "^3.1071.0",
     "@base-ui/react": "^1.5.0",
     "@date-fns/tz": "^1.5.0",
     "@dnd-kit/core": "^6.3.1",
@@ -74,8 +74,8 @@
     "@orpc/server": "^1.14.6",
     "@portabletext/react": "^6.2.0",
     "@portabletext/to-html": "^5.0.2",
-    "@react-router/dev": "^7.18.0",
-    "@react-router/node": "^7.18.0",
+    "@react-router/dev": "^8.0.0",
+    "@react-router/node": "^8.0.0",
     "@shikijs/transformers": "^4.2.0",
     "@simplewebauthn/browser": "^13.3.0",
     "@simplewebauthn/server": "^13.3.1",
@@ -134,7 +134,7 @@
     "react-day-picker": "^10.0.1",
     "react-dom": "^19.2.7",
     "react-hook-form": "^7.79.0",
-    "react-router": "^7.18.0",
+    "react-router": "^8.0.0",
     "sanitize-html": "^2.17.5",
     "sharp-ico": "0.1.5",
     "shiki": "^4.2.0",

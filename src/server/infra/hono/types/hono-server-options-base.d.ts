@@ -1,9 +1,7 @@
 import type { Context, Env, Hono } from 'hono'
-import type { AppLoadContext, RouterContextProvider, ServerBuild, UNSAFE_MiddlewareEnabled } from 'react-router'
+import type { RouterContextProvider, ServerBuild } from 'react-router'
 
-export type ReactRouterHonoServerAppLoadContext = UNSAFE_MiddlewareEnabled extends true
-  ? RouterContextProvider
-  : AppLoadContext
+export type ReactRouterHonoServerAppLoadContext = RouterContextProvider
 
 export interface HonoServerOptionsBase<E extends Env> {
   /**
