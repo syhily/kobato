@@ -85,6 +85,7 @@ googlebot
 gotop
 grayscale
 gungseo
+Haklex
 hashtext
 healthcheck
 hefei

@@ -91,6 +91,7 @@ const ADMIN_IMAGE_WITH_UPLOADER_COLUMNS = {
   updatedAt: image.updatedAt,
   deletedAt: image.deletedAt,
   storagePath: image.storagePath,
+  storageDriver: image.storageDriver,
   mimeType: image.mimeType,
   width: image.width,
   height: image.height,

@@ -29,6 +29,7 @@ import { brandingRouter } from '@/server/http/resources/branding'
 import { feedRouter } from '@/server/http/resources/feed'
 import { fontsRouter } from '@/server/http/resources/fonts'
 import { imagesRouter } from '@/server/http/resources/images'
+import { localStorageRouter } from '@/server/http/resources/local-storage'
 import { maxmindRouter } from '@/server/http/resources/maxmind'
 import { musicProxyRouter } from '@/server/http/resources/music-proxy'
 import { redirectsRouter } from '@/server/http/resources/redirects'
@@ -205,6 +206,10 @@ export function configureMiddleware(app: Hono<Env>): void {
   app.route('/', analyticsEventsRouter)
   app.route('/', feedRouter)
   app.route('/', imagesRouter)
+  // Local-storage assets served from $DATA_PATH/storage (images/music/
+  // branding uploaded while S3 was disabled). Public — no auth — and
+  // supports Range requests for audio seeking.
+  app.route('/', localStorageRouter)
   app.route('/', sitemapRouter)
   app.route('/', redirectsRouter)
 

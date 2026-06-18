@@ -30,7 +30,7 @@ import { BackupView } from '@/ui/admin/settings/BackupView'
 
 const queryMocks = vi.hoisted(() => ({
   query: {
-    data: undefined as { s3Enabled: boolean; pgToolsAvailable: boolean } | undefined,
+    data: undefined as { primaryDriver: 's3' | 'local'; pgToolsAvailable: boolean } | undefined,
     isPending: true,
     error: null as unknown,
   },
@@ -113,16 +113,18 @@ describe('snapshot: BackupView branches', () => {
     expect(html).toContain('未选择文件')
   })
 
-  it('threads canConfigure=true to the schedule form when the status query resolves with S3 + pg tools', () => {
-    // `canConfigure = s3Enabled && pgToolsAvailable` is computed every
-    // render from `statusData`. With the status query resolved, the
-    // schedule form receives `canConfigure={true}` and its inputs are
-    // NOT disabled. (The warning banners stay hidden because
+  it('threads canConfigure=true to the schedule form when the status query resolves with pg tools available', () => {
+    // `canConfigure = pgToolsAvailable` is computed every render from
+    // `statusData` (S3 being off no longer disables backups — they fall
+    // back to local storage, so `primaryDriver` only drives the info
+    // banner). With the status query resolved and pg tools present, the
+    // schedule form receives `canConfigure={true}` and its inputs are NOT
+    // disabled. (The info/warning banners stay hidden because
     // `isInitialLoading` is still true on SSR — the file-list effect
     // never fires — so this case isolates the canConfigure render branch
     // from the effect-gated banner branches.)
     queryMocks.query = {
-      data: { s3Enabled: true, pgToolsAvailable: true },
+      data: { primaryDriver: 's3', pgToolsAvailable: true },
       isPending: false,
       error: null,
     }
@@ -146,7 +148,7 @@ describe('snapshot: BackupView branches', () => {
     // No warning banner leaks while the file list is still loading
     // (effect-gated branch, asserted absent here).
     expect(html).not.toContain('缺少 postgresql-client')
-    expect(html).not.toContain('请先前往存储配置启用 S3 存储')
+    expect(html).not.toContain('未启用 S3 存储')
   })
 
   it('renders the manual-restore section in its default (no-file-selected) state', () => {
@@ -179,7 +181,7 @@ describe('snapshot: BackupView branches', () => {
     // input + upload button. This is a render-path branch (computed off
     // statusData) distinct from the loading-state default.
     queryMocks.query = {
-      data: { s3Enabled: true, pgToolsAvailable: false },
+      data: { primaryDriver: 's3', pgToolsAvailable: false },
       isPending: false,
       error: null,
     }

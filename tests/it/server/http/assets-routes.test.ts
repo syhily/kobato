@@ -27,7 +27,7 @@ function bundleWith(overrides: Partial<BlogSettingsBundle> = {}): BlogSettingsBu
 }
 
 function ref(etag: string, contentType: string): BrandingObjectRef {
-  return { etag, contentType, size: 1024, updatedAt: '2024-01-01T00:00:00.000Z' }
+  return { etag, contentType, size: 1024, updatedAt: '2024-01-01T00:00:00.000Z', driver: 's3' }
 }
 
 describe('assetsRouter static paths', () => {

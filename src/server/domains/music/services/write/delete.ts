@@ -18,7 +18,10 @@ export async function deleteMusic(db: NodePgDatabase, id: bigint, viewer?: Music
   // Mirror the image library: try S3 best-effort, always proceed to
   // DB soft-delete so the admin table doesn't keep showing a "missing"
   // row when the delete only fails on the S3 leg.
-  await Promise.allSettled([deleteMusicObject(existing.audioStoragePath), deleteMusicObject(existing.coverStoragePath)])
+  await Promise.allSettled([
+    deleteMusicObject(existing.audioStoragePath, existing.storageDriver),
+    deleteMusicObject(existing.coverStoragePath, existing.storageDriver),
+  ])
 
   const deleted = await softDeleteMusic(db, id)
   if (deleted === null) {

@@ -86,16 +86,34 @@ describe('assets storage', () => {
 
   it('fetches a branding object from cache or s3', async () => {
     ;(getS3ObjectBuffer as ReturnType<typeof vi.fn>).mockResolvedValue(pngHeader)
-    const buffer = await fetchBrandingObject('icon192', { etag: 'a', contentType: 'image/png', size: 8, updatedAt: '' })
+    const buffer = await fetchBrandingObject('icon192', {
+      etag: 'a',
+      contentType: 'image/png',
+      size: 8,
+      updatedAt: '',
+      driver: 's3',
+    })
     expect(buffer).toBe(pngHeader)
     // second call should hit cache
-    const cached = await fetchBrandingObject('icon192', { etag: 'a', contentType: 'image/png', size: 8, updatedAt: '' })
+    const cached = await fetchBrandingObject('icon192', {
+      etag: 'a',
+      contentType: 'image/png',
+      size: 8,
+      updatedAt: '',
+      driver: 's3',
+    })
     expect(cached).toBe(pngHeader)
   })
 
   it('returns null when s3 fetch fails', async () => {
     ;(getS3ObjectBuffer as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('down'))
-    const buffer = await fetchBrandingObject('icon192', { etag: 'b', contentType: 'image/png', size: 8, updatedAt: '' })
+    const buffer = await fetchBrandingObject('icon192', {
+      etag: 'b',
+      contentType: 'image/png',
+      size: 8,
+      updatedAt: '',
+      driver: 's3',
+    })
     expect(buffer).toBeNull()
   })
 })

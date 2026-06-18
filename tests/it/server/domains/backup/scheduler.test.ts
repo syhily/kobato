@@ -12,6 +12,10 @@ vi.mock('@/server/domains/backup/services/shared', () => ({
   checkPgToolsAvailable: vi.fn(async () => true),
 }))
 
+vi.mock('@/server/bootstrap/db-lifecycle', () => ({
+  getDb: vi.fn(() => ({})),
+}))
+
 vi.mock('@/server/infra/lifecycle', () => ({
   registerShutdownHook: vi.fn(),
 }))
@@ -51,16 +55,20 @@ describe('backup/scheduler — scheduleNextBackup', () => {
     expect(vi.getTimerCount()).toBe(0)
   })
 
-  it('does nothing when storage is not enabled', () => {
+  it('schedules even when storage is not enabled (backups fall back to local)', () => {
     setBlogSettingsBundleForTests({
       ...TEST_BLOG_SETTINGS_BUNDLE,
+      backup: {
+        ...TEST_BLOG_SETTINGS_BUNDLE.backup!,
+        scheduled: { enabled: true, frequency: 'daily', hour: 3, minute: 0 },
+      },
       assets: {
         ...TEST_BLOG_SETTINGS_BUNDLE.assets!,
         storage: { ...TEST_BLOG_SETTINGS_BUNDLE.assets!.storage, enabled: false },
       },
     })
     scheduleNextBackup()
-    expect(vi.getTimerCount()).toBe(0)
+    expect(vi.getTimerCount()).toBeGreaterThan(0)
   })
 
   it('schedules a timer when backup + storage are enabled', () => {

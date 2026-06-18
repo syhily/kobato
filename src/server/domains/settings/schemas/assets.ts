@@ -10,17 +10,16 @@ const coerceBoolean = z
 // base with music metadata, so combining the two keeps the operator
 // from having to keep two pages in sync.
 //
-// Image upload is gated by a single `storage.enabled` toggle:
+// Storage is always available: uploads go to the active backend, which
+// is S3 when `storage.enabled` is on AND every bucket field is filled
+// (the `superRefine` below enforces the latter), and the local
+// filesystem otherwise (`$DATA_PATH/storage/`). There is no longer an
+// "uploads refused with 503" state — local is the always-on fallback,
+// so fresh installs work out of the box without configuring S3.
 //
-//   - `enabled === false` (default for fresh installs) — uploads are
-//     refused at the perimeter with a friendly 503. The admin library
-//     UI still lists previously-uploaded rows and the public render
-//     pipeline still resolves their public URL using the stored
-//     `publicBaseUrl`, so historical S3 rows keep working even after
-//     the toggle is flipped off.
-//   - `enabled === true` — every field below is required (the schema
-//     `superRefine` below enforces it). The runtime upload service
-//     hands the buffer to the S3 client.
+// Each asset row records the backend it was written to (`storageDriver`),
+// so reads, deletes, and public-URL resolution dispatch correctly after
+// a local→S3 switch, and the migration tool can copy local objects to S3.
 //
 // We deliberately keep the bucket fields nullable when disabled so
 // that flipping the toggle off doesn't force the admin to re-paste
@@ -54,6 +53,9 @@ const brandingObjectRef = z.object({
   contentType: z.string().min(1).max(128),
   size: z.number().int().min(0),
   updatedAt: z.string().min(1).max(64),
+  // Backend the bytes live in. Defaults to 's3' for refs persisted before
+  // local storage existed, so historical branding assets resolve correctly.
+  driver: z.enum(['s3', 'local']).default('s3'),
 })
 
 export const assetsSchema = z

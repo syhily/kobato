@@ -199,45 +199,26 @@ const SLOT_GROUPS: readonly SlotGroup[] = [
 
 interface BrandingViewProps {
   branding: AssetsLoaderShape['branding'] | null
-  storageEnabled: boolean
 }
 
-export function BrandingView({ branding, storageEnabled }: BrandingViewProps) {
+export function BrandingView({ branding }: BrandingViewProps) {
   return (
     <AdminListPage>
       <AdminListPage.Header
         title="品牌素材"
-        description="集中管理 favicon、Logo、社交卡片与海报等站点品牌素材。所有文件直接写入 S3，公开 URL 与默认资源一致。"
+        description="集中管理 favicon、Logo、社交卡片与海报等站点品牌素材。上传写入当前存储后端（S3 优先，未配置时落本地），公开 URL 与默认资源一致。"
       />
-
-      {!storageEnabled ? (
-        <div className="rounded-xl border border-status-warn-border/30 bg-status-warn-bg/50 p-4 text-sm text-status-warn-fg">
-          当前未启用 S3 上传，所有上传 / 清除入口将返回 503。请先到{' '}
-          <a className="underline underline-offset-2" href="/admin/settings#assets">
-            系统设置 → 资源
-          </a>{' '}
-          打开「启用 S3 上传」并填写凭据。
-        </div>
-      ) : null}
 
       <div className="flex flex-col gap-8">
         {SLOT_GROUPS.map((group) => (
-          <SlotGroupCard key={group.title} group={group} branding={branding} storageEnabled={storageEnabled} />
+          <SlotGroupCard key={group.title} group={group} branding={branding} />
         ))}
       </div>
     </AdminListPage>
   )
 }
 
-function SlotGroupCard({
-  group,
-  branding,
-  storageEnabled,
-}: {
-  group: SlotGroup
-  branding: AssetsLoaderShape['branding'] | null
-  storageEnabled: boolean
-}) {
+function SlotGroupCard({ group, branding }: { group: SlotGroup; branding: AssetsLoaderShape['branding'] | null }) {
   return (
     <section>
       <header className="mb-3">
@@ -247,12 +228,7 @@ function SlotGroupCard({
       <Card>
         <CardContent className="divide-y divide-border p-0">
           {group.slots.map((meta) => (
-            <SlotRow
-              key={meta.slot}
-              meta={meta}
-              status={branding?.[meta.slot] ?? { etag: '' }}
-              storageEnabled={storageEnabled}
-            />
+            <SlotRow key={meta.slot} meta={meta} status={branding?.[meta.slot] ?? { etag: '' }} />
           ))}
         </CardContent>
       </Card>
@@ -260,15 +236,7 @@ function SlotGroupCard({
   )
 }
 
-function SlotRow({
-  meta,
-  status,
-  storageEnabled,
-}: {
-  meta: SlotMeta
-  status: BrandingSlotStatus
-  storageEnabled: boolean
-}) {
+function SlotRow({ meta, status }: { meta: SlotMeta; status: BrandingSlotStatus }) {
   const revalidator = useRevalidator()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [pending, setPending] = useState<'upload' | 'clear' | null>(null)
@@ -385,7 +353,7 @@ function SlotRow({
           type="button"
           variant="default"
           className="w-full"
-          disabled={!storageEnabled || pending !== null}
+          disabled={pending !== null}
           onClick={() => fileInputRef.current?.click()}
         >
           {pending === 'upload' ? '上传中…' : configured ? '替换' : '上传'}

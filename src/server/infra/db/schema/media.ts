@@ -1,4 +1,16 @@
-import { bigint, bigserial, index, integer, pgTable, text, timestamp, uniqueIndex, varchar } from 'drizzle-orm/pg-core'
+import { sql } from 'drizzle-orm'
+import {
+  bigint,
+  bigserial,
+  check,
+  index,
+  integer,
+  pgTable,
+  text,
+  timestamp,
+  uniqueIndex,
+  varchar,
+} from 'drizzle-orm/pg-core'
 
 export const image = pgTable(
   'image',
@@ -12,6 +24,7 @@ export const image = pgTable(
       .$defaultFn(() => new Date()),
     deletedAt: timestamp('deleted_at', { withTimezone: true, mode: 'date' }),
     storagePath: varchar('storage_path', { length: 500 }).unique().notNull(),
+    storageDriver: varchar('storage_driver', { length: 8 }).$type<'s3' | 'local'>().notNull().default('s3'),
     mimeType: varchar('mime_type', { length: 60 }).notNull(),
     width: integer('width').notNull(),
     height: integer('height').notNull(),
@@ -20,7 +33,11 @@ export const image = pgTable(
     uploaderId: bigint('uploader_id', { mode: 'bigint' }),
     note: text('note'),
   },
-  (table) => [index('idx_image_created_at').on(table.createdAt), index('idx_image_deleted_at').on(table.deletedAt)],
+  (table) => [
+    index('idx_image_created_at').on(table.createdAt),
+    index('idx_image_deleted_at').on(table.deletedAt),
+    check('image_storage_driver_chk', sql`${table.storageDriver} IN ('s3', 'local')`),
+  ],
 )
 
 export const music = pgTable(
@@ -42,6 +59,7 @@ export const music = pgTable(
     album: varchar('album', { length: 200 }).notNull(),
     audioStoragePath: varchar('audio_storage_path', { length: 500 }).unique().notNull(),
     coverStoragePath: varchar('cover_storage_path', { length: 500 }).unique().notNull(),
+    storageDriver: varchar('storage_driver', { length: 8 }).$type<'s3' | 'local'>().notNull().default('s3'),
     lyric: text('lyric'),
     uploaderId: bigint('uploader_id', { mode: 'bigint' }),
   },
@@ -50,5 +68,6 @@ export const music = pgTable(
     index('idx_music_player_id').on(table.playerId),
     index('idx_music_created_at').on(table.createdAt),
     index('idx_music_deleted_at').on(table.deletedAt),
+    check('music_storage_driver_chk', sql`${table.storageDriver} IN ('s3', 'local')`),
   ],
 )

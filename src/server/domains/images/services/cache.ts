@@ -1,13 +1,13 @@
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
 import type { ImageRow } from '@/server/infra/db/types'
+import type { StorageDriver } from '@/shared/config/types'
 
 import { findImagesByStoragePaths } from '@/server/infra/db/operations/image'
-import { ActionFailure } from '@/server/infra/http/errors'
 import { getLogger } from '@/server/infra/logger'
 import { createInflight } from '@/server/infra/redis/inflight'
 import { storage } from '@/server/infra/redis/storage'
-import { getPublicBaseUrl } from '@/server/infra/storage/public-url'
+import { resolveAssetUrl } from '@/server/infra/storage/public-url'
 import { getCacheSettings } from '@/shared/config/getters'
 
 const log = getLogger('images.render-enhance')
@@ -15,6 +15,7 @@ const log = getLogger('images.render-enhance')
 export interface CachedImageMetaPresent {
   found: true
   storagePath: string
+  driver: StorageDriver
   width: number
   height: number
   thumbhash: string | null
@@ -31,6 +32,7 @@ function rowToCached(row: ImageRow): CachedImageMetaPresent {
   return {
     found: true,
     storagePath: row.storagePath,
+    driver: row.storageDriver,
     width: row.width,
     height: row.height,
     thumbhash: row.thumbhash,
@@ -140,26 +142,22 @@ export async function clearImageEnhanceCache(): Promise<void> {
   )
 }
 
-export function resolvePublicUrl(meta: CachedImageMetaPresent, publicBaseUrl: string | null): string {
-  if (publicBaseUrl === null) {
-    return meta.storagePath
-  }
-  const tail = meta.storagePath.startsWith('/') ? meta.storagePath.slice(1) : meta.storagePath
-  return appendCacheBuster(`${publicBaseUrl}/${tail}`, meta.updatedAtMs)
+/**
+ * Resolve the public URL for a cached image meta. Dispatches on the
+ * per-asset `driver` via the central `resolveAssetUrl` (S3 → CDN,
+ * local → `/storage/*`), appending the `?v=<updatedAtMs>` cache buster.
+ */
+export function resolvePublicUrl(meta: CachedImageMetaPresent): string {
+  return resolveAssetUrl(meta.driver, meta.storagePath, meta.updatedAtMs)
 }
 
-function appendCacheBuster(url: string, version: number): string {
-  const sep = url.includes('?') ? '&' : '?'
-  return `${url}${sep}v=${version}`
-}
-
-export function buildPublicUrl(storagePath: string): string {
-  const publicBaseUrl = getPublicBaseUrl()
-  if (publicBaseUrl === null) {
-    throw new ActionFailure(503, '请先在 /admin/settings/assets 配置 S3 公共访问基地址')
-  }
-  const tail = storagePath.startsWith('/') ? storagePath.slice(1) : storagePath
-  return `${publicBaseUrl}/${tail}`
+/**
+ * Build a public URL from a bare storage path + driver (no cache buster).
+ * Used by the admin list DTO. Throws `ActionFailure(503)` for an S3 asset
+ * when the CDN base is unset.
+ */
+export function buildPublicUrl(storagePath: string, driver: StorageDriver): string {
+  return resolveAssetUrl(driver, storagePath)
 }
 
 export function resolveSrcToStoragePath(src: string, publicBaseUrl: string | null): string | null {
@@ -174,6 +172,10 @@ export function resolveSrcToStoragePath(src: string, publicBaseUrl: string | nul
     }
     try {
       const url = new URL(src)
+      // Local-served assets live under `/storage/<key>` on the blog origin.
+      if (url.pathname.startsWith('/storage/')) {
+        return normalizeStoragePath(url.pathname.slice('/storage/'.length))
+      }
       if (url.pathname.startsWith('/images/')) {
         return normalizeStoragePath(url.pathname.slice(1))
       }
@@ -181,6 +183,12 @@ export function resolveSrcToStoragePath(src: string, publicBaseUrl: string | nul
       // Malformed URL — fall through to "no match".
     }
     return null
+  }
+  if (src.startsWith('/storage/')) {
+    return normalizeStoragePath(src.slice('/storage/'.length))
+  }
+  if (src.startsWith('storage/')) {
+    return normalizeStoragePath(src.slice('storage/'.length))
   }
   if (src.startsWith('/images/')) {
     return normalizeStoragePath(src.slice(1))

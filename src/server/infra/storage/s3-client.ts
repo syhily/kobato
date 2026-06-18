@@ -204,6 +204,31 @@ function parseS3Contents(contents: _Object[] | undefined): S3ObjectMeta[] {
   return objects
 }
 
+/**
+ * Existence check via a single `HeadObject`. Cheaper and more precise than
+ * the prior `listS3Objects(key, 1)` approach (one request, exact-key match
+ * rather than a prefix listing the migration would otherwise fire for every
+ * object). Treats a `404`/`NotFound` as "absent" and any other failure as
+ * "absent" too — a transient error mid-migration shouldn't abort, since the
+ * subsequent PUT is idempotent (matches the old list-based contract).
+ */
+export async function s3ObjectExists(key: string): Promise<boolean> {
+  const sdk = await getAwsSdk()
+  const { client, bucket } = await getS3StorageContext({ requireEnabled: false })
+  try {
+    await client.send(new sdk.HeadObjectCommand({ Bucket: bucket, Key: key }))
+    return true
+  } catch (error) {
+    const name = (error as { name?: string }).name
+    const statusCode = (error as { $metadata?: { httpStatusCode?: number } }).$metadata?.httpStatusCode
+    if (name === 'NotFound' || statusCode === 404) {
+      return false
+    }
+    log.warn('HeadObject failed; treating key as absent', { key, error: String(error) })
+    return false
+  }
+}
+
 export async function listS3Objects(prefix: string, maxKeys = 10_000): Promise<S3ObjectMeta[]> {
   const sdk = await getAwsSdk()
   const { client, bucket } = await getS3StorageContext({ requireEnabled: false })
@@ -283,6 +308,21 @@ export async function getS3ObjectBuffer(key: string, maxSize = MAX_S3_BUFFER_SIZ
     stream.on('end', () => resolve(Buffer.concat(chunks)))
     stream.on('error', (err: Error) => reject(err))
   })
+}
+
+/**
+ * Stream an object without buffering it into memory. Used for backups,
+ * which can exceed the `MAX_S3_BUFFER_SIZE` cap that `getS3ObjectBuffer`
+ * enforces. Throws `ActionFailure(404)` on a missing/empty object.
+ */
+export async function getS3ObjectStream(key: string): Promise<Readable> {
+  const sdk = await getAwsSdk()
+  const { client, bucket } = await getS3StorageContext({ requireEnabled: false })
+  const response = await client.send(new sdk.GetObjectCommand({ Bucket: bucket, Key: key }))
+  if (response.Body === undefined) {
+    throw new ActionFailure(404, 'S3 对象不存在或内容为空')
+  }
+  return response.Body as Readable
 }
 
 export async function putS3Object(key: string, body: Buffer | Readable, contentType?: string): Promise<void> {

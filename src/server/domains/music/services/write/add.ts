@@ -14,12 +14,7 @@ import {
   MAX_AUDIO_BYTES,
   MAX_COVER_BYTES,
 } from '@/server/domains/music/services/write/shared'
-import {
-  deleteMusicObject,
-  ensureMusicStorageEnabled,
-  putMusicAudio,
-  putMusicCover,
-} from '@/server/domains/music/storage'
+import { deleteMusicObject, putMusicAudio, putMusicCover } from '@/server/domains/music/storage'
 import { insertMusic, findMusicBySourceAndId } from '@/server/infra/db/operations/music'
 import { DomainError } from '@/server/infra/http/errors'
 import { processImageBuffer } from '@/server/infra/image/process'
@@ -59,8 +54,6 @@ export interface AddMusicPrefill {
  * which makes the import script safe to re-run.
  */
 export async function addMusic(db: NodePgDatabase, input: AddMusicInputs): Promise<AdminMusicDto> {
-  await ensureMusicStorageEnabled()
-
   // Idempotency: skip the whole upload-and-insert dance if we already
   // imported this song. The caller can decide whether to surface this
   // as "already exists" (UI) or "skip" (importer).
@@ -108,8 +101,14 @@ export async function addMusic(db: NodePgDatabase, input: AddMusicInputs): Promi
     throw error
   }
 
-  // Upload both assets in parallel.
-  await Promise.all([putMusicAudio(audioStoragePath, audioBuffer), putMusicCover(coverStoragePath, coverProcessed)])
+  // Upload both assets in parallel. Both target the active backend, so
+  // they return the same driver; capture it once to persist on the row
+  // and to target the right backend on rollback.
+  const [audioResult, coverResult] = await Promise.all([
+    putMusicAudio(audioStoragePath, audioBuffer),
+    putMusicCover(coverStoragePath, coverProcessed),
+  ])
+  const driver = audioResult.driver ?? coverResult.driver
 
   const newRow: NewMusic = {
     source: input.source,
@@ -120,6 +119,7 @@ export async function addMusic(db: NodePgDatabase, input: AddMusicInputs): Promi
     album: metadata.album,
     audioStoragePath,
     coverStoragePath,
+    storageDriver: driver,
     lyric: lyricText,
     uploaderId: input.uploader?.id ?? null,
   }
@@ -128,12 +128,13 @@ export async function addMusic(db: NodePgDatabase, input: AddMusicInputs): Promi
   try {
     row = await insertMusic(db, newRow)
   } catch (error) {
-    log.error('Music insert failed; rolling back S3 uploads', {
+    log.error('Music insert failed; rolling back uploads', {
       sourceId: input.sourceId,
       playerId,
+      driver,
       error,
     })
-    await Promise.allSettled([deleteMusicObject(audioStoragePath), deleteMusicObject(coverStoragePath)])
+    await Promise.allSettled([deleteMusicObject(audioStoragePath, driver), deleteMusicObject(coverStoragePath, driver)])
     throw new DomainError('INTERNAL', '音乐元数据写入失败，请稍后重试')
   }
 

@@ -12,6 +12,7 @@ import { adminPagesRouter } from '@/server/http/controllers/admin/pages.controll
 import { adminPostsRouter } from '@/server/http/controllers/admin/posts.controller'
 import { adminRendersRouter } from '@/server/http/controllers/admin/renders.controller'
 import { adminSettingsRouter } from '@/server/http/controllers/admin/settings.controller'
+import { adminStorageRouter } from '@/server/http/controllers/admin/storage.controller'
 import { adminTagsRouter } from '@/server/http/controllers/admin/tags.controller'
 import { adminUsersAdminRouter } from '@/server/http/controllers/admin/users-admin.controller'
 import { adminUsersCrudRouter } from '@/server/http/controllers/admin/users-crud.controller'
@@ -47,6 +48,7 @@ export const apiRouter = {
     users: { ...adminUsersCrudRouter, ...adminUsersAdminRouter, ...adminUsersSessionsRouter },
     auditLog: auditLogRouter,
     settings: adminSettingsRouter,
+    storage: adminStorageRouter,
     cache: adminCacheRouter,
     mail: adminMailRouter,
     friends: adminFriendsRouter,

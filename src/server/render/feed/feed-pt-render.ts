@@ -90,7 +90,7 @@ async function resolveMusicPlayerMeta(db: NodePgDatabase, body: PortableTextBody
 
   const map = new Map<string, MusicMeta>()
   for (const row of rows) {
-    const audioUrl = safeBuildMusicPublicUrl(row.audioStoragePath)
+    const audioUrl = safeBuildMusicPublicUrl(row.audioStoragePath, row.storageDriver)
     if (audioUrl !== null) {
       map.set(row.playerId, { name: row.name, artist: row.artist, audioUrl })
     }

@@ -42,6 +42,7 @@ const ADMIN_MUSIC_WITH_UPLOADER_COLUMNS = {
   album: music.album,
   audioStoragePath: music.audioStoragePath,
   coverStoragePath: music.coverStoragePath,
+  storageDriver: music.storageDriver,
   lyric: music.lyric,
   uploaderId: music.uploaderId,
   uploaderName: user.name,

@@ -1,12 +1,13 @@
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import type { AssetsSettings } from '@/shared/config/types'
 
 import { TEST_BLOG_SETTINGS_BUNDLE } from '#/_helpers/blog-settings'
 import { setBlogSettingsBundleForTests } from '@/server/domains/settings/services/test-utils'
 
-const { deleteImage, isUploadEnabled, putImage } = await import('@/server/domains/images/storage')
+const { isUploadEnabled, putImage } = await import('@/server/domains/images/storage')
 const { getPublicBaseUrl } = await import('@/server/infra/storage/public-url')
+const { localBackend } = await import('@/server/infra/storage/backends/local')
 
 // Narrow once: the bundle types `assets` as nullable to express the
 // pre-install state, but the fixture always seeds it. Pulling the
@@ -46,7 +47,10 @@ describe('server/images/storage — toggle dispatch', () => {
     expect(getPublicBaseUrl()).toBe('https://assets.example.com')
   })
 
-  it('refuses putImage / deleteImage when the toggle is OFF', async () => {
+  it('writes to local storage (no 503) when S3 is off and returns the local driver', async () => {
+    // The single-toggle 503 gate is gone: with S3 off, uploads fall through
+    // to the local backend instead of refusing. Spy on the local backend so
+    // the test never touches the real filesystem.
     setBlogSettingsBundleForTests({
       ...TEST_BLOG_SETTINGS_BUNDLE,
       assets: {
@@ -54,13 +58,19 @@ describe('server/images/storage — toggle dispatch', () => {
         storage: { ...fixtureAssets.storage, enabled: false },
       },
     })
-    await expect(
-      putImage({
+    const putSpy = vi.spyOn(localBackend, 'put').mockResolvedValue({ key: 'images/2026/05/x.jpg', size: 0 })
+    try {
+      const result = await putImage({
         storagePath: 'images/2026/05/x.jpg',
         body: Buffer.from(''),
         contentType: 'image/jpeg',
-      }),
-    ).rejects.toMatchObject({ status: 503 })
-    await expect(deleteImage('images/2026/05/x.jpg')).rejects.toMatchObject({ status: 503 })
+      })
+      expect(result.driver).toBe('local')
+      expect(putSpy).toHaveBeenCalledWith(
+        expect.objectContaining({ key: 'images/2026/05/x.jpg', visibility: 'public' }),
+      )
+    } finally {
+      putSpy.mockRestore()
+    }
   })
 })

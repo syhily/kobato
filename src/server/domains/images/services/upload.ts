@@ -103,7 +103,7 @@ export async function uploadImage(db: NodePgDatabase, input: UploadImageInputs):
   const keySpec = toKeySpec(input.kind)
   const objectKey = buildObjectKey(keySpec)
 
-  await putImage({
+  const { driver } = await putImage({
     storagePath: objectKey,
     body: processed.buffer,
     contentType: 'image/jpeg',
@@ -117,6 +117,7 @@ export async function uploadImage(db: NodePgDatabase, input: UploadImageInputs):
     try {
       row = await insertImage(db, {
         storagePath: objectKey,
+        storageDriver: driver,
         mimeType: 'image/jpeg',
         width: processed.width,
         height: processed.height,
@@ -126,12 +127,13 @@ export async function uploadImage(db: NodePgDatabase, input: UploadImageInputs):
         note: noteValue,
       })
     } catch (error) {
-      log.error('Generic image insert failed (storage_path collision?)', { objectKey, error })
+      log.error('Generic image insert failed (storage_path collision?)', { objectKey, driver, error })
       throw new DomainError('INTERNAL', '图片元数据写入失败，请稍后重试')
     }
   } else {
     row = await upsertImageByStoragePath(db, {
       storagePath: objectKey,
+      storageDriver: driver,
       mimeType: 'image/jpeg',
       width: processed.width,
       height: processed.height,

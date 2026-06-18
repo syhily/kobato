@@ -147,14 +147,23 @@ export interface CacheSettings {
   }
 }
 
-// Metadata kept in the settings row for each S3-backed branding asset.
+// The backend a stored object lives in. Each asset (image, music,
+// branding slot, backup) records its driver so reads, deletes, and the
+// local→S3 migration target the right place. Defined here (shared) so
+// the settings JSON shape and the server storage layer agree on it.
+export type StorageDriver = 's3' | 'local'
+
+// Metadata kept in the settings row for each branding asset.
 // `etag` is the sha256 of the uploaded bytes; used as the HTTP ETag
-// value and as the in-process cache key.
+// value and as the in-process cache key. `driver` records which backend
+// the bytes live in ('s3' | 'local'); it defaults to 's3' for refs
+// created before local storage existed.
 export interface BrandingObjectRef {
   etag: string
   contentType: string
   size: number
   updatedAt: string
+  driver: StorageDriver
 }
 
 export interface SiteAssetBranding {

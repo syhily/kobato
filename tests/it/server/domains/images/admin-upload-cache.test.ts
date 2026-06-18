@@ -109,62 +109,54 @@ describe('images/services/cache — invalidateImageEnhanceCacheFor', () => {
 })
 
 describe('images/services/cache — resolvePublicUrl', () => {
-  it('returns the storage path when publicBaseUrl is null', () => {
+  it('joins the S3 base url and appends a cache buster', () => {
     const meta = {
       found: true as const,
       storagePath: 'images/x.jpg',
+      driver: 's3' as const,
       width: 1,
       height: 1,
       thumbhash: null,
       updatedAtMs: 1000,
     }
-    expect(cache.resolvePublicUrl(meta, null)).toBe('images/x.jpg')
+    expect(cache.resolvePublicUrl(meta)).toBe('https://assets.example.com/images/x.jpg?v=1000')
   })
 
-  it('joins base url and appends a cache buster', () => {
+  it('resolves a local-driver asset through the /storage route', () => {
     const meta = {
       found: true as const,
       storagePath: 'images/x.jpg',
+      driver: 'local' as const,
       width: 1,
       height: 1,
       thumbhash: null,
       updatedAtMs: 1000,
     }
-    expect(cache.resolvePublicUrl(meta, 'https://cdn.example.com')).toBe('https://cdn.example.com/images/x.jpg?v=1000')
-  })
-
-  it('uses & when the base url already contains a query', () => {
-    const meta = {
-      found: true as const,
-      storagePath: 'x.jpg',
-      width: 1,
-      height: 1,
-      thumbhash: null,
-      updatedAtMs: 7,
-    }
-    expect(cache.resolvePublicUrl(meta, 'https://cdn.example.com/?a=1')).toBe('https://cdn.example.com/?a=1/x.jpg&v=7')
+    // Local assets are served from the site origin's /storage/* route.
+    expect(cache.resolvePublicUrl(meta)).toMatch(/\/storage\/images\/x\.jpg\?v=1000$/)
   })
 
   it('strips a leading slash from the storagePath', () => {
     const meta = {
       found: true as const,
       storagePath: '/foo.jpg',
+      driver: 's3' as const,
       width: 1,
       height: 1,
       thumbhash: null,
       updatedAtMs: 0,
     }
-    expect(cache.resolvePublicUrl(meta, 'https://cdn.example.com')).toBe('https://cdn.example.com/foo.jpg?v=0')
+    expect(cache.resolvePublicUrl(meta)).toBe('https://assets.example.com/foo.jpg?v=0')
   })
 })
 
 describe('images/services/cache — buildPublicUrl', () => {
-  it('joins base url with storage path', () => {
-    expect(cache.buildPublicUrl('images/foo.jpg')).toBe('https://assets.example.com/images/foo.jpg')
+  it('joins base url with storage path for an S3 asset', () => {
+    expect(cache.buildPublicUrl('images/foo.jpg', 's3')).toBe('https://assets.example.com/images/foo.jpg')
   })
 
   it('strips a leading slash from storage path', () => {
-    expect(cache.buildPublicUrl('/foo.jpg')).toBe('https://assets.example.com/foo.jpg')
+    expect(cache.buildPublicUrl('/foo.jpg', 's3')).toBe('https://assets.example.com/foo.jpg')
   })
 })
 

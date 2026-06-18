@@ -151,7 +151,7 @@ export function BackupView({ backup, timeZone }: BackupViewProps) {
     }
   }, [])
 
-  const s3Enabled = statusData?.s3Enabled ?? false
+  const primaryDriver = statusData?.primaryDriver ?? 'local'
   const pgToolsAvailable = statusData?.pgToolsAvailable ?? false
 
   const source = backup ?? FALLBACK_BACKUP
@@ -244,7 +244,11 @@ export function BackupView({ backup, timeZone }: BackupViewProps) {
     }
   }, [selectedFile, csrfToken])
 
-  const canConfigure = s3Enabled && pgToolsAvailable
+  // Backups are usable as long as the postgres client tools are present —
+  // they land in S3 when configured and in local storage otherwise, so S3
+  // being off no longer disables the feature. `primaryDriver` only drives
+  // the informational banner below.
+  const canConfigure = pgToolsAvailable
 
   return (
     <div className="flex flex-col gap-6">
@@ -254,9 +258,9 @@ export function BackupView({ backup, timeZone }: BackupViewProps) {
           当前运行环境缺少 postgresql-client，备份与还原功能不可用。
         </div>
       )}
-      {!statusLoading && !isInitialLoading && !s3Enabled && (
-        <div className="rounded-xl border border-status-warn-border/30 bg-status-warn-bg/50 p-4 text-sm text-status-warn-fg">
-          请先前往存储配置启用 S3 存储。
+      {!statusLoading && !isInitialLoading && primaryDriver !== 's3' && (
+        <div className="rounded-xl border border-status-info-border/30 bg-status-info-bg/50 p-4 text-sm text-status-info-fg">
+          未启用 S3 存储，备份将写入服务器本地存储。建议配置 S3 以实现异地备份与更长的保留期。
         </div>
       )}
 

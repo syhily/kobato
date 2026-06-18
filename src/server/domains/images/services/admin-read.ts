@@ -3,7 +3,6 @@ import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 import type { ImageRow } from '@/server/infra/db/types'
 import type { AdminImageDto, ListImagesInput, ListImagesOutput } from '@/shared/types/images'
 
-import { buildPublicUrl } from '@/server/domains/images/services/cache'
 import {
   type AdminImagesListFilters,
   countAdminImages,
@@ -11,7 +10,7 @@ import {
   findImagesByStoragePaths,
   listAdminImageRows,
 } from '@/server/infra/db/operations/image'
-import { DomainError } from '@/server/infra/http/errors'
+import { safeResolveAssetUrl } from '@/server/infra/storage/public-url'
 import { classifyImageKind } from '@/shared/types/images'
 
 export async function listImagesForAdmin(db: NodePgDatabase, input: ListImagesInput = {}): Promise<ListImagesOutput> {
@@ -77,16 +76,7 @@ export function toAdminImageDto(row: ImageRow, uploaderName: string | null): Adm
 }
 
 function resolvePublicUrl(row: ImageRow): string {
-  try {
-    const base = buildPublicUrl(row.storagePath)
-    const sep = base.includes('?') ? '&' : '?'
-    return `${base}${sep}v=${row.updatedAt.getTime()}`
-  } catch (error) {
-    if (error instanceof DomainError) {
-      return row.storagePath
-    }
-    throw error
-  }
+  return safeResolveAssetUrl(row.storageDriver, row.storagePath, row.updatedAt.getTime()) ?? row.storagePath
 }
 
 function clampOffset(value: number | undefined): number {

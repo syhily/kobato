@@ -42,9 +42,9 @@ function buildBranding(overrides: Partial<AssetsLoaderShape['branding']> = {}): 
 }
 
 describe('snapshot: BrandingView', () => {
-  it('renders the page header and all four slot groups with storage enabled', () => {
+  it('renders the page header and all four slot groups with uploads reachable', () => {
     const branding = buildBranding({ faviconSvg: { etag: 'sha-abc123' } })
-    const html = stableHtml(renderToHtml(<BrandingView branding={branding} storageEnabled={true} />))
+    const html = stableHtml(renderToHtml(<BrandingView branding={branding} />))
     expect(html).toContain('品牌素材')
     expect(html).toContain('集中管理 favicon、Logo、社交卡片与海报等站点品牌素材')
     // Slot group headings.
@@ -55,26 +55,25 @@ describe('snapshot: BrandingView', () => {
     // A configured slot reads "已自定义"; the others default.
     expect(html).toContain('已自定义')
     expect(html).toContain('使用默认')
-    // With storage enabled the upload affordances are reachable (buttons
-    // render without the `disabled` attribute on a configured slot).
+    // Uploads always work (S3 or local fallback), so the buttons render
+    // without a storage-disabled state on a configured slot.
     expect(html).toContain('替换')
     expect(html).toContain('上传')
   })
 
-  it('renders the S3-disabled warning when storageEnabled is false', () => {
+  it('never renders a storage-disabled banner — uploads always succeed via the active backend', () => {
+    // The old "请先启用 S3 上传" gate is gone: uploads fall back to local
+    // storage, so there is no disabled state to render regardless of config.
     const branding = buildBranding()
-    const html = stableHtml(renderToHtml(<BrandingView branding={branding} storageEnabled={false} />))
+    const html = stableHtml(renderToHtml(<BrandingView branding={branding} />))
     expect(html).toContain('品牌素材')
-    // The warning banner links back to the assets settings anchor.
-    expect(html).toContain('当前未启用 S3 上传')
-    expect(html).toContain('系统设置 → 资源')
-    expect(html).toContain('/admin/settings#assets')
-    // Upload buttons carry the disabled flag in this mode.
-    expect(html).toContain('disabled')
+    expect(html).not.toContain('当前未启用 S3 上传')
+    expect(html).not.toContain('系统设置 → 资源')
+    expect(html).toContain('上传')
   })
 
   it('renders with no branding configured (all defaults) when branding is null', () => {
-    const html = stableHtml(renderToHtml(<BrandingView branding={null} storageEnabled={true} />))
+    const html = stableHtml(renderToHtml(<BrandingView branding={null} />))
     expect(html).toContain('品牌素材')
     expect(html).toContain('使用默认')
     // No slot is configured, so the "configured" pill never appears.

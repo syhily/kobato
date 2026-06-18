@@ -47,6 +47,43 @@ vi.mock('@/server/infra/storage/s3-client', () => ({
   putPublicS3Object: vi.fn(),
 }))
 
+// Route the storage registry at an in-memory backend backed by `s3Mock.store`
+// so createBackup/getBackupBuffer round-trip without real S3 or settings.
+vi.mock('@/server/infra/storage/registry', () => {
+  const drain = async (body: AsyncIterable<unknown>): Promise<Buffer> => {
+    const chunks: Buffer[] = []
+    for await (const chunk of body) {
+      chunks.push(chunk as Buffer)
+    }
+    return Buffer.concat(chunks)
+  }
+  const backend = {
+    driver: 's3',
+    isAvailable: () => true,
+    put: async ({ key, body }: { key: string; body: Buffer }) => {
+      s3Mock.store.set(key, body)
+      return { key, size: body.length }
+    },
+    putStream: async ({ key, body }: { key: string; body: AsyncIterable<unknown> }) => {
+      const buf = await drain(body)
+      s3Mock.store.set(key, buf)
+      return { key, size: buf.length }
+    },
+    get: async (key: string) => {
+      const b = s3Mock.store.get(key)
+      if (b === undefined) {
+        throw new Error(`S3 mock: object not found: ${key}`)
+      }
+      return b
+    },
+    delete: async () => {},
+    deleteMany: async () => {},
+    exists: async () => false,
+    list: async () => [],
+  }
+  return { activeBackend: () => ({ backend, driver: 's3' }), backendFor: () => backend }
+})
+
 let poolManager = createDbPool()
 let db: NodePgDatabase = poolManager.db
 let pool: Pool = poolManager.pool
@@ -67,7 +104,7 @@ describe('backup and restore integration', () => {
       .values({ name: 'BackupCat', slug: 'backup-cat', cover: '', description: '', sortOrder: 0 })
       .returning()
 
-    const { fileName, size } = await createBackup()
+    const { fileName, size } = await createBackup(db)
 
     expect(fileName).toMatch(/^backup-\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}\.sql\.gz$/)
     expect(size).toBeGreaterThan(0)

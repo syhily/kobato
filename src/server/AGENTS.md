@@ -277,15 +277,19 @@ redeploying. Examples: `assets.storage.enabled`, `seo.og.width`,
 
 ### Images
 
-- Postgres `image` table; bytes in S3. Public URL is
-  `<storage.publicBaseUrl>/<storagePath>`.
-- `@/server/domains/images/storage` is gated on `assets.storage.enabled`
-  in `setting('blog.assets')`. ON → PUT/DELETE through
-  `@/server/infra/storage/s3-client`. OFF (default for fresh installs)
-  → PUT/DELETE return `ActionFailure(503)`; the SSR enhancer still
-  resolves historical rows against the saved `publicBaseUrl`. Toggling
-  back on does not require re-pasting credentials.
-- Every `image` row is an S3 object — no `external` origin, no
+- Postgres `image` table; bytes in the **active storage backend**
+  (`@/server/infra/storage/registry::activeBackend` — S3 when configured,
+  local filesystem otherwise). Public URL resolves through
+  `@/server/infra/storage/public-url::resolveAssetUrl`, dispatching on the
+  per-row `storageDriver`: S3 → `<asset.scheme>://<asset.host>/<storagePath>`,
+  local → `<siteIdentity.website>/storage/<storagePath>` (served by the
+  public `/storage/*` route).
+- `@/server/domains/images/storage` is the upload/URL entry point. Writes go
+  to the active backend and never 503 on a missing S3 config — local is the
+  always-on fallback. Each row persists its `storageDriver` so reads/deletes
+  and URL resolution target the right backend after a local→S3 switch.
+  Toggling S3 back on does not require re-pasting credentials.
+- Every `image` row is a storage object — no `external` origin, no
   `image.source` discriminator.
 - Uploads go through `/admin/library/images` (generic
   `images/yyyy/MM/<timestamp>.jpg`), plus inline upload in
@@ -298,8 +302,10 @@ redeploying. Examples: `assets.storage.enabled`, `seo.og.width`,
 ### Music
 
 - Postgres `music` table; audio (`musics/<playerId>.mp3`) and 300×300
-  JPEG covers (`musics/<playerId>.jpg`) in the same S3 bucket, gated on
-  `assets.storage.enabled`.
+  JPEG covers (`musics/<playerId>.jpg`) in the active storage backend,
+  written via `@/server/domains/music/storage` (same active-backend model
+  as images). The per-track `storageDriver` is persisted so reads/deletes
+  and URL resolution dispatch correctly.
 - PortableText references rows via a 16-char lowercase random id. Service
   is netease-only via the inline `NeteaseResolver`; `(source, sourceId)` is unique with
   `source` reserved as varchar for future providers. Lyrics live in

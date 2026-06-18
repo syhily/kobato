@@ -52,8 +52,8 @@ export async function getMusicMetaForPlayer(db: NodePgDatabase, playerId: string
   if (row === null) {
     return null
   }
-  const audioUrl = safeBuildMusicPublicUrl(row.audioStoragePath)
-  const coverUrl = safeBuildMusicPublicUrl(row.coverStoragePath)
+  const audioUrl = safeBuildMusicPublicUrl(row.audioStoragePath, row.storageDriver)
+  const coverUrl = safeBuildMusicPublicUrl(row.coverStoragePath, row.storageDriver)
   if (audioUrl === null || coverUrl === null) {
     return null
   }

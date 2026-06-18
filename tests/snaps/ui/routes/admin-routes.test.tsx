@@ -238,10 +238,7 @@ describe('admin routes — Component SSR renders', () => {
   describe('library', () => {
     it('library/branding renders the BrandingView chrome', () => {
       const html = stableHtml(
-        renderInRouter(
-          <BrandingRoute loaderData={{ branding: null, storageEnabled: false }} />,
-          '/admin/library/branding',
-        ),
+        renderInRouter(<BrandingRoute loaderData={{ branding: null }} />, '/admin/library/branding'),
       )
       expect(html.length).toBeGreaterThan(0)
     })

@@ -3,7 +3,6 @@ import { useState } from 'react'
 
 import type { AdminImageDto } from '@/shared/types/images'
 
-import { useAssetsSettingsOptional } from '@/shared/lib/blog-config-context'
 import { UploadImageDialog, type UploadKind } from '@/ui/admin/shared/UploadImageDialog'
 import { Button } from '@/ui/components/button'
 import { Label } from '@/ui/components/label'
@@ -61,8 +60,6 @@ export function CoverInputRow({
   objectFit = 'cover',
 }: CoverInputRowProps) {
   const [uploadOpen, setUploadOpen] = useState(false)
-  const assetsSettings = useAssetsSettingsOptional()
-  const uploadsEnabled = assetsSettings?.storage.enabled === true
 
   const hasValue = value !== ''
 
@@ -71,16 +68,12 @@ export function CoverInputRow({
     setUploadOpen(false)
   }
 
-  const uploadDisabled = uploadKind === null || !uploadsEnabled
-  const uploadTitle = (() => {
-    if (uploadKind === null) {
-      return '请先填写 slug / host 后再上传'
-    }
-    if (!uploadsEnabled) {
-      return 'S3 上传未开启；请到 /admin/settings/assets 启用'
-    }
-    return undefined
-  })()
+  // Uploads always succeed: the active backend is S3 when configured and
+  // local storage otherwise, so there's no "uploads disabled" state to gate
+  // on. The only real precondition is that the parent has supplied a
+  // `kind` (i.e. the slug/host it needs is filled in).
+  const uploadDisabled = uploadKind === null
+  const uploadTitle = uploadKind === null ? '请先填写 slug / host 后再上传' : undefined
 
   return (
     <div className="flex flex-col gap-2">

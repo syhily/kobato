@@ -3,7 +3,6 @@ import { z } from 'zod'
 import { recordAuditEvent, recordAuditEventFromContext } from '@/server/domains/audit/services/record'
 import { performSafeRestore } from '@/server/domains/backup/restore-orchestrator'
 import {
-  buildBackupS3Key,
   createBackup,
   deleteBackup,
   getBackupBuffer,
@@ -16,7 +15,7 @@ import { adminProc } from '@/server/http/orpc-base'
 import { ActionFailure } from '@/server/infra/http/errors'
 import { getRestoreState } from '@/server/infra/lifecycle'
 import { getLogger } from '@/server/infra/logger'
-import { getBlogSettingsBundleSync } from '@/shared/config/getters'
+import { activeBackend } from '@/server/infra/storage/registry'
 
 const log = getLogger('backup.controller')
 
@@ -29,28 +28,31 @@ const backupFileDto = z.object({
 
 const status = adminProc
   .route({ method: 'GET', path: '/admin/backup/status' })
-  .output(z.object({ s3Enabled: z.boolean(), pgToolsAvailable: z.boolean() }))
+  .output(z.object({ primaryDriver: z.enum(['s3', 'local']), pgToolsAvailable: z.boolean() }))
   .handler(async () => {
-    const bundle = getBlogSettingsBundleSync()
-    const s3Enabled = bundle?.assets?.storage.enabled ?? false
+    // Backups run regardless of storage: when S3 is unconfigured they land
+    // in local storage. `primaryDriver` is informational only (shown in the
+    // UI as "where new backups go"); `pgToolsAvailable` is the sole gate
+    // for whether backups can be created/restored at all.
+    const primaryDriver = activeBackend().driver
     const pgToolsAvailable = await checkPgToolsAvailable()
-    return { s3Enabled, pgToolsAvailable }
+    return { primaryDriver, pgToolsAvailable }
   })
 
 const list = adminProc
   .route({ method: 'GET', path: '/admin/backup/list' })
   .input(z.object({ limit: z.number().optional(), continuationToken: z.string().optional() }).optional())
   .output(z.object({ files: z.array(backupFileDto), nextContinuationToken: z.string().optional() }))
-  .handler(async ({ input }) => {
-    const result = await listBackups(input?.limit, input?.continuationToken)
+  .handler(async ({ input, context }) => {
+    const result = await listBackups(context.db, input?.limit, input?.continuationToken)
     return result
   })
 
 const create = adminProc
   .route({ method: 'POST', path: '/admin/backup/create' })
-  .output(z.object({ fileName: z.string(), size: z.number() }))
+  .output(z.object({ fileName: z.string(), size: z.number(), timestamp: z.string() }))
   .handler(async ({ context }) => {
-    const result = await createBackup()
+    const result = await createBackup(context.db, null)
     recordAuditEventFromContext(context, {
       action: 'backup_created',
       resourceType: 'backup',
@@ -67,7 +69,7 @@ const delete_ = adminProc
     if (!isValidBackupKey(input.key)) {
       throw new ActionFailure(400, '无效的备份标识。')
     }
-    await deleteBackup(buildBackupS3Key(input.key))
+    await deleteBackup(context.db, input.key)
     recordAuditEventFromContext(context, {
       action: 'backup_deleted',
       resourceType: 'backup',
@@ -89,7 +91,7 @@ const restore = adminProc
     }
 
     const { db, pool } = context
-    const buffer = await getBackupBuffer(buildBackupS3Key(input.key))
+    const buffer = await getBackupBuffer(db, input.key)
 
     const actorId = context.viewer?.userId
     const actorRole = context.viewer?.role ?? null

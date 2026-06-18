@@ -1,75 +1,59 @@
-import type { AssetsSettings } from '@/shared/config/types'
+import type { AssetsSettings, StorageDriver } from '@/shared/config/types'
 
-import { ActionFailure } from '@/server/infra/http/errors'
-import { deleteS3Object, getS3ObjectBuffer, putPublicS3Object } from '@/server/infra/storage/s3-client'
+import { backendFor, activeBackend } from '@/server/infra/storage/registry'
 import { requireBlogSettingsSection } from '@/shared/config/getters'
 
-// Storage entry point used by the upload pipeline and the SSR
-// enhancer. Everything is conditioned on a single
-// `images.storage.enabled` toggle:
-//
-//   - Toggle ON  → every PUT/DELETE goes to the configured S3-
-//                  compatible bucket through `@/server/infra/storage/s3-client`.
-//                  The runtime resolves public URLs by joining
-//                  `<publicBaseUrl>/<storagePath>`.
-//   - Toggle OFF → every PUT/DELETE is refused with `ActionFailure(503)`.
-//                  The admin library still lists historical rows and
-//                  the SSR enhancer can still resolve `<img src>` for
-//                  rows whose `publicBaseUrl` was filled in earlier,
-//                  so flipping the toggle off does not break public
-//                  pages that already reference uploaded images.
+// Storage entry point used by the upload pipeline and the SSR enhancer.
+// Writes go to the **active** backend (S3 when enabled + configured, local
+// otherwise); reads/deletes dispatch on each asset's recorded `driver` so
+// historical local assets keep working after S3 is switched on. Local is
+// the always-available fallback, so uploads are never refused for a missing
+// S3 config the way they were when this module gated on a single toggle.
 
-const UPLOAD_DISABLED_MESSAGE = '图片上传未开启；请到 /admin/settings/assets 打开「启用 S3 上传」并填写存储桶配置。'
-
-/** Returns the live storage settings, or throws `ActionFailure(503)` if the section is unseeded. */
+/** Returns the live storage settings, or throws if the section is unseeded. */
 export function getImageStorage(): AssetsSettings['storage'] {
   return requireBlogSettingsSection('assets').storage
 }
 
-/** Whether the admin has flipped the master upload toggle ON for this deployment. */
+/**
+ * Whether S3 is configured as the primary backend for new uploads.
+ * Kept for UI consumers; the "uploads disabled" 503 no longer applies
+ * (local storage always accepts writes).
+ */
 export function isUploadEnabled(): boolean {
-  return getImageStorage().enabled
+  return activeBackend().driver === 's3'
 }
 
 export interface PutImageInput {
-  /** Storage key relative to the bucket root, e.g. `images/2026/05/...jpg`. */
+  /** Storage key relative to the bucket root / local root, e.g. `images/2026/05/...jpg`. */
   storagePath: string
   body: Buffer
   contentType: string
 }
 
-/** PUT to the configured S3 bucket. Refuses when the upload toggle is OFF. */
-export async function putImage(input: PutImageInput): Promise<void> {
-  ensureUploadReady()
-  await putPublicS3Object({
-    key: input.storagePath,
-    body: input.body,
-    contentType: input.contentType,
-  })
+export interface PutImageResult {
+  /** Backend the bytes were written to — persisted on the image row. */
+  driver: StorageDriver
 }
 
-/** DELETE from the configured S3 bucket. Best-effort: missing objects are not an error. */
-export async function deleteImage(storagePath: string): Promise<void> {
-  ensureUploadReady()
-  await deleteS3Object(storagePath)
+/** PUT to the active backend. Returns the driver so the caller can persist it on the row. */
+export async function putImage(input: PutImageInput): Promise<PutImageResult> {
+  const { backend, driver } = activeBackend()
+  await backend.put({ key: input.storagePath, body: input.body, contentType: input.contentType, visibility: 'public' })
+  return { driver }
 }
 
-/** GET from the configured S3 bucket. Throws on missing object or network failure. */
-export async function getImage(storagePath: string): Promise<Buffer> {
-  return getS3ObjectBuffer(storagePath)
+/** DELETE from the backend the asset lives on. Best-effort: missing objects are not an error. */
+export async function deleteImage(storagePath: string, driver: StorageDriver = 's3'): Promise<void> {
+  await backendFor(driver).delete(storagePath)
+}
+
+/** GET from the backend the asset lives on. Throws `ActionFailure(404)` on a missing object. */
+export async function getImage(storagePath: string, driver: StorageDriver = 's3'): Promise<Buffer> {
+  return backendFor(driver).get(storagePath)
 }
 
 /** Optional URL transform template used by the front-end image helper. */
 export function getPublicUrlTemplate(): string {
   return getImageStorage().urlTemplate.trim()
-}
-
-function ensureUploadReady(): void {
-  const storage = getImageStorage()
-  if (!storage.enabled) {
-    throw new ActionFailure(503, UPLOAD_DISABLED_MESSAGE)
-  }
-  if (storage.secretAccessKey === '') {
-    throw new ActionFailure(503, '请先在 /admin/settings/assets 配置 S3 Secret Access Key')
-  }
 }

@@ -1,3 +1,4 @@
+import type { backup } from '@/server/infra/db/schema/backup'
 import type { comment } from '@/server/infra/db/schema/comment'
 import type { setting } from '@/server/infra/db/schema/config'
 import type { content } from '@/server/infra/db/schema/content'
@@ -26,6 +27,7 @@ export type NewMusic = typeof music.$inferInsert
 export type NewPageMeta = typeof page.$inferInsert
 export type NewPostMeta = typeof post.$inferInsert
 export type NewContent = typeof content.$inferInsert
+export type NewBackup = typeof backup.$inferInsert
 
 // Types for select
 export type PasskeyCredentialRow = typeof passkeyCredential.$inferSelect
@@ -43,3 +45,4 @@ export type MusicRow = typeof music.$inferSelect
 export type PageMetaRow = typeof page.$inferSelect
 export type PostMetaRow = typeof post.$inferSelect
 export type ContentRow = typeof content.$inferSelect
+export type BackupRow = typeof backup.$inferSelect

@@ -13,7 +13,7 @@ import {
   updateImageNoteWithUploader,
   updateImageThumbhashWithUploader,
 } from '@/server/infra/db/operations/image'
-import { DomainError, ErrorMessages } from '@/server/infra/http/errors'
+import { ActionFailure, DomainError, ErrorMessages } from '@/server/infra/http/errors'
 import { processImageBuffer } from '@/server/infra/image/process'
 import { getLogger } from '@/server/infra/logger'
 
@@ -31,11 +31,12 @@ export async function deleteImage(db: NodePgDatabase, id: bigint, viewer?: Image
   }
 
   try {
-    await deleteStoredImage(existing.storagePath)
+    await deleteStoredImage(existing.storagePath, existing.storageDriver)
   } catch (error) {
-    log.warn('S3 delete failed; proceeding with DB soft-delete anyway', {
+    log.warn('Storage delete failed; proceeding with DB soft-delete anyway', {
       id: String(id),
       storagePath: existing.storagePath,
+      driver: existing.storageDriver,
       error,
     })
   }
@@ -82,19 +83,20 @@ export async function recalculateImageThumbhash(
 
   let buffer: Buffer
   try {
-    buffer = await getImage(existing.storagePath)
+    buffer = await getImage(existing.storagePath, existing.storageDriver)
   } catch (error) {
-    if (error instanceof DomainError && error.code === 'NOT_FOUND') {
-      throw new DomainError('NOT_FOUND', 'S3 中未找到该图片对象')
+    if (error instanceof ActionFailure && error.status === 404) {
+      throw new DomainError('NOT_FOUND', '存储中未找到该图片对象')
     }
     const errorDetail =
       error instanceof Error ? { errorName: error.name, errorMessage: error.message } : { errorRaw: String(error) }
-    log.error('Failed to fetch image from S3 for thumbhash recalculation', {
+    log.error('Failed to fetch image from storage for thumbhash recalculation', {
       id: String(id),
       storagePath: existing.storagePath,
+      driver: existing.storageDriver,
       ...errorDetail,
     })
-    throw new DomainError('INTERNAL', '从 S3 获取图片失败，请检查存储配置')
+    throw new DomainError('INTERNAL', '从存储获取图片失败，请检查存储配置')
   }
 
   const processed = await processImageBuffer({

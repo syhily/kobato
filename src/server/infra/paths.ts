@@ -7,6 +7,10 @@ export const FONT_DIR = path.resolve(DATA_PATH, 'fonts')
 export const ANALYTICS_DEAD_LETTER_PATH = path.resolve(DATA_PATH, 'analytics', 'dead-letter.jsonl')
 export const AUDIT_DEAD_LETTER_PATH = path.resolve(DATA_PATH, 'audit', 'dead-letter.jsonl')
 export const MAXMIND_DB_PATH = path.resolve(DATA_PATH, 'maxmind', 'GeoLite2-City.mmdb')
+// Local storage backend root. When S3 is not enabled, uploaded images,
+// music, branding, and backups land here under the same key namespace
+// the S3 backend uses (e.g. `images/...`, `musics/...`, `backup/...`).
+export const STORAGE_DIR = path.resolve(DATA_PATH, 'storage')
 
 /**
  * Returns true when `target` resolves to a path inside `root`. Used to harden
@@ -22,6 +26,7 @@ export function isPathInside(target: string, root: string): boolean {
 // upload endpoints don't fail on first write due to a missing parent dir.
 for (const dir of [
   FONT_DIR,
+  STORAGE_DIR,
   path.dirname(ANALYTICS_DEAD_LETTER_PATH),
   path.dirname(AUDIT_DEAD_LETTER_PATH),
   path.dirname(MAXMIND_DB_PATH),

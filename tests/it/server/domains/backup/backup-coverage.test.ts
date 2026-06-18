@@ -1,5 +1,9 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
+import type { Pool } from 'pg'
 
+import { beforeEach, afterAll, describe, expect, it, vi } from 'vitest'
+
+import { clearAllTables } from '#/_helpers/integration-db'
 import {
   buildBackupS3Key,
   isValidBackupKey,
@@ -15,18 +19,68 @@ import {
 } from '@/server/domains/backup/services/restore'
 import { getPgConnectionOptions, MAX_SQL_SIZE } from '@/server/domains/backup/services/shared'
 import { validateBackupSql } from '@/server/domains/backup/services/validate'
+import { createDbPool, closePool } from '@/server/infra/db/pool'
+import { backup } from '@/server/infra/db/schema/backup'
 import { ActionFailure } from '@/server/infra/http/errors'
 
-vi.mock('@/server/infra/storage/s3-client', () => ({
-  listS3Objects: vi.fn(),
-  listS3ObjectsPaginated: vi.fn(),
-  deleteS3Objects: vi.fn(),
-  deleteS3Object: vi.fn(),
-  getS3ObjectBuffer: vi.fn(),
-  putS3Object: vi.fn(),
+// In-memory storage backend so listBackups/deleteBackup/cleanupOldBackups
+// exercise the DB-backed backup table without real S3 or a local disk.
+const memoryStore = vi.hoisted(() => {
+  const objects = new Map<string, { size: number; driver: 's3' | 'local' }>()
+  const deletedKeys = new Set<string>()
+  return {
+    objects,
+    deletedKeys,
+    reset: () => {
+      objects.clear()
+      deletedKeys.clear()
+    },
+  }
+})
+
+vi.mock('@/server/infra/storage/backends/local', () => ({
+  localBackend: {
+    driver: 'local',
+    isAvailable: () => true,
+    list: async (prefix: string) =>
+      [...memoryStore.objects.entries()]
+        .filter(([key]) => key.startsWith(prefix))
+        .map(([key, meta]) => ({ key, size: meta.size, lastModified: new Date() })),
+    delete: async (key: string) => {
+      memoryStore.deletedKeys.add(key)
+    },
+  },
+  resolveLocalPath: (key: string) => key,
 }))
 
-const s3Mock = () => import('@/server/infra/storage/s3-client')
+vi.mock('@/server/infra/storage/backends/s3', () => ({
+  s3Backend: {
+    driver: 's3',
+    isAvailable: () => true,
+    list: async (prefix: string) =>
+      [...memoryStore.objects.entries()]
+        .filter(([key]) => key.startsWith(prefix))
+        .map(([key, meta]) => ({ key, size: meta.size, lastModified: new Date() })),
+  },
+}))
+
+vi.mock('@/server/infra/storage/registry', () => ({
+  activeBackend: () => ({ backend: { put: vi.fn() }, driver: 's3' }),
+  backendFor: (driver: 's3' | 'local') => ({
+    delete: async (key: string) => {
+      memoryStore.deletedKeys.add(key)
+    },
+    get: async () => Buffer.alloc(0),
+  }),
+}))
+
+const poolManager = createDbPool()
+const db: NodePgDatabase = poolManager.db
+const pool: Pool = poolManager.pool
+
+afterAll(async () => {
+  await closePool(pool)
+})
 
 describe('backup/validate — validateBackupSql', () => {
   it('accepts a clean pg_dump script with INSERT/CREATE TABLE', () => {
@@ -164,72 +218,104 @@ describe('backup/backup — isValidBackupKey & buildBackupS3Key', () => {
 })
 
 describe('backup/backup — listBackups', () => {
-  beforeEach(() => {
-    vi.clearAllMocks()
+  beforeEach(async () => {
+    memoryStore.reset()
+    await clearAllTables(db)
   })
 
-  it('maps S3 objects to BackupFileDto with valid timestamps', async () => {
-    const { listS3ObjectsPaginated } = await s3Mock()
-    vi.mocked(listS3ObjectsPaginated).mockResolvedValue({
-      objects: [
-        {
-          key: 'backup/backup-2026-06-13T10-30-00.sql.gz',
-          size: 100,
-          lastModified: new Date('2026-06-13T10:30:00Z'),
-        },
-        {
-          key: 'backup/backup-not-a-timestamp.sql.gz',
-          size: 50,
-          lastModified: new Date('2026-06-12T00:00:00Z'),
-        },
-      ],
-    })
-    const { files } = await listBackups()
-    expect(files).toHaveLength(1)
+  it('returns rows from the backup table, newest first', async () => {
+    await db.insert(backup).values([
+      {
+        timestamp: '2026-06-12T00-00-00',
+        storagePath: 'backup/backup-2026-06-12T00-00-00.sql.gz',
+        storageDriver: 's3',
+        byteSize: 50,
+      },
+      {
+        timestamp: '2026-06-13T10-30-00',
+        storagePath: 'backup/backup-2026-06-13T10-30-00.sql.gz',
+        storageDriver: 's3',
+        byteSize: 100,
+      },
+    ])
+    const { files } = await listBackups(db)
+    expect(files).toHaveLength(2)
     expect(files[0]!.key).toBe('2026-06-13T10-30-00')
     expect(files[0]!.size).toBe(100)
   })
 
-  it('returns an empty list when S3 returns 503', async () => {
-    const { listS3ObjectsPaginated } = await s3Mock()
-    const err = Object.assign(new Error('service unavailable'), { status: 503 })
-    vi.mocked(listS3ObjectsPaginated).mockRejectedValue(err)
-    expect(await listBackups()).toEqual({ files: [] })
-  })
-
-  it('returns empty on other errors too (defensive)', async () => {
-    const { listS3ObjectsPaginated } = await s3Mock()
-    vi.mocked(listS3ObjectsPaginated).mockRejectedValue(new Error('boom'))
-    expect(await listBackups()).toEqual({ files: [] })
+  it('reconciles unrecorded backend objects into the table (self-healing)', async () => {
+    // A file exists in storage but has no DB row (e.g. pre-existing S3 backup
+    // before the upgrade). listBackups should pick it up.
+    memoryStore.objects.set('backup/backup-2026-06-13T10-30-00.sql.gz', { size: 100, driver: 's3' })
+    const { files } = await listBackups(db)
+    expect(files).toHaveLength(1)
+    expect(files[0]!.key).toBe('2026-06-13T10-30-00')
+    // A second list does not duplicate the row.
+    const { files: again } = await listBackups(db)
+    expect(again).toHaveLength(1)
   })
 })
 
 describe('backup/backup — cleanupOldBackups & deleteBackup', () => {
-  beforeEach(() => {
-    vi.clearAllMocks()
+  beforeEach(async () => {
+    memoryStore.reset()
+    await clearAllTables(db)
   })
 
-  it('cleanupOldBackups deletes only objects past the cutoff', async () => {
-    const { listS3Objects, deleteS3Objects } = await s3Mock()
-    vi.mocked(listS3Objects).mockResolvedValue([
-      { key: 'backup/old.sql.gz', size: 0, lastModified: new Date(Date.now() - 40 * 24 * 60 * 60 * 1000) },
-      { key: 'backup/new.sql.gz', size: 0, lastModified: new Date() },
+  it('cleanupOldBackups deletes only rows past the cutoff', async () => {
+    const oldDate = new Date(Date.now() - 40 * 24 * 60 * 60 * 1000)
+    const freshDate = new Date()
+    await db.insert(backup).values([
+      {
+        timestamp: '2026-05-01T00-00-00',
+        storagePath: 'backup/backup-2026-05-01T00-00-00.sql.gz',
+        storageDriver: 's3',
+        byteSize: 0,
+        createdAt: oldDate,
+      },
+      {
+        timestamp: '2026-06-14T00-00-00',
+        storagePath: 'backup/backup-2026-06-14T00-00-00.sql.gz',
+        storageDriver: 's3',
+        byteSize: 0,
+        createdAt: freshDate,
+      },
     ])
-    await cleanupOldBackups(30)
-    expect(deleteS3Objects).toHaveBeenCalledWith(['backup/old.sql.gz'])
+    await cleanupOldBackups(db, 30)
+    const remaining = await db.select().from(backup)
+    expect(remaining).toHaveLength(1)
+    expect(remaining[0]!.timestamp).toBe('2026-06-14T00-00-00')
+    expect(memoryStore.deletedKeys.has('backup/backup-2026-05-01T00-00-00.sql.gz')).toBe(true)
   })
 
   it('cleanupOldBackups is a no-op when nothing is old', async () => {
-    const { listS3Objects, deleteS3Objects } = await s3Mock()
-    vi.mocked(listS3Objects).mockResolvedValue([{ key: 'backup/fresh.sql.gz', size: 0, lastModified: new Date() }])
-    await cleanupOldBackups(30)
-    expect(deleteS3Objects).not.toHaveBeenCalled()
+    await db.insert(backup).values({
+      timestamp: '2026-06-14T00-00-00',
+      storagePath: 'backup/backup-2026-06-14T00-00-00.sql.gz',
+      storageDriver: 's3',
+      byteSize: 0,
+      createdAt: new Date(),
+    })
+    await cleanupOldBackups(db, 30)
+    expect(await db.select().from(backup)).toHaveLength(1)
   })
 
-  it('deleteBackup calls deleteS3Object with the key', async () => {
-    const { deleteS3Object } = await s3Mock()
-    await deleteBackup('backup/x.sql.gz')
-    expect(deleteS3Object).toHaveBeenCalledWith('backup/x.sql.gz')
+  it('deleteBackup removes the row and deletes the stored object', async () => {
+    await db.insert(backup).values({
+      timestamp: '2026-06-13T10-30-00',
+      storagePath: 'backup/backup-2026-06-13T10-30-00.sql.gz',
+      storageDriver: 's3',
+      byteSize: 8,
+    })
+    await deleteBackup(db, '2026-06-13T10-30-00')
+    expect(await db.select().from(backup)).toHaveLength(0)
+    expect(memoryStore.deletedKeys.has('backup/backup-2026-06-13T10-30-00.sql.gz')).toBe(true)
+  })
+
+  it('deleteBackup is a no-op when the timestamp is unknown', async () => {
+    await deleteBackup(db, '2026-06-13T10-30-00')
+    expect(await db.select().from(backup)).toHaveLength(0)
   })
 })
 

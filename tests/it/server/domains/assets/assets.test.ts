@@ -22,7 +22,7 @@ function bundleWith(branding: Record<string, unknown>): BlogSettingsBundle {
 }
 
 function ref(etag: string, contentType: string, bytes: number): BrandingObjectRef {
-  return { etag, contentType, size: bytes, updatedAt: '2024-01-01T00:00:00.000Z' }
+  return { etag, contentType, size: bytes, updatedAt: '2024-01-01T00:00:00.000Z', driver: 's3' }
 }
 
 describe('resolveSiteAsset', () => {

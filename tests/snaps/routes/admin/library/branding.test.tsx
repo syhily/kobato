@@ -18,9 +18,7 @@ vi.mock('sonner', () => ({ toast: { error: vi.fn(), success: vi.fn() } }))
 describe('snapshot: routes/admin/library/branding', () => {
   it('renders the branding route', () => {
     const Route = asRoute(BrandingRoute)
-    const html = stableHtml(
-      renderInRouter(<Route loaderData={{ branding: null, storageEnabled: false }} />, '/admin/library/branding'),
-    )
+    const html = stableHtml(renderInRouter(<Route loaderData={{ branding: null }} />, '/admin/library/branding'))
     expect(html).toContain('品牌素材')
   })
 })

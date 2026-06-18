@@ -3,12 +3,11 @@ import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 import {
   readMeta,
   readManyMeta,
-  resolvePublicUrl,
   resolveSrcToStoragePath,
   type CachedImageMeta,
 } from '@/server/domains/images/services/cache'
 import { getLogger } from '@/server/infra/logger'
-import { getPublicBaseUrl } from '@/server/infra/storage/public-url'
+import { getPublicBaseUrl, safeResolveAssetUrl } from '@/server/infra/storage/public-url'
 
 const log = getLogger('images.render-enhance')
 
@@ -51,7 +50,7 @@ export async function loadImageThumbhash(db: NodePgDatabase, src: string): Promi
     width: meta.width,
     height: meta.height,
     thumbhash: meta.thumbhash ?? undefined,
-    publicUrl: publicBaseUrl === null ? null : resolvePublicUrl(meta, publicBaseUrl),
+    publicUrl: safeResolveAssetUrl(meta.driver, meta.storagePath, meta.updatedAtMs),
   }
 }
 
@@ -114,7 +113,7 @@ export async function loadManyImageThumbhash(
       width: meta.width,
       height: meta.height,
       thumbhash: meta.thumbhash ?? undefined,
-      publicUrl: publicBaseUrl === null ? null : resolvePublicUrl(meta, publicBaseUrl),
+      publicUrl: safeResolveAssetUrl(meta.driver, meta.storagePath, meta.updatedAtMs),
     })
   }
 

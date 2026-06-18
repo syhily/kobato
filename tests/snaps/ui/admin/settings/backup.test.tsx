@@ -18,7 +18,7 @@ import { idleClearStatus } from '@/ui/admin/settings/cache/cache-status'
 
 const queryMocks = vi.hoisted(() => ({
   query: {
-    data: undefined as { s3Enabled: boolean; pgToolsAvailable: boolean } | undefined,
+    data: undefined as { primaryDriver: 's3' | 'local'; pgToolsAvailable: boolean } | undefined,
     isPending: true,
     error: null as unknown,
   },

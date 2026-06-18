@@ -9,10 +9,15 @@ const cleanupOldBackups = vi.fn().mockResolvedValue(undefined)
 const checkPgToolsAvailable = vi.fn().mockResolvedValue(undefined)
 const registerShutdownHook = vi.fn()
 const registerSectionChangeHandler = vi.fn()
+const getDb = vi.fn().mockReturnValue({})
 
 vi.mock('@/server/domains/backup/services/backup', () => ({
   createBackup: (...args: unknown[]) => createBackup(...args),
   cleanupOldBackups: (...args: unknown[]) => cleanupOldBackups(...args),
+}))
+
+vi.mock('@/server/bootstrap/db-lifecycle', () => ({
+  getDb: (...args: unknown[]) => getDb(...args),
 }))
 
 vi.mock('@/server/domains/backup/services/shared', () => ({
@@ -78,7 +83,7 @@ describe('backup scheduler', () => {
     expect(vi.getTimerCount()).toBe(1)
     await vi.advanceTimersByTimeAsync(3_600_000)
     expect(createBackup).toHaveBeenCalled()
-    expect(cleanupOldBackups).toHaveBeenCalledWith(7)
+    expect(cleanupOldBackups).toHaveBeenCalledWith(expect.anything(), 7)
   })
 
   it('handles a next-run in the past by scheduling in one minute', async () => {
@@ -134,14 +139,16 @@ describe('backup scheduler', () => {
     expect(vi.getTimerCount()).toBe(0)
   })
 
-  it('does not schedule a backup when asset storage is disabled', () => {
+  it('schedules a backup even when asset storage is disabled (local fallback)', () => {
+    // Scheduled backups no longer require S3 — when storage is off they land
+    // in local storage, so the scheduler still arms a timer.
     bundle = {
       backup: { scheduled: { enabled: true, frequency: 'daily' }, retention: { enabled: false } },
       assets: { storage: { enabled: false } },
       siteIdentity: { timeZone: 'UTC' },
     }
     scheduleNextBackup()
-    expect(vi.getTimerCount()).toBe(0)
+    expect(vi.getTimerCount()).toBe(1)
   })
 
   it('logs an error when a backup job fails', async () => {

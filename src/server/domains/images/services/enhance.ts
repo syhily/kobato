@@ -67,18 +67,18 @@ async function resolveSources(db: NodePgDatabase, links: string[]): Promise<Map<
     if (meta === undefined || !meta.found) {
       continue
     }
-    out.set(src, toEnhancement(meta, publicBaseUrl))
+    out.set(src, toEnhancement(meta))
   }
 
   return out
 }
 
-function toEnhancement(meta: CachedImageMetaPresent, publicBaseUrl: string | null): ImageEnhancement {
+function toEnhancement(meta: CachedImageMetaPresent): ImageEnhancement {
   return {
     width: meta.width,
     height: meta.height,
     thumbhash: meta.thumbhash,
-    publicUrl: resolvePublicUrl(meta, publicBaseUrl),
+    publicUrl: resolvePublicUrl(meta),
   }
 }
 

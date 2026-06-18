@@ -15,8 +15,8 @@ const { TEST_BLOG_SETTINGS_BUNDLE } = await import('#/_helpers/blog-settings')
 
 vi.mock('@/server/domains/music/storage', () => ({
   ensureMusicStorageEnabled: vi.fn(async () => undefined),
-  putMusicAudio: vi.fn(async () => undefined),
-  putMusicCover: vi.fn(async () => undefined),
+  putMusicAudio: vi.fn(async () => ({ driver: 's3' })),
+  putMusicCover: vi.fn(async () => ({ driver: 's3' })),
   deleteMusicObject: vi.fn(async () => undefined),
   buildMusicPublicUrl: vi.fn((p: string) => `https://assets.example.com/${p}`),
   safeBuildMusicPublicUrl: vi.fn((p: string) => `https://assets.example.com/${p}`),

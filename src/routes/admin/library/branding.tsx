@@ -11,10 +11,10 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   requireRole(getRouteRequestContext({ request, context }), 'admin')
   const bundle = getBlogSettingsBundleSync()
   if (!bundle?.assets) {
-    return { branding: null, storageEnabled: false }
+    return { branding: null }
   }
   const projected = projectAssetsForAdmin(bundle.assets)
-  return { branding: projected.branding, storageEnabled: projected.storage.enabled }
+  return { branding: projected.branding }
 }
 
 export function meta({ matches }: Route.MetaArgs) {
@@ -22,5 +22,5 @@ export function meta({ matches }: Route.MetaArgs) {
 }
 
 export default function WpAdminBrandingRoute({ loaderData }: Route.ComponentProps) {
-  return <BrandingView branding={loaderData.branding} storageEnabled={loaderData.storageEnabled} />
+  return <BrandingView branding={loaderData.branding} />
 }

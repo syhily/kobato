@@ -7,7 +7,7 @@ import { recordAuditEvent } from '@/server/domains/audit/services/record'
 import { CSRF_HEADER, validateCsrfToken } from '@/server/domains/auth/csrf'
 import { isSetupTokenActive } from '@/server/domains/auth/setup-token'
 import { performSafeRestore } from '@/server/domains/backup/restore-orchestrator'
-import { buildBackupS3Key, getBackupBuffer, isValidBackupKey } from '@/server/domains/backup/services/backup'
+import { getBackupBuffer, isValidBackupKey } from '@/server/domains/backup/services/backup'
 import { extractBackupSql, restoreFromSql } from '@/server/domains/backup/services/restore'
 import { checkPgToolsAvailable } from '@/server/domains/backup/services/shared'
 import { validateBackupSql } from '@/server/domains/backup/services/validate'
@@ -43,7 +43,7 @@ export const backupRouter = new Hono<Env>()
     if (!isValidBackupKey(timestamp)) {
       return c.json({ error: { message: '无效的备份标识。' } }, 400)
     }
-    const buffer = await getBackupBuffer(buildBackupS3Key(timestamp))
+    const buffer = await getBackupBuffer(c.var.db, timestamp)
     const fileName = `backup-${timestamp}.sql.gz`
     c.header('Content-Type', 'application/gzip')
     c.header('Content-Disposition', `attachment; filename="${fileName}"`)

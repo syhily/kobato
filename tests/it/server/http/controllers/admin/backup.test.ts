@@ -1,8 +1,6 @@
 import { call, ORPCError } from '@orpc/server'
 import { describe, expect, it, vi } from 'vitest'
 
-import type { BlogSettingsBundle } from '@/shared/config/types'
-
 import { makeAuthedCtx } from '#/_helpers/mock-ctx'
 
 vi.mock('@/server/domains/backup/services/shared', () => ({
@@ -28,8 +26,8 @@ vi.mock('@/server/domains/backup/restore-orchestrator', () => ({
   performSafeRestore: vi.fn(),
 }))
 
-vi.mock('@/shared/config/getters', () => ({
-  getBlogSettingsBundleSync: vi.fn(),
+vi.mock('@/server/infra/storage/registry', () => ({
+  activeBackend: vi.fn(),
 }))
 
 vi.mock('@/server/infra/lifecycle', () => ({
@@ -43,18 +41,16 @@ vi.mock('@/server/infra/lifecycle', () => ({
 const shared = await import('@/server/domains/backup/services/shared')
 const backupService = await import('@/server/domains/backup/services/backup')
 const orchestrator = await import('@/server/domains/backup/restore-orchestrator')
-const blogConfig = await import('@/shared/config/getters')
+const registry = await import('@/server/infra/storage/registry')
 const { adminBackupRouter } = await import('@/server/http/controllers/admin/backup.controller')
 
 describe('adminBackupRouter.status', () => {
-  it('returns s3Enabled and pgToolsAvailable', async () => {
-    vi.mocked(blogConfig.getBlogSettingsBundleSync).mockReturnValue({
-      assets: { storage: { enabled: true } },
-    } as unknown as BlogSettingsBundle)
+  it('returns the active primary driver and pgToolsAvailable', async () => {
+    vi.mocked(registry.activeBackend).mockReturnValue({ backend: {} as never, driver: 's3' })
     vi.mocked(shared.checkPgToolsAvailable).mockResolvedValueOnce(true)
     const ctx = makeAuthedCtx()
     const res = await call(adminBackupRouter.status, undefined, { context: ctx })
-    expect(res).toEqual({ s3Enabled: true, pgToolsAvailable: true })
+    expect(res).toEqual({ primaryDriver: 's3', pgToolsAvailable: true })
   })
 })
 
@@ -82,10 +78,11 @@ describe('adminBackupRouter.create', () => {
     vi.mocked(backupService.createBackup).mockResolvedValueOnce({
       fileName: '2026-01-01.sql.gz',
       size: 2048,
+      timestamp: '2026-01-01T00-00-00',
     })
     const ctx = makeAuthedCtx()
     const res = await call(adminBackupRouter.create, undefined, { context: ctx })
-    expect(res).toEqual({ fileName: '2026-01-01.sql.gz', size: 2048 })
+    expect(res).toEqual({ fileName: '2026-01-01.sql.gz', size: 2048, timestamp: '2026-01-01T00-00-00' })
   })
 })
 

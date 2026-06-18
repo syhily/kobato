@@ -17,6 +17,7 @@ import { refreshBlogSettings } from '@/server/domains/settings/services/hydrate'
 import { findSettingByScope, upsertSetting } from '@/server/infra/db/operations/setting'
 import { ActionFailure } from '@/server/infra/http/errors'
 import { getLogger } from '@/server/infra/logger'
+import { activeBackend } from '@/server/infra/storage/registry'
 
 const log = getLogger('branding.management')
 
@@ -51,6 +52,9 @@ export async function uploadBrandingAsset(
   buffer: Buffer,
 ): Promise<BrandingObjectRef> {
   ensureMatchesSlot(slot, buffer)
+  // Every put in this flow targets the active backend; capture the driver
+  // once so the rollback deletes the right bytes if something fails.
+  const { driver } = activeBackend()
   const uploaded: BrandingSlot[] = []
   try {
     const primaryRef = await putBrandingObject(slot, buffer)
@@ -74,18 +78,21 @@ export async function uploadBrandingAsset(
     await persistBranding(db, { [slot]: primaryRef } as Record<BrandingSlot, BrandingObjectRef>)
     return primaryRef
   } catch (error) {
-    log.warn('Branding upload failed; rolling back S3 objects', { slot, uploaded, error: String(error) })
-    await Promise.allSettled(uploaded.map((s) => deleteBrandingObject(s)))
+    log.warn('Branding upload failed; rolling back uploaded objects', { slot, driver, uploaded, error: String(error) })
+    await Promise.allSettled(uploaded.map((s) => deleteBrandingObject(s, driver)))
     throw error
   }
 }
 
 // Clear a branding slot. For `faviconSvg` we also tear down the four
 // derived icons so admins don't end up with a mismatched favicon SVG +
-// stale PNG/ICO pack.
+// stale PNG/ICO pack. Each slot's bytes are deleted from the backend its
+// ref records, so a local-uploaded asset is removed from disk.
 export async function clearBrandingAsset(db: NodePgDatabase, slot: BrandingSlot): Promise<void> {
   const slotsToClear: BrandingSlot[] = slot === 'faviconSvg' ? [slot, ...FAVICON_DERIVED_SLOTS] : [slot]
-  await Promise.all(slotsToClear.map((s) => deleteBrandingObject(s)))
+  const row = await readAssetsRow(db)
+  const branding = (row.branding ?? {}) as Record<string, BrandingObjectRef>
+  await Promise.all(slotsToClear.map((s) => deleteBrandingObject(s, branding[s]?.driver ?? 's3')))
   await persistBrandingDelete(db, slotsToClear)
 }
 

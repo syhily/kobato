@@ -1,12 +1,12 @@
 import { createHash } from 'node:crypto'
 
 import type { BinarySlot, SvgSlot } from '@/server/assets/defaults'
-import type { BrandingObjectRef } from '@/shared/config/types'
+import type { BrandingObjectRef, StorageDriver } from '@/shared/config/types'
 
 import { BINARY_SLOTS, SVG_SLOTS } from '@/server/assets/defaults'
 import { ActionFailure } from '@/server/infra/http/errors'
 import { getLogger } from '@/server/infra/logger'
-import { deleteS3Object, getS3ObjectBuffer, putS3Object } from '@/server/infra/storage/s3-client'
+import { activeBackend, backendFor } from '@/server/infra/storage/registry'
 
 const log = getLogger('branding.storage')
 
@@ -160,29 +160,33 @@ export async function putBrandingObject(slot: BrandingSlot, buffer: Buffer): Pro
   ensureMatchesSlot(slot, buffer)
   const contentType = SLOT_CONTENT_TYPE[slot]
   const key = s3KeyForSlot(slot)
-  await putS3Object(key, buffer, contentType)
+  const { backend, driver } = activeBackend()
+  await backend.put({ key, body: buffer, contentType, visibility: 'private' })
   const etag = createHash('sha256').update(buffer).digest('hex')
   const ref: BrandingObjectRef = {
     etag,
     contentType,
     size: buffer.length,
     updatedAt: new Date().toISOString(),
+    driver,
   }
   cacheSet(slot, etag, buffer)
-  log.info('Branding object uploaded', { slot, key, size: buffer.length, etag })
+  log.info('Branding object uploaded', { slot, key, driver, size: buffer.length, etag })
   return ref
 }
 
-// Best-effort delete — if S3 already lacks the object (e.g. operator
-// pruned the bucket manually) the admin's "clear" should still succeed
-// at the settings layer. Real failures surface to the caller.
-export async function deleteBrandingObject(slot: BrandingSlot): Promise<void> {
+// Best-effort delete — if the backend already lacks the object (e.g.
+// operator pruned the bucket / removed the local file manually) the
+// admin's "clear" should still succeed at the settings layer. Real
+// failures surface to the caller. `driver` targets the backend the ref
+// was uploaded to, so a local asset isn't looked up in S3.
+export async function deleteBrandingObject(slot: BrandingSlot, driver: StorageDriver = 's3'): Promise<void> {
   const key = s3KeyForSlot(slot)
   try {
-    await deleteS3Object(key)
-    log.info('Branding object deleted', { slot, key })
+    await backendFor(driver).delete(key)
+    log.info('Branding object deleted', { slot, key, driver })
   } catch (error) {
-    log.warn('Failed to delete branding object; continuing', { slot, key, error: String(error) })
+    log.warn('Failed to delete branding object; continuing', { slot, key, driver, error: String(error) })
   }
   for (const cacheKey of Array.from(bufferCache.keys())) {
     if (cacheKey.startsWith(`${slot}:`)) {
@@ -224,14 +228,16 @@ export async function fetchBrandingObject(slot: BrandingSlot, ref: BrandingObjec
   if (cached !== undefined) {
     return cached
   }
+  const driver = ref.driver
   try {
-    const buffer = await getS3ObjectBuffer(s3KeyForSlot(slot))
+    const buffer = await backendFor(driver).get(s3KeyForSlot(slot))
     cacheSet(slot, ref.etag, buffer)
     return buffer
   } catch (error) {
     log.warn('Failed to fetch branding object; falling back to default', {
       slot,
       etag: ref.etag,
+      driver,
       error: String(error),
     })
     return null

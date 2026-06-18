@@ -1,3 +1,4 @@
+import { getDb } from '@/server/bootstrap/db-lifecycle'
 import { computeNextRun } from '@/server/domains/backup/scheduler-utils'
 import { createBackup, cleanupOldBackups } from '@/server/domains/backup/services/backup'
 import { checkPgToolsAvailable } from '@/server/domains/backup/services/shared'
@@ -14,13 +15,14 @@ let hydrationRetryAttempt = 0
 async function runBackupJob(): Promise<void> {
   try {
     await checkPgToolsAvailable()
-    const result = await createBackup()
+    const db = getDb()
+    const result = await createBackup(db, null)
     log.info('Scheduled backup created', result)
 
     const bundle = getBlogSettingsBundleSync()
     const backupSettings = bundle?.backup
     if (backupSettings?.retention.enabled) {
-      await cleanupOldBackups(backupSettings.retention.days)
+      await cleanupOldBackups(db, backupSettings.retention.days)
     }
   } catch (error) {
     log.error('Scheduled backup job failed', { error })
@@ -49,8 +51,9 @@ export function scheduleNextBackup(): void {
   hydrationRetryAttempt = 0
 
   const backupSettings = bundle.backup
-  const assets = bundle.assets
-  if (!backupSettings?.scheduled.enabled || !assets?.storage.enabled) {
+  // Scheduled backups run regardless of whether S3 is enabled — when S3 is
+  // off, backups land in local storage under `$DATA_PATH/storage/backup/`.
+  if (!backupSettings?.scheduled.enabled) {
     return
   }
 

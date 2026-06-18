@@ -68,7 +68,7 @@ describe('images/services/upload — pure validation + mime detection', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     processImageBufferMock.mockReset()
-    putImageMock.mockResolvedValue(undefined)
+    putImageMock.mockResolvedValue({ driver: 's3' })
     insertImageMock.mockReset()
     upsertImageByStoragePathMock.mockReset()
     invalidateCacheMock.mockResolvedValue(undefined)
