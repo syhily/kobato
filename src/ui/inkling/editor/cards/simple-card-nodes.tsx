@@ -23,6 +23,16 @@ import {
 
 export type SerializedImageCardNode = InklingImageCardNode
 
+/** Parse a width/height attribute from pasted HTML; returns undefined for
+ *  missing/invalid values so the card node omits the field. */
+function parsePositiveInt(value: string | null): number | undefined {
+  if (value === null) {
+    return undefined
+  }
+  const n = Number.parseInt(value, 10)
+  return Number.isFinite(n) && n > 0 ? n : undefined
+}
+
 export class ImageCardNode extends DecoratorNode<JSX.Element | null> {
   __src: string
   __alt: string
@@ -143,6 +153,13 @@ export class ImageCardNode extends DecoratorNode<JSX.Element | null> {
     return false
   }
 
+  // Allows click/arrow-key navigation to enter a `NodeSelection` on this
+  // card, which is required for the selection outline, drag handle, edit
+  // controls, and keyboard-navigation across cards to work.
+  isKeyboardSelectable(): boolean {
+    return true
+  }
+
   decorate(_editor: LexicalEditor, _config: EditorConfig): JSX.Element | null {
     return <ImageCardComponent node={this} />
   }
@@ -188,7 +205,48 @@ export class ImageCardNode extends DecoratorNode<JSX.Element | null> {
         if (node instanceof HTMLElement && node.dataset?.inklingImageCard === 'true') {
           return { conversion: () => ({ node: new ImageCardNode('', '', '', 'center') }), priority: 1 }
         }
+        // External figure (e.g. from a web page): convert if it wraps an img.
+        if (node instanceof HTMLElement) {
+          const img = node.querySelector('img')
+          if (img !== null) {
+            return {
+              conversion: () => ({
+                node: new ImageCardNode(
+                  img.getAttribute('src') ?? '',
+                  img.getAttribute('alt') ?? '',
+                  '',
+                  'center',
+                  parsePositiveInt(img.getAttribute('width')),
+                  parsePositiveInt(img.getAttribute('height')),
+                ),
+              }),
+              priority: 1,
+            }
+          }
+        }
         return null
+      },
+      img: (node: Node) => {
+        if (!(node instanceof HTMLImageElement)) {
+          return null
+        }
+        // Skip if this img is inside a figure — the figure handler above owns it.
+        if (node.parentElement?.tagName.toLowerCase() === 'figure') {
+          return null
+        }
+        return {
+          conversion: () => ({
+            node: new ImageCardNode(
+              node.getAttribute('src') ?? '',
+              node.getAttribute('alt') ?? '',
+              '',
+              'center',
+              parsePositiveInt(node.getAttribute('width')),
+              parsePositiveInt(node.getAttribute('height')),
+            ),
+          }),
+          priority: 2,
+        }
       },
     }
   }
@@ -270,6 +328,11 @@ export class CodeCardNode extends DecoratorNode<JSX.Element | null> {
     return false
   }
 
+  // See ImageCardNode.isKeyboardSelectable.
+  isKeyboardSelectable(): boolean {
+    return true
+  }
+
   decorate(): JSX.Element | null {
     return <CodeCardComponent node={this} />
   }
@@ -298,6 +361,25 @@ export class CodeCardNode extends DecoratorNode<JSX.Element | null> {
       pre: (node: Node) => {
         if (node instanceof HTMLElement && node.dataset?.inklingCodeBlock === 'true') {
           return { conversion: () => ({ node: new CodeCardNode('') }), priority: 1 }
+        }
+        // External <pre> (pasted code from a web page / docs): convert to a
+        // CodeCardNode. Derive the language from a `language-*` class on the
+        // <pre> or its child <code> (common highlighter convention).
+        if (node instanceof HTMLElement) {
+          const code = node.querySelector('code')
+          const langFromClass = (el: Element | null): string | undefined => {
+            if (el === null) {
+              return undefined
+            }
+            const match = el.className.match(/(?:language-|lang-)([a-z0-9+#-]+)/i)
+            return match?.[1]
+          }
+          const language = langFromClass(node) ?? langFromClass(code)
+          const text = (code ?? node).textContent ?? ''
+          return {
+            conversion: () => ({ node: new CodeCardNode(text, language) }),
+            priority: 2,
+          }
         }
         return null
       },
@@ -361,6 +443,11 @@ export class MathCardNode extends DecoratorNode<JSX.Element | null> {
 
   updateDOM(): false {
     return false
+  }
+
+  // See ImageCardNode.isKeyboardSelectable.
+  isKeyboardSelectable(): boolean {
+    return true
   }
 
   decorate(): JSX.Element | null {
@@ -463,6 +550,11 @@ export class MusicCardNode extends DecoratorNode<JSX.Element | null> {
     return false
   }
 
+  // See ImageCardNode.isKeyboardSelectable.
+  isKeyboardSelectable(): boolean {
+    return true
+  }
+
   decorate(): JSX.Element | null {
     return <MusicCardComponent node={this} />
   }
@@ -533,6 +625,11 @@ export class HorizontalRuleCardNode extends DecoratorNode<JSX.Element | null> {
 
   updateDOM(): false {
     return false
+  }
+
+  // See ImageCardNode.isKeyboardSelectable.
+  isKeyboardSelectable(): boolean {
+    return true
   }
 
   decorate(): JSX.Element | null {
@@ -614,6 +711,11 @@ export class TableCardNode extends DecoratorNode<JSX.Element | null> {
 
   updateDOM(): false {
     return false
+  }
+
+  // See ImageCardNode.isKeyboardSelectable.
+  isKeyboardSelectable(): boolean {
+    return true
   }
 
   decorate(): JSX.Element | null {

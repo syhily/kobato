@@ -341,7 +341,11 @@ describe('server/render/inkling/html', () => {
       },
     ])
     const html = await renderInklingToHtml(db, doc, [])
-    expect(html).toContain('<sup><a href="#user-content-fn-1">1</a></sup>')
+    // The reference `<sup>` carries `id="user-content-fnref-N"` so the
+    // backref `↩` anchor (which targets `#user-content-fnref-N`) resolves.
+    // Without this id the backref is a dead link. Mirrors the React renderer
+    // in marks/FootnoteRefMark.tsx.
+    expect(html).toContain('<sup id="user-content-fnref-1"><a href="#user-content-fn-1">1</a></sup>')
     expect(html).toContain('<section class="footnotes"')
     expect(html).toContain('id="user-content-fn-1"')
     expect(html).toContain('Footnote content')

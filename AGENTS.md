@@ -88,7 +88,7 @@ the first-screen preload tight instead of widening it with unrelated routes.
 
 **Exclusion rules:** Heavy lazy-only chunks are excluded from both critical
 and idle preloads (`canvas-*`, `ImageEditorCanvas-*`, `qrcode*`, `player-*`).
-`editor-tiptap-*` is allowed only in the editor idle tier. Shiki grammar
+`editor-inkling-*` is allowed only in the editor idle tier. Shiki grammar
 chunks are excluded (not in any route's `imports` array). Chunks > 100 KB are
 excluded from idle warmup. The idle script respects
 `navigator.connection.saveData`, skips 2g, and defers until the page is

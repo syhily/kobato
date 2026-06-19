@@ -509,16 +509,6 @@ describe('contract: module and bundle boundaries', () => {
         file: 'src/ui/public/comments/LazyCommentBodyEditor.tsx',
         specifier: './CommentBodyEditor',
       },
-      {
-        key: 'renumber.ts -> ./FootnoteDefinitionNode',
-        file: 'src/ui/inkling/editor/footnotes/renumber.ts',
-        specifier: './FootnoteDefinitionNode',
-      },
-      {
-        key: 'renumber.ts -> ./FootnoteRefNode',
-        file: 'src/ui/inkling/editor/footnotes/renumber.ts',
-        specifier: './FootnoteRefNode',
-      },
     ] as const
     const explicitAllowedHits = new Set<string>()
 

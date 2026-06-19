@@ -3,6 +3,13 @@ import { Fragment, type ReactNode } from 'react'
 import type { InklingDocument, InklingInlineNode, InklingListItemNode, InklingListNode } from '@/shared/inkling/schema'
 
 import { validateInklingDocumentForMode } from '@/shared/inkling/features'
+import {
+  INKLING_FORMAT_BOLD,
+  INKLING_FORMAT_CODE,
+  INKLING_FORMAT_ITALIC,
+  INKLING_FORMAT_STRIKETHROUGH,
+  INKLING_FORMAT_UNDERLINE,
+} from '@/shared/inkling/format'
 import { walkInkling } from '@/shared/inkling/walk'
 import { safeRel } from '@/ui/lib/link'
 
@@ -10,11 +17,13 @@ import { safeRel } from '@/ui/lib/link'
 // comment feature subset; encountering an article-only node throws so that
 // mismigrated data cannot silently degrade.
 
-const FORMAT_BOLD = 1
-const FORMAT_ITALIC = 2
-const FORMAT_UNDERLINE = 4
-const FORMAT_CODE = 8
-const FORMAT_STRIKETHROUGH = 16
+// Lexical text format bits, imported from the shared source of truth so they
+// stay in sync with lexical's IS_* constants (underline = 8, code = 16).
+const FORMAT_BOLD = INKLING_FORMAT_BOLD
+const FORMAT_ITALIC = INKLING_FORMAT_ITALIC
+const FORMAT_UNDERLINE = INKLING_FORMAT_UNDERLINE
+const FORMAT_CODE = INKLING_FORMAT_CODE
+const FORMAT_STRIKETHROUGH = INKLING_FORMAT_STRIKETHROUGH
 
 function hasFormat(format: number | undefined, bit: number): boolean {
   return ((format ?? 0) & bit) !== 0
@@ -73,7 +82,10 @@ function renderInlineNode(node: InklingInlineNode, key: string): ReactNode {
       return (
         <a
           key={key}
-          href={node.url}
+          // Defense-in-depth: never emit executable JavaScript/data URLs even
+          // if the schema-level URL filter is somehow bypassed. Mirrors the
+          // article renderer in marks/LinkMark.tsx.
+          href={/^\s*(javascript|data):/i.test(node.url) ? '#' : node.url}
           rel={safeRel(node.target, node.rel) ?? 'nofollow noreferrer'}
           target={node.target ?? '_blank'}
           title={node.title ?? undefined}

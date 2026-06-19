@@ -65,24 +65,34 @@ export function useInklingSlashMenu(editor: LexicalEditor | null, mode: InklingF
       if (editor === null) {
         return
       }
-      editor.update(() => {
-        const selection = $getSelection()
-        if (!$isRangeSelection(selection) || !selection.isCollapsed()) {
-          return
-        }
-        const anchor = selection.anchor
-        const node = anchor.getNode()
-        if ($isTextNode(node)) {
-          const text = node.getTextContent()
-          const before = text.slice(0, anchor.offset)
-          const slashIndex = before.lastIndexOf('/')
-          if (slashIndex !== -1) {
-            node.spliceText(slashIndex, anchor.offset - slashIndex, '')
-            node.select(slashIndex, slashIndex)
+      // Remove the `/query` trigger text in its own update, then run the
+      // card insert handler in a second update. `item.insert` calls
+      // `insertBlockCard`, which owns its own `editor.update` (with a
+      // `history-merge` tag). We must NOT nest it inside another update —
+      // Lexical silently drops re-entrant updates that carry a tag.
+      // Both updates use `history-merge` so they collapse into a single
+      // undo entry.
+      editor.update(
+        () => {
+          const selection = $getSelection()
+          if (!$isRangeSelection(selection) || !selection.isCollapsed()) {
+            return
           }
-        }
-        item.insert(editor)
-      })
+          const anchor = selection.anchor
+          const node = anchor.getNode()
+          if ($isTextNode(node)) {
+            const text = node.getTextContent()
+            const before = text.slice(0, anchor.offset)
+            const slashIndex = before.lastIndexOf('/')
+            if (slashIndex !== -1) {
+              node.spliceText(slashIndex, anchor.offset - slashIndex, '')
+              node.select(slashIndex, slashIndex)
+            }
+          }
+        },
+        { tag: 'history-merge' },
+      )
+      item.insert(editor)
       close()
     },
     [editor, close],
@@ -147,7 +157,9 @@ export function useInklingSlashMenu(editor: LexicalEditor | null, mode: InklingF
       KEY_ARROW_DOWN_COMMAND,
       (event: KeyboardEvent) => {
         event.preventDefault()
-        setSelectedIndex((i) => Math.min(i + 1, allFiltered.length - 1))
+        // Wrap around at the bottom so ArrowDown from the last item jumps to
+        // the first — matches Koenig's circular navigation.
+        setSelectedIndex((i) => (i + 1) % Math.max(allFiltered.length, 1))
         return true
       },
       COMMAND_PRIORITY_LOW,
@@ -162,12 +174,14 @@ export function useInklingSlashMenu(editor: LexicalEditor | null, mode: InklingF
       KEY_ARROW_UP_COMMAND,
       (event: KeyboardEvent) => {
         event.preventDefault()
-        setSelectedIndex((i) => Math.max(i - 1, 0))
+        // Wrap around at the top so ArrowUp from the first item jumps to the
+        // last.
+        setSelectedIndex((i) => (i - 1 + allFiltered.length) % Math.max(allFiltered.length, 1))
         return true
       },
       COMMAND_PRIORITY_LOW,
     )
-  }, [editor, open])
+  }, [editor, open, allFiltered])
 
   useEffect(() => {
     if (editor === null || !open) {
@@ -194,6 +208,30 @@ export function useInklingSlashMenu(editor: LexicalEditor | null, mode: InklingF
     return editor.registerCommand(
       KEY_ESCAPE_COMMAND,
       () => {
+        // Remove the `/query` trigger text before closing so the user isn't
+        // left with stray `/code` in their document. Matches Koenig's Escape
+        // behaviour which restores the caret to a clean state.
+        editor.update(
+          () => {
+            const selection = $getSelection()
+            if (!$isRangeSelection(selection) || !selection.isCollapsed()) {
+              return
+            }
+            const anchor = selection.anchor
+            const node = anchor.getNode()
+            if (!$isTextNode(node)) {
+              return
+            }
+            const text = node.getTextContent()
+            const before = text.slice(0, anchor.offset)
+            const slashIndex = before.lastIndexOf('/')
+            if (slashIndex !== -1) {
+              node.spliceText(slashIndex, anchor.offset - slashIndex, '')
+              node.select(slashIndex, slashIndex)
+            }
+          },
+          { tag: 'history-merge', discrete: true },
+        )
         close()
         return true
       },

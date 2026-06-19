@@ -224,9 +224,10 @@ redeploying. Examples: `assets.storage.enabled`, `seo.og.width`,
 ### Posts and pages
 
 - `post` + `content` → `/posts/:slug`. `page` + `content` → `/:slug`.
-  Both rendered via `<PortableTextBody>`. Public URLs use `slug`, not
-  internal id.
-- Custom block components in `@/ui/pt/blocks/`.
+  Both rendered via `<InklingBody>` from `@/ui/inkling/render` (the
+  PortableText renderer in `@/ui/pt/*` is retained only as a migration
+  baseline). Public URLs use `slug`, not internal id.
+- Custom block components in `@/ui/inkling/render/blocks/`.
 - `visible=false` posts are hidden from the public home and random-post
   widgets but stay in `/archives`, `/tags/:slug`, `/search/:keyword`,
   `sitemap.xml`, feeds, and category/tag listings and counts.
@@ -263,8 +264,8 @@ redeploying. Examples: `assets.storage.enabled`, `seo.og.width`,
   slugs so legacy URLs like `archives.html` survive; the derived value
   is always plain kebab-case ASCII.
 - Heading anchors for DB-backed pages: SSR loaders pre-compute
-  `collectHeadings(body, deriveSlug).map(h => h.slug)` and pass it to
-  `<PortableTextBody headingSlugs>`. The renderer consumes one slug per
+  `collectInklingHeadings(body, deriveSlug).map(h => h.slug)` and pass it
+  to `<InklingBody headingSlugs>`. The renderer consumes one slug per
   heading via a per-render cursor; without the prop it falls back to a
   local `github-slugger`.
 - **Page ↔ post slugs share one namespace.** Catalog, OG generator,

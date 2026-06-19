@@ -14,8 +14,8 @@ import { useCallback, useMemo } from 'react'
 
 import type { InklingDocument } from '@/shared/inkling/schema'
 
-import { INKLING_SCHEMA_VERSION } from '@/shared/inkling/schema'
 import { reportEditorError } from '@/ui/inkling/editor/error-report'
+import { editorStateToInklingDocument } from '@/ui/inkling/editor/serialize'
 
 const theme = {
   paragraph: 'inkling-paragraph',
@@ -79,23 +79,10 @@ export interface InklingEditorProps {
   children?: React.ReactNode
 }
 
-export function editorStateToInklingDocument(editorState: EditorState): InklingDocument {
-  const serialized = editorState.toJSON()
-  return {
-    _type: 'inkling',
-    schemaVersion: INKLING_SCHEMA_VERSION,
-    lexicalVersion: '0.45.0',
-    root: {
-      type: 'root',
-      version: 1,
-      direction: serialized.root.direction ?? null,
-      format: serialized.root.format ?? '',
-      indent: serialized.root.indent ?? 0,
-      // oxlint-disable-next-line typescript/no-unsafe-type-assertion
-      children: serialized.root.children as never[],
-    },
-  }
-}
+// Re-export for backwards compatibility — the canonical implementation now
+// lives in `./serialize` and is shared by the article editor, the footnote
+// controller, and this comment editor.
+export { editorStateToInklingDocument } from '@/ui/inkling/editor/serialize'
 
 export function InklingEditor({
   namespace,

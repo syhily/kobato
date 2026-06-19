@@ -3,6 +3,12 @@ import { describe, expect, it } from 'vitest'
 import type { InklingBlockNode, InklingDocument, InklingInlineNode } from '@/shared/inkling/schema'
 
 import { renderToHtml, stableHtml } from '#/_helpers/render'
+import {
+  INKLING_FORMAT_BOLD,
+  INKLING_FORMAT_CODE,
+  INKLING_FORMAT_ITALIC,
+  INKLING_FORMAT_STRIKETHROUGH,
+} from '@/shared/inkling/format'
 import { CommentInklingBody } from '@/ui/inkling/render/CommentInklingBody'
 
 function text(value: string, format?: number): InklingInlineNode {
@@ -25,10 +31,12 @@ function makeDocument(rootChildren: InklingBlockNode[]): InklingDocument {
   }
 }
 
-const BOLD = 1
-const ITALIC = 2
-const CODE = 8
-const STRIKETHROUGH = 16
+// Lexical text format bits, imported from the shared source of truth so the
+// test stays in sync with lexical's IS_* constants.
+const BOLD = INKLING_FORMAT_BOLD
+const ITALIC = INKLING_FORMAT_ITALIC
+const CODE = INKLING_FORMAT_CODE
+const STRIKETHROUGH = INKLING_FORMAT_STRIKETHROUGH
 
 describe('ui/inkling/CommentInklingBody', () => {
   it('renders a paragraph and blockquote', () => {

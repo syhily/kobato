@@ -1,86 +1,30 @@
-import type { EditorState, SerializedLexicalNode } from 'lexical'
-
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
-import {
-  $createTextNode,
-  $getEditor,
-  $getRoot,
-  $getSelection,
-  $isElementNode,
-  $isRangeSelection,
-  $isTextNode,
-  $parseSerializedNode,
-} from 'lexical'
-import { useCallback, useEffect } from 'react'
+import { $createTextNode, $getRoot, $getSelection, $isElementNode, $isRangeSelection, $isTextNode } from 'lexical'
+import { useCallback, useEffect, useRef } from 'react'
 
-import type { InklingDocument, InklingNonRecursiveBlockNode } from '@/shared/inkling/schema'
+import type { InklingFootnoteRefEntry } from '@/shared/inkling/footnotes'
+import type { InklingNonRecursiveBlockNode } from '@/shared/inkling/schema'
 
-import { INKLING_SCHEMA_VERSION } from '@/shared/inkling/schema'
+import { collectFootnoteRefs } from '@/shared/inkling/footnotes'
 import { registerFootnoteCaretTrigger } from '@/ui/inkling/editor/footnotes/FootnoteCaretTrigger'
-import {
-  $createFootnoteDefinitionNode,
-  $isFootnoteDefinitionNode,
-} from '@/ui/inkling/editor/footnotes/FootnoteDefinitionNode'
 import { FootnoteDialog } from '@/ui/inkling/editor/footnotes/FootnoteDialog'
 import { $createFootnoteRefNode, $isFootnoteRefNode } from '@/ui/inkling/editor/footnotes/FootnoteRefNode'
 import { generateFootnoteKey, useInklingFootnotes } from '@/ui/inkling/editor/footnotes/InklingFootnoteProvider'
-import { applyFootnoteRenumberWithHistoryMerge } from '@/ui/inkling/editor/footnotes/renumber'
+import {
+  applyFootnoteRenumberWithHistoryMerge,
+  buildFootnoteIndexMap,
+  footnoteSyncSignature,
+} from '@/ui/inkling/editor/footnotes/renumber'
+import { editorStateToInklingDocument } from '@/ui/inkling/editor/serialize'
 
-function editorStateToInklingDocument(editorState: EditorState): InklingDocument {
-  const serialized = editorState.toJSON()
-  return {
-    _type: 'inkling',
-    schemaVersion: INKLING_SCHEMA_VERSION,
-    lexicalVersion: '0.45.0',
-    // oxlint-disable-next-line typescript/no-unsafe-type-assertion
-    root: serialized.root as InklingDocument['root'],
-  }
-}
-
-function $appendInklingChildren(
-  parent: ReturnType<typeof $createFootnoteDefinitionNode>,
-  children: readonly InklingNonRecursiveBlockNode[],
-): void {
-  for (const child of children) {
-    // $parseSerializedNode uses the editor's node registry; it expects a plain
-    // Lexical-shaped JSON object, which our non-recursive blocks satisfy.
-    // oxlint-disable-next-line typescript/no-unsafe-type-assertion
-    const node = $parseSerializedNode(child as unknown as SerializedLexicalNode)
-    if ($isElementNode(node) || node !== null) {
-      parent.append(node)
-    }
-  }
-}
-
-function $replaceFootnoteDefinitionChildren(
-  targetKey: string,
-  children: readonly InklingNonRecursiveBlockNode[],
-): boolean {
+/**
+ * Remove every `FootnoteRefNode` whose `targetKey` matches. Used by the delete
+ * handler to clear superscripts when a definition is removed. Must run inside
+ * an active update.
+ */
+function $removeFootnoteRefsByTargetKey(targetKey: string): void {
   const root = $getRoot()
-  for (const child of root.getChildren()) {
-    if ($isFootnoteDefinitionNode(child) && child.getTargetKey() === targetKey) {
-      child.clear()
-      $appendInklingChildren(child, children)
-      return true
-    }
-  }
-  return false
-}
-
-function $removeFootnoteDefinition(targetKey: string): boolean {
-  const root = $getRoot()
-  for (const child of root.getChildren()) {
-    if ($isFootnoteDefinitionNode(child) && child.getTargetKey() === targetKey) {
-      child.remove()
-      return true
-    }
-  }
-  return false
-}
-
-function $removeFootnoteRefs(targetKey: string): void {
-  const root = $getRoot()
-  const stack: ReturnType<typeof root.getChildren> = [...root.getChildren()]
+  const stack = [...root.getChildren()]
   while (stack.length > 0) {
     const node = stack.pop()
     if (node === undefined) {
@@ -94,10 +38,12 @@ function $removeFootnoteRefs(targetKey: string): void {
   }
 }
 
-function $insertFootnoteRefAndDefinition(
-  targetKey: string,
-  definitionChildren: readonly InklingNonRecursiveBlockNode[],
-): void {
+/**
+ * Insert a `FootnoteRefNode` at the caret, followed by a space so the user
+ * can keep typing. Must run inside an active update with a collapsed range
+ * selection.
+ */
+function $insertFootnoteRefAtCaret(targetKey: string): void {
   const selection = $getSelection()
   if (!$isRangeSelection(selection)) {
     return
@@ -105,14 +51,13 @@ function $insertFootnoteRefAndDefinition(
   const refKey = generateFootnoteKey()
   const ref = $createFootnoteRefNode(targetKey, refKey, 0)
   selection.insertNodes([ref, $createTextNode(' ')])
-
-  const root = $getRoot()
-  const def = $createFootnoteDefinitionNode(targetKey, 0)
-  $appendInklingChildren(def, definitionChildren)
-  root.append(def)
 }
 
-function $replaceCaretWithRef(_targetKey: string): void {
+/**
+ * Delete the `^ ` trigger text immediately before the caret. Must run inside
+ * an active update.
+ */
+function $replaceCaretWithRef(): void {
   const selection = $getSelection()
   if (!$isRangeSelection(selection) || !selection.isCollapsed()) {
     return
@@ -140,34 +85,94 @@ export function FootnoteController() {
     dialogMode,
     dialogInitialChildren,
     editTargetKey,
+    getDefinitions,
     openInsertDialog,
     closeDialog,
-    syncFromDocument,
+    replaceDefinition,
+    removeDefinition,
+    removeOrphans,
   } = useInklingFootnotes()
 
-  // Sync provider state with the editor document on every update.
+  // Re-entrancy guard: the renumber update re-fires this listener, so without
+  // a guard we'd loop. Mirrors the Tiptap-era `isSyncingFootnotesRef` pattern.
+  const isSyncingRef = useRef(false)
+  // Last-seen signature. When an editor update produces the same signature
+  // we skip renumber entirely — this bounds the loop to one extra update.
+  const lastSignatureRef = useRef<string>('')
+
+  // Core footnote lifecycle hook. Fires on every editor update:
+  //   1. Read refs from the editor tree.
+  //   2. Drop orphan definitions from provider state (auto-cleanup per §6.3).
+  //   3. Compute a signature; if it changed, dispatch a history-merged
+  //      renumber so ref indices follow first-reference order.
   useEffect(() => {
     if (editor === null) {
       return undefined
     }
     return editor.registerUpdateListener(({ editorState }) => {
-      syncFromDocument(editorStateToInklingDocument(editorState))
-    })
-  }, [editor, syncFromDocument])
+      if (isSyncingRef.current) {
+        return
+      }
+      let refs: InklingFootnoteRefEntry[] = []
+      editorState.read(() => {
+        refs = collectFootnoteRefs(editorStateToInklingDocument(editorState))
+      })
 
-  // ^<space> trigger.
+      removeOrphans(refs)
+
+      const currentDefinitions = getDefinitions()
+      const preSignature = footnoteSyncSignature(refs, currentDefinitions)
+      if (preSignature === lastSignatureRef.current) {
+        return
+      }
+
+      // Compute the signature we expect AFTER renumber lands. The renumber
+      // rewrites ref `index` fields to match `buildFootnoteIndexMap`; we store
+      // that projected signature so the next listener fire (with the corrected
+      // indices) matches and short-circuits — otherwise we'd renumber again
+      // on the very next keystroke.
+      const indexMap = buildFootnoteIndexMap(refs, currentDefinitions)
+      const projectedRefs = refs.map((r) => ({ ...r, index: indexMap.get(r.targetKey) ?? r.index }))
+      const projectedDefinitions = currentDefinitions.map((d) => ({
+        ...d,
+        index: indexMap.get(d.targetKey) ?? d.index,
+      }))
+      lastSignatureRef.current = footnoteSyncSignature(projectedRefs, projectedDefinitions)
+
+      isSyncingRef.current = true
+      try {
+        applyFootnoteRenumberWithHistoryMerge(editor, refs, currentDefinitions)
+      } finally {
+        // Re-arm on the next microtask so the renumber's own listener fire
+        // (which will short-circuit via the signature gate) lands first.
+        queueMicrotask(() => {
+          isSyncingRef.current = false
+        })
+      }
+    })
+  }, [editor, getDefinitions, removeOrphans])
+
+  // `^<space>` trigger. Suppressed while the dialog is open so typing `^ `
+  // inside the footnote body editor doesn't reopen an insert dialog.
   useEffect(() => {
-    if (editor === null) {
+    if (editor === null || dialogOpen) {
       return undefined
     }
     return registerFootnoteCaretTrigger(editor, () => {
       const targetKey = generateFootnoteKey()
-      editor.update(() => {
-        $replaceCaretWithRef(targetKey)
-      })
+      editor.update(
+        () => {
+          $replaceCaretWithRef()
+          $insertFootnoteRefAtCaret(targetKey)
+        },
+        { tag: 'history-merge', discrete: true },
+      )
+      replaceDefinition(targetKey, [
+        { type: 'paragraph', version: 1, direction: null, format: '', indent: 0, children: [] },
+      ])
       openInsertDialog(targetKey)
     })
-  }, [editor, openInsertDialog])
+  }, [editor, dialogOpen, openInsertDialog, replaceDefinition])
 
   const handleSave = useCallback(
     (children: InklingNonRecursiveBlockNode[]) => {
@@ -175,20 +180,28 @@ export function FootnoteController() {
         return
       }
       const targetKey = editTargetKey ?? generateFootnoteKey()
-      editor.update(
-        () => {
-          if (dialogMode === 'create') {
-            $insertFootnoteRefAndDefinition(targetKey, children)
-          } else {
-            $replaceFootnoteDefinitionChildren(targetKey, children)
-          }
-          applyFootnoteRenumberWithHistoryMerge($getEditor())
-        },
-        { tag: 'history-merge', discrete: true },
-      )
+      if (dialogMode === 'create') {
+        // The ref was already inserted by the caret trigger. If the dialog
+        // was opened from a toolbar button instead (no ref yet), insert one
+        // now so the definition is not orphaned immediately.
+        editor.update(
+          () => {
+            const doc = editorStateToInklingDocument(editor.getEditorState())
+            const hasRef = collectFootnoteRefs(doc).some((r) => r.targetKey === targetKey)
+            if (!hasRef) {
+              $insertFootnoteRefAtCaret(targetKey)
+            }
+          },
+          { tag: 'history-merge', discrete: true },
+        )
+      }
+      replaceDefinition(targetKey, children)
+      // Force the next update-listener pass to recompute (the new/edited
+      // definition may shift indices or change the signature).
+      lastSignatureRef.current = ''
       closeDialog()
     },
-    [editor, dialogMode, editTargetKey, closeDialog],
+    [editor, dialogMode, editTargetKey, replaceDefinition, closeDialog],
   )
 
   const handleDelete = useCallback(() => {
@@ -198,14 +211,14 @@ export function FootnoteController() {
     }
     editor.update(
       () => {
-        $removeFootnoteDefinition(editTargetKey)
-        $removeFootnoteRefs(editTargetKey)
-        applyFootnoteRenumberWithHistoryMerge($getEditor())
+        $removeFootnoteRefsByTargetKey(editTargetKey)
       },
       { tag: 'history-merge', discrete: true },
     )
+    removeDefinition(editTargetKey)
+    lastSignatureRef.current = ''
     closeDialog()
-  }, [editor, editTargetKey, closeDialog])
+  }, [editor, editTargetKey, removeDefinition, closeDialog])
 
   // Index for the dialog title is derived from provider definitions.
   const dialogIndex = definitions.find((d) => d.targetKey === editTargetKey)?.index ?? definitions.length + 1

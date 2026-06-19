@@ -47,16 +47,25 @@ import type {
 
 import { sanitizeCommentSpanText, type SanitizeToken } from '@/shared/inkling/comment-html-sanitize'
 import { createEmptyInklingDocument } from '@/shared/inkling/empty'
+import {
+  INKLING_FORMAT_BOLD,
+  INKLING_FORMAT_CODE,
+  INKLING_FORMAT_ITALIC,
+  INKLING_FORMAT_STRIKETHROUGH,
+  INKLING_FORMAT_UNDERLINE,
+} from '@/shared/inkling/format'
 import { INKLING_LEXICAL_VERSION } from '@/shared/inkling/schema'
 import { commentBodySchema, type CommentBlock, type CommentBody, type CommentMarkDef } from '@/shared/pt/comment-schema'
 import { portableTextBodySchema, STANDARD_DECORATORS } from '@/shared/pt/schema'
 
-// Lexical text format bits (from lexical package source).
-const FORMAT_BOLD = 1
-const FORMAT_ITALIC = 2
-const FORMAT_UNDERLINE = 4
-const FORMAT_CODE = 8
-const FORMAT_STRIKETHROUGH = 16
+// Lexical text format bits, imported from `./format` to keep a single source
+// of truth that stays in sync with lexical's IS_* constants. Underline is
+// `1 << 3 = 8`, code is `1 << 4 = 16`, strikethrough is `1 << 2 = 4`.
+const FORMAT_BOLD = INKLING_FORMAT_BOLD
+const FORMAT_ITALIC = INKLING_FORMAT_ITALIC
+const FORMAT_UNDERLINE = INKLING_FORMAT_UNDERLINE
+const FORMAT_CODE = INKLING_FORMAT_CODE
+const FORMAT_STRIKETHROUGH = INKLING_FORMAT_STRIKETHROUGH
 
 const DECORATOR_TO_FORMAT: Record<StandardDecorator, number> = {
   strong: FORMAT_BOLD,
@@ -1129,11 +1138,13 @@ export function commentPortableTextToInklingDocument(body: CommentBody): Inkling
 
 // --- Reverse conversion: Inkling -> PortableText (temporary adapter) ----------
 
-const REVERSE_FORMAT_BOLD = 1
-const REVERSE_FORMAT_ITALIC = 2
-const REVERSE_FORMAT_UNDERLINE = 4
-const REVERSE_FORMAT_CODE = 8
-const REVERSE_FORMAT_STRIKETHROUGH = 16
+// Same Lexical-aligned bits as the forward map; reuse the shared constants so
+// both directions can never drift apart.
+const REVERSE_FORMAT_BOLD = INKLING_FORMAT_BOLD
+const REVERSE_FORMAT_ITALIC = INKLING_FORMAT_ITALIC
+const REVERSE_FORMAT_UNDERLINE = INKLING_FORMAT_UNDERLINE
+const REVERSE_FORMAT_CODE = INKLING_FORMAT_CODE
+const REVERSE_FORMAT_STRIKETHROUGH = INKLING_FORMAT_STRIKETHROUGH
 
 const FORMAT_TO_DECORATOR: Record<number, StandardDecorator> = {
   [REVERSE_FORMAT_BOLD]: 'strong',

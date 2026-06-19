@@ -1,4 +1,6 @@
-import type { LexicalEditor } from 'lexical'
+import type { LexicalEditor, LexicalNode } from 'lexical'
+
+import { $createParagraphNode, $getRoot, $getSelection, $isRangeSelection } from 'lexical'
 
 import type { InklingFeatureMode } from '@/shared/inkling/schema'
 
@@ -46,6 +48,70 @@ export interface InklingCardMenuItem {
   insert: (editor: LexicalEditor) => void
 }
 
+/**
+ * Insert a block-level card node at the current selection, then enter a
+ * `NodeSelection` on the freshly-inserted card so the editor's card UI
+ * (selection outline, drag handle, edit controls) appears immediately.
+ *
+ * The node MUST be attached to the document tree before any selection method
+ * (e.g. `selectPrevious()`) is called — Lexical's selection helpers call
+ * `getParentOrThrow()`, which throws on detached nodes. We use
+ * `selection.insertNodes([node])`, which handles both the in-paragraph case
+ * (splits the paragraph) and the empty-root case.
+ *
+ * After inserting, an empty trailing paragraph is appended when the card is
+ * the last child of root, so the caret has somewhere to land when the user
+ * arrows past the card. The card itself is then selected via
+ * `node.selectNext()` → `selectPrevious()` to enter `NodeSelection`.
+ *
+ * This helper wraps the work in its own `editor.update` so it can be called
+ * from event handlers that are NOT already inside a Lexical update (e.g. a
+ * toolbar button `onClick`). Callers that already hold an active update
+ * (e.g. SlashMenu's insert path) should call `$insertBlockCard` instead to
+ * avoid re-entrant `editor.update`.
+ */
+export function insertBlockCard(editor: LexicalEditor, createNode: () => LexicalNode): void {
+  editor.update(
+    () => {
+      $insertBlockCard(createNode)
+    },
+    // `discrete: true` forces a synchronous commit so the new node is in the
+    // tree before any subsequent read (e.g. a picker resolving the selection).
+    // `history-merge` collapses this update into the preceding undo entry so
+    // a single Ctrl+Z removes both the `/query` text and the inserted card.
+    { tag: 'history-merge', discrete: true },
+  )
+}
+
+/**
+ * The update-context body of `insertBlockCard`. Must be called inside an
+ * active `editor.update(() => ...)`. Separated so SlashMenu (which already
+ * wraps the call in its own update for `/` text removal) can reuse it
+ * without triggering a re-entrant `editor.update`.
+ */
+export function $insertBlockCard(createNode: () => LexicalNode): void {
+  const node = createNode()
+  const root = $getRoot()
+  const selection = $getSelection()
+
+  if ($isRangeSelection(selection)) {
+    selection.insertNodes([node])
+  } else {
+    // No usable range selection (collapsed root, NodeSelection, etc.) —
+    // append to the end of the document.
+    root.append(node)
+  }
+
+  // Ensure the user can place the caret after the card.
+  if (node.getNextSibling() === null) {
+    node.insertAfter($createParagraphNode())
+  }
+
+  // Move into a NodeSelection on the new card so the selection outline,
+  // drag handle, and edit controls render.
+  node.selectPrevious()
+}
+
 export const INKLING_CARD_MENU_ITEMS: InklingCardMenuItem[] = [
   {
     type: 'image-card',
@@ -53,9 +119,7 @@ export const INKLING_CARD_MENU_ITEMS: InklingCardMenuItem[] = [
     section: 'media',
     modes: ['article'],
     insert: (editor) => {
-      editor.update(() => {
-        $createImageCardNode({ src: '', alt: '', caption: '', layout: 'center' }).selectPrevious()
-      })
+      insertBlockCard(editor, () => $createImageCardNode({ src: '', alt: '', caption: '', layout: 'center' }))
     },
   },
   {
@@ -64,9 +128,7 @@ export const INKLING_CARD_MENU_ITEMS: InklingCardMenuItem[] = [
     section: 'rich',
     modes: ['article', 'comment'],
     insert: (editor) => {
-      editor.update(() => {
-        $createCodeCardNode({ code: '' }).selectPrevious()
-      })
+      insertBlockCard(editor, () => $createCodeCardNode({ code: '' }))
     },
   },
   {
@@ -75,9 +137,7 @@ export const INKLING_CARD_MENU_ITEMS: InklingCardMenuItem[] = [
     section: 'rich',
     modes: ['article', 'comment'],
     insert: (editor) => {
-      editor.update(() => {
-        $createMathCardNode({ tex: '' }).selectPrevious()
-      })
+      insertBlockCard(editor, () => $createMathCardNode({ tex: '' }))
     },
   },
   {
@@ -86,9 +146,9 @@ export const INKLING_CARD_MENU_ITEMS: InklingCardMenuItem[] = [
     section: 'media',
     modes: ['article'],
     insert: (editor) => {
-      editor.update(() => {
-        $createMusicCardNode({ playerId: '' }).selectPrevious()
-      })
+      // Empty `playerId` would fail `inklingMusicCardNodeSchema.playerId.min(1)`,
+      // so seed with a placeholder the picker will overwrite.
+      insertBlockCard(editor, () => $createMusicCardNode({ playerId: '__pending__' }))
     },
   },
   {
@@ -97,9 +157,7 @@ export const INKLING_CARD_MENU_ITEMS: InklingCardMenuItem[] = [
     section: 'structure',
     modes: ['article'],
     insert: (editor) => {
-      editor.update(() => {
-        $createHorizontalRuleCardNode().selectPrevious()
-      })
+      insertBlockCard(editor, () => $createHorizontalRuleCardNode())
     },
   },
   {
@@ -108,7 +166,7 @@ export const INKLING_CARD_MENU_ITEMS: InklingCardMenuItem[] = [
     section: 'layout',
     modes: ['article'],
     insert: (editor) => {
-      editor.update(() => {
+      insertBlockCard(editor, () =>
         $createTableCardNode({
           rows: [
             {
@@ -128,8 +186,8 @@ export const INKLING_CARD_MENU_ITEMS: InklingCardMenuItem[] = [
               ],
             },
           ],
-        }).selectPrevious()
-      })
+        }),
+      )
     },
   },
   {
@@ -138,12 +196,11 @@ export const INKLING_CARD_MENU_ITEMS: InklingCardMenuItem[] = [
     section: 'structure',
     modes: ['article'],
     insert: (editor) => {
-      editor.update(() => {
-        const node = $createSolutionCardNode({
+      insertBlockCard(editor, () =>
+        $createSolutionCardNode({
           children: [{ type: 'paragraph', version: 1, direction: null, format: '', indent: 0, children: [] }],
-        })
-        node.selectPrevious()
-      })
+        }),
+      )
     },
   },
   {
@@ -152,13 +209,12 @@ export const INKLING_CARD_MENU_ITEMS: InklingCardMenuItem[] = [
     section: 'layout',
     modes: ['article'],
     insert: (editor) => {
-      editor.update(() => {
-        const node = $createTwoColumnCardNode({
+      insertBlockCard(editor, () =>
+        $createTwoColumnCardNode({
           left: [{ type: 'paragraph', version: 1, direction: null, format: '', indent: 0, children: [] }],
           right: [{ type: 'paragraph', version: 1, direction: null, format: '', indent: 0, children: [] }],
-        })
-        node.selectPrevious()
-      })
+        }),
+      )
     },
   },
 ]

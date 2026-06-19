@@ -9,6 +9,8 @@ import type { InklingDocument } from '@/shared/inkling/schema'
 
 import { validateInklingDocument } from '@/shared/inkling/schema'
 import { InlineMathNode } from '@/ui/inkling/editor/article/InlineMathNode'
+import { INKLING_CARD_MENU_ITEMS } from '@/ui/inkling/editor/cards/card-registry'
+import { SolutionCardNode, TwoColumnCardNode } from '@/ui/inkling/editor/cards/layout-card-nodes'
 import {
   $createCodeCardNode,
   $createHorizontalRuleCardNode,
@@ -47,6 +49,8 @@ function buildHeadlessArticleEditor() {
       MusicCardNode,
       HorizontalRuleCardNode,
       TableCardNode,
+      SolutionCardNode,
+      TwoColumnCardNode,
     ],
   })
 }
@@ -205,6 +209,138 @@ describe('ui/inkling/editor/cards/insertion', () => {
     if (tableNode?.type === 'table') {
       expect(tableNode.rows).toHaveLength(1)
       expect(tableNode.rows[0]?.cells).toHaveLength(2)
+    }
+  })
+})
+
+// Regression tests for the card-registry `insert` handlers. These exercise
+// the real slash-menu / toolbar insertion path (unlike the tests above,
+// which call `$create*CardNode` + `root.append` directly and so bypass the
+// handler). The handlers previously called `.selectPrevious()` on a
+// detached node, which throws inside Lexical's `getParentOrThrow()` and
+// silently aborted every card insertion; these tests pin the fix.
+describe('ui/inkling/editor/cards/card-registry insert handlers', () => {
+  // Build an editor with a single empty paragraph and place the caret in it,
+  // then run every article-mode card insert handler and assert the card
+  // actually lands in the document tree (not silently dropped).
+  function insertAndSerialize(type: string): InklingDocument {
+    const editor = buildHeadlessArticleEditor()
+    editor.update(
+      () => {
+        const root = $getRoot()
+        root.clear()
+        root.append($createParagraphNode())
+      },
+      { discrete: true },
+    )
+
+    const item = INKLING_CARD_MENU_ITEMS.find((entry) => entry.type === type)
+    expect(item).toBeDefined()
+    item!.insert(editor)
+
+    return editorStateToDocument(editor.getEditorState())
+  }
+
+  it('attaches an image card via the registry insert handler', () => {
+    const document = insertAndSerialize('image-card')
+    expect(document.root.children.some((child) => child.type === 'image-card')).toBe(true)
+  })
+
+  it('attaches a code card via the registry insert handler', () => {
+    const document = insertAndSerialize('code-block')
+    expect(document.root.children.some((child) => child.type === 'code-block')).toBe(true)
+  })
+
+  it('attaches a math card via the registry insert handler', () => {
+    const document = insertAndSerialize('math-block')
+    expect(document.root.children.some((child) => child.type === 'math-block')).toBe(true)
+  })
+
+  it('attaches a music card via the registry insert handler with a non-empty playerId', () => {
+    // The handler seeds `playerId: '__pending__'` because the schema requires
+    // `playerId.min(1)` — an empty string would make the document fail
+    // `validateInklingDocument` and stall autosave (see OnInklingDocumentChangePlugin).
+    const document = insertAndSerialize('music-card')
+    const music = document.root.children.find(
+      (child): child is Extract<(typeof document.root.children)[number], { type: 'music-card' }> =>
+        child.type === 'music-card',
+    )
+    expect(music).toBeDefined()
+    expect(music!.playerId.length).toBeGreaterThan(0)
+  })
+
+  it('attaches a horizontal-rule card via the registry insert handler', () => {
+    const document = insertAndSerialize('horizontal-rule')
+    expect(document.root.children.some((child) => child.type === 'horizontal-rule')).toBe(true)
+  })
+
+  it('attaches a table card via the registry insert handler', () => {
+    const document = insertAndSerialize('table')
+    const table = document.root.children.find(
+      (child): child is Extract<(typeof document.root.children)[number], { type: 'table' }> => child.type === 'table',
+    )
+    expect(table).toBeDefined()
+    expect(table!.rows).toHaveLength(2)
+    expect(table!.rows[0]?.cells).toHaveLength(2)
+  })
+
+  it('attaches a solution card via the registry insert handler', () => {
+    const document = insertAndSerialize('solution')
+    expect(document.root.children.some((child) => child.type === 'solution')).toBe(true)
+  })
+
+  it('attaches a two-column card via the registry insert handler', () => {
+    const document = insertAndSerialize('two-column')
+    expect(document.root.children.some((child) => child.type === 'two-column')).toBe(true)
+  })
+
+  it('appends a trailing paragraph after the card so the caret can land past it', () => {
+    const document = insertAndSerialize('horizontal-rule')
+    // children: [paragraph (original, now split), horizontal-rule, trailing paragraph]
+    const last = document.root.children[document.root.children.length - 1]
+    expect(last?.type).toBe('paragraph')
+  })
+})
+
+// Regression tests for `isKeyboardSelectable()`. Without this override,
+// Lexical never enters a `NodeSelection` on a DecoratorNode, so click-to-
+// select, the selection outline, the drag handle, and arrow-key navigation
+// across cards all silently fail. Pin the override on every article card.
+describe('ui/inkling/editor/cards isKeyboardSelectable', () => {
+  it('every article card node reports isKeyboardSelectable() = true', () => {
+    const editor = buildHeadlessArticleEditor()
+    editor.update(
+      () => {
+        const root = $getRoot()
+        root.clear()
+        root.append($createParagraphNode())
+      },
+      { discrete: true },
+    )
+
+    const cardCreators = [
+      () => $createImageCardNode({ src: '', alt: '', caption: '', layout: 'center' }),
+      () => $createCodeCardNode({ code: '' }),
+      () => $createMathCardNode({ tex: '' }),
+      () => $createMusicCardNode({ playerId: '__pending__' }),
+      () => $createHorizontalRuleCardNode(),
+      () =>
+        $createTableCardNode({
+          rows: [{ type: 'tablerow', version: 1, cells: [{ type: 'tablecell', version: 1, children: [] }] }],
+        }),
+    ]
+
+    for (const create of cardCreators) {
+      let selectable = false
+      editor.update(
+        () => {
+          const node = create()
+          $getRoot().append(node)
+          selectable = node.isKeyboardSelectable()
+        },
+        { discrete: true },
+      )
+      expect(selectable).toBe(true)
     }
   })
 })

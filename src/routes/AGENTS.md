@@ -111,9 +111,10 @@ adopt React Router's segment-based filename convention.
 ## Content patterns
 
 - `post` + `content` → `/posts/:slug`. `page` + `content` → `/:slug`.
-  Both rendered via `<PortableTextBody>`. Public URLs use `slug`, not
-  internal id.
-- Custom block components in `@/ui/pt/blocks/`.
+  Both rendered via `<InklingBody>` from `@/ui/inkling/render` (the
+  PortableText renderer in `@/ui/pt/*` is retained only as a migration
+  baseline). Public URLs use `slug`, not internal id.
+- Custom block components in `@/ui/inkling/render/blocks/`.
 - `visible=false` posts are hidden from the public home and random-post
   widgets but stay in `/archives`, `/tags/:slug`, `/search/:keyword`,
   `sitemap.xml`, feeds, and category/tag listings and counts.

@@ -3,6 +3,13 @@ import { describe, expect, it } from 'vitest'
 import type { InklingBlockNode, InklingDocument, InklingInlineNode } from '@/shared/inkling/schema'
 
 import { commentInklingToEmailHtml } from '@/server/domains/inkling/comment-email'
+import {
+  INKLING_FORMAT_BOLD,
+  INKLING_FORMAT_CODE,
+  INKLING_FORMAT_ITALIC,
+  INKLING_FORMAT_STRIKETHROUGH,
+  INKLING_FORMAT_UNDERLINE,
+} from '@/shared/inkling/format'
 
 function text(value: string, format?: number): InklingInlineNode {
   return { type: 'text', version: 1, text: value, format }
@@ -24,12 +31,13 @@ function makeDocument(rootChildren: InklingBlockNode[]): InklingDocument {
   }
 }
 
-// Lexical format bits.
-const BOLD = 1
-const ITALIC = 2
-const UNDERLINE = 4
-const CODE = 8
-const STRIKETHROUGH = 16
+// Lexical text format bits, imported from the shared source of truth so the
+// test stays in sync with lexical's IS_* constants.
+const BOLD = INKLING_FORMAT_BOLD
+const ITALIC = INKLING_FORMAT_ITALIC
+const UNDERLINE = INKLING_FORMAT_UNDERLINE
+const CODE = INKLING_FORMAT_CODE
+const STRIKETHROUGH = INKLING_FORMAT_STRIKETHROUGH
 
 describe('server/domains/inkling/comment-email', () => {
   it('renders a paragraph', () => {

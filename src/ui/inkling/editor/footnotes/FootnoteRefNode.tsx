@@ -74,6 +74,9 @@ export class FootnoteRefNode extends DecoratorNode<JSX.Element | null> {
     if (prevNode.__refKey !== this.__refKey) {
       element.setAttribute('data-ref-key', this.__refKey)
     }
+    if (prevNode.__index !== this.__index) {
+      element.setAttribute('data-index', String(this.__index))
+    }
     return false
   }
 

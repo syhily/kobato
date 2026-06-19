@@ -40,6 +40,11 @@ export class SolutionCardNode extends DecoratorNode<JSX.Element | null> {
   updateDOM(): false {
     return false
   }
+  // See ImageCardNode.isKeyboardSelectable (simple-card-nodes.tsx).
+  isKeyboardSelectable(): boolean {
+    return true
+  }
+
   decorate(_editor: LexicalEditor, _config: EditorConfig): JSX.Element {
     return <SolutionCardComponent node={this} />
   }
@@ -120,6 +125,11 @@ export class TwoColumnCardNode extends DecoratorNode<JSX.Element | null> {
   updateDOM(): false {
     return false
   }
+  // See ImageCardNode.isKeyboardSelectable (simple-card-nodes.tsx).
+  isKeyboardSelectable(): boolean {
+    return true
+  }
+
   decorate(_editor: LexicalEditor, _config: EditorConfig): JSX.Element {
     return <TwoColumnCardComponent node={this} />
   }

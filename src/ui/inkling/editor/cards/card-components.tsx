@@ -222,9 +222,21 @@ export function CodeCardComponent({ node }: { node: CodeCardNode }): ReactNode {
       editor.update(() => {
         if (patch.code !== undefined) {
           node.setCode(patch.code)
+          // `highlightedHtml` is a server-side prerender artifact (filled by
+          // `prerenderInklingDocument` at save time). Once the user edits the
+          // source it is stale — clear it so the editor shows plain text
+          // instead of outdated highlighting, and so the save path re-runs
+          // Shiki. Mirrors how `mathml` is treated as a derived artifact.
+          if (node.getHighlightedHtml() !== undefined) {
+            node.setHighlightedHtml(undefined)
+          }
         }
         if (patch.language !== undefined) {
           node.setLanguage(patch.language)
+          // Language change also invalidates the highlight (different grammar).
+          if (patch.code === undefined && node.getHighlightedHtml() !== undefined) {
+            node.setHighlightedHtml(undefined)
+          }
         }
       })
     },

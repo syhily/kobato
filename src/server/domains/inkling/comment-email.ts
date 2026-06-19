@@ -10,6 +10,13 @@ import type {
 } from '@/shared/inkling/schema'
 
 import { validateInklingDocumentForMode } from '@/shared/inkling/features'
+import {
+  INKLING_FORMAT_BOLD,
+  INKLING_FORMAT_CODE,
+  INKLING_FORMAT_ITALIC,
+  INKLING_FORMAT_STRIKETHROUGH,
+  INKLING_FORMAT_UNDERLINE,
+} from '@/shared/inkling/format'
 import { walkInkling } from '@/shared/inkling/walk'
 import { escapeHtml } from '@/shared/utils/security'
 
@@ -22,12 +29,13 @@ import { escapeHtml } from '@/shared/utils/security'
 // stripped by most clients. It only handles the comment feature subset; any
 // article-only node causes an error so that migration problems surface loudly.
 
-// Lexical text format bits (from lexical package source).
-const FORMAT_BOLD = 1
-const FORMAT_ITALIC = 2
-const FORMAT_UNDERLINE = 4
-const FORMAT_CODE = 8
-const FORMAT_STRIKETHROUGH = 16
+// Lexical text format bits (re-exported from the shared source of truth so
+// they stay in sync with lexical's IS_* constants).
+const FORMAT_BOLD = INKLING_FORMAT_BOLD
+const FORMAT_ITALIC = INKLING_FORMAT_ITALIC
+const FORMAT_UNDERLINE = INKLING_FORMAT_UNDERLINE
+const FORMAT_CODE = INKLING_FORMAT_CODE
+const FORMAT_STRIKETHROUGH = INKLING_FORMAT_STRIKETHROUGH
 
 interface RenderCtx {
   out: string[]
@@ -74,10 +82,14 @@ function renderInlineMathNode(node: InklingInlineMathNode): string {
 }
 
 function renderLinkNode(node: InklingLinkNode): string {
+  // Defense-in-depth: never emit executable JavaScript/data URLs even if the
+  // schema-level URL filter is somehow bypassed. Mirrors the article renderer
+  // in marks/LinkMark.tsx and the feed renderer in render/inkling/html.ts.
+  const href = /^\s*(javascript|data):/i.test(node.url) ? '#' : node.url
   const rel = node.rel ?? 'nofollow noreferrer'
   const target = node.target ?? '_blank'
   const titleAttr = node.title ? ` title="${escapeAttr(node.title)}"` : ''
-  return `<a href="${escapeAttr(node.url)}" rel="${escapeAttr(rel)}" target="${escapeAttr(target)}"${titleAttr}>${renderInlineChildren(node.children)}</a>`
+  return `<a href="${escapeAttr(href)}" rel="${escapeAttr(rel)}" target="${escapeAttr(target)}"${titleAttr}>${renderInlineChildren(node.children)}</a>`
 }
 
 function renderLineBreakNode(_node: InklingLineBreakNode): string {

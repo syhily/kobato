@@ -13,6 +13,13 @@ import { findMusicByPlayerIds } from '@/server/domains/music/services/read'
 import { safeBuildMusicPublicUrl } from '@/server/domains/music/storage'
 import { deriveSlug } from '@/server/infra/slug'
 import { requireBlogSettingsSection } from '@/shared/config/getters'
+import {
+  INKLING_FORMAT_BOLD,
+  INKLING_FORMAT_CODE,
+  INKLING_FORMAT_ITALIC,
+  INKLING_FORMAT_STRIKETHROUGH,
+  INKLING_FORMAT_UNDERLINE,
+} from '@/shared/inkling/format'
 import { collectInklingHeadingSlots } from '@/shared/inkling/headings'
 import { walkInkling, type InklingWalkerHandlers } from '@/shared/inkling/walk'
 import { resolveFootnotesSectionTitle } from '@/shared/utils/footnotes-section-title'
@@ -166,7 +173,7 @@ function renderInlineNodeHtml(node: InklingInlineNode, ctx: HtmlRenderCtx): stri
       return `<code>${escapeHtml(node.tex)}</code>`
     }
     case 'footnote-ref':
-      return `<sup><a href="#user-content-fn-${node.index}">${node.index}</a></sup>`
+      return `<sup id="user-content-fnref-${node.index}"><a href="#user-content-fn-${node.index}">${node.index}</a></sup>`
     case 'link': {
       const children = node.children.map((child) => renderInlineNodeHtml(child, ctx)).join('')
       const href = /^\s*(javascript|data):/i.test(node.url) ? '#' : node.url
@@ -181,12 +188,13 @@ function renderInlineNodesHtml(nodes: readonly InklingInlineNode[], ctx: HtmlRen
   return nodes.map((node) => renderInlineNodeHtml(node, ctx)).join('')
 }
 
-// Lexical text format bits.
-const FORMAT_BOLD = 1
-const FORMAT_ITALIC = 2
-const FORMAT_UNDERLINE = 4
-const FORMAT_CODE = 8
-const FORMAT_STRIKETHROUGH = 16
+// Lexical text format bits, imported from the shared source of truth so they
+// stay in sync with lexical's IS_* constants.
+const FORMAT_BOLD = INKLING_FORMAT_BOLD
+const FORMAT_ITALIC = INKLING_FORMAT_ITALIC
+const FORMAT_UNDERLINE = INKLING_FORMAT_UNDERLINE
+const FORMAT_CODE = INKLING_FORMAT_CODE
+const FORMAT_STRIKETHROUGH = INKLING_FORMAT_STRIKETHROUGH
 
 function renderFormattedText(text: string, format: number): string {
   let html = escapeHtml(text).replace(/\n/g, '<br />')
@@ -354,7 +362,10 @@ function buildHtmlHandlers(ctx: HtmlRenderCtx): InklingWalkerHandlers<HtmlRender
       }
     },
     footnoteRef: (node, c) => {
-      append(c, `<sup><a href="#user-content-fn-${node.index}">${node.index}</a></sup>`)
+      append(
+        c,
+        `<sup id="user-content-fnref-${node.index}"><a href="#user-content-fn-${node.index}">${node.index}</a></sup>`,
+      )
     },
     image: (node, c) => {
       append(c, renderImageBlockHtml(node))

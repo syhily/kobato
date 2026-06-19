@@ -3,6 +3,7 @@ import type { ReactNode } from 'react'
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import { Code2Icon, ImageIcon, MinusIcon, Music2Icon, PiIcon, TableIcon } from 'lucide-react'
 
+import { insertBlockCard } from '@/ui/inkling/editor/cards/card-registry'
 import {
   $createCodeCardNode,
   $createHorizontalRuleCardNode,
@@ -22,37 +23,29 @@ export function ArticleToolbar({ disabled, className }: ArticleToolbarProps): Re
   const [editor] = useLexicalComposerContext()
 
   const insertImage = () => {
-    editor.update(() => {
-      $createImageCardNode({ src: '', alt: '', caption: '', layout: 'center' }).selectPrevious()
-    })
+    insertBlockCard(editor, () => $createImageCardNode({ src: '', alt: '', caption: '', layout: 'center' }))
   }
 
   const insertCode = () => {
-    editor.update(() => {
-      $createCodeCardNode({ code: '' }).selectPrevious()
-    })
+    insertBlockCard(editor, () => $createCodeCardNode({ code: '' }))
   }
 
   const insertMath = () => {
-    editor.update(() => {
-      $createMathCardNode({ tex: '' }).selectPrevious()
-    })
+    insertBlockCard(editor, () => $createMathCardNode({ tex: '' }))
   }
 
   const insertMusic = () => {
-    editor.update(() => {
-      $createMusicCardNode({ playerId: '' }).selectPrevious()
-    })
+    // Empty `playerId` would fail `inklingMusicCardNodeSchema.playerId.min(1)`,
+    // so seed with a placeholder the picker will overwrite.
+    insertBlockCard(editor, () => $createMusicCardNode({ playerId: '__pending__' }))
   }
 
   const insertHorizontalRule = () => {
-    editor.update(() => {
-      $createHorizontalRuleCardNode().selectPrevious()
-    })
+    insertBlockCard(editor, () => $createHorizontalRuleCardNode())
   }
 
   const insertTable = () => {
-    editor.update(() => {
+    insertBlockCard(editor, () =>
       $createTableCardNode({
         rows: [
           {
@@ -72,8 +65,8 @@ export function ArticleToolbar({ disabled, className }: ArticleToolbarProps): Re
             ],
           },
         ],
-      }).selectPrevious()
-    })
+      }),
+    )
   }
 
   return (

@@ -259,6 +259,62 @@ function $insertParagraphAfterSelectedCard(): boolean {
   return true
 }
 
+/**
+ * When Backspace is pressed at the start of an empty paragraph whose previous
+ * sibling is a card, select the card instead of deleting the paragraph. This
+ * avoids accumulating empty paragraphs between cards and gives the user a
+ * natural way to navigate back into a card to edit it.
+ *
+ * Mirrors Koenig's `$deselectCard` / backspace-into-card behaviour.
+ */
+function $selectPreviousCardFromEmptyParagraph(): boolean {
+  const selection = $getSelection()
+  if (!$isRangeSelection(selection) || !selection.isCollapsed() || selection.anchor.offset !== 0) {
+    return false
+  }
+  const node = selection.anchor.getNode()
+  // The anchor may be the paragraph itself or a text node inside it.
+  const paragraph = $isElementNode(node) && node.getType() === 'paragraph' ? node : node.getParent()
+  if (paragraph === null || paragraph.getType() !== 'paragraph' || paragraph.getTextContent().length > 0) {
+    return false
+  }
+  const previous = paragraph.getPreviousSibling()
+  if (previous === null || !$isBlockCardNode(previous)) {
+    return false
+  }
+  previous.selectPrevious()
+  return true
+}
+
+/**
+ * Symmetric to `$selectPreviousCardFromEmptyParagraph` for forward-delete.
+ */
+function $selectNextCardFromEmptyParagraph(): boolean {
+  const selection = $getSelection()
+  if (!$isRangeSelection(selection) || !selection.isCollapsed()) {
+    return false
+  }
+  const node = selection.anchor.getNode()
+  const paragraph = $isElementNode(node) && node.getType() === 'paragraph' ? node : node.getParent()
+  if (paragraph === null || paragraph.getType() !== 'paragraph') {
+    return false
+  }
+  // Caret must be at the end of the paragraph's last text child.
+  const text = paragraph.getTextContent()
+  if (selection.anchor.offset !== text.length) {
+    return false
+  }
+  if (text.length > 0) {
+    return false
+  }
+  const next = paragraph.getNextSibling()
+  if (next === null || !$isBlockCardNode(next)) {
+    return false
+  }
+  next.selectPrevious()
+  return true
+}
+
 function $exitCardSelectionMode(): boolean {
   const selection = $getSelection()
   if (!$isNodeSelection(selection)) {
@@ -368,7 +424,16 @@ export function registerInklingKeyboardNavigation(editor: LexicalEditor): () => 
       if (event !== null && event.defaultPrevented) {
         return false
       }
-      return $deleteSelectedDecorator()
+      // First: if a card is selected, delete it.
+      if ($deleteSelectedDecorator()) {
+        return true
+      }
+      // Second: if the caret is at the start of an empty paragraph whose
+      // previous sibling is a card, select the card instead of deleting the
+      // empty paragraph. This mirrors Koenig's "backspace into card" behaviour
+      // and lets the user navigate back into cards without leaving stray
+      // empty paragraphs between them.
+      return $selectPreviousCardFromEmptyParagraph()
     },
     COMMAND_PRIORITY_CRITICAL,
   )
@@ -379,7 +444,12 @@ export function registerInklingKeyboardNavigation(editor: LexicalEditor): () => 
       if (event !== null && event.defaultPrevented) {
         return false
       }
-      return $deleteSelectedDecorator()
+      if ($deleteSelectedDecorator()) {
+        return true
+      }
+      // Symmetric: forward-delete at the end of an empty paragraph whose next
+      // sibling is a card selects that card.
+      return $selectNextCardFromEmptyParagraph()
     },
     COMMAND_PRIORITY_CRITICAL,
   )
