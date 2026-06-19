@@ -1,4 +1,4 @@
-import type { PortableTextBody } from '@/shared/pt/schema'
+import type { InklingDocument } from '@/shared/inkling/schema'
 import type { AdminRevisionDto } from '@/shared/types/revision'
 import type { MarkdownHeading } from '@/shared/utils/toc'
 
@@ -139,7 +139,7 @@ export interface UnpublishPostOutput {
 
 export interface SavePostBodyInput {
   id: string
-  body: PortableTextBody
+  body: InklingDocument
   expectedClientRevisionToken?: string | null
   force?: boolean
   publishedAt?: string
@@ -150,7 +150,7 @@ export type SavePostBodyOutput =
   | { status: 'conflict'; latest: AdminRevisionDto; expectedToken: string }
 
 export interface PreviewPostBodyInput {
-  body: PortableTextBody
+  body: InklingDocument
 }
 
 export interface PreviewPostBodyOutput {

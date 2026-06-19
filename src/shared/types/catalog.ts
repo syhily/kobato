@@ -191,18 +191,18 @@ export interface CommentFormUser {
   admin: boolean
 }
 
-// Types that need PortableTextBody (isomorphic)
-import type { PortableTextBody } from '@/shared/pt/schema'
-export type { PortableTextBody }
+// Types that need InklingDocument (isomorphic)
+import type { InklingDocument } from '@/shared/inkling/schema'
+export type { InklingDocument }
 
 export interface Post extends ClientPost {
-  body: PortableTextBody
+  body: InklingDocument
   imageSources: string[]
   publishedRevisionId: bigint | null
 }
 
 export interface Page extends ClientPage {
-  body: PortableTextBody
+  body: InklingDocument
   imageSources: string[]
   publishedRevisionId: bigint | null
 }

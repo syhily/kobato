@@ -1,4 +1,4 @@
-import type { PortableTextBody } from '@/shared/pt/schema'
+import type { InklingDocument } from '@/shared/inkling/schema'
 import type { MarkdownHeading } from '@/shared/types/catalog'
 import type { AdminRevisionDto } from '@/shared/types/revision'
 
@@ -215,7 +215,7 @@ export interface UnpublishPageOutput {
 export interface SavePageBodyInput {
   id: string
   /** PortableText body. Validated by the server perimeter. */
-  body: PortableTextBody
+  body: InklingDocument
   /** Optimistic-concurrency token. */
   expectedClientRevisionToken?: string | null
   /** Override the conflict guard. */
@@ -233,7 +233,7 @@ export type SavePageBodyOutput =
     }
 
 export interface PreviewPageBodyInput {
-  body: PortableTextBody
+  body: InklingDocument
 }
 
 export interface PreviewPageBodyOutput {

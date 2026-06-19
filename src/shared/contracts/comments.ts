@@ -4,7 +4,7 @@ import type { Assert, Equals } from '@/shared/contracts/primitives'
 import type { AdminCommentWire, AdminPendingDashboardDto, CommentItemWire } from '@/shared/types/comments'
 
 import { idString, isoDateTime } from '@/shared/contracts/primitives'
-import { commentBodySchema } from '@/shared/pt/comment-schema'
+import { inklingDocumentSchema } from '@/shared/inkling/schema'
 
 export const adminPendingDashboardDto = z.object({
   items: z.array(
@@ -36,7 +36,7 @@ export const commentBaseDto = z.object({
   updatedAt: isoDateTime,
   deleteAt: isoDateTime.nullable(),
   deleteRequestedAt: isoDateTime.nullable().optional(),
-  body: commentBodySchema,
+  body: inklingDocumentSchema,
   type: z.enum(['post', 'page']).nullable(),
   ownerId: idString.nullable(),
   userId: idString,

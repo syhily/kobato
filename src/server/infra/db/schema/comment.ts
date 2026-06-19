@@ -1,7 +1,9 @@
 import { sql } from 'drizzle-orm'
 import { bigint, bigserial, boolean, index, jsonb, pgTable, text, timestamp, varchar } from 'drizzle-orm/pg-core'
 
-import type { CommentBody } from '@/shared/pt/comment-schema'
+import type { InklingDocument } from '@/shared/inkling/schema'
+
+import { createEmptyInklingDocument, EMPTY_INKLING_DOCUMENT } from '@/shared/inkling/empty'
 
 export const comment = pgTable(
   'comment',
@@ -16,9 +18,10 @@ export const comment = pgTable(
     deletedAt: timestamp('deleted_at', { withTimezone: true, mode: 'date' }),
     content: text('content').default(''),
     body: jsonb('body')
-      .$type<CommentBody>()
+      .$type<InklingDocument>()
       .notNull()
-      .default(sql`'[]'::jsonb`),
+      .default(sql.raw(`'${JSON.stringify(EMPTY_INKLING_DOCUMENT)}'::jsonb`))
+      .$defaultFn(() => createEmptyInklingDocument()),
     type: varchar('type', { length: 16 }).$type<'post' | 'page'>().notNull(),
     ownerId: bigint('owner_id', { mode: 'bigint' }).notNull(),
     userId: bigint('user_id', { mode: 'bigint' }).notNull(),

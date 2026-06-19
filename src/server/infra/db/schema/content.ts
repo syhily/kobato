@@ -15,6 +15,10 @@ import {
 } from 'drizzle-orm/pg-core'
 import { randomUUID } from 'node:crypto'
 
+import type { InklingDocument } from '@/shared/inkling/schema'
+
+import { createEmptyInklingDocument, EMPTY_INKLING_DOCUMENT } from '@/shared/inkling/empty'
+
 // Shared revision table for pages and posts. A single table avoids near-
 // identical projections and lets cross-content queries scan one index.
 //
@@ -37,8 +41,10 @@ export const content = pgTable(
     revisionNo: integer('revision_no').notNull(),
     status: varchar('status', { length: 16 }).notNull().default('draft'),
     body: jsonb('body')
+      .$type<InklingDocument>()
       .notNull()
-      .default(sql`'[]'::jsonb`),
+      .default(sql.raw(`'${JSON.stringify(EMPTY_INKLING_DOCUMENT)}'::jsonb`))
+      .$defaultFn(() => createEmptyInklingDocument()),
     imageSources: jsonb('image_sources')
       .notNull()
       .default(sql`'[]'::jsonb`),

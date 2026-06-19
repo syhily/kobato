@@ -4,13 +4,13 @@ import type { Assert, Equals } from '@/shared/contracts/primitives'
 import type { AdminRevisionDto } from '@/shared/types/revision'
 
 import { idString, isoDateTime, markdownHeadingDto } from '@/shared/contracts/primitives'
-import { portableTextBodySchema } from '@/shared/pt/schema'
+import { inklingDocumentSchema } from '@/shared/inkling/schema'
 
 export const adminRevisionDto = z.object({
   id: idString,
   revisionNo: z.number().int().nonnegative(),
   status: z.enum(['draft', 'published']),
-  body: portableTextBodySchema,
+  body: inklingDocumentSchema,
   imageSources: z.array(z.string()),
   headings: z.array(markdownHeadingDto),
   authorId: idString.nullable(),

@@ -28,7 +28,7 @@ export interface AdminPendingDashboardDto {
   counts: { all: number; approval: number; deletion: number }
 }
 
-import type { CommentBody } from '@/shared/pt/comment-schema'
+import type { InklingDocument } from '@/shared/inkling/schema'
 
 export interface CommentAndUser {
   id: bigint
@@ -44,11 +44,11 @@ export interface CommentAndUser {
    */
   deleteRequestedAt?: Date | string | null
   /**
-   * Canonical PortableText body. Rendered by `<PortableTextBody>` on
-   * the public site. The DB also retains a markdown projection of this
+   * Canonical Inkling Lexical JSON body. Rendered by `<CommentInklingBody>`
+   * on the public site. The DB also retains a markdown projection of this
    * field under `comment.content`, but that's server-only.
    */
-  body: CommentBody
+  body: InklingDocument
   /**
    * Plain-text / markdown rollback snapshot. Present on server-side
    * `CommentAndUser` values, null on client-projected DTOs.
@@ -128,7 +128,7 @@ export interface CommentReq {
   name: string
   email: string
   link?: string
-  body: CommentBody
+  body: InklingDocument
   rid?: number
 }
 
@@ -141,7 +141,7 @@ export interface CommentReplyInput {
   name: string
   email: string
   link?: string
-  body: CommentBody
+  body: InklingDocument
   rid?: number
   subtitle?: string
 }
@@ -153,7 +153,7 @@ export interface CommentRidInput {
 }
 
 export interface CommentEditInput extends CommentRidInput {
-  body: CommentBody
+  body: InklingDocument
 }
 
 export interface LoadCommentsInput {
@@ -193,7 +193,7 @@ export interface CommentItemWire {
   updatedAt: string
   deleteAt: string | null
   deleteRequestedAt?: string | null
-  body: CommentBody
+  body: InklingDocument
   type: 'post' | 'page' | null
   ownerId: string | null
   userId: string
@@ -220,7 +220,7 @@ export interface AdminCommentWire {
   updatedAt: string
   deleteAt: string | null
   deleteRequestedAt?: string | null
-  body: CommentBody
+  body: InklingDocument
   type: 'post' | 'page' | null
   ownerId: string | null
   userId: string
@@ -262,7 +262,7 @@ export interface LoadCommentsOutput {
 }
 
 export interface CommentRawOutput {
-  body: CommentBody
+  body: InklingDocument
 }
 
 export interface MyCommentsOutput {

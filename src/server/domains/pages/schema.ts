@@ -1,6 +1,6 @@
 import { z } from 'zod'
 
-import { portableTextBodySchema } from '@/shared/pt/schema'
+import { inklingDocumentSchema } from '@/shared/inkling/schema'
 import { safeBoolean } from '@/shared/utils/schema'
 
 const slugSchema = z
@@ -60,14 +60,14 @@ export const upsertPageMetaSchema = z.object({
 
 export const savePageBodySchema = z.object({
   id: z.string().min(1),
-  body: portableTextBodySchema,
+  body: inklingDocumentSchema,
   expectedClientRevisionToken: z.uuid().nullable().optional(),
   force: safeBoolean().optional(),
   publishedAt: z.iso.datetime({ offset: true }).optional(),
 })
 
 export const previewPageBodySchema = z.object({
-  body: portableTextBodySchema,
+  body: inklingDocumentSchema,
 })
 
 export const renderMathSchema = z.object({
