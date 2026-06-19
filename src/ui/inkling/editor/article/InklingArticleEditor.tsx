@@ -75,6 +75,7 @@ const ARTICLE_NODES: InitialConfigType['nodes'] = [
 ]
 
 function inklingDocumentToSerializedRoot(document: InklingDocument): SerializedRootNode {
+  // oxlint-disable-next-line typescript/no-unsafe-type-assertion
   return structuredClone(document.root) as unknown as SerializedRootNode
 }
 

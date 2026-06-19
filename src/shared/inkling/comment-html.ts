@@ -141,7 +141,14 @@ export function inklingCommentToHtml(document: InklingDocument): string {
         out.push(`<pre><code>$$${escapeHtml(block.tex)}$$</code></pre>`)
         break
       }
-      default:
+      case 'heading':
+      case 'image-card':
+      case 'music-card':
+      case 'table':
+      case 'horizontal-rule':
+      case 'solution':
+      case 'two-column':
+      case 'footnote-definition':
         break
     }
   }

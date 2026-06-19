@@ -53,7 +53,7 @@ function buildManifest(prefix: string): string {
         },
         'routes/editor/post/new': {
           module: '/assets/editor-post.js',
-          imports: ['/assets/editor-tiptap-core.js'],
+          imports: ['/assets/editor-inkling-core.js'],
         },
         'routes/auth/signin': {
           module: '/assets/signin.js',
@@ -177,7 +177,7 @@ describe('route-warmup plugin — writeBundle handler', () => {
       'dashboard',
       'admin-shared',
       'editor-post',
-      'editor-tiptap-core',
+      'editor-inkling-core',
       'signin',
       'canvas-hl',
     ]) {
@@ -209,9 +209,9 @@ describe('route-warmup plugin — writeBundle handler', () => {
 
     // tier2_admin excludes editor-only chunks; the editor tier keeps them.
     expect(manifest.tier2_admin).toContain('/assets/dashboard.js')
-    expect(manifest.tier2_admin).not.toContain('/assets/editor-tiptap-core.js')
+    expect(manifest.tier2_admin).not.toContain('/assets/editor-inkling-core.js')
     expect(manifest.tier2_editor).toContain('/assets/editor-post.js')
-    expect(manifest.tier2_editor).toContain('/assets/editor-tiptap-core.js')
+    expect(manifest.tier2_editor).toContain('/assets/editor-inkling-core.js')
 
     // Lazy-only / native canvas chunks are excluded from every tier.
     for (const tier of ['tier1', 'tier2_public', 'tier2_admin', 'tier2_editor', 'tier2_auth']) {

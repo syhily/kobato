@@ -11,8 +11,8 @@ function deepFreeze<T>(value: T): T {
       deepFreeze(entry)
     }
   } else if (typeof value === 'object') {
-    for (const key of Object.keys(value)) {
-      deepFreeze((value as Record<string, unknown>)[key])
+    for (const [, entry] of Object.entries(value)) {
+      deepFreeze(entry)
     }
   }
   return Object.freeze(value)

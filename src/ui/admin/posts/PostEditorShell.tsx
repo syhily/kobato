@@ -94,7 +94,9 @@ export function PostEditorShell({ mode, detail, navigate }: PostEditorShellProps
     detail: detail
       ? {
           entity: detail.post,
+          // oxlint-disable-next-line typescript/no-unsafe-type-assertion
           latestRevision: detail.latestRevision as unknown as RevisionLike,
+          // oxlint-disable-next-line typescript/no-unsafe-type-assertion
           publishedRevision: detail.publishedRevision as unknown as RevisionLike,
         }
       : undefined,
@@ -108,8 +110,10 @@ export function PostEditorShell({ mode, detail, navigate }: PostEditorShellProps
       return result.post
     },
     saveDraftFn: (input) =>
+      // oxlint-disable-next-line typescript/no-unsafe-type-assertion
       orpc.admin.posts.saveDraft(input as unknown as SavePostBodyInput) as unknown as Promise<SaveBodyOutput>,
     publishFn: (input) =>
+      // oxlint-disable-next-line typescript/no-unsafe-type-assertion
       orpc.admin.posts.publishLatest(input as unknown as SavePostBodyInput) as unknown as Promise<SaveBodyOutput>,
     unpublishFn: async (input) => {
       const result = await orpc.admin.posts.unpublish(input)
@@ -117,6 +121,7 @@ export function PostEditorShell({ mode, detail, navigate }: PostEditorShellProps
     },
     buildUpsertMetaPayload: buildPostUpsertPayload,
     directSaveDraft: (input) =>
+      // oxlint-disable-next-line typescript/no-unsafe-type-assertion
       orpc.admin.posts.saveDraft(input as unknown as SavePostBodyInput) as unknown as Promise<SaveBodyOutput>,
     editPath: (id) => `/editor/post/${id}`,
     navigate,

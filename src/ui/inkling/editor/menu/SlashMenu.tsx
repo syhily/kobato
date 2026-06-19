@@ -207,7 +207,7 @@ export function useInklingSlashMenu(editor: LexicalEditor | null, mode: InklingF
       return undefined
     }
     const handler = (e: MouseEvent) => {
-      if (menuRef.current !== null && !menuRef.current.contains(e.target as Node)) {
+      if (menuRef.current !== null && e.target instanceof Node && !menuRef.current.contains(e.target)) {
         close()
       }
     }

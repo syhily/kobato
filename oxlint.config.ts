@@ -7,7 +7,15 @@ export default defineConfig({
     node: true,
     es2022: true,
   },
-  ignorePatterns: ['.agents/skills/*', 'drizzle/**/*', 'tests/**/*'],
+  ignorePatterns: [
+    '.agents/skills/*',
+    'drizzle/**/*',
+    'tests/**/*',
+    // Legacy editor files, will be deleted.
+    'scripts/inkling-poc/*.ts',
+    'scripts/inkling-poc/*.mjs',
+    'src/ui/admin/editor/tiptap/**/*',
+  ],
   settings: {
     react: {
       version: '19.2.5',

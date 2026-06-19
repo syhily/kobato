@@ -75,8 +75,8 @@ export function useInklingDragDropReorder(editor: LexicalEditor): void {
       }
 
       // Show indicator at the nearest drop position
-      const target = e.target as HTMLElement
-      const card = target.closest<HTMLElement>('.inkling-card')
+      const target = e.target
+      const card = target instanceof HTMLElement ? target.closest<HTMLElement>('.inkling-card') : null
       if (card === null) {
         removeIndicator()
         return
@@ -101,8 +101,8 @@ export function useInklingDragDropReorder(editor: LexicalEditor): void {
         return
       }
 
-      const target = e.target as HTMLElement
-      const card = target.closest<HTMLElement>('.inkling-card')
+      const target = e.target
+      const card = target instanceof HTMLElement ? target.closest<HTMLElement>('.inkling-card') : null
       if (card === null) {
         dragKey = null
         return

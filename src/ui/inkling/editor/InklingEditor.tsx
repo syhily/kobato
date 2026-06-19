@@ -49,6 +49,7 @@ function buildInitialEditorState(document: InklingDocument): (editor: LexicalEdi
 
 function inklingDocumentToEditorState(document: InklingDocument): SerializedEditorState {
   const direction = document.root.direction ?? null
+  // oxlint-disable-next-line typescript/no-unsafe-type-assertion
   const format = (document.root.format ?? '') as unknown as ElementFormatType
   const indent = document.root.indent ?? 0
   return {
@@ -60,6 +61,7 @@ function inklingDocumentToEditorState(document: InklingDocument): SerializedEdit
       indent,
       textFormat: 0,
       textStyle: '',
+      // oxlint-disable-next-line typescript/no-unsafe-type-assertion
       children: document.root.children as unknown as SerializedLexicalNode[],
     },
   }
@@ -89,6 +91,7 @@ export function editorStateToInklingDocument(editorState: EditorState): InklingD
       direction: serialized.root.direction ?? null,
       format: serialized.root.format ?? '',
       indent: serialized.root.indent ?? 0,
+      // oxlint-disable-next-line typescript/no-unsafe-type-assertion
       children: serialized.root.children as never[],
     },
   }

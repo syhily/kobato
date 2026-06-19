@@ -21,7 +21,7 @@ export const WARMUP_GLOBAL_EXCLUDED_PATTERNS = [
 
 // Editor-only chunks that are allowed in the editor idle tier but should not
 // be pulled into the public/admin/auth critical or idle paths.
-export const WARMUP_EDITOR_ONLY_PATTERN = '^editor-tiptap-'
+export const WARMUP_EDITOR_ONLY_PATTERN = '^editor-inkling-'
 
 // Shared shape of the React Router client manifest that the route-warmup
 // plugin writes and the SSR runtime reads back to match request URLs.

@@ -92,7 +92,9 @@ export function PageEditorShell({ mode, detail, navigate }: PageEditorShellProps
     detail: detail
       ? {
           entity: detail.page,
+          // oxlint-disable-next-line typescript/no-unsafe-type-assertion
           latestRevision: detail.latestRevision as unknown as RevisionLike,
+          // oxlint-disable-next-line typescript/no-unsafe-type-assertion
           publishedRevision: detail.publishedRevision as unknown as RevisionLike,
         }
       : undefined,
@@ -106,8 +108,10 @@ export function PageEditorShell({ mode, detail, navigate }: PageEditorShellProps
       return result.page
     },
     saveDraftFn: (input) =>
+      // oxlint-disable-next-line typescript/no-unsafe-type-assertion
       orpc.admin.pages.saveDraft(input as unknown as SavePageBodyInput) as unknown as Promise<SaveBodyOutput>,
     publishFn: (input) =>
+      // oxlint-disable-next-line typescript/no-unsafe-type-assertion
       orpc.admin.pages.publishLatest(input as unknown as SavePageBodyInput) as unknown as Promise<SaveBodyOutput>,
     unpublishFn: async (input) => {
       const result = await orpc.admin.pages.unpublish(input)
@@ -115,6 +119,7 @@ export function PageEditorShell({ mode, detail, navigate }: PageEditorShellProps
     },
     buildUpsertMetaPayload: buildPageUpsertPayload,
     directSaveDraft: (input) =>
+      // oxlint-disable-next-line typescript/no-unsafe-type-assertion
       orpc.admin.pages.saveDraft(input as unknown as SavePageBodyInput) as unknown as Promise<SaveBodyOutput>,
     editPath: (id) => `/editor/page/${id}`,
     navigate,

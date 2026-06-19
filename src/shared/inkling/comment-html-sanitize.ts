@@ -253,7 +253,6 @@ function flattenTextBetween(
   start: number,
   end: number,
   matchedClose: readonly (number | undefined)[],
-  matchedOpen: readonly (number | undefined)[],
 ): string {
   let text = ''
   let i = start
@@ -266,7 +265,7 @@ function flattenTextBetween(
     } else if (t.kind === 'open') {
       const closeIdx = matchedClose[i]
       if (closeIdx !== undefined && closeIdx <= end) {
-        text += flattenTextBetween(tokens, i + 1, closeIdx, matchedClose, matchedOpen)
+        text += flattenTextBetween(tokens, i + 1, closeIdx, matchedClose)
         i = closeIdx
       }
     }
@@ -362,7 +361,7 @@ export function sanitizeCommentSpanText(text: string, parentDecorators: Standard
         if (closeIdx !== undefined) {
           const href = t.attrs.get('href')
           if (href !== undefined && isValidCommentLinkUrl(href)) {
-            const innerText = flattenTextBetween(tokens, i + 1, closeIdx, matchedClose, matchedOpen)
+            const innerText = flattenTextBetween(tokens, i + 1, closeIdx, matchedClose)
             out.push(makeLinkToken(t.attrs, innerText, mergeDecorators(parentDecorators, active)))
             i = closeIdx + 1
             continue

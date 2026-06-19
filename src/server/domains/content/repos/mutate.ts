@@ -66,8 +66,9 @@ export async function saveDraftRevision(
         .update(contentTable)
         .set({
           updatedAt: now,
+          // oxlint-disable-next-line typescript/no-unsafe-type-assertion
           body: bodyJson as ContentRow['body'],
-          imageSources: imageSourcesJson as ContentRow['imageSources'],
+          imageSources: imageSourcesJson,
           headings: headingsJson as ContentRow['headings'],
           authorId: input.authorId ?? latest.authorId,
           clientRevisionToken: nextToken,
@@ -90,6 +91,7 @@ export async function saveDraftRevision(
     if (
       latest !== undefined &&
       latest.status === 'published' &&
+      // oxlint-disable-next-line typescript/no-unsafe-type-assertion
       areInklingDocumentsEquivalent(input.body as InklingDocument, latest.body) &&
       isDeepStrictEqual(input.imageSources, latest.imageSources) &&
       isDeepStrictEqual(input.headings, latest.headings)
@@ -103,8 +105,9 @@ export async function saveDraftRevision(
       ownerId: input.ownerId,
       revisionNo: nextRevisionNo,
       status: 'draft',
+      // oxlint-disable-next-line typescript/no-unsafe-type-assertion
       body: bodyJson as NewContent['body'],
-      imageSources: imageSourcesJson as NewContent['imageSources'],
+      imageSources: imageSourcesJson,
       headings: headingsJson as NewContent['headings'],
       authorId: input.authorId,
       clientRevisionToken: nextToken,
@@ -156,8 +159,9 @@ export async function publishLatestRevision(
         .update(contentTable)
         .set({
           updatedAt: now,
+          // oxlint-disable-next-line typescript/no-unsafe-type-assertion
           body: input.body as ContentRow['body'],
-          imageSources: input.imageSources as ContentRow['imageSources'],
+          imageSources: input.imageSources,
           headings: input.headings as ContentRow['headings'],
           authorId: input.authorId ?? latest.authorId,
           clientRevisionToken: nextToken,
@@ -181,8 +185,9 @@ export async function publishLatestRevision(
         ownerId: input.ownerId,
         revisionNo: nextRevisionNo,
         status: 'published',
+        // oxlint-disable-next-line typescript/no-unsafe-type-assertion
         body: input.body as NewContent['body'],
-        imageSources: input.imageSources as NewContent['imageSources'],
+        imageSources: input.imageSources,
         headings: input.headings as NewContent['headings'],
         authorId: input.authorId,
         clientRevisionToken: nextToken,

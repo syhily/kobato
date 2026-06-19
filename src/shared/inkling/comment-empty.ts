@@ -58,7 +58,14 @@ export function isInklingCommentEmpty(document: InklingDocument): boolean {
           return false
         }
         break
-      default:
+      case 'heading':
+      case 'image-card':
+      case 'music-card':
+      case 'table':
+      case 'horizontal-rule':
+      case 'solution':
+      case 'two-column':
+      case 'footnote-definition':
         break
     }
   }

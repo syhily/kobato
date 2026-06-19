@@ -132,6 +132,7 @@ export function RevisionHistoryDrawer({
                   // body during the migration POC window. The shell expects
                   // InklingDocument, so we bridge with an explicit cast; the
                   // real cutover will make this assignment structural.
+                  // oxlint-disable-next-line typescript/no-unsafe-type-assertion
                   body: selectedRevision.body as unknown as InklingDocument,
                   revisionNo: selectedRevision.revisionNo,
                 })

@@ -1,4 +1,4 @@
-import type { LexicalEditor } from 'lexical'
+import type { LexicalEditor, TextFormatType } from 'lexical'
 
 import { $isLinkNode } from '@lexical/link'
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
@@ -32,12 +32,12 @@ function ToolbarButton({ active, onClick, title, children }: ToolbarButtonProps)
   )
 }
 
-function hasFormat(editor: LexicalEditor, format: string): boolean {
+function hasFormat(editor: LexicalEditor, format: TextFormatType): boolean {
   let active = false
   editor.getEditorState().read(() => {
     const selection = $getSelection()
     if ($isRangeSelection(selection)) {
-      active = selection.hasFormat(format as never)
+      active = selection.hasFormat(format)
     }
   })
   return active

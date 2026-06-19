@@ -318,6 +318,7 @@ function emptyPtMetrics(): PtMetrics {
 
 function verifyRow(table: 'content' | 'comment', id: string, body: unknown): VerificationRow {
   const alreadyInkling = isInklingDocument(body)
+  // oxlint-disable-next-line typescript/no-unsafe-assignment
   const ptBody: PortableTextBody = Array.isArray(body) ? body : []
   const ptMetrics = alreadyInkling ? emptyPtMetrics() : collectPtMetrics(ptBody)
   const ptPlainText = alreadyInkling ? '' : bodyToPlainText(ptBody)
@@ -325,10 +326,11 @@ function verifyRow(table: 'content' | 'comment', id: string, body: unknown): Ver
   try {
     let document: InklingDocument
     if (alreadyInkling) {
-      document = body as InklingDocument
+      document = body
     } else if (table === 'content') {
       document = portableTextToInklingDocument(ptBody)
     } else {
+      // oxlint-disable-next-line typescript/no-unsafe-type-assertion
       document = commentPortableTextToInklingDocument(ptBody as CommentBody)
     }
 

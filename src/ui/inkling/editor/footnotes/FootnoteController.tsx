@@ -1,4 +1,4 @@
-import type { EditorState } from 'lexical'
+import type { EditorState, SerializedLexicalNode } from 'lexical'
 
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import {
@@ -44,7 +44,8 @@ function $appendInklingChildren(
   for (const child of children) {
     // $parseSerializedNode uses the editor's node registry; it expects a plain
     // Lexical-shaped JSON object, which our non-recursive blocks satisfy.
-    const node = $parseSerializedNode(child as never)
+    // oxlint-disable-next-line typescript/no-unsafe-type-assertion
+    const node = $parseSerializedNode(child as unknown as SerializedLexicalNode)
     if ($isElementNode(node) || node !== null) {
       parent.append(node)
     }

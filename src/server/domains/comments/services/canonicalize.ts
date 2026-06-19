@@ -79,7 +79,16 @@ function countLinksInBlock(block: InklingDocument['root']['children'][number]): 
       return countLinksInInline(block.children)
     case 'list':
       return countLinksInList(block)
-    default:
+    case 'code-block':
+    case 'math-block':
+    case 'heading':
+    case 'image-card':
+    case 'music-card':
+    case 'table':
+    case 'horizontal-rule':
+    case 'solution':
+    case 'two-column':
+    case 'footnote-definition':
       return 0
   }
 }
@@ -140,7 +149,16 @@ function blockHasDisallowedLinkUrl(block: InklingDocument['root']['children'][nu
       return inlineHasDisallowedLinkUrl(block.children)
     case 'list':
       return listHasDisallowedLinkUrl(block)
-    default:
+    case 'code-block':
+    case 'math-block':
+    case 'heading':
+    case 'image-card':
+    case 'music-card':
+    case 'table':
+    case 'horizontal-rule':
+    case 'solution':
+    case 'two-column':
+    case 'footnote-definition':
       return false
   }
 }

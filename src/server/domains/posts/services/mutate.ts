@@ -199,7 +199,7 @@ interface IndexablePostData {
   id: bigint
   title: string
   summary: string
-  body: unknown
+  body: InklingDocument
 }
 
 export async function restorePost(
@@ -257,7 +257,7 @@ export async function restorePost(
     })
     if (indexable !== null) {
       try {
-        await indexPost(db, indexable.id, indexable.title, indexable.summary, indexable.body as InklingDocument)
+        await indexPost(db, indexable.id, indexable.title, indexable.summary, indexable.body)
       } catch (err: unknown) {
         log.warn('index post failed', { postId: indexable.id, error: err })
         const indexWarning = '搜索索引更新失败，该文章可能不会出现在搜索结果中。'
