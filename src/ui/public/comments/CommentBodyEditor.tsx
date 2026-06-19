@@ -1,39 +1,26 @@
-import type { JSONContent } from '@tiptap/core'
+import { useEffect, useRef } from 'react'
 
-import Link from '@tiptap/extension-link'
-import Placeholder from '@tiptap/extension-placeholder'
-import { type Editor, EditorContent, useEditor } from '@tiptap/react'
-import StarterKit from '@tiptap/starter-kit'
-import { useEffect, useMemo, useRef } from 'react'
+import type { InklingDocument } from '@/shared/inkling/schema'
 
-import type { PmDoc } from '@/shared/pt/bridge/types'
-import type { PortableTextBody } from '@/shared/pt/schema'
-
-import { pmDocToBody } from '@/shared/pt/bridge/pm-to-pt'
-import { bodyToPmDoc } from '@/shared/pt/bridge/pt-to-pm'
-import { type CommentBody, safeValidateCommentBody } from '@/shared/pt/comment-schema'
-import { BlockCardNode } from '@/ui/admin/editor/tiptap/BlockCardNode'
-import { MathInlineMark } from '@/ui/admin/editor/tiptap/InlineMarks'
-import { SlashCommandsExtension } from '@/ui/admin/editor/tiptap/SlashMenu'
+import { EMPTY_INKLING_DOCUMENT } from '@/shared/inkling/empty'
+import { CommentInklingEditor } from '@/ui/inkling/editor/comment/CommentEditor'
 import { cn } from '@/ui/lib/cn'
-import { EMPTY_COMMENT_BODY } from '@/ui/public/comments/comment-body-helpers'
-import { COMMENT_SLASH_COMMANDS } from '@/ui/public/comments/comment-slash-commands'
 import { CommentEditorHint } from '@/ui/public/comments/CommentEditorHint'
 import { CommentEditorToolbar } from '@/ui/public/comments/CommentEditorToolbar'
 
-// Simplified Tiptap editor for comment bodies. Loads only extensions the comment dialect allows.
+// Lexical-based comment editor. Emits Inkling JSON only; no Tiptap/PT runtime.
 
 export interface CommentBodyEditorProps {
-  /** Initial PortableText body. Read on first mount + when `bodyKey` changes. */
-  initialBody: CommentBody
+  /** Initial Inkling document. Read on first mount + when `documentKey` changes. */
+  initialDocument: InklingDocument
   /**
-   * Identity of the body source — when this string changes the editor
-   * resets its content from `initialBody`. Use it for the reply form
+   * Identity of the document source — when this string changes the editor
+   * resets its content from `initialDocument`. Use it for the reply form
    * to reset after submit, or when switching the edited comment.
    */
-  bodyKey: string
-  /** Fired on every editor update with the freshly-derived comment body. */
-  onBodyChange: (body: CommentBody) => void
+  documentKey: string
+  /** Fired on every editor update with the freshly-derived Inkling document. */
+  onDocumentChange: (document: InklingDocument) => void
   /** When true, the editor becomes read-only. */
   disabled?: boolean
   /** Override the placeholder copy. */
@@ -44,76 +31,34 @@ export interface CommentBodyEditorProps {
 
 const DEFAULT_PLACEHOLDER = '写下你的评论…  / 命令，$ 公式'
 
-function safeBodyToPmDoc(body: CommentBody): PmDoc {
-  const result = safeValidateCommentBody(body)
-  const safe = result.ok ? result.body : EMPTY_COMMENT_BODY
-  return bodyToPmDoc(safe as PortableTextBody)
+function safeInitialDocument(document: InklingDocument | undefined): InklingDocument {
+  if (document === undefined || document.root.children.length === 0) {
+    return EMPTY_INKLING_DOCUMENT
+  }
+  return document
 }
 
 export function CommentBodyEditor({
-  initialBody,
-  bodyKey,
-  onBodyChange,
+  initialDocument,
+  documentKey,
+  onDocumentChange,
   disabled,
   placeholder,
   className,
 }: CommentBodyEditorProps) {
-  const onBodyChangeRef = useRef(onBodyChange)
+  const onDocumentChangeRef = useRef(onDocumentChange)
   useEffect(() => {
-    onBodyChangeRef.current = onBodyChange
+    onDocumentChangeRef.current = onDocumentChange
   })
 
   const placeholderText = placeholder ?? DEFAULT_PLACEHOLDER
+  const document = safeInitialDocument(initialDocument)
 
-  const extensions = useMemo(
-    () => [
-      StarterKit.configure({
-        heading: false,
-        horizontalRule: false,
-        link: false,
-        dropcursor: { color: '#3b82f6', width: 2 },
-      }),
-      Link.configure({
-        openOnClick: false,
-        autolink: true,
-        HTMLAttributes: { class: null, target: null, rel: null },
-      }),
-      Placeholder.configure({ placeholder: placeholderText }),
-      MathInlineMark,
-      BlockCardNode,
-      SlashCommandsExtension.configure({ commands: COMMENT_SLASH_COMMANDS }),
-    ],
-    [placeholderText],
-  )
-
-  const editor = useEditor({
-    immediatelyRender: false,
-    editable: disabled !== true,
-    extensions,
-    content: safeBodyToPmDoc(initialBody) as JSONContent,
-    onUpdate({ editor: instance }) {
-      const body = pmDocToBody(instance.getJSON() as PmDoc)
-      const result = safeValidateCommentBody(body)
-      if (result.ok) {
-        onBodyChangeRef.current(result.body)
-      }
-    },
-  })
-
-  // Reset editor content when `bodyKey` changes.
+  // Reset editor content when `documentKey` changes.
+  const keyRef = useRef(documentKey)
   useEffect(() => {
-    if (editor === null) {
-      return
-    }
-    editor.commands.setContent(safeBodyToPmDoc(initialBody) as JSONContent, { emitUpdate: false })
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [bodyKey, editor])
-
-  useEffect(() => {
-    if (editor !== null) {
-      editor.setEditable(disabled !== true)
-    }
-  }, [disabled, editor])
+    keyRef.current = documentKey
+  }, [documentKey])
 
   return (
     <div
@@ -124,20 +69,25 @@ export function CommentBodyEditor({
         className,
       )}
     >
-      {editor !== null && <CommentEditorToolbar editor={editor} disabled={disabled === true} />}
-      <EditorContent
-        editor={editor}
-        className={cn(
+      <CommentInklingEditor
+        key={documentKey}
+        document={document}
+        onChange={(next) => {
+          onDocumentChangeRef.current(next)
+        }}
+        editable={disabled !== true}
+        placeholder={placeholderText}
+        contentClassName={cn(
           'prose-blog prose prose-sm max-w-none px-3 py-2',
           'min-h-[6rem]',
           'wrap-break-word whitespace-normal',
-          '[&_.ProseMirror]:min-h-[5rem] [&_.ProseMirror]:outline-none',
-          '[&_.ProseMirror>:first-child]:mt-0 [&_.ProseMirror>:last-child]:mb-0',
+          '[&_.lexical-editor]:min-h-[5rem] [&_.lexical-editor]:outline-none',
+          '[&_.lexical-editor>:first-child]:mt-0 [&_.lexical-editor>:last-child]:mb-0',
         )}
-      />
+      >
+        <CommentEditorToolbar disabled={disabled === true} />
+      </CommentInklingEditor>
       <CommentEditorHint />
     </div>
   )
 }
-
-export type { Editor }

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
-import type { PortableTextBody } from '@/shared/pt/schema'
 import type {
+  EditorBody,
   EditorShellStatus,
   EntityLike,
   PublishState,
@@ -13,7 +13,7 @@ import type {
 
 import { useCreateDraft } from '@/client/hooks/use-create-draft'
 import { useLocalDraft } from '@/client/hooks/use-local-draft'
-import { arePortableTextBodiesEquivalent } from '@/shared/pt/bridge/canonicalize'
+import { areInklingDocumentsEquivalent } from '@/shared/inkling/normalize'
 import {
   derivePublishState,
   deriveSidebarPublishStatus,
@@ -131,7 +131,7 @@ export function useEditorShellState<
 
   // --- Conflict detection (edit mode) --------------------------------------
   const [conflict, setConflict] = useState<{
-    localBody: PortableTextBody
+    localBody: EditorBody
     localSavedAt: number
   } | null>(null)
   const [conflictResolved, setConflictResolved] = useState(false)
@@ -149,7 +149,7 @@ export function useEditorShellState<
     if (
       !conflictResolved &&
       loadedLocalDraft !== null &&
-      !arePortableTextBodiesEquivalent(loadedLocalDraft.body, initialBody)
+      !areInklingDocumentsEquivalent(loadedLocalDraft.body, initialBody)
     ) {
       setConflict({ localBody: loadedLocalDraft.body, localSavedAt: loadedLocalDraft.savedAt })
     }
@@ -266,7 +266,7 @@ export function useEditorShellState<
     if (publishState.kind === 'draft-ahead') {
       return true
     }
-    return !arePortableTextBodiesEquivalent(body, lastSavedBody)
+    return !areInklingDocumentsEquivalent(body, lastSavedBody)
   }, [isEditing, body, publishState, lastSavedBody])
 
   const sidebarPublishStatus = useMemo<SidebarPublishStatus | null>(
@@ -315,7 +315,7 @@ export function useEditorShellState<
   }, [initialBody, detail, clearLocalDraft, replaceBody, markBodySaved])
 
   const adoptRevisionFromHistory = useCallback(
-    (revision: { body: PortableTextBody; revisionNo: number }) => {
+    (revision: { body: EditorBody; revisionNo: number }) => {
       if (!isEditing || !detail) {
         return
       }
@@ -329,7 +329,7 @@ export function useEditorShellState<
   const canPersistMeta = meta.title.trim() !== ''
   const canPublish = isEditing && publishState.kind !== 'published-current'
   const sidebarRevisionSummary = deriveSidebarRevisionSummary({ isEditing, publishState })
-  const isBodyDirty = !arePortableTextBodiesEquivalent(body, lastSavedBody)
+  const isBodyDirty = !areInklingDocumentsEquivalent(body, lastSavedBody)
   const isMetaDirty = !metaDraftsEqual(meta, lastPersistedMeta)
   const sidebarSaveStatus = deriveSidebarSaveStatus({ status, isEditing, isBodyDirty, isMetaDirty, displaySaveAtMs })
 

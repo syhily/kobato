@@ -1,10 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import type { InklingDocument } from '@/shared/inkling/schema'
 import type { PortableTextBody } from '@/shared/pt/schema'
 
 import { makePost } from '#/_helpers/catalog'
 import { makeLoaderArgs, unwrapLoaderData } from '#/_helpers/context'
 import { adminSession, authorSession, regularSession } from '#/_helpers/session'
+import { portableTextToInklingDocument } from '@/shared/inkling/migrate-pt'
 
 // Draft-preview contract for `routes/post.detail`.
 //
@@ -139,7 +141,7 @@ const findPostBySlugMock = vi.mocked(postsSingle.findPostBySlug)
 
 type LoaderResult = {
   post: { title: string }
-  body: PortableTextBody
+  body: unknown
   draftMarker: 'draft' | 'unpublished-draft' | 'published-draft' | null
 }
 
@@ -160,7 +162,7 @@ describe('routes/post.detail draft visibility', () => {
       ),
     )
 
-    expect(result.body).toEqual(publishedBody)
+    expect(result.body).toEqual(portableTextToInklingDocument(publishedBody))
     expect(result.draftMarker).toBeNull()
     expect(draftPreviewMock).not.toHaveBeenCalled()
   })
@@ -236,7 +238,7 @@ describe('routes/post.detail draft visibility', () => {
       ),
     )
 
-    expect(result.body).toEqual(draftBody)
+    expect(result.body).toEqual(portableTextToInklingDocument(draftBody))
     expect(result.draftMarker).toBe('draft')
     expect(draftPreviewMock).toHaveBeenCalledWith(expect.any(Object), 'secret')
   })
@@ -255,7 +257,7 @@ describe('routes/post.detail draft visibility', () => {
       ),
     )
 
-    expect(result.body).toEqual(draftBody)
+    expect(result.body).toEqual(portableTextToInklingDocument(draftBody))
     expect(result.draftMarker).toBe('draft')
     expect(draftPreviewMock).toHaveBeenCalledWith(expect.any(Object), 'secret')
   })
@@ -273,7 +275,7 @@ describe('routes/post.detail draft visibility', () => {
       ),
     )
 
-    expect(result.body).toEqual(publishedBody)
+    expect(result.body).toEqual(portableTextToInklingDocument(publishedBody))
     expect(result.draftMarker).toBeNull()
     expect(draftPreviewMock).not.toHaveBeenCalled()
   })

@@ -49,11 +49,13 @@ vi.stubGlobal('BroadcastChannel', FakeBroadcastChannel)
 
 import { renderHook } from '#/_helpers/hook'
 import { useLocalDraft } from '@/client/hooks/use-local-draft'
+import { portableTextBodySchema } from '@/shared/pt/schema'
 
 const config = {
   keyPrefix: 'cms-post-draft:',
   broadcastName: 'cms-post-draft',
   editType: 'post-edit' as const,
+  bodySchema: portableTextBodySchema,
 }
 
 const emptyBody: PortableTextBody = []

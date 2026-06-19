@@ -1,8 +1,10 @@
 import type { NavigateFunction } from 'react-router'
 
-import type { AdminPostDetailDto, AdminPostDto, UpsertPostMetaInput } from '@/shared/types/posts'
+import type { AdminPostDetailDto, AdminPostDto, SavePostBodyInput, UpsertPostMetaInput } from '@/shared/types/posts'
+import type { RevisionLike, SaveBodyOutput } from '@/ui/admin/editor-shell/editor-shell-types'
 
 import { orpc } from '@/client/api/client'
+import { inklingDocumentSchema } from '@/shared/inkling/schema'
 import { CreateModeBanner } from '@/ui/admin/editor-shared/CreateModeBanner'
 import { TitleSlugStrip } from '@/ui/admin/editor-shared/TitleSlugStrip'
 import { ActionBanner } from '@/ui/admin/editor-shell/ActionBanner'
@@ -10,7 +12,7 @@ import { DraftConflictDialog } from '@/ui/admin/editor-shell/DraftConflictDialog
 import { FloatingPublishButton } from '@/ui/admin/editor-shell/FloatingPublishButton'
 import { PreviewPane } from '@/ui/admin/editor-shell/PreviewPanel'
 import { useEditorShellState } from '@/ui/admin/editor-shell/use-editor-shell-state'
-import { PageBodyEditor } from '@/ui/admin/editor/PageBodyEditor'
+import { useEditorPickerActions } from '@/ui/admin/editor/use-inkling-picker-actions'
 import { PostEditorMetaAside, PostEditorMetaSheet } from '@/ui/admin/posts/PostEditorMetaPanel'
 import { PostEditorToolbar } from '@/ui/admin/posts/PostEditorToolbar'
 import {
@@ -19,6 +21,7 @@ import {
   metaDraftsEqual,
   type PostMetaDraft,
 } from '@/ui/admin/posts/PostMetaSidebar'
+import { InklingArticleEditor } from '@/ui/inkling/editor/article/InklingArticleEditor'
 import { cn } from '@/ui/lib/cn'
 
 export interface PostEditorShellProps {
@@ -28,18 +31,20 @@ export interface PostEditorShellProps {
 }
 
 const POST_LOCAL_DRAFT_CONFIG = {
-  keyPrefix: 'cms-post-draft:',
-  broadcastName: 'cms-post-draft',
+  keyPrefix: 'cms-post-draft-v2:',
+  broadcastName: 'cms-post-draft-v2',
   editType: 'post-edit' as const,
+  bodySchema: inklingDocumentSchema,
 }
 
 const POST_CREATE_DRAFT_CONFIG = {
-  keyPrefix: 'cms-post-draft:new:',
-  sessionKey: 'cms-post-draft:new:session',
-  broadcastName: 'cms-post-draft',
+  keyPrefix: 'cms-post-draft:new:v2:',
+  sessionKey: 'cms-post-draft:new:v2:session',
+  broadcastName: 'cms-post-draft-v2',
   createType: 'post-create' as const,
   editType: 'post-edit' as const,
-  editKeyPrefix: 'cms-post-draft:',
+  editKeyPrefix: 'cms-post-draft-v2:',
+  bodySchema: inklingDocumentSchema,
 }
 
 function buildPostUpsertPayload({
@@ -76,14 +81,18 @@ export function PostEditorShell({ mode, detail, navigate }: PostEditorShellProps
   // --- Shared state hook ---------------------------------------------------
   // The hook owns `useMutation()` internally — Shell only provides
   // entity-specific mutation functions + the LS hook factories.
+  //
+  // During Plan 008 the server DTOs still carry PortableText bodies, so the
+  // shell casts the detail and save payloads to its Inkling-facing types.
+  // These casts are temporary scaffolding until the server cutover lands.
   const state = useEditorShellState<PostMetaDraft, AdminPostDto, UpsertPostMetaInput>({
     mode,
     entityKind: 'post',
     detail: detail
       ? {
           entity: detail.post,
-          latestRevision: detail.latestRevision,
-          publishedRevision: detail.publishedRevision,
+          latestRevision: detail.latestRevision as unknown as RevisionLike,
+          publishedRevision: detail.publishedRevision as unknown as RevisionLike,
         }
       : undefined,
     emptyMeta: EMPTY_POST_META_DRAFT,
@@ -95,17 +104,22 @@ export function PostEditorShell({ mode, detail, navigate }: PostEditorShellProps
       const result = await orpc.admin.posts.upsertMeta(input)
       return result.post
     },
-    saveDraftFn: (input) => orpc.admin.posts.saveDraft(input),
-    publishFn: (input) => orpc.admin.posts.publishLatest(input),
+    saveDraftFn: (input) =>
+      orpc.admin.posts.saveDraft(input as unknown as SavePostBodyInput) as unknown as Promise<SaveBodyOutput>,
+    publishFn: (input) =>
+      orpc.admin.posts.publishLatest(input as unknown as SavePostBodyInput) as unknown as Promise<SaveBodyOutput>,
     unpublishFn: async (input) => {
       const result = await orpc.admin.posts.unpublish(input)
       return result.post
     },
     buildUpsertMetaPayload: buildPostUpsertPayload,
-    directSaveDraft: (input) => orpc.admin.posts.saveDraft(input),
+    directSaveDraft: (input) =>
+      orpc.admin.posts.saveDraft(input as unknown as SavePostBodyInput) as unknown as Promise<SaveBodyOutput>,
     editPath: (id) => `/editor/post/${id}`,
     navigate,
   })
+
+  const pickerActions = useEditorPickerActions()
 
   return (
     <div
@@ -151,11 +165,12 @@ export function PostEditorShell({ mode, detail, navigate }: PostEditorShellProps
               disabled={state.isPending}
             />
           ) : null}
-          <PageBodyEditor
-            initialBody={state.initialBody}
-            bodyKey={state.bodyKey}
-            onBodyChange={state.setBody}
+          <InklingArticleEditor
+            initialDocument={state.initialBody}
+            documentKey={state.bodyKey}
+            onDocumentChange={state.setBody}
             disabled={state.isPending}
+            actions={pickerActions.actions}
             livePreviewOpen={state.previewOpen}
             scrollContainerRef={state.editorScrollRef}
             floatingActions={
@@ -208,6 +223,7 @@ export function PostEditorShell({ mode, detail, navigate }: PostEditorShellProps
           onChooseServer={state.adoptServerVersion}
         />
       ) : null}
+      {pickerActions.renderPickers()}
     </div>
   )
 }

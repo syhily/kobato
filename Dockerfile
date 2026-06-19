@@ -2,7 +2,7 @@ FROM node:24-alpine AS build
 WORKDIR /app
 
 # Enable and activate the pnpm version pinned in package.json.
-RUN corepack enable && corepack prepare pnpm@11.7.0 --activate
+RUN corepack enable && corepack prepare pnpm@11.8.0 --activate
 
 # Install dependencies first so source changes don't invalidate the layer.
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
@@ -21,7 +21,7 @@ RUN apk add --no-cache tini postgresql-client
 
 # Install runtime native deps from the lockfile so production images use the
 # exact versions tested locally, not the latest matching semver range.
-RUN corepack enable && corepack prepare pnpm@11.7.0 --activate
+RUN corepack enable && corepack prepare pnpm@11.8.0 --activate
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 # --ignore-scripts keeps the root `prepare` script from running `npx husky`
 # in a stage that has no devDependencies and no .git directory. The native

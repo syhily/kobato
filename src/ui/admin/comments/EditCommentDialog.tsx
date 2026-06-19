@@ -3,10 +3,12 @@ import { SaveIcon, XIcon } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
 
+import type { InklingDocument } from '@/shared/inkling/schema'
 import type { CommentBody } from '@/shared/pt/comment-schema'
 import type { AdminCommentWire as AdminComment } from '@/shared/types/comments'
 
 import { orpcQuery } from '@/client/api/orpc-query'
+import { EMPTY_INKLING_DOCUMENT } from '@/shared/inkling/empty'
 import { idStr } from '@/shared/utils/tools'
 import { Button } from '@/ui/components/button'
 import {
@@ -18,7 +20,11 @@ import {
   DialogTitle,
 } from '@/ui/components/dialog'
 import { Label } from '@/ui/components/label'
-import { EMPTY_COMMENT_BODY, isCommentBodyBlank } from '@/ui/public/comments/comment-body-helpers'
+import { isInklingCommentBlank } from '@/ui/public/comments/comment-body-helpers'
+import {
+  commentBodyToInklingDocument,
+  inklingDocumentToCommentBodyAdapter,
+} from '@/ui/public/comments/comment-inkling-adapter'
 import { CommentBodyEditor } from '@/ui/public/comments/CommentBodyEditor'
 
 export interface EditCommentDialogProps {
@@ -28,8 +34,8 @@ export interface EditCommentDialogProps {
 }
 
 export function EditCommentDialog({ comment, onClose, onSaved }: EditCommentDialogProps) {
-  const [initialBody, setInitialBody] = useState<CommentBody>(EMPTY_COMMENT_BODY)
-  const [body, setBody] = useState<CommentBody>(EMPTY_COMMENT_BODY)
+  const [initialDocument, setInitialDocument] = useState<InklingDocument>(EMPTY_INKLING_DOCUMENT)
+  const [document, setDocument] = useState<InklingDocument>(EMPTY_INKLING_DOCUMENT)
   const [bodyKey, setBodyKey] = useState(0)
   const [loaded, setLoaded] = useState(false)
   const [lastCommentId, setLastCommentId] = useState(comment?.id)
@@ -51,16 +57,17 @@ export function EditCommentDialog({ comment, onClose, onSaved }: EditCommentDial
   if (comment?.id !== lastCommentId) {
     setLastCommentId(comment?.id)
     setLoaded(false)
-    setInitialBody(EMPTY_COMMENT_BODY)
-    setBody(EMPTY_COMMENT_BODY)
+    setInitialDocument(EMPTY_INKLING_DOCUMENT)
+    setDocument(EMPTY_INKLING_DOCUMENT)
   }
   // Apply raw body once it arrives (or differs from what we last applied).
   if (rawData !== lastRawData) {
     setLastRawData(rawData)
     if (comment && rawData) {
       const loadedBody = (rawData.body ?? []) as CommentBody
-      setInitialBody(loadedBody)
-      setBody(loadedBody)
+      const loadedDocument = commentBodyToInklingDocument(loadedBody)
+      setInitialDocument(loadedDocument)
+      setDocument(loadedDocument)
       setBodyKey((k) => k + 1)
       setLoaded(true)
     }
@@ -83,20 +90,20 @@ export function EditCommentDialog({ comment, onClose, onSaved }: EditCommentDial
             if (!comment) {
               return
             }
-            if (isCommentBodyBlank(body)) {
+            if (isInklingCommentBlank(document)) {
               toast.error('评论内容不能为空')
               return
             }
-            editMutation.mutate({ rid: idStr(comment.id), body })
+            editMutation.mutate({ rid: idStr(comment.id), body: inklingDocumentToCommentBodyAdapter(document) })
           }}
           className="flex flex-col gap-4"
         >
           <div className="flex flex-col gap-2">
             <Label htmlFor="edit-comment-content">评论内容</Label>
             <CommentBodyEditor
-              initialBody={initialBody}
-              bodyKey={`admin-edit-${dialogKey}-${bodyKey}`}
-              onBodyChange={setBody}
+              initialDocument={initialDocument}
+              documentKey={`admin-edit-${dialogKey}-${bodyKey}`}
+              onDocumentChange={setDocument}
               disabled={!loaded || submitting}
             />
           </div>

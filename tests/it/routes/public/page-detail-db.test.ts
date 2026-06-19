@@ -1,15 +1,16 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import type { InklingDocument } from '@/shared/inkling/schema'
 import type { PortableTextBody } from '@/shared/pt/schema'
 
 import { makePage } from '#/_helpers/catalog'
 import { makeLoaderArgs, unwrapLoaderData } from '#/_helpers/context'
 import { regularSession } from '#/_helpers/session'
+import { portableTextToInklingDocument } from '@/shared/inkling/migrate-pt'
 
 // Pages live exclusively in the `page` + `content` Postgres tables,
 // so this test pins the contract that the `page.detail` loader
-// returns the row's PortableText body straight through (the React
-// component renders it via `<PortableTextBody>`).
+// returns the converted InklingDocument body.
 
 const session = regularSession()
 
@@ -130,10 +131,10 @@ beforeEach(() => {
 })
 
 describe('routes/page.detail loader (DB-backed page)', () => {
-  it('returns the page row body as PortableText', async () => {
+  it('returns the page row body as InklingDocument', async () => {
     const result = unwrapLoaderData<{
       page: { permalink: string; title: string }
-      body: PortableTextBody
+      body: unknown
       imageMeta: Record<string, unknown>
     }>(
       await pageRoute.loader(
@@ -146,8 +147,8 @@ describe('routes/page.detail loader (DB-backed page)', () => {
     )
 
     expect(result.page.permalink).toBe('/about')
-    // The PortableText body shape is preserved end-to-end.
-    expect(result.body).toEqual(dbPageBody)
+    // The body is now converted to InklingDocument by the loader.
+    expect(result.body).toEqual(portableTextToInklingDocument(dbPageBody))
     // Image meta resolution still happens (mocked to empty), proving
     // the loader doesn't short-circuit it for DB pages.
     expect(result.imageMeta).toEqual({})

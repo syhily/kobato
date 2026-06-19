@@ -3,11 +3,10 @@ import { ArrowLeftIcon, CheckIcon, HistoryIcon, RefreshCcwIcon } from 'lucide-re
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { toast } from 'sonner'
 
-import type { PortableTextBody } from '@/shared/pt/schema'
+import type { InklingDocument } from '@/shared/inkling/schema'
 import type { AdminRevisionDto } from '@/shared/types/revision'
 
 import { orpcQuery } from '@/client/api/orpc-query'
-import { diffBodies, DiffPanel } from '@/ui/admin/editor/portable-text-diff'
 import { Badge } from '@/ui/components/badge'
 import { Button } from '@/ui/components/button'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/ui/components/sheet'
@@ -18,9 +17,9 @@ export interface RevisionHistoryDrawerProps {
   ownerId: string
   /** Token of the currently displayed revision; used to highlight the row. */
   currentToken: string | null
-  /** PortableText body currently displayed in the editor. */
-  currentBody: PortableTextBody
-  onAdoptRevision: (revision: AdminRevisionDto) => void
+  /** Inkling body currently displayed in the editor. */
+  currentBody: InklingDocument
+  onAdoptRevision: (revision: { body: InklingDocument; revisionNo: number }) => void
 }
 
 export function RevisionHistoryDrawer({
@@ -128,7 +127,14 @@ export function RevisionHistoryDrawer({
               currentBody={currentBody}
               isCurrent={selectedRevision.clientRevisionToken === currentToken}
               onAdopt={() => {
-                onAdoptRevision(selectedRevision)
+                onAdoptRevision({
+                  // Server revisions still carry the legacy PortableText
+                  // body during the migration POC window. The shell expects
+                  // InklingDocument, so we bridge with an explicit cast; the
+                  // real cutover will make this assignment structural.
+                  body: selectedRevision.body as unknown as InklingDocument,
+                  revisionNo: selectedRevision.revisionNo,
+                })
                 setOpen(false)
               }}
             />
@@ -218,14 +224,15 @@ function RevisionRow({ revision, isCurrent, onClick }: RevisionRowProps) {
 
 interface RevisionDetailViewProps {
   revision: AdminRevisionDto
-  currentBody: PortableTextBody
+  currentBody: InklingDocument
   isCurrent: boolean
   onAdopt: () => void
 }
 
-function RevisionDetailView({ revision, currentBody, isCurrent, onAdopt }: RevisionDetailViewProps) {
-  const diff = useMemo(() => diffBodies(revision.body, currentBody), [revision.body, currentBody])
-  const changedCount = diff.filter((entry) => entry.status !== 'unchanged').length
+function RevisionDetailView({ revision, isCurrent, onAdopt }: RevisionDetailViewProps) {
+  // Plan 008 placeholder: the block-level Inkling diff is not implemented in
+  // this shell POC. The drawer still lists revisions and lets the operator
+  // adopt one; the diff view will come with the real Inkling renderer.
 
   const leftScrollRef = useRef<HTMLDivElement>(null)
   const rightScrollRef = useRef<HTMLDivElement>(null)
@@ -271,7 +278,7 @@ function RevisionDetailView({ revision, currentBody, isCurrent, onAdopt }: Revis
       left.removeEventListener('scroll', onLeftScroll)
       right.removeEventListener('scroll', onRightScroll)
     }
-  }, [diff])
+  }, [revision.id])
 
   return (
     <div className="flex min-h-0 grow flex-col gap-3 overflow-hidden px-4 pb-4">
@@ -280,19 +287,19 @@ function RevisionDetailView({ revision, currentBody, isCurrent, onAdopt }: Revis
           R{revision.revisionNo} · {revision.status === 'published' ? '已发布' : '草稿'}
         </Badge>
         <span>更新于 {new Date(revision.updatedAt).toLocaleString('zh-CN')}</span>
-        <span className="ml-auto">{changedCount === 0 ? '与当前一致' : `${changedCount} 处差异`}</span>
+        <span className="ml-auto">差异视图占位</span>
       </div>
       <div className="grid min-h-0 grow grid-cols-2 gap-2 overflow-hidden rounded-xl border bg-card">
         <div className="flex min-h-0 flex-col border-r">
           <div className="border-b bg-muted/50 px-2 py-1 text-xs font-medium text-muted-foreground">历史版本</div>
           <div ref={leftScrollRef} className="min-h-0 grow overflow-y-auto overscroll-contain p-2">
-            <DiffPanel diff={diff} side="left" />
+            <div className="text-xs text-muted-foreground">差异视图占位（Plan 008）</div>
           </div>
         </div>
         <div className="flex min-h-0 flex-col">
           <div className="border-b bg-muted/50 px-2 py-1 text-xs font-medium text-muted-foreground">当前正文</div>
           <div ref={rightScrollRef} className="min-h-0 grow overflow-y-auto overscroll-contain p-2">
-            <DiffPanel diff={diff} side="right" />
+            <div className="text-xs text-muted-foreground">差异视图占位（Plan 008）</div>
           </div>
         </div>
       </div>

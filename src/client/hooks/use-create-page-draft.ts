@@ -2,6 +2,7 @@ import type { PortableTextBody } from '@/shared/pt/schema'
 import type { PageMetaDraft } from '@/shared/types/pages'
 
 import { useCreateDraft } from '@/client/hooks/use-create-draft'
+import { portableTextBodySchema } from '@/shared/pt/schema'
 
 const PAGE_CREATE_CONFIG = {
   keyPrefix: 'cms-page-draft:new:',
@@ -10,6 +11,7 @@ const PAGE_CREATE_CONFIG = {
   createType: 'page-create' as const,
   editType: 'page-edit' as const,
   editKeyPrefix: 'cms-page-draft:',
+  bodySchema: portableTextBodySchema,
 }
 
 export type CreateDraftMeta = PageMetaDraft
@@ -27,5 +29,5 @@ export interface UseCreatePageDraftResult {
 }
 
 export function useCreatePageDraft({ body, meta }: UseCreatePageDraftOptions): UseCreatePageDraftResult {
-  return useCreateDraft<PageMetaDraft>(PAGE_CREATE_CONFIG, { body, meta })
+  return useCreateDraft<PortableTextBody, PageMetaDraft>(PAGE_CREATE_CONFIG, { body, meta })
 }

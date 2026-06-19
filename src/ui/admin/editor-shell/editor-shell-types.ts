@@ -2,7 +2,13 @@ import type { NavigateFunction } from 'react-router'
 
 import type { CreateDraftConfig } from '@/client/hooks/use-create-draft'
 import type { LocalDraftConfig } from '@/client/hooks/use-local-draft'
-import type { PortableTextBody } from '@/shared/pt/schema'
+import type { InklingDocument } from '@/shared/inkling/schema'
+
+/**
+ * Body type for the editor shell. Plan 008 proves the shell can operate on
+ * Lexical JSON only; PortableText is intentionally not part of this alias.
+ */
+export type EditorBody = InklingDocument
 
 export type EditorShellStatus =
   | { kind: 'idle' }
@@ -37,7 +43,7 @@ export interface RevisionLike {
   id: string
   revisionNo: number
   status: 'draft' | 'published'
-  body: PortableTextBody
+  body: EditorBody
   clientRevisionToken: string
   updatedAt: string
 }
@@ -61,7 +67,7 @@ export type EditorShellArgs<TEntity extends EntityLike> =
 
 export interface SaveBodyInput {
   id: string
-  body: PortableTextBody
+  body: EditorBody
   expectedClientRevisionToken?: string | null
   force?: boolean
   publishedAt?: string
@@ -90,8 +96,8 @@ export interface UseEditorShellStateArgs<
   emptyMeta: TMeta
   metaDraftFromEntity: (entity: TEntity) => TMeta
   metaDraftsEqual: (a: TMeta, b: TMeta) => boolean
-  localDraftConfig: LocalDraftConfig
-  createDraftConfig: CreateDraftConfig
+  localDraftConfig: LocalDraftConfig<EditorBody>
+  createDraftConfig: CreateDraftConfig<EditorBody>
 
   upsertMetaFn: (input: TUpsertMetaInput) => Promise<TEntity>
   saveDraftFn: (input: SaveBodyInput) => Promise<SaveBodyOutput>
@@ -114,7 +120,7 @@ export interface UseEditorShellStateArgs<
    */
   directSaveDraft: (input: {
     id: string
-    body: PortableTextBody
+    body: EditorBody
     expectedClientRevisionToken?: string | null
     force?: boolean
   }) => Promise<SaveBodyOutput>
@@ -127,10 +133,10 @@ export interface UseEditorShellStateArgs<
 export interface UseEditorShellStateOutput<TMeta, TEntity extends EntityLike = EntityLike> {
   meta: TMeta
   setMeta: React.Dispatch<React.SetStateAction<TMeta>>
-  body: PortableTextBody
-  setBody: React.Dispatch<React.SetStateAction<PortableTextBody>>
+  body: EditorBody
+  setBody: React.Dispatch<React.SetStateAction<EditorBody>>
   bodyKey: string
-  initialBody: PortableTextBody
+  initialBody: EditorBody
   isEditing: boolean
   status: EditorShellStatus
   sidebarSaveStatus: SidebarSaveStatus
@@ -141,7 +147,7 @@ export interface UseEditorShellStateOutput<TMeta, TEntity extends EntityLike = E
   isLg: boolean
   editorScrollRef: React.RefObject<HTMLDivElement | null>
   previewScrollRef: React.RefObject<HTMLDivElement | null>
-  conflict: { localBody: PortableTextBody; localSavedAt: number } | null
+  conflict: { localBody: EditorBody; localSavedAt: number } | null
   previewBanner: { kind: 'draft' | 'published'; slug: string } | null
   dismissPreviewBanner: () => void
   createDraftSavedAt: number | null
@@ -163,7 +169,7 @@ export interface UseEditorShellStateOutput<TMeta, TEntity extends EntityLike = E
   persistUnpublish: () => void
   adoptLocalDraft: () => Promise<void>
   adoptServerVersion: () => void
-  adoptRevisionFromHistory: (revision: { body: PortableTextBody; revisionNo: number }) => void
+  adoptRevisionFromHistory: (revision: { body: EditorBody; revisionNo: number }) => void
   onMetaSaved: (entity: TEntity) => void
   onBodySaved: (payload: SaveBodyOutput) => void
   onUnpublishSaved: (entity: TEntity, freshMeta: TMeta) => void

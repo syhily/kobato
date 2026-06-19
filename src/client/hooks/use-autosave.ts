@@ -1,7 +1,5 @@
 import { useCallback, useEffect, useRef } from 'react'
 
-import type { PortableTextBody } from '@/shared/pt/schema'
-
 // Autosave engine for the page/post editor.
 // Debounce (5 s) + hard cap (60 s). Force-flush on `visibilitychange` / `pagehide`.
 // Skips when disabled or body hasn't changed since last persist.
@@ -12,10 +10,10 @@ export type AutosaveStatus =
   | { kind: 'saved'; at: number }
   | { kind: 'retrying'; attempt: number; nextAttemptAt: number; message: string }
 
-export interface UseAutosaveOptions {
-  body: PortableTextBody
+export interface UseAutosaveOptions<TBody> {
+  body: TBody
   enabled: boolean
-  flush: (body: PortableTextBody) => Promise<void>
+  flush: (body: TBody) => Promise<void>
   debounceMs?: number
   hardCapMs?: number
   retryDelaysMs?: number[]
@@ -24,7 +22,7 @@ export interface UseAutosaveOptions {
 
 const DEFAULT_RETRY_DELAYS_MS = [1_000, 3_000, 9_000]
 
-export function useAutosave({
+export function useAutosave<TBody>({
   body,
   enabled,
   flush,
@@ -32,7 +30,7 @@ export function useAutosave({
   hardCapMs = 60_000,
   retryDelaysMs = DEFAULT_RETRY_DELAYS_MS,
   onStatusChange,
-}: UseAutosaveOptions): { forceFlush: () => Promise<void> } {
+}: UseAutosaveOptions<TBody>): { forceFlush: () => Promise<void> } {
   const flushRef = useRef(flush)
   const bodyRef = useRef(body)
   const enabledRef = useRef(enabled)
@@ -48,7 +46,7 @@ export function useAutosave({
     retryDelaysRef.current = retryDelaysMs
   })
 
-  const lastPersistedRef = useRef<PortableTextBody | null>(null)
+  const lastPersistedRef = useRef<TBody | null>(null)
   const inFlightRef = useRef<Promise<void> | null>(null)
   const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const hardCapTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)

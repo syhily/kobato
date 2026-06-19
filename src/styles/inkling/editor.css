@@ -1,0 +1,80 @@
+/* Ported from Koenig koenig-lexical.css — editor container, selection, table, dark mode.
+   Ghost-specific emoji-picker / cardmenu / floating-toolbar / cta / embed dropped.
+   Token mapping: grey-900→ink-1, grey-300→inkling-selection, green→brand.      */
+
+.inkling-editor {
+  position: relative;
+}
+
+.inkling-editor > * {
+  font-size: 1.7rem;
+  font-weight: 400;
+  letter-spacing: 0.1px;
+  color: var(--inkling-text);
+  font-family: var(--inkling-font-ui);
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  -moz-font-feature-settings: 'liga' on;
+}
+
+.inkling-editor [contenteditable] {
+  outline: none;
+}
+
+/* Selection highlight — brand color */
+.inkling-editor ::selection {
+  background: var(--inkling-selection);
+}
+
+/* Dark mode */
+.inkling-editor .dark,
+.inkling-editor.dark,
+.dark .inkling-editor {
+  &:not(.kg-inherit-styles) {
+    > * {
+      color: var(--inkling-muted);
+    }
+  }
+
+  ::selection {
+    background: var(--ink-3);
+  }
+}
+
+/* Caption — smaller text */
+.inkling-editor.inkling-editor-caption {
+  font-size: 0;
+
+  > * {
+    font-size: 1.4rem;
+  }
+}
+
+.inkling-editor-caption p {
+  color: var(--ink-3);
+}
+
+.dark .inkling-editor-caption p {
+  color: var(--ink-4);
+}
+
+/* Table */
+.inkling-editor table {
+  font-size: 1.75rem;
+  margin: 0;
+  font-family: var(--inkling-font-serif);
+  letter-spacing: 0.02rem;
+  line-height: 1.6em;
+}
+
+.inkling-editor table tr td,
+.inkling-editor table tr th {
+  vertical-align: top;
+  border-bottom: 1px solid var(--inkling-border);
+}
+
+.dark .inkling-editor table tr td,
+.dark .inkling-editor table tr th {
+  border-bottom: 1px solid var(--ink-5);
+}

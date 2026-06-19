@@ -38,25 +38,70 @@ vi.mock('@/client/hooks/use-autosave', () => ({
   useAutosave: vi.fn(),
 }))
 
+import type { InklingDocument } from '@/shared/inkling/schema'
+
+import { EMPTY_INKLING_DOCUMENT } from '@/shared/inkling/empty'
 import { useEditorShellPersist } from '@/ui/admin/editor-shell/use-editor-shell-persist'
 
 type Meta = { title: string; slug: string; published: boolean; publishedAt: string }
 
 const baseMeta: Meta = { title: 't', slug: 's', published: false, publishedAt: '' }
 
-// Minimal valid PortableText block shape (matches what the autosave /
-// canonicalize helpers expect). `arePortableTextBodiesEquivalent` runs
-// the body through the PT↔PM bridge, which iterates `block.children`, so
-// every block must carry a `children` array of spans.
-function block(key: string, text: string) {
-  return { _type: 'block' as const, _key: key, children: [{ _type: 'span' as const, _key: `${key}-s`, text }] }
+// Minimal Inkling document helper for persist tests. Node keys are included
+// so we can prove that semantic equality ignores generated keys.
+function inklingDocWithText(text: string, keyPrefix = 'k'): InklingDocument {
+  return {
+    _type: 'inkling',
+    schemaVersion: 1,
+    lexicalVersion: '0.45.0',
+    root: {
+      type: 'root',
+      version: 1,
+      direction: null,
+      format: '',
+      indent: 0,
+      children: [
+        {
+          type: 'paragraph',
+          version: 1,
+          key: `${keyPrefix}-p`,
+          direction: null,
+          format: '',
+          indent: 0,
+          children: [{ type: 'text', version: 1, key: `${keyPrefix}-t`, text }],
+        },
+      ],
+    },
+  }
+}
+
+function inklingDocWithImage(src: string): InklingDocument {
+  return {
+    _type: 'inkling',
+    schemaVersion: 1,
+    lexicalVersion: '0.45.0',
+    root: {
+      type: 'root',
+      version: 1,
+      direction: null,
+      format: '',
+      indent: 0,
+      children: [
+        {
+          type: 'image-card',
+          version: 1,
+          src,
+        },
+      ],
+    },
+  }
 }
 
 function makeArgs(overrides: Partial<Parameters<typeof useEditorShellPersist>[0]> = {}) {
   return {
     isEditing: false,
     meta: baseMeta,
-    body: [] as never,
+    body: EMPTY_INKLING_DOCUMENT,
     expectedToken: null,
     detail: undefined,
     serverPublishedAtIso: null,
@@ -77,7 +122,7 @@ function makeArgs(overrides: Partial<Parameters<typeof useEditorShellPersist>[0]
     setStatus: vi.fn(),
     setMeta: vi.fn(),
     setServerPublishedAtIso: vi.fn(),
-    lastSavedBody: [],
+    lastSavedBody: EMPTY_INKLING_DOCUMENT,
     markBodySaved: vi.fn(),
     pendingActionRef: { current: null },
     createDraft: { migrateToEditKey: vi.fn() },
@@ -175,8 +220,8 @@ describe('ui/admin/editor-shell/useEditorShellPersist — edit-mode save dispatc
       detail,
       meta: { ...baseMeta, publishedAt: '2025-01-01T00:00' },
       buildUpsertMetaPayload: vi.fn().mockReturnValue(payload),
-      lastSavedBody: [block('b1', 'same')],
-      body: [block('b1', 'same')], // semantically equal -> not diverged
+      lastSavedBody: inklingDocWithText('same', 'old'),
+      body: inklingDocWithText('same', 'new'), // semantically equal -> not diverged
     })
     const { persistSave } = renderHook(() => useEditorShellPersist(args))
     persistSave()
@@ -205,8 +250,8 @@ describe('ui/admin/editor-shell/useEditorShellPersist — edit-mode save dispatc
       detail,
       meta: { ...baseMeta, publishedAt: '' },
       buildUpsertMetaPayload: vi.fn().mockReturnValue({ meta: baseMeta }),
-      lastSavedBody: [block('old', 'old text')],
-      body: [block('new', 'new text')], // diverged
+      lastSavedBody: inklingDocWithText('old text'),
+      body: inklingDocWithText('new text'), // diverged
       expectedToken: 'tok-1',
     })
     const { persistSave } = renderHook(() => useEditorShellPersist(args))
@@ -227,7 +272,7 @@ describe('ui/admin/editor-shell/useEditorShellPersist — edit-mode save dispatc
       isEditing: true,
       detail,
       meta: { ...baseMeta, publishedAt: '2025-06-01T12:00' },
-      body: [block('b1', 'x')],
+      body: inklingDocWithText('x'),
       expectedToken: 'tok-1',
     })
     const { persistPublish } = renderHook(() => useEditorShellPersist(args))
@@ -252,5 +297,71 @@ describe('ui/admin/editor-shell/useEditorShellPersist — edit-mode save dispatc
 
     expect(args.setStatus).toHaveBeenCalledWith({ kind: 'saving' })
     expect(mutate).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('ui/admin/editor-shell/useEditorShellPersist — Inkling semantic dirty check', () => {
+  beforeEach(() => {
+    mutate.mockClear()
+  })
+
+  it('treats documents with different generated keys but identical text as not dirty', () => {
+    const detail = {
+      entity: { id: 'e1', slug: 's', updatedAt: '', publishedAt: null },
+      latestRevision: null,
+      publishedRevision: null,
+    }
+    const args = makeArgs({
+      isEditing: true,
+      detail,
+      lastSavedBody: inklingDocWithText('hello', 'old'),
+      body: inklingDocWithText('hello', 'new'),
+    })
+    const { persistSave } = renderHook(() => useEditorShellPersist(args))
+    persistSave()
+
+    // Only upsertMeta fires because the body is semantically unchanged.
+    expect(mutate).toHaveBeenCalledTimes(1)
+    expect(args.pendingActionRef.current).toEqual({ kind: 'draft', remaining: 1 })
+  })
+
+  it('treats changed text as dirty and fires saveDraft', () => {
+    const detail = {
+      entity: { id: 'e1', slug: 's', updatedAt: '', publishedAt: null },
+      latestRevision: null,
+      publishedRevision: null,
+    }
+    const args = makeArgs({
+      isEditing: true,
+      detail,
+      lastSavedBody: inklingDocWithText('hello'),
+      body: inklingDocWithText('world'),
+      expectedToken: 'tok-1',
+    })
+    const { persistSave } = renderHook(() => useEditorShellPersist(args))
+    persistSave()
+
+    expect(mutate).toHaveBeenCalledTimes(2)
+    expect(args.pendingActionRef.current).toEqual({ kind: 'draft', remaining: 2 })
+  })
+
+  it('treats changed custom block payload as dirty and fires saveDraft', () => {
+    const detail = {
+      entity: { id: 'e1', slug: 's', updatedAt: '', publishedAt: null },
+      latestRevision: null,
+      publishedRevision: null,
+    }
+    const args = makeArgs({
+      isEditing: true,
+      detail,
+      lastSavedBody: inklingDocWithImage('https://example.com/old.png'),
+      body: inklingDocWithImage('https://example.com/new.png'),
+      expectedToken: 'tok-1',
+    })
+    const { persistSave } = renderHook(() => useEditorShellPersist(args))
+    persistSave()
+
+    expect(mutate).toHaveBeenCalledTimes(2)
+    expect(args.pendingActionRef.current).toEqual({ kind: 'draft', remaining: 2 })
   })
 })

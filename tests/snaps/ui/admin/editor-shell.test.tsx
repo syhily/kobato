@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from 'vitest'
 import type { AdminRevisionDto } from '@/shared/types/revision'
 
 import { renderInRouter, renderToHtml, stableHtml } from '#/_helpers/render'
+import { EMPTY_INKLING_DOCUMENT } from '@/shared/inkling/empty'
 import { DateTimePicker } from '@/ui/admin/editor-shell/DateTimePicker'
 import { RevisionHistoryDrawer } from '@/ui/admin/editor-shell/RevisionsDrawer'
 
@@ -126,7 +127,7 @@ describe('snapshot: RevisionHistoryDrawer', () => {
           type="post"
           ownerId="post-1"
           currentToken="token-current"
-          currentBody={[]}
+          currentBody={EMPTY_INKLING_DOCUMENT}
           onAdoptRevision={noop}
         />,
       ),
@@ -143,7 +144,7 @@ describe('snapshot: RevisionHistoryDrawer', () => {
           type="page"
           ownerId="page-1"
           currentToken={null}
-          currentBody={[]}
+          currentBody={EMPTY_INKLING_DOCUMENT}
           onAdoptRevision={noop}
         />,
       ),
@@ -167,7 +168,7 @@ describe('snapshot: RevisionHistoryDrawer', () => {
           type="post"
           ownerId="post-1"
           currentToken="tok-3"
-          currentBody={[]}
+          currentBody={EMPTY_INKLING_DOCUMENT}
           onAdoptRevision={noop}
         />,
       ),
@@ -191,7 +192,7 @@ describe('snapshot: RevisionHistoryDrawer', () => {
           type="post"
           ownerId="post-1"
           currentToken={null}
-          currentBody={[]}
+          currentBody={EMPTY_INKLING_DOCUMENT}
           onAdoptRevision={noop}
         />,
       ),

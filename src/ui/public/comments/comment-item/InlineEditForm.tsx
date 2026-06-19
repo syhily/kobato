@@ -5,8 +5,13 @@ import type { CommentBody } from '@/shared/pt/comment-schema'
 import type { CommentEditOutput, CommentItemWire as CommentItemType, CommentRawOutput } from '@/shared/types/comments'
 
 import { orpcQuery } from '@/client/api/orpc-query'
+import { EMPTY_INKLING_DOCUMENT } from '@/shared/inkling/empty'
 import { Button } from '@/ui/components/button'
-import { EMPTY_COMMENT_BODY, isCommentBodyBlank } from '@/ui/public/comments/comment-body-helpers'
+import { isInklingCommentBlank } from '@/ui/public/comments/comment-body-helpers'
+import {
+  commentBodyToInklingDocument,
+  inklingDocumentToCommentBodyAdapter,
+} from '@/ui/public/comments/comment-inkling-adapter'
 import { useCommentsLeafContext } from '@/ui/public/comments/comment-item/helpers'
 import { LazyCommentBodyEditor } from '@/ui/public/comments/LazyCommentBodyEditor'
 
@@ -18,8 +23,8 @@ interface InlineEditFormProps {
 
 export function InlineEditForm({ commentId, onCancel, onSaved }: InlineEditFormProps) {
   const leaf = useCommentsLeafContext(undefined)
-  const [body, setBody] = useState<CommentBody>(EMPTY_COMMENT_BODY)
-  const [initialBody, setInitialBody] = useState<CommentBody>(EMPTY_COMMENT_BODY)
+  const [document, setDocument] = useState(() => EMPTY_INKLING_DOCUMENT)
+  const [initialDocument, setInitialDocument] = useState(() => EMPTY_INKLING_DOCUMENT)
   const [bodyKey, setBodyKey] = useState(0)
   const [loaded, setLoaded] = useState(false)
 
@@ -27,8 +32,9 @@ export function InlineEditForm({ commentId, onCancel, onSaved }: InlineEditFormP
     ...orpcQuery.comments.getRaw.mutationOptions(),
     onSuccess: (payload: CommentRawOutput) => {
       const loadedBody = (payload.body ?? []) as CommentBody
-      setInitialBody(loadedBody)
-      setBody(loadedBody)
+      const loadedDocument = commentBodyToInklingDocument(loadedBody)
+      setInitialDocument(loadedDocument)
+      setDocument(loadedDocument)
       setBodyKey((k) => k + 1)
       setLoaded(true)
     },
@@ -49,18 +55,18 @@ export function InlineEditForm({ commentId, onCancel, onSaved }: InlineEditFormP
   const saving = editAction.isPending
 
   const handleSave = () => {
-    if (isCommentBodyBlank(body)) {
+    if (isInklingCommentBlank(document)) {
       return
     }
-    editAction.mutate({ rid: String(commentId), body })
+    editAction.mutate({ rid: String(commentId), body: inklingDocumentToCommentBodyAdapter(document) })
   }
 
   return (
     <div className="mt-2 block w-full">
       <LazyCommentBodyEditor
-        initialBody={initialBody}
-        bodyKey={`edit-${commentId}-${bodyKey}`}
-        onBodyChange={setBody}
+        initialDocument={initialDocument}
+        documentKey={`edit-${commentId}-${bodyKey}`}
+        onDocumentChange={setDocument}
         disabled={!loaded || saving}
       />
       <div className="mt-2 flex justify-end gap-2">

@@ -1,27 +1,28 @@
 import { useMemo, useState } from 'react'
 
-import type { PortableTextBody } from '@/shared/pt/schema'
-import type { EditorShellArgs, EntityLike } from '@/ui/admin/editor-shell/editor-shell-types'
+import type { EditorBody, EditorShellArgs, EntityLike } from '@/ui/admin/editor-shell/editor-shell-types'
+
+import { EMPTY_INKLING_DOCUMENT } from '@/shared/inkling/empty'
 
 export interface EditorBodyState {
-  body: PortableTextBody
-  setBody: React.Dispatch<React.SetStateAction<PortableTextBody>>
+  body: EditorBody
+  setBody: React.Dispatch<React.SetStateAction<EditorBody>>
   bodyKey: string
-  initialBody: PortableTextBody
-  lastSavedBody: PortableTextBody
-  replaceBody: (body: PortableTextBody, key: string) => void
-  markBodySaved: (savedBody: PortableTextBody) => void
+  initialBody: EditorBody
+  lastSavedBody: EditorBody
+  replaceBody: (body: EditorBody, key: string) => void
+  markBodySaved: (savedBody: EditorBody) => void
 }
 
 export function useEditorBodyState<TEntity extends EntityLike>(args: EditorShellArgs<TEntity>): EditorBodyState {
-  const initialBody = useMemo<PortableTextBody>(() => {
+  const initialBody = useMemo<EditorBody>(() => {
     if (!args.isEditing) {
-      return []
+      return EMPTY_INKLING_DOCUMENT
     }
-    return (args.detail.latestRevision ?? args.detail.publishedRevision)?.body ?? []
+    return (args.detail.latestRevision ?? args.detail.publishedRevision)?.body ?? EMPTY_INKLING_DOCUMENT
   }, [args])
 
-  const [body, setBody] = useState<PortableTextBody>(initialBody)
+  const [body, setBody] = useState<EditorBody>(initialBody)
 
   const initialBodyKey = useMemo(() => {
     if (!args.isEditing) {
@@ -32,14 +33,14 @@ export function useEditorBodyState<TEntity extends EntityLike>(args: EditorShell
   }, [args])
 
   const [bodyKey, setBodyKey] = useState(initialBodyKey)
-  const [lastSavedBody, setLastSavedBody] = useState<PortableTextBody>(initialBody)
+  const [lastSavedBody, setLastSavedBody] = useState<EditorBody>(initialBody)
 
-  const replaceBody = (newBody: PortableTextBody, key: string) => {
+  const replaceBody = (newBody: EditorBody, key: string) => {
     setBody(newBody)
     setBodyKey(key)
   }
 
-  const markBodySaved = (savedBody: PortableTextBody) => {
+  const markBodySaved = (savedBody: EditorBody) => {
     setLastSavedBody(savedBody)
   }
 

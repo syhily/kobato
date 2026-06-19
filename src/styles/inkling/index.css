@@ -1,0 +1,18 @@
+@import './preflight.css';
+@import './editor.css';
+@import './prose.css';
+
+/* Scoped token aliases mapping Ghost grey/green → project ink/brand.
+   These reference project tokens; they do NOT introduce new values.
+   See plans/inkling-style-port.md §3 for the full mapping table. */
+.inkling-editor,
+.inkling-prose {
+  --inkling-text: var(--ink-1);
+  --inkling-muted: var(--ink-4);
+  --inkling-accent: var(--brand);
+  --inkling-border: var(--line);
+  --inkling-selection: var(--ink-4);
+  --inkling-font-ui: 'OPPO Sans 4.0', 'OPPO Sans', OPPOSans, 'PingFang SC', system-ui, sans-serif;
+  --inkling-font-serif: 'OPPO Serif SC', Georgia, Times, serif;
+  --inkling-font-code: var(--font-code);
+}

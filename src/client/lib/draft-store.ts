@@ -36,6 +36,22 @@ export function __resetDbForTests(): void {
 }
 
 function inferTypeFromKey(key: string): DraftType | null {
+  // v2 Inkling-backed keys (editor-shell POC). These must be checked before
+  // the legacy prefixes because `cms-post-draft:new:v2:` also starts with the
+  // old create prefix.
+  if (key.startsWith('cms-post-draft:new:v2:')) {
+    return 'post-create'
+  }
+  if (key.startsWith('cms-page-draft:new:v2:')) {
+    return 'page-create'
+  }
+  if (key.startsWith('cms-post-draft-v2:')) {
+    return 'post-edit'
+  }
+  if (key.startsWith('cms-page-draft-v2:')) {
+    return 'page-edit'
+  }
+  // Legacy PortableText-backed keys (kept for the existing wrapper hooks).
   if (key.startsWith('cms-post-draft:new:')) {
     return 'post-create'
   }

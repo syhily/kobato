@@ -1,0 +1,148 @@
+import type { InitialConfigType } from '@lexical/react/LexicalComposer'
+import type {
+  EditorState,
+  ElementFormatType,
+  LexicalEditor,
+  SerializedEditorState,
+  SerializedLexicalNode,
+} from 'lexical'
+
+import { LexicalComposer } from '@lexical/react/LexicalComposer'
+import { ContentEditable } from '@lexical/react/LexicalContentEditable'
+import { OnChangePlugin } from '@lexical/react/LexicalOnChangePlugin'
+import { useCallback, useMemo } from 'react'
+
+import type { InklingDocument } from '@/shared/inkling/schema'
+
+import { INKLING_SCHEMA_VERSION } from '@/shared/inkling/schema'
+
+const theme = {
+  paragraph: 'inkling-paragraph',
+  heading: {
+    h1: 'inkling-h1',
+    h2: 'inkling-h2',
+    h3: 'inkling-h3',
+    h4: 'inkling-h4',
+  },
+  list: {
+    ul: 'inkling-ul',
+    ol: 'inkling-ol',
+  },
+  link: 'inkling-link',
+  quote: 'inkling-quote',
+  code: 'inkling-code',
+  text: {
+    bold: 'inkling-text-bold',
+    italic: 'inkling-text-italic',
+    underline: 'inkling-text-underline',
+    strikethrough: 'inkling-text-strikethrough',
+    code: 'inkling-text-code',
+  },
+}
+
+function buildInitialEditorState(document: InklingDocument): (editor: LexicalEditor) => void {
+  return (editor: LexicalEditor) => {
+    editor.setEditorState(editor.parseEditorState(inklingDocumentToEditorState(document)))
+  }
+}
+
+function inklingDocumentToEditorState(document: InklingDocument): SerializedEditorState {
+  const direction = document.root.direction ?? null
+  const format = (document.root.format ?? '') as unknown as ElementFormatType
+  const indent = document.root.indent ?? 0
+  return {
+    root: {
+      type: 'root',
+      version: 1,
+      direction,
+      format,
+      indent,
+      textFormat: 0,
+      textStyle: '',
+      children: document.root.children as unknown as SerializedLexicalNode[],
+    },
+  }
+}
+
+export interface InklingEditorProps {
+  namespace: string
+  nodes: InitialConfigType['nodes']
+  document: InklingDocument
+  onChange: (document: InklingDocument) => void
+  editable?: boolean
+  placeholder?: string
+  className?: string
+  contentClassName?: string
+  children?: React.ReactNode
+}
+
+export function editorStateToInklingDocument(editorState: EditorState): InklingDocument {
+  const serialized = editorState.toJSON()
+  return {
+    _type: 'inkling',
+    schemaVersion: INKLING_SCHEMA_VERSION,
+    lexicalVersion: '0.45.0',
+    root: {
+      type: 'root',
+      version: 1,
+      direction: serialized.root.direction ?? null,
+      format: serialized.root.format ?? '',
+      indent: serialized.root.indent ?? 0,
+      children: serialized.root.children as never[],
+    },
+  }
+}
+
+export function InklingEditor({
+  namespace,
+  nodes,
+  document,
+  onChange,
+  editable = true,
+  placeholder,
+  className,
+  contentClassName,
+  children,
+}: InklingEditorProps) {
+  const initialConfig: InitialConfigType = useMemo(
+    () => ({
+      namespace,
+      theme,
+      onError: (error: Error) => {
+        // eslint-disable-next-line no-console
+        console.error(`${namespace} error:`, error)
+      },
+      nodes,
+      editable,
+      editorState: buildInitialEditorState(document),
+    }),
+    [namespace, nodes, editable, document],
+  )
+
+  const handleChange = useCallback(
+    (editorState: EditorState) => {
+      onChange(editorStateToInklingDocument(editorState))
+    },
+    [onChange],
+  )
+
+  return (
+    <LexicalComposer initialConfig={initialConfig}>
+      <div className={className}>
+        <ContentEditable
+          className={contentClassName}
+          placeholder={
+            placeholder
+              ? ((({ isEditable }: { isEditable: boolean }) =>
+                  isEditable ? (
+                    <div className="inkling-placeholder text-muted-foreground">{placeholder}</div>
+                  ) : null) as never)
+              : null
+          }
+        />
+        <OnChangePlugin onChange={handleChange} />
+        {children}
+      </div>
+    </LexicalComposer>
+  )
+}

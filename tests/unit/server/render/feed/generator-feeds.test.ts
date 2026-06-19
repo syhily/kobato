@@ -19,8 +19,8 @@ vi.mock('@/server/domains/taxonomies/tags/service', () => ({
   findTagBySlug: (_db: unknown, slug: string) => feedState.findTagBySlug(slug),
   getTagsByNames: (_db: unknown, names: string[]) => feedState.getTags(names),
 }))
-vi.mock('@/server/render/feed/feed-pt-render', () => ({
-  renderPortableTextToHtml: () => feedState.render(),
+vi.mock('@/server/render/inkling/html', () => ({
+  renderInklingToHtml: () => feedState.render(),
 }))
 
 import type { Post, Page } from '@/shared/types/catalog'

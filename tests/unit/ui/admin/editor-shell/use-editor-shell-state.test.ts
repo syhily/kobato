@@ -47,6 +47,7 @@ vi.mock('@/client/hooks/use-create-draft', () => ({
 
 import type { EntityLike } from '@/ui/admin/editor-shell/editor-shell-types'
 
+import { EMPTY_INKLING_DOCUMENT } from '@/shared/inkling/empty'
 import { useEditorShellState } from '@/ui/admin/editor-shell/use-editor-shell-state'
 
 interface Meta {
@@ -89,9 +90,9 @@ describe('ui/admin/editor-shell/useEditorShellState — create-mode initial surf
 
     // Meta + body state.
     expect(result.meta).toEqual(emptyMeta)
-    expect(result.body).toEqual([])
+    expect(result.body).toEqual(EMPTY_INKLING_DOCUMENT)
     expect(result.bodyKey).toBe('create:initial')
-    expect(result.initialBody).toEqual([])
+    expect(result.initialBody).toEqual(EMPTY_INKLING_DOCUMENT)
     expect(result.isEditing).toBe(false)
 
     // Status flags.
@@ -155,7 +156,7 @@ describe('ui/admin/editor-shell/useEditorShellState — create-mode initial surf
     // they resolve without touching the body/meta state.
     await expect(result.adoptLocalDraft()).resolves.toBeUndefined()
     expect(() => result.adoptServerVersion()).not.toThrow()
-    expect(() => result.adoptRevisionFromHistory({ body: [], revisionNo: 1 })).not.toThrow()
+    expect(() => result.adoptRevisionFromHistory({ body: EMPTY_INKLING_DOCUMENT, revisionNo: 1 })).not.toThrow()
     // directSaveDraft must not have been called by adoptLocalDraft.
     expect(args.directSaveDraft).not.toHaveBeenCalled()
   })

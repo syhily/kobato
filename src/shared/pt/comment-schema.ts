@@ -9,6 +9,13 @@ import {
   TEXT_ALIGN_VALUES,
 } from '@/shared/pt/schema'
 
+// Pure helper shared by the comment API perimeter and the PT→Inkling
+// migration sanitizer. Matches the policy enforced by `linkMarkDefSchema`.
+export function isValidCommentLinkUrl(url: string): boolean {
+  const trimmed = url.trim()
+  return trimmed.length > 0 && !/^\s*(javascript|data|vbscript):/i.test(trimmed)
+}
+
 // Strict PortableText subset accepted in comment bodies. Comments are
 // authored through a deliberately-thin Tiptap editor (basic inline
 // formatting + lists + blockquote + fenced code + math) — the editor
@@ -39,6 +46,7 @@ const COMMENT_LIST_ITEMS = ['bullet', 'number'] as const
 
 // markDef union for comment text blocks.
 const commentMarkDefSchema = z.discriminatedUnion('_type', [linkMarkDefSchema, mathInlineMarkDefSchema])
+export type CommentMarkDef = z.infer<typeof commentMarkDefSchema>
 
 export const commentTextBlockSchema = z.object({
   _type: z.literal('block'),

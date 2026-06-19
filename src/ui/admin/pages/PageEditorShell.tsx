@@ -15,9 +15,17 @@ import {
 } from 'lucide-react'
 import { Link } from 'react-router'
 
-import type { AdminPageDetailDto, AdminPageDto, PageMetaDraft, UpsertPageMetaInput } from '@/shared/types/pages'
+import type {
+  AdminPageDetailDto,
+  AdminPageDto,
+  PageMetaDraft,
+  SavePageBodyInput,
+  UpsertPageMetaInput,
+} from '@/shared/types/pages'
+import type { RevisionLike, SaveBodyOutput } from '@/ui/admin/editor-shell/editor-shell-types'
 
 import { orpc } from '@/client/api/client'
+import { inklingDocumentSchema } from '@/shared/inkling/schema'
 import { CreateModeBanner } from '@/ui/admin/editor-shared/CreateModeBanner'
 import { TitleSlugStrip } from '@/ui/admin/editor-shared/TitleSlugStrip'
 import { ActionBanner } from '@/ui/admin/editor-shell/ActionBanner'
@@ -26,13 +34,14 @@ import { FloatingPublishButton } from '@/ui/admin/editor-shell/FloatingPublishBu
 import { PreviewPane } from '@/ui/admin/editor-shell/PreviewPanel'
 import { RevisionHistoryDrawer } from '@/ui/admin/editor-shell/RevisionsDrawer'
 import { useEditorShellState } from '@/ui/admin/editor-shell/use-editor-shell-state'
-import { PageBodyEditor } from '@/ui/admin/editor/PageBodyEditor'
+import { useEditorPickerActions } from '@/ui/admin/editor/use-inkling-picker-actions'
 import { buildPageUpsertPayload } from '@/ui/admin/pages/build-page-upsert-payload'
 import { EMPTY_META_DRAFT, metaDraftFromPage, metaDraftsEqual, MetaSidebar } from '@/ui/admin/pages/MetaSidebar'
 import { usePageDeleteRestore } from '@/ui/admin/pages/use-page-delete-restore'
 import { ConfirmDialog } from '@/ui/admin/shared/ConfirmDialog'
 import { Button } from '@/ui/components/button'
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/ui/components/sheet'
+import { InklingArticleEditor } from '@/ui/inkling/editor/article/InklingArticleEditor'
 import { cn } from '@/ui/lib/cn'
 
 export interface PageEditorShellProps {
@@ -42,18 +51,20 @@ export interface PageEditorShellProps {
 }
 
 const PAGE_LOCAL_DRAFT_CONFIG = {
-  keyPrefix: 'cms-page-draft:',
-  broadcastName: 'cms-page-draft',
+  keyPrefix: 'cms-page-draft-v2:',
+  broadcastName: 'cms-page-draft-v2',
   editType: 'page-edit' as const,
+  bodySchema: inklingDocumentSchema,
 }
 
 const PAGE_CREATE_DRAFT_CONFIG = {
-  keyPrefix: 'cms-page-draft:new:',
-  sessionKey: 'cms-page-draft:new:session',
-  broadcastName: 'cms-page-draft',
+  keyPrefix: 'cms-page-draft:new:v2:',
+  sessionKey: 'cms-page-draft:new:v2:session',
+  broadcastName: 'cms-page-draft-v2',
   createType: 'page-create' as const,
   editType: 'page-edit' as const,
-  editKeyPrefix: 'cms-page-draft:',
+  editKeyPrefix: 'cms-page-draft-v2:',
+  bodySchema: inklingDocumentSchema,
 }
 
 // Top-level orchestrator for the page authoring screen. All shared
@@ -69,14 +80,18 @@ export function PageEditorShell({ mode, detail, navigate }: PageEditorShellProps
   // --- Shared state hook ---------------------------------------------------
   // The hook owns `useMutation()` internally — Shell only provides
   // entity-specific mutation functions + the LS hook factories.
+  //
+  // During Plan 008 the server DTOs still carry PortableText bodies, so the
+  // shell casts the detail and save payloads to its Inkling-facing types.
+  // These casts are temporary scaffolding until the server cutover lands.
   const state = useEditorShellState<PageMetaDraft, AdminPageDto, UpsertPageMetaInput>({
     mode,
     entityKind: 'page',
     detail: detail
       ? {
           entity: detail.page,
-          latestRevision: detail.latestRevision,
-          publishedRevision: detail.publishedRevision,
+          latestRevision: detail.latestRevision as unknown as RevisionLike,
+          publishedRevision: detail.publishedRevision as unknown as RevisionLike,
         }
       : undefined,
     emptyMeta: EMPTY_META_DRAFT,
@@ -88,17 +103,22 @@ export function PageEditorShell({ mode, detail, navigate }: PageEditorShellProps
       const result = await orpc.admin.pages.upsertMeta(input)
       return result.page
     },
-    saveDraftFn: (input) => orpc.admin.pages.saveDraft(input),
-    publishFn: (input) => orpc.admin.pages.publishLatest(input),
+    saveDraftFn: (input) =>
+      orpc.admin.pages.saveDraft(input as unknown as SavePageBodyInput) as unknown as Promise<SaveBodyOutput>,
+    publishFn: (input) =>
+      orpc.admin.pages.publishLatest(input as unknown as SavePageBodyInput) as unknown as Promise<SaveBodyOutput>,
     unpublishFn: async (input) => {
       const result = await orpc.admin.pages.unpublish(input)
       return result.page
     },
     buildUpsertMetaPayload: buildPageUpsertPayload,
-    directSaveDraft: (input) => orpc.admin.pages.saveDraft(input),
+    directSaveDraft: (input) =>
+      orpc.admin.pages.saveDraft(input as unknown as SavePageBodyInput) as unknown as Promise<SaveBodyOutput>,
     editPath: (id) => `/editor/page/${id}`,
     navigate,
   })
+
+  const pickerActions = useEditorPickerActions()
 
   return (
     <div
@@ -253,11 +273,12 @@ export function PageEditorShell({ mode, detail, navigate }: PageEditorShellProps
               disabled={state.isPending}
             />
           ) : null}
-          <PageBodyEditor
-            initialBody={state.initialBody}
-            bodyKey={state.bodyKey}
-            onBodyChange={state.setBody}
+          <InklingArticleEditor
+            initialDocument={state.initialBody}
+            documentKey={state.bodyKey}
+            onDocumentChange={state.setBody}
             disabled={state.isPending}
+            actions={pickerActions.actions}
             livePreviewOpen={state.previewOpen}
             scrollContainerRef={state.editorScrollRef}
             floatingActions={
@@ -417,6 +438,7 @@ export function PageEditorShell({ mode, detail, navigate }: PageEditorShellProps
           onChooseServer={state.adoptServerVersion}
         />
       ) : null}
+      {pickerActions.renderPickers()}
     </div>
   )
 }

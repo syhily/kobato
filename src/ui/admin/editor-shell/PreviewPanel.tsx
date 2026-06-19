@@ -1,14 +1,12 @@
 import { useDeferredValue, useMemo, useRef } from 'react'
 
-import type { PortableTextBody } from '@/shared/pt/schema'
+import type { InklingDocument } from '@/shared/inkling/schema'
 
-import { useMediumZoom } from '@/client/hooks/use-medium-zoom'
 import { useContentSettings, useSiteIdentity } from '@/shared/lib/blog-config-context'
 import { resolveFootnotesSectionTitle } from '@/shared/utils/footnotes-section-title'
-import { PortableTextBody as PortableTextBodyRenderer } from '@/ui/pt/render'
 
 export interface PreviewPaneProps {
-  body: PortableTextBody
+  body: InklingDocument
   title: string
   slug: string
   scrollContainerRef?: React.RefObject<HTMLDivElement | null>
@@ -16,7 +14,6 @@ export interface PreviewPaneProps {
 
 export function PreviewPane({ body, title, slug, scrollContainerRef }: PreviewPaneProps) {
   const previewPostContentRef = useRef<HTMLDivElement>(null)
-  useMediumZoom(previewPostContentRef)
 
   const deferredBody = useDeferredValue(body)
   const isStale = deferredBody !== body
@@ -65,11 +62,17 @@ export function PreviewPane({ body, title, slug, scrollContainerRef }: PreviewPa
           )}
         </header>
         <div ref={previewPostContentRef} className="post-content prose-blog prose prose-lg max-w-none">
-          <PortableTextBodyRenderer
-            body={renderedBody}
-            musicAutoplay="suppressed"
-            footnotesSectionTitle={resolveFootnotesSectionTitle(content)}
-          />
+          {/* Plan 008 placeholder: the real Inkling React renderer lives in
+           *  a later POC. For now we render a compact structural fingerprint
+           *  so the preview pane still proves it receives an InklingDocument. */}
+          <div className="rounded-lg border border-dashed border-muted-foreground/40 bg-muted/30 p-3">
+            <div className="mb-2 text-xs font-medium text-muted-foreground">Inkling 预览占位</div>
+            <div className="font-mono text-xs text-muted-foreground">
+              schemaVersion: {renderedBody.schemaVersion} · lexicalVersion: {renderedBody.lexicalVersion} · root
+              children: {renderedBody.root.children.length}
+            </div>
+            {content !== undefined ? <div className="sr-only">{resolveFootnotesSectionTitle(content)}</div> : null}
+          </div>
         </div>
       </div>
     </div>

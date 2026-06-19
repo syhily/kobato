@@ -2,7 +2,6 @@ import { useMutation } from '@tanstack/react-query'
 import { PencilIcon } from 'lucide-react'
 import { useRef, useState } from 'react'
 
-import type { CommentBody } from '@/shared/pt/comment-schema'
 import type { CommentFormUser } from '@/shared/types/catalog'
 import type {
   CommentItemWire as CommentItemType,
@@ -13,12 +12,14 @@ import type {
 
 import { orpcQuery } from '@/client/api/orpc-query'
 import { useCommentGuest } from '@/client/hooks/use-comment-guest'
+import { EMPTY_INKLING_DOCUMENT } from '@/shared/inkling/empty'
 import { bodyToPlainText } from '@/shared/pt/utils'
 import { joinUrl } from '@/shared/utils/urls'
 import { Button } from '@/ui/components/button'
 import { Input } from '@/ui/components/input'
 import { cn } from '@/ui/lib/cn'
-import { EMPTY_COMMENT_BODY, isCommentBodyBlank } from '@/ui/public/comments/comment-body-helpers'
+import { isInklingCommentBlank } from '@/ui/public/comments/comment-body-helpers'
+import { inklingDocumentToCommentBodyAdapter } from '@/ui/public/comments/comment-inkling-adapter'
 import { LazyCommentBodyEditor } from '@/ui/public/comments/LazyCommentBodyEditor'
 
 export interface CommentReplyFormProps {
@@ -43,7 +44,7 @@ export function CommentReplyForm({
   const { profile: guestProfile, saveProfile: saveGuestProfile, clearProfile: clearGuestProfile } = useCommentGuest()
   const isGuestMode = !user && guestProfile !== null
 
-  const [body, setBody] = useState<CommentBody>(EMPTY_COMMENT_BODY)
+  const [document, setDocument] = useState(() => EMPTY_INKLING_DOCUMENT)
   const [bodyKey, setBodyKey] = useState(0)
   const [submitError, setSubmitError] = useState<string | null>(null)
   const formRef = useRef<HTMLFormElement | null>(null)
@@ -82,7 +83,7 @@ export function CommentReplyForm({
           avatar: avatarSrc,
         })
       }
-      setBody(EMPTY_COMMENT_BODY)
+      setDocument(EMPTY_INKLING_DOCUMENT)
       setBodyKey((k) => k + 1)
       formRef.current?.reset()
     },
@@ -114,7 +115,7 @@ export function CommentReplyForm({
 
   const handleSubmit = (event: React.SyntheticEvent<HTMLFormElement>) => {
     event.preventDefault()
-    if (isCommentBodyBlank(body)) {
+    if (isInklingCommentBlank(document)) {
       setSubmitError('请输入评论内容。')
       return
     }
@@ -129,7 +130,7 @@ export function CommentReplyForm({
       name,
       email,
       link: link !== '' ? link : undefined,
-      body,
+      body: inklingDocumentToCommentBodyAdapter(document),
       rid: replyToId === 0 ? undefined : replyToId,
       subtitle: subtitle === '' ? undefined : subtitle,
     }
@@ -164,9 +165,9 @@ export function CommentReplyForm({
         <div className="flex-1">
           <div className="relative mb-4">
             <LazyCommentBodyEditor
-              initialBody={EMPTY_COMMENT_BODY}
-              bodyKey={`reply-${bodyKey}`}
-              onBodyChange={setBody}
+              initialDocument={EMPTY_INKLING_DOCUMENT}
+              documentKey={`reply-${bodyKey}`}
+              onDocumentChange={setDocument}
               disabled={isPending}
               className={cn(isReplying && 'pt-10')}
             />

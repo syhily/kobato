@@ -167,7 +167,7 @@ describe('routes/post.detail loader', () => {
   it('returns the canonical post payload for a real slug', async () => {
     const data = unwrapLoaderData<{
       post: { title: string; permalink: string }
-      body: unknown[]
+      body: unknown
     }>(
       await postRoute.loader(
         makeLoaderArgs({
@@ -180,7 +180,19 @@ describe('routes/post.detail loader', () => {
 
     expect(data.post.title).toBe(samplePost.title)
     expect(data.post.permalink).toBe('/posts/hello')
-    expect(data.body).toEqual([])
+    expect(data.body).toEqual({
+      _type: 'inkling',
+      schemaVersion: 1,
+      lexicalVersion: '0.45.0',
+      root: {
+        type: 'root',
+        version: 1,
+        direction: null,
+        format: '',
+        indent: 0,
+        children: [{ type: 'paragraph', version: 1, direction: null, format: '', indent: 0, children: [] }],
+      },
+    })
   })
 })
 

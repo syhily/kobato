@@ -7,8 +7,14 @@ import { MetaSidebar } from '@/ui/admin/pages/MetaSidebar'
 import { PageEditorRoute } from '@/ui/admin/pages/PageEditorRoute'
 import { PageEditorShell } from '@/ui/admin/pages/PageEditorShell'
 
-vi.mock('@/ui/admin/editor/PageBodyEditor', () => ({
-  PageBodyEditor: () => <div data-testid="page-body-editor">PageBodyEditor</div>,
+vi.mock('@/ui/inkling/editor/article/InklingArticleEditor', () => ({
+  InklingArticleEditor: () => <div data-testid="inkling-article-editor">InklingArticleEditor</div>,
+}))
+vi.mock('@/ui/admin/editor/use-inkling-picker-actions', () => ({
+  useEditorPickerActions: () => ({
+    actions: {},
+    renderPickers: () => null,
+  }),
 }))
 
 vi.mock('@/ui/admin/shell/AdminShell', () => ({
@@ -95,7 +101,7 @@ describe('snapshot: PageEditorShell', () => {
     const html = stableHtml(renderInRouter(<PageEditorShell mode="create" navigate={vi.fn()} />))
     expect(html).toContain('创建页面')
     expect(html).toContain('实时预览')
-    expect(html).toContain('PageBodyEditor')
+    expect(html).toContain('InklingArticleEditor')
   })
 
   it('renders edit mode', () => {
@@ -105,7 +111,7 @@ describe('snapshot: PageEditorShell', () => {
     expect(html).toContain('保存草稿')
     expect(html).toContain('发布草稿')
     expect(html).toContain('元数据')
-    expect(html).toContain('PageBodyEditor')
+    expect(html).toContain('InklingArticleEditor')
   })
 })
 

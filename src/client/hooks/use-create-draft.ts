@@ -1,15 +1,17 @@
+import type { ZodType } from 'zod'
+
 import { useCallback, useEffect, useRef, useState } from 'react'
 
 import { getDraft, removeDraft, setDraft, type DraftRecord, type DraftType } from '@/client/lib/draft-store'
-import { portableTextBodySchema, type PortableTextBody } from '@/shared/pt/schema'
 
-export interface CreateDraftConfig {
+export interface CreateDraftConfig<TBody> {
   keyPrefix: string
   sessionKey: string
   broadcastName: string
   createType: DraftType
   editType: DraftType
   editKeyPrefix: string
+  bodySchema: ZodType<TBody>
 }
 
 interface BroadcastMessage {
@@ -19,8 +21,13 @@ interface BroadcastMessage {
 
 const STORAGE_VERSION = 1
 
-function isValidDraft<TMeta>(record: DraftRecord): record is DraftRecord<PortableTextBody, TMeta> & { meta: TMeta } {
-  return record.version === STORAGE_VERSION && Array.isArray(record.body) && record.meta !== undefined
+function isValidDraft<TBody, TMeta>(
+  record: DraftRecord,
+  config: CreateDraftConfig<TBody>,
+): record is DraftRecord<TBody, TMeta> & { meta: TMeta } {
+  return (
+    record.version === STORAGE_VERSION && config.bodySchema.safeParse(record.body).success && record.meta !== undefined
+  )
 }
 
 function readOrCreateSessionId(sessionKey: string): string {
@@ -40,26 +47,26 @@ function readOrCreateSessionId(sessionKey: string): string {
   }
 }
 
-export interface UseCreateDraftOptions<TMeta> {
-  body: PortableTextBody
+export interface UseCreateDraftOptions<TBody, TMeta> {
+  body: TBody
   meta: TMeta
 }
 
-export interface UseCreateDraftResult<TMeta> {
+export interface UseCreateDraftResult<TBody, TMeta> {
   sessionId: string
-  loadedDraft: { body: PortableTextBody; meta: TMeta; savedAt: number } | null
-  migrateToEditKey: (entityId: string, clientRevisionToken: string, body: PortableTextBody) => void
+  loadedDraft: { body: TBody; meta: TMeta; savedAt: number } | null
+  migrateToEditKey: (entityId: string, clientRevisionToken: string, body: TBody) => void
   clearDraft: () => void
 }
 
-export function useCreateDraft<TMeta>(
-  config: CreateDraftConfig,
-  { body, meta }: UseCreateDraftOptions<TMeta>,
-): UseCreateDraftResult<TMeta> {
+export function useCreateDraft<TBody, TMeta>(
+  config: CreateDraftConfig<TBody>,
+  { body, meta }: UseCreateDraftOptions<TBody, TMeta>,
+): UseCreateDraftResult<TBody, TMeta> {
   const [sessionId] = useState(() => readOrCreateSessionId(config.sessionKey))
   const key = `${config.keyPrefix}${sessionId}`
 
-  const [loadedDraft, setLoadedDraft] = useState<{ body: PortableTextBody; meta: TMeta; savedAt: number } | null>(null)
+  const [loadedDraft, setLoadedDraft] = useState<{ body: TBody; meta: TMeta; savedAt: number } | null>(null)
   const didReadRef = useRef(false)
   const loadCompleteRef = useRef(false)
 
@@ -83,16 +90,7 @@ export function useCreateDraft<TMeta>(
           loadCompleteRef.current = true
           return
         }
-        if (!isValidDraft<TMeta>(record)) {
-          await removeDraft(key)
-          if (!cancelled) {
-            setLoadedDraft(null)
-          }
-          loadCompleteRef.current = true
-          return
-        }
-        const bodyResult = portableTextBodySchema.safeParse(record.body)
-        if (!bodyResult.success) {
+        if (!isValidDraft<TBody, TMeta>(record, config)) {
           await removeDraft(key)
           if (!cancelled) {
             setLoadedDraft(null)
@@ -101,7 +99,7 @@ export function useCreateDraft<TMeta>(
           return
         }
         setLoadedDraft({
-          body: bodyResult.data,
+          body: record.body,
           meta: record.meta,
           savedAt: record.savedAt,
         })
@@ -117,13 +115,13 @@ export function useCreateDraft<TMeta>(
     return () => {
       cancelled = true
     }
-  }, [key])
+  }, [key, config])
 
   useEffect(() => {
     if (!loadCompleteRef.current) {
       return
     }
-    const payload: DraftRecord<PortableTextBody, TMeta> = {
+    const payload: DraftRecord<TBody, TMeta> = {
       key,
       type: config.createType,
       body,
@@ -180,9 +178,9 @@ export function useCreateDraft<TMeta>(
   }, [key, config.broadcastName])
 
   const migrateToEditKey = useCallback(
-    (entityId: string, clientRevisionToken: string, latestBody: PortableTextBody) => {
+    (entityId: string, clientRevisionToken: string, latestBody: TBody) => {
       const editKey = `${config.editKeyPrefix}${entityId}:${clientRevisionToken}`
-      const editPayload: DraftRecord<PortableTextBody> = {
+      const editPayload: DraftRecord<TBody> = {
         key: editKey,
         type: config.editType,
         body: latestBody,

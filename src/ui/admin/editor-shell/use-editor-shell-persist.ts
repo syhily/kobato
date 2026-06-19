@@ -3,8 +3,8 @@ import type { NavigateFunction } from 'react-router'
 import { useMutation } from '@tanstack/react-query'
 import { useCallback, useEffect, useRef, useState } from 'react'
 
-import type { PortableTextBody } from '@/shared/pt/schema'
 import type {
+  EditorBody,
   EditorShellStatus,
   EntityLike,
   RevisionLike,
@@ -13,7 +13,7 @@ import type {
 } from '@/ui/admin/editor-shell/editor-shell-types'
 
 import { useAutosave, type AutosaveStatus } from '@/client/hooks/use-autosave'
-import { arePortableTextBodiesEquivalent } from '@/shared/pt/bridge/canonicalize'
+import { areInklingDocumentsEquivalent } from '@/shared/inkling/normalize'
 import { isPendingForAutosave } from '@/ui/admin/editor-shell/editor-shell-derived'
 
 function localInputValueToIso(localValue: string): string | null {
@@ -34,7 +34,7 @@ export function useEditorShellPersist<
 >(args: {
   isEditing: boolean
   meta: TMeta
-  body: PortableTextBody
+  body: EditorBody
   expectedToken: string | null
   detail?: {
     entity: TEntity
@@ -42,7 +42,7 @@ export function useEditorShellPersist<
     publishedRevision: RevisionLike | null
   }
   serverPublishedAtIso: string | null
-  conflict: { localBody: PortableTextBody; localSavedAt: number } | null
+  conflict: { localBody: EditorBody; localSavedAt: number } | null
 
   upsertMetaFn: UseEditorShellStateArgs<TMeta, TEntity, TUpsertMetaInput>['upsertMetaFn']
   saveDraftFn: UseEditorShellStateArgs<TMeta, TEntity, TUpsertMetaInput>['saveDraftFn']
@@ -63,10 +63,10 @@ export function useEditorShellPersist<
   setMeta: React.Dispatch<React.SetStateAction<TMeta>>
   setServerPublishedAtIso: React.Dispatch<React.SetStateAction<string | null>>
 
-  lastSavedBody: PortableTextBody
-  markBodySaved: (savedBody: PortableTextBody) => void
+  lastSavedBody: EditorBody
+  markBodySaved: (savedBody: EditorBody) => void
   pendingActionRef: React.RefObject<{ kind: 'draft' | 'published'; remaining: number } | null>
-  createDraft: { migrateToEditKey: (id: string, token: string, body: PortableTextBody) => void }
+  createDraft: { migrateToEditKey: (id: string, token: string, body: EditorBody) => void }
 }) {
   const {
     isEditing,
@@ -144,7 +144,7 @@ export function useEditorShellPersist<
   })
 
   const flushAutosave = useCallback(
-    async (snapshot: PortableTextBody) => {
+    async (snapshot: EditorBody) => {
       if (!isEditing || !detail) {
         return
       }
@@ -249,7 +249,7 @@ export function useEditorShellPersist<
     const pickerIso = localInputValueToIso(meta.publishedAt)
     const serverIsScheduled = serverPublishedAtIso !== null && (Date.parse(serverPublishedAtIso) || 0) > Date.now()
     const publishedAt = pickerIso !== null ? pickerIso : serverIsScheduled ? new Date().toISOString() : null
-    const bodyDiverged = !arePortableTextBodiesEquivalent(body, lastSavedBody)
+    const bodyDiverged = !areInklingDocumentsEquivalent(body, lastSavedBody)
     pendingActionRef.current = { kind: 'draft', remaining: bodyDiverged ? 2 : 1 }
     upsertMetaMutation.mutate(buildUpsertMetaPayload({ meta, id: detail.entity.id, publishedAt }))
     if (bodyDiverged) {

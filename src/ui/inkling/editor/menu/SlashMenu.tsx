@@ -1,0 +1,256 @@
+import type { LexicalEditor } from 'lexical'
+
+import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
+import {
+  $getSelection,
+  $isRangeSelection,
+  COMMAND_PRIORITY_LOW,
+  KEY_ARROW_DOWN_COMMAND,
+  KEY_ARROW_UP_COMMAND,
+  KEY_ENTER_COMMAND,
+  KEY_ESCAPE_COMMAND,
+} from 'lexical'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+
+import type { InklingFeatureMode } from '@/shared/inkling/schema'
+import type { InklingCardMenuItem } from '@/ui/inkling/editor/cards/card-registry'
+
+import { buildInklingCardMenu } from '@/ui/inkling/editor/cards/card-registry'
+import { getSelectionRect } from '@/ui/inkling/editor/shared/dom-selection'
+import { cn } from '@/ui/lib/cn'
+
+interface InklingSlashMenuProps {
+  mode: InklingFeatureMode
+  className?: string
+}
+
+export function useInklingSlashMenu(editor: LexicalEditor | null, mode: InklingFeatureMode) {
+  const [open, setOpen] = useState(false)
+  const [query, setQuery] = useState('')
+  const [selectedIndex, setSelectedIndex] = useState(0)
+  const [position, setPosition] = useState<{ top: number; left: number } | null>(null)
+  const menuRef = useRef<HTMLDivElement>(null)
+
+  const sections = useMemo(() => buildInklingCardMenu(mode), [mode])
+
+  const filteredItems = useMemo(() => {
+    if (query.length === 0) {
+      return sections
+    }
+    const q = query.toLowerCase()
+    return sections
+      .map((section) => ({
+        ...section,
+        items: section.items.filter(
+          (item) => item.label.toLowerCase().includes(q) || item.type.toLowerCase().includes(q),
+        ),
+      }))
+      .filter((section) => section.items.length > 0)
+  }, [sections, query])
+
+  const allFiltered = useMemo(() => filteredItems.flatMap((s) => s.items), [filteredItems])
+
+  const selectedItem = allFiltered[selectedIndex] ?? null
+
+  const close = useCallback(() => {
+    setOpen(false)
+    setQuery('')
+    setSelectedIndex(0)
+    setPosition(null)
+  }, [])
+
+  const insert = useCallback(
+    (item: InklingCardMenuItem) => {
+      if (editor === null) { return }
+      item.insert(editor)
+      close()
+    },
+    [editor, close],
+  )
+
+  // Listen for text input to detect "/"
+  useEffect(() => {
+    if (editor === null) {
+      return undefined
+    }
+    return editor.registerUpdateListener(({ editorState }) => {
+      editorState.read(() => {
+        const selection = $getSelection()
+        if (!$isRangeSelection(selection) || !selection.isCollapsed()) {
+          if (open) {
+            close()
+          }
+          return
+        }
+        const anchor = selection.anchor
+        const node = anchor.getNode()
+        const text = node.getTextContent()
+        const offset = anchor.offset
+        const before = text.slice(0, offset)
+
+        // Check if the character immediately before the cursor is "/"
+        const slashIdx = before.lastIndexOf('/')
+        if (slashIdx === -1 || slashIdx !== before.length - 1) {
+          if (open && before.length === 0) {
+            close()
+          }
+          return
+        }
+
+        // Menu triggered — position it near the cursor
+        if (!open) {
+          const rootEl = editor.getRootElement()
+          if (rootEl !== null) {
+            const rect = getSelectionRect(rootEl)
+            if (rect !== null) {
+              setPosition({ top: rect.bottom + 4, left: rect.left })
+            }
+          }
+          setOpen(true)
+          setQuery('')
+          setSelectedIndex(0)
+        }
+
+        const afterSlash = before.slice(slashIdx + 1)
+        setQuery(afterSlash)
+      })
+    })
+  }, [editor, open, close])
+
+  // Keyboard navigation
+  useEffect(() => {
+    if (editor === null || !open) {
+      return undefined
+    }
+    return editor.registerCommand(
+      KEY_ARROW_DOWN_COMMAND,
+      (event: KeyboardEvent) => {
+        event.preventDefault()
+        setSelectedIndex((i) => Math.min(i + 1, allFiltered.length - 1))
+        return true
+      },
+      COMMAND_PRIORITY_LOW,
+    )
+  }, [editor, open, allFiltered])
+
+  useEffect(() => {
+    if (editor === null || !open) {
+      return undefined
+    }
+    return editor.registerCommand(
+      KEY_ARROW_UP_COMMAND,
+      (event: KeyboardEvent) => {
+        event.preventDefault()
+        setSelectedIndex((i) => Math.max(i - 1, 0))
+        return true
+      },
+      COMMAND_PRIORITY_LOW,
+    )
+  }, [editor, open])
+
+  useEffect(() => {
+    if (editor === null || !open) {
+      return undefined
+    }
+    return editor.registerCommand(
+      KEY_ENTER_COMMAND,
+      (event: KeyboardEvent) => {
+        if (selectedItem === null) {
+          return false
+        }
+        event.preventDefault()
+        insert(selectedItem)
+        return true
+      },
+      COMMAND_PRIORITY_LOW,
+    )
+  }, [editor, open, selectedItem, insert])
+
+  useEffect(() => {
+    if (editor === null || !open) {
+      return undefined
+    }
+    return editor.registerCommand(
+      KEY_ESCAPE_COMMAND,
+      () => {
+        close()
+        return true
+      },
+      COMMAND_PRIORITY_LOW,
+    )
+  }, [editor, open, close])
+
+  // Click outside to close
+  useEffect(() => {
+    if (!open) {
+      return undefined
+    }
+    const handler = (e: MouseEvent) => {
+      if (menuRef.current !== null && !menuRef.current.contains(e.target as Node)) {
+        close()
+      }
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [open, close])
+
+  const SlashMenuComponent = useCallback(() => {
+    if (!open || position === null) {
+      return null
+    }
+    return (
+      <div
+        ref={menuRef}
+        className={cn(
+          'inkling-slash-menu absolute z-50 max-h-72 w-64 overflow-y-auto rounded-lg border bg-popover p-1 shadow-lg',
+          'inkling-slash-menu',
+        )}
+        style={{ top: position.top, left: position.left }}
+      >
+        {query.length > 0 ? <div className="px-2 py-1 text-xs text-muted-foreground">搜索: {query}</div> : null}
+        {filteredItems.length === 0 ? (
+          <div className="px-2 py-4 text-center text-xs text-muted-foreground">无匹配结果</div>
+        ) : (
+          filteredItems.map((section) => (
+            <div key={section.section}>
+              <div className="px-2 py-1 text-[10px] font-medium text-muted-foreground/60 uppercase">
+                {section.label}
+              </div>
+              {section.items.map((item) => {
+                const globalIdx = allFiltered.indexOf(item)
+                const isSelected = globalIdx === selectedIndex
+                return (
+                  <button
+                    key={item.type}
+                    type="button"
+                    className={cn(
+                      'flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-sm transition',
+                      isSelected ? 'bg-accent text-accent-foreground' : 'hover:bg-muted',
+                    )}
+                    onMouseDown={(e) => {
+                      e.preventDefault()
+                      insert(item)
+                    }}
+                    onMouseEnter={() => setSelectedIndex(globalIdx)}
+                  >
+                    <span className="font-medium">{item.label}</span>
+                    <span className="ml-auto font-mono text-[10px] text-muted-foreground">{item.type}</span>
+                  </button>
+                )
+              })}
+            </div>
+          ))
+        )}
+      </div>
+    )
+  }, [open, position, query, filteredItems, allFiltered, selectedIndex, insert])
+
+  return { SlashMenuComponent, open }
+}
+
+/** Mountable plugin component. */
+export function InklingSlashMenuPlugin({ mode, className: _className }: InklingSlashMenuProps) {
+  const [editor] = useLexicalComposerContext()
+  const { SlashMenuComponent } = useInklingSlashMenu(editor, mode)
+  return <SlashMenuComponent />
+}

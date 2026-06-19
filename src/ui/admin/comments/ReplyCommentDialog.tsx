@@ -3,10 +3,11 @@ import { SendIcon, XIcon } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
 
-import type { CommentBody } from '@/shared/pt/comment-schema'
+import type { InklingDocument } from '@/shared/inkling/schema'
 import type { AdminCommentWire as AdminComment } from '@/shared/types/comments'
 
 import { orpcQuery } from '@/client/api/orpc-query'
+import { EMPTY_INKLING_DOCUMENT } from '@/shared/inkling/empty'
 import { idStr } from '@/shared/utils/tools'
 import { Button } from '@/ui/components/button'
 import {
@@ -18,7 +19,8 @@ import {
   DialogTitle,
 } from '@/ui/components/dialog'
 import { Label } from '@/ui/components/label'
-import { EMPTY_COMMENT_BODY, isCommentBodyBlank } from '@/ui/public/comments/comment-body-helpers'
+import { isInklingCommentBlank } from '@/ui/public/comments/comment-body-helpers'
+import { inklingDocumentToCommentBodyAdapter } from '@/ui/public/comments/comment-inkling-adapter'
 import { CommentBodyEditor } from '@/ui/public/comments/CommentBodyEditor'
 
 export interface ReplyCommentDialogProps {
@@ -36,15 +38,15 @@ export function ReplyCommentDialog({ comment, authorName, authorEmail, onClose, 
       onReplied()
     },
   })
-  const [body, setBody] = useState<CommentBody>(EMPTY_COMMENT_BODY)
+  const [document, setDocument] = useState<InklingDocument>(EMPTY_INKLING_DOCUMENT)
   const [bodyKey, setBodyKey] = useState(0)
   const [lastCommentId, setLastCommentId] = useState(comment?.id)
-  // Reset the editor body whenever the dialog opens for a new comment, or
+  // Reset the editor document whenever the dialog opens for a new comment, or
   // closes. Bumping `bodyKey` forces `CommentBodyEditor` to remount its
-  // Tiptap instance so the previous reply doesn't leak into the next one.
+  // Lexical instance so the previous reply doesn't leak into the next one.
   if (comment?.id !== lastCommentId) {
     setLastCommentId(comment?.id)
-    setBody(EMPTY_COMMENT_BODY)
+    setDocument(EMPTY_INKLING_DOCUMENT)
     setBodyKey((k) => k + 1)
   }
 
@@ -67,7 +69,7 @@ export function ReplyCommentDialog({ comment, authorName, authorEmail, onClose, 
             if (!comment) {
               return
             }
-            if (isCommentBodyBlank(body)) {
+            if (isInklingCommentBlank(document)) {
               toast.error('回复内容不能为空')
               return
             }
@@ -83,7 +85,7 @@ export function ReplyCommentDialog({ comment, authorName, authorEmail, onClose, 
               page_key: comment.pagePublicId,
               name: authorName,
               email: authorEmail,
-              body,
+              body: inklingDocumentToCommentBodyAdapter(document),
               rid: Number.parseInt(idStr(comment.id), 10),
             })
           }}
@@ -92,9 +94,9 @@ export function ReplyCommentDialog({ comment, authorName, authorEmail, onClose, 
           <div className="flex flex-col gap-2">
             <Label htmlFor="reply-comment-content">回复内容</Label>
             <CommentBodyEditor
-              initialBody={EMPTY_COMMENT_BODY}
-              bodyKey={`admin-reply-${dialogKey}-${bodyKey}`}
-              onBodyChange={setBody}
+              initialDocument={EMPTY_INKLING_DOCUMENT}
+              documentKey={`admin-reply-${dialogKey}-${bodyKey}`}
+              onDocumentChange={setDocument}
               disabled={submitting}
             />
           </div>

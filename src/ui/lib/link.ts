@@ -5,11 +5,12 @@
  * unless `rel` contains `noopener` (and `noreferrer` as a broader defense).
  * This helper merges those values into any existing `rel` value.
  */
-export function safeRel(target: string | undefined, existingRel: string | undefined): string | undefined {
+export function safeRel(target: string | null | undefined, existingRel: string | null | undefined): string | undefined {
+  const normalizedRel = existingRel ?? undefined
   if (target !== '_blank') {
-    return existingRel
+    return normalizedRel
   }
-  const parts = new Set((existingRel ?? '').split(/\s+/).filter(Boolean))
+  const parts = new Set((normalizedRel ?? '').split(/\s+/).filter(Boolean))
   parts.add('noopener')
   parts.add('noreferrer')
   return [...parts].join(' ')

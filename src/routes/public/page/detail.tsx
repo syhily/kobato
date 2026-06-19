@@ -11,9 +11,10 @@ import { loadPagePreview } from '@/server/http/loaders/page-preview'
 import { detailHeaders, publicShouldRevalidate } from '@/server/http/loaders/route-exports'
 import { bundleFromMatches, routeMeta, seoForPage } from '@/server/render/seo/meta'
 import { requireBlogSettingsSection } from '@/shared/config/getters'
+import { portableTextToInklingDocument } from '@/shared/inkling/migrate-pt'
 import { resolveFootnotesSectionTitle } from '@/shared/utils/footnotes-section-title'
+import { InklingBody } from '@/ui/inkling/render/InklingBody'
 import { Friends } from '@/ui/pt/blocks/Friends'
-import { PortableTextBody } from '@/ui/pt/render'
 import { PageDetailBody } from '@/ui/public/post/PageDetailBody'
 
 import type { Route } from './+types/detail'
@@ -34,6 +35,7 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
 
   const footnotesSectionTitle = resolveFootnotesSectionTitle(requireBlogSettingsSection('content'))
   const enrichedBody = await prerenderMusicPlayerBlocks(db, preview.body)
+  const body = portableTextToInklingDocument(enrichedBody ?? preview.body)
 
   const { detail } = await loadPublicDetailData(db, {
     request,
@@ -45,7 +47,7 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
   return data(
     {
       page: preview.page,
-      body: enrichedBody ?? preview.body,
+      body,
       friends,
       showFriends: preview.showFriends,
       draftMarker: preview.draftMarker,
@@ -82,8 +84,8 @@ export default function PageDetailRoute({ loaderData }: Route.ComponentProps) {
         currentUser={detail.currentUser}
         mode={detail.admin ? 'admin' : 'public'}
       >
-        <PortableTextBody
-          body={body}
+        <InklingBody
+          document={body}
           imageMeta={imageMeta}
           headingSlugs={headingSlugs}
           footnotesSectionTitle={footnotesSectionTitle}

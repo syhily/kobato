@@ -20,10 +20,11 @@ import { notFound } from '@/server/infra/http/status'
 import { bundleFromMatches, routeMeta, seoForPost } from '@/server/render/seo/meta'
 import { requireBlogSettingsSection } from '@/shared/config/getters'
 import { getSidebarWidgetCount } from '@/shared/config/utils'
+import { portableTextToInklingDocument } from '@/shared/inkling/migrate-pt'
 import { toClientPost, toDetailPostShell } from '@/shared/types/catalog'
 import { canonicalPostPath } from '@/shared/utils/paths'
 import { hasAtLeast } from '@/shared/utils/roles'
-import { PortableTextBody } from '@/ui/pt/render'
+import { InklingBody } from '@/ui/inkling/render/InklingBody'
 import { PostDetailBody } from '@/ui/public/post/PostDetailBody'
 
 import type { Route } from './+types/detail'
@@ -75,6 +76,7 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
     selectSidebarPosts(db, getSidebarWidgetCount(requireBlogSettingsSection('sidebar'), 'recentPosts')),
     prerenderMusicPlayerBlocks(db, sourcePost.body),
   ])
+  const inklingBody = portableTextToInklingDocument(enrichedBody ?? sourcePost.body)
 
   const { detail } = await loadPublicDetailData(db, {
     request,
@@ -87,7 +89,7 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
   return data(
     {
       post,
-      body: enrichedBody ?? sourcePost.body,
+      body: inklingBody,
       visibleTags,
       sidebarPosts,
       tags: sidebarTags,
@@ -132,7 +134,7 @@ export default function PostDetailRoute({ loaderData }: Route.ComponentProps) {
         draftMarker={draftMarker}
         sidebar={sidebar}
       >
-        <PortableTextBody body={body} headingSlugs={headingSlugs} imageMeta={imageMeta} />
+        <InklingBody document={body} headingSlugs={headingSlugs} imageMeta={imageMeta} />
       </PostDetailBody>
     </>
   )

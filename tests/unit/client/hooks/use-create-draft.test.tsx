@@ -48,14 +48,16 @@ vi.stubGlobal('BroadcastChannel', FakeBroadcastChannel)
 
 import { renderHook } from '#/_helpers/hook'
 import { useCreateDraft, type CreateDraftConfig } from '@/client/hooks/use-create-draft'
+import { portableTextBodySchema } from '@/shared/pt/schema'
 
-const config: CreateDraftConfig = {
+const config: CreateDraftConfig<PortableTextBody> = {
   keyPrefix: 'cms-post-draft:new:',
   sessionKey: 'cms-post-draft:new:session',
   broadcastName: 'cms-post-draft',
   createType: 'post-create',
   editType: 'post-edit',
   editKeyPrefix: 'cms-post-draft:',
+  bodySchema: portableTextBodySchema,
 }
 
 const emptyBody: PortableTextBody = []
@@ -249,7 +251,7 @@ describe('useCreateDraft — BroadcastChannel unavailable', () => {
 describe('useCreateDraft — stability', () => {
   it('migrateToEditKey / clearDraft keep referential identity across renders', () => {
     installWindow()
-    const results: ReturnType<typeof useCreateDraft>[] = []
+    const results: ReturnType<typeof useCreateDraft<PortableTextBody, typeof meta>>[] = []
     renderHook(
       () => {
         const r = useCreateDraft(config, { body: emptyBody, meta })

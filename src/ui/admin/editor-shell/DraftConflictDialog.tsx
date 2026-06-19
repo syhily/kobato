@@ -1,17 +1,16 @@
 import { ArrowRightLeftIcon, MonitorIcon, ServerIcon } from 'lucide-react'
 
-import type { PortableTextBody } from '@/shared/pt/schema'
+import type { InklingDocument } from '@/shared/inkling/schema'
 
-import { diffBodies, DiffPanel } from '@/ui/admin/editor/portable-text-diff'
 import { Button } from '@/ui/components/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/ui/components/dialog'
 
 export interface DraftConflictDialogProps {
   open: boolean
-  /** PT body that was just loaded from Local Storage. */
-  localBody: PortableTextBody
-  /** PT body of the server's latest revision. */
-  serverBody: PortableTextBody
+  /** Inkling body that was just loaded from Local Storage. */
+  localBody: InklingDocument
+  /** Inkling body of the server's latest revision. */
+  serverBody: InklingDocument
   /** ms-since-epoch when the local copy was last saved. */
   localSavedAt: number | null
   /** ms-since-epoch when the server copy was last updated. */
@@ -24,15 +23,11 @@ export interface DraftConflictDialogProps {
 
 export function DraftConflictDialog({
   open,
-  localBody,
-  serverBody,
   localSavedAt,
   serverUpdatedAt,
   onChooseLocal,
   onChooseServer,
 }: DraftConflictDialogProps) {
-  const diff = diffBodies(serverBody, localBody)
-
   return (
     <Dialog open={open}>
       <DialogContent className="max-h-dialog-max-h max-w-5xl">
@@ -51,14 +46,12 @@ export function DraftConflictDialog({
             icon={<ServerIcon className="size-4" />}
             timestamp={serverUpdatedAt}
             side="left"
-            diff={diff}
           />
           <DraftPanel
             title="本地草稿"
             icon={<MonitorIcon className="size-4" />}
             timestamp={localSavedAt}
             side="right"
-            diff={diff}
           />
         </div>
         <div className="flex flex-wrap items-center justify-end gap-2">
@@ -79,10 +72,9 @@ interface DraftPanelProps {
   icon: React.ReactNode
   timestamp: number | null
   side: 'left' | 'right'
-  diff: ReturnType<typeof diffBodies>
 }
 
-function DraftPanel({ title, icon, timestamp, side, diff }: DraftPanelProps) {
+function DraftPanel({ title, icon, timestamp }: DraftPanelProps) {
   return (
     <div className="flex min-h-0 flex-col rounded-xl border bg-card">
       <div className="flex items-center gap-2 border-b px-3 py-2 text-sm font-medium">
@@ -93,7 +85,9 @@ function DraftPanel({ title, icon, timestamp, side, diff }: DraftPanelProps) {
         ) : null}
       </div>
       <div className="max-h-(--spacing-editor-min) overflow-y-auto p-3">
-        <DiffPanel diff={diff} side={side} />
+        <div className="text-xs text-muted-foreground">
+          差异对比视图在当前编辑器外壳 POC 中尚未实现。选择一方后，编辑器会加载对应正文。
+        </div>
       </div>
     </div>
   )

@@ -25,7 +25,28 @@ describe('snapshot: routes/public/post/detail', () => {
         <Route
           loaderData={{
             post,
-            body: [{ _type: 'block', children: [{ _type: 'span', _key: 's1', text: 'Hello body' }] }],
+            body: {
+              _type: 'inkling',
+              schemaVersion: 1,
+              lexicalVersion: '0.45.0',
+              root: {
+                type: 'root',
+                version: 1,
+                direction: null,
+                format: '',
+                indent: 0,
+                children: [
+                  {
+                    type: 'paragraph',
+                    version: 1,
+                    direction: null,
+                    format: '',
+                    indent: 0,
+                    children: [{ type: 'text', version: 1, text: 'Hello body' }],
+                  },
+                ],
+              },
+            },
             visibleTags,
             sidebarPosts: [],
             tags: [],

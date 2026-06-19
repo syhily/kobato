@@ -7,7 +7,11 @@ import type { CommentItemWire as CommentItemType } from '@/shared/types/comments
 
 import { orpcQuery } from '@/client/api/orpc-query'
 import { Button } from '@/ui/components/button'
-import { isCommentBodyBlank } from '@/ui/public/comments/comment-body-helpers'
+import { isInklingCommentBlank } from '@/ui/public/comments/comment-body-helpers'
+import {
+  commentBodyToInklingDocument,
+  inklingDocumentToCommentBodyAdapter,
+} from '@/ui/public/comments/comment-inkling-adapter'
 import { LazyCommentBodyEditor } from '@/ui/public/comments/LazyCommentBodyEditor'
 
 interface InlineOwnEditFormProps {
@@ -26,25 +30,25 @@ export function InlineOwnEditForm({ comment, onCancel, onSaved }: InlineOwnEditF
     },
   })
   const seed = comment.body as CommentBody
-  const [body, setBody] = useState<CommentBody>(seed)
+  const [document, setDocument] = useState(() => commentBodyToInklingDocument(seed))
   const [bodyKey, setBodyKey] = useState(0)
 
   const submitting = updateOwn.isPending
 
   const handleSave = () => {
-    if (isCommentBodyBlank(body)) {
+    if (isInklingCommentBlank(document)) {
       return
     }
-    updateOwn.mutate({ commentId: String(comment.id), body })
+    updateOwn.mutate({ commentId: String(comment.id), body: inklingDocumentToCommentBodyAdapter(document) })
   }
 
   return (
     <div className="mt-2 block w-full">
       <LazyCommentBodyEditor
-        initialBody={seed}
-        bodyKey={`own-edit-${comment.id}-${bodyKey}`}
-        onBodyChange={(next) => {
-          setBody(next)
+        initialDocument={commentBodyToInklingDocument(seed)}
+        documentKey={`own-edit-${comment.id}-${bodyKey}`}
+        onDocumentChange={(next) => {
+          setDocument(next)
           setBodyKey((k) => (k === 0 ? k + 1 : k))
         }}
         disabled={submitting}
