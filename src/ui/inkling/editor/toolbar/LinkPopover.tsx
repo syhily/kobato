@@ -13,7 +13,9 @@ function getExistingLink(editor: LexicalEditor): { url: string; text: string } |
   let result: { url: string; text: string } | null = null
   editor.getEditorState().read(() => {
     const selection = $getSelection()
-    if (!$isRangeSelection(selection) || selection.isCollapsed()) { return }
+    if (!$isRangeSelection(selection) || selection.isCollapsed()) {
+      return
+    }
     const nodes = selection.getNodes()
     for (const node of nodes) {
       const parent = node.getParent()

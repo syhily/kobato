@@ -1,6 +1,6 @@
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
-import type { CommentBody } from '@/shared/pt/comment-schema'
+import type { InklingDocument } from '@/shared/inkling/schema'
 
 import { withCommentBadgeTextColor } from '@/server/domains/comments/badge'
 import { clearLatestCommentsCache } from '@/server/domains/comments/cache'
@@ -46,7 +46,7 @@ export async function getCommentById(db: NodePgDatabase, rid: string) {
   return findCommentWithUserById(db, idFromString(rid))
 }
 
-export async function updateComment(db: NodePgDatabase, rid: string, newBody: CommentBody) {
+export async function updateComment(db: NodePgDatabase, rid: string, newBody: InklingDocument) {
   const id = idFromString(rid)
   const { body, content } = await canonicalizeCommentBody(newBody)
   await updateCommentBodyAndContent(db, id, body, content)
@@ -60,7 +60,7 @@ export async function updateComment(db: NodePgDatabase, rid: string, newBody: Co
   return { ...withCommentBadgeTextColor(r), content: null }
 }
 
-export async function updateOwnComment(db: NodePgDatabase, rid: string, newBody: CommentBody) {
+export async function updateOwnComment(db: NodePgDatabase, rid: string, newBody: InklingDocument) {
   const id = idFromString(rid)
   const existing = await findCommentWithUserById(db, id)
   if (existing === null) {

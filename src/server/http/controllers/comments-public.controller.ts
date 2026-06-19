@@ -22,7 +22,7 @@ import {
 } from '@/server/infra/rate-limit'
 import { requireBlogSettingsSection } from '@/shared/config/getters'
 import { commentItemDto } from '@/shared/contracts/comments'
-import { commentBodySchema } from '@/shared/pt/comment-schema'
+import { inklingDocumentSchema } from '@/shared/inkling/schema'
 import { parseCommentTokensCookie, serializeCommentTokensCookie } from '@/shared/utils/comment-token'
 
 const replyComment = publicProc
@@ -95,7 +95,7 @@ const list = publicProc
 const getRaw = publicProc
   .route({ method: 'GET', path: '/comments/get-raw' })
   .input(commentRidSchema)
-  .output(z.object({ body: commentBodySchema }))
+  .output(z.object({ body: inklingDocumentSchema }))
   .handler(async ({ input, context }) => {
     const { request, session, responseHeaders } = context
     const sessionUser = userSession(session)
@@ -114,7 +114,7 @@ const getRaw = publicProc
 
 const edit = publicProc
   .route({ method: 'POST', path: '/comments/edit' })
-  .input(commentRidSchema.extend({ body: commentBodySchema }))
+  .input(commentRidSchema.extend({ body: inklingDocumentSchema }))
   .output(z.object({ comment: commentItemDto }))
   .handler(async ({ input, context }) => {
     const { request, session, responseHeaders, clientAddress } = context

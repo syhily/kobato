@@ -2,6 +2,8 @@ import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
 import { eq } from 'drizzle-orm'
 
+import type { InklingDocument } from '@/shared/inkling/schema'
+
 import { findContentById } from '@/server/domains/content/repos/query'
 import { clearContentCaches } from '@/server/domains/content/shared'
 import { toAdminPostDto, type AdminPostDto } from '@/server/domains/posts/projection'
@@ -29,7 +31,6 @@ import { invalidateSearchCache } from '@/server/infra/search/search'
 import { resolveSlugForTaxonomy } from '@/server/infra/slug'
 import { ensureSlugLegal, resolveSlug } from '@/server/infra/slug-validation'
 import { reserveSlugInTransaction } from '@/server/infra/slug/reservation'
-import { portableTextBodySchema } from '@/shared/pt/schema'
 import { idFromString } from '@/shared/utils/id'
 
 const log = getLogger('posts.service')
@@ -255,15 +256,12 @@ export async function restorePost(
       log.warn('invalidate search cache failed', { postId: id, error: err })
     })
     if (indexable !== null) {
-      const bodyResult = portableTextBodySchema.safeParse(indexable.body)
-      if (bodyResult.success) {
-        try {
-          await indexPost(db, indexable.id, indexable.title, indexable.summary, bodyResult.data)
-        } catch (err: unknown) {
-          log.warn('index post failed', { postId: indexable.id, error: err })
-          const indexWarning = '搜索索引更新失败，该文章可能不会出现在搜索结果中。'
-          warning = warning !== undefined ? `${warning} ${indexWarning}` : indexWarning
-        }
+      try {
+        await indexPost(db, indexable.id, indexable.title, indexable.summary, indexable.body as InklingDocument)
+      } catch (err: unknown) {
+        log.warn('index post failed', { postId: indexable.id, error: err })
+        const indexWarning = '搜索索引更新失败，该文章可能不会出现在搜索结果中。'
+        warning = warning !== undefined ? `${warning} ${indexWarning}` : indexWarning
       }
     }
   }

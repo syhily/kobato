@@ -2,16 +2,11 @@ import { useMutation } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useRevalidator } from 'react-router'
 
-import type { CommentBody } from '@/shared/pt/comment-schema'
 import type { CommentItemWire as CommentItemType } from '@/shared/types/comments'
 
 import { orpcQuery } from '@/client/api/orpc-query'
 import { Button } from '@/ui/components/button'
 import { isInklingCommentBlank } from '@/ui/public/comments/comment-body-helpers'
-import {
-  commentBodyToInklingDocument,
-  inklingDocumentToCommentBodyAdapter,
-} from '@/ui/public/comments/comment-inkling-adapter'
 import { LazyCommentBodyEditor } from '@/ui/public/comments/LazyCommentBodyEditor'
 
 interface InlineOwnEditFormProps {
@@ -29,8 +24,7 @@ export function InlineOwnEditForm({ comment, onCancel, onSaved }: InlineOwnEditF
       onSaved()
     },
   })
-  const seed = comment.body as CommentBody
-  const [document, setDocument] = useState(() => commentBodyToInklingDocument(seed))
+  const [document, setDocument] = useState(() => comment.body)
   const [bodyKey, setBodyKey] = useState(0)
 
   const submitting = updateOwn.isPending
@@ -39,13 +33,13 @@ export function InlineOwnEditForm({ comment, onCancel, onSaved }: InlineOwnEditF
     if (isInklingCommentBlank(document)) {
       return
     }
-    updateOwn.mutate({ commentId: String(comment.id), body: inklingDocumentToCommentBodyAdapter(document) })
+    updateOwn.mutate({ commentId: String(comment.id), body: document })
   }
 
   return (
     <div className="mt-2 block w-full">
       <LazyCommentBodyEditor
-        initialDocument={commentBodyToInklingDocument(seed)}
+        initialDocument={comment.body}
         documentKey={`own-edit-${comment.id}-${bodyKey}`}
         onDocumentChange={(next) => {
           setDocument(next)

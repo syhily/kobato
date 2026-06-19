@@ -1,40 +1,42 @@
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
-import type { Block, ImageBlock, PortableTextBody } from '@/shared/pt/schema'
+import type {
+  InklingBlockNode,
+  InklingDocument,
+  InklingImageCardNode,
+  InklingNonRecursiveBlockNode,
+} from '@/shared/inkling/schema'
 
 import { findImagesByIds, updateImageNote } from '@/server/infra/db/operations/image'
 import { getPublicBaseUrl } from '@/server/infra/storage/public-url'
 import { idFromString } from '@/shared/utils/id'
 
-// Two-step sync for `image` blocks at save time.
+// Two-step sync for `image-card` blocks at save time.
 //
 //   1. Library blocks (`imageId !== undefined`) — re-resolve
 //      `storagePath` / `width` / `height` / `thumbhash` / `src` from
 //      the canonical `image` row so the body stays in lockstep with
-//      the media library. Also write back to the row when the
-//      operator edited `alt` (`image.note`) inside the editor —
-//      this is the "edit alt updates the table" half of the brief.
+//      the media library. Also write back to the row when the operator
+//      edited `alt` (`image.note`) inside the editor.
 //
 //   2. External blocks (`imageId === undefined`) — leave alone. The
 //      `src` is a third-party URL; we don't fetch its bytes, don't
 //      compute a thumbhash, and don't add it to the revision's
-//      `image_sources` projection (the existing
-//      `collectImageStoragePaths` already skips blocks without a
-//      `storagePath`, so nothing extra to do here).
+//      `image_sources` projection.
 //
-// Mutates the passed body in place. Failures are swallowed —
+// Mutates the passed document in place. Failures are swallowed —
 // canonicalising a single block isn't worth blocking the save.
-export async function syncLibraryImageBlocks(db: NodePgDatabase, body: PortableTextBody): Promise<void> {
-  const targets: ImageBlock[] = []
-  for (const block of body) {
-    collectImageBlocks(block, targets)
+export async function syncLibraryImageBlocks(db: NodePgDatabase, document: InklingDocument): Promise<void> {
+  const targets: InklingImageCardNode[] = []
+  for (const block of document.root.children) {
+    collectImageCards(block, targets)
   }
   if (targets.length === 0) {
     return
   }
 
   // Batch-resolve imageIds to bigint ids so we can fetch all rows in one query.
-  const idTargets: { id: bigint; target: ImageBlock }[] = []
+  const idTargets: { id: bigint; target: InklingImageCardNode }[] = []
   for (const target of targets) {
     if (target.imageId === undefined || target.imageId === '') {
       continue
@@ -80,24 +82,35 @@ export async function syncLibraryImageBlocks(db: NodePgDatabase, body: PortableT
   }
 }
 
-function collectImageBlocks(block: Block, out: ImageBlock[]): void {
-  if (block._type === 'image') {
+function collectImageCards(block: InklingBlockNode, out: InklingImageCardNode[]): void {
+  if (block.type === 'image-card') {
     out.push(block)
     return
   }
-  if (block._type === 'solution' || block._type === 'footnoteDefinition') {
+  if (block.type === 'solution' || block.type === 'footnote-definition') {
     for (const child of block.children) {
-      collectImageBlocks(child, out)
+      collectImageCards(child, out)
     }
     return
   }
-  if (block._type === 'twoColumn') {
+  if (block.type === 'two-column') {
     for (const child of block.left) {
-      collectImageBlocks(child, out)
+      collectImageCards(child, out)
     }
     for (const child of block.right) {
-      collectImageBlocks(child, out)
+      collectImageCards(child, out)
     }
     return
+  }
+}
+
+export function syncLibraryImageBlocksInNonRecursiveBlocks(
+  blocks: InklingNonRecursiveBlockNode[],
+  out: InklingImageCardNode[],
+): void {
+  for (const block of blocks) {
+    if (block.type === 'image-card') {
+      out.push(block)
+    }
   }
 }

@@ -36,7 +36,9 @@ function hasFormat(editor: LexicalEditor, format: string): boolean {
   let active = false
   editor.getEditorState().read(() => {
     const selection = $getSelection()
-    if ($isRangeSelection(selection)) { active = selection.hasFormat(format as never) }
+    if ($isRangeSelection(selection)) {
+      active = selection.hasFormat(format as never)
+    }
   })
   return active
 }
@@ -53,12 +55,18 @@ function hasLink(editor: LexicalEditor): boolean {
 }
 
 function shouldShowToolbar(editor: LexicalEditor): boolean {
-  if (editor.isComposing()) { return false }
+  if (editor.isComposing()) {
+    return false
+  }
   let show = false
   editor.getEditorState().read(() => {
     const selection = $getSelection()
-    if (!$isRangeSelection(selection) || selection.isCollapsed()) { return }
-    if (selection.getTextContent().trim().length === 0) { return }
+    if (!$isRangeSelection(selection) || selection.isCollapsed()) {
+      return
+    }
+    if (selection.getTextContent().trim().length === 0) {
+      return
+    }
     show = true
   })
   return show
@@ -89,7 +97,7 @@ export function FloatingFormatToolbar() {
     if (editor === null) {
       return undefined
     }
-    return editor.registerCommand(
+    const unregister = editor.registerCommand(
       SELECTION_CHANGE_COMMAND,
       () => {
         if (shouldShowToolbar(editor)) {
@@ -98,13 +106,31 @@ export function FloatingFormatToolbar() {
             setPosition(pos)
             setVisible(true)
           }
-        } else { setVisible(false) }
+        } else {
+          setVisible(false)
+        }
         refresh()
         return false
       },
       1,
     )
-  }, [editor, refresh, selectRect])
+
+    const handleViewportChange = () => {
+      if (visible) {
+        const pos = selectRect()
+        if (pos !== null) {
+          setPosition(pos)
+        }
+      }
+    }
+    window.addEventListener('scroll', handleViewportChange, { passive: true })
+    window.addEventListener('resize', handleViewportChange)
+    return () => {
+      unregister()
+      window.removeEventListener('scroll', handleViewportChange)
+      window.removeEventListener('resize', handleViewportChange)
+    }
+  }, [editor, refresh, selectRect, visible])
 
   if (!visible || position === null) {
     return null
@@ -161,7 +187,11 @@ export function FloatingFormatToolbar() {
           />
         </svg>
       </ToolbarButton>
-      {showLinkPopover ? <LinkPopover editor={editor} onClose={() => setShowLinkPopover(false)} /> : null}
+      {showLinkPopover ? (
+        <div className="absolute top-full left-1/2 mt-2 -translate-x-1/2">
+          <LinkPopover editor={editor} onClose={() => setShowLinkPopover(false)} />
+        </div>
+      ) : null}
     </div>
   )
 }

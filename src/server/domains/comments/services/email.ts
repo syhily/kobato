@@ -8,13 +8,13 @@ import type { Comment, User } from '@/server/infra/db/types'
 import type { SendResult } from '@/server/infra/email/types'
 
 import { entityCommentUrl, findEntitySlugTitle } from '@/server/domains/comments/services/shared'
-import { commentBodyToHtml } from '@/server/domains/pt/services/comment-to-html'
 import { renderEmail, sendEmail } from '@/server/infra/email/sender'
 import ApprovedComment from '@/server/infra/email/templates/ApprovedComment'
 import NewComment from '@/server/infra/email/templates/NewComment'
 import NewReply from '@/server/infra/email/templates/NewReply'
 import { getLogger } from '@/server/infra/logger'
 import { requireBlogSettingsSection } from '@/shared/config/getters'
+import { inklingCommentToHtml } from '@/shared/inkling/comment-html'
 
 const log = getLogger('comments.email')
 
@@ -33,7 +33,7 @@ export async function sendNewComment(
   target: EntityTarget,
 ): Promise<SendResult> {
   const entity = await resolveEntity(db, target)
-  const commentHtml = commentBodyToHtml(commentInfo.body)
+  const commentHtml = inklingCommentToHtml(commentInfo.body)
   if (entity === null) {
     log.warn('Skipping new-comment email: target entity not found', { target })
     return { ok: false, reason: 'unconfigured', message: '评论目标已不存在' }
@@ -60,8 +60,8 @@ export async function sendNewReply(
   target: EntityTarget,
 ): Promise<SendResult> {
   const entity = await resolveEntity(db, target)
-  const sourceHtml = commentBodyToHtml(source.body)
-  const replyHtml = commentBodyToHtml(reply.body)
+  const sourceHtml = inklingCommentToHtml(source.body)
+  const replyHtml = inklingCommentToHtml(reply.body)
   if (entity === null) {
     log.warn('Skipping reply email: target entity not found', { target })
     return { ok: false, reason: 'unconfigured', message: '评论目标已不存在' }
@@ -91,7 +91,7 @@ export async function sendApprovedComment(
   target: EntityTarget,
 ): Promise<SendResult> {
   const entity = await resolveEntity(db, target)
-  const commentHtml = commentBodyToHtml(comment.body)
+  const commentHtml = inklingCommentToHtml(comment.body)
   if (entity === null) {
     log.warn('Skipping approval email: target entity not found', { target })
     return { ok: false, reason: 'unconfigured', message: '评论目标已不存在' }

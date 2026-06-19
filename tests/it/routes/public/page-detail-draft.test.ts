@@ -1,12 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { InklingDocument } from '@/shared/inkling/schema'
-import type { PortableTextBody } from '@/shared/pt/schema'
 
 import { makePage } from '#/_helpers/catalog'
 import { makeLoaderArgs, unwrapLoaderData } from '#/_helpers/context'
+import { inklingFromPt } from '#/_helpers/inkling'
 import { adminSession, regularSession } from '#/_helpers/session'
-import { portableTextToInklingDocument } from '@/shared/inkling/migrate-pt'
 
 // Draft-preview contract for `routes/page.detail`. Three states the
 // route distinguishes via the `draftMarker` discriminator on the
@@ -26,23 +25,23 @@ import { portableTextToInklingDocument } from '@/shared/inkling/migrate-pt'
 // trip these branches: `?draft=true` is silently ignored, and an
 // unpublished page still 404s.
 
-const publishedBody: PortableTextBody = [
+const publishedBody: InklingDocument = inklingFromPt([
   {
     _type: 'block',
     _key: 'p1',
     style: 'normal',
     children: [{ _type: 'span', _key: 's1', text: 'Published body.' }],
   },
-]
+])
 
-const draftBody: PortableTextBody = [
+const draftBody: InklingDocument = inklingFromPt([
   {
     _type: 'block',
     _key: 'p2',
     style: 'normal',
     children: [{ _type: 'span', _key: 's2', text: 'Draft body.' }],
   },
-]
+])
 
 const publishedPage = {
   ...makePage({ slug: 'about', title: 'About', permalink: '/about' }),
@@ -150,7 +149,7 @@ describe('routes/page.detail draft preview', () => {
       ),
     )
 
-    expect(result.body).toEqual(portableTextToInklingDocument(publishedBody))
+    expect(result.body).toEqual(publishedBody)
     expect(result.draftMarker).toBeNull()
     expect(draftPreviewMock).not.toHaveBeenCalled()
   })
@@ -166,7 +165,7 @@ describe('routes/page.detail draft preview', () => {
       ),
     )
 
-    expect(result.body).toEqual(portableTextToInklingDocument(publishedBody))
+    expect(result.body).toEqual(publishedBody)
     expect(result.draftMarker).toBeNull()
     // The service is consulted only after we confirm the session is
     // an admin's. For non-admin requests we never even reach it.
@@ -205,7 +204,7 @@ describe('routes/page.detail draft preview', () => {
       ),
     )
 
-    expect(result.body).toEqual(portableTextToInklingDocument(draftBody))
+    expect(result.body).toEqual(draftBody)
     expect(result.draftMarker).toBe('draft')
   })
 
@@ -229,7 +228,7 @@ describe('routes/page.detail draft preview', () => {
       ),
     )
 
-    expect(result.body).toEqual(portableTextToInklingDocument(draftBody))
+    expect(result.body).toEqual(draftBody)
     expect(result.draftMarker).toBe('unpublished-draft')
   })
 
@@ -251,7 +250,7 @@ describe('routes/page.detail draft preview', () => {
     )
 
     // No newer draft → body stays on the published revision.
-    expect(result.body).toEqual(portableTextToInklingDocument(publishedBody))
+    expect(result.body).toEqual(publishedBody)
     expect(result.draftMarker).toBe('published-draft')
   })
 
@@ -268,7 +267,7 @@ describe('routes/page.detail draft preview', () => {
       ),
     )
 
-    expect(result.body).toEqual(portableTextToInklingDocument(publishedBody))
+    expect(result.body).toEqual(publishedBody)
     expect(result.draftMarker).toBeNull()
     // No catalog miss, no `?draft=true` → the service is not even
     // consulted on the warm path.

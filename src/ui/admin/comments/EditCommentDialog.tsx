@@ -4,7 +4,6 @@ import { useState } from 'react'
 import { toast } from 'sonner'
 
 import type { InklingDocument } from '@/shared/inkling/schema'
-import type { CommentBody } from '@/shared/pt/comment-schema'
 import type { AdminCommentWire as AdminComment } from '@/shared/types/comments'
 
 import { orpcQuery } from '@/client/api/orpc-query'
@@ -21,16 +20,12 @@ import {
 } from '@/ui/components/dialog'
 import { Label } from '@/ui/components/label'
 import { isInklingCommentBlank } from '@/ui/public/comments/comment-body-helpers'
-import {
-  commentBodyToInklingDocument,
-  inklingDocumentToCommentBodyAdapter,
-} from '@/ui/public/comments/comment-inkling-adapter'
 import { CommentBodyEditor } from '@/ui/public/comments/CommentBodyEditor'
 
 export interface EditCommentDialogProps {
   comment: AdminComment | null
   onClose: () => void
-  onSaved: (next: { body: CommentBody }) => void
+  onSaved: (next: { body: InklingDocument }) => void
 }
 
 export function EditCommentDialog({ comment, onClose, onSaved }: EditCommentDialogProps) {
@@ -64,8 +59,7 @@ export function EditCommentDialog({ comment, onClose, onSaved }: EditCommentDial
   if (rawData !== lastRawData) {
     setLastRawData(rawData)
     if (comment && rawData) {
-      const loadedBody = (rawData.body ?? []) as CommentBody
-      const loadedDocument = commentBodyToInklingDocument(loadedBody)
+      const loadedDocument = rawData.body ?? EMPTY_INKLING_DOCUMENT
       setInitialDocument(loadedDocument)
       setDocument(loadedDocument)
       setBodyKey((k) => k + 1)
@@ -94,7 +88,7 @@ export function EditCommentDialog({ comment, onClose, onSaved }: EditCommentDial
               toast.error('评论内容不能为空')
               return
             }
-            editMutation.mutate({ rid: idStr(comment.id), body: inklingDocumentToCommentBodyAdapter(document) })
+            editMutation.mutate({ rid: idStr(comment.id), body: document })
           }}
           className="flex flex-col gap-4"
         >

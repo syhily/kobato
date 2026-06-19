@@ -28,35 +28,14 @@
 }
 
 /* Dark mode */
-.inkling-editor .dark,
-.inkling-editor.dark,
-.dark .inkling-editor {
-  &:not(.kg-inherit-styles) {
-    > * {
-      color: var(--inkling-muted);
-    }
-  }
-
-  ::selection {
-    background: var(--ink-3);
-  }
+.dark .inkling-editor > *,
+.inkling-editor.dark > * {
+  color: var(--inkling-muted);
 }
 
-/* Caption — smaller text */
-.inkling-editor.inkling-editor-caption {
-  font-size: 0;
-
-  > * {
-    font-size: 1.4rem;
-  }
-}
-
-.inkling-editor-caption p {
-  color: var(--ink-3);
-}
-
-.dark .inkling-editor-caption p {
-  color: var(--ink-4);
+.dark .inkling-editor ::selection,
+.inkling-editor.dark ::selection {
+  background: var(--ink-3);
 }
 
 /* Table */
@@ -75,6 +54,8 @@
 }
 
 .dark .inkling-editor table tr td,
-.dark .inkling-editor table tr th {
-  border-bottom: 1px solid var(--ink-5);
+.dark .inkling-editor table tr th,
+.inkling-editor.dark table tr td,
+.inkling-editor.dark table tr th {
+  border-bottom: 1px solid var(--line);
 }

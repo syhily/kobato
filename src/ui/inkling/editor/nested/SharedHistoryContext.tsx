@@ -24,3 +24,8 @@ export function useSharedHistoryState(): HistoryState {
   }
   return state
 }
+
+/** Returns the shared history state when inside a provider, otherwise null. */
+export function useOptionalSharedHistoryState(): HistoryState | null {
+  return useContext(SharedHistoryContext)
+}

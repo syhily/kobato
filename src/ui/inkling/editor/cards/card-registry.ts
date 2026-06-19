@@ -2,16 +2,15 @@ import type { LexicalEditor } from 'lexical'
 
 import type { InklingFeatureMode } from '@/shared/inkling/schema'
 
+import { $createSolutionCardNode, $createTwoColumnCardNode } from '@/ui/inkling/editor/cards/layout-card-nodes'
 import {
   $createCodeCardNode,
   $createHorizontalRuleCardNode,
   $createImageCardNode,
   $createMathCardNode,
   $createMusicCardNode,
-  $createSolutionCardNode,
   $createTableCardNode,
-  $createTwoColumnCardNode,
-} from '@/ui/inkling/editor/cards/card-nodes'
+} from '@/ui/inkling/editor/cards/simple-card-nodes'
 
 const INKLING_CARD_NODE_TYPES = new Set<string>([
   'image-card',

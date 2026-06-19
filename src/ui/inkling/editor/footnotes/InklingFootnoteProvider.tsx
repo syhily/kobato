@@ -16,23 +16,15 @@ export interface InklingFootnoteContextValue {
   dialogMode: 'create' | 'edit'
   dialogInitialChildren: InklingNonRecursiveBlockNode[]
   editTargetKey: string | null
-  openInsertDialog: () => void
+  openInsertDialog: (targetKey?: string) => void
   openEditDialog: (targetKey: string) => void
   closeDialog: () => void
-  insertDefinition: (children: InklingNonRecursiveBlockNode[]) => FootnoteDefinitionItem | null
-  updateDefinition: (targetKey: string, children: InklingNonRecursiveBlockNode[]) => boolean
-  removeDefinition: (targetKey: string) => boolean
   syncFromDocument: (document: InklingDocument) => void
 }
 
 const InklingFootnoteContext = createContext<InklingFootnoteContextValue | null>(null)
 
-export interface InklingFootnoteProviderProps {
-  children: ReactNode
-  initialDefinitions?: readonly FootnoteDefinitionItem[]
-}
-
-function generateFootnoteKey(): string {
+export function generateFootnoteKey(): string {
   const bytes = new Uint8Array(8)
   if (typeof globalThis !== 'undefined' && typeof globalThis.crypto?.getRandomValues === 'function') {
     globalThis.crypto.getRandomValues(bytes)
@@ -48,26 +40,31 @@ function generateFootnoteKey(): string {
   return out.slice(0, 12)
 }
 
+export interface InklingFootnoteProviderProps {
+  children: ReactNode
+  initialDefinitions?: readonly FootnoteDefinitionItem[]
+}
+
+const EMPTY_PARAGRAPH: InklingNonRecursiveBlockNode = {
+  type: 'paragraph',
+  version: 1,
+  direction: null,
+  format: '',
+  indent: 0,
+  children: [],
+}
+
 export function InklingFootnoteProvider({ children, initialDefinitions = [] }: InklingFootnoteProviderProps) {
   const [definitions, setDefinitions] = useState<readonly FootnoteDefinitionItem[]>(initialDefinitions)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [dialogMode, setDialogMode] = useState<'create' | 'edit'>('create')
-  const [dialogInitialChildren, setDialogInitialChildren] = useState<InklingNonRecursiveBlockNode[]>([])
+  const [dialogInitialChildren, setDialogInitialChildren] = useState<InklingNonRecursiveBlockNode[]>([EMPTY_PARAGRAPH])
   const [editTargetKey, setEditTargetKey] = useState<string | null>(null)
 
-  const openInsertDialog = useCallback(() => {
-    setEditTargetKey(null)
+  const openInsertDialog = useCallback((targetKey?: string) => {
+    setEditTargetKey(targetKey ?? null)
     setDialogMode('create')
-    setDialogInitialChildren([
-      {
-        type: 'paragraph',
-        version: 1,
-        direction: null,
-        format: '',
-        indent: 0,
-        children: [],
-      },
-    ])
+    setDialogInitialChildren([EMPTY_PARAGRAPH])
     setDialogOpen(true)
   }, [])
 
@@ -76,20 +73,7 @@ export function InklingFootnoteProvider({ children, initialDefinitions = [] }: I
       const def = definitions.find((d) => d.targetKey === targetKey)
       setEditTargetKey(targetKey)
       setDialogMode('edit')
-      setDialogInitialChildren(
-        def !== undefined && def.children.length > 0
-          ? [...def.children]
-          : [
-              {
-                type: 'paragraph',
-                version: 1,
-                direction: null,
-                format: '',
-                indent: 0,
-                children: [],
-              },
-            ],
-      )
+      setDialogInitialChildren(def !== undefined && def.children.length > 0 ? [...def.children] : [EMPTY_PARAGRAPH])
       setDialogOpen(true)
     },
     [definitions],
@@ -98,49 +82,6 @@ export function InklingFootnoteProvider({ children, initialDefinitions = [] }: I
   const closeDialog = useCallback(() => {
     setDialogOpen(false)
     setEditTargetKey(null)
-  }, [])
-
-  const insertDefinition = useCallback((children: InklingNonRecursiveBlockNode[]): FootnoteDefinitionItem | null => {
-    const targetKey = generateFootnoteKey()
-    let newDef: FootnoteDefinitionItem | null = null
-    setDefinitions((prev) => {
-      const nextIndex = prev.length + 1
-      newDef = { targetKey, index: nextIndex, children: [...children] }
-      return [...prev, newDef]
-    })
-    return newDef
-  }, [])
-
-  const updateDefinition = useCallback((targetKey: string, children: InklingNonRecursiveBlockNode[]): boolean => {
-    let found = false
-    setDefinitions((prev) =>
-      prev.map((d) => {
-        if (d.targetKey !== targetKey) {
-          return d
-        }
-        found = true
-        return { ...d, children: [...children] }
-      }),
-    )
-    return found
-  }, [])
-
-  const removeDefinition = useCallback((targetKey: string): boolean => {
-    let found = false
-    setDefinitions((prev) => {
-      const filtered = prev.filter((d) => {
-        if (d.targetKey === targetKey) {
-          found = true
-          return false
-        }
-        return true
-      })
-      if (!found) {
-        return prev
-      } // Renumber remaining definitions sequentially.
-      return filtered.map((d, i) => ({ ...d, index: i + 1 }))
-    })
-    return found
   }, [])
 
   const syncFromDocument = useCallback((document: InklingDocument) => {
@@ -163,9 +104,6 @@ export function InklingFootnoteProvider({ children, initialDefinitions = [] }: I
       openInsertDialog,
       openEditDialog,
       closeDialog,
-      insertDefinition,
-      updateDefinition,
-      removeDefinition,
       syncFromDocument,
     }),
     [
@@ -177,9 +115,6 @@ export function InklingFootnoteProvider({ children, initialDefinitions = [] }: I
       openInsertDialog,
       openEditDialog,
       closeDialog,
-      insertDefinition,
-      updateDefinition,
-      removeDefinition,
       syncFromDocument,
     ],
   )

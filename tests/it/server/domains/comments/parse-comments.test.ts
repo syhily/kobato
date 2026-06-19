@@ -2,6 +2,8 @@ import { describe, expect, it, vi } from 'vitest'
 
 import type { CommentAndUser, CommentItem } from '@/shared/types/comments'
 
+import { emptyInklingDocument, inklingFromPt } from '#/_helpers/inkling'
+
 // `parseComments` consumes the raw `(roots + children)` union returned by
 // `loadComments` and produces the nested tree the public list renders.
 // Soft-deleted rows (`deleteAt !== null`) MUST disappear from the rendered
@@ -28,14 +30,14 @@ function row(overrides: Omit<Partial<CommentAndUser>, 'id'> & { id: bigint }): C
     updatedAt: new Date('2024-01-01T00:00:00.000Z'),
     deleteAt: null,
     content: null,
-    body: [
+    body: inklingFromPt([
       {
         _type: 'block' as const,
         _key: `b-${String(id)}`,
         style: 'normal' as const,
         children: [{ _type: 'span' as const, _key: `s-${String(id)}`, text: 'x' }],
       },
-    ],
+    ]),
     type: 'post' as const,
     ownerId: 1n,
     userId: 7n,

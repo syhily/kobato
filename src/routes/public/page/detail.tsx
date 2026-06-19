@@ -5,13 +5,12 @@ import type { RouteHandle } from '@/root'
 
 import { getDbFromContext } from '@/server/domains/auth/context'
 import { listAllFriends } from '@/server/domains/friends/service'
-import { prerenderMusicPlayerBlocks } from '@/server/domains/pt/prerender'
+import { prerenderInklingMusicPlayers } from '@/server/domains/inkling/music-prerender'
 import { loadPublicDetailData } from '@/server/http/loaders/detail'
 import { loadPagePreview } from '@/server/http/loaders/page-preview'
 import { detailHeaders, publicShouldRevalidate } from '@/server/http/loaders/route-exports'
 import { bundleFromMatches, routeMeta, seoForPage } from '@/server/render/seo/meta'
 import { requireBlogSettingsSection } from '@/shared/config/getters'
-import { portableTextToInklingDocument } from '@/shared/inkling/migrate-pt'
 import { resolveFootnotesSectionTitle } from '@/shared/utils/footnotes-section-title'
 import { InklingBody } from '@/ui/inkling/render/InklingBody'
 import { Friends } from '@/ui/pt/blocks/Friends'
@@ -34,8 +33,8 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
   ])
 
   const footnotesSectionTitle = resolveFootnotesSectionTitle(requireBlogSettingsSection('content'))
-  const enrichedBody = await prerenderMusicPlayerBlocks(db, preview.body)
-  const body = portableTextToInklingDocument(enrichedBody ?? preview.body)
+  const enrichedBody = await prerenderInklingMusicPlayers(db, preview.body)
+  const body = enrichedBody ?? preview.body
 
   const { detail } = await loadPublicDetailData(db, {
     request,

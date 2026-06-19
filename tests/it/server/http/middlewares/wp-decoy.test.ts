@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { makePage, makePost } from '#/_helpers/catalog'
 import { makeLoaderArgs, unwrapLoaderData } from '#/_helpers/context'
+import { emptyInklingDocument } from '#/_helpers/inkling'
 import { regularSession } from '#/_helpers/session'
 import {
   assertNotWordPressDecoy,
@@ -34,7 +35,7 @@ fixtures.samplePost = {
 }
 fixtures.samplePage = {
   ...makePage({ slug: 'about' }),
-  body: [],
+  body: emptyInklingDocument(),
   imageSources: [],
   publishedRevisionId: null,
 }

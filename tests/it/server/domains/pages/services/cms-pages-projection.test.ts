@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest'
 
 import type { ContentRow, PageMetaRow } from '@/server/infra/db/types'
 
+import { emptyInklingDocument, inklingFromPt } from '#/_helpers/inkling'
+
 // Projection-layer unit tests. These run without any mocks because
 // the projection module is pure data shaping — it accepts already-fetched
 // rows and produces the public/admin DTOs. The tests pin two contracts:
@@ -45,7 +47,7 @@ function contentRow(overrides: Partial<ContentRow> = {}): ContentRow {
     ownerId: overrides.ownerId ?? 1n,
     revisionNo: overrides.revisionNo ?? 1,
     status: overrides.status ?? 'draft',
-    body: overrides.body ?? [],
+    body: overrides.body ?? emptyInklingDocument(),
     imageSources: overrides.imageSources ?? [],
     headings: overrides.headings ?? [],
     authorId: overrides.authorId ?? null,
@@ -58,7 +60,7 @@ function contentRow(overrides: Partial<ContentRow> = {}): ContentRow {
 describe('cms/pages/projection — toCmsPage', () => {
   it('returns an empty body when there is no published revision', () => {
     const dto = toCmsPage(metaRow({ id: 1n, publishedRevisionId: null }), null)
-    expect(dto.body).toEqual([])
+    expect(dto.body).toEqual(emptyInklingDocument())
     expect(dto.imageSources).toEqual([])
     expect(dto.headings).toEqual([])
     expect(dto.publishedRevisionId).toBeNull()
@@ -66,14 +68,14 @@ describe('cms/pages/projection — toCmsPage', () => {
   })
 
   it('joins the published revision body when present', () => {
-    const body = [
+    const body = inklingFromPt([
       {
         _type: 'block',
         _key: 'b1',
         style: 'h2',
         children: [{ _type: 'span', _key: 's1', text: 'Hi' }],
       },
-    ]
+    ])
     const dto = toCmsPage(
       metaRow({ id: 1n, publishedRevisionId: 200n }),
       contentRow({
@@ -93,7 +95,7 @@ describe('cms/pages/projection — toCmsPage', () => {
     expect(() =>
       toCmsPage(
         metaRow({ id: 1n, publishedRevisionId: 200n }),
-        contentRow({ id: 200n, body: [{ _type: 'unknown_block', payload: 'foo' }] }),
+        contentRow({ id: 200n, body: inklingFromPt([{ _type: 'unknown_block', payload: 'foo' }]) }),
       ),
     ).toThrow()
   })
@@ -103,7 +105,7 @@ describe('cms/pages/projection — toCmsPage', () => {
       metaRow({ id: 1n, publishedRevisionId: 200n }),
       contentRow({
         id: 200n,
-        body: [],
+        body: emptyInklingDocument(),
         imageSources: ['ok.jpg', 42, null] as unknown as ContentRow['imageSources'],
       }),
     )
@@ -115,7 +117,7 @@ describe('cms/pages/projection — toCmsPage', () => {
       metaRow({ id: 1n, publishedRevisionId: 200n }),
       contentRow({
         id: 200n,
-        body: [],
+        body: emptyInklingDocument(),
         headings: [
           { depth: 2, text: 'ok', slug: 'ok' },
           { depth: 'two', text: 'x' },
@@ -134,14 +136,14 @@ describe('cms/pages/projection — toAdminRevisionDto', () => {
         id: 12345n,
         revisionNo: 7,
         status: 'published',
-        body: [
+        body: inklingFromPt([
           {
             _type: 'block',
             _key: 'b1',
             style: 'normal',
             children: [{ _type: 'span', _key: 's1', text: 'Hi' }],
           },
-        ],
+        ]),
         authorId: 99n,
       }),
     )
@@ -155,12 +157,14 @@ describe('cms/pages/projection — toAdminRevisionDto', () => {
 
   it('throws on malformed body so the editor never hydrates with garbage', () => {
     expect(() =>
-      toAdminRevisionDto(contentRow({ body: [{ _type: 'block' }] as unknown as ContentRow['body'] })),
+      toAdminRevisionDto(contentRow({ body: inklingFromPt([{ _type: 'block' }]) as unknown as ContentRow['body'] })),
     ).toThrow()
   })
 
   it('coalesces unknown statuses to draft (defensive)', () => {
-    const dto = toAdminRevisionDto(contentRow({ status: 'somethingElse' as unknown as ContentRow['status'], body: [] }))
+    const dto = toAdminRevisionDto(
+      contentRow({ status: 'somethingElse' as unknown as ContentRow['status'], body: emptyInklingDocument() }),
+    )
     expect(dto.status).toBe('draft')
   })
 })

@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest'
 
 import type { ContentRow, PostMetaRow } from '@/server/infra/db/types'
 
+import { emptyInklingDocument, inklingFromPt } from '#/_helpers/inkling'
+
 // Projection-layer unit tests for post DTO shaping.  Pins two contracts:
 //
 //   1. `toCmsPost` / `toClientPostFromMeta` fall back to the default cover
@@ -48,7 +50,7 @@ function contentRow(overrides: Partial<ContentRow> = {}): ContentRow {
     ownerId: overrides.ownerId ?? 1n,
     revisionNo: overrides.revisionNo ?? 1,
     status: overrides.status ?? 'draft',
-    body: overrides.body ?? [],
+    body: overrides.body ?? emptyInklingDocument(),
     imageSources: overrides.imageSources ?? [],
     headings: overrides.headings ?? [],
     authorId: overrides.authorId ?? null,
@@ -71,7 +73,7 @@ describe('cms/posts/projection — toCmsPost', () => {
 
   it('returns an empty body when there is no published revision', () => {
     const dto = toCmsPost(metaRow({ publishedRevisionId: null }), null)
-    expect(dto.body).toEqual([])
+    expect(dto.body).toEqual(emptyInklingDocument())
     expect(dto.imageSources).toEqual([])
     expect(dto.headings).toEqual([])
     expect(dto.permalink).toBe('/posts/hello')
@@ -85,17 +87,17 @@ describe('cms/posts/projection — toCmsPost', () => {
         style: 'h2',
         children: [{ _type: 'span', _key: 's1', text: 'Hi' }],
       },
-    ]
+    ] as const
     const dto = toCmsPost(
       metaRow({ publishedRevisionId: 200n }),
       contentRow({
         id: 200n,
-        body,
+        body: inklingFromPt(body),
         imageSources: ['images/x.jpg'],
         headings: [{ depth: 2, text: 'Hi', slug: 'hi' }],
       }),
     )
-    expect(dto.body).toEqual(body)
+    expect(dto.body).toEqual(inklingFromPt(body))
     expect(dto.imageSources).toEqual(['images/x.jpg'])
     expect(dto.headings).toEqual([{ depth: 2, text: 'Hi', slug: 'hi' }])
   })

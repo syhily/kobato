@@ -1,19 +1,21 @@
-import type { MarkdownHeading, PortableTextBody } from '@/shared/types/catalog'
+import type { InklingDocument } from '@/shared/inkling/schema'
+import type { MarkdownHeading } from '@/shared/types/catalog'
 
-import { validatePortableTextBody } from '@/shared/pt/utils'
+import { createEmptyInklingDocument } from '@/shared/inkling/empty'
+import { validateInklingDocument } from '@/shared/inkling/schema'
 import { isRecord } from '@/shared/utils/type-guards'
 
 // `content.body` is `jsonb` so Drizzle hands it to us as `unknown`.
-// We round-trip through `validatePortableTextBody` so the SSR /
+// We round-trip through `validateInklingDocument` so the SSR /
 // editor never sees a malformed payload — saving a corrupted blob
 // shouldn't be possible (the API perimeter validates), but defending
 // the read path keeps a future direct-INSERT bug from blanking the
 // public site.
-export function readBody(value: unknown): PortableTextBody {
+export function readBody(value: unknown): InklingDocument {
   if (value === null || value === undefined) {
-    return []
+    return createEmptyInklingDocument()
   }
-  return validatePortableTextBody(value)
+  return validateInklingDocument(value)
 }
 
 export function readHeadings(value: unknown): MarkdownHeading[] {

@@ -4,6 +4,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { CommentAndUser } from '@/server/domains/comments/types'
 
+import { inklingParagraph } from '#/_helpers/inkling'
+
 // Stub email templates with trivial React components so the import
 // chain is cheap and we can focus on the sender's transport / config
 // branches.
@@ -18,9 +20,6 @@ vi.mock('@/server/email/templates/ApprovedComment', () => ({
 }))
 vi.mock('@/server/email/render', () => ({
   render: vi.fn(() => '<p>stub</p>'),
-}))
-vi.mock('@/server/domains/pt/services/comment-to-html', () => ({
-  commentBodyToHtml: vi.fn(() => '<p>stub</p>'),
 }))
 
 // `sender.ts` resolves the entity's current slug + title at send time.
@@ -75,6 +74,7 @@ describe('email/sender — internalSend (via sendNewComment)', () => {
   const commentInfo = {
     id: 7n,
     content: 'hello',
+    body: inklingParagraph('hello'),
     isPending: false,
     user: { id: 1n, name: 'visitor', email: 'visitor@example.com' },
   } as unknown as CommentAndUser

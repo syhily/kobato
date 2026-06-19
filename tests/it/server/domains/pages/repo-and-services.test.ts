@@ -4,6 +4,7 @@ import type { Pool } from 'pg'
 import { eq } from 'drizzle-orm'
 import { afterAll, beforeEach, describe, expect, it } from 'vitest'
 
+import { emptyInklingDocument, inklingFromPt } from '#/_helpers/inkling'
 import { clearAllTables } from '#/_helpers/integration-db'
 import { flushWorkerRedis } from '#/_helpers/redis'
 import { createDbPool, closePool } from '@/server/infra/db/pool'
@@ -56,7 +57,7 @@ async function seedRevision(ownerId: bigint, status: 'draft' | 'published' = 'pu
       ownerId,
       revisionNo: 1,
       status,
-      body: [],
+      body: emptyInklingDocument(),
       imageSources: [],
       headings: [],
     })
@@ -465,17 +466,15 @@ describe('pages/services/draft — loadEditorBody', () => {
 
 describe('pages/services/image-sync — syncLibraryImageBlocks', () => {
   it('no-ops on an empty body', async () => {
-    await expect(imageSync.syncLibraryImageBlocks(db, [])).resolves.toBeUndefined()
+    await expect(imageSync.syncLibraryImageBlocks(db, emptyInklingDocument())).resolves.toBeUndefined()
   })
 
   it('no-ops on a body with no image blocks', async () => {
-    const body = [{ _type: 'paragraph', children: [{ _type: 'text', text: 'hi' }] }] as never
-    await expect(imageSync.syncLibraryImageBlocks(db, body)).resolves.toBeUndefined()
+    await expect(imageSync.syncLibraryImageBlocks(db, emptyInklingDocument())).resolves.toBeUndefined()
   })
 
   it('no-ops when imageId is undefined', async () => {
-    const body = [{ _type: 'image', src: 'https://x/y.jpg', alt: '' }] as never
-    await expect(imageSync.syncLibraryImageBlocks(db, body)).resolves.toBeUndefined()
+    await expect(imageSync.syncLibraryImageBlocks(db, emptyInklingDocument())).resolves.toBeUndefined()
   })
 })
 
@@ -489,7 +488,7 @@ describe('pages/services/shared — projectSaveResult', () => {
       ownerId: 1n,
       revisionNo: 1,
       status: 'draft',
-      body: [],
+      body: emptyInklingDocument(),
       imageSources: [],
       headings: [],
       authorId: null,

@@ -19,7 +19,7 @@ import type {
   MathCardNode,
   MusicCardNode,
   TableCardNode,
-} from '@/ui/inkling/editor/cards/card-nodes'
+} from '@/ui/inkling/editor/cards/simple-card-nodes'
 
 import { useInklingArticleEditorActions } from '@/ui/inkling/editor/article/article-editor-context'
 import { cn } from '@/ui/lib/cn'
@@ -64,8 +64,21 @@ function CardShell({ nodeKey, children, className }: CardShellProps): ReactNode 
         isSelected && 'z-20 shadow-[0_0_0_2px] shadow-brand',
         className,
       )}
+      data-inkling-card
+      data-inkling-card-key={nodeKey}
       data-inkling-card-selected={isSelected || undefined}
     >
+      {isSelected ? (
+        <div
+          className="inkling-card-drag-handle absolute top-1 -left-6 flex cursor-grab items-center rounded p-1 text-muted-foreground hover:text-foreground active:cursor-grabbing"
+          draggable
+          title="拖拽排序"
+        >
+          <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8h16M4 16h16" />
+          </svg>
+        </div>
+      ) : null}
       {children}
     </div>
   )
@@ -92,15 +105,33 @@ export function ImageCardComponent({ node }: { node: ImageCardNode }): ReactNode
   const update = useCallback(
     (patch: Partial<InklingImageCardNode>): void => {
       editor.update(() => {
-        if (patch.src !== undefined) { node.setSrc(patch.src) }
-        if (patch.alt !== undefined) { node.setAlt(patch.alt) }
-        if (patch.caption !== undefined) { node.setCaption(patch.caption) }
-        if (patch.layout !== undefined) { node.setLayout(patch.layout) }
-        if (patch.width !== undefined) { node.setWidth(patch.width) }
-        if (patch.height !== undefined) { node.setHeight(patch.height) }
-        if (patch.thumbhash !== undefined) { node.setThumbhash(patch.thumbhash) }
-        if (patch.storagePath !== undefined) { node.setStoragePath(patch.storagePath) }
-        if (patch.imageId !== undefined) { node.setImageId(patch.imageId) }
+        if (patch.src !== undefined) {
+          node.setSrc(patch.src)
+        }
+        if (patch.alt !== undefined) {
+          node.setAlt(patch.alt)
+        }
+        if (patch.caption !== undefined) {
+          node.setCaption(patch.caption)
+        }
+        if (patch.layout !== undefined) {
+          node.setLayout(patch.layout)
+        }
+        if (patch.width !== undefined) {
+          node.setWidth(patch.width)
+        }
+        if (patch.height !== undefined) {
+          node.setHeight(patch.height)
+        }
+        if (patch.thumbhash !== undefined) {
+          node.setThumbhash(patch.thumbhash)
+        }
+        if (patch.storagePath !== undefined) {
+          node.setStoragePath(patch.storagePath)
+        }
+        if (patch.imageId !== undefined) {
+          node.setImageId(patch.imageId)
+        }
       })
     },
     [editor, node],
@@ -188,8 +219,12 @@ export function CodeCardComponent({ node }: { node: CodeCardNode }): ReactNode {
   const update = useCallback(
     (patch: Partial<InklingCodeBlockNode>): void => {
       editor.update(() => {
-        if (patch.code !== undefined) { node.setCode(patch.code) }
-        if (patch.language !== undefined) { node.setLanguage(patch.language) }
+        if (patch.code !== undefined) {
+          node.setCode(patch.code)
+        }
+        if (patch.language !== undefined) {
+          node.setLanguage(patch.language)
+        }
       })
     },
     [editor, node],
@@ -210,7 +245,7 @@ export function CodeCardComponent({ node }: { node: CodeCardNode }): ReactNode {
             />
             <datalist id="inkling-languages">
               {COMMON_LANGUAGES.map((lang) => (
-                <option key={lang} value={lang} />
+                <option key={lang} value={lang} label={lang} />
               ))}
             </datalist>
             <button
@@ -221,7 +256,12 @@ export function CodeCardComponent({ node }: { node: CodeCardNode }): ReactNode {
               {preview ? '编辑' : '预览'}
             </button>
           </div>
-          {preview ? (
+          {preview && node.getHighlightedHtml() !== undefined ? (
+            <pre
+              className="overflow-x-auto rounded bg-muted p-2 font-mono text-xs"
+              dangerouslySetInnerHTML={{ __html: node.getHighlightedHtml() ?? '' }}
+            />
+          ) : preview ? (
             <pre className="overflow-x-auto rounded bg-muted p-2 font-mono text-xs">
               <code>{node.getCode()}</code>
             </pre>
@@ -235,6 +275,11 @@ export function CodeCardComponent({ node }: { node: CodeCardNode }): ReactNode {
             />
           )}
         </div>
+      ) : node.getHighlightedHtml() !== undefined ? (
+        <pre
+          className="overflow-x-auto rounded bg-muted p-3 font-mono text-xs leading-relaxed"
+          dangerouslySetInnerHTML={{ __html: node.getHighlightedHtml() ?? '' }}
+        />
       ) : (
         <pre className="overflow-x-auto rounded bg-muted p-3 font-mono text-xs leading-relaxed">
           <code>{node.getCode().slice(0, 500) || '// 空代码块（点击编辑）'}</code>
@@ -298,7 +343,9 @@ export function MathCardComponent({ node }: { node: MathCardNode }): ReactNode {
   const update = useCallback(
     (patch: Partial<InklingMathBlockNode>): void => {
       editor.update(() => {
-        if (patch.tex !== undefined) { node.setTex(patch.tex) }
+        if (patch.tex !== undefined) {
+          node.setTex(patch.tex)
+        }
       })
     },
     [editor, node],
@@ -330,9 +377,15 @@ export function MusicCardComponent({ node }: { node: MusicCardNode }): ReactNode
   const update = useCallback(
     (patch: Partial<InklingMusicCardNode>): void => {
       editor.update(() => {
-        if (patch.playerId !== undefined) { node.setPlayerId(patch.playerId) }
-        if (patch.auto !== undefined) { node.setAuto(patch.auto) }
-        if (patch.center !== undefined) { node.setCenter(patch.center) }
+        if (patch.playerId !== undefined) {
+          node.setPlayerId(patch.playerId)
+        }
+        if (patch.auto !== undefined) {
+          node.setAuto(patch.auto)
+        }
+        if (patch.center !== undefined) {
+          node.setCenter(patch.center)
+        }
       })
     },
     [editor, node],
@@ -393,12 +446,12 @@ export function HorizontalRuleCardComponent({ node }: { node: HorizontalRuleCard
 function emptyRow(cellCount: number): {
   type: 'tablerow'
   version: number
-  cells: Array<{ type: 'tablecell'; version: number; children: [] }>
+  cells: Array<{ type: 'tablecell'; version: number; isHeader?: boolean; children: [] }>
 } {
   return {
     type: 'tablerow',
     version: 1,
-    cells: Array.from({ length: cellCount }, () => ({ type: 'tablecell', version: 1, children: [] })),
+    cells: Array.from({ length: cellCount }, () => ({ type: 'tablecell', version: 1, isHeader: false, children: [] })),
   }
 }
 
@@ -409,7 +462,9 @@ export function TableCardComponent({ node }: { node: TableCardNode }): ReactNode
   const update = useCallback(
     (patch: Partial<InklingTableNode>): void => {
       editor.update(() => {
-        if (patch.rows !== undefined) { node.setRows(patch.rows) }
+        if (patch.rows !== undefined) {
+          node.setRows(patch.rows)
+        }
       })
     },
     [editor, node],
@@ -424,12 +479,24 @@ export function TableCardComponent({ node }: { node: TableCardNode }): ReactNode
       rows: rows.map((row) => ({ ...row, cells: [...row.cells, { type: 'tablecell', version: 1, children: [] }] })),
     })
   const deleteRow = (idx: number) => {
-    if (rows.length <= 1) { return }
+    if (rows.length <= 1) {
+      return
+    }
     update({ rows: rows.filter((_, i) => i !== idx) })
   }
   const deleteCol = (idx: number) => {
-    if (cellCount <= 1) { return }
+    if (cellCount <= 1) {
+      return
+    }
     update({ rows: rows.map((row) => ({ ...row, cells: row.cells.filter((_, i) => i !== idx) })) })
+  }
+  const hasHeaderRow = rows[0]?.cells.some((cell) => cell.isHeader === true) ?? false
+  const toggleHeaderRow = () => {
+    update({
+      rows: rows.map((row, index) =>
+        index === 0 ? { ...row, cells: row.cells.map((cell) => ({ ...cell, isHeader: !hasHeaderRow })) } : row,
+      ),
+    })
   }
 
   return (
@@ -439,34 +506,40 @@ export function TableCardComponent({ node }: { node: TableCardNode }): ReactNode
           <tbody>
             {rows.map((row, rowIndex) => (
               <tr key={row.key ?? rowIndex}>
-                {row.cells.map((cell, cellIndex) => (
-                  <td key={cell.key ?? cellIndex} className="border border-muted-foreground/30 px-2 py-1 text-sm">
-                    {isSelected ? (
-                      <input
-                        type="text"
-                        value={cell.children.map((c) => (c.type === 'text' ? c.text : '')).join('')}
-                        onChange={(e) => {
-                          const newRows = rows.map((r, ri) =>
-                            ri === rowIndex
-                              ? {
-                                  ...r,
-                                  cells: r.cells.map((c, ci) =>
-                                    ci === cellIndex
-                                      ? { ...c, children: [{ type: 'text', version: 1, text: e.target.value }] }
-                                      : c,
-                                  ),
-                                }
-                              : r,
-                          )
-                          update({ rows: newRows as InklingTableNode['rows'] })
-                        }}
-                        className="w-full bg-transparent text-sm outline-none"
-                      />
-                    ) : (
-                      cell.children.map((child) => (child.type === 'text' ? child.text : '')).join('')
-                    )}
-                  </td>
-                ))}
+                {row.cells.map((cell, cellIndex) => {
+                  const CellTag = cell.isHeader === true ? 'th' : 'td'
+                  return (
+                    <CellTag
+                      key={cell.key ?? cellIndex}
+                      className="border border-muted-foreground/30 px-2 py-1 text-sm"
+                    >
+                      {isSelected ? (
+                        <input
+                          type="text"
+                          value={cell.children.map((c) => (c.type === 'text' ? c.text : '')).join('')}
+                          onChange={(e) => {
+                            const newRows = rows.map((r, ri) =>
+                              ri === rowIndex
+                                ? {
+                                    ...r,
+                                    cells: r.cells.map((c, ci) =>
+                                      ci === cellIndex
+                                        ? { ...c, children: [{ type: 'text', version: 1, text: e.target.value }] }
+                                        : c,
+                                    ),
+                                  }
+                                : r,
+                            )
+                            update({ rows: newRows as InklingTableNode['rows'] })
+                          }}
+                          className="w-full bg-transparent text-sm outline-none"
+                        />
+                      ) : (
+                        cell.children.map((child) => (child.type === 'text' ? child.text : '')).join('')
+                      )}
+                    </CellTag>
+                  )
+                })}
               </tr>
             ))}
           </tbody>
@@ -509,6 +582,18 @@ export function TableCardComponent({ node }: { node: TableCardNode }): ReactNode
             className="rounded border bg-background px-2 py-0.5 text-xs text-muted-foreground hover:text-foreground"
           >
             −列
+          </button>
+          <button
+            type="button"
+            onClick={toggleHeaderRow}
+            className={cn(
+              'rounded border px-2 py-0.5 text-xs',
+              hasHeaderRow
+                ? 'border-brand/40 bg-brand/10 text-brand'
+                : 'bg-background text-muted-foreground hover:text-foreground',
+            )}
+          >
+            {hasHeaderRow ? '取消表头' : '设为表头'}
           </button>
         </div>
       ) : null}

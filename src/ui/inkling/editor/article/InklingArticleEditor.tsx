@@ -9,8 +9,8 @@ import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext
 import { ContentEditable } from '@lexical/react/LexicalContentEditable'
 import { HistoryPlugin } from '@lexical/react/LexicalHistoryPlugin'
 import { HeadingNode, QuoteNode } from '@lexical/rich-text'
-import { ParagraphNode, $createTextNode, $getSelection, $isRangeSelection } from 'lexical'
-import { useMemo, useEffect, useState, useCallback } from 'react'
+import { ParagraphNode } from 'lexical'
+import { useEffect, useMemo, type RefObject } from 'react'
 
 import type { InklingDocument } from '@/shared/inkling/schema'
 import type { InklingArticleEditorProps } from '@/ui/inkling/editor/article/article-editor-types'
@@ -19,21 +19,22 @@ import { InklingArticleEditorProvider } from '@/ui/inkling/editor/article/articl
 import { InlineMathNode } from '@/ui/inkling/editor/article/InlineMathNode'
 import { InklingDragDropReorder } from '@/ui/inkling/editor/behaviour/DragDropReorderPlugin'
 import { useInklingKeyboardNavigation } from '@/ui/inkling/editor/behaviour/keyboard-navigation'
+import { SolutionCardNode, TwoColumnCardNode } from '@/ui/inkling/editor/cards/layout-card-nodes'
 import {
   CodeCardNode,
   HorizontalRuleCardNode,
   ImageCardNode,
   MathCardNode,
   MusicCardNode,
-  SolutionCardNode,
   TableCardNode,
-  TwoColumnCardNode,
-} from '@/ui/inkling/editor/cards/card-nodes'
-import { registerFootnoteCaretTrigger } from '@/ui/inkling/editor/footnotes/FootnoteCaretTrigger'
-import { FootnoteDialog } from '@/ui/inkling/editor/footnotes/FootnoteDialog'
-import { FootnoteRefNode, $createFootnoteRefNode } from '@/ui/inkling/editor/footnotes/FootnoteRefNode'
+} from '@/ui/inkling/editor/cards/simple-card-nodes'
+import { reportEditorError } from '@/ui/inkling/editor/error-report'
+import { FootnoteController } from '@/ui/inkling/editor/footnotes/FootnoteController'
+import { FootnoteDefinitionNode } from '@/ui/inkling/editor/footnotes/FootnoteDefinitionNode'
+import { FootnoteRefNode } from '@/ui/inkling/editor/footnotes/FootnoteRefNode'
+import { InklingFootnoteProvider } from '@/ui/inkling/editor/footnotes/InklingFootnoteProvider'
 import { InklingSlashMenuPlugin } from '@/ui/inkling/editor/menu/SlashMenu'
-import { SharedHistoryProvider } from '@/ui/inkling/editor/nested/SharedHistoryContext'
+import { SharedHistoryProvider, useSharedHistoryState } from '@/ui/inkling/editor/nested/SharedHistoryContext'
 import { OnInklingDocumentChangePlugin } from '@/ui/inkling/editor/plugins/OnInklingDocumentChangePlugin'
 import { FloatingFormatToolbar } from '@/ui/inkling/editor/toolbar/FloatingFormatToolbar'
 
@@ -61,6 +62,7 @@ const ARTICLE_NODES: InitialConfigType['nodes'] = [
   ListItemNode,
   LinkNode,
   FootnoteRefNode,
+  FootnoteDefinitionNode,
   InlineMathNode,
   ImageCardNode,
   CodeCardNode,
@@ -82,15 +84,14 @@ export function InklingArticleEditor({
   onDocumentChange,
   disabled,
   actions = {},
+  editorRef: editorRefProp,
 }: InklingArticleEditorProps) {
-  // P3.1 (floating toolbar) and P3.3 (slash menu) are TODO —
-  // placeholder components that will be added in follow-up.
   const initialConfig: InitialConfigType = useMemo(
     () => ({
       namespace: 'inkling-article-editor',
       theme,
       onError: (error: Error) => {
-        console.error('Inkling article editor error:', error)
+        reportEditorError(error, 'article')
       },
       nodes: ARTICLE_NODES,
       editable: disabled !== true,
@@ -108,32 +109,32 @@ export function InklingArticleEditor({
   return (
     <InklingArticleEditorProvider actions={actions}>
       <SharedHistoryProvider>
-        <LexicalComposer initialConfig={initialConfig}>
-          <div className="inkling-editor">
-            <div className="inkling-prose">
-              <ContentEditable
-                className="inkling-article-editor__content min-h-[12rem] focus:outline-none"
-                aria-placeholder="在此处开始编写内容…（/ 命令菜单，^ 空格插入脚注）"
-                placeholder={() => (
-                  <div className="inkling-placeholder pointer-events-none absolute top-0 left-0 text-muted-foreground select-none">
-                    在此处开始编写内容…（/ 命令菜单，^ 空格插入脚注）
-                  </div>
-                )}
-              />
+        <InklingFootnoteProvider>
+          <LexicalComposer initialConfig={initialConfig}>
+            <div className="inkling-editor">
+              <div className="inkling-prose">
+                <ContentEditable
+                  className="inkling-article-editor__content min-h-[12rem] focus:outline-none"
+                  aria-placeholder="在此处开始编写内容…（/ 命令菜单，^ 空格插入脚注）"
+                  placeholder={() => (
+                    <div className="inkling-placeholder pointer-events-none absolute top-0 left-0 text-muted-foreground select-none">
+                      在此处开始编写内容…（/ 命令菜单，^ 空格插入脚注）
+                    </div>
+                  )}
+                />
+              </div>
+              <EditorRefSetter editorRef={editorRefProp} />
+              <OnInklingDocumentChangePlugin onChange={onDocumentChange} />
+              <SharedHistoryPlugin />
+              <AutoFocusPlugin />
+              <InklingKeyboardNav />
+              <FloatingFormatToolbar />
+              <InklingSlashMenuPlugin mode="article" />
+              <FootnoteController />
+              <InklingDragDropReorder />
             </div>
-            <OnInklingDocumentChangePlugin onChange={onDocumentChange} />
-            <HistoryPlugin />
-            <AutoFocusPlugin />
-            <InklingKeyboardNav />
-            <FloatingFormatToolbar />
-            <InklingSlashMenuPlugin mode="article" />
-            <FootnoteSystem />
-            <InklingDragDropReorder />
-            {/* P4.1 TODO: <InklingFootnoteProvider> / <FootnoteCaretTrigger /> / <FootnoteDialog /> */}
-            {/* P4.2 TODO: <SharedHistoryContext> for nested editors */}
-            {/* P4.3 TODO: <NestedEditor> wire for Solution/TwoColumn card decorate() */}
-          </div>
-        </LexicalComposer>
+          </LexicalComposer>
+        </InklingFootnoteProvider>
       </SharedHistoryProvider>
     </InklingArticleEditorProvider>
   )
@@ -145,46 +146,24 @@ function InklingKeyboardNav() {
   return null
 }
 
-function FootnoteSystem() {
+function EditorRefSetter({ editorRef }: { editorRef?: RefObject<LexicalEditor | null> }) {
   const [editor] = useLexicalComposerContext()
-  const [dialogOpen, setDialogOpen] = useState(false)
-  const [dialogText, setDialogText] = useState('')
-  const [dialogIndex, setDialogIndex] = useState(0)
-
   useEffect(() => {
-    if (editor === null) {
-      return undefined
+    if (editorRef !== undefined) {
+      editorRef.current = editor
     }
-    return registerFootnoteCaretTrigger(editor, () => {
-      setDialogText('')
-      setDialogIndex(1)
-      setDialogOpen(true)
-    })
-  }, [editor])
+    return () => {
+      if (editorRef !== undefined) {
+        editorRef.current = null
+      }
+    }
+  }, [editor, editorRef])
+  return null
+}
 
-  const handleSave = useCallback(
-    (_text: string) => {
-      editor?.update(() => {
-        const selection = $getSelection()
-        if (!$isRangeSelection(selection)) { return }
-        const ref = $createFootnoteRefNode('fn', 'fn', 1)
-        selection.insertNodes([ref, $createTextNode(' ')])
-      })
-      setDialogOpen(false)
-    },
-    [editor],
-  )
-
-  return (
-    <FootnoteDialog
-      open={dialogOpen}
-      initialText={dialogText}
-      index={dialogIndex}
-      onSave={handleSave}
-      onDelete={() => setDialogOpen(false)}
-      onClose={() => setDialogOpen(false)}
-    />
-  )
+function SharedHistoryPlugin() {
+  const historyState = useSharedHistoryState()
+  return <HistoryPlugin externalHistoryState={historyState} />
 }
 
 export { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'

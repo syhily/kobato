@@ -3,6 +3,9 @@ import type { Pool } from 'pg'
 
 import { afterAll, beforeEach, describe, expect, it } from 'vitest'
 
+import type { InklingDocument } from '@/shared/inkling/schema'
+
+import { emptyInklingDocument } from '#/_helpers/inkling'
 import { clearAllTables } from '#/_helpers/integration-db'
 import { createDbPool, closePool } from '@/server/infra/db/pool'
 import { content as contentTable } from '@/server/infra/db/schema/content'
@@ -27,7 +30,7 @@ async function seedContent(overrides: {
   ownerId: bigint
   revisionNo: number
   status?: 'draft' | 'published'
-  body?: unknown
+  body?: InklingDocument
   imageSources?: string[]
   headings?: unknown
 }) {
@@ -38,7 +41,7 @@ async function seedContent(overrides: {
       ownerId: overrides.ownerId,
       revisionNo: overrides.revisionNo,
       status: overrides.status ?? 'draft',
-      body: overrides.body ?? [],
+      body: overrides.body ?? emptyInklingDocument(),
       imageSources: overrides.imageSources ?? [],
       headings: overrides.headings ?? [],
     })

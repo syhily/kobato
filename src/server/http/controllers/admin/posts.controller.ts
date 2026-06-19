@@ -23,7 +23,7 @@ import {
 } from '@/server/domains/posts/services/mutate'
 import { authorProc } from '@/server/http/orpc-base'
 import { deriveSlug } from '@/server/infra/slug'
-import { renderPortableTextToHtml as renderPostPortableTextToHtml } from '@/server/render/feed/feed-pt-render'
+import { renderInklingToHtml } from '@/server/render/inkling/html'
 import {
   adminPostDetailDto,
   adminPostDto,
@@ -31,7 +31,7 @@ import {
   listPostsOutputDto,
 } from '@/shared/contracts/posts'
 import { previewOutputDto, saveResultOutput } from '@/shared/contracts/revision'
-import { collectHeadings } from '@/shared/pt/utils'
+import { collectInklingHeadings } from '@/shared/inkling/headings'
 import { idFromString } from '@/shared/utils/id'
 
 const idInput = z.object({ id: z.string().min(1) })
@@ -160,8 +160,8 @@ const preview = authorProc
   .input(previewPostBodySchema)
   .output(previewOutputDto)
   .handler(async ({ input, context }) => {
-    const html = await renderPostPortableTextToHtml(context.db, input.body, [])
-    const headings = collectHeadings(input.body, deriveSlug)
+    const html = await renderInklingToHtml(context.db, input.body, [])
+    const headings = collectInklingHeadings(input.body, deriveSlug)
     return { html, headings }
   })
 

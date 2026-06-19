@@ -45,9 +45,7 @@ export const COMMENT_FEATURE_TYPES = new Set<string>([
   'inline-math',
 ])
 
-const ALL_INKLING_FEATURE_TYPES = new Set<string>([
-  ...ARTICLE_FEATURE_TYPES,
-])
+const ALL_INKLING_FEATURE_TYPES = new Set<string>(ARTICLE_FEATURE_TYPES)
 
 export const FORBIDDEN_IN_COMMENT = new Set<string>(
   [...ALL_INKLING_FEATURE_TYPES].filter((type) => !COMMENT_FEATURE_TYPES.has(type)),
@@ -65,10 +63,6 @@ export interface InklingFeatureValidationError {
 }
 
 export type InklingFeatureValidation = InklingFeatureValidationResult | InklingFeatureValidationError
-
-function isForbiddenInComment(type: string): boolean {
-  return FORBIDDEN_IN_COMMENT.has(type)
-}
 
 function collectInlineNodeTypes(node: InklingInlineNode, path: string, sink: Map<string, string>): void {
   sink.set(node.type, path)

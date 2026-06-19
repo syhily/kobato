@@ -5,15 +5,15 @@ import { toast } from 'sonner'
 import type { AdminCommentWire as AdminComment } from '@/shared/types/comments'
 
 import { orpcQuery } from '@/client/api/orpc-query'
+import { inklingToPlainText } from '@/shared/inkling/plaintext'
 import { useSiteIdentity } from '@/shared/lib/blog-config-context'
-import { bodyToPlainText } from '@/shared/pt/utils'
 import { formatLocalDate } from '@/shared/utils/formatter'
 import { safeHref } from '@/shared/utils/safe-url'
 import { idStr } from '@/shared/utils/tools'
 import { Avatar, AvatarFallback, AvatarImage } from '@/ui/components/avatar'
 import { Badge } from '@/ui/components/badge'
 import { Button } from '@/ui/components/button'
-import { PortableTextBody } from '@/ui/pt/render'
+import { InklingBody } from '@/ui/inkling/render/InklingBody'
 import { Image } from '@/ui/public/widgets/Image'
 
 const ADMIN_DATE_FORMAT = 'yyyy-LL-dd HH:mm'
@@ -172,7 +172,7 @@ export function AdminCommentRow({
 
           {/* Body */}
           <div className="comment-content prose-blog prose prose-sm mt-2 max-w-none leading-[1.85] wrap-break-word whitespace-normal">
-            <PortableTextBody body={comment.body} />
+            <InklingBody document={comment.body} />
           </div>
 
           {/* Action row — flat, no overflow menu. Text label hides on narrow screens. */}
@@ -329,7 +329,7 @@ function resolveParent(comment: AdminComment, parentLookup: Map<string, AdminCom
 // or nested code block collapses into whitespace, not into a literal
 // newline inside the inline hint.
 function snippet(body: AdminComment['body'], max: number): string {
-  const text = bodyToPlainText(body).replace(/\s+/g, ' ').trim()
+  const text = inklingToPlainText(body).replace(/\s+/g, ' ').trim()
   if (text.length <= max) {
     return text
   }

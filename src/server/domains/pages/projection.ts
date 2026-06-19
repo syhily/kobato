@@ -1,10 +1,11 @@
 import type { ContentRow, PageMetaRow } from '@/server/infra/db/types'
-import type { PortableTextBody } from '@/shared/pt/schema'
+import type { InklingDocument } from '@/shared/inkling/schema'
 import type { ClientPage } from '@/shared/types/catalog'
 import type { AdminRevisionDto } from '@/shared/types/revision'
 
 import { readBody, readHeadings } from '@/server/domains/content/projection-helpers'
 import { DomainError } from '@/server/infra/http/errors'
+import { createEmptyInklingDocument } from '@/shared/inkling/empty'
 import { readStringArray } from '@/shared/utils/tools'
 
 // --- Public catalog projection ----------------------------------------------
@@ -12,11 +13,11 @@ import { readStringArray } from '@/shared/utils/tools'
 // SSR-rendered `Page` DTO returned by the catalog. Mirrors the
 // historical `ClientPage` shape exactly so the public detail route +
 // SEO + feeds carry forward unchanged. The `body` slot now carries
-// PortableText (was MDXContent), and `imageSources` flows from the
+// Inkling Lexical JSON, and `imageSources` flows from the
 // `content` revision rather than from the MDX AST.
 export interface CmsPage extends ClientPage {
-  /** PortableText payload. Empty array for pages whose published revision is missing. */
-  body: PortableTextBody
+  /** Inkling Lexical JSON payload. Empty document for pages whose published revision is missing. */
+  body: InklingDocument
   imageSources: string[]
   /** The `content.id` whose body is being rendered (used for cache keys / debug). */
   publishedRevisionId: bigint | null
@@ -37,7 +38,7 @@ export function toCmsPage(
     coverHeight?: number
   } = {},
 ): CmsPage {
-  const body = publishedRevision !== null ? readBody(publishedRevision.body) : []
+  const body = publishedRevision !== null ? readBody(publishedRevision.body) : createEmptyInklingDocument()
   const imageSources = publishedRevision !== null ? readStringArray(publishedRevision.imageSources) : []
   const headings = publishedRevision !== null ? readHeadings(publishedRevision.headings) : []
 

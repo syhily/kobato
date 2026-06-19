@@ -49,7 +49,7 @@ const dbPage = {
     comments: false,
     toc: false,
   }),
-  body: dbPageBody,
+  body: portableTextToInklingDocument(dbPageBody),
   imageSources: ['https://cdn.example.com/photo.jpg'],
   publishedRevisionId: 42n,
 }
@@ -120,8 +120,8 @@ vi.mock('@/server/domains/images/services/cover', () => ({
 // The music prerender would hit Postgres via findMusicByPlayerId; this
 // test pins the page-body contract, not music resolution, so pass the
 // body straight through.
-vi.mock('@/server/domains/pt/prerender', () => ({
-  prerenderMusicPlayerBlocks: vi.fn(async (_db: unknown, body: unknown) => body),
+vi.mock('@/server/domains/inkling/music-prerender', () => ({
+  prerenderInklingMusicPlayers: vi.fn(async (_db: unknown, body: unknown) => body),
 }))
 
 const pageRoute = await import('@/routes/public/page/detail')

@@ -2,7 +2,7 @@ import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 import type { LoaderFunctionArgs } from 'react-router'
 
 import type { ResolvedImageMeta } from '@/server/domains/images/services/enhance'
-import type { PortableTextBody } from '@/shared/pt/schema'
+import type { InklingDocument } from '@/shared/inkling/schema'
 import type { MarkdownHeading } from '@/shared/utils/toc'
 
 import { tryGetSessionContext } from '@/server/domains/auth/context'
@@ -37,7 +37,7 @@ export interface PagePreviewResult {
     showUpdated: boolean
     headings: MarkdownHeading[]
   }
-  body: PortableTextBody
+  body: InklingDocument
   showFriends: boolean
   draftMarker: DraftMarker
   publicEtag: string | null

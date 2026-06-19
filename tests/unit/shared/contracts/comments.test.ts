@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest'
 
-import type { CommentBody } from '@/shared/pt/comment-schema'
 import type { AdminCommentWire as AdminComment } from '@/shared/types/comments'
 import type {
   ActiveFilter,
@@ -9,16 +8,11 @@ import type {
   StatusCounts,
 } from '@/ui/admin/comments/useCommentsController'
 
+import { inklingParagraph } from '#/_helpers/inkling'
 import { commentsReducer } from '@/ui/admin/comments/useCommentsController'
 
-// Minimal Portable Text block — type-safe without constructing every span field.
-const mockBody = [
-  {
-    _type: 'block' as const,
-    _key: 'a',
-    children: [{ _type: 'span' as const, _key: 'b', text: 'hello', marks: [] as never[] }],
-  },
-] satisfies CommentBody
+// Minimal Inkling document with a single paragraph.
+const mockBody = inklingParagraph('hello')
 
 // Minimal mock — the reducer only touches a handful of fields so we
 // don't need a full wire object. Cast through `as` avoids listing every
@@ -281,13 +275,7 @@ describe('commentsReducer — removeComment', () => {
 
 describe('commentsReducer — updateCommentContent', () => {
   it('updates the body of the matching comment', () => {
-    const newBody = [
-      {
-        _type: 'block' as const,
-        _key: 'x',
-        children: [{ _type: 'span' as const, _key: 'y', text: 'updated', marks: [] as never[] }],
-      },
-    ] satisfies CommentBody
+    const newBody = inklingParagraph('updated')
     const comments = [mockComment({ id: '1' }), mockComment({ id: '2' })]
     const prev = emptyState({ comments })
     const action: CommentsAction = { type: 'updateCommentContent', id: '1', body: newBody }

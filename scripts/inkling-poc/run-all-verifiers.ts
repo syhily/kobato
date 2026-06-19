@@ -61,12 +61,6 @@ const VERIFIERS: Verifier[] = [
     report: 'tmp/inkling-poc/comment-html-cleanup-report.json',
     optional: true,
   },
-  {
-    name: 'article-literal-html-probe',
-    script: 'scripts/inkling-poc/probe-article-literal-html.ts',
-    report: 'tmp/inkling-poc/article-literal-html-report.json',
-    optional: true,
-  },
 ]
 
 const LOADER = 'scripts/inkling-poc/path-loader-register.mjs'
@@ -79,6 +73,7 @@ interface RunResult {
   report: string
   reportExists: boolean
   optional: boolean
+  error?: string
 }
 
 function runVerifier(verifier: Verifier): Promise<RunResult> {
@@ -127,7 +122,7 @@ function runVerifier(verifier: Verifier): Promise<RunResult> {
         reportExists: existsSync(join(ROOT, verifier.report)),
         optional: verifier.optional === true,
         error: error instanceof Error ? error.message : String(error),
-      } as unknown as RunResult)
+      })
     })
   })
 }

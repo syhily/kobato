@@ -4,6 +4,7 @@ import type { Pool } from 'pg'
 import { randomUUID } from 'node:crypto'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { emptyInklingDocument, inklingFromPt } from '#/_helpers/inkling'
 import { clearAllTables } from '#/_helpers/integration-db'
 import { flushWorkerRedis } from '#/_helpers/redis'
 import { createDbPool, closePool } from '@/server/infra/db/pool'
@@ -52,7 +53,7 @@ async function seedComment(opts: Partial<typeof comment.$inferInsert> = {}): Pro
       ownerId: 1n,
       userId: 1n,
       content: 'hi',
-      body: [],
+      body: emptyInklingDocument(),
       ...opts,
     })
     .returning({ id: comment.id })
@@ -102,28 +103,28 @@ describe('comments/services/moderate — updateComment', () => {
     const u1 = await seedUser()
     const id = await seedComment({ userId: u1, content: 'old' })
     const { updateComment } = await import('@/server/domains/comments/services/moderate')
-    const r = await updateComment(db, String(id), [])
+    const r = await updateComment(db, String(id), emptyInklingDocument())
     expect(r).not.toBeNull()
     const rows = await db.select({ content: comment.content }).from(comment)
     expect(rows[0]?.content).toBe('md')
   })
   it('returns null when the comment does not exist', async () => {
     const { updateComment } = await import('@/server/domains/comments/services/moderate')
-    expect(await updateComment(db, '9999', [])).toBeNull()
+    expect(await updateComment(db, '9999', emptyInklingDocument())).toBeNull()
   })
 })
 
 describe('comments/services/moderate — updateOwnComment', () => {
   it('returns null when the comment does not exist', async () => {
     const { updateOwnComment } = await import('@/server/domains/comments/services/moderate')
-    expect(await updateOwnComment(db, '9999', [])).toBeNull()
+    expect(await updateOwnComment(db, '9999', emptyInklingDocument())).toBeNull()
   })
   it('edits inside the grace window without re-pending', async () => {
     const u1 = await seedUser()
     const now = new Date()
     const id = await seedComment({ userId: u1, updatedAt: now, createdAt: now })
     const { updateOwnComment } = await import('@/server/domains/comments/services/moderate')
-    const r = await updateOwnComment(db, String(id), [])
+    const r = await updateOwnComment(db, String(id), emptyInklingDocument())
     expect(r).not.toBeNull()
     const rows = await db.select({ isPending: comment.isPending }).from(comment)
     expect(rows[0]?.isPending).toBe(false)
@@ -133,7 +134,7 @@ describe('comments/services/moderate — updateOwnComment', () => {
     const old = new Date(Date.now() - 60 * 60 * 1000)
     const id = await seedComment({ userId: u1, createdAt: old, updatedAt: old })
     const { updateOwnComment } = await import('@/server/domains/comments/services/moderate')
-    const r = await updateOwnComment(db, String(id), [])
+    const r = await updateOwnComment(db, String(id), emptyInklingDocument())
     expect(r).not.toBeNull()
     const rows = await db.select({ isPending: comment.isPending }).from(comment)
     expect(rows[0]?.isPending).toBe(true)

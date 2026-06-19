@@ -1,6 +1,7 @@
 import { call } from '@orpc/server'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { emptyInklingDocument, inklingParagraph } from '#/_helpers/inkling'
 import { makePublicCtx } from '#/_helpers/mock-ctx'
 
 // `comment-public.controller` orchestrates many service modules; we
@@ -90,9 +91,7 @@ const { commentsPublicRouter } = await import('@/server/http/controllers/comment
 const commentsRouter = commentsPublicRouter
 const { likesRouter } = await import('@/server/http/controllers/likes.controller')
 
-const validBody = [
-  { _type: 'block' as const, _key: 'b1', children: [{ _type: 'span' as const, _key: 's1', text: 'hello' }] },
-]
+const validBody = inklingParagraph('hello')
 
 function makeValidReplyInput() {
   return {
@@ -223,7 +222,9 @@ describe('commentsRouter.getRaw', () => {
 describe('commentsRouter.edit', () => {
   it('throws BAD_REQUEST when rid is not numeric', async () => {
     const ctx = makePublicCtx()
-    await expect(call(commentsRouter.edit, { rid: 'not-a-number', body: [] }, { context: ctx })).rejects.toMatchObject({
+    await expect(
+      call(commentsRouter.edit, { rid: 'not-a-number', body: emptyInklingDocument() }, { context: ctx }),
+    ).rejects.toMatchObject({
       code: 'BAD_REQUEST',
     })
   })

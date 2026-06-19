@@ -11,6 +11,7 @@ import { toClientPostFromMeta } from '@/server/domains/posts/repos/shared'
 import { findTagNamesByPostId } from '@/server/infra/db/operations/post-tag'
 import { content as contentTable } from '@/server/infra/db/schema/content'
 import { post as postMetaTable } from '@/server/infra/db/schema/post'
+import { EMPTY_INKLING_DOCUMENT } from '@/shared/inkling/empty'
 
 export async function findPostMetaById(db: NodePgDatabase, id: bigint): Promise<PostMetaRow | null> {
   const rows = await db.select().from(postMetaTable).where(eq(postMetaTable.id, id)).limit(1)
@@ -39,7 +40,7 @@ export async function findPublicPostMetaBySlug(db: NodePgDatabase, slug: string)
 export function toPostFromMeta(meta: PostMetaRow, tags: string[] = []): Post {
   return {
     ...toClientPostFromMeta(meta, tags),
-    body: [],
+    body: EMPTY_INKLING_DOCUMENT,
     imageSources: [],
     publishedRevisionId: meta.publishedRevisionId,
   }

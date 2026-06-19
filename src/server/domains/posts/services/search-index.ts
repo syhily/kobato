@@ -2,12 +2,11 @@ import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
 import { eq, sql } from 'drizzle-orm'
 
-import type { PortableTextBody } from '@/shared/pt/schema'
+import type { InklingDocument } from '@/shared/inkling/schema'
 
 import { postSearchIndex } from '@/server/infra/db/schema/content'
 import { getLogger } from '@/server/infra/logger'
 import { generateEmbedding } from '@/server/infra/search/openai'
-import { portableTextToInklingDocument } from '@/shared/inkling/migrate-pt'
 import { inklingToPlainText } from '@/shared/inkling/plaintext'
 
 // pgvector column dimension. Must stay in sync with `postSearchIndex.embedding`
@@ -40,10 +39,9 @@ export async function indexPost(
   postId: bigint,
   title: string,
   summary: string,
-  body: PortableTextBody,
+  body: InklingDocument,
 ): Promise<void> {
-  const inklingDoc = portableTextToInklingDocument(body)
-  const plainText = inklingToPlainText(inklingDoc)
+  const plainText = inklingToPlainText(body)
   const indexText = `${title}\n${summary}\n${plainText}`.trim()
 
   const rawEmbedding = await generateEmbedding(indexText)

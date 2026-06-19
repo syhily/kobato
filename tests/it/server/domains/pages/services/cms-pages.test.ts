@@ -4,6 +4,9 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { PageMetaWithAuthor } from '@/server/domains/pages/repo'
 import type { ContentRow } from '@/server/infra/db/types'
+import type { InklingDocument } from '@/shared/inkling/schema'
+
+import { emptyInklingDocument, inklingFromPt } from '#/_helpers/inkling'
 
 // CMS page service — drives the save/publish state machine through
 // the repository's mocked transactional helpers. The repository
@@ -144,7 +147,7 @@ function contentRow(overrides: Partial<ContentRow> = {}): ContentRow {
     ownerId: overrides.ownerId ?? 1n,
     revisionNo: overrides.revisionNo ?? 1,
     status: overrides.status ?? 'draft',
-    body: overrides.body ?? [],
+    body: overrides.body ?? emptyInklingDocument(),
     imageSources: overrides.imageSources ?? [],
     headings: overrides.headings ?? [],
     authorId: overrides.authorId ?? null,
@@ -154,14 +157,14 @@ function contentRow(overrides: Partial<ContentRow> = {}): ContentRow {
   }
 }
 
-const VALID_BODY = [
+const VALID_BODY: InklingDocument = inklingFromPt([
   {
     _type: 'block',
     _key: 'b1',
     style: 'h2',
     children: [{ _type: 'span', _key: 's1', text: 'Hello world' }],
   },
-]
+])
 
 beforeEach(() => {
   for (const fn of Object.values(repo)) {
@@ -298,9 +301,15 @@ describe('cms/pages/service — createPage / updatePageMeta validation', () => {
 describe('cms/pages/service — saveDraft / publishLatest body validation', () => {
   it('rejects a malformed body (zod issues become DomainError 400)', async () => {
     vi.mocked(repo.findPageMetaById).mockResolvedValue(metaRow({ id: 1n }))
-    await expect(
-      draft.saveDraft(db, { pageId: 1n, body: [{ _type: 'unknown', _key: 'k' }], authorId: null }),
-    ).rejects.toMatchObject({ code: 'BAD_REQUEST' })
+    const malformed = {
+      _type: 'inkling',
+      schemaVersion: 1,
+      lexicalVersion: '0.45.0',
+      root: {},
+    } as unknown as InklingDocument
+    await expect(draft.saveDraft(db, { pageId: 1n, body: malformed, authorId: null })).rejects.toMatchObject({
+      code: 'BAD_REQUEST',
+    })
     expect(contentMutate.saveDraftRevision).not.toHaveBeenCalled()
   })
 
@@ -319,7 +328,7 @@ describe('cms/pages/service — saveDraft / publishLatest body validation', () =
       row: contentRow({ revisionNo: 1, status: 'draft' }),
     })
 
-    const body = [
+    const body = inklingFromPt([
       {
         _type: 'block',
         _key: 'h1',
@@ -332,7 +341,7 @@ describe('cms/pages/service — saveDraft / publishLatest body validation', () =
         src: 'https://cdn/example.jpg',
         storagePath: 'images/2026/05/foo.jpg',
       },
-    ]
+    ])
     await draft.saveDraft(db, { pageId: 1n, body, authorId: 42n })
 
     const arg = vi.mocked(contentMutate.saveDraftRevision).mock.calls[0][2]

@@ -2,6 +2,7 @@ import { describe, expect, expectTypeOf, it } from 'vitest'
 
 import type { ClientPage, ClientPost, Page, Post } from '@/shared/types/catalog'
 
+import { emptyInklingDocument, inklingFromPt } from '#/_helpers/inkling'
 import {
   toClientPage,
   toClientPost,
@@ -53,7 +54,7 @@ describe('shared/types/catalog — toClientPost', () => {
   it('strips body / imageSources / publishedRevisionId from a Post', () => {
     const post: Post = {
       ...basePost,
-      body: [],
+      body: emptyInklingDocument(),
       imageSources: ['/a.png'],
       publishedRevisionId: 5n,
     }
@@ -70,7 +71,7 @@ describe('shared/types/catalog — toClientPage', () => {
   it('strips body / imageSources / publishedRevisionId from a Page', () => {
     const page: Page = {
       ...basePage,
-      body: [],
+      body: emptyInklingDocument(),
       imageSources: ['/a.png'],
       publishedRevisionId: null,
     }

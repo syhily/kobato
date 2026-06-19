@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest'
 
 import type { CommentItemWire as CommentItemType, Comments as CommentsData } from '@/shared/types/comments'
 
+import { inklingParagraph } from '#/_helpers/inkling'
 import { renderInRouter, stableHtml } from '#/_helpers/render'
 import { Comments } from '@/ui/public/comments/Comments'
 
@@ -46,15 +47,7 @@ function makeComment(overrides: Partial<CommentItemType> = {}): CommentItemType 
     updatedAt: overrides.updatedAt ?? '2024-03-12T08:30:00.000Z',
     deleteAt: overrides.deleteAt ?? null,
     deleteRequestedAt: overrides.deleteRequestedAt ?? null,
-    body: overrides.body ?? [
-      {
-        _type: 'block',
-        _key: `b${seq}`,
-        style: 'normal',
-        markDefs: [],
-        children: [{ _type: 'span', _key: `s${seq}`, text: `Body ${seq}` }],
-      },
-    ],
+    body: overrides.body ?? inklingParagraph(`Body ${seq}`),
     type: overrides.type ?? 'post',
     ownerId: overrides.ownerId ?? '1',
     userId: overrides.userId ?? String(100 + seq),

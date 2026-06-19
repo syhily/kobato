@@ -1,15 +1,16 @@
 import type { ContentRow, PostMetaRow } from '@/server/infra/db/types'
-import type { PortableTextBody } from '@/shared/pt/schema'
+import type { InklingDocument } from '@/shared/inkling/schema'
 import type { ClientPost } from '@/shared/types/catalog'
 import type { AdminRevisionDto } from '@/shared/types/revision'
 
 import { readBody, readHeadings } from '@/server/domains/content/projection-helpers'
+import { createEmptyInklingDocument } from '@/shared/inkling/empty'
 import { readStringArray } from '@/shared/utils/tools'
 
 // --- Public catalog projection ----------------------------------------------
 
 export interface CmsPost extends ClientPost {
-  body: PortableTextBody
+  body: InklingDocument
   imageSources: string[]
   publishedRevisionId: bigint | null
 }
@@ -24,7 +25,7 @@ export function toCmsPost(
     tags?: string[]
   } = {},
 ): CmsPost {
-  const body = publishedRevision !== null ? readBody(publishedRevision.body) : []
+  const body = publishedRevision !== null ? readBody(publishedRevision.body) : createEmptyInklingDocument()
   const imageSources = publishedRevision !== null ? readStringArray(publishedRevision.imageSources) : []
   const headings = publishedRevision !== null ? readHeadings(publishedRevision.headings) : []
 

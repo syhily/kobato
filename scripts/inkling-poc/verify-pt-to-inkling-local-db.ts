@@ -15,7 +15,7 @@ import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { Client } from 'pg'
 
-import { verifyPtToInklingMigration } from '@/server/domains/inkling/poc/migration-verifier'
+import { verifyPtToInklingMigration } from '@/server/domains/inkling/migration-support/migration-verifier'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const OUT_DIR = resolve(__dirname, '..', '..', 'tmp', 'inkling-poc')

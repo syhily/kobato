@@ -1,35 +1,32 @@
 import { z } from 'zod'
 
-import type { CommentBody } from '@/shared/pt/comment-schema'
-
+import { prerenderInklingDocument } from '@/server/domains/inkling/prerender'
 import { DomainError } from '@/server/infra/http/errors'
-import { prerenderPortableTextBody } from '@/server/infra/pt/prerender'
-import { commentBodyToMarkdown } from '@/shared/pt/comment-markdown'
-import { commentBodySchema, isCommentBodyEmpty } from '@/shared/pt/comment-schema'
+import { isInklingCommentEmpty } from '@/shared/inkling/comment-empty'
+import { inklingCommentToMarkdown } from '@/shared/inkling/comment-markdown'
+import { validateInklingDocumentForMode } from '@/shared/inkling/features'
+import { inklingDocumentSchema, type InklingDocument } from '@/shared/inkling/schema'
 
 const COMMENT_MAX_BLOCKS = 200
 const COMMENT_MAX_HTTP_URLS = 3
 
-// Validate and prepare a comment body for persistence:
-//   1. Parse the incoming JSON through `commentBodySchema` so the
-//      narrow comment dialect is enforced at the API perimeter.
-//   2. Reject empty / link-spam bodies. The old markdown pipeline
-//      counted `https?://` substrings in raw text; the PT equivalent
-//      walks `link` markDefs (the only way the editor produces URLs)
-//      to keep the spam-prevention spirit intact.
-//   3. Pre-render heavy assets (Shiki for `code` blocks, KaTeX for
-//      `mathBlock` and `mathInline` markDefs). The renderer is
-//      shared with posts / pages and already no-ops for block types
-//      the comment dialect doesn't permit.
-//   4. Serialise the canonical PT body back into markdown for the
+// Validate and prepare a comment Inkling body for persistence:
+//   1. Parse the incoming JSON through `inklingDocumentSchema` so the
+//      document envelope is structurally sound.
+//   2. Enforce the narrower comment feature set (no headings, images,
+//      music cards, tables, footnotes, etc.).
+//   3. Reject empty / link-spam bodies.
+//   4. Pre-render heavy assets (Shiki for `code-block`, KaTeX for
+//      `math-block` and `inline-math`).
+//   5. Serialise the canonical Inkling body back into markdown for the
 //      `comment.content` rollback snapshot.
 //
 // On any validation failure, surface a `DomainError` so the resource
 // route can translate it into a structured `ActionFailure` response.
-export async function canonicalizeCommentBody(input: unknown): Promise<{ body: CommentBody; content: string }> {
-  let parsed: CommentBody
+export async function canonicalizeCommentBody(input: unknown): Promise<{ body: InklingDocument; content: string }> {
+  let parsed: InklingDocument
   try {
-    parsed = commentBodySchema.parse(input)
+    parsed = inklingDocumentSchema.parse(input)
   } catch (error) {
     if (error instanceof z.ZodError) {
       throw new DomainError('BAD_REQUEST', '评论内容格式有误。')
@@ -37,65 +34,140 @@ export async function canonicalizeCommentBody(input: unknown): Promise<{ body: C
     throw error
   }
 
-  if (parsed.length > COMMENT_MAX_BLOCKS) {
+  const featureCheck = validateInklingDocumentForMode(parsed, 'comment')
+  if (!featureCheck.ok) {
+    throw new DomainError('BAD_REQUEST', '评论内容包含不允许的元素。')
+  }
+
+  if (hasDisallowedLinkUrl(parsed)) {
+    throw new DomainError('BAD_REQUEST', '评论中的链接包含不安全的 URL。')
+  }
+
+  if (parsed.root.children.length > COMMENT_MAX_BLOCKS) {
     throw new DomainError('BAD_REQUEST', '评论内容过长，请精简后重试。')
   }
-  if (isCommentBodyEmpty(parsed)) {
+  if (isInklingCommentEmpty(parsed)) {
     throw new DomainError('BAD_REQUEST', '评论内容不能为空。')
   }
-  if (countLinks(parsed) > COMMENT_MAX_HTTP_URLS) {
+  if (countHttpLinks(parsed) > COMMENT_MAX_HTTP_URLS) {
     throw new DomainError('BAD_REQUEST', `评论中链接过多（最多 ${COMMENT_MAX_HTTP_URLS} 个）。`)
   }
 
-  // Strip any client-supplied pre-rendered fields to prevent stored XSS.
-  // The server will re-generate these from tex/code after this call.
-  stripClientRenderedFields(parsed)
+  const body = await prerenderInklingDocument(parsed)
 
-  const body = await prerenderPortableTextBody(parsed)
-  const revalidated = commentBodySchema.safeParse(body)
+  const revalidated = inklingDocumentSchema.safeParse(body)
   if (!revalidated.success) {
     throw new DomainError('BAD_REQUEST', '评论预渲染后格式异常。')
   }
-  const content = commentBodyToMarkdown(revalidated.data)
+
+  const content = inklingCommentToMarkdown(revalidated.data)
   return { body: revalidated.data, content }
 }
 
-function stripClientRenderedFields(body: CommentBody): void {
-  for (const block of body) {
-    if (block._type === 'code') {
-      block.highlightedHtml = undefined
-    }
-    if (block._type === 'mathBlock') {
-      block.mathml = undefined
-      block.svg = undefined
-    }
-    if (block._type === 'block' && Array.isArray(block.markDefs)) {
-      for (const def of block.markDefs) {
-        if (def._type === 'mathInline') {
-          def.mathml = undefined
-          def.svg = undefined
-        }
-      }
-    }
+function countHttpLinks(document: InklingDocument): number {
+  let total = 0
+  for (const block of document.root.children) {
+    total += countLinksInBlock(block)
+  }
+  return total
+}
+
+function countLinksInBlock(block: InklingDocument['root']['children'][number]): number {
+  switch (block.type) {
+    case 'paragraph':
+    case 'quote':
+      return countLinksInInline(block.children)
+    case 'list':
+      return countLinksInList(block)
+    default:
+      return 0
   }
 }
 
-function countLinks(body: CommentBody): number {
-  // Only count http(s) URLs. Tiptap's `Link` extension autolinks
-  // anything URL-shaped — including bare email addresses, which it
-  // turns into `mailto:user@example.com` markDefs. Treating those as
-  // URLs would flag a perfectly legitimate "feel free to email me at
-  // x@y" reply as spam.
+function countLinksInList(list: { children: Array<{ children: unknown[] }> }): number {
   let total = 0
-  for (const block of body) {
-    if (block._type !== 'block') {
-      continue
-    }
-    for (const def of block.markDefs ?? []) {
-      if (def._type === 'link' && /^https?:\/\//i.test(def.href)) {
-        total += 1
+  for (const item of list.children) {
+    for (const child of item.children) {
+      if (isInlineNode(child)) {
+        total += countLinksInInline([child])
       }
     }
   }
   return total
+}
+
+function countLinksInInline(nodes: readonly { type: string; url?: string; children?: readonly unknown[] }[]): number {
+  let total = 0
+  for (const node of nodes) {
+    if (node.type === 'link' && typeof node.url === 'string' && /^https?:\/\//i.test(node.url)) {
+      total += 1
+    }
+    if ('children' in node && Array.isArray(node.children)) {
+      total += countLinksInInline(node.children)
+    }
+  }
+  return total
+}
+
+function isInlineNode(value: unknown): value is { type: string; url?: string; children?: readonly unknown[] } {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    'type' in value &&
+    typeof (value as { type: unknown }).type === 'string'
+  )
+}
+
+const DISALLOWED_LINK_PROTOCOLS = /^(javascript|data|vbscript):/i
+
+function isDisallowedLinkUrl(url: string): boolean {
+  return DISALLOWED_LINK_PROTOCOLS.test(url.trim())
+}
+
+function hasDisallowedLinkUrl(document: InklingDocument): boolean {
+  for (const block of document.root.children) {
+    if (blockHasDisallowedLinkUrl(block)) {
+      return true
+    }
+  }
+  return false
+}
+
+function blockHasDisallowedLinkUrl(block: InklingDocument['root']['children'][number]): boolean {
+  switch (block.type) {
+    case 'paragraph':
+    case 'quote':
+      return inlineHasDisallowedLinkUrl(block.children)
+    case 'list':
+      return listHasDisallowedLinkUrl(block)
+    default:
+      return false
+  }
+}
+
+function listHasDisallowedLinkUrl(list: { children: Array<{ children: unknown[] }> }): boolean {
+  for (const item of list.children) {
+    for (const child of item.children) {
+      if (isInlineNode(child) && inlineHasDisallowedLinkUrl([child])) {
+        return true
+      }
+    }
+  }
+  return false
+}
+
+function inlineHasDisallowedLinkUrl(
+  nodes: readonly { type: string; url?: string; children?: readonly unknown[] }[],
+): boolean {
+  for (const node of nodes) {
+    if (node.type === 'link' && typeof node.url === 'string' && isDisallowedLinkUrl(node.url)) {
+      return true
+    }
+    if ('children' in node && Array.isArray(node.children)) {
+      if (inlineHasDisallowedLinkUrl(node.children)) {
+        return true
+      }
+    }
+  }
+  return false
 }

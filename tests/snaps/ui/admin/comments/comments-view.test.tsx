@@ -1,9 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type { CommentBody } from '@/shared/pt/comment-schema'
 import type { AdminCommentWire as AdminComment } from '@/shared/types/comments'
 import type { CommentsState } from '@/ui/admin/comments/useCommentsController'
 
+import { inklingParagraph } from '#/_helpers/inkling'
 import { renderInRouter, stableHtml } from '#/_helpers/render'
 import { AdminCommentRow } from '@/ui/admin/comments/AdminCommentRow'
 import { CommentsView } from '@/ui/admin/comments/CommentsView'
@@ -116,14 +116,7 @@ let commentSeq = 0
 
 function makeAdminComment(overrides: Partial<AdminComment> = {}): AdminComment {
   commentSeq += 1
-  const body: CommentBody = [
-    {
-      _type: 'block',
-      _key: `b${commentSeq}`,
-      style: 'normal',
-      children: [{ _type: 'span', _key: `s${commentSeq}`, text: `Comment body ${commentSeq}` }],
-    },
-  ]
+  const body = inklingParagraph(`Comment body ${commentSeq}`)
   return {
     id: String(commentSeq),
     createAt: '2024-03-12T08:30:00.000Z',

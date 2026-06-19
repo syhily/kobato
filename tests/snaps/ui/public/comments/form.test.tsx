@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest'
 import type { CommentFormUser } from '@/shared/types/catalog'
 import type { CommentItemWire as CommentItemType } from '@/shared/types/comments'
 
+import { emptyInklingDocument, inklingFromPt } from '#/_helpers/inkling'
 import { renderInRouter } from '#/_helpers/render'
 import { CommentReplyForm } from '@/ui/public/comments/CommentReplyForm'
 import { Comments } from '@/ui/public/comments/Comments'
@@ -63,7 +64,7 @@ describe('snapshot: Comments form variants', () => {
       createAt: '2024-04-18T13:06:00.000Z',
       updatedAt: '2024-04-18T13:06:00.000Z',
       deleteAt: null,
-      body: [
+      body: inklingFromPt([
         {
           _type: 'block',
           _key: 'b1',
@@ -76,7 +77,7 @@ describe('snapshot: Comments form variants', () => {
             },
           ],
         },
-      ],
+      ]),
       type: 'post' as const,
       ownerId: '1',
       userId: '1',

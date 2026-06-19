@@ -5,6 +5,7 @@ import { eq } from 'drizzle-orm'
 import { randomUUID } from 'node:crypto'
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
+import { emptyInklingDocument, inklingFromPt } from '#/_helpers/inkling'
 import { clearAllTables } from '#/_helpers/integration-db'
 import {
   countAllComments,
@@ -132,7 +133,7 @@ async function seedComment(opts: Partial<typeof comment.$inferInsert> = {}): Pro
       ownerId: opts.ownerId ?? 1n,
       userId: opts.userId ?? 1n,
       content: opts.content ?? 'hello',
-      body: opts.body ?? [],
+      body: opts.body ?? emptyInklingDocument(),
       rid: opts.rid ?? 0,
       rootId: opts.rootId ?? 0n,
       isPending: opts.isPending ?? false,
@@ -301,7 +302,7 @@ describe('comments/repos/mutate — insertComment', () => {
       ownerId: pid,
       userId: u1,
       content: 'hi',
-      body: [],
+      body: emptyInklingDocument(),
     })
     expect(row).not.toBeNull()
     expect(row!.content).toBe('hi')
@@ -320,7 +321,7 @@ describe('comments/repos/mutate — updateCommentContent', () => {
 describe('comments/repos/mutate — updateCommentBodyAndContent', () => {
   it('rewrites body + content', async () => {
     const id = await seedComment({ content: 'old' })
-    await updateCommentBodyAndContent(db, id, [], 'rewritten')
+    await updateCommentBodyAndContent(db, id, emptyInklingDocument(), 'rewritten')
     const rows = await db.select({ content: comment.content }).from(comment).where(eq(comment.id, id))
     expect(rows[0]?.content).toBe('rewritten')
   })
@@ -329,7 +330,7 @@ describe('comments/repos/mutate — updateCommentBodyAndContent', () => {
 describe('comments/repos/mutate — updateOwnCommentBody', () => {
   it('returns 0 when updated_at has drifted (optimistic lock)', async () => {
     const id = await seedComment({ content: 'old' })
-    const n = await updateOwnCommentBody(db, id, [], 'x', new Date('2000-01-01'))
+    const n = await updateOwnCommentBody(db, id, emptyInklingDocument(), 'x', new Date('2000-01-01'))
     expect(n).toBe(0)
   })
   it('returns 1 when the optimistic lock matches', async () => {
@@ -340,12 +341,12 @@ describe('comments/repos/mutate — updateOwnCommentBody', () => {
         ownerId: 1n,
         userId: 1n,
         content: 'x',
-        body: [],
+        body: emptyInklingDocument(),
         updatedAt: new Date('2025-01-01'),
       })
       .returning()
     const id = rows[0]!.id
-    const n = await updateOwnCommentBody(db, id, [], 'y', new Date('2025-01-01'))
+    const n = await updateOwnCommentBody(db, id, emptyInklingDocument(), 'y', new Date('2025-01-01'))
     expect(n).toBe(1)
   })
 })
@@ -359,13 +360,13 @@ describe('comments/repos/mutate — updateOwnCommentBodyAndPending', () => {
         ownerId: 1n,
         userId: 1n,
         content: 'x',
-        body: [],
+        body: emptyInklingDocument(),
         updatedAt: new Date('2025-01-01'),
         isPending: false,
       })
       .returning()
     const id = rows[0]!.id
-    const n = await updateOwnCommentBodyAndPending(db, id, [], 'y', new Date('2025-01-01'))
+    const n = await updateOwnCommentBodyAndPending(db, id, emptyInklingDocument(), 'y', new Date('2025-01-01'))
     expect(n).toBe(1)
     const after = await db.select({ isPending: comment.isPending }).from(comment).where(eq(comment.id, id))
     expect(after[0]?.isPending).toBe(true)

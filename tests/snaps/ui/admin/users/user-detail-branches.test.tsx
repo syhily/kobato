@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { AdminCommentWire as AdminComment } from '@/shared/types/comments'
 import type { AdminUserDto } from '@/shared/types/users'
 
+import { inklingParagraph } from '#/_helpers/inkling'
 import { renderInRouter, stableHtml } from '#/_helpers/render'
 import { UserDetailView } from '@/ui/admin/users/UserDetailView'
 
@@ -131,15 +132,7 @@ function makeAdminComment(overrides: Partial<AdminComment> = {}): AdminComment {
     updatedAt: overrides.updatedAt ?? '2024-03-12T08:30:00.000Z',
     deleteAt: overrides.deleteAt ?? null,
     deleteRequestedAt: overrides.deleteRequestedAt ?? null,
-    body: overrides.body ?? [
-      {
-        _type: 'block',
-        _key: 'b1',
-        style: 'normal',
-        markDefs: [],
-        children: [{ _type: 'span', _key: 's1', text: 'A sample comment.' }],
-      },
-    ],
+    body: overrides.body ?? inklingParagraph('A sample comment.'),
     type: overrides.type ?? 'post',
     ownerId: overrides.ownerId ?? null,
     userId: overrides.userId ?? '10',

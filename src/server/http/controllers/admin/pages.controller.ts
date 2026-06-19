@@ -18,7 +18,7 @@ import {
 } from '@/server/domains/pages/services/mutate'
 import { adminProc } from '@/server/http/orpc-base'
 import { deriveSlug } from '@/server/infra/slug'
-import { renderPortableTextToHtml as renderPagePortableTextToHtml } from '@/server/render/feed/feed-pt-render'
+import { renderInklingToHtml } from '@/server/render/inkling/html'
 import {
   adminPageDetailDto,
   adminPageDto,
@@ -26,8 +26,8 @@ import {
   listPagesOutputDto,
 } from '@/shared/contracts/pages'
 import { previewOutputDto, saveResultOutput } from '@/shared/contracts/revision'
-import { portableTextBodySchema } from '@/shared/pt/schema'
-import { collectHeadings } from '@/shared/pt/utils'
+import { collectInklingHeadings } from '@/shared/inkling/headings'
+import { inklingDocumentSchema } from '@/shared/inkling/schema'
 import { idFromString } from '@/shared/utils/id'
 
 const idInput = z.object({ id: z.string().min(1) })
@@ -145,11 +145,11 @@ const publishLatest = adminProc
 
 const preview = adminProc
   .route({ method: 'POST', path: '/admin/pages/preview' })
-  .input(z.object({ body: portableTextBodySchema }))
+  .input(z.object({ body: inklingDocumentSchema }))
   .output(previewOutputDto)
   .handler(async ({ input, context }) => {
-    const html = await renderPagePortableTextToHtml(context.db, input.body, [])
-    const headings = collectHeadings(input.body, deriveSlug)
+    const html = await renderInklingToHtml(context.db, input.body, [])
+    const headings = collectInklingHeadings(input.body, deriveSlug)
     return { html, headings }
   })
 

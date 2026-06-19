@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
+import { inklingParagraph } from '#/_helpers/inkling'
 import {
   commentEditSchema,
   commentReplySchema,
@@ -9,14 +10,7 @@ import {
   loadCommentsSchema,
 } from '@/server/domains/comments/schema'
 
-const HELLO_BODY = [
-  {
-    _type: 'block' as const,
-    _key: 'b1',
-    style: 'normal' as const,
-    children: [{ _type: 'span' as const, _key: 's1', text: 'Thoughtful comment.' }],
-  },
-]
+const HELLO_BODY = inklingParagraph('Thoughtful comment.')
 
 describe('commentReplySchema anti-spam', () => {
   const base = {
@@ -40,10 +34,9 @@ describe('commentReplySchema anti-spam', () => {
     })
   })
 
-  it('rejects a body that violates the PT comment dialect', async () => {
-    // Headings are rejected because the comment dialect only allows
-    // `normal` and `blockquote` text-block styles. Validation
-    // surfaces the field path under `body[*]`, so we just assert the
+  it('rejects a body that violates the Inkling document shape', async () => {
+    // A legacy PortableText array is no longer accepted. Validation
+    // surfaces the field path under `body`, so we just assert the
     // schema throws — the precise issue path varies by Zod version.
     const badBody = [
       {

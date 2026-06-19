@@ -71,10 +71,7 @@ describe('shared/inkling/plaintext — extracts text from custom nodes', () => {
       {
         type: 'paragraph',
         version: 1,
-        children: [
-          text('see'),
-          { type: 'footnote-ref', version: 1, targetKey: 'a', refKey: 'r1', index: 2 },
-        ],
+        children: [text('see'), { type: 'footnote-ref', version: 1, targetKey: 'a', refKey: 'r1', index: 2 }],
       },
     ])
     expect(inklingToPlainText(doc)).toBe('see2')

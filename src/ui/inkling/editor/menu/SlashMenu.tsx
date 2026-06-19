@@ -4,6 +4,7 @@ import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext
 import {
   $getSelection,
   $isRangeSelection,
+  $isTextNode,
   COMMAND_PRIORITY_LOW,
   KEY_ARROW_DOWN_COMMAND,
   KEY_ARROW_UP_COMMAND,
@@ -61,14 +62,33 @@ export function useInklingSlashMenu(editor: LexicalEditor | null, mode: InklingF
 
   const insert = useCallback(
     (item: InklingCardMenuItem) => {
-      if (editor === null) { return }
-      item.insert(editor)
+      if (editor === null) {
+        return
+      }
+      editor.update(() => {
+        const selection = $getSelection()
+        if (!$isRangeSelection(selection) || !selection.isCollapsed()) {
+          return
+        }
+        const anchor = selection.anchor
+        const node = anchor.getNode()
+        if ($isTextNode(node)) {
+          const text = node.getTextContent()
+          const before = text.slice(0, anchor.offset)
+          const slashIndex = before.lastIndexOf('/')
+          if (slashIndex !== -1) {
+            node.spliceText(slashIndex, anchor.offset - slashIndex, '')
+            node.select(slashIndex, slashIndex)
+          }
+        }
+        item.insert(editor)
+      })
       close()
     },
     [editor, close],
   )
 
-  // Listen for text input to detect "/"
+  // Listen for text input to detect "/" and track the query that follows it.
   useEffect(() => {
     if (editor === null) {
       return undefined
@@ -84,35 +104,36 @@ export function useInklingSlashMenu(editor: LexicalEditor | null, mode: InklingF
         }
         const anchor = selection.anchor
         const node = anchor.getNode()
-        const text = node.getTextContent()
-        const offset = anchor.offset
-        const before = text.slice(0, offset)
-
-        // Check if the character immediately before the cursor is "/"
-        const slashIdx = before.lastIndexOf('/')
-        if (slashIdx === -1 || slashIdx !== before.length - 1) {
-          if (open && before.length === 0) {
+        const text = $isTextNode(node) ? node.getTextContent() : ''
+        const before = text.slice(0, anchor.offset)
+        const slashIndex = before.lastIndexOf('/')
+        if (slashIndex === -1) {
+          if (open) {
+            close()
+          }
+          return
+        }
+        const queryText = before.slice(slashIndex + 1)
+        // Close the menu once the user leaves the slash-command word (e.g. types a space).
+        if (/\s/.test(queryText)) {
+          if (open) {
             close()
           }
           return
         }
 
-        // Menu triggered — position it near the cursor
-        if (!open) {
-          const rootEl = editor.getRootElement()
-          if (rootEl !== null) {
-            const rect = getSelectionRect(rootEl)
-            if (rect !== null) {
-              setPosition({ top: rect.bottom + 4, left: rect.left })
-            }
+        const rootEl = editor.getRootElement()
+        if (rootEl !== null) {
+          const rect = getSelectionRect(rootEl)
+          if (rect !== null) {
+            setPosition({ top: rect.bottom + 4, left: rect.left })
           }
+        }
+        if (!open) {
           setOpen(true)
-          setQuery('')
           setSelectedIndex(0)
         }
-
-        const afterSlash = before.slice(slashIdx + 1)
-        setQuery(afterSlash)
+        setQuery(queryText)
       })
     })
   }, [editor, open, close])

@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { AdminComment, AdminCommentWire } from '@/shared/types/comments'
 
+import { emptyInklingDocument } from '#/_helpers/inkling'
 import { makeAuthedCtx } from '#/_helpers/mock-ctx'
 
 vi.mock('@/server/domains/comments/services/admin-query', () => ({
@@ -47,7 +48,7 @@ const comment = {
   updatedAt: '2026-01-01T00:00:00.000Z',
   deleteAt: null,
   deleteRequestedAt: null,
-  body: [],
+  body: emptyInklingDocument(),
   content: 'hello',
   type: 'post' as const,
   ownerId: '1',

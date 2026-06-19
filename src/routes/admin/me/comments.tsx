@@ -1,7 +1,7 @@
 import { data, useOutletContext } from 'react-router'
 
 import type { MyCommentsStatus } from '@/server/domains/comments/repos/shared'
-import type { CommentBody } from '@/shared/pt/comment-schema'
+import type { InklingDocument } from '@/shared/inkling/schema'
 
 import { getDbFromContext, getRouteRequestContext } from '@/server/domains/auth/context'
 import { requireRole } from '@/server/domains/auth/rbac'
@@ -26,7 +26,7 @@ export interface MyCommentEntityOption {
 
 export interface MyCommentItem {
   id: string
-  body: CommentBody
+  body: InklingDocument
   createdAtIso: string
   deletedAtIso: string | null
   deleteRequestedAtIso: string | null

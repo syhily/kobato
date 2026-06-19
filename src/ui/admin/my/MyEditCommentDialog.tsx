@@ -4,7 +4,6 @@ import { useState } from 'react'
 import { toast } from 'sonner'
 
 import type { InklingDocument } from '@/shared/inkling/schema'
-import type { CommentBody } from '@/shared/pt/comment-schema'
 
 import { orpcQuery } from '@/client/api/orpc-query'
 import { EMPTY_INKLING_DOCUMENT } from '@/shared/inkling/empty'
@@ -19,10 +18,6 @@ import {
 } from '@/ui/components/dialog'
 import { Label } from '@/ui/components/label'
 import { isInklingCommentBlank } from '@/ui/public/comments/comment-body-helpers'
-import {
-  commentBodyToInklingDocument,
-  inklingDocumentToCommentBodyAdapter,
-} from '@/ui/public/comments/comment-inkling-adapter'
 import { CommentBodyEditor } from '@/ui/public/comments/CommentBodyEditor'
 
 // Self-edit dialog for `/admin/me/comments`. Differs from the
@@ -33,7 +28,7 @@ import { CommentBodyEditor } from '@/ui/public/comments/CommentBodyEditor'
 // - server enforces the 30-min auto-approve vs re-pend rule; the UI
 //   surfaces both outcomes through the same success path
 export interface MyEditCommentDialogProps {
-  target: { id: string; body: CommentBody } | null
+  target: { id: string; body: InklingDocument } | null
   onClose: () => void
   onSaved: () => void
 }
@@ -55,7 +50,7 @@ export function MyEditCommentDialog({ target, onClose, onSaved }: MyEditCommentD
       setInitialDocument(EMPTY_INKLING_DOCUMENT)
       setDocument(EMPTY_INKLING_DOCUMENT)
     } else {
-      const loadedDocument = commentBodyToInklingDocument(target.body)
+      const loadedDocument = target.body
       setInitialDocument(loadedDocument)
       setDocument(loadedDocument)
       setBodyKey((k) => k + 1)
@@ -85,7 +80,7 @@ export function MyEditCommentDialog({ target, onClose, onSaved }: MyEditCommentD
               toast.error('评论内容不能为空')
               return
             }
-            update.mutate({ commentId: target.id, body: inklingDocumentToCommentBodyAdapter(document) })
+            update.mutate({ commentId: target.id, body: document })
           }}
           className="flex flex-col gap-4"
         >

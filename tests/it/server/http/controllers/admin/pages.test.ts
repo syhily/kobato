@@ -1,6 +1,7 @@
 import { call } from '@orpc/server'
 import { describe, expect, it, vi } from 'vitest'
 
+import { emptyInklingDocument, inklingFromPt } from '#/_helpers/inkling'
 import { makeAuthedCtx } from '#/_helpers/mock-ctx'
 
 vi.mock('@/server/domains/pages/services/mutate', () => ({
@@ -22,19 +23,19 @@ vi.mock('@/server/domains/pages/services/draft', () => ({
   saveDraft: vi.fn(),
 }))
 
-vi.mock('@/server/render/feed/feed-pt-render', () => ({
-  renderPortableTextToHtml: vi.fn(),
+vi.mock('@/server/render/inkling/html', () => ({
+  renderInklingToHtml: vi.fn(),
 }))
 
-vi.mock('@/shared/pt/utils', () => ({
-  collectHeadings: vi.fn(),
+vi.mock('@/shared/inkling/headings', () => ({
+  collectInklingHeadings: vi.fn(),
 }))
 
 const mutateService = await import('@/server/domains/pages/services/mutate')
 const adminQueryService = await import('@/server/domains/pages/services/admin-query')
 const draftService = await import('@/server/domains/pages/services/draft')
-const { renderPortableTextToHtml } = await import('@/server/render/feed/feed-pt-render')
-const { collectHeadings } = await import('@/shared/pt/utils')
+const { renderInklingToHtml } = await import('@/server/render/inkling/html')
+const { collectInklingHeadings } = await import('@/shared/inkling/headings')
 const { adminPagesRouter } = await import('@/server/http/controllers/admin/pages.controller')
 
 const pageStub = {
@@ -64,7 +65,7 @@ const revisionStub = {
   id: '1',
   revisionNo: 1,
   status: 'draft' as const,
-  body: [],
+  body: emptyInklingDocument(),
   imageSources: [],
   headings: [],
   authorId: '1',
@@ -148,7 +149,7 @@ describe('adminPagesRouter.saveDraft', () => {
     const ctx = makeAuthedCtx()
     const res = (await call(
       adminPagesRouter.saveDraft,
-      { id: '1', body: [], expectedClientRevisionToken: '00000000-0000-4000-8000-000000000000' },
+      { id: '1', body: emptyInklingDocument(), expectedClientRevisionToken: '00000000-0000-4000-8000-000000000000' },
       { context: ctx },
     )) as { status: string }
     expect(res.status).toBe('saved')
@@ -163,7 +164,7 @@ describe('adminPagesRouter.saveDraft', () => {
     const ctx = makeAuthedCtx()
     const res = (await call(
       adminPagesRouter.saveDraft,
-      { id: '1', body: [], expectedClientRevisionToken: '00000000-0000-4000-8000-000000000000' },
+      { id: '1', body: emptyInklingDocument(), expectedClientRevisionToken: '00000000-0000-4000-8000-000000000000' },
       { context: ctx },
     )) as { status: string }
     expect(res.status).toBe('conflict')
@@ -179,7 +180,7 @@ describe('adminPagesRouter.publishLatest', () => {
     const ctx = makeAuthedCtx()
     const res = (await call(
       adminPagesRouter.publishLatest,
-      { id: '1', body: [], expectedClientRevisionToken: '00000000-0000-4000-8000-000000000000' },
+      { id: '1', body: emptyInklingDocument(), expectedClientRevisionToken: '00000000-0000-4000-8000-000000000000' },
       { context: ctx },
     )) as { status: string }
     expect(res.status).toBe('saved')
@@ -188,10 +189,10 @@ describe('adminPagesRouter.publishLatest', () => {
 
 describe('adminPagesRouter.preview', () => {
   it('returns html and headings', async () => {
-    vi.mocked(renderPortableTextToHtml).mockResolvedValueOnce('<p>hello</p>')
-    vi.mocked(collectHeadings).mockReturnValueOnce([{ text: 'Hello', depth: 2, slug: 'hello' }])
+    vi.mocked(renderInklingToHtml).mockResolvedValueOnce('<p>hello</p>')
+    vi.mocked(collectInklingHeadings).mockReturnValueOnce([{ text: 'Hello', depth: 2, slug: 'hello' }])
     const ctx = makeAuthedCtx()
-    const res = await call(adminPagesRouter.preview, { body: [] }, { context: ctx })
+    const res = await call(adminPagesRouter.preview, { body: emptyInklingDocument() }, { context: ctx })
     expect(res.html).toBe('<p>hello</p>')
     expect(res.headings).toHaveLength(1)
   })

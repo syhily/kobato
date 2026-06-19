@@ -1,4 +1,7 @@
+import type { LexicalEditor } from 'lexical'
 import type { NavigateFunction } from 'react-router'
+
+import { useRef } from 'react'
 
 import type { AdminPostDetailDto, AdminPostDto, SavePostBodyInput, UpsertPostMetaInput } from '@/shared/types/posts'
 import type { RevisionLike, SaveBodyOutput } from '@/ui/admin/editor-shell/editor-shell-types'
@@ -119,7 +122,8 @@ export function PostEditorShell({ mode, detail, navigate }: PostEditorShellProps
     navigate,
   })
 
-  const pickerActions = useEditorPickerActions()
+  const editorRef = useRef<LexicalEditor | null>(null)
+  const pickerActions = useEditorPickerActions(editorRef)
 
   return (
     <div
@@ -171,6 +175,7 @@ export function PostEditorShell({ mode, detail, navigate }: PostEditorShellProps
             onDocumentChange={state.setBody}
             disabled={state.isPending}
             actions={pickerActions.actions}
+            editorRef={editorRef}
             livePreviewOpen={state.previewOpen}
             scrollContainerRef={state.editorScrollRef}
             floatingActions={

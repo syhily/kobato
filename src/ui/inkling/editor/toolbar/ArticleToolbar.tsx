@@ -10,7 +10,7 @@ import {
   $createMathCardNode,
   $createMusicCardNode,
   $createTableCardNode,
-} from '@/ui/inkling/editor/cards/card-nodes'
+} from '@/ui/inkling/editor/cards/simple-card-nodes'
 import { cn } from '@/ui/lib/cn'
 
 export interface ArticleToolbarProps {

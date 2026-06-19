@@ -2,6 +2,8 @@ import { afterEach, vi } from 'vitest'
 
 import type { Comment, Like, MetricRow, NewComment, NewUser, User } from '@/server/infra/db/types'
 
+import { emptyInklingDocument } from '#/_helpers/inkling'
+
 afterEach(() => {
   resetSeedIds()
 })
@@ -71,6 +73,7 @@ export function seedComment(overrides: CommentFixture = {}) {
     voteUp: overrides.voteUp ?? 0,
     voteDown: overrides.voteDown ?? 0,
     rootId: overrides.rootId ?? 0n,
+    body: overrides.body ?? emptyInklingDocument(),
     name: overrides.user?.name ?? 'Alice',
     email: overrides.user?.email ?? `user${userId}@example.com`,
     emailVerified: overrides.user?.emailVerified ?? true,

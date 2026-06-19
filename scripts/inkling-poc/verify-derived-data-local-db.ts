@@ -15,7 +15,7 @@ import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { Client } from 'pg'
 
-import { verifyDerivedDataParity } from '@/server/domains/inkling/poc/derived-data-verifier'
+import { verifyDerivedDataParity } from '@/server/domains/inkling/migration-support/derived-data-verifier'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const OUT_DIR = resolve(__dirname, '..', '..', 'tmp', 'inkling-poc')

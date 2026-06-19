@@ -14,13 +14,30 @@ import { useCallback, useMemo } from 'react'
 
 import type { InklingNonRecursiveBlockNode } from '@/shared/inkling/schema'
 
-const NESTED_EDITOR_NODES: InitialConfigType['nodes'] = [
+import { InlineMathNode } from '@/ui/inkling/editor/article/InlineMathNode'
+import {
+  CodeCardNode,
+  HorizontalRuleCardNode,
+  ImageCardNode,
+  MathCardNode,
+  TableCardNode,
+} from '@/ui/inkling/editor/cards/simple-card-nodes'
+import { reportEditorError } from '@/ui/inkling/editor/error-report'
+import { useOptionalSharedHistoryState } from '@/ui/inkling/editor/nested/SharedHistoryContext'
+
+export const NESTED_ARTICLE_NODES: InitialConfigType['nodes'] = [
   ParagraphNode,
   HeadingNode,
   QuoteNode,
   ListNode,
   ListItemNode,
   LinkNode,
+  InlineMathNode,
+  ImageCardNode,
+  CodeCardNode,
+  MathCardNode,
+  HorizontalRuleCardNode,
+  TableCardNode,
 ]
 
 function toSerializedLexicalChildren(blocks: readonly InklingNonRecursiveBlockNode[]): SerializedLexicalNode[] {
@@ -31,7 +48,7 @@ function toSerializedLexicalChildren(blocks: readonly InklingNonRecursiveBlockNo
 }
 
 function buildNestedInitialState(blocks: readonly InklingNonRecursiveBlockNode[]): EditorState {
-  const editor = createEditor({ nodes: NESTED_EDITOR_NODES })
+  const editor = createEditor({ nodes: NESTED_ARTICLE_NODES })
   const root: SerializedEditorState['root'] = {
     type: 'root',
     version: 1,
@@ -49,18 +66,23 @@ export interface NestedInklingEditorProps {
   editable?: boolean
   placeholder?: string
   className?: string
+  nodes?: InitialConfigType['nodes']
 }
 
-export function NestedInklingEditor({ initialBlocks, onChange, editable = true, className }: NestedInklingEditorProps) {
+export function NestedInklingEditor({
+  initialBlocks,
+  onChange,
+  editable = true,
+  className,
+  nodes = NESTED_ARTICLE_NODES,
+}: NestedInklingEditorProps) {
   const [parentEditor] = useLexicalComposerContext()
+  const sharedHistoryState = useOptionalSharedHistoryState()
 
   const nestedEditor = useMemo(() => {
-    // Shared history integration: use LexicalNestedComposer with parentEditor
-    // reference. The SharedHistoryProvider in the parent tree ensures nested
-    // and root editors share one undo/redo stack. See SharedHistoryContext.tsx.
     return createEditor({
       namespace: 'inkling-nested-editor',
-      nodes: NESTED_EDITOR_NODES,
+      nodes,
       parentEditor,
       editable,
       theme: {
@@ -70,12 +92,11 @@ export function NestedInklingEditor({ initialBlocks, onChange, editable = true, 
         link: 'inkling-link',
       },
       onError: (error: Error) => {
-        // eslint-disable-next-line no-console
-        console.error('Nested Inkling editor error:', error)
+        reportEditorError(error, 'nested')
       },
       editorState: buildNestedInitialState(initialBlocks),
     })
-  }, [parentEditor, initialBlocks, editable])
+  }, [parentEditor, initialBlocks, editable, nodes])
 
   const handleChange = useCallback(
     (editorState: EditorState) => {
@@ -94,7 +115,7 @@ export function NestedInklingEditor({ initialBlocks, onChange, editable = true, 
       <div className={className ?? 'inkling-nested-editor'}>
         <ContentEditable className="inkling-nested-editor__content" />
         <OnChangePlugin onChange={handleChange} />
-        <HistoryPlugin />
+        <HistoryPlugin externalHistoryState={sharedHistoryState ?? undefined} />
       </div>
     </LexicalNestedComposer>
   )

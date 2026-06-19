@@ -20,7 +20,6 @@ import {
 } from '@/ui/components/dialog'
 import { Label } from '@/ui/components/label'
 import { isInklingCommentBlank } from '@/ui/public/comments/comment-body-helpers'
-import { inklingDocumentToCommentBodyAdapter } from '@/ui/public/comments/comment-inkling-adapter'
 import { CommentBodyEditor } from '@/ui/public/comments/CommentBodyEditor'
 
 export interface ReplyCommentDialogProps {
@@ -85,7 +84,7 @@ export function ReplyCommentDialog({ comment, authorName, authorEmail, onClose, 
               page_key: comment.pagePublicId,
               name: authorName,
               email: authorEmail,
-              body: inklingDocumentToCommentBodyAdapter(document),
+              body: document,
               rid: Number.parseInt(idStr(comment.id), 10),
             })
           }}

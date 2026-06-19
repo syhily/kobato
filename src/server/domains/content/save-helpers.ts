@@ -1,11 +1,13 @@
-import type { PortableTextBody } from '@/shared/pt/schema'
+import type { InklingDocument } from '@/shared/inkling/schema'
 
-import { canonicalizePortableTextBody } from '@/server/domains/pt/services/canonicalize'
+import { canonicalizeInklingDocument } from '@/server/domains/inkling/canonicalize'
+import { prerenderInklingDocument } from '@/server/domains/inkling/prerender'
 import { DomainError } from '@/server/infra/http/errors'
 
-export async function canonicalizeBodyOrThrow(value: unknown): Promise<PortableTextBody> {
+export async function canonicalizeBodyOrThrow(value: unknown): Promise<InklingDocument> {
   try {
-    return await canonicalizePortableTextBody(value)
+    const canonical = canonicalizeInklingDocument(value)
+    return await prerenderInklingDocument(canonical)
   } catch (error) {
     throw new DomainError('BAD_REQUEST', '正文格式不合法。', extractZodIssues(error))
   }

@@ -3,6 +3,7 @@ import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { seedMetric } from '#/_helpers/db'
+import { emptyInklingDocument, inklingFromPt } from '#/_helpers/inkling'
 import { adminSession, regularSession } from '#/_helpers/session'
 
 // `loadComments` is the most-called server function on the site (every post
@@ -86,14 +87,14 @@ function row(overrides: Record<string, unknown> = {}) {
     updatedAt: new Date('2024-01-01T00:00:00.000Z'),
     deleteAt: null,
     content: 'x',
-    body: [
+    body: inklingFromPt([
       {
         _type: 'block' as const,
         _key: 'b1',
         style: 'normal' as const,
         children: [{ _type: 'span' as const, _key: 's1', text: 'x' }],
       },
-    ],
+    ]),
     type: 'post' as const,
     ownerId: 1n,
     userId: 7n,

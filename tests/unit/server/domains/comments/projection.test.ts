@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import type { CommentAndUser, CommentItem } from '@/shared/types/comments'
 
+import { emptyInklingDocument, inklingFromPt } from '#/_helpers/inkling'
 import { asAdminCommentsWire, asCommentItemsWire, asCommentItemWire } from '@/server/domains/comments/projection'
 
 // The wire helpers bridge `CommentAndUser` (Drizzle row shape: bigint
@@ -17,7 +18,7 @@ function makeRow(overrides: Partial<CommentAndUser> = {}): CommentAndUser {
     createAt: new Date('2024-01-15T08:30:00.000Z'),
     updatedAt: new Date('2024-01-16T08:30:00.000Z'),
     deleteAt: null,
-    body: [],
+    body: emptyInklingDocument(),
     content: null,
     type: 'post',
     ownerId: 42n,

@@ -5,6 +5,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { CommentWithUser } from '@/server/domains/comments/repos/shared'
 
+import { emptyInklingDocument, inklingFromPt } from '#/_helpers/inkling'
+
 // `updateOwnComment` (visitor self-edit of their own comment) branches
 // on the age of the row at edit time:
 //
@@ -82,14 +84,14 @@ function row(overrides: Partial<CommentWithUser> = {}): CommentWithUser {
     updatedAt: new Date('2024-01-01T00:00:00.000Z'),
     deleteAt: null,
     content: 'old markdown',
-    body: [
+    body: inklingFromPt([
       {
         _type: 'block',
         _key: 'b1',
         style: 'normal',
         children: [{ _type: 'span', _key: 's1', text: 'old' }],
       },
-    ],
+    ]),
     type: 'post',
     ownerId: 1n,
     userId: 7n,
@@ -116,14 +118,14 @@ function row(overrides: Partial<CommentWithUser> = {}): CommentWithUser {
   } as CommentWithUser
 }
 
-const NEW_BODY = [
+const NEW_BODY = inklingFromPt([
   {
     _type: 'block' as const,
     _key: 'b2',
     style: 'normal' as const,
     children: [{ _type: 'span' as const, _key: 's2', text: 'edited' }],
   },
-]
+])
 
 beforeEach(() => {
   vi.clearAllMocks()

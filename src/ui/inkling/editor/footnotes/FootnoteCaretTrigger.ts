@@ -12,7 +12,9 @@ export function registerFootnoteCaretTrigger(editor: LexicalEditor, onTrigger: (
   return editor.registerCommand(
     KEY_SPACE_COMMAND,
     (event: KeyboardEvent) => {
-      if (!isAnchorAfterCaret('^')) { return false }
+      if (!isAnchorAfterCaret('^')) {
+        return false
+      }
       event.preventDefault()
       onTrigger()
       return true

@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { MyCommentItem } from '@/routes/admin/me/comments'
-import type { CommentBody } from '@/shared/pt/comment-schema'
 
+import { inklingParagraph } from '#/_helpers/inkling'
 import { renderInRouter, stableHtml } from '#/_helpers/render'
 import { MyCommentsView } from '@/ui/admin/my/MyCommentsView'
 
@@ -78,16 +78,9 @@ vi.mock('@/ui/admin/shared/useDebouncedSearch', () => ({
 
 let itemSeq = 0
 
-function makeBody(text: string): CommentBody {
+function makeBody(text: string) {
   itemSeq += 1
-  return [
-    {
-      _type: 'block',
-      _key: `b${itemSeq}`,
-      style: 'normal',
-      children: [{ _type: 'span', _key: `s${itemSeq}`, text }],
-    },
-  ]
+  return inklingParagraph(text)
 }
 
 function makeItem(overrides: Partial<MyCommentItem> = {}): MyCommentItem {

@@ -2,6 +2,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { AdminCommentsResult } from '@/server/domains/comments/types'
 
+import { emptyInklingDocument, inklingFromPt } from '#/_helpers/inkling'
+
 vi.mock('@/server/domains/comments/repos/admin-query', () => ({
   listAdminComments: vi.fn(),
   countAdminComments: vi.fn(),
@@ -33,7 +35,7 @@ const baseComment = {
   updatedAt: new Date(),
   deleteAt: null,
   content: 'hello',
-  body: [],
+  body: emptyInklingDocument(),
   type: 'post' as const,
   ownerId: 1n,
   userId: 1n,

@@ -17,7 +17,6 @@ import { feedCacheFor } from '@/server/infra/cache/feed-cache'
 import { DomainError } from '@/server/infra/http/errors'
 import { renderInklingToHtml } from '@/server/render/inkling/html'
 import { requireBlogSettingsSection } from '@/shared/config/getters'
-import { portableTextToInklingDocument } from '@/shared/inkling/migrate-pt'
 import { joinUrl } from '@/shared/utils/urls'
 
 export interface FeedOptions {
@@ -124,11 +123,10 @@ async function renderEntryContent(db: NodePgDatabase, entry: Post | Page): Promi
   //
   // `rssMode` degrades interactive blocks (musicPlayer, etc.) to static HTML
   // so feed readers without JavaScript still get meaningful content.
-  // Both pages and posts now live in Postgres and carry a PortableText body.
-  const inklingDoc = portableTextToInklingDocument(entry.body)
+  // Both pages and posts now live in Postgres and carry an Inkling Lexical body.
   const html = await renderInklingToHtml(
     db,
-    inklingDoc,
+    entry.body,
     entry.headings.map((h) => h.slug),
     { rssMode: true },
   )

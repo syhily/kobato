@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { MyCommentItem } from '@/routes/admin/me/comments'
-import type { CommentBody } from '@/shared/pt/comment-schema'
 
+import { inklingParagraph } from '#/_helpers/inkling'
 import { renderInRouter, stableHtml } from '#/_helpers/render'
 import { MyCommentsView } from '@/ui/admin/my/MyCommentsView'
 
@@ -67,17 +67,9 @@ vi.mock('@/ui/public/comments/CommentBodyEditor', () => ({
 // ───────────────────────────── fixtures ─────────────────────────────
 
 let seq = 0
-function makeBody(text: string): CommentBody {
+function makeBody(text: string) {
   seq += 1
-  return [
-    {
-      _type: 'block',
-      _key: `b${seq}`,
-      style: 'normal',
-      markDefs: [],
-      children: [{ _type: 'span', _key: `s${seq}`, text, marks: [] }],
-    },
-  ]
+  return inklingParagraph(text)
 }
 
 function makeMyComment(overrides: Partial<MyCommentItem> = {}): MyCommentItem {

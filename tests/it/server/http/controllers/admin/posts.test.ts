@@ -1,6 +1,7 @@
 import { call } from '@orpc/server'
 import { describe, expect, it, vi } from 'vitest'
 
+import { emptyInklingDocument, inklingFromPt } from '#/_helpers/inkling'
 import { makeAuthedCtx } from '#/_helpers/mock-ctx'
 
 vi.mock('@/server/domains/posts/services/mutate', () => ({
@@ -104,7 +105,7 @@ describe('adminPostsRouter.saveDraft', () => {
       id: '1',
       revisionNo: 1,
       status: 'draft' as const,
-      body: [],
+      body: emptyInklingDocument(),
       imageSources: [],
       headings: [],
       authorId: '1',
@@ -119,7 +120,7 @@ describe('adminPostsRouter.saveDraft', () => {
     const ctx = makeAuthedCtx()
     const res = (await call(
       adminPostsRouter.saveDraft,
-      { id: '1', body: [], expectedClientRevisionToken: '00000000-0000-4000-8000-000000000000' },
+      { id: '1', body: emptyInklingDocument(), expectedClientRevisionToken: '00000000-0000-4000-8000-000000000000' },
       { context: ctx },
     )) as { status: string }
     expect(res.status).toBe('saved')

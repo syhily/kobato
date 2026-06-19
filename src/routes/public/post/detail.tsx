@@ -6,10 +6,10 @@ import type { DraftMarker } from '@/ui/public/post/DetailBodyChrome'
 
 import { getDbFromContext, tryGetSessionContext } from '@/server/domains/auth/context'
 import { resolveImageMetaBySources } from '@/server/domains/images/services/enhance'
+import { prerenderInklingMusicPlayers } from '@/server/domains/inkling/music-prerender'
 import { selectSidebarPosts } from '@/server/domains/posts/repos/public-query/featured'
 import { findPostBySlug } from '@/server/domains/posts/repos/single'
 import { loadPostDraftPreviewBySlug } from '@/server/domains/posts/services/draft'
-import { prerenderMusicPlayerBlocks } from '@/server/domains/pt/prerender'
 import { getTagsByNames, listAllTags } from '@/server/domains/taxonomies/tags/service'
 import { loadPublicDetailData } from '@/server/http/loaders/detail'
 import { detailHeaders, publicShouldRevalidate } from '@/server/http/loaders/route-exports'
@@ -20,7 +20,6 @@ import { notFound } from '@/server/infra/http/status'
 import { bundleFromMatches, routeMeta, seoForPost } from '@/server/render/seo/meta'
 import { requireBlogSettingsSection } from '@/shared/config/getters'
 import { getSidebarWidgetCount } from '@/shared/config/utils'
-import { portableTextToInklingDocument } from '@/shared/inkling/migrate-pt'
 import { toClientPost, toDetailPostShell } from '@/shared/types/catalog'
 import { canonicalPostPath } from '@/shared/utils/paths'
 import { hasAtLeast } from '@/shared/utils/roles'
@@ -74,9 +73,9 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
     resolveImageMetaBySources(db, sourcePost.imageSources).then((r) => Object.fromEntries(r)),
     listAllTags(db).then(selectSidebarTags),
     selectSidebarPosts(db, getSidebarWidgetCount(requireBlogSettingsSection('sidebar'), 'recentPosts')),
-    prerenderMusicPlayerBlocks(db, sourcePost.body),
+    prerenderInklingMusicPlayers(db, sourcePost.body),
   ])
-  const inklingBody = portableTextToInklingDocument(enrichedBody ?? sourcePost.body)
+  const inklingBody = enrichedBody ?? sourcePost.body
 
   const { detail } = await loadPublicDetailData(db, {
     request,

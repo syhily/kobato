@@ -3,6 +3,7 @@ import type { Pool } from 'pg'
 
 import { afterAll, beforeEach, describe, expect, it } from 'vitest'
 
+import { inklingParagraph } from '#/_helpers/inkling'
 import { clearAllTables } from '#/_helpers/integration-db'
 import { makeAuthedCtx, makePublicCtx } from '#/_helpers/mock-ctx'
 import { flushWorkerRedis } from '#/_helpers/redis'
@@ -53,14 +54,7 @@ describe('integration / comment threading', () => {
         page_key: page.commentPublicId,
         name: 'Alice',
         email: 'alice@example.com',
-        body: [
-          {
-            _type: 'block',
-            _key: 'b1',
-            style: 'normal',
-            children: [{ _type: 'span', _key: 's1', text: 'hello', marks: [] }],
-          },
-        ],
+        body: inklingParagraph('hello'),
       },
       publicCtx,
     )

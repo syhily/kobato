@@ -1,3 +1,4 @@
+import type { LexicalEditor } from 'lexical'
 import type { RefObject } from 'react'
 
 import type { InklingDocument } from '@/shared/inkling/schema'
@@ -14,6 +15,8 @@ export interface InklingArticleEditorProps {
   disabled?: boolean
   /** Injected actions so cards can open pickers without importing server code. */
   actions?: InklingArticleEditorActions
+  /** Ref the shell mounts into so picker callbacks can reach the editor. */
+  editorRef?: RefObject<LexicalEditor | null>
   /** Live preview column layout flag (mirrors old PageBodyEditor API). */
   livePreviewOpen?: boolean
   /** Ref to the scrollable container so the parent shell can wire scroll sync. */

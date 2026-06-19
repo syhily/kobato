@@ -6,7 +6,7 @@ import {
   collectValidationIssuePaths,
   mergeBodyShapeStats,
   redactPortableTextBodyShape,
-} from '@/server/domains/inkling/poc/body-shape-inventory'
+} from '@/server/domains/inkling/migration-support/body-shape-inventory'
 
 const SECRET_TEXT = 'This is a secret sentence.'
 const SECRET_URL = 'https://example.com/secret/path?token=abc'
@@ -157,7 +157,7 @@ function makeCommentBody(): unknown[] {
   ]
 }
 
-describe('server/domains/inkling/poc/body-shape-inventory — redaction', () => {
+describe('server/domains/inkling/migration-support/body-shape-inventory — redaction', () => {
   it('removes raw text from spans', () => {
     const redacted = redactPortableTextBodyShape(makeArticleBody()) as unknown[]
     const firstBlock = redacted[0] as Record<string, unknown>
@@ -242,7 +242,7 @@ describe('server/domains/inkling/poc/body-shape-inventory — redaction', () => 
   })
 })
 
-describe('server/domains/inkling/poc/body-shape-inventory — statistics', () => {
+describe('server/domains/inkling/migration-support/body-shape-inventory — statistics', () => {
   it('counts block _types', () => {
     const stats = collectBodyShapeStats(makeArticleBody())
     expect(stats.blockTypeCounts.block).toBeGreaterThan(0)
@@ -290,7 +290,7 @@ describe('server/domains/inkling/poc/body-shape-inventory — statistics', () =>
   })
 })
 
-describe('server/domains/inkling/poc/body-shape-inventory — validation issue paths', () => {
+describe('server/domains/inkling/migration-support/body-shape-inventory — validation issue paths', () => {
   it('returns issue paths without raw payloads', () => {
     const schema = z.object({ name: z.string() })
     const result = schema.safeParse({ name: 123 })

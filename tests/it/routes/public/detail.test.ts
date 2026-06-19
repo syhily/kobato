@@ -6,6 +6,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { makePage, makePost, makePostList, makeTag } from '#/_helpers/catalog'
 import { makeLoaderArgs, unwrapLoaderData } from '#/_helpers/context'
+import { emptyInklingDocument } from '#/_helpers/inkling'
 import { regularSession } from '#/_helpers/session'
 import { dbContext, poolContext } from '@/server/domains/auth/context'
 
@@ -16,12 +17,12 @@ import { dbContext, poolContext } from '@/server/domains/auth/context'
 const session = regularSession()
 const samplePost = {
   ...makePost({ slug: 'hello', alias: ['hello-old'] }),
-  body: [],
+  body: emptyInklingDocument(),
   imageSources: [],
 }
 const samplePage = {
   ...makePage({ slug: 'about' }),
-  body: [],
+  body: emptyInklingDocument(),
   imageSources: [],
   publishedRevisionId: null,
 }

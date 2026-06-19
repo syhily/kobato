@@ -1,17 +1,12 @@
 import { useMutation } from '@tanstack/react-query'
 import { useEffect, useState } from 'react'
 
-import type { CommentBody } from '@/shared/pt/comment-schema'
 import type { CommentEditOutput, CommentItemWire as CommentItemType, CommentRawOutput } from '@/shared/types/comments'
 
 import { orpcQuery } from '@/client/api/orpc-query'
 import { EMPTY_INKLING_DOCUMENT } from '@/shared/inkling/empty'
 import { Button } from '@/ui/components/button'
 import { isInklingCommentBlank } from '@/ui/public/comments/comment-body-helpers'
-import {
-  commentBodyToInklingDocument,
-  inklingDocumentToCommentBodyAdapter,
-} from '@/ui/public/comments/comment-inkling-adapter'
 import { useCommentsLeafContext } from '@/ui/public/comments/comment-item/helpers'
 import { LazyCommentBodyEditor } from '@/ui/public/comments/LazyCommentBodyEditor'
 
@@ -31,8 +26,7 @@ export function InlineEditForm({ commentId, onCancel, onSaved }: InlineEditFormP
   const raw = useMutation({
     ...orpcQuery.comments.getRaw.mutationOptions(),
     onSuccess: (payload: CommentRawOutput) => {
-      const loadedBody = (payload.body ?? []) as CommentBody
-      const loadedDocument = commentBodyToInklingDocument(loadedBody)
+      const loadedDocument = payload.body ?? EMPTY_INKLING_DOCUMENT
       setInitialDocument(loadedDocument)
       setDocument(loadedDocument)
       setBodyKey((k) => k + 1)
@@ -58,7 +52,7 @@ export function InlineEditForm({ commentId, onCancel, onSaved }: InlineEditFormP
     if (isInklingCommentBlank(document)) {
       return
     }
-    editAction.mutate({ rid: String(commentId), body: inklingDocumentToCommentBodyAdapter(document) })
+    editAction.mutate({ rid: String(commentId), body: document })
   }
 
   return (

@@ -1,8 +1,8 @@
 import { describe, expect, it, vi } from 'vitest'
 
 import type { MyCommentItem } from '@/routes/admin/me/comments'
-import type { CommentBody } from '@/shared/pt/comment-schema'
 
+import { inklingParagraph } from '#/_helpers/inkling'
 import { renderInRouter, renderToHtml, stableHtml } from '#/_helpers/render'
 import { MyCommentsView } from '@/ui/admin/my/MyCommentsView'
 import { MyEditCommentDialog } from '@/ui/admin/my/MyEditCommentDialog'
@@ -11,18 +11,8 @@ vi.mock('@/ui/public/comments/CommentBodyEditor', () => ({
   CommentBodyEditor: () => <div data-testid="comment-body-editor">CommentBodyEditor</div>,
 }))
 
-const EMPTY_BODY: CommentBody = []
-
-function makeCommentBody(text: string): CommentBody {
-  return [
-    {
-      _type: 'block',
-      _key: 'b1',
-      style: 'normal',
-      children: [{ _type: 'span', _key: 's1', text, marks: [] }],
-      markDefs: [],
-    },
-  ]
+function makeCommentBody(text: string) {
+  return inklingParagraph(text)
 }
 
 function makeMyCommentItem(overrides: Partial<MyCommentItem> = {}): MyCommentItem {

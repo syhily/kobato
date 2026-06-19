@@ -108,7 +108,7 @@ function makeRevision(overrides: Partial<AdminRevisionDto> = {}): AdminRevisionD
     id: overrides.id ?? 'rev-1',
     revisionNo: overrides.revisionNo ?? 1,
     status: overrides.status ?? 'draft',
-    body: overrides.body ?? [],
+    body: overrides.body ?? EMPTY_INKLING_DOCUMENT,
     imageSources: overrides.imageSources ?? [],
     headings: overrides.headings ?? [],
     authorId: overrides.authorId ?? null,

@@ -2,7 +2,7 @@ import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
 import type { MyCommentsFilters } from '@/server/domains/comments/repos/shared'
 import type { EntityType } from '@/server/infra/db/target'
-import type { CommentBody } from '@/shared/pt/comment-schema'
+import type { InklingDocument } from '@/shared/inkling/schema'
 
 import { countMyComments, listMyComments } from '@/server/domains/comments/repos/admin-query'
 import { findParentCommentsByIds } from '@/server/domains/comments/repos/public-query/by-id'
@@ -11,7 +11,7 @@ import { mineSoftDeleteCutoff } from '@/server/domains/comments/repos/shared'
 
 export interface MineCommentItem {
   id: string
-  body: CommentBody
+  body: InklingDocument
   createdAtIso: string
   deletedAtIso: string | null
   deleteRequestedAtIso: string | null
@@ -94,7 +94,12 @@ export async function loadMineCommentsPage(
 
     return {
       id: String(c.id),
-      body: (c.body ?? []) as CommentBody,
+      body: (c.body ?? {
+        _type: 'inkling',
+        schemaVersion: 1,
+        lexicalVersion: '0.45.0',
+        root: { type: 'root', version: 1, children: [] },
+      }) as InklingDocument,
       createdAtIso: c.createAt ? new Date(c.createAt).toISOString() : '',
       deletedAtIso: c.deleteAt ? new Date(c.deleteAt).toISOString() : null,
       deleteRequestedAtIso: c.deleteRequestedAt ? new Date(c.deleteRequestedAt).toISOString() : null,

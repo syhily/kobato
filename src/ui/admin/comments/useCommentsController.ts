@@ -1,6 +1,6 @@
 import { useMemo, useReducer } from 'react'
 
-import type { CommentBody } from '@/shared/pt/comment-schema'
+import type { InklingDocument } from '@/shared/inkling/schema'
 import type { AdminCommentWire as AdminComment } from '@/shared/types/comments'
 
 import { idStr } from '@/shared/utils/tools'
@@ -173,7 +173,7 @@ export type CommentsAction =
     }
   | { type: 'removeComment'; id: string }
   | { type: 'approveComment'; id: string }
-  | { type: 'updateCommentContent'; id: string; body: CommentBody }
+  | { type: 'updateCommentContent'; id: string; body: InklingDocument }
   | { type: 'addFilter'; field: FilterFieldKey; value: string; label: string }
   | { type: 'removeFilter'; field: FilterFieldKey }
   | { type: 'renameFilter'; field: FilterFieldKey; label: string }

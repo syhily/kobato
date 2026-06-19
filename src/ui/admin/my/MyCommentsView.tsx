@@ -18,7 +18,6 @@ import type { MyCommentsStatus } from '@/shared/types/comments'
 import { orpc } from '@/client/api/client'
 import { orpcQuery } from '@/client/api/orpc-query'
 import { useSiteIdentity } from '@/shared/lib/blog-config-context'
-import { commentBodySchema } from '@/shared/pt/comment-schema'
 import { formatLocalDate } from '@/shared/utils/formatter'
 import { CommentsFilterBar } from '@/ui/admin/comments/CommentsFilterBar'
 import { type FieldDefinition } from '@/ui/admin/comments/filter-constants'
@@ -37,7 +36,7 @@ import { Badge } from '@/ui/components/badge'
 import { Button } from '@/ui/components/button'
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@/ui/components/empty'
 import { Skeleton } from '@/ui/components/skeleton'
-import { PortableTextBody } from '@/ui/pt/render'
+import { InklingBody } from '@/ui/inkling/render/InklingBody'
 
 const ADMIN_DATE_FORMAT = 'yyyy-LL-dd HH:mm'
 const PAGE_SIZE = 20
@@ -375,14 +374,7 @@ export function MyCommentsView({ status, q, entity, entityOptions, currentUser }
       </AdminListPage.Body>
 
       <MyEditCommentDialog
-        target={
-          editTarget
-            ? (() => {
-                const parsed = commentBodySchema.safeParse(editTarget.body)
-                return parsed.success ? { id: editTarget.id, body: parsed.data } : null
-              })()
-            : null
-        }
+        target={editTarget ? { id: editTarget.id, body: editTarget.body } : null}
         onClose={() => setEditTarget(null)}
         onSaved={() => {
           setEditTarget(null)
@@ -462,7 +454,7 @@ function MyCommentRow({
 
           {/* Body */}
           <div className="comment-content prose-blog prose prose-sm mt-2 max-w-none leading-[1.85] wrap-break-word whitespace-normal">
-            <PortableTextBody body={item.body} />
+            <InklingBody document={item.body} />
           </div>
 
           {/* Action row */}

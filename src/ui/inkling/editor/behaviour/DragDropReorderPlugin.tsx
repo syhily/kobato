@@ -25,8 +25,8 @@ export function useInklingDragDropReorder(editor: LexicalEditor): void {
 
     const createIndicator = (): HTMLDivElement => {
       const el = document.createElement('div')
-      el.className = 'inkling-drop-indicator'
-      el.style.cssText = 'height:3px;background:var(--brand);margin:2px 0;border-radius:1.5px;pointer-events:none'
+      el.className = 'inkling-drop-indicator bg-brand'
+      el.style.cssText = 'height:3px;margin:2px 0;border-radius:1.5px;pointer-events:none'
       el.setAttribute('data-inkling-drop-indicator', 'true')
       return el
     }
@@ -40,11 +40,17 @@ export function useInklingDragDropReorder(editor: LexicalEditor): void {
 
     const onDragStart = (e: DragEvent) => {
       const target = e.target
-      if (!(target instanceof HTMLElement)) { return }
+      if (!(target instanceof HTMLElement)) {
+        return
+      }
       const card = target.closest('[data-inkling-card-selected]') ?? target.closest('.inkling-card')
-      if (!(card instanceof HTMLElement)) { return }
+      if (!(card instanceof HTMLElement)) {
+        return
+      }
       const editorRoot = editor.getRootElement()
-      if (editorRoot === null || !editorRoot.contains(card)) { return }
+      if (editorRoot === null || !editorRoot.contains(card)) {
+        return
+      }
 
       // Find the card's node key from the Lexical DOM
       editor.getEditorState().read(() => {
@@ -60,9 +66,13 @@ export function useInklingDragDropReorder(editor: LexicalEditor): void {
     }
 
     const onDragOver = (e: DragEvent) => {
-      if (dragKey === null) { return }
+      if (dragKey === null) {
+        return
+      }
       e.preventDefault()
-      if (e.dataTransfer !== null) { e.dataTransfer.dropEffect = 'move' }
+      if (e.dataTransfer !== null) {
+        e.dataTransfer.dropEffect = 'move'
+      }
 
       // Show indicator at the nearest drop position
       const target = e.target as HTMLElement
@@ -71,7 +81,9 @@ export function useInklingDragDropReorder(editor: LexicalEditor): void {
         removeIndicator()
         return
       }
-      if (dropIndicator === null) { dropIndicator = createIndicator() }
+      if (dropIndicator === null) {
+        dropIndicator = createIndicator()
+      }
 
       const rect = card.getBoundingClientRect()
       const midY = rect.top + rect.height / 2
@@ -85,7 +97,9 @@ export function useInklingDragDropReorder(editor: LexicalEditor): void {
     const onDrop = (e: DragEvent) => {
       e.preventDefault()
       removeIndicator()
-      if (dragKey === null) { return }
+      if (dragKey === null) {
+        return
+      }
 
       const target = e.target as HTMLElement
       const card = target.closest<HTMLElement>('.inkling-card')
@@ -95,17 +109,18 @@ export function useInklingDragDropReorder(editor: LexicalEditor): void {
       }
 
       editor.update(() => {
-        const dragNode = editor.getEditorState().read(() => $getNearestNodeFromDOMNode(card))
-        if (dragNode === null) { return }
-
         const targetNode = $getNearestNodeFromDOMNode(card)
-        if (targetNode === null || dragKey === targetNode.getKey()) { return }
+        if (targetNode === null || dragKey === targetNode.getKey()) {
+          return
+        }
 
         const root = $getRoot()
         const children = root.getChildren()
         const dragChild = children.find((c) => c.getKey() === dragKey)
         const targetChild = children.find((c) => c.getKey() === targetNode.getKey())
-        if (dragChild === undefined || targetChild === undefined) { return }
+        if (dragChild === undefined || targetChild === undefined) {
+          return
+        }
 
         const dragIdx = children.indexOf(dragChild)
         const targetIdx = children.indexOf(targetChild)

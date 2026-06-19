@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest'
 
-import type { CommentBody } from '@/shared/pt/comment-schema'
 import type { AdminCommentWire as AdminComment } from '@/shared/types/comments'
 
 import { renderHook } from '#/_helpers/hook'
+import { inklingParagraph } from '#/_helpers/inkling'
 import {
   DATE_FILTER_OPERATORS,
   DEFAULT_DATE_OPERATOR,
@@ -23,13 +23,7 @@ import {
 let commentId = 0
 function makeAdminComment(overrides: Partial<AdminComment> = {}): AdminComment {
   commentId += 1
-  const body: CommentBody = [
-    {
-      _type: 'block',
-      _key: `b${commentId}`,
-      children: [{ _type: 'span', _key: `s${commentId}`, text: `Comment ${commentId}` }],
-    },
-  ]
+  const body = inklingParagraph(`Comment ${commentId}`)
   return {
     id: String(commentId),
     createAt: '2024-01-01T00:00:00.000Z',
@@ -244,13 +238,7 @@ describe('ui/admin/comments/useCommentsController hook', () => {
 
   it('updates comment content', () => {
     const comment = makeAdminComment()
-    const newBody: CommentBody = [
-      {
-        _type: 'block',
-        _key: 'new',
-        children: [{ _type: 'span', _key: 'new-s', text: 'Updated body' }],
-      },
-    ]
+    const newBody = inklingParagraph('Updated body')
     const { state } = renderHook(() => useCommentsController({ initialFilters: [] }), {
       actions: [
         (r) =>

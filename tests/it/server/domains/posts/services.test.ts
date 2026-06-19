@@ -4,6 +4,7 @@ import type { Pool } from 'pg'
 import { eq } from 'drizzle-orm'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { emptyInklingDocument, inklingFromPt } from '#/_helpers/inkling'
 import { clearAllTables } from '#/_helpers/integration-db'
 import { flushWorkerRedis } from '#/_helpers/redis'
 import { createDbPool, closePool } from '@/server/infra/db/pool'
@@ -58,7 +59,7 @@ async function seedContent(opts: Partial<typeof contentTable.$inferInsert> = {})
       ownerId: opts.ownerId ?? 1n,
       revisionNo: opts.revisionNo ?? 1,
       status: opts.status ?? 'published',
-      body: opts.body ?? [],
+      body: opts.body ?? emptyInklingDocument(),
       ...opts,
     })
     .returning({ id: contentTable.id })
@@ -170,14 +171,14 @@ describe('posts/services/search-reindex — reindexSearchBatch', () => {
       type: 'post',
       revisionNo: 1,
       status: 'published',
-      body: [
+      body: inklingFromPt([
         {
           _type: 'block',
           _key: 'b1',
           style: 'normal',
           children: [{ _type: 'span', _key: 's1', text: 'hi', marks: [] }],
         },
-      ],
+      ]),
     })
     await seedPost({ slug: 'idx', publishedRevisionId: revId })
     const { reindexSearchBatch } = await import('@/server/domains/posts/services/search-reindex')
@@ -190,7 +191,7 @@ describe('posts/services/search-reindex — reindexSearchBatch', () => {
       type: 'post',
       revisionNo: 1,
       status: 'published',
-      body: [],
+      body: emptyInklingDocument(),
     })
     await seedPost({ slug: 'a', publishedRevisionId: revId })
     await seedPost({ slug: 'b', publishedRevisionId: revId })
@@ -293,14 +294,14 @@ describe('posts/services/draft — saveDraft / publishLatest', () => {
     const { saveDraft } = await import('@/server/domains/posts/services/draft')
     const r = await saveDraft(db, {
       postId: BigInt(created.id),
-      body: [
+      body: inklingFromPt([
         {
           _type: 'block',
           _key: 'b1',
           style: 'normal',
           children: [{ _type: 'span', _key: 's1', text: 'hi', marks: [] }],
         },
-      ],
+      ]),
       authorId: null,
     })
     expect(r.status).toBe('saved')
@@ -311,14 +312,14 @@ describe('posts/services/draft — saveDraft / publishLatest', () => {
     const { publishLatest } = await import('@/server/domains/posts/services/draft')
     const r = await publishLatest(db, {
       postId: BigInt(created.id),
-      body: [
+      body: inklingFromPt([
         {
           _type: 'block',
           _key: 'b1',
           style: 'normal',
           children: [{ _type: 'span', _key: 's1', text: 'pub', marks: [] }],
         },
-      ],
+      ]),
       authorId: null,
     })
     expect(r.status).toBe('saved')
@@ -329,14 +330,20 @@ describe('posts/services/search-index — indexPost', () => {
   it('inserts a search index row with no embedding', async () => {
     const pid = await seedPost({ slug: 'idx-post' })
     const { indexPost } = await import('@/server/domains/posts/services/search-index')
-    await indexPost(db, pid, 'Title', 'Summary', [
-      {
-        _type: 'block',
-        _key: 'b1',
-        style: 'normal',
-        children: [{ _type: 'span', _key: 's1', text: 'body', marks: [] }],
-      },
-    ])
+    await indexPost(
+      db,
+      pid,
+      'Title',
+      'Summary',
+      inklingFromPt([
+        {
+          _type: 'block',
+          _key: 'b1',
+          style: 'normal',
+          children: [{ _type: 'span', _key: 's1', text: 'body', marks: [] }],
+        },
+      ]),
+    )
     const { postSearchIndex } = await import('@/server/infra/db/schema/content')
     const rows = await db.select().from(postSearchIndex)
     expect(rows).toHaveLength(1)
@@ -347,7 +354,7 @@ describe('posts/services/search-index — indexPost', () => {
     vi.mocked(generateEmbedding).mockResolvedValueOnce(Array.from({ length: 2000 }, () => 0.1))
     const pid = await seedPost({ slug: 'idx-trunc' })
     const { indexPost } = await import('@/server/domains/posts/services/search-index')
-    await indexPost(db, pid, 'T', 'S', [])
+    await indexPost(db, pid, 'T', 'S', emptyInklingDocument())
     expect(true).toBe(true)
   })
   it('pads short embeddings to the target dimension', async () => {
@@ -355,7 +362,7 @@ describe('posts/services/search-index — indexPost', () => {
     vi.mocked(generateEmbedding).mockResolvedValueOnce([0.1, 0.2, 0.3])
     const pid = await seedPost({ slug: 'idx-pad' })
     const { indexPost } = await import('@/server/domains/posts/services/search-index')
-    await indexPost(db, pid, 'T', 'S', [])
+    await indexPost(db, pid, 'T', 'S', emptyInklingDocument())
     expect(true).toBe(true)
   })
 })

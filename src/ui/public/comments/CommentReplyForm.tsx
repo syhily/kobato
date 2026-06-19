@@ -13,13 +13,12 @@ import type {
 import { orpcQuery } from '@/client/api/orpc-query'
 import { useCommentGuest } from '@/client/hooks/use-comment-guest'
 import { EMPTY_INKLING_DOCUMENT } from '@/shared/inkling/empty'
-import { bodyToPlainText } from '@/shared/pt/utils'
+import { inklingToPlainText } from '@/shared/inkling/plaintext'
 import { joinUrl } from '@/shared/utils/urls'
 import { Button } from '@/ui/components/button'
 import { Input } from '@/ui/components/input'
 import { cn } from '@/ui/lib/cn'
 import { isInklingCommentBlank } from '@/ui/public/comments/comment-body-helpers'
-import { inklingDocumentToCommentBodyAdapter } from '@/ui/public/comments/comment-inkling-adapter'
 import { LazyCommentBodyEditor } from '@/ui/public/comments/LazyCommentBodyEditor'
 
 export interface CommentReplyFormProps {
@@ -130,7 +129,7 @@ export function CommentReplyForm({
       name,
       email,
       link: link !== '' ? link : undefined,
-      body: inklingDocumentToCommentBodyAdapter(document),
+      body: document,
       rid: replyToId === 0 ? undefined : replyToId,
       subtitle: subtitle === '' ? undefined : subtitle,
     }
@@ -174,7 +173,7 @@ export function CommentReplyForm({
             {isReplying && (
               <ReplyOverlay
                 authorName={replyTarget.name}
-                originalContent={bodyToPlainText(replyTarget.body).slice(0, 200).trim()}
+                originalContent={inklingToPlainText(replyTarget.body).slice(0, 200).trim()}
               />
             )}
           </div>

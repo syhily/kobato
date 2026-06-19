@@ -519,11 +519,6 @@ describe('contract: module and bundle boundaries', () => {
         file: 'src/ui/inkling/editor/footnotes/renumber.ts',
         specifier: './FootnoteRefNode',
       },
-      {
-        key: 'UndoKeyboardProbe.tsx -> ./shared-history-context',
-        file: 'src/ui/inkling/poc/UndoKeyboardProbe.tsx',
-        specifier: './shared-history-context',
-      },
     ] as const
     const explicitAllowedHits = new Set<string>()
 

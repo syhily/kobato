@@ -5,6 +5,7 @@ import { call } from '@orpc/server'
 import { eq } from 'drizzle-orm'
 import { afterAll, beforeEach, describe, expect, it } from 'vitest'
 
+import { emptyInklingDocument } from '#/_helpers/inkling'
 import { clearAllTables } from '#/_helpers/integration-db'
 import { makeAuthedCtx } from '#/_helpers/mock-ctx'
 import { commentsAuthedRouter } from '@/server/http/controllers/comments-authed.controller'
@@ -67,7 +68,7 @@ async function seedComment(opts: Partial<typeof comment.$inferInsert> = {}): Pro
       ownerId: opts.ownerId ?? 1n,
       userId: opts.userId ?? 1n,
       content: opts.content ?? 'hello',
-      body: opts.body ?? [],
+      body: opts.body ?? emptyInklingDocument(),
       rid: opts.rid ?? 0,
       rootId: opts.rootId ?? 0n,
       isPending: opts.isPending ?? false,

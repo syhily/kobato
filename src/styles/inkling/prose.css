@@ -6,7 +6,7 @@
    grey-300→inkling-border, grey-200→line-muted, code bg kept project cream,
    kg-accent-color→brand, Inter→OPPO Sans, Georgia→OPPO Serif SC.              */
 
-.inkling-prose {
+.inkling-prose.inkling-prose {
   /* ── Reset margins ──────────────────────────────────────────────── */
   :where(p, h1, h2, h3, h4, h5, h6, blockquote, aside):not(:where(.not-inkling-prose, [class~='not-inkling-prose'] *)) {
     margin: 1.6rem 0 0;
@@ -396,7 +396,7 @@
     padding: 3.2rem 0 0;
   }
 
-  > :where(div[data-kg-card-width='full'] + div[data-kg-card-width='full']):not(
+  > :where(div[data-inkling-card-width='full'] + div[data-inkling-card-width='full']):not(
       :where(.not-inkling-prose, [class~='not-inkling-prose'] *)
     ) {
     padding: 0;
@@ -452,6 +452,29 @@
     white-space: pre-wrap;
   }
 
+  /* ── Tables ──────────────────────────────────────────────────────── */
+
+  table {
+    font-size: 1.75rem;
+    margin: 0;
+    font-family: var(--inkling-font-serif);
+    letter-spacing: 0.02rem;
+    line-height: 1.6em;
+  }
+
+  table tr td,
+  table tr th {
+    vertical-align: top;
+    border-bottom: 1px solid var(--inkling-border);
+  }
+
+  .dark & table tr td,
+  .dark & table tr th,
+  &.dark table tr td,
+  &.dark table tr th {
+    border-bottom: 1px solid var(--line);
+  }
+
   /* ── Images ──────────────────────────────────────────────────────── */
 
   :where(img):not(:where(.not-inkling-prose, [class~='not-inkling-prose'] *)) {
@@ -459,17 +482,18 @@
   }
 
   /* ── Dark mode ───────────────────────────────────────────────────── */
+}
 
-  .dark {
-    :where(h1, h2, h3, h4, h5, h6):not(:where(.not-inkling-prose, [class~='not-inkling-prose'] *)) {
-      color: var(--inkling-text);
-    }
+.dark .inkling-prose.inkling-prose,
+.inkling-prose.inkling-prose.dark {
+  :where(h1, h2, h3, h4, h5, h6):not(:where(.not-inkling-prose, [class~='not-inkling-prose'] *)) {
+    color: var(--inkling-text);
+  }
 
-    :where(code):not(:where(.not-inkling-prose, [class~='not-inkling-prose'] *)) {
-      background: var(--ink-5);
-      border: 1px solid var(--ink-5);
-      border-radius: 2px;
-      color: var(--inkling-text);
-    }
+  :where(code):not(:where(.not-inkling-prose, [class~='not-inkling-prose'] *)) {
+    background: var(--ink-5);
+    border: 1px solid var(--ink-5);
+    border-radius: 2px;
+    color: var(--inkling-text);
   }
 }

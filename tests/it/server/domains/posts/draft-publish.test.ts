@@ -3,6 +3,7 @@ import type { Pool } from 'pg'
 
 import { afterAll, beforeEach, describe, expect, it } from 'vitest'
 
+import { inklingParagraph } from '#/_helpers/inkling'
 import { clearAllTables } from '#/_helpers/integration-db'
 import { makeAuthedCtx } from '#/_helpers/mock-ctx'
 import { flushWorkerRedis } from '#/_helpers/redis'
@@ -36,14 +37,7 @@ describe('integration / draft publish flow', () => {
       '/admin/posts/saveDraft',
       {
         id: post.id,
-        body: [
-          {
-            _type: 'block',
-            _key: 'b1',
-            style: 'normal',
-            children: [{ _type: 'span', _key: 's1', text: 'hello', marks: [] }],
-          },
-        ],
+        body: inklingParagraph('hello'),
       },
       ctx,
     )
@@ -54,14 +48,7 @@ describe('integration / draft publish flow', () => {
       '/admin/posts/publishLatest',
       {
         id: post.id,
-        body: [
-          {
-            _type: 'block',
-            _key: 'b1',
-            style: 'normal',
-            children: [{ _type: 'span', _key: 's1', text: 'published', marks: [] }],
-          },
-        ],
+        body: inklingParagraph('published'),
       },
       ctx,
     )

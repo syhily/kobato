@@ -1,3 +1,4 @@
+import type { LexicalEditor } from 'lexical'
 import type { NavigateFunction } from 'react-router'
 
 import {
@@ -13,6 +14,7 @@ import {
   Undo2Icon,
   UploadIcon,
 } from 'lucide-react'
+import { useRef } from 'react'
 import { Link } from 'react-router'
 
 import type {
@@ -118,7 +120,8 @@ export function PageEditorShell({ mode, detail, navigate }: PageEditorShellProps
     navigate,
   })
 
-  const pickerActions = useEditorPickerActions()
+  const editorRef = useRef<LexicalEditor | null>(null)
+  const pickerActions = useEditorPickerActions(editorRef)
 
   return (
     <div
@@ -279,6 +282,7 @@ export function PageEditorShell({ mode, detail, navigate }: PageEditorShellProps
             onDocumentChange={state.setBody}
             disabled={state.isPending}
             actions={pickerActions.actions}
+            editorRef={editorRef}
             livePreviewOpen={state.previewOpen}
             scrollContainerRef={state.editorScrollRef}
             floatingActions={

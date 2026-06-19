@@ -6,7 +6,7 @@ import { indexPost } from '@/server/domains/posts/services/search-index'
 import { content } from '@/server/infra/db/schema/content'
 import { post } from '@/server/infra/db/schema/post'
 import { getLogger } from '@/server/infra/logger'
-import { portableTextBodySchema } from '@/shared/pt/schema'
+import { validateInklingDocument } from '@/shared/inkling/schema'
 
 const log = getLogger('search.reindex')
 
@@ -67,11 +67,8 @@ export async function reindexSearchBatch(
     const rev = contentMap.get(row.publishedRevisionId!)
     if (rev) {
       try {
-        const body = portableTextBodySchema.safeParse(rev.body)
-        if (!body.success) {
-          throw new Error('Invalid body format')
-        }
-        await indexPost(db, row.id, row.title, row.summary, body.data)
+        const body = validateInklingDocument(rev.body)
+        await indexPost(db, row.id, row.title, row.summary, body)
         processed++
       } catch (err) {
         log.error('Index post failed', {

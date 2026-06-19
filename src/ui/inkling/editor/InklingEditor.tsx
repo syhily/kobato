@@ -15,6 +15,7 @@ import { useCallback, useMemo } from 'react'
 import type { InklingDocument } from '@/shared/inkling/schema'
 
 import { INKLING_SCHEMA_VERSION } from '@/shared/inkling/schema'
+import { reportEditorError } from '@/ui/inkling/editor/error-report'
 
 const theme = {
   paragraph: 'inkling-paragraph',
@@ -109,8 +110,7 @@ export function InklingEditor({
       namespace,
       theme,
       onError: (error: Error) => {
-        // eslint-disable-next-line no-console
-        console.error(`${namespace} error:`, error)
+        reportEditorError(error, namespace)
       },
       nodes,
       editable,
@@ -131,13 +131,11 @@ export function InklingEditor({
       <div className={className}>
         <ContentEditable
           className={contentClassName}
-          placeholder={
-            placeholder
-              ? ((({ isEditable }: { isEditable: boolean }) =>
-                  isEditable ? (
-                    <div className="inkling-placeholder text-muted-foreground">{placeholder}</div>
-                  ) : null) as never)
-              : null
+          aria-placeholder={placeholder ?? ''}
+          placeholder={(isEditable: boolean) =>
+            placeholder && isEditable ? (
+              <div className="inkling-placeholder text-muted-foreground">{placeholder}</div>
+            ) : null
           }
         />
         <OnChangePlugin onChange={handleChange} />

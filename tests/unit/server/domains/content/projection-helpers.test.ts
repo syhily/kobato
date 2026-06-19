@@ -1,18 +1,20 @@
 import { describe, expect, it } from 'vitest'
 
+import { emptyInklingDocument, inklingFromPt } from '#/_helpers/inkling'
+
 const { readBody, readHeadings } = await import('@/server/domains/content/projection-helpers')
 
 describe('content/projection-helpers — readBody', () => {
-  it('returns empty array for null', () => {
-    expect(readBody(null)).toEqual([])
+  it('returns an empty Inkling document for null', () => {
+    expect(readBody(null)).toEqual(emptyInklingDocument())
   })
 
-  it('returns empty array for undefined', () => {
-    expect(readBody(undefined)).toEqual([])
+  it('returns an empty Inkling document for undefined', () => {
+    expect(readBody(undefined)).toEqual(emptyInklingDocument())
   })
 
-  it('returns validated body for a valid portable text array', () => {
-    const body = [
+  it('returns a validated Inkling document for a valid Inkling document', () => {
+    const body = inklingFromPt([
       {
         _type: 'block',
         _key: 'b1',
@@ -20,14 +22,14 @@ describe('content/projection-helpers — readBody', () => {
         children: [{ _type: 'span', _key: 's1', text: 'Hello' }],
         markDefs: [],
       },
-    ]
+    ])
     const result = readBody(body)
     expect(result).toEqual(body)
   })
 
-  it('throws for an invalid non-array value (defensive read path)', () => {
-    // validatePortableTextBody throws ZodError for non-array input
-    expect(() => readBody('not an array')).toThrow()
+  it('throws for an invalid non-object value (defensive read path)', () => {
+    // validateInklingDocument throws ZodError for non-object input
+    expect(() => readBody('not an object')).toThrow()
   })
 })
 

@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from 'vitest'
 
 import type { CommentItemWire as CommentItemType } from '@/shared/types/comments'
 
+import { emptyInklingDocument, inklingFromPt } from '#/_helpers/inkling'
 import { renderInRouter, renderToHtml, stableHtml } from '#/_helpers/render'
 import { CommentActions } from '@/ui/public/comments/comment-item/CommentActions'
 import { CommentReplyForm } from '@/ui/public/comments/CommentReplyForm'
@@ -82,14 +83,14 @@ function makeComment(overrides: Partial<CommentItemType> = {}): CommentItemType 
     createAt: '2024-01-15T08:30:00.000Z',
     updatedAt: '2024-01-15T08:30:00.000Z',
     deleteAt: null,
-    body: [
+    body: inklingFromPt([
       {
         _type: 'block',
         _key: 'b1',
         style: 'normal',
         children: [{ _type: 'span', _key: 's1', text: 'Hello, world.' }],
       },
-    ],
+    ]),
     type: 'post' as const,
     ownerId: '1',
     userId: '42',
@@ -359,14 +360,14 @@ describe('snapshot: CommentReplyForm', () => {
     const replyTarget = makeComment({
       id: '42',
       name: '雨帆',
-      body: [
+      body: inklingFromPt([
         {
           _type: 'block',
           _key: 'b1',
           style: 'normal',
           children: [{ _type: 'span', _key: 's1', text: '回复内容片段。' }],
         },
-      ],
+      ]),
     })
     const html = stableHtml(
       renderInRouter(

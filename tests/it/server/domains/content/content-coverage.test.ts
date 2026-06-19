@@ -4,6 +4,7 @@ import type { Pool } from 'pg'
 import { eq } from 'drizzle-orm'
 import { afterAll, beforeEach, describe, expect, it } from 'vitest'
 
+import { emptyInklingDocument, inklingFromPt } from '#/_helpers/inkling'
 import { clearAllTables } from '#/_helpers/integration-db'
 import { saveDraftRevision, publishLatestRevision } from '@/server/domains/content/repos/mutate'
 import {
@@ -32,9 +33,9 @@ beforeEach(async () => {
   await clearAllTables(db)
 })
 
-const body = [
+const body = inklingFromPt([
   { _type: 'block', _key: 'b1', style: 'normal', children: [{ _type: 'span', _key: 's1', text: 'hi', marks: [] }] },
-]
+])
 
 async function seedPostMeta(slug = 'p1', title = 'P1') {
   const [m] = await db.insert(postMetaTable).values({ slug, title }).returning()
@@ -229,7 +230,15 @@ describe('content/repos/query — basic lookups', () => {
   it('findContentsByIds returns matching rows', async () => {
     const [a] = await db
       .insert(contentTable)
-      .values({ type: 'post', ownerId: 1n, revisionNo: 1, status: 'draft', body: [], imageSources: [], headings: [] })
+      .values({
+        type: 'post',
+        ownerId: 1n,
+        revisionNo: 1,
+        status: 'draft',
+        body: emptyInklingDocument(),
+        imageSources: [],
+        headings: [],
+      })
       .returning()
     const [b] = await db
       .insert(contentTable)
@@ -238,7 +247,7 @@ describe('content/repos/query — basic lookups', () => {
         ownerId: 1n,
         revisionNo: 2,
         status: 'published',
-        body: [],
+        body: emptyInklingDocument(),
         imageSources: [],
         headings: [],
       })
@@ -249,9 +258,33 @@ describe('content/repos/query — basic lookups', () => {
 
   it('findLatestRevision returns the highest revisionNo', async () => {
     await db.insert(contentTable).values([
-      { type: 'post', ownerId: 5n, revisionNo: 1, status: 'draft', body: [], imageSources: [], headings: [] },
-      { type: 'post', ownerId: 5n, revisionNo: 3, status: 'published', body: [], imageSources: [], headings: [] },
-      { type: 'post', ownerId: 5n, revisionNo: 2, status: 'draft', body: [], imageSources: [], headings: [] },
+      {
+        type: 'post',
+        ownerId: 5n,
+        revisionNo: 1,
+        status: 'draft',
+        body: emptyInklingDocument(),
+        imageSources: [],
+        headings: [],
+      },
+      {
+        type: 'post',
+        ownerId: 5n,
+        revisionNo: 3,
+        status: 'published',
+        body: emptyInklingDocument(),
+        imageSources: [],
+        headings: [],
+      },
+      {
+        type: 'post',
+        ownerId: 5n,
+        revisionNo: 2,
+        status: 'draft',
+        body: emptyInklingDocument(),
+        imageSources: [],
+        headings: [],
+      },
     ])
     const latest = await findLatestRevision(db, 'post', 5n)
     expect(latest).not.toBeNull()
@@ -260,8 +293,24 @@ describe('content/repos/query — basic lookups', () => {
 
   it('findLatestDraft returns the latest draft only', async () => {
     await db.insert(contentTable).values([
-      { type: 'page', ownerId: 7n, revisionNo: 1, status: 'published', body: [], imageSources: [], headings: [] },
-      { type: 'page', ownerId: 7n, revisionNo: 2, status: 'draft', body: [], imageSources: [], headings: [] },
+      {
+        type: 'page',
+        ownerId: 7n,
+        revisionNo: 1,
+        status: 'published',
+        body: emptyInklingDocument(),
+        imageSources: [],
+        headings: [],
+      },
+      {
+        type: 'page',
+        ownerId: 7n,
+        revisionNo: 2,
+        status: 'draft',
+        body: emptyInklingDocument(),
+        imageSources: [],
+        headings: [],
+      },
     ])
     const draft = await findLatestDraft(db, 'page', 7n)
     expect(draft).not.toBeNull()
@@ -271,9 +320,33 @@ describe('content/repos/query — basic lookups', () => {
 
   it('listRevisions returns revisions in descending order with limit', async () => {
     await db.insert(contentTable).values([
-      { type: 'post', ownerId: 9n, revisionNo: 1, status: 'published', body: [], imageSources: [], headings: [] },
-      { type: 'post', ownerId: 9n, revisionNo: 2, status: 'published', body: [], imageSources: [], headings: [] },
-      { type: 'post', ownerId: 9n, revisionNo: 3, status: 'draft', body: [], imageSources: [], headings: [] },
+      {
+        type: 'post',
+        ownerId: 9n,
+        revisionNo: 1,
+        status: 'published',
+        body: emptyInklingDocument(),
+        imageSources: [],
+        headings: [],
+      },
+      {
+        type: 'post',
+        ownerId: 9n,
+        revisionNo: 2,
+        status: 'published',
+        body: emptyInklingDocument(),
+        imageSources: [],
+        headings: [],
+      },
+      {
+        type: 'post',
+        ownerId: 9n,
+        revisionNo: 3,
+        status: 'draft',
+        body: emptyInklingDocument(),
+        imageSources: [],
+        headings: [],
+      },
     ])
     const list = await listRevisions(db, 'post', 9n, 2)
     expect(list).toHaveLength(2)
@@ -283,8 +356,24 @@ describe('content/repos/query — basic lookups', () => {
 
   it('maxRevisionNo returns the largest revisionNo for the (type, owner)', async () => {
     await db.insert(contentTable).values([
-      { type: 'post', ownerId: 11n, revisionNo: 1, status: 'draft', body: [], imageSources: [], headings: [] },
-      { type: 'post', ownerId: 11n, revisionNo: 4, status: 'published', body: [], imageSources: [], headings: [] },
+      {
+        type: 'post',
+        ownerId: 11n,
+        revisionNo: 1,
+        status: 'draft',
+        body: emptyInklingDocument(),
+        imageSources: [],
+        headings: [],
+      },
+      {
+        type: 'post',
+        ownerId: 11n,
+        revisionNo: 4,
+        status: 'published',
+        body: emptyInklingDocument(),
+        imageSources: [],
+        headings: [],
+      },
     ])
     expect(await maxRevisionNo(db, 'post', 11n)).toBe(4)
   })

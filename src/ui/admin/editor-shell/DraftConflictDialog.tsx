@@ -2,8 +2,11 @@ import { ArrowRightLeftIcon, MonitorIcon, ServerIcon } from 'lucide-react'
 
 import type { InklingDocument } from '@/shared/inkling/schema'
 
+import { inklingDocumentFingerprint } from '@/shared/inkling/normalize'
 import { Button } from '@/ui/components/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/ui/components/dialog'
+import { InklingBody } from '@/ui/inkling/render/InklingBody'
+import { cn } from '@/ui/lib/cn'
 
 export interface DraftConflictDialogProps {
   open: boolean
@@ -23,6 +26,8 @@ export interface DraftConflictDialogProps {
 
 export function DraftConflictDialog({
   open,
+  localBody,
+  serverBody,
   localSavedAt,
   serverUpdatedAt,
   onChooseLocal,
@@ -45,12 +50,16 @@ export function DraftConflictDialog({
             title="云端版本"
             icon={<ServerIcon className="size-4" />}
             timestamp={serverUpdatedAt}
+            body={serverBody}
+            otherBody={localBody}
             side="left"
           />
           <DraftPanel
             title="本地草稿"
             icon={<MonitorIcon className="size-4" />}
             timestamp={localSavedAt}
+            body={localBody}
+            otherBody={serverBody}
             side="right"
           />
         </div>
@@ -71,10 +80,23 @@ interface DraftPanelProps {
   title: string
   icon: React.ReactNode
   timestamp: number | null
+  body: InklingDocument
+  otherBody: InklingDocument
   side: 'left' | 'right'
 }
 
-function DraftPanel({ title, icon, timestamp }: DraftPanelProps) {
+function blockFingerprint(body: InklingDocument, block: InklingDocument['root']['children'][number]): string {
+  const doc: InklingDocument = {
+    _type: 'inkling',
+    schemaVersion: body.schemaVersion,
+    lexicalVersion: body.lexicalVersion,
+    root: { type: 'root', version: 1, direction: null, format: '', indent: 0, children: [block] },
+  }
+  return inklingDocumentFingerprint(doc)
+}
+
+function DraftPanel({ title, icon, timestamp, body, otherBody }: DraftPanelProps) {
+  const otherFingerprints = new Set(otherBody.root.children.map((block) => blockFingerprint(otherBody, block)))
   return (
     <div className="flex min-h-0 flex-col rounded-xl border bg-card">
       <div className="flex items-center gap-2 border-b px-3 py-2 text-sm font-medium">
@@ -85,8 +107,22 @@ function DraftPanel({ title, icon, timestamp }: DraftPanelProps) {
         ) : null}
       </div>
       <div className="max-h-(--spacing-editor-min) overflow-y-auto p-3">
-        <div className="text-xs text-muted-foreground">
-          差异对比视图在当前编辑器外壳 POC 中尚未实现。选择一方后，编辑器会加载对应正文。
+        <div className="flex flex-col gap-2">
+          {body.root.children.map((block, index) => {
+            const fp = blockFingerprint(body, block)
+            const changed = !otherFingerprints.has(fp)
+            return (
+              <div
+                key={block.key ?? `block-${index}`}
+                className={cn('rounded border p-2', changed ? 'border-brand/40 bg-brand/5' : 'border-transparent')}
+              >
+                {changed ? <div className="mb-1 text-[10px] font-medium text-brand">已变更</div> : null}
+                <div className="opacity-90">
+                  <InklingBody document={{ ...body, root: { ...body.root, children: [block] } }} />
+                </div>
+              </div>
+            )
+          })}
         </div>
       </div>
     </div>

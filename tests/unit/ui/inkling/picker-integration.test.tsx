@@ -20,7 +20,7 @@ import {
   MathCardNode,
   MusicCardNode,
   TableCardNode,
-} from '@/ui/inkling/editor/cards/card-nodes'
+} from '@/ui/inkling/editor/cards/simple-card-nodes'
 import { FootnoteRefNode } from '@/ui/inkling/editor/footnotes/FootnoteRefNode'
 
 function buildHeadlessArticleEditor() {

@@ -18,7 +18,8 @@ import { clearSitemapCache } from '@/server/infra/cache/sitemap-cache'
 import { DomainError } from '@/server/infra/http/errors'
 import { getLogger } from '@/server/infra/logger'
 import { deriveSlug } from '@/server/infra/slug'
-import { collectHeadings, collectImageStoragePaths } from '@/shared/pt/utils'
+import { collectInklingHeadings } from '@/shared/inkling/headings'
+import { collectInklingImageStoragePaths } from '@/shared/inkling/images'
 
 const log = getLogger('pages.service')
 const auditLog = getLogger('audit.cms.pages')
@@ -83,8 +84,8 @@ async function savePageBodyInternal(
     warnings.push('图片库同步失败，部分图片可能无法正常显示。')
   }
 
-  const imageSources = collectImageStoragePaths(body)
-  const headings = collectHeadings(body, deriveSlug)
+  const imageSources = collectInklingImageStoragePaths(body)
+  const headings = collectInklingHeadings(body, deriveSlug)
 
   const overwriteContext = input.force === true ? await findLatestRevision(db, 'page', meta.id).catch(() => null) : null
 

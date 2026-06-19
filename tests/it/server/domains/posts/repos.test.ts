@@ -4,6 +4,7 @@ import type { Pool } from 'pg'
 import { eq } from 'drizzle-orm'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { emptyInklingDocument } from '#/_helpers/inkling'
 import { clearAllTables } from '#/_helpers/integration-db'
 import { flushWorkerRedis } from '#/_helpers/redis'
 import { createDbPool, closePool } from '@/server/infra/db/pool'
@@ -63,7 +64,7 @@ async function seedContent(opts: Partial<typeof contentTable.$inferInsert> = {})
       ownerId: opts.ownerId ?? 1n,
       revisionNo: opts.revisionNo ?? 1,
       status: opts.status ?? 'published',
-      body: opts.body ?? [],
+      body: opts.body ?? emptyInklingDocument(),
       ...opts,
     })
     .returning({ id: contentTable.id })
@@ -244,7 +245,7 @@ describe('posts/repos/single — toPostFromMeta', () => {
       pinnedAt: null,
     }
     const p = toPostFromMeta(meta, ['t'])
-    expect(p.body).toEqual([])
+    expect(p.body).toEqual(emptyInklingDocument())
     expect(p.imageSources).toEqual([])
     expect(p.publishedRevisionId).toBeNull()
   })

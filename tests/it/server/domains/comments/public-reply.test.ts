@@ -3,6 +3,7 @@ import type { Pool } from 'pg'
 
 import { afterAll, beforeEach, describe, expect, it } from 'vitest'
 
+import { inklingLink, inklingParagraph } from '#/_helpers/inkling'
 import { clearAllTables } from '#/_helpers/integration-db'
 import { makeAuthedCtx, makePublicCtx } from '#/_helpers/mock-ctx'
 import { flushWorkerRedis } from '#/_helpers/redis'
@@ -24,24 +25,31 @@ beforeEach(async () => {
 
 describe('integration / public comments', () => {
   it('rejects XSS payload in comment body link href', async () => {
-    const ctx = makePublicCtx({ db, pool })
+    const adminCtx = makeAuthedCtx({ role: 'admin', db, pool })
+    const publicCtx = makePublicCtx({ db, pool })
+
+    // Create a page so the comment target exists.
+    const pageRes = await callRpc(
+      '/admin/pages/upsertMeta',
+      { title: 'Commentable Page', summary: '', slug: 'commentable' },
+      adminCtx,
+    )
+    expect(pageRes.status).toBe(200)
+
+    const listRes = await callRpc('/admin/pages/list', { offset: 0, limit: 1 }, adminCtx)
+    expect(listRes.status).toBe(200)
+    const list = await parseRpcJson<{ pages: { id: string; commentPublicId: string }[]; total: number }>(listRes)
+    const page = list.pages[0]!
+
     const res = await callRpc(
       '/comments/replyComment',
       {
-        page_key: 'posts/nonexistent',
+        page_key: page.commentPublicId,
         name: 'Guest',
         email: 'guest@example.com',
-        body: [
-          {
-            _type: 'block',
-            _key: 'b1',
-            style: 'normal',
-            children: [{ _type: 'span', _key: 's1', text: 'click', marks: ['m1'] }],
-            markDefs: [{ _type: 'link', _key: 'm1', href: "javascript:alert('xss')" }],
-          },
-        ],
+        body: inklingLink("javascript:alert('xss')", 'click'),
       },
-      ctx,
+      publicCtx,
     )
     expect(res.status).toBe(400)
   })
@@ -70,14 +78,7 @@ describe('integration / public comments', () => {
         page_key: page.commentPublicId,
         name: 'Guest',
         email: 'guest@example.com',
-        body: [
-          {
-            _type: 'block',
-            _key: 'b1',
-            style: 'normal',
-            children: [{ _type: 'span', _key: 's1', text: longText }],
-          },
-        ],
+        body: inklingParagraph(longText),
       },
       publicCtx,
     )

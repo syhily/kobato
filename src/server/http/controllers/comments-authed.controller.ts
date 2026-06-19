@@ -9,7 +9,7 @@ import { findCommentWithUserById } from '@/server/domains/comments/repos/public-
 import { loadMineCommentsPage } from '@/server/domains/comments/services/mine-comments'
 import { updateOwnComment } from '@/server/domains/comments/services/moderate'
 import { authedProc } from '@/server/http/orpc-base'
-import { commentBodySchema } from '@/shared/pt/comment-schema'
+import { inklingDocumentSchema } from '@/shared/inkling/schema'
 import { parseCommentEntity, serializeCommentEntity } from '@/shared/utils/comments'
 import { idFromString } from '@/shared/utils/id'
 
@@ -17,7 +17,7 @@ const successOutput = z.object({ success: z.boolean() })
 
 const updateOwn = authedProc
   .route({ method: 'POST', path: '/comments/update-own' })
-  .input(z.object({ commentId: z.string(), body: commentBodySchema }))
+  .input(z.object({ commentId: z.string(), body: inklingDocumentSchema }))
   .output(successOutput)
   .handler(async ({ input, context }) => {
     const commentId = input.commentId ? idFromString(input.commentId) : 0n
@@ -94,7 +94,7 @@ const loadMine = authedProc
       items: z.array(
         z.object({
           id: z.string(),
-          body: commentBodySchema,
+          body: inklingDocumentSchema,
           createdAtIso: z.string(),
           deletedAtIso: z.string().nullable(),
           deleteRequestedAtIso: z.string().nullable(),

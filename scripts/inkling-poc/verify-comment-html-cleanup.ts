@@ -79,7 +79,9 @@ const FORMAT_CODE = 8
 const FORMAT_STRIKETHROUGH = 16
 
 function hasDecorator(format: number | undefined): boolean {
-  if (format === undefined) return false
+  if (format === undefined) {
+    return false
+  }
   return (format & (FORMAT_BOLD | FORMAT_ITALIC | FORMAT_UNDERLINE | FORMAT_CODE | FORMAT_STRIKETHROUGH)) !== 0
 }
 
@@ -270,13 +272,17 @@ function scanBodyForTags(body: CommentBody): {
   let p = 0
 
   for (const block of body) {
-    if (block._type !== 'block') continue
+    if (block._type !== 'block') {
+      continue
+    }
     for (const span of block.children) {
       const text = span.text
       const types = detectTagTypes(text)
       if (types.length > 0) {
         affected = true
-        for (const t of types) allTypes.add(t)
+        for (const t of types) {
+          allTypes.add(t)
+        }
         aOpen += countMatches(text, A_OPEN_RE)
         aClose += countMatches(text, A_CLOSE_RE)
         img += countMatches(text, IMG_RE)

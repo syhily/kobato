@@ -20,7 +20,7 @@ import {
   collectValidationIssuePaths,
   mergeBodyShapeStats,
   type BodyShapeStats,
-} from '@/server/domains/inkling/poc/body-shape-inventory'
+} from '@/server/domains/inkling/migration-support/body-shape-inventory'
 import { safeValidateCommentBody } from '@/shared/pt/comment-schema'
 import { safeValidatePortableTextBody } from '@/shared/pt/utils'
 

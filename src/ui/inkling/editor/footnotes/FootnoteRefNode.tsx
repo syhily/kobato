@@ -6,8 +6,11 @@ import type {
   NodeKey,
   SerializedLexicalNode,
 } from 'lexical'
+import type { JSX } from 'react'
 
 import { DecoratorNode } from 'lexical'
+
+import { FootnoteRefComponent } from '@/ui/inkling/editor/footnotes/FootnoteRefComponent'
 
 export interface SerializedFootnoteRefNode extends SerializedLexicalNode {
   type: 'footnote-ref'
@@ -17,7 +20,7 @@ export interface SerializedFootnoteRefNode extends SerializedLexicalNode {
   index: number
 }
 
-export class FootnoteRefNode extends DecoratorNode<null> {
+export class FootnoteRefNode extends DecoratorNode<JSX.Element | null> {
   __targetKey: string
   __refKey: string
   __index: number
@@ -55,18 +58,16 @@ export class FootnoteRefNode extends DecoratorNode<null> {
   }
 
   createDOM(_config: EditorConfig): HTMLElement {
-    const element = document.createElement('sup')
-    element.className = 'inkling-footnote-ref'
-    element.setAttribute('data-target-key', this.__targetKey)
-    element.setAttribute('data-ref-key', this.__refKey)
-    element.textContent = String(this.__index)
+    // The React decorator component renders the <sup>, so the host element is
+    // a neutral span to avoid nested <sup> elements.
+    const element = document.createElement('span')
+    element.className = 'inkling-footnote-ref-host'
     return element
   }
 
   updateDOM(prevNode: FootnoteRefNode, element: HTMLElement): boolean {
-    if (prevNode.__index !== this.__index) {
-      element.textContent = String(this.__index)
-    }
+    // The React decorator component owns the visible <sup>; only sync host
+    // attributes here so exportDOM/importDOM round-trips stay consistent.
     if (prevNode.__targetKey !== this.__targetKey) {
       element.setAttribute('data-target-key', this.__targetKey)
     }
@@ -76,8 +77,8 @@ export class FootnoteRefNode extends DecoratorNode<null> {
     return false
   }
 
-  decorate(_editor: LexicalEditor, _config: EditorConfig): null {
-    return null
+  decorate(_editor: LexicalEditor, _config: EditorConfig): JSX.Element {
+    return <FootnoteRefComponent node={this} />
   }
 
   isInline(): boolean {

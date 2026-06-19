@@ -24,16 +24,15 @@ import {
 } from 'lexical'
 import { useEffect } from 'react'
 
+import { SolutionCardNode, TwoColumnCardNode } from '@/ui/inkling/editor/cards/layout-card-nodes'
 import {
-  ImageCardNode,
   CodeCardNode,
+  HorizontalRuleCardNode,
+  ImageCardNode,
   MathCardNode,
   MusicCardNode,
   TableCardNode,
-  HorizontalRuleCardNode,
-  SolutionCardNode,
-  TwoColumnCardNode,
-} from '@/ui/inkling/editor/cards/card-nodes'
+} from '@/ui/inkling/editor/cards/simple-card-nodes'
 import { FootnoteRefNode } from '@/ui/inkling/editor/footnotes/FootnoteRefNode'
 
 function $selectNode(node: LexicalNode): void {
