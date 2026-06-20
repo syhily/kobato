@@ -1,5 +1,6 @@
 import { type ReactNode } from 'react'
 
+import { sanitizeUrl } from '@/shared/sanitize-url'
 import { INKLING_INLINE } from '@/ui/inkling/render/render-shared'
 import { safeRel } from '@/ui/lib/link'
 
@@ -12,9 +13,10 @@ export interface LinkMarkProps {
 }
 
 export function LinkMark({ url, target, rel, title, children }: LinkMarkProps): ReactNode {
-  // Defense-in-depth: never emit executable JavaScript or data URLs
-  // even if the schema filter is somehow bypassed.
-  const href = /^\s*(javascript|data):/i.test(url) ? '#' : url
+  // Defense-in-depth: shared protocol whitelist + control-character
+  // stripping.  Replaces the previous ad-hoc `/^\s*(javascript|data):/i`
+  // regex which missed vbscript: and was bypassable via control chars.
+  const href = sanitizeUrl(url)
   return (
     <a
       href={href}

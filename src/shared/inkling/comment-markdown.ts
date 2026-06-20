@@ -7,16 +7,13 @@ import {
   INKLING_FORMAT_STRIKETHROUGH,
   INKLING_FORMAT_UNDERLINE,
 } from '@/shared/inkling/format'
+import { isSafeUrl } from '@/shared/sanitize-url'
 
 const NEWLINE = '\n'
 const INDENT_STEP = '  '
 
 function escapeInline(text: string): string {
   return text.replace(/([\\`*_])/g, '\\$1')
-}
-
-function isSafeUrl(url: string): boolean {
-  return !/^\s*(javascript|data|vbscript):/i.test(url)
 }
 
 function renderInlineNode(node: InklingInlineNode): string {

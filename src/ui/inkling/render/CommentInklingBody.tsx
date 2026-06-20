@@ -11,6 +11,7 @@ import {
   INKLING_FORMAT_UNDERLINE,
 } from '@/shared/inkling/format'
 import { walkInkling } from '@/shared/inkling/walk'
+import { sanitizeUrl } from '@/shared/sanitize-url'
 import { safeRel } from '@/ui/lib/link'
 
 // SSR-safe React renderer for Inkling comment bodies. It only supports the
@@ -82,10 +83,10 @@ function renderInlineNode(node: InklingInlineNode, key: string): ReactNode {
       return (
         <a
           key={key}
-          // Defense-in-depth: never emit executable JavaScript/data URLs even
-          // if the schema-level URL filter is somehow bypassed. Mirrors the
-          // article renderer in marks/LinkMark.tsx.
-          href={/^\s*(javascript|data):/i.test(node.url) ? '#' : node.url}
+          // Defense-in-depth: shared protocol whitelist + control-character
+          // stripping via `sanitizeUrl`. Mirrors the article renderer in
+          // marks/LinkMark.tsx.
+          href={sanitizeUrl(node.url)}
           rel={safeRel(node.target, node.rel) ?? 'nofollow noreferrer'}
           target={node.target ?? '_blank'}
           title={node.title ?? undefined}

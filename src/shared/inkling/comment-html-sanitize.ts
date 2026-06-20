@@ -307,9 +307,13 @@ function pairTags(tokens: readonly LexToken[]): {
   return { matchedClose, matchedOpen }
 }
 
-function makeLinkToken(attrs: Map<string, string>, innerText: string, decorators: StandardDecorator[]): SanitizeToken {
-  const rawUrl = attrs.get('href') ?? ''
-  const url = decodeEntities(rawUrl).trim()
+function makeLinkToken(
+  attrs: Map<string, string>,
+  innerText: string,
+  /** Pre-decoded and validated URL (caller must decode entities before validating). */
+  url: string,
+  decorators: StandardDecorator[],
+): SanitizeToken {
   const rel = attrs.get('rel')
   const title = attrs.get('title')
   const rawTarget = attrs.get('target')
@@ -359,12 +363,19 @@ export function sanitizeCommentSpanText(text: string, parentDecorators: Standard
 
       if (t.name === 'a') {
         if (closeIdx !== undefined) {
-          const href = t.attrs.get('href')
-          if (href !== undefined && isValidCommentLinkUrl(href)) {
-            const innerText = flattenTextBetween(tokens, i + 1, closeIdx, matchedClose)
-            out.push(makeLinkToken(t.attrs, innerText, mergeDecorators(parentDecorators, active)))
-            i = closeIdx + 1
-            continue
+          const rawHref = t.attrs.get('href')
+          if (rawHref !== undefined) {
+            // Must decode entities BEFORE validation so entity-encoded
+            // attacks (e.g. javas&#99;ript:alert(1)) are caught.
+            // Browsers decode entities when parsing the href attribute,
+            // so checking only the raw value misses this class of bypass.
+            const decodedHref = decodeEntities(rawHref).trim()
+            if (decodedHref.length > 0 && isValidCommentLinkUrl(decodedHref)) {
+              const innerText = flattenTextBetween(tokens, i + 1, closeIdx, matchedClose)
+              out.push(makeLinkToken(t.attrs, innerText, decodedHref, mergeDecorators(parentDecorators, active)))
+              i = closeIdx + 1
+              continue
+            }
           }
         }
         // Orphan <a> or invalid href: strip the opening tag, keep the inner text.

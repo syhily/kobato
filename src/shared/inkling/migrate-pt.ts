@@ -965,6 +965,16 @@ function convertNonRecursiveBlock(
       return convertMusicPlayer(block)
     case 'table':
       return convertTableBlock(block, mode)
+    default:
+      // Catch-all: if a new PortableText block type is added but the
+      // migration isn't updated, fail loudly rather than silently
+      // dropping user content.  The upstream Zod schema validator
+      // (`validatePortableTextInput`) should reject unknown types
+      // before they reach here, so hitting this means a deployment
+      // order bug (schema updated before migration).
+      throw new Error(
+        `Unknown PortableText block type: "${(block as { _type: string })._type}". Migration must be updated.`,
+      )
   }
 }
 

@@ -104,6 +104,14 @@ describe('server/domains/inkling/comment-html-sanitize', () => {
     expect(tokens).toEqual([textToken('x')])
   })
 
+  it('SEC-2: entity-encoded javascript href is stripped (decoded before validation)', () => {
+    // Browsers decode entities when parsing href attributes, so
+    // javas&#99;ript:… becomes javascript:… at runtime. The sanitizer
+    // must decode BEFORE the protocol check or this bypasses it.
+    const tokens = sanitizeCommentSpanText('<a href="javas&#99;ript:alert(1)">x</a>', [])
+    expect(tokens).toEqual([textToken('x')])
+  })
+
   it('R3: empty href is stripped and text kept', () => {
     const tokens = sanitizeCommentSpanText('<a href="">x</a>', [])
     expect(tokens).toEqual([textToken('x')])

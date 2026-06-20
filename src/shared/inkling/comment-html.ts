@@ -7,16 +7,13 @@ import {
   INKLING_FORMAT_STRIKETHROUGH,
   INKLING_FORMAT_UNDERLINE,
 } from '@/shared/inkling/format'
+import { isSafeUrl } from '@/shared/sanitize-url'
 import { escapeHtml } from '@/shared/utils/security'
 
 const NEWLINE = '\n'
 
 function escapeAttr(input: string): string {
   return escapeHtml(input)
-}
-
-function isSafeUrl(url: string): boolean {
-  return !/^\s*(javascript|data|vbscript):/i.test(url)
 }
 
 function renderFormattedText(text: string, format: number | undefined): string {

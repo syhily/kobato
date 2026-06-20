@@ -8,12 +8,14 @@ import {
   spanSchema,
   TEXT_ALIGN_VALUES,
 } from '@/shared/pt/schema'
+import { isSafeUrl } from '@/shared/sanitize-url'
 
 // Pure helper shared by the comment API perimeter and the PT→Inkling
 // migration sanitizer. Matches the policy enforced by `linkMarkDefSchema`.
+// Delegates to the shared `isSafeUrl` so the protocol whitelist and
+// control-character stripping logic live in one place.
 export function isValidCommentLinkUrl(url: string): boolean {
-  const trimmed = url.trim()
-  return trimmed.length > 0 && !/^\s*(javascript|data|vbscript):/i.test(trimmed)
+  return isSafeUrl(url)
 }
 
 // Strict PortableText subset accepted in comment bodies. Comments are

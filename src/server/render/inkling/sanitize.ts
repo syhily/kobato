@@ -60,3 +60,120 @@ export function sanitizeInklingFeedHtml(html: string): string {
     },
   })
 }
+
+/**
+ * Sanitize server-rendered mathml HTML before emitting it in SSR output.
+ * Mirrors the client-side `sanitizeHtml(..., 'math')` policy in
+ * `@/ui/lib/sanitize-html` so the server and client apply the same allow-list.
+ */
+export function sanitizeMathml(html: string): string {
+  return sanitizeHtml(html, {
+    allowedTags: [
+      'math',
+      'mrow',
+      'mi',
+      'mo',
+      'mn',
+      'msup',
+      'msub',
+      'msubsup',
+      'mfrac',
+      'msqrt',
+      'mroot',
+      'mtext',
+      'munder',
+      'mover',
+      'munderover',
+      'mfenced',
+      'mstyle',
+      'mspace',
+      'mpadded',
+      'menclose',
+      'semantics',
+      'annotation',
+      'annotation-xml',
+      'span',
+      'div',
+    ],
+    allowedAttributes: {
+      '*': [
+        'class',
+        'xmlns',
+        'display',
+        'overflow',
+        'mathcolor',
+        'mathbackground',
+        'mathsize',
+        'mathvariant',
+        'fence',
+        'stretchy',
+        'lspace',
+        'rspace',
+        'maxsize',
+        'minsize',
+        'movablelimits',
+        'accent',
+        'accentunder',
+        'symmetric',
+        'largeop',
+        'displaystyle',
+        'scriptlevel',
+        'columnalign',
+        'columnspacing',
+        'rowspacing',
+        'rowalign',
+        'frame',
+        'framespacing',
+        'width',
+        'height',
+        'depth',
+        'linethickness',
+        'bevelled',
+        'open',
+        'close',
+        'separators',
+        'notation',
+        'subscriptshift',
+        'superscriptshift',
+      ],
+    },
+    allowedSchemes: ['http', 'https', 'mailto'],
+    disallowedTagsMode: 'discard',
+  })
+}
+
+/**
+ * Sanitize server-rendered shiki-highlighted code HTML before emitting it
+ * in SSR output.  Shiki emits inline `style="color:…"` on token spans; we
+ * restrict the allow-list to the property/value shapes shiki actually
+ * produces.  Mirrors `@/ui/lib/sanitize-html`'s `'shiki'` strategy.
+ */
+export function sanitizeShikiHtml(html: string): string {
+  return sanitizeHtml(html, {
+    allowedTags: ['code', 'pre', 'span', 'line', 'div'],
+    allowedAttributes: {
+      '*': [
+        'class',
+        'style',
+        'data-language',
+        'data-rehype-pretty-code-fragment',
+        'data-rehype-pretty-code-title',
+        'data-line',
+      ],
+    },
+    allowedSchemes: ['http', 'https', 'mailto'],
+    allowedStyles: {
+      '*': {
+        color: [/^#?[0-9a-fA-F]+$/, /^rgba?\([^;]*\)$/i, /^hsla?\([^;]*\)$/i, /^inherit$/i, /^var\(/],
+        'background-color': [/^#?[0-9a-fA-F]+$/, /^rgba?\([^;]*\)$/i, /^hsla?\([^;]*\)$/i, /^inherit$/i, /^var\(/],
+        'font-weight': [/^\d{3}$/],
+        'font-style': [/^(italic|normal|oblique)$/i],
+        'text-decoration': [/^(underline|line-through|none)$/i],
+        '--shiki-light': [/^#?[0-9a-fA-F]+$/],
+        '--shiki-dark': [/^#?[0-9a-fA-F]+$/],
+        '--shiki-light-bg': [/^#?[0-9a-fA-F]+$/],
+        '--shiki-dark-bg': [/^#?[0-9a-fA-F]+$/],
+      },
+    },
+  })
+}

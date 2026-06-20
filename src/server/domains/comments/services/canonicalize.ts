@@ -6,6 +6,7 @@ import { isInklingCommentEmpty } from '@/shared/inkling/comment-empty'
 import { inklingCommentToMarkdown } from '@/shared/inkling/comment-markdown'
 import { validateInklingDocumentForMode } from '@/shared/inkling/features'
 import { inklingDocumentSchema, type InklingDocument } from '@/shared/inkling/schema'
+import { isSafeUrl } from '@/shared/sanitize-url'
 
 const COMMENT_MAX_BLOCKS = 200
 const COMMENT_MAX_HTTP_URLS = 3
@@ -127,10 +128,8 @@ function isInlineNode(value: unknown): value is { type: string; url?: string; ch
   )
 }
 
-const DISALLOWED_LINK_PROTOCOLS = /^(javascript|data|vbscript):/i
-
 function isDisallowedLinkUrl(url: string): boolean {
-  return DISALLOWED_LINK_PROTOCOLS.test(url.trim())
+  return !isSafeUrl(url)
 }
 
 function hasDisallowedLinkUrl(document: InklingDocument): boolean {

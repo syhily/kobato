@@ -200,7 +200,8 @@ describe('server/render/inkling/html', () => {
       },
     ])
     const html = await renderInklingToHtml(db, doc, [], { rssMode: false })
-    expect(html).toContain('<math><mrow/></math>')
+    // sanitize-html normalizes self-closing tags: <mrow/> → <mrow></mrow>
+    expect(html).toContain('<math><mrow></mrow></math>')
   })
 
   it('renders horizontal rule', async () => {

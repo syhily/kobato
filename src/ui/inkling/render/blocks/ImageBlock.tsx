@@ -2,6 +2,7 @@ import { type ReactNode } from 'react'
 
 import type { InklingImageCardNode } from '@/shared/inkling/schema'
 
+import { sanitizeUrl } from '@/shared/sanitize-url'
 import { cn } from '@/ui/lib/cn'
 import { BlockImage } from '@/ui/pt/blocks/BlockImage'
 
@@ -19,7 +20,7 @@ export function ImageBlock({ node }: { node: InklingImageCardNode }): ReactNode 
   return (
     <figure className={imageFigureLayoutClass(node.layout)}>
       <BlockImage
-        src={node.src}
+        src={sanitizeUrl(node.src)}
         alt={node.alt ?? ''}
         width={node.width}
         height={node.height}

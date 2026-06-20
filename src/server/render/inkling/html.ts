@@ -12,6 +12,7 @@ import type {
 import { findMusicByPlayerIds } from '@/server/domains/music/services/read'
 import { safeBuildMusicPublicUrl } from '@/server/domains/music/storage'
 import { deriveSlug } from '@/server/infra/slug'
+import { sanitizeMathml, sanitizeShikiHtml } from '@/server/render/inkling/sanitize'
 import { requireBlogSettingsSection } from '@/shared/config/getters'
 import {
   INKLING_FORMAT_BOLD,
@@ -22,6 +23,7 @@ import {
 } from '@/shared/inkling/format'
 import { collectInklingHeadingSlots } from '@/shared/inkling/headings'
 import { walkInkling, type InklingWalkerHandlers } from '@/shared/inkling/walk'
+import { sanitizeUrl } from '@/shared/sanitize-url'
 import { resolveFootnotesSectionTitle } from '@/shared/utils/footnotes-section-title'
 import { escapeHtml } from '@/shared/utils/security'
 
@@ -168,7 +170,7 @@ function renderInlineNodeHtml(node: InklingInlineNode, ctx: HtmlRenderCtx): stri
         return `<code>${escapeHtml(node.tex)}</code>`
       }
       if (node.mathml !== undefined && node.mathml !== '') {
-        return node.mathml
+        return sanitizeMathml(node.mathml)
       }
       return `<code>${escapeHtml(node.tex)}</code>`
     }
@@ -176,7 +178,7 @@ function renderInlineNodeHtml(node: InklingInlineNode, ctx: HtmlRenderCtx): stri
       return `<sup id="user-content-fnref-${node.index}"><a href="#user-content-fn-${node.index}">${node.index}</a></sup>`
     case 'link': {
       const children = node.children.map((child) => renderInlineNodeHtml(child, ctx)).join('')
-      const href = /^\s*(javascript|data):/i.test(node.url) ? '#' : node.url
+      const href = sanitizeUrl(node.url)
       const rel = node.rel ? ` rel="${escapeHtml(node.rel)}"` : ''
       const target = node.target ? ` target="${escapeHtml(node.target)}"` : ''
       return `<a href="${escapeHtml(href)}"${rel}${target}>${children}</a>`
@@ -258,7 +260,7 @@ function renderImageBlockHtml(node: {
   width?: number
   height?: number
 }): string {
-  const src = escapeHtml(node.src)
+  const src = escapeHtml(sanitizeUrl(node.src))
   const alt = node.alt !== undefined && node.alt !== '' ? ` alt="${escapeHtml(node.alt)}"` : ''
   const width = node.width !== undefined ? ` width="${node.width}"` : ''
   const height = node.height !== undefined ? ` height="${node.height}"` : ''
@@ -276,7 +278,9 @@ function renderCodeBlockHtml(
   const dataLang =
     node.language !== undefined && node.language !== '' ? ` data-language="${escapeHtml(node.language)}"` : ''
   if (node.highlightedHtml !== undefined && node.highlightedHtml !== '') {
-    const inner = isRss ? `<![CDATA[${node.highlightedHtml}]]>` : node.highlightedHtml
+    const inner = isRss
+      ? `<![CDATA[${sanitizeShikiHtml(node.highlightedHtml)}]]>`
+      : sanitizeShikiHtml(node.highlightedHtml)
     return `<pre><code${langClass}${dataLang}>${inner}</code></pre>`
   }
   return `<pre><code${langClass}${dataLang}>${escapeHtml(node.code)}</code></pre>`
@@ -287,7 +291,7 @@ function renderMathBlockHtml(node: { tex: string; mathml?: string }, isRss: bool
     return `<pre><code>${escapeHtml(node.tex)}</code></pre>`
   }
   if (node.mathml !== undefined && node.mathml !== '') {
-    return node.mathml
+    return sanitizeMathml(node.mathml)
   }
   return `<pre><code>${escapeHtml(node.tex)}</code></pre>`
 }
@@ -347,7 +351,7 @@ function buildHtmlHandlers(ctx: HtmlRenderCtx): InklingWalkerHandlers<HtmlRender
       enter(c)
       walkChildren()
       const children = leave(c).join('')
-      const href = /^\s*(javascript|data):/i.test(node.url) ? '#' : node.url
+      const href = sanitizeUrl(node.url)
       const rel = node.rel ? ` rel="${escapeHtml(node.rel)}"` : ''
       const target = node.target ? ` target="${escapeHtml(node.target)}"` : ''
       append(c, `<a href="${escapeHtml(href)}"${rel}${target}>${children}</a>`)
@@ -356,7 +360,7 @@ function buildHtmlHandlers(ctx: HtmlRenderCtx): InklingWalkerHandlers<HtmlRender
       if (c.isRss) {
         append(c, `<code>${escapeHtml(node.tex)}</code>`)
       } else if (node.mathml !== undefined && node.mathml !== '') {
-        append(c, node.mathml)
+        append(c, sanitizeMathml(node.mathml))
       } else {
         append(c, `<code>${escapeHtml(node.tex)}</code>`)
       }
