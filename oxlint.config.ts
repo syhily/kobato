@@ -11,10 +11,9 @@ export default defineConfig({
     '.agents/skills/*',
     'drizzle/**/*',
     'tests/**/*',
-    // Legacy editor files, will be deleted.
+    // POC verifier scripts — kept as migration regression baseline.
     'scripts/inkling-poc/*.ts',
     'scripts/inkling-poc/*.mjs',
-    'src/ui/admin/editor/tiptap/**/*',
   ],
   settings: {
     react: {

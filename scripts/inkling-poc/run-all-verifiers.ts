@@ -36,16 +36,6 @@ const VERIFIERS: Verifier[] = [
     report: 'tmp/inkling-poc/pt-to-inkling-report.json',
   },
   {
-    name: 'article-render-parity',
-    script: 'scripts/inkling-poc/verify-article-render-local-db.ts',
-    report: 'tmp/inkling-poc/article-render-parity-report.json',
-  },
-  {
-    name: 'comment-migration',
-    script: 'scripts/inkling-poc/verify-comment-local-db.ts',
-    report: 'tmp/inkling-poc/comment-migration-report.json',
-  },
-  {
     name: 'derived-data-parity',
     script: 'scripts/inkling-poc/verify-derived-data-local-db.ts',
     report: 'tmp/inkling-poc/derived-data-parity-report.json',

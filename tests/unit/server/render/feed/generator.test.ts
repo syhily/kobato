@@ -8,7 +8,6 @@ import { describe, expect, it } from 'vitest'
 // items. We pin the contract by inspecting source rather than spinning up
 // the full catalog (which would require the .source MDX corpus).
 const feedSource = readFileSync(resolve(process.cwd(), 'src/server/render/feed/generator.tsx'), 'utf8')
-const feedPtRenderSource = readFileSync(resolve(process.cwd(), 'src/server/render/feed/feed-pt-render.ts'), 'utf8')
 
 import { feedHeaders } from '@/server/render/feed/generator'
 
@@ -30,12 +29,11 @@ describe('contract: feed (RSS + Atom) shape', () => {
     expect(feedSource).toContain("language: 'zh-CN'")
   })
 
-  it("renders each entry's full MDX body (not just the summary)", () => {
-    // The feed delegates to the shared SSR helper in `feed-pt-render.ts`,
-    // which converts PortableText to HTML server-side via `@portabletext/to-html`.
-    // We assert the helper is wired in and that entry items receive the rendered
-    // body as `content`, so subscribers see the full post — not a summary stub.
-    expect(feedPtRenderSource).toContain('toHTML')
+  it("renders each entry's full body (not just the summary)", () => {
+    // The feed delegates to `renderInklingToHtml` (server/render/inkling/html.ts)
+    // which converts Inkling documents to HTML server-side. We assert the
+    // generator wires the rendered body as `content` so subscribers see the
+    // full post — not a summary stub.
     expect(feedSource).toContain('content: contents[i]')
   })
 
