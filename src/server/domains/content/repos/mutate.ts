@@ -19,6 +19,7 @@ import { page as pageMetaTable } from '@/server/infra/db/schema/page'
 import { post as postMetaTable } from '@/server/infra/db/schema/post'
 import { DomainError } from '@/server/infra/http/errors'
 import { areInklingDocumentsEquivalent } from '@/shared/inkling/normalize'
+import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
 function metaTableFor(type: ContentType) {
   return type === 'page' ? pageMetaTable : postMetaTable
@@ -66,8 +67,7 @@ export async function saveDraftRevision(
         .update(contentTable)
         .set({
           updatedAt: now,
-          // oxlint-disable-next-line typescript/no-unsafe-type-assertion
-          body: bodyJson as ContentRow['body'],
+          body: unsafeCast<ContentRow['body']>(bodyJson),
           imageSources: imageSourcesJson,
           headings: headingsJson as ContentRow['headings'],
           authorId: input.authorId ?? latest.authorId,
@@ -91,8 +91,7 @@ export async function saveDraftRevision(
     if (
       latest !== undefined &&
       latest.status === 'published' &&
-      // oxlint-disable-next-line typescript/no-unsafe-type-assertion
-      areInklingDocumentsEquivalent(input.body as InklingDocument, latest.body) &&
+      areInklingDocumentsEquivalent(unsafeCast<InklingDocument>(input.body), latest.body) &&
       isDeepStrictEqual(input.imageSources, latest.imageSources) &&
       isDeepStrictEqual(input.headings, latest.headings)
     ) {
@@ -105,8 +104,7 @@ export async function saveDraftRevision(
       ownerId: input.ownerId,
       revisionNo: nextRevisionNo,
       status: 'draft',
-      // oxlint-disable-next-line typescript/no-unsafe-type-assertion
-      body: bodyJson as NewContent['body'],
+      body: unsafeCast<NewContent['body']>(bodyJson),
       imageSources: imageSourcesJson,
       headings: headingsJson as NewContent['headings'],
       authorId: input.authorId,
@@ -159,8 +157,7 @@ export async function publishLatestRevision(
         .update(contentTable)
         .set({
           updatedAt: now,
-          // oxlint-disable-next-line typescript/no-unsafe-type-assertion
-          body: input.body as ContentRow['body'],
+          body: unsafeCast<ContentRow['body']>(input.body),
           imageSources: input.imageSources,
           headings: input.headings as ContentRow['headings'],
           authorId: input.authorId ?? latest.authorId,
@@ -185,8 +182,7 @@ export async function publishLatestRevision(
         ownerId: input.ownerId,
         revisionNo: nextRevisionNo,
         status: 'published',
-        // oxlint-disable-next-line typescript/no-unsafe-type-assertion
-        body: input.body as NewContent['body'],
+        body: unsafeCast<NewContent['body']>(input.body),
         imageSources: input.imageSources,
         headings: input.headings as NewContent['headings'],
         authorId: input.authorId,

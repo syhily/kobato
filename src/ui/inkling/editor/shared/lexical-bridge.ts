@@ -2,25 +2,21 @@ import type { SerializedLexicalNode, SerializedRootNode } from 'lexical'
 
 import type { InklingBlockNode, InklingNonRecursiveBlockNode, InklingRootNode } from '@/shared/inkling/schema'
 
+import { unsafeCast } from '@/shared/utils/unsafe-cast'
+
 /**
  * Lexical ↔ Inkling type bridge.
  *
  * Inkling block nodes and Lexical serialised nodes are structurally
  * identical JSON trees (`type`, `version`, `children`).  The types live
  * in separate packages with independent type hierarchies, so TypeScript
- * cannot see the structural compatibility on its own.
+ * cannot see the structural compatibility.
  *
- * We bridge the gap via `unsafeCast` — the single point where we assert
- * that the runtime shapes match.  The Inkling schema validates at the
- * persistence boundary; re-validating with Zod inside the editor hot-path
- * would be redundant and expensive.
+ * We bridge the gap via `unsafeCast` — a single shared utility whose
+ * `oxlint-disable` serves the entire codebase.  The Inkling schema
+ * validates at the persistence boundary; re-validating with Zod inside
+ * the editor hot-path would be redundant.
  */
-
-/** Single bridge point — both type trees are isomorphic JSON. */
-function cast<T>(value: unknown): T {
-  // oxlint-disable-next-line typescript/no-unsafe-type-assertion
-  return value as unknown as T
-}
 
 // ---------------------------------------------------------------------------
 // Inkling → Lexical
@@ -29,11 +25,11 @@ function cast<T>(value: unknown): T {
 export function toLexicalChildren(
   children: readonly InklingBlockNode[] | readonly InklingNonRecursiveBlockNode[],
 ): SerializedLexicalNode[] {
-  return cast(children)
+  return unsafeCast(children)
 }
 
 export function toSerializedRoot(root: InklingRootNode): SerializedRootNode {
-  return cast(root)
+  return unsafeCast(root)
 }
 
 // ---------------------------------------------------------------------------
@@ -41,9 +37,9 @@ export function toSerializedRoot(root: InklingRootNode): SerializedRootNode {
 // ---------------------------------------------------------------------------
 
 export function fromLexicalChildren(children: readonly SerializedLexicalNode[]): InklingNonRecursiveBlockNode[] {
-  return cast(children)
+  return unsafeCast(children)
 }
 
 export function toBlockChildren(children: readonly SerializedLexicalNode[]): InklingBlockNode[] {
-  return cast(children)
+  return unsafeCast(children)
 }

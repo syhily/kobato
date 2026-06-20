@@ -3,11 +3,12 @@ import type { NavigateFunction } from 'react-router'
 
 import { useRef } from 'react'
 
-import type { AdminPostDetailDto, AdminPostDto, SavePostBodyInput, UpsertPostMetaInput } from '@/shared/types/posts'
+import type { AdminPostDetailDto, AdminPostDto, UpsertPostMetaInput } from '@/shared/types/posts'
 import type { RevisionLike, SaveBodyOutput } from '@/ui/admin/editor-shell/editor-shell-types'
 
 import { orpc } from '@/client/api/client'
 import { inklingDocumentSchema } from '@/shared/inkling/schema'
+import { unsafeCast } from '@/shared/utils/unsafe-cast'
 import { CreateModeBanner } from '@/ui/admin/editor-shared/CreateModeBanner'
 import { TitleSlugStrip } from '@/ui/admin/editor-shared/TitleSlugStrip'
 import { ActionBanner } from '@/ui/admin/editor-shell/ActionBanner'
@@ -94,10 +95,8 @@ export function PostEditorShell({ mode, detail, navigate }: PostEditorShellProps
     detail: detail
       ? {
           entity: detail.post,
-          // oxlint-disable-next-line typescript/no-unsafe-type-assertion
-          latestRevision: detail.latestRevision as unknown as RevisionLike,
-          // oxlint-disable-next-line typescript/no-unsafe-type-assertion
-          publishedRevision: detail.publishedRevision as unknown as RevisionLike,
+          latestRevision: unsafeCast<RevisionLike>(detail.latestRevision),
+          publishedRevision: unsafeCast<RevisionLike>(detail.publishedRevision),
         }
       : undefined,
     emptyMeta: EMPTY_POST_META_DRAFT,
@@ -109,20 +108,14 @@ export function PostEditorShell({ mode, detail, navigate }: PostEditorShellProps
       const result = await orpc.admin.posts.upsertMeta(input)
       return result.post
     },
-    saveDraftFn: (input) =>
-      // oxlint-disable-next-line typescript/no-unsafe-type-assertion
-      orpc.admin.posts.saveDraft(input as unknown as SavePostBodyInput) as unknown as Promise<SaveBodyOutput>,
-    publishFn: (input) =>
-      // oxlint-disable-next-line typescript/no-unsafe-type-assertion
-      orpc.admin.posts.publishLatest(input as unknown as SavePostBodyInput) as unknown as Promise<SaveBodyOutput>,
+    saveDraftFn: (input) => unsafeCast<Promise<SaveBodyOutput>>(orpc.admin.posts.saveDraft(unsafeCast(input))),
+    publishFn: (input) => unsafeCast<Promise<SaveBodyOutput>>(orpc.admin.posts.publishLatest(unsafeCast(input))),
     unpublishFn: async (input) => {
       const result = await orpc.admin.posts.unpublish(input)
       return result.post
     },
     buildUpsertMetaPayload: buildPostUpsertPayload,
-    directSaveDraft: (input) =>
-      // oxlint-disable-next-line typescript/no-unsafe-type-assertion
-      orpc.admin.posts.saveDraft(input as unknown as SavePostBodyInput) as unknown as Promise<SaveBodyOutput>,
+    directSaveDraft: (input) => unsafeCast<Promise<SaveBodyOutput>>(orpc.admin.posts.saveDraft(unsafeCast(input))),
     editPath: (id) => `/editor/post/${id}`,
     navigate,
   })

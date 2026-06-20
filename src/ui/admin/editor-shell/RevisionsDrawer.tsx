@@ -7,6 +7,7 @@ import type { InklingDocument } from '@/shared/inkling/schema'
 import type { AdminRevisionDto } from '@/shared/types/revision'
 
 import { orpcQuery } from '@/client/api/orpc-query'
+import { unsafeCast } from '@/shared/utils/unsafe-cast'
 import { Badge } from '@/ui/components/badge'
 import { Button } from '@/ui/components/button'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/ui/components/sheet'
@@ -132,8 +133,7 @@ export function RevisionHistoryDrawer({
                   // body during the migration POC window. The shell expects
                   // InklingDocument, so we bridge with an explicit cast; the
                   // real cutover will make this assignment structural.
-                  // oxlint-disable-next-line typescript/no-unsafe-type-assertion
-                  body: selectedRevision.body as unknown as InklingDocument,
+                  body: unsafeCast<InklingDocument>(selectedRevision.body),
                   revisionNo: selectedRevision.revisionNo,
                 })
                 setOpen(false)

@@ -36,7 +36,7 @@ export class EditorErrorBoundary extends Component<EditorErrorBoundaryProps, Edi
     // `info.componentStack` is useful for debugging but we don't log it
     // separately — reportEditorError already captures the error.
     if (import.meta.env.DEV) {
-      // eslint-disable-next-line no-console
+      // oxlint-disable-next-line no-console
       console.warn(`[${this.props.context}] component stack:`, info.componentStack)
     }
   }

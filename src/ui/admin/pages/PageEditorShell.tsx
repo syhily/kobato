@@ -17,17 +17,12 @@ import {
 import { useRef } from 'react'
 import { Link } from 'react-router'
 
-import type {
-  AdminPageDetailDto,
-  AdminPageDto,
-  PageMetaDraft,
-  SavePageBodyInput,
-  UpsertPageMetaInput,
-} from '@/shared/types/pages'
+import type { AdminPageDetailDto, AdminPageDto, PageMetaDraft, UpsertPageMetaInput } from '@/shared/types/pages'
 import type { RevisionLike, SaveBodyOutput } from '@/ui/admin/editor-shell/editor-shell-types'
 
 import { orpc } from '@/client/api/client'
 import { inklingDocumentSchema } from '@/shared/inkling/schema'
+import { unsafeCast } from '@/shared/utils/unsafe-cast'
 import { CreateModeBanner } from '@/ui/admin/editor-shared/CreateModeBanner'
 import { TitleSlugStrip } from '@/ui/admin/editor-shared/TitleSlugStrip'
 import { ActionBanner } from '@/ui/admin/editor-shell/ActionBanner'
@@ -92,10 +87,8 @@ export function PageEditorShell({ mode, detail, navigate }: PageEditorShellProps
     detail: detail
       ? {
           entity: detail.page,
-          // oxlint-disable-next-line typescript/no-unsafe-type-assertion
-          latestRevision: detail.latestRevision as unknown as RevisionLike,
-          // oxlint-disable-next-line typescript/no-unsafe-type-assertion
-          publishedRevision: detail.publishedRevision as unknown as RevisionLike,
+          latestRevision: unsafeCast<RevisionLike>(detail.latestRevision),
+          publishedRevision: unsafeCast<RevisionLike>(detail.publishedRevision),
         }
       : undefined,
     emptyMeta: EMPTY_META_DRAFT,
@@ -107,20 +100,14 @@ export function PageEditorShell({ mode, detail, navigate }: PageEditorShellProps
       const result = await orpc.admin.pages.upsertMeta(input)
       return result.page
     },
-    saveDraftFn: (input) =>
-      // oxlint-disable-next-line typescript/no-unsafe-type-assertion
-      orpc.admin.pages.saveDraft(input as unknown as SavePageBodyInput) as unknown as Promise<SaveBodyOutput>,
-    publishFn: (input) =>
-      // oxlint-disable-next-line typescript/no-unsafe-type-assertion
-      orpc.admin.pages.publishLatest(input as unknown as SavePageBodyInput) as unknown as Promise<SaveBodyOutput>,
+    saveDraftFn: (input) => unsafeCast<Promise<SaveBodyOutput>>(orpc.admin.pages.saveDraft(unsafeCast(input))),
+    publishFn: (input) => unsafeCast<Promise<SaveBodyOutput>>(orpc.admin.pages.publishLatest(unsafeCast(input))),
     unpublishFn: async (input) => {
       const result = await orpc.admin.pages.unpublish(input)
       return result.page
     },
     buildUpsertMetaPayload: buildPageUpsertPayload,
-    directSaveDraft: (input) =>
-      // oxlint-disable-next-line typescript/no-unsafe-type-assertion
-      orpc.admin.pages.saveDraft(input as unknown as SavePageBodyInput) as unknown as Promise<SaveBodyOutput>,
+    directSaveDraft: (input) => unsafeCast<Promise<SaveBodyOutput>>(orpc.admin.pages.saveDraft(unsafeCast(input))),
     editPath: (id) => `/editor/page/${id}`,
     navigate,
   })
