@@ -2,11 +2,23 @@
 @import './editor.css';
 @import './prose.css';
 
-/* Scoped token aliases mapping Ghost grey/green → project ink/brand.
-   These reference project tokens; they do NOT introduce new values.
-   See plans/inkling-style-port.md §3 for the full mapping table. */
+/*
+ * Scoped token aliases + root font-size override.
+ *
+ * Koenig's CSS was authored under the assumption that the root font-size
+ * is 62.5% (1rem = 10px). The project does NOT set this globally — it uses
+ * the browser default (1rem = 16px). Without this override, every rem value
+ * in preflight/editor/prose renders 1.6× too large (e.g. a 2rem paragraph
+ * renders at 32px instead of the intended 20px).
+ *
+ * Setting font-size: 62.5% scoped to .inkling-editor / .inkling-prose makes
+ * 1rem = 10px *inside the editor/prose scope only*, matching Koenig's
+ * design assumptions without affecting the rest of the admin UI.
+ */
 .inkling-editor,
 .inkling-prose {
+  font-size: 62.5%;
+
   --inkling-text: var(--ink-1);
   --inkling-muted: var(--ink-4);
   --inkling-accent: var(--brand);
