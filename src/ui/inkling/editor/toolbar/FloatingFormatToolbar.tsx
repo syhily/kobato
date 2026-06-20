@@ -1,4 +1,4 @@
-import type { LexicalEditor, TextFormatType } from 'lexical'
+import type { LexicalEditor } from 'lexical'
 
 import { $isLinkNode } from '@lexical/link'
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
@@ -35,20 +35,43 @@ function ToolbarButton({ active, onClick, title, children }: ToolbarButtonProps)
   )
 }
 
-function hasFormat(editor: LexicalEditor, format: TextFormatType): boolean {
-  return readEditor(editor, () => {
-    const selection = $getSelection()
-    return $isRangeSelection(selection) && selection.hasFormat(format)
-  })
+interface FormatState {
+  bold: boolean
+  italic: boolean
+  underline: boolean
+  strikethrough: boolean
+  code: boolean
+  link: boolean
 }
 
-function hasLink(editor: LexicalEditor): boolean {
+const EMPTY_FORMAT_STATE: FormatState = {
+  bold: false,
+  italic: false,
+  underline: false,
+  strikethrough: false,
+  code: false,
+  link: false,
+}
+
+/**
+ * Read the current format state from the editor selection. Returns a snapshot
+ * of which formats are active so the toolbar buttons reflect the selection
+ * without needing a `forceUpdate` hack.
+ */
+function readFormatState(editor: LexicalEditor): FormatState {
   return readEditor(editor, () => {
     const selection = $getSelection()
     if (!$isRangeSelection(selection)) {
-      return false
+      return EMPTY_FORMAT_STATE
     }
-    return selection.getNodes().some((n) => $isLinkNode(n.getParent()))
+    return {
+      bold: selection.hasFormat('bold'),
+      italic: selection.hasFormat('italic'),
+      underline: selection.hasFormat('underline'),
+      strikethrough: selection.hasFormat('strikethrough'),
+      code: selection.hasFormat('code'),
+      link: selection.getNodes().some((n) => $isLinkNode(n.getParent())),
+    }
   })
 }
 
@@ -70,12 +93,11 @@ export function FloatingFormatToolbar() {
   const [visible, setVisible] = useState(false)
   const [position, setPosition] = useState<{ top: number; left: number } | null>(null)
   const [showLinkPopover, setShowLinkPopover] = useState(false)
-  const [, forceUpdate] = useState(0)
+  const [formatState, setFormatState] = useState<FormatState>(EMPTY_FORMAT_STATE)
   const toolbarRef = useRef<HTMLDivElement>(null)
-  const refresh = useCallback(() => forceUpdate((n) => n + 1), [])
 
   const selectRect = useCallback(() => {
-    const rootEl = editor?.getRootElement() ?? null
+    const rootEl = editor.getRootElement()
     if (rootEl === null) {
       return null
     }
@@ -86,10 +108,11 @@ export function FloatingFormatToolbar() {
     return { top: rect.top - 40, left: rect.left + rect.width / 2 }
   }, [editor])
 
+  // SELECTION_CHANGE_COMMAND is the single source of truth for toolbar
+  // visibility + position + format state. Updating all three in one callback
+  // (instead of reading format state during render via forceUpdate) means
+  // React only re-renders when the selection actually changes.
   useEffect(() => {
-    if (editor === null) {
-      return undefined
-    }
     const unregister = editor.registerCommand(
       SELECTION_CHANGE_COMMAND,
       () => {
@@ -98,32 +121,39 @@ export function FloatingFormatToolbar() {
           if (pos !== null) {
             setPosition(pos)
             setVisible(true)
+            setFormatState(readFormatState(editor))
           }
         } else {
           setVisible(false)
         }
-        refresh()
         return false
       },
       1,
     )
+    return unregister
+  }, [editor, selectRect])
 
+  // Viewport listeners (scroll/resize) only reposition the toolbar — they
+  // don't change format state. Split into a separate effect from the command
+  // registration so neither depends on `visible` (the command registration
+  // would otherwise tear down and rebuild on every show/hide).
+  useEffect(() => {
+    if (!visible) {
+      return undefined
+    }
     const handleViewportChange = () => {
-      if (visible) {
-        const pos = selectRect()
-        if (pos !== null) {
-          setPosition(pos)
-        }
+      const pos = selectRect()
+      if (pos !== null) {
+        setPosition(pos)
       }
     }
     window.addEventListener('scroll', handleViewportChange, { passive: true })
     window.addEventListener('resize', handleViewportChange)
     return () => {
-      unregister()
       window.removeEventListener('scroll', handleViewportChange)
       window.removeEventListener('resize', handleViewportChange)
     }
-  }, [editor, refresh, selectRect, visible])
+  }, [visible, selectRect])
 
   if (!visible || position === null) {
     return null
@@ -137,42 +167,42 @@ export function FloatingFormatToolbar() {
       style={{ top: position.top, left: position.left }}
     >
       <ToolbarButton
-        active={hasFormat(editor, 'bold')}
+        active={formatState.bold}
         onClick={() => editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'bold')}
         title="加粗 (Ctrl+B)"
       >
         <b>B</b>
       </ToolbarButton>
       <ToolbarButton
-        active={hasFormat(editor, 'italic')}
+        active={formatState.italic}
         onClick={() => editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'italic')}
         title="斜体 (Ctrl+I)"
       >
         <i>I</i>
       </ToolbarButton>
       <ToolbarButton
-        active={hasFormat(editor, 'underline')}
+        active={formatState.underline}
         onClick={() => editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'underline')}
         title="下划线 (Ctrl+U)"
       >
         <u>U</u>
       </ToolbarButton>
       <ToolbarButton
-        active={hasFormat(editor, 'strikethrough')}
+        active={formatState.strikethrough}
         onClick={() => editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'strikethrough')}
         title="删除线"
       >
         <s>S</s>
       </ToolbarButton>
       <ToolbarButton
-        active={hasFormat(editor, 'code')}
+        active={formatState.code}
         onClick={() => editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'code')}
         title="行内代码"
       >
         <span className="font-mono text-xs">{'<>'}</span>
       </ToolbarButton>
       <div className="mx-0.5 h-4 w-px bg-border" />
-      <ToolbarButton active={hasLink(editor)} onClick={() => setShowLinkPopover(true)} title="链接 (Ctrl+K)">
+      <ToolbarButton active={formatState.link} onClick={() => setShowLinkPopover(true)} title="链接 (Ctrl+K)">
         <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path
             strokeLinecap="round"
