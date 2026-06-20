@@ -36,7 +36,7 @@ import { Badge } from '@/ui/components/badge'
 import { Button } from '@/ui/components/button'
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@/ui/components/empty'
 import { Skeleton } from '@/ui/components/skeleton'
-import { InklingBody } from '@/ui/inkling/render/InklingBody'
+import { CommentInklingBody } from '@/ui/inkling/render/CommentInklingBody'
 
 const ADMIN_DATE_FORMAT = 'yyyy-LL-dd HH:mm'
 const PAGE_SIZE = 20
@@ -454,7 +454,7 @@ function MyCommentRow({
 
           {/* Body */}
           <div className="comment-content prose-blog prose prose-sm mt-2 max-w-none leading-[1.85] wrap-break-word whitespace-normal">
-            <InklingBody document={item.body} />
+            <CommentInklingBody document={item.body} />
           </div>
 
           {/* Action row */}

@@ -39,12 +39,10 @@ export default defineConfig({
     typeCheck: true,
   },
   categories: {
-    // All correctness rules default to 'warn'. Rules that must block
-    // the build are individually set to 'error' below (curly,
-    // no-unused-vars, etc.). This avoids the category-level 'error'
-    // overriding per-rule 'warn' settings for rules like
-    // no-unsafe-type-assertion that are codebase debt tracked as warn.
-    correctness: 'warn',
+    // Per-rule settings below override this default. Rules explicitly set
+    // to 'warn' (e.g. no-unsafe-type-assertion, which is codebase debt
+    // tracked as warn) stay at 'warn' regardless of the category default.
+    correctness: 'error',
   },
   rules: {
     curly: 'error',

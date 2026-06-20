@@ -1031,10 +1031,19 @@ pnpm run build         # 构建成功
 | **🔴 PastePlugin 递归** | 🔴 高 | 🔴 待修 | CRIT-2: `===` 字符串比较保护脆弱 |
 | **🔴 Card 插入 NodeSelection** | 🔴 高 | 🔴 待修 | CRIT-3: `selectPrevious()` 错误行为 |
 | **🔴 PT 格式残留** | 🔴 高 | 🔴 P7 前必须 | H-1~H-7: DB 存 PT 但代码只读 Inkling，静默丢内容 |
+| **🔴 预渲染日志泄露** | 🔴 高 | 🔴 待修 | BR-2: `prerender.ts:104,128,136` 将 `String(err)` 写入日志，KaTeX 错误可含 TeX 源码 → 违反隐私规则 |
+| **🔴 卡片预览 XSS** | 🔴 高 | 🔴 待修 | BR-3: `card-components.tsx:274,293,351` `dangerouslySetInnerHTML` 未清洗 stored HTML → 管理员编辑器 XSS |
+| **🔴 comment-email URL** | 🔴 高 | 🟡 SEC-3 已修但 email 未覆盖 | BR-4: `comment-email.ts:84` 用 ad-hoc `/^\s*(javascript\|data):/i` 而非 `sanitizeUrl`，缺 `vbscript:` 和控字符保护 |
 | **🟠 渲染器分叉** | 🟠 中高 | 🟠 待修 | H-9: CODE exclusive 不一致，格式嵌套顺序不同 |
 | **🟠 主题缺失** | 🟠 中 | 🟠 待修 | H-10: `text.code` theme key 缺失 |
+| **🟠 评论表面用错渲染器** | 🟠 中高 | 🟠 待修 | BR-5: 生产评论 UI（CommentRow、AdminCommentRow、MyCommentsView）用文章渲染器而非 `CommentInklingBody` |
+| **🟠 lint correctness 降级** | 🟠 中 | 🟠 待修 | BR-6: `oxlint.config.ts:41` `categories.correctness` → `warn`，CI 门禁弱化 |
+| **🟠 依赖策略违反** | 🟠 低 | 🟠 待修 | BR-7: `@number-flow/react` 在 `dependencies` 应移 `devDependencies` |
 | **🟠 纯符号标题 id** | 🟠 低 | 🟠 待修 | M-4: 全 emoji/标点标题 id="" |
 | **🟠 迁移校验器** | 🟠 中 | 🟠 P7 前修 | H-13/H-14: per-span 误计 + 空白匹配过于宽松 |
+| **🟠 预览端点未规范化** | 🟠 中 | 🟠 待修 | BR-9: admin preview 直接渲染 raw body，不跑 canonicalize/prerender → 预览与实际保存不一致 |
+| **🟡 旧 PT draft hooks** | 🟡 低 | 🟡 P9 清理 | BR-8: `use-create-post-draft.ts` 等仍用 `PortableTextBody`，与 v2 Inkling 配置并存 |
+| **🟡 card-components 过大** | 🟡 低 | 🟡 P9 重构 | BR-10: 722 LOC 混入多卡片类型 + 异步预览逻辑，超出 500 行约定 |
 
 POC 后"能不能做"全消解，剩余是工程质量。
 

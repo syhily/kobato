@@ -1,3 +1,9 @@
+/**
+ * @deprecated Legacy PortableText draft hook.  Post local drafts are now
+ * persisted in Inkling format via v2 draft configs defined inline in
+ * PostEditorShell.  This wrapper is retained only for reference; it has
+ * zero importers and will be deleted in P9 cleanup.  Do NOT use for new code.
+ */
 import type { PortableTextBody } from '@/shared/pt/schema'
 
 import { useLocalDraft, type StoredDraft } from '@/client/hooks/use-local-draft'

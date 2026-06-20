@@ -24,6 +24,7 @@ import type {
 import { LoopIcon, PlayIcon, VolumeUpIcon } from '@/ui/icons/aplayer'
 import { useInklingArticleEditorActions } from '@/ui/inkling/editor/article/article-editor-context'
 import { cn } from '@/ui/lib/cn'
+import { sanitizeHtml } from '@/ui/lib/sanitize-html'
 
 const COMMON_LANGUAGES = [
   'javascript',
@@ -274,7 +275,7 @@ export function CodeCardComponent({ node }: { node: CodeCardNode }): ReactNode {
           {preview && node.getHighlightedHtml() !== undefined ? (
             <pre
               className="overflow-x-auto rounded bg-muted p-2 font-mono text-xs"
-              dangerouslySetInnerHTML={{ __html: node.getHighlightedHtml() ?? '' }}
+              dangerouslySetInnerHTML={{ __html: sanitizeHtml(node.getHighlightedHtml() ?? '', 'shiki') }}
             />
           ) : preview ? (
             <pre className="overflow-x-auto rounded bg-muted p-2 font-mono text-xs">
@@ -293,7 +294,7 @@ export function CodeCardComponent({ node }: { node: CodeCardNode }): ReactNode {
       ) : node.getHighlightedHtml() !== undefined ? (
         <pre
           className="overflow-x-auto rounded bg-muted p-3 font-mono text-xs leading-relaxed"
-          dangerouslySetInnerHTML={{ __html: node.getHighlightedHtml() ?? '' }}
+          dangerouslySetInnerHTML={{ __html: sanitizeHtml(node.getHighlightedHtml() ?? '', 'shiki') }}
         />
       ) : (
         <pre className="overflow-x-auto rounded bg-muted p-3 font-mono text-xs leading-relaxed">
@@ -348,7 +349,12 @@ function MathPreview({ tex }: { tex: string }) {
   if (tex.trim().length === 0 || html === null) {
     return <div className="py-4 text-center font-mono text-sm">$${tex || '\\text{输入 TeX 公式}'}$$</div>
   }
-  return <div className="overflow-x-auto py-4 text-center" dangerouslySetInnerHTML={{ __html: html }} />
+  return (
+    <div
+      className="overflow-x-auto py-4 text-center"
+      dangerouslySetInnerHTML={{ __html: sanitizeHtml(html, 'math') }}
+    />
+  )
 }
 
 export function MathCardComponent({ node }: { node: MathCardNode }): ReactNode {

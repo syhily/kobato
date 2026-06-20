@@ -3,7 +3,7 @@ import { useState, type ReactNode } from 'react'
 
 import type { CommentItemWire as CommentItemType } from '@/shared/types/comments'
 
-import { InklingBody } from '@/ui/inkling/render/InklingBody'
+import { CommentInklingBody } from '@/ui/inkling/render/CommentInklingBody'
 import { CommentActions } from '@/ui/public/comments/comment-item/CommentActions'
 import { CommentAuthorLine, CommentAvatar } from '@/ui/public/comments/comment-item/CommentAuthorLine'
 import {
@@ -69,12 +69,12 @@ export function CommentRow({ comment, depth, pending, mode: propMode, children }
               <div className="mt-1.5 mb-1.5 flex w-full items-center gap-1.5 rounded-md border border-status-warn-border/30 bg-status-warn-bg px-2.5 py-1 text-xs text-status-warn-fg">
                 <span>您的评论正在等待审核中...</span>
               </div>
-              <InklingBody document={comment.body} />
+              <CommentInklingBody document={comment.body} />
             </div>
           )}
           {(!isPending || isMyComment) && (
             <div className={commentContentClass(depth)}>
-              <InklingBody document={comment.body} />
+              <CommentInklingBody document={comment.body} />
             </div>
           )}
           {editing === 'admin' && (

@@ -18,6 +18,7 @@ import {
   INKLING_FORMAT_UNDERLINE,
 } from '@/shared/inkling/format'
 import { walkInkling } from '@/shared/inkling/walk'
+import { sanitizeUrl } from '@/shared/sanitize-url'
 import { escapeHtml } from '@/shared/utils/security'
 
 // Email-friendly server renderer for Inkling comment bodies. Produces a
@@ -82,10 +83,11 @@ function renderInlineMathNode(node: InklingInlineMathNode): string {
 }
 
 function renderLinkNode(node: InklingLinkNode): string {
-  // Defense-in-depth: never emit executable JavaScript/data URLs even if the
-  // schema-level URL filter is somehow bypassed. Mirrors the article renderer
-  // in marks/LinkMark.tsx and the feed renderer in render/inkling/html.ts.
-  const href = /^\s*(javascript|data):/i.test(node.url) ? '#' : node.url
+  // Defense-in-depth: shared protocol whitelist + control-character
+  // stripping via sanitizeUrl. Replaces the previous ad-hoc
+  // /^\s*(javascript|data):/i regex which missed vbscript: and was
+  // bypassable via control characters. Mirrors LinkMark.tsx and html.ts.
+  const href = sanitizeUrl(node.url)
   const rel = node.rel ?? 'nofollow noreferrer'
   const target = node.target ?? '_blank'
   const titleAttr = node.title ? ` title="${escapeAttr(node.title)}"` : ''

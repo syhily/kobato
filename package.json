@@ -56,7 +56,6 @@
   },
   "dependencies": {
     "@napi-rs/canvas": "^1.0.0",
-    "@number-flow/react": "^0.6.0",
     "sharp": "^0.35.1"
   },
   "devDependencies": {
@@ -81,6 +80,7 @@
     "@lexical/table": "^0.45.0",
     "@lexical/utils": "^0.45.0",
     "@maxmind/geoip2-node": "^6.3.4",
+    "@number-flow/react": "^0.6.0",
     "@orpc/client": "^1.14.6",
     "@orpc/react-query": "^1.14.6",
     "@orpc/server": "^1.14.6",

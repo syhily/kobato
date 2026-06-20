@@ -13,7 +13,7 @@ import { idStr } from '@/shared/utils/tools'
 import { Avatar, AvatarFallback, AvatarImage } from '@/ui/components/avatar'
 import { Badge } from '@/ui/components/badge'
 import { Button } from '@/ui/components/button'
-import { InklingBody } from '@/ui/inkling/render/InklingBody'
+import { CommentInklingBody } from '@/ui/inkling/render/CommentInklingBody'
 import { Image } from '@/ui/public/widgets/Image'
 
 const ADMIN_DATE_FORMAT = 'yyyy-LL-dd HH:mm'
@@ -172,7 +172,7 @@ export function AdminCommentRow({
 
           {/* Body */}
           <div className="comment-content prose-blog prose prose-sm mt-2 max-w-none leading-[1.85] wrap-break-word whitespace-normal">
-            <InklingBody document={comment.body} />
+            <CommentInklingBody document={comment.body} />
           </div>
 
           {/* Action row — flat, no overflow menu. Text label hides on narrow screens. */}

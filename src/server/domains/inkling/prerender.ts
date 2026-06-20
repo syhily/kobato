@@ -102,7 +102,13 @@ async function runShikiPasses(blocks: { code: string; language?: string; highlig
           transformers: shikiTransformers(),
         })
       } catch (err) {
-        log.warn('shiki pass failed for block', { error: String(err) })
+        // Log only metadata, never user-authored code.  Shiki parse
+        // errors can include source excerpts, which would violate the
+        // privacy-logging rules (L4 user content must not be logged).
+        log.warn('shiki pass failed for block', {
+          language: typeof block.language === 'string' ? block.language : 'text',
+          errName: err instanceof Error ? err.name : undefined,
+        })
       }
     }),
   )
@@ -127,7 +133,12 @@ async function runKatexPasses(
         block.mathml = await renderer.render(block.tex, true)
       } catch (err) {
         // Leave mathml unset; renderer will fall back to raw tex.
-        log.warn('katex block render failed', { error: String(err) })
+        // Log only error name, never the message — KaTeX parse errors
+        // include TeX source snippets (L4 user content).
+        log.warn('katex block render failed', {
+          errName: err instanceof Error ? err.name : undefined,
+          blockKind: 'math-block',
+        })
       }
     }),
     ...inlines.map(async (inline) => {
@@ -135,7 +146,11 @@ async function runKatexPasses(
         inline.mathml = await renderer.render(inline.tex, false)
       } catch (err) {
         // Leave mathml unset.
-        log.warn('katex inline render failed', { error: String(err) })
+        // Log only error name, never the message (see block variant above).
+        log.warn('katex inline render failed', {
+          errName: err instanceof Error ? err.name : undefined,
+          blockKind: 'inline-math',
+        })
       }
     }),
   ])

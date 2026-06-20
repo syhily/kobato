@@ -1,3 +1,9 @@
+/**
+ * @deprecated Legacy PortableText draft hook.  Page drafts are now persisted
+ * in Inkling format via v2 draft configs defined inline in PageEditorShell.
+ * This wrapper is retained only for reference; it has zero importers and
+ * will be deleted in P9 cleanup.  Do NOT use for new code.
+ */
 import type { PortableTextBody } from '@/shared/pt/schema'
 import type { PageMetaDraft } from '@/shared/types/pages'
 
