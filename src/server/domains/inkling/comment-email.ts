@@ -59,20 +59,23 @@ function assertCommentOnlyInlineType(type: string): void {
 function renderTextNode(node: InklingTextNode): string {
   let html = escapeHtml(node.text)
   const format = node.format ?? 0
+  // CODE is exclusive per Lexical semantics.  Nesting order (outermost
+  // first): STRIKETHROUGH > UNDERLINE > ITALIC > BOLD, matching all
+  // other renderers (html.ts, comment-html.ts, CommentInklingBody, TextMark).
   if (hasFormat(format, FORMAT_CODE)) {
     html = `<code>${html}</code>`
   } else {
     if (hasFormat(format, FORMAT_STRIKETHROUGH)) {
-      html = `<del>${html}</del>`
+      html = `<s>${html}</s>`
+    }
+    if (hasFormat(format, FORMAT_UNDERLINE)) {
+      html = `<u>${html}</u>`
     }
     if (hasFormat(format, FORMAT_ITALIC)) {
       html = `<em>${html}</em>`
     }
     if (hasFormat(format, FORMAT_BOLD)) {
       html = `<strong>${html}</strong>`
-    }
-    if (hasFormat(format, FORMAT_UNDERLINE)) {
-      html = `<u>${html}</u>`
     }
   }
   return html

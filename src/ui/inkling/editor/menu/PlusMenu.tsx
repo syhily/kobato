@@ -19,16 +19,22 @@ const SECTION_LABELS: Record<string, string> = {
 
 function insertCard(editor: LexicalEditor, item: InklingCardMenuItem): void {
   editor.update(() => {
-    // Restore a collapsed RangeSelection if the editor lost focus while the
-    // menu was open.  Without this, insertBlockCard's $getSelection() check
-    // for $isRangeSelection fails and the card is appended to root instead of
-    // inserted at the original cursor position.
     const selection = $getSelection()
-    if (selection === null && editor.getRootElement() !== null) {
-      editor.getRootElement()?.focus()
-      // Focus triggers Lexical's selection restoration; run the insert in a
-      // subsequent microtask if needed, but for now we just let the caller
-      // retry or the insertion falls through to root-append.
+    if (selection === null) {
+      // Editor lost focus while menu was open.  Focus first, then defer
+      // the insert to a subsequent update so Lexical's focus handler can
+      // restore the RangeSelection at the previous cursor position.
+      // Without this, insertBlockCard appends to root instead of inserting
+      // at the original location.
+      editor.focus(
+        () => {
+          editor.update(() => {
+            item.insert(editor)
+          })
+        },
+        { defaultSelection: undefined },
+      )
+      return
     }
     item.insert(editor)
   })

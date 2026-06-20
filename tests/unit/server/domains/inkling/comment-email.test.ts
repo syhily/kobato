@@ -70,7 +70,7 @@ describe('server/domains/inkling/comment-email', () => {
     expect(html).toContain('<em>italic </em>')
     expect(html).toContain('<u>underline </u>')
     expect(html).toContain('<code>code </code>')
-    expect(html).toContain('<del>strike</del>')
+    expect(html).toContain('<s>strike</s>')
   })
 
   it('prefers code decorator over other decorators', () => {

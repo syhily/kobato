@@ -169,19 +169,35 @@ export function FloatingLinkToolbar(): ReactNode {
         return
       }
 
+      // Clamp the toolbar within the editor viewport: never render above
+      // the top edge or below the bottom edge of the scroll container.
+      const toolbarHeight = 36
+      let top = linkRect.top - rootRect.top - toolbarHeight
+      if (top < 0) {
+        // Link is near the top — flip to below.
+        top = linkRect.bottom - rootRect.top + 4
+      }
+      const maxTop = rootRect.height - toolbarHeight - 4
+      if (top > maxTop) {
+        top = maxTop
+      }
+
       setPosition({
-        // Toolbar above the link (36px = toolbar height + gap), horizontally centered.
-        top: linkRect.top - rootRect.top - 36,
+        top,
         left: linkRect.left - rootRect.left + linkRect.width / 2,
       })
     }
 
     computePosition()
 
+    // Listen to scroll on both window (page scroll) and the editor root
+    // (nested scroll container).  The editor lives inside overflow-y:auto.
     window.addEventListener('scroll', computePosition, { passive: true })
+    rootElement.addEventListener('scroll', computePosition, { passive: true })
     window.addEventListener('resize', computePosition)
     return () => {
       window.removeEventListener('scroll', computePosition)
+      rootElement.removeEventListener('scroll', computePosition)
       window.removeEventListener('resize', computePosition)
     }
   }, [editor, linkKey, targetElem])
