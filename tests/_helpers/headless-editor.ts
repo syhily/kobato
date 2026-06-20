@@ -1,87 +1,34 @@
 // Shared headless-editor fixtures for Inkling editor tests.
 //
 // The established in-repo pattern (see tests/unit/ui/inkling/*.test.tsx) is
-// `createHeadlessEditor({ nodes: [...16 nodes...] })`, with the 16-entry
-// article node array re-declared in every file. Any drift between those
-// copies and the production `ARTICLE_NODES` array silently invalidates the
-// test. This helper centralises the node list by importing the real node
-// classes (not a copy) so the headless editor always mirrors production.
+// `createHeadlessEditor({ nodes: [...16 nodes...] })`, with the node arrays
+// re-declared in every file. This helper centralises the editor construction
+// by importing the real production node sets from `nodes/registry.ts` so the
+// headless editor always mirrors production — no drift possible.
 //
 // Usage:
 //   import { buildHeadlessArticleEditor, seedParagraph } from '#/_helpers/headless-editor'
 //   const editor = buildHeadlessArticleEditor()
 //   seedParagraph(editor, 'Hello')
 
-import type { InitialConfigType } from '@lexical/react/LexicalComposer'
-
 import { createHeadlessEditor } from '@lexical/headless'
-import { LinkNode } from '@lexical/link'
-import { ListItemNode, ListNode } from '@lexical/list'
-import { HeadingNode, QuoteNode } from '@lexical/rich-text'
 import {
   $createParagraphNode,
   $createTextNode,
   $getRoot,
-  ParagraphNode,
   type LexicalEditor,
   type SerializedEditorState,
 } from 'lexical'
 
-import { InlineMathNode } from '@/ui/inkling/editor/article/InlineMathNode'
-import { SolutionCardNode, TwoColumnCardNode } from '@/ui/inkling/editor/cards/layout-card-nodes'
-import {
-  CodeCardNode,
-  HorizontalRuleCardNode,
-  ImageCardNode,
-  MathCardNode,
-  MusicCardNode,
-  TableCardNode,
-} from '@/ui/inkling/editor/cards/simple-card-nodes'
-import { CodeBlockNode } from '@/ui/inkling/editor/comment/nodes/CodeBlockNode'
-import { InlineMathNode as CommentInlineMathNode } from '@/ui/inkling/editor/comment/nodes/InlineMathNode'
-import { MathBlockNode } from '@/ui/inkling/editor/comment/nodes/MathBlockNode'
-import { FootnoteRefNode } from '@/ui/inkling/editor/footnotes/FootnoteRefNode'
+import { ARTICLE_NODES, COMMENT_NODES } from '@/ui/inkling/editor/nodes/registry'
 
-/**
- * The article editor's node set. Imported (not copied) from the production
- * node modules so a headless test can never drift from what the real editor
- * registers. Keep in sync with `ARTICLE_NODES` in
- * `article/InklingArticleEditor.tsx` — Phase 2 of the editor refactor will
- * collapse this list and `ARTICLE_NODES` into a single registry.
- */
-export const ARTICLE_EDITOR_NODES: InitialConfigType['nodes'] = [
-  ParagraphNode,
-  HeadingNode,
-  QuoteNode,
-  ListNode,
-  ListItemNode,
-  LinkNode,
-  FootnoteRefNode,
-  InlineMathNode,
-  ImageCardNode,
-  CodeCardNode,
-  MathCardNode,
-  MusicCardNode,
-  HorizontalRuleCardNode,
-  TableCardNode,
-  SolutionCardNode,
-  TwoColumnCardNode,
-]
-
-/**
- * The comment editor's node set. Mirrors `COMMENT_EDITOR_NODES` in
- * `comment/CommentEditor.tsx`.
- */
-export const COMMENT_EDITOR_NODES: InitialConfigType['nodes'] = [
-  ParagraphNode,
-  QuoteNode,
-  ListNode,
-  ListItemNode,
-  LinkNode,
-  CodeBlockNode,
-  MathBlockNode,
-  CommentInlineMathNode,
-]
+// Re-export the production node sets under the legacy names so existing
+// tests that imported `ARTICLE_EDITOR_NODES` / `COMMENT_EDITOR_NODES` keep
+// working without touching every test file.
+export {
+  ARTICLE_NODES as ARTICLE_EDITOR_NODES,
+  COMMENT_NODES as COMMENT_EDITOR_NODES,
+} from '@/ui/inkling/editor/nodes/registry'
 
 /**
  * Build a headless article editor. `onError` defaults to `console.error`
@@ -91,7 +38,7 @@ export function buildHeadlessArticleEditor(onError?: (e: Error) => void): Lexica
   return createHeadlessEditor({
     namespace: 'inkling-article-test',
     onError: onError ?? ((e: Error) => console.error(e)),
-    nodes: ARTICLE_EDITOR_NODES,
+    nodes: ARTICLE_NODES,
   })
 }
 
@@ -102,7 +49,7 @@ export function buildHeadlessCommentEditor(onError?: (e: Error) => void): Lexica
   return createHeadlessEditor({
     namespace: 'inkling-comment-test',
     onError: onError ?? ((e: Error) => undefined),
-    nodes: COMMENT_EDITOR_NODES,
+    nodes: COMMENT_NODES,
   })
 }
 

@@ -1,38 +1,23 @@
 import type { InitialConfigType } from '@lexical/react/LexicalComposer'
 import type { LexicalEditor, SerializedRootNode } from 'lexical'
 
-import { LinkNode } from '@lexical/link'
-import { ListItemNode, ListNode } from '@lexical/list'
 import { AutoFocusPlugin } from '@lexical/react/LexicalAutoFocusPlugin'
 import { LexicalComposer } from '@lexical/react/LexicalComposer'
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import { ContentEditable } from '@lexical/react/LexicalContentEditable'
 import { HistoryPlugin } from '@lexical/react/LexicalHistoryPlugin'
-import { HeadingNode, QuoteNode } from '@lexical/rich-text'
-import { ParagraphNode } from 'lexical'
 import { useEffect, useMemo, type RefObject } from 'react'
 
 import type { InklingBlockNode, InklingDocument } from '@/shared/inkling/schema'
 import type { InklingArticleEditorProps } from '@/ui/inkling/editor/article/article-editor-types'
 
 import { InklingArticleEditorProvider } from '@/ui/inkling/editor/article/article-editor-context'
-import { InlineMathNode } from '@/ui/inkling/editor/article/InlineMathNode'
 import { registerInklingDocumentTransforms } from '@/ui/inkling/editor/behaviour/document-transforms'
 import { InklingDragDropReorder } from '@/ui/inkling/editor/behaviour/DragDropReorderPlugin'
 import { useInklingKeyboardNavigation } from '@/ui/inkling/editor/behaviour/keyboard-navigation'
-import { SolutionCardNode, TwoColumnCardNode } from '@/ui/inkling/editor/cards/layout-card-nodes'
-import {
-  CodeCardNode,
-  HorizontalRuleCardNode,
-  ImageCardNode,
-  MathCardNode,
-  MusicCardNode,
-  TableCardNode,
-} from '@/ui/inkling/editor/cards/simple-card-nodes'
 import { reportEditorError } from '@/ui/inkling/editor/error-report'
 import { EditorErrorBoundary } from '@/ui/inkling/editor/ErrorBoundary'
 import { FootnoteController } from '@/ui/inkling/editor/footnotes/FootnoteController'
-import { FootnoteRefNode } from '@/ui/inkling/editor/footnotes/FootnoteRefNode'
 import {
   InklingFootnoteProvider,
   type FootnoteDefinitionItem,
@@ -41,6 +26,7 @@ import {
 import { InklingPlusMenuPlugin } from '@/ui/inkling/editor/menu/PlusMenu'
 import { InklingSlashMenuPlugin } from '@/ui/inkling/editor/menu/SlashMenu'
 import { SharedHistoryProvider, useSharedHistoryState } from '@/ui/inkling/editor/nested/SharedHistoryContext'
+import { ARTICLE_NODES } from '@/ui/inkling/editor/nodes/registry'
 import { OnInklingDocumentChangePlugin } from '@/ui/inkling/editor/plugins/OnInklingDocumentChangePlugin'
 import { PastePlugin } from '@/ui/inkling/editor/plugins/PastePlugin'
 import { toSerializedRoot } from '@/ui/inkling/editor/shared/lexical-bridge'
@@ -62,33 +48,6 @@ const theme = {
     code: 'inkling-text-code',
   },
 }
-
-// Note: `FootnoteDefinitionNode` is intentionally NOT registered here. The
-// article editor uses a parallel-state footnote model (§6.3): definitions
-// live in `InklingFootnoteProvider` state, not in the Lexical tree. Only
-// `FootnoteRefNode` (the inline superscript) appears in the editor. The
-// `FootnoteDefinitionNode` class is retained for paste/importDOM fallback but
-// is never mounted in the article editor, so any stray `footnote-definition`
-// block that slips past the read-time strip is dropped rather than silently
-// polluting the editable root.
-const ARTICLE_NODES: InitialConfigType['nodes'] = [
-  ParagraphNode,
-  HeadingNode,
-  QuoteNode,
-  ListNode,
-  ListItemNode,
-  LinkNode,
-  FootnoteRefNode,
-  InlineMathNode,
-  ImageCardNode,
-  CodeCardNode,
-  MathCardNode,
-  MusicCardNode,
-  HorizontalRuleCardNode,
-  TableCardNode,
-  SolutionCardNode,
-  TwoColumnCardNode,
-]
 
 interface StrippedDocument {
   /** Root whose children contain only prose (no `footnote-definition` blocks). */

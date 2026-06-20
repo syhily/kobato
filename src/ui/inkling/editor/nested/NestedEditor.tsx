@@ -24,7 +24,15 @@ import {
 } from '@/ui/inkling/editor/cards/simple-card-nodes'
 import { reportEditorError } from '@/ui/inkling/editor/error-report'
 import { useOptionalSharedHistoryState } from '@/ui/inkling/editor/nested/SharedHistoryContext'
+import { fromLexicalChildren, toLexicalChildren } from '@/ui/inkling/editor/shared/lexical-bridge'
 
+// NOTE: this node set is defined locally rather than imported from
+// `nodes/registry.ts` to break a circular dependency:
+//   registry → layout-card-nodes → NestedEditor → registry.
+// The canonical nested set lives in `nodes/registry.ts` (`NESTED_ARTICLE_NODES`);
+// this local copy MUST stay in sync with it. Phase 3 (delete dead code) or a
+// future lazy-import pattern can collapse them — for now, breaking the cycle
+// is more important than DRY.
 export const NESTED_ARTICLE_NODES: InitialConfigType['nodes'] = [
   ParagraphNode,
   HeadingNode,
@@ -39,8 +47,6 @@ export const NESTED_ARTICLE_NODES: InitialConfigType['nodes'] = [
   HorizontalRuleCardNode,
   TableCardNode,
 ]
-
-import { fromLexicalChildren, toLexicalChildren } from '@/ui/inkling/editor/shared/lexical-bridge'
 
 function buildNestedInitialState(blocks: readonly InklingNonRecursiveBlockNode[]): EditorState {
   const editor = createEditor({ nodes: NESTED_ARTICLE_NODES })
