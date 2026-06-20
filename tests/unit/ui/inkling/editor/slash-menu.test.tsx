@@ -1,3 +1,5 @@
+// @vitest-environment happy-dom
+
 // Regression tests for InklingSlashMenuPlugin — the `/`-triggered card menu.
 //
 // SlashMenu detects `/` via registerUpdateListener, which reads Lexical's

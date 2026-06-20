@@ -1,3 +1,5 @@
+// @vitest-environment happy-dom
+
 // Parity guard for the NestedEditor's local NESTED_ARTICLE_NODES.
 //
 // NestedEditor.tsx defines its own local copy of the node set (instead of

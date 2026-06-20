@@ -1,3 +1,5 @@
+// @vitest-environment happy-dom
+
 // Comprehensive regression tests for OnInklingDocumentChangePlugin — the
 // debounce + footnote merge + schema validation wrapper around Lexical's
 // OnChangePlugin.

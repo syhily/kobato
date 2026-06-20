@@ -1,3 +1,5 @@
+// @vitest-environment happy-dom
+
 // Regression tests for the Inkling card React components.
 //
 // These pin the *observable* rendering behaviour of every card component

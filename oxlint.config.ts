@@ -7,14 +7,7 @@ export default defineConfig({
     node: true,
     es2022: true,
   },
-  ignorePatterns: [
-    '.agents/skills/*',
-    'drizzle/**/*',
-    'tests/**/*',
-    // POC verifier scripts — kept as migration regression baseline.
-    'scripts/inkling-poc/*.ts',
-    'scripts/inkling-poc/*.mjs',
-  ],
+  ignorePatterns: ['.agents/skills/*', 'drizzle/**/*', 'tests/**/*'],
   settings: {
     react: {
       version: '19.2.5',

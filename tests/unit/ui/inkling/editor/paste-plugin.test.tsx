@@ -1,3 +1,5 @@
+// @vitest-environment happy-dom
+
 // Regression tests for PastePlugin — the capture-phase paste HTML sanitiser.
 //
 // The plugin intercepts paste events on the editor root, sanitises the HTML

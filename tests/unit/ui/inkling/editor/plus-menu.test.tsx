@@ -1,3 +1,5 @@
+// @vitest-environment happy-dom
+
 // Comprehensive regression tests for InklingPlusMenuPlugin — the `+` button
 // that opens a card-insert menu.
 //

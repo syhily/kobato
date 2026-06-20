@@ -1,3 +1,5 @@
+// @vitest-environment happy-dom
+
 // Regression tests for LinkPopover — the link create/edit/remove popover.
 //
 // Security-critical: this is the user-facing surface where a `javascript:`

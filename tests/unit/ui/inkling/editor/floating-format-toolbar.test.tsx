@@ -1,3 +1,5 @@
+// @vitest-environment happy-dom
+
 // Regression tests for FloatingFormatToolbar — the floating toolbar that
 // appears above a non-collapsed text selection offering inline format
 // actions (bold / italic / underline / strikethrough / code / link).
