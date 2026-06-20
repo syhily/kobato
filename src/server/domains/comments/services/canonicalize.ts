@@ -5,6 +5,7 @@ import { DomainError } from '@/server/infra/http/errors'
 import { isInklingCommentEmpty } from '@/shared/inkling/comment-empty'
 import { inklingCommentToMarkdown } from '@/shared/inkling/comment-markdown'
 import { validateInklingDocumentForMode } from '@/shared/inkling/features'
+import { collectLinkUrls, countHttpLinks as countDocHttpLinks } from '@/shared/inkling/links'
 import { inklingDocumentSchema, type InklingDocument } from '@/shared/inkling/schema'
 import { isSafeUrl } from '@/shared/sanitize-url'
 
@@ -50,7 +51,7 @@ export async function canonicalizeCommentBody(input: unknown): Promise<{ body: I
   if (isInklingCommentEmpty(parsed)) {
     throw new DomainError('BAD_REQUEST', '评论内容不能为空。')
   }
-  if (countHttpLinks(parsed) > COMMENT_MAX_HTTP_URLS) {
+  if (countDocHttpLinks(parsed) > COMMENT_MAX_HTTP_URLS) {
     throw new DomainError('BAD_REQUEST', `评论中链接过多（最多 ${COMMENT_MAX_HTTP_URLS} 个）。`)
   }
 
@@ -65,126 +66,10 @@ export async function canonicalizeCommentBody(input: unknown): Promise<{ body: I
   return { body: revalidated.data, content }
 }
 
-function countHttpLinks(document: InklingDocument): number {
-  let total = 0
-  for (const block of document.root.children) {
-    total += countLinksInBlock(block)
-  }
-  return total
-}
-
-function countLinksInBlock(block: InklingDocument['root']['children'][number]): number {
-  switch (block.type) {
-    case 'paragraph':
-    case 'quote':
-      return countLinksInInline(block.children)
-    case 'list':
-      return countLinksInList(block)
-    case 'code-block':
-    case 'math-block':
-    case 'heading':
-    case 'image-card':
-    case 'music-card':
-    case 'table':
-    case 'horizontal-rule':
-    case 'solution':
-    case 'two-column':
-    case 'footnote-definition':
-      return 0
-  }
-}
-
-function countLinksInList(list: { children: Array<{ children: unknown[] }> }): number {
-  let total = 0
-  for (const item of list.children) {
-    for (const child of item.children) {
-      if (isInlineNode(child)) {
-        total += countLinksInInline([child])
-      }
-    }
-  }
-  return total
-}
-
-function countLinksInInline(nodes: readonly { type: string; url?: string; children?: readonly unknown[] }[]): number {
-  let total = 0
-  for (const node of nodes) {
-    if (node.type === 'link' && typeof node.url === 'string' && /^https?:\/\//i.test(node.url)) {
-      total += 1
-    }
-    if ('children' in node && Array.isArray(node.children)) {
-      total += countLinksInInline(node.children)
-    }
-  }
-  return total
-}
-
-function isInlineNode(value: unknown): value is { type: string; url?: string; children?: readonly unknown[] } {
-  return (
-    typeof value === 'object' &&
-    value !== null &&
-    'type' in value &&
-    typeof (value as { type: unknown }).type === 'string'
-  )
-}
-
 function isDisallowedLinkUrl(url: string): boolean {
   return !isSafeUrl(url)
 }
 
 function hasDisallowedLinkUrl(document: InklingDocument): boolean {
-  for (const block of document.root.children) {
-    if (blockHasDisallowedLinkUrl(block)) {
-      return true
-    }
-  }
-  return false
-}
-
-function blockHasDisallowedLinkUrl(block: InklingDocument['root']['children'][number]): boolean {
-  switch (block.type) {
-    case 'paragraph':
-    case 'quote':
-      return inlineHasDisallowedLinkUrl(block.children)
-    case 'list':
-      return listHasDisallowedLinkUrl(block)
-    case 'code-block':
-    case 'math-block':
-    case 'heading':
-    case 'image-card':
-    case 'music-card':
-    case 'table':
-    case 'horizontal-rule':
-    case 'solution':
-    case 'two-column':
-    case 'footnote-definition':
-      return false
-  }
-}
-
-function listHasDisallowedLinkUrl(list: { children: Array<{ children: unknown[] }> }): boolean {
-  for (const item of list.children) {
-    for (const child of item.children) {
-      if (isInlineNode(child) && inlineHasDisallowedLinkUrl([child])) {
-        return true
-      }
-    }
-  }
-  return false
-}
-
-function inlineHasDisallowedLinkUrl(
-  nodes: readonly { type: string; url?: string; children?: readonly unknown[] }[],
-): boolean {
-  for (const node of nodes) {
-    if (node.type === 'link' && typeof node.url === 'string' && isDisallowedLinkUrl(node.url)) {
-      return true
-    }
-    if ('children' in node && Array.isArray(node.children)) {
-      if (inlineHasDisallowedLinkUrl(node.children)) {
-        return true
-      }
-    }
-  }
-  return false
+  return collectLinkUrls(document).some(isDisallowedLinkUrl)
 }

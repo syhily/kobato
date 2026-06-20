@@ -13,6 +13,7 @@ import { createComment } from '@/server/domains/comments/services/mutate'
 import { loadComments, parseComments } from '@/server/domains/comments/services/public-query'
 import { resolveMetricTarget } from '@/server/domains/comments/services/shared'
 import { appendCommentToken, issueCommentToken } from '@/server/domains/comments/services/token'
+import { readCommentBody } from '@/server/domains/content/projection-helpers'
 import { publicProc } from '@/server/http/orpc-base'
 import { getLogger } from '@/server/infra/logger'
 import {
@@ -109,7 +110,10 @@ const getRaw = publicProc
     if (!comment) {
       throw new ORPCError('NOT_FOUND', { message: '评论不存在' })
     }
-    return { body: comment.body }
+    // `comment.body` is raw JSONB; route it through `readCommentBody` so a
+    // legacy PT-shape row (pre-inkling migration) falls back to an empty
+    // document instead of failing the output-schema parse and 500ing.
+    return { body: readCommentBody(comment.body) }
   })
 
 const edit = publicProc

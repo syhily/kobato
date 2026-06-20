@@ -1,5 +1,6 @@
-/* oxlint-disable typescript/no-unsafe-type-assertion */
 import type { Block } from '@/shared/pt/schema'
+
+import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
 // Normalisation shared by PortableText semantic equality (`pt-bridge`
 // dirty/conflict guards) AND the admin block-level diff anchoring logic
@@ -36,8 +37,8 @@ function resolveMarks(block: Block): Block {
     )
     return { ...child, marks: resolved }
   })
-  const { markDefs: _drop, ...rest } = block as Record<string, unknown>
-  return { ...rest, children: resolvedChildren } as Block
+  const { markDefs: _drop, ...rest } = unsafeCast<Record<string, unknown>>(block)
+  return unsafeCast<Block>({ ...rest, children: resolvedChildren })
 }
 
 function semanticCanonicalJson(value: unknown): Json | undefined {
@@ -53,7 +54,7 @@ function semanticCanonicalJson(value: unknown): Json | undefined {
   }
   if (value !== null && typeof value === 'object') {
     const out: { [k: string]: Json } = {}
-    for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
+    for (const [k, v] of Object.entries(unsafeCast<Record<string, unknown>>(value))) {
       if (k === '_key') {
         continue
       }
@@ -71,7 +72,7 @@ function semanticCanonicalJson(value: unknown): Json | undefined {
   if (value === undefined) {
     return undefined
   }
-  return value as Json
+  return unsafeCast<Json>(value)
 }
 
 function semanticCanonicalStringify(value: Json | undefined): string {

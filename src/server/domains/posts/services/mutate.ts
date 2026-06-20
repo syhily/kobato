@@ -31,6 +31,7 @@ import { invalidateSearchCache } from '@/server/infra/search/search'
 import { resolveSlugForTaxonomy } from '@/server/infra/slug'
 import { ensureSlugLegal, resolveSlug } from '@/server/infra/slug-validation'
 import { reserveSlugInTransaction } from '@/server/infra/slug/reservation'
+import { validateInklingDocument } from '@/shared/inkling/schema'
 import { idFromString } from '@/shared/utils/id'
 
 const log = getLogger('posts.service')
@@ -237,11 +238,30 @@ export async function restorePost(
         if (restoredMeta.published && restoredMeta.publishedRevisionId !== null) {
           const revision = await findContentById(tx, restoredMeta.publishedRevisionId)
           if (revision !== null) {
-            data = {
-              id: restoredMeta.id,
-              title: restoredMeta.title,
-              summary: restoredMeta.summary,
-              body: revision.body,
+            // Validate the restored JSONB body before handing it to the
+            // search indexer. A legacy PT-shape row (pre-inkling migration)
+            // would otherwise throw inside `inklingToPlainText` and only
+            // surface as a soft "search index failed" warning. Treat a body
+            // that fails validation the same way as a missing revision:
+            // skip indexing rather than corrupting the index or aborting the
+            // restore. The user can reindex after migrating the body.
+            let body: InklingDocument | null = null
+            try {
+              body = validateInklingDocument(revision.body)
+            } catch (err) {
+              log.warn('restore post: body validation failed, skipping search index', {
+                postId: String(id),
+                revisionId: String(revision.id),
+                error: err instanceof Error ? err.message : String(err),
+              })
+            }
+            if (body !== null) {
+              data = {
+                id: restoredMeta.id,
+                title: restoredMeta.title,
+                summary: restoredMeta.summary,
+                body,
+              }
             }
           }
         }

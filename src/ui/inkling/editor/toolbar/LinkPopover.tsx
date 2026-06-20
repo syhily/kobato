@@ -2,7 +2,9 @@ import type { LexicalEditor } from 'lexical'
 
 import { $isLinkNode, TOGGLE_LINK_COMMAND } from '@lexical/link'
 import { $getSelection, $isRangeSelection } from 'lexical'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+
+import { isSafeUrl } from '@/shared/sanitize-url'
 
 interface LinkPopoverProps {
   editor: LexicalEditor
@@ -29,9 +31,13 @@ function getExistingLink(editor: LexicalEditor): { url: string; text: string } |
 }
 
 export function LinkPopover({ editor, onClose }: LinkPopoverProps) {
-  const existing = getExistingLink(editor)
+  // Read the existing link once for this popover's lifetime. The popover is
+  // mounted for a single link-editing session, so memoising on `[]` avoids
+  // a full editor-state read on every keystroke in the URL input.
+  const existing = useMemo(() => getExistingLink(editor), [editor])
   const [url, setUrl] = useState(existing?.url ?? '')
   const [text, setText] = useState(existing?.text ?? '')
+  const [urlError, urlErrorSetter] = useState<string | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -40,13 +46,45 @@ export function LinkPopover({ editor, onClose }: LinkPopoverProps) {
   }, [])
 
   const apply = useCallback(() => {
-    if (url.length > 0) {
-      editor.dispatchCommand(TOGGLE_LINK_COMMAND, { url, target: '_blank', rel: 'noopener noreferrer nofollow' })
+    const trimmed = url.trim()
+    // Perimeter guard: reject unsafe schemes before they reach Lexical.
+    // Lexical 0.45's `LinkNode.sanitizeUrl` only cleans the URL at DOM
+    // export time, so `exportJSON` would persist the raw `javascript:`
+    // string into the Inkling document and through to the DB. Renderers
+    // re-sanitize on output, but persisting the unsafe URL lets it leak
+    // through any future consumer that forgets the second layer.
+    if (trimmed.length > 0 && !isSafeUrl(trimmed)) {
+      urlErrorSetter('链接协议不被允许（仅支持 http/https/mailto/tel 或相对路径）。')
+      return
+    }
+    urlErrorSetter(null)
+    if (trimmed.length > 0) {
+      // When creating a new link with explicit text, seed the selection's
+      // text content first so the link carries the typed label rather than
+      // whatever was (or wasn't) selected. For an existing link we leave
+      // the text untouched — editing the URL shouldn't clobber the visible
+      // label the user already has.
+      if (existing === null && text.trim().length > 0) {
+        editor.update(
+          () => {
+            const selection = $getSelection()
+            if ($isRangeSelection(selection)) {
+              selection.insertText(text)
+            }
+          },
+          { tag: 'history-merge' },
+        )
+      }
+      editor.dispatchCommand(TOGGLE_LINK_COMMAND, {
+        url: trimmed,
+        target: '_blank',
+        rel: 'noopener noreferrer nofollow',
+      })
     } else {
       editor.dispatchCommand(TOGGLE_LINK_COMMAND, null) // remove link
     }
     onClose()
-  }, [editor, url, onClose])
+  }, [editor, url, text, existing, onClose])
 
   const remove = useCallback(() => {
     editor.dispatchCommand(TOGGLE_LINK_COMMAND, null)
@@ -76,9 +114,15 @@ export function LinkPopover({ editor, onClose }: LinkPopoverProps) {
         ref={inputRef}
         type="text"
         value={url}
-        onChange={(e) => setUrl(e.target.value)}
+        onChange={(e) => {
+          setUrl(e.target.value)
+          if (urlError !== null) {
+            urlErrorSetter(null)
+          }
+        }}
         onKeyDown={handleKeyDown}
         placeholder="https://..."
+        aria-invalid={urlError !== null}
         className="mb-2 w-full rounded border bg-background px-2 py-1 text-sm"
       />
       {existing === null ? (
@@ -90,6 +134,11 @@ export function LinkPopover({ editor, onClose }: LinkPopoverProps) {
           placeholder="链接文字（可选）"
           className="mb-2 w-full rounded border bg-background px-2 py-1 text-sm"
         />
+      ) : null}
+      {urlError !== null ? (
+        <div role="alert" className="mb-2 text-xs text-destructive">
+          {urlError}
+        </div>
       ) : null}
       <div className="flex gap-1.5">
         <button

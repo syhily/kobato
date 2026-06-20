@@ -1,4 +1,3 @@
-/* oxlint-disable typescript/no-unsafe-type-assertion */
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
 import type { BrandingObjectRef } from '@/shared/config/types'
@@ -18,6 +17,7 @@ import { findSettingByScope, upsertSetting } from '@/server/infra/db/operations/
 import { ActionFailure } from '@/server/infra/http/errors'
 import { getLogger } from '@/server/infra/logger'
 import { activeBackend } from '@/server/infra/storage/registry'
+import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
 const log = getLogger('branding.management')
 
@@ -70,12 +70,12 @@ export async function uploadBrandingAsset(
         refs[derived] = await putBrandingObject(derived, pack[derived])
         uploaded.push(derived)
       }
-      const merged = { ...refs, [slot]: primaryRef } as Record<BrandingSlot, BrandingObjectRef>
+      const merged = unsafeCast<Record<BrandingSlot, BrandingObjectRef>>({ ...refs, [slot]: primaryRef })
       await persistBranding(db, merged)
       return primaryRef
     }
 
-    await persistBranding(db, { [slot]: primaryRef } as Record<BrandingSlot, BrandingObjectRef>)
+    await persistBranding(db, unsafeCast<Record<BrandingSlot, BrandingObjectRef>>({ [slot]: primaryRef }))
     return primaryRef
   } catch (error) {
     log.warn('Branding upload failed; rolling back uploaded objects', { slot, driver, uploaded, error: String(error) })
@@ -91,7 +91,7 @@ export async function uploadBrandingAsset(
 export async function clearBrandingAsset(db: NodePgDatabase, slot: BrandingSlot): Promise<void> {
   const slotsToClear: BrandingSlot[] = slot === 'faviconSvg' ? [slot, ...FAVICON_DERIVED_SLOTS] : [slot]
   const row = await readAssetsRow(db)
-  const branding = (row.branding ?? {}) as Record<string, BrandingObjectRef>
+  const branding = unsafeCast<Record<string, BrandingObjectRef>>(row.branding ?? {})
   await Promise.all(slotsToClear.map((s) => deleteBrandingObject(s, branding[s]?.driver ?? 's3')))
   await persistBrandingDelete(db, slotsToClear)
 }
@@ -103,12 +103,12 @@ async function readAssetsRow(db: NodePgDatabase): Promise<Record<string, unknown
   if (!existing) {
     throw new ActionFailure(409, '尚未安装站点设置，无法上传品牌素材')
   }
-  return { ...(existing.data as Record<string, unknown>) }
+  return { ...unsafeCast<Record<string, unknown>>(existing.data) }
 }
 
 async function persistBranding(db: NodePgDatabase, refs: Record<string, BrandingObjectRef>): Promise<void> {
   const row = await readAssetsRow(db)
-  const branding = { ...(row.branding as Record<string, unknown> | undefined) }
+  const branding = { ...unsafeCast<Record<string, unknown> | undefined>(row.branding) }
   for (const [slot, ref] of Object.entries(refs)) {
     branding[slot] = ref
   }
@@ -119,7 +119,7 @@ async function persistBranding(db: NodePgDatabase, refs: Record<string, Branding
 
 async function persistBrandingDelete(db: NodePgDatabase, slots: BrandingSlot[]): Promise<void> {
   const row = await readAssetsRow(db)
-  const branding = { ...(row.branding as Record<string, unknown> | undefined) }
+  const branding = { ...unsafeCast<Record<string, unknown> | undefined>(row.branding) }
   for (const slot of slots) {
     delete branding[slot]
   }

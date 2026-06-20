@@ -1,11 +1,6 @@
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
-import type {
-  InklingBlockNode,
-  InklingDocument,
-  InklingImageCardNode,
-  InklingNonRecursiveBlockNode,
-} from '@/shared/inkling/schema'
+import type { InklingBlockNode, InklingDocument, InklingImageCardNode } from '@/shared/inkling/schema'
 
 import { findImagesByIds, updateImageNote } from '@/server/infra/db/operations/image'
 import { getPublicBaseUrl } from '@/server/infra/storage/public-url'
@@ -101,16 +96,5 @@ function collectImageCards(block: InklingBlockNode, out: InklingImageCardNode[])
       collectImageCards(child, out)
     }
     return
-  }
-}
-
-export function syncLibraryImageBlocksInNonRecursiveBlocks(
-  blocks: InklingNonRecursiveBlockNode[],
-  out: InklingImageCardNode[],
-): void {
-  for (const block of blocks) {
-    if (block.type === 'image-card') {
-      out.push(block)
-    }
   }
 }

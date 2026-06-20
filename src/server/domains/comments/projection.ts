@@ -25,6 +25,7 @@ import type {
 } from '@/shared/types/comments'
 
 import { withCommentBadgeTextColor } from '@/server/domains/comments/badge'
+import { readCommentBody } from '@/server/domains/content/projection-helpers'
 
 function asString(value: bigint | string | null | undefined): string {
   if (typeof value === 'string') {
@@ -65,7 +66,11 @@ function projectPublicCommentBase(row: CommentAndUser): CommentItemWire {
     updatedAt: asIso(row.updatedAt),
     deleteAt: asNullableIso(row.deleteAt),
     deleteRequestedAt: row.deleteRequestedAt === undefined ? undefined : asNullableIso(row.deleteRequestedAt),
-    body: row.body,
+    // `row.body` is raw JSONB from the comment row; route it through
+    // `readCommentBody` so a legacy PT-shape row (pre-inkling migration)
+    // falls back to an empty document instead of failing the
+    // `commentItemDto.body` output-schema parse at response time.
+    body: readCommentBody(row.body),
     type: row.type,
     ownerId: asNullableString(row.ownerId),
     userId: asString(row.userId),

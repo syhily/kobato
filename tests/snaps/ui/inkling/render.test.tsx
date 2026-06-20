@@ -217,7 +217,12 @@ describe('InklingBody SSR renderer', () => {
     expect(html).toContain('尾声礼记')
     expect(html).toContain('id="user-content-fn-1"')
     expect(html).toContain('脚注内容')
-    expect(html).toMatch(/<p>[^]*脚注内容[^]*href="#user-content-fnref-1"/)
+    // Backref lives in a standalone trailing <p> (mirrors the SSR string
+    // renderer in server/render/inkling/html.ts so RSS / plaintext
+    // extraction agrees with the React render). The previous assertion
+    // required the backref to be inlined into the footnote's last
+    // paragraph; both renderers now emit a separate <p> for consistency.
+    expect(html).toMatch(/脚注内容[^]*<p>[^]*href="#user-content-fnref-1"/)
   })
 
   it('renders twoColumn as a responsive grid with both panes', () => {

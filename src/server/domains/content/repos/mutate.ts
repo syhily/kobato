@@ -12,14 +12,35 @@ import type {
   SaveDraftResult,
 } from '@/server/domains/content/schema'
 import type { ContentRow, NewContent } from '@/server/infra/db/types'
-import type { InklingDocument } from '@/shared/inkling/schema'
 
 import { content as contentTable } from '@/server/infra/db/schema/content'
 import { page as pageMetaTable } from '@/server/infra/db/schema/page'
 import { post as postMetaTable } from '@/server/infra/db/schema/post'
 import { DomainError } from '@/server/infra/http/errors'
 import { areInklingDocumentsEquivalent } from '@/shared/inkling/normalize'
+import { safeValidateInklingDocument } from '@/shared/inkling/schema'
 import { unsafeCast } from '@/shared/utils/unsafe-cast'
+
+/**
+ * Symmetric equivalence check that parses both sides through the Inkling
+ * schema before fingerprinting. Returns `false` if either side fails
+ * validation (so a malformed `input.body` or a corrupted DB row falls back
+ * to "save a new revision" rather than throwing mid-transaction).
+ *
+ * The previous implementation cast `input.body` via `unsafeCast` while
+ * `latest.body` was parsed inside `inklingDocumentFingerprint` — that
+ * asymmetry meant a non-document `input.body` would throw an opaque
+ * ZodError from inside the equivalence check instead of surfacing as a
+ * clean save-new-revision path.
+ */
+function isInklingDocumentEquivalentTo(input: unknown, latest: unknown): boolean {
+  const a = safeValidateInklingDocument(input)
+  const b = safeValidateInklingDocument(latest)
+  if (!a.ok || !b.ok) {
+    return false
+  }
+  return areInklingDocumentsEquivalent(a.document, b.document)
+}
 
 function metaTableFor(type: ContentType) {
   return type === 'page' ? pageMetaTable : postMetaTable
@@ -91,7 +112,16 @@ export async function saveDraftRevision(
     if (
       latest !== undefined &&
       latest.status === 'published' &&
-      areInklingDocumentsEquivalent(unsafeCast<InklingDocument>(input.body), latest.body) &&
+      // Symmetric validation: parse both sides through the Inkling schema
+      // before comparing fingerprints. The service layer
+      // (`canonicalizeBodyOrThrow`) already canonicalises + validates, so
+      // in the normal path this re-parse is a cheap no-op — but it closes
+      // the asymmetric-cast gap (the previous code cast `input.body` via
+      // `unsafeCast` while `latest.body` was implicitly parsed inside
+      // `inklingDocumentFingerprint`). A future caller that bypasses the
+      // service layer (e.g. a batch restore path) will now hit a clean
+      // `BAD_REQUEST` here rather than a ZodError thrown mid-transaction.
+      isInklingDocumentEquivalentTo(input.body, latest.body) &&
       isDeepStrictEqual(input.imageSources, latest.imageSources) &&
       isDeepStrictEqual(input.headings, latest.headings)
     ) {

@@ -1,4 +1,3 @@
-/* oxlint-disable typescript/no-unsafe-type-assertion */
 import type { Config as ReactRouterConfig } from '@react-router/dev/config'
 import type { IncomingMessage, ServerResponse } from 'node:http'
 import type { Plugin, UserConfig, ViteDevServer } from 'vite'
@@ -8,6 +7,7 @@ import nodeAdapter from '@hono/vite-dev-server/node'
 import fs from 'node:fs'
 import path from 'node:path'
 
+import { unsafeCast } from '../../../shared/utils/unsafe-cast'
 import { setViteDevServer } from './dev-server-ref'
 
 interface ReactRouterHonoServerEnv {
@@ -84,7 +84,9 @@ export function reactRouterHonoServer(options: ReactRouterHonoServerPluginOption
         return
       }
 
-      const isEnvironmentApiEnabled = (pluginConfig.future as { v8_viteEnvironmentApi?: boolean }).v8_viteEnvironmentApi
+      const isEnvironmentApiEnabled = unsafeCast<{ v8_viteEnvironmentApi?: boolean }>(
+        pluginConfig.future,
+      ).v8_viteEnvironmentApi
 
       const serverEntryPoint = pluginConfig.serverEntryPoint
 
@@ -115,7 +117,7 @@ export function reactRouterHonoServer(options: ReactRouterHonoServerPluginOption
             input: serverEntryPoint,
             output: {
               entryFileNames: (chunk) => {
-                ;(chunk as { facadeModuleId?: string }).facadeModuleId = REACT_ROUTER_SERVER_BUILD_MODULE_ID
+                unsafeCast<{ facadeModuleId?: string }>(chunk).facadeModuleId = REACT_ROUTER_SERVER_BUILD_MODULE_ID
                 return 'index.js'
               },
               chunkFileNames: (chunk) => {
@@ -138,7 +140,7 @@ export function reactRouterHonoServer(options: ReactRouterHonoServerPluginOption
         return {
           ...baseConfig,
           environments: {
-            ssr: ssrConfig as UserConfig['environments'] extends Record<string, infer V> ? V : never,
+            ssr: unsafeCast<UserConfig['environments'] extends Record<string, infer V> ? V : never>(ssrConfig),
           },
         }
       }
@@ -203,7 +205,7 @@ export function reactRouterHonoServer(options: ReactRouterHonoServerPluginOption
       })
 
       if (typeof devServerPlugin.configureServer === 'function') {
-        await (devServerPlugin.configureServer as (server: ViteDevServer) => void | Promise<void>)(server)
+        await unsafeCast<(server: ViteDevServer) => void | Promise<void>>(devServerPlugin.configureServer)(server)
       } else {
         process.stderr.write(
           'Dev server plugin configureServer hook is not a function. This is likely a bug, I guess 😅\n',
@@ -227,8 +229,9 @@ function resolvePluginConfig(config: UserConfig, options: ReactRouterHonoServerP
     return null
   }
 
-  const { reactRouterConfig, environmentBuildContext, rootDirectory } =
-    config.__reactRouterPluginContext as ReactRouterPluginContext
+  const { reactRouterConfig, environmentBuildContext, rootDirectory } = unsafeCast<ReactRouterPluginContext>(
+    config.__reactRouterPluginContext,
+  )
   const buildDirectory = path.relative(rootDirectory, reactRouterConfig.buildDirectory)
   const appDirectory = path.relative(rootDirectory, reactRouterConfig.appDirectory)
   const isSsrBuild = environmentBuildContext?.name === 'ssr'

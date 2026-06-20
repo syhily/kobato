@@ -107,7 +107,11 @@ function strategyToConfig(strategy: SafeHtmlStrategy): IOptions {
           'menclose',
           'semantics',
           'annotation',
-          'annotation-xml',
+          // NOTE: `annotation-xml` is intentionally excluded. See
+          // `server/render/inkling/sanitize.ts` for the full rationale —
+          // `<annotation-xml encoding="text/html">` is the canonical
+          // mutation-XSS / namespace-switching vector. KaTeX (`trust:false`)
+          // does not emit it for rendering.
         ],
         allowedAttributes: {
           '*': [

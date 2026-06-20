@@ -39,6 +39,13 @@ export interface InklingFootnoteContextValue {
    *  decision: auto-delete orphans). Returns the survivor count so the caller
    *  can decide whether to re-render. */
   removeOrphans: (refs: readonly InklingFootnoteRefEntry[]) => number
+  /** Re-derive 1-based indices on the provider's parallel definition state
+   *  from the first-reference order in `refs`. Called by the editor update
+   *  listener alongside the in-tree ref renumber so the two stay in sync —
+   *  otherwise the projected signature never matches the actual state and
+   *  the listener re-fires on every keystroke. Definitions with no matching
+   *  ref are preserved at the tail (the dialog may be editing one). */
+  renumberDefinitions: (refs: readonly InklingFootnoteRefEntry[]) => void
 }
 
 const InklingFootnoteContext = createContext<InklingFootnoteContextValue | null>(null)
@@ -84,7 +91,7 @@ const EMPTY_PARAGRAPH: InklingNonRecursiveBlockNode = {
  * state rather than a full InklingDocument. Indices on the refs themselves are
  * the editor listener's responsibility (it rewrites them in the Lexical tree).
  */
-function renumberDefinitions(
+function renumberDefinitionsImpl(
   definitions: readonly FootnoteDefinitionItem[],
   refs: readonly InklingFootnoteRefEntry[],
 ): FootnoteDefinitionItem[] {
@@ -195,6 +202,19 @@ export function InklingFootnoteProvider({ children, initialDefinitions = [] }: I
     [setDefinitions],
   )
 
+  const renumberDefinitions = useCallback(
+    (refs: readonly InklingFootnoteRefEntry[]): void => {
+      setDefinitions((prev) => {
+        const renumbered = renumberDefinitionsImpl(prev, refs)
+        const indicesChanged = renumbered.some(
+          (d, i) => prev[i]?.index !== d.index || prev[i]?.targetKey !== d.targetKey,
+        )
+        return indicesChanged ? renumbered : prev
+      })
+    },
+    [setDefinitions],
+  )
+
   const removeOrphans = useCallback(
     (refs: readonly InklingFootnoteRefEntry[]) => {
       const referenced = new Set(refs.map((r) => r.targetKey))
@@ -211,14 +231,14 @@ export function InklingFootnoteProvider({ children, initialDefinitions = [] }: I
           // No orphans — but indices may still need refreshing. Only return a
           // new array if a renumber actually changes something, otherwise bail
           // with the original reference so React skips the re-render.
-          const renumbered = renumberDefinitions(prev, refs)
+          const renumbered = renumberDefinitionsImpl(prev, refs)
           const indicesChanged = renumbered.some(
             (d, i) => prev[i]?.index !== d.index || prev[i]?.targetKey !== d.targetKey,
           )
           return indicesChanged ? renumbered : prev
         }
         // Renumber survivors by first-ref order.
-        return renumberDefinitions(next, refs)
+        return renumberDefinitionsImpl(next, refs)
       })
       return removed
     },
@@ -242,6 +262,7 @@ export function InklingFootnoteProvider({ children, initialDefinitions = [] }: I
       replaceDefinition,
       removeDefinition,
       removeOrphans,
+      renumberDefinitions,
     }),
     [
       definitions,
@@ -257,6 +278,7 @@ export function InklingFootnoteProvider({ children, initialDefinitions = [] }: I
       replaceDefinition,
       removeDefinition,
       removeOrphans,
+      renumberDefinitions,
     ],
   )
 

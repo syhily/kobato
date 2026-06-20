@@ -27,9 +27,19 @@ describe('content/projection-helpers — readBody', () => {
     expect(result).toEqual(body)
   })
 
-  it('throws for an invalid non-object value (defensive read path)', () => {
-    // validateInklingDocument throws ZodError for non-object input
-    expect(() => readBody('not an object')).toThrow()
+  it('falls back to an empty document for an invalid non-object value (legacy/malformed read path)', () => {
+    // During the PT→Inkling migration window, the read path must not 500 on
+    // a legacy or malformed body — it returns an empty document so the page
+    // still renders and the body can be migrated separately.
+    expect(readBody('not an object')).toEqual(emptyInklingDocument())
+  })
+
+  it('falls back to an empty document for a legacy PT-shaped value', () => {
+    // Legacy PortableText body (array of blocks) must not crash the read
+    // path; it falls back to an empty Inkling document.
+    expect(readBody([{ _type: 'block', _key: 'b1', style: 'normal', children: [], markDefs: [] }])).toEqual(
+      emptyInklingDocument(),
+    )
   })
 })
 

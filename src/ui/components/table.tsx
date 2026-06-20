@@ -3,12 +3,24 @@ import type { ComponentProps } from 'react'
 import { cn } from '@/ui/lib/cn'
 
 function Table({ className, ...props }: ComponentProps<'table'>) {
+  // Block-level disable: the formatter breaks the opening tag across
+  // multiple lines, which would defeat `oxlint-disable-next-line` (the
+  // violation lands on the `tabIndex={0}` line, not the `<div` line).
+  // The region role + tabIndex is intentional: it makes horizontally
+  // scrollable tables keyboard-accessible.
+  /* oxlint-disable jsx-a11y/no-noninteractive-tabindex */
   return (
-    // oxlint-disable-next-line jsx-a11y/no-noninteractive-tabindex -- intentional: makes horizontally scrollable tables keyboard-accessible
-    <div data-slot="table-container" className="relative w-full overflow-x-auto" tabIndex={0} aria-label="数据表格">
+    <div
+      data-slot="table-container"
+      className="relative w-full overflow-x-auto"
+      role="region"
+      tabIndex={0}
+      aria-label="数据表格"
+    >
       <table data-slot="table" className={cn('w-full caption-bottom text-sm', className)} {...props} />
     </div>
   )
+  /* oxlint-enable jsx-a11y/no-noninteractive-tabindex */
 }
 
 function TableHeader({ className, ...props }: ComponentProps<'thead'>) {

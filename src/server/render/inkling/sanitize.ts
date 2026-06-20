@@ -91,7 +91,15 @@ export function sanitizeMathml(html: string): string {
       'menclose',
       'semantics',
       'annotation',
-      'annotation-xml',
+      // NOTE: `annotation-xml` is intentionally excluded from the allow-list.
+      // `<annotation-xml encoding="text/html">` is the canonical mutation-XSS
+      // / namespace-switching vector used to break out of MathML into the
+      // HTML namespace and smuggle `<script>` or event handlers (this is why
+      // DOMPurify special-cases it). KaTeX's own MathML output (generated
+      // with `trust: false`) does not need `annotation-xml` for rendering —
+      // it only carries a hidden TeX source annotation. Dropping the tag
+      // entirely closes the mXSS vector regardless of what an
+      // attacker-controlled TeX payload produces.
       'span',
       'div',
     ],

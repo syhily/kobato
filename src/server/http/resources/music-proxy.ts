@@ -1,5 +1,3 @@
-/* oxlint-disable typescript/no-unsafe-type-assertion */
-
 import type { ContentfulStatusCode } from 'hono/utils/http-status'
 
 import { Hono } from 'hono'
@@ -10,6 +8,7 @@ import type { MetingSource } from '@/shared/types/music'
 import { getProvider } from '@/server/domains/music/providers/registry'
 import { ActionFailure } from '@/server/infra/http/errors'
 import { hasAtLeast } from '@/shared/utils/roles'
+import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
 const SOURCE_REFERERS: Record<MetingSource, string> = {
   netease: 'https://music.163.com/',
@@ -70,12 +69,12 @@ function parseProxyParams(c: { req: { query: (k: string) => string | undefined }
       headers: { 'Content-Type': 'application/json' },
     })
   }
-  return { source: source as MetingSource, sourceId }
+  return { source: unsafeCast<MetingSource>(source), sourceId }
 }
 
 function handleError(err: unknown) {
   const message = err instanceof ActionFailure ? err.message : 'Upstream error'
-  const status = (err instanceof ActionFailure ? err.status : 502) as ContentfulStatusCode
+  const status = unsafeCast<ContentfulStatusCode>(err instanceof ActionFailure ? err.status : 502)
   return { error: message, status }
 }
 

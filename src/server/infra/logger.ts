@@ -1,4 +1,3 @@
-/* oxlint-disable typescript/no-unsafe-type-assertion */
 // Structured JSON logger backed by pino. The public API (Logger interface,
 // getLogger, logger singleton) is the only stable surface — consumers never
 // touch pino directly, so the underlying transport can be swapped without
@@ -19,6 +18,7 @@ import { Writable } from 'node:stream'
 import pino from 'pino'
 
 import { LOG_LEVEL } from '@/server/infra/env'
+import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
 type Level = NonNullable<typeof LOG_LEVEL>
 
@@ -26,7 +26,7 @@ function resolveLevel(): Level {
   if (LOG_LEVEL) {
     return LOG_LEVEL
   }
-  const meta = (import.meta as { env?: { PROD?: boolean } }).env
+  const meta = unsafeCast<{ env?: { PROD?: boolean } }>(import.meta).env
   return meta?.PROD === true ? 'info' : 'debug'
 }
 
@@ -72,7 +72,7 @@ function serializeError(err: Error): Record<string, unknown> {
   if (err.stack) {
     out.stack = err.stack
   }
-  const cause = (err as Error & { cause?: unknown }).cause
+  const cause = unsafeCast<Error & { cause?: unknown }>(err).cause
   if (cause !== undefined) {
     out.cause = cause instanceof Error ? serializeError(cause) : cause
   }
@@ -93,13 +93,13 @@ function applyPrivacyTagsRecursive(context: LogContext): LogContext {
     } else if (Array.isArray(value)) {
       tagged[key] = value.map((item) =>
         typeof item === 'object' && item !== null && !(item instanceof Error)
-          ? applyPrivacyTagsRecursive(item as LogContext)
+          ? applyPrivacyTagsRecursive(unsafeCast<LogContext>(item))
           : L3_KEYS.has(key)
             ? tagL3(item)
             : item,
-      )
+      ) satisfies LogContext[keyof LogContext][]
     } else if (typeof value === 'object' && value !== null) {
-      tagged[key] = applyPrivacyTagsRecursive(value as LogContext)
+      tagged[key] = applyPrivacyTagsRecursive(unsafeCast<LogContext>(value))
     } else {
       tagged[key] = L3_KEYS.has(key) ? tagL3(value) : value
     }

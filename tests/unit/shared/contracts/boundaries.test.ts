@@ -505,6 +505,21 @@ describe('contract: module and bundle boundaries', () => {
         specifier: '../../shared/constants/route-warmup',
       },
       {
+        // Config-graph file (loaded by vite.config.ts): same alias caveat
+        // as above. `unsafeCast` is needed because the Vite dev-server types
+        // are structurally compatible but not declared as our domain type.
+        key: 'dev.ts -> ../../../shared/utils/unsafe-cast',
+        file: 'src/server/infra/hono/dev.ts',
+        specifier: '../../../shared/utils/unsafe-cast',
+      },
+      {
+        // Config-graph file (loaded by vite.config.ts): same alias caveat.
+        // `unsafeCast` is used on the parsed route manifest / Vite internals.
+        key: 'route-warmup.ts -> ../../shared/utils/unsafe-cast',
+        file: 'src/server/infra/route-warmup.ts',
+        specifier: '../../shared/utils/unsafe-cast',
+      },
+      {
         key: 'LazyCommentBodyEditor.tsx -> ./CommentBodyEditor',
         file: 'src/ui/public/comments/LazyCommentBodyEditor.tsx',
         specifier: './CommentBodyEditor',

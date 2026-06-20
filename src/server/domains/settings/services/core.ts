@@ -1,4 +1,3 @@
-/* oxlint-disable typescript/no-unsafe-type-assertion */
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 import type { Pool } from 'pg'
 
@@ -60,7 +59,7 @@ export async function updateBlogSettingsSection<S extends SettingsSection>(
     )
   }
   if (section === 'security') {
-    const securityPayload = parsed.data as { otp?: { enabled?: boolean }; passkey?: { enabled?: boolean } }
+    const securityPayload = unsafeCast<{ otp?: { enabled?: boolean }; passkey?: { enabled?: boolean } }>(parsed.data)
     if (securityPayload.otp?.enabled) {
       const bundle = getBlogSettingsBundleSync()
       const mail = bundle?.mail?.mail
@@ -129,13 +128,13 @@ export function computeSecretMasks(bundle: BlogSettingsBundle): SecretMasks {
 }
 
 export function redactSecretsFromBundle(bundle: BlogSettingsBundle): BlogSettingsBundle {
-  const clone = { ...bundle } as Record<string, unknown>
+  const clone = unsafeCast<Record<string, unknown>>({ ...bundle })
   for (const { bundleKey, path, field } of SECRET_FIELDS) {
-    const section = clone[bundleKey] as Record<string, unknown> | null
+    const section = unsafeCast<Record<string, unknown> | null>(clone[bundleKey])
     if (section === null) {
       continue
     }
-    const bucket = section[path] as Record<string, unknown> | undefined
+    const bucket = unsafeCast<Record<string, unknown> | undefined>(section[path])
     if (bucket && typeof bucket[field] === 'string' && bucket[field] !== '') {
       clone[bundleKey] = {
         ...section,
@@ -151,7 +150,7 @@ async function applySectionPatch(
   section: SettingsSection,
   validated: unknown,
 ): Promise<Record<string, unknown>> {
-  let row = validated as Record<string, unknown>
+  let row = unsafeCast<Record<string, unknown>>(validated)
   const secretConfigs = SECRET_FIELDS.filter((f) => f.section === section)
   if (secretConfigs.length > 0) {
     // Only hit the DB when at least one secret is missing from the
@@ -174,7 +173,7 @@ async function applySectionPatch(
 }
 
 function hasSecretInRow(row: Record<string, unknown>, payloadPath: string, secretKey: string): boolean {
-  const bucket = row[payloadPath] as Record<string, unknown> | undefined
+  const bucket = unsafeCast<Record<string, unknown> | undefined>(row[payloadPath])
   return bucket !== undefined && secretKey in bucket && bucket[secretKey] !== undefined
 }
 
@@ -183,10 +182,10 @@ async function preserveBrandingOnPatch(
   row: Record<string, unknown>,
 ): Promise<Record<string, unknown>> {
   const existingRow = await findSettingByScope(db, SECTION_REGISTRY.assets.scope)
-  const existingBranding = (existingRow?.data as Record<string, unknown> | undefined)?.branding as
-    | Record<string, unknown>
-    | undefined
-  const incomingBranding = row.branding as Record<string, unknown> | undefined
+  const existingBranding = unsafeCast<Record<string, unknown> | undefined>(
+    unsafeCast<Record<string, unknown> | undefined>(existingRow?.data)?.branding,
+  )
+  const incomingBranding = unsafeCast<Record<string, unknown> | undefined>(row.branding)
   if (existingBranding === undefined && incomingBranding === undefined) {
     return row
   }
@@ -200,15 +199,15 @@ function preserveSecretOnPatch(
   payloadPath: string,
   secretKey: string,
 ): Record<string, unknown> {
-  const record = validated as Record<string, unknown>
-  const incoming = (record[payloadPath] as Record<string, unknown>) ?? {}
+  const record = unsafeCast<Record<string, unknown>>(validated)
+  const incoming = unsafeCast<Record<string, unknown>>(record[payloadPath]) ?? {}
   if (secretKey in incoming && incoming[secretKey] !== undefined) {
     return record
   }
 
-  const existingPayload = (existingRow?.data as Record<string, unknown> | undefined)?.[payloadPath] as
-    | Record<string, unknown>
-    | undefined
+  const existingPayload = unsafeCast<Record<string, unknown> | undefined>(
+    unsafeCast<Record<string, unknown> | undefined>(existingRow?.data)?.[payloadPath],
+  )
 
   // Pass the existing ciphertext through unchanged. encryptSecretsInRow
   // recognises the encrypted prefix and skips re-encryption.
@@ -224,7 +223,7 @@ function encryptSecretsInRow(section: SettingsSection, row: Record<string, unkno
   }
   const next: Record<string, unknown> = { ...row }
   for (const config of configs) {
-    const bucket = next[config.path] as Record<string, unknown> | undefined
+    const bucket = unsafeCast<Record<string, unknown> | undefined>(next[config.path])
     if (!bucket) {
       continue
     }

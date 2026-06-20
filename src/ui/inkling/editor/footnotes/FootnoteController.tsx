@@ -90,20 +90,26 @@ export function FootnoteController() {
     closeDialog,
     replaceDefinition,
     removeDefinition,
+    renumberDefinitions,
   } = useInklingFootnotes()
 
   // Re-entrancy guard: the renumber update re-fires this listener, so without
   // a guard we'd loop. Mirrors the Tiptap-era `isSyncingFootnotesRef` pattern.
   const isSyncingRef = useRef(false)
-  // Last-seen signature. When an editor update produces the same signature
+  // Last-seen signature. When an editor-update produces the same signature
   // we skip renumber entirely — this bounds the loop to one extra update.
+  // The signature includes BOTH ref indices and definition indices, so once
+  // the provider's parallel definition state is renumbered to match the
+  // in-tree ref indices, the next listener fire matches and short-circuits.
   const lastSignatureRef = useRef<string>('')
 
   // Core footnote lifecycle hook. Fires on every editor update:
   //   1. Read refs from the editor tree.
-  //   2. Drop orphan definitions from provider state (auto-cleanup per §6.3).
-  //   3. Compute a signature; if it changed, dispatch a history-merged
-  //      renumber so ref indices follow first-reference order.
+  //   2. Compute a signature covering refs + provider definitions; if it
+  //      changed, renumber BOTH the in-tree refs (history-merged) and the
+  //      provider's definition indices so the two stay in sync.
+  //   3. The next listener fire (with corrected indices on both sides)
+  //      matches the stored signature and short-circuits.
   useEffect(() => {
     if (editor === null) {
       return undefined
@@ -128,11 +134,11 @@ export function FootnoteController() {
         return
       }
 
-      // Compute the signature we expect AFTER renumber lands. The renumber
-      // rewrites ref `index` fields to match `buildFootnoteIndexMap`; we store
-      // that projected signature so the next listener fire (with the corrected
-      // indices) matches and short-circuits — otherwise we'd renumber again
-      // on the very next keystroke.
+      // Compute the signature we expect AFTER renumber lands. Both the
+      // in-tree refs and the provider definitions will be rewritten to
+      // match `buildFootnoteIndexMap`, so we store the projected signature
+      // (using that same index map on both sides) so the next listener fire
+      // matches and short-circuits.
       const indexMap = buildFootnoteIndexMap(refs, currentDefinitions)
       const projectedRefs = refs.map((r) => ({ ...r, index: indexMap.get(r.targetKey) ?? r.index }))
       const projectedDefinitions = currentDefinitions.map((d) => ({
@@ -140,6 +146,13 @@ export function FootnoteController() {
         index: indexMap.get(d.targetKey) ?? d.index,
       }))
       lastSignatureRef.current = footnoteSyncSignature(projectedRefs, projectedDefinitions)
+
+      // Renumber the provider's parallel definition state so it agrees with
+      // the in-tree ref indices. Without this, the projected signature would
+      // never match the actual state on the next fire and we'd renumber
+      // (no-op for refs but still a discrete history-merged update) on every
+      // keystroke for the life of the editor session.
+      renumberDefinitions(refs)
 
       isSyncingRef.current = true
       try {
@@ -152,7 +165,7 @@ export function FootnoteController() {
         })
       }
     })
-  }, [editor, getDefinitions])
+  }, [editor, getDefinitions, renumberDefinitions])
 
   // `^<space>` trigger. Suppressed while the dialog is open so typing `^ `
   // inside the footnote body editor doesn't reopen an insert dialog.

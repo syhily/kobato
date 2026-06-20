@@ -284,7 +284,13 @@ function $selectPreviousCardFromEmptyParagraph(): boolean {
   if (previous === null || !$isBlockCardNode(previous)) {
     return false
   }
-  previous.selectPrevious()
+  // Select the card itself (NodeSelection) rather than calling the base
+  // `selectPrevious()`, which would move the caret to the node's previous
+  // sibling — i.e. navigate past the card instead of selecting it. This
+  // makes Backspace from an empty paragraph adjacent to a card select the
+  // card (so a second Backspace deletes it), matching the function name
+  // and the docstring above. Same primitive used by `$deleteSelectedDecorator`.
+  $selectNode(previous)
   return true
 }
 
@@ -313,7 +319,9 @@ function $selectNextCardFromEmptyParagraph(): boolean {
   if (next === null || !$isBlockCardNode(next)) {
     return false
   }
-  next.selectPrevious()
+  // See `$selectPreviousCardFromEmptyParagraph` — `selectPrevious()` would
+  // move the caret rather than entering NodeSelection on the card.
+  $selectNode(next)
   return true
 }
 

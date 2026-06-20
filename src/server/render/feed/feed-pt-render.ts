@@ -1,4 +1,3 @@
-/* oxlint-disable typescript/no-unsafe-assignment, typescript/no-unsafe-argument, typescript/no-unsafe-member-access, typescript/no-unsafe-return, typescript/no-unsafe-type-assertion */
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
 import { toHTML, type PortableTextComponents } from '@portabletext/to-html'
@@ -24,6 +23,7 @@ import { requireBlogSettingsSection } from '@/shared/config/getters'
 import { collectHeadingSlotsInPortableTextRenderOrder } from '@/shared/pt/utils'
 import { resolveFootnotesSectionTitle } from '@/shared/utils/footnotes-section-title'
 import { escapeHtml } from '@/shared/utils/security'
+import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
 export interface RenderPortableTextToHtmlOptions {
   rssMode?: boolean
@@ -48,7 +48,7 @@ export async function renderPortableTextToHtml(
 
   const components = buildPortableTextComponents({ headingIdByBlockKey, isRss, musicByPlayerId })
 
-  let html = toHTML(inlineBody as PortableTextBlock[], { components })
+  let html = toHTML(unsafeCast<PortableTextBlock[]>(inlineBody), { components })
 
   if (footnotes.length > 0) {
     html += renderFootnotesSection(footnotes, footnotesSectionTitle, components)
@@ -142,19 +142,19 @@ function buildPortableTextComponents(ctx: ComponentContext): PortableTextCompone
   return {
     block: {
       h1: ({ children, value }) => {
-        const id = ctx.headingIdByBlockKey.get((value as TextBlock)._key) ?? ''
+        const id = ctx.headingIdByBlockKey.get(unsafeCast<TextBlock>(value)._key) ?? ''
         return `<h1 id="${escapeHtml(id)}">${children}</h1>`
       },
       h2: ({ children, value }) => {
-        const id = ctx.headingIdByBlockKey.get((value as TextBlock)._key) ?? ''
+        const id = ctx.headingIdByBlockKey.get(unsafeCast<TextBlock>(value)._key) ?? ''
         return `<h2 id="${escapeHtml(id)}">${children}</h2>`
       },
       h3: ({ children, value }) => {
-        const id = ctx.headingIdByBlockKey.get((value as TextBlock)._key) ?? ''
+        const id = ctx.headingIdByBlockKey.get(unsafeCast<TextBlock>(value)._key) ?? ''
         return `<h3 id="${escapeHtml(id)}">${children}</h3>`
       },
       h4: ({ children, value }) => {
-        const id = ctx.headingIdByBlockKey.get((value as TextBlock)._key) ?? ''
+        const id = ctx.headingIdByBlockKey.get(unsafeCast<TextBlock>(value)._key) ?? ''
         return `<h4 id="${escapeHtml(id)}">${children}</h4>`
       },
       normal: ({ children }) => `<p>${children}</p>`,
@@ -203,25 +203,25 @@ function buildPortableTextComponents(ctx: ComponentContext): PortableTextCompone
       },
     },
     types: {
-      image: ({ value }) => renderImageBlock(value as ImageBlock),
-      code: ({ value }) => renderCodeBlock(value as CodeBlock, ctx.isRss),
-      mathBlock: ({ value }) => renderMathBlock(value as MathBlock, ctx.isRss),
+      image: ({ value }) => renderImageBlock(unsafeCast<ImageBlock>(value)),
+      code: ({ value }) => renderCodeBlock(unsafeCast<CodeBlock>(value), ctx.isRss),
+      mathBlock: ({ value }) => renderMathBlock(unsafeCast<MathBlock>(value), ctx.isRss),
       horizontalRule: () => '<hr />',
-      musicPlayer: ({ value }) => renderMusicPlayer(value as MusicPlayerBlock, ctx),
+      musicPlayer: ({ value }) => renderMusicPlayer(unsafeCast<MusicPlayerBlock>(value), ctx),
       solution: ({ value }) => {
-        const children = (value as SolutionBlock).children
-        return toHTML(children as PortableTextBlock[], { components: buildPortableTextComponents(ctx) })
+        const children = unsafeCast<SolutionBlock>(value).children
+        return toHTML(unsafeCast<PortableTextBlock[]>(children), { components: buildPortableTextComponents(ctx) })
       },
       twoColumn: ({ value }) => {
-        const v = value as TwoColumnBlock
-        const left = toHTML(v.left as PortableTextBlock[], { components: buildPortableTextComponents(ctx) })
-        const right = toHTML(v.right as PortableTextBlock[], { components: buildPortableTextComponents(ctx) })
+        const v = unsafeCast<TwoColumnBlock>(value)
+        const left = toHTML(unsafeCast<PortableTextBlock[]>(v.left), { components: buildPortableTextComponents(ctx) })
+        const right = toHTML(unsafeCast<PortableTextBlock[]>(v.right), { components: buildPortableTextComponents(ctx) })
         if (ctx.isRss) {
           return left + right
         }
         return `<div>${left}${right}</div>`
       },
-      table: ({ value }) => renderTableBlock(value as TableBlock, ctx.isRss),
+      table: ({ value }) => renderTableBlock(unsafeCast<TableBlock>(value), ctx.isRss),
     },
     hardBreak: () => '<br />',
     unknownType: () => '',
@@ -429,7 +429,7 @@ function renderFootnotesSection(
   html += '<ol>'
   for (const def of definitions) {
     const anchorId = `user-content-fn-${def.index}`
-    const childrenHtml = toHTML(def.children as PortableTextBlock[], { components })
+    const childrenHtml = toHTML(unsafeCast<PortableTextBlock[]>(def.children), { components })
     html += `<li id="${anchorId}">${childrenHtml}<p><a href="#user-content-fnref-${def.index}" data-footnote-backref="" aria-label="返回引用">↩</a></p></li>`
   }
   html += '</ol></section>'

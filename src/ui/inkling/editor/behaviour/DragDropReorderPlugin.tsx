@@ -23,7 +23,7 @@ import { useEffect } from 'react'
  * attribute on its DOM wrapper.  The CardShell in card-components
  * already sets `data-inkling-card-selected`.
  */
-export function useInklingDragDropReorder(editor: LexicalEditor): void {
+export function useInklingDragDropReorder(editor: LexicalEditor | null): void {
   useEffect(() => {
     if (editor === null) {
       return undefined

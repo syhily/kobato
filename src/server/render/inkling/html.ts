@@ -273,6 +273,17 @@ function renderImageBlockHtml(node: {
   return `<figure><img src="${src}"${alt}${width}${height} />${caption}</figure>`
 }
 
+/**
+ * Escape `]]>` sequences in a string so it can be safely wrapped in an RSS
+ * CDATA section. A literal `]]>` would prematurely terminate the section and
+ * the remainder would be parsed as RSS XML — a potential parse-corruption /
+ * injection vector. The standard fix is to split the terminator across two
+ * CDATA sections: `]]>` becomes `]]]]><![CDATA[>`.
+ */
+function escapeCdataTerminator(value: string): string {
+  return value.replaceAll(']]>', ']]]]><![CDATA[>')
+}
+
 function renderCodeBlockHtml(
   node: { code: string; language?: string; highlightedHtml?: string },
   isRss: boolean,
@@ -282,9 +293,8 @@ function renderCodeBlockHtml(
   const dataLang =
     node.language !== undefined && node.language !== '' ? ` data-language="${escapeHtml(node.language)}"` : ''
   if (node.highlightedHtml !== undefined && node.highlightedHtml !== '') {
-    const inner = isRss
-      ? `<![CDATA[${sanitizeShikiHtml(node.highlightedHtml)}]]>`
-      : sanitizeShikiHtml(node.highlightedHtml)
+    const sanitized = sanitizeShikiHtml(node.highlightedHtml)
+    const inner = isRss ? `<![CDATA[${escapeCdataTerminator(sanitized)}]]>` : sanitized
     return `<pre><code${langClass}${dataLang}>${inner}</code></pre>`
   }
   return `<pre><code${langClass}${dataLang}>${escapeHtml(node.code)}</code></pre>`

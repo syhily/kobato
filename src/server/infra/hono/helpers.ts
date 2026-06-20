@@ -43,8 +43,7 @@ export function bindIncomingRequestSocketInfo() {
  * Import React Router server build
  */
 export async function importBuild(): Promise<ServerBuild> {
-  // oxlint-disable-next-line typescript/return-await
-  return await import('virtual:react-router/server-build')
+  return import('virtual:react-router/server-build')
 }
 
 /**

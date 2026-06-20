@@ -75,5 +75,3 @@ export function registerInklingDocumentTransforms(editor: LexicalEditor): () => 
     }
   }
 }
-
-export { $isListNode, ListNode }

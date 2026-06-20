@@ -1,6 +1,7 @@
-/* oxlint-disable typescript/no-unsafe-type-assertion */
 import process from 'node:process'
 import { z } from 'zod'
+
+import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
 // Minimal t3-env replacement — Zod-only, server-only
 
@@ -29,13 +30,13 @@ export function createEnv<TServer extends ServerSchema>(opts: CreateEnvOptions<T
   if (opts.emptyStringAsUndefined) {
     for (const [key, value] of Object.entries(runtimeEnv)) {
       if (value === '') {
-        delete (runtimeEnv as Record<string, unknown>)[key]
+        delete unsafeCast<Record<string, unknown>>(runtimeEnv)[key]
       }
     }
   }
 
   if (opts.skipValidation) {
-    return runtimeEnv as InferOutput<TServer>
+    return unsafeCast<InferOutput<TServer>>(runtimeEnv)
   }
 
   const result: Record<string, unknown> = {}
@@ -71,7 +72,7 @@ export function createEnv<TServer extends ServerSchema>(opts: CreateEnvOptions<T
     return onValidationError(issues)
   }
 
-  return result as InferOutput<TServer>
+  return unsafeCast<InferOutput<TServer>>(result)
 }
 
 // Project environment schema

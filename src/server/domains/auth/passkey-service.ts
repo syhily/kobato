@@ -1,4 +1,3 @@
-/* oxlint-disable typescript/no-unsafe-type-assertion */
 import type {
   AuthenticationResponseJSON,
   PublicKeyCredentialCreationOptionsJSON,
@@ -26,6 +25,7 @@ import { getLogger } from '@/server/infra/logger'
 import { redisInstance } from '@/server/infra/redis/storage'
 import { requireBlogSettingsBundle } from '@/shared/config/getters'
 import { isValidPasskeyDomain, tryParseUrl } from '@/shared/utils/safe-url'
+import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
 const log = getLogger('auth.passkey')
 
@@ -65,11 +65,11 @@ async function consumeChallenge(prefix: string, challenge: string): Promise<Reco
   try {
     // EVAL script numkeys key — traditional syntax is portable across
     // ioredis versions and test mocks.
-    const raw = (await redis.eval(CONSUME_CHALLENGE_LUA, 1, key)) as string | null
+    const raw = unsafeCast<string | null>(await redis.eval(CONSUME_CHALLENGE_LUA, 1, key))
     if (!raw) {
       return null
     }
-    return JSON.parse(raw) as Record<string, unknown>
+    return unsafeCast<Record<string, unknown>>(JSON.parse(raw))
   } catch (error) {
     log.error('Redis EVAL failed while consuming passkey challenge', { key, error })
     return null
@@ -105,7 +105,7 @@ export async function generateRegistrationOptions(
     },
     excludeCredentials: existing.map((c) => ({
       id: c.credentialId,
-      transports: (c.transports as ('ble' | 'hybrid' | 'internal' | 'nfc' | 'usb')[] | undefined) ?? [],
+      transports: unsafeCast<('ble' | 'hybrid' | 'internal' | 'nfc' | 'usb')[] | undefined>(c.transports) ?? [],
     })),
   })
 
@@ -159,7 +159,7 @@ export async function verifyRegistrationResponse(
         credentialId: credential.id,
         publicKey: Buffer.from(credential.publicKey),
         counter: Number(credential.counter),
-        transports: (credential.transports as string[] | undefined) ?? [],
+        transports: unsafeCast<string[] | undefined>(credential.transports) ?? [],
         deviceName: input.deviceName ?? null,
         backedUp: verification.registrationInfo.credentialBackedUp ?? false,
       })
@@ -201,7 +201,7 @@ export async function generateAuthenticationOptions(
         .where(eq(passkeyCredential.userId, targetUser.id))
       allowCredentials = creds.map((c) => ({
         id: c.credentialId,
-        transports: (c.transports as ('ble' | 'hybrid' | 'internal' | 'nfc' | 'usb')[] | undefined) ?? [],
+        transports: unsafeCast<('ble' | 'hybrid' | 'internal' | 'nfc' | 'usb')[] | undefined>(c.transports) ?? [],
       }))
     }
   }
@@ -256,7 +256,7 @@ export async function verifyAuthenticationResponse(
       id: cred.credentialId,
       publicKey: new Uint8Array(cred.publicKey),
       counter: cred.counter,
-      transports: (cred.transports as ('ble' | 'hybrid' | 'internal' | 'nfc' | 'usb')[] | undefined) ?? [],
+      transports: unsafeCast<('ble' | 'hybrid' | 'internal' | 'nfc' | 'usb')[] | undefined>(cred.transports) ?? [],
     },
     requireUserVerification: true,
   })
@@ -279,7 +279,7 @@ export async function verifyAuthenticationResponse(
 
   // Return SafeUser shape
   const { password: _p, lastIp: _li, lastUa: _lu, ...safeUser } = dbUser
-  return { user: safeUser as SafeUser, authMethod: 'passkey' }
+  return { user: unsafeCast<SafeUser>(safeUser), authMethod: 'passkey' }
 }
 
 // ─── Credential management ─────────────────────────────────

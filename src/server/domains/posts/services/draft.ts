@@ -123,17 +123,16 @@ async function savePostBodyInternal(
     await invalidateSearchCache().catch((err: unknown) => {
       log.warn('invalidate search cache failed', { postId: input.postId, error: err })
     })
-    const publishedRevision = await findContentById(db, result.row.id)
-    if (publishedRevision !== null) {
-      const postMeta = await findPostMetaById(db, input.postId)
-      if (postMeta !== null) {
-        try {
-          await indexPost(db, postMeta.id, postMeta.title, postMeta.summary, publishedRevision.body)
-        } catch (err: unknown) {
-          log.warn('index post failed', { postId: postMeta.id, error: err })
-          warnings.push('搜索索引更新失败，该文章可能不会出现在搜索结果中。')
-        }
-      }
+    // Index the canonical body we already have in scope rather than
+    // re-reading the row from the DB. The in-scope `body` is freshly
+    // canonicalized + prerendered, so it is guaranteed to match the
+    // published HTML. Re-reading the row would reintroduce a validation
+    // gap (raw JSONB typed as InklingDocument) and cost an extra round-trip.
+    try {
+      await indexPost(db, meta.id, meta.title, meta.summary, body)
+    } catch (err: unknown) {
+      log.warn('index post failed', { postId: meta.id, error: err })
+      warnings.push('搜索索引更新失败，该文章可能不会出现在搜索结果中。')
     }
   }
   return projectSaveResult(result, warnings.length > 0 ? warnings.join(' ') : undefined)

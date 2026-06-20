@@ -86,7 +86,14 @@ async function runShikiPasses(blocks: { code: string; language?: string; highlig
   let highlighter: Awaited<ReturnType<typeof createHighlighter>>
   try {
     highlighter = await getShikiHighlighter()
-  } catch {
+  } catch (err) {
+    // A bootstrap failure (e.g. corrupt WASM, OOM) degrades EVERY saved
+    // article until the process restarts — surface it loudly so the
+    // operator notices. Per-block render failures are logged separately
+    // below with sanitised metadata.
+    log.error('shiki highlighter bootstrap failed; code blocks will not be highlighted', {
+      errName: err instanceof Error ? err.name : undefined,
+    })
     return
   }
   await Promise.all(
@@ -124,7 +131,12 @@ async function runKatexPasses(
   let renderer: KatexRenderer
   try {
     renderer = await getKatexRenderer()
-  } catch {
+  } catch (err) {
+    // See `runShikiPasses` — a bootstrap failure degrades every saved
+    // article until restart. Surface it loudly.
+    log.error('katex renderer bootstrap failed; math will fall back to raw tex', {
+      errName: err instanceof Error ? err.name : undefined,
+    })
     return
   }
   await Promise.all([

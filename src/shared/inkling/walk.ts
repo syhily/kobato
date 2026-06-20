@@ -291,6 +291,9 @@ export interface ResidualHtmlMatch {
  * Detect literal HTML tag-like sequences left inside text nodes. These are
  * normally a sign that an HTML import path failed to parse markup and leaked
  * raw source into span text. Used by migration verifiers and paste tests.
+ *
+ * Note: `RESIDUAL_HTML_RE` has no `g`/`y` flag, so `lastIndex` is always 0
+ * and no manual reset is needed between `exec` calls.
  */
 export function findResidualHtmlInText(document: InklingDocument): ResidualHtmlMatch[] {
   const matches: ResidualHtmlMatch[] = []
@@ -299,7 +302,6 @@ export function findResidualHtmlInText(document: InklingDocument): ResidualHtmlM
     document,
     {
       text: (node) => {
-        RESIDUAL_HTML_RE.lastIndex = 0
         const m = RESIDUAL_HTML_RE.exec(node.text)
         if (m !== null) {
           matches.push({ text: node.text, match: m[0] })

@@ -2,6 +2,7 @@ import { ORPCError } from '@orpc/server'
 import { z } from 'zod'
 
 import { recordAuditEventFromContext } from '@/server/domains/audit/services/record'
+import { canonicalizeBodyOrThrow } from '@/server/domains/content/save-helpers'
 import { listPagesSchema, savePageBodySchema, upsertPageMetaSchema } from '@/server/domains/pages/schema'
 import {
   listPagesForAdmin,
@@ -148,8 +149,14 @@ const preview = adminProc
   .input(z.object({ body: inklingDocumentSchema }))
   .output(previewOutputDto)
   .handler(async ({ input, context }) => {
-    const html = await renderInklingToHtml(context.db, input.body, [])
-    const headings = collectInklingHeadings(input.body, deriveSlug)
+    // Route preview through the same canonicalize + prerender pipeline as
+    // the save path so the preview matches what will actually be published
+    // (Shiki/KaTeX artifacts included) and so client-supplied prerender
+    // fields are stripped before rendering (defense-in-depth against stored
+    // XSS via preview).
+    const canonical = await canonicalizeBodyOrThrow(input.body)
+    const html = await renderInklingToHtml(context.db, canonical, [])
+    const headings = collectInklingHeadings(canonical, deriveSlug)
     return { html, headings }
   })
 

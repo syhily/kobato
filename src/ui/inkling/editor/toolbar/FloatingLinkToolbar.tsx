@@ -156,6 +156,13 @@ export function FloatingLinkToolbar(): ReactNode {
       // calling setState synchronously here to prevent cascading renders.
       return
     }
+    // Guard against a detached element: if the link was removed (e.g. via
+    // `handleRemove`) without the state being cleared yet, `getClientRects`
+    // returns nothing and we'd keep using a stale rect. Bailing keeps the
+    // positioning effect honest and lets the next hover re-arm it.
+    if (!targetElem.isConnected) {
+      return
+    }
 
     const rootElement = editor.getRootElement()
     if (rootElement === null) {

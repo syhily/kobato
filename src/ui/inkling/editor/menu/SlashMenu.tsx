@@ -104,6 +104,14 @@ export function useInklingSlashMenu(editor: LexicalEditor | null, mode: InklingF
       return undefined
     }
     return editor.registerUpdateListener(({ editorState }) => {
+      // IME guard: during CJK composition the editor emits intermediate
+      // state updates that can pass through `/` (e.g. a pinyin candidate
+      // selection, or an IME that inserts `/` as a dead-key artifact).
+      // Acting on those would pop the slash menu mid-composition and
+      // disrupt input. Mirrors the guard in `FloatingFormatToolbar`.
+      if (editor.isComposing()) {
+        return
+      }
       editorState.read(() => {
         const selection = $getSelection()
         if (!$isRangeSelection(selection) || !selection.isCollapsed()) {
@@ -141,8 +149,13 @@ export function useInklingSlashMenu(editor: LexicalEditor | null, mode: InklingF
         }
         if (!open) {
           setOpen(true)
-          setSelectedIndex(0)
         }
+        // Reset the highlighted item whenever the query changes so the
+        // selection never points past the end of the filtered list
+        // (e.g. user was on item 3 and typed a filter that yields 2
+        // items — without this `selectedItem` would be null and Enter
+        // would silently no-op until an arrow key is pressed).
+        setSelectedIndex(0)
         setQuery(queryText)
       })
     })
@@ -260,10 +273,7 @@ export function useInklingSlashMenu(editor: LexicalEditor | null, mode: InklingF
     return (
       <div
         ref={menuRef}
-        className={cn(
-          'inkling-slash-menu absolute z-50 max-h-72 w-64 overflow-y-auto rounded-lg border bg-popover p-1 shadow-lg',
-          'inkling-slash-menu',
-        )}
+        className="inkling-slash-menu absolute z-50 max-h-72 w-64 overflow-y-auto rounded-lg border bg-popover p-1 shadow-lg"
         style={{ top: position.top, left: position.left }}
       >
         {query.length > 0 ? <div className="px-2 py-1 text-xs text-muted-foreground">搜索: {query}</div> : null}

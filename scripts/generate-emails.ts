@@ -19,24 +19,26 @@ import { NewReply } from '@/server/infra/email/templates/NewReply'
 import { PasswordReset } from '@/server/infra/email/templates/PasswordReset'
 import { SignInOtp } from '@/server/infra/email/templates/SignInOtp'
 import { BLOG_SETTINGS_SNAPSHOT_SLOT } from '@/shared/config/snapshot'
+import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const OUT_DIR = join(__dirname, 'emails')
 
-// oxlint-disable-next-line typescript/no-unsafe-type-assertion
-BLOG_SETTINGS_SNAPSHOT_SLOT.write({
-  siteIdentity: {
-    title: 'Kobato',
-    description: 'A self-hosted blog',
-    website: 'https://example.com',
-    keywords: [],
-    author: { name: 'Yufan', email: 'author@example.com', url: 'https://example.com' },
-    locale: 'zh-CN',
-    timeZone: 'Asia/Shanghai',
-    timeFormat: 'yyyy-MM-dd HH:mm',
-    initialYear: 2024,
-  },
-} as unknown as BlogSettingsBundle)
+BLOG_SETTINGS_SNAPSHOT_SLOT.write(
+  unsafeCast<BlogSettingsBundle>({
+    siteIdentity: {
+      title: 'Kobato',
+      description: 'A self-hosted blog',
+      website: 'https://example.com',
+      keywords: [],
+      author: { name: 'Yufan', email: 'author@example.com', url: 'https://example.com' },
+      locale: 'zh-CN',
+      timeZone: 'Asia/Shanghai',
+      timeFormat: 'yyyy-MM-dd HH:mm',
+      initialYear: 2024,
+    },
+  }),
+)
 
 const templates = [
   {

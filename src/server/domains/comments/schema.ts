@@ -8,7 +8,7 @@ const COMMENT_HONEYPOT_MAX_LEN = 240
 
 // `rid` arrives as a number from JSON callers. The previous form-encoded
 // path coerced from string; comments now POST JSON exclusively because
-// PortableText bodies aren't form-encodable, so `z.number()` is enough.
+// Inkling bodies aren't form-encodable, so `z.number()` is enough.
 // `0` keeps its "top-level reply" meaning and gets normalised to
 // `undefined` before reaching `createComment`.
 export const commentReplySchema = z

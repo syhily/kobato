@@ -9,6 +9,7 @@ import { commentPortableTextToInklingDocument, portableTextToInklingDocument } f
 import { inklingToPlainText } from '@/shared/inkling/plaintext'
 import { findResidualHtmlInText, walkInkling } from '@/shared/inkling/walk'
 import { bodyToPlainText } from '@/shared/pt/utils'
+import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
 export interface VerificationRow {
   table: 'content' | 'comment'
@@ -318,8 +319,9 @@ function emptyPtMetrics(): PtMetrics {
 
 function verifyRow(table: 'content' | 'comment', id: string, body: unknown): VerificationRow {
   const alreadyInkling = isInklingDocument(body)
-  // oxlint-disable-next-line typescript/no-unsafe-assignment
-  const ptBody: PortableTextBody = Array.isArray(body) ? body : []
+  // body is unknown coming from the DB JSONB column; Array.isArray
+  // narrows it to unknown[] but TypeScript cannot infer PortableTextBody.
+  const ptBody = Array.isArray(body) ? unsafeCast<PortableTextBody>(body) : []
   const ptMetrics = alreadyInkling ? emptyPtMetrics() : collectPtMetrics(ptBody)
   const ptPlainText = alreadyInkling ? '' : bodyToPlainText(ptBody)
 
@@ -330,8 +332,9 @@ function verifyRow(table: 'content' | 'comment', id: string, body: unknown): Ver
     } else if (table === 'content') {
       document = portableTextToInklingDocument(ptBody)
     } else {
-      // oxlint-disable-next-line typescript/no-unsafe-type-assertion
-      document = commentPortableTextToInklingDocument(ptBody as CommentBody)
+      // ptBody has been verified as an array above; CommentBody is a
+      // subtype of PortableTextBody used by the comment migration path.
+      document = commentPortableTextToInklingDocument(unsafeCast<CommentBody>(ptBody))
     }
 
     const mode = table === 'content' ? 'article' : 'comment'

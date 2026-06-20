@@ -1,4 +1,3 @@
-/* oxlint-disable typescript/no-unsafe-assignment, typescript/no-unsafe-member-access, typescript/no-unsafe-type-assertion */
 import type { Plugin } from 'vite'
 
 import { existsSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs'
@@ -11,6 +10,7 @@ import {
   WARMUP_GLOBAL_EXCLUDED_PATTERNS,
   type RouteManifest,
 } from '../../shared/constants/route-warmup'
+import { unsafeCast } from '../../shared/utils/unsafe-cast'
 
 // Route tier configuration
 
@@ -137,7 +137,6 @@ function loadServerManifest(clientAssetsDir: string): RouteManifest | null {
     const files = readdirSync(clientAssetsDir)
     const manifestFile = files.find((f) => f.startsWith('manifest-') && f.endsWith('.js'))
     if (!manifestFile) {
-      // oxlint-disable-next-line no-console
       console.error('[route-warmup] React Router client manifest not found in', clientAssetsDir)
       return null
     }
@@ -145,15 +144,13 @@ function loadServerManifest(clientAssetsDir: string): RouteManifest | null {
     const content = readFileSync(join(clientAssetsDir, manifestFile), 'utf-8')
     const prefix = 'window.__reactRouterManifest='
     if (!content.startsWith(prefix)) {
-      // oxlint-disable-next-line no-console
       console.error('[route-warmup] React Router client manifest has unexpected format')
       return null
     }
 
     const jsonText = content.slice(prefix.length).replace(/;\s*$/, '')
-    return JSON.parse(jsonText) as RouteManifest
+    return unsafeCast<RouteManifest>(JSON.parse(jsonText))
   } catch (err) {
-    // oxlint-disable-next-line no-console
     console.error('[route-warmup] failed to load server manifest', err instanceof Error ? err.message : String(err))
     return null
   }
@@ -247,14 +244,14 @@ export function routeWarmupPlugin(): Plugin {
         // With v8_viteEnvironmentApi, the client build fires first,
         // then the SSR build. Run in the SSR environment so both
         // client assets and the server manifest are available.
-        const env = (this as any).environment
+        const env = unsafeCast<{ environment?: { name?: string } }>(this).environment
 
         // Skip client env (server manifest not written yet)
         if (env && env.name === 'client') {
           return
         }
         // If no environment API (older Vite), skip SSR builds
-        if (!env && (options as any).ssr) {
+        if (!env && unsafeCast<{ ssr?: boolean }>(options).ssr) {
           return
         }
 
@@ -279,7 +276,6 @@ export function routeWarmupPlugin(): Plugin {
         }
 
         if (Object.keys(manifest.routes).length === 0) {
-          // oxlint-disable-next-line no-console
           console.error('[route-warmup] parsed manifest has 0 routes — likely a parser regression')
           return
         }
@@ -373,8 +369,7 @@ export function routeWarmupPlugin(): Plugin {
           const totalKb = arr.reduce((sum, c) => sum + (chunkSizes.get(c) ?? 0), 0) / 1024
           return `${arr.length} chunks (~${totalKb.toFixed(0)} KB)`
         }
-        // oxlint-disable-next-line no-console
-        console.log(
+        console.warn(
           `[route-warmup] Manifest written:\n` +
             `  tier1:        ${fmt(tier1)}\n` +
             `  tier2_public: ${fmt(tier2_public)}\n` +

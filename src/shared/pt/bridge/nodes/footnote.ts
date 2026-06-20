@@ -1,4 +1,3 @@
-/* oxlint-disable typescript/no-unsafe-type-assertion */
 import type { PmBlockNode, PmNode } from '@/shared/pt/bridge/types'
 import type {
   Block,
@@ -10,6 +9,8 @@ import type {
   Span,
   TableCell,
 } from '@/shared/pt/schema'
+
+import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
 export function footnoteDefinitionBlockToPmNode(
   block: FootnoteDefinitionBlock,
@@ -90,7 +91,7 @@ function walkMainColumnFootnoteRefs(body: PortableTextBody, visit: (targetKey: s
       }
       continue
     }
-    visitNonRecursive(block as NonRecursiveBlock)
+    visitNonRecursive(unsafeCast<NonRecursiveBlock>(block))
   }
 }
 
@@ -191,19 +192,19 @@ function syncBlock(block: Block, keyToIndex: Map<string, number>): Block {
       return {
         ...block,
         index,
-        children: block.children.map((c) => syncBlock(c, keyToIndex)) as FootnoteDefinitionBlock['children'],
+        children: unsafeCast<FootnoteDefinitionBlock['children']>(block.children.map((c) => syncBlock(c, keyToIndex))),
       }
     }
     case 'solution':
       return {
         ...block,
-        children: block.children.map((c) => syncBlock(c, keyToIndex)) as FootnoteDefinitionBlock['children'],
+        children: unsafeCast<FootnoteDefinitionBlock['children']>(block.children.map((c) => syncBlock(c, keyToIndex))),
       }
     case 'twoColumn':
       return {
         ...block,
-        left: block.left.map((c) => syncBlock(c, keyToIndex)) as FootnoteDefinitionBlock['children'],
-        right: block.right.map((c) => syncBlock(c, keyToIndex)) as FootnoteDefinitionBlock['children'],
+        left: unsafeCast<FootnoteDefinitionBlock['children']>(block.left.map((c) => syncBlock(c, keyToIndex))),
+        right: unsafeCast<FootnoteDefinitionBlock['children']>(block.right.map((c) => syncBlock(c, keyToIndex))),
       }
     case 'block': {
       const nextDefs = syncMarkDefs(block.markDefs, keyToIndex)
@@ -219,7 +220,7 @@ function syncBlock(block: Block, keyToIndex: Map<string, number>): Block {
         rows: block.rows.map((row) => ({
           ...row,
           cells: row.cells.map((cell) => {
-            const nextCellDefs = syncMarkDefs(cell.markDefs, keyToIndex) as TableCell['markDefs']
+            const nextCellDefs = unsafeCast<TableCell['markDefs']>(syncMarkDefs(cell.markDefs, keyToIndex))
             return {
               ...cell,
               markDefs: nextCellDefs,

@@ -22,6 +22,8 @@ function ToolbarButton({ active, onClick, title, children }: ToolbarButtonProps)
       type="button"
       onClick={onClick}
       title={title}
+      aria-label={title}
+      aria-pressed={active}
       className={cn(
         'flex h-7 w-7 items-center justify-center rounded text-sm transition',
         active ? 'bg-accent text-accent-foreground' : 'text-muted-foreground hover:bg-muted hover:text-foreground',
@@ -138,6 +140,8 @@ export function FloatingFormatToolbar() {
   return (
     <div
       ref={toolbarRef}
+      role="toolbar"
+      aria-label="文本格式化"
       className="inkling-floating-toolbar absolute z-50 flex -translate-x-1/2 items-center gap-0.5 rounded-lg border bg-popover p-1 shadow-lg"
       style={{ top: position.top, left: position.left }}
     >

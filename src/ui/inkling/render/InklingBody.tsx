@@ -11,7 +11,6 @@ import type {
 
 import { collectInklingHeadingSlots } from '@/shared/inkling/headings'
 import { walkInkling, type InklingWalkerHandlers } from '@/shared/inkling/walk'
-import { Slugger } from '@/shared/slug'
 import { BlockquoteBlock } from '@/ui/inkling/render/blocks/BlockquoteBlock'
 import { CodeBlock } from '@/ui/inkling/render/blocks/CodeBlock'
 import { HeadingBlock } from '@/ui/inkling/render/blocks/HeadingBlock'
@@ -239,16 +238,6 @@ function buildReactHandlers(_ctx: ReactRenderCtx): InklingWalkerHandlers<ReactRe
   }
 }
 
-function lastNormalParagraphKey(children: readonly InklingBlockNode[]): string | null {
-  for (let i = children.length - 1; i >= 0; i--) {
-    const child = children[i]
-    if (child?.type === 'paragraph') {
-      return child.key ?? null
-    }
-  }
-  return null
-}
-
 function FootnoteBackrefLink({ footnoteIndex }: { footnoteIndex: number }): ReactNode {
   return (
     <a
@@ -262,19 +251,14 @@ function FootnoteBackrefLink({ footnoteIndex }: { footnoteIndex: number }): Reac
   )
 }
 
-function renderFootnoteDefinitionChildren(node: InklingFootnoteDefinitionNode, footnoteIndex: number): ReactNode {
-  const lastKey = lastNormalParagraphKey(node.children)
-  return node.children.map((child, index) => {
-    if (child.type === 'paragraph' && child.key === lastKey) {
-      return (
-        <p key={child.key ?? `fnp-${index}`}>
-          {renderInlineNodes(child.children)}
-          <FootnoteBackrefLink footnoteIndex={footnoteIndex} />
-        </p>
-      )
-    }
-    return <span key={child.key ?? `fn-${index}`}>{renderBlockNode(child)}</span>
-  })
+function renderFootnoteDefinitionChildren(node: InklingFootnoteDefinitionNode): ReactNode {
+  // NOTE: we intentionally do NOT inline the backref into the last
+  // paragraph here. The SSR string renderer
+  // (`renderFootnotesSection` in `server/render/inkling/html.ts`) always
+  // appends a standalone trailing `<p>` backref, so we mirror that here
+  // to keep the two outputs structurally identical (RSS / plaintext
+  // extraction relies on the same shape as the React render).
+  return node.children.map((child, index) => <span key={child.key ?? `fn-${index}`}>{renderBlockNode(child)}</span>)
 }
 
 function FootnotesSection({
@@ -292,16 +276,17 @@ function FootnotesSection({
       <ol>
         {definitions.map((definition) => {
           const anchorId = `user-content-fn-${definition.index}`
-          const preview = <>{renderFootnoteDefinitionChildren(definition, definition.index)}</>
+          const preview = renderFootnoteDefinitionChildren(definition)
           return (
             <li key={definition.key ?? definition.targetKey} id={anchorId}>
               <FootnotePreviewRegistrar anchorId={anchorId} preview={preview} />
               {preview}
-              {lastNormalParagraphKey(definition.children) === null ? (
-                <p>
-                  <FootnoteBackrefLink footnoteIndex={definition.index} />
-                </p>
-              ) : null}
+              {/* Standalone backref paragraph — matches the SSR string
+                  renderer so RSS / plaintext extraction agrees with the
+                  React render. */}
+              <p>
+                <FootnoteBackrefLink footnoteIndex={definition.index} />
+              </p>
             </li>
           )
         })}
@@ -321,14 +306,21 @@ export function InklingBody({
   const headingIdByBlockKey = useMemo(() => {
     const slots = collectInklingHeadingSlots(document)
     const map = new Map<string, string>()
-    const fallbackSlugger = new Slugger()
+    // `headingSlugs` are precomputed by the route loader using the
+    // server-side `deriveSlug` (pinyin-pro romanisation → slugify). They
+    // are the source of truth — every detail route passes them in.
+    //
+    // The fallback below only runs if a caller forgets to pass
+    // `headingSlugs` or if a slot's precomputed slug is empty. We use a
+    // stable index-based id (`heading-{i}`) rather than `Slugger` because
+    // the client cannot import `pinyin-pro` (~150 KB) and a pure-slugify
+    // fallback would disagree with the server for any CJK heading. An
+    // index-based id is deterministic, never empty, and obviously not the
+    // canonical slug — so the divergence is loud rather than silent.
     for (let i = 0; i < slots.length; i++) {
       const slot = slots[i]
       const pre = headingSlugs?.[i]
-      const id =
-        headingSlugs !== undefined && typeof pre === 'string' && pre.length > 0
-          ? pre
-          : fallbackSlugger.slug(slot.plainText)
+      const id = headingSlugs !== undefined && typeof pre === 'string' && pre.length > 0 ? pre : `heading-${i}`
       map.set(slot.blockKey, id)
     }
     return map

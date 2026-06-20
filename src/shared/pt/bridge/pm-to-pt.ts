@@ -1,4 +1,3 @@
-/* oxlint-disable typescript/no-unsafe-type-assertion */
 import type { PmDoc, PmNode, PmBlockNode, PmInlineNode } from '@/shared/pt/bridge/types'
 import type {
   Block,
@@ -14,6 +13,7 @@ import { flattenList } from '@/shared/pt/bridge/nodes/list'
 import { pmTableToBlock } from '@/shared/pt/bridge/nodes/table'
 import { paragraphToTextBlock } from '@/shared/pt/bridge/nodes/text'
 import { isBlock, isInline, stringAttr, numberAttr } from '@/shared/pt/bridge/utils'
+import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
 /** Convert a ProseMirror `doc` node back into a PortableText body. */
 export function pmDocToBody(doc: PmDoc): PortableTextBody {
@@ -128,7 +128,7 @@ export function pushPmNode(
       out.push({
         _type: 'solution',
         _key: ensureKey(node.attrs),
-        children: inner as SolutionBlock['children'],
+        children: unsafeCast<SolutionBlock['children']>(inner),
       })
       return
     }
@@ -155,8 +155,8 @@ export function pushPmNode(
       out.push({
         _type: 'twoColumn',
         _key: ensureKey(node.attrs),
-        left: leftBlocks as TwoColumnBlock['left'],
-        right: rightBlocks as TwoColumnBlock['right'],
+        left: unsafeCast<TwoColumnBlock['left']>(leftBlocks),
+        right: unsafeCast<TwoColumnBlock['right']>(rightBlocks),
       })
       return
     }
@@ -171,14 +171,14 @@ export function pushPmNode(
         _type: 'footnoteDefinition',
         _key: ensureKey(node.attrs),
         index: idx >= 1 ? idx : 1,
-        children: inner as FootnoteDefinitionBlock['children'],
+        children: unsafeCast<FootnoteDefinitionBlock['children']>(inner),
       })
       return
     }
     case 'blockCard': {
       const payload = node.attrs?.payload
       if (payload && typeof payload === 'object' && '_type' in payload) {
-        out.push(payload as Block)
+        out.push(unsafeCast<Block>(payload))
       }
       return
     }

@@ -8,6 +8,7 @@ import { countMyComments, listMyComments } from '@/server/domains/comments/repos
 import { findParentCommentsByIds } from '@/server/domains/comments/repos/public-query/by-id'
 import { resolveEntitiesForComments } from '@/server/domains/comments/repos/public-query/entities'
 import { mineSoftDeleteCutoff } from '@/server/domains/comments/repos/shared'
+import { readCommentBody } from '@/server/domains/content/projection-helpers'
 
 export interface MineCommentItem {
   id: string
@@ -94,12 +95,12 @@ export async function loadMineCommentsPage(
 
     return {
       id: String(c.id),
-      body: (c.body ?? {
-        _type: 'inkling',
-        schemaVersion: 1,
-        lexicalVersion: '0.45.0',
-        root: { type: 'root', version: 1, children: [] },
-      }) as InklingDocument,
+      // `readCommentBody` validates the JSONB body against the Inkling schema
+      // and falls back to an empty document on failure (e.g. a legacy
+      // PortableText row still in the DB during the P7 migration window).
+      // Without this, the `loadMine` output schema would 500 for any
+      // pre-inkling comment.
+      body: readCommentBody(c.body),
       createdAtIso: c.createAt ? new Date(c.createAt).toISOString() : '',
       deletedAtIso: c.deleteAt ? new Date(c.deleteAt).toISOString() : null,
       deleteRequestedAtIso: c.deleteRequestedAt ? new Date(c.deleteRequestedAt).toISOString() : null,
