@@ -3,6 +3,7 @@ import type { EditorState } from 'lexical'
 import type { InklingDocument } from '@/shared/inkling/schema'
 
 import { INKLING_LEXICAL_VERSION, INKLING_SCHEMA_VERSION } from '@/shared/inkling/schema'
+import { toBlockChildren } from '@/ui/inkling/editor/shared/lexical-bridge'
 
 /**
  * Convert a Lexical `EditorState` into the canonical `InklingDocument` shape.
@@ -30,8 +31,7 @@ export function editorStateToInklingDocument(editorState: EditorState): InklingD
       direction: root.direction ?? null,
       format: root.format ?? '',
       indent: root.indent ?? 0,
-      // oxlint-disable-next-line typescript/no-unsafe-type-assertion
-      children: root.children as never[],
+      children: toBlockChildren(root.children),
     },
   }
 }

@@ -66,10 +66,13 @@ export function FloatingLinkToolbar(): ReactNode {
     }
 
     const onMouseMove = (event: MouseEvent): void => {
+      const target = event.target
+      if (!(target instanceof Node)) {
+        return
+      }
       // If the mouse is over the toolbar itself, cancel any pending hide
       // (prevents flicker when moving from link to toolbar).
-      // oxlint-disable-next-line typescript/no-unsafe-type-assertion
-      if (toolbarRef.current?.contains(event.target as Node)) {
+      if (toolbarRef.current?.contains(target)) {
         if (hideTimeoutRef.current !== null) {
           clearTimeout(hideTimeoutRef.current)
           hideTimeoutRef.current = null
@@ -87,9 +90,6 @@ export function FloatingLinkToolbar(): ReactNode {
       if (hoverTimeoutRef.current !== null) {
         clearTimeout(hoverTimeoutRef.current)
       }
-
-      // oxlint-disable-next-line typescript/no-unsafe-type-assertion
-      const target = event.target as Node
 
       // Early exit: if outside the editor root, start hide timer.
       if (!rootElement.contains(target)) {

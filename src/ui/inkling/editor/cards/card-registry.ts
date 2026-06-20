@@ -21,32 +21,6 @@ import {
   $createTableCardNode,
 } from '@/ui/inkling/editor/cards/simple-card-nodes'
 
-const INKLING_CARD_NODE_TYPES = new Set<string>([
-  'image-card',
-  'code-block',
-  'math-block',
-  'music-card',
-  'horizontal-rule',
-  'table',
-  'solution',
-  'two-column',
-])
-
-/**
- * Inspect the editor's private node registry to discover which Inkling card
- * nodes are currently registered. This is the only module that may read
- * `editor._nodes`; if a future Lexical version removes it, switch to the
- * explicit `INKLING_CARD_NODE_TYPES` set.
- */
-export function getInklingCardNodes(editor: LexicalEditor): string[] {
-  // oxlint-disable-next-line typescript/no-unsafe-type-assertion
-  const registered = (editor as unknown as { _nodes?: Map<string, unknown> })._nodes
-  if (registered === undefined) {
-    return []
-  }
-  return Array.from(registered.keys()).filter((type) => INKLING_CARD_NODE_TYPES.has(type))
-}
-
 export interface InklingCardMenuItem {
   type: string
   label: string

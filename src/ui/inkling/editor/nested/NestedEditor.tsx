@@ -1,5 +1,5 @@
 import type { InitialConfigType } from '@lexical/react/LexicalComposer'
-import type { EditorState, SerializedEditorState, SerializedLexicalNode } from 'lexical'
+import type { EditorState, SerializedEditorState } from 'lexical'
 
 import { LinkNode } from '@lexical/link'
 import { ListItemNode, ListNode } from '@lexical/list'
@@ -40,12 +40,7 @@ export const NESTED_ARTICLE_NODES: InitialConfigType['nodes'] = [
   TableCardNode,
 ]
 
-function toSerializedLexicalChildren(blocks: readonly InklingNonRecursiveBlockNode[]): SerializedLexicalNode[] {
-  // Inkling non-recursive blocks are structurally compatible with Lexical serialized nodes
-  // for the restricted subset registered above.
-  // oxlint-disable-next-line typescript/no-unsafe-type-assertion
-  return structuredClone(blocks) as unknown as SerializedLexicalNode[]
-}
+import { fromLexicalChildren, toLexicalChildren } from '@/ui/inkling/editor/shared/lexical-bridge'
 
 function buildNestedInitialState(blocks: readonly InklingNonRecursiveBlockNode[]): EditorState {
   const editor = createEditor({ nodes: NESTED_ARTICLE_NODES })
@@ -55,7 +50,7 @@ function buildNestedInitialState(blocks: readonly InklingNonRecursiveBlockNode[]
     direction: null,
     format: '',
     indent: 0,
-    children: toSerializedLexicalChildren(blocks),
+    children: toLexicalChildren(structuredClone(blocks)),
   }
   return editor.parseEditorState({ root })
 }
@@ -120,8 +115,7 @@ export function NestedInklingEditor({
       const serialized = editorState.toJSON()
       // Nested editor only registers the restricted subset, so the serialized
       // children are safe to treat as Inkling non-recursive blocks.
-      // oxlint-disable-next-line typescript/no-unsafe-type-assertion
-      const blocks = (serialized.root.children ?? []) as unknown as InklingNonRecursiveBlockNode[]
+      const blocks = fromLexicalChildren(serialized.root.children ?? [])
       onChange(blocks)
     },
     [onChange],

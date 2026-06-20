@@ -43,6 +43,7 @@ import { InklingSlashMenuPlugin } from '@/ui/inkling/editor/menu/SlashMenu'
 import { SharedHistoryProvider, useSharedHistoryState } from '@/ui/inkling/editor/nested/SharedHistoryContext'
 import { OnInklingDocumentChangePlugin } from '@/ui/inkling/editor/plugins/OnInklingDocumentChangePlugin'
 import { PastePlugin } from '@/ui/inkling/editor/plugins/PastePlugin'
+import { toSerializedRoot } from '@/ui/inkling/editor/shared/lexical-bridge'
 import { FloatingFormatToolbar } from '@/ui/inkling/editor/toolbar/FloatingFormatToolbar'
 import { FloatingLinkToolbar } from '@/ui/inkling/editor/toolbar/FloatingLinkToolbar'
 
@@ -122,8 +123,7 @@ function stripFootnoteDefinitions(document: InklingDocument): StrippedDocument {
   // prose-only list. The cast mirrors `editorStateToInklingDocument` helpers
   // elsewhere: Inkling's root shape is structurally compatible with Lexical's
   // `SerializedRootNode`.
-  // oxlint-disable-next-line typescript/no-unsafe-type-assertion
-  const proseRoot = { ...document.root, children: proseChildren } as unknown as SerializedRootNode
+  const proseRoot = toSerializedRoot({ ...document.root, children: proseChildren })
   return { proseRoot, definitions }
 }
 

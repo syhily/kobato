@@ -1,11 +1,5 @@
 import type { InitialConfigType } from '@lexical/react/LexicalComposer'
-import type {
-  EditorState,
-  ElementFormatType,
-  LexicalEditor,
-  SerializedEditorState,
-  SerializedLexicalNode,
-} from 'lexical'
+import type { EditorState, ElementFormatType, LexicalEditor, SerializedEditorState } from 'lexical'
 
 import { LexicalComposer } from '@lexical/react/LexicalComposer'
 import { ContentEditable } from '@lexical/react/LexicalContentEditable'
@@ -16,6 +10,7 @@ import type { InklingDocument } from '@/shared/inkling/schema'
 
 import { reportEditorError } from '@/ui/inkling/editor/error-report'
 import { editorStateToInklingDocument } from '@/ui/inkling/editor/serialize'
+import { toLexicalChildren } from '@/ui/inkling/editor/shared/lexical-bridge'
 
 const theme = {
   paragraph: 'inkling-paragraph',
@@ -49,8 +44,15 @@ function buildInitialEditorState(document: InklingDocument): (editor: LexicalEdi
 
 function inklingDocumentToEditorState(document: InklingDocument): SerializedEditorState {
   const direction = document.root.direction ?? null
-  // oxlint-disable-next-line typescript/no-unsafe-type-assertion
-  const format = (document.root.format ?? '') as unknown as ElementFormatType
+  const rawFormat = document.root.format ?? ''
+  const format: ElementFormatType =
+    rawFormat === '' ||
+    rawFormat === 'left' ||
+    rawFormat === 'center' ||
+    rawFormat === 'right' ||
+    rawFormat === 'justify'
+      ? (rawFormat as ElementFormatType)
+      : ''
   const indent = document.root.indent ?? 0
   return {
     root: {
@@ -61,8 +63,7 @@ function inklingDocumentToEditorState(document: InklingDocument): SerializedEdit
       indent,
       textFormat: 0,
       textStyle: '',
-      // oxlint-disable-next-line typescript/no-unsafe-type-assertion
-      children: document.root.children as unknown as SerializedLexicalNode[],
+      children: toLexicalChildren(document.root.children),
     },
   }
 }

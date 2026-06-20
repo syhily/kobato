@@ -495,16 +495,15 @@ export function registerInklingKeyboardNavigation(editor: LexicalEditor): () => 
   const rootElement = editor.getRootElement()
 
   const handleCardMousedown = (event: MouseEvent): void => {
-    // oxlint-disable-next-line typescript/no-unsafe-type-assertion
-    if (rootElement === null || !rootElement.contains(event.target as Node)) {
+    const target = event.target
+    if (!(target instanceof Node) || rootElement === null || !rootElement.contains(target)) {
       return
     }
     // Find the nearest Lexical node for the mousedown target, then walk up
     // to see if any ancestor is a block-level card.
     let targetCardKey: string | null = null
     editor.read(() => {
-      // oxlint-disable-next-line typescript/no-unsafe-type-assertion
-      const lexicalNode = $getNearestNodeFromDOMNode(event.target as Node)
+      const lexicalNode = $getNearestNodeFromDOMNode(target)
       if (lexicalNode === null) {
         return
       }
@@ -557,8 +556,9 @@ export function registerInklingKeyboardNavigation(editor: LexicalEditor): () => 
     // require two clicks: one to select the card (mousedown prevented the
     // click), another to actually trigger the button. Including BUTTON and
     // SELECT here makes card-internal controls work on the first click.
-    // oxlint-disable-next-line typescript/no-unsafe-type-assertion
-    const target = event.target as HTMLElement
+    if (!(target instanceof HTMLElement)) {
+      return
+    }
     const isInteractive =
       target.tagName === 'INPUT' ||
       target.tagName === 'TEXTAREA' ||
