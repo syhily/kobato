@@ -2,7 +2,7 @@
 
 > 基于 [可行性研究报告](./2026-06-18-inkling-feasibility-report.md) 与 16/16 完成的 POC，制定从 POC 产物到生产上线的逐步执行计划。
 >
-> 日期：2026-06-19 | 状态：POC 全绿，进入生产化执行
+> 日期：2026-06-19（更新 2026-06-20） | 状态：POC 全绿，进入生产化执行。**2026-06-20 完成全量代码审查，发现 3 CRITICAL + 5 SEC + 17 HIGH 问题（详见 §12）。SEC-1/2/3 已修复（a3cf52a7），FloatingLinkToolbar + card mousedown 已实现（1a73903d）。**
 >
 > **使用方式**：每个阶段的每个 Step 都是独立可执行单元。执行者读完 Step 即可动手，不需额外上下文。Step 内标注了【参照】（Tiptap 侧或 Koenig 侧的移植来源）、【交付】（要创建/修改的精确文件）、【验收】（如何确认完成）。
 
@@ -24,6 +24,7 @@
 12. [P9：清理与验收](#p9清理与验收)
 13. [完整删除清单](#10-完整删除清单)
 14. [风险与回滚](#11-风险与回滚)
+15. [代码审查发现（2026-06-20）](#12-代码审查发现2026-06-20)
 
 ---
 
@@ -53,22 +54,26 @@
 |               | `ui/inkling/render/CommentInklingBody.tsx`    | 163  | 评论专用                                 |
 |               | `ui/inkling/render/{blocks,marks}/*`          | ~260 | 8 block + 4 mark                         |
 | 评论编辑器    | `ui/inkling/editor/comment/CommentEditor.tsx` | 61   | 完整接线含工具栏                         |
+| URL 安全      | `shared/sanitize-url.ts`                      | 84   | 统一清洗：控制字符剥离 + 协议白名单（**新增，2026-06-20**） |
 
-### 1.2 POC 骨架（需硬化 + 接线）
+### 1.2 POC 骨架（已硬化 ✅ / 待硬化 🟡 / 有已知缺陷 🔴）
 
-| 文件                                    | LOC | 问题                                                 |
-| --------------------------------------- | --- | ---------------------------------------------------- |
-| `article/InklingArticleEditor.tsx`      | 138 | 注册节点但零交互，零生产消费者                       |
-| `cards/card-components.tsx`             | 328 | 占位 UI（裸 textarea/input）                         |
-| `cards/card-registry.ts`                | 179 | solution/two-column insert 空 no-op，无 SlashMenu UI |
-| `behaviour/keyboard-navigation.ts`      | 411 | 硬依赖 `poc/ProbeBlockCardNode`                      |
-| `toolbar/ArticleToolbar.tsx`            | 125 | 只 insert 按钮，无格式切换                           |
-| `nested/NestedEditor.tsx`               | 101 | history 本地未共享                                   |
-| `footnotes/InklingFootnoteProvider.tsx` | 189 | index 硬编码 1，无对话框，未接线                     |
+| 文件                                    | LOC  | 状态 | 说明                                                 |
+| --------------------------------------- | ---- | ---- | ---------------------------------------------------- |
+| `article/InklingArticleEditor.tsx`      | 283  | ✅    | 已集成 FloatingLinkToolbar、FootnoteProvider，已接线 editor-shell |
+| `cards/card-components.tsx`             | 722  | 🟡    | UI 硬化但 CRIT-1: layout-card 嵌套编辑器每次击键重建 |
+| `cards/card-registry.ts`               | 249  | 🟡    | CRIT-3: 插入后 `selectPrevious()` 可能不进 NodeSelection |
+| `behaviour/keyboard-navigation.ts`      | 599  | ✅    | mousedown 卡片选中已实现，export $selectNode |
+| `toolbar/ArticleToolbar.tsx`            | 118  | 🟡    | 只 insert 按钮，无格式切换                           |
+| `toolbar/FloatingLinkToolbar.tsx`       | 285  | ✅    | **新增**，hover 编辑/删除链接（2026-06-20）         |
+| `nested/NestedEditor.tsx`               | 122  | 🔴    | CRIT-2: useMemo([initialBlocks]) 导致每次击键重建编辑器 |
+| `footnotes/InklingFootnoteProvider.tsx` | 272  | 🟡    | 对话框已实现但无 focus trap / ARIA modal |
 
 ### 1.3 缺失（POC 完全没有，需新建）
 
-浮动格式工具栏、Slash 菜单 UI、拖拽排序、图片/音乐 picker 接线、脚注对话框、数学预览面板、链接 popover、表格 bubble menu、placeholder、autofocus。
+~~浮动格式工具栏~~ ✅、Slash 菜单 UI ✅、~~拖拽排序~~ ✅、图片/音乐 picker 接线 🟡、~~脚注对话框~~ ✅、数学预览面板 🟡、~~链接 popover~~ ✅、表格 bubble menu ❌、placeholder ✅、autofocus ✅。
+
+> **2026-06-20 代码审查更新**：PastePlugin 递归保护脆弱（CRIT-2）、`text.code` theme key 缺失（H-10）、评论/文章渲染器格式分叉（H-9）。详见 §12。
 
 ---
 
@@ -1021,6 +1026,15 @@ pnpm run build         # 构建成功
 | Ghost 样式保真      | 中   | 🟡 P0 视觉 QA       | pair-specific margin 原样搬 + 5 篇对比 |
 | 表格嵌套编辑        | 中   | 🟡 P2.5             | table guard + cell inline-only         |
 | 跨层 undo           | 中   | 🟡 P4.5             | SharedHistoryContext + X1-X3 验证      |
+| **🔴 评论链接 XSS** | 🔴 高 | ✅ **已修复** (a3cf52a7) | SEC-1/2/3: `sanitize-url.ts` 统一清洗 + 实体解码前置 + SSR mathml/shiki 清洗 |
+| **🔴 Layout 卡片编辑器** | 🔴 高 | 🔴 待修 | CRIT-1: 嵌套编辑器每击键重建，layout 卡片不可用 |
+| **🔴 PastePlugin 递归** | 🔴 高 | 🔴 待修 | CRIT-2: `===` 字符串比较保护脆弱 |
+| **🔴 Card 插入 NodeSelection** | 🔴 高 | 🔴 待修 | CRIT-3: `selectPrevious()` 错误行为 |
+| **🔴 PT 格式残留** | 🔴 高 | 🔴 P7 前必须 | H-1~H-7: DB 存 PT 但代码只读 Inkling，静默丢内容 |
+| **🟠 渲染器分叉** | 🟠 中高 | 🟠 待修 | H-9: CODE exclusive 不一致，格式嵌套顺序不同 |
+| **🟠 主题缺失** | 🟠 中 | 🟠 待修 | H-10: `text.code` theme key 缺失 |
+| **🟠 纯符号标题 id** | 🟠 低 | 🟠 待修 | M-4: 全 emoji/标点标题 id="" |
+| **🟠 迁移校验器** | 🟠 中 | 🟠 P7 前修 | H-13/H-14: per-span 误计 + 空白匹配过于宽松 |
 
 POC 后"能不能做"全消解，剩余是工程质量。
 
@@ -1031,6 +1045,76 @@ POC 后"能不能做"全消解，剩余是工程质量。
 - 迁移失败 → 恢复备份（脚本幂等/事务性）
 - 迁移后验证失败 → 恢复备份（不在生产就地修）
 - 冒烟发现破坏 → 恢复备份
+
+---
+
+## 12. 代码审查发现（2026-06-20）
+
+> 2026-06-20 完成 `feature/inkling` vs `develop` 全量代码审查。287 文件、~29K 行增量的 5 路并行 Agent 审查 + 人工深潜。完整报告见 `docs/inkling-new-editor-review.md`（未提交，会话产物）。
+
+### 12.1 已修复（本次审查期间提交）
+
+| # | 严重度 | 问题 | 修复 commit |
+|---|--------|------|-------------|
+| SEC-1 | 🔴 | 控制字符绕过 URL 清洗（`java\tscript:`） | `a3cf52a7` — `sanitize-url.ts` 统一清洗 |
+| SEC-2 | 🔴 | HTML 实体编码绕过 URL 清洗（`javas&#99;ript:`） | `a3cf52a7` — 解码前置 |
+| SEC-3 | 🔴 | 预览端点原样输出 mathml/highlightedHtml | `a3cf52a7` — `sanitizeMathml`/`sanitizeShikiHtml` |
+| SEC-4 | 🔴 | DoS: `String.fromCodePoint` 超大数字实体 | `a3cf52a7` — 未修（待确认） |
+| — | 🟢 | FloatingLinkToolbar（hover 编辑/删除链接） | `1a73903d` — 新增 |
+| — | 🟢 | Card mousedown 选中（NodeSelection 进入） | `1a73903d` — keyboard-navigation 扩展 |
+
+### 12.2 待修（合并前 / P7 迁移前 / 可延后）
+
+#### 🔴 合并前必修
+
+| # | 文件 | 问题 |
+|---|------|------|
+| CRIT-1 | `layout-card-nodes.tsx` + `NestedEditor.tsx` | Layout 卡片嵌套编辑器每击键重建（selection/undo 销毁），SolutionCard/TwoColumnCard **不可用** |
+| CRIT-2 | `plugins/PastePlugin.tsx` | `cleanedHtml === html` 递归保护在 `sanitize-html` 重序列化时可能失败 |
+| CRIT-3 | `cards/card-registry.ts:112` | `selectPrevious()` 选的是前驱 sibling 非卡片自身，插入后 NodeSelection 不进入 |
+| SEC-4 | `comment-html-sanitize.ts:88-97` | `&#99999999999999999;` → `fromCodePoint` 抛 RangeError（DoS）。需加 `code > 0x10FFFF` guard |
+| H-10 | `InklingArticleEditor.tsx:48-62` | `theme.text` 缺少 `code` key，行内代码无 CSS class |
+
+#### 🟠 强烈建议（发布前）
+
+| # | 问题 |
+|---|------|
+| H-1 | PT-format body 在 DB → `readBody` 返回空 Inkling doc（**全站内容静默消失**，需数据迁移） |
+| H-2 | EditorShell `as unknown as RevisionLike` cast——服务端发 PT 数组，Lexical 收到非 Inkling 崩溃 |
+| H-4 | 评论 canonicalize 路径未调用 `canonicalizeInklingDocument`（不剥离客户端 stale 产物） |
+| H-5 | `content/repos/mutate.ts` 移除 `safeParse`，裸 `as` cast body 写入 DB（损坏数据可落库） |
+| H-9 | `TextMark.tsx`（文章）CODE 与 BOLD 共存；`CommentInklingBody.tsx`（评论）CODE exclusive。**两个渲染器分叉，嵌套顺序也不同**。需抽共享 `renderFormattedText` |
+| H-11 | `NestedEditor.tsx:82-99` `useMemo([initialBlocks])` 每渲染重建 Lexical 编辑器（与 CRIT-1 同一根因） |
+
+#### 🟡 建议在迭代中修复
+
+| # | 类别 | 问题 |
+|---|------|------|
+| M-1 | 死代码 | `blocks/TableBlock.tsx` 的 `renderCellInline` 永远返回 `null`，文件零引用 |
+| M-4 | 渲染 | 纯符号标题产生 `id=""`（Slugger 返回空串），应 fallback `heading-{i}` |
+| M-12/13/14/15 | a11y | FootnoteDialog 无 focus trap/role="dialog"/aria-modal；SlashMenu 无 role="listbox"；卡片拖拽无键盘替代 |
+| M-22/24 | a11y | 卡片选中纯鼠标驱动；拖拽排序无键盘等价 |
+| M-30 | markdown | `comment-markdown.ts:25` 代码文本含 `` ` `` 时 markdown 输出断裂 |
+| H-12 | 纯文本 | `plaintext.ts:69-72` image handler 缺 `endBlock()` 调用 |
+| H-13 | 迁移 | `migration-verifier.ts` per-span 误计（PT 多 span 同一 mark 被重复计） |
+| H-14 | 迁移 | `derived-data-verifier.ts` 只比 empty/non-empty 等价，5000→50 字丢失通过 |
+| M-5/6/7 | 性能 | `z.custom()` 无运行时校验、`EMPTY_HEADING_IDS` 可变 Map 共享、每次渲染重建 ReactNode 树 |
+
+#### 🟢 技术债（延后）
+
+共 29 项低严重度问题：`makeSingleBlockDocument` 重复、`sameDecorators` 重复、`<s>` vs `<del>` 不一致、`escapeAttr` 不转义单引号、CSS class 硬编码、`oxlint-disable` 过多、`RESIDUAL_HTML_RE` 缺 `g` flag 等。
+
+### 12.3 测试缺口
+
+| 优先级 | 目录 | 说明 |
+|--------|------|------|
+| 🔴 | `src/shared/inkling/comment-html-sanitize.ts` | 手写 HTML lexer——零测试。SEC 向量无覆盖 |
+| 🔴 | `src/shared/inkling/migrate-pt.ts` | 1359 行迁移逻辑——零单元测试 |
+| 🔴 | `src/shared/inkling/footnotes.ts` | 525 行脚注引擎——零测试 |
+| 🔴 | `src/ui/inkling/editor/` | 全 35 编辑器文件——零测试（FloatingLinkToolbar + card-mousedown 除外，已新增） |
+| 🔴 | `src/ui/inkling/render/` | 全 17 渲染文件——零测试 |
+| 🟠 | `src/server/domains/inkling/comment-email.ts` | 邮件 HTML——零测试，SEC-3 向量（comment-email 路径未用 sanitizeUrl） |
+| 🟠 | `src/server/domains/inkling/migration-support/` | 迁移校验器——零测试，lossy comparison bug 待修 |
 
 ---
 
