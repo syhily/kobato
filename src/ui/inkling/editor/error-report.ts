@@ -4,6 +4,5 @@
  * localized to this module.
  */
 export function reportEditorError(error: Error, context?: string): void {
-  // oxlint-disable-next-line eslint/no-console
   console.error(`Inkling editor error${context ? ` (${context})` : ''}:`, error)
 }
