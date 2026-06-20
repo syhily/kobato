@@ -3,53 +3,77 @@ import type { SerializedLexicalNode, SerializedRootNode } from 'lexical'
 import type { InklingBlockNode, InklingNonRecursiveBlockNode, InklingRootNode } from '@/shared/inkling/schema'
 
 /**
- * Lexical bridge helpers for the Inkling editor.
+ * Lexical ↔ Inkling type bridge.
  *
- * Inkling block nodes are structurally compatible with Lexical serialised
- * nodes — both are JSON trees with `type`, `version`, `children`, etc.
- * The Inkling schema validates the shape at the persistence boundary;
- * these casts bridge the isomorphic type gap between the two JSON trees
- * at the editor boundary where full Zod re-validation would be redundant.
+ * Inkling block nodes and Lexical serialised nodes share an identical JSON
+ * shape (`type`, `version`, `children`, etc.).  The Inkling schema validates
+ * the full tree at the persistence boundary; re-validating with Zod inside
+ * the editor hot-path (serialize / deserialize per keystroke) would be
+ * redundant and expensive.
+ *
+ * These helpers bridge the nominal type gap.  Dev-mode structural assertions
+ * catch mismatches early without production overhead.
  */
 
-/**
- * Cast Inkling block children to Lexical serialised nodes.
- * Callers that need a deep copy should pass the result through
- * `structuredClone` themselves.
- */
+// ---------------------------------------------------------------------------
+// Internal: single unsafe cast, guarded by dev-mode structural checks
+// ---------------------------------------------------------------------------
+
+/** Shallow-check that every element in an array is a plain object with a
+ *  `type` property — the common structural denominator between Inkling
+ *  block nodes and Lexical serialised nodes.  Only runs in dev mode. */
+function assertNodeArray(arr: readonly unknown[]): void {
+  if (import.meta.env.DEV) {
+    for (const el of arr) {
+      if (typeof el !== 'object' || el === null || !('type' in el)) {
+        throw new Error('lexical-bridge: expected object with type property')
+      }
+    }
+  }
+}
+
+/** Single point for the Inkling ↔ Lexical structural cast.  The two type
+ *  trees are isomorphic JSON; the dev-mode checks above and in each caller
+ *  validate the structural contract at runtime. */
+function unsafeCast<T>(value: unknown): T {
+  // oxlint-disable-next-line typescript/no-unsafe-type-assertion
+  return value as unknown as T
+}
+
+// ---------------------------------------------------------------------------
+// Public API
+// ---------------------------------------------------------------------------
+
+/** Inkling children → Lexical serialised nodes (editor input direction). */
 export function toLexicalChildren(
   children: readonly InklingBlockNode[] | readonly InklingNonRecursiveBlockNode[],
 ): SerializedLexicalNode[] {
-  // oxlint-disable-next-line typescript/no-unsafe-type-assertion
-  return children as unknown as SerializedLexicalNode[]
+  assertNodeArray(children)
+  return unsafeCast(children)
 }
 
-/**
- * Cast Lexical serialised node children back to Inkling non-recursive blocks.
- * Only safe when the editor is configured with the restricted node subset
- * that maps 1:1 to Inkling non-recursive blocks.
- */
+/** Lexical children → Inkling non-recursive blocks (restricted nested-editor
+ *  output direction).  Only valid when the editor registers the restricted
+ *  node subset that maps 1:1 to non-recursive blocks. */
 export function fromLexicalChildren(children: readonly SerializedLexicalNode[]): InklingNonRecursiveBlockNode[] {
-  // oxlint-disable-next-line typescript/no-unsafe-type-assertion
-  return children as unknown as InklingNonRecursiveBlockNode[]
+  assertNodeArray(children)
+  return unsafeCast(children)
 }
 
-/**
- * Cast Lexical serialised node children back to Inkling blocks (full union
- * including recursive types).  Used by editorStateToInklingDocument where
- * the editor registers all article nodes.
- */
+/** Lexical children → Inkling full block union (article-editor output
+ *  direction).  Used by `editorStateToInklingDocument`. */
 export function toBlockChildren(children: readonly SerializedLexicalNode[]): InklingBlockNode[] {
-  // oxlint-disable-next-line typescript/no-unsafe-type-assertion
-  return children as unknown as InklingBlockNode[]
+  assertNodeArray(children)
+  return unsafeCast(children)
 }
 
-/**
- * Cast an Inkling-shaped root to Lexical's SerializedRootNode.
- * Used when stripping footnote-definition blocks to produce a prose-only
- * editor state.  The shapes are structurally compatible.
- */
+/** Inkling root node → Lexical SerializedRootNode.  Used when stripping
+ *  footnote-definition blocks to produce a prose-only editor state. */
 export function toSerializedRoot(root: InklingRootNode): SerializedRootNode {
-  // oxlint-disable-next-line typescript/no-unsafe-type-assertion
-  return root as unknown as SerializedRootNode
+  if (import.meta.env.DEV) {
+    if (typeof root !== 'object' || root === null || root.type !== 'root') {
+      throw new Error('lexical-bridge: expected root node')
+    }
+  }
+  return unsafeCast(root)
 }
