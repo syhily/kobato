@@ -62,7 +62,7 @@ function CardShell({ nodeKey, children, className }: CardShellProps): ReactNode 
     <div
       className={cn(
         'inkling-card caret-grey-800 relative border-transparent transition-shadow',
-        'hover:shadow-[0_0_0_1px] hover:shadow-brand/40',
+        'hover:shadow-[0_0_0_1px] hover:shadow-brand',
         isSelected && 'z-20 shadow-[0_0_0_2px] shadow-brand',
         className,
       )}
@@ -639,19 +639,21 @@ export function TableCardComponent({ node }: { node: TableCardNode }): ReactNode
                           type="text"
                           value={cell.children.map((c) => (c.type === 'text' ? c.text : '')).join('')}
                           onChange={(e) => {
+                            // Preserve existing non-text children (links, inline-math)
+                            // when the user edits text content.  The text content of
+                            // the first text child is updated; other children are kept.
+                            const nonTextChildren = cell.children.filter((c) => c.type !== 'text')
+                            const newTextNode = {
+                              type: 'text' as const,
+                              version: 1 as const,
+                              text: e.target.value,
+                            }
                             const newRows: InklingTableNode['rows'] = rows.map((r, ri) =>
                               ri === rowIndex
                                 ? {
                                     ...r,
                                     cells: r.cells.map((c, ci) =>
-                                      ci === cellIndex
-                                        ? {
-                                            ...c,
-                                            children: [
-                                              { type: 'text' as const, version: 1 as const, text: e.target.value },
-                                            ],
-                                          }
-                                        : c,
+                                      ci === cellIndex ? { ...c, children: [newTextNode, ...nonTextChildren] } : c,
                                     ),
                                   }
                                 : r,
@@ -661,7 +663,20 @@ export function TableCardComponent({ node }: { node: TableCardNode }): ReactNode
                           className="w-full bg-transparent text-sm outline-none"
                         />
                       ) : (
-                        cell.children.map((child) => (child.type === 'text' ? child.text : '')).join('')
+                        cell.children
+                          .map((child, _ci) => {
+                            if (child.type === 'text') {
+                              return child.text
+                            }
+                            if (child.type === 'link') {
+                              return `[链接: ${child.url}]`
+                            }
+                            if (child.type === 'inline-math') {
+                              return `$${child.tex}$`
+                            }
+                            return ''
+                          })
+                          .join('') || '\u00A0'
                       )}
                     </CellTag>
                   )

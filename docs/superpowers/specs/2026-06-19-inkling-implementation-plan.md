@@ -3,6 +3,7 @@
 > 基于 [可行性研究报告](./2026-06-18-inkling-feasibility-report.md) 与 16/16 完成的 POC，制定从 POC 产物到生产上线的逐步执行计划。
 >
 > 日期：2026-06-19（更新 2026-06-20 二轮） | 状态：**P0–P6 完成，P7 待建迁移脚本**。2026-06-20 完成两轮代码审查 + 修复：
+>
 > - **已修复**：SEC-1/2/3 (`a3cf52a7`)、BR-2/3/4/5/6/7/8 (`2c8ab732`)、CRIT-1/2/3 + H-9 + P3.3 (`fedbf01a`)
 > - **待修**：仅 P7 生产迁移脚本
 >
@@ -541,12 +542,12 @@ pnpm run test:unit -- inkling
 - insert/delete 后调用 `renumber.ts` 的 `$renumberFootnotes` + `applyFootnoteRenumberWithHistoryMerge`
 - `applyFootnoteRenumberWithHistoryMerge` 用 history-merge tag（renumber 不单独进 undo 栈——U4 gate，POC 016 已验证）
 
-### Step P4.2 — `^ ` 触发 + 定义对话框
+### Step P4.2 — `^` 触发 + 定义对话框
 
-【参照】Tiptap 侧 `tiptap/footnote-caret-trigger.ts`（32 行，`^ ` 正则触发）+ `ui/admin/editor/FootnoteEditorDialog.tsx`。
+【参照】Tiptap 侧 `tiptap/footnote-caret-trigger.ts`（32 行，`^` 正则触发）+ `ui/admin/editor/FootnoteEditorDialog.tsx`。
 【交付】
 
-- 新建 `ui/inkling/editor/footnotes/FootnoteCaretTrigger.ts`：Lexical command/transform，检测输入 `^ ` 后插入 FootnoteRefNode + 打开对话框
+- 新建 `ui/inkling/editor/footnotes/FootnoteCaretTrigger.ts`：Lexical command/transform，检测输入 `^` 后插入 FootnoteRefNode + 打开对话框
 - 新建 `ui/inkling/editor/footnotes/FootnoteDialog.tsx`：编辑脚注定义内容（受限 block set：paragraph/heading/quote/list/code/math/link/inline-math，**无 solution/two-column/footnote 自身**防递归），保存后合并到 document 尾部 definition nodes
 
 ### Step P4.3 — ref 点击打开定义
@@ -583,7 +584,7 @@ pnpm run test:unit -- inkling
 
 ### Step P4.7 — 验收
 
-- `^ ` 插入脚注 → 对话框编辑 → 保存 → ref 编号正确
+- `^` 插入脚注 → 对话框编辑 → 保存 → ref 编号正确
 - 删 ref → 编号重排
 - undo/redo 脚注不破坏编号（U4：单次 undo 单次回滚）
 - Solution/TwoColumn 插入 → 内部编辑 → 序列化往返正确

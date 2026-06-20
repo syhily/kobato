@@ -1,15 +1,27 @@
 import type { LexicalEditor } from 'lexical'
 
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
-import { $getNearestNodeFromDOMNode, $getRoot, $isDecoratorNode } from 'lexical'
+import {
+  $getNearestNodeFromDOMNode,
+  $getRoot,
+  $getSelection,
+  $isDecoratorNode,
+  $isNodeSelection,
+  COMMAND_PRIORITY_LOW,
+  KEY_ARROW_DOWN_COMMAND,
+  KEY_ARROW_UP_COMMAND,
+} from 'lexical'
 import { useEffect } from 'react'
 
 /**
- * Enables drag-and-drop reordering of block-level DecoratorNodes (cards).
- * Uses HTML5 drag API. A card must have `draggable="true"` and a
- * `data-inkling-card-key` attribute on its DOM wrapper for this plugin
- * to recognise it. The CardShell in card-components already sets
- * `data-inkling-card-selected`.
+ * Enables drag-and-drop and keyboard reordering of block-level
+ * DecoratorNodes (cards).  Keyboard: Alt+ArrowUp / Alt+ArrowDown moves
+ * the currently selected card one position.  Mouse: HTML5 drag API with
+ * drop indicator.
+ *
+ * A card must have `draggable="true"` and a `data-inkling-card-key`
+ * attribute on its DOM wrapper.  The CardShell in card-components
+ * already sets `data-inkling-card-selected`.
  */
 export function useInklingDragDropReorder(editor: LexicalEditor): void {
   useEffect(() => {
@@ -141,12 +153,74 @@ export function useInklingDragDropReorder(editor: LexicalEditor): void {
       dragKey = null
     }
 
+    // Keyboard reorder: Alt+ArrowUp / Alt+ArrowDown moves the currently
+    // selected card one position within the root children.
+    const unregisterArrowUp = editor.registerCommand(
+      KEY_ARROW_UP_COMMAND,
+      (event: KeyboardEvent) => {
+        if (!event.altKey) {
+          return false
+        }
+        const selection = $getSelection()
+        if (!$isNodeSelection(selection)) {
+          return false
+        }
+        const selectedNodes = selection.getNodes()
+        if (selectedNodes.length !== 1) {
+          return false
+        }
+        const node = selectedNodes[0]
+        if (!node || !$isDecoratorNode(node) || node.isInline()) {
+          return false
+        }
+        const prev = node.getPreviousSibling()
+        if (prev === null) {
+          return true
+        }
+        prev.insertBefore(node)
+        event.preventDefault()
+        return true
+      },
+      COMMAND_PRIORITY_LOW,
+    )
+
+    const unregisterArrowDown = editor.registerCommand(
+      KEY_ARROW_DOWN_COMMAND,
+      (event: KeyboardEvent) => {
+        if (!event.altKey) {
+          return false
+        }
+        const selection = $getSelection()
+        if (!$isNodeSelection(selection)) {
+          return false
+        }
+        const selectedNodes = selection.getNodes()
+        if (selectedNodes.length !== 1) {
+          return false
+        }
+        const node = selectedNodes[0]
+        if (!node || !$isDecoratorNode(node) || node.isInline()) {
+          return false
+        }
+        const next = node.getNextSibling()
+        if (next === null) {
+          return true
+        }
+        next.insertAfter(node)
+        event.preventDefault()
+        return true
+      },
+      COMMAND_PRIORITY_LOW,
+    )
+
     rootEl.addEventListener('dragstart', onDragStart)
     rootEl.addEventListener('dragover', onDragOver)
     rootEl.addEventListener('drop', onDrop)
     rootEl.addEventListener('dragend', onDragEnd)
 
     return () => {
+      unregisterArrowUp()
+      unregisterArrowDown()
       rootEl.removeEventListener('dragstart', onDragStart)
       rootEl.removeEventListener('dragover', onDragOver)
       rootEl.removeEventListener('drop', onDrop)

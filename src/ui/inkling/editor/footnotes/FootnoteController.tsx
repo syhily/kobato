@@ -90,7 +90,6 @@ export function FootnoteController() {
     closeDialog,
     replaceDefinition,
     removeDefinition,
-    removeOrphans,
   } = useInklingFootnotes()
 
   // Re-entrancy guard: the renumber update re-fires this listener, so without
@@ -118,7 +117,10 @@ export function FootnoteController() {
         refs = collectFootnoteRefs(editorStateToInklingDocument(editorState))
       })
 
-      removeOrphans(refs)
+      // Orphan definitions are NOT silently auto-removed here.  The user
+      // may still be editing a definition that temporarily has no refs
+      // (e.g. they just deleted the last ref and plan to insert a new one).
+      // Explicit deletion is available via the delete button in FootnoteDialog.
 
       const currentDefinitions = getDefinitions()
       const preSignature = footnoteSyncSignature(refs, currentDefinitions)
@@ -150,7 +152,7 @@ export function FootnoteController() {
         })
       }
     })
-  }, [editor, getDefinitions, removeOrphans])
+  }, [editor, getDefinitions])
 
   // `^<space>` trigger. Suppressed while the dialog is open so typing `^ `
   // inside the footnote body editor doesn't reopen an insert dialog.
