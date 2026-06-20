@@ -3,6 +3,8 @@ import type { LexicalEditor, LexicalNode } from 'lexical'
 import {
   $createNodeSelection,
   $createParagraphNode,
+  $getNearestNodeFromDOMNode,
+  $getNodeByKey,
   $getRoot,
   $getSelection,
   $isDecoratorNode,
@@ -35,7 +37,7 @@ import {
 } from '@/ui/inkling/editor/cards/simple-card-nodes'
 import { FootnoteRefNode } from '@/ui/inkling/editor/footnotes/FootnoteRefNode'
 
-function $selectNode(node: LexicalNode): void {
+export function $selectNode(node: LexicalNode): void {
   const nodeSelection = $createNodeSelection()
   nodeSelection.add(node.getKey())
   $setSelection(nodeSelection)
@@ -45,7 +47,7 @@ function $isInlineDecoratorNode(node: LexicalNode | null | undefined): node is F
   return node instanceof FootnoteRefNode && node.isInline()
 }
 
-function $isBlockCardNode(node: LexicalNode | null | undefined): boolean {
+export function $isBlockCardNode(node: LexicalNode | null | undefined): boolean {
   return (
     node instanceof ImageCardNode ||
     node instanceof CodeCardNode ||
@@ -476,6 +478,104 @@ export function registerInklingKeyboardNavigation(editor: LexicalEditor): () => 
     COMMAND_PRIORITY_CRITICAL,
   )
 
+  // Mousedown handler: select a card when the user clicks on it. If the
+  // card is already selected, let the click through to internal controls
+  // (INPUT/TEXTAREA). If the target is an input-like element, don't
+  // preventDefault so the input gets focus. Mirrors Koenig's
+  // `KoenigCardWrapper.handleMousedown` (package koenig-lexical).
+  //
+  // `event.preventDefault()` on non-input targets is the key defence:
+  // it keeps the browser from changing the DOM selection, which in turn
+  // prevents Lexical's `selectionchange` listener from calling
+  // `$internalCreateRangeSelection` to overwrite the NodeSelection we
+  // just set. No additional click intercept is needed — Lexical's
+  // `onClick` (`Lexical.dev.mjs:3769-3797`) only calls `removeAllRanges`
+  // under narrow multi-child-empty-editor conditions and never touches
+  // a valid NodeSelection.
+  const rootElement = editor.getRootElement()
+
+  const handleCardMousedown = (event: MouseEvent): void => {
+    // oxlint-disable-next-line typescript/no-unsafe-type-assertion
+    if (rootElement === null || !rootElement.contains(event.target as Node)) {
+      return
+    }
+    // Find the nearest Lexical node for the mousedown target, then walk up
+    // to see if any ancestor is a block-level card.
+    let targetCardKey: string | null = null
+    editor.read(() => {
+      // oxlint-disable-next-line typescript/no-unsafe-type-assertion
+      const lexicalNode = $getNearestNodeFromDOMNode(event.target as Node)
+      if (lexicalNode === null) {
+        return
+      }
+      let current: LexicalNode | null = lexicalNode
+      while (current !== null) {
+        if ($isBlockCardNode(current)) {
+          targetCardKey = current.getKey()
+          return
+        }
+        current = current.getParent()
+      }
+    })
+    if (targetCardKey === null) {
+      // Not a card — let Lexical default behaviour handle it.
+      return
+    }
+
+    // Check whether this card is already selected.
+    let alreadySelected = false
+    editor.getEditorState().read(() => {
+      const selection = $getSelection()
+      if ($isNodeSelection(selection)) {
+        alreadySelected = selection.getNodes().some((n) => n.getKey() === targetCardKey)
+      }
+    })
+    if (alreadySelected) {
+      // Card is already selected — allow the click to pass through so
+      // internal controls (inputs, buttons) work normally.
+      return
+    }
+
+    // Select the card via a NodeSelection. Use `history-merge` so the
+    // selection itself doesn't push an undo entry.
+    const cardKey = targetCardKey
+    editor.update(
+      () => {
+        const node = $getNodeByKey(cardKey)
+        if (node !== null) {
+          $selectNode(node)
+        }
+      },
+      { tag: 'history-merge' },
+    )
+
+    // Focus-passthrough: if the user clicked on an interactive form control
+    // (input, textarea, button, select) or inside a
+    // `[data-inkling-allow-clickthrough]` element, don't preventDefault —
+    // let the browser handle focus and the subsequent click event naturally.
+    // Without this, clicking a <button> inside an unselected card would
+    // require two clicks: one to select the card (mousedown prevented the
+    // click), another to actually trigger the button. Including BUTTON and
+    // SELECT here makes card-internal controls work on the first click.
+    // oxlint-disable-next-line typescript/no-unsafe-type-assertion
+    const target = event.target as HTMLElement
+    const isInteractive =
+      target.tagName === 'INPUT' ||
+      target.tagName === 'TEXTAREA' ||
+      target.tagName === 'BUTTON' ||
+      target.tagName === 'SELECT'
+    // `data-inkling-allow-clickthrough` is an extension point for non-standard
+    // interactive regions (currently unused — no card sets this attribute).
+    const allowClickthrough = target.closest('[data-inkling-allow-clickthrough]') !== null
+    if (!isInteractive && !allowClickthrough) {
+      event.preventDefault()
+    }
+  }
+  rootElement?.addEventListener('mousedown', handleCardMousedown, false)
+  const unregisterMousedown = (): void => {
+    rootElement?.removeEventListener('mousedown', handleCardMousedown, false)
+  }
+
   return () => {
     unregisterArrowLeft()
     unregisterArrowRight()
@@ -485,6 +585,7 @@ export function registerInklingKeyboardNavigation(editor: LexicalEditor): () => 
     unregisterDelete()
     unregisterEnter()
     unregisterEscape()
+    unregisterMousedown()
   }
 }
 

@@ -43,6 +43,7 @@ import { SharedHistoryProvider, useSharedHistoryState } from '@/ui/inkling/edito
 import { OnInklingDocumentChangePlugin } from '@/ui/inkling/editor/plugins/OnInklingDocumentChangePlugin'
 import { PastePlugin } from '@/ui/inkling/editor/plugins/PastePlugin'
 import { FloatingFormatToolbar } from '@/ui/inkling/editor/toolbar/FloatingFormatToolbar'
+import { FloatingLinkToolbar } from '@/ui/inkling/editor/toolbar/FloatingLinkToolbar'
 
 const theme = {
   paragraph: 'inkling-paragraph',
@@ -202,6 +203,9 @@ export function InklingArticleEditor({
                 <AutoFocusPlugin />
                 <InklingKeyboardNav />
                 <FloatingFormatToolbar />
+                {/* Hover-to-edit link toolbar: shows above a link on mousemove
+                    (50ms debounce) with one-click edit / remove. */}
+                <FloatingLinkToolbar />
                 <InklingSlashMenuPlugin mode="article" />
                 <FootnoteController />
                 <InklingDragDropReorder />
