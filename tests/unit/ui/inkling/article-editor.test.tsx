@@ -132,7 +132,6 @@ describe('ui/inkling/editor/article/InklingArticleEditor', () => {
       _type: 'inkling',
       schemaVersion: 1,
       lexicalVersion: '0.45.0',
-      // oxlint-disable-next-line typescript/no-unsafe-type-assertion
       root: serialized.root as InklingDocument['root'],
     })
 

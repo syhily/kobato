@@ -135,7 +135,6 @@ function editorStateToDocument(editorState: { toJSON: () => { root: unknown } })
     _type: 'inkling',
     schemaVersion: INKLING_SCHEMA_VERSION,
     lexicalVersion: '0.45.0',
-    // oxlint-disable-next-line typescript/no-unsafe-type-assertion
     root: serialized.root as InklingDocument['root'],
   }
 }
