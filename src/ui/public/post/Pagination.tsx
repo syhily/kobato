@@ -21,7 +21,7 @@ export function Pagination({ current, total, rootPath }: PaginationProps) {
       <ul data-slot="pagination-content" className="flex flex-row flex-wrap items-center justify-center gap-2">
         {items.map((item, i) =>
           item === 'ellipsis' ? (
-            // oxlint-disable-next-line react/no-array-index-key
+            // key={`ellipsis-${i}`} is stable: at most 2 ellipsis items, always at fixed window edges.
             <Ellipsis key={`ellipsis-${i}`} />
           ) : (
             <PageItem key={item} pageNum={item} current={current} rootPath={rootPath} />

@@ -40,8 +40,7 @@ const app = await createHonoServer<Env>({
   // keeping the `async` keyword here makes the promise boundary explicit
   // and prevents a future edit from accidentally dropping the await.
   async getLoadContext(c) {
-    // oxlint-disable-next-line typescript/return-await
-    return await buildLoadContext(c)
+    return buildLoadContext(c)
   },
 })
 

@@ -33,7 +33,6 @@ export function RealtimeFeed({ className }: { className?: string }) {
                   // two events on the same ms tie-break by their
                   // arrival index in the rolling window. Items are
                   // append-only and never reorder.
-                  // oxlint-disable-next-line react/no-array-index-key
                   key={`${e.ts}-${idx}`}
                   className="grid grid-cols-[auto_1fr_auto] items-center gap-2 rounded-xl px-2 py-1 text-xs hover:bg-accent/40"
                 >

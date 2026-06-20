@@ -301,7 +301,7 @@ function AuditLogSkeleton() {
   return (
     <>
       {Array.from({ length: 3 }).map((_, i) => (
-        // oxlint-disable-next-line react/no-array-index-key
+        // Skeleton placeholders — static-length array, index is stable.
         <div key={i} className="px-4 py-3">
           <div className="flex flex-col gap-2">
             <div className="flex items-center gap-2">

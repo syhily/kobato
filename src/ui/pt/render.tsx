@@ -1,4 +1,3 @@
-/* oxlint-disable typescript/no-unsafe-type-assertion */
 import { PortableText, type PortableTextComponents, type PortableTextTypeComponentProps } from '@portabletext/react'
 import { useMemo, type ReactNode } from 'react'
 
@@ -14,6 +13,7 @@ import type {
 
 import { collectHeadingSlotsInPortableTextRenderOrder } from '@/shared/pt/utils'
 import { Slugger } from '@/shared/slug'
+import { unsafeCast } from '@/shared/utils/unsafe-cast'
 import { Solution } from '@/ui/pt/blocks/Solution'
 import { FootnoteProvider, FootnotePreviewRegistrar } from '@/ui/pt/Footnotes'
 import { ImageMetaProvider, type ImageMetaMap } from '@/ui/pt/image-meta-context'
@@ -103,7 +103,7 @@ export function PortableTextBody({
           <FootnoteRefContext value={footnoteCtx}>
             <HeadingIdByBlockKeyContext value={headingIdByBlockKey}>
               <div className="portable-text-body">
-                <PortableText value={inlineBody as PortableTextBlock[]} components={portableTextComponents} />
+                <PortableText value={unsafeCast<PortableTextBlock[]>(inlineBody)} components={portableTextComponents} />
                 {footnotes.length > 0 ? (
                   <FootnotesSection definitions={footnotes} sectionTitle={resolvedFootnotesHeading} />
                 ) : null}
@@ -129,27 +129,29 @@ function collectFootnoteDefinitions(body: PortableTextBodyType): Map<string, Foo
 const portableTextComponents: PortableTextComponents = {
   block: {
     h1: ({ children, value }) => (
-      <HeadingBlock Tag="h1" value={value as TextBlock}>
+      <HeadingBlock Tag="h1" value={unsafeCast<TextBlock>(value)}>
         {children}
       </HeadingBlock>
     ),
     h2: ({ children, value }) => (
-      <HeadingBlock Tag="h2" value={value as TextBlock}>
+      <HeadingBlock Tag="h2" value={unsafeCast<TextBlock>(value)}>
         {children}
       </HeadingBlock>
     ),
     h3: ({ children, value }) => (
-      <HeadingBlock Tag="h3" value={value as TextBlock}>
+      <HeadingBlock Tag="h3" value={unsafeCast<TextBlock>(value)}>
         {children}
       </HeadingBlock>
     ),
     h4: ({ children, value }) => (
-      <HeadingBlock Tag="h4" value={value as TextBlock}>
+      <HeadingBlock Tag="h4" value={unsafeCast<TextBlock>(value)}>
         {children}
       </HeadingBlock>
     ),
-    normal: ({ children, value }) => <ParagraphBlock value={value as TextBlock}>{children}</ParagraphBlock>,
-    blockquote: ({ children, value }) => <BlockquoteBlock value={value as TextBlock}>{children}</BlockquoteBlock>,
+    normal: ({ children, value }) => <ParagraphBlock value={unsafeCast<TextBlock>(value)}>{children}</ParagraphBlock>,
+    blockquote: ({ children, value }) => (
+      <BlockquoteBlock value={unsafeCast<TextBlock>(value)}>{children}</BlockquoteBlock>
+    ),
   },
   list: {
     bullet: ({ children }) => <ul>{children}</ul>,
@@ -196,7 +198,7 @@ const portableTextComponents: PortableTextComponents = {
 function SolutionBlockComponent({ value }: PortableTextTypeComponentProps<SolutionBlock>) {
   return (
     <Solution>
-      <PortableText value={value.children as PortableTextBlock[]} components={portableTextComponents} />
+      <PortableText value={unsafeCast<PortableTextBlock[]>(value.children)} components={portableTextComponents} />
     </Solution>
   )
 }
@@ -205,10 +207,10 @@ function TwoColumnBlockComponent({ value }: PortableTextTypeComponentProps<TwoCo
   return (
     <section className="my-6 grid grid-cols-1 gap-6 md:grid-cols-2 md:gap-8" data-pt-two-column="">
       <div className="min-w-0" data-pt-two-column-pane="" data-side="left">
-        <PortableText value={value.left as PortableTextBlock[]} components={portableTextComponents} />
+        <PortableText value={unsafeCast<PortableTextBlock[]>(value.left)} components={portableTextComponents} />
       </div>
       <div className="min-w-0" data-pt-two-column-pane="" data-side="right">
-        <PortableText value={value.right as PortableTextBlock[]} components={portableTextComponents} />
+        <PortableText value={unsafeCast<PortableTextBlock[]>(value.right)} components={portableTextComponents} />
       </div>
     </section>
   )
@@ -238,12 +240,13 @@ function FootnoteBackrefLink({ footnoteIndex }: { footnoteIndex: number }) {
 }
 
 function footnotesPortableComponents(lastParagraphKey: string | null, footnoteIndex: number): PortableTextComponents {
+  // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- spreading PortableTextComponents with an overridden block requires the assertion; type-safe at runtime
   return {
     ...portableTextComponents,
     block: {
       ...portableTextComponents.block,
       normal: ({ children, value }) => {
-        const tb = value as TextBlock
+        const tb = unsafeCast<TextBlock>(value)
         if (lastParagraphKey !== null && tb._key === lastParagraphKey) {
           return (
             <p>
@@ -252,7 +255,7 @@ function footnotesPortableComponents(lastParagraphKey: string | null, footnoteIn
             </p>
           )
         }
-        return <ParagraphBlock value={value as TextBlock}>{children}</ParagraphBlock>
+        return <ParagraphBlock value={unsafeCast<TextBlock>(value)}>{children}</ParagraphBlock>
       },
     },
   } as PortableTextComponents
@@ -276,12 +279,15 @@ function FootnotesSection({
           const lastPk = lastNormalParagraphKey(definition.children)
           const comps = footnotesPortableComponents(lastPk, definition.index)
           const preview = (
-            <PortableText value={definition.children as PortableTextBlock[]} components={portableTextComponents} />
+            <PortableText
+              value={unsafeCast<PortableTextBlock[]>(definition.children)}
+              components={portableTextComponents}
+            />
           )
           return (
             <li key={definition._key} id={anchorId}>
               <FootnotePreviewRegistrar anchorId={anchorId} preview={preview} />
-              <PortableText value={definition.children as PortableTextBlock[]} components={comps} />
+              <PortableText value={unsafeCast<PortableTextBlock[]>(definition.children)} components={comps} />
               {lastPk === null ? (
                 <p>
                   <FootnoteBackrefLink footnoteIndex={definition.index} />

@@ -1,4 +1,3 @@
-/* oxlint-disable typescript/no-unsafe-type-assertion */
 import { describe, expect, it } from 'vitest'
 
 import type { Block, NonRecursiveBlock, PortableTextBody, TextBlock } from '@/shared/pt/schema'

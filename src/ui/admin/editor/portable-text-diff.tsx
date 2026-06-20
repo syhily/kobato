@@ -180,7 +180,6 @@ export function DiffPanel({ diff, side }: DiffPanelProps) {
               // `entry.key` is the diff entry's PT-block `_key`. The idx
               // suffix disambiguates the rare case where the same `_key`
               // appears twice in the same diff (move + edit pair).
-              // oxlint-disable-next-line react/no-array-index-key
               key={`${entry.key}-${idx}`}
               className="rounded border border-dashed border-muted bg-muted/30 px-2 py-2 text-xs text-muted-foreground"
             >
@@ -190,7 +189,9 @@ export function DiffPanel({ diff, side }: DiffPanelProps) {
         }
         return (
           <li
-            // oxlint-disable-next-line react/no-array-index-key
+            // `entry.key` is the diff entry's PT-block `_key`. The idx
+            // suffix disambiguates the rare case where the same `_key`
+            // appears twice in the same diff (move + edit pair).
             key={`${entry.key}-${idx}`}
             className={cn(
               'rounded border px-2 py-2 text-sm',
@@ -236,13 +237,12 @@ function BlockInlineDiff({ leftBlock, rightBlock, side }: BlockInlineDiffProps) 
   return (
     <p className="line-clamp-6 leading-relaxed wrap-break-word">
       {parts.map((part, idx) => {
+        // `parts` is a deterministically-computed inline diff array; idx is stable.
         if (part.op === 0) {
-          // oxlint-disable-next-line react/no-array-index-key
           return <span key={idx}>{part.text}</span>
         }
         if (side === 'right' && part.op === 1) {
           return (
-            // oxlint-disable-next-line react/no-array-index-key
             <span key={idx} className="rounded bg-diff-insert-bg px-0.5 text-diff-insert-fg">
               {part.text}
             </span>
@@ -250,7 +250,6 @@ function BlockInlineDiff({ leftBlock, rightBlock, side }: BlockInlineDiffProps) 
         }
         if (side === 'left' && part.op === -1) {
           return (
-            // oxlint-disable-next-line react/no-array-index-key
             <span key={idx} className="rounded bg-diff-delete-bg px-0.5 text-diff-delete-fg line-through">
               {part.text}
             </span>

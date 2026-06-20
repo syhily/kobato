@@ -227,7 +227,7 @@ export function JustifiedImageGridSkeleton({ targetRowHeight = 200, gap = 12, cl
   return (
     <div className={cn('flex flex-col', className)} style={{ gap }}>
       {Array.from({ length: 4 }).map((_, rowIndex) => (
-        // oxlint-disable-next-line react/no-array-index-key
+        // Skeleton rows — static-length placeholder array, index is stable.
         <div key={rowIndex} className="flex" style={{ gap, height: targetRowHeight }}>
           {skeletonWidths(rowIndex).map((span, itemIndex) => {
             const key = `${rowIndex}-${itemIndex}`

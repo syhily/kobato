@@ -318,7 +318,7 @@ export function AddMusicDialog({ open, onClose, onAdded }: AddMusicDialogProps) 
           <div className="flex flex-col gap-2">
             {(isSearching || isLoadingMore) && results.length === 0 ? (
               Array.from({ length: 3 }).map((_, index) => (
-                // oxlint-disable-next-line react/no-array-index-key
+                // Skeleton placeholders — static-length array, index is stable.
                 <Skeleton key={index} className="h-16 w-full rounded-xl" />
               ))
             ) : results.length === 0 ? (

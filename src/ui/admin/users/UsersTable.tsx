@@ -157,7 +157,7 @@ function UsersSkeleton() {
   return (
     <>
       {Array.from({ length: 5 }).map((_, i) => (
-        // oxlint-disable-next-line react/no-array-index-key
+        // Skeleton rows — static-length placeholder array, index is stable.
         <TableRow key={i}>
           <TableCell colSpan={4} className="py-4">
             <div className="flex items-center gap-3">

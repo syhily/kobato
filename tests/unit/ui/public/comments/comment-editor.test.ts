@@ -13,7 +13,7 @@ import { validateInklingDocumentForMode } from '@/shared/inkling/features'
 import { CodeBlockNode, $createCodeBlockNode } from '@/ui/inkling/editor/comment/nodes/CodeBlockNode'
 import { InlineMathNode, $createInlineMathNode } from '@/ui/inkling/editor/comment/nodes/InlineMathNode'
 import { MathBlockNode, $createMathBlockNode } from '@/ui/inkling/editor/comment/nodes/MathBlockNode'
-import { editorStateToInklingDocument } from '@/ui/inkling/editor/InklingEditor'
+import { editorStateToInklingDocument } from '@/ui/inkling/editor/serialize'
 
 const COMMENT_NODES = [
   ParagraphNode,

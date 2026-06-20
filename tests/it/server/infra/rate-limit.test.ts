@@ -1,8 +1,3 @@
-// `expect((await fn()).field)` is the compact assertion idiom we use
-// throughout the suite. Extracting an intermediate variable on every
-// line would double the file length without adding clarity.
-// oxlint-disable unicorn/no-await-expression-member
-
 import { beforeEach, describe, expect, it } from 'vitest'
 
 import { TEST_BLOG_SETTINGS_BUNDLE } from '#/_helpers/blog-settings'

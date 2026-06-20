@@ -35,58 +35,58 @@
 
 ### 1.1 生产就绪（直接可用，~3500 LOC）
 
-| 层            | 文件                                          | LOC  | 说明                                     |
-| ------------- | --------------------------------------------- | ---- | ---------------------------------------- |
-| 数据契约      | `shared/inkling/schema.ts`                    | 561  | 全节点 Zod schema，含递归容器 lazy union |
-|               | `shared/inkling/features.ts`                  | 182  | article/comment 模式校验                 |
-|               | `shared/inkling/empty.ts`                     | 26   | 空文档常量                               |
-|               | `shared/inkling/normalize.ts`                 | 106  | transient/derived 剥离 + fingerprint     |
-| 纯逻辑 walker | `shared/inkling/walk.ts`                      | 341  | 框架无关 visitor，20 handler             |
-|               | `shared/inkling/plaintext.ts`                 | 114  | 搜索/摘要纯文本                          |
-|               | `shared/inkling/headings.ts`                  | 148  | TOC 标题收集 + slug 槽                   |
-|               | `shared/inkling/images.ts`                    | 25   | storagePath 去重                         |
-| 脚注引擎      | `shared/inkling/footnotes.ts`                 | 525  | 重编号 + 孤儿移除 + 缺失检测             |
-| 迁移          | `shared/inkling/migrate-pt.ts`                | 1336 | 双向 PT↔Inkling                          |
-|               | `shared/inkling/comment-html-sanitize.ts`     | 427  | 手写 HTML lexer 清洗器                   |
-| SSR 渲染      | `server/render/inkling/html.ts`               | 453  | Feed HTML 全节点含嵌套                   |
-|               | `server/render/inkling/sanitize.ts`           | 62   | feed 消毒                                |
-|               | `server/domains/inkling/prerender.ts`         | 172  | 保存时 Shiki+KaTeX                       |
-|               | `server/domains/inkling/music-prerender.ts`   | 136  | 读取时音乐元数据                         |
-|               | `server/domains/inkling/comment-email.ts`     | 163  | 评论邮件 HTML                            |
-| React 渲染    | `ui/inkling/render/InklingBody.tsx`           | 375  | 全节点 SSR React                         |
-|               | `ui/inkling/render/CommentInklingBody.tsx`    | 163  | 评论专用                                 |
-|               | `ui/inkling/render/{blocks,marks}/*`          | ~260 | 8 block + 4 mark                         |
-| 评论编辑器    | `ui/inkling/editor/comment/CommentEditor.tsx` | 61   | 完整接线含工具栏                         |
+| 层            | 文件                                          | LOC  | 说明                                                        |
+| ------------- | --------------------------------------------- | ---- | ----------------------------------------------------------- |
+| 数据契约      | `shared/inkling/schema.ts`                    | 561  | 全节点 Zod schema，含递归容器 lazy union                    |
+|               | `shared/inkling/features.ts`                  | 182  | article/comment 模式校验                                    |
+|               | `shared/inkling/empty.ts`                     | 26   | 空文档常量                                                  |
+|               | `shared/inkling/normalize.ts`                 | 106  | transient/derived 剥离 + fingerprint                        |
+| 纯逻辑 walker | `shared/inkling/walk.ts`                      | 341  | 框架无关 visitor，20 handler                                |
+|               | `shared/inkling/plaintext.ts`                 | 114  | 搜索/摘要纯文本                                             |
+|               | `shared/inkling/headings.ts`                  | 148  | TOC 标题收集 + slug 槽                                      |
+|               | `shared/inkling/images.ts`                    | 25   | storagePath 去重                                            |
+| 脚注引擎      | `shared/inkling/footnotes.ts`                 | 525  | 重编号 + 孤儿移除 + 缺失检测                                |
+| 迁移          | `shared/inkling/migrate-pt.ts`                | 1336 | 双向 PT↔Inkling                                             |
+|               | `shared/inkling/comment-html-sanitize.ts`     | 427  | 手写 HTML lexer 清洗器                                      |
+| SSR 渲染      | `server/render/inkling/html.ts`               | 453  | Feed HTML 全节点含嵌套                                      |
+|               | `server/render/inkling/sanitize.ts`           | 62   | feed 消毒                                                   |
+|               | `server/domains/inkling/prerender.ts`         | 172  | 保存时 Shiki+KaTeX                                          |
+|               | `server/domains/inkling/music-prerender.ts`   | 136  | 读取时音乐元数据                                            |
+|               | `server/domains/inkling/comment-email.ts`     | 163  | 评论邮件 HTML                                               |
+| React 渲染    | `ui/inkling/render/InklingBody.tsx`           | 375  | 全节点 SSR React                                            |
+|               | `ui/inkling/render/CommentInklingBody.tsx`    | 163  | 评论专用                                                    |
+|               | `ui/inkling/render/{blocks,marks}/*`          | ~260 | 8 block + 4 mark                                            |
+| 评论编辑器    | `ui/inkling/editor/comment/CommentEditor.tsx` | 61   | 完整接线含工具栏                                            |
 | URL 安全      | `shared/sanitize-url.ts`                      | 84   | 统一清洗：控制字符剥离 + 协议白名单（**新增，2026-06-20**） |
 
 ### 1.2 POC 骨架（已硬化 ✅ / 已修复 🔧）
 
-| 文件                                    | LOC  | 状态 | 说明                                                 |
-| --------------------------------------- | ---- | ---- | ---------------------------------------------------- |
-| `article/InklingArticleEditor.tsx`      | 283  | ✅    | 已集成 FloatingLinkToolbar、PlusMenu、FootnoteProvider、PastePlugin |
-| `cards/card-components.tsx`             | 722  | ✅    | CRIT-1 已修（`fedbf01a`）：NestedEditor 不再每击键重建 |
-| `cards/card-registry.ts`               | 249  | ✅    | CRIT-3 已修：`$createNodeSelection` + `$setSelection` 代 `selectPrevious` |
-| `behaviour/keyboard-navigation.ts`      | 599  | ✅    | mousedown 卡片选中已实现，export $selectNode/$isBlockCardNode |
-| `toolbar/ArticleToolbar.tsx`            | 118  | 🟡    | 只 insert 按钮，无格式切换（此非阻塞，可后补）       |
-| `toolbar/FloatingLinkToolbar.tsx`       | 285  | ✅    | hover 编辑/删除链接 |
-| `nested/NestedEditor.tsx`               | 122  | ✅    | CRIT-1 已修：`useMemo` 不含 `initialBlocks`，编辑器单次创建 |
-| `footnotes/InklingFootnoteProvider.tsx` | 272  | ✅    | 对话框已实现，重编号已接线 |
+| 文件                                    | LOC | 状态 | 说明                                                                      |
+| --------------------------------------- | --- | ---- | ------------------------------------------------------------------------- |
+| `article/InklingArticleEditor.tsx`      | 283 | ✅   | 已集成 FloatingLinkToolbar、PlusMenu、FootnoteProvider、PastePlugin       |
+| `cards/card-components.tsx`             | 722 | ✅   | CRIT-1 已修（`fedbf01a`）：NestedEditor 不再每击键重建                    |
+| `cards/card-registry.ts`                | 249 | ✅   | CRIT-3 已修：`$createNodeSelection` + `$setSelection` 代 `selectPrevious` |
+| `behaviour/keyboard-navigation.ts`      | 599 | ✅   | mousedown 卡片选中已实现，export $selectNode/$isBlockCardNode             |
+| `toolbar/ArticleToolbar.tsx`            | 118 | 🟡   | 只 insert 按钮，无格式切换（此非阻塞，可后补）                            |
+| `toolbar/FloatingLinkToolbar.tsx`       | 285 | ✅   | hover 编辑/删除链接                                                       |
+| `nested/NestedEditor.tsx`               | 122 | ✅   | CRIT-1 已修：`useMemo` 不含 `initialBlocks`，编辑器单次创建               |
+| `footnotes/InklingFootnoteProvider.tsx` | 272 | ✅   | 对话框已实现，重编号已接线                                                |
 
 ### 1.3 缺失（已补 ✅ / 可选 🟡 / 未建 ❌）
 
-| 项目 | 状态 |
-|------|------|
-| 浮动格式工具栏 | ✅ `FloatingFormatToolbar.tsx` |
-| Slash 菜单 UI | ✅ `SlashMenu.tsx` |
-| **Plus 菜单** | ✅ `PlusMenu.tsx`（`fedbf01a` 新增） |
-| 拖拽排序 | ✅ `DragDropReorderPlugin.tsx` |
-| 图片/音乐 picker 接线 | ✅ `use-inkling-picker-actions.tsx` |
-| 脚注对话框 | ✅ `FootnoteDialog.tsx` |
-| 数学预览面板 | ✅ `card-components.tsx` oRPC 异步 |
-| 链接 popover | ✅ `LinkPopover.tsx` |
-| 表格 bubble menu | 🟡 行列操作已内联，独立 `TableEditor.tsx` 未建（非阻塞） |
-| placeholder / autofocus | ✅ `ContentEditable` + `AutoFocusPlugin` |
-| 生产迁移脚本 | ❌ `scripts/migrate-pt-to-inkling.ts`（P7） |
+| 项目                    | 状态                                                     |
+| ----------------------- | -------------------------------------------------------- |
+| 浮动格式工具栏          | ✅ `FloatingFormatToolbar.tsx`                           |
+| Slash 菜单 UI           | ✅ `SlashMenu.tsx`                                       |
+| **Plus 菜单**           | ✅ `PlusMenu.tsx`（`fedbf01a` 新增）                     |
+| 拖拽排序                | ✅ `DragDropReorderPlugin.tsx`                           |
+| 图片/音乐 picker 接线   | ✅ `use-inkling-picker-actions.tsx`                      |
+| 脚注对话框              | ✅ `FootnoteDialog.tsx`                                  |
+| 数学预览面板            | ✅ `card-components.tsx` oRPC 异步                       |
+| 链接 popover            | ✅ `LinkPopover.tsx`                                     |
+| 表格 bubble menu        | 🟡 行列操作已内联，独立 `TableEditor.tsx` 未建（非阻塞） |
+| placeholder / autofocus | ✅ `ContentEditable` + `AutoFocusPlugin`                 |
+| 生产迁移脚本            | ❌ `scripts/migrate-pt-to-inkling.ts`（P7）              |
 
 ---
 
@@ -1026,37 +1026,37 @@ pnpm run build         # 构建成功
 
 ### 风险矩阵（POC 后）
 
-| 风险                | 等级 | 状态                | 缓解                                   |
-| ------------------- | ---- | ------------------- | -------------------------------------- |
-| Lexical 版本跨度    | 高   | ✅ POC 001 消解     | —                                      |
-| 脚注 parallel-state | 高   | ✅ POC 011+016 消解 | —                                      |
-| 中文 IME            | 高   | ✅ POC 014 消解     | —                                      |
-| undo 一致性         | 高   | ✅ POC 016 U4 消解  | —                                      |
-| 粘贴管线            | 中高 | ✅ POC 015 消解     | —                                      |
-| 评论 HTML 清洗      | 中   | ✅ POC 013 消解     | —                                      |
-| SSR 渲染差异        | 中高 | ✅ POC 005/006 消解 | —                                      |
-| 数据迁移完整性      | 中高 | 🟡 P7 staging 演练  | 幂等脚本 + 备份 + 全量校验             |
-| Ghost 样式保真      | 中   | 🟡 P0 视觉 QA       | pair-specific margin 原样搬 + 5 篇对比 |
-| 表格嵌套编辑        | 中   | 🟡 P2.5             | table guard + cell inline-only         |
-| 跨层 undo           | 中   | 🟡 P4.5             | SharedHistoryContext + X1-X3 验证      |
-| **🔴 评论链接 XSS** | 🔴 高 | ✅ **已修复** (a3cf52a7) | SEC-1/2/3: `sanitize-url.ts` 统一清洗 + 实体解码前置 + SSR mathml/shiki 清洗 |
-| **🔴 Layout 卡片编辑器** | 🔴 高 | ✅ **已修复** (fedbf01a) | CRIT-1: `useMemo` 移除 `initialBlocks` 依赖，编辑器单次创建 |
-| **🔴 PastePlugin 递归** | 🔴 高 | ✅ **已修复** (fedbf01a) | CRIT-2: `===` → `isProcessingPasteRef` ref flag |
-| **🔴 Card 插入 NodeSelection** | 🔴 高 | ✅ **已修复** (fedbf01a) | CRIT-3: `selectPrevious()` → `$createNodeSelection` + `$setSelection` |
-| **🔴 PT 格式残留** | 🔴 高 | 🔴 P7 前必须 | H-1~H-7: DB 存 PT 但代码只读 Inkling，静默丢内容 |
-| **🔴 预渲染日志泄露** | 🔴 高 | ✅ **已修复** (2c8ab732) | BR-2: `String(err)` → `err.name` + `blockKind` |
-| **🔴 卡片预览 XSS** | 🔴 高 | ✅ **已修复** (2c8ab732) | BR-3: `dangerouslySetInnerHTML` 前加 `sanitizeHtml` |
-| **🔴 comment-email URL** | 🔴 高 | ✅ **已修复** (2c8ab732) | BR-4: ad-hoc regex → `sanitizeUrl` |
-| **🟠 渲染器分叉** | 🟠 中高 | ✅ **已修复** (fedbf01a) | H-9: CODE exclusive + `<s>` 统一 + 标准嵌套顺序 |
-| **🟠 主题缺失** | 🟠 中 | ✅ 已存在 | H-10: `text.code` theme key 已在内 |
-| **🟠 评论表面用错渲染器** | 🟠 中高 | ✅ **已修复** (2c8ab732) | BR-5: `CommentRow`/`AdminCommentRow`/`MyCommentsView` → `CommentInklingBody` |
-| **🟠 lint correctness 降级** | 🟠 中 | ✅ **已修复** (2c8ab732) | BR-6: `correctness` → `error` |
-| **🟠 依赖策略违反** | 🟠 低 | ✅ **已修复** (2c8ab732) | BR-7: `@number-flow/react` → `devDependencies` |
-| **🟠 纯符号标题 id** | 🟠 低 | 🟠 待修 | M-4: 全 emoji/标点标题 id="" |
-| **🟠 迁移校验器** | 🟠 中 | 🟠 P7 前修 | H-13/H-14: per-span 误计 + 空白匹配过于宽松 |
-| **🟠 预览端点未规范化** | 🟠 中 | 🟠 待修 | BR-9: admin preview 不跑 canonicalize/prerender |
-| **🟡 旧 PT draft hooks** | 🟡 低 | ✅ **已标记** (2c8ab732) | BR-8: `@deprecated` JSDoc 已加 |
-| **🟡 card-components 过大** | 🟡 低 | 🟡 P9 重构 | BR-10: 722 LOC，待拆分 |
+| 风险                           | 等级    | 状态                     | 缓解                                                                         |
+| ------------------------------ | ------- | ------------------------ | ---------------------------------------------------------------------------- |
+| Lexical 版本跨度               | 高      | ✅ POC 001 消解          | —                                                                            |
+| 脚注 parallel-state            | 高      | ✅ POC 011+016 消解      | —                                                                            |
+| 中文 IME                       | 高      | ✅ POC 014 消解          | —                                                                            |
+| undo 一致性                    | 高      | ✅ POC 016 U4 消解       | —                                                                            |
+| 粘贴管线                       | 中高    | ✅ POC 015 消解          | —                                                                            |
+| 评论 HTML 清洗                 | 中      | ✅ POC 013 消解          | —                                                                            |
+| SSR 渲染差异                   | 中高    | ✅ POC 005/006 消解      | —                                                                            |
+| 数据迁移完整性                 | 中高    | 🟡 P7 staging 演练       | 幂等脚本 + 备份 + 全量校验                                                   |
+| Ghost 样式保真                 | 中      | 🟡 P0 视觉 QA            | pair-specific margin 原样搬 + 5 篇对比                                       |
+| 表格嵌套编辑                   | 中      | 🟡 P2.5                  | table guard + cell inline-only                                               |
+| 跨层 undo                      | 中      | 🟡 P4.5                  | SharedHistoryContext + X1-X3 验证                                            |
+| **🔴 评论链接 XSS**            | 🔴 高   | ✅ **已修复** (a3cf52a7) | SEC-1/2/3: `sanitize-url.ts` 统一清洗 + 实体解码前置 + SSR mathml/shiki 清洗 |
+| **🔴 Layout 卡片编辑器**       | 🔴 高   | ✅ **已修复** (fedbf01a) | CRIT-1: `useMemo` 移除 `initialBlocks` 依赖，编辑器单次创建                  |
+| **🔴 PastePlugin 递归**        | 🔴 高   | ✅ **已修复** (fedbf01a) | CRIT-2: `===` → `isProcessingPasteRef` ref flag                              |
+| **🔴 Card 插入 NodeSelection** | 🔴 高   | ✅ **已修复** (fedbf01a) | CRIT-3: `selectPrevious()` → `$createNodeSelection` + `$setSelection`        |
+| **🔴 PT 格式残留**             | 🔴 高   | 🔴 P7 前必须             | H-1~H-7: DB 存 PT 但代码只读 Inkling，静默丢内容                             |
+| **🔴 预渲染日志泄露**          | 🔴 高   | ✅ **已修复** (2c8ab732) | BR-2: `String(err)` → `err.name` + `blockKind`                               |
+| **🔴 卡片预览 XSS**            | 🔴 高   | ✅ **已修复** (2c8ab732) | BR-3: `dangerouslySetInnerHTML` 前加 `sanitizeHtml`                          |
+| **🔴 comment-email URL**       | 🔴 高   | ✅ **已修复** (2c8ab732) | BR-4: ad-hoc regex → `sanitizeUrl`                                           |
+| **🟠 渲染器分叉**              | 🟠 中高 | ✅ **已修复** (fedbf01a) | H-9: CODE exclusive + `<s>` 统一 + 标准嵌套顺序                              |
+| **🟠 主题缺失**                | 🟠 中   | ✅ 已存在                | H-10: `text.code` theme key 已在内                                           |
+| **🟠 评论表面用错渲染器**      | 🟠 中高 | ✅ **已修复** (2c8ab732) | BR-5: `CommentRow`/`AdminCommentRow`/`MyCommentsView` → `CommentInklingBody` |
+| **🟠 lint correctness 降级**   | 🟠 中   | ✅ **已修复** (2c8ab732) | BR-6: `correctness` → `error`                                                |
+| **🟠 依赖策略违反**            | 🟠 低   | ✅ **已修复** (2c8ab732) | BR-7: `@number-flow/react` → `devDependencies`                               |
+| **🟠 纯符号标题 id**           | 🟠 低   | 🟠 待修                  | M-4: 全 emoji/标点标题 id=""                                                 |
+| **🟠 迁移校验器**              | 🟠 中   | 🟠 P7 前修               | H-13/H-14: per-span 误计 + 空白匹配过于宽松                                  |
+| **🟠 预览端点未规范化**        | 🟠 中   | 🟠 待修                  | BR-9: admin preview 不跑 canonicalize/prerender                              |
+| **🟡 旧 PT draft hooks**       | 🟡 低   | ✅ **已标记** (2c8ab732) | BR-8: `@deprecated` JSDoc 已加                                               |
+| **🟡 card-components 过大**    | 🟡 低   | 🟡 P9 重构               | BR-10: 722 LOC，待拆分                                                       |
 
 POC 后"能不能做"全消解，剩余是工程质量。
 
@@ -1078,37 +1078,37 @@ POC 后"能不能做"全消解，剩余是工程质量。
 
 ### 12.1 已修复
 
-| # | 严重度 | 问题 | 修复 commit |
-|---|--------|------|-------------|
-| SEC-1 | 🔴 | 控制字符绕过 URL 清洗 | `a3cf52a7` — `sanitize-url.ts` |
-| SEC-2 | 🔴 | HTML 实体编码绕过 URL 清洗 | `a3cf52a7` — 解码前置 |
-| SEC-3 | 🔴 | SSR 预览原样输出 mathml/highlightedHtml | `a3cf52a7` — `sanitizeMathml`/`sanitizeShikiHtml` |
-| SEC-5 | 🔴 | SSR mathml/shiki 未清洗 | `a3cf52a7` — 同上 |
-| BR-2 | 🔴 | 预渲染日志泄露用户内容 | `2c8ab732` — `err.name` + `blockKind` |
-| BR-3 | 🔴 | 卡片预览 `dangerouslySetInnerHTML` 未清洗 | `2c8ab732` — `sanitizeHtml(..., 'shiki'|'math')` |
-| BR-4 | 🔴 | comment-email 用 ad-hoc 正则 | `2c8ab732` — `sanitizeUrl` |
-| BR-5 | 🟠 | 评论表面用错渲染器 | `2c8ab732` — 切 `CommentInklingBody` |
-| BR-6 | 🟠 | lint correctness → warn | `2c8ab732` — 恢复 `error` |
-| BR-7 | 🟠 | `@number-flow/react` 在 dependencies | `2c8ab732` — 移 `devDependencies` |
-| BR-8 | 🟡 | 旧 PT draft hooks 未标记 | `2c8ab732` — `@deprecated` JSDoc |
-| CRIT-1 | 🔴 | Layout 卡片嵌套编辑器每击键重建 | `fedbf01a` — `useMemo` 移除 `initialBlocks` |
-| CRIT-2 | 🔴 | PastePlugin 递归保护脆弱 | `fedbf01a` — `isProcessingPasteRef` ref flag |
-| CRIT-3 | 🔴 | Card 插入后 NodeSelection 不进 | `fedbf01a` — `$createNodeSelection` + `$setSelection` |
-| H-9 | 🟠 | 四个渲染器 CODE/格式分叉 | `fedbf01a` — CODE exclusive + `<s>` 统一 + 标准嵌套 |
-| H-10 | 🟠 | `text.code` theme key 缺失 | 已在 `InklingArticleEditor.tsx:60` 内 |
-| P3.3 | 🟡 | PlusMenu 不存在 | `fedbf01a` — 新建 `PlusMenu.tsx` |
+| #      | 严重度 | 问题                                      | 修复 commit                                           |
+| ------ | ------ | ----------------------------------------- | ----------------------------------------------------- | -------- |
+| SEC-1  | 🔴     | 控制字符绕过 URL 清洗                     | `a3cf52a7` — `sanitize-url.ts`                        |
+| SEC-2  | 🔴     | HTML 实体编码绕过 URL 清洗                | `a3cf52a7` — 解码前置                                 |
+| SEC-3  | 🔴     | SSR 预览原样输出 mathml/highlightedHtml   | `a3cf52a7` — `sanitizeMathml`/`sanitizeShikiHtml`     |
+| SEC-5  | 🔴     | SSR mathml/shiki 未清洗                   | `a3cf52a7` — 同上                                     |
+| BR-2   | 🔴     | 预渲染日志泄露用户内容                    | `2c8ab732` — `err.name` + `blockKind`                 |
+| BR-3   | 🔴     | 卡片预览 `dangerouslySetInnerHTML` 未清洗 | `2c8ab732` — `sanitizeHtml(..., 'shiki'               | 'math')` |
+| BR-4   | 🔴     | comment-email 用 ad-hoc 正则              | `2c8ab732` — `sanitizeUrl`                            |
+| BR-5   | 🟠     | 评论表面用错渲染器                        | `2c8ab732` — 切 `CommentInklingBody`                  |
+| BR-6   | 🟠     | lint correctness → warn                   | `2c8ab732` — 恢复 `error`                             |
+| BR-7   | 🟠     | `@number-flow/react` 在 dependencies      | `2c8ab732` — 移 `devDependencies`                     |
+| BR-8   | 🟡     | 旧 PT draft hooks 未标记                  | `2c8ab732` — `@deprecated` JSDoc                      |
+| CRIT-1 | 🔴     | Layout 卡片嵌套编辑器每击键重建           | `fedbf01a` — `useMemo` 移除 `initialBlocks`           |
+| CRIT-2 | 🔴     | PastePlugin 递归保护脆弱                  | `fedbf01a` — `isProcessingPasteRef` ref flag          |
+| CRIT-3 | 🔴     | Card 插入后 NodeSelection 不进            | `fedbf01a` — `$createNodeSelection` + `$setSelection` |
+| H-9    | 🟠     | 四个渲染器 CODE/格式分叉                  | `fedbf01a` — CODE exclusive + `<s>` 统一 + 标准嵌套   |
+| H-10   | 🟠     | `text.code` theme key 缺失                | 已在 `InklingArticleEditor.tsx:60` 内                 |
+| P3.3   | 🟡     | PlusMenu 不存在                           | `fedbf01a` — 新建 `PlusMenu.tsx`                      |
 
 ### 12.2 待修（可延后）
 
-| # | 严重度 | 问题 |
-|---|--------|------|
-| H-1 | 🔴 | PT 格式残留——DB 存 PT 但代码只读 Inkling。**P7 迁移脚本解决** |
-| H-4 | 🟠 | 评论 canonicalize 未调 `canonicalizeInklingDocument`（不剥离 stale 产物） |
-| H-5 | 🟠 | `content/repos/mutate.ts` 移除 safeParse，裸 as cast |
-| BR-9 | 🟠 | 预览端点不跑 canonicalize/prerender |
-| M-4 | 🟠 | 纯符号标题 id=""（Slugger 返回空串） |
-| H-13/H-14 | 🟠 | 迁移校验器 per-span 误计 + 空白匹配过于宽松 |
-| BR-10 | 🟡 | `card-components.tsx` 722 LOC 过大 |
+| #         | 严重度 | 问题                                                                      |
+| --------- | ------ | ------------------------------------------------------------------------- |
+| H-1       | 🔴     | PT 格式残留——DB 存 PT 但代码只读 Inkling。**P7 迁移脚本解决**             |
+| H-4       | 🟠     | 评论 canonicalize 未调 `canonicalizeInklingDocument`（不剥离 stale 产物） |
+| H-5       | 🟠     | `content/repos/mutate.ts` 移除 safeParse，裸 as cast                      |
+| BR-9      | 🟠     | 预览端点不跑 canonicalize/prerender                                       |
+| M-4       | 🟠     | 纯符号标题 id=""（Slugger 返回空串）                                      |
+| H-13/H-14 | 🟠     | 迁移校验器 per-span 误计 + 空白匹配过于宽松                               |
+| BR-10     | 🟡     | `card-components.tsx` 722 LOC 过大                                        |
 
 ---
 

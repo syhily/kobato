@@ -80,11 +80,6 @@ export interface InklingEditorProps {
   children?: React.ReactNode
 }
 
-// Re-export for backwards compatibility — the canonical implementation now
-// lives in `./serialize` and is shared by the article editor, the footnote
-// controller, and this comment editor.
-export { editorStateToInklingDocument } from '@/ui/inkling/editor/serialize'
-
 export function InklingEditor({
   namespace,
   nodes,

@@ -190,7 +190,7 @@ export default defineConfig({
     'prefer-node-protocol': 'error',
     'no-param-reassign': 'warn',
     'no-empty-function': 'warn',
-    'no-console': 'warn',
+    'no-console': ['warn', { allow: ['warn', 'error'] }],
     'promise/catch-or-return': 'warn',
     'no-document-cookie': 'error',
 

@@ -11,6 +11,7 @@ import { orpc } from '@/client/api/client'
 import { orpcQuery } from '@/client/api/orpc-query'
 import { getLogger } from '@/client/lib/logger'
 import { idStr } from '@/shared/utils/tools'
+import { unsafeCast } from '@/shared/utils/unsafe-cast'
 import { AdminCommentRow } from '@/ui/admin/comments/AdminCommentRow'
 import { CommentsFilterBar } from '@/ui/admin/comments/CommentsFilterBar'
 import { EditCommentDialog } from '@/ui/admin/comments/EditCommentDialog'
@@ -149,8 +150,8 @@ export function CommentsView({ currentUserName, currentUserEmail, initialFilters
           next.set('userId', filter.value)
         } else if (filter.field === 'text' && filter.value) {
           try {
-            // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- parsed JSON validated immediately below
-            const range = JSON.parse(filter.value) as { value?: string; op?: string }
+            // parsed JSON validated immediately below
+            const range = unsafeCast<{ value?: string; op?: string }>(JSON.parse(filter.value))
             if (range.value) {
               next.set('q', range.value)
               if (range.op) {
@@ -162,8 +163,8 @@ export function CommentsView({ currentUserName, currentUserEmail, initialFilters
           }
         } else if (filter.field === 'date' && filter.value) {
           try {
-            // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- parsed JSON validated immediately below
-            const range = JSON.parse(filter.value) as { date?: string; op?: string }
+            // parsed JSON validated immediately below
+            const range = unsafeCast<{ date?: string; op?: string }>(JSON.parse(filter.value))
             if (range.date) {
               next.set('date', range.date)
             }
@@ -484,7 +485,7 @@ function CommentsSkeleton() {
   return (
     <>
       {Array.from({ length: 3 }).map((_, i) => (
-        // oxlint-disable-next-line react/no-array-index-key
+        // Skeleton placeholders — static-length array, index is stable.
         <div key={i} className="flex gap-3 px-4 py-3">
           <Skeleton className="size-10 shrink-0 rounded-full" />
           <div className="flex flex-1 flex-col gap-2">

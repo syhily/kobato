@@ -183,8 +183,16 @@ export function Header({ navigation, currentUser, pathname, search }: HeaderProp
               <img src={`/logo-dark.svg${v}`} alt="且听书吟" width={60} height={60} className={navbarBrandImgClass} />
             </Link>
           </h1>
-          {/* oxlint-disable-next-line jsx-a11y/no-noninteractive-element-interactions */}
-          <nav className={siteMenuClass} onClick={() => setMenuOpen(false)}>
+          {/* oxlint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- <nav> with click/keyboard handler closes mobile menu; role=navigation is implicit */}
+          <nav
+            className={siteMenuClass}
+            onClick={() => setMenuOpen(false)}
+            onKeyDown={(e) => {
+              if (e.key === 'Escape') {
+                setMenuOpen(false)
+              }
+            }}
+          >
             <ul className={siteMenuListClass}>
               {navigation.map((menu) => (
                 <li key={`menu-${menu.link}`} className={siteMenuItemClass}>

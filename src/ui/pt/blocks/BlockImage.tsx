@@ -87,10 +87,15 @@ export function BlockImage({
       return
     }
 
+    // Capture narrowed src for the async closure below — guards above ensure
+    // src is a non-empty, non-data-URI string at this point.
+    const currentSrc = src
+
     let cancelled = false
-    void orpc.image
-      .resolveThumbhash({ src })
-      .then((data) => {
+
+    async function resolveMeta() {
+      try {
+        const data = await orpc.image.resolveThumbhash({ src: currentSrc })
         if (cancelled) {
           return
         }
@@ -105,12 +110,15 @@ export function BlockImage({
           next.height = data.height
         }
         if (next.thumbhash !== undefined || next.width !== undefined || next.height !== undefined) {
-          setImageMetaCache(src, next)
-          // oxlint-disable-next-line promise/no-callback-in-promise -- setResolvedMeta is a React state setter, not a traditional callback
+          setImageMetaCache(currentSrc, next)
           setResolvedMeta(next)
         }
-      })
-      .catch(() => undefined)
+      } catch {
+        // Ignore resolution failures — image falls back to prop dimensions.
+      }
+    }
+
+    void resolveMeta()
 
     return () => {
       cancelled = true

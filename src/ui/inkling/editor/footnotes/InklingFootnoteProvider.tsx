@@ -36,10 +36,8 @@ export interface InklingFootnoteContextValue {
   /** Remove a definition by targetKey (dialog delete button). Does NOT touch
    *  the editor tree — the caller is responsible for removing matching refs. */
   removeDefinition: (targetKey: string) => void
-  /** Drop definitions that have no matching ref. Called by the editor update
-   *  listener on every edit so orphans never persist (per §6.3 / design
-   *  decision: auto-delete orphans). Returns the survivor count so the caller
-   *  can decide whether to re-render. */
+  /** Drop definitions that have no matching ref. Used by the footnote sync
+   *  tests to verify orphan cleanup. Returns the survivor count. */
   removeOrphans: (refs: readonly InklingFootnoteRefEntry[]) => number
   /** Re-derive 1-based indices on the provider's parallel definition state
    *  from the first-reference order in `refs`. Called by the editor update
