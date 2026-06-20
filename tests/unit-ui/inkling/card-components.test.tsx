@@ -35,12 +35,10 @@ import {
   InklingArticleEditorProvider,
   type InklingArticleEditorActions,
 } from '@/ui/inkling/editor/article/article-editor-context'
-import {
-  ImageCardComponent,
-  CodeCardComponent,
-  HorizontalRuleCardComponent,
-  MusicCardComponent,
-} from '@/ui/inkling/editor/cards/card-components'
+import { CodeCardComponent } from '@/ui/inkling/editor/cards/code-card-component'
+import { HorizontalRuleCardComponent } from '@/ui/inkling/editor/cards/horizontal-rule-card-component'
+import { ImageCardComponent } from '@/ui/inkling/editor/cards/image-card-component'
+import { MusicCardComponent } from '@/ui/inkling/editor/cards/music-card-component'
 import {
   $createCodeCardNode,
   $createHorizontalRuleCardNode,

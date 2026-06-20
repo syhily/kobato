@@ -12,14 +12,12 @@ import type {
   InklingTableNode,
 } from '@/shared/inkling/schema'
 
-import {
-  CodeCardComponent,
-  HorizontalRuleCardComponent,
-  ImageCardComponent,
-  MathCardComponent,
-  MusicCardComponent,
-  TableCardComponent,
-} from '@/ui/inkling/editor/cards/card-components'
+import { CodeCardComponent } from '@/ui/inkling/editor/cards/code-card-component'
+import { HorizontalRuleCardComponent } from '@/ui/inkling/editor/cards/horizontal-rule-card-component'
+import { ImageCardComponent } from '@/ui/inkling/editor/cards/image-card-component'
+import { MathCardComponent } from '@/ui/inkling/editor/cards/math-card-component'
+import { MusicCardComponent } from '@/ui/inkling/editor/cards/music-card-component'
+import { TableCardComponent } from '@/ui/inkling/editor/cards/table-card-component'
 
 export type SerializedImageCardNode = InklingImageCardNode
 
