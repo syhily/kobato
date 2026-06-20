@@ -1,6 +1,6 @@
+/* oxlint-disable typescript/no-unsafe-type-assertion */
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
-/* oxlint-disable typescript/no-unsafe-type-assertion */
 import { and, eq, isNull } from 'drizzle-orm'
 
 import type { BrandingObjectRef } from '@/shared/config/types'

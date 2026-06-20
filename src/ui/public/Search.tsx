@@ -1,4 +1,3 @@
-/* oxlint-disable typescript/no-unsafe-type-assertion */
 import type { RefObject } from 'react'
 
 import { SearchIcon } from 'lucide-react'

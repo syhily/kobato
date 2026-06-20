@@ -1,4 +1,3 @@
-/* oxlint-disable typescript/no-unsafe-assignment, typescript/no-unsafe-type-assertion */
 import type { PublicKeyCredentialRequestOptionsJSON } from '@simplewebauthn/browser'
 
 import { startAuthentication } from '@simplewebauthn/browser'

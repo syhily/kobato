@@ -1,4 +1,3 @@
-/* oxlint-disable typescript/no-unsafe-type-assertion */
 import type { z } from 'zod'
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'

@@ -1,4 +1,4 @@
-/* oxlint-disable typescript/no-unsafe-return, typescript/no-unsafe-type-assertion */
+/* oxlint-disable typescript/no-unsafe-type-assertion */
 // Structured JSON logger backed by pino. The public API (Logger interface,
 // getLogger, logger singleton) is the only stable surface — consumers never
 // touch pino directly, so the underlying transport can be swapped without

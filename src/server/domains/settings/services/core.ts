@@ -18,6 +18,7 @@ import { DomainError } from '@/server/infra/http/errors'
 import { getLogger } from '@/server/infra/logger'
 import { getBlogSettingsBundleSync } from '@/shared/config/getters'
 import { isValidPasskeyDomain } from '@/shared/utils/safe-url'
+import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
 const log = getLogger('settings.service')
 
@@ -142,7 +143,7 @@ export function redactSecretsFromBundle(bundle: BlogSettingsBundle): BlogSetting
       }
     }
   }
-  return clone as unknown as BlogSettingsBundle
+  return unsafeCast<BlogSettingsBundle>(clone)
 }
 
 async function applySectionPatch(
