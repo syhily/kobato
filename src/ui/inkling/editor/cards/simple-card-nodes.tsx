@@ -326,7 +326,6 @@ export class CodeCardNode extends DecoratorNode<JSX.Element | null> {
     return false
   }
 
-  // See ImageCardNode.isKeyboardSelectable.
   isKeyboardSelectable(): boolean {
     return true
   }
@@ -443,7 +442,6 @@ export class MathCardNode extends DecoratorNode<JSX.Element | null> {
     return false
   }
 
-  // See ImageCardNode.isKeyboardSelectable.
   isKeyboardSelectable(): boolean {
     return true
   }
@@ -548,7 +546,6 @@ export class MusicCardNode extends DecoratorNode<JSX.Element | null> {
     return false
   }
 
-  // See ImageCardNode.isKeyboardSelectable.
   isKeyboardSelectable(): boolean {
     return true
   }
@@ -625,7 +622,6 @@ export class HorizontalRuleCardNode extends DecoratorNode<JSX.Element | null> {
     return false
   }
 
-  // See ImageCardNode.isKeyboardSelectable.
   isKeyboardSelectable(): boolean {
     return true
   }
@@ -711,7 +707,6 @@ export class TableCardNode extends DecoratorNode<JSX.Element | null> {
     return false
   }
 
-  // See ImageCardNode.isKeyboardSelectable.
   isKeyboardSelectable(): boolean {
     return true
   }
