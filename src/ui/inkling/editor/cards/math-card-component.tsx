@@ -15,6 +15,12 @@ function MathPreview({ tex }: { tex: string }) {
 
   useEffect(() => {
     if (tex.trim().length === 0) {
+      // Skip the fetch for empty tex. The render guard below
+      // (`tex.trim().length === 0 || html === null`) handles display
+      // correctly — it shows the $$tex$$ fallback. We don't reset
+      // `html`/`loading` here because the render guard already masks
+      // any stale state, and calling setState synchronously in the
+      // effect would trigger the react-compiler lint rule.
       return
     }
     let cancelled = false

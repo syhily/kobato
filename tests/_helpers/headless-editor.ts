@@ -22,14 +22,6 @@ import {
 
 import { ARTICLE_NODES, COMMENT_NODES } from '@/ui/inkling/editor/nodes/registry'
 
-// Re-export the production node sets under the legacy names so existing
-// tests that imported `ARTICLE_EDITOR_NODES` / `COMMENT_EDITOR_NODES` keep
-// working without touching every test file.
-export {
-  ARTICLE_NODES as ARTICLE_EDITOR_NODES,
-  COMMENT_NODES as COMMENT_EDITOR_NODES,
-} from '@/ui/inkling/editor/nodes/registry'
-
 /**
  * Build a headless article editor. `onError` defaults to `console.error`
  * (matches the existing pattern); override to assert no errors in a test.

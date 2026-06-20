@@ -30,7 +30,7 @@ export function registerCardClickSelection(editor: LexicalEditor): () => void {
     // Find the nearest Lexical node for the mousedown target, then walk up
     // to see if any ancestor is a block-level card.
     let targetCardKey: string | null = null
-    editor.read(() => {
+    readEditor(editor, () => {
       const lexicalNode = $getNearestNodeFromDOMNode(target)
       if (lexicalNode === null) {
         return

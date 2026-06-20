@@ -20,8 +20,8 @@ import { useEffect } from 'react'
  * drop indicator.
  *
  * A card must have `draggable="true"` and a `data-inkling-card-key`
- * attribute on its DOM wrapper.  The CardShell in card-components
- * already sets `data-inkling-card-selected`.
+ * attribute on its DOM wrapper.  The CardShell in card-shell.tsx
+ * sets `data-inkling-card-selected`.
  */
 export function useInklingDragDropReorder(editor: LexicalEditor | null): void {
   useEffect(() => {

@@ -1,10 +1,9 @@
-// Regression tests for the Inkling card React components —
-// `src/ui/inkling/editor/cards/card-components.tsx`.
+// Regression tests for the Inkling card React components.
 //
 // These pin the *observable* rendering behaviour of every card component
-// BEFORE the editor refactor:
-//   - Phase 2: split `card-components.tsx` into one file per card.
-//   - Phase 5: extract a shared base class / `CardShell` wrapper.
+// in `src/ui/inkling/editor/cards/*-card-component.tsx`. The components
+// were split out of the former `card-components.tsx` god file (Phase 2);
+// these tests guard the split against regressions.
 //
 // What could regress in those phases and what we guard against:
 //   - The `CardShell` wrapper's data attributes (`data-inkling-card`,
@@ -30,7 +29,6 @@ import { render, screen } from '@testing-library/react'
 import { $getRoot, type LexicalEditor, type LexicalNode } from 'lexical'
 import { describe, expect, it, vi } from 'vitest'
 
-import { ARTICLE_EDITOR_NODES } from '#/_helpers/headless-editor'
 import {
   InklingArticleEditorProvider,
   type InklingArticleEditorActions,
@@ -45,6 +43,7 @@ import {
   $createImageCardNode,
   $createMusicCardNode,
 } from '@/ui/inkling/editor/cards/simple-card-nodes'
+import { ARTICLE_NODES as ARTICLE_EDITOR_NODES } from '@/ui/inkling/editor/nodes/registry'
 
 /**
  * Build a `<LexicalComposer>` whose editor is seeded with a single card node

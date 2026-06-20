@@ -69,20 +69,3 @@ export const COMMENT_NODES: InitialConfigType['nodes'] = [
   MathBlockNode,
   CommentInlineMathNode,
 ]
-
-/**
- * Nested editor node set (inside Solution / TwoColumn / FootnoteDialog).
- * Same as article minus the recursive containers (no Solution, TwoColumn,
- * or FootnoteRef — prevents infinite nesting). Music is excluded because
- * the nested editor is for prose, not media layout.
- */
-export const NESTED_ARTICLE_NODES: InitialConfigType['nodes'] = [
-  ...PROSE_NODES,
-  HeadingNode,
-  InlineMathNode,
-  ImageCardNode,
-  CodeCardNode,
-  MathCardNode,
-  HorizontalRuleCardNode,
-  TableCardNode,
-]

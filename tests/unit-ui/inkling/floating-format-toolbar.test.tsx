@@ -29,7 +29,7 @@ import {
 } from 'lexical'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { ARTICLE_EDITOR_NODES } from '#/_helpers/headless-editor'
+import { ARTICLE_NODES as ARTICLE_EDITOR_NODES } from '@/ui/inkling/editor/nodes/registry'
 import { FloatingFormatToolbar } from '@/ui/inkling/editor/toolbar/FloatingFormatToolbar'
 
 // happy-dom's `window.getSelection()` returns a Selection with `rangeCount: 0`

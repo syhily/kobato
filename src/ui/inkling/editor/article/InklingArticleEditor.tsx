@@ -240,5 +240,3 @@ function FootnoteAwareChangePlugin({ onChange }: { onChange: (document: InklingD
   const { getDefinitions } = useInklingFootnotes()
   return <OnInklingDocumentChangePlugin onChange={onChange} getDefinitions={getDefinitions} />
 }
-
-export { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
