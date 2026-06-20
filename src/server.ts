@@ -6,6 +6,10 @@ import { getDb, getPool } from '@/server/bootstrap/db-lifecycle'
 import { scheduleNextArchive } from '@/server/domains/audit/services/scheduler'
 import { getSetupToken } from '@/server/domains/auth/setup-token'
 import { initBackupScheduler, scheduleNextBackup } from '@/server/domains/backup/scheduler'
+import {
+  migratePortableTextToInkling,
+  rebuildSearchIndexAfterMigration,
+} from '@/server/domains/inkling/startup-migration'
 import { refreshBlogSettings } from '@/server/domains/settings/services/hydrate'
 import { migrateSecretsEncryption } from '@/server/domains/settings/services/migrate-secrets'
 import { wrapFetchWithLeakedResponseHandler } from '@/server/http/leaked-response'
@@ -56,6 +60,14 @@ setRestartApp(app)
 
 if (!hmr?.secretsMigrated) {
   await migrateSecretsEncryption(getDb())
+
+  // One-time PT→Inkling body migration. Idempotent: rows already carrying
+  // `_type: 'inkling'` are skipped. After the first successful run, this
+  // is a no-op fast path. Can be removed in a future release once all
+  // deployments have migrated.
+  await migratePortableTextToInkling(getDb())
+  await rebuildSearchIndexAfterMigration(getDb())
+
   await refreshBlogSettings(getDb())
 
   scheduleNextBackup()
