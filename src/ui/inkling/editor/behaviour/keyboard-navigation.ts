@@ -36,6 +36,7 @@ import {
   TableCardNode,
 } from '@/ui/inkling/editor/cards/simple-card-nodes'
 import { FootnoteRefNode } from '@/ui/inkling/editor/footnotes/FootnoteRefNode'
+import { readEditor } from '@/ui/inkling/editor/shared/read-editor'
 
 export function $selectNode(node: LexicalNode): void {
   const nodeSelection = $createNodeSelection()
@@ -530,12 +531,12 @@ export function registerInklingKeyboardNavigation(editor: LexicalEditor): () => 
     }
 
     // Check whether this card is already selected.
-    let alreadySelected = false
-    editor.getEditorState().read(() => {
+    const alreadySelected = readEditor(editor, () => {
       const selection = $getSelection()
-      if ($isNodeSelection(selection)) {
-        alreadySelected = selection.getNodes().some((n) => n.getKey() === targetCardKey)
+      if (!$isNodeSelection(selection)) {
+        return false
       }
+      return selection.getNodes().some((n) => n.getKey() === targetCardKey)
     })
     if (alreadySelected) {
       // Card is already selected — allow the click to pass through so

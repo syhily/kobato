@@ -6,6 +6,7 @@ import { $getSelection, $isRangeSelection, FORMAT_TEXT_COMMAND, SELECTION_CHANGE
 import { useCallback, useEffect, useRef, useState } from 'react'
 
 import { getSelectionRect } from '@/ui/inkling/editor/shared/dom-selection'
+import { readEditor } from '@/ui/inkling/editor/shared/read-editor'
 import { LinkPopover } from '@/ui/inkling/editor/toolbar/LinkPopover'
 import { cn } from '@/ui/lib/cn'
 
@@ -35,43 +36,33 @@ function ToolbarButton({ active, onClick, title, children }: ToolbarButtonProps)
 }
 
 function hasFormat(editor: LexicalEditor, format: TextFormatType): boolean {
-  let active = false
-  editor.getEditorState().read(() => {
+  return readEditor(editor, () => {
     const selection = $getSelection()
-    if ($isRangeSelection(selection)) {
-      active = selection.hasFormat(format)
-    }
+    return $isRangeSelection(selection) && selection.hasFormat(format)
   })
-  return active
 }
 
 function hasLink(editor: LexicalEditor): boolean {
-  let active = false
-  editor.getEditorState().read(() => {
+  return readEditor(editor, () => {
     const selection = $getSelection()
-    if ($isRangeSelection(selection)) {
-      active = selection.getNodes().some((n) => $isLinkNode(n.getParent()))
+    if (!$isRangeSelection(selection)) {
+      return false
     }
+    return selection.getNodes().some((n) => $isLinkNode(n.getParent()))
   })
-  return active
 }
 
 function shouldShowToolbar(editor: LexicalEditor): boolean {
   if (editor.isComposing()) {
     return false
   }
-  let show = false
-  editor.getEditorState().read(() => {
+  return readEditor(editor, () => {
     const selection = $getSelection()
     if (!$isRangeSelection(selection) || selection.isCollapsed()) {
-      return
+      return false
     }
-    if (selection.getTextContent().trim().length === 0) {
-      return
-    }
-    show = true
+    return selection.getTextContent().trim().length > 0
   })
-  return show
 }
 
 export function FloatingFormatToolbar() {

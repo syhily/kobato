@@ -5,6 +5,7 @@ import { useCallback, useEffect, useRef } from 'react'
 import type { InklingFootnoteRefEntry } from '@/shared/inkling/footnotes'
 import type { InklingNonRecursiveBlockNode } from '@/shared/inkling/schema'
 
+import { createEmptyInklingParagraph } from '@/shared/inkling/empty'
 import { collectFootnoteRefs } from '@/shared/inkling/footnotes'
 import { registerFootnoteCaretTrigger } from '@/ui/inkling/editor/footnotes/FootnoteCaretTrigger'
 import { FootnoteDialog } from '@/ui/inkling/editor/footnotes/FootnoteDialog'
@@ -182,9 +183,7 @@ export function FootnoteController() {
         },
         { tag: 'history-merge', discrete: true },
       )
-      replaceDefinition(targetKey, [
-        { type: 'paragraph', version: 1, direction: null, format: '', indent: 0, children: [] },
-      ])
+      replaceDefinition(targetKey, [createEmptyInklingParagraph()])
       openInsertDialog(targetKey)
     })
   }, [editor, dialogOpen, openInsertDialog, replaceDefinition])

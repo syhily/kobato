@@ -5,6 +5,8 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import type { InklingFootnoteRefEntry } from '@/shared/inkling/footnotes'
 import type { InklingNonRecursiveBlockNode } from '@/shared/inkling/schema'
 
+import { EMPTY_INKLING_PARAGRAPH } from '@/shared/inkling/empty'
+
 export interface FootnoteDefinitionItem {
   targetKey: string
   index: number
@@ -71,15 +73,6 @@ export interface InklingFootnoteProviderProps {
   initialDefinitions?: readonly FootnoteDefinitionItem[]
 }
 
-const EMPTY_PARAGRAPH: InklingNonRecursiveBlockNode = {
-  type: 'paragraph',
-  version: 1,
-  direction: null,
-  format: '',
-  indent: 0,
-  children: [],
-}
-
 /**
  * Re-derive 1-based indices from the first-reference order in `refs`, then
  * apply them to `definitions`. Definitions whose targetKey never appears in
@@ -121,7 +114,7 @@ function renumberDefinitionsImpl(
     const existing = byKey.get(targetKey)
     const index = keyToIndex.get(targetKey) ?? 0
     if (existing === undefined) {
-      return { targetKey, index, children: [EMPTY_PARAGRAPH] }
+      return { targetKey, index, children: [EMPTY_INKLING_PARAGRAPH] }
     }
     return existing.index === index ? existing : { ...existing, index }
   })
@@ -139,7 +132,9 @@ export function InklingFootnoteProvider({ children, initialDefinitions = [] }: I
 
   const [dialogOpen, setDialogOpen] = useState(false)
   const [dialogMode, setDialogMode] = useState<'create' | 'edit'>('create')
-  const [dialogInitialChildren, setDialogInitialChildren] = useState<InklingNonRecursiveBlockNode[]>([EMPTY_PARAGRAPH])
+  const [dialogInitialChildren, setDialogInitialChildren] = useState<InklingNonRecursiveBlockNode[]>([
+    EMPTY_INKLING_PARAGRAPH,
+  ])
   const [editTargetKey, setEditTargetKey] = useState<string | null>(null)
 
   const setDefinitions = useCallback(
@@ -164,7 +159,7 @@ export function InklingFootnoteProvider({ children, initialDefinitions = [] }: I
   const openInsertDialog = useCallback((targetKey?: string) => {
     setEditTargetKey(targetKey ?? null)
     setDialogMode('create')
-    setDialogInitialChildren([EMPTY_PARAGRAPH])
+    setDialogInitialChildren([EMPTY_INKLING_PARAGRAPH])
     setDialogOpen(true)
   }, [])
 
@@ -172,7 +167,9 @@ export function InklingFootnoteProvider({ children, initialDefinitions = [] }: I
     const def = definitionsRef.current.find((d) => d.targetKey === targetKey)
     setEditTargetKey(targetKey)
     setDialogMode('edit')
-    setDialogInitialChildren(def !== undefined && def.children.length > 0 ? [...def.children] : [EMPTY_PARAGRAPH])
+    setDialogInitialChildren(
+      def !== undefined && def.children.length > 0 ? [...def.children] : [EMPTY_INKLING_PARAGRAPH],
+    )
     setDialogOpen(true)
   }, [])
 

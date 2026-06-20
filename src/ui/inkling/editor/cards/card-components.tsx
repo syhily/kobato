@@ -1,6 +1,5 @@
 import type { ReactNode } from 'react'
 
-import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import { useLexicalNodeSelection } from '@lexical/react/useLexicalNodeSelection'
 import { useCallback, useEffect, useState } from 'react'
 
@@ -23,6 +22,7 @@ import type {
 
 import { LoopIcon, PlayIcon, VolumeUpIcon } from '@/ui/icons/aplayer'
 import { useInklingArticleEditorActions } from '@/ui/inkling/editor/article/article-editor-context'
+import { useCardNode } from '@/ui/inkling/editor/cards/use-card-node'
 import { cn } from '@/ui/lib/cn'
 import { sanitizeHtml } from '@/ui/lib/sanitize-html'
 
@@ -100,8 +100,7 @@ function parseImageLayout(value: string): InklingImageLayout | undefined {
 /* ─── Image Card ────────────────────────────────────────────────── */
 
 export function ImageCardComponent({ node }: { node: ImageCardNode }): ReactNode {
-  const [editor] = useLexicalComposerContext()
-  const [isSelected] = useLexicalNodeSelection(node.getKey())
+  const { editor, isSelected } = useCardNode(node)
   const { openImagePicker } = useInklingArticleEditorActions()
 
   const update = useCallback(
@@ -214,8 +213,7 @@ export function ImageCardComponent({ node }: { node: ImageCardNode }): ReactNode
 /* ─── Code Card ─────────────────────────────────────────────────── */
 
 export function CodeCardComponent({ node }: { node: CodeCardNode }): ReactNode {
-  const [editor] = useLexicalComposerContext()
-  const [isSelected] = useLexicalNodeSelection(node.getKey())
+  const { editor, isSelected } = useCardNode(node)
   const [preview, setPreview] = useState(false)
 
   const update = useCallback(
@@ -358,8 +356,7 @@ function MathPreview({ tex }: { tex: string }) {
 }
 
 export function MathCardComponent({ node }: { node: MathCardNode }): ReactNode {
-  const [editor] = useLexicalComposerContext()
-  const [isSelected] = useLexicalNodeSelection(node.getKey())
+  const { editor, isSelected } = useCardNode(node)
 
   const update = useCallback(
     (patch: Partial<InklingMathBlockNode>): void => {
@@ -450,8 +447,7 @@ function StaticMusicPreview({ meta, playerId }: { meta: MusicPreviewMeta | null;
 }
 
 export function MusicCardComponent({ node }: { node: MusicCardNode }): ReactNode {
-  const [editor] = useLexicalComposerContext()
-  const [isSelected] = useLexicalNodeSelection(node.getKey())
+  const { editor, isSelected } = useCardNode(node)
   const { openMusicPicker } = useInklingArticleEditorActions()
   const [meta, setMeta] = useState<MusicPreviewMeta | null>(null)
 
@@ -577,8 +573,7 @@ function emptyRow(cellCount: number): {
 }
 
 export function TableCardComponent({ node }: { node: TableCardNode }): ReactNode {
-  const [editor] = useLexicalComposerContext()
-  const [isSelected] = useLexicalNodeSelection(node.getKey())
+  const { editor, isSelected } = useCardNode(node)
 
   const update = useCallback(
     (patch: Partial<InklingTableNode>): void => {

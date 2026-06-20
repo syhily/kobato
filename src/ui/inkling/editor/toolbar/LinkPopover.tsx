@@ -5,6 +5,7 @@ import { $getSelection, $isRangeSelection } from 'lexical'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { isSafeUrl } from '@/shared/sanitize-url'
+import { readEditor } from '@/ui/inkling/editor/shared/read-editor'
 
 interface LinkPopoverProps {
   editor: LexicalEditor
@@ -12,22 +13,20 @@ interface LinkPopoverProps {
 }
 
 function getExistingLink(editor: LexicalEditor): { url: string; text: string } | null {
-  let result: { url: string; text: string } | null = null
-  editor.getEditorState().read(() => {
+  return readEditor(editor, () => {
     const selection = $getSelection()
     if (!$isRangeSelection(selection) || selection.isCollapsed()) {
-      return
+      return null
     }
     const nodes = selection.getNodes()
     for (const node of nodes) {
       const parent = node.getParent()
       if ($isLinkNode(parent)) {
-        result = { url: parent.getURL(), text: selection.getTextContent() }
-        return
+        return { url: parent.getURL(), text: selection.getTextContent() }
       }
     }
+    return null
   })
-  return result
 }
 
 export function LinkPopover({ editor, onClose }: LinkPopoverProps) {

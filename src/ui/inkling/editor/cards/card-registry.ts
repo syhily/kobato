@@ -11,6 +11,7 @@ import {
 
 import type { InklingFeatureMode } from '@/shared/inkling/schema'
 
+import { createEmptyInklingParagraph } from '@/shared/inkling/empty'
 import { $createSolutionCardNode, $createTwoColumnCardNode } from '@/ui/inkling/editor/cards/layout-card-nodes'
 import {
   $createCodeCardNode,
@@ -182,7 +183,7 @@ export const INKLING_CARD_MENU_ITEMS: InklingCardMenuItem[] = [
     insert: (editor) => {
       insertBlockCard(editor, () =>
         $createSolutionCardNode({
-          children: [{ type: 'paragraph', version: 1, direction: null, format: '', indent: 0, children: [] }],
+          children: [createEmptyInklingParagraph()],
         }),
       )
     },
@@ -195,8 +196,8 @@ export const INKLING_CARD_MENU_ITEMS: InklingCardMenuItem[] = [
     insert: (editor) => {
       insertBlockCard(editor, () =>
         $createTwoColumnCardNode({
-          left: [{ type: 'paragraph', version: 1, direction: null, format: '', indent: 0, children: [] }],
-          right: [{ type: 'paragraph', version: 1, direction: null, format: '', indent: 0, children: [] }],
+          left: [createEmptyInklingParagraph()],
+          right: [createEmptyInklingParagraph()],
         }),
       )
     },
