@@ -10,7 +10,7 @@ import { LexicalNestedComposer } from '@lexical/react/LexicalNestedComposer'
 import { OnChangePlugin } from '@lexical/react/LexicalOnChangePlugin'
 import { HeadingNode, QuoteNode } from '@lexical/rich-text'
 import { createEditor, ParagraphNode } from 'lexical'
-import { useCallback, useMemo } from 'react'
+import { useCallback, useEffect, useMemo, useRef } from 'react'
 
 import type { InklingNonRecursiveBlockNode } from '@/shared/inkling/schema'
 
@@ -94,9 +94,26 @@ export function NestedInklingEditor({
       onError: (error: Error) => {
         reportEditorError(error, 'nested')
       },
-      editorState: buildNestedInitialState(initialBlocks),
     })
-  }, [parentEditor, initialBlocks, editable, nodes])
+    // initialBlocks is intentionally excluded from deps — recreating the editor
+    // on every keystroke destroys selection, focus, and undo history.  The
+    // editor is created once and seeded via the effect below.  External state
+    // changes (e.g. adopting a different revision) are handled by the parent
+    // remounting this component with a new key.
+  }, [parentEditor, nodes, editable])
+
+  // Seed the initial editor state once on mount.  Subsequent renders with a
+  // new initialBlocks identity (from our own onChange → parent setChildren →
+  // Lexical re-decorate loop) must NOT re-seed, or we'd overwrite the user's
+  // selection.  External state changes are picked up by the parent remounting
+  // this component (e.g. via key={documentKey} in InklingArticleEditor).
+  const didInitRef = useRef(false)
+  useEffect(() => {
+    if (!didInitRef.current) {
+      nestedEditor.setEditorState(buildNestedInitialState(initialBlocks))
+      didInitRef.current = true
+    }
+  }, [nestedEditor, initialBlocks])
 
   const handleChange = useCallback(
     (editorState: EditorState) => {

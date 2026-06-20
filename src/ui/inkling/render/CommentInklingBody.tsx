@@ -58,19 +58,20 @@ function renderInlineNode(node: InklingInlineNode, key: string): ReactNode {
       const format = node.format ?? 0
       let children: ReactNode = node.text
       if (hasFormat(format, FORMAT_CODE)) {
+        // CODE is exclusive per Lexical semantics.
         children = <code>{children}</code>
       } else {
         if (hasFormat(format, FORMAT_STRIKETHROUGH)) {
-          children = <del>{children}</del>
+          children = <s>{children}</s>
+        }
+        if (hasFormat(format, FORMAT_UNDERLINE)) {
+          children = <u>{children}</u>
         }
         if (hasFormat(format, FORMAT_ITALIC)) {
           children = <em>{children}</em>
         }
         if (hasFormat(format, FORMAT_BOLD)) {
           children = <strong>{children}</strong>
-        }
-        if (hasFormat(format, FORMAT_UNDERLINE)) {
-          children = <u>{children}</u>
         }
       }
       return <Fragment key={key}>{children}</Fragment>

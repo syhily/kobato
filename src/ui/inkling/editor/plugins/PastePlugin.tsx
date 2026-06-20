@@ -1,5 +1,5 @@
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import sanitizeHtml from 'sanitize-html'
 
 /**
@@ -80,6 +80,12 @@ function sanitisePastedHtml(html: string): string {
 
 export function PastePlugin(): null {
   const [editor] = useLexicalComposerContext()
+  // Guard against re-entering the paste handler when we dispatch the
+  // synthetic ClipboardEvent.  Without this flag the previous `===`
+  // string-comparison guard could fail when sanitize-html re-serialises
+  // with different whitespace or attribute ordering, causing a two-event
+  // recursion chain or silently dropping content.
+  const isProcessingPasteRef = useRef(false)
 
   useEffect(() => {
     const rootElement = editor.getRootElement()
@@ -88,6 +94,12 @@ export function PastePlugin(): null {
     }
 
     const handlePaste = (event: ClipboardEvent): void => {
+      // Re-entry guard: our own synthetic event re-fires this capture-phase
+      // listener.  When already processing, let the cleaned event through
+      // so Lexical's default handler runs on the sanitised HTML.
+      if (isProcessingPasteRef.current) {
+        return
+      }
       // Only act when the paste targets the editor's contenteditable.
       if (editor.isEditable() !== true) {
         return
@@ -134,7 +146,12 @@ export function PastePlugin(): null {
       // Dispatch on the original target so Lexical's listener picks it up.
       const target = event.target
       if (target !== null) {
-        target.dispatchEvent(syntheticEvent)
+        isProcessingPasteRef.current = true
+        try {
+          target.dispatchEvent(syntheticEvent)
+        } finally {
+          isProcessingPasteRef.current = false
+        }
       }
     }
 

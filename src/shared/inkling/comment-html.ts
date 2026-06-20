@@ -18,23 +18,26 @@ function escapeAttr(input: string): string {
 
 function renderFormattedText(text: string, format: number | undefined): string {
   let html = escapeHtml(text)
-  if ((format ?? 0) === 0) {
+  const f = format ?? 0
+  if (f === 0) {
     return html
   }
-  if (((format ?? 0) & INKLING_FORMAT_BOLD) !== 0) {
-    html = `<strong>${html}</strong>`
+
+  // CODE is exclusive per Lexical semantics.
+  if ((f & INKLING_FORMAT_CODE) !== 0) {
+    return `<code>${html}</code>`
   }
-  if (((format ?? 0) & INKLING_FORMAT_ITALIC) !== 0) {
-    html = `<em>${html}</em>`
+  if ((f & INKLING_FORMAT_STRIKETHROUGH) !== 0) {
+    html = `<s>${html}</s>`
   }
-  if (((format ?? 0) & INKLING_FORMAT_UNDERLINE) !== 0) {
+  if ((f & INKLING_FORMAT_UNDERLINE) !== 0) {
     html = `<u>${html}</u>`
   }
-  if (((format ?? 0) & INKLING_FORMAT_STRIKETHROUGH) !== 0) {
-    html = `<del>${html}</del>`
+  if ((f & INKLING_FORMAT_ITALIC) !== 0) {
+    html = `<em>${html}</em>`
   }
-  if (((format ?? 0) & INKLING_FORMAT_CODE) !== 0) {
-    html = `<code>${html}</code>`
+  if ((f & INKLING_FORMAT_BOLD) !== 0) {
+    html = `<strong>${html}</strong>`
   }
   return html
 }

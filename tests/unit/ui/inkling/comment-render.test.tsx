@@ -76,7 +76,7 @@ describe('ui/inkling/CommentInklingBody', () => {
     expect(html).toMatch(/<strong[^>]*>bold <\/strong>/)
     expect(html).toMatch(/<em[^>]*>italic <\/em>/)
     expect(html).toMatch(/<code[^>]*>code <\/code>/)
-    expect(html).toMatch(/<del[^>]*>strike<\/del>/)
+    expect(html).toMatch(/<s[^>]*>strike<\/s>/)
   })
 
   it('renders a safe link', () => {

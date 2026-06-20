@@ -200,20 +200,24 @@ const FORMAT_STRIKETHROUGH = INKLING_FORMAT_STRIKETHROUGH
 
 function renderFormattedText(text: string, format: number): string {
   let html = escapeHtml(text).replace(/\n/g, '<br />')
-  if ((format & FORMAT_BOLD) !== 0) {
-    html = `<strong>${html}</strong>`
-  }
-  if ((format & FORMAT_ITALIC) !== 0) {
-    html = `<em>${html}</em>`
-  }
-  if ((format & FORMAT_UNDERLINE) !== 0) {
-    html = `<u>${html}</u>`
+
+  // CODE is exclusive per Lexical semantics — when code formatting is
+  // active, other formats are not applied.  Nesting order (outermost
+  // first): STRIKETHROUGH > UNDERLINE > ITALIC > BOLD.
+  if ((format & FORMAT_CODE) !== 0) {
+    return `<code>${html}</code>`
   }
   if ((format & FORMAT_STRIKETHROUGH) !== 0) {
     html = `<s>${html}</s>`
   }
-  if ((format & FORMAT_CODE) !== 0) {
-    html = `<code>${html}</code>`
+  if ((format & FORMAT_UNDERLINE) !== 0) {
+    html = `<u>${html}</u>`
+  }
+  if ((format & FORMAT_ITALIC) !== 0) {
+    html = `<em>${html}</em>`
+  }
+  if ((format & FORMAT_BOLD) !== 0) {
+    html = `<strong>${html}</strong>`
   }
   return html
 }

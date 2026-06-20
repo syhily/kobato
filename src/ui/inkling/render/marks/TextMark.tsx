@@ -44,20 +44,26 @@ function textWithLineBreaks(text: string): ReactNode {
 
 export function TextMark({ text, format = 0 }: TextMarkProps): ReactNode {
   let node: ReactNode = textWithLineBreaks(text)
-  if ((format & FORMAT_BOLD) !== 0) {
-    node = <strong className={INKLING_INLINE.strong}>{node}</strong>
-  }
-  if ((format & FORMAT_ITALIC) !== 0) {
-    node = <em className={INKLING_INLINE.em}>{node}</em>
-  }
-  if ((format & FORMAT_UNDERLINE) !== 0) {
-    node = <u className={INKLING_INLINE.underline}>{node}</u>
+
+  // CODE is exclusive per Lexical semantics — when code formatting is
+  // active, other formats (bold, italic, etc.) are not applied.  This
+  // matches the comment renderer and the shared render-formatted-text
+  // utility.  Nesting order (outermost first): STRIKETHROUGH > UNDERLINE
+  // > ITALIC > BOLD, matching the canonical order in the shared helper.
+  if ((format & FORMAT_CODE) !== 0) {
+    return <code className={INKLING_INLINE.code}>{node}</code>
   }
   if ((format & FORMAT_STRIKETHROUGH) !== 0) {
     node = <s className={INKLING_INLINE.strike}>{node}</s>
   }
-  if ((format & FORMAT_CODE) !== 0) {
-    node = <code className={INKLING_INLINE.code}>{node}</code>
+  if ((format & FORMAT_UNDERLINE) !== 0) {
+    node = <u className={INKLING_INLINE.underline}>{node}</u>
+  }
+  if ((format & FORMAT_ITALIC) !== 0) {
+    node = <em className={INKLING_INLINE.em}>{node}</em>
+  }
+  if ((format & FORMAT_BOLD) !== 0) {
+    node = <strong className={INKLING_INLINE.strong}>{node}</strong>
   }
   return node
 }

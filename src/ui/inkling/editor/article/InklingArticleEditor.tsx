@@ -38,6 +38,7 @@ import {
   type FootnoteDefinitionItem,
   useInklingFootnotes,
 } from '@/ui/inkling/editor/footnotes/InklingFootnoteProvider'
+import { InklingPlusMenuPlugin } from '@/ui/inkling/editor/menu/PlusMenu'
 import { InklingSlashMenuPlugin } from '@/ui/inkling/editor/menu/SlashMenu'
 import { SharedHistoryProvider, useSharedHistoryState } from '@/ui/inkling/editor/nested/SharedHistoryContext'
 import { OnInklingDocumentChangePlugin } from '@/ui/inkling/editor/plugins/OnInklingDocumentChangePlugin'
@@ -207,6 +208,7 @@ export function InklingArticleEditor({
                     (50ms debounce) with one-click edit / remove. */}
                 <FloatingLinkToolbar />
                 <InklingSlashMenuPlugin mode="article" />
+                <InklingPlusMenuPlugin mode="article" />
                 <FootnoteController />
                 <InklingDragDropReorder />
                 {/* Paste sanitiser: strips script/style/event-handlers/javascript:

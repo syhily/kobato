@@ -1,6 +1,13 @@
 import type { LexicalEditor, LexicalNode } from 'lexical'
 
-import { $createParagraphNode, $getRoot, $getSelection, $isRangeSelection } from 'lexical'
+import {
+  $createNodeSelection,
+  $createParagraphNode,
+  $getRoot,
+  $getSelection,
+  $isRangeSelection,
+  $setSelection,
+} from 'lexical'
 
 import type { InklingFeatureMode } from '@/shared/inkling/schema'
 
@@ -108,8 +115,11 @@ export function $insertBlockCard(createNode: () => LexicalNode): void {
   }
 
   // Move into a NodeSelection on the new card so the selection outline,
-  // drag handle, and edit controls render.
-  node.selectPrevious()
+  // drag handle, and edit controls render.  `selectPrevious()` would pick
+  // the preceding sibling, not the card itself.
+  const nodeSelection = $createNodeSelection()
+  nodeSelection.add(node.getKey())
+  $setSelection(nodeSelection)
 }
 
 export const INKLING_CARD_MENU_ITEMS: InklingCardMenuItem[] = [
