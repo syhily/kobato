@@ -35,7 +35,7 @@ import {
 import { describe, expect, it } from 'vitest'
 
 import { InlineMathNode } from '@/ui/inkling/editor/article/InlineMathNode'
-import { $isBlockCardNode, $selectNode } from '@/ui/inkling/editor/behaviour/keyboard-navigation'
+import { $isBlockCardNode, $selectNode } from '@/ui/inkling/editor/behaviour/card-helpers'
 import { SolutionCardNode, TwoColumnCardNode } from '@/ui/inkling/editor/cards/layout-card-nodes'
 import {
   CodeCardNode,
