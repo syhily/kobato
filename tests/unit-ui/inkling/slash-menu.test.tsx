@@ -1,22 +1,25 @@
-// Regression tests for SlashMenu — the `/`-command card insertion menu.
+// Regression tests for InklingSlashMenuPlugin — the `/`-triggered card menu.
 //
-// The SlashMenu plugin registers a `registerUpdateListener` that detects
-// `/` typed in the editor and shows a filterable menu. Full input simulation
-// in happy-dom is brittle (Lexical's input pipeline needs a real DOM), so
-// these tests focus on:
-//   1. The menu renders when the plugin is mounted (no crash).
-//   2. The menu is initially closed (no `/` typed yet).
-//   3. Keyboard commands (Escape/Arrow/Enter) are registered.
+// SlashMenu detects `/` via registerUpdateListener, which reads Lexical's
+// selection model ($getSelection, $isRangeSelection) to locate the trigger.
+// happy-dom cannot drive Lexical's RangeSelection correctly (paragraph.select
+// doesn't produce a committed RangeSelection that $getSelection returns), so
+// full `/`-trigger-to-menu-open simulation is unreliable in this environment.
 //
-// The filtering, IME guard, and full `/`-trigger-to-insert flow are verified
-// in browser-based manual testing — happy-dom can't simulate Lexical's
-// composition events or selection-boundary input correctly.
+// What we CAN test reliably:
+//   1. The plugin mounts without throwing inside a LexicalComposer.
+//   2. The menu is initially absent (no `/` typed).
+//
+// The filtering, IME guard, keyboard navigation, and full trigger flow are
+// verified in browser-based manual testing — the selection-model dependency
+// makes them untestable in happy-dom without a jsdom + real DOM harness.
+
+import type { LexicalEditor } from 'lexical'
 
 import { LexicalComposer } from '@lexical/react/LexicalComposer'
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import { ContentEditable } from '@lexical/react/LexicalContentEditable'
-import { act, render, screen } from '@testing-library/react'
-import { $createParagraphNode, $createTextNode, $getRoot, type LexicalEditor } from 'lexical'
+import { render } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 
 import { InklingSlashMenuPlugin } from '@/ui/inkling/editor/menu/SlashMenu'
@@ -49,44 +52,21 @@ function mountEditor() {
   return holder
 }
 
-describe('SlashMenu', () => {
+describe('InklingSlashMenuPlugin', () => {
   it('mounts without throwing', () => {
     expect(() => mountEditor()).not.toThrow()
   })
 
   it('does not show the menu initially (no / typed)', () => {
     mountEditor()
-    // The menu renders with class 'inkling-slash-menu' when open.
-    // Initially it should not be in the document.
     expect(document.querySelector('.inkling-slash-menu')).toBeNull()
   })
 
-  it('shows the menu after / is typed in the editor', () => {
-    const holder = mountEditor()
-    const editor = holder.current!
-
-    // Seed text ending with '/' to trigger the menu. The registerUpdateListener
-    // fires on editor state change, so seeding via editor.update should trigger it.
-    act(() => {
-      editor.update(
-        () => {
-          const root = $getRoot()
-          root.clear()
-          const para = $createParagraphNode()
-          para.append($createTextNode('/'))
-          root.append(para)
-        },
-        { discrete: true },
-      )
-    })
-
-    // The menu should now be visible (it may take a tick for the listener
-    // to fire). Use querySelector since the menu may or may not render
-    // depending on happy-dom's selection support.
-    // If happy-dom doesn't support getSelection well enough for the position
-    // computation, the menu stays closed — that's an acceptable limitation.
-    const menu = document.querySelector('.inkling-slash-menu')
-    // Assert either way — the key is that the plugin didn't crash.
-    expect(menu === null || menu !== null).toBe(true)
-  })
+  // The filtering, keyboard navigation, mouse insert, and close-behaviour
+  // tests require Lexical's RangeSelection to work in the test DOM.
+  // happy-dom's selection model doesn't satisfy this — paragraph.select()
+  // doesn't produce a selection that $getSelection() returns inside a
+  // registerUpdateListener callback. These paths are covered by manual
+  // browser testing and the headless-editor tests in tests/unit/ui/inkling/.
+  it.skip('shows the menu when / is typed (requires real DOM selection)', () => {})
 })
