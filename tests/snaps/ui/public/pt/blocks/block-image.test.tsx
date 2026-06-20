@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import { renderToHtml } from '#/_helpers/render'
-import { BlockImage } from '@/ui/pt/blocks/BlockImage'
+import { BlockImage } from '@/ui/inkling/render/components/BlockImage'
 
 describe('snapshot: BlockImage', () => {
   it('renders an img with explicit dimensions', () => {

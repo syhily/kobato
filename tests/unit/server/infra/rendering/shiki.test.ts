@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { SHIKI_THEME, SHIKI_THEMES, shikiTransformers } from '@/server/infra/pt/shiki'
+import { SHIKI_THEME, SHIKI_THEMES, shikiTransformers } from '@/server/infra/rendering/shiki'
 
 describe('shiki configuration', () => {
   it('exports the expected light and dark theme names', () => {

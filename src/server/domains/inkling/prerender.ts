@@ -8,8 +8,8 @@ import type {
 } from '@/shared/inkling/schema'
 
 import { getLogger } from '@/server/infra/logger'
-import { getKatexRenderer, type KatexRenderer } from '@/server/infra/pt/katex-renderer'
-import { SHIKI_THEMES, shikiTransformers } from '@/server/infra/pt/shiki'
+import { getKatexRenderer, type KatexRenderer } from '@/server/infra/rendering/katex-renderer'
+import { SHIKI_THEMES, shikiTransformers } from '@/server/infra/rendering/shiki'
 import { HIGHLIGHT_LANGUAGES } from '@/shared/constants/languages'
 import { walkInkling } from '@/shared/inkling/walk'
 

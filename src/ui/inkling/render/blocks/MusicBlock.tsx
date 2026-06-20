@@ -2,8 +2,8 @@ import { use, type ReactNode } from 'react'
 
 import type { InklingMusicCardNode } from '@/shared/inkling/schema'
 
+import { MusicPlayer } from '@/ui/inkling/render/components/MusicPlayer'
 import { InklingMusicMetaContext, InklingMusicPresentationContext } from '@/ui/inkling/render/render-shared'
-import { MusicPlayer } from '@/ui/pt/blocks/MusicPlayer'
 
 export function MusicBlock({ node }: { node: InklingMusicCardNode }): ReactNode {
   const { suppressAutoplay } = use(InklingMusicPresentationContext)

@@ -2,8 +2,8 @@ import { type ReactNode } from 'react'
 
 import type { InklingCodeBlockNode } from '@/shared/inkling/schema'
 
+import { CodeBlock as CodeBlockComponent } from '@/ui/inkling/render/components/CodeBlock'
 import { sanitizeHtml } from '@/ui/lib/sanitize-html'
-import { CodeBlock as CodeBlockComponent } from '@/ui/pt/blocks/CodeBlock'
 
 export function CodeBlock({ node }: { node: InklingCodeBlockNode }): ReactNode {
   if (node.highlightedHtml !== undefined && node.highlightedHtml !== '') {

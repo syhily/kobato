@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest'
 
 import { makeAuthedCtx } from '#/_helpers/mock-ctx'
 
-vi.mock('@/server/infra/pt/katex-renderer', () => ({
+vi.mock('@/server/infra/rendering/katex-renderer', () => ({
   getKatexRenderer: vi.fn(),
 }))
 
@@ -11,7 +11,7 @@ vi.mock('@/server/domains/posts/services/search-reindex', () => ({
   reindexSearchBatch: vi.fn(),
 }))
 
-const { getKatexRenderer } = await import('@/server/infra/pt/katex-renderer')
+const { getKatexRenderer } = await import('@/server/infra/rendering/katex-renderer')
 const { reindexSearchBatch } = await import('@/server/domains/posts/services/search-reindex')
 const { adminRendersRouter } = await import('@/server/http/controllers/admin/renders.controller')
 

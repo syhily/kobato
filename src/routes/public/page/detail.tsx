@@ -12,8 +12,8 @@ import { detailHeaders, publicShouldRevalidate } from '@/server/http/loaders/rou
 import { bundleFromMatches, routeMeta, seoForPage } from '@/server/render/seo/meta'
 import { requireBlogSettingsSection } from '@/shared/config/getters'
 import { resolveFootnotesSectionTitle } from '@/shared/utils/footnotes-section-title'
+import { Friends } from '@/ui/inkling/render/components/Friends'
 import { InklingBody } from '@/ui/inkling/render/InklingBody'
-import { Friends } from '@/ui/pt/blocks/Friends'
 import { PageDetailBody } from '@/ui/public/post/PageDetailBody'
 
 import type { Route } from './+types/detail'

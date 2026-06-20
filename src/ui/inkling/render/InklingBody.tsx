@@ -19,6 +19,9 @@ import { ImageBlock } from '@/ui/inkling/render/blocks/ImageBlock'
 import { MathBlock } from '@/ui/inkling/render/blocks/MathBlock'
 import { MusicBlock } from '@/ui/inkling/render/blocks/MusicBlock'
 import { ParagraphBlock } from '@/ui/inkling/render/blocks/ParagraphBlock'
+import { FootnoteProvider, FootnotePreviewRegistrar } from '@/ui/inkling/render/components/Footnotes'
+import { ImageMetaProvider, type ImageMetaMap } from '@/ui/inkling/render/components/image-meta-context'
+import { Solution } from '@/ui/inkling/render/components/Solution'
 import { FootnoteRefMark } from '@/ui/inkling/render/marks/FootnoteRefMark'
 import { LinkMark } from '@/ui/inkling/render/marks/LinkMark'
 import { renderMathMarkupOrTexFallback } from '@/ui/inkling/render/marks/MathMark'
@@ -30,9 +33,6 @@ import {
   type InklingMusicMetaMap,
   InklingMusicPresentationContext,
 } from '@/ui/inkling/render/render-shared'
-import { Solution } from '@/ui/pt/blocks/Solution'
-import { FootnoteProvider, FootnotePreviewRegistrar } from '@/ui/pt/Footnotes'
-import { ImageMetaProvider, type ImageMetaMap } from '@/ui/pt/image-meta-context'
 
 export interface InklingBodyProps {
   document: InklingDocument

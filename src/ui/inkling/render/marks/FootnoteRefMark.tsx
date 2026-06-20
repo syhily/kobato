@@ -1,6 +1,6 @@
 import { type ReactNode } from 'react'
 
-import { FootnoteReference } from '@/ui/pt/Footnotes'
+import { FootnoteReference } from '@/ui/inkling/render/components/Footnotes'
 
 export interface FootnoteRefMarkProps {
   index: number

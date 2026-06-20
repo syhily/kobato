@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 import type { Friend } from '@/shared/types/catalog'
 
 import { renderToHtml } from '#/_helpers/render'
-import { Friends } from '@/ui/pt/blocks/Friends'
+import { Friends } from '@/ui/inkling/render/components/Friends'
 
 const friends: Friend[] = [
   {

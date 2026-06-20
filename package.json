@@ -56,10 +56,10 @@
   },
   "dependencies": {
     "@napi-rs/canvas": "^1.0.0",
-    "sharp": "^0.35.1"
+    "sharp": "^0.35.2"
   },
   "devDependencies": {
-    "@aws-sdk/client-s3": "^3.1072.0",
+    "@aws-sdk/client-s3": "^3.1073.0",
     "@base-ui/react": "^1.6.0",
     "@date-fns/tz": "^1.5.0",
     "@dnd-kit/core": "^6.3.1",
@@ -129,7 +129,7 @@
     "oxfmt": "^0.55.0",
     "oxlint": "^1.70.0",
     "oxlint-tsgolint": "^0.23.0",
-    "pg": "^8.21.0",
+    "pg": "^8.22.0",
     "pg-copy-streams": "^7.0.0",
     "pino": "^10.3.1",
     "pinyin-pro": "^3.28.1",
@@ -137,7 +137,7 @@
     "react": "^19.2.7",
     "react-day-picker": "^10.0.1",
     "react-dom": "^19.2.7",
-    "react-hook-form": "^7.79.0",
+    "react-hook-form": "^7.80.0",
     "react-router": "^8.0.1",
     "sanitize-html": "^2.17.5",
     "sharp-ico": "0.1.5",

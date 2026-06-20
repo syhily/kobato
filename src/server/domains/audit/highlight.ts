@@ -1,6 +1,6 @@
 import { createHighlighter } from 'shiki'
 
-import { SHIKI_THEMES } from '@/server/infra/pt/shiki'
+import { SHIKI_THEMES } from '@/server/infra/rendering/shiki'
 
 let highlighterPromise: ReturnType<typeof createHighlighter> | null = null
 

@@ -3,7 +3,7 @@ import { z } from 'zod'
 import { recordAuditEventFromContext } from '@/server/domains/audit/services/record'
 import { reindexSearchBatch } from '@/server/domains/posts/services/search-reindex'
 import { adminProc } from '@/server/http/orpc-base'
-import { getKatexRenderer, type KatexRenderer } from '@/server/infra/pt/katex-renderer'
+import { getKatexRenderer, type KatexRenderer } from '@/server/infra/rendering/katex-renderer'
 
 const MAX_RENDER_INPUT_LENGTH = 10_000
 

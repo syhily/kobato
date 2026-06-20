@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 import type { MusicPlayerBlockMeta } from '@/shared/types/music'
 
 import { renderToHtml } from '#/_helpers/render'
-import { MusicPlayer } from '@/ui/pt/blocks/MusicPlayer'
+import { MusicPlayer } from '@/ui/inkling/render/components/MusicPlayer'
 
 const meta: MusicPlayerBlockMeta = {
   id: 'music-1',

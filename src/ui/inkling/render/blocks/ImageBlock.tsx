@@ -3,8 +3,8 @@ import { type ReactNode } from 'react'
 import type { InklingImageCardNode } from '@/shared/inkling/schema'
 
 import { sanitizeUrl } from '@/shared/sanitize-url'
+import { BlockImage } from '@/ui/inkling/render/components/BlockImage'
 import { cn } from '@/ui/lib/cn'
-import { BlockImage } from '@/ui/pt/blocks/BlockImage'
 
 function imageFigureLayoutClass(layout: InklingImageCardNode['layout']): string {
   const l = layout ?? 'center'

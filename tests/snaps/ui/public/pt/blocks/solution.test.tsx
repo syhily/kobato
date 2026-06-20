@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import { renderToHtml } from '#/_helpers/render'
-import { Solution, UnstyledSolution } from '@/ui/pt/blocks/Solution'
+import { Solution, UnstyledSolution } from '@/ui/inkling/render/components/Solution'
 
 describe('snapshot: Solution', () => {
   it('renders the styled solution block', () => {

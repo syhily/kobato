@@ -26,11 +26,6 @@ interface Verifier {
 
 const VERIFIERS: Verifier[] = [
   {
-    name: 'body-shape-inventory',
-    script: 'scripts/inkling-poc/inventory-local-bodies.ts',
-    report: 'tmp/inkling-poc/body-format-inventory.json',
-  },
-  {
     name: 'pt-to-inkling',
     script: 'scripts/inkling-poc/verify-pt-to-inkling-local-db.ts',
     report: 'tmp/inkling-poc/pt-to-inkling-report.json',
@@ -39,17 +34,6 @@ const VERIFIERS: Verifier[] = [
     name: 'derived-data-parity',
     script: 'scripts/inkling-poc/verify-derived-data-local-db.ts',
     report: 'tmp/inkling-poc/derived-data-parity-report.json',
-  },
-  {
-    name: 'footnotes',
-    script: 'scripts/inkling-poc/verify-footnotes-local-db.ts',
-    report: 'tmp/inkling-poc/footnote-report.json',
-  },
-  {
-    name: 'comment-html-cleanup',
-    script: 'scripts/inkling-poc/verify-comment-html-cleanup.ts',
-    report: 'tmp/inkling-poc/comment-html-cleanup-report.json',
-    optional: true,
   },
 ]
 

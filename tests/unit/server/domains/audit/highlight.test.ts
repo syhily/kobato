@@ -11,7 +11,7 @@ vi.mock('shiki', () => ({
   createHighlighter: createHighlighterMock,
 }))
 
-vi.mock('@/server/infra/pt/shiki', () => ({
+vi.mock('@/server/infra/rendering/shiki', () => ({
   SHIKI_THEMES: { light: 'solarized-light', dark: 'solarized-dark' },
 }))
 
