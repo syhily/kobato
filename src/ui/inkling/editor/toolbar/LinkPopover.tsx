@@ -36,7 +36,7 @@ export function LinkPopover({ editor, onClose }: LinkPopoverProps) {
   const existing = useMemo(() => getExistingLink(editor), [editor])
   const [url, setUrl] = useState(existing?.url ?? '')
   const [text, setText] = useState(existing?.text ?? '')
-  const [urlError, urlErrorSetter] = useState<string | null>(null)
+  const [urlError, setUrlError] = useState<string | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -53,10 +53,10 @@ export function LinkPopover({ editor, onClose }: LinkPopoverProps) {
     // re-sanitize on output, but persisting the unsafe URL lets it leak
     // through any future consumer that forgets the second layer.
     if (trimmed.length > 0 && !isSafeUrl(trimmed)) {
-      urlErrorSetter('链接协议不被允许（仅支持 http/https/mailto/tel 或相对路径）。')
+      setUrlError('链接协议不被允许（仅支持 http/https/mailto/tel 或相对路径）。')
       return
     }
-    urlErrorSetter(null)
+    setUrlError(null)
     if (trimmed.length > 0) {
       // When creating a new link with explicit text, seed the selection's
       // text content first so the link carries the typed label rather than
@@ -116,7 +116,7 @@ export function LinkPopover({ editor, onClose }: LinkPopoverProps) {
         onChange={(e) => {
           setUrl(e.target.value)
           if (urlError !== null) {
-            urlErrorSetter(null)
+            setUrlError(null)
           }
         }}
         onKeyDown={handleKeyDown}

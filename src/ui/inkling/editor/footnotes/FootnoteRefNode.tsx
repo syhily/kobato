@@ -128,11 +128,11 @@ export class FootnoteRefNode extends DecoratorNode<JSX.Element | null> {
         const refKey = node.getAttribute('data-ref-key') ?? 'legacy-ref'
         const dataIndex = node.getAttribute('data-index')
         const textIndex = Number.parseInt(node.textContent ?? '', 10)
-        const index = Number.isNaN(Number.parseInt(dataIndex ?? '', 10))
-          ? Number.isNaN(textIndex)
-            ? 1
-            : textIndex
-          : Number.parseInt(dataIndex!, 10)
+        // Resolve the 1-based index: prefer the explicit `data-index` attribute,
+        // fall back to the text content (legacy), default to 1. Both parses are
+        // NaN-checked before use so no non-null assertion is needed.
+        const parsedDataIndex = dataIndex !== null ? Number.parseInt(dataIndex, 10) : Number.NaN
+        const index = !Number.isNaN(parsedDataIndex) ? parsedDataIndex : !Number.isNaN(textIndex) ? textIndex : 1
 
         return {
           conversion: () => ({ node: new FootnoteRefNode(targetKey, refKey, index) }),

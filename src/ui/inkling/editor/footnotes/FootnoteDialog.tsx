@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react'
+import { useCallback, useState } from 'react'
 
 import type { InklingNonRecursiveBlockNode } from '@/shared/inkling/schema'
 
@@ -40,7 +40,6 @@ function FootnoteDialogContent({
   onClose,
 }: Omit<FootnoteDialogProps, 'open'>) {
   const [children, setChildren] = useState<InklingNonRecursiveBlockNode[]>(initialChildren)
-  const saveButtonRef = useRef<HTMLButtonElement>(null)
 
   const handleSave = useCallback(() => {
     onSave(children)
@@ -104,7 +103,6 @@ function FootnoteDialogContent({
               取消
             </button>
             <button
-              ref={saveButtonRef}
               type="button"
               onClick={handleSave}
               disabled={isEmpty}
