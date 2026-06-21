@@ -31,6 +31,46 @@
   outline: none;
 }
 
+/* ── Inline text-format classes ─────────────────────────────────────── */
+/* Lexical's theme maps each FORMAT_TEXT_COMMAND flag to a class applied
+   on the wrapping <span>. Without rules here the format is toggled in the
+   editor state (the toolbar button shows active) but renders with NO
+   visual change — the class name exists but does nothing. Bold/italic
+   happen to work via browser defaults on <strong>/<em>, but underline and
+   strikethrough rely entirely on these rules (Lexical emits a <span
+   class>, not a <u>/<s> tag, in the editor). The published HTML path uses
+   native <u>/<s> tags (see server/render/inkling/html.ts), so these rules
+   make the editor's inline preview match the rendered output.            */
+
+.inkling-prose .inkling-text-bold {
+  font-weight: 700;
+}
+
+.inkling-prose .inkling-text-italic {
+  font-style: italic;
+}
+
+.inkling-prose .inkling-text-underline {
+  text-decoration: underline;
+}
+
+.inkling-prose .inkling-text-strikethrough {
+  text-decoration: line-through;
+}
+
+.inkling-prose .inkling-text-code {
+  font-family: var(--inkling-font-code);
+  background: var(--code-bg);
+  border: 1px solid var(--line-muted);
+  border-radius: 2px;
+  color: var(--code-inline-fg);
+  font-size: 0.8em;
+  line-height: 1em;
+  padding: calc(0.4 * var(--ir)) calc(0.4 * var(--ir)) calc(0.2 * var(--ir));
+  vertical-align: middle;
+  white-space: pre-wrap;
+}
+
 /* Selection highlight — brand color */
 .inkling-prose ::selection {
   background: var(--inkling-selection);
