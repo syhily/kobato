@@ -22,9 +22,16 @@ const SECTION_LABELS: Record<string, string> = {
 /**
  * Horizontal gap between the `+` button and the paragraph's left text edge.
  * Mirrors Koenig's card-add gutter — the button sits in the left margin,
- * not flush against the text.
+ * not flush against the text. The actual offset is clamped in
+ * `computePosition` so the button never overflows the editor shell (the
+ * scroll container's padding is narrower than this on mobile).
  */
 const PLUS_BUTTON_GUTTER = 28
+/**
+ * Size of the `+` button (h-6 w-6 = 24px). Used to clamp the left offset so
+ * the whole button stays inside the editor shell.
+ */
+const PLUS_BUTTON_SIZE = 24
 
 function insertCard(editor: LexicalEditor, item: InklingCardMenuItem): void {
   editor.update(() => {
@@ -123,31 +130,53 @@ export function InklingPlusMenuPlugin({ mode }: InklingPlusMenuPluginProps) {
   // scroll/resize listeners and the anchor-change effect can all reuse it
   // without tripping the react-compiler "setState in effect body" rule.
   //
+  // Coordinates are computed against the button's actual positioning
+  // context — the nearest positioned ancestor (the `.inkling-editor` shell),
+  // NOT the contenteditable. The button renders with `position: absolute`
+  // inside `.inkling-editor`, so using the contenteditable's rect as the
+  // origin would be wrong by the scroll container's padding, pushing the
+  // button off-screen. We resolve the offset parent via the contenteditable
+  // and measure against it.
+  //
   // Returns null only when there is no anchor at all. If the anchor's DOM
   // element can't be resolved (e.g. it was just inserted and Lexical hasn't
-  // reconciled yet, or in a test environment), we fall back to the editor
-  // root's origin so the button still renders — it just repositions on the
-  // next layout tick.
+  // reconciled yet, or in a test environment), we fall back to the offset
+  // parent's origin so the button still renders.
   const computePosition = useCallback((): { top: number; left: number } | null => {
     if (anchorKey === null) {
       return null
     }
     const rootEl = editor.getRootElement()
     if (rootEl === null) {
-      return { top: 0, left: -PLUS_BUTTON_GUTTER }
+      return { top: 0, left: 0 }
     }
+    // The positioned ancestor that the absolute button will be placed in.
+    // `offsetParent` walks up to the first `position: relative/absolute/…`
+    // element — that is `.inkling-editor`, the button's coordinate origin.
+    const origin = rootEl.offsetParent ?? rootEl
+    const originRect = origin.getBoundingClientRect()
+
     const blockEl = editor.getElementByKey(anchorKey)
     if (blockEl === null) {
-      return { top: 0, left: -PLUS_BUTTON_GUTTER }
+      return { top: 0, left: 0 }
     }
-    const rootRect = rootEl.getBoundingClientRect()
     const blockRect = blockEl.getBoundingClientRect()
+    // The paragraph's left edge in the editor-shell coordinate space.
+    const blockLeft = blockRect.left - originRect.left
+    // Pull the button into the left margin by the gutter, but clamp so the
+    // whole button (24px wide) stays inside the editor shell. The scroll
+    // container's horizontal padding is the available margin (px-3 = 12px
+    // on mobile, md:px-6 = 24px on desktop), so on mobile the gutter must
+    // shrink to fit — otherwise the button overflows and gets clipped to
+    // half. Never let the button start below 4px from the shell's left edge.
+    const desiredLeft = blockLeft - PLUS_BUTTON_GUTTER
+    const minLeft = 4
+    const left = Math.max(minLeft, Math.min(desiredLeft, blockLeft - PLUS_BUTTON_SIZE - 4))
     return {
       // Vertically center on the first line. The block's top + a fraction
       // of its height lands roughly on the text baseline area.
-      top: blockRect.top - rootRect.top + (blockRect.height - 24) / 2,
-      // Left text edge, pulled into the margin by the gutter.
-      left: blockRect.left - rootRect.left - PLUS_BUTTON_GUTTER,
+      top: blockRect.top - originRect.top + (blockRect.height - 24) / 2,
+      left,
     }
   }, [anchorKey, editor])
 
