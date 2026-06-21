@@ -240,10 +240,47 @@ describe('settings/schemas/fonts', () => {
     expect(result.success).toBe(true)
   })
 
-  it('rejects family names with spaces', () => {
+  it('accepts family names with spaces (valid CSS font-family)', () => {
+    const result = fontsSchema.safeParse({
+      og: { family: 'OPPO Sans 4.0' },
+      calendar: { family: 'Source Han Serif' },
+      globalFamily: 'OPPO Sans 4.0',
+      postFamily: 'OPPO Serif SC',
+      globalCss: [],
+      postCss: [],
+    })
+    expect(result.success).toBe(true)
+  })
+
+  it('accepts Unicode family names', () => {
+    const result = fontsSchema.safeParse({
+      og: { family: '思源宋体' },
+      calendar: { family: 'ヒラギノ角ゴ' },
+      globalFamily: '思源黑体',
+      postFamily: '思源宋体',
+      globalCss: [],
+      postCss: [],
+    })
+    expect(result.success).toBe(true)
+  })
+
+  it('rejects family names containing quotes (CSS injection guard)', () => {
     expect(
       fontsSchema.safeParse({
-        og: { family: 'has space' },
+        og: { family: "Serif'; body { color: red }" },
+        calendar: { family: '' },
+        globalFamily: '',
+        postFamily: '',
+        globalCss: [],
+        postCss: [],
+      }).success,
+    ).toBe(false)
+  })
+
+  it('rejects family names containing braces (CSS injection guard)', () => {
+    expect(
+      fontsSchema.safeParse({
+        og: { family: 'Serif{}' },
         calendar: { family: '' },
         globalFamily: '',
         postFamily: '',
