@@ -23,7 +23,7 @@ function StaticMusicPreview({ meta, playerId }: { meta: MusicPreviewMeta | null;
   const coverUrl = meta?.coverUrl ?? ''
 
   return (
-    <div className="aplayer not-prose relative m-aplayer-margin overflow-hidden rounded-sm bg-white font-[Arial,Helvetica,sans-serif] leading-normal shadow-[0_2px_2px_0_rgba(0,0,0,0.07),0_1px_5px_0_rgba(0,0,0,0.1)] select-none dark:rounded-[var(--radius-sm)] dark:bg-surface dark:shadow-[0_0_0_1px_rgb(255_255_255_/_8%)] [&_*]:box-content">
+    <div className="aplayer relative m-aplayer-margin overflow-hidden rounded-sm bg-white font-[Arial,Helvetica,sans-serif] leading-normal shadow-[0_2px_2px_0_rgba(0,0,0,0.07),0_1px_5px_0_rgba(0,0,0,0.1)] select-none dark:rounded-[var(--radius-sm)] dark:bg-surface dark:shadow-[0_0_0_1px_rgb(255_255_255_/_8%)] [&_*]:box-content">
       <div className="aplayer-body relative">
         <div
           className="aplayer-pic group relative float-left h-aplayer-art-sm w-aplayer-art-sm cursor-default bg-cover bg-center transition-all duration-300 dark:[filter:brightness(0.72)_contrast(0.95)_saturate(0.9)]"

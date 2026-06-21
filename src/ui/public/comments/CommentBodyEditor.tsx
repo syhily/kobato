@@ -78,7 +78,7 @@ export function CommentBodyEditor({
         editable={disabled !== true}
         placeholder={placeholderText}
         contentClassName={cn(
-          'prose-blog prose prose-sm max-w-none px-3 py-2',
+          'comment-content px-3 py-2',
           'min-h-[6rem]',
           'wrap-break-word whitespace-normal',
           '[&_.lexical-editor]:min-h-[5rem] [&_.lexical-editor]:outline-none',

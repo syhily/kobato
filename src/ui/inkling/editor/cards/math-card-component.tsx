@@ -51,7 +51,7 @@ function MathPreview({ tex }: { tex: string }) {
     return <div className="py-4 text-center font-mono text-sm">$${tex || '\\text{输入 TeX 公式}'}$$</div>
   }
   // Use the same `math math-display` class as the published renderer so
-  // prose-blog's .math-display rules (overflow, centering) apply.
+  // inkling.css's .math-display rules (overflow, centering) apply.
   return (
     <div
       className="math math-display text-center [&_svg]:mx-auto [&_svg]:block [&_svg]:max-w-none"

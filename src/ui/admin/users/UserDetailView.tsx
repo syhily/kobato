@@ -328,7 +328,7 @@ export function UserDetailView({ userId, navigate, passkeyEnabled }: UserDetailV
                           </span>
                           {c.isPending && <Badge variant="destructive">待审核</Badge>}
                         </div>
-                        <div className="comment-content prose-blog prose prose-sm mt-1 line-clamp-3 max-w-none text-sm leading-snug wrap-break-word whitespace-normal [&>*]:!my-0">
+                        <div className="comment-content mt-1 line-clamp-3 text-sm leading-snug wrap-break-word whitespace-normal [&>*]:!my-0">
                           <InklingBody document={c.body} />
                         </div>
                       </li>

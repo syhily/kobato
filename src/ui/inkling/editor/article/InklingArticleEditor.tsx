@@ -143,7 +143,7 @@ export function InklingArticleEditor({
                   ref={scrollContainerRef}
                   className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto px-3 pt-6 pb-editor-pad-bottom md:px-6"
                 >
-                  <div className="inkling-prose post-content prose-blog prose prose-lg max-w-none">
+                  <div className="inkling-prose post-content">
                     {/* `<RichTextPlugin>` is what actually mounts the decorator
                       renderer (`<LegacyDecorators>`), which portals each card
                       node's `decorate()` output into its host element. Without

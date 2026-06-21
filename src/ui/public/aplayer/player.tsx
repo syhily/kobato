@@ -77,7 +77,7 @@ export function APlayer({
   return (
     <div
       className={cn(
-        'aplayer not-prose relative m-aplayer-margin overflow-hidden rounded-sm bg-white font-[Arial,Helvetica,sans-serif] leading-normal shadow-[0_2px_2px_0_rgba(0,0,0,0.07),0_1px_5px_0_rgba(0,0,0,0.1)] select-none dark:rounded-[var(--radius-sm)] dark:bg-surface dark:shadow-[0_0_0_1px_rgb(255_255_255_/_8%)] [&_*]:box-content',
+        'aplayer relative m-aplayer-margin overflow-hidden rounded-sm bg-white font-[Arial,Helvetica,sans-serif] leading-normal shadow-[0_2px_2px_0_rgba(0,0,0,0.07),0_1px_5px_0_rgba(0,0,0,0.1)] select-none dark:rounded-[var(--radius-sm)] dark:bg-surface dark:shadow-[0_0_0_1px_rgb(255_255_255_/_8%)] [&_*]:box-content',
         {
           'aplayer-fixed fixed right-0 bottom-0 left-0 z-[99] m-0 max-w-aplayer-fixed-max overflow-visible shadow-none dark:shadow-none':
             appearance === 'fixed',

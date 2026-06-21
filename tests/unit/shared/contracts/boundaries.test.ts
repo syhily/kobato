@@ -696,66 +696,47 @@ describe('contract: module and bundle boundaries', () => {
   it('keeps solution math scrollable instead of clipping long formulas', () => {
     const publicCss = readFileSync('src/styles/public.css', 'utf8')
     const tailwindCss = readFileSync('src/styles/tailwind.css', 'utf8')
+    const inklingCss = readFileSync('src/styles/inkling.css', 'utf8')
 
     expect(publicCss).not.toMatch(/\.post-content \.solution\s*\{[^}]*overflow:\s*hidden/s)
     expect(tailwindCss).not.toMatch(/\.post-content \.solution\s*\{[^}]*overflow:\s*hidden/s)
-    expect(tailwindCss).toContain(':where(.math-display)')
-    expect(tailwindCss).toContain('overflow-x: auto')
+    expect(inklingCss).toMatch(/\.math-display\b/)
+    expect(inklingCss).toContain('overflow-x: auto')
   })
 
-  it('routes post / comment typography through @tailwindcss/typography', () => {
+  it('routes post / comment typography through hand-written inkling.css', () => {
     const publicCss = readFileSync('src/styles/public.css', 'utf8')
     const tailwindCss = readFileSync('src/styles/tailwind.css', 'utf8')
+    const inklingCss = readFileSync('src/styles/inkling.css', 'utf8')
     const commentItem = readFileSync('src/ui/public/comments/comment-item/helpers.ts', 'utf8')
 
     expect(publicCss).not.toMatch(/^\s*\.post-content\s*\{/m)
     expect(publicCss).not.toMatch(/^\s*\.comment-content\s*\{/m)
-    expect(tailwindCss).toMatch(/@utility\s+prose-blog\s*\{/)
-    expect(tailwindCss).toMatch(/&\.post-content\s*\{/)
-    expect(tailwindCss).toMatch(/&\.comment-content\s*\{/)
     expect(publicCss).not.toMatch(/@import\s+['"][^'"]*ui\/post\/post\.css['"]/)
     expect(existsSync('src/ui/post/post.css')).toBe(false)
 
-    expect(tailwindCss).toContain("@plugin '@tailwindcss/typography'")
-    expect(tailwindCss).toMatch(/--code-bg:\s*rgb\(253,\s*246,\s*227\);/)
+    // @tailwindcss/typography is fully removed — replaced by inkling.css
+    expect(tailwindCss).not.toContain("@plugin '@tailwindcss/typography'")
+    expect(tailwindCss).toContain("@import './inkling.css'")
 
-    // Typography colours are driven by a shared --prose-blog-* slot table
-    // so light and invert ladders read from the same source.
-    for (const slot of [
-      'body',
-      'headings',
-      'lead',
-      'links',
-      'bold',
-      'counters',
-      'bullets',
-      'hr',
-      'quotes',
-      'quote-borders',
-      'captions',
-      'code',
-      'pre-code',
-      'pre-bg',
-      'th-borders',
-      'td-borders',
-    ]) {
-      expect(tailwindCss).toMatch(new RegExp(`--prose-blog-${slot}\\s*:`))
-      expect(tailwindCss).toMatch(new RegExp(`--tw-prose-${slot}\\s*:\\s*var\\(--prose-blog-${slot}\\)`))
-      expect(tailwindCss).toMatch(new RegExp(`--tw-prose-invert-${slot}\\s*:\\s*var\\(--prose-blog-${slot}\\)`))
-    }
+    // inkling.css defines both scopes with explicit (non-:where) selectors
+    expect(inklingCss).toMatch(/\.post-content\s*\{/)
+    expect(inklingCss).toMatch(/\.comment-content\s*\{/)
 
-    expect(commentItem).toMatch(/cn\(\s*'comment-content'\s*,\s*'prose-blog prose prose-sm max-w-none'/)
+    // Colours are driven by project tokens, not --tw-prose-* slots
+    expect(inklingCss).toMatch(/var\(--ink-2\)/)
+    expect(inklingCss).toMatch(/var\(--brand\)/)
+
+    // No stale prose/prose-blog classes leak into consumer components
+    expect(commentItem).toMatch(/cn\(\s*'comment-content'\s*,/)
+    expect(commentItem).not.toMatch(/prose/)
   })
 
   it('inlines the post-content / comment-content literals at the only two call-site shapes', () => {
-    const tailwindCss = readFileSync('src/styles/tailwind.css', 'utf8')
-    expect(tailwindCss).toMatch(/&\.post-content\s*\{/)
-    expect(tailwindCss).toMatch(/&\.comment-content\s*\{/)
-
     const detailChrome = readFileSync('src/ui/public/post/DetailBodyChrome.tsx', 'utf8')
     const commentItem = readFileSync('src/ui/public/comments/comment-item/helpers.ts', 'utf8')
 
-    expect(detailChrome).toMatch(/cn\(\s*'post-content'\s*,/)
+    expect(detailChrome).toMatch(/className="post-content"/)
     expect(commentItem).toMatch(/cn\(\s*'comment-content'\s*,/)
 
     expect(existsSync('src/ui/lib/wp-compat.ts')).toBe(false)

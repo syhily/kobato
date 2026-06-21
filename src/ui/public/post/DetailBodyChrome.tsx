@@ -116,7 +116,7 @@ export function DetailBodyChrome({
       </div>
       <TableOfContents headings={headings} toc={toc} />
       <div className={contentWrapperClassName}>
-        <div ref={postContentRef} className={cn('post-content', 'prose-blog prose prose-lg max-w-none')}>
+        <div ref={postContentRef} className="post-content">
           {children}
         </div>
       </div>

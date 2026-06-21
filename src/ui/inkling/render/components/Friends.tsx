@@ -26,7 +26,7 @@ export function Friends({ friends }: FriendsProps) {
   }
 
   return (
-    <div className="not-prose mt-10 px-4 md:mt-8 md:px-0">
+    <div className="mt-10 px-4 md:mt-8 md:px-0">
       <h2 className="mb-6 text-xl text-ink-4 md:mb-4 md:text-2xl">
         左邻右舍 <span className="mb-6 text-sm text-brand md:mb-4">排名不分前后</span>
       </h2>
