@@ -217,7 +217,13 @@ describe('settings/schemas/seo', () => {
 
 describe('settings/schemas/fonts', () => {
   it('accepts empty family and CSS arrays', () => {
-    const result = fontsSchema.safeParse({ og: { family: '' }, calendar: { family: '' }, globalCss: [], postCss: [] })
+    const result = fontsSchema.safeParse({
+      og: { family: '' },
+      calendar: { family: '' },
+      postFamily: '',
+      globalCss: [],
+      postCss: [],
+    })
     expect(result.success).toBe(true)
   })
 
@@ -225,6 +231,7 @@ describe('settings/schemas/fonts', () => {
     const result = fontsSchema.safeParse({
       og: { family: 'NotoSans' },
       calendar: { family: 'Noto-Serif' },
+      postFamily: 'Noto-Serif',
       globalCss: ['https://fonts.example/og.css'],
       postCss: ['https://fonts.example/post.css'],
     })
@@ -233,15 +240,26 @@ describe('settings/schemas/fonts', () => {
 
   it('rejects family names with spaces', () => {
     expect(
-      fontsSchema.safeParse({ og: { family: 'has space' }, calendar: { family: '' }, globalCss: [], postCss: [] })
-        .success,
+      fontsSchema.safeParse({
+        og: { family: 'has space' },
+        calendar: { family: '' },
+        postFamily: '',
+        globalCss: [],
+        postCss: [],
+      }).success,
     ).toBe(false)
   })
 
   it('rejects more than 8 css entries', () => {
     const css = Array.from({ length: 9 }, () => 'https://fonts.example/a.css')
     expect(
-      fontsSchema.safeParse({ og: { family: '' }, calendar: { family: '' }, globalCss: css, postCss: [] }).success,
+      fontsSchema.safeParse({
+        og: { family: '' },
+        calendar: { family: '' },
+        postFamily: '',
+        globalCss: css,
+        postCss: [],
+      }).success,
     ).toBe(false)
   })
 })

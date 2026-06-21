@@ -245,6 +245,7 @@ export interface SearchSettings {
 export interface FontsSettings {
   og: { family: string }
   calendar: { family: string }
+  postFamily: string
   globalCss: string[]
   postCss: string[]
 }

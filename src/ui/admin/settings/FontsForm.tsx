@@ -215,14 +215,16 @@ function FontsGlobalCssCard({ fonts }: { fonts: FontsSettings }) {
 }
 
 function FontsPostCssCard({ fonts }: { fonts: FontsSettings }) {
-  const { form, settingGroupProps } = useSettingsCard<FontsSettings, { postCss: CssRow[] }>({
+  const { form, settingGroupProps } = useSettingsCard<FontsSettings, { postCss: CssRow[]; postFamily: string }>({
     section: 'fonts',
     source: fonts,
     toState: (source) => ({
       postCss: source.postCss.map((url, i) => ({ clientId: `css-post-${i}`, url })),
+      postFamily: source.postFamily,
     }),
     fromState: (state) => ({
       postCss: state.postCss.map((row) => row.url.trim()).filter((url) => url !== ''),
+      postFamily: state.postFamily.trim(),
     }),
   })
 
@@ -230,11 +232,20 @@ function FontsPostCssCard({ fonts }: { fonts: FontsSettings }) {
 
   return (
     <SettingGroup
-      title="文章页字体 CSS"
-      description="仅在文章详情页的 <head> 注入。适合体积大、仅长文阅读需要的字体。"
+      title="文章页字体"
+      description="仅在文章详情页加载。配置字体 CSS 后，填写族名让正文使用该字体；留空则使用默认衬线字体。"
       {...settingGroupProps}
     >
       <SettingGroupContent>
+        <SettingsRow label="正文字体族名" htmlFor="fonts-post-family">
+          <Input
+            id="fonts-post-family"
+            type="text"
+            placeholder="族名，例如 OPPOSerif（留空使用默认字体）"
+            maxLength={100}
+            {...form.register('postFamily')}
+          />
+        </SettingsRow>
         <div className="flex flex-col gap-3">
           {rows.fields.length === 0 ? (
             <p className="text-sm text-muted-foreground">还没有添加 CSS，点击下方按钮新增一项。</p>

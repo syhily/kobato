@@ -23,6 +23,7 @@ function bundleWith(overrides: {
     fonts: {
       og: { family: '' },
       calendar: { family: '' },
+      postFamily: '',
       globalCss: [],
       postCss: [],
       ...overrides.fonts,

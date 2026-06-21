@@ -108,7 +108,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
     admin?: boolean
     theme?: 'dark' | 'light' | null
     blogSettings?: {
-      fonts?: { globalCss?: string[]; postCss?: string[] } | null
+      fonts?: { globalCss?: string[]; postCss?: string[]; postFamily?: string } | null
       assets?: { asset?: { host?: string } | null } | null
       siteIdentity?: { locale?: string } | null
     } | null
@@ -149,9 +149,19 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const matches = useMatches()
   const wantsPostFonts = matches.some((m) => isRecord(m.handle) && m.handle.postFonts === true)
   const postFontCss = wantsPostFonts ? (rootData?.blogSettings?.fonts?.postCss ?? []) : []
+  // When a custom post body font is configured, override the
+  // --inkling-font-serif token at the <html> root so .post-content /
+  // .comment-content pick it up without hardcoding the family name in CSS.
+  const postFamily = rootData?.blogSettings?.fonts?.postFamily
+  const htmlStyle =
+    postFamily !== undefined && postFamily !== ''
+      ? ({
+          '--inkling-font-serif': `'${postFamily}', 'OPPO Serif SC', 'Source Han Serif SC', 'Noto Serif CJK SC', 'Songti SC', SimSun, Georgia, Times, serif`,
+        } as React.CSSProperties)
+      : undefined
 
   return (
-    <html lang={locale} className={theme ?? undefined}>
+    <html lang={locale} className={theme ?? undefined} style={htmlStyle}>
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />

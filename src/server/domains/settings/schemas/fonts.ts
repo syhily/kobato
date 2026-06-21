@@ -22,6 +22,7 @@ const fontCssListSchema = z.array(z.url()).max(8)
 export const fontsSchema = z.object({
   og: z.object({ family: fontFamilySchema }),
   calendar: z.object({ family: fontFamilySchema }),
+  postFamily: fontFamilySchema,
   globalCss: fontCssListSchema,
   postCss: fontCssListSchema,
 })
