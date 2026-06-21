@@ -8,6 +8,7 @@ import { ContentEditable } from '@lexical/react/LexicalContentEditable'
 import { HistoryPlugin } from '@lexical/react/LexicalHistoryPlugin'
 import { LexicalNestedComposer } from '@lexical/react/LexicalNestedComposer'
 import { OnChangePlugin } from '@lexical/react/LexicalOnChangePlugin'
+import { RichTextPlugin } from '@lexical/react/LexicalRichTextPlugin'
 import { HeadingNode, QuoteNode } from '@lexical/rich-text'
 import { createEditor, ParagraphNode } from 'lexical'
 import { useCallback, useEffect, useMemo, useRef } from 'react'
@@ -22,6 +23,7 @@ import {
   MathCardNode,
   TableCardNode,
 } from '@/ui/inkling/editor/cards/simple-card-nodes'
+import { DecoratorErrorBoundary } from '@/ui/inkling/editor/decorator-error-boundary'
 import { reportEditorError } from '@/ui/inkling/editor/error-report'
 import { useOptionalSharedHistoryState } from '@/ui/inkling/editor/nested/SharedHistoryContext'
 import { fromLexicalChildren, toLexicalChildren } from '@/ui/inkling/editor/shared/lexical-bridge'
@@ -130,7 +132,15 @@ export function NestedInklingEditor({
   return (
     <LexicalNestedComposer initialEditor={nestedEditor}>
       <div className={className ?? 'inkling-nested-editor'}>
-        <ContentEditable className="inkling-nested-editor__content" />
+        {/* `<RichTextPlugin>` mounts the decorator renderer so card nodes
+          (image/code/math in the nested set) get their `decorate()` output
+          portaled into the host element. Without it nested card content
+          renders empty.                                                        */}
+        <RichTextPlugin
+          contentEditable={<ContentEditable className="inkling-nested-editor__content" placeholder={null} />}
+          placeholder={null}
+          ErrorBoundary={DecoratorErrorBoundary}
+        />
         <OnChangePlugin onChange={handleChange} />
         <HistoryPlugin externalHistoryState={sharedHistoryState ?? undefined} />
       </div>

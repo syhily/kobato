@@ -1,8 +1,18 @@
-/* Ported from Koenig preflight.css — reset scoped to .inkling-editor.
+/* Ported from Koenig preflight.css — Tailwind-style reset scoped to the
+   editable content region ONLY.
    theme() calls rewritten for Tailwind v4 (Koenig targets v3).
-   Ghost-admin-specific resets dropped.                                  */
+   Ghost-admin-specific resets dropped.
 
-.inkling-editor {
+   IMPORTANT — scope:
+   This was originally scoped to `.inkling-editor`, which wraps the whole
+   editor shell (scroll container, floating toolbars, plus/slash menus).
+   The `*`, `button`, `ol/ul`, `[type=button]` resets then leaked into the
+   UI chrome and nuked e.g. the plus button's Tailwind `bg-brand` fill,
+   menu padding, and list styles. Moved to `.inkling-prose` — the wrapper
+   around the ContentEditable — so the reset only touches editable
+   content, matching what Tailwind's base layer is intended for.            */
+
+.inkling-prose {
   /*
   1. Prevent padding and border from affecting element width.
   2. Allow adding a border to an element by just adding a border-width.
@@ -29,14 +39,18 @@
   1. Use a consistent sensible line-height in all browsers.
   2. Prevent adjustments of font size after orientation changes in iOS.
   3. Use a more readable tab size.
+
+  NOTE: the original Koenig/Tailwind source used `:where(&) { … }` nested
+  inside the scope block. With native CSS nesting that compiles to
+  `.inkling-prose :where(.inkling-prose)` — a descendant selector that can
+  never match (the scope is not nested inside itself). Applied directly
+  here instead, on `.inkling-prose` itself.
   */
-  :where(&) {
-    line-height: 1.5;
-    -webkit-text-size-adjust: 100%;
-    -moz-tab-size: 4;
-    tab-size: 4;
-    font-family: var(--inkling-font-ui);
-  }
+  line-height: 1.5;
+  -webkit-text-size-adjust: 100%;
+  -moz-tab-size: 4;
+  tab-size: 4;
+  font-family: var(--inkling-font-ui);
 
   /*
   1. Add the correct height in Firefox.

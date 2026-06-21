@@ -1,13 +1,22 @@
-/* Ported from Koenig koenig-lexical.css — editor container, selection, table, dark mode.
+/* Ported from Koenig koenig-lexical.css — editable-content container,
+   selection, table, dark mode.
    Ghost-specific emoji-picker / cardmenu / floating-toolbar / cta / embed dropped.
-   Token mapping: grey-900→ink-1, grey-300→inkling-selection, green→brand.      */
+   Token mapping: grey-900→ink-1, grey-300→inkling-selection, green→brand.
+   Rem values rewritten as calc(N * var(--ir)) — see index.css.
 
-.inkling-editor {
+   Scope note:
+   Originally applied to `.inkling-editor` (the whole editor shell, which
+   also contains the floating toolbars and plus/slash menus). Moved to
+   `.inkling-prose` — the ContentEditable wrapper — so the `> *` font
+   rule and `[contenteditable]` outline cannot affect the editor's UI
+   chrome.                                                          */
+
+.inkling-prose {
   position: relative;
 }
 
-.inkling-editor > * {
-  font-size: 1.7rem;
+.inkling-prose > * {
+  font-size: calc(1.7 * var(--ir));
   font-weight: 400;
   letter-spacing: 0.1px;
   color: var(--inkling-text);
@@ -18,44 +27,44 @@
   -moz-font-feature-settings: 'liga' on;
 }
 
-.inkling-editor [contenteditable] {
+.inkling-prose [contenteditable] {
   outline: none;
 }
 
 /* Selection highlight — brand color */
-.inkling-editor ::selection {
+.inkling-prose ::selection {
   background: var(--inkling-selection);
 }
 
 /* Dark mode */
-.dark .inkling-editor > *,
-.inkling-editor.dark > * {
+.dark .inkling-prose > *,
+.inkling-prose.dark > * {
   color: var(--inkling-muted);
 }
 
-.dark .inkling-editor ::selection,
-.inkling-editor.dark ::selection {
+.dark .inkling-prose ::selection,
+.inkling-prose.dark ::selection {
   background: var(--ink-3);
 }
 
 /* Table */
-.inkling-editor table {
-  font-size: 1.75rem;
+.inkling-prose table {
+  font-size: calc(1.75 * var(--ir));
   margin: 0;
   font-family: var(--inkling-font-serif);
-  letter-spacing: 0.02rem;
+  letter-spacing: 0.02em;
   line-height: 1.6em;
 }
 
-.inkling-editor table tr td,
-.inkling-editor table tr th {
+.inkling-prose table tr td,
+.inkling-prose table tr th {
   vertical-align: top;
   border-bottom: 1px solid var(--inkling-border);
 }
 
-.dark .inkling-editor table tr td,
-.dark .inkling-editor table tr th,
-.inkling-editor.dark table tr td,
-.inkling-editor.dark table tr th {
+.dark .inkling-prose table tr td,
+.dark .inkling-prose table tr th,
+.inkling-prose.dark table tr td,
+.inkling-prose.dark table tr th {
   border-bottom: 1px solid var(--line);
 }

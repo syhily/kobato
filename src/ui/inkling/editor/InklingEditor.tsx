@@ -4,10 +4,12 @@ import type { EditorState, ElementFormatType, LexicalEditor, SerializedEditorSta
 import { LexicalComposer } from '@lexical/react/LexicalComposer'
 import { ContentEditable } from '@lexical/react/LexicalContentEditable'
 import { OnChangePlugin } from '@lexical/react/LexicalOnChangePlugin'
+import { RichTextPlugin } from '@lexical/react/LexicalRichTextPlugin'
 import { useCallback, useMemo } from 'react'
 
 import type { InklingDocument } from '@/shared/inkling/schema'
 
+import { DecoratorErrorBoundary } from '@/ui/inkling/editor/decorator-error-boundary'
 import { reportEditorError } from '@/ui/inkling/editor/error-report'
 import { editorStateToInklingDocument } from '@/ui/inkling/editor/serialize'
 import { toLexicalChildren } from '@/ui/inkling/editor/shared/lexical-bridge'
@@ -115,14 +117,33 @@ export function InklingEditor({
   return (
     <LexicalComposer initialConfig={initialConfig}>
       <div className={className}>
-        <ContentEditable
-          className={contentClassName}
-          aria-placeholder={placeholder ?? ''}
-          placeholder={(isEditable: boolean) =>
-            placeholder && isEditable ? (
-              <div className="inkling-placeholder text-muted-foreground">{placeholder}</div>
-            ) : null
+        {/* `<RichTextPlugin>` mounts the decorator renderer
+          (`<LegacyDecorators>`) that portals each card node's `decorate()`
+          output into its host element. Without it, DecoratorNode-based cards
+          (CodeBlock/MathBlock/InlineMath in comment mode) render empty hosts.
+          `contentEditable` takes the `<ContentEditable>` as a prop (modern
+          API) rather than a child. `ErrorBoundary` is required by this
+          Lexical version's prop type.
+
+          `ContentEditable`'s `placeholder` prop is a discriminated union:
+          when `aria-placeholder` is set, `placeholder` must be a non-null
+          Element (or render fn); when `aria-placeholder` is absent,
+          `placeholder` must be null. So we only set `aria-placeholder` when
+          we actually have a placeholder string to show.                    */}
+        <RichTextPlugin
+          contentEditable={
+            <ContentEditable
+              className={contentClassName}
+              {...(placeholder !== undefined
+                ? {
+                    'aria-placeholder': placeholder,
+                    placeholder: <div className="inkling-placeholder text-muted-foreground">{placeholder}</div>,
+                  }
+                : { placeholder: null })}
+            />
           }
+          placeholder={null}
+          ErrorBoundary={DecoratorErrorBoundary}
         />
         <OnChangePlugin onChange={handleChange} />
         {children}

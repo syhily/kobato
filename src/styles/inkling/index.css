@@ -3,21 +3,34 @@
 @import './prose.css';
 
 /*
- * Scoped token aliases + root font-size override.
+ * Koenig rem anchoring + scoped token aliases.
  *
- * Koenig's CSS was authored under the assumption that the root font-size
- * is 62.5% (1rem = 10px). The project does NOT set this globally — it uses
- * the browser default (1rem = 16px). Without this override, every rem value
- * in preflight/editor/prose renders 1.6× too large (e.g. a 2rem paragraph
- * renders at 32px instead of the intended 20px).
+ * Koenig's CSS was authored assuming `html { font-size: 62.5% }` so that
+ * 1rem = 10px everywhere. This project does NOT set that globally — the
+ * admin UI relies on the browser default (1rem = 16px) — so every rem
+ * value ported from Koenig would render 1.6× too large.
  *
- * Setting font-size: 62.5% scoped to .inkling-editor / .inkling-prose makes
- * 1rem = 10px *inside the editor/prose scope only*, matching Koenig's
- * design assumptions without affecting the rest of the admin UI.
+ * `rem` cannot be re-anchored by setting font-size on a scoped ancestor
+ * (rem always resolves against <html>). The previous `font-size: 62.5%`
+ * scope rule was a no-op for rem values and only confused the em context.
+ *
+ * Fix: define `--ir` (inkling-rem) = 0.625rem (= 10px against the 16px
+ * project root) on the editor/prose scope, and rewrite every ported
+ * `Nrem` as `calc(N * var(--ir))`. Properties that Koenig authored in
+ * `em` (line-height, letter-spacing, font-size multipliers) are left
+ * untouched — they already resolve against the parent font-size, which
+ * is what Koenig intended.
+ *
+ * `.inkling-editor` is the outer shell — it wraps the scroll container,
+ * the floating toolbars, and the plus/slash menu plugins. It only carries
+ * the `--ir` + token variables; NO reset, NO typography. The reset and
+ * content typography live on `.inkling-prose` (the ContentEditable
+ * wrapper) so that the ported Tailwind preflight (`*`, `button`, `ol/ul`)
+ * cannot leak into the editor's UI chrome.
  */
 .inkling-editor,
 .inkling-prose {
-  font-size: 62.5%;
+  --ir: 0.625rem; /* 10px at the project's 16px root — Koenig's "1rem" */
 
   --inkling-text: var(--ink-1);
   --inkling-muted: var(--ink-4);

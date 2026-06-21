@@ -6,6 +6,7 @@ import { LexicalComposer } from '@lexical/react/LexicalComposer'
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import { ContentEditable } from '@lexical/react/LexicalContentEditable'
 import { HistoryPlugin } from '@lexical/react/LexicalHistoryPlugin'
+import { RichTextPlugin } from '@lexical/react/LexicalRichTextPlugin'
 import { useEffect, useMemo, type RefObject } from 'react'
 
 import type { InklingBlockNode, InklingDocument } from '@/shared/inkling/schema'
@@ -15,6 +16,7 @@ import { InklingArticleEditorProvider } from '@/ui/inkling/editor/article/articl
 import { registerInklingDocumentTransforms } from '@/ui/inkling/editor/behaviour/document-transforms'
 import { InklingDragDropReorder } from '@/ui/inkling/editor/behaviour/DragDropReorderPlugin'
 import { useInklingKeyboardNavigation } from '@/ui/inkling/editor/behaviour/keyboard-navigation'
+import { DecoratorErrorBoundary } from '@/ui/inkling/editor/decorator-error-boundary'
 import { reportEditorError } from '@/ui/inkling/editor/error-report'
 import { EditorErrorBoundary } from '@/ui/inkling/editor/ErrorBoundary'
 import { FootnoteController } from '@/ui/inkling/editor/footnotes/FootnoteController'
@@ -142,14 +144,30 @@ export function InklingArticleEditor({
                   className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto px-3 pt-6 pb-editor-pad-bottom md:px-6"
                 >
                   <div className="inkling-prose">
-                    <ContentEditable
-                      className="inkling-article-editor__content min-h-[12rem] focus:outline-none"
-                      aria-placeholder="在此处开始编写内容…（/ 命令菜单，^ 空格插入脚注）"
-                      placeholder={() => (
-                        <div className="inkling-placeholder pointer-events-none absolute top-0 left-0 text-muted-foreground select-none">
-                          在此处开始编写内容…（/ 命令菜单，^ 空格插入脚注）
-                        </div>
-                      )}
+                    {/* `<RichTextPlugin>` is what actually mounts the decorator
+                      renderer (`<LegacyDecorators>`), which portals each card
+                      node's `decorate()` output into its host element. Without
+                      it the host `<figure>`/`<div>` for image/music/code cards
+                      renders empty — the node exists in editor state but its
+                      React content is never injected. `contentEditable` takes
+                      the `<ContentEditable>` element as a prop here (the
+                      modern API) rather than as a child. `ErrorBoundary` is
+                      required by this Lexical version's prop type and guards
+                      each card's decorate output.                            */}
+                    <RichTextPlugin
+                      contentEditable={
+                        <ContentEditable
+                          className="inkling-article-editor__content min-h-[12rem] focus:outline-none"
+                          aria-placeholder="在此处开始编写内容…（/ 命令菜单，^ 空格插入脚注）"
+                          placeholder={
+                            <div className="inkling-placeholder pointer-events-none absolute top-0 left-0 text-muted-foreground select-none">
+                              在此处开始编写内容…（/ 命令菜单，^ 空格插入脚注）
+                            </div>
+                          }
+                        />
+                      }
+                      placeholder={null}
+                      ErrorBoundary={DecoratorErrorBoundary}
                     />
                   </div>
                 </div>
