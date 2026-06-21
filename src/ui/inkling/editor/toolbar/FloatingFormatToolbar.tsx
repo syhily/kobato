@@ -121,7 +121,13 @@ export function FloatingFormatToolbar() {
             setFormatState(readFormatState(editor))
           }
         } else {
+          // Hiding the toolbar also closes the link popover. Without this
+          // reset, clicking away (collapsing the selection) unmounts the
+          // toolbar but leaves `showLinkPopover` true — so the popover
+          // reappears on the very next text selection, trapping the user
+          // in "enter a link" mode until they explicitly cancel.
           setVisible(false)
+          setShowLinkPopover(false)
         }
         return false
       },
