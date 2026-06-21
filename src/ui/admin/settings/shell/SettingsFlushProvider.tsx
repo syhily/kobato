@@ -61,21 +61,22 @@ export function SettingsFlushProvider({ children }: { children: ReactNode }) {
 
   const flushAll = useCallback(() => {
     for (const set of flushMapRef.current.values()) {
-      for (const fn of set) fn()
+      for (const fn of set) {
+        fn()
+      }
     }
   }, [])
 
   const flushSection = useCallback((sectionId: string) => {
     const set = flushMapRef.current.get(sectionId)
     if (set) {
-      for (const fn of set) fn()
+      for (const fn of set) {
+        fn()
+      }
     }
   }, [])
 
-  const value = useMemo(
-    () => ({ registerFlush, flushAll, flushSection }),
-    [registerFlush, flushAll, flushSection],
-  )
+  const value = useMemo(() => ({ registerFlush, flushAll, flushSection }), [registerFlush, flushAll, flushSection])
 
   return <SettingsFlushContext value={value}>{children}</SettingsFlushContext>
 }

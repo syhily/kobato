@@ -6,6 +6,7 @@ import { orpcQuery } from '@/client/api/orpc-query'
 import { useAnalyticsState } from '@/ui/admin/analytics/use-analytics-state'
 import { Skeleton } from '@/ui/components/skeleton'
 import { cn } from '@/ui/lib/cn'
+import { skeletonKeys } from '@/ui/lib/skeleton-keys'
 
 // Generic top-N list for one metric type. Each row carries a horizontal
 // progress bar whose width is `value / maxValue`. Clicking a row
@@ -42,9 +43,8 @@ export function MetricList({ type, initial, className, entityType, entityId }: M
   if (rows === null) {
     return (
       <div className={cn('flex flex-col gap-2', className)}>
-        {Array.from({ length: 5 }).map((_, i) => (
-          // Skeleton placeholders — static-length array, index is stable.
-          <Skeleton key={i} className="h-8 w-full rounded-xl" />
+        {skeletonKeys(5).map((key) => (
+          <Skeleton key={key} className="h-8 w-full rounded-xl" />
         ))}
       </div>
     )

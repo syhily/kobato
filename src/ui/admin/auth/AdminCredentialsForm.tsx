@@ -43,6 +43,31 @@ export function useWebAuthnSupported(): boolean {
   return supported
 }
 
+// The `passkey/auth-begin` endpoint returns `{ options: z.any() }` because
+// the WebAuthn options JSON is owned by @simplewebauthn. This guard narrows
+// the untyped response back to the library's expected shape without an
+// unsafe cast.
+function isAuthBeginResponse(value: unknown): value is { options: PublicKeyCredentialRequestOptionsJSON } {
+  if (typeof value !== 'object' || value === null || !('options' in value)) {
+    return false
+  }
+  const opts = (value as { options: unknown }).options
+  if (typeof opts !== 'object' || opts === null) {
+    return false
+  }
+  return typeof (opts as { challenge?: unknown }).challenge === 'string'
+}
+
+function extractAuthOptions(value: unknown): PublicKeyCredentialRequestOptionsJSON {
+  if (isAuthBeginResponse(value)) {
+    return value.options
+  }
+  // Unreachable in practice — the server always returns a well-formed
+  // challenge. Throw so a malformed response surfaces as a caught error
+  // rather than silent undefined-propagation.
+  throw new Error('Passkey 服务返回数据格式错误')
+}
+
 export function LoginForm({ action, passkeyEnabled, isSubmitting, csrfToken }: LoginFormProps) {
   const [showPassword, setShowPassword] = useState(false)
   const webAuthnSupported = useWebAuthnSupported()
@@ -54,9 +79,14 @@ export function LoginForm({ action, passkeyEnabled, isSubmitting, csrfToken }: L
     setPasskeyError(null)
     try {
       const email = emailRef.current?.value?.trim()
-      const { options } = await orpc.passkey.authBegin({ email })
-      const opts = options as { challenge: string }
-      const assertion = await startAuthentication({ optionsJSON: options as PublicKeyCredentialRequestOptionsJSON })
+      // The endpoint returns `{ options: z.any() }` because the WebAuthn
+      // options JSON shape is owned by @simplewebauthn. We extract the
+      // `options` value as `unknown`, then narrow it via a minimal shape
+      // check before handing it to @simplewebauthn.
+      const result: unknown = await orpc.passkey.authBegin({ email })
+      const options = extractAuthOptions(result)
+      const challenge = options.challenge
+      const assertion = await startAuthentication({ optionsJSON: options })
       // Submit via a hidden form so the React Router action handles session creation
       const form = formRef.current
       if (!form) {
@@ -72,7 +102,7 @@ export function LoginForm({ action, passkeyEnabled, isSubmitting, csrfToken }: L
       const challengeInput = document.createElement('input')
       challengeInput.type = 'hidden'
       challengeInput.name = 'passkey_challenge'
-      challengeInput.value = opts.challenge
+      challengeInput.value = challenge
       form.appendChild(challengeInput)
       form.action = `${action ?? ''}?action=passkey`
       form.requestSubmit()

@@ -61,9 +61,10 @@ export function Heatmap({ data, className }: HeatmapProps) {
             const hour = idx % 24
             return (
               <div
-                // `idx` = weekday * 24 + hour — a stable bijection on a
-                // fixed 7×24 grid; cells never reorder.
-                key={idx}
+                // The cell's position on the 7×24 grid is a stable
+                // bijection — derive the key from weekday+hour so it
+                // carries the cell's identity, not its array slot.
+                key={`${weekday}-${hour}`}
                 title={`${WEEKDAY_LABELS[weekday]} ${hour}:00 — ${visits} 次访问`}
                 className="aspect-square rounded-sm transition-transform hover:scale-110 hover:ring-1 hover:ring-foreground/30"
                 style={{

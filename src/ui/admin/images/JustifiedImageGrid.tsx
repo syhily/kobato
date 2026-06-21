@@ -6,6 +6,7 @@ import type { AdminImageDto } from '@/shared/types/images'
 import { transitions } from '@/client/lib/motion'
 import { getImageUrl } from '@/shared/types/images'
 import { cn } from '@/ui/lib/cn'
+import { skeletonKeys } from '@/ui/lib/skeleton-keys'
 import { useDevicePixelRatio } from '@/ui/lib/use-device-pixel-ratio'
 import { useElementWidth } from '@/ui/lib/use-element-width'
 
@@ -226,11 +227,10 @@ export function JustifiedImageGridSkeleton({ targetRowHeight = 200, gap = 12, cl
   const prefersReducedMotion = useReducedMotion()
   return (
     <div className={cn('flex flex-col', className)} style={{ gap }}>
-      {Array.from({ length: 4 }).map((_, rowIndex) => (
-        // Skeleton rows — static-length placeholder array, index is stable.
-        <div key={rowIndex} className="flex" style={{ gap, height: targetRowHeight }}>
+      {skeletonKeys(4).map((rowKey, rowIndex) => (
+        <div key={rowKey} className="flex" style={{ gap, height: targetRowHeight }}>
           {skeletonWidths(rowIndex).map((span, itemIndex) => {
-            const key = `${rowIndex}-${itemIndex}`
+            const key = `${rowKey}-item-${itemIndex}`
             const style = { flex: span }
             return prefersReducedMotion ? (
               <div key={key} className="rounded-xl bg-muted" style={style} />

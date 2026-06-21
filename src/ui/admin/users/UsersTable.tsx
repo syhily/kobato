@@ -12,6 +12,7 @@ import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@/ui/components/empt
 import { Skeleton } from '@/ui/components/skeleton'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/ui/components/table'
 import { cn } from '@/ui/lib/cn'
+import { skeletonKeys } from '@/ui/lib/skeleton-keys'
 
 const DATE_FORMAT = 'yyyy-LL-dd'
 
@@ -156,9 +157,8 @@ const UserRow = memo(function UserRow({ user, config }: UserRowProps) {
 function UsersSkeleton() {
   return (
     <>
-      {Array.from({ length: 5 }).map((_, i) => (
-        // Skeleton rows — static-length placeholder array, index is stable.
-        <TableRow key={i}>
+      {skeletonKeys(5).map((key) => (
+        <TableRow key={key}>
           <TableCell colSpan={4} className="py-4">
             <div className="flex items-center gap-3">
               <Skeleton className="size-10 shrink-0 rounded-full" />

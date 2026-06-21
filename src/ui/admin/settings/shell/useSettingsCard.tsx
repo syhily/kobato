@@ -14,6 +14,7 @@ import {
 import type { SettingsSection } from '@/shared/config/sections'
 
 import { getLogger } from '@/client/lib/logger'
+import { unsafeCast } from '@/shared/utils/unsafe-cast'
 import { useSettingsFlushContext } from '@/ui/admin/settings/shell/SettingsFlushProvider'
 import { useSettingsMutation } from '@/ui/admin/settings/useSettingsMutation'
 
@@ -52,12 +53,19 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === 'object' && !Array.isArray(value)
 }
 
+function isFieldErrorRecord(value: unknown): value is Record<string, unknown> {
+  return isRecord(value)
+}
+
 function deepMerge<T extends object>(
   target: T,
   patch: Record<string, unknown>,
   seen: WeakSet<object> = new WeakSet(),
 ): T {
-  const result: Record<string, unknown> = { ...(target as Record<string, unknown>) }
+  // T is an arbitrary settings DTO; spreading into a plain record is the
+  // canonical shape-preserving copy. The structural identity holds because
+  // `patch` only adds/overrides keys that already exist on `T`.
+  const result: Record<string, unknown> = { ...unsafeCast<Record<string, unknown>>(target) }
   for (const key of Object.keys(patch)) {
     const patchVal = patch[key]
     const targetVal = result[key]
@@ -71,7 +79,15 @@ function deepMerge<T extends object>(
       result[key] = patchVal
     }
   }
-  return result as T
+  return unsafeCast<T>(result)
+}
+
+// Zod issue paths are PropertyKey[] (string | number | symbol). RHF error
+// trees key by string, so every path element is coerced via `String()`. The
+// narrowing is total — no information is lost because every PropertyKey has
+// a well-defined string form.
+function pathKey(p: PropertyKey): string {
+  return typeof p === 'string' ? p : String(p)
 }
 
 function buildZodErrors<T extends FieldValues>(
@@ -81,17 +97,27 @@ function buildZodErrors<T extends FieldValues>(
   for (const issue of issues) {
     let current: Record<string, unknown> = errors
     for (let i = 0; i < issue.path.length - 1; i++) {
-      const key = issue.path[i] as string | number
+      const key = pathKey(issue.path[i])
       const nextKey = issue.path[i + 1]
       if (current[key] === undefined) {
         current[key] = typeof nextKey === 'number' ? [] : {}
       }
-      current = current[key] as Record<string, unknown>
+      const stepped = current[key]
+      if (isFieldErrorRecord(stepped)) {
+        current = stepped
+      } else {
+        // The path walked into an array slot or primitive that earlier issues
+        // materialised; step in by treating it as a record. Runtime shape is
+        // already correct because every prior iteration wrote a container.
+        current = unsafeCast<Record<string, unknown>>(stepped)
+      }
     }
-    const lastKey = issue.path[issue.path.length - 1] as string | number
-    current[lastKey] = { type: issue.code, message: issue.message } as FieldError
+    const lastKey = pathKey(issue.path[issue.path.length - 1])
+    current[lastKey] = { type: issue.code, message: issue.message } satisfies FieldError
   }
-  return errors as FieldErrors<T>
+  // The hand-built `errors` object mirrors RHF's FieldErrors<T> shape one
+  // leaf at a time; the cast is structural, not semantic.
+  return unsafeCast<FieldErrors<T>>(errors)
 }
 
 export function useSettingsCard<TSource extends object, TState extends FieldValues>({
@@ -106,7 +132,9 @@ export function useSettingsCard<TSource extends object, TState extends FieldValu
   const { commit, isPending, status } = useSettingsMutation()
   const { registerFlush } = useSettingsFlushContext()
 
-  const initialValues = useMemo(() => toState(source) as DefaultValues<TState>, [source, toState])
+  // `toState` returns the form's TState; DefaultValues<TState> is structurally
+  // wider (allows `undefined` leaves) so RHF accepts partial seeds.
+  const initialValues = useMemo(() => unsafeCast<DefaultValues<TState>>(toState(source)), [source, toState])
 
   const resolver = useMemo<Resolver<TState> | undefined>(() => {
     if (!schema) {
@@ -146,7 +174,7 @@ export function useSettingsCard<TSource extends object, TState extends FieldValu
 
     if (!hasUncommittedEdits) {
       // Clean — safe to adopt the new server snapshot verbatim.
-      const next = toState(source) as DefaultValues<TState>
+      const next = unsafeCast<DefaultValues<TState>>(toState(source))
       reset(next)
       setLastCommitted(next)
       if (optimisticSource !== null) {
@@ -161,10 +189,16 @@ export function useSettingsCard<TSource extends object, TState extends FieldValu
     void handleSubmit(
       async (values) => {
         const patchPayload = fromState(values)
-        const payload: TSource = mergeMode === 'patch' ? deepMerge(source, patchPayload) : (patchPayload as TSource)
+        // `fromState` returns a partial patch shape; in 'full' mode it IS the
+        // whole TSource. The structural identity holds because the caller's
+        // `fromState` is paired with the section's TSource contract.
+        const payload: TSource =
+          mergeMode === 'patch' ? deepMerge(source, patchPayload) : unsafeCast<TSource>(patchPayload)
         setOptimisticSource(payload)
-        setLastCommitted(values as DefaultValues<TState>)
-        const ok = await commit(section, payload as Record<string, unknown>)
+        setLastCommitted(unsafeCast<DefaultValues<TState>>(values))
+        // TSource is always a JSON-serialisable settings object; the mutation
+        // endpoint takes Record<string, unknown> by design.
+        const ok = await commit(section, unsafeCast<Record<string, unknown>>(payload))
         if (!ok) {
           setOptimisticSource(null)
         }
@@ -186,13 +220,17 @@ export function useSettingsCard<TSource extends object, TState extends FieldValu
 
   // Text input blur — skip when nothing changed.
   const flushOnBlur = useCallback(() => {
-    if (!isDirty()) return
+    if (!isDirty()) {
+      return
+    }
     performSave()
   }, [isDirty, performSave])
 
   // Close / scroll-away / page-hide — skip when nothing changed.
   const flush = useCallback(() => {
-    if (!isDirty()) return
+    if (!isDirty()) {
+      return
+    }
     performSave()
   }, [isDirty, performSave])
 

@@ -50,11 +50,16 @@ export function AdminPagination({ totalPages, currentPage, onChange }: AdminPagi
   return (
     <Pagination>
       <PaginationContent>
-        {items.map((item, i) =>
-          item === 'ellipsis' ? (
-            // key={`ellipsis-${i}`} is stable: at most 2 ellipsis items,
-            // always at fixed window edges; the index disambiguates them.
-            <PaginationItem key={`ellipsis-${i}`}>
+        {items.map((item, i) => {
+          // Disambiguate the (at most two) ellipsis slots by their window
+          // edge — `i` alone would be a positional key, but pairing the
+          // ellipsis with the neighbouring page number makes it stable
+          // regardless of list length.
+          const prev = items[i - 1]
+          const next = items[i + 1]
+          const ellipsisKey = `ellipsis-${prev ?? 'start'}-${next ?? 'end'}`
+          return item === 'ellipsis' ? (
+            <PaginationItem key={ellipsisKey}>
               <PaginationEllipsis />
             </PaginationItem>
           ) : (
@@ -63,8 +68,8 @@ export function AdminPagination({ totalPages, currentPage, onChange }: AdminPagi
                 {item}
               </PaginationLink>
             </PaginationItem>
-          ),
-        )}
+          )
+        })}
       </PaginationContent>
     </Pagination>
   )

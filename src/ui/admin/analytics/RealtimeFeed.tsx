@@ -27,13 +27,14 @@ export function RealtimeFeed({ className }: { className?: string }) {
         ) : (
           <div className="max-h-[28rem] overflow-y-auto pr-2">
             <ul className="flex flex-col gap-1">
-              {ordered.map((e, idx) => (
+              {ordered.map((e) => (
                 <li
-                  // `ts` is the access event's millisecond timestamp;
-                  // two events on the same ms tie-break by their
-                  // arrival index in the rolling window. Items are
-                  // append-only and never reorder.
-                  key={`${e.ts}-${idx}`}
+                  // Key on the event's content identity (ts + path + ua
+                  // fingerprint) rather than its list position — the feed
+                  // is append-only and the rolling window can drop the
+                  // head, which would shift positional keys and remount
+                  // every row.
+                  key={`${e.ts}-${e.path}-${e.browser ?? ''}-${e.os ?? ''}`}
                   className="grid grid-cols-[auto_1fr_auto] items-center gap-2 rounded-xl px-2 py-1 text-xs hover:bg-accent/40"
                 >
                   <span className="text-muted-foreground tabular-nums">{formatClockTime(e.ts)}</span>

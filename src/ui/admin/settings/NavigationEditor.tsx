@@ -55,6 +55,29 @@ const TYPE_LABELS: Record<FooterNavItem['type'], string> = {
   search: '搜索',
 }
 
+// Runtime guards for the Select-option strings. The `<Select>` emits the
+// literal `value` of the chosen `<SelectItem>`, but its callback is typed
+// `(value: string) => void` — so narrowing back to the union needs a guard,
+// not a cast.
+const FOOTER_NAV_TYPE_SET: ReadonlySet<string> = new Set(['social', 'themeToggle', 'search'])
+const SOCIAL_NETWORK_SET: ReadonlySet<string> = new Set(SOCIAL_NETWORKS)
+
+function isFooterNavType(value: string): value is FooterNavItem['type'] {
+  return FOOTER_NAV_TYPE_SET.has(value)
+}
+
+function isSocialNetwork(value: string): value is SocialNetwork {
+  return SOCIAL_NETWORK_SET.has(value)
+}
+
+function asFooterNavType(value: string | null): FooterNavItem['type'] {
+  return value !== null && isFooterNavType(value) ? value : 'social'
+}
+
+function asSocialNetwork(value: string | null): SocialNetwork {
+  return value !== null && isSocialNetwork(value) ? value : 'github'
+}
+
 // Side Navigation Card
 
 function SortableSideNavRow({
@@ -256,14 +279,14 @@ function SortableFooterNavRow({
             value={item.type}
             onValueChange={(value) =>
               onUpdate(index, {
-                type: value as FooterNavItem['type'],
+                type: asFooterNavType(value),
                 network: value === 'social' ? 'github' : undefined,
               })
             }
           >
             <SelectTrigger id={`footer-item-type-${index}`}>
               <SelectValue>
-                {(value: string | null) => (value ? (TYPE_LABELS[value as FooterNavItem['type']] ?? value) : '请选择')}
+                {(value: string | null) => (value ? (TYPE_LABELS[asFooterNavType(value)] ?? value) : '请选择')}
               </SelectValue>
             </SelectTrigger>
             <SelectContent>
@@ -278,12 +301,12 @@ function SortableFooterNavRow({
             <Label htmlFor={`footer-item-network-${index}`}>平台</Label>
             <Select
               value={item.network}
-              onValueChange={(value) => onUpdate(index, { network: value as SocialNetwork })}
+              onValueChange={(value) => onUpdate(index, { network: asSocialNetwork(value) })}
             >
               <SelectTrigger id={`footer-item-network-${index}`}>
                 <SelectValue>
                   {(value: string | null) =>
-                    value ? (SOCIAL_NETWORK_META[value as SocialNetwork]?.label ?? value) : '请选择'
+                    value ? (SOCIAL_NETWORK_META[asSocialNetwork(value)]?.label ?? value) : '请选择'
                   }
                 </SelectValue>
               </SelectTrigger>

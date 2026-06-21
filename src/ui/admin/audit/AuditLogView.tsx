@@ -28,6 +28,7 @@ import { Button } from '@/ui/components/button'
 import { Checkbox } from '@/ui/components/checkbox'
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@/ui/components/empty'
 import { Skeleton } from '@/ui/components/skeleton'
+import { skeletonKeys } from '@/ui/lib/skeleton-keys'
 
 const PAGE_SIZE = 20
 const log = getLogger('audit.AuditLogView')
@@ -300,9 +301,8 @@ export function AuditLogView({ retentionDays }: AuditLogViewProps) {
 function AuditLogSkeleton() {
   return (
     <>
-      {Array.from({ length: 3 }).map((_, i) => (
-        // Skeleton placeholders — static-length array, index is stable.
-        <div key={i} className="px-4 py-3">
+      {skeletonKeys(3).map((key) => (
+        <div key={key} className="px-4 py-3">
           <div className="flex flex-col gap-2">
             <div className="flex items-center gap-2">
               <Skeleton className="h-5 w-16" />

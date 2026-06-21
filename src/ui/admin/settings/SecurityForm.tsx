@@ -8,10 +8,10 @@ import { isValidPasskeyDomain } from '@/shared/utils/safe-url'
 import { SettingsRow } from '@/ui/admin/settings/SettingsSection'
 import { SettingGroup } from '@/ui/admin/settings/shell/SettingGroup'
 import { SettingGroupContent } from '@/ui/admin/settings/shell/SettingGroupContent'
+import { SettingsInput } from '@/ui/admin/settings/shell/SettingsInput'
 import { useSettingsCard } from '@/ui/admin/settings/shell/useSettingsCard'
 import { Button } from '@/ui/components/button'
 import { FieldLabel } from '@/ui/components/field'
-import { Input } from '@/ui/components/input'
 import { Switch } from '@/ui/components/switch'
 
 interface ExemptPathRow {
@@ -80,7 +80,7 @@ function CsrfToggleCard({ security }: { security: SecuritySettings }) {
 }
 
 function CsrfExemptPathsCard({ security }: { security: SecuritySettings }) {
-  const { form, settingGroupProps } = useSettingsCard<SecuritySettings, { exemptPaths: ExemptPathRow[] }>({
+  const { form, settingGroupProps, flushOnBlur } = useSettingsCard<SecuritySettings, { exemptPaths: ExemptPathRow[] }>({
     section: 'security',
     source: security,
     toState: (source) => ({
@@ -113,7 +113,8 @@ function CsrfExemptPathsCard({ security }: { security: SecuritySettings }) {
             ) : (
               rows.fields.map((field, index) => (
                 <div key={field.id} className="flex items-center gap-2">
-                  <Input
+                  <SettingsInput
+                    flushOnBlur={flushOnBlur}
                     type="text"
                     placeholder="/rpc/public.comments"
                     className="flex-1"
@@ -153,7 +154,7 @@ function CsrfExemptPathsCard({ security }: { security: SecuritySettings }) {
 }
 
 function CorsPolicyCard({ security }: { security: SecuritySettings }) {
-  const { form, settingGroupProps, save } = useSettingsCard<
+  const { form, settingGroupProps, save, flushOnBlur } = useSettingsCard<
     SecuritySettings,
     { enabled: boolean; origins: OriginRow[] }
   >({
@@ -218,7 +219,8 @@ function CorsPolicyCard({ security }: { security: SecuritySettings }) {
             ) : (
               rows.fields.map((field, index) => (
                 <div key={field.id} className="flex items-center gap-2">
-                  <Input
+                  <SettingsInput
+                    flushOnBlur={flushOnBlur}
                     type="url"
                     placeholder="https://example.com"
                     maxLength={253}

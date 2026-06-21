@@ -8,6 +8,7 @@ import { useSiteIdentity } from '@/shared/lib/blog-config-context'
 import { SettingsRow } from '@/ui/admin/settings/SettingsSection'
 import { SettingGroup } from '@/ui/admin/settings/shell/SettingGroup'
 import { SettingGroupContent } from '@/ui/admin/settings/shell/SettingGroupContent'
+import { SettingsInput } from '@/ui/admin/settings/shell/SettingsInput'
 import { useSettingsCard } from '@/ui/admin/settings/shell/useSettingsCard'
 import { Button } from '@/ui/components/button'
 import { FieldLabel } from '@/ui/components/field'
@@ -160,7 +161,10 @@ function ProviderSelectCard({ mail }: { mail: MailLoaderShape }) {
 }
 
 function ZeaburConfigCard({ mail }: { mail: MailLoaderShape }) {
-  const { form, settingGroupProps, display } = useSettingsCard<MailLoaderShape, { host: string; apiKey: string }>({
+  const { form, flushOnBlur, settingGroupProps, display } = useSettingsCard<
+    MailLoaderShape,
+    { host: string; apiKey: string }
+  >({
     section: 'mail',
     source: mail,
     toState: (source) => ({
@@ -187,7 +191,13 @@ function ZeaburConfigCard({ mail }: { mail: MailLoaderShape }) {
     >
       <SettingGroupContent>
         <SettingsRow label="接入域名" htmlFor="mail-host" hint="不带协议，例如 api.zeabur.com。">
-          <Input id="mail-host" placeholder="api.zeabur.com" maxLength={253} {...form.register('host')} />
+          <SettingsInput
+            flushOnBlur={flushOnBlur}
+            id="mail-host"
+            placeholder="api.zeabur.com"
+            maxLength={253}
+            {...form.register('host')}
+          />
         </SettingsRow>
         <SettingsRow
           label="API Key"
@@ -198,7 +208,8 @@ function ZeaburConfigCard({ mail }: { mail: MailLoaderShape }) {
               : '尚未配置。在 Zeabur 控制台 ZSend 服务页面生成的密钥。'
           }
         >
-          <Input
+          <SettingsInput
+            flushOnBlur={flushOnBlur}
             id="mail-api-key"
             type="password"
             {...form.register('apiKey')}
@@ -213,7 +224,7 @@ function ZeaburConfigCard({ mail }: { mail: MailLoaderShape }) {
 }
 
 function MailgunConfigCard({ mail }: { mail: MailLoaderShape }) {
-  const { form, settingGroupProps, display } = useSettingsCard<
+  const { form, flushOnBlur, settingGroupProps, display } = useSettingsCard<
     MailLoaderShape,
     { mailgunDomain: string; mailgunApiKey: string }
   >({
@@ -247,7 +258,8 @@ function MailgunConfigCard({ mail }: { mail: MailLoaderShape }) {
           htmlFor="mail-mailgun-domain"
           hint="在 Mailgun 控制台已验证的域名，例如 mg.example.com。"
         >
-          <Input
+          <SettingsInput
+            flushOnBlur={flushOnBlur}
             id="mail-mailgun-domain"
             placeholder="mg.example.com"
             maxLength={253}
@@ -263,7 +275,8 @@ function MailgunConfigCard({ mail }: { mail: MailLoaderShape }) {
               : '尚未配置。在 Mailgun 控制台「Settings → API Keys」页面生成的私钥（key-... 或 MG_... 形式）。'
           }
         >
-          <Input
+          <SettingsInput
+            flushOnBlur={flushOnBlur}
             id="mail-mailgun-api-key"
             type="password"
             {...form.register('mailgunApiKey')}
@@ -278,7 +291,7 @@ function MailgunConfigCard({ mail }: { mail: MailLoaderShape }) {
 }
 
 function SmtpConfigCard({ mail }: { mail: MailLoaderShape }) {
-  const { form, settingGroupProps, display, save } = useSettingsCard<
+  const { form, flushOnBlur, settingGroupProps, display, save } = useSettingsCard<
     MailLoaderShape,
     {
       smtpHost: string
@@ -326,10 +339,17 @@ function SmtpConfigCard({ mail }: { mail: MailLoaderShape }) {
     >
       <SettingGroupContent>
         <SettingsRow label="服务器地址" htmlFor="mail-smtp-host" hint="例如 smtp.example.com。">
-          <Input id="mail-smtp-host" placeholder="smtp.example.com" maxLength={253} {...form.register('smtpHost')} />
+          <SettingsInput
+            flushOnBlur={flushOnBlur}
+            id="mail-smtp-host"
+            placeholder="smtp.example.com"
+            maxLength={253}
+            {...form.register('smtpHost')}
+          />
         </SettingsRow>
         <SettingsRow label="端口" htmlFor="mail-smtp-port" hint="常见端口：25、587、465。">
-          <Input
+          <SettingsInput
+            flushOnBlur={flushOnBlur}
             id="mail-smtp-port"
             type="number"
             min={1}
@@ -338,7 +358,8 @@ function SmtpConfigCard({ mail }: { mail: MailLoaderShape }) {
           />
         </SettingsRow>
         <SettingsRow label="用户名" htmlFor="mail-smtp-user" hint="SMTP 登录账号，通常是一个邮箱地址。">
-          <Input
+          <SettingsInput
+            flushOnBlur={flushOnBlur}
             id="mail-smtp-user"
             type="text"
             placeholder="postmaster@example.com"
@@ -355,7 +376,8 @@ function SmtpConfigCard({ mail }: { mail: MailLoaderShape }) {
               : '尚未配置。'
           }
         >
-          <Input
+          <SettingsInput
+            flushOnBlur={flushOnBlur}
             id="mail-smtp-pass"
             type="password"
             {...form.register('smtpPass')}
@@ -436,7 +458,7 @@ function SmtpConfigCard({ mail }: { mail: MailLoaderShape }) {
 }
 
 function SenderFieldCard({ mail }: { mail: MailLoaderShape }) {
-  const { form, settingGroupProps } = useSettingsCard<MailLoaderShape, { sender: string }>({
+  const { form, flushOnBlur, settingGroupProps } = useSettingsCard<MailLoaderShape, { sender: string }>({
     section: 'mail',
     source: mail,
     toState: (source) => ({ sender: source.mail.sender }),
@@ -453,7 +475,8 @@ function SenderFieldCard({ mail }: { mail: MailLoaderShape }) {
     >
       <SettingGroupContent>
         <SettingsRow label="发件人邮箱" htmlFor="mail-sender" hint="必须是当前服务商已验证过的发件域。">
-          <Input
+          <SettingsInput
+            flushOnBlur={flushOnBlur}
             id="mail-sender"
             type="email"
             placeholder="noreply@example.com"

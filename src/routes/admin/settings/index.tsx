@@ -196,7 +196,9 @@ function SectionWrapper({
 
   useEffect(() => {
     const el = sectionRef.current
-    if (!el) return
+    if (!el) {
+      return
+    }
     // Root is the content scroller, not the viewport — the panel is a fixed
     // inset-0 container with its own scroll context.
     const root = document.getElementById('settings-content-scroller')

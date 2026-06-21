@@ -1,7 +1,7 @@
-import type { ComponentProps } from 'react'
-import type { FocusEventHandler } from 'react'
+import type { ComponentProps, FocusEventHandler } from 'react'
 
 import { Input } from '@/ui/components/input'
+import { Textarea } from '@/ui/components/textarea'
 
 // `<Input>` + automatic blur-driven save for /admin/settings.
 //
@@ -25,6 +25,8 @@ type InputProps = ComponentProps<typeof Input>
 interface SettingsInputProps extends Omit<InputProps, 'onBlur'> {
   /** From `useSettingsCard().flushOnBlur`. */
   flushOnBlur: () => void
+  /** Optional upstream onBlur (e.g. from `form.register()`); merged with flushOnBlur. */
+  onBlur?: FocusEventHandler<HTMLInputElement>
 }
 
 export function SettingsInput({ flushOnBlur, onBlur, ...props }: SettingsInputProps) {
@@ -34,4 +36,26 @@ export function SettingsInput({ flushOnBlur, onBlur, ...props }: SettingsInputPr
   }
 
   return <Input {...props} onBlur={handleBlur} />
+}
+
+// `<Textarea>` companion to `SettingsInput`. Same blur-saves pattern; needed
+// for the robots.txt card and any future multi-line field. Controlled usage
+// (these fields use `value`/`onChange` rather than `register`), so there's no
+// RHF onBlur to merge — flushOnBlur runs directly.
+type TextareaProps = ComponentProps<typeof Textarea>
+
+interface SettingsTextareaProps extends Omit<TextareaProps, 'onBlur'> {
+  /** From `useSettingsCard().flushOnBlur`. */
+  flushOnBlur: () => void
+  /** Optional upstream onBlur; merged with flushOnBlur. */
+  onBlur?: FocusEventHandler<HTMLTextAreaElement>
+}
+
+export function SettingsTextarea({ flushOnBlur, onBlur, ...props }: SettingsTextareaProps) {
+  const handleBlur: FocusEventHandler<HTMLTextAreaElement> = (event) => {
+    onBlur?.(event)
+    flushOnBlur()
+  }
+
+  return <Textarea {...props} onBlur={handleBlur} />
 }

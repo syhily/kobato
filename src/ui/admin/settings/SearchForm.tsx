@@ -9,10 +9,10 @@ import { orpc } from '@/client/api/client'
 import { SettingsRow } from '@/ui/admin/settings/SettingsSection'
 import { SettingGroup } from '@/ui/admin/settings/shell/SettingGroup'
 import { SettingGroupContent } from '@/ui/admin/settings/shell/SettingGroupContent'
+import { SettingsInput } from '@/ui/admin/settings/shell/SettingsInput'
 import { useSettingsCard } from '@/ui/admin/settings/shell/useSettingsCard'
 import { Button } from '@/ui/components/button'
 import { FieldLabel } from '@/ui/components/field'
-import { Input } from '@/ui/components/input'
 import { RadioGroup, RadioGroupItem } from '@/ui/components/radio-group'
 import { Switch } from '@/ui/components/switch'
 
@@ -81,7 +81,14 @@ function SearchModeCard({ search }: { search: SearchLoaderShape }) {
             control={form.control}
             name="mode"
             render={({ field }) => (
-              <RadioGroup value={field.value} onValueChange={field.onChange} className="flex items-center gap-4">
+              <RadioGroup
+                value={field.value}
+                onValueChange={(v) => {
+                  field.onChange(v)
+                  save()
+                }}
+                className="flex items-center gap-4"
+              >
                 <div className="flex items-center gap-2">
                   <RadioGroupItem value="like" id="search-mode-like" />
                   <FieldLabel htmlFor="search-mode-like" className="font-normal">
@@ -104,7 +111,7 @@ function SearchModeCard({ search }: { search: SearchLoaderShape }) {
 }
 
 function SearchOpenAiCard({ search }: { search: SearchLoaderShape }) {
-  const { form, settingGroupProps, display } = useSettingsCard<
+  const { form, flushOnBlur, settingGroupProps, display } = useSettingsCard<
     SearchLoaderShape,
     { endpoint: string; apiKey: string; model: string; similarityThreshold: number }
   >({
@@ -136,7 +143,8 @@ function SearchOpenAiCard({ search }: { search: SearchLoaderShape }) {
           htmlFor="search-endpoint"
           hint="留空表示使用官方 OpenAI 接口。支持任意兼容 OpenAI API 规范的第三方服务。"
         >
-          <Input
+          <SettingsInput
+            flushOnBlur={flushOnBlur}
             id="search-endpoint"
             type="url"
             placeholder="https://api.openai.com/v1"
@@ -151,7 +159,8 @@ function SearchOpenAiCard({ search }: { search: SearchLoaderShape }) {
             apiKeyConfigured ? `当前已配置（结尾 …${display.apiKeyMask}）。留空保存表示保留现有 Key。` : '尚未配置。'
           }
         >
-          <Input
+          <SettingsInput
+            flushOnBlur={flushOnBlur}
             id="search-api-key"
             type="password"
             {...form.register('apiKey')}
@@ -161,14 +170,21 @@ function SearchOpenAiCard({ search }: { search: SearchLoaderShape }) {
           />
         </SettingsRow>
         <SettingsRow label="模型" htmlFor="search-model" hint="默认 text-embedding-3-small，性价比最高。">
-          <Input id="search-model" placeholder="text-embedding-3-small" maxLength={80} {...form.register('model')} />
+          <SettingsInput
+            flushOnBlur={flushOnBlur}
+            id="search-model"
+            placeholder="text-embedding-3-small"
+            maxLength={80}
+            {...form.register('model')}
+          />
         </SettingsRow>
         <SettingsRow
           label="相似度阈值"
           htmlFor="search-threshold"
           hint="0–1 之间。越高结果越精准，但可能漏掉部分内容。建议 0.5–0.7。"
         >
-          <Input
+          <SettingsInput
+            flushOnBlur={flushOnBlur}
             id="search-threshold"
             type="number"
             min={0}

@@ -45,7 +45,7 @@ export function requestTimeout(timeoutMs = DEFAULT_TIMEOUT_MS): MiddlewareHandle
           if (prop === 'signal') {
             return combined
           }
-          const value = Reflect.get(target, prop, receiver)
+          const value: unknown = Reflect.get(target, prop, receiver)
           if (typeof value === 'function') {
             return unsafeCast<(...args: unknown[]) => unknown>(value).bind(target)
           }

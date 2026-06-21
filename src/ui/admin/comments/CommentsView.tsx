@@ -23,6 +23,7 @@ import { type ConfirmState, ConfirmDialog } from '@/ui/admin/shared/ConfirmDialo
 import { useDebouncedSearch } from '@/ui/admin/shared/useDebouncedSearch'
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@/ui/components/empty'
 import { Skeleton } from '@/ui/components/skeleton'
+import { skeletonKeys } from '@/ui/lib/skeleton-keys'
 
 const FILTER_QUERY_DEBOUNCE_MS = 250
 const log = getLogger('comments.CommentsView')
@@ -484,9 +485,8 @@ export function CommentsView({ currentUserName, currentUserEmail, initialFilters
 function CommentsSkeleton() {
   return (
     <>
-      {Array.from({ length: 3 }).map((_, i) => (
-        // Skeleton placeholders — static-length array, index is stable.
-        <div key={i} className="flex gap-3 px-4 py-3">
+      {skeletonKeys(3).map((key) => (
+        <div key={key} className="flex gap-3 px-4 py-3">
           <Skeleton className="size-10 shrink-0 rounded-full" />
           <div className="flex flex-1 flex-col gap-2">
             <Skeleton className="h-4 w-1/4" />

@@ -30,7 +30,8 @@ export function SearchBar() {
         onSubmit={(e) => {
           e.preventDefault()
           const form = e.currentTarget
-          const q = new FormData(form).get('q') as string
+          const qEntry = new FormData(form).get('q')
+          const q = typeof qEntry === 'string' ? qEntry : ''
           if (q.trim()) {
             void navigate(`/search/${encodeURIComponent(q.trim())}`)
           }
@@ -70,11 +71,12 @@ export function SearchIconButton() {
       return
     }
     const onDocClick = (event: MouseEvent) => {
-      if (triggerRef.current?.contains(event.target as Node)) {
+      const target = event.target
+      if (target instanceof Node && triggerRef.current?.contains(target)) {
         return
       }
       const popup = document.querySelector<HTMLElement>(`[data-popup-id="${SEARCH_POPUP_ID}"]`)
-      if (popup?.contains(event.target as Node)) {
+      if (target instanceof Node && popup?.contains(target)) {
         return
       }
       setOpen(false)
@@ -124,7 +126,8 @@ function SearchPopup({ open, onClose, inputRef }: SearchPopupProps) {
         onSubmit={(e) => {
           e.preventDefault()
           const form = e.currentTarget
-          const q = new FormData(form).get('q') as string
+          const qEntry = new FormData(form).get('q')
+          const q = typeof qEntry === 'string' ? qEntry : ''
           if (q.trim()) {
             void navigate(`/search/${encodeURIComponent(q.trim())}`)
             onClose()

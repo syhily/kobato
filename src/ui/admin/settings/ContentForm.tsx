@@ -5,9 +5,9 @@ import type { ContentSettings } from '@/shared/config/types'
 import { SettingsRow } from '@/ui/admin/settings/SettingsSection'
 import { SettingGroup } from '@/ui/admin/settings/shell/SettingGroup'
 import { SettingGroupContent } from '@/ui/admin/settings/shell/SettingGroupContent'
+import { SettingsInput } from '@/ui/admin/settings/shell/SettingsInput'
 import { useSettingsCard } from '@/ui/admin/settings/shell/useSettingsCard'
 import { FieldLabel } from '@/ui/components/field'
-import { Input } from '@/ui/components/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/components/select'
 import { Switch } from '@/ui/components/switch'
 
@@ -26,7 +26,7 @@ const SORT_BY_ITEMS = [
 ]
 
 function ContentPaginationCard({ content }: { content: ContentSettings }) {
-  const { form, settingGroupProps } = useSettingsCard<
+  const { form, flushOnBlur, settingGroupProps } = useSettingsCard<
     ContentSettings,
     { pagPosts: number; pagCategory: number; pagTags: number; pagSearch: number }
   >({
@@ -56,7 +56,8 @@ function ContentPaginationCard({ content }: { content: ContentSettings }) {
     >
       <SettingGroupContent>
         <SettingsRow label="首页每页文章数" htmlFor="content-pag-posts">
-          <Input
+          <SettingsInput
+            flushOnBlur={flushOnBlur}
             id="content-pag-posts"
             type="number"
             min={1}
@@ -65,7 +66,8 @@ function ContentPaginationCard({ content }: { content: ContentSettings }) {
           />
         </SettingsRow>
         <SettingsRow label="分类页每页文章数" htmlFor="content-pag-category">
-          <Input
+          <SettingsInput
+            flushOnBlur={flushOnBlur}
             id="content-pag-category"
             type="number"
             min={1}
@@ -74,7 +76,8 @@ function ContentPaginationCard({ content }: { content: ContentSettings }) {
           />
         </SettingsRow>
         <SettingsRow label="标签页每页文章数" htmlFor="content-pag-tags">
-          <Input
+          <SettingsInput
+            flushOnBlur={flushOnBlur}
             id="content-pag-tags"
             type="number"
             min={1}
@@ -83,7 +86,8 @@ function ContentPaginationCard({ content }: { content: ContentSettings }) {
           />
         </SettingsRow>
         <SettingsRow label="搜索结果每页数" htmlFor="content-pag-search">
-          <Input
+          <SettingsInput
+            flushOnBlur={flushOnBlur}
             id="content-pag-search"
             type="number"
             min={1}
@@ -97,7 +101,10 @@ function ContentPaginationCard({ content }: { content: ContentSettings }) {
 }
 
 function ContentFeedCard({ content }: { content: ContentSettings }) {
-  const { form, settingGroupProps, save } = useSettingsCard<ContentSettings, { feedFull: boolean; feedSize: number }>({
+  const { form, flushOnBlur, settingGroupProps, save } = useSettingsCard<
+    ContentSettings,
+    { feedFull: boolean; feedSize: number }
+  >({
     section: 'content',
     source: content,
     toState: (source) => ({
@@ -138,7 +145,8 @@ function ContentFeedCard({ content }: { content: ContentSettings }) {
           </div>
         </SettingsRow>
         <SettingsRow label="Feed 条目数" htmlFor="content-feed-size">
-          <Input
+          <SettingsInput
+            flushOnBlur={flushOnBlur}
             id="content-feed-size"
             type="number"
             min={1}
@@ -188,7 +196,13 @@ function ContentSortCard({ content }: { content: ContentSettings }) {
             control={form.control}
             name="postSortBy"
             render={({ field }) => (
-              <Select value={field.value} onValueChange={field.onChange}>
+              <Select
+                value={field.value}
+                onValueChange={(v) => {
+                  field.onChange(v)
+                  save()
+                }}
+              >
                 <SelectTrigger id="content-post-sort-by" className="w-full">
                   <SelectValue>
                     {(value: string | null) => SORT_BY_ITEMS.find((o) => o.value === value)?.label ?? value ?? ''}
@@ -210,7 +224,13 @@ function ContentSortCard({ content }: { content: ContentSettings }) {
             control={form.control}
             name="postSort"
             render={({ field }) => (
-              <Select value={field.value} onValueChange={field.onChange}>
+              <Select
+                value={field.value}
+                onValueChange={(v) => {
+                  field.onChange(v)
+                  save()
+                }}
+              >
                 <SelectTrigger id="content-post-sort" className="w-full">
                   <SelectValue>
                     {(value: string | null) => SORT_DIR_ITEMS.find((o) => o.value === value)?.label ?? value ?? ''}
@@ -254,7 +274,7 @@ function ContentSortCard({ content }: { content: ContentSettings }) {
 }
 
 function ContentFootnotesCard({ content }: { content: ContentSettings }) {
-  const { form, settingGroupProps } = useSettingsCard<ContentSettings, { footnotesSectionTitle: string }>({
+  const { form, flushOnBlur, settingGroupProps } = useSettingsCard<ContentSettings, { footnotesSectionTitle: string }>({
     section: 'content',
     source: content,
     toState: (source) => ({
@@ -273,7 +293,8 @@ function ContentFootnotesCard({ content }: { content: ContentSettings }) {
     >
       <SettingGroupContent>
         <SettingsRow label="标题文案" htmlFor="content-footnotes-section-title">
-          <Input
+          <SettingsInput
+            flushOnBlur={flushOnBlur}
             id="content-footnotes-section-title"
             type="text"
             maxLength={120}

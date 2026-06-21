@@ -6,6 +6,7 @@ import type { AdminTagDto } from '@/shared/types/tags'
 
 import { Skeleton } from '@/ui/components/skeleton'
 import { TableCell, TableRow } from '@/ui/components/table'
+import { skeletonKeys } from '@/ui/lib/skeleton-keys'
 
 interface TagRowProps {
   tag: AdminTagDto
@@ -62,9 +63,8 @@ export const TagRow = memo(function TagRow({ tag, disabled, onEdit, onDelete }: 
 export function TagsSkeleton() {
   return (
     <>
-      {Array.from({ length: 6 }).map((_, i) => (
-        // Skeleton rows — static-length placeholder array, index is stable.
-        <TableRow key={i}>
+      {skeletonKeys(6).map((key) => (
+        <TableRow key={key}>
           <TableCell className="py-5" colSpan={3}>
             <Skeleton className="h-4 w-1/3" />
           </TableCell>

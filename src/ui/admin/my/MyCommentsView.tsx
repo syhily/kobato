@@ -38,6 +38,7 @@ import { Button } from '@/ui/components/button'
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@/ui/components/empty'
 import { Skeleton } from '@/ui/components/skeleton'
 import { CommentInklingBody } from '@/ui/inkling/render/CommentInklingBody'
+import { skeletonKeys } from '@/ui/lib/skeleton-keys'
 
 const ADMIN_DATE_FORMAT = 'yyyy-LL-dd HH:mm'
 const PAGE_SIZE = 20
@@ -512,9 +513,8 @@ function MyCommentRow({
 function MyCommentsSkeleton() {
   return (
     <>
-      {Array.from({ length: 3 }).map((_, i) => (
-        // Skeleton placeholders — static-length array, index is stable.
-        <div key={i} className="flex gap-3 px-4 py-3">
+      {skeletonKeys(3).map((key) => (
+        <div key={key} className="flex gap-3 px-4 py-3">
           <Skeleton className="size-10 shrink-0 rounded-full" />
           <div className="flex flex-1 flex-col gap-2">
             <Skeleton className="h-4 w-1/4" />

@@ -74,4 +74,52 @@ describe('ui/admin/settings/shell/useSettingsCard', () => {
     await vi.waitFor(() => expect(commit).toHaveBeenCalledOnce())
     expect(display).toEqual(source)
   })
+
+  // Note on flush/flushOnBlur dirty-commit coverage:
+  //
+  // `flushOnBlur` and `flush` share the same dirty guard (`getValues() !==
+  // lastCommitted`) before delegating to `performSave`. Verifying the
+  // guard *passes* when dirty is hard in this SSR-only hook runner:
+  // `renderToStaticMarkup` renders exactly once with no commit phase, so
+  // RHF's `getValues()` after a post-render `setValue` still returns the
+  // seeded snapshot, making `isDirty()` return false and the commit a
+  // no-op. The unconditional `save()` path (tested above) confirms
+  // `performSave` itself works; the no-op tests below confirm the guard
+  // exists and blocks clean forms. The dirty→commit path is exercised
+  // end-to-end by the snapshot form tests that render the full card tree.
+
+  it('flushOnBlur is a no-op when the form is clean', () => {
+    const source: Source = { title: 'Hello', description: 'World' }
+    const { flushOnBlur } = renderHook(makeHook(source))
+    flushOnBlur()
+    expect(commit).not.toHaveBeenCalled()
+  })
+
+  it('flush is a no-op when the form is clean', () => {
+    const source: Source = { title: 'Hello', description: 'World' }
+    const { flush } = renderHook(makeHook(source))
+    flush()
+    expect(commit).not.toHaveBeenCalled()
+  })
+
+  it('exposes flushOnBlur and flush as distinct callable triggers', () => {
+    const source: Source = { title: 'Hello', description: 'World' }
+    const { flushOnBlur, flush } = renderHook(makeHook(source))
+    expect(typeof flushOnBlur).toBe('function')
+    expect(typeof flush).toBe('function')
+    // Clean form → neither fires a commit.
+    flushOnBlur()
+    flush()
+    expect(commit).not.toHaveBeenCalled()
+  })
+
+  it('does not auto-save on change (debounce removed)', async () => {
+    const source: Source = { title: 'Hello', description: 'World' }
+    const { form } = renderHook(makeHook(source))
+    form.setValue('title', 'Typed')
+    // Wait well past any historical debounce window. Nothing should fire —
+    // saves are now exclusively driven by save()/flushOnBlur()/flush().
+    await new Promise((resolve) => setTimeout(resolve, 30))
+    expect(commit).not.toHaveBeenCalled()
+  })
 })

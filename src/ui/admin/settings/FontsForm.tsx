@@ -12,7 +12,6 @@ import { SettingGroupContent } from '@/ui/admin/settings/shell/SettingGroupConte
 import { SettingsInput } from '@/ui/admin/settings/shell/SettingsInput'
 import { useSettingsCard } from '@/ui/admin/settings/shell/useSettingsCard'
 import { Button } from '@/ui/components/button'
-import { Input } from '@/ui/components/input'
 import { extractApiErrorMessage } from '@/ui/lib/api-error'
 
 interface CssRow {

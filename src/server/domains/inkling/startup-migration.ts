@@ -2,6 +2,9 @@ import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
 import { eq, sql } from 'drizzle-orm'
 
+import type { CommentBody } from '@/shared/pt/comment-schema'
+import type { PortableTextBody } from '@/shared/pt/schema'
+
 import { indexPost } from '@/server/domains/posts/services/search-index'
 import { comment as commentTable } from '@/server/infra/db/schema/comment'
 import { content as contentTable } from '@/server/infra/db/schema/content'
@@ -15,6 +18,7 @@ import { collectInklingImageStoragePaths } from '@/shared/inkling/images'
 import { commentPortableTextToInklingDocument, portableTextToInklingDocument } from '@/shared/inkling/migrate-pt'
 import { validateInklingDocument } from '@/shared/inkling/schema'
 import { isRecord } from '@/shared/utils/type-guards'
+import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
 const log = getLogger('inkling.startup-migration')
 
@@ -133,8 +137,11 @@ async function migrateContentBodies(db: NodePgDatabase): Promise<MigrationStats>
             continue
           }
 
-          // Convert PT → Inkling
-          const inklingDoc = portableTextToInklingDocument(row.body as never)
+          // Convert PT → Inkling. `row.body` is typed as InklingDocument
+          // (the post-migration column type), but during startup migration
+          // the on-disk rows still hold legacy PortableText JSON. The
+          // runtime shape is PortableText; the typed column lies.
+          const inklingDoc = portableTextToInklingDocument(unsafeCast<PortableTextBody>(row.body))
 
           // Regenerate derived data from the new Inkling body
           const headings = collectInklingHeadings(inklingDoc, deriveSlug)
@@ -198,8 +205,10 @@ async function migrateCommentBodies(db: NodePgDatabase): Promise<MigrationStats>
           }
 
           // Convert PT → Inkling (comment mode: runs HTML sanitiser, strips
-          // article-only blocks, enforces the comment feature set).
-          const inklingDoc = commentPortableTextToInklingDocument(row.body as never)
+          // article-only blocks, enforces the comment feature set). Same
+          // PT-vs-Inkling shape mismatch as above — runtime is PT, column
+          // type says Inkling.
+          const inklingDoc = commentPortableTextToInklingDocument(unsafeCast<CommentBody>(row.body))
 
           // Regenerate the markdown snapshot stored in comment.content
           // (used as a rollback / plaintext-extraction fallback).
