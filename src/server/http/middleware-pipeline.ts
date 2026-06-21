@@ -62,7 +62,11 @@ export interface CspInput {
 export function buildCspHeader({ bundle, nonce, isDev }: CspInput): string {
   const origins = new Set<string>()
   if (bundle) {
-    for (const url of [...(bundle.fonts?.globalCss ?? []), ...(bundle.fonts?.postCss ?? [])]) {
+    for (const url of [
+      ...(bundle.fonts?.globalCss ?? []),
+      ...(bundle.fonts?.postCss ?? []),
+      ...(bundle.fonts?.codeCss ?? []),
+    ]) {
       try {
         origins.add(new URL(url).origin)
       } catch {

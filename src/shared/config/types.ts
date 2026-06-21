@@ -247,8 +247,10 @@ export interface FontsSettings {
   calendar: { family: string }
   globalFamily: string
   postFamily: string
+  codeFamily: string
   globalCss: string[]
   postCss: string[]
+  codeCss: string[]
 }
 
 export interface BackupSettings {

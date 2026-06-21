@@ -108,7 +108,14 @@ export function Layout({ children }: { children: React.ReactNode }) {
     admin?: boolean
     theme?: 'dark' | 'light' | null
     blogSettings?: {
-      fonts?: { globalCss?: string[]; postCss?: string[]; postFamily?: string; globalFamily?: string } | null
+      fonts?: {
+        globalCss?: string[]
+        postCss?: string[]
+        codeCss?: string[]
+        postFamily?: string
+        globalFamily?: string
+        codeFamily?: string
+      } | null
       assets?: { asset?: { host?: string } | null } | null
       siteIdentity?: { locale?: string } | null
     } | null
@@ -121,8 +128,13 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const globalFontCss = rootData?.blogSettings?.fonts?.globalCss ?? []
   const assetHost = rootData?.blogSettings?.assets?.asset?.host
 
+  const matches = useMatches()
+  const wantsPostFonts = matches.some((m) => isRecord(m.handle) && m.handle.postFonts === true)
+  const postFontCss = wantsPostFonts ? (rootData?.blogSettings?.fonts?.postCss ?? []) : []
+  const codeFontCss = wantsPostFonts ? (rootData?.blogSettings?.fonts?.codeCss ?? []) : []
+
   const fontHosts: string[] = []
-  for (const url of globalFontCss) {
+  for (const url of [...globalFontCss, ...postFontCss, ...codeFontCss]) {
     try {
       const host = new URL(url).host
       if (!fontHosts.includes(host)) {
@@ -146,15 +158,14 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
   const locale = rootData?.blogSettings?.siteIdentity?.locale ?? 'zh-CN'
 
-  const matches = useMatches()
-  const wantsPostFonts = matches.some((m) => isRecord(m.handle) && m.handle.postFonts === true)
-  const postFontCss = wantsPostFonts ? (rootData?.blogSettings?.fonts?.postCss ?? []) : []
   // When custom fonts are configured, override the CSS font tokens on
   // <html> so the configured family is prepended to the fallback chain.
-  //   globalFamily → --font-body  (site-wide sans-serif UI font)
-  //   postFamily   → --inkling-font-serif  (article body serif font)
+  //   globalFamily → --font-body          (site-wide sans-serif UI font)
+  //   postFamily   → --inkling-font-serif (article body serif font)
+  //   codeFamily   → --font-code          (inline/block code monospace font)
   const postFamily = rootData?.blogSettings?.fonts?.postFamily
   const globalFamily = rootData?.blogSettings?.fonts?.globalFamily
+  const codeFamily = rootData?.blogSettings?.fonts?.codeFamily
   const htmlStyle: Record<string, string> = {}
   if (globalFamily !== undefined && globalFamily !== '') {
     htmlStyle['--font-body'] =
@@ -163,6 +174,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
   if (postFamily !== undefined && postFamily !== '') {
     htmlStyle['--inkling-font-serif'] =
       `'${postFamily}', 'OPPO Serif SC', 'Source Han Serif SC', 'Noto Serif CJK SC', 'Songti SC', SimSun, Georgia, Times, serif`
+  }
+  if (codeFamily !== undefined && codeFamily !== '') {
+    htmlStyle['--font-code'] = `'${codeFamily}', 'Iosevka', monospace`
   }
 
   return (
@@ -176,10 +190,13 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <meta name="color-scheme" content={theme ?? 'light dark'} />
         {globalFontCss.map((url) => (
-          <link key={url} rel="stylesheet" href={url} />
+          <link key={`g-${url}`} rel="stylesheet" href={url} />
         ))}
         {postFontCss.map((url) => (
-          <link key={url} rel="stylesheet" href={url} />
+          <link key={`p-${url}`} rel="stylesheet" href={url} />
+        ))}
+        {codeFontCss.map((url) => (
+          <link key={`c-${url}`} rel="stylesheet" href={url} />
         ))}
         <Meta />
         <Links />

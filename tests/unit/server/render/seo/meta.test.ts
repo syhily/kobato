@@ -141,8 +141,10 @@ const fixture: BlogSettingsBundle = {
     og: { family: '' },
     calendar: { family: '' },
     globalFamily: '',
+    codeFamily: '',
     postFamily: '',
     globalCss: [],
+    codeCss: [],
     postCss: [],
   },
   backup: {

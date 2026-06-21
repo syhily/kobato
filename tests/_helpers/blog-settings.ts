@@ -177,8 +177,10 @@ export const TEST_BLOG_SETTINGS_BUNDLE: BlogSettingsBundle = {
     og: { family: '' },
     calendar: { family: '' },
     globalFamily: '',
+    codeFamily: '',
     postFamily: '',
     globalCss: [],
+    codeCss: [],
     postCss: [],
   },
   backup: {

@@ -222,8 +222,10 @@ describe('settings/schemas/fonts', () => {
       calendar: { family: '' },
       globalFamily: '',
       postFamily: '',
+      codeFamily: '',
       globalCss: [],
       postCss: [],
+      codeCss: [],
     })
     expect(result.success).toBe(true)
   })
@@ -234,8 +236,10 @@ describe('settings/schemas/fonts', () => {
       calendar: { family: 'Noto-Serif' },
       globalFamily: 'NotoSans',
       postFamily: 'Noto-Serif',
+      codeFamily: 'Iosevka',
       globalCss: ['https://fonts.example/og.css'],
       postCss: ['https://fonts.example/post.css'],
+      codeCss: ['https://fonts.example/code.css'],
     })
     expect(result.success).toBe(true)
   })
@@ -246,8 +250,10 @@ describe('settings/schemas/fonts', () => {
       calendar: { family: 'Source Han Serif' },
       globalFamily: 'OPPO Sans 4.0',
       postFamily: 'OPPO Serif SC',
+      codeFamily: '',
       globalCss: [],
       postCss: [],
+      codeCss: [],
     })
     expect(result.success).toBe(true)
   })
@@ -258,8 +264,10 @@ describe('settings/schemas/fonts', () => {
       calendar: { family: 'ヒラギノ角ゴ' },
       globalFamily: '思源黑体',
       postFamily: '思源宋体',
+      codeFamily: '',
       globalCss: [],
       postCss: [],
+      codeCss: [],
     })
     expect(result.success).toBe(true)
   })
@@ -271,8 +279,10 @@ describe('settings/schemas/fonts', () => {
         calendar: { family: '' },
         globalFamily: '',
         postFamily: '',
+        codeFamily: '',
         globalCss: [],
         postCss: [],
+        codeCss: [],
       }).success,
     ).toBe(false)
   })
@@ -284,8 +294,10 @@ describe('settings/schemas/fonts', () => {
         calendar: { family: '' },
         globalFamily: '',
         postFamily: '',
+        codeFamily: '',
         globalCss: [],
         postCss: [],
+        codeCss: [],
       }).success,
     ).toBe(false)
   })
@@ -298,8 +310,10 @@ describe('settings/schemas/fonts', () => {
         calendar: { family: '' },
         globalFamily: '',
         postFamily: '',
+        codeFamily: '',
         globalCss: css,
         postCss: [],
+        codeCss: [],
       }).success,
     ).toBe(false)
   })

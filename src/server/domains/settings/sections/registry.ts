@@ -110,8 +110,10 @@ export const SECTION_REGISTRY = {
       calendar: { family: 'NotoSansCJK' },
       globalFamily: '',
       postFamily: '',
+      codeFamily: '',
       globalCss: [],
       postCss: [],
+      codeCss: [],
     },
   },
   backup: {

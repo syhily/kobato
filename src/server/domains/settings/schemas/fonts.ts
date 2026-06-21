@@ -44,7 +44,9 @@ export const fontsSchema = z.object({
   calendar: z.object({ family: fontFamilySchema }),
   globalFamily: fontFamilySchema,
   postFamily: fontFamilySchema,
+  codeFamily: fontFamilySchema,
   globalCss: fontCssListSchema,
   postCss: fontCssListSchema,
+  codeCss: fontCssListSchema,
 })
 export type FontsInput = z.infer<typeof fontsSchema>

@@ -154,7 +154,10 @@ function FontsCanvasCard({ fonts }: { fonts: FontsSettings }) {
 }
 
 function FontsGlobalCssCard({ fonts }: { fonts: FontsSettings }) {
-  const { form, settingGroupProps } = useSettingsCard<FontsSettings, { globalCss: CssRow[]; globalFamily: string }>({
+  const { form, settingGroupProps, flushOnBlur } = useSettingsCard<
+    FontsSettings,
+    { globalCss: CssRow[]; globalFamily: string }
+  >({
     section: 'fonts',
     source: fonts,
     toState: (source) => ({
@@ -177,11 +180,12 @@ function FontsGlobalCssCard({ fonts }: { fonts: FontsSettings }) {
     >
       <SettingGroupContent>
         <SettingsRow label="界面字体族名" htmlFor="fonts-global-family">
-          <Input
+          <SettingsInput
             id="fonts-global-family"
             type="text"
             placeholder="族名，例如 OPPOSans（留空使用默认字体）"
             maxLength={100}
+            flushOnBlur={flushOnBlur}
             {...form.register('globalFamily')}
           />
         </SettingsRow>
@@ -191,11 +195,12 @@ function FontsGlobalCssCard({ fonts }: { fonts: FontsSettings }) {
           ) : (
             rows.fields.map((field, index) => (
               <div key={field.id} className="flex items-center gap-2">
-                <Input
+                <SettingsInput
                   type="url"
                   placeholder="https://assets.example.com/fonts/<name>.css"
                   maxLength={500}
                   className="flex-1"
+                  flushOnBlur={flushOnBlur}
                   {...form.register(`globalCss.${index}.url` as const)}
                 />
                 <Button
@@ -229,7 +234,10 @@ function FontsGlobalCssCard({ fonts }: { fonts: FontsSettings }) {
 }
 
 function FontsPostCssCard({ fonts }: { fonts: FontsSettings }) {
-  const { form, settingGroupProps } = useSettingsCard<FontsSettings, { postCss: CssRow[]; postFamily: string }>({
+  const { form, settingGroupProps, flushOnBlur } = useSettingsCard<
+    FontsSettings,
+    { postCss: CssRow[]; postFamily: string }
+  >({
     section: 'fonts',
     source: fonts,
     toState: (source) => ({
@@ -252,11 +260,12 @@ function FontsPostCssCard({ fonts }: { fonts: FontsSettings }) {
     >
       <SettingGroupContent>
         <SettingsRow label="正文字体族名" htmlFor="fonts-post-family">
-          <Input
+          <SettingsInput
             id="fonts-post-family"
             type="text"
             placeholder="族名，例如 OPPOSerif（留空使用默认字体）"
             maxLength={100}
+            flushOnBlur={flushOnBlur}
             {...form.register('postFamily')}
           />
         </SettingsRow>
@@ -266,11 +275,12 @@ function FontsPostCssCard({ fonts }: { fonts: FontsSettings }) {
           ) : (
             rows.fields.map((field, index) => (
               <div key={field.id} className="flex items-center gap-2">
-                <Input
+                <SettingsInput
                   type="url"
                   placeholder="https://assets.example.com/fonts/<name>.css"
                   maxLength={500}
                   className="flex-1"
+                  flushOnBlur={flushOnBlur}
                   {...form.register(`postCss.${index}.url` as const)}
                 />
                 <Button
@@ -303,12 +313,93 @@ function FontsPostCssCard({ fonts }: { fonts: FontsSettings }) {
   )
 }
 
+function FontsCodeCard({ fonts }: { fonts: FontsSettings }) {
+  const { form, settingGroupProps, flushOnBlur } = useSettingsCard<
+    FontsSettings,
+    { codeCss: CssRow[]; codeFamily: string }
+  >({
+    section: 'fonts',
+    source: fonts,
+    toState: (source) => ({
+      codeCss: source.codeCss.map((url, i) => ({ clientId: `css-code-${i}`, url })),
+      codeFamily: source.codeFamily,
+    }),
+    fromState: (state) => ({
+      codeCss: state.codeCss.map((row) => row.url.trim()).filter((url) => url !== ''),
+      codeFamily: state.codeFamily.trim(),
+    }),
+  })
+
+  const rows = useFieldArray({ control: form.control, name: 'codeCss' })
+
+  return (
+    <SettingGroup
+      title="代码字体"
+      description="代码块和行内代码使用的等宽字体。配置字体 CSS 后，填写族名让代码使用该字体；留空则使用默认 Iosevka。"
+      {...settingGroupProps}
+    >
+      <SettingGroupContent>
+        <SettingsRow label="代码字体族名" htmlFor="fonts-code-family">
+          <SettingsInput
+            id="fonts-code-family"
+            type="text"
+            placeholder="族名，例如 Iosevka（留空使用默认字体）"
+            maxLength={100}
+            flushOnBlur={flushOnBlur}
+            {...form.register('codeFamily')}
+          />
+        </SettingsRow>
+        <div className="flex flex-col gap-3">
+          {rows.fields.length === 0 ? (
+            <p className="text-sm text-muted-foreground">还没有添加 CSS，点击下方按钮新增一项。</p>
+          ) : (
+            rows.fields.map((field, index) => (
+              <div key={field.id} className="flex items-center gap-2">
+                <SettingsInput
+                  type="url"
+                  placeholder="https://assets.example.com/fonts/<name>.css"
+                  maxLength={500}
+                  className="flex-1"
+                  flushOnBlur={flushOnBlur}
+                  {...form.register(`codeCss.${index}.url` as const)}
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => rows.remove(index)}
+                  aria-label="删除此项"
+                >
+                  <Trash2Icon className="text-destructive" />
+                </Button>
+              </div>
+            ))
+          )}
+          <div>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={rows.fields.length >= 8}
+              onClick={() => rows.append({ clientId: crypto.randomUUID(), url: '' })}
+            >
+              <PlusIcon /> 添加代码 CSS
+            </Button>
+            {rows.fields.length >= 8 && <span className="ml-2 text-xs text-muted-foreground">上限 8 条</span>}
+          </div>
+        </div>
+      </SettingGroupContent>
+    </SettingGroup>
+  )
+}
+
 export function FontsForm({ fonts }: FontsFormProps) {
   return (
     <div className="flex flex-col gap-5">
       <FontsCanvasCard fonts={fonts} />
       <FontsGlobalCssCard fonts={fonts} />
       <FontsPostCssCard fonts={fonts} />
+      <FontsCodeCard fonts={fonts} />
     </div>
   )
 }

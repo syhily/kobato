@@ -600,7 +600,7 @@ describe('contract: module and bundle boundaries', () => {
     expect(root).not.toContain('.ttf')
 
     expect(root).toContain('blogSettings?.fonts?.globalCss')
-    expect(root).toContain('<link key={url} rel="stylesheet" href={url} />')
+    expect(root).toContain('rel="stylesheet" href={url}')
   })
 
   it('keeps admin Tailwind layouts on flex/grid gap instead of space utilities', () => {

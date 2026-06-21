@@ -24,8 +24,10 @@ function bundleWith(overrides: {
       og: { family: '' },
       calendar: { family: '' },
       globalFamily: '',
+      codeFamily: '',
       postFamily: '',
       globalCss: [],
+      codeCss: [],
       postCss: [],
       ...overrides.fonts,
     },
@@ -65,6 +67,7 @@ describe('buildCspHeader', () => {
     const bundle = bundleWith({
       fonts: {
         globalCss: ['https://fonts.googleapis.com/css?family=Foo'],
+        codeCss: [],
         postCss: ['https://fonts.bunny.net/css?family=Bar'],
       },
       host: null,
@@ -84,6 +87,7 @@ describe('buildCspHeader', () => {
     const bundle = bundleWith({
       fonts: {
         globalCss: ['not-a-valid-url', 'https://valid.example.com/x.css'],
+        codeCss: [],
         postCss: [],
       },
       host: null,

@@ -112,8 +112,10 @@ const populatedFonts: FontsSettings = {
   calendar: { family: 'OPPOSerif' },
   globalFamily: 'OPPOSans',
   postFamily: 'OPPOSerif',
+  codeFamily: 'Iosevka',
   globalCss: ['https://assets.example.com/fonts/global.css'],
   postCss: ['https://assets.example.com/fonts/post.css'],
+  codeCss: ['https://assets.example.com/fonts/code.css'],
 }
 
 const emptyFonts: FontsSettings = {
@@ -121,8 +123,10 @@ const emptyFonts: FontsSettings = {
   calendar: { family: '' },
   globalFamily: '',
   postFamily: '',
+  codeFamily: '',
   globalCss: [],
   postCss: [],
+  codeCss: [],
 }
 
 describe('snapshot: FontsForm', () => {
@@ -145,12 +149,16 @@ describe('snapshot: FontsForm', () => {
     // in the static HTML — assert on row presence instead.
     expect(html).toContain('全站字体')
     expect(html).toContain('文章页字体')
+    expect(html).toContain('代码字体')
     expect(html).toContain('name="globalFamily"')
     expect(html).toContain('name="postFamily"')
+    expect(html).toContain('name="codeFamily"')
     expect(html).toContain('name="globalCss.0.url"')
     expect(html).toContain('name="postCss.0.url"')
+    expect(html).toContain('name="codeCss.0.url"')
     expect(html).toContain('添加全站 CSS')
     expect(html).toContain('添加文章页 CSS')
+    expect(html).toContain('添加代码 CSS')
     expect(html).toContain('aria-label="删除此项"')
   })
 
