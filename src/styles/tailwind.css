@@ -788,32 +788,26 @@ pre.shiki span {
   }
 }
 
+/*
+ * Body font chain.
+ *
+ * Defined as a CSS variable so a configured globalFamily setting
+ * (blogSettings.fonts.globalFamily) can prepend a custom family at
+ * runtime via root.tsx. When no globalFamily is configured, the variable
+ * falls back to the default OPPO Sans CJK sans-serif chain.
+ */
+:root {
+  --font-body:
+    'OPPO Sans 4.0', 'OPPO Sans', OPPOSans, 'PingFang SC', 'Lantinghei SC', 'Microsoft YaHei', 'Source Han Sans CN',
+    -apple-system, BlinkMacSystemFont, 'HanHei SC', 'Helvetica Neue', 'Open Sans', Arial, 'Hiragino Sans GB', STHeiti,
+    'WenQuanYi Micro Hei', SimSun, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol';
+}
+
 /* Document chrome body font cursors */
 html,
 body {
   overscroll-behavior: none;
-  font-family:
-    'OPPO Sans 4.0',
-    'OPPO Sans',
-    OPPOSans,
-    'PingFang SC',
-    'Lantinghei SC',
-    'Microsoft YaHei',
-    'Source Han Sans CN',
-    -apple-system,
-    BlinkMacSystemFont,
-    'HanHei SC',
-    'Helvetica Neue',
-    'Open Sans',
-    Arial,
-    'Hiragino Sans GB',
-    STHeiti,
-    'WenQuanYi Micro Hei',
-    SimSun,
-    sans-serif,
-    'Apple Color Emoji',
-    'Segoe UI Emoji',
-    'Segoe UI Symbol';
+  font-family: var(--font-body);
   font-size: 0.9375rem;
   background-color: var(--surface-body);
   color: var(--ink-2);

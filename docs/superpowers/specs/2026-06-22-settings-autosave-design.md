@@ -27,7 +27,9 @@ useEffect(() => {
   if (isSavingRef.current) return
   if (debounceTimerRef.current !== null) clearTimeout(debounceTimerRef.current)
   debounceTimerRef.current = setTimeout(performSave, debounceMs) // 500ms
-  return () => { if (debounceTimerRef.current !== null) clearTimeout(debounceTimerRef.current) }
+  return () => {
+    if (debounceTimerRef.current !== null) clearTimeout(debounceTimerRef.current)
+  }
 }, [watchedValues, getValues, performSave, debounceMs, lastCommitted])
 ```
 
@@ -52,7 +54,7 @@ useEffect(() => {
    ```ts
    if (source !== lastSourceSnapshot) {
      setLastSourceSnapshot(source)
-     reset(initialValues)        // ← 把用户刚 append 的空行 reset 掉
+     reset(initialValues) // ← 把用户刚 append 的空行 reset 掉
      setLastCommitted(initialValues)
    }
    ```
@@ -74,14 +76,14 @@ useEffect(() => {
 
 ### 1.3 触发时机需求（已与产品确认）
 
-| 控件类型 | 触发时机 |
-|---|---|
-| 文本 `<Input>` / `<Textarea>` | **仅 blur**（失去焦点） |
-| Switch / RadioGroup / Select | **即时保存**（`onChange` 即 `save()`，与现状一致） |
-| 动态列表（append / remove / 排序） | **不主动保存**——按钮只改 form 结构；行内输入框 blur 时保存，或随 flush 时机（关闭/滚动/页面隐藏）保存 |
-| 关闭按钮（X / ESC） | flush 未保存改动后再 navigate |
-| 滚动离开当前 section | flush 该 section 所有 card 的未保存改动 |
-| 页面隐藏（`visibilitychange` / `pagehide`） | flush 所有未保存改动 |
+| 控件类型                                    | 触发时机                                                                                              |
+| ------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| 文本 `<Input>` / `<Textarea>`               | **仅 blur**（失去焦点）                                                                               |
+| Switch / RadioGroup / Select                | **即时保存**（`onChange` 即 `save()`，与现状一致）                                                    |
+| 动态列表（append / remove / 排序）          | **不主动保存**——按钮只改 form 结构；行内输入框 blur 时保存，或随 flush 时机（关闭/滚动/页面隐藏）保存 |
+| 关闭按钮（X / ESC）                         | flush 未保存改动后再 navigate                                                                         |
+| 滚动离开当前 section                        | flush 该 section 所有 card 的未保存改动                                                               |
+| 页面隐藏（`visibilitychange` / `pagehide`） | flush 所有未保存改动                                                                                  |
 
 **显式不做**：onChange 防抖自动保存（彻底删除 debounce 机制）。
 
@@ -109,11 +111,11 @@ SettingsPage (route)
 
 ### 2.2 三层职责
 
-| 层 | 文件 | 职责 |
-|---|---|---|
-| **触发层** | `SettingsInput.tsx`（新增）、各 `*Form.tsx`、`SectionWrapper`、`SettingsCloseButton`、`SettingsPageInner` | 决定**何时**调用 flush/save |
-| **协调层** | `useSettingsCard.tsx`（重构）、`SettingsFlushProvider`（新增） | 决定**是否真的提交**（脏检查）、**如何**提交（`performSave`）、把 flush 注册到全局表 |
-| **执行层** | `useSettingsMutation.ts`（不变）、`SettingGroup`（不变） | 真正的网络请求 + UI 反馈 |
+| 层         | 文件                                                                                                      | 职责                                                                                 |
+| ---------- | --------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| **触发层** | `SettingsInput.tsx`（新增）、各 `*Form.tsx`、`SectionWrapper`、`SettingsCloseButton`、`SettingsPageInner` | 决定**何时**调用 flush/save                                                          |
+| **协调层** | `useSettingsCard.tsx`（重构）、`SettingsFlushProvider`（新增）                                            | 决定**是否真的提交**（脏检查）、**如何**提交（`performSave`）、把 flush 注册到全局表 |
+| **执行层** | `useSettingsMutation.ts`（不变）、`SettingGroup`（不变）                                                  | 真正的网络请求 + UI 反馈                                                             |
 
 ---
 
@@ -188,8 +190,7 @@ const performSave = useCallback(() => {
   void handleSubmit(
     async (values) => {
       const patchPayload = fromState(values)
-      const payload: TSource =
-        mergeMode === 'patch' ? deepMerge(source, patchPayload) : (patchPayload as TSource)
+      const payload: TSource = mergeMode === 'patch' ? deepMerge(source, patchPayload) : (patchPayload as TSource)
       setOptimisticSource(payload)
       setLastCommitted(values as DefaultValues<TState>)
       const ok = await commit(section, payload as Record<string, unknown>)
@@ -227,7 +228,7 @@ const flush = useCallback(() => {
 // useSettingsCard 内部，performSave 定义之后
 const { registerFlush } = useSettingsFlushContext()
 useEffect(() => {
-  return registerFlush(section, flush)  // 传 section id，返回注销函数
+  return registerFlush(section, flush) // 传 section id，返回注销函数
 }, [registerFlush, section, flush])
 ```
 
@@ -284,7 +285,9 @@ export function SettingsFlushProvider({ children }: { children: ReactNode }) {
       flushMapRef.current.set(sectionId, set)
     }
     set.add(fn)
-    return () => { set!.delete(fn) }
+    return () => {
+      set!.delete(fn)
+    }
   }, [])
 
   const flushAll = useCallback(() => {
@@ -300,10 +303,7 @@ export function SettingsFlushProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
-  const value = useMemo(
-    () => ({ registerFlush, flushAll, flushSection }),
-    [registerFlush, flushAll, flushSection],
-  )
+  const value = useMemo(() => ({ registerFlush, flushAll, flushSection }), [registerFlush, flushAll, flushSection])
   return <SettingsFlushContext value={value}>{children}</SettingsFlushContext>
 }
 
@@ -321,7 +321,9 @@ export function useSettingsFlushContext() {
 ```tsx
 export default function SettingsPage() {
   return (
-    <SettingsFlushProvider>      {/* ← 最外层 */}
+    <SettingsFlushProvider>
+      {' '}
+      {/* ← 最外层 */}
       <ScrollSpyProvider>
         <SettingsSearchProvider>
           <SettingsPageInner />
@@ -332,7 +334,7 @@ export default function SettingsPage() {
 }
 ```
 
-放最外层是因为：关闭按钮、SectionWrapper、各 *Card 都要访问 `flushAll` / `registerFlush`。
+放最外层是因为：关闭按钮、SectionWrapper、各 \*Card 都要访问 `flushAll` / `registerFlush`。
 
 ### 3.3 `SettingsInput` 包装组件（新增）
 
@@ -406,22 +408,22 @@ const { form, flushOnBlur } = useSettingsCard(...)
 
 **涉及文件 + Input 数量**（`rg '<Input' src/ui/admin/settings/` 实测）：
 
-| 文件 | `<Input>` 数 | 备注 |
-|---|---|---|
-| `GeneralForm.tsx` | 12 | title, description, website, keywords[]×(1+N), author.{name,email,url}, locale, timeFormat, initialYear, icpNo, moeIcpNo |
-| `MailForm.tsx` | 10 | host, sender, apiKey, smtpHost/Port/User/Pass, mailgunDomain/ApiKey 等 |
-| `AssetsForm.tsx` | 9 | bucket, endpoint, region, accessKey, secretKey, url, image params 等 |
-| `ContentForm.tsx` | 6 | 摘要长度、列表大小等 |
-| `FontsForm.tsx` | 5 | ogFamily, calendarFamily, globalCss[].url, postCss[].url, postFamily |
-| `CommentsForm.tsx` | 4 | size, avatarMirror, avatarSize, tokenTtlSeconds |
-| `SeoForm.tsx` | 4 | tocMin, tocMax, ogWidth, ogHeight |
-| `SearchForm.tsx` | 4 | endpoint, apiKey, model, similarityThreshold |
-| `LimitsForm.tsx` | 4 | 各类数值上限 |
-| `SecurityForm.tsx` | 2 | |
-| `ThresholdForm.tsx` | 2 | rate-limit bucket 编辑行 |
-| `SidebarForm.tsx` | 1 | |
-| `BackupScheduleForm.tsx` | 1 | |
-| `AnalyticsForm.tsx` | 0 | 仅 Switch + Select |
+| 文件                     | `<Input>` 数 | 备注                                                                                                                     |
+| ------------------------ | ------------ | ------------------------------------------------------------------------------------------------------------------------ |
+| `GeneralForm.tsx`        | 12           | title, description, website, keywords[]×(1+N), author.{name,email,url}, locale, timeFormat, initialYear, icpNo, moeIcpNo |
+| `MailForm.tsx`           | 10           | host, sender, apiKey, smtpHost/Port/User/Pass, mailgunDomain/ApiKey 等                                                   |
+| `AssetsForm.tsx`         | 9            | bucket, endpoint, region, accessKey, secretKey, url, image params 等                                                     |
+| `ContentForm.tsx`        | 6            | 摘要长度、列表大小等                                                                                                     |
+| `FontsForm.tsx`          | 5            | ogFamily, calendarFamily, globalCss[].url, postCss[].url, postFamily                                                     |
+| `CommentsForm.tsx`       | 4            | size, avatarMirror, avatarSize, tokenTtlSeconds                                                                          |
+| `SeoForm.tsx`            | 4            | tocMin, tocMax, ogWidth, ogHeight                                                                                        |
+| `SearchForm.tsx`         | 4            | endpoint, apiKey, model, similarityThreshold                                                                             |
+| `LimitsForm.tsx`         | 4            | 各类数值上限                                                                                                             |
+| `SecurityForm.tsx`       | 2            |                                                                                                                          |
+| `ThresholdForm.tsx`      | 2            | rate-limit bucket 编辑行                                                                                                 |
+| `SidebarForm.tsx`        | 1            |                                                                                                                          |
+| `BackupScheduleForm.tsx` | 1            |                                                                                                                          |
+| `AnalyticsForm.tsx`      | 0            | 仅 Switch + Select                                                                                                       |
 
 **排除的文件**（不使用 `useSettingsCard`，不在本设计范围）：
 
@@ -466,14 +468,14 @@ const { form, flushOnBlur } = useSettingsCard(...)
 **检查清单**：实现时 `rg 'onValueChange=\{field.onChange\}|onValueChange=\{\(v\)' src/ui/admin/settings/`
 找出所有「只 onChange 没 save」的 Select/RadioGroup/Combobox。实测清单：
 
-| 文件 | 行 | 控件 | 当前 |
-|---|---|---|---|
-| `AssetsForm.tsx` | 54 | Select | `onValueChange={field.onChange}` → 补 save() |
-| `BackupScheduleForm.tsx` | 101 | Select (enabled) | `onValueChange={field.onChange}` → 补 save() |
+| 文件                     | 行              | 控件                        | 当前                                                                                   |
+| ------------------------ | --------------- | --------------------------- | -------------------------------------------------------------------------------------- |
+| `AssetsForm.tsx`         | 54              | Select                      | `onValueChange={field.onChange}` → 补 save()                                           |
+| `BackupScheduleForm.tsx` | 101             | Select (enabled)            | `onValueChange={field.onChange}` → 补 save()                                           |
 | `BackupScheduleForm.tsx` | 123,146,173,200 | Select (frequency/hour/min) | `(v) => field.onChange(Number(v))` → 改 `(v) => { field.onChange(Number(v)); save() }` |
-| `ContentForm.tsx` | 191, 213 | Select ×2 | `onValueChange={field.onChange}` → 补 save() |
-| `SearchForm.tsx` | 84 | RadioGroup (mode) | `onValueChange={field.onChange}` → 补 save() |
-| `GeneralForm.tsx` | 297 | Combobox (timeZone) | `onValueChange={(item) => field.onChange(item.value)}` → 补 save() |
+| `ContentForm.tsx`        | 191, 213        | Select ×2                   | `onValueChange={field.onChange}` → 补 save()                                           |
+| `SearchForm.tsx`         | 84              | RadioGroup (mode)           | `onValueChange={field.onChange}` → 补 save()                                           |
+| `GeneralForm.tsx`        | 297             | Combobox (timeZone)         | `onValueChange={(item) => field.onChange(item.value)}` → 补 save()                     |
 
 全部补上 `save()` 后才能安全删除 debounce。
 
@@ -613,7 +615,7 @@ useEffect(() => {
     if (document.visibilityState === 'hidden') flushAll()
   }
   document.addEventListener('visibilitychange', onHide)
-  window.addEventListener('pagehide', flushAll)  // pagehide 兼容移动端 + 关闭 tab
+  window.addEventListener('pagehide', flushAll) // pagehide 兼容移动端 + 关闭 tab
   return () => {
     document.removeEventListener('visibilitychange', onHide)
     document.removeEventListener('pagehide', flushAll)

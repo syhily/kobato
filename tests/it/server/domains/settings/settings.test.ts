@@ -169,6 +169,7 @@ const fixtureBundle: BlogSettingsBundle = {
   fonts: {
     og: { family: '' },
     calendar: { family: '' },
+    globalFamily: '',
     postFamily: '',
     globalCss: [],
     postCss: [],

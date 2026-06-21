@@ -1,6 +1,6 @@
 import type { z } from 'zod'
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
   type DefaultValues,
   type FieldError,
@@ -9,12 +9,12 @@ import {
   type Resolver,
   type UseFormReturn,
   useForm,
-  useWatch,
 } from 'react-hook-form'
 
 import type { SettingsSection } from '@/shared/config/sections'
 
 import { getLogger } from '@/client/lib/logger'
+import { useSettingsFlushContext } from '@/ui/admin/settings/shell/SettingsFlushProvider'
 import { useSettingsMutation } from '@/ui/admin/settings/useSettingsMutation'
 
 const log = getLogger('settings.card')
@@ -26,13 +26,22 @@ interface UseSettingsCardOptions<TSource extends object, TState extends FieldVal
   fromState: (state: TState) => Record<string, unknown>
   schema?: z.ZodType<TState, any>
   mode?: 'patch' | 'full'
-  debounceMs?: number
 }
 
 interface UseSettingsCardResult<TSource extends object, TState extends FieldValues> {
   form: UseFormReturn<TState>
   isSaving: boolean
+  /** Immediate commit. Skips the dirty guard but still runs validation.
+   * Used by Switch / RadioGroup / Select — controls that have no "intermediate"
+   * state worth deferring. */
   save: () => void
+  /** Blur-driven commit. No-op when the form matches the last committed
+   * snapshot. Used by `<SettingsInput>` on every text input. */
+  flushOnBlur: () => void
+  /** Top-level flush (close / scroll-away / page-hide). Same dirty guard as
+   * `flushOnBlur`; the split name documents caller intent and leaves room for
+   * the two to diverge later. */
+  flush: () => void
   display: TSource
   settingGroupProps: {
     saveState: 'idle' | 'saving' | 'saved' | 'error'
@@ -92,10 +101,10 @@ export function useSettingsCard<TSource extends object, TState extends FieldValu
   fromState,
   schema,
   mode: mergeMode = 'patch',
-  debounceMs = 500,
 }: UseSettingsCardOptions<TSource, TState>): UseSettingsCardResult<TSource, TState> {
   const [optimisticSource, setOptimisticSource] = useState<TSource | null>(null)
   const { commit, isPending, status } = useSettingsMutation()
+  const { registerFlush } = useSettingsFlushContext()
 
   const initialValues = useMemo(() => toState(source) as DefaultValues<TState>, [source, toState])
 
@@ -119,25 +128,34 @@ export function useSettingsCard<TSource extends object, TState extends FieldValu
   })
   const { reset, handleSubmit, getValues } = form
 
-  // --- Auto-save ---
-  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const isSavingRef = useRef(false)
+  // Last snapshot the server has acknowledged (or the initial seed). Drives
+  // the dirty guard: if `getValues()` deep-equals this, flush is a no-op.
   const [lastCommitted, setLastCommitted] = useState<DefaultValues<TState>>(initialValues)
 
-  // Re-seed form when source changes (after a save in another card, after revert, etc.)
+  // Re-seed form when source changes (after a save in another card, after a
+  // remote update, etc.). Reference-equality is insufficient on its own —
+  // `revalidator.revalidate()` produces a fresh `source` reference on every
+  // successful save, which would `reset()` away the user's in-flight edits.
+  // So we only reseed when the form is *clean* (no uncommitted local edits).
   const [lastSourceSnapshot, setLastSourceSnapshot] = useState<TSource>(source)
   if (source !== lastSourceSnapshot) {
     setLastSourceSnapshot(source)
-    reset(initialValues)
-    setLastCommitted(initialValues)
-    if (optimisticSource !== null) {
-      setOptimisticSource(null)
-    }
-  }
 
-  useEffect(() => {
-    isSavingRef.current = isPending
-  }, [isPending])
+    const currentValues = getValues()
+    const hasUncommittedEdits = JSON.stringify(currentValues) !== JSON.stringify(lastCommitted)
+
+    if (!hasUncommittedEdits) {
+      // Clean — safe to adopt the new server snapshot verbatim.
+      const next = toState(source) as DefaultValues<TState>
+      reset(next)
+      setLastCommitted(next)
+      if (optimisticSource !== null) {
+        setOptimisticSource(null)
+      }
+    }
+    // Dirty — keep the user's edits; the pending flush will commit them and
+    // the next revalidate (now clean) will reseed safely.
+  }
 
   const performSave = useCallback(() => {
     void handleSubmit(
@@ -152,49 +170,45 @@ export function useSettingsCard<TSource extends object, TState extends FieldValu
         }
       },
       (errors) => {
-        log.debug('Auto-save validation failed, skipping', { errors })
+        log.debug('Settings save validation failed, skipping', { errors })
       },
     )()
   }, [handleSubmit, mergeMode, section, commit, fromState, source])
 
-  // Debounced auto-save triggered by form changes. useWatch returns the
-  // current values reactively without the function-call API the React
-  // Compiler can't analyze.
-  const watchedValues = useWatch({ control: form.control })
-  useEffect(() => {
-    const current = getValues()
-    if (JSON.stringify(current) === JSON.stringify(lastCommitted)) {
-      return
-    }
-    if (isSavingRef.current) {
-      return
-    }
+  const isDirty = useCallback(() => {
+    return JSON.stringify(getValues()) !== JSON.stringify(lastCommitted)
+  }, [getValues, lastCommitted])
 
-    if (debounceTimerRef.current !== null) {
-      clearTimeout(debounceTimerRef.current)
-    }
-    debounceTimerRef.current = setTimeout(performSave, debounceMs)
-
-    return () => {
-      if (debounceTimerRef.current !== null) {
-        clearTimeout(debounceTimerRef.current)
-      }
-    }
-  }, [watchedValues, getValues, performSave, debounceMs, lastCommitted])
-
-  // Immediate save for switches — clears debounce and fires now
+  // Switch / RadioGroup / Select / list buttons — fire immediately.
   const save = useCallback(() => {
-    if (debounceTimerRef.current !== null) {
-      clearTimeout(debounceTimerRef.current)
-      debounceTimerRef.current = null
-    }
     performSave()
   }, [performSave])
+
+  // Text input blur — skip when nothing changed.
+  const flushOnBlur = useCallback(() => {
+    if (!isDirty()) return
+    performSave()
+  }, [isDirty, performSave])
+
+  // Close / scroll-away / page-hide — skip when nothing changed.
+  const flush = useCallback(() => {
+    if (!isDirty()) return
+    performSave()
+  }, [isDirty, performSave])
+
+  // Register this card's flush so the panel-level triggers (close, scroll,
+  // visibilitychange) can reach it. Re-registers when `flush` identity
+  // changes (i.e. when `lastCommitted` moves).
+  useEffect(() => {
+    return registerFlush(section, flush)
+  }, [registerFlush, section, flush])
 
   return {
     form,
     isSaving: isPending,
     save,
+    flushOnBlur,
+    flush,
     display: optimisticSource ?? source,
     settingGroupProps: {
       saveState: status,

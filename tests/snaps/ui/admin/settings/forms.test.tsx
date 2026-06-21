@@ -110,6 +110,7 @@ const mailMasks = {
 const populatedFonts: FontsSettings = {
   og: { family: 'OPPOSans' },
   calendar: { family: 'OPPOSerif' },
+  globalFamily: 'OPPOSans',
   postFamily: 'OPPOSerif',
   globalCss: ['https://assets.example.com/fonts/global.css'],
   postCss: ['https://assets.example.com/fonts/post.css'],
@@ -118,6 +119,7 @@ const populatedFonts: FontsSettings = {
 const emptyFonts: FontsSettings = {
   og: { family: '' },
   calendar: { family: '' },
+  globalFamily: '',
   postFamily: '',
   globalCss: [],
   postCss: [],
@@ -141,8 +143,9 @@ describe('snapshot: FontsForm', () => {
     // with the field-array `name` and a delete affordance. The URL value
     // itself is uncontrolled (react-hook-form `register`), so it won't be
     // in the static HTML — assert on row presence instead.
-    expect(html).toContain('全站字体 CSS')
+    expect(html).toContain('全站字体')
     expect(html).toContain('文章页字体')
+    expect(html).toContain('name="globalFamily"')
     expect(html).toContain('name="postFamily"')
     expect(html).toContain('name="globalCss.0.url"')
     expect(html).toContain('name="postCss.0.url"')

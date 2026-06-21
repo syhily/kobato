@@ -176,6 +176,7 @@ export const TEST_BLOG_SETTINGS_BUNDLE: BlogSettingsBundle = {
   fonts: {
     og: { family: '' },
     calendar: { family: '' },
+    globalFamily: '',
     postFamily: '',
     globalCss: [],
     postCss: [],

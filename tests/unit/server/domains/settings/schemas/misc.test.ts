@@ -220,6 +220,7 @@ describe('settings/schemas/fonts', () => {
     const result = fontsSchema.safeParse({
       og: { family: '' },
       calendar: { family: '' },
+      globalFamily: '',
       postFamily: '',
       globalCss: [],
       postCss: [],
@@ -231,6 +232,7 @@ describe('settings/schemas/fonts', () => {
     const result = fontsSchema.safeParse({
       og: { family: 'NotoSans' },
       calendar: { family: 'Noto-Serif' },
+      globalFamily: 'NotoSans',
       postFamily: 'Noto-Serif',
       globalCss: ['https://fonts.example/og.css'],
       postCss: ['https://fonts.example/post.css'],
@@ -243,6 +245,7 @@ describe('settings/schemas/fonts', () => {
       fontsSchema.safeParse({
         og: { family: 'has space' },
         calendar: { family: '' },
+        globalFamily: '',
         postFamily: '',
         globalCss: [],
         postCss: [],
@@ -256,6 +259,7 @@ describe('settings/schemas/fonts', () => {
       fontsSchema.safeParse({
         og: { family: '' },
         calendar: { family: '' },
+        globalFamily: '',
         postFamily: '',
         globalCss: css,
         postCss: [],

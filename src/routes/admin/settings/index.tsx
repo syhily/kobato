@@ -1,4 +1,4 @@
-import { Children, useCallback, useEffect, useSyncExternalStore } from 'react'
+import { Children, useCallback, useEffect, useRef, useSyncExternalStore } from 'react'
 import { useNavigate, useOutletContext } from 'react-router'
 
 import type { SettingsOutletContext } from '@/routes/admin/settings/layout'
@@ -23,6 +23,7 @@ import { NavigationEditor } from '@/ui/admin/settings/NavigationEditor'
 import { SearchForm } from '@/ui/admin/settings/SearchForm'
 import { SecurityForm } from '@/ui/admin/settings/SecurityForm'
 import { SeoForm } from '@/ui/admin/settings/SeoForm'
+import { SettingsFlushProvider, useSettingsFlushContext } from '@/ui/admin/settings/shell/SettingsFlushProvider'
 import { SettingsCloseButton } from '@/ui/admin/settings/shell/SettingsHeader'
 import { SettingsMobileBar } from '@/ui/admin/settings/shell/SettingsMobileBar'
 import { ICON_MAP, SettingsNav } from '@/ui/admin/settings/shell/SettingsNav'
@@ -185,14 +186,44 @@ function SectionWrapper({
   children: React.ReactNode
 }) {
   const { ref } = useScrollSpy(id)
+  const { flushSection } = useSettingsFlushContext()
+  const sectionRef = useRef<HTMLDivElement>(null)
+  // Track whether this section has ever been visible. Without this, the
+  // initial mount (section starts off-screen below the fold) would fire a
+  // spurious "left the viewport" flush before the user has scrolled at all.
+  const hasBeenVisibleRef = useRef(false)
   const Icon = ICON_MAP[icon]
+
+  useEffect(() => {
+    const el = sectionRef.current
+    if (!el) return
+    // Root is the content scroller, not the viewport — the panel is a fixed
+    // inset-0 container with its own scroll context.
+    const root = document.getElementById('settings-content-scroller')
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          hasBeenVisibleRef.current = true
+        } else if (hasBeenVisibleRef.current) {
+          // Was visible, now fully out of view → the user scrolled away.
+          flushSection(id)
+        }
+      },
+      { root, threshold: 0 },
+    )
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [id, flushSection])
+
   return (
-    <div ref={ref}>
-      <h3 className="flex items-center gap-2 font-semibold text-foreground">
-        {Icon && <Icon className="size-4" />}
-        {title}
-      </h3>
-      <div className="mt-4 flex flex-col gap-5">{children}</div>
+    <div ref={sectionRef}>
+      <div ref={ref}>
+        <h3 className="flex items-center gap-2 font-semibold text-foreground">
+          {Icon && <Icon className="size-4" />}
+          {title}
+        </h3>
+        <div className="mt-4 flex flex-col gap-5">{children}</div>
+      </div>
     </div>
   )
 }
@@ -222,6 +253,7 @@ function SettingsPageInner() {
   const settings = bundle
   const tz = timeZones
   const { checkVisible, filter } = useSettingsSearchContext()
+  const { flushAll } = useSettingsFlushContext()
   const isMobile = useIsMobile()
 
   useEffect(() => {
@@ -245,6 +277,7 @@ function SettingsPageInner() {
         return
       }
 
+      flushAll()
       void navigate(-1)
     }
 
@@ -252,7 +285,26 @@ function SettingsPageInner() {
     return () => {
       window.removeEventListener('keydown', handleKeyDown)
     }
-  }, [navigate])
+  }, [navigate, flushAll])
+
+  // Flush pending edits when the page is hidden (tab switch, minimize, mobile
+  // background) or unloaded. `pagehide` covers close-tab / back-nav on mobile
+  // where visibilitychange doesn't fire. `beforeunload` is deliberately not
+  // used — it would pop a "leave site?" dialog, violating the silent-save UX.
+  useEffect(() => {
+    const onVisibility = () => {
+      if (document.visibilityState === 'hidden') {
+        flushAll()
+      }
+    }
+    const onPageHide = () => flushAll()
+    document.addEventListener('visibilitychange', onVisibility)
+    window.addEventListener('pagehide', onPageHide)
+    return () => {
+      document.removeEventListener('visibilitychange', onVisibility)
+      window.removeEventListener('pagehide', onPageHide)
+    }
+  }, [flushAll])
 
   const navItems = SECTION_CONFIGS.map((s) => ({
     id: s.id,
@@ -327,10 +379,12 @@ function SettingsPageInner() {
 
 export default function SettingsPage() {
   return (
-    <ScrollSpyProvider>
-      <SettingsSearchProvider>
-        <SettingsPageInner />
-      </SettingsSearchProvider>
-    </ScrollSpyProvider>
+    <SettingsFlushProvider>
+      <ScrollSpyProvider>
+        <SettingsSearchProvider>
+          <SettingsPageInner />
+        </SettingsSearchProvider>
+      </ScrollSpyProvider>
+    </SettingsFlushProvider>
   )
 }

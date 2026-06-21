@@ -9,6 +9,7 @@ import type { FontsSettings } from '@/shared/config/types'
 import { SettingsRow } from '@/ui/admin/settings/SettingsSection'
 import { SettingGroup } from '@/ui/admin/settings/shell/SettingGroup'
 import { SettingGroupContent } from '@/ui/admin/settings/shell/SettingGroupContent'
+import { SettingsInput } from '@/ui/admin/settings/shell/SettingsInput'
 import { useSettingsCard } from '@/ui/admin/settings/shell/useSettingsCard'
 import { Button } from '@/ui/components/button'
 import { Input } from '@/ui/components/input'
@@ -98,7 +99,7 @@ function FontUploadRow({ slot, label, family }: { slot: 'og' | 'calendar'; label
 }
 
 function FontsCanvasCard({ fonts }: { fonts: FontsSettings }) {
-  const { form, settingGroupProps, display } = useSettingsCard<
+  const { form, settingGroupProps, display, flushOnBlur } = useSettingsCard<
     FontsSettings,
     { ogFamily: string; calendarFamily: string }
   >({
@@ -124,11 +125,12 @@ function FontsCanvasCard({ fonts }: { fonts: FontsSettings }) {
         <SettingsRow label="OG 图字体" htmlFor="fonts-og-family">
           <div className="flex flex-col gap-2">
             <FontUploadRow slot="og" label="OG 图字体" family={display.og.family} />
-            <Input
+            <SettingsInput
               id="fonts-og-family"
               type="text"
               placeholder="族名，例如 OPPOSans"
               maxLength={100}
+              flushOnBlur={flushOnBlur}
               {...form.register('ogFamily')}
             />
           </div>
@@ -136,11 +138,12 @@ function FontsCanvasCard({ fonts }: { fonts: FontsSettings }) {
         <SettingsRow label="日历图字体" htmlFor="fonts-calendar-family">
           <div className="flex flex-col gap-2">
             <FontUploadRow slot="calendar" label="日历图字体" family={display.calendar.family} />
-            <Input
+            <SettingsInput
               id="fonts-calendar-family"
               type="text"
               placeholder="族名，例如 OPPOSerif"
               maxLength={100}
+              flushOnBlur={flushOnBlur}
               {...form.register('calendarFamily')}
             />
           </div>
@@ -151,14 +154,16 @@ function FontsCanvasCard({ fonts }: { fonts: FontsSettings }) {
 }
 
 function FontsGlobalCssCard({ fonts }: { fonts: FontsSettings }) {
-  const { form, settingGroupProps } = useSettingsCard<FontsSettings, { globalCss: CssRow[] }>({
+  const { form, settingGroupProps } = useSettingsCard<FontsSettings, { globalCss: CssRow[]; globalFamily: string }>({
     section: 'fonts',
     source: fonts,
     toState: (source) => ({
       globalCss: source.globalCss.map((url, i) => ({ clientId: `css-global-${i}`, url })),
+      globalFamily: source.globalFamily,
     }),
     fromState: (state) => ({
       globalCss: state.globalCss.map((row) => row.url.trim()).filter((url) => url !== ''),
+      globalFamily: state.globalFamily.trim(),
     }),
   })
 
@@ -166,11 +171,20 @@ function FontsGlobalCssCard({ fonts }: { fonts: FontsSettings }) {
 
   return (
     <SettingGroup
-      title="全站字体 CSS"
-      description="每个 URL 都会在所有页面的 <head> 注入一个 <link rel='stylesheet'>。"
+      title="全站字体"
+      description="全站所有页面加载。配置字体 CSS 后，填写族名让界面 UI 使用该字体；留空则使用默认无衬线字体。"
       {...settingGroupProps}
     >
       <SettingGroupContent>
+        <SettingsRow label="界面字体族名" htmlFor="fonts-global-family">
+          <Input
+            id="fonts-global-family"
+            type="text"
+            placeholder="族名，例如 OPPOSans（留空使用默认字体）"
+            maxLength={100}
+            {...form.register('globalFamily')}
+          />
+        </SettingsRow>
         <div className="flex flex-col gap-3">
           {rows.fields.length === 0 ? (
             <p className="text-sm text-muted-foreground">还没有添加 CSS，点击下方按钮新增一项。</p>

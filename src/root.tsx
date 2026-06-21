@@ -108,7 +108,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
     admin?: boolean
     theme?: 'dark' | 'light' | null
     blogSettings?: {
-      fonts?: { globalCss?: string[]; postCss?: string[]; postFamily?: string } | null
+      fonts?: { globalCss?: string[]; postCss?: string[]; postFamily?: string; globalFamily?: string } | null
       assets?: { asset?: { host?: string } | null } | null
       siteIdentity?: { locale?: string } | null
     } | null
@@ -149,19 +149,28 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const matches = useMatches()
   const wantsPostFonts = matches.some((m) => isRecord(m.handle) && m.handle.postFonts === true)
   const postFontCss = wantsPostFonts ? (rootData?.blogSettings?.fonts?.postCss ?? []) : []
-  // When a custom post body font is configured, override the
-  // --inkling-font-serif token at the <html> root so .post-content /
-  // .comment-content pick it up without hardcoding the family name in CSS.
+  // When custom fonts are configured, override the CSS font tokens on
+  // <html> so the configured family is prepended to the fallback chain.
+  //   globalFamily → --font-body  (site-wide sans-serif UI font)
+  //   postFamily   → --inkling-font-serif  (article body serif font)
   const postFamily = rootData?.blogSettings?.fonts?.postFamily
-  const htmlStyle =
-    postFamily !== undefined && postFamily !== ''
-      ? ({
-          '--inkling-font-serif': `'${postFamily}', 'OPPO Serif SC', 'Source Han Serif SC', 'Noto Serif CJK SC', 'Songti SC', SimSun, Georgia, Times, serif`,
-        } as React.CSSProperties)
-      : undefined
+  const globalFamily = rootData?.blogSettings?.fonts?.globalFamily
+  const htmlStyle: Record<string, string> = {}
+  if (globalFamily !== undefined && globalFamily !== '') {
+    htmlStyle['--font-body'] =
+      `'${globalFamily}', 'OPPO Sans 4.0', 'OPPO Sans', OPPOSans, 'PingFang SC', 'Lantinghei SC', 'Microsoft YaHei', 'Source Han Sans CN', -apple-system, BlinkMacSystemFont, sans-serif`
+  }
+  if (postFamily !== undefined && postFamily !== '') {
+    htmlStyle['--inkling-font-serif'] =
+      `'${postFamily}', 'OPPO Serif SC', 'Source Han Serif SC', 'Noto Serif CJK SC', 'Songti SC', SimSun, Georgia, Times, serif`
+  }
 
   return (
-    <html lang={locale} className={theme ?? undefined} style={htmlStyle}>
+    <html
+      lang={locale}
+      className={theme ?? undefined}
+      style={Object.keys(htmlStyle).length > 0 ? htmlStyle : undefined}
+    >
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
