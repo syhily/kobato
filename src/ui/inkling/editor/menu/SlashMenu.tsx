@@ -18,7 +18,6 @@ import type { InklingCardMenuItem } from '@/ui/inkling/editor/cards/card-registr
 
 import { buildInklingCardMenu } from '@/ui/inkling/editor/cards/card-registry'
 import { getSelectionRect } from '@/ui/inkling/editor/shared/dom-selection'
-import { cn } from '@/ui/lib/cn'
 
 interface InklingSlashMenuProps {
   mode: InklingFeatureMode
@@ -276,18 +275,18 @@ export function useInklingSlashMenu(editor: LexicalEditor | null, mode: InklingF
     return (
       <div
         ref={menuRef}
-        className="inkling-slash-menu absolute z-50 max-h-72 w-64 overflow-y-auto rounded-lg border bg-popover p-1 shadow-lg"
+        role="listbox"
+        aria-label="卡片菜单"
+        className="inkling-slash-menu inkling-cardmenu absolute z-50 max-h-72 overflow-y-auto"
         style={{ top: position.top, left: position.left }}
       >
-        {query.length > 0 ? <div className="px-2 py-1 text-xs text-muted-foreground">搜索: {query}</div> : null}
+        {query.length > 0 ? <div className="inkling-cardmenu-query">搜索: {query}</div> : null}
         {filteredItems.length === 0 ? (
-          <div className="px-2 py-4 text-center text-xs text-muted-foreground">无匹配结果</div>
+          <div className="inkling-cardmenu-empty">无匹配结果</div>
         ) : (
           filteredItems.map((section) => (
             <div key={section.section}>
-              <div className="px-2 py-1 text-[10px] font-medium text-muted-foreground/60 uppercase">
-                {section.label}
-              </div>
+              <div className="inkling-cardmenu-section">{section.label}</div>
               {section.items.map((item) => {
                 const globalIdx = allFiltered.indexOf(item)
                 const isSelected = globalIdx === selectedIndex
@@ -296,28 +295,22 @@ export function useInklingSlashMenu(editor: LexicalEditor | null, mode: InklingF
                   <button
                     key={item.type}
                     type="button"
+                    role="option"
                     aria-label={item.label}
-                    className={cn(
-                      'flex w-full items-center gap-2.5 rounded px-2 py-1.5 text-left transition',
-                      isSelected ? 'bg-accent text-accent-foreground' : 'hover:bg-muted',
-                    )}
+                    aria-selected={isSelected}
                     onMouseDown={(e) => {
                       e.preventDefault()
                       insert(item)
                     }}
                     onMouseEnter={() => setSelectedIndex(globalIdx)}
+                    className="inkling-cardmenu-item"
                   >
-                    <Icon className="h-4 w-4 shrink-0 text-muted-foreground" />
-                    <span className="flex flex-col">
-                      <span className="text-sm leading-tight font-medium">{item.label}</span>
-                      <span
-                        className={cn(
-                          'text-[11px] leading-tight',
-                          isSelected ? 'text-accent-foreground/70' : 'text-muted-foreground',
-                        )}
-                      >
-                        {item.description}
-                      </span>
+                    <span className="inkling-cardmenu-item-icon">
+                      <Icon />
+                    </span>
+                    <span className="inkling-cardmenu-item-text">
+                      <span className="inkling-cardmenu-item-title">{item.label}</span>
+                      <span className="inkling-cardmenu-item-desc">{item.description}</span>
                     </span>
                   </button>
                 )

@@ -107,16 +107,12 @@ export function InklingPlusMenuPlugin({ mode }: InklingPlusMenuPluginProps) {
           ref={menuRef}
           role="listbox"
           aria-label="卡片菜单"
-          className={cn(
-            'pointer-events-auto absolute top-8 left-6 z-50 w-60 rounded-lg border bg-popover p-1 shadow-lg',
-          )}
+          className="inkling-cardmenu pointer-events-auto absolute top-8 left-6 z-50"
           onBlur={handleBlur}
         >
           {sections.map((section) => (
             <div key={section.section}>
-              <div className="px-2 pt-1.5 pb-0.5 text-[10px] font-semibold text-muted-foreground/60 uppercase">
-                {SECTION_LABELS[section.section] ?? section.section}
-              </div>
+              <div className="inkling-cardmenu-section">{SECTION_LABELS[section.section] ?? section.section}</div>
               {section.items
                 .filter((item) => item.modes.includes(mode))
                 .map((item) => {
@@ -132,12 +128,14 @@ export function InklingPlusMenuPlugin({ mode }: InklingPlusMenuPluginProps) {
                         e.preventDefault()
                         handleInsert(item)
                       }}
-                      className="flex w-full items-center gap-2.5 rounded-sm px-2 py-1.5 text-left hover:bg-muted"
+                      className="inkling-cardmenu-item"
                     >
-                      <Icon className="h-4 w-4 shrink-0 text-muted-foreground" />
-                      <span className="flex flex-col">
-                        <span className="text-sm leading-tight font-medium text-foreground">{item.label}</span>
-                        <span className="text-[11px] leading-tight text-muted-foreground">{item.description}</span>
+                      <span className="inkling-cardmenu-item-icon">
+                        <Icon />
+                      </span>
+                      <span className="inkling-cardmenu-item-text">
+                        <span className="inkling-cardmenu-item-title">{item.label}</span>
+                        <span className="inkling-cardmenu-item-desc">{item.description}</span>
                       </span>
                     </button>
                   )
