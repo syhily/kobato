@@ -128,6 +128,15 @@ export interface UseEditorShellStateArgs<
   // Routing
   editPath: (id: string) => string
   navigate: NavigateFunction
+
+  /**
+   * Synchronously flush the editor's pending (debounced) edits and return the
+   * freshest document. Called by every persist handler before it reads the
+   * body to persist — closes the window where a save/publish inside the
+   * change-plugin's 120ms debounce silently dropped the last edits. Set by
+   * the owning shell from the article editor's flush handle.
+   */
+  flushEditor?: () => InklingDocument | null
 }
 
 export interface UseEditorShellStateOutput<TMeta, TEntity extends EntityLike = EntityLike> {

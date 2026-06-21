@@ -10,7 +10,7 @@ import { RichTextPlugin } from '@lexical/react/LexicalRichTextPlugin'
 import { useEffect, useMemo, type RefObject } from 'react'
 
 import type { InklingBlockNode, InklingDocument } from '@/shared/inkling/schema'
-import type { InklingArticleEditorProps } from '@/ui/inkling/editor/article/article-editor-types'
+import type { InklingArticleEditorProps, InklingFlushHandle } from '@/ui/inkling/editor/article/article-editor-types'
 
 import { InklingArticleEditorProvider } from '@/ui/inkling/editor/article/article-editor-context'
 import { registerInklingDocumentTransforms } from '@/ui/inkling/editor/behaviour/document-transforms'
@@ -97,6 +97,7 @@ export function InklingArticleEditor({
   actions = {},
   editorRef: editorRefProp,
   scrollContainerRef,
+  flushHandleRef,
   floatingActions,
 }: InklingArticleEditorProps) {
   // Strip footnote definitions once per `initialDocument` identity. The prose
@@ -176,7 +177,7 @@ export function InklingArticleEditor({
                   definitions back into the serialized document so the
                   persisted shape carries `footnote-definition` blocks at the
                   root tail (matching what renderers + migrate-pt produce). */}
-                <FootnoteAwareChangePlugin onChange={onDocumentChange} />
+                <FootnoteAwareChangePlugin onChange={onDocumentChange} flushHandleRef={flushHandleRef} />
                 <SharedHistoryPlugin />
                 <AutoFocusPlugin />
                 <InklingKeyboardNav />
@@ -261,7 +262,19 @@ function SharedHistoryPlugin() {
  * so `OnInklingDocumentChangePlugin` itself stays decoupled from the footnote
  * subsystem and reusable by non-article editors.
  */
-function FootnoteAwareChangePlugin({ onChange }: { onChange: (document: InklingDocument) => void }) {
+function FootnoteAwareChangePlugin({
+  onChange,
+  flushHandleRef,
+}: {
+  onChange: (document: InklingDocument) => void
+  flushHandleRef?: React.RefObject<InklingFlushHandle | null>
+}) {
   const { getDefinitions } = useInklingFootnotes()
-  return <OnInklingDocumentChangePlugin onChange={onChange} getDefinitions={getDefinitions} />
+  return (
+    <OnInklingDocumentChangePlugin
+      onChange={onChange}
+      getDefinitions={getDefinitions}
+      flushHandleRef={flushHandleRef}
+    />
+  )
 }

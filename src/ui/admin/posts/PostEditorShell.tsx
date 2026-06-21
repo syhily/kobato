@@ -1,10 +1,11 @@
 import type { LexicalEditor } from 'lexical'
 import type { NavigateFunction } from 'react-router'
 
-import { useRef } from 'react'
+import { useCallback, useRef } from 'react'
 
 import type { AdminPostDetailDto, AdminPostDto, UpsertPostMetaInput } from '@/shared/types/posts'
 import type { RevisionLike, SaveBodyOutput } from '@/ui/admin/editor-shell/editor-shell-types'
+import type { InklingFlushHandle } from '@/ui/inkling/editor/article/article-editor-types'
 
 import { orpc } from '@/client/api/client'
 import { inklingDocumentSchema } from '@/shared/inkling/schema'
@@ -81,6 +82,16 @@ function buildPostUpsertPayload({
 export function PostEditorShell({ mode, detail, navigate }: PostEditorShellProps) {
   const isEditing = mode === 'edit' && detail !== undefined
 
+  const editorRef = useRef<LexicalEditor | null>(null)
+
+  // Flush handle populated by the article editor's change plugin. Wrapped in
+  // a stable callback and passed into the shell so persist handlers can
+  // synchronously flush the latest edits (incl. footnote-definition merge)
+  // before the save/publish mutation fires — closing the 120ms debounce
+  // window that could otherwise drop the last edits.
+  const flushHandleRef = useRef<InklingFlushHandle | null>(null)
+  const flushEditor = useCallback(() => flushHandleRef.current?.() ?? null, [])
+
   // --- Shared state hook ---------------------------------------------------
   // The hook owns `useMutation()` internally — Shell only provides
   // entity-specific mutation functions + the LS hook factories.
@@ -117,9 +128,9 @@ export function PostEditorShell({ mode, detail, navigate }: PostEditorShellProps
     directSaveDraft: (input) => unsafeCast<Promise<SaveBodyOutput>>(orpc.admin.posts.saveDraft(unsafeCast(input))),
     editPath: (id) => `/editor/post/${id}`,
     navigate,
+    flushEditor,
   })
 
-  const editorRef = useRef<LexicalEditor | null>(null)
   const pickerActions = useEditorPickerActions(editorRef)
 
   return (
@@ -163,6 +174,7 @@ export function PostEditorShell({ mode, detail, navigate }: PostEditorShellProps
             disabled={state.isPending}
             actions={pickerActions.actions}
             editorRef={editorRef}
+            flushHandleRef={flushHandleRef}
             scrollContainerRef={state.editorScrollRef}
             floatingActions={
               isEditing ? (

@@ -49,6 +49,7 @@ export function useEditorShellState<
     directSaveDraft,
     editPath,
     navigate,
+    flushEditor,
   } = args
 
   const isEditing = mode === 'edit' && detail !== undefined
@@ -242,6 +243,7 @@ export function useEditorShellState<
     onBodySaved,
     onUnpublishSaved,
     noteError,
+    flushEditor,
     setStatus,
     setMeta,
     setServerPublishedAtIso: metaState.setServerPublishedAtIso,

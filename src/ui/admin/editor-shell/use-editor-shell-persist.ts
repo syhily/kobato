@@ -3,6 +3,7 @@ import type { NavigateFunction } from 'react-router'
 import { useMutation } from '@tanstack/react-query'
 import { useCallback, useEffect, useRef, useState } from 'react'
 
+import type { InklingDocument } from '@/shared/inkling/schema'
 import type {
   EditorBody,
   EditorShellStatus,
@@ -59,6 +60,18 @@ export function useEditorShellPersist<
   onUnpublishSaved: (entity: TEntity, freshMeta: TMeta) => void
   noteError: (message: string) => void
 
+  /**
+   * Synchronously flush the editor's pending (debounced) edits and return the
+   * resulting document. When provided, every persist handler calls this first
+   * and uses the returned document for the mutation body — closing the window
+   * where a save/publish fired inside the change-plugin's 120ms debounce and
+   * silently dropped the last edits (and, in article mode, all footnote
+   * definitions which live only in the provider's parallel state). Returns
+   * `null` when the editor hasn't mounted or the document is invalid, in
+   * which case the caller falls back to the React-state `body`.
+   */
+  flushEditor?: () => InklingDocument | null
+
   setStatus: React.Dispatch<React.SetStateAction<EditorShellStatus>>
   setMeta: React.Dispatch<React.SetStateAction<TMeta>>
   setServerPublishedAtIso: React.Dispatch<React.SetStateAction<string | null>>
@@ -89,6 +102,7 @@ export function useEditorShellPersist<
     onBodySaved,
     onUnpublishSaved,
     noteError,
+    flushEditor,
     setStatus,
     setMeta,
     setServerPublishedAtIso,
@@ -180,6 +194,23 @@ export function useEditorShellPersist<
   // --- Persist handlers ----------------------------------------------------
   const [isCreating, setIsCreating] = useState(false)
 
+  /**
+   * Resolve the freshest body to persist. We MUST flush the editor before
+   * reading: the change plugin coalesces edits on a 120ms trailing debounce,
+   * so `body` (React state set by `onChange`) can lag the editor by one debounce
+   * window. For article mode this is especially dangerous — footnote
+   * definitions live only in the provider's parallel state and are merged into
+   * the document by that debounced flush, so a publish inside the window
+   * persists a body with zero footnote-definition blocks.
+   */
+  const resolveBodyToPersist = useCallback((): EditorBody => {
+    if (flushEditor === undefined) {
+      return body
+    }
+    const flushed = flushEditor()
+    return flushed ?? body
+  }, [body, flushEditor])
+
   const persistCreate = useCallback(async () => {
     if (isEditing || isCreating) {
       return
@@ -188,6 +219,7 @@ export function useEditorShellPersist<
     setStatus({ kind: 'saving' })
 
     const publishedAt = localInputValueToIso(meta.publishedAt)
+    const bodyToPersist = resolveBodyToPersist()
     let savedEntity: TEntity
     try {
       savedEntity = await upsertMetaMutation.mutateAsync(buildUpsertMetaPayload({ meta, publishedAt }))
@@ -201,7 +233,7 @@ export function useEditorShellPersist<
     try {
       draftResult = await directSaveDraft({
         id: savedEntity.id,
-        body,
+        body: bodyToPersist,
         expectedClientRevisionToken: null,
       })
     } catch (error) {
@@ -220,7 +252,7 @@ export function useEditorShellPersist<
       return
     }
 
-    createDraft.migrateToEditKey(savedEntity.id, draftResult.revision.clientRevisionToken, body)
+    createDraft.migrateToEditKey(savedEntity.id, draftResult.revision.clientRevisionToken, bodyToPersist)
     markBodySaved(draftResult.revision.body)
 
     setStatus({ kind: 'saved', at: new Date() })
@@ -230,7 +262,7 @@ export function useEditorShellPersist<
     isEditing,
     isCreating,
     meta,
-    body,
+    resolveBodyToPersist,
     upsertMetaMutation,
     directSaveDraft,
     createDraft,
@@ -249,13 +281,14 @@ export function useEditorShellPersist<
     const pickerIso = localInputValueToIso(meta.publishedAt)
     const serverIsScheduled = serverPublishedAtIso !== null && (Date.parse(serverPublishedAtIso) || 0) > Date.now()
     const publishedAt = pickerIso !== null ? pickerIso : serverIsScheduled ? new Date().toISOString() : null
-    const bodyDiverged = !areInklingDocumentsEquivalent(body, lastSavedBody)
+    const bodyToPersist = resolveBodyToPersist()
+    const bodyDiverged = !areInklingDocumentsEquivalent(bodyToPersist, lastSavedBody)
     pendingActionRef.current = { kind: 'draft', remaining: bodyDiverged ? 2 : 1 }
     upsertMetaMutation.mutate(buildUpsertMetaPayload({ meta, id: detail.entity.id, publishedAt }))
     if (bodyDiverged) {
       saveDraftMutation.mutate({
         id: detail.entity.id,
-        body,
+        body: bodyToPersist,
         expectedClientRevisionToken: expectedToken,
       })
     }
@@ -263,7 +296,7 @@ export function useEditorShellPersist<
     isEditing,
     detail,
     meta,
-    body,
+    resolveBodyToPersist,
     expectedToken,
     serverPublishedAtIso,
     upsertMetaMutation,
@@ -281,10 +314,11 @@ export function useEditorShellPersist<
     }
     setStatus({ kind: 'saving' })
     const publishedAtIso = localInputValueToIso(meta.publishedAt)
+    const bodyToPersist = resolveBodyToPersist()
     pendingActionRef.current = { kind: 'published', remaining: 1 }
     publishMutation.mutate({
       id: detail.entity.id,
-      body,
+      body: bodyToPersist,
       expectedClientRevisionToken: expectedToken,
       ...(publishedAtIso !== null ? { publishedAt: publishedAtIso } : {}),
     })
@@ -292,7 +326,7 @@ export function useEditorShellPersist<
   }, [
     isEditing,
     detail,
-    body,
+    resolveBodyToPersist,
     expectedToken,
     meta.publishedAt,
     publishMutation,

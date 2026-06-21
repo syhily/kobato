@@ -25,7 +25,10 @@ interface MergeFootnoteDefinitionsOptions {
  * appends them at the root tail, then canonicalises indices and drops orphans
  * so the output matches what renderers + migrate-pt expect.
  */
-function mergeFootnoteDefinitions(editorState: EditorState, options: MergeFootnoteDefinitionsOptions): InklingDocument {
+export function mergeFootnoteDefinitions(
+  editorState: EditorState,
+  options: MergeFootnoteDefinitionsOptions,
+): InklingDocument {
   const proseDocument = editorStateToInklingDocument(editorState)
   const proseChildren = proseDocument.root.children as InklingBlockNode[]
 
@@ -51,6 +54,38 @@ function mergeFootnoteDefinitions(editorState: EditorState, options: MergeFootno
   return removeOrphanFootnoteDefinitions(canonical)
 }
 
+/**
+ * Synchronously build a validated Inkling document from a Lexical editor
+ * state, applying the same footnote-definition merge the debounced change
+ * handler uses. Returns `null` when the resulting document fails schema
+ * validation (the validation error is reported through the editor error
+ * channel). Exposed so a parent shell can flush the latest in-flight edits
+ * before a save/publish — the change plugin's own merge is debounced (120ms
+ * trailing edge) and would otherwise be skipped if the user clicks save
+ * inside that window, silently dropping the last edits (and, for article
+ * mode, all footnote definitions which live only in the provider's parallel
+ * state).
+ */
+export function buildInklingDocumentFromEditorState(
+  editorState: EditorState,
+  options: MergeFootnoteDefinitionsOptions,
+): InklingDocument | null {
+  const document = mergeFootnoteDefinitions(editorState, options)
+  const validation = safeValidateInklingDocument(document)
+  if (validation.ok) {
+    return validation.document
+  }
+  reportEditorError(
+    new Error(
+      `Inkling document failed schema validation: ${validation.error.issues
+        .map((issue) => `${issue.path.join('.')}: ${issue.message}`)
+        .join('; ')}`,
+    ),
+    'serialize',
+  )
+  return null
+}
+
 export interface OnInklingDocumentChangePluginProps {
   /** Fired on every editor update with a validated Inkling document. */
   onChange: (document: InklingDocument) => void
@@ -58,6 +93,11 @@ export interface OnInklingDocumentChangePluginProps {
    *  runs (used by editors without footnotes, e.g. comment editor — though
    *  that path currently uses the raw `OnChangePlugin` directly). */
   getDefinitions?: () => readonly FootnoteDefinitionItem[]
+  /** When provided, the plugin keeps this ref populated with a synchronous
+   *  flush function so a parent shell can force the pending debounced merge
+   *  to run immediately (used before save/publish to avoid losing the last
+   *  120ms of edits). Cleared on unmount. */
+  flushHandleRef?: React.RefObject<(() => InklingDocument | null) | null>
 }
 
 /**
@@ -71,7 +111,11 @@ export interface OnInklingDocumentChangePluginProps {
  */
 const MERGE_DEBOUNCE_MS = 120
 
-export function OnInklingDocumentChangePlugin({ onChange, getDefinitions }: OnInklingDocumentChangePluginProps) {
+export function OnInklingDocumentChangePlugin({
+  onChange,
+  getDefinitions,
+  flushHandleRef,
+}: OnInklingDocumentChangePluginProps) {
   // Latest editor state captured by the trailing-edge debounce timer. We
   // store the immutable `EditorState` rather than the serialized document
   // so the debounce coalesces N keystrokes into one serialize pass rather
@@ -119,6 +163,45 @@ export function OnInklingDocumentChangePlugin({ onChange, getDefinitions }: OnIn
       )
     }
   }, [])
+
+  // Expose a synchronous flush to the parent shell via `flushHandleRef`.
+  // Unlike the debounced `flush` above, this variant runs regardless of
+  // whether a pending timer is armed, because save/publish must capture the
+  // editor's *current* state — not the last state captured at debounce time.
+  // It returns the document so the caller can use it directly for the
+  // mutation (React state `setBody` would be async and not yet reflected in
+  // the persist callback's closure).
+  useEffect(() => {
+    if (flushHandleRef === undefined) {
+      return
+    }
+    const handle = (): InklingDocument | null => {
+      // Clear the pending debounce so we don't double-fire: the flushed
+      // document supersedes anything the timer would have produced.
+      if (timerRef.current !== null) {
+        clearTimeout(timerRef.current)
+        timerRef.current = null
+      }
+      const editorState = pendingEditorStateRef.current
+      pendingEditorStateRef.current = null
+      if (editorState === null) {
+        return null
+      }
+      const document = buildInklingDocumentFromEditorState(editorState, {
+        getDefinitions: getDefinitionsRef.current,
+      })
+      if (document !== null) {
+        onChangeRef.current(document)
+      }
+      return document
+    }
+    flushHandleRef.current = handle
+    return () => {
+      if (flushHandleRef.current === handle) {
+        flushHandleRef.current = null
+      }
+    }
+  }, [flushHandleRef])
 
   // Cancel any pending flush on unmount so we don't fire onChange after the
   // editor is gone.
