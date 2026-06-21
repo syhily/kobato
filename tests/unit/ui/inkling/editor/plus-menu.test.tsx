@@ -54,11 +54,14 @@ function renderPlusMenu(mode: 'article' | 'comment' = 'article') {
 
 describe('InklingPlusMenuPlugin', () => {
   describe('button', () => {
-    it('renders the `+` button with aria-label', () => {
+    it('renders the `+` button with aria-label and an icon', () => {
       renderPlusMenu()
       const button = screen.getByRole('button', { name: '插入卡片' })
       expect(button).toBeInTheDocument()
-      expect(button).toHaveTextContent('+')
+      // The button renders a lucide PlusIcon (an inline SVG), not a literal
+      // `+` glyph. Asserting the icon presence keeps this test honest about
+      // what the button actually contains.
+      expect(button.querySelector('svg')).toBeInTheDocument()
     })
 
     it('reports aria-expanded=false when closed', () => {

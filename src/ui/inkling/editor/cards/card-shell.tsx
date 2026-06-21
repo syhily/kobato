@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 
 import { useLexicalNodeSelection } from '@lexical/react/useLexicalNodeSelection'
+import { GripVerticalIcon } from 'lucide-react'
 
 import type { InklingImageLayout } from '@/shared/inkling/schema'
 
@@ -33,9 +34,7 @@ export function CardShell({ nodeKey, children, className }: CardShellProps): Rea
           draggable
           title="拖拽排序"
         >
-          <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8h16M4 16h16" />
-          </svg>
+          <GripVerticalIcon className="h-4 w-4" />
         </div>
       ) : null}
       {children}

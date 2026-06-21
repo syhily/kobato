@@ -3,6 +3,7 @@ import type { LexicalEditor } from 'lexical'
 import { $isLinkNode } from '@lexical/link'
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import { $getSelection, $isRangeSelection, FORMAT_TEXT_COMMAND, SELECTION_CHANGE_COMMAND } from 'lexical'
+import { BoldIcon, CodeIcon, ItalicIcon, Link2Icon, StrikethroughIcon, UnderlineIcon } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 
 import { getSelectionRect } from '@/ui/inkling/editor/shared/dom-selection'
@@ -171,46 +172,39 @@ export function FloatingFormatToolbar() {
         onClick={() => editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'bold')}
         title="加粗 (Ctrl+B)"
       >
-        <b>B</b>
+        <BoldIcon className="h-4 w-4" />
       </ToolbarButton>
       <ToolbarButton
         active={formatState.italic}
         onClick={() => editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'italic')}
         title="斜体 (Ctrl+I)"
       >
-        <i>I</i>
+        <ItalicIcon className="h-4 w-4" />
       </ToolbarButton>
       <ToolbarButton
         active={formatState.underline}
         onClick={() => editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'underline')}
         title="下划线 (Ctrl+U)"
       >
-        <u>U</u>
+        <UnderlineIcon className="h-4 w-4" />
       </ToolbarButton>
       <ToolbarButton
         active={formatState.strikethrough}
         onClick={() => editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'strikethrough')}
         title="删除线"
       >
-        <s>S</s>
+        <StrikethroughIcon className="h-4 w-4" />
       </ToolbarButton>
       <ToolbarButton
         active={formatState.code}
         onClick={() => editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'code')}
         title="行内代码"
       >
-        <span className="font-mono text-xs">{'<>'}</span>
+        <CodeIcon className="h-4 w-4" />
       </ToolbarButton>
       <div className="mx-0.5 h-4 w-px bg-border" />
       <ToolbarButton active={formatState.link} onClick={() => setShowLinkPopover(true)} title="链接 (Ctrl+K)">
-        <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"
-          />
-        </svg>
+        <Link2Icon className="h-4 w-4" />
       </ToolbarButton>
       {showLinkPopover ? (
         <div className="absolute top-full left-1/2 mt-2 -translate-x-1/2">

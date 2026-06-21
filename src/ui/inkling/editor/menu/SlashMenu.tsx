@@ -43,7 +43,10 @@ export function useInklingSlashMenu(editor: LexicalEditor | null, mode: InklingF
       .map((section) => ({
         ...section,
         items: section.items.filter(
-          (item) => item.label.toLowerCase().includes(q) || item.type.toLowerCase().includes(q),
+          (item) =>
+            item.label.toLowerCase().includes(q) ||
+            item.type.toLowerCase().includes(q) ||
+            item.description.toLowerCase().includes(q),
         ),
       }))
       .filter((section) => section.items.length > 0)
@@ -288,12 +291,14 @@ export function useInklingSlashMenu(editor: LexicalEditor | null, mode: InklingF
               {section.items.map((item) => {
                 const globalIdx = allFiltered.indexOf(item)
                 const isSelected = globalIdx === selectedIndex
+                const Icon = item.icon
                 return (
                   <button
                     key={item.type}
                     type="button"
+                    aria-label={item.label}
                     className={cn(
-                      'flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-sm transition',
+                      'flex w-full items-center gap-2.5 rounded px-2 py-1.5 text-left transition',
                       isSelected ? 'bg-accent text-accent-foreground' : 'hover:bg-muted',
                     )}
                     onMouseDown={(e) => {
@@ -302,8 +307,18 @@ export function useInklingSlashMenu(editor: LexicalEditor | null, mode: InklingF
                     }}
                     onMouseEnter={() => setSelectedIndex(globalIdx)}
                   >
-                    <span className="font-medium">{item.label}</span>
-                    <span className="ml-auto font-mono text-[10px] text-muted-foreground">{item.type}</span>
+                    <Icon className="h-4 w-4 shrink-0 text-muted-foreground" />
+                    <span className="flex flex-col">
+                      <span className="text-sm leading-tight font-medium">{item.label}</span>
+                      <span
+                        className={cn(
+                          'text-[11px] leading-tight',
+                          isSelected ? 'text-accent-foreground/70' : 'text-muted-foreground',
+                        )}
+                      >
+                        {item.description}
+                      </span>
+                    </span>
                   </button>
                 )
               })}

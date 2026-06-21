@@ -2,6 +2,7 @@ import type { LexicalEditor } from 'lexical'
 
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import { $getSelection } from 'lexical'
+import { PlusIcon } from 'lucide-react'
 import { useCallback, useMemo, useRef, useState } from 'react'
 
 import type { InklingFeatureMode } from '@/shared/inkling/schema'
@@ -92,13 +93,13 @@ export function InklingPlusMenuPlugin({ mode }: InklingPlusMenuPluginProps) {
             setOpen((prev) => !prev)
           }}
           className={cn(
-            'pointer-events-auto flex h-6 w-6 items-center justify-center rounded-full border text-xs leading-none transition-colors',
+            'pointer-events-auto flex h-6 w-6 items-center justify-center rounded-full border transition-colors',
             open
               ? 'text-brand-foreground border-brand bg-brand'
               : 'border-muted-foreground/20 bg-background text-muted-foreground hover:border-brand hover:text-brand',
           )}
         >
-          +
+          <PlusIcon className="h-3.5 w-3.5" />
         </button>
       </div>
       {open ? (
@@ -107,7 +108,7 @@ export function InklingPlusMenuPlugin({ mode }: InklingPlusMenuPluginProps) {
           role="listbox"
           aria-label="卡片菜单"
           className={cn(
-            'pointer-events-auto absolute top-8 left-6 z-50 w-56 rounded-lg border bg-popover p-1 shadow-lg',
+            'pointer-events-auto absolute top-8 left-6 z-50 w-60 rounded-lg border bg-popover p-1 shadow-lg',
           )}
           onBlur={handleBlur}
         >
@@ -118,21 +119,29 @@ export function InklingPlusMenuPlugin({ mode }: InklingPlusMenuPluginProps) {
               </div>
               {section.items
                 .filter((item) => item.modes.includes(mode))
-                .map((item) => (
-                  <button
-                    key={item.type}
-                    type="button"
-                    role="option"
-                    aria-selected={false}
-                    onMouseDown={(e) => {
-                      e.preventDefault()
-                      handleInsert(item)
-                    }}
-                    className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-left text-sm text-foreground hover:bg-muted"
-                  >
-                    <span className="text-base leading-none">{item.label}</span>
-                  </button>
-                ))}
+                .map((item) => {
+                  const Icon = item.icon
+                  return (
+                    <button
+                      key={item.type}
+                      type="button"
+                      role="option"
+                      aria-label={item.label}
+                      aria-selected={false}
+                      onMouseDown={(e) => {
+                        e.preventDefault()
+                        handleInsert(item)
+                      }}
+                      className="flex w-full items-center gap-2.5 rounded-sm px-2 py-1.5 text-left hover:bg-muted"
+                    >
+                      <Icon className="h-4 w-4 shrink-0 text-muted-foreground" />
+                      <span className="flex flex-col">
+                        <span className="text-sm leading-tight font-medium text-foreground">{item.label}</span>
+                        <span className="text-[11px] leading-tight text-muted-foreground">{item.description}</span>
+                      </span>
+                    </button>
+                  )
+                })}
             </div>
           ))}
         </div>

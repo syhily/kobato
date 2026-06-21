@@ -1,4 +1,5 @@
 import type { LexicalEditor, LexicalNode } from 'lexical'
+import type { ComponentType, SVGProps } from 'react'
 
 import {
   $createNodeSelection,
@@ -8,6 +9,16 @@ import {
   $isRangeSelection,
   $setSelection,
 } from 'lexical'
+import {
+  Code2Icon,
+  Columns2Icon,
+  ImageIcon,
+  LightbulbIcon,
+  MinusIcon,
+  MusicIcon,
+  SigmaIcon,
+  TableIcon,
+} from 'lucide-react'
 
 import type { InklingFeatureMode } from '@/shared/inkling/schema'
 
@@ -22,9 +33,18 @@ import {
   $createTableCardNode,
 } from '@/ui/inkling/editor/cards/simple-card-nodes'
 
+/** A lucide icon component. Kept as a field type so card menus can render a
+ *  uniform icon box (Koenig's cardmenu renders an icon + title + description
+ *  per card) without each menu re-importing the icon set. */
+export type InklingCardIcon = ComponentType<SVGProps<SVGSVGElement>>
+
 export interface InklingCardMenuItem {
   type: string
   label: string
+  /** Short one-line description shown under the label in the card menus. */
+  description: string
+  /** Lucide icon rendered in the menu's icon box. */
+  icon: InklingCardIcon
   section: 'media' | 'rich' | 'layout' | 'structure'
   modes: InklingFeatureMode[]
   insert: (editor: LexicalEditor) => void
@@ -101,6 +121,8 @@ export const INKLING_CARD_MENU_ITEMS: InklingCardMenuItem[] = [
   {
     type: 'image-card',
     label: '图片',
+    description: '上传或插入一张图片',
+    icon: ImageIcon,
     section: 'media',
     modes: ['article'],
     insert: (editor) => {
@@ -110,6 +132,8 @@ export const INKLING_CARD_MENU_ITEMS: InklingCardMenuItem[] = [
   {
     type: 'code-block',
     label: '代码块',
+    description: '带语法高亮的代码',
+    icon: Code2Icon,
     section: 'rich',
     modes: ['article', 'comment'],
     insert: (editor) => {
@@ -119,6 +143,8 @@ export const INKLING_CARD_MENU_ITEMS: InklingCardMenuItem[] = [
   {
     type: 'math-block',
     label: '公式块',
+    description: 'LaTeX 数学公式',
+    icon: SigmaIcon,
     section: 'rich',
     modes: ['article', 'comment'],
     insert: (editor) => {
@@ -128,6 +154,8 @@ export const INKLING_CARD_MENU_ITEMS: InklingCardMenuItem[] = [
   {
     type: 'music-card',
     label: '音乐',
+    description: '嵌入一个音乐播放器',
+    icon: MusicIcon,
     section: 'media',
     modes: ['article'],
     insert: (editor) => {
@@ -139,6 +167,8 @@ export const INKLING_CARD_MENU_ITEMS: InklingCardMenuItem[] = [
   {
     type: 'horizontal-rule',
     label: '分隔线',
+    description: '段落之间的视觉分割',
+    icon: MinusIcon,
     section: 'structure',
     modes: ['article'],
     insert: (editor) => {
@@ -148,6 +178,8 @@ export const INKLING_CARD_MENU_ITEMS: InklingCardMenuItem[] = [
   {
     type: 'table',
     label: '表格',
+    description: '可编辑的行列表格',
+    icon: TableIcon,
     section: 'layout',
     modes: ['article'],
     insert: (editor) => {
@@ -178,6 +210,8 @@ export const INKLING_CARD_MENU_ITEMS: InklingCardMenuItem[] = [
   {
     type: 'solution',
     label: '解答块',
+    description: '可折叠的解答区域',
+    icon: LightbulbIcon,
     section: 'structure',
     modes: ['article'],
     insert: (editor) => {
@@ -191,6 +225,8 @@ export const INKLING_CARD_MENU_ITEMS: InklingCardMenuItem[] = [
   {
     type: 'two-column',
     label: '双栏',
+    description: '并排的双栏布局',
+    icon: Columns2Icon,
     section: 'layout',
     modes: ['article'],
     insert: (editor) => {
