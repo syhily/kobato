@@ -16,6 +16,7 @@ import { InklingArticleEditorProvider } from '@/ui/inkling/editor/article/articl
 import { registerInklingDocumentTransforms } from '@/ui/inkling/editor/behaviour/document-transforms'
 import { InklingDragDropReorder } from '@/ui/inkling/editor/behaviour/DragDropReorderPlugin'
 import { useInklingKeyboardNavigation } from '@/ui/inkling/editor/behaviour/keyboard-navigation'
+import { useInklingMarkdownShortcuts } from '@/ui/inkling/editor/behaviour/markdown-shortcuts'
 import { DecoratorErrorBoundary } from '@/ui/inkling/editor/decorator-error-boundary'
 import { reportEditorError } from '@/ui/inkling/editor/error-report'
 import { EditorErrorBoundary } from '@/ui/inkling/editor/ErrorBoundary'
@@ -196,6 +197,10 @@ export function InklingArticleEditor({
                 <PastePlugin />
                 {/* Document-normalisation transforms (mergeListNodes etc). */}
                 <InklingDocumentTransforms />
+                {/* Ghost-style markdown shortcuts: # / > / * / 1. at line
+                    start become headings/quote/lists; **bold**, *italic*,
+                    `code`, ~~strike~~, [text](url) wrap inline as you type. */}
+                <InklingMarkdownShortcuts />
                 {/* Shell-level floating actions (publish FAB). Rendered in a
                   fixed slot at bottom-right so it overlays the scrollport
                   without participating in scroll sync. Gated on
@@ -225,6 +230,12 @@ function InklingKeyboardNav() {
 function InklingDocumentTransforms() {
   const [editor] = useLexicalComposerContext()
   useEffect(() => registerInklingDocumentTransforms(editor), [editor])
+  return null
+}
+
+function InklingMarkdownShortcuts() {
+  const [editor] = useLexicalComposerContext()
+  useInklingMarkdownShortcuts(editor)
   return null
 }
 
