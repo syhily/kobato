@@ -120,8 +120,6 @@ describe('ui/admin/editor-shell/useEditorShellState — create-mode initial surf
     expect(result.expectedToken).toBeNull()
 
     // Layout state.
-    expect(result.previewOpen).toBe(false)
-    expect(typeof result.setPreviewOpen).toBe('function')
     expect(result.metaOpen).toBe(true) // isLg defaults to true in SSR
     expect(result.isLg).toBe(true)
 

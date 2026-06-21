@@ -140,13 +140,10 @@ export interface UseEditorShellStateOutput<TMeta, TEntity extends EntityLike = E
   isEditing: boolean
   status: EditorShellStatus
   sidebarSaveStatus: SidebarSaveStatus
-  previewOpen: boolean
-  setPreviewOpen: (updater: boolean | ((prev: boolean) => boolean)) => void
   metaOpen: boolean
   setMetaOpen: React.Dispatch<React.SetStateAction<boolean>>
   isLg: boolean
   editorScrollRef: React.RefObject<HTMLDivElement | null>
-  previewScrollRef: React.RefObject<HTMLDivElement | null>
   conflict: { localBody: EditorBody; localSavedAt: number } | null
   previewBanner: { kind: 'draft' | 'published'; slug: string } | null
   dismissPreviewBanner: () => void

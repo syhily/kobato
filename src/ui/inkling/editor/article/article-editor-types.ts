@@ -17,8 +17,6 @@ export interface InklingArticleEditorProps {
   actions?: InklingArticleEditorActions
   /** Ref the shell mounts into so picker callbacks can reach the editor. */
   editorRef?: RefObject<LexicalEditor | null>
-  /** Live preview column layout flag (mirrors old PageBodyEditor API). */
-  livePreviewOpen?: boolean
   /** Ref to the scrollable container so the parent shell can wire scroll sync. */
   scrollContainerRef?: RefObject<HTMLDivElement | null>
   /** Shell-level actions rendered next to editor controls. */

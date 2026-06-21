@@ -64,8 +64,7 @@ export function useEditorShellState<
   const revisionManager = useEditorRevisionManager(shellArgs)
   const { expectedToken, latestRevision, publishedRevision, updateAfterSave } = revisionManager
 
-  const { previewOpen, setPreviewOpen, metaOpen, setMetaOpen, isLg, editorScrollRef, previewScrollRef } =
-    useEditorShellLayout()
+  const { metaOpen, setMetaOpen, isLg, editorScrollRef } = useEditorShellLayout()
 
   const [status, setStatus] = useState<EditorShellStatus>({ kind: 'idle' })
   const [displaySaveAtMs, setDisplaySaveAtMs] = useState<number | null>(() => {
@@ -345,14 +344,11 @@ export function useEditorShellState<
     status,
     sidebarSaveStatus,
 
-    previewOpen,
-    setPreviewOpen,
     metaOpen,
     setMetaOpen,
     isLg,
 
     editorScrollRef,
-    previewScrollRef,
 
     conflict,
 

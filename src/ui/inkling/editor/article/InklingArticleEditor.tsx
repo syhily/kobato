@@ -96,7 +96,6 @@ export function InklingArticleEditor({
   disabled,
   actions = {},
   editorRef: editorRefProp,
-  livePreviewOpen = false,
   scrollContainerRef,
   floatingActions,
 }: InklingArticleEditorProps) {
@@ -203,11 +202,8 @@ export function InklingArticleEditor({
                 <InklingMarkdownShortcuts />
                 {/* Shell-level floating actions (publish FAB). Rendered in a
                   fixed slot at bottom-right so it overlays the scrollport
-                  without participating in scroll sync. Gated on
-                  `livePreviewOpen` to match the old PageBodyEditor behaviour:
-                  the FAB only shows in single-pane edit mode, not when the
-                  preview pane is open. */}
-                {floatingActions && !livePreviewOpen ? (
+                  without participating in scroll sync. */}
+                {floatingActions ? (
                   <div className="pointer-events-auto fixed right-4 bottom-6 z-40 touch-manipulation sm:bottom-8 lg:right-6">
                     {floatingActions}
                   </div>

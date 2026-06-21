@@ -14,7 +14,6 @@ import { TitleSlugStrip } from '@/ui/admin/editor-shared/TitleSlugStrip'
 import { ActionBanner } from '@/ui/admin/editor-shell/ActionBanner'
 import { DraftConflictDialog } from '@/ui/admin/editor-shell/DraftConflictDialog'
 import { FloatingPublishButton } from '@/ui/admin/editor-shell/FloatingPublishButton'
-import { PreviewPane } from '@/ui/admin/editor-shell/PreviewPanel'
 import { useEditorShellState } from '@/ui/admin/editor-shell/use-editor-shell-state'
 import { useEditorPickerActions } from '@/ui/admin/editor/use-inkling-picker-actions'
 import { PostEditorMetaAside, PostEditorMetaSheet } from '@/ui/admin/posts/PostEditorMetaPanel'
@@ -124,12 +123,7 @@ export function PostEditorShell({ mode, detail, navigate }: PostEditorShellProps
   const pickerActions = useEditorPickerActions(editorRef)
 
   return (
-    <div
-      className={cn(
-        'flex flex-col gap-0 p-2 md:gap-4 md:p-4',
-        state.previewOpen ? 'min-h-0 flex-1' : 'min-h-admin-content-min',
-      )}
-    >
+    <div className="flex min-h-admin-content-min flex-col gap-0 p-2 md:gap-4 md:p-4">
       <PostEditorToolbar mode={mode} detail={detail} state={state} />
 
       {isEditing && state.previewBanner !== null ? (
@@ -141,32 +135,27 @@ export function PostEditorShell({ mode, detail, navigate }: PostEditorShellProps
         />
       ) : null}
 
-      {/* Layout grid. Three states drive the column template:
-       *    - preview off + meta open  → [editor | meta]      (2 col)
-       *    - preview off + meta hidden → [editor]              (1 col)
-       *    - preview on               → [editor | preview]    (2 col)
-       *      meta is moved into a `Sheet` overlay. */}
+      {/* Layout grid. Two states drive the column template:
+       *    - meta open  → [editor | meta]   (2 col)
+       *    - meta hidden → [editor]           (1 col)
+       *    Below lg, meta moves into a `Sheet` overlay. */}
       <div
         className={cn(
-          'mt-4 grid min-h-0 gap-4 md:mt-0',
-          state.previewOpen ? 'flex-1' : 'grow',
-          !state.previewOpen && state.metaOpen && 'lg:grid-cols-[minmax(0,1fr)_360px]',
-          !state.previewOpen && !state.metaOpen && 'lg:grid-cols-[minmax(0,1fr)]',
-          state.previewOpen && 'lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]',
+          'mt-4 grid min-h-0 grow gap-4 md:mt-0',
+          state.metaOpen && 'lg:grid-cols-[minmax(0,1fr)_360px]',
+          !state.metaOpen && 'lg:grid-cols-[minmax(0,1fr)]',
         )}
       >
         <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-2">
           {mode === 'create' ? <CreateModeBanner entityLabel="文章" draftSavedAt={state.createDraftSavedAt} /> : null}
-          {!state.previewOpen ? (
-            <TitleSlugStrip
-              entityLabel="文章"
-              title={state.meta.title}
-              slug={state.meta.slug}
-              onTitleChange={(value) => state.setMeta((m) => ({ ...m, title: value }))}
-              onSlugChange={(value) => state.setMeta((m) => ({ ...m, slug: value }))}
-              disabled={state.isPending}
-            />
-          ) : null}
+          <TitleSlugStrip
+            entityLabel="文章"
+            title={state.meta.title}
+            slug={state.meta.slug}
+            onTitleChange={(value) => state.setMeta((m) => ({ ...m, title: value }))}
+            onSlugChange={(value) => state.setMeta((m) => ({ ...m, slug: value }))}
+            disabled={state.isPending}
+          />
           <InklingArticleEditor
             initialDocument={state.initialBody}
             documentKey={state.bodyKey}
@@ -174,7 +163,6 @@ export function PostEditorShell({ mode, detail, navigate }: PostEditorShellProps
             disabled={state.isPending}
             actions={pickerActions.actions}
             editorRef={editorRef}
-            livePreviewOpen={state.previewOpen}
             scrollContainerRef={state.editorScrollRef}
             floatingActions={
               isEditing ? (
@@ -194,21 +182,9 @@ export function PostEditorShell({ mode, detail, navigate }: PostEditorShellProps
             }
           />
         </div>
-        {state.previewOpen ? (
-          <section aria-label="实时预览" className="flex min-h-0 min-w-0 flex-1 flex-col">
-            <PreviewPane
-              body={state.body}
-              title={state.meta.title}
-              slug={state.meta.slug}
-              scrollContainerRef={state.previewScrollRef}
-            />
-          </section>
-        ) : null}
-        {!state.previewOpen && state.metaOpen ? (
-          <PostEditorMetaAside mode={mode} detail={detail} state={state} />
-        ) : null}
+        {state.metaOpen ? <PostEditorMetaAside mode={mode} detail={detail} state={state} /> : null}
       </div>
-      {state.previewOpen || !state.isLg ? <PostEditorMetaSheet mode={mode} detail={detail} state={state} /> : null}
+      {!state.isLg ? <PostEditorMetaSheet mode={mode} detail={detail} state={state} /> : null}
       {state.conflict !== null && isEditing ? (
         <DraftConflictDialog
           open={true}

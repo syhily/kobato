@@ -6,8 +6,6 @@ import {
   ExternalLinkIcon,
   EyeOffIcon,
   Loader2Icon,
-  PanelRightCloseIcon,
-  PanelRightOpenIcon,
   SaveIcon,
   SlidersHorizontalIcon,
   Trash2Icon,
@@ -28,7 +26,6 @@ import { TitleSlugStrip } from '@/ui/admin/editor-shared/TitleSlugStrip'
 import { ActionBanner } from '@/ui/admin/editor-shell/ActionBanner'
 import { DraftConflictDialog } from '@/ui/admin/editor-shell/DraftConflictDialog'
 import { FloatingPublishButton } from '@/ui/admin/editor-shell/FloatingPublishButton'
-import { PreviewPane } from '@/ui/admin/editor-shell/PreviewPanel'
 import { RevisionHistoryDrawer } from '@/ui/admin/editor-shell/RevisionsDrawer'
 import { useEditorShellState } from '@/ui/admin/editor-shell/use-editor-shell-state'
 import { useEditorPickerActions } from '@/ui/admin/editor/use-inkling-picker-actions'
@@ -116,12 +113,7 @@ export function PageEditorShell({ mode, detail, navigate }: PageEditorShellProps
   const pickerActions = useEditorPickerActions(editorRef)
 
   return (
-    <div
-      className={cn(
-        'flex flex-col gap-0 p-2 md:gap-4 md:p-4',
-        state.previewOpen ? 'min-h-0 flex-1' : 'min-h-[calc(100vh-4rem)]',
-      )}
-    >
+    <div className="flex min-h-[calc(100vh-4rem)] flex-col gap-0 p-2 md:gap-4 md:p-4">
       {/* Toolbar splits into two intent groups that share a single row
        *  when there is room — see `PostEditorShell` for the full
        *  rationale (LEFT-first icon collapse, RIGHT keeps labels longer
@@ -153,17 +145,6 @@ export function PageEditorShell({ mode, detail, navigate }: PageEditorShellProps
           ) : null}
         </div>
         <div className="ml-auto flex min-w-0 items-center gap-2">
-          <Button
-            variant={state.previewOpen ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => state.setPreviewOpen((open) => !open)}
-            title={state.previewOpen ? '关闭实时预览，恢复菜单' : '开启实时预览，并折叠左侧菜单'}
-            aria-pressed={state.previewOpen}
-            className={cn('hidden lg:inline-flex', state.previewOpen && 'border border-transparent')}
-          >
-            {state.previewOpen ? <PanelRightCloseIcon /> : <PanelRightOpenIcon />}
-            <span className="sr-only sm:not-sr-only">实时预览</span>
-          </Button>
           {mode === 'create' ? (
             <Button
               size="sm"
@@ -249,25 +230,21 @@ export function PageEditorShell({ mode, detail, navigate }: PageEditorShellProps
 
       <div
         className={cn(
-          'mt-4 grid min-h-0 gap-4 md:mt-0',
-          state.previewOpen ? 'flex-1' : 'grow',
-          !state.previewOpen && state.metaOpen && 'lg:grid-cols-[minmax(0,1fr)_360px]',
-          !state.previewOpen && !state.metaOpen && 'lg:grid-cols-[minmax(0,1fr)]',
-          state.previewOpen && 'lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]',
+          'mt-4 grid min-h-0 grow gap-4 md:mt-0',
+          state.metaOpen && 'lg:grid-cols-[minmax(0,1fr)_360px]',
+          !state.metaOpen && 'lg:grid-cols-[minmax(0,1fr)]',
         )}
       >
         <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-2">
           {mode === 'create' ? <CreateModeBanner entityLabel="页面" draftSavedAt={state.createDraftSavedAt} /> : null}
-          {!state.previewOpen ? (
-            <TitleSlugStrip
-              entityLabel="页面"
-              title={state.meta.title}
-              slug={state.meta.slug}
-              onTitleChange={(value) => state.setMeta((m) => ({ ...m, title: value }))}
-              onSlugChange={(value) => state.setMeta((m) => ({ ...m, slug: value }))}
-              disabled={state.isPending}
-            />
-          ) : null}
+          <TitleSlugStrip
+            entityLabel="页面"
+            title={state.meta.title}
+            slug={state.meta.slug}
+            onTitleChange={(value) => state.setMeta((m) => ({ ...m, title: value }))}
+            onSlugChange={(value) => state.setMeta((m) => ({ ...m, slug: value }))}
+            disabled={state.isPending}
+          />
           <InklingArticleEditor
             initialDocument={state.initialBody}
             documentKey={state.bodyKey}
@@ -275,7 +252,6 @@ export function PageEditorShell({ mode, detail, navigate }: PageEditorShellProps
             disabled={state.isPending}
             actions={pickerActions.actions}
             editorRef={editorRef}
-            livePreviewOpen={state.previewOpen}
             scrollContainerRef={state.editorScrollRef}
             floatingActions={
               isEditing ? (
@@ -295,17 +271,7 @@ export function PageEditorShell({ mode, detail, navigate }: PageEditorShellProps
             }
           />
         </div>
-        {state.previewOpen ? (
-          <section aria-label="实时预览" className="flex min-h-0 min-w-0 flex-1 flex-col">
-            <PreviewPane
-              body={state.body}
-              title={state.meta.title}
-              slug={state.meta.slug}
-              scrollContainerRef={state.previewScrollRef}
-            />
-          </section>
-        ) : null}
-        {!state.previewOpen && state.metaOpen ? (
+        {state.metaOpen ? (
           <aside className="hidden min-h-0 flex-col overflow-y-auto pr-1 lg:flex">
             <MetaSidebar
               draft={state.meta}
@@ -357,7 +323,7 @@ export function PageEditorShell({ mode, detail, navigate }: PageEditorShellProps
           </aside>
         ) : null}
       </div>
-      {state.previewOpen || !state.isLg ? (
+      {!state.isLg ? (
         <Sheet open={state.metaOpen} onOpenChange={state.setMetaOpen}>
           <SheetContent side="right" className="flex w-full flex-col gap-0 p-0 sm:max-w-sm">
             <SheetHeader className="border-b">
