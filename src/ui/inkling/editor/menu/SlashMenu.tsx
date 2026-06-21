@@ -14,7 +14,7 @@ import {
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import type { InklingFeatureMode } from '@/shared/inkling/schema'
-import type { InklingCardMenuItem } from '@/ui/inkling/editor/cards/card-registry'
+import type { InklingCardMenuItem, InklingCardMenuSection } from '@/ui/inkling/editor/cards/card-registry'
 
 import { buildInklingCardMenu } from '@/ui/inkling/editor/cards/card-registry'
 import { getSelectionRect } from '@/ui/inkling/editor/shared/dom-selection'
@@ -285,13 +285,62 @@ export function useInklingSlashMenu(editor: LexicalEditor | null, mode: InklingF
     return () => document.removeEventListener('mousedown', handler)
   }, [open, close])
 
+  // The menu DOM is rendered by the stable <SlashMenuView> component below
+  // — NOT by a useCallback-wrapped inline component. Returning a fresh
+  // function component from the hook and rendering it as <Comp/> causes
+  // React to unmount+remount the menu whenever any dep changes (e.g.
+  // selectedIndex on mouseenter), which destroys scrollTop and snaps the
+  // list back to the top. A module-level component with a stable identity
+  // preserves the DOM node across re-renders.
+  const menuElement =
+    !open || position === null ? null : (
+      <SlashMenuView
+        menuRef={menuRef}
+        position={position}
+        query={query}
+        sections={filteredItems}
+        allItems={allFiltered}
+        selectedIndex={selectedIndex}
+        onSelect={setSelectedIndex}
+        onInsert={insert}
+      />
+    )
+
+  return { menuElement, open }
+}
+
+interface SlashMenuViewProps {
+  menuRef: React.RefObject<HTMLDivElement | null>
+  position: { top: number; left: number }
+  query: string
+  sections: InklingCardMenuSection[]
+  allItems: InklingCardMenuItem[]
+  selectedIndex: number
+  onSelect: (index: number) => void
+  onInsert: (item: InklingCardMenuItem) => void
+}
+
+/**
+ * Stable, module-level menu component. Its identity never changes across
+ * re-renders, so React updates the DOM in place instead of
+ * unmounting/remounting — preserving the scroll position when the user
+ * hovers items or navigates with arrow keys.
+ */
+function SlashMenuView({
+  menuRef,
+  position,
+  query,
+  sections,
+  allItems,
+  selectedIndex,
+  onSelect,
+  onInsert,
+}: SlashMenuViewProps) {
   // Keep the highlighted option scrolled into view as the user navigates
-  // with arrow keys. Lives in the hook body (not inside the useCallback
-  // component) so it doesn't violate the rules of hooks. Runs after every
-  // render where selectedIndex changed; uses `block: 'nearest'` so it only
-  // scrolls when the option is actually out of view.
+  // with arrow keys. `block: 'nearest'` only scrolls when the option is
+  // actually out of view (no jitter when navigating within the visible window).
   useEffect(() => {
-    if (!open || menuRef.current === null) {
+    if (menuRef.current === null) {
       return
     }
     const selected = menuRef.current.querySelector('[aria-selected="true"]')
@@ -300,66 +349,59 @@ export function useInklingSlashMenu(editor: LexicalEditor | null, mode: InklingF
     }
   })
 
-  const SlashMenuComponent = useCallback(() => {
-    if (!open || position === null) {
-      return null
-    }
-    return (
-      <div
-        ref={menuRef}
-        role="listbox"
-        aria-label="卡片菜单"
-        className="inkling-slash-menu inkling-cardmenu absolute z-50 max-h-72 overflow-y-auto"
-        style={{ top: position.top, left: position.left }}
-      >
-        {query.length > 0 ? <div className="inkling-cardmenu-query">搜索: {query}</div> : null}
-        {filteredItems.length === 0 ? (
-          <div className="inkling-cardmenu-empty">无匹配结果</div>
-        ) : (
-          filteredItems.map((section) => (
-            <div key={section.section}>
-              <div className="inkling-cardmenu-section">{section.label}</div>
-              {section.items.map((item) => {
-                const globalIdx = allFiltered.indexOf(item)
-                const isSelected = globalIdx === selectedIndex
-                const Icon = item.icon
-                return (
-                  <button
-                    key={item.type}
-                    type="button"
-                    role="option"
-                    aria-label={item.label}
-                    aria-selected={isSelected}
-                    onMouseDown={(e) => {
-                      e.preventDefault()
-                      insert(item)
-                    }}
-                    onMouseEnter={() => setSelectedIndex(globalIdx)}
-                    className="inkling-cardmenu-item"
-                  >
-                    <span className="inkling-cardmenu-item-icon">
-                      <Icon />
-                    </span>
-                    <span className="inkling-cardmenu-item-text">
-                      <span className="inkling-cardmenu-item-title">{item.label}</span>
-                      <span className="inkling-cardmenu-item-desc">{item.description}</span>
-                    </span>
-                  </button>
-                )
-              })}
-            </div>
-          ))
-        )}
-      </div>
-    )
-  }, [open, position, query, filteredItems, allFiltered, selectedIndex, insert])
-
-  return { SlashMenuComponent, open }
+  return (
+    <div
+      ref={menuRef}
+      role="listbox"
+      aria-label="卡片菜单"
+      className="inkling-slash-menu inkling-cardmenu absolute z-50 max-h-72 overflow-y-auto"
+      style={{ top: position.top, left: position.left }}
+    >
+      {query.length > 0 ? <div className="inkling-cardmenu-query">搜索: {query}</div> : null}
+      {sections.length === 0 ? (
+        <div className="inkling-cardmenu-empty">无匹配结果</div>
+      ) : (
+        sections.map((section) => (
+          <div key={section.section}>
+            <div className="inkling-cardmenu-section">{section.label}</div>
+            {section.items.map((item) => {
+              const globalIdx = allItems.indexOf(item)
+              const isSelected = globalIdx === selectedIndex
+              const Icon = item.icon
+              return (
+                <button
+                  key={item.type}
+                  type="button"
+                  role="option"
+                  aria-label={item.label}
+                  aria-selected={isSelected}
+                  onMouseDown={(e) => {
+                    e.preventDefault()
+                    onInsert(item)
+                  }}
+                  onMouseEnter={() => onSelect(globalIdx)}
+                  className="inkling-cardmenu-item"
+                >
+                  <span className="inkling-cardmenu-item-icon">
+                    <Icon />
+                  </span>
+                  <span className="inkling-cardmenu-item-text">
+                    <span className="inkling-cardmenu-item-title">{item.label}</span>
+                    <span className="inkling-cardmenu-item-desc">{item.description}</span>
+                  </span>
+                </button>
+              )
+            })}
+          </div>
+        ))
+      )}
+    </div>
+  )
 }
 
 /** Mountable plugin component. */
 export function InklingSlashMenuPlugin({ mode, className: _className }: InklingSlashMenuProps) {
   const [editor] = useLexicalComposerContext()
-  const { SlashMenuComponent } = useInklingSlashMenu(editor, mode)
-  return <SlashMenuComponent />
+  const { menuElement } = useInklingSlashMenu(editor, mode)
+  return menuElement
 }
