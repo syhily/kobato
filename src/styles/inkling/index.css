@@ -38,8 +38,11 @@
   --inkling-accent: var(--brand);
   --inkling-border: var(--line);
   --inkling-selection: var(--ink-4);
-  --inkling-font-ui: 'OPPO Sans 4.0', 'OPPO Sans', OPPOSans, 'PingFang SC', system-ui, sans-serif;
-  --inkling-font-serif: 'OPPO Serif SC', Georgia, Times, serif;
+  --inkling-font-ui:
+    'OPPO Sans 4.0', 'OPPO Sans', OPPOSans, 'PingFang SC', 'Lantinghei SC', 'Microsoft YaHei', 'Source Han Sans CN',
+    system-ui, sans-serif;
+  --inkling-font-serif:
+    'OPPO Serif SC', 'Source Han Serif SC', 'Noto Serif CJK SC', 'Songti SC', SimSun, Georgia, Times, serif;
   --inkling-font-code: var(--font-code);
 
   /*
