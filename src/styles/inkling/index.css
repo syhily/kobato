@@ -54,6 +54,7 @@
   --inkling-toolbar-bg: var(--ink-1);
   --inkling-toolbar-fg: rgb(255 255 255 / 85%);
   --inkling-toolbar-fg-muted: rgb(255 255 255 / 60%);
+  --inkling-toolbar-fg-strong: #ffffff;
 }
 
 /* Dark mode: invert the toolbar to a light capsule on the dark canvas,
@@ -67,4 +68,5 @@
   --inkling-toolbar-bg: var(--ink-5);
   --inkling-toolbar-fg: var(--ink-1);
   --inkling-toolbar-fg-muted: var(--ink-4);
+  --inkling-toolbar-fg-strong: var(--ink-1);
 }

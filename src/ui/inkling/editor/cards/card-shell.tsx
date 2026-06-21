@@ -22,7 +22,7 @@ export function CardShell({ nodeKey, children, className }: CardShellProps): Rea
   return (
     <div
       className={cn(
-        'inkling-card relative rounded-sm transition-shadow',
+        'inkling-card relative rounded-lg transition-shadow',
         isSelected
           ? 'z-20 shadow-[0_0_0_2px_var(--brand)]'
           : 'hover:shadow-[0_0_0_1px_color-mix(in_oklab,var(--brand)_45%,transparent)]',
