@@ -8,7 +8,12 @@ import { InklingMusicMetaContext, InklingMusicPresentationContext } from '@/ui/i
 export function MusicBlock({ node }: { node: InklingMusicCardNode }): ReactNode {
   const { suppressAutoplay } = use(InklingMusicPresentationContext)
   const musicMeta = use(InklingMusicMetaContext)
-  const meta = musicMeta?.[node.playerId]
+  // Prefer the meta embedded by `prerenderInklingMusicPlayers` (SSR), then
+  // fall back to the React context map. The context path exists for callers
+  // that pass musicMeta as a prop to <InklingBody>; the node.meta path is
+  // the canonical SSR route (the post/page detail loaders enrich the body
+  // before rendering).
+  const meta = node.meta ?? musicMeta?.[node.playerId]
   return (
     <MusicPlayer
       id={node.playerId}
