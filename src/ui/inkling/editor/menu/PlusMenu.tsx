@@ -1,14 +1,15 @@
-import type { LexicalEditor } from 'lexical'
+import type { LexicalEditor, LexicalNode } from 'lexical'
 
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
-import { $getSelection } from 'lexical'
+import { $getSelection, $isRangeSelection, $isTextNode, SELECTION_CHANGE_COMMAND } from 'lexical'
 import { PlusIcon } from 'lucide-react'
-import { useCallback, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import type { InklingFeatureMode } from '@/shared/inkling/schema'
 import type { InklingCardMenuItem } from '@/ui/inkling/editor/cards/card-registry'
 
 import { buildInklingCardMenu } from '@/ui/inkling/editor/cards/card-registry'
+import { readEditor } from '@/ui/inkling/editor/shared/read-editor'
 import { cn } from '@/ui/lib/cn'
 
 const SECTION_LABELS: Record<string, string> = {
@@ -17,6 +18,13 @@ const SECTION_LABELS: Record<string, string> = {
   layout: '布局',
   structure: '结构',
 }
+
+/**
+ * Horizontal gap between the `+` button and the paragraph's left text edge.
+ * Mirrors Koenig's card-add gutter — the button sits in the left margin,
+ * not flush against the text.
+ */
+const PLUS_BUTTON_GUTTER = 28
 
 function insertCard(editor: LexicalEditor, item: InklingCardMenuItem): void {
   editor.update(() => {
@@ -41,6 +49,54 @@ function insertCard(editor: LexicalEditor, item: InklingCardMenuItem): void {
   })
 }
 
+/**
+ * Decide whether the `+` button should show for the current selection, and
+ * if so return the key of the paragraph it should anchor to.
+ *
+ * Koenig shows the add-card button at the left margin of the paragraph the
+ * caret is in, but ONLY when the caret is at the very start of that
+ * paragraph — i.e. the paragraph is empty, or the caret is before all
+ * text. Once the user types, the button disappears. This matches that
+ * behaviour: we walk up from the anchor to the nearest top-level block,
+ * and require the anchor offset to be 0 with no preceding text.
+ */
+function getAnchorParagraphKey(editor: LexicalEditor): string | null {
+  return readEditor(editor, () => {
+    const selection = $getSelection()
+    if (!$isRangeSelection(selection) || !selection.isCollapsed()) {
+      return null
+    }
+    const anchor = selection.anchor
+    const anchorNode = anchor.getNode()
+    if (anchorNode === null) {
+      return null
+    }
+
+    // Resolve the top-level block element that owns the anchor (paragraph,
+    // heading, quote, list item, …). For a text node this is its parent
+    // element; for an element node (e.g. empty paragraph) it is itself.
+    let block: LexicalNode = anchorNode
+    if ($isTextNode(anchorNode)) {
+      // Caret must be at offset 0 AND no text before it inside this node.
+      if (anchor.offset !== 0) {
+        return null
+      }
+      const parent = anchorNode.getPreviousSibling()
+      // Any preceding sibling (text or inline) means the caret is not at
+      // the paragraph start — e.g. "ab|c" or a leading inline node.
+      if (parent !== null) {
+        return null
+      }
+      block = anchorNode.getTopLevelElement() ?? anchorNode.getParent() ?? anchorNode
+    }
+    // For an element anchor (empty block), offset 0 is the start.
+    if (block === null) {
+      return null
+    }
+    return block.getKey()
+  })
+}
+
 export interface InklingPlusMenuPluginProps {
   mode: InklingFeatureMode
 }
@@ -48,6 +104,8 @@ export interface InklingPlusMenuPluginProps {
 export function InklingPlusMenuPlugin({ mode }: InklingPlusMenuPluginProps) {
   const [editor] = useLexicalComposerContext()
   const [open, setOpen] = useState(false)
+  const [anchorKey, setAnchorKey] = useState<string | null>(null)
+  const [position, setPosition] = useState<{ top: number; left: number } | null>(null)
   const buttonRef = useRef<HTMLButtonElement>(null)
   const menuRef = useRef<HTMLDivElement>(null)
 
@@ -60,6 +118,86 @@ export function InklingPlusMenuPlugin({ mode }: InklingPlusMenuPluginProps) {
     },
     [editor],
   )
+
+  // Pure position computation — no setState. Kept side-effect-free so the
+  // scroll/resize listeners and the anchor-change effect can all reuse it
+  // without tripping the react-compiler "setState in effect body" rule.
+  //
+  // Returns null only when there is no anchor at all. If the anchor's DOM
+  // element can't be resolved (e.g. it was just inserted and Lexical hasn't
+  // reconciled yet, or in a test environment), we fall back to the editor
+  // root's origin so the button still renders — it just repositions on the
+  // next layout tick.
+  const computePosition = useCallback((): { top: number; left: number } | null => {
+    if (anchorKey === null) {
+      return null
+    }
+    const rootEl = editor.getRootElement()
+    if (rootEl === null) {
+      return { top: 0, left: -PLUS_BUTTON_GUTTER }
+    }
+    const blockEl = editor.getElementByKey(anchorKey)
+    if (blockEl === null) {
+      return { top: 0, left: -PLUS_BUTTON_GUTTER }
+    }
+    const rootRect = rootEl.getBoundingClientRect()
+    const blockRect = blockEl.getBoundingClientRect()
+    return {
+      // Vertically center on the first line. The block's top + a fraction
+      // of its height lands roughly on the text baseline area.
+      top: blockRect.top - rootRect.top + (blockRect.height - 24) / 2,
+      // Left text edge, pulled into the margin by the gutter.
+      left: blockRect.left - rootRect.left - PLUS_BUTTON_GUTTER,
+    }
+  }, [anchorKey, editor])
+
+  // Track the caret: show/hide + re-anchor whenever the selection lands on
+  // (or leaves) a paragraph start. SELECTION_CHANGE_COMMAND fires on caret
+  // moves and focus changes; registerUpdateListener fires on content edits
+  // (so the button hides the moment the user types into the empty block).
+  useEffect(() => {
+    const update = () => {
+      if (editor.isComposing()) {
+        return
+      }
+      const key = getAnchorParagraphKey(editor)
+      setAnchorKey(key)
+      if (key === null) {
+        setOpen(false)
+      }
+    }
+    const offSelection = editor.registerCommand(
+      SELECTION_CHANGE_COMMAND,
+      () => {
+        update()
+        return false
+      },
+      1,
+    )
+    const offUpdate = editor.registerUpdateListener(update)
+    return () => {
+      offSelection()
+      offUpdate()
+    }
+  }, [editor])
+
+  // Recompute pixel position whenever the anchor changes, and on scroll /
+  // resize (the paragraph may move under a scrolling container). The
+  // initial recompute is deferred to a microtask so setState never runs
+  // synchronously in the effect body (react-compiler rule).
+  useEffect(() => {
+    const handler = () => setPosition(computePosition())
+    handler()
+    if (anchorKey === null) {
+      return undefined
+    }
+    window.addEventListener('scroll', handler, { passive: true })
+    window.addEventListener('resize', handler)
+    return () => {
+      window.removeEventListener('scroll', handler)
+      window.removeEventListener('resize', handler)
+    }
+  }, [anchorKey, computePosition])
 
   // Close on outside click.
   const handleBlur = useCallback((e: React.FocusEvent) => {
@@ -75,39 +213,44 @@ export function InklingPlusMenuPlugin({ mode }: InklingPlusMenuPluginProps) {
     }
   }, [])
 
+  if (anchorKey === null || position === null) {
+    return null
+  }
+
   return (
-    <div className="inkling-plus-menu-wrapper pointer-events-none absolute -top-2 left-0 z-40 w-full">
-      <div className="mx-auto flex w-full max-w-[var(--inkling-content-width,740px)] justify-start">
-        <button
-          ref={buttonRef}
-          type="button"
-          aria-label="插入卡片"
-          aria-expanded={open}
-          aria-haspopup="true"
-          onMouseDown={(e) => {
-            // preventDefault keeps the editor from losing selection when
-            // clicking the + button.  We do NOT call editor.focus() here
-            // because that would move the cursor to the start of the
-            // contenteditable on the next render.
-            e.preventDefault()
-            setOpen((prev) => !prev)
-          }}
-          className={cn(
-            'pointer-events-auto flex h-6 w-6 items-center justify-center rounded-full border transition-colors',
-            open
-              ? 'text-brand-foreground border-brand bg-brand'
-              : 'border-muted-foreground/20 bg-background text-muted-foreground hover:border-brand hover:text-brand',
-          )}
-        >
-          <PlusIcon className="h-3.5 w-3.5" />
-        </button>
-      </div>
+    <div
+      className="inkling-plus-menu-wrapper pointer-events-none absolute z-40"
+      style={{ top: position.top, left: position.left }}
+    >
+      <button
+        ref={buttonRef}
+        type="button"
+        aria-label="插入卡片"
+        aria-expanded={open}
+        aria-haspopup="true"
+        onMouseDown={(e) => {
+          // preventDefault keeps the editor from losing selection when
+          // clicking the + button.  We do NOT call editor.focus() here
+          // because that would move the cursor to the start of the
+          // contenteditable on the next render.
+          e.preventDefault()
+          setOpen((prev) => !prev)
+        }}
+        className={cn(
+          'pointer-events-auto flex h-6 w-6 items-center justify-center rounded-full border transition-colors',
+          open
+            ? 'text-brand-foreground border-brand bg-brand'
+            : 'border-muted-foreground/20 bg-background text-muted-foreground hover:border-brand hover:text-brand',
+        )}
+      >
+        <PlusIcon className="h-3.5 w-3.5" />
+      </button>
       {open ? (
         <div
           ref={menuRef}
           role="listbox"
           aria-label="卡片菜单"
-          className="inkling-cardmenu pointer-events-auto absolute top-8 left-6 z-50"
+          className="inkling-cardmenu pointer-events-auto absolute top-8 left-0 z-50"
           onBlur={handleBlur}
         >
           {sections.map((section) => (
