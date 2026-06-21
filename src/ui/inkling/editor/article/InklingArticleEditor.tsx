@@ -138,12 +138,12 @@ export function InklingArticleEditor({
               first mount and would keep showing stale content. */}
           <LexicalComposer key={documentKey} initialConfig={initialConfig}>
             <EditorErrorBoundary context="article-editor">
-              <div className="inkling-editor relative flex min-h-0 w-full min-w-0 flex-1 flex-col">
+              <div className="inkling-editor relative flex min-h-0 w-full min-w-0 flex-1 flex-col overflow-hidden rounded-xl border bg-card">
                 <div
                   ref={scrollContainerRef}
                   className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto px-3 pt-6 pb-editor-pad-bottom md:px-6"
                 >
-                  <div className="inkling-prose">
+                  <div className="inkling-prose post-content prose-blog prose prose-lg max-w-none">
                     {/* `<RichTextPlugin>` is what actually mounts the decorator
                       renderer (`<LegacyDecorators>`), which portals each card
                       node's `decorate()` output into its host element. Without
