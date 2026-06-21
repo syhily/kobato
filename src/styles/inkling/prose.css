@@ -12,19 +12,28 @@
  * that `prose-blog` does NOT provide — the Koenig convention that
  * decorator-rendered block cards (`<div>` wrappers) collapse their
  * line-height and get pair-specific top padding (e.g. `p + div` = 3.2ir).
- * These rules are scoped to `.inkling-prose` and use the `--ir` token.
+ *
+ * CRITICAL: these rules target ONLY `[data-inkling-card]` divs (the card
+ * wrappers), NOT every direct-child `<div>`. The ContentEditable element
+ * is also a direct-child `<div>` of `.inkling-prose` — a bare `> :where(div)`
+ * selector would hit it, set its line-height to 0, and the paragraphs
+ * inside would inherit that collapsed line-height (since prose's `:where(p)`
+ * rule sets margin but NOT line-height — line-height comes from the
+ * inherited `.prose-lg` value). That collapsed every paragraph's line
+ * height, making text overlap.
  */
 
 .inkling-prose.inkling-prose {
-  /* Card containers (decorator-rendered block cards) collapse line-height
-     so the card's own content controls its box. This prevents the
-     prose-blog paragraph line-height from inflating card wrappers.      */
-  > :where(div):not(:where(.not-inkling-prose, [class~='not-inkling-prose'] *)) {
+  /* Card containers only — scoped to [data-inkling-card] so the
+     ContentEditable div (also a direct child) is never affected. */
+  > :where(div[data-inkling-card]):not(:where(.not-inkling-prose, [class~='not-inkling-prose'] *)) {
     line-height: 0;
     min-width: 100%;
   }
 
-  > :where(div + div):not(:where(.not-inkling-prose, [class~='not-inkling-prose'] *)) {
+  > :where(div[data-inkling-card] + div[data-inkling-card]):not(
+      :where(.not-inkling-prose, [class~='not-inkling-prose'] *)
+    ) {
     padding: calc(3.2 * var(--ir)) 0 0;
   }
 
@@ -34,17 +43,25 @@
     padding: 0;
   }
 
-  :where(p + div, blockquote + div, aside + div, ul + div, ol + div):not(
-    :where(.not-inkling-prose, [class~='not-inkling-prose'] *)
-  ) {
+  :where(
+    p + div[data-inkling-card],
+    blockquote + div[data-inkling-card],
+    aside + div[data-inkling-card],
+    ul + div[data-inkling-card],
+    ol + div[data-inkling-card]
+  ):not(:where(.not-inkling-prose, [class~='not-inkling-prose'] *)) {
     padding: calc(3.2 * var(--ir)) 0 0;
   }
-  :where(h1 + div):not(:where(.not-inkling-prose, [class~='not-inkling-prose'] *)) {
+  :where(h1 + div[data-inkling-card]):not(:where(.not-inkling-prose, [class~='not-inkling-prose'] *)) {
     padding: calc(2.8 * var(--ir)) 0 0;
   }
-  :where(h2 + div, h3 + div, h4 + div, h5 + div, h6 + div):not(
-    :where(.not-inkling-prose, [class~='not-inkling-prose'] *)
-  ) {
+  :where(
+    h2 + div[data-inkling-card],
+    h3 + div[data-inkling-card],
+    h4 + div[data-inkling-card],
+    h5 + div[data-inkling-card],
+    h6 + div[data-inkling-card]
+  ):not(:where(.not-inkling-prose, [class~='not-inkling-prose'] *)) {
     padding: calc(1.6 * var(--ir)) 0 0;
   }
 }
