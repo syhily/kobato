@@ -9,7 +9,6 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { getSelectionRect } from '@/ui/inkling/editor/shared/dom-selection'
 import { readEditor } from '@/ui/inkling/editor/shared/read-editor'
 import { LinkPopover } from '@/ui/inkling/editor/toolbar/LinkPopover'
-import { cn } from '@/ui/lib/cn'
 
 interface ToolbarButtonProps {
   active?: boolean
@@ -26,10 +25,7 @@ function ToolbarButton({ active, onClick, title, children }: ToolbarButtonProps)
       title={title}
       aria-label={title}
       aria-pressed={active}
-      className={cn(
-        'flex h-7 w-7 items-center justify-center rounded text-sm transition',
-        active ? 'bg-accent text-accent-foreground' : 'text-muted-foreground hover:bg-muted hover:text-foreground',
-      )}
+      className="inkling-toolbar-button"
     >
       {children}
     </button>
@@ -164,7 +160,7 @@ export function FloatingFormatToolbar() {
       ref={toolbarRef}
       role="toolbar"
       aria-label="文本格式化"
-      className="inkling-floating-toolbar absolute z-50 flex -translate-x-1/2 items-center gap-0.5 rounded-lg border bg-popover p-1 shadow-lg"
+      className="inkling-toolbar inkling-toolbar--with-caret absolute z-50 -translate-x-1/2"
       style={{ top: position.top, left: position.left }}
     >
       <ToolbarButton
@@ -202,7 +198,7 @@ export function FloatingFormatToolbar() {
       >
         <CodeIcon className="h-4 w-4" />
       </ToolbarButton>
-      <div className="mx-0.5 h-4 w-px bg-border" />
+      <div className="inkling-toolbar-divider" />
       <ToolbarButton active={formatState.link} onClick={() => setShowLinkPopover(true)} title="链接 (Ctrl+K)">
         <Link2Icon className="h-4 w-4" />
       </ToolbarButton>

@@ -1,6 +1,7 @@
 @import './preflight.css';
 @import './editor.css';
 @import './prose.css';
+@import './toolbar.css';
 
 /*
  * Koenig rem anchoring + scoped token aliases.
@@ -40,4 +41,27 @@
   --inkling-font-ui: 'OPPO Sans 4.0', 'OPPO Sans', OPPOSans, 'PingFang SC', system-ui, sans-serif;
   --inkling-font-serif: 'OPPO Serif SC', Georgia, Times, serif;
   --inkling-font-code: var(--font-code);
+
+  /*
+   * Floating toolbar tokens — the dark capsule that sits above the
+   * selection. Koenig paints it near-black with off-white text; mapped to
+   * the project's ink ladder so it follows the dark/light theme. In dark
+   * mode the toolbar inverts to a light capsule (overridden below).
+   */
+  --inkling-toolbar-bg: var(--ink-1);
+  --inkling-toolbar-fg: rgb(255 255 255 / 85%);
+  --inkling-toolbar-fg-muted: rgb(255 255 255 / 60%);
+}
+
+/* Dark mode: invert the toolbar to a light capsule on the dark canvas,
+   matching how Ghost's toolbar stays legible on a dark editor background.
+   The `.dark .inkling-prose` / `.inkling-prose.dark` duplication mirrors
+   the dark-mode pattern used in editor.css. */
+.dark .inkling-editor,
+.inkling-editor.dark,
+.dark .inkling-prose,
+.inkling-prose.dark {
+  --inkling-toolbar-bg: var(--ink-5);
+  --inkling-toolbar-fg: var(--ink-1);
+  --inkling-toolbar-fg-muted: var(--ink-4);
 }

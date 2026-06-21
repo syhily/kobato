@@ -105,10 +105,8 @@ export function LinkPopover({ editor, onClose }: LinkPopoverProps) {
   )
 
   return (
-    <div className="inkling-link-popover absolute z-50 w-72 rounded-lg border bg-popover p-3 shadow-lg">
-      <div className="mb-2 text-xs font-medium text-muted-foreground">
-        {existing !== null ? '编辑链接' : '插入链接'}
-      </div>
+    <div className="inkling-cardmenu inkling-link-popover absolute z-50 flex flex-col gap-2 p-3">
+      <div className="text-xs font-medium text-muted-foreground">{existing !== null ? '编辑链接' : '插入链接'}</div>
       <input
         ref={inputRef}
         type="text"
@@ -122,7 +120,7 @@ export function LinkPopover({ editor, onClose }: LinkPopoverProps) {
         onKeyDown={handleKeyDown}
         placeholder="https://..."
         aria-invalid={urlError !== null}
-        className="mb-2 w-full rounded border bg-background px-2 py-1 text-sm"
+        className="w-full rounded border bg-background px-2 py-1 text-sm"
       />
       {existing === null ? (
         <input
@@ -131,11 +129,11 @@ export function LinkPopover({ editor, onClose }: LinkPopoverProps) {
           onChange={(e) => setText(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder="链接文字（可选）"
-          className="mb-2 w-full rounded border bg-background px-2 py-1 text-sm"
+          className="w-full rounded border bg-background px-2 py-1 text-sm"
         />
       ) : null}
       {urlError !== null ? (
-        <div role="alert" className="mb-2 text-xs text-destructive">
+        <div role="alert" className="text-xs text-destructive">
           {urlError}
         </div>
       ) : null}

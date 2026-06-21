@@ -18,24 +18,10 @@ import { LinkPopover } from '@/ui/inkling/editor/toolbar/LinkPopover'
  * for debounce and `position:absolute` inside the editor container).
  */
 
-// Reusable toolbar button matching the style of `FloatingFormatToolbar`.
-function LinkToolbarButton({ title, onClick, children }: { title: string; onClick: () => void; children: string }) {
-  return (
-    <button
-      type="button"
-      title={title}
-      onClick={onClick}
-      className="rounded p-1 text-xs text-muted-foreground hover:bg-muted hover:text-foreground"
-    >
-      {children}
-    </button>
-  )
-}
-
 // Compact URL display — truncates long URLs and drops the protocol for readability.
 function LinkUrlLabel({ href }: { href: string }) {
   const compact = href.replace(/^https?:\/\//, '').replace(/^www\./, '')
-  return <span className="max-w-[240px] truncate text-xs text-muted-foreground">{compact}</span>
+  return <span className="inkling-toolbar-label">{compact}</span>
 }
 
 export function FloatingLinkToolbar(): ReactNode {
@@ -281,18 +267,19 @@ export function FloatingLinkToolbar(): ReactNode {
         role="toolbar"
         aria-label="链接操作"
         tabIndex={-1}
-        className="inkling-floating-link-toolbar absolute z-50 flex -translate-x-1/2 items-center gap-1 rounded-md border bg-popover/95 px-2 py-0.5 shadow-md backdrop-blur-sm"
+        className="inkling-floating-link-toolbar inkling-toolbar absolute z-50 -translate-x-1/2"
         style={{ top: position.top, left: position.left }}
         onMouseEnter={handleToolbarMouseEnter}
         onMouseLeave={handleToolbarMouseLeave}
       >
         <LinkUrlLabel href={href} />
-        <LinkToolbarButton title="编辑链接" onClick={handleEdit}>
+        <div className="inkling-toolbar-divider" />
+        <button type="button" title="编辑链接" onClick={handleEdit} className="inkling-toolbar-chip">
           编辑
-        </LinkToolbarButton>
-        <LinkToolbarButton title="移除链接" onClick={handleRemove}>
+        </button>
+        <button type="button" title="移除链接" onClick={handleRemove} className="inkling-toolbar-chip">
           移除
-        </LinkToolbarButton>
+        </button>
       </div>
       {showLinkPopover ? <LinkPopover editor={editor} onClose={() => setShowLinkPopover(false)} /> : null}
     </>
