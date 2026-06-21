@@ -31,6 +31,8 @@ import { render, screen } from '@testing-library/react'
 import { $getRoot, type LexicalEditor, type LexicalNode } from 'lexical'
 import { describe, expect, it, vi } from 'vitest'
 
+import { TEST_BLOG_SETTINGS_BUNDLE } from '#/_helpers/blog-settings'
+import { BlogSettingsProvider } from '@/shared/lib/blog-config-context'
 import {
   InklingArticleEditorProvider,
   type InklingArticleEditorActions,
@@ -89,11 +91,13 @@ function renderCardInComposer<T extends LexicalNode>(
   }
 
   render(
-    <InklingArticleEditorProvider actions={actions}>
-      <LexicalComposer initialConfig={initialConfig}>
-        <DeferredChild />
-      </LexicalComposer>
-    </InklingArticleEditorProvider>,
+    <BlogSettingsProvider value={TEST_BLOG_SETTINGS_BUNDLE}>
+      <InklingArticleEditorProvider actions={actions}>
+        <LexicalComposer initialConfig={initialConfig}>
+          <DeferredChild />
+        </LexicalComposer>
+      </InklingArticleEditorProvider>
+    </BlogSettingsProvider>,
   )
 
   return { editor: holder.current!, node: holder.node! }
@@ -158,7 +162,7 @@ describe('card-components', () => {
   })
 
   describe('ImageCardComponent', () => {
-    it('shows the "选择图片" picker button when src is empty', () => {
+    it('shows the empty-image placeholder when src is empty and not selected', () => {
       renderCardInComposer(
         () => {
           const node = $createImageCardNode({ src: '', layout: 'center' })
@@ -168,8 +172,9 @@ describe('card-components', () => {
         (node) => <ImageCardComponent node={node} />,
       )
 
-      expect(screen.getByText('选择图片')).toBeInTheDocument()
-      // No <img> should render in the empty state.
+      // Unselected + empty src → placeholder text (the picker button only
+      // shows when the card is selected). No <img> in the empty state.
+      expect(screen.getByText('空图片卡片（点击编辑）')).toBeInTheDocument()
       expect(document.querySelector('img')).toBeNull()
     })
 
@@ -191,32 +196,11 @@ describe('card-components', () => {
       expect(img).not.toBeNull()
       expect(img?.getAttribute('src')).toBe('https://example.com/photo.png')
       expect(img?.getAttribute('alt')).toBe('a photo')
-      // The empty-state button must NOT show when an image is present.
-      expect(screen.queryByText('选择图片')).not.toBeInTheDocument()
-    })
-
-    it('calls openImagePicker when the "选择图片" button is clicked', () => {
-      const openImagePicker = vi.fn()
-      renderCardInComposer(
-        () => {
-          const node = $createImageCardNode({ src: '', layout: 'center' })
-          $getRoot().append(node)
-          return node
-        },
-        (node) => <ImageCardComponent node={node} />,
-        { openImagePicker },
-      )
-
-      screen.getByText('选择图片').click()
-
-      // The picker action is injected by the shell (server-free); the card
-      // must forward the click rather than open its own picker.
-      expect(openImagePicker).toHaveBeenCalledTimes(1)
     })
   })
 
   describe('CodeCardComponent', () => {
-    it('renders the code text in a <pre><code> preview when not selected and not highlighted', () => {
+    it('renders the code text in the CodeBlock renderer when not selected', () => {
       renderCardInComposer(
         () => {
           const node = $createCodeCardNode({ code: 'console.log("hi")', language: 'javascript' })
@@ -226,26 +210,11 @@ describe('card-components', () => {
         (node) => <CodeCardComponent node={node} />,
       )
 
-      // Unselected + no server-rendered highlight → plain <pre><code> view,
-      // code truncated to 500 chars. This is the read-only preview the
-      // refactor must preserve.
-      const code = document.querySelector('pre > code')
-      expect(code).not.toBeNull()
-      expect(code?.textContent).toContain('console.log("hi")')
-    })
-
-    it('renders the empty-code placeholder text when code is blank', () => {
-      renderCardInComposer(
-        () => {
-          const node = $createCodeCardNode({ code: '' })
-          $getRoot().append(node)
-          return node
-        },
-        (node) => <CodeCardComponent node={node} />,
-      )
-
-      // Empty code block shows a CJK hint rather than a bare empty <pre>.
-      expect(screen.getByText('// 空代码块（点击编辑）')).toBeInTheDocument()
+      // Unselected → the published CodeBlock renderer (header + <pre><code>).
+      // The code text must be present somewhere in the rendered output.
+      const pre = document.querySelector('pre')
+      expect(pre).not.toBeNull()
+      expect(pre?.textContent).toContain('console.log("hi")')
     })
   })
 

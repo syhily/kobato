@@ -15,12 +15,6 @@ function MathPreview({ tex }: { tex: string }) {
 
   useEffect(() => {
     if (tex.trim().length === 0) {
-      // Skip the fetch for empty tex. The render guard below
-      // (`tex.trim().length === 0 || html === null`) handles display
-      // correctly — it shows the $$tex$$ fallback. We don't reset
-      // `html`/`loading` here because the render guard already masks
-      // any stale state, and calling setState synchronously in the
-      // effect would trigger the react-compiler lint rule.
       return
     }
     let cancelled = false
@@ -56,9 +50,11 @@ function MathPreview({ tex }: { tex: string }) {
   if (tex.trim().length === 0 || html === null) {
     return <div className="py-4 text-center font-mono text-sm">$${tex || '\\text{输入 TeX 公式}'}$$</div>
   }
+  // Use the same `math math-display` class as the published renderer so
+  // prose-blog's .math-display rules (overflow, centering) apply.
   return (
     <div
-      className="overflow-x-auto py-4 text-center"
+      className="math math-display text-center [&_svg]:mx-auto [&_svg]:block [&_svg]:max-w-none"
       dangerouslySetInnerHTML={{ __html: sanitizeHtml(html, 'math') }}
     />
   )
@@ -79,14 +75,14 @@ export function MathCardComponent({ node }: { node: MathCardNode }): ReactNode {
   )
 
   return (
-    <CardShell nodeKey={node.getKey()} className="space-y-2 p-3">
+    <CardShell nodeKey={node.getKey()} className="p-3">
       {isSelected ? (
         <textarea
           value={node.getTex()}
           onChange={(e) => update({ tex: e.target.value })}
           rows={4}
           placeholder="e^{i\\pi} + 1 = 0"
-          className="inkling-card-textarea"
+          className="inkling-card-textarea mb-2"
         />
       ) : null}
       <MathPreview tex={node.getTex()} />

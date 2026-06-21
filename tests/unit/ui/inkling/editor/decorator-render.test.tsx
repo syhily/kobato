@@ -18,6 +18,8 @@ import { describe, expect, it, vi } from 'vitest'
 
 import type { InklingDocument } from '@/shared/inkling/schema'
 
+import { TEST_BLOG_SETTINGS_BUNDLE } from '#/_helpers/blog-settings'
+import { BlogSettingsProvider } from '@/shared/lib/blog-config-context'
 import { InklingArticleEditor } from '@/ui/inkling/editor/article/InklingArticleEditor'
 
 function makeDocument(children: InklingDocument['root']['children']): InklingDocument {
@@ -48,7 +50,13 @@ describe('InklingArticleEditor — decorator cards render into DOM', () => {
     ])
 
     const { container } = render(
-      <InklingArticleEditor initialDocument={document} documentKey="decorator-regression" onDocumentChange={vi.fn()} />,
+      <BlogSettingsProvider value={TEST_BLOG_SETTINGS_BUNDLE}>
+        <InklingArticleEditor
+          initialDocument={document}
+          documentKey="decorator-regression"
+          onDocumentChange={vi.fn()}
+        />
+      </BlogSettingsProvider>,
     )
 
     // The image-card host is a <figure data-inkling-image-card>. Before the

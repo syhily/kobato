@@ -66,8 +66,8 @@ export function TableCardComponent({ node }: { node: TableCardNode }): ReactNode
 
   return (
     <CardShell nodeKey={node.getKey()} className="p-3">
-      <div className="overflow-x-auto">
-        <table className="w-full border-collapse text-sm">
+      <div className="pt-table-wrapper overflow-x-auto">
+        <table className="pt-table w-full border-collapse text-sm">
           <tbody>
             {rows.map((row, rowIndex) => (
               <tr key={row.key ?? rowIndex}>
