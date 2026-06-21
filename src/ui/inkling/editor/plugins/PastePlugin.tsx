@@ -69,7 +69,12 @@ function sanitisePastedHtml(html: string): string {
       span: ['class'],
     },
     allowedSchemes: ['http', 'https', 'mailto'],
-    allowedSchemesByTag: { img: ['http', 'https', 'data'] },
+    // `data:` is intentionally NOT allowed for `img`: `sanitizeUrl` (used by
+    // every renderer) rewrites non-http(s) schemes to `#`, so a pasted
+    // `data:` image would silently render as a broken image forever. Dropping
+    // it here keeps the editor honest — users see the image disappear on
+    // paste rather than after saving and publishing.
+    allowedSchemesByTag: { img: ['http', 'https'] },
     disallowedTagsMode: 'discard',
     allowProtocolRelative: false,
     // Drop inline styles entirely — Inkling has no inline-style support and

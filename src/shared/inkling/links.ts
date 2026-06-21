@@ -1,4 +1,4 @@
-import type { InklingDocument, InklingLinkNode } from '@/shared/inkling/schema'
+import type { InklingDocument, InklingImageCardNode, InklingLinkNode } from '@/shared/inkling/schema'
 
 import { walkInkling } from '@/shared/inkling/walk'
 
@@ -26,6 +26,31 @@ export function collectLinkUrls(document: InklingDocument): string[] {
     undefined,
   )
   return urls
+}
+
+/**
+ * Collect every `image-card` `src` in the document, in render order. Covers
+ * images nested inside recursive containers (solution, two-column,
+ * footnote-definition) the same way {@link collectLinkUrls} does.
+ *
+ * Used by canonicalization to enforce image-URL safety at the API perimeter:
+ * a `data:` image accepted on input is silently destroyed at SSR render time
+ * (`sanitizeUrl` rewrites it to `#`), so persisting one leaves a permanently
+ * broken image in the article. Rejecting `data:` (and other non-http(s)
+ * schemes) here keeps the input and output boundaries consistent.
+ */
+export function collectImageSrcs(document: InklingDocument): string[] {
+  const srcs: string[] = []
+  walkInkling(
+    document,
+    {
+      image: (node: InklingImageCardNode) => {
+        srcs.push(node.src)
+      },
+    },
+    undefined,
+  )
+  return srcs
 }
 
 /**

@@ -1,7 +1,7 @@
 import type { InklingDocument } from '@/shared/inkling/schema'
 
 import { parseInklingDocument } from '@/server/domains/inkling/schema'
-import { collectLinkUrls } from '@/shared/inkling/links'
+import { collectImageSrcs, collectLinkUrls } from '@/shared/inkling/links'
 import { normalizeInklingDocument } from '@/shared/inkling/normalize'
 import { isSafeUrl } from '@/shared/sanitize-url'
 
@@ -37,6 +37,7 @@ export function canonicalizeInklingDocument(value: unknown, options: Canonicaliz
   const document = parseInklingDocument(value)
   if (options.validateLinkUrls !== false) {
     assertSafeLinkUrls(document)
+    assertSafeImageSrcs(document)
   }
   return normalizeInklingDocument(document, {
     stripPrerenderArtifacts: options.stripPrerenderArtifacts !== false,
@@ -59,6 +60,21 @@ function assertSafeLinkUrls(document: InklingDocument): void {
 }
 
 /**
+ * Reject the document if any image `src` fails `isSafeUrl`. The render layer
+ * runs every `src` through `sanitizeUrl`, whose scheme allow-list excludes
+ * `data:` — so a persisted `data:` image renders as `<img src="#">` forever
+ * (a permanently broken image that no later edit fixes). Enforcing http(s)
+ * at the perimeter guarantees what you see in the editor is what renders.
+ */
+function assertSafeImageSrcs(document: InklingDocument): void {
+  for (const src of collectImageSrcs(document)) {
+    if (!isSafeUrl(src)) {
+      throw new UnsafeImageSrcError(src)
+    }
+  }
+}
+
+/**
  * Dedicated error class so callers can distinguish URL-safety failures from
  * generic schema errors when translating to a client-facing message.
  */
@@ -68,5 +84,15 @@ export class UnsafeLinkUrlError extends Error {
     super(`Document contains a disallowed link URL: ${url.length > 80 ? `${url.slice(0, 80)}…` : url}`)
     this.name = 'UnsafeLinkUrlError'
     this.url = url
+  }
+}
+
+/** Image variant of {@link UnsafeLinkUrlError} for disallowed `src` schemes. */
+export class UnsafeImageSrcError extends Error {
+  readonly src: string
+  constructor(src: string) {
+    super(`Document contains a disallowed image src: ${src.length > 80 ? `${src.slice(0, 80)}…` : src}`)
+    this.name = 'UnsafeImageSrcError'
+    this.src = src
   }
 }
