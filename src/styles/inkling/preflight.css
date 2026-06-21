@@ -1,16 +1,26 @@
-/* Ported from Koenig preflight.css — Tailwind-style reset scoped to the
-   editable content region ONLY.
-   theme() calls rewritten for Tailwind v4 (Koenig targets v3).
-   Ghost-admin-specific resets dropped.
-
-   IMPORTANT — scope:
-   This was originally scoped to `.inkling-editor`, which wraps the whole
-   editor shell (scroll container, floating toolbars, plus/slash menus).
-   The `*`, `button`, `ol/ul`, `[type=button]` resets then leaked into the
-   UI chrome and nuked e.g. the plus button's Tailwind `bg-brand` fill,
-   menu padding, and list styles. Moved to `.inkling-prose` — the wrapper
-   around the ContentEditable — so the reset only touches editable
-   content, matching what Tailwind's base layer is intended for.            */
+/*
+ * Editor content reset — scoped to `.inkling-prose`.
+ *
+ * Previously this was a full Tailwind preflight port (from Koenig). Now
+ * that the editor content wrapper carries `prose-blog prose prose-lg`
+ * (the @tailwindcss/typography plugin), the prose system provides its own
+ * preflight + typography. The old preflight's rules (margin:0 on p/h1-h6,
+ * heading font-size reset, a { color: inherit }, list-style: none, etc.)
+ * were MORE specific than prose's `:where()` selectors and nuked the
+ * paragraph spacing, collapsing every block into one line.
+ *
+ * What remains here is ONLY what the editor needs that prose does NOT
+ * provide:
+ *   - box-sizing: border-box (so card controls have predictable sizing)
+ *   - border-width/style/color defaults (so `border` utilities work)
+ *   - form-element resets (button/input/select/textarea appearance +
+ *     inherit) so card edit controls render consistently
+ *   - button background-image: none (prose doesn't reset this)
+ *
+ * All typography (margins, font-size, headings, lists, links, code) is
+ * handled by `prose-blog prose`. Do NOT add margin/font/list resets here
+ * — they will override prose's `:where()` rules and break the layout.
+ */
 
 .inkling-prose {
   /*
@@ -21,119 +31,13 @@
   ::before,
   ::after {
     box-sizing: border-box; /* 1 */
-    max-width: revert;
-    max-height: revert;
-    min-width: revert;
-    min-height: revert;
     border-width: 0; /* 2 */
     border-style: solid; /* 2 */
-    border-color: var(--border); /* 2 — was theme('borderColor.DEFAULT', currentColor) */
+    border-color: var(--border); /* 2 */
   }
 
-  ::before,
-  ::after {
-    --tw-content: '';
-  }
-
-  /*
-  1. Use a consistent sensible line-height in all browsers.
-  2. Prevent adjustments of font size after orientation changes in iOS.
-  3. Use a more readable tab size.
-
-  NOTE: the original Koenig/Tailwind source used `:where(&) { … }` nested
-  inside the scope block. With native CSS nesting that compiles to
-  `.inkling-prose :where(.inkling-prose)` — a descendant selector that can
-  never match (the scope is not nested inside itself). Applied directly
-  here instead, on `.inkling-prose` itself.
-  */
-  line-height: 1.5;
-  -webkit-text-size-adjust: 100%;
-  -moz-tab-size: 4;
-  tab-size: 4;
-  font-family: var(--inkling-font-ui);
-
-  /*
-  1. Add the correct height in Firefox.
-  2. Correct the inheritance of border color in Firefox.
-  3. Ensure horizontal rules are visible by default.
-  */
-  hr {
-    height: 0;
-    color: inherit;
-    border-top-width: 1px;
-  }
-
-  abbr:where([title]) {
-    text-decoration: underline dotted;
-  }
-
-  /* Remove the default font size and weight for headings. */
-  h1,
-  h2,
-  h3,
-  h4,
-  h5,
-  h6 {
-    font-size: inherit;
-    font-weight: inherit;
-  }
-
-  /* Reset links to optimize for opt-in styling instead of opt-out. */
-  a {
-    color: inherit;
-    text-decoration: inherit;
-  }
-
-  b,
-  strong {
-    font-weight: bolder;
-  }
-
-  /*
-  1. Use the project's configured mono font family.
-  2. Correct the odd `em` font sizing in all browsers.
-  */
-  code,
-  kbd,
-  samp,
-  pre {
-    font-family: var(--inkling-font-code); /* 1 — was theme('fontFamily.mono', ...) */
-    font-size: 1em; /* 2 */
-  }
-
-  small {
-    font-size: 80%;
-  }
-
-  /* Prevent `sub` and `sup` from affecting line height. */
-  sub,
-  sup {
-    font-size: 75%;
-    line-height: 0;
-    position: relative;
-    vertical-align: baseline;
-  }
-
-  sub {
-    bottom: -0.25em;
-  }
-
-  sup {
-    top: -0.5em;
-  }
-
-  /*
-  1. Remove text indentation from table contents in Chrome/Safari.
-  2. Correct table border color inheritance in Chrome/Safari.
-  3. Remove gaps between table borders by default.
-  */
-  table {
-    text-indent: 0; /* 1 */
-    border-color: inherit; /* 2 */
-    border-collapse: collapse; /* 3 */
-  }
-
-  /* Form element font inheritance. */
+  /* Form element font inheritance — card edit controls (inputs, selects,
+     textareas) need to inherit the editor's font, not the browser default. */
   button,
   input,
   optgroup,
@@ -170,58 +74,6 @@
     box-shadow: none;
   }
 
-  progress {
-    vertical-align: baseline;
-  }
-
-  ::-webkit-inner-spin-button,
-  ::-webkit-outer-spin-button {
-    height: auto;
-  }
-
-  [type='search'] {
-    -webkit-appearance: textfield;
-    outline-offset: -2px;
-  }
-
-  ::-webkit-search-decoration {
-    -webkit-appearance: none;
-  }
-
-  ::-webkit-file-upload-button {
-    -webkit-appearance: button;
-    font: inherit;
-  }
-
-  summary {
-    display: list-item;
-  }
-
-  /* Remove default spacing for block elements. */
-  blockquote,
-  dl,
-  dd,
-  h1,
-  h2,
-  h3,
-  h4,
-  h5,
-  h6,
-  hr,
-  figure,
-  p,
-  pre {
-    margin: 0;
-  }
-
-  ol,
-  ul,
-  menu {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-  }
-
   textarea {
     resize: vertical;
   }
@@ -229,30 +81,11 @@
   input::placeholder,
   textarea::placeholder {
     opacity: 1;
-    color: var(--inkling-muted); /* was theme('colors.grey.500') */
+    color: var(--inkling-muted);
   }
 
   button:focus-visible,
   input:focus-visible {
     outline: none;
-  }
-
-  /* Replaced elements — display:block + vertical-align:middle by default. */
-  img,
-  svg,
-  video,
-  canvas,
-  audio,
-  iframe,
-  embed,
-  object {
-    display: block;
-    vertical-align: middle;
-  }
-
-  img,
-  video {
-    max-width: 100%;
-    height: auto;
   }
 }
