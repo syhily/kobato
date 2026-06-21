@@ -143,7 +143,7 @@ export function InklingArticleEditor({
                   ref={scrollContainerRef}
                   className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto px-3 pt-6 pb-editor-pad-bottom md:px-6"
                 >
-                  <div className="inkling-prose post-content">
+                  <div className="inkling-prose post-content mx-auto w-full max-w-2xl">
                     {/* `<RichTextPlugin>` is what actually mounts the decorator
                       renderer (`<LegacyDecorators>`), which portals each card
                       node's `decorate()` output into its host element. Without
@@ -157,7 +157,7 @@ export function InklingArticleEditor({
                     <RichTextPlugin
                       contentEditable={
                         <ContentEditable
-                          className="inkling-article-editor__content min-h-[12rem] focus:outline-none"
+                          className="inkling-article-editor__content min-h-[24rem] focus:outline-none"
                           aria-placeholder="在此处开始编写内容…（/ 命令菜单，^ 空格插入脚注）"
                           placeholder={
                             <div className="inkling-placeholder pointer-events-none absolute top-0 left-0 text-muted-foreground select-none">
