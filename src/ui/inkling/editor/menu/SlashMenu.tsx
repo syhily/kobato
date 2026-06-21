@@ -146,19 +146,36 @@ export function useInklingSlashMenu(editor: LexicalEditor | null, mode: InklingF
         if (rootEl !== null) {
           const rect = getSelectionRect(rootEl)
           if (rect !== null) {
-            setPosition({ top: rect.bottom + 4, left: rect.left })
+            const nextTop = rect.bottom + 4
+            const nextLeft = rect.left
+            // Only update position when it actually moves. The update
+            // listener fires on every editor commit (including arrow-key
+            // menu navigation that doesn't move the caret), and a new
+            // position object — even with identical values — re-renders
+            // the menu and can reset its scroll offset.
+            setPosition((prev) => {
+              if (prev !== null && prev.top === nextTop && prev.left === nextLeft) {
+                return prev
+              }
+              return { top: nextTop, left: nextLeft }
+            })
           }
         }
         if (!open) {
           setOpen(true)
         }
-        // Reset the highlighted item whenever the query changes so the
-        // selection never points past the end of the filtered list
-        // (e.g. user was on item 3 and typed a filter that yields 2
-        // items — without this `selectedItem` would be null and Enter
-        // would silently no-op until an arrow key is pressed).
-        setSelectedIndex(0)
-        setQuery(queryText)
+        // Reset the highlighted item ONLY when the query actually changes.
+        // The update listener fires on every editor commit — including
+        // arrow-key navigation that doesn't touch the text — so resetting
+        // unconditionally would snap the selection back to the top every
+        // time the user arrows down the menu. Comparing against the current
+        // query state keeps the reset tied to real text edits.
+        setQuery((prevQuery) => {
+          if (prevQuery !== queryText) {
+            setSelectedIndex(0)
+          }
+          return queryText
+        })
       })
     })
   }, [editor, open, close])
@@ -267,6 +284,21 @@ export function useInklingSlashMenu(editor: LexicalEditor | null, mode: InklingF
     document.addEventListener('mousedown', handler)
     return () => document.removeEventListener('mousedown', handler)
   }, [open, close])
+
+  // Keep the highlighted option scrolled into view as the user navigates
+  // with arrow keys. Lives in the hook body (not inside the useCallback
+  // component) so it doesn't violate the rules of hooks. Runs after every
+  // render where selectedIndex changed; uses `block: 'nearest'` so it only
+  // scrolls when the option is actually out of view.
+  useEffect(() => {
+    if (!open || menuRef.current === null) {
+      return
+    }
+    const selected = menuRef.current.querySelector('[aria-selected="true"]')
+    if (selected instanceof HTMLElement) {
+      selected.scrollIntoView({ block: 'nearest' })
+    }
+  })
 
   const SlashMenuComponent = useCallback(() => {
     if (!open || position === null) {
