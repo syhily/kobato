@@ -79,14 +79,14 @@ export function MathCardComponent({ node }: { node: MathCardNode }): ReactNode {
   )
 
   return (
-    <CardShell nodeKey={node.getKey()} className="p-3">
+    <CardShell nodeKey={node.getKey()} className="space-y-2 p-3">
       {isSelected ? (
         <textarea
           value={node.getTex()}
           onChange={(e) => update({ tex: e.target.value })}
           rows={4}
           placeholder="e^{i\\pi} + 1 = 0"
-          className="w-full rounded border bg-background px-2 py-1 font-mono text-sm"
+          className="inkling-card-textarea"
         />
       ) : null}
       <MathPreview tex={node.getTex()} />

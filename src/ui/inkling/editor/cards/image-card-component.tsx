@@ -57,7 +57,7 @@ export function ImageCardComponent({ node }: { node: ImageCardNode }): ReactNode
         <button
           type="button"
           onClick={handlePick}
-          className="flex w-full flex-col items-center gap-2 rounded-lg border-2 border-dashed border-brand/30 bg-muted/20 py-10 text-sm text-muted-foreground transition hover:border-brand/60 hover:bg-muted/40"
+          className="inkling-card-button--primary flex w-full flex-col items-center gap-2 rounded-lg border-2 border-dashed border-brand/30 bg-muted/20 py-10 text-sm text-muted-foreground transition hover:border-brand/60 hover:bg-muted/40"
         >
           <ImageIcon className="h-8 w-8 opacity-40" />
           <span>选择图片</span>
@@ -74,40 +74,38 @@ export function ImageCardComponent({ node }: { node: ImageCardNode }): ReactNode
         <div className="text-center text-xs text-muted-foreground">点击卡片进入编辑模式</div>
       ) : null}
       {isSelected ? (
-        <div className="space-y-2">
-          <div className="flex gap-2">
-            <input
-              type="text"
-              value={node.getAlt()}
-              onChange={(e) => update({ alt: e.target.value })}
-              placeholder="替代文本 (alt)"
-              className="flex-1 rounded border bg-background px-2 py-1 text-sm"
-            />
-            <select
-              value={node.getLayout()}
-              onChange={(e) => {
-                const layout = parseImageLayout(e.target.value)
-                if (layout !== undefined) {
-                  update({ layout })
-                }
-              }}
-              className="rounded border bg-background px-2 py-1 text-sm"
-            >
-              <option value="center">居中</option>
-              <option value="left">左对齐</option>
-              <option value="right">右对齐</option>
-            </select>
-          </div>
+        <div className="inkling-card-controlbar flex-wrap">
+          <input
+            type="text"
+            value={node.getAlt()}
+            onChange={(e) => update({ alt: e.target.value })}
+            placeholder="替代文本 (alt)"
+            className="inkling-card-input"
+          />
+          <select
+            value={node.getLayout()}
+            onChange={(e) => {
+              const layout = parseImageLayout(e.target.value)
+              if (layout !== undefined) {
+                update({ layout })
+              }
+            }}
+            className="inkling-card-select"
+          >
+            <option value="center">居中</option>
+            <option value="left">左对齐</option>
+            <option value="right">右对齐</option>
+          </select>
+          <button type="button" onClick={handlePick} className="inkling-card-button">
+            更换图片
+          </button>
           <input
             type="text"
             value={node.getCaption()}
             onChange={(e) => update({ caption: e.target.value })}
             placeholder="图片说明 (caption)"
-            className="w-full rounded border bg-background px-2 py-1 text-sm"
+            className="inkling-card-input basis-full"
           />
-          <button type="button" onClick={handlePick} className="text-sm text-brand hover:underline">
-            更换图片
-          </button>
         </div>
       ) : null}
     </CardShell>

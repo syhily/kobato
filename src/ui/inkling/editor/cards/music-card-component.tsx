@@ -124,34 +124,26 @@ export function MusicCardComponent({ node }: { node: MusicCardNode }): ReactNode
       {playerId !== '' ? (
         <StaticMusicPreview meta={meta} playerId={playerId} />
       ) : (
-        <div className="flex items-center gap-2">
-          <span className="flex items-center gap-1.5 font-mono text-xs text-muted-foreground">
+        <div className="inkling-card-controlbar">
+          <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
             <MusicIcon className="h-4 w-4" />
             未选择音乐
           </span>
-          <button
-            type="button"
-            onClick={handlePick}
-            className="rounded border bg-background px-2 py-0.5 text-xs text-brand hover:bg-accent"
-          >
+          <button type="button" onClick={handlePick} className="inkling-card-button inkling-card-button--primary">
             选择音乐
           </button>
         </div>
       )}
       {isSelected ? (
-        <div className="flex flex-wrap items-center gap-3 text-xs">
-          <button
-            type="button"
-            onClick={handlePick}
-            className="rounded border bg-background px-2 py-0.5 text-xs text-brand hover:bg-accent"
-          >
+        <div className="inkling-card-controlbar">
+          <button type="button" onClick={handlePick} className="inkling-card-button">
             {playerId !== '' ? '更换音乐' : '选择音乐'}
           </button>
-          <label className="flex items-center gap-1.5">
+          <label className="inkling-card-toggle">
             <input type="checkbox" checked={node.getAuto()} onChange={(e) => update({ auto: e.target.checked })} />
             自动播放
           </label>
-          <label className="flex items-center gap-1.5">
+          <label className="inkling-card-toggle">
             <input type="checkbox" checked={node.getCenter()} onChange={(e) => update({ center: e.target.checked })} />
             居中显示
           </label>

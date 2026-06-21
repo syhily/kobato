@@ -40,17 +40,17 @@ export function CodeCardComponent({ node }: { node: CodeCardNode }): ReactNode {
   )
 
   return (
-    <CardShell nodeKey={node.getKey()} className="p-3">
+    <CardShell nodeKey={node.getKey()} className="space-y-2 p-3">
       {isSelected ? (
-        <div className="space-y-2">
-          <div className="flex items-center gap-2">
+        <>
+          <div className="inkling-card-controlbar">
             <input
               list="inkling-languages"
               type="text"
               value={node.getLanguage() ?? ''}
               onChange={(e) => update({ language: e.target.value })}
               placeholder="语言 (可选)"
-              className="flex-1 rounded border bg-background px-2 py-1 font-mono text-xs"
+              className="inkling-card-input font-[var(--inkling-font-code)]"
             />
             <datalist id="inkling-languages">
               {COMMON_LANGUAGES.map((lang) => (
@@ -59,11 +59,7 @@ export function CodeCardComponent({ node }: { node: CodeCardNode }): ReactNode {
                 </option>
               ))}
             </datalist>
-            <button
-              type="button"
-              onClick={() => setPreview(!preview)}
-              className="rounded border bg-background px-2 py-1 text-xs text-muted-foreground hover:text-foreground"
-            >
+            <button type="button" onClick={() => setPreview(!preview)} className="inkling-card-button">
               {preview ? '编辑' : '预览'}
             </button>
           </div>
@@ -82,10 +78,10 @@ export function CodeCardComponent({ node }: { node: CodeCardNode }): ReactNode {
               onChange={(e) => update({ code: e.target.value })}
               rows={8}
               spellCheck={false}
-              className="w-full rounded border bg-background px-2 py-1 font-mono text-sm leading-relaxed"
+              className="inkling-card-textarea"
             />
           )}
-        </div>
+        </>
       ) : node.getHighlightedHtml() !== undefined ? (
         <pre
           className="overflow-x-auto rounded bg-muted p-3 font-mono text-xs leading-relaxed"

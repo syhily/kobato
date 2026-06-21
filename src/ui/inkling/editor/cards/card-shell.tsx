@@ -13,15 +13,19 @@ interface CardShellProps {
   className?: string
 }
 
-/** Ghost-style card wrapper — brand shadow on select, subtle ring on hover. */
+/** Ghost-style card wrapper — brand ring on select, faint brand tint on
+ *  hover. The selection state mirrors Koenig's `kg-card-selected`: a 2px
+ *  brand outline. Hover shows a 1px brand hairline so the user can tell a
+ *  card is interactive before clicking. */
 export function CardShell({ nodeKey, children, className }: CardShellProps): ReactNode {
   const [isSelected] = useLexicalNodeSelection(nodeKey)
   return (
     <div
       className={cn(
-        'inkling-card caret-grey-800 relative border-transparent transition-shadow',
-        'hover:shadow-[0_0_0_1px] hover:shadow-brand',
-        isSelected && 'z-20 shadow-[0_0_0_2px] shadow-brand',
+        'inkling-card relative rounded-sm transition-shadow',
+        isSelected
+          ? 'z-20 shadow-[0_0_0_2px_var(--brand)]'
+          : 'hover:shadow-[0_0_0_1px_color-mix(in_oklab,var(--brand)_45%,transparent)]',
         className,
       )}
       data-inkling-card
@@ -30,7 +34,7 @@ export function CardShell({ nodeKey, children, className }: CardShellProps): Rea
     >
       {isSelected ? (
         <div
-          className="inkling-card-drag-handle absolute top-1 -left-6 flex cursor-grab items-center rounded p-1 text-muted-foreground hover:text-foreground active:cursor-grabbing"
+          className="inkling-card-drag-handle absolute top-1 -left-7 flex cursor-grab items-center rounded p-0.5 text-muted-foreground hover:text-foreground active:cursor-grabbing"
           draggable
           title="拖拽排序"
         >

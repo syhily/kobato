@@ -128,12 +128,8 @@ export function TableCardComponent({ node }: { node: TableCardNode }): ReactNode
         </table>
       </div>
       {isSelected ? (
-        <div className="mt-2 flex flex-wrap gap-1.5">
-          <button
-            type="button"
-            onClick={addRow}
-            className="rounded border bg-background px-2 py-0.5 text-xs text-muted-foreground hover:text-foreground"
-          >
+        <div className="inkling-card-controlbar">
+          <button type="button" onClick={addRow} className="inkling-card-button">
             ＋行
           </button>
           <button
@@ -143,15 +139,11 @@ export function TableCardComponent({ node }: { node: TableCardNode }): ReactNode
                 deleteRow(rows.length - 1)
               }
             }}
-            className="rounded border bg-background px-2 py-0.5 text-xs text-muted-foreground hover:text-foreground"
+            className="inkling-card-button"
           >
             −行
           </button>
-          <button
-            type="button"
-            onClick={addCol}
-            className="rounded border bg-background px-2 py-0.5 text-xs text-muted-foreground hover:text-foreground"
-          >
+          <button type="button" onClick={addCol} className="inkling-card-button">
             ＋列
           </button>
           <button
@@ -161,19 +153,15 @@ export function TableCardComponent({ node }: { node: TableCardNode }): ReactNode
                 deleteCol(cellCount - 1)
               }
             }}
-            className="rounded border bg-background px-2 py-0.5 text-xs text-muted-foreground hover:text-foreground"
+            className="inkling-card-button"
           >
             −列
           </button>
           <button
             type="button"
+            aria-pressed={hasHeaderRow}
             onClick={toggleHeaderRow}
-            className={cn(
-              'rounded border px-2 py-0.5 text-xs',
-              hasHeaderRow
-                ? 'border-brand/40 bg-brand/10 text-brand'
-                : 'bg-background text-muted-foreground hover:text-foreground',
-            )}
+            className={cn('inkling-card-button', hasHeaderRow && 'inkling-card-button--primary')}
           >
             {hasHeaderRow ? '取消表头' : '设为表头'}
           </button>
