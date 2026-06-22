@@ -59,6 +59,16 @@ function append(ctx: ReactRenderCtx, node: ReactNode): void {
   ctx.stack[ctx.stack.length - 1]!.push(node)
 }
 
+// Fallback React key for nodes whose `key` field is absent. Lexical always
+// assigns keys to real documents; the fallback only guards against
+// hand-built or partially-migrated data. It is the positional index of the
+// element among its siblings (the current top stack frame length, captured
+// before `append` pushes), prefixed with `_` so it can never collide with a
+// real Lexical key (which is always a bare numeric string).
+function siblingKey(c: ReactRenderCtx): string {
+  return `_${c.stack[c.stack.length - 1]!.length}`
+}
+
 function makeSingleBlockDocument(node: InklingBlockNode): InklingDocument {
   return {
     _type: 'inkling',
@@ -82,20 +92,20 @@ function renderBlockNode(node: InklingBlockNode): ReactNode {
   return ctx.stack[0]![0] ?? null
 }
 
-function renderInlineNode(node: InklingInlineNode): ReactNode {
+function renderInlineNode(node: InklingInlineNode, key: string): ReactNode {
   switch (node.type) {
     case 'text':
-      return <TextMark text={node.text} format={node.format} />
+      return <TextMark key={key} text={node.text} format={node.format} />
     case 'linebreak':
-      return <br />
+      return <br key={key} />
     case 'inline-math':
-      return renderMathMarkupOrTexFallback(node.tex, node.mathml, 'inline')
+      return <Fragment key={key}>{renderMathMarkupOrTexFallback(node.tex, node.mathml, 'inline')}</Fragment>
     case 'footnote-ref':
-      return <FootnoteRefMark index={node.index} />
+      return <FootnoteRefMark key={key} index={node.index} />
     case 'link': {
-      const children = node.children.map(renderInlineNode)
+      const children = renderInlineNodes(node.children)
       return (
-        <LinkMark url={node.url} target={node.target} rel={node.rel} title={node.title}>
+        <LinkMark key={key} url={node.url} target={node.target} rel={node.rel} title={node.title}>
           {children}
         </LinkMark>
       )
@@ -104,7 +114,7 @@ function renderInlineNode(node: InklingInlineNode): ReactNode {
 }
 
 function renderInlineNodes(nodes: readonly InklingInlineNode[]): ReactNode {
-  return nodes.map((node, index) => <Fragment key={node.key ?? `inline-${index}`}>{renderInlineNode(node)}</Fragment>)
+  return nodes.map((node, index) => renderInlineNode(node, node.key ?? `inline-${index}`))
 }
 
 function renderTableCellContent(cell: InklingTableCellNode): ReactNode {
@@ -121,21 +131,21 @@ function renderTable(node: InklingTableNode): ReactNode {
       <table className="pt-table">
         {headRows.length > 0 ? (
           <thead>
-            {headRows.map((row) => (
-              <tr key={row.key ?? row.cells.map((c) => c.key).join('-')}>
-                {row.cells.map((cell) => (
-                  <th key={cell.key}>{renderTableCellContent(cell)}</th>
+            {headRows.map((row, rowIndex) => (
+              <tr key={row.key ?? `tr-${rowIndex}`}>
+                {row.cells.map((cell, cellIndex) => (
+                  <th key={cell.key ?? `th-${cellIndex}`}>{renderTableCellContent(cell)}</th>
                 ))}
               </tr>
             ))}
           </thead>
         ) : null}
         <tbody>
-          {bodyRows.map((row) => (
-            <tr key={row.key ?? row.cells.map((c) => c.key).join('-')}>
-              {row.cells.map((cell) => {
+          {bodyRows.map((row, rowIndex) => (
+            <tr key={row.key ?? `tr-${rowIndex}`}>
+              {row.cells.map((cell, cellIndex) => {
                 const Tag = cell.isHeader === true ? 'th' : 'td'
-                return <Tag key={cell.key}>{renderTableCellContent(cell)}</Tag>
+                return <Tag key={cell.key ?? `td-${cellIndex}`}>{renderTableCellContent(cell)}</Tag>
               })}
             </tr>
           ))}
@@ -151,38 +161,53 @@ function buildReactHandlers(_ctx: ReactRenderCtx): InklingWalkerHandlers<ReactRe
       enter(c)
       walkChildren()
       const children = leave(c)
-      append(c, <ParagraphBlock node={node}>{children}</ParagraphBlock>)
+      append(
+        c,
+        <ParagraphBlock key={node.key ?? siblingKey(c)} node={node}>
+          {children}
+        </ParagraphBlock>,
+      )
     },
     heading: (node, c, walkChildren) => {
       enter(c)
       walkChildren()
       const children = leave(c)
-      append(c, <HeadingBlock node={node}>{children}</HeadingBlock>)
+      append(
+        c,
+        <HeadingBlock key={node.key ?? siblingKey(c)} node={node}>
+          {children}
+        </HeadingBlock>,
+      )
     },
     quote: (node, c, walkChildren) => {
       enter(c)
       walkChildren()
       const children = leave(c)
-      append(c, <BlockquoteBlock node={node}>{children}</BlockquoteBlock>)
+      append(
+        c,
+        <BlockquoteBlock key={node.key ?? siblingKey(c)} node={node}>
+          {children}
+        </BlockquoteBlock>,
+      )
     },
     list: (node, c, walkChildren) => {
       enter(c)
       walkChildren()
       const children = leave(c)
       const Tag = node.listType === 'bullet' ? 'ul' : 'ol'
-      append(c, <Tag>{children}</Tag>)
+      append(c, <Tag key={node.key ?? siblingKey(c)}>{children}</Tag>)
     },
     listitem: (node, c, walkChildren) => {
       enter(c)
       walkChildren()
       const children = leave(c)
-      append(c, <li>{children}</li>)
+      append(c, <li key={node.key ?? siblingKey(c)}>{children}</li>)
     },
     text: (node, c) => {
-      append(c, <TextMark text={node.text} format={node.format} />)
+      append(c, <TextMark key={node.key ?? siblingKey(c)} text={node.text} format={node.format} />)
     },
-    linebreak: (_node, c) => {
-      append(c, <br />)
+    linebreak: (node, c) => {
+      append(c, <br key={node.key ?? siblingKey(c)} />)
     },
     link: (node, c, walkChildren) => {
       enter(c)
@@ -190,47 +215,67 @@ function buildReactHandlers(_ctx: ReactRenderCtx): InklingWalkerHandlers<ReactRe
       const children = leave(c)
       append(
         c,
-        <LinkMark url={node.url} target={node.target} rel={node.rel} title={node.title}>
+        <LinkMark key={node.key ?? siblingKey(c)} url={node.url} target={node.target} rel={node.rel} title={node.title}>
           {children}
         </LinkMark>,
       )
     },
     inlineMath: (node, c) => {
-      append(c, renderMathMarkupOrTexFallback(node.tex, node.mathml, 'inline'))
+      append(
+        c,
+        <Fragment key={node.key ?? siblingKey(c)}>
+          {renderMathMarkupOrTexFallback(node.tex, node.mathml, 'inline')}
+        </Fragment>,
+      )
     },
     footnoteRef: (node, c) => {
-      append(c, <FootnoteRefMark index={node.index} />)
+      append(c, <FootnoteRefMark key={node.key ?? siblingKey(c)} index={node.index} />)
     },
     image: (node, c) => {
-      append(c, <ImageBlock node={node} />)
+      append(c, <ImageBlock key={node.key ?? siblingKey(c)} node={node} />)
     },
     code: (node, c) => {
-      append(c, <CodeBlock node={node} />)
+      append(c, <CodeBlock key={node.key ?? siblingKey(c)} node={node} />)
     },
     mathBlock: (node, c) => {
-      append(c, <MathBlock node={node} />)
+      append(c, <MathBlock key={node.key ?? siblingKey(c)} node={node} />)
     },
     music: (node, c) => {
-      append(c, <MusicBlock node={node} />)
+      append(c, <MusicBlock key={node.key ?? siblingKey(c)} node={node} />)
     },
-    horizontalRule: (_node, c) => {
-      append(c, <HorizontalRuleBlock />)
+    horizontalRule: (node, c) => {
+      append(c, <HorizontalRuleBlock key={node.key ?? siblingKey(c)} />)
     },
     table: (node, c) => {
-      append(c, renderTable(node))
+      append(c, <Fragment key={node.key ?? siblingKey(c)}>{renderTable(node)}</Fragment>)
     },
     solution: (node, c) => {
-      append(c, <Solution>{node.children.map((child) => renderBlockNode(child))}</Solution>)
+      append(
+        c,
+        <Solution key={node.key ?? siblingKey(c)}>
+          {node.children.map((child, index) => (
+            <Fragment key={child.key ?? `_sol-${index}`}>{renderBlockNode(child)}</Fragment>
+          ))}
+        </Solution>,
+      )
     },
     twoColumn: (node, c) => {
       append(
         c,
-        <section className="my-6 grid grid-cols-1 gap-6 md:grid-cols-2 md:gap-8" data-pt-two-column="">
+        <section
+          key={node.key ?? siblingKey(c)}
+          className="my-6 grid grid-cols-1 gap-6 md:grid-cols-2 md:gap-8"
+          data-pt-two-column=""
+        >
           <div className="min-w-0" data-pt-two-column-pane="" data-side="left">
-            {node.left.map((child) => renderBlockNode(child))}
+            {node.left.map((child, index) => (
+              <Fragment key={child.key ?? `_2col-l-${index}`}>{renderBlockNode(child)}</Fragment>
+            ))}
           </div>
           <div className="min-w-0" data-pt-two-column-pane="" data-side="right">
-            {node.right.map((child) => renderBlockNode(child))}
+            {node.right.map((child, index) => (
+              <Fragment key={child.key ?? `_2col-r-${index}`}>{renderBlockNode(child)}</Fragment>
+            ))}
           </div>
         </section>,
       )

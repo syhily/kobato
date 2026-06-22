@@ -2,7 +2,7 @@
 
 > 将 Vercel Geist 设计系统（`.agents/skills/geist/design.md` + `design.dark.md`）的系统化理念接入本博客，不替换品牌身份，而是补齐 token 阶梯、聚焦环、alpha 叠加层、暗色强调色规律与排版 token 体系。
 >
-> 日期：2026-06-22 | 状态：**草案，待 review**。
+> 日期：2026-06-22（2026-06-22 修订：适配 `src/styles/` CSS 拆分重构） | 状态：**草案，待 review**。
 >
 > **使用方式**：每个阶段（P0–P5）独立可合并，风险递增。每阶段列出【目标】、【交付】（精确文件 + 改动点）、【验收】、【风险】与【回滚】。执行者读完阶段即可动手。
 
@@ -10,55 +10,92 @@
 
 ## 目录
 
-1. [设计定位与对齐评估](#1-设计定位与对齐评估)
-2. [关键决策记录](#2-关键决策记录)
-3. [总体策略与阶段依赖](#3-总体策略与阶段依赖)
-4. [P0：暗色品牌色按 Geist dark 规律重调](#p0暗色品牌色按-geist-dark-规律重调)
-5. [P1：聚焦环双层化](#p1聚焦环双层化)
-6. [P2：Geist alpha 叠加层](#p2geist-alpha-叠加层)
-7. [P3：排版 token 体系 + 文章标题权重](#p3排版-token-体系--文章标题权重)
-8. [P4：圆角基线上调 5px → 6px](#p4圆角基线上调-5px--6px)
-9. [P5：阴影三档语义化](#p5阴影三档语义化)
-10. [Token 命名规范](#6-token-命名规范)
-11. [风险与回滚](#7-风险与回滚)
-12. [不在本方案范围内](#8-不在本方案范围内)
+1. [CSS 架构现状（重构后）](#1-css-架构现状重构后)
+2. [设计定位与对齐评估](#2-设计定位与对齐评估)
+3. [关键决策记录](#3-关键决策记录)
+4. [总体策略与阶段依赖](#4-总体策略与阶段依赖)
+5. [P0：暗色品牌色按 Geist dark 规律重调](#p0暗色品牌色按-geist-dark-规律重调)
+6. [P1：聚焦环双层化](#p1聚焦环双层化)
+7. [P2：Geist alpha 叠加层](#p2geist-alpha-叠加层)
+8. [P3：排版 token 体系 + 文章标题权重](#p3排版-token-体系--文章标题权重)
+9. [P4：圆角基线上调 5px → 6px](#p4圆角基线上调-5px--6px)
+10. [P5：阴影三档语义化](#p5阴影三档语义化)
+11. [Token 命名规范](#6-token-命名规范)
+12. [风险与回滚](#7-风险与回滚)
+13. [不在本方案范围内](#8-不在本方案范围内)
 
 ---
 
-## 1. 设计定位与对齐评估
+## 1. CSS 架构现状（重构后）
 
-### 1.1 一句话定位
+> **2026-06-22 修订**：`src/styles/` 已从单文件 `tailwind.css` 拆分为模块化结构。本方案所有文件引用基于拆分后的结构。
+
+```
+src/styles/
+├── tailwind.css        # 入口：@import 'tailwindcss' + @custom-variant + 4 条 @import
+├── tokens.css          # 所有自定义属性（:root light + .dark override）
+├── theme.css           # @theme inline —— Tailwind v4 工具类桥接（契约测试读取此文件）
+├── base.css            # Shiki、comment-flash、preflight、body 字体链、光标、view-transition
+├── content.css         # .post-content / .comment-content 文章+评论排版（手写 prose 系统）
+├── public.css          # 公开站点样式（@import inkling/core.css）
+├── admin.css           # 管理后台样式（@import inkling/core.css + inkling/editor.css）
+└── inkling/
+    ├── core.css        # 编辑器内容 reset + .inkling-text-* 内联格式（公开评论 + 后台共用）
+    └── editor.css      # 后台文章编辑器 chrome（浮动工具栏、卡片菜单）
+```
+
+**关键架构事实（影响本方案）：**
+
+| 事实                                                                                                                          | 影响                                                                                                                                      |
+| ----------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| **无 `@media (prefers-color-scheme: dark)` 回退块** —— 暗色完全由 `.dark` class 驱动（ThemeProvider + SSR cookie 是唯一权威） | 本方案中所有"改 dark 值"只需改 `tokens.css` 的 `.dark` 块，**不再需要同步镜像媒体查询块**。旧版方案中反复出现的"同步回退块"指令已全部移除 |
+| 契约测试 `tests/unit/contract/tailwind-tokens.test.ts` 的 `CSS_PATH` 指向 **`src/styles/theme.css`**（即 `@theme inline` 块） | 新增 Tailwind 工具类 token 必须在 `theme.css` 的 `@theme inline` 内声明，否则契约测试失败                                                 |
+| 自定义属性（`--brand`、`--ink-*`、`--radius` 等）定义在 **`tokens.css`**                                                      | 所有颜色/圆角/阴影的 light/dark 值都在 `tokens.css` 改                                                                                    |
+| `.post-content` 文章排版在 **`content.css`**                                                                                  | 标题字重、字体等正文改造在 `content.css`                                                                                                  |
+| `--inkling-font-serif`、`--font-body`、`--font-code` **不在 CSS 中定义**，由 `root.tsx` 根据设置运行时注入到 `<html style>`   | 字体相关不在本方案范围（见决策 3）                                                                                                        |
+
+---
+
+## 2. 设计定位与对齐评估
+
+### 2.1 一句话定位
 
 Geist 的精髓不是它的蓝色，而是它**步骤编码语义**的灰阶体系（100 默认底 → 200 hover → 300 active；400/500/600 边框；700/800 实色；900/1000 文本）、**双层聚焦环**、**alpha 叠加层**、以及**排版 token 化**。本博客当前视觉语言已与 Geist 高度同构（窄圆角、极淡阴影、ink 灰阶、克制动效），本方案是**系统化收口**而非推倒重来。
 
-### 1.2 对齐度评估
+### 2.2 对齐度评估
 
-| Geist 原则               | 本博客现状                                                | 对齐度  | 行动                                                 |
-| ------------------------ | --------------------------------------------------------- | ------- | ---------------------------------------------------- |
-| 高对比、靠灰阶排名信息   | `--ink-1..5` 五步文本灰阶                                 | ⚠️ 中   | 文本灰阶保留，补齐 alpha 叠加层（P2）                |
-| 动效近乎瞬时（0ms 常态） | view transition 350ms（路由级，功能性）；comment-flash 3s | ✅ 高   | 功能性动效保留，仅缩短 comment-flash（可选，非阻塞） |
-| 圆角紧致、单家族         | `--radius: 5px`，sm/md/lg flatten 成 5px                  | ✅ 高   | 基线上调至 6px（P4）                                 |
-| 阴影极淡、靠色阶         | `--shadow-card-value` 仅 2% 不透明度                      | ✅ 高   | 现状已达标，补三档语义（P5）                         |
-| 语义状态配对图标         | status token 齐全但无图标强制                             | ⚠️ 中   | 规范层，非本方案代码范围（见 §8）                    |
-| **聚焦双层 ring**        | `--ring-width: 3px` 单层，36 处 `ring-ring`               | ❌ 缺   | **重点改造**（P1）                                   |
-| **字体 token 化**        | 零 typography token，全靠手填 size/leading                | ❌ 缺   | 新增 heading token（P3）                             |
-| 完整 10 步语义灰阶       | 5 步 ink + 实色 line                                      | ⚠️ 部分 | 补 alpha 层（P2）                                    |
+| Geist 原则               | 本博客现状                                                                                    | 对齐度  | 行动                                                 |
+| ------------------------ | --------------------------------------------------------------------------------------------- | ------- | ---------------------------------------------------- |
+| 高对比、靠灰阶排名信息   | `--ink-1..5` 五步文本灰阶（`tokens.css:30-35`）                                               | ⚠️ 中   | 文本灰阶保留，补齐 alpha 叠加层（P2）                |
+| 动效近乎瞬时（0ms 常态） | view transition 350ms（`base.css:143`，路由级功能性）；comment-flash 3s（`theme.css:222`）    | ✅ 高   | 功能性动效保留，仅缩短 comment-flash（可选，非阻塞） |
+| 圆角紧致、单家族         | `--radius: 0.3125rem`（`tokens.css:63`），`theme.css:44-46` 把 sm/md/lg flatten 到 `--radius` | ✅ 高   | 基线上调至 6px（P4）                                 |
+| 阴影极淡、靠色阶         | `--shadow-card-value` 仅 2% 不透明度（`tokens.css:104`）                                      | ✅ 高   | 现状已达标，补三档语义（P5）                         |
+| 语义状态配对图标         | status token 齐全但无图标强制                                                                 | ⚠️ 中   | 规范层，非本方案代码范围（见 §8）                    |
+| **聚焦双层 ring**        | `--ring-width: 3px` 单层（`theme.css:67`），36 处 `ring-ring`                                 | ❌ 缺   | **重点改造**（P1）                                   |
+| **字体 token 化**        | 零 typography token，全靠手填 size/leading                                                    | ❌ 缺   | 新增 heading token（P3）                             |
+| 完整 10 步语义灰阶       | 5 步 ink + 实色 line                                                                          | ⚠️ 部分 | 补 alpha 层（P2）                                    |
 
 ---
 
-## 2. 关键决策记录
+## 3. 关键决策记录
 
 ### 决策 1：保留青色品牌身份
 
-Geist 默认强调色是 `#006bff`（蓝），但青色 `#008c95` 是本博客的人格符号（logo、按钮、链接、h2/h3 装饰条）。**不替换品牌色**。Geist 的蓝色语义角色（focus ring / 链接 / 成功信息）由青色承担，结构借鉴 Geist，色相保留身份。
+Geist 默认强调色是 `#006bff`（蓝），但青色 `#008c95`（`tokens.css:21`）是本博客的人格符号（logo、按钮、链接、h2/h3 装饰条）。**不替换品牌色**。Geist 的蓝色语义角色（focus ring / 链接 / 成功信息）由青色承担，结构借鉴 Geist，色相保留身份。
 
 ### 决策 2：暗色品牌色按 Geist dark 规律重调（P0）
 
-Geist dark 把强调色整体抬到更高明度（如 blue light `#006bff` → dark `#006efe`，轻微提亮并保持色相稳定）。本博客 dark 下品牌色现为 `#1ab2bd`，按同一规律重新校准。详见 P0。
+Geist dark 把强调色整体抬到更高明度（如 blue light `#006bff` → dark `#006efe`，轻微提亮并保持色相稳定）。本博客 dark 下品牌色现为 `#1ab2bd`（`tokens.css:206`），按同一规律重新校准。详见 P0。
 
 ### 决策 3：字体不在本方案范围
 
-字体自托管与动态注入机制（`globalFamily` / `postFamily` / `globalCss` / `postCss`，见 `src/root.tsx:156-166`、`src/server/domains/settings/schemas/fonts.ts`）已实现且可配置。Geist Sans/Mono 的接入属于设置层操作，不属于设计 token 改造，**排除在本方案外**。
+字体自托管与动态注入机制已完整实现：
+
+- `globalFamily` / `postFamily` / `codeFamily` 三个设置槽（`src/server/domains/settings/schemas/fonts.ts:44-47`）
+- `root.tsx:166-180` 运行时注入到 `<html style>` 的 `--font-body` / `--inkling-font-serif` / `--font-code`
+- `globalCss` / `postCss` 字体样式表 `<link>` 注入（`root.tsx:188-193`）
+
+Geist Sans/Mono 的接入属于设置层操作（在后台 `/admin/settings/fonts` 配置 family + CSS），不属于设计 token 改造，**排除在本方案外**。
 
 ### 决策 4：圆角从 5px → 6px，不采用 Geist 的 12/16
 
@@ -68,13 +105,13 @@ Geist 圆角阶梯是 6/12/16，但本博客的极简调性偏紧致。基线上
 
 不把 `--ink-1..5` 强行映射成 Geist 的 `gray-900/1000`。原因：
 
-- 36+ 文件消费这些 token，大规模重命名收益低、风险高。
+- 多文件消费这些 token，大规模重命名收益低、风险高。
 - Geist 的 10 步灰阶语义（背景/边框/填充/文本混用同一 scale）与本项目"文本用 ink、线条用 line"的分离设计哲学不同。
 - **只在文本灰阶之外补一套 alpha 叠加层**（P2），补齐 Geist 的跨表面通用边框/hover 能力，这是现状最缺的。
 
 ---
 
-## 3. 总体策略与阶段依赖
+## 4. 总体策略与阶段依赖
 
 ```text
 P0 暗色品牌色重调 ─────────────────────┐
@@ -111,10 +148,11 @@ dark 模式下品牌青 `#1ab2bd` 按 Geist dark 规律（强调色提亮、保�
 
 ### 现状
 
-`src/styles/tailwind.css:212`：
+`src/styles/tokens.css:205-208`：
 
 ```css
 .dark {
+  /* Brand */
   --brand: #1ab2bd;
   --brand-dark: #334155;
   --brand-darker: #475569;
@@ -125,14 +163,15 @@ dark 模式下品牌青 `#1ab2bd` 按 Geist dark 规律（强调色提亮、保�
 
 ### 交付
 
-**文件**：`src/styles/tailwind.css`
+**文件**：`src/styles/tokens.css`
 
-1. 在 `.dark` 块（第 203 行起）重调 `--brand`：
+1. 在 `.dark` 块（第 197 行起）重调 `--brand`（第 206 行）：
    - 新值目标：明度比 light `#008c95`（约 L=53%）提升到 L≈68%，色相 hue 保持 ~185°（青色），饱和度微增。
    - 候选值：`#22c7d4` 或 `#2dd4e0`（需用对比度工具验证对 `--surface-body: #1d2842` 的 WCAG AA，≥4.5:1 用于文本/链接，≥3:1 用于大字号/UI）。
-2. 同步重调 `--btn-primary-bg`（`tailwind.css:223`）：它当前是 `color-mix(in oklab, var(--brand) 75%, black 25%)`，brand 改变后会自动跟随，**确认无需手动改**。
-3. 同步重调 `--sidebar-accent`（`tailwind.css:323`）：`color-mix(in oklab, var(--brand) 18%, var(--surface-dim))`，同样自动跟随。
-4. **同步更新 `@media (prefers-color-scheme: dark)` 回退块**（`tailwind.css:348-456`）：该块是 `.dark` 的镜像拷贝，必须同步改 `--brand`（第 356 行），否则系统暗色偏好用户与 `.dark` class 用户看到不一致。
+2. `--btn-primary-bg`（`tokens.css:217`）：当前是 `color-mix(in oklab, var(--brand) 75%, black 25%)`，brand 改变后自动跟随，**确认无需手动改**。
+3. `--sidebar-accent`（`tokens.css:317`）：`color-mix(in oklab, var(--brand) 18%, var(--surface-dim))`，同样自动跟随。
+
+> **重构红利**：旧架构需同步 `@media (prefers-color-scheme: dark)` 镜像块。重构后该块已删除（暗色唯一权威是 `.dark` class），**本阶段只改一处**。
 
 ### 验收
 
@@ -156,8 +195,8 @@ dark 模式下品牌青 `#1ab2bd` 按 Geist dark 规律（强调色提亮、保�
 
 ### 现状
 
-- `src/styles/tailwind.css:530`：`--ring-width: 3px;`
-- `src/styles/tailwind.css:145`：`--ring: var(--brand);`（light）；`.dark` 下未单独定义，继承 light。
+- `src/styles/theme.css:67`：`--ring-width: 3px;`
+- `src/styles/tokens.css:139`：`--ring: var(--brand);`（light）；`.dark` 下未单独定义，继承 light。
 - **36 处** `ring-ring` 用法分布在 32 个文件（`src/ui/components/*` 的 shadcn 组件 + `src/ui/admin/*` + `src/ui/public/chrome/Header.tsx`）。
 - 典型用法（`src/ui/components/button.tsx:10`）：
   ```tsx
@@ -172,32 +211,36 @@ dark 版（design.dark.md:475）：间隙用 `#000000`，环用 `blue-900`（`#4
 
 ### 交付
 
-**文件 1**：`src/styles/tailwind.css`
+**文件 1**：`src/styles/tokens.css` — 新增 ring 语义 token
 
-1. 新增 ring 相关语义 token（在 `:root` 与 `.dark` 分别定义）：
-   ```css
-   :root {
-     --ring-gap-color: var(--canvas); /* 间隙用主表面色 */
-     --ring-color: var(--brand); /* 环用品牌色（保留身份） */
-   }
-   .dark {
-     --ring-gap-color: var(--surface-body);
-     --ring-color: var(--brand); /* 跟随 P0 重调后的暗色品牌色 */
-   }
-   ```
-2. 新增 `--shadow-focus` token 到 `@theme inline`：
-   ```css
-   --shadow-focus: 0 0 0 2px var(--ring-gap-color), 0 0 0 4px var(--ring-color);
-   ```
-3. 同步更新 `@media (prefers-color-scheme: dark)` 回退块（`tailwind.css:348-456`）中的对应变量（若有）。
-4. **保留** `--ring-width: 3px` 和 `--ring: var(--brand)` 作为向后兼容别名，避免 36 处用法同时炸裂。
+在 `:root`（第 19 行起的 light 块）与 `.dark`（第 197 行起）分别定义：
 
-**文件 2**：`src/ui/lib/cn.ts`
+```css
+:root {
+  --ring-gap-color: var(--canvas); /* 间隙用主表面色 */
+  --ring-color: var(--brand); /* 环用品牌色（保留身份） */
+}
+.dark {
+  --ring-gap-color: var(--surface-body);
+  --ring-color: var(--brand); /* 跟随 P0 重调后的暗色品牌色 */
+}
+```
 
-- 在 `SHADOW_TOKENS` 数组（第 123 行）新增 `'focus'`：
-  ```ts
-  const SHADOW_TOKENS = ['card', 'focus', 'like-active', 'popup-close', 'toc-toggle', 'tooltip'] as const
-  ```
+**文件 2**：`src/styles/theme.css` — 在 `@theme inline` 新增 `--shadow-focus`
+
+```css
+--shadow-focus: 0 0 0 2px var(--ring-gap-color), 0 0 0 4px var(--ring-color);
+```
+
+> 必须在 `theme.css` 的 `@theme inline` 内声明，契约测试 `CSS_PATH` 读取的就是这个文件。
+
+**保留** `--ring-width: 3px`（`theme.css:67`）和 `--ring: var(--brand)`（`tokens.css:139`）作为向后兼容别名，避免 36 处用法同时炸裂。
+
+**文件 3**：`src/ui/lib/cn.ts` — 在 `SHADOW_TOKENS`（第 123 行）新增 `'focus'`：
+
+```ts
+const SHADOW_TOKENS = ['card', 'focus', 'like-active', 'popup-close', 'toc-toggle', 'tooltip'] as const
+```
 
 **文件 3-N**：shadcn 基础组件（迁移 `ring-ring` → `shadow-focus`）
 
@@ -217,8 +260,7 @@ dark 版（design.dark.md:475）：间隙用 `#000000`，环用 `blue-900`（`#4
 
 ### 验收
 
-- [ ] `tests/unit/contract/tailwind-tokens.test.ts` 通过（`--shadow-focus` 在 `@theme inline` 且 `cn.ts` 已注册 `focus`）
-- [ ] `tests/contract.tailwind-tokens.test.ts`（若存在）通过
+- [ ] `tests/unit/contract/tailwind-tokens.test.ts` 通过（`--shadow-focus` 在 `theme.css` 的 `@theme inline` 且 `cn.ts` 已注册 `focus`）
 - [ ] 键盘 Tab 遍历所有交互元素，视觉确认每个都有清晰的双层 ring
 - [ ] `prefers-reduced-motion` 下 ring 仍可见（ring 不是 motion）
 - [ ] dark 模式下 ring 间隙色与表面色一致（无错位白边）
@@ -256,9 +298,7 @@ dark 版（design.dark.md:475）：间隙用 `#000000`，环用 `blue-900`（`#4
 
 ### 交付
 
-**文件 1**：`src/styles/tailwind.css`
-
-在 `:root`（第 25 行起）与 `.dark`（第 203 行起）各新增一组：
+**文件 1**：`src/styles/tokens.css` — 在 `:root`（第 19 行起）与 `.dark`（第 197 行起）各新增一组
 
 ```css
 :root {
@@ -280,7 +320,9 @@ dark 版（design.dark.md:475）：间隙用 `#000000`，环用 `blue-900`（`#4
 }
 ```
 
-在 `@theme inline`（第 474 行起）新增颜色桥接：
+> **重构红利**：只需在 `tokens.css` 写一次 light + 一次 dark。旧架构需额外同步 `@media (prefers-color-scheme: dark)` 镜像块，现已删除。
+
+**文件 2**：`src/styles/theme.css` — 在 `@theme inline` 新增颜色桥接
 
 ```css
 --color-ga-100: var(--ga-100);
@@ -291,11 +333,7 @@ dark 版（design.dark.md:475）：间隙用 `#000000`，环用 `blue-900`（`#4
 --color-ga-600: var(--ga-600);
 ```
 
-**同步更新 `@media (prefers-color-scheme: dark)` 回退块**（`tailwind.css:348-456`），在 `:root:not(.light, .dark)` 内追加 dark 版 `--ga-*` 值。
-
-**文件 2**：`src/ui/lib/cn.ts`
-
-在 `COLOR_TOKENS`（第 24 行起）新增，**按字母序插入**（现有数组大致字母序）：
+**文件 3**：`src/ui/lib/cn.ts` — 在 `COLOR_TOKENS`（第 24 行起）新增，**按字母序插入**（现有数组大致字母序）：
 
 ```ts
 'ga-100',
@@ -308,13 +346,13 @@ dark 版（design.dark.md:475）：间隙用 `#000000`，环用 `blue-900`（`#4
 
 ### 验收
 
-- [ ] `tests/unit/contract/tailwind-tokens.test.ts` 通过（6 个新 color token 在 `@theme inline` 与 `cn.ts` 双向对齐）
+- [ ] `tests/unit/contract/tailwind-tokens.test.ts` 通过（6 个新 color token 在 `theme.css` 的 `@theme inline` 与 `cn.ts` 双向对齐）
 - [ ] `pnpm run type && pnpm run lint`
 - [ ] 手动验证：临时给一个元素加 `border-ga-100`，在 light/dark 下均可见且不突兀
 
 ### 风险与回滚
 
-- **风险**：纯增量，几乎无风险。唯一注意点是 `@media (prefers-color-scheme: dark)` 回退块必须同步，否则系统暗色偏好用户会看到 light 版 alpha（在深色背景上几乎不可见）。
+- **风险**：纯增量，几乎无风险。
 - **回滚**：删除新增的 token 行 + cn.ts 注册即可。
 
 ### 后续应用（非本阶段强制）
@@ -331,13 +369,13 @@ P2 只交付 token。实际把 `--line` 替换为 `--ga-*` 是渐进的、按组
 
 ### 现状
 
-- **无 typography token**。`@theme inline` 有零散的 `--text-*`（`--text-md`, `--text-2xl`, `--text-toc-*` 等），但无系统化的 heading 阶梯。
-- 文章标题（`src/styles/inkling.css:53-140`）用 `font-weight: 700`，与 Geist 的 600 不符。
+- **无 typography token**。`theme.css` 的 `@theme inline` 有零散的 `--text-*`（`--text-md`, `--text-2xl`, `--text-toc-*` 等，见 `theme.css:116-123`），但无系统化的 heading 阶梯。
+- 文章标题（`src/styles/content.css:52-62`）用 `font-weight: 700`，与 Geist 的 600 不符。
 - Geist heading 阶梯：72/64/56/48/40/32/24/20/16/14，负字距随字号增大。
 
 ### 交付
 
-**文件 1**：`src/styles/tailwind.css` — `@theme inline` 新增 heading 阶梯
+**文件 1**：`src/styles/theme.css` — `@theme inline` 新增 heading 阶梯
 
 只引入博客实际用得到的档位（不全盘搬 Geist 的 10 档，避免未使用 token 噪音）：
 
@@ -366,7 +404,7 @@ P2 只交付 token。实际把 `--line` 替换为 `--ga-*` 是渐进的、按组
 }
 ```
 
-**文件 2**：`src/ui/lib/cn.ts` — 注册 text 与 leading token
+**文件 2**：`src/ui/lib/cn.ts` — 注册 text token
 
 ```ts
 const TEXT_TOKENS = [
@@ -380,9 +418,9 @@ const TEXT_TOKENS = [
 ] as const
 ```
 
-注意：`leading` 命名空间在 `__TOKENS_FOR_TESTS.omitted` 中（`cn.ts:230`），`leading-*` token 无需在 `cn.ts` 注册，但 contract 测试会校验 `@theme inline` 里的 `leading-*` 存在——确认 `ALLOWED` 逻辑覆盖（当前 `omitted: ['leading']`，✅）。
+注意：`leading` 命名空间在 `__TOKENS_FOR_TESTS.omitted` 中（`cn.ts:230`），`leading-*` token 无需在 `cn.ts` 注册，但 contract 测试会校验 `@theme inline` 里的 `leading-*` 存在——确认 `omitted` 逻辑覆盖（当前 `omitted: ['leading']`，✅）。
 
-**文件 3**：`src/styles/inkling.css` — 文章标题字重 700 → 600
+**文件 3**：`src/styles/content.css` — 文章标题字重 700 → 600
 
 第 60 行 `font-weight: 700` 改为 `600`：
 
@@ -401,11 +439,7 @@ const TEXT_TOKENS = [
 }
 ```
 
-**不动** `strong/b` 的 `font-weight: 700`（第 153-156 行）——正文加粗需要与正文 400 拉开差距，700 合理。
-
-**文件 4**：`src/styles/inkling/index.css` — 不动
-
-inkling 编辑器的 `--inkling-font-serif` 等字体 token 保持不变。
+**不动** `strong/b` 的 `font-weight: 700`（`content.css:153-156`）——正文加粗需要与正文 400 拉开差距，700 合理。
 
 ### 验收
 
@@ -420,7 +454,7 @@ inkling 编辑器的 `--inkling-font-serif` 等字体 token 保持不变。
 - **缓解**：P3 单独一个 commit，快照更新作为 commit 的一部分。`pnpm run test -u` 更新快照后人工抽检 diff 确认只是字重变化。
 - **风险**：heading token 定义后无人使用，变成死 token。
 - **缓解**：P3 交付 token 即可，不强制立即迁移现有手填 size。token 存在是给新代码和渐进迁移用的。
-- **回滚**：token 是增量，inkling.css 字重改回 700 即可。
+- **回滚**：token 是增量，content.css 字重改回 700 即可。
 
 ---
 
@@ -432,25 +466,25 @@ inkling 编辑器的 `--inkling-font-serif` 等字体 token 保持不变。
 
 ### 现状
 
-`src/styles/tailwind.css:69`：
+`src/styles/tokens.css:63`：
 
 ```css
 --radius: 0.3125rem;
 ```
 
-`@theme inline` 把 sm/md/lg 全 flatten 到 `--radius`（第 507-509 行），所以改 `--radius` 即全站生效。
+`theme.css:44-46` 把 sm/md/lg 全 flatten 到 `--radius`，所以改 `--radius` 即全站生效。
 
 ### 交付
 
-**文件**：`src/styles/tailwind.css`
+**文件**：`src/styles/tokens.css`
 
-第 69 行：
+第 63 行：
 
 ```css
 --radius: 0.375rem; /* was 0.3125rem (5px) → 6px, 对齐 Geist rounded.sm */
 ```
 
-**不动** `--radius-xs` (3px)、`--radius-sm` (4px)、`--radius-md` (6px)、`--radius-lg` (10px) 这些原始变量——它们服务于非 Tailwind 场景（如代码块 `border-radius: var(--radius-md)`），保持独立。
+**不动** `--radius-xs` (3px)、`--radius-sm` (4px)、`--radius-md` (6px)、`--radius-lg` (10px) 这些原始变量（`tokens.css:64-67`）——它们服务于非 Tailwind 场景（如代码块 `border-radius: var(--radius-md)`，见 `content.css:171`），保持独立。
 
 ### 验收
 
@@ -472,7 +506,7 @@ inkling 编辑器的 `--inkling-font-serif` 等字体 token 保持不变。
 
 ### 现状
 
-`src/styles/tailwind.css:110-112`：
+`src/styles/tokens.css:104-106`：
 
 ```css
 --shadow-card-value: 0 0 30px 0 rgb(40 49 73 / 2%);
@@ -490,9 +524,7 @@ inkling 编辑器的 `--inkling-font-serif` 等字体 token 保持不变。
 
 ### 交付
 
-**文件**：`src/styles/tailwind.css`
-
-在 `:root` 新增三档（保留 `--shadow-card-value` 作为向后兼容别名，指向 raised）：
+**文件 1**：`src/styles/tokens.css` — 在 `:root` 新增三档（保留 `--shadow-card-value` 作为向后兼容别名，指向 raised）
 
 ```css
 :root {
@@ -506,7 +538,7 @@ inkling 编辑器的 `--inkling-font-serif` 等字体 token 保持不变。
 }
 ```
 
-`.dark` 块（第 252 行附近）同步：
+`.dark` 块（第 245 行附近）同步：
 
 ```css
 .dark {
@@ -518,7 +550,7 @@ inkling 编辑器的 `--inkling-font-serif` 等字体 token 保持不变。
 
 （dark 版的 raised 来自 design.dark.md:451：`0 1px 2px rgba(0, 0, 0, 0.16)`）
 
-`@theme inline` 新增：
+**文件 2**：`src/styles/theme.css` — `@theme inline` 新增
 
 ```css
 --shadow-raised: var(--shadow-raised);
@@ -526,9 +558,7 @@ inkling 编辑器的 `--inkling-font-serif` 等字体 token 保持不变。
 --shadow-modal: var(--shadow-modal);
 ```
 
-**同步更新 `@media (prefers-color-scheme: dark)` 回退块**。
-
-**文件**：`src/ui/lib/cn.ts` — `SHADOW_TOKENS` 新增：
+**文件 3**：`src/ui/lib/cn.ts` — `SHADOW_TOKENS` 新增：
 
 ```ts
 const SHADOW_TOKENS = [
@@ -564,20 +594,22 @@ const SHADOW_TOKENS = [
 
 本方案引入的 token 遵循以下命名约定，与现有体系一致：
 
-| 前缀             | 含义                    | 示例                                  | 注册位置                         |
-| ---------------- | ----------------------- | ------------------------------------- | -------------------------------- |
-| `--ga-*`         | Geist gray-alpha 叠加层 | `--ga-100`                            | COLOR_TOKENS                     |
-| `--ring-*`       | 聚焦环语义              | `--ring-color`, `--ring-gap-color`    | 不注册（内部 CSS var）           |
-| `--text-h-*`     | Geist heading 阶梯      | `--text-h-display`                    | TEXT_TOKENS                      |
-| `--leading-h-*`  | heading 配套行高        | `--leading-h-display`                 | omitted（leading 命名空间）      |
-| `--tracking-h-*` | heading 配套字距        | `--tracking-h-display`                | 不注册（Tailwind 原生 tracking） |
-| `--shadow-*`     | 阴影语义                | `--shadow-raised/popover/modal/focus` | SHADOW_TOKENS                    |
+| 前缀             | 含义                    | 示例                                  | 定义位置                    | 注册位置                         |
+| ---------------- | ----------------------- | ------------------------------------- | --------------------------- | -------------------------------- |
+| `--ga-*`         | Geist gray-alpha 叠加层 | `--ga-100`                            | `tokens.css`                | COLOR_TOKENS                     |
+| `--ring-*`       | 聚焦环语义              | `--ring-color`, `--ring-gap-color`    | `tokens.css`                | 不注册（内部 CSS var）           |
+| `--text-h-*`     | Geist heading 阶梯      | `--text-h-display`                    | `theme.css` `@theme inline` | TEXT_TOKENS                      |
+| `--leading-h-*`  | heading 配套行高        | `--leading-h-display`                 | `theme.css` `@theme inline` | omitted（leading 命名空间）      |
+| `--tracking-h-*` | heading 配套字距        | `--tracking-h-display`                | `theme.css` `@theme inline` | 不注册（Tailwind 原生 tracking） |
+| `--shadow-*`     | 阴影语义                | `--shadow-raised/popover/modal/focus` | `tokens.css` + `theme.css`  | SHADOW_TOKENS                    |
 
 **禁止**：
 
 - 不用 `--geist-*` 前缀。token 是项目资产，不绑定来源品牌。
 - 不重命名现有 `--ink-*` / `--brand-*` / `--line-*`。
-- 新 color/shadow/text/spacing token 必须同时出现在 `@theme inline` 和 `cn.ts`，否则 contract 测试失败。
+- 新 color/shadow/text/spacing token 必须同时出现在 `theme.css` 的 `@theme inline` 和 `cn.ts`，否则 contract 测试失败。
+
+**核心规则（来自 `src/styles/AGENTS.md`）**：每个驱动 Tailwind 工具类的 CSS 自定义属性必须在 `theme.css` 的 `@theme inline` 内声明，并在 `cn.ts` 的对应命名空间下注册。契约测试 `tests/unit/contract/tailwind-tokens.test.ts` 读取 `theme.css`，强制双向对齐。
 
 ---
 
@@ -585,11 +617,12 @@ const SHADOW_TOKENS = [
 
 ### 7.1 全局风险
 
-| 风险                                                          | 影响                                       | 缓解                                                            |
-| ------------------------------------------------------------- | ------------------------------------------ | --------------------------------------------------------------- |
-| `@media (prefers-color-scheme: dark)` 回退块与 `.dark` 不同步 | 系统暗色偏好用户与手动切暗色用户视觉不一致 | 每个涉及 dark 的阶段（P0/P1/P2/P5）交付清单明确列出"同步回退块" |
-| contract 测试失败阻塞 CI                                      | 无法合并                                   | 每阶段交付清单已包含 cn.ts 注册步骤，按顺序执行即可             |
-| 快照测试大面积 diff（P3 标题字重）                            | PR 噪音大                                  | P3 单独 commit，`pnpm run test -u` + 人工抽检                   |
+| 风险                               | 影响      | 缓解                                                                 |
+| ---------------------------------- | --------- | -------------------------------------------------------------------- |
+| contract 测试失败阻塞 CI           | 无法合并  | 每阶段交付清单已包含 cn.ts 注册 + theme.css 声明步骤，按顺序执行即可 |
+| 快照测试大面积 diff（P3 标题字重） | PR 噪音大 | P3 单独 commit，`pnpm run test -u` + 人工抽检                        |
+
+> **重构红利**：旧架构最大的同步风险——`.dark` 块与 `@media (prefers-color-scheme: dark)` 镜像块不一致——在重构后已消除。暗色唯一权威是 `.dark` class，本方案所有 dark 值只改 `tokens.css` 一处。
 
 ### 7.2 回滚策略
 
@@ -603,16 +636,16 @@ const SHADOW_TOKENS = [
 
 以下事项明确排除，避免范围蔓延：
 
-| 事项                                                                | 原因                                                                |
-| ------------------------------------------------------------------- | ------------------------------------------------------------------- |
-| **字体接入**（Geist Sans/Mono 自托管）                              | 字体配置机制已实现（`fontsSchema` + `root.tsx` 注入），属设置层操作 |
-| **品牌色替换**（青 → Geist 蓝）                                     | 保留青色身份（决策 1）                                              |
-| **`--ink-*` 重命名为 Geist `gray-*`**                               | 收益低风险高，文本灰阶现状已够用（决策 5）                          |
-| **状态徽章强制配图标**                                              | 属规范层（`web-design-guidelines` skill），非 token 改造            |
-| **全面采用 Geist 圆角 12/16**                                       | 与极简调性冲突（决策 4）                                            |
-| **动效清理**（comment-flash 时长等）                                | 现有动效均功能性，非装饰，不阻塞                                    |
-| **把 `--line` 批量替换为 `--ga-*`**                                 | P2 只交付 token，实际替换是渐进的、按组件进行                       |
-| **完整 Geist 组件 token**（button-primary/secondary/tertiary 全套） | shadcn 变体体系已覆盖等价能力，tertiary(ghost) 变体如需再单独提     |
+| 事项                                                                | 原因                                                                                                                  |
+| ------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| **字体接入**（Geist Sans/Mono 自托管）                              | 字体配置机制已实现（`fontsSchema` 含 `globalFamily`/`postFamily`/`codeFamily` + `root.tsx` 运行时注入），属设置层操作 |
+| **品牌色替换**（青 → Geist 蓝）                                     | 保留青色身份（决策 1）                                                                                                |
+| **`--ink-*` 重命名为 Geist `gray-*`**                               | 收益低风险高，文本灰阶现状已够用（决策 5）                                                                            |
+| **状态徽章强制配图标**                                              | 属规范层（`web-design-guidelines` skill），非 token 改造                                                              |
+| **全面采用 Geist 圆角 12/16**                                       | 与极简调性冲突（决策 4）                                                                                              |
+| **动效清理**（comment-flash 时长等）                                | 现有动效均功能性，非装饰，不阻塞                                                                                      |
+| **把 `--line` 批量替换为 `--ga-*`**                                 | P2 只交付 token，实际替换是渐进的、按组件进行                                                                         |
+| **完整 Geist 组件 token**（button-primary/secondary/tertiary 全套） | shadcn 变体体系已覆盖等价能力，tertiary(ghost) 变体如需再单独提                                                       |
 
 ---
 
