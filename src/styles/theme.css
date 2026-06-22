@@ -1,0 +1,289 @@
+/*
+ * Tailwind v4 utility bridge — maps every design token in tokens.css
+ * to a Tailwind utility namespace (--color-*, --text-*, --shadow-*,
+ * --spacing-*, --radius-*, etc.) so utilities like bg-brand, text-ink-2,
+ * shadow-card are emitted.
+ *
+ * `inline` keeps the tokens reactive to .dark rebinds in tokens.css.
+ */
+
+/* Tailwind theme bridge shadcn */
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  /* Radius: sm, md, and lg are intentionally flattened to the base --radius (5px)
+     for a consistent UI look. The raw --radius-sm (4px), --radius-md (6px), and
+     --radius-lg (10px) CSS variables are preserved for non-Tailwind usage.
+     For the 4px checkbox radius, see --radius-input below. */
+  --radius-sm: var(--radius);
+  --radius-md: var(--radius);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 2px);
+
+  --breakpoint-sm: 576px;
+  --breakpoint-md: 768px;
+  --breakpoint-lg: 992px;
+  --breakpoint-xl: 1200px;
+  --breakpoint-2xl: 1400px;
+
+  --container-sm: 540px;
+  --container-md: 720px;
+  --container-lg: 960px;
+  --container-xl: 1140px;
+  --container-2xl: 1320px;
+  --container-admin: 1480px;
+
+  --text-admin-sm: 0.8125rem;
+  --text-admin-base: 0.9375rem;
+  --text-micro: 0.6875rem;
+  --text-nano: 0.625rem;
+
+  --ring-width: 3px;
+
+  --z-index-modal: var(--z-modal);
+  --z-index-aside-drawer: var(--z-aside-drawer);
+
+  --spacing-admin-thumb: var(--size-admin-thumb);
+  --spacing-admin-col-narrow: var(--size-admin-col-narrow);
+  --spacing-auth-input: var(--size-auth-input);
+  --spacing-auth-btn: var(--size-auth-btn);
+  --spacing-editor-min: var(--size-editor-min);
+
+  --color-canvas: var(--canvas);
+  --color-surface: var(--surface);
+  --color-surface-dim: var(--surface-dim);
+  --color-surface-soft: var(--surface-soft);
+  --color-surface-warn: var(--surface-warn);
+  --color-surface-body: var(--surface-body);
+  --color-surface-secondary: var(--surface-secondary);
+  --color-aside-bg: var(--aside-bg);
+
+  --color-line: var(--line);
+  --color-line-muted: var(--line-muted);
+  --color-widget-border: var(--line-widget);
+
+  --color-brand: var(--brand);
+  --color-brand-dark: var(--brand-dark);
+  --color-brand-darker: var(--brand-darker);
+  --color-scrim: var(--scrim);
+  --color-skeleton-start: var(--skeleton-start);
+  --color-skeleton-end: var(--skeleton-end);
+  --color-warn: var(--warn);
+  --color-alert: var(--alert);
+
+  --color-ink-1: var(--ink-1);
+  --color-ink-2: var(--ink-2);
+  --color-ink-3: var(--ink-3);
+  --color-ink-4: var(--ink-4);
+  --color-ink-on-dark: var(--ink-on-dark);
+  --color-ink-5: var(--ink-5);
+
+  --color-like-active: var(--like-active);
+  --color-like-bg: var(--like-bg);
+  --color-like-bg-hover: var(--like-bg-hover);
+  --shadow-like-active: var(--like-active-shadow);
+
+  --radius-xs: var(--radius-xs);
+  --radius-input: var(--radius-sm);
+  --font-code: var(--font-code);
+
+  --text-md: 0.9375rem;
+  --text-2xl: 1.625rem;
+  --text-toc-toggle: 1.375rem;
+  --text-toc-title: 1.5rem;
+  --text-toc-link: 0.85rem;
+  --text-badge: 0.625rem;
+  --text-empty-state-hero: 6rem;
+  --text-btn-lg: clamp(0.875rem, 0.8rem + 0.2vw, 0.9375rem);
+
+  --leading-badge: 1.2;
+  --spacing-sidebar-item: var(--size-sidebar-item);
+  --spacing-search-trigger: var(--size-search-trigger);
+  --spacing-empty-state: var(--size-empty-state);
+  --spacing-badge-overlay-y: 0.4375rem;
+  --spacing-icon-inset: 28%;
+  --spacing-btn-icon-md: 2.625rem;
+
+  /* TOC spacing tokens */
+  --spacing-toc-disc: 100px;
+  --spacing-toc-disc-hover: 120px;
+  --spacing-toc-disc-open: 50px;
+  --spacing-toc-disc-open-hover: 64px;
+  --spacing-toc-drawer: 280px;
+  --spacing-toc-drawer-edge: 280px;
+  --spacing-toc-toggle-edge-open: 25px;
+
+  /* Header / chrome spacing tokens */
+  --spacing-header-brand-x: 25px;
+  --spacing-header-brand-b: 15px;
+  --spacing-submenu-p: 25px;
+  --spacing-submenu-px-lg: 15px;
+
+  /* Form spacing tokens */
+  --spacing-comment-avatar-gap: 15px;
+  --spacing-auth-input-pad: 8rem;
+
+  /* Editor spacing tokens */
+  --spacing-editor-prose-min: 440px;
+
+  /* APlayer spacing tokens */
+  --spacing-aplayer-margin: 5px;
+  --spacing-aplayer-art-sm: 66px;
+  --spacing-aplayer-art-lg: 90px;
+  --spacing-aplayer-info-gap-sm: 76px;
+  --spacing-aplayer-info-gap-lg: 100px;
+  --spacing-aplayer-info-pad-x: 7px;
+  --spacing-aplayer-info-pad-top-lg: 10px;
+  --spacing-aplayer-music-gap: 13px;
+  --spacing-aplayer-music-indent: 5px;
+  --spacing-aplayer-time-height: 17px;
+  --spacing-aplayer-time-pad: 7px;
+  --spacing-aplayer-icon: 15px;
+  --spacing-aplayer-volume-indent: 3px;
+  --spacing-aplayer-volume-popup-right: 3px;
+  --spacing-aplayer-volume-popup-bottom: 15px;
+  --spacing-aplayer-volume-popup-width: 25px;
+  --spacing-aplayer-volume-bar-indent: 10px;
+  --spacing-aplayer-volume-bar-height: 35px;
+  --spacing-aplayer-volume-bar-track: 5px;
+  --spacing-aplayer-progress-indent: 5px;
+  --spacing-aplayer-thumb-offset: 5px;
+  --spacing-aplayer-notice-pad-y: 5px;
+  --spacing-aplayer-fixed-max: 400px;
+  --spacing-aplayer-miniswitcher-width: 18px;
+  --spacing-aplayer-lrc: 30px;
+  --spacing-aplayer-lrc-gap: 7px;
+  --text-aplayer-time: 11px;
+  --radius-aplayer-volume: 2.5px;
+  --color-aplayer-bar: #cdcdcd;
+  --color-aplayer-bar-loaded: #aaa;
+
+  --container-popup-sm: 300px;
+  --container-popup-md: 540px;
+  --container-popup-lg: 960px;
+  --spacing-popup-mobile: 95%;
+  --shadow-popup-close: 0 2px 6px rgba(0, 0, 0, 0.2);
+  --color-popup-close-hover: var(--popup-close-hover);
+
+  --spacing-qr-dialog: 210px;
+
+  /* Admin content minimum height */
+  --spacing-admin-content-min: calc(100vh - 4rem);
+
+  /* Dialog max heights */
+  --spacing-dialog-max-h: 90vh;
+  --spacing-dialog-max-h-sm: 60vh;
+
+  /* Editor padding bottom for scroll */
+  --spacing-editor-pad-bottom: 60vh;
+
+  /* Content layout proportions */
+  --spacing-content-main: 71%;
+  --spacing-content-side: 29%;
+
+  /* Body line height */
+  --leading-body: 1.4;
+
+  /* Dialog popup max width */
+  --spacing-dialog-popup-md: calc(var(--container-popup-md));
+
+  --shadow-card: var(--shadow-card-value);
+  --shadow-tooltip: var(--shadow-tooltip-value);
+  --shadow-toc-toggle: var(--shadow-toc-toggle-value);
+
+  --animate-comments-shimmer: comments-shimmer 1.4s linear infinite;
+
+  --animate-comment-flash: comment-flash 3s ease-out forwards;
+
+  @keyframes comment-flash {
+    0%,
+    25% {
+      background-color: color-mix(in oklab, var(--brand) 16%, transparent);
+    }
+    100% {
+      background-color: transparent;
+    }
+  }
+
+  --color-status-info-bg: var(--status-info-bg);
+  --color-status-info-fg: var(--status-info-fg);
+  --color-status-info-border: var(--status-info-border);
+  --color-status-warn-bg: var(--status-warn-bg);
+  --color-status-warn-fg: var(--status-warn-fg);
+  --color-status-warn-border: var(--status-warn-border);
+  --color-status-error-bg: var(--status-error-bg);
+  --color-status-error-fg: var(--status-error-fg);
+  --color-status-error-border: var(--status-error-border);
+  --color-status-success-bg: var(--status-success-bg);
+  --color-status-success-fg: var(--status-success-fg);
+  --color-status-success-border: var(--status-success-border);
+
+  /* Status tokens — draft */
+  --color-status-draft-bg: var(--status-draft-bg);
+  --color-status-draft-fg: var(--status-draft-fg);
+  --color-status-draft-border: var(--status-draft-border);
+
+  /* Diff viewer tokens */
+  --color-diff-change-bg: var(--diff-change-bg);
+  --color-diff-change-fg: var(--diff-change-fg);
+  --color-diff-change-border: var(--diff-change-border);
+  --color-diff-insert-bg: var(--diff-insert-bg);
+  --color-diff-insert-fg: var(--diff-insert-fg);
+  --color-diff-insert-border: var(--diff-insert-border);
+  --color-diff-delete-bg: var(--diff-delete-bg);
+  --color-diff-delete-fg: var(--diff-delete-fg);
+  --color-diff-delete-border: var(--diff-delete-border);
+
+  --color-chip-bg: var(--chip-bg);
+  --color-chip-fg: var(--chip-fg);
+  --color-chip-hover-bg: var(--chip-hover-bg);
+  --color-chip-hover-fg: var(--chip-hover-fg);
+
+  --color-btn-light-border: var(--btn-light-border);
+  --color-btn-light-bg: var(--btn-light-bg);
+  --color-btn-light-fg: var(--btn-light-fg);
+  --color-btn-light-hover-fg: var(--btn-light-hover-fg);
+
+  --color-fab-bg: var(--fab-bg);
+  --color-fab-fg: var(--fab-fg);
+
+  --color-btn-primary-bg: var(--btn-primary-bg);
+  --color-btn-hover-bg: var(--btn-hover-bg);
+  --color-btn-hover-fg: var(--btn-hover-fg);
+  --color-editor-accent: var(--editor-accent);
+
+  @keyframes comments-shimmer {
+    0% {
+      background-position: 200% 0;
+    }
+    100% {
+      background-position: -200% 0;
+    }
+  }
+}
