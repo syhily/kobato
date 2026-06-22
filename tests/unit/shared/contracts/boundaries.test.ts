@@ -525,6 +525,12 @@ describe('contract: module and bundle boundaries', () => {
         file: 'src/ui/public/comments/LazyCommentBodyEditor.tsx',
         specifier: './CommentBodyEditor',
       },
+      {
+        // Vendored cn-font-split: Vite `?url` import of the wasm binary.
+        key: 'slice.ts -> ./vendor/wasm-split',
+        file: 'src/server/domains/fonts/slice.ts',
+        specifier: './vendor/wasm-split',
+      },
     ] as const
     const explicitAllowedHits = new Set<string>()
 
@@ -600,8 +606,10 @@ describe('contract: module and bundle boundaries', () => {
     expect(root).not.toContain("import '@/assets/fonts/")
     expect(root).not.toContain('.ttf')
 
-    expect(root).toContain('blogSettings?.fonts?.globalCss')
-    expect(root).toContain('rel="stylesheet" href={url}')
+    // Browser web fonts now flow through self-hosted packages resolved from
+    // the root loader's `fonts` field (resolved family + href per slot),
+    // not from external CSS URLs. Assert the new contract holds.
+    expect(root).toContain('rel="stylesheet" href={f.href}')
   })
 
   it('keeps admin Tailwind layouts on flex/grid gap instead of space utilities', () => {

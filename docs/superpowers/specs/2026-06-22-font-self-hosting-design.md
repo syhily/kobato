@@ -100,7 +100,7 @@ In `<head>`, for each font across all three slots:
 ```
 
 The `result.css` uses relative chunk paths (`./chunk-xxx.woff2`), which resolve
-correctly under both local (`/storage/fonts/<hash>/result.css`) and S3
+correctly under both local (`/fonts/embedded/<hash>/result.css`) and S3
 (`https://<asset.host>/fonts/<hash>/result.css`) URL schemes — no rewriting
 needed.
 

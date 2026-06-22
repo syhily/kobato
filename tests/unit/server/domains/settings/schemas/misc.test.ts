@@ -216,30 +216,25 @@ describe('settings/schemas/seo', () => {
 })
 
 describe('settings/schemas/fonts', () => {
-  it('accepts empty family and CSS arrays', () => {
+  it('accepts empty family and empty slot lists', () => {
     const result = fontsSchema.safeParse({
       og: { family: '' },
       calendar: { family: '' },
-      globalFamily: '',
-      postFamily: '',
-      codeFamily: '',
-      globalCss: [],
-      postCss: [],
-      codeCss: [],
+      global: [],
+      post: [],
+      code: [],
     })
     expect(result.success).toBe(true)
   })
 
-  it('accepts valid family names and CSS URLs', () => {
+  it('accepts valid canvas family names with UUID slot lists', () => {
+    const id = '00000000-0000-4000-8000-00000000000a'
     const result = fontsSchema.safeParse({
       og: { family: 'NotoSans' },
       calendar: { family: 'Noto-Serif' },
-      globalFamily: 'NotoSans',
-      postFamily: 'Noto-Serif',
-      codeFamily: 'Iosevka',
-      globalCss: ['https://fonts.example/og.css'],
-      postCss: ['https://fonts.example/post.css'],
-      codeCss: ['https://fonts.example/code.css'],
+      global: [id],
+      post: [],
+      code: [id],
     })
     expect(result.success).toBe(true)
   })
@@ -248,12 +243,9 @@ describe('settings/schemas/fonts', () => {
     const result = fontsSchema.safeParse({
       og: { family: 'OPPO Sans 4.0' },
       calendar: { family: 'Source Han Serif' },
-      globalFamily: 'OPPO Sans 4.0',
-      postFamily: 'OPPO Serif SC',
-      codeFamily: '',
-      globalCss: [],
-      postCss: [],
-      codeCss: [],
+      global: [],
+      post: [],
+      code: [],
     })
     expect(result.success).toBe(true)
   })
@@ -262,12 +254,9 @@ describe('settings/schemas/fonts', () => {
     const result = fontsSchema.safeParse({
       og: { family: '思源宋体' },
       calendar: { family: 'ヒラギノ角ゴ' },
-      globalFamily: '思源黑体',
-      postFamily: '思源宋体',
-      codeFamily: '',
-      globalCss: [],
-      postCss: [],
-      codeCss: [],
+      global: [],
+      post: [],
+      code: [],
     })
     expect(result.success).toBe(true)
   })
@@ -277,12 +266,9 @@ describe('settings/schemas/fonts', () => {
       fontsSchema.safeParse({
         og: { family: "Serif'; body { color: red }" },
         calendar: { family: '' },
-        globalFamily: '',
-        postFamily: '',
-        codeFamily: '',
-        globalCss: [],
-        postCss: [],
-        codeCss: [],
+        global: [],
+        post: [],
+        code: [],
       }).success,
     ).toBe(false)
   })
@@ -292,28 +278,34 @@ describe('settings/schemas/fonts', () => {
       fontsSchema.safeParse({
         og: { family: 'Serif{}' },
         calendar: { family: '' },
-        globalFamily: '',
-        postFamily: '',
-        codeFamily: '',
-        globalCss: [],
-        postCss: [],
-        codeCss: [],
+        global: [],
+        post: [],
+        code: [],
       }).success,
     ).toBe(false)
   })
 
-  it('rejects more than 8 css entries', () => {
-    const css = Array.from({ length: 9 }, () => 'https://fonts.example/a.css')
+  it('rejects more than 8 font ids in a slot', () => {
+    const ids = Array.from({ length: 9 }, (_, i) => `00000000-0000-4000-8000-${String(i).padStart(12, '0')}`)
     expect(
       fontsSchema.safeParse({
         og: { family: '' },
         calendar: { family: '' },
-        globalFamily: '',
-        postFamily: '',
-        codeFamily: '',
-        globalCss: css,
-        postCss: [],
-        codeCss: [],
+        global: ids,
+        post: [],
+        code: [],
+      }).success,
+    ).toBe(false)
+  })
+
+  it('rejects non-uuid slot ids', () => {
+    expect(
+      fontsSchema.safeParse({
+        og: { family: '' },
+        calendar: { family: '' },
+        global: ['not-a-uuid'],
+        post: [],
+        code: [],
       }).success,
     ).toBe(false)
   })

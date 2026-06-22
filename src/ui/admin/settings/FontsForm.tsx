@@ -1,7 +1,6 @@
-import { PlusIcon, Trash2Icon, UploadIcon } from 'lucide-react'
+import { UploadIcon } from 'lucide-react'
 import { useRef, useState } from 'react'
-import { useFieldArray } from 'react-hook-form'
-import { useRouteLoaderData } from 'react-router'
+import { Link, useRouteLoaderData } from 'react-router'
 import { toast } from 'sonner'
 
 import type { FontsSettings } from '@/shared/config/types'
@@ -13,11 +12,6 @@ import { SettingsInput } from '@/ui/admin/settings/shell/SettingsInput'
 import { useSettingsCard } from '@/ui/admin/settings/shell/useSettingsCard'
 import { Button } from '@/ui/components/button'
 import { extractApiErrorMessage } from '@/ui/lib/api-error'
-
-interface CssRow {
-  clientId: string
-  url: string
-}
 
 interface FontsFormProps {
   fonts: FontsSettings
@@ -152,241 +146,19 @@ function FontsCanvasCard({ fonts }: { fonts: FontsSettings }) {
   )
 }
 
-function FontsGlobalCssCard({ fonts }: { fonts: FontsSettings }) {
-  const { form, settingGroupProps, flushOnBlur } = useSettingsCard<
-    FontsSettings,
-    { globalCss: CssRow[]; globalFamily: string }
-  >({
-    section: 'fonts',
-    source: fonts,
-    toState: (source) => ({
-      globalCss: source.globalCss.map((url, i) => ({ clientId: `css-global-${i}`, url })),
-      globalFamily: source.globalFamily,
-    }),
-    fromState: (state) => ({
-      globalCss: state.globalCss.map((row) => row.url.trim()).filter((url) => url !== ''),
-      globalFamily: state.globalFamily.trim(),
-    }),
-  })
-
-  const rows = useFieldArray({ control: form.control, name: 'globalCss' })
-
+function FontsWebFontNoticeCard() {
   return (
     <SettingGroup
-      title="全站字体"
-      description="全站所有页面加载。配置字体 CSS 后，填写族名让界面 UI 使用该字体；留空则使用默认无衬线字体。"
-      {...settingGroupProps}
+      title="网页字体"
+      description="网站字体与槽位分配。前往字体库上传 TTF/OTF 自动分包，拖拽分配到全站 / 文章 / 代码槽位。"
     >
       <SettingGroupContent>
-        <SettingsRow label="界面字体族名" htmlFor="fonts-global-family">
-          <SettingsInput
-            id="fonts-global-family"
-            type="text"
-            placeholder="族名，例如 OPPOSans（留空使用默认字体）"
-            maxLength={100}
-            flushOnBlur={flushOnBlur}
-            {...form.register('globalFamily')}
-          />
-        </SettingsRow>
-        <div className="flex flex-col gap-3">
-          {rows.fields.length === 0 ? (
-            <p className="text-sm text-muted-foreground">还没有添加 CSS，点击下方按钮新增一项。</p>
-          ) : (
-            rows.fields.map((field, index) => (
-              <div key={field.id} className="flex items-center gap-2">
-                <SettingsInput
-                  type="url"
-                  placeholder="https://assets.example.com/fonts/<name>.css"
-                  maxLength={500}
-                  className="flex-1"
-                  flushOnBlur={flushOnBlur}
-                  {...form.register(`globalCss.${index}.url` as const)}
-                />
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => rows.remove(index)}
-                  aria-label="删除此项"
-                >
-                  <Trash2Icon className="text-destructive" />
-                </Button>
-              </div>
-            ))
-          )}
-          <div>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              disabled={rows.fields.length >= 8}
-              onClick={() => rows.append({ clientId: crypto.randomUUID(), url: '' })}
-            >
-              <PlusIcon /> 添加全站 CSS
-            </Button>
-            {rows.fields.length >= 8 && <span className="ml-2 text-xs text-muted-foreground">上限 8 条</span>}
-          </div>
-        </div>
-      </SettingGroupContent>
-    </SettingGroup>
-  )
-}
-
-function FontsPostCssCard({ fonts }: { fonts: FontsSettings }) {
-  const { form, settingGroupProps, flushOnBlur } = useSettingsCard<
-    FontsSettings,
-    { postCss: CssRow[]; postFamily: string }
-  >({
-    section: 'fonts',
-    source: fonts,
-    toState: (source) => ({
-      postCss: source.postCss.map((url, i) => ({ clientId: `css-post-${i}`, url })),
-      postFamily: source.postFamily,
-    }),
-    fromState: (state) => ({
-      postCss: state.postCss.map((row) => row.url.trim()).filter((url) => url !== ''),
-      postFamily: state.postFamily.trim(),
-    }),
-  })
-
-  const rows = useFieldArray({ control: form.control, name: 'postCss' })
-
-  return (
-    <SettingGroup
-      title="文章页字体"
-      description="仅在文章详情页加载。配置字体 CSS 后，填写族名让正文使用该字体；留空则使用默认衬线字体。"
-      {...settingGroupProps}
-    >
-      <SettingGroupContent>
-        <SettingsRow label="正文字体族名" htmlFor="fonts-post-family">
-          <SettingsInput
-            id="fonts-post-family"
-            type="text"
-            placeholder="族名，例如 OPPOSerif（留空使用默认字体）"
-            maxLength={100}
-            flushOnBlur={flushOnBlur}
-            {...form.register('postFamily')}
-          />
-        </SettingsRow>
-        <div className="flex flex-col gap-3">
-          {rows.fields.length === 0 ? (
-            <p className="text-sm text-muted-foreground">还没有添加 CSS，点击下方按钮新增一项。</p>
-          ) : (
-            rows.fields.map((field, index) => (
-              <div key={field.id} className="flex items-center gap-2">
-                <SettingsInput
-                  type="url"
-                  placeholder="https://assets.example.com/fonts/<name>.css"
-                  maxLength={500}
-                  className="flex-1"
-                  flushOnBlur={flushOnBlur}
-                  {...form.register(`postCss.${index}.url` as const)}
-                />
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => rows.remove(index)}
-                  aria-label="删除此项"
-                >
-                  <Trash2Icon className="text-destructive" />
-                </Button>
-              </div>
-            ))
-          )}
-          <div>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              disabled={rows.fields.length >= 8}
-              onClick={() => rows.append({ clientId: crypto.randomUUID(), url: '' })}
-            >
-              <PlusIcon /> 添加文章页 CSS
-            </Button>
-            {rows.fields.length >= 8 && <span className="ml-2 text-xs text-muted-foreground">上限 8 条</span>}
-          </div>
-        </div>
-      </SettingGroupContent>
-    </SettingGroup>
-  )
-}
-
-function FontsCodeCard({ fonts }: { fonts: FontsSettings }) {
-  const { form, settingGroupProps, flushOnBlur } = useSettingsCard<
-    FontsSettings,
-    { codeCss: CssRow[]; codeFamily: string }
-  >({
-    section: 'fonts',
-    source: fonts,
-    toState: (source) => ({
-      codeCss: source.codeCss.map((url, i) => ({ clientId: `css-code-${i}`, url })),
-      codeFamily: source.codeFamily,
-    }),
-    fromState: (state) => ({
-      codeCss: state.codeCss.map((row) => row.url.trim()).filter((url) => url !== ''),
-      codeFamily: state.codeFamily.trim(),
-    }),
-  })
-
-  const rows = useFieldArray({ control: form.control, name: 'codeCss' })
-
-  return (
-    <SettingGroup
-      title="代码字体"
-      description="代码块和行内代码使用的等宽字体。配置字体 CSS 后，填写族名让代码使用该字体；留空则使用默认 Iosevka。"
-      {...settingGroupProps}
-    >
-      <SettingGroupContent>
-        <SettingsRow label="代码字体族名" htmlFor="fonts-code-family">
-          <SettingsInput
-            id="fonts-code-family"
-            type="text"
-            placeholder="族名，例如 Iosevka（留空使用默认字体）"
-            maxLength={100}
-            flushOnBlur={flushOnBlur}
-            {...form.register('codeFamily')}
-          />
-        </SettingsRow>
-        <div className="flex flex-col gap-3">
-          {rows.fields.length === 0 ? (
-            <p className="text-sm text-muted-foreground">还没有添加 CSS，点击下方按钮新增一项。</p>
-          ) : (
-            rows.fields.map((field, index) => (
-              <div key={field.id} className="flex items-center gap-2">
-                <SettingsInput
-                  type="url"
-                  placeholder="https://assets.example.com/fonts/<name>.css"
-                  maxLength={500}
-                  className="flex-1"
-                  flushOnBlur={flushOnBlur}
-                  {...form.register(`codeCss.${index}.url` as const)}
-                />
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => rows.remove(index)}
-                  aria-label="删除此项"
-                >
-                  <Trash2Icon className="text-destructive" />
-                </Button>
-              </div>
-            ))
-          )}
-          <div>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              disabled={rows.fields.length >= 8}
-              onClick={() => rows.append({ clientId: crypto.randomUUID(), url: '' })}
-            >
-              <PlusIcon /> 添加代码 CSS
-            </Button>
-            {rows.fields.length >= 8 && <span className="ml-2 text-xs text-muted-foreground">上限 8 条</span>}
-          </div>
-        </div>
+        <Link
+          to="/admin/library/fonts"
+          className="inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline"
+        >
+          打开字体库 →
+        </Link>
       </SettingGroupContent>
     </SettingGroup>
   )
@@ -395,10 +167,8 @@ function FontsCodeCard({ fonts }: { fonts: FontsSettings }) {
 export function FontsForm({ fonts }: FontsFormProps) {
   return (
     <div className="flex flex-col gap-5">
+      <FontsWebFontNoticeCard />
       <FontsCanvasCard fonts={fonts} />
-      <FontsGlobalCssCard fonts={fonts} />
-      <FontsPostCssCard fonts={fonts} />
-      <FontsCodeCard fonts={fonts} />
     </div>
   )
 }

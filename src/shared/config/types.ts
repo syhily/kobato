@@ -245,12 +245,12 @@ export interface SearchSettings {
 export interface FontsSettings {
   og: { family: string }
   calendar: { family: string }
-  globalFamily: string
-  postFamily: string
-  codeFamily: string
-  globalCss: string[]
-  postCss: string[]
-  codeCss: string[]
+  /** Ordered `font.id` UUIDs assigned to the site-wide UI slot. */
+  global: string[]
+  /** Ordered `font.id` UUIDs assigned to the article-body slot. */
+  post: string[]
+  /** Ordered `font.id` UUIDs assigned to the inline/block code slot. */
+  code: string[]
 }
 
 export interface BackupSettings {

@@ -79,7 +79,7 @@ describe('uploadBrandingAsset', () => {
     expect(ref.etag).toMatch(/^[a-f0-9]{64}$/)
     expect(ref.size).toBe(PNG_BYTES.length)
     expect(s3.putS3Object).toHaveBeenCalledTimes(1)
-    expect(s3.putS3Object).toHaveBeenCalledWith('branding/apple-touch-icon', PNG_BYTES, 'image/png')
+    expect(s3.putS3Object).toHaveBeenCalledWith('branding/apple-touch-icon.png', PNG_BYTES, 'image/png')
 
     const [, data] = vi.mocked(settings.upsertSetting).mock.calls[0]
     const branding = (data as Record<string, unknown>).branding as Record<string, unknown>
@@ -94,11 +94,11 @@ describe('uploadBrandingAsset', () => {
     const keys = vi.mocked(s3.putS3Object).mock.calls.map((c) => c[0])
     expect(keys).toEqual(
       expect.arrayContaining([
-        'branding/favicon-svg',
-        'branding/favicon-ico',
-        'branding/apple-touch-icon',
-        'branding/icon-192',
-        'branding/icon-512',
+        'branding/favicon.svg',
+        'branding/favicon.ico',
+        'branding/apple-touch-icon.png',
+        'branding/icon-192.png',
+        'branding/icon-512.png',
       ]),
     )
 
@@ -117,7 +117,7 @@ describe('uploadBrandingAsset', () => {
     await expect(uploadBrandingAsset(db, 'faviconSvg', SVG_BYTES)).rejects.toThrow('sharp failed')
 
     // The primary SVG put has already happened — rollback must remove it.
-    expect(s3.deleteS3Object).toHaveBeenCalledWith('branding/favicon-svg')
+    expect(s3.deleteS3Object).toHaveBeenCalledWith('branding/favicon.svg')
     expect(settings.upsertSetting).not.toHaveBeenCalled()
   })
 
@@ -146,7 +146,9 @@ describe('clearBrandingAsset', () => {
 
     await clearBrandingAsset(db, 'appleTouchIcon')
 
-    expect(s3.deleteS3Object).toHaveBeenCalledTimes(1)
+    // Deletes both the current key and the legacy (extensionless) key.
+    expect(s3.deleteS3Object).toHaveBeenCalledTimes(2)
+    expect(s3.deleteS3Object).toHaveBeenCalledWith('branding/apple-touch-icon.png')
     expect(s3.deleteS3Object).toHaveBeenCalledWith('branding/apple-touch-icon')
 
     const [, data] = vi.mocked(settings.upsertSetting).mock.calls[0]
@@ -157,14 +159,20 @@ describe('clearBrandingAsset', () => {
   it('clears favicon pack when faviconSvg is cleared', async () => {
     await clearBrandingAsset(db, 'faviconSvg')
 
-    expect(s3.deleteS3Object).toHaveBeenCalledTimes(5)
+    // 5 slots × 2 keys (current + legacy) = 10 deletes
+    expect(s3.deleteS3Object).toHaveBeenCalledTimes(10)
     const keys = vi.mocked(s3.deleteS3Object).mock.calls.map((c) => c[0])
     expect(keys).toEqual(
       expect.arrayContaining([
+        'branding/favicon.svg',
         'branding/favicon-svg',
+        'branding/favicon.ico',
         'branding/favicon-ico',
+        'branding/apple-touch-icon.png',
         'branding/apple-touch-icon',
+        'branding/icon-192.png',
         'branding/icon-192',
+        'branding/icon-512.png',
         'branding/icon-512',
       ]),
     )

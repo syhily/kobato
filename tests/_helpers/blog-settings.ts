@@ -176,12 +176,9 @@ export const TEST_BLOG_SETTINGS_BUNDLE: BlogSettingsBundle = {
   fonts: {
     og: { family: '' },
     calendar: { family: '' },
-    globalFamily: '',
-    codeFamily: '',
-    postFamily: '',
-    globalCss: [],
-    codeCss: [],
-    postCss: [],
+    global: [],
+    post: [],
+    code: [],
   },
   backup: {
     scheduled: { enabled: false, frequency: 'daily', hour: 3, minute: 0 },

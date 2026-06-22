@@ -1,4 +1,5 @@
 import { createRequire } from 'node:module'
+import Binary from 'vite-plugin-binary'
 import { defineConfig } from 'vitest/config'
 
 import { routeWarmupScriptStubPlugin } from '../_helpers/virtual-modules'
@@ -7,8 +8,9 @@ const require = createRequire(import.meta.url)
 const pkg = require('../../package.json')
 
 export default defineConfig({
-  plugins: [routeWarmupScriptStubPlugin()],
+  plugins: [routeWarmupScriptStubPlugin(), Binary({ gzip: false })],
   resolve: { tsconfigPaths: true },
+  assetsInclude: ['**/*.wasm', '**/*.wasm?binary'],
   define: {
     __APP_NAME__: JSON.stringify(pkg.name),
     __APP_VERSION__: JSON.stringify(pkg.version),

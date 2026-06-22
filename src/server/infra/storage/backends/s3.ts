@@ -2,6 +2,7 @@ import type { Readable } from 'node:stream'
 
 import type { PutObjectInput, PutStreamInput, StorageBackend, StoredObjectMeta } from '@/server/infra/storage/backend'
 
+import { getLogger } from '@/server/infra/logger'
 import { DEFAULT_PUBLIC_CACHE_CONTROL } from '@/server/infra/storage/backend'
 import {
   deleteS3Object,
@@ -83,6 +84,27 @@ export const s3Backend: StorageBackend = {
 
   async deleteMany(keys: string[]): Promise<void> {
     await deleteS3Objects(keys)
+  },
+
+  async deletePrefix(prefix: string): Promise<void> {
+    // S3 has no real directories — deleting all objects under the prefix
+    // effectively removes the "folder". List and delete in pages to handle
+    // prefixes with more than 1000 objects.
+    const objects = await listS3Objects(prefix)
+    if (objects.length > 0) {
+      await deleteS3Objects(objects.map((o) => o.key))
+    }
+    // S3-compatible services that persist folder markers (MinIO, SeaweedFS,
+    // Aliyun OSS, …) leave a zero-byte object at the prefix itself after the
+    // contents are gone. The contract is "including the prefix directory
+    // itself", so best-effort delete it — a missing marker is not an error.
+    if (prefix.endsWith('/')) {
+      try {
+        await deleteS3Object(prefix)
+      } catch (error) {
+        getLogger('storage.s3').warn('Failed to delete prefix folder marker', { prefix, error })
+      }
+    }
   },
 
   async list(prefix: string, opts?: { maxKeys?: number }): Promise<StoredObjectMeta[]> {

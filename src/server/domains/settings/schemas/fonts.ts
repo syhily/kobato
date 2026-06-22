@@ -16,10 +16,10 @@ import { z } from 'zod'
  * and braces. The `trim()` + `min(1)` pair means whitespace-only names
  * normalize to empty.
  *
- * Used by:
- *   - `og` / `calendar` (canvas server-side rendering via @napi-rs/canvas)
- *   - `globalFamily` (site-wide UI sans-serif, injected as --font-body)
- *   - `postFamily` (article body serif, injected as --inkling-font-serif)
+ * Used by `og` / `calendar` (canvas server-side rendering via
+ * @napi-rs/canvas). The browser web fonts now come from self-hosted
+ * packages managed in `/admin/library/fonts`; their `familyName` is stored on the
+ * `font` row and never re-enters the settings row.
  */
 const fontFamilySchema = z.union([
   z.literal(''),
@@ -33,20 +33,19 @@ const fontFamilySchema = z.union([
     }),
 ])
 
-// CSS list cap: 8 stylesheets per slot is comfortably above any
-// realistic font number (typically 1-3) and stops a misconfigured row
-// from emitting hundreds of <link> tags. The form trims empty strings
-// before save.
-const fontCssListSchema = z.array(z.url()).max(8)
+// Ordered list of `font.id` UUIDs assigned to a slot (global / post / code).
+// The `/admin/library/fonts` manager edits these via `fonts.setSlot`. The cap of 8
+// is comfortably above any realistic stack (typically 1-3) and stops a
+// runaway payload from emitting hundreds of <link> tags. Slot membership is
+// reference-counted across all three lists by the fonts domain — a font is
+// only garbage-collected when its total reference count drops to zero.
+const slotFontListSchema = z.array(z.uuid()).max(8)
 
 export const fontsSchema = z.object({
   og: z.object({ family: fontFamilySchema }),
   calendar: z.object({ family: fontFamilySchema }),
-  globalFamily: fontFamilySchema,
-  postFamily: fontFamilySchema,
-  codeFamily: fontFamilySchema,
-  globalCss: fontCssListSchema,
-  postCss: fontCssListSchema,
-  codeCss: fontCssListSchema,
+  global: slotFontListSchema,
+  post: slotFontListSchema,
+  code: slotFontListSchema,
 })
 export type FontsInput = z.infer<typeof fontsSchema>

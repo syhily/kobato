@@ -24,7 +24,7 @@ export const localStorageRouter = new Hono<Env>()
 // traversal guard in `resolveLocalPath` is not enough on its own — it only
 // prevents escaping STORAGE_DIR, it does not restrict *which* subdirectory
 // inside it is readable.
-const PUBLIC_STORAGE_PREFIXES = ['images/', 'musics/', 'branding/']
+const PUBLIC_STORAGE_PREFIXES = ['images/', 'musics/', 'branding/', 'fonts/']
 
 /**
  * Whether a decoded key names a publicly-servable object. Rejects empty
@@ -63,6 +63,11 @@ const CONTENT_TYPE_BY_EXT: Record<string, string> = {
   '.ico': 'image/x-icon',
   '.webmanifest': 'application/manifest+json',
   '.json': 'application/json; charset=utf-8',
+  '.css': 'text/css; charset=utf-8',
+  '.woff2': 'font/woff2',
+  '.woff': 'font/woff',
+  '.ttf': 'font/ttf',
+  '.otf': 'font/otf',
 }
 
 function contentTypeFor(key: string): string {
