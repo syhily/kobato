@@ -1,0 +1,167 @@
+/*
+ * Base layer — structural defaults, resets, and non-token CSS that
+ * applies globally across both public and admin surfaces.
+ *
+ * Contents (in cascade order):
+ *   1. Shiki token colors (pre.shiki)
+ *   2. Comment flash animation (.comment-body.active)
+ *   3. @layer base (text-autospace, svg, border-color defaults)
+ *   4. APlayer icon sizing
+ *   5. Reduced-motion override
+ *   6. Body font chain (--font-body) + html/body defaults
+ *   7. Custom cursor styles (folded from cursors.css)
+ *   8. @layer utilities (medium-zoom stacking, scrollbar-thin)
+ *   9. View-transition styles
+ */
+
+/* Shiki token colors and background outside .prose-blog (e.g. audit-log details) */
+pre.shiki {
+  color: var(--shiki-light);
+  background-color: var(--shiki-light-bg);
+}
+pre.shiki span {
+  color: var(--shiki-light);
+}
+
+/* Shiki dual theme dark override */
+.dark pre.shiki {
+  color: var(--shiki-dark) !important;
+  background-color: var(--shiki-dark-bg) !important;
+}
+.dark pre.shiki span {
+  color: var(--shiki-dark) !important;
+}
+
+/* Comment hash focus flash */
+.comment-body.active {
+  animation: var(--animate-comment-flash);
+  border-radius: var(--radius-sm);
+}
+
+/* Base layer Preflight overrides */
+@layer base {
+  :root {
+    text-autospace: normal;
+  }
+
+  svg {
+    display: inline-block;
+    vertical-align: middle;
+  }
+
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--border);
+  }
+}
+
+/* APlayer icon sizing — SVGs must fill their 15×15 px parent containers */
+.aplayer .aplayer-icon svg {
+  width: 100%;
+  height: 100%;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/*
+ * Body font chain.
+ *
+ * Defined as a CSS variable so a configured globalFamily setting
+ * (blogSettings.fonts.globalFamily) can prepend a custom family at
+ * runtime via root.tsx. When no globalFamily is configured, the variable
+ * falls back to the default OPPO Sans CJK sans-serif chain.
+ */
+:root {
+  --font-body:
+    'OPPO Sans 4.0', 'OPPO Sans', OPPOSans, 'PingFang SC', 'Lantinghei SC', 'Microsoft YaHei', 'Source Han Sans CN',
+    -apple-system, BlinkMacSystemFont, 'HanHei SC', 'Helvetica Neue', 'Open Sans', Arial, 'Hiragino Sans GB', STHeiti,
+    'WenQuanYi Micro Hei', SimSun, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol';
+}
+
+/* Document chrome body font cursors */
+html,
+body {
+  overscroll-behavior: none;
+  font-family: var(--font-body);
+  font-size: 0.9375rem;
+  background-color: var(--surface-body);
+  color: var(--ink-2);
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-box-sizing: border-box;
+  box-sizing: border-box;
+}
+
+/* ── Custom pointer cursors (folded from cursors.css) ──────────────── */
+
+/* Custom pointer cursors */
+html,
+body {
+  cursor:
+    image-set(
+        url(data:image/png;base64,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)
+          2x
+      )
+      4 4,
+    auto !important;
+}
+
+a,
+button {
+  cursor: image-set(url(data:image/png;base64,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) 2x) 9 9, auto;
+}
+
+@layer utilities {
+  /* medium-zoom stack admin chrome under overlay popovers above */
+  .medium-zoom-overlay,
+  .medium-zoom-image--opened {
+    z-index: 45;
+  }
+
+  /* Thin scrollbar for lyrics panel */
+  .scrollbar-thin {
+    scrollbar-width: thin;
+  }
+}
+
+/* ─── View Transition styles ───────────────────────────── */
+@supports (view-transition-name: none) {
+  ::view-transition-group(*) {
+    animation-duration: 350ms;
+    animation-timing-function: cubic-bezier(0.3, 0, 0, 1);
+  }
+
+  ::view-transition-old(music-cover-*),
+  ::view-transition-new(music-cover-*) {
+    animation: none;
+  }
+
+  ::view-transition-new(music-title-*),
+  ::view-transition-new(music-artist-*) {
+    animation: slideUpFade 300ms ease-out;
+  }
+}
+
+@keyframes slideUpFade {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
