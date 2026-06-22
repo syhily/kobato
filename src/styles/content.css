@@ -202,6 +202,18 @@
     overflow-wrap: normal;
   }
 
+  /* When a code block is rendered inside .code-block-wrapper (the
+     CodeBlock component's shell with a language + copy header), the
+     <pre>'s top/bottom margin is replaced by the header bar above it.
+     Without this reset the 1.5rem margin-top creates a visible gap
+     between the header and the code. The component already applies
+     Tailwind mt-0/mb-0, but this .post-content pre rule is unlayered
+     and wins over layered utilities, so the reset must live here too. */
+  .code-block-wrapper pre {
+    margin-top: 0;
+    margin-bottom: 0;
+  }
+
   pre.shiki {
     color: var(--shiki-light);
   }
