@@ -1,0 +1,183 @@
+/*
+ * Shared editor primitives — needed by BOTH the public comment textarea
+ * and the admin article editor.
+ *
+ * Contents:
+ *   1. Editor content reset (box-sizing, form-element reset) — scoped to
+ *      .inkling-prose only (the comment textarea doesn't need it; it uses
+ *      Tailwind utilities for its inputs).
+ *   2. .inkling-text-* inline format rules (bold/italic/underline/
+ *      strikethrough/code) — re-scoped to match BOTH .inkling-prose and
+ *      .comment-content so the comment textarea's live preview renders
+ *      underline/strikethrough/code (previously invisible — latent bug).
+ *   3. .inkling-prose behavior rules (position:relative, contenteditable
+ *      outline removal, selection color, dark-mode selection).
+ *
+ * Consumed by: public.css AND admin.css.
+ */
+
+/*
+ * Editor content reset — scoped to `.inkling-prose`.
+ *
+ * Previously this was a full Tailwind preflight port (from Koenig). Now
+ * that the editor content wrapper carries `prose-blog prose prose-lg`
+ * (the @tailwindcss/typography plugin), the prose system provides its own
+ * preflight + typography. The old preflight's rules (margin:0 on p/h1-h6,
+ * heading font-size reset, a { color: inherit }, list-style: none, etc.)
+ * were MORE specific than prose's `:where()` selectors and nuked the
+ * paragraph spacing, collapsing every block into one line.
+ *
+ * What remains here is ONLY what the editor needs that prose does NOT
+ * provide:
+ *   - box-sizing: border-box (so card controls have predictable sizing)
+ *   - border-width/style/color defaults (so `border` utilities work)
+ *   - form-element resets (button/input/select/textarea appearance +
+ *     inherit) so card edit controls render consistently
+ *   - button background-image: none (prose doesn't reset this)
+ *
+ * All typography (margins, font-size, headings, lists, links, code) is
+ * handled by `prose-blog prose`. Do NOT add margin/font/list resets here
+ * — they will override prose's `:where()` rules and break the layout.
+ */
+
+.inkling-prose {
+  /*
+  1. Prevent padding and border from affecting element width.
+  2. Allow adding a border to an element by just adding a border-width.
+  */
+  *,
+  ::before,
+  ::after {
+    box-sizing: border-box; /* 1 */
+    border-width: 0; /* 2 */
+    border-style: solid; /* 2 */
+    border-color: var(--border); /* 2 */
+  }
+
+  /* Form element font inheritance — card edit controls (inputs, selects,
+     textareas) need to inherit the editor's font, not the browser default. */
+  button,
+  input,
+  optgroup,
+  select,
+  textarea {
+    font-family: inherit;
+    font-size: 100%;
+    font-weight: inherit;
+    line-height: inherit;
+    color: inherit;
+    margin: 0;
+    padding: 0;
+  }
+
+  button,
+  select {
+    text-transform: none;
+  }
+
+  button,
+  [type='button'],
+  [type='reset'],
+  [type='submit'] {
+    -webkit-appearance: button;
+    background-color: transparent;
+    background-image: none;
+  }
+
+  :-moz-focusring {
+    outline: none;
+  }
+
+  :-moz-ui-invalid {
+    box-shadow: none;
+  }
+
+  textarea {
+    resize: vertical;
+  }
+
+  input::placeholder,
+  textarea::placeholder {
+    opacity: 1;
+    color: var(--inkling-muted);
+  }
+
+  button:focus-visible,
+  input:focus-visible {
+    outline: none;
+  }
+}
+
+/* ── Inline text-format classes ─────────────────────────────────────── */
+/* Lexical's theme maps each FORMAT_TEXT_COMMAND flag to a class applied
+   on the wrapping <span>. Re-scoped to match BOTH .inkling-prose (article
+   editor) and .comment-content (comment textarea) — previously scoped to
+   .inkling-prose only, which meant underline/strikethrough/code were
+   invisible in the comment editor live preview. The published HTML path
+   uses native <u>/<s>/<code> tags (see server/render/inkling/html.ts),
+   styled by content.css; these rules make the editor's inline preview
+   match the rendered output.                                           */
+
+:is(.inkling-prose, .comment-content) .inkling-text-bold {
+  font-weight: 700;
+}
+
+:is(.inkling-prose, .comment-content) .inkling-text-italic {
+  font-style: italic;
+}
+
+:is(.inkling-prose, .comment-content) .inkling-text-underline {
+  text-decoration: underline;
+}
+
+:is(.inkling-prose, .comment-content) .inkling-text-strikethrough {
+  text-decoration: line-through;
+}
+
+:is(.inkling-prose, .comment-content) .inkling-text-code {
+  font-family: var(--inkling-font-code);
+  background: var(--code-bg);
+  border: 1px solid var(--line-muted);
+  border-radius: 2px;
+  color: var(--code-inline-fg);
+  font-size: 0.8em;
+  line-height: 1em;
+  padding: calc(0.4 * var(--ir)) calc(0.4 * var(--ir)) calc(0.2 * var(--ir));
+  vertical-align: middle;
+  white-space: pre-wrap;
+}
+
+/* ── .inkling-prose behavior rules ─────────────────────────────────── */
+/*
+ * Editor-content behavior rules — scoped to `.inkling-prose`.
+ *
+ * Typography (font-family, font-size, headings, paragraphs, lists,
+ * blockquote, code, tables) is handled entirely by the `post-content
+ * prose-blog prose prose-lg` classes on the same wrapper. This file only
+ * provides editor-specific behaviour that the prose system does not cover:
+ *
+ *   - position: relative (anchor for absolutely-positioned toolbars)
+ *   - [contenteditable] outline removal
+ *   - selection highlight color
+ *   - Lexical text-format classes (bold/italic/underline/strikethrough/code)
+ *     — Lexical applies these as <span class> instead of <strong>/<u> etc.
+ */
+
+.inkling-prose {
+  position: relative;
+}
+
+.inkling-prose [contenteditable] {
+  outline: none;
+}
+
+/* Selection highlight — brand color */
+.inkling-prose ::selection {
+  background: var(--inkling-selection);
+}
+
+/* Dark mode */
+.dark .inkling-prose ::selection,
+.inkling-prose.dark ::selection {
+  background: var(--ink-3);
+}
