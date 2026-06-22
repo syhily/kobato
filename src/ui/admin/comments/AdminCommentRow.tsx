@@ -171,7 +171,7 @@ export function AdminCommentRow({
           )}
 
           {/* Body */}
-          <div className="comment-content mt-2 leading-[1.85] wrap-break-word whitespace-normal">
+          <div className="comment-content mt-2 leading-copy wrap-break-word whitespace-normal">
             <CommentInklingBody document={comment.body} />
           </div>
 

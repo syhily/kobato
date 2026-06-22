@@ -83,7 +83,7 @@ const menuTogglerClass = cn(
   'inline-flex items-center justify-center',
   'cursor-pointer border-0 bg-transparent p-0',
   'text-2xl leading-none text-ink-1',
-  'focus-visible:ring-(--ring-width) focus-visible:ring-ring/50 focus-visible:outline-hidden',
+  'focus-visible:shadow-focus focus-visible:outline-none',
 )
 
 const siteMenuClass = 'flex-1 overflow-hidden'

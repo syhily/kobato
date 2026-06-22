@@ -1,9 +1,11 @@
 import {
   closestCorners,
+  type CollisionDetection,
   DndContext,
   type DragEndEvent,
   KeyboardSensor,
   PointerSensor,
+  pointerWithin,
   useDraggable,
   useDroppable,
   useSensor,
@@ -175,6 +177,29 @@ export function FontsView() {
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   )
 
+  // The drag spans two containers with opposite intents:
+  //  - Library rows (left) are draggable but never droppable. Dropping one
+  //    into a slot only counts when the pointer is *inside* the slot rect.
+  //  - Slot items (right) sort within their own column; reorder wants the
+  //    "nearest corner" looseness `closestCorners` provides.
+  // `closestCorners` alone returns the nearest slot even when the pointer is
+  // still hovering the library column, so a drag started on the left would
+  // "land" in a slot on drop without ever entering it. Dispatching by active
+  // type keeps both behaviors correct.
+  const collisionDetection: CollisionDetection = (args) => {
+    const activeData = args.active.data.current
+    const activeType =
+      activeData && typeof activeData === 'object' ? (activeData as { type?: unknown }).type : undefined
+    if (activeType === 'library') {
+      const within = pointerWithin(args)
+      // Fall back to closestCorners only if the pointer is genuinely inside a
+      // droppable — pointerWithin already returns [] when it isn't, so the
+      // fallback here just ranks multiple overlapping slots.
+      return within.length > 0 ? within : []
+    }
+    return closestCorners(args)
+  }
+
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event
     if (!over) {
@@ -229,7 +254,7 @@ export function FontsView() {
         <UploadButton />
       </AdminListPage.Header>
       <AdminListPage.Body>
-        <DndContext sensors={sensors} collisionDetection={closestCorners} onDragEnd={handleDragEnd}>
+        <DndContext sensors={sensors} collisionDetection={collisionDetection} onDragEnd={handleDragEnd}>
           <div className="grid gap-6 lg:grid-cols-[1fr_1fr]">
             <LibrarySection fonts={fonts} onDelete={onDelete} loading={listQuery.isLoading} />
             <SlotAssignmentSection fonts={fonts} slots={slotsController.slots} onRemove={slotsController.remove} />
@@ -772,22 +797,36 @@ function SlotColumn({
         <div
           ref={setNodeRef}
           className={
-            'flex min-h-16 flex-col gap-1 rounded-md transition-colors' +
+            'flex flex-col gap-1 rounded-md p-1.5 transition-colors' +
             (isOver ? ' bg-primary/5 ring-1 ring-primary/20 ring-inset' : '')
           }
         >
           {assigned.length === 0 ? (
-            <p className="flex min-h-16 items-center justify-center text-sm text-muted-foreground">
+            <p className="flex min-h-16 items-center justify-center rounded px-2 py-3 text-center text-sm text-muted-foreground">
               该槽位暂无字体，拖拽左侧字体到此处添加。
             </p>
           ) : (
-            <SortableContext items={itemIds} strategy={verticalListSortingStrategy}>
-              <ol className="flex flex-col gap-1">
-                {assigned.map((font) => (
-                  <SlotFontRow key={font.id} slot={slot} font={font} onRemove={onRemove} />
-                ))}
-              </ol>
-            </SortableContext>
+            <>
+              <SortableContext items={itemIds} strategy={verticalListSortingStrategy}>
+                <ol className="flex flex-col gap-1">
+                  {assigned.map((font) => (
+                    <SlotFontRow key={font.id} slot={slot} font={font} onRemove={onRemove} />
+                  ))}
+                </ol>
+              </SortableContext>
+              {/* Trailing drop region: gives a visible target to "append at
+                  the end" instead of forcing the user to hit an existing row.
+                  The dashed outline only surfaces while dragging over so the
+                  filled slot still reads as a tidy list at rest. */}
+              <div
+                className={
+                  'min-h-10 rounded px-2 py-1.5 text-center text-xs transition-colors' +
+                  (isOver ? ' border border-dashed border-primary/30 text-primary/70' : ' text-muted-foreground/0')
+                }
+              >
+                {isOver ? '拖到此处追加到末尾' : ''}
+              </div>
+            </>
           )}
           {assigned.length >= MAX_SLOT_FONTS && (
             <span className="mt-1 text-xs text-muted-foreground">已达上限 {MAX_SLOT_FONTS} 个</span>

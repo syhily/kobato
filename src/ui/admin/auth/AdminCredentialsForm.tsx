@@ -298,7 +298,7 @@ export function ResetPasswordForm({ action, token, isSubmitting, csrfToken }: Re
         className="mt-7 h-(--spacing-auth-btn) w-full rounded-xl bg-brand text-xl font-normal text-white hover:opacity-90"
       >
         {isSubmitting ? (
-          '保存中...'
+          '保存中…'
         ) : (
           <>
             设置密码 <ArrowRightIcon className="ml-1 inline-block" size={18} />

@@ -79,7 +79,7 @@ function SearchFilterPill({
         className={cn(
           'flex size-9 shrink-0 items-center justify-center rounded-r-md border border-l-0 border-border text-muted-foreground transition',
           'hover:bg-secondary hover:text-foreground',
-          'focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none',
+          'focus-visible:shadow-focus focus-visible:outline-none',
         )}
         onClick={onRemove}
       >
@@ -130,7 +130,7 @@ function KindFilterPill({
         className={cn(
           'flex size-9 shrink-0 items-center justify-center rounded-r-md border border-l-0 border-border text-muted-foreground transition',
           'hover:bg-secondary hover:text-foreground',
-          'focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none',
+          'focus-visible:shadow-focus focus-visible:outline-none',
         )}
         onClick={onRemove}
       >
@@ -187,7 +187,7 @@ export function ImagesFilterBar({ filters, onAddFilter, onRemoveFilter, onClearF
         <PopoverTrigger
           className={cn(
             'inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-md border border-border px-3 text-sm transition hover:bg-accent',
-            'focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none',
+            'focus-visible:shadow-focus focus-visible:outline-none',
           )}
         >
           {hasFilters ? <FunnelPlusIcon className="size-4" /> : <FunnelIcon className="size-4" />}

@@ -30,7 +30,7 @@ function PaginationItem({ ...props }: ComponentProps<'li'>) {
 }
 
 export const chipBase =
-  'inline-flex size-10 items-center justify-center rounded-full text-sm font-medium select-none transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-40'
+  'inline-flex size-10 items-center justify-center rounded-full text-sm font-medium select-none transition-colors focus-visible:outline-none focus-visible:shadow-focus disabled:cursor-not-allowed disabled:opacity-40'
 
 export const chipResting = 'bg-chip-bg text-chip-fg hover:bg-chip-hover-bg hover:text-chip-hover-fg'
 

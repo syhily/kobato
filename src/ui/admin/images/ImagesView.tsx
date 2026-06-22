@@ -90,7 +90,7 @@ export function ImagesView() {
     mutationFn: (id: string) => orpc.admin.images.delete({ id }),
     onSuccess: () => {
       setSelectedImage(null)
-      toast.success('删除成功')
+      toast.success('图片已删除')
       invalidateList()
     },
     onError: (error) => {
@@ -104,7 +104,7 @@ export function ImagesView() {
       orpc.admin.images.updateNote({ id: vars.id, note: vars.note }),
     onSuccess: (payload) => {
       setSelectedImage((prev) => (prev !== null && prev.id === payload.image.id ? payload.image : prev))
-      toast.success('更新备注成功')
+      toast.success('备注已更新')
       invalidateList()
     },
     onError: (error) => {
@@ -118,7 +118,7 @@ export function ImagesView() {
     mutationFn: (id: string) => orpc.admin.images.recalculateThumbhash({ id }),
     onSuccess: (payload) => {
       setSelectedImage((prev) => (prev !== null && prev.id === payload.image.id ? payload.image : prev))
-      toast.success('重新计算缩略图成功')
+      toast.success('缩略图已重新计算')
       invalidateList()
     },
     onError: (error) => {

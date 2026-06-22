@@ -433,7 +433,7 @@ function LinkPromptDialog({ seed, onClose, onConfirm }: LinkPromptDialogProps) {
             <Button type="button" variant="outline" onClick={onClose}>
               取消
             </Button>
-            <Button type="submit">确定</Button>
+            <Button type="submit">插入链接</Button>
           </DialogFooter>
         </form>
       </DialogContent>

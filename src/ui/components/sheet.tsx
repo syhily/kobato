@@ -58,7 +58,7 @@ function SheetContent({
         data-slot="sheet-content"
         data-side={side}
         className={cn(
-          'fixed z-(--z-modal) flex flex-col gap-4 bg-background shadow-lg transition-all duration-350 ease-[cubic-bezier(0.16,1,0.3,1)]',
+          'fixed z-(--z-modal) flex flex-col gap-4 bg-background shadow-modal transition-all duration-350 ease-[cubic-bezier(0.16,1,0.3,1)]',
           sideClasses[side],
           className,
         )}
@@ -78,7 +78,7 @@ function SheetContent({
         </motion.div>
         <BaseDialog.Close
           data-slot="sheet-close-button"
-          className="absolute top-4 right-4 rounded-xs opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-hidden disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*=size-])]:size-4"
+          className="absolute top-4 right-4 rounded-xs opacity-70 transition-opacity hover:opacity-100 focus-visible:shadow-focus focus-visible:outline-none disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*=size-])]:size-4"
         >
           <XIcon />
           <span className="sr-only">关闭</span>

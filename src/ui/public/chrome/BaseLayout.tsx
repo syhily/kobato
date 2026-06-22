@@ -44,7 +44,7 @@ export function BaseLayout({ navigation, footer, currentUser, pathname, search, 
           <UserMenu currentUser={currentUser} logoutQuery={logoutQuery} />
         </div>
       )}
-      <main id="main-content" className="flex flex-1 flex-col">
+      <main id="main-content" className="flex min-w-0 flex-1 flex-col">
         {children}
         {showFooter && <Footer />}
       </main>

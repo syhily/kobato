@@ -69,7 +69,12 @@ export function HomeLayoutBody({
 function EmptyHomeState({ currentUser, hasSidebar }: { currentUser?: { role: string } | null; hasSidebar: boolean }) {
   const canWrite = currentUser?.role === 'admin' || currentUser?.role === 'author'
   return (
-    <div className={cn('box-border w-full max-w-full shrink-0 px-3', hasSidebar ? 'xl:w-content-main' : 'xl:w-full')}>
+    <div
+      className={cn(
+        'box-border w-full max-w-full min-w-0 shrink-0 px-3',
+        hasSidebar ? 'xl:w-content-main' : 'xl:w-full',
+      )}
+    >
       <div className="flex h-(--size-empty-state) flex-auto flex-col text-center">
         <div className="my-auto">
           <div className="mb-2 inline-flex size-16 items-center justify-center rounded-full bg-brand/10 text-brand">
@@ -234,7 +239,7 @@ export function PostCards({
   return (
     <div
       className={cn(
-        'box-border w-full max-w-full shrink-0 px-3',
+        'box-border w-full max-w-full min-w-0 shrink-0 px-3',
         layout === 'with-sidebar' ? 'xl:w-content-main' : 'xl:w-full',
       )}
     >

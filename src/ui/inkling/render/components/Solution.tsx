@@ -7,7 +7,7 @@ export interface SolutionProps {
 export function Solution({ children }: SolutionProps) {
   return (
     <blockquote className="solution relative flow-root overflow-x-auto overflow-y-hidden p-[1.2rem] pr-9 pb-9 [-webkit-overflow-scrolling:touch]">
-      <div className="solution-begin mb-2 block text-[1.2rem] font-extrabold text-brand">解：</div>
+      <div className="solution-begin mb-2 block text-[1.2rem] font-bold text-brand">解：</div>
       {children}
       <span
         className="solution-qed pointer-events-none absolute right-3 bottom-3 inline-flex h-3.5 w-3.5 items-center justify-center text-ink-3"

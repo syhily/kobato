@@ -53,7 +53,7 @@ async function pollReady(onTimeout: () => void, signal: AbortSignal) {
               typeof status.phase === 'string' &&
               status.phase === 'completed'
             ) {
-              toast.success('还原成功')
+              toast.success('备份已还原')
             } else if (
               typeof status === 'object' &&
               status !== null &&

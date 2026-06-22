@@ -189,7 +189,7 @@ function CalendarDropdown({ options, ...selectProps }: DropdownProps) {
       value={String(selectProps.value ?? '')}
       aria-label="选择月份或年份"
       className={cn(
-        'h-8 w-auto appearance-none rounded-md border border-input bg-background px-2 pr-6 text-sm shadow-sm transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50',
+        'h-8 w-auto appearance-none rounded-md border border-input bg-background px-2 pr-6 text-sm shadow-sm transition-colors focus-visible:shadow-focus focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50',
         selectProps.className,
       )}
     >

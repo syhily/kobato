@@ -84,7 +84,7 @@ export function FriendsView() {
   const deleteMutation = useMutation({
     mutationFn: (input: DeleteFriendInput) => orpc.admin.friends.delete({ id: input.id }),
     onSuccess: () => {
-      toast.success('删除成功')
+      toast.success('友链已删除')
       invalidateList()
     },
     onError: (error) => {

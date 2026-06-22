@@ -188,7 +188,7 @@ export function JustifiedImageGrid({
                   whileTap={prefersReducedMotion ? undefined : { scale: 0.98 }}
                   className={cn(
                     'group relative block overflow-hidden rounded-xl border bg-muted',
-                    'focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none',
+                    'focus-visible:shadow-focus focus-visible:outline-none',
                   )}
                   style={{ width: item.width, height: item.height }}
                   aria-label={`查看图片 ${item.image.storagePath}`}

@@ -26,22 +26,8 @@ export function TableOfContents({ headings, toc = 'disabled' }: TableOfContentsP
   const generateTocConfig = toc === 'enabled' ? (seo?.toc ?? DEFAULT_TOC_CONFIG) : false
   const items = generateToC(headings, generateTocConfig)
   const [visible, setVisible] = useState(false)
-  const [hovered, setHovered] = useState(false)
 
   const onToggle = useCallback(() => setVisible((prev) => !prev), [])
-
-  const onPointerEnter = useCallback((event: React.PointerEvent) => {
-    if (event.pointerType === 'touch') {
-      return
-    }
-    setHovered(true)
-  }, [])
-  const onPointerLeave = useCallback((event: React.PointerEvent) => {
-    if (event.pointerType === 'touch') {
-      return
-    }
-    setHovered(false)
-  }, [])
 
   useEffect(() => {
     return () => {
@@ -50,27 +36,28 @@ export function TableOfContents({ headings, toc = 'disabled' }: TableOfContentsP
       }
       document.body.style.overflow = ''
       document.body.style.paddingRight = ''
-      document.body.style.removeProperty('--scrollbar-width')
     }
   }, [])
 
-  const lock = hovered || visible
+  // Scroll-lock the page only when the drawer is actually open. Tying
+  // it to `hovered` made the body gain a 15px padding-right every time
+  // the cursor entered the toggle, which shoved every `fixed right-*`
+  // chrome element (logged-in avatar, floating buttons) 15px leftward
+  // and back on each hover/leave — visible page jitter.
   useEffect(() => {
-    if (typeof document === 'undefined' || !lock) {
+    if (typeof document === 'undefined' || !visible) {
       return
     }
     const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth
     document.body.style.overflow = 'hidden'
     if (scrollbarWidth > 0) {
       document.body.style.paddingRight = `${scrollbarWidth}px`
-      document.body.style.setProperty('--scrollbar-width', `${scrollbarWidth}px`)
     }
     return () => {
       document.body.style.overflow = ''
       document.body.style.paddingRight = ''
-      document.body.style.removeProperty('--scrollbar-width')
     }
-  }, [lock])
+  }, [visible])
 
   if (items.length === 0) {
     return null
@@ -81,7 +68,7 @@ export function TableOfContents({ headings, toc = 'disabled' }: TableOfContentsP
       <motion.button
         type="button"
         className={cn(
-          'fixed top-0 right-[var(--scrollbar-width,0px)] bottom-0 my-auto flex cursor-pointer items-center justify-center',
+          'fixed top-0 right-0 bottom-0 my-auto flex cursor-pointer items-center justify-center',
           'rounded-full border border-line text-toc-toggle leading-none text-ink-3 shadow-toc-toggle',
           'transition-colors duration-500',
           'bg-canvas/90 hover:bg-surface',
@@ -104,8 +91,6 @@ export function TableOfContents({ headings, toc = 'disabled' }: TableOfContentsP
         aria-label={visible ? '关闭文章目录' : '展开文章目录'}
         aria-expanded={visible}
         onClick={onToggle}
-        onPointerEnter={onPointerEnter}
-        onPointerLeave={onPointerLeave}
       >
         <motion.span
           className="inline-flex"

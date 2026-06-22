@@ -1,4 +1,5 @@
-export const postTitleClass = 'post-title text-[1.5rem] md:max-lg:text-[1.625rem] lg:text-[1.75rem]'
+export const postTitleClass =
+  'post-title text-h-lg leading-h-lg tracking-h-lg md:max-lg:text-[1.625rem] lg:text-[1.75rem]'
 
 export const postMetaClass = 'post-meta flex items-start gap-x-4 gap-y-3 max-md:flex-col max-md:gap-2.5'
 

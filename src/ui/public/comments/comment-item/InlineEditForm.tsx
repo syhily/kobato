@@ -70,7 +70,7 @@ export function InlineEditForm({ commentId, onCancel, onSaved }: InlineEditFormP
           onClick={handleSave}
           disabled={!loaded || saving}
         >
-          {saving ? '保存中...' : '保存'}
+          {saving ? '保存中…' : '保存'}
         </Button>
         <Button variant="light" onMouseDown={(event) => event.preventDefault()} onClick={onCancel} disabled={saving}>
           取消

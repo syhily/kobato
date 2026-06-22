@@ -64,7 +64,7 @@ export function MetricList({ type, initial, className, entityType, entityId }: M
           <li key={row.name}>
             <button
               type="button"
-              className="group relative flex w-full items-center gap-2 overflow-hidden rounded-xl px-2 py-1.5 text-sm transition-colors hover:bg-accent/60 focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
+              className="group relative flex w-full items-center gap-2 overflow-hidden rounded-xl px-2 py-1.5 text-sm transition-colors hover:bg-accent/60 focus-visible:shadow-focus focus-visible:outline-none"
               onClick={() => state.setFilter(type, row.name)}
             >
               <span

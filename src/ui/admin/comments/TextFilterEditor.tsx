@@ -24,7 +24,7 @@ function TextOperatorTrigger({
       <DropdownMenuTrigger
         className={cn(
           'flex h-9 w-full cursor-pointer items-center justify-between gap-1 px-3 text-sm transition',
-          'hover:bg-accent focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none',
+          'hover:bg-accent focus-visible:shadow-focus focus-visible:outline-none',
           className,
         )}
       >
