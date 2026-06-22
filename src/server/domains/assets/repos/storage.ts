@@ -147,8 +147,12 @@ export function ensureMatchesSlot(slot: BrandingSlot, buffer: Buffer): void {
 // slot ends in `Ico` (`faviconIco` → `favicon`). Binary PNG slots
 // have no suffix and pass through unchanged.
 function slotBaseName(slot: BrandingSlot): string {
-  if (slot.endsWith('Svg')) {return slot.slice(0, -3)}
-  if (slot.endsWith('Ico')) {return slot.slice(0, -3)}
+  if (slot.endsWith('Svg')) {
+    return slot.slice(0, -3)
+  }
+  if (slot.endsWith('Ico')) {
+    return slot.slice(0, -3)
+  }
   return slot
 }
 

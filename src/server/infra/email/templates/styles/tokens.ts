@@ -5,9 +5,9 @@ export const light = {
   cardBg: '#F4F5F6',
   cardBgAlt: '#F9F9FA',
   borderColor: '#EEF5F8',
-  accentColor: '#008c95',
+  accentColor: '#007a82',
   bodyBg: '#ffffff',
-  ctaBg: '#008c95',
+  ctaBg: '#007a82',
   ctaText: '#ffffff',
 } as const
 

@@ -238,7 +238,7 @@ describe('MusicsView render branches', () => {
     }
     const html = renderMusics()
     expect(html).toContain('蓝色风暴')
-    expect(html).toContain('加载中...')
+    expect(html).toContain('加载中…')
     // With a next page pending the sentinel never prints the all-loaded copy.
     expect(html).not.toContain('已加载全部')
   })

@@ -155,9 +155,9 @@ describe('snapshot: Comments render branches', () => {
         '/posts/long',
       ),
     )
-    // The LoadMore button copy flips to "加载中..." while the mutation is
+    // The LoadMore button copy flips to "加载中…" while the mutation is
     // pending, and the button is disabled.
-    expect(html).toContain('加载中...')
+    expect(html).toContain('加载中…')
     expect(html).toContain('disabled=""')
     mutationState.isPending = false
   })
