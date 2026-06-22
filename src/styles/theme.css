@@ -104,6 +104,14 @@
   --color-ink-on-dark: var(--ink-on-dark);
   --color-ink-5: var(--ink-5);
 
+  /* Geist gray-alpha overlay — translucent borders/dividers/hover (P2) */
+  --color-ga-100: var(--ga-100);
+  --color-ga-200: var(--ga-200);
+  --color-ga-300: var(--ga-300);
+  --color-ga-400: var(--ga-400);
+  --color-ga-500: var(--ga-500);
+  --color-ga-600: var(--ga-600);
+
   --color-like-active: var(--like-active);
   --color-like-bg: var(--like-bg);
   --color-like-bg-hover: var(--like-bg-hover);
@@ -121,6 +129,26 @@
   --text-badge: 0.625rem;
   --text-empty-state-hero: 6rem;
   --text-btn-lg: clamp(0.875rem, 0.8rem + 0.2vw, 0.9375rem);
+
+  /* Geist heading ladder (P3) — five steps the blog actually uses, not
+     the full Geist 10-step scale. Negative tracking tightens with size.
+     Pair with --leading-h-* (omitted from cn.ts) and Tailwind-native
+     tracking-h-* utilities. */
+  --text-h-display: 2.5rem;
+  --leading-h-display: 1.2;
+  --tracking-h-display: -0.04em;
+  --text-h-xl: 2rem;
+  --leading-h-xl: 1.25;
+  --tracking-h-xl: -0.032em;
+  --text-h-lg: 1.5rem;
+  --leading-h-lg: 1.33;
+  --tracking-h-lg: -0.024em;
+  --text-h-md: 1.25rem;
+  --leading-h-md: 1.3;
+  --tracking-h-md: -0.01em;
+  --text-h-sm: 1rem;
+  --leading-h-sm: 1.5;
+  --tracking-h-sm: -0.008em;
 
   --leading-badge: 1.2;
   --spacing-sidebar-item: var(--size-sidebar-item);
@@ -210,6 +238,10 @@
   /* Body line height */
   --leading-body: 1.4;
 
+  /* Copy line height — taller, for multi-line user-generated body text
+     (comments, descriptions). Dedupes the former leading-[1.85] literals. */
+  --leading-copy: 1.85;
+
   /* Dialog popup max width */
   --spacing-dialog-popup-md: calc(var(--container-popup-md));
 
@@ -217,13 +249,23 @@
   --shadow-tooltip: var(--shadow-tooltip-value);
   --shadow-toc-toggle: var(--shadow-toc-toggle-value);
 
+  /* Two-layer focus ring (P1) — 2px surface gap + 2px brand stroke.
+     Kept as a single shadow token so `focus-visible:shadow-focus` emits
+     both layers; pair with `outline-none`. */
+  --shadow-focus: 0 0 0 2px var(--ring-gap-color), 0 0 0 4px var(--ring-color);
+
+  /* Three semantic elevation tiers (P5) */
+  --shadow-raised: var(--shadow-raised);
+  --shadow-popover: var(--shadow-popover);
+  --shadow-modal: var(--shadow-modal);
+
   --animate-comments-shimmer: comments-shimmer 1.4s linear infinite;
 
-  --animate-comment-flash: comment-flash 3s ease-out forwards;
+  --animate-comment-flash: comment-flash 1.5s ease-out forwards;
 
   @keyframes comment-flash {
     0%,
-    25% {
+    40% {
       background-color: color-mix(in oklab, var(--brand) 16%, transparent);
     }
     100% {
@@ -276,6 +318,8 @@
   --color-btn-primary-bg: var(--btn-primary-bg);
   --color-btn-hover-bg: var(--btn-hover-bg);
   --color-btn-hover-fg: var(--btn-hover-fg);
+  --color-btn-destructive-hover-bg: var(--btn-destructive-hover-bg);
+  --color-btn-destructive-hover-fg: var(--btn-destructive-hover-fg);
   --color-editor-accent: var(--editor-accent);
 
   @keyframes comments-shimmer {
