@@ -307,6 +307,9 @@
   --color-chip-hover-bg: var(--chip-hover-bg);
   --color-chip-hover-fg: var(--chip-hover-fg);
 
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+
   --color-btn-light-border: var(--btn-light-border);
   --color-btn-light-bg: var(--btn-light-bg);
   --color-btn-light-fg: var(--btn-light-fg);

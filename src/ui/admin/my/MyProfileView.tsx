@@ -65,7 +65,7 @@ export function MyProfileView({ user, counts, passkeyEnabled }: MyProfileViewPro
   const [name, setName] = useState(user.name)
   const [link, setLink] = useState(user.link)
   const [badgeName, setBadgeName] = useState(user.badgeName)
-  const [badgeColor, setBadgeColor] = useState(user.badgeColor || '#008c95')
+  const [badgeColor, setBadgeColor] = useState(user.badgeColor || '#007a82')
   const [profileMessage, setProfileMessage] = useState<string | null>(null)
 
   const profileError = profileMutation.error?.message

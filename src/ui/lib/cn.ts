@@ -127,6 +127,8 @@ const COLOR_TOKENS = [
   'diff-delete-bg',
   'diff-delete-fg',
   'diff-delete-border',
+  'chart-1',
+  'chart-2',
   'chip-bg',
   'chip-fg',
   'chip-hover-bg',

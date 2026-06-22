@@ -62,7 +62,7 @@ function ComboboxContent<Item>({
         <BaseCombobox.Popup
           data-slot="combobox-content"
           className={cn(
-            'relative z-(--z-modal) flex max-h-[var(--available-height)] min-w-[var(--anchor-width)] origin-[var(--transform-origin)] flex-col overflow-hidden rounded-md border bg-popover text-popover-foreground shadow-md transition-all duration-[250ms] ease-[cubic-bezier(0.16,1,0.3,1)] data-[ending-style]:scale-95 data-[ending-style]:opacity-0 data-[starting-style]:scale-95 data-[starting-style]:opacity-0',
+            'relative z-(--z-modal) flex max-h-[var(--available-height)] min-w-[var(--anchor-width)] origin-[var(--transform-origin)] flex-col overflow-hidden rounded-md border bg-popover text-popover-foreground shadow-popover transition-all duration-[250ms] ease-[cubic-bezier(0.16,1,0.3,1)] data-[ending-style]:scale-95 data-[ending-style]:opacity-0 data-[starting-style]:scale-95 data-[starting-style]:opacity-0',
             className,
           )}
           {...props}

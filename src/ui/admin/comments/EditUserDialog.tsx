@@ -40,7 +40,7 @@ export function EditUserDialog({ comment, onClose, onSaved }: EditUserDialogProp
   const [email, setEmail] = useState(comment?.email ?? '')
   const [link, setLink] = useState(comment?.link ?? '')
   const [badgeName, setBadgeName] = useState(comment?.badgeName ?? '')
-  const [badgeColor, setBadgeColor] = useState(comment?.badgeColor ?? '#008c95')
+  const [badgeColor, setBadgeColor] = useState(comment?.badgeColor ?? '#007a82')
   const [useTextOverride, setUseTextOverride] = useState(comment?.badgeTextColor != null)
   const [badgeTextColor, setBadgeTextColor] = useState(comment?.badgeTextColor ?? DEFAULT_BADGE_TEXT_COLOR)
   if (comment?.id !== lastCommentId) {
@@ -50,7 +50,7 @@ export function EditUserDialog({ comment, onClose, onSaved }: EditUserDialogProp
       setEmail(comment.email)
       setLink(comment.link ?? '')
       setBadgeName(comment.badgeName ?? '')
-      setBadgeColor(comment.badgeColor ?? '#008c95')
+      setBadgeColor(comment.badgeColor ?? '#007a82')
       setUseTextOverride(comment.badgeTextColor !== null && comment.badgeTextColor !== undefined)
       setBadgeTextColor(comment.badgeTextColor ?? DEFAULT_BADGE_TEXT_COLOR)
     }
@@ -169,7 +169,7 @@ export function EditUserDialog({ comment, onClose, onSaved }: EditUserDialogProp
                 />
                 <span
                   className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium"
-                  style={{ backgroundColor: badgeColor || '#008c95', color: badgeTextColor }}
+                  style={{ backgroundColor: badgeColor || '#007a82', color: badgeTextColor }}
                 >
                   {badgeName || '预览'}
                 </span>

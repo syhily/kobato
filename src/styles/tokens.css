@@ -232,6 +232,10 @@
   --chip-hover-bg: var(--primary);
   --chip-hover-fg: var(--primary-foreground);
 
+  /* Chart palette — two data series for the analytics dashboard. */
+  --chart-1: #6366f1;
+  --chart-2: #14b8a6;
+
   /* Button light variant tokens light */
   --btn-light-border: var(--surface-soft);
   --btn-light-bg: var(--surface-soft);
@@ -366,6 +370,10 @@
   --chip-fg: var(--ink-1);
   --chip-hover-bg: var(--primary);
   --chip-hover-fg: var(--primary-foreground);
+
+  /* Chart palette — lifted for dark surfaces. */
+  --chart-1: #818cf8;
+  --chart-2: #2dd4bf;
 
   /* Button light variant tokens dark */
   --btn-light-border: var(--line);

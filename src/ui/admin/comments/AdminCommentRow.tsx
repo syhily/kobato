@@ -124,7 +124,7 @@ export function AdminCommentRow({
             {comment.badgeName && (
               <Badge
                 style={{
-                  backgroundColor: comment.badgeColor || '#008c95',
+                  backgroundColor: comment.badgeColor || '#007a82',
                   color: comment.badgeTextColor || '#ffffff',
                 }}
                 className="border-transparent"
