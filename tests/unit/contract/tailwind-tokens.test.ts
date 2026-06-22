@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest'
 
 import { __TOKENS_FOR_TESTS } from '@/ui/lib/cn'
 
-const CSS_PATH = resolve(process.cwd(), 'src/styles/tailwind.css')
+const CSS_PATH = resolve(process.cwd(), 'src/styles/theme.css')
 
 /** Namespaces that are Tailwind builtins and do not need registration in cn.ts. */
 const BUILTIN_NAMESPACES = new Set(['breakpoint', 'container'])
@@ -38,7 +38,7 @@ const KNOWN_THEME_NAMESPACES = [
 function extractThemeInlineTokens(css: string): Map<string, Set<string>> {
   const start = css.indexOf('@theme inline {')
   if (start === -1) {
-    throw new Error('Could not find @theme inline block in tailwind.css')
+    throw new Error('Could not find @theme inline block in theme.css')
   }
   const braceStart = css.indexOf('{', start)
   let depth = 1
@@ -69,7 +69,7 @@ function extractThemeInlineTokens(css: string): Map<string, Set<string>> {
   return tokens
 }
 
-describe('tailwind.css @theme inline ↔ cn.ts token parity', () => {
+describe('theme.css @theme inline ↔ cn.ts token parity', () => {
   const css = readFileSync(CSS_PATH, 'utf-8')
   const themeTokens = extractThemeInlineTokens(css)
   const registered = __TOKENS_FOR_TESTS.registered as Record<string, readonly string[]>

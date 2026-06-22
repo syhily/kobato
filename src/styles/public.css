@@ -1,7 +1,10 @@
+/* Public site entry point — loads only what public routes render.
+   The comment textarea needs inkling/core.css (editor primitives);
+   it does NOT need inkling/editor.css (article-editor chrome). */
 .medium-zoom-overlay,
 .medium-zoom-image--opened {
   z-index: 1080;
 }
 
 @import './tailwind.css';
-@import './inkling/index.css';
+@import './inkling/core.css';

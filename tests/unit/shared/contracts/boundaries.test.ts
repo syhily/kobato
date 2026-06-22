@@ -153,8 +153,8 @@ describe('contract: module and bundle boundaries', () => {
       expect(btn).toMatch(new RegExp(`\\b${shape}:`))
     }
 
-    const tailwindCss = readFileSync('src/styles/tailwind.css', 'utf8')
-    expect(tailwindCss).toMatch(/--spacing-icon-inset:\s*28%;/)
+    const themeCss = readFileSync('src/styles/theme.css', 'utf8')
+    expect(themeCss).toMatch(/--spacing-icon-inset:\s*28%;/)
   })
 
   it('keeps the legacy cards + lists partials fully retired', () => {
@@ -165,9 +165,10 @@ describe('contract: module and bundle boundaries', () => {
     expect(globals).not.toMatch(/@import\s+['"][^'"]*cards\.css['"]/)
     expect(globals).not.toMatch(/@import\s+['"][^'"]*lists\.css['"]/)
 
-    const tailwindCss = readFileSync('src/styles/tailwind.css', 'utf8')
-    expect(tailwindCss).toMatch(/--ink-5:\s*#eaecf3;/)
-    expect(tailwindCss).toMatch(/--color-ink-5:\s*var\(--ink-5\);/)
+    const tokensCss = readFileSync('src/styles/tokens.css', 'utf8')
+    expect(tokensCss).toMatch(/--ink-5:\s*#eaecf3;/)
+    const themeCss = readFileSync('src/styles/theme.css', 'utf8')
+    expect(themeCss).toMatch(/--color-ink-5:\s*var\(--ink-5\);/)
 
     // Scan every source file for residual className tokens that would
     // only resolve through the deleted partials. Strip comments first
@@ -225,7 +226,7 @@ describe('contract: module and bundle boundaries', () => {
     const globals = readFileSync('src/styles/public.css', 'utf8')
     expect(globals).not.toMatch(/@import\s+['"][^'"]*navigation\.css['"]/)
 
-    const tokens = readFileSync('src/styles/tailwind.css', 'utf8')
+    const tokens = readFileSync('src/styles/tokens.css', 'utf8')
     expect(tokens).toMatch(/--z-aside-drawer:\s*1020;/)
 
     const offenders: string[] = []
@@ -696,18 +697,18 @@ describe('contract: module and bundle boundaries', () => {
   it('keeps solution math scrollable instead of clipping long formulas', () => {
     const publicCss = readFileSync('src/styles/public.css', 'utf8')
     const tailwindCss = readFileSync('src/styles/tailwind.css', 'utf8')
-    const inklingCss = readFileSync('src/styles/inkling.css', 'utf8')
+    const contentCss = readFileSync('src/styles/content.css', 'utf8')
 
     expect(publicCss).not.toMatch(/\.post-content \.solution\s*\{[^}]*overflow:\s*hidden/s)
     expect(tailwindCss).not.toMatch(/\.post-content \.solution\s*\{[^}]*overflow:\s*hidden/s)
-    expect(inklingCss).toMatch(/\.math-display\b/)
-    expect(inklingCss).toContain('overflow-x: auto')
+    expect(contentCss).toMatch(/\.math-display\b/)
+    expect(contentCss).toContain('overflow-x: auto')
   })
 
-  it('routes post / comment typography through hand-written inkling.css', () => {
+  it('routes post / comment typography through hand-written content.css', () => {
     const publicCss = readFileSync('src/styles/public.css', 'utf8')
     const tailwindCss = readFileSync('src/styles/tailwind.css', 'utf8')
-    const inklingCss = readFileSync('src/styles/inkling.css', 'utf8')
+    const contentCss = readFileSync('src/styles/content.css', 'utf8')
     const commentItem = readFileSync('src/ui/public/comments/comment-item/helpers.ts', 'utf8')
 
     expect(publicCss).not.toMatch(/^\s*\.post-content\s*\{/m)
@@ -715,17 +716,17 @@ describe('contract: module and bundle boundaries', () => {
     expect(publicCss).not.toMatch(/@import\s+['"][^'"]*ui\/post\/post\.css['"]/)
     expect(existsSync('src/ui/post/post.css')).toBe(false)
 
-    // @tailwindcss/typography is fully removed — replaced by inkling.css
+    // @tailwindcss/typography is fully removed — replaced by content.css
     expect(tailwindCss).not.toContain("@plugin '@tailwindcss/typography'")
-    expect(tailwindCss).toContain("@import './inkling.css'")
+    expect(tailwindCss).toContain("@import './content.css'")
 
-    // inkling.css defines both scopes with explicit (non-:where) selectors
-    expect(inklingCss).toMatch(/\.post-content\s*\{/)
-    expect(inklingCss).toMatch(/\.comment-content\s*\{/)
+    // content.css defines both scopes with explicit (non-:where) selectors
+    expect(contentCss).toMatch(/\.post-content\s*\{/)
+    expect(contentCss).toMatch(/\.comment-content\s*\{/)
 
     // Colours are driven by project tokens, not --tw-prose-* slots
-    expect(inklingCss).toMatch(/var\(--ink-2\)/)
-    expect(inklingCss).toMatch(/var\(--brand\)/)
+    expect(contentCss).toMatch(/var\(--ink-2\)/)
+    expect(contentCss).toMatch(/var\(--brand\)/)
 
     // No stale prose/prose-blog classes leak into consumer components
     expect(commentItem).toMatch(/cn\(\s*'comment-content'\s*,/)

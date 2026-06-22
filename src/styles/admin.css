@@ -1,2 +1,4 @@
+/* Admin + editor entry point — public CSS plus the article-editor chrome. */
 @import './tailwind.css';
-@import './inkling/index.css';
+@import './inkling/core.css';
+@import './inkling/editor.css';

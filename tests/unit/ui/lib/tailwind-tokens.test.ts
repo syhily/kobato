@@ -4,14 +4,14 @@ import { describe, expect, it } from 'vitest'
 import { __TOKENS_FOR_TESTS } from '@/ui/lib/cn'
 
 // Custom design tokens live in @theme inline blocks in
-// src/styles/tailwind.css. tailwind-merge does not parse those
+// src/styles/theme.css. tailwind-merge does not parse those
 // blocks, so src/ui/lib/cn.ts hand-mirrors the token names into
 // extendTailwindMerge under the matching theme key. A forgotten
 // registration silently reintroduces the original bug — two tokens
 // from different Tailwind v4 namespaces collapsing to one because
 // tailwind-merge cannot tell them apart.
 //
-// This test diffs the token universe in tailwind.css against the
+// This test diffs the token universe in theme.css against the
 // hand-written tables in cn.ts and fails noisily on drift.
 
 interface ParsedThemeBlocks {
@@ -71,13 +71,13 @@ function parseThemeBlocks(css: string): ParsedThemeBlocks {
 // hand-authored arbitrary-value utilities.
 const BELOW_THE_LINE_NAMESPACES = new Set<string>(['breakpoint', 'container', 'ring', 'size', 'width', 'z'])
 
-const CSS_PATH = 'src/styles/tailwind.css'
+const CSS_PATH = 'src/styles/theme.css'
 
 describe('contract: @theme tokens are mirrored into tailwind-merge', () => {
   const css = readFileSync(CSS_PATH, 'utf8')
   const { byNamespace } = parseThemeBlocks(css)
 
-  it('every namespace in tailwind.css is either registered, omitted, or marked below-the-line', () => {
+  it('every namespace in theme.css is either registered, omitted, or marked below-the-line', () => {
     const cssNamespaces = [...byNamespace.keys()].sort()
     const registered = new Set(Object.keys(__TOKENS_FOR_TESTS.registered))
     const omitted = new Set<string>(__TOKENS_FOR_TESTS.omitted)
@@ -89,7 +89,7 @@ describe('contract: @theme tokens are mirrored into tailwind-merge', () => {
     expect(
       undecided,
       [
-        `tailwind.css declares one or more @theme namespaces that nobody`,
+        `theme.css declares one or more @theme namespaces that nobody`,
         `decided about: ${undecided.join(', ')}.`,
         `Pick one:`,
         `  - register the tokens in src/ui/lib/cn.ts via extendTailwindMerge`,
@@ -102,7 +102,7 @@ describe('contract: @theme tokens are mirrored into tailwind-merge', () => {
     ).toEqual([])
   })
 
-  it('every registered namespace agrees exactly with tailwind.css', () => {
+  it('every registered namespace agrees exactly with theme.css', () => {
     const drift: { namespace: string; missingFromCn: string[]; staleInCn: string[] }[] = []
     for (const [namespace, tokens] of Object.entries(__TOKENS_FOR_TESTS.registered)) {
       const cssTokens = byNamespace.get(namespace) ?? new Set<string>()
@@ -119,7 +119,7 @@ describe('contract: @theme tokens are mirrored into tailwind-merge', () => {
     expect(
       drift,
       [
-        `src/ui/lib/cn.ts disagrees with src/styles/tailwind.css.`,
+        `src/ui/lib/cn.ts disagrees with src/styles/theme.css.`,
         `For each namespace below, the entries under "missingFromCn" exist in`,
         `the CSS but were not registered with extendTailwindMerge -- a future`,
         `cn() call composing two tokens of the same namespace prefix may`,
@@ -129,7 +129,7 @@ describe('contract: @theme tokens are mirrored into tailwind-merge', () => {
     ).toEqual([])
   })
 
-  it('every omitted namespace still exists in tailwind.css', () => {
+  it('every omitted namespace still exists in theme.css', () => {
     const omitted = __TOKENS_FOR_TESTS.omitted
     const ghost = omitted.filter((namespace) => !byNamespace.has(namespace))
 
@@ -137,7 +137,7 @@ describe('contract: @theme tokens are mirrored into tailwind-merge', () => {
       ghost,
       [
         `__TOKENS_FOR_TESTS.omitted lists ${ghost.join(', ')}, but those`,
-        `namespaces are no longer present in tailwind.css. Drop the entry`,
+        `namespaces are no longer present in theme.css. Drop the entry`,
         `from cn.ts so the omission decision does not outlive its reason.`,
       ].join('\n'),
     ).toEqual([])
