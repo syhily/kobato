@@ -161,10 +161,19 @@ via the shadcn alias) as a perceptible hover-state.
 - When a UI component needs highlighted code, the server procedure or
   loader must pre-render the HTML and pass it in the DTO (e.g.
   `detailsHtml` on audit-log items).
-- Render pre-highlighted HTML with `dangerouslySetInnerHTML` and run it
-  through `sanitizeHtml(html, 'shiki')` from `@/ui/lib/sanitize-html` so
-  inline `style` attributes and shiki CSS classes are preserved while
-  everything else is stripped.
+- The server is the authoritative sanitization boundary: pre-highlighted
+  HTML (shiki output, KaTeX MathML) is run through `sanitizeShikiHtml` /
+  `sanitizeMathml` in `src/server/render/inkling/sanitize.ts` **before** it
+  is stored on the DTO. UI components render it with
+  `dangerouslySetInnerHTML` directly — there is **no client-side
+  re-sanitization** for these trusted server sources. (Sanitizing twice
+  with different libraries would break hydration; sanitizing twice with
+  `sanitize-html` on the client breaks the browser bundle. See
+  `docs/superpowers/specs/2026-06-22-sanitizer-migration-design.md`.)
+- The only browser-side sanitizer is `dompurify`, used solely by
+  `PastePlugin` for genuinely untrusted clipboard HTML. Use it directly
+  (`import DOMPurify from 'dompurify'`) — there is no shared client
+  sanitizer module.
 
 ## LOC ceiling
 

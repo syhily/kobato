@@ -63,8 +63,9 @@ export function sanitizeInklingFeedHtml(html: string): string {
 
 /**
  * Sanitize server-rendered mathml HTML before emitting it in SSR output.
- * Mirrors the client-side `sanitizeHtml(..., 'math')` policy in
- * `@/ui/lib/sanitize-html` so the server and client apply the same allow-list.
+ * This is the authoritative sanitization boundary — the client no longer
+ * re-sanitizes mathml (see
+ * `docs/superpowers/specs/2026-06-22-sanitizer-migration-design.md`).
  */
 export function sanitizeMathml(html: string): string {
   return sanitizeHtml(html, {
@@ -154,7 +155,9 @@ export function sanitizeMathml(html: string): string {
  * Sanitize server-rendered shiki-highlighted code HTML before emitting it
  * in SSR output.  Shiki emits inline `style="color:…"` on token spans; we
  * restrict the allow-list to the property/value shapes shiki actually
- * produces.  Mirrors `@/ui/lib/sanitize-html`'s `'shiki'` strategy.
+ * produces.  This is the authoritative sanitization boundary — the client
+ * no longer re-sanitizes shiki output (see
+ * `docs/superpowers/specs/2026-06-22-sanitizer-migration-design.md`).
  */
 export function sanitizeShikiHtml(html: string): string {
   return sanitizeHtml(html, {

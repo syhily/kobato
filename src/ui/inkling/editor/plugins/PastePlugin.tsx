@@ -1,6 +1,6 @@
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
+import createDOMPurify, { type DOMPurify as DOMPurifyInstance } from 'dompurify'
 import { useEffect, useRef } from 'react'
-import sanitizeHtml from 'sanitize-html'
 
 /**
  * Paste sanitiser plugin for the Inkling editor.
@@ -21,6 +21,11 @@ import sanitizeHtml from 'sanitize-html'
  *
  * Plain-text paste (`text/plain` only, no `text/html`) is passed through
  * untouched — Lexical handles it natively and there is nothing to sanitise.
+ *
+ * Sanitisation uses `dompurify` (browser-only) rather than `sanitize-html`
+ * (Node-only — its postcss dependency pulls in Node built-ins and breaks the
+ * browser bundle). See `docs/superpowers/specs/2026-06-22-sanitizer-migration-design.md`
+ * for the full coexistence rationale.
  */
 
 // Allow-list for paste sanitisation. Kept in sync with the node set the
@@ -56,38 +61,75 @@ const PASTE_ALLOWED_TAGS = [
   'sub',
 ]
 
-function sanitisePastedHtml(html: string): string {
-  return sanitizeHtml(html, {
-    allowedTags: PASTE_ALLOWED_TAGS,
-    allowedAttributes: {
-      a: ['href', 'title', 'target', 'rel'],
-      img: ['src', 'alt', 'title', 'width', 'height'],
-      // `class` on span/code lets through highlighter token classes (e.g.
-      // `language-*` on pasted code). The renderer sanitises again at
-      // feed/email time, so this is editor-local only.
-      code: ['class'],
-      span: ['class'],
-    },
-    allowedSchemes: ['http', 'https', 'mailto'],
-    // `data:` is intentionally NOT allowed for `img`: `sanitizeUrl` (used by
-    // every renderer) rewrites non-http(s) schemes to `#`, so a pasted
-    // `data:` image would silently render as a broken image forever. Dropping
-    // it here keeps the editor honest — users see the image disappear on
-    // paste rather than after saving and publishing.
-    allowedSchemesByTag: { img: ['http', 'https'] },
-    disallowedTagsMode: 'discard',
-    allowProtocolRelative: false,
-    // Drop inline styles entirely — Inkling has no inline-style support and
-    // Word's mso-* styles are noise.
-    allowedStyles: {},
+// DOMPurify is DOM-bound: it must be constructed against a `window` before
+// it exposes `.sanitize` / `.addHook`. The default export is the factory
+// (`createDOMPurify(window)`). Constructing it at module top-level would
+// run during SSR / Node test imports where `window` is absent, yielding an
+// inert instance (`isSupported === false`, no methods) and crashing any
+// Node-environment test that transitively imports the editor shell.
+//
+// We therefore lazily build a single DOMPurify instance against the real
+// browser `window` on first use, and register the img-src hook once at
+// construction time. `sanitisePastedHtml` is only ever called from inside
+// the paste `useEffect` (browser-only), so `window` is guaranteed present
+// when this resolves in production.
+let purify: DOMPurifyInstance | null = null
+
+function getPurify(): DOMPurifyInstance {
+  if (purify !== null) {
+    return purify
+  }
+  const instance = createDOMPurify(window)
+  // Restrict img src to http(s) only (mirrors the old
+  // `allowedSchemesByTag.img`). DOMPurify has no per-tag URI filter, so the
+  // scheme allow-list (`ALLOWED_URI_REGEXP`) is global and we additionally
+  // strip `data:` on `<img src>` here.
+  instance.addHook('uponSanitizeAttribute', (_node, data) => {
+    if (data.attrName === 'src' && data.attrValue.startsWith('data:')) {
+      data.keepAttr = false
+    }
   })
+  purify = instance
+  return instance
+}
+
+// Exported for unit tests (paste-event simulation is unreliable in
+// happy-dom — see paste-plugin.test.tsx). Not part of the plugin's public
+// API; callers outside tests should not import this.
+export function sanitisePastedHtml(html: string): string {
+  return getPurify().sanitize(html, {
+    ALLOWED_TAGS: PASTE_ALLOWED_TAGS,
+    // Union of the old per-tag allow-list. DOMPurify has no per-tag attr
+    // config; the union is safe because the tag allow-list above is already
+    // narrow (each attribute only reaches the tags listed there).
+    ALLOWED_ATTR: [
+      // <a>
+      'href',
+      'title',
+      'target',
+      'rel',
+      // <img>
+      'src',
+      'alt',
+      'width',
+      'height',
+      // <code>/<span> — highlighter token classes (e.g. `language-*`). The
+      // renderer sanitises again at feed/email time, so this is editor-local.
+      'class',
+    ],
+    // http / https / mailto only; also rejects protocol-relative `//host`.
+    ALLOWED_URI_REGEXP: /^(?:(?:https?|mailto):)/i,
+    ALLOW_DATA_ATTR: false,
+    // `style` is omitted from ALLOWED_ATTR → stripped. Inkling has no
+    // inline-style support and Word's mso-* styles are noise.
+  }) as string
 }
 
 export function PastePlugin(): null {
   const [editor] = useLexicalComposerContext()
   // Guard against re-entering the paste handler when we dispatch the
   // synthetic ClipboardEvent.  Without this flag the previous `===`
-  // string-comparison guard could fail when sanitize-html re-serialises
+  // string-comparison guard could fail when dompurify re-serialises
   // with different whitespace or attribute ordering, causing a two-event
   // recursion chain or silently dropping content.
   const isProcessingPasteRef = useRef(false)

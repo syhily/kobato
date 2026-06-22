@@ -7,7 +7,6 @@ import type { MathCardNode } from '@/ui/inkling/editor/cards/simple-card-nodes'
 
 import { CardShell } from '@/ui/inkling/editor/cards/card-shell'
 import { useCardNode } from '@/ui/inkling/editor/cards/use-card-node'
-import { sanitizeHtml } from '@/ui/lib/sanitize-html'
 
 function MathPreview({ tex }: { tex: string }) {
   const [html, setHtml] = useState<string | null>(null)
@@ -50,12 +49,14 @@ function MathPreview({ tex }: { tex: string }) {
   if (tex.trim().length === 0 || html === null) {
     return <div className="py-4 text-center font-mono text-sm">$${tex || '\\text{输入 TeX 公式}'}$$</div>
   }
-  // Use the same `math math-display` class as the published renderer so
-  // inkling.css's .math-display rules (overflow, centering) apply.
+  // `html` is server-rendered MathML from `orpc.admin.renders.math`, which
+  // runs `sanitizeMathml` before returning. No client-side re-sanitization —
+  // see docs/superpowers/specs/2026-06-22-sanitizer-migration-design.md §"Why
+  // sites 1–4 drop the client-side call entirely".
   return (
     <div
       className="math math-display text-center [&_svg]:mx-auto [&_svg]:block [&_svg]:max-w-none"
-      dangerouslySetInnerHTML={{ __html: sanitizeHtml(html, 'math') }}
+      dangerouslySetInnerHTML={{ __html: html }}
     />
   )
 }
