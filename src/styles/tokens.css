@@ -1,0 +1,321 @@
+/*
+ * Design tokens — all custom properties for colors, surfaces, lines,
+ * shadows, radii, and shadcn semantic slots.
+ *
+ * Two scopes:
+ *   :root  — light-mode values (the only place hex literals live)
+ *   .dark  — dark-mode overrides (rebinds the same custom properties)
+ *
+ * Dark mode is driven SOLELY by the `.dark` class on <html>. The
+ * ThemeProvider (src/ui/lib/ThemeProvider.tsx) is the single authority
+ * that applies .dark/.light. There is intentionally NO
+ * @media (prefers-color-scheme: dark) fallback — the SSR root loader
+ * (src/root.tsx) always emits a concrete .dark/.light class from the
+ * theme cookie, and ThemeProvider re-applies it on hydrate, so a
+ * media-query fallback could never match a hydrated page.
+ */
+
+/* Project semantic tokens */
+:root {
+  /* Brand */
+  --brand: #008c95;
+  --brand-dark: #151b2b;
+  --brand-darker: #20283b;
+
+  /* Primary button hover swap */
+  --btn-hover-bg: var(--brand-dark);
+  --btn-hover-fg: #ffffff;
+
+  /* Ink */
+  --ink-1: #151b2b;
+  --ink-2: #1f2538;
+  --ink-3: #404b69;
+  --ink-4: #8a92a9;
+  --ink-on-dark: #e8e9ea;
+  --ink-5: #eaecf3;
+
+  /* Surfaces */
+  --canvas: #ffffff;
+  --surface: #f6f6f7;
+  --surface-dim: #ededf1;
+  --surface-warn: #ffe9d5;
+  --surface-body: #fbfbfd;
+  --surface-secondary: #283149;
+  --surface-soft: #eceef1;
+
+  /* Aside panel */
+  --aside-bg: #283149;
+
+  /* Lines */
+  --line: #eff3fa;
+  --line-muted: #d4ddec;
+  --line-widget: #d2e3e4;
+
+  /* Status */
+  --warn: #ff8338;
+  --alert: #f7094c;
+  --like-active: #ff4053;
+  --like-active-shadow: 0 5px 20px 0 rgba(228, 93, 106, 0.35);
+  --like-bg: var(--brand-dark);
+  --like-bg-hover: var(--brand-darker);
+
+  /* Radius */
+  --radius: 0.3125rem;
+  --radius-xs: 3px;
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 10px;
+
+  /* Misc primitives */
+  --editor-accent: rgb(59 130 246);
+  --font-code: 'Iosevka', monospace;
+  --code-bg: rgb(253, 246, 227);
+  --code-inline-fg: #24292e;
+  --code-inline-border: color-mix(in oklab, var(--code-bg) 68%, white 32%);
+  --size-empty-state: 50vh;
+  --size-sidebar-item: 34px;
+  --size-search-trigger: 38px;
+  --size-admin-thumb: 100px;
+  --size-admin-col-narrow: 52px;
+  --size-auth-input: 54px;
+  --size-auth-btn: 52px;
+  --size-editor-min: 480px;
+  --mobile-navbar-height: 64px;
+  --z-aside-drawer: 1020;
+  --z-modal: 1050;
+  --z-nav-splash: 1100;
+  --z-tooltip: 1080;
+
+  /* TOC z-index stack */
+  --z-toc-backdrop: 500;
+  --z-toc-drawer: 880;
+  --z-toc-drawer-open: 1000;
+  --z-toc-toggle: 890;
+  --z-toc-toggle-open: 1500;
+  --scrim: rgba(8, 15, 25, 0.3);
+  --skeleton-start: rgba(0, 0, 0, 0.04);
+  --skeleton-end: rgba(0, 0, 0, 0.08);
+
+  /* Sidebar layout */
+  --sidebar-width: 20.5rem;
+  --sidebar-width-icon: 4rem;
+
+  /* Shadow and popup primitives */
+  --shadow-card-value: 0 0 30px 0 rgb(40 49 73 / 2%);
+  --shadow-tooltip-value: 0 8px 28px rgb(40 49 73 / 14%);
+  --shadow-toc-toggle-value: 0 0.125rem 0.3125rem rgb(0 0 0 / 11.7%);
+  --popup-close-hover: #f5f5f5;
+
+  /* Shadcn semantic slots */
+  --background: var(--surface-body);
+  --foreground: var(--ink-1);
+  --card: var(--canvas);
+  --card-foreground: var(--ink-1);
+  --popover: var(--canvas);
+  --popover-foreground: var(--ink-1);
+
+  --primary: var(--brand);
+  --primary-foreground: #ffffff;
+
+  /* Primary button resting fill */
+  --btn-primary-bg: var(--primary);
+
+  --secondary: var(--surface-dim);
+  --secondary-foreground: var(--ink-1);
+
+  --muted: var(--surface-dim);
+  --muted-foreground: var(--ink-4);
+
+  --accent: var(--line);
+  --accent-foreground: var(--ink-1);
+
+  --destructive: var(--alert);
+  --destructive-foreground: #ffffff;
+
+  --border-soft: var(--line);
+  --border-strong: var(--line-widget);
+  --border: var(--border-soft);
+  --input: var(--border-strong);
+  --ring: var(--brand);
+
+  --sidebar: var(--surface);
+  --sidebar-foreground: var(--ink-1);
+  --sidebar-primary: var(--brand);
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: var(--surface-dim);
+  --sidebar-accent-foreground: var(--ink-1);
+  --sidebar-border: var(--border-soft);
+  --sidebar-ring: var(--brand);
+
+  /* Status tokens light */
+  --status-info-bg: #f0f9ff;
+  --status-info-fg: #0369a1;
+  --status-info-border: #bae6fd;
+  --status-warn-bg: #fffbeb;
+  --status-warn-fg: #92400e;
+  --status-warn-border: #fcd34d;
+  --status-error-bg: #fef2f2;
+  --status-error-fg: #991b1b;
+  --status-error-border: #fecaca;
+  --status-success-bg: #f0fdf4;
+  --status-success-fg: #166534;
+  --status-success-border: #86efac;
+
+  /* Status tokens — draft */
+  --status-draft-bg: #fdf2f8;
+  --status-draft-fg: #be185d;
+  --status-draft-border: #f9a8d4;
+
+  /* Diff viewer tokens light */
+  --diff-change-bg: #fffbeb;
+  --diff-change-fg: #92400e;
+  --diff-change-border: #fcd34d;
+  --diff-insert-bg: #f0fdf4;
+  --diff-insert-fg: #166534;
+  --diff-insert-border: #86efac;
+  --diff-delete-bg: #fef2f2;
+  --diff-delete-fg: #991b1b;
+  --diff-delete-border: #fecaca;
+
+  /* Chip tokens light */
+  --chip-bg: var(--foreground);
+  --chip-fg: var(--background);
+  --chip-hover-bg: var(--primary);
+  --chip-hover-fg: var(--primary-foreground);
+
+  /* Button light variant tokens light */
+  --btn-light-border: var(--surface-soft);
+  --btn-light-bg: var(--surface-soft);
+  --btn-light-fg: var(--ink-4);
+  --btn-light-hover-fg: var(--ink-1);
+
+  /* FAB tokens light */
+  --fab-bg: var(--canvas);
+  --fab-fg: var(--ink-1);
+}
+
+.dark {
+  /* Ink light text on dark canvas */
+  --ink-1: #e8e9ea;
+  --ink-2: #c8ccd6;
+  --ink-3: #8b92a5;
+  --ink-4: #9ca3b8;
+  --ink-5: #2a3142;
+
+  /* Brand */
+  --brand: #1ab2bd;
+  --brand-dark: #334155;
+  --brand-darker: #475569;
+
+  /* Surfaces */
+  --surface-secondary: #0b1322;
+  --aside-bg: #15203a;
+
+  /* Primary button hover and resting */
+  --btn-hover-bg: color-mix(in oklab, var(--brand) 80%, black 20%);
+  --btn-hover-fg: #ffffff;
+  --btn-primary-bg: color-mix(in oklab, var(--brand) 75%, black 25%);
+
+  /* Dark surface lightness ladder L 7 to L 44 see cn.ts */
+  --canvas: #26314d;
+  --surface: #26314d;
+  --surface-dim: #303a5a;
+  --surface-warn: #3a2810;
+  --surface-body: #1d2842;
+  --surface-soft: #2a3553;
+
+  --line: #475672;
+  --line-muted: #374566;
+  --line-widget: #5b6b88;
+
+  --editor-accent: rgb(59 130 246);
+
+  /* Code dark inversion */
+  --code-bg: #1a1f2e;
+  --code-inline-fg: #c8ccd6;
+  --code-inline-border: color-mix(in oklab, var(--code-bg) 68%, #444 32%);
+
+  /* Skeleton dark inversion */
+  --skeleton-start: rgba(255, 255, 255, 0.04);
+  --skeleton-end: rgba(255, 255, 255, 0.08);
+
+  /* Scrim */
+  --scrim: rgba(0, 0, 0, 0.5);
+
+  /* Shadows tuned for dark */
+  --shadow-card-value: 0 0 0 1px rgb(255 255 255 / 7%), 0 6px 20px 0 rgb(0 0 0 / 38%);
+  --shadow-tooltip-value: 0 8px 28px rgb(0 0 0 / 40%);
+  --shadow-toc-toggle-value: 0 0.125rem 0.3125rem rgb(0 0 0 / 40%);
+
+  /* Popup close hover */
+  --popup-close-hover: #2a3142;
+
+  /* Like button dark mode */
+  --like-bg: #64748b;
+  --like-bg-hover: #94a3b8;
+  --like-active: #991b1b;
+  --like-active-shadow: 0 5px 20px 0 rgba(0, 0, 0, 0.45);
+
+  /* Shiki light fallback see cn.ts */
+  --shiki-light: var(--ink-2);
+
+  /* Status lifts */
+  --warn: #ff9b5c;
+  --alert: #ff4a6a;
+
+  /* Status tokens dark */
+  --status-info-bg: #0c4a6e;
+  --status-info-fg: #bae6fd;
+  --status-info-border: #075985;
+  --status-warn-bg: #451a03;
+  --status-warn-fg: #fcd34d;
+  --status-warn-border: #78350f;
+  --status-error-bg: #450a0a;
+  --status-error-fg: #fecaca;
+  --status-error-border: #7f1d1d;
+  --status-success-bg: #052e16;
+  --status-success-fg: #86efac;
+  --status-success-border: #14532d;
+
+  /* Status tokens — draft dark */
+  --status-draft-bg: #4a0e2c;
+  --status-draft-fg: #f9a8d4;
+  --status-draft-border: #831843;
+
+  /* Diff viewer tokens dark */
+  --diff-change-bg: #451a03;
+  --diff-change-fg: #fcd34d;
+  --diff-change-border: #78350f;
+  --diff-insert-bg: #052e16;
+  --diff-insert-fg: #86efac;
+  --diff-insert-border: #14532d;
+  --diff-delete-bg: #450a0a;
+  --diff-delete-fg: #fecaca;
+  --diff-delete-border: #7f1d1d;
+
+  /* Chip tokens dark */
+  --chip-bg: var(--surface-dim);
+  --chip-fg: var(--ink-1);
+  --chip-hover-bg: var(--primary);
+  --chip-hover-fg: var(--primary-foreground);
+
+  /* Button light variant tokens dark */
+  --btn-light-border: var(--line);
+  --btn-light-bg: var(--line-muted);
+  --btn-light-fg: var(--ink-1);
+  --btn-light-hover-fg: var(--brand);
+
+  /* FAB tokens dark */
+  --fab-bg: var(--surface-dim);
+  --fab-fg: var(--ink-1);
+
+  /* Sidebar */
+  --sidebar: var(--surface-secondary);
+  --sidebar-foreground: var(--ink-on-dark);
+  --sidebar-primary: var(--brand);
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: color-mix(in oklab, var(--brand) 18%, var(--surface-dim));
+  --sidebar-accent-foreground: #ffffff;
+  --sidebar-border: var(--ink-3);
+  --sidebar-ring: var(--brand);
+}
