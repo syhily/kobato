@@ -140,7 +140,7 @@ export async function insertAdmin(
     role: 'admin',
     password: hashedPassword,
     badgeName: 'MOD',
-    badgeColor: '#008c95',
+    badgeColor: '#007a82',
     receiveEmail: true,
   }
   return db.insert(user).values(admin).returning(safeUserColumns)
@@ -155,7 +155,7 @@ export async function insertAuthor(db: NodePgDatabase, name: string, email: stri
     role: 'author',
     password: '',
     badgeName: 'AUTHOR',
-    badgeColor: '#008c95',
+    badgeColor: '#007a82',
     receiveEmail: true,
   }
   return db.insert(user).values(author).returning()

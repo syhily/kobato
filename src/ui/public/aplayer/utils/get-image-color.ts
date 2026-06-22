@@ -6,7 +6,7 @@ export function getImageColor(imageUrl: string): Promise<string> {
       const canvas = document.createElement('canvas')
       const ctx = canvas.getContext('2d')
       if (!ctx) {
-        resolve('#008c95')
+        resolve('#007a82')
         return
       }
       canvas.width = img.naturalWidth
@@ -32,7 +32,7 @@ export function getImageColor(imageUrl: string): Promise<string> {
           count++
         }
         if (count === 0) {
-          resolve('#008c95')
+          resolve('#007a82')
           return
         }
         const toHex = (n: number) =>
@@ -41,10 +41,10 @@ export function getImageColor(imageUrl: string): Promise<string> {
             .padStart(2, '0')
         resolve(`#${toHex(r)}${toHex(g)}${toHex(b)}`)
       } catch {
-        resolve('#008c95')
+        resolve('#007a82')
       }
     }
-    img.onerror = () => resolve('#008c95')
+    img.onerror = () => resolve('#007a82')
     img.src = imageUrl
   })
 }

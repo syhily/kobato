@@ -87,7 +87,7 @@ function toAudioInfo(meta: MusicPlayerBlockMeta): AudioInfo {
     url: meta.audioUrl,
     cover: meta.cover,
     lrc: meta.lyric,
-    theme: '#008c95',
+    theme: '#007a82',
   }
 }
 

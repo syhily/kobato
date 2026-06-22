@@ -1,4 +1,4 @@
-export const DEFAULT_COMMENT_BADGE_BACKGROUND = '#008c95'
+export const DEFAULT_COMMENT_BADGE_BACKGROUND = '#007a82'
 
 const LIGHT_TEXT = '#ffffff'
 const DARK_TEXT = '#151b2b'

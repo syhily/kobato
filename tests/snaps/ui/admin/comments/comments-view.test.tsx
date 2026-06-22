@@ -210,7 +210,7 @@ describe('snapshot: CommentsView', () => {
           pageTitle: 'Hello World',
           pagePermalink: '/posts/hello',
           badgeName: '站长',
-          badgeColor: '#008c95',
+          badgeColor: '#007a82',
           badgeTextColor: '#ffffff',
         }),
         makeAdminComment({
