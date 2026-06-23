@@ -1,6 +1,6 @@
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
-import { CLICK_COMMAND, COMMAND_PRIORITY_HIGH } from 'lexical'
-import { useCallback, useEffect, useRef, type ReactNode } from 'react'
+import { $getNodeByKey, CLICK_COMMAND, COMMAND_PRIORITY_LOW } from 'lexical'
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react'
 
 import { CardWrapper, type CardWrapperStyle } from '@/ui/inkling/components/ui/CardWrapper'
 import CardContext, { type CardContextValue } from '@/ui/inkling/context/CardContext'
@@ -8,21 +8,25 @@ import { useKoenigSelectedCardContext } from '@/ui/inkling/context/KoenigSelecte
 import { EDIT_CARD_COMMAND, SELECT_CARD_COMMAND } from '@/ui/inkling/editor/commands'
 
 /**
- * Card connector — ported from Koenig's KoenigCardWrapper.jsx.
+ * Card connector — faithful port of Koenig's KoenigCardWrapper.jsx.
  *
  * Every card node's `decorate()` returns `<KoenigCardWrapper nodeKey={...}>`
  * wrapping the card's React component. This wrapper:
  *
  *   1. Derives `isSelected` / `isEditing` from KoenigSelectedCardContext.
  *   2. Provides those values via CardContext to child components.
- *   3. Registers a `mousedown` handler on its container — first click
- *      selects the card (dispatches SELECT_CARD_COMMAND); a second click on
- *      an already-selected card enters edit mode (dispatches
- *      EDIT_CARD_COMMAND).
- *   4. Registers a CLICK_COMMAND handler so Lexical knows the card was
- *      interacted with (prevents the editor from collapsing the selection).
+ *   3. Registers a NATIVE `mousedown` listener on the CardWrapper DOM
+ *      element — NOT a React onMouseDown prop. This is critical because
+ *      the mousedown must fire before Lexical's own selection processing.
+ *      On first click it selects the card (SELECT_CARD_COMMAND) and sets
+ *      `skipClick=true` so the immediately-following CLICK_COMMAND doesn't
+ *      jump straight to edit mode.
+ *   4. Registers a CLICK_COMMAND handler at editor level. On a second click
+ *      of an already-selected card, it enters edit mode (EDIT_CARD_COMMAND)
+ *      if the card node has an edit mode.
  *
- * Removed from Koenig: visibility settings, snippet, wide/full card width.
+ * Removed from Koenig: visibility settings, cardWidth logic.
+ * Everything else is a line-by-line translation.
  */
 
 export interface KoenigCardWrapperProps {
@@ -34,91 +38,111 @@ export interface KoenigCardWrapperProps {
 
 export function KoenigCardWrapper({ nodeKey, wrapperStyle = 'regular', width, children }: KoenigCardWrapperProps) {
   const [editor] = useLexicalComposerContext()
-  const { selectedCardKey, isEditingCard, isDragging, setSelectedCardKey, setIsEditingCard } =
-    useKoenigSelectedCardContext()
-
+  const [cardType, setCardType] = useState<string | null>(null)
   const containerRef = useRef<HTMLDivElement>(null)
-  // Prevents the CLICK_COMMAND that follows mousedown from immediately
-  // entering edit mode — the user should see the selection ring first, then
-  // click again to edit.
-  const skipClickRef = useRef(false)
+  const skipClick = useRef(false)
+
+  const { selectedCardKey, isEditingCard, isDragging } = useKoenigSelectedCardContext()
 
   const isSelected = selectedCardKey === nodeKey
   const isEditing = isSelected && isEditingCard
 
-  const setEditing = useCallback(
-    (shouldEdit: boolean) => {
-      if (shouldEdit) {
-        editor.dispatchCommand(EDIT_CARD_COMMAND, { cardKey: nodeKey })
-      } else {
-        setSelectedCardKey(nodeKey)
-        setIsEditingCard(false)
-        editor.dispatchCommand(SELECT_CARD_COMMAND, { cardKey: nodeKey })
+  // --- init: read card type once ---
+  useLayoutEffect(() => {
+    editor.getEditorState().read(() => {
+      const cardNode = $getNodeByKey(nodeKey)
+      if (cardNode !== null) {
+        setCardType(cardNode.getType())
       }
-    },
-    [editor, nodeKey, setSelectedCardKey, setIsEditingCard],
-  )
-
-  // --- mousedown: select card on first click ---
-  const handleMouseDown = useCallback(
-    (event: React.MouseEvent) => {
-      if (editor.isComposing()) {
-        return
-      }
-
-      const target = event.target as HTMLElement
-      // Let clicks on interactive elements (inputs, buttons, textareas,
-      // selects, links) pass through without triggering selection — the
-      // user is interacting with the card's controls.
-      if (target.closest('input, textarea, button, select, a, [contenteditable="true"]')) {
-        return
-      }
-
-      if (!isSelected) {
-        // First click: select the card
-        skipClickRef.current = true
-        event.preventDefault()
-        editor.dispatchCommand(SELECT_CARD_COMMAND, { cardKey: nodeKey, focusEditor: false })
-      }
-    },
-    [editor, isSelected, nodeKey],
-  )
+    })
+    // We only do this for init
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   // --- CLICK_COMMAND: enter edit mode on second click ---
+  // Registered at editor level (not React level) so we can prevent the
+  // editor's default click behaviour without also preventing clicks on
+  // other React components inside the card.
   useEffect(() => {
     return editor.registerCommand(
       CLICK_COMMAND,
       (event: MouseEvent) => {
-        const target = event.target as HTMLElement
-        if (target.closest('input, textarea, button, select, a, [contenteditable="true"]')) {
-          return false
-        }
+        if (!skipClick.current && containerRef.current?.contains(event.target as Node)) {
+          const cardNode = editor.getEditorState().read(() => $getNodeByKey(nodeKey))
+          const clickedDifferentEditor = cardNode === null
+          const clickedToolbar = (event.target as HTMLElement).closest('[data-kg-allow-clickthrough="false"]')
+          const clickedSettingsPanel = (event.target as HTMLElement).closest('[data-kg-settings-panel]')
 
-        const cardDOM = containerRef.current
-        if (cardDOM === null) {
-          return false
-        }
-        if (!cardDOM.contains(target)) {
-          return false
-        }
+          const hasEditMode =
+            typeof (cardNode as { hasEditMode?: () => boolean })?.hasEditMode === 'function'
+              ? (cardNode as { hasEditMode?: () => boolean }).hasEditMode?.()
+              : true // default to true so cards without explicit hasEditMode can still enter edit mode
 
-        if (skipClickRef.current) {
-          // This click is the one that immediately followed the mousedown
-          // selection — consume it so we don't jump straight to edit mode.
-          skipClickRef.current = false
+          if (isSelected && hasEditMode && !isEditing && clickedToolbar === null && clickedSettingsPanel === null) {
+            editor.dispatchCommand(EDIT_CARD_COMMAND, { cardKey: nodeKey, focusEditor: !clickedDifferentEditor })
+          } else if (!isSelected) {
+            editor.dispatchCommand(SELECT_CARD_COMMAND, { cardKey: nodeKey, focusEditor: !clickedDifferentEditor })
+          }
+
+          if (clickedDifferentEditor) {
+            return false
+          }
+
           return true
         }
 
-        if (isSelected && !isEditing) {
-          // Second click on an already-selected card → enter edit mode
-          editor.dispatchCommand(EDIT_CARD_COMMAND, { cardKey: nodeKey, focusEditor: false })
+        if (skipClick.current === true) {
+          skipClick.current = false
           return true
         }
 
+        skipClick.current = false
         return false
       },
-      COMMAND_PRIORITY_HIGH,
+      COMMAND_PRIORITY_LOW,
     )
+  })
+
+  const setEditing = (shouldEdit: boolean) => {
+    if (shouldEdit) {
+      editor.dispatchCommand(EDIT_CARD_COMMAND, { cardKey: nodeKey })
+    } else if (!isSelected) {
+      editor.dispatchCommand(SELECT_CARD_COMMAND, { cardKey: nodeKey })
+    }
+  }
+
+  // --- mousedown: select card on first click ---
+  // NATIVE event listener on the DOM element, NOT a React onMouseDown prop.
+  // This ensures correct event ordering relative to Lexical's processing.
+  useEffect(() => {
+    const container = containerRef.current
+
+    function handleMousedown(event: MouseEvent) {
+      if (!isSelected && !isEditing) {
+        editor.dispatchCommand(SELECT_CARD_COMMAND, { cardKey: nodeKey })
+
+        // skip CLICK_COMMAND behaviour otherwise we'll immediately enter edit mode
+        skipClick.current = true
+
+        // in most situations we want to prevent default behaviour which
+        // can cause an underlying cursor position change but inputs and
+        // textareas are different and we want the focus to move to them
+        // immediately when clicked
+        const targetTagName = (event.target as HTMLElement).tagName
+        const allowedTagNames = ['INPUT', 'TEXTAREA']
+        const allowClickthrough = !!(event.target as HTMLElement).closest('[data-kg-allow-clickthrough]')
+
+        if (!allowedTagNames.includes(targetTagName) && !allowClickthrough) {
+          event.preventDefault()
+        }
+      }
+    }
+
+    container?.addEventListener('mousedown', handleMousedown)
+
+    return () => {
+      container?.removeEventListener('mousedown', handleMousedown)
+    }
   }, [editor, isSelected, isEditing, nodeKey])
 
   const cardContextValue: CardContextValue = {
@@ -130,11 +154,17 @@ export function KoenigCardWrapper({ nodeKey, wrapperStyle = 'regular', width, ch
 
   return (
     <CardContext.Provider value={cardContextValue}>
-      <div ref={containerRef} onMouseDown={handleMouseDown}>
-        <CardWrapper isSelected={isSelected} isDragging={isDragging} wrapperStyle={wrapperStyle} width={width}>
-          {children}
-        </CardWrapper>
-      </div>
+      <CardWrapper
+        ref={containerRef}
+        cardType={cardType ?? undefined}
+        isDragging={isDragging}
+        isEditing={isEditing}
+        isSelected={isSelected}
+        wrapperStyle={wrapperStyle}
+        width={width}
+      >
+        {children}
+      </CardWrapper>
     </CardContext.Provider>
   )
 }

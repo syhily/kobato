@@ -56,7 +56,7 @@ export function CodeCardComponent({ node }: { node: CodeCardNode }) {
         <ToolbarMenu>
           <ToolbarMenuItem icon="edit" label="编辑" onClick={() => setEditing(true)} />
           <ToolbarMenuItem
-            icon="trash"
+            icon="remove"
             label="删除"
             onClick={() => editor.dispatchCommand(DELETE_CARD_COMMAND, undefined)}
           />

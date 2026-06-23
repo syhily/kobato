@@ -1,134 +1,208 @@
-import { TOGGLE_LINK_COMMAND } from '@lexical/link'
-import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
-import { $createHeadingNode, $createQuoteNode } from '@lexical/rich-text'
+/** Faithful copy of Koenig's FormatToolbar.jsx — snippet + aside removed */
+import { $isListNode, ListNode } from '@lexical/list'
+import { $createHeadingNode, $createQuoteNode, $isHeadingNode, HeadingNode, QuoteNode } from '@lexical/rich-text'
 import { $setBlocksType } from '@lexical/selection'
-import { $getSelection, $isRangeSelection } from 'lexical'
-import { useEffect, useState } from 'react'
+import { $getNearestNodeOfType } from '@lexical/utils'
+import {
+  $createParagraphNode,
+  $getSelection,
+  $isRangeSelection,
+  FORMAT_TEXT_COMMAND,
+  type LexicalEditor,
+} from 'lexical'
+import { useState, useCallback, useEffect } from 'react'
 
-import { FloatingToolbar } from '@/ui/inkling/components/ui/FloatingToolbar'
 import { ToolbarMenu, ToolbarMenuItem, ToolbarMenuSeparator } from '@/ui/inkling/components/ui/ToolbarMenu'
+import { getSelectedNode } from '@/ui/inkling/utils/getSelectedNode'
+import { altOrOption, ctrlOrCmdSymbol, ctrlOrSymbol } from '@/ui/inkling/utils/shortcutSymbols'
 
-/**
- * Text format toolbar — ported from Koenig's FormatToolbar.jsx +
- * FloatingFormatToolbar.jsx.
- *
- * Shows when the user selects text. Buttons:
- *   article mode: Bold | Italic | H2 | H3 | Quote | Link
- *   comment mode: Bold | Italic | Link
- *
- * Removed from Koenig: snippet button, aside toggle.
- */
-type EditorMode = 'article' | 'comment'
+const blockTypeToBlockName: Record<string, string> = {
+  bullet: 'Bulleted List',
+  check: 'Check List',
+  code: 'Code Block',
+  h1: 'Heading 1',
+  h2: 'Heading 2',
+  h3: 'Heading 3',
+  h4: 'Heading 4',
+  h5: 'Heading 5',
+  h6: 'Heading 6',
+  number: 'Numbered List',
+  paragraph: 'Normal',
+  quote: 'Quote',
+}
+
+function quoteIcon(blockType = '') {
+  if (blockType.endsWith('quote')) {
+    return 'quoteOne' as const
+  } else {
+    return 'quote' as const
+  }
+}
 
 export function FormatToolbar({
-  mode,
-  isVisible,
+  editor,
+  isLinkSelected,
   onLinkClick,
+  hiddenFormats = [],
 }: {
-  mode: EditorMode
-  isVisible: boolean
+  editor: LexicalEditor
+  isLinkSelected?: boolean
   onLinkClick?: () => void
+  hiddenFormats?: string[]
 }) {
-  const [editor] = useLexicalComposerContext()
   const [isBold, setIsBold] = useState(false)
   const [isItalic, setIsItalic] = useState(false)
-  const [isQuote, setIsQuote] = useState(false)
+  const [blockType, setBlockType] = useState('paragraph')
 
-  // Sync format state on every editor update
-  useEffect(() => {
-    return editor.registerUpdateListener(({ editorState }) => {
-      editorState.read(() => {
-        const selection = $getSelection()
-        if (!$isRangeSelection(selection)) {
-          return
+  let hideHeading = false
+  if (!editor.hasNodes([HeadingNode])) {
+    hideHeading = true
+  }
+
+  let hideQuotes = false
+  if (!editor.hasNodes([QuoteNode])) {
+    hideQuotes = true
+  }
+
+  let hideBold = false
+  if (hiddenFormats.includes('bold')) {
+    hideBold = true
+  }
+
+  const updateState = useCallback(() => {
+    editor.getEditorState().read(() => {
+      // Should not pop up the floating toolbar when using IME input
+      if (editor.isComposing()) {
+        return
+      }
+
+      const selection = $getSelection()
+      if (!$isRangeSelection(selection)) {
+        return
+      }
+      // update text format
+      setIsBold(selection.hasFormat('bold'))
+      setIsItalic(selection.hasFormat('italic'))
+
+      const anchorNode = getSelectedNode(selection)
+      const element = anchorNode.getKey() === 'root' ? anchorNode : anchorNode.getTopLevelElementOrThrow()
+      const elementKey = element.getKey()
+      const elementDOM = editor.getElementByKey(elementKey)
+
+      if (elementDOM !== null) {
+        if ($isListNode(element)) {
+          const parentList = $getNearestNodeOfType(anchorNode, ListNode)
+          const type = parentList ? parentList.getListType() : element.getListType()
+          setBlockType(type)
+        } else {
+          const type = $isHeadingNode(element) ? element.getTag() : element.getType()
+
+          if (type in blockTypeToBlockName) {
+            setBlockType(type)
+          }
         }
-        setIsBold(selection.hasFormat('bold'))
-        setIsItalic(selection.hasFormat('italic'))
-
-        const anchorNode = selection.anchor.getNode()
-        const element = anchorNode.getKey() === 'root' ? anchorNode : anchorNode.getTopLevelElementOrThrow()
-        setIsQuote(element.getType() === 'quote')
-      })
+      }
     })
   }, [editor])
 
-  const formatBold = () => {
-    editor.update(() => {
-      const selection = $getSelection()
-      if ($isRangeSelection(selection)) {
-        selection.formatText('bold')
-      }
+  useEffect(() => {
+    updateState()
+
+    return editor.registerUpdateListener(() => {
+      updateState()
     })
+  }, [editor, updateState])
+
+  const formatParagraph = () => {
+    if (blockType !== 'paragraph') {
+      editor.update(() => {
+        const selection = $getSelection()
+
+        if ($isRangeSelection(selection)) {
+          $setBlocksType(selection, () => $createParagraphNode())
+        }
+      })
+    }
   }
 
-  const formatItalic = () => {
-    editor.update(() => {
-      const selection = $getSelection()
-      if ($isRangeSelection(selection)) {
-        selection.formatText('italic')
-      }
-    })
-  }
+  const formatHeading = (headingSize: 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6') => {
+    if (blockType !== headingSize) {
+      editor.update(() => {
+        const selection = $getSelection()
 
-  const formatHeading = (level: 2 | 3) => {
-    editor.update(() => {
-      const selection = $getSelection()
-      if ($isRangeSelection(selection)) {
-        $setBlocksType(selection, () => $createHeadingNode(`h${level}`))
-      }
-    })
+        if ($isRangeSelection(selection)) {
+          $setBlocksType(selection, () => $createHeadingNode(headingSize))
+        }
+      })
+    }
   }
 
   const formatQuote = () => {
     editor.update(() => {
       const selection = $getSelection()
+
       if ($isRangeSelection(selection)) {
         $setBlocksType(selection, () => $createQuoteNode())
       }
     })
   }
 
-  const insertLink = () => {
-    if (onLinkClick !== undefined) {
-      onLinkClick()
-      return
-    }
-    editor.dispatchCommand(TOGGLE_LINK_COMMAND, 'https://')
-  }
-
-  // Cmd/Ctrl+K → insert link
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if ((event.metaKey || event.ctrlKey) && event.key === 'k') {
-        event.preventDefault()
-        insertLink()
-      }
-    }
-    const rootElement = editor.getRootElement()
-    rootElement?.addEventListener('keydown', handleKeyDown)
-    return () => {
-      rootElement?.removeEventListener('keydown', handleKeyDown)
-    }
-  }, [editor])
-
   return (
-    <FloatingToolbar isVisible={isVisible}>
-      <ToolbarMenu>
-        <ToolbarMenuItem icon="bold" label="加粗" shortcut="⌘B" isActive={isBold} onClick={formatBold} />
-        <ToolbarMenuItem icon="italic" label="斜体" shortcut="⌘I" isActive={isItalic} onClick={formatItalic} />
+    <ToolbarMenu>
+      <ToolbarMenuItem
+        data-kg-toolbar-button="bold"
+        hide={hideBold}
+        icon="bold"
+        isActive={isBold}
+        label="加粗"
+        shortcutKeys={[ctrlOrCmdSymbol(), 'B']}
+        onClick={() => editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'bold')}
+      />
+      <ToolbarMenuItem
+        data-kg-toolbar-button="italic"
+        icon="italic"
+        isActive={isItalic}
+        label="斜体"
+        shortcutKeys={[ctrlOrCmdSymbol(), 'I']}
+        onClick={() => editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'italic')}
+      />
+      <ToolbarMenuItem
+        data-kg-toolbar-button="h2"
+        hide={hideHeading}
+        icon="headingTwo"
+        isActive={blockType === 'h2'}
+        label="标题 2"
+        shortcutKeys={[ctrlOrSymbol(), altOrOption(), '2']}
+        onClick={() => (blockType === 'h2' ? formatParagraph() : formatHeading('h2'))}
+      />
+      <ToolbarMenuItem
+        data-kg-toolbar-button="h3"
+        hide={hideHeading}
+        icon="headingThree"
+        isActive={blockType === 'h3'}
+        label="标题 3"
+        shortcutKeys={[ctrlOrSymbol(), altOrOption(), '3']}
+        onClick={() => (blockType === 'h3' ? formatParagraph() : formatHeading('h3'))}
+      />
+      <ToolbarMenuSeparator hide={hideQuotes} />
+      <ToolbarMenuItem
+        data-kg-toolbar-button="quote"
+        hide={hideQuotes}
+        icon={quoteIcon(blockType)}
+        isActive={blockType.endsWith('quote')}
+        label="引用"
+        shortcutKeys={[ctrlOrSymbol(), 'Q']}
+        onClick={formatQuote}
+      />
 
-        {mode === 'article' && (
-          <>
-            <ToolbarMenuSeparator />
-            <ToolbarMenuItem icon="headingTwo" label="标题 2" shortcut="⌘⌥2" onClick={() => formatHeading(2)} />
-            <ToolbarMenuItem icon="headingThree" label="标题 3" shortcut="⌘⌥3" onClick={() => formatHeading(3)} />
-            <ToolbarMenuItem icon="quote" label="引用" shortcut="⌘Q" isActive={isQuote} onClick={formatQuote} />
-          </>
-        )}
-
-        <ToolbarMenuSeparator />
-        <ToolbarMenuItem icon="link" label="链接" shortcut="⌘K" onClick={insertLink} />
-      </ToolbarMenu>
-    </FloatingToolbar>
+      <ToolbarMenuItem
+        data-kg-toolbar-button="link"
+        icon="link"
+        isActive={!!isLinkSelected}
+        label="链接"
+        shortcutKeys={[ctrlOrCmdSymbol(), 'K']}
+        onClick={onLinkClick}
+      />
+    </ToolbarMenu>
   )
 }

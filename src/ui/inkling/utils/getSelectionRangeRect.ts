@@ -1,45 +1,43 @@
 import { createDOMRange, createRectsFromDOMRange } from '@lexical/selection'
-import { $getSelection, $isRangeSelection, type LexicalEditor } from 'lexical'
+import { $isRangeSelection, type LexicalEditor, type BaseSelection } from 'lexical'
 
-/**
- * Get the bounding rect of the current selection — ported from Koenig's
- * $getSelectionRangeRect.js.
- *
- * For multi-line selections, finds the bounding box of all rects. Returns
- * null if there is no valid range selection or no DOM rects.
- *
- * Must be called inside an `editor.read()` / `editor.getEditorState().read()`
- * callback.
- */
-export function $getSelectionRangeRect(editor: LexicalEditor): DOMRect | null {
-  const selection = $getSelection()
-  if (!$isRangeSelection(selection) || selection.isCollapsed() || selection.getTextContent().trim() === '') {
+/** Faithful copy of Koenig's $getSelectionRangeRect.js */
+export function $getSelectionRangeRect(editor: LexicalEditor, selection: BaseSelection | null): DOMRect | null {
+  if (!selection || !$isRangeSelection(selection)) {
     return null
   }
 
-  const { anchor, focus } = selection
-  const domRange = createDOMRange(editor, anchor.getNode(), anchor.offset, focus.getNode(), focus.offset)
-  if (domRange === null) {
+  const anchor = selection.anchor
+  const focus = selection.focus
+  const selectionRange = createDOMRange(
+    editor,
+    anchor.getNode(),
+    selection.anchor.offset,
+    focus.getNode(),
+    selection.focus.offset,
+  )
+
+  if (!selectionRange) {
     return null
   }
 
-  const domRects = createRectsFromDOMRange(editor, domRange)
-  if (domRects.length === 0) {
+  const selectionRects = createRectsFromDOMRange(editor, selectionRange)
+  const returnRect = selectionRects[0]
+
+  if (!returnRect) {
     return null
   }
 
-  let top = domRects[0]!.top
-  let left = domRects[0]!.left
-  let right = domRects[0]!.right
-  let bottom = domRects[0]!.bottom
-
-  for (let i = 1; i < domRects.length; i += 1) {
-    const rect = domRects[i]!
-    top = Math.min(top, rect.top)
-    left = Math.min(left, rect.left)
-    right = Math.max(right, rect.right)
-    bottom = Math.max(bottom, rect.bottom)
+  // we can get multiple rects if the selection spans multiple lines or has inline nodes like links
+  if (selectionRects.length > 1) {
+    // add up the widths of all rects using the first top position
+    for (let i = 1; i < selectionRects.length; i++) {
+      const rect = selectionRects[i]
+      if (rect.top === returnRect.top) {
+        returnRect.width += rect.width
+      }
+    }
   }
 
-  return new DOMRect(left, top, right - left, bottom - top)
+  return returnRect
 }

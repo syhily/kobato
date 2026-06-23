@@ -1,27 +1,16 @@
-import { cn } from '@/ui/lib/cn'
-
-/**
- * Toolbar tooltip — ported from Koenig's Tooltip.jsx.
- *
- * Shows a label + optional keyboard shortcut chip on hover. Positioned above
- * the parent (which must be `relative` + `group`).
- */
-export function Tooltip({ label, shortcut, className }: { label: string; shortcut?: string; className?: string }) {
+/** Faithful copy of Koenig's Tooltip.jsx */
+export function Tooltip({ label, shortcutKeys }: { label: string; shortcutKeys?: string[] }) {
   return (
-    <span
-      className={cn(
-        'pointer-events-none absolute top-[-2rem] left-1/2 -translate-x-1/2',
-        'invisible z-[10001] rounded bg-black px-1.5 py-0.5 whitespace-nowrap',
-        'text-[1.2rem] font-normal text-white opacity-0 transition-opacity duration-100',
-        'group-hover:visible group-hover:opacity-100',
-        'dark:bg-grey-900',
-        className,
-      )}
+    <div
+      className={`text-2xs invisible absolute -top-8 left-1/2 z-[1000] flex -translate-x-1/2 items-center gap-1 rounded-md bg-black py-1 font-sans font-medium whitespace-nowrap text-white group-hover:visible dark:bg-grey-900 ${shortcutKeys ? 'pr-1 pl-[1rem]' : 'px-[1rem]'}`}
     >
-      {label}
-      {shortcut !== undefined && shortcut !== '' && (
-        <span className="ml-1 rounded bg-grey-900 px-1 dark:bg-grey-950">{shortcut}</span>
-      )}
-    </span>
+      <span>{label}</span>
+      {shortcutKeys &&
+        shortcutKeys.map((k) => (
+          <div key={k} className="text-2xs rounded bg-grey-900 px-2 text-white dark:bg-grey-950">
+            {k}
+          </div>
+        ))}
+    </div>
   )
 }

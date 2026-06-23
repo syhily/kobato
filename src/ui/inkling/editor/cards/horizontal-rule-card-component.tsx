@@ -19,7 +19,7 @@ export function HorizontalRuleCardComponent({ node }: { node: HorizontalRuleCard
       <ActionToolbar isVisible={isSelected}>
         <ToolbarMenu>
           <ToolbarMenuItem
-            icon="trash"
+            icon="remove"
             label="删除"
             onClick={() => editor.dispatchCommand(DELETE_CARD_COMMAND, undefined)}
           />

@@ -1,66 +1,110 @@
+/** Faithful copy of Koenig's FloatingToolbarPlugin.jsx — link-search removed */
 import { $isLinkNode } from '@lexical/link'
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
-import { $getSelection, $isRangeSelection, $isRootNode, SELECTION_CHANGE_COMMAND, COMMAND_PRIORITY_LOW } from 'lexical'
-import { useEffect, useState } from 'react'
+import { $getSelection, $isParagraphNode, $isRangeSelection, $isTextNode } from 'lexical'
+import { useCallback, useEffect, useState } from 'react'
 
-import { FormatToolbar } from '@/ui/inkling/components/ui/FormatToolbar'
+import {
+  FloatingFormatToolbar,
+  toolbarItemTypes,
+  type ToolbarItemType,
+} from '@/ui/inkling/components/ui/FloatingFormatToolbar'
 import { getSelectedNode } from '@/ui/inkling/utils/getSelectedNode'
 
-/**
- * Floating toolbar plugin — ported from Koenig's FloatingToolbarPlugin.jsx.
- *
- * Decides when to show the floating text toolbar based on selection state.
- * Shows when:
- *   - There is a non-collapsed range selection
- *   - The selection contains text
- *   - The selection is not inside a card (decorator node)
- *   - The selection is not inside a link-only context (handled by LinkToolbar)
- *
- * Removed from Koenig: snippet toolbar, link-search toolbar, link toolbar
- * (handled separately).
- */
-export function FloatingToolbarPlugin({ mode }: { mode: 'article' | 'comment' }) {
+export function FloatingToolbarPlugin({
+  anchorElem,
+  hiddenFormats = [],
+}: {
+  anchorElem?: HTMLElement
+  hiddenFormats?: string[]
+}) {
   const [editor] = useLexicalComposerContext()
-  const [isVisible, setIsVisible] = useState(false)
+  const elem = anchorElem ?? (typeof document !== 'undefined' ? document.body : null)
+
+  const [toolbarItemType, setToolbarItemType] = useState<ToolbarItemType>(null)
+  const [href, setHref] = useState<string>('')
+
+  const setToolbarType = useCallback(() => {
+    editor.getEditorState().read(() => {
+      if (editor.isComposing()) {
+        return
+      }
+
+      const selection = $getSelection()
+      const nativeSelection = window.getSelection()
+      const rootElement = editor.getRootElement()
+
+      // close toolbar if selection was outside of editor
+      if (
+        nativeSelection !== null &&
+        (!$isRangeSelection(selection) || rootElement === null || !rootElement.contains(nativeSelection.anchorNode))
+      ) {
+        setToolbarItemType(null)
+        return
+      }
+
+      if (!$isRangeSelection(selection)) {
+        if (toolbarItemType) {
+          setToolbarItemType(null)
+        }
+        return
+      }
+
+      const anchorNode = getSelectedNode(selection)
+      const parent = anchorNode.getParent()
+
+      if ($isLinkNode(parent)) {
+        setHref(parent.getURL())
+      } else if ($isLinkNode(anchorNode)) {
+        setHref(anchorNode.getURL())
+      } else {
+        setHref('')
+      }
+
+      if (selection.getTextContent().trim() !== '' && ($isTextNode(anchorNode) || $isParagraphNode(anchorNode))) {
+        setToolbarItemType(toolbarItemTypes.text)
+        return
+      }
+
+      setToolbarItemType(null)
+    })
+  }, [editor, toolbarItemType])
 
   useEffect(() => {
-    return editor.registerCommand(
-      SELECTION_CHANGE_COMMAND,
-      () => {
-        editor.getEditorState().read(() => {
-          const selection = $getSelection()
-          if (!$isRangeSelection(selection) || selection.isCollapsed()) {
-            setIsVisible(false)
-            return
-          }
+    document.addEventListener('selectionchange', setToolbarType)
+    return () => {
+      document.removeEventListener('selectionchange', setToolbarType)
+    }
+  }, [setToolbarType])
 
-          // Don't show if selection is empty text
-          if (selection.getTextContent().trim() === '') {
-            setIsVisible(false)
-            return
-          }
+  // use native mousedown event so the toolbar can close when something is
+  // clicked outside of the editor and the selection is lost
+  useEffect(() => {
+    const handleMousedown = (event: MouseEvent) => {
+      if (elem && !elem.contains(event.target as Node)) {
+        setToolbarItemType(null)
+      }
+    }
 
-          // Don't show if the anchor is inside a link (link toolbar handles it)
-          const selectedNode = getSelectedNode(selection)
-          const parent = selectedNode.getParent()
-          if (parent !== null && $isLinkNode(parent)) {
-            setIsVisible(false)
-            return
-          }
+    document.addEventListener('mousedown', handleMousedown)
 
-          // Don't show if the selection is inside a decorator/card
-          const anchorNode = selectedNode.getKey() === 'root' ? selectedNode : selectedNode.getTopLevelElementOrThrow()
-          if (anchorNode.getType() === 'root' && $isRootNode(anchorNode)) {
-            // Root-level — fine to show
-          }
+    return () => {
+      document.removeEventListener('mousedown', handleMousedown)
+    }
+  })
 
-          setIsVisible(true)
-        })
-        return false
-      },
-      COMMAND_PRIORITY_LOW,
-    )
-  }, [editor])
+  if (!elem) {
+    return null
+  }
 
-  return <FormatToolbar mode={mode} isVisible={isVisible} />
+  return (
+    <FloatingFormatToolbar
+      anchorElem={elem}
+      editor={editor}
+      hiddenFormats={hiddenFormats}
+      href={href}
+      toolbarItemType={toolbarItemType}
+      setToolbarItemType={setToolbarItemType}
+    />
+  )
 }

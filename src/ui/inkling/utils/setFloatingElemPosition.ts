@@ -1,42 +1,42 @@
 /**
- * Floating element positioning — ported from Koenig's setFloatingElemPosition.js.
+ * Floating element positioning — faithful port of Koenig's setFloatingElemPosition.js.
  *
  * Positions a floating toolbar above a selection rect, clamped horizontally
- * to the editor's scroll container. Pure function — no side effects beyond
- * setting inline styles on the floating element.
- *
- * @param targetRect    - DOMRect of the text selection
- * @param floatingElem   - The floating toolbar DOM element
- * @param anchorElem     - The editor's scroll container (positioned ancestor)
- * @param verticalGap    - Pixels between selection top and toolbar bottom (default 10)
- * @param controlOpacity - If true, sets opacity:0 until positioned then opacity:1 (default true)
+ * to the editor's scroll container (anchorElem.parentElement).
  */
+const VERTICAL_GAP = 10
+
 export function setFloatingElemPosition(
-  targetRect: DOMRect,
+  targetRect: DOMRect | null,
   floatingElem: HTMLElement,
   anchorElem: HTMLElement,
-  verticalGap = 10,
-  controlOpacity = true,
+  options: { verticalGap?: number; controlOpacity?: boolean } = {},
 ): void {
-  const floatingElemRect = floatingElem.getBoundingClientRect()
-  const anchorScrollerRect = anchorElem.getBoundingClientRect()
+  const { verticalGap = VERTICAL_GAP, controlOpacity = false } = options
 
-  if (floatingElemRect.width === 0 || floatingElemRect.height === 0) {
+  const scrollerElem = anchorElem.parentElement
+
+  if (!targetRect || !scrollerElem || !floatingElem) {
     return
   }
 
-  let top = targetRect.top - floatingElemRect.height - verticalGap
+  const floatingElemRect = floatingElem.getBoundingClientRect()
+  const editorScrollerRect = scrollerElem.getBoundingClientRect()
+
+  const top = targetRect.top - floatingElemRect.height - verticalGap
   let left = targetRect.left + targetRect.width / 2 - floatingElemRect.width / 2
 
-  // Clamp horizontally so the toolbar never overflows the editor scroller
-  if (left < anchorScrollerRect.left) {
-    left = anchorScrollerRect.left
-  }
-  if (left + floatingElemRect.width > anchorScrollerRect.right) {
-    left = anchorScrollerRect.right - floatingElemRect.width
+  if (left < editorScrollerRect.left) {
+    left = editorScrollerRect.left
   }
 
-  floatingElem.style.left = `${left}px`
+  if (left + floatingElemRect.width > editorScrollerRect.right) {
+    left = editorScrollerRect.right - floatingElemRect.width
+  }
+
+  if (controlOpacity) {
+    floatingElem.style.opacity = '1'
+  }
   floatingElem.style.top = `${top}px`
-  floatingElem.style.opacity = controlOpacity ? '1' : floatingElem.style.opacity
+  floatingElem.style.left = `${left}px`
 }

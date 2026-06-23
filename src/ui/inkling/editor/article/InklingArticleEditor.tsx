@@ -188,7 +188,7 @@ export function InklingArticleEditor({
                     <AutoFocusPlugin />
                     <InklingKeyboardNav />
                     <CardCommandsPlugin />
-                    <FloatingToolbarPlugin mode="article" />
+                    <FloatingToolbarPlugin />
                     <InklingSlashMenuPlugin mode="article" />
                     <InklingPlusMenuPlugin mode="article" />
                     <FootnoteController />

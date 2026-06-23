@@ -190,7 +190,7 @@ function SolutionCardComponent({ node }: { node: SolutionCardNode }): JSX.Elemen
       <ActionToolbar isVisible={isSelected}>
         <ToolbarMenu>
           <ToolbarMenuItem
-            icon="trash"
+            icon="remove"
             label="删除"
             onClick={() => editor.dispatchCommand(DELETE_CARD_COMMAND, undefined)}
           />
@@ -219,7 +219,7 @@ function TwoColumnCardComponent({ node }: { node: TwoColumnCardNode }): JSX.Elem
       <ActionToolbar isVisible={isSelected}>
         <ToolbarMenu>
           <ToolbarMenuItem
-            icon="trash"
+            icon="remove"
             label="删除"
             onClick={() => editor.dispatchCommand(DELETE_CARD_COMMAND, undefined)}
           />

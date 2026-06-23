@@ -71,7 +71,7 @@ export function CommentInklingEditor({
           <CommentMarkdownShortcuts />
           <CommentKeyboardNav />
           <CardCommandsPlugin />
-          <FloatingToolbarPlugin mode="comment" />
+          <FloatingToolbarPlugin hiddenFormats={[]} />
           {children}
         </InklingEditor>
       </KoenigSelectedCardContextProvider>
