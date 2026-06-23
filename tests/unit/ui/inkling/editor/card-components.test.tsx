@@ -119,9 +119,9 @@ describe('card-components', () => {
         (node) => <HorizontalRuleCardComponent node={node} />,
       )
 
-      const card = document.querySelector('[data-kg-card]')
+      const card = document.querySelector('[data-inkling-card]')
       expect(card).not.toBeNull()
-      expect(card?.hasAttribute('data-kg-card-selected')).toBe(true)
+      expect(card?.hasAttribute('data-inkling-card-key')).toBe(true)
     })
 
     it('does not mark the card selected by default', () => {

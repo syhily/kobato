@@ -1,5 +1,5 @@
-import { createDOMRange, createRectsFromDOMRange } from '@lexical/selection'
 import { $getSelection, $isRangeSelection, type LexicalEditor } from 'lexical'
+import { createDOMRange, createRectsFromDOMRange } from '@lexical/selection'
 
 /**
  * Get the bounding rect of the current selection — ported from Koenig's
@@ -13,12 +13,22 @@ import { $getSelection, $isRangeSelection, type LexicalEditor } from 'lexical'
  */
 export function $getSelectionRangeRect(editor: LexicalEditor): DOMRect | null {
   const selection = $getSelection()
-  if (!$isRangeSelection(selection) || selection.isCollapsed() || selection.getTextContent().trim() === '') {
+  if (
+    !$isRangeSelection(selection) ||
+    selection.isCollapsed() ||
+    selection.getTextContent().trim() === ''
+  ) {
     return null
   }
 
   const { anchor, focus } = selection
-  const domRange = createDOMRange(editor, anchor.getNode(), anchor.offset, focus.getNode(), focus.offset)
+  const domRange = createDOMRange(
+    editor,
+    anchor.getNode(),
+    anchor.offset,
+    focus.getNode(),
+    focus.offset,
+  )
   if (domRange === null) {
     return null
   }

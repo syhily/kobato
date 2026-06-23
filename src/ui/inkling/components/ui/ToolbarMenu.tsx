@@ -1,4 +1,3 @@
-import { Tooltip } from '@/ui/inkling/components/ui/Tooltip'
 import {
   BoldIcon,
   EditIcon,
@@ -10,6 +9,7 @@ import {
   TrashIcon,
 } from '@/ui/inkling/icons'
 import { cn } from '@/ui/lib/cn'
+import { Tooltip } from '@/ui/inkling/components/ui/Tooltip'
 
 /**
  * Toolbar menu primitives — ported from Koenig's ToolbarMenu.jsx.
@@ -73,7 +73,6 @@ export function ToolbarMenuItem({
   return (
     <li className="m-0">
       <div className="group relative inline-block">
-        {/* eslint-disable-next-line jsx-a11y/control-has-associated-label -- aria-label is set below */}
         <button
           type="button"
           aria-label={label}

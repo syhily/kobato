@@ -1,6 +1,6 @@
+import { $getSelection, $isRangeSelection, $isRootNode, SELECTION_CHANGE_COMMAND, COMMAND_PRIORITY_LOW } from 'lexical'
 import { $isLinkNode } from '@lexical/link'
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
-import { $getSelection, $isRangeSelection, $isRootNode, SELECTION_CHANGE_COMMAND, COMMAND_PRIORITY_LOW } from 'lexical'
 import { useEffect, useState } from 'react'
 
 import { FormatToolbar } from '@/ui/inkling/components/ui/FormatToolbar'

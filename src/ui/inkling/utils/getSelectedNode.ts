@@ -1,4 +1,4 @@
-import type { RangeSelection } from 'lexical'
+import { $isRangeSelection, type RangeSelection } from 'lexical'
 
 /**
  * Get the node at the current selection anchor — ported from Koenig's
@@ -25,11 +25,7 @@ export function getSelectedNode(selection: RangeSelection) {
   return $isAtNodeEnd(anchor) ? getPreviousSibling(anchorNode) : anchorNode
 }
 
-function $isAtNodeEnd(selection: {
-  type: string
-  offset: number
-  getNode: () => { getTextContentSize?: () => number; getPreviousSibling: () => unknown }
-}) {
+function $isAtNodeEnd(selection: { type: string; offset: number; getNode: () => { getTextContentSize?: () => number; getPreviousSibling: () => unknown } }) {
   if (selection.type === 'text') {
     const node = selection.getNode()
     const textContentSize = node.getTextContentSize?.() ?? 0

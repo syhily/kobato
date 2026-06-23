@@ -22,6 +22,7 @@ import {
 } from 'lexical'
 import { useEffect } from 'react'
 
+import { registerCardClickSelection } from '@/ui/inkling/editor/behaviour/card-click-selection'
 import { $isBlockCardNode, $selectNode } from '@/ui/inkling/editor/behaviour/card-helpers'
 import { FootnoteRefNode } from '@/ui/inkling/editor/footnotes/FootnoteRefNode'
 
@@ -455,8 +456,9 @@ export function registerInklingKeyboardNavigation(editor: LexicalEditor): () => 
     COMMAND_PRIORITY_CRITICAL,
   )
 
-  // Card click-to-select is now handled by CardCommandsPlugin (Koenig's
-  // command-driven approach via KoenigCardWrapper → SELECT_CARD_COMMAND).
+  // Card click-to-select is registered separately (see card-click-selection.ts)
+  // so it can be tested independently from the keyboard command handlers.
+  const unregisterMousedown = registerCardClickSelection(editor)
 
   return () => {
     unregisterArrowLeft()
@@ -467,6 +469,7 @@ export function registerInklingKeyboardNavigation(editor: LexicalEditor): () => 
     unregisterDelete()
     unregisterEnter()
     unregisterEscape()
+    unregisterMousedown()
   }
 }
 

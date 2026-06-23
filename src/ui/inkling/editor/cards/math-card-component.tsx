@@ -1,16 +1,16 @@
 import type { ReactNode } from 'react'
 
-import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import { useCallback, useEffect, useState } from 'react'
 
 import type { InklingMathBlockNode } from '@/shared/inkling/schema'
 import type { MathCardNode } from '@/ui/inkling/editor/cards/simple-card-nodes'
 
-import { KoenigCardWrapper } from '@/ui/inkling/components/KoenigCardWrapper'
 import { ActionToolbar } from '@/ui/inkling/components/ui/ActionToolbar'
 import { ToolbarMenu, ToolbarMenuItem } from '@/ui/inkling/components/ui/ToolbarMenu'
 import { useCardContext } from '@/ui/inkling/context/CardContext'
 import { DELETE_CARD_COMMAND } from '@/ui/inkling/editor/commands'
+import { KoenigCardWrapper } from '@/ui/inkling/components/KoenigCardWrapper'
+import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 
 function MathPreview({ tex }: { tex: string }) {
   const [html, setHtml] = useState<string | null>(null)
