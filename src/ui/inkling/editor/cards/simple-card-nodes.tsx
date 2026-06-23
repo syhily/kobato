@@ -144,6 +144,14 @@ export class ImageCardNode extends DecoratorNode<JSX.Element | null> {
   createDOM(_config: EditorConfig): HTMLElement {
     const element = document.createElement('figure')
     element.setAttribute('data-inkling-image-card', 'true')
+    // Mark the host as non-editable so the React component rendered by
+    // `decorate()` (inputs, textareas, buttons) sits inside a
+    // `contenteditable=false` island. Without this, the host inherits the
+    // editor root's `contenteditable=true` and the browser's selection
+    // engine hijacks focus from nested form controls — the card becomes
+    // selectable but its inputs can't receive keyboard input. This mirrors
+    // Koenig's decorator host convention.
+    element.setAttribute('contenteditable', 'false')
     return element
   }
 
@@ -319,6 +327,9 @@ export class CodeCardNode extends DecoratorNode<JSX.Element | null> {
   createDOM(_config: EditorConfig): HTMLElement {
     const element = document.createElement('pre')
     element.setAttribute('data-inkling-code-block', 'true')
+    // See ImageCardNode.createDOM for why every card host must opt out of
+    // the editor root's `contenteditable=true`.
+    element.setAttribute('contenteditable', 'false')
     return element
   }
 
@@ -435,6 +446,9 @@ export class MathCardNode extends DecoratorNode<JSX.Element | null> {
   createDOM(_config: EditorConfig): HTMLElement {
     const element = document.createElement('div')
     element.setAttribute('data-inkling-math-block', 'true')
+    // See ImageCardNode.createDOM for why every card host must opt out of
+    // the editor root's `contenteditable=true`.
+    element.setAttribute('contenteditable', 'false')
     return element
   }
 
@@ -539,6 +553,9 @@ export class MusicCardNode extends DecoratorNode<JSX.Element | null> {
   createDOM(_config: EditorConfig): HTMLElement {
     const element = document.createElement('div')
     element.setAttribute('data-inkling-music-card', 'true')
+    // See ImageCardNode.createDOM for why every card host must opt out of
+    // the editor root's `contenteditable=true`.
+    element.setAttribute('contenteditable', 'false')
     return element
   }
 
@@ -615,6 +632,9 @@ export class HorizontalRuleCardNode extends DecoratorNode<JSX.Element | null> {
   createDOM(_config: EditorConfig): HTMLElement {
     const element = document.createElement('div')
     element.setAttribute('data-inkling-horizontal-rule', 'true')
+    // See ImageCardNode.createDOM for why every card host must opt out of
+    // the editor root's `contenteditable=true`.
+    element.setAttribute('contenteditable', 'false')
     return element
   }
 
@@ -700,6 +720,9 @@ export class TableCardNode extends DecoratorNode<JSX.Element | null> {
   createDOM(_config: EditorConfig): HTMLElement {
     const element = document.createElement('div')
     element.setAttribute('data-inkling-table', 'true')
+    // See ImageCardNode.createDOM for why every card host must opt out of
+    // the editor root's `contenteditable=true`.
+    element.setAttribute('contenteditable', 'false')
     return element
   }
 

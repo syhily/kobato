@@ -1,19 +1,19 @@
 import type { ReactNode } from 'react'
 
+import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import { ImageIcon } from 'lucide-react'
 import { useCallback } from 'react'
 
 import type { InklingImageCardNode } from '@/shared/inkling/schema'
 import type { ImageCardNode } from '@/ui/inkling/editor/cards/simple-card-nodes'
 
-import { useInklingArticleEditorActions } from '@/ui/inkling/editor/article/article-editor-context'
+import { KoenigCardWrapper } from '@/ui/inkling/components/KoenigCardWrapper'
 import { ActionToolbar } from '@/ui/inkling/components/ui/ActionToolbar'
 import { ToolbarMenu, ToolbarMenuItem } from '@/ui/inkling/components/ui/ToolbarMenu'
-import { KoenigCardWrapper } from '@/ui/inkling/components/KoenigCardWrapper'
 import { useCardContext } from '@/ui/inkling/context/CardContext'
+import { useInklingArticleEditorActions } from '@/ui/inkling/editor/article/article-editor-context'
 import { DELETE_CARD_COMMAND } from '@/ui/inkling/editor/commands'
 import { ImageBlock } from '@/ui/inkling/render/blocks/ImageBlock'
-import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 
 export function ImageCardComponent({ node }: { node: ImageCardNode }): ReactNode {
   const [editor] = useLexicalComposerContext()
@@ -23,15 +23,33 @@ export function ImageCardComponent({ node }: { node: ImageCardNode }): ReactNode
   const update = useCallback(
     (patch: Partial<InklingImageCardNode>): void => {
       editor.update(() => {
-        if (patch.src !== undefined) node.setSrc(patch.src)
-        if (patch.alt !== undefined) node.setAlt(patch.alt)
-        if (patch.caption !== undefined) node.setCaption(patch.caption)
-        if (patch.layout !== undefined) node.setLayout(patch.layout)
-        if (patch.width !== undefined) node.setWidth(patch.width)
-        if (patch.height !== undefined) node.setHeight(patch.height)
-        if (patch.thumbhash !== undefined) node.setThumbhash(patch.thumbhash)
-        if (patch.storagePath !== undefined) node.setStoragePath(patch.storagePath)
-        if (patch.imageId !== undefined) node.setImageId(patch.imageId)
+        if (patch.src !== undefined) {
+          node.setSrc(patch.src)
+        }
+        if (patch.alt !== undefined) {
+          node.setAlt(patch.alt)
+        }
+        if (patch.caption !== undefined) {
+          node.setCaption(patch.caption)
+        }
+        if (patch.layout !== undefined) {
+          node.setLayout(patch.layout)
+        }
+        if (patch.width !== undefined) {
+          node.setWidth(patch.width)
+        }
+        if (patch.height !== undefined) {
+          node.setHeight(patch.height)
+        }
+        if (patch.thumbhash !== undefined) {
+          node.setThumbhash(patch.thumbhash)
+        }
+        if (patch.storagePath !== undefined) {
+          node.setStoragePath(patch.storagePath)
+        }
+        if (patch.imageId !== undefined) {
+          node.setImageId(patch.imageId)
+        }
       })
     },
     [editor, node],
@@ -100,7 +118,11 @@ export function ImageCardComponent({ node }: { node: ImageCardNode }): ReactNode
               <option value="left">左对齐</option>
               <option value="right">右对齐</option>
             </select>
-            <button type="button" onClick={handlePick} className="rounded border border-grey-300 px-3 py-1 text-sm hover:bg-grey-100 dark:border-grey-700 dark:hover:bg-grey-800">
+            <button
+              type="button"
+              onClick={handlePick}
+              className="rounded border border-grey-300 px-3 py-1 text-sm hover:bg-grey-100 dark:border-grey-700 dark:hover:bg-grey-800"
+            >
               更换图片
             </button>
           </div>

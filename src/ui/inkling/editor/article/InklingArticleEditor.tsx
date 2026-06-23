@@ -12,6 +12,8 @@ import { useEffect, useMemo, type RefObject } from 'react'
 import type { InklingBlockNode, InklingDocument } from '@/shared/inkling/schema'
 import type { InklingArticleEditorProps, InklingFlushHandle } from '@/ui/inkling/editor/article/article-editor-types'
 
+import { KoenigComposerContextProvider } from '@/ui/inkling/context/KoenigComposerContext'
+import { KoenigSelectedCardContextProvider } from '@/ui/inkling/context/KoenigSelectedCardContext'
 import { InklingArticleEditorProvider } from '@/ui/inkling/editor/article/article-editor-context'
 import { registerInklingDocumentTransforms } from '@/ui/inkling/editor/behaviour/document-transforms'
 import { InklingDragDropReorder } from '@/ui/inkling/editor/behaviour/DragDropReorderPlugin'
@@ -30,11 +32,11 @@ import { InklingPlusMenuPlugin } from '@/ui/inkling/editor/menu/PlusMenu'
 import { InklingSlashMenuPlugin } from '@/ui/inkling/editor/menu/SlashMenu'
 import { SharedHistoryProvider, useSharedHistoryState } from '@/ui/inkling/editor/nested/SharedHistoryContext'
 import { ARTICLE_NODES } from '@/ui/inkling/editor/nodes/registry'
+import { CardCommandsPlugin } from '@/ui/inkling/editor/plugins/CardCommandsPlugin'
+import { FloatingToolbarPlugin } from '@/ui/inkling/editor/plugins/FloatingToolbarPlugin'
 import { OnInklingDocumentChangePlugin } from '@/ui/inkling/editor/plugins/OnInklingDocumentChangePlugin'
 import { PastePlugin } from '@/ui/inkling/editor/plugins/PastePlugin'
 import { toSerializedRoot } from '@/ui/inkling/editor/shared/lexical-bridge'
-import { FloatingFormatToolbar } from '@/ui/inkling/editor/toolbar/FloatingFormatToolbar'
-import { FloatingLinkToolbar } from '@/ui/inkling/editor/toolbar/FloatingLinkToolbar'
 
 const theme = {
   paragraph: 'inkling-paragraph',
@@ -127,25 +129,29 @@ export function InklingArticleEditor({
   return (
     <InklingArticleEditorProvider actions={actions}>
       <SharedHistoryProvider>
-        {/* `key={documentKey}` remounts the provider alongside the composer so
-            its parallel footnote-definition state resets when the body source
-            changes. Without this the provider would carry the previous
-            document's definitions into the new edit session. */}
-        <InklingFootnoteProvider key={documentKey} initialDefinitions={initialFootnoteDefinitions}>
-          {/* `key={documentKey}` forces LexicalComposer to remount when the
+        <KoenigComposerContextProvider
+          value={{ darkMode: typeof document !== 'undefined' && document.documentElement.classList.contains('dark') }}
+        >
+          <KoenigSelectedCardContextProvider>
+            {/* `key={documentKey}` remounts the provider alongside the composer so
+                its parallel footnote-definition state resets when the body source
+                changes. Without this the provider would carry the previous
+                document's definitions into the new edit session. */}
+            <InklingFootnoteProvider key={documentKey} initialDefinitions={initialFootnoteDefinitions}>
+              {/* `key={documentKey}` forces LexicalComposer to remount when the
               body source identity changes (e.g. adopting a server revision
               from DraftConflictDialog or RevisionHistoryDrawer). Without it,
               LexicalComposer only reads `initialConfig.editorState` once on
               first mount and would keep showing stale content. */}
-          <LexicalComposer key={documentKey} initialConfig={initialConfig}>
-            <EditorErrorBoundary context="article-editor">
-              <div className="inkling-editor relative flex min-h-0 w-full min-w-0 flex-1 flex-col overflow-hidden rounded-xl border bg-card">
-                <div
-                  ref={scrollContainerRef}
-                  className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto px-3 pt-6 pb-editor-pad-bottom md:px-6"
-                >
-                  <div className="inkling-prose post-content mx-auto w-full max-w-2xl">
-                    {/* `<RichTextPlugin>` is what actually mounts the decorator
+              <LexicalComposer key={documentKey} initialConfig={initialConfig}>
+                <EditorErrorBoundary context="article-editor">
+                  <div className="inkling-editor relative flex min-h-0 w-full min-w-0 flex-1 flex-col overflow-hidden rounded-xl border bg-card">
+                    <div
+                      ref={scrollContainerRef}
+                      className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto px-3 pt-6 pb-editor-pad-bottom md:px-6"
+                    >
+                      <div className="inkling-prose post-content mx-auto w-full max-w-2xl">
+                        {/* `<RichTextPlugin>` is what actually mounts the decorator
                       renderer (`<LegacyDecorators>`), which portals each card
                       node's `decorate()` output into its host element. Without
                       it the host `<figure>`/`<div>` for image/music/code cards
@@ -155,64 +161,64 @@ export function InklingArticleEditor({
                       modern API) rather than as a child. `ErrorBoundary` is
                       required by this Lexical version's prop type and guards
                       each card's decorate output.                            */}
-                    <RichTextPlugin
-                      contentEditable={
-                        <ContentEditable
-                          className="inkling-article-editor__content min-h-[24rem] focus:outline-none"
-                          aria-placeholder="在此处开始编写内容…（/ 命令菜单，^ 空格插入脚注）"
-                          placeholder={
-                            <div className="inkling-placeholder pointer-events-none absolute top-0 left-0 text-muted-foreground select-none">
-                              在此处开始编写内容…（/ 命令菜单，^ 空格插入脚注）
-                            </div>
+                        <RichTextPlugin
+                          contentEditable={
+                            <ContentEditable
+                              className="inkling-article-editor__content min-h-[24rem] focus:outline-none"
+                              aria-placeholder="在此处开始编写内容…（/ 命令菜单，^ 空格插入脚注）"
+                              placeholder={
+                                <div className="inkling-placeholder pointer-events-none absolute top-0 left-0 text-muted-foreground select-none">
+                                  在此处开始编写内容…（/ 命令菜单，^ 空格插入脚注）
+                                </div>
+                              }
+                            />
                           }
+                          placeholder={null}
+                          ErrorBoundary={DecoratorErrorBoundary}
                         />
-                      }
-                      placeholder={null}
-                      ErrorBoundary={DecoratorErrorBoundary}
-                    />
-                  </div>
-                </div>
-                <EditorRefSetter editorRef={editorRefProp} />
-                {/* `FootnoteAwareChangePlugin` merges the provider's footnote
+                      </div>
+                    </div>
+                    <EditorRefSetter editorRef={editorRefProp} />
+                    {/* `FootnoteAwareChangePlugin` merges the provider's footnote
                   definitions back into the serialized document so the
                   persisted shape carries `footnote-definition` blocks at the
                   root tail (matching what renderers + migrate-pt produce). */}
-                <FootnoteAwareChangePlugin onChange={onDocumentChange} flushHandleRef={flushHandleRef} />
-                <SharedHistoryPlugin />
-                <AutoFocusPlugin />
-                <InklingKeyboardNav />
-                <FloatingFormatToolbar />
-                {/* Hover-to-edit link toolbar: shows above a link on mousemove
-                    (50ms debounce) with one-click edit / remove. */}
-                <FloatingLinkToolbar />
-                <InklingSlashMenuPlugin mode="article" />
-                <InklingPlusMenuPlugin mode="article" />
-                <FootnoteController />
-                <InklingDragDropReorder />
-                {/* Paste sanitiser: strips script/style/event-handlers/javascript:
+                    <FootnoteAwareChangePlugin onChange={onDocumentChange} flushHandleRef={flushHandleRef} />
+                    <SharedHistoryPlugin />
+                    <AutoFocusPlugin />
+                    <InklingKeyboardNav />
+                    <CardCommandsPlugin />
+                    <FloatingToolbarPlugin mode="article" />
+                    <InklingSlashMenuPlugin mode="article" />
+                    <InklingPlusMenuPlugin mode="article" />
+                    <FootnoteController />
+                    <InklingDragDropReorder />
+                    {/* Paste sanitiser: strips script/style/event-handlers/javascript:
                   URLs from pasted HTML before Lexical's default handler sees
                   it, then inserts the cleaned nodes. Without this, pasting
                   from Word/web produces uneditable (and sometimes XSS-laden)
                   content. */}
-                <PastePlugin />
-                {/* Document-normalisation transforms (mergeListNodes etc). */}
-                <InklingDocumentTransforms />
-                {/* Ghost-style markdown shortcuts: # / > / * / 1. at line
+                    <PastePlugin />
+                    {/* Document-normalisation transforms (mergeListNodes etc). */}
+                    <InklingDocumentTransforms />
+                    {/* Ghost-style markdown shortcuts: # / > / * / 1. at line
                     start become headings/quote/lists; **bold**, *italic*,
                     `code`, ~~strike~~, [text](url) wrap inline as you type. */}
-                <InklingMarkdownShortcuts />
-                {/* Shell-level floating actions (publish FAB). Rendered in a
+                    <InklingMarkdownShortcuts />
+                    {/* Shell-level floating actions (publish FAB). Rendered in a
                   fixed slot at bottom-right so it overlays the scrollport
                   without participating in scroll sync. */}
-                {floatingActions ? (
-                  <div className="pointer-events-auto fixed right-4 bottom-6 z-40 touch-manipulation sm:bottom-8 lg:right-6">
-                    {floatingActions}
+                    {floatingActions ? (
+                      <div className="pointer-events-auto fixed right-4 bottom-6 z-40 touch-manipulation sm:bottom-8 lg:right-6">
+                        {floatingActions}
+                      </div>
+                    ) : null}
                   </div>
-                ) : null}
-              </div>
-            </EditorErrorBoundary>
-          </LexicalComposer>
-        </InklingFootnoteProvider>
+                </EditorErrorBoundary>
+              </LexicalComposer>
+            </InklingFootnoteProvider>
+          </KoenigSelectedCardContextProvider>
+        </KoenigComposerContextProvider>
       </SharedHistoryProvider>
     </InklingArticleEditorProvider>
   )

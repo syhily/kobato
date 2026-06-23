@@ -1,12 +1,11 @@
-import { CLICK_COMMAND, COMMAND_PRIORITY_HIGH } from 'lexical'
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
-import { mergeRegister } from '@lexical/utils'
-import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
+import { CLICK_COMMAND, COMMAND_PRIORITY_HIGH } from 'lexical'
+import { useCallback, useEffect, useRef, type ReactNode } from 'react'
 
+import { CardWrapper, type CardWrapperStyle } from '@/ui/inkling/components/ui/CardWrapper'
 import CardContext, { type CardContextValue } from '@/ui/inkling/context/CardContext'
 import { useKoenigSelectedCardContext } from '@/ui/inkling/context/KoenigSelectedCardContext'
 import { EDIT_CARD_COMMAND, SELECT_CARD_COMMAND } from '@/ui/inkling/editor/commands'
-import { CardWrapper, type CardWrapperStyle } from '@/ui/inkling/components/ui/CardWrapper'
 
 /**
  * Card connector — ported from Koenig's KoenigCardWrapper.jsx.
@@ -35,7 +34,8 @@ export interface KoenigCardWrapperProps {
 
 export function KoenigCardWrapper({ nodeKey, wrapperStyle = 'regular', width, children }: KoenigCardWrapperProps) {
   const [editor] = useLexicalComposerContext()
-  const { selectedCardKey, isEditingCard, isDragging, setSelectedCardKey, setIsEditingCard } = useKoenigSelectedCardContext()
+  const { selectedCardKey, isEditingCard, isDragging, setSelectedCardKey, setIsEditingCard } =
+    useKoenigSelectedCardContext()
 
   const containerRef = useRef<HTMLDivElement>(null)
   // Prevents the CLICK_COMMAND that follows mousedown from immediately
@@ -86,40 +86,38 @@ export function KoenigCardWrapper({ nodeKey, wrapperStyle = 'regular', width, ch
 
   // --- CLICK_COMMAND: enter edit mode on second click ---
   useEffect(() => {
-    return mergeRegister(
-      editor.registerCommand(
-        CLICK_COMMAND,
-        (event: MouseEvent) => {
-          const target = event.target as HTMLElement
-          if (target.closest('input, textarea, button, select, a, [contenteditable="true"]')) {
-            return false
-          }
-
-          const cardDOM = containerRef.current
-          if (cardDOM === null) {
-            return false
-          }
-          if (!cardDOM.contains(target)) {
-            return false
-          }
-
-          if (skipClickRef.current) {
-            // This click is the one that immediately followed the mousedown
-            // selection — consume it so we don't jump straight to edit mode.
-            skipClickRef.current = false
-            return true
-          }
-
-          if (isSelected && !isEditing) {
-            // Second click on an already-selected card → enter edit mode
-            editor.dispatchCommand(EDIT_CARD_COMMAND, { cardKey: nodeKey, focusEditor: false })
-            return true
-          }
-
+    return editor.registerCommand(
+      CLICK_COMMAND,
+      (event: MouseEvent) => {
+        const target = event.target as HTMLElement
+        if (target.closest('input, textarea, button, select, a, [contenteditable="true"]')) {
           return false
-        },
-        COMMAND_PRIORITY_HIGH,
-      ),
+        }
+
+        const cardDOM = containerRef.current
+        if (cardDOM === null) {
+          return false
+        }
+        if (!cardDOM.contains(target)) {
+          return false
+        }
+
+        if (skipClickRef.current) {
+          // This click is the one that immediately followed the mousedown
+          // selection — consume it so we don't jump straight to edit mode.
+          skipClickRef.current = false
+          return true
+        }
+
+        if (isSelected && !isEditing) {
+          // Second click on an already-selected card → enter edit mode
+          editor.dispatchCommand(EDIT_CARD_COMMAND, { cardKey: nodeKey, focusEditor: false })
+          return true
+        }
+
+        return false
+      },
+      COMMAND_PRIORITY_HIGH,
     )
   }, [editor, isSelected, isEditing, nodeKey])
 

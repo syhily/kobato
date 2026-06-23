@@ -1,18 +1,18 @@
 import type { ReactNode } from 'react'
 
+import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import { MusicIcon } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
-import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 
 import type { InklingMusicCardNode } from '@/shared/inkling/schema'
 import type { MusicCardNode } from '@/ui/inkling/editor/cards/simple-card-nodes'
 
 import { LoopIcon, PlayIcon, VolumeUpIcon } from '@/ui/icons/aplayer'
-import { useInklingArticleEditorActions } from '@/ui/inkling/editor/article/article-editor-context'
+import { KoenigCardWrapper } from '@/ui/inkling/components/KoenigCardWrapper'
 import { ActionToolbar } from '@/ui/inkling/components/ui/ActionToolbar'
 import { ToolbarMenu, ToolbarMenuItem } from '@/ui/inkling/components/ui/ToolbarMenu'
-import { KoenigCardWrapper } from '@/ui/inkling/components/KoenigCardWrapper'
 import { useCardContext } from '@/ui/inkling/context/CardContext'
+import { useInklingArticleEditorActions } from '@/ui/inkling/editor/article/article-editor-context'
 import { DELETE_CARD_COMMAND } from '@/ui/inkling/editor/commands'
 
 interface MusicPreviewMeta {
@@ -108,9 +108,15 @@ export function MusicCardComponent({ node }: { node: MusicCardNode }): ReactNode
   const update = useCallback(
     (patch: Partial<InklingMusicCardNode>): void => {
       editor.update(() => {
-        if (patch.playerId !== undefined) node.setPlayerId(patch.playerId)
-        if (patch.auto !== undefined) node.setAuto(patch.auto)
-        if (patch.center !== undefined) node.setCenter(patch.center)
+        if (patch.playerId !== undefined) {
+          node.setPlayerId(patch.playerId)
+        }
+        if (patch.auto !== undefined) {
+          node.setAuto(patch.auto)
+        }
+        if (patch.center !== undefined) {
+          node.setCenter(patch.center)
+        }
       })
     },
     [editor, node],
@@ -163,7 +169,11 @@ export function MusicCardComponent({ node }: { node: MusicCardNode }): ReactNode
               自动播放
             </label>
             <label className="flex items-center gap-1 text-xs text-grey-600 dark:text-grey-400">
-              <input type="checkbox" checked={node.getCenter()} onChange={(e) => update({ center: e.target.checked })} />
+              <input
+                type="checkbox"
+                checked={node.getCenter()}
+                onChange={(e) => update({ center: e.target.checked })}
+              />
               居中显示
             </label>
           </div>

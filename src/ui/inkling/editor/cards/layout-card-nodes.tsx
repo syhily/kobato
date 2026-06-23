@@ -6,6 +6,11 @@ import { DecoratorNode } from 'lexical'
 
 import type { InklingNonRecursiveBlockNode, InklingSolutionNode, InklingTwoColumnNode } from '@/shared/inkling/schema'
 
+import { KoenigCardWrapper } from '@/ui/inkling/components/KoenigCardWrapper'
+import { ActionToolbar } from '@/ui/inkling/components/ui/ActionToolbar'
+import { ToolbarMenu, ToolbarMenuItem } from '@/ui/inkling/components/ui/ToolbarMenu'
+import { useCardContext } from '@/ui/inkling/context/CardContext'
+import { DELETE_CARD_COMMAND } from '@/ui/inkling/editor/commands'
 import { NestedInklingEditor } from '@/ui/inkling/editor/nested/NestedEditor'
 
 /* ── Solution & TwoColumn (skeleton — nested editors wired in P4) ── */
@@ -35,6 +40,9 @@ export class SolutionCardNode extends DecoratorNode<JSX.Element | null> {
   createDOM(_config: EditorConfig): HTMLElement {
     const el = document.createElement('div')
     el.setAttribute('data-inkling-solution', 'true')
+    // See ImageCardNode.createDOM (simple-card-nodes.tsx) for why every card
+    // host must opt out of the editor root's `contenteditable=true`.
+    el.setAttribute('contenteditable', 'false')
     return el
   }
   updateDOM(): false {
@@ -120,6 +128,9 @@ export class TwoColumnCardNode extends DecoratorNode<JSX.Element | null> {
   createDOM(_config: EditorConfig): HTMLElement {
     const el = document.createElement('section')
     el.setAttribute('data-inkling-two-column', 'true')
+    // See ImageCardNode.createDOM (simple-card-nodes.tsx) for why every card
+    // host must opt out of the editor root's `contenteditable=true`.
+    el.setAttribute('contenteditable', 'false')
     return el
   }
   updateDOM(): false {
@@ -173,41 +184,69 @@ export function $isTwoColumnCardNode(node: unknown): node is TwoColumnCardNode {
 
 function SolutionCardComponent({ node }: { node: SolutionCardNode }): JSX.Element {
   const [editor] = useLexicalComposerContext()
+  const { isSelected } = useCardContext()
   return (
-    <NestedInklingEditor
-      initialBlocks={node.getChildren()}
-      onChange={(blocks) => {
-        editor.update(() => {
-          node.setChildren(blocks)
-        })
-      }}
-      className="inkling-solution-editor rounded border bg-muted/20 p-3"
-    />
+    <KoenigCardWrapper nodeKey={node.getKey()}>
+      <ActionToolbar isVisible={isSelected}>
+        <ToolbarMenu>
+          <ToolbarMenuItem
+            icon="trash"
+            label="删除"
+            onClick={() => editor.dispatchCommand(DELETE_CARD_COMMAND, undefined)}
+          />
+        </ToolbarMenu>
+      </ActionToolbar>
+      <div className="p-3">
+        <NestedInklingEditor
+          initialBlocks={node.getChildren()}
+          onChange={(blocks) => {
+            editor.update(() => {
+              node.setChildren(blocks)
+            })
+          }}
+          className="inkling-solution-editor rounded border bg-muted/20 p-3"
+        />
+      </div>
+    </KoenigCardWrapper>
   )
 }
 
 function TwoColumnCardComponent({ node }: { node: TwoColumnCardNode }): JSX.Element {
   const [editor] = useLexicalComposerContext()
+  const { isSelected } = useCardContext()
   return (
-    <div className="inkling-two-column grid grid-cols-1 gap-4 md:grid-cols-2">
-      <NestedInklingEditor
-        initialBlocks={node.getLeft()}
-        onChange={(blocks) => {
-          editor.update(() => {
-            node.setLeft(blocks)
-          })
-        }}
-        className="inkling-two-column-left rounded border bg-muted/20 p-3"
-      />
-      <NestedInklingEditor
-        initialBlocks={node.getRight()}
-        onChange={(blocks) => {
-          editor.update(() => {
-            node.setRight(blocks)
-          })
-        }}
-        className="inkling-two-column-right rounded border bg-muted/20 p-3"
-      />
-    </div>
+    <KoenigCardWrapper nodeKey={node.getKey()}>
+      <ActionToolbar isVisible={isSelected}>
+        <ToolbarMenu>
+          <ToolbarMenuItem
+            icon="trash"
+            label="删除"
+            onClick={() => editor.dispatchCommand(DELETE_CARD_COMMAND, undefined)}
+          />
+        </ToolbarMenu>
+      </ActionToolbar>
+      <div className="p-3">
+        <div className="inkling-two-column grid grid-cols-1 gap-4 md:grid-cols-2">
+          <NestedInklingEditor
+            initialBlocks={node.getLeft()}
+            onChange={(blocks) => {
+              editor.update(() => {
+                node.setLeft(blocks)
+              })
+            }}
+            className="inkling-two-column-left rounded border bg-muted/20 p-3"
+          />
+          <NestedInklingEditor
+            initialBlocks={node.getRight()}
+            onChange={(blocks) => {
+              editor.update(() => {
+                node.setRight(blocks)
+              })
+            }}
+            className="inkling-two-column-right rounded border bg-muted/20 p-3"
+          />
+        </div>
+      </div>
+    </KoenigCardWrapper>
   )
 }
