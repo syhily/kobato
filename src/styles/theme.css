@@ -263,6 +263,13 @@
 
   --animate-comment-flash: comment-flash 1.5s ease-out forwards;
 
+  /* APlayer lyric marquee — scrolls a long active line left so the full text
+     stays readable. Distance is per-instance: the active line's component sets
+     `--aplayer-lrc-marquee-distance` to its overflow (textWidth − viewportWidth)
+     and toggles the animation only when the line actually overflows. The
+     global `prefers-reduced-motion` override (base.css) neutralises it. */
+  --animate-aplayer-lrc-marquee: aplayer-lrc-marquee 8s ease-in-out infinite;
+
   @keyframes comment-flash {
     0%,
     40% {
@@ -318,6 +325,25 @@
   --color-fab-bg: var(--fab-bg);
   --color-fab-fg: var(--fab-fg);
 
+  /* Koenig editor grey palette — maps to Tailwind utilities like
+     bg-grey-200, text-grey-900, border-grey-300, etc. Used by the editor's
+     floating toolbar (ToolbarMenu) and card chrome (CardWrapper). */
+  --color-grey-50: var(--kg-grey-50);
+  --color-grey-100: var(--kg-grey-100);
+  --color-grey-200: var(--kg-grey-200);
+  --color-grey-300: var(--kg-grey-300);
+  --color-grey-400: var(--kg-grey-400);
+  --color-grey-500: var(--kg-grey-500);
+  --color-grey-600: var(--kg-grey-600);
+  --color-grey-700: var(--kg-grey-700);
+  --color-grey-800: var(--kg-grey-800);
+  --color-grey-900: var(--kg-grey-900);
+  --color-grey-950: var(--kg-grey-950);
+  --color-grey: var(--kg-grey-500);
+  --color-green: var(--kg-green);
+  --color-green-600: var(--kg-green-600);
+  --shadow-md: var(--kg-shadow-md);
+
   --color-btn-primary-bg: var(--btn-primary-bg);
   --color-btn-hover-bg: var(--btn-hover-bg);
   --color-btn-hover-fg: var(--btn-hover-fg);
@@ -331,6 +357,24 @@
     }
     100% {
       background-position: -200% 0;
+    }
+  }
+
+  @keyframes aplayer-lrc-marquee {
+    /* Hold at start so a short line that just fits reads without motion. */
+    0%,
+    10% {
+      transform: translateX(0);
+    }
+    /* Pan left by the measured overflow distance, then hold. */
+    45%,
+    55% {
+      transform: translateX(calc(var(--aplayer-lrc-marquee-distance, 0px) * -1));
+    }
+    /* Pan back to the start and hold before looping. */
+    90%,
+    100% {
+      transform: translateX(0);
     }
   }
 }

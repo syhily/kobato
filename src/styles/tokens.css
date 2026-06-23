@@ -245,6 +245,27 @@
   /* FAB tokens light */
   --fab-bg: var(--canvas);
   --fab-fg: var(--ink-1);
+
+  /* Koenig editor grey palette — ported from Ghost's koenig-lexical
+     tailwind.config.cjs. These power the editor's floating toolbar and card
+     chrome (bg-white, bg-grey-200/80 hover, bg-grey-950 dark, etc.). They are
+     NOT theme-bound: the toolbar is a light capsule in light mode and a dark
+     capsule in dark mode, matching Koenig exactly. The green is the card
+     selection ring stroke. */
+  --kg-grey-50: #fafafb;
+  --kg-grey-100: #f4f5f6;
+  --kg-grey-200: #ebeef0;
+  --kg-grey-300: #dde1e5;
+  --kg-grey-400: #ced4d9;
+  --kg-grey-500: #aeb7c1;
+  --kg-grey-600: #95a1ad;
+  --kg-grey-700: #7c8b9a;
+  --kg-grey-800: #626d79;
+  --kg-grey-900: #394047;
+  --kg-grey-950: #23292f;
+  --kg-green: #30cf43;
+  --kg-green-600: #2ab23a;
+  --kg-shadow-md: 0px 13px 27px -5px rgba(50, 50, 93, 0.25), 0px 8px 16px -8px rgba(0, 0, 0, 0.3);
 }
 
 .dark {
