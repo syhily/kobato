@@ -3,26 +3,20 @@ import type { LexicalEditor } from 'lexical'
 /**
  * Run a synchronous read callback inside the editor's current state and
  * return its result. This is the canonical wrapper for the recurring
- * `let x; editor.getEditorState().read(() => { x = ... }); return x` pattern
- * that appeared 5+ times across the editor (hasFormat, hasLink,
- * shouldShowToolbar, getExistingLink, keyboard-nav selection reads).
+ * `let x; editor.read(() => { x = ... }); return x` pattern that appeared
+ * 5+ times across the editor.
  *
- * Every Lexical read MUST happen inside `editor.getEditorState().read(...)`
- * — reading the tree outside a read callback returns stale or null nodes.
- * This helper makes that boundary impossible to forget.
- *
- * The callback runs synchronously (Lexical reads are sync), so the return
- * value is immediately available.
- *
- * @example
- *   const isBold = readEditor(editor, () => {
- *     const sel = $getSelection()
- *     return $isRangeSelection(sel) && sel.hasFormat('bold')
- *   })
+ * Uses `editor.read()` (not `editor.getEditorState().read()`) so that:
+ *   1. Pending updates are flushed before reading (latest state).
+ *   2. The active editor is bound inside the callback via
+ *      `{ editor: this }`, which node-lookup helpers like
+ *      `$getNodeFromDOMNode` and `$getNearestNodeFromDOMNode` rely on.
+ *      Without this binding, those helpers throw "Unable to find an active
+ *      editor" when called from DOM event handlers (mousedown, etc).
  */
 export function readEditor<T>(editor: LexicalEditor, fn: () => T): T {
   let result: T
-  editor.getEditorState().read(() => {
+  editor.read(() => {
     result = fn()
   })
   // The read callback runs synchronously, so `result` is always assigned

@@ -229,6 +229,7 @@ export interface RateLimitSettings {
   passkeyRegisterFinishIp: RateLimitBucket
   passkeySetForceIp: RateLimitBucket
   passkeyDeleteIp: RateLimitBucket
+  renderIp: RateLimitBucket
 }
 
 export interface SearchSettings {

@@ -126,6 +126,7 @@ const fixture: BlogSettingsBundle = {
     passkeyRegisterFinishIp: { windowSeconds: 60 * 5, maxAttempts: 10 },
     passkeySetForceIp: { windowSeconds: 60 * 5, maxAttempts: 10 },
     passkeyDeleteIp: { windowSeconds: 60 * 5, maxAttempts: 10 },
+    renderIp: { windowSeconds: 60, maxAttempts: 60 },
   },
   search: {
     search: {

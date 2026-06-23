@@ -43,6 +43,7 @@ const passkeyRegisterBeginIpKey = (ip: string) => `${RATE_LIMIT_NAMESPACE}passke
 const passkeyRegisterFinishIpKey = (ip: string) => `${RATE_LIMIT_NAMESPACE}passkey-register-finish:${ip}`
 const passkeySetForceIpKey = (ip: string) => `${RATE_LIMIT_NAMESPACE}passkey-set-force:${ip}`
 const passkeyDeleteIpKey = (ip: string) => `${RATE_LIMIT_NAMESPACE}passkey-delete:${ip}`
+const renderIpKey = (ip: string) => `${RATE_LIMIT_NAMESPACE}render:${ip}`
 
 // Conservative fallbacks used ONLY when the settings snapshot has
 // not been hydrated yet (pre-install, or the very first request after
@@ -233,4 +234,8 @@ export async function tryPasskeySetForceRateLimit(ip: string): Promise<RateLimit
 
 export async function tryPasskeyDeleteRateLimit(ip: string): Promise<RateLimitResult> {
   return tryKeyedRateLimit(passkeyDeleteIpKey(ip), readBucket('passkeyDeleteIp'))
+}
+
+export async function tryRenderRateLimit(ip: string): Promise<RateLimitResult> {
+  return tryKeyedRateLimit(renderIpKey(ip), readBucket('renderIp'))
 }

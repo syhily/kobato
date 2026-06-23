@@ -10,7 +10,12 @@ import { describe, expect, it } from 'vitest'
 
 import { EMPTY_INKLING_DOCUMENT } from '@/shared/inkling/empty'
 import { validateInklingDocumentForMode } from '@/shared/inkling/features'
-import { CodeCardNode, MathCardNode, $createCodeCardNode, $createMathCardNode } from '@/ui/inkling/editor/cards/simple-card-nodes'
+import {
+  CodeCardNode,
+  MathCardNode,
+  $createCodeCardNode,
+  $createMathCardNode,
+} from '@/ui/inkling/editor/cards/simple-card-nodes'
 import { InlineMathNode, $createInlineMathNode } from '@/ui/inkling/editor/comment/nodes/InlineMathNode'
 import { editorStateToInklingDocument } from '@/ui/inkling/editor/serialize'
 

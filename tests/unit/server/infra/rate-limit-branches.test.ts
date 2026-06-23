@@ -37,6 +37,7 @@ import {
   tryPasswordResetByTargetRateLimit,
   tryPasswordResetRateLimit,
   tryRateLimit,
+  tryRenderRateLimit,
   tryResourceRateLimit,
   trySignInByEmailRateLimit,
 } from '@/server/infra/rate-limit'
@@ -65,6 +66,7 @@ describe('rate-limit — bucket routing', () => {
     await tryPasskeyRegisterFinishRateLimit('1.1.1.1')
     await tryPasskeySetForceRateLimit('1.1.1.1')
     await tryPasskeyDeleteRateLimit('1.1.1.1')
+    await tryRenderRateLimit('1.1.1.1')
 
     const keys = mockPipeline.incr.mock.calls.map((c) => c[0] as string)
     expect(new Set(keys).size).toBe(keys.length)
@@ -88,6 +90,7 @@ describe('rate-limit — bucket routing', () => {
         'rate-limit:passkey-register-finish:1.1.1.1',
         'rate-limit:passkey-set-force:1.1.1.1',
         'rate-limit:passkey-delete:1.1.1.1',
+        'rate-limit:render:1.1.1.1',
       ]),
     )
   })

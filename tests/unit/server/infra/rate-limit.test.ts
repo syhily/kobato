@@ -52,6 +52,7 @@ import {
   tryPasskeyRegisterFinishRateLimit,
   tryPasskeySetForceRateLimit,
   tryPasskeyDeleteRateLimit,
+  tryRenderRateLimit,
   readBucket,
   tryKeyedRateLimit,
   type RateLimitResult,
@@ -126,6 +127,7 @@ describe('rate-limit', () => {
       () => tryPasskeyRegisterFinishRateLimit('127.0.0.1'),
       () => tryPasskeySetForceRateLimit('127.0.0.1'),
       () => tryPasskeyDeleteRateLimit('127.0.0.1'),
+      () => tryRenderRateLimit('127.0.0.1'),
     ]
 
     for (const callable of callables) {

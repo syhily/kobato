@@ -253,6 +253,17 @@ export const BUCKET_META: Record<
       { label: '30分', seconds: 1800 },
     ],
   },
+  renderIp: {
+    title: '公式渲染限流（按 IP）',
+    description: '评论编辑器公式实时预览的 KaTeX 服务端渲染按访客 IP 计数。已登录管理员不受限制。',
+    group: '公共资源',
+    quickWindowOptions: [
+      { label: '1分', seconds: 60 },
+      { label: '5分', seconds: 300 },
+      { label: '15分', seconds: 900 },
+      { label: '30分', seconds: 1800 },
+    ],
+  },
 }
 
 export const GROUPS: { label: string; keys: BucketKey[] }[] = [
@@ -276,5 +287,5 @@ export const GROUPS: { label: string; keys: BucketKey[] }[] = [
   { label: '密码重置', keys: ['passwordResetIp', 'passwordResetEmail', 'passwordResetTarget'] },
   { label: '评论互动', keys: ['commentPostIp', 'commentPostEmail', 'likeIncreaseIp'] },
   { label: '管理操作', keys: ['inviteIp', 'inviteEmail'] },
-  { label: '公共资源', keys: ['resourceIp'] },
+  { label: '公共资源', keys: ['resourceIp', 'renderIp'] },
 ]

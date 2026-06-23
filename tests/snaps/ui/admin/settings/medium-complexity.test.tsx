@@ -256,6 +256,7 @@ const baseRateLimit: RateLimitSettings = {
   passkeyRegisterFinishIp: { windowSeconds: 300, maxAttempts: 10 },
   passkeySetForceIp: { windowSeconds: 300, maxAttempts: 10 },
   passkeyDeleteIp: { windowSeconds: 300, maxAttempts: 10 },
+  renderIp: { windowSeconds: 60, maxAttempts: 60 },
 }
 
 const baseAnalytics: AnalyticsSettings = {

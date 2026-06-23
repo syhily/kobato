@@ -1,6 +1,6 @@
 /** Faithful copy of Koenig's shortcutSymbols.js */
 function isMac() {
-  return typeof navigator !== 'undefined' && navigator.userAgent.indexOf('Mac') !== -1
+  return typeof navigator !== 'undefined' && navigator.userAgent.includes('Mac')
 }
 
 export function ctrlOrCmdSymbol() {
