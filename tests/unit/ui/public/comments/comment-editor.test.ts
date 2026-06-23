@@ -10,9 +10,8 @@ import { describe, expect, it } from 'vitest'
 
 import { EMPTY_INKLING_DOCUMENT } from '@/shared/inkling/empty'
 import { validateInklingDocumentForMode } from '@/shared/inkling/features'
-import { CodeBlockNode, $createCodeBlockNode } from '@/ui/inkling/editor/comment/nodes/CodeBlockNode'
+import { CodeCardNode, MathCardNode, $createCodeCardNode, $createMathCardNode } from '@/ui/inkling/editor/cards/simple-card-nodes'
 import { InlineMathNode, $createInlineMathNode } from '@/ui/inkling/editor/comment/nodes/InlineMathNode'
-import { MathBlockNode, $createMathBlockNode } from '@/ui/inkling/editor/comment/nodes/MathBlockNode'
 import { editorStateToInklingDocument } from '@/ui/inkling/editor/serialize'
 
 const COMMENT_NODES = [
@@ -21,8 +20,8 @@ const COMMENT_NODES = [
   ListNode,
   ListItemNode,
   LinkNode,
-  CodeBlockNode,
-  MathBlockNode,
+  CodeCardNode,
+  MathCardNode,
   InlineMathNode,
 ]
 
@@ -152,7 +151,7 @@ describe('ui/public/comments/comment-editor', () => {
       () => {
         const root = $getRoot()
         const paragraph = root.getFirstChildOrThrow<ElementNode>()
-        const codeBlock = $createCodeBlockNode('const x = 1', 'ts')
+        const codeBlock = $createCodeCardNode({ code: 'const x = 1', language: 'ts' })
         paragraph.insertAfter(codeBlock)
       },
       { discrete: true },
@@ -174,7 +173,7 @@ describe('ui/public/comments/comment-editor', () => {
       () => {
         const root = $getRoot()
         const paragraph = root.getFirstChildOrThrow<ElementNode>()
-        const mathBlock = $createMathBlockNode('E = mc^2')
+        const mathBlock = $createMathCardNode({ tex: 'E = mc^2' })
         paragraph.insertAfter(mathBlock)
       },
       { discrete: true },

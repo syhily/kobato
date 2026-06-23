@@ -15,9 +15,7 @@ import {
   MusicCardNode,
   TableCardNode,
 } from '@/ui/inkling/editor/cards/simple-card-nodes'
-import { CodeBlockNode } from '@/ui/inkling/editor/comment/nodes/CodeBlockNode'
 import { InlineMathNode as CommentInlineMathNode } from '@/ui/inkling/editor/comment/nodes/InlineMathNode'
-import { MathBlockNode } from '@/ui/inkling/editor/comment/nodes/MathBlockNode'
 import { FootnoteRefNode } from '@/ui/inkling/editor/footnotes/FootnoteRefNode'
 
 /**
@@ -59,13 +57,13 @@ export const ARTICLE_NODES: InitialConfigType['nodes'] = [
 ]
 
 /**
- * Comment editor node set. Restricted: no headings, no cards, no footnotes.
- * Uses the comment-specific DOM-rendered code/math nodes (not the decorated
- * article variants) so comment editing stays lightweight.
+ * Comment editor node set. Restricted: no headings, no image/music/table/hr
+ * cards, no footnotes. Code-block and math-block use the SAME decorated card
+ * nodes as the article editor so the Koenig card UI is shared.
  */
 export const COMMENT_NODES: InitialConfigType['nodes'] = [
   ...PROSE_NODES,
-  CodeBlockNode,
-  MathBlockNode,
+  CodeCardNode,
+  MathCardNode,
   CommentInlineMathNode,
 ]
