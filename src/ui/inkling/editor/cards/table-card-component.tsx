@@ -1,14 +1,14 @@
 import type { ReactNode } from 'react'
 
-import { useCallback } from 'react'
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
+import { useCallback } from 'react'
 
 import type { InklingTableNode } from '@/shared/inkling/schema'
 import type { TableCardNode } from '@/ui/inkling/editor/cards/simple-card-nodes'
 
+import { KoenigCardWrapper } from '@/ui/inkling/components/KoenigCardWrapper'
 import { ActionToolbar } from '@/ui/inkling/components/ui/ActionToolbar'
 import { ToolbarMenu, ToolbarMenuItem } from '@/ui/inkling/components/ui/ToolbarMenu'
-import { KoenigCardWrapper } from '@/ui/inkling/components/KoenigCardWrapper'
 import { useCardContext } from '@/ui/inkling/context/CardContext'
 import { DELETE_CARD_COMMAND } from '@/ui/inkling/editor/commands'
 import { cn } from '@/ui/lib/cn'
@@ -32,7 +32,9 @@ export function TableCardComponent({ node }: { node: TableCardNode }): ReactNode
   const update = useCallback(
     (patch: Partial<InklingTableNode>): void => {
       editor.update(() => {
-        if (patch.rows !== undefined) node.setRows(patch.rows)
+        if (patch.rows !== undefined) {
+          node.setRows(patch.rows)
+        }
       })
     },
     [editor, node],
@@ -47,11 +49,15 @@ export function TableCardComponent({ node }: { node: TableCardNode }): ReactNode
       rows: rows.map((row) => ({ ...row, cells: [...row.cells, { type: 'tablecell', version: 1, children: [] }] })),
     })
   const deleteRow = (idx: number) => {
-    if (rows.length <= 1) return
+    if (rows.length <= 1) {
+      return
+    }
     update({ rows: rows.filter((_, i) => i !== idx) })
   }
   const deleteCol = (idx: number) => {
-    if (cellCount <= 1) return
+    if (cellCount <= 1) {
+      return
+    }
     update({ rows: rows.map((row) => ({ ...row, cells: row.cells.filter((_, i) => i !== idx) })) })
   }
   const hasHeaderRow = rows[0]?.cells.some((cell) => cell.isHeader === true) ?? false
@@ -113,9 +119,15 @@ export function TableCardComponent({ node }: { node: TableCardNode }): ReactNode
                         ) : (
                           cell.children
                             .map((child) => {
-                              if (child.type === 'text') return child.text
-                              if (child.type === 'link') return `[链接: ${child.url}]`
-                              if (child.type === 'inline-math') return `$${child.tex}$`
+                              if (child.type === 'text') {
+                                return child.text
+                              }
+                              if (child.type === 'link') {
+                                return `[链接: ${child.url}]`
+                              }
+                              if (child.type === 'inline-math') {
+                                return `$${child.tex}$`
+                              }
                               return ''
                             })
                             .join('') || '\u00A0'
@@ -130,16 +142,32 @@ export function TableCardComponent({ node }: { node: TableCardNode }): ReactNode
         </div>
         {isEditing ? (
           <div className="mt-2 flex flex-wrap gap-2">
-            <button type="button" onClick={addRow} className="rounded border border-grey-300 px-3 py-1 text-xs hover:bg-grey-100 dark:border-grey-700 dark:hover:bg-grey-800">
+            <button
+              type="button"
+              onClick={addRow}
+              className="rounded border border-grey-300 px-3 py-1 text-xs hover:bg-grey-100 dark:border-grey-700 dark:hover:bg-grey-800"
+            >
               ＋行
             </button>
-            <button type="button" onClick={() => deleteRow(rows.length - 1)} className="rounded border border-grey-300 px-3 py-1 text-xs hover:bg-grey-100 dark:border-grey-700 dark:hover:bg-grey-800">
+            <button
+              type="button"
+              onClick={() => deleteRow(rows.length - 1)}
+              className="rounded border border-grey-300 px-3 py-1 text-xs hover:bg-grey-100 dark:border-grey-700 dark:hover:bg-grey-800"
+            >
               −行
             </button>
-            <button type="button" onClick={addCol} className="rounded border border-grey-300 px-3 py-1 text-xs hover:bg-grey-100 dark:border-grey-700 dark:hover:bg-grey-800">
+            <button
+              type="button"
+              onClick={addCol}
+              className="rounded border border-grey-300 px-3 py-1 text-xs hover:bg-grey-100 dark:border-grey-700 dark:hover:bg-grey-800"
+            >
               ＋列
             </button>
-            <button type="button" onClick={() => deleteCol(cellCount - 1)} className="rounded border border-grey-300 px-3 py-1 text-xs hover:bg-grey-100 dark:border-grey-700 dark:hover:bg-grey-800">
+            <button
+              type="button"
+              onClick={() => deleteCol(cellCount - 1)}
+              className="rounded border border-grey-300 px-3 py-1 text-xs hover:bg-grey-100 dark:border-grey-700 dark:hover:bg-grey-800"
+            >
               −列
             </button>
             <button

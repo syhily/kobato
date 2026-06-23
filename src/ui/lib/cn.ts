@@ -133,12 +133,28 @@ const COLOR_TOKENS = [
   'chip-fg',
   'chip-hover-bg',
   'chip-hover-fg',
+  // Koenig editor grey palette + green selection color
+  'grey',
+  'grey-50',
+  'grey-100',
+  'grey-200',
+  'grey-300',
+  'grey-400',
+  'grey-500',
+  'grey-600',
+  'grey-700',
+  'grey-800',
+  'grey-900',
+  'grey-950',
+  'green',
+  'green-600',
 ] as const
 
 const SHADOW_TOKENS = [
   'card',
   'focus',
   'like-active',
+  'md',
   'modal',
   'popup-close',
   'popover',
@@ -151,7 +167,7 @@ const RADIUS_TOKENS = ['aplayer-volume', 'xs', 'sm', 'md', 'lg', 'xl', 'input'] 
 
 const FONT_TOKENS = ['code'] as const
 
-const ANIMATE_TOKENS = ['comments-shimmer', 'comment-flash'] as const
+const ANIMATE_TOKENS = ['comments-shimmer', 'comment-flash', 'aplayer-lrc-marquee'] as const
 
 const Z_INDEX_TOKENS = ['modal', 'aside-drawer'] as const
 

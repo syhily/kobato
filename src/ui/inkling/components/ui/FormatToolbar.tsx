@@ -1,12 +1,12 @@
-import { $getSelection, $isRangeSelection, COMMAND_PRIORITY_CRITICAL, KEY_MODIFIER_COMMAND } from 'lexical'
-import { $isLinkNode, TOGGLE_LINK_COMMAND } from '@lexical/link'
-import { $setBlocksType } from '@lexical/selection'
-import { $createHeadingNode, $createQuoteNode } from '@lexical/rich-text'
+import { TOGGLE_LINK_COMMAND } from '@lexical/link'
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
+import { $createHeadingNode, $createQuoteNode } from '@lexical/rich-text'
+import { $setBlocksType } from '@lexical/selection'
+import { $getSelection, $isRangeSelection } from 'lexical'
 import { useEffect, useState } from 'react'
 
-import { ToolbarMenu, ToolbarMenuItem, ToolbarMenuSeparator } from '@/ui/inkling/components/ui/ToolbarMenu'
 import { FloatingToolbar } from '@/ui/inkling/components/ui/FloatingToolbar'
+import { ToolbarMenu, ToolbarMenuItem, ToolbarMenuSeparator } from '@/ui/inkling/components/ui/ToolbarMenu'
 
 /**
  * Text format toolbar — ported from Koenig's FormatToolbar.jsx +
@@ -46,8 +46,7 @@ export function FormatToolbar({
         setIsItalic(selection.hasFormat('italic'))
 
         const anchorNode = selection.anchor.getNode()
-        const element =
-          anchorNode.getKey() === 'root' ? anchorNode : anchorNode.getTopLevelElementOrThrow()
+        const element = anchorNode.getKey() === 'root' ? anchorNode : anchorNode.getTopLevelElementOrThrow()
         setIsQuote(element.getType() === 'quote')
       })
     })
@@ -99,19 +98,17 @@ export function FormatToolbar({
 
   // Cmd/Ctrl+K → insert link
   useEffect(() => {
-    return editor.registerCommand(
-      KEY_MODIFIER_COMMAND,
-      (payload) => {
-        const event = payload as KeyboardEvent
-        if ((event.metaKey || event.ctrlKey) && event.key === 'k') {
-          event.preventDefault()
-          insertLink()
-          return true
-        }
-        return false
-      },
-      COMMAND_PRIORITY_CRITICAL,
-    )
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if ((event.metaKey || event.ctrlKey) && event.key === 'k') {
+        event.preventDefault()
+        insertLink()
+      }
+    }
+    const rootElement = editor.getRootElement()
+    rootElement?.addEventListener('keydown', handleKeyDown)
+    return () => {
+      rootElement?.removeEventListener('keydown', handleKeyDown)
+    }
   }, [editor])
 
   return (

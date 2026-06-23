@@ -3,12 +3,17 @@ import { HistoryPlugin } from '@lexical/react/LexicalHistoryPlugin'
 
 import type { InklingDocument } from '@/shared/inkling/schema'
 
+import { KoenigComposerContextProvider } from '@/ui/inkling/context/KoenigComposerContext'
+import { KoenigSelectedCardContextProvider } from '@/ui/inkling/context/KoenigSelectedCardContext'
+import { useInklingKeyboardNavigation } from '@/ui/inkling/editor/behaviour/keyboard-navigation'
 import {
   INKLING_COMMENT_MARKDOWN_TRANSFORMERS,
   useInklingMarkdownShortcuts,
 } from '@/ui/inkling/editor/behaviour/markdown-shortcuts'
 import { InklingEditor } from '@/ui/inkling/editor/InklingEditor'
 import { COMMENT_NODES } from '@/ui/inkling/editor/nodes/registry'
+import { CardCommandsPlugin } from '@/ui/inkling/editor/plugins/CardCommandsPlugin'
+import { FloatingToolbarPlugin } from '@/ui/inkling/editor/plugins/FloatingToolbarPlugin'
 
 /** Headless plugin that wires markdown shortcuts into the comment editor.
  *  Uses the comment-restricted transformer set (no HEADING — the comment
@@ -16,6 +21,14 @@ import { COMMENT_NODES } from '@/ui/inkling/editor/nodes/registry'
 function CommentMarkdownShortcuts() {
   const [editor] = useLexicalComposerContext()
   useInklingMarkdownShortcuts(editor, INKLING_COMMENT_MARKDOWN_TRANSFORMERS)
+  return null
+}
+
+/** Headless plugin that registers card click-to-select + arrow-key
+ *  navigation. Mirrors the article editor's InklingKeyboardNav. */
+function CommentKeyboardNav() {
+  const [editor] = useLexicalComposerContext()
+  useInklingKeyboardNavigation(editor)
   return null
 }
 
@@ -38,20 +51,30 @@ export function CommentInklingEditor({
   contentClassName,
   children,
 }: CommentInklingEditorProps) {
+  const darkMode =
+    typeof globalThis !== 'undefined' && globalThis.document?.documentElement.classList.contains('dark') === true
+
   return (
-    <InklingEditor
-      namespace="inkling-comment-editor"
-      nodes={COMMENT_NODES}
-      document={document}
-      onChange={onChange}
-      editable={editable}
-      placeholder={placeholder}
-      className={className}
-      contentClassName={contentClassName}
-    >
-      <HistoryPlugin />
-      <CommentMarkdownShortcuts />
-      {children}
-    </InklingEditor>
+    <KoenigComposerContextProvider value={{ darkMode }}>
+      <KoenigSelectedCardContextProvider>
+        <InklingEditor
+          namespace="inkling-comment-editor"
+          nodes={COMMENT_NODES}
+          document={document}
+          onChange={onChange}
+          editable={editable}
+          placeholder={placeholder}
+          className={className}
+          contentClassName={contentClassName}
+        >
+          <HistoryPlugin />
+          <CommentMarkdownShortcuts />
+          <CommentKeyboardNav />
+          <CardCommandsPlugin />
+          <FloatingToolbarPlugin mode="comment" />
+          {children}
+        </InklingEditor>
+      </KoenigSelectedCardContextProvider>
+    </KoenigComposerContextProvider>
   )
 }

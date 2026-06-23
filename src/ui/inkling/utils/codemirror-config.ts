@@ -1,8 +1,8 @@
-import { EditorView, keymap, lineNumbers } from '@codemirror/view'
-import { HighlightStyle, syntaxHighlighting } from '@codemirror/language'
 import { history, historyKeymap, standardKeymap } from '@codemirror/commands'
-import { minimalSetup } from '@uiw/codemirror-extensions-basic-setup'
+import { HighlightStyle, syntaxHighlighting } from '@codemirror/language'
+import { EditorView, keymap, lineNumbers } from '@codemirror/view'
 import { tags as t } from '@lezer/highlight'
+import { minimalSetup } from '@uiw/codemirror-extensions-basic-setup'
 
 /**
  * CodeMirror theme + highlight config — ported from Koenig's

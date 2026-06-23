@@ -1,10 +1,10 @@
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import { SELECTION_CHANGE_COMMAND } from 'lexical'
-import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 
 import { Portal } from '@/ui/inkling/components/ui/Portal'
-import { $getSelectionRangeRect } from '@/ui/inkling/utils/getSelectionRangeRect'
 import { getScrollParent } from '@/ui/inkling/utils/getScrollParent'
+import { $getSelectionRangeRect } from '@/ui/inkling/utils/getSelectionRangeRect'
 import { setFloatingElemPosition } from '@/ui/inkling/utils/setFloatingElemPosition'
 
 /**
@@ -31,6 +31,26 @@ export function FloatingToolbar({
   const toolbarRef = useRef<HTMLDivElement>(null)
   const [opacity, setOpacity] = useState(0)
 
+  const positionToolbar = useCallback(() => {
+    const toolbar = toolbarRef.current
+    const rootElement = editor.getRootElement()
+    if (toolbar === null || rootElement === null) {
+      return
+    }
+
+    editor.getEditorState().read(() => {
+      const targetRect = $getSelectionRangeRect(editor)
+      if (targetRect === null) {
+        setOpacity(0)
+        return
+      }
+
+      const scroller = getScrollParent(rootElement.parentElement)
+      setFloatingElemPosition(targetRect, toolbar, scroller, 10, false)
+      setOpacity(1)
+    })
+  }, [editor])
+
   // Reposition the toolbar on selection change
   useEffect(() => {
     return editor.registerCommand(
@@ -44,7 +64,7 @@ export function FloatingToolbar({
       },
       1,
     )
-  }, [editor, isVisible, shouldReposition])
+  }, [editor, isVisible, shouldReposition, positionToolbar])
 
   // Reposition on scroll + resize
   useEffect(() => {
@@ -68,27 +88,7 @@ export function FloatingToolbar({
       scroller.removeEventListener('scroll', handleScroll)
       window.removeEventListener('resize', handleResize)
     }
-  }, [editor, isVisible])
-
-  function positionToolbar() {
-    const toolbar = toolbarRef.current
-    const rootElement = editor.getRootElement()
-    if (toolbar === null || rootElement === null) {
-      return
-    }
-
-    editor.getEditorState().read(() => {
-      const targetRect = $getSelectionRangeRect(editor)
-      if (targetRect === null) {
-        setOpacity(0)
-        return
-      }
-
-      const scroller = getScrollParent(rootElement.parentElement)
-      setFloatingElemPosition(targetRect, toolbar, scroller, 10, false)
-      setOpacity(1)
-    })
-  }
+  }, [editor, isVisible, positionToolbar])
 
   if (!isVisible) {
     return null

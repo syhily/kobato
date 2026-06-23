@@ -1,14 +1,14 @@
-import { $getSelection, $isNodeSelection } from 'lexical'
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import { useCallback } from 'react'
 
 import type { CodeCardNode } from '@/ui/inkling/editor/cards/simple-card-nodes'
+
+import { KoenigCardWrapper } from '@/ui/inkling/components/KoenigCardWrapper'
 import { ActionToolbar } from '@/ui/inkling/components/ui/ActionToolbar'
-import { ToolbarMenu, ToolbarMenuItem } from '@/ui/inkling/components/ui/ToolbarMenu'
 import { CodeBlockCard } from '@/ui/inkling/components/ui/cards/CodeBlockCard'
+import { ToolbarMenu, ToolbarMenuItem } from '@/ui/inkling/components/ui/ToolbarMenu'
 import { useCardContext } from '@/ui/inkling/context/CardContext'
 import { DELETE_CARD_COMMAND } from '@/ui/inkling/editor/commands'
-import { KoenigCardWrapper } from '@/ui/inkling/components/KoenigCardWrapper'
 
 /**
  * Code card component — connects CodeCardNode to the Koenig card system.

@@ -1,13 +1,14 @@
 import type { ReactNode } from 'react'
 
+import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
+
 import type { HorizontalRuleCardNode } from '@/ui/inkling/editor/cards/simple-card-nodes'
 
+import { KoenigCardWrapper } from '@/ui/inkling/components/KoenigCardWrapper'
 import { ActionToolbar } from '@/ui/inkling/components/ui/ActionToolbar'
 import { ToolbarMenu, ToolbarMenuItem } from '@/ui/inkling/components/ui/ToolbarMenu'
-import { KoenigCardWrapper } from '@/ui/inkling/components/KoenigCardWrapper'
 import { useCardContext } from '@/ui/inkling/context/CardContext'
 import { DELETE_CARD_COMMAND } from '@/ui/inkling/editor/commands'
-import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 
 export function HorizontalRuleCardComponent({ node }: { node: HorizontalRuleCardNode }): ReactNode {
   const [editor] = useLexicalComposerContext()
