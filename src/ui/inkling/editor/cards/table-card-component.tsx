@@ -1,12 +1,16 @@
 import type { ReactNode } from 'react'
 
 import { useCallback } from 'react'
+import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 
 import type { InklingTableNode } from '@/shared/inkling/schema'
 import type { TableCardNode } from '@/ui/inkling/editor/cards/simple-card-nodes'
 
-import { CardShell } from '@/ui/inkling/editor/cards/card-shell'
-import { useCardNode } from '@/ui/inkling/editor/cards/use-card-node'
+import { ActionToolbar } from '@/ui/inkling/components/ui/ActionToolbar'
+import { ToolbarMenu, ToolbarMenuItem } from '@/ui/inkling/components/ui/ToolbarMenu'
+import { KoenigCardWrapper } from '@/ui/inkling/components/KoenigCardWrapper'
+import { useCardContext } from '@/ui/inkling/context/CardContext'
+import { DELETE_CARD_COMMAND } from '@/ui/inkling/editor/commands'
 import { cn } from '@/ui/lib/cn'
 
 function emptyRow(cellCount: number): {
@@ -22,14 +26,13 @@ function emptyRow(cellCount: number): {
 }
 
 export function TableCardComponent({ node }: { node: TableCardNode }): ReactNode {
-  const { editor, isSelected } = useCardNode(node)
+  const [editor] = useLexicalComposerContext()
+  const { isSelected, isEditing, setEditing } = useCardContext()
 
   const update = useCallback(
     (patch: Partial<InklingTableNode>): void => {
       editor.update(() => {
-        if (patch.rows !== undefined) {
-          node.setRows(patch.rows)
-        }
+        if (patch.rows !== undefined) node.setRows(patch.rows)
       })
     },
     [editor, node],
@@ -44,15 +47,11 @@ export function TableCardComponent({ node }: { node: TableCardNode }): ReactNode
       rows: rows.map((row) => ({ ...row, cells: [...row.cells, { type: 'tablecell', version: 1, children: [] }] })),
     })
   const deleteRow = (idx: number) => {
-    if (rows.length <= 1) {
-      return
-    }
+    if (rows.length <= 1) return
     update({ rows: rows.filter((_, i) => i !== idx) })
   }
   const deleteCol = (idx: number) => {
-    if (cellCount <= 1) {
-      return
-    }
+    if (cellCount <= 1) return
     update({ rows: rows.map((row) => ({ ...row, cells: row.cells.filter((_, i) => i !== idx) })) })
   }
   const hasHeaderRow = rows[0]?.cells.some((cell) => cell.isHeader === true) ?? false
@@ -65,108 +64,100 @@ export function TableCardComponent({ node }: { node: TableCardNode }): ReactNode
   }
 
   return (
-    <CardShell nodeKey={node.getKey()} className="p-3">
-      <div className="pt-table-wrapper overflow-x-auto">
-        <table className="pt-table w-full border-collapse text-sm">
-          <tbody>
-            {rows.map((row, rowIndex) => (
-              <tr key={row.key ?? rowIndex}>
-                {row.cells.map((cell, cellIndex) => {
-                  const CellTag = cell.isHeader === true ? 'th' : 'td'
-                  return (
-                    <CellTag
-                      key={cell.key ?? cellIndex}
-                      className="border border-muted-foreground/30 px-2 py-1 text-sm"
-                    >
-                      {isSelected ? (
-                        <input
-                          type="text"
-                          value={cell.children.map((c) => (c.type === 'text' ? c.text : '')).join('')}
-                          onChange={(e) => {
-                            const nonTextChildren = cell.children.filter((c) => c.type !== 'text')
-                            const newTextNode = {
-                              type: 'text' as const,
-                              version: 1 as const,
-                              text: e.target.value,
-                            }
-                            const newRows: InklingTableNode['rows'] = rows.map((r, ri) =>
-                              ri === rowIndex
-                                ? {
-                                    ...r,
-                                    cells: r.cells.map((c, ci) =>
-                                      ci === cellIndex ? { ...c, children: [newTextNode, ...nonTextChildren] } : c,
-                                    ),
-                                  }
-                                : r,
-                            )
-                            update({ rows: newRows })
-                          }}
-                          className="w-full bg-transparent text-sm outline-none"
-                        />
-                      ) : (
-                        cell.children
-                          .map((child) => {
-                            if (child.type === 'text') {
-                              return child.text
-                            }
-                            if (child.type === 'link') {
-                              return `[链接: ${child.url}]`
-                            }
-                            if (child.type === 'inline-math') {
-                              return `$${child.tex}$`
-                            }
-                            return ''
-                          })
-                          .join('') || '\u00A0'
-                      )}
-                    </CellTag>
-                  )
-                })}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-      {isSelected ? (
-        <div className="inkling-card-controlbar">
-          <button type="button" onClick={addRow} className="inkling-card-button">
-            ＋行
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              if (rows.length > 1) {
-                deleteRow(rows.length - 1)
-              }
-            }}
-            className="inkling-card-button"
-          >
-            −行
-          </button>
-          <button type="button" onClick={addCol} className="inkling-card-button">
-            ＋列
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              if (cellCount > 1) {
-                deleteCol(cellCount - 1)
-              }
-            }}
-            className="inkling-card-button"
-          >
-            −列
-          </button>
-          <button
-            type="button"
-            aria-pressed={hasHeaderRow}
-            onClick={toggleHeaderRow}
-            className={cn('inkling-card-button', hasHeaderRow && 'inkling-card-button--primary')}
-          >
-            {hasHeaderRow ? '取消表头' : '设为表头'}
-          </button>
+    <KoenigCardWrapper nodeKey={node.getKey()}>
+      <ActionToolbar isVisible={isSelected && !isEditing}>
+        <ToolbarMenu>
+          <ToolbarMenuItem icon="edit" label="编辑" onClick={() => setEditing(true)} />
+          <ToolbarMenuItem
+            icon="trash"
+            label="删除"
+            onClick={() => editor.dispatchCommand(DELETE_CARD_COMMAND, undefined)}
+          />
+        </ToolbarMenu>
+      </ActionToolbar>
+
+      <div className="p-3">
+        <div className="overflow-x-auto">
+          <table className="w-full border-collapse text-sm">
+            <tbody>
+              {rows.map((row, rowIndex) => (
+                <tr key={row.key ?? rowIndex}>
+                  {row.cells.map((cell, cellIndex) => {
+                    const CellTag = cell.isHeader === true ? 'th' : 'td'
+                    return (
+                      <CellTag
+                        key={cell.key ?? cellIndex}
+                        className="border border-grey-300 px-2 py-1 text-sm dark:border-grey-700"
+                      >
+                        {isEditing ? (
+                          <input
+                            type="text"
+                            value={cell.children.map((c) => (c.type === 'text' ? c.text : '')).join('')}
+                            onChange={(e) => {
+                              const nonTextChildren = cell.children.filter((c) => c.type !== 'text')
+                              const newTextNode = { type: 'text' as const, version: 1 as const, text: e.target.value }
+                              const newRows: InklingTableNode['rows'] = rows.map((r, ri) =>
+                                ri === rowIndex
+                                  ? {
+                                      ...r,
+                                      cells: r.cells.map((c, ci) =>
+                                        ci === cellIndex ? { ...c, children: [newTextNode, ...nonTextChildren] } : c,
+                                      ),
+                                    }
+                                  : r,
+                              )
+                              update({ rows: newRows })
+                            }}
+                            className="w-full bg-transparent text-sm outline-none"
+                          />
+                        ) : (
+                          cell.children
+                            .map((child) => {
+                              if (child.type === 'text') return child.text
+                              if (child.type === 'link') return `[链接: ${child.url}]`
+                              if (child.type === 'inline-math') return `$${child.tex}$`
+                              return ''
+                            })
+                            .join('') || '\u00A0'
+                        )}
+                      </CellTag>
+                    )
+                  })}
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
-      ) : null}
-    </CardShell>
+        {isEditing ? (
+          <div className="mt-2 flex flex-wrap gap-2">
+            <button type="button" onClick={addRow} className="rounded border border-grey-300 px-3 py-1 text-xs hover:bg-grey-100 dark:border-grey-700 dark:hover:bg-grey-800">
+              ＋行
+            </button>
+            <button type="button" onClick={() => deleteRow(rows.length - 1)} className="rounded border border-grey-300 px-3 py-1 text-xs hover:bg-grey-100 dark:border-grey-700 dark:hover:bg-grey-800">
+              −行
+            </button>
+            <button type="button" onClick={addCol} className="rounded border border-grey-300 px-3 py-1 text-xs hover:bg-grey-100 dark:border-grey-700 dark:hover:bg-grey-800">
+              ＋列
+            </button>
+            <button type="button" onClick={() => deleteCol(cellCount - 1)} className="rounded border border-grey-300 px-3 py-1 text-xs hover:bg-grey-100 dark:border-grey-700 dark:hover:bg-grey-800">
+              −列
+            </button>
+            <button
+              type="button"
+              aria-pressed={hasHeaderRow}
+              onClick={toggleHeaderRow}
+              className={cn(
+                'rounded border px-3 py-1 text-xs',
+                hasHeaderRow
+                  ? 'border-green bg-green text-white'
+                  : 'border-grey-300 hover:bg-grey-100 dark:border-grey-700 dark:hover:bg-grey-800',
+              )}
+            >
+              {hasHeaderRow ? '取消表头' : '设为表头'}
+            </button>
+          </div>
+        ) : null}
+      </div>
+    </KoenigCardWrapper>
   )
 }

@@ -5,8 +5,12 @@ import { useCallback, useEffect, useState } from 'react'
 import type { InklingMathBlockNode } from '@/shared/inkling/schema'
 import type { MathCardNode } from '@/ui/inkling/editor/cards/simple-card-nodes'
 
-import { CardShell } from '@/ui/inkling/editor/cards/card-shell'
-import { useCardNode } from '@/ui/inkling/editor/cards/use-card-node'
+import { ActionToolbar } from '@/ui/inkling/components/ui/ActionToolbar'
+import { ToolbarMenu, ToolbarMenuItem } from '@/ui/inkling/components/ui/ToolbarMenu'
+import { useCardContext } from '@/ui/inkling/context/CardContext'
+import { DELETE_CARD_COMMAND } from '@/ui/inkling/editor/commands'
+import { KoenigCardWrapper } from '@/ui/inkling/components/KoenigCardWrapper'
+import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 
 function MathPreview({ tex }: { tex: string }) {
   const [html, setHtml] = useState<string | null>(null)
@@ -22,7 +26,7 @@ function MathPreview({ tex }: { tex: string }) {
         setLoading(true)
         try {
           const { orpc } = await import('@/client/api/client')
-          const result = await orpc.admin.renders.math({ tex, display: true })
+          const result = await orpc.renders.math({ tex, display: true })
           if (!cancelled) {
             setHtml(result.mathml ?? null)
           }
@@ -49,10 +53,6 @@ function MathPreview({ tex }: { tex: string }) {
   if (tex.trim().length === 0 || html === null) {
     return <div className="py-4 text-center font-mono text-sm">$${tex || '\\text{输入 TeX 公式}'}$$</div>
   }
-  // `html` is server-rendered MathML from `orpc.admin.renders.math`, which
-  // runs `sanitizeMathml` before returning. No client-side re-sanitization —
-  // see docs/superpowers/specs/2026-06-22-sanitizer-migration-design.md §"Why
-  // sites 1–4 drop the client-side call entirely".
   return (
     <div
       className="math math-display text-center [&_svg]:mx-auto [&_svg]:block [&_svg]:max-w-none"
@@ -62,7 +62,8 @@ function MathPreview({ tex }: { tex: string }) {
 }
 
 export function MathCardComponent({ node }: { node: MathCardNode }): ReactNode {
-  const { editor, isSelected } = useCardNode(node)
+  const [editor] = useLexicalComposerContext()
+  const { isSelected, isEditing, setEditing } = useCardContext()
 
   const update = useCallback(
     (patch: Partial<InklingMathBlockNode>): void => {
@@ -76,17 +77,30 @@ export function MathCardComponent({ node }: { node: MathCardNode }): ReactNode {
   )
 
   return (
-    <CardShell nodeKey={node.getKey()} className="p-3">
-      {isSelected ? (
+    <KoenigCardWrapper nodeKey={node.getKey()}>
+      <ActionToolbar isVisible={isSelected && !isEditing}>
+        <ToolbarMenu>
+          <ToolbarMenuItem icon="edit" label="编辑" onClick={() => setEditing(true)} />
+          <ToolbarMenuItem
+            icon="trash"
+            label="删除"
+            onClick={() => editor.dispatchCommand(DELETE_CARD_COMMAND, undefined)}
+          />
+        </ToolbarMenu>
+      </ActionToolbar>
+
+      {isEditing ? (
         <textarea
           value={node.getTex()}
           onChange={(e) => update({ tex: e.target.value })}
           rows={4}
           placeholder="e^{i\\pi} + 1 = 0"
-          className="inkling-card-textarea mb-2"
+          className="inkling-card-textarea mb-2 w-full rounded border border-grey-300 p-3 font-mono text-sm dark:border-grey-900"
         />
       ) : null}
-      <MathPreview tex={node.getTex()} />
-    </CardShell>
+      <div className="px-4 py-3">
+        <MathPreview tex={node.getTex()} />
+      </div>
+    </KoenigCardWrapper>
   )
 }

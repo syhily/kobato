@@ -2,14 +2,18 @@ import type { ReactNode } from 'react'
 
 import { MusicIcon } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
+import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 
 import type { InklingMusicCardNode } from '@/shared/inkling/schema'
 import type { MusicCardNode } from '@/ui/inkling/editor/cards/simple-card-nodes'
 
 import { LoopIcon, PlayIcon, VolumeUpIcon } from '@/ui/icons/aplayer'
 import { useInklingArticleEditorActions } from '@/ui/inkling/editor/article/article-editor-context'
-import { CardShell } from '@/ui/inkling/editor/cards/card-shell'
-import { useCardNode } from '@/ui/inkling/editor/cards/use-card-node'
+import { ActionToolbar } from '@/ui/inkling/components/ui/ActionToolbar'
+import { ToolbarMenu, ToolbarMenuItem } from '@/ui/inkling/components/ui/ToolbarMenu'
+import { KoenigCardWrapper } from '@/ui/inkling/components/KoenigCardWrapper'
+import { useCardContext } from '@/ui/inkling/context/CardContext'
+import { DELETE_CARD_COMMAND } from '@/ui/inkling/editor/commands'
 
 interface MusicPreviewMeta {
   name: string
@@ -71,7 +75,8 @@ function StaticMusicPreview({ meta, playerId }: { meta: MusicPreviewMeta | null;
 }
 
 export function MusicCardComponent({ node }: { node: MusicCardNode }): ReactNode {
-  const { editor, isSelected } = useCardNode(node)
+  const [editor] = useLexicalComposerContext()
+  const { isSelected, isEditing, setEditing } = useCardContext()
   const { openMusicPicker } = useInklingArticleEditorActions()
   const [meta, setMeta] = useState<MusicPreviewMeta | null>(null)
 
@@ -103,15 +108,9 @@ export function MusicCardComponent({ node }: { node: MusicCardNode }): ReactNode
   const update = useCallback(
     (patch: Partial<InklingMusicCardNode>): void => {
       editor.update(() => {
-        if (patch.playerId !== undefined) {
-          node.setPlayerId(patch.playerId)
-        }
-        if (patch.auto !== undefined) {
-          node.setAuto(patch.auto)
-        }
-        if (patch.center !== undefined) {
-          node.setCenter(patch.center)
-        }
+        if (patch.playerId !== undefined) node.setPlayerId(patch.playerId)
+        if (patch.auto !== undefined) node.setAuto(patch.auto)
+        if (patch.center !== undefined) node.setCenter(patch.center)
       })
     },
     [editor, node],
@@ -120,35 +119,56 @@ export function MusicCardComponent({ node }: { node: MusicCardNode }): ReactNode
   const handlePick = () => openMusicPicker?.()
 
   return (
-    <CardShell nodeKey={node.getKey()} className="space-y-2 p-3">
-      {playerId !== '' ? (
-        <StaticMusicPreview meta={meta} playerId={playerId} />
-      ) : (
-        <div className="inkling-card-controlbar">
-          <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
-            <MusicIcon className="h-4 w-4" />
-            未选择音乐
-          </span>
-          <button type="button" onClick={handlePick} className="inkling-card-button inkling-card-button--primary">
-            选择音乐
-          </button>
-        </div>
-      )}
-      {isSelected ? (
-        <div className="inkling-card-controlbar">
-          <button type="button" onClick={handlePick} className="inkling-card-button">
-            {playerId !== '' ? '更换音乐' : '选择音乐'}
-          </button>
-          <label className="inkling-card-toggle">
-            <input type="checkbox" checked={node.getAuto()} onChange={(e) => update({ auto: e.target.checked })} />
-            自动播放
-          </label>
-          <label className="inkling-card-toggle">
-            <input type="checkbox" checked={node.getCenter()} onChange={(e) => update({ center: e.target.checked })} />
-            居中显示
-          </label>
-        </div>
-      ) : null}
-    </CardShell>
+    <KoenigCardWrapper nodeKey={node.getKey()}>
+      <ActionToolbar isVisible={isSelected && !isEditing}>
+        <ToolbarMenu>
+          <ToolbarMenuItem icon="edit" label="编辑" onClick={() => setEditing(true)} />
+          <ToolbarMenuItem
+            icon="trash"
+            label="删除"
+            onClick={() => editor.dispatchCommand(DELETE_CARD_COMMAND, undefined)}
+          />
+        </ToolbarMenu>
+      </ActionToolbar>
+
+      <div className="space-y-2 p-3">
+        {playerId !== '' ? (
+          <StaticMusicPreview meta={meta} playerId={playerId} />
+        ) : (
+          <div className="flex items-center gap-2">
+            <span className="flex items-center gap-1.5 text-xs text-grey-500">
+              <MusicIcon className="h-4 w-4" />
+              未选择音乐
+            </span>
+            <button
+              type="button"
+              onClick={handlePick}
+              className="rounded bg-grey-900 px-3 py-1 text-xs text-white hover:bg-grey-800 dark:bg-grey-100 dark:text-grey-900"
+            >
+              选择音乐
+            </button>
+          </div>
+        )}
+        {isEditing ? (
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={handlePick}
+              className="rounded border border-grey-300 px-3 py-1 text-xs hover:bg-grey-100 dark:border-grey-700 dark:hover:bg-grey-800"
+            >
+              {playerId !== '' ? '更换音乐' : '选择音乐'}
+            </button>
+            <label className="flex items-center gap-1 text-xs text-grey-600 dark:text-grey-400">
+              <input type="checkbox" checked={node.getAuto()} onChange={(e) => update({ auto: e.target.checked })} />
+              自动播放
+            </label>
+            <label className="flex items-center gap-1 text-xs text-grey-600 dark:text-grey-400">
+              <input type="checkbox" checked={node.getCenter()} onChange={(e) => update({ center: e.target.checked })} />
+              居中显示
+            </label>
+          </div>
+        ) : null}
+      </div>
+    </KoenigCardWrapper>
   )
 }

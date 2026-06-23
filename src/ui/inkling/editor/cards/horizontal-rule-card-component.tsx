@@ -2,12 +2,31 @@ import type { ReactNode } from 'react'
 
 import type { HorizontalRuleCardNode } from '@/ui/inkling/editor/cards/simple-card-nodes'
 
-import { CardShell } from '@/ui/inkling/editor/cards/card-shell'
+import { ActionToolbar } from '@/ui/inkling/components/ui/ActionToolbar'
+import { ToolbarMenu, ToolbarMenuItem } from '@/ui/inkling/components/ui/ToolbarMenu'
+import { KoenigCardWrapper } from '@/ui/inkling/components/KoenigCardWrapper'
+import { useCardContext } from '@/ui/inkling/context/CardContext'
+import { DELETE_CARD_COMMAND } from '@/ui/inkling/editor/commands'
+import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 
 export function HorizontalRuleCardComponent({ node }: { node: HorizontalRuleCardNode }): ReactNode {
+  const [editor] = useLexicalComposerContext()
+  const { isSelected } = useCardContext()
+
   return (
-    <CardShell nodeKey={node.getKey()} className="py-3">
-      <hr className="border-inkling-border" />
-    </CardShell>
+    <KoenigCardWrapper nodeKey={node.getKey()}>
+      <ActionToolbar isVisible={isSelected}>
+        <ToolbarMenu>
+          <ToolbarMenuItem
+            icon="trash"
+            label="删除"
+            onClick={() => editor.dispatchCommand(DELETE_CARD_COMMAND, undefined)}
+          />
+        </ToolbarMenu>
+      </ActionToolbar>
+      <div className="py-3">
+        <hr className="border-grey-300 dark:border-grey-700" />
+      </div>
+    </KoenigCardWrapper>
   )
 }

@@ -1,95 +1,75 @@
-import type { ReactNode } from 'react'
+import { $getSelection, $isNodeSelection } from 'lexical'
+import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
+import { useCallback } from 'react'
 
-import { useCallback, useState } from 'react'
-
-import type { InklingCodeBlockNode } from '@/shared/inkling/schema'
 import type { CodeCardNode } from '@/ui/inkling/editor/cards/simple-card-nodes'
+import { ActionToolbar } from '@/ui/inkling/components/ui/ActionToolbar'
+import { ToolbarMenu, ToolbarMenuItem } from '@/ui/inkling/components/ui/ToolbarMenu'
+import { CodeBlockCard } from '@/ui/inkling/components/ui/cards/CodeBlockCard'
+import { useCardContext } from '@/ui/inkling/context/CardContext'
+import { DELETE_CARD_COMMAND } from '@/ui/inkling/editor/commands'
+import { KoenigCardWrapper } from '@/ui/inkling/components/KoenigCardWrapper'
 
-import { CardShell, COMMON_LANGUAGES } from '@/ui/inkling/editor/cards/card-shell'
-import { useCardNode } from '@/ui/inkling/editor/cards/use-card-node'
-import { CodeBlock as CodeBlockRenderer } from '@/ui/inkling/render/blocks/CodeBlock'
+/**
+ * Code card component — connects CodeCardNode to the Koenig card system.
+ *
+ * Replaces the old CodeCardComponent that used CardShell + CodeBlockRenderer.
+ * Now uses KoenigCardWrapper for selection/editing state and CodeBlockCard
+ * (CodeMirror) for the editor.
+ */
+export function CodeCardComponent({ node }: { node: CodeCardNode }) {
+  const [editor] = useLexicalComposerContext()
+  const { isSelected, isEditing, setEditing } = useCardContext()
 
-export function CodeCardComponent({ node }: { node: CodeCardNode }): ReactNode {
-  const { editor, isSelected } = useCardNode(node)
-  const [preview, setPreview] = useState(false)
+  const code = node.getCode()
+  const language = node.getLanguage() ?? ''
 
-  const update = useCallback(
-    (patch: Partial<InklingCodeBlockNode>): void => {
-      editor.update(() => {
-        if (patch.code !== undefined) {
-          node.setCode(patch.code)
-          if (node.getHighlightedHtml() !== undefined) {
-            node.setHighlightedHtml(undefined)
-          }
-        }
-        if (patch.language !== undefined) {
-          node.setLanguage(patch.language)
-          if (patch.code === undefined && node.getHighlightedHtml() !== undefined) {
-            node.setHighlightedHtml(undefined)
-          }
-        }
-      })
+  const onCodeChange = useCallback(
+    (newCode: string) => {
+      editor.update(
+        () => {
+          node.setCode(newCode)
+          node.setHighlightedHtml(undefined)
+        },
+        { tag: 'history-merge' },
+      )
     },
     [editor, node],
   )
 
-  // Build a plain InklingCodeBlockNode for the render component.
-  const renderNode: InklingCodeBlockNode = {
-    type: 'code-block',
-    version: 1,
-    code: node.getCode(),
-    language: node.getLanguage(),
-    highlightedHtml: node.getHighlightedHtml(),
-  }
-
-  if (!isSelected) {
-    // Idle: render the published CodeBlock component (header + copy button + Shiki)
-    return (
-      <CardShell nodeKey={node.getKey()} className="p-0">
-        <CodeBlockRenderer node={renderNode} />
-      </CardShell>
-    )
-  }
+  const onLanguageChange = useCallback(
+    (newLang: string) => {
+      editor.update(
+        () => {
+          node.setLanguage(newLang)
+          node.setHighlightedHtml(undefined)
+        },
+        { tag: 'history-merge' },
+      )
+    },
+    [editor, node],
+  )
 
   return (
-    <CardShell nodeKey={node.getKey()} className="space-y-2 p-3">
-      <div className="inkling-card-controlbar">
-        <input
-          list="inkling-languages"
-          type="text"
-          value={node.getLanguage() ?? ''}
-          onChange={(e) => update({ language: e.target.value })}
-          placeholder="语言 (可选)"
-          className="inkling-card-input"
-        />
-        <datalist id="inkling-languages">
-          {COMMON_LANGUAGES.map((lang) => (
-            <option key={lang} value={lang}>
-              {lang}
-            </option>
-          ))}
-        </datalist>
-        <button type="button" onClick={() => setPreview(!preview)} className="inkling-card-button">
-          {preview ? '编辑' : '预览'}
-        </button>
-      </div>
-      {preview ? (
-        node.getHighlightedHtml() !== undefined ? (
-          <CodeBlockRenderer node={renderNode} />
-        ) : (
-          <pre className="overflow-x-auto rounded bg-muted p-2 font-mono text-xs">
-            <code>{node.getCode()}</code>
-          </pre>
-        )
-      ) : (
-        <textarea
-          value={node.getCode()}
-          onChange={(e) => update({ code: e.target.value })}
-          rows={8}
-          spellCheck={false}
-          className="inkling-card-textarea"
-        />
-      )}
-    </CardShell>
+    <KoenigCardWrapper nodeKey={node.getKey()} wrapperStyle="code-card">
+      <ActionToolbar isVisible={isSelected && !isEditing}>
+        <ToolbarMenu>
+          <ToolbarMenuItem icon="edit" label="编辑" onClick={() => setEditing(true)} />
+          <ToolbarMenuItem
+            icon="trash"
+            label="删除"
+            onClick={() => editor.dispatchCommand(DELETE_CARD_COMMAND, undefined)}
+          />
+        </ToolbarMenu>
+      </ActionToolbar>
+
+      <CodeBlockCard
+        code={code}
+        language={language}
+        isEditing={isEditing}
+        onCodeChange={onCodeChange}
+        onLanguageChange={onLanguageChange}
+      />
+    </KoenigCardWrapper>
   )
 }
