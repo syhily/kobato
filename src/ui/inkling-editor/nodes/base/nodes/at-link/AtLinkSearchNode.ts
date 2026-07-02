@@ -55,7 +55,8 @@ export class AtLinkSearchNode extends TextNode {
     dom.dataset.placeholder =
       this.__placeholder !== null ? this.__placeholder : this.__text ? '' : this.defaultPlaceholder
 
-    return super.updateDOM(prevNode, dom, config)
+    // yufan.me: Lexical 0.46 types updateDOM's prevNode as the polymorphic `this`; safe as this class is not subclassed
+    return super.updateDOM(prevNode as this, dom, config)
   }
 
   // This is an editor-only placeholder node. Return an empty element and

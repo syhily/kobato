@@ -98,7 +98,8 @@ export function denestTransform<T extends ElementNode>(node: T, createNode: Crea
 
   // find the top-level parent to insert nodes after in case of deeper nesting,
   // e.g. images inside lists
-  let parent = node
+  // yufan.me: widened from T — ancestors are arbitrary ElementNodes and only ElementNode APIs are used below
+  let parent: ElementNode = node
   while (parent.getParent() && parent.getParent() !== $getRoot()) {
     parent = parent.getParentOrThrow()
   }

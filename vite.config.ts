@@ -30,7 +30,15 @@ const projectRoot = fileURLToPath(new URL('.', import.meta.url))
 export default defineConfig(({ command }) => ({
   ssr:
     command === 'serve'
-      ? {}
+      ? {
+          // CJS-only packages reached by the vendored editor whose named
+          // exports Node's ESM lexer can't statically analyze in dev SSR;
+          // pre-bundling converts them to ESM (prod build is noExternal).
+          noExternal: ['emoji-mart', '@emoji-mart/react'],
+          optimizeDeps: {
+            include: ['emoji-mart', '@emoji-mart/react'],
+          },
+        }
       : {
           noExternal: true,
           target: 'node',

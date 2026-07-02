@@ -127,6 +127,9 @@ export function EmojiPickerPlugin() {
         }
 
         const currentNode = selection.anchor.getNode()
+        if (!$isTextNode(currentNode)) {
+          return
+        }
         // need to replace the last text matching the :test: pattern with a single emoji
         const shortcodeLength = emoji.id.length + 1 // +1 for the end colon
         const textNode = currentNode.spliceText(

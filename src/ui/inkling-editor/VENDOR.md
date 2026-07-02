@@ -11,7 +11,8 @@ to upstream so future re-vendoring diffs stay reviewable.
 - Commit: `e76a86cda0a2a99d598e3941600f83f80b604694` (2026-06-26T15:18:09+08:00)
 - Copied: 2026-07-02, `src/` only (no `test/`, `demo/`, `.storybook/`,
   `*.stories.tsx`, `utils/storybook/`)
-- Lexical: `0.13.1` (the whole app is aligned to this version)
+- Lexical: upstream targeted `0.13.1`; this tree was migrated to `^0.46.0`
+  (0.13 is CJS-only and unusable in Vite dev SSR — maintainer decision 2026-07-03)
 
 ## Tooling exemptions
 
@@ -46,5 +47,18 @@ to upstream so future re-vendoring diffs stay reviewable.
    `InitialConfigType['nodes']` so the host registry can be passed.
 9. `plugins/InklingBehaviourPlugin.tsx` — SSR guard around a render-time
    `document.querySelector` (editor shells are server-rendered).
+
+10. Lexical 0.13 → 0.46 migration sweep (33 tsc errors across 15 files):
+    null/undefined guards (`AtLinkPlugin`, `EmEnDashPlugin`,
+    `HorizontalRulePlugin`, `SlashCardMenuPlugin`, `TKPlugin`,
+    `InklingBehaviourPlugin`, `convert-to-html-string`), `$isTextNode`
+    narrowing (`FloatingLinkToolbar`, `LinkActionToolbarWithSearch`,
+    `EmojiPickerPlugin`), `ExtendedTextNode.isInline(): true` literal,
+    `SerializedParagraphNode.textFormat/textStyle` in `html-to-lexical`,
+    `Partial` format map in `TextContent`, `updateDOM(prevNode as this)` in
+    `AtLinkSearchNode`, `ElementNode` widening in `denest`.
+11. `components/InklingComposer.tsx` — children wrapped in
+    `<LexicalCollaboration>`: Lexical 0.46's `useCollaborationContext`
+    throws in dev builds without a provider (0.13 had a default context).
 
 Later tasks append here.

@@ -1,4 +1,11 @@
-import type { DOMConversionMap, DOMExportOutput, EditorConfig, LexicalEditor, NodeKey } from 'lexical'
+import type {
+  DOMConversionMap,
+  DOMExportOutput,
+  EditorConfig,
+  LexicalEditor,
+  NodeKey,
+  SerializedLexicalNode,
+} from 'lexical'
 import type { JSX } from 'react'
 
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
@@ -7,6 +14,7 @@ import { useContext } from 'react'
 
 import type { InklingNonRecursiveBlockNode, InklingSolutionNode, InklingTwoColumnNode } from '@/shared/inkling/schema'
 
+import { unsafeCast } from '@/shared/utils/unsafe-cast'
 import InklingCardWrapper from '@/ui/inkling-editor/components/InklingCardWrapper'
 import { ActionToolbar } from '@/ui/inkling-editor/components/ui/ActionToolbar'
 import { ToolbarMenu, ToolbarMenuItem } from '@/ui/inkling-editor/components/ui/ToolbarMenu'
@@ -62,15 +70,17 @@ export class SolutionCardNode extends DecoratorNode<JSX.Element | null> {
   }
 
   exportJSON(): InklingSolutionNode {
-    // Lexical 0.13: the base `LexicalNode.exportJSON()` throws ("base method
-    // not extended"), so the serialized shape is spelled out explicitly
-    // instead of spreading `super.exportJSON()`. The output is identical to
-    // the previous (Lexical 0.45) implementation — `type`/`version` were
+    // The serialized shape is spelled out explicitly instead of spreading
+    // `super.exportJSON()` — the shape IS the frozen Inkling storage schema,
+    // so it must not silently absorb new base fields. `type`/`version` were
     // always overridden explicitly. This is the frozen storage contract.
     return { type: 'solution', version: 1, children: this.__children }
   }
 
-  static importJSON(serializedNode: InklingSolutionNode): SolutionCardNode {
+  static importJSON(serialized: SerializedLexicalNode): SolutionCardNode {
+    // Lexical 0.46 requires the base static signature; the payload is
+    // structurally the Inkling node shape (see lexical-bridge.ts).
+    const serializedNode = unsafeCast<InklingSolutionNode>(serialized)
     return new SolutionCardNode(serializedNode.children)
   }
 
@@ -155,11 +165,14 @@ export class TwoColumnCardNode extends DecoratorNode<JSX.Element | null> {
   }
 
   exportJSON(): InklingTwoColumnNode {
-    // See SolutionCardNode.exportJSON — no `super.exportJSON()` at Lexical 0.13.
+    // See SolutionCardNode.exportJSON — shape is the frozen storage schema.
     return { type: 'two-column', version: 1, left: this.__left, right: this.__right }
   }
 
-  static importJSON(serializedNode: InklingTwoColumnNode): TwoColumnCardNode {
+  static importJSON(serialized: SerializedLexicalNode): TwoColumnCardNode {
+    // Lexical 0.46 requires the base static signature; the payload is
+    // structurally the Inkling node shape (see lexical-bridge.ts).
+    const serializedNode = unsafeCast<InklingTwoColumnNode>(serialized)
     return new TwoColumnCardNode(serializedNode.left, serializedNode.right)
   }
 

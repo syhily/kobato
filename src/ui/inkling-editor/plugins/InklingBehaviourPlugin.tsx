@@ -644,14 +644,14 @@ function useInklingBehaviour({
           // if a selection is being made, we need to handle it ourselves (lexical does not handle decorator nodes at this time)
           if (event?.shiftKey) {
             if ($isRangeSelection(selection)) {
-              let anchorNode = selection?.anchor.getNode()
+              let anchorNode: LexicalNode | null = selection?.anchor.getNode()
 
               if (!$isRootNode(anchorNode)) {
                 anchorNode = anchorNode.getTopLevelElement()
                 let focusNode = selection.focus.getNode().getTopLevelElement()
 
                 // treat text nodes as normal
-                let previousSibling = focusNode?.getTopLevelElement().getPreviousSibling()
+                let previousSibling = focusNode?.getTopLevelElement()?.getPreviousSibling()
                 if ($isTextNode(focusNode) && $isTextNode(previousSibling)) {
                   return false
                 }
@@ -768,14 +768,14 @@ function useInklingBehaviour({
           // if a selection is being made, we need to handle it ourselves (lexical does not handle decorator nodes at this time)
           if (event?.shiftKey) {
             if ($isRangeSelection(selection)) {
-              let anchorNode = selection?.anchor.getNode()
+              let anchorNode: LexicalNode | null = selection?.anchor.getNode()
 
               if (!$isRootNode(anchorNode)) {
                 anchorNode = anchorNode.getTopLevelElement()
                 let focusNode = selection.focus.getNode().getTopLevelElement()
 
                 // treat text nodes as normal
-                let nextSibling = focusNode?.getTopLevelElement().getNextSibling()
+                let nextSibling = focusNode?.getTopLevelElement()?.getNextSibling()
                 if ($isTextNode(focusNode) && $isTextNode(nextSibling)) {
                   return false
                 }
@@ -1397,7 +1397,7 @@ function useInklingBehaviour({
             }
 
             const hasIndentedNode = nodes.some((node) => {
-              return node && node.getIndent && node.getIndent() > 0
+              return node && $isElementNode(node) && node.getIndent() > 0
             })
 
             if (!hasIndentedNode) {

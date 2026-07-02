@@ -9,7 +9,9 @@ import type { RendererOptions } from '@/ui/inkling-editor/html/renderer/types'
 type TextFormatAbbreviation = 'STRONG' | 'EM' | 'S' | 'U' | 'CODE' | 'SUB' | 'SUP' | 'MARK'
 type ExportChildren = (node: ElementNode, options: RendererOptions) => string
 
-const FORMAT_TAG_MAP: Record<TextFormatType, TextFormatAbbreviation> = {
+// Partial because Lexical 0.46 added CSS-only formats (highlight/lowercase/uppercase/capitalize)
+// that have no corresponding output tag in this renderer
+const FORMAT_TAG_MAP: Partial<Record<TextFormatType, TextFormatAbbreviation>> = {
   bold: 'STRONG',
   italic: 'EM',
   strikethrough: 'S',
@@ -21,7 +23,7 @@ const FORMAT_TAG_MAP: Record<TextFormatType, TextFormatAbbreviation> = {
 }
 
 type Entries<T> = {
-  [K in keyof T]: [K, T[K]]
+  [K in keyof T]-?: [K, T[K]]
 }[keyof T][]
 
 type RequiredKeys<T, K extends keyof T> = Exclude<T, K> & Required<Pick<T, K>>
@@ -117,7 +119,11 @@ export default class TextContent {
 
         // open new tags
         formatsToOpen.forEach((format) => {
-          const formatTag = document.createElement(FORMAT_TAG_MAP[format])
+          const tag = FORMAT_TAG_MAP[format]
+          if (!tag) {
+            return
+          }
+          const formatTag = document.createElement(tag)
           currentNode.append(formatTag)
           currentNode = formatTag
           openFormats.push(format)

@@ -440,6 +440,9 @@ export const InklingAtLinkPlugin = ({ searchLinks, siteUrl }: AtLinkPluginProps)
         }
 
         const parent = focusedAtLinkNode.getParent()
+        if (!parent) {
+          return
+        }
         // we have to get the children nodes
         const children = parent.getChildren()
 

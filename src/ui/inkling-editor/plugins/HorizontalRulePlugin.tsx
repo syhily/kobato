@@ -82,6 +82,9 @@ export const HorizontalRulePlugin = () => {
 
         const line = $createHorizontalRuleNode()
         const parentNode = node.getTopLevelElement()
+        if (!parentNode) {
+          return
+        }
 
         if (parentNode.getNextSibling()) {
           parentNode.replace(line)

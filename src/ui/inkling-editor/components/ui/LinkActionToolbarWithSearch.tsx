@@ -1,6 +1,6 @@
 import { TOGGLE_LINK_COMMAND } from '@lexical/link'
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
-import { $createRangeSelection, $getSelection, $isRangeSelection, $setSelection } from 'lexical'
+import { $createRangeSelection, $getSelection, $isRangeSelection, $isTextNode, $setSelection } from 'lexical'
 import React from 'react'
 
 import { LinkInputWithSearch } from '@/ui/inkling-editor/components/ui/LinkInputWithSearch'
@@ -113,14 +113,16 @@ export function LinkActionToolbarWithSearch({ anchorElem, href, onClose, ...prop
       const selection = $getSelection()
       if (selection && $isRangeSelection(selection)) {
         const focusNode = selection.focus.getNode()
-        const rangeSelection = $createRangeSelection()
-        rangeSelection.setTextNodeRange(
-          focusNode,
-          focusNode.getTextContentSize(),
-          focusNode,
-          focusNode.getTextContentSize(),
-        )
-        $setSelection(rangeSelection)
+        if ($isTextNode(focusNode)) {
+          const rangeSelection = $createRangeSelection()
+          rangeSelection.setTextNodeRange(
+            focusNode,
+            focusNode.getTextContentSize(),
+            focusNode,
+            focusNode.getTextContentSize(),
+          )
+          $setSelection(rangeSelection)
+        }
       }
 
       onClose()

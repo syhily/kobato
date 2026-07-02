@@ -1,3 +1,4 @@
+import { LexicalCollaboration } from '@lexical/react/LexicalCollaborationContext'
 import { CollaborationPlugin } from '@lexical/react/LexicalCollaborationPlugin'
 import { LexicalComposer } from '@lexical/react/LexicalComposer'
 import React from 'react'
@@ -174,24 +175,30 @@ const InklingComposer = ({
   return (
     // oxlint-disable-next-line typescript/no-explicit-any
     <LexicalComposer initialConfig={initialConfig as any}>
-      <InklingComposerContext.Provider value={composerContextValue}>
-        <InklingSelectedCardContext>
-          <TKContext>
-            {enableMultiplayer ? (
-              <CollaborationPlugin
-                id="main"
-                // oxlint-disable-next-line typescript/no-explicit-any
-                initialEditorState={initialEditorState as any}
-                // oxlint-disable-next-line typescript/no-explicit-any
-                providerFactory={createWebsocketProvider as any}
-                shouldBootstrap={true}
-                username={multiplayerUsername}
-              />
-            ) : null}
-            {children}
-          </TKContext>
-        </InklingSelectedCardContext>
-      </InklingComposerContext.Provider>
+      {/* yufan.me: Lexical 0.46's useCollaborationContext (called by
+          InklingComposableEditor) THROWS in dev builds without this provider;
+          0.13 shipped a default context. Inert unless CollaborationPlugin
+          is also mounted. */}
+      <LexicalCollaboration>
+        <InklingComposerContext.Provider value={composerContextValue}>
+          <InklingSelectedCardContext>
+            <TKContext>
+              {enableMultiplayer ? (
+                <CollaborationPlugin
+                  id="main"
+                  // oxlint-disable-next-line typescript/no-explicit-any
+                  initialEditorState={initialEditorState as any}
+                  // oxlint-disable-next-line typescript/no-explicit-any
+                  providerFactory={createWebsocketProvider as any}
+                  shouldBootstrap={true}
+                  username={multiplayerUsername}
+                />
+              ) : null}
+              {children}
+            </TKContext>
+          </InklingSelectedCardContext>
+        </InklingComposerContext.Provider>
+      </LexicalCollaboration>
     </LexicalComposer>
   )
 }

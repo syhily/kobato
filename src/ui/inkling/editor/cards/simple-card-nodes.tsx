@@ -1,4 +1,11 @@
-import type { DOMConversionMap, DOMExportOutput, EditorConfig, LexicalEditor, NodeKey } from 'lexical'
+import type {
+  DOMConversionMap,
+  DOMExportOutput,
+  EditorConfig,
+  LexicalEditor,
+  NodeKey,
+  SerializedLexicalNode,
+} from 'lexical'
 import type { JSX } from 'react'
 
 import { DecoratorNode } from 'lexical'
@@ -12,6 +19,7 @@ import type {
   InklingTableNode,
 } from '@/shared/inkling/schema'
 
+import { unsafeCast } from '@/shared/utils/unsafe-cast'
 import { CodeCardComponent } from '@/ui/inkling/editor/cards/code-card-component'
 import { HorizontalRuleCardComponent } from '@/ui/inkling/editor/cards/horizontal-rule-card-component'
 import { ImageCardComponent } from '@/ui/inkling/editor/cards/image-card-component'
@@ -181,10 +189,9 @@ export class ImageCardNode extends DecoratorNode<JSX.Element | null> {
   }
 
   exportJSON(): SerializedImageCardNode {
-    // Lexical 0.13: the base `LexicalNode.exportJSON()` throws ("base method
-    // not extended"), so the serialized shape is spelled out explicitly
-    // instead of spreading `super.exportJSON()`. The output is identical to
-    // the previous (Lexical 0.45) implementation — `type`/`version` were
+    // The serialized shape is spelled out explicitly instead of spreading
+    // `super.exportJSON()` — the shape IS the frozen Inkling storage schema,
+    // so it must not silently absorb new base fields. `type`/`version` were
     // always overridden explicitly. This is the frozen storage contract.
     return {
       type: 'image-card',
@@ -201,7 +208,10 @@ export class ImageCardNode extends DecoratorNode<JSX.Element | null> {
     }
   }
 
-  static importJSON(serializedNode: SerializedImageCardNode): ImageCardNode {
+  static importJSON(serialized: SerializedLexicalNode): ImageCardNode {
+    // Lexical 0.46 requires the base static signature; the payload is
+    // structurally the Inkling node shape (see lexical-bridge.ts).
+    const serializedNode = unsafeCast<SerializedImageCardNode>(serialized)
     return new ImageCardNode(
       serializedNode.src,
       serializedNode.alt ?? '',
@@ -365,7 +375,7 @@ export class CodeCardNode extends DecoratorNode<JSX.Element | null> {
   }
 
   exportJSON(): SerializedCodeCardNode {
-    // See ImageCardNode.exportJSON — no `super.exportJSON()` at Lexical 0.13.
+    // See ImageCardNode.exportJSON — shape is the frozen storage schema.
     return {
       type: 'code-block',
       version: 1,
@@ -375,7 +385,10 @@ export class CodeCardNode extends DecoratorNode<JSX.Element | null> {
     }
   }
 
-  static importJSON(serializedNode: SerializedCodeCardNode): CodeCardNode {
+  static importJSON(serialized: SerializedLexicalNode): CodeCardNode {
+    // Lexical 0.46 requires the base static signature; the payload is
+    // structurally the Inkling node shape (see lexical-bridge.ts).
+    const serializedNode = unsafeCast<SerializedCodeCardNode>(serialized)
     return new CodeCardNode(serializedNode.code, serializedNode.language, serializedNode.highlightedHtml)
   }
 
@@ -489,7 +502,7 @@ export class MathCardNode extends DecoratorNode<JSX.Element | null> {
   }
 
   exportJSON(): SerializedMathCardNode {
-    // See ImageCardNode.exportJSON — no `super.exportJSON()` at Lexical 0.13.
+    // See ImageCardNode.exportJSON — shape is the frozen storage schema.
     return {
       type: 'math-block',
       version: 1,
@@ -498,7 +511,10 @@ export class MathCardNode extends DecoratorNode<JSX.Element | null> {
     }
   }
 
-  static importJSON(serializedNode: SerializedMathCardNode): MathCardNode {
+  static importJSON(serialized: SerializedLexicalNode): MathCardNode {
+    // Lexical 0.46 requires the base static signature; the payload is
+    // structurally the Inkling node shape (see lexical-bridge.ts).
+    const serializedNode = unsafeCast<SerializedMathCardNode>(serialized)
     return new MathCardNode(serializedNode.tex, serializedNode.mathml)
   }
 
@@ -601,7 +617,7 @@ export class MusicCardNode extends DecoratorNode<JSX.Element | null> {
   }
 
   exportJSON(): SerializedMusicCardNode {
-    // See ImageCardNode.exportJSON — no `super.exportJSON()` at Lexical 0.13.
+    // See ImageCardNode.exportJSON — shape is the frozen storage schema.
     return {
       type: 'music-card',
       version: 1,
@@ -611,7 +627,10 @@ export class MusicCardNode extends DecoratorNode<JSX.Element | null> {
     }
   }
 
-  static importJSON(serializedNode: SerializedMusicCardNode): MusicCardNode {
+  static importJSON(serialized: SerializedLexicalNode): MusicCardNode {
+    // Lexical 0.46 requires the base static signature; the payload is
+    // structurally the Inkling node shape (see lexical-bridge.ts).
+    const serializedNode = unsafeCast<SerializedMusicCardNode>(serialized)
     return new MusicCardNode(serializedNode.playerId, serializedNode.auto, serializedNode.center)
   }
 
@@ -680,14 +699,14 @@ export class HorizontalRuleCardNode extends DecoratorNode<JSX.Element | null> {
   }
 
   exportJSON(): InklingHorizontalRuleNode {
-    // See ImageCardNode.exportJSON — no `super.exportJSON()` at Lexical 0.13.
+    // See ImageCardNode.exportJSON — shape is the frozen storage schema.
     return {
       type: 'horizontal-rule',
       version: 1,
     }
   }
 
-  static importJSON(_serializedNode: InklingHorizontalRuleNode): HorizontalRuleCardNode {
+  static importJSON(_serializedNode: SerializedLexicalNode): HorizontalRuleCardNode {
     return new HorizontalRuleCardNode()
   }
 
@@ -777,7 +796,7 @@ export class TableCardNode extends DecoratorNode<JSX.Element | null> {
   }
 
   exportJSON(): SerializedTableCardNode {
-    // See ImageCardNode.exportJSON — no `super.exportJSON()` at Lexical 0.13.
+    // See ImageCardNode.exportJSON — shape is the frozen storage schema.
     return {
       type: 'table',
       version: 1,
@@ -785,7 +804,10 @@ export class TableCardNode extends DecoratorNode<JSX.Element | null> {
     }
   }
 
-  static importJSON(serializedNode: SerializedTableCardNode): TableCardNode {
+  static importJSON(serialized: SerializedLexicalNode): TableCardNode {
+    // Lexical 0.46 requires the base static signature; the payload is
+    // structurally the Inkling node shape (see lexical-bridge.ts).
+    const serializedNode = unsafeCast<SerializedTableCardNode>(serialized)
     return new TableCardNode(serializedNode.rows)
   }
 

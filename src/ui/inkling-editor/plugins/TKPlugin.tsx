@@ -194,7 +194,9 @@ export default function TKPlugin() {
           } else {
             const parentNodeKey = $getNodeByKey(tkNodeKey)?.getTopLevelElement()?.getKey()
             const topLevelNodeKey = parentEditorNodeKey || parentNodeKey
-            addEditorTkNode(editor.getKey(), topLevelNodeKey, tkNodeKey)
+            if (topLevelNodeKey) {
+              addEditorTkNode(editor.getKey(), topLevelNodeKey, tkNodeKey)
+            }
           }
         }
       })

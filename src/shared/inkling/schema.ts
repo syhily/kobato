@@ -7,7 +7,7 @@ import type { MusicPlayerBlockMeta } from '@/shared/types/music'
 // server, client, or node:* APIs.
 
 export const INKLING_SCHEMA_VERSION = 1
-export const INKLING_LEXICAL_VERSION = '0.13.1'
+export const INKLING_LEXICAL_VERSION = '0.46.0'
 
 export type InklingFeatureMode = 'article' | 'comment'
 

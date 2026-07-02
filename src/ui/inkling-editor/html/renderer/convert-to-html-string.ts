@@ -97,7 +97,7 @@ function exportChildren(node: ElementNode, options: RendererOptions): string {
   return output.join('')
 }
 
-function getElementInnerHTML(element: HTMLElement | Text | null): string {
+function getElementInnerHTML(element: DocumentFragment | HTMLElement | Text | null): string {
   if (element && 'innerHTML' in element) {
     return element.innerHTML
   }
@@ -105,7 +105,7 @@ function getElementInnerHTML(element: HTMLElement | Text | null): string {
   return ''
 }
 
-function getElementOuterHTML(element: HTMLElement | Text | null): string {
+function getElementOuterHTML(element: DocumentFragment | HTMLElement | Text | null): string {
   if (element && 'outerHTML' in element) {
     return element.outerHTML
   }

@@ -10,6 +10,7 @@ import type { JSX } from 'react'
 
 import { DecoratorNode } from 'lexical'
 
+import { unsafeCast } from '@/shared/utils/unsafe-cast'
 import { FootnoteRefComponent } from '@/ui/inkling/editor/footnotes/FootnoteRefComponent'
 
 export interface SerializedFootnoteRefNode extends SerializedLexicalNode {
@@ -97,10 +98,9 @@ export class FootnoteRefNode extends DecoratorNode<JSX.Element | null> {
   }
 
   exportJSON(): SerializedFootnoteRefNode {
-    // Lexical 0.13: the base `LexicalNode.exportJSON()` throws ("base method
-    // not extended"), so the serialized shape is spelled out explicitly
-    // instead of spreading `super.exportJSON()`. The output is identical to
-    // the previous (Lexical 0.45) implementation — `type`/`version` were
+    // The serialized shape is spelled out explicitly instead of spreading
+    // `super.exportJSON()` — the shape IS the frozen Inkling storage schema,
+    // so it must not silently absorb new base fields. `type`/`version` were
     // always overridden explicitly. This is the frozen storage contract.
     return {
       type: 'footnote-ref',
@@ -111,7 +111,10 @@ export class FootnoteRefNode extends DecoratorNode<JSX.Element | null> {
     }
   }
 
-  static importJSON(serializedNode: SerializedFootnoteRefNode): FootnoteRefNode {
+  static importJSON(serialized: SerializedLexicalNode): FootnoteRefNode {
+    // Lexical 0.46 requires the base static signature; the payload is
+    // structurally the Inkling node shape (see lexical-bridge.ts).
+    const serializedNode = unsafeCast<SerializedFootnoteRefNode>(serialized)
     return new FootnoteRefNode(serializedNode.targetKey, serializedNode.refKey, serializedNode.index)
   }
 

@@ -170,14 +170,32 @@ function hydrate(document: InklingDocument) {
   return { editor, definitions }
 }
 
+/**
+ * Serialize through the SAME boundary production uses: the change plugin and
+ * the flush handle both emit `safeValidateInklingDocument(...).document`,
+ * whose Zod parse strips Lexical-internal extras the runtime adds to core
+ * nodes (e.g. `textFormat`/`textStyle` on paragraphs since Lexical 0.4x).
+ * Comparing the raw merge output instead would flag those transport-only
+ * fields, which never reach storage.
+ */
+function serializeAtBoundary(
+  editor: ReturnType<typeof createHeadlessEditor>,
+  definitions: FootnoteDefinitionItem[],
+): InklingDocument {
+  const merged = mergeFootnoteDefinitions(editor.getEditorState(), { getDefinitions: () => definitions })
+  const validation = safeValidateInklingDocument(merged)
+  if (!validation.ok) {
+    throw new Error(`schema validation failed: ${validation.error.message}`)
+  }
+  return validation.document
+}
+
 describe('inkling document ⇄ vendored-editor round trip', () => {
   it('round-trips a document containing every schema node type losslessly', () => {
     const original = fullDocument()
     const { editor, definitions } = hydrate(original)
 
-    const output = mergeFootnoteDefinitions(editor.getEditorState(), {
-      getDefinitions: () => definitions,
-    })
+    const output = serializeAtBoundary(editor, definitions)
 
     expect(output).toEqual(original)
   })
@@ -197,7 +215,7 @@ describe('inkling document ⇄ vendored-editor round trip', () => {
   it('round-trips the canonical empty document', () => {
     const original = structuredClone(EMPTY_INKLING_DOCUMENT) as InklingDocument
     const { editor, definitions } = hydrate(original)
-    const output = mergeFootnoteDefinitions(editor.getEditorState(), { getDefinitions: () => definitions })
+    const output = serializeAtBoundary(editor, definitions)
     expect(output).toEqual(original)
   })
 })

@@ -52,6 +52,9 @@ export const EmEnDashPlugin = () => {
           const emDashMatch = text.match(emDashRegExp)
           if (emDashMatch) {
             const index = emDashMatch?.index
+            if (index === undefined) {
+              return
+            }
             const newText = text.slice(0, index) + '—' + text.slice(index + 3)
             node.setTextContent(newText)
             selection.anchor.offset = index + 2
@@ -62,6 +65,9 @@ export const EmEnDashPlugin = () => {
           const enDashMatch = text.match(enDashRegExp)
           if (enDashMatch) {
             const index = enDashMatch?.index
+            if (index === undefined) {
+              return
+            }
             const newText = text.slice(0, index + 1) + '–' + text.slice(index + 3)
             node.setTextContent(newText)
             selection.anchor.offset = index + 3

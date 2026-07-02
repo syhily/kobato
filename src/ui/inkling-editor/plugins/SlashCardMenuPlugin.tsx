@@ -130,6 +130,9 @@ function useSlashCardMenu(editor: LexicalEditor) {
         const selection = $getSelection() as RangeSelection
 
         const focusPNode = selection.focus.getNode().getTopLevelElement()
+        if (!focusPNode) {
+          return
+        }
 
         // paragraphs at the beginning of the document will delete themselves
         // via .collapseAtStart() if their contents are deleted so we create

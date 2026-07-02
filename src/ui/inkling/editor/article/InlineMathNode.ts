@@ -9,6 +9,8 @@ import type {
 
 import { DecoratorNode } from 'lexical'
 
+import { unsafeCast } from '@/shared/utils/unsafe-cast'
+
 export interface SerializedInlineMathNode extends SerializedLexicalNode {
   type: 'inline-math'
   version: number
@@ -78,10 +80,9 @@ export class InlineMathNode extends DecoratorNode<null> {
   }
 
   exportJSON(): SerializedInlineMathNode {
-    // Lexical 0.13: the base `LexicalNode.exportJSON()` throws ("base method
-    // not extended"), so the serialized shape is spelled out explicitly
-    // instead of spreading `super.exportJSON()`. The output is identical to
-    // the previous (Lexical 0.45) implementation — `type`/`version` were
+    // The serialized shape is spelled out explicitly instead of spreading
+    // `super.exportJSON()` — the shape IS the frozen Inkling storage schema,
+    // so it must not silently absorb new base fields. `type`/`version` were
     // always overridden explicitly. This is the frozen storage contract.
     return {
       type: 'inline-math',
@@ -91,7 +92,10 @@ export class InlineMathNode extends DecoratorNode<null> {
     }
   }
 
-  static importJSON(serializedNode: SerializedInlineMathNode): InlineMathNode {
+  static importJSON(serialized: SerializedLexicalNode): InlineMathNode {
+    // Lexical 0.46 requires the base static signature; the payload is
+    // structurally the Inkling node shape (see lexical-bridge.ts).
+    const serializedNode = unsafeCast<SerializedInlineMathNode>(serialized)
     return new InlineMathNode(serializedNode.tex, serializedNode.mathml)
   }
 

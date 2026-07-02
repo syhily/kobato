@@ -1,5 +1,3 @@
-import type { LexicalNode } from 'lexical'
-
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import { $createTextNode, $getRoot, $getSelection, $isElementNode, $isRangeSelection, $isTextNode } from 'lexical'
 import { useCallback, useEffect, useRef } from 'react'
@@ -66,12 +64,7 @@ function $replaceCaretWithRef(): void {
     return
   }
   const anchor = selection.anchor
-  // Explicit annotation + suppression: Lexical 0.13's `PointType.getNode()`
-  // d.ts uses a self-import (`import { TextNode } from '.'`) that oxlint's
-  // type-aware checker fails to resolve, yielding an error-typed value. tsc
-  // resolves it fine; the annotation restores the type downstream.
-  // oxlint-disable-next-line typescript/no-unsafe-assignment -- false positive, see above
-  const node: LexicalNode = anchor.getNode()
+  const node = anchor.getNode()
   if (!$isTextNode(node)) {
     return
   }
