@@ -61,4 +61,19 @@ to upstream so future re-vendoring diffs stay reviewable.
     `<LexicalCollaboration>`: Lexical 0.46's `useCollaborationContext`
     throws in dev builds without a provider (0.13 had a default context).
 
+12. Internal imports of the `index.ts` barrel rewritten to concrete modules
+    (11 files). The cycle `DefaultNodes → <card node> → index → DefaultNodes`
+    hit a TDZ (`Cannot access 'BookmarkNode' before initialization`) in
+    browser ESM and broke loading the editor route entirely.
+13. `unsplash/styles/index.css` emptied — its `@tailwind` directives compiled
+    into a second, UN-layered Tailwind universe that overrode the app's
+    layered styles page-wide (blank meta aside, broken admin styling after
+    navigation).
+14. Dependency modernization (maintainer direction: no CJS accommodation):
+    `color` ^5 (instance type via `ReturnType<typeof Color>`),
+    `react-error-boundary` ^6 (`onError` reports `unknown`), `markdown-it`
+    ^14.3; `highlight.js` and `html-minifier` removed (never imported by the
+    vendored tree). `events` → `eventemitter3` Vite alias (same as upstream)
+    for the browser build.
+
 Later tasks append here.

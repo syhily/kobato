@@ -13,14 +13,22 @@ parent.
   (`tailwind.css`) covers public + admin.
 - **`ui/public/`** — `chrome/`, `post/`, `comments/`, `widgets/`, plus
   single-file leaves (`Search.tsx`, `Sidebar.tsx`, `LikeActions.tsx`).
+- **`ui/inkling/`** — the Inkling document system: `render/` (pure-props
+  SSR renderers that walk `InklingDocument` JSON; used by public routes)
+  and `editor/` (the yufan.me integration layer over the vendored editor:
+  schema-exact node classes, footnote parallel state, serialize/hydrate
+  bridge, article + comment composers).
+- **`ui/inkling-editor/`** — vendored third-party editor source (Koenig
+  derivative, Lexical). Exempt from app lint/style conventions; see its
+  `VENDOR.md` for provenance and the local-modification log. App code
+  imports it only from `ui/inkling/editor/*`.
 - **`ui/admin/`** — grouped by domain (`analytics`, `auth`,
   `categories`, `comments`, `editor`, `editor-shell`, `friends`,
   `images`, `musics`, `my`, `pages`, `posts`, `sessions`, `settings`,
   `tags`, `users`, `dashboard`, plus `shared/` and `shell/`).
-  - `editor/` — the Tiptap micro-app (`PageBodyEditor`, `tiptap/`,
-    `toolbar/`, `pickers/`, `FootnoteEditorDialog`,
-    `portable-text-diff`). Self-contained; only `PageBodyEditor` is
-    imported by other admin domains.
+  - `editor/` — editor-adjacent admin glue: `use-inkling-picker-actions`
+    (image/music picker wiring into the selected card node) and
+    `pickers/` dialogs.
   - `editor-shell/` — the business-orchestration layer that wraps the
     Tiptap editor into a draft/publish workflow:
     `useEditorShellState` (shared FSM for both Post + Page editor

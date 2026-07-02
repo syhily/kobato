@@ -9,6 +9,7 @@ import { makeLoaderArgs, unwrapLoaderData } from '#/_helpers/context'
 import { emptyInklingDocument } from '#/_helpers/inkling'
 import { regularSession } from '#/_helpers/session'
 import { dbContext, poolContext } from '@/server/domains/auth/context'
+import { INKLING_LEXICAL_VERSION } from '@/shared/inkling/schema'
 
 // post.detail / page.detail loaders form the most-trafficked SSR endpoints.
 // Pin the alias 301 redirect, the page-vs-post-slug fallback redirect, and
@@ -184,7 +185,7 @@ describe('routes/post.detail loader', () => {
     expect(data.body).toEqual({
       _type: 'inkling',
       schemaVersion: 1,
-      lexicalVersion: '0.45.0',
+      lexicalVersion: INKLING_LEXICAL_VERSION,
       root: {
         type: 'root',
         version: 1,
