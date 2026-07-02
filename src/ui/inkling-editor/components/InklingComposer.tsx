@@ -30,6 +30,10 @@ const defaultConfig = {
 interface InklingComposerProps {
   initialEditorState?: string | Record<string, unknown> | null
   nodes?: typeof DEFAULT_NODES
+  // yufan.me: allow the host app to supply its own EditorThemeClasses so
+  // document styles (inkling-* classes from src/styles/inkling/core.css)
+  // apply inside the editing surface.
+  theme?: typeof defaultTheme | Record<string, unknown>
   onError?: (error: Error) => void
   fileUploader?: import('@/ui/inkling-editor/context/InklingComposerContext').FileUploader | Record<string, unknown>
   cardConfig?: import('@/ui/inkling-editor/context/InklingComposerContext').CardConfig
@@ -46,6 +50,7 @@ interface InklingComposerProps {
 const InklingComposer = ({
   initialEditorState,
   nodes = [...DEFAULT_NODES],
+  theme,
   onError = defaultOnError,
   fileUploader = {},
   cardConfig = {},
@@ -86,8 +91,10 @@ const InklingComposer = ({
       nodes,
       editorState: enableMultiplayer ? null : editorState,
       onError,
+      // yufan.me: host-supplied theme wins over the vendored default.
+      ...(theme ? { theme } : {}),
     })
-  }, [enableMultiplayer, initialEditorState, nodes, onError])
+  }, [enableMultiplayer, initialEditorState, nodes, onError, theme])
 
   const editorContainerRef = React.useRef(null)
   const onWordCountChangeRef = React.useRef(null)
