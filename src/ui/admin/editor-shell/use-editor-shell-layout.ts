@@ -18,9 +18,11 @@ export function useEditorShellLayout() {
     const mql = window.matchMedia('(min-width: 1024px)')
     const handleChange = (event: MediaQueryListEvent) => {
       setIsLg(event.matches)
-      if (!event.matches) {
-        setMetaOpen(false)
-      }
+      // Meta visibility follows the breakpoint both ways: the panel is shown
+      // whenever the viewport is wide enough and hidden (sheet mode) when it
+      // isn't — it must never END UP hidden by default on a wide screen just
+      // because the window was narrow at some point.
+      setMetaOpen(event.matches)
     }
     mql.addEventListener('change', handleChange)
     return () => mql.removeEventListener('change', handleChange)
