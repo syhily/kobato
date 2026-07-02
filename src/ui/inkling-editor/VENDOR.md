@@ -41,4 +41,10 @@ to upstream so future re-vendoring diffs stay reviewable.
    `src/styles/inkling/editor-vendor.css` (see the comment in the file for
    why the upstream sheet must not load).
 
+8. `components/InklingComposer.tsx` — added an optional `theme` prop
+   (host-app EditorThemeClasses) and widened `nodes` to Lexical's
+   `InitialConfigType['nodes']` so the host registry can be passed.
+9. `plugins/InklingBehaviourPlugin.tsx` — SSR guard around a render-time
+   `document.querySelector` (editor shells are server-rendered).
+
 Later tasks append here.

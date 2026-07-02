@@ -699,6 +699,10 @@ export class HorizontalRuleCardNode extends DecoratorNode<JSX.Element | null> {
         }
         return null
       },
+      // Pasted/markdown-converted HTML uses a bare <hr> (the vendored
+      // MarkdownPastePlugin renders `---` to <hr>); without this matcher the
+      // divider would be silently dropped on paste.
+      hr: () => ({ conversion: () => ({ node: new HorizontalRuleCardNode() }), priority: 1 }),
     }
   }
 

@@ -81,6 +81,14 @@
   --shadow-insetgreen: 0px 0px 0px 1px inset var(--green);
 }
 
+/* The vendored `.inkling-lexical > *` rule pins a Ghost font stack + size on
+ * the editor surface. `inkling-inherit-styles` (the `inheritStyles` prop)
+ * resets color/family/weight but upstream forgot font-size — add it so the
+ * editing surface fully adopts the site typography (post-content prose). */
+.inkling-lexical.inkling-inherit-styles > * {
+  font-size: inherit;
+}
+
 /* Scoped variables the vendored component CSS reads (from upstream
  * index.css). Kept verbatim — these are contained to the editor surface. */
 .inkling-lexical {

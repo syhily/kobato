@@ -1724,7 +1724,10 @@ export default function InklingBehaviourPlugin({
   isNested?: boolean
 }) {
   const [editor] = useLexicalComposerContext()
-  const fallbackRef = React.useRef<HTMLElement | null>(document.querySelector('.inkling-editor'))
+  // yufan.me: SSR-safe — `document` does not exist during server rendering.
+  const fallbackRef = React.useRef<HTMLElement | null>(
+    typeof document === 'undefined' ? null : document.querySelector('.inkling-editor'),
+  )
   return useInklingBehaviour({
     editor,
     containerElem: containerElem ?? fallbackRef,

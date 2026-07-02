@@ -29,7 +29,9 @@ const defaultConfig = {
 
 interface InklingComposerProps {
   initialEditorState?: string | Record<string, unknown> | null
-  nodes?: typeof DEFAULT_NODES
+  // yufan.me: widened from `typeof DEFAULT_NODES` so the host app can pass
+  // its own node registry (same shape LexicalComposer accepts).
+  nodes?: import('@lexical/react/LexicalComposer').InitialConfigType['nodes']
   // yufan.me: allow the host app to supply its own EditorThemeClasses so
   // document styles (inkling-* classes from src/styles/inkling/core.css)
   // apply inside the editing surface.
