@@ -76,4 +76,17 @@ to upstream so future re-vendoring diffs stay reviewable.
     vendored tree). `events` → `eventemitter3` Vite alias (same as upstream)
     for the browser build.
 
+15. Dead-code prune: removed the Unsplash card family and integration that
+    yufan.me never registers — the entire `unsplash/` directory, the
+    `components/ui/UnsplashPlugin.tsx` selector, the
+    `components/ui/file-selectors/UnsplashModal.tsx` modal, and the
+    `nodes/base/utils/is-unsplash-image.ts` helper. All remaining references
+    in `InklingSelectorPlugin`, `ImageNode`, `AllDefaultPlugins`,
+    `InklingComposerContext`, `DesignSandbox`, `gallery-renderer`, and
+    `srcset-attribute` were removed. Also deleted were unused vendored SVG
+    icons (Audio, Video, Bookmark, Gallery, Button, Toggle, Callout, Html,
+    Markdown, File, Header, NFT, Collection, Twitter, etc.). The vendored
+    card node source files themselves remain in the tree but are not
+    registered by yufan.me's integration layer.
+
 Later tasks append here.
