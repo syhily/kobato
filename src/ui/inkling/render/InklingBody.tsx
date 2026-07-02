@@ -10,6 +10,7 @@ import type {
 } from '@/shared/inkling/schema'
 
 import { collectInklingHeadingSlots } from '@/shared/inkling/headings'
+import { INKLING_LEXICAL_VERSION } from '@/shared/inkling/schema'
 import { walkInkling, type InklingWalkerHandlers } from '@/shared/inkling/walk'
 import { BlockquoteBlock } from '@/ui/inkling/render/blocks/BlockquoteBlock'
 import { CodeBlock } from '@/ui/inkling/render/blocks/CodeBlock'
@@ -73,7 +74,7 @@ function makeSingleBlockDocument(node: InklingBlockNode): InklingDocument {
   return {
     _type: 'inkling',
     schemaVersion: 1,
-    lexicalVersion: '0.45.0',
+    lexicalVersion: INKLING_LEXICAL_VERSION,
     root: {
       type: 'root',
       version: 1,

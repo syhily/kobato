@@ -22,6 +22,7 @@ import {
   INKLING_FORMAT_UNDERLINE,
 } from '@/shared/inkling/format'
 import { collectInklingHeadingSlots } from '@/shared/inkling/headings'
+import { INKLING_LEXICAL_VERSION } from '@/shared/inkling/schema'
 import { walkInkling, type InklingWalkerHandlers } from '@/shared/inkling/walk'
 import { sanitizeUrl } from '@/shared/sanitize-url'
 import { resolveFootnotesSectionTitle } from '@/shared/utils/footnotes-section-title'
@@ -143,7 +144,7 @@ function makeSingleBlockDocument(node: InklingBlockNode): InklingDocument {
   return {
     _type: 'inkling',
     schemaVersion: 1,
-    lexicalVersion: '0.45.0',
+    lexicalVersion: INKLING_LEXICAL_VERSION,
     root: {
       type: 'root',
       version: 1,
