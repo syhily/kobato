@@ -7,7 +7,9 @@ export default defineConfig({
     node: true,
     es2022: true,
   },
-  ignorePatterns: ['.agents/skills/*', 'drizzle/**/*', 'tests/**/*', 'scripts/**/*'],
+  // src/ui/inkling-editor is vendored third-party source (see its VENDOR.md);
+  // it is exempt from app lint conventions to keep the upstream diff small.
+  ignorePatterns: ['.agents/skills/*', 'drizzle/**/*', 'tests/**/*', 'scripts/**/*', 'src/ui/inkling-editor/**/*'],
   settings: {
     react: {
       version: '19.2.5',

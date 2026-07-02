@@ -1,6 +1,7 @@
 /// <reference types="node" />
 /// <reference types="vite/client" />
 /// <reference types="vite-plugin-binary/types" />
+/// <reference types="vite-plugin-svgr/client" />
 
 interface ReactRouterHonoServerEnv {
   readonly REACT_ROUTER_HONO_SERVER_BUILD_DIRECTORY: string

@@ -7,6 +7,7 @@ import { resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { defineConfig } from 'vite'
 import Binary from 'vite-plugin-binary'
+import svgr from 'vite-plugin-svgr'
 import { z } from 'zod'
 
 import { reactRouterHonoServer } from './src/server/infra/hono/dev.ts'
@@ -50,6 +51,8 @@ export default defineConfig(({ command }) => ({
   plugins: [
     reactRouterHonoServer(),
     Binary({ gzip: false, excludeAsset: true }),
+    // `?react` SVG imports used by the vendored editor source (src/ui/inkling-editor).
+    svgr(),
     ...(reactRouter() as Plugin[]),
     tailwindcss(),
     processWorkerEntryPlugin(),
