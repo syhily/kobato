@@ -31,13 +31,11 @@ export default defineConfig(({ command }) => ({
   ssr:
     command === 'serve'
       ? {
-          // CJS-only packages reached by the vendored editor whose named
-          // exports Node's ESM lexer can't statically analyze in dev SSR;
-          // pre-bundling converts them to ESM (prod build is noExternal).
+          // emoji-mart ships ESM only under its `module` field (no `exports`
+          // map), so Node's externalized SSR resolution falls back to the CJS
+          // `main` and named imports fail. Bundling them into the dev SSR
+          // graph lets Vite pick the ESM build (prod build is noExternal).
           noExternal: ['emoji-mart', '@emoji-mart/react'],
-          optimizeDeps: {
-            include: ['emoji-mart', '@emoji-mart/react'],
-          },
         }
       : {
           noExternal: true,
@@ -71,6 +69,11 @@ export default defineConfig(({ command }) => ({
     alias: {
       '@': resolve(projectRoot, 'src'),
       '#': resolve(projectRoot, 'tests'),
+      // y-websocket (vendored editor's multiplayer transport) imports Node's
+      // `events`, which Vite externalizes to an empty shim in the browser —
+      // clicking into the editor route then dies on `events.EventEmitter`.
+      // Same alias the upstream inkling repo uses.
+      events: 'eventemitter3',
     },
   },
   build: {

@@ -3,9 +3,10 @@ import { $canShowPlaceholderCurry } from '@lexical/text'
 import { createCommand, type EditorState, type LexicalEditor, type SerializedLexicalNode } from 'lexical'
 
 import ToggleIcon from '@/ui/inkling-editor/assets/icons/inkling-card-type-toggle.svg?react'
+import InklingCardWrapper from '@/ui/inkling-editor/components/InklingCardWrapper'
 import { cleanBasicHtml } from '@/ui/inkling-editor/html/clean-basic-html'
-import { InklingCardWrapper, MINIMAL_NODES } from '@/ui/inkling-editor/index'
 import { ToggleNode as BaseToggleNode } from '@/ui/inkling-editor/nodes/base'
+import MINIMAL_NODES from '@/ui/inkling-editor/nodes/MinimalNodes'
 import { ToggleNodeComponent } from '@/ui/inkling-editor/nodes/ToggleNodeComponent'
 import { populateNestedEditor, setupNestedEditor } from '@/ui/inkling-editor/utils/nested-editors'
 

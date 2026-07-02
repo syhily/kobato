@@ -1,6 +1,6 @@
 import { createEditor, type EditorState, type Klass, type LexicalEditor, type LexicalNode } from 'lexical'
 
-import { MINIMAL_NODES } from '@/ui/inkling-editor/index'
+import MINIMAL_NODES from '@/ui/inkling-editor/nodes/MinimalNodes'
 import generateEditorState from '@/ui/inkling-editor/utils/generateEditorState'
 
 const BLANK_EDITOR_STATE = JSON.stringify({

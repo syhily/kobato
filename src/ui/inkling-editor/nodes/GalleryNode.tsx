@@ -5,10 +5,11 @@ import pick from 'lodash/pick'
 import type { GalleryImage } from '@/ui/inkling-editor/types/gallery'
 
 import GalleryCardIcon from '@/ui/inkling-editor/assets/icons/inkling-card-type-gallery.svg?react'
+import InklingCardWrapper from '@/ui/inkling-editor/components/InklingCardWrapper'
 import { cleanBasicHtml } from '@/ui/inkling-editor/html/clean-basic-html'
-import { InklingCardWrapper, MINIMAL_NODES } from '@/ui/inkling-editor/index'
 import { GalleryNode as BaseGalleryNode } from '@/ui/inkling-editor/nodes/base'
 import { GalleryNodeComponent } from '@/ui/inkling-editor/nodes/GalleryNodeComponent'
+import MINIMAL_NODES from '@/ui/inkling-editor/nodes/MinimalNodes'
 import { populateNestedEditor, setupNestedEditor } from '@/ui/inkling-editor/utils/nested-editors'
 
 export const INSERT_GALLERY_COMMAND = createCommand()

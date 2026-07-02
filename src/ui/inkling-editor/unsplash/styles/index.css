@@ -1,3 +1,9 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+/* yufan.me: intentionally empty on vendoring.
+ *
+ * Upstream this file carried `@tailwind base/components/utilities`
+ * directives; compiled as a standalone Vite CSS entry it produced a second,
+ * UN-layered Tailwind universe that overrode the app's layered styles
+ * (blank editor meta aside, broken admin pages after navigation). The
+ * Unsplash integration is not wired in yufan.me; if it ever is, scope its
+ * styles into src/styles/inkling/editor-vendor.css instead.
+ */

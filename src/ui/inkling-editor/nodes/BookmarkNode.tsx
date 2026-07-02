@@ -2,10 +2,11 @@ import { $generateHtmlFromNodes } from '@lexical/html'
 import { createCommand } from 'lexical'
 
 import BookmarkCardIcon from '@/ui/inkling-editor/assets/icons/inkling-card-type-bookmark.svg?react'
+import InklingCardWrapper from '@/ui/inkling-editor/components/InklingCardWrapper'
 import { cleanBasicHtml } from '@/ui/inkling-editor/html/clean-basic-html'
-import { InklingCardWrapper, MINIMAL_NODES } from '@/ui/inkling-editor/index'
 import { BookmarkNode as BaseBookmarkNode } from '@/ui/inkling-editor/nodes/base'
 import { BookmarkNodeComponent } from '@/ui/inkling-editor/nodes/BookmarkNodeComponent'
+import MINIMAL_NODES from '@/ui/inkling-editor/nodes/MinimalNodes'
 import { populateNestedEditor, setupNestedEditor } from '@/ui/inkling-editor/utils/nested-editors'
 
 export const INSERT_BOOKMARK_COMMAND = createCommand()

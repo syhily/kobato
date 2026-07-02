@@ -7,10 +7,11 @@ import type { CardConfig } from '@/ui/inkling-editor/context/InklingComposerCont
 import GIFIcon from '@/ui/inkling-editor/assets/icons/inkling-card-type-gif.svg?react'
 import ImageCardIcon from '@/ui/inkling-editor/assets/icons/inkling-card-type-image.svg?react'
 import UnsplashIcon from '@/ui/inkling-editor/assets/icons/inkling-card-type-unsplash.svg?react'
+import InklingCardWrapper from '@/ui/inkling-editor/components/InklingCardWrapper'
 import { cleanBasicHtml } from '@/ui/inkling-editor/html/clean-basic-html'
-import { InklingCardWrapper, MINIMAL_NODES } from '@/ui/inkling-editor/index'
 import { ImageNode as BaseImageNode } from '@/ui/inkling-editor/nodes/base'
 import { ImageNodeComponent } from '@/ui/inkling-editor/nodes/ImageNodeComponent'
+import MINIMAL_NODES from '@/ui/inkling-editor/nodes/MinimalNodes'
 import {
   OPEN_GIF_SELECTOR_COMMAND,
   OPEN_UNSPLASH_SELECTOR_COMMAND,

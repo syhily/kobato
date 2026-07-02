@@ -13,7 +13,6 @@ import { EditorPlaceholder } from '@/ui/inkling-editor/components/ui/EditorPlace
 import InklingComposerContext from '@/ui/inkling-editor/context/InklingComposerContext'
 import { useSharedHistoryContext } from '@/ui/inkling-editor/context/SharedHistoryContext'
 import { useSharedOnChangeContext } from '@/ui/inkling-editor/context/SharedOnChangeContext'
-import { RestrictContentPlugin } from '@/ui/inkling-editor/index'
 import DragDropPastePlugin from '@/ui/inkling-editor/plugins/DragDropPastePlugin'
 import DragDropReorderPlugin from '@/ui/inkling-editor/plugins/DragDropReorderPlugin'
 import { ExternalControlPlugin } from '@/ui/inkling-editor/plugins/ExternalControlPlugin'
@@ -23,6 +22,7 @@ import { InklingBlurPlugin } from '@/ui/inkling-editor/plugins/InklingBlurPlugin
 import { InklingFocusPlugin } from '@/ui/inkling-editor/plugins/InklingFocusPlugin'
 import MarkdownPastePlugin from '@/ui/inkling-editor/plugins/MarkdownPastePlugin'
 import MarkdownShortcutPlugin from '@/ui/inkling-editor/plugins/MarkdownShortcutPlugin'
+import RestrictContentPlugin from '@/ui/inkling-editor/plugins/RestrictContentPlugin'
 import TKPlugin from '@/ui/inkling-editor/plugins/TKPlugin'
 
 interface InklingComposableEditorProps {

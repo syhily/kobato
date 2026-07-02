@@ -14,15 +14,13 @@ import React, { useCallback, useContext } from 'react'
 import type { NestedKeyboardEvent } from '@/ui/inkling-editor/types/events'
 import type { InklingEditorInternals } from '@/ui/inkling-editor/types/lexical-internals'
 
+import InklingComposableEditor from '@/ui/inkling-editor/components/InklingComposableEditor'
+import InklingNestedComposer from '@/ui/inkling-editor/components/InklingNestedComposer'
 import CardContext from '@/ui/inkling-editor/context/CardContext'
-import {
-  InklingComposableEditor,
-  InklingNestedComposer,
-  MINIMAL_NODES,
-  MINIMAL_TRANSFORMERS,
-  RestrictContentPlugin,
-} from '@/ui/inkling-editor/index'
+import MINIMAL_NODES from '@/ui/inkling-editor/nodes/MinimalNodes'
 import { EmojiPickerPlugin } from '@/ui/inkling-editor/plugins/EmojiPickerPlugin'
+import { MINIMAL_TRANSFORMERS } from '@/ui/inkling-editor/plugins/MarkdownShortcutPlugin'
+import RestrictContentPlugin from '@/ui/inkling-editor/plugins/RestrictContentPlugin'
 
 const Placeholder = ({ text = 'Type here' }) => {
   return (

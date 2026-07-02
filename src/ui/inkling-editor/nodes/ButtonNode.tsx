@@ -2,10 +2,11 @@ import { $generateHtmlFromNodes } from '@lexical/html'
 import { createCommand, type EditorState, type LexicalEditor, type SerializedLexicalNode } from 'lexical'
 
 import ButtonCardIcon from '@/ui/inkling-editor/assets/icons/inkling-card-type-button.svg?react'
+import InklingCardWrapper from '@/ui/inkling-editor/components/InklingCardWrapper'
 import { cleanBasicHtml } from '@/ui/inkling-editor/html/clean-basic-html'
-import { InklingCardWrapper, MINIMAL_NODES } from '@/ui/inkling-editor/index'
 import { ButtonNode as BaseButtonNode } from '@/ui/inkling-editor/nodes/base'
 import { ButtonNodeComponent } from '@/ui/inkling-editor/nodes/ButtonNodeComponent'
+import MINIMAL_NODES from '@/ui/inkling-editor/nodes/MinimalNodes'
 import { populateNestedEditor, setupNestedEditor } from '@/ui/inkling-editor/utils/nested-editors'
 
 export const INSERT_BUTTON_COMMAND = createCommand('INSERT_BUTTON_COMMAND')

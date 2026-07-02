@@ -1,14 +1,11 @@
-import {
-  BASIC_NODES,
-  BASIC_TRANSFORMERS,
-  InklingComposableEditor,
-  InklingNestedComposer,
-  MINIMAL_NODES,
-  MINIMAL_TRANSFORMERS,
-  RestrictContentPlugin,
-} from '@/ui/inkling-editor/index'
+import InklingComposableEditor from '@/ui/inkling-editor/components/InklingComposableEditor'
+import InklingNestedComposer from '@/ui/inkling-editor/components/InklingNestedComposer'
+import BASIC_NODES from '@/ui/inkling-editor/nodes/BasicNodes'
+import MINIMAL_NODES from '@/ui/inkling-editor/nodes/MinimalNodes'
 import { EmojiPickerPlugin } from '@/ui/inkling-editor/plugins/EmojiPickerPlugin'
 import InklingNestedEditorPlugin from '@/ui/inkling-editor/plugins/InklingNestedEditorPlugin'
+import { BASIC_TRANSFORMERS, MINIMAL_TRANSFORMERS } from '@/ui/inkling-editor/plugins/MarkdownShortcutPlugin'
+import RestrictContentPlugin from '@/ui/inkling-editor/plugins/RestrictContentPlugin'
 
 const Placeholder = ({ text = 'Type here', className = '' }) => {
   // Note: we use line-clamp-1, instead of truncate because truncate adds 'white-space: nowrap', which often breaks overflows of parents in some cards
