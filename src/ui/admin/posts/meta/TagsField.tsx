@@ -2,7 +2,9 @@ import { useQuery } from '@tanstack/react-query'
 import { XIcon } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 
-import { orpcQuery } from '@/client/api/orpc-query'
+import type { AdminTagDto } from '@/shared/types/tags'
+
+import { orpc } from '@/client/api/client'
 import { Badge } from '@/ui/components/badge'
 import { Button } from '@/ui/components/button'
 import { Input } from '@/ui/components/input'
@@ -22,8 +24,26 @@ export function TagsField({ values, onChange, disabled }: TagsFieldProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const isComposingRef = useRef(false)
-  const tagsQuery = useQuery(orpcQuery.admin.tags.list.queryOptions({ input: { limit: 100 } }))
-  const tags = tagsQuery.data?.tags ?? []
+  // Fetch the COMPLETE tag list by paginating until the server reports no
+  // more pages. A single capped request (the previous `limit: 100`) silently
+  // truncated the set once the blog grew past the cap, making every tag
+  // outside the first page look "not created yet" in the warning below.
+  const tagsQuery = useQuery({
+    queryKey: ['admin', 'tags', 'list', 'all'],
+    queryFn: async () => {
+      const pageSize = 200
+      const all: AdminTagDto[] = []
+      for (let offset = 0; ; offset += pageSize) {
+        const page = await orpc.admin.tags.list({ offset, limit: pageSize })
+        all.push(...page.tags)
+        if (!page.hasMore || page.tags.length === 0) {
+          break
+        }
+      }
+      return all
+    },
+  })
+  const tags = tagsQuery.data ?? []
 
   const addTag = useCallback(
     (raw: string) => {
