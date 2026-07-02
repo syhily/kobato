@@ -4,6 +4,9 @@ import { describe, expect, it } from 'vitest'
 // Node-native replacement for ripgrep. GitHub's ubuntu-latest runner
 // doesn't ship rg, so execFileSync('rg', …) fails in CI.
 const IGNORE_DIRS = new Set([
+  // Vendored third-party editor source is exempt from app conventions
+  // (see src/ui/inkling-editor/VENDOR.md).
+  'inkling-editor',
   'node_modules',
   '.git',
   '.cache',

@@ -1,0 +1,210 @@
+@import 'tailwindcss/theme';
+
+@import './preflight.css';
+@import './components/inkling-lexical';
+@import './components/inkling-prose';
+@import './components/simplemde';
+@import './components/react-colorful';
+@import 'tailwindcss/utilities';
+
+@theme {
+  --color-accent: var(--inkling-accent-color, #ff0095);
+  --color-transparent: transparent;
+  --color-current: currentColor;
+  --color-white: #fff;
+  --color-black: #15171a;
+
+  --color-grey: #abb4be;
+  --color-grey-50: #fafafb;
+  --color-grey-75: #f9fafb;
+  --color-grey-100: #f4f5f6;
+  --color-grey-150: #f1f3f4;
+  --color-grey-200: #ebeef0;
+  --color-grey-250: #e5e9ed;
+  --color-grey-300: #dde1e5;
+  --color-grey-400: #ced4d9;
+  --color-grey-500: #aeb7c1;
+  --color-grey-600: #95a1ad;
+  --color-grey-700: #7c8b9a;
+  --color-grey-800: #626d79;
+  --color-grey-900: #394047;
+  --color-grey-925: #2e3338;
+  --color-grey-950: #23292f;
+  --color-grey-975: #191b1e;
+
+  --color-green: #30cf43;
+  --color-green-100: #e1f9e4;
+  --color-green-400: #58da67;
+  --color-green-500: #30cf43;
+  --color-green-600: #2ab23a;
+
+  --color-blue: #14b8ff;
+  --color-blue-100: #dbf4ff;
+  --color-blue-400: #42c6ff;
+  --color-blue-500: #14b8ff;
+  --color-blue-600: #00a4eb;
+
+  --color-purple: #8e42ff;
+  --color-purple-100: #ede0ff;
+  --color-purple-400: #a366ff;
+  --color-purple-500: #8e42ff;
+  --color-purple-600: #7b1fff;
+
+  --color-pink: #fb2d8d;
+  --color-pink-100: #ffdfee;
+  --color-pink-400: #ff5ca8;
+  --color-pink-500: #fb2d8d;
+  --color-pink-600: #f70878;
+
+  --color-red: #f50b23;
+  --color-red-100: #ffe0e0;
+  --color-red-400: #f9394c;
+  --color-red-500: #f50b23;
+  --color-red-600: #dc091e;
+
+  --color-yellow: #ffb41f;
+  --color-yellow-100: #fff1d6;
+  --color-yellow-400: #ffc247;
+  --color-yellow-500: #ffb41f;
+  --color-yellow-600: #f0a000;
+
+  --color-lime: #b5ff18;
+  --color-lime-300: #cfff99;
+  --color-lime-500: #b5ff18;
+  --color-lime-800: #466600;
+  --color-lime-900: #344d00;
+
+  --font-sans:
+    Inter, -apple-system, BlinkMacSystemFont, avenir next, avenir, helvetica neue, helvetica, ubuntu, roboto, noto,
+    segoe ui, arial, sans-serif;
+  --font-serif: Georgia, Times, serif;
+  --font-mono: Consolas, Liberation Mono, Menlo, Courier, monospace;
+
+  --shadow:
+    0 0 1px rgba(0, 0, 0, 0.15), 0px 13px 27px -5px rgba(50, 50, 93, 0.08), 0px 8px 16px -8px rgba(0, 0, 0, 0.12);
+  --shadow-xs: 0px 1px 2px rgba(0, 0, 0, 0.06);
+  --shadow-sm: 0px 2px 5px -1px rgba(50, 50, 93, 0.2), 0px 1px 3px -1px rgba(0, 0, 0, 0.25);
+  --shadow-md: 0px 13px 27px -5px rgba(50, 50, 93, 0.25), 0px 8px 16px -8px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0px 50px 100px -25px rgba(50, 50, 93, 0.2), 0px 30px 60px -20px rgba(0, 0, 0, 0.25);
+  --shadow-xl:
+    0 2.8px 2.2px rgba(0, 0, 0, 0.02), 0 6.7px 5.3px rgba(0, 0, 0, 0.028), 0 12.5px 10px rgba(0, 0, 0, 0.035),
+    0 22.3px 17.9px rgba(0, 0, 0, 0.042), 0 41.8px 33.4px rgba(0, 0, 0, 0.05), 0 100px 80px rgba(0, 0, 0, 0.07);
+  --shadow-inner: inset 0 0 4px 0 rgb(0 0 0 / 0.08);
+  --shadow-insetgreen: 0px 0px 0px 1px inset var(--green);
+  --shadow-none: 0 0 #0000;
+
+  --spacing-px: 1px;
+  --spacing-0: 0px;
+  --spacing-0\.5: 0.2rem;
+  --spacing-1: 0.4rem;
+  --spacing-1\.5: 0.6rem;
+  --spacing-2: 0.8rem;
+  --spacing-2\.5: 1rem;
+  --spacing-3: 1.2rem;
+  --spacing-3\.5: 1.4rem;
+  --spacing-4: 1.6rem;
+  --spacing-5: 2rem;
+  --spacing-6: 2.4rem;
+  --spacing-7: 2.8rem;
+  --spacing-8: 3.2rem;
+  --spacing-9: 3.6rem;
+  --spacing-10: 4rem;
+  --spacing-11: 4.4rem;
+  --spacing-12: 4.8rem;
+  --spacing-14: 5.6rem;
+  --spacing-16: 6.4rem;
+  --spacing-20: 8rem;
+  --spacing-24: 9.6rem;
+  --spacing-28: 11.2rem;
+  --spacing-32: 12.8rem;
+  --spacing-36: 14.4rem;
+  --spacing-40: 16rem;
+  --spacing-44: 17.6rem;
+  --spacing-48: 19.2rem;
+  --spacing-52: 20.8rem;
+  --spacing-56: 22.4rem;
+  --spacing-60: 24rem;
+  --spacing-64: 25.6rem;
+  --spacing-72: 28.8rem;
+  --spacing-80: 32rem;
+  --spacing-96: 38.4rem;
+
+  --max-width-none: none;
+  --max-width-0: 0rem;
+  --max-width-xs: 32rem;
+  --max-width-sm: 38.4rem;
+  --max-width-md: 44.8rem;
+  --max-width-lg: 51.2rem;
+  --max-width-xl: 57.6rem;
+  --max-width-2xl: 67.2rem;
+  --max-width-3xl: 76.8rem;
+  --max-width-4xl: 89.6rem;
+  --max-width-5xl: 102.4rem;
+  --max-width-6xl: 115.2rem;
+  --max-width-7xl: 128rem;
+  --max-width-8xl: 140rem;
+  --max-width-9xl: 156rem;
+  --max-width-full: 100%;
+  --max-width-min: min-content;
+  --max-width-max: max-content;
+  --max-width-fit: fit-content;
+  --max-width-prose: 65ch;
+
+  --radius-sm: 0.2rem;
+  --radius: 0.4rem;
+  --radius-md: 0.6rem;
+  --radius-lg: 0.8rem;
+  --radius-xl: 1.2rem;
+  --radius-2xl: 1.6rem;
+  --radius-3xl: 2.4rem;
+  --radius-full: 9999px;
+
+  --text-2xs: 1.2rem;
+  --text-xs: 1.25rem;
+  --text-sm: 1.4rem;
+  --text-md: 1.5rem;
+  --text-lg: 1.8rem;
+  --text-xl: 2rem;
+  --text-2xl: 2.4rem;
+  --text-3xl: 3rem;
+  --text-4xl: 3.6rem;
+  --text-5xl: 4.8rem;
+  --text-5xl--line-height: 1.15;
+  --text-6xl: 6rem;
+  --text-6xl--line-height: 1;
+  --text-7xl: 7.2rem;
+  --text-7xl--line-height: 1;
+  --text-8xl: 9.6rem;
+  --text-8xl--line-height: 1;
+  --text-9xl: 12.8rem;
+  --text-9xl--line-height: 1;
+
+  --breakpoint-xs: 500px;
+}
+
+@custom-variant dark (&:is(.dark *));
+
+/* Global Inkling content styles
+/* -------------------------------------------------------------------- */
+
+.inkling-lexical {
+  --white: #fff;
+
+  --grey-50: #fafafb;
+  --grey-100: #f4f5f6;
+  --grey-200: #ebeef0;
+  --grey-300: #dde1e5;
+  --grey-400: #ced4d9;
+  --grey-500: #aeb7c1;
+  --grey-600: #95a1ad;
+  --grey-700: #7c8b9a;
+  --grey-800: #626d79;
+  --grey-900: #394047;
+  --grey-950: #23292f;
+
+  --black: #15171a;
+
+  --green: #30cf43;
+
+  --inkling-breakout-adjustment-with-fallback: var(--inkling-breakout-adjustment, 0px);
+}

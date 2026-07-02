@@ -114,6 +114,7 @@
     "@types/color": "^4.2.1",
     "@types/diff-match-patch": "^1.0.36",
     "@types/html-minifier": "^4.0.5",
+    "@types/jsdom": "^28.0.3",
     "@types/lodash": "^4.17.24",
     "@types/luxon": "^3.7.2",
     "@types/markdown-it": "^14.1.2",
