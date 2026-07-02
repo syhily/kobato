@@ -139,10 +139,16 @@ export function InklingArticleEditor({
                 ref={scrollContainerRef}
                 className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto px-3 pt-6 pb-editor-pad-bottom md:px-6"
               >
-                <div className="inkling-prose post-content mx-auto w-full max-w-2xl">
+                {/* Upstream-look writing column: 740px centered, exactly like
+                    the original inkling demo. Arbitrary value on its own
+                    wrapper because the site theme rescales the max-w-* container
+                    tokens and `.post-content` (content.css) force-resets
+                    max-width — both would break the column. The editing surface
+                    typography comes from the vendored inkling-prose.css, NOT
+                    the site's post-content styles. */}
+                <div className="mx-auto w-full max-w-[740px]">
                   <InklingComposableEditor
                     readOnly={disabled === true}
-                    inheritStyles
                     isSnippetsEnabled={false}
                     markdownTransformers={INKLING_MARKDOWN_TRANSFORMERS}
                     placeholderText="在此处开始编写内容…（/ 命令菜单，^ 空格插入脚注）"

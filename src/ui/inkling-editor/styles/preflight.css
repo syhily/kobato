@@ -8,10 +8,11 @@
   ::before,
   ::after {
     box-sizing: border-box; /* 1 */
-    max-width: revert;
-    max-height: revert;
-    min-width: revert;
-    min-height: revert;
+    /* yufan.me: upstream reverted min and max width/height here, which (being
+       un-layered) silently defeated every Tailwind min-height, max-height,
+       min-width, and max-width utility used INSIDE the editor — e.g. the
+       comment editor's min-height and card component sizing. Removed; the host
+       app's preflight already provides sane defaults. */
     border-width: 0; /* 2 */
     border-style: solid; /* 2 */
     border-color: var(--color-grey, currentColor); /* 2 */

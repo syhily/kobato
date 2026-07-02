@@ -10,14 +10,15 @@
  * imported files were rescaled from Ghost's 10px root to the 16px default
  * (÷1.6) during vendoring.
  *
- * inkling-prose.css (Ghost article typography) is intentionally skipped —
- * the editing surface uses the site's own document styles (inkling/core.css),
- * exactly like the previous editor. simplemde.css is skipped (markdown card
- * is not registered).
+ * inkling-prose.css (the upstream article typography) IS imported — the
+ * maintainer wants the editing surface to look like the original inkling
+ * editor, not like the site's published-page typography. simplemde.css is
+ * skipped (markdown card is not registered).
  */
 
 @import '../../ui/inkling-editor/styles/preflight.css';
 @import '../../ui/inkling-editor/styles/components/inkling-lexical.css';
+@import '../../ui/inkling-editor/styles/components/inkling-prose.css';
 @import '../../ui/inkling-editor/styles/components/react-colorful.css';
 
 @theme {
@@ -79,14 +80,6 @@
   --breakpoint-xs: 500px;
 
   --shadow-insetgreen: 0px 0px 0px 1px inset var(--green);
-}
-
-/* The vendored `.inkling-lexical > *` rule pins a Ghost font stack + size on
- * the editor surface. `inkling-inherit-styles` (the `inheritStyles` prop)
- * resets color/family/weight but upstream forgot font-size — add it so the
- * editing surface fully adopts the site typography (post-content prose). */
-.inkling-lexical.inkling-inherit-styles > * {
-  font-size: inherit;
 }
 
 /* Scoped variables the vendored component CSS reads (from upstream

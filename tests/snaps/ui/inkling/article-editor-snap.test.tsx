@@ -52,7 +52,8 @@ describe('snaps/ui/inkling/InklingArticleEditor', () => {
 
     // Structural invariants the admin editor layout depends on.
     expect(html).toContain('inkling-editor')
-    expect(html).toContain('inkling-prose post-content')
+    expect(html).toContain('max-w-[740px]')
+    expect(html).toContain('inkling-prose')
     // The contenteditable host is present in the SSR output; Lexical only
     // reconciles document content into it after `setRootElement` on the
     // client, so the host is empty here.
