@@ -1,37 +1,14 @@
-import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
-import { HistoryPlugin } from '@lexical/react/LexicalHistoryPlugin'
-
 import type { InklingDocument } from '@/shared/inkling/schema'
 
-import { KoenigComposerContextProvider } from '@/ui/inkling/context/KoenigComposerContext'
-import { KoenigSelectedCardContextProvider } from '@/ui/inkling/context/KoenigSelectedCardContext'
-import { useInklingKeyboardNavigation } from '@/ui/inkling/editor/behaviour/keyboard-navigation'
-import {
-  INKLING_COMMENT_MARKDOWN_TRANSFORMERS,
-  useInklingMarkdownShortcuts,
-} from '@/ui/inkling/editor/behaviour/markdown-shortcuts'
-import { InklingEditor } from '@/ui/inkling/editor/InklingEditor'
-import { COMMENT_NODES } from '@/ui/inkling/editor/nodes/registry'
-import { CardCommandsPlugin } from '@/ui/inkling/editor/plugins/CardCommandsPlugin'
-import { FloatingToolbarPlugin } from '@/ui/inkling/editor/plugins/FloatingToolbarPlugin'
+import { cn } from '@/ui/lib/cn'
 
-/** Headless plugin that wires markdown shortcuts into the comment editor.
- *  Uses the comment-restricted transformer set (no HEADING — the comment
- *  node set has no HeadingNode). */
-function CommentMarkdownShortcuts() {
-  const [editor] = useLexicalComposerContext()
-  useInklingMarkdownShortcuts(editor, INKLING_COMMENT_MARKDOWN_TRANSFORMERS)
-  return null
-}
-
-/** Headless plugin that registers card click-to-select + arrow-key
- *  navigation. Mirrors the article editor's InklingKeyboardNav. */
-function CommentKeyboardNav() {
-  const [editor] = useLexicalComposerContext()
-  useInklingKeyboardNavigation(editor)
-  return null
-}
-
+/**
+ * Temporary stub while the hand-rolled editor is replaced by the vendored
+ * inkling source (docs/superpowers/plans/2026-07-02-inkling-vendor-migration.md,
+ * Task 1). Renders a disabled placeholder and intentionally does NOT render
+ * `children` — `CommentInsertActions` reads the Lexical composer context,
+ * which the stub does not provide. Replaced by the real integration in Task 7.
+ */
 export interface CommentInklingEditorProps {
   document: InklingDocument
   onChange: (document: InklingDocument) => void
@@ -42,39 +19,12 @@ export interface CommentInklingEditorProps {
   children?: React.ReactNode
 }
 
-export function CommentInklingEditor({
-  document,
-  onChange,
-  editable,
-  placeholder,
-  className,
-  contentClassName,
-  children,
-}: CommentInklingEditorProps) {
-  const darkMode =
-    typeof globalThis !== 'undefined' && globalThis.document?.documentElement.classList.contains('dark') === true
-
+export function CommentInklingEditor({ className, contentClassName, placeholder }: CommentInklingEditorProps) {
   return (
-    <KoenigComposerContextProvider value={{ darkMode }}>
-      <KoenigSelectedCardContextProvider>
-        <InklingEditor
-          namespace="inkling-comment-editor"
-          nodes={COMMENT_NODES}
-          document={document}
-          onChange={onChange}
-          editable={editable}
-          placeholder={placeholder}
-          className={className}
-          contentClassName={contentClassName}
-        >
-          <HistoryPlugin />
-          <CommentMarkdownShortcuts />
-          <CommentKeyboardNav />
-          <CardCommandsPlugin />
-          <FloatingToolbarPlugin hiddenFormats={[]} />
-          {children}
-        </InklingEditor>
-      </KoenigSelectedCardContextProvider>
-    </KoenigComposerContextProvider>
+    <div className={cn('relative', className)}>
+      <div className={cn('text-ink-4', contentClassName)} aria-disabled="true">
+        {placeholder ?? '评论编辑器迁移中，暂不可用'}
+      </div>
+    </div>
   )
 }
