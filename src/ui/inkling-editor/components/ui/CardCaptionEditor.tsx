@@ -61,7 +61,7 @@ interface AltToggleButtonProps {
 function AltToggleButton({ isEditingAlt, onClick }: AltToggleButtonProps) {
   return (
     <button
-      className={`absolute right-0 bottom-0 m-2 cursor-pointer rounded-md border px-1 font-sans text-[1.3rem] leading-7 font-normal tracking-wide transition-all duration-100 ${isEditingAlt ? 'border-green bg-green text-white' : 'border-grey text-grey'} `}
+      className={`absolute right-0 bottom-0 m-2 cursor-pointer rounded-md border px-1 font-sans text-[0.8125rem] leading-7 font-normal tracking-wide transition-all duration-100 ${isEditingAlt ? 'border-green bg-green text-white' : 'border-grey text-grey'} `}
       data-testid="alt-toggle-button"
       name="alt-toggle-button"
       type="button"

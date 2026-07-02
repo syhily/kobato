@@ -145,8 +145,8 @@ export function UrlSearchInput({
         autoFocus={true}
         dataTestId={dataTestId}
         dropdownClassName="z-[-1] max-h-[30vh] w-full overflow-y-auto bg-white px-2 py-1 shadow-md dark:bg-grey-950"
-        dropdownPlacementBottomClass="mt-[.6rem] rounded-md"
-        dropdownPlacementTopClass="top-[-.6rem] -translate-y-full rounded-md"
+        dropdownPlacementBottomClass="mt-[0.375rem] rounded-md"
+        dropdownPlacementTopClass="top-[-0.375rem] -translate-y-full rounded-md"
         getItem={getItem as never}
         inputClassName={`w-full rounded-md border border-grey-300 p-2 font-sans text-sm font-normal leading-snug text-grey-900 placeholder:text-sm placeholder:font-medium placeholder:leading-snug placeholder:text-grey-500 focus-visible:outline-none dark:border-grey-800 dark:bg-grey-950 dark:text-grey-100 dark:placeholder:text-grey-800`}
         isLoading={isSearching}

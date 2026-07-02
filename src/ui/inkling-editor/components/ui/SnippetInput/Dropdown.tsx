@@ -58,7 +58,7 @@ const DropdownSection = ({
 }) => {
   return (
     <li role="separator">
-      <span className="block border-t border-grey-200 px-3 pt-3 pb-2 text-[1.1rem] font-semibold tracking-wide text-grey-600 uppercase dark:border-grey-900 dark:text-grey-800">
+      <span className="block border-t border-grey-200 px-3 pt-3 pb-2 text-[0.6875rem] font-semibold tracking-wide text-grey-600 uppercase dark:border-grey-900 dark:text-grey-800">
         Replace existing
       </span>
       <ul role="menu">

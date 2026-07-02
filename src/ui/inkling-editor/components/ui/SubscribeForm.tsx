@@ -41,9 +41,9 @@ export function SubscribeForm({
       <input
         className={clsx(
           'bg-white px-4 py-2 font-sans font-normal text-grey-900 relative w-full focus-visible:outline-none',
-          buttonSize === 'small' && 'h-10 text-md leading-[4rem]',
-          buttonSize === 'medium' && 'h-11 text-[1.6rem] leading-[4.4rem]',
-          buttonSize === 'large' && 'h-12 text-lg leading-[4.8rem]',
+          buttonSize === 'small' && 'h-10 text-md leading-[2.5rem]',
+          buttonSize === 'medium' && 'h-11 text-[1rem] leading-[2.75rem]',
+          buttonSize === 'large' && 'h-12 text-lg leading-[3rem]',
         )}
         defaultValue={value}
         placeholder={placeholder}

@@ -1,0 +1,106 @@
+/* Vendored inkling editor chrome, adapted for yufan.me.
+ *
+ * Sources: src/ui/inkling-editor/styles/* (see its VENDOR.md). The upstream
+ * index.css is intentionally NOT imported — it pulled tailwindcss layers and
+ * a Ghost 10px-root token scale. Here we import only the scoped pieces and
+ * declare the tokens the vendored components use that the app theme does not
+ * already define. Colliding names (grey scale, green, accent, radius, text
+ * sizes, shadows) intentionally resolve to the app's theme.css values so the
+ * editor chrome adopts the site design language. All rem values in the
+ * imported files were rescaled from Ghost's 10px root to the 16px default
+ * (÷1.6) during vendoring.
+ *
+ * inkling-prose.css (Ghost article typography) is intentionally skipped —
+ * the editing surface uses the site's own document styles (inkling/core.css),
+ * exactly like the previous editor. simplemde.css is skipped (markdown card
+ * is not registered).
+ */
+
+@import '../../ui/inkling-editor/styles/preflight.css';
+@import '../../ui/inkling-editor/styles/components/inkling-lexical.css';
+@import '../../ui/inkling-editor/styles/components/react-colorful.css';
+
+@theme {
+  /* Vendored palette additions — names absent from src/styles/theme.css. */
+  --color-transparent: transparent;
+  --color-current: currentColor;
+  --color-white: #fff;
+  --color-black: #15171a;
+
+  --color-grey-75: #f9fafb;
+  --color-grey-150: #f1f3f4;
+  --color-grey-250: #e5e9ed;
+  --color-grey-925: #2e3338;
+  --color-grey-975: #191b1e;
+
+  --color-green-100: #e1f9e4;
+  --color-green-400: #58da67;
+  --color-green-500: #30cf43;
+
+  --color-blue: #14b8ff;
+  --color-blue-100: #dbf4ff;
+  --color-blue-400: #42c6ff;
+  --color-blue-500: #14b8ff;
+  --color-blue-600: #00a4eb;
+
+  --color-purple: #8e42ff;
+  --color-purple-100: #ede0ff;
+  --color-purple-400: #a366ff;
+  --color-purple-500: #8e42ff;
+  --color-purple-600: #7b1fff;
+
+  --color-pink: #fb2d8d;
+  --color-pink-100: #ffdfee;
+  --color-pink-400: #ff5ca8;
+  --color-pink-500: #fb2d8d;
+  --color-pink-600: #f70878;
+
+  --color-red: #f50b23;
+  --color-red-100: #ffe0e0;
+  --color-red-400: #f9394c;
+  --color-red-500: #f50b23;
+  --color-red-600: #dc091e;
+
+  --color-yellow: #ffb41f;
+  --color-yellow-100: #fff1d6;
+  --color-yellow-400: #ffc247;
+  --color-yellow-500: #ffb41f;
+  --color-yellow-600: #f0a000;
+
+  --color-lime: #b5ff18;
+  --color-lime-300: #cfff99;
+  --color-lime-500: #b5ff18;
+  --color-lime-800: #466600;
+  --color-lime-900: #344d00;
+
+  /* 12px at the 16px root (upstream: 1.2rem at the 10px root). */
+  --text-2xs: 0.75rem;
+
+  --breakpoint-xs: 500px;
+
+  --shadow-insetgreen: 0px 0px 0px 1px inset var(--green);
+}
+
+/* Scoped variables the vendored component CSS reads (from upstream
+ * index.css). Kept verbatim — these are contained to the editor surface. */
+.inkling-lexical {
+  --white: #fff;
+
+  --grey-50: #fafafb;
+  --grey-100: #f4f5f6;
+  --grey-200: #ebeef0;
+  --grey-300: #dde1e5;
+  --grey-400: #ced4d9;
+  --grey-500: #aeb7c1;
+  --grey-600: #95a1ad;
+  --grey-700: #7c8b9a;
+  --grey-800: #626d79;
+  --grey-900: #394047;
+  --grey-950: #23292f;
+
+  --black: #15171a;
+
+  --green: #30cf43;
+
+  --inkling-breakout-adjustment-with-fallback: var(--inkling-breakout-adjustment, 0px);
+}

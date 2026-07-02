@@ -117,7 +117,7 @@ export function MediaUploader({
     <div
       className={clsx(
         'group/image relative flex items-center justify-center',
-        isLoading ? 'min-w-[6.8rem]' : 'min-w-[5.2rem]',
+        isLoading ? 'min-w-[4.25rem]' : 'min-w-[3.25rem]',
         borderStyle === 'rounded' && 'rounded',
         className,
       )}
@@ -128,7 +128,7 @@ export function MediaUploader({
           <img
             alt={alt}
             className={clsx(
-              'mx-auto h-full w-auto min-w-[5.2rem]',
+              'mx-auto h-full w-auto min-w-[3.25rem]',
               borderStyle === 'rounded' && 'rounded-lg',
               backgroundSize === 'cover' ? 'object-cover' : 'object-contain',
               imgClassName,

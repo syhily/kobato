@@ -1,6 +1,7 @@
 /* Public site entry point — loads only what public routes render.
-   The comment textarea needs inkling/core.css (editor primitives);
-   it does NOT need inkling/editor.css (article-editor chrome). */
+   The comment editor needs inkling/core.css (document primitives) plus the
+   vendored editor chrome (inkling/editor-vendor.css) for its toolbar, card
+   shells, and selection UI. */
 .medium-zoom-overlay,
 .medium-zoom-image--opened {
   z-index: 1080;
@@ -8,3 +9,4 @@
 
 @import './tailwind.css';
 @import './inkling/core.css';
+@import './inkling/editor-vendor.css';

@@ -80,7 +80,7 @@ export const CardMenuItem = ({
     >
       <button
         ref={buttonRef}
-        className={`group flex w-full cursor-pointer flex-row items-center gap-3 border border-transparent px-2 py-[.6rem] text-left text-grey-800 hover:bg-grey-100 md:rounded-md dark:hover:bg-grey-900 ${isSelected ? 'bg-grey-100 dark:bg-grey-900' : ''}`}
+        className={`group flex w-full cursor-pointer flex-row items-center gap-3 border border-transparent px-2 py-[0.375rem] text-left text-grey-800 hover:bg-grey-100 md:rounded-md dark:hover:bg-grey-900 ${isSelected ? 'bg-grey-100 dark:bg-grey-900' : ''}`}
         data-inkling-card-menu-item={label}
         data-inkling-cardmenu-idx={dataItemId}
         data-inkling-cardmenu-selected={isSelected}
@@ -90,22 +90,22 @@ export const CardMenuItem = ({
       >
         {Icon && (
           <div className="flex size-7 shrink-0 items-center justify-center rounded-md bg-white text-grey-900 dark:bg-transparent dark:text-grey-500">
-            <Icon className="size-[1.8rem]" />
+            <Icon className="size-[1.125rem]" />
           </div>
         )}
         <div className="flex w-full justify-between">
           <div className="flex flex-col items-start">
-            <div className="m-0 truncate text-[1.35rem] leading-snug font-medium tracking-[.02rem] text-grey-900 dark:text-grey-200">
+            <div className="m-0 truncate text-[0.84375rem] leading-snug font-medium tracking-[0.0125rem] text-grey-900 dark:text-grey-200">
               {label}
             </div>
             {desc && (
-              <div className="m-0 truncate text-[1.35rem] leading-snug font-medium tracking-[.02rem] text-grey-500 dark:text-grey-200">
+              <div className="m-0 truncate text-[0.84375rem] leading-snug font-medium tracking-[0.0125rem] text-grey-500 dark:text-grey-200">
                 {desc}
               </div>
             )}
           </div>
           {shortcut && (
-            <div className="invisible m-0 truncate text-[1.35rem] leading-snug font-medium tracking-[.02rem] text-grey-500 group-hover:visible dark:text-grey-200">
+            <div className="invisible m-0 truncate text-[0.84375rem] leading-snug font-medium tracking-[0.0125rem] text-grey-500 group-hover:visible dark:text-grey-200">
               {shortcut}
             </div>
           )}
@@ -142,13 +142,13 @@ export const CardMenuSection = ({ label, children }: CardMenuSectionProps) => {
 
   return (
     <li
-      className="flex shrink-0 flex-col justify-center border-t border-grey-200 text-[1.1rem] font-semibold tracking-wide text-grey-600 first-of-type:border-t-0 dark:border-grey-900 dark:text-grey-600"
+      className="flex shrink-0 flex-col justify-center border-t border-grey-200 text-[0.6875rem] font-semibold tracking-wide text-grey-600 first-of-type:border-t-0 dark:border-grey-900 dark:text-grey-600"
       role="separator"
     >
       <span
         className="flex items-center justify-between px-4 pt-3 pb-2 uppercase"
         data-card-menu-section="label"
-        style={{ minWidth: 'calc(100% - 3.2rem)' }}
+        style={{ minWidth: 'calc(100% - 2rem)' }}
       >
         {label}
         {helpLink && (
@@ -157,7 +157,7 @@ export const CardMenuSection = ({ label, children }: CardMenuSectionProps) => {
           </a>
         )}
       </span>
-      <ul className="md:grid md:gap-y-[.2rem] md:px-2" role="menu">
+      <ul className="md:grid md:gap-y-[0.125rem] md:px-2" role="menu">
         {children}
       </ul>
     </li>
@@ -208,7 +208,7 @@ export const CardSnippetItem = ({
         tabIndex={-1}
         onMouseDown={handleMouseDown}
       >
-        <div className="m-0 ml-4 min-w-0 flex-1 truncate text-[1.35rem] leading-snug font-medium tracking-[.02rem] text-grey-900 dark:text-grey-200">
+        <div className="m-0 ml-4 min-w-0 flex-1 truncate text-[0.84375rem] leading-snug font-medium tracking-[0.0125rem] text-grey-900 dark:text-grey-200">
           {label}
         </div>
         {onRemove && (
@@ -221,7 +221,7 @@ export const CardSnippetItem = ({
               onRemove()
             }}
           >
-            <TrashCardIcon className="stroke-red text-red size-[1.8rem] stroke-[1.5]" />
+            <TrashCardIcon className="stroke-red text-red size-[1.125rem] stroke-[1.5]" />
             <span className="sr-only">Remove</span>
           </button>
         )}

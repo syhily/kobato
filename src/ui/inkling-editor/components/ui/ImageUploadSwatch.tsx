@@ -23,7 +23,7 @@ export const ImageUploadSwatch = ({
       type="button"
       onClick={onClickHandler}
     >
-      <ImgBgIcon className="size-[1.4rem]" />
+      <ImgBgIcon className="size-[0.875rem]" />
       <Tooltip label="Image" />
     </button>
   )

@@ -34,4 +34,11 @@ to upstream so future re-vendoring diffs stay reviewable.
 5. `unsplash/ui/UnsplashGallery.tsx` — `galleryRef` prop widened to
    `RefObject<HTMLDivElement | null>` (React 19 `useRef` typing).
 
+6. All `rem` values in `*.tsx` arbitrary Tailwind classes and in
+   `styles/preflight.css` + `styles/components/*.css` rescaled ÷1.6 (Ghost's
+   10px-root convention → the app's 16px default root; 27 files, mechanical).
+7. `styles/index.css` emptied — the adapted editor stylesheet lives at
+   `src/styles/inkling/editor-vendor.css` (see the comment in the file for
+   why the upstream sheet must not load).
+
 Later tasks append here.

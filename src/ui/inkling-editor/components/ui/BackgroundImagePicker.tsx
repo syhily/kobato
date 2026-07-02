@@ -80,7 +80,7 @@ export function BackgroundImagePicker({
                   onClick={openFilePicker}
                 >
                   <FileUploadIcon className="size-5 fill-grey-700 stroke-[3px] transition-all ease-linear group-hover:scale-105" />
-                  <span className="px-1 text-[1.35rem] font-medium text-grey-700">
+                  <span className="px-1 text-[0.84375rem] font-medium text-grey-700">
                     Click to upload background image
                   </span>
                 </button>

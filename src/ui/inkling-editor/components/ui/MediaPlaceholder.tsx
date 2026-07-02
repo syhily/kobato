@@ -32,7 +32,7 @@ const ButtonContents = ({ desc, hasErrors }: { desc?: string; hasErrors?: boolea
   if (hasErrors) {
     return null
   }
-  return <p className="!font-sans !text-[1.3rem] !font-medium text-grey-900">{desc}</p>
+  return <p className="!font-sans !text-[0.8125rem] !font-medium text-grey-900">{desc}</p>
 }
 
 const StandardContents = ({

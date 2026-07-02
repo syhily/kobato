@@ -70,7 +70,7 @@ export function BookmarkCard({
             data-testid="bookmark-text-container"
           >
             <div
-              className="text-[1.5rem] leading-normal font-semibold tracking-normal text-grey-900 dark:text-grey-100"
+              className="text-[0.9375rem] leading-normal font-semibold tracking-normal text-grey-900 dark:text-grey-100"
               data-testid="bookmark-title"
             >
               {title}
@@ -103,7 +103,7 @@ export function BookmarkCard({
             <div className={'relative m-0 min-w-[33%] grow-1'} data-testid="bookmark-thumbnail-container">
               <img
                 alt=""
-                className="absolute inset-0 size-full rounded-r-[.5rem] object-cover"
+                className="absolute inset-0 size-full rounded-r-[0.3125rem] object-cover"
                 data-testid="bookmark-thumbnail"
                 src={thumbnail}
                 onError={handleThumbnailError}

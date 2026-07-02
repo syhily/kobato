@@ -282,7 +282,7 @@ export function ColorIndicator({
           )}
           style={{ backgroundColor }}
         >
-          {value === 'image' && <ImgBgIcon className="size-[1.4rem]" />}
+          {value === 'image' && <ImgBgIcon className="size-[0.875rem]" />}
           {value === 'transparent' && (
             <div className="border-b-red absolute top-[3px] left-[3px] z-10 w-[136%] origin-left rotate-45 border-b" />
           )}

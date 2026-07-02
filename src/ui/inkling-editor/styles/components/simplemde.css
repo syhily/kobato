@@ -118,7 +118,7 @@
   /* fix visible scrollbars when OSX is set to show them */
   .CodeMirror-scroll {
     overflow: visible !important;
-    padding-bottom: 5rem; /* pad so text doesn't go behind toolbar */
+    padding-bottom: 3.125rem; /* pad so text doesn't go behind toolbar */
   }
 
   .CodeMirror-scroll:hover {
@@ -150,7 +150,7 @@
     padding: 0;
     color: var(--grey-900);
     font-family: 'Consolas', monaco, monospace;
-    font-size: 1.6rem;
+    font-size: 1rem;
   }
 
   .CodeMirror .cm-strong {

@@ -22,7 +22,7 @@ export function LinkInputSearchItem({
 }) {
   return (
     <InputListItem
-      className="my-[.2rem] flex cursor-pointer items-center justify-between gap-3 rounded-md px-4 py-2 text-left text-black dark:text-white"
+      className="my-[0.125rem] flex cursor-pointer items-center justify-between gap-3 rounded-md px-4 py-2 text-left text-black dark:text-white"
       dataTestId={dataTestId}
       item={item}
       scrollIntoView={scrollIntoView}
@@ -31,8 +31,8 @@ export function LinkInputSearchItem({
       onClick={onClick}
       onMouseOver={onMouseOver}
     >
-      <span className="line-clamp-1 flex items-center gap-[.6rem]">
-        {item.Icon && <item.Icon className="size-[1.4rem] stroke-[1.5px]" />}
+      <span className="line-clamp-1 flex items-center gap-[0.375rem]">
+        {item.Icon && <item.Icon className="size-[0.875rem] stroke-[1.5px]" />}
         <span
           className="block truncate text-sm leading-snug font-medium"
           data-testid={`${dataTestId}-listOption-label`}
@@ -42,10 +42,10 @@ export function LinkInputSearchItem({
       </span>
       {selected && (item.metaText || item.MetaIcon) && (
         <span
-          className="flex shrink-0 items-center gap-[.6rem] text-[1.3rem] leading-snug tracking-tight text-grey-600 dark:text-grey-500"
+          className="flex shrink-0 items-center gap-[0.375rem] text-[0.8125rem] leading-snug tracking-tight text-grey-600 dark:text-grey-500"
           data-testid={`${dataTestId}-listOption-meta`}
         >
-          <span title={item.metaIconTitle}>{item.MetaIcon && <item.MetaIcon className="size-[1.4rem]" />}</span>
+          <span title={item.metaIconTitle}>{item.MetaIcon && <item.MetaIcon className="size-[0.875rem]" />}</span>
           {item.metaText && <span>{item.metaText}</span>}
         </span>
       )}

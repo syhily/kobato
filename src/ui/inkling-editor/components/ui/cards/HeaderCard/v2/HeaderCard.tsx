@@ -306,7 +306,7 @@ export function HeaderCard({
             layout === 'split' && isSwapped && 'sm:flex-row-reverse flex-col-reverse',
             // This is needed to align the content with wide breakout width
             (layout === 'full' || (layout === 'split' && correctedBackgroundSize === 'contain')) &&
-              'xs:w-[calc(740px+8rem)] md:w-[calc(740px+12rem)] lg:w-[calc(740px+22rem)] xl:w-[calc(740px+40rem)] mx-auto w-[calc(740px+4rem)]',
+              'xs:w-[calc(740px+5rem)] md:w-[calc(740px+7.5rem)] lg:w-[calc(740px+13.75rem)] xl:w-[calc(740px+25rem)] mx-auto w-[calc(740px+2.5rem)]',
             backgroundImageSrc && layout === 'split' && correctedBackgroundSize === 'contain' && 'items-center',
           )}
           data-testid={'header-card-content'}
@@ -330,10 +330,10 @@ export function HeaderCard({
                 correctedBackgroundSize === 'contain' && 'sm:my-10 md:my-14',
                 !isSwapped &&
                   correctedBackgroundSize === 'contain' &&
-                  'mt-10 xs:px-[calc(92px-(8rem/2))] sm:pl-[calc(92px-(12rem/2))] sm:pr-0 md:pl-[calc(92px-(12rem/2))] lg:pl-0 px-[calc(32px-(4rem/2))]',
+                  'mt-10 xs:px-[calc(92px-(5rem/2))] sm:pl-[calc(92px-(7.5rem/2))] sm:pr-0 md:pl-[calc(92px-(7.5rem/2))] lg:pl-0 px-[calc(32px-(2.5rem/2))]',
                 isSwapped &&
                   correctedBackgroundSize === 'contain' &&
-                  'mb-10 xs:px-[calc(92px-(8rem/2))] sm:pl-0 sm:pr-[calc(92px-(12rem/2))] md:pr-[calc(92px-(12rem/2))] lg:pr-0 px-[calc(32px-(4rem/2))]',
+                  'mb-10 xs:px-[calc(92px-(5rem/2))] sm:pl-0 sm:pr-[calc(92px-(7.5rem/2))] md:pr-[calc(92px-(7.5rem/2))] lg:pr-0 px-[calc(32px-(2.5rem/2))]',
               )}
               desc="Click to select an image"
               dragHandler={imageDragHandler}
@@ -357,19 +357,20 @@ export function HeaderCard({
             className={clsx(
               'mx-auto flex w-full flex-1 flex-col justify-center',
               alignment === 'center' && 'items-center',
-              layout === 'regular' && 'sm:py-[6rem] md:px-[6rem] md:py-[10rem] lg:px-[8rem] p-[4rem]',
-              layout === 'wide' && 'sm:py-[6rem] md:px-[8rem] md:py-[14rem] lg:px-0 max-w-[740px] p-[4rem]',
+              layout === 'regular' && 'sm:py-[3.75rem] md:px-[3.75rem] md:py-[6.25rem] lg:px-[5rem] p-[2.5rem]',
+              layout === 'wide' && 'sm:py-[3.75rem] md:px-[5rem] md:py-[8.75rem] lg:px-0 max-w-[740px] p-[2.5rem]',
               layout === 'full' &&
-                'xs:px-[calc(92px-(8rem/2))] sm:py-[6rem] md:px-[calc(92px-(12rem/2))] md:py-[12rem] lg:px-0 lg:py-[14rem] xl:py-[18rem] px-[calc(32px-(4rem/2))] py-[4rem]',
-              layout === 'split' && 'sm:py-[6rem] md:px-[6rem] md:py-[12rem] lg:px-[8rem] lg:py-[16rem] p-[4rem]',
+                'xs:px-[calc(92px-(5rem/2))] sm:py-[3.75rem] md:px-[calc(92px-(7.5rem/2))] md:py-[7.5rem] lg:px-0 lg:py-[8.75rem] xl:py-[11.25rem] px-[calc(32px-(2.5rem/2))] py-[2.5rem]',
+              layout === 'split' &&
+                'sm:py-[3.75rem] md:px-[3.75rem] md:py-[7.5rem] lg:px-[5rem] lg:py-[10rem] p-[2.5rem]',
               !isSwapped &&
                 layout === 'split' &&
                 correctedBackgroundSize === 'contain' &&
-                'xs:px-[calc(92px-(8rem/2))] sm:px-[calc(92px-(12rem/2))] md:pr-[calc(92px-(12rem/2))] lg:pr-0 px-[calc(32px-(4rem/2))]',
+                'xs:px-[calc(92px-(5rem/2))] sm:px-[calc(92px-(7.5rem/2))] md:pr-[calc(92px-(7.5rem/2))] lg:pr-0 px-[calc(32px-(2.5rem/2))]',
               isSwapped &&
                 layout === 'split' &&
                 correctedBackgroundSize === 'contain' &&
-                'xs:px-[calc(92px-(8rem/2))] sm:px-[calc(92px-(12rem/2))] md:pl-[calc(92px-(12rem/2))] lg:pl-0 px-[calc(32px-(4rem/2))]',
+                'xs:px-[calc(92px-(5rem/2))] sm:px-[calc(92px-(7.5rem/2))] md:pl-[calc(92px-(7.5rem/2))] lg:pl-0 px-[calc(32px-(2.5rem/2))]',
             )}
           >
             {/* Heading */}
@@ -417,8 +418,8 @@ export function HeaderCard({
                   '!font-medium !leading-snug !tracking-tight opacity-60',
                   alignment === 'center' && 'text-center',
                   layout === 'regular' && 'text-lg sm:text-xl',
-                  (layout === 'wide' || layout === 'split') && 'text-lg leading-snug sm:text-xl md:text-[2.2rem]',
-                  layout === 'full' && 'text-lg sm:text-xl md:text-[2.2rem] lg:text-[2.6rem] xl:max-w-[880px]',
+                  (layout === 'wide' || layout === 'split') && 'text-lg leading-snug sm:text-xl md:text-[1.375rem]',
+                  layout === 'full' && 'text-lg sm:text-xl md:text-[1.375rem] lg:text-[1.625rem] xl:max-w-[880px]',
                 )}
                 placeholderText={subheaderPlaceholder}
                 singleParagraph={true}
@@ -509,7 +510,7 @@ export function HeaderCard({
                         setButtonColorPickerExpanded(false)
                       }}
                     >
-                      <ImgBgIcon className="size-[1.4rem]" />
+                      <ImgBgIcon className="size-[0.875rem]" />
                       <Tooltip label="Image" />
                     </button>
                   ),

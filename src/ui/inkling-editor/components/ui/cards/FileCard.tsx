@@ -107,7 +107,7 @@ function PopulatedFileCard({
               )}
               {(isEditing || desc) && (
                 <TextInput
-                  className="h-[26px] bg-transparent pb-1 text-[1.6rem] leading-none font-normal text-grey-700 placeholder:text-grey-500 dark:text-grey-300 dark:placeholder:text-grey-800"
+                  className="h-[26px] bg-transparent pb-1 text-[1rem] leading-none font-normal text-grey-700 placeholder:text-grey-500 dark:text-grey-300 dark:placeholder:text-grey-800"
                   data-inkling-file-card="fileDescription"
                   maxLength="100"
                   placeholder={descPlaceholder}

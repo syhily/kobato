@@ -11,7 +11,7 @@ interface MediaPlayerProps {
 export function MediaPlayer({ type, duration, theme, ...args }: MediaPlayerProps) {
   return (
     <div className="mt-auto flex w-full items-center py-2" {...args}>
-      <PlayIcon className={`mr-2 size-[1.4rem] ${theme === 'light' ? 'fill-white' : 'fill-black dark:fill-white'}`} />
+      <PlayIcon className={`mr-2 size-[0.875rem] ${theme === 'light' ? 'fill-white' : 'fill-black dark:fill-white'}`} />
       <div
         className={`mb-[1px] font-sans text-sm font-medium ${theme === 'light' ? 'text-white/60' : 'text-black/50 dark:text-white/50'} `}
       >

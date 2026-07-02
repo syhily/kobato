@@ -78,7 +78,7 @@ export function ColorOptionButtons({ buttons = [], selectedName, onClick }: Colo
                 ) : (
                   <li
                     key="background-image"
-                    className={`mb-0 flex size-[3rem] cursor-pointer items-center justify-center rounded-full border-2 ${selectedName === name ? 'border-green' : 'border-transparent'}`}
+                    className={`mb-0 flex size-[1.875rem] cursor-pointer items-center justify-center rounded-full border-2 ${selectedName === name ? 'border-green' : 'border-transparent'}`}
                     data-testid="background-image-color-button"
                     onClick={() => onClick(name)}
                   >
@@ -118,7 +118,7 @@ export function ColorButton({ onClick, label, name, color, selectedName }: Color
         onClick={handleClick}
         onMouseDown={handleMousedown}
       >
-        <span className={`${color} size-[1.8rem] rounded-full border`}></span>
+        <span className={`${color} size-[1.125rem] rounded-full border`}></span>
         <Tooltip label={label} />
       </button>
     </li>

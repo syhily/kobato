@@ -97,7 +97,7 @@ export function InputListGroup({
 }) {
   return (
     <li
-      className="mt-2 mb-0 flex items-center justify-between border-t border-grey-200 px-4 pt-3 pb-2 text-[1.1rem] font-semibold tracking-wide text-grey-600 uppercase first-of-type:mt-0 first-of-type:border-t-0 dark:border-grey-900"
+      className="mt-2 mb-0 flex items-center justify-between border-t border-grey-200 px-4 pt-3 pb-2 text-[0.6875rem] font-semibold tracking-wide text-grey-600 uppercase first-of-type:mt-0 first-of-type:border-t-0 dark:border-grey-900"
       data-testid={`${dataTestId}-listGroup`}
     >
       <div className="flex items-center gap-1.5">

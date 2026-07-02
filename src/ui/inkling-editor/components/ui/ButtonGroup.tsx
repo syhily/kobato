@@ -73,7 +73,7 @@ export function ButtonGroupIconButton({
       <button
         aria-checked={isActive}
         aria-label={ariaLabel ?? label}
-        className={`group relative flex h-7 w-8 cursor-pointer items-center justify-center rounded-lg text-black dark:text-white ${isActive ? 'border border-grey-300 bg-white shadow-xs dark:border-grey-800 dark:bg-grey-950' : ''} ${Icon ? '' : 'text-[1.3rem] font-bold'}`}
+        className={`group relative flex h-7 w-8 cursor-pointer items-center justify-center rounded-lg text-black dark:text-white ${isActive ? 'border border-grey-300 bg-white shadow-xs dark:border-grey-800 dark:bg-grey-950' : ''} ${Icon ? '' : 'text-[0.8125rem] font-bold'}`}
         data-testid={dataTestId}
         role="menuitemradio"
         type="button"

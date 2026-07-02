@@ -201,8 +201,8 @@ const DesignSandbox = () => {
   function CardMenuSection({ label, ...props }: { label: string; [key: string]: unknown }) {
     return (
       <div
-        className="text-2xs mb-2 flex shrink-0 flex-col justify-center px-4 pt-3 font-medium tracking-[.06rem] text-grey uppercase"
-        style={{ minWidth: 'calc(100% - 3.2rem)' }}
+        className="text-2xs mb-2 flex shrink-0 flex-col justify-center px-4 pt-3 font-medium tracking-[0.0375rem] text-grey uppercase"
+        style={{ minWidth: 'calc(100% - 2rem)' }}
         {...props}
       >
         {label}
@@ -230,10 +230,10 @@ const DesignSandbox = () => {
           <Icon className="size-7" />
         </div>
         <div className="flex flex-col">
-          <div className="m-0 ml-4 truncate text-[1.3rem] leading-[1.333em] font-normal tracking-[.02rem] text-grey-900">
+          <div className="m-0 ml-4 truncate text-[0.8125rem] leading-[1.333em] font-normal tracking-[0.0125rem] text-grey-900">
             {label}
           </div>
-          <div className="text-2xs m-0 ml-4 truncate leading-[1.333em] font-normal tracking-[.02rem] text-grey">
+          <div className="text-2xs m-0 ml-4 truncate leading-[1.333em] font-normal tracking-[0.0125rem] text-grey">
             {desc}
           </div>
         </div>
@@ -259,7 +259,7 @@ const DesignSandbox = () => {
           <Icon className="size-7" />
         </div>
         <div className="flex flex-col">
-          <div className="m-0 ml-4 truncate text-[1.3rem] leading-[1.333em] font-normal tracking-[.02rem] text-grey-900">
+          <div className="m-0 ml-4 truncate text-[0.8125rem] leading-[1.333em] font-normal tracking-[0.0125rem] text-grey-900">
             {label}
           </div>
         </div>
@@ -285,7 +285,7 @@ const DesignSandbox = () => {
     return (
       <div className="border-2 border-green">
         <div className="rounded bg-grey-50 px-3 py-2">
-          <textarea className="w-full resize-none bg-grey-50 font-mono text-[1.7rem]" />
+          <textarea className="w-full resize-none bg-grey-50 font-mono text-[1.0625rem]" />
         </div>
         <CaptionEditor placeholder="Type caption for code block (optional)" />
       </div>
@@ -317,7 +317,7 @@ const DesignSandbox = () => {
           <MediaPlaceholder desc="Click to select an image" Icon={ImgPlaceholderIcon} />
           <CaptionEditor placeholder="Type caption for image (optional)" />
           <button
-            className={`absolute right-0 bottom-0 m-3 cursor-pointer rounded border px-1 text-[1.3rem] leading-7 font-normal tracking-wide transition-all duration-100 ${altText ? 'border-green bg-green text-white' : 'border-grey text-grey'} `}
+            className={`absolute right-0 bottom-0 m-3 cursor-pointer rounded border px-1 text-[0.8125rem] leading-7 font-normal tracking-wide transition-all duration-100 ${altText ? 'border-green bg-green text-white' : 'border-grey text-grey'} `}
             type="button"
             onClick={(e) => toggleAltText(e)}
           >

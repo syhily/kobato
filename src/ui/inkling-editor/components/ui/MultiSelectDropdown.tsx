@@ -150,14 +150,14 @@ export function MultiSelectDropdown({
             onMouseDownCapture={(event) => handleDeselect(event, item)}
           >
             {item.label}
-            <CloseIcon className="mt-px size-[1rem] stroke-[3]" />
+            <CloseIcon className="mt-px size-[0.625rem] stroke-[3]" />
           </button>
         ))}
 
         <div className="flex-1">
           <input
             ref={inputRef}
-            className="size-full min-w-[5rem] appearance-none bg-transparent px-0 leading-none outline-none"
+            className="size-full min-w-[3.125rem] appearance-none bg-transparent px-0 leading-none outline-none"
             placeholder={selectedItems.length === 0 ? placeholder : ''}
             value={filter}
             onBlur={handleBlur}

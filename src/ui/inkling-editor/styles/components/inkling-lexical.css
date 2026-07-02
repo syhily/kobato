@@ -11,7 +11,7 @@
 /* everything is nested here to keep it scoped to our container */
 .inkling-lexical {
   > * {
-    font-size: 1.7rem;
+    font-size: 1.0625rem;
     font-weight: 400;
     letter-spacing: 0.1px;
     color: var(--grey-900);
@@ -85,7 +85,7 @@
   font-size: 0;
 
   > * {
-    font-size: 1.4rem;
+    font-size: 0.875rem;
   }
 }
 
@@ -129,7 +129,7 @@ em-emoji-picker .search input[type='search'] {
 /* HTML card */
 
 .inkling-lexical .js-embed-placeholder {
-  margin: 0.4rem 0 !important;
+  margin: 0.25rem 0 !important;
   color: var(--grey-700) !important;
 }
 
@@ -180,10 +180,10 @@ em-emoji-picker .search input[type='search'] {
 
 /* Table */
 .inkling-lexical table {
-  font-size: 1.75rem;
+  font-size: 1.09375rem;
   margin: 0;
   font-family: georgia, Times, serif;
-  letter-spacing: 0.02rem;
+  letter-spacing: 0.0125rem;
   line-height: 1.6em;
 }
 

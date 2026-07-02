@@ -4,15 +4,15 @@ import VisibilityIndicator from '@/ui/inkling-editor/assets/icons/inkling-indica
 
 const CARD_WIDTH_CLASSES: Record<string, string> = {
   wide: [
-    'w-[calc(75vw-var(--inkling-breakout-adjustment-with-fallback)+2px)] mx-[calc(50%-(50vw-var(--inkling-breakout-adjustment-with-fallback))-.8rem)] min-w-[calc(100%+3.6rem)] translate-x-[calc(50vw-50%+.8rem-var(--inkling-breakout-adjustment-with-fallback))]',
-    'md:min-w-[calc(100%+10rem)]',
-    'lg:min-w-[calc(100%+18rem)]',
+    'w-[calc(75vw-var(--inkling-breakout-adjustment-with-fallback)+2px)] mx-[calc(50%-(50vw-var(--inkling-breakout-adjustment-with-fallback))-0.5rem)] min-w-[calc(100%+2.25rem)] translate-x-[calc(50vw-50%+0.5rem-var(--inkling-breakout-adjustment-with-fallback))]',
+    'md:min-w-[calc(100%+6.25rem)]',
+    'lg:min-w-[calc(100%+11.25rem)]',
   ].join(' '),
   full: 'inset-x-[-1px] mx-[calc(50%-50vw)] w-[calc(100vw+2px)] lg:mx-[calc(50%-50vw+(var(--inkling-breakout-adjustment-with-fallback)/2))] lg:w-[calc(100vw-var(--inkling-breakout-adjustment-with-fallback)+2px)]',
 }
 
 const DEFAULT_INDICATOR_POSITION = {
-  top: '.6rem',
+  top: '0.375rem',
 }
 
 interface CardWrapperProps {
@@ -76,7 +76,7 @@ export const CardWrapper = React.forwardRef<HTMLDivElement, CardWrapperProps>(
     const position = {
       ...DEFAULT_INDICATOR_POSITION,
       ...indicatorPosition,
-      ...(cardType === 'call-to-action' && { top: '1.4rem' }),
+      ...(cardType === 'call-to-action' && { top: '0.875rem' }),
     }
 
     let indicatorIcon
@@ -85,7 +85,7 @@ export const CardWrapper = React.forwardRef<HTMLDivElement, CardWrapperProps>(
         <div className="sticky top-0 lg:top-8">
           <VisibilityIndicator
             aria-label="Card is hidden for select audiences"
-            className="absolute left-[-6rem] size-5 cursor-pointer text-grey"
+            className="absolute left-[-3.75rem] size-5 cursor-pointer text-grey"
             data-testid="visibility-indicator"
             style={{
               left: position.left,
@@ -100,7 +100,7 @@ export const CardWrapper = React.forwardRef<HTMLDivElement, CardWrapperProps>(
         <div className="sticky top-0 lg:top-8">
           <IndicatorIcon
             aria-label={`${cardType} indicator`}
-            className="absolute left-[-6rem] size-5 text-grey"
+            className="absolute left-[-3.75rem] size-5 text-grey"
             style={{
               left: position.left,
               top: position.top,
