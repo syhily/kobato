@@ -1,0 +1,3 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`snaps/ui/inkling/InklingArticleEditor > renders the article editor shell 1`] = `"<div class="inkling-editor relative flex min-h-0 w-full min-w-0 flex-1 flex-col overflow-hidden rounded-xl border bg-card"><div class="min-h-0 flex-1 overflow-x-hidden overflow-y-auto px-3 pt-6 pb-editor-pad-bottom md:px-6"><div class="inkling-prose post-content mx-auto w-full max-w-2xl"><div class="inkling-lexical inkling-inherit-styles " data-inkling-dnd-disabled="false"><div data-inkling="editor"><div class="inkling-prose" contentEditable="true" role="textbox" spellCheck="true"></div></div> </div></div></div></div>"`;
