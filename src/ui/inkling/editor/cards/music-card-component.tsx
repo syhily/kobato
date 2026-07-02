@@ -8,12 +8,12 @@ import type { InklingMusicCardNode } from '@/shared/inkling/schema'
 import type { MusicCardNode } from '@/ui/inkling/editor/cards/simple-card-nodes'
 
 import { LoopIcon, PlayIcon, VolumeUpIcon } from '@/ui/icons/aplayer'
-import InklingCardWrapper from '@/ui/inkling-editor/components/InklingCardWrapper'
 import { ActionToolbar } from '@/ui/inkling-editor/components/ui/ActionToolbar'
 import { ToolbarMenu, ToolbarMenuItem } from '@/ui/inkling-editor/components/ui/ToolbarMenu'
 import CardContext from '@/ui/inkling-editor/context/CardContext'
 import { DELETE_CARD_COMMAND } from '@/ui/inkling-editor/plugins/InklingBehaviourPlugin'
 import { useInklingArticleEditorActions } from '@/ui/inkling/editor/article/article-editor-context'
+import { InklingCardChrome } from '@/ui/inkling/editor/cards/CardChrome'
 
 interface MusicPreviewMeta {
   name: string
@@ -125,7 +125,7 @@ export function MusicCardComponent({ node }: { node: MusicCardNode }): ReactNode
   const handlePick = () => openMusicPicker?.()
 
   return (
-    <InklingCardWrapper nodeKey={node.getKey()}>
+    <InklingCardChrome nodeKey={node.getKey()}>
       <ActionToolbar isVisible={isSelected && !isEditing}>
         <ToolbarMenu>
           <ToolbarMenuItem icon="edit" isActive={false} label="编辑" onClick={() => setEditing(true)} />
@@ -180,6 +180,6 @@ export function MusicCardComponent({ node }: { node: MusicCardNode }): ReactNode
           </div>
         ) : null}
       </div>
-    </InklingCardWrapper>
+    </InklingCardChrome>
   )
 }

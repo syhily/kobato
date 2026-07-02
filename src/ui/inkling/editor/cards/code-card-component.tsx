@@ -3,12 +3,12 @@ import { useCallback, useContext } from 'react'
 
 import type { CodeCardNode } from '@/ui/inkling/editor/cards/simple-card-nodes'
 
-import InklingCardWrapper from '@/ui/inkling-editor/components/InklingCardWrapper'
 import { ActionToolbar } from '@/ui/inkling-editor/components/ui/ActionToolbar'
 import { ToolbarMenu, ToolbarMenuItem } from '@/ui/inkling-editor/components/ui/ToolbarMenu'
 import CardContext from '@/ui/inkling-editor/context/CardContext'
 import { DELETE_CARD_COMMAND } from '@/ui/inkling-editor/plugins/InklingBehaviourPlugin'
 import { CodeBlockCard } from '@/ui/inkling/components/ui/cards/CodeBlockCard'
+import { InklingCardChrome } from '@/ui/inkling/editor/cards/CardChrome'
 
 /**
  * Code card component — connects CodeCardNode to the Koenig card system.
@@ -51,7 +51,7 @@ export function CodeCardComponent({ node }: { node: CodeCardNode }) {
   )
 
   return (
-    <InklingCardWrapper nodeKey={node.getKey()} wrapperStyle="code-card">
+    <InklingCardChrome nodeKey={node.getKey()} wrapperStyle="code-card">
       <ActionToolbar isVisible={isSelected && !isEditing}>
         <ToolbarMenu>
           <ToolbarMenuItem icon="edit" isActive={false} label="编辑" onClick={() => setEditing(true)} />
@@ -71,6 +71,6 @@ export function CodeCardComponent({ node }: { node: CodeCardNode }) {
         onCodeChange={onCodeChange}
         onLanguageChange={onLanguageChange}
       />
-    </InklingCardWrapper>
+    </InklingCardChrome>
   )
 }

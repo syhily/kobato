@@ -6,11 +6,11 @@ import { useCallback, useContext } from 'react'
 import type { InklingTableNode } from '@/shared/inkling/schema'
 import type { TableCardNode } from '@/ui/inkling/editor/cards/simple-card-nodes'
 
-import InklingCardWrapper from '@/ui/inkling-editor/components/InklingCardWrapper'
 import { ActionToolbar } from '@/ui/inkling-editor/components/ui/ActionToolbar'
 import { ToolbarMenu, ToolbarMenuItem } from '@/ui/inkling-editor/components/ui/ToolbarMenu'
 import CardContext from '@/ui/inkling-editor/context/CardContext'
 import { DELETE_CARD_COMMAND } from '@/ui/inkling-editor/plugins/InklingBehaviourPlugin'
+import { InklingCardChrome } from '@/ui/inkling/editor/cards/CardChrome'
 import { cn } from '@/ui/lib/cn'
 
 function emptyRow(cellCount: number): {
@@ -70,7 +70,7 @@ export function TableCardComponent({ node }: { node: TableCardNode }): ReactNode
   }
 
   return (
-    <InklingCardWrapper nodeKey={node.getKey()}>
+    <InklingCardChrome nodeKey={node.getKey()}>
       <ActionToolbar isVisible={isSelected && !isEditing}>
         <ToolbarMenu>
           <ToolbarMenuItem icon="edit" isActive={false} label="编辑" onClick={() => setEditing(true)} />
@@ -187,6 +187,6 @@ export function TableCardComponent({ node }: { node: TableCardNode }): ReactNode
           </div>
         ) : null}
       </div>
-    </InklingCardWrapper>
+    </InklingCardChrome>
   )
 }

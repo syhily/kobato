@@ -6,11 +6,11 @@ import { useCallback, useContext, useEffect, useState } from 'react'
 import type { InklingMathBlockNode } from '@/shared/inkling/schema'
 import type { MathCardNode } from '@/ui/inkling/editor/cards/simple-card-nodes'
 
-import InklingCardWrapper from '@/ui/inkling-editor/components/InklingCardWrapper'
 import { ActionToolbar } from '@/ui/inkling-editor/components/ui/ActionToolbar'
 import { ToolbarMenu, ToolbarMenuItem } from '@/ui/inkling-editor/components/ui/ToolbarMenu'
 import CardContext from '@/ui/inkling-editor/context/CardContext'
 import { DELETE_CARD_COMMAND } from '@/ui/inkling-editor/plugins/InklingBehaviourPlugin'
+import { InklingCardChrome } from '@/ui/inkling/editor/cards/CardChrome'
 
 function MathPreview({ tex }: { tex: string }) {
   const [html, setHtml] = useState<string | null>(null)
@@ -77,7 +77,7 @@ export function MathCardComponent({ node }: { node: MathCardNode }): ReactNode {
   )
 
   return (
-    <InklingCardWrapper nodeKey={node.getKey()}>
+    <InklingCardChrome nodeKey={node.getKey()}>
       <ActionToolbar isVisible={isSelected && !isEditing}>
         <ToolbarMenu>
           <ToolbarMenuItem icon="edit" isActive={false} label="编辑" onClick={() => setEditing(true)} />
@@ -102,6 +102,6 @@ export function MathCardComponent({ node }: { node: MathCardNode }): ReactNode {
       <div className="px-4 py-3">
         <MathPreview tex={node.getTex()} />
       </div>
-    </InklingCardWrapper>
+    </InklingCardChrome>
   )
 }
