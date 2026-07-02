@@ -9,7 +9,7 @@ import { unsafeCast } from '@/shared/utils/unsafe-cast'
 import InklingComposableEditor from '@/ui/inkling-editor/components/InklingComposableEditor'
 import InklingComposer from '@/ui/inkling-editor/components/InklingComposer'
 import { SharedHistoryContext } from '@/ui/inkling-editor/context/SharedHistoryContext'
-import { INKLING_COMMENT_MARKDOWN_TRANSFORMERS } from '@/ui/inkling/editor/behaviour/markdown-shortcuts'
+import { MINIMAL_TRANSFORMERS } from '@/ui/inkling-editor/plugins/MarkdownShortcutPlugin'
 import { reportEditorError } from '@/ui/inkling/editor/error-report'
 import { COMMENT_NODES } from '@/ui/inkling/editor/nodes/registry'
 import { editorStateToInklingDocument } from '@/ui/inkling/editor/serialize'
@@ -67,10 +67,13 @@ export interface CommentInklingEditorProps {
 }
 
 /**
- * Comment editor on the vendored inkling composer. Textarea-like by design:
- * no top toolbar; inline formats via the vendored floating toolbar on text
- * selection; list/quote via markdown shortcuts; code/math blocks via the
- * `CommentInsertActions` buttons passed as `children`.
+ * Comment editor on the vendored inkling composer, composed like the
+ * upstream MINIMAL editor variant (MINIMAL_TRANSFORMERS, no snippets, no
+ * drag): textarea-like, no top toolbar; inline formats via the vendored
+ * floating toolbar on text selection; code/math blocks via the
+ * `CommentInsertActions` buttons passed as `children`. The full comment
+ * node set stays registered so previously stored comments (lists, quotes,
+ * cards) keep hydrating.
  *
  * Unlike the article editor there is no debounced change plugin — the parent
  * form reads React state on submit, so every update serializes immediately
@@ -123,7 +126,7 @@ export function CommentInklingEditor({
           inheritStyles
           isDragEnabled={false}
           isSnippetsEnabled={false}
-          markdownTransformers={INKLING_COMMENT_MARKDOWN_TRANSFORMERS}
+          markdownTransformers={MINIMAL_TRANSFORMERS}
           {...(placeholder !== undefined ? { placeholderText: placeholder } : {})}
         >
           <OnChangePlugin ignoreSelectionChange onChange={handleChange} />

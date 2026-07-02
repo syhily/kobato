@@ -56,24 +56,6 @@ export const INKLING_MARKDOWN_TRANSFORMERS: Transformer[] = [
   LINK,
 ]
 
-/**
- * Comment-editor variant: same inline formats, but NO `HEADING` — the
- * comment node set (`COMMENT_NODES`) does not register `HeadingNode`, so a
- * heading transformer would try to create a node type the editor can't
- * render. Quote and lists ARE available (they live in `PROSE_NODES`).
- */
-export const INKLING_COMMENT_MARKDOWN_TRANSFORMERS: Transformer[] = [
-  QUOTE,
-  UNORDERED_LIST,
-  ORDERED_LIST,
-  BOLD_ITALIC_STAR,
-  BOLD_STAR,
-  ITALIC_STAR,
-  INLINE_CODE,
-  STRIKETHROUGH,
-  LINK,
-]
-
 export function registerInklingMarkdownShortcuts(
   editor: LexicalEditor,
   transformers: Transformer[] = INKLING_MARKDOWN_TRANSFORMERS,
