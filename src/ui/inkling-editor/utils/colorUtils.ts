@@ -1,5 +1,8 @@
 import Color from 'color'
 
+// yufan.me: color v5 no longer exports an instance type under the same name.
+type ColorInstance = ReturnType<typeof Color>
+
 export { Color }
 
 /**
@@ -8,7 +11,7 @@ export { Color }
  *
  * NOTE: `.b()` returns the Lab b-channel, not RGB blue — this is intentional.
  */
-export function textColorForBackgroundColor(background: string | Color): Color {
+export function textColorForBackgroundColor(background: string | ColorInstance): ColorInstance {
   const backgroundColor = Color(background)
 
   const white = Color({ r: 255, g: 255, b: 255 })
