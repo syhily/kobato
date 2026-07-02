@@ -38,6 +38,9 @@ interface InklingComposableEditorProps {
   placeholderText?: string
   placeholderClassName?: string
   className?: string
+  // yufan.me: extra classes for the ContentEditable itself (the host app's
+  // comment editor styles the editable area like a textarea).
+  contentClassName?: string
   readOnly?: boolean
   isDragEnabled?: boolean
   inheritStyles?: boolean
@@ -60,6 +63,7 @@ const InklingComposableEditor = ({
   placeholderText,
   placeholderClassName = '',
   className = '',
+  contentClassName = '',
   readOnly = false,
   isDragEnabled = true,
   inheritStyles = false,
@@ -125,7 +129,10 @@ const InklingComposableEditor = ({
       <RichTextPlugin
         contentEditable={
           <div ref={onContentEditableRef} data-inkling="editor">
-            <ContentEditable className={useDefaultClasses ? 'inkling-prose' : ''} readOnly={readOnly} />
+            <ContentEditable
+              className={`${useDefaultClasses ? 'inkling-prose' : ''} ${contentClassName}`.trim()}
+              readOnly={readOnly}
+            />
           </div>
         }
         ErrorBoundary={InklingErrorBoundary}
