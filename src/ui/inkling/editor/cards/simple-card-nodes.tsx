@@ -8,8 +8,6 @@ import type {
 } from 'lexical'
 import type { JSX } from 'react'
 
-import { DecoratorNode } from 'lexical'
-
 import type {
   InklingCodeBlockNode,
   InklingHorizontalRuleNode,
@@ -20,6 +18,7 @@ import type {
 } from '@/shared/inkling/schema'
 
 import { unsafeCast } from '@/shared/utils/unsafe-cast'
+import { InklingDecoratorNode } from '@/ui/inkling-editor/nodes/base/InklingDecoratorNode'
 import { CodeCardComponent } from '@/ui/inkling/editor/cards/code-card-component'
 import { HorizontalRuleCardComponent } from '@/ui/inkling/editor/cards/horizontal-rule-card-component'
 import { ImageCardComponent } from '@/ui/inkling/editor/cards/image-card-component'
@@ -39,7 +38,7 @@ function parsePositiveInt(value: string | null): number | undefined {
   return Number.isFinite(n) && n > 0 ? n : undefined
 }
 
-export class ImageCardNode extends DecoratorNode<JSX.Element | null> {
+export class ImageCardNode extends InklingDecoratorNode {
   __src: string
   __alt: string
   __caption: string
@@ -180,6 +179,17 @@ export class ImageCardNode extends DecoratorNode<JSX.Element | null> {
     return true
   }
 
+  // Vendored card protocol — the behaviour plugin's selection sync only
+  // treats nodes passing `$isInklingCard` (instanceof + these methods) as
+  // cards; without them every selection is cleared on the next update.
+  isInklingCard(): true {
+    return true
+  }
+
+  hasDynamicData(): boolean {
+    return false
+  }
+
   decorate(_editor: LexicalEditor, _config: EditorConfig): JSX.Element | null {
     return <ImageCardComponent node={this} />
   }
@@ -304,7 +314,7 @@ export function $isImageCardNode(node: unknown): node is ImageCardNode {
 
 export type SerializedCodeCardNode = InklingCodeBlockNode
 
-export class CodeCardNode extends DecoratorNode<JSX.Element | null> {
+export class CodeCardNode extends InklingDecoratorNode {
   __code: string
   __language?: string
   __highlightedHtml?: string
@@ -364,6 +374,17 @@ export class CodeCardNode extends DecoratorNode<JSX.Element | null> {
   // See ImageCardNode.hasEditMode.
   hasEditMode(): boolean {
     return true
+  }
+
+  // Vendored card protocol — the behaviour plugin's selection sync only
+  // treats nodes passing `$isInklingCard` (instanceof + these methods) as
+  // cards; without them every selection is cleared on the next update.
+  isInklingCard(): true {
+    return true
+  }
+
+  hasDynamicData(): boolean {
+    return false
   }
 
   decorate(): JSX.Element | null {
@@ -439,7 +460,7 @@ export function $isCodeCardNode(node: unknown): node is CodeCardNode {
 
 export type SerializedMathCardNode = InklingMathBlockNode
 
-export class MathCardNode extends DecoratorNode<JSX.Element | null> {
+export class MathCardNode extends InklingDecoratorNode {
   __tex: string
   __mathml?: string
 
@@ -491,6 +512,17 @@ export class MathCardNode extends DecoratorNode<JSX.Element | null> {
   // See ImageCardNode.hasEditMode.
   hasEditMode(): boolean {
     return true
+  }
+
+  // Vendored card protocol — the behaviour plugin's selection sync only
+  // treats nodes passing `$isInklingCard` (instanceof + these methods) as
+  // cards; without them every selection is cleared on the next update.
+  isInklingCard(): true {
+    return true
+  }
+
+  hasDynamicData(): boolean {
+    return false
   }
 
   decorate(): JSX.Element | null {
@@ -546,7 +578,7 @@ export function $isMathCardNode(node: unknown): node is MathCardNode {
 
 export type SerializedMusicCardNode = InklingMusicCardNode
 
-export class MusicCardNode extends DecoratorNode<JSX.Element | null> {
+export class MusicCardNode extends InklingDecoratorNode {
   __playerId: string
   __auto: boolean
   __center: boolean
@@ -608,6 +640,17 @@ export class MusicCardNode extends DecoratorNode<JSX.Element | null> {
     return true
   }
 
+  // Vendored card protocol — the behaviour plugin's selection sync only
+  // treats nodes passing `$isInklingCard` (instanceof + these methods) as
+  // cards; without them every selection is cleared on the next update.
+  isInklingCard(): true {
+    return true
+  }
+
+  hasDynamicData(): boolean {
+    return false
+  }
+
   decorate(): JSX.Element | null {
     return <MusicCardComponent node={this} />
   }
@@ -660,7 +703,7 @@ export function $isMusicCardNode(node: unknown): node is MusicCardNode {
   return node instanceof MusicCardNode
 }
 
-export class HorizontalRuleCardNode extends DecoratorNode<JSX.Element | null> {
+export class HorizontalRuleCardNode extends InklingDecoratorNode {
   static getType(): string {
     return 'horizontal-rule'
   }
@@ -688,6 +731,17 @@ export class HorizontalRuleCardNode extends DecoratorNode<JSX.Element | null> {
 
   isKeyboardSelectable(): boolean {
     return true
+  }
+
+  // Vendored card protocol — the behaviour plugin's selection sync only
+  // treats nodes passing `$isInklingCard` (instanceof + these methods) as
+  // cards; without them every selection is cleared on the next update.
+  isInklingCard(): true {
+    return true
+  }
+
+  hasDynamicData(): boolean {
+    return false
   }
 
   decorate(): JSX.Element | null {
@@ -742,7 +796,7 @@ export function $isHorizontalRuleCardNode(node: unknown): node is HorizontalRule
 
 export type SerializedTableCardNode = InklingTableNode
 
-export class TableCardNode extends DecoratorNode<JSX.Element | null> {
+export class TableCardNode extends InklingDecoratorNode {
   __rows: InklingTableNode['rows']
 
   static getType(): string {
@@ -785,6 +839,17 @@ export class TableCardNode extends DecoratorNode<JSX.Element | null> {
   // See ImageCardNode.hasEditMode.
   hasEditMode(): boolean {
     return true
+  }
+
+  // Vendored card protocol — the behaviour plugin's selection sync only
+  // treats nodes passing `$isInklingCard` (instanceof + these methods) as
+  // cards; without them every selection is cleared on the next update.
+  isInklingCard(): true {
+    return true
+  }
+
+  hasDynamicData(): boolean {
+    return false
   }
 
   decorate(): JSX.Element | null {

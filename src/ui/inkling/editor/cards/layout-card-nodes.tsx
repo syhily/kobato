@@ -9,21 +9,21 @@ import type {
 import type { JSX } from 'react'
 
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
-import { DecoratorNode } from 'lexical'
 import { useContext } from 'react'
 
 import type { InklingNonRecursiveBlockNode, InklingSolutionNode, InklingTwoColumnNode } from '@/shared/inkling/schema'
 
 import { unsafeCast } from '@/shared/utils/unsafe-cast'
-import InklingCardWrapper from '@/ui/inkling-editor/components/InklingCardWrapper'
 import { ActionToolbar } from '@/ui/inkling-editor/components/ui/ActionToolbar'
 import { ToolbarMenu, ToolbarMenuItem } from '@/ui/inkling-editor/components/ui/ToolbarMenu'
 import CardContext from '@/ui/inkling-editor/context/CardContext'
+import { InklingDecoratorNode } from '@/ui/inkling-editor/nodes/base/InklingDecoratorNode'
 import { DELETE_CARD_COMMAND } from '@/ui/inkling-editor/plugins/InklingBehaviourPlugin'
+import { InklingCardChrome } from '@/ui/inkling/editor/cards/CardChrome'
 import { NestedInklingEditor } from '@/ui/inkling/editor/nested/NestedEditor'
 
 /* ── Solution & TwoColumn (skeleton — nested editors wired in P4) ── */
-export class SolutionCardNode extends DecoratorNode<JSX.Element | null> {
+export class SolutionCardNode extends InklingDecoratorNode {
   __children: InklingNonRecursiveBlockNode[]
 
   static getType(): string {
@@ -60,6 +60,17 @@ export class SolutionCardNode extends DecoratorNode<JSX.Element | null> {
   // See ImageCardNode.isKeyboardSelectable (simple-card-nodes.tsx).
   isKeyboardSelectable(): boolean {
     return true
+  }
+
+  // Vendored card protocol — the behaviour plugin's selection sync only
+  // treats nodes passing `$isInklingCard` (instanceof + these methods) as
+  // cards; without them every selection is cleared on the next update.
+  isInklingCard(): true {
+    return true
+  }
+
+  hasDynamicData(): boolean {
+    return false
   }
 
   decorate(_editor: LexicalEditor, _config: EditorConfig): JSX.Element {
@@ -110,7 +121,7 @@ export function $isSolutionCardNode(node: unknown): node is SolutionCardNode {
   return node instanceof SolutionCardNode
 }
 
-export class TwoColumnCardNode extends DecoratorNode<JSX.Element | null> {
+export class TwoColumnCardNode extends InklingDecoratorNode {
   __left: InklingNonRecursiveBlockNode[]
   __right: InklingNonRecursiveBlockNode[]
 
@@ -155,6 +166,17 @@ export class TwoColumnCardNode extends DecoratorNode<JSX.Element | null> {
   // See ImageCardNode.isKeyboardSelectable (simple-card-nodes.tsx).
   isKeyboardSelectable(): boolean {
     return true
+  }
+
+  // Vendored card protocol — the behaviour plugin's selection sync only
+  // treats nodes passing `$isInklingCard` (instanceof + these methods) as
+  // cards; without them every selection is cleared on the next update.
+  isInklingCard(): true {
+    return true
+  }
+
+  hasDynamicData(): boolean {
+    return false
   }
 
   decorate(_editor: LexicalEditor, _config: EditorConfig): JSX.Element {
@@ -206,7 +228,7 @@ function SolutionCardComponent({ node }: { node: SolutionCardNode }): JSX.Elemen
   const [editor] = useLexicalComposerContext()
   const { isSelected } = useContext(CardContext)
   return (
-    <InklingCardWrapper nodeKey={node.getKey()}>
+    <InklingCardChrome nodeKey={node.getKey()}>
       <ActionToolbar isVisible={isSelected}>
         <ToolbarMenu>
           <ToolbarMenuItem
@@ -228,7 +250,7 @@ function SolutionCardComponent({ node }: { node: SolutionCardNode }): JSX.Elemen
           className="inkling-solution-editor rounded border bg-muted/20 p-3"
         />
       </div>
-    </InklingCardWrapper>
+    </InklingCardChrome>
   )
 }
 
@@ -236,7 +258,7 @@ function TwoColumnCardComponent({ node }: { node: TwoColumnCardNode }): JSX.Elem
   const [editor] = useLexicalComposerContext()
   const { isSelected } = useContext(CardContext)
   return (
-    <InklingCardWrapper nodeKey={node.getKey()}>
+    <InklingCardChrome nodeKey={node.getKey()}>
       <ActionToolbar isVisible={isSelected}>
         <ToolbarMenu>
           <ToolbarMenuItem
@@ -269,6 +291,6 @@ function TwoColumnCardComponent({ node }: { node: TwoColumnCardNode }): JSX.Elem
           />
         </div>
       </div>
-    </InklingCardWrapper>
+    </InklingCardChrome>
   )
 }

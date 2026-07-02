@@ -1,4 +1,4 @@
-import type { LexicalEditor } from 'lexical'
+import type { EditorConfig, LexicalEditor } from 'lexical'
 
 /* c8 ignore start */
 import { DecoratorNode } from 'lexical'
@@ -10,7 +10,10 @@ export class InklingDecoratorNode extends DecoratorNode<unknown> {
     return null
   }
 
-  decorate(): unknown {
+  // yufan.me: match Lexical's own `decorate(editor, config)` signature so
+  // subclasses may accept the arguments (overriding with fewer params stays
+  // legal for the generated vendored nodes).
+  decorate(_editor: LexicalEditor, _config: EditorConfig): unknown {
     return null
   }
 }
