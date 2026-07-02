@@ -18,7 +18,6 @@ import NftCardIcon from '@/ui/inkling-editor/assets/icons/inkling-card-type-nft.
 import SnippetCardIcon from '@/ui/inkling-editor/assets/icons/inkling-card-type-snippet.svg?react'
 import ToggleCardIcon from '@/ui/inkling-editor/assets/icons/inkling-card-type-toggle.svg?react'
 import TwitterCardIcon from '@/ui/inkling-editor/assets/icons/inkling-card-type-twitter.svg?react'
-import UnsplashCardIcon from '@/ui/inkling-editor/assets/icons/inkling-card-type-unsplash.svg?react'
 import VideoCardIcon from '@/ui/inkling-editor/assets/icons/inkling-card-type-video.svg?react'
 import GalleryPlaceholderIcon from '@/ui/inkling-editor/assets/icons/inkling-gallery-placeholder.svg?react'
 import HeadingTwoIcon from '@/ui/inkling-editor/assets/icons/inkling-heading-2.svg?react'
@@ -190,7 +189,6 @@ const DesignSandbox = () => {
         <CardMenuItem desc="Add a bold section header" Icon={HeaderCardIcon} label="Header" />
         <CardMenuSection label="Embed" />
         <CardMenuItem desc="/twitter [tweet url]" Icon={TwitterCardIcon} label="Twitter" />
-        <CardMenuItem desc="/unsplash [search-term or url]" Icon={UnsplashCardIcon} label="Unsplash" />
         <CardMenuItem desc="/nft [opensea url]" Icon={NftCardIcon} label="NFT" />
         <CardMenuSection label="Snippets" />
         <CardSnippetItem Icon={SnippetCardIcon} label="A random snippet" />

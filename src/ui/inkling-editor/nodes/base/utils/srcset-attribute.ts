@@ -2,7 +2,6 @@ import type { ExportDOMOptions } from '@/ui/inkling-editor/nodes/base/export-dom
 
 import { getAvailableImageWidths } from '@/ui/inkling-editor/nodes/base/utils/get-available-image-widths'
 import { isLocalContentImage } from '@/ui/inkling-editor/nodes/base/utils/is-local-content-image'
-import { isUnsplashImage } from '@/ui/inkling-editor/nodes/base/utils/is-unsplash-image'
 
 // default content sizes: [600, 1000, 1600, 2400]
 
@@ -63,17 +62,6 @@ export const getSrcsetAttribute = function ({
   }
 
   // apply srcset if this is an Unsplash image
-  if (isUnsplashImage(src)) {
-    const unsplashUrl = new URL(src)
-    const srcs: string[] = []
-
-    srcsetWidths.forEach((srcsetWidth) => {
-      unsplashUrl.searchParams.set('w', String(srcsetWidth))
-      srcs.push(`${unsplashUrl.href} ${srcsetWidth}w`)
-    })
-
-    return srcs.join(', ')
-  }
 }
 
 export const setSrcsetAttribute = function (

@@ -4,7 +4,6 @@ import { addCreateDocumentOption } from '@/ui/inkling-editor/nodes/base/utils/ad
 import { getAvailableImageWidths } from '@/ui/inkling-editor/nodes/base/utils/get-available-image-widths'
 import { getResizedImageDimensions } from '@/ui/inkling-editor/nodes/base/utils/get-resized-image-dimensions'
 import { isLocalContentImage } from '@/ui/inkling-editor/nodes/base/utils/is-local-content-image'
-import { isUnsplashImage } from '@/ui/inkling-editor/nodes/base/utils/is-unsplash-image'
 import { renderEmptyContainer } from '@/ui/inkling-editor/nodes/base/utils/render-empty-container'
 import { setSrcsetAttribute } from '@/ui/inkling-editor/nodes/base/utils/srcset-attribute'
 
@@ -177,12 +176,6 @@ export function renderGalleryNode(node: GalleryNodeData, options: GalleryRenderO
               img.setAttribute('src', `${imagesPath}/size/w${srcWidth}/${filename}`)
             }
           }
-        }
-
-        if (isUnsplashImage(image.src)) {
-          const unsplashUrl = new URL(image.src)
-          unsplashUrl.searchParams.set('w', '1200')
-          img.setAttribute('src', unsplashUrl.href)
         }
       }
 

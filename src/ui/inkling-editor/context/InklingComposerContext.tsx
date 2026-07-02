@@ -37,7 +37,6 @@ export interface CardConfig {
   pinturaConfig?: object
   renderLabels?: boolean
   fetchLabels?: () => Promise<unknown[]>
-  unsplash?: object
   image?: { allowedWidths?: string[] }
   klipy?: { apiKey?: string; contentFilter?: string }
   tenor?: { googleApiKey?: string; contentFilter?: string }
