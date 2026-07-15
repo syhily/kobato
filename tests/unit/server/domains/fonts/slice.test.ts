@@ -10,12 +10,12 @@ import { sliceFont } from '@/server/domains/fonts/slice'
 // (from GitHub release 7.6.8), the protobuf round-trip breaks and this test
 // fails with either a thrown error or a malformed result.
 //
-// Uses the real OPPO Sans TTF shipped under `data/fonts/` for canvas OG
-// rendering — a full CJK font exercises the slicer end-to-end. The test is
-// marked `it.serial` because the WASM core is single-threaded and shares one
-// in-process virtual filesystem across invocations.
+// Uses the Barlow TTF committed under `tests/fixtures/fonts/` (SIL OFL 1.1) —
+// a small Latin font keeps the suite self-contained: no dependency on local,
+// gitignored files under `data/fonts/`, so the test runs identically on any
+// machine including CI.
 
-const TTF_PATH = resolve(process.cwd(), 'data/fonts/opposans.ttf')
+const TTF_PATH = resolve(__dirname, '../../../../fixtures/fonts/Barlow-Regular.ttf')
 
 describe('sliceFont', () => {
   // The wasm binary is loaded via Vite's native `?init` import and
@@ -26,14 +26,14 @@ describe('sliceFont', () => {
     const source = await readFile(TTF_PATH)
     expect(source.length).toBeGreaterThan(0)
 
-    const result = await sliceFont(source, { fontFamily: 'OPPO Sans' })
+    const result = await sliceFont(source, { fontFamily: 'Barlow' })
 
     // result.css must contain at least one @font-face rule referencing a
     // woff2 chunk — the whole point of the pipeline.
     const cssText = Buffer.from(result.css).toString('utf8')
     expect(cssText).toContain('@font-face')
     expect(cssText).toMatch(/\.woff2['")]/)
-    expect(cssText).toContain('OPPO Sans')
+    expect(cssText).toContain('Barlow')
 
     // At least one woff2 chunk, each non-empty. cn-font-split's woff2s carry
     // the `wOF` prefix (bytes 77 4F 46) — the canonical woff2 magic is
@@ -53,5 +53,5 @@ describe('sliceFont', () => {
     // totalBytes is the sum of css + every chunk.
     const expectedTotal = result.css.length + result.chunks.reduce((n, c) => n + c.data.length, 0)
     expect(result.totalBytes).toBe(expectedTotal)
-  }, 60_000) // CJK slicing can take ~15–20s on the single-threaded WASM path.
+  }, 60_000) // Slicing runs on the single-threaded WASM path; keep headroom for slow CI.
 })
