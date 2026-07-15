@@ -20,7 +20,6 @@ import {
 import { getLogger } from '@/server/infra/logger'
 import { invalidateSearchCache } from '@/server/infra/search/search'
 import { deriveSlug } from '@/server/infra/slug'
-import { portableTextBodySchema } from '@/shared/pt/schema'
 import { collectHeadings, collectImageStoragePaths } from '@/shared/pt/utils'
 
 const log = getLogger('posts.service')
@@ -123,20 +122,15 @@ async function savePostBodyInternal(
     await invalidateSearchCache().catch((err: unknown) => {
       log.warn('invalidate search cache failed', { postId: input.postId, error: err })
     })
-    const publishedRevision = await findContentById(db, result.row.id)
-    if (publishedRevision !== null) {
-      const postMeta = await findPostMetaById(db, input.postId)
-      if (postMeta !== null) {
-        const body = portableTextBodySchema.safeParse(publishedRevision.body)
-        if (body.success) {
-          try {
-            await indexPost(db, postMeta.id, postMeta.title, postMeta.summary, body.data)
-          } catch (err: unknown) {
-            log.warn('index post failed', { postId: postMeta.id, error: err })
-            warnings.push('搜索索引更新失败，该文章可能不会出现在搜索结果中。')
-          }
-        }
-      }
+    // Index the canonical body already in scope rather than re-reading the
+    // row from the DB: `body` is freshly canonicalized + prerendered, so it
+    // matches what `publishLatestRevision` persisted — a re-read would only
+    // cost a round-trip and reintroduce a validation gap (raw JSONB).
+    try {
+      await indexPost(db, meta.id, meta.title, meta.summary, body)
+    } catch (err: unknown) {
+      log.warn('index post failed', { postId: meta.id, error: err })
+      warnings.push('搜索索引更新失败，该文章可能不会出现在搜索结果中。')
     }
   }
   return projectSaveResult(result, warnings.length > 0 ? warnings.join(' ') : undefined)
