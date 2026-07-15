@@ -6,6 +6,7 @@ import type { AdminImageDto } from '@/shared/types/images'
 import { transitions } from '@/client/lib/motion'
 import { getImageUrl } from '@/shared/types/images'
 import { cn } from '@/ui/lib/cn'
+import { skeletonKeys } from '@/ui/lib/skeleton-keys'
 import { useDevicePixelRatio } from '@/ui/lib/use-device-pixel-ratio'
 import { useElementWidth } from '@/ui/lib/use-element-width'
 
@@ -187,7 +188,7 @@ export function JustifiedImageGrid({
                   whileTap={prefersReducedMotion ? undefined : { scale: 0.98 }}
                   className={cn(
                     'group relative block overflow-hidden rounded-xl border bg-muted',
-                    'focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none',
+                    'focus-visible:shadow-focus focus-visible:outline-none',
                   )}
                   style={{ width: item.width, height: item.height }}
                   aria-label={`查看图片 ${item.image.storagePath}`}
@@ -226,11 +227,10 @@ export function JustifiedImageGridSkeleton({ targetRowHeight = 200, gap = 12, cl
   const prefersReducedMotion = useReducedMotion()
   return (
     <div className={cn('flex flex-col', className)} style={{ gap }}>
-      {Array.from({ length: 4 }).map((_, rowIndex) => (
-        // oxlint-disable-next-line react/no-array-index-key
-        <div key={rowIndex} className="flex" style={{ gap, height: targetRowHeight }}>
+      {skeletonKeys(4).map((rowKey, rowIndex) => (
+        <div key={rowKey} className="flex" style={{ gap, height: targetRowHeight }}>
           {skeletonWidths(rowIndex).map((span, itemIndex) => {
-            const key = `${rowIndex}-${itemIndex}`
+            const key = `${rowKey}-item-${itemIndex}`
             const style = { flex: span }
             return prefersReducedMotion ? (
               <div key={key} className="rounded-xl bg-muted" style={style} />

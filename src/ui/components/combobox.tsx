@@ -26,7 +26,7 @@ function ComboboxTrigger({
       data-slot="combobox-trigger"
       data-size={size}
       className={cn(
-        "flex w-fit items-center justify-between gap-2 rounded-md border border-line bg-transparent px-3 py-2 text-sm whitespace-nowrap shadow-xs transition-[color,box-shadow] outline-none focus-visible:border-ring focus-visible:ring-(--ring-width) focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 data-[popup-open]:border-ring data-[popup-open]:ring-(--ring-width) data-[popup-open]:ring-ring/50 data-[size=default]:h-9 data-[size=sm]:h-8 *:data-[slot=combobox-value]:line-clamp-1 *:data-[slot=combobox-value]:flex *:data-[slot=combobox-value]:items-center *:data-[slot=combobox-value]:gap-2 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='text-'])]:text-muted-foreground [&_svg:not([class*=size-])]:size-4",
+        "flex w-fit items-center justify-between gap-2 rounded-md border border-line bg-transparent px-3 py-2 text-sm whitespace-nowrap shadow-xs transition-[color,box-shadow] outline-none focus-visible:border-ring focus-visible:shadow-focus disabled:cursor-not-allowed disabled:opacity-50 data-[popup-open]:border-ring data-[popup-open]:shadow-focus data-[size=default]:h-9 data-[size=sm]:h-8 *:data-[slot=combobox-value]:line-clamp-1 *:data-[slot=combobox-value]:flex *:data-[slot=combobox-value]:items-center *:data-[slot=combobox-value]:gap-2 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='text-'])]:text-muted-foreground [&_svg:not([class*=size-])]:size-4",
         className,
       )}
       {...props}
@@ -62,7 +62,7 @@ function ComboboxContent<Item>({
         <BaseCombobox.Popup
           data-slot="combobox-content"
           className={cn(
-            'relative z-(--z-modal) flex max-h-[var(--available-height)] min-w-[var(--anchor-width)] origin-[var(--transform-origin)] flex-col overflow-hidden rounded-md border bg-popover text-popover-foreground shadow-md transition-all duration-[250ms] ease-[cubic-bezier(0.16,1,0.3,1)] data-[ending-style]:scale-95 data-[ending-style]:opacity-0 data-[starting-style]:scale-95 data-[starting-style]:opacity-0',
+            'relative z-(--z-modal) flex max-h-[var(--available-height)] min-w-[var(--anchor-width)] origin-[var(--transform-origin)] flex-col overflow-hidden rounded-md border bg-popover text-popover-foreground shadow-popover transition-all duration-[250ms] ease-[cubic-bezier(0.16,1,0.3,1)] data-[ending-style]:scale-95 data-[ending-style]:opacity-0 data-[starting-style]:scale-95 data-[starting-style]:opacity-0',
             className,
           )}
           {...props}

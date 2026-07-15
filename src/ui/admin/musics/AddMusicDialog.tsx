@@ -21,6 +21,7 @@ import { InputGroup, InputGroupAddon, InputGroupInput } from '@/ui/components/in
 import { Label } from '@/ui/components/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/components/select'
 import { Skeleton } from '@/ui/components/skeleton'
+import { skeletonKeys } from '@/ui/lib/skeleton-keys'
 
 const SOURCE_OPTIONS: { value: string; label: string }[] = [
   { value: 'netease', label: '网易云' },
@@ -317,10 +318,7 @@ export function AddMusicDialog({ open, onClose, onAdded }: AddMusicDialogProps) 
 
           <div className="flex flex-col gap-2">
             {(isSearching || isLoadingMore) && results.length === 0 ? (
-              Array.from({ length: 3 }).map((_, index) => (
-                // oxlint-disable-next-line react/no-array-index-key
-                <Skeleton key={index} className="h-16 w-full rounded-xl" />
-              ))
+              skeletonKeys(3).map((key) => <Skeleton key={key} className="h-16 w-full rounded-xl" />)
             ) : results.length === 0 ? (
               <p className="text-sm text-muted-foreground">输入关键词后点击搜索。</p>
             ) : (

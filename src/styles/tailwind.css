@@ -24,8 +24,9 @@
 
 /* Project semantic tokens */
 :root {
-  /* Brand */
-  --brand: #008c95;
+  /* Brand — teal hue 184. #007a82 darkens from #008c95 (L29→L25) so
+     inline links and brand text clear WCAG AA on white (4.05→5.11:1). */
+  --brand: #007a82;
   --brand-dark: #151b2b;
   --brand-darker: #20283b;
 
@@ -33,29 +34,40 @@
   --btn-hover-bg: var(--brand-dark);
   --btn-hover-fg: #ffffff;
 
+  /* Destructive button hover — steps the error fill darker in the same
+     red family (Geist scale-stepping), instead of jumping to brand-dark
+     which erased the error affordance on hover. */
+  --btn-destructive-hover-bg: color-mix(in oklab, var(--destructive) 82%, black 18%);
+  --btn-destructive-hover-fg: #ffffff;
+
   /* Ink */
   --ink-1: #151b2b;
   --ink-2: #1f2538;
   --ink-3: #404b69;
-  --ink-4: #8a92a9;
+  /* ink-4 drives muted-foreground / placeholder / timestamps. Darkened
+     from #8a92a9 (3.10:1) to #646c82 (5.24:1) for WCAG AA on white. */
+  --ink-4: #646c82;
   --ink-on-dark: #e8e9ea;
   --ink-5: #eaecf3;
 
-  /* Surfaces */
+  /* Surfaces — neutral hue unified to 220° (indigo-gray) with saturation
+     decreasing as lightness rises, for a clean paper feel without the
+     previous blue-cast drift (was 216-240°, sat 6-52%). */
   --canvas: #ffffff;
-  --surface: #f6f6f7;
-  --surface-dim: #ededf1;
+  --surface: #f5f6f8;
+  --surface-dim: #edeef1;
   --surface-warn: #ffe9d5;
-  --surface-body: #fbfbfd;
+  --surface-body: #fafbfc;
   --surface-secondary: #283149;
-  --surface-soft: #eceef1;
+  --surface-soft: #edeef1;
 
-  /* Aside panel */
-  --aside-bg: #283149;
+  /* Aside panel — same fill as surface-secondary in light; diverges in dark. */
+  --aside-bg: var(--surface-secondary);
 
-  /* Lines */
-  --line: #eff3fa;
-  --line-muted: #d4ddec;
+  /* Lines — same hue 220° discipline; low saturation so borders read as
+     gray, not blue. */
+  --line: #f0f2f5;
+  --line-muted: #d6d9e0;
   --line-widget: #d2e3e4;
 
   /* Status */
@@ -67,11 +79,21 @@
   --like-bg-hover: var(--brand-darker);
 
   /* Radius */
-  --radius: 0.3125rem;
+  --radius: 0.375rem;
   --radius-xs: 3px;
   --radius-sm: 4px;
   --radius-md: 6px;
   --radius-lg: 10px;
+
+  /* Geist gray-alpha overlay — translucent steps that layer over any
+     surface for borders, dividers, hover washes (design.md:430).
+     Unlocks cross-theme borders/hover the solid --line can't express. */
+  --ga-100: #0000000d;
+  --ga-200: #00000015;
+  --ga-300: #0000001a;
+  --ga-400: #00000014;
+  --ga-500: #00000036;
+  --ga-600: #0000003d;
 
   /* Misc primitives */
   --editor-accent: rgb(59 130 246);
@@ -113,6 +135,15 @@
   --shadow-toc-toggle-value: 0 0.125rem 0.3125rem rgb(0 0 0 / 11.7%);
   --popup-close-hover: #f5f5f5;
 
+  /* Geist elevation — three semantic tiers (design.md:449-455).
+     `--shadow-card-value` above is kept at its existing soft value so
+     the legacy `shadow-card` utility (used across many components) keeps
+     its current look; the tiers below are the new vocabulary for new
+     code and a gradual migration. */
+  --shadow-raised: 0 2px 2px rgb(0 0 0 / 4%);
+  --shadow-popover: 0 1px 1px rgb(0 0 0 / 2%), 0 4px 8px -4px rgb(0 0 0 / 4%), 0 16px 24px -8px rgb(0 0 0 / 6%);
+  --shadow-modal: 0 1px 1px rgb(0 0 0 / 2%), 0 8px 16px -4px rgb(0 0 0 / 4%), 0 24px 32px -8px rgb(0 0 0 / 6%);
+
   /* Shadcn semantic slots */
   --background: var(--surface-body);
   --foreground: var(--ink-1);
@@ -144,6 +175,14 @@
   --border: var(--border-soft);
   --input: var(--border-strong);
   --ring: var(--brand);
+
+  /* Geist two-layer focus ring — a 2px gap in the surface color, then a
+     2px brand ring (design.md:475). `--ring-gap-color` is the surface fill
+     so the ring reads as floating; `--ring-color` is the brand stroke and
+     intentionally tracks --ring (the shadcn ring slot) — both equal brand.
+     Don't diverge them without also updating --shadow-focus in the bridge. */
+  --ring-gap-color: var(--canvas);
+  --ring-color: var(--ring);
 
   --sidebar: var(--surface);
   --sidebar-foreground: var(--ink-1);
@@ -190,6 +229,10 @@
   --chip-hover-bg: var(--primary);
   --chip-hover-fg: var(--primary-foreground);
 
+  /* Chart palette — two data series for the analytics dashboard. */
+  --chart-1: #6366f1;
+  --chart-2: #14b8a6;
+
   /* Button light variant tokens light */
   --btn-light-border: var(--surface-soft);
   --btn-light-bg: var(--surface-soft);
@@ -210,7 +253,7 @@
   --ink-5: #2a3142;
 
   /* Brand */
-  --brand: #1ab2bd;
+  --brand: #22c7d4;
   --brand-dark: #334155;
   --brand-darker: #475569;
 
@@ -222,6 +265,8 @@
   --btn-hover-bg: color-mix(in oklab, var(--brand) 80%, black 20%);
   --btn-hover-fg: #ffffff;
   --btn-primary-bg: color-mix(in oklab, var(--brand) 75%, black 25%);
+  --btn-destructive-hover-bg: color-mix(in oklab, var(--destructive) 78%, black 22%);
+  --btn-destructive-hover-fg: #ffffff;
 
   /* Dark surface lightness ladder L 7 to L 44 see cn.ts */
   --canvas: #26314d;
@@ -234,6 +279,19 @@
   --line: #475672;
   --line-muted: #374566;
   --line-widget: #5b6b88;
+
+  /* Focus ring — gap matches the page surface so the ring floats
+     (design.dark.md:475); stroke is the recalibrated dark brand. */
+  --ring-gap-color: var(--surface-body);
+  --ring-color: var(--ring);
+
+  /* Geist gray-alpha overlay (design.dark.md frontmatter) */
+  --ga-100: #ffffff12;
+  --ga-200: #ffffff17;
+  --ga-300: #ffffff21;
+  --ga-400: #ffffff24;
+  --ga-500: #ffffff3d;
+  --ga-600: #ffffff82;
 
   --editor-accent: rgb(59 130 246);
 
@@ -253,6 +311,10 @@
   --shadow-card-value: 0 0 0 1px rgb(255 255 255 / 7%), 0 6px 20px 0 rgb(0 0 0 / 38%);
   --shadow-tooltip-value: 0 8px 28px rgb(0 0 0 / 40%);
   --shadow-toc-toggle-value: 0 0.125rem 0.3125rem rgb(0 0 0 / 40%);
+
+  /* Geist elevation — dark tiers (design.dark.md:449-455). Only raised
+     differs from light; popover/modal are identical so inherited. */
+  --shadow-raised: 0 1px 2px rgb(0 0 0 / 16%);
 
   /* Popup close hover */
   --popup-close-hover: #2a3142;
@@ -306,6 +368,10 @@
   --chip-hover-bg: var(--primary);
   --chip-hover-fg: var(--primary-foreground);
 
+  /* Chart palette — lifted for dark surfaces. */
+  --chart-1: #818cf8;
+  --chart-2: #2dd4bf;
+
   /* Button light variant tokens dark */
   --btn-light-border: var(--line);
   --btn-light-bg: var(--line-muted);
@@ -354,7 +420,7 @@ pre.shiki span {
     --ink-4: #9ca3b8;
     --ink-5: #2a3142;
 
-    --brand: #1ab2bd;
+    --brand: #22c7d4;
     --brand-dark: #334155;
     --brand-darker: #475569;
 
@@ -364,6 +430,8 @@ pre.shiki span {
     --btn-hover-bg: color-mix(in oklab, var(--brand) 80%, black 20%);
     --btn-hover-fg: #ffffff;
     --btn-primary-bg: color-mix(in oklab, var(--brand) 75%, black 25%);
+    --btn-destructive-hover-bg: color-mix(in oklab, var(--destructive) 78%, black 22%);
+    --btn-destructive-hover-fg: #ffffff;
 
     --canvas: #26314d;
     --surface: #26314d;
@@ -375,6 +443,19 @@ pre.shiki span {
     --line: #475672;
     --line-muted: #374566;
     --line-widget: #5b6b88;
+
+    /* Focus ring — gap matches the page surface so the ring floats
+       (design.dark.md:475); stroke is the recalibrated dark brand. */
+    --ring-gap-color: var(--surface-body);
+    --ring-color: var(--ring);
+
+    /* Geist gray-alpha overlay (design.dark.md frontmatter) */
+    --ga-100: #ffffff12;
+    --ga-200: #ffffff17;
+    --ga-300: #ffffff21;
+    --ga-400: #ffffff24;
+    --ga-500: #ffffff3d;
+    --ga-600: #ffffff82;
 
     --editor-accent: rgb(59 130 246);
 
@@ -390,6 +471,10 @@ pre.shiki span {
     --shadow-card-value: 0 0 0 1px rgb(255 255 255 / 7%), 0 6px 20px 0 rgb(0 0 0 / 38%);
     --shadow-tooltip-value: 0 8px 28px rgb(0 0 0 / 40%);
     --shadow-toc-toggle-value: 0 0.125rem 0.3125rem rgb(0 0 0 / 40%);
+
+    /* Geist elevation — dark tiers (design.dark.md:449-455). Only raised
+       differs from light; popover/modal are identical so inherited. */
+    --shadow-raised: 0 1px 2px rgb(0 0 0 / 16%);
 
     --popup-close-hover: #2a3142;
 
@@ -437,6 +522,10 @@ pre.shiki span {
     --chip-hover-bg: var(--primary);
     --chip-hover-fg: var(--primary-foreground);
 
+    /* Chart palette — lifted for dark surfaces. */
+    --chart-1: #818cf8;
+    --chart-2: #2dd4bf;
+
     --btn-light-border: var(--line);
     --btn-light-bg: var(--line-muted);
     --btn-light-fg: var(--ink-1);
@@ -462,6 +551,26 @@ pre.shiki span {
   }
   :root:not(.light, .dark) pre.shiki span {
     color: var(--shiki-dark) !important;
+  }
+}
+
+/* Display P3 wide-gamut overrides (design.md frontmatter `*-p3` tokens).
+   On P3-capable screens (MacBook, iPhone, modern Android) these express
+   more chroma than the sRGB hex fallbacks above. Only accent colors
+   benefit — neutrals are gray, so no override needed. Chroma is boosted
+   ~15% over the sRGB oklch equivalent, hue/lightness held constant. */
+@supports (color: oklch(0% 0 0)) {
+  @media (color-gamut: p3) {
+    :root {
+      --brand: oklch(52.8% 0.1034 202.8);
+      --alert: oklch(62.1% 0.283 17.4);
+      --warn: oklch(73.9% 0.1991 48.2);
+      --like-active: oklch(66.2% 0.2588 20.9);
+    }
+    .dark {
+      --brand: oklch(75.8% 0.1427 203.5);
+      --alert: oklch(67.5% 0.2483 15.2);
+    }
   }
 }
 
@@ -568,6 +677,14 @@ pre.shiki span {
   --color-ink-on-dark: var(--ink-on-dark);
   --color-ink-5: var(--ink-5);
 
+  /* Geist gray-alpha overlay — translucent borders/dividers/hover (P2) */
+  --color-ga-100: var(--ga-100);
+  --color-ga-200: var(--ga-200);
+  --color-ga-300: var(--ga-300);
+  --color-ga-400: var(--ga-400);
+  --color-ga-500: var(--ga-500);
+  --color-ga-600: var(--ga-600);
+
   --color-like-active: var(--like-active);
   --color-like-bg: var(--like-bg);
   --color-like-bg-hover: var(--like-bg-hover);
@@ -585,6 +702,26 @@ pre.shiki span {
   --text-badge: 0.625rem;
   --text-empty-state-hero: 6rem;
   --text-btn-lg: clamp(0.875rem, 0.8rem + 0.2vw, 0.9375rem);
+
+  /* Geist heading ladder (P3) — five steps the blog actually uses, not
+     the full Geist 10-step scale. Negative tracking tightens with size.
+     Pair with --leading-h-* (omitted from cn.ts) and Tailwind-native
+     tracking-h-* utilities. */
+  --text-h-display: 2.5rem;
+  --leading-h-display: 1.2;
+  --tracking-h-display: -0.04em;
+  --text-h-xl: 2rem;
+  --leading-h-xl: 1.25;
+  --tracking-h-xl: -0.032em;
+  --text-h-lg: 1.5rem;
+  --leading-h-lg: 1.33;
+  --tracking-h-lg: -0.024em;
+  --text-h-md: 1.25rem;
+  --leading-h-md: 1.3;
+  --tracking-h-md: -0.01em;
+  --text-h-sm: 1rem;
+  --leading-h-sm: 1.5;
+  --tracking-h-sm: -0.008em;
 
   --leading-badge: 1.2;
   --spacing-sidebar-item: var(--size-sidebar-item);
@@ -674,12 +811,26 @@ pre.shiki span {
   /* Body line height */
   --leading-body: 1.4;
 
+  /* Copy line height — taller, for multi-line user-generated body text
+     (comments, descriptions). Dedupes the former leading-[1.85] literals. */
+  --leading-copy: 1.85;
+
   /* Dialog popup max width */
   --spacing-dialog-popup-md: calc(var(--container-popup-md));
 
   --shadow-card: var(--shadow-card-value);
   --shadow-tooltip: var(--shadow-tooltip-value);
   --shadow-toc-toggle: var(--shadow-toc-toggle-value);
+
+  /* Two-layer focus ring (P1) — 2px surface gap + 2px brand stroke.
+     Kept as a single shadow token so `focus-visible:shadow-focus` emits
+     both layers; pair with `outline-none`. */
+  --shadow-focus: 0 0 0 2px var(--ring-gap-color), 0 0 0 4px var(--ring-color);
+
+  /* Three semantic elevation tiers (P5) */
+  --shadow-raised: var(--shadow-raised);
+  --shadow-popover: var(--shadow-popover);
+  --shadow-modal: var(--shadow-modal);
 
   --animate-comments-shimmer: comments-shimmer 1.4s linear infinite;
 
@@ -729,6 +880,9 @@ pre.shiki span {
   --color-chip-hover-bg: var(--chip-hover-bg);
   --color-chip-hover-fg: var(--chip-hover-fg);
 
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+
   --color-btn-light-border: var(--btn-light-border);
   --color-btn-light-bg: var(--btn-light-bg);
   --color-btn-light-fg: var(--btn-light-fg);
@@ -740,6 +894,8 @@ pre.shiki span {
   --color-btn-primary-bg: var(--btn-primary-bg);
   --color-btn-hover-bg: var(--btn-hover-bg);
   --color-btn-hover-fg: var(--btn-hover-fg);
+  --color-btn-destructive-hover-bg: var(--btn-destructive-hover-bg);
+  --color-btn-destructive-hover-fg: var(--btn-destructive-hover-fg);
   --color-editor-accent: var(--editor-accent);
 
   @keyframes comments-shimmer {
@@ -789,32 +945,26 @@ pre.shiki span {
   }
 }
 
+/*
+ * Body font chain.
+ *
+ * Defined as a CSS variable so a configured globalFamily setting
+ * (blogSettings.fonts.globalFamily) can prepend a custom family at
+ * runtime via root.tsx. When no globalFamily is configured, the variable
+ * falls back to the default OPPO Sans CJK sans-serif chain.
+ */
+:root {
+  --font-body:
+    'OPPO Sans 4.0', 'OPPO Sans', OPPOSans, 'PingFang SC', 'Lantinghei SC', 'Microsoft YaHei', 'Source Han Sans CN',
+    -apple-system, BlinkMacSystemFont, 'HanHei SC', 'Helvetica Neue', 'Open Sans', Arial, 'Hiragino Sans GB', STHeiti,
+    'WenQuanYi Micro Hei', SimSun, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol';
+}
+
 /* Document chrome body font cursors */
 html,
 body {
   overscroll-behavior: none;
-  font-family:
-    'OPPO Sans 4.0',
-    'OPPO Sans',
-    OPPOSans,
-    'PingFang SC',
-    'Lantinghei SC',
-    'Microsoft YaHei',
-    'Source Han Sans CN',
-    -apple-system,
-    BlinkMacSystemFont,
-    'HanHei SC',
-    'Helvetica Neue',
-    'Open Sans',
-    Arial,
-    'Hiragino Sans GB',
-    STHeiti,
-    'WenQuanYi Micro Hei',
-    SimSun,
-    sans-serif,
-    'Apple Color Emoji',
-    'Segoe UI Emoji',
-    'Segoe UI Symbol';
+  font-family: var(--font-body);
   font-size: 0.9375rem;
   background-color: var(--surface-body);
   color: var(--ink-2);

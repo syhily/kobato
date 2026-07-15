@@ -47,7 +47,7 @@ export function UserDetailView({ userId, navigate, passkeyEnabled }: UserDetailV
   const [email, setEmail] = useState('')
   const [link, setLink] = useState('')
   const [badgeName, setBadgeName] = useState('')
-  const [badgeColor, setBadgeColor] = useState('#008c95')
+  const [badgeColor, setBadgeColor] = useState('#007a82')
   const [useTextOverride, setUseTextOverride] = useState(false)
   const [badgeTextColor, setBadgeTextColor] = useState(DEFAULT_BADGE_TEXT_COLOR)
   const [roleDraft, setRoleDraft] = useState<Role | ''>('')
@@ -73,7 +73,7 @@ export function UserDetailView({ userId, navigate, passkeyEnabled }: UserDetailV
       setEmail(user.email)
       setLink(user.link ?? '')
       setBadgeName(user.badgeName ?? '')
-      setBadgeColor(user.badgeColor ?? '#008c95')
+      setBadgeColor(user.badgeColor ?? '#007a82')
       setUseTextOverride(user.badgeTextColor !== null)
       setBadgeTextColor(user.badgeTextColor ?? DEFAULT_BADGE_TEXT_COLOR)
     }

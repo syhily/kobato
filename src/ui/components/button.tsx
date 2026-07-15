@@ -7,18 +7,17 @@ import { cva, type VariantProps } from '@/ui/lib/cva'
 
 // Button variants matching the public site's `.btn` rules.
 const buttonVariants = cva(
-  'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*=size-])]:size-4 [&_[data-icon]]:size-4 [&_[data-icon=sm]]:size-3 [&_[data-icon=lg]]:size-5 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-(--ring-width) aria-invalid:ring-destructive/20 aria-invalid:border-destructive',
+  'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*=size-])]:size-4 [&_[data-icon]]:size-4 [&_[data-icon=sm]]:size-3 [&_[data-icon=lg]]:size-5 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:shadow-focus aria-invalid:border-destructive',
   {
     variants: {
       variant: {
         default: 'bg-btn-primary-bg text-primary-foreground hover:bg-btn-hover-bg hover:text-btn-hover-fg',
         destructive:
-          'bg-destructive text-destructive-foreground hover:bg-btn-hover-bg hover:text-btn-hover-fg focus-visible:ring-destructive/20',
-        'destructive-soft':
-          'bg-destructive/10 text-destructive hover:bg-destructive hover:text-destructive-foreground focus-visible:ring-destructive/20',
-        outline: 'border bg-background hover:bg-accent hover:text-accent-foreground',
-        secondary: 'bg-secondary text-secondary-foreground hover:bg-secondary/80',
-        ghost: 'hover:bg-accent hover:text-accent-foreground',
+          'bg-destructive text-destructive-foreground hover:bg-btn-destructive-hover-bg hover:text-btn-destructive-hover-fg',
+        'destructive-soft': 'bg-destructive/10 text-destructive hover:bg-destructive hover:text-destructive-foreground',
+        outline: 'border border-ga-300 bg-background hover:bg-ga-100 hover:text-accent-foreground',
+        secondary: 'bg-secondary text-secondary-foreground hover:bg-ga-100',
+        ghost: 'hover:bg-ga-100 hover:text-accent-foreground',
         link: 'text-primary underline-offset-4 hover:underline',
         light: 'border border-btn-light-border bg-btn-light-bg text-btn-light-fg hover:text-btn-light-hover-fg',
         dark: 'border border-brand-dark bg-brand-dark text-ink-on-dark hover:bg-brand-darker hover:border-brand-darker hover:text-white',

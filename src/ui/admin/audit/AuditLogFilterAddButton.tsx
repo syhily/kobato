@@ -77,7 +77,7 @@ export function AuditLogFilterAddButton({ filters, onAddFilter, actors }: Filter
       <PopoverTrigger
         className={cn(
           'inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-md border border-border px-3 text-sm transition hover:bg-accent',
-          'focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none',
+          'focus-visible:shadow-focus focus-visible:outline-none',
         )}
       >
         {hasFilters ? <FunnelPlusIcon className="size-4" /> : <FunnelIcon className="size-4" />}

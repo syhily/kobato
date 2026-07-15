@@ -261,7 +261,7 @@ export function MusicDetailView() {
                   onChange={(e) => setDraftName(e.target.value)}
                   placeholder="歌曲名称"
                   aria-label="歌曲名称"
-                  className="w-full border-b-2 border-line-muted bg-transparent pb-1 text-4xl font-black tracking-tight text-ink-1 transition-colors outline-none placeholder:text-ink-4/40 focus:border-primary sm:text-5xl lg:text-6xl"
+                  className="w-full border-b-2 border-line-muted bg-transparent pb-1 text-4xl font-bold tracking-tight text-ink-1 transition-colors outline-none placeholder:text-ink-4/40 focus:border-primary sm:text-5xl lg:text-6xl"
                 />
                 <div className="flex flex-wrap items-center gap-2 text-base text-ink-2">
                   <input
@@ -286,7 +286,7 @@ export function MusicDetailView() {
             ) : (
               <>
                 <motion.h1
-                  className="text-4xl font-black tracking-tight text-ink-1 sm:text-5xl lg:text-6xl"
+                  className="text-4xl font-bold tracking-tight text-ink-1 sm:text-5xl lg:text-6xl"
                   style={{ viewTransitionName: `music-title-${music.id}` }}
                   initial={{ opacity: 0, y: 16 }}
                   animate={{ opacity: 1, y: 0 }}

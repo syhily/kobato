@@ -16,9 +16,9 @@ function RadioGroupItem({ className, ...props }: ComponentProps<typeof BaseRadio
       className={cn(
         'peer relative inline-flex aspect-square size-4 shrink-0 items-center justify-center rounded-full border border-input outline-none',
         'after:absolute after:-inset-x-3 after:-inset-y-2',
-        'focus-visible:border-ring focus-visible:ring-(--ring-width) focus-visible:ring-ring/50',
+        'focus-visible:border-ring focus-visible:shadow-focus',
         'disabled:cursor-not-allowed disabled:opacity-50',
-        'aria-invalid:border-destructive aria-invalid:ring-(--ring-width) aria-invalid:ring-destructive/20',
+        'aria-invalid:border-destructive',
         'data-[checked]:border-primary data-[checked]:bg-primary data-[checked]:text-primary-foreground',
         className,
       )}

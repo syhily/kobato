@@ -6,6 +6,7 @@ import { orpcQuery } from '@/client/api/orpc-query'
 import { useAnalyticsState } from '@/ui/admin/analytics/use-analytics-state'
 import { Skeleton } from '@/ui/components/skeleton'
 import { cn } from '@/ui/lib/cn'
+import { skeletonKeys } from '@/ui/lib/skeleton-keys'
 
 // Generic top-N list for one metric type. Each row carries a horizontal
 // progress bar whose width is `value / maxValue`. Clicking a row
@@ -42,11 +43,8 @@ export function MetricList({ type, initial, className, entityType, entityId }: M
   if (rows === null) {
     return (
       <div className={cn('flex flex-col gap-2', className)}>
-        {Array.from({ length: 5 }).map((_, i) => (
-          // Skeleton placeholders — identical non-interactive items
-          // that disappear in one shot when data arrives.
-          // oxlint-disable-next-line react/no-array-index-key
-          <Skeleton key={i} className="h-8 w-full rounded-xl" />
+        {skeletonKeys(5).map((key) => (
+          <Skeleton key={key} className="h-8 w-full rounded-xl" />
         ))}
       </div>
     )
@@ -66,7 +64,7 @@ export function MetricList({ type, initial, className, entityType, entityId }: M
           <li key={row.name}>
             <button
               type="button"
-              className="group relative flex w-full items-center gap-2 overflow-hidden rounded-xl px-2 py-1.5 text-sm transition-colors hover:bg-accent/60 focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
+              className="group relative flex w-full items-center gap-2 overflow-hidden rounded-xl px-2 py-1.5 text-sm transition-colors hover:bg-accent/60 focus-visible:shadow-focus focus-visible:outline-none"
               onClick={() => state.setFilter(type, row.name)}
             >
               <span
