@@ -15,7 +15,13 @@ export function RecentMyCommentsCard({ comments }: { comments: MyCommentSummary[
         </Button>
       </div>
       {comments.length === 0 ? (
-        <p className="mt-3 text-sm text-muted-foreground">你还没有发表过评论。</p>
+        <p className="mt-3 text-sm text-muted-foreground">
+          你还没有发表过评论，去文章页留下第一条{' '}
+          <Link to="/admin/me/comments" className="text-brand hover:underline">
+            评论足迹
+          </Link>
+          。
+        </p>
       ) : (
         <ul className="mt-3 flex flex-col gap-3 text-sm">
           {comments.map((comment) => (

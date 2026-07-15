@@ -61,26 +61,26 @@ export function PendingModerationPanel({ initial, emptyStateLine }: PendingModer
   const approveApi = useMutation({
     mutationFn: (vars: { commentId: string }) => orpc.admin.comments.approve({ commentId: vars.commentId }),
     onSuccess: () => {
-      toast.success('已通过该评论。')
+      toast.success('已通过该评论')
       refresh()
     },
-    onError: () => toast.error('操作失败'),
+    onError: () => toast.error('操作失败，请刷新页面重试'),
   })
   const rejectApi = useMutation({
     mutationFn: (vars: { commentId: string }) => orpc.admin.comments.delete({ commentId: vars.commentId }),
     onSuccess: () => {
-      toast.success('已拒绝并删除该评论。')
+      toast.success('已拒绝并删除该评论')
       refresh()
     },
-    onError: () => toast.error('操作失败'),
+    onError: () => toast.error('操作失败，请刷新页面重试'),
   })
   const approveDeletionApi = useMutation({
     ...orpcQuery.admin.comments.approveCommentDeletion.mutationOptions(),
     onSuccess: (data) => {
-      toast.success(data ? '已处理该删除申请。' : '已处理。')
+      toast.success(data ? '已处理该删除申请' : '已处理')
       refresh()
     },
-    onError: () => toast.error('操作失败'),
+    onError: () => toast.error('操作失败，请刷新页面重试'),
   })
 
   const onApprove = (item: AdminPendingItemDto) => {
@@ -277,10 +277,10 @@ function PendingRow({ item, disabled, onApprove, onReject, onApproveDeletion, on
         ) : (
           <>
             <Button type="button" size="sm" disabled={disabled} onClick={() => onApprove(item)}>
-              <CheckIcon data-icon /> 通过
+              <CheckIcon data-icon /> 通过评论
             </Button>
             <Button type="button" size="sm" variant="destructive" disabled={disabled} onClick={() => onReject(item)}>
-              <Trash2Icon data-icon /> 拒绝
+              <Trash2Icon data-icon /> 拒绝评论
             </Button>
           </>
         )}

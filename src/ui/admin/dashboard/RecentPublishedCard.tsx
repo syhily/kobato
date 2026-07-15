@@ -15,7 +15,13 @@ export function RecentPublishedCard({ posts }: { posts: DraftSummary[] }) {
         </Button>
       </div>
       {posts.length === 0 ? (
-        <p className="mt-3 text-sm text-muted-foreground">暂无已发布文章。</p>
+        <p className="mt-3 text-sm text-muted-foreground">
+          暂无已发布文章，去{' '}
+          <Link to="/admin/posts/new" className="text-brand hover:underline">
+            写一篇
+          </Link>{' '}
+          吧。
+        </p>
       ) : (
         <ul className="mt-3 flex flex-col gap-2 text-sm">
           {posts.map((post) => (
