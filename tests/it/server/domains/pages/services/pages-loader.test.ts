@@ -57,7 +57,7 @@ const mocks = vi.hoisted(() => ({
   findPublicPostMetaBySlug: vi.fn(async (): Promise<unknown> => null),
   findPageBySlug: vi.fn(async (): Promise<unknown> => null),
   buildDbPage: vi.fn((p: unknown) => p),
-  loadPageDraftPreviewBySlug: vi.fn(async (): Promise<unknown> => null),
+  loadDraftPreviewBySlug: vi.fn(async (): Promise<unknown> => null),
   tryGetSessionContext: vi.fn((): unknown => null),
   resolveSessionContext: vi.fn(async () => ({ role: 'anonymous', user: null, session: null })),
   resolveImageMetaBySources: vi.fn(async () => []),
@@ -68,11 +68,12 @@ vi.mock('@/server/domains/posts/repos/single', () => ({
 }))
 vi.mock('@/server/domains/pages/repo', () => ({
   findPageBySlug: mocks.findPageBySlug,
+  findPageMetaById: vi.fn(async () => null),
   findPublicPageMetaBySlug: vi.fn(async () => null),
   buildDbPage: mocks.buildDbPage,
 }))
-vi.mock('@/server/domains/pages/services/draft', () => ({
-  loadPageDraftPreviewBySlug: mocks.loadPageDraftPreviewBySlug,
+vi.mock('@/server/domains/content/lifecycle', () => ({
+  loadDraftPreviewBySlug: mocks.loadDraftPreviewBySlug,
 }))
 vi.mock('@/server/domains/auth/context', () => ({
   tryGetSessionContext: mocks.tryGetSessionContext,
@@ -103,7 +104,7 @@ beforeEach(() => {
   vi.clearAllMocks()
   mocks.findPublicPostMetaBySlug.mockImplementation(async () => null)
   mocks.findPageBySlug.mockImplementation(async () => null)
-  mocks.loadPageDraftPreviewBySlug.mockImplementation(async () => null)
+  mocks.loadDraftPreviewBySlug.mockImplementation(async () => null)
   mocks.tryGetSessionContext.mockReturnValue(null)
   mocks.resolveSessionContext.mockImplementation(async () => ({
     role: 'anonymous',
@@ -177,8 +178,8 @@ describe('loadPagePreview — slug redirect logic', () => {
 
   it('shows draft to admin when slug has no published page', async () => {
     const draftPage = makeDbPage({ slug: 'new-page', title: 'New Page Draft' })
-    mocks.loadPageDraftPreviewBySlug.mockImplementation(async () => ({
-      page: draftPage,
+    mocks.loadDraftPreviewBySlug.mockImplementation(async () => ({
+      preview: draftPage,
       hasNewerDraft: false,
     }))
     mocks.tryGetSessionContext.mockReturnValue({ role: 'admin', user: { id: '1' }, session: {} })

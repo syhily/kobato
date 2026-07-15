@@ -5,10 +5,11 @@ import type { RouteHandle } from '@/root'
 import type { DraftMarker } from '@/ui/public/post/DetailBodyChrome'
 
 import { getDbFromContext, tryGetSessionContext } from '@/server/domains/auth/context'
+import { loadDraftPreviewBySlug } from '@/server/domains/content/lifecycle'
 import { resolveImageMetaBySources } from '@/server/domains/images/services/enhance'
 import { selectSidebarPosts } from '@/server/domains/posts/repos/public-query/featured'
 import { findPostBySlug } from '@/server/domains/posts/repos/single'
-import { loadPostDraftPreviewBySlug } from '@/server/domains/posts/services/draft'
+import { postLifecycleAdapter } from '@/server/domains/posts/services/lifecycle-adapter'
 import { prerenderMusicPlayerBlocks } from '@/server/domains/pt/prerender'
 import { getTagsByNames, listAllTags } from '@/server/domains/taxonomies/tags/service'
 import { loadPublicDetailData } from '@/server/http/loaders/detail'
@@ -43,9 +44,9 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
       throw notFound()
     }
     if (hasAtLeast(sessionContext.role, 'author')) {
-      const preview = await loadPostDraftPreviewBySlug(db, params.slug)
+      const preview = await loadDraftPreviewBySlug(db, postLifecycleAdapter, params.slug)
       if (preview !== null) {
-        sourcePost = preview.post
+        sourcePost = preview.preview
         draftMarker = 'draft'
       }
     }

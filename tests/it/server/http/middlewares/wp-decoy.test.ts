@@ -54,6 +54,8 @@ vi.mock('@/server/domains/posts/repos/single', () => ({
 }))
 vi.mock('@/server/domains/pages/repo', () => ({
   listPublicPageMetas: vi.fn(async () => []),
+  findPageMetaById: vi.fn(async () => null),
+  findPublicPageMetaBySlug: vi.fn(async () => null),
   findPageBySlug: vi.fn(async (_db: unknown, slug: string) => (slug === 'about' ? fixtures.samplePage : null)),
   buildDbPage: (p: unknown) => p,
 }))

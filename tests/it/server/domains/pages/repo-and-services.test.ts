@@ -17,9 +17,9 @@ const { TEST_BLOG_SETTINGS_BUNDLE } = await import('#/_helpers/blog-settings')
 const repo = await import('@/server/domains/pages/repo')
 const mutate = await import('@/server/domains/pages/services/mutate')
 const adminQuery = await import('@/server/domains/pages/services/admin-query')
-const draft = await import('@/server/domains/pages/services/draft')
+const lifecycle = await import('@/server/domains/content/lifecycle')
+const { pageLifecycleAdapter } = await import('@/server/domains/pages/services/lifecycle-adapter')
 const imageSync = await import('@/server/domains/pages/services/image-sync')
-const shared = await import('@/server/domains/pages/services/shared')
 
 const poolManager = createDbPool()
 const db: NodePgDatabase = poolManager.db
@@ -378,15 +378,15 @@ describe('pages/services/admin-query — listRevisionsForAdmin', () => {
   })
 })
 
-describe('pages/services/draft — loadPageDraftPreviewBySlug', () => {
+describe('content/lifecycle (page adapter) — loadDraftPreviewBySlug', () => {
   it('returns null when the page does not exist', async () => {
-    expect(await draft.loadPageDraftPreviewBySlug(db, 'nope')).toBeNull()
+    expect(await lifecycle.loadDraftPreviewBySlug(db, pageLifecycleAdapter, 'nope')).toBeNull()
   })
 
   it('returns the page with hasNewerDraft=false when only a published revision exists', async () => {
     const rev = await seedRevision(0n)
     await seedPage({ slug: 'pub', published: true, publishedRevisionId: rev.id })
-    const r = await draft.loadPageDraftPreviewBySlug(db, 'pub')
+    const r = await lifecycle.loadDraftPreviewBySlug(db, pageLifecycleAdapter, 'pub')
     expect(r).not.toBeNull()
     expect(r!.hasNewerDraft).toBe(false)
   })
@@ -394,22 +394,9 @@ describe('pages/services/draft — loadPageDraftPreviewBySlug', () => {
   it('returns the page with hasNewerDraft=true when a draft revision exists', async () => {
     const p = await seedPage({ slug: 'drafty' })
     await seedRevision(p.id, 'draft')
-    const r = await draft.loadPageDraftPreviewBySlug(db, 'drafty')
+    const r = await lifecycle.loadDraftPreviewBySlug(db, pageLifecycleAdapter, 'drafty')
     expect(r).not.toBeNull()
     expect(r!.hasNewerDraft).toBe(true)
-  })
-})
-
-describe('pages/services/draft — loadEditorBody', () => {
-  it('throws NOT_FOUND for unknown id', async () => {
-    await expect(draft.loadEditorBody(db, 9999n)).rejects.toThrow(/页面不存在/)
-  })
-
-  it('returns meta with null draft/published when none exist', async () => {
-    const p = await seedPage()
-    const r = await draft.loadEditorBody(db, p.id)
-    expect(r.draft).toBeNull()
-    expect(r.published).toBeNull()
   })
 })
 
@@ -429,23 +416,19 @@ describe('pages/services/image-sync — syncLibraryImageBlocks', () => {
   })
 })
 
-describe('pages/services/shared — projectSaveResult', () => {
-  it('projects a saved result', () => {
-    const rev = {
-      id: 1n,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      type: 'page',
-      ownerId: 1n,
-      revisionNo: 1,
-      status: 'draft',
-      body: [],
-      imageSources: [],
-      headings: [],
-      authorId: null,
-      clientRevisionToken: 'abc',
-    }
-    const result = shared.projectSaveResult({ status: 'saved', row: rev })
+describe('content/lifecycle (page adapter) — save result projection', () => {
+  it('projects a saved repo result into the wire DTO shape', async () => {
+    const p = await seedPage()
+    const result = await lifecycle.saveBody(
+      db,
+      pageLifecycleAdapter,
+      { entityId: p.id, body: [], authorId: null },
+      'draft',
+    )
     expect(result.status).toBe('saved')
+    if (result.status === 'saved') {
+      expect(result.revision.status).toBe('draft')
+      expect(result.revision.clientRevisionToken).not.toBe('')
+    }
   })
 })

@@ -134,8 +134,9 @@ adopt React Router's segment-based filename convention.
   (latest revision IS the published one).
 - Discriminator:
   `'draft' | 'unpublished-draft' | 'published-draft' | null`.
-  Service is `loadPageDraftPreviewBySlug` returning
-  `{ page, hasNewerDraft }`.
+  Service is `loadDraftPreviewBySlug(db, pageLifecycleAdapter, slug)`
+  (`@/server/domains/content/lifecycle`) returning
+  `{ preview, hasNewerDraft }`.
 
 ---
 

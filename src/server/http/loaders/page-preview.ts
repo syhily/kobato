@@ -7,10 +7,11 @@ import type { MarkdownHeading } from '@/shared/utils/toc'
 
 import { tryGetSessionContext } from '@/server/domains/auth/context'
 import { resolveSessionContext } from '@/server/domains/auth/primitives'
+import { loadDraftPreviewBySlug } from '@/server/domains/content/lifecycle'
 import { isLive } from '@/server/domains/content/schema'
 import { resolveImageMetaBySources } from '@/server/domains/images/services/enhance'
 import { buildDbPage, findPageBySlug } from '@/server/domains/pages/repo'
-import { loadPageDraftPreviewBySlug } from '@/server/domains/pages/services/draft'
+import { pageLifecycleAdapter } from '@/server/domains/pages/services/lifecycle-adapter'
 import { findPublicPostMetaBySlug } from '@/server/domains/posts/repos/single'
 import { ifNoneMatch, notModifiedResponse, weakEtag } from '@/server/infra/http/etag'
 import { redirectPermanent } from '@/server/infra/http/redirects'
@@ -75,14 +76,14 @@ export async function loadPagePreview({
   if (needsDraftLookup) {
     const sessionContext = tryGetSessionContext(context) ?? (await resolveSessionContext(db, request))
     if (sessionContext.role === 'admin') {
-      const preview = await loadPageDraftPreviewBySlug(db, slug)
-      if (preview !== null) {
+      const draftPreview = await loadDraftPreviewBySlug(db, pageLifecycleAdapter, slug)
+      if (draftPreview !== null) {
         if (sourcePage === undefined) {
-          sourcePage = buildDbPage(preview.page)
+          sourcePage = buildDbPage(draftPreview.preview)
           draftMarker = 'draft'
         } else if (wantsDraftPreview) {
-          if (preview.hasNewerDraft) {
-            sourcePage = buildDbPage(preview.page)
+          if (draftPreview.hasNewerDraft) {
+            sourcePage = buildDbPage(draftPreview.preview)
             draftMarker = 'unpublished-draft'
           } else {
             draftMarker = 'published-draft'

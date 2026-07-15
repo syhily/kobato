@@ -47,12 +47,14 @@ always import from one predictable location.
 
 Domains: `analytics`, `auth` (session-storage, csrf, rbac, flows,
 verification-tokens), `comments` (loader, moderation, projection, likes,
-token, badge, url, canonicalize), `friends`, `images` (schema, service,
+token, badge, url, canonicalize), `content` (revision `repos/` +
+entity-agnostic draft→publish `lifecycle.ts`; post/page behavior
+attaches via `services/lifecycle-adapter.ts` in each entity domain),
+`friends`, `images` (schema, service,
 storage, key, process), `music`, `pages`, `posts`, `pt`
 (Shiki/KaTeX prerender, canonicalize, comment-to-html),
 `settings` (install-flow, install-gate),
-`taxonomies/{categories,tags}`, `users`. Plus `content-revisions.ts`
-and `audit.ts`.
+`taxonomies/{categories,tags}`, `users`. Plus `audit`.
 
 Domains may import from `shared/`, `infra/`, and other `domains/`.
 `tests/contract.cookie.test.ts` pins `domains/auth/session-storage.ts`.

@@ -3,8 +3,9 @@ import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 import type { ListPostsFilters } from '@/server/domains/posts/repos/shared'
 import type { AdminRevisionDto } from '@/shared/types/revision'
 
+import { toAdminRevisionDto } from '@/server/domains/content/projection'
 import { findContentById, findLatestRevision, listRevisions } from '@/server/domains/content/repos/query'
-import { toAdminPostDto, toAdminRevisionDto, type AdminPostDetailDto } from '@/server/domains/posts/projection'
+import { toAdminPostDto, type AdminPostDetailDto } from '@/server/domains/posts/projection'
 import { countPostMetas, listPostMetas } from '@/server/domains/posts/repos/admin-query'
 import { findPostMetaById } from '@/server/domains/posts/repos/single'
 import {

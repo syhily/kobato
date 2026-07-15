@@ -31,6 +31,7 @@ const sidebarSamples = makePostList(3, { slug: 'sidebar' })
 // catalog/catalog removed; post detail uses findPostBySlug directly, page
 // detail uses pages/loader which queries findPublicPostMetaBySlug + findPageBySlug.
 vi.mock('@/server/domains/posts/repos/single', () => ({
+  findPostMetaById: vi.fn(async () => null),
   findPostBySlug: vi.fn(async (_db: unknown, slug: string) => {
     if (slug === 'hello' || slug === 'hello-old') {
       return samplePost
@@ -58,6 +59,8 @@ vi.mock('@/server/domains/posts/repos/public-query/featured', () => ({
 }))
 vi.mock('@/server/domains/pages/repo', () => ({
   listPublicPageMetas: vi.fn(async () => []),
+  findPageMetaById: vi.fn(async () => null),
+  findPublicPageMetaBySlug: vi.fn(async () => null),
   findPageBySlug: vi.fn(async (_db: unknown, slug: string) => {
     if (slug === 'about') {
       return samplePage

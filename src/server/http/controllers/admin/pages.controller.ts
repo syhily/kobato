@@ -2,14 +2,14 @@ import { ORPCError } from '@orpc/server'
 import { z } from 'zod'
 
 import { recordAuditEventFromContext } from '@/server/domains/audit/services/record'
-import { canonicalizeBodyOrThrow } from '@/server/domains/content/save-helpers'
+import { previewBody, saveBody } from '@/server/domains/content/lifecycle'
 import { listPagesSchema, savePageBodySchema, upsertPageMetaSchema } from '@/server/domains/pages/schema'
 import {
   listPagesForAdmin,
   getPageDetailForAdmin,
   listRevisionsForAdmin as listPageRevisionsForAdmin,
 } from '@/server/domains/pages/services/admin-query'
-import { publishLatest as publishPageLatest, saveDraft as savePageDraft } from '@/server/domains/pages/services/draft'
+import { pageLifecycleAdapter } from '@/server/domains/pages/services/lifecycle-adapter'
 import {
   createPage,
   deletePage,
@@ -18,7 +18,6 @@ import {
   updatePageMeta,
 } from '@/server/domains/pages/services/mutate'
 import { adminProc } from '@/server/http/orpc-base'
-import { deriveSlug } from '@/server/infra/slug'
 import { renderPortableTextToHtml as renderPagePortableTextToHtml } from '@/server/render/feed/feed-pt-render'
 import {
   adminPageDetailDto,
@@ -28,7 +27,6 @@ import {
 } from '@/shared/contracts/pages'
 import { previewOutputDto, saveResultOutput } from '@/shared/contracts/revision'
 import { portableTextBodySchema } from '@/shared/pt/schema'
-import { collectHeadings } from '@/shared/pt/utils'
 import { idFromString } from '@/shared/utils/id'
 
 const idInput = z.object({ id: z.string().min(1) })
@@ -103,13 +101,18 @@ const saveDraft = adminProc
   .input(savePageBodySchema)
   .output(saveResultOutput)
   .handler(async ({ input, context }) => {
-    const result = await savePageDraft(context.db, {
-      pageId: idFromString(input.id),
-      body: input.body,
-      expectedClientRevisionToken: input.expectedClientRevisionToken ?? undefined,
-      force: input.force,
-      authorId: idFromString(context.viewer.userId),
-    })
+    const result = await saveBody(
+      context.db,
+      pageLifecycleAdapter,
+      {
+        entityId: idFromString(input.id),
+        body: input.body,
+        expectedClientRevisionToken: input.expectedClientRevisionToken ?? undefined,
+        force: input.force,
+        authorId: idFromString(context.viewer.userId),
+      },
+      'draft',
+    )
     if (result.status === 'saved') {
       recordAuditEventFromContext(context, {
         action: 'page_draft_saved',
@@ -125,14 +128,19 @@ const publishLatest = adminProc
   .input(savePageBodySchema)
   .output(saveResultOutput)
   .handler(async ({ input, context }) => {
-    const result = await publishPageLatest(context.db, {
-      pageId: idFromString(input.id),
-      body: input.body,
-      expectedClientRevisionToken: input.expectedClientRevisionToken ?? undefined,
-      force: input.force,
-      authorId: idFromString(context.viewer.userId),
-      publishedAt: input.publishedAt !== undefined ? new Date(input.publishedAt) : undefined,
-    })
+    const result = await saveBody(
+      context.db,
+      pageLifecycleAdapter,
+      {
+        entityId: idFromString(input.id),
+        body: input.body,
+        expectedClientRevisionToken: input.expectedClientRevisionToken ?? undefined,
+        force: input.force,
+        authorId: idFromString(context.viewer.userId),
+        publishedAt: input.publishedAt !== undefined ? new Date(input.publishedAt) : undefined,
+      },
+      'publish',
+    )
     if (result.status === 'saved') {
       recordAuditEventFromContext(context, {
         action: 'page_published',
@@ -149,13 +157,7 @@ const preview = adminProc
   .input(z.object({ body: portableTextBodySchema }))
   .output(previewOutputDto)
   .handler(async ({ input, context }) => {
-    // Route preview through the same canonicalize + prerender pipeline as
-    // the save path so the preview matches what will actually be published
-    // (Shiki/KaTeX artifacts included).
-    const canonical = await canonicalizeBodyOrThrow(input.body)
-    const html = await renderPagePortableTextToHtml(context.db, canonical, [])
-    const headings = collectHeadings(canonical, deriveSlug)
-    return { html, headings }
+    return previewBody(input.body, (body) => renderPagePortableTextToHtml(context.db, body, []))
   })
 
 const upsertMeta = adminProc

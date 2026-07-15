@@ -17,9 +17,9 @@ vi.mock('@/server/domains/posts/services/admin-query', () => ({
   listRevisionsForAdmin: vi.fn(),
 }))
 
-vi.mock('@/server/domains/posts/services/draft', () => ({
-  publishLatest: vi.fn(),
-  saveDraft: vi.fn(),
+vi.mock('@/server/domains/content/lifecycle', () => ({
+  previewBody: vi.fn(),
+  saveBody: vi.fn(),
 }))
 
 vi.mock('@/server/domains/posts/preview', () => ({
@@ -28,7 +28,7 @@ vi.mock('@/server/domains/posts/preview', () => ({
 
 const mutateService = await import('@/server/domains/posts/services/mutate')
 const adminQueryService = await import('@/server/domains/posts/services/admin-query')
-const draftService = await import('@/server/domains/posts/services/draft')
+const lifecycle = await import('@/server/domains/content/lifecycle')
 const { adminPostsRouter } = await import('@/server/http/controllers/admin/posts.controller')
 
 describe('adminPostsRouter.get', () => {
@@ -112,7 +112,7 @@ describe('adminPostsRouter.saveDraft', () => {
       createdAt: '2026-01-01T00:00:00.000Z',
       updatedAt: '2026-01-01T00:00:00.000Z',
     }
-    vi.mocked(draftService.saveDraft).mockResolvedValueOnce({
+    vi.mocked(lifecycle.saveBody).mockResolvedValueOnce({
       status: 'saved',
       revision: revision,
     })

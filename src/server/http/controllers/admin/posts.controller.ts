@@ -2,7 +2,7 @@ import { ORPCError } from '@orpc/server'
 import { z } from 'zod'
 
 import { recordAuditEventFromContext } from '@/server/domains/audit/services/record'
-import { canonicalizeBodyOrThrow } from '@/server/domains/content/save-helpers'
+import { previewBody, saveBody } from '@/server/domains/content/lifecycle'
 import {
   listPostsSchema,
   previewPostBodySchema,
@@ -14,7 +14,7 @@ import {
   listPostsForAdmin,
   listRevisionsForAdmin as listPostRevisionsForAdmin,
 } from '@/server/domains/posts/services/admin-query'
-import { saveDraft as savePostDraft, publishLatest as publishPostLatest } from '@/server/domains/posts/services/draft'
+import { postLifecycleAdapter } from '@/server/domains/posts/services/lifecycle-adapter'
 import {
   createPost,
   deletePost,
@@ -23,7 +23,6 @@ import {
   updatePostMeta,
 } from '@/server/domains/posts/services/mutate'
 import { authorProc } from '@/server/http/orpc-base'
-import { deriveSlug } from '@/server/infra/slug'
 import { renderPortableTextToHtml as renderPostPortableTextToHtml } from '@/server/render/feed/feed-pt-render'
 import {
   adminPostDetailDto,
@@ -32,7 +31,6 @@ import {
   listPostsOutputDto,
 } from '@/shared/contracts/posts'
 import { previewOutputDto, saveResultOutput } from '@/shared/contracts/revision'
-import { collectHeadings } from '@/shared/pt/utils'
 import { idFromString } from '@/shared/utils/id'
 
 const idInput = z.object({ id: z.string().min(1) })
@@ -107,15 +105,17 @@ const saveDraft = authorProc
   .input(savePostBodySchema)
   .output(saveResultOutput)
   .handler(async ({ input, context }) => {
-    const result = await savePostDraft(
+    const result = await saveBody(
       context.db,
+      postLifecycleAdapter,
       {
-        postId: idFromString(input.id),
+        entityId: idFromString(input.id),
         body: input.body,
         expectedClientRevisionToken: input.expectedClientRevisionToken ?? undefined,
         force: input.force,
         authorId: idFromString(context.viewer.userId),
       },
+      'draft',
       context.viewer,
     )
     if (result.status === 'saved') {
@@ -133,16 +133,18 @@ const publishLatest = authorProc
   .input(savePostBodySchema)
   .output(saveResultOutput)
   .handler(async ({ input, context }) => {
-    const result = await publishPostLatest(
+    const result = await saveBody(
       context.db,
+      postLifecycleAdapter,
       {
-        postId: idFromString(input.id),
+        entityId: idFromString(input.id),
         body: input.body,
         expectedClientRevisionToken: input.expectedClientRevisionToken ?? undefined,
         force: input.force,
         authorId: idFromString(context.viewer.userId),
         publishedAt: input.publishedAt !== undefined ? new Date(input.publishedAt) : undefined,
       },
+      'publish',
       context.viewer,
     )
     if (result.status === 'saved') {
@@ -161,13 +163,7 @@ const preview = authorProc
   .input(previewPostBodySchema)
   .output(previewOutputDto)
   .handler(async ({ input, context }) => {
-    // Route preview through the same canonicalize + prerender pipeline as
-    // the save path so the preview matches what will actually be published
-    // (Shiki/KaTeX artifacts included).
-    const canonical = await canonicalizeBodyOrThrow(input.body)
-    const html = await renderPostPortableTextToHtml(context.db, canonical, [])
-    const headings = collectHeadings(canonical, deriveSlug)
-    return { html, headings }
+    return previewBody(input.body, (body) => renderPostPortableTextToHtml(context.db, body, []))
   })
 
 const upsertMeta = authorProc

@@ -9,7 +9,7 @@ import { adminSession, authorSession, regularSession } from '#/_helpers/session'
 // Draft-preview contract for `routes/post.detail`.
 //
 //   - `status=draft` posts are invisible to anonymous/regular users (404).
-//   - Admin and author users see the draft via `loadPostDraftPreviewBySlug`
+//   - Admin and author users see the draft via `loadDraftPreviewBySlug`
 
 const publishedBody: PortableTextBody = [
   {
@@ -66,6 +66,8 @@ vi.mock('@/server/domains/auth/primitives', async () => {
 })
 
 vi.mock('@/server/domains/posts/repos/single', () => ({
+  findPostMetaById: vi.fn(async () => null),
+  findPublicPostMetaBySlug: vi.fn(async () => null),
   findPostBySlug: vi.fn(async (_db: unknown, slug: string) => {
     if (slug === 'hello') {
       return publishedPost
@@ -86,8 +88,8 @@ vi.mock('@/server/domains/taxonomies/tags/service', () => ({
   listAllTags: vi.fn(async () => []),
   selectSidebarTags: vi.fn(async () => []),
 }))
-vi.mock('@/server/domains/posts/services/draft', () => ({
-  loadPostDraftPreviewBySlug: vi.fn(),
+vi.mock('@/server/domains/content/lifecycle', () => ({
+  loadDraftPreviewBySlug: vi.fn(),
 }))
 vi.mock('@/shared/types/catalog', async () => {
   const actual = await vi.importActual<typeof import('@/shared/types/catalog')>('@/shared/types/catalog')
@@ -132,8 +134,8 @@ vi.mock('@/server/domains/images/services/cover', () => ({
 }))
 
 const postRoute = await import('@/routes/public/post/detail')
-const postsService = await import('@/server/domains/posts/services/draft')
-const draftPreviewMock = vi.mocked(postsService.loadPostDraftPreviewBySlug)
+const lifecycle = await import('@/server/domains/content/lifecycle')
+const draftPreviewMock = vi.mocked(lifecycle.loadDraftPreviewBySlug)
 const postsSingle = await import('@/server/domains/posts/repos/single')
 const findPostBySlugMock = vi.mocked(postsSingle.findPostBySlug)
 
@@ -224,7 +226,7 @@ describe('routes/post.detail draft visibility', () => {
 
   it('shows 【草稿】 for an admin viewing a draft post', async () => {
     currentSession = adminSession()
-    draftPreviewMock.mockResolvedValueOnce({ post: draftPost, hasNewerDraft: true })
+    draftPreviewMock.mockResolvedValueOnce({ preview: draftPost, hasNewerDraft: true })
 
     const result = unwrapLoaderData<LoaderResult>(
       await postRoute.loader(
@@ -238,12 +240,12 @@ describe('routes/post.detail draft visibility', () => {
 
     expect(result.body).toEqual(draftBody)
     expect(result.draftMarker).toBe('draft')
-    expect(draftPreviewMock).toHaveBeenCalledWith(expect.any(Object), 'secret')
+    expect(draftPreviewMock).toHaveBeenCalledWith(expect.any(Object), expect.anything(), 'secret')
   })
 
   it('shows 【草稿】 for an author viewing a draft post', async () => {
     currentSession = authorSession()
-    draftPreviewMock.mockResolvedValueOnce({ post: draftPost, hasNewerDraft: true })
+    draftPreviewMock.mockResolvedValueOnce({ preview: draftPost, hasNewerDraft: true })
 
     const result = unwrapLoaderData<LoaderResult>(
       await postRoute.loader(
@@ -257,7 +259,7 @@ describe('routes/post.detail draft visibility', () => {
 
     expect(result.body).toEqual(draftBody)
     expect(result.draftMarker).toBe('draft')
-    expect(draftPreviewMock).toHaveBeenCalledWith(expect.any(Object), 'secret')
+    expect(draftPreviewMock).toHaveBeenCalledWith(expect.any(Object), expect.anything(), 'secret')
   })
 
   it('does not paint a marker on a published post (admin session)', async () => {

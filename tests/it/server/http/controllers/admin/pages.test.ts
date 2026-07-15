@@ -17,27 +17,14 @@ vi.mock('@/server/domains/pages/services/admin-query', () => ({
   listRevisionsForAdmin: vi.fn(),
 }))
 
-vi.mock('@/server/domains/pages/services/draft', () => ({
-  publishLatest: vi.fn(),
-  saveDraft: vi.fn(),
-}))
-
-vi.mock('@/server/render/feed/feed-pt-render', () => ({
-  renderPortableTextToHtml: vi.fn(),
-}))
-
-vi.mock('@/shared/pt/utils', () => ({
-  collectHeadings: vi.fn(),
-  // Preview canonicalizes through `validatePortableTextBody` before render;
-  // pass the body through so this suite stays focused on the controller wiring.
-  validatePortableTextBody: vi.fn((body: unknown) => body),
+vi.mock('@/server/domains/content/lifecycle', () => ({
+  previewBody: vi.fn(),
+  saveBody: vi.fn(),
 }))
 
 const mutateService = await import('@/server/domains/pages/services/mutate')
 const adminQueryService = await import('@/server/domains/pages/services/admin-query')
-const draftService = await import('@/server/domains/pages/services/draft')
-const { renderPortableTextToHtml } = await import('@/server/render/feed/feed-pt-render')
-const { collectHeadings } = await import('@/shared/pt/utils')
+const lifecycle = await import('@/server/domains/content/lifecycle')
 const { adminPagesRouter } = await import('@/server/http/controllers/admin/pages.controller')
 
 const pageStub = {
@@ -144,7 +131,7 @@ describe('adminPagesRouter.unpublish', () => {
 
 describe('adminPagesRouter.saveDraft', () => {
   it('returns saved status on success', async () => {
-    vi.mocked(draftService.saveDraft).mockResolvedValueOnce({
+    vi.mocked(lifecycle.saveBody).mockResolvedValueOnce({
       status: 'saved',
       revision: revisionStub,
     })
@@ -158,7 +145,7 @@ describe('adminPagesRouter.saveDraft', () => {
   })
 
   it('returns conflict status when tokens mismatch', async () => {
-    vi.mocked(draftService.saveDraft).mockResolvedValueOnce({
+    vi.mocked(lifecycle.saveBody).mockResolvedValueOnce({
       status: 'conflict',
       latest: revisionStub,
       expectedToken: '11111111-1111-4000-8000-000000000000',
@@ -175,7 +162,7 @@ describe('adminPagesRouter.saveDraft', () => {
 
 describe('adminPagesRouter.publishLatest', () => {
   it('returns saved status on success', async () => {
-    vi.mocked(draftService.publishLatest).mockResolvedValueOnce({
+    vi.mocked(lifecycle.saveBody).mockResolvedValueOnce({
       status: 'saved',
       revision: revisionStub,
     })
@@ -191,8 +178,10 @@ describe('adminPagesRouter.publishLatest', () => {
 
 describe('adminPagesRouter.preview', () => {
   it('returns html and headings', async () => {
-    vi.mocked(renderPortableTextToHtml).mockResolvedValueOnce('<p>hello</p>')
-    vi.mocked(collectHeadings).mockReturnValueOnce([{ text: 'Hello', depth: 2, slug: 'hello' }])
+    vi.mocked(lifecycle.previewBody).mockResolvedValueOnce({
+      html: '<p>hello</p>',
+      headings: [{ text: 'Hello', depth: 2, slug: 'hello' }],
+    })
     const ctx = makeAuthedCtx()
     const res = await call(adminPagesRouter.preview, { body: [] }, { context: ctx })
     expect(res.html).toBe('<p>hello</p>')

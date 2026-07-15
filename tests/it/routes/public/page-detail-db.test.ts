@@ -56,6 +56,8 @@ const dbPage = {
 // catalog/catalog removed; pages/loader uses findPublicPostMetaBySlug + findPageBySlug.
 vi.mock('@/server/domains/pages/repo', () => ({
   listPublicPageMetas: vi.fn(async () => []),
+  findPageMetaById: vi.fn(async () => null),
+  findPublicPageMetaBySlug: vi.fn(async () => null),
   findPageBySlug: vi.fn(async (_db: unknown, slug: string) => (slug === 'about' ? dbPage : null)),
   buildDbPage: (p: unknown) => p,
 }))

@@ -108,7 +108,8 @@ const contentMutate = await import('@/server/domains/content/repos/mutate')
 const { DomainError } = await import('@/server/infra/http/errors')
 const adminQuery = await import('@/server/domains/pages/services/admin-query')
 const mutate = await import('@/server/domains/pages/services/mutate')
-const draft = await import('@/server/domains/pages/services/draft')
+const lifecycle = await import('@/server/domains/content/lifecycle')
+const { pageLifecycleAdapter } = await import('@/server/domains/pages/services/lifecycle-adapter')
 
 function metaRow(overrides: Partial<PageMetaWithAuthor> = {}): PageMetaWithAuthor {
   const now = overrides.createdAt ?? new Date('2026-05-01T00:00:00.000Z')
@@ -294,18 +295,25 @@ describe('cms/pages/service — createPage / updatePageMeta validation', () => {
   })
 })
 
-describe('cms/pages/service — saveDraft / publishLatest body validation', () => {
+describe('cms/pages lifecycle — saveBody draft / publish body validation', () => {
   it('rejects a malformed body (zod issues become DomainError 400)', async () => {
     vi.mocked(repo.findPageMetaById).mockResolvedValue(metaRow({ id: 1n }))
     await expect(
-      draft.saveDraft(db, { pageId: 1n, body: [{ _type: 'unknown', _key: 'k' }], authorId: null }),
+      lifecycle.saveBody(
+        db,
+        pageLifecycleAdapter,
+        { entityId: 1n, body: [{ _type: 'unknown', _key: 'k' }], authorId: null },
+        'draft',
+      ),
     ).rejects.toMatchObject({ code: 'BAD_REQUEST' })
     expect(contentMutate.saveDraftRevision).not.toHaveBeenCalled()
   })
 
   it('rejects when the page row is missing without touching the transaction', async () => {
     vi.mocked(repo.findPageMetaById).mockResolvedValue(null)
-    await expect(draft.saveDraft(db, { pageId: 1n, body: VALID_BODY, authorId: null })).rejects.toMatchObject({
+    await expect(
+      lifecycle.saveBody(db, pageLifecycleAdapter, { entityId: 1n, body: VALID_BODY, authorId: null }, 'draft'),
+    ).rejects.toMatchObject({
       code: 'NOT_FOUND',
     })
     expect(contentMutate.saveDraftRevision).not.toHaveBeenCalled()
@@ -332,7 +340,7 @@ describe('cms/pages/service — saveDraft / publishLatest body validation', () =
         storagePath: 'images/2026/05/foo.jpg',
       },
     ]
-    await draft.saveDraft(db, { pageId: 1n, body, authorId: 42n })
+    await lifecycle.saveBody(db, pageLifecycleAdapter, { entityId: 1n, body, authorId: 42n }, 'draft')
 
     const arg = vi.mocked(contentMutate.saveDraftRevision).mock.calls[0][2]
     expect(arg.ownerId).toBe(1n)
@@ -355,12 +363,17 @@ describe('cms/pages/service — saveDraft / publishLatest body validation', () =
       expectedToken: latest.clientRevisionToken,
     })
 
-    const result = await draft.saveDraft(db, {
-      pageId: 1n,
-      body: VALID_BODY,
-      authorId: null,
-      expectedClientRevisionToken: 'stale-token',
-    })
+    const result = await lifecycle.saveBody(
+      db,
+      pageLifecycleAdapter,
+      {
+        entityId: 1n,
+        body: VALID_BODY,
+        authorId: null,
+        expectedClientRevisionToken: 'stale-token',
+      },
+      'draft',
+    )
     expect(result.status).toBe('conflict')
     if (result.status === 'conflict') {
       expect(result.latest.id).toBe('999')
@@ -369,13 +382,18 @@ describe('cms/pages/service — saveDraft / publishLatest body validation', () =
     }
   })
 
-  it('publishLatest projects the saved revision back as a "saved" wire DTO', async () => {
+  it('publish projects the saved revision back as a "saved" wire DTO', async () => {
     vi.mocked(repo.findPageMetaById).mockResolvedValue(metaRow({ id: 1n }))
     vi.mocked(contentMutate.publishLatestRevision).mockResolvedValue({
       status: 'published',
       row: contentRow({ revisionNo: 7, status: 'published' }),
     })
-    const result = await draft.publishLatest(db, { pageId: 1n, body: VALID_BODY, authorId: 5n })
+    const result = await lifecycle.saveBody(
+      db,
+      pageLifecycleAdapter,
+      { entityId: 1n, body: VALID_BODY, authorId: 5n },
+      'publish',
+    )
     expect(result.status).toBe('saved')
     if (result.status === 'saved') {
       expect(result.revision.status).toBe('published')
@@ -384,27 +402,32 @@ describe('cms/pages/service — saveDraft / publishLatest body validation', () =
   })
 })
 
-describe('cms/pages/service — saveDraft / publishLatest CAS + force', () => {
-  it('saveDraft forwards expectedClientRevisionToken untouched into the repo call', async () => {
+describe('cms/pages lifecycle — saveBody CAS + force', () => {
+  it('saveBody forwards expectedClientRevisionToken untouched into the repo call', async () => {
     vi.mocked(repo.findPageMetaById).mockResolvedValue(metaRow({ id: 1n }))
     vi.mocked(contentMutate.saveDraftRevision).mockResolvedValue({
       status: 'saved',
       row: contentRow({ revisionNo: 1, status: 'draft' }),
     })
 
-    await draft.saveDraft(db, {
-      pageId: 1n,
-      body: VALID_BODY,
-      authorId: null,
-      expectedClientRevisionToken: 'expected-token-abc',
-    })
+    await lifecycle.saveBody(
+      db,
+      pageLifecycleAdapter,
+      {
+        entityId: 1n,
+        body: VALID_BODY,
+        authorId: null,
+        expectedClientRevisionToken: 'expected-token-abc',
+      },
+      'draft',
+    )
 
     const arg = vi.mocked(contentMutate.saveDraftRevision).mock.calls[0][2]
     expect(arg.expectedClientRevisionToken).toBe('expected-token-abc')
     expect(arg.force).toBeUndefined()
   })
 
-  it('saveDraft with force=true bypasses CAS at the repo and writes an audit log row', async () => {
+  it('saveBody with force=true bypasses CAS at the repo and writes an audit log row', async () => {
     auditInfoMock.mockClear()
 
     vi.mocked(repo.findPageMetaById).mockResolvedValue(metaRow({ id: 7n }))
@@ -422,13 +445,18 @@ describe('cms/pages/service — saveDraft / publishLatest CAS + force', () => {
       row: contentRow({ id: 601n, ownerId: 7n, revisionNo: 9, status: 'draft' }),
     })
 
-    await draft.saveDraft(db, {
-      pageId: 7n,
-      body: VALID_BODY,
-      authorId: 42n,
-      expectedClientRevisionToken: 'client-thought-this',
-      force: true,
-    })
+    await lifecycle.saveBody(
+      db,
+      pageLifecycleAdapter,
+      {
+        entityId: 7n,
+        body: VALID_BODY,
+        authorId: 42n,
+        expectedClientRevisionToken: 'client-thought-this',
+        force: true,
+      },
+      'draft',
+    )
 
     const repoArg = vi.mocked(contentMutate.saveDraftRevision).mock.calls[0][2]
     expect(repoArg.force).toBe(true)
@@ -448,7 +476,7 @@ describe('cms/pages/service — saveDraft / publishLatest CAS + force', () => {
     })
   })
 
-  it('saveDraft with force=true on a no-op overwrite (matching tokens) skips the audit log', async () => {
+  it('saveBody with force=true on a no-op overwrite (matching tokens) skips the audit log', async () => {
     auditInfoMock.mockClear()
 
     vi.mocked(repo.findPageMetaById).mockResolvedValue(metaRow({ id: 7n }))
@@ -467,18 +495,23 @@ describe('cms/pages/service — saveDraft / publishLatest CAS + force', () => {
       row: contentRow({ id: 701n, ownerId: 7n, revisionNo: 3, status: 'draft' }),
     })
 
-    await draft.saveDraft(db, {
-      pageId: 7n,
-      body: VALID_BODY,
-      authorId: null,
-      expectedClientRevisionToken: same,
-      force: true,
-    })
+    await lifecycle.saveBody(
+      db,
+      pageLifecycleAdapter,
+      {
+        entityId: 7n,
+        body: VALID_BODY,
+        authorId: null,
+        expectedClientRevisionToken: same,
+        force: true,
+      },
+      'draft',
+    )
 
     expect(auditInfoMock).not.toHaveBeenCalled()
   })
 
-  it('publishLatest forwards force=true and translates a conflict back into the wire shape', async () => {
+  it('publish forwards force and translates a conflict back into the wire shape', async () => {
     vi.mocked(repo.findPageMetaById).mockResolvedValue(metaRow({ id: 1n }))
     const stale = contentRow({
       id: 800n,
@@ -492,13 +525,18 @@ describe('cms/pages/service — saveDraft / publishLatest CAS + force', () => {
       expectedToken: stale.clientRevisionToken,
     })
 
-    const result = await draft.publishLatest(db, {
-      pageId: 1n,
-      body: VALID_BODY,
-      authorId: null,
-      expectedClientRevisionToken: 'stale-client',
-      force: false,
-    })
+    const result = await lifecycle.saveBody(
+      db,
+      pageLifecycleAdapter,
+      {
+        entityId: 1n,
+        body: VALID_BODY,
+        authorId: null,
+        expectedClientRevisionToken: 'stale-client',
+        force: false,
+      },
+      'publish',
+    )
     expect(result.status).toBe('conflict')
     if (result.status === 'conflict') {
       expect(result.latest.id).toBe('800')
@@ -510,7 +548,7 @@ describe('cms/pages/service — saveDraft / publishLatest CAS + force', () => {
     expect(repoArg.expectedClientRevisionToken).toBe('stale-client')
   })
 
-  it('publishLatest with force=true writes audit log with mode="publish"', async () => {
+  it('publish with force=true writes audit log with mode="publish"', async () => {
     auditInfoMock.mockClear()
 
     vi.mocked(repo.findPageMetaById).mockResolvedValue(metaRow({ id: 11n }))
@@ -528,13 +566,18 @@ describe('cms/pages/service — saveDraft / publishLatest CAS + force', () => {
       row: contentRow({ id: 901n, ownerId: 11n, revisionNo: 12, status: 'published' }),
     })
 
-    await draft.publishLatest(db, {
-      pageId: 11n,
-      body: VALID_BODY,
-      authorId: 99n,
-      expectedClientRevisionToken: 'cli-token',
-      force: true,
-    })
+    await lifecycle.saveBody(
+      db,
+      pageLifecycleAdapter,
+      {
+        entityId: 11n,
+        body: VALID_BODY,
+        authorId: 99n,
+        expectedClientRevisionToken: 'cli-token',
+        force: true,
+      },
+      'publish',
+    )
 
     expect(auditInfoMock).toHaveBeenCalledTimes(1)
     const [message, context] = auditInfoMock.mock.calls[0]!

@@ -114,40 +114,28 @@ describe('posts/services/admin-query — listRevisionsForAdmin', () => {
   })
 })
 
-describe('posts/services/draft — loadPostDraftPreviewBySlug', () => {
+describe('content/lifecycle (post adapter) — loadDraftPreviewBySlug', () => {
   it('returns null when the slug does not exist', async () => {
-    const { loadPostDraftPreviewBySlug } = await import('@/server/domains/posts/services/draft')
-    expect(await loadPostDraftPreviewBySlug(db, 'nope')).toBeNull()
+    const { loadDraftPreviewBySlug } = await import('@/server/domains/content/lifecycle')
+    const { postLifecycleAdapter } = await import('@/server/domains/posts/services/lifecycle-adapter')
+    expect(await loadDraftPreviewBySlug(db, postLifecycleAdapter, 'nope')).toBeNull()
   })
   it('returns the published revision when no draft exists', async () => {
     const revId = await seedContent({ type: 'post', revisionNo: 1, status: 'published' })
     await seedPost({ slug: 'prev', publishedRevisionId: revId })
-    const { loadPostDraftPreviewBySlug } = await import('@/server/domains/posts/services/draft')
-    const r = await loadPostDraftPreviewBySlug(db, 'prev')
-    expect(r?.post.slug).toBe('prev')
+    const { loadDraftPreviewBySlug } = await import('@/server/domains/content/lifecycle')
+    const { postLifecycleAdapter } = await import('@/server/domains/posts/services/lifecycle-adapter')
+    const r = await loadDraftPreviewBySlug(db, postLifecycleAdapter, 'prev')
+    expect(r?.preview.slug).toBe('prev')
     expect(r?.hasNewerDraft).toBe(false)
   })
   it('returns the draft when one exists', async () => {
     const pid = await seedPost({ slug: 'dr', publishedRevisionId: null })
     await seedContent({ type: 'post', ownerId: pid, revisionNo: 1, status: 'draft' })
-    const { loadPostDraftPreviewBySlug } = await import('@/server/domains/posts/services/draft')
-    const r = await loadPostDraftPreviewBySlug(db, 'dr')
+    const { loadDraftPreviewBySlug } = await import('@/server/domains/content/lifecycle')
+    const { postLifecycleAdapter } = await import('@/server/domains/posts/services/lifecycle-adapter')
+    const r = await loadDraftPreviewBySlug(db, postLifecycleAdapter, 'dr')
     expect(r?.hasNewerDraft).toBe(true)
-  })
-})
-
-describe('posts/services/draft — loadEditorBody', () => {
-  it('throws NOT_FOUND when the post does not exist', async () => {
-    const { loadEditorBody } = await import('@/server/domains/posts/services/draft')
-    await expect(loadEditorBody(db, 9999n)).rejects.toMatchObject({ code: 'NOT_FOUND' })
-  })
-  it('returns meta + draft + published revisions', async () => {
-    const revId = await seedContent({ type: 'post', revisionNo: 1, status: 'published' })
-    const pid = await seedPost({ slug: 'ed', publishedRevisionId: revId })
-    const { loadEditorBody } = await import('@/server/domains/posts/services/draft')
-    const r = await loadEditorBody(db, pid)
-    expect(r.meta.slug).toBe('ed')
-    expect(r.published).not.toBeNull()
   })
 })
 
@@ -258,42 +246,98 @@ describe('posts/services/mutate — deletePost / restorePost / unpublishPost', (
   })
 })
 
-describe('posts/services/draft — saveDraft / publishLatest', () => {
+describe('content/lifecycle (post adapter) — saveBody draft / publish', () => {
   it('saves a draft revision for an existing post', async () => {
     const { createPost } = await import('@/server/domains/posts/services/mutate')
     const created = await createPost(db, { title: 'Draft Me' }, null)
-    const { saveDraft } = await import('@/server/domains/posts/services/draft')
-    const r = await saveDraft(db, {
-      postId: BigInt(created.id),
-      body: [
-        {
-          _type: 'block',
-          _key: 'b1',
-          style: 'normal',
-          children: [{ _type: 'span', _key: 's1', text: 'hi', marks: [] }],
-        },
-      ],
-      authorId: null,
-    })
+    const { saveBody } = await import('@/server/domains/content/lifecycle')
+    const { postLifecycleAdapter } = await import('@/server/domains/posts/services/lifecycle-adapter')
+    const r = await saveBody(
+      db,
+      postLifecycleAdapter,
+      {
+        entityId: BigInt(created.id),
+        body: [
+          {
+            _type: 'block',
+            _key: 'b1',
+            style: 'normal',
+            children: [{ _type: 'span', _key: 's1', text: 'hi', marks: [] }],
+          },
+        ],
+        authorId: null,
+      },
+      'draft',
+    )
     expect(r.status).toBe('saved')
   })
   it('publishes the latest revision', async () => {
     const { createPost } = await import('@/server/domains/posts/services/mutate')
     const created = await createPost(db, { title: 'Publish Me' }, null)
-    const { publishLatest } = await import('@/server/domains/posts/services/draft')
-    const r = await publishLatest(db, {
-      postId: BigInt(created.id),
-      body: [
-        {
-          _type: 'block',
-          _key: 'b1',
-          style: 'normal',
-          children: [{ _type: 'span', _key: 's1', text: 'pub', marks: [] }],
-        },
-      ],
-      authorId: null,
-    })
+    const { saveBody } = await import('@/server/domains/content/lifecycle')
+    const { postLifecycleAdapter } = await import('@/server/domains/posts/services/lifecycle-adapter')
+    const r = await saveBody(
+      db,
+      postLifecycleAdapter,
+      {
+        entityId: BigInt(created.id),
+        body: [
+          {
+            _type: 'block',
+            _key: 'b1',
+            style: 'normal',
+            children: [{ _type: 'span', _key: 's1', text: 'pub', marks: [] }],
+          },
+        ],
+        authorId: null,
+      },
+      'publish',
+    )
     expect(r.status).toBe('saved')
+  })
+  it('audits a force save against the latest revision of any status (not just drafts)', async () => {
+    const { createPost } = await import('@/server/domains/posts/services/mutate')
+    const created = await createPost(db, { title: 'Force Audit' }, null)
+    const pid = BigInt(created.id)
+    // Only a published revision exists: the old posts track looked up the
+    // latest *draft* here and skipped the audit; the merged pipeline reads
+    // the latest revision regardless of status.
+    await seedContent({
+      type: 'post',
+      ownerId: pid,
+      revisionNo: 1,
+      status: 'published',
+      clientRevisionToken: '00000000-0000-4000-8000-000000000042',
+    })
+    const { saveBody } = await import('@/server/domains/content/lifecycle')
+    const { postLifecycleAdapter } = await import('@/server/domains/posts/services/lifecycle-adapter')
+    const spy = vi.spyOn(postLifecycleAdapter, 'recordForceOverwrite')
+    try {
+      const r = await saveBody(
+        db,
+        postLifecycleAdapter,
+        {
+          entityId: pid,
+          body: [
+            {
+              _type: 'block',
+              _key: 'b1',
+              style: 'normal',
+              children: [{ _type: 'span', _key: 's1', text: 'force', marks: [] }],
+            },
+          ],
+          authorId: null,
+          expectedClientRevisionToken: 'stale-token',
+          force: true,
+        },
+        'draft',
+      )
+      expect(r.status).toBe('saved')
+      expect(spy).toHaveBeenCalledTimes(1)
+      expect(spy.mock.calls[0]?.[0].overwritten.clientRevisionToken).toBe('00000000-0000-4000-8000-000000000042')
+    } finally {
+      spy.mockRestore()
+    }
   })
 })
 

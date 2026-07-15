@@ -61,6 +61,8 @@ let currentSession = regularSession()
 // catalog/catalog removed; pages/loader uses findPublicPostMetaBySlug + findPageBySlug.
 vi.mock('@/server/domains/pages/repo', () => ({
   listPublicPageMetas: vi.fn(async () => []),
+  findPageMetaById: vi.fn(async () => null),
+  findPublicPageMetaBySlug: vi.fn(async () => null),
   findPageBySlug: vi.fn(async (_db: unknown, slug: string) => (slug === 'about' ? publishedPage : null)),
   buildDbPage: (p: unknown) => p,
 }))
@@ -84,8 +86,8 @@ vi.mock('@/shared/types/catalog', async () => {
   }
 })
 
-vi.mock('@/server/domains/pages/services/draft', () => ({
-  loadPageDraftPreviewBySlug: vi.fn(),
+vi.mock('@/server/domains/content/lifecycle', () => ({
+  loadDraftPreviewBySlug: vi.fn(),
 }))
 
 vi.mock('@/server/http/loaders/comments', () => ({
@@ -122,8 +124,8 @@ vi.mock('@/server/domains/images/services/cover', () => ({
 }))
 
 const pageRoute = await import('@/routes/public/page/detail')
-const pagesService = await import('@/server/domains/pages/services/draft')
-const draftPreviewMock = vi.mocked(pagesService.loadPageDraftPreviewBySlug)
+const lifecycle = await import('@/server/domains/content/lifecycle')
+const draftPreviewMock = vi.mocked(lifecycle.loadDraftPreviewBySlug)
 
 type LoaderResult = {
   page: { title: string }
@@ -191,7 +193,7 @@ describe('routes/page.detail draft preview', () => {
 
   it('shows 【草稿】 for an admin viewing an unpublished page', async () => {
     currentSession = adminSession()
-    draftPreviewMock.mockResolvedValueOnce({ page: unpublishedPage, hasNewerDraft: true })
+    draftPreviewMock.mockResolvedValueOnce({ preview: unpublishedPage, hasNewerDraft: true })
 
     const result = unwrapLoaderData<LoaderResult>(
       await pageRoute.loader(
@@ -213,7 +215,7 @@ describe('routes/page.detail draft preview', () => {
     // whose `body` is the draft. The route then swaps `sourcePage`
     // to that projection so the rendered body is the draft one.
     draftPreviewMock.mockResolvedValueOnce({
-      page: { ...publishedPage, body: draftBody },
+      preview: { ...publishedPage, body: draftBody },
       hasNewerDraft: true,
     })
 
@@ -234,7 +236,7 @@ describe('routes/page.detail draft preview', () => {
   it('shows 【已发布的草稿】 when an admin opens a published page with `?draft=true` and there is no newer draft', async () => {
     currentSession = adminSession()
     draftPreviewMock.mockResolvedValueOnce({
-      page: publishedPage,
+      preview: publishedPage,
       hasNewerDraft: false,
     })
 
