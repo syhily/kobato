@@ -171,7 +171,7 @@ export function AdminCommentRow({
           )}
 
           {/* Body */}
-          <div className="comment-content prose-blog prose prose-sm mt-2 max-w-none leading-[1.85] wrap-break-word whitespace-normal">
+          <div className="comment-content prose-blog prose prose-sm mt-2 max-w-none leading-copy wrap-break-word whitespace-normal">
             <PortableTextBody body={comment.body} />
           </div>
 

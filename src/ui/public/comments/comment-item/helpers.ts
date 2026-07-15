@@ -108,7 +108,7 @@ export function nestedCommentInnerClass(): string {
 
 export function commentContentClass(depth: number): string {
   const base = cn('comment-content', 'prose-blog prose prose-sm max-w-none', 'wrap-break-word whitespace-normal')
-  return depth === 1 ? cn(base, 'my-2 leading-[1.85]') : cn(base, 'my-1.5 break-all max-md:my-1.25')
+  return depth === 1 ? cn(base, 'my-2 leading-copy') : cn(base, 'my-1.5 break-all max-md:my-1.25')
 }
 
 export const commentFooterButtonClass = cn(
