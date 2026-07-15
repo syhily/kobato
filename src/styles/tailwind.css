@@ -836,11 +836,11 @@ pre.shiki span {
 
   --animate-comments-shimmer: comments-shimmer 1.4s linear infinite;
 
-  --animate-comment-flash: comment-flash 3s ease-out forwards;
+  --animate-comment-flash: comment-flash 1.5s ease-out forwards;
 
   @keyframes comment-flash {
     0%,
-    25% {
+    40% {
       background-color: color-mix(in oklab, var(--brand) 16%, transparent);
     }
     100% {
