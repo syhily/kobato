@@ -1,7 +1,6 @@
 import NumberFlow from '@number-flow/react'
 import { useMutation } from '@tanstack/react-query'
 import { HeartIcon } from 'lucide-react'
-import { motion } from 'motion/react'
 import { startTransition, useCallback, useEffect, useOptimistic, useRef, useState } from 'react'
 
 import type { DecreaseLikeOutput, IncreaseLikeOutput, ValidateLikeTokenOutput } from '@/shared/types/likes'
@@ -183,34 +182,36 @@ export function LikeButton({ permalink, commentKey, likes: initialLikes }: LikeB
 
   return (
     <div className="mt-12 text-center">
-      <motion.div whileHover={{ x: [-1, 2, -2, 2, -1] }} transition={{ duration: 0.82 }}>
-        <Button
-          variant="dark"
-          size="lg"
-          shape="pill"
-          className={cn(
-            'px-10',
-            'border-like-bg bg-like-bg hover:border-like-bg-hover hover:bg-like-bg-hover',
-            'data-[liked=true]:border-like-active data-[liked=true]:bg-like-active data-[liked=true]:text-white data-[liked=true]:shadow-like-active',
-          )}
-          title="Do you like me?"
-          aria-pressed={state.liked}
-          aria-label={state.liked ? '取消点赞' : '点赞'}
-          data-permalink={permalink}
-          data-liked={state.liked ? 'true' : 'false'}
-          onClick={onClick}
-          disabled={isPending}
-        >
-          <HeartIcon
-            className="me-1 mt-[-2px] size-[1.1em] align-middle"
-            fill="currentColor"
-            size="1em"
-            strokeWidth={0}
-            aria-hidden
-          />
-          <NumberFlow value={state.likes} />
-        </Button>
-      </motion.div>
+      <Button
+        variant="dark"
+        size="lg"
+        shape="pill"
+        className={cn(
+          'px-10',
+          'border-like-bg bg-like-bg hover:border-like-bg-hover hover:bg-like-bg-hover',
+          // Lift on hover: a soft ambient shadow + a gentle 4% scale-up.
+          // Transition respects prefers-reduced-motion via the global
+          // base.css media-query guard (transition-duration → 0.01ms).
+          'transition-[transform,box-shadow,background-color,border-color] duration-200 ease-[cubic-bezier(0.175,0.885,0.32,1.1)] hover:scale-[1.04] hover:shadow-[0_12px_32px_-6px_rgb(0_0_0/0.25)]',
+          'data-[liked=true]:border-like-active data-[liked=true]:bg-like-active data-[liked=true]:text-white data-[liked=true]:shadow-like-active',
+        )}
+        title="Do you like me?"
+        aria-pressed={state.liked}
+        aria-label={state.liked ? '取消点赞' : '点赞'}
+        data-permalink={permalink}
+        data-liked={state.liked ? 'true' : 'false'}
+        onClick={onClick}
+        disabled={isPending}
+      >
+        <HeartIcon
+          className="me-1 mt-[-2px] size-[1.1em] align-middle"
+          fill="currentColor"
+          size="1em"
+          strokeWidth={0}
+          aria-hidden
+        />
+        <NumberFlow value={state.likes} />
+      </Button>
     </div>
   )
 }

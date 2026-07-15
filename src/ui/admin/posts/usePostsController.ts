@@ -1,4 +1,4 @@
-import { useEffect, useReducer } from 'react'
+import { useEffect, useReducer, useRef } from 'react'
 import { useLocation } from 'react-router'
 
 import type { AdminPostDto } from '@/shared/types/posts'
@@ -142,26 +142,35 @@ export function usePostsController() {
     sortOrder: 'desc',
   })
 
+  // Hold a mutable reference to the latest state so the URL-sync effects can
+  // read it without listing state fields as dependencies. Listing them caused
+  // a feedback loop: a user dispatch changed state, the effect re-ran, saw the
+  // URL was still the old value, and dispatched the old value back.
+  const stateRef = useRef(state)
+  useEffect(() => {
+    stateRef.current = state
+  })
+
   useEffect(() => {
     const urlStatus = getInitialStatusFromSearch(search)
-    if (urlStatus !== state.status) {
+    if (urlStatus !== stateRef.current.status) {
       dispatch({ type: 'setStatus', value: urlStatus })
     }
-  }, [search, state.status])
+  }, [search, stateRef, dispatch])
 
   useEffect(() => {
     const urlTag = getInitialTagFromSearch(search)
-    if (urlTag !== state.tag) {
+    if (urlTag !== stateRef.current.tag) {
       dispatch({ type: 'setTag', value: urlTag })
     }
-  }, [search, state.tag])
+  }, [search, stateRef, dispatch])
 
   useEffect(() => {
     const urlCategory = getInitialCategoryFromSearch(search)
-    if (urlCategory !== state.category) {
+    if (urlCategory !== stateRef.current.category) {
       dispatch({ type: 'setCategory', value: urlCategory })
     }
-  }, [search, state.category])
+  }, [search, stateRef, dispatch])
 
   return { state, dispatch }
 }
