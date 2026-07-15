@@ -20,6 +20,7 @@ import { orpcQuery } from '@/client/api/orpc-query'
 import { useSiteIdentity } from '@/shared/lib/blog-config-context'
 import { commentBodySchema } from '@/shared/pt/comment-schema'
 import { formatLocalDate } from '@/shared/utils/formatter'
+import { unsafeCast } from '@/shared/utils/unsafe-cast'
 import { CommentsFilterBar } from '@/ui/admin/comments/CommentsFilterBar'
 import { type FieldDefinition } from '@/ui/admin/comments/filter-constants'
 import {
@@ -37,6 +38,7 @@ import { Badge } from '@/ui/components/badge'
 import { Button } from '@/ui/components/button'
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@/ui/components/empty'
 import { Skeleton } from '@/ui/components/skeleton'
+import { skeletonKeys } from '@/ui/lib/skeleton-keys'
 import { PortableTextBody } from '@/ui/pt/render'
 
 const ADMIN_DATE_FORMAT = 'yyyy-LL-dd HH:mm'
@@ -186,8 +188,7 @@ export function MyCommentsView({ status, q, entity, entityOptions, currentUser }
         updateParams({ entity: value })
       } else if (field === 'text') {
         try {
-          // oxlint-disable-next-line typescript/no-unsafe-type-assertion
-          const parsed = JSON.parse(value) as { value?: string; op?: string }
+          const parsed = unsafeCast<{ value?: string; op?: string }>(JSON.parse(value))
           const text = parsed.value?.trim() ?? ''
           // Always show the pill via the draft so the user can type into it.
           // Sync the URL in both directions: non-empty text sets q, empty text
@@ -520,9 +521,8 @@ function MyCommentRow({
 function MyCommentsSkeleton() {
   return (
     <>
-      {Array.from({ length: 3 }).map((_, i) => (
-        // oxlint-disable-next-line react/no-array-index-key
-        <div key={i} className="flex gap-3 px-4 py-3">
+      {skeletonKeys(3).map((key) => (
+        <div key={key} className="flex gap-3 px-4 py-3">
           <Skeleton className="size-10 shrink-0 rounded-full" />
           <div className="flex flex-1 flex-col gap-2">
             <Skeleton className="h-4 w-1/4" />

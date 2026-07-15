@@ -11,6 +11,7 @@ import { orpc } from '@/client/api/client'
 import { orpcQuery } from '@/client/api/orpc-query'
 import { getLogger } from '@/client/lib/logger'
 import { idStr } from '@/shared/utils/tools'
+import { unsafeCast } from '@/shared/utils/unsafe-cast'
 import { AdminCommentRow } from '@/ui/admin/comments/AdminCommentRow'
 import { CommentsFilterBar } from '@/ui/admin/comments/CommentsFilterBar'
 import { EditCommentDialog } from '@/ui/admin/comments/EditCommentDialog'
@@ -22,6 +23,7 @@ import { type ConfirmState, ConfirmDialog } from '@/ui/admin/shared/ConfirmDialo
 import { useDebouncedSearch } from '@/ui/admin/shared/useDebouncedSearch'
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@/ui/components/empty'
 import { Skeleton } from '@/ui/components/skeleton'
+import { skeletonKeys } from '@/ui/lib/skeleton-keys'
 
 const FILTER_QUERY_DEBOUNCE_MS = 250
 const log = getLogger('comments.CommentsView')
@@ -149,8 +151,8 @@ export function CommentsView({ currentUserName, currentUserEmail, initialFilters
           next.set('userId', filter.value)
         } else if (filter.field === 'text' && filter.value) {
           try {
-            // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- parsed JSON validated immediately below
-            const range = JSON.parse(filter.value) as { value?: string; op?: string }
+            // parsed JSON validated immediately below
+            const range = unsafeCast<{ value?: string; op?: string }>(JSON.parse(filter.value))
             if (range.value) {
               next.set('q', range.value)
               if (range.op) {
@@ -162,8 +164,8 @@ export function CommentsView({ currentUserName, currentUserEmail, initialFilters
           }
         } else if (filter.field === 'date' && filter.value) {
           try {
-            // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- parsed JSON validated immediately below
-            const range = JSON.parse(filter.value) as { date?: string; op?: string }
+            // parsed JSON validated immediately below
+            const range = unsafeCast<{ date?: string; op?: string }>(JSON.parse(filter.value))
             if (range.date) {
               next.set('date', range.date)
             }
@@ -483,9 +485,8 @@ export function CommentsView({ currentUserName, currentUserEmail, initialFilters
 function CommentsSkeleton() {
   return (
     <>
-      {Array.from({ length: 3 }).map((_, i) => (
-        // oxlint-disable-next-line react/no-array-index-key
-        <div key={i} className="flex gap-3 px-4 py-3">
+      {skeletonKeys(3).map((key) => (
+        <div key={key} className="flex gap-3 px-4 py-3">
           <Skeleton className="size-10 shrink-0 rounded-full" />
           <div className="flex flex-1 flex-col gap-2">
             <Skeleton className="h-4 w-1/4" />

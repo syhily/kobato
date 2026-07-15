@@ -1,9 +1,10 @@
-/* oxlint-disable typescript/no-unsafe-assignment, typescript/no-unsafe-call, typescript/no-unsafe-member-access, typescript/no-unsafe-return */
 import type { MiddlewareHandler } from 'hono'
 
 import { HTTPException } from 'hono/http-exception'
 
 import type { Env } from '@/server/http/context'
+
+import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
 // Per-request deadline. Creates an `AbortController` whose signal is
 // merged with the client disconnect signal via `AbortSignal.any()`. The
@@ -32,16 +33,21 @@ export function requestTimeout(timeoutMs = DEFAULT_TIMEOUT_MS): MiddlewareHandle
     // global undici Request constructor, causing a TypeError. In that
     // case we fall back to a Proxy.
     try {
-      c.req.raw = new Request(c.req.raw, { signal: combined })
+      // Hono types c.req.raw as readonly; the new Request wrapper replaces it
+      // to inject the combined AbortSignal. Safe — same Request interface.
+      unsafeCast<{ req: { raw: Request } }>(c).req.raw = new Request(c.req.raw, { signal: combined })
     } catch {
-      c.req.raw = new Proxy(c.req.raw, {
+      // Some runtimes reject `new Request()` on an already-wrapped incoming
+      // request (e.g. Node adapter in Vite dev). Fall back to a Proxy that
+      // forwards everything except `signal`.
+      unsafeCast<{ req: { raw: Request } }>(c).req.raw = new Proxy(c.req.raw, {
         get(target, prop, receiver) {
           if (prop === 'signal') {
             return combined
           }
-          const value = Reflect.get(target, prop, receiver)
+          const value: unknown = Reflect.get(target, prop, receiver)
           if (typeof value === 'function') {
-            return value.bind(target)
+            return unsafeCast<(...args: unknown[]) => unknown>(value).bind(target)
           }
           return value
         },

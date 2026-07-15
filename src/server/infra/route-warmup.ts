@@ -137,7 +137,6 @@ function loadServerManifest(clientAssetsDir: string): RouteManifest | null {
     const files = readdirSync(clientAssetsDir)
     const manifestFile = files.find((f) => f.startsWith('manifest-') && f.endsWith('.js'))
     if (!manifestFile) {
-      // oxlint-disable-next-line no-console
       console.error('[route-warmup] React Router client manifest not found in', clientAssetsDir)
       return null
     }
@@ -145,7 +144,6 @@ function loadServerManifest(clientAssetsDir: string): RouteManifest | null {
     const content = readFileSync(join(clientAssetsDir, manifestFile), 'utf-8')
     const prefix = 'window.__reactRouterManifest='
     if (!content.startsWith(prefix)) {
-      // oxlint-disable-next-line no-console
       console.error('[route-warmup] React Router client manifest has unexpected format')
       return null
     }
@@ -153,7 +151,6 @@ function loadServerManifest(clientAssetsDir: string): RouteManifest | null {
     const jsonText = content.slice(prefix.length).replace(/;\s*$/, '')
     return JSON.parse(jsonText) as RouteManifest
   } catch (err) {
-    // oxlint-disable-next-line no-console
     console.error('[route-warmup] failed to load server manifest', err instanceof Error ? err.message : String(err))
     return null
   }
@@ -279,7 +276,6 @@ export function routeWarmupPlugin(): Plugin {
         }
 
         if (Object.keys(manifest.routes).length === 0) {
-          // oxlint-disable-next-line no-console
           console.error('[route-warmup] parsed manifest has 0 routes — likely a parser regression')
           return
         }
@@ -373,7 +369,6 @@ export function routeWarmupPlugin(): Plugin {
           const totalKb = arr.reduce((sum, c) => sum + (chunkSizes.get(c) ?? 0), 0) / 1024
           return `${arr.length} chunks (~${totalKb.toFixed(0)} KB)`
         }
-        // oxlint-disable-next-line no-console
         console.log(
           `[route-warmup] Manifest written:\n` +
             `  tier1:        ${fmt(tier1)}\n` +
