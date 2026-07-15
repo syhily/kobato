@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { WASI } from 'node:wasi'
 
-import wasmBytes from '@/server/domains/fonts/vendor/cnfs.wasm?binary'
+import initWasm from '@/server/domains/fonts/vendor/cnfs.wasm?init'
 import { InputTemplateSchema } from '@/server/domains/fonts/vendor/gen/api_pb'
 import { getLogger } from '@/server/infra/logger'
 
@@ -14,8 +14,9 @@ const log = getLogger('fonts.wasm')
 // Minimal WASM glue for the vendored cn-font-split wasm core, driven by
 // Node's built-in `node:wasi` (which binds `node:fs` directly——no
 // `memfs-browser` / `@tybys/wasm-util` needed). The wasm binary is imported
-// via Vite's `?url` query, giving us a build-time asset URL that resolves to
-// the emitted `.wasm` file relative to the server bundle.
+// via Vite's native `?init` query: in dev the helper reads the source file
+// from disk; in the SSR build Vite emits the `.wasm` next to the server
+// bundle and resolves it relative to `import.meta.url` at runtime.
 //
 // The wasm core expects: a serialized `InputTemplate` protobuf at
 // `/tmp/fonts/<key>` (WASI preopens-relative), and writes its outputs
@@ -105,13 +106,10 @@ export async function fontSplit(props: FontSplitProps): Promise<FontSplitOutputF
       },
     }
 
-    // Compile + instantiate separately to avoid the Node 24 type ambiguity:
-    // `WebAssembly.instantiate(bytes, imports)` returns `{module, instance}`
-    // while the TS types declare it as bare `Instance`. The two-step form
-    // (`compile` then `instantiate(module, imports)`) is well-typed and
-    // unambiguous on every Node version.
-    const module = await WebAssembly.compile(Buffer.from(wasmBytes))
-    const instance = await WebAssembly.instantiate(module, imports)
+    // Vite's `?init` helper compiles + instantiates per call, so concurrent
+    // slice calls each get a fresh instance (the wasm core is stateful and
+    // runs `main` once via `wasi.start`).
+    const instance = await initWasm(imports)
     wasi.start(instance)
 
     // Read back everything the core wrote into <root>/tmp/<key>/.

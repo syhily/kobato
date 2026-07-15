@@ -1,5 +1,4 @@
 import { createRequire } from 'node:module'
-import Binary from 'vite-plugin-binary'
 import { defineConfig } from 'vitest/config'
 
 import { routeWarmupScriptStubPlugin } from '../_helpers/virtual-modules'
@@ -8,9 +7,8 @@ const require = createRequire(import.meta.url)
 const pkg = require('../../package.json')
 
 export default defineConfig({
-  plugins: [routeWarmupScriptStubPlugin(), Binary({ gzip: false })],
+  plugins: [routeWarmupScriptStubPlugin()],
   resolve: { tsconfigPaths: true },
-  assetsInclude: ['**/*.wasm', '**/*.wasm?binary'],
   // Mirror the root vite.config.ts define block so route modules that
   // transitively import `@/shared/config/version` (e.g. AdminShell →
   // VersionDialog) resolve the compile-time globals under the test

@@ -2,8 +2,8 @@
 
 Self-hosted web-font slicing with **zero runtime wasm/fs npm dependencies**.
 The fonts domain drives cn-font-split's Rust wasm core via Node's built-in
-`node:wasi` (binds `node:fs` directly). The wasm binary is inlined into the
-SSR bundle at build time by `vite-plugin-binary`.
+`node:wasi` (binds `node:fs` directly). The wasm binary is imported with
+Vite's native `?init` query — no plugin, no base85 inlining.
 
 cn-font-split is published to npm at `7.4.3` while the Rust core has advanced
 to `7.6.8` on GitHub. We pair the Rust wasm binary (7.6.8) with a **minimal
@@ -25,10 +25,12 @@ contract between JS and the wasm core.
 - **`node:wasi` instead of `memfs-browser` + `@tybys/wasm-util`**: Node's
   built-in WASI binds `node:fs` directly. We use a real OS temp directory as
   the wasm's `/` — no virtual filesystem, no browser-oriented deps.
-- **`vite-plugin-binary`**: Inlines the 4.2 MB `.wasm` as base85-encoded data
-  into the SSR bundle at build time. No separate asset file to emit, no
-  relative-path resolution at runtime — works equally in dev, test, and
-  production.
+- **Vite's native `?init` wasm import**: `wasm-split.ts` imports
+  `cnfs.wasm?init` and gets back an `init(imports)` function that compiles +
+  instantiates the core per call. In dev the helper reads the source file
+  from disk; in the SSR build Vite emits the `.wasm` as an asset next to the
+  server bundle and reads it via `import.meta.url`-relative paths at runtime
+  — works equally in dev, test, and production with no plugin.
 - **`@bufbuild/protobuf`**: Modern, lightweight protobuf runtime. The encoder
   (`gen/api_pb.ts`) is generated from `api.proto` via `protoc-gen-es` and
   committed, so no `protoc` dependency at build or runtime.
@@ -63,4 +65,3 @@ changes.
 - `cnfs.wasm` — release `7.6.8`, sha256 `05a88dcb9a0b0d1e14daf0f429d9af6e2ac8d94d9e574523a76d3e9f440dccc9`
 - `api.proto` — from the `release` branch (byte-identical across 7.4.3 / 7.6.8)
 - `@bufbuild/protobuf` / `protoc-gen-es` — `2.12.0`
-- `vite-plugin-binary` — `1.3.1`

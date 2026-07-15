@@ -18,9 +18,9 @@ import { sliceFont } from '@/server/domains/fonts/slice'
 const TTF_PATH = resolve(process.cwd(), 'data/fonts/opposans.ttf')
 
 describe('sliceFont', () => {
-  // The slicer caches the wasm bytes in a module-level promise; we don't
-  // reset it between tests because reading the 4 MB binary once is fine and
-  // the cache is process-scoped (not test-scoped).
+  // The wasm binary is loaded via Vite's native `?init` import and
+  // instantiated fresh inside each `fontSplit` call, so there is no
+  // module-level cache to reset between tests.
 
   it('slices a real TTF into a non-empty result.css + woff2 chunks', async () => {
     const source = await readFile(TTF_PATH)

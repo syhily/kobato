@@ -6,7 +6,6 @@ import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { defineConfig } from 'vite'
-import Binary from 'vite-plugin-binary'
 import { z } from 'zod'
 
 import { reactRouterHonoServer } from './src/server/infra/hono/dev.ts'
@@ -49,6 +48,11 @@ export default defineConfig(({ command }) => ({
               conditions: ['node'],
             },
             build: {
+              // Emit assets referenced by the server graph (the cnfs.wasm
+              // `?init` import) into build/server/assets — Vite 8 defaults
+              // this off for non-client consumers, and React Router's
+              // `build.ssrEmitAssets` is no longer honored per-environment.
+              emitAssets: true,
               rollupOptions: {
                 input: 'src/server.ts',
               },
@@ -58,7 +62,6 @@ export default defineConfig(({ command }) => ({
       : undefined,
   plugins: [
     reactRouterHonoServer(),
-    Binary({ gzip: false, excludeAsset: true }),
     ...(reactRouter() as Plugin[]),
     tailwindcss(),
     processWorkerEntryPlugin(),
@@ -89,5 +92,4 @@ export default defineConfig(({ command }) => ({
       clientFiles: ['./src/root.tsx', './src/routes.ts', './src/routes/**/*.{ts,tsx}'],
     },
   },
-  assetsInclude: ['**/*.wasm', '**/*.wasm?binary'],
 }))

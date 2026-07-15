@@ -1,12 +1,10 @@
 import { createRequire } from 'node:module'
-import Binary from 'vite-plugin-binary'
 import { defineConfig } from 'vitest/config'
 
 const require = createRequire(import.meta.url)
 const pkg = require('../../package.json')
 
 export default defineConfig({
-  plugins: [Binary({ gzip: false })],
   resolve: {
     tsconfigPaths: true,
   },
@@ -18,7 +16,6 @@ export default defineConfig({
     __APP_HOMEPAGE__: JSON.stringify(pkg.homepage),
     __APP_REPOSITORY__: JSON.stringify(pkg.repository.url),
   },
-  assetsInclude: ['**/*.wasm', '**/*.wasm?binary'],
   test: {
     globals: false,
     silent: 'passed-only',
