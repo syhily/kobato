@@ -264,6 +264,13 @@ export async function restorePost(
           const indexWarning = '搜索索引更新失败，该文章可能不会出现在搜索结果中。'
           warning = warning !== undefined ? `${warning} ${indexWarning}` : indexWarning
         }
+      } else {
+        // Corrupt JSONB (e.g. a direct INSERT) — the post is restored but
+        // would silently never be indexed without this log.
+        log.warn('restore post: body validation failed, skipping search index', {
+          postId: id.toString(),
+          error: bodyResult.error.message,
+        })
       }
     }
   }
