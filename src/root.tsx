@@ -91,9 +91,11 @@ export async function loader({ request, context }: Route.LoaderArgs) {
 
   // Resolve the configured font-id slots into browser-ready {family, href}
   // lists so `<head>` can emit one self-hosted `<link>` per font without a
-  // second round-trip. The post (article-body) slot is resolved here but
-  // deliberately not rendered — see the Layout below. `getDbFromContext` is
-  // read lazily so a missing bundle never touches the request db.
+  // second round-trip. Post/code fonts are resolved eagerly (the root layout
+  // can't know which child routes opt in via `handle.postFonts` until render)
+  // but only rendered when the matched route opts in — see the Layout below.
+  // `getDbFromContext` is read lazily so a missing bundle never touches the
+  // request db.
   const fonts = blogSettings?.fonts
     ? await resolveFontsForRender(getDbFromContext({ request, context }), blogSettings.fonts, /* wantsPostFonts */ true)
     : null
@@ -126,6 +128,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
     criticalLinks?: string[]
     fonts?: {
       global: { family: string; href: string }[]
+      post: { family: string; href: string }[]
       code: { family: string; href: string }[]
     } | null
     tier2Chunks?: string[]
@@ -136,22 +139,21 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const assetHost = rootData?.blogSettings?.assets?.asset?.host
   const fonts = rootData?.fonts
   const globalFonts = fonts?.global ?? []
+  const postFonts = fonts?.post ?? []
   const codeFonts = fonts?.code ?? []
 
   const matches = useMatches()
   const wantsPostFonts = matches.some((m) => isRecord(m.handle) && m.handle.postFonts === true)
-  // Code fonts load only on routes that render article/code content (they opt
-  // in via `handle.postFonts`). The post (article-body serif) slot is resolved
-  // by the loader but intentionally not rendered here: this branch preserves
-  // the existing PT prose typography stack, so no article-body font override
-  // is emitted.
+  // Post/code fonts load only on routes that render article content (they opt
+  // in via `handle.postFonts`); the global slot loads on every page.
+  const activePostFonts = wantsPostFonts ? postFonts : []
   const activeCodeFonts = wantsPostFonts ? codeFonts : []
 
   // Preconnect to every distinct host the self-hosted fonts load from.
   // Local storage resolves to 'self' (a relative URL → skipped); S3 storage
   // resolves to the asset host, which is already preconnected below.
   const fontHosts = new Set<string>()
-  for (const f of [...globalFonts, ...activeCodeFonts]) {
+  for (const f of [...globalFonts, ...activePostFonts, ...activeCodeFonts]) {
     if (!f.href) {
       continue
     }
@@ -182,13 +184,19 @@ export function Layout({ children }: { children: React.ReactNode }) {
   // When custom fonts are configured, override the CSS font tokens on <html>
   // so the slot's family stack is prepended to the existing fallback chain
   // (an empty slot leaves the token at its stylesheet default).
-  //   global → --font-body (site-wide UI font)
-  //   code   → --font-code (inline/block code monospace font)
+  //   global → --font-body  (site-wide UI font)
+  //   post   → --font-serif (article body serif font)
+  //   code   → --font-code  (inline/block code monospace font)
   const htmlStyle: Record<string, string> = {}
   if (globalFonts.length > 0) {
     const stack = globalFonts.map((f) => `'${f.family}'`).join(', ')
     htmlStyle['--font-body'] =
       `${stack}, 'OPPO Sans 4.0', 'OPPO Sans', OPPOSans, 'PingFang SC', 'Lantinghei SC', 'Microsoft YaHei', 'Source Han Sans CN', -apple-system, BlinkMacSystemFont, 'HanHei SC', 'Helvetica Neue', 'Open Sans', Arial, 'Hiragino Sans GB', STHeiti, 'WenQuanYi Micro Hei', SimSun, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol'`
+  }
+  if (activePostFonts.length > 0) {
+    const stack = activePostFonts.map((f) => `'${f.family}'`).join(', ')
+    htmlStyle['--font-serif'] =
+      `${stack}, 'OPPO Serif SC', 'Source Han Serif SC', 'Noto Serif CJK SC', 'Songti SC', SimSun, Georgia, Times, serif`
   }
   if (activeCodeFonts.length > 0) {
     const stack = activeCodeFonts.map((f) => `'${f.family}'`).join(', ')
@@ -210,6 +218,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
             pulls the whole progressive-load cascade. Served from 'self'
             (local storage) or the asset CDN host (S3) — both CSP-safe. */}
         {globalFonts.map((f) => (f.href ? <link key={`g-${f.href}`} rel="stylesheet" href={f.href} /> : null))}
+        {activePostFonts.map((f) => (f.href ? <link key={`p-${f.href}`} rel="stylesheet" href={f.href} /> : null))}
         {activeCodeFonts.map((f) => (f.href ? <link key={`c-${f.href}`} rel="stylesheet" href={f.href} /> : null))}
         <Meta />
         <Links />

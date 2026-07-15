@@ -958,6 +958,11 @@ pre.shiki span {
     'OPPO Sans 4.0', 'OPPO Sans', OPPOSans, 'PingFang SC', 'Lantinghei SC', 'Microsoft YaHei', 'Source Han Sans CN',
     -apple-system, BlinkMacSystemFont, 'HanHei SC', 'Helvetica Neue', 'Open Sans', Arial, 'Hiragino Sans GB', STHeiti,
     'WenQuanYi Micro Hei', SimSun, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol';
+
+  /* Article-body serif stack. Same runtime-override mechanism as --font-body:
+     root.tsx prepends the configured post-slot families on <html>; without a
+     configured slot the prose body falls back to this default chain. */
+  --font-serif: 'OPPO Serif SC', 'Source Han Serif SC', 'Noto Serif CJK SC', 'Songti SC', SimSun, Georgia, Times, serif;
 }
 
 /* Document chrome body font cursors */
@@ -1032,7 +1037,7 @@ body {
     --tw-prose-invert-th-borders: var(--prose-blog-th-borders);
     --tw-prose-invert-td-borders: var(--prose-blog-td-borders);
 
-    font-family: 'OPPO Serif SC';
+    font-family: var(--font-serif);
 
     :where(blockquote) {
       font-style: normal;
