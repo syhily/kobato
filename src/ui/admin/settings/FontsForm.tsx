@@ -1,7 +1,6 @@
-import { PlusIcon, Trash2Icon, UploadIcon } from 'lucide-react'
+import { UploadIcon } from 'lucide-react'
 import { useRef, useState } from 'react'
-import { useFieldArray } from 'react-hook-form'
-import { useRouteLoaderData } from 'react-router'
+import { Link, useRouteLoaderData } from 'react-router'
 import { toast } from 'sonner'
 
 import type { FontsSettings } from '@/shared/config/types'
@@ -13,11 +12,6 @@ import { useSettingsCard } from '@/ui/admin/settings/shell/useSettingsCard'
 import { Button } from '@/ui/components/button'
 import { Input } from '@/ui/components/input'
 import { extractApiErrorMessage } from '@/ui/lib/api-error'
-
-interface CssRow {
-  clientId: string
-  url: string
-}
 
 interface FontsFormProps {
   fonts: FontsSettings
@@ -150,129 +144,19 @@ function FontsCanvasCard({ fonts }: { fonts: FontsSettings }) {
   )
 }
 
-function FontsGlobalCssCard({ fonts }: { fonts: FontsSettings }) {
-  const { form, settingGroupProps } = useSettingsCard<FontsSettings, { globalCss: CssRow[] }>({
-    section: 'fonts',
-    source: fonts,
-    toState: (source) => ({
-      globalCss: source.globalCss.map((url, i) => ({ clientId: `css-global-${i}`, url })),
-    }),
-    fromState: (state) => ({
-      globalCss: state.globalCss.map((row) => row.url.trim()).filter((url) => url !== ''),
-    }),
-  })
-
-  const rows = useFieldArray({ control: form.control, name: 'globalCss' })
-
+function FontsWebFontNoticeCard() {
   return (
     <SettingGroup
-      title="全站字体 CSS"
-      description="每个 URL 都会在所有页面的 <head> 注入一个 <link rel='stylesheet'>。"
-      {...settingGroupProps}
+      title="网页字体"
+      description="网站字体与槽位分配。前往字体库上传 TTF/OTF 自动分包，拖拽分配到全站 / 文章 / 代码槽位。"
     >
       <SettingGroupContent>
-        <div className="flex flex-col gap-3">
-          {rows.fields.length === 0 ? (
-            <p className="text-sm text-muted-foreground">还没有添加 CSS，点击下方按钮新增一项。</p>
-          ) : (
-            rows.fields.map((field, index) => (
-              <div key={field.id} className="flex items-center gap-2">
-                <Input
-                  type="url"
-                  placeholder="https://assets.example.com/fonts/<name>.css"
-                  maxLength={500}
-                  className="flex-1"
-                  {...form.register(`globalCss.${index}.url` as const)}
-                />
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => rows.remove(index)}
-                  aria-label="删除此项"
-                >
-                  <Trash2Icon className="text-destructive" />
-                </Button>
-              </div>
-            ))
-          )}
-          <div>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              disabled={rows.fields.length >= 8}
-              onClick={() => rows.append({ clientId: crypto.randomUUID(), url: '' })}
-            >
-              <PlusIcon /> 添加全站 CSS
-            </Button>
-            {rows.fields.length >= 8 && <span className="ml-2 text-xs text-muted-foreground">上限 8 条</span>}
-          </div>
-        </div>
-      </SettingGroupContent>
-    </SettingGroup>
-  )
-}
-
-function FontsPostCssCard({ fonts }: { fonts: FontsSettings }) {
-  const { form, settingGroupProps } = useSettingsCard<FontsSettings, { postCss: CssRow[] }>({
-    section: 'fonts',
-    source: fonts,
-    toState: (source) => ({
-      postCss: source.postCss.map((url, i) => ({ clientId: `css-post-${i}`, url })),
-    }),
-    fromState: (state) => ({
-      postCss: state.postCss.map((row) => row.url.trim()).filter((url) => url !== ''),
-    }),
-  })
-
-  const rows = useFieldArray({ control: form.control, name: 'postCss' })
-
-  return (
-    <SettingGroup
-      title="文章页字体 CSS"
-      description="仅在文章详情页的 <head> 注入。适合体积大、仅长文阅读需要的字体。"
-      {...settingGroupProps}
-    >
-      <SettingGroupContent>
-        <div className="flex flex-col gap-3">
-          {rows.fields.length === 0 ? (
-            <p className="text-sm text-muted-foreground">还没有添加 CSS，点击下方按钮新增一项。</p>
-          ) : (
-            rows.fields.map((field, index) => (
-              <div key={field.id} className="flex items-center gap-2">
-                <Input
-                  type="url"
-                  placeholder="https://assets.example.com/fonts/<name>.css"
-                  maxLength={500}
-                  className="flex-1"
-                  {...form.register(`postCss.${index}.url` as const)}
-                />
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => rows.remove(index)}
-                  aria-label="删除此项"
-                >
-                  <Trash2Icon className="text-destructive" />
-                </Button>
-              </div>
-            ))
-          )}
-          <div>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              disabled={rows.fields.length >= 8}
-              onClick={() => rows.append({ clientId: crypto.randomUUID(), url: '' })}
-            >
-              <PlusIcon /> 添加文章页 CSS
-            </Button>
-            {rows.fields.length >= 8 && <span className="ml-2 text-xs text-muted-foreground">上限 8 条</span>}
-          </div>
-        </div>
+        <Link
+          to="/admin/library/fonts"
+          className="inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline"
+        >
+          打开字体库 →
+        </Link>
       </SettingGroupContent>
     </SettingGroup>
   )
@@ -281,9 +165,8 @@ function FontsPostCssCard({ fonts }: { fonts: FontsSettings }) {
 export function FontsForm({ fonts }: FontsFormProps) {
   return (
     <div className="flex flex-col gap-5">
+      <FontsWebFontNoticeCard />
       <FontsCanvasCard fonts={fonts} />
-      <FontsGlobalCssCard fonts={fonts} />
-      <FontsPostCssCard fonts={fonts} />
     </div>
   )
 }

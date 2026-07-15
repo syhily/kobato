@@ -78,6 +78,32 @@ export function resolveAssetUrl(driver: StorageDriver, storagePath: string, upda
 }
 
 /**
+ * Resolve the public URL for a self-hosted font's entry CSS. Differs from
+ * `resolveAssetUrl` only for the `local` driver: instead of the generic
+ * `/storage/fonts/<hash>/result.css`, local fonts are served from a dedicated
+ * `/fonts/embedded/<hash>/result.css` route that isolates font packages from
+ * the general-purpose local storage namespace.
+ *
+ * - `local` → `<generalWebsite>/fonts/embedded/<hash>/result.css`
+ * - `s3`    → `<publicBaseUrl>/fonts/<hash>/result.css` (same as before)
+ */
+export function resolveFontAssetUrl(driver: StorageDriver, hash: string, updatedAtMs?: number): string {
+  const cssKey = `fonts/${hash}/result.css`
+  if (driver === 'local') {
+    const website = getGeneralWebsite()
+    if (website === '') {
+      throw new ActionFailure(503, '请先在 /admin/settings/general 配置站点网址（siteIdentity.website）')
+    }
+    return appendVersion(`${website}/fonts/embedded/${hash}/result.css`, updatedAtMs)
+  }
+  const publicBaseUrl = getPublicBaseUrl()
+  if (publicBaseUrl === null) {
+    throw new ActionFailure(503, '请先在 /admin/settings/assets 配置 S3 公共访问基地址')
+  }
+  return appendVersion(`${publicBaseUrl}/${cssKey}`, updatedAtMs)
+}
+
+/**
  * Null-safe variant: returns `null` instead of throwing when an S3 asset's
  * CDN base is unset. Used by SSR/list renderers that must degrade gracefully.
  */

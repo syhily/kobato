@@ -14,19 +14,9 @@ import { buildCspHeader } from '@/server/http/middleware-pipeline'
 const NONCE = 'abcdef0123456789'
 
 /** Build a minimal bundle carrying only the fields `buildCspHeader` reads. */
-function bundleWith(overrides: {
-  fonts?: Partial<NonNullable<BlogSettingsBundle['fonts']>>
-  host?: string | null
-}): BlogSettingsBundle {
+function bundleWith(overrides: { host?: string | null }): BlogSettingsBundle {
   return {
     ...TEST_BLOG_SETTINGS_BUNDLE,
-    fonts: {
-      og: { family: '' },
-      calendar: { family: '' },
-      globalCss: [],
-      postCss: [],
-      ...overrides.fonts,
-    },
     assets:
       overrides.host === null
         ? null
@@ -59,45 +49,20 @@ describe('buildCspHeader', () => {
     expect(prodWorkerSrc).toBe("worker-src 'self'")
   })
 
-  it('extracts font CSS origins into style-src and font-src', () => {
-    const bundle = bundleWith({
-      fonts: {
-        globalCss: ['https://fonts.googleapis.com/css?family=Foo'],
-        postCss: ['https://fonts.bunny.net/css?family=Bar'],
-      },
-      host: null,
-    })
-    const csp = buildCspHeader({ bundle, nonce: NONCE, isDev: false })
-
-    // The `extra` template literal injects a leading space before each
-    // origin list, so directives with an `'unsafe-inline'` token carry
-    // a double space before the origin list (mirrors production output).
-    expect(csp).toContain('style-src ' + "'self' 'unsafe-inline'  https://fonts.googleapis.com https://fonts.bunny.net")
-    expect(csp).toContain('font-src ' + "'self'  https://fonts.googleapis.com https://fonts.bunny.net")
-    expect(csp).toContain('img-src ' + "'self' data: blob:  https://fonts.googleapis.com https://fonts.bunny.net")
-    expect(csp).toContain('media-src ' + "'self'  https://fonts.googleapis.com https://fonts.bunny.net")
-  })
-
-  it('skips malformed font URLs without throwing', () => {
-    const bundle = bundleWith({
-      fonts: {
-        globalCss: ['not-a-valid-url', 'https://valid.example.com/x.css'],
-        postCss: [],
-      },
-      host: null,
-    })
-    // Must not throw — invalid entry is silently dropped, valid one kept.
-    const csp = buildCspHeader({ bundle, nonce: NONCE, isDev: false })
-    expect(csp).toContain('https://valid.example.com')
-    expect(csp).not.toContain('not-a-valid-url')
+  it('does NOT inject any per-font origin (self-hosted fonts are served from self / asset host)', () => {
+    // Self-hosted web fonts live under /fonts/embedded/* (local) or the asset
+    // CDN host (S3); both are already covered by 'self' / the asset host.
+    // No external font origin (Google Fonts etc.) should ever appear.
+    const csp = buildCspHeader({ bundle: bundleWith({ host: null }), nonce: NONCE, isDev: false })
+    expect(csp).not.toContain('fonts.googleapis.com')
+    expect(csp).not.toContain('fonts.bunny.net')
+    expect(csp).not.toMatch(/font-src[^;]*https:/)
   })
 
   it('adds the asset host as an https origin', () => {
-    const bundle = bundleWith({ host: 'cdn.example.com' })
-    const csp = buildCspHeader({ bundle, nonce: NONCE, isDev: false })
+    const csp = buildCspHeader({ bundle: bundleWith({ host: 'cdn.example.com' }), nonce: NONCE, isDev: false })
     expect(csp).toContain('https://cdn.example.com')
     // The asset host must land in style-src / font-src / img-src / media-src.
-    // (Same double-space quirk as the font-origin case above.)
     expect(csp).toContain('style-src ' + "'self' 'unsafe-inline'  https://cdn.example.com")
     expect(csp).toContain('font-src ' + "'self'  https://cdn.example.com")
     expect(csp).toContain('img-src ' + "'self' data: blob:  https://cdn.example.com")

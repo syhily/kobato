@@ -28,6 +28,8 @@ import { backupRouter } from '@/server/http/resources/backup'
 import { brandingRouter } from '@/server/http/resources/branding'
 import { feedRouter } from '@/server/http/resources/feed'
 import { fontsRouter } from '@/server/http/resources/fonts'
+import { fontsEmbeddedRouter } from '@/server/http/resources/fonts-embedded'
+import { fontsPackageRouter } from '@/server/http/resources/fonts-package'
 import { imagesRouter } from '@/server/http/resources/images'
 import { localStorageRouter } from '@/server/http/resources/local-storage'
 import { maxmindRouter } from '@/server/http/resources/maxmind'
@@ -52,26 +54,21 @@ export interface CspInput {
  * The policy derives per-request from:
  *  - the per-request `nonce` (production script-src),
  *  - whether we are in dev mode (`unsafe-inline` + blob workers),
- *  - externally-hosted origins declared in blog settings
- *    (font CSS URLs + asset CDN host) so admin-configured fonts/images
- *    are not blocked by the strict baseline.
+ *  - the configured asset CDN host (`blog.assets.asset.host`) so S3-served
+ *    media is not blocked. Local storage is covered by `'self'`.
+ *
+ * Self-hosted browser web fonts (the `/admin/library/fonts` packages) are served
+ * from `'self'` (local) or the asset host above (S3), so **no per-font
+ * origin is ever injected** — the previous loop that extracted origins from
+ * external font CSS URLs was removed when those settings fields were dropped.
  *
  * Extracted as a pure function so unit tests can exercise the real
  * logic directly instead of a parallel inline copy in the test suite.
  */
 export function buildCspHeader({ bundle, nonce, isDev }: CspInput): string {
   const origins = new Set<string>()
-  if (bundle) {
-    for (const url of [...(bundle.fonts?.globalCss ?? []), ...(bundle.fonts?.postCss ?? [])]) {
-      try {
-        origins.add(new URL(url).origin)
-      } catch {
-        // Invalid URL — skip.
-      }
-    }
-    if (bundle.assets?.asset?.host) {
-      origins.add(`https://${bundle.assets.asset.host}`)
-    }
+  if (bundle?.assets?.asset?.host) {
+    origins.add(`https://${bundle.assets.asset.host}`)
   }
   const extra = origins.size > 0 ? ' ' + [...origins].join(' ') : ''
   // In development Vite may inject inline scripts (HMR, module preloading,
@@ -116,9 +113,9 @@ export function configureMiddleware(app: Hono<Env>): void {
   app.use(requestId())
   app.use(compress())
   // Dynamic CSP: generates a per-request nonce for script-src and extends
-  // the policy with origins from blog settings (font CSS URLs and asset
-  // host) so externally-hosted fonts / images do not get blocked after an
-  // admin configures them.
+  // the policy with the asset CDN host from blog settings so S3-served
+  // media (fonts / images / music) is not blocked after an admin
+  // configures storage.
   //
   // Registered BEFORE `secureHeaders` so its `next()` returns *after*
   // `secureHeaders` has already set the static CSP header, letting us
@@ -192,6 +189,7 @@ export function configureMiddleware(app: Hono<Env>): void {
   // their bodyLimit middleware is not overridden by the 10 MB global limit.
   app.route('/', backupRouter)
   app.route('/', fontsRouter)
+  app.route('/', fontsPackageRouter)
   app.route('/', maxmindRouter)
   app.route('/', musicProxyRouter)
 
@@ -210,6 +208,9 @@ export function configureMiddleware(app: Hono<Env>): void {
   // branding uploaded while S3 was disabled). Public — no auth — and
   // supports Range requests for audio seeking.
   app.route('/', localStorageRouter)
+  // Self-hosted web-font packages served from a dedicated namespace
+  // (/fonts/embedded/<hash>/...) separate from the generic /storage/* route.
+  app.route('/', fontsEmbeddedRouter)
   app.route('/', sitemapRouter)
   app.route('/', redirectsRouter)
 

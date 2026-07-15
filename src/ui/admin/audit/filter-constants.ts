@@ -98,6 +98,8 @@ export const ACTION_OPTIONS = [
   { value: 'passkey_force_changed', label: '通行密钥强制变更' },
   { value: 'maxmind_uploaded', label: 'MaxMind 数据上传' },
   { value: 'font_uploaded', label: '字体上传' },
+  { value: 'font_deleted', label: '字体删除' },
+  { value: 'font_slot_updated', label: '字体槽位更新' },
 ]
 
 export const RESOURCE_TYPE_OPTIONS = [

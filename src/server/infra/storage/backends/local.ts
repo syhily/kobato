@@ -185,6 +185,18 @@ export const localBackend: StorageBackend = {
     await Promise.all(keys.map((key) => localBackend.delete(key)))
   },
 
+  async deletePrefix(prefix: string): Promise<void> {
+    try {
+      const dir = path.resolve(STORAGE_DIR, prefix)
+      if (!isPathInside(dir, STORAGE_DIR)) {
+        return
+      }
+      await rm(dir, { recursive: true, force: true })
+    } catch (error) {
+      log.warn('Failed to delete local prefix', { prefix, error })
+    }
+  },
+
   async list(prefix: string, opts?: { maxKeys?: number }): Promise<StoredObjectMeta[]> {
     const base = path.resolve(STORAGE_DIR, prefix)
     if (!isPathInside(base, STORAGE_DIR)) {

@@ -42,7 +42,7 @@ describe('root loader', () => {
     })
     args.context.set(cspNonceContext, 'test-nonce-abc123')
 
-    const result = loader(args)
+    const result = await loader(args)
 
     expect(result).toMatchObject({
       cspNonce: 'test-nonce-abc123',

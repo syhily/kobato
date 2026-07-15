@@ -14,7 +14,8 @@ import { useChunkErrorRecovery, useReloadOnChunkError } from '@/client/hooks/use
 import { useFocusHash } from '@/client/hooks/use-focus-hash'
 import { useIosNoZoomOnFocus } from '@/client/hooks/use-ios-no-zoom'
 import { defaultTransition } from '@/client/lib/motion'
-import { getCspNonceFromContext, getRouteRequestContext } from '@/server/domains/auth/context'
+import { getCspNonceFromContext, getDbFromContext, getRouteRequestContext } from '@/server/domains/auth/context'
+import { resolveFontsForRender } from '@/server/domains/fonts/services/render'
 import { redactSecretsFromBundle } from '@/server/domains/settings/services/core'
 import { bundleFromMatches, routeMeta } from '@/server/render/seo/meta'
 import { getCriticalChunksForPathname, getWarmupManifest } from '@/server/render/warmup/manifest'
@@ -71,7 +72,7 @@ export function meta({ loaderData, matches }: Route.MetaArgs) {
   return routeMeta(undefined, loaderData?.blogSettings ?? bundleFromMatches(matches))
 }
 
-export function loader({ request, context }: Route.LoaderArgs) {
+export async function loader({ request, context }: Route.LoaderArgs) {
   const { role, user, session } = getRouteRequestContext({ request, context })
   const admin = role === 'admin'
   const csrfToken = session.get('csrfToken')
@@ -88,6 +89,15 @@ export function loader({ request, context }: Route.LoaderArgs) {
   const rawBundle = getBlogSettingsBundleSync()
   const blogSettings = rawBundle ? redactSecretsFromBundle(rawBundle) : null
 
+  // Resolve the configured font-id slots into browser-ready {family, href}
+  // lists so `<head>` can emit one self-hosted `<link>` per font without a
+  // second round-trip. The post (article-body) slot is resolved here but
+  // deliberately not rendered — see the Layout below. `getDbFromContext` is
+  // read lazily so a missing bundle never touches the request db.
+  const fonts = blogSettings?.fonts
+    ? await resolveFontsForRender(getDbFromContext({ request, context }), blogSettings.fonts, /* wantsPostFonts */ true)
+    : null
+
   const warmupManifest = getWarmupManifest()
   const pathname = new URL(request.url).pathname
   const criticalLinks = getCriticalChunksForPathname(pathname) ?? warmupManifest?.tier1 ?? []
@@ -95,7 +105,7 @@ export function loader({ request, context }: Route.LoaderArgs) {
 
   const cspNonce = getCspNonceFromContext({ request, context })
 
-  return { admin, currentUser, blogSettings, theme, csrfToken, criticalLinks, tier2Chunks, cspNonce }
+  return { admin, currentUser, blogSettings, fonts, theme, csrfToken, criticalLinks, tier2Chunks, cspNonce }
 }
 
 export function shouldRevalidate({ formAction, defaultShouldRevalidate }: ShouldRevalidateFunctionArgs) {
@@ -110,32 +120,53 @@ export function Layout({ children }: { children: React.ReactNode }) {
     admin?: boolean
     theme?: 'dark' | 'light' | null
     blogSettings?: {
-      fonts?: { globalCss?: string[]; postCss?: string[] } | null
       assets?: { asset?: { host?: string } | null } | null
       siteIdentity?: { locale?: string } | null
     } | null
     criticalLinks?: string[]
+    fonts?: {
+      global: { family: string; href: string }[]
+      code: { family: string; href: string }[]
+    } | null
     tier2Chunks?: string[]
     csrfToken?: string
     cspNonce?: string
   }>('root')
   const theme = rootData?.theme ?? null
-  const globalFontCss = rootData?.blogSettings?.fonts?.globalCss ?? []
   const assetHost = rootData?.blogSettings?.assets?.asset?.host
+  const fonts = rootData?.fonts
+  const globalFonts = fonts?.global ?? []
+  const codeFonts = fonts?.code ?? []
 
-  const fontHosts: string[] = []
-  for (const url of globalFontCss) {
+  const matches = useMatches()
+  const wantsPostFonts = matches.some((m) => isRecord(m.handle) && m.handle.postFonts === true)
+  // Code fonts load only on routes that render article/code content (they opt
+  // in via `handle.postFonts`). The post (article-body serif) slot is resolved
+  // by the loader but intentionally not rendered here: this branch preserves
+  // the existing PT prose typography stack, so no article-body font override
+  // is emitted.
+  const activeCodeFonts = wantsPostFonts ? codeFonts : []
+
+  // Preconnect to every distinct host the self-hosted fonts load from.
+  // Local storage resolves to 'self' (a relative URL → skipped); S3 storage
+  // resolves to the asset host, which is already preconnected below.
+  const fontHosts = new Set<string>()
+  for (const f of [...globalFonts, ...activeCodeFonts]) {
+    if (!f.href) {
+      continue
+    }
     try {
-      const host = new URL(url).host
-      if (!fontHosts.includes(host)) {
-        fontHosts.push(host)
+      const host = new URL(f.href).host
+      if (host) {
+        fontHosts.add(host)
       }
     } catch {
-      // Invalid URL — skip.
+      // Relative URL (local 'self') — nothing to preconnect.
     }
   }
 
   if (assetHost) {
+    fontHosts.add(assetHost)
     preconnect(`https://${assetHost}`, { crossOrigin: 'anonymous' })
   }
   for (const host of fontHosts) {
@@ -148,22 +179,38 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
   const locale = rootData?.blogSettings?.siteIdentity?.locale ?? 'zh-CN'
 
-  const matches = useMatches()
-  const wantsPostFonts = matches.some((m) => isRecord(m.handle) && m.handle.postFonts === true)
-  const postFontCss = wantsPostFonts ? (rootData?.blogSettings?.fonts?.postCss ?? []) : []
+  // When custom fonts are configured, override the CSS font tokens on <html>
+  // so the slot's family stack is prepended to the existing fallback chain
+  // (an empty slot leaves the token at its stylesheet default).
+  //   global → --font-body (site-wide UI font)
+  //   code   → --font-code (inline/block code monospace font)
+  const htmlStyle: Record<string, string> = {}
+  if (globalFonts.length > 0) {
+    const stack = globalFonts.map((f) => `'${f.family}'`).join(', ')
+    htmlStyle['--font-body'] =
+      `${stack}, 'OPPO Sans 4.0', 'OPPO Sans', OPPOSans, 'PingFang SC', 'Lantinghei SC', 'Microsoft YaHei', 'Source Han Sans CN', -apple-system, BlinkMacSystemFont, 'HanHei SC', 'Helvetica Neue', 'Open Sans', Arial, 'Hiragino Sans GB', STHeiti, 'WenQuanYi Micro Hei', SimSun, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol'`
+  }
+  if (activeCodeFonts.length > 0) {
+    const stack = activeCodeFonts.map((f) => `'${f.family}'`).join(', ')
+    htmlStyle['--font-code'] = `${stack}, 'Iosevka', monospace`
+  }
 
   return (
-    <html lang={locale} className={theme ?? undefined}>
+    <html
+      lang={locale}
+      className={theme ?? undefined}
+      style={Object.keys(htmlStyle).length > 0 ? htmlStyle : undefined}
+    >
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <meta name="color-scheme" content={theme ?? 'light dark'} />
-        {globalFontCss.map((url) => (
-          <link key={url} rel="stylesheet" href={url} />
-        ))}
-        {postFontCss.map((url) => (
-          <link key={url} rel="stylesheet" href={url} />
-        ))}
+        {/* Self-hosted web-font packages. Each font's result.css references
+            its woff2 chunks via relative paths, so a single <link> per font
+            pulls the whole progressive-load cascade. Served from 'self'
+            (local storage) or the asset CDN host (S3) — both CSP-safe. */}
+        {globalFonts.map((f) => (f.href ? <link key={`g-${f.href}`} rel="stylesheet" href={f.href} /> : null))}
+        {activeCodeFonts.map((f) => (f.href ? <link key={`c-${f.href}`} rel="stylesheet" href={f.href} /> : null))}
         <Meta />
         <Links />
         {criticalLinks.map((href) => (

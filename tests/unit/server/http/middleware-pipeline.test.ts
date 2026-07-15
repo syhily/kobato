@@ -81,6 +81,10 @@ vi.mock('@/server/http/resources/fonts', () => ({
   fontsRouter: new Hono(),
 }))
 
+vi.mock('@/server/http/resources/fonts-package', () => ({
+  fontsPackageRouter: new Hono(),
+}))
+
 vi.mock('@/server/http/resources/images', () => ({
   imagesRouter: new Hono(),
 }))
@@ -114,7 +118,8 @@ vi.mock('@/server/infra/lifecycle', () => ({
 
 vi.mock('@/server/infra/logger', () => ({
   root: {},
-  getLogger: vi.fn(() => ({ info: vi.fn(), warn: vi.fn(), error: vi.fn() })),
+  getLogger: vi.fn(() => ({ info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() })),
+  L3_KEYS: new Set<string>(),
 }))
 
 vi.mock('hono-pino', () => ({
@@ -152,17 +157,21 @@ describe('buildCspHeader', () => {
     expect(header).toContain("worker-src 'self' blob:")
   })
 
-  it('adds font and asset origins from the bundle', () => {
+  it('adds the asset host from the bundle (self-hosted fonts need no per-font origin)', () => {
     const header = buildCspHeader({
       bundle: {
-        fonts: { globalCss: ['https://fonts.example.com/font.css'], postCss: ['bad-url'] },
+        // The fonts section now carries slot id lists (global/post/code),
+        // not external CSS URLs — no per-font origin is ever injected.
+        fonts: { global: [], post: [], code: [] },
         assets: { asset: { host: 'cdn.example.com' } },
       } as never,
       nonce: 'abc123',
       isDev: false,
     })
-    expect(header).toContain('https://fonts.example.com')
     expect(header).toContain('https://cdn.example.com')
+    // No external font origin leaks in — self-hosted packages are served
+    // from 'self' (local) or the asset host above (S3), both CSP-safe.
+    expect(header).not.toContain('fonts.example.com')
   })
 })
 

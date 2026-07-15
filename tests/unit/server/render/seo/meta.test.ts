@@ -140,8 +140,9 @@ const fixture: BlogSettingsBundle = {
   fonts: {
     og: { family: '' },
     calendar: { family: '' },
-    globalCss: [],
-    postCss: [],
+    global: [],
+    post: [],
+    code: [],
   },
   backup: {
     scheduled: { enabled: false, frequency: 'daily', hour: 3, minute: 0 },

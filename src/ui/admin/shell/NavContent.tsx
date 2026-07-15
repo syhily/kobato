@@ -129,7 +129,12 @@ export function NavContent({ role, pendingCommentCount = 0, userCount }: NavCont
           {showAuthorItems && (
             <NavMenuItem.Collapsible
               id="media-submenu"
-              paths={['/admin/library/images', '/admin/library/music', '/admin/library/branding']}
+              paths={[
+                '/admin/library/images',
+                '/admin/library/music',
+                '/admin/library/branding',
+                '/admin/library/fonts',
+              ]}
             >
               <NavMenuItem.CollapsibleItem ariaLabel="展开媒体管理子菜单">
                 <ImagesIcon />
@@ -151,6 +156,13 @@ export function NavContent({ role, pendingCommentCount = 0, userCount }: NavCont
                   <NavMenuItem>
                     <NavMenuItem.Link to="/admin/library/branding" className="pl-11">
                       <NavMenuItem.Label>品牌素材</NavMenuItem.Label>
+                    </NavMenuItem.Link>
+                  </NavMenuItem>
+                )}
+                {showAdminItems && (
+                  <NavMenuItem>
+                    <NavMenuItem.Link to="/admin/library/fonts" className="pl-11">
+                      <NavMenuItem.Label>网站字体</NavMenuItem.Label>
                     </NavMenuItem.Link>
                   </NavMenuItem>
                 )}

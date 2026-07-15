@@ -60,6 +60,8 @@ export interface StorageBackend {
   exists(key: string): Promise<boolean>
   delete(key: string): Promise<void>
   deleteMany(keys: string[]): Promise<void>
+  /** Delete every object under `prefix` including the prefix directory itself. */
+  deletePrefix(prefix: string): Promise<void>
   list(prefix: string, opts?: { maxKeys?: number }): Promise<StoredObjectMeta[]>
 }
 
