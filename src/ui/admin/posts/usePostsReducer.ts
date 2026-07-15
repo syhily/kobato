@@ -118,7 +118,7 @@ function postsReducer(state: PostsState, action: PostsAction): PostsState {
   }
 }
 
-export function usePostsController() {
+export function usePostsReducer() {
   const { search } = useLocation()
   const initialStatus = getInitialStatusFromSearch(search)
   const initialTag = getInitialTagFromSearch(search)
@@ -175,4 +175,4 @@ export function usePostsController() {
   return { state, dispatch }
 }
 
-export type PostsControllerDispatch = ReturnType<typeof usePostsController>['dispatch']
+export type PostsReducerDispatch = ReturnType<typeof usePostsReducer>['dispatch']

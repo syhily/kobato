@@ -1,3 +1,6 @@
+import type { ReactNode } from 'react'
+
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { describe, expect, it } from 'vitest'
 
 import type { CommentBody } from '@/shared/pt/comment-schema'
@@ -8,17 +11,35 @@ import {
   DATE_FILTER_OPERATORS,
   DEFAULT_DATE_OPERATOR,
   DEFAULT_TEXT_OPERATOR,
-  type DateFilterValue,
-  type TextFilterValue,
+  approveCommentInPages,
+  clearDeleteRequestInPages,
   dateFilterLabel,
   isDateFilterOperator,
   isTextFilterOperator,
   parseDateFilter,
   parseTextFilter,
+  removeCommentFromPages,
   resolveDateFilterBounds,
   textFilterLabel,
+  updateCommentBodyInPages,
   useCommentsController,
+  type AdminCommentsData,
+  type AdminCommentsPage,
+  type DateFilterValue,
+  type TextFilterValue,
 } from '@/ui/admin/comments/useCommentsController'
+
+// The controller owns a `useInfiniteQuery` + `useQueryClient`, so hook tests
+// need a real QueryClient above the memory router that `renderHook` mounts.
+// No fetch ever fires — effects do not run under the SSR hook runner.
+function makeWrapper() {
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false, gcTime: 0 }, mutations: { retry: false } },
+  })
+  return function Wrapper({ children }: { children: ReactNode }) {
+    return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+  }
+}
 
 let commentId = 0
 function makeAdminComment(overrides: Partial<AdminComment> = {}): AdminComment {
@@ -64,6 +85,20 @@ function makeAdminComment(overrides: Partial<AdminComment> = {}): AdminComment {
     pagePermalink: null,
     ...overrides,
   }
+}
+
+function makePage(comments: AdminComment[], overrides: Partial<AdminCommentsPage> = {}): AdminCommentsPage {
+  return {
+    comments,
+    total: comments.length,
+    hasMore: false,
+    statusCounts: { all: comments.length, pending: 0, approved: comments.length, deleteRequested: 0 },
+    ...overrides,
+  }
+}
+
+function makeData(...pages: AdminCommentsPage[]): AdminCommentsData {
+  return { pages, pageParams: pages.map((_, index) => index * 10) }
 }
 
 describe('ui/admin/comments/useCommentsController helpers', () => {
@@ -129,117 +164,43 @@ describe('ui/admin/comments/useCommentsController helpers', () => {
   })
 })
 
-describe('ui/admin/comments/useCommentsController hook', () => {
-  it('starts with the provided filters', () => {
-    const { state, filterStatus } = renderHook(() =>
-      useCommentsController({ initialFilters: [{ field: 'status', value: 'pending', label: '待审' }] }),
-    )
-    expect(state.filters).toHaveLength(1)
-    expect(filterStatus).toBe('pending')
-    expect(state.total).toBe(0)
-    expect(state.statusCounts).toEqual({ all: 0, pending: 0, approved: 0, deleteRequested: 0 })
-  })
-
-  it('derives page and author filters', () => {
-    const { filterPageKey, filterAuthorId } = renderHook(() =>
-      useCommentsController({
-        initialFilters: [
-          { field: 'page', value: 'page-1', label: 'Page' },
-          { field: 'author', value: 'user-42', label: 'Author' },
-        ],
-      }),
-    )
-    expect(filterPageKey).toBe('page-1')
-    expect(filterAuthorId).toBe('user-42')
-  })
-
-  it('parses text and date filters', () => {
-    const text: TextFilterValue = { op: 'contains', value: 'hello' }
-    const date: DateFilterValue = { date: '2024-03-15', op: 'is-greater' }
-    const { filterText, filterDateRange, filterCreatedAfter } = renderHook(() =>
-      useCommentsController({
-        initialFilters: [
-          { field: 'text', value: JSON.stringify(text), label: 'Text' },
-          { field: 'date', value: JSON.stringify(date), label: 'Date' },
-        ],
-      }),
-    )
-    expect(filterText).toEqual(text)
-    expect(filterDateRange).toEqual(date)
-    const expectedEnd = new Date('2024-03-15')
-    expectedEnd.setHours(23, 59, 59, 999)
-    expect(filterCreatedAfter).toBe(expectedEnd.toISOString())
-  })
-
-  it('loads comments and status counts', () => {
-    const comments = [makeAdminComment(), makeAdminComment()]
-    const statusCounts = { all: 2, pending: 1, approved: 1, deleteRequested: 0 }
-    const { state } = renderHook(() => useCommentsController({ initialFilters: [] }), {
-      actions: [(r) => r.dispatch({ type: 'loaded', comments, total: 2, statusCounts })],
-    })
-    expect(state.comments).toEqual(comments)
-    expect(state.total).toBe(2)
-    expect(state.statusCounts).toEqual(statusCounts)
-  })
-
-  it('appends comments', () => {
-    const first = makeAdminComment()
-    const second = makeAdminComment()
-    const { state } = renderHook(() => useCommentsController({ initialFilters: [] }), {
-      actions: [
-        (r) =>
-          r.dispatch({
-            type: 'loaded',
-            comments: [first],
-            total: 2,
-            statusCounts: { all: 2, pending: 0, approved: 2, deleteRequested: 0 },
-          }),
-        (r) => r.dispatch({ type: 'appended', comments: [second], total: 2 }),
-      ],
-    })
-    expect(state.comments).toEqual([first, second])
-    expect(state.total).toBe(2)
-  })
-
-  it('approves a pending comment and updates counts', () => {
-    const comment = makeAdminComment({ isPending: true })
-    const { state } = renderHook(() => useCommentsController({ initialFilters: [] }), {
-      actions: [
-        (r) =>
-          r.dispatch({
-            type: 'loaded',
-            comments: [comment],
-            total: 1,
-            statusCounts: { all: 1, pending: 1, approved: 0, deleteRequested: 0 },
-          }),
-        (r) => r.dispatch({ type: 'approveComment', id: comment.id }),
-      ],
-    })
-    expect(state.comments[0]!.isPending).toBe(false)
-    expect(state.statusCounts).toEqual({ all: 1, pending: 0, approved: 1, deleteRequested: 0 })
-  })
-
-  it('removes a comment and updates counts', () => {
+describe('ui/admin/comments/useCommentsController page patches', () => {
+  it('removes a comment across pages and updates counts, leaving total untouched', () => {
     const pending = makeAdminComment({ isPending: true })
     const approved = makeAdminComment()
     const requested = makeAdminComment({ deleteRequestedAt: '2024-01-02T00:00:00.000Z' })
-    const { state } = renderHook(() => useCommentsController({ initialFilters: [] }), {
-      actions: [
-        (r) =>
-          r.dispatch({
-            type: 'loaded',
-            comments: [pending, approved, requested],
-            total: 3,
-            statusCounts: { all: 3, pending: 1, approved: 1, deleteRequested: 1 },
-          }),
-        (r) => r.dispatch({ type: 'removeComment', id: pending.id }),
-        (r) => r.dispatch({ type: 'removeComment', id: approved.id }),
-        (r) => r.dispatch({ type: 'removeComment', id: requested.id }),
-      ],
-    })
-    expect(state.comments).toHaveLength(0)
-    expect(state.statusCounts).toEqual({ all: 0, pending: 0, approved: 0, deleteRequested: 0 })
-    expect(state.total).toBe(3)
+    const data = makeData(
+      makePage([pending, approved], {
+        total: 3,
+        statusCounts: { all: 3, pending: 1, approved: 1, deleteRequested: 1 },
+      }),
+      makePage([requested], {
+        total: 3,
+        statusCounts: { all: 3, pending: 1, approved: 1, deleteRequested: 1 },
+      }),
+    )
+
+    const afterPending = removeCommentFromPages(data, pending.id)
+    expect(afterPending.pages[0]!.comments).toEqual([approved])
+    expect(afterPending.pages[0]!.statusCounts).toEqual({ all: 2, pending: 0, approved: 1, deleteRequested: 1 })
+    expect(afterPending.pages[0]!.total).toBe(3)
+
+    const afterRequested = removeCommentFromPages(data, requested.id)
+    expect(afterRequested.pages[1]!.comments).toEqual([])
+    expect(afterRequested.pages[1]!.statusCounts).toEqual({ all: 2, pending: 1, approved: 1, deleteRequested: 0 })
+  })
+
+  it('approves a pending comment and moves the count to approved', () => {
+    const comment = makeAdminComment({ isPending: true })
+    const data = makeData(
+      makePage([comment], {
+        total: 1,
+        statusCounts: { all: 1, pending: 1, approved: 0, deleteRequested: 0 },
+      }),
+    )
+    const next = approveCommentInPages(data, comment.id)
+    expect(next.pages[0]!.comments[0]!.isPending).toBe(false)
+    expect(next.pages[0]!.statusCounts).toEqual({ all: 1, pending: 0, approved: 1, deleteRequested: 0 })
   })
 
   it('updates comment content', () => {
@@ -251,62 +212,126 @@ describe('ui/admin/comments/useCommentsController hook', () => {
         children: [{ _type: 'span', _key: 'new-s', text: 'Updated body' }],
       },
     ]
-    const { state } = renderHook(() => useCommentsController({ initialFilters: [] }), {
-      actions: [
-        (r) =>
-          r.dispatch({
-            type: 'loaded',
-            comments: [comment],
-            total: 1,
-            statusCounts: { all: 1, pending: 0, approved: 1, deleteRequested: 0 },
-          }),
-        (r) => r.dispatch({ type: 'updateCommentContent', id: comment.id, body: newBody }),
-      ],
-    })
-    expect(state.comments[0]!.body).toEqual(newBody)
+    const data = makeData(makePage([comment]))
+    const next = updateCommentBodyInPages(data, comment.id, newBody)
+    expect(next.pages[0]!.comments[0]!.body).toEqual(newBody)
+  })
+
+  it('clears a delete request and moves the count to pending/approved', () => {
+    const pending = makeAdminComment({ isPending: true, deleteRequestedAt: '2024-01-02T00:00:00.000Z' })
+    const approved = makeAdminComment({ deleteRequestedAt: '2024-01-02T00:00:00.000Z' })
+    const data = makeData(
+      makePage([pending, approved], {
+        total: 2,
+        statusCounts: { all: 2, pending: 1, approved: 0, deleteRequested: 1 },
+      }),
+    )
+
+    const afterPending = clearDeleteRequestInPages(data, pending.id, true)
+    expect(afterPending.pages[0]!.comments[0]!.deleteRequestedAt).toBeNull()
+    expect(afterPending.pages[0]!.statusCounts).toEqual({ all: 2, pending: 2, approved: 0, deleteRequested: 0 })
+
+    const afterApproved = clearDeleteRequestInPages(data, approved.id, false)
+    expect(afterApproved.pages[0]!.comments[1]!.deleteRequestedAt).toBeNull()
+    expect(afterApproved.pages[0]!.statusCounts).toEqual({ all: 2, pending: 1, approved: 1, deleteRequested: 0 })
+  })
+})
+
+describe('ui/admin/comments/useCommentsController hook', () => {
+  it('starts with the provided filters and an empty pending list', () => {
+    const { filters, filterStatus, comments, total, statusCounts, hasMore, isLoading } = renderHook(
+      () => useCommentsController({ initialFilters: [{ field: 'status', value: 'pending', label: '待审' }] }),
+      { wrapper: makeWrapper() },
+    )
+    expect(filters).toHaveLength(1)
+    expect(filterStatus).toBe('pending')
+    // The list query is pending under SSR — the view renders its skeleton.
+    expect(comments).toEqual([])
+    expect(total).toBe(0)
+    expect(statusCounts).toEqual({ all: 0, pending: 0, approved: 0, deleteRequested: 0 })
+    expect(hasMore).toBe(false)
+    expect(isLoading).toBe(true)
+  })
+
+  it('derives page and author filters', () => {
+    const { filterPageKey, filterAuthorId } = renderHook(
+      () =>
+        useCommentsController({
+          initialFilters: [
+            { field: 'page', value: 'page-1', label: 'Page' },
+            { field: 'author', value: 'user-42', label: 'Author' },
+          ],
+        }),
+      { wrapper: makeWrapper() },
+    )
+    expect(filterPageKey).toBe('page-1')
+    expect(filterAuthorId).toBe('user-42')
+  })
+
+  it('parses text and date filters', () => {
+    const text: TextFilterValue = { op: 'contains', value: 'hello' }
+    const date: DateFilterValue = { date: '2024-03-15', op: 'is-greater' }
+    const { filterText, filterDateRange, filterCreatedAfter } = renderHook(
+      () =>
+        useCommentsController({
+          initialFilters: [
+            { field: 'text', value: JSON.stringify(text), label: 'Text' },
+            { field: 'date', value: JSON.stringify(date), label: 'Date' },
+          ],
+        }),
+      { wrapper: makeWrapper() },
+    )
+    expect(filterText).toEqual(text)
+    expect(filterDateRange).toEqual(date)
+    const expectedEnd = new Date('2024-03-15')
+    expectedEnd.setHours(23, 59, 59, 999)
+    expect(filterCreatedAfter).toBe(expectedEnd.toISOString())
   })
 
   it('adds and replaces filters', () => {
-    const { state, filterStatus } = renderHook(() => useCommentsController({ initialFilters: [] }), {
+    const { filters, filterStatus } = renderHook(() => useCommentsController({ initialFilters: [] }), {
+      wrapper: makeWrapper(),
       actions: [
         (r) => r.dispatch({ type: 'addFilter', field: 'status', value: 'pending', label: '待审' }),
         (r) => r.dispatch({ type: 'addFilter', field: 'author', value: 'user-1', label: 'Author' }),
         (r) => r.dispatch({ type: 'addFilter', field: 'status', value: 'approved', label: '已通过' }),
       ],
     })
-    expect(state.filters).toHaveLength(2)
+    expect(filters).toHaveLength(2)
     expect(filterStatus).toBe('approved')
   })
 
   it('removes a filter', () => {
-    const { state, filterStatus } = renderHook(
+    const { filters, filterStatus } = renderHook(
       () =>
         useCommentsController({
           initialFilters: [{ field: 'status', value: 'pending', label: '待审' }],
         }),
       {
+        wrapper: makeWrapper(),
         actions: [(r) => r.dispatch({ type: 'removeFilter', field: 'status' })],
       },
     )
-    expect(state.filters).toHaveLength(0)
+    expect(filters).toHaveLength(0)
     expect(filterStatus).toBe('all')
   })
 
   it('renames a filter label', () => {
-    const { state } = renderHook(
+    const { filters } = renderHook(
       () =>
         useCommentsController({
           initialFilters: [{ field: 'status', value: 'pending', label: '待审' }],
         }),
       {
+        wrapper: makeWrapper(),
         actions: [(r) => r.dispatch({ type: 'renameFilter', field: 'status', label: '待审核' })],
       },
     )
-    expect(state.filters[0]!.label).toBe('待审核')
+    expect(filters[0]!.label).toBe('待审核')
   })
 
   it('clears all filters', () => {
-    const { state } = renderHook(
+    const { filters } = renderHook(
       () =>
         useCommentsController({
           initialFilters: [
@@ -315,35 +340,10 @@ describe('ui/admin/comments/useCommentsController hook', () => {
           ],
         }),
       {
+        wrapper: makeWrapper(),
         actions: [(r) => r.dispatch({ type: 'clearFilters' })],
       },
     )
-    expect(state.filters).toHaveLength(0)
-  })
-
-  it('clears a delete request and moves to pending/approved', () => {
-    const pending = makeAdminComment({
-      isPending: true,
-      deleteRequestedAt: '2024-01-02T00:00:00.000Z',
-    })
-    const approved = makeAdminComment({
-      deleteRequestedAt: '2024-01-02T00:00:00.000Z',
-    })
-    const { state } = renderHook(() => useCommentsController({ initialFilters: [] }), {
-      actions: [
-        (r) =>
-          r.dispatch({
-            type: 'loaded',
-            comments: [pending, approved],
-            total: 2,
-            statusCounts: { all: 2, pending: 1, approved: 0, deleteRequested: 1 },
-          }),
-        (r) => r.dispatch({ type: 'clearDeleteRequest', id: pending.id, isPending: true }),
-        (r) => r.dispatch({ type: 'clearDeleteRequest', id: approved.id, isPending: false }),
-      ],
-    })
-    expect(state.comments[0]!.deleteRequestedAt).toBeNull()
-    expect(state.comments[1]!.deleteRequestedAt).toBeNull()
-    expect(state.statusCounts).toEqual({ all: 2, pending: 2, approved: 1, deleteRequested: 0 })
+    expect(filters).toHaveLength(0)
   })
 })

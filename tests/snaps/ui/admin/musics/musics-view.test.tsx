@@ -14,7 +14,7 @@ import { MusicPlayerProvider } from '@/ui/admin/musics/MusicPlayerContext'
 import { MusicsView } from '@/ui/admin/musics/MusicsView'
 import { ProgressSlider } from '@/ui/admin/musics/ProgressSlider'
 
-// `useMusicsController` is a plain useReducer; the real reducer is fine for
+// `useMusicsReducer` is a plain useReducer; the real reducer is fine for
 // SSR — but `MusicsView` also calls `useInfiniteQuery` against `orpc.admin.
 // music.list`, which would hit the network. We replace the controller's
 // initial state through a hoisted singleton so tests can mutate it between
@@ -27,8 +27,8 @@ const controllerState = vi.hoisted(() => ({
   pageSize: 24,
 }))
 
-vi.mock('@/ui/admin/musics/useMusicsController', () => ({
-  useMusicsController: () => ({ state: controllerState, dispatch: vi.fn() }),
+vi.mock('@/ui/admin/musics/useMusicsReducer', () => ({
+  useMusicsReducer: () => ({ state: controllerState, dispatch: vi.fn() }),
 }))
 
 // TanStack Query hooks: return inert values so the views never issue real

@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { AuditLogActorDto, AuditLogItemDto } from '@/shared/types/audit'
-import type { ActiveFilter } from '@/ui/admin/audit/useAuditLogController'
+import type { ActiveFilter } from '@/ui/admin/audit/useAuditLogReducer'
 
 import { renderInRouter, stableHtml } from '#/_helpers/render'
 import { AuditLogView } from '@/ui/admin/audit/AuditLogView'
@@ -9,7 +9,7 @@ import { AuditLogView } from '@/ui/admin/audit/AuditLogView'
 // The companion `audit-view.test.tsx` covers the empty-state shell (no
 // filters, no rows) and exercises `AuditLogRow` / filter-pill components
 // directly. This suite drives the remaining render-path branches in
-// `AuditLogView` itself by MOCKING `useAuditLogController` so we can
+// `AuditLogView` itself by MOCKING `useAuditLogReducer` so we can
 // populate `state.items` (the `.map` callback), `state.hasMore`, and
 // `state.filters` (the `hasActiveFilters` header-vs-body placement +
 // the multi-type filter-pill render branches) without depending on the
@@ -46,8 +46,8 @@ const controller = vi.hoisted<ControllerShape>(() => ({
   filterDateTo: '',
 }))
 
-vi.mock('@/ui/admin/audit/useAuditLogController', () => ({
-  useAuditLogController: () => controller,
+vi.mock('@/ui/admin/audit/useAuditLogReducer', () => ({
+  useAuditLogReducer: () => controller,
   // Re-exported by the source module; keep the stubs available so the
   // real imports inside AuditLogView's transitive graph still resolve.
   parseDateFilter: () => null,

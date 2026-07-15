@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 import type { AdminCategoryDto } from '@/shared/types/categories'
 
 import { renderHook } from '#/_helpers/hook'
-import { useCategoriesController } from '@/ui/admin/categories/useCategoriesController'
+import { useCategoriesReducer } from '@/ui/admin/categories/useCategoriesReducer'
 
 function makeAdminCategory(overrides: Partial<AdminCategoryDto> = {}): AdminCategoryDto {
   return {
@@ -21,9 +21,9 @@ function makeAdminCategory(overrides: Partial<AdminCategoryDto> = {}): AdminCate
   }
 }
 
-describe('useCategoriesController', () => {
+describe('useCategoriesReducer', () => {
   it('starts with an empty list', () => {
-    const { state } = renderHook(() => useCategoriesController())
+    const { state } = renderHook(() => useCategoriesReducer())
     expect(state.rows).toEqual([])
     expect(state.total).toBe(0)
     expect(state.q).toBe('')
@@ -31,7 +31,7 @@ describe('useCategoriesController', () => {
 
   it('loads rows and total', () => {
     const category = makeAdminCategory({ id: 'cat-1', name: 'A' })
-    const { state } = renderHook(() => useCategoriesController(), {
+    const { state } = renderHook(() => useCategoriesReducer(), {
       actions: [({ dispatch }) => dispatch({ type: 'loaded', rows: [category], total: 1 })],
     })
     expect(state.rows).toEqual([category])
@@ -40,7 +40,7 @@ describe('useCategoriesController', () => {
 
   it('patches an existing category', () => {
     const category = makeAdminCategory({ id: 'cat-1', name: 'A' })
-    const { state } = renderHook(() => useCategoriesController(), {
+    const { state } = renderHook(() => useCategoriesReducer(), {
       actions: [
         ({ dispatch }) => dispatch({ type: 'loaded', rows: [category], total: 1 }),
         ({ dispatch }) => dispatch({ type: 'patchCategory', category: { ...category, name: 'A2' } }),
@@ -53,7 +53,7 @@ describe('useCategoriesController', () => {
   it('prepends a new category', () => {
     const existing = makeAdminCategory({ id: 'cat-1', name: 'A' })
     const created = makeAdminCategory({ id: 'cat-2', name: 'B' })
-    const { state } = renderHook(() => useCategoriesController(), {
+    const { state } = renderHook(() => useCategoriesReducer(), {
       actions: [
         ({ dispatch }) => dispatch({ type: 'loaded', rows: [existing], total: 1 }),
         ({ dispatch }) => dispatch({ type: 'prependCategory', category: created }),
@@ -67,7 +67,7 @@ describe('useCategoriesController', () => {
   it('removes a category and decrements total', () => {
     const a = makeAdminCategory({ id: 'cat-1', name: 'A' })
     const b = makeAdminCategory({ id: 'cat-2', name: 'B' })
-    const { state } = renderHook(() => useCategoriesController(), {
+    const { state } = renderHook(() => useCategoriesReducer(), {
       actions: [
         ({ dispatch }) => dispatch({ type: 'loaded', rows: [a, b], total: 2 }),
         ({ dispatch }) => dispatch({ type: 'removeCategory', id: a.id }),
@@ -82,10 +82,10 @@ describe('useCategoriesController', () => {
     const a = makeAdminCategory({ id: 'cat-1', name: 'A', sortOrder: 0 })
     const b = makeAdminCategory({ id: 'cat-2', name: 'B', sortOrder: 1 })
     const c = makeAdminCategory({ id: 'cat-3', name: 'C', sortOrder: 2 })
-    const { state } = renderHook(() => useCategoriesController(), {
+    const { state } = renderHook(() => useCategoriesReducer(), {
       actions: [({ dispatch }) => dispatch({ type: 'loaded', rows: [a, b, c], total: 3 })],
     })
-    const reordered = renderHook(() => useCategoriesController(), {
+    const reordered = renderHook(() => useCategoriesReducer(), {
       actions: [
         ({ dispatch }) => dispatch({ type: 'loaded', rows: [a, b, c], total: 3 }),
         ({ dispatch }) => dispatch({ type: 'reorderRows', orderedIds: [c.id, a.id, b.id] }),
@@ -99,7 +99,7 @@ describe('useCategoriesController', () => {
   it('replaces rows from the server', () => {
     const a = makeAdminCategory({ id: 'cat-1', name: 'A' })
     const b = makeAdminCategory({ id: 'cat-2', name: 'B' })
-    const { state } = renderHook(() => useCategoriesController(), {
+    const { state } = renderHook(() => useCategoriesReducer(), {
       actions: [
         ({ dispatch }) => dispatch({ type: 'loaded', rows: [a], total: 1 }),
         ({ dispatch }) => dispatch({ type: 'replaceRows', rows: [b] }),
@@ -109,7 +109,7 @@ describe('useCategoriesController', () => {
   })
 
   it('updates the search query', () => {
-    const { state } = renderHook(() => useCategoriesController(), {
+    const { state } = renderHook(() => useCategoriesReducer(), {
       actions: [({ dispatch }) => dispatch({ type: 'setQ', value: 'react' })],
     })
     expect(state.q).toBe('react')

@@ -2,7 +2,7 @@ import type { ComponentType, SVGProps } from 'react'
 
 import { CalendarIcon, ListChecksIcon, NetworkIcon, SearchIcon, UserIcon } from 'lucide-react'
 
-import type { AuditLogFilterFieldKey } from '@/ui/admin/audit/useAuditLogController'
+import type { AuditLogFilterFieldKey } from '@/ui/admin/audit/useAuditLogReducer'
 
 export type FieldIcon = ComponentType<SVGProps<SVGSVGElement>>
 

@@ -16,7 +16,7 @@ function friendsReducer(state: FriendsState, action: FriendsAction): FriendsStat
   }
 }
 
-export function useFriendsController() {
+export function useFriendsReducer() {
   const [state, dispatch] = useReducer(friendsReducer, {
     q: '',
     includeHidden: false,
@@ -24,4 +24,4 @@ export function useFriendsController() {
   return { state, dispatch }
 }
 
-export type FriendsControllerDispatch = ReturnType<typeof useFriendsController>['dispatch']
+export type FriendsReducerDispatch = ReturnType<typeof useFriendsReducer>['dispatch']

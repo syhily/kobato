@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { auditLogReducer, findActorLabel } from '@/ui/admin/audit/useAuditLogController'
+import { auditLogReducer, findActorLabel } from '@/ui/admin/audit/useAuditLogReducer'
 
 const initialState = {
   items: [],

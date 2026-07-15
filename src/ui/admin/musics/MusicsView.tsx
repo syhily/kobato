@@ -18,7 +18,7 @@ import { unsafeCast } from '@/shared/utils/unsafe-cast'
 import { AlbumCard } from '@/ui/admin/musics/AlbumCard'
 import { MusicLibraryHero } from '@/ui/admin/musics/MusicLibraryHero'
 import { useMusicPlayerActions } from '@/ui/admin/musics/MusicPlayerContext'
-import { type MusicSortBy, useMusicsController } from '@/ui/admin/musics/useMusicsController'
+import { type MusicSortBy, useMusicsReducer } from '@/ui/admin/musics/useMusicsReducer'
 import { cn } from '@/ui/lib/cn'
 
 const SORT_LABELS: Record<MusicSortBy, string> = {
@@ -49,7 +49,7 @@ function SortIcon({ sortBy, sortOrder }: { sortBy: MusicSortBy; sortOrder: 'asc'
 
 export function MusicsView() {
   const navigate = useNavigate()
-  const { state, dispatch } = useMusicsController()
+  const { state, dispatch } = useMusicsReducer()
   const { load } = useMusicPlayerActions()
   const [sortMenuOpen, setSortMenuOpen] = useState(false)
   const sortMenuId = useId()

@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 
-// Regression tests for the URL→state sync effects in usePostsController.
+// Regression tests for the URL→state sync effects in usePostsReducer.
 //
 // The default hook runner (tests/_helpers/hook.tsx) renders via
 // renderToStaticMarkup, so useEffect never runs and these sync effects were
@@ -16,12 +16,12 @@ import { act, render, waitFor } from '@testing-library/react'
 import { createMemoryRouter, RouterProvider, type RouteObject } from 'react-router'
 import { describe, expect, it } from 'vitest'
 
-import { usePostsController } from '@/ui/admin/posts/usePostsController'
+import { usePostsReducer } from '@/ui/admin/posts/usePostsReducer'
 
 interface HarnessHandle {
   current: {
-    state: ReturnType<typeof usePostsController>['state']
-    dispatch: ReturnType<typeof usePostsController>['dispatch']
+    state: ReturnType<typeof usePostsReducer>['state']
+    dispatch: ReturnType<typeof usePostsReducer>['dispatch']
   } | null
 }
 
@@ -29,7 +29,7 @@ function mountController(initialPath: string = '/'): HarnessHandle {
   const handle: HarnessHandle = { current: null }
 
   function Harness() {
-    const controller = usePostsController()
+    const controller = usePostsReducer()
     handle.current = controller
     return null
   }
@@ -40,7 +40,7 @@ function mountController(initialPath: string = '/'): HarnessHandle {
   return handle
 }
 
-describe('usePostsController — URL→state sync does not clobber user filters', () => {
+describe('usePostsReducer — URL→state sync does not clobber user filters', () => {
   it('keeps a user-selected status after effects flush', async () => {
     const handle = mountController()
 

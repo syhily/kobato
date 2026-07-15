@@ -2,11 +2,11 @@ import { describe, expect, it } from 'vitest'
 
 import { makeAdminPost } from '#/_helpers/catalog'
 import { renderHook } from '#/_helpers/hook'
-import { usePostsController } from '@/ui/admin/posts/usePostsController'
+import { usePostsReducer } from '@/ui/admin/posts/usePostsReducer'
 
-describe('ui/admin/posts/usePostsController', () => {
+describe('ui/admin/posts/usePostsReducer', () => {
   it('derives an empty search into the default state', () => {
-    const { state } = renderHook(usePostsController)
+    const { state } = renderHook(usePostsReducer)
     expect(state.status).toBe('all')
     expect(state.deletedStatus).toBe('normal')
     expect(state.published).toBeUndefined()
@@ -21,7 +21,7 @@ describe('ui/admin/posts/usePostsController', () => {
   })
 
   it('reads status, category and tag from the URL', () => {
-    const { state } = renderHook(usePostsController, {
+    const { state } = renderHook(usePostsReducer, {
       initialPath: '/?status=published&category=tech&tag=react',
     })
     expect(state.status).toBe('published')
@@ -33,21 +33,21 @@ describe('ui/admin/posts/usePostsController', () => {
   })
 
   it('derives draft status', () => {
-    const { state } = renderHook(usePostsController, { initialPath: '/?status=draft' })
+    const { state } = renderHook(usePostsReducer, { initialPath: '/?status=draft' })
     expect(state.status).toBe('draft')
     expect(state.published).toBe(false)
     expect(state.visible).toBeUndefined()
   })
 
   it('derives hidden status', () => {
-    const { state } = renderHook(usePostsController, { initialPath: '/?status=hidden' })
+    const { state } = renderHook(usePostsReducer, { initialPath: '/?status=hidden' })
     expect(state.status).toBe('hidden')
     expect(state.published).toBe(true)
     expect(state.visible).toBe(false)
   })
 
   it('derives deleted status', () => {
-    const { state } = renderHook(usePostsController, { initialPath: '/?status=deleted' })
+    const { state } = renderHook(usePostsReducer, { initialPath: '/?status=deleted' })
     expect(state.status).toBe('deleted')
     expect(state.deletedStatus).toBe('deleted')
     expect(state.published).toBeUndefined()
@@ -55,13 +55,13 @@ describe('ui/admin/posts/usePostsController', () => {
   })
 
   it('ignores unknown status values', () => {
-    const { state } = renderHook(usePostsController, { initialPath: '/?status=unknown' })
+    const { state } = renderHook(usePostsReducer, { initialPath: '/?status=unknown' })
     expect(state.status).toBe('all')
   })
 
   it('loads rows and total', () => {
     const rows = [makeAdminPost(), makeAdminPost()]
-    const { state } = renderHook(usePostsController, {
+    const { state } = renderHook(usePostsReducer, {
       actions: [(r) => r.dispatch({ type: 'loaded', rows, total: 5 })],
     })
     expect(state.rows).toEqual(rows)
@@ -71,7 +71,7 @@ describe('ui/admin/posts/usePostsController', () => {
   it('appends rows and updates total', () => {
     const first = makeAdminPost()
     const second = makeAdminPost()
-    const { state } = renderHook(usePostsController, {
+    const { state } = renderHook(usePostsReducer, {
       actions: [
         (r) => r.dispatch({ type: 'loaded', rows: [first], total: 3 }),
         (r) => r.dispatch({ type: 'appended', rows: [second], total: 3 }),
@@ -82,14 +82,14 @@ describe('ui/admin/posts/usePostsController', () => {
   })
 
   it('updates search query', () => {
-    const { state } = renderHook(usePostsController, {
+    const { state } = renderHook(usePostsReducer, {
       actions: [(r) => r.dispatch({ type: 'setQ', value: 'hello' })],
     })
     expect(state.q).toBe('hello')
   })
 
   it('updates status and derived fields', () => {
-    const { state } = renderHook(usePostsController, {
+    const { state } = renderHook(usePostsReducer, {
       actions: [(r) => r.dispatch({ type: 'setStatus', value: 'draft' })],
     })
     expect(state.status).toBe('draft')
@@ -98,7 +98,7 @@ describe('ui/admin/posts/usePostsController', () => {
   })
 
   it('updates category and tag filters', () => {
-    const { state } = renderHook(usePostsController, {
+    const { state } = renderHook(usePostsReducer, {
       actions: [
         (r) => r.dispatch({ type: 'setCategory', value: 'life' }),
         (r) => r.dispatch({ type: 'setTag', value: 'vue' }),
@@ -111,7 +111,7 @@ describe('ui/admin/posts/usePostsController', () => {
   })
 
   it('updates sort options', () => {
-    const { state } = renderHook(usePostsController, {
+    const { state } = renderHook(usePostsReducer, {
       actions: [
         (r) => r.dispatch({ type: 'setSortBy', value: 'updatedAt' }),
         (r) => r.dispatch({ type: 'setSortOrder', value: 'asc' }),
@@ -123,7 +123,7 @@ describe('ui/admin/posts/usePostsController', () => {
 
   it('patches a post in place', () => {
     const post = makeAdminPost({ title: 'Original' })
-    const { state } = renderHook(usePostsController, {
+    const { state } = renderHook(usePostsReducer, {
       actions: [
         (r) => r.dispatch({ type: 'loaded', rows: [post], total: 1 }),
         (r) => r.dispatch({ type: 'patchPost', post: { ...post, title: 'Updated' } }),
@@ -136,7 +136,7 @@ describe('ui/admin/posts/usePostsController', () => {
   it('removes a post and decrements total', () => {
     const a = makeAdminPost()
     const b = makeAdminPost()
-    const { state } = renderHook(usePostsController, {
+    const { state } = renderHook(usePostsReducer, {
       actions: [
         (r) => r.dispatch({ type: 'loaded', rows: [a, b], total: 2 }),
         (r) => r.dispatch({ type: 'removePost', id: a.id }),
@@ -149,7 +149,7 @@ describe('ui/admin/posts/usePostsController', () => {
 
   it('does not decrement total below zero', () => {
     const post = makeAdminPost()
-    const { state } = renderHook(usePostsController, {
+    const { state } = renderHook(usePostsReducer, {
       actions: [
         (r) => r.dispatch({ type: 'loaded', rows: [post], total: 1 }),
         (r) => r.dispatch({ type: 'removePost', id: post.id }),
@@ -162,7 +162,7 @@ describe('ui/admin/posts/usePostsController', () => {
   it('prepends a post and increments total', () => {
     const existing = makeAdminPost()
     const fresh = makeAdminPost()
-    const { state } = renderHook(usePostsController, {
+    const { state } = renderHook(usePostsReducer, {
       actions: [
         (r) => r.dispatch({ type: 'loaded', rows: [existing], total: 1 }),
         (r) => r.dispatch({ type: 'prependPost', post: fresh }),

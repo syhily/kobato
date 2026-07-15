@@ -74,7 +74,7 @@ function pagesReducer(state: PagesState, action: PagesAction): PagesState {
   }
 }
 
-export function usePagesController() {
+export function usePagesReducer() {
   const [state, dispatch] = useReducer(pagesReducer, {
     rows: [],
     total: 0,
@@ -87,4 +87,4 @@ export function usePagesController() {
   return { state, dispatch }
 }
 
-export type PagesControllerDispatch = ReturnType<typeof usePagesController>['dispatch']
+export type PagesReducerDispatch = ReturnType<typeof usePagesReducer>['dispatch']

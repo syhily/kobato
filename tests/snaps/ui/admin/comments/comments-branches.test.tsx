@@ -2,13 +2,13 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { CommentBody } from '@/shared/pt/comment-schema'
 import type { AdminCommentWire as AdminComment } from '@/shared/types/comments'
-import type { ActiveFilter, CommentsState } from '@/ui/admin/comments/useCommentsController'
+import type { ActiveFilter } from '@/ui/admin/comments/useCommentsController'
 
 import { renderInRouter, stableHtml } from '#/_helpers/render'
 import { CommentsView } from '@/ui/admin/comments/CommentsView'
 
-// `CommentsView` attaches an IntersectionObserver in a `useEffect` for the
-// load-more sentinel. Effects never run during synchronous SSR, but the
+// The load-more sentinel is observed from `useInfiniteScrollSentinel` inside
+// `useCommentsController`. Effects never run during synchronous SSR, but the
 // constructor is still referenced at module load when the effect closure is
 // built — silence the SSR warning by stubbing the global.
 vi.stubGlobal(
@@ -22,31 +22,30 @@ vi.stubGlobal(
 
 // --- hoisted controller singleton -------------------------------------------
 //
-// `CommentsView` reads its row list from `useCommentsController` (a
-// useReducer). The reducer's `loaded` action only fires from an async effect
-// that calls `orpc.admin.comments.loadAll`, so under synchronous SSR the
-// state stays at its initial empty value. To exercise the data-loaded render
-// branches we swap the controller's return value through this hoisted
-// singleton, exactly mirroring what `comments-view.test.tsx` does.
+// `CommentsView` reads its row list from `useCommentsController`, which owns
+// a `useInfiniteQuery` against `orpc.admin.comments.loadAll`. Queries never
+// fetch under synchronous SSR, so the list stays at its initial empty value.
+// To exercise the data-loaded render branches we swap the controller's
+// return value through this hoisted singleton, exactly mirroring what
+// `comments-view.test.tsx` does.
 //
 // The render-path branches we target here are the ones the existing test
 // leaves uncovered:
 //   - the `pageItems` / `authorItems` useMemo factories (run only when the
 //     secondary `useQuery` lookups resolve with data),
 //   - the `current not in items` `.unshift` branch inside both memos,
-//   - the `loadingMore` "加载中…" sentinel,
+//   - the `isFetchingNextPage` "加载中…" sentinel,
 //   - the `!hasMore && comments.length > 0` "已加载全部评论" sentinel,
 //   - the active-filter header/body slot split.
 
 const controllerState = vi.hoisted(() => ({
-  state: {
-    comments: [] as AdminComment[],
-    total: 0,
-    filters: [] as ActiveFilter[],
-    statusCounts: { all: 0, pending: 0, approved: 0, deleteRequested: 0 },
-  } as CommentsState,
+  comments: [] as AdminComment[],
+  total: 0,
+  filters: [] as ActiveFilter[],
+  statusCounts: { all: 0, pending: 0, approved: 0, deleteRequested: 0 },
   hasMore: false,
-  loadingMore: false,
+  isLoading: false,
+  isFetchingNextPage: false,
 }))
 
 vi.mock('@/ui/admin/comments/useCommentsController', async () => {
@@ -56,17 +55,20 @@ vi.mock('@/ui/admin/comments/useCommentsController', async () => {
   return {
     ...actual,
     useCommentsController: () => ({
-      state: controllerState.state,
+      filters: controllerState.filters,
       dispatch: vi.fn(),
-      pageSize: 10,
+      comments: controllerState.comments,
+      total: controllerState.total,
+      statusCounts: controllerState.statusCounts,
       hasMore: controllerState.hasMore,
-      filterStatus: 'all',
-      filterPageKey: '',
-      filterAuthorId: '',
-      filterText: null,
-      filterDateRange: null,
-      filterCreatedAfter: undefined,
-      filterCreatedBefore: undefined,
+      isLoading: controllerState.isLoading,
+      isFetchingNextPage: controllerState.isFetchingNextPage,
+      sentinelRef: { current: null },
+      approveComment: vi.fn(),
+      removeComment: vi.fn(),
+      updateCommentBody: vi.fn(),
+      clearCommentDeleteRequest: vi.fn(),
+      invalidateList: vi.fn(),
     }),
   }
 })
@@ -78,13 +80,6 @@ vi.mock('@/ui/admin/comments/useCommentsController', async () => {
 // every call, so we pack both `.pages` and `.authors` arrays onto the shared
 // `data` field. Each test reassigns the singleton to control which option
 // list is populated.
-//
-// NOTE: `loadingMore` lives on the controller's local state, not on
-// react-query. It is read via a closure in the view's JSX, so to cover the
-// "加载中…" branch we need the component to read `loadingMore === true`
-// during render. Because the real `loadingMore` useState starts at `false`
-// and only flips inside an event handler (uncoverable in SSR), we additionally
-// stub the view's named import surface below to expose a controllable flag.
 
 const queryMocks = vi.hoisted(() => ({
   query: {
@@ -175,13 +170,14 @@ function makeAdminComment(overrides: Partial<AdminComment> = {}): AdminComment {
   }
 }
 
-function emptyState(): CommentsState {
-  return {
-    comments: [],
-    total: 0,
-    filters: [],
-    statusCounts: { all: 0, pending: 0, approved: 0, deleteRequested: 0 },
-  }
+function resetController() {
+  controllerState.comments = []
+  controllerState.total = 0
+  controllerState.filters = []
+  controllerState.statusCounts = { all: 0, pending: 0, approved: 0, deleteRequested: 0 }
+  controllerState.hasMore = false
+  controllerState.isLoading = false
+  controllerState.isFetchingNextPage = false
 }
 
 function renderComments(initialFilters: ActiveFilter[] = []) {
@@ -197,9 +193,7 @@ function renderComments(initialFilters: ActiveFilter[] = []) {
 
 describe('snapshot: CommentsView render branches', () => {
   beforeEach(() => {
-    controllerState.state = emptyState()
-    controllerState.hasMore = false
-    controllerState.loadingMore = false
+    resetController()
     queryMocks.query = {
       data: null,
       isPending: false,
@@ -231,12 +225,9 @@ describe('snapshot: CommentsView render branches', () => {
         authors: [],
       },
     }
-    controllerState.state = {
-      ...emptyState(),
-      comments: [makeAdminComment({ id: '1', name: 'Alice', pageTitle: 'Hello World' })],
-      total: 1,
-      statusCounts: { all: 1, pending: 0, approved: 1, deleteRequested: 0 },
-    }
+    controllerState.comments = [makeAdminComment({ id: '1', name: 'Alice', pageTitle: 'Hello World' })]
+    controllerState.total = 1
+    controllerState.statusCounts = { all: 1, pending: 0, approved: 1, deleteRequested: 0 }
     const html = renderComments()
     // Row map branch executed (memo factories ran before the row render).
     expect(html).toContain('Alice')
@@ -258,12 +249,9 @@ describe('snapshot: CommentsView render branches', () => {
         ],
       },
     }
-    controllerState.state = {
-      ...emptyState(),
-      comments: [makeAdminComment({ id: '2', name: 'Carol' })],
-      total: 1,
-      statusCounts: { all: 1, pending: 0, approved: 1, deleteRequested: 0 },
-    }
+    controllerState.comments = [makeAdminComment({ id: '2', name: 'Carol' })]
+    controllerState.total = 1
+    controllerState.statusCounts = { all: 1, pending: 0, approved: 1, deleteRequested: 0 }
     const html = renderComments()
     // Row rendered (authorItems memo ran before the row render).
     expect(html).toContain('Carol')
@@ -281,13 +269,10 @@ describe('snapshot: CommentsView render branches', () => {
       },
     }
     const activeFilters: ActiveFilter[] = [{ field: 'page', value: 'post-1', label: 'Pinned Page' }]
-    controllerState.state = {
-      ...emptyState(),
-      comments: [makeAdminComment({ id: '3', name: 'Eve' })],
-      total: 1,
-      filters: activeFilters,
-      statusCounts: { all: 1, pending: 0, approved: 1, deleteRequested: 0 },
-    }
+    controllerState.comments = [makeAdminComment({ id: '3', name: 'Eve' })]
+    controllerState.total = 1
+    controllerState.filters = activeFilters
+    controllerState.statusCounts = { all: 1, pending: 0, approved: 1, deleteRequested: 0 }
     const html = renderComments(activeFilters)
     // Active-filter body slot rendered (filter bar moved into the body).
     // The field label "文章" for the page filter renders in the pill prefix.
@@ -307,13 +292,10 @@ describe('snapshot: CommentsView render branches', () => {
       },
     }
     const activeFilters: ActiveFilter[] = [{ field: 'author', value: 'u-missing', label: 'Pinned Author' }]
-    controllerState.state = {
-      ...emptyState(),
-      comments: [makeAdminComment({ id: '4', name: 'Frank' })],
-      total: 1,
-      filters: activeFilters,
-      statusCounts: { all: 1, pending: 0, approved: 1, deleteRequested: 0 },
-    }
+    controllerState.comments = [makeAdminComment({ id: '4', name: 'Frank' })]
+    controllerState.total = 1
+    controllerState.filters = activeFilters
+    controllerState.statusCounts = { all: 1, pending: 0, approved: 1, deleteRequested: 0 }
     const html = renderComments(activeFilters)
     // Author field label "评论人" renders in the pill prefix.
     expect(html).toContain('评论人')
@@ -322,12 +304,9 @@ describe('snapshot: CommentsView render branches', () => {
   })
 
   it('renders the load-more sentinel div when hasMore is true', () => {
-    controllerState.state = {
-      ...emptyState(),
-      comments: [makeAdminComment({ id: '5', name: 'Solo' })],
-      total: 20,
-      statusCounts: { all: 20, pending: 0, approved: 20, deleteRequested: 0 },
-    }
+    controllerState.comments = [makeAdminComment({ id: '5', name: 'Solo' })]
+    controllerState.total = 20
+    controllerState.statusCounts = { all: 20, pending: 0, approved: 20, deleteRequested: 0 }
     controllerState.hasMore = true
     const html = renderComments()
     expect(html).toContain('Solo')
@@ -337,13 +316,23 @@ describe('snapshot: CommentsView render branches', () => {
     expect(html).not.toContain('已加载全部评论')
   })
 
+  it('renders the "加载中…" copy when isFetchingNextPage is true', () => {
+    controllerState.comments = [makeAdminComment({ id: '7', name: 'Paging' })]
+    controllerState.total = 20
+    controllerState.statusCounts = { all: 20, pending: 0, approved: 20, deleteRequested: 0 }
+    controllerState.hasMore = true
+    controllerState.isFetchingNextPage = true
+    const html = renderComments()
+    expect(html).toContain('Paging')
+    // The fetching-next-page branch replaces the end-of-list copy.
+    expect(html).toContain('加载中…')
+    expect(html).not.toContain('已加载全部评论')
+  })
+
   it('renders the end-of-list copy when comments exist but hasMore is false', () => {
-    controllerState.state = {
-      ...emptyState(),
-      comments: [makeAdminComment({ id: '6', name: 'Last' })],
-      total: 1,
-      statusCounts: { all: 1, pending: 0, approved: 1, deleteRequested: 0 },
-    }
+    controllerState.comments = [makeAdminComment({ id: '6', name: 'Last' })]
+    controllerState.total = 1
+    controllerState.statusCounts = { all: 1, pending: 0, approved: 1, deleteRequested: 0 }
     controllerState.hasMore = false
     const html = renderComments()
     expect(html).toContain('Last')
@@ -352,7 +341,7 @@ describe('snapshot: CommentsView render branches', () => {
 
   it('renders the parentLookup map branch when a row references a parent in the list', () => {
     // Two rows where the child's `rid` points at the parent's id — this
-    // forces `parentLookup` (a useMemo over `state.comments`) to be built
+    // forces `parentLookup` (a useMemo over `comments`) to be built
     // and the AdminCommentRow "回复 <parent>" hint branch to render.
     const parent = makeAdminComment({ id: '100', name: 'Carol' })
     const child = makeAdminComment({
@@ -361,12 +350,9 @@ describe('snapshot: CommentsView render branches', () => {
       rootId: '100',
       name: 'Dave',
     })
-    controllerState.state = {
-      ...emptyState(),
-      comments: [parent, child],
-      total: 2,
-      statusCounts: { all: 2, pending: 0, approved: 2, deleteRequested: 0 },
-    }
+    controllerState.comments = [parent, child]
+    controllerState.total = 2
+    controllerState.statusCounts = { all: 2, pending: 0, approved: 2, deleteRequested: 0 }
     const html = renderComments()
     expect(html).toContain('Carol')
     expect(html).toContain('Dave')
@@ -375,7 +361,6 @@ describe('snapshot: CommentsView render branches', () => {
   })
 
   it('renders the empty-state branch when comments is empty', () => {
-    controllerState.state = emptyState()
     const html = renderComments()
     expect(html).toContain('暂无评论')
     // The end-of-list sentinel only fires when comments.length > 0.
@@ -384,13 +369,7 @@ describe('snapshot: CommentsView render branches', () => {
 
   it('renders the active-filter body slot instead of the header slot when filters are active', () => {
     const activeFilters: ActiveFilter[] = [{ field: 'status', value: 'pending', label: '待审核' }]
-    controllerState.state = {
-      ...emptyState(),
-      comments: [],
-      total: 0,
-      filters: activeFilters,
-      statusCounts: { all: 0, pending: 0, approved: 0, deleteRequested: 0 },
-    }
+    controllerState.filters = activeFilters
     const html = renderComments(activeFilters)
     // Filter bar still rendered (in the body slot), so the status filter
     // label is visible.

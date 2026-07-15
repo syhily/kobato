@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest'
 
 import { renderHook } from '#/_helpers/hook'
-import { useImagesController } from '@/ui/admin/images/useImagesController'
+import { useImagesReducer } from '@/ui/admin/images/useImagesReducer'
 
-describe('ui/admin/images/useImagesController', () => {
+describe('ui/admin/images/useImagesReducer', () => {
   it('starts empty', () => {
-    const { state, q, kind, activeFilters, pageSize } = renderHook(useImagesController)
+    const { state, q, kind, activeFilters, pageSize } = renderHook(useImagesReducer)
     expect(state.filters).toHaveLength(0)
     expect(q).toBe('')
     expect(kind).toBe('all')
@@ -14,7 +14,7 @@ describe('ui/admin/images/useImagesController', () => {
   })
 
   it('adds kind and q filters', () => {
-    const { kind, activeFilters } = renderHook(useImagesController, {
+    const { kind, activeFilters } = renderHook(useImagesReducer, {
       actions: [
         (r) => r.dispatch({ type: 'addFilter', field: 'kind', value: 'category', label: '分类' }),
         (r) => r.dispatch({ type: 'addFilter', field: 'q', value: 'cat', label: 'cat' }),
@@ -26,7 +26,7 @@ describe('ui/admin/images/useImagesController', () => {
   })
 
   it('replaces a filter with the same field', () => {
-    const { kind, activeFilters } = renderHook(useImagesController, {
+    const { kind, activeFilters } = renderHook(useImagesReducer, {
       actions: [
         (r) => r.dispatch({ type: 'addFilter', field: 'kind', value: 'generic', label: '普通' }),
         (r) => r.dispatch({ type: 'addFilter', field: 'kind', value: 'friend', label: '友链' }),
@@ -37,21 +37,21 @@ describe('ui/admin/images/useImagesController', () => {
   })
 
   it('ignores unknown kind values', () => {
-    const { kind } = renderHook(useImagesController, {
+    const { kind } = renderHook(useImagesReducer, {
       actions: [(r) => r.dispatch({ type: 'addFilter', field: 'kind', value: 'unknown', label: '未知' })],
     })
     expect(kind).toBe('all')
   })
 
   it('updates q via setQ', () => {
-    const { q } = renderHook(useImagesController, {
+    const { q } = renderHook(useImagesReducer, {
       actions: [(r) => r.dispatch({ type: 'setQ', value: 'puppy' })],
     })
     expect(q).toBe('puppy')
   })
 
   it('removes a filter and resets q when no q filter remains', () => {
-    const { q, kind, activeFilters } = renderHook(useImagesController, {
+    const { q, kind, activeFilters } = renderHook(useImagesReducer, {
       actions: [
         (r) => r.dispatch({ type: 'addFilter', field: 'kind', value: 'category', label: '分类' }),
         (r) => r.dispatch({ type: 'addFilter', field: 'q', value: 'foo', label: 'foo' }),
@@ -64,7 +64,7 @@ describe('ui/admin/images/useImagesController', () => {
   })
 
   it('keeps q state when a q filter remains', () => {
-    const { q, activeFilters } = renderHook(useImagesController, {
+    const { q, activeFilters } = renderHook(useImagesReducer, {
       actions: [
         (r) => r.dispatch({ type: 'setQ', value: 'foo' }),
         (r) => r.dispatch({ type: 'addFilter', field: 'q', value: 'foo', label: 'foo' }),
@@ -77,7 +77,7 @@ describe('ui/admin/images/useImagesController', () => {
   })
 
   it('renames a filter label', () => {
-    const { activeFilters } = renderHook(useImagesController, {
+    const { activeFilters } = renderHook(useImagesReducer, {
       actions: [
         (r) => r.dispatch({ type: 'addFilter', field: 'kind', value: 'friend', label: '友链' }),
         (r) => r.dispatch({ type: 'renameFilter', field: 'kind', label: '友情链接' }),
@@ -87,14 +87,14 @@ describe('ui/admin/images/useImagesController', () => {
   })
 
   it('ignores rename for a missing filter', () => {
-    const { state } = renderHook(useImagesController, {
+    const { state } = renderHook(useImagesReducer, {
       actions: [(r) => r.dispatch({ type: 'renameFilter', field: 'kind', label: '友情链接' })],
     })
     expect(state.filters).toHaveLength(0)
   })
 
   it('clears all filters and q', () => {
-    const { q, kind, activeFilters } = renderHook(useImagesController, {
+    const { q, kind, activeFilters } = renderHook(useImagesReducer, {
       actions: [
         (r) => r.dispatch({ type: 'addFilter', field: 'kind', value: 'category', label: '分类' }),
         (r) => r.dispatch({ type: 'addFilter', field: 'q', value: 'foo', label: 'foo' }),

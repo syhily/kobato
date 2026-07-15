@@ -6,7 +6,7 @@ import { renderInRouter, renderToHtml, stableHtml } from '#/_helpers/render'
 import { FriendsView } from '@/ui/admin/friends/FriendsView'
 
 // FriendsView derives its rows directly from `useInfiniteQuery` pages (no
-// reducer for rows — `useFriendsController` only holds `{ q, includeHidden }`).
+// reducer for rows — `useFriendsReducer` only holds `{ q, includeHidden }`).
 // The existing `friends-view.test.tsx` covers the loading and empty states;
 // this spec adds populated rows (the `rows.map` callback), the error state,
 // and the include-hidden toggle's checked / unchecked render branches.
@@ -18,8 +18,8 @@ const controllerState = vi.hoisted(() => ({
   },
 }))
 
-vi.mock('@/ui/admin/friends/useFriendsController', () => ({
-  useFriendsController: () => ({ state: controllerState.state, dispatch: vi.fn() }),
+vi.mock('@/ui/admin/friends/useFriendsReducer', () => ({
+  useFriendsReducer: () => ({ state: controllerState.state, dispatch: vi.fn() }),
 }))
 
 const queryMocks = vi.hoisted(() => ({

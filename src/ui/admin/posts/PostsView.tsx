@@ -10,7 +10,7 @@ import { orpc } from '@/client/api/client'
 import { orpcQuery } from '@/client/api/orpc-query'
 import { PostRow } from '@/ui/admin/posts/PostRow'
 import { PostsSkeleton } from '@/ui/admin/posts/PostsSkeleton'
-import { type PostStatusFilter, usePostsController } from '@/ui/admin/posts/usePostsController'
+import { type PostStatusFilter, usePostsReducer } from '@/ui/admin/posts/usePostsReducer'
 import { AdminListPage } from '@/ui/admin/shared/AdminListPage'
 import { Combobox, ComboboxContent, ComboboxItem, ComboboxTrigger, ComboboxValue } from '@/ui/components/combobox'
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@/ui/components/empty'
@@ -37,7 +37,7 @@ const PAGE_SIZE = 10
 const pill =
   'h-9 gap-1 rounded-(--radius) border-border px-3 text-(--text-admin-sm) font-medium shadow-none hover:bg-accent focus-visible:border-border focus-visible:ring-0 data-[popup-open]:border-border data-[popup-open]:ring-0'
 
-function buildQueryInput(state: ReturnType<typeof usePostsController>['state'], offset: number) {
+function buildQueryInput(state: ReturnType<typeof usePostsReducer>['state'], offset: number) {
   return {
     q: state.q || undefined,
     deletedStatus: state.deletedStatus,
@@ -54,7 +54,7 @@ function buildQueryInput(state: ReturnType<typeof usePostsController>['state'], 
 }
 
 export function PostsView() {
-  const { state, dispatch } = usePostsController()
+  const { state, dispatch } = usePostsReducer()
 
   // --- Initial page query ---
   const {

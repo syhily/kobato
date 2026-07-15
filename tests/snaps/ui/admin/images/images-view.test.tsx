@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { AdminImageDto } from '@/shared/types/images'
-import type { ActiveImageFilter } from '@/ui/admin/images/useImagesController'
+import type { ActiveImageFilter } from '@/ui/admin/images/useImagesReducer'
 
 import { renderInRouter, renderToHtml, stableHtml } from '#/_helpers/render'
 import { ImageDetailDialog } from '@/ui/admin/images/ImageDetailDialog'

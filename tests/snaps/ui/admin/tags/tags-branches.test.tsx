@@ -5,7 +5,7 @@ import type { AdminTagDto } from '@/shared/types/tags'
 import { renderInRouter, stableHtml } from '#/_helpers/render'
 import { TagsView } from '@/ui/admin/tags/TagsView'
 
-// TagsView drives its rows from a reducer (`useTagsController`) and a list
+// TagsView drives its rows from a reducer (`useTagsReducer`) and a list
 // `useQuery` plus a delete `useMutation`, with the search box wired through
 // `useDebouncedSearch`. The existing `tags-view.test.tsx` covers the loading
 // and empty states; this spec adds populated rows (the `state.rows.map`
@@ -27,8 +27,8 @@ const controllerState = vi.hoisted((): { state: ControllerState } => ({
   },
 }))
 
-vi.mock('@/ui/admin/tags/useTagsController', () => ({
-  useTagsController: () => ({ state: controllerState.state, dispatch: vi.fn() }),
+vi.mock('@/ui/admin/tags/useTagsReducer', () => ({
+  useTagsReducer: () => ({ state: controllerState.state, dispatch: vi.fn() }),
 }))
 
 const queryMocks = vi.hoisted(() => ({

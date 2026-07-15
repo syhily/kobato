@@ -5,7 +5,7 @@ import type { AdminCategoryDto } from '@/shared/types/categories'
 import { renderInRouter, stableHtml } from '#/_helpers/render'
 import { CategoriesView } from '@/ui/admin/categories/CategoriesView'
 
-// CategoriesView drives its rows from a reducer (`useCategoriesController`)
+// CategoriesView drives its rows from a reducer (`useCategoriesReducer`)
 // and a list `useQuery` plus delete / reorder `useMutation`s, with DnD via
 // dnd-kit. The existing `categories-view.test.tsx` covers the loading and
 // empty states; this spec adds populated rows (the `state.rows.map`
@@ -25,8 +25,8 @@ const controllerState = vi.hoisted(() => ({
   } satisfies ControllerState,
 }))
 
-vi.mock('@/ui/admin/categories/useCategoriesController', () => ({
-  useCategoriesController: () => ({ state: controllerState.state, dispatch: vi.fn() }),
+vi.mock('@/ui/admin/categories/useCategoriesReducer', () => ({
+  useCategoriesReducer: () => ({ state: controllerState.state, dispatch: vi.fn() }),
 }))
 
 const queryMocks = vi.hoisted(() => ({

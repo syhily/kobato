@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 import type { AdminPageDto } from '@/shared/types/pages'
 
 import { renderHook } from '#/_helpers/hook'
-import { usePagesController } from '@/ui/admin/pages/usePagesController'
+import { usePagesReducer } from '@/ui/admin/pages/usePagesReducer'
 
 function makePage(id: string): AdminPageDto {
   return {
@@ -30,9 +30,9 @@ function makePage(id: string): AdminPageDto {
   }
 }
 
-describe('ui/admin/pages/usePagesController', () => {
+describe('ui/admin/pages/usePagesReducer', () => {
   it('starts with the default state', () => {
-    const { state } = renderHook(usePagesController)
+    const { state } = renderHook(usePagesReducer)
     expect(state.rows).toEqual([])
     expect(state.total).toBe(0)
     expect(state.q).toBe('')
@@ -43,7 +43,7 @@ describe('ui/admin/pages/usePagesController', () => {
   })
 
   it('derives published status', () => {
-    const { state } = renderHook(usePagesController, {
+    const { state } = renderHook(usePagesReducer, {
       actions: [(r) => r.dispatch({ type: 'setStatus', value: 'published' })],
     })
     expect(state.status).toBe('published')
@@ -52,7 +52,7 @@ describe('ui/admin/pages/usePagesController', () => {
   })
 
   it('derives draft status', () => {
-    const { state } = renderHook(usePagesController, {
+    const { state } = renderHook(usePagesReducer, {
       actions: [(r) => r.dispatch({ type: 'setStatus', value: 'draft' })],
     })
     expect(state.status).toBe('draft')
@@ -60,7 +60,7 @@ describe('ui/admin/pages/usePagesController', () => {
   })
 
   it('derives deleted status', () => {
-    const { state } = renderHook(usePagesController, {
+    const { state } = renderHook(usePagesReducer, {
       actions: [(r) => r.dispatch({ type: 'setStatus', value: 'deleted' })],
     })
     expect(state.status).toBe('deleted')
@@ -70,7 +70,7 @@ describe('ui/admin/pages/usePagesController', () => {
 
   it('loads rows and total', () => {
     const rows = [makePage('1'), makePage('2')]
-    const { state } = renderHook(usePagesController, {
+    const { state } = renderHook(usePagesReducer, {
       actions: [(r) => r.dispatch({ type: 'loaded', rows, total: 5 })],
     })
     expect(state.rows).toEqual(rows)
@@ -80,7 +80,7 @@ describe('ui/admin/pages/usePagesController', () => {
   it('appends rows and total', () => {
     const first = makePage('1')
     const second = makePage('2')
-    const { state } = renderHook(usePagesController, {
+    const { state } = renderHook(usePagesReducer, {
       actions: [
         (r) => r.dispatch({ type: 'loaded', rows: [first], total: 3 }),
         (r) => r.dispatch({ type: 'appended', rows: [second], total: 3 }),
@@ -91,14 +91,14 @@ describe('ui/admin/pages/usePagesController', () => {
   })
 
   it('updates search query', () => {
-    const { state } = renderHook(usePagesController, {
+    const { state } = renderHook(usePagesReducer, {
       actions: [(r) => r.dispatch({ type: 'setQ', value: 'hello' })],
     })
     expect(state.q).toBe('hello')
   })
 
   it('updates author filter', () => {
-    const { state } = renderHook(usePagesController, {
+    const { state } = renderHook(usePagesReducer, {
       actions: [(r) => r.dispatch({ type: 'setAuthorId', value: 'author-1' })],
     })
     expect(state.authorId).toBe('author-1')
@@ -106,7 +106,7 @@ describe('ui/admin/pages/usePagesController', () => {
 
   it('patches a page in place', () => {
     const page = makePage('1')
-    const { state } = renderHook(usePagesController, {
+    const { state } = renderHook(usePagesReducer, {
       actions: [
         (r) => r.dispatch({ type: 'loaded', rows: [page], total: 1 }),
         (r) =>
@@ -123,7 +123,7 @@ describe('ui/admin/pages/usePagesController', () => {
   it('removes a page and decrements total', () => {
     const a = makePage('1')
     const b = makePage('2')
-    const { state } = renderHook(usePagesController, {
+    const { state } = renderHook(usePagesReducer, {
       actions: [
         (r) => r.dispatch({ type: 'loaded', rows: [a, b], total: 2 }),
         (r) => r.dispatch({ type: 'removePage', id: a.id }),
@@ -136,7 +136,7 @@ describe('ui/admin/pages/usePagesController', () => {
 
   it('does not decrement total below zero', () => {
     const page = makePage('1')
-    const { state } = renderHook(usePagesController, {
+    const { state } = renderHook(usePagesReducer, {
       actions: [
         (r) => r.dispatch({ type: 'loaded', rows: [page], total: 1 }),
         (r) => r.dispatch({ type: 'removePage', id: page.id }),
@@ -149,7 +149,7 @@ describe('ui/admin/pages/usePagesController', () => {
   it('prepends a page and increments total', () => {
     const existing = makePage('1')
     const fresh = makePage('2')
-    const { state } = renderHook(usePagesController, {
+    const { state } = renderHook(usePagesReducer, {
       actions: [
         (r) => r.dispatch({ type: 'loaded', rows: [existing], total: 1 }),
         (r) => r.dispatch({ type: 'prependPage', page: fresh }),

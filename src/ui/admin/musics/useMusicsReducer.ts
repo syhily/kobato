@@ -31,7 +31,7 @@ function musicsReducer(state: MusicsState, action: MusicsAction): MusicsState {
   }
 }
 
-export function useMusicsController() {
+export function useMusicsReducer() {
   const [state, dispatch] = useReducer(musicsReducer, {
     q: '',
     sortBy: 'createdAt',

@@ -43,7 +43,7 @@ function tagsReducer(state: TagsState, action: TagsAction): TagsState {
   }
 }
 
-export function useTagsController() {
+export function useTagsReducer() {
   const [state, dispatch] = useReducer(tagsReducer, {
     rows: [],
     total: 0,
@@ -53,4 +53,4 @@ export function useTagsController() {
   return { state, dispatch }
 }
 
-export type TagsControllerDispatch = ReturnType<typeof useTagsController>['dispatch']
+export type TagsReducerDispatch = ReturnType<typeof useTagsReducer>['dispatch']

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import type { AuditLogActorDto, AuditLogItemDto } from '@/shared/types/audit'
-import type { ActiveFilter } from '@/ui/admin/audit/useAuditLogController'
+import type { ActiveFilter } from '@/ui/admin/audit/useAuditLogReducer'
 
 import { renderInRouter, renderToHtml, stableHtml } from '#/_helpers/render'
 import { AuditLogFilterAddButton } from '@/ui/admin/audit/AuditLogFilterAddButton'

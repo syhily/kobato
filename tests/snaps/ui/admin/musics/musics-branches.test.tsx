@@ -25,8 +25,8 @@ const controllerState = vi.hoisted(() => ({
   pageSize: 24,
 }))
 
-vi.mock('@/ui/admin/musics/useMusicsController', () => ({
-  useMusicsController: () => ({ state: controllerState, dispatch: vi.fn() }),
+vi.mock('@/ui/admin/musics/useMusicsReducer', () => ({
+  useMusicsReducer: () => ({ state: controllerState, dispatch: vi.fn() }),
 }))
 
 const queryMocks = vi.hoisted(() => ({

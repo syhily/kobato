@@ -1,13 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { AdminImageDto } from '@/shared/types/images'
-import type { ActiveImageFilter } from '@/ui/admin/images/useImagesController'
+import type { ActiveImageFilter } from '@/ui/admin/images/useImagesReducer'
 
 import { renderInRouter, renderToHtml, stableHtml } from '#/_helpers/render'
 import { ImagesView } from '@/ui/admin/images/ImagesView'
 import { ConfirmDialog } from '@/ui/admin/shared/ConfirmDialog'
 
-// `ImagesView` threads filter state through `useImagesController` and page
+// `ImagesView` threads filter state through `useImagesReducer` and page
 // data through `useInfiniteQuery`. The companion `images-view.test.tsx`
 // exercises the loading / empty / populated branches by letting the real
 // controller run with an empty filter set. This suite instead MOCKS the
@@ -34,8 +34,8 @@ const controller = vi.hoisted<ControllerShape>(() => ({
   activeFilters: [],
 }))
 
-vi.mock('@/ui/admin/images/useImagesController', () => ({
-  useImagesController: () => controller,
+vi.mock('@/ui/admin/images/useImagesReducer', () => ({
+  useImagesReducer: () => controller,
 }))
 
 // ─────────────────────── react-query mock ───────────────────────────

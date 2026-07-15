@@ -12,7 +12,7 @@ import { type ConfirmState, ConfirmDialog } from '@/ui/admin/shared/ConfirmDialo
 import { useDebouncedSearch } from '@/ui/admin/shared/useDebouncedSearch'
 import { EditTagDialog } from '@/ui/admin/tags/EditTagDialog'
 import { TagRow, TagsSkeleton } from '@/ui/admin/tags/TagRows'
-import { useTagsController } from '@/ui/admin/tags/useTagsController'
+import { useTagsReducer } from '@/ui/admin/tags/useTagsReducer'
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@/ui/components/empty'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/ui/components/table'
 
@@ -21,7 +21,7 @@ const PAGE_SIZE = 30
 type EditTarget = AdminTagDto | null | undefined
 
 export function TagsView() {
-  const { state, dispatch } = useTagsController()
+  const { state, dispatch } = useTagsReducer()
   const [confirm, setConfirm] = useState<ConfirmState | null>(null)
   const [editTarget, setEditTarget] = useState<EditTarget>(undefined)
 

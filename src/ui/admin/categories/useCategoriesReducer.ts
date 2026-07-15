@@ -58,7 +58,7 @@ function categoriesReducer(state: CategoriesState, action: CategoriesAction): Ca
   }
 }
 
-export function useCategoriesController() {
+export function useCategoriesReducer() {
   const [state, dispatch] = useReducer(categoriesReducer, {
     rows: [],
     total: 0,
@@ -67,4 +67,4 @@ export function useCategoriesController() {
   return { state, dispatch }
 }
 
-export type CategoriesControllerDispatch = ReturnType<typeof useCategoriesController>['dispatch']
+export type CategoriesReducerDispatch = ReturnType<typeof useCategoriesReducer>['dispatch']

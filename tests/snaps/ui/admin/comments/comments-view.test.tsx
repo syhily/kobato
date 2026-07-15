@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { CommentBody } from '@/shared/pt/comment-schema'
 import type { AdminCommentWire as AdminComment } from '@/shared/types/comments'
-import type { CommentsState } from '@/ui/admin/comments/useCommentsController'
+import type { ActiveFilter } from '@/ui/admin/comments/useCommentsController'
 
 import { renderInRouter, stableHtml } from '#/_helpers/render'
 import { AdminCommentRow } from '@/ui/admin/comments/AdminCommentRow'
@@ -25,24 +25,22 @@ vi.stubGlobal(
 
 // --- data-loaded CommentsView mocks -----------------------------------------
 //
-// `CommentsView` does not pull its comment list from react-query — it
-// drives a `useReducer` (`useCommentsController`) whose `loaded` action
-// is only dispatched from a `useEffect` that calls `orpc.admin.comments.
-// loadAll`. Effects never run during synchronous SSR, so the reducer
-// stays at its initial empty state and only the skeleton chrome renders.
-// To cover the data-loaded render path (the `state.comments.map` branch
-// and the empty-state branch) we stub the controller with a hoisted
-// singleton, mirroring exactly what `tags.test.tsx` /
+// `CommentsView` pulls its comment list from `useCommentsController`, which
+// owns a `useInfiniteQuery` against `orpc.admin.comments.loadAll`. Queries
+// never fetch during synchronous SSR, so the list stays empty and only the
+// skeleton chrome renders. To cover the data-loaded render path (the
+// `comments.map` branch and the empty-state branch) we stub the controller
+// with a hoisted singleton, mirroring exactly what `tags.test.tsx` /
 // `musics-view.test.tsx` do for their own controllers.
 
 const controllerState = vi.hoisted(() => ({
-  state: {
-    comments: [] as AdminComment[],
-    total: 0,
-    filters: [],
-    statusCounts: { all: 0, pending: 0, approved: 0, deleteRequested: 0 },
-  } as CommentsState,
+  comments: [] as AdminComment[],
+  total: 0,
+  filters: [] as ActiveFilter[],
+  statusCounts: { all: 0, pending: 0, approved: 0, deleteRequested: 0 },
   hasMore: false,
+  isLoading: false,
+  isFetchingNextPage: false,
 }))
 
 vi.mock('@/ui/admin/comments/useCommentsController', async () => {
@@ -52,17 +50,20 @@ vi.mock('@/ui/admin/comments/useCommentsController', async () => {
   return {
     ...actual,
     useCommentsController: () => ({
-      state: controllerState.state,
+      filters: controllerState.filters,
       dispatch: vi.fn(),
-      pageSize: 10,
+      comments: controllerState.comments,
+      total: controllerState.total,
+      statusCounts: controllerState.statusCounts,
       hasMore: controllerState.hasMore,
-      filterStatus: 'all',
-      filterPageKey: '',
-      filterAuthorId: '',
-      filterText: null,
-      filterDateRange: null,
-      filterCreatedAfter: undefined,
-      filterCreatedBefore: undefined,
+      isLoading: controllerState.isLoading,
+      isFetchingNextPage: controllerState.isFetchingNextPage,
+      sentinelRef: { current: null },
+      approveComment: vi.fn(),
+      removeComment: vi.fn(),
+      updateCommentBody: vi.fn(),
+      clearCommentDeleteRequest: vi.fn(),
+      invalidateList: vi.fn(),
     }),
   }
 })
@@ -185,18 +186,19 @@ describe('snapshot: CommentsView', () => {
   beforeEach(() => {
     // Reset the hoisted controller state between cases so each test
     // controls which branch of the view it covers.
-    controllerState.state = {
-      comments: [],
-      total: 0,
-      filters: [],
-      statusCounts: { all: 0, pending: 0, approved: 0, deleteRequested: 0 },
-    }
+    controllerState.comments = []
+    controllerState.total = 0
+    controllerState.filters = []
+    controllerState.statusCounts = { all: 0, pending: 0, approved: 0, deleteRequested: 0 }
     controllerState.hasMore = false
+    controllerState.isLoading = false
+    controllerState.isFetchingNextPage = false
   })
 
-  // Regression guard: the page chrome + skeleton render even before the
-  // first dispatch resolves.
+  // Regression guard: the page chrome + skeleton render while the first
+  // page of comments is still pending.
   it('renders the page chrome with title and loading skeleton', () => {
+    controllerState.isLoading = true
     const html = stableHtml(
       renderInRouter(
         <CommentsView currentUserName="Alice" currentUserEmail="a@b.com" initialFilters={[]} />,
@@ -205,33 +207,32 @@ describe('snapshot: CommentsView', () => {
     )
     expect(html).toContain('评论管理')
     expect(html).toContain('审核、回复、编辑站点评论')
-    expect(html.length).toBeGreaterThan(0)
+    // Loading branch — pulse placeholders instead of the empty state.
+    expect(html).toContain('animate-pulse')
+    expect(html).not.toContain('暂无评论')
   })
 
   it('renders the data-loaded branch with comment rows and filter chrome', () => {
-    controllerState.state = {
-      comments: [
-        makeAdminComment({
-          id: '1',
-          name: 'Alice',
-          pageTitle: 'Hello World',
-          pagePermalink: '/posts/hello',
-          badgeName: '站长',
-          badgeColor: '#007a82',
-          badgeTextColor: '#ffffff',
-        }),
-        makeAdminComment({
-          id: '2',
-          name: 'Bob',
-          isPending: true,
-          pageTitle: 'Second Post',
-          pagePermalink: '/posts/second',
-        }),
-      ],
-      total: 2,
-      filters: [],
-      statusCounts: { all: 2, pending: 1, approved: 1, deleteRequested: 0 },
-    }
+    controllerState.comments = [
+      makeAdminComment({
+        id: '1',
+        name: 'Alice',
+        pageTitle: 'Hello World',
+        pagePermalink: '/posts/hello',
+        badgeName: '站长',
+        badgeColor: '#007a82',
+        badgeTextColor: '#ffffff',
+      }),
+      makeAdminComment({
+        id: '2',
+        name: 'Bob',
+        isPending: true,
+        pageTitle: 'Second Post',
+        pagePermalink: '/posts/second',
+      }),
+    ]
+    controllerState.total = 2
+    controllerState.statusCounts = { all: 2, pending: 1, approved: 1, deleteRequested: 0 }
     const html = stableHtml(
       renderInRouter(
         <CommentsView currentUserName="Alice" currentUserEmail="a@b.com" initialFilters={[]} />,
@@ -258,12 +259,6 @@ describe('snapshot: CommentsView', () => {
   })
 
   it('renders the empty-state branch when the loaded list is empty', () => {
-    controllerState.state = {
-      comments: [],
-      total: 0,
-      filters: [],
-      statusCounts: { all: 0, pending: 0, approved: 0, deleteRequested: 0 },
-    }
     const html = stableHtml(
       renderInRouter(
         <CommentsView currentUserName="Alice" currentUserEmail="a@b.com" initialFilters={[]} />,
@@ -278,12 +273,9 @@ describe('snapshot: CommentsView', () => {
   })
 
   it('renders the loading-more sentinel when hasMore is true', () => {
-    controllerState.state = {
-      comments: [makeAdminComment({ id: '9', name: 'Solo' })],
-      total: 20,
-      filters: [],
-      statusCounts: { all: 20, pending: 0, approved: 20, deleteRequested: 0 },
-    }
+    controllerState.comments = [makeAdminComment({ id: '9', name: 'Solo' })]
+    controllerState.total = 20
+    controllerState.statusCounts = { all: 20, pending: 0, approved: 20, deleteRequested: 0 }
     controllerState.hasMore = true
     const html = stableHtml(
       renderInRouter(
@@ -294,6 +286,21 @@ describe('snapshot: CommentsView', () => {
     expect(html).toContain('Solo')
     // The intersection sentinel div is present when hasMore is true.
     expect(html).toContain('class="h-1"')
+  })
+
+  it('renders the fetching-next-page copy while the next page is loading', () => {
+    controllerState.comments = [makeAdminComment({ id: '10', name: 'Solo' })]
+    controllerState.total = 20
+    controllerState.statusCounts = { all: 20, pending: 0, approved: 20, deleteRequested: 0 }
+    controllerState.hasMore = true
+    controllerState.isFetchingNextPage = true
+    const html = stableHtml(
+      renderInRouter(
+        <CommentsView currentUserName="Alice" currentUserEmail="a@b.com" initialFilters={[]} />,
+        '/admin/comments',
+      ),
+    )
+    expect(html).toContain('加载中…')
   })
 })
 

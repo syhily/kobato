@@ -63,7 +63,7 @@ function usersReducer(state: UsersState, action: UsersAction): UsersState {
   }
 }
 
-export function useUsersController() {
+export function useUsersReducer() {
   const [state, dispatch] = useReducer(usersReducer, {
     rows: [],
     total: 0,

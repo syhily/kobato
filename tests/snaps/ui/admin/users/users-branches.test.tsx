@@ -1,12 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { AdminUserDto } from '@/shared/types/users'
-import type { RoleFilter, SortOrder } from '@/ui/admin/users/useUsersController'
+import type { RoleFilter, SortOrder } from '@/ui/admin/users/useUsersReducer'
 
 import { renderInRouter, stableHtml } from '#/_helpers/render'
 import { UsersView } from '@/ui/admin/users/UsersView'
 
-// `UsersView` is driven by `useUsersController` + three TanStack Query hooks
+// `UsersView` is driven by `useUsersReducer` + three TanStack Query hooks
 // (list + query client + mutations are never fired in SSR). The existing
 // `users.test.tsx` only snapshots the loading chrome; this suite covers the
 // remaining render-path branches:
@@ -43,8 +43,8 @@ const controllerState = vi.hoisted((): { state: ControllerState } => ({
   },
 }))
 
-vi.mock('@/ui/admin/users/useUsersController', () => ({
-  useUsersController: () => ({
+vi.mock('@/ui/admin/users/useUsersReducer', () => ({
+  useUsersReducer: () => ({
     state: controllerState.state,
     dispatch: vi.fn(),
   }),

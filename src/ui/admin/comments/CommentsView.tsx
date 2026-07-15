@@ -1,17 +1,12 @@
 import { useQuery } from '@tanstack/react-query'
 import { LoaderIcon, SearchIcon } from 'lucide-react'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { useSearchParams } from 'react-router'
-import { toast } from 'sonner'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import type { AdminCommentWire as AdminComment } from '@/shared/types/comments'
 import type { ActiveFilter, FilterFieldKey, FilterItem } from '@/ui/admin/comments/useCommentsController'
 
-import { orpc } from '@/client/api/client'
 import { orpcQuery } from '@/client/api/orpc-query'
-import { getLogger } from '@/client/lib/logger'
 import { idStr } from '@/shared/utils/tools'
-import { unsafeCast } from '@/shared/utils/unsafe-cast'
 import { AdminCommentRow } from '@/ui/admin/comments/AdminCommentRow'
 import { CommentsFilterBar } from '@/ui/admin/comments/CommentsFilterBar'
 import { EditCommentDialog } from '@/ui/admin/comments/EditCommentDialog'
@@ -26,7 +21,6 @@ import { Skeleton } from '@/ui/components/skeleton'
 import { skeletonKeys } from '@/ui/lib/skeleton-keys'
 
 const FILTER_QUERY_DEBOUNCE_MS = 250
-const log = getLogger('comments.CommentsView')
 
 export interface CommentsViewProps {
   currentUserName: string
@@ -36,42 +30,21 @@ export interface CommentsViewProps {
 
 export function CommentsView({ currentUserName, currentUserEmail, initialFilters }: CommentsViewProps) {
   const {
-    state,
+    filters,
     dispatch,
-    pageSize,
+    comments,
     hasMore,
-    filterStatus,
-    filterPageKey,
-    filterAuthorId,
-    filterText,
-    filterCreatedAfter,
-    filterCreatedBefore,
+    isLoading,
+    isFetchingNextPage,
+    sentinelRef,
+    approveComment,
+    removeComment,
+    updateCommentBody,
+    clearCommentDeleteRequest,
+    invalidateList,
   } = useCommentsController({
     initialFilters,
   })
-
-  const [isCommentsLoading, setIsCommentsLoading] = useState(false)
-  const lastQueryKeyRef = useRef<string | null>(null)
-
-  const loadComments = useCallback(
-    async (input: { offset: number; limit: number }) => {
-      setIsCommentsLoading(true)
-      try {
-        const result = await orpc.admin.comments.loadAll(input)
-        dispatch({
-          type: 'loaded',
-          comments: result.comments,
-          total: result.total,
-          statusCounts: result.statusCounts,
-        })
-      } catch (error) {
-        toast.error('加载评论列表失败', { description: error instanceof Error ? error.message : String(error) })
-      } finally {
-        setIsCommentsLoading(false)
-      }
-    },
-    [dispatch],
-  )
 
   const [debouncedPageQuery, setDebouncedPageQuery] = useState('')
   const [, setPageQuery] = useDebouncedSearch({
@@ -132,155 +105,27 @@ export function CommentsView({ currentUserName, currentUserEmail, initialFilters
     dispatch({ type: 'renameFilter', field: 'page', label: pageRehydrateData.pages[0].title || '无标题' })
   }, [pageRehydrateData, dispatch])
 
-  const parentLookup = useMemo(() => new Map(state.comments.map((c) => [idStr(c.id), c])), [state.comments])
-
-  const [searchParams, setSearchParams] = useSearchParams()
-  const urlSyncTimerRef = useRef<number | null>(null)
-  useEffect(() => {
-    if (urlSyncTimerRef.current !== null) {
-      window.clearTimeout(urlSyncTimerRef.current)
-    }
-    urlSyncTimerRef.current = window.setTimeout(() => {
-      const next = new URLSearchParams()
-      for (const filter of state.filters) {
-        if (filter.field === 'status' && filter.value !== 'all') {
-          next.set('status', filter.value)
-        } else if (filter.field === 'page' && filter.value) {
-          next.set('pageKey', filter.value)
-        } else if (filter.field === 'author' && filter.value) {
-          next.set('userId', filter.value)
-        } else if (filter.field === 'text' && filter.value) {
-          try {
-            // parsed JSON validated immediately below
-            const range = unsafeCast<{ value?: string; op?: string }>(JSON.parse(filter.value))
-            if (range.value) {
-              next.set('q', range.value)
-              if (range.op) {
-                next.set('match', range.op)
-              }
-            }
-          } catch {
-            // ignore malformed legacy value
-          }
-        } else if (filter.field === 'date' && filter.value) {
-          try {
-            // parsed JSON validated immediately below
-            const range = unsafeCast<{ date?: string; op?: string }>(JSON.parse(filter.value))
-            if (range.date) {
-              next.set('date', range.date)
-            }
-            if (range.op) {
-              next.set('dateOp', range.op)
-            }
-          } catch {
-            // ignore malformed legacy value
-          }
-        }
-      }
-      if (next.toString() !== searchParams.toString()) {
-        setSearchParams(next, { replace: true, preventScrollReset: true })
-      }
-    }, 300)
-    return () => {
-      if (urlSyncTimerRef.current !== null) {
-        window.clearTimeout(urlSyncTimerRef.current)
-      }
-    }
-  }, [state.filters, setSearchParams, searchParams])
-
-  const buildQueryInput = useCallback(
-    (offset: number) => ({
-      offset,
-      limit: pageSize,
-      ...(filterPageKey ? { pageKey: filterPageKey } : {}),
-      ...(filterAuthorId ? { userId: filterAuthorId } : {}),
-      ...(filterStatus !== 'all' ? { status: filterStatus } : {}),
-      ...(filterText && filterText.value ? { q: filterText.value, match: filterText.op } : {}),
-      ...(filterCreatedAfter ? { createdAfter: filterCreatedAfter } : {}),
-      ...(filterCreatedBefore ? { createdBefore: filterCreatedBefore } : {}),
-    }),
-    [pageSize, filterPageKey, filterAuthorId, filterStatus, filterText, filterCreatedAfter, filterCreatedBefore],
-  )
-
-  const reload = useCallback(
-    (force = false) => {
-      const input = buildQueryInput(0)
-      const key = JSON.stringify(input)
-      if (!force && key === lastQueryKeyRef.current) {
-        return
-      }
-      lastQueryKeyRef.current = key
-      void loadComments(input)
-    },
-    [loadComments, buildQueryInput],
-  )
-
-  useEffect(() => {
-    reload()
-  }, [reload])
-
-  const [loadingMore, setLoadingMore] = useState(false)
-  const sentinelRef = useRef<HTMLDivElement>(null)
-
-  const loadMore = useCallback(async () => {
-    if (loadingMore || !hasMore) {
-      return
-    }
-    setLoadingMore(true)
-    try {
-      const result = await orpc.admin.comments.loadAll(buildQueryInput(state.comments.length))
-      dispatch({
-        type: 'appended',
-        comments: result.comments,
-        total: result.total,
-      })
-    } catch (error) {
-      toast.error('加载更多评论失败')
-      log.warn('Failed to load more comments', { error })
-    } finally {
-      setLoadingMore(false)
-    }
-  }, [loadingMore, hasMore, buildQueryInput, state.comments.length, dispatch])
-
-  useEffect(() => {
-    if (!hasMore) {
-      return
-    }
-    const el = sentinelRef.current
-    if (!el) {
-      return
-    }
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry?.isIntersecting) {
-          void loadMore()
-        }
-      },
-      { rootMargin: '200px' },
-    )
-    observer.observe(el)
-    return () => observer.disconnect()
-  }, [hasMore, loadMore])
+  const parentLookup = useMemo(() => new Map(comments.map((c) => [idStr(c.id), c])), [comments])
 
   const pageItems = useMemo<FilterItem[]>(() => {
     const fetched = pagesData?.pages ?? []
     const items = fetched.map((p) => ({ value: p.key, label: p.title || '无标题' }))
-    const current = state.filters.find((f) => f.field === 'page')
+    const current = filters.find((f) => f.field === 'page')
     if (current && !items.some((i) => i.value === current.value)) {
       items.unshift({ value: current.value, label: current.label })
     }
     return items
-  }, [pagesData, state.filters])
+  }, [pagesData, filters])
 
   const authorItems = useMemo<FilterItem[]>(() => {
     const fetched = authorsData?.authors ?? []
     const items = fetched.map((a) => ({ value: a.id, label: a.name }))
-    const current = state.filters.find((f) => f.field === 'author')
+    const current = filters.find((f) => f.field === 'author')
     if (current && !items.some((i) => i.value === current.value)) {
       items.unshift({ value: current.value, label: current.label })
     }
     return items
-  }, [authorsData, state.filters])
+  }, [authorsData, filters])
 
   const askApprove = useCallback(
     (run: () => void) =>
@@ -348,20 +193,19 @@ export function CommentsView({ currentUserName, currentUserEmail, initialFilters
   const handleDeleteRequestResolved = useCallback(
     (id: string, approved: boolean, isPending: boolean) => {
       if (approved) {
-        dispatch({ type: 'removeComment', id })
+        removeComment(id)
       } else {
-        dispatch({ type: 'clearDeleteRequest', id, isPending })
+        clearCommentDeleteRequest(id, isPending)
       }
     },
-    [dispatch],
+    [removeComment, clearCommentDeleteRequest],
   )
 
-  const hasActiveFilters = state.filters.length > 0
-  const isLoading = isCommentsLoading
+  const hasActiveFilters = filters.length > 0
 
   const filterBar = (
     <CommentsFilterBar
-      filters={state.filters}
+      filters={filters}
       onAddFilter={handleAddFilter}
       onRemoveFilter={handleRemoveFilter}
       onClearFilters={handleClearFilters}
@@ -388,7 +232,7 @@ export function CommentsView({ currentUserName, currentUserEmail, initialFilters
           <div className="divide-y">
             {isLoading ? (
               <CommentsSkeleton />
-            ) : state.comments.length === 0 ? (
+            ) : comments.length === 0 ? (
               <Empty>
                 <EmptyHeader>
                   <EmptyMedia variant="icon">
@@ -398,7 +242,7 @@ export function CommentsView({ currentUserName, currentUserEmail, initialFilters
                 </EmptyHeader>
               </Empty>
             ) : (
-              state.comments.map((comment) => (
+              comments.map((comment) => (
                 <AdminCommentRow
                   key={idStr(comment.id)}
                   comment={comment}
@@ -406,8 +250,8 @@ export function CommentsView({ currentUserName, currentUserEmail, initialFilters
                   onEdit={() => setEditTarget(comment)}
                   onReply={() => setReplyTarget(comment)}
                   onEditUser={() => setEditUserTarget(comment)}
-                  onApproved={() => dispatch({ type: 'approveComment', id: idStr(comment.id) })}
-                  onDeleted={() => dispatch({ type: 'removeComment', id: idStr(comment.id) })}
+                  onApproved={() => approveComment(idStr(comment.id))}
+                  onDeleted={() => removeComment(idStr(comment.id))}
                   onDeleteRequestResolved={(approved) =>
                     handleDeleteRequestResolved(idStr(comment.id), approved, comment.isPending === true)
                   }
@@ -433,9 +277,9 @@ export function CommentsView({ currentUserName, currentUserEmail, initialFilters
           </div>
 
           {hasMore && <div ref={sentinelRef} className="h-1" />}
-          {(loadingMore || (!hasMore && state.comments.length > 0)) && (
+          {(isFetchingNextPage || (!hasMore && comments.length > 0)) && (
             <div className="py-6 text-center text-sm text-muted-foreground">
-              {loadingMore ? (
+              {isFetchingNextPage ? (
                 <span className="inline-flex items-center gap-2">
                   <LoaderIcon className="size-4 animate-spin" />
                   加载中…
@@ -453,7 +297,7 @@ export function CommentsView({ currentUserName, currentUserEmail, initialFilters
         onClose={() => setEditTarget(null)}
         onSaved={(c) => {
           if (editTarget) {
-            dispatch({ type: 'updateCommentContent', id: idStr(editTarget.id), body: c.body })
+            updateCommentBody(idStr(editTarget.id), c.body)
           }
           setEditTarget(null)
         }}
@@ -463,7 +307,7 @@ export function CommentsView({ currentUserName, currentUserEmail, initialFilters
         onClose={() => setEditUserTarget(null)}
         onSaved={() => {
           setEditUserTarget(null)
-          reload(true)
+          invalidateList()
         }}
       />
       <ReplyCommentDialog
@@ -473,7 +317,7 @@ export function CommentsView({ currentUserName, currentUserEmail, initialFilters
         onClose={() => setReplyTarget(null)}
         onReplied={() => {
           setReplyTarget(null)
-          reload(true)
+          invalidateList()
         }}
       />
 

@@ -2,7 +2,7 @@ import { ArrowLeftIcon, FunnelIcon, FunnelPlusIcon } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 
 import type { AuditLogActorDto } from '@/shared/types/audit'
-import type { ActiveFilter, AuditLogFilterFieldKey } from '@/ui/admin/audit/useAuditLogController'
+import type { ActiveFilter, AuditLogFilterFieldKey } from '@/ui/admin/audit/useAuditLogReducer'
 
 import { AuditLogActorPicker } from '@/ui/admin/audit/AuditLogActorPicker'
 import { ACTION_OPTIONS, FILTER_FIELDS, RESOURCE_TYPE_OPTIONS } from '@/ui/admin/audit/filter-constants'

@@ -73,11 +73,11 @@ export function auditLogReducer(state: AuditLogState, action: AuditLogAction): A
   }
 }
 
-export interface UseAuditLogControllerOptions {
+export interface UseAuditLogReducerOptions {
   initialFilters?: ActiveFilter[]
 }
 
-export function useAuditLogController({ initialFilters = [] }: UseAuditLogControllerOptions = {}) {
+export function useAuditLogReducer({ initialFilters = [] }: UseAuditLogReducerOptions = {}) {
   const [state, dispatch] = useReducer(auditLogReducer, {
     items: [],
     total: 0,

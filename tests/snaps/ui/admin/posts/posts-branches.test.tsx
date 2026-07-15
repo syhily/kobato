@@ -1,13 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { AdminPostDto } from '@/shared/types/posts'
-import type { PostStatusFilter } from '@/ui/admin/posts/usePostsController'
+import type { PostStatusFilter } from '@/ui/admin/posts/usePostsReducer'
 
 import { makeAdminPost } from '#/_helpers/catalog'
 import { renderInRouter, stableHtml } from '#/_helpers/render'
 import { PostsView } from '@/ui/admin/posts/PostsView'
 
-// PostsView drives its rows from a reducer (`usePostsController`) and four
+// PostsView drives its rows from a reducer (`usePostsReducer`) and four
 // `useQuery` calls: the post list plus the secondary option-list queries for
 // categories, tags and authors. To maximise render-path branch coverage we
 // bypass the real reducer entirely and pass a hoisted `state` singleton so
@@ -47,8 +47,8 @@ const controllerState = vi.hoisted(() => ({
   } satisfies ControllerState,
 }))
 
-vi.mock('@/ui/admin/posts/usePostsController', () => ({
-  usePostsController: () => ({ state: controllerState.state, dispatch: vi.fn() }),
+vi.mock('@/ui/admin/posts/usePostsReducer', () => ({
+  usePostsReducer: () => ({ state: controllerState.state, dispatch: vi.fn() }),
   // The real PostsView imports the type as a value-resolved reference for
   // its cast inside `onValueChange`; the helper is not actually executed
   // under SSR (event handlers don't fire) but the symbol must resolve.

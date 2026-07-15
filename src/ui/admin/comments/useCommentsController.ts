@@ -1,10 +1,16 @@
-import { useMemo, useReducer } from 'react'
+import { useInfiniteQuery, useQueryClient, type InfiniteData } from '@tanstack/react-query'
+import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react'
+import { useSearchParams } from 'react-router'
+import { toast } from 'sonner'
 
 import type { CommentBody } from '@/shared/pt/comment-schema'
-import type { AdminCommentWire as AdminComment } from '@/shared/types/comments'
 
+import { orpc } from '@/client/api/client'
+import { useInfiniteScrollSentinel } from '@/client/hooks/use-infinite-scroll-sentinel'
+import { getLogger } from '@/client/lib/logger'
 import { idStr } from '@/shared/utils/tools'
 import { isRecord } from '@/shared/utils/type-guards'
+import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
 export type FilterStatus = 'all' | 'pending' | 'approved' | 'deleteRequested'
 
@@ -151,122 +157,120 @@ export interface StatusCounts {
 }
 
 const PAGE_SIZE = 10
+const URL_SYNC_DEBOUNCE_MS = 300
 
-export interface CommentsState {
-  comments: AdminComment[]
-  total: number
-  filters: ActiveFilter[]
-  statusCounts: StatusCounts
-}
+const log = getLogger('comments.useCommentsController')
 
-export type CommentsAction =
-  | {
-      type: 'loaded'
-      comments: AdminComment[]
-      total: number
-      statusCounts: StatusCounts
-    }
-  | {
-      type: 'appended'
-      comments: AdminComment[]
-      total: number
-    }
-  | { type: 'removeComment'; id: string }
-  | { type: 'approveComment'; id: string }
-  | { type: 'updateCommentContent'; id: string; body: CommentBody }
+export type FilterAction =
   | { type: 'addFilter'; field: FilterFieldKey; value: string; label: string }
   | { type: 'removeFilter'; field: FilterFieldKey }
   | { type: 'renameFilter'; field: FilterFieldKey; label: string }
-  | { type: 'clearDeleteRequest'; id: string; isPending: boolean }
   | { type: 'clearFilters' }
 
-export function commentsReducer(state: CommentsState, action: CommentsAction): CommentsState {
+export function filtersReducer(filters: ActiveFilter[], action: FilterAction): ActiveFilter[] {
   switch (action.type) {
-    case 'loaded':
-      return {
-        ...state,
-        comments: action.comments,
-        total: action.total,
-        statusCounts: action.statusCounts,
+    case 'addFilter': {
+      const next = filters.filter((f) => f.field !== action.field)
+      return [...next, { field: action.field, value: action.value, label: action.label }]
+    }
+    case 'removeFilter':
+      return filters.filter((f) => f.field !== action.field)
+    case 'renameFilter': {
+      const idx = filters.findIndex((f) => f.field === action.field)
+      if (idx === -1) {
+        return filters
       }
-    case 'appended':
-      return {
-        ...state,
-        comments: [...state.comments, ...action.comments],
-        total: action.total,
-      }
-    case 'removeComment': {
-      const removed = state.comments.find((comment) => idStr(comment.id) === action.id)
-      const nextStatusCounts = { ...state.statusCounts, all: Math.max(0, state.statusCounts.all - 1) }
+      const next = [...filters]
+      next[idx] = { ...next[idx]!, label: action.label }
+      return next
+    }
+    case 'clearFilters':
+      return []
+  }
+}
+
+export type AdminCommentsPage = Awaited<ReturnType<typeof orpc.admin.comments.loadAll>>
+export type AdminCommentsData = InfiniteData<AdminCommentsPage, number>
+
+const ZERO_STATUS_COUNTS: StatusCounts = { all: 0, pending: 0, approved: 0, deleteRequested: 0 }
+
+// Local-mutation helpers. After an admin action (approve / delete / edit /
+// delete-request resolution) has succeeded server-side, the view patches
+// the cached list pages in place instead of refetching. Each helper mirrors
+// the semantics of the retired `commentsReducer` action of the same name
+// one-for-one — including the deliberate choice to leave `total` untouched
+// on removal (the next page load re-syncs it).
+
+export function removeCommentFromPages(data: AdminCommentsData, id: string): AdminCommentsData {
+  const removed = data.pages.flatMap((page) => page.comments).find((comment) => idStr(comment.id) === id)
+  return {
+    ...data,
+    pages: data.pages.map((page) => {
+      const statusCounts = { ...page.statusCounts, all: Math.max(0, page.statusCounts.all - 1) }
       if (removed) {
         if (removed.deleteRequestedAt !== null) {
-          nextStatusCounts.deleteRequested = Math.max(0, nextStatusCounts.deleteRequested - 1)
+          statusCounts.deleteRequested = Math.max(0, statusCounts.deleteRequested - 1)
         } else if (removed.isPending) {
-          nextStatusCounts.pending = Math.max(0, nextStatusCounts.pending - 1)
+          statusCounts.pending = Math.max(0, statusCounts.pending - 1)
         } else {
-          nextStatusCounts.approved = Math.max(0, nextStatusCounts.approved - 1)
+          statusCounts.approved = Math.max(0, statusCounts.approved - 1)
         }
       }
       return {
-        ...state,
-        comments: state.comments.filter((comment) => idStr(comment.id) !== action.id),
-        statusCounts: nextStatusCounts,
+        ...page,
+        comments: page.comments.filter((comment) => idStr(comment.id) !== id),
+        statusCounts,
       }
-    }
-    case 'approveComment':
-      return {
-        ...state,
-        comments: state.comments.map((comment) =>
-          idStr(comment.id) === action.id ? { ...comment, isPending: false } : comment,
-        ),
-        statusCounts: {
-          ...state.statusCounts,
-          pending: Math.max(0, state.statusCounts.pending - 1),
-          approved: state.statusCounts.approved + 1,
-        },
+    }),
+  }
+}
+
+export function approveCommentInPages(data: AdminCommentsData, id: string): AdminCommentsData {
+  return {
+    ...data,
+    pages: data.pages.map((page) => ({
+      ...page,
+      comments: page.comments.map((comment) => (idStr(comment.id) === id ? { ...comment, isPending: false } : comment)),
+      statusCounts: {
+        ...page.statusCounts,
+        pending: Math.max(0, page.statusCounts.pending - 1),
+        approved: page.statusCounts.approved + 1,
+      },
+    })),
+  }
+}
+
+export function updateCommentBodyInPages(data: AdminCommentsData, id: string, body: CommentBody): AdminCommentsData {
+  return {
+    ...data,
+    pages: data.pages.map((page) => ({
+      ...page,
+      comments: page.comments.map((comment) => (idStr(comment.id) === id ? { ...comment, body } : comment)),
+    })),
+  }
+}
+
+export function clearDeleteRequestInPages(data: AdminCommentsData, id: string, isPending: boolean): AdminCommentsData {
+  return {
+    ...data,
+    pages: data.pages.map((page) => {
+      const statusCounts = {
+        ...page.statusCounts,
+        deleteRequested: Math.max(0, page.statusCounts.deleteRequested - 1),
       }
-    case 'updateCommentContent':
-      return {
-        ...state,
-        comments: state.comments.map((comment) =>
-          idStr(comment.id) === action.id ? { ...comment, body: action.body } : comment,
-        ),
-      }
-    case 'addFilter': {
-      const next = state.filters.filter((f) => f.field !== action.field)
-      return { ...state, filters: [...next, { field: action.field, value: action.value, label: action.label }] }
-    }
-    case 'removeFilter':
-      return { ...state, filters: state.filters.filter((f) => f.field !== action.field) }
-    case 'renameFilter': {
-      const idx = state.filters.findIndex((f) => f.field === action.field)
-      if (idx === -1) {
-        return state
-      }
-      const next = [...state.filters]
-      next[idx] = { ...next[idx]!, label: action.label }
-      return { ...state, filters: next }
-    }
-    case 'clearDeleteRequest': {
-      const nextStatusCounts = {
-        ...state.statusCounts,
-        deleteRequested: Math.max(0, state.statusCounts.deleteRequested - 1),
-      }
-      if (action.isPending) {
-        nextStatusCounts.pending = state.statusCounts.pending + 1
+      if (isPending) {
+        statusCounts.pending = page.statusCounts.pending + 1
       } else {
-        nextStatusCounts.approved = state.statusCounts.approved + 1
+        statusCounts.approved = page.statusCounts.approved + 1
       }
       return {
-        ...state,
-        comments: state.comments.map((comment) =>
-          idStr(comment.id) === action.id ? { ...comment, deleteRequestedAt: null } : comment,
+        ...page,
+        comments: page.comments.map((comment) =>
+          idStr(comment.id) === id ? { ...comment, deleteRequestedAt: null } : comment,
         ),
-        statusCounts: nextStatusCounts,
+        statusCounts,
       }
-    }
-    case 'clearFilters':
-      return { ...state, filters: [] }
+    }),
   }
 }
 
@@ -275,34 +279,194 @@ export interface UseCommentsControllerOptions {
 }
 
 export function useCommentsController({ initialFilters }: UseCommentsControllerOptions) {
-  const [state, dispatch] = useReducer(commentsReducer, {
-    comments: [],
-    total: 0,
-    filters: initialFilters,
-    statusCounts: { all: 0, pending: 0, approved: 0, deleteRequested: 0 },
+  const queryClient = useQueryClient()
+  const [filters, dispatch] = useReducer(filtersReducer, initialFilters)
+
+  const statusFilter = filters.find((f) => f.field === 'status')
+  const pageFilter = filters.find((f) => f.field === 'page')
+  const authorFilter = filters.find((f) => f.field === 'author')
+  const textFilter = filters.find((f) => f.field === 'text')
+  const dateFilter = filters.find((f) => f.field === 'date')
+
+  const filterText = useMemo(() => (textFilter ? parseTextFilter(textFilter.value) : null), [textFilter])
+  const filterDateRange = useMemo(() => (dateFilter ? parseDateFilter(dateFilter.value) : null), [dateFilter])
+  const dateBounds = useMemo(() => resolveDateFilterBounds(filterDateRange), [filterDateRange])
+
+  const filterStatus: FilterStatus = isFilterStatus(statusFilter?.value) ? statusFilter.value : 'all'
+  const filterPageKey = pageFilter?.value ?? ''
+  const filterAuthorId = authorFilter?.value ?? ''
+  const filterCreatedAfter = dateBounds.after
+  const filterCreatedBefore = dateBounds.before
+
+  // Mirror the active filters into the URL so a filtered view stays
+  // shareable. Debounced: text/date edits dispatch on every keystroke, and
+  // the URL should only settle once the user pauses.
+  const [searchParams, setSearchParams] = useSearchParams()
+  const urlSyncTimerRef = useRef<number | null>(null)
+  useEffect(() => {
+    if (urlSyncTimerRef.current !== null) {
+      window.clearTimeout(urlSyncTimerRef.current)
+    }
+    urlSyncTimerRef.current = window.setTimeout(() => {
+      const next = new URLSearchParams()
+      for (const filter of filters) {
+        if (filter.field === 'status' && filter.value !== 'all') {
+          next.set('status', filter.value)
+        } else if (filter.field === 'page' && filter.value) {
+          next.set('pageKey', filter.value)
+        } else if (filter.field === 'author' && filter.value) {
+          next.set('userId', filter.value)
+        } else if (filter.field === 'text' && filter.value) {
+          try {
+            // parsed JSON validated immediately below
+            const range = unsafeCast<{ value?: string; op?: string }>(JSON.parse(filter.value))
+            if (range.value) {
+              next.set('q', range.value)
+              if (range.op) {
+                next.set('match', range.op)
+              }
+            }
+          } catch {
+            // ignore malformed legacy value
+          }
+        } else if (filter.field === 'date' && filter.value) {
+          try {
+            // parsed JSON validated immediately below
+            const range = unsafeCast<{ date?: string; op?: string }>(JSON.parse(filter.value))
+            if (range.date) {
+              next.set('date', range.date)
+            }
+            if (range.op) {
+              next.set('dateOp', range.op)
+            }
+          } catch {
+            // ignore malformed legacy value
+          }
+        }
+      }
+      if (next.toString() !== searchParams.toString()) {
+        setSearchParams(next, { replace: true, preventScrollReset: true })
+      }
+    }, URL_SYNC_DEBOUNCE_MS)
+    return () => {
+      if (urlSyncTimerRef.current !== null) {
+        window.clearTimeout(urlSyncTimerRef.current)
+      }
+    }
+  }, [filters, setSearchParams, searchParams])
+
+  const textQuery = filterText?.value ?? ''
+  const textMatch = filterText?.value ? filterText.op : ''
+  const createdAfter = filterCreatedAfter ?? ''
+  const createdBefore = filterCreatedBefore ?? ''
+  const listQueryKey = useMemo(
+    () =>
+      [
+        'admin',
+        'comments',
+        'list',
+        {
+          status: filterStatus,
+          pageKey: filterPageKey,
+          userId: filterAuthorId,
+          q: textQuery,
+          match: textMatch,
+          createdAfter,
+          createdBefore,
+        },
+      ] as const,
+    [filterStatus, filterPageKey, filterAuthorId, textQuery, textMatch, createdAfter, createdBefore],
+  )
+
+  const listQuery = useInfiniteQuery({
+    queryKey: listQueryKey,
+    queryFn: async ({ pageParam }) =>
+      orpc.admin.comments.loadAll({
+        offset: pageParam,
+        limit: PAGE_SIZE,
+        ...(filterPageKey ? { pageKey: filterPageKey } : {}),
+        ...(filterAuthorId ? { userId: filterAuthorId } : {}),
+        ...(filterStatus !== 'all' ? { status: filterStatus } : {}),
+        ...(filterText && filterText.value ? { q: filterText.value, match: filterText.op } : {}),
+        ...(filterCreatedAfter ? { createdAfter: filterCreatedAfter } : {}),
+        ...(filterCreatedBefore ? { createdBefore: filterCreatedBefore } : {}),
+      }),
+    getNextPageParam: (lastPage, _allPages, lastPageParam) => {
+      if (!lastPage.hasMore) {
+        return undefined
+      }
+      return (lastPageParam ?? 0) + PAGE_SIZE
+    },
+    initialPageParam: 0,
   })
 
-  const statusFilter = state.filters.find((f) => f.field === 'status')
-  const pageFilter = state.filters.find((f) => f.field === 'page')
-  const authorFilter = state.filters.find((f) => f.field === 'author')
-  const textFilter = state.filters.find((f) => f.field === 'text')
-  const dateFilter = state.filters.find((f) => f.field === 'date')
+  const { hasNextPage, isFetchingNextPage, fetchNextPage, isLoading } = listQuery
+  const comments = useMemo(() => listQuery.data?.pages.flatMap((page) => page.comments) ?? [], [listQuery.data])
+  const total = listQuery.data?.pages[0]?.total ?? 0
+  const statusCounts = listQuery.data?.pages[0]?.statusCounts ?? ZERO_STATUS_COUNTS
 
-  const textRange = useMemo(() => (textFilter ? parseTextFilter(textFilter.value) : null), [textFilter])
-  const dateRange = useMemo(() => (dateFilter ? parseDateFilter(dateFilter.value) : null), [dateFilter])
-  const dateBounds = useMemo(() => resolveDateFilterBounds(dateRange), [dateRange])
+  useEffect(() => {
+    if (!listQuery.error) {
+      return
+    }
+    if (listQuery.isFetchNextPageError) {
+      toast.error('加载更多评论失败')
+      log.warn('Failed to load more comments', { error: listQuery.error })
+    } else {
+      toast.error('加载评论列表失败', {
+        description: listQuery.error instanceof Error ? listQuery.error.message : String(listQuery.error),
+      })
+    }
+  }, [listQuery.error, listQuery.isFetchNextPageError])
+
+  const sentinelRef = useInfiniteScrollSentinel({ hasNextPage, isFetchingNextPage, fetchNextPage })
+
+  const patchList = useCallback(
+    (patch: (data: AdminCommentsData) => AdminCommentsData) => {
+      queryClient.setQueryData<AdminCommentsData>(listQueryKey, (old) => (old ? patch(old) : old))
+    },
+    [queryClient, listQueryKey],
+  )
+
+  const approveComment = useCallback((id: string) => patchList((data) => approveCommentInPages(data, id)), [patchList])
+  const removeComment = useCallback((id: string) => patchList((data) => removeCommentFromPages(data, id)), [patchList])
+  const updateCommentBody = useCallback(
+    (id: string, body: CommentBody) => patchList((data) => updateCommentBodyInPages(data, id, body)),
+    [patchList],
+  )
+  const clearCommentDeleteRequest = useCallback(
+    (id: string, isPending: boolean) => patchList((data) => clearDeleteRequestInPages(data, id, isPending)),
+    [patchList],
+  )
+
+  // Full refresh after mutations the local patches can't model (user edits,
+  // replies). Only the active filter combination has a live query, so the
+  // prefix invalidation refetches exactly that combination.
+  const invalidateList = useCallback(() => {
+    void queryClient.invalidateQueries({ queryKey: ['admin', 'comments', 'list'], exact: false })
+  }, [queryClient])
 
   return {
-    state,
+    filters,
     dispatch,
-    pageSize: PAGE_SIZE,
-    hasMore: state.comments.length < state.total,
-    filterStatus: isFilterStatus(statusFilter?.value) ? statusFilter.value : 'all',
-    filterPageKey: pageFilter?.value ?? '',
-    filterAuthorId: authorFilter?.value ?? '',
-    filterText: textRange,
-    filterDateRange: dateRange,
-    filterCreatedAfter: dateBounds.after,
-    filterCreatedBefore: dateBounds.before,
+    comments,
+    total,
+    statusCounts,
+    hasMore: hasNextPage,
+    isLoading,
+    isFetchingNextPage,
+    sentinelRef,
+    approveComment,
+    removeComment,
+    updateCommentBody,
+    clearCommentDeleteRequest,
+    invalidateList,
+    filterStatus,
+    filterPageKey,
+    filterAuthorId,
+    filterText,
+    filterDateRange,
+    filterCreatedAfter,
+    filterCreatedBefore,
   }
 }

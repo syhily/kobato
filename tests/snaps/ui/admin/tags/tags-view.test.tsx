@@ -17,8 +17,8 @@ const controllerState = vi.hoisted(() => ({
   q: '',
 }))
 
-vi.mock('@/ui/admin/tags/useTagsController', () => ({
-  useTagsController: () => ({ state: controllerState, dispatch: vi.fn() }),
+vi.mock('@/ui/admin/tags/useTagsReducer', () => ({
+  useTagsReducer: () => ({ state: controllerState, dispatch: vi.fn() }),
 }))
 
 const queryMocks = vi.hoisted(() => ({

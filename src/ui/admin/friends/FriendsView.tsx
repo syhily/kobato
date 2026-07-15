@@ -8,7 +8,7 @@ import type { AdminFriendDto, DeleteFriendInput } from '@/shared/types/friends'
 import { orpc } from '@/client/api/client'
 import { EditFriendDialog } from '@/ui/admin/friends/EditFriendDialog'
 import { FriendRow, FriendsSkeleton } from '@/ui/admin/friends/FriendRow'
-import { useFriendsController } from '@/ui/admin/friends/useFriendsController'
+import { useFriendsReducer } from '@/ui/admin/friends/useFriendsReducer'
 import { AdminListPage } from '@/ui/admin/shared/AdminListPage'
 import { type ConfirmState, ConfirmDialog } from '@/ui/admin/shared/ConfirmDialog'
 import { useDebouncedSearch } from '@/ui/admin/shared/useDebouncedSearch'
@@ -22,7 +22,7 @@ const PAGE_SIZE = 30
 type EditTarget = AdminFriendDto | null | undefined
 
 export function FriendsView() {
-  const { state, dispatch } = useFriendsController()
+  const { state, dispatch } = useFriendsReducer()
   const queryClient = useQueryClient()
   const [editTarget, setEditTarget] = useState<EditTarget>(undefined)
   const [confirm, setConfirm] = useState<ConfirmState | null>(null)

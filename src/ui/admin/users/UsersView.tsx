@@ -10,11 +10,11 @@ import { useDebouncedSearch } from '@/ui/admin/shared/useDebouncedSearch'
 import { InviteAuthorDialog } from '@/ui/admin/users/InviteAuthorDialog'
 import { UsersTable } from '@/ui/admin/users/UsersTable'
 import { UsersToolbar } from '@/ui/admin/users/UsersToolbar'
-import { useUsersController } from '@/ui/admin/users/useUsersController'
+import { useUsersReducer } from '@/ui/admin/users/useUsersReducer'
 import { Button } from '@/ui/components/button'
 import { InputGroup, InputGroupAddon, InputGroupInput } from '@/ui/components/input-group'
 
-function buildQueryInput(state: ReturnType<typeof useUsersController>['state'], offset: number) {
+function buildQueryInput(state: ReturnType<typeof useUsersReducer>['state'], offset: number) {
   return {
     offset,
     limit: state.pageSize,
@@ -27,7 +27,7 @@ function buildQueryInput(state: ReturnType<typeof useUsersController>['state'], 
 
 export function UsersView() {
   const config = useSiteIdentity()
-  const { state, dispatch } = useUsersController()
+  const { state, dispatch } = useUsersReducer()
 
   const queryClient = useQueryClient()
 

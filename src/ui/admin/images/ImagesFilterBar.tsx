@@ -2,7 +2,7 @@ import { FunnelIcon, FunnelPlusIcon, SearchIcon, XIcon } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 
 import type { AdminImageKind } from '@/shared/types/images'
-import type { ActiveImageFilter, ImageFilterField } from '@/ui/admin/images/useImagesController'
+import type { ActiveImageFilter, ImageFilterField } from '@/ui/admin/images/useImagesReducer'
 
 import { Popover, PopoverContent, PopoverTrigger } from '@/ui/components/popover'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/components/select'

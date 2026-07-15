@@ -10,7 +10,7 @@ import { orpc } from '@/client/api/client'
 import { orpcQuery } from '@/client/api/orpc-query'
 import { PageRow } from '@/ui/admin/pages/PageRow'
 import { PagesSkeleton } from '@/ui/admin/pages/PagesSkeleton'
-import { type PageStatusFilter, usePagesController } from '@/ui/admin/pages/usePagesController'
+import { type PageStatusFilter, usePagesReducer } from '@/ui/admin/pages/usePagesReducer'
 import { AdminListPage } from '@/ui/admin/shared/AdminListPage'
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@/ui/components/empty'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/components/select'
@@ -28,7 +28,7 @@ const PAGE_SIZE = 10
 const pill =
   'h-9 gap-1 rounded-(--radius) border-border px-3 text-(--text-admin-sm) font-medium shadow-none hover:bg-accent focus-visible:border-border focus-visible:ring-0 data-[popup-open]:border-border data-[popup-open]:ring-0'
 
-function buildQueryInput(state: ReturnType<typeof usePagesController>['state'], offset: number) {
+function buildQueryInput(state: ReturnType<typeof usePagesReducer>['state'], offset: number) {
   return {
     q: state.q || undefined,
     deletedStatus: state.deletedStatus,
@@ -40,7 +40,7 @@ function buildQueryInput(state: ReturnType<typeof usePagesController>['state'], 
 }
 
 export function PagesView() {
-  const { state, dispatch } = usePagesController()
+  const { state, dispatch } = usePagesReducer()
 
   // --- Initial page query ---
   const {

@@ -10,7 +10,7 @@ import { useAssetsSettings } from '@/shared/lib/blog-config-context'
 import { ImageDetailDialog } from '@/ui/admin/images/ImageDetailDialog'
 import { ImagesFilterBar } from '@/ui/admin/images/ImagesFilterBar'
 import { JustifiedImageGrid, JustifiedImageGridSkeleton } from '@/ui/admin/images/JustifiedImageGrid'
-import { useImagesController } from '@/ui/admin/images/useImagesController'
+import { useImagesReducer } from '@/ui/admin/images/useImagesReducer'
 import { AdminListPage } from '@/ui/admin/shared/AdminListPage'
 import { type ConfirmState, ConfirmDialog } from '@/ui/admin/shared/ConfirmDialog'
 import { UploadImageDialog } from '@/ui/admin/shared/UploadImageDialog'
@@ -19,11 +19,11 @@ import { Button } from '@/ui/components/button'
 import { Card } from '@/ui/components/card'
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@/ui/components/empty'
 
-// Infinite-scroll image library. Filter state lives in `useImagesController`;
+// Infinite-scroll image library. Filter state lives in `useImagesReducer`;
 // the actual pages are fetched via `useInfiniteQuery` and laid out by
 // `JustifiedImageGrid` using a Google Photos-style justified-row algorithm.
 export function ImagesView() {
-  const { q, kind, dispatch, pageSize, activeFilters } = useImagesController()
+  const { q, kind, dispatch, pageSize, activeFilters } = useImagesReducer()
   const { asset, storage } = useAssetsSettings()
   const queryClient = useQueryClient()
   const [confirm, setConfirm] = useState<ConfirmState | null>(null)

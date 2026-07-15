@@ -19,7 +19,7 @@ import type { AdminCategoryDto } from '@/shared/types/categories'
 import { orpcQuery } from '@/client/api/orpc-query'
 import { CategoriesSkeleton, CategoryRow } from '@/ui/admin/categories/CategoryRow'
 import { EditCategoryDialog } from '@/ui/admin/categories/EditCategoryDialog'
-import { useCategoriesController } from '@/ui/admin/categories/useCategoriesController'
+import { useCategoriesReducer } from '@/ui/admin/categories/useCategoriesReducer'
 import { AdminListPage } from '@/ui/admin/shared/AdminListPage'
 import { type ConfirmState, ConfirmDialog } from '@/ui/admin/shared/ConfirmDialog'
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@/ui/components/empty'
@@ -27,7 +27,7 @@ import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@/ui/components/empt
 type EditTarget = AdminCategoryDto | null | undefined
 
 export function CategoriesView() {
-  const { state, dispatch } = useCategoriesController()
+  const { state, dispatch } = useCategoriesReducer()
   const [editTarget, setEditTarget] = useState<EditTarget>(undefined)
   const [confirm, setConfirm] = useState<ConfirmState | null>(null)
 

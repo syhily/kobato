@@ -55,7 +55,7 @@ function imagesReducer(state: ImagesState, action: ImagesAction): ImagesState {
   }
 }
 
-export function useImagesController() {
+export function useImagesReducer() {
   const [state, dispatch] = useReducer(imagesReducer, {
     filters: [],
     q: '',

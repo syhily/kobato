@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 import type { AdminTagDto } from '@/shared/types/tags'
 
 import { renderHook } from '#/_helpers/hook'
-import { useTagsController } from '@/ui/admin/tags/useTagsController'
+import { useTagsReducer } from '@/ui/admin/tags/useTagsReducer'
 
 function makeAdminTag(overrides: Partial<AdminTagDto> = {}): AdminTagDto {
   return {
@@ -18,9 +18,9 @@ function makeAdminTag(overrides: Partial<AdminTagDto> = {}): AdminTagDto {
   }
 }
 
-describe('useTagsController', () => {
+describe('useTagsReducer', () => {
   it('starts with an empty list', () => {
-    const { state } = renderHook(() => useTagsController())
+    const { state } = renderHook(() => useTagsReducer())
     expect(state.rows).toEqual([])
     expect(state.total).toBe(0)
     expect(state.hasMore).toBe(false)
@@ -29,7 +29,7 @@ describe('useTagsController', () => {
 
   it('loads rows, total and hasMore flag', () => {
     const tag = makeAdminTag({ id: 'tag-1', name: 'A' })
-    const { state } = renderHook(() => useTagsController(), {
+    const { state } = renderHook(() => useTagsReducer(), {
       actions: [({ dispatch }) => dispatch({ type: 'loaded', rows: [tag], total: 1, hasMore: true })],
     })
     expect(state.rows).toEqual([tag])
@@ -40,7 +40,7 @@ describe('useTagsController', () => {
   it('appends rows and updates pagination flags', () => {
     const a = makeAdminTag({ id: 'tag-1', name: 'A' })
     const b = makeAdminTag({ id: 'tag-2', name: 'B' })
-    const { state } = renderHook(() => useTagsController(), {
+    const { state } = renderHook(() => useTagsReducer(), {
       actions: [
         ({ dispatch }) => dispatch({ type: 'loaded', rows: [a], total: 2, hasMore: true }),
         ({ dispatch }) => dispatch({ type: 'appended', rows: [b], total: 2, hasMore: false }),
@@ -53,7 +53,7 @@ describe('useTagsController', () => {
 
   it('patches an existing tag', () => {
     const tag = makeAdminTag({ id: 'tag-1', name: 'A' })
-    const { state } = renderHook(() => useTagsController(), {
+    const { state } = renderHook(() => useTagsReducer(), {
       actions: [
         ({ dispatch }) => dispatch({ type: 'loaded', rows: [tag], total: 1, hasMore: false }),
         ({ dispatch }) => dispatch({ type: 'patchTag', tag: { ...tag, name: 'A2' } }),
@@ -65,7 +65,7 @@ describe('useTagsController', () => {
   it('prepends a new tag', () => {
     const existing = makeAdminTag({ id: 'tag-1', name: 'A' })
     const created = makeAdminTag({ id: 'tag-2', name: 'B' })
-    const { state } = renderHook(() => useTagsController(), {
+    const { state } = renderHook(() => useTagsReducer(), {
       actions: [
         ({ dispatch }) => dispatch({ type: 'loaded', rows: [existing], total: 1, hasMore: false }),
         ({ dispatch }) => dispatch({ type: 'prependTag', tag: created }),
@@ -78,7 +78,7 @@ describe('useTagsController', () => {
   it('removes a tag and decrements total', () => {
     const a = makeAdminTag({ id: 'tag-1', name: 'A' })
     const b = makeAdminTag({ id: 'tag-2', name: 'View' })
-    const { state } = renderHook(() => useTagsController(), {
+    const { state } = renderHook(() => useTagsReducer(), {
       actions: [
         ({ dispatch }) => dispatch({ type: 'loaded', rows: [a, b], total: 2, hasMore: false }),
         ({ dispatch }) => dispatch({ type: 'removeTag', id: a.id }),
@@ -90,7 +90,7 @@ describe('useTagsController', () => {
   })
 
   it('updates the search query', () => {
-    const { state } = renderHook(() => useTagsController(), {
+    const { state } = renderHook(() => useTagsReducer(), {
       actions: [({ dispatch }) => dispatch({ type: 'setQ', value: 'react' })],
     })
     expect(state.q).toBe('react')

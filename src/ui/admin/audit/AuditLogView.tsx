@@ -8,11 +8,7 @@ import { orpcQuery } from '@/client/api/orpc-query'
 import { getLogger } from '@/client/lib/logger'
 import { AuditLogFilterBar } from '@/ui/admin/audit/AuditLogFilterBar'
 import { AuditLogRow } from '@/ui/admin/audit/AuditLogRow'
-import {
-  parseDateFilter,
-  type AuditLogFilterFieldKey,
-  useAuditLogController,
-} from '@/ui/admin/audit/useAuditLogController'
+import { parseDateFilter, type AuditLogFilterFieldKey, useAuditLogReducer } from '@/ui/admin/audit/useAuditLogReducer'
 import { AdminListPage } from '@/ui/admin/shared/AdminListPage'
 import {
   AlertDialog,
@@ -38,7 +34,7 @@ interface AuditLogViewProps {
 }
 
 export function AuditLogView({ retentionDays }: AuditLogViewProps) {
-  const { state, dispatch } = useAuditLogController()
+  const { state, dispatch } = useAuditLogReducer()
 
   const [isLoading, setIsLoading] = useState(false)
   const [loadingMore, setLoadingMore] = useState(false)

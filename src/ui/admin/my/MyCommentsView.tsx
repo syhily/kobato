@@ -8,7 +8,7 @@ import {
   SquarePenIcon,
   Trash2Icon,
 } from 'lucide-react'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router'
 import { toast } from 'sonner'
 
@@ -17,6 +17,7 @@ import type { MyCommentsStatus } from '@/shared/types/comments'
 
 import { orpc } from '@/client/api/client'
 import { orpcQuery } from '@/client/api/orpc-query'
+import { useInfiniteScrollSentinel } from '@/client/hooks/use-infinite-scroll-sentinel'
 import { useSiteIdentity } from '@/shared/lib/blog-config-context'
 import { commentBodySchema } from '@/shared/pt/comment-schema'
 import { formatLocalDate } from '@/shared/utils/formatter'
@@ -119,8 +120,6 @@ export function MyCommentsView({ status, q, entity, entityOptions, currentUser }
       enabled: debouncedEntityQuery !== '',
     }),
   )
-
-  const sentinelRef = useRef<HTMLDivElement>(null)
 
   const updateParams = useCallback(
     (patch: Record<string, string | null>) => {
@@ -231,32 +230,13 @@ export function MyCommentsView({ status, q, entity, entityOptions, currentUser }
   const items = useMemo(() => listQuery.data?.pages.flatMap((page) => page.items) ?? [], [listQuery.data])
   const total = listQuery.data?.pages[0]?.total ?? 0
 
+  const sentinelRef = useInfiniteScrollSentinel({ hasNextPage, isFetchingNextPage, fetchNextPage })
+
   useEffect(() => {
     if (listQuery.error) {
       toast.error('加载评论失败', { description: listQuery.error.message })
     }
   }, [listQuery.error])
-
-  useEffect(() => {
-    const el = sentinelRef.current
-    if (!el || !hasNextPage || isFetchingNextPage) {
-      return
-    }
-
-    const loadMoreRef = { current: fetchNextPage }
-    loadMoreRef.current = fetchNextPage
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry?.isIntersecting) {
-          void loadMoreRef.current()
-        }
-      },
-      { rootMargin: '200px' },
-    )
-    observer.observe(el)
-    return () => observer.disconnect()
-  }, [hasNextPage, isFetchingNextPage, fetchNextPage])
 
   const invalidateList = useCallback(() => {
     void queryClient.invalidateQueries({ queryKey: ['comments', 'loadMine'], exact: false })

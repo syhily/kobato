@@ -14,8 +14,8 @@ const controllerState = vi.hoisted(() => ({
   q: '',
 }))
 
-vi.mock('@/ui/admin/categories/useCategoriesController', () => ({
-  useCategoriesController: () => ({ state: controllerState, dispatch: vi.fn() }),
+vi.mock('@/ui/admin/categories/useCategoriesReducer', () => ({
+  useCategoriesReducer: () => ({ state: controllerState, dispatch: vi.fn() }),
 }))
 
 const queryMocks = vi.hoisted(() => ({
