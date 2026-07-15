@@ -80,7 +80,7 @@ describe('snapshot: UserEditForm', () => {
           setLink={() => {}}
           badgeName=""
           setBadgeName={() => {}}
-          badgeColor="#008c95"
+          badgeColor="#007a82"
           setBadgeColor={() => {}}
           useTextOverride={false}
           setUseTextOverride={() => {}}

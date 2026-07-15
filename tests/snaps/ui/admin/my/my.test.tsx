@@ -26,7 +26,7 @@ function makeMyProfileUser(overrides: Partial<MyProfileUser> = {}): MyProfileUse
     link: overrides.link ?? '',
     role: overrides.role ?? 'admin',
     badgeName: overrides.badgeName ?? '',
-    badgeColor: overrides.badgeColor ?? '#008c95',
+    badgeColor: overrides.badgeColor ?? '#007a82',
     createdAt: overrides.createdAt ?? '2024-01-01T00:00:00.000Z',
     lastIp: overrides.lastIp ?? '127.0.0.1',
     lastUa: overrides.lastUa ?? 'Mozilla/5.0',

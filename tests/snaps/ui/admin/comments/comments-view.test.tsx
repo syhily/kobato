@@ -217,7 +217,7 @@ describe('snapshot: CommentsView', () => {
           pageTitle: 'Hello World',
           pagePermalink: '/posts/hello',
           badgeName: '站长',
-          badgeColor: '#008c95',
+          badgeColor: '#007a82',
           badgeTextColor: '#ffffff',
         }),
         makeAdminComment({
@@ -306,7 +306,7 @@ describe('snapshot: AdminCommentRow', () => {
       pageTitle: 'Hello World',
       pagePermalink: '/posts/hello',
       badgeName: '站长',
-      badgeColor: '#008c95',
+      badgeColor: '#007a82',
       badgeTextColor: '#ffffff',
     })
     const html = stableHtml(renderInRouter(<AdminCommentRow comment={comment} {...rowProps} />))
