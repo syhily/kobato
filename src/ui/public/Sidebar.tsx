@@ -21,7 +21,7 @@ const widgetTitleClass = cn(
   'relative border-t-2 border-widget-border',
   'px-0 py-5',
   'text-base text-brand',
-  "before:absolute before:-top-0.5 before:left-0 before:h-0.5 before:w-[30px] before:bg-brand before:content-['']",
+  "before:absolute before:-top-0.5 before:left-0 before:h-0.5 before:w-8 before:bg-brand before:content-['']",
 )
 
 // Widget list indent.
@@ -43,10 +43,10 @@ const tagcloudClass = 'flex flex-wrap'
 // Tag chip — `#` prefix via before pseudo-element.
 const tagcloudLinkClass = cn(
   'relative inline-block text-sm leading-none',
-  'mr-1.5 mb-1.5 px-[15px] py-2',
+  'mr-1.5 mb-1.5 px-4 py-2',
   'rounded-xs border border-line',
   'hover:text-brand',
-  "before:mr-[5px] before:inline-block before:text-brand before:content-['#']",
+  "before:mr-1 before:inline-block before:text-brand before:content-['#']",
 )
 
 export interface SidebarData {

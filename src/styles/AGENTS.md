@@ -27,3 +27,19 @@ When modifying files in this directory, open and follow these skills first:
   `w-[100px]`, `h-[20rem]`, or `gap-[0.75rem]` are not acceptable.
 - The contract test in `tests/contract.tailwind-tokens.test.ts` guards
   against drift between `tailwind.css` and `cn.ts`.
+
+## Shadow tiers
+
+Four shadow utilities, each with a distinct job:
+
+| Utility          | Token                 | Use for                                                                     |
+| ---------------- | --------------------- | --------------------------------------------------------------------------- |
+| `shadow-card`    | `--shadow-card-value` | Public content cards (post body, sidebar) — intentionally soft (2% ambient) |
+| `shadow-raised`  | `--shadow-raised`     | Admin cards, stat tiles — Geist crisp drop                                  |
+| `shadow-popover` | `--shadow-popover`    | Dropdowns, menus, selects, comboboxes, popovers                             |
+| `shadow-modal`   | `--shadow-modal`      | Dialogs, alert-dialogs, sheets                                              |
+
+`shadow-card` and `shadow-raised` are **not** aliased — the public site's
+card silhouette is deliberately softer than Geist's raised spec. Pick the
+one that matches the surface's context (public content → card, admin →
+raised), don't mix them within one view.

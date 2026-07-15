@@ -153,7 +153,7 @@ async function seedAdminUser() {
       password: hashedPassword,
       role: 'admin',
       badgeName: 'MOD',
-      badgeColor: '#008c95',
+      badgeColor: '#007a82',
       receiveEmail: true,
     })
     .returning()

@@ -36,7 +36,7 @@ export function SessionSortSelect<T extends string>({ sort, options, onChange }:
         <PopoverTrigger
           className={cn(
             'inline-flex h-9 items-center gap-1.5 px-3 text-sm transition hover:bg-accent',
-            'focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none',
+            'focus-visible:shadow-focus focus-visible:outline-none',
           )}
         >
           <span>{current?.label ?? sort.field}</span>
@@ -70,7 +70,7 @@ export function SessionSortSelect<T extends string>({ sort, options, onChange }:
         className={cn(
           'flex h-9 w-9 items-center justify-center border-l border-border text-muted-foreground transition',
           'hover:bg-accent hover:text-foreground',
-          'focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none',
+          'focus-visible:shadow-focus focus-visible:outline-none',
         )}
         onClick={toggleDirection}
       >

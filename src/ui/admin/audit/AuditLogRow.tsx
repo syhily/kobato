@@ -77,7 +77,7 @@ export function AuditLogRow({ row }: AuditLogRowProps) {
       className={cn(
         'group relative flex flex-wrap items-start gap-3 px-4 py-3 transition-colors',
         canExpand &&
-          'cursor-pointer hover:bg-muted/50 focus-visible:bg-muted/50 focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none',
+          'cursor-pointer hover:bg-muted/50 focus-visible:bg-muted/50 focus-visible:shadow-focus focus-visible:outline-none',
       )}
       onClick={toggleExpanded}
       onKeyDown={handleKeyDown}

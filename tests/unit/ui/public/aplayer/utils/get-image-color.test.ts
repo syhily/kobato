@@ -54,7 +54,7 @@ describe('ui/public/aplayer/utils/get-image-color', () => {
 
     const promise = getImageColor('https://example.com/cover.png')
     imageInstances[0]!.onload?.()
-    await expect(promise).resolves.toBe('#008c95')
+    await expect(promise).resolves.toBe('#007a82')
   })
 
   it('computes the average opaque non-white color', async () => {
@@ -94,7 +94,7 @@ describe('ui/public/aplayer/utils/get-image-color', () => {
 
     const promise = getImageColor('https://example.com/cover.png')
     imageInstances[0]!.onload?.()
-    await expect(promise).resolves.toBe('#008c95')
+    await expect(promise).resolves.toBe('#007a82')
   })
 
   it('falls back when getImageData throws', async () => {
@@ -106,7 +106,7 @@ describe('ui/public/aplayer/utils/get-image-color', () => {
 
     const promise = getImageColor('https://example.com/cover.png')
     imageInstances[0]!.onload?.()
-    await expect(promise).resolves.toBe('#008c95')
+    await expect(promise).resolves.toBe('#007a82')
   })
 
   it('falls back on image error', async () => {
@@ -116,7 +116,7 @@ describe('ui/public/aplayer/utils/get-image-color', () => {
 
     const promise = getImageColor('https://example.com/broken.png')
     imageInstances[0]!.onerror?.()
-    await expect(promise).resolves.toBe('#008c95')
+    await expect(promise).resolves.toBe('#007a82')
   })
 
   it('sets crossOrigin to anonymous', async () => {

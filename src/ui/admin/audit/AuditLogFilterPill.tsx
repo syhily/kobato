@@ -65,7 +65,7 @@ export function AuditLogFilterPill({ filter, onRemove, onValueChange, actors }: 
         className={cn(
           'flex size-9 shrink-0 items-center justify-center rounded-r-md border border-l-0 border-border text-muted-foreground transition',
           'hover:bg-secondary hover:text-foreground',
-          'focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none',
+          'focus-visible:shadow-focus focus-visible:outline-none',
         )}
         onClick={onRemove}
       >

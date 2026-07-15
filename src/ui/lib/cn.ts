@@ -12,6 +12,11 @@ const TEXT_TOKENS = [
   'badge',
   'btn-lg',
   'empty-state-hero',
+  'h-display',
+  'h-lg',
+  'h-md',
+  'h-sm',
+  'h-xl',
   'md',
   'micro',
   'nano',
@@ -36,6 +41,8 @@ const COLOR_TOKENS = [
   'brand-darker',
   'btn-hover-bg',
   'btn-hover-fg',
+  'btn-destructive-hover-bg',
+  'btn-destructive-hover-fg',
   'btn-light-border',
   'btn-light-bg',
   'btn-light-fg',
@@ -52,6 +59,12 @@ const COLOR_TOKENS = [
   'fab-bg',
   'fab-fg',
   'foreground',
+  'ga-100',
+  'ga-200',
+  'ga-300',
+  'ga-400',
+  'ga-500',
+  'ga-600',
   'ink-1',
   'ink-2',
   'ink-3',
@@ -114,13 +127,25 @@ const COLOR_TOKENS = [
   'diff-delete-bg',
   'diff-delete-fg',
   'diff-delete-border',
+  'chart-1',
+  'chart-2',
   'chip-bg',
   'chip-fg',
   'chip-hover-bg',
   'chip-hover-fg',
 ] as const
 
-const SHADOW_TOKENS = ['card', 'like-active', 'popup-close', 'toc-toggle', 'tooltip'] as const
+const SHADOW_TOKENS = [
+  'card',
+  'focus',
+  'like-active',
+  'modal',
+  'popup-close',
+  'popover',
+  'raised',
+  'toc-toggle',
+  'tooltip',
+] as const
 
 const RADIUS_TOKENS = ['aplayer-volume', 'xs', 'sm', 'md', 'lg', 'xl', 'input'] as const
 
