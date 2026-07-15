@@ -40,7 +40,7 @@ export function PageDetailBody({
 
   return (
     <div className="flex flex-wrap">
-      <div className="box-border w-full max-w-full shrink-0 xl:w-2/3">
+      <div className="box-border w-full max-w-full min-w-0 shrink-0 xl:w-2/3">
         <div className="relative p-4 md:p-12">
           <DetailBodyChrome
             siteIdentity={config}

@@ -56,7 +56,7 @@ export function InlineOwnEditForm({ comment, onCancel, onSaved }: InlineOwnEditF
           onClick={handleSave}
           disabled={submitting}
         >
-          {submitting ? '保存中...' : '保存'}
+          {submitting ? '保存中…' : '保存'}
         </Button>
         <Button
           variant="light"
