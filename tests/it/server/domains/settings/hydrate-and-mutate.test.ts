@@ -1,7 +1,7 @@
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 import type { Pool } from 'pg'
 
-import { afterAll, beforeEach, describe, expect, it } from 'vitest'
+import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { clearAllTables } from '#/_helpers/integration-db'
 import { makeAuthedCtx, makePublicCtx } from '#/_helpers/mock-ctx'
@@ -10,6 +10,12 @@ import { callRpc, parseRpcJson } from '#/_helpers/rpc-call'
 import { getAdminBlogSettings } from '@/server/domains/settings/services/core'
 import { createDbPool, closePool } from '@/server/infra/db/pool'
 import { setting } from '@/server/infra/db/schema/config'
+
+// Section-change dispatch is covered by the unit tests; keep the
+// backup/audit schedulers out of these persistence-focused cases.
+vi.mock('@/server/domains/settings/services/section-changes', () => ({
+  SECTION_CHANGE_HANDLERS: new Map(),
+}))
 
 const poolManager = createDbPool()
 const db: NodePgDatabase = poolManager.db

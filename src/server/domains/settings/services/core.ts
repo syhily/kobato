@@ -10,9 +10,10 @@ export type { SecretMasks }
 import { SECRET_FIELDS } from '@/server/domains/settings/secrets'
 import { SECTION_REGISTRY } from '@/server/domains/settings/sections/registry'
 import { hydrateBlogSettings, refreshBlogSettings } from '@/server/domains/settings/services/hydrate'
+import { SECTION_CHANGE_HANDLERS } from '@/server/domains/settings/services/section-changes'
 import { encryptIfNeeded } from '@/server/infra/crypto/secret-encryption'
 import { findSettingByScope, upsertSetting } from '@/server/infra/db/operations/setting'
-import { checkMailReady, invalidateMailTransportCache } from '@/server/infra/email/sender'
+import { checkMailReady } from '@/server/infra/email/sender'
 import { DomainError } from '@/server/infra/http/errors'
 import { getLogger } from '@/server/infra/logger'
 import { getBlogSettingsBundleSync } from '@/shared/config/getters'
@@ -20,15 +21,6 @@ import { isValidPasskeyDomain } from '@/shared/utils/safe-url'
 import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
 const log = getLogger('settings.service')
-
-const sectionChangeHandlers = new Map<SettingsSection, (pool: Pool) => void | Promise<void>>()
-
-export function registerSectionChangeHandler(
-  section: SettingsSection,
-  handler: (pool: Pool) => void | Promise<void>,
-): void {
-  sectionChangeHandlers.set(section, handler)
-}
 
 export interface AdminBlogSettingsDto {
   bundle: BlogSettingsBundle | null
@@ -95,11 +87,7 @@ export async function updateBlogSettingsSection<S extends SettingsSection>(
     return refreshBlogSettings(tx)
   })
 
-  if (section === 'mail') {
-    invalidateMailTransportCache()
-  }
-
-  const handler = sectionChangeHandlers.get(section)
+  const handler = SECTION_CHANGE_HANDLERS.get(section)
   if (handler) {
     try {
       await handler(pool)
@@ -112,19 +100,14 @@ export async function updateBlogSettingsSection<S extends SettingsSection>(
 }
 
 export function computeSecretMasks(bundle: BlogSettingsBundle): SecretMasks {
-  const mailApiKey = bundle.mail?.mail.apiKey
-  const mailSmtpPass = bundle.mail?.mail.smtpPass
-  const mailMailgunApiKey = bundle.mail?.mail.mailgunApiKey
-  const assetsSecret = bundle.assets?.storage.secretAccessKey
-  const searchApiKey = bundle.search?.search.apiKey
-  return {
-    mailApiKeyMask: typeof mailApiKey === 'string' && mailApiKey !== '' ? mailApiKey.slice(-4) : null,
-    mailSmtpPassMask: typeof mailSmtpPass === 'string' && mailSmtpPass !== '' ? mailSmtpPass.slice(-4) : null,
-    mailMailgunApiKeyMask:
-      typeof mailMailgunApiKey === 'string' && mailMailgunApiKey !== '' ? mailMailgunApiKey.slice(-4) : null,
-    assetsSecretAccessKeyMask: typeof assetsSecret === 'string' && assetsSecret !== '' ? assetsSecret.slice(-4) : null,
-    searchApiKeyMask: typeof searchApiKey === 'string' && searchApiKey !== '' ? searchApiKey.slice(-4) : null,
+  const masks = unsafeCast<Record<keyof SecretMasks, string | null>>({})
+  for (const { bundleKey, path, field, maskKey } of SECRET_FIELDS) {
+    const section = unsafeCast<Record<string, unknown> | null>(bundle[bundleKey])
+    const bucket = unsafeCast<Record<string, unknown> | undefined>(section?.[path])
+    const value = bucket?.[field]
+    masks[maskKey] = typeof value === 'string' && value !== '' ? value.slice(-4) : null
   }
+  return masks
 }
 
 export function redactSecretsFromBundle(bundle: BlogSettingsBundle): BlogSettingsBundle {

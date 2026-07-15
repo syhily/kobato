@@ -20,10 +20,6 @@ vi.mock('@/server/infra/lifecycle', () => ({
   registerShutdownHook: vi.fn(),
 }))
 
-vi.mock('@/server/domains/settings/services/core', () => ({
-  registerSectionChangeHandler: vi.fn(),
-}))
-
 const { scheduleNextBackup, stopBackupScheduler, rescheduleBackup } = await import('@/server/domains/backup/scheduler')
 
 describe('backup/scheduler — scheduleNextBackup', () => {

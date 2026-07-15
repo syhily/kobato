@@ -13,6 +13,13 @@ vi.mock('@/server/domains/settings/services/hydrate', () => ({
   hydrateBlogSettings: vi.fn(() => Promise.resolve()),
 }))
 
+// The root module imports the settings service, whose section-change
+// wiring pulls in the backup/audit schedulers (and transitively the DB
+// bootstrap) — irrelevant to the loader contract.
+vi.mock('@/server/domains/settings/services/section-changes', () => ({
+  SECTION_CHANGE_HANDLERS: new Map(),
+}))
+
 vi.mock('@/client/api/query-client', () => ({
   makeQueryClient: vi.fn(() => ({})),
 }))

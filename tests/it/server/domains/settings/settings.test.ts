@@ -33,6 +33,13 @@ vi.mock('@/server/infra/logger', () => ({
   ]),
 }))
 
+// Section-change dispatch (backup/audit reschedule, mail transport
+// invalidation) is covered by the unit tests; keep it out of these
+// persistence-focused cases.
+vi.mock('@/server/domains/settings/services/section-changes', () => ({
+  SECTION_CHANGE_HANDLERS: new Map(),
+}))
+
 import { flushWorkerRedis } from '#/_helpers/redis'
 
 const db = {

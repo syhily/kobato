@@ -60,6 +60,9 @@ vi.mock('@/server/infra/db/operations/setting', () => ({
   findSettingsByScopePrefix: mockState.findSettingsByScopePrefix,
   upsertSetting: mockState.upsertSetting,
 }))
+vi.mock('@/server/domains/settings/services/section-changes', () => ({
+  SECTION_CHANGE_HANDLERS: new Map(),
+}))
 vi.mock('@/server/domains/settings/services/hydrate', () => ({
   hydrateBlogSettings: vi.fn(async () => null),
   refreshBlogSettings: vi.fn(async () => ({

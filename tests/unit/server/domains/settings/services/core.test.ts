@@ -5,7 +5,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { BlogSettingsBundle } from '@/shared/config/types'
 
-import { registerSectionChangeHandler, updateBlogSettingsSection } from '@/server/domains/settings/services/core'
+import { SECRET_FIELDS } from '@/server/domains/settings/secrets'
+import { computeSecretMasks, updateBlogSettingsSection } from '@/server/domains/settings/services/core'
 
 const mockPool = {} as unknown as Pool
 const mockTx = {} as unknown as NodePgDatabase
@@ -26,6 +27,7 @@ const mocks = vi.hoisted(() => {
     upsertSetting: vi.fn().mockResolvedValue({ scope: 'blog.limits', data: {} }),
     getBlogSettingsBundleSync: vi.fn().mockReturnValue(null),
     loggerError: vi.fn(),
+    sectionChangeHandlers: new Map<string, (pool: Pool) => void | Promise<void>>(),
   }
 })
 
@@ -36,6 +38,10 @@ vi.mock('@/server/domains/settings/sections/registry', () => ({
 vi.mock('@/server/domains/settings/services/hydrate', () => ({
   hydrateBlogSettings: mocks.hydrateBlogSettings,
   refreshBlogSettings: mocks.refreshBlogSettings,
+}))
+
+vi.mock('@/server/domains/settings/services/section-changes', () => ({
+  SECTION_CHANGE_HANDLERS: mocks.sectionChangeHandlers,
 }))
 
 vi.mock('@/server/infra/db/operations/setting', () => ({
@@ -54,6 +60,7 @@ vi.mock('@/server/infra/logger', () => ({
 describe('server/domains/settings/services/core', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    mocks.sectionChangeHandlers.clear()
     mocks.refreshBlogSettings.mockResolvedValue({ limits: {} } as BlogSettingsBundle)
   })
 
@@ -67,7 +74,7 @@ describe('server/domains/settings/services/core', () => {
     const handler = vi.fn(async () => {
       calls.push('handler')
     })
-    registerSectionChangeHandler('limits', handler)
+    mocks.sectionChangeHandlers.set('limits', handler)
 
     await updateBlogSettingsSection(mockDb, mockPool, 'limits', { maxRequestBodySize: 2048 }, null)
 
@@ -81,7 +88,7 @@ describe('server/domains/settings/services/core', () => {
     mocks.refreshBlogSettings.mockResolvedValue(bundle)
 
     const error = new Error('sync handler failed')
-    registerSectionChangeHandler('limits', () => {
+    mocks.sectionChangeHandlers.set('limits', () => {
       throw error
     })
 
@@ -99,7 +106,7 @@ describe('server/domains/settings/services/core', () => {
     mocks.refreshBlogSettings.mockResolvedValue(bundle)
 
     const error = new Error('async handler failed')
-    registerSectionChangeHandler('limits', async () => {
+    mocks.sectionChangeHandlers.set('limits', async () => {
       throw error
     })
 
@@ -109,6 +116,49 @@ describe('server/domains/settings/services/core', () => {
     expect(mocks.loggerError).toHaveBeenCalledWith('Section change handler failed', {
       section: 'limits',
       error: String(error),
+    })
+  })
+})
+
+describe('computeSecretMasks', () => {
+  it('derives a last-4 mask for every SECRET_FIELDS entry', () => {
+    const bundle = {
+      mail: { mail: { apiKey: 'key-aa11', smtpPass: 'pass-bb22', mailgunApiKey: 'mg-cc33' } },
+      assets: { storage: { secretAccessKey: 's3-dd44' } },
+      search: { search: { apiKey: 'meili-ee55' } },
+    } as unknown as BlogSettingsBundle
+
+    const masks = computeSecretMasks(bundle)
+
+    // Runtime parity guard: every configured secret field produces a mask
+    // entry, so a new SECRET_FIELDS row cannot silently miss the output.
+    for (const { maskKey } of SECRET_FIELDS) {
+      expect(masks[maskKey]).not.toBeNull()
+    }
+    expect(masks).toEqual({
+      mailApiKeyMask: 'aa11',
+      mailSmtpPassMask: 'bb22',
+      mailMailgunApiKeyMask: 'cc33',
+      assetsSecretAccessKeyMask: 'dd44',
+      searchApiKeyMask: 'ee55',
+    })
+  })
+
+  it('returns null masks when secrets are missing or empty', () => {
+    const bundle = {
+      mail: { mail: { apiKey: '', smtpPass: 'pass-bb22', mailgunApiKey: null } },
+      assets: null,
+      search: { search: {} },
+    } as unknown as BlogSettingsBundle
+
+    const masks = computeSecretMasks(bundle)
+
+    expect(masks).toEqual({
+      mailApiKeyMask: null,
+      mailSmtpPassMask: 'bb22',
+      mailMailgunApiKeyMask: null,
+      assetsSecretAccessKeyMask: null,
+      searchApiKeyMask: null,
     })
   })
 })

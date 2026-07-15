@@ -3,7 +3,6 @@ import type { Pool } from 'pg'
 import { drizzle } from 'drizzle-orm/node-postgres'
 
 import { runArchiveJob } from '@/server/domains/audit/services/archive'
-import { registerSectionChangeHandler } from '@/server/domains/settings/services/core'
 import { registerShutdownHook } from '@/server/infra/lifecycle'
 import { getLogger } from '@/server/infra/logger'
 import { getBlogSettingsBundleSync } from '@/shared/config/getters'
@@ -74,5 +73,3 @@ export function stopArchiveScheduler(): void {
 registerShutdownHook(async () => {
   stopArchiveScheduler()
 }, 0)
-
-registerSectionChangeHandler('limits', rescheduleArchive)

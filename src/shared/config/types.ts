@@ -1,4 +1,6 @@
+import type { BundleKey } from '@/shared/config/sections'
 import type { SocialNetwork } from '@/shared/config/socials'
+import type { Assert, Equals } from '@/shared/contracts/primitives'
 
 // Per-section DTOs for the editable blog configuration.
 //
@@ -326,3 +328,8 @@ export interface BlogSettingsBundle {
   analytics: AnalyticsSettings | null
   security: SecuritySettings | null
 }
+
+// Compile-time parity: BlogSettingsBundle keys must mirror the section →
+// bundle-key mapping in `sections.ts`. Adding a section without a bundle
+// slot (or renaming one side) fails type-checking here.
+type _blogSettingsBundleKeyParity = Assert<Equals<keyof BlogSettingsBundle, BundleKey>>

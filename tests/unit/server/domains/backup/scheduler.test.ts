@@ -8,7 +8,6 @@ const createBackup = vi.fn().mockResolvedValue({ path: '/backup' })
 const cleanupOldBackups = vi.fn().mockResolvedValue(undefined)
 const checkPgToolsAvailable = vi.fn().mockResolvedValue(undefined)
 const registerShutdownHook = vi.fn()
-const registerSectionChangeHandler = vi.fn()
 const getDb = vi.fn().mockReturnValue({})
 
 vi.mock('@/server/domains/backup/services/backup', () => ({
@@ -22,10 +21,6 @@ vi.mock('@/server/bootstrap/db-lifecycle', () => ({
 
 vi.mock('@/server/domains/backup/services/shared', () => ({
   checkPgToolsAvailable: (...args: unknown[]) => checkPgToolsAvailable(...args),
-}))
-
-vi.mock('@/server/domains/settings/services/core', () => ({
-  registerSectionChangeHandler: (...args: unknown[]) => registerSectionChangeHandler(...args),
 }))
 
 vi.mock('@/server/infra/lifecycle', () => ({
