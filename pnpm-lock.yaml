@@ -14,9 +14,6 @@ importers:
       '@napi-rs/canvas':
         specifier: ^1.0.2
         version: 1.0.2
-      '@number-flow/react':
-        specifier: ^0.6.1
-        version: 0.6.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
       sharp:
         specifier: ^0.35.3
         version: 0.35.3(@types/node@24.13.3)
@@ -54,6 +51,9 @@ importers:
       '@maxmind/geoip2-node':
         specifier: ^6.3.4
         version: 6.3.4
+      '@number-flow/react':
+        specifier: ^0.6.1
+        version: 0.6.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
       '@orpc/client':
         specifier: ^1.14.8
         version: 1.14.8

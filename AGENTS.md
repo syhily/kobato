@@ -151,8 +151,7 @@ inside the production Docker image — see `Dockerfile:21-23` and commit
 `ed83a5a`) belong in `package.json`'s `dependencies`. The current entries
 are the canonical examples:
 
-- `@napi-rs/canvas`, `sharp`, `sharp-ico` — native binaries fetched per
-  platform.
+- `@napi-rs/canvas`, `sharp` — native binaries fetched per platform.
 
 Every other dependency belongs in `devDependencies`, even if the server or
 client bundle imports it in production. The production Docker image is
