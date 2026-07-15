@@ -62,6 +62,7 @@
   "devDependencies": {
     "@aws-sdk/client-s3": "^3.1071.0",
     "@base-ui/react": "^1.6.0",
+    "@bufbuild/protobuf": "^2.12.0",
     "@date-fns/tz": "^1.5.0",
     "@dnd-kit/core": "^6.3.1",
     "@dnd-kit/modifiers": "^9.0.0",
@@ -148,6 +149,7 @@
     "typescript": "7.0.1-rc",
     "ua-parser-js": "^2.0.10",
     "vite": "^8.0.16",
+    "vite-plugin-binary": "^1.3.1",
     "vitest": "^4.1.9",
     "zod": "^4.4.3"
   },
