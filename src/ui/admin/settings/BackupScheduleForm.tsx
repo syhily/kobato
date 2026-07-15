@@ -5,9 +5,9 @@ import type { BackupSettings } from '@/shared/config/types'
 import { SettingsRow } from '@/ui/admin/settings/SettingsSection'
 import { SettingGroup } from '@/ui/admin/settings/shell/SettingGroup'
 import { SettingGroupContent } from '@/ui/admin/settings/shell/SettingGroupContent'
+import { SettingsInput } from '@/ui/admin/settings/shell/SettingsInput'
 import { useSettingsCard } from '@/ui/admin/settings/shell/useSettingsCard'
 import { FieldLabel } from '@/ui/components/field'
-import { Input } from '@/ui/components/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/components/select'
 import { Switch } from '@/ui/components/switch'
 
@@ -32,7 +32,7 @@ interface BackupScheduleFormProps {
 }
 
 export function BackupScheduleForm({ backup, canConfigure }: BackupScheduleFormProps) {
-  const { form, settingGroupProps, save } = useSettingsCard<BackupSettings, FormState>({
+  const { form, flushOnBlur, settingGroupProps, save } = useSettingsCard<BackupSettings, FormState>({
     section: 'backup',
     source: backup,
     toState: (source) => ({
@@ -98,7 +98,14 @@ export function BackupScheduleForm({ backup, canConfigure }: BackupScheduleFormP
                 control={form.control}
                 name="frequency"
                 render={({ field }) => (
-                  <Select value={field.value} onValueChange={field.onChange} disabled={!canConfigure}>
+                  <Select
+                    value={field.value}
+                    onValueChange={(v) => {
+                      field.onChange(v)
+                      save()
+                    }}
+                    disabled={!canConfigure}
+                  >
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
@@ -120,7 +127,10 @@ export function BackupScheduleForm({ backup, canConfigure }: BackupScheduleFormP
                   render={({ field }) => (
                     <Select
                       value={String(field.value)}
-                      onValueChange={(v) => field.onChange(Number(v))}
+                      onValueChange={(v) => {
+                        field.onChange(Number(v))
+                        save()
+                      }}
                       disabled={!canConfigure}
                     >
                       <SelectTrigger className="w-24">
@@ -143,7 +153,10 @@ export function BackupScheduleForm({ backup, canConfigure }: BackupScheduleFormP
                   render={({ field }) => (
                     <Select
                       value={String(field.value)}
-                      onValueChange={(v) => field.onChange(Number(v))}
+                      onValueChange={(v) => {
+                        field.onChange(Number(v))
+                        save()
+                      }}
                       disabled={!canConfigure}
                     >
                       <SelectTrigger className="w-24">
@@ -170,7 +183,10 @@ export function BackupScheduleForm({ backup, canConfigure }: BackupScheduleFormP
                   render={({ field }) => (
                     <Select
                       value={field.value ? String(field.value) : ''}
-                      onValueChange={(v) => field.onChange(Number(v))}
+                      onValueChange={(v) => {
+                        field.onChange(Number(v))
+                        save()
+                      }}
                       disabled={!canConfigure}
                     >
                       <SelectTrigger>
@@ -197,7 +213,10 @@ export function BackupScheduleForm({ backup, canConfigure }: BackupScheduleFormP
                   render={({ field }) => (
                     <Select
                       value={field.value ? String(field.value) : ''}
-                      onValueChange={(v) => field.onChange(Number(v))}
+                      onValueChange={(v) => {
+                        field.onChange(Number(v))
+                        save()
+                      }}
                       disabled={!canConfigure}
                     >
                       <SelectTrigger>
@@ -241,7 +260,8 @@ export function BackupScheduleForm({ backup, canConfigure }: BackupScheduleFormP
 
             {retentionEnabled && (
               <SettingsRow label="保留天数" hint="超过此天数的旧备份将被自动删除。">
-                <Input
+                <SettingsInput
+                  flushOnBlur={flushOnBlur}
                   type="number"
                   min={1}
                   max={365}

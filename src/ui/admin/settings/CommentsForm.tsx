@@ -3,15 +3,15 @@ import type { CommentsSettings } from '@/shared/config/types'
 import { SettingsRow } from '@/ui/admin/settings/SettingsSection'
 import { SettingGroup } from '@/ui/admin/settings/shell/SettingGroup'
 import { SettingGroupContent } from '@/ui/admin/settings/shell/SettingGroupContent'
+import { SettingsInput } from '@/ui/admin/settings/shell/SettingsInput'
 import { useSettingsCard } from '@/ui/admin/settings/shell/useSettingsCard'
-import { Input } from '@/ui/components/input'
 
 interface CommentsFormProps {
   comments: CommentsSettings
 }
 
 function CommentsPaginationCard({ comments }: { comments: CommentsSettings }) {
-  const { form, settingGroupProps } = useSettingsCard<CommentsSettings, { size: number }>({
+  const { form, flushOnBlur, settingGroupProps } = useSettingsCard<CommentsSettings, { size: number }>({
     section: 'comments',
     source: comments,
     toState: (source) => ({ size: source.comments.size }),
@@ -26,7 +26,8 @@ function CommentsPaginationCard({ comments }: { comments: CommentsSettings }) {
     <SettingGroup title="评论分页" description="控制文章页面下方的评论列表加载行为。" {...settingGroupProps}>
       <SettingGroupContent>
         <SettingsRow label="每页评论数" htmlFor="comments-size" hint="客户端「加载更多」每次抓取的根评论数量。">
-          <Input
+          <SettingsInput
+            flushOnBlur={flushOnBlur}
             id="comments-size"
             type="number"
             min={1}
@@ -40,7 +41,10 @@ function CommentsPaginationCard({ comments }: { comments: CommentsSettings }) {
 }
 
 function CommentsAvatarCard({ comments }: { comments: CommentsSettings }) {
-  const { form, settingGroupProps } = useSettingsCard<CommentsSettings, { avatarMirror: string; avatarSize: number }>({
+  const { form, flushOnBlur, settingGroupProps } = useSettingsCard<
+    CommentsSettings,
+    { avatarMirror: string; avatarSize: number }
+  >({
     section: 'comments',
     source: comments,
     toState: (source) => ({
@@ -66,10 +70,16 @@ function CommentsAvatarCard({ comments }: { comments: CommentsSettings }) {
           htmlFor="comments-avatar-mirror"
           hint="例如 https://gravatar.loli.net/avatar，结尾不带斜杠。"
         >
-          <Input id="comments-avatar-mirror" type="url" {...form.register('avatarMirror')} />
+          <SettingsInput
+            flushOnBlur={flushOnBlur}
+            id="comments-avatar-mirror"
+            type="url"
+            {...form.register('avatarMirror')}
+          />
         </SettingsRow>
         <SettingsRow label="头像尺寸 (px)" htmlFor="comments-avatar-size">
-          <Input
+          <SettingsInput
+            flushOnBlur={flushOnBlur}
             id="comments-avatar-size"
             type="number"
             min={16}
@@ -83,7 +93,7 @@ function CommentsAvatarCard({ comments }: { comments: CommentsSettings }) {
 }
 
 function CommentsTokenCard({ comments }: { comments: CommentsSettings }) {
-  const { form, settingGroupProps } = useSettingsCard<CommentsSettings, { tokenTtlSeconds: number }>({
+  const { form, flushOnBlur, settingGroupProps } = useSettingsCard<CommentsSettings, { tokenTtlSeconds: number }>({
     section: 'comments',
     source: comments,
     toState: (source) => ({ tokenTtlSeconds: source.comments.tokenTtlSeconds }),
@@ -106,7 +116,8 @@ function CommentsTokenCard({ comments }: { comments: CommentsSettings }) {
           htmlFor="comments-token-ttl"
           hint="默认 1800 秒（30 分钟）。范围 60–86400 秒。"
         >
-          <Input
+          <SettingsInput
+            flushOnBlur={flushOnBlur}
             id="comments-token-ttl"
             type="number"
             min={60}

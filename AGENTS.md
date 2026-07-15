@@ -169,6 +169,60 @@ Examples: `react`, `hono`, `drizzle-orm`, `ioredis`, `nodemailer`,
 all `devDependencies`, despite being production imports. Only the native
 runtime deps go in `dependencies`.
 
+## Settings autosave
+
+`/admin/settings` saves per-card, not per-form. Every card is a
+`useSettingsCard` instance backed by `useSettingsMutation.commit(section, payload)`.
+The save trigger model is **blur-driven, not debounce-driven** — there is no
+`onChange` autosave anywhere.
+
+**Three triggers, each wired to a specific control type:**
+
+| Control                                 | Trigger       | When it fires                      |
+| --------------------------------------- | ------------- | ---------------------------------- |
+| Text `<Input>` / `<Textarea>`           | `flushOnBlur` | Input loses focus; no-op if clean  |
+| Switch / RadioGroup / Select / Combobox | `save`        | `onChange`, immediately            |
+| List append/remove/move                 | none          | Relies on the next blur or a flush |
+
+In addition, three framework-level flushes call every registered card via
+`SettingsFlushProvider`: close button + ESC (`flushAll`), scroll-away
+(`IntersectionObserver` → `flushSection(id)`), and page hide
+(`visibilitychange` / `pagehide` → `flushAll`).
+
+**Adding / editing a settings card — the rules:**
+
+1. Destructure the trigger you need from `useSettingsCard()`:
+   - text input → `flushOnBlur`
+   - switch/select/radio → `save` (never call `save` from a text input)
+   - you usually don't need `flush` directly (the framework owns it)
+2. Render text inputs through `<SettingsInput flushOnBlur={flushOnBlur} {...form.register('x')}>`
+   — **never** bare `<Input>`. The wrapper merges RHF's onBlur with
+   `flushOnBlur`; spreading `register` first would clobber it. For multi-line
+   controlled fields use `<SettingsTextarea flushOnBlur={flushOnBlur}>`.
+3. Every `<Select>` / `<RadioGroup>` / `<Combobox>` `onValueChange` MUST call
+   `save()` after `field.onChange(...)` — there is no debounce to catch it.
+   Audit with `rg 'onValueChange=\{field.onChange\}' src/ui/admin/settings/`.
+4. List append/remove/move buttons MUST NOT call `save()` — they leave the
+   form dirty and the next blur/flush commits the whole list. Calling
+   `save()` on append would filter empty rows in `fromState`, shrink the
+   payload, trigger a revalidate, and (before the reseed guard) wipe the
+   row the user just added.
+5. Don't destructure `flushOnBlur` in a card that has no text input —
+   `no-unused-vars` is enforced.
+
+**Reseed guard (do not remove):** `useSettingsCard` only re-seeds the form
+from a new `source` prop when the form is **clean** (`getValues()` deep-equals
+`lastCommitted`). When the user has un-blurred edits, a concurrent
+`revalidator.revalidate()` (from another card's save) produces a fresh
+`source` reference but the card keeps the user's input. Removing this guard
+re-introduces the "empty row disappears" bug. The trade-off is accepted: a
+remote concurrent edit to the same section won't surface until the local
+edit is committed.
+
+**No `debounceMs` option** — it was removed. Don't re-add onChange
+auto-save; the whole point of the rework is that typing never fires a
+request.
+
 ## Layering
 
 - `server/*` may import `shared/*` and other `server/*`. Not `client/*`

@@ -8,9 +8,9 @@ import type { FontsSettings } from '@/shared/config/types'
 import { SettingsRow } from '@/ui/admin/settings/SettingsSection'
 import { SettingGroup } from '@/ui/admin/settings/shell/SettingGroup'
 import { SettingGroupContent } from '@/ui/admin/settings/shell/SettingGroupContent'
+import { SettingsInput } from '@/ui/admin/settings/shell/SettingsInput'
 import { useSettingsCard } from '@/ui/admin/settings/shell/useSettingsCard'
 import { Button } from '@/ui/components/button'
-import { Input } from '@/ui/components/input'
 import { extractApiErrorMessage } from '@/ui/lib/api-error'
 
 interface FontsFormProps {
@@ -92,7 +92,7 @@ function FontUploadRow({ slot, label, family }: { slot: 'og' | 'calendar'; label
 }
 
 function FontsCanvasCard({ fonts }: { fonts: FontsSettings }) {
-  const { form, settingGroupProps, display } = useSettingsCard<
+  const { form, settingGroupProps, display, flushOnBlur } = useSettingsCard<
     FontsSettings,
     { ogFamily: string; calendarFamily: string }
   >({
@@ -118,11 +118,12 @@ function FontsCanvasCard({ fonts }: { fonts: FontsSettings }) {
         <SettingsRow label="OG 图字体" htmlFor="fonts-og-family">
           <div className="flex flex-col gap-2">
             <FontUploadRow slot="og" label="OG 图字体" family={display.og.family} />
-            <Input
+            <SettingsInput
               id="fonts-og-family"
               type="text"
               placeholder="族名，例如 OPPOSans"
               maxLength={100}
+              flushOnBlur={flushOnBlur}
               {...form.register('ogFamily')}
             />
           </div>
@@ -130,11 +131,12 @@ function FontsCanvasCard({ fonts }: { fonts: FontsSettings }) {
         <SettingsRow label="日历图字体" htmlFor="fonts-calendar-family">
           <div className="flex flex-col gap-2">
             <FontUploadRow slot="calendar" label="日历图字体" family={display.calendar.family} />
-            <Input
+            <SettingsInput
               id="fonts-calendar-family"
               type="text"
               placeholder="族名，例如 OPPOSerif"
               maxLength={100}
+              flushOnBlur={flushOnBlur}
               {...form.register('calendarFamily')}
             />
           </div>

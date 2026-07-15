@@ -25,9 +25,9 @@ import type { SidebarSettings, SidebarWidget, SidebarWidgetType } from '@/shared
 import { SettingsRow } from '@/ui/admin/settings/SettingsSection'
 import { SettingGroup } from '@/ui/admin/settings/shell/SettingGroup'
 import { SettingGroupContent } from '@/ui/admin/settings/shell/SettingGroupContent'
+import { SettingsInput } from '@/ui/admin/settings/shell/SettingsInput'
 import { useSettingsCard } from '@/ui/admin/settings/shell/useSettingsCard'
 import { FieldLabel } from '@/ui/components/field'
-import { Input } from '@/ui/components/input'
 import { Switch } from '@/ui/components/switch'
 
 interface SidebarFormProps {
@@ -55,11 +55,13 @@ function SortableWidgetRow({
   index,
   form,
   save,
+  flushOnBlur,
 }: {
   widget: SidebarWidget
   index: number
   form: ReturnType<typeof useSettingsCard<SidebarSettings, { widgets: SidebarWidget[] }>>['form']
   save: () => void
+  flushOnBlur: () => void
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: widget.type,
@@ -108,7 +110,8 @@ function SortableWidgetRow({
         {hasCount && (
           <div className="mt-2 pl-0">
             <SettingsRow label="显示数量" htmlFor={`sidebar-${widget.type}-count`}>
-              <Input
+              <SettingsInput
+                flushOnBlur={flushOnBlur}
                 id={`sidebar-${widget.type}-count`}
                 type="number"
                 min={0}
@@ -124,12 +127,14 @@ function SortableWidgetRow({
 }
 
 export function SidebarForm({ sidebar }: SidebarFormProps) {
-  const { form, settingGroupProps, save } = useSettingsCard<SidebarSettings, { widgets: SidebarWidget[] }>({
-    section: 'sidebar',
-    source: sidebar,
-    toState: (source) => ({ widgets: [...source.sidebar.widgets] }),
-    fromState: (state) => ({ sidebar: { widgets: state.widgets } }),
-  })
+  const { form, flushOnBlur, settingGroupProps, save } = useSettingsCard<SidebarSettings, { widgets: SidebarWidget[] }>(
+    {
+      section: 'sidebar',
+      source: sidebar,
+      toState: (source) => ({ widgets: [...source.sidebar.widgets] }),
+      fromState: (state) => ({ sidebar: { widgets: state.widgets } }),
+    },
+  )
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -169,6 +174,7 @@ export function SidebarForm({ sidebar }: SidebarFormProps) {
                   index={index}
                   form={form}
                   save={save}
+                  flushOnBlur={flushOnBlur}
                 />
               ))}
             </div>

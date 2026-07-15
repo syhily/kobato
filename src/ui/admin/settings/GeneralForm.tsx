@@ -8,10 +8,10 @@ import type { SiteIdentitySettings } from '@/shared/config/types'
 import { SettingsRow } from '@/ui/admin/settings/SettingsSection'
 import { SettingGroup } from '@/ui/admin/settings/shell/SettingGroup'
 import { SettingGroupContent } from '@/ui/admin/settings/shell/SettingGroupContent'
+import { SettingsInput } from '@/ui/admin/settings/shell/SettingsInput'
 import { useSettingsCard } from '@/ui/admin/settings/shell/useSettingsCard'
 import { Button } from '@/ui/components/button'
 import { Combobox, ComboboxContent, ComboboxItem, ComboboxTrigger, ComboboxValue } from '@/ui/components/combobox'
-import { Input } from '@/ui/components/input'
 
 interface TimeZoneItem {
   value: string
@@ -65,7 +65,7 @@ function toFormValues(source: SiteIdentitySettings): GeneralFormValues {
 }
 
 function GeneralIdentityCard({ siteIdentity }: { siteIdentity: SiteIdentitySettings }) {
-  const { form, settingGroupProps } = useSettingsCard<SiteIdentitySettings, GeneralFormValues>({
+  const { form, settingGroupProps, flushOnBlur } = useSettingsCard<SiteIdentitySettings, GeneralFormValues>({
     section: 'general',
     source: siteIdentity,
     schema: generalFormSchema,
@@ -89,7 +89,7 @@ function GeneralIdentityCard({ siteIdentity }: { siteIdentity: SiteIdentitySetti
     >
       <SettingGroupContent>
         <SettingsRow label="站点标题" htmlFor="general-title" error={formState.errors.title?.message}>
-          <Input id="general-title" maxLength={120} {...form.register('title')} />
+          <SettingsInput flushOnBlur={flushOnBlur} id="general-title" maxLength={120} {...form.register('title')} />
         </SettingsRow>
         <SettingsRow
           label="站点描述"
@@ -97,7 +97,12 @@ function GeneralIdentityCard({ siteIdentity }: { siteIdentity: SiteIdentitySetti
           hint="出现在首页 SEO description 与默认 meta 中。"
           error={formState.errors.description?.message}
         >
-          <Input id="general-description" maxLength={240} {...form.register('description')} />
+          <SettingsInput
+            flushOnBlur={flushOnBlur}
+            id="general-description"
+            maxLength={240}
+            {...form.register('description')}
+          />
         </SettingsRow>
         <SettingsRow
           label="站点 URL"
@@ -105,7 +110,13 @@ function GeneralIdentityCard({ siteIdentity }: { siteIdentity: SiteIdentitySetti
           hint="必须是完整的 https URL，结尾不带斜杠。"
           error={formState.errors.website?.message}
         >
-          <Input id="general-website" type="url" placeholder="https://example.com" {...form.register('website')} />
+          <SettingsInput
+            flushOnBlur={flushOnBlur}
+            id="general-website"
+            type="url"
+            placeholder="https://example.com"
+            {...form.register('website')}
+          />
         </SettingsRow>
         <SettingsRow
           label="关键词"
@@ -115,7 +126,8 @@ function GeneralIdentityCard({ siteIdentity }: { siteIdentity: SiteIdentitySetti
           <div className="flex flex-col gap-2">
             {keywords.fields.map((field, index) => (
               <div key={field.id} className="flex gap-2">
-                <Input
+                <SettingsInput
+                  flushOnBlur={flushOnBlur}
                   maxLength={60}
                   placeholder="例如：blog"
                   aria-invalid={formState.errors.keywords?.[index]?.value ? true : undefined}
@@ -149,7 +161,7 @@ function GeneralIdentityCard({ siteIdentity }: { siteIdentity: SiteIdentitySetti
 }
 
 function GeneralFooterCard({ siteIdentity }: { siteIdentity: SiteIdentitySettings }) {
-  const { form, settingGroupProps } = useSettingsCard<SiteIdentitySettings, GeneralFormValues>({
+  const { form, settingGroupProps, flushOnBlur } = useSettingsCard<SiteIdentitySettings, GeneralFormValues>({
     section: 'general',
     source: siteIdentity,
     schema: generalFormSchema,
@@ -167,7 +179,8 @@ function GeneralFooterCard({ siteIdentity }: { siteIdentity: SiteIdentitySetting
     <SettingGroup title="页脚信息" description="网站页脚的版权年份与备案号。" {...settingGroupProps}>
       <SettingGroupContent>
         <SettingsRow label="起始年份" htmlFor="general-initial-year" error={formState.errors.initialYear?.message}>
-          <Input
+          <SettingsInput
+            flushOnBlur={flushOnBlur}
             id="general-initial-year"
             type="number"
             min={1970}
@@ -176,7 +189,8 @@ function GeneralFooterCard({ siteIdentity }: { siteIdentity: SiteIdentitySetting
           />
         </SettingsRow>
         <SettingsRow label="ICP 备案号" htmlFor="general-icp" error={formState.errors.icpNo?.message}>
-          <Input
+          <SettingsInput
+            flushOnBlur={flushOnBlur}
             id="general-icp"
             maxLength={60}
             placeholder="例如：皖ICP备2021002315号-2"
@@ -184,7 +198,7 @@ function GeneralFooterCard({ siteIdentity }: { siteIdentity: SiteIdentitySetting
           />
         </SettingsRow>
         <SettingsRow label="萌国备案号" htmlFor="general-moe-icp" error={formState.errors.moeIcpNo?.message}>
-          <Input id="general-moe-icp" maxLength={60} {...form.register('moeIcpNo')} />
+          <SettingsInput flushOnBlur={flushOnBlur} id="general-moe-icp" maxLength={60} {...form.register('moeIcpNo')} />
         </SettingsRow>
       </SettingGroupContent>
     </SettingGroup>
@@ -192,7 +206,7 @@ function GeneralFooterCard({ siteIdentity }: { siteIdentity: SiteIdentitySetting
 }
 
 function GeneralAuthorCard({ siteIdentity }: { siteIdentity: SiteIdentitySettings }) {
-  const { form, settingGroupProps } = useSettingsCard<SiteIdentitySettings, GeneralFormValues>({
+  const { form, settingGroupProps, flushOnBlur } = useSettingsCard<SiteIdentitySettings, GeneralFormValues>({
     section: 'general',
     source: siteIdentity,
     schema: generalFormSchema,
@@ -216,7 +230,12 @@ function GeneralAuthorCard({ siteIdentity }: { siteIdentity: SiteIdentitySetting
     >
       <SettingGroupContent>
         <SettingsRow label="作者姓名" htmlFor="general-author-name" error={formState.errors.author?.name?.message}>
-          <Input id="general-author-name" maxLength={60} {...form.register('author.name')} />
+          <SettingsInput
+            flushOnBlur={flushOnBlur}
+            id="general-author-name"
+            maxLength={60}
+            {...form.register('author.name')}
+          />
         </SettingsRow>
         <SettingsRow
           label="作者邮箱"
@@ -224,10 +243,16 @@ function GeneralAuthorCard({ siteIdentity }: { siteIdentity: SiteIdentitySetting
           hint="评论通知 / 待审核提醒发件人。"
           error={formState.errors.author?.email?.message}
         >
-          <Input id="general-author-email" type="email" {...form.register('author.email')} />
+          <SettingsInput
+            flushOnBlur={flushOnBlur}
+            id="general-author-email"
+            type="email"
+            {...form.register('author.email')}
+          />
         </SettingsRow>
         <SettingsRow label="作者主页" htmlFor="general-author-url" error={formState.errors.author?.url?.message}>
-          <Input
+          <SettingsInput
+            flushOnBlur={flushOnBlur}
             id="general-author-url"
             type="url"
             placeholder="https://example.com"
@@ -246,7 +271,7 @@ function GeneralTimeZoneCard({
   siteIdentity: SiteIdentitySettings
   timeZones: readonly string[]
 }) {
-  const { form, settingGroupProps } = useSettingsCard<SiteIdentitySettings, GeneralFormValues>({
+  const { form, settingGroupProps, flushOnBlur, save } = useSettingsCard<SiteIdentitySettings, GeneralFormValues>({
     section: 'general',
     source: siteIdentity,
     schema: generalFormSchema,
@@ -277,7 +302,13 @@ function GeneralTimeZoneCard({
           hint="BCP 47 语言标签，例如 zh-CN、en-US。"
           error={formState.errors.locale?.message}
         >
-          <Input id="general-locale" maxLength={35} placeholder="zh-CN" {...form.register('locale')} />
+          <SettingsInput
+            flushOnBlur={flushOnBlur}
+            id="general-locale"
+            maxLength={35}
+            placeholder="zh-CN"
+            {...form.register('locale')}
+          />
         </SettingsRow>
         <SettingsRow
           label="时区"
@@ -297,6 +328,7 @@ function GeneralTimeZoneCard({
                   onValueChange={(item) => {
                     if (item) {
                       field.onChange(item.value)
+                      save()
                     }
                   }}
                 >
@@ -321,7 +353,8 @@ function GeneralTimeZoneCard({
           hint="支持 yyyy / LL / MM / dd / HH / mm 占位符，例如 yyyy-LL-dd HH:mm。"
           error={formState.errors.timeFormat?.message}
         >
-          <Input
+          <SettingsInput
+            flushOnBlur={flushOnBlur}
             id="general-time-format"
             maxLength={40}
             placeholder="yyyy-LL-dd HH:mm"

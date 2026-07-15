@@ -213,7 +213,6 @@ describe('snapshot: useSettingsCard', () => {
       source: { title: 'Hello' },
       toState: (s) => ({ title: s.title }),
       fromState: (state) => ({ title: state.title }),
-      debounceMs: 1000,
     })
 
     return (

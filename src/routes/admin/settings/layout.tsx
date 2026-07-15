@@ -13,6 +13,7 @@ import {
 import { getSupportedTimeZones } from '@/server/domains/settings/timezones'
 import { upsertSetting } from '@/server/infra/db/operations/setting'
 import { SECTION_TO_BUNDLE_KEY, SETTINGS_SECTIONS } from '@/shared/config/sections'
+import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
 import type { Route } from './+types/layout'
 
@@ -116,9 +117,8 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   }
 
   assertSettingsBundle(mutable)
-  const masks = computeSecretMasks(mutable as BlogSettingsBundle)
-  /* oxlint-disable-next-line typescript/no-unsafe-type-assertion */
-  const redacted = redactSecretsFromBundle(mutable as BlogSettingsBundle) as SettingsBundle
+  const masks = computeSecretMasks(unsafeCast<BlogSettingsBundle>(mutable))
+  const redacted = unsafeCast<SettingsBundle>(redactSecretsFromBundle(unsafeCast<BlogSettingsBundle>(mutable)))
   return {
     bundle: redacted,
     timeZones: getSupportedTimeZones(),

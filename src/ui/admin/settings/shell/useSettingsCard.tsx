@@ -1,7 +1,6 @@
-/* oxlint-disable typescript/no-unsafe-type-assertion */
 import type { z } from 'zod'
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
   type DefaultValues,
   type FieldError,
@@ -10,12 +9,13 @@ import {
   type Resolver,
   type UseFormReturn,
   useForm,
-  useWatch,
 } from 'react-hook-form'
 
 import type { SettingsSection } from '@/shared/config/sections'
 
 import { getLogger } from '@/client/lib/logger'
+import { unsafeCast } from '@/shared/utils/unsafe-cast'
+import { useSettingsFlushContext } from '@/ui/admin/settings/shell/SettingsFlushProvider'
 import { useSettingsMutation } from '@/ui/admin/settings/useSettingsMutation'
 
 const log = getLogger('settings.card')
@@ -27,13 +27,22 @@ interface UseSettingsCardOptions<TSource extends object, TState extends FieldVal
   fromState: (state: TState) => Record<string, unknown>
   schema?: z.ZodType<TState, any>
   mode?: 'patch' | 'full'
-  debounceMs?: number
 }
 
 interface UseSettingsCardResult<TSource extends object, TState extends FieldValues> {
   form: UseFormReturn<TState>
   isSaving: boolean
+  /** Immediate commit. Skips the dirty guard but still runs validation.
+   * Used by Switch / RadioGroup / Select — controls that have no "intermediate"
+   * state worth deferring. */
   save: () => void
+  /** Blur-driven commit. No-op when the form matches the last committed
+   * snapshot. Used by `<SettingsInput>` on every text input. */
+  flushOnBlur: () => void
+  /** Top-level flush (close / scroll-away / page-hide). Same dirty guard as
+   * `flushOnBlur`; the split name documents caller intent and leaves room for
+   * the two to diverge later. */
+  flush: () => void
   display: TSource
   settingGroupProps: {
     saveState: 'idle' | 'saving' | 'saved' | 'error'
@@ -44,12 +53,19 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === 'object' && !Array.isArray(value)
 }
 
+function isFieldErrorRecord(value: unknown): value is Record<string, unknown> {
+  return isRecord(value)
+}
+
 function deepMerge<T extends object>(
   target: T,
   patch: Record<string, unknown>,
   seen: WeakSet<object> = new WeakSet(),
 ): T {
-  const result: Record<string, unknown> = { ...(target as Record<string, unknown>) }
+  // T is an arbitrary settings DTO; spreading into a plain record is the
+  // canonical shape-preserving copy. The structural identity holds because
+  // `patch` only adds/overrides keys that already exist on `T`.
+  const result: Record<string, unknown> = { ...unsafeCast<Record<string, unknown>>(target) }
   for (const key of Object.keys(patch)) {
     const patchVal = patch[key]
     const targetVal = result[key]
@@ -63,7 +79,15 @@ function deepMerge<T extends object>(
       result[key] = patchVal
     }
   }
-  return result as T
+  return unsafeCast<T>(result)
+}
+
+// Zod issue paths are PropertyKey[] (string | number | symbol). RHF error
+// trees key by string, so every path element is coerced via `String()`. The
+// narrowing is total — no information is lost because every PropertyKey has
+// a well-defined string form.
+function pathKey(p: PropertyKey): string {
+  return typeof p === 'string' ? p : String(p)
 }
 
 function buildZodErrors<T extends FieldValues>(
@@ -73,17 +97,27 @@ function buildZodErrors<T extends FieldValues>(
   for (const issue of issues) {
     let current: Record<string, unknown> = errors
     for (let i = 0; i < issue.path.length - 1; i++) {
-      const key = issue.path[i] as string | number
+      const key = pathKey(issue.path[i])
       const nextKey = issue.path[i + 1]
       if (current[key] === undefined) {
         current[key] = typeof nextKey === 'number' ? [] : {}
       }
-      current = current[key] as Record<string, unknown>
+      const stepped = current[key]
+      if (isFieldErrorRecord(stepped)) {
+        current = stepped
+      } else {
+        // The path walked into an array slot or primitive that earlier issues
+        // materialised; step in by treating it as a record. Runtime shape is
+        // already correct because every prior iteration wrote a container.
+        current = unsafeCast<Record<string, unknown>>(stepped)
+      }
     }
-    const lastKey = issue.path[issue.path.length - 1] as string | number
-    current[lastKey] = { type: issue.code, message: issue.message } as FieldError
+    const lastKey = pathKey(issue.path[issue.path.length - 1])
+    current[lastKey] = { type: issue.code, message: issue.message } satisfies FieldError
   }
-  return errors as FieldErrors<T>
+  // The hand-built `errors` object mirrors RHF's FieldErrors<T> shape one
+  // leaf at a time; the cast is structural, not semantic.
+  return unsafeCast<FieldErrors<T>>(errors)
 }
 
 export function useSettingsCard<TSource extends object, TState extends FieldValues>({
@@ -93,12 +127,14 @@ export function useSettingsCard<TSource extends object, TState extends FieldValu
   fromState,
   schema,
   mode: mergeMode = 'patch',
-  debounceMs = 500,
 }: UseSettingsCardOptions<TSource, TState>): UseSettingsCardResult<TSource, TState> {
   const [optimisticSource, setOptimisticSource] = useState<TSource | null>(null)
   const { commit, isPending, status } = useSettingsMutation()
+  const { registerFlush } = useSettingsFlushContext()
 
-  const initialValues = useMemo(() => toState(source) as DefaultValues<TState>, [source, toState])
+  // `toState` returns the form's TState; DefaultValues<TState> is structurally
+  // wider (allows `undefined` leaves) so RHF accepts partial seeds.
+  const initialValues = useMemo(() => unsafeCast<DefaultValues<TState>>(toState(source)), [source, toState])
 
   const resolver = useMemo<Resolver<TState> | undefined>(() => {
     if (!schema) {
@@ -120,82 +156,97 @@ export function useSettingsCard<TSource extends object, TState extends FieldValu
   })
   const { reset, handleSubmit, getValues } = form
 
-  // --- Auto-save ---
-  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const isSavingRef = useRef(false)
+  // Last snapshot the server has acknowledged (or the initial seed). Drives
+  // the dirty guard: if `getValues()` deep-equals this, flush is a no-op.
   const [lastCommitted, setLastCommitted] = useState<DefaultValues<TState>>(initialValues)
 
-  // Re-seed form when source changes (after a save in another card, after revert, etc.)
+  // Re-seed form when source changes (after a save in another card, after a
+  // remote update, etc.). Reference-equality is insufficient on its own —
+  // `revalidator.revalidate()` produces a fresh `source` reference on every
+  // successful save, which would `reset()` away the user's in-flight edits.
+  // So we only reseed when the form is *clean* (no uncommitted local edits).
   const [lastSourceSnapshot, setLastSourceSnapshot] = useState<TSource>(source)
   if (source !== lastSourceSnapshot) {
     setLastSourceSnapshot(source)
-    reset(initialValues)
-    setLastCommitted(initialValues)
-    if (optimisticSource !== null) {
-      setOptimisticSource(null)
-    }
-  }
 
-  useEffect(() => {
-    isSavingRef.current = isPending
-  }, [isPending])
+    const currentValues = getValues()
+    const hasUncommittedEdits = JSON.stringify(currentValues) !== JSON.stringify(lastCommitted)
+
+    if (!hasUncommittedEdits) {
+      // Clean — safe to adopt the new server snapshot verbatim.
+      const next = unsafeCast<DefaultValues<TState>>(toState(source))
+      reset(next)
+      setLastCommitted(next)
+      if (optimisticSource !== null) {
+        setOptimisticSource(null)
+      }
+    }
+    // Dirty — keep the user's edits; the pending flush will commit them and
+    // the next revalidate (now clean) will reseed safely.
+  }
 
   const performSave = useCallback(() => {
     void handleSubmit(
       async (values) => {
         const patchPayload = fromState(values)
-        const payload: TSource = mergeMode === 'patch' ? deepMerge(source, patchPayload) : (patchPayload as TSource)
+        // `fromState` returns a partial patch shape; in 'full' mode it IS the
+        // whole TSource. The structural identity holds because the caller's
+        // `fromState` is paired with the section's TSource contract.
+        const payload: TSource =
+          mergeMode === 'patch' ? deepMerge(source, patchPayload) : unsafeCast<TSource>(patchPayload)
         setOptimisticSource(payload)
-        setLastCommitted(values as DefaultValues<TState>)
-        const ok = await commit(section, payload as Record<string, unknown>)
+        setLastCommitted(unsafeCast<DefaultValues<TState>>(values))
+        // TSource is always a JSON-serialisable settings object; the mutation
+        // endpoint takes Record<string, unknown> by design.
+        const ok = await commit(section, unsafeCast<Record<string, unknown>>(payload))
         if (!ok) {
           setOptimisticSource(null)
         }
       },
       (errors) => {
-        log.debug('Auto-save validation failed, skipping', { errors })
+        log.debug('Settings save validation failed, skipping', { errors })
       },
     )()
   }, [handleSubmit, mergeMode, section, commit, fromState, source])
 
-  // Debounced auto-save triggered by form changes. useWatch returns the
-  // current values reactively without the function-call API the React
-  // Compiler can't analyze.
-  const watchedValues = useWatch({ control: form.control })
-  useEffect(() => {
-    const current = getValues()
-    if (JSON.stringify(current) === JSON.stringify(lastCommitted)) {
-      return
-    }
-    if (isSavingRef.current) {
-      return
-    }
+  const isDirty = useCallback(() => {
+    return JSON.stringify(getValues()) !== JSON.stringify(lastCommitted)
+  }, [getValues, lastCommitted])
 
-    if (debounceTimerRef.current !== null) {
-      clearTimeout(debounceTimerRef.current)
-    }
-    debounceTimerRef.current = setTimeout(performSave, debounceMs)
-
-    return () => {
-      if (debounceTimerRef.current !== null) {
-        clearTimeout(debounceTimerRef.current)
-      }
-    }
-  }, [watchedValues, getValues, performSave, debounceMs, lastCommitted])
-
-  // Immediate save for switches — clears debounce and fires now
+  // Switch / RadioGroup / Select / list buttons — fire immediately.
   const save = useCallback(() => {
-    if (debounceTimerRef.current !== null) {
-      clearTimeout(debounceTimerRef.current)
-      debounceTimerRef.current = null
-    }
     performSave()
   }, [performSave])
+
+  // Text input blur — skip when nothing changed.
+  const flushOnBlur = useCallback(() => {
+    if (!isDirty()) {
+      return
+    }
+    performSave()
+  }, [isDirty, performSave])
+
+  // Close / scroll-away / page-hide — skip when nothing changed.
+  const flush = useCallback(() => {
+    if (!isDirty()) {
+      return
+    }
+    performSave()
+  }, [isDirty, performSave])
+
+  // Register this card's flush so the panel-level triggers (close, scroll,
+  // visibilitychange) can reach it. Re-registers when `flush` identity
+  // changes (i.e. when `lastCommitted` moves).
+  useEffect(() => {
+    return registerFlush(section, flush)
+  }, [registerFlush, section, flush])
 
   return {
     form,
     isSaving: isPending,
     save,
+    flushOnBlur,
+    flush,
     display: optimisticSource ?? source,
     settingGroupProps: {
       saveState: status,

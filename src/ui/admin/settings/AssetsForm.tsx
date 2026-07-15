@@ -5,12 +5,11 @@ import type { AssetsLoaderShape } from '@/shared/config/projection'
 import { SettingsRow } from '@/ui/admin/settings/SettingsSection'
 import { SettingGroup } from '@/ui/admin/settings/shell/SettingGroup'
 import { SettingGroupContent } from '@/ui/admin/settings/shell/SettingGroupContent'
+import { SettingsInput, SettingsTextarea } from '@/ui/admin/settings/shell/SettingsInput'
 import { useSettingsCard } from '@/ui/admin/settings/shell/useSettingsCard'
 import { FieldLabel } from '@/ui/components/field'
-import { Input } from '@/ui/components/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/components/select'
 import { Switch } from '@/ui/components/switch'
-import { Textarea } from '@/ui/components/textarea'
 
 export type { AssetsLoaderShape }
 
@@ -24,7 +23,7 @@ const SCHEME_OPTIONS: { value: 'http' | 'https'; label: string }[] = [
 ]
 
 function AssetsDomainCard({ assets }: { assets: AssetsLoaderShape }) {
-  const { form, settingGroupProps } = useSettingsCard<
+  const { form, settingGroupProps, save, flushOnBlur } = useSettingsCard<
     AssetsLoaderShape,
     { assetHost: string; assetScheme: 'http' | 'https' }
   >({
@@ -51,7 +50,13 @@ function AssetsDomainCard({ assets }: { assets: AssetsLoaderShape }) {
             control={form.control}
             name="assetScheme"
             render={({ field }) => (
-              <Select value={field.value} onValueChange={field.onChange}>
+              <Select
+                value={field.value}
+                onValueChange={(v) => {
+                  field.onChange(v)
+                  save()
+                }}
+              >
                 <SelectTrigger id="assets-asset-scheme" className="w-full">
                   <SelectValue>
                     {(value: string | null) => SCHEME_OPTIONS.find((o) => o.value === value)?.label ?? value ?? ''}
@@ -73,7 +78,13 @@ function AssetsDomainCard({ assets }: { assets: AssetsLoaderShape }) {
           htmlFor="assets-asset-host"
           hint="只能包含字母 / 数字 / `-` / `.`，例如 `cat.example.com`。"
         >
-          <Input id="assets-asset-host" maxLength={253} placeholder="cat.example.com" {...form.register('assetHost')} />
+          <SettingsInput
+            flushOnBlur={flushOnBlur}
+            id="assets-asset-host"
+            maxLength={253}
+            placeholder="cat.example.com"
+            {...form.register('assetHost')}
+          />
         </SettingsRow>
       </SettingGroupContent>
     </SettingGroup>
@@ -124,7 +135,7 @@ function AssetsToggleCard({ assets }: { assets: AssetsLoaderShape }) {
 }
 
 function AssetsS3Card({ assets }: { assets: AssetsLoaderShape }) {
-  const { form, settingGroupProps, display, save } = useSettingsCard<
+  const { form, settingGroupProps, display, save, flushOnBlur } = useSettingsCard<
     AssetsLoaderShape,
     {
       endpoint: string
@@ -172,7 +183,8 @@ function AssetsS3Card({ assets }: { assets: AssetsLoaderShape }) {
     >
       <SettingGroupContent>
         <SettingsRow label="Endpoint" htmlFor="assets-endpoint" hint="完整 URL，例如 https://s3.amazonaws.com。">
-          <Input
+          <SettingsInput
+            flushOnBlur={flushOnBlur}
             id="assets-endpoint"
             type="url"
             placeholder="https://s3.amazonaws.com"
@@ -180,13 +192,19 @@ function AssetsS3Card({ assets }: { assets: AssetsLoaderShape }) {
           />
         </SettingsRow>
         <SettingsRow label="Region" htmlFor="assets-region" hint="例：us-east-1 / auto（R2 / B2）。">
-          <Input id="assets-region" maxLength={60} {...form.register('region')} />
+          <SettingsInput flushOnBlur={flushOnBlur} id="assets-region" maxLength={60} {...form.register('region')} />
         </SettingsRow>
         <SettingsRow label="Bucket" htmlFor="assets-bucket">
-          <Input id="assets-bucket" maxLength={120} {...form.register('bucket')} />
+          <SettingsInput flushOnBlur={flushOnBlur} id="assets-bucket" maxLength={120} {...form.register('bucket')} />
         </SettingsRow>
         <SettingsRow label="Access Key ID" htmlFor="assets-access-key-id">
-          <Input id="assets-access-key-id" maxLength={255} autoComplete="off" {...form.register('accessKeyId')} />
+          <SettingsInput
+            flushOnBlur={flushOnBlur}
+            id="assets-access-key-id"
+            maxLength={255}
+            autoComplete="off"
+            {...form.register('accessKeyId')}
+          />
         </SettingsRow>
         <SettingsRow
           label="Secret Access Key"
@@ -197,7 +215,8 @@ function AssetsS3Card({ assets }: { assets: AssetsLoaderShape }) {
               : '尚未配置。将以明文存入 setting 表。'
           }
         >
-          <Input
+          <SettingsInput
+            flushOnBlur={flushOnBlur}
             id="assets-secret"
             type="password"
             {...form.register('secretAccessKey')}
@@ -232,7 +251,8 @@ function AssetsS3Card({ assets }: { assets: AssetsLoaderShape }) {
           htmlFor="assets-url-template"
           hint="支持 `{src}`、`{width}`、`{height}`、`{quality}` 占位符。"
         >
-          <Input
+          <SettingsInput
+            flushOnBlur={flushOnBlur}
             id="assets-url-template"
             {...form.register('urlTemplate')}
             maxLength={500}
@@ -245,7 +265,10 @@ function AssetsS3Card({ assets }: { assets: AssetsLoaderShape }) {
 }
 
 function AssetsUploadCard({ assets }: { assets: AssetsLoaderShape }) {
-  const { form, settingGroupProps } = useSettingsCard<AssetsLoaderShape, { maxBytes: number; jpegQuality: number }>({
+  const { form, flushOnBlur, settingGroupProps } = useSettingsCard<
+    AssetsLoaderShape,
+    { maxBytes: number; jpegQuality: number }
+  >({
     section: 'assets',
     source: assets,
     toState: (source) => ({
@@ -269,7 +292,8 @@ function AssetsUploadCard({ assets }: { assets: AssetsLoaderShape }) {
           htmlFor="assets-max-bytes"
           hint="默认建议 8 MiB（8388608）。最大 50 MiB。"
         >
-          <Input
+          <SettingsInput
+            flushOnBlur={flushOnBlur}
             id="assets-max-bytes"
             type="number"
             min={1024}
@@ -278,7 +302,8 @@ function AssetsUploadCard({ assets }: { assets: AssetsLoaderShape }) {
           />
         </SettingsRow>
         <SettingsRow label="默认 JPEG 质量" htmlFor="assets-jpeg-quality" hint="40-100 之间。">
-          <Input
+          <SettingsInput
+            flushOnBlur={flushOnBlur}
             id="assets-jpeg-quality"
             type="number"
             min={40}
@@ -296,7 +321,7 @@ function AssetsUploadCard({ assets }: { assets: AssetsLoaderShape }) {
 // PATCH. The actual brand assets (favicons, logos, posters, default
 // avatar) are managed at `/admin/library/branding`.
 function AssetsRobotsTxtCard({ assets }: { assets: AssetsLoaderShape }) {
-  const { form, settingGroupProps } = useSettingsCard<AssetsLoaderShape, { robotsTxt: string }>({
+  const { form, flushOnBlur, settingGroupProps } = useSettingsCard<AssetsLoaderShape, { robotsTxt: string }>({
     section: 'assets',
     source: assets,
     toState: (source) => ({ robotsTxt: source.branding.robotsTxt }),
@@ -311,7 +336,8 @@ function AssetsRobotsTxtCard({ assets }: { assets: AssetsLoaderShape }) {
     >
       <SettingGroupContent>
         <SettingsRow label="robots.txt 内容" htmlFor="assets-robots-txt">
-          <Textarea
+          <SettingsTextarea
+            flushOnBlur={flushOnBlur}
             id="assets-robots-txt"
             aria-label="robots.txt 内容"
             rows={6}

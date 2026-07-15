@@ -17,7 +17,15 @@ interface RateLimitFormProps {
   rateLimit: RateLimitSettings
 }
 
-function WindowEditCell({ bucketKey, form }: { bucketKey: BucketKey; form: UseFormReturn<RateLimitSettings> }) {
+function WindowEditCell({
+  bucketKey,
+  form,
+  flushOnBlur,
+}: {
+  bucketKey: BucketKey
+  form: UseFormReturn<RateLimitSettings>
+  flushOnBlur: () => void
+}) {
   const meta = BUCKET_META[bucketKey]
   const fieldName = `${bucketKey}.windowSeconds` as const
   const currentValue = form.watch(fieldName)
@@ -27,6 +35,7 @@ function WindowEditCell({ bucketKey, form }: { bucketKey: BucketKey; form: UseFo
   const applyValue = (val: number) => {
     form.setValue(fieldName, val, { shouldDirty: true, shouldValidate: true })
     setOpen(false)
+    flushOnBlur()
   }
 
   return (
@@ -34,7 +43,7 @@ function WindowEditCell({ bucketKey, form }: { bucketKey: BucketKey; form: UseFo
       <PopoverTrigger
         className={cn(
           'flex h-7 items-center justify-between gap-1 rounded-md border border-line bg-transparent px-2 text-xs shadow-xs transition-[color,box-shadow] outline-none',
-          'focus-visible:border-ring focus-visible:ring-(--ring-width) focus-visible:ring-ring/50',
+          'focus-visible:border-ring focus-visible:shadow-focus',
         )}
       >
         <span className="min-w-[3ch]">{matchedOption?.label ?? `${currentValue}秒`}</span>
@@ -52,9 +61,11 @@ function WindowEditCell({ bucketKey, form }: { bucketKey: BucketKey; form: UseFo
               const val = e.target.value === '' ? BOUNDS.windowSeconds.min : Number(e.target.value)
               form.setValue(fieldName, val, { shouldDirty: true, shouldValidate: true })
             }}
+            onBlur={flushOnBlur}
             onKeyDown={(e) => {
               if (e.key === 'Enter') {
                 setOpen(false)
+                flushOnBlur()
               }
             }}
           />
@@ -79,7 +90,15 @@ function WindowEditCell({ bucketKey, form }: { bucketKey: BucketKey; form: UseFo
   )
 }
 
-function AttemptsEditCell({ bucketKey, form }: { bucketKey: BucketKey; form: UseFormReturn<RateLimitSettings> }) {
+function AttemptsEditCell({
+  bucketKey,
+  form,
+  flushOnBlur,
+}: {
+  bucketKey: BucketKey
+  form: UseFormReturn<RateLimitSettings>
+  flushOnBlur: () => void
+}) {
   const fieldName = `${bucketKey}.maxAttempts` as const
   const currentValue = form.watch(fieldName)
   const error = (form.formState.errors[bucketKey] as { maxAttempts?: { message?: string } } | undefined)?.maxAttempts
@@ -96,12 +115,13 @@ function AttemptsEditCell({ bucketKey, form }: { bucketKey: BucketKey; form: Use
         const val = e.target.value === '' ? BOUNDS.maxAttempts.min : Number(e.target.value)
         form.setValue(fieldName, val, { shouldDirty: true, shouldValidate: true })
       }}
+      onBlur={flushOnBlur}
     />
   )
 }
 
 export function ThresholdForm({ rateLimit }: RateLimitFormProps) {
-  const { form, settingGroupProps } = useSettingsCard<RateLimitSettings, RateLimitSettings>({
+  const { form, flushOnBlur, settingGroupProps } = useSettingsCard<RateLimitSettings, RateLimitSettings>({
     section: 'rateLimit',
     source: rateLimit,
     toState: (source) => source,
@@ -147,10 +167,10 @@ export function ThresholdForm({ rateLimit }: RateLimitFormProps) {
                     </div>
                   </TableCell>
                   <TableCell>
-                    <WindowEditCell bucketKey={key} form={form} />
+                    <WindowEditCell bucketKey={key} form={form} flushOnBlur={flushOnBlur} />
                   </TableCell>
                   <TableCell className="text-right">
-                    <AttemptsEditCell bucketKey={key} form={form} />
+                    <AttemptsEditCell bucketKey={key} form={form} flushOnBlur={flushOnBlur} />
                   </TableCell>
                 </TableRow>
               ))}

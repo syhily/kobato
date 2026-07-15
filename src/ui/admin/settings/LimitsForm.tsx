@@ -3,8 +3,8 @@ import type { LimitsSettings } from '@/shared/config/types'
 import { SettingsRow } from '@/ui/admin/settings/SettingsSection'
 import { SettingGroup } from '@/ui/admin/settings/shell/SettingGroup'
 import { SettingGroupContent } from '@/ui/admin/settings/shell/SettingGroupContent'
+import { SettingsInput } from '@/ui/admin/settings/shell/SettingsInput'
 import { useSettingsCard } from '@/ui/admin/settings/shell/useSettingsCard'
-import { Input } from '@/ui/components/input'
 
 interface LimitsFormProps {
   limits: LimitsSettings
@@ -18,7 +18,7 @@ const BOUNDS = {
 } as const
 
 function LimitsRequestCard({ limits }: { limits: LimitsSettings }) {
-  const { form, settingGroupProps } = useSettingsCard<LimitsSettings, { maxRequestBodySize: number }>({
+  const { form, settingGroupProps, flushOnBlur } = useSettingsCard<LimitsSettings, { maxRequestBodySize: number }>({
     section: 'limits',
     source: limits,
     toState: (source) => ({ maxRequestBodySize: source.maxRequestBodySize }),
@@ -39,11 +39,12 @@ function LimitsRequestCard({ limits }: { limits: LimitsSettings }) {
           htmlFor="limits-max-request-body-size"
           hint={`范围 ${BOUNDS.maxRequestBodySize.min} - ${BOUNDS.maxRequestBodySize.max}。默认 10 MB（${10 * 1024 * 1024}）。`}
         >
-          <Input
+          <SettingsInput
             id="limits-max-request-body-size"
             type="number"
             min={BOUNDS.maxRequestBodySize.min}
             max={BOUNDS.maxRequestBodySize.max}
+            flushOnBlur={flushOnBlur}
             {...form.register('maxRequestBodySize', { valueAsNumber: true })}
           />
         </SettingsRow>
@@ -53,7 +54,7 @@ function LimitsRequestCard({ limits }: { limits: LimitsSettings }) {
 }
 
 function LimitsSessionCard({ limits }: { limits: LimitsSettings }) {
-  const { form, settingGroupProps } = useSettingsCard<LimitsSettings, { sessionMaxAge: number }>({
+  const { form, settingGroupProps, flushOnBlur } = useSettingsCard<LimitsSettings, { sessionMaxAge: number }>({
     section: 'limits',
     source: limits,
     toState: (source) => ({ sessionMaxAge: source.sessionMaxAge }),
@@ -74,11 +75,12 @@ function LimitsSessionCard({ limits }: { limits: LimitsSettings }) {
           htmlFor="limits-session-max-age"
           hint={`范围 ${BOUNDS.sessionMaxAge.min} - ${BOUNDS.sessionMaxAge.max}。默认 30 天（${60 * 60 * 24 * 30}）。`}
         >
-          <Input
+          <SettingsInput
             id="limits-session-max-age"
             type="number"
             min={BOUNDS.sessionMaxAge.min}
             max={BOUNDS.sessionMaxAge.max}
+            flushOnBlur={flushOnBlur}
             {...form.register('sessionMaxAge', { valueAsNumber: true })}
           />
         </SettingsRow>
@@ -88,7 +90,7 @@ function LimitsSessionCard({ limits }: { limits: LimitsSettings }) {
 }
 
 function LimitsAuditCard({ limits }: { limits: LimitsSettings }) {
-  const { form, settingGroupProps } = useSettingsCard<
+  const { form, settingGroupProps, flushOnBlur } = useSettingsCard<
     LimitsSettings,
     { auditLogDbRetentionDays: number; auditLogArchiveRetentionDays: number }
   >({
@@ -116,11 +118,12 @@ function LimitsAuditCard({ limits }: { limits: LimitsSettings }) {
           htmlFor="limits-audit-db-retention"
           hint={`范围 ${BOUNDS.auditLogDbRetentionDays.min} - ${BOUNDS.auditLogDbRetentionDays.max}。默认 30 天。`}
         >
-          <Input
+          <SettingsInput
             id="limits-audit-db-retention"
             type="number"
             min={BOUNDS.auditLogDbRetentionDays.min}
             max={BOUNDS.auditLogDbRetentionDays.max}
+            flushOnBlur={flushOnBlur}
             {...form.register('auditLogDbRetentionDays', { valueAsNumber: true })}
           />
         </SettingsRow>
@@ -129,11 +132,12 @@ function LimitsAuditCard({ limits }: { limits: LimitsSettings }) {
           htmlFor="limits-audit-archive-retention"
           hint={`范围 ${BOUNDS.auditLogArchiveRetentionDays.min} - ${BOUNDS.auditLogArchiveRetentionDays.max}。默认 180 天。`}
         >
-          <Input
+          <SettingsInput
             id="limits-audit-archive-retention"
             type="number"
             min={BOUNDS.auditLogArchiveRetentionDays.min}
             max={BOUNDS.auditLogArchiveRetentionDays.max}
+            flushOnBlur={flushOnBlur}
             {...form.register('auditLogArchiveRetentionDays', { valueAsNumber: true })}
           />
         </SettingsRow>
