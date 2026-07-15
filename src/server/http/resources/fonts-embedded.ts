@@ -1,11 +1,10 @@
 import { Hono } from 'hono'
-import { createReadStream } from 'node:fs'
 import { stat } from 'node:fs/promises'
 import path from 'node:path'
-import { Readable } from 'node:stream'
 
 import type { Env } from '@/server/http/context'
 
+import { IMMUTABLE_CACHE_CONTROL, respondWithLocalFile } from '@/server/http/resources/serve-local-file'
 import { getLogger } from '@/server/infra/logger'
 import { resolveLocalPath } from '@/server/infra/storage/backends/local'
 
@@ -23,8 +22,6 @@ const log = getLogger('fonts.embedded.http')
  */
 export const fontsEmbeddedRouter = new Hono<Env>()
 
-const IMMUTABLE_CACHE_CONTROL = 'public, max-age=31536000, immutable'
-
 const CONTENT_TYPE_BY_EXT: Record<string, string> = {
   '.css': 'text/css; charset=utf-8',
   '.woff2': 'font/woff2',
@@ -35,63 +32,6 @@ const CONTENT_TYPE_BY_EXT: Record<string, string> = {
 
 function contentTypeFor(key: string): string {
   return CONTENT_TYPE_BY_EXT[path.extname(key).toLowerCase()] ?? 'application/octet-stream'
-}
-
-/**
- * Bridge a Node `fs.createReadStream` into a DOM `ReadableStream` for the
- * `Response` body. Mirrors the identical helper in `local-storage.ts`.
- */
-function nodeStreamToWeb(stream: Readable): ReadableStream<Uint8Array> {
-  return new ReadableStream<Uint8Array>({
-    start(controller) {
-      stream.on('data', (chunk: Buffer) => {
-        controller.enqueue(new Uint8Array(chunk))
-      })
-      stream.on('end', () => controller.close())
-      stream.on('error', (error) => controller.error(error))
-    },
-    cancel() {
-      stream.destroy()
-    },
-  })
-}
-
-interface ByteRange {
-  start: number
-  end: number // inclusive
-  total: number
-}
-
-/** Parse a single-range `Range: bytes=start-end` header (`null` if absent/unsupported). */
-function parseRange(header: string | undefined, size: number): ByteRange | 'unsatisfiable' | null {
-  if (header === undefined || !header.startsWith('bytes=')) {
-    return null
-  }
-  const spec = header.slice(6).trim()
-  if (spec.includes(',')) {
-    return null
-  }
-  const [startRaw, endRaw] = spec.split('-')
-  let start: number
-  let end: number
-  if (startRaw === '') {
-    const n = Number.parseInt(endRaw, 10)
-    if (!Number.isFinite(n) || n <= 0) {
-      return 'unsatisfiable'
-    }
-    start = Math.max(0, size - n)
-    end = size - 1
-  } else {
-    start = Number.parseInt(startRaw, 10)
-    end = endRaw === '' ? size - 1 : Number.parseInt(endRaw, 10)
-    if (!Number.isFinite(start) || (!Number.isFinite(end) && endRaw !== '')) {
-      return null
-    }
-  }
-  if (start < 0 || start >= size || end < start) {
-    return 'unsatisfiable'
-  }
-  return { start, end: Math.min(end, size - 1), total: size }
 }
 
 /**
@@ -171,45 +111,13 @@ fontsEmbeddedRouter.get('/fonts/embedded/*', async (c) => {
     return c.body(null, 500)
   }
 
-  const etag = `"${size}-${mtimeMs}"`
-  const baseHeaders: Record<string, string> = {
-    'Content-Type': contentTypeFor(storageKey),
-    'Cache-Control': IMMUTABLE_CACHE_CONTROL,
-    ETag: etag,
-    AcceptRanges: 'bytes',
-    'X-Content-Type-Options': 'nosniff',
-  }
-
-  const inm = c.req.header('if-none-match')
-  if (inm !== undefined && (inm === etag || inm === '*')) {
-    return new Response(null, { status: 304, headers: baseHeaders })
-  }
-
-  const range = parseRange(c.req.header('range'), size)
-  if (range === 'unsatisfiable') {
-    return new Response(null, {
-      status: 416,
-      headers: { ...baseHeaders, 'Content-Range': `bytes */${size}` },
-    })
-  }
-
-  if (range !== null) {
-    const { start, end, total } = range
-    const stream = createReadStream(abs, { start, end })
-    const length = end - start + 1
-    return new Response(nodeStreamToWeb(stream), {
-      status: 206,
-      headers: {
-        ...baseHeaders,
-        'Content-Length': String(length),
-        'Content-Range': `bytes ${start}-${end}/${total}`,
-      },
-    })
-  }
-
-  const stream = createReadStream(abs)
-  return new Response(nodeStreamToWeb(stream), {
-    status: 200,
-    headers: { ...baseHeaders, 'Content-Length': String(size) },
+  return respondWithLocalFile({
+    absPath: abs,
+    size,
+    mtimeMs,
+    contentType: contentTypeFor(storageKey),
+    cacheControl: IMMUTABLE_CACHE_CONTROL,
+    ifNoneMatch: c.req.header('if-none-match'),
+    range: c.req.header('range'),
   })
 })
