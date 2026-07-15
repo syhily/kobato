@@ -90,8 +90,8 @@ export interface UseEditorShellStateArgs<
   emptyMeta: TMeta
   metaDraftFromEntity: (entity: TEntity) => TMeta
   metaDraftsEqual: (a: TMeta, b: TMeta) => boolean
-  localDraftConfig: LocalDraftConfig
-  createDraftConfig: CreateDraftConfig
+  localDraftConfig: LocalDraftConfig<PortableTextBody>
+  createDraftConfig: CreateDraftConfig<PortableTextBody>
 
   upsertMetaFn: (input: TUpsertMetaInput) => Promise<TEntity>
   saveDraftFn: (input: SaveBodyInput) => Promise<SaveBodyOutput>

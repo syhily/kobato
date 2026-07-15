@@ -1,6 +1,5 @@
-import type { PortableTextBody } from '@/shared/pt/schema'
-
 import { useCreateDraft } from '@/client/hooks/use-create-draft'
+import { portableTextBodySchema, type PortableTextBody } from '@/shared/pt/schema'
 
 const POST_CREATE_CONFIG = {
   keyPrefix: 'cms-post-draft:new:',
@@ -9,6 +8,7 @@ const POST_CREATE_CONFIG = {
   createType: 'post-create' as const,
   editType: 'post-edit' as const,
   editKeyPrefix: 'cms-post-draft:',
+  bodySchema: portableTextBodySchema,
 }
 
 export interface CreatePostDraftMeta {
@@ -42,5 +42,5 @@ export interface UseCreatePostDraftResult {
 }
 
 export function useCreatePostDraft({ body, meta }: UseCreatePostDraftOptions): UseCreatePostDraftResult {
-  return useCreateDraft<CreatePostDraftMeta>(POST_CREATE_CONFIG, { body, meta })
+  return useCreateDraft<PortableTextBody, CreatePostDraftMeta>(POST_CREATE_CONFIG, { body, meta })
 }

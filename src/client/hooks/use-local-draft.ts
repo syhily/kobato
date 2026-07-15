@@ -1,19 +1,21 @@
+import type { ZodType } from 'zod'
+
 import { useCallback, useEffect, useRef, useState } from 'react'
 
 import { getDraft, removeDraft, setDraft, type DraftRecord, type DraftType } from '@/client/lib/draft-store'
-import { portableTextBodySchema, type PortableTextBody } from '@/shared/pt/schema'
 
-export interface LocalDraftConfig {
+export interface LocalDraftConfig<TBody> {
   keyPrefix: string
   broadcastName: string
   editType: DraftType
+  bodySchema: ZodType<TBody>
 }
 
-export interface StoredDraft {
+export interface StoredDraft<TBody> {
   version: number
   entityId: string
   clientRevisionToken: string
-  body: PortableTextBody
+  body: TBody
   savedAt: number
 }
 
@@ -22,25 +24,25 @@ interface BroadcastMessage {
   key: string
 }
 
-export interface UseLocalDraftOptions {
+export interface UseLocalDraftOptions<TBody> {
   entityId: string | null
   clientRevisionToken: string | null
-  body: PortableTextBody
+  body: TBody
   disabled?: boolean
 }
 
-export interface UseLocalDraftResult {
-  loadedDraft: StoredDraft | null
+export interface UseLocalDraftResult<TBody> {
+  loadedDraft: StoredDraft<TBody> | null
   clearDraft: () => void
 }
 
 const STORAGE_VERSION = 1
 
-export function useLocalDraft(
-  config: LocalDraftConfig,
-  { entityId, clientRevisionToken, body, disabled = false }: UseLocalDraftOptions,
-): UseLocalDraftResult {
-  const [loadedDraft, setLoadedDraft] = useState<StoredDraft | null>(null)
+export function useLocalDraft<TBody>(
+  config: LocalDraftConfig<TBody>,
+  { entityId, clientRevisionToken, body, disabled = false }: UseLocalDraftOptions<TBody>,
+): UseLocalDraftResult<TBody> {
+  const [loadedDraft, setLoadedDraft] = useState<StoredDraft<TBody> | null>(null)
   const lastReadKeyRef = useRef<string | null>(null)
   const loadCompleteRef = useRef(false)
 
@@ -86,7 +88,7 @@ export function useLocalDraft(
         if (entityId === null || clientRevisionToken === null) {
           return
         }
-        if (record.version !== STORAGE_VERSION || !Array.isArray(record.body)) {
+        if (record.version !== STORAGE_VERSION) {
           await removeDraft(key)
           if (!cancelled) {
             setLoadedDraft(null)
@@ -94,7 +96,7 @@ export function useLocalDraft(
           loadCompleteRef.current = true
           return
         }
-        const bodyResult = portableTextBodySchema.safeParse(record.body)
+        const bodyResult = config.bodySchema.safeParse(record.body)
         if (!bodyResult.success) {
           await removeDraft(key)
           if (!cancelled) {
@@ -122,7 +124,7 @@ export function useLocalDraft(
     return () => {
       cancelled = true
     }
-  }, [key, entityId, clientRevisionToken])
+  }, [key, entityId, clientRevisionToken, config.bodySchema])
 
   useEffect(() => {
     if (key === null || entityId === null || clientRevisionToken === null) {
@@ -131,7 +133,7 @@ export function useLocalDraft(
     if (!loadCompleteRef.current) {
       return
     }
-    const payload: DraftRecord<PortableTextBody> = {
+    const payload: DraftRecord<TBody> = {
       key,
       type: config.editType,
       body,

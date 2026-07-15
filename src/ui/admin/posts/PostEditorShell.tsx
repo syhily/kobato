@@ -3,6 +3,7 @@ import type { NavigateFunction } from 'react-router'
 import type { AdminPostDetailDto, AdminPostDto, UpsertPostMetaInput } from '@/shared/types/posts'
 
 import { orpc } from '@/client/api/client'
+import { portableTextBodySchema } from '@/shared/pt/schema'
 import { CreateModeBanner } from '@/ui/admin/editor-shared/CreateModeBanner'
 import { TitleSlugStrip } from '@/ui/admin/editor-shared/TitleSlugStrip'
 import { ActionBanner } from '@/ui/admin/editor-shell/ActionBanner'
@@ -31,6 +32,7 @@ const POST_LOCAL_DRAFT_CONFIG = {
   keyPrefix: 'cms-post-draft:',
   broadcastName: 'cms-post-draft',
   editType: 'post-edit' as const,
+  bodySchema: portableTextBodySchema,
 }
 
 const POST_CREATE_DRAFT_CONFIG = {
@@ -40,6 +42,7 @@ const POST_CREATE_DRAFT_CONFIG = {
   createType: 'post-create' as const,
   editType: 'post-edit' as const,
   editKeyPrefix: 'cms-post-draft:',
+  bodySchema: portableTextBodySchema,
 }
 
 function buildPostUpsertPayload({

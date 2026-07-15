@@ -1,11 +1,11 @@
-import type { PortableTextBody } from '@/shared/pt/schema'
-
 import { useLocalDraft, type StoredDraft } from '@/client/hooks/use-local-draft'
+import { portableTextBodySchema, type PortableTextBody } from '@/shared/pt/schema'
 
 const PAGE_CONFIG = {
   keyPrefix: 'cms-page-draft:',
   broadcastName: 'cms-page-draft',
   editType: 'page-edit' as const,
+  bodySchema: portableTextBodySchema,
 }
 
 export interface UsePageLocalDraftOptions {
@@ -16,7 +16,7 @@ export interface UsePageLocalDraftOptions {
 }
 
 export interface UsePageLocalDraftResult {
-  loadedDraft: StoredDraft | null
+  loadedDraft: StoredDraft<PortableTextBody> | null
   clearDraft: () => void
 }
 
@@ -26,7 +26,7 @@ export function usePageLocalDraft({
   body,
   disabled = false,
 }: UsePageLocalDraftOptions): UsePageLocalDraftResult {
-  return useLocalDraft(PAGE_CONFIG, {
+  return useLocalDraft<PortableTextBody>(PAGE_CONFIG, {
     entityId: pageId,
     clientRevisionToken,
     body,
