@@ -226,7 +226,8 @@ scrolling past unrelated concerns."
   body before the Like button; PortableText has no `friends` block.
 - Adding a toggle touches: db schema + migration + snapshot, page
   projection, page service + schema, shared DTOs,
-  `MetaSidebar` + `PageEditorShell`, and the `CreateDraftMeta` mirror
-  in `@/client/hooks/use-create-page-draft`. Test fixtures in
-  `tests/_helpers/catalog.ts` + `tests/service.cms-pages*.test.ts` need
-  the new default.
+  `MetaSidebar` + `PageEditorShell`, and the `PageMetaDraft` meta type
+  in `@/shared/types/pages` (passed through to
+  `@/client/hooks/use-create-draft` by the editor shell). Test fixtures
+  in `tests/_helpers/catalog.ts` + `tests/service.cms-pages*.test.ts`
+  need the new default.

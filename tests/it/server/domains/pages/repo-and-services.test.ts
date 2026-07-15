@@ -17,7 +17,6 @@ const { TEST_BLOG_SETTINGS_BUNDLE } = await import('#/_helpers/blog-settings')
 const repo = await import('@/server/domains/pages/repo')
 const mutate = await import('@/server/domains/pages/services/mutate')
 const adminQuery = await import('@/server/domains/pages/services/admin-query')
-const catalog = await import('@/server/domains/pages/services/catalog')
 const draft = await import('@/server/domains/pages/services/draft')
 const imageSync = await import('@/server/domains/pages/services/image-sync')
 const shared = await import('@/server/domains/pages/services/shared')
@@ -376,55 +375,6 @@ describe('pages/services/admin-query — listRevisionsForAdmin', () => {
     await seedRevision(p.id)
     const rows = await adminQuery.listRevisionsForAdmin(db, p.id)
     expect(rows).toHaveLength(1)
-  })
-})
-
-describe('pages/services/catalog — loadCatalogPages', () => {
-  it('returns empty when no visible pages', async () => {
-    expect(await catalog.loadCatalogPages(db)).toEqual([])
-  })
-
-  it('skips pages without a published revision', async () => {
-    await seedPage({ published: true, publishedRevisionId: null })
-    expect(await catalog.loadCatalogPages(db)).toEqual([])
-  })
-
-  it('returns visible published pages', async () => {
-    const rev = await seedRevision(0n)
-    await seedPage({ slug: 'visible', published: true, publishedRevisionId: rev.id })
-    const pages = await catalog.loadCatalogPages(db)
-    expect(pages).toHaveLength(1)
-    expect(pages[0].slug).toBe('visible')
-  })
-
-  it('caches the result for the second call', async () => {
-    const rev = await seedRevision(0n)
-    await seedPage({ slug: 'cached', published: true, publishedRevisionId: rev.id })
-    await catalog.loadCatalogPages(db)
-
-    await seedPage({ slug: 'second', published: true, publishedRevisionId: rev.id })
-    const cached = await catalog.loadCatalogPages(db)
-    expect(cached).toHaveLength(1)
-    expect(cached[0].slug).toBe('cached')
-  })
-})
-
-describe('pages/services/catalog — loadCatalogPageBySlug', () => {
-  it('returns null for unknown slug', async () => {
-    expect(await catalog.loadCatalogPageBySlug(db, 'nope')).toBeNull()
-  })
-
-  it('returns null for unpublished page', async () => {
-    await seedPage({ slug: 'unpub', published: false })
-    expect(await catalog.loadCatalogPageBySlug(db, 'unpub')).toBeNull()
-  })
-
-  it('returns the page when visible', async () => {
-    const rev = await seedRevision(0n)
-    await seedPage({ slug: 'visible', published: true, publishedRevisionId: rev.id })
-    const p = await catalog.loadCatalogPageBySlug(db, 'visible')
-    expect(p).not.toBeNull()
-    expect(p!.slug).toBe('visible')
   })
 })
 

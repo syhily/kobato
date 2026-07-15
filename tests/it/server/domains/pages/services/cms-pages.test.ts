@@ -109,7 +109,6 @@ const { DomainError } = await import('@/server/infra/http/errors')
 const adminQuery = await import('@/server/domains/pages/services/admin-query')
 const mutate = await import('@/server/domains/pages/services/mutate')
 const draft = await import('@/server/domains/pages/services/draft')
-const catalog = await import('@/server/domains/pages/services/catalog')
 
 function metaRow(overrides: Partial<PageMetaWithAuthor> = {}): PageMetaWithAuthor {
   const now = overrides.createdAt ?? new Date('2026-05-01T00:00:00.000Z')
@@ -549,41 +548,5 @@ describe('cms/pages/service — saveDraft / publishLatest CAS + force', () => {
       clientExpectedToken: 'cli-token',
       resultRevisionId: '901',
     })
-  })
-})
-
-describe('cms/pages/service — public catalog projection', () => {
-  it('loadCatalogPageBySlug 404s on soft-deleted rows', async () => {
-    vi.mocked(repo.findPublicPageMetaBySlug).mockResolvedValue(null)
-    expect(await catalog.loadCatalogPageBySlug(db, 'gone')).toBeNull()
-  })
-
-  it('loadCatalogPageBySlug 404s when meta.status=draft', async () => {
-    vi.mocked(repo.findPublicPageMetaBySlug).mockResolvedValue(metaRow({ published: false }))
-    expect(await catalog.loadCatalogPageBySlug(db, 'about')).toBeNull()
-  })
-
-  it('loadCatalogPageBySlug 404s when publishedRevisionId is null (no revision promoted)', async () => {
-    vi.mocked(repo.findPublicPageMetaBySlug).mockResolvedValue(metaRow({ id: 1n, publishedRevisionId: null }))
-    expect(await catalog.loadCatalogPageBySlug(db, 'about')).toBeNull()
-  })
-
-  it('loadCatalogPageBySlug joins the published revision body when present', async () => {
-    vi.mocked(repo.findPublicPageMetaBySlug).mockResolvedValue(metaRow({ id: 1n, publishedRevisionId: 200n }))
-    vi.mocked(query.findContentById).mockResolvedValue(
-      contentRow({
-        id: 200n,
-        revisionNo: 3,
-        status: 'published',
-        body: VALID_BODY,
-        imageSources: ['images/2026/05/foo.jpg'],
-        headings: [{ depth: 2, text: 'Hello', slug: 'hello' }],
-      }),
-    )
-    const page = await catalog.loadCatalogPageBySlug(db, 'about')
-    expect(page?.body).toEqual(VALID_BODY)
-    expect(page?.imageSources).toEqual(['images/2026/05/foo.jpg'])
-    expect(page?.headings).toEqual([{ depth: 2, text: 'Hello', slug: 'hello' }])
-    expect(page?.publishedRevisionId).toBe(200n)
   })
 })

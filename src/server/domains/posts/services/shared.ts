@@ -1,9 +1,8 @@
-import type { AdminPostDto, CmsPost } from '@/server/domains/posts/projection'
+import type { AdminPostDto } from '@/server/domains/posts/projection'
 import type { PostMetaRow } from '@/server/infra/db/types'
 import type { AdminRevisionDto } from '@/shared/types/revision'
 
 import { canEditPost, type ViewerContext as RbacViewerContext } from '@/server/domains/auth/rbac'
-import { createRedisCache } from '@/server/infra/cache/redis-cache'
 import { DomainError, ErrorMessages } from '@/server/infra/http/errors'
 
 export type ViewerContext = RbacViewerContext
@@ -59,14 +58,3 @@ export function assertOwnPostOr404(meta: PostMetaRow | null, viewer?: ViewerCont
     throw new DomainError('NOT_FOUND', ErrorMessages.NOT_FOUND)
   }
 }
-
-// Process-level cache for catalog post metas. Cleared on admin writes.
-// Blog catalog data changes infrequently (only on admin writes).
-// 5-minute TTL balances freshness with DB load.
-const postMetaCache = createRedisCache<CmsPost[]>('posts:catalog:metas', { ttlMs: 300_000 })
-
-export async function clearPostMetasCache(): Promise<void> {
-  await postMetaCache.clear()
-}
-
-export { postMetaCache }

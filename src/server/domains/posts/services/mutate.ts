@@ -10,7 +10,6 @@ import { restorePostMeta, softDeletePostMeta, updatePostMetaById } from '@/serve
 import { indexPost, removePostIndex } from '@/server/domains/posts/services/search-index'
 import {
   assertOwnPostOr404,
-  clearPostMetasCache,
   type UpsertPostMetaInput,
   type ViewerContext,
 } from '@/server/domains/posts/services/shared'
@@ -98,7 +97,6 @@ export async function createPost(
       await insertSlugRegistry(tx, { slug, entityType: 'post', entityId: inserted.id })
       return inserted
     })
-    await clearPostMetasCache()
     return toAdminPostDto(row, { tags: tagNames })
   } catch (err) {
     if (isUniqueConstraintError(err, 'post_slug_key') || isUniqueConstraintError(err, 'uq_slug_registry_slug')) {
@@ -160,7 +158,6 @@ export async function updatePostMeta(
     if (updated === null) {
       throw new DomainError('NOT_FOUND', '文章不存在或已被删除。')
     }
-    await clearPostMetasCache()
     return toAdminPostDto(updated, { tags: tagNames })
   } catch (err) {
     if (isUniqueConstraintError(err, 'post_slug_key') || isUniqueConstraintError(err, 'uq_slug_registry_slug')) {

@@ -32,7 +32,6 @@ vi.mock('@/server/domains/posts/services/search-index', () => ({
 
 vi.mock('@/server/domains/posts/services/shared', () => ({
   assertOwnPostOr404: vi.fn(),
-  clearPostMetasCache: vi.fn().mockResolvedValue(undefined),
 }))
 
 vi.mock('@/server/infra/db/operations/post-tag', () => ({

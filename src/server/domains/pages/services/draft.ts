@@ -5,16 +5,11 @@ import type { ContentRow, PageMetaRow } from '@/server/infra/db/types'
 import { publishLatestRevision, saveDraftRevision } from '@/server/domains/content/repos/mutate'
 import { findContentById, findLatestDraft, findLatestRevision } from '@/server/domains/content/repos/query'
 import { canonicalizeBodyOrThrow } from '@/server/domains/content/save-helpers'
+import { clearContentCaches } from '@/server/domains/content/shared'
 import { toCmsPage, type CmsPage } from '@/server/domains/pages/projection'
 import { findPageMetaById, findPublicPageMetaBySlug } from '@/server/domains/pages/repo'
 import { syncLibraryImageBlocks } from '@/server/domains/pages/services/image-sync'
-import {
-  clearPagesCache,
-  projectSaveResult,
-  type SavePageBodyInput,
-  type SavePageResult,
-} from '@/server/domains/pages/services/shared'
-import { clearSitemapCache } from '@/server/infra/cache/sitemap-cache'
+import { projectSaveResult, type SavePageBodyInput, type SavePageResult } from '@/server/domains/pages/services/shared'
 import { DomainError } from '@/server/infra/http/errors'
 import { getLogger } from '@/server/infra/logger'
 import { deriveSlug } from '@/server/infra/slug'
@@ -121,10 +116,7 @@ async function savePageBodyInternal(
     }
   }
   if (mode === 'publish' && wroteSuccessfully) {
-    await clearPagesCache()
-    await clearSitemapCache().catch((err: unknown) => {
-      log.warn('clear sitemap cache failed', { pageId: input.pageId, error: err })
-    })
+    await clearContentCaches('page', input.pageId)
   }
   return projectSaveResult(result, warnings.length > 0 ? warnings.join(' ') : undefined)
 }

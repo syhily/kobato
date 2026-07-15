@@ -1,19 +1,7 @@
 import type { SaveDraftResult, PublishLatestResult } from '@/server/domains/content/schema'
-import type { CmsPage } from '@/server/domains/pages/projection'
 import type { AdminRevisionDto } from '@/shared/types/revision'
 
 import { toAdminRevisionDto } from '@/server/domains/pages/projection'
-import { createRedisCache } from '@/server/infra/cache/redis-cache'
-
-// Visibility gate shared by the listing and single-page lookups.
-// A page is considered live publicly iff:
-// Blog catalog data changes infrequently (only on admin writes).
-// 5-minute TTL balances freshness with DB load.
-export const pagesCache = createRedisCache<CmsPage[]>('pages:catalog', { ttlMs: 300_000 })
-
-export async function clearPagesCache(): Promise<void> {
-  await pagesCache.clear()
-}
 
 export interface UpsertPageMetaInput {
   /** Existing page id; omitted on create. */

@@ -7,6 +7,7 @@ import { clearAllTables } from '#/_helpers/integration-db'
 import { makeAuthedCtx, makePublicCtx } from '#/_helpers/mock-ctx'
 import { flushWorkerRedis } from '#/_helpers/redis'
 import { callRpc, parseRpcJson } from '#/_helpers/rpc-call'
+import { getAdminBlogSettings } from '@/server/domains/settings/services/core'
 import { createDbPool, closePool } from '@/server/infra/db/pool'
 import { setting } from '@/server/infra/db/schema/config'
 
@@ -95,9 +96,7 @@ describe('integration / admin settings', () => {
     const updateBody = await parseRpcJson<{ success: boolean }>(updateRes)
     expect(updateBody.success).toBe(true)
 
-    const getRes = await callRpc('/admin/settings/loadAll', {}, ctx)
-    expect(getRes.status).toBe(200)
-    const data = await parseRpcJson<{ bundle: { limits: { maxRequestBodySize: number } } }>(getRes)
-    expect(data.bundle.limits.maxRequestBodySize).toBe(5 * 1024 * 1024)
+    const { bundle } = await getAdminBlogSettings(db)
+    expect(bundle?.limits?.maxRequestBodySize).toBe(5 * 1024 * 1024)
   })
 })

@@ -202,34 +202,6 @@ describe('posts/services/search-reindex — reindexSearchBatch', () => {
   })
 })
 
-describe('posts/services/catalog — loadCatalogPostMetas', () => {
-  it('returns [] when there are no visible posts', async () => {
-    const { loadCatalogPostMetas } = await import('@/server/domains/posts/services/catalog')
-    expect(await loadCatalogPostMetas(db)).toEqual([])
-  })
-  it('returns posts with revision + tags', async () => {
-    const revId = await seedContent({ type: 'post', revisionNo: 1, status: 'published' })
-    await seedPost({ slug: 'cat', publishedRevisionId: revId })
-    const { loadCatalogPostMetas } = await import('@/server/domains/posts/services/catalog')
-    const posts = await loadCatalogPostMetas(db)
-    expect(posts[0]?.slug).toBe('cat')
-  })
-})
-
-describe('posts/services/catalog — loadCatalogPostBySlug', () => {
-  it('returns null when the slug does not exist', async () => {
-    const { loadCatalogPostBySlug } = await import('@/server/domains/posts/services/catalog')
-    expect(await loadCatalogPostBySlug(db, 'nope')).toBeNull()
-  })
-  it('returns the post when visible', async () => {
-    const revId = await seedContent({ type: 'post', revisionNo: 1, status: 'published' })
-    await seedPost({ slug: 'cat-slug', publishedRevisionId: revId })
-    const { loadCatalogPostBySlug } = await import('@/server/domains/posts/services/catalog')
-    const r = await loadCatalogPostBySlug(db, 'cat-slug')
-    expect(r?.slug).toBe('cat-slug')
-  })
-})
-
 describe('posts/services/mutate — createPost', () => {
   it('creates a new draft post with slug derived from title', async () => {
     const { createPost } = await import('@/server/domains/posts/services/mutate')
