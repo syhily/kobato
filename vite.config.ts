@@ -34,19 +34,19 @@ export default defineConfig(({ command }) => ({
           target: 'node',
           external: ['sharp', '@napi-rs/canvas'],
         },
-  environments:
-    command === 'build'
-      ? {
-          ssr: {
-            // React Router ≥8.2 strips the `node` resolve condition from the
-            // ssr environment unless a Node adapter (@react-router/node etc.)
-            // appears in `dependencies` — ours live in devDependencies by
-            // convention (see AGENTS.md). Without `node`, packages that only
-            // expose node-conditional exports (e.g. mailgun.js) fail to
-            // resolve in the ssr build. Restore the condition explicitly.
-            resolve: {
-              conditions: ['node'],
-            },
+  environments: {
+    ssr: {
+      // React Router ≥8.2 strips the `node` resolve condition from the ssr
+      // environment unless a Node adapter (@react-router/node etc.) appears
+      // in `dependencies` — ours live in devDependencies by convention (see
+      // AGENTS.md). Without `node`, packages that only expose
+      // node-conditional exports (e.g. mailgun.js) fail to resolve. Restore
+      // the condition explicitly — dev SSR needs it just as much as build.
+      resolve: {
+        conditions: ['node'],
+      },
+      ...(command === 'build'
+        ? {
             build: {
               // Emit assets referenced by the server graph (the cnfs.wasm
               // `?init` import) into build/server/assets — Vite 8 defaults
@@ -57,9 +57,10 @@ export default defineConfig(({ command }) => ({
                 input: 'src/server.ts',
               },
             },
-          },
-        }
-      : undefined,
+          }
+        : {}),
+    },
+  },
   plugins: [
     reactRouterHonoServer(),
     ...(reactRouter() as Plugin[]),
