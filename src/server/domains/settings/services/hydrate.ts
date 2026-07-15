@@ -1,4 +1,3 @@
-/* oxlint-disable typescript/no-unsafe-type-assertion */
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
 import type { BundleKey, SettingsSection } from '@/shared/config/sections'
@@ -22,28 +21,29 @@ import { findSettingsByScopePrefix, upsertSetting } from '@/server/infra/db/oper
 import { getLogger } from '@/server/infra/logger'
 import { BUNDLE_KEYS } from '@/shared/config/sections'
 import { BLOG_SETTINGS_SNAPSHOT_SLOT } from '@/shared/config/snapshot'
+import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
 const log = getLogger('settings.snapshot')
 
 function bundleSet(bundle: BlogSettingsBundle, key: BundleKey, value: unknown): void {
-  ;(bundle as Record<BundleKey, unknown>)[key] = value
+  unsafeCast<Record<BundleKey, unknown>>(bundle)[key] = value
 }
 
 function bundleHas(bundle: BlogSettingsBundle, key: BundleKey): boolean {
-  return (bundle as Record<BundleKey, unknown>)[key] !== null
+  return unsafeCast<Record<BundleKey, unknown>>(bundle)[key] !== null
 }
 
 function emptyBundle(): BlogSettingsBundle {
-  return Object.fromEntries(BUNDLE_KEYS.map((key) => [key, null])) as Record<BundleKey, null> as BlogSettingsBundle
+  return unsafeCast<BlogSettingsBundle>(Object.fromEntries(BUNDLE_KEYS.map((key) => [key, null])))
 }
 
 function decryptSecretsInBundle(bundle: BlogSettingsBundle): void {
   for (const { bundleKey, path, field } of SECRET_FIELDS) {
-    const sectionData = bundle[bundleKey] as Record<string, unknown> | null
+    const sectionData = unsafeCast<Record<string, unknown> | null>(bundle[bundleKey])
     if (sectionData === null) {
       continue
     }
-    const bucket = sectionData[path] as Record<string, unknown> | undefined
+    const bucket = unsafeCast<Record<string, unknown> | undefined>(sectionData[path])
     if (!bucket) {
       continue
     }

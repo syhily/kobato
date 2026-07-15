@@ -9,6 +9,7 @@ import {
   type RouteManifestRoute,
 } from '@/shared/constants/route-warmup'
 import { isRecord } from '@/shared/utils/type-guards'
+import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
 export interface WarmupManifest {
   version: number
@@ -178,13 +179,12 @@ function buildRouteTree(manifest: RouteManifest): RouteObject[] {
     const children = (childrenByParent.get(id) ?? []).map((r) => build(r.id))
     // The React Router `RouteObject` union types `index` as a discriminant,
     // so constructing it with optional fields requires an assertion.
-    // oxlint-disable-next-line typescript/no-unsafe-type-assertion
-    return {
+    return unsafeCast<RouteObject>({
       id,
       path: route?.path,
       index: route?.index,
       children: children.length > 0 ? children : undefined,
-    } as RouteObject
+    })
   }
 
   return [build('root')]

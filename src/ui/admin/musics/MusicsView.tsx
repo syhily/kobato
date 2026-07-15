@@ -14,6 +14,7 @@ import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router'
 
 import { orpc } from '@/client/api/client'
+import { unsafeCast } from '@/shared/utils/unsafe-cast'
 import { AlbumCard } from '@/ui/admin/musics/AlbumCard'
 import { MusicLibraryHero } from '@/ui/admin/musics/MusicLibraryHero'
 import { useMusicPlayerActions } from '@/ui/admin/musics/MusicPlayerContext'
@@ -29,8 +30,7 @@ const SORT_LABELS: Record<MusicSortBy, string> = {
 }
 
 function sortLabelEntries(): [MusicSortBy, string][] {
-  // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- Object.entries on Record<T, V> always returns [string, V][]
-  return Object.entries(SORT_LABELS) as [MusicSortBy, string][]
+  return unsafeCast<[MusicSortBy, string][]>(Object.entries(SORT_LABELS))
 }
 
 function SortIcon({ sortBy, sortOrder }: { sortBy: MusicSortBy; sortOrder: 'asc' | 'desc' }) {

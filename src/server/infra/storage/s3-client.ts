@@ -1,4 +1,3 @@
-/* oxlint-disable typescript/no-unsafe-type-assertion */
 import type { ServiceInputTypes, ServiceOutputTypes, _Object } from '@aws-sdk/client-s3'
 import type { FinalizeRequestMiddleware, HandlerExecutionContext } from '@smithy/types'
 
@@ -10,6 +9,7 @@ import type { AssetsSettings } from '@/shared/config/types'
 import { ActionFailure } from '@/server/infra/http/errors'
 import { getLogger } from '@/server/infra/logger'
 import { requireBlogSettingsSection } from '@/shared/config/getters'
+import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
 // `@aws-sdk/client-s3` is loaded lazily via `getAwsSdk()` because
 // `@aws-sdk/core` ships an ESM index that does
@@ -157,7 +157,7 @@ function installDeleteObjectsMd5Fallback(_sdk: AwsSdk, client: S3ClientInstance)
       if (context.commandName !== 'DeleteObjectsCommand') {
         return next(args)
       }
-      const request = args.request as { headers: Record<string, string>; body?: unknown }
+      const request = unsafeCast<{ headers: Record<string, string>; body?: unknown }>(args.request)
       for (const header of Object.keys(request.headers)) {
         const lower = header.toLowerCase()
         if (lower.startsWith('x-amz-checksum-') || lower.startsWith('x-amz-sdk-checksum-')) {
@@ -165,7 +165,7 @@ function installDeleteObjectsMd5Fallback(_sdk: AwsSdk, client: S3ClientInstance)
         }
       }
       if (request.body !== undefined && request.body !== null) {
-        const body = Buffer.from(request.body as string | Uint8Array)
+        const body = Buffer.from(unsafeCast<string | Uint8Array>(request.body))
         request.headers['Content-MD5'] = createHash('md5').update(body).digest('base64')
       }
       return next(args)
@@ -219,8 +219,8 @@ export async function s3ObjectExists(key: string): Promise<boolean> {
     await client.send(new sdk.HeadObjectCommand({ Bucket: bucket, Key: key }))
     return true
   } catch (error) {
-    const name = (error as { name?: string }).name
-    const statusCode = (error as { $metadata?: { httpStatusCode?: number } }).$metadata?.httpStatusCode
+    const name = unsafeCast<{ name?: string }>(error).name
+    const statusCode = unsafeCast<{ $metadata?: { httpStatusCode?: number } }>(error).$metadata?.httpStatusCode
     if (name === 'NotFound' || statusCode === 404) {
       return false
     }
@@ -292,7 +292,7 @@ export async function getS3ObjectBuffer(key: string, maxSize = MAX_S3_BUFFER_SIZ
   if (contentLength !== undefined && contentLength > maxSize) {
     throw new ActionFailure(413, `S3 对象过大 (${contentLength} 字节)，超出 ${maxSize} 字节限制`)
   }
-  const stream = response.Body as Readable
+  const stream = unsafeCast<Readable>(response.Body)
   const chunks: Buffer[] = []
   let received = 0
   return new Promise((resolve, reject) => {
@@ -322,7 +322,7 @@ export async function getS3ObjectStream(key: string): Promise<Readable> {
   if (response.Body === undefined) {
     throw new ActionFailure(404, 'S3 对象不存在或内容为空')
   }
-  return response.Body as Readable
+  return unsafeCast<Readable>(response.Body)
 }
 
 export async function putS3Object(key: string, body: Buffer | Readable, contentType?: string): Promise<void> {

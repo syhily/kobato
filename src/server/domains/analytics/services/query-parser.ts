@@ -8,6 +8,7 @@ import {
   type PresetKey,
 } from '@/shared/contracts/analytics'
 import { idFromString } from '@/shared/utils/id'
+import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
 export interface AnalyticsQueryInput {
   range: DateRange
@@ -19,7 +20,7 @@ export interface AnalyticsQueryInput {
 const FILTERABLE_SET = new Set<string>(FILTERABLE_TYPES)
 
 function isPresetKey(value: string): value is PresetKey {
-  return (PRESET_KEYS as readonly string[]).includes(value)
+  return unsafeCast<readonly string[]>(PRESET_KEYS).includes(value)
 }
 
 export function parseAnalyticsSearch(searchParams: URLSearchParams): AnalyticsQueryInput {
@@ -53,8 +54,7 @@ export function parseAnalyticsSearch(searchParams: URLSearchParams): AnalyticsQu
         for (const [key, value] of Object.entries(parsed)) {
           if (typeof value === 'string' && value.length > 0 && FILTERABLE_SET.has(key)) {
             // FILTERABLE_SET is built from FILTERABLE_TYPES, so key is a valid MetricType.
-            // oxlint-disable-next-line typescript/no-unsafe-type-assertion
-            filters[key as MetricType] = value
+            filters[unsafeCast<MetricType>(key)] = value
           }
         }
       }

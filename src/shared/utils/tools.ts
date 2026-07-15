@@ -1,5 +1,5 @@
-/* oxlint-disable typescript/no-unsafe-type-assertion */
 // Parse a string to BigInt, returning null on failure instead of throwing.
+import { unsafeCast } from '@/shared/utils/unsafe-cast'
 export function safeBigInt(value: string): bigint | null {
   try {
     return BigInt(value)
@@ -80,7 +80,7 @@ export function sampleSize<T>(items: readonly T[], n: number, seed?: string): T[
 // Group an array by the result of a key function. Replaces _.groupBy for the
 // (currently single) call site that needed it.
 export function groupBy<T, K extends string | number>(items: readonly T[], keyFn: (item: T) => K): Record<K, T[]> {
-  const result = {} as Record<K, T[]>
+  const result = unsafeCast<Record<K, T[]>>({})
   for (const item of items) {
     const key = keyFn(item)
     ;(result[key] ??= []).push(item)
@@ -95,13 +95,13 @@ export function deepClone<T>(obj: T): T {
     return obj
   }
   if (Array.isArray(obj)) {
-    return obj.map(deepClone) as unknown as T
+    return unsafeCast<T>(obj.map(deepClone))
   }
   const cloned: Record<string, unknown> = {}
-  for (const key of Reflect.ownKeys(obj as object)) {
-    cloned[key as string] = deepClone((obj as Record<string, unknown>)[key as string])
+  for (const key of Reflect.ownKeys(unsafeCast<object>(obj))) {
+    cloned[unsafeCast<string>(key)] = deepClone(unsafeCast<Record<string, unknown>>(obj)[unsafeCast<string>(key)])
   }
-  return cloned as T
+  return unsafeCast<T>(cloned)
 }
 
 /** Recursively freeze an object and all its nested objects/arrays.
@@ -115,7 +115,7 @@ export function deepFreeze<T>(obj: T): T {
   }
   Object.freeze(obj)
   for (const key of Reflect.ownKeys(obj)) {
-    const value = (obj as Record<PropertyKey, unknown>)[key]
+    const value = unsafeCast<Record<PropertyKey, unknown>>(obj)[key]
     if (value !== null && typeof value === 'object') {
       deepFreeze(value)
     }

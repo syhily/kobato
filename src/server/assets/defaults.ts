@@ -1,5 +1,6 @@
-/* oxlint-disable typescript/no-unsafe-type-assertion */
 import { createHash } from 'node:crypto'
+
+import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
 // Fallback site assets bundled into the server build via Vite's glob
 // import. SVGs are inlined as raw text (also rendered inline elsewhere);
@@ -26,17 +27,21 @@ export const BINARY_SLOTS = [
 export type BinarySlot = (typeof BINARY_SLOTS)[number]
 const BINARY_SLOT_SET = new Set<string>(BINARY_SLOTS)
 
-const svgModules = import.meta.glob('./defaults/**/*.svg', {
-  query: '?raw',
-  import: 'default',
-  eager: true,
-}) as Record<string, string>
+const svgModules = unsafeCast<Record<string, string>>(
+  import.meta.glob('./defaults/**/*.svg', {
+    query: '?raw',
+    import: 'default',
+    eager: true,
+  }),
+)
 
-const binaryModules = import.meta.glob(['./defaults/**/*.png', './defaults/**/*.ico'], {
-  query: '?inline',
-  import: 'default',
-  eager: true,
-}) as Record<string, string>
+const binaryModules = unsafeCast<Record<string, string>>(
+  import.meta.glob(['./defaults/**/*.png', './defaults/**/*.ico'], {
+    query: '?inline',
+    import: 'default',
+    eager: true,
+  }),
+)
 
 // `favicon.svg` -> `faviconSvg`, `logo-large-dark.svg` -> `logoLargeDarkSvg`,
 // `apple-touch-icon.png` -> `appleTouchIcon`, `favicon.ico` -> `faviconIco`.
@@ -63,14 +68,14 @@ function indexBySlot<T, U, S extends string>(
     if (!expected.has(slot)) {
       throw new Error(`Default ${kind} asset ${path} maps to unknown slot "${slot}"`)
     }
-    out[slot as S] = transform(value)
+    out[unsafeCast<S>(slot)] = transform(value)
   }
   for (const slot of expected) {
     if (!(slot in out)) {
       throw new Error(`Missing default ${kind} asset for slot "${slot}"`)
     }
   }
-  return out as Record<S, U>
+  return unsafeCast<Record<S, U>>(out)
 }
 
 export const DEFAULT_SVG: Readonly<Record<SvgSlot, string>> = indexBySlot(svgModules, SVG_SLOT_SET, 'svg', (raw) => raw)
@@ -95,10 +100,10 @@ export const DEFAULT_BINARY: Readonly<Record<BinarySlot, Buffer>> = indexBySlot(
 // hashing on every request.
 function hashRecord<K extends string>(record: Record<K, Buffer | string>): Record<K, string> {
   const out: Partial<Record<K, string>> = {}
-  for (const [k, v] of Object.entries(record) as [K, Buffer | string][]) {
+  for (const [k, v] of unsafeCast<[K, Buffer | string][]>(Object.entries(record))) {
     out[k] = createHash('sha256').update(v).digest('hex')
   }
-  return out as Record<K, string>
+  return unsafeCast<Record<K, string>>(out)
 }
 
 export const DEFAULT_SVG_ETAG: Readonly<Record<SvgSlot, string>> = hashRecord(DEFAULT_SVG)

@@ -6,6 +6,7 @@ import superjson from 'superjson'
 import { REDIS_KEY_PREFIX, REDIS_URL } from '@/server/infra/env'
 import { registerShutdownHook } from '@/server/infra/lifecycle'
 import { getLogger } from '@/server/infra/logger'
+import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
 const log = getLogger('redis')
 
@@ -105,19 +106,16 @@ export const storage = {
       return null
     }
     // generic Buffer-to-T cast is intrinsic to the raw API
-    // oxlint-disable-next-line typescript/no-unsafe-type-assertion
-    return raw as T
+    return unsafeCast<T>(raw)
   },
 
   async setItemRaw(key: string, value: unknown, opts?: { ttl?: number }): Promise<void> {
     if (opts?.ttl) {
       // ioredis set() accepts string | Buffer
-      // oxlint-disable-next-line typescript/no-unsafe-type-assertion
-      await redis.set(key, value as string | Buffer, 'EX', opts.ttl)
+      await redis.set(key, unsafeCast<string | Buffer>(value), 'EX', opts.ttl)
     } else {
       // ioredis set() accepts string | Buffer
-      // oxlint-disable-next-line typescript/no-unsafe-type-assertion
-      await redis.set(key, value as string | Buffer)
+      await redis.set(key, unsafeCast<string | Buffer>(value))
     }
   },
 

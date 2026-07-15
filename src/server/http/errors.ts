@@ -1,4 +1,3 @@
-/* oxlint-disable typescript/no-unsafe-type-assertion */
 import type { Context } from 'hono'
 
 import { HTTPException } from 'hono/http-exception'
@@ -8,6 +7,7 @@ import type { Env } from '@/server/http/context'
 
 import { ActionFailure, DomainError, domainStatus, ErrorMessages } from '@/server/infra/http/errors'
 import { getLogger } from '@/server/infra/logger'
+import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
 const log = getLogger('http.error')
 
@@ -20,10 +20,10 @@ export function onErrorHandler(err: Error, c: Context<Env>): Response {
       {
         error: {
           message: err.message,
-          issues: err.cause as { message: string; path?: string[] }[] | undefined,
+          issues: unsafeCast<{ message: string; path?: string[] }[] | undefined>(err.cause),
         },
       },
-      err.status as 400 | 401 | 403 | 404 | 409 | 413 | 429 | 500,
+      unsafeCast<400 | 401 | 403 | 404 | 409 | 413 | 429 | 500>(err.status),
     )
   }
 
@@ -40,7 +40,7 @@ export function onErrorHandler(err: Error, c: Context<Env>): Response {
           issues: err.issues,
         },
       },
-      err.status as 400 | 401 | 403 | 404 | 409 | 413 | 429 | 500,
+      unsafeCast<400 | 401 | 403 | 404 | 409 | 413 | 429 | 500>(err.status),
     )
   }
 
@@ -48,7 +48,7 @@ export function onErrorHandler(err: Error, c: Context<Env>): Response {
     c.header('X-Request-Id', requestId)
     return c.json(
       { error: { message: err.message, issues: err.issues } },
-      domainStatus(err) as 400 | 401 | 403 | 404 | 409 | 429 | 500,
+      unsafeCast<400 | 401 | 403 | 404 | 409 | 429 | 500>(domainStatus(err)),
     )
   }
 

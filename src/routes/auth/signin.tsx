@@ -35,6 +35,7 @@ import {
 import { bundleFromMatches, routeMeta } from '@/server/render/seo/meta'
 import { getBlogSettingsBundleSync } from '@/shared/config/getters'
 import { safeRedirectPath } from '@/shared/utils/safe-url'
+import { unsafeCast } from '@/shared/utils/unsafe-cast'
 import { LoginForm, LostPasswordForm, OtpForm, ResetPasswordForm } from '@/ui/admin/auth/AdminCredentialsForm'
 import { BrandLogo } from '@/ui/public/chrome/BrandLogo'
 
@@ -323,8 +324,8 @@ export async function action({ request, context }: Route.ActionArgs) {
     try {
       const result = await verifyAuthenticationResponse(
         db,
-        // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- parsed JSON validated by verifyAuthenticationResponse
-        response as Parameters<typeof verifyAuthenticationResponse>[1],
+        // parsed JSON validated by verifyAuthenticationResponse
+        unsafeCast<Parameters<typeof verifyAuthenticationResponse>[1]>(response),
         rawChallenge,
       )
       const established = await establishLoginSession(db, session, result.user, request, clientAddress, {
@@ -408,10 +409,10 @@ export default function LoginRoute({ actionData, loaderData }: Route.ComponentPr
       )}
       {loaderData.action === 'verifyotp' && 'pendingOtpEmail' in loaderData && 'pendingOtpSentAt' in loaderData && (
         <OtpForm
-          // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- narrowed by 'in' check above
-          email={loaderData.pendingOtpEmail as string}
-          // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- narrowed by 'in' check above
-          sentAt={loaderData.pendingOtpSentAt as number}
+          // narrowed by 'in' check above
+          email={unsafeCast<string>(loaderData.pendingOtpEmail)}
+          // narrowed by 'in' check above
+          sentAt={unsafeCast<number>(loaderData.pendingOtpSentAt)}
           isSubmitting={isSubmitting}
           csrfToken={csrfToken}
           actionData={actionData}

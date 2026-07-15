@@ -1,4 +1,3 @@
-/* oxlint-disable typescript/no-unsafe-type-assertion */
 import { createMiddleware } from 'hono/factory'
 
 import type { Env } from '@/server/http/context'
@@ -7,13 +6,16 @@ import { ensureCsrfToken } from '@/server/domains/auth/csrf'
 import { resolveSessionContext } from '@/server/domains/auth/primitives'
 import { commitSessionWithMaxAge } from '@/server/domains/auth/session-storage'
 import { getClientAddress } from '@/server/http/utils/client-address'
+import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
 function getDirectRemoteAddress(c: { env: unknown }): string | undefined {
-  const env = c.env as Record<string, unknown> | undefined
+  const env = unsafeCast<Record<string, unknown> | undefined>(c.env)
   const incoming =
-    (env?.incoming as Record<string, unknown> | undefined) ??
-    (env?.server as Record<string, unknown> | undefined)?.incoming
-  const socket = (incoming as Record<string, unknown> | undefined)?.socket as Record<string, unknown> | undefined
+    unsafeCast<Record<string, unknown> | undefined>(env?.incoming) ??
+    unsafeCast<Record<string, unknown> | undefined>(env?.server)?.incoming
+  const socket = unsafeCast<Record<string, unknown> | undefined>(
+    unsafeCast<Record<string, unknown> | undefined>(incoming)?.socket,
+  )
   return typeof socket?.remoteAddress === 'string' ? socket.remoteAddress : undefined
 }
 

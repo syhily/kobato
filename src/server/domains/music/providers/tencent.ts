@@ -1,10 +1,10 @@
-/* oxlint-disable typescript/no-unsafe-type-assertion */
 import { z } from 'zod'
 
 import type { MusicProvider, ProviderSearchResult, ProviderTrack } from '@/server/domains/music/providers/types'
 
 import { ActionFailure } from '@/server/infra/http/errors'
 import { getLogger } from '@/server/infra/logger'
+import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
 const log = getLogger('music.tencent')
 
@@ -214,14 +214,14 @@ export const tencentProvider: MusicProvider = {
     }
 
     // Support both req_1 (batch key) and music.search.SearchCgiService (service key) response shapes.
-    const typedRes = res as Record<string, unknown>
-    const batchData = typedRes.req_1 as Record<string, unknown> | undefined
-    const serviceData = typedRes['music.search.SearchCgiService'] as Record<string, unknown> | undefined
-    const dataBlock = (batchData ?? serviceData) as Record<string, unknown> | undefined
-    const innerData = dataBlock?.data as Record<string, unknown> | undefined
-    const body = innerData?.body as Record<string, unknown> | undefined
-    const song = body?.song as Record<string, unknown> | undefined
-    const songs = (song?.list as RawTencentSong[] | undefined) ?? []
+    const typedRes = unsafeCast<Record<string, unknown>>(res)
+    const batchData = unsafeCast<Record<string, unknown> | undefined>(typedRes.req_1)
+    const serviceData = unsafeCast<Record<string, unknown> | undefined>(typedRes['music.search.SearchCgiService'])
+    const dataBlock = unsafeCast<Record<string, unknown> | undefined>(batchData ?? serviceData)
+    const innerData = unsafeCast<Record<string, unknown> | undefined>(dataBlock?.data)
+    const body = unsafeCast<Record<string, unknown> | undefined>(innerData?.body)
+    const song = unsafeCast<Record<string, unknown> | undefined>(body?.song)
+    const songs = unsafeCast<RawTencentSong[] | undefined>(song?.list) ?? []
     const tracks = songs.map(toTrack)
 
     const hasMore = songs.length > 0
@@ -246,7 +246,7 @@ export const tencentProvider: MusicProvider = {
       throw new ActionFailure(502, '上游音乐服务返回异常，请稍后再试')
     }
 
-    const trackInfo = parsed.data.songinfo?.data?.track_info as RawTencentSong | undefined
+    const trackInfo = unsafeCast<RawTencentSong | undefined>(parsed.data.songinfo?.data?.track_info)
     return trackInfo ? toTrack(trackInfo) : null
   },
 
@@ -263,10 +263,10 @@ export const tencentProvider: MusicProvider = {
       },
     })
 
-    const typedDetail = detailRes as Record<string, unknown>
-    const songinfo = typedDetail.songinfo as Record<string, unknown> | undefined
-    const data = songinfo?.data as Record<string, unknown> | undefined
-    const songData = data?.track_info as RawTencentSong | undefined
+    const typedDetail = unsafeCast<Record<string, unknown>>(detailRes)
+    const songinfo = unsafeCast<Record<string, unknown> | undefined>(typedDetail.songinfo)
+    const data = unsafeCast<Record<string, unknown> | undefined>(songinfo?.data)
+    const songData = unsafeCast<RawTencentSong | undefined>(data?.track_info)
 
     if (!songData?.file?.media_mid) {
       throw new ActionFailure(404, '上游未返回完整的歌曲文件信息')
@@ -312,11 +312,11 @@ export const tencentProvider: MusicProvider = {
       data: JSON.stringify(payload),
     })
 
-    const typed = vkeyRes as Record<string, unknown>
-    const req0 = typed.req_0 as Record<string, unknown> | undefined
-    const req0Data = req0?.data as Record<string, unknown> | undefined
-    const midurlinfo = req0Data?.midurlinfo as Array<Record<string, string>> | undefined
-    const sip = req0Data?.sip as string[] | undefined
+    const typed = unsafeCast<Record<string, unknown>>(vkeyRes)
+    const req0 = unsafeCast<Record<string, unknown> | undefined>(typed.req_0)
+    const req0Data = unsafeCast<Record<string, unknown> | undefined>(req0?.data)
+    const midurlinfo = unsafeCast<Array<Record<string, string>> | undefined>(req0Data?.midurlinfo)
+    const sip = unsafeCast<string[] | undefined>(req0Data?.sip)
 
     if (!midurlinfo || !sip) {
       throw new ActionFailure(404, '上游未返回音频地址（vkey 解析失败）')
@@ -365,13 +365,13 @@ export const tencentProvider: MusicProvider = {
 
     let data: Record<string, unknown>
     try {
-      data = JSON.parse(jsonStr) as Record<string, unknown>
+      data = unsafeCast<Record<string, unknown>>(JSON.parse(jsonStr))
     } catch {
       log.warn('Failed to parse Tencent lyric response', { sourceId: track.sourceId })
       return null
     }
 
-    const lyricBase64 = data.lyric as string | undefined
+    const lyricBase64 = unsafeCast<string | undefined>(data.lyric)
     if (!lyricBase64) {
       return null
     }
