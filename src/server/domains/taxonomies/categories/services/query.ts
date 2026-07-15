@@ -1,10 +1,11 @@
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
-import { and, asc, eq, inArray, isNull, sql } from 'drizzle-orm'
+import { and, asc, eq, inArray, isNotNull, isNull, sql } from 'drizzle-orm'
 
 import type { AdminCategoriesListResult } from '@/server/domains/taxonomies/categories/projection'
 import type { Category } from '@/shared/types/catalog'
 
+import { liveContentWhere } from '@/server/domains/content/schema'
 import { hydrateImageRefs } from '@/server/domains/images/services/enhance'
 import { toAdminCategoryDto } from '@/server/domains/taxonomies/categories/projection'
 import { createRedisCache } from '@/server/infra/cache/redis-cache'
@@ -26,7 +27,13 @@ async function countPostsByCategories(db: NodePgDatabase): Promise<Map<string, n
       count: sql<number>`count(${postMetaTable.id})::int`,
     })
     .from(postMetaTable)
-    .where(and(isNull(postMetaTable.deletedAt), eq(postMetaTable.published, true)))
+    .where(
+      and(
+        isNull(postMetaTable.deletedAt),
+        eq(postMetaTable.published, true),
+        isNotNull(postMetaTable.publishedRevisionId),
+      ),
+    )
     .groupBy(postMetaTable.category)
   const counts = new Map<string, number>()
   for (const row of rows) {
@@ -105,10 +112,16 @@ async function queryAllCategories(db: NodePgDatabase): Promise<Category[]> {
     .from(postMetaTable)
     .where(
       and(
-        isNull(postMetaTable.deletedAt),
-        eq(postMetaTable.published, true),
+        liveContentWhere(
+          {
+            deletedAt: postMetaTable.deletedAt,
+            published: postMetaTable.published,
+            publishedRevisionId: postMetaTable.publishedRevisionId,
+            publishedAt: postMetaTable.publishedAt,
+          },
+          { asOf: now },
+        ),
         eq(postMetaTable.visible, true),
-        sql`${postMetaTable.publishedAt} <= ${now}`,
       ),
     )
     .groupBy(postMetaTable.category)

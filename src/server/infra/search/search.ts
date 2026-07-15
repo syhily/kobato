@@ -1,6 +1,6 @@
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
-import { and, cosineDistance, desc, eq, gt, isNull, or, sql } from 'drizzle-orm'
+import { and, cosineDistance, desc, eq, gt, or, sql, type SQL } from 'drizzle-orm'
 import { createHash } from 'node:crypto'
 
 import { ilikeEscape } from '@/server/infra/db/ilike-escape'
@@ -90,10 +90,10 @@ export async function invalidateSearchCache(): Promise<void> {
 async function executeSearch(
   db: NodePgDatabase,
   settings: ReturnType<typeof getSearchSettings>,
+  baseWhere: SQL,
   query: string,
 ): Promise<string[]> {
   const trimmed = query.trim()
-  const baseWhere = and(isNull(post.deletedAt), eq(post.published, true))
   const likeWhere = and(
     baseWhere,
     or(
@@ -181,8 +181,11 @@ async function executeSearch(
 
 // Public API
 
+// The visibility gate is supplied by the caller (infra has zero business
+// knowledge — the "live" rule lives in `@/server/domains/content/schema`).
 export async function searchPosts(
   db: NodePgDatabase,
+  baseWhere: SQL,
   query: string,
   limit: number,
   offset: number = 0,
@@ -215,7 +218,7 @@ export async function searchPosts(
   }
 
   // Execute full search
-  const allSlugs = await executeSearch(db, settings, trimmed)
+  const allSlugs = await executeSearch(db, settings, baseWhere, trimmed)
 
   // Write cache (only when non-empty, as requested)
   if (allSlugs.length > 0) {

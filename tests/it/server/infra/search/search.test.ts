@@ -26,8 +26,19 @@ vi.mock('@/server/infra/search/openai', () => ({
 }))
 
 const { searchPosts } = await import('@/server/infra/search/search')
+const { liveContentWhere } = await import('@/server/domains/content/schema')
 const { setBlogSettingsBundleForTests } = await import('@/server/domains/settings/services/test-utils')
 const { TEST_BLOG_SETTINGS_BUNDLE } = await import('#/_helpers/blog-settings')
+
+/** The same caller-supplied live gate the production search loader passes. */
+function liveWhere() {
+  return liveContentWhere({
+    deletedAt: post.deletedAt,
+    published: post.published,
+    publishedRevisionId: post.publishedRevisionId,
+    publishedAt: post.publishedAt,
+  })
+}
 
 beforeEach(async () => {
   await clearAllTables(db)
@@ -44,6 +55,7 @@ async function seedPost(overrides: Partial<typeof post.$inferInsert> = {}) {
       title: 'Test Post',
       summary: 'A test summary',
       publishedAt: overrides.publishedAt ?? new Date(),
+      publishedRevisionId: 1n,
       ...overrides,
     })
     .returning()
@@ -72,7 +84,7 @@ function enableVectorMode() {
 
 describe('services/search — searchPosts', () => {
   it('returns empty results for empty query', async () => {
-    const result = await searchPosts(db, '', 10)
+    const result = await searchPosts(db, liveWhere(), '', 10)
     expect(result.hits).toEqual([])
     expect(result.totalPages).toBe(0)
   })
@@ -81,7 +93,7 @@ describe('services/search — searchPosts', () => {
     await seedPost({ slug: 'post-with-phrase', title: '向量数据库入门' })
     await seedPost({ slug: 'another-post', title: '另一个文章' })
 
-    const result = await searchPosts(db, '向量数据库', 10)
+    const result = await searchPosts(db, liveWhere(), '向量数据库', 10)
 
     expect(result.hits).toEqual(['post-with-phrase'])
     expect(result.totalPages).toBe(1)
@@ -102,7 +114,7 @@ describe('services/search — searchPosts', () => {
     })
     await seedPost({ slug: 'post-c', title: 'Test C', publishedAt: now })
 
-    const result = await searchPosts(db, 'test', 2, 1)
+    const result = await searchPosts(db, liveWhere(), 'test', 2, 1)
 
     // Ordered by publishedAt DESC: post-c, post-b, post-a
     // offset=1, limit=2 → post-b, post-a
@@ -118,7 +130,7 @@ describe('services/search — searchPosts', () => {
     await seedPost({ slug: 'vector-match-1', title: 'Semantic One' })
     await seedPost({ slug: 'vector-match-2', title: 'Semantic Two' })
 
-    const result = await searchPosts(db, 'semantic', 10)
+    const result = await searchPosts(db, liveWhere(), 'semantic', 10)
 
     expect(mocks.generateEmbedding).toHaveBeenCalledWith('semantic')
     // Vector search won't match because no embeddings in DB,
@@ -133,9 +145,27 @@ describe('services/search — searchPosts', () => {
 
     await seedPost({ slug: 'like-fallback', title: 'Test Fallback' })
 
-    const result = await searchPosts(db, 'test', 10)
+    const result = await searchPosts(db, liveWhere(), 'test', 10)
 
     expect(mocks.generateEmbedding).toHaveBeenCalled()
     expect(result.hits).toEqual(['like-fallback'])
+  })
+
+  it('excludes scheduled posts (publishedAt in the future)', async () => {
+    await seedPost({
+      slug: 'scheduled',
+      title: 'Scheduled Test',
+      publishedAt: new Date(Date.now() + 86_400_000),
+    })
+
+    const result = await searchPosts(db, liveWhere(), 'scheduled', 10)
+    expect(result.hits).toEqual([])
+  })
+
+  it('excludes published posts without a published revision', async () => {
+    await seedPost({ slug: 'no-revision', title: 'No Revision Test', publishedRevisionId: null })
+
+    const result = await searchPosts(db, liveWhere(), 'revision', 10)
+    expect(result.hits).toEqual([])
   })
 })

@@ -45,6 +45,7 @@ describe('listCategoriesForAdmin', () => {
         visible: true,
         published: true,
         publishedAt: past,
+        publishedRevisionId: 1n,
       },
       // counted: hidden but includeHidden=true
       {
@@ -56,6 +57,7 @@ describe('listCategoriesForAdmin', () => {
         visible: false,
         published: true,
         publishedAt: past,
+        publishedRevisionId: 2n,
       },
       // counted: future-dated but includeScheduled=true
       {
@@ -67,6 +69,18 @@ describe('listCategoriesForAdmin', () => {
         visible: true,
         published: true,
         publishedAt: future,
+        publishedRevisionId: 3n,
+      },
+      // not counted: published but no published revision (a draft state)
+      {
+        slug: 'tech-norev',
+        title: 'Tech NoRev',
+        summary: '',
+        cover: '',
+        category: 'Tech',
+        visible: true,
+        published: true,
+        publishedAt: past,
       },
       // not counted: draft
       {
@@ -101,6 +115,7 @@ describe('listCategoriesForAdmin', () => {
         visible: true,
         published: true,
         publishedAt: past,
+        publishedRevisionId: 4n,
       },
       // not counted: no category
       {
@@ -112,6 +127,7 @@ describe('listCategoriesForAdmin', () => {
         visible: true,
         published: true,
         publishedAt: past,
+        publishedRevisionId: 5n,
       },
     ])
 

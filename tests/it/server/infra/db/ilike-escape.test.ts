@@ -6,6 +6,7 @@ import { afterAll, beforeEach, describe, expect, it } from 'vitest'
 
 import { clearAllTables } from '#/_helpers/integration-db'
 import { buildAdminListConditions } from '@/server/domains/comments/repos/shared'
+import { liveContentWhere } from '@/server/domains/content/schema'
 import { ilikeEscape } from '@/server/infra/db/ilike-escape'
 import { createDbPool, closePool } from '@/server/infra/db/pool'
 import { comment } from '@/server/infra/db/schema/comment'
@@ -26,6 +27,16 @@ beforeEach(async () => {
   await clearAllTables(db)
   await invalidateSearchCache()
 })
+
+/** The same caller-supplied live gate the production search loader passes. */
+function liveWhere() {
+  return liveContentWhere({
+    deletedAt: post.deletedAt,
+    published: post.published,
+    publishedRevisionId: post.publishedRevisionId,
+    publishedAt: post.publishedAt,
+  })
+}
 
 describe('ilikeEscape — direct SQL against database', () => {
   it('finds users by normal substring', async () => {
@@ -178,45 +189,45 @@ describe('ilikeEscape — comments repository', () => {
 describe('ilikeEscape — search posts', () => {
   it('finds posts by title with escaped wildcards', async () => {
     await db.insert(post).values([
-      { slug: 'post-1', title: 'How to get 50% off', summary: '', cover: '', category: '' },
-      { slug: 'post-2', title: '500 reasons to code', summary: '', cover: '', category: '' },
+      { slug: 'post-1', title: 'How to get 50% off', summary: '', cover: '', category: '', publishedRevisionId: 1n },
+      { slug: 'post-2', title: '500 reasons to code', summary: '', cover: '', category: '', publishedRevisionId: 2n },
     ])
     await db.insert(postSearchIndex).values([
       { postId: 1n, plainText: 'How to get 50% off' },
       { postId: 2n, plainText: '500 reasons to code' },
     ])
 
-    const result = await searchPosts(db, '50% off', 10)
+    const result = await searchPosts(db, liveWhere(), '50% off', 10)
     expect(result.hits).toContain('post-1')
     expect(result.hits).not.toContain('post-2')
   })
 
   it('finds posts by summary with escaped wildcards', async () => {
     await db.insert(post).values([
-      { slug: 'post-1', title: 'Guide', summary: 'Save 50% today', cover: '', category: '' },
-      { slug: 'post-2', title: 'Guide 2', summary: 'Save 500 today', cover: '', category: '' },
+      { slug: 'post-1', title: 'Guide', summary: 'Save 50% today', cover: '', category: '', publishedRevisionId: 1n },
+      { slug: 'post-2', title: 'Guide 2', summary: 'Save 500 today', cover: '', category: '', publishedRevisionId: 2n },
     ])
     await db.insert(postSearchIndex).values([
       { postId: 1n, plainText: 'Save 50% today' },
       { postId: 2n, plainText: 'Save 500 today' },
     ])
 
-    const result = await searchPosts(db, '50%', 10)
+    const result = await searchPosts(db, liveWhere(), '50%', 10)
     expect(result.hits).toContain('post-1')
     expect(result.hits).not.toContain('post-2')
   })
 
   it('finds posts by title with escaped underscores', async () => {
     await db.insert(post).values([
-      { slug: 'post-1', title: 'Guide to foo_bar', summary: '', cover: '', category: '' },
-      { slug: 'post-2', title: 'Guide to foobar', summary: '', cover: '', category: '' },
+      { slug: 'post-1', title: 'Guide to foo_bar', summary: '', cover: '', category: '', publishedRevisionId: 1n },
+      { slug: 'post-2', title: 'Guide to foobar', summary: '', cover: '', category: '', publishedRevisionId: 2n },
     ])
     await db.insert(postSearchIndex).values([
       { postId: 1n, plainText: '' },
       { postId: 2n, plainText: '' },
     ])
 
-    const result = await searchPosts(db, 'foo_bar', 10)
+    const result = await searchPosts(db, liveWhere(), 'foo_bar', 10)
     expect(result.hits).toContain('post-1')
     expect(result.hits).not.toContain('post-2')
   })

@@ -1,11 +1,12 @@
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
-import { and, asc, eq, inArray, isNull, sql } from 'drizzle-orm'
+import { and, asc, eq, inArray, isNotNull, isNull, sql } from 'drizzle-orm'
 
 import type { TagRow } from '@/server/infra/db/types'
 import type { Tag } from '@/shared/types/catalog'
 import type { AdminTagDto } from '@/shared/types/tags'
 
+import { liveContentWhere } from '@/server/domains/content/schema'
 import { listPostsByTag } from '@/server/domains/posts/repos/public-query/taxonomy'
 import {
   deleteAdminTaxonomy,
@@ -55,6 +56,8 @@ export interface AdminTagsListResult {
 }
 
 // Bulk-count posts per tag in a single query, then project into a Map.
+// Admin counts include scheduled posts but skip rows without a published
+// revision (a draft state per the live gate definition).
 async function countPostsByTags(db: NodePgDatabase): Promise<Map<string, number>> {
   const rows = await db
     .select({ name: tagTable.name, count: sql<number>`count(${postMetaTable.id})::int` })
@@ -62,7 +65,12 @@ async function countPostsByTags(db: NodePgDatabase): Promise<Map<string, number>
     .leftJoin(postTag, eq(postTag.tagId, tagTable.id))
     .leftJoin(
       postMetaTable,
-      and(eq(postMetaTable.id, postTag.postId), isNull(postMetaTable.deletedAt), eq(postMetaTable.published, true)),
+      and(
+        eq(postMetaTable.id, postTag.postId),
+        isNull(postMetaTable.deletedAt),
+        eq(postMetaTable.published, true),
+        isNotNull(postMetaTable.publishedRevisionId),
+      ),
     )
     .groupBy(tagTable.name)
   const counts = new Map<string, number>()
@@ -77,7 +85,15 @@ async function countPostsByTag(db: NodePgDatabase, name: string): Promise<number
     .select({ count: sql<number>`count(${postMetaTable.id})::int` })
     .from(tagTable)
     .leftJoin(postTag, eq(postTag.tagId, tagTable.id))
-    .leftJoin(postMetaTable, eq(postMetaTable.id, postTag.postId))
+    .leftJoin(
+      postMetaTable,
+      and(
+        eq(postMetaTable.id, postTag.postId),
+        isNull(postMetaTable.deletedAt),
+        eq(postMetaTable.published, true),
+        isNotNull(postMetaTable.publishedRevisionId),
+      ),
+    )
     .where(eq(tagTable.name, name))
   return row?.count ?? 0
 }
@@ -213,10 +229,16 @@ export async function listAllTags(db: NodePgDatabase): Promise<Tag[]> {
         postMetaTable,
         and(
           eq(postMetaTable.id, postTag.postId),
-          isNull(postMetaTable.deletedAt),
-          eq(postMetaTable.published, true),
+          liveContentWhere(
+            {
+              deletedAt: postMetaTable.deletedAt,
+              published: postMetaTable.published,
+              publishedRevisionId: postMetaTable.publishedRevisionId,
+              publishedAt: postMetaTable.publishedAt,
+            },
+            { asOf: now },
+          ),
           eq(postMetaTable.visible, true),
-          sql`${postMetaTable.publishedAt} <= ${now}`,
         ),
       )
       .groupBy(tagTable.name)
@@ -257,10 +279,16 @@ export async function getTagsByNames(db: NodePgDatabase, names: readonly string[
       postMetaTable,
       and(
         eq(postMetaTable.id, postTag.postId),
-        isNull(postMetaTable.deletedAt),
-        eq(postMetaTable.published, true),
+        liveContentWhere(
+          {
+            deletedAt: postMetaTable.deletedAt,
+            published: postMetaTable.published,
+            publishedRevisionId: postMetaTable.publishedRevisionId,
+            publishedAt: postMetaTable.publishedAt,
+          },
+          { asOf: now },
+        ),
         eq(postMetaTable.visible, true),
-        sql`${postMetaTable.publishedAt} <= ${now}`,
       ),
     )
     .where(inArray(tagTable.name, uniqueNames))
