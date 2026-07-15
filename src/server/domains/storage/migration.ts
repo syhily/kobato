@@ -5,7 +5,12 @@ import { and, eq, isNull } from 'drizzle-orm'
 
 import type { BrandingObjectRef } from '@/shared/config/types'
 
-import { BRANDING_SLOTS, SLOT_CONTENT_TYPE, s3KeyForSlot } from '@/server/domains/assets/repos/storage'
+import {
+  BRANDING_SLOTS,
+  legacyKeyForSlot,
+  SLOT_CONTENT_TYPE,
+  s3KeyForSlot,
+} from '@/server/domains/assets/repos/storage'
 import { invalidateImageEnhanceCacheFor } from '@/server/domains/images/services/cache'
 import { SECTION_REGISTRY } from '@/server/domains/settings/sections/registry'
 import { refreshBlogSettings } from '@/server/domains/settings/services/hydrate'
@@ -204,14 +209,28 @@ async function migrateBranding(db: NodePgDatabase, result: MigrationResult): Pro
       continue
     }
     const key = s3KeyForSlot(slot)
+    const legacyKey = legacyKeyForSlot(slot)
     try {
       const alreadyInS3 = await s3Backend.exists(key)
       if (!alreadyInS3) {
-        const body = await localBackend.get(key)
+        let body: Buffer
+        if (await localBackend.exists(key)) {
+          body = await localBackend.get(key)
+        } else if (await localBackend.exists(legacyKey)) {
+          body = await localBackend.get(legacyKey)
+        } else {
+          // Neither key exists locally — the ref points to an orphan.
+          // Still flip the driver so the row stops counting as local.
+          branding[slot] = { ...ref, driver: 's3' }
+          changed = true
+          result.skipped += 1
+          continue
+        }
         await s3Backend.put({ key, body, contentType: SLOT_CONTENT_TYPE[slot], visibility: 'private' })
       }
       branding[slot] = { ...ref, driver: 's3' }
       await deleteLocalSafe(key)
+      await deleteLocalSafe(legacyKey)
       if (alreadyInS3) {
         result.skipped += 1
       } else {

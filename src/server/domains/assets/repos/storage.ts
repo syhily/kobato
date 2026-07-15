@@ -142,16 +142,57 @@ export function ensureMatchesSlot(slot: BrandingSlot, buffer: Buffer): void {
   validateBinary(slot, buffer)
 }
 
-// Stable kebab-case conversion: `faviconIco` -> `favicon-ico`,
-// `blogPosterDark` -> `blog-poster-dark`. The slot name appears in the
-// S3 key so the admin can browse `branding/<slot>` in their bucket and
-// recognise each entry without consulting the codebase.
+// Strip the type suffix from slot names that carry one. SVG slots
+// end in `Svg` (e.g. `faviconSvg` → `favicon`), and the single ICO
+// slot ends in `Ico` (`faviconIco` → `favicon`). Binary PNG slots
+// have no suffix and pass through unchanged.
+function slotBaseName(slot: BrandingSlot): string {
+  if (slot.endsWith('Svg')) {
+    return slot.slice(0, -3)
+  }
+  if (slot.endsWith('Ico')) {
+    return slot.slice(0, -3)
+  }
+  return slot
+}
+
+// Stable kebab-case conversion: `logoLargeDark` -> `logo-large-dark`,
+// `appleTouchIcon` -> `apple-touch-icon`.
 function slotToKebab(slot: BrandingSlot): string {
-  return slot.replace(/([A-Z0-9]+)/g, (_, c: string) => `-${c.toLowerCase()}`)
+  return slotBaseName(slot).replace(/([A-Z0-9]+)/g, (_, c: string) => `-${c.toLowerCase()}`)
+}
+
+// Map SLOT_CONTENT_TYPE values to file extensions so storage keys carry
+// the correct suffix. Without this, objects land in the bucket / local
+// filesystem as bare `branding/favicon-ico` with no extension, which
+// breaks `Content-Type` detection in the local-storage router and makes
+// the bucket harder to browse.
+const EXT_BY_CONTENT_TYPE: Record<string, string> = {
+  'image/svg+xml': '.svg',
+  'image/x-icon': '.ico',
+  'image/png': '.png',
+}
+
+function extensionForSlot(slot: BrandingSlot): string {
+  return EXT_BY_CONTENT_TYPE[SLOT_CONTENT_TYPE[slot]] ?? ''
 }
 
 export function s3KeyForSlot(slot: BrandingSlot): string {
-  return `branding/${slotToKebab(slot)}`
+  return `branding/${slotToKebab(slot)}${extensionForSlot(slot)}`
+}
+
+/** Kebab-case preserving the original slot suffix (e.g. `faviconSvg` → `favicon-svg`).
+ *  Only used by {@link legacyKeyForSlot} — new keys use {@link s3KeyForSlot}. */
+function slotToKebabLegacy(slot: BrandingSlot): string {
+  return slot.replace(/([A-Z0-9]+)/g, (_, c: string) => `-${c.toLowerCase()}`)
+}
+
+/**
+ * Legacy key format (without extension) used before the 2026-06-22 fix.
+ * Only needed for migration — new uploads always use {@link s3KeyForSlot}.
+ */
+export function legacyKeyForSlot(slot: BrandingSlot): string {
+  return `branding/${slotToKebabLegacy(slot)}`
 }
 
 // --- Operations ---
@@ -172,6 +213,15 @@ export async function putBrandingObject(slot: BrandingSlot, buffer: Buffer): Pro
   }
   cacheSet(slot, etag, buffer)
   log.info('Branding object uploaded', { slot, key, driver, size: buffer.length, etag })
+
+  // Clean up any legacy (extensionless) object left over from before the
+  // 2026-06-22 key-format fix. Best-effort: if it doesn't exist or the
+  // backend is unreachable, the new upload already succeeded.
+  const legacyKey = legacyKeyForSlot(slot)
+  backend.delete(legacyKey).catch((error) => {
+    log.debug('Legacy key cleanup skipped', { slot, legacyKey, error: String(error) })
+  })
+
   return ref
 }
 
@@ -181,13 +231,23 @@ export async function putBrandingObject(slot: BrandingSlot, buffer: Buffer): Pro
 // failures surface to the caller. `driver` targets the backend the ref
 // was uploaded to, so a local asset isn't looked up in S3.
 export async function deleteBrandingObject(slot: BrandingSlot, driver: StorageDriver = 's3'): Promise<void> {
+  const backend = backendFor(driver)
   const key = s3KeyForSlot(slot)
-  try {
-    await backendFor(driver).delete(key)
-    log.info('Branding object deleted', { slot, key, driver })
-  } catch (error) {
-    log.warn('Failed to delete branding object; continuing', { slot, key, driver, error: String(error) })
+  const legacyKey = legacyKeyForSlot(slot)
+
+  // Delete both current and legacy keys so an old upload on a different
+  // driver (e.g. local→S3 migration happened after the fix) is also
+  // cleaned up. Both are best-effort.
+  const results = await Promise.allSettled([backend.delete(key), backend.delete(legacyKey)])
+  for (const [i, k] of [key, legacyKey].entries()) {
+    const r = results[i]
+    if (r.status === 'rejected') {
+      log.warn('Failed to delete branding object; continuing', { slot, key: k, driver, error: String(r.reason) })
+    } else {
+      log.info('Branding object deleted', { slot, key: k, driver })
+    }
   }
+
   for (const cacheKey of Array.from(bufferCache.keys())) {
     if (cacheKey.startsWith(`${slot}:`)) {
       bufferCache.delete(cacheKey)
@@ -223,17 +283,60 @@ function cacheGet(slot: BrandingSlot, etag: string): Buffer | undefined {
 // matches how `OG` and `font` loaders treat missing optional assets:
 // availability of a custom branding upload should never 5xx the
 // `/favicon.ico` route.
+//
+// Auto-migrates objects still stored under the legacy extensionless key
+// (pre-2026-06-22): if the current key doesn't exist but the legacy key
+// does, the bytes are copied to the current key and the legacy object is
+// deleted. The migration is transparent — callers don't know it happened.
 export async function fetchBrandingObject(slot: BrandingSlot, ref: BrandingObjectRef): Promise<Buffer | null> {
   const cached = cacheGet(slot, ref.etag)
   if (cached !== undefined) {
     return cached
   }
   const driver = ref.driver
+  const backend = backendFor(driver)
+  const key = s3KeyForSlot(slot)
+
   try {
-    const buffer = await backendFor(driver).get(s3KeyForSlot(slot))
+    const buffer = await backend.get(key)
     cacheSet(slot, ref.etag, buffer)
     return buffer
   } catch (error) {
+    // If the current key isn't found, try the legacy (extensionless) key.
+    // On success, copy to the current key and delete the legacy object so
+    // subsequent reads hit the new key directly.
+    if (isNotFoundError(error)) {
+      const legacyKey = legacyKeyForSlot(slot)
+      try {
+        const legacyBuffer = await backend.get(legacyKey)
+        // Copy to the new key first, then delete the legacy object.
+        // If the copy fails we still have the legacy object to retry
+        // next time; if the delete fails the legacy object is orphaned
+        // but harmless.
+        await backend.put({
+          key,
+          body: legacyBuffer,
+          contentType: ref.contentType,
+          visibility: 'private',
+        })
+        backend.delete(legacyKey).catch((delErr) => {
+          log.warn('Legacy key cleanup after migration failed', { slot, legacyKey, error: String(delErr) })
+        })
+        cacheSet(slot, ref.etag, legacyBuffer)
+        log.info('Branding object auto-migrated to extensioned key', { slot, legacyKey, key, driver })
+        return legacyBuffer
+      } catch (legacyError) {
+        // Legacy key also not found (or copy failed) — genuinely missing.
+        log.warn('Failed to fetch branding object; falling back to default', {
+          slot,
+          etag: ref.etag,
+          driver,
+          error: String(legacyError),
+        })
+        return null
+      }
+    }
+
     log.warn('Failed to fetch branding object; falling back to default', {
       slot,
       etag: ref.etag,
@@ -242,4 +345,24 @@ export async function fetchBrandingObject(slot: BrandingSlot, ref: BrandingObjec
     })
     return null
   }
+}
+
+/** Heuristic check for 404 / not-found errors across backends. */
+function isNotFoundError(error: unknown): boolean {
+  if (error instanceof Error) {
+    const msg = error.message.toLowerCase()
+    if (msg.includes('not found') || msg.includes('404') || msg.includes('does not exist') || msg.includes('enoent')) {
+      return true
+    }
+  }
+  // ActionFailure with status 404 from the local backend
+  if (
+    typeof error === 'object' &&
+    error !== null &&
+    'status' in error &&
+    (error as Record<string, unknown>).status === 404
+  ) {
+    return true
+  }
+  return false
 }

@@ -43,8 +43,9 @@ describe('assets storage', () => {
   })
 
   it('derives an s3 key for a slot', () => {
-    expect(s3KeyForSlot('faviconIco')).toBe('branding/favicon-ico')
-    expect(s3KeyForSlot('blogPosterDark')).toBe('branding/blog-poster-dark')
+    expect(s3KeyForSlot('faviconIco')).toBe('branding/favicon.ico')
+    expect(s3KeyForSlot('blogPosterDark')).toBe('branding/blog-poster-dark.png')
+    expect(s3KeyForSlot('logoSvg')).toBe('branding/logo.svg')
   })
 
   it('validates an SVG upload', () => {
@@ -115,5 +116,49 @@ describe('assets storage', () => {
       driver: 's3',
     })
     expect(buffer).toBeNull()
+  })
+
+  it('auto-migrates from legacy extensionless key when new key is not found', async () => {
+    // First call (new key `branding/icon-192.png`) → not found.
+    // Second call (legacy key `branding/icon-192`) → found → auto-migrate.
+    ;(getS3ObjectBuffer as ReturnType<typeof vi.fn>)
+      .mockRejectedValueOnce(new Error('Not Found'))
+      .mockResolvedValueOnce(pngHeader)
+
+    const buffer = await fetchBrandingObject('icon192', {
+      etag: 'c',
+      contentType: 'image/png',
+      size: 8,
+      updatedAt: '',
+      driver: 's3',
+    })
+
+    expect(buffer).toBe(pngHeader)
+    expect(getS3ObjectBuffer).toHaveBeenCalledTimes(2)
+    expect(getS3ObjectBuffer).toHaveBeenNthCalledWith(1, 'branding/icon-192.png')
+    expect(getS3ObjectBuffer).toHaveBeenNthCalledWith(2, 'branding/icon-192')
+    // Migration: copy to new key + delete legacy
+    expect(putS3Object).toHaveBeenCalledWith('branding/icon-192.png', pngHeader, 'image/png')
+    expect(deleteS3Object).toHaveBeenCalledWith('branding/icon-192')
+  })
+
+  it('auto-migrates and still returns null when both keys are missing', async () => {
+    // Both new and legacy keys return 404.
+    ;(getS3ObjectBuffer as ReturnType<typeof vi.fn>)
+      .mockRejectedValueOnce(new Error('Not Found'))
+      .mockRejectedValueOnce(new Error('Not Found'))
+
+    const buffer = await fetchBrandingObject('icon192', {
+      etag: 'd',
+      contentType: 'image/png',
+      size: 8,
+      updatedAt: '',
+      driver: 's3',
+    })
+
+    expect(buffer).toBeNull()
+    expect(getS3ObjectBuffer).toHaveBeenCalledTimes(2)
+    expect(putS3Object).not.toHaveBeenCalled()
+    expect(deleteS3Object).not.toHaveBeenCalled()
   })
 })
