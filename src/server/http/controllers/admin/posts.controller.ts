@@ -2,6 +2,7 @@ import { ORPCError } from '@orpc/server'
 import { z } from 'zod'
 
 import { recordAuditEventFromContext } from '@/server/domains/audit/services/record'
+import { canonicalizeBodyOrThrow } from '@/server/domains/content/save-helpers'
 import {
   listPostsSchema,
   previewPostBodySchema,
@@ -160,8 +161,12 @@ const preview = authorProc
   .input(previewPostBodySchema)
   .output(previewOutputDto)
   .handler(async ({ input, context }) => {
-    const html = await renderPostPortableTextToHtml(context.db, input.body, [])
-    const headings = collectHeadings(input.body, deriveSlug)
+    // Route preview through the same canonicalize + prerender pipeline as
+    // the save path so the preview matches what will actually be published
+    // (Shiki/KaTeX artifacts included).
+    const canonical = await canonicalizeBodyOrThrow(input.body)
+    const html = await renderPostPortableTextToHtml(context.db, canonical, [])
+    const headings = collectHeadings(canonical, deriveSlug)
     return { html, headings }
   })
 

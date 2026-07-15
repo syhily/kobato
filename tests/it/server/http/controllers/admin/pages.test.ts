@@ -28,6 +28,9 @@ vi.mock('@/server/render/feed/feed-pt-render', () => ({
 
 vi.mock('@/shared/pt/utils', () => ({
   collectHeadings: vi.fn(),
+  // Preview canonicalizes through `validatePortableTextBody` before render;
+  // pass the body through so this suite stays focused on the controller wiring.
+  validatePortableTextBody: vi.fn((body: unknown) => body),
 }))
 
 const mutateService = await import('@/server/domains/pages/services/mutate')

@@ -2,6 +2,7 @@ import { ORPCError } from '@orpc/server'
 import { z } from 'zod'
 
 import { recordAuditEventFromContext } from '@/server/domains/audit/services/record'
+import { canonicalizeBodyOrThrow } from '@/server/domains/content/save-helpers'
 import { listPagesSchema, savePageBodySchema, upsertPageMetaSchema } from '@/server/domains/pages/schema'
 import {
   listPagesForAdmin,
@@ -148,8 +149,12 @@ const preview = adminProc
   .input(z.object({ body: portableTextBodySchema }))
   .output(previewOutputDto)
   .handler(async ({ input, context }) => {
-    const html = await renderPagePortableTextToHtml(context.db, input.body, [])
-    const headings = collectHeadings(input.body, deriveSlug)
+    // Route preview through the same canonicalize + prerender pipeline as
+    // the save path so the preview matches what will actually be published
+    // (Shiki/KaTeX artifacts included).
+    const canonical = await canonicalizeBodyOrThrow(input.body)
+    const html = await renderPagePortableTextToHtml(context.db, canonical, [])
+    const headings = collectHeadings(canonical, deriveSlug)
     return { html, headings }
   })
 
