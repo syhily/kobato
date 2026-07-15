@@ -240,10 +240,14 @@ redeploying. Examples: `assets.storage.enabled`, `seo.og.width`,
 - **Draft post visibility gate.** A post is considered draft (invisible
   to the public) when `status=draft` OR `publishedRevisionId=null`.
   The admin lifecycle filter treats both cases as draft; all public
-  queries (`buildPublicPostsWhere`, `isCatalogVisible`, `findPostBySlug`)
+  queries (`buildPublicPostsWhere`, `isLive`, `findPostBySlug`)
   MUST check both conditions. A post with `status=published` but no
   published revision must NOT appear on the home page, in listings,
-  feeds, or sitemap.
+  feeds, or sitemap. The full "live" gate (not deleted, published, has
+  a published revision, `publishedAt` not in the future) is defined
+  once in `@/server/domains/content/schema.ts` with two projections
+  that MUST be changed together: `isLive` (in-memory predicate) and
+  `liveContentWhere` (SQL fragment for post/page meta columns).
 
 ### Taxonomies (categories, tags, friends)
 

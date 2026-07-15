@@ -7,7 +7,7 @@ import type { NewPageMeta, PageMetaRow } from '@/server/infra/db/types'
 import type { Page } from '@/shared/types/catalog'
 
 import { findContentById, findContentsByIds } from '@/server/domains/content/repos/query'
-import { isCatalogVisible } from '@/server/domains/content/schema'
+import { isLive, liveContentWhere } from '@/server/domains/content/schema'
 import { hydrateImageRefs } from '@/server/domains/images/services/enhance'
 import { toCmsPage } from '@/server/domains/pages/projection'
 import { ilikeEscape } from '@/server/infra/db/ilike-escape'
@@ -151,12 +151,13 @@ export interface SitemapPageRow {
 }
 
 /**
- * Sitemap-only projection of published pages. Mirrors the visibility
- * gate enforced by `isCatalogVisible` (used inside `listAllPages`) —
- * not deleted, published, has a published revision, `published_at`
- * not in the future — but selects only `slug` + `firstPublishedAt` +
- * `publishedAt` to skip the revision-join + image-hydration the full
- * `listAllPages` path performs.
+ * Sitemap-only projection of published pages. Applies the SQL
+ * projection of the live gate (`liveContentWhere`, the SQL dual of
+ * `isLive` used inside `listAllPages`) — not deleted, published, has a
+ * published revision, `published_at` not in the future — but selects
+ * only `slug` + `firstPublishedAt` + `publishedAt` to skip the
+ * revision-join + image-hydration the full `listAllPages` path
+ * performs.
  */
 export async function listSitemapPages(db: NodePgDatabase, now = new Date()): Promise<SitemapPageRow[]> {
   return db
@@ -167,11 +168,14 @@ export async function listSitemapPages(db: NodePgDatabase, now = new Date()): Pr
     })
     .from(pageMetaTable)
     .where(
-      and(
-        isNull(pageMetaTable.deletedAt),
-        eq(pageMetaTable.published, true),
-        isNotNull(pageMetaTable.publishedRevisionId),
-        sql`${pageMetaTable.publishedAt} <= ${now}`,
+      liveContentWhere(
+        {
+          deletedAt: pageMetaTable.deletedAt,
+          published: pageMetaTable.published,
+          publishedRevisionId: pageMetaTable.publishedRevisionId,
+          publishedAt: pageMetaTable.publishedAt,
+        },
+        { asOf: now },
       ),
     )
     .orderBy(desc(pageMetaTable.firstPublishedAt))
@@ -268,7 +272,7 @@ export function buildDbPage(page: CmsPage): Page {
 
 export async function findPageBySlug(db: NodePgDatabase, slug: string): Promise<Page | null> {
   const meta = await findPublicPageMetaBySlug(db, slug)
-  if (meta === null || !isCatalogVisible(meta)) {
+  if (meta === null || !isLive(meta)) {
     return null
   }
   const revision = meta.publishedRevisionId === null ? null : await findContentById(db, meta.publishedRevisionId)
@@ -280,7 +284,7 @@ export async function findPageBySlug(db: NodePgDatabase, slug: string): Promise<
 export async function listAllPages(db: NodePgDatabase): Promise<Page[]> {
   const metas = await listPublicPageMetas(db)
   const asOf = new Date()
-  const visible = metas.filter((meta) => isCatalogVisible(meta, asOf))
+  const visible = metas.filter((meta) => isLive(meta, asOf))
   if (visible.length === 0) {
     return []
   }

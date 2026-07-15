@@ -5,6 +5,7 @@ import { and, eq, isNull, type SQL } from 'drizzle-orm'
 import type { ContentRow, PostMetaRow } from '@/server/infra/db/types'
 import type { Post } from '@/shared/types/catalog'
 
+import { liveContentWhere } from '@/server/domains/content/schema'
 import { toCmsPost } from '@/server/domains/posts/projection'
 import { hydratePostImages } from '@/server/domains/posts/repos/hydrate'
 import { toClientPostFromMeta } from '@/server/domains/posts/repos/shared'
@@ -64,8 +65,17 @@ async function findPostWithRevisionBySlug(
 }
 
 export async function findPostBySlug(db: NodePgDatabase, slug: string): Promise<Post | null> {
-  const result = await findPostWithRevisionBySlug(db, slug, isNull(postMetaTable.deletedAt))
-  if (result === null || !result.meta.published || result.meta.publishedRevisionId === null) {
+  const result = await findPostWithRevisionBySlug(
+    db,
+    slug,
+    liveContentWhere({
+      deletedAt: postMetaTable.deletedAt,
+      published: postMetaTable.published,
+      publishedRevisionId: postMetaTable.publishedRevisionId,
+      publishedAt: postMetaTable.publishedAt,
+    }),
+  )
+  if (result === null) {
     return null
   }
   const tags = await findTagNamesByPostId(db, result.meta.id)

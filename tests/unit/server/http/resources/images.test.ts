@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 vi.mock('@/server/domains/content/schema', () => ({
-  isCatalogVisible: vi.fn(() => true),
+  isLive: vi.fn(() => true),
 }))
 
 vi.mock('@/server/domains/pages/repo', () => ({

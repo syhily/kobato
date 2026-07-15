@@ -5,7 +5,7 @@ import crypto from 'node:crypto'
 
 import type { Env } from '@/server/http/context'
 
-import { isCatalogVisible } from '@/server/domains/content/schema'
+import { isLive } from '@/server/domains/content/schema'
 import { findPublicPageMetaBySlug } from '@/server/domains/pages/repo'
 import { findPublicPostMetaBySlug } from '@/server/domains/posts/repos/single'
 import { findCategoryBySlug } from '@/server/domains/taxonomies/categories/services/query'
@@ -80,8 +80,8 @@ export const imagesRouter = new Hono<Env>()
       findPublicPostMetaBySlug(c.var.db, slug),
       findPublicPageMetaBySlug(c.var.db, slug),
     ])
-    const post = postMeta && postMeta.published && postMeta.publishedRevisionId !== null ? postMeta : null
-    const page = pageMeta && isCatalogVisible(pageMeta) ? pageMeta : null
+    const post = postMeta && isLive(postMeta) ? postMeta : null
+    const page = pageMeta && isLive(pageMeta) ? pageMeta : null
     if (!post && !page) {
       return ogFallback(c)
     }

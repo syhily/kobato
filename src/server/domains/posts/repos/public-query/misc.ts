@@ -1,9 +1,10 @@
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
-import { and, desc, eq, inArray, isNotNull, isNull, sql } from 'drizzle-orm'
+import { and, desc, inArray, isNull } from 'drizzle-orm'
 
 import type { Post, PostVisibilityOptions } from '@/shared/types/catalog'
 
+import { liveContentWhere } from '@/server/domains/content/schema'
 import { buildPublicPostFilters, hydratePostImages } from '@/server/domains/posts/repos/hydrate'
 import { listPublicPosts } from '@/server/domains/posts/repos/public-query/listing'
 import { toPostFromMeta } from '@/server/domains/posts/repos/single'
@@ -18,11 +19,10 @@ export interface SitemapPostRow {
 }
 
 /**
- * Sitemap-only projection of published posts. Mirrors the visibility
- * gate used by `listAllPosts({ includeHidden: true, includeScheduled:
- * false })` — i.e. every published, non-deleted row with a published
- * revision whose `published_at` is not in the future — but selects
- * only `slug` + `firstPublishedAt` + `publishedAt` to avoid the
+ * Sitemap-only projection of published posts. Applies the shared live
+ * gate (`liveContentWhere`) — every published, non-deleted row with a
+ * published revision whose `published_at` is not in the future — but
+ * selects only `slug` + `firstPublishedAt` + `publishedAt` to avoid the
  * revision-join + image-hydration fan-out the full `listAllPosts`
  * path performs.
  */
@@ -35,11 +35,14 @@ export async function listSitemapPosts(db: NodePgDatabase, now = new Date()): Pr
     })
     .from(postMetaTable)
     .where(
-      and(
-        isNull(postMetaTable.deletedAt),
-        eq(postMetaTable.published, true),
-        isNotNull(postMetaTable.publishedRevisionId),
-        sql`${postMetaTable.publishedAt} <= ${now}`,
+      liveContentWhere(
+        {
+          deletedAt: postMetaTable.deletedAt,
+          published: postMetaTable.published,
+          publishedRevisionId: postMetaTable.publishedRevisionId,
+          publishedAt: postMetaTable.publishedAt,
+        },
+        { asOf: now },
       ),
     )
     .orderBy(desc(postMetaTable.firstPublishedAt))

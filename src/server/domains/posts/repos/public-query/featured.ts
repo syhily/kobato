@@ -1,9 +1,10 @@
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
-import { and, desc, eq, isNotNull, isNull, sql } from 'drizzle-orm'
+import { and, desc, eq, isNotNull, sql } from 'drizzle-orm'
 
 import type { ClientPost, SidebarPostLink } from '@/shared/types/catalog'
 
+import { liveContentWhere } from '@/server/domains/content/schema'
 import { hydrateClientPostCovers } from '@/server/domains/posts/repos/hydrate'
 import { toClientPostFromMeta } from '@/server/domains/posts/repos/shared'
 import { findTagNamesByPostIds } from '@/server/infra/db/operations/post-tag'
@@ -14,6 +15,13 @@ import { shuffle } from '@/shared/utils/tools'
 
 const FEATURE_POST_COUNT = 3
 
+const liveColumns = {
+  deletedAt: postMetaTable.deletedAt,
+  published: postMetaTable.published,
+  publishedRevisionId: postMetaTable.publishedRevisionId,
+  publishedAt: postMetaTable.publishedAt,
+}
+
 export async function selectFeaturePosts(db: NodePgDatabase, seed: string): Promise<ClientPost[]> {
   const content = requireBlogSettingsSection('content')
   if (!content.post.featureEnabled) {
@@ -21,13 +29,7 @@ export async function selectFeaturePosts(db: NodePgDatabase, seed: string): Prom
   }
 
   const now = new Date()
-  const publicWhere = and(
-    isNull(postMetaTable.deletedAt),
-    eq(postMetaTable.published, true),
-    isNotNull(postMetaTable.publishedRevisionId),
-    eq(postMetaTable.visible, true),
-    sql`${postMetaTable.publishedAt} <= ${now}`,
-  )
+  const publicWhere = and(liveContentWhere(liveColumns, { asOf: now }), eq(postMetaTable.visible, true))
 
   const pinnedMetas = await db
     .select()
@@ -99,15 +101,7 @@ export async function selectSidebarPosts(db: NodePgDatabase, count: number): Pro
   const metas = await db
     .select()
     .from(postMetaTable)
-    .where(
-      and(
-        isNull(postMetaTable.deletedAt),
-        eq(postMetaTable.published, true),
-        isNotNull(postMetaTable.publishedRevisionId),
-        eq(postMetaTable.visible, true),
-        sql`${postMetaTable.publishedAt} <= ${new Date()}`,
-      ),
-    )
+    .where(and(liveContentWhere(liveColumns), eq(postMetaTable.visible, true)))
     .orderBy(sql`md5(${postMetaTable.id}::text || ${seed})`)
     .limit(count)
   const tagMap = await findTagNamesByPostIds(

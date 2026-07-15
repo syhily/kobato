@@ -16,7 +16,8 @@ vi.mock('@/server/domains/content/repos/query', () => ({
 }))
 
 vi.mock('@/server/domains/content/schema', () => ({
-  isCatalogVisible: vi.fn(() => true),
+  isLive: vi.fn(() => true),
+  liveContentWhere: vi.fn(() => 'live-where'),
 }))
 
 vi.mock('@/server/domains/images/services/enhance', () => ({
@@ -69,7 +70,7 @@ vi.mock('@/server/infra/db/schema/user', () => ({
 }))
 
 import { findContentById, findContentsByIds } from '@/server/domains/content/repos/query'
-import { isCatalogVisible } from '@/server/domains/content/schema'
+import { isLive } from '@/server/domains/content/schema'
 import { hydrateImageRefs } from '@/server/domains/images/services/enhance'
 import { toCmsPage } from '@/server/domains/pages/projection'
 
@@ -162,7 +163,7 @@ import {
 describe('pages repo', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    ;(isCatalogVisible as ReturnType<typeof vi.fn>).mockReturnValue(true)
+    ;(isLive as ReturnType<typeof vi.fn>).mockReturnValue(true)
   })
 
   it('lists, counts, and filters page metas', async () => {
@@ -255,7 +256,7 @@ describe('pages repo', () => {
 
   it('returns null for invisible page by slug', async () => {
     const db = fakeDb([{ id: 1n, slug: 'hello', deletedAt: null }])
-    ;(isCatalogVisible as ReturnType<typeof vi.fn>).mockReturnValue(false)
+    ;(isLive as ReturnType<typeof vi.fn>).mockReturnValue(false)
     const page = await findPageBySlug(db, 'hello')
     expect(page).toBeNull()
   })

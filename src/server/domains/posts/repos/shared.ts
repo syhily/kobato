@@ -3,6 +3,7 @@ import { and, asc, desc, eq, isNotNull, isNull, or, sql, type SQL } from 'drizzl
 import type { PostMetaRow } from '@/server/infra/db/types'
 import type { ClientPost } from '@/shared/types/catalog'
 
+import { liveContentWhere } from '@/server/domains/content/schema'
 import { ilikeEscape } from '@/server/infra/db/ilike-escape'
 import { post as postMetaTable } from '@/server/infra/db/schema/post'
 import { postTag } from '@/server/infra/db/schema/post-tag'
@@ -149,16 +150,19 @@ export function toClientPostFromMeta(meta: PostMetaRow, tags: string[] = []): Cl
 
 export function buildPublicPostsWhere(filters: ListPublicPostsFilters, now = new Date()): SQL {
   const conditions: SQL[] = [
-    isNull(postMetaTable.deletedAt),
-    eq(postMetaTable.published, true),
-    isNotNull(postMetaTable.publishedRevisionId),
+    liveContentWhere(
+      {
+        deletedAt: postMetaTable.deletedAt,
+        published: postMetaTable.published,
+        publishedRevisionId: postMetaTable.publishedRevisionId,
+        publishedAt: postMetaTable.publishedAt,
+      },
+      { asOf: now, includeScheduled: filters.includeScheduled },
+    ),
   ]
 
   if (!filters.includeHidden) {
     conditions.push(eq(postMetaTable.visible, true))
-  }
-  if (!filters.includeScheduled) {
-    conditions.push(sql`${postMetaTable.publishedAt} <= ${now}`)
   }
   if (filters.category) {
     conditions.push(eq(postMetaTable.category, filters.category))

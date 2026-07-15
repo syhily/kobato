@@ -159,6 +159,15 @@ describe('posts/repos/shared — buildPublicPostsWhere', () => {
     expect(buildPublicPostsWhere({})).toBeDefined()
     expect(buildPublicPostsWhere({ includeHidden: true, includeScheduled: true })).toBeDefined()
   })
+  it('excludes scheduled rows unless includeScheduled is set', async () => {
+    await seedPost({ slug: 'live-now', publishedRevisionId: 1n, publishedAt: new Date('2020-01-01') })
+    await seedPost({ slug: 'live-future', publishedRevisionId: 1n, publishedAt: new Date('2099-01-01') })
+    const { listPublicPosts } = await import('@/server/domains/posts/repos/public-query/listing')
+    const scheduledExcluded = await listPublicPosts(db)
+    expect(scheduledExcluded.map((r) => r.slug)).toEqual(['live-now'])
+    const scheduledIncluded = await listPublicPosts(db, { includeScheduled: true })
+    expect(scheduledIncluded.map((r) => r.slug).sort()).toEqual(['live-future', 'live-now'])
+  })
 })
 
 describe('posts/repos/write — insertPostMeta / updatePostMetaById / softDelete / restore', () => {
@@ -266,6 +275,12 @@ describe('posts/repos/single — findPostBySlug', () => {
     const { findPostBySlug } = await import('@/server/domains/posts/repos/single')
     const r = await findPostBySlug(db, 'full')
     expect(r?.id).toBe(String(pid))
+  })
+  it('returns null for a scheduled post (publishedAt in the future)', async () => {
+    const revId = await seedContent({ type: 'post', revisionNo: 1, status: 'published' })
+    await seedPost({ slug: 'future', publishedRevisionId: revId, publishedAt: new Date('2099-01-01') })
+    const { findPostBySlug } = await import('@/server/domains/posts/repos/single')
+    expect(await findPostBySlug(db, 'future')).toBeNull()
   })
 })
 

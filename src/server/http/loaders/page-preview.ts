@@ -7,7 +7,7 @@ import type { MarkdownHeading } from '@/shared/utils/toc'
 
 import { tryGetSessionContext } from '@/server/domains/auth/context'
 import { resolveSessionContext } from '@/server/domains/auth/primitives'
-import { isCatalogVisible } from '@/server/domains/content/schema'
+import { isLive } from '@/server/domains/content/schema'
 import { resolveImageMetaBySources } from '@/server/domains/images/services/enhance'
 import { buildDbPage, findPageBySlug } from '@/server/domains/pages/repo'
 import { loadPageDraftPreviewBySlug } from '@/server/domains/pages/services/draft'
@@ -59,10 +59,10 @@ export async function loadPagePreview({
 }): Promise<PagePreviewResult> {
   const [postMeta, page] = await Promise.all([findPublicPostMetaBySlug(db, slug), findPageBySlug(db, slug)])
 
-  // If the slug belongs to a published, non-deleted, non-scheduled post,
-  // redirect to the canonical post URL. Matches the old catalog visibility
-  // semantics where only visible posts appeared in the slug map.
-  if (postMeta !== null && isCatalogVisible(postMeta)) {
+  // If the slug belongs to a live post (not deleted, published, not
+  // scheduled), redirect to the canonical post URL. Matches the old
+  // slug-map semantics where only live posts appeared in the catalog.
+  if (postMeta !== null && isLive(postMeta)) {
     redirectPermanent(`/posts/${slug}`)
   }
 
