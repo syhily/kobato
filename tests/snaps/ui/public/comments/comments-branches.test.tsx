@@ -13,7 +13,7 @@ import { Comments } from '@/ui/public/comments/Comments'
 //   - the `CommentsReplyFormSlot` branch when an active reply target is set
 //     (activeReplyToId !== 0 → the slot returns null and the reply form is
 //     suppressed from its default position),
-//   - the `CommentsLoadMore` button in its `moreLoading` ("加载中...")
+//   - the `CommentsLoadMore` button in its `moreLoading` ("加载中…")
 //     state via the mutation's `isPending` flag,
 //   - the `CommentsHeader` count branch with a large total,
 //   - the failure branch + populated-tree branch co-coverage to guard
@@ -22,7 +22,7 @@ import { Comments } from '@/ui/public/comments/Comments'
 // `Comments` calls `useMutation` (token revoke, my-comments merge,
 // load-more) from `@tanstack/react-query`. The mutation hooks themselves
 // run during render; we stub them with a hoisted singleton so we can flip
-// the load-more `isPending` flag to cover the "加载中..." copy.
+// the load-more `isPending` flag to cover the "加载中…" copy.
 
 const mutationState = vi.hoisted(() => ({ mutate: vi.fn(), isPending: false }))
 
@@ -162,9 +162,9 @@ describe('snapshot: Comments render branches', () => {
         '/posts/long',
       ),
     )
-    // The LoadMore button copy flips to "加载中..." while the mutation is
+    // The LoadMore button copy flips to "加载中…" while the mutation is
     // pending, and the button is disabled.
-    expect(html).toContain('加载中...')
+    expect(html).toContain('加载中…')
     expect(html).toContain('disabled=""')
     mutationState.isPending = false
   })

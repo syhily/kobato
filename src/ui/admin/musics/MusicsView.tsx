@@ -345,7 +345,7 @@ export function MusicsView() {
             {isFetchingNextPage && (
               <div className="flex items-center gap-2 text-sm text-ink-4">
                 <div className="size-4 animate-spin rounded-full border-2 border-line-muted border-t-primary" />
-                加载中...
+                加载中…
               </div>
             )}
             {!listQuery.hasNextPage && allMusics.length > 0 && (

@@ -417,7 +417,7 @@ function CommentsLoadMore() {
         data-size={pageSize}
         data-offset={state.state.rootsLoaded}
       >
-        {moreLoading ? '加载中...' : '加载更多'}
+        {moreLoading ? '加载中…' : '加载更多'}
       </Button>
     </div>
   )
