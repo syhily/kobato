@@ -1,6 +1,5 @@
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
-/* oxlint-disable typescript/no-unsafe-type-assertion */
 import { and, eq, isNull } from 'drizzle-orm'
 
 import type { BrandingObjectRef } from '@/shared/config/types'
@@ -21,6 +20,7 @@ import { getLogger } from '@/server/infra/logger'
 import { localBackend } from '@/server/infra/storage/backends/local'
 import { s3Backend } from '@/server/infra/storage/backends/s3'
 import { getBlogSettingsBundleSync } from '@/shared/config/getters'
+import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
 const log = getLogger('storage.migration')
 
@@ -61,7 +61,7 @@ export async function getLocalStorageMigrationStats(db: NodePgDatabase): Promise
   const brandingSettings = getBlogSettingsBundleSync()?.assets?.branding
   if (brandingSettings !== undefined) {
     for (const slot of BRANDING_SLOTS) {
-      const ref = brandingSettings[slot as keyof typeof brandingSettings]
+      const ref = brandingSettings[unsafeCast<keyof typeof brandingSettings>(slot)]
       if (ref !== undefined && typeof ref === 'object' && ref.driver === 'local') {
         branding += 1
       }
@@ -199,8 +199,8 @@ async function migrateBranding(db: NodePgDatabase, result: MigrationResult): Pro
   if (existing === null) {
     return
   }
-  const data = { ...(existing.data as Record<string, unknown>) }
-  const branding = { ...(data.branding as Record<string, BrandingObjectRef | undefined>) }
+  const data = { ...unsafeCast<Record<string, unknown>>(existing.data) }
+  const branding = { ...unsafeCast<Record<string, BrandingObjectRef | undefined>>(data.branding) }
 
   let changed = false
   for (const slot of BRANDING_SLOTS) {
