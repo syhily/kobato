@@ -32,12 +32,16 @@ describe('shared: sanitize-url', () => {
       expect(isSafeUrl('java\nscript:alert(1)')).toBe(false)
       expect(isSafeUrl('java\rscript:alert(1)')).toBe(false)
       expect(isSafeUrl('jav	ascript:alert(1)')).toBe(false)
+      expect(isSafeUrl('java\u0000script:alert(1)')).toBe(false)
+      expect(isSafeUrl('java\u000Bscript:alert(1)')).toBe(false)
+      expect(isSafeUrl('java\u000Cscript:alert(1)')).toBe(false)
     })
 
     it('rejects empty and whitespace-only URLs', () => {
       expect(isSafeUrl('')).toBe(false)
       expect(isSafeUrl('   ')).toBe(false)
       expect(isSafeUrl('\t\n')).toBe(false)
+      expect(isSafeUrl('\t\n\r')).toBe(false)
     })
   })
 
@@ -50,7 +54,9 @@ describe('shared: sanitize-url', () => {
     it('returns the fallback for dangerous or empty URLs', () => {
       expect(sanitizeUrl('javascript:alert(1)')).toBe('#')
       expect(sanitizeUrl('java\tscript:alert(1)')).toBe('#')
+      expect(sanitizeUrl('java\u0000script:alert(1)')).toBe('#')
       expect(sanitizeUrl('')).toBe('#')
+      expect(sanitizeUrl('  \t ')).toBe('#')
       expect(sanitizeUrl('data:text/html,<script>', 'about:blank')).toBe('about:blank')
     })
 
