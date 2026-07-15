@@ -2,6 +2,7 @@ import '@/shared/zod-config'
 import type { MiddlewareFunction, ShouldRevalidateFunctionArgs } from 'react-router'
 
 import { QueryClientProvider } from '@tanstack/react-query'
+import { MotionConfig } from 'motion/react'
 import { lazy, Suspense, useLayoutEffect, useState } from 'react'
 import { preconnect, prefetchDNS } from 'react-dom'
 import { Links, Meta, Outlet, Scripts, ScrollRestoration, useMatches, useRouteLoaderData } from 'react-router'
@@ -12,6 +13,7 @@ import { RouteWarmupScript } from '@/client/components/RouteWarmupScript'
 import { useChunkErrorRecovery, useReloadOnChunkError } from '@/client/hooks/use-chunk-error-recovery'
 import { useFocusHash } from '@/client/hooks/use-focus-hash'
 import { useIosNoZoomOnFocus } from '@/client/hooks/use-ios-no-zoom'
+import { defaultTransition } from '@/client/lib/motion'
 import { getCspNonceFromContext, getRouteRequestContext } from '@/server/domains/auth/context'
 import { redactSecretsFromBundle } from '@/server/domains/settings/services/core'
 import { bundleFromMatches, routeMeta } from '@/server/render/seo/meta'
@@ -203,8 +205,10 @@ export default function App({ loaderData }: Route.ComponentProps) {
     <QueryClientProvider client={queryClient}>
       <ThemeProvider initialResolved={loaderData.theme ?? undefined}>
         <BlogSettingsProvider value={loaderData.blogSettings ?? undefined}>
-          <NavigationSplash />
-          <Outlet />
+          <MotionConfig reducedMotion="user" transition={defaultTransition}>
+            <NavigationSplash />
+            <Outlet />
+          </MotionConfig>
         </BlogSettingsProvider>
       </ThemeProvider>
     </QueryClientProvider>
@@ -221,15 +225,17 @@ export function ErrorBoundary({ error, loaderData }: Route.ErrorBoundaryProps) {
   return (
     <ThemeProvider initialResolved={loaderData?.theme ?? undefined}>
       <BlogSettingsProvider value={blogSettings ?? undefined}>
-        {blogSettings ? (
-          <Suspense fallback={body}>
-            <PublicChrome currentUser={loaderData?.currentUser ?? null} pathname="/" search="">
-              {body}
-            </PublicChrome>
-          </Suspense>
-        ) : (
-          body
-        )}
+        <MotionConfig reducedMotion="user" transition={defaultTransition}>
+          {blogSettings ? (
+            <Suspense fallback={body}>
+              <PublicChrome currentUser={loaderData?.currentUser ?? null} pathname="/" search="">
+                {body}
+              </PublicChrome>
+            </Suspense>
+          ) : (
+            body
+          )}
+        </MotionConfig>
       </BlogSettingsProvider>
     </ThemeProvider>
   )

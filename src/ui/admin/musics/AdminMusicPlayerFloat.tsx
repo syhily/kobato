@@ -1,5 +1,5 @@
 import { Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, X, ChevronUp, ChevronDown } from 'lucide-react'
-import { AnimatePresence, motion } from 'motion/react'
+import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation } from 'react-router'
 
@@ -48,6 +48,7 @@ function savePosition(pos: PlayerPosition) {
 
 export function AdminMusicPlayerFloat() {
   const location = useLocation()
+  const prefersReducedMotion = useReducedMotion()
   const isMusicPage = location.pathname.startsWith('/admin/library/music')
   const { currentTrack, isPlaying, duration, volume, muted, extractedColor, playlist, currentIndex } =
     useMusicPlayerState()
@@ -176,8 +177,12 @@ export function AdminMusicPlayerFloat() {
               {currentTrack.coverUrl ? (
                 <motion.div
                   className="size-10 overflow-hidden rounded-full"
-                  animate={isPlaying ? { rotate: 360 } : { rotate: 0 }}
-                  transition={isPlaying ? { repeat: Infinity, duration: 6, ease: 'linear' } : { duration: 0.3 }}
+                  animate={isPlaying && !prefersReducedMotion ? { rotate: 360 } : { rotate: 0 }}
+                  transition={
+                    isPlaying && !prefersReducedMotion
+                      ? { repeat: Infinity, duration: 6, ease: 'linear' }
+                      : { duration: 0.3 }
+                  }
                 >
                   <Image
                     src={currentTrack.coverUrl}

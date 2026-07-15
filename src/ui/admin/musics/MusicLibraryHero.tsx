@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 
-import { AnimatePresence, motion } from 'motion/react'
+import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 
 import type { AdminMusicDto } from '@/shared/types/music'
@@ -214,10 +214,16 @@ function CollageBackground({ allCoverUrls }: { allCoverUrls: string[] }) {
 }
 
 function PlayingBackground({ coverUrl, extractedColor }: { coverUrl: string; extractedColor: string | null }) {
+  const prefersReducedMotion = useReducedMotion()
   return (
     <div className="absolute inset-0 overflow-hidden">
-      {/* Blurred cover backdrop — scale compensates blur edge fade */}
-      <motion.div className="absolute inset-0" animate={{ scale: [1.05, 1.2] }} transition={transitions.slowLoop}>
+      {/* Blurred cover backdrop — scale compensates blur edge fade.
+          The ambient slowLoop is decorative; freeze it under reduced-motion. */}
+      <motion.div
+        className="absolute inset-0"
+        animate={prefersReducedMotion ? { scale: 1.1 } : { scale: [1.05, 1.2] }}
+        transition={prefersReducedMotion ? { duration: 0 } : transitions.slowLoop}
+      >
         <img src={coverUrl} alt="" className="h-full w-full scale-125 object-cover" style={{ filter: 'blur(48px)' }} />
       </motion.div>
 
@@ -231,8 +237,8 @@ function PlayingBackground({ coverUrl, extractedColor }: { coverUrl: string; ext
           style={{
             background: `radial-gradient(ellipse at 50% 30%, ${extractedColor}40 0%, transparent 60%)`,
           }}
-          animate={{ opacity: [0.4, 0.7], scale: [1, 1.1] }}
-          transition={transitions.pulseLoop}
+          animate={prefersReducedMotion ? { opacity: 0.55, scale: 1.05 } : { opacity: [0.4, 0.7], scale: [1, 1.1] }}
+          transition={prefersReducedMotion ? { duration: 0 } : transitions.pulseLoop}
         />
       )}
     </div>

@@ -1,3 +1,13 @@
+/**
+ * Geist's signature easing curve (design.md "Motion"): short and physical.
+ * Used as the global default via <MotionConfig transition={defaultTransition}>
+ * so any motion component without an explicit transition inherits it.
+ */
+export const geistEase = [0.175, 0.885, 0.32, 1.1] as [number, number, number, number]
+
+/** Global default transition applied by the root MotionConfig. */
+export const defaultTransition = { duration: 0.15, ease: geistEase }
+
 export const transitions = {
   /** General spring — tight feel. */
   spring: { type: 'spring' as const, stiffness: 300, damping: 30 },
