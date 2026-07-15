@@ -4,6 +4,7 @@ import { adminBackupRouter } from '@/server/http/controllers/admin/backup.contro
 import { adminCacheRouter } from '@/server/http/controllers/admin/cache.controller'
 import { adminCategoriesRouter } from '@/server/http/controllers/admin/categories.controller'
 import { adminCommentsRouter } from '@/server/http/controllers/admin/comments.controller'
+import { adminFontsRouter } from '@/server/http/controllers/admin/fonts.controller'
 import { adminFriendsRouter } from '@/server/http/controllers/admin/friends.controller'
 import { adminImagesRouter } from '@/server/http/controllers/admin/images.controller'
 import { adminMailRouter } from '@/server/http/controllers/admin/mail.controller'
@@ -61,6 +62,7 @@ export const apiRouter = {
     renders: adminRendersRouter,
     comments: adminCommentsRouter,
     backup: adminBackupRouter,
+    fonts: adminFontsRouter,
   },
 }
 

@@ -108,8 +108,9 @@ export const SECTION_REGISTRY = {
     defaults: {
       og: { family: 'NotoSansCJK' },
       calendar: { family: 'NotoSansCJK' },
-      globalCss: [],
-      postCss: [],
+      global: [],
+      post: [],
+      code: [],
     },
   },
   backup: {

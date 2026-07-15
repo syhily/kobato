@@ -11,7 +11,7 @@ import type {
 } from '@/shared/config/types'
 import type { AdminCacheStatsDto, ClearCacheResultDto } from '@/shared/types/cache'
 
-import { renderToHtml, stableHtml } from '#/_helpers/render'
+import { renderInRouter, renderToHtml, stableHtml } from '#/_helpers/render'
 import { CacheView } from '@/ui/admin/settings/CacheView'
 import { FontsForm } from '@/ui/admin/settings/FontsForm'
 import { NavigationEditor } from '@/ui/admin/settings/NavigationEditor'
@@ -110,20 +110,24 @@ const mailMasks = {
 const populatedFonts: FontsSettings = {
   og: { family: 'OPPOSans' },
   calendar: { family: 'OPPOSerif' },
-  globalCss: ['https://assets.example.com/fonts/global.css'],
-  postCss: ['https://assets.example.com/fonts/post.css'],
+  global: [],
+  post: [],
+  code: [],
 }
 
 const emptyFonts: FontsSettings = {
   og: { family: '' },
   calendar: { family: '' },
-  globalCss: [],
-  postCss: [],
+  global: [],
+  post: [],
+  code: [],
 }
 
 describe('snapshot: FontsForm', () => {
-  it('renders canvas, global-css and post-css cards with populated config', () => {
-    const html = stableHtml(renderToHtml(<FontsForm fonts={populatedFonts} />))
+  it('renders the canvas card with populated family names', () => {
+    // FontsForm now contains a <Link> in the notice card, so it must render
+    // inside a router context (renderInRouter) rather than bare renderToHtml.
+    const html = stableHtml(renderInRouter(<FontsForm fonts={populatedFonts} />))
     // Canvas card headings + family inputs
     expect(html).toContain('Canvas 字体')
     expect(html).toContain('OG 图字体')
@@ -135,31 +139,27 @@ describe('snapshot: FontsForm', () => {
     expect(html).toContain('上传字体')
     expect(html).toContain('已配置族名：OPPOSans')
     expect(html).toContain('已配置族名：OPPOSerif')
-    // Global / post CSS cards with populated rows: each row emits an input
-    // with the field-array `name` and a delete affordance. The URL value
-    // itself is uncontrolled (react-hook-form `register`), so it won't be
-    // in the static HTML — assert on row presence instead.
-    expect(html).toContain('全站字体 CSS')
-    expect(html).toContain('文章页字体 CSS')
-    expect(html).toContain('name="globalCss.0.url"')
-    expect(html).toContain('name="postCss.0.url"')
-    expect(html).toContain('添加全站 CSS')
-    expect(html).toContain('添加文章页 CSS')
-    expect(html).toContain('aria-label="删除此项"')
   })
 
-  it('renders empty-state copy when no CSS rows are configured', () => {
-    const html = stableHtml(renderToHtml(<FontsForm fonts={emptyFonts} />))
+  it('renders the web-font notice card pointing to /admin/library/fonts', () => {
+    const html = stableHtml(renderInRouter(<FontsForm fonts={emptyFonts} />))
+    // The three browser web-font slots moved to /admin/library/fonts; the settings
+    // page just shows a pointer card.
+    expect(html).toContain('网页字体')
+    expect(html).toContain('/admin/library/fonts')
+    expect(html).toContain('网站字体与槽位分配')
+    // The legacy globalCss/globalFamily inputs are gone.
+    expect(html).not.toContain('name="globalFamily"')
+    expect(html).not.toContain('name="globalCss')
+    expect(html).not.toContain('全站字体')
+    expect(html).not.toContain('文章页字体')
+    expect(html).not.toContain('代码字体')
+  })
+
+  it('renders empty-state copy when canvas family is unconfigured', () => {
+    const html = stableHtml(renderInRouter(<FontsForm fonts={emptyFonts} />))
     // Empty family -> FontUploadRow shows the "未配置族名" fallback span.
     expect(html).toContain('未配置族名')
-    // Each CSS card shows its empty hint (no rows -> the empty <p> branch).
-    expect(html).toContain('还没有添加 CSS，点击下方按钮新增一项。')
-    // No populated field-array rows are emitted.
-    expect(html).not.toContain('name="globalCss.0.url"')
-    expect(html).not.toContain('name="postCss.0.url"')
-    // Add buttons still present and not disabled (under the 8-row cap).
-    expect(html).toContain('添加全站 CSS')
-    expect(html).toContain('添加文章页 CSS')
   })
 })
 
