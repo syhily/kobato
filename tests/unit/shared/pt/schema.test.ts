@@ -161,6 +161,20 @@ describe('contract: portable-text dialect — rejects unknown shapes', () => {
     expect(safeValidatePortableTextBody(bad).ok).toBe(false)
   })
 
+  it('rejects link hrefs with disallowed protocols, including control-char smuggling', () => {
+    for (const href of ['javascript:alert(1)', 'data:text/html,<script>', 'java\tscript:alert(1)']) {
+      const bad: unknown = [
+        {
+          _type: 'block',
+          _key: 'b',
+          children: [span('x', ['m1'])],
+          markDefs: [{ _type: 'link', _key: 'm1', href }],
+        },
+      ]
+      expect(safeValidatePortableTextBody(bad).ok).toBe(false)
+    }
+  })
+
   it('rejects a heading style outside h1-h4', () => {
     const bad: unknown = [
       {

@@ -2,6 +2,8 @@ import { z } from 'zod'
 
 import type { MusicPlayerBlockMeta } from '@/shared/types/music'
 
+import { isSafeUrl } from '@/shared/sanitize-url'
+
 // Strict PortableText subset for this repository. PT is stored in
 // `content.body` (`jsonb`) and maps 1:1 to MDX React components.
 // A closed type union lets the SSR renderer and Tiptap bridge use
@@ -21,7 +23,7 @@ export type StandardListItem = (typeof STANDARD_LIST_ITEMS)[number]
 export const linkMarkDefSchema = z.object({
   _type: z.literal('link'),
   _key: NON_EMPTY_KEY,
-  href: z.string().refine((v) => !/^\s*(javascript|data|vbscript):/i.test(v.trim()), {
+  href: z.string().refine((v) => isSafeUrl(v), {
     message: 'href must not use javascript:, data:, or vbscript: protocol',
   }),
   rel: z.string().optional(),

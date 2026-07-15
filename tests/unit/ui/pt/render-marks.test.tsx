@@ -95,6 +95,25 @@ describe('security / XSS payload — PT renderer defense-in-depth', () => {
     // The renderer should either drop the href entirely or replace it with #
     expect(html).not.toContain("javascript:alert('xss')")
   })
+
+  it('LinkMark neutralises control-character smuggling (java\\tscript:)', () => {
+    // Browsers strip C0 control chars when parsing the protocol, so
+    // `java\tscript:` executes as `javascript:`. A protocol regex that does
+    // not strip first sees it as a safe string — the renderer must not.
+    const value = {
+      _type: 'link',
+      _key: 'k1',
+      href: "java\tscript:alert('xss')",
+    } as unknown as LinkMarkDef
+    const html = renderToStaticMarkup(
+      createElement(LinkMark, {
+        value,
+        children: 'malicious link',
+      } as React.ComponentProps<typeof LinkMark>),
+    )
+    expect(html).toContain('href="#"')
+    expect(html).not.toContain('alert')
+  })
 })
 
 describe('security / XSS payload — math markup', () => {

@@ -1,4 +1,4 @@
-/* oxlint-disable typescript/no-unsafe-assignment, typescript/no-unsafe-argument, typescript/no-unsafe-member-access, typescript/no-unsafe-return, typescript/no-unsafe-type-assertion */
+/* oxlint-disable typescript/no-unsafe-argument, typescript/no-unsafe-member-access, typescript/no-unsafe-return, typescript/no-unsafe-type-assertion */
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
 import { toHTML, type PortableTextComponents } from '@portabletext/to-html'
@@ -22,6 +22,7 @@ import { safeBuildMusicPublicUrl } from '@/server/domains/music/storage'
 import { deriveSlug } from '@/server/infra/slug'
 import { requireBlogSettingsSection } from '@/shared/config/getters'
 import { collectHeadingSlotsInPortableTextRenderOrder } from '@/shared/pt/utils'
+import { sanitizeUrl } from '@/shared/sanitize-url'
 import { resolveFootnotesSectionTitle } from '@/shared/utils/footnotes-section-title'
 import { escapeHtml } from '@/shared/utils/security'
 
@@ -178,7 +179,7 @@ function buildPortableTextComponents(ctx: ComponentContext): PortableTextCompone
         if (value === undefined) {
           return children
         }
-        const href = /^\s*(javascript|data):/i.test(value.href) ? '#' : value.href
+        const href = sanitizeUrl(value.href)
         const rel = value.rel ? ` rel="${escapeHtml(value.rel)}"` : ''
         const target = value.target ? ` target="${escapeHtml(value.target)}"` : ''
         return `<a href="${escapeHtml(href)}"${rel}${target}>${children}</a>`
@@ -391,7 +392,7 @@ function applyInlineMarkHtml(
   }
   switch (def._type) {
     case 'link': {
-      const href = /^\s*(javascript|data):/i.test(def.href ?? '') ? '#' : (def.href ?? '#')
+      const href = sanitizeUrl(def.href ?? '')
       const rel = def.rel ? ` rel="${escapeHtml(def.rel)}"` : ''
       const target = def.target ? ` target="${escapeHtml(def.target)}"` : ''
       return `<a href="${escapeHtml(href)}"${rel}${target}>${text}</a>`

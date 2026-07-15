@@ -155,6 +155,26 @@ describe('render/feed/feed-pt-render — link sanitizer', () => {
     expect(html).toContain('href="#"')
   })
 
+  it('rewrites control-character smuggled hrefs (java\\tscript:) to "#"', async () => {
+    // Browsers strip C0 control chars when parsing the protocol, so
+    // `java\tscript:` IS `javascript:` at runtime — must be neutralised.
+    const html = await renderPortableTextToHtml(
+      fakeDb,
+      [
+        {
+          _type: 'block',
+          _key: 'b1',
+          style: 'normal',
+          children: [{ _type: 'span', _key: 's1', text: 'x', marks: ['lk'] }],
+          markDefs: [{ _type: 'link', _key: 'lk', href: 'java\tscript:alert(1)' }],
+        },
+      ],
+      [],
+    )
+    expect(html).toContain('href="#"')
+    expect(html).not.toContain('alert(1)')
+  })
+
   it('keeps a relative href without rel/target when those are absent', async () => {
     const html = await renderPortableTextToHtml(
       fakeDb,

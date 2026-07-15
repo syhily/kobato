@@ -3,6 +3,7 @@ import { type ReactNode } from 'react'
 
 import type { FootnoteRefMarkDef, LinkMarkDef, MathInlineMarkDef } from '@/shared/pt/schema'
 
+import { sanitizeUrl } from '@/shared/sanitize-url'
 import { cn } from '@/ui/lib/cn'
 import { safeRel } from '@/ui/lib/link'
 import { sanitizeHtml } from '@/ui/lib/sanitize-html'
@@ -52,8 +53,10 @@ export function LinkMark({ value, children }: PortableTextMarkComponentProps<Lin
     return <>{children}</>
   }
   // Defense-in-depth: even if the schema filter is bypassed, never emit
-  // executable JavaScript or data URLs in the public renderer.
-  const href = /^\s*(javascript|data):/i.test(def.href) ? '#' : def.href
+  // executable JavaScript or data URLs in the public renderer. `sanitizeUrl`
+  // also strips C0 control characters, closing the `java\tscript:` bypass
+  // that a naive protocol regex misses.
+  const href = sanitizeUrl(def.href)
   return (
     <a href={href} rel={safeRel(def.target, def.rel)} target={def.target} className={PT_INLINE.link}>
       {children}

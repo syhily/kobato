@@ -14,6 +14,7 @@ import type {
   TextBlock,
 } from '@/shared/pt/schema'
 
+import { sanitizeUrl } from '@/shared/sanitize-url'
 import { cn } from '@/ui/lib/cn'
 import { safeRel } from '@/ui/lib/link'
 import { sanitizeHtml } from '@/ui/lib/sanitize-html'
@@ -204,8 +205,10 @@ function applyInlineMark(node: ReactNode, markName: string, markDefs: readonly M
   switch (def._type) {
     case 'link': {
       // Defense-in-depth: never emit executable JavaScript or data URLs
-      // even if the schema filter is somehow bypassed.
-      const href = /^\s*(javascript|data):/i.test(def.href) ? '#' : def.href
+      // even if the schema filter is somehow bypassed. `sanitizeUrl` also
+      // strips C0 control characters, closing the `java\tscript:` bypass
+      // that a naive protocol regex misses.
+      const href = sanitizeUrl(def.href)
       return (
         <a href={href} rel={safeRel(def.target, def.rel)} target={def.target} className={PT_INLINE.link}>
           {node}
