@@ -8,12 +8,10 @@ vi.mock('@tanstack/react-query', async () => {
   return {
     ...actual,
     useQuery: () => ({
-      data: {
-        tags: [
-          { id: '1', name: 'React' },
-          { id: '2', name: 'TypeScript' },
-        ],
-      },
+      data: [
+        { id: '1', name: 'React' },
+        { id: '2', name: 'TypeScript' },
+      ],
       isLoading: false,
       error: null,
     }),
