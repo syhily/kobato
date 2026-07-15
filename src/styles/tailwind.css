@@ -212,16 +212,18 @@
   --status-draft-fg: #be185d;
   --status-draft-border: #f9a8d4;
 
-  /* Diff viewer tokens light */
-  --diff-change-bg: #fffbeb;
-  --diff-change-fg: #92400e;
-  --diff-change-border: #fcd34d;
-  --diff-insert-bg: #f0fdf4;
-  --diff-insert-fg: #166534;
-  --diff-insert-border: #86efac;
-  --diff-delete-bg: #fef2f2;
-  --diff-delete-fg: #991b1b;
-  --diff-delete-border: #fecaca;
+  /* Diff viewer tokens light — alias the matching status triple
+     (change=warn, insert=success, delete=error). Re-point individually
+     if diff ever needs to diverge from status coloring. */
+  --diff-change-bg: var(--status-warn-bg);
+  --diff-change-fg: var(--status-warn-fg);
+  --diff-change-border: var(--status-warn-border);
+  --diff-insert-bg: var(--status-success-bg);
+  --diff-insert-fg: var(--status-success-fg);
+  --diff-insert-border: var(--status-success-border);
+  --diff-delete-bg: var(--status-error-bg);
+  --diff-delete-fg: var(--status-error-fg);
+  --diff-delete-border: var(--status-error-border);
 
   /* Chip tokens light */
   --chip-bg: var(--foreground);
@@ -351,16 +353,16 @@
   --status-draft-fg: #f9a8d4;
   --status-draft-border: #831843;
 
-  /* Diff viewer tokens dark */
-  --diff-change-bg: #451a03;
-  --diff-change-fg: #fcd34d;
-  --diff-change-border: #78350f;
-  --diff-insert-bg: #052e16;
-  --diff-insert-fg: #86efac;
-  --diff-insert-border: #14532d;
-  --diff-delete-bg: #450a0a;
-  --diff-delete-fg: #fecaca;
-  --diff-delete-border: #7f1d1d;
+  /* Diff viewer tokens dark — alias the dark status triple (see :root note). */
+  --diff-change-bg: var(--status-warn-bg);
+  --diff-change-fg: var(--status-warn-fg);
+  --diff-change-border: var(--status-warn-border);
+  --diff-insert-bg: var(--status-success-bg);
+  --diff-insert-fg: var(--status-success-fg);
+  --diff-insert-border: var(--status-success-border);
+  --diff-delete-bg: var(--status-error-bg);
+  --diff-delete-fg: var(--status-error-fg);
+  --diff-delete-border: var(--status-error-border);
 
   /* Chip tokens dark */
   --chip-bg: var(--surface-dim);
@@ -506,16 +508,16 @@ pre.shiki span {
     --status-draft-fg: #f9a8d4;
     --status-draft-border: #831843;
 
-    /* Diff viewer tokens dark */
-    --diff-change-bg: #451a03;
-    --diff-change-fg: #fcd34d;
-    --diff-change-border: #78350f;
-    --diff-insert-bg: #052e16;
-    --diff-insert-fg: #86efac;
-    --diff-insert-border: #14532d;
-    --diff-delete-bg: #450a0a;
-    --diff-delete-fg: #fecaca;
-    --diff-delete-border: #7f1d1d;
+    /* Diff viewer tokens dark — alias the dark status triple (see :root note). */
+    --diff-change-bg: var(--status-warn-bg);
+    --diff-change-fg: var(--status-warn-fg);
+    --diff-change-border: var(--status-warn-border);
+    --diff-insert-bg: var(--status-success-bg);
+    --diff-insert-fg: var(--status-success-fg);
+    --diff-insert-border: var(--status-success-border);
+    --diff-delete-bg: var(--status-error-bg);
+    --diff-delete-fg: var(--status-error-fg);
+    --diff-delete-border: var(--status-error-border);
 
     --chip-bg: var(--surface-dim);
     --chip-fg: var(--ink-1);
