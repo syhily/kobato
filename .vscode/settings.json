@@ -17,7 +17,8 @@
   "[typescriptreact]": { "editor.defaultFormatter": "oxc.oxc-vscode" },
   "[markdown]": {
     "editor.formatOnSave": true,
-    "editor.formatOnPaste": true
+    "editor.formatOnPaste": true,
+    "editor.defaultFormatter": "DavidAnson.vscode-markdownlint"
   },
   "oxc.disableNestedConfig": true,
   "oxc.requireConfig": true,
@@ -44,6 +45,5 @@
   "tailwindCSS.includeLanguages": {
     "mdx": "html"
   },
-  "js/ts.tsdk.path": "node_modules/typescript/lib",
-  "js/ts.experimental.useTsgo": true
+  "js/ts.tsdk.path": "node_modules/typescript/lib"
 }

@@ -22,6 +22,7 @@ blogster
 blurhash
 bradlc
 braindamage
+bufbuild
 buildx
 bxaw
 bytea
@@ -30,6 +31,7 @@ cfilter
 cimage
 ckenh
 cking
+cnfs
 cnip
 codegen
 codegraph
@@ -48,6 +50,7 @@ daiji
 datetime
 datong
 dbname
+Dedup
 dichen
 dinesh
 dotum
@@ -238,11 +241,15 @@ pltclu
 pnpx
 portabletext
 prefetcher
+preopen
 prerender
 procfile
 prosemirror
+protoc
 psql
 pswp
+pthread
+pthreads
 pwsz
 pxat
 qdrant
@@ -281,6 +288,7 @@ skia
 skrs
 slugignore
 smembers
+Songti
 sqlx
 srcset
 srem
@@ -311,6 +319,7 @@ tsgo
 tsgolint
 tview
 twofei
+tybys
 typegen
 typname
 ultrahtml
@@ -336,6 +345,8 @@ vitest
 vkey
 voidzero
 wangdaodao
+wasi
+wasip
 weapi
 weavatar
 wechat
