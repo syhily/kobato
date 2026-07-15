@@ -1,5 +1,5 @@
 import { parentPort, workerData } from 'node:worker_threads'
-import sharp from 'sharp'
+import sharp, { type Sharp } from 'sharp'
 
 // Relative import (not `@/shared/...`) so the worker is fully
 // self-contained: Node's `worker_threads` loads it directly in tests via
@@ -91,7 +91,7 @@ export class WorkerDomainError extends Error {
  * behaviour regardless of where the work runs.
  */
 export async function processImageInWorker(input: ProcessImageInput): Promise<ProcessedImage> {
-  let pipeline: sharp.Sharp
+  let pipeline: Sharp
   try {
     pipeline = sharp(input.buffer, {
       failOn: 'error',
