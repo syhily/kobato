@@ -2,6 +2,8 @@ import { useState } from 'react'
 
 import type { EditorShellDetail, EntityLike, RevisionLike } from '@/ui/admin/editor-shell/editor-shell-types'
 
+import { deriveBaselineRevision } from '@/ui/admin/editor-shell/editor-shell-derived'
+
 export interface EditorRevisionManager {
   expectedToken: string | null
   latestRevision: RevisionLike | null
@@ -13,7 +15,7 @@ export function useEditorRevisionManager<TEntity extends EntityLike>(
   detail: EditorShellDetail<TEntity> | undefined,
 ): EditorRevisionManager {
   const [expectedToken, setExpectedToken] = useState<string | null>(
-    detail !== undefined ? ((detail.latestRevision ?? detail.publishedRevision)?.clientRevisionToken ?? null) : null,
+    deriveBaselineRevision(detail)?.clientRevisionToken ?? null,
   )
   const [latestRevision, setLatestRevision] = useState<RevisionLike | null>(
     detail !== undefined ? detail.latestRevision : null,

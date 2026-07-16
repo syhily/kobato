@@ -212,11 +212,7 @@ export function PostEditorShell({ mode, detail, navigate }: PostEditorShellProps
           localBody={state.conflict.localBody}
           serverBody={state.initialBody}
           localSavedAt={state.conflict.localSavedAt}
-          serverUpdatedAt={
-            (detail.latestRevision ?? detail.publishedRevision)?.updatedAt
-              ? Date.parse((detail.latestRevision ?? detail.publishedRevision)!.updatedAt)
-              : null
-          }
+          serverUpdatedAt={state.baselineUpdatedAtMs}
           onChooseLocal={() => {
             void state.adoptLocalDraft()
           }}

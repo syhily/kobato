@@ -3,6 +3,8 @@ import { useMemo, useState } from 'react'
 import type { PortableTextBody } from '@/shared/pt/schema'
 import type { EditorShellDetail, EntityLike } from '@/ui/admin/editor-shell/editor-shell-types'
 
+import { deriveBaselineRevision } from '@/ui/admin/editor-shell/editor-shell-derived'
+
 export interface EditorBodyState {
   body: PortableTextBody
   setBody: React.Dispatch<React.SetStateAction<PortableTextBody>>
@@ -26,10 +28,7 @@ export function useEditorBodyState<TEntity extends EntityLike>(
   // `detail` is the loader-stable reference the shell TSX memoizes, so the
   // memos below recompute only when the loaded entity actually changes.
   const initialBody = useMemo<PortableTextBody>(() => {
-    if (detail === undefined) {
-      return EMPTY_BODY
-    }
-    return (detail.latestRevision ?? detail.publishedRevision)?.body ?? EMPTY_BODY
+    return deriveBaselineRevision(detail)?.body ?? EMPTY_BODY
   }, [detail])
 
   const [body, setBody] = useState<PortableTextBody>(initialBody)
@@ -38,7 +37,7 @@ export function useEditorBodyState<TEntity extends EntityLike>(
     if (detail === undefined) {
       return 'create:initial'
     }
-    const rev = detail.latestRevision ?? detail.publishedRevision
+    const rev = deriveBaselineRevision(detail)
     return rev !== null ? `${detail.entity.id}:${rev.clientRevisionToken}` : `${detail.entity.id}:empty`
   }, [detail])
 

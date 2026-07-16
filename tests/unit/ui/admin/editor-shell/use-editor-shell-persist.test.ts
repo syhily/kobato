@@ -6,20 +6,19 @@ import { renderHook } from '#/_helpers/hook'
 // on useAutosave. The SSR renderHook harness renders a single synchronous
 // pass, so effects (including the autosave subscription) do not fire. What
 // IS observable in one pass:
-//   - the four mutations are instantiated with the supplied fns
 //   - the derived pending flags (isPending / isSavingDraft / isPublishing /
 //     isUnpublishing / isCreating) reflect the mocked mutation states
 //   - the four persist handlers are returned as functions
 //   - persistSave / persistPublish / persistUnpublish short-circuit
 //     (setStatus aside) when `!isEditing || !detail`
 //   - persistCreate short-circuits when isEditing or isCreating is true
+//   - persistSave / persistPublish arm the action banner via
+//     `actionBanner.begin(kind, legs)` — the leg count (draft: 1 or 2 by
+//     body divergence, publish: 1) is persist's own knowledge
 //
-// `localInputValueToIso` is a private module helper, not exported. Its
-// branches are exercised indirectly by persistSave / persistPublish /
-// persistCreate (which call it on `meta.publishedAt`), but those paths
-// also branch on the mutation results which we cannot drive through the
-// SSR harness. The pure helper is therefore also covered directly in
-// editor-shell-derived.test coverage (parseLocalDateTime mirrors it).
+// `localInputValueToIso` lives in editor-shell-derived.ts and is covered
+// directly by editor-shell-derived.test.ts; the persist paths below only
+// assert its ISO output flows into the mutation payloads.
 
 const mutate = vi.fn()
 const mutateAsync = vi.fn().mockResolvedValue(undefined)
@@ -79,7 +78,7 @@ function makeArgs(overrides: Partial<Parameters<typeof useEditorShellPersist>[0]
     setServerPublishedAtIso: vi.fn(),
     lastSavedBody: [],
     markBodySaved: vi.fn(),
-    pendingActionRef: { current: null },
+    actionBanner: { begin: vi.fn() },
     createDraft: { migrateToEditKey: vi.fn() },
     ...overrides,
   }
@@ -105,11 +104,6 @@ describe('ui/admin/editor-shell/useEditorShellPersist — initial-return surface
     expect(result.isPublishing).toBe(false)
     expect(result.isUnpublishing).toBe(false)
     expect(result.isCreating).toBe(false)
-    // The four mutation objects are exposed too.
-    expect(result.upsertMetaMutation).toBeDefined()
-    expect(result.saveDraftMutation).toBeDefined()
-    expect(result.publishMutation).toBeDefined()
-    expect(result.unpublishMutation).toBeDefined()
   })
 })
 
@@ -190,8 +184,8 @@ describe('ui/admin/editor-shell/useEditorShellPersist — edit-mode save dispatc
       id: 'e1',
       publishedAt: expect.any(String),
     })
-    // The pending-action ref is armed for the draft leg.
-    expect(args.pendingActionRef.current).toEqual({ kind: 'draft', remaining: 1 })
+    // The banner countdown is armed for a single draft leg.
+    expect(args.actionBanner.begin).toHaveBeenCalledWith('draft', 1)
   })
 
   it('persistSave also fires saveDraft when the body diverged from lastSavedBody', () => {
@@ -214,7 +208,7 @@ describe('ui/admin/editor-shell/useEditorShellPersist — edit-mode save dispatc
 
     // Both mutations fire (upsertMeta + saveDraft).
     expect(mutate).toHaveBeenCalledTimes(2)
-    expect(args.pendingActionRef.current).toEqual({ kind: 'draft', remaining: 2 })
+    expect(args.actionBanner.begin).toHaveBeenCalledWith('draft', 2)
   })
 
   it('persistPublish fires the publish mutation with the parsed publishedAt', () => {
@@ -237,7 +231,7 @@ describe('ui/admin/editor-shell/useEditorShellPersist — edit-mode save dispatc
     expect(mutate).toHaveBeenCalledTimes(1)
     // setServerPublishedAtIso is updated to the parsed ISO.
     expect(args.setServerPublishedAtIso).toHaveBeenCalledWith(expect.any(String))
-    expect(args.pendingActionRef.current).toEqual({ kind: 'published', remaining: 1 })
+    expect(args.actionBanner.begin).toHaveBeenCalledWith('published', 1)
   })
 
   it('persistUnpublish fires the unpublish mutation in edit mode', () => {

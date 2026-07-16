@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router'
 import { toast } from 'sonner'
 
-import type { AdminPostDetailDto, AdminPostDto } from '@/shared/types/posts'
+import type { AdminPostDetailDto } from '@/shared/types/posts'
 import type { UseEditorShellStateOutput } from '@/ui/admin/editor-shell/editor-shell-types'
 import type { PostMetaDraft } from '@/ui/admin/posts/PostMetaSidebar'
 
@@ -19,7 +19,7 @@ import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '
 interface PostEditorMetaPanelProps {
   mode: 'create' | 'edit'
   detail?: AdminPostDetailDto
-  state: UseEditorShellStateOutput<PostMetaDraft, AdminPostDto>
+  state: UseEditorShellStateOutput<PostMetaDraft>
 }
 
 function MetaExtras({

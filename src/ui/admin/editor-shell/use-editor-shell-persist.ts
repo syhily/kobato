@@ -11,21 +11,11 @@ import type {
   SaveBodyOutput,
   UseEditorShellStateArgs,
 } from '@/ui/admin/editor-shell/editor-shell-types'
+import type { ActionBannerController } from '@/ui/admin/editor-shell/use-action-banner'
 
 import { useAutosave, type AutosaveStatus } from '@/client/hooks/use-autosave'
 import { arePortableTextBodiesEquivalent } from '@/shared/pt/bridge/canonicalize'
-import { isPendingForAutosave } from '@/ui/admin/editor-shell/editor-shell-derived'
-
-function localInputValueToIso(localValue: string): string | null {
-  if (localValue === '') {
-    return null
-  }
-  const ms = Date.parse(localValue)
-  if (Number.isNaN(ms)) {
-    return null
-  }
-  return new Date(ms).toISOString()
-}
+import { isPendingForAutosave, localInputValueToIso } from '@/ui/admin/editor-shell/editor-shell-derived'
 
 export function useEditorShellPersist<
   TMeta extends { title: string; slug: string; published: boolean; publishedAt: string },
@@ -65,7 +55,12 @@ export function useEditorShellPersist<
 
   lastSavedBody: PortableTextBody
   markBodySaved: (savedBody: PortableTextBody) => void
-  pendingActionRef: React.RefObject<{ kind: 'draft' | 'published'; remaining: number } | null>
+  /**
+   * Narrow slice of the banner protocol: persist arms the countdown
+   * (`begin(kind, legs)`) and owns the leg count — the orchestrator's
+   * reducers note and cancel legs through the same controller.
+   */
+  actionBanner: Pick<ActionBannerController, 'begin'>
   createDraft: { migrateToEditKey: (id: string, token: string, body: PortableTextBody) => void }
 }) {
   const {
@@ -94,9 +89,12 @@ export function useEditorShellPersist<
     setServerPublishedAtIso,
     lastSavedBody,
     markBodySaved,
-    pendingActionRef,
+    actionBanner,
     createDraft,
   } = args
+  // Destructured so the persist handlers can dep on the stable callback
+  // itself, not on the narrow wrapper object the orchestrator rebuilds.
+  const beginActionBanner = actionBanner.begin
 
   const upsertMetaMutation = useMutation({
     mutationFn: upsertMetaFn,
@@ -250,7 +248,7 @@ export function useEditorShellPersist<
     const serverIsScheduled = serverPublishedAtIso !== null && (Date.parse(serverPublishedAtIso) || 0) > Date.now()
     const publishedAt = pickerIso !== null ? pickerIso : serverIsScheduled ? new Date().toISOString() : null
     const bodyDiverged = !arePortableTextBodiesEquivalent(body, lastSavedBody)
-    pendingActionRef.current = { kind: 'draft', remaining: bodyDiverged ? 2 : 1 }
+    beginActionBanner('draft', bodyDiverged ? 2 : 1)
     upsertMetaMutation.mutate(buildUpsertMetaPayload({ meta, id: detail.entity.id, publishedAt }))
     if (bodyDiverged) {
       saveDraftMutation.mutate({
@@ -270,7 +268,7 @@ export function useEditorShellPersist<
     saveDraftMutation,
     buildUpsertMetaPayload,
     setStatus,
-    pendingActionRef,
+    beginActionBanner,
     lastSavedBody,
   ])
 
@@ -281,7 +279,7 @@ export function useEditorShellPersist<
     }
     setStatus({ kind: 'saving' })
     const publishedAtIso = localInputValueToIso(meta.publishedAt)
-    pendingActionRef.current = { kind: 'published', remaining: 1 }
+    beginActionBanner('published', 1)
     publishMutation.mutate({
       id: detail.entity.id,
       body,
@@ -298,7 +296,7 @@ export function useEditorShellPersist<
     publishMutation,
     setStatus,
     setServerPublishedAtIso,
-    pendingActionRef,
+    beginActionBanner,
   ])
 
   const persistUnpublish = useCallback(() => {
@@ -321,10 +319,6 @@ export function useEditorShellPersist<
   const isUnpublishing = unpublishMutation.isPending
 
   return {
-    upsertMetaMutation,
-    saveDraftMutation,
-    publishMutation,
-    unpublishMutation,
     isPending,
     isSavingDraft,
     isPublishing,

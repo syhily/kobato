@@ -1,5 +1,7 @@
 import type {
+  EditorShellDetail,
   EditorShellStatus,
+  EntityLike,
   PublishState,
   RevisionLike,
   SidebarPublishStatus,
@@ -48,14 +50,55 @@ export function derivePublishState(
   }
 }
 
-// `localInputValueToIso` parses the picker's local-tz string into ISO.
-// Both Post + Page sidebars export the same helper; we accept it as a
-// closure callback rather than duplicating the implementation here.
-// Shell binds it via `args.toPublishedAtIso` … actually no, the
-// callsites all use `meta.publishedAt` directly. We accept the parsed
-// ISO from the Shell so the hook stays agnostic of input formatting.
+// --- Baseline revision projection -------------------------------------------
+
+// The baseline revision is the server's most advanced copy of the body: the
+// latest revision when one exists, else the published one. This precedence
+// has a single owner — every consumer (body seed, bodyKey, expected token,
+// conflict-dialog timestamp) derives from these two projections.
+export function deriveBaselineRevision<TEntity extends EntityLike>(
+  detail: EditorShellDetail<TEntity> | undefined,
+): RevisionLike | null {
+  if (detail === undefined) {
+    return null
+  }
+  return detail.latestRevision ?? detail.publishedRevision
+}
+
+// ms-since-epoch of the baseline revision's last update, falling back to the
+// entity row's own `updatedAt` when no revision exists yet (a freshly created
+// entity whose first saveDraft leg failed still has a meaningful timestamp).
+export function deriveBaselineUpdatedAtMs<TEntity extends EntityLike>(
+  detail: EditorShellDetail<TEntity> | undefined,
+): number | null {
+  if (detail === undefined) {
+    return null
+  }
+  const iso = deriveBaselineRevision(detail)?.updatedAt ?? detail.entity.updatedAt
+  const ms = Date.parse(iso)
+  return Number.isNaN(ms) ? null : ms
+}
+
+// --- Date-time picker parsing -------------------------------------------------
+
+// The picker's local-tz input string has exactly two outcomes across the
+// shell: an ISO timestamp or "no value". Both `''` and unparseable input map
+// to the no-value sentinel — `null` here, `Number.NaN` in
+// `parseLocalDateTime` below — and this one parser owns that decision.
+export function localInputValueToIso(localValue: string): string | null {
+  if (localValue === '') {
+    return null
+  }
+  const ms = Date.parse(localValue)
+  if (Number.isNaN(ms)) {
+    return null
+  }
+  return new Date(ms).toISOString()
+}
+
 export function parseLocalDateTime(localValue: string): number {
-  return localValue === '' ? Number.NaN : Date.parse(localValue)
+  const iso = localInputValueToIso(localValue)
+  return iso === null ? Number.NaN : Date.parse(iso)
 }
 
 // --- Sidebar derivations ----------------------------------------------------

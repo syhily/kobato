@@ -113,6 +113,7 @@ describe('ui/admin/editor-shell/useEditorShellState — create-mode initial surf
     expect(result.sidebarRevisionSummary).toBeNull() // not editing
     // No conflict in create mode.
     expect(result.conflict).toBeNull()
+    expect(result.baselineUpdatedAtMs).toBeNull()
     expect(result.previewBanner).toBeNull()
     expect(result.createDraftSavedAt).toBeNull()
     // No expected token in create mode.
@@ -146,6 +147,20 @@ describe('ui/admin/editor-shell/useEditorShellState — create-mode initial surf
     const result = renderHook(() => useEditorShellState<Meta, EntityLike>(makeCreateArgs()))
     // Only meaningful in edit mode.
     expect(result.showPreviewPublicSyncHint).toBe(false)
+  })
+
+  it('baselineUpdatedAtMs falls back to the entity updatedAt in edit mode with no revisions', () => {
+    const args = {
+      ...makeCreateArgs(),
+      mode: 'edit' as const,
+      detail: {
+        entity: { id: 'e1', slug: 's', updatedAt: '2026-07-01T00:00:00.000Z', publishedAt: null },
+        latestRevision: null,
+        publishedRevision: null,
+      },
+    }
+    const result = renderHook(() => useEditorShellState<Meta, EntityLike>(args))
+    expect(result.baselineUpdatedAtMs).toBe(Date.parse('2026-07-01T00:00:00.000Z'))
   })
 
   it('adoptLocalDraft / adoptServerVersion / adoptRevisionFromHistory short-circuit in create mode', async () => {

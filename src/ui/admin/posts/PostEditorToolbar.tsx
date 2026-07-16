@@ -12,7 +12,7 @@ import {
 } from 'lucide-react'
 import { Link } from 'react-router'
 
-import type { AdminPostDetailDto, AdminPostDto } from '@/shared/types/posts'
+import type { AdminPostDetailDto } from '@/shared/types/posts'
 import type { UseEditorShellStateOutput } from '@/ui/admin/editor-shell/editor-shell-types'
 import type { PostMetaDraft } from '@/ui/admin/posts/PostMetaSidebar'
 
@@ -22,7 +22,7 @@ import { cn } from '@/ui/lib/cn'
 interface PostEditorToolbarProps {
   mode: 'create' | 'edit'
   detail?: AdminPostDetailDto
-  state: UseEditorShellStateOutput<PostMetaDraft, AdminPostDto>
+  state: UseEditorShellStateOutput<PostMetaDraft>
 }
 
 export function PostEditorToolbar({ mode, detail, state }: PostEditorToolbarProps) {

@@ -116,7 +116,7 @@ export interface UseEditorShellStateArgs<
   navigate: NavigateFunction
 }
 
-export interface UseEditorShellStateOutput<TMeta, TEntity extends EntityLike = EntityLike> {
+export interface UseEditorShellStateOutput<TMeta> {
   meta: TMeta
   setMeta: React.Dispatch<React.SetStateAction<TMeta>>
   body: PortableTextBody
@@ -134,6 +134,12 @@ export interface UseEditorShellStateOutput<TMeta, TEntity extends EntityLike = E
   editorScrollRef: React.RefObject<HTMLDivElement | null>
   previewScrollRef: React.RefObject<HTMLDivElement | null>
   conflict: { localBody: PortableTextBody; localSavedAt: number } | null
+  /**
+   * ms-since-epoch of the baseline revision's last update (latest revision,
+   * else published, else the entity row's `updatedAt`); null in create mode
+   * or when the timestamp is unparseable. Feeds the conflict dialog.
+   */
+  baselineUpdatedAtMs: number | null
   previewBanner: { kind: 'draft' | 'published'; slug: string } | null
   dismissPreviewBanner: () => void
   createDraftSavedAt: number | null
@@ -156,8 +162,4 @@ export interface UseEditorShellStateOutput<TMeta, TEntity extends EntityLike = E
   adoptLocalDraft: () => Promise<void>
   adoptServerVersion: () => void
   adoptRevisionFromHistory: (revision: { body: PortableTextBody; revisionNo: number }) => void
-  onMetaSaved: (entity: TEntity) => void
-  onBodySaved: (payload: SaveBodyOutput) => void
-  onUnpublishSaved: (entity: TEntity, freshMeta: TMeta) => void
-  noteError: (message: string) => void
 }

@@ -15,11 +15,13 @@ import { useCreateDraft } from '@/client/hooks/use-create-draft'
 import { useLocalDraft } from '@/client/hooks/use-local-draft'
 import { arePortableTextBodiesEquivalent } from '@/shared/pt/bridge/canonicalize'
 import {
+  deriveBaselineUpdatedAtMs,
   derivePublishState,
   deriveSidebarPublishStatus,
   deriveSidebarRevisionSummary,
   deriveSidebarSaveStatus,
 } from '@/ui/admin/editor-shell/editor-shell-derived'
+import { useActionBanner } from '@/ui/admin/editor-shell/use-action-banner'
 import { useEditorBodyState } from '@/ui/admin/editor-shell/use-editor-body-state'
 import { useEditorKeyboardShortcuts } from '@/ui/admin/editor-shell/use-editor-keyboard-shortcuts'
 import { useEditorMetaState } from '@/ui/admin/editor-shell/use-editor-meta-state'
@@ -31,7 +33,7 @@ export function useEditorShellState<
   TMeta extends { title: string; slug: string; published: boolean; publishedAt: string },
   TEntity extends EntityLike,
   TUpsertMetaInput = Record<string, unknown>,
->(args: UseEditorShellStateArgs<TMeta, TEntity, TUpsertMetaInput>): UseEditorShellStateOutput<TMeta, TEntity> {
+>(args: UseEditorShellStateArgs<TMeta, TEntity, TUpsertMetaInput>): UseEditorShellStateOutput<TMeta> {
   const {
     mode,
     entityKind: _entityKind,
@@ -69,14 +71,9 @@ export function useEditorShellState<
     useEditorShellLayout()
 
   const [status, setStatus] = useState<EditorShellStatus>({ kind: 'idle' })
-  const [displaySaveAtMs, setDisplaySaveAtMs] = useState<number | null>(() => {
-    if (!isEditing || detail === undefined) {
-      return null
-    }
-    const iso = (detail.latestRevision ?? detail.publishedRevision)?.updatedAt ?? detail.entity.updatedAt
-    const ms = Date.parse(iso)
-    return Number.isNaN(ms) ? null : ms
-  })
+  const [displaySaveAtMs, setDisplaySaveAtMs] = useState<number | null>(() =>
+    isEditing ? deriveBaselineUpdatedAtMs(detail) : null,
+  )
 
   // --- LS draft hooks -------------------------------------------------------
   const { loadedDraft: loadedLocalDraft, clearDraft: clearLocalDraft } = useLocalDraft(localDraftConfig, {
@@ -88,28 +85,16 @@ export function useEditorShellState<
   const createDraft = useCreateDraft(createDraftConfig, { body, meta })
 
   // --- Banner (post-save preview link) -------------------------------------
-  const pendingActionRef = useRef<{ kind: 'draft' | 'published'; remaining: number } | null>(null)
-  const [previewBanner, setPreviewBanner] = useState<{
-    kind: 'draft' | 'published'
-    slug: string
-  } | null>(null)
-  const dismissPreviewBanner = useCallback(() => setPreviewBanner(null), [])
-  const noteActionLegSucceeded = useCallback((slugForBanner: string) => {
-    const pending = pendingActionRef.current
-    if (pending === null) {
-      return
-    }
-    pending.remaining -= 1
-    if (pending.remaining > 0) {
-      return
-    }
-    const kind = pending.kind
-    pendingActionRef.current = null
-    setPreviewBanner({ kind, slug: slugForBanner })
-  }, [])
-  const cancelActionBanner = useCallback(() => {
-    pendingActionRef.current = null
-  }, [])
+  // The banner protocol (arm → note legs → show / cancel) lives in
+  // useActionBanner: persist arms the countdown, the save reducers below
+  // note legs and cancel. No shared mutable ref crosses the module boundary.
+  const {
+    banner: previewBanner,
+    begin: beginActionBanner,
+    noteLeg: noteActionLegSucceeded,
+    cancel: cancelActionBanner,
+    dismiss: dismissPreviewBanner,
+  } = useActionBanner()
 
   // --- Create-mode LS hydration --------------------------------------------
   const createDraftHydratedRef = useRef(false)
@@ -199,9 +184,9 @@ export function useEditorShellState<
       if (!Number.isNaN(saveMs)) {
         setDisplaySaveAtMs(saveMs)
       }
-      setPreviewBanner(null)
+      dismissPreviewBanner()
     },
-    [resetMeta],
+    [resetMeta, dismissPreviewBanner],
   )
 
   const noteError = useCallback(
@@ -249,11 +234,16 @@ export function useEditorShellState<
     setServerPublishedAtIso: metaState.setServerPublishedAtIso,
     lastSavedBody,
     markBodySaved,
-    pendingActionRef,
+    actionBanner: { begin: beginActionBanner },
     createDraft,
   })
 
   // --- Derived flags + projections -----------------------------------------
+  // Baseline timestamp (latest revision, else published, else the entity
+  // row's own updatedAt) — single-owner projection from editor-shell-derived,
+  // consumed by the conflict dialog in the shell TSX.
+  const baselineUpdatedAtMs = useMemo(() => (isEditing ? deriveBaselineUpdatedAtMs(detail) : null), [isEditing, detail])
+
   const publishState = useMemo<PublishState>(
     () =>
       isEditing ? derivePublishState(latestRevision, publishedRevision, meta.published) : { kind: 'not-published-yet' },
@@ -356,6 +346,7 @@ export function useEditorShellState<
     previewScrollRef,
 
     conflict,
+    baselineUpdatedAtMs,
 
     previewBanner,
     dismissPreviewBanner,
@@ -383,10 +374,5 @@ export function useEditorShellState<
     adoptLocalDraft,
     adoptServerVersion,
     adoptRevisionFromHistory,
-
-    onMetaSaved,
-    onBodySaved,
-    onUnpublishSaved,
-    noteError,
   }
 }
