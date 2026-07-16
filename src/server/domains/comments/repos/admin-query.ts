@@ -175,19 +175,7 @@ export async function listAdminPendingDashboard(
     .orderBy(desc(sql`COALESCE(${comment.deleteRequestedAt}, ${comment.createdAt})`), desc(comment.id))
     .limit(limit)
     .offset(offset)
-  return rows.map((row) => ({
-    id: row.id,
-    createdAt: row.createdAt,
-    deleteRequestedAt: row.deleteRequestedAt,
-    isPending: row.isPending,
-    content: row.content,
-    type: row.type,
-    ownerId: row.ownerId,
-    pageSlug: row.pageSlug,
-    pageTitle: row.pageTitle,
-    authorName: row.authorName,
-    authorLink: row.authorLink,
-  }))
+  return rows
 }
 
 export async function countAdminPendingDashboard(db: NodePgDatabase): Promise<{

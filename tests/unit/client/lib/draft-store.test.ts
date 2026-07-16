@@ -2,17 +2,7 @@ import { openDB } from 'idb'
 import 'fake-indexeddb/auto'
 import { beforeEach, describe, expect, it } from 'vitest'
 
-import {
-  __resetDbForTests,
-  countDrafts,
-  getDraft,
-  listDrafts,
-  removeDraft,
-  removeDraftsBefore,
-  removeDraftsByPrefix,
-  removeDraftsByType,
-  setDraft,
-} from '@/client/lib/draft-store'
+import { __resetDbForTests, getDraft, removeDraft, setDraft } from '@/client/lib/draft-store'
 
 const localStorageData = new Map<string, string>()
 
@@ -92,92 +82,6 @@ describe('draft-store', () => {
     expect(result).toBeNull()
   })
 
-  it('lists all drafts', async () => {
-    const r1 = {
-      key: 'cms-post-draft:p1:t1',
-      type: 'post-edit' as const,
-      body: [],
-      savedAt: 100,
-      version: 1,
-    }
-    const r2 = {
-      key: 'cms-page-draft:p2:t2',
-      type: 'page-edit' as const,
-      body: [],
-      savedAt: 200,
-      version: 1,
-    }
-    await setDraft(r1.key, r1)
-    await setDraft(r2.key, r2)
-    const all = await listDrafts()
-    expect(all).toHaveLength(2)
-    expect(all.map((r) => r.key)).toContain(r1.key)
-    expect(all.map((r) => r.key)).toContain(r2.key)
-  })
-
-  it('filters drafts by type', async () => {
-    await setDraft('k1', {
-      key: 'k1',
-      type: 'post-create',
-      body: [],
-      savedAt: 1,
-      version: 1,
-    })
-    await setDraft('k2', {
-      key: 'k2',
-      type: 'page-edit',
-      body: [],
-      savedAt: 2,
-      version: 1,
-    })
-    const posts = await listDrafts({ type: 'post-create' })
-    expect(posts).toHaveLength(1)
-    expect(posts[0]!.key).toBe('k1')
-  })
-
-  it('filters drafts by savedAt ceiling', async () => {
-    await setDraft('k1', {
-      key: 'k1',
-      type: 'post-edit',
-      body: [],
-      savedAt: 100,
-      version: 1,
-    })
-    await setDraft('k2', {
-      key: 'k2',
-      type: 'post-edit',
-      body: [],
-      savedAt: 200,
-      version: 1,
-    })
-    const old = await listDrafts({ before: 150 })
-    expect(old).toHaveLength(1)
-    expect(old[0]!.key).toBe('k1')
-  })
-
-  it('counts drafts', async () => {
-    expect(await countDrafts()).toBe(0)
-    await setDraft('k1', { key: 'k1', type: 'post-edit', body: [], savedAt: 1, version: 1 })
-    expect(await countDrafts()).toBe(1)
-  })
-
-  it('removes drafts by type', async () => {
-    await setDraft('k1', { key: 'k1', type: 'post-edit', body: [], savedAt: 1, version: 1 })
-    await setDraft('k2', { key: 'k2', type: 'post-create', body: [], savedAt: 2, version: 1 })
-    await setDraft('k3', { key: 'k3', type: 'page-edit', body: [], savedAt: 3, version: 1 })
-    const removed = await removeDraftsByType('post-edit')
-    expect(removed).toBe(1)
-    expect(await countDrafts()).toBe(2)
-  })
-
-  it('removes drafts before a timestamp', async () => {
-    await setDraft('k1', { key: 'k1', type: 'post-edit', body: [], savedAt: 100, version: 1 })
-    await setDraft('k2', { key: 'k2', type: 'post-edit', body: [], savedAt: 200, version: 1 })
-    const removed = await removeDraftsBefore(150)
-    expect(removed).toBe(1)
-    expect(await countDrafts()).toBe(1)
-  })
-
   it('migrates legacy localStorage drafts on first DB open', async () => {
     localStorageData.set(
       'cms-post-draft:legacy-post:token',
@@ -201,8 +105,9 @@ describe('draft-store', () => {
     )
     localStorageData.set('other-key', 'should-stay')
 
-    // DB open triggers migration automatically on first access.
-    expect(await countDrafts()).toBe(2)
+    // DB open triggers migration automatically on first access; unrelated
+    // localStorage keys are never migrated into IDB.
+    expect(await getDraft('other-key')).toBeNull()
 
     const post = await getDraft('cms-post-draft:legacy-post:token')
     expect(post).not.toBeNull()
@@ -225,43 +130,9 @@ describe('draft-store', () => {
     localStorageData.set('cms-post-draft:wrong-version', JSON.stringify({ version: 2, body: [] }))
     localStorageData.set('cms-post-draft:missing-body', JSON.stringify({ version: 1 }))
 
-    expect(await countDrafts()).toBe(0)
-  })
-
-  it('removes drafts by prefix', async () => {
-    await setDraft('cms-post-draft:p1:t1', {
-      key: 'cms-post-draft:p1:t1',
-      type: 'post-edit',
-      body: [],
-      savedAt: 1,
-      version: 1,
-    })
-    await setDraft('cms-post-draft:p2:t2', {
-      key: 'cms-post-draft:p2:t2',
-      type: 'post-edit',
-      body: [],
-      savedAt: 2,
-      version: 1,
-    })
-    await setDraft('cms-page-draft:page1:t1', {
-      key: 'cms-page-draft:page1:t1',
-      type: 'page-edit',
-      body: [],
-      savedAt: 3,
-      version: 1,
-    })
-
-    const removed = await removeDraftsByPrefix('cms-post-draft:')
-    expect(removed).toBe(2)
-    expect(await countDrafts()).toBe(1)
-    expect(await getDraft('cms-page-draft:page1:t1')).not.toBeNull()
-  })
-
-  it('returns 0 when removing drafts by a non-matching prefix', async () => {
-    await setDraft('k1', { key: 'k1', type: 'post-edit', body: [], savedAt: 1, version: 1 })
-    const removed = await removeDraftsByPrefix('no-match')
-    expect(removed).toBe(0)
-    expect(await countDrafts()).toBe(1)
+    expect(await getDraft('cms-post-draft:bad')).toBeNull()
+    expect(await getDraft('cms-post-draft:wrong-version')).toBeNull()
+    expect(await getDraft('cms-post-draft:missing-body')).toBeNull()
   })
 
   it('overwrites an existing draft with the same key', async () => {
@@ -272,14 +143,5 @@ describe('draft-store', () => {
     expect(result).not.toBeNull()
     expect(result!.body).toEqual([{ text: 'second' }])
     expect(result!.savedAt).toBe(200)
-  })
-
-  it('returns empty array when listing drafts in an empty store', async () => {
-    const all = await listDrafts()
-    expect(all).toEqual([])
-  })
-
-  it('returns 0 when counting drafts in an empty store', async () => {
-    expect(await countDrafts()).toBe(0)
   })
 })
