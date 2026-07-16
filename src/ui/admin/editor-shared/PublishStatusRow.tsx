@@ -5,7 +5,7 @@ import type {
   SidebarPublishStatus,
   SidebarRevisionSummary,
   SidebarSaveStatus,
-} from '@/ui/admin/editor-shared/sidebar-types'
+} from '@/ui/admin/editor-shell/editor-shell-types'
 
 import { DateTimePicker } from '@/ui/admin/editor-shell/DateTimePicker'
 import { Badge } from '@/ui/components/badge'

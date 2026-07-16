@@ -72,7 +72,7 @@ import type {
   SidebarPublishStatus,
   SidebarRevisionSummary,
   SidebarSaveStatus,
-} from '@/ui/admin/editor-shared/sidebar-types'
+} from '@/ui/admin/editor-shell/editor-shell-types'
 
 export interface MetaSidebarProps {
   draft: PageMetaDraft
