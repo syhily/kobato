@@ -10,7 +10,10 @@ import type { Route } from './+types/archives'
 export async function loader({ request, context }: Route.LoaderArgs) {
   const db = getDbFromContext({ request, context })
   const listingNowIso = new Date().toISOString()
-  const rawPosts = await listClientPosts(db, { includeHidden: true, includeScheduled: false })
+  // Archives promises completeness: list every live post. The bound is explicit
+  // (the helper otherwise defaults to 200) and far above any realistic personal
+  // blog; if it ever bites, the fix is year-grouped pagination, not a lower cap.
+  const rawPosts = await listClientPosts(db, { includeHidden: true, includeScheduled: false, limit: 10_000 })
   const posts = rawPosts.map(toListingPostCard)
   const resolvedPosts = await getClientPostsWithMetadata(db, posts, {
     likes: true,
