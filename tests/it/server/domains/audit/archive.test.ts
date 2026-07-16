@@ -1,5 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { TEST_BLOG_SETTINGS_BUNDLE } from '#/_helpers/blog-settings'
+import { setBlogSettingsBundleForTests } from '@/server/domains/settings/services/test-utils'
+
+// The storage seam stays real (registry → S3 backend); only the AWS SDK is
+// mocked at the boundary. That keeps the availability checks honest — the
+// half-configured cases below exercise the backend's real `isAvailable()`.
 const dbDeleteWhere = vi.fn(() => Promise.resolve({ rowCount: 0 })) as ReturnType<typeof vi.fn>
 const dbSelectLimit = vi.fn(() => Promise.resolve([])) as ReturnType<typeof vi.fn>
 const dbSelectOrderBy = vi.fn(() => ({ limit: dbSelectLimit })) as ReturnType<typeof vi.fn>
@@ -7,34 +13,33 @@ const dbSelectWhere = vi.fn(() => ({ orderBy: dbSelectOrderBy })) as ReturnType<
 const dbSelectFrom = vi.fn(() => ({ where: dbSelectWhere })) as ReturnType<typeof vi.fn>
 const dbSelect = vi.fn(() => ({ from: dbSelectFrom })) as ReturnType<typeof vi.fn>
 
-const listS3Objects = vi.fn()
-const putS3Object = vi.fn()
-const deleteS3Objects = vi.fn()
+const sendMock = vi.fn<(command: { input: unknown }) => Promise<unknown>>()
+const destroyMock = vi.fn()
+const middlewareStack = { addRelativeTo: vi.fn() }
 
-function createBundle(s3Enabled: boolean, secretAccessKey: string) {
-  return {
-    limits: { auditLogDbRetentionDays: 30, auditLogArchiveRetentionDays: 180 },
-    assets: {
-      storage: {
-        enabled: s3Enabled,
-        secretAccessKey,
-      },
-    },
+vi.mock('@aws-sdk/client-s3', () => {
+  class S3Client {
+    send = sendMock
+    destroy = destroyMock
+    middlewareStack = middlewareStack
+    constructor(public config: unknown) {}
   }
-}
+  class PutObjectCommand {
+    constructor(public input: unknown) {}
+  }
+  class ListObjectsV2Command {
+    constructor(public input: unknown) {}
+  }
+  class DeleteObjectsCommand {
+    constructor(public input: unknown) {}
+  }
+  return { S3Client, PutObjectCommand, ListObjectsV2Command, DeleteObjectsCommand }
+})
 
-const getBlogSettingsBundleSync = vi.fn(() => createBundle(true, 'test-secret'))
-
-vi.mock('@/server/infra/storage/s3-client', () => ({
-  listS3Objects,
-  putS3Object,
-  deleteS3Objects,
-}))
-
-vi.mock('@/shared/config/getters', () => ({ getBlogSettingsBundleSync }))
+const logSpies = vi.hoisted(() => ({ error: vi.fn(), warn: vi.fn(), info: vi.fn(), debug: vi.fn() }))
 
 vi.mock('@/server/infra/logger', () => ({
-  getLogger: () => ({ error: vi.fn(), warn: vi.fn(), info: vi.fn(), debug: vi.fn() }),
+  getLogger: () => logSpies,
 }))
 
 vi.mock('@/server/domains/audit/services/record', () => ({ recordAuditEvent: vi.fn() }))
@@ -44,12 +49,33 @@ const db = {
   select: dbSelect,
 } as any
 
+type StorageOverrides = Partial<NonNullable<(typeof TEST_BLOG_SETTINGS_BUNDLE)['assets']>['storage']>
+
+function setS3Storage(overrides: StorageOverrides) {
+  const assets = TEST_BLOG_SETTINGS_BUNDLE.assets!
+  setBlogSettingsBundleForTests({
+    ...TEST_BLOG_SETTINGS_BUNDLE,
+    assets: { ...assets, storage: { ...assets.storage, ...overrides } },
+  })
+}
+
+interface SentCommandInput {
+  Key?: string
+  ContentType?: string
+  CacheControl?: string
+  Delete?: { Objects?: { Key: string }[] }
+}
+
+function commandInput(call: number): SentCommandInput {
+  return (sendMock.mock.calls[call]![0] as { input: SentCommandInput }).input
+}
+
 const { archiveExpiredAuditLogs, cleanupExpiredArchives } = await import('@/server/domains/audit/services/archive')
 
 describe('audit/archive', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    getBlogSettingsBundleSync.mockReturnValue(createBundle(true, 'test-secret'))
+    setBlogSettingsBundleForTests(TEST_BLOG_SETTINGS_BUNDLE)
   })
 
   describe('archiveExpiredAuditLogs', () => {
@@ -80,7 +106,7 @@ describe('audit/archive', () => {
 
       const result = await archiveExpiredAuditLogs(db)
       expect(result.archivedDays).toBe(1)
-      expect(putS3Object).not.toHaveBeenCalled()
+      expect(sendMock).not.toHaveBeenCalled()
     })
 
     it('archives rows and deletes them after successful upload', async () => {
@@ -111,32 +137,53 @@ describe('audit/archive', () => {
       dbSelectLimit.mockReturnValueOnce(Promise.resolve(rows))
 
       dbDeleteWhere.mockResolvedValueOnce({ rowCount: 1 })
+      sendMock.mockResolvedValue({})
 
       const result = await archiveExpiredAuditLogs(db)
       expect(result.archivedRows).toBe(1)
-      expect(putS3Object).toHaveBeenCalledOnce()
+      expect(sendMock).toHaveBeenCalledOnce()
+      const input = commandInput(0)
+      expect(input.Key).toBe('audit-log/archive/2026-01-01.jsonl.gz')
+      expect(input.ContentType).toBe('application/gzip')
+      expect(input.CacheControl).toContain('private')
       expect(dbDeleteWhere).toHaveBeenCalledOnce()
     })
 
     it('purges expired rows without archiving when S3 is disabled', async () => {
-      getBlogSettingsBundleSync.mockReturnValue(createBundle(false, ''))
+      setS3Storage({ enabled: false })
 
       dbDeleteWhere.mockResolvedValueOnce({ rowCount: 42 })
 
       const result = await archiveExpiredAuditLogs(db)
       expect(result).toEqual({ archivedDays: 0, archivedRows: 0, deletedRows: 42 })
-      expect(putS3Object).not.toHaveBeenCalled()
+      expect(sendMock).not.toHaveBeenCalled()
       expect(dbDeleteWhere).toHaveBeenCalledOnce()
     })
 
     it('purges expired rows without archiving when S3 secret key is empty', async () => {
-      getBlogSettingsBundleSync.mockReturnValue(createBundle(true, ''))
+      setS3Storage({ secretAccessKey: '' })
 
       dbDeleteWhere.mockResolvedValueOnce({ rowCount: 10 })
 
       const result = await archiveExpiredAuditLogs(db)
       expect(result).toEqual({ archivedDays: 0, archivedRows: 0, deletedRows: 10 })
-      expect(putS3Object).not.toHaveBeenCalled()
+      expect(sendMock).not.toHaveBeenCalled()
+    })
+
+    // Q4: a half-configured bucket (enabled + keys present, endpoint missing)
+    // must take the purge fallback — one warn, zero errors — instead of
+    // attempting the archive and logging an error every daily run.
+    it('purges expired rows when S3 is half-configured (endpoint missing)', async () => {
+      setS3Storage({ endpoint: '' })
+
+      dbDeleteWhere.mockResolvedValueOnce({ rowCount: 7 })
+
+      const result = await archiveExpiredAuditLogs(db)
+      expect(result).toEqual({ archivedDays: 0, archivedRows: 0, deletedRows: 7 })
+      expect(sendMock).not.toHaveBeenCalled()
+      expect(logSpies.warn).toHaveBeenCalledTimes(1)
+      expect(logSpies.warn).toHaveBeenCalledWith('S3 storage unavailable; purging expired audit logs without archiving')
+      expect(logSpies.error).not.toHaveBeenCalled()
     })
   })
 
@@ -145,40 +192,44 @@ describe('audit/archive', () => {
       const veryOld = new Date()
       veryOld.setDate(veryOld.getDate() - 365)
 
-      listS3Objects.mockResolvedValueOnce([
-        { key: 'audit-log/archive/2025-01-01.jsonl.gz', lastModified: veryOld },
-        { key: 'audit-log/archive/2026-05-01.jsonl.gz', lastModified: new Date() },
-      ])
+      sendMock.mockResolvedValueOnce({
+        Contents: [
+          { Key: 'audit-log/archive/2025-01-01.jsonl.gz', Size: 10, LastModified: veryOld },
+          { Key: 'audit-log/archive/2026-05-01.jsonl.gz', Size: 10, LastModified: new Date() },
+        ],
+      })
+      sendMock.mockResolvedValueOnce({})
 
       const result = await cleanupExpiredArchives()
       expect(result.deletedFiles).toBe(1)
-      expect(deleteS3Objects).toHaveBeenCalledWith(['audit-log/archive/2025-01-01.jsonl.gz'])
+      expect(sendMock).toHaveBeenCalledTimes(2)
+      expect(commandInput(1).Delete?.Objects).toEqual([{ Key: 'audit-log/archive/2025-01-01.jsonl.gz' }])
     })
 
     it('returns zero when nothing is expired', async () => {
-      listS3Objects.mockResolvedValueOnce([{ key: 'audit-log/archive/2026-05-01.jsonl.gz', lastModified: new Date() }])
+      sendMock.mockResolvedValueOnce({
+        Contents: [{ Key: 'audit-log/archive/2026-05-01.jsonl.gz', Size: 10, LastModified: new Date() }],
+      })
 
       const result = await cleanupExpiredArchives()
       expect(result.deletedFiles).toBe(0)
-      expect(deleteS3Objects).not.toHaveBeenCalled()
+      expect(sendMock).toHaveBeenCalledTimes(1)
     })
 
     it('skips cleanup when S3 is disabled', async () => {
-      getBlogSettingsBundleSync.mockReturnValue(createBundle(false, ''))
+      setS3Storage({ enabled: false })
 
       const result = await cleanupExpiredArchives()
       expect(result.deletedFiles).toBe(0)
-      expect(listS3Objects).not.toHaveBeenCalled()
-      expect(deleteS3Objects).not.toHaveBeenCalled()
+      expect(sendMock).not.toHaveBeenCalled()
     })
 
     it('skips cleanup when S3 secret key is empty', async () => {
-      getBlogSettingsBundleSync.mockReturnValue(createBundle(true, ''))
+      setS3Storage({ secretAccessKey: '' })
 
       const result = await cleanupExpiredArchives()
       expect(result.deletedFiles).toBe(0)
-      expect(listS3Objects).not.toHaveBeenCalled()
-      expect(deleteS3Objects).not.toHaveBeenCalled()
+      expect(sendMock).not.toHaveBeenCalled()
     })
   })
 })

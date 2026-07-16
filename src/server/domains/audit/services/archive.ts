@@ -10,13 +10,26 @@ import type { ArchiveResult, CleanupResult } from '@/server/domains/audit/types'
 import { recordAuditEvent } from '@/server/domains/audit/services/record'
 import { auditLog } from '@/server/infra/db/schema/config'
 import { getLogger } from '@/server/infra/logger'
-import { deleteS3Objects, listS3Objects, putS3Object } from '@/server/infra/storage/s3-client'
+import { backendFor } from '@/server/infra/storage/registry'
 import { getBlogSettingsBundleSync } from '@/shared/config/getters'
 
 const log = getLogger('audit.archive')
 
 const S3_ARCHIVE_PREFIX = 'audit-log/archive/'
 const ARCHIVE_PAGE_SIZE = 5000
+
+// Whether the archive job can write to S3. Goes through the backend's strict
+// `isAvailable()` (enabled + endpoint + bucket + both keys) so a
+// half-configured bucket takes the purge fallback below instead of failing
+// every daily run. The try/catch mirrors the registry's own degradation: a
+// not-yet-hydrated settings snapshot counts as unavailable, not as a crash.
+function s3ArchiveAvailable(): boolean {
+  try {
+    return backendFor('s3').isAvailable()
+  } catch {
+    return false
+  }
+}
 
 // Archive expired audit logs to S3
 
@@ -33,9 +46,7 @@ export async function archiveExpiredAuditLogs(db: NodePgDatabase): Promise<Archi
 
   // If S3 is not configured, fall back to purge-only mode so expired rows
   // do not accumulate indefinitely in Postgres.
-  const storage = bundle?.assets?.storage
-  const s3Available = storage?.enabled === true && storage.secretAccessKey !== ''
-  if (!s3Available) {
+  if (!s3ArchiveAvailable()) {
     log.warn('S3 storage unavailable; purging expired audit logs without archiving')
 
     const deleteResult = await db.delete(auditLog).where(lt(auditLog.createdAt, cutoff))
@@ -166,7 +177,7 @@ async function archiveDay(db: NodePgDatabase, day: string, dayStart: Date, dayEn
   }
 
   // Upload to S3
-  await putS3Object(key, buffer, 'application/gzip')
+  await backendFor('s3').put({ key, body: buffer, contentType: 'application/gzip', visibility: 'private' })
 
   // Only delete from DB after successful upload.
   // Delete by the exact row IDs we collected so that events inserted
@@ -183,9 +194,7 @@ export async function cleanupExpiredArchives(): Promise<CleanupResult> {
   const bundle = getBlogSettingsBundleSync()
   const archiveRetentionDays = bundle?.limits?.auditLogArchiveRetentionDays ?? 180
 
-  const storage = bundle?.assets?.storage
-  const s3Available = storage?.enabled === true && storage.secretAccessKey !== ''
-  if (!s3Available) {
+  if (!s3ArchiveAvailable()) {
     log.info('S3 storage unavailable; skipping expired archive cleanup')
     return { deletedFiles: 0 }
   }
@@ -195,15 +204,16 @@ export async function cleanupExpiredArchives(): Promise<CleanupResult> {
 
   log.info('Starting S3 archive cleanup', { cutoff: cutoff.toISOString(), archiveRetentionDays })
 
-  const objects = await listS3Objects(S3_ARCHIVE_PREFIX)
-  const toDelete = objects.filter((o) => o.lastModified < cutoff).map((o) => o.key)
+  const backend = backendFor('s3')
+  const objects = await backend.list(S3_ARCHIVE_PREFIX)
+  const toDelete = objects.filter((o) => o.lastModified !== undefined && o.lastModified < cutoff).map((o) => o.key)
 
   if (toDelete.length === 0) {
     log.info('No expired S3 archives to clean up')
     return { deletedFiles: 0 }
   }
 
-  await deleteS3Objects(toDelete)
+  await backend.deleteMany(toDelete)
 
   log.info('S3 archive cleanup completed', { deletedFiles: toDelete.length })
   return { deletedFiles: toDelete.length }
