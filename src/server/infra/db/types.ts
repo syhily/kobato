@@ -11,6 +11,7 @@ import type { passkeyCredential } from '@/server/infra/db/schema/passkey'
 import type { post } from '@/server/infra/db/schema/post'
 import type { category, tag } from '@/server/infra/db/schema/taxonomy'
 import type { user, verification } from '@/server/infra/db/schema/user'
+import type { webmention } from '@/server/infra/db/schema/webmention'
 
 // Types for insert
 export type NewPasskeyCredential = typeof passkeyCredential.$inferInsert
@@ -30,6 +31,7 @@ export type NewPostMeta = typeof post.$inferInsert
 export type NewContent = typeof content.$inferInsert
 export type NewBackup = typeof backup.$inferInsert
 export type NewNewsletterSubscriber = typeof newsletterSubscriber.$inferInsert
+export type NewWebmention = typeof webmention.$inferInsert
 
 // Types for select
 export type PasskeyCredentialRow = typeof passkeyCredential.$inferSelect
@@ -49,3 +51,4 @@ export type PostMetaRow = typeof post.$inferSelect
 export type ContentRow = typeof content.$inferSelect
 export type BackupRow = typeof backup.$inferSelect
 export type NewsletterSubscriberRow = typeof newsletterSubscriber.$inferSelect
+export type WebmentionRow = typeof webmention.$inferSelect
