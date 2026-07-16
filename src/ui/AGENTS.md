@@ -11,7 +11,8 @@ parent.
   so `npx shadcn@latest add/diff` works. `components.json` aliases
   `components` and `ui` here. One token cascade in `:root`
   (`tailwind.css`) covers public + admin.
-- **`ui/public/`** — `chrome/`, `post/`, `comments/`, `widgets/`, plus
+- **`ui/public/`** — `chrome/`, `post/`, `comments/`, `friends/`
+  (friend-link application form), `widgets/`, plus
   single-file leaves (`Search.tsx`, `Sidebar.tsx`, `LikeActions.tsx`).
 - **`ui/admin/`** — grouped by domain (`analytics`, `auth`,
   `categories`, `comments`, `editor`, `editor-shell`, `friends`,
