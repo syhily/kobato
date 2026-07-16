@@ -20,33 +20,6 @@ const s3Mock = vi.hoisted(() => {
   }
 })
 
-vi.mock('@/server/infra/storage/s3-client', () => ({
-  putS3Object: vi.fn(async (key: string, body: Buffer | AsyncIterable<unknown>) => {
-    if (Buffer.isBuffer(body)) {
-      s3Mock.store.set(key, body)
-      return
-    }
-
-    const chunks: Buffer[] = []
-    for await (const chunk of body) {
-      chunks.push(chunk as Buffer)
-    }
-    s3Mock.store.set(key, Buffer.concat(chunks))
-  }),
-  getS3ObjectBuffer: vi.fn(async (key: string) => {
-    const buffer = s3Mock.store.get(key)
-    if (buffer === undefined) {
-      throw new Error(`S3 mock: object not found: ${key}`)
-    }
-    return buffer
-  }),
-  deleteS3Object: vi.fn(),
-  deleteS3Objects: vi.fn(),
-  listS3Objects: vi.fn(async () => []),
-  listS3ObjectsPaginated: vi.fn(async () => ({ objects: [] })),
-  putPublicS3Object: vi.fn(),
-}))
-
 // Route the storage registry at an in-memory backend backed by `s3Mock.store`
 // so createBackup/getBackupBuffer round-trip without real S3 or settings.
 vi.mock('@/server/infra/storage/registry', () => {

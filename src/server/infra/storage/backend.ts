@@ -36,8 +36,8 @@ export interface PutStreamInput {
 }
 
 /**
- * Pluggable storage backend. Two implementations exist: S3 (wraps
- * `s3-client.ts`) and local (under `DATA_PATH/storage/`). Domain
+ * Pluggable storage backend. Two implementations exist: S3
+ * (`backends/s3.ts`) and local (under `DATA_PATH/storage/`). Domain
  * dispatchers never import a backend directly — they resolve one from
  * the registry (`activeBackend()` for writes, `backendFor(driver)` for
  * reads/deletes/migration).

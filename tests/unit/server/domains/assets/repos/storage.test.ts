@@ -1,9 +1,17 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-vi.mock('@/server/infra/storage/s3-client', () => ({
-  deleteS3Object: vi.fn().mockResolvedValue(undefined),
-  getS3ObjectBuffer: vi.fn(),
-  putS3Object: vi.fn().mockResolvedValue(undefined),
+// The branding repo talks to storage exclusively through the registry seam,
+// so the tests mock that seam with an in-memory backend and assert on the
+// `StorageBackend` calls — never on S3 internals.
+const backend = vi.hoisted(() => ({
+  put: vi.fn(async (input: { key: string; body: Buffer }) => ({ key: input.key, size: input.body.length })),
+  get: vi.fn(),
+  delete: vi.fn(async (_key: string) => {}),
+}))
+
+vi.mock('@/server/infra/storage/registry', () => ({
+  activeBackend: () => ({ backend, driver: 's3' }),
+  backendFor: () => backend,
 }))
 
 vi.mock('@/server/infra/logger', () => ({
@@ -11,6 +19,7 @@ vi.mock('@/server/infra/logger', () => ({
     info: vi.fn(),
     warn: vi.fn(),
     error: vi.fn(),
+    debug: vi.fn(),
   })),
 }))
 
@@ -24,7 +33,6 @@ import {
   putBrandingObject,
   s3KeyForSlot,
 } from '@/server/domains/assets/repos/storage'
-import { deleteS3Object, getS3ObjectBuffer, putS3Object } from '@/server/infra/storage/s3-client'
 
 const pngHeader = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])
 const svgBuffer = Buffer.from('<?xml version="1.0"?><svg></svg>')
@@ -77,16 +85,21 @@ describe('assets storage', () => {
   it('uploads a branding object', async () => {
     const ref = await putBrandingObject('icon192', pngHeader)
     expect(ref.contentType).toBe('image/png')
-    expect(putS3Object).toHaveBeenCalled()
+    expect(backend.put).toHaveBeenCalledWith({
+      key: 'branding/icon-192.png',
+      body: pngHeader,
+      contentType: 'image/png',
+      visibility: 'private',
+    })
   })
 
-  it('deletes a branding object and swallows s3 errors', async () => {
-    ;(deleteS3Object as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('not found'))
+  it('deletes a branding object and swallows backend errors', async () => {
+    backend.delete.mockRejectedValue(new Error('not found'))
     await expect(deleteBrandingObject('icon192')).resolves.toBeUndefined()
   })
 
-  it('fetches a branding object from cache or s3', async () => {
-    ;(getS3ObjectBuffer as ReturnType<typeof vi.fn>).mockResolvedValue(pngHeader)
+  it('fetches a branding object from cache or the backend', async () => {
+    backend.get.mockResolvedValue(pngHeader)
     const buffer = await fetchBrandingObject('icon192', {
       etag: 'a',
       contentType: 'image/png',
@@ -106,8 +119,8 @@ describe('assets storage', () => {
     expect(cached).toBe(pngHeader)
   })
 
-  it('returns null when s3 fetch fails', async () => {
-    ;(getS3ObjectBuffer as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('down'))
+  it('returns null when the backend fetch fails', async () => {
+    backend.get.mockRejectedValue(new Error('down'))
     const buffer = await fetchBrandingObject('icon192', {
       etag: 'b',
       contentType: 'image/png',
@@ -121,9 +134,7 @@ describe('assets storage', () => {
   it('auto-migrates from legacy extensionless key when new key is not found', async () => {
     // First call (new key `branding/icon-192.png`) → not found.
     // Second call (legacy key `branding/icon-192`) → found → auto-migrate.
-    ;(getS3ObjectBuffer as ReturnType<typeof vi.fn>)
-      .mockRejectedValueOnce(new Error('Not Found'))
-      .mockResolvedValueOnce(pngHeader)
+    backend.get.mockRejectedValueOnce(new Error('Not Found')).mockResolvedValueOnce(pngHeader)
 
     const buffer = await fetchBrandingObject('icon192', {
       etag: 'c',
@@ -134,19 +145,22 @@ describe('assets storage', () => {
     })
 
     expect(buffer).toBe(pngHeader)
-    expect(getS3ObjectBuffer).toHaveBeenCalledTimes(2)
-    expect(getS3ObjectBuffer).toHaveBeenNthCalledWith(1, 'branding/icon-192.png')
-    expect(getS3ObjectBuffer).toHaveBeenNthCalledWith(2, 'branding/icon-192')
+    expect(backend.get).toHaveBeenCalledTimes(2)
+    expect(backend.get).toHaveBeenNthCalledWith(1, 'branding/icon-192.png')
+    expect(backend.get).toHaveBeenNthCalledWith(2, 'branding/icon-192')
     // Migration: copy to new key + delete legacy
-    expect(putS3Object).toHaveBeenCalledWith('branding/icon-192.png', pngHeader, 'image/png')
-    expect(deleteS3Object).toHaveBeenCalledWith('branding/icon-192')
+    expect(backend.put).toHaveBeenCalledWith({
+      key: 'branding/icon-192.png',
+      body: pngHeader,
+      contentType: 'image/png',
+      visibility: 'private',
+    })
+    expect(backend.delete).toHaveBeenCalledWith('branding/icon-192')
   })
 
   it('auto-migrates and still returns null when both keys are missing', async () => {
     // Both new and legacy keys return 404.
-    ;(getS3ObjectBuffer as ReturnType<typeof vi.fn>)
-      .mockRejectedValueOnce(new Error('Not Found'))
-      .mockRejectedValueOnce(new Error('Not Found'))
+    backend.get.mockRejectedValueOnce(new Error('Not Found')).mockRejectedValueOnce(new Error('Not Found'))
 
     const buffer = await fetchBrandingObject('icon192', {
       etag: 'd',
@@ -157,8 +171,8 @@ describe('assets storage', () => {
     })
 
     expect(buffer).toBeNull()
-    expect(getS3ObjectBuffer).toHaveBeenCalledTimes(2)
-    expect(putS3Object).not.toHaveBeenCalled()
-    expect(deleteS3Object).not.toHaveBeenCalled()
+    expect(backend.get).toHaveBeenCalledTimes(2)
+    expect(backend.put).not.toHaveBeenCalled()
+    expect(backend.delete).not.toHaveBeenCalled()
   })
 })
