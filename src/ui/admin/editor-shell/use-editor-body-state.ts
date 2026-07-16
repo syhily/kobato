@@ -14,12 +14,17 @@ export interface EditorBodyState {
 }
 
 export function useEditorBodyState<TEntity extends EntityLike>(args: EditorShellArgs<TEntity>): EditorBodyState {
+  // Deps are the primitive/loader references, NOT `args` itself — the shell
+  // rebuilds the args object every render, so `[args]` would recompute every
+  // render and hand out a fresh `[]` in create mode. That unstable
+  // `initialBody` fed the conflict check in use-editor-shell-state into an
+  // infinite setState-during-render loop on /editor/*/new.
   const initialBody = useMemo<PortableTextBody>(() => {
     if (!args.isEditing) {
       return []
     }
     return (args.detail.latestRevision ?? args.detail.publishedRevision)?.body ?? []
-  }, [args])
+  }, [args.isEditing, args.detail])
 
   const [body, setBody] = useState<PortableTextBody>(initialBody)
 
@@ -29,7 +34,7 @@ export function useEditorBodyState<TEntity extends EntityLike>(args: EditorShell
     }
     const rev = args.detail.latestRevision ?? args.detail.publishedRevision
     return rev !== null ? `${args.detail.entity.id}:${rev.clientRevisionToken}` : `${args.detail.entity.id}:empty`
-  }, [args])
+  }, [args.isEditing, args.detail])
 
   const [bodyKey, setBodyKey] = useState(initialBodyKey)
   const [lastSavedBody, setLastSavedBody] = useState<PortableTextBody>(initialBody)
