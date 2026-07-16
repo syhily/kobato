@@ -51,6 +51,7 @@ describe('routes/archives loader', () => {
     expect(mocks.listClientPosts).toHaveBeenCalledWith(expect.any(Object), {
       includeHidden: true,
       includeScheduled: false,
+      limit: 10_000,
     })
     expect(result.resolvedPosts.map((post) => post.slug)).toEqual(['visible-post', 'hidden-post'])
     expect(typeof result.listingNowIso).toBe('string')
