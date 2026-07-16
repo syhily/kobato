@@ -52,16 +52,17 @@ export function useEditorShellState<
   } = args
 
   const isEditing = mode === 'edit' && detail !== undefined
-  const shellArgs =
-    isEditing && detail ? { isEditing: true as const, detail } : { isEditing: false as const, detail: undefined }
 
-  const bodyState = useEditorBodyState(shellArgs)
+  // The sub-hooks take the loader-stable `detail` straight through (the shell
+  // TSX memoizes the literal it builds from the loader DTO) — there is no
+  // per-render args bag to memo-poison anymore.
+  const bodyState = useEditorBodyState(detail)
   const { body, setBody, bodyKey, initialBody, lastSavedBody, replaceBody, markBodySaved } = bodyState
 
-  const metaState = useEditorMetaState(shellArgs, emptyMeta, metaDraftFromEntity)
+  const metaState = useEditorMetaState(detail, emptyMeta, metaDraftFromEntity)
   const { meta, setMeta, lastPersistedMeta, serverPublishedAtIso, resetMeta } = metaState
 
-  const revisionManager = useEditorRevisionManager(shellArgs)
+  const revisionManager = useEditorRevisionManager(detail)
   const { expectedToken, latestRevision, publishedRevision, updateAfterSave } = revisionManager
 
   const { previewOpen, setPreviewOpen, metaOpen, setMetaOpen, isLg, editorScrollRef, previewScrollRef } =

@@ -55,10 +55,6 @@ export interface EditorShellDetail<TEntity extends EntityLike> {
   publishedRevision: RevisionLike | null
 }
 
-export type EditorShellArgs<TEntity extends EntityLike> =
-  | { isEditing: true; detail: EditorShellDetail<TEntity> }
-  | { isEditing: false; detail?: undefined }
-
 export interface SaveBodyInput {
   id: string
   body: PortableTextBody
@@ -81,11 +77,7 @@ export interface UseEditorShellStateArgs<
   entityKind: 'post' | 'page'
 
   /** Pre-loaded detail (edit-mode only). */
-  detail?: {
-    entity: TEntity
-    latestRevision: RevisionLike | null
-    publishedRevision: RevisionLike | null
-  }
+  detail?: EditorShellDetail<TEntity>
 
   emptyMeta: TMeta
   metaDraftFromEntity: (entity: TEntity) => TMeta

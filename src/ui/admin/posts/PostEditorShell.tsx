@@ -1,5 +1,7 @@
 import type { NavigateFunction } from 'react-router'
 
+import { useMemo } from 'react'
+
 import type { AdminPostDetailDto, AdminPostDto, UpsertPostMetaInput } from '@/shared/types/posts'
 
 import { orpc } from '@/client/api/client'
@@ -76,19 +78,29 @@ function buildPostUpsertPayload({
 export function PostEditorShell({ mode, detail, navigate }: PostEditorShellProps) {
   const isEditing = mode === 'edit' && detail !== undefined
 
+  // Loader-stable detail object for the state hook: the query DTO prop is
+  // referentially stable, so memoizing on it keeps the sub-hook memos from
+  // recomputing every render (an unstable detail used to feed the conflict
+  // check into a "Too many re-renders" loop on revision-less entities).
+  const editorDetail = useMemo(
+    () =>
+      detail
+        ? {
+            entity: detail.post,
+            latestRevision: detail.latestRevision,
+            publishedRevision: detail.publishedRevision,
+          }
+        : undefined,
+    [detail],
+  )
+
   // --- Shared state hook ---------------------------------------------------
   // The hook owns `useMutation()` internally — Shell only provides
   // entity-specific mutation functions + the LS hook factories.
   const state = useEditorShellState<PostMetaDraft, AdminPostDto, UpsertPostMetaInput>({
     mode,
     entityKind: 'post',
-    detail: detail
-      ? {
-          entity: detail.post,
-          latestRevision: detail.latestRevision,
-          publishedRevision: detail.publishedRevision,
-        }
-      : undefined,
+    detail: editorDetail,
     emptyMeta: EMPTY_POST_META_DRAFT,
     metaDraftFromEntity: metaDraftFromPost,
     metaDraftsEqual,

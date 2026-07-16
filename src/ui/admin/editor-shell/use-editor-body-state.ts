@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 
 import type { PortableTextBody } from '@/shared/pt/schema'
-import type { EditorShellArgs, EntityLike } from '@/ui/admin/editor-shell/editor-shell-types'
+import type { EditorShellDetail, EntityLike } from '@/ui/admin/editor-shell/editor-shell-types'
 
 export interface EditorBodyState {
   body: PortableTextBody
@@ -20,28 +20,27 @@ export interface EditorBodyState {
 // edit mode when an entity has zero revisions.
 const EMPTY_BODY: PortableTextBody = []
 
-export function useEditorBodyState<TEntity extends EntityLike>(args: EditorShellArgs<TEntity>): EditorBodyState {
-  // Deps are the primitive/loader references, NOT `args` itself — the shell
-  // rebuilds the args object every render, so `[args]` would recompute every
-  // render. That instability fed the conflict check in
-  // use-editor-shell-state into an infinite setState-during-render loop on
-  // /editor/*/new.
+export function useEditorBodyState<TEntity extends EntityLike>(
+  detail: EditorShellDetail<TEntity> | undefined,
+): EditorBodyState {
+  // `detail` is the loader-stable reference the shell TSX memoizes, so the
+  // memos below recompute only when the loaded entity actually changes.
   const initialBody = useMemo<PortableTextBody>(() => {
-    if (!args.isEditing) {
+    if (detail === undefined) {
       return EMPTY_BODY
     }
-    return (args.detail.latestRevision ?? args.detail.publishedRevision)?.body ?? EMPTY_BODY
-  }, [args.isEditing, args.detail])
+    return (detail.latestRevision ?? detail.publishedRevision)?.body ?? EMPTY_BODY
+  }, [detail])
 
   const [body, setBody] = useState<PortableTextBody>(initialBody)
 
   const initialBodyKey = useMemo(() => {
-    if (!args.isEditing) {
+    if (detail === undefined) {
       return 'create:initial'
     }
-    const rev = args.detail.latestRevision ?? args.detail.publishedRevision
-    return rev !== null ? `${args.detail.entity.id}:${rev.clientRevisionToken}` : `${args.detail.entity.id}:empty`
-  }, [args.isEditing, args.detail])
+    const rev = detail.latestRevision ?? detail.publishedRevision
+    return rev !== null ? `${detail.entity.id}:${rev.clientRevisionToken}` : `${detail.entity.id}:empty`
+  }, [detail])
 
   const [bodyKey, setBodyKey] = useState(initialBodyKey)
   const [lastSavedBody, setLastSavedBody] = useState<PortableTextBody>(initialBody)
