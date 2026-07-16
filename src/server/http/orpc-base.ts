@@ -7,6 +7,7 @@ import type { ViewerContext } from '@/server/domains/auth/rbac'
 import type { Env } from '@/server/http/context'
 
 import { ActionFailure, DomainError, domainStatus, ErrorMessages } from '@/server/infra/http/errors'
+import { tryResourceRateLimit } from '@/server/infra/rate-limit'
 import { hasAtLeast, type Role } from '@/shared/utils/roles'
 
 // Context every oRPC procedure sees. The Hono `/rpc/*` bridge in
@@ -97,6 +98,23 @@ function requireRole(role: Role) {
     })
   })
 }
+
+// ─── Middleware: shared per-IP resource rate limit ──────
+// Guard for public procedures that proxy upstream services or render
+// expensive payloads. Reads the `resourceIp` bucket via
+// `tryResourceRateLimit` and throws the same ORPCError the per-controller
+// inline copies used to throw, so the RPC wire shape is byte-identical.
+// Runs after input validation (oRPC validates at the index captured when
+// `.input()` was called — before any `.use()` added afterwards), matching
+// the old "first statement of the handler" order. Hono resource routes
+// use the parallel `rateLimitByIp` seam in `middlewares/rate-limit.ts`.
+export const resourceRateLimit = root.middleware(async ({ context, next }) => {
+  const { exceeded } = await tryResourceRateLimit(context.clientAddress)
+  if (exceeded) {
+    throw new ORPCError('TOO_MANY_REQUESTS', { message: '请求过于频繁，请稍后再试。' })
+  }
+  return next({})
+})
 
 // ─── Public base procedure ──────────────────────────────
 // No auth gate. Public mutations rely on session authentication.

@@ -25,7 +25,8 @@ vi.mock('@/server/render/og/render', () => ({
   drawOpenGraph: mocks.drawOpenGraph,
 }))
 vi.mock('@/server/infra/rate-limit', () => ({
-  tryResourceRateLimit: vi.fn(async () => ({ exceeded: false })),
+  readBucket: vi.fn(() => ({ windowSeconds: 60, maxAttempts: 60 })),
+  tryKeyedRateLimit: vi.fn(async () => ({ count: 1, exceeded: false })),
 }))
 vi.mock('@/server/infra/redis/buffer-cache', () => ({
   loadBuffer: vi.fn(async (_key: unknown, loader: () => Promise<unknown>) => loader()),

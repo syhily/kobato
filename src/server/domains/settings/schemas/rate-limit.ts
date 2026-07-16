@@ -12,7 +12,10 @@ import { z } from 'zod'
 //   * `passwordResetIp`     — `tryPasswordResetRateLimit(ip)` (lostpassword)
 //   * `passwordResetEmail`  — `tryPasswordResetByEmailRateLimit(email)`
 //   * `passwordResetTarget` — `tryPasswordResetByTargetRateLimit(userId)`
-//   * `resourceIp`          — `tryResourceRateLimit(ip)` (resource downloads)
+//   * `resourceIp`          — `tryResourceRateLimit(ip)` (oRPC public resource
+//                             guard) + `rateLimitByIp(key, 'resourceIp')`
+//                             (Hono resource routes: feed, webmention,
+//                             images, sitemap)
 //   * `otpSendIp`           — `tryOtpSendRateLimit(ip)` (OTP send)
 //   * `otpSendEmail`        — `tryOtpSendByEmailRateLimit(email)` (OTP send per email)
 //   * `otpVerifyIp`         — `tryOtpVerifyRateLimit(ip)` (OTP verify)

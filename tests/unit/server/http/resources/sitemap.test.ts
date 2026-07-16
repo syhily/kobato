@@ -28,7 +28,8 @@ describe('sitemapRouter', () => {
       },
     }))
     vi.doMock('@/server/infra/rate-limit', () => ({
-      tryResourceRateLimit: vi.fn().mockResolvedValue({ exceeded: false }),
+      readBucket: vi.fn(() => ({ windowSeconds: 60, maxAttempts: 60 })),
+      tryKeyedRateLimit: vi.fn().mockResolvedValue({ exceeded: false }),
     }))
 
     const { sitemapRouter } = await import('@/server/http/resources/sitemap')
@@ -51,7 +52,8 @@ describe('sitemapRouter', () => {
       },
     }))
     vi.doMock('@/server/infra/rate-limit', () => ({
-      tryResourceRateLimit: vi.fn().mockResolvedValue({ exceeded: false }),
+      readBucket: vi.fn(() => ({ windowSeconds: 60, maxAttempts: 60 })),
+      tryKeyedRateLimit: vi.fn().mockResolvedValue({ exceeded: false }),
     }))
     vi.doMock('@/server/render/seo/sitemap', () => ({
       buildSitemapXml: vi.fn().mockResolvedValue(built),
@@ -68,7 +70,8 @@ describe('sitemapRouter', () => {
 
   it('returns 429 when rate limit exceeded', async () => {
     vi.doMock('@/server/infra/rate-limit', () => ({
-      tryResourceRateLimit: vi.fn().mockResolvedValue({ exceeded: true }),
+      readBucket: vi.fn(() => ({ windowSeconds: 60, maxAttempts: 60 })),
+      tryKeyedRateLimit: vi.fn().mockResolvedValue({ exceeded: true }),
     }))
 
     const { sitemapRouter } = await import('@/server/http/resources/sitemap')
@@ -77,5 +80,6 @@ describe('sitemapRouter', () => {
 
     const res = await app.request('/sitemap.xml')
     expect(res.status).toBe(429)
+    await expect(res.json()).resolves.toEqual({ error: 'Too many requests' })
   })
 })

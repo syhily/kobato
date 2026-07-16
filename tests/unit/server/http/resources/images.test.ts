@@ -27,7 +27,8 @@ vi.mock('@/server/infra/db/operations/category', () => ({
 }))
 
 vi.mock('@/server/infra/rate-limit', () => ({
-  tryResourceRateLimit: vi.fn().mockResolvedValue({ exceeded: false, count: 1 }),
+  readBucket: vi.fn(() => ({ windowSeconds: 60, maxAttempts: 60 })),
+  tryKeyedRateLimit: vi.fn().mockResolvedValue({ exceeded: false, count: 1 }),
 }))
 
 vi.mock('@/server/infra/redis/buffer-cache', () => ({
@@ -63,7 +64,7 @@ import { loadAvatar } from '@/server/http/resources/avatar-cache'
 import { serveCalendar } from '@/server/http/resources/calendar'
 import { imagesRouter } from '@/server/http/resources/images'
 import { findCategoryBySlug } from '@/server/infra/db/operations/category'
-import { tryResourceRateLimit } from '@/server/infra/rate-limit'
+import { readBucket, tryKeyedRateLimit } from '@/server/infra/rate-limit'
 import { loadBuffer } from '@/server/infra/redis/buffer-cache'
 import { fetchAvatarImage, fetchQQAvatarImage, resolveAvatarInfo } from '@/server/render/avatar/fetch'
 import { drawOpenGraph } from '@/server/render/og/render'
@@ -73,7 +74,8 @@ const env = { db: {}, clientAddress: '127.0.0.1' } as never
 describe('images resource', () => {
   beforeEach(async () => {
     vi.resetAllMocks()
-    ;(tryResourceRateLimit as ReturnType<typeof vi.fn>).mockResolvedValue({ exceeded: false, count: 1 })
+    ;(readBucket as ReturnType<typeof vi.fn>).mockReturnValue({ windowSeconds: 60, maxAttempts: 60 })
+    ;(tryKeyedRateLimit as ReturnType<typeof vi.fn>).mockResolvedValue({ exceeded: false, count: 1 })
     ;(loadBuffer as ReturnType<typeof vi.fn>).mockResolvedValue(Buffer.from('png'))
     ;(serveCalendar as ReturnType<typeof vi.fn>).mockResolvedValue(
       new Response('cal', { headers: { 'Content-Type': 'image/png' } }),

@@ -8,10 +8,10 @@ import type { Env } from '@/server/http/context'
 import { isLive } from '@/server/domains/content/schema'
 import { findPublicPageMetaBySlug } from '@/server/domains/pages/repo'
 import { findPublicPostMetaBySlug } from '@/server/domains/posts/repos/single'
+import { rateLimitByIp } from '@/server/http/middlewares/rate-limit'
 import { AvatarStatus, cacheAvatar, loadAvatar } from '@/server/http/resources/avatar-cache'
 import { serveCalendar } from '@/server/http/resources/calendar'
 import { findCategoryBySlug } from '@/server/infra/db/operations/category'
-import { tryResourceRateLimit } from '@/server/infra/rate-limit'
 import { loadBuffer } from '@/server/infra/redis/buffer-cache'
 import {
   defaultAvatarUrl,
@@ -62,13 +62,7 @@ function stripPng(filename: string): string {
 }
 
 export const imagesRouter = new Hono<Env>()
-  .use(async (c, next) => {
-    const { exceeded } = await tryResourceRateLimit(c.var.clientAddress)
-    if (exceeded) {
-      return c.json({ error: 'Too many requests' }, 429)
-    }
-    await next()
-  })
+  .use(rateLimitByIp('images', 'resourceIp', { errorBody: { error: 'Too many requests' } }))
   .get('/images/og/:filename{[^/]+\\.png}', async (c) => {
     const slug = stripPng(c.req.param('filename'))
     if (!slug) {

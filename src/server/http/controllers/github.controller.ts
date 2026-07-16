@@ -1,8 +1,7 @@
 import { ORPCError } from '@orpc/server'
 import { z } from 'zod'
 
-import { publicProc } from '@/server/http/orpc-base'
-import { tryResourceRateLimit } from '@/server/infra/rate-limit'
+import { publicProc, resourceRateLimit } from '@/server/http/orpc-base'
 import { APP_REPOSITORY } from '@/shared/config/version'
 import { isRecord } from '@/shared/utils/type-guards'
 
@@ -42,11 +41,8 @@ function arrayBufferToBase64(buffer: ArrayBuffer): string {
 const avatar = publicProc
   .route({ method: 'GET', path: '/github/avatar' })
   .output(z.object({ avatar: z.string() }))
-  .handler(async ({ context }) => {
-    const rateLimit = await tryResourceRateLimit(context.clientAddress)
-    if (rateLimit.exceeded) {
-      throw new ORPCError('TOO_MANY_REQUESTS', { message: '请求过于频繁，请稍后再试。' })
-    }
+  .use(resourceRateLimit)
+  .handler(async () => {
     const res = await fetch(AVATAR_URL, { signal: AbortSignal.timeout(30_000) })
     if (!res.ok) {
       return { avatar: '' }
@@ -67,11 +63,8 @@ const release = publicProc
       publishedAt: z.string(),
     }),
   )
-  .handler(async ({ context }) => {
-    const rateLimit = await tryResourceRateLimit(context.clientAddress)
-    if (rateLimit.exceeded) {
-      throw new ORPCError('TOO_MANY_REQUESTS', { message: '请求过于频繁，请稍后再试。' })
-    }
+  .use(resourceRateLimit)
+  .handler(async () => {
     const parsed = parseRepo(APP_REPOSITORY)
     if (!parsed) {
       throw new ORPCError('INTERNAL_SERVER_ERROR', { message: 'Invalid repository format' })

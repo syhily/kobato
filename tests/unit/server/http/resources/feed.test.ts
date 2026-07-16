@@ -1,7 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 vi.mock('@/server/infra/rate-limit', () => ({
-  tryResourceRateLimit: vi.fn(),
+  readBucket: vi.fn(() => ({ windowSeconds: 60, maxAttempts: 60 })),
+  tryKeyedRateLimit: vi.fn(),
 }))
 
 vi.mock('@/server/render/feed/generator', () => ({
@@ -18,7 +19,7 @@ vi.mock('@/server/infra/cache/feed-cache', () => ({
 
 import { feedRouter } from '@/server/http/resources/feed'
 import { feedCacheFor } from '@/server/infra/cache/feed-cache'
-import { tryResourceRateLimit } from '@/server/infra/rate-limit'
+import { tryKeyedRateLimit } from '@/server/infra/rate-limit'
 import { generateFeeds } from '@/server/render/feed/generator'
 
 const BUILT = { rss: '<rss version="2.0">built</rss>', atom: '<feed>built</feed>' }
@@ -39,7 +40,7 @@ describe('feed resource', () => {
     vi.clearAllMocks()
     cacheGet = vi.fn().mockResolvedValue(null)
     cacheSet = vi.fn().mockResolvedValue(undefined)
-    ;(tryResourceRateLimit as ReturnType<typeof vi.fn>).mockResolvedValue({ exceeded: false, count: 1 })
+    ;(tryKeyedRateLimit as ReturnType<typeof vi.fn>).mockResolvedValue({ exceeded: false, count: 1 })
     ;(generateFeeds as ReturnType<typeof vi.fn>).mockResolvedValue(BUILT)
     ;(feedCacheFor as ReturnType<typeof vi.fn>).mockReturnValue({ get: cacheGet, set: cacheSet, clear: vi.fn() })
   })
@@ -70,9 +71,10 @@ describe('feed resource', () => {
   })
 
   it('rate-limits feed requests', async () => {
-    ;(tryResourceRateLimit as ReturnType<typeof vi.fn>).mockResolvedValue({ exceeded: true, count: 100 })
+    ;(tryKeyedRateLimit as ReturnType<typeof vi.fn>).mockResolvedValue({ exceeded: true, count: 100 })
     const res = await requestFeed('http://localhost/feed')
     expect(res.status).toBe(429)
+    await expect(res.json()).resolves.toEqual({ error: 'Too many requests' })
   })
 
   it('serves a cache hit without regenerating the feed', async () => {

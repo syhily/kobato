@@ -4,7 +4,7 @@ import type { Env } from '@/server/http/context'
 
 import { webmentionReceiveSchema } from '@/server/domains/webmentions/schema'
 import { receiveWebmention } from '@/server/domains/webmentions/service'
-import { tryResourceRateLimit } from '@/server/infra/rate-limit'
+import { rateLimitByIp } from '@/server/http/middlewares/rate-limit'
 
 // Form-encoded webmention bodies carry exactly two URLs — anything
 // larger is junk traffic, not a protocol peer. The cap is checked on
@@ -17,23 +17,22 @@ const MAX_FORM_BODY_BYTES = 16 * 1024
 // 202 goes out only after the source has been fetched, verified to link
 // to the target, and stored as pending. DomainError escapes to the
 // perimeter onError handler, which maps it to 400/404 with a JSON body.
-export const webmentionRouter = new Hono<Env>().post('/webmention', async (c) => {
-  const { exceeded } = await tryResourceRateLimit(c.var.clientAddress)
-  if (exceeded) {
-    return c.json({ error: 'Too many requests' }, 429)
-  }
+export const webmentionRouter = new Hono<Env>().post(
+  '/webmention',
+  rateLimitByIp('webmention', 'resourceIp', { errorBody: { error: 'Too many requests' } }),
+  async (c) => {
+    const contentLength = Number.parseInt(c.req.header('content-length') ?? '', 10)
+    if (Number.isFinite(contentLength) && contentLength > MAX_FORM_BODY_BYTES) {
+      return c.json({ error: 'Payload too large' }, 413)
+    }
 
-  const contentLength = Number.parseInt(c.req.header('content-length') ?? '', 10)
-  if (Number.isFinite(contentLength) && contentLength > MAX_FORM_BODY_BYTES) {
-    return c.json({ error: 'Payload too large' }, 413)
-  }
+    const body = await c.req.parseBody()
+    const parsed = webmentionReceiveSchema.safeParse({ source: body['source'], target: body['target'] })
+    if (!parsed.success) {
+      return c.json({ error: 'Invalid webmention request: source and target must be valid http(s) URLs' }, 400)
+    }
 
-  const body = await c.req.parseBody()
-  const parsed = webmentionReceiveSchema.safeParse({ source: body['source'], target: body['target'] })
-  if (!parsed.success) {
-    return c.json({ error: 'Invalid webmention request: source and target must be valid http(s) URLs' }, 400)
-  }
-
-  const mention = await receiveWebmention(c.var.db, parsed.data)
-  return c.json({ status: 'pending', id: mention.id.toString() }, 202)
-})
+    const mention = await receiveWebmention(c.var.db, parsed.data)
+    return c.json({ status: 'pending', id: mention.id.toString() }, 202)
+  },
+)
