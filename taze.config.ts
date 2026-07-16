@@ -26,5 +26,8 @@ export default defineConfig({
     '@types/node': 'minor',
     'drizzle-kit': 'next',
     'drizzle-orm': 'next',
+    // The packageManager field is checked as a dependency; keep pnpm on
+    // stable releases only (mode 'latest' above would chase alphas).
+    pnpm: 'stable',
   },
 })
