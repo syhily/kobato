@@ -12,10 +12,10 @@ import { fileURLToPath } from 'node:url'
 import type { BlogSettingsBundle } from '@/shared/config/types'
 
 import { render } from '@/server/infra/email/render'
+import { AdminNotificationEmail } from '@/server/infra/email/templates/AdminNotificationEmail'
 import { ApprovedComment } from '@/server/infra/email/templates/ApprovedComment'
 import { AuthorInvite } from '@/server/infra/email/templates/AuthorInvite'
 import { ConfirmSubscription } from '@/server/infra/email/templates/ConfirmSubscription'
-import { NewComment } from '@/server/infra/email/templates/NewComment'
 import { NewPostNotification } from '@/server/infra/email/templates/NewPostNotification'
 import { NewReply } from '@/server/infra/email/templates/NewReply'
 import { PasswordReset } from '@/server/infra/email/templates/PasswordReset'
@@ -64,15 +64,56 @@ const templates = [
         link: 'https://example.com/admin/invite?token=abcdef',
       }),
   },
+  // Admin notifications all render through `AdminNotificationEmail`;
+  // each entry below is the layout fed by one notification type's data.
   {
     name: 'NewComment',
     make: () =>
-      NewComment({
-        postTitle: '使用 React Router 7 搭建博客',
-        postLink: 'https://example.com/posts/hello-react-router',
-        commentNeedApproval: false,
-        commentContent: '<p>写得非常清楚，已经按教程跑通了。期待下一篇。</p>',
-        commentLink: 'https://example.com/posts/hello-react-router#comment-1',
+      AdminNotificationEmail({
+        preview: '在《使用 React Router 7 搭建博客》中有一条新留言',
+        title: '新留言',
+        contextLine: {
+          label: '留言文章：',
+          link: { text: '使用 React Router 7 搭建博客', href: 'https://example.com/posts/hello-react-router' },
+        },
+        mutedNote: '该留言需要审核',
+        rows: [{ html: '<p>写得非常清楚，已经按教程跑通了。期待下一篇。</p>' }],
+        cta: { label: '查看留言', href: 'https://example.com/posts/hello-react-router#comment-1' },
+      }),
+  },
+  {
+    name: 'NewWebmention',
+    make: () =>
+      AdminNotificationEmail({
+        preview: '《使用 React Router 7 搭建博客》收到一条新的 Webmention',
+        title: '新 Webmention',
+        contextLine: {
+          label: '目标文章：',
+          link: { text: '使用 React Router 7 搭建博客', href: 'https://example.com/posts/hello-react-router' },
+        },
+        mutedNote: '该提及已通过来源校验，等待审核',
+        rows: [
+          { label: '来源：', value: 'React Router 学习笔记' },
+          { label: '作者：', value: 'Jane Doe' },
+          { value: '照着这篇文章搭好了自己的博客，写得很清楚。' },
+        ],
+        cta: { label: '查看来源', href: 'https://sender.example/mentioning-post' },
+      }),
+  },
+  {
+    name: 'NewFriendApplication',
+    make: () =>
+      AdminNotificationEmail({
+        preview: '「小鱼的博客」申请交换友链',
+        title: '新友链申请',
+        mutedNote: '该申请等待审核，通过后才会在公共页面展示',
+        rows: [
+          { label: '站名：', value: '小鱼的博客' },
+          { label: '主页：', value: 'https://blog.example.com' },
+          { label: '简介：', value: '记录前端与生活' },
+          { label: 'RSS：', value: 'https://blog.example.com/feed.xml' },
+        ],
+        cta: { label: '前往审核', href: 'https://example.com/admin/taxonomy/friends' },
       }),
   },
   {

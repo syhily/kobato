@@ -9,9 +9,10 @@ import type { SendResult } from '@/server/infra/email/types'
 
 import { entityCommentUrl, findEntitySlugTitle } from '@/server/domains/comments/services/shared'
 import { commentBodyToHtml } from '@/server/domains/pt/services/comment-to-html'
+import { sendAdminNotification } from '@/server/infra/email/admin-notification'
 import { renderEmail, sendEmail } from '@/server/infra/email/sender'
+import { AdminNotificationEmail } from '@/server/infra/email/templates/AdminNotificationEmail'
 import ApprovedComment from '@/server/infra/email/templates/ApprovedComment'
-import NewComment from '@/server/infra/email/templates/NewComment'
 import NewReply from '@/server/infra/email/templates/NewReply'
 import { getLogger } from '@/server/infra/logger'
 import { requireBlogSettingsSection } from '@/shared/config/getters'
@@ -38,17 +39,17 @@ export async function sendNewComment(
     log.warn('Skipping new-comment email: target entity not found', { target })
     return { ok: false, reason: 'unconfigured', message: '评论目标已不存在' }
   }
-  const html = renderEmail(
-    createElement(NewComment, {
-      postTitle: entity.title,
-      postLink: entity.url,
-      commentNeedApproval: commentInfo.isPending === true,
-      commentContent: commentHtml,
-      commentLink: `${entity.url}#user-comment-${commentInfo.id}`,
+  return sendAdminNotification({
+    subject: '有了新评论',
+    element: createElement(AdminNotificationEmail, {
+      preview: `在《${entity.title}》中有一条新留言`,
+      title: '新留言',
+      contextLine: { label: '留言文章：', link: { text: entity.title, href: entity.url } },
+      mutedNote: commentInfo.isPending === true ? '该留言需要审核' : undefined,
+      rows: [{ html: commentHtml }],
+      cta: { label: '查看留言', href: `${entity.url}#user-comment-${commentInfo.id}` },
     }),
-  )
-  const siteIdentity = requireBlogSettingsSection('siteIdentity')
-  return sendEmail(siteIdentity.author.email, `您的网站【${siteIdentity.title}】有了新评论`, html)
+  })
 }
 
 // Sent to the original commenter when one of their comments receives a reply.

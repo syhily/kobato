@@ -4,21 +4,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { CommentAndUser } from '@/server/domains/comments/types'
 
-// Stub email templates with trivial React components so the import
-// chain is cheap and we can focus on the sender's transport / config
-// branches.
-vi.mock('@/server/email/templates/NewComment', () => ({
-  default: () => null,
-}))
-vi.mock('@/server/email/templates/NewReply', () => ({
-  default: () => null,
-}))
-vi.mock('@/server/email/templates/ApprovedComment', () => ({
-  default: () => null,
-}))
-vi.mock('@/server/email/render', () => ({
-  render: vi.fn(() => '<p>stub</p>'),
-}))
+// `commentBodyToHtml` pulls in the whole PT prerender pipeline (Shiki,
+// KaTeX, …) — stub it so the test can focus on the sender's transport /
+// config branches and the admin-notification mapping.
 vi.mock('@/server/domains/pt/services/comment-to-html', () => ({
   commentBodyToHtml: vi.fn(() => '<p>stub</p>'),
 }))
@@ -171,6 +159,56 @@ describe('email/sender — internalSend (via sendNewComment)', () => {
         expect(result.message).toContain('ECONNREFUSED')
       }
     }
+  })
+})
+
+describe('comments email — sendNewComment maps onto the admin-notification seam', () => {
+  const commentInfo = {
+    id: 7n,
+    content: 'hello',
+    isPending: false,
+    user: { id: 1n, name: 'visitor', email: 'visitor@example.com' },
+  } as unknown as CommentAndUser
+  const target = { type: 'post' as const, ownerId: 1n }
+
+  function sentBody(): Record<string, unknown> {
+    const [, init] = fetchMock.mock.calls[0]
+    return JSON.parse(init?.body as string)
+  }
+
+  beforeEach(() => {
+    setMail({
+      enabled: true,
+      host: 'api.zeabur.com',
+      apiKey: 'SECRET',
+      sender: 'noreply@example.com',
+    })
+    fetchMock.mockResolvedValueOnce(new Response(null, { status: 200 }))
+  })
+
+  it('sends the comment card to the author under the shared subject convention', async () => {
+    await sendNewComment(db, commentInfo, target)
+
+    const body = sentBody()
+    expect(body.to).toEqual([TEST_BLOG_SETTINGS_BUNDLE.siteIdentity!.author.email])
+    expect(body.subject).toBe(`您的网站【${TEST_BLOG_SETTINGS_BUNDLE.siteIdentity!.title}】有了新评论`)
+    const html = body.html as string
+    expect(html).toContain('新留言')
+    expect(html).toContain('留言文章：')
+    // Resolved entity fixture: slug `hi`, title `Hi`.
+    expect(html).toContain('>Hi</a>')
+    expect(html).toContain('href="https://example.com/posts/hi/"')
+    // The `commentBodyToHtml` stub renders raw inside the card.
+    expect(html).toContain('<p>stub</p>')
+    expect(html).toContain('href="https://example.com/posts/hi/#user-comment-7"')
+    // Not pending → no approval note.
+    expect(html).not.toContain('该留言需要审核')
+  })
+
+  it('adds the approval note for pending comments', async () => {
+    await sendNewComment(db, { ...commentInfo, isPending: true }, target)
+
+    expect(sentBody().html).toContain('该留言需要审核')
   })
 })
 

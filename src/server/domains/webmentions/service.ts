@@ -17,6 +17,7 @@ import {
   listWebmentionsByStatus,
   setWebmentionStatus,
 } from '@/server/infra/db/operations/webmention'
+import { fireAndForgetNotify } from '@/server/infra/email/admin-notification'
 import { DomainError } from '@/server/infra/http/errors'
 import { getLogger } from '@/server/infra/logger'
 import { idFromString } from '@/shared/utils/id'
@@ -62,9 +63,7 @@ export async function receiveWebmention(db: NodePgDatabase, input: WebmentionRec
     rawPayload: { source: input.source, target: input.target },
   })
 
-  void sendNewWebmention(row, target).catch((error) => {
-    log.error('failed to send new webmention email', { error })
-  })
+  fireAndForgetNotify(sendNewWebmention(row, target), log, 'new webmention')
   return row
 }
 

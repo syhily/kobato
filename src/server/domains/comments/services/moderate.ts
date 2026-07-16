@@ -15,6 +15,7 @@ import { findCommentWithUserById } from '@/server/domains/comments/repos/public-
 import { canonicalizeCommentBody } from '@/server/domains/comments/services/canonicalize'
 import { sendApprovedComment, sendNewComment } from '@/server/domains/comments/services/email'
 import { asCommentTarget } from '@/server/domains/comments/services/shared'
+import { fireAndForgetNotify } from '@/server/infra/email/admin-notification'
 import { DomainError } from '@/server/infra/http/errors'
 import { getLogger } from '@/server/infra/logger'
 import { idFromString } from '@/shared/utils/id'
@@ -93,9 +94,7 @@ export async function updateOwnComment(db: NodePgDatabase, rid: string, newBody:
   if (!insideGrace) {
     if (r.type !== null && r.ownerId !== null) {
       const target = { type: r.type, ownerId: r.ownerId }
-      void sendNewComment(db, r, target).catch((error) => {
-        adminLog.error('failed to send new comment email (own edit)', { error })
-      })
+      fireAndForgetNotify(sendNewComment(db, r, target), adminLog, 'new comment (own edit)')
     } else {
       adminLog.warn('skipping new-comment email after own edit: missing target', { commentId: id })
     }

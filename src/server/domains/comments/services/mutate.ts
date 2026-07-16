@@ -22,6 +22,7 @@ import { canonicalizeCommentBody } from '@/server/domains/comments/services/cano
 import { sendNewComment, sendNewReply } from '@/server/domains/comments/services/email'
 import { safeResolveMetricTarget } from '@/server/domains/comments/services/shared'
 import { hasRegisteredAccount, insertCommentUser, updateLastLogin } from '@/server/infra/db/operations/user'
+import { fireAndForgetNotify } from '@/server/infra/email/admin-notification'
 import { DomainError } from '@/server/infra/http/errors'
 import { getLogger } from '@/server/infra/logger'
 import { requireBlogSettingsSection } from '@/shared/config/getters'
@@ -172,9 +173,7 @@ async function persistComment(
 
 async function notifyCommentCreated(db: NodePgDatabase, info: CommentAndUser, target: MetricTarget): Promise<void> {
   if (info.email !== requireBlogSettingsSection('siteIdentity').author.email) {
-    void sendNewComment(db, info, target).catch((error) => {
-      log.error('failed to send new comment email', { error })
-    })
+    fireAndForgetNotify(sendNewComment(db, info, target), log, 'new comment')
   }
   if (info.rid !== 0) {
     const source = await findCommentWithSourceUser(db, idFromString(info.rid))

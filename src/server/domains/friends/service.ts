@@ -17,6 +17,7 @@ import {
   listPublicFriendRows,
   updateFriend,
 } from '@/server/infra/db/operations/friend'
+import { fireAndForgetNotify } from '@/server/infra/email/admin-notification'
 import { DomainError } from '@/server/infra/http/errors'
 import { getLogger } from '@/server/infra/logger'
 
@@ -198,9 +199,7 @@ export async function applyFriend(db: NodePgDatabase, input: ApplyFriendInputs):
     rssUrl: normaliseNullable(input.rssUrl),
     visible: false,
   })
-  void sendNewFriendApplication(row).catch((error) => {
-    log.error('failed to send friend application email', { error })
-  })
+  fireAndForgetNotify(sendNewFriendApplication(row), log, 'friend application')
 }
 
 // Trim and collapse the empty string to `null` so the DB never stores
