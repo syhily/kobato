@@ -4,7 +4,7 @@ Repository conventions for AI agents and contributors.
 
 ## Quick orientation
 
-- React Router 7 Framework Mode with SSR (`appDirectory: 'src'`).
+- React Router 8 Framework Mode with SSR (`appDirectory: 'src'`).
 - React 19 TSX/TS only.
 - Postgres + Redis.
 - Path alias `@/*` → `./src/*`.

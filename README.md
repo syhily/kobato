@@ -9,7 +9,7 @@
 > _"A little bird carrying hope, one letter at a time."_
 
 **Kobato** is a self-hosted blog CMS built by [Yufan Sheng](https://github.com/syhily)
-— the engine behind [且听书吟](https://yufan.me). It runs on React Router 7 (SSR), Hono, and oRPC.
+— the engine behind [且听书吟](https://yufan.me). It runs on React Router 8 (SSR), Hono, and oRPC.
 It provide a built-in `/admin` console for everything.
 Content is stored as **PortableText** and authored through a Tiptap editor that round-trips losslessly to the wire format.
 
