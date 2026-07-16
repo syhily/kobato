@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useSyncExternalStore } from 'react'
 import { data } from 'react-router'
 
 import type { DraftSummary } from '@/ui/admin/dashboard/types'
@@ -135,10 +135,25 @@ function greetingForHour(hour: number): string {
   return '晚上好'
 }
 
-function useGreeting() {
-  // Lazy initializer computes once on mount without setState-in-effect.
-  const [greeting] = useState(() => greetingForHour(new Date().getHours()))
-  return greeting
+function subscribeNoop(): () => void {
+  return () => {
+    // Greeting is read once from the client clock; nothing to unsubscribe.
+  }
+}
+
+function getGreetingSnapshot(): string {
+  return greetingForHour(new Date().getHours())
+}
+
+function getGreetingServerSnapshot(): string | null {
+  return null
+}
+
+function useGreeting(): string | null {
+  // Client-local greeting: SSR emits no greeting (server snapshot is null)
+  // and hydration renders the same null, so the browser's own clock is the
+  // only source — the container's timezone can no longer desync the text.
+  return useSyncExternalStore<string | null>(subscribeNoop, getGreetingSnapshot, getGreetingServerSnapshot)
 }
 
 export default function DashboardRoute({ loaderData }: Route.ComponentProps) {
@@ -160,9 +175,7 @@ export default function DashboardRoute({ loaderData }: Route.ComponentProps) {
     <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-4 rounded-lg border bg-card p-6 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-semibold">
-            {greeting}，{name}
-          </h1>
+          <h1 className="text-2xl font-semibold">{greeting === null ? name : `${greeting}，${name}`}</h1>
           <p className="mt-1 text-muted-foreground">当前身份：{roleLabel(role)}</p>
         </div>
         <QuickActions />
