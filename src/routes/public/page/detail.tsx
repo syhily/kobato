@@ -14,6 +14,7 @@ import { requireBlogSettingsSection } from '@/shared/config/getters'
 import { resolveFootnotesSectionTitle } from '@/shared/utils/footnotes-section-title'
 import { Friends } from '@/ui/pt/blocks/Friends'
 import { PortableTextBody } from '@/ui/pt/render'
+import { FriendApplyForm } from '@/ui/public/friends/FriendApplyForm'
 import { PageDetailBody } from '@/ui/public/post/PageDetailBody'
 
 import type { Route } from './+types/detail'
@@ -89,6 +90,7 @@ export default function PageDetailRoute({ loaderData }: Route.ComponentProps) {
           footnotesSectionTitle={footnotesSectionTitle}
         />
         {showFriends && <Friends friends={friends} />}
+        {showFriends && <FriendApplyForm />}
       </PageDetailBody>
     </>
   )

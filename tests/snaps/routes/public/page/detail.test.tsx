@@ -46,4 +46,53 @@ describe('snapshot: routes/public/page/detail', () => {
     expect(html).toContain('About')
     expect(html).toContain('About body')
   })
+
+  it('renders the friend grid and the application form when showFriends is on', () => {
+    const Route = asRoute(PageDetailRoute)
+    const page = toDetailPageShell(
+      makePage({
+        slug: 'links',
+        title: 'Links',
+        permalink: '/links',
+        date: new Date('2024-01-01T00:00:00.000Z'),
+        toc: false,
+        comments: false,
+      }),
+    )
+    const html = stableHtml(
+      renderInRouter(
+        <Route
+          loaderData={{
+            page,
+            body: [{ _type: 'block', children: [{ _type: 'span', _key: 's1', text: 'Links body' }] }],
+            friends: [
+              {
+                website: 'Alice',
+                description: 'Alice writes about code.',
+                homepage: 'https://alice.example',
+                poster: '/images/alice-poster.png',
+              },
+            ],
+            showFriends: true,
+            draftMarker: null,
+            detail: {
+              admin: false,
+              likes: 0,
+              commentKey: 'https://example.com/links/',
+              comments: Promise.resolve({ commentData: null, commentItems: [] }),
+              recentComments: [],
+              currentUser: null,
+            },
+            imageMeta: {},
+            footnotesSectionTitle: '尾声礼记',
+          }}
+        />,
+        '/links',
+      ),
+    )
+    expect(html).toContain('左邻右舍')
+    expect(html).toContain('Alice')
+    expect(html).toContain('申请友链')
+    expect(html).toContain('name="contact"')
+  })
 })

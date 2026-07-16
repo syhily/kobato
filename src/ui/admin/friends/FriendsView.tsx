@@ -1,4 +1,4 @@
-import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { LoaderIcon, PlusIcon, SearchIcon } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
@@ -8,6 +8,7 @@ import type { AdminFriendDto, DeleteFriendInput } from '@/shared/types/friends'
 import { orpc } from '@/client/api/client'
 import { EditFriendDialog } from '@/ui/admin/friends/EditFriendDialog'
 import { FriendRow, FriendsSkeleton } from '@/ui/admin/friends/FriendRow'
+import { PendingFriendRow } from '@/ui/admin/friends/PendingFriendRow'
 import { useFriendsReducer } from '@/ui/admin/friends/useFriendsReducer'
 import { AdminListPage } from '@/ui/admin/shared/AdminListPage'
 import { type ConfirmState, ConfirmDialog } from '@/ui/admin/shared/ConfirmDialog'
@@ -19,6 +20,10 @@ import { Input } from '@/ui/components/input'
 
 const PAGE_SIZE = 30
 
+// Pending applications rarely exceed a handful; a single bounded page
+// is enough for the review bucket (no infinite scroll there).
+const PENDING_LIMIT = 50
+
 type EditTarget = AdminFriendDto | null | undefined
 
 export function FriendsView() {
@@ -27,6 +32,14 @@ export function FriendsView() {
   const [editTarget, setEditTarget] = useState<EditTarget>(undefined)
   const [confirm, setConfirm] = useState<ConfirmState | null>(null)
   const sentinelRef = useRef<HTMLDivElement>(null)
+
+  // Pending bucket: applications arrive as `visible: false` and surface
+  // on top of the list for one-click review.
+  const pendingQuery = useQuery({
+    queryKey: ['admin', 'friends', 'pending'],
+    queryFn: () => orpc.admin.friends.list({ visible: false, limit: PENDING_LIMIT }),
+  })
+  const pendingRows = pendingQuery.data?.friends ?? []
 
   const listQuery = useInfiniteQuery({
     queryKey: ['admin', 'friends', 'list', { q: state.q, includeHidden: state.includeHidden }],
@@ -78,7 +91,9 @@ export function FriendsView() {
   }, [hasNextPage, isFetchingNextPage, fetchNextPage])
 
   const invalidateList = useCallback(() => {
-    void queryClient.invalidateQueries({ queryKey: ['admin', 'friends', 'list'], exact: false })
+    // Covers both the main list (`['admin', 'friends', 'list', …]`) and
+    // the pending bucket (`['admin', 'friends', 'pending']`).
+    void queryClient.invalidateQueries({ queryKey: ['admin', 'friends'], exact: false })
   }, [queryClient])
 
   const deleteMutation = useMutation({
@@ -92,6 +107,30 @@ export function FriendsView() {
     },
   })
   const submitDelete = deleteMutation.mutate
+
+  // One-click approve: flip `visible` through the existing upsert path.
+  // Rows without a poster can't pass the upsert schema — the UI keeps
+  // the button disabled until the admin fills the cover via edit.
+  const approveMutation = useMutation({
+    mutationFn: (friend: AdminFriendDto) =>
+      orpc.admin.friends.upsert({
+        id: friend.id,
+        website: friend.website,
+        description: friend.description,
+        homepage: friend.homepage,
+        poster: friend.poster,
+        rssUrl: friend.rssUrl,
+        visible: true,
+      }),
+    onSuccess: () => {
+      toast.success('友链已通过审核')
+      invalidateList()
+    },
+    onError: (error) => {
+      toast.error('通过友链失败', { description: error.message })
+    },
+  })
+  const submitApprove = approveMutation.mutate
 
   const [qInput, setQInput] = useDebouncedSearch({
     delayMs: 300,
@@ -154,6 +193,27 @@ export function FriendsView() {
         </AdminListPage.Header>
 
         <AdminListPage.Body>
+          {pendingRows.length > 0 && (
+            <section className="mb-6" aria-label="待审核友链申请">
+              <h2 className="mb-3 text-admin-base font-semibold">
+                待审核申请 <span className="text-sm font-normal text-muted-foreground">{pendingRows.length}</span>
+              </h2>
+              <div className="divide-y rounded-xl border">
+                {pendingRows.map((row) => (
+                  <PendingFriendRow
+                    key={row.id}
+                    friend={row}
+                    disabled={isDialogOpen}
+                    approving={approveMutation.isPending}
+                    onApprove={() => submitApprove(row)}
+                    onEdit={() => setEditTarget(row)}
+                    onDelete={() => handleDelete(row)}
+                  />
+                ))}
+              </div>
+            </section>
+          )}
+
           {isLoading ? (
             <FriendsSkeleton />
           ) : rows.length === 0 ? (
