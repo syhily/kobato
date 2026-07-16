@@ -46,7 +46,31 @@ describe('content/schema — isLive', () => {
     const exactDate = new Date('2026-06-01T12:00:00.000Z')
     const meta = liveMeta({ publishedAt: exactDate })
     // not strictly greater, so equal timestamps should be live
-    expect(isLive(meta, exactDate)).toBe(true)
+    expect(isLive(meta, { asOf: exactDate })).toBe(true)
+  })
+
+  it('honours the asOf override in the options bag', () => {
+    const meta = liveMeta({ publishedAt: new Date('2026-06-01T00:00:00.000Z') })
+    expect(isLive(meta, { asOf: new Date('2026-05-31T00:00:00.000Z') })).toBe(false)
+    expect(isLive(meta, { asOf: new Date('2026-06-02T00:00:00.000Z') })).toBe(true)
+  })
+
+  it('includes future-dated rows when includeScheduled is true', () => {
+    const meta = liveMeta({ publishedAt: new Date('2099-12-31T00:00:00.000Z') })
+    expect(isLive(meta, { includeScheduled: true })).toBe(true)
+  })
+
+  it('excludes future-dated rows when includeScheduled is false', () => {
+    const meta = liveMeta({ publishedAt: new Date('2099-12-31T00:00:00.000Z') })
+    expect(isLive(meta, { includeScheduled: false })).toBe(false)
+  })
+
+  it('includeScheduled skips only the publishedAt leg', () => {
+    expect(isLive(liveMeta({ publishedRevisionId: null }), { includeScheduled: true })).toBe(false)
+    expect(isLive(liveMeta({ published: false }), { includeScheduled: true })).toBe(false)
+    expect(isLive(liveMeta({ deletedAt: new Date('2020-01-01T00:00:00.000Z') }), { includeScheduled: true })).toBe(
+      false,
+    )
   })
 
   it('returns false when deletedAt is a past date (presence check, not date comparison)', () => {

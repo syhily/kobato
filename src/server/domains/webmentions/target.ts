@@ -3,7 +3,8 @@ import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 import { and, eq } from 'drizzle-orm'
 
 import { entityPermalink } from '@/server/domains/comments/services/shared'
-import { liveContentWhere } from '@/server/domains/content/schema'
+import { livePageWhere } from '@/server/domains/pages/repo'
+import { livePostWhere } from '@/server/domains/posts/repos/shared'
 import { page } from '@/server/infra/db/schema/page'
 import { post } from '@/server/infra/db/schema/post'
 import { requireBlogSettingsSection } from '@/shared/config/getters'
@@ -33,17 +34,7 @@ async function findLivePostBySlug(db: NodePgDatabase, slug: string): Promise<{ i
   const rows = await db
     .select({ id: post.id, title: post.title })
     .from(post)
-    .where(
-      and(
-        eq(post.slug, slug),
-        liveContentWhere({
-          deletedAt: post.deletedAt,
-          published: post.published,
-          publishedRevisionId: post.publishedRevisionId,
-          publishedAt: post.publishedAt,
-        }),
-      ),
-    )
+    .where(and(eq(post.slug, slug), livePostWhere()))
     .limit(1)
   return rows[0] ?? null
 }
@@ -52,17 +43,7 @@ async function findLivePageBySlug(db: NodePgDatabase, slug: string): Promise<{ i
   const rows = await db
     .select({ id: page.id, title: page.title })
     .from(page)
-    .where(
-      and(
-        eq(page.slug, slug),
-        liveContentWhere({
-          deletedAt: page.deletedAt,
-          published: page.published,
-          publishedRevisionId: page.publishedRevisionId,
-          publishedAt: page.publishedAt,
-        }),
-      ),
-    )
+    .where(and(eq(page.slug, slug), livePageWhere()))
     .limit(1)
   return rows[0] ?? null
 }

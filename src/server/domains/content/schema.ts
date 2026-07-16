@@ -41,6 +41,19 @@ export interface LiveMeta {
   publishedAt: Date
 }
 
+export interface LiveContentOptions {
+  /**
+   * Rows are live when `publishedAt <= asOf`. Defaults to the current
+   * time.
+   */
+  asOf?: Date
+  /**
+   * Escape hatch for listings: skip the `publishedAt <= asOf` condition
+   * so scheduled (future-dated) rows are included.
+   */
+  includeScheduled?: boolean
+}
+
 /**
  * In-memory projection of the "live" gate shared by posts and pages. A
  * row is live — reachable at its public URL and listed publicly — when
@@ -50,9 +63,16 @@ export interface LiveMeta {
  * This is one of two projections of a single gate defined in this
  * module; the SQL projection is `liveContentWhere` below. The two MUST
  * be changed together — a condition edited in only one of them silently
- * splits what "live" means between read paths.
+ * splits what "live" means between read paths. Both take the same
+ * `LiveContentOptions` bag; `includeScheduled` skips only the
+ * `publishedAt` leg in each.
+ *
+ * SQL callers must not bind the meta columns by hand: the repo-side
+ * adapters `livePostWhere` (`posts/repos/shared.ts`) and
+ * `livePageWhere` (`pages/repo.ts`) are the only sanctioned callers of
+ * `liveContentWhere` outside this module and its tests.
  */
-export function isLive(meta: LiveMeta, asOf: Date = new Date()): boolean {
+export function isLive(meta: LiveMeta, options: LiveContentOptions = {}): boolean {
   if (meta.deletedAt !== null) {
     return false
   }
@@ -62,8 +82,11 @@ export function isLive(meta: LiveMeta, asOf: Date = new Date()): boolean {
   if (meta.publishedRevisionId === null) {
     return false
   }
-  if (meta.publishedAt.getTime() > asOf.getTime()) {
-    return false
+  if (!options.includeScheduled) {
+    const asOf = options.asOf ?? new Date()
+    if (meta.publishedAt.getTime() > asOf.getTime()) {
+      return false
+    }
   }
   return true
 }
@@ -79,24 +102,14 @@ export interface LiveContentColumns {
   publishedAt: typeof postMetaTable.publishedAt | typeof pageMetaTable.publishedAt
 }
 
-export interface LiveContentOptions {
-  /**
-   * Rows are live when `publishedAt <= asOf`. Defaults to the current
-   * time, matching `isLive`.
-   */
-  asOf?: Date
-  /**
-   * Escape hatch for listings: skip the `publishedAt <= asOf` condition
-   * so scheduled (future-dated) rows are included.
-   */
-  includeScheduled?: boolean
-}
-
 /**
  * SQL projection of the same "live" gate as `isLive` above — not
  * soft-deleted, published, has a published revision, and (unless
- * `includeScheduled`) `publishedAt <= asOf`. Keep the two projections in
- * sync; see the warning on `isLive`.
+ * `includeScheduled`) `publishedAt <= asOf`. Takes the same
+ * `LiveContentOptions` bag as `isLive`; keep the two projections in
+ * sync (see the warning on `isLive`). Call this through the repo-side
+ * adapters `livePostWhere` / `livePageWhere`, never with hand-bound
+ * columns.
  */
 export function liveContentWhere(columns: LiveContentColumns, options: LiveContentOptions = {}): SQL {
   const conditions: SQL[] = [

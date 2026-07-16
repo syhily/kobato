@@ -49,6 +49,14 @@ published revision" is what makes content Live.
 _Avoid_: version (ambiguous with app version), draft (a revision's state,
 not the revision itself)
 
+**Live gate**:
+The paired projections `isLive` (in-memory) and `liveContentWhere` (SQL) in
+`src/server/domains/content/schema.ts` that decide whether a row satisfies
+Live. Both take the same `{ asOf, includeScheduled }` options; entity column
+binding lives in repo-side adapters (`livePostWhere` / `livePageWhere`).
+_Avoid_: hand-written `published && publishedRevisionId` checks (drifted
+copies of this gate)
+
 ### Settings
 
 **Section**:

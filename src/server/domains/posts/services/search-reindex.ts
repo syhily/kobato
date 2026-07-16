@@ -1,7 +1,8 @@
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
-import { and, count, eq, inArray, isNotNull, isNull } from 'drizzle-orm'
+import { count, inArray } from 'drizzle-orm'
 
+import { livePostWhere } from '@/server/domains/posts/repos/shared'
 import { indexPost } from '@/server/domains/posts/services/search-index'
 import { content } from '@/server/infra/db/schema/content'
 import { post } from '@/server/infra/db/schema/post'
@@ -36,6 +37,11 @@ export async function reindexSearchBatch(
   const offset = input.offset ?? 0
   const batchSize = input.batchSize ?? 50
 
+  // Index every live post including scheduled ones (the query-time gate
+  // filters scheduled rows until their `publishedAt` arrives, so they
+  // become searchable then without a reindex).
+  const liveIncludingScheduled = livePostWhere({ includeScheduled: true })
+
   const rows = await db
     .select({
       id: post.id,
@@ -44,15 +50,12 @@ export async function reindexSearchBatch(
       publishedRevisionId: post.publishedRevisionId,
     })
     .from(post)
-    .where(and(isNull(post.deletedAt), eq(post.published, true), isNotNull(post.publishedRevisionId)))
+    .where(liveIncludingScheduled)
     .orderBy(post.id)
     .limit(batchSize)
     .offset(offset)
 
-  const totalRows = await db
-    .select({ count: count() })
-    .from(post)
-    .where(and(isNull(post.deletedAt), eq(post.published, true), isNotNull(post.publishedRevisionId)))
+  const totalRows = await db.select({ count: count() }).from(post).where(liveIncludingScheduled)
   const total = totalRows[0].count
 
   const batch = rows

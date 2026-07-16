@@ -7,7 +7,7 @@ import type { NewPageMeta, PageMetaRow } from '@/server/infra/db/types'
 import type { Page } from '@/shared/types/catalog'
 
 import { findContentById, findContentsByIds } from '@/server/domains/content/repos/query'
-import { isLive, liveContentWhere } from '@/server/domains/content/schema'
+import { isLive, liveContentWhere, type LiveContentOptions } from '@/server/domains/content/schema'
 import { hydrateImageRefs } from '@/server/domains/images/services/enhance'
 import { toCmsPage } from '@/server/domains/pages/projection'
 import { ilikeEscape } from '@/server/infra/db/ilike-escape'
@@ -15,6 +15,25 @@ import { page as pageMetaTable } from '@/server/infra/db/schema/page'
 import { user } from '@/server/infra/db/schema/user'
 
 // --- Reads -------------------------------------------------------------------
+
+/**
+ * Repo-side binding of the live gate for the `page` table. Binds the
+ * four meta columns once and delegates to `liveContentWhere`, so call
+ * sites never hand-assemble the column struct (and can't drift into
+ * their own copy of the gate). See the warning on `isLive` in
+ * `content/schema.ts`.
+ */
+export function livePageWhere(options?: LiveContentOptions): SQL {
+  return liveContentWhere(
+    {
+      deletedAt: pageMetaTable.deletedAt,
+      published: pageMetaTable.published,
+      publishedRevisionId: pageMetaTable.publishedRevisionId,
+      publishedAt: pageMetaTable.publishedAt,
+    },
+    options,
+  )
+}
 
 export type PageMetaWithAuthor = PageMetaRow & { authorName: string | null }
 
@@ -152,7 +171,7 @@ export interface SitemapPageRow {
 
 /**
  * Sitemap-only projection of published pages. Applies the SQL
- * projection of the live gate (`liveContentWhere`, the SQL dual of
+ * projection of the live gate (`livePageWhere`, the repo-bound dual of
  * `isLive` used inside `listAllPages`) — not deleted, published, has a
  * published revision, `published_at` not in the future — but selects
  * only `slug` + `firstPublishedAt` + `publishedAt` to skip the
@@ -167,17 +186,7 @@ export async function listSitemapPages(db: NodePgDatabase, now = new Date()): Pr
       publishedAt: pageMetaTable.publishedAt,
     })
     .from(pageMetaTable)
-    .where(
-      liveContentWhere(
-        {
-          deletedAt: pageMetaTable.deletedAt,
-          published: pageMetaTable.published,
-          publishedRevisionId: pageMetaTable.publishedRevisionId,
-          publishedAt: pageMetaTable.publishedAt,
-        },
-        { asOf: now },
-      ),
-    )
+    .where(livePageWhere({ asOf: now }))
     .orderBy(desc(pageMetaTable.firstPublishedAt))
 }
 
@@ -284,7 +293,7 @@ export async function findPageBySlug(db: NodePgDatabase, slug: string): Promise<
 export async function listAllPages(db: NodePgDatabase): Promise<Page[]> {
   const metas = await listPublicPageMetas(db)
   const asOf = new Date()
-  const visible = metas.filter((meta) => isLive(meta, asOf))
+  const visible = metas.filter((meta) => isLive(meta, { asOf }))
   if (visible.length === 0) {
     return []
   }

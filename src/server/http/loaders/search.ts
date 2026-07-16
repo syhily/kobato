@@ -6,11 +6,10 @@ import { redirect } from 'react-router'
 import type { ListingPageLoaderData } from '@/server/http/loaders/listing'
 
 import { recordAuditEvent } from '@/server/domains/audit/services/record'
-import { liveContentWhere } from '@/server/domains/content/schema'
 import { getClientPostsWithMetadata } from '@/server/domains/posts/repos/public-query/listing'
 import { getPostsBySlugs } from '@/server/domains/posts/repos/public-query/misc'
+import { livePostWhere } from '@/server/domains/posts/repos/shared'
 import { parseListingPage } from '@/server/http/loaders/pagination'
-import { post as postMetaTable } from '@/server/infra/db/schema/post'
 import { searchPostOptions } from '@/server/infra/search/options'
 import { searchPosts } from '@/server/infra/search/search'
 import { listingSeo } from '@/server/render/seo/listing-seo'
@@ -39,14 +38,10 @@ export async function searchLoader(
   const pageNum = parseListingPage(num, rootPath)
   const pageSize = requireBlogSettingsSection('content').pagination.search
   // Only live posts are searchable — the gate is defined once in
-  // `@/server/domains/content/schema` and passed down so the search infra
-  // stays free of business rules.
-  const liveWhere = liveContentWhere({
-    deletedAt: postMetaTable.deletedAt,
-    published: postMetaTable.published,
-    publishedRevisionId: postMetaTable.publishedRevisionId,
-    publishedAt: postMetaTable.publishedAt,
-  })
+  // `@/server/domains/content/schema`, bound to the post columns by
+  // `livePostWhere`, and passed down so the search infra stays free of
+  // business rules.
+  const liveWhere = livePostWhere()
   const { hits, page, totalPages } = await searchPosts(db, liveWhere, query, pageSize, (pageNum - 1) * pageSize)
   if (request !== undefined) {
     recordAuditEvent({

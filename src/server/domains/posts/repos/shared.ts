@@ -3,7 +3,7 @@ import { and, asc, desc, eq, isNotNull, isNull, or, sql, type SQL } from 'drizzl
 import type { PostMetaRow } from '@/server/infra/db/types'
 import type { ClientPost } from '@/shared/types/catalog'
 
-import { liveContentWhere } from '@/server/domains/content/schema'
+import { liveContentWhere, type LiveContentOptions } from '@/server/domains/content/schema'
 import { ilikeEscape } from '@/server/infra/db/ilike-escape'
 import { post as postMetaTable } from '@/server/infra/db/schema/post'
 import { postTag } from '@/server/infra/db/schema/post-tag'
@@ -11,6 +11,25 @@ import { tag } from '@/server/infra/db/schema/taxonomy'
 import { readStringArray } from '@/shared/utils/tools'
 
 export type PostMetaWithAuthor = PostMetaRow & { authorName: string | null }
+
+/**
+ * Repo-side binding of the live gate for the `post` table. Binds the
+ * four meta columns once and delegates to `liveContentWhere`, so call
+ * sites never hand-assemble the column struct (and can't drift into
+ * their own copy of the gate). See the warning on `isLive` in
+ * `content/schema.ts`.
+ */
+export function livePostWhere(options?: LiveContentOptions): SQL {
+  return liveContentWhere(
+    {
+      deletedAt: postMetaTable.deletedAt,
+      published: postMetaTable.published,
+      publishedRevisionId: postMetaTable.publishedRevisionId,
+      publishedAt: postMetaTable.publishedAt,
+    },
+    options,
+  )
+}
 
 export interface ListPostsFilters {
   /** Free-text query matched case-insensitively against `slug` and `title`. */
@@ -149,17 +168,7 @@ export function toClientPostFromMeta(meta: PostMetaRow, tags: string[] = []): Cl
 }
 
 export function buildPublicPostsWhere(filters: ListPublicPostsFilters, now = new Date()): SQL {
-  const conditions: SQL[] = [
-    liveContentWhere(
-      {
-        deletedAt: postMetaTable.deletedAt,
-        published: postMetaTable.published,
-        publishedRevisionId: postMetaTable.publishedRevisionId,
-        publishedAt: postMetaTable.publishedAt,
-      },
-      { asOf: now, includeScheduled: filters.includeScheduled },
-    ),
-  ]
+  const conditions: SQL[] = [livePostWhere({ asOf: now, includeScheduled: filters.includeScheduled })]
 
   if (!filters.includeHidden) {
     conditions.push(eq(postMetaTable.visible, true))

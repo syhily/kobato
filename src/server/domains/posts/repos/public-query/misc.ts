@@ -4,9 +4,10 @@ import { and, desc, inArray, isNull } from 'drizzle-orm'
 
 import type { Post, PostVisibilityOptions } from '@/shared/types/catalog'
 
-import { isLive, liveContentWhere } from '@/server/domains/content/schema'
+import { isLive } from '@/server/domains/content/schema'
 import { buildPublicPostFilters, hydratePostImages } from '@/server/domains/posts/repos/hydrate'
 import { listPublicPosts } from '@/server/domains/posts/repos/public-query/listing'
+import { livePostWhere } from '@/server/domains/posts/repos/shared'
 import { toPostFromMeta } from '@/server/domains/posts/repos/single'
 import { findTagNamesByPostIds } from '@/server/infra/db/operations/post-tag'
 import { post as postMetaTable } from '@/server/infra/db/schema/post'
@@ -20,7 +21,7 @@ export interface SitemapPostRow {
 
 /**
  * Sitemap-only projection of published posts. Applies the shared live
- * gate (`liveContentWhere`) — every published, non-deleted row with a
+ * gate (`livePostWhere`) — every published, non-deleted row with a
  * published revision whose `published_at` is not in the future — but
  * selects only `slug` + `firstPublishedAt` + `publishedAt` to avoid the
  * revision-join + image-hydration fan-out the full `listAllPosts`
@@ -34,17 +35,7 @@ export async function listSitemapPosts(db: NodePgDatabase, now = new Date()): Pr
       publishedAt: postMetaTable.publishedAt,
     })
     .from(postMetaTable)
-    .where(
-      liveContentWhere(
-        {
-          deletedAt: postMetaTable.deletedAt,
-          published: postMetaTable.published,
-          publishedRevisionId: postMetaTable.publishedRevisionId,
-          publishedAt: postMetaTable.publishedAt,
-        },
-        { asOf: now },
-      ),
-    )
+    .where(livePostWhere({ asOf: now }))
     .orderBy(desc(postMetaTable.firstPublishedAt))
 }
 
@@ -70,10 +61,10 @@ export async function getPostsBySlugs(
   const now = new Date()
   const filteredRows = rows.filter((meta) => {
     const visible = filters.includeHidden || meta.visible
-    // Mirror the canonical live gate (content/schema.ts). `includeScheduled`
+    // The canonical live gate (content/schema.ts). `includeScheduled`
     // relaxes only the publishedAt<=now leg — a row without a promoted
     // revision is never public, scheduled or not.
-    const live = filters.includeScheduled ? meta.published && meta.publishedRevisionId !== null : isLive(meta, now)
+    const live = isLive(meta, { asOf: now, includeScheduled: filters.includeScheduled })
     return visible && live
   })
   const order = new Map(slugs.map((slug, index) => [slug, index]))
