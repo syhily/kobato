@@ -12,9 +12,18 @@ vi.mock('@/server/domains/images/services/cover', () => ({
 }))
 
 const imageMeta = await import('@/server/domains/images/services/cover')
+const rateLimitMod = await import('@/server/infra/rate-limit')
 const { imageRouter } = await import('@/server/http/controllers/image.controller')
 
 describe('imageRouter.resolveThumbhash', () => {
+  it('throws TOO_MANY_REQUESTS when the rate limit is exceeded', async () => {
+    vi.mocked(rateLimitMod.tryResourceRateLimit).mockResolvedValueOnce({ count: 100, exceeded: true })
+    const ctx = makePublicCtx()
+    await expect(
+      call(imageRouter.resolveThumbhash, { src: 'https://cdn.example.com/images/test.jpg' }, { context: ctx }),
+    ).rejects.toMatchObject({ code: 'TOO_MANY_REQUESTS' })
+  })
+
   it('returns thumbhash, width, and height when image is found', async () => {
     vi.mocked(imageMeta.loadImageThumbhash).mockResolvedValueOnce({
       width: 100,

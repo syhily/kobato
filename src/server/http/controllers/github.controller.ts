@@ -1,3 +1,4 @@
+import { ORPCError } from '@orpc/server'
 import { z } from 'zod'
 
 import { publicProc } from '@/server/http/orpc-base'
@@ -44,7 +45,7 @@ const avatar = publicProc
   .handler(async ({ context }) => {
     const rateLimit = await tryResourceRateLimit(context.clientAddress)
     if (rateLimit.exceeded) {
-      throw new Error('请求过于频繁，请稍后再试。')
+      throw new ORPCError('TOO_MANY_REQUESTS', { message: '请求过于频繁，请稍后再试。' })
     }
     const res = await fetch(AVATAR_URL, { signal: AbortSignal.timeout(30_000) })
     if (!res.ok) {
@@ -69,22 +70,22 @@ const release = publicProc
   .handler(async ({ context }) => {
     const rateLimit = await tryResourceRateLimit(context.clientAddress)
     if (rateLimit.exceeded) {
-      throw new Error('请求过于频繁，请稍后再试。')
+      throw new ORPCError('TOO_MANY_REQUESTS', { message: '请求过于频繁，请稍后再试。' })
     }
     const parsed = parseRepo(APP_REPOSITORY)
     if (!parsed) {
-      throw new Error('Invalid repository format')
+      throw new ORPCError('INTERNAL_SERVER_ERROR', { message: 'Invalid repository format' })
     }
     const { owner, repo } = parsed
     const res = await fetch(`https://api.github.com/repos/${owner}/${repo}/releases/latest`, {
       signal: AbortSignal.timeout(30_000),
     })
     if (!res.ok) {
-      throw new Error('Failed to fetch release')
+      throw new ORPCError('INTERNAL_SERVER_ERROR', { message: 'Failed to fetch release' })
     }
     const json: unknown = await res.json()
     if (!isGitHubRelease(json)) {
-      throw new Error('Unexpected response format from GitHub API')
+      throw new ORPCError('INTERNAL_SERVER_ERROR', { message: 'Unexpected response format from GitHub API' })
     }
     return {
       tagName: json.tag_name,

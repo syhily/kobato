@@ -1,3 +1,4 @@
+import { ORPCError } from '@orpc/server'
 import { z } from 'zod'
 
 import { publicProc } from '@/server/http/orpc-base'
@@ -15,7 +16,7 @@ const findAvatar = publicProc
   .handler(async ({ input, context }) => {
     const rateLimit = await tryResourceRateLimit(context.clientAddress)
     if (rateLimit.exceeded) {
-      throw new Error('请求过于频繁，请稍后再试。')
+      throw new ORPCError('TOO_MANY_REQUESTS', { message: '请求过于频繁，请稍后再试。' })
     }
     const hash = await encodedEmail(input.email)
     if (isQQEmail(input.email)) {
