@@ -48,6 +48,11 @@ export async function listSitemapPosts(db: NodePgDatabase, now = new Date()): Pr
     .orderBy(desc(postMetaTable.firstPublishedAt))
 }
 
+/**
+ * Hydrates posts by slug. Rows come back in the caller's slug order — the
+ * search pipeline passes a relevance-ranked list, so the DB result must not
+ * be re-ordered by date.
+ */
 export async function getPostsBySlugs(
   db: NodePgDatabase,
   slugs: readonly string[],
@@ -61,7 +66,6 @@ export async function getPostsBySlugs(
     .select()
     .from(postMetaTable)
     .where(and(inArray(postMetaTable.slug, [...slugs]), isNull(postMetaTable.deletedAt)))
-    .orderBy(desc(postMetaTable.firstPublishedAt))
 
   const now = new Date()
   const filteredRows = rows.filter((meta) => {
@@ -69,6 +73,8 @@ export async function getPostsBySlugs(
     const published = filters.includeScheduled || meta.publishedAt <= now
     return visible && published && meta.published
   })
+  const order = new Map(slugs.map((slug, index) => [slug, index]))
+  filteredRows.sort((a, b) => (order.get(a.slug) ?? 0) - (order.get(b.slug) ?? 0))
   const tagMap = await findTagNamesByPostIds(
     db,
     filteredRows.map((m) => m.id),

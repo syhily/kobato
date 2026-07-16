@@ -26,6 +26,8 @@ vi.mock('@/server/infra/search/openai', () => ({
 }))
 
 const { searchPosts } = await import('@/server/infra/search/search')
+const { getPostsBySlugs } = await import('@/server/domains/posts/repos/public-query/misc')
+const { searchPostOptions } = await import('@/server/infra/search/options')
 const { liveContentWhere } = await import('@/server/domains/content/schema')
 const { setBlogSettingsBundleForTests } = await import('@/server/domains/settings/services/test-utils')
 const { TEST_BLOG_SETTINGS_BUNDLE } = await import('#/_helpers/blog-settings')
@@ -167,5 +169,26 @@ describe('services/search — searchPosts', () => {
 
     const result = await searchPosts(db, liveWhere(), 'revision', 10)
     expect(result.hits).toEqual([])
+  })
+})
+
+describe('services/search — getPostsBySlugs', () => {
+  it('returns hydrated posts in the caller slug order, not date order', async () => {
+    const now = new Date()
+    await seedPost({ slug: 'alpha-match', title: 'alpha match', publishedAt: now })
+    await seedPost({
+      slug: 'match-beta',
+      title: 'match beta',
+      publishedAt: new Date(now.getTime() - 1000),
+    })
+    await seedPost({
+      slug: 'match-gamma',
+      title: 'match gamma',
+      publishedAt: new Date(now.getTime() - 2000),
+    })
+
+    const posts = await getPostsBySlugs(db, ['match-gamma', 'alpha-match', 'match-beta'], searchPostOptions())
+
+    expect(posts.map((p) => p.slug)).toEqual(['match-gamma', 'alpha-match', 'match-beta'])
   })
 })
