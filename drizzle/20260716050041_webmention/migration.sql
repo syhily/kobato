@@ -1,4 +1,7 @@
-CREATE TYPE "webmention_status" AS ENUM('pending', 'approved', 'rejected');--> statement-breakpoint
+DO $$ BEGIN
+	CREATE TYPE "webmention_status" AS ENUM('pending', 'approved', 'rejected');
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;--> statement-breakpoint
 CREATE TABLE "webmention" (
 	"id" bigserial PRIMARY KEY,
 	"created_at" timestamp with time zone NOT NULL,

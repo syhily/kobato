@@ -1,4 +1,7 @@
-CREATE TYPE "newsletter_subscriber_status" AS ENUM('pending', 'confirmed', 'unsubscribed');--> statement-breakpoint
+DO $$ BEGIN
+	CREATE TYPE "newsletter_subscriber_status" AS ENUM('pending', 'confirmed', 'unsubscribed');
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;--> statement-breakpoint
 CREATE TABLE "newsletter_subscriber" (
 	"id" bigserial PRIMARY KEY,
 	"created_at" timestamp with time zone NOT NULL,
