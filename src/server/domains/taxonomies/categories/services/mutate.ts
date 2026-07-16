@@ -5,13 +5,13 @@ import type { AdminCategoryDto, UpsertCategoryInputs } from '@/server/domains/ta
 import { listPostsByCategory } from '@/server/domains/posts/repos/public-query/taxonomy'
 import { toAdminCategoryDto } from '@/server/domains/taxonomies/categories/projection'
 import { categoriesCache } from '@/server/domains/taxonomies/categories/services/query'
+import { countPostsByTaxonomy } from '@/server/domains/taxonomies/counts'
 import {
   deleteAdminTaxonomy,
   ensureUniqueOnCreateTaxonomy,
   ensureUniqueOnUpdateTaxonomy,
 } from '@/server/domains/taxonomies/shared'
 import {
-  countPostsByCategory,
   deleteCategory as deleteCategoryRow,
   findCategoryById,
   findCategoryByName,
@@ -45,7 +45,7 @@ export async function upsertAdminCategory(db: NodePgDatabase, input: UpsertCateg
       ...(input.sortOrder !== undefined ? { sortOrder: input.sortOrder } : {}),
     })
     await categoriesCache.clear()
-    const counts = await countPostsByCategory(db)
+    const counts = await countPostsByTaxonomy(db, { kind: 'category', gate: 'admin', name: row.name })
     return toAdminCategoryDto(row, counts.get(row.name) ?? 0)
   }
 
@@ -75,7 +75,7 @@ export async function upsertAdminCategory(db: NodePgDatabase, input: UpsertCateg
     throw new DomainError('NOT_FOUND', '分类不存在')
   }
   await categoriesCache.clear()
-  const counts = await countPostsByCategory(db)
+  const counts = await countPostsByTaxonomy(db, { kind: 'category', gate: 'admin', name: updated.name })
   return toAdminCategoryDto(updated, counts.get(updated.name) ?? 0)
 }
 
@@ -107,7 +107,7 @@ export async function reorderAdminCategories(
       db,
       orderedIds.map((id) => idFromString(id)),
     ),
-    countPostsByCategory(db),
+    countPostsByTaxonomy(db, { kind: 'category', gate: 'admin' }),
   ])
   await categoriesCache.clear()
   return updated.map((row) => toAdminCategoryDto(row, counts.get(row.name) ?? 0))

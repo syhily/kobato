@@ -150,4 +150,48 @@ describe('listCategoriesForAdmin', () => {
     expect(result.total).toBe(1)
     expect(result.categories[0]?.postCount).toBe(0)
   })
+
+  // Regression for the drifted gates: the admin list and the count
+  // returned by upsert must come from the same live-gate definition, so
+  // a draft + a published post both count as exactly 1 on either path.
+  it('list count and upsert-returned count agree (both exclude drafts)', async () => {
+    const [cat] = await db
+      .insert(category)
+      .values({ name: 'Tech', slug: 'tech', cover: '', description: '', sortOrder: 0 })
+      .returning()
+
+    const past = new Date(Date.now() - 24 * 60 * 60 * 1000)
+    await db.insert(post).values([
+      {
+        slug: 'tech-published',
+        title: 'Tech Published',
+        summary: '',
+        cover: '',
+        category: 'Tech',
+        visible: true,
+        published: true,
+        publishedAt: past,
+        publishedRevisionId: 1n,
+      },
+      {
+        slug: 'tech-draft',
+        title: 'Tech Draft',
+        summary: '',
+        cover: '',
+        category: 'Tech',
+        visible: true,
+        published: false,
+        publishedAt: past,
+      },
+    ])
+
+    const { listCategoriesForAdmin } = await import('@/server/domains/taxonomies/categories/services/query')
+    const { upsertAdminCategory } = await import('@/server/domains/taxonomies/categories/services/mutate')
+
+    const list = await listCategoriesForAdmin(db, {})
+    expect(list.categories.find((c) => c.name === 'Tech')?.postCount).toBe(1)
+
+    const updated = await upsertAdminCategory(db, { id: cat.id, name: 'Tech', cover: '', description: '' })
+    expect(updated.postCount).toBe(1)
+  })
 })

@@ -1,13 +1,13 @@
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
-import { and, asc, eq, inArray, isNotNull, isNull, sql } from 'drizzle-orm'
+import { asc, inArray } from 'drizzle-orm'
 
 import type { TagRow } from '@/server/infra/db/types'
 import type { Tag } from '@/shared/types/catalog'
 import type { AdminTagDto } from '@/shared/types/tags'
 
-import { liveContentWhere } from '@/server/domains/content/schema'
 import { listPostsByTag } from '@/server/domains/posts/repos/public-query/taxonomy'
+import { countPostsByTaxonomy } from '@/server/domains/taxonomies/counts'
 import {
   deleteAdminTaxonomy,
   ensureUniqueOnCreateTaxonomy,
@@ -25,8 +25,6 @@ import {
   listAdminTagRows,
   updateTag,
 } from '@/server/infra/db/operations/tag'
-import { post as postMetaTable } from '@/server/infra/db/schema/post'
-import { postTag } from '@/server/infra/db/schema/post-tag'
 import { tag as tagTable } from '@/server/infra/db/schema/taxonomy'
 import { DomainError, ErrorMessages } from '@/server/infra/http/errors'
 import { getLogger } from '@/server/infra/logger'
@@ -37,8 +35,8 @@ import { hasAtLeast, type Role } from '@/shared/utils/roles'
 const log = getLogger('tags.service')
 
 // Wire-format DTO for every admin tag endpoint. `postCount` is
-// projected by the caller from the live `ContentCatalog` (mirrors
-// the category service shape). See `countPostsByTag`.
+// projected by the caller from `countPostsByTaxonomy` (mirrors the
+// category service shape).
 export function toAdminTagDto(row: TagRow, postCount: number): AdminTagDto {
   return {
     id: String(row.id),
@@ -58,52 +56,9 @@ export interface AdminTagsListResult {
   hasMore: boolean
 }
 
-// Bulk-count posts per tag in a single query, then project into a Map.
-// Admin counts include scheduled posts but skip rows without a published
-// revision (a draft state per the live gate definition).
-async function countPostsByTags(db: NodePgDatabase): Promise<Map<string, number>> {
-  const rows = await db
-    .select({ name: tagTable.name, count: sql<number>`count(${postMetaTable.id})::int` })
-    .from(tagTable)
-    .leftJoin(postTag, eq(postTag.tagId, tagTable.id))
-    .leftJoin(
-      postMetaTable,
-      and(
-        eq(postMetaTable.id, postTag.postId),
-        isNull(postMetaTable.deletedAt),
-        eq(postMetaTable.published, true),
-        isNotNull(postMetaTable.publishedRevisionId),
-      ),
-    )
-    .groupBy(tagTable.name)
-  const counts = new Map<string, number>()
-  for (const row of rows) {
-    counts.set(row.name, row.count)
-  }
-  return counts
-}
-
-async function countPostsByTag(db: NodePgDatabase, name: string): Promise<number> {
-  const [row] = await db
-    .select({ count: sql<number>`count(${postMetaTable.id})::int` })
-    .from(tagTable)
-    .leftJoin(postTag, eq(postTag.tagId, tagTable.id))
-    .leftJoin(
-      postMetaTable,
-      and(
-        eq(postMetaTable.id, postTag.postId),
-        isNull(postMetaTable.deletedAt),
-        eq(postMetaTable.published, true),
-        isNotNull(postMetaTable.publishedRevisionId),
-      ),
-    )
-    .where(eq(tagTable.name, name))
-  return row?.count ?? 0
-}
-
 // Server-side pagination: parallel `[rows, total, postCounter]` so we
 // pay only one round-trip for the page-of-rows query, the COUNT(*),
-// and the catalog snapshot. `total` is the full filtered count
+// and the per-term counts. `total` is the full filtered count
 // (independent of `offset`/`limit`) so the client can render the
 // correct number of pagination buttons.
 export async function listTagsForAdmin(
@@ -114,7 +69,7 @@ export async function listTagsForAdmin(
   const [rows, total, counts] = await Promise.all([
     listAdminTagRows(db, filters),
     countAdminTags(db, { q: filters.q }),
-    countPostsByTags(db),
+    countPostsByTaxonomy(db, { kind: 'tag', gate: 'admin' }),
   ])
   return {
     tags: rows.map((row) => toAdminTagDto(row, counts.get(row.name) ?? 0)),
@@ -154,7 +109,8 @@ export async function upsertAdminTag(
     await clearTagCache().catch((err: unknown) => {
       log.warn('clear tag cache failed', { error: err })
     })
-    return toAdminTagDto(row, await countPostsByTag(db, row.name))
+    const counts = await countPostsByTaxonomy(db, { kind: 'tag', gate: 'admin', name: row.name })
+    return toAdminTagDto(row, counts.get(row.name) ?? 0)
   }
 
   // Authors may only create tags; renaming is admin-only.
@@ -183,7 +139,8 @@ export async function upsertAdminTag(
   await clearTagCache().catch((err: unknown) => {
     log.warn('clear tag cache failed', { error: err })
   })
-  return toAdminTagDto(updated, await countPostsByTag(db, updated.name))
+  const counts = await countPostsByTaxonomy(db, { kind: 'tag', gate: 'admin', name: updated.name })
+  return toAdminTagDto(updated, counts.get(updated.name) ?? 0)
 }
 
 // Block-only deletion regardless of role. `deleteAdminTaxonomy` refuses
@@ -229,8 +186,6 @@ export async function listAllTags(db: NodePgDatabase): Promise<Tag[]> {
       return cachedInner
     }
 
-    const now = new Date()
-
     const tagRows = await db
       .select({ name: tagTable.name, slug: tagTable.slug })
       .from(tagTable)
@@ -241,32 +196,7 @@ export async function listAllTags(db: NodePgDatabase): Promise<Tag[]> {
       return []
     }
 
-    const countsResult = await db
-      .select({ name: tagTable.name, count: sql<number>`count(${postMetaTable.id})::int` })
-      .from(tagTable)
-      .leftJoin(postTag, eq(postTag.tagId, tagTable.id))
-      .leftJoin(
-        postMetaTable,
-        and(
-          eq(postMetaTable.id, postTag.postId),
-          liveContentWhere(
-            {
-              deletedAt: postMetaTable.deletedAt,
-              published: postMetaTable.published,
-              publishedRevisionId: postMetaTable.publishedRevisionId,
-              publishedAt: postMetaTable.publishedAt,
-            },
-            { asOf: now },
-          ),
-          eq(postMetaTable.visible, true),
-        ),
-      )
-      .groupBy(tagTable.name)
-
-    const countsMap = new Map<string, number>()
-    for (const row of countsResult) {
-      countsMap.set(row.name, row.count)
-    }
+    const countsMap = await countPostsByTaxonomy(db, { kind: 'tag', gate: 'public' })
 
     const tags = tagRows.map((row) => ({
       name: row.name,
@@ -285,43 +215,16 @@ export async function getTagsByNames(db: NodePgDatabase, names: readonly string[
     return []
   }
   const uniqueNames = [...new Set(names)]
-  const now = new Date()
 
   const tagRowsPromise = db
     .select({ name: tagTable.name, slug: tagTable.slug })
     .from(tagTable)
     .where(inArray(tagTable.name, uniqueNames))
-  const countsResultPromise = db
-    .select({ name: tagTable.name, count: sql<number>`count(${postMetaTable.id})::int` })
-    .from(tagTable)
-    .leftJoin(postTag, eq(postTag.tagId, tagTable.id))
-    .leftJoin(
-      postMetaTable,
-      and(
-        eq(postMetaTable.id, postTag.postId),
-        liveContentWhere(
-          {
-            deletedAt: postMetaTable.deletedAt,
-            published: postMetaTable.published,
-            publishedRevisionId: postMetaTable.publishedRevisionId,
-            publishedAt: postMetaTable.publishedAt,
-          },
-          { asOf: now },
-        ),
-        eq(postMetaTable.visible, true),
-      ),
-    )
-    .where(inArray(tagTable.name, uniqueNames))
-    .groupBy(tagTable.name)
-  const [tagRows, countsResult] = await Promise.all([tagRowsPromise, countsResultPromise])
+  const countsMapPromise = countPostsByTaxonomy(db, { kind: 'tag', gate: 'public' })
+  const [tagRows, countsMap] = await Promise.all([tagRowsPromise, countsMapPromise])
 
   if (tagRows.length === 0) {
     return []
-  }
-
-  const countsMap = new Map<string, number>()
-  for (const row of countsResult) {
-    countsMap.set(row.name, row.count)
   }
 
   const tagMap = new Map(

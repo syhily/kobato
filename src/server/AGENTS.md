@@ -246,19 +246,24 @@ redeploying. Examples: `assets.storage.enabled`, `seo.og.width`,
   The admin lifecycle filter treats both cases as draft; all public
   queries MUST check both conditions: listings
   (`buildPublicPostsWhere`), direct links (`findPostBySlug`), and
-  public taxonomy counts (`liveContentWhere` + `visible`). Search is
+  public taxonomy counts (`countPostsByTaxonomy` with the `public`
+  gate: live + `visible`). Search is
   gated too — `@/server/infra/search/search.ts::searchPosts` takes the
   gate as a caller-supplied `baseWhere` (the HTTP search loader passes
-  `liveContentWhere(...)`), keeping `infra/` free of business rules.
+  `livePostWhere(...)`), keeping `infra/` free of business rules.
   A post with `status=published` but no published revision must NOT
   appear on the home page, in listings, feeds, sitemap, or search
   results. The full "live" gate (not deleted, published, has
   a published revision, `publishedAt` not in the future) is defined
   once in `@/server/domains/content/schema.ts` with two projections
   that MUST be changed together: `isLive` (in-memory predicate) and
-  `liveContentWhere` (SQL fragment for post/page meta columns). Admin
+  `liveContentWhere` (SQL fragment for post/page meta columns). SQL
+  call sites bind columns through the repo-side adapters
+  `livePostWhere` (`posts/repos/shared.ts`) / `livePageWhere`
+  (`pages/repo.ts`) — never hand-assemble the column struct. Admin
   taxonomy counts deliberately include scheduled posts but still
-  require a published revision.
+  require a published revision (`countPostsByTaxonomy` with the
+  `admin` gate).
 
 ### Taxonomies (categories, tags, friends)
 

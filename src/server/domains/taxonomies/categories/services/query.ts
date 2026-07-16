@@ -1,52 +1,30 @@
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
-import { and, asc, eq, inArray, isNotNull, isNull, sql } from 'drizzle-orm'
+import { asc, inArray } from 'drizzle-orm'
 
 import type { AdminCategoriesListResult } from '@/server/domains/taxonomies/categories/projection'
 import type { Category } from '@/shared/types/catalog'
 
-import { liveContentWhere } from '@/server/domains/content/schema'
 import { hydrateImageRefs } from '@/server/domains/images/services/enhance'
 import { toAdminCategoryDto } from '@/server/domains/taxonomies/categories/projection'
+import { countPostsByTaxonomy } from '@/server/domains/taxonomies/counts'
 import { createRedisCache } from '@/server/infra/cache/redis-cache'
 import {
   type AdminCategoriesListFilters,
   findCategoryByName,
   listAdminCategoryRows,
 } from '@/server/infra/db/operations/category'
-import { post as postMetaTable } from '@/server/infra/db/schema/post'
 import { category as categoryTable } from '@/server/infra/db/schema/taxonomy'
 import { createInflight } from '@/server/infra/redis/inflight'
-
-async function countPostsByCategories(db: NodePgDatabase): Promise<Map<string, number>> {
-  const rows = await db
-    .select({
-      category: postMetaTable.category,
-      count: sql<number>`count(${postMetaTable.id})::int`,
-    })
-    .from(postMetaTable)
-    .where(
-      and(
-        isNull(postMetaTable.deletedAt),
-        eq(postMetaTable.published, true),
-        isNotNull(postMetaTable.publishedRevisionId),
-      ),
-    )
-    .groupBy(postMetaTable.category)
-  const counts = new Map<string, number>()
-  for (const row of rows) {
-    if (row.category) {
-      counts.set(row.category, row.count)
-    }
-  }
-  return counts
-}
 
 export async function listCategoriesForAdmin(
   db: NodePgDatabase,
   filters: AdminCategoriesListFilters,
 ): Promise<AdminCategoriesListResult> {
-  const [rows, counts] = await Promise.all([listAdminCategoryRows(db, filters), countPostsByCategories(db)])
+  const [rows, counts] = await Promise.all([
+    listAdminCategoryRows(db, filters),
+    countPostsByTaxonomy(db, { kind: 'category', gate: 'admin' }),
+  ])
   return {
     categories: rows.map((row) => toAdminCategoryDto(row, counts.get(row.name) ?? 0)),
     total: rows.length,
@@ -91,7 +69,6 @@ export async function listAllCategories(db: NodePgDatabase): Promise<Category[]>
 }
 
 async function queryAllCategories(db: NodePgDatabase): Promise<Category[]> {
-  const now = new Date()
   const rows = await db
     .select({
       name: categoryTable.name,
@@ -102,34 +79,7 @@ async function queryAllCategories(db: NodePgDatabase): Promise<Category[]> {
     .from(categoryTable)
     .orderBy(asc(categoryTable.sortOrder), asc(categoryTable.id))
 
-  const countsResult = await db
-    .select({
-      category: postMetaTable.category,
-      count: sql<number>`count(${postMetaTable.id})::int`,
-    })
-    .from(postMetaTable)
-    .where(
-      and(
-        liveContentWhere(
-          {
-            deletedAt: postMetaTable.deletedAt,
-            published: postMetaTable.published,
-            publishedRevisionId: postMetaTable.publishedRevisionId,
-            publishedAt: postMetaTable.publishedAt,
-          },
-          { asOf: now },
-        ),
-        eq(postMetaTable.visible, true),
-      ),
-    )
-    .groupBy(postMetaTable.category)
-
-  const countsMap = new Map<string, number>()
-  for (const row of countsResult) {
-    if (row.category) {
-      countsMap.set(row.category, row.count)
-    }
-  }
+  const countsMap = await countPostsByTaxonomy(db, { kind: 'category', gate: 'public' })
 
   const categories: Category[] = rows.map((row) => ({
     name: row.name,
