@@ -6,13 +6,9 @@ import sanitizeHtml from 'sanitize-html'
 import type { Page, Post } from '@/shared/types/catalog'
 
 import { listPublicPostsWithContent } from '@/server/domains/posts/repos/public-query/feed'
-import {
-  findCategoriesByNames,
-  findCategoryByName,
-  findCategoryBySlug,
-  listAllCategories,
-} from '@/server/domains/taxonomies/categories/services/query'
+import { listAllCategories } from '@/server/domains/taxonomies/categories/services/query'
 import { findTagByName, findTagBySlug, getTagsByNames } from '@/server/domains/taxonomies/tags/service'
+import { findCategoriesByNames, findCategoryByName, findCategoryBySlug } from '@/server/infra/db/operations/category'
 import { DomainError } from '@/server/infra/http/errors'
 import { renderPortableTextToHtml } from '@/server/render/feed/feed-pt-render'
 import { requireBlogSettingsSection } from '@/shared/config/getters'

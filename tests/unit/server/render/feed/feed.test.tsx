@@ -23,13 +23,15 @@ vi.mock('@/server/domains/posts/repos/public-query/feed', () => ({
 }))
 vi.mock('@/server/domains/taxonomies/categories/services/query', () => ({
   listAllCategories: mocks.listAllCategories,
-  findCategoryBySlug: mocks.findCategoryBySlug,
-  findCategoriesByNames: mocks.findCategoriesByNames,
 }))
 vi.mock('@/server/domains/taxonomies/tags/service', () => ({
   getTagsByNames: mocks.getTagsByNames,
   findTagBySlug: mocks.findTagBySlug,
   findTagByName: mocks.findTagByName,
+}))
+vi.mock('@/server/infra/db/operations/category', () => ({
+  findCategoryBySlug: mocks.findCategoryBySlug,
+  findCategoriesByNames: mocks.findCategoriesByNames,
 }))
 vi.mock('@/shared/config/getters', () => ({
   requireBlogSettingsSection: vi.fn((section: string) => {

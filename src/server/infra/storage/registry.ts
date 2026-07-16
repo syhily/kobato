@@ -40,5 +40,3 @@ export function activeBackend(): { backend: StorageBackend; driver: StorageDrive
 export function isS3Primary(): boolean {
   return activeBackend().driver === 's3'
 }
-
-export type { StorageDriver, StorageBackend } from '@/server/infra/storage/backend'

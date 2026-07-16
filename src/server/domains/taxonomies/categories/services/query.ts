@@ -11,9 +11,7 @@ import { toAdminCategoryDto } from '@/server/domains/taxonomies/categories/proje
 import { createRedisCache } from '@/server/infra/cache/redis-cache'
 import {
   type AdminCategoriesListFilters,
-  findCategoriesByNames,
   findCategoryByName,
-  findCategoryBySlug,
   listAdminCategoryRows,
 } from '@/server/infra/db/operations/category'
 import { post as postMetaTable } from '@/server/infra/db/schema/post'
@@ -168,5 +166,3 @@ export async function getCategoryLinks(db: NodePgDatabase, names: readonly strin
   }
   return result
 }
-
-export { findCategoriesByNames, findCategoryByName, findCategoryBySlug }

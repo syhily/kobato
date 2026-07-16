@@ -12,10 +12,6 @@ vi.mock('@/server/domains/posts/repos/single', () => ({
   findPublicPostMetaBySlug: vi.fn(),
 }))
 
-vi.mock('@/server/domains/taxonomies/categories/services/query', () => ({
-  findCategoryBySlug: vi.fn(),
-}))
-
 vi.mock('@/server/http/resources/avatar-cache', () => ({
   AvatarStatus: { NO_AVATAR: 'no_avatar', HAVE_AVATAR: 'have_avatar' },
   cacheAvatar: vi.fn().mockResolvedValue(undefined),
@@ -24,6 +20,10 @@ vi.mock('@/server/http/resources/avatar-cache', () => ({
 
 vi.mock('@/server/http/resources/calendar', () => ({
   serveCalendar: vi.fn(),
+}))
+
+vi.mock('@/server/infra/db/operations/category', () => ({
+  findCategoryBySlug: vi.fn(),
 }))
 
 vi.mock('@/server/infra/rate-limit', () => ({
@@ -59,10 +59,10 @@ vi.mock('@/shared/utils/urls', () => ({
 
 import { findPublicPageMetaBySlug } from '@/server/domains/pages/repo'
 import { findPublicPostMetaBySlug } from '@/server/domains/posts/repos/single'
-import { findCategoryBySlug } from '@/server/domains/taxonomies/categories/services/query'
 import { loadAvatar } from '@/server/http/resources/avatar-cache'
 import { serveCalendar } from '@/server/http/resources/calendar'
 import { imagesRouter } from '@/server/http/resources/images'
+import { findCategoryBySlug } from '@/server/infra/db/operations/category'
 import { tryResourceRateLimit } from '@/server/infra/rate-limit'
 import { loadBuffer } from '@/server/infra/redis/buffer-cache'
 import { fetchAvatarImage, fetchQQAvatarImage, resolveAvatarInfo } from '@/server/render/avatar/fetch'
