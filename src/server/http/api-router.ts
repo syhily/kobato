@@ -27,6 +27,7 @@ import { githubRouter } from '@/server/http/controllers/github.controller'
 import { imageRouter } from '@/server/http/controllers/image.controller'
 import { likesRouter } from '@/server/http/controllers/likes.controller'
 import { musicRouter } from '@/server/http/controllers/music.controller'
+import { newsletterPublicRouter } from '@/server/http/controllers/newsletter-public.controller'
 import { passkeyPublicRouter } from '@/server/http/controllers/passkey-public.controller'
 
 // The composed oRPC router. The shape is the audit surface for the
@@ -44,6 +45,7 @@ export const apiRouter = {
   image: imageRouter,
   likes: likesRouter,
   music: musicRouter,
+  newsletter: newsletterPublicRouter,
   passkey: passkeyPublicRouter,
   admin: {
     users: { ...adminUsersCrudRouter, ...adminUsersAdminRouter, ...adminUsersSessionsRouter },
