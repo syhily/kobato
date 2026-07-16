@@ -102,11 +102,12 @@ export const SECTION_REGISTRY = {
     defaults: {
       search: {
         enabled: false,
-        mode: 'like',
+        mode: 'trgm',
         endpoint: '',
         apiKey: '',
         model: 'text-embedding-3-small',
         similarityThreshold: 0.5,
+        trgmThreshold: 0.3,
       },
     },
   },

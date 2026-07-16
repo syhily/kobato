@@ -32,30 +32,32 @@ interface ReindexProgress {
 }
 
 function SearchModeCard({ search }: { search: SearchLoaderShape }) {
-  const { form, settingGroupProps, save } = useSettingsCard<
+  const { form, flushOnBlur, settingGroupProps, save } = useSettingsCard<
     SearchLoaderShape,
-    { enabled: boolean; mode: 'vector' | 'like' }
+    { enabled: boolean; mode: 'vector' | 'like' | 'trgm'; trgmThreshold: number }
   >({
     section: 'search',
     source: search,
     toState: (source) => ({
       enabled: source.search.enabled,
       mode: source.search.mode,
+      trgmThreshold: source.search.trgmThreshold,
     }),
     fromState: (state) => ({
       enabled: state.enabled,
       mode: state.mode,
+      trgmThreshold: state.trgmThreshold,
     }),
   })
 
   return (
     <SettingGroup
       title="搜索模式"
-      description="选择文章搜索的底层实现。LIKE 模式仅依赖 Postgres，无需外部 API；向量模式需要 OpenAI API Key。"
+      description="选择文章搜索的底层实现。LIKE 与三元组模式仅依赖 Postgres，无需外部 API；向量模式需要 OpenAI API Key。"
       {...settingGroupProps}
     >
       <SettingGroupContent>
-        <SettingsRow label="启用 AI 向量搜索" hint="关闭时所有搜索请求都会降级为 Postgres LIKE 查询。">
+        <SettingsRow label="启用 AI 向量搜索" hint="仅控制向量（OpenAI）搜索；LIKE 与三元组模式不依赖此开关。">
           <Controller
             control={form.control}
             name="enabled"
@@ -96,6 +98,12 @@ function SearchModeCard({ search }: { search: SearchLoaderShape }) {
                   </FieldLabel>
                 </div>
                 <div className="flex items-center gap-2">
+                  <RadioGroupItem value="trgm" id="search-mode-trgm" />
+                  <FieldLabel htmlFor="search-mode-trgm" className="font-normal">
+                    三元组（pg_trgm，无需 API Key）
+                  </FieldLabel>
+                </div>
+                <div className="flex items-center gap-2">
                   <RadioGroupItem value="vector" id="search-mode-vector" />
                   <FieldLabel htmlFor="search-mode-vector" className="font-normal">
                     向量（OpenAI + pgvector）
@@ -103,6 +111,21 @@ function SearchModeCard({ search }: { search: SearchLoaderShape }) {
                 </div>
               </RadioGroup>
             )}
+          />
+        </SettingsRow>
+        <SettingsRow
+          label="三元组相似度阈值"
+          htmlFor="search-trgm-threshold"
+          hint="0–1 之间，仅在三元组模式下生效。越高模糊匹配越严格；逐字命中（含标题）不受阈值影响。建议 0.2–0.4。"
+        >
+          <SettingsInput
+            flushOnBlur={flushOnBlur}
+            id="search-trgm-threshold"
+            type="number"
+            min={0}
+            max={1}
+            step={0.05}
+            {...form.register('trgmThreshold', { valueAsNumber: true })}
           />
         </SettingsRow>
       </SettingGroupContent>

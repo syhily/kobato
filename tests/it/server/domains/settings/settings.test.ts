@@ -174,6 +174,7 @@ const fixtureBundle: BlogSettingsBundle = {
       apiKey: '',
       model: 'text-embedding-3-small',
       similarityThreshold: 0.5,
+      trgmThreshold: 0.3,
     },
   },
   fonts: {

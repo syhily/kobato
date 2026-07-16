@@ -193,6 +193,7 @@ const baseSearch: SearchSettings & { apiKeyMask: string | null } = {
     apiKey: '',
     model: 'text-embedding-3-small',
     similarityThreshold: 0.5,
+    trgmThreshold: 0.3,
   },
   apiKeyMask: null,
 }

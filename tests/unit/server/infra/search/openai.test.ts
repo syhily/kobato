@@ -36,6 +36,7 @@ function enableSearchBundle(overrides?: Record<string, unknown>) {
         apiKey: 'test-key',
         model: 'text-embedding-3-small',
         similarityThreshold: 0.5,
+        trgmThreshold: 0.3,
         ...overrides,
       },
     },
@@ -72,6 +73,7 @@ describe('infra/search/openai — generateEmbedding', () => {
           apiKey: '',
           model: 'text-embedding-3-small',
           similarityThreshold: 0.5,
+          trgmThreshold: 0.3,
         },
       },
     })

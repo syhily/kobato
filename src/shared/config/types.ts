@@ -247,11 +247,12 @@ export interface RateLimitSettings {
 export interface SearchSettings {
   search: {
     enabled: boolean
-    mode: 'vector' | 'like'
+    mode: 'vector' | 'like' | 'trgm'
     endpoint: string
     apiKey: string
     model: string
     similarityThreshold: number
+    trgmThreshold: number
   }
 }
 

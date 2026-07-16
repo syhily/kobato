@@ -18,6 +18,7 @@ const DEFAULT_SEARCH_SETTINGS = {
   apiKey: '',
   model: 'text-embedding-3-small',
   similarityThreshold: 0.5,
+  trgmThreshold: 0.3,
 }
 
 function getSearchSettings() {
@@ -25,15 +26,49 @@ function getSearchSettings() {
   return bundle?.search?.search ?? DEFAULT_SEARCH_SETTINGS
 }
 
+// pg_trgm availability probe
+//
+// The extension can only appear or disappear via a migration, and
+// migrations run at boot — so the probe result is cached for the
+// process lifetime. A failed probe (transient connection issue) is NOT
+// cached: the next search retries.
+let trgmAvailability: Promise<boolean> | null = null
+let trgmFallbackWarned = false
+
+function probeTrgmAvailability(db: NodePgDatabase): Promise<boolean> {
+  trgmAvailability ??= db
+    .execute(sql`SELECT extname FROM pg_extension WHERE extname = 'pg_trgm'`)
+    .then((result) => result.rows.length > 0)
+    .catch((error: unknown) => {
+      trgmAvailability = null
+      getLogger('search.trgm').error('pg_trgm availability probe failed', {
+        error: error instanceof Error ? error.message : String(error),
+      })
+      return false
+    })
+  return trgmAvailability
+}
+
+/**
+ * Test-only seam: force the cached probe result (`true` / `false`) or
+ * clear it (`null` → next search re-probes). Also re-arms the one-time
+ * fallback warning so tests can observe it again.
+ */
+export function __setTrgmAvailabilityForTests(available: boolean | null): void {
+  trgmAvailability = available === null ? null : Promise.resolve(available)
+  trgmFallbackWarned = false
+}
+
 // Search-result cache
 //
 // The full ordered slug list for a query is cached so pagination never
 // re-runs the embedding API or the database query.  The cache key
 // incorporates every input that could change the result set:
-//   - search mode (vector vs like)
+//   - search mode (vector vs trgm vs like)
 //   - query text
 //   - similarity threshold (vector mode only)
 //   - embedding model (vector mode only)
+//   - trigram threshold (trgm mode only)
 //
 // Value is JSON.stringify(slugs[]) — short strings, negligible overhead.
 
@@ -43,6 +78,9 @@ function searchCacheKey(settings: ReturnType<typeof getSearchSettings>, query: s
   const hashInput = [settings.mode, query, String(settings.similarityThreshold)]
   if (settings.mode === 'vector') {
     hashInput.push(settings.model)
+  }
+  if (settings.mode === 'trgm') {
+    hashInput.push(String(settings.trgmThreshold))
   }
   return `${prefix}${createHash('sha256').update(hashInput.join('|')).digest('hex')}`
 }
@@ -102,6 +140,63 @@ async function executeSearch(
       ilikeEscape(sql`COALESCE(${postSearchIndex.plainText}, '')`, trimmed),
     ),
   )
+
+  // --- Trigram mode ---
+  if (settings.mode === 'trgm') {
+    if (await probeTrgmAvailability(db)) {
+      // word_similarity(query, doc) — not plain similarity(): with a
+      // short query inside a long plainText body, similarity() dilutes
+      // to |shared| / |union| over the whole document (≈0.002 for a
+      // 5 000-char body) and can never pass a useful threshold.
+      // word_similarity scores the query against the best-matching
+      // extent of the document, so verbatim and near-verbatim CJK/Latin
+      // matches score ≈0.4–1.0 regardless of body length.
+      //
+      // The ILIKE disjuncts preserve LIKE-mode recall exactly (verbatim
+      // substrings, 1–2-char queries that word_similarity can't trigram);
+      // the threshold disjunct is what adds fuzzy matches on top. The
+      // GIN index on plain_text accelerates the ILIKE side.
+      const score = sql<number>`greatest(
+        word_similarity(${trimmed}, ${post.title}),
+        word_similarity(${trimmed}, ${post.summary}),
+        word_similarity(${trimmed}, COALESCE(${postSearchIndex.plainText}, ''))
+      )`
+
+      const rows = await db
+        .select({ slug: post.slug, score })
+        .from(post)
+        .leftJoin(postSearchIndex, eq(post.id, postSearchIndex.postId))
+        .where(
+          and(
+            baseWhere,
+            or(
+              gt(score, settings.trgmThreshold),
+              ilikeEscape(post.title, trimmed),
+              ilikeEscape(post.summary, trimmed),
+              ilikeEscape(sql`COALESCE(${postSearchIndex.plainText}, '')`, trimmed),
+            ),
+          ),
+        )
+        .orderBy(desc(score), desc(post.publishedAt))
+
+      getLogger('search.trgm').info('Search trigram results', {
+        query: trimmed,
+        rawRows: rows.length,
+        threshold: settings.trgmThreshold,
+        topScore: rows[0]?.score ?? null,
+      })
+
+      return rows.map((r) => r.slug)
+    }
+
+    // Extension missing (or probe failed) — degrade to LIKE, warn once.
+    if (!trgmFallbackWarned) {
+      trgmFallbackWarned = true
+      getLogger('search.trgm').warn('pg_trgm extension unavailable — trgm search mode degrading to LIKE', {
+        query: trimmed,
+      })
+    }
+  }
 
   // --- Vector mode ---
   if (settings.enabled && settings.mode === 'vector') {

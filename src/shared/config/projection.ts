@@ -43,11 +43,12 @@ export interface AssetsLoaderShape {
 export interface SearchLoaderShape {
   search: {
     enabled: boolean
-    mode: 'vector' | 'like'
+    mode: 'vector' | 'like' | 'trgm'
     endpoint: string
     apiKey: string
     model: string
     similarityThreshold: number
+    trgmThreshold: number
   }
   apiKeyMask: string | null
 }
@@ -145,11 +146,12 @@ export function projectSearchForAdmin(
     | {
         search: {
           enabled?: boolean
-          mode?: 'vector' | 'like'
+          mode?: 'vector' | 'like' | 'trgm'
           endpoint?: string
           apiKey?: string
           model?: string
           similarityThreshold?: number
+          trgmThreshold?: number
         }
       }
     | undefined,
@@ -158,22 +160,24 @@ export function projectSearchForAdmin(
   const s = search ?? {
     search: {
       enabled: false,
-      mode: 'like' as const,
+      mode: 'trgm' as const,
       endpoint: '',
       apiKey: '',
       model: 'text-embedding-3-small',
       similarityThreshold: 0.5,
+      trgmThreshold: 0.3,
     },
   }
   const apiKey = typeof s.search.apiKey === 'string' ? s.search.apiKey : ''
   return {
     search: {
       enabled: s.search.enabled === true,
-      mode: s.search.mode === 'vector' ? 'vector' : 'like',
+      mode: s.search.mode === 'vector' || s.search.mode === 'trgm' ? s.search.mode : 'like',
       endpoint: s.search.endpoint ?? '',
       apiKey: '',
       model: s.search.model ?? 'text-embedding-3-small',
       similarityThreshold: s.search.similarityThreshold ?? 0.5,
+      trgmThreshold: s.search.trgmThreshold ?? 0.3,
     },
     apiKeyMask: apiKeyMask ?? (apiKey === '' ? null : apiKey.slice(-4)),
   }
