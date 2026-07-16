@@ -58,6 +58,11 @@ const requestDeleteOwn = authedProc
       return { success: true }
     }
     await requestDeleteComment(context.db, commentId, idFromString(context.viewer.userId))
+    recordAuditEventFromContext(context, {
+      action: 'comment_delete_requested',
+      resourceType: 'comment',
+      resourceId: input.commentId,
+    })
     return { success: true }
   })
 
@@ -75,6 +80,11 @@ const cancelDeleteOwn = authedProc
     if (!ok) {
       throw new ORPCError('CONFLICT', { message: '无法撤回删除申请。' })
     }
+    recordAuditEventFromContext(context, {
+      action: 'comment_delete_request_cancelled',
+      resourceType: 'comment',
+      resourceId: input.commentId,
+    })
     return { success: true }
   })
 

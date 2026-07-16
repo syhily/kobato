@@ -3,13 +3,15 @@ import type { Pool } from 'pg'
 
 import { call } from '@orpc/server'
 import { eq } from 'drizzle-orm'
-import { afterAll, beforeEach, describe, expect, it } from 'vitest'
+import { afterAll, afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 import { clearAllTables } from '#/_helpers/integration-db'
 import { makeAuthedCtx } from '#/_helpers/mock-ctx'
+import { flushAuditLog, initAuditLogBatcher, resetAuditLogBatcher } from '@/server/domains/audit/repos/batcher'
 import { commentsAuthedRouter } from '@/server/http/controllers/comments-authed.controller'
 import { createDbPool, closePool } from '@/server/infra/db/pool'
 import { comment } from '@/server/infra/db/schema/comment'
+import { auditLog } from '@/server/infra/db/schema/config'
 import { page } from '@/server/infra/db/schema/page'
 import { post } from '@/server/infra/db/schema/post'
 import { user } from '@/server/infra/db/schema/user'
@@ -118,6 +120,65 @@ describe('commentsAuthedRouter.searchMineEntities', () => {
     const u = await seedVisitor({ name: 'U4', email: 'u4@x.com' })
     const res = await call(commentsAuthedRouter.searchMineEntities, {}, { context: ctxFor(u) })
     expect(res.entities).toEqual([])
+  })
+})
+
+describe('commentsAuthedRouter — delete-request audit events', () => {
+  beforeEach(() => {
+    initAuditLogBatcher(db, pool)
+  })
+
+  afterEach(() => {
+    resetAuditLogBatcher()
+  })
+
+  async function auditRowsFor(action: string) {
+    await flushAuditLog()
+    return db.select().from(auditLog).where(eq(auditLog.action, action))
+  }
+
+  it('records comment_delete_requested when the owner requests deletion', async () => {
+    const u = await seedVisitor({ name: 'U7', email: 'u7@x.com' })
+    const pid = await seedPost('Delete Audit Post', 'delete-audit-post')
+    const cid = await seedComment({ userId: u, ownerId: pid, type: 'post' })
+
+    const res = await call(commentsAuthedRouter.requestDeleteOwn, { commentId: String(cid) }, { context: ctxFor(u) })
+    expect(res.success).toBe(true)
+
+    const rows = await auditRowsFor('comment_delete_requested')
+    expect(rows).toHaveLength(1)
+    expect(rows[0]!.resourceType).toBe('comment')
+    expect(rows[0]!.resourceId).toBe(String(cid))
+    expect(rows[0]!.actorId).toBe(u)
+  })
+
+  it('does not record a duplicate event on the idempotent no-op path', async () => {
+    const u = await seedVisitor({ name: 'U8', email: 'u8@x.com' })
+    const pid = await seedPost('Delete Audit Twice', 'delete-audit-twice')
+    const cid = await seedComment({ userId: u, ownerId: pid, type: 'post' })
+
+    await call(commentsAuthedRouter.requestDeleteOwn, { commentId: String(cid) }, { context: ctxFor(u) })
+    const res = await call(commentsAuthedRouter.requestDeleteOwn, { commentId: String(cid) }, { context: ctxFor(u) })
+    expect(res.success).toBe(true)
+
+    const rows = await auditRowsFor('comment_delete_requested')
+    expect(rows).toHaveLength(1)
+  })
+
+  it('records comment_delete_request_cancelled when the owner cancels the request', async () => {
+    const u = await seedVisitor({ name: 'U9', email: 'u9@x.com' })
+    const pid = await seedPost('Cancel Audit Post', 'cancel-audit-post')
+    const cid = await seedComment({ userId: u, ownerId: pid, type: 'post' })
+
+    await call(commentsAuthedRouter.requestDeleteOwn, { commentId: String(cid) }, { context: ctxFor(u) })
+    const res = await call(commentsAuthedRouter.cancelDeleteOwn, { commentId: String(cid) }, { context: ctxFor(u) })
+    expect(res.success).toBe(true)
+
+    const rows = await auditRowsFor('comment_delete_request_cancelled')
+    expect(rows).toHaveLength(1)
+    expect(rows[0]!.resourceType).toBe('comment')
+    expect(rows[0]!.resourceId).toBe(String(cid))
+    expect(rows[0]!.actorId).toBe(u)
   })
 })
 

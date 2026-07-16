@@ -340,6 +340,14 @@ export async function handleCredentialLogin(
 
   const dbUser = await verifyUserPassword(db, input.email, input.password)
   if (!dbUser || !dbUser.role) {
+    recordAuditEvent({
+      action: 'credential_login_failed',
+      resourceType: 'user',
+      resourceId: dbUser ? String(dbUser.id) : null,
+      ipAddress: clientAddress,
+      userAgent: request.headers.get('User-Agent'),
+      details: { email: input.email, reason: 'invalid_credentials' },
+    })
     if (isOtpEnabled()) {
       return {
         type: 'redirect',

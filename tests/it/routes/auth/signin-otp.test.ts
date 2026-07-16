@@ -334,6 +334,29 @@ describe('integration: OTP login flow (real DB)', () => {
     expect((lockoutCall![0].details as Record<string, unknown>).failCount).toBe(3)
   })
 
+  it('wrong password records a credential_login_failed audit event without the password', async () => {
+    await seedAdminUser()
+
+    const wrongPassword = 'wrong-password-123'
+    const result = await callAction(null, loginFormData('admin@example.com', wrongPassword))
+    expect(result.status).toBe(302)
+    expect(result.headers.get('Location')).toContain('error=invalid_credentials')
+
+    // Failed credential logins are audited; the password must never appear.
+    const failCall = mockHandles.recordAuditEvent.mock.calls.find(
+      (call: any[]) => call[0]?.action === 'credential_login_failed',
+    ) as unknown as [Record<string, unknown>] | undefined
+    expect(failCall).toBeDefined()
+    const payload = failCall![0]
+    expect(payload.resourceType).toBe('user')
+    expect(payload.resourceId).toBeNull()
+    const details = payload.details as Record<string, unknown>
+    expect(details.email).toBe('admin@example.com')
+    expect(details.reason).toBe('invalid_credentials')
+    expect(details).not.toHaveProperty('password')
+    expect(JSON.stringify(payload)).not.toContain(wrongPassword)
+  })
+
   it('resend issues new OTP and invalidates old one', async () => {
     await seedAdminUser()
     const oldOtp = await doLogin()
