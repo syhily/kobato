@@ -55,8 +55,8 @@ npx vitest run --project snaps
 
 Services:
 
-- `postgres-test` — PostgreSQL 17 (TimescaleDB), port `5432`
-- `redis-test` — Redis 7, port `6379`
+- `postgres-test` — PostgreSQL 17 (TimescaleDB), host port `5434` (container-internal `5432`)
+- `redis-test` — Redis 7, host port `6381` (container-internal `6379`)
 
 ### CI
 
