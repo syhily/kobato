@@ -25,6 +25,25 @@ const pkg = pkgSchema.parse(JSON.parse(readFileSync('./package.json', 'utf-8')))
 
 const projectRoot = fileURLToPath(new URL('.', import.meta.url))
 
+// The sanitize facade (src/ui/lib/sanitize-html.ts) imports the node engine
+// (sanitize-html). For the browser bundle this plugin swaps that specifier
+// to the DOMPurify engine, keeping sanitize-html's Node-only dependency
+// chain (postcss, source-map-js, fs/path/url) out of the client — per-
+// environment `resolve.alias` is not a thing in vite, so it takes a plugin.
+const sanitizeEngineAliasPlugin = (): Plugin => ({
+  name: 'sanitize-html-engine-alias',
+  enforce: 'pre',
+  resolveId: {
+    filter: { id: /sanitize-html-engine\.node$/ },
+    handler() {
+      if (this.environment.name === 'client') {
+        return resolve(projectRoot, 'src/ui/lib/sanitize-html-engine.browser.ts')
+      }
+      return null
+    },
+  },
+})
+
 export default defineConfig(({ command }) => ({
   ssr:
     command === 'serve'
@@ -62,6 +81,7 @@ export default defineConfig(({ command }) => ({
     },
   },
   plugins: [
+    sanitizeEngineAliasPlugin(),
     reactRouterHonoServer(),
     ...(reactRouter() as Plugin[]),
     tailwindcss(),

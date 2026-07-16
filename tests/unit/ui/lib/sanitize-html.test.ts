@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest'
 
-import { sanitizeHtmlString, type SafeHtmlStrategy } from '@/ui/lib/sanitize-html'
+import type { SafeHtmlStrategy } from '@/ui/lib/sanitize-html-config'
+
+import { sanitizeHtmlString } from '@/ui/lib/sanitize-html'
 
 const strategies: SafeHtmlStrategy[] = ['shiki', 'math', 'email', 'audit', 'preview']
 
