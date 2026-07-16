@@ -7,7 +7,7 @@ import { ilikeEscape } from '@/server/infra/db/ilike-escape'
 import { postSearchIndex } from '@/server/infra/db/schema/content'
 import { post } from '@/server/infra/db/schema/post'
 import { getLogger } from '@/server/infra/logger'
-import { storage } from '@/server/infra/redis/storage'
+import { redisInstance, storage } from '@/server/infra/redis/storage'
 import { generateEmbedding } from '@/server/infra/search/openai'
 import { getBlogSettingsBundleSync } from '@/shared/config/getters'
 import { CACHE_BUCKET_FALLBACKS } from '@/shared/types/cache'
@@ -64,6 +64,7 @@ export function __setTrgmAvailabilityForTests(available: boolean | null): void {
 // The full ordered slug list for a query is cached so pagination never
 // re-runs the embedding API or the database query.  The cache key
 // incorporates every input that could change the result set:
+//   - cache generation (see below)
 //   - search mode (vector vs trgm vs like)
 //   - query text
 //   - similarity threshold (vector mode only)
@@ -71,10 +72,57 @@ export function __setTrgmAvailabilityForTests(available: boolean | null): void {
 //   - trigram threshold (trgm mode only)
 //
 // Value is JSON.stringify(slugs[]) — short strings, negligible overhead.
+//
+// Invalidation is a generation stamp, not key enumeration (getKeys caps
+// the scan and would silently under-invalidate past the ceiling): every
+// key carries a per-installation counter and bumping it makes all
+// previously cached entries unreachable — they expire by TTL. Same
+// namespace-rollover pattern as the feed cache (plans/003).
 
-function searchCacheKey(settings: ReturnType<typeof getSearchSettings>, query: string): string {
+function searchCachePrefix(): string {
   const bundle = getBlogSettingsBundleSync()
-  const prefix = bundle?.cache?.cache.searchResult?.prefix ?? CACHE_BUCKET_FALLBACKS.searchResult.prefix
+  return bundle?.cache?.cache.searchResult?.prefix ?? CACHE_BUCKET_FALLBACKS.searchResult.prefix
+}
+
+function searchGenerationKey(): string {
+  return `${searchCachePrefix()}generation`
+}
+
+// The generation is read once per process and cached in module state. A
+// failed read is NOT cached (the next search retries) and falls back to
+// generation 0 — a missing or unreadable counter must never break
+// search. Single-instance self-host is the documented deploy target, so
+// only this process bumps the counter and the cached value stays
+// authoritative.
+let searchCacheGeneration: Promise<number> | null = null
+
+function readSearchCacheGeneration(): Promise<number> {
+  searchCacheGeneration ??= redisInstance()
+    .get(searchGenerationKey())
+    .then((raw) => {
+      const parsed = raw === null ? 0 : Number.parseInt(raw, 10)
+      return Number.isNaN(parsed) ? 0 : parsed
+    })
+    .catch((error: unknown) => {
+      searchCacheGeneration = null
+      getLogger('search.cache').warn('search cache generation read failed', {
+        error: error instanceof Error ? error.message : String(error),
+      })
+      return 0
+    })
+  return searchCacheGeneration
+}
+
+/**
+ * Test-only seam: drop the process-cached generation so the next search
+ * re-reads the counter from Redis.
+ */
+export function __resetSearchCacheGenerationForTests(): void {
+  searchCacheGeneration = null
+}
+
+async function searchCacheKey(settings: ReturnType<typeof getSearchSettings>, query: string): Promise<string> {
+  const generation = await readSearchCacheGeneration()
   const hashInput = [settings.mode, query, String(settings.similarityThreshold)]
   if (settings.mode === 'vector') {
     hashInput.push(settings.model)
@@ -82,7 +130,7 @@ function searchCacheKey(settings: ReturnType<typeof getSearchSettings>, query: s
   if (settings.mode === 'trgm') {
     hashInput.push(String(settings.trgmThreshold))
   }
-  return `${prefix}${createHash('sha256').update(hashInput.join('|')).digest('hex')}`
+  return `${searchCachePrefix()}${generation}:${createHash('sha256').update(hashInput.join('|')).digest('hex')}`
 }
 
 async function getCachedSearchResult(key: string): Promise<string[] | null> {
@@ -108,19 +156,24 @@ async function setCachedSearchResult(key: string, slugs: string[], ttlSeconds: n
 }
 
 /**
- * Invalidate all cached search results. Called whenever a post's
- * published / deleted / restored state changes so stale result lists
- * don't survive until their TTL expires.
+ * Invalidate all cached search results by bumping the generation stamp.
+ * Called whenever a post's published / deleted / restored state changes
+ * so stale result lists don't survive until their TTL expires.
+ *
+ * Fire-and-forget by contract: invalidation must never bring down the
+ * post mutation that triggered it, so Redis failures are logged and
+ * swallowed here — callers neither catch nor inspect the result.
  */
 export async function invalidateSearchCache(): Promise<void> {
-  const bundle = getBlogSettingsBundleSync()
-  const prefix = bundle?.cache?.cache.searchResult?.prefix ?? CACHE_BUCKET_FALLBACKS.searchResult.prefix
-  const keys = await storage.getKeys(prefix, 1_000)
-  if (keys.length === 0) {
-    return
+  try {
+    const generation = await redisInstance().incr(searchGenerationKey())
+    searchCacheGeneration = Promise.resolve(generation)
+    getLogger('search.cache').info('invalidated search result cache', { generation })
+  } catch (error: unknown) {
+    getLogger('search.cache').warn('search result cache invalidation failed', {
+      error: error instanceof Error ? error.message : String(error),
+    })
   }
-  getLogger('search.cache').info('invalidating search result cache', { count: keys.length })
-  await Promise.all(keys.map((k) => storage.removeItem(k)))
 }
 
 // Core search execution (no pagination — returns the full ordered list)
@@ -295,7 +348,7 @@ export async function searchPosts(
   }
 
   const settings = getSearchSettings()
-  const cacheKey = searchCacheKey(settings, trimmed)
+  const cacheKey = await searchCacheKey(settings, trimmed)
 
   // Try cache first
   const cached = await getCachedSearchResult(cacheKey)

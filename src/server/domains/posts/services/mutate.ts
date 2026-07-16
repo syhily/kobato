@@ -184,9 +184,7 @@ export async function deletePost(
   })
   if (deleted) {
     await clearContentCaches('post', id)
-    await invalidateSearchCache().catch((err: unknown) => {
-      log.warn('invalidate search cache failed', { postId: id, error: err })
-    })
+    await invalidateSearchCache()
   }
   return { deleted }
 }
@@ -248,9 +246,7 @@ export async function restorePost(
 
   if (restored) {
     await clearContentCaches('post', id)
-    await invalidateSearchCache().catch((err: unknown) => {
-      log.warn('invalidate search cache failed', { postId: id, error: err })
-    })
+    await invalidateSearchCache()
     if (indexable !== null) {
       const bodyResult = portableTextBodySchema.safeParse(indexable.body)
       if (bodyResult.success) {
@@ -288,9 +284,7 @@ export async function unpublishPost(db: NodePgDatabase, id: bigint, viewer?: Vie
     throw new DomainError('NOT_FOUND', '文章不存在或已被删除。')
   }
   await clearContentCaches('post', id)
-  await invalidateSearchCache().catch((err: unknown) => {
-    log.warn('invalidate search cache failed', { postId: id, error: err })
-  })
+  await invalidateSearchCache()
   await removePostIndex(db, id).catch((err: unknown) => {
     log.warn('remove post index failed', { postId: id, error: err })
   })

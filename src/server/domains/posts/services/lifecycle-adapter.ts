@@ -33,9 +33,7 @@ export const postLifecycleAdapter: ContentEntityAdapter<PostMetaRow, CmsPost> = 
   },
   async afterPublish(db, meta, body, warnings) {
     await clearContentCaches('post', meta.id)
-    await invalidateSearchCache().catch((err: unknown) => {
-      log.warn('invalidate search cache failed', { postId: meta.id, error: err })
-    })
+    await invalidateSearchCache()
     // Index the canonical body already in scope rather than re-reading the
     // row from the DB: `body` is freshly canonicalized + prerendered, so it
     // matches what `publishLatestRevision` persisted — a re-read would only
