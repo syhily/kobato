@@ -29,9 +29,12 @@ import { post as postMetaTable } from '@/server/infra/db/schema/post'
 import { postTag } from '@/server/infra/db/schema/post-tag'
 import { tag as tagTable } from '@/server/infra/db/schema/taxonomy'
 import { DomainError, ErrorMessages } from '@/server/infra/http/errors'
+import { getLogger } from '@/server/infra/logger'
 import { createInflight } from '@/server/infra/redis/inflight'
 import { resolveSlugForTaxonomy } from '@/server/infra/slug'
 import { hasAtLeast, type Role } from '@/shared/utils/roles'
+
+const log = getLogger('tags.service')
 
 // Wire-format DTO for every admin tag endpoint. `postCount` is
 // projected by the caller from the live `ContentCatalog` (mirrors
@@ -148,6 +151,9 @@ export async function upsertAdminTag(
       '标签',
     )
     const row = await insertTag(db, { name: input.name, slug, ogImage: input.ogImage ?? '' })
+    await clearTagCache().catch((err: unknown) => {
+      log.warn('clear tag cache failed', { error: err })
+    })
     return toAdminTagDto(row, await countPostsByTag(db, row.name))
   }
 
@@ -174,6 +180,9 @@ export async function upsertAdminTag(
   if (updated === null) {
     throw new DomainError('NOT_FOUND', '标签不存在')
   }
+  await clearTagCache().catch((err: unknown) => {
+    log.warn('clear tag cache failed', { error: err })
+  })
   return toAdminTagDto(updated, await countPostsByTag(db, updated.name))
 }
 
@@ -185,17 +194,28 @@ export async function upsertAdminTag(
 // global to the tag, not the viewer. Same contract as
 // `deleteAdminCategory`.
 export async function deleteAdminTag(db: NodePgDatabase, id: bigint, _viewer?: TagViewerContext): Promise<boolean> {
-  return deleteAdminTaxonomy(id, '标签', {
+  const deleted = await deleteAdminTaxonomy(id, '标签', {
     findById: (id) => findTagById(db, id),
     deleteRow: (id) => deleteTagRow(db, id),
     listPostsBy: (name) => listPostsByTag(db, name),
   })
+  if (deleted) {
+    await clearTagCache().catch((err: unknown) => {
+      log.warn('clear tag cache failed', { error: err })
+    })
+  }
+  return deleted
 }
 
 // --- Public catalog queries -------------------------------------------------
 
 const tagCache = createRedisCache<Tag[]>('tags:all', { ttlMs: 30_000 })
 const tagInflight = createInflight<Tag[]>()
+
+/** Drop the cached public tag list (call after any tag/content mutation). */
+export async function clearTagCache(): Promise<void> {
+  await tagCache.clear()
+}
 
 export async function listAllTags(db: NodePgDatabase): Promise<Tag[]> {
   const cached = await tagCache.get()
