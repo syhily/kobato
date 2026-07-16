@@ -2,9 +2,6 @@ import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-vi.mock('@/server/infra/cache/feed-cache', () => ({
-  feedCacheFor: () => feedCacheState.cache,
-}))
 vi.mock('@/server/domains/posts/repos/public-query/feed', () => ({
   listPublicPostsWithContent: (db: unknown, opts: unknown) => feedState.listPosts(db, opts),
 }))
@@ -28,13 +25,6 @@ import type { Post, Page } from '@/shared/types/catalog'
 import { TEST_BLOG_SETTINGS_BUNDLE } from '#/_helpers/blog-settings'
 import { setBlogSettingsBundleForTests } from '@/server/domains/settings/services/test-utils'
 import { feedResponse, generateFeeds } from '@/server/render/feed/generator'
-
-const feedCacheState = {
-  cache: {
-    get: vi.fn<() => Promise<unknown>>(),
-    set: vi.fn<(value: unknown) => Promise<void>>(),
-  },
-}
 
 const feedState = {
   listPosts: vi.fn<(db: unknown, opts: unknown) => Promise<(Post | Page)[]>>(),
@@ -67,10 +57,6 @@ function makePost(overrides: Partial<Post> = {}): Post {
 }
 
 beforeEach(() => {
-  feedCacheState.cache.get.mockReset()
-  feedCacheState.cache.set.mockReset()
-  feedCacheState.cache.get.mockResolvedValue(null)
-  feedCacheState.cache.set.mockResolvedValue(undefined)
   feedState.listPosts.mockReset()
   feedState.findCats.mockReset()
   feedState.findCatByName.mockReset()
@@ -97,19 +83,11 @@ afterEach(() => {
 })
 
 describe('render/feed/generator — generateFeeds', () => {
-  it('returns the cached feed when the cache has it', async () => {
-    feedCacheState.cache.get.mockResolvedValue({ rss: 'cached-rss', atom: 'cached-atom' })
-    const result = await generateFeeds(fakeDb)
-    expect(result.rss).toBe('cached-rss')
-    expect(feedState.listPosts).not.toHaveBeenCalled()
-  })
-
   it('generates a feed with no posts', async () => {
     feedState.listPosts.mockResolvedValue([])
     const result = await generateFeeds(fakeDb)
     expect(result.rss).toContain('<?xml')
     expect(result.atom).toContain('xml:lang="zh-CN"')
-    expect(feedCacheState.cache.set).toHaveBeenCalled()
   })
 
   it('generates a feed with one post including its content', async () => {

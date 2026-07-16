@@ -31,21 +31,6 @@ vi.mock('@/server/domains/taxonomies/tags/service', () => ({
   findTagBySlug: mocks.findTagBySlug,
   findTagByName: mocks.findTagByName,
 }))
-vi.mock('@/server/infra/cache/feed-cache', () => ({
-  clearFeedCache: vi.fn(async () => {}),
-  feedCacheFor: vi.fn(() => {
-    let cached: { rss: string; atom: string } | null = null
-    return {
-      get: vi.fn(async () => cached),
-      set: vi.fn(async (value: { rss: string; atom: string }) => {
-        cached = value
-      }),
-      clear: vi.fn(async () => {
-        cached = null
-      }),
-    }
-  }),
-}))
 vi.mock('@/shared/config/getters', () => ({
   requireBlogSettingsSection: vi.fn((section: string) => {
     if (section === 'siteIdentity') {
@@ -68,7 +53,6 @@ vi.mock('@/shared/config/getters', () => ({
 
 const db = {} as NodePgDatabase
 
-const { clearFeedCache, feedCacheFor } = await import('@/server/infra/cache/feed-cache')
 const { feedResponse, generateFeeds } = await import('@/server/render/feed/generator')
 
 function fakeCatalog(
@@ -101,7 +85,6 @@ beforeEach(async () => {
   for (const mock of Object.values(mocks)) {
     mock.mockReset()
   }
-  await clearFeedCache()
 })
 
 describe('services/feed — generateFeeds (channel envelope)', () => {
@@ -195,38 +178,6 @@ describe('services/feed — generateFeeds (channel envelope)', () => {
   it('rejects calls that pass both category and tag', async () => {
     fakeCatalog()
     await expect(generateFeeds(db, { category: 'tech', tag: 'react' })).rejects.toThrow(/at the same time/)
-  })
-})
-
-describe('generateFeeds — cache key namespacing', () => {
-  it('namespaces same-slug category and tag feeds into separate cache entries', async () => {
-    fakeCatalog({
-      categories: [{ name: '技术', slug: 'tech' }],
-      tags: [{ name: 'Tech', slug: 'tech' }],
-    })
-
-    await generateFeeds(db, { category: 'tech' })
-    await generateFeeds(db, { tag: 'tech' })
-
-    expect(vi.mocked(feedCacheFor).mock.calls).toEqual([['cat:tech'], ['tag:tech']])
-  })
-
-  it('namespaces a category slugged `all` away from the site-wide feed', async () => {
-    fakeCatalog({ categories: [{ name: '全部', slug: 'all' }] })
-
-    await generateFeeds(db, { category: 'all' })
-
-    const keys = vi.mocked(feedCacheFor).mock.calls.map(([key]) => key)
-    expect(keys).toContain('cat:all')
-    expect(keys).not.toContain('all')
-  })
-
-  it('uses the bare `all` key for the site-wide feed', async () => {
-    fakeCatalog()
-
-    await generateFeeds(db)
-
-    expect(vi.mocked(feedCacheFor).mock.calls).toEqual([['all']])
   })
 })
 
