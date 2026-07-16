@@ -6,6 +6,7 @@ import type { PortableTextBody } from '@/shared/pt/schema'
 
 import { postSearchIndex } from '@/server/infra/db/schema/content'
 import { getLogger } from '@/server/infra/logger'
+import { corpusText } from '@/server/infra/search/corpus'
 import { generateEmbedding } from '@/server/infra/search/openai'
 import { bodyToPlainText } from '@/shared/pt/utils'
 
@@ -42,7 +43,7 @@ export async function indexPost(
   body: PortableTextBody,
 ): Promise<void> {
   const plainText = bodyToPlainText(body)
-  const indexText = `${title}\n${summary}\n${plainText}`.trim()
+  const indexText = corpusText({ title, summary, plainText })
 
   const rawEmbedding = await generateEmbedding(indexText)
 

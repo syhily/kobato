@@ -1,19 +1,21 @@
+import type { SQL } from 'drizzle-orm'
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
-import { and, cosineDistance, desc, eq, gt, or, sql, type SQL } from 'drizzle-orm'
+import { sql } from 'drizzle-orm'
 import { createHash } from 'node:crypto'
 
-import { ilikeEscape } from '@/server/infra/db/ilike-escape'
-import { postSearchIndex } from '@/server/infra/db/schema/content'
-import { post } from '@/server/infra/db/schema/post'
+import type { SearchSettings } from '@/shared/config/types'
+
 import { getLogger } from '@/server/infra/logger'
 import { redisInstance, storage } from '@/server/infra/redis/storage'
 import { INFRA_SEARCH_DEFAULTS } from '@/server/infra/search/defaults'
-import { generateEmbedding } from '@/server/infra/search/openai'
+import { likeCacheKeyParts, runLikeSearch } from '@/server/infra/search/like'
+import { runTrgmSearch, trgmCacheKeyParts } from '@/server/infra/search/trgm'
+import { runVectorSearch, vectorCacheKeyParts } from '@/server/infra/search/vector'
 import { getBlogSettingsBundleSync } from '@/shared/config/getters'
 import { CACHE_BUCKET_FALLBACKS } from '@/shared/types/cache'
 
-function getSearchSettings() {
+function getSearchSettings(): SearchSettings['search'] {
   const bundle = getBlogSettingsBundleSync()
   return bundle?.search?.search ?? INFRA_SEARCH_DEFAULTS
 }
@@ -57,11 +59,11 @@ export function __setTrgmAvailabilityForTests(available: boolean | null): void {
 // re-runs the embedding API or the database query.  The cache key
 // incorporates every input that could change the result set:
 //   - cache generation (see below)
-//   - search mode (vector vs trgm vs like)
-//   - query text
-//   - similarity threshold (vector mode only)
-//   - embedding model (vector mode only)
-//   - trigram threshold (trgm mode only)
+//   - the active mode's key parts, owned by its mode module
+//     (`infra/search/{like,trgm,vector}.ts`): the mode, the query, and
+//     exactly the settings knobs that mode's result set depends on
+//     (similarity threshold + embedding model for vector, trigram
+//     threshold for trgm, none for like)
 //
 // Value is JSON.stringify(slugs[]) — short strings, negligible overhead.
 //
@@ -113,15 +115,20 @@ export function __resetSearchCacheGenerationForTests(): void {
   searchCacheGeneration = null
 }
 
-async function searchCacheKey(settings: ReturnType<typeof getSearchSettings>, query: string): Promise<string> {
+function cacheKeyParts(settings: SearchSettings['search'], query: string): string[] {
+  switch (settings.mode) {
+    case 'vector':
+      return vectorCacheKeyParts(settings, query)
+    case 'trgm':
+      return trgmCacheKeyParts(settings, query)
+    case 'like':
+      return likeCacheKeyParts(settings, query)
+  }
+}
+
+async function searchCacheKey(settings: SearchSettings['search'], query: string): Promise<string> {
   const generation = await readSearchCacheGeneration()
-  const hashInput = [settings.mode, query, String(settings.similarityThreshold)]
-  if (settings.mode === 'vector') {
-    hashInput.push(settings.model)
-  }
-  if (settings.mode === 'trgm') {
-    hashInput.push(String(settings.trgmThreshold))
-  }
+  const hashInput = cacheKeyParts(settings, query)
   return `${searchCachePrefix()}${generation}:${createHash('sha256').update(hashInput.join('|')).digest('hex')}`
 }
 
@@ -168,155 +175,39 @@ export async function invalidateSearchCache(): Promise<void> {
   }
 }
 
-// Core search execution (no pagination — returns the full ordered list)
+// Core search execution (no pagination — returns the full ordered list).
+// Dispatches to the active mode's module; every fallback path lands on
+// the LIKE recall floor.
 
 async function executeSearch(
   db: NodePgDatabase,
-  settings: ReturnType<typeof getSearchSettings>,
+  settings: SearchSettings['search'],
   baseWhere: SQL,
   query: string,
 ): Promise<string[]> {
-  const trimmed = query.trim()
-  const likeWhere = and(
-    baseWhere,
-    or(
-      ilikeEscape(post.title, trimmed),
-      ilikeEscape(post.summary, trimmed),
-      ilikeEscape(sql`COALESCE(${postSearchIndex.plainText}, '')`, trimmed),
-    ),
-  )
-
   // --- Trigram mode ---
   if (settings.mode === 'trgm') {
     if (await probeTrgmAvailability(db)) {
-      // word_similarity(query, doc) — not plain similarity(): with a
-      // short query inside a long plainText body, similarity() dilutes
-      // to |shared| / |union| over the whole document (≈0.002 for a
-      // 5 000-char body) and can never pass a useful threshold.
-      // word_similarity scores the query against the best-matching
-      // extent of the document, so verbatim and near-verbatim CJK/Latin
-      // matches score ≈0.4–1.0 regardless of body length.
-      //
-      // The ILIKE disjuncts preserve LIKE-mode recall exactly (verbatim
-      // substrings, 1–2-char queries that word_similarity can't trigram);
-      // the threshold disjunct is what adds fuzzy matches on top. The
-      // GIN index on plain_text accelerates the ILIKE side.
-      const score = sql<number>`greatest(
-        word_similarity(${trimmed}, ${post.title}),
-        word_similarity(${trimmed}, ${post.summary}),
-        word_similarity(${trimmed}, COALESCE(${postSearchIndex.plainText}, ''))
-      )`
-
-      const rows = await db
-        .select({ slug: post.slug, score })
-        .from(post)
-        .leftJoin(postSearchIndex, eq(post.id, postSearchIndex.postId))
-        .where(
-          and(
-            baseWhere,
-            or(
-              gt(score, settings.trgmThreshold),
-              ilikeEscape(post.title, trimmed),
-              ilikeEscape(post.summary, trimmed),
-              ilikeEscape(sql`COALESCE(${postSearchIndex.plainText}, '')`, trimmed),
-            ),
-          ),
-        )
-        .orderBy(desc(score), desc(post.publishedAt))
-
-      getLogger('search.trgm').info('Search trigram results', {
-        query: trimmed,
-        rawRows: rows.length,
-        threshold: settings.trgmThreshold,
-        topScore: rows[0]?.score ?? null,
-      })
-
-      return rows.map((r) => r.slug)
+      return runTrgmSearch(db, baseWhere, query, settings.trgmThreshold)
     }
 
     // Extension missing (or probe failed) — degrade to LIKE, warn once.
     if (!trgmFallbackWarned) {
       trgmFallbackWarned = true
       getLogger('search.trgm').warn('pg_trgm extension unavailable — trgm search mode degrading to LIKE', {
-        query: trimmed,
+        query,
       })
     }
+    return runLikeSearch(db, baseWhere, query)
   }
 
   // --- Vector mode ---
-  if (settings.enabled && settings.mode === 'vector') {
-    const embedding = await generateEmbedding(trimmed)
-    getLogger('search.vector').info('Search vector query', {
-      query: trimmed,
-      hasEmbedding: embedding !== null,
-      dimensions: embedding?.length ?? 0,
-      threshold: settings.similarityThreshold,
-    })
-
-    if (embedding !== null) {
-      const similarity = sql<number>`1 - (${cosineDistance(postSearchIndex.embedding, embedding)})`
-
-      const [vectorRows, likeRows] = await Promise.all([
-        db
-          .select({ slug: post.slug, similarity })
-          .from(post)
-          .leftJoin(postSearchIndex, eq(post.id, postSearchIndex.postId))
-          .where(and(baseWhere, gt(similarity, settings.similarityThreshold)))
-          .orderBy(desc(similarity)),
-        db
-          .select({ slug: post.slug })
-          .from(post)
-          .leftJoin(postSearchIndex, eq(post.id, postSearchIndex.postId))
-          .where(likeWhere)
-          .orderBy(desc(post.publishedAt)),
-      ])
-
-      getLogger('search.vector').info('Search vector results', {
-        query: trimmed,
-        rawRows: vectorRows.length,
-        threshold: settings.similarityThreshold,
-        topSimilarity: vectorRows[0]?.similarity ?? null,
-      })
-
-      getLogger('search.like').info('Search LIKE results', {
-        query: trimmed,
-        rawRows: likeRows.length,
-      })
-
-      // Merge: vector results first, then LIKE results deduplicated
-      const seen = new Set<string>()
-      const merged: string[] = []
-      for (const row of vectorRows) {
-        if (!seen.has(row.slug)) {
-          seen.add(row.slug)
-          merged.push(row.slug)
-        }
-      }
-      for (const row of likeRows) {
-        if (!seen.has(row.slug)) {
-          seen.add(row.slug)
-          merged.push(row.slug)
-        }
-      }
-      return merged
-    }
-    // embedding generation failed → fall through to LIKE
+  if (settings.mode === 'vector') {
+    return runVectorSearch(db, settings, baseWhere, query)
   }
 
-  // --- LIKE fallback ---
-  const rows = await db
-    .select({ slug: post.slug })
-    .from(post)
-    .leftJoin(postSearchIndex, eq(post.id, postSearchIndex.postId))
-    .where(likeWhere)
-    .orderBy(desc(post.publishedAt))
-
-  getLogger('search.like').info('Search LIKE results', {
-    query: trimmed,
-    rawRows: rows.length,
-  })
-
-  return rows.map((r) => r.slug)
+  // --- LIKE mode ---
+  return runLikeSearch(db, baseWhere, query)
 }
 
 // Public API
