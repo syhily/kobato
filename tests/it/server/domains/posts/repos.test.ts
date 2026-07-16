@@ -337,24 +337,6 @@ describe('posts/repos/hydrate — hydratePostMetasToFullPosts', () => {
   })
 })
 
-describe('posts/repos/public-query/listing — listPublicPostMetas', () => {
-  it('sorts by firstPublishedAt desc by default', async () => {
-    await seedPost({ slug: 'a', firstPublishedAt: new Date('2026-01-01') })
-    await seedPost({ slug: 'b', firstPublishedAt: new Date('2026-02-01') })
-    const { listPublicPostMetas } = await import('@/server/domains/posts/repos/public-query/listing')
-    const rows = await listPublicPostMetas(db)
-    expect(rows[0]?.slug).toBe('b')
-  })
-  it('excludes soft-deleted rows', async () => {
-    await seedPost({ slug: 'live' })
-    await seedPost({ slug: 'gone', deletedAt: new Date() })
-    const { listPublicPostMetas } = await import('@/server/domains/posts/repos/public-query/listing')
-    const rows = await listPublicPostMetas(db)
-    expect(rows).toHaveLength(1)
-    expect(rows[0]?.slug).toBe('live')
-  })
-})
-
 describe('posts/repos/public-query/listing — listPublicPosts', () => {
   it('applies limit + offset', async () => {
     await seedPost({ slug: 'a', publishedRevisionId: 1n, firstPublishedAt: new Date('2026-01-01') })

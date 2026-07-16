@@ -66,9 +66,7 @@ vi.mock('@/server/domains/pages/repo', () => ({
   findPageBySlug: vi.fn(async (_db: unknown, slug: string) => (slug === 'about' ? publishedPage : null)),
   buildDbPage: (p: unknown) => p,
 }))
-vi.mock('@/server/domains/posts/repos/public-query/listing', () => ({
-  listPublicPostMetas: vi.fn(async () => []),
-}))
+vi.mock('@/server/domains/posts/repos/public-query/listing', () => ({}))
 vi.mock('@/server/domains/posts/repos/single', () => ({
   findPostBySlug: vi.fn(async () => null),
   findPublicPostMetaBySlug: vi.fn(async () => null),

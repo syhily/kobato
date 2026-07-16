@@ -1,6 +1,6 @@
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
-import { desc, isNull, sql } from 'drizzle-orm'
+import { desc, sql } from 'drizzle-orm'
 
 import type { PostMetaRow } from '@/server/infra/db/types'
 import type { ClientPost, ListingPostCard, PostVisibilityOptions } from '@/shared/types/catalog'
@@ -17,15 +17,6 @@ import { findTagNamesByPostIds } from '@/server/infra/db/operations/post-tag'
 import { post as postMetaTable } from '@/server/infra/db/schema/post'
 import { toListingPostCard } from '@/shared/types/catalog'
 import { idFromString } from '@/shared/utils/id'
-
-export async function listPublicPostMetas(
-  db: NodePgDatabase,
-  sortBy: 'publishedAt' | 'updatedAt' = 'publishedAt',
-  limit = 200,
-): Promise<PostMetaRow[]> {
-  const col = sortBy === 'updatedAt' ? postMetaTable.updatedAt : postMetaTable.firstPublishedAt
-  return db.select().from(postMetaTable).where(isNull(postMetaTable.deletedAt)).orderBy(desc(col)).limit(limit)
-}
 
 export async function listPublicPosts(
   db: NodePgDatabase,
