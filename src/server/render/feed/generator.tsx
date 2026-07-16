@@ -134,7 +134,13 @@ async function renderEntryContent(db: NodePgDatabase, entry: Post | Page): Promi
 }
 
 export async function generateFeeds(db: NodePgDatabase, options: FeedOptions = {}) {
-  const cacheKey = options.category ?? options.tag ?? 'all'
+  // Cache keys are namespaced because category and tag slugs share one slug namespace, and a category slugged `all` would otherwise collide with the site-wide feed.
+  const cacheKey =
+    options.category !== undefined
+      ? `cat:${options.category}`
+      : options.tag !== undefined
+        ? `tag:${options.tag}`
+        : 'all'
   const feedCache = feedCacheFor(cacheKey)
   const cached = await feedCache.get()
   if (cached !== null) {
