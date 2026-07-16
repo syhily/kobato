@@ -2,10 +2,12 @@ import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
 import { randomBytes } from 'node:crypto'
 
+import type { SafeFetchFailure } from '@/server/infra/safe-fetch'
+
 import { findMusicByPlayerId } from '@/server/infra/db/operations/music'
 import { DomainError } from '@/server/infra/http/errors'
 import { getLogger } from '@/server/infra/logger'
-import { isBlockedFetchHost } from '@/shared/utils/safe-url'
+import { safeFetch } from '@/server/infra/safe-fetch'
 
 const log = getLogger('music.service')
 
@@ -45,68 +47,44 @@ export async function generateUniquePlayerId(db: NodePgDatabase): Promise<string
   throw new DomainError('INTERNAL', 'playerId 生成失败：连续 5 次冲突')
 }
 
-function assertDownloadableUrl(url: string, what: 'audio' | 'cover'): void {
-  let parsed: URL
-  try {
-    parsed = new URL(url)
-  } catch {
-    throw new DomainError('BAD_REQUEST', `${what === 'audio' ? '音频' : '封面'}地址无效`)
-  }
-  if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
-    throw new DomainError('BAD_REQUEST', `${what === 'audio' ? '音频' : '封面'}地址协议不被支持`)
-  }
-  const host = parsed.hostname.toLowerCase()
-  if (isBlockedFetchHost(host)) {
-    throw new DomainError('BAD_REQUEST', `${what === 'audio' ? '音频' : '封面'}地址指向了内网或本机`)
+// Map the safe-fetch failure union onto the pinned DomainError
+// variants — the exact codes/messages are covered by the write tests.
+function downloadError(result: SafeFetchFailure, originalUrl: string, what: 'audio' | 'cover'): DomainError {
+  const asset = what === 'audio' ? '音频' : '封面'
+  const action = what === 'audio' ? '下载音频' : '下载封面'
+  switch (result.reason) {
+    case 'invalid-url':
+      return new DomainError('BAD_REQUEST', `${asset}地址无效`)
+    case 'bad-protocol':
+      return new DomainError('BAD_REQUEST', `${asset}地址协议不被支持`)
+    case 'blocked-host':
+      return new DomainError('BAD_REQUEST', `${asset}地址指向了内网或本机`)
+    case 'too-many-redirects':
+      return new DomainError('BAD_REQUEST', `${asset}地址重定向次数过多`)
+    case 'too-large':
+      return new DomainError('BAD_REQUEST', `${asset}体积超过上限`)
+    case 'http-error':
+      log.error('Music asset fetch returned non-2xx', { url: originalUrl, what, status: result.status })
+      return new DomainError('INTERNAL', `${action}失败：${result.status}`)
+    case 'timeout':
+    case 'fetch-failed':
+      log.error('Music asset fetch failed', { url: result.url, what, error: result.error })
+      return new DomainError('INTERNAL', `${action}失败，请稍后再试`)
+    case 'missing-redirect-location':
+    case 'redirect-vetoed':
+      return new DomainError('INTERNAL', `${action}失败，请稍后再试`)
   }
 }
 
 export async function downloadBinary(url: string, maxBytes: number, what: 'audio' | 'cover'): Promise<Buffer> {
-  assertDownloadableUrl(url, what)
-  const MAX_REDIRECTS = 5
-  let currentUrl = url
-  let response: Response
-  for (let hop = 0; ; hop++) {
-    try {
-      response = await fetch(currentUrl, {
-        redirect: 'manual',
-        signal: AbortSignal.timeout(30_000),
-        headers: { 'User-Agent': MUSIC_DOWNLOAD_UA },
-      })
-    } catch (error) {
-      log.error('Music asset fetch failed', { url: currentUrl, what, error })
-      throw new DomainError('INTERNAL', `${what === 'audio' ? '下载音频' : '下载封面'}失败，请稍后再试`)
-    }
-    if (response.status < 300 || response.status >= 400) {
-      break
-    }
-    if (hop >= MAX_REDIRECTS) {
-      throw new DomainError('BAD_REQUEST', `${what === 'audio' ? '音频' : '封面'}地址重定向次数过多`)
-    }
-    const location = response.headers.get('location')
-    if (location === null) {
-      throw new DomainError('INTERNAL', `${what === 'audio' ? '下载音频' : '下载封面'}失败，请稍后再试`)
-    }
-    currentUrl = new URL(location, currentUrl).toString()
-    // Re-validate every hop: a remote CDN can 302 toward an internal address.
-    assertDownloadableUrl(currentUrl, what)
+  const result = await safeFetch(url, {
+    timeoutMs: 30_000,
+    maxBytes,
+    maxRedirects: 5,
+    headers: { 'User-Agent': MUSIC_DOWNLOAD_UA },
+  })
+  if (!result.ok) {
+    throw downloadError(result, url, what)
   }
-  if (!response.ok) {
-    log.error('Music asset fetch returned non-2xx', { url, what, status: response.status })
-    throw new DomainError('INTERNAL', `${what === 'audio' ? '下载音频' : '下载封面'}失败：${response.status}`)
-  }
-
-  const length = response.headers.get('content-length')
-  if (length !== null) {
-    const expected = Number.parseInt(length, 10)
-    if (Number.isFinite(expected) && expected > maxBytes) {
-      throw new DomainError('BAD_REQUEST', `${what === 'audio' ? '音频' : '封面'}体积超过上限`)
-    }
-  }
-
-  const arrayBuf = await response.arrayBuffer()
-  if (arrayBuf.byteLength > maxBytes) {
-    throw new DomainError('BAD_REQUEST', `${what === 'audio' ? '音频' : '封面'}体积超过上限`)
-  }
-  return Buffer.from(arrayBuf)
+  return Buffer.from(result.body)
 }

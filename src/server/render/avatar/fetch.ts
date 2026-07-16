@@ -4,10 +4,11 @@ import { Buffer } from 'node:buffer'
 
 import { findEmailById } from '@/server/domains/users/services/admin'
 import { getLogger } from '@/server/infra/logger'
+import { safeFetch } from '@/server/infra/safe-fetch'
 import { compressImage } from '@/server/render/image-compress'
 import { requireBlogSettingsSection } from '@/shared/config/getters'
 import { idFromString } from '@/shared/utils/id'
-import { isAllowedMirrorUrl, isBlockedFetchHost } from '@/shared/utils/safe-url'
+import { isAllowedMirrorUrl } from '@/shared/utils/safe-url'
 import { encodedEmail } from '@/shared/utils/security'
 import { isNumeric } from '@/shared/utils/tools'
 import { joinUrl } from '@/shared/utils/urls'
@@ -37,64 +38,37 @@ interface SafeFetchOptions {
   allowRedirect?: boolean
 }
 
-/** Fetch an avatar image with bounded redirects and consistent error
- *  handling. Returns `null` on any failure so the route can fall back to
- *  the default avatar. */
+/** Fetch avatar image bytes with bounded redirects and consistent error
+ *  handling — the SSRF guard, manual-redirect loop, and timeout are owned
+ *  by `@/server/infra/safe-fetch`. Returns `null` on any failure so the
+ *  route can fall back to the default avatar. */
 async function safeFetchAvatar(
   label: 'avatar' | 'avatar.qq',
   initialLink: string,
   options: SafeFetchOptions = {},
-): Promise<Response | null> {
+): Promise<ArrayBuffer | null> {
   const { headers, allowRedirect = true } = options
-  let currentLink = initialLink
-
-  for (let hop = 0; hop <= MAX_REDIRECT_HOPS; hop++) {
-    let resp: Response
-    try {
-      resp = await fetch(currentLink, {
-        redirect: 'manual',
-        headers,
-        signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
-      })
-    } catch (err) {
-      // Network-level failures (ETIMEDOUT, ECONNREFUSED, DNS failures,
-      // aborts) should degrade to the default avatar instead of 500ing
-      // the whole route. Log only the message — URLs / emails are user data
-      // and must not be emitted.
-      getLogger(label).warn('avatar fetch failed', { error: fetchErrorMessage(err) })
-      return null
-    }
-
-    if (resp.status >= 300 && resp.status < 400) {
-      if (!allowRedirect) {
-        return null
-      }
-      const location = resp.headers.get('location')
-      if (location === null) {
-        return null
-      }
-      const nextUrl = new URL(location, currentLink)
-      const nextLink = nextUrl.toString()
-      if (nextLink === defaultAvatarUrl()) {
-        return null
-      }
-      // SSRF guard: a malicious / compromised mirror can 302 us toward an
-      // internal address. Re-validate every hop, not just the initial URL.
-      if ((nextUrl.protocol !== 'https:' && nextUrl.protocol !== 'http:') || isBlockedFetchHost(nextUrl.hostname)) {
-        getLogger(label).warn('avatar redirect target rejected by ssrf guard')
-        return null
-      }
-      currentLink = nextLink
-      continue
-    }
-
-    if (!resp.ok) {
-      return null
-    }
-
-    return resp
+  const result = await safeFetch(initialLink, {
+    timeoutMs: FETCH_TIMEOUT_MS,
+    maxRedirects: allowRedirect ? MAX_REDIRECT_HOPS : 0,
+    headers,
+    // A redirect back to our own default avatar is the mirror's
+    // "no avatar" signal — veto the hop before we fetch ourselves.
+    shouldFollowRedirect: (nextUrl) => nextUrl.toString() !== defaultAvatarUrl(),
+  })
+  if (result.ok) {
+    return result.body
   }
-
+  if (result.reason === 'fetch-failed' || result.reason === 'timeout') {
+    // Network-level failures (ETIMEDOUT, ECONNREFUSED, DNS failures,
+    // aborts) should degrade to the default avatar instead of 500ing
+    // the whole route. Log only the message — URLs / emails are user data
+    // and must not be emitted.
+    getLogger(label).warn('avatar fetch failed', { error: fetchErrorMessage(result.error) })
+  } else if (result.reason === 'blocked-host' || result.reason === 'bad-protocol') {
+    // A malicious / compromised mirror 302d us toward an internal address.
+    getLogger(label).warn('avatar redirect target rejected by ssrf guard')
+  }
   return null
 }
 
@@ -124,11 +98,11 @@ export async function fetchAvatarImage(hash: string): Promise<Buffer | null> {
     Referer: siteIdentity.website,
   }
 
-  const resp = await safeFetchAvatar('avatar', initialLink, { headers, allowRedirect: true })
-  if (resp === null) {
+  const body = await safeFetchAvatar('avatar', initialLink, { headers, allowRedirect: true })
+  if (body === null) {
     return null
   }
-  return compressImage(Buffer.from(await resp.arrayBuffer()))
+  return compressImage(Buffer.from(body))
 }
 
 const QQ_EMAIL_RE = /^\d+@qq\.com$/i
@@ -157,14 +131,14 @@ export async function fetchQQAvatarImage(email: string): Promise<Buffer | null> 
     return null
   }
 
-  const resp = await safeFetchAvatar('avatar.qq', url, {
+  const body = await safeFetchAvatar('avatar.qq', url, {
     headers: { Accept: 'image/png,image/jpeg,image/webp,*/*' },
     allowRedirect: false,
   })
-  if (resp === null) {
+  if (body === null) {
     return null
   }
-  return compressImage(Buffer.from(await resp.arrayBuffer()))
+  return compressImage(Buffer.from(body))
 }
 
 /** Translate the route param into the canonical cache key and, when the
