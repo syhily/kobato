@@ -150,7 +150,7 @@
     "tailwind-merge": "^3.6.0",
     "tailwindcss": "^4.3.2",
     "taze": "^19.14.1",
-    "typescript": "7.0.1-rc",
+    "typescript": "7.0.2",
     "ua-parser-js": "^2.0.10",
     "vite": "^8.1.4",
     "vitest": "^4.1.10",
