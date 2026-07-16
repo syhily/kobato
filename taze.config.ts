@@ -26,6 +26,5 @@ export default defineConfig({
     '@types/node': 'minor',
     'drizzle-kit': 'next',
     'drizzle-orm': 'next',
-    typescript: 'next',
   },
 })
