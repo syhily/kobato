@@ -8,14 +8,15 @@ import {
   resolveDateFilterBounds,
   type DateFilterValue,
 } from '@/ui/admin/shared/date-filter'
+import {
+  filterPillsReducer,
+  type ActiveFilter as GenericActiveFilter,
+  type FilterPillsAction,
+} from '@/ui/admin/shared/filterPillsReducer'
 
 export type AuditLogFilterFieldKey = 'action' | 'resourceType' | 'actor' | 'ip' | 'date'
 
-export interface ActiveFilter {
-  field: AuditLogFilterFieldKey
-  value: string
-  label: string
-}
+export type ActiveFilter = GenericActiveFilter<AuditLogFilterFieldKey>
 
 export type { DateFilterValue }
 export { dateFilterLabel, parseDateFilter, resolveDateFilterBounds }
@@ -32,10 +33,7 @@ export interface AuditLogState {
 export type AuditLogAction =
   | { type: 'loaded'; items: AuditLogItemDto[]; total: number; hasMore: boolean }
   | { type: 'appended'; items: AuditLogItemDto[]; total: number; hasMore: boolean }
-  | { type: 'addFilter'; field: AuditLogFilterFieldKey; value: string; label: string }
-  | { type: 'removeFilter'; field: AuditLogFilterFieldKey }
-  | { type: 'renameFilter'; field: AuditLogFilterFieldKey; label: string }
-  | { type: 'clearFilters' }
+  | FilterPillsAction<AuditLogFilterFieldKey>
 
 export function auditLogReducer(state: AuditLogState, action: AuditLogAction): AuditLogState {
   switch (action.type) {
@@ -53,23 +51,11 @@ export function auditLogReducer(state: AuditLogState, action: AuditLogAction): A
         total: action.total,
         hasMore: action.hasMore,
       }
-    case 'addFilter': {
-      const next = state.filters.filter((f) => f.field !== action.field)
-      return { ...state, filters: [...next, { field: action.field, value: action.value, label: action.label }] }
-    }
+    case 'addFilter':
     case 'removeFilter':
-      return { ...state, filters: state.filters.filter((f) => f.field !== action.field) }
-    case 'renameFilter': {
-      const idx = state.filters.findIndex((f) => f.field === action.field)
-      if (idx === -1) {
-        return state
-      }
-      const next = [...state.filters]
-      next[idx] = { ...next[idx]!, label: action.label }
-      return { ...state, filters: next }
-    }
+    case 'renameFilter':
     case 'clearFilters':
-      return { ...state, filters: [] }
+      return { ...state, filters: filterPillsReducer(state.filters, action) }
   }
 }
 

@@ -2,16 +2,10 @@ import { describe, expect, it } from 'vitest'
 
 import type { CommentBody } from '@/shared/pt/comment-schema'
 import type { AdminCommentWire as AdminComment } from '@/shared/types/comments'
-import type {
-  ActiveFilter,
-  AdminCommentsData,
-  FilterAction,
-  StatusCounts,
-} from '@/ui/admin/comments/useCommentsController'
+import type { AdminCommentsData, StatusCounts } from '@/ui/admin/comments/useCommentsController'
 
 import {
   approveCommentInPages,
-  filtersReducer,
   removeCommentFromPages,
   updateCommentBodyInPages,
 } from '@/ui/admin/comments/useCommentsController'
@@ -72,100 +66,6 @@ function makeData(comments: AdminComment[], statusCounts: StatusCounts = ZERO_CO
     pageParams: [0],
   }
 }
-
-describe('filtersReducer — addFilter', () => {
-  it('adds a new filter when the field is not already present', () => {
-    const action: FilterAction = { type: 'addFilter', field: 'status', value: 'pending', label: '待审核' }
-
-    const next = filtersReducer([], action)
-    expect(next).toEqual([{ field: 'status', value: 'pending', label: '待审核' }])
-  })
-
-  it('replaces an existing filter for the same field (single chip per field)', () => {
-    const prev: ActiveFilter[] = [{ field: 'status', value: 'pending', label: '待审核' }]
-    const action: FilterAction = { type: 'addFilter', field: 'status', value: 'approved', label: '已审核' }
-
-    const next = filtersReducer(prev, action)
-    expect(next).toHaveLength(1)
-    expect(next[0]!).toEqual({ field: 'status', value: 'approved', label: '已审核' })
-  })
-
-  it('keeps unrelated filters when replacing a same-field filter', () => {
-    const prev: ActiveFilter[] = [
-      { field: 'status', value: 'pending', label: '待审核' },
-      { field: 'page', value: 'pid-1', label: 'pid-1' },
-    ]
-    const action: FilterAction = { type: 'addFilter', field: 'status', value: 'approved', label: '已审核' }
-
-    const next = filtersReducer(prev, action)
-    expect(next).toHaveLength(2)
-    expect(next.find((f) => f.field === 'page')).toEqual({ field: 'page', value: 'pid-1', label: 'pid-1' })
-    expect(next.find((f) => f.field === 'status')).toEqual({
-      field: 'status',
-      value: 'approved',
-      label: '已审核',
-    })
-  })
-})
-
-describe('filtersReducer — removeFilter', () => {
-  it('removes the filter with the given field', () => {
-    const prev: ActiveFilter[] = [
-      { field: 'status', value: 'pending', label: '待审核' },
-      { field: 'page', value: 'pid-1', label: 'pid-1' },
-    ]
-    const action: FilterAction = { type: 'removeFilter', field: 'status' }
-
-    const next = filtersReducer(prev, action)
-    expect(next).toHaveLength(1)
-    expect(next[0]!.field).toBe('page')
-  })
-
-  it('is a no-op when the field is not in the filter list', () => {
-    const prev: ActiveFilter[] = [{ field: 'page', value: 'pid-1', label: 'pid-1' }]
-    const action: FilterAction = { type: 'removeFilter', field: 'status' }
-
-    const next = filtersReducer(prev, action)
-    expect(next).toHaveLength(1)
-  })
-})
-
-describe('filtersReducer — renameFilter', () => {
-  it('updates the label of an existing filter', () => {
-    const prev: ActiveFilter[] = [
-      { field: 'author', value: '42', label: '42' },
-      { field: 'page', value: 'pid-1', label: 'pid-1' },
-    ]
-    const action: FilterAction = { type: 'renameFilter', field: 'author', label: 'Alice' }
-
-    const next = filtersReducer(prev, action)
-    expect(next.find((f) => f.field === 'author')!.label).toBe('Alice')
-    // Other filters unchanged
-    expect(next.find((f) => f.field === 'page')!.label).toBe('pid-1')
-  })
-
-  it('is a no-op when the field is not found', () => {
-    const prev: ActiveFilter[] = []
-    const action: FilterAction = { type: 'renameFilter', field: 'author', label: 'Alice' }
-
-    const next = filtersReducer(prev, action)
-    expect(next).toEqual(prev)
-  })
-})
-
-describe('filtersReducer — clearFilters', () => {
-  it('removes all active filters', () => {
-    const prev: ActiveFilter[] = [
-      { field: 'status', value: 'pending', label: '待审核' },
-      { field: 'page', value: 'pid-1', label: 'pid-1' },
-      { field: 'author', value: '42', label: '42' },
-    ]
-    const action: FilterAction = { type: 'clearFilters' }
-
-    const next = filtersReducer(prev, action)
-    expect(next).toEqual([])
-  })
-})
 
 describe('approveCommentInPages', () => {
   it('sets isPending to false for the matching comment', () => {
@@ -236,15 +136,6 @@ describe('updateCommentBodyInPages', () => {
 })
 
 describe('immutability', () => {
-  it('does not mutate the previous filters array on addFilter', () => {
-    const prev: ActiveFilter[] = [{ field: 'status', value: 'pending', label: '待审核' }]
-    const action: FilterAction = { type: 'addFilter', field: 'page', value: 'pid-1', label: 'pid-1' }
-
-    const next = filtersReducer(prev, action)
-    expect(next).not.toBe(prev)
-    expect(prev).toHaveLength(1)
-  })
-
   it('does not mutate the previous pages on removeCommentFromPages', () => {
     const comments = [mockComment({ id: '1' })]
     const data = makeData(comments, { all: 1, pending: 1, approved: 0, deleteRequested: 0 })

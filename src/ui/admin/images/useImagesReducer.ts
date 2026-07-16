@@ -2,25 +2,18 @@ import { useReducer } from 'react'
 
 import type { AdminImageKind } from '@/shared/types/images'
 
+import { filterPillsReducer, type ActiveFilter, type FilterPillsAction } from '@/ui/admin/shared/filterPillsReducer'
+
 export type ImageFilterField = 'q' | 'kind'
 
-export interface ActiveImageFilter {
-  field: ImageFilterField
-  value: string
-  label: string
-}
+export type ActiveImageFilter = ActiveFilter<ImageFilterField>
 
 interface ImagesState {
   filters: ActiveImageFilter[]
   q: string
 }
 
-type ImagesAction =
-  | { type: 'addFilter'; field: ImageFilterField; value: string; label: string }
-  | { type: 'removeFilter'; field: ImageFilterField }
-  | { type: 'renameFilter'; field: ImageFilterField; label: string }
-  | { type: 'setQ'; value: string }
-  | { type: 'clearFilters' }
+type ImagesAction = FilterPillsAction<ImageFilterField> | { type: 'setQ'; value: string }
 
 const PAGE_SIZE = 60
 
@@ -30,28 +23,20 @@ function isAdminImageKind(value: string): value is AdminImageKind {
 
 function imagesReducer(state: ImagesState, action: ImagesAction): ImagesState {
   switch (action.type) {
-    case 'addFilter': {
-      const next = state.filters.filter((f) => f.field !== action.field)
-      return { ...state, filters: [...next, { field: action.field, value: action.value, label: action.label }] }
-    }
-    case 'removeFilter': {
-      const next = state.filters.filter((f) => f.field !== action.field)
-      const q = next.some((f) => f.field === 'q') ? state.q : ''
-      return { ...state, filters: next, q }
-    }
-    case 'renameFilter': {
-      const idx = state.filters.findIndex((f) => f.field === action.field)
-      if (idx === -1) {
-        return state
-      }
-      const next = [...state.filters]
-      next[idx] = { ...next[idx]!, label: action.label }
-      return { ...state, filters: next }
-    }
     case 'setQ':
       return { ...state, q: action.value }
+    case 'addFilter':
+    case 'renameFilter':
+      return { ...state, filters: filterPillsReducer(state.filters, action) }
+    case 'removeFilter': {
+      const filters = filterPillsReducer(state.filters, action)
+      // Caller-level side effect kept local to this hook: removing the last
+      // q pill also clears the search box mirror; a remaining q pill keeps it.
+      const q = filters.some((f) => f.field === 'q') ? state.q : ''
+      return { ...state, filters, q }
+    }
     case 'clearFilters':
-      return { filters: [], q: '' }
+      return { ...state, filters: filterPillsReducer(state.filters, action), q: '' }
   }
 }
 

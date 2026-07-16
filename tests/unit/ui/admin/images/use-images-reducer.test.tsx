@@ -25,17 +25,6 @@ describe('ui/admin/images/useImagesReducer', () => {
     expect(activeFilters[1]!).toEqual({ field: 'q', value: 'cat', label: 'cat' })
   })
 
-  it('replaces a filter with the same field', () => {
-    const { kind, activeFilters } = renderHook(useImagesReducer, {
-      actions: [
-        (r) => r.dispatch({ type: 'addFilter', field: 'kind', value: 'generic', label: '普通' }),
-        (r) => r.dispatch({ type: 'addFilter', field: 'kind', value: 'friend', label: '友链' }),
-      ],
-    })
-    expect(kind).toBe('friend')
-    expect(activeFilters).toHaveLength(1)
-  })
-
   it('ignores unknown kind values', () => {
     const { kind } = renderHook(useImagesReducer, {
       actions: [(r) => r.dispatch({ type: 'addFilter', field: 'kind', value: 'unknown', label: '未知' })],
@@ -74,23 +63,6 @@ describe('ui/admin/images/useImagesReducer', () => {
     })
     expect(activeFilters).toHaveLength(1)
     expect(q).toBe('foo')
-  })
-
-  it('renames a filter label', () => {
-    const { activeFilters } = renderHook(useImagesReducer, {
-      actions: [
-        (r) => r.dispatch({ type: 'addFilter', field: 'kind', value: 'friend', label: '友链' }),
-        (r) => r.dispatch({ type: 'renameFilter', field: 'kind', label: '友情链接' }),
-      ],
-    })
-    expect(activeFilters[0]!.label).toBe('友情链接')
-  })
-
-  it('ignores rename for a missing filter', () => {
-    const { state } = renderHook(useImagesReducer, {
-      actions: [(r) => r.dispatch({ type: 'renameFilter', field: 'kind', label: '友情链接' })],
-    })
-    expect(state.filters).toHaveLength(0)
   })
 
   it('clears all filters and q', () => {

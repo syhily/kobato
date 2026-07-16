@@ -11,6 +11,7 @@ import { getLogger } from '@/client/lib/logger'
 import { idStr } from '@/shared/utils/tools'
 import { isRecord } from '@/shared/utils/type-guards'
 import { unsafeCast } from '@/shared/utils/unsafe-cast'
+import { filterPillsReducer, type ActiveFilter as GenericActiveFilter } from '@/ui/admin/shared/filterPillsReducer'
 
 export type FilterStatus = 'all' | 'pending' | 'approved' | 'deleteRequested'
 
@@ -48,11 +49,7 @@ export function isTextFilterOperator(value: unknown): value is TextFilterOperato
   return value === 'contains' || value === 'does-not-contain'
 }
 
-export interface ActiveFilter {
-  field: FilterFieldKey
-  value: string
-  label: string
-}
+export type ActiveFilter = GenericActiveFilter<FilterFieldKey>
 
 export interface FilterItem {
   value: string
@@ -161,34 +158,6 @@ const URL_SYNC_DEBOUNCE_MS = 300
 
 const log = getLogger('comments.useCommentsController')
 
-export type FilterAction =
-  | { type: 'addFilter'; field: FilterFieldKey; value: string; label: string }
-  | { type: 'removeFilter'; field: FilterFieldKey }
-  | { type: 'renameFilter'; field: FilterFieldKey; label: string }
-  | { type: 'clearFilters' }
-
-export function filtersReducer(filters: ActiveFilter[], action: FilterAction): ActiveFilter[] {
-  switch (action.type) {
-    case 'addFilter': {
-      const next = filters.filter((f) => f.field !== action.field)
-      return [...next, { field: action.field, value: action.value, label: action.label }]
-    }
-    case 'removeFilter':
-      return filters.filter((f) => f.field !== action.field)
-    case 'renameFilter': {
-      const idx = filters.findIndex((f) => f.field === action.field)
-      if (idx === -1) {
-        return filters
-      }
-      const next = [...filters]
-      next[idx] = { ...next[idx]!, label: action.label }
-      return next
-    }
-    case 'clearFilters':
-      return []
-  }
-}
-
 export type AdminCommentsPage = Awaited<ReturnType<typeof orpc.admin.comments.loadAll>>
 export type AdminCommentsData = InfiniteData<AdminCommentsPage, number>
 
@@ -280,7 +249,7 @@ export interface UseCommentsControllerOptions {
 
 export function useCommentsController({ initialFilters }: UseCommentsControllerOptions) {
   const queryClient = useQueryClient()
-  const [filters, dispatch] = useReducer(filtersReducer, initialFilters)
+  const [filters, dispatch] = useReducer(filterPillsReducer<FilterFieldKey>, initialFilters)
 
   const statusFilter = filters.find((f) => f.field === 'status')
   const pageFilter = filters.find((f) => f.field === 'page')

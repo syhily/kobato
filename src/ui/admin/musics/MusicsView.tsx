@@ -18,8 +18,12 @@ import { unsafeCast } from '@/shared/utils/unsafe-cast'
 import { AlbumCard } from '@/ui/admin/musics/AlbumCard'
 import { MusicLibraryHero } from '@/ui/admin/musics/MusicLibraryHero'
 import { useMusicPlayerActions } from '@/ui/admin/musics/MusicPlayerContext'
-import { type MusicSortBy, useMusicsReducer } from '@/ui/admin/musics/useMusicsReducer'
 import { cn } from '@/ui/lib/cn'
+
+export type MusicSortBy = 'createdAt' | 'updatedAt' | 'name' | 'artist' | 'album'
+export type MusicSortOrder = 'asc' | 'desc'
+
+const PAGE_SIZE = 24
 
 const SORT_LABELS: Record<MusicSortBy, string> = {
   createdAt: '创建时间',
@@ -33,7 +37,7 @@ function sortLabelEntries(): [MusicSortBy, string][] {
   return unsafeCast<[MusicSortBy, string][]>(Object.entries(SORT_LABELS))
 }
 
-function SortIcon({ sortBy, sortOrder }: { sortBy: MusicSortBy; sortOrder: 'asc' | 'desc' }) {
+export function SortIcon({ sortBy, sortOrder }: { sortBy: MusicSortBy; sortOrder: MusicSortOrder }) {
   const asc = sortOrder === 'asc'
   switch (sortBy) {
     case 'createdAt':
@@ -49,7 +53,9 @@ function SortIcon({ sortBy, sortOrder }: { sortBy: MusicSortBy; sortOrder: 'asc'
 
 export function MusicsView() {
   const navigate = useNavigate()
-  const { state, dispatch } = useMusicsReducer()
+  const [q, setQ] = useState('')
+  const [sortBy, setSortBy] = useState<MusicSortBy>('createdAt')
+  const [sortOrder, setSortOrder] = useState<MusicSortOrder>('desc')
   const { load } = useMusicPlayerActions()
   const [sortMenuOpen, setSortMenuOpen] = useState(false)
   const sortMenuId = useId()
@@ -119,27 +125,24 @@ export function MusicsView() {
 
   const [qInput, setQInput] = useState('')
 
-  const queryKey = useMemo(
-    () => ['admin', 'music', 'list', { q: state.q, sortBy: state.sortBy, sortOrder: state.sortOrder }],
-    [state.q, state.sortBy, state.sortOrder],
-  )
+  const queryKey = useMemo(() => ['admin', 'music', 'list', { q, sortBy, sortOrder }], [q, sortBy, sortOrder])
 
   const listQuery = useInfiniteQuery({
     queryKey,
     queryFn: async ({ pageParam }) => {
       return orpc.admin.music.list({
-        q: state.q || undefined,
+        q: q || undefined,
         offset: pageParam,
-        limit: state.pageSize,
-        sortBy: state.sortBy,
-        sortOrder: state.sortOrder,
+        limit: PAGE_SIZE,
+        sortBy,
+        sortOrder,
       })
     },
     getNextPageParam: (lastPage, _allPages, lastPageParam) => {
       if (!lastPage.hasMore) {
         return undefined
       }
-      return (lastPageParam ?? 0) + state.pageSize
+      return (lastPageParam ?? 0) + PAGE_SIZE
     },
     initialPageParam: 0,
   })
@@ -194,16 +197,16 @@ export function MusicsView() {
   )
 
   const handleSortChange = useCallback(
-    (sortBy: MusicSortBy) => {
-      if (state.sortBy === sortBy) {
-        dispatch({ type: 'toggleSortOrder' })
+    (next: MusicSortBy) => {
+      if (sortBy === next) {
+        setSortOrder((order) => (order === 'asc' ? 'desc' : 'asc'))
       } else {
-        dispatch({ type: 'setSortBy', value: sortBy })
-        dispatch({ type: 'setSortOrder', value: 'asc' })
+        setSortBy(next)
+        setSortOrder('asc')
       }
       setSortMenuOpen(false)
     },
-    [state.sortBy, dispatch],
+    [sortBy],
   )
 
   return (
@@ -247,16 +250,16 @@ export function MusicsView() {
                 aria-expanded={sortMenuOpen}
                 aria-controls={sortMenuId}
               >
-                <SortIcon sortBy={state.sortBy} sortOrder={state.sortOrder} />
-                <span className="hidden sm:inline">{SORT_LABELS[state.sortBy]}</span>
+                <SortIcon sortBy={sortBy} sortOrder={sortOrder} />
+                <span className="hidden sm:inline">{SORT_LABELS[sortBy]}</span>
               </button>
               <div className="h-5 w-px bg-line-muted" />
               <button
                 type="button"
-                onClick={() => dispatch({ type: 'toggleSortOrder' })}
+                onClick={() => setSortOrder((order) => (order === 'asc' ? 'desc' : 'asc'))}
                 className="px-3 py-2.5 text-sm text-ink-4 transition-colors hover:bg-surface hover:text-ink-1 sm:px-4"
               >
-                {state.sortOrder === 'asc' ? '升序' : '降序'}
+                {sortOrder === 'asc' ? '升序' : '降序'}
               </button>
             </div>
 
@@ -279,13 +282,11 @@ export function MusicsView() {
                     onKeyDown={(e) => handleSortItemKeyDown(e, index)}
                     className={cn(
                       'flex w-full items-center justify-between px-3 py-2 text-left text-sm transition-colors',
-                      state.sortBy === key ? 'text-ink-1' : 'text-ink-3 hover:bg-surface hover:text-ink-1',
+                      sortBy === key ? 'text-ink-1' : 'text-ink-3 hover:bg-surface hover:text-ink-1',
                     )}
                   >
                     <span>{label}</span>
-                    {state.sortBy === key && (
-                      <span className="text-ink-4">{state.sortOrder === 'asc' ? '升序' : '降序'}</span>
-                    )}
+                    {sortBy === key && <span className="text-ink-4">{sortOrder === 'asc' ? '升序' : '降序'}</span>}
                   </button>
                 ))}
               </div>
@@ -296,7 +297,7 @@ export function MusicsView() {
             className="relative min-w-0 flex-1 sm:ml-auto sm:flex-none"
             onSubmit={(e) => {
               e.preventDefault()
-              dispatch({ type: 'setQ', value: qInput })
+              setQ(qInput)
             }}
           >
             <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-ink-4" />

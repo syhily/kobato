@@ -14,22 +14,12 @@ import { MusicPlayerProvider } from '@/ui/admin/musics/MusicPlayerContext'
 import { MusicsView } from '@/ui/admin/musics/MusicsView'
 import { ProgressSlider } from '@/ui/admin/musics/ProgressSlider'
 
-// `useMusicsReducer` is a plain useReducer; the real reducer is fine for
-// SSR — but `MusicsView` also calls `useInfiniteQuery` against `orpc.admin.
-// music.list`, which would hit the network. We replace the controller's
-// initial state through a hoisted singleton so tests can mutate it between
-// cases, and stub out tanstack/react-query's fetch hooks below.
-
-const controllerState = vi.hoisted(() => ({
-  q: '',
-  sortBy: 'createdAt' as 'createdAt' | 'updatedAt' | 'name' | 'artist' | 'album',
-  sortOrder: 'desc' as 'asc' | 'desc',
-  pageSize: 24,
-}))
-
-vi.mock('@/ui/admin/musics/useMusicsReducer', () => ({
-  useMusicsReducer: () => ({ state: controllerState, dispatch: vi.fn() }),
-}))
+// `MusicsView` inlines its sort/search state via `useState` (the old
+// `useMusicsReducer` pass-through was deleted); the defaults — q '',
+// sortBy 'createdAt', sortOrder 'desc', page size 24 — are exactly what
+// these SSR snapshots assert. `MusicsView` also calls `useInfiniteQuery`
+// against `orpc.admin.music.list`, which would hit the network, so we
+// stub out tanstack/react-query's fetch hooks below.
 
 // TanStack Query hooks: return inert values so the views never issue real
 // network calls. The `data` field is mutated per test by reassigning the
@@ -142,10 +132,6 @@ const SAMPLE_LRC = ['[00:01.00]夜了呢', '[00:05.00]月光下的苍白', '[00:
 
 describe('snapshot: MusicsView', () => {
   beforeEach(() => {
-    controllerState.q = ''
-    controllerState.sortBy = 'createdAt'
-    controllerState.sortOrder = 'desc'
-    controllerState.pageSize = 24
     queryMocks.infinite = {
       data: { pages: [] },
       isLoading: true,

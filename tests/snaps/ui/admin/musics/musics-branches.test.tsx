@@ -7,27 +7,16 @@ import { AddMusicView } from '@/ui/admin/musics/AddMusicView'
 import { LyricsDisplay } from '@/ui/admin/musics/LyricsDisplay'
 import { MusicDetailView } from '@/ui/admin/musics/MusicDetailView'
 import { MusicPlayerProvider } from '@/ui/admin/musics/MusicPlayerContext'
-import { MusicsView } from '@/ui/admin/musics/MusicsView'
+import { MusicsView, SortIcon } from '@/ui/admin/musics/MusicsView'
 
 // Render-path coverage companion to `musics-view.test.tsx`. We re-use the
-// same mock scaffolding (controller singleton + tanstack/react-query stub)
-// so the SortIcon matrix, every grid branch and the detail / add-music
-// render arms are exercised without ever hitting the network. Event
-// handlers and effects are intentionally not covered — SSR can't drive
-// them — so this file focuses strictly on what renders.
-
-// ─────────────────────────── mock scaffolding ───────────────────────────
-
-const controllerState = vi.hoisted(() => ({
-  q: '',
-  sortBy: 'createdAt' as 'createdAt' | 'updatedAt' | 'name' | 'artist' | 'album',
-  sortOrder: 'desc' as 'asc' | 'desc',
-  pageSize: 24,
-}))
-
-vi.mock('@/ui/admin/musics/useMusicsReducer', () => ({
-  useMusicsReducer: () => ({ state: controllerState, dispatch: vi.fn() }),
-}))
+// same mock scaffolding (tanstack/react-query stub) so the SortIcon matrix,
+// every grid branch and the detail / add-music render arms are exercised
+// without ever hitting the network. Event handlers and effects are
+// intentionally not covered — SSR can't drive them — so this file focuses
+// strictly on what renders. `MusicsView` inlines its sort/search state via
+// `useState` (the old `useMusicsReducer` pass-through was deleted), so the
+// per-combo SortIcon matrix below renders the exported `SortIcon` directly.
 
 const queryMocks = vi.hoisted(() => ({
   query: {
@@ -150,10 +139,6 @@ function renderDetail(): string {
 
 describe('MusicsView render branches', () => {
   beforeEach(() => {
-    controllerState.q = ''
-    controllerState.sortBy = 'createdAt'
-    controllerState.sortOrder = 'desc'
-    controllerState.pageSize = 24
     queryMocks.infinite = {
       data: { pages: [] },
       isLoading: true,
@@ -264,50 +249,27 @@ describe('MusicsView render branches', () => {
 // ──────────────────── MusicsView: SortIcon matrix ────────────────────────
 //
 // `SortIcon` is a switch over (sortBy, sortOrder) that picks one of
-// ClockArrow{Up,Down} / CalendarArrow{Up,Down} / Arrow{Up,Down}AZ. The
-// menu-open state is event-driven and unreachable in SSR, but the
-// *trigger* re-renders the icon on every controller change. We drive
-// each (sortBy, sortOrder) combo through the hoisted controller state
-// and assert the rendered lucide class so every switch arm is covered.
+// ClockArrow{Up,Down} / CalendarArrow{Up,Down} / Arrow{Up,Down}AZ. The sort
+// state is inlined in the view (`useState`) and only flips via event
+// handlers, which SSR cannot drive — so we render the exported `SortIcon`
+// directly for every combo and assert the lucide class, covering each
+// switch arm. The trigger's default label / order text (创建时间 / 降序)
+// remains covered by the full-view tests above.
 
 describe('MusicsView SortIcon matrix', () => {
-  beforeEach(() => {
-    controllerState.q = ''
-    controllerState.pageSize = 24
-    // Populate the grid so the sort trigger renders alongside real data.
-    const a = makeAdminMusic({ id: 'm-a', name: '蓝色风暴' })
-    queryMocks.infinite = {
-      data: { pages: [{ musics: [a], total: 1, hasMore: false }] },
-      isLoading: false,
-      isPending: false,
-      isFetching: false,
-      isError: false,
-      isFetchingNextPage: false,
-      hasNextPage: false,
-      error: null,
-      fetchNextPage: vi.fn(),
-    }
-  })
-
   it.each([
-    ['createdAt', 'asc', '创建时间', 'lucide-clock-arrow-up'],
-    ['createdAt', 'desc', '创建时间', 'lucide-clock-arrow-down'],
-    ['updatedAt', 'asc', '更新时间', 'lucide-calendar-arrow-up'],
-    ['updatedAt', 'desc', '更新时间', 'lucide-calendar-arrow-down'],
-    ['name', 'asc', '歌曲名称', 'lucide-arrow-up-a-z'],
-    ['name', 'desc', '歌曲名称', 'lucide-arrow-down-a-z'],
-    ['artist', 'asc', '艺人', 'lucide-arrow-up-a-z'],
-    ['artist', 'desc', '艺人', 'lucide-arrow-down-a-z'],
-    ['album', 'asc', '专辑', 'lucide-arrow-up-a-z'],
-    ['album', 'desc', '专辑', 'lucide-arrow-down-a-z'],
-  ] as const)('renders SortIcon for sortBy=%s sortOrder=%s', (sortBy, sortOrder, label, iconClass) => {
-    controllerState.sortBy = sortBy
-    controllerState.sortOrder = sortOrder
-    const html = renderMusics()
-    // The current sort label is rendered next to the trigger.
-    expect(html).toContain(label)
-    // The order toggle reflects the active direction.
-    expect(html).toContain(sortOrder === 'asc' ? '升序' : '降序')
+    ['createdAt', 'asc', 'lucide-clock-arrow-up'],
+    ['createdAt', 'desc', 'lucide-clock-arrow-down'],
+    ['updatedAt', 'asc', 'lucide-calendar-arrow-up'],
+    ['updatedAt', 'desc', 'lucide-calendar-arrow-down'],
+    ['name', 'asc', 'lucide-arrow-up-a-z'],
+    ['name', 'desc', 'lucide-arrow-down-a-z'],
+    ['artist', 'asc', 'lucide-arrow-up-a-z'],
+    ['artist', 'desc', 'lucide-arrow-down-a-z'],
+    ['album', 'asc', 'lucide-arrow-up-a-z'],
+    ['album', 'desc', 'lucide-arrow-down-a-z'],
+  ] as const)('renders SortIcon for sortBy=%s sortOrder=%s', (sortBy, sortOrder, iconClass) => {
+    const html = stableHtml(renderToHtml(<SortIcon sortBy={sortBy} sortOrder={sortOrder} />))
     // The correct lucide icon class is emitted by the SortIcon switch.
     expect(html).toContain(iconClass)
   })

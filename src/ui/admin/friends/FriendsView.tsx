@@ -9,7 +9,6 @@ import { orpc } from '@/client/api/client'
 import { EditFriendDialog } from '@/ui/admin/friends/EditFriendDialog'
 import { FriendRow, FriendsSkeleton } from '@/ui/admin/friends/FriendRow'
 import { PendingFriendRow } from '@/ui/admin/friends/PendingFriendRow'
-import { useFriendsReducer } from '@/ui/admin/friends/useFriendsReducer'
 import { AdminListPage } from '@/ui/admin/shared/AdminListPage'
 import { type ConfirmState, ConfirmDialog } from '@/ui/admin/shared/ConfirmDialog'
 import { useDebouncedSearch } from '@/ui/admin/shared/useDebouncedSearch'
@@ -27,7 +26,8 @@ const PENDING_LIMIT = 50
 type EditTarget = AdminFriendDto | null | undefined
 
 export function FriendsView() {
-  const { state, dispatch } = useFriendsReducer()
+  const [q, setQ] = useState('')
+  const [includeHidden, setIncludeHidden] = useState(false)
   const queryClient = useQueryClient()
   const [editTarget, setEditTarget] = useState<EditTarget>(undefined)
   const [confirm, setConfirm] = useState<ConfirmState | null>(null)
@@ -42,11 +42,11 @@ export function FriendsView() {
   const pendingRows = pendingQuery.data?.friends ?? []
 
   const listQuery = useInfiniteQuery({
-    queryKey: ['admin', 'friends', 'list', { q: state.q, includeHidden: state.includeHidden }],
+    queryKey: ['admin', 'friends', 'list', { q, includeHidden }],
     queryFn: async ({ pageParam }) =>
       orpc.admin.friends.list({
-        q: state.q || undefined,
-        includeHidden: state.includeHidden ? true : undefined,
+        q: q || undefined,
+        includeHidden: includeHidden ? true : undefined,
         offset: pageParam,
         limit: PAGE_SIZE,
       }),
@@ -134,7 +134,7 @@ export function FriendsView() {
 
   const [qInput, setQInput] = useDebouncedSearch({
     delayMs: 300,
-    onChange: (value) => dispatch({ type: 'setQ', value }),
+    onChange: (value) => setQ(value),
   })
 
   const isDialogOpen = editTarget !== undefined
@@ -178,8 +178,8 @@ export function FriendsView() {
             <div className="flex h-9 items-center gap-2 rounded-xl border border-input px-3">
               <Checkbox
                 id="friends-include-hidden"
-                checked={state.includeHidden}
-                onCheckedChange={(value) => dispatch({ type: 'setIncludeHidden', value: value === true })}
+                checked={includeHidden}
+                onCheckedChange={(value) => setIncludeHidden(value === true)}
               />
               <label htmlFor="friends-include-hidden" className="text-sm select-none">
                 包含已隐藏
