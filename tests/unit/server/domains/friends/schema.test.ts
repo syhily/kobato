@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest'
 
-import { friendIdSchema, listFriendsSchema, upsertFriendSchema } from '@/server/domains/friends/schema'
+import {
+  applyFriendSchema,
+  friendIdSchema,
+  listFriendsSchema,
+  upsertFriendSchema,
+} from '@/server/domains/friends/schema'
 
 describe('server/domains/friends/schema — listFriendsSchema', () => {
   it('accepts an empty payload and defaults includeHidden to false', () => {
@@ -81,5 +86,50 @@ describe('server/domains/friends/schema — upsertFriendSchema', () => {
 
   it('rejects an invalid homepage URL', () => {
     expect(upsertFriendSchema.safeParse({ ...valid, homepage: 'not-a-url' }).success).toBe(false)
+  })
+})
+
+describe('server/domains/friends/schema — applyFriendSchema', () => {
+  const valid = {
+    website: 'Site',
+    homepage: 'https://a.com',
+  }
+
+  it('accepts a minimal payload (poster and rssUrl optional)', () => {
+    const result = applyFriendSchema.safeParse(valid)
+    expect(result.success).toBe(true)
+    expect(result.data?.poster).toBeUndefined()
+    expect(result.data?.rssUrl).toBeUndefined()
+    expect(result.data?.contact).toBe('')
+  })
+
+  it('treats blank optional URLs as undefined', () => {
+    const result = applyFriendSchema.safeParse({ ...valid, poster: '', rssUrl: '' })
+    expect(result.success).toBe(true)
+    expect(result.data?.poster).toBeUndefined()
+    expect(result.data?.rssUrl).toBeUndefined()
+  })
+
+  it('rejects a filled honeypot with the generic invalid-input message', () => {
+    const result = applyFriendSchema.safeParse({ ...valid, contact: 'spammy' })
+    expect(result.success).toBe(false)
+    if (!result.success) {
+      const issue = result.error.issues.find((i) => i.path.includes('contact'))
+      expect(issue?.message).toBe('输入数据无效。')
+    }
+  })
+
+  it('rejects non-http(s) homepage URLs', () => {
+    expect(applyFriendSchema.safeParse({ ...valid, homepage: 'javascript:alert(1)' }).success).toBe(false)
+    expect(applyFriendSchema.safeParse({ ...valid, homepage: 'ftp://a.com' }).success).toBe(false)
+  })
+
+  it('rejects non-http(s) poster and rssUrl when present', () => {
+    expect(applyFriendSchema.safeParse({ ...valid, poster: 'javascript:alert(1)' }).success).toBe(false)
+    expect(applyFriendSchema.safeParse({ ...valid, rssUrl: 'ftp://a.com/rss' }).success).toBe(false)
+  })
+
+  it('rejects website longer than 80 chars', () => {
+    expect(applyFriendSchema.safeParse({ ...valid, website: 'x'.repeat(81) }).success).toBe(false)
   })
 })

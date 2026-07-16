@@ -13,6 +13,9 @@ const list = adminProc
     z.object({
       q: z.string().optional(),
       includeHidden: z.boolean().optional(),
+      // Exact visibility match — the pending-review bucket passes
+      // `visible: false`; omit it for the classic includeHidden behavior.
+      visible: z.boolean().optional(),
       offset: z.number().optional(),
       limit: z.number().optional(),
     }),
@@ -22,6 +25,7 @@ const list = adminProc
     listFriendsForAdmin(context.db, {
       q: input.q,
       includeHidden: input.includeHidden,
+      visible: input.visible,
       offset: input.offset,
       limit: input.limit,
     }),

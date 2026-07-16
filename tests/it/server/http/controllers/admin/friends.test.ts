@@ -37,6 +37,23 @@ describe('adminFriendsRouter.list', () => {
     expect(res.total).toBe(1)
     expect(res.hasMore).toBe(false)
   })
+
+  it('forwards the visible filter (pending bucket) to the service', async () => {
+    vi.mocked(service.listFriendsForAdmin).mockResolvedValueOnce({
+      friends: [],
+      total: 0,
+      hasMore: false,
+    })
+    const ctx = makeAuthedCtx()
+    await call(adminFriendsRouter.list, { visible: false }, { context: ctx })
+    expect(service.listFriendsForAdmin).toHaveBeenCalledWith(expect.anything(), {
+      q: undefined,
+      includeHidden: undefined,
+      visible: false,
+      offset: undefined,
+      limit: undefined,
+    })
+  })
 })
 
 describe('adminFriendsRouter.upsert', () => {

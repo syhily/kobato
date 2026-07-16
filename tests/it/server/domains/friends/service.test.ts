@@ -140,6 +140,15 @@ describe('friends/service — listFriendsForAdmin', () => {
     const r = await listFriendsForAdmin(db, { includeHidden: true })
     expect(r.total).toBe(1)
   })
+  it('returns only hidden friends when visible=false (pending bucket)', async () => {
+    await seedFriend({ website: 'Shown', homepage: 'https://shown.com', visible: true })
+    await seedFriend({ website: 'Pending', homepage: 'https://pending.com', visible: false })
+    const { listFriendsForAdmin } = await import('@/server/domains/friends/service')
+    const r = await listFriendsForAdmin(db, { visible: false })
+    expect(r.total).toBe(1)
+    expect(r.friends).toHaveLength(1)
+    expect(r.friends[0]?.website).toBe('Pending')
+  })
 })
 
 describe('friends/service — upsertAdminFriend (create)', () => {

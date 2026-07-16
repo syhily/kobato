@@ -34,7 +34,7 @@ export function safeRedirectPath(value: string | null | undefined, fallback: str
   }
 }
 
-function isHttpUrl(value: string): boolean {
+export function isHttpUrl(value: string): boolean {
   try {
     const url = new URL(value)
     return url.protocol === 'http:' || url.protocol === 'https:'

@@ -24,6 +24,7 @@ import { avatarRouter } from '@/server/http/controllers/avatar.controller'
 import { commentsAuthedRouter } from '@/server/http/controllers/comments-authed.controller'
 import { commentsPublicRouter } from '@/server/http/controllers/comments-public.controller'
 import { commentsTokenRouter } from '@/server/http/controllers/comments-token.controller'
+import { friendsPublicRouter } from '@/server/http/controllers/friends-public.controller'
 import { githubRouter } from '@/server/http/controllers/github.controller'
 import { imageRouter } from '@/server/http/controllers/image.controller'
 import { likesRouter } from '@/server/http/controllers/likes.controller'
@@ -43,6 +44,7 @@ export const apiRouter = {
   avatar: avatarRouter,
   github: githubRouter,
   comments: { ...commentsPublicRouter, ...commentsAuthedRouter, ...commentsTokenRouter },
+  friends: friendsPublicRouter,
   image: imageRouter,
   likes: likesRouter,
   music: musicRouter,

@@ -26,6 +26,8 @@ export interface AdminFriendDto {
 export interface ListFriendsInput {
   q?: string
   includeHidden?: boolean
+  /** Exact visibility match; takes precedence over `includeHidden` (pending-review bucket). */
+  visible?: boolean
   offset?: number
   limit?: number
 }

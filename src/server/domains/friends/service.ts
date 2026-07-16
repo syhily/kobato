@@ -4,6 +4,7 @@ import type { FriendRow } from '@/server/infra/db/types'
 import type { Friend } from '@/shared/types/catalog'
 import type { AdminFriendDto } from '@/shared/types/friends'
 
+import { sendNewFriendApplication } from '@/server/domains/friends/email'
 import { hydrateImageRefs } from '@/server/domains/images/services/enhance'
 import {
   type AdminFriendsListFilters,
@@ -17,6 +18,9 @@ import {
   updateFriend,
 } from '@/server/infra/db/operations/friend'
 import { DomainError } from '@/server/infra/http/errors'
+import { getLogger } from '@/server/infra/logger'
+
+const log = getLogger('friends.service')
 
 // Public projection (no `id`/`visible`/`createdAt`/`updatedAt`/`rssUrl`).
 // The `Friend` shape exported from `@/shared/types/catalog` already matches —
@@ -77,7 +81,7 @@ export async function listFriendsForAdmin(
   const offset = filters.offset ?? 0
   const [rows, total] = await Promise.all([
     listAdminFriendRows(db, filters),
-    countAdminFriends(db, { q: filters.q, includeHidden: filters.includeHidden }),
+    countAdminFriends(db, { q: filters.q, includeHidden: filters.includeHidden, visible: filters.visible }),
   ])
   return {
     friends: rows.map(toAdminFriendDto),
@@ -156,6 +160,47 @@ export async function upsertAdminFriend(db: NodePgDatabase, input: UpsertFriendI
 
 export async function deleteAdminFriend(db: NodePgDatabase, id: bigint): Promise<boolean> {
   return deleteFriendRow(db, id)
+}
+
+// --- Public application -----------------------------------------------------
+
+export interface ApplyFriendInputs {
+  website: string
+  homepage: string
+  description?: string
+  poster?: string
+  rssUrl?: string
+}
+
+// Entry-point for the public `friends.apply` procedure. The row lands
+// as `visible: false` (pending) — approval is the admin flipping the
+// flag. `homepage` duplicates are rejected with the same soft-check
+// the admin upsert path uses, so the pending queue can't accumulate
+// repeat applications. The admin notification is fire-and-forget: a
+// mail-pipeline hiccup must never fail the application (the
+// `sendNewComment` precedent).
+export async function applyFriend(db: NodePgDatabase, input: ApplyFriendInputs): Promise<void> {
+  const dup = await findFriendByHomepage(db, input.homepage)
+  if (dup !== null) {
+    throw new DomainError('CONFLICT', '该主页已经提交过友链申请，请勿重复提交。', [
+      { message: '主页 URL 已提交过', path: ['homepage'] },
+    ])
+  }
+  const row = await insertFriend(db, {
+    website: input.website,
+    description: normaliseNullable(input.description),
+    homepage: input.homepage,
+    // `friend.poster` is NOT NULL and applicants rarely have a cover
+    // URL handy — store '' and let the admin fill it before approving
+    // (the admin upsert schema requires a valid poster URL, so a
+    // poster-less application can't go public by accident).
+    poster: input.poster ?? '',
+    rssUrl: normaliseNullable(input.rssUrl),
+    visible: false,
+  })
+  void sendNewFriendApplication(row).catch((error) => {
+    log.error('failed to send friend application email', { error })
+  })
 }
 
 // Trim and collapse the empty string to `null` so the DB never stores

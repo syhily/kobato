@@ -20,6 +20,13 @@ export async function listPublicFriendRows(db: NodePgDatabase): Promise<FriendRo
 export interface AdminFriendsListFilters {
   q?: string
   includeHidden?: boolean
+  /**
+   * Exact visibility match. When set, takes precedence over
+   * `includeHidden` — the pending-review bucket uses `visible: false`
+   * to list only hidden rows (which `includeHidden: true` cannot
+   * express, since it returns both buckets).
+   */
+  visible?: boolean
   /** Zero-based offset for pagination. Defaults to 0 when undefined. */
   offset?: number
   /** Page size. When undefined, all matching rows are returned. */
@@ -33,7 +40,9 @@ export interface AdminFriendsListFilters {
 // with the returned page (and `hasMore` would lie).
 function buildAdminFriendWhere(filters: AdminFriendsListFilters): SQL | undefined {
   const conditions: SQL[] = []
-  if (!filters.includeHidden) {
+  if (filters.visible !== undefined) {
+    conditions.push(eq(friend.visible, filters.visible))
+  } else if (!filters.includeHidden) {
     conditions.push(eq(friend.visible, true))
   }
   if (filters.q && filters.q.trim() !== '') {
