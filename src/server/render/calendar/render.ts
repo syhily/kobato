@@ -1,51 +1,22 @@
 import type { SKRSContext2D } from '@napi-rs/canvas'
 import type { Buffer } from 'node:buffer'
 
-import { createCanvas, GlobalFonts } from '@napi-rs/canvas'
+import { createCanvas } from '@napi-rs/canvas'
 import { format, getDate, getISODay, getMonth, getYear } from 'date-fns'
 import { Solar } from 'lunar-typescript'
 
 import { DomainError } from '@/server/infra/http/errors'
 import { compressImage } from '@/server/render/image-compress'
-import { oppoSerif, type FontSlot } from '@/server/render/og/assets'
+import { ensureCanvasFont, type FontSlot } from '@/server/render/og/assets'
 import { isRecord } from '@/shared/utils/type-guards'
 
 const WIDTH = 600
 const HEIGHT = 880
 
-// Single-flight font registration mirroring `og.ts`. See that file for
-// the full rationale; in short, both the cached-empty-URL path AND the
-// catch path must clear `calendarFontReady` so the next render
-// re-reads settings — otherwise pasting a URL after first render takes
-// effect only on process restart.
-let calendarFontSlot: FontSlot | null = null
-
-let calendarFontReady: Promise<void> | null = null
-function ensureFonts(): Promise<void> {
-  const slot = calendarFontSlot
-  if (slot !== null && GlobalFonts.has(slot.family)) {
-    return Promise.resolve()
-  }
-  if (calendarFontReady === null) {
-    calendarFontReady = (async () => {
-      const loaded = await oppoSerif()
-      if (loaded !== null && !GlobalFonts.has(loaded.family)) {
-        GlobalFonts.register(loaded.buffer, loaded.family)
-        calendarFontSlot = loaded
-      }
-    })()
-      .catch((err) => {
-        calendarFontReady = null
-        throw err
-      })
-      .finally(() => {
-        const s = calendarFontSlot
-        if (s === null || !GlobalFonts.has(s.family)) {
-          calendarFontReady = null
-        }
-      })
-  }
-  return calendarFontReady
+// Font registration lives in `og/assets.ts` (`ensureCanvasFont`) — one
+// single-flight per slot, shared with the OG renderer.
+function ensureFonts(): Promise<FontSlot | null> {
+  return ensureCanvasFont('calendar')
 }
 
 function isQuotePayload(value: unknown): value is { content: string; translation: string; author: string } {
@@ -123,7 +94,7 @@ function wrapText(ctx: SKRSContext2D, text: string, maxWidth: number) {
 export type CalendarTheme = 'light' | 'dark'
 
 export async function renderCalendar(date: Date, theme: CalendarTheme = 'light'): Promise<Buffer> {
-  await ensureFonts()
+  const calendarFontSlot = await ensureFonts()
 
   // Generate the required data from date.
   const quoteData = await fetchDailyQuote(date)

@@ -1,3 +1,4 @@
+import { GlobalFonts } from '@napi-rs/canvas'
 import { Buffer } from 'node:buffer'
 import { access, readFile } from 'node:fs/promises'
 
@@ -118,10 +119,83 @@ async function loadFontSlot(slot: 'og' | 'calendar'): Promise<FontSlot | null> {
   }
 }
 
-export function oppoSans(): Promise<FontSlot | null> {
-  return loadFontSlot('og')
+// -------- Canvas font single-flight registration --------
+//
+// Single-flight font registration: if a deploy spike fires 50 canvas
+// renders in parallel, only the first one reads the TTF — the rest
+// await the same Promise. Slot is null when the admin hasn't
+// configured the path/family yet (or the file is missing); in that
+// case we skip `GlobalFonts.register` and Canvas falls back to its
+// built-in CJK shaper so the image still renders, just with system
+// typography.
+//
+// CRITICAL: the single-flight promise must NOT memoize the "skipped"
+// path. If the admin starts with empty fields, fills them later, and
+// we'd kept a resolved no-op promise here, every subsequent render
+// would short-circuit on that cached resolution and never re-attempt
+// the load — the dynamic strategy would only take effect after a
+// process restart. So we clear the flight whenever the font is
+// *not* registered after the work runs, both on success-but-null and
+// on caught error.
+//
+// The slot assignment is unconditional once a font loads: even when
+// the family is already registered (HMR re-registration, or the og
+// and calendar slots sharing a family), callers still need the loaded
+// family. Gating the assignment on `!GlobalFonts.has(...)` would leave
+// the slot null forever — every render re-reading the TTF AND falling
+// back to the system font despite the custom font being usable.
+
+const canvasFontSlots: Record<'og' | 'calendar', FontSlot | null> = { og: null, calendar: null }
+const canvasFontFlights: Record<'og' | 'calendar', Promise<FontSlot | null> | null> = {
+  og: null,
+  calendar: null,
 }
 
-export function oppoSerif(): Promise<FontSlot | null> {
-  return loadFontSlot('calendar')
+export function ensureCanvasFont(slot: 'og' | 'calendar'): Promise<FontSlot | null> {
+  const cached = canvasFontSlots[slot]
+  // Fast path: font already registered. No promise indirection needed.
+  if (cached !== null && GlobalFonts.has(cached.family)) {
+    return Promise.resolve(cached)
+  }
+  let flight = canvasFontFlights[slot]
+  if (flight === null) {
+    flight = (async () => {
+      const loaded = await loadFontSlot(slot)
+      if (loaded !== null) {
+        if (!GlobalFonts.has(loaded.family)) {
+          GlobalFonts.register(loaded.buffer, loaded.family)
+        }
+        canvasFontSlots[slot] = loaded
+      }
+      return canvasFontSlots[slot]
+    })()
+      .catch((err) => {
+        canvasFontFlights[slot] = null
+        throw err
+      })
+      .finally(() => {
+        const s = canvasFontSlots[slot]
+        // If the work resolved without actually registering (null
+        // slot, snapshot race), drop the single-flight so the next
+        // render re-reads settings and re-loads.
+        if (s === null || !GlobalFonts.has(s.family)) {
+          canvasFontFlights[slot] = null
+        }
+      })
+    canvasFontFlights[slot] = flight
+  }
+  return flight
+}
+
+/** Clear single-flight font state so tests can exercise the registration paths. */
+export function resetCanvasFontForTests(slot?: 'og' | 'calendar'): void {
+  if (slot === undefined) {
+    canvasFontSlots.og = null
+    canvasFontSlots.calendar = null
+    canvasFontFlights.og = null
+    canvasFontFlights.calendar = null
+    return
+  }
+  canvasFontSlots[slot] = null
+  canvasFontFlights[slot] = null
 }

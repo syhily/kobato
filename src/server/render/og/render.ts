@@ -1,10 +1,10 @@
 import type { Image, SKRSContext2D } from '@napi-rs/canvas'
 import type { Buffer } from 'node:buffer'
 
-import { Canvas, GlobalFonts, loadImage } from '@napi-rs/canvas'
+import { Canvas, loadImage } from '@napi-rs/canvas'
 
 import { compressImage } from '@/server/render/image-compress'
-import { logoDark, oppoSans, type FontSlot } from '@/server/render/og/assets'
+import { ensureCanvasFont, logoDark, type FontSlot } from '@/server/render/og/assets'
 import { requireBlogSettingsSection } from '@/shared/config/getters'
 
 /**
@@ -132,60 +132,14 @@ export interface OpenGraphProps {
   cover: string
 }
 
-let ogFontSlot: FontSlot | null = null
-
-// Single-flight font registration: if a deploy spike fires 50 OG
-// renders in parallel, only the first one reads the TTF — the rest
-// await the same Promise. Slot is null when the admin hasn't
-// configured the path/family yet (or the file is missing); in that
-// case we skip `GlobalFonts.register` and Canvas falls back to its
-// built-in CJK shaper so the OG image still renders, just with system
-// typography.
-//
-// CRITICAL: the single-flight promise must NOT memoize the "skipped"
-// path. If the admin starts with empty fields, fills them later, and
-// we'd kept a resolved no-op promise here, every subsequent render
-// would short-circuit on that cached resolution and never re-attempt
-// the load — the dynamic strategy would only take effect after a
-// process restart. So we clear `ogFontReady` whenever the font is
-// *not* registered after the work runs, both on success-but-null and
-// on caught error.
-let ogFontReady: Promise<void> | null = null
-function ensureFonts(): Promise<void> {
-  const slot = ogFontSlot
-  // Fast path: font already registered. No promise indirection needed.
-  if (slot !== null && GlobalFonts.has(slot.family)) {
-    return Promise.resolve()
-  }
-  if (ogFontReady === null) {
-    ogFontReady = (async () => {
-      const loaded = await oppoSans()
-      if (loaded !== null) {
-        if (!GlobalFonts.has(loaded.family)) {
-          GlobalFonts.register(loaded.buffer, loaded.family)
-        }
-        ogFontSlot = loaded
-      }
-    })()
-      .catch((err) => {
-        ogFontReady = null
-        throw err
-      })
-      .finally(() => {
-        const s = ogFontSlot
-        // If the work resolved without actually registering (null
-        // slot, snapshot race), drop the single-flight so the next
-        // render re-reads settings and re-loads.
-        if (s === null || !GlobalFonts.has(s.family)) {
-          ogFontReady = null
-        }
-      })
-  }
-  return ogFontReady
+// Font registration lives in `og/assets.ts` (`ensureCanvasFont`) — one
+// single-flight per slot, shared with the calendar renderer.
+function ensureFonts(): Promise<FontSlot | null> {
+  return ensureCanvasFont('og')
 }
 
 export async function drawOpenGraph({ title, summary, cover }: OpenGraphProps): Promise<Buffer> {
-  await ensureFonts()
+  const ogFontSlot = await ensureFonts()
   const siteIdentity = requireBlogSettingsSection('siteIdentity')
   const seo = requireBlogSettingsSection('seo')
 
