@@ -4,6 +4,7 @@ import type { Block, NonRecursiveBlock, PortableTextBody } from '@/shared/pt/sch
 import type { MusicPlayerBlockMeta } from '@/shared/types/music'
 
 import { getMusicMetaForPlayer } from '@/server/domains/music/services/read'
+import { visitNestedBlocks } from '@/shared/pt/utils'
 
 /**
  * Walks a PortableText value and resolves `musicPlayer` blocks into SSR-ready
@@ -63,33 +64,12 @@ async function resolveMusicPlayerMeta(
 
 function collectMusicPlayerIds(body: PortableTextBody): string[] {
   const ids: string[] = []
-  for (const block of body) {
-    collectBlockIds(block, ids)
-  }
+  visitNestedBlocks(body, (block) => {
+    if (block._type === 'musicPlayer') {
+      ids.push(block.playerId)
+    }
+  })
   return ids
-}
-
-function collectBlockIds(block: Block, ids: string[]): void {
-  if (block._type === 'musicPlayer') {
-    ids.push(block.playerId)
-    return
-  }
-
-  if (block._type === 'solution' || block._type === 'footnoteDefinition') {
-    for (const child of block.children) {
-      collectBlockIds(child, ids)
-    }
-    return
-  }
-
-  if (block._type === 'twoColumn') {
-    for (const child of block.left) {
-      collectBlockIds(child, ids)
-    }
-    for (const child of block.right) {
-      collectBlockIds(child, ids)
-    }
-  }
 }
 
 function enrichBlock(block: Block, metaByPlayerId: Map<string, MusicPlayerBlockMeta>): Block {

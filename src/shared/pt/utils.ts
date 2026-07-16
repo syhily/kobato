@@ -151,37 +151,50 @@ function headingDepthFromStyle(style: StandardBlockStyle): number | null {
   }
 }
 
+// --- Nested traversal -------------------------------------------------------
+
+/**
+ * Depth-first walk over a PortableText body in render order: top-level
+ * blocks in body order, descending into `solution` / `footnoteDefinition`
+ * `children` and `twoColumn` `left` then `right`. Yields **every** block —
+ * container blocks themselves first, then their descendants (pre-order).
+ *
+ * The schema's nesting rules live here exactly once; collectors (image
+ * paths, code/math pre-render, music players, image sync) are callbacks
+ * that filter by `_type`. Nesting is one level deep by schema — container
+ * children are `NonRecursiveBlock[]` — so the walk cannot recurse further.
+ */
+export function visitNestedBlocks(body: PortableTextBody, visit: (block: Block) => void): void {
+  for (const block of body) {
+    visit(block)
+    if (block._type === 'solution' || block._type === 'footnoteDefinition') {
+      for (const child of block.children) {
+        visit(child)
+      }
+      continue
+    }
+    if (block._type === 'twoColumn') {
+      for (const child of block.left) {
+        visit(child)
+      }
+      for (const child of block.right) {
+        visit(child)
+      }
+    }
+  }
+}
+
 // --- Image paths ------------------------------------------------------------
 
 /** Walk a body and pick out every `image.storagePath` referenced. */
 export function collectImageStoragePaths(body: PortableTextBody): string[] {
   const paths = new Set<string>()
-  for (const block of body) {
-    walkBlockForImages(block, paths)
-  }
+  visitNestedBlocks(body, (block) => {
+    if (block._type === 'image' && typeof block.storagePath === 'string' && block.storagePath !== '') {
+      paths.add(block.storagePath)
+    }
+  })
   return Array.from(paths)
-}
-
-function walkBlockForImages(block: Block, sink: Set<string>): void {
-  if (block._type === 'image' && typeof block.storagePath === 'string' && block.storagePath !== '') {
-    sink.add(block.storagePath)
-    return
-  }
-  if (block._type === 'solution' || block._type === 'footnoteDefinition') {
-    for (const child of block.children) {
-      walkBlockForImages(child, sink)
-    }
-    return
-  }
-  if (block._type === 'twoColumn') {
-    for (const child of block.left) {
-      walkBlockForImages(child, sink)
-    }
-    for (const child of block.right) {
-      walkBlockForImages(child, sink)
-    }
-    return
-  }
 }
 
 // --- Plain text -------------------------------------------------------------

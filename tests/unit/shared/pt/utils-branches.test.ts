@@ -11,6 +11,7 @@ import {
   generateBlockKey,
   safeValidatePortableTextBody,
   validatePortableTextBody,
+  visitNestedBlocks,
 } from '@/shared/pt/utils'
 
 // --- fixtures -------------------------------------------------------------
@@ -140,6 +141,76 @@ describe('shared/pt/utils — collectHeadings', () => {
     const body: PortableTextBody = [textBlock('Same', 'h2'), textBlock('Same', 'h2')]
     const headings = collectHeadings(body)
     expect(headings.map((h) => h.slug)).toEqual(['same', 'same-1'])
+  })
+})
+
+// --- visitNestedBlocks -------------------------------------------------------
+
+describe('shared/pt/utils — visitNestedBlocks', () => {
+  it('yields nothing for an empty body', () => {
+    const seen: string[] = []
+    visitNestedBlocks([], (block) => {
+      seen.push(block._key)
+    })
+    expect(seen).toEqual([])
+  })
+
+  it('visits every block pre-order: body order, containers first, children, left before right', () => {
+    const body: PortableTextBody = [
+      { _type: 'block', _key: 'b1', children: [{ _type: 'span', _key: 's1', text: 'lead' }] },
+      {
+        _type: 'solution',
+        _key: 'sol1',
+        children: [
+          { _type: 'block', _key: 'b2', children: [{ _type: 'span', _key: 's2', text: 'sol' }] },
+          { _type: 'image', _key: 'i1', src: 'x' },
+        ],
+      },
+      {
+        _type: 'twoColumn',
+        _key: 'tc1',
+        left: [{ _type: 'code', _key: 'c1', code: 'left' }],
+        right: [{ _type: 'mathBlock', _key: 'm1', tex: 'right' }],
+      },
+      {
+        _type: 'footnoteDefinition',
+        _key: 'fn1',
+        index: 1,
+        children: [{ _type: 'musicPlayer', _key: 'mp1', playerId: 'p1' }],
+      },
+      { _type: 'horizontalRule', _key: 'hr1' },
+    ]
+    const seen: string[] = []
+    visitNestedBlocks(body, (block) => {
+      seen.push(`${block._type}:${block._key}`)
+    })
+    // Complete coverage (all 10 blocks, containers included) in exact
+    // pre-order: each container yields itself before its descendants,
+    // twoColumn yields left before right.
+    expect(seen).toEqual([
+      'block:b1',
+      'solution:sol1',
+      'block:b2',
+      'image:i1',
+      'twoColumn:tc1',
+      'code:c1',
+      'mathBlock:m1',
+      'footnoteDefinition:fn1',
+      'musicPlayer:mp1',
+      'horizontalRule:hr1',
+    ])
+  })
+
+  it('visits empty containers without descending', () => {
+    const body: PortableTextBody = [
+      { _type: 'solution', _key: 'sol1', children: [] },
+      { _type: 'twoColumn', _key: 'tc1', left: [], right: [] },
+    ]
+    const seen: string[] = []
+    visitNestedBlocks(body, (block) => {
+      seen.push(block._key)
+    })
+    expect(seen).toEqual(['sol1', 'tc1'])
   })
 })
 

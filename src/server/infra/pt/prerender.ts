@@ -1,12 +1,13 @@
 import katex from 'katex'
 import { bundledLanguages, createHighlighter } from 'shiki'
 
-import type { Block, MarkDef, PortableTextBody, TextBlock } from '@/shared/pt/schema'
+import type { MarkDef, PortableTextBody, TextBlock } from '@/shared/pt/schema'
 
 import { getLogger } from '@/server/infra/logger'
 import { KATEX_OPTIONS } from '@/server/infra/pt/katex'
 import { SHIKI_THEMES, shikiTransformers } from '@/server/infra/pt/shiki'
 import { HIGHLIGHT_LANGUAGES } from '@/shared/constants/languages'
+import { visitNestedBlocks } from '@/shared/pt/utils'
 
 const log = getLogger('pt.prerender')
 
@@ -36,9 +37,25 @@ export async function prerenderPortableTextBody(body: PortableTextBody): Promise
     svg?: string
   }[] = []
 
-  for (const block of body) {
-    collectBlock(block, codeBlocks, mathBlocks, mathInlineDefs)
-  }
+  visitNestedBlocks(body, (block) => {
+    if (block._type === 'code') {
+      if (block.code !== '' && (block.highlightedHtml === undefined || block.highlightedHtml === '')) {
+        codeBlocks.push(block)
+      }
+      return
+    }
+    if (block._type === 'mathBlock') {
+      if (block.tex !== '' && (block.mathml === undefined || block.mathml === '')) {
+        mathBlocks.push(block)
+      }
+      return
+    }
+    if (block._type === 'block') {
+      // Tables, rules, images, music players, and containers carry no
+      // code/math payloads of their own.
+      collectFromTextBlock(block, mathInlineDefs)
+    }
+  })
 
   // Hot path: skip when no math/code blocks need pre-rendering.
   if (codeBlocks.length === 0 && mathBlocks.length === 0 && mathInlineDefs.length === 0) {
@@ -49,53 +66,6 @@ export async function prerenderPortableTextBody(body: PortableTextBody): Promise
   await runShikiPasses(codeBlocks)
 
   return body
-}
-
-function collectBlock(
-  block: Block,
-  codeBlocks: { _type: 'code'; code: string; language?: string; highlightedHtml?: string }[],
-  mathBlocks: { _type: 'mathBlock'; tex: string; mathml?: string; svg?: string }[],
-  mathInlineDefs: { _type: 'mathInline'; tex: string; mathml?: string; svg?: string }[],
-): void {
-  switch (block._type) {
-    case 'code':
-      if (block.code !== '' && (block.highlightedHtml === undefined || block.highlightedHtml === '')) {
-        codeBlocks.push(block)
-      }
-      return
-    case 'mathBlock':
-      if (block.tex !== '' && (block.mathml === undefined || block.mathml === '')) {
-        mathBlocks.push(block)
-      }
-      return
-    case 'block': {
-      collectFromTextBlock(block, mathInlineDefs)
-      return
-    }
-    case 'solution':
-    case 'footnoteDefinition':
-      if (Array.isArray(block.children)) {
-        for (const child of block.children) {
-          collectBlock(child as Block, codeBlocks, mathBlocks, mathInlineDefs)
-        }
-      }
-      return
-    case 'twoColumn':
-      for (const child of block.left) {
-        collectBlock(child as Block, codeBlocks, mathBlocks, mathInlineDefs)
-      }
-      for (const child of block.right) {
-        collectBlock(child as Block, codeBlocks, mathBlocks, mathInlineDefs)
-      }
-      return
-    case 'table':
-      // Explicit no-op: tables don't contain nested code/math.
-      return
-    case 'horizontalRule':
-    case 'image':
-    case 'musicPlayer':
-      return
-  }
 }
 
 function collectFromTextBlock(

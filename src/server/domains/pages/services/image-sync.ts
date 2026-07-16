@@ -1,9 +1,10 @@
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
-import type { Block, ImageBlock, PortableTextBody } from '@/shared/pt/schema'
+import type { ImageBlock, PortableTextBody } from '@/shared/pt/schema'
 
 import { findImagesByIds, updateImageNote } from '@/server/infra/db/operations/image'
 import { getPublicBaseUrl } from '@/server/infra/storage/public-url'
+import { visitNestedBlocks } from '@/shared/pt/utils'
 import { idFromString } from '@/shared/utils/id'
 
 // Two-step sync for `image` blocks at save time.
@@ -26,9 +27,11 @@ import { idFromString } from '@/shared/utils/id'
 // canonicalising a single block isn't worth blocking the save.
 export async function syncLibraryImageBlocks(db: NodePgDatabase, body: PortableTextBody): Promise<void> {
   const targets: ImageBlock[] = []
-  for (const block of body) {
-    collectImageBlocks(block, targets)
-  }
+  visitNestedBlocks(body, (block) => {
+    if (block._type === 'image') {
+      targets.push(block)
+    }
+  })
   if (targets.length === 0) {
     return
   }
@@ -77,27 +80,5 @@ export async function syncLibraryImageBlocks(db: NodePgDatabase, body: PortableT
     if (nextNote !== (row.note ?? '')) {
       await updateImageNote(db, row.id, nextNote === '' ? null : nextNote).catch(() => undefined)
     }
-  }
-}
-
-function collectImageBlocks(block: Block, out: ImageBlock[]): void {
-  if (block._type === 'image') {
-    out.push(block)
-    return
-  }
-  if (block._type === 'solution' || block._type === 'footnoteDefinition') {
-    for (const child of block.children) {
-      collectImageBlocks(child, out)
-    }
-    return
-  }
-  if (block._type === 'twoColumn') {
-    for (const child of block.left) {
-      collectImageBlocks(child, out)
-    }
-    for (const child of block.right) {
-      collectImageBlocks(child, out)
-    }
-    return
   }
 }

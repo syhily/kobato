@@ -21,7 +21,7 @@ import { findMusicByPlayerIds } from '@/server/domains/music/services/read'
 import { safeBuildMusicPublicUrl } from '@/server/domains/music/storage'
 import { deriveSlug } from '@/server/infra/slug'
 import { requireBlogSettingsSection } from '@/shared/config/getters'
-import { collectHeadingSlotsInPortableTextRenderOrder } from '@/shared/pt/utils'
+import { collectHeadingSlotsInPortableTextRenderOrder, visitNestedBlocks } from '@/shared/pt/utils'
 import { sanitizeUrl } from '@/shared/sanitize-url'
 import { resolveFootnotesSectionTitle } from '@/shared/utils/footnotes-section-title'
 import { escapeHtml } from '@/shared/utils/security'
@@ -101,33 +101,11 @@ async function resolveMusicPlayerMeta(db: NodePgDatabase, body: PortableTextBody
 
 function collectMusicPlayerIds(body: PortableTextBodyType): string[] {
   const ids: string[] = []
-  for (const block of body) {
+  visitNestedBlocks(body, (block) => {
     if (block._type === 'musicPlayer') {
       ids.push(block.playerId)
-      continue
     }
-    if (block._type === 'solution' || block._type === 'footnoteDefinition') {
-      for (const child of block.children) {
-        if (child._type === 'musicPlayer') {
-          ids.push(child.playerId)
-        }
-      }
-      continue
-    }
-    if (block._type === 'twoColumn') {
-      for (const child of block.left) {
-        if (child._type === 'musicPlayer') {
-          ids.push(child.playerId)
-        }
-      }
-      for (const child of block.right) {
-        if (child._type === 'musicPlayer') {
-          ids.push(child.playerId)
-        }
-      }
-      continue
-    }
-  }
+  })
   return ids
 }
 
