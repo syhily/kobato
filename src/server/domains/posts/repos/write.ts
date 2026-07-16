@@ -6,11 +6,6 @@ import type { NewPostMeta, PostMetaRow } from '@/server/infra/db/types'
 
 import { post as postMetaTable } from '@/server/infra/db/schema/post'
 
-export async function insertPostMeta(db: NodePgDatabase, values: NewPostMeta): Promise<PostMetaRow> {
-  const rows = await db.insert(postMetaTable).values(values).returning()
-  return rows[0]
-}
-
 export async function updatePostMetaById(
   db: NodePgDatabase,
   id: bigint,

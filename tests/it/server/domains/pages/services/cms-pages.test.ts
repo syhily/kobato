@@ -32,7 +32,6 @@ vi.mock('@/server/domains/content/repos/query', () => ({
   findLatestDraft: vi.fn(),
   findLatestRevision: vi.fn(),
   listRevisions: vi.fn(async () => []),
-  maxRevisionNo: vi.fn(async () => 0),
 }))
 vi.mock('@/server/domains/content/repos/mutate', () => ({
   publishLatestRevision: vi.fn(),

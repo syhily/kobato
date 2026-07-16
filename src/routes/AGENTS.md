@@ -192,25 +192,30 @@ chrome, never import `<PublicChrome>`, and must not pull
 `public.css` into their bundle. Each one returns a `Response`
 directly from a `loader` (GET) or `action` (POST/PATCH/DELETE).
 
-### D. Feed URLs share two route modules
+### D. Feed URLs (Hono resource router)
 
-Six public feed URLs share **two** route modules
-(`feed.rss.ts`, `feed.atom.ts`):
+The six public feed URLs are served by a single Hono router,
+`feedRouter` in `src/server/http/resources/feed.ts`, mounted at the
+root in `src/server/http/middleware-pipeline.ts` (`app.route('/',
+feedRouter)`). They do **not** appear in `routes.ts`:
 
-| URL                     | Module         | `id`                 |
-| ----------------------- | -------------- | -------------------- |
-| `/feed`                 | `feed.rss.ts`  | (default)            |
-| `/feed/atom`            | `feed.atom.ts` | (default)            |
-| `/cats/:slug/feed`      | `feed.rss.ts`  | `category-feed-rss`  |
-| `/cats/:slug/feed/atom` | `feed.atom.ts` | `category-feed-atom` |
-| `/tags/:slug/feed`      | `feed.rss.ts`  | `tag-feed-rss`       |
-| `/tags/:slug/feed/atom` | `feed.atom.ts` | `tag-feed-atom`      |
+| URL                     | Handler scope             |
+| ----------------------- | ------------------------- |
+| `/feed`                 | site-wide RSS             |
+| `/feed/atom`            | site-wide Atom            |
+| `/cats/:slug/feed`      | `{ category: slug }` RSS  |
+| `/cats/:slug/feed/atom` | `{ category: slug }` Atom |
+| `/tags/:slug/feed`      | `{ tag: slug }` RSS       |
+| `/tags/:slug/feed/atom` | `{ tag: slug }` Atom      |
 
-The modules infer category / tag scope from the request URL via
-`scopeFromUrl`, so the only thing that varies across the three
-patterns per format is the React Router `id` (which has to stay
-unique). When you add a new scope, copy the existing pattern instead
-of forking the loader.
+Each handler pins its taxonomy scope at compile time and passes the
+`slug` route param straight into `generateFeeds` — there is no
+URL-sniffing helper. Responses are rate-limited
+(`tryResourceRateLimit`) and cached through `feedCacheFor` with a
+namespaced key (`cat:<slug>` / `tag:<slug>` / `all`) so a category
+slugged `all` can never collide with the site-wide feed. When you add
+a new scope, add a new `.get()` pair that states its scope inline —
+do not reintroduce a scope-from-URL helper.
 
 ### E. API routes (Hono layer)
 

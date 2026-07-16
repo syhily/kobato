@@ -12,7 +12,6 @@ import {
   findLatestRevision,
   findLatestDraft,
   listRevisions,
-  maxRevisionNo,
 } from '@/server/domains/content/repos/query'
 import { createDbPool, closePool } from '@/server/infra/db/pool'
 import { content as contentTable } from '@/server/infra/db/schema/content'
@@ -279,17 +278,5 @@ describe('content/repos/query — basic lookups', () => {
     expect(list).toHaveLength(2)
     expect(list[0]!.revisionNo).toBe(3)
     expect(list[1]!.revisionNo).toBe(2)
-  })
-
-  it('maxRevisionNo returns the largest revisionNo for the (type, owner)', async () => {
-    await db.insert(contentTable).values([
-      { type: 'post', ownerId: 11n, revisionNo: 1, status: 'draft', body: [], imageSources: [], headings: [] },
-      { type: 'post', ownerId: 11n, revisionNo: 4, status: 'published', body: [], imageSources: [], headings: [] },
-    ])
-    expect(await maxRevisionNo(db, 'post', 11n)).toBe(4)
-  })
-
-  it('maxRevisionNo returns null when no rows exist', async () => {
-    expect(await maxRevisionNo(db, 'post', 99n)).toBeNull()
   })
 })

@@ -7,7 +7,6 @@ import type { FontRow } from '@/server/infra/db/schema/font'
 import type { FontsSettings } from '@/shared/config/types'
 import type { FontSlot } from '@/shared/types/fonts'
 
-import { referenceCount, type SlotSnapshot } from '@/server/domains/fonts/slot-gc'
 import { deleteFontPackage } from '@/server/domains/fonts/storage'
 import { SECTION_REGISTRY } from '@/server/domains/settings/sections/registry'
 import { updateBlogSettingsSection } from '@/server/domains/settings/services/core'
@@ -42,10 +41,6 @@ async function readCurrentFonts(db: NodePgDatabase): Promise<FontsSettings> {
   return unsafeCast<FontsSettings>(SECTION_REGISTRY.fonts.defaults)
 }
 
-function snapshotFromSettings(settings: FontsSettings): SlotSnapshot {
-  return { global: settings.global, post: settings.post, code: settings.code }
-}
-
 /**
  * Set a slot's ordered font-id list. One endpoint covers add, remove, and
  * reorder. Pure settings write — the referenced font packages are never
@@ -78,18 +73,17 @@ export async function deleteFont(db: NodePgDatabase, fontId: string): Promise<Fo
     throw new DomainError('NOT_FOUND', '字体不存在')
   }
   const current = await readCurrentFonts(db)
-  const count = referenceCount(snapshotFromSettings(current), fontId)
-  if (count > 0) {
-    const using: string[] = []
-    if (current.global.includes(fontId)) {
-      using.push('global')
-    }
-    if (current.post.includes(fontId)) {
-      using.push('post')
-    }
-    if (current.code.includes(fontId)) {
-      using.push('code')
-    }
+  const using: string[] = []
+  if (current.global.includes(fontId)) {
+    using.push('global')
+  }
+  if (current.post.includes(fontId)) {
+    using.push('post')
+  }
+  if (current.code.includes(fontId)) {
+    using.push('code')
+  }
+  if (using.length > 0) {
     throw new DomainError(
       'CONFLICT',
       `字体仍被以下槽位引用：${using.join('、')}。请先在 /admin/library/fonts 中将其从这些槽位移除。`,

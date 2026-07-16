@@ -2,7 +2,7 @@ import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-// `feedResponse` and `generateFeeds` thread a real `feed` package output, the
+// `generateFeeds` threads a real `feed` package output, the
 // content catalog, and `prerenderToNodeStream` together. We mock the catalog
 // (no real MDX), keep the actual `feed` package, and pin the channel-level
 // envelope so a future refactor of `index.server.tsx` cannot silently change
@@ -55,7 +55,7 @@ vi.mock('@/shared/config/getters', () => ({
 
 const db = {} as NodePgDatabase
 
-const { feedResponse, generateFeeds } = await import('@/server/render/feed/generator')
+const { generateFeeds } = await import('@/server/render/feed/generator')
 
 function fakeCatalog(
   opts: {
@@ -180,21 +180,5 @@ describe('services/feed — generateFeeds (channel envelope)', () => {
   it('rejects calls that pass both category and tag', async () => {
     fakeCatalog()
     await expect(generateFeeds(db, { category: 'tech', tag: 'react' })).rejects.toThrow(/at the same time/)
-  })
-})
-
-describe('services/feed — feedResponse (HTTP wrapper)', () => {
-  it('rss returns application/xml; charset=utf-8', async () => {
-    fakeCatalog()
-    const response = await feedResponse(db, 'rss')
-    expect(response.headers.get('Content-Type')).toBe('application/xml; charset=utf-8')
-    const body = await response.text()
-    expect(body.startsWith('<?xml')).toBe(true)
-  })
-
-  it('atom returns application/atom+xml; charset=utf-8', async () => {
-    fakeCatalog()
-    const response = await feedResponse(db, 'atom')
-    expect(response.headers.get('Content-Type')).toBe('application/atom+xml; charset=utf-8')
   })
 })

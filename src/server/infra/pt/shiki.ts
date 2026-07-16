@@ -28,7 +28,3 @@ export const SHIKI_THEMES = {
   light: 'solarized-light',
   dark: 'solarized-dark',
 } as const
-
-// Back-compat alias for any caller still importing the single-theme name.
-// `prerender.ts` now reads `SHIKI_THEMES` directly.
-export const SHIKI_THEME = SHIKI_THEMES.light

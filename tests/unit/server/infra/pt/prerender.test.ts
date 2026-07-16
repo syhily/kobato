@@ -1,8 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-vi.mock('@/server/infra/pt/katex-renderer', () => ({
-  getKatexRenderer: () => prerenderState.katex(),
+vi.mock('katex', () => ({
+  default: {
+    renderToString: (tex: string) => prerenderState.katex(tex),
+  },
 }))
+vi.mock('katex/contrib/mhchem', () => ({}))
 vi.mock('@/server/infra/pt/shiki', () => ({
   SHIKI_THEMES: { light: 'github-light', dark: 'github-dark' },
   shikiTransformers: () => [],
@@ -20,11 +23,7 @@ const prerenderState = {
       codeToHtml: (code: string) => `<pre><code>${code}</code></pre>`,
     }),
   ),
-  katex: vi.fn(() =>
-    Promise.resolve({
-      render: (tex: string) => Promise.resolve(`<math>${tex}</math>`),
-    }),
-  ),
+  katex: vi.fn((tex: string) => `<math>${tex}</math>`),
 }
 
 import { prerenderPortableTextBody } from '@/server/infra/pt/prerender'
@@ -33,7 +32,7 @@ beforeEach(() => {
   prerenderState.shiki.mockReset()
   prerenderState.katex.mockReset()
   prerenderState.shiki.mockResolvedValue({ codeToHtml: (code: string) => `<pre><code>${code}</code></pre>` })
-  prerenderState.katex.mockResolvedValue({ render: (tex: string) => Promise.resolve(`<math>${tex}</math>`) })
+  prerenderState.katex.mockImplementation((tex: string) => `<math>${tex}</math>`)
 })
 
 describe('infra/pt/prerender — prerenderPortableTextBody', () => {
@@ -144,12 +143,6 @@ describe('infra/pt/prerender — prerenderPortableTextBody', () => {
     await expect(prerenderPortableTextBody(body)).resolves.toBe(body)
   })
 
-  it('does not throw when katex rejects', async () => {
-    prerenderState.katex.mockRejectedValue(new Error('katex fail'))
-    const body: PortableTextBody = [{ _type: 'mathBlock', _key: 'm1', tex: 'x' }]
-    await expect(prerenderPortableTextBody(body)).resolves.toBe(body)
-  })
-
   it('does not throw when an individual shiki codeToHtml call fails', async () => {
     prerenderState.shiki.mockResolvedValue({
       codeToHtml: () => {
@@ -160,8 +153,10 @@ describe('infra/pt/prerender — prerenderPortableTextBody', () => {
     await expect(prerenderPortableTextBody(body)).resolves.toBe(body)
   })
 
-  it('does not throw when an individual katex render call fails', async () => {
-    prerenderState.katex.mockResolvedValue({ render: () => Promise.reject(new Error('bad tex')) })
+  it('does not throw when a katex render call fails', async () => {
+    prerenderState.katex.mockImplementation(() => {
+      throw new Error('bad tex')
+    })
     const body: PortableTextBody = [{ _type: 'mathBlock', _key: 'm1', tex: 'x' }]
     await expect(prerenderPortableTextBody(body)).resolves.toBe(body)
   })

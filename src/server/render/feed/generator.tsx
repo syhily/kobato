@@ -15,9 +15,6 @@ import { requireBlogSettingsSection } from '@/shared/config/getters'
 import { joinUrl } from '@/shared/utils/urls'
 
 export interface FeedOptions {
-  includeHidden?: boolean
-  includeScheduled?: boolean
-  size?: number
   category?: string
   tag?: string
 }
@@ -27,24 +24,14 @@ const CONTENT_TYPES = {
   atom: 'application/atom+xml; charset=utf-8',
 } as const
 
-// Centralised cache headers for syndication feeds. Routes that re-export this
-// from a `headers()` route module function will get cache-friendly behaviour
-// without re-stating the policy.
+// Centralised cache headers for syndication feeds. The Hono feed resource
+// (`@/server/http/resources/feed`) applies them to every feed response so
+// all six feed URLs share one cache policy.
 export function feedHeaders(kind: 'rss' | 'atom'): HeadersInit {
   return {
     'Content-Type': CONTENT_TYPES[kind],
     'Cache-Control': 'public, max-age=1800',
   }
-}
-
-export async function feedResponse(
-  db: NodePgDatabase,
-  kind: 'rss' | 'atom',
-  filter?: Pick<FeedOptions, 'category' | 'tag'>,
-): Promise<Response> {
-  const feed = await generateFeeds(db, filter ?? {})
-  const body = kind === 'rss' ? feed.rss : feed.atom
-  return new Response(body, { headers: feedHeaders(kind) })
 }
 
 // Allowlist-based server-side HTML sanitizer for feed output. Strips script
@@ -131,11 +118,19 @@ async function renderEntryContent(db: NodePgDatabase, entry: Post | Page): Promi
 export async function generateFeeds(db: NodePgDatabase, options: FeedOptions = {}) {
   const siteIdentity = requireBlogSettingsSection('siteIdentity')
   const content = requireBlogSettingsSection('content')
-  const { includeHidden = true, includeScheduled = false, size = content.feed.size, category, tag } = options
+  const { category, tag } = options
   if (category !== undefined && tag !== undefined) {
     throw new DomainError('BAD_REQUEST', 'Category and tag cannot be specified at the same time')
   }
-  const feedPosts = await selectFeedPosts(db, { includeHidden, includeScheduled, category, tag, limit: size })
+  // Visibility is internal to the feed channel: hidden posts are included
+  // (they stay listed in feeds by design), scheduled posts are not.
+  const feedPosts = await selectFeedPosts(db, {
+    includeHidden: true,
+    includeScheduled: false,
+    category,
+    tag,
+    limit: content.feed.size,
+  })
 
   // Start to build the feed.
   const feed = new Feed({

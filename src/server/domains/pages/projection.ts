@@ -4,7 +4,6 @@ import type { ClientPage } from '@/shared/types/catalog'
 import type { AdminRevisionDto } from '@/shared/types/revision'
 
 import { readBody, readHeadings } from '@/server/domains/content/projection-helpers'
-import { DomainError } from '@/server/infra/http/errors'
 import { readStringArray } from '@/shared/utils/tools'
 
 // --- Public catalog projection ----------------------------------------------
@@ -65,18 +64,6 @@ export function toCmsPage(
     imageSources,
     publishedRevisionId: meta.publishedRevisionId,
   }
-}
-
-// `toCmsPost` is **reserved** for the next migration. The current
-// iteration ships only the page editor, so emitting a stub here means
-// callers can already write `import { toCmsPost } from
-// '@/server/domains/pages/projection'` without circular re-exports later.
-//
-// When the post migration lands this signature will widen to accept
-// the `PostRow` (currently named `metric`-row in legacy callers) and
-// projects it into `ClientPost`.
-export function toCmsPost(): never {
-  throw new DomainError('INTERNAL', 'toCmsPost is reserved for the next iteration; posts are still served from MDX')
 }
 
 // --- Admin projection -------------------------------------------------------

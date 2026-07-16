@@ -1,6 +1,6 @@
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
-import { and, desc, eq, inArray, max } from 'drizzle-orm'
+import { and, desc, eq, inArray } from 'drizzle-orm'
 
 import type { ContentType } from '@/server/domains/content/schema'
 import type { ContentRow } from '@/server/infra/db/types'
@@ -59,12 +59,4 @@ export async function listRevisions(
     .where(and(eq(contentTable.type, type), eq(contentTable.ownerId, ownerId)))
     .orderBy(desc(contentTable.revisionNo))
     .limit(limit)
-}
-
-export async function maxRevisionNo(db: NodePgDatabase, type: ContentType, ownerId: bigint): Promise<number | null> {
-  const rows = await db
-    .select({ value: max(contentTable.revisionNo) })
-    .from(contentTable)
-    .where(and(eq(contentTable.type, type), eq(contentTable.ownerId, ownerId)))
-  return rows[0]?.value ?? null
 }

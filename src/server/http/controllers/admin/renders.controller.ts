@@ -1,9 +1,10 @@
+import katex from 'katex'
 import { z } from 'zod'
 
 import { recordAuditEventFromContext } from '@/server/domains/audit/services/record'
 import { reindexSearchBatch } from '@/server/domains/posts/services/search-reindex'
 import { adminProc } from '@/server/http/orpc-base'
-import { getKatexRenderer, type KatexRenderer } from '@/server/infra/pt/katex-renderer'
+import { KATEX_OPTIONS } from '@/server/infra/pt/katex'
 
 const MAX_RENDER_INPUT_LENGTH = 10_000
 
@@ -15,14 +16,8 @@ const math = adminProc
     if (input.tex.trim() === '') {
       return { mathml: '', error: null }
     }
-    let renderer: KatexRenderer
     try {
-      renderer = await getKatexRenderer()
-    } catch (err) {
-      return { mathml: '', error: err instanceof Error ? err.message : 'KaTeX 加载失败' }
-    }
-    try {
-      const mathml = await renderer.render(input.tex, input.display ?? false)
+      const mathml = katex.renderToString(input.tex, { ...KATEX_OPTIONS, displayMode: input.display ?? false })
       return { mathml, error: null }
     } catch (err) {
       return { mathml: '', error: err instanceof Error ? err.message : '公式渲染失败' }

@@ -170,29 +170,24 @@ describe('posts/repos/shared — buildPublicPostsWhere', () => {
   })
 })
 
-describe('posts/repos/write — insertPostMeta / updatePostMetaById / softDelete / restore', () => {
-  it('inserts a new post meta row', async () => {
-    const { insertPostMeta } = await import('@/server/domains/posts/repos/write')
-    const row = await insertPostMeta(db, { slug: 'new', title: 'New' })
-    expect(row.slug).toBe('new')
-  })
+describe('posts/repos/write — updatePostMetaById / softDelete / restore', () => {
   it('updates fields by id', async () => {
-    const { insertPostMeta, updatePostMetaById } = await import('@/server/domains/posts/repos/write')
-    const inserted = await insertPostMeta(db, { slug: 'u', title: 'Old' })
-    const updated = await updatePostMetaById(db, inserted.id, { title: 'New' })
+    const id = await seedPost({ slug: 'u', title: 'Old' })
+    const { updatePostMetaById } = await import('@/server/domains/posts/repos/write')
+    const updated = await updatePostMetaById(db, id, { title: 'New' })
     expect(updated?.title).toBe('New')
   })
   it('soft-deletes then restores', async () => {
-    const { insertPostMeta, softDeletePostMeta, restorePostMeta } = await import('@/server/domains/posts/repos/write')
-    const inserted = await insertPostMeta(db, { slug: 'sd', title: 'X' })
-    expect(await softDeletePostMeta(db, inserted.id)).toBe(true)
-    expect(await restorePostMeta(db, inserted.id)).toBe(true)
+    const id = await seedPost({ slug: 'sd', title: 'X' })
+    const { softDeletePostMeta, restorePostMeta } = await import('@/server/domains/posts/repos/write')
+    expect(await softDeletePostMeta(db, id)).toBe(true)
+    expect(await restorePostMeta(db, id)).toBe(true)
   })
   it('soft-delete returns false when already deleted', async () => {
-    const { insertPostMeta, softDeletePostMeta } = await import('@/server/domains/posts/repos/write')
-    const inserted = await insertPostMeta(db, { slug: 'sd2', title: 'X' })
-    await softDeletePostMeta(db, inserted.id)
-    expect(await softDeletePostMeta(db, inserted.id)).toBe(false)
+    const id = await seedPost({ slug: 'sd2', title: 'X' })
+    const { softDeletePostMeta } = await import('@/server/domains/posts/repos/write')
+    await softDeletePostMeta(db, id)
+    expect(await softDeletePostMeta(db, id)).toBe(false)
   })
 })
 

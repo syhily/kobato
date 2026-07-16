@@ -1,9 +1,10 @@
+import katex from 'katex'
 import { bundledLanguages, createHighlighter } from 'shiki'
 
 import type { Block, MarkDef, PortableTextBody, TextBlock } from '@/shared/pt/schema'
 
 import { getLogger } from '@/server/infra/logger'
-import { getKatexRenderer, type KatexRenderer } from '@/server/infra/pt/katex-renderer'
+import { KATEX_OPTIONS } from '@/server/infra/pt/katex'
 import { SHIKI_THEMES, shikiTransformers } from '@/server/infra/pt/shiki'
 import { HIGHLIGHT_LANGUAGES } from '@/shared/constants/languages'
 
@@ -44,7 +45,8 @@ export async function prerenderPortableTextBody(body: PortableTextBody): Promise
     return body
   }
 
-  await Promise.all([runShikiPasses(codeBlocks), runKatexPasses(mathBlocks, mathInlineDefs)])
+  runKatexPasses(mathBlocks, mathInlineDefs)
+  await runShikiPasses(codeBlocks)
 
   return body
 }
@@ -157,35 +159,24 @@ async function runShikiPasses(blocks: { code: string; language?: string; highlig
   )
 }
 
-async function runKatexPasses(
-  blocks: { tex: string; mathml?: string }[],
-  inlines: { tex: string; mathml?: string }[],
-): Promise<void> {
+function runKatexPasses(blocks: { tex: string; mathml?: string }[], inlines: { tex: string; mathml?: string }[]): void {
   if (blocks.length === 0 && inlines.length === 0) {
     return
   }
-  let renderer: KatexRenderer
-  try {
-    renderer = await getKatexRenderer()
-  } catch {
-    return
+  for (const block of blocks) {
+    try {
+      block.mathml = katex.renderToString(block.tex, { ...KATEX_OPTIONS, displayMode: true })
+    } catch (err) {
+      // Leave mathml unset; renderer will fall back to legacy SVG or raw text.
+      log.warn('katex block render failed', { error: String(err) })
+    }
   }
-  await Promise.all([
-    ...blocks.map(async (block) => {
-      try {
-        block.mathml = await renderer.render(block.tex, true)
-      } catch (err) {
-        // Leave mathml unset; renderer will fall back to legacy SVG or raw text.
-        log.warn('katex block render failed', { error: String(err) })
-      }
-    }),
-    ...inlines.map(async (def) => {
-      try {
-        def.mathml = await renderer.render(def.tex, false)
-      } catch (err) {
-        // Leave mathml unset.
-        log.warn('katex inline render failed', { error: String(err) })
-      }
-    }),
-  ])
+  for (const def of inlines) {
+    try {
+      def.mathml = katex.renderToString(def.tex, { ...KATEX_OPTIONS, displayMode: false })
+    } catch (err) {
+      // Leave mathml unset.
+      log.warn('katex inline render failed', { error: String(err) })
+    }
+  }
 }

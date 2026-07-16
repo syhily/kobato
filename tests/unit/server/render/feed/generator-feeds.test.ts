@@ -26,7 +26,7 @@ import type { Post, Page } from '@/shared/types/catalog'
 
 import { TEST_BLOG_SETTINGS_BUNDLE } from '#/_helpers/blog-settings'
 import { setBlogSettingsBundleForTests } from '@/server/domains/settings/services/test-utils'
-import { feedResponse, generateFeeds } from '@/server/render/feed/generator'
+import { generateFeeds } from '@/server/render/feed/generator'
 
 const feedState = {
   listPosts: vi.fn<(db: unknown, opts: unknown) => Promise<(Post | Page)[]>>(),
@@ -152,23 +152,5 @@ describe('render/feed/generator — generateFeeds', () => {
     feedState.listPosts.mockResolvedValue([])
     await generateFeeds(fakeDb, { tag: 'React' })
     expect(feedState.listPosts).toHaveBeenCalled()
-  })
-})
-
-describe('render/feed/generator — feedResponse', () => {
-  it('returns a Response with the RSS content-type', async () => {
-    feedState.listPosts.mockResolvedValue([])
-    const res = await feedResponse(fakeDb, 'rss')
-    expect(res.headers.get('content-type')).toBe('application/xml; charset=utf-8')
-    const body = await res.text()
-    expect(body).toContain('<?xml')
-  })
-
-  it('returns a Response with the Atom content-type', async () => {
-    feedState.listPosts.mockResolvedValue([])
-    const res = await feedResponse(fakeDb, 'atom')
-    expect(res.headers.get('content-type')).toBe('application/atom+xml; charset=utf-8')
-    const body = await res.text()
-    expect(body).toContain('<feed')
   })
 })
