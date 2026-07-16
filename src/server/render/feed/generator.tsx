@@ -182,7 +182,6 @@ export async function generateFeeds(db: NodePgDatabase, options: FeedOptions = {
       .map((t) => ({
         name: t.name,
         domain: joinUrl(siteIdentity.website, `/tags/${t.slug}`),
-        scheme: 'https',
         term: t.name,
       }))
     const postCategory = post.category ? (catMap.get(post.category) ?? null) : null
@@ -190,7 +189,6 @@ export async function generateFeeds(db: NodePgDatabase, options: FeedOptions = {
       itemCategories.push({
         name: postCategory.name,
         domain: joinUrl(siteIdentity.website, `/cats/${postCategory.slug}`),
-        scheme: 'https',
         term: postCategory.name,
       })
     }

@@ -114,7 +114,7 @@
     "drizzle-kit": "1.0.0-rc.3",
     "drizzle-orm": "1.0.0-rc.3",
     "fake-indexeddb": "^6.2.5",
-    "feed": "^5.2.1",
+    "feed": "^6.0.0",
     "happy-dom": "^20.10.6",
     "hono": "^4.12.30",
     "hono-pino": "^0.10.3",
