@@ -74,3 +74,57 @@ describe('resolveAssetUrl — missing-base guards', () => {
     expect(() => safeResolveAssetUrl('s3', 'images/a.jpg')).toThrow('boom')
   })
 })
+
+// The font URL contract (hard repo rule): local fonts are served from the
+// dedicated `/fonts/embedded/<hash>/result.css` route, s3 fonts straight
+// from `<publicBaseUrl>/fonts/<hash>/result.css`. The options bag below is
+// exactly what the fonts render service passes — these tests pin the public
+// URL shapes byte-for-byte.
+describe('resolveAssetUrl — local route override (font options bag)', () => {
+  const HASH = 'a'.repeat(64)
+  const CSS_KEY = `fonts/${HASH}/result.css`
+  const FONT_OPTIONS = { local: { route: '/fonts/embedded/', stripPrefix: 'fonts/' } }
+
+  it('reproduces the embedded-font local URL byte-for-byte', () => {
+    expect(resolveAssetUrl('local', CSS_KEY, undefined, FONT_OPTIONS)).toBe(
+      `https://site.example.com/fonts/embedded/${HASH}/result.css`,
+    )
+  })
+
+  it('keeps the s3 URL on the raw storage key (options ignored)', () => {
+    expect(resolveAssetUrl('s3', CSS_KEY, undefined, FONT_OPTIONS)).toBe(`https://cdn.example.com/${CSS_KEY}`)
+  })
+
+  it('appends ?v=<updatedAtMs> under the route override, both drivers', () => {
+    expect(resolveAssetUrl('local', CSS_KEY, 123, FONT_OPTIONS)).toBe(
+      `https://site.example.com/fonts/embedded/${HASH}/result.css?v=123`,
+    )
+    expect(resolveAssetUrl('s3', CSS_KEY, 123, FONT_OPTIONS)).toBe(`https://cdn.example.com/${CSS_KEY}?v=123`)
+  })
+
+  it('keeps the full key when stripPrefix does not match', () => {
+    expect(resolveAssetUrl('local', 'other/x.css', undefined, FONT_OPTIONS)).toBe(
+      'https://site.example.com/fonts/embedded/other/x.css',
+    )
+  })
+
+  it('still throws ActionFailure(503) for local when the site origin is empty', () => {
+    requireBlogSettingsSection.mockImplementation((section: string) =>
+      section === 'siteIdentity' ? { website: '' } : { asset: { scheme: 'https', host: 'cdn.example.com' } },
+    )
+    expect(() => resolveAssetUrl('local', CSS_KEY, undefined, FONT_OPTIONS)).toThrow(ActionFailure)
+    expect(() => resolveAssetUrl('local', CSS_KEY, undefined, FONT_OPTIONS)).toThrow(
+      '请先在 /admin/settings/general 配置站点网址（siteIdentity.website）',
+    )
+  })
+
+  it('still throws ActionFailure(503) for s3 when the CDN host is empty (options ignored)', () => {
+    requireBlogSettingsSection.mockImplementation((section: string) =>
+      section === 'assets' ? { asset: { scheme: 'https', host: '' } } : { website: 'https://site.example.com' },
+    )
+    expect(() => resolveAssetUrl('s3', CSS_KEY, undefined, FONT_OPTIONS)).toThrow(ActionFailure)
+    expect(() => resolveAssetUrl('s3', CSS_KEY, undefined, FONT_OPTIONS)).toThrow(
+      '请先在 /admin/settings/assets 配置 S3 公共访问基地址',
+    )
+  })
+})

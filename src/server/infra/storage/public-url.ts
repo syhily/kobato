@@ -47,6 +47,22 @@ function appendVersion(url: string, version: number | undefined): string {
   return `${url}${sep}v=${version}`
 }
 
+export interface ResolveAssetUrlOptions {
+  /**
+   * Route override for the `local` driver. Local assets default to the
+   * generic `/storage/<storagePath>` route; a dedicated public route (e.g.
+   * the self-hosted font route) claims the asset instead by passing its URL
+   * prefix as `route` (leading + trailing slash required). When the route
+   * already implies a leading storage-key prefix, `stripPrefix` drops it
+   * from the key first. Ignored for the `s3` driver — the bucket serves the
+   * raw storage key either way.
+   */
+  local?: {
+    route: string
+    stripPrefix?: string
+  }
+}
+
 /**
  * Resolve the absolute public URL for a stored object, dispatching on the
  * per-asset `driver`:
@@ -55,52 +71,38 @@ function appendVersion(url: string, version: number | undefined): string {
  *              bucket/CDN. Throws `ActionFailure(503)` when the CDN host
  *              is unset (matches the historical `buildPublicUrl`).
  *  - `local` → `<generalWebsite>/storage/<storagePath>` — served by the
- *              app's public `/storage/*` route. Throws `ActionFailure(503)`
- *              when the site origin is unset; a relative `/storage/…` URL
- *              would break in RSS / OG / email contexts that need an
- *              absolute URL.
+ *              app's public `/storage/*` route, unless `options.local`
+ *              overrides the route (see `ResolveAssetUrlOptions`). Throws
+ *              `ActionFailure(503)` when the site origin is unset; a
+ *              relative URL would break in RSS / OG / email contexts that
+ *              need an absolute URL.
  *
  * Both shapes append `?v=<updatedAtMs>` for cache busting when provided.
  */
-export function resolveAssetUrl(driver: StorageDriver, storagePath: string, updatedAtMs?: number): string {
+export function resolveAssetUrl(
+  driver: StorageDriver,
+  storagePath: string,
+  updatedAtMs?: number,
+  options?: ResolveAssetUrlOptions,
+): string {
   if (driver === 'local') {
     const website = getGeneralWebsite()
     if (website === '') {
       throw new ActionFailure(503, '请先在 /admin/settings/general 配置站点网址（siteIdentity.website）')
     }
-    return appendVersion(`${website}/storage/${trimLeadingSlash(storagePath)}`, updatedAtMs)
+    let key = trimLeadingSlash(storagePath)
+    const local = options?.local
+    if (local?.stripPrefix !== undefined && key.startsWith(local.stripPrefix)) {
+      key = key.slice(local.stripPrefix.length)
+    }
+    const route = local?.route ?? '/storage/'
+    return appendVersion(`${website}${route}${key}`, updatedAtMs)
   }
   const publicBaseUrl = getPublicBaseUrl()
   if (publicBaseUrl === null) {
     throw new ActionFailure(503, '请先在 /admin/settings/assets 配置 S3 公共访问基地址')
   }
   return appendVersion(`${publicBaseUrl}/${trimLeadingSlash(storagePath)}`, updatedAtMs)
-}
-
-/**
- * Resolve the public URL for a self-hosted font's entry CSS. Differs from
- * `resolveAssetUrl` only for the `local` driver: instead of the generic
- * `/storage/fonts/<hash>/result.css`, local fonts are served from a dedicated
- * `/fonts/embedded/<hash>/result.css` route that isolates font packages from
- * the general-purpose local storage namespace.
- *
- * - `local` → `<generalWebsite>/fonts/embedded/<hash>/result.css`
- * - `s3`    → `<publicBaseUrl>/fonts/<hash>/result.css` (same as before)
- */
-export function resolveFontAssetUrl(driver: StorageDriver, hash: string, updatedAtMs?: number): string {
-  const cssKey = `fonts/${hash}/result.css`
-  if (driver === 'local') {
-    const website = getGeneralWebsite()
-    if (website === '') {
-      throw new ActionFailure(503, '请先在 /admin/settings/general 配置站点网址（siteIdentity.website）')
-    }
-    return appendVersion(`${website}/fonts/embedded/${hash}/result.css`, updatedAtMs)
-  }
-  const publicBaseUrl = getPublicBaseUrl()
-  if (publicBaseUrl === null) {
-    throw new ActionFailure(503, '请先在 /admin/settings/assets 配置 S3 公共访问基地址')
-  }
-  return appendVersion(`${publicBaseUrl}/${cssKey}`, updatedAtMs)
 }
 
 /**

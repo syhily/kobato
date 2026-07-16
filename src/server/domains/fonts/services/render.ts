@@ -5,7 +5,7 @@ import type { ResolvedFont, ResolvedFonts } from '@/shared/types/fonts'
 
 import { findFontsByIds, resolveSlotOrder } from '@/server/domains/fonts/services/read'
 import { getLogger } from '@/server/infra/logger'
-import { resolveFontAssetUrl } from '@/server/infra/storage/public-url'
+import { resolveAssetUrl } from '@/server/infra/storage/public-url'
 
 const log = getLogger('fonts.render')
 
@@ -52,7 +52,15 @@ export async function resolveFontsForRender(
     resolveSlotOrder(ids, byId).map((row) => {
       let href: string
       try {
-        href = resolveFontAssetUrl(row.storageDriver, row.hash, etagToTimestamp(row.etag))
+        // Consume the persisted `cssKey` (written by `fontCssKey(hash)` at
+        // upload time) instead of recomputing the key layout from `hash`.
+        // Local packages are served by the dedicated `/fonts/embedded/*`
+        // route, not the generic `/storage/*` one — `route`/`stripPrefix`
+        // below are that route's shape and must stay in sync with
+        // src/server/http/resources/fonts-embedded.ts.
+        href = resolveAssetUrl(row.storageDriver, row.cssKey, etagToTimestamp(row.etag), {
+          local: { route: '/fonts/embedded/', stripPrefix: 'fonts/' },
+        })
       } catch (error) {
         // Asset base URL unconfigured — degrade by dropping this font from
         // the stack rather than crashing the whole render.

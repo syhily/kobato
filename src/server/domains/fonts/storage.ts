@@ -6,9 +6,11 @@ import { activeBackend, backendFor } from '@/server/infra/storage/registry'
 // Storage entry point for the fonts domain. Mirrors `images/storage.ts`:
 // writes go to the **active** backend (S3 when configured, local otherwise);
 // reads/deletes dispatch on the font row's recorded `driver` so historical
-// packages keep working after a local→S3 flip. The public URL is resolved
-// centrally via `resolveAssetUrl(driver, cssKey, …)` so this module never
-// touches URL construction.
+// packages keep working after a local→S3 flip. This module owns the
+// `fonts/<hash>/` key layout (`fontPrefix`/`fontCssKey`): upload persists
+// `fontCssKey(hash)` as the row's `cssKey`, and render resolves the public
+// URL from that persisted column via `resolveAssetUrl` — nothing else
+// reconstructs the layout.
 
 /** Storage prefix for every file in a font package. Content-addressed by hash. */
 export function fontPrefix(hash: string): string {

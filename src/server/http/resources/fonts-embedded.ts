@@ -82,6 +82,10 @@ fontsEmbeddedRouter.get('/fonts/embedded/*', async (c) => {
     return c.body(null, 400)
   }
 
+  // URL → storage-key inverse of the `local` branch of `resolveAssetUrl`
+  // (src/server/infra/storage/public-url.ts), which the fonts render service
+  // targets with `local: { route: '/fonts/embedded/', stripPrefix: 'fonts/' }`.
+  // The route shape is owned here; keep the pair in sync.
   const storageKey = `fonts/${parsed.hash}/${parsed.filename}`
 
   let abs: string
