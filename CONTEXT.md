@@ -30,6 +30,25 @@ Live-in-the-future content: published with a `publishedAt` later than now.
 Scheduled content is not live and answers 404 until its time arrives.
 _Avoid_: future-dated, timed
 
+**PT**:
+The strict PortableText subset that is this repo's wire and storage format
+for rich content, stored in `content.body` and `comment.body` (`jsonb`) and
+defined in `src/shared/pt/schema.ts`. The Tiptap editor round-trips through a
+bridge so the editor JSON and the PT wire format stay losslessly isomorphic;
+the `pt` directories (`src/shared/pt`, `src/ui/pt`, `src/server/infra/pt`,
+`src/server/domains/pt`) hold its schema, renderer, and services.
+_Avoid_: MDX (retired render target), InklingDocument (editor-vendor
+experiment, not the shipping store)
+
+**Revision**:
+One row in the content table's revision pipeline: every draft save creates a
+new revision with a monotonically increasing `revisionNo`; publishing promotes
+a revision by pointing the entity's `publishedRevisionId` at it. The
+draft→publish revision pipeline is the Content lifecycle (q.v.), and "the
+published revision" is what makes content Live.
+_Avoid_: version (ambiguous with app version), draft (a revision's state,
+not the revision itself)
+
 ### Settings
 
 **Section**:
