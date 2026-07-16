@@ -29,6 +29,7 @@ const TIER2_PUBLIC_ROUTES = [
   'tag-list-page',
   'routes/public/search/list',
   'search-list-page',
+  'routes/public/post/detail',
   'routes/public/page/detail',
   'routes/public/not-found',
 ]
@@ -44,6 +45,8 @@ const TIER2_ADMIN_ROUTES = [
   'routes/admin/taxonomy/tags',
   'routes/admin/library/images',
   'routes/admin/library/music',
+  'routes/admin/library/music/add',
+  'routes/admin/library/music/detail',
   'routes/admin/library/branding',
   'routes/admin/library/fonts',
   'routes/admin/taxonomy/friends',
