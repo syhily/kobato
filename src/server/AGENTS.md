@@ -20,9 +20,9 @@ Pure primitives. `db/` (Drizzle pool, schema, migrations,
 `operations/<entity>.ts` raw helpers), `redis/` (ioredis:
 storage, buckets, inflight, `buffer-cache`, `admin-ops`), `http/`
 (generic `etag`, `headers`, `status`, `errors` with `DomainError` /
-`ActionFailure`), `email/` (sender + React Email), `search/` (openai
-client, vector driver), `env.ts`, `logger.ts`, `rate-limit.ts`,
-`slug.ts`.
+`ActionFailure`), `email/` (sender + React Email), `search/` (LIKE,
+pg_trgm and vector drivers, openai client), `env.ts`, `logger.ts`,
+`rate-limit.ts`, `slug.ts`.
 
 Imports nothing from `domains/`, `http/`, or `render/`.
 
