@@ -2,6 +2,7 @@ import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 import type { Pool } from 'pg'
 
 import { randomUUID } from 'node:crypto'
+import superjson from 'superjson'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { clearAllTables } from '#/_helpers/integration-db'
@@ -255,25 +256,15 @@ describe('comments/services/token — cleanupExpiredTokens', () => {
     expect(r.cleaned).toEqual({})
     expect(r.validEntries).toEqual([])
   })
-  it('keeps entries backed by a valid JSON payload in Redis', async () => {
-    const { redisInstance } = await import('@/server/infra/redis/storage')
-    const { cleanupExpiredTokens } = await import('@/server/domains/comments/services/token')
-    const redis = redisInstance()
-    const token = 'manual-token-' + Math.random().toString(36).slice(2)
-    const payload = JSON.stringify({
-      commentId: '42',
-      userId: '7',
-      pageKey: 'post:1',
-      createdAt: Date.now(),
-    })
-    await redis.set(`comment:token:${token}`, payload, 'EX', 60)
+  it('accepts a real token issued by issueCommentToken (superjson wire format)', async () => {
+    const { issueCommentToken, cleanupExpiredTokens } = await import('@/server/domains/comments/services/token')
+    const token = await issueCommentToken(42n, 7n, 'post:1', 60)
     const r = await cleanupExpiredTokens({
       'post:1': [{ token, expiresAt: Date.now() + 60_000 }],
     })
     expect(r.validEntries).toHaveLength(1)
     expect(r.validEntries[0]?.payload.commentId).toBe('42')
     expect(r.cleaned['post:1']).toHaveLength(1)
-    await redis.del(`comment:token:${token}`)
   })
   it('skips entries whose Redis payload is not valid JSON', async () => {
     const { redisInstance } = await import('@/server/infra/redis/storage')
@@ -293,7 +284,7 @@ describe('comments/services/token — cleanupExpiredTokens', () => {
     const { cleanupExpiredTokens } = await import('@/server/domains/comments/services/token')
     const redis = redisInstance()
     const token = 'bad-shape-' + Math.random().toString(36).slice(2)
-    await redis.set(`comment:token:${token}`, JSON.stringify({ foo: 'bar' }), 'EX', 60)
+    await redis.set(`comment:token:${token}`, superjson.stringify({ foo: 'bar' }), 'EX', 60)
     const r = await cleanupExpiredTokens({
       'post:1': [{ token, expiresAt: Date.now() + 60_000 }],
     })
@@ -309,36 +300,16 @@ describe('comments/services/token — verifyCommentOwnership', () => {
     expect(r.ok).toBe(false)
   })
   it('returns ok=true when a backed token matches the commentId', async () => {
-    const { redisInstance } = await import('@/server/infra/redis/storage')
-    const { verifyCommentOwnership } = await import('@/server/domains/comments/services/token')
-    const redis = redisInstance()
-    const token = 'own-' + Math.random().toString(36).slice(2)
-    const payload = JSON.stringify({
-      commentId: '77',
-      userId: '7',
-      pageKey: 'post:1',
-      createdAt: Date.now(),
-    })
-    await redis.set(`comment:token:${token}`, payload, 'EX', 60)
+    const { issueCommentToken, verifyCommentOwnership } = await import('@/server/domains/comments/services/token')
+    const token = await issueCommentToken(77n, 7n, 'post:1', 60)
     const r = await verifyCommentOwnership({ 'post:1': [{ token, expiresAt: Date.now() + 60_000 }] }, '77')
     expect(r.ok).toBe(true)
-    await redis.del(`comment:token:${token}`)
   })
   it('returns ok=false when the backed token does not match the commentId', async () => {
-    const { redisInstance } = await import('@/server/infra/redis/storage')
-    const { verifyCommentOwnership } = await import('@/server/domains/comments/services/token')
-    const redis = redisInstance()
-    const token = 'other-' + Math.random().toString(36).slice(2)
-    const payload = JSON.stringify({
-      commentId: '111',
-      userId: '7',
-      pageKey: 'post:1',
-      createdAt: Date.now(),
-    })
-    await redis.set(`comment:token:${token}`, payload, 'EX', 60)
+    const { issueCommentToken, verifyCommentOwnership } = await import('@/server/domains/comments/services/token')
+    const token = await issueCommentToken(111n, 7n, 'post:1', 60)
     const r = await verifyCommentOwnership({ 'post:1': [{ token, expiresAt: Date.now() + 60_000 }] }, '222')
     expect(r.ok).toBe(false)
-    await redis.del(`comment:token:${token}`)
   })
 })
 

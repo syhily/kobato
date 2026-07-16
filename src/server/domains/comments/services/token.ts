@@ -31,6 +31,28 @@ function isCommentTokenPayload(value: unknown): value is CommentTokenPayload {
   )
 }
 
+/**
+ * Single codec for the Redis token keyspace. superjson both ways — the guard
+ * runs after decode as a second-line check against shape drift.
+ */
+function encodeTokenPayload(payload: CommentTokenPayload): string {
+  return superjson.stringify(payload)
+}
+
+function decodeTokenPayload(raw: string): CommentTokenPayload | null {
+  try {
+    const parsed: unknown = superjson.parse(raw)
+    if (!isCommentTokenPayload(parsed)) {
+      log.warn('Invalid comment token payload shape from Redis')
+      return null
+    }
+    return parsed
+  } catch (error) {
+    log.warn('Failed to parse comment token payload from Redis', { error })
+    return null
+  }
+}
+
 export async function issueCommentToken(
   commentId: bigint | string,
   userId: bigint | string,
@@ -46,7 +68,7 @@ export async function issueCommentToken(
   }
   const ttl = ttlSeconds ?? requireBlogSettingsSection('comments').comments.tokenTtlSeconds
   const redis = redisInstance()
-  await redis.set(`${TOKEN_KEY_PREFIX}${token}`, superjson.stringify(payload), 'EX', ttl)
+  await redis.set(`${TOKEN_KEY_PREFIX}${token}`, encodeTokenPayload(payload), 'EX', ttl)
   return token
 }
 
@@ -56,12 +78,7 @@ export async function verifyCommentToken(token: string): Promise<CommentTokenPay
   if (!raw) {
     return null
   }
-  try {
-    return superjson.parse<CommentTokenPayload>(raw)
-  } catch (error) {
-    log.warn('Failed to parse comment token payload', { token: token.slice(0, 8), error })
-    return null
-  }
+  return decodeTokenPayload(raw)
 }
 
 export async function revokeCommentToken(token: string): Promise<void> {
@@ -107,16 +124,8 @@ export async function cleanupExpiredTokens(cookie: CommentTokenCookie): Promise<
     if (typeof raw !== 'string') {
       continue
     }
-    let payload: CommentTokenPayload
-    try {
-      const parsed: unknown = JSON.parse(raw)
-      if (!isCommentTokenPayload(parsed)) {
-        log.warn('Invalid comment token payload from Redis', { key: keys[i]?.slice(0, 8) })
-        continue
-      }
-      payload = parsed
-    } catch (error) {
-      log.warn('Failed to parse comment token from Redis during cleanup', { key: keys[i]?.slice(0, 8), error })
+    const payload = decodeTokenPayload(raw)
+    if (!payload) {
       continue
     }
     if (!cleaned[pageKey]) {
