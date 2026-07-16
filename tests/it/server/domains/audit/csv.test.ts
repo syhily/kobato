@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { csvEscapeDisplay } from '@/server/http/controllers/admin/audit.controller'
+import { csvEscapeDisplay } from '@/server/domains/audit/export-csv'
 import { csvEscape } from '@/server/infra/csv'
 
 describe('audit/csv', () => {

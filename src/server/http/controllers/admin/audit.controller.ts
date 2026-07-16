@@ -1,6 +1,7 @@
 import { ORPCError } from '@orpc/server'
 import { z } from 'zod'
 
+import { buildAuditLogCsv } from '@/server/domains/audit/export-csv'
 import { highlightAuditLogDetails } from '@/server/domains/audit/highlight'
 import { toAuditLogItemDto } from '@/server/domains/audit/projection'
 import {
@@ -21,19 +22,15 @@ import { idFromString } from '@/shared/utils/id'
 
 // Helpers
 
-const FORMULA_PREFIXES = new Set(['=', '+', '-', '@'])
-
-// Exported for testing only.
-export function csvEscapeDisplay(value: string | number | null | undefined): string {
-  if (value === null || value === undefined) {
-    return ''
+function assertValidActorId(actorId: string | undefined): void {
+  if (!actorId) {
+    return
   }
-  const str = typeof value === 'string' ? value : String(value)
-  const sanitized = str.length > 0 && FORMULA_PREFIXES.has(str[0]) ? `\t${str}` : str
-  if (/[",\n\r]/.test(sanitized)) {
-    return `"${sanitized.replace(/"/g, '""')}"`
+  try {
+    idFromString(actorId)
+  } catch {
+    throw new ORPCError('BAD_REQUEST', { message: 'actorId 格式无效' })
   }
-  return sanitized
 }
 
 const EXPORT_MAX_ROWS = 10_000
@@ -47,13 +44,7 @@ const list = adminProc
   .handler(async ({ input, context }) => {
     const { db } = context
 
-    if (input.actorId) {
-      try {
-        idFromString(input.actorId)
-      } catch {
-        throw new ORPCError('BAD_REQUEST', { message: 'actorId 格式无效' })
-      }
-    }
+    assertValidActorId(input.actorId)
 
     const filters: AuditLogFilterInput = input
     const total = await countAuditLogs(db, filters)
@@ -86,13 +77,7 @@ const exportCsv = adminProc
   .handler(async ({ input, context }) => {
     const { db } = context
 
-    if (input.actorId) {
-      try {
-        idFromString(input.actorId)
-      } catch {
-        throw new ORPCError('BAD_REQUEST', { message: 'actorId 格式无效' })
-      }
-    }
+    assertValidActorId(input.actorId)
 
     const filters: AuditLogFilterInput = input
     const total = await countAuditLogs(db, filters)
@@ -106,40 +91,7 @@ const exportCsv = adminProc
     const rows = await listAuditLogs(db, filters, 0, EXPORT_MAX_ROWS)
     const actorMap = await fetchAuditLogActorMap(db, rows)
 
-    const headers = [
-      'id',
-      'action',
-      'actorId',
-      'actorName',
-      'actorRole',
-      'resourceType',
-      'resourceId',
-      'details',
-      'ipAddress',
-      'userAgentMasked',
-      'createdAt',
-    ]
-    const lines = [headers.join(',')]
-
-    for (const row of rows) {
-      const dto = toAuditLogItemDto(row, row.actorId ? (actorMap.get(String(row.actorId)) ?? null) : null)
-      const cols = [
-        csvEscapeDisplay(dto.id),
-        csvEscapeDisplay(dto.action),
-        csvEscapeDisplay(dto.actorId ?? ''),
-        csvEscapeDisplay(dto.actorName ?? ''),
-        csvEscapeDisplay(dto.actorRole ?? ''),
-        csvEscapeDisplay(dto.resourceType),
-        csvEscapeDisplay(dto.resourceId ?? ''),
-        csvEscapeDisplay(dto.details ? JSON.stringify(dto.details) : ''),
-        csvEscapeDisplay(input.includeFullIp ? (row.ipAddress ?? '') : (dto.ipAddressMasked ?? '')),
-        csvEscapeDisplay(dto.userAgentMasked ?? ''),
-        csvEscapeDisplay(dto.createdAt),
-      ]
-      lines.push(cols.join(','))
-    }
-
-    return '\uFEFF' + lines.join('\n') + '\n'
+    return buildAuditLogCsv(rows, actorMap, { includeFullIp: input.includeFullIp })
   })
 
 // Actors (distinct users with audit log entries)
