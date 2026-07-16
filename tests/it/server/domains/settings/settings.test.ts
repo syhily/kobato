@@ -130,6 +130,9 @@ const fixtureBundle: BlogSettingsBundle = {
       mailgunApiKey: '',
     },
   },
+  newsletter: {
+    newsletter: { enabled: false, fromName: '', subjectPrefix: '' },
+  },
   cache: {
     cache: {
       og: { prefix: 'og:', ttlSeconds: 3600 },
@@ -213,6 +216,7 @@ function bundleRows(bundle: BlogSettingsBundle): Setting[] {
     comments: 'blog.comments',
     seo: 'blog.seo',
     mail: 'blog.mail',
+    newsletter: 'blog.newsletter',
     cache: 'blog.cache',
     rateLimit: 'blog.rateLimit',
     search: 'blog.search',

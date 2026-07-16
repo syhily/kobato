@@ -5,6 +5,7 @@ import type { content } from '@/server/infra/db/schema/content'
 import type { friend } from '@/server/infra/db/schema/friend'
 import type { image, music } from '@/server/infra/db/schema/media'
 import type { like, metric } from '@/server/infra/db/schema/metric'
+import type { newsletterSubscriber } from '@/server/infra/db/schema/newsletter'
 import type { page } from '@/server/infra/db/schema/page'
 import type { passkeyCredential } from '@/server/infra/db/schema/passkey'
 import type { post } from '@/server/infra/db/schema/post'
@@ -28,6 +29,7 @@ export type NewPageMeta = typeof page.$inferInsert
 export type NewPostMeta = typeof post.$inferInsert
 export type NewContent = typeof content.$inferInsert
 export type NewBackup = typeof backup.$inferInsert
+export type NewNewsletterSubscriber = typeof newsletterSubscriber.$inferInsert
 
 // Types for select
 export type PasskeyCredentialRow = typeof passkeyCredential.$inferSelect
@@ -46,3 +48,4 @@ export type PageMetaRow = typeof page.$inferSelect
 export type PostMetaRow = typeof post.$inferSelect
 export type ContentRow = typeof content.$inferSelect
 export type BackupRow = typeof backup.$inferSelect
+export type NewsletterSubscriberRow = typeof newsletterSubscriber.$inferSelect

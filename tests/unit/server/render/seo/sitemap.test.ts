@@ -88,6 +88,9 @@ const fixture: BlogSettingsBundle = {
       mailgunApiKey: '',
     },
   },
+  newsletter: {
+    newsletter: { enabled: false, fromName: '', subjectPrefix: '' },
+  },
   cache: {
     cache: {
       og: { prefix: 'og:', ttlSeconds: 3600 },

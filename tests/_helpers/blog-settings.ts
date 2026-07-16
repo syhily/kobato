@@ -123,6 +123,9 @@ export const TEST_BLOG_SETTINGS_BUNDLE: BlogSettingsBundle = {
       mailgunApiKey: '',
     },
   },
+  newsletter: {
+    newsletter: { enabled: false, fromName: '', subjectPrefix: '' },
+  },
   cache: {
     cache: {
       og: { ...CACHE_BUCKET_FALLBACKS.og, ttlSeconds: 60 * 60 * 24 * 7 },

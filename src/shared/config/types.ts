@@ -138,6 +138,17 @@ export interface MailSettings {
   }
 }
 
+export interface NewsletterSettings {
+  newsletter: {
+    /** Master switch for the public subscribe endpoint. Default off. */
+    enabled: boolean
+    /** Display name used as the sender identity in newsletter emails. */
+    fromName: string
+    /** Prefix prepended to newsletter email subjects (e.g. the site name). */
+    subjectPrefix: string
+  }
+}
+
 export interface CacheSettings {
   cache: {
     og: { prefix: string; ttlSeconds: number }
@@ -319,6 +330,7 @@ export interface BlogSettingsBundle {
   comments: CommentsSettings | null
   seo: SeoSettings | null
   mail: MailSettings | null
+  newsletter: NewsletterSettings | null
   cache: CacheSettings | null
   rateLimit: RateLimitSettings | null
   search: SearchSettings | null

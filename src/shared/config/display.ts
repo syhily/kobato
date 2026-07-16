@@ -93,6 +93,13 @@ export const SECTION_DISPLAY: Record<SettingsSection, SectionDisplayMeta> = {
     group: 'service',
     icon: 'Mail',
   },
+  newsletter: {
+    to: '/admin/settings',
+    label: '邮件订阅',
+    description: 'Newsletter 订阅开关、发件人名称与主题前缀',
+    group: 'service',
+    icon: 'Mails',
+  },
   search: {
     to: '/admin/settings',
     label: '文章搜索',

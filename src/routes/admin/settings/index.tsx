@@ -20,6 +20,7 @@ import { GeneralForm } from '@/ui/admin/settings/GeneralForm'
 import { LimitsForm } from '@/ui/admin/settings/LimitsForm'
 import { MailForm } from '@/ui/admin/settings/MailForm'
 import { NavigationEditor } from '@/ui/admin/settings/NavigationEditor'
+import { NewsletterForm } from '@/ui/admin/settings/NewsletterForm'
 import { SearchForm } from '@/ui/admin/settings/SearchForm'
 import { SecurityForm } from '@/ui/admin/settings/SecurityForm'
 import { SeoForm } from '@/ui/admin/settings/SeoForm'
@@ -115,6 +116,10 @@ const SECTION_CONFIGS: {
     render: (bundle, _tz, masks) => (
       <SearchForm search={projectSearchForAdmin(bundle.search, masks.searchApiKeyMask)} />
     ),
+  },
+  {
+    id: 'newsletter',
+    render: (bundle) => <NewsletterForm newsletter={bundle.newsletter} />,
   },
   {
     id: 'cache',

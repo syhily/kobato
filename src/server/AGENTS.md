@@ -186,10 +186,10 @@ redeploying. Examples: `assets.storage.enabled`, `seo.og.width`,
 ## Configuration & Install Gate
 
 - Source of truth is the `setting` table — one JSONB row per section,
-  `scope='blog.<section>'`. 17 sections: `general`, `assets`,
+  `scope='blog.<section>'`. 18 sections: `general`, `assets`,
   `navigation`, `socials`, `content`, `sidebar`, `comments`, `seo`,
-  `mail`, `cache`, `rateLimit`, `search`, `fonts`, `cors`, `backup`,
-  `limits`, `analytics`.
+  `mail`, `newsletter`, `cache`, `rateLimit`, `search`, `fonts`,
+  `backup`, `limits`, `analytics`, `security`.
   Per-section splitting avoids races between concurrent admin tabs.
 - Section ↔ DB scope ↔ Zod schema ↔ bundle key mapping lives in
   `@/server/domains/settings/sections/registry.ts`'s `SECTION_REGISTRY`.
@@ -203,8 +203,8 @@ redeploying. Examples: `assets.storage.enabled`, `seo.og.width`,
      the first admin row and auto-logs in. Redirects to stage 2.
   2. `routes/auth/setup/settings.tsx`
      (`/admin/setup/settings`) persists `blog.general` and
-     `blog.assets` from the form AND seeds the remaining 15 sections
-     from `SECTION_REGISTRY[<section>].defaults`. All 17 rows are
+     `blog.assets` from the form AND seeds the remaining 16 sections
+     from `SECTION_REGISTRY[<section>].defaults`. All 18 rows are
      written atomically. `blog.assets` defaults to upload toggle OFF.
 - `honoInstallGateMiddleware`
   (`@/server/http/middlewares/install-gate.ts`) reads

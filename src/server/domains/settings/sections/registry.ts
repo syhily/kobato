@@ -14,6 +14,7 @@ import { generalSchema } from '@/server/domains/settings/schemas/general'
 import { limitsSchema } from '@/server/domains/settings/schemas/limits'
 import { mailSchema } from '@/server/domains/settings/schemas/mail'
 import { navigationSchema } from '@/server/domains/settings/schemas/navigation'
+import { newsletterSchema } from '@/server/domains/settings/schemas/newsletter'
 import { rateLimitSchema } from '@/server/domains/settings/schemas/rate-limit'
 import { searchSchema } from '@/server/domains/settings/schemas/search'
 import { securitySchema } from '@/server/domains/settings/schemas/security'
@@ -79,6 +80,14 @@ export const SECTION_REGISTRY = {
   },
   seo: { scope: 'blog.seo', schema: seoSchema, key: 'seo', defaults: seoDefaults },
   mail: { scope: 'blog.mail', schema: mailSchema, key: 'mail', defaults: mailDefaults },
+  newsletter: {
+    scope: 'blog.newsletter',
+    schema: newsletterSchema,
+    key: 'newsletter',
+    defaults: {
+      newsletter: { enabled: false, fromName: '', subjectPrefix: '' },
+    },
+  },
   cache: { scope: 'blog.cache', schema: cacheSchema, key: 'cache', defaults: cacheDefaults },
   rateLimit: {
     scope: 'blog.rateLimit',
