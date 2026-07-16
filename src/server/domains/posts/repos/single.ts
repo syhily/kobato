@@ -7,7 +7,7 @@ import type { Post } from '@/shared/types/catalog'
 
 import { toCmsPost } from '@/server/domains/posts/projection'
 import { hydratePostImages } from '@/server/domains/posts/repos/hydrate'
-import { livePostWhere, toClientPostFromMeta } from '@/server/domains/posts/repos/shared'
+import { livePostWhere } from '@/server/domains/posts/repos/shared'
 import { findTagNamesByPostId } from '@/server/infra/db/operations/post-tag'
 import { content as contentTable } from '@/server/infra/db/schema/content'
 import { post as postMetaTable } from '@/server/infra/db/schema/post'
@@ -34,15 +34,6 @@ export async function findPublicPostMetaBySlug(db: NodePgDatabase, slug: string)
     .where(and(eq(postMetaTable.slug, slug), isNull(postMetaTable.deletedAt)))
     .limit(1)
   return rows[0] ?? null
-}
-
-export function toPostFromMeta(meta: PostMetaRow, tags: string[] = []): Post {
-  return {
-    ...toClientPostFromMeta(meta, tags),
-    body: [],
-    imageSources: [],
-    publishedRevisionId: meta.publishedRevisionId,
-  }
 }
 
 async function findPostWithRevisionBySlug(

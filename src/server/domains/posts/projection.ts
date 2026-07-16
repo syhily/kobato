@@ -4,6 +4,7 @@ import type { ClientPost } from '@/shared/types/catalog'
 import type { AdminRevisionDto } from '@/shared/types/revision'
 
 import { readBody, readHeadings } from '@/server/domains/content/projection-helpers'
+import { toClientPostFromMeta } from '@/server/domains/posts/repos/shared'
 import { readStringArray } from '@/shared/utils/tools'
 
 // --- Public catalog projection ----------------------------------------------
@@ -28,31 +29,17 @@ export function toCmsPost(
   const imageSources = publishedRevision !== null ? readStringArray(publishedRevision.imageSources) : []
   const headings = publishedRevision !== null ? readHeadings(publishedRevision.headings) : []
 
+  // Compose, don't copy: the ~20 catalog fields come from the shared
+  // projection (`toClientPostFromMeta`); only the revision-joined CMS
+  // fields are stated here. `headings` overrides the projection's empty
+  // default when a published revision carries real anchors.
   return {
-    id: String(meta.id),
-    title: meta.title,
-    date: meta.firstPublishedAt ?? meta.publishedAt,
-    /** Public catalog: mirrors `published_at` (publish / schedule), not draft saves. */
-    updated: meta.publishedAt,
-    comments: meta.commentsEnabled,
-    alias: readStringArray(meta.alias),
-    tags: options.tags ?? [],
-    category: meta.category,
-    summary: meta.summary,
-    cover: meta.cover || '/images/open-graph.png',
+    ...toClientPostFromMeta(meta, options.tags ?? []),
     coverThumbhash: options.coverThumbhash,
-    og: meta.og ?? undefined,
-    published: meta.published,
-    visible: meta.visible,
-    toc: meta.showToc,
-    showUpdated: meta.showUpdated,
-    slug: meta.slug,
-    permalink: `/posts/${meta.slug}`,
     headings,
     body,
     imageSources,
     publishedRevisionId: meta.publishedRevisionId,
-    pinnedAt: meta.pinnedAt ?? undefined,
   }
 }
 

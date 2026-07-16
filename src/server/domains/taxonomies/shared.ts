@@ -63,17 +63,17 @@ export async function ensureUniqueOnUpdateTaxonomy<T extends { id: bigint }>(
 
 // Block-only deletion: refuses to delete a taxonomy row while any post
 // still references it. The 409 body lists up to 5 referencing post
-// titles so the admin knows which files to fix.
+// titles so the admin knows which files to fix. `listPostTitles` is a
+// deliberately slim seam (titles only, full inclusion gate) — the guard
+// must not pay for the full listing pipeline (tag batch, revision join,
+// cover/thumbhash hydration) just to name the referencing posts.
 export async function deleteAdminTaxonomy<T extends { name: string }>(
   id: bigint,
   entityLabel: string,
   deps: {
     findById: (id: bigint) => Promise<T | null>
     deleteRow: (id: bigint) => Promise<boolean>
-    listPostsBy: (
-      name: string,
-      opts: { includeHidden: boolean; includeScheduled: boolean },
-    ) => Promise<{ title: string }[]>
+    listPostTitles: (name: string) => Promise<string[]>
   },
 ): Promise<boolean> {
   const existing = await deps.findById(id)
@@ -81,19 +81,9 @@ export async function deleteAdminTaxonomy<T extends { name: string }>(
     return false
   }
 
-  const referencing = await deps.listPostsBy(existing.name, {
-    includeHidden: true,
-    includeScheduled: true,
-  })
-  if (referencing.length > 0) {
-    throw new DomainError(
-      'CONFLICT',
-      formatBlockMessage(
-        entityLabel,
-        existing.name,
-        referencing.map((post) => post.title),
-      ),
-    )
+  const titles = await deps.listPostTitles(existing.name)
+  if (titles.length > 0) {
+    throw new DomainError('CONFLICT', formatBlockMessage(entityLabel, existing.name, titles))
   }
 
   const removed = await deps.deleteRow(id)

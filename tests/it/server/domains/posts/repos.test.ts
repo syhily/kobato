@@ -221,39 +221,6 @@ describe('posts/repos/single — findPostMetaById / BySlug / BySlugForUpdate / P
   })
 })
 
-describe('posts/repos/single — toPostFromMeta', () => {
-  it('produces a Post with empty body and imageSources', async () => {
-    const { toPostFromMeta } = await import('@/server/domains/posts/repos/single')
-    const meta: typeof postMetaTable.$inferSelect = {
-      id: 1n,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      deletedAt: null,
-      slug: 's',
-      title: 'T',
-      summary: '',
-      cover: '',
-      og: null,
-      published: true,
-      commentsEnabled: true,
-      showToc: false,
-      showUpdated: false,
-      visible: true,
-      publishedAt: new Date(),
-      publishedRevisionId: null,
-      firstPublishedAt: null,
-      authorId: null,
-      category: '',
-      alias: [],
-      pinnedAt: null,
-    }
-    const p = toPostFromMeta(meta, ['t'])
-    expect(p.body).toEqual([])
-    expect(p.imageSources).toEqual([])
-    expect(p.publishedRevisionId).toBeNull()
-  })
-})
-
 describe('posts/repos/single — findPostBySlug', () => {
   it('returns null when slug does not exist', async () => {
     const { findPostBySlug } = await import('@/server/domains/posts/repos/single')
@@ -288,7 +255,7 @@ describe('posts/repos/single — findPostBySlugForAdmin', () => {
   })
 })
 
-describe('posts/repos/hydrate — hydratePostImages / hydrateClientPostCovers', () => {
+describe('posts/repos/hydrate — hydratePostImages', () => {
   it('does not throw on an empty list', async () => {
     const { hydratePostImages } = await import('@/server/domains/posts/repos/hydrate')
     await expect(hydratePostImages(db, [])).resolves.toBeUndefined()
@@ -299,9 +266,10 @@ describe('posts/repos/hydrate — hydratePostImages / hydrateClientPostCovers', 
     const { hydrateImageRefs } = await import('@/server/domains/images/services/enhance')
     expect(hydrateImageRefs).toHaveBeenCalled()
   })
-  it('invokes hydrateImageRefs for a non-empty client post list', async () => {
-    const { hydrateClientPostCovers } = await import('@/server/domains/posts/repos/hydrate')
-    await hydrateClientPostCovers(db, [{ cover: '/c.png' } as never])
+  it('hydrates any post-shaped projection (ClientPost included)', async () => {
+    const { hydratePostImages } = await import('@/server/domains/posts/repos/hydrate')
+    const clientPost = { cover: '/c.png' } as never
+    await hydratePostImages(db, [clientPost])
     const { hydrateImageRefs } = await import('@/server/domains/images/services/enhance')
     expect(hydrateImageRefs).toHaveBeenCalled()
   })
@@ -317,18 +285,38 @@ describe('posts/repos/hydrate — buildPublicPostFilters', () => {
   })
 })
 
-describe('posts/repos/hydrate — hydratePostMetasToFullPosts', () => {
+describe('posts/repos/hydrate — hydratePostList', () => {
   it('returns [] for empty input', async () => {
-    const { hydratePostMetasToFullPosts } = await import('@/server/domains/posts/repos/hydrate')
-    expect(await hydratePostMetasToFullPosts(db, [])).toEqual([])
+    const { hydratePostList } = await import('@/server/domains/posts/repos/hydrate')
+    expect(await hydratePostList(db, [])).toEqual([])
   })
-  it('joins revisions and tags', async () => {
+  it('projects metas with tags and an empty body by default', async () => {
+    const tid = await seedTag('React')
+    const pid = await seedPost({ slug: 'h-list', publishedRevisionId: 1n })
+    await linkTag(pid, tid)
+    const rows = await db.select().from(postMetaTable).where(eq(postMetaTable.id, pid))
+    const { hydratePostList } = await import('@/server/domains/posts/repos/hydrate')
+    const posts = await hydratePostList(db, rows)
+    expect(posts).toHaveLength(1)
+    expect(posts[0]?.tags).toEqual(['React'])
+    expect(posts[0]?.body).toEqual([])
+  })
+  it('joins published revisions when revision: published', async () => {
     const revId = await seedContent({ type: 'post', revisionNo: 1, status: 'published' })
     const pid = await seedPost({ slug: 'h-full', publishedRevisionId: revId })
     const rows = await db.select().from(postMetaTable).where(eq(postMetaTable.id, pid))
-    const { hydratePostMetasToFullPosts } = await import('@/server/domains/posts/repos/hydrate')
-    const posts = await hydratePostMetasToFullPosts(db, rows)
+    const { hydratePostList } = await import('@/server/domains/posts/repos/hydrate')
+    const posts = await hydratePostList(db, rows, { revision: 'published' })
     expect(posts).toHaveLength(1)
+    expect(posts[0]?.publishedRevisionId).toBe(revId)
+  })
+  it('skips cover hydration when images: false', async () => {
+    const pid = await seedPost({ slug: 'h-noimg', publishedRevisionId: 1n, cover: '/c.png' })
+    const rows = await db.select().from(postMetaTable).where(eq(postMetaTable.id, pid))
+    const { hydratePostList } = await import('@/server/domains/posts/repos/hydrate')
+    const posts = await hydratePostList(db, rows, { images: false })
+    expect(posts[0]?.cover).toBe('/c.png')
+    expect(posts[0]?.coverThumbhash).toBeUndefined()
   })
 })
 
@@ -502,20 +490,47 @@ describe('posts/repos/public-query/misc — listAllPosts', () => {
   })
 })
 
-describe('posts/repos/public-query/taxonomy — listPostsByCategory / listPostsByTag', () => {
+describe('posts/repos/public-query/taxonomy — listPostsByTaxonomy', () => {
   it('lists posts by category', async () => {
     await seedPost({ slug: 'c', publishedRevisionId: 1n, category: 'tech' })
-    const { listPostsByCategory } = await import('@/server/domains/posts/repos/public-query/taxonomy')
-    const posts = await listPostsByCategory(db, 'tech')
+    const { listPostsByTaxonomy } = await import('@/server/domains/posts/repos/public-query/taxonomy')
+    const posts = await listPostsByTaxonomy(db, 'category', 'tech')
     expect(posts[0]?.slug).toBe('c')
   })
   it('lists posts by tag', async () => {
     const tid = await seedTag('React')
     const pid = await seedPost({ slug: 't', publishedRevisionId: 1n })
     await linkTag(pid, tid)
-    const { listPostsByTag } = await import('@/server/domains/posts/repos/public-query/taxonomy')
-    const posts = await listPostsByTag(db, 'React')
+    const { listPostsByTaxonomy } = await import('@/server/domains/posts/repos/public-query/taxonomy')
+    const posts = await listPostsByTaxonomy(db, 'tag', 'React')
     expect(posts[0]?.slug).toBe('t')
+  })
+})
+
+describe('posts/repos/public-query/taxonomy — listPostTitlesByTaxonomy', () => {
+  it('returns only titles, including hidden and scheduled posts', async () => {
+    await seedPost({ slug: 'vis', title: 'Visible', publishedRevisionId: 1n, category: 'tech' })
+    await seedPost({ slug: 'hid', title: 'Hidden', publishedRevisionId: 1n, category: 'tech', visible: false })
+    await seedPost({
+      slug: 'sch',
+      title: 'Scheduled',
+      publishedRevisionId: 1n,
+      category: 'tech',
+      publishedAt: new Date('2099-01-01'),
+    })
+    await seedPost({ slug: 'other', title: 'Other', publishedRevisionId: 1n, category: 'life' })
+    const { listPostTitlesByTaxonomy } = await import('@/server/domains/posts/repos/public-query/taxonomy')
+    const titles = await listPostTitlesByTaxonomy(db, 'category', 'tech')
+    expect(titles.sort()).toEqual(['Hidden', 'Scheduled', 'Visible'])
+  })
+  it('excludes drafts (no published revision) and matches tags by name', async () => {
+    const tid = await seedTag('React')
+    const livePid = await seedPost({ slug: 'live', title: 'Live', publishedRevisionId: 1n })
+    const draftPid = await seedPost({ slug: 'draft', title: 'Draft', published: false, publishedRevisionId: null })
+    await linkTag(livePid, tid)
+    await linkTag(draftPid, tid)
+    const { listPostTitlesByTaxonomy } = await import('@/server/domains/posts/repos/public-query/taxonomy')
+    expect(await listPostTitlesByTaxonomy(db, 'tag', 'React')).toEqual(['Live'])
   })
 })
 

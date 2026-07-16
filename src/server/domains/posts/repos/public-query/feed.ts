@@ -2,7 +2,7 @@ import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
 import type { Post, PostVisibilityOptions } from '@/shared/types/catalog'
 
-import { buildPublicPostFilters, hydratePostMetasToFullPosts } from '@/server/domains/posts/repos/hydrate'
+import { buildPublicPostFilters, hydratePostList } from '@/server/domains/posts/repos/hydrate'
 import { listPublicPosts } from '@/server/domains/posts/repos/public-query/listing'
 
 /**
@@ -27,5 +27,5 @@ export async function listPublicPostsWithContent(
     sortBy: options?.sortBy,
     limit: options?.limit,
   })
-  return hydratePostMetasToFullPosts(db, metas)
+  return hydratePostList(db, metas, { revision: 'published' })
 }

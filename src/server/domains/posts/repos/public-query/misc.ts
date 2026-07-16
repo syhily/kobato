@@ -5,11 +5,9 @@ import { and, desc, inArray, isNull } from 'drizzle-orm'
 import type { Post, PostVisibilityOptions } from '@/shared/types/catalog'
 
 import { isLive } from '@/server/domains/content/schema'
-import { buildPublicPostFilters, hydratePostImages } from '@/server/domains/posts/repos/hydrate'
+import { buildPublicPostFilters, hydratePostList } from '@/server/domains/posts/repos/hydrate'
 import { listPublicPosts } from '@/server/domains/posts/repos/public-query/listing'
 import { livePostWhere } from '@/server/domains/posts/repos/shared'
-import { toPostFromMeta } from '@/server/domains/posts/repos/single'
-import { findTagNamesByPostIds } from '@/server/infra/db/operations/post-tag'
 import { post as postMetaTable } from '@/server/infra/db/schema/post'
 
 /** Slim row for sitemap generation — only the fields needed to derive `permalink` + `lastmod`. */
@@ -69,23 +67,11 @@ export async function getPostsBySlugs(
   })
   const order = new Map(slugs.map((slug, index) => [slug, index]))
   filteredRows.sort((a, b) => (order.get(a.slug) ?? 0) - (order.get(b.slug) ?? 0))
-  const tagMap = await findTagNamesByPostIds(
-    db,
-    filteredRows.map((m) => m.id),
-  )
-  const posts = filteredRows.map((meta) => toPostFromMeta(meta, tagMap.get(meta.id) ?? []))
-  await hydratePostImages(db, posts)
-  return posts
+  return hydratePostList(db, filteredRows)
 }
 
 export async function listAllPosts(db: NodePgDatabase, options?: PostVisibilityOptions): Promise<Post[]> {
   const filters = buildPublicPostFilters(options)
   const metas = await listPublicPosts(db, { ...filters })
-  const tagMap = await findTagNamesByPostIds(
-    db,
-    metas.map((m) => m.id),
-  )
-  const posts = metas.map((meta) => toPostFromMeta(meta, tagMap.get(meta.id) ?? []))
-  await hydratePostImages(db, posts)
-  return posts
+  return hydratePostList(db, metas)
 }

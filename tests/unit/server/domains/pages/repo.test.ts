@@ -13,6 +13,7 @@ vi.mock('drizzle-orm', async (importOriginal) => {
 vi.mock('@/server/domains/content/repos/query', () => ({
   findContentById: vi.fn(),
   findContentsByIds: vi.fn(),
+  hydratePublishedRevisions: vi.fn(async () => new Map()),
 }))
 
 vi.mock('@/server/domains/content/schema', () => ({

@@ -6,14 +6,8 @@ import type { PostMetaRow } from '@/server/infra/db/types'
 import type { ClientPost, ListingPostCard, PostVisibilityOptions } from '@/shared/types/catalog'
 
 import { queryMetadata } from '@/server/domains/comments/services/likes'
-import { hydrateImageRefs } from '@/server/domains/images/services/enhance'
-import { buildPublicPostFilters } from '@/server/domains/posts/repos/hydrate'
-import {
-  buildPublicPostsWhere,
-  toClientPostFromMeta,
-  type ListPublicPostsFilters,
-} from '@/server/domains/posts/repos/shared'
-import { findTagNamesByPostIds } from '@/server/infra/db/operations/post-tag'
+import { buildPublicPostFilters, hydratePostList } from '@/server/domains/posts/repos/hydrate'
+import { buildPublicPostsWhere, type ListPublicPostsFilters } from '@/server/domains/posts/repos/shared'
 import { post as postMetaTable } from '@/server/infra/db/schema/post'
 import { toListingPostCard } from '@/shared/types/catalog'
 import { idFromString } from '@/shared/utils/id'
@@ -61,11 +55,8 @@ export async function listPublicPostCards(
 ): Promise<ListingPostCard[]> {
   const filters = buildPublicPostFilters(options)
   const metas = await listPublicPosts(db, { ...filters, sortBy: options?.sortBy })
-  const tagMap = await findTagNamesByPostIds(
-    db,
-    metas.map((m) => m.id),
-  )
-  return metas.map((meta) => toClientPostFromMeta(meta, tagMap.get(meta.id) ?? [])).map(toListingPostCard)
+  const posts = await hydratePostList(db, metas, { images: false })
+  return posts.map(toListingPostCard)
 }
 
 /** Cards for one listing page. The filtered count is deliberately not run
@@ -95,23 +86,8 @@ export async function listPublicPostCardsPaginated(
     limit: pageSize,
     offset,
   })
-  const tagMap = await findTagNamesByPostIds(
-    db,
-    metas.map((m) => m.id),
-  )
-  const posts = metas.map((meta) => toClientPostFromMeta(meta, tagMap.get(meta.id) ?? [])).map(toListingPostCard)
-  await hydrateImageRefs(
-    db,
-    posts,
-    (p) => p.cover,
-    (p, lookup) => {
-      p.coverThumbhash = lookup?.thumbhash
-      if (lookup?.publicUrl != null) {
-        p.cover = lookup.publicUrl
-      }
-    },
-  )
-  return posts
+  const posts = await hydratePostList(db, metas)
+  return posts.map(toListingPostCard)
 }
 
 export async function listClientPosts(
@@ -120,23 +96,7 @@ export async function listClientPosts(
 ): Promise<ClientPost[]> {
   const filters = buildPublicPostFilters(options)
   const metas = await listPublicPosts(db, { ...filters, limit: options?.limit ?? 200 })
-  const tagMap = await findTagNamesByPostIds(
-    db,
-    metas.map((m) => m.id),
-  )
-  const posts = metas.map((meta) => toClientPostFromMeta(meta, tagMap.get(meta.id) ?? []))
-  await hydrateImageRefs(
-    db,
-    posts,
-    (p) => p.cover,
-    (p, lookup) => {
-      p.coverThumbhash = lookup?.thumbhash
-      if (lookup?.publicUrl != null) {
-        p.cover = lookup.publicUrl
-      }
-    },
-  )
-  return posts
+  return hydratePostList(db, metas)
 }
 
 export async function getClientPostsWithMetadata<PostLike extends { id: string }>(

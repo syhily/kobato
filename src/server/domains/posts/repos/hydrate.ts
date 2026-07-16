@@ -2,28 +2,22 @@ import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
 import type { ListPublicPostsFilters } from '@/server/domains/posts/repos/shared'
 import type { PostMetaRow } from '@/server/infra/db/types'
-import type { ClientPost, Post, PostVisibilityOptions } from '@/shared/types/catalog'
+import type { Post, PostVisibilityOptions } from '@/shared/types/catalog'
 
-import { findContentsByIds } from '@/server/domains/content/repos/query'
+import { hydratePublishedRevisions } from '@/server/domains/content/repos/query'
 import { hydrateImageRefs } from '@/server/domains/images/services/enhance'
 import { toCmsPost } from '@/server/domains/posts/projection'
 import { findTagNamesByPostIds } from '@/server/infra/db/operations/post-tag'
 
-export async function hydratePostImages(db: NodePgDatabase, posts: Post[]): Promise<void> {
-  await hydrateImageRefs(
-    db,
-    posts,
-    (p) => p.cover,
-    (p, lookup) => {
-      p.coverThumbhash = lookup?.thumbhash
-      if (lookup?.publicUrl != null) {
-        p.cover = lookup.publicUrl
-      }
-    },
-  )
-}
-
-export async function hydrateClientPostCovers(db: NodePgDatabase, posts: ClientPost[]): Promise<void> {
+/**
+ * Cover hydration for any post-shaped projection carrying `cover` /
+ * `coverThumbhash` (`Post`, `ClientPost`, `ListingPostCard`, ...): resolves
+ * the stored cover to its CDN public URL and attaches the thumbhash.
+ */
+export async function hydratePostImages<T extends { cover: string; coverThumbhash?: string }>(
+  db: NodePgDatabase,
+  posts: T[],
+): Promise<void> {
   await hydrateImageRefs(
     db,
     posts,
@@ -46,27 +40,45 @@ export function buildPublicPostFilters(
   }
 }
 
-/** Join published `content` rows so callers receive a real `Post` with `body` (RSS, detail routes, etc.). */
-export async function hydratePostMetasToFullPosts(db: NodePgDatabase, metas: PostMetaRow[]): Promise<Post[]> {
+export interface HydratePostListOptions {
+  /**
+   * `'none'` (default): project metas with an empty body — cheap, for cards
+   * and metadata-only listings. `'published'`: batch-join the published
+   * `content` revisions so posts carry real Portable Text bodies + headings
+   * (feeds and other body-rendering callers).
+   */
+  revision?: 'none' | 'published'
+  /** Resolve covers to CDN public URLs + thumbhashes. Default `true`. */
+  images?: boolean
+}
+
+/**
+ * The public post-list assembly pipeline: batch tag names, project each
+ * meta to a full `Post`, optionally join published revisions, optionally
+ * hydrate covers. Every public listing (cards, archives, taxonomy, feed,
+ * search hydration) is a one-liner over this — mount it instead of
+ * hand-assembling a new copy.
+ */
+export async function hydratePostList(
+  db: NodePgDatabase,
+  metas: PostMetaRow[],
+  options: HydratePostListOptions = {},
+): Promise<Post[]> {
   if (metas.length === 0) {
     return []
   }
-  const revisionIds = metas.map((m) => m.publishedRevisionId).filter((id): id is bigint => id !== null)
-  const revisionMap = new Map<bigint, Awaited<ReturnType<typeof findContentsByIds>>[number]>()
-  if (revisionIds.length > 0) {
-    const rows = await findContentsByIds(db, revisionIds)
-    for (const row of rows) {
-      revisionMap.set(row.id, row)
-    }
-  }
+  const revisions = options.revision === 'published' ? await hydratePublishedRevisions(db, metas) : null
   const tagMap = await findTagNamesByPostIds(
     db,
     metas.map((m) => m.id),
   )
   const posts = metas.map((meta) => {
-    const revision = meta.publishedRevisionId === null ? null : (revisionMap.get(meta.publishedRevisionId) ?? null)
+    const revision =
+      revisions === null || meta.publishedRevisionId === null ? null : (revisions.get(meta.publishedRevisionId) ?? null)
     return toCmsPost(meta, revision, { tags: tagMap.get(meta.id) ?? [] })
   })
-  await hydratePostImages(db, posts)
+  if (options.images !== false) {
+    await hydratePostImages(db, posts)
+  }
   return posts
 }

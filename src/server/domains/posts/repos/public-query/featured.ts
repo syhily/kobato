@@ -4,7 +4,7 @@ import { and, desc, eq, isNotNull, sql } from 'drizzle-orm'
 
 import type { ClientPost, SidebarPostLink } from '@/shared/types/catalog'
 
-import { hydrateClientPostCovers } from '@/server/domains/posts/repos/hydrate'
+import { hydratePostImages, hydratePostList } from '@/server/domains/posts/repos/hydrate'
 import { livePostWhere, toClientPostFromMeta } from '@/server/domains/posts/repos/shared'
 import { findTagNamesByPostIds } from '@/server/infra/db/operations/post-tag'
 import { post as postMetaTable } from '@/server/infra/db/schema/post'
@@ -36,7 +36,7 @@ export async function selectFeaturePosts(db: NodePgDatabase, seed: string): Prom
   )
   const pinned = pinnedMetas.map((meta) => toClientPostFromMeta(meta, pinnedTagMap.get(meta.id) ?? []))
   if (pinned.length === FEATURE_POST_COUNT) {
-    await hydrateClientPostCovers(db, pinned)
+    await hydratePostImages(db, pinned)
     return pinned
   }
 
@@ -78,7 +78,7 @@ export async function selectFeaturePosts(db: NodePgDatabase, seed: string): Prom
     result = [...pinned, ...shuffled.slice(0, FEATURE_POST_COUNT - pinned.length)]
   }
 
-  await hydrateClientPostCovers(db, result)
+  await hydratePostImages(db, result)
   return result
 }
 
@@ -96,9 +96,6 @@ export async function selectSidebarPosts(db: NodePgDatabase, count: number): Pro
     .where(and(livePostWhere(), eq(postMetaTable.visible, true)))
     .orderBy(sql`md5(${postMetaTable.id}::text || ${seed})`)
     .limit(count)
-  const tagMap = await findTagNamesByPostIds(
-    db,
-    metas.map((m) => m.id),
-  )
-  return metas.map((meta) => toClientPostFromMeta(meta, tagMap.get(meta.id) ?? [])).map(toSidebarPostLink)
+  const posts = await hydratePostList(db, metas, { images: false })
+  return posts.map(toSidebarPostLink)
 }

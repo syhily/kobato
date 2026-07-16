@@ -2,7 +2,7 @@ import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
 import type { AdminCategoryDto, UpsertCategoryInputs } from '@/server/domains/taxonomies/categories/projection'
 
-import { listPostsByCategory } from '@/server/domains/posts/repos/public-query/taxonomy'
+import { listPostTitlesByTaxonomy } from '@/server/domains/posts/repos/public-query/taxonomy'
 import { toAdminCategoryDto } from '@/server/domains/taxonomies/categories/projection'
 import { categoriesCache } from '@/server/domains/taxonomies/categories/services/query'
 import { countPostsByTaxonomy } from '@/server/domains/taxonomies/counts'
@@ -117,7 +117,7 @@ export async function deleteAdminCategory(db: NodePgDatabase, id: bigint): Promi
   const result = await deleteAdminTaxonomy(id, '分类', {
     findById: (id) => findCategoryById(db, id),
     deleteRow: (id) => deleteCategoryRow(db, id),
-    listPostsBy: (name) => listPostsByCategory(db, name),
+    listPostTitles: (name) => listPostTitlesByTaxonomy(db, 'category', name),
   })
   if (result) {
     await categoriesCache.clear()

@@ -55,17 +55,21 @@ async function seedTag(opts: Partial<typeof tagTable.$inferInsert> = {}): Promis
   return rows[0]!.id
 }
 
-async function seedPublishedPost(category?: string): Promise<bigint> {
+async function seedPublishedPost(
+  category?: string,
+  opts: { title?: string; visible?: boolean; publishedAt?: Date } = {},
+): Promise<bigint> {
   const rows = await db
     .insert(postMetaTable)
     .values({
       slug: `p-${Math.random().toString(36).slice(2)}`,
-      title: 'Post',
+      title: opts.title ?? 'Post',
       published: true,
       publishedRevisionId: 1n,
-      publishedAt: new Date('2020-01-01'),
+      publishedAt: opts.publishedAt ?? new Date('2020-01-01'),
       firstPublishedAt: new Date('2020-01-01'),
       category: category ?? '',
+      visible: opts.visible ?? true,
     })
     .returning({ id: postMetaTable.id })
   return rows[0]!.id
@@ -133,7 +137,7 @@ describe('taxonomies/shared — deleteAdminTaxonomy', () => {
     const r = await deleteAdminTaxonomy(9999n, '标签', {
       findById: async () => null,
       deleteRow: async () => false,
-      listPostsBy: async () => [],
+      listPostTitles: async () => [],
     })
     expect(r).toBe(false)
   })
@@ -143,7 +147,7 @@ describe('taxonomies/shared — deleteAdminTaxonomy', () => {
       deleteAdminTaxonomy(1n, '标签', {
         findById: async () => ({ name: 'X' }),
         deleteRow: async () => true,
-        listPostsBy: async () => [{ title: 'Post A' }],
+        listPostTitles: async () => ['Post A'],
       }),
     ).rejects.toMatchObject({ code: 'CONFLICT' })
   })
@@ -156,7 +160,7 @@ describe('taxonomies/shared — deleteAdminTaxonomy', () => {
         deleted = true
         return true
       },
-      listPostsBy: async () => [],
+      listPostTitles: async () => [],
     })
     expect(r).toBe(true)
     expect(deleted).toBe(true)
@@ -235,6 +239,28 @@ describe('taxonomies/tags/service — deleteAdminTag', () => {
     await db.insert(postTag).values({ postId: pid, tagId: id })
     const { deleteAdminTag } = await import('@/server/domains/taxonomies/tags/service')
     await expect(deleteAdminTag(db, id)).rejects.toMatchObject({ code: 'CONFLICT' })
+  })
+  it('blocks on hidden + scheduled references, names them, and never touches image hydration', async () => {
+    const id = await seedTag({ name: 'Ref2', slug: 'ref2' })
+    const hiddenPid = await seedPublishedPost(undefined, { title: 'Hidden Post', visible: false })
+    const scheduledPid = await seedPublishedPost(undefined, {
+      title: 'Scheduled Post',
+      publishedAt: new Date('2099-01-01'),
+    })
+    await db.insert(postTag).values([
+      { postId: hiddenPid, tagId: id },
+      { postId: scheduledPid, tagId: id },
+    ])
+    const { deleteAdminTag } = await import('@/server/domains/taxonomies/tags/service')
+    const error = await deleteAdminTag(db, id).catch((e: unknown) => e)
+    expect(error).toMatchObject({ code: 'CONFLICT' })
+    expect((error as Error).message).toContain('Hidden Post')
+    expect((error as Error).message).toContain('Scheduled Post')
+    // The slim delete guard selects titles only — it must not run the full
+    // listing pipeline (whose cover hydration would reach `hydrateImageRefs`
+    // and its thumbhash batch query).
+    const { hydrateImageRefs } = await import('@/server/domains/images/services/enhance')
+    expect(hydrateImageRefs).not.toHaveBeenCalled()
   })
 })
 
@@ -360,6 +386,16 @@ describe('taxonomies/categories/services/mutate — deleteAdminCategory', () => 
     await seedPublishedPost('Tech')
     const { deleteAdminCategory } = await import('@/server/domains/taxonomies/categories/services/mutate')
     await expect(deleteAdminCategory(db, id)).rejects.toMatchObject({ code: 'CONFLICT' })
+  })
+  it('blocks on hidden + scheduled references and names them in the 409 body', async () => {
+    const id = await seedCategory({ name: 'Tech', slug: 'tech3' })
+    await seedPublishedPost('Tech', { title: 'Hidden Post', visible: false })
+    await seedPublishedPost('Tech', { title: 'Scheduled Post', publishedAt: new Date('2099-01-01') })
+    const { deleteAdminCategory } = await import('@/server/domains/taxonomies/categories/services/mutate')
+    const error = await deleteAdminCategory(db, id).catch((e: unknown) => e)
+    expect(error).toMatchObject({ code: 'CONFLICT' })
+    expect((error as Error).message).toContain('Hidden Post')
+    expect((error as Error).message).toContain('Scheduled Post')
   })
   it('returns false when the category does not exist', async () => {
     const { deleteAdminCategory } = await import('@/server/domains/taxonomies/categories/services/mutate')

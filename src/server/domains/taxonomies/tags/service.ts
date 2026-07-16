@@ -6,7 +6,7 @@ import type { TagRow } from '@/server/infra/db/types'
 import type { Tag } from '@/shared/types/catalog'
 import type { AdminTagDto } from '@/shared/types/tags'
 
-import { listPostsByTag } from '@/server/domains/posts/repos/public-query/taxonomy'
+import { listPostTitlesByTaxonomy } from '@/server/domains/posts/repos/public-query/taxonomy'
 import { countPostsByTaxonomy } from '@/server/domains/taxonomies/counts'
 import {
   deleteAdminTaxonomy,
@@ -154,7 +154,7 @@ export async function deleteAdminTag(db: NodePgDatabase, id: bigint, _viewer?: T
   const deleted = await deleteAdminTaxonomy(id, '标签', {
     findById: (id) => findTagById(db, id),
     deleteRow: (id) => deleteTagRow(db, id),
-    listPostsBy: (name) => listPostsByTag(db, name),
+    listPostTitles: (name) => listPostTitlesByTaxonomy(db, 'tag', name),
   })
   if (deleted) {
     await clearTagCache().catch((err: unknown) => {

@@ -6,7 +6,7 @@ import type { CmsPage } from '@/server/domains/pages/projection'
 import type { NewPageMeta, PageMetaRow } from '@/server/infra/db/types'
 import type { Page } from '@/shared/types/catalog'
 
-import { findContentById, findContentsByIds } from '@/server/domains/content/repos/query'
+import { findContentById, hydratePublishedRevisions } from '@/server/domains/content/repos/query'
 import { isLive, liveContentWhere, type LiveContentOptions } from '@/server/domains/content/schema'
 import { hydrateImageRefs } from '@/server/domains/images/services/enhance'
 import { toCmsPage } from '@/server/domains/pages/projection'
@@ -298,15 +298,7 @@ export async function listAllPages(db: NodePgDatabase): Promise<Page[]> {
     return []
   }
 
-  const revisionIds = visible.map((m) => m.publishedRevisionId).filter((id): id is bigint => id !== null)
-  const revisionMap = new Map<bigint, Awaited<ReturnType<typeof findContentsByIds>>[number]>()
-  if (revisionIds.length > 0) {
-    const rows = await findContentsByIds(db, revisionIds)
-    for (const row of rows) {
-      revisionMap.set(row.id, row)
-    }
-  }
-
+  const revisionMap = await hydratePublishedRevisions(db, visible)
   const pages = visible.map((meta) => {
     const revision = meta.publishedRevisionId === null ? null : (revisionMap.get(meta.publishedRevisionId) ?? null)
     return buildDbPage(toCmsPage(meta, revision))

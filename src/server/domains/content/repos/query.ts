@@ -19,6 +19,29 @@ export async function findContentsByIds(db: NodePgDatabase, ids: bigint[]): Prom
   return db.select().from(contentTable).where(inArray(contentTable.id, ids))
 }
 
+/**
+ * Batch-join the published `content` revision for a list of metas —
+ * structural over post and page rows (like `LiveContentColumns`), since
+ * both declare `publishedRevisionId` identically. Returns a map keyed by
+ * revision id so callers resolve `meta.publishedRevisionId` in O(1).
+ * Empty input (or all-null revision ids) short-circuits without a query.
+ */
+export async function hydratePublishedRevisions(
+  db: NodePgDatabase,
+  rows: readonly { publishedRevisionId: bigint | null }[],
+): Promise<Map<bigint, ContentRow>> {
+  const map = new Map<bigint, ContentRow>()
+  const ids = rows.map((row) => row.publishedRevisionId).filter((id): id is bigint => id !== null)
+  if (ids.length === 0) {
+    return map
+  }
+  const revisions = await findContentsByIds(db, ids)
+  for (const revision of revisions) {
+    map.set(revision.id, revision)
+  }
+  return map
+}
+
 export async function findLatestRevision(
   db: NodePgDatabase,
   type: ContentType,
