@@ -191,4 +191,18 @@ describe('services/search — getPostsBySlugs', () => {
 
     expect(posts.map((p) => p.slug)).toEqual(['match-gamma', 'alpha-match', 'match-beta'])
   })
+
+  it('excludes published rows that never had a revision promoted', async () => {
+    await seedPost({
+      slug: 'never-promoted',
+      title: 'Never Promoted',
+      published: true,
+      publishedRevisionId: null,
+    })
+    await seedPost({ slug: 'promoted-live', title: 'Promoted Live', publishedRevisionId: 1n })
+
+    const posts = await getPostsBySlugs(db, ['never-promoted', 'promoted-live'], searchPostOptions())
+
+    expect(posts.map((p) => p.slug)).toEqual(['promoted-live'])
+  })
 })

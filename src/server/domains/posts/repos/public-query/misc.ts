@@ -4,7 +4,7 @@ import { and, desc, inArray, isNull } from 'drizzle-orm'
 
 import type { Post, PostVisibilityOptions } from '@/shared/types/catalog'
 
-import { liveContentWhere } from '@/server/domains/content/schema'
+import { isLive, liveContentWhere } from '@/server/domains/content/schema'
 import { buildPublicPostFilters, hydratePostImages } from '@/server/domains/posts/repos/hydrate'
 import { listPublicPosts } from '@/server/domains/posts/repos/public-query/listing'
 import { toPostFromMeta } from '@/server/domains/posts/repos/single'
@@ -70,8 +70,11 @@ export async function getPostsBySlugs(
   const now = new Date()
   const filteredRows = rows.filter((meta) => {
     const visible = filters.includeHidden || meta.visible
-    const published = filters.includeScheduled || meta.publishedAt <= now
-    return visible && published && meta.published
+    // Mirror the canonical live gate (content/schema.ts). `includeScheduled`
+    // relaxes only the publishedAt<=now leg — a row without a promoted
+    // revision is never public, scheduled or not.
+    const live = filters.includeScheduled ? meta.published && meta.publishedRevisionId !== null : isLive(meta, now)
+    return visible && live
   })
   const order = new Map(slugs.map((slug, index) => [slug, index]))
   filteredRows.sort((a, b) => (order.get(a.slug) ?? 0) - (order.get(b.slug) ?? 0))
