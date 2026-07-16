@@ -48,7 +48,8 @@ describe('adminFriendsRouter.list', () => {
     await call(adminFriendsRouter.list, { visible: false }, { context: ctx })
     expect(service.listFriendsForAdmin).toHaveBeenCalledWith(expect.anything(), {
       q: undefined,
-      includeHidden: undefined,
+      // The domain schema defaults `includeHidden` at the wire boundary.
+      includeHidden: false,
       visible: false,
       offset: undefined,
       limit: undefined,

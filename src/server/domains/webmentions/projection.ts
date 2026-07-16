@@ -1,20 +1,5 @@
 import type { WebmentionRow } from '@/server/infra/db/types'
-
-// Wire shape for the admin moderation list. bigints and Dates are
-// projected to strings/ISO — the oRPC JSON channel cannot carry either.
-export interface AdminWebmentionWire {
-  id: string
-  sourceUrl: string
-  targetUrl: string
-  targetType: 'post' | 'page'
-  status: WebmentionRow['status']
-  authorName: string | null
-  title: string | null
-  summary: string | null
-  fetchedAt: string | null
-  createdAt: string
-  moderatedAt: string | null
-}
+import type { AdminWebmentionWire } from '@/shared/types/webmentions'
 
 export function asAdminWebmentionWire(row: WebmentionRow): AdminWebmentionWire {
   return {

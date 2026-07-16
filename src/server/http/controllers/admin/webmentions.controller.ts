@@ -4,20 +4,7 @@ import { recordAuditEventFromContext } from '@/server/domains/audit/services/rec
 import { adminWebmentionListSchema } from '@/server/domains/webmentions/schema'
 import { approveWebmention, listAdminWebmentions, rejectWebmention } from '@/server/domains/webmentions/service'
 import { adminProc } from '@/server/http/orpc-base'
-
-const adminWebmentionDto = z.object({
-  id: z.string(),
-  sourceUrl: z.string(),
-  targetUrl: z.string(),
-  targetType: z.enum(['post', 'page']),
-  status: z.enum(['pending', 'approved', 'rejected']),
-  authorName: z.string().nullable(),
-  title: z.string().nullable(),
-  summary: z.string().nullable(),
-  fetchedAt: z.string().nullable(),
-  createdAt: z.string(),
-  moderatedAt: z.string().nullable(),
-})
+import { adminWebmentionDto } from '@/shared/contracts/webmentions'
 
 const loadAll = adminProc
   .route({ method: 'GET', path: '/webmention-admin/load-all' })

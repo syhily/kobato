@@ -1,9 +1,9 @@
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
-import type { AdminWebmentionWire } from '@/server/domains/webmentions/projection'
 import type { WebmentionReceiveInput } from '@/server/domains/webmentions/schema'
 import type { WebmentionStatus, WebmentionStatusCounts } from '@/server/infra/db/operations/webmention'
 import type { WebmentionRow } from '@/server/infra/db/types'
+import type { AdminWebmentionWire } from '@/shared/types/webmentions'
 
 import { sendNewWebmention } from '@/server/domains/webmentions/email'
 import { fetchSourceHtml } from '@/server/domains/webmentions/fetch'

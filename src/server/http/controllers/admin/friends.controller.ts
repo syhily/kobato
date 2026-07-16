@@ -2,6 +2,7 @@ import { ORPCError } from '@orpc/server'
 import { z } from 'zod'
 
 import { recordAuditEventFromContext } from '@/server/domains/audit/services/record'
+import { friendIdSchema, listFriendsSchema, upsertFriendSchema } from '@/server/domains/friends/schema'
 import { deleteAdminFriend, listFriendsForAdmin, upsertAdminFriend } from '@/server/domains/friends/service'
 import { adminProc } from '@/server/http/orpc-base'
 import { adminFriendDto } from '@/shared/contracts/friends'
@@ -9,17 +10,7 @@ import { idFromString } from '@/shared/utils/id'
 
 const list = adminProc
   .route({ method: 'GET', path: '/admin/friends/list' })
-  .input(
-    z.object({
-      q: z.string().optional(),
-      includeHidden: z.boolean().optional(),
-      // Exact visibility match — the pending-review bucket passes
-      // `visible: false`; omit it for the classic includeHidden behavior.
-      visible: z.boolean().optional(),
-      offset: z.number().optional(),
-      limit: z.number().optional(),
-    }),
-  )
+  .input(listFriendsSchema)
   .output(z.object({ friends: z.array(adminFriendDto), total: z.number(), hasMore: z.boolean() }))
   .handler(({ input, context }) =>
     listFriendsForAdmin(context.db, {
@@ -33,17 +24,7 @@ const list = adminProc
 
 const upsert = adminProc
   .route({ method: 'POST', path: '/admin/friends/upsert' })
-  .input(
-    z.object({
-      id: z.string().min(1).optional(),
-      website: z.string().trim().min(1).max(80),
-      description: z.string().max(999).nullable().optional(),
-      homepage: z.url().max(500),
-      poster: z.url().max(500),
-      rssUrl: z.union([z.url().max(500), z.literal(''), z.null()]).optional(),
-      visible: z.boolean().optional().default(true),
-    }),
-  )
+  .input(upsertFriendSchema)
   .output(z.object({ friend: adminFriendDto }))
   .handler(async ({ input, context }) => {
     const friend = await upsertAdminFriend(context.db, {
@@ -65,7 +46,7 @@ const upsert = adminProc
 
 const remove = adminProc
   .route({ method: 'POST', path: '/admin/friends/remove' })
-  .input(z.object({ id: z.string().min(1) }))
+  .input(friendIdSchema)
   .output(z.void())
   .handler(async ({ input, context }) => {
     const ok = await deleteAdminFriend(context.db, idFromString(input.id))

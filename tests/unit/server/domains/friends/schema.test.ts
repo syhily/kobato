@@ -30,6 +30,12 @@ describe('server/domains/friends/schema — listFriendsSchema', () => {
     expect(result.data?.limit).toBe(20)
   })
 
+  it('passes an exact visibility match through (pending-review bucket)', () => {
+    const result = listFriendsSchema.safeParse({ visible: false })
+    expect(result.success).toBe(true)
+    expect(result.data?.visible).toBe(false)
+  })
+
   it('rejects limit above 100', () => {
     expect(listFriendsSchema.safeParse({ limit: 101 }).success).toBe(false)
   })
@@ -68,8 +74,20 @@ describe('server/domains/friends/schema — upsertFriendSchema', () => {
     expect(result.data?.description).toBeUndefined()
   })
 
+  it('accepts a null description and normalizes it to undefined', () => {
+    const result = upsertFriendSchema.safeParse({ ...valid, description: null })
+    expect(result.success).toBe(true)
+    expect(result.data?.description).toBeUndefined()
+  })
+
   it('treats empty rssUrl as undefined', () => {
     const result = upsertFriendSchema.safeParse({ ...valid, rssUrl: '' })
+    expect(result.success).toBe(true)
+    expect(result.data?.rssUrl).toBeUndefined()
+  })
+
+  it('accepts a null rssUrl and normalizes it to undefined', () => {
+    const result = upsertFriendSchema.safeParse({ ...valid, rssUrl: null })
     expect(result.success).toBe(true)
     expect(result.data?.rssUrl).toBeUndefined()
   })
