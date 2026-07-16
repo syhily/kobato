@@ -107,6 +107,7 @@ export const assetsSchema = z
         blogPoster: brandingObjectRef.optional(),
         blogPosterDark: brandingObjectRef.optional(),
         defaultAvatar: brandingObjectRef.optional(),
+        defaultMusicCover: brandingObjectRef.optional(),
         robotsTxt: robotsTxt.optional(),
       })
       .optional(),

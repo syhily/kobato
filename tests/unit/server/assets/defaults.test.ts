@@ -62,6 +62,7 @@ describe('DEFAULT_BINARY', () => {
       'blogPoster',
       'blogPosterDark',
       'defaultAvatar',
+      'defaultMusicCover',
     ]
     expect(Object.keys(DEFAULT_BINARY).sort()).toEqual(expected.sort())
   })

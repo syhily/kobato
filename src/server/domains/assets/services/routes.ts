@@ -41,6 +41,7 @@ export const ASSET_ROUTES: Readonly<Record<string, AssetRoute>> = {
   '/images/blog-poster.png': { kind: 'binary', slot: 'blogPoster' },
   '/images/blog-poster-dark.png': { kind: 'binary', slot: 'blogPosterDark' },
   '/images/default-avatar.png': { kind: 'binary', slot: 'defaultAvatar' },
+  '/images/default-music-cover.png': { kind: 'binary', slot: 'defaultMusicCover' },
 }
 
 // Defensive sanity check: every BinarySlot must have exactly one route.

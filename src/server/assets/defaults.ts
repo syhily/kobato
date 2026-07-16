@@ -23,6 +23,7 @@ export const BINARY_SLOTS = [
   'blogPoster',
   'blogPosterDark',
   'defaultAvatar',
+  'defaultMusicCover',
 ] as const
 export type BinarySlot = (typeof BINARY_SLOTS)[number]
 const BINARY_SLOT_SET = new Set<string>(BINARY_SLOTS)

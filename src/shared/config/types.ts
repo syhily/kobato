@@ -193,6 +193,7 @@ export interface SiteAssetBranding {
   blogPoster?: BrandingObjectRef
   blogPosterDark?: BrandingObjectRef
   defaultAvatar?: BrandingObjectRef
+  defaultMusicCover?: BrandingObjectRef
   robotsTxt?: string
 }
 

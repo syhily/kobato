@@ -46,6 +46,7 @@ export const SLOT_CONTENT_TYPE: Readonly<Record<BrandingSlot, string>> = {
   blogPoster: 'image/png',
   blogPosterDark: 'image/png',
   defaultAvatar: 'image/png',
+  defaultMusicCover: 'image/png',
 }
 
 // Per-slot byte ceiling. We bound individual uploads so an oversized
@@ -65,6 +66,7 @@ export const SLOT_MAX_BYTES: Readonly<Record<BrandingSlot, number>> = {
   blogPoster: 600 * 1024,
   blogPosterDark: 600 * 1024,
   defaultAvatar: 100 * 1024,
+  defaultMusicCover: 100 * 1024,
 }
 
 // --- Per-kind content validation ---
