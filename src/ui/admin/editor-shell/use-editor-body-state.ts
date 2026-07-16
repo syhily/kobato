@@ -13,17 +13,24 @@ export interface EditorBodyState {
   markBodySaved: (savedBody: PortableTextBody) => void
 }
 
+// The module owns the empty-body identity: both "no body yet" paths must
+// hand out this single reference, never a fresh `[]`. A fresh array per
+// recompute fed the conflict check in use-editor-shell-state into an
+// infinite setState-during-render loop ("Too many re-renders") — live in
+// edit mode when an entity has zero revisions.
+const EMPTY_BODY: PortableTextBody = []
+
 export function useEditorBodyState<TEntity extends EntityLike>(args: EditorShellArgs<TEntity>): EditorBodyState {
   // Deps are the primitive/loader references, NOT `args` itself — the shell
   // rebuilds the args object every render, so `[args]` would recompute every
-  // render and hand out a fresh `[]` in create mode. That unstable
-  // `initialBody` fed the conflict check in use-editor-shell-state into an
-  // infinite setState-during-render loop on /editor/*/new.
+  // render. That instability fed the conflict check in
+  // use-editor-shell-state into an infinite setState-during-render loop on
+  // /editor/*/new.
   const initialBody = useMemo<PortableTextBody>(() => {
     if (!args.isEditing) {
-      return []
+      return EMPTY_BODY
     }
-    return (args.detail.latestRevision ?? args.detail.publishedRevision)?.body ?? []
+    return (args.detail.latestRevision ?? args.detail.publishedRevision)?.body ?? EMPTY_BODY
   }, [args.isEditing, args.detail])
 
   const [body, setBody] = useState<PortableTextBody>(initialBody)

@@ -52,7 +52,7 @@ vi.mock('@/ui/admin/editor-shell/use-editor-keyboard-shortcuts', () => ({
   useEditorKeyboardShortcuts: vi.fn(),
 }))
 
-import type { EntityLike } from '@/ui/admin/editor-shell/editor-shell-types'
+import type { EditorShellDetail, EntityLike } from '@/ui/admin/editor-shell/editor-shell-types'
 
 import { useEditorShellState } from '@/ui/admin/editor-shell/use-editor-shell-state'
 
@@ -90,6 +90,26 @@ function makeCreateArgs() {
   }
 }
 
+function makeEditArgs() {
+  // The shell TSX rebuilds the detail literal every render from the
+  // loader-stable DTO, so each call hands out a fresh object on purpose.
+  const detail: EditorShellDetail<EntityLike> = {
+    entity: {
+      id: 'post-1',
+      slug: 'hello-world',
+      updatedAt: '2026-07-01T00:00:00.000Z',
+      publishedAt: null,
+    },
+    latestRevision: null,
+    publishedRevision: null,
+  }
+  return {
+    ...makeCreateArgs(),
+    mode: 'edit' as const,
+    detail,
+  }
+}
+
 describe('ui/admin/editor-shell/useEditorShellState — client re-renders', () => {
   it('create mode survives re-renders with a referentially stable initialBody', () => {
     // Regression: use-editor-body-state memoized on `[args]` (rebuilt every
@@ -98,6 +118,20 @@ describe('ui/admin/editor-shell/useEditorShellState — client re-renders', () =
     // setState-during-render looped until React threw "Too many re-renders"
     // on /editor/post/new.
     const { result, rerender } = renderHook(() => useEditorShellState<Meta, EntityLike>(makeCreateArgs()))
+    const firstBody = result.current.initialBody
+    rerender()
+    rerender()
+    expect(result.current.initialBody).toBe(firstBody)
+    expect(result.current.conflict).toBeNull()
+  })
+
+  it('edit mode with zero revisions survives re-renders with a referentially stable initialBody', () => {
+    // Regression: an entity with no revisions (persistCreate whose saveDraft
+    // leg failed still navigates to the edit path) made the body-state memo
+    // hand out a fresh `[]` every render — `(null ?? null)?.body ?? []`.
+    // The conflict check then setState-during-render looped until React threw
+    // "Too many re-renders"; one external re-render (typing) ignited it.
+    const { result, rerender } = renderHook(() => useEditorShellState<Meta, EntityLike>(makeEditArgs()))
     const firstBody = result.current.initialBody
     rerender()
     rerender()
