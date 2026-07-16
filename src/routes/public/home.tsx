@@ -79,7 +79,7 @@ export async function loader({
       listPublicPostCardsPaginated(db, pageNum, pageSize, {
         ...filters,
         offset: (pageNum - 1) * homePageSize,
-      }).then((r) => r.posts),
+      }),
     rootPath: '/',
     pageSize: homePageSize,
     mergeTailWhenLessThan,

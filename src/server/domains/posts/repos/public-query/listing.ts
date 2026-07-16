@@ -68,6 +68,9 @@ export async function listPublicPostCards(
   return metas.map((meta) => toClientPostFromMeta(meta, tagMap.get(meta.id) ?? [])).map(toListingPostCard)
 }
 
+/** Cards for one listing page. The filtered count is deliberately not run
+    here: callers that need `total` call `countPublicPosts` themselves (all
+    current callers already do), so the count runs once per request. */
 export async function listPublicPostCardsPaginated(
   db: NodePgDatabase,
   pageNum: number,
@@ -81,25 +84,17 @@ export async function listPublicPostCardsPaginated(
         the offset must still be based on the original page size. */
     offset?: number
   },
-): Promise<{ posts: ListingPostCard[]; total: number }> {
+): Promise<ListingPostCard[]> {
   const filters = buildPublicPostFilters(options)
   const offset = options?.offset ?? (pageNum - 1) * pageSize
-  const now = new Date()
-  const [metas, total] = await Promise.all([
-    listPublicPosts(
-      db,
-      {
-        ...filters,
-        sortBy: options?.sortBy,
-        category: options?.category,
-        tag: options?.tag,
-        limit: pageSize,
-        offset,
-      },
-      now,
-    ),
-    countPublicPosts(db, { ...filters, category: options?.category, tag: options?.tag }, now),
-  ])
+  const metas = await listPublicPosts(db, {
+    ...filters,
+    sortBy: options?.sortBy,
+    category: options?.category,
+    tag: options?.tag,
+    limit: pageSize,
+    offset,
+  })
   const tagMap = await findTagNamesByPostIds(
     db,
     metas.map((m) => m.id),
@@ -116,7 +111,7 @@ export async function listPublicPostCardsPaginated(
       }
     },
   )
-  return { posts, total }
+  return posts
 }
 
 export async function listClientPosts(

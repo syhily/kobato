@@ -34,7 +34,7 @@ const mocks = vi.hoisted(() => ({
   paginatedPosts: vi.fn(async (_db: unknown, pageNum: number, pageSize: number) => {
     const posts = mocks.listClientPosts() ?? []
     const start = (pageNum - 1) * pageSize
-    return { posts: posts.slice(start, start + pageSize), total: posts.length }
+    return posts.slice(start, start + pageSize)
   }),
 }))
 

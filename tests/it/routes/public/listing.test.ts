@@ -65,7 +65,7 @@ vi.mock('@/server/domains/posts/repos/public-query/listing', () => ({
       options: { includeHidden?: boolean; category?: string; tag?: string },
     ) => {
       const posts = options?.includeHidden ? samplePosts : publicPosts
-      return { posts, total: posts.length }
+      return posts
     },
   ),
   getClientPostsWithMetadata: vi.fn(async (_db: unknown, posts: unknown[]) =>

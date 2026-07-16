@@ -370,14 +370,13 @@ describe('posts/repos/public-query/listing — listPublicPostCards / Paginated /
     const cards = await listPublicPostCards(db)
     expect(cards[0]?.slug).toBe('card')
   })
-  it('paginates with total + hasMore', async () => {
+  it('paginates post cards', async () => {
     for (let i = 0; i < 3; i++) {
       await seedPost({ slug: `pg-${i}`, publishedRevisionId: 1n })
     }
     const { listPublicPostCardsPaginated } = await import('@/server/domains/posts/repos/public-query/listing')
-    const r = await listPublicPostCardsPaginated(db, 1, 2)
-    expect(r.posts).toHaveLength(2)
-    expect(r.total).toBe(3)
+    const cards = await listPublicPostCardsPaginated(db, 1, 2)
+    expect(cards).toHaveLength(2)
   })
   it('listClientPosts returns posts with empty body', async () => {
     await seedPost({ slug: 'cl', publishedRevisionId: 1n })

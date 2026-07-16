@@ -32,7 +32,7 @@ export async function loader({ request, context, params }: Route.LoaderArgs): Pr
         includeHidden: true,
         includeScheduled: false,
         tag: tag.name,
-      }).then((r) => r.posts),
+      }),
     rootPath,
     metadata: { likes: true, views: true, comments: false },
     title: tag.name,
