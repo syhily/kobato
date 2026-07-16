@@ -49,8 +49,8 @@ importers:
         specifier: ^0.26.1
         version: 0.26.1(hono@4.12.30)
       '@maxmind/geoip2-node':
-        specifier: ^6.3.4
-        version: 6.3.4
+        specifier: ^7.0.0
+        version: 7.0.0
       '@number-flow/react':
         specifier: ^0.6.1
         version: 0.6.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
@@ -995,8 +995,9 @@ packages:
   '@levischuck/tiny-cbor@0.2.11':
     resolution: {integrity: sha512-llBRm4dT4Z89aRsm6u2oEZ8tfwL/2l6BwpZ7JcyieouniDECM5AqNgr/y08zalEIvW3RSK4upYyybDcmjXqAow==}
 
-  '@maxmind/geoip2-node@6.3.4':
-    resolution: {integrity: sha512-BTRFHCX7Uie4wVSPXsWQfg0EVl4eGZgLCts0BTKAP+Eiyt1zmF2UPyuUZkaj0R59XSDYO+84o1THAtaenUoQYg==}
+  '@maxmind/geoip2-node@7.0.0':
+    resolution: {integrity: sha512-TUuCUXP93+cCkHmSy42vLwKquMsr20vrhcDBqqEPrpfdFFw16sL6hcmEuAyHbs2S+IVgouqsF37wnCdtbi+i7A==}
+    engines: {node: '>=22'}
 
   '@napi-rs/canvas-android-arm64@1.0.2':
     resolution: {integrity: sha512-IMXKVQod0ol4vt3gmClUfXz4JAgHYESGPCUqmH3lQxBoL0K/2greJaQE1HVBVxWWFKfLc4OLZVdxg7kXVyXv+g==}
@@ -4466,7 +4467,7 @@ snapshots:
 
   '@levischuck/tiny-cbor@0.2.11': {}
 
-  '@maxmind/geoip2-node@6.3.4':
+  '@maxmind/geoip2-node@7.0.0':
     dependencies:
       maxmind: 5.0.6
 
