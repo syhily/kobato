@@ -34,7 +34,7 @@ async function detectAvailableExtensions(db: ReturnType<typeof drizzle>): Promis
   try {
     const result = await db.execute(sql`
       SELECT name FROM pg_available_extensions
-      WHERE name IN ('timescaledb', 'vector')
+      WHERE name IN ('timescaledb', 'vector', 'pg_trgm')
     `)
     return new Set((result.rows as { name: string }[]).map((r) => r.name))
   } catch {
@@ -50,7 +50,7 @@ async function detectAvailableExtensions(db: ReturnType<typeof drizzle>): Promis
  */
 async function runTestMigrations(db: ReturnType<typeof drizzle>): Promise<void> {
   const available = await detectAvailableExtensions(db)
-  const allExtensionsAvailable = available.has('timescaledb') && available.has('vector')
+  const allExtensionsAvailable = available.has('timescaledb') && available.has('vector') && available.has('pg_trgm')
 
   if (allExtensionsAvailable) {
     await migrate(db, {
@@ -78,11 +78,15 @@ async function runTestMigrations(db: ReturnType<typeof drizzle>): Promise<void> 
 
       const needsTimescaledb = content.includes('CREATE EXTENSION IF NOT EXISTS timescaledb')
       const needsVector = content.includes('CREATE EXTENSION IF NOT EXISTS vector')
+      const needsPgTrgm = content.includes('CREATE EXTENSION IF NOT EXISTS pg_trgm')
 
       if (needsTimescaledb && !available.has('timescaledb')) {
         continue
       }
       if (needsVector && !available.has('vector')) {
+        continue
+      }
+      if (needsPgTrgm && !available.has('pg_trgm')) {
         continue
       }
 
@@ -131,6 +135,11 @@ export async function createWorkerDatabase(workerId: string): Promise<string> {
   }
   try {
     await extPool.query(`CREATE EXTENSION IF NOT EXISTS timescaledb`)
+  } catch {
+    // ignore — extension not available in this Postgres build
+  }
+  try {
+    await extPool.query(`CREATE EXTENSION IF NOT EXISTS pg_trgm`)
   } catch {
     // ignore — extension not available in this Postgres build
   }
