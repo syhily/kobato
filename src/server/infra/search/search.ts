@@ -8,22 +8,14 @@ import { postSearchIndex } from '@/server/infra/db/schema/content'
 import { post } from '@/server/infra/db/schema/post'
 import { getLogger } from '@/server/infra/logger'
 import { redisInstance, storage } from '@/server/infra/redis/storage'
+import { INFRA_SEARCH_DEFAULTS } from '@/server/infra/search/defaults'
 import { generateEmbedding } from '@/server/infra/search/openai'
 import { getBlogSettingsBundleSync } from '@/shared/config/getters'
 import { CACHE_BUCKET_FALLBACKS } from '@/shared/types/cache'
 
-const DEFAULT_SEARCH_SETTINGS = {
-  enabled: false,
-  mode: 'like' as const,
-  apiKey: '',
-  model: 'text-embedding-3-small',
-  similarityThreshold: 0.5,
-  trgmThreshold: 0.3,
-}
-
 function getSearchSettings() {
   const bundle = getBlogSettingsBundleSync()
-  return bundle?.search?.search ?? DEFAULT_SEARCH_SETTINGS
+  return bundle?.search?.search ?? INFRA_SEARCH_DEFAULTS
 }
 
 // pg_trgm availability probe

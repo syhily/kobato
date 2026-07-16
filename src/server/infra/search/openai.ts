@@ -3,6 +3,7 @@ import { createHash } from 'node:crypto'
 import { getLogger } from '@/server/infra/logger'
 import { createInflight } from '@/server/infra/redis/inflight'
 import { storage } from '@/server/infra/redis/storage'
+import { INFRA_SEARCH_DEFAULTS } from '@/server/infra/search/defaults'
 import { getBlogSettingsBundleSync } from '@/shared/config/getters'
 import { CACHE_BUCKET_FALLBACKS } from '@/shared/types/cache'
 import { isRecord } from '@/shared/utils/type-guards'
@@ -86,7 +87,7 @@ export async function generateEmbedding(text: string): Promise<number[] | null> 
   }
 
   const bundle = getBlogSettingsBundleSync()
-  const model = bundle?.search?.search.model || 'text-embedding-3-small'
+  const model = bundle?.search?.search.model || INFRA_SEARCH_DEFAULTS.model
 
   const cacheSlot = bundle?.cache?.cache.embeddingSearch ?? CACHE_BUCKET_FALLBACKS.embeddingSearch
   const key = embeddingCacheKey(cacheSlot.prefix, text)
