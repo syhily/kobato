@@ -48,7 +48,8 @@ always import from one predictable location.
 Domains: `analytics`, `auth` (session-storage, csrf, rbac, flows,
 verification-tokens), `comments` (loader, moderation, projection, likes,
 token, badge, url, canonicalize), `content` (revision `repos/` +
-entity-agnostic draft→publish `lifecycle.ts`; post/page behavior
+entity-agnostic draft→publish `lifecycle.ts` + restore-time
+`slug-reclaim.ts`; post/page behavior
 attaches via `services/lifecycle-adapter.ts` in each entity domain),
 `friends`, `images` (schema, service,
 storage, key, process), `music`, `pages`, `posts`, `pt`

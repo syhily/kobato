@@ -151,6 +151,7 @@ function fakeDb(query = new FakeQuery()): NodePgDatabase {
 }
 
 import { findContentById } from '@/server/domains/content/repos/query'
+import { clearContentCaches } from '@/server/domains/content/shared'
 import { findPostMetaById, findPostMetaBySlugForUpdate } from '@/server/domains/posts/repos/single'
 import { restorePostMeta, softDeletePostMeta, updatePostMetaById } from '@/server/domains/posts/repos/write'
 import {
@@ -160,8 +161,10 @@ import {
   unpublishPost,
   updatePostMeta,
 } from '@/server/domains/posts/services/mutate'
+import { indexPost, removePostIndex } from '@/server/domains/posts/services/search-index'
 import { findSlugRegistryBySlugForUpdate, insertSlugRegistry } from '@/server/infra/db/operations/slug-registry'
 import { isUniqueConstraintError } from '@/server/infra/http/errors'
+import { invalidateSearchCache } from '@/server/infra/search/search'
 
 describe('posts mutate service', () => {
   beforeEach(() => {
@@ -266,5 +269,107 @@ describe('posts mutate service', () => {
     ;(isUniqueConstraintError as ReturnType<typeof vi.fn>).mockReturnValue(true)
     const result = await restorePost(db, 100n)
     expect(result.warning).toBeTruthy()
+  })
+})
+
+describe('posts mutate — post-state-change side effects', () => {
+  const publishedMeta = {
+    id: 100n,
+    slug: 'hello',
+    title: 'Hello',
+    summary: 'S',
+    published: true,
+    publishedRevisionId: 2n,
+  }
+  const validBody = [{ _type: 'block', _key: 'b1', children: [{ _type: 'span', _key: 's1', text: 'hi' }] }]
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    ;(isUniqueConstraintError as ReturnType<typeof vi.fn>).mockReturnValue(false)
+    ;(findSlugRegistryBySlugForUpdate as ReturnType<typeof vi.fn>).mockResolvedValue(null)
+    ;(insertSlugRegistry as ReturnType<typeof vi.fn>).mockResolvedValue(undefined)
+  })
+
+  it('restore re-indexes a published post after clearing caches and invalidating search', async () => {
+    const db = fakeDb()
+    ;(findPostMetaById as ReturnType<typeof vi.fn>).mockResolvedValue(publishedMeta)
+    ;(restorePostMeta as ReturnType<typeof vi.fn>).mockResolvedValue(true)
+    ;(findContentById as ReturnType<typeof vi.fn>).mockResolvedValue({ id: 2n, body: validBody })
+
+    const result = await restorePost(db, 100n)
+
+    expect(result).toEqual({ restored: true, warning: undefined })
+    expect(clearContentCaches).toHaveBeenCalledWith('post', 100n)
+    expect(invalidateSearchCache).toHaveBeenCalledTimes(1)
+    expect(indexPost).toHaveBeenCalledTimes(1)
+    expect(removePostIndex).not.toHaveBeenCalled()
+  })
+
+  it('restore returns the exact index-failure warning when re-indexing fails', async () => {
+    const db = fakeDb()
+    ;(findPostMetaById as ReturnType<typeof vi.fn>).mockResolvedValue(publishedMeta)
+    ;(restorePostMeta as ReturnType<typeof vi.fn>).mockResolvedValue(true)
+    ;(findContentById as ReturnType<typeof vi.fn>).mockResolvedValue({ id: 2n, body: validBody })
+    ;(indexPost as ReturnType<typeof vi.fn>).mockRejectedValueOnce(new Error('embedding down'))
+
+    const result = await restorePost(db, 100n)
+
+    expect(result.restored).toBe(true)
+    expect(result.warning).toBe('搜索索引更新失败，该文章可能不会出现在搜索结果中。')
+  })
+
+  it('restore prepends the slug warning ahead of the index warning', async () => {
+    const db = fakeDb()
+    ;(findPostMetaById as ReturnType<typeof vi.fn>).mockResolvedValue(publishedMeta)
+    ;(restorePostMeta as ReturnType<typeof vi.fn>).mockResolvedValue(true)
+    ;(findSlugRegistryBySlugForUpdate as ReturnType<typeof vi.fn>).mockResolvedValue({
+      entityType: 'page',
+      entityId: 2n,
+      slug: 'hello',
+    })
+    ;(findContentById as ReturnType<typeof vi.fn>).mockResolvedValue({ id: 2n, body: validBody })
+    ;(indexPost as ReturnType<typeof vi.fn>).mockRejectedValueOnce(new Error('embedding down'))
+
+    const result = await restorePost(db, 100n)
+
+    expect(result.warning).toBe(
+      'slug "hello" 已被另一个页面占用，恢复后该 URL 不会指向此文章。请修改 slug 或先处理占用方。 搜索索引更新失败，该文章可能不会出现在搜索结果中。',
+    )
+  })
+
+  it('unpublish clears caches, invalidates search, and removes the index row', async () => {
+    const db = fakeDb()
+    ;(findPostMetaById as ReturnType<typeof vi.fn>).mockResolvedValue({ id: 100n })
+    ;(updatePostMetaById as ReturnType<typeof vi.fn>).mockResolvedValue({ id: 100n })
+
+    await unpublishPost(db, 100n)
+
+    expect(clearContentCaches).toHaveBeenCalledWith('post', 100n)
+    expect(invalidateSearchCache).toHaveBeenCalledTimes(1)
+    expect(removePostIndex).toHaveBeenCalledWith(db, 100n)
+    expect(indexPost).not.toHaveBeenCalled()
+  })
+
+  it('unpublish swallows an index-removal failure', async () => {
+    const db = fakeDb()
+    ;(findPostMetaById as ReturnType<typeof vi.fn>).mockResolvedValue({ id: 100n })
+    ;(updatePostMetaById as ReturnType<typeof vi.fn>).mockResolvedValue({ id: 100n })
+    ;(removePostIndex as ReturnType<typeof vi.fn>).mockRejectedValueOnce(new Error('index down'))
+
+    await expect(unpublishPost(db, 100n)).resolves.toMatchObject({ id: 100n })
+  })
+
+  it('delete clears caches and invalidates search; the index row goes inside the transaction', async () => {
+    const db = fakeDb()
+    ;(findPostMetaById as ReturnType<typeof vi.fn>).mockResolvedValue({ id: 100n })
+    ;(softDeletePostMeta as ReturnType<typeof vi.fn>).mockResolvedValue(true)
+
+    const result = await deletePost(db, 100n)
+
+    expect(result.deleted).toBe(true)
+    expect(removePostIndex).toHaveBeenCalledTimes(1)
+    expect(clearContentCaches).toHaveBeenCalledWith('post', 100n)
+    expect(invalidateSearchCache).toHaveBeenCalledTimes(1)
+    expect(indexPost).not.toHaveBeenCalled()
   })
 })

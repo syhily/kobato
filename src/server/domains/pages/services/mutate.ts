@@ -3,6 +3,7 @@ import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 import type { AdminPageDto } from '@/server/domains/pages/projection'
 
 import { clearContentCaches } from '@/server/domains/content/shared'
+import { reclaimSlugOnRestore } from '@/server/domains/content/slug-reclaim'
 import { toAdminPageDto } from '@/server/domains/pages/projection'
 import {
   findPageMetaById,
@@ -15,7 +16,6 @@ import {
 import { type UpsertPageMetaInput } from '@/server/domains/pages/services/shared'
 import {
   deleteSlugRegistryByEntity,
-  findSlugRegistryBySlugForUpdate,
   insertSlugRegistry,
   updateSlugRegistryByEntity,
 } from '@/server/infra/db/operations/slug-registry'
@@ -133,26 +133,10 @@ export async function restorePage(db: NodePgDatabase, id: bigint): Promise<{ res
     if (restored) {
       const meta = await findPageMetaById(tx, id)
       if (meta !== null) {
-        const existing = await findSlugRegistryBySlugForUpdate(tx, meta.slug)
-        if (existing !== null && !(existing.entityType === 'page' && existing.entityId === id)) {
-          const otherEntity = existing.entityType === 'post' ? '文章' : '页面'
+        const warning = await reclaimSlugOnRestore(tx, 'page', id, meta.slug)
+        if (warning !== undefined) {
           await clearContentCaches('page', id)
-          return {
-            restored: true,
-            warning: `slug "${meta.slug}" 已被另一个${otherEntity}占用，恢复后该 URL 不会指向此页面。请修改 slug 或先处理占用方。`,
-          }
-        }
-        try {
-          await insertSlugRegistry(tx, { slug: meta.slug, entityType: 'page', entityId: id })
-        } catch (err) {
-          if (!isUniqueConstraintError(err, 'uq_slug_registry_slug')) {
-            throw err
-          }
-          await clearContentCaches('page', id)
-          return {
-            restored: true,
-            warning: `slug "${meta.slug}" 在恢复过程中被其它内容占用，URL 不会指向此页面。`,
-          }
+          return { restored: true, warning }
         }
       }
       await clearContentCaches('page', id)

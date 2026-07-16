@@ -4,6 +4,7 @@ import { eq } from 'drizzle-orm'
 
 import { findContentById } from '@/server/domains/content/repos/query'
 import { clearContentCaches } from '@/server/domains/content/shared'
+import { reclaimSlugOnRestore } from '@/server/domains/content/slug-reclaim'
 import { toAdminPostDto, type AdminPostDto } from '@/server/domains/posts/projection'
 import { findPostMetaById, findPostMetaBySlugForUpdate } from '@/server/domains/posts/repos/single'
 import { restorePostMeta, softDeletePostMeta, updatePostMetaById } from '@/server/domains/posts/repos/write'
@@ -16,7 +17,6 @@ import {
 import { findTagNamesByPostId, setPostTags } from '@/server/infra/db/operations/post-tag'
 import {
   deleteSlugRegistryByEntity,
-  findSlugRegistryBySlugForUpdate,
   insertSlugRegistry,
   updateSlugRegistryByEntity,
 } from '@/server/infra/db/operations/slug-registry'
@@ -167,6 +167,56 @@ export async function updatePostMeta(
   }
 }
 
+interface IndexablePostData {
+  id: bigint
+  title: string
+  summary: string
+  body: unknown
+}
+
+/**
+ * Side effects after a post state change (delete / restore / unpublish):
+ * clear content caches, invalidate the search cache, then apply the
+ * search-index change selected by `index` — 'remove' drops the index row
+ * (unpublish), an IndexablePostData re-indexes (restore) and yields the
+ * Chinese warning when the write fails, undefined/null leaves the index
+ * alone (delete already removed the row inside its transaction).
+ */
+async function afterPostStateChange(
+  db: NodePgDatabase,
+  id: bigint,
+  options: { index?: IndexablePostData | null | 'remove' } = {},
+): Promise<string | undefined> {
+  await clearContentCaches('post', id)
+  await invalidateSearchCache()
+  const { index } = options
+  if (index === 'remove') {
+    await removePostIndex(db, id).catch((err: unknown) => {
+      log.warn('remove post index failed', { postId: id, error: err })
+    })
+    return undefined
+  }
+  if (index !== undefined && index !== null) {
+    const bodyResult = portableTextBodySchema.safeParse(index.body)
+    if (bodyResult.success) {
+      try {
+        await indexPost(db, index.id, index.title, index.summary, bodyResult.data)
+      } catch (err: unknown) {
+        log.warn('index post failed', { postId: index.id, error: err })
+        return '搜索索引更新失败，该文章可能不会出现在搜索结果中。'
+      }
+    } else {
+      // Corrupt JSONB (e.g. a direct INSERT) — the post is restored but
+      // would silently never be indexed without this log.
+      log.warn('restore post: body validation failed, skipping search index', {
+        postId: id.toString(),
+        error: bodyResult.error.message,
+      })
+    }
+  }
+  return undefined
+}
+
 export async function deletePost(
   db: NodePgDatabase,
   id: bigint,
@@ -183,17 +233,9 @@ export async function deletePost(
     return ok
   })
   if (deleted) {
-    await clearContentCaches('post', id)
-    await invalidateSearchCache()
+    await afterPostStateChange(db, id)
   }
   return { deleted }
-}
-
-interface IndexablePostData {
-  id: bigint
-  title: string
-  summary: string
-  body: unknown
 }
 
 export async function restorePost(
@@ -214,20 +256,7 @@ export async function restorePost(
     if (ok) {
       const restoredMeta = await findPostMetaById(tx, id)
       if (restoredMeta !== null) {
-        const existing = await findSlugRegistryBySlugForUpdate(tx, restoredMeta.slug)
-        if (existing !== null && !(existing.entityType === 'post' && existing.entityId === id)) {
-          const otherEntity = existing.entityType === 'page' ? '页面' : '文章'
-          slugConflict = `slug "${restoredMeta.slug}" 已被另一个${otherEntity}占用，恢复后该 URL 不会指向此文章。请修改 slug 或先处理占用方。`
-        } else {
-          try {
-            await insertSlugRegistry(tx, { slug: restoredMeta.slug, entityType: 'post', entityId: id })
-          } catch (err) {
-            if (!isUniqueConstraintError(err, 'uq_slug_registry_slug')) {
-              throw err
-            }
-            slugConflict = `slug "${restoredMeta.slug}" 在恢复过程中被其它内容占用，URL 不会指向此文章。`
-          }
-        }
+        slugConflict = await reclaimSlugOnRestore(tx, 'post', id, restoredMeta.slug)
         if (restoredMeta.published && restoredMeta.publishedRevisionId !== null) {
           const revision = await findContentById(tx, restoredMeta.publishedRevisionId)
           if (revision !== null) {
@@ -245,27 +274,7 @@ export async function restorePost(
   })
 
   if (restored) {
-    await clearContentCaches('post', id)
-    await invalidateSearchCache()
-    if (indexable !== null) {
-      const bodyResult = portableTextBodySchema.safeParse(indexable.body)
-      if (bodyResult.success) {
-        try {
-          await indexPost(db, indexable.id, indexable.title, indexable.summary, bodyResult.data)
-        } catch (err: unknown) {
-          log.warn('index post failed', { postId: indexable.id, error: err })
-          const indexWarning = '搜索索引更新失败，该文章可能不会出现在搜索结果中。'
-          warning = warning !== undefined ? `${warning} ${indexWarning}` : indexWarning
-        }
-      } else {
-        // Corrupt JSONB (e.g. a direct INSERT) — the post is restored but
-        // would silently never be indexed without this log.
-        log.warn('restore post: body validation failed, skipping search index', {
-          postId: id.toString(),
-          error: bodyResult.error.message,
-        })
-      }
-    }
+    warning = await afterPostStateChange(db, id, { index: indexable })
   }
   if (slugWarning !== undefined) {
     warning = warning !== undefined ? `${slugWarning} ${warning}` : slugWarning
@@ -283,10 +292,6 @@ export async function unpublishPost(db: NodePgDatabase, id: bigint, viewer?: Vie
   if (updated === null) {
     throw new DomainError('NOT_FOUND', '文章不存在或已被删除。')
   }
-  await clearContentCaches('post', id)
-  await invalidateSearchCache()
-  await removePostIndex(db, id).catch((err: unknown) => {
-    log.warn('remove post index failed', { postId: id, error: err })
-  })
+  await afterPostStateChange(db, id, { index: 'remove' })
   return toAdminPostDto(updated, { tags })
 }
