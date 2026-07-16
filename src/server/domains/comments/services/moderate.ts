@@ -5,7 +5,12 @@ import type { CommentBody } from '@/shared/pt/comment-schema'
 import { withCommentBadgeTextColor } from '@/server/domains/comments/badge'
 import { clearLatestCommentsCache } from '@/server/domains/comments/cache'
 import { findCommentWithUserAndTarget } from '@/server/domains/comments/repos/admin-query'
-import { approveCommentById, deleteCommentById } from '@/server/domains/comments/repos/moderation'
+import {
+  approveCommentById,
+  bulkApprovePendingByUser as bulkApprovePendingByUserRepo,
+  bulkSoftDeleteCommentsByUser as bulkSoftDeleteCommentsByUserRepo,
+  deleteCommentById,
+} from '@/server/domains/comments/repos/moderation'
 import {
   updateCommentBodyAndContent,
   updateOwnCommentBody,
@@ -41,6 +46,21 @@ export async function approveComment(db: NodePgDatabase, rid: string) {
 export async function deleteComment(db: NodePgDatabase, rid: string) {
   await deleteCommentById(db, idFromString(rid))
   await clearLatestCommentsCache()
+}
+
+// Bulk entry points called by the users domain's admin actions. Same
+// invariant as the single-row paths above: every mutation clears the
+// sidebar latest-comments cache.
+export async function bulkApprovePendingByUser(db: NodePgDatabase, userId: bigint): Promise<number> {
+  const approved = await bulkApprovePendingByUserRepo(db, userId)
+  await clearLatestCommentsCache()
+  return approved
+}
+
+export async function bulkSoftDeleteCommentsByUser(db: NodePgDatabase, userId: bigint): Promise<number> {
+  const deleted = await bulkSoftDeleteCommentsByUserRepo(db, userId)
+  await clearLatestCommentsCache()
+  return deleted
 }
 
 export async function getCommentById(db: NodePgDatabase, rid: string) {

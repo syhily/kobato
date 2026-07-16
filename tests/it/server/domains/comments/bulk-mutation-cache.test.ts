@@ -1,0 +1,130 @@
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
+import type { Pool } from 'pg'
+
+import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
+
+import { clearAllTables } from '#/_helpers/integration-db'
+import { flushWorkerRedis } from '#/_helpers/redis'
+import { latestCommentsCache } from '@/server/domains/comments/cache'
+import { latestComments } from '@/server/domains/comments/services/public-query'
+import { createDbPool, closePool } from '@/server/infra/db/pool'
+import { comment } from '@/server/infra/db/schema/comment'
+import { post } from '@/server/infra/db/schema/post'
+import { user } from '@/server/infra/db/schema/user'
+
+// The users-domain service module pulls the email sender in transitively.
+// The bulk comment paths never send mail, but stub the boundary so the
+// module graph can never reach the network.
+vi.mock('@/server/infra/email/sender', () => ({
+  sendAuthorInvite: vi.fn(),
+  sendPasswordReset: vi.fn(),
+}))
+
+const { setBlogSettingsBundleForTests } = await import('@/server/domains/settings/services/test-utils')
+const { TEST_BLOG_SETTINGS_BUNDLE } = await import('#/_helpers/blog-settings')
+
+// Import the users-domain entry points AFTER the mocks are registered.
+// The invariant under test: these bulk mutations are routed through the
+// comments domain's services, so the sidebar latest-comments cache is
+// cleared just like on the five single-row mutation paths.
+const { bulkApproveCommentsForUser, bulkDeleteCommentsForUser } = await import('@/server/domains/users/services/admin')
+
+const poolManager = createDbPool()
+const db: NodePgDatabase = poolManager.db
+const pool: Pool = poolManager.pool
+
+afterAll(async () => {
+  await closePool(pool)
+})
+
+beforeEach(async () => {
+  setBlogSettingsBundleForTests(TEST_BLOG_SETTINGS_BUNDLE)
+  await clearAllTables(db)
+  await flushWorkerRedis()
+})
+
+async function seedUser(overrides: Partial<typeof user.$inferInsert> = {}): Promise<bigint> {
+  const rows = await db
+    .insert(user)
+    .values({
+      name: 'Commenter',
+      email: `u${Math.random().toString(36).slice(2)}@example.com`,
+      password: 'hashed',
+      role: 'visitor',
+      ...overrides,
+    })
+    .returning({ id: user.id })
+  return rows[0]!.id
+}
+
+async function seedPost(slug: string): Promise<bigint> {
+  const rows = await db
+    .insert(post)
+    .values({
+      slug,
+      title: `Post ${slug}`,
+      summary: '',
+      published: true,
+      publishedRevisionId: 1n,
+    })
+    .returning({ id: post.id })
+  return rows[0]!.id
+}
+
+async function seedComment(userId: bigint, ownerId: bigint, isPending: boolean): Promise<bigint> {
+  const rows = await db
+    .insert(comment)
+    .values({
+      type: 'post',
+      ownerId,
+      userId,
+      content: 'hello',
+      body: [],
+      rid: 0,
+      rootId: 0n,
+      isPending,
+    })
+    .returning({ id: comment.id })
+  return rows[0]!.id
+}
+
+describe('comments/services/moderate — bulk mutations clear the sidebar cache', () => {
+  it('users-domain bulk approve invalidates the warmed latest-comments cache', async () => {
+    const userId = await seedUser()
+    const postId = await seedPost('bulk-approve-target')
+    const commentId = await seedComment(userId, postId, true)
+
+    // Warm the sidebar cache. The pending comment is not listed yet.
+    const warmed = await latestComments(db)
+    expect(warmed).toHaveLength(0)
+    expect(await latestCommentsCache.get()).not.toBeNull()
+
+    const { approved } = await bulkApproveCommentsForUser(db, userId)
+    expect(approved).toBe(1)
+
+    // The cache must be cleared, so the next read sees the approved row.
+    expect(await latestCommentsCache.get()).toBeNull()
+    const fresh = await latestComments(db)
+    expect(fresh).toHaveLength(1)
+    expect(fresh[0]!.permalink).toBe(`/posts/bulk-approve-target/#user-comment-${commentId}`)
+  })
+
+  it('users-domain bulk soft-delete invalidates the warmed latest-comments cache', async () => {
+    const userId = await seedUser()
+    const postId = await seedPost('bulk-delete-target')
+    await seedComment(userId, postId, false)
+
+    // Warm the sidebar cache with the approved comment listed.
+    const warmed = await latestComments(db)
+    expect(warmed).toHaveLength(1)
+    expect(await latestCommentsCache.get()).not.toBeNull()
+
+    const { deleted } = await bulkDeleteCommentsForUser(db, userId)
+    expect(deleted).toBe(1)
+
+    // The cache must be cleared, so the next read no longer sees the row.
+    expect(await latestCommentsCache.get()).toBeNull()
+    const fresh = await latestComments(db)
+    expect(fresh).toHaveLength(0)
+  })
+})

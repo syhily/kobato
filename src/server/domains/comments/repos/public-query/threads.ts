@@ -8,6 +8,20 @@ import { commentWithUser, whereTarget } from '@/server/domains/comments/repos/sh
 import { comment } from '@/server/infra/db/schema/comment'
 import { user } from '@/server/infra/db/schema/user'
 
+// Viewer-visibility predicate, shared by the three thread queries below. A
+// row is visible when it falls inside the caller-visible pending set and
+// has no pending delete request — or when it is the viewer's own comment
+// still awaiting approval or deletion, so its author keeps seeing it with
+// its moderation state.
+function whereViewerVisible(pendingValues: boolean[], currentUserId?: bigint) {
+  return or(
+    and(inArray(comment.isPending, pendingValues), isNull(comment.deleteRequestedAt)),
+    currentUserId !== undefined
+      ? and(eq(comment.userId, currentUserId), or(eq(comment.isPending, true), isNotNull(comment.deleteRequestedAt)))
+      : sql`1 = 0`,
+  )
+}
+
 // Computes both totals in a single round-trip using a filtered aggregate so
 // loaders don't issue two near-identical queries on every comment render.
 export async function countCommentsAndRoots(
@@ -16,15 +30,7 @@ export async function countCommentsAndRoots(
   pendingValues: boolean[],
   currentUserId?: bigint,
 ): Promise<{ total: number; roots: number }> {
-  const baseConditions = [
-    whereTarget(target),
-    or(
-      and(inArray(comment.isPending, pendingValues), isNull(comment.deleteRequestedAt)),
-      currentUserId !== undefined
-        ? and(eq(comment.userId, currentUserId), or(eq(comment.isPending, true), isNotNull(comment.deleteRequestedAt)))
-        : sql`1 = 0`,
-    ),
-  ]
+  const baseConditions = [whereTarget(target), whereViewerVisible(pendingValues, currentUserId)]
   const rows = await db
     .select({
       total: count(),
@@ -44,16 +50,7 @@ export async function findRootComments(
   limit: number,
   currentUserId?: bigint,
 ) {
-  const baseConditions = [
-    whereTarget(target),
-    eq(comment.rootId, 0n),
-    or(
-      and(inArray(comment.isPending, pendingValues), isNull(comment.deleteRequestedAt)),
-      currentUserId !== undefined
-        ? and(eq(comment.userId, currentUserId), or(eq(comment.isPending, true), isNotNull(comment.deleteRequestedAt)))
-        : sql`1 = 0`,
-    ),
-  ]
+  const baseConditions = [whereTarget(target), eq(comment.rootId, 0n), whereViewerVisible(pendingValues, currentUserId)]
   return db
     .select(commentWithUser)
     .from(comment)
@@ -77,12 +74,7 @@ export async function findChildComments(
   const baseConditions = [
     whereTarget(target),
     inArray(comment.rootId, rootIds),
-    or(
-      and(inArray(comment.isPending, pendingValues), isNull(comment.deleteRequestedAt)),
-      currentUserId !== undefined
-        ? and(eq(comment.userId, currentUserId), or(eq(comment.isPending, true), isNotNull(comment.deleteRequestedAt)))
-        : sql`1 = 0`,
-    ),
+    whereViewerVisible(pendingValues, currentUserId),
   ]
   return db
     .select(commentWithUser)
