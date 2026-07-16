@@ -6,8 +6,9 @@ import { parseRpcJson } from '#/_helpers/rpc-call'
 // Stub every service-layer dep the account controller reaches for. The
 // handlers themselves stay real — we exercise their branching (rate-limit,
 // passkey-enabled gate, ownership check, missing-user, invalid-response,
-// last-credential auto-disable, force-with-no-creds) by shaping the mock
-// return values per test.
+// domain-error propagation) by shaping the mock return values per test.
+// The passkey force/credential invariant itself lives in passkey-service
+// and is covered by tests/unit/server/domains/auth/passkey-service.test.ts.
 
 const tryRateLimitMock = vi.hoisted(() => vi.fn(async () => ({ exceeded: false })))
 const tryPasskeyRegisterBeginRateLimitMock = vi.hoisted(() => vi.fn(async () => ({ exceeded: false })))
@@ -65,6 +66,7 @@ vi.mock('@/server/domains/audit/services/record', () => ({
 }))
 
 const { RPCHandler } = await import('@orpc/server/fetch')
+const { DomainError } = await import('@/server/infra/http/errors')
 const { accountRouter } = await import('@/server/http/controllers/account.controller')
 const handler = new RPCHandler(accountRouter)
 
@@ -329,23 +331,17 @@ describe('account controller', () => {
       deleteCredentialMock.mockResolvedValue(false)
       const response = await call('/passkeyDelete', { credentialId: 'nope' })
       expect(response.status).toBe(404)
-      expect(setPasskeyForceMock).not.toHaveBeenCalled()
+      expect(recordAuditEventFromContextMock).not.toHaveBeenCalled()
     })
 
-    it('auto-disables passkeyForce when the last credential is removed', async () => {
-      deleteCredentialMock.mockResolvedValue(true)
-      listCredentialsMock.mockResolvedValue([]) // remaining is empty
+    it('deletes the credential and records an audit event', async () => {
       const response = await call('/passkeyDelete', { credentialId: 'c1' })
       expect(response.status).toBe(200)
-      expect(setPasskeyForceMock).toHaveBeenCalledWith(expect.anything(), 1n, false)
-    })
-
-    it('keeps passkeyForce when credentials remain after deletion', async () => {
-      deleteCredentialMock.mockResolvedValue(true)
-      listCredentialsMock.mockResolvedValue([{ id: 'other' }])
-      const response = await call('/passkeyDelete', { credentialId: 'c1' })
-      expect(response.status).toBe(200)
-      expect(setPasskeyForceMock).not.toHaveBeenCalled()
+      expect(deleteCredentialMock).toHaveBeenCalledWith(expect.anything(), 'c1', 1n)
+      expect(recordAuditEventFromContextMock).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({ action: 'passkey_deleted' }),
+      )
     })
 
     it('throws BAD_REQUEST when passkeys are disabled', async () => {
@@ -357,15 +353,16 @@ describe('account controller', () => {
 
   // ─── passkey set-force ───────────────────────────────────
   describe('passkeySetForce', () => {
-    it('throws BAD_REQUEST when forcing on with no credentials', async () => {
-      listCredentialsMock.mockResolvedValue([])
+    it('propagates the domain rejection when forcing on with no credentials', async () => {
+      setPasskeyForceMock.mockRejectedValue(
+        new DomainError('BAD_REQUEST', '必须至少注册一个 Passkey 才能开启强制登录。'),
+      )
       const response = await call('/passkeySetForce', { force: true })
       expect(response.status).toBe(400)
-      expect(setPasskeyForceMock).not.toHaveBeenCalled()
+      expect(recordAuditEventFromContextMock).not.toHaveBeenCalled()
     })
 
-    it('enables force when at least one credential exists', async () => {
-      listCredentialsMock.mockResolvedValue([{ id: 'c1' }])
+    it('enables force and records an audit event', async () => {
       const response = await call('/passkeySetForce', { force: true })
       expect(response.status).toBe(200)
       expect(setPasskeyForceMock).toHaveBeenCalledWith(expect.anything(), 1n, true)
@@ -375,10 +372,9 @@ describe('account controller', () => {
       )
     })
 
-    it('disables force without checking credentials', async () => {
+    it('disables force', async () => {
       const response = await call('/passkeySetForce', { force: false })
       expect(response.status).toBe(200)
-      expect(listCredentialsMock).not.toHaveBeenCalled()
       expect(setPasskeyForceMock).toHaveBeenCalledWith(expect.anything(), 1n, false)
     })
 

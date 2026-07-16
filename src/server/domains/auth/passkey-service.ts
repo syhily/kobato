@@ -312,12 +312,30 @@ export async function listCredentials(db: NodePgDatabase, userId: bigint): Promi
   }))
 }
 
+// Invariant: `passkeyForce` must not outlive credentials — a user with
+// force enabled and zero passkeys would lock themselves out. Every
+// credential-deletion path runs this check so callers inherit it.
+async function clearForceWhenNoCredentials(db: NodePgDatabase, userId: bigint): Promise<void> {
+  const remaining = await db
+    .select({ id: passkeyCredential.id })
+    .from(passkeyCredential)
+    .where(eq(passkeyCredential.userId, userId))
+    .limit(1)
+  if (remaining.length === 0) {
+    await db.update(user).set({ passkeyForce: false }).where(eq(user.id, userId))
+  }
+}
+
 export async function deleteCredential(db: NodePgDatabase, credentialId: string, userId: bigint): Promise<boolean> {
   const result = await db
     .delete(passkeyCredential)
     .where(and(eq(passkeyCredential.credentialId, credentialId), eq(passkeyCredential.userId, userId)))
     .returning({ id: passkeyCredential.id })
-  return result.length > 0
+  if (result.length === 0) {
+    return false
+  }
+  await clearForceWhenNoCredentials(db, userId)
+  return true
 }
 
 export async function deleteAllCredentials(db: NodePgDatabase, userId: bigint): Promise<number> {
@@ -325,9 +343,20 @@ export async function deleteAllCredentials(db: NodePgDatabase, userId: bigint): 
     .delete(passkeyCredential)
     .where(eq(passkeyCredential.userId, userId))
     .returning({ id: passkeyCredential.id })
+  await clearForceWhenNoCredentials(db, userId)
   return result.length
 }
 
 export async function setPasskeyForce(db: NodePgDatabase, userId: bigint, force: boolean): Promise<void> {
+  if (force) {
+    const credentials = await db
+      .select({ id: passkeyCredential.id })
+      .from(passkeyCredential)
+      .where(eq(passkeyCredential.userId, userId))
+      .limit(1)
+    if (credentials.length === 0) {
+      throw new DomainError('BAD_REQUEST', '必须至少注册一个 Passkey 才能开启强制登录。')
+    }
+  }
   await db.update(user).set({ passkeyForce: force }).where(eq(user.id, userId))
 }

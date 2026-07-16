@@ -485,28 +485,47 @@ describe('passkey-service — credential management', () => {
   })
 
   it('deletes a credential by id and userId', async () => {
-    const dbWithDelete = {
+    const dbWithOps = {
       delete: vi.fn(() => ({
         where: vi.fn(() => ({
           returning: vi.fn(() => [{ id: 1n }]),
         })),
       })),
+      select: vi.fn(() => ({
+        from: vi.fn(() => ({
+          where: vi.fn(() => ({
+            limit: vi.fn(() => [{ id: 2n }]),
+          })),
+        })),
+      })),
     } as unknown as NodePgDatabase
 
-    const result = await passkeyService.deleteCredential(dbWithDelete, 'c1', 1n)
+    const result = await passkeyService.deleteCredential(dbWithOps, 'c1', 1n)
     expect(result).toBe(true)
   })
 
   it('deletes all credentials for a user', async () => {
-    const dbWithDelete = {
+    const dbWithOps = {
       delete: vi.fn(() => ({
         where: vi.fn(() => ({
           returning: vi.fn(() => [{ id: 1n }, { id: 2n }]),
         })),
       })),
+      select: vi.fn(() => ({
+        from: vi.fn(() => ({
+          where: vi.fn(() => ({
+            limit: vi.fn(() => []),
+          })),
+        })),
+      })),
+      update: vi.fn(() => ({
+        set: vi.fn(() => ({
+          where: vi.fn(() => Promise.resolve()),
+        })),
+      })),
     } as unknown as NodePgDatabase
 
-    const result = await passkeyService.deleteAllCredentials(dbWithDelete, 1n)
+    const result = await passkeyService.deleteAllCredentials(dbWithOps, 1n)
     expect(result).toBe(2)
   })
 
@@ -518,7 +537,88 @@ describe('passkey-service — credential management', () => {
     }))
     const dbWithUpdate = { update: updateSpy } as unknown as NodePgDatabase
 
-    await passkeyService.setPasskeyForce(dbWithUpdate, 1n, true)
+    await passkeyService.setPasskeyForce(dbWithUpdate, 1n, false)
+    expect(updateSpy).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('passkey-service — force/credential invariant', () => {
+  function dbWithCredentialCount(remaining: { id: bigint }[]) {
+    const updateSpy = vi.fn(() => ({
+      set: vi.fn(() => ({
+        where: vi.fn(() => Promise.resolve()),
+      })),
+    }))
+    const selectSpy = vi.fn(() => ({
+      from: vi.fn(() => ({
+        where: vi.fn(() => ({
+          limit: vi.fn(() => remaining),
+        })),
+      })),
+    }))
+    const db = {
+      delete: vi.fn(() => ({
+        where: vi.fn(() => ({
+          returning: vi.fn(() => [{ id: 1n }]),
+        })),
+      })),
+      select: selectSpy,
+      update: updateSpy,
+    } as unknown as NodePgDatabase
+    return { db, selectSpy, updateSpy }
+  }
+
+  it('clears passkeyForce when deleteCredential removes the last credential', async () => {
+    const { db, updateSpy } = dbWithCredentialCount([])
+    const result = await passkeyService.deleteCredential(db, 'c1', 1n)
+    expect(result).toBe(true)
+    expect(updateSpy).toHaveBeenCalledTimes(1)
+  })
+
+  it('preserves passkeyForce when credentials remain after deleteCredential', async () => {
+    const { db, updateSpy } = dbWithCredentialCount([{ id: 2n }])
+    const result = await passkeyService.deleteCredential(db, 'c1', 1n)
+    expect(result).toBe(true)
+    expect(updateSpy).not.toHaveBeenCalled()
+  })
+
+  it('does not touch passkeyForce when deleteCredential matches nothing', async () => {
+    const { db, selectSpy, updateSpy } = dbWithCredentialCount([])
+    db.delete = vi.fn(() => ({
+      where: vi.fn(() => ({
+        returning: vi.fn(() => []),
+      })),
+    })) as unknown as NodePgDatabase['delete']
+
+    const result = await passkeyService.deleteCredential(db, 'nope', 1n)
+    expect(result).toBe(false)
+    expect(selectSpy).not.toHaveBeenCalled()
+    expect(updateSpy).not.toHaveBeenCalled()
+  })
+
+  it('clears passkeyForce after deleteAllCredentials leaves zero credentials', async () => {
+    const { db, updateSpy } = dbWithCredentialCount([])
+    const result = await passkeyService.deleteAllCredentials(db, 1n)
+    expect(result).toBe(1)
+    expect(updateSpy).toHaveBeenCalledTimes(1)
+  })
+
+  it('rejects enabling force when no credentials exist', async () => {
+    const { db, updateSpy } = dbWithCredentialCount([])
+    await expect(passkeyService.setPasskeyForce(db, 1n, true)).rejects.toBeInstanceOf(DomainError)
+    expect(updateSpy).not.toHaveBeenCalled()
+  })
+
+  it('enables force when at least one credential exists', async () => {
+    const { db, updateSpy } = dbWithCredentialCount([{ id: 1n }])
+    await passkeyService.setPasskeyForce(db, 1n, true)
+    expect(updateSpy).toHaveBeenCalledTimes(1)
+  })
+
+  it('disables force without checking credentials', async () => {
+    const { db, selectSpy, updateSpy } = dbWithCredentialCount([])
+    await passkeyService.setPasskeyForce(db, 1n, false)
+    expect(selectSpy).not.toHaveBeenCalled()
     expect(updateSpy).toHaveBeenCalledTimes(1)
   })
 })

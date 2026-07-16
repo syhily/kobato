@@ -263,12 +263,6 @@ const passkeyDelete = authedProc
     if (!ok) {
       throw new ORPCError('NOT_FOUND', { message: '凭据不存在。' })
     }
-    // Auto-disable passkeyForce when the last credential is removed so
-    // the user does not lock themselves out.
-    const remaining = await listCredentials(db, userId)
-    if (remaining.length === 0) {
-      await setPasskeyForce(db, userId, false)
-    }
     recordAuditEventFromContext(context, {
       action: 'passkey_deleted',
       resourceType: 'user',
@@ -289,12 +283,6 @@ const passkeySetForce = authedProc
     const limit = await tryPasskeySetForceRateLimit(clientAddress)
     if (limit.exceeded) {
       throw new ORPCError('TOO_MANY_REQUESTS', { message: '操作过于频繁，请稍后再试。' })
-    }
-    if (input.force) {
-      const creds = await listCredentials(db, idFromString(viewer.userId))
-      if (creds.length === 0) {
-        throw new ORPCError('BAD_REQUEST', { message: '必须至少注册一个 Passkey 才能开启强制登录。' })
-      }
     }
     await setPasskeyForce(db, idFromString(viewer.userId), input.force)
     recordAuditEventFromContext(context, {

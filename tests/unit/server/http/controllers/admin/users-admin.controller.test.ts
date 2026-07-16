@@ -9,7 +9,6 @@ const updateUserRoleWithGuard = vi.hoisted(() => vi.fn())
 const inviteAuthorWithRollback = vi.hoisted(() => vi.fn())
 const sendPasswordResetToUser = vi.hoisted(() => vi.fn())
 const deleteAllCredentials = vi.hoisted(() => vi.fn())
-const setPasskeyForce = vi.hoisted(() => vi.fn())
 
 vi.mock('@/server/domains/users/services/admin', () => ({
   fetchAdminUserDto,
@@ -29,7 +28,6 @@ vi.mock('@/server/domains/auth/passkey-gate', () => ({
 
 vi.mock('@/server/domains/auth/passkey-service', () => ({
   deleteAllCredentials,
-  setPasskeyForce,
 }))
 
 vi.mock('@/server/infra/rate-limit', () => ({
@@ -136,7 +134,8 @@ describe('admin users-admin controller', () => {
     expect(response.status).toBe(200)
     const body = await parseRpcJson<{ user: unknown }>(response)
     expect(body.user).toBeDefined()
+    // Force clearing is owned by deleteAllCredentials itself (service-level
+    // invariant, covered in passkey-service.test.ts).
     expect(deleteAllCredentials).toHaveBeenCalledWith(expect.anything(), 1n)
-    expect(setPasskeyForce).toHaveBeenCalledWith(expect.anything(), 1n, false)
   })
 })

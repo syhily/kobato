@@ -352,14 +352,10 @@ describe('passkey — deleting last credential auto-disables force', () => {
       .then((r) => r[0])
     expect(dbUserRow.passkeyForce).toBe(true)
 
-    // Delete the only credential and simulate controller-side cleanup
+    // Delete the only credential — the service owns the invariant and
+    // clears force itself.
     const ok = await passkeyService.deleteCredential(db, 'cred-force', userId)
     expect(ok).toBe(true)
-
-    const remaining = await passkeyService.listCredentials(db, userId)
-    if (remaining.length === 0) {
-      await passkeyService.setPasskeyForce(db, userId, false)
-    }
 
     // Verify force was disabled
     dbUserRow = await db

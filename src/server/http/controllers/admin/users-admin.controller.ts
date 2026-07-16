@@ -3,7 +3,7 @@ import { z } from 'zod'
 
 import { recordAuditEventFromContext } from '@/server/domains/audit/services/record'
 import { isPasskeyEnabled } from '@/server/domains/auth/passkey-gate'
-import { deleteAllCredentials, setPasskeyForce } from '@/server/domains/auth/passkey-service'
+import { deleteAllCredentials } from '@/server/domains/auth/passkey-service'
 import {
   fetchAdminUserDto,
   inviteAuthorWithRollback,
@@ -124,7 +124,6 @@ const clearPasskeys = adminProc
     }
     const targetId = idFromString(input.id)
     await deleteAllCredentials(context.db, targetId)
-    await setPasskeyForce(context.db, targetId, false)
     const dto = await fetchAdminUserDto(context.db, targetId)
     if (!dto) {
       throw new ORPCError('NOT_FOUND', { message: '用户不存在' })
