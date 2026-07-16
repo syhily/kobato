@@ -6,15 +6,11 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 // edge-config branches that the main spec doesn't exercise.
 
 vi.mock('@/server/domains/music/services/read', () => ({
-  findMusicByPlayerIds: (db: unknown, ids: readonly string[]) => musicMockState.read(db, ids),
-}))
-vi.mock('@/server/domains/music/storage', () => ({
-  safeBuildMusicPublicUrl: (path: string | null) => musicMockState.build(path),
+  getPublicMusicMetasByIds: (db: unknown, ids: readonly string[]) => musicMockState.read(db, ids),
 }))
 
 const musicMockState = {
-  read: vi.fn<(db: unknown, ids: readonly string[]) => Promise<unknown[]>>(),
-  build: vi.fn<(path: string | null) => string | null>(),
+  read: vi.fn<(db: unknown, ids: readonly string[]) => Promise<Map<string, unknown>>>(),
 }
 
 import { renderPortableTextToHtml } from '@/server/render/feed/feed-pt-render'
@@ -23,8 +19,7 @@ const fakeDb = {} as NodePgDatabase
 
 beforeEach(() => {
   musicMockState.read.mockReset()
-  musicMockState.build.mockReset()
-  musicMockState.read.mockResolvedValue([])
+  musicMockState.read.mockResolvedValue(new Map())
 })
 
 describe('render/feed/feed-pt-render — RSS-mode branches', () => {
@@ -238,7 +233,7 @@ describe('render/feed/feed-pt-render — table without header', () => {
 
 describe('render/feed/feed-pt-render — music placeholder branches', () => {
   it('renders a placeholder inside a twoColumn block when no music row resolves', async () => {
-    musicMockState.read.mockResolvedValue([])
+    musicMockState.read.mockResolvedValue(new Map())
     const html = await renderPortableTextToHtml(
       fakeDb,
       [
@@ -257,7 +252,7 @@ describe('render/feed/feed-pt-render — music placeholder branches', () => {
   })
 
   it('renders a placeholder inside a solution block when the music row is missing', async () => {
-    musicMockState.read.mockResolvedValue([])
+    musicMockState.read.mockResolvedValue(new Map())
     const html = await renderPortableTextToHtml(
       fakeDb,
       [
@@ -273,30 +268,34 @@ describe('render/feed/feed-pt-render — music placeholder branches', () => {
     expect(html).toContain('此文章包含音乐播放器')
   })
 
-  it('skips music rows whose audioStoragePath resolves to null', async () => {
-    musicMockState.read.mockResolvedValue([
-      {
-        id: 1n,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        deletedAt: null,
-        source: 'manual',
-        sourceId: null,
-        playerId: 'p-1',
-        name: 'NoUrl',
-        artist: 'Artist',
-        album: null,
-        audioStoragePath: 'orphaned/path.mp3',
-        coverStoragePath: null,
-        lyric: null,
-        uploaderId: null,
-      },
-    ])
-    // safeBuildMusicPublicUrl returns null -> row dropped -> placeholder.
-    musicMockState.build.mockReturnValue(null)
+  it('renders the player for resolved ids and the placeholder for ids missing from the meta map', async () => {
+    musicMockState.read.mockResolvedValue(
+      new Map([
+        [
+          'p-ok',
+          {
+            id: 'p-ok',
+            name: 'Song',
+            artist: 'Artist',
+            album: 'Album',
+            url: 'https://cdn.example.com/ok.mp3',
+            pic: 'https://cdn.example.com/ok.jpg',
+            lyric: '',
+          },
+        ],
+      ]),
+    )
 
-    const html = await renderPortableTextToHtml(fakeDb, [{ _type: 'musicPlayer', _key: 'mp1', playerId: 'p-1' }], [])
+    const html = await renderPortableTextToHtml(
+      fakeDb,
+      [
+        { _type: 'musicPlayer', _key: 'mp1', playerId: 'p-ok' },
+        { _type: 'musicPlayer', _key: 'mp2', playerId: 'p-missing' },
+      ],
+      [],
+    )
+    expect(html).toContain('<audio controls preload="none" src="https://cdn.example.com/ok.mp3"></audio>')
+    expect(html).toContain('<img src="https://cdn.example.com/ok.jpg" alt="Song" />')
     expect(html).toContain('此文章包含音乐播放器')
-    expect(html).not.toContain('<audio')
   })
 })

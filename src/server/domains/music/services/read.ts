@@ -1,5 +1,6 @@
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
+import type { MusicRow } from '@/server/infra/db/types'
 import type { AdminMusicDto, ListMusicInput, ListMusicOutput, PublicMusicMeta } from '@/shared/types/music'
 
 import { toAdminMusicDto } from '@/server/domains/music/projection'
@@ -43,18 +44,22 @@ export async function findMusicDtoById(db: NodePgDatabase, id: bigint): Promise<
 }
 
 /**
- * Public projection for the SSR `<MusicPlayer />` and the public
- * `GET music.get` route. Returns `null` when the row is missing or
- * soft-deleted so the player can render a no-op placeholder.
+ * Fallback cover for tracks whose stored cover has no buildable public URL
+ * (e.g. an S3 row after the CDN base was unset). Served by the bundled
+ * default-asset route — see `src/server/domains/assets/services/routes.ts`
+ * (`/images/default-music-cover.png` → the `defaultMusicCover` slot).
  */
-export async function getMusicMetaForPlayer(db: NodePgDatabase, playerId: string): Promise<PublicMusicMeta | null> {
-  const row = await findMusicByPlayerId(db, playerId)
-  if (row === null) {
-    return null
-  }
+export const DEFAULT_MUSIC_COVER_URL = '/images/default-music-cover.png'
+
+/**
+ * Row → public projection, the single owner of music URL building. Returns
+ * `null` only when the audio URL can't be built — an unplayable track stays
+ * hidden. A missing cover is not fatal: it falls back to the bundled default
+ * vinyl image so the track stays playable (unplayable ≠ coverless).
+ */
+function toPublicMusicMeta(row: MusicRow): PublicMusicMeta | null {
   const audioUrl = safeBuildMusicPublicUrl(row.audioStoragePath, row.storageDriver)
-  const coverUrl = safeBuildMusicPublicUrl(row.coverStoragePath, row.storageDriver)
-  if (audioUrl === null || coverUrl === null) {
+  if (audioUrl === null) {
     return null
   }
   return {
@@ -63,9 +68,39 @@ export async function getMusicMetaForPlayer(db: NodePgDatabase, playerId: string
     artist: row.artist,
     album: row.album,
     url: audioUrl,
-    pic: coverUrl,
+    pic: safeBuildMusicPublicUrl(row.coverStoragePath, row.storageDriver) ?? DEFAULT_MUSIC_COVER_URL,
     lyric: row.lyric ?? '',
   }
+}
+
+/**
+ * Public projection for the SSR `<MusicPlayer />` and the public
+ * `GET music.get` route. Returns `null` when the row is missing or
+ * soft-deleted so the player can render a no-op placeholder.
+ */
+export async function getMusicMetaForPlayer(db: NodePgDatabase, playerId: string): Promise<PublicMusicMeta | null> {
+  const row = await findMusicByPlayerId(db, playerId)
+  return row === null ? null : toPublicMusicMeta(row)
+}
+
+/**
+ * Batch variant of `getMusicMetaForPlayer` — one query regardless of how
+ * many players a page embeds. The single seam consumed by SSR
+ * (`domains/pt/prerender`) and feed rendering (`render/feed/feed-pt-render`).
+ */
+export async function getPublicMusicMetasByIds(
+  db: NodePgDatabase,
+  playerIds: readonly string[],
+): Promise<Map<string, PublicMusicMeta>> {
+  const rows = await findMusicByPlayerIds(db, playerIds)
+  const metas = new Map<string, PublicMusicMeta>()
+  for (const row of rows) {
+    const meta = toPublicMusicMeta(row)
+    if (meta !== null) {
+      metas.set(row.playerId, meta)
+    }
+  }
+  return metas
 }
 
 function clampOffset(value: number | undefined): number {
@@ -82,5 +117,3 @@ function clampLimit(value: number | undefined): number {
   }
   return Math.max(1, Math.min(100, Math.floor(value)))
 }
-
-export { findMusicByPlayerIds }

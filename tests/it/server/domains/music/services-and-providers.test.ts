@@ -34,6 +34,7 @@ vi.mock('@/server/infra/image/process', () => ({
 }))
 
 const read = await import('@/server/domains/music/services/read')
+const storageMod = await import('@/server/domains/music/storage')
 const searchService = await import('@/server/domains/music/services/search')
 const addMod = await import('@/server/domains/music/services/write/add')
 const metadataMod = await import('@/server/domains/music/services/write/metadata')
@@ -145,16 +146,36 @@ describe('music/services/read — getMusicMetaForPlayer', () => {
   })
 })
 
-describe('music/services/read — findMusicByPlayerIds', () => {
-  it('returns empty for empty input', async () => {
-    expect(await read.findMusicByPlayerIds(db, [])).toEqual([])
+describe('music/services/read — getPublicMusicMetasByIds', () => {
+  it('returns an empty map for empty input', async () => {
+    expect(await read.getPublicMusicMetasByIds(db, [])).toEqual(new Map())
   })
 
-  it('returns rows matching the given player ids', async () => {
+  it('resolves metas for the given player ids in one batch query', async () => {
     await seedMusic({ playerId: 'a' })
     await seedMusic({ playerId: 'b' })
-    const rows = await read.findMusicByPlayerIds(db, ['a', 'b', 'unknown'])
-    expect(rows).toHaveLength(2)
+    const metas = await read.getPublicMusicMetasByIds(db, ['a', 'b', 'unknown'])
+    expect(metas.size).toBe(2)
+    expect(metas.get('a')?.url).toContain('https://assets.example.com/')
+    expect(metas.get('a')?.pic).toContain('https://assets.example.com/')
+  })
+
+  it('keeps a coverless track playable with the default cover', async () => {
+    await seedMusic({ playerId: 'nocover', coverStoragePath: 'musics/nocover.jpg' })
+    const buildMock = vi.mocked(storageMod.safeBuildMusicPublicUrl)
+    // toPublicMusicMeta builds the audio URL first, then the cover URL.
+    buildMock.mockImplementationOnce((path: string) => `https://assets.example.com/${path}`)
+    buildMock.mockImplementationOnce(() => null)
+    const metas = await read.getPublicMusicMetasByIds(db, ['nocover'])
+    expect(metas.get('nocover')?.pic).toBe(read.DEFAULT_MUSIC_COVER_URL)
+    expect(metas.get('nocover')?.url).toContain('https://assets.example.com/')
+  })
+
+  it('drops entries whose audio URL is unbuildable', async () => {
+    await seedMusic({ playerId: 'noaudio' })
+    vi.mocked(storageMod.safeBuildMusicPublicUrl).mockImplementationOnce(() => null)
+    const metas = await read.getPublicMusicMetasByIds(db, ['noaudio'])
+    expect(metas.size).toBe(0)
   })
 })
 

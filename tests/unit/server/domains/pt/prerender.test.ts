@@ -10,16 +10,16 @@ import type {
 import type { PublicMusicMeta } from '@/shared/types/music'
 
 vi.mock('@/server/domains/music/services/read', () => ({
-  getMusicMetaForPlayer: vi.fn(),
+  getPublicMusicMetasByIds: vi.fn(),
 }))
 
-import { getMusicMetaForPlayer } from '@/server/domains/music/services/read'
+import { getPublicMusicMetasByIds } from '@/server/domains/music/services/read'
 import { prerenderMusicPlayerBlocks } from '@/server/domains/pt/prerender'
 
 const fakeDb = {} as never
 
 beforeEach(() => {
-  vi.mocked(getMusicMetaForPlayer).mockReset()
+  vi.mocked(getPublicMusicMetasByIds).mockReset()
 })
 
 function makeMusicMeta(partial: Partial<PublicMusicMeta> & { id: string }): PublicMusicMeta {
@@ -32,6 +32,10 @@ function makeMusicMeta(partial: Partial<PublicMusicMeta> & { id: string }): Publ
     lyric: '',
     ...partial,
   }
+}
+
+function makeMetaMap(...entries: PublicMusicMeta[]): Map<string, PublicMusicMeta> {
+  return new Map(entries.map((meta) => [meta.id, meta]))
 }
 
 describe('server/domains/pt/prerenderMusicPlayerBlocks', () => {
@@ -53,19 +57,16 @@ describe('server/domains/pt/prerenderMusicPlayerBlocks', () => {
 
     const result = await prerenderMusicPlayerBlocks(fakeDb, body)
     expect(result).toEqual(body)
-    expect(getMusicMetaForPlayer).not.toHaveBeenCalled()
+    expect(getPublicMusicMetasByIds).not.toHaveBeenCalled()
   })
 
-  it('resolves music metadata for top-level musicPlayer blocks', async () => {
-    vi.mocked(getMusicMetaForPlayer).mockImplementation(async (_db, playerId) => {
-      if (playerId === 'playeroneeeeeeeeee') {
-        return makeMusicMeta({ id: playerId, name: 'One' })
-      }
-      if (playerId === 'playertwooooooooooo') {
-        return makeMusicMeta({ id: playerId, name: 'Two' })
-      }
-      return null
-    })
+  it('resolves music metadata for top-level musicPlayer blocks with one batch call', async () => {
+    vi.mocked(getPublicMusicMetasByIds).mockResolvedValue(
+      makeMetaMap(
+        makeMusicMeta({ id: 'playeroneeeeeeeeee', name: 'One' }),
+        makeMusicMeta({ id: 'playertwooooooooooo', name: 'Two' }),
+      ),
+    )
 
     const body: PortableTextBody = [
       { _type: 'musicPlayer', _key: 'm1', playerId: 'playeroneeeeeeeeee', auto: true },
@@ -91,16 +92,19 @@ describe('server/domains/pt/prerenderMusicPlayerBlocks', () => {
     expect(third._type).toBe('musicPlayer')
     expect(third.meta).toBeUndefined()
 
-    expect(getMusicMetaForPlayer).toHaveBeenCalledTimes(3)
+    // Every player id is resolved by a single batch query, not per-block calls.
+    expect(getPublicMusicMetasByIds).toHaveBeenCalledTimes(1)
+    expect(getPublicMusicMetasByIds).toHaveBeenCalledWith(fakeDb, [
+      'playeroneeeeeeeeee',
+      'playertwooooooooooo',
+      'missingggggggggggg',
+    ])
   })
 
   it('resolves music players nested in solution, footnoteDefinition, and twoColumn blocks', async () => {
-    vi.mocked(getMusicMetaForPlayer).mockImplementation(async (_db, playerId) => {
-      if (playerId === 'nestedoneeeeeeeeee') {
-        return makeMusicMeta({ id: playerId, name: 'Nested' })
-      }
-      return null
-    })
+    vi.mocked(getPublicMusicMetasByIds).mockResolvedValue(
+      makeMetaMap(makeMusicMeta({ id: 'nestedoneeeeeeeeee', name: 'Nested' })),
+    )
 
     const body: PortableTextBody = [
       {
@@ -137,11 +141,13 @@ describe('server/domains/pt/prerenderMusicPlayerBlocks', () => {
     expect(twoColumn._type).toBe('twoColumn')
     expect((twoColumn.left[0] as MusicPlayerBlock).meta).toBeDefined()
 
-    expect(getMusicMetaForPlayer).toHaveBeenCalledTimes(1)
+    // The same playerId referenced three times is deduped into one batch call.
+    expect(getPublicMusicMetasByIds).toHaveBeenCalledTimes(1)
+    expect(getPublicMusicMetasByIds).toHaveBeenCalledWith(fakeDb, ['nestedoneeeeeeeeee'])
   })
 
   it('leaves non-music blocks untouched', async () => {
-    vi.mocked(getMusicMetaForPlayer).mockResolvedValue(null)
+    vi.mocked(getPublicMusicMetasByIds).mockResolvedValue(new Map())
 
     const body: PortableTextBody = [
       {

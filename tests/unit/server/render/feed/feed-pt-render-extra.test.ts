@@ -10,15 +10,11 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 // (strong/em/code/footnoteRef) including the undefined-value short-circuits.
 
 vi.mock('@/server/domains/music/services/read', () => ({
-  findMusicByPlayerIds: (db: unknown, ids: readonly string[]) => musicMockState.read(db, ids),
-}))
-vi.mock('@/server/domains/music/storage', () => ({
-  safeBuildMusicPublicUrl: (path: string | null) => musicMockState.build(path),
+  getPublicMusicMetasByIds: (db: unknown, ids: readonly string[]) => musicMockState.read(db, ids),
 }))
 
 const musicMockState = {
-  read: vi.fn<(db: unknown, ids: readonly string[]) => Promise<unknown[]>>(),
-  build: vi.fn<(path: string | null) => string | null>(),
+  read: vi.fn<(db: unknown, ids: readonly string[]) => Promise<Map<string, unknown>>>(),
 }
 
 import { renderPortableTextToHtml } from '@/server/render/feed/feed-pt-render'
@@ -27,8 +23,7 @@ const fakeDb = {} as NodePgDatabase
 
 beforeEach(() => {
   musicMockState.read.mockReset()
-  musicMockState.build.mockReset()
-  musicMockState.read.mockResolvedValue([])
+  musicMockState.read.mockResolvedValue(new Map())
 })
 
 describe('render/feed/feed-pt-render — image block attribute branches', () => {
@@ -320,37 +315,35 @@ describe('render/feed/feed-pt-render — lists and inline marks', () => {
 })
 
 describe('render/feed/feed-pt-render — music player happy path', () => {
-  it('renders an <audio> figure when the music row resolves with a public URL', async () => {
-    musicMockState.read.mockResolvedValue([
-      {
-        id: 1n,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        deletedAt: null,
-        source: 'manual',
-        sourceId: null,
-        playerId: 'p-1',
-        name: 'Song',
-        artist: 'Artist',
-        album: null,
-        audioStoragePath: 'path/to.mp3',
-        coverStoragePath: null,
-        lyric: null,
-        uploaderId: null,
-      },
-    ])
-    musicMockState.build.mockReturnValue('https://cdn/to.mp3')
+  it('renders an <audio> figure with the resolved cover when the music meta resolves', async () => {
+    musicMockState.read.mockResolvedValue(
+      new Map([
+        [
+          'p-1',
+          {
+            id: 'p-1',
+            name: 'Song',
+            artist: 'Artist',
+            album: 'Album',
+            url: 'https://cdn/to.mp3',
+            pic: 'https://cdn/to.jpg',
+            lyric: '',
+          },
+        ],
+      ]),
+    )
 
     const html = await renderPortableTextToHtml(fakeDb, [{ _type: 'musicPlayer', _key: 'mp1', playerId: 'p-1' }], [])
     expect(html).toContain('<audio')
     expect(html).toContain('src="https://cdn/to.mp3"')
+    expect(html).toContain('<img src="https://cdn/to.jpg" alt="Song" />')
     expect(html).toContain('Song')
     expect(html).toContain('Artist')
     expect(html).not.toContain('此文章包含音乐播放器')
   })
 
   it('collects music player ids nested in footnoteDefinition blocks', async () => {
-    musicMockState.read.mockResolvedValue([])
+    musicMockState.read.mockResolvedValue(new Map())
     await renderPortableTextToHtml(
       fakeDb,
       [

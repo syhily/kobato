@@ -3,7 +3,7 @@ import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 import type { Block, NonRecursiveBlock, PortableTextBody } from '@/shared/pt/schema'
 import type { MusicPlayerBlockMeta } from '@/shared/types/music'
 
-import { getMusicMetaForPlayer } from '@/server/domains/music/services/read'
+import { getPublicMusicMetasByIds } from '@/server/domains/music/services/read'
 import { visitNestedBlocks } from '@/shared/pt/utils'
 
 /**
@@ -40,25 +40,18 @@ async function resolveMusicPlayerMeta(
   }
 
   const uniqueIds = [...new Set(playerIds)]
+  const metas = await getPublicMusicMetasByIds(db, uniqueIds)
   const map = new Map<string, MusicPlayerBlockMeta>()
-
-  await Promise.all(
-    uniqueIds.map(async (playerId) => {
-      const meta = await getMusicMetaForPlayer(db, playerId)
-      if (meta === null) {
-        return
-      }
-      map.set(playerId, {
-        id: meta.id,
-        name: meta.name,
-        artist: meta.artist,
-        cover: meta.pic,
-        audioUrl: meta.url,
-        lyric: meta.lyric,
-      })
-    }),
-  )
-
+  for (const [playerId, meta] of metas) {
+    map.set(playerId, {
+      id: meta.id,
+      name: meta.name,
+      artist: meta.artist,
+      cover: meta.pic,
+      audioUrl: meta.url,
+      lyric: meta.lyric,
+    })
+  }
   return map
 }
 

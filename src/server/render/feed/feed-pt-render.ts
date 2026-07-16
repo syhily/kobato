@@ -17,14 +17,14 @@ import type {
   TwoColumnBlock,
 } from '@/shared/pt/schema'
 
-import { findMusicByPlayerIds } from '@/server/domains/music/services/read'
-import { safeBuildMusicPublicUrl } from '@/server/domains/music/storage'
+import { getPublicMusicMetasByIds } from '@/server/domains/music/services/read'
 import { deriveSlug } from '@/server/infra/slug'
 import { requireBlogSettingsSection } from '@/shared/config/getters'
 import { collectHeadingSlotsInPortableTextRenderOrder, visitNestedBlocks } from '@/shared/pt/utils'
 import { sanitizeUrl } from '@/shared/sanitize-url'
 import { resolveFootnotesSectionTitle } from '@/shared/utils/footnotes-section-title'
 import { escapeHtml } from '@/shared/utils/security'
+import { joinUrl } from '@/shared/utils/urls'
 
 export interface RenderPortableTextToHtmlOptions {
   rssMode?: boolean
@@ -78,6 +78,7 @@ interface MusicMeta {
   name: string
   artist: string
   audioUrl: string
+  cover: string
 }
 
 async function resolveMusicPlayerMeta(db: NodePgDatabase, body: PortableTextBodyType): Promise<Map<string, MusicMeta>> {
@@ -87,16 +88,24 @@ async function resolveMusicPlayerMeta(db: NodePgDatabase, body: PortableTextBody
   }
 
   const uniqueIds = [...new Set(playerIds)]
-  const rows = await findMusicByPlayerIds(db, uniqueIds)
+  const metas = await getPublicMusicMetasByIds(db, uniqueIds)
 
   const map = new Map<string, MusicMeta>()
-  for (const row of rows) {
-    const audioUrl = safeBuildMusicPublicUrl(row.audioStoragePath, row.storageDriver)
-    if (audioUrl !== null) {
-      map.set(row.playerId, { name: row.name, artist: row.artist, audioUrl })
-    }
+  for (const [playerId, meta] of metas) {
+    map.set(playerId, { name: meta.name, artist: meta.artist, audioUrl: meta.url, cover: absolutizeForFeed(meta.pic) })
   }
   return map
+}
+
+// Feed readers resolve URLs on a different origin, so a relative cover URL
+// (the bundled default music cover) is joined with the site origin — the
+// same way the feed generator absolutizes `/logo.svg`. Storage URLs already
+// arrive absolute (`resolveAssetUrl` joins the CDN base or the site origin).
+function absolutizeForFeed(url: string): string {
+  if (!url.startsWith('/')) {
+    return url
+  }
+  return joinUrl(requireBlogSettingsSection('siteIdentity').website, url)
 }
 
 function collectMusicPlayerIds(body: PortableTextBodyType): string[] {
@@ -256,7 +265,8 @@ function renderMusicPlayer(value: MusicPlayerBlock, ctx: ComponentContext): stri
   const name = escapeHtml(meta.name)
   const artist = escapeHtml(meta.artist)
   const src = escapeHtml(meta.audioUrl)
-  return `<figure><audio controls preload="none" src="${src}"></audio><figcaption>🎵 ${name} — ${artist}</figcaption></figure>`
+  const cover = escapeHtml(meta.cover)
+  return `<figure><img src="${cover}" alt="${name}" /><audio controls preload="none" src="${src}"></audio><figcaption>🎵 ${name} — ${artist}</figcaption></figure>`
 }
 
 // Table block

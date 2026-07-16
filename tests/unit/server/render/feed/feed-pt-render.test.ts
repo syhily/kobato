@@ -3,11 +3,7 @@ import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 vi.mock('@/server/domains/music/services/read', () => ({
-  findMusicByPlayerIds: vi.fn(),
-}))
-
-vi.mock('@/server/domains/music/storage', () => ({
-  safeBuildMusicPublicUrl: vi.fn((path: string) => `/audio/${path}`),
+  getPublicMusicMetasByIds: vi.fn(),
 }))
 
 vi.mock('@/server/infra/slug', () => ({
@@ -15,7 +11,9 @@ vi.mock('@/server/infra/slug', () => ({
 }))
 
 vi.mock('@/shared/config/getters', () => ({
-  requireBlogSettingsSection: vi.fn(() => ({})),
+  requireBlogSettingsSection: vi.fn((section: string) =>
+    section === 'siteIdentity' ? { website: 'https://example.com' } : {},
+  ),
 }))
 
 vi.mock('@/shared/pt/utils', async (importOriginal) => {
@@ -35,7 +33,7 @@ vi.mock('@/shared/utils/footnotes-section-title', () => ({
   resolveFootnotesSectionTitle: vi.fn(() => 'Footnotes'),
 }))
 
-import { findMusicByPlayerIds } from '@/server/domains/music/services/read'
+import { getPublicMusicMetasByIds } from '@/server/domains/music/services/read'
 import { renderPortableTextToHtml } from '@/server/render/feed/feed-pt-render'
 
 const dbMock = {} as NodePgDatabase
@@ -43,9 +41,22 @@ const dbMock = {} as NodePgDatabase
 describe('renderPortableTextToHtml', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    ;(findMusicByPlayerIds as ReturnType<typeof vi.fn>).mockResolvedValue([
-      { playerId: 'p1', name: 'Song', artist: 'Artist', audioStoragePath: 'song.mp3' },
-    ])
+    ;(getPublicMusicMetasByIds as ReturnType<typeof vi.fn>).mockResolvedValue(
+      new Map([
+        [
+          'p1',
+          {
+            id: 'p1',
+            name: 'Song',
+            artist: 'Artist',
+            album: 'Album',
+            url: 'https://cdn.example.com/song.mp3',
+            pic: 'https://cdn.example.com/song.jpg',
+            lyric: '',
+          },
+        ],
+      ]),
+    )
   })
 
   it('renders a full portable text body into html', async () => {
@@ -221,10 +232,33 @@ describe('renderPortableTextToHtml', () => {
   })
 
   it('falls back to placeholder when music player metadata is missing', async () => {
-    ;(findMusicByPlayerIds as ReturnType<typeof vi.fn>).mockResolvedValue([])
+    ;(getPublicMusicMetasByIds as ReturnType<typeof vi.fn>).mockResolvedValue(new Map())
     const body = [{ _type: 'musicPlayer', _key: 'm1', playerId: 'missing' }]
     const html = await renderPortableTextToHtml(dbMock, body as never, [])
     expect(html).toContain('此文章包含音乐播放器')
+  })
+
+  it('renders the resolved cover as an <img>, absolutizing the relative default cover', async () => {
+    ;(getPublicMusicMetasByIds as ReturnType<typeof vi.fn>).mockResolvedValue(
+      new Map([
+        [
+          'p1',
+          {
+            id: 'p1',
+            name: 'Song',
+            artist: 'Artist',
+            album: 'Album',
+            url: 'https://cdn.example.com/song.mp3',
+            pic: '/images/default-music-cover.png',
+            lyric: '',
+          },
+        ],
+      ]),
+    )
+    const body = [{ _type: 'musicPlayer', _key: 'm1', playerId: 'p1' }]
+    const html = await renderPortableTextToHtml(dbMock, body as never, [])
+    expect(html).toContain('<img src="https://example.com/images/default-music-cover.png" alt="Song" />')
+    expect(html).toContain('<audio controls preload="none" src="https://cdn.example.com/song.mp3"></audio>')
   })
 
   it('covers edge cases for inline marks and block renderers', async () => {
