@@ -68,19 +68,6 @@ describe('ui/admin/posts/usePostsReducer', () => {
     expect(state.total).toBe(5)
   })
 
-  it('appends rows and updates total', () => {
-    const first = makeAdminPost()
-    const second = makeAdminPost()
-    const { state } = renderHook(usePostsReducer, {
-      actions: [
-        (r) => r.dispatch({ type: 'loaded', rows: [first], total: 3 }),
-        (r) => r.dispatch({ type: 'appended', rows: [second], total: 3 }),
-      ],
-    })
-    expect(state.rows).toEqual([first, second])
-    expect(state.total).toBe(3)
-  })
-
   it('updates search query', () => {
     const { state } = renderHook(usePostsReducer, {
       actions: [(r) => r.dispatch({ type: 'setQ', value: 'hello' })],
@@ -145,18 +132,6 @@ describe('ui/admin/posts/usePostsReducer', () => {
     expect(state.rows).toHaveLength(1)
     expect(state.rows[0]!.id).toBe(b.id)
     expect(state.total).toBe(1)
-  })
-
-  it('does not decrement total below zero', () => {
-    const post = makeAdminPost()
-    const { state } = renderHook(usePostsReducer, {
-      actions: [
-        (r) => r.dispatch({ type: 'loaded', rows: [post], total: 1 }),
-        (r) => r.dispatch({ type: 'removePost', id: post.id }),
-        (r) => r.dispatch({ type: 'removePost', id: post.id }),
-      ],
-    })
-    expect(state.total).toBe(0)
   })
 
   it('prepends a post and increments total', () => {

@@ -3,6 +3,8 @@ import { useLocation } from 'react-router'
 
 import type { AdminPostDto } from '@/shared/types/posts'
 
+import { rowsReducer, type RowsState } from '@/ui/admin/shared/rowsReducer'
+
 export type PostStatusFilter = 'all' | 'published' | 'draft' | 'hidden' | 'deleted'
 
 function getInitialStatusFromSearch(search: string): PostStatusFilter {
@@ -21,9 +23,7 @@ function getInitialCategoryFromSearch(search: string): string {
   return new URLSearchParams(search).get('category') ?? ''
 }
 
-interface PostsState {
-  rows: AdminPostDto[]
-  total: number
+interface PostsState extends RowsState<AdminPostDto> {
   q: string
   deletedStatus: 'all' | 'deleted' | 'normal'
   pageSize: number
@@ -70,18 +70,13 @@ function deriveStatusFields(status: PostStatusFilter): {
   return { deletedStatus: 'normal', ...statusMap[status as Exclude<PostStatusFilter, 'deleted'>] }
 }
 
-function resetFields(): Partial<PostsState> {
-  return {}
-}
-
 function postsReducer(state: PostsState, action: PostsAction): PostsState {
   switch (action.type) {
     case 'loaded':
-      return { ...state, rows: action.rows, total: action.total }
     case 'appended':
-      return { ...state, rows: [...state.rows, ...action.rows], total: action.total }
+      return { ...state, ...rowsReducer(state, action) }
     case 'setQ':
-      return { ...state, q: action.value, ...resetFields() }
+      return { ...state, q: action.value }
     case 'setStatus': {
       const derived = deriveStatusFields(action.value)
       return {
@@ -103,18 +98,11 @@ function postsReducer(state: PostsState, action: PostsAction): PostsState {
     case 'setSortOrder':
       return { ...state, sortOrder: action.value }
     case 'patchPost':
-      return {
-        ...state,
-        rows: state.rows.map((row) => (row.id === action.post.id ? { ...row, ...action.post } : row)),
-      }
+      return { ...state, ...rowsReducer(state, { type: 'patch', row: action.post }) }
     case 'removePost':
-      return {
-        ...state,
-        rows: state.rows.filter((row) => row.id !== action.id),
-        total: Math.max(0, state.total - 1),
-      }
+      return { ...state, ...rowsReducer(state, { type: 'remove', id: action.id }) }
     case 'prependPost':
-      return { ...state, rows: [action.post, ...state.rows], total: state.total + 1 }
+      return { ...state, ...rowsReducer(state, { type: 'prepend', row: action.post }) }
   }
 }
 

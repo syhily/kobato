@@ -2,6 +2,8 @@ import { useReducer } from 'react'
 
 import type { AdminPageDto } from '@/shared/types/pages'
 
+import { rowsReducer, type RowsState } from '@/ui/admin/shared/rowsReducer'
+
 export type PageStatusFilter = 'all' | 'published' | 'draft' | 'deleted'
 
 function deriveStatusFields(status: PageStatusFilter): {
@@ -19,9 +21,7 @@ function deriveStatusFields(status: PageStatusFilter): {
   return { deletedStatus: 'normal', ...statusMap[status as Exclude<PageStatusFilter, 'deleted'>] }
 }
 
-interface PagesState {
-  rows: AdminPageDto[]
-  total: number
+interface PagesState extends RowsState<AdminPageDto> {
   q: string
   deletedStatus: 'all' | 'deleted' | 'normal'
   published?: boolean
@@ -42,9 +42,8 @@ type PagesAction =
 function pagesReducer(state: PagesState, action: PagesAction): PagesState {
   switch (action.type) {
     case 'loaded':
-      return { ...state, rows: action.rows, total: action.total }
     case 'appended':
-      return { ...state, rows: [...state.rows, ...action.rows], total: action.total }
+      return { ...state, ...rowsReducer(state, action) }
     case 'setQ':
       return { ...state, q: action.value }
     case 'setStatus': {
@@ -59,18 +58,11 @@ function pagesReducer(state: PagesState, action: PagesAction): PagesState {
     case 'setAuthorId':
       return { ...state, authorId: action.value }
     case 'patchPage':
-      return {
-        ...state,
-        rows: state.rows.map((row) => (row.id === action.page.id ? { ...row, ...action.page } : row)),
-      }
+      return { ...state, ...rowsReducer(state, { type: 'patch', row: action.page }) }
     case 'removePage':
-      return {
-        ...state,
-        rows: state.rows.filter((row) => row.id !== action.id),
-        total: Math.max(0, state.total - 1),
-      }
+      return { ...state, ...rowsReducer(state, { type: 'remove', id: action.id }) }
     case 'prependPage':
-      return { ...state, rows: [action.page, ...state.rows], total: state.total + 1 }
+      return { ...state, ...rowsReducer(state, { type: 'prepend', row: action.page }) }
   }
 }
 

@@ -126,7 +126,7 @@ describe('ui/admin/users/useUsersReducer', () => {
     expect(state.total).toBe(1)
   })
 
-  it('removes a user', () => {
+  it('removes a user and decrements total', () => {
     const a = makeUser('1')
     const b = makeUser('2')
     const { state } = renderHook(useUsersReducer, {
@@ -143,6 +143,8 @@ describe('ui/admin/users/useUsersReducer', () => {
     })
     expect(state.rows).toHaveLength(1)
     expect(state.rows[0]!.id).toBe(b.id)
-    expect(state.total).toBe(2)
+    // Unified with the other four admin rows surfaces: the header count
+    // updates immediately on remove.
+    expect(state.total).toBe(1)
   })
 })

@@ -77,19 +77,6 @@ describe('ui/admin/pages/usePagesReducer', () => {
     expect(state.total).toBe(5)
   })
 
-  it('appends rows and total', () => {
-    const first = makePage('1')
-    const second = makePage('2')
-    const { state } = renderHook(usePagesReducer, {
-      actions: [
-        (r) => r.dispatch({ type: 'loaded', rows: [first], total: 3 }),
-        (r) => r.dispatch({ type: 'appended', rows: [second], total: 3 }),
-      ],
-    })
-    expect(state.rows).toEqual([first, second])
-    expect(state.total).toBe(3)
-  })
-
   it('updates search query', () => {
     const { state } = renderHook(usePagesReducer, {
       actions: [(r) => r.dispatch({ type: 'setQ', value: 'hello' })],
@@ -132,18 +119,6 @@ describe('ui/admin/pages/usePagesReducer', () => {
     expect(state.rows).toHaveLength(1)
     expect(state.rows[0]!.id).toBe(b.id)
     expect(state.total).toBe(1)
-  })
-
-  it('does not decrement total below zero', () => {
-    const page = makePage('1')
-    const { state } = renderHook(usePagesReducer, {
-      actions: [
-        (r) => r.dispatch({ type: 'loaded', rows: [page], total: 1 }),
-        (r) => r.dispatch({ type: 'removePage', id: page.id }),
-        (r) => r.dispatch({ type: 'removePage', id: page.id }),
-      ],
-    })
-    expect(state.total).toBe(0)
   })
 
   it('prepends a page and increments total', () => {

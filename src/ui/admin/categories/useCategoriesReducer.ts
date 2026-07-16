@@ -2,9 +2,9 @@ import { useReducer } from 'react'
 
 import type { AdminCategoryDto } from '@/shared/types/categories'
 
-interface CategoriesState {
-  rows: AdminCategoryDto[]
-  total: number
+import { rowsReducer, type RowsState } from '@/ui/admin/shared/rowsReducer'
+
+interface CategoriesState extends RowsState<AdminCategoryDto> {
   q: string
 }
 
@@ -20,22 +20,15 @@ type CategoriesAction =
 function categoriesReducer(state: CategoriesState, action: CategoriesAction): CategoriesState {
   switch (action.type) {
     case 'loaded':
-      return { ...state, rows: action.rows, total: action.total }
+      return { ...state, ...rowsReducer(state, action) }
     case 'setQ':
       return { ...state, q: action.value }
     case 'patchCategory':
-      return {
-        ...state,
-        rows: state.rows.map((row) => (row.id === action.category.id ? { ...row, ...action.category } : row)),
-      }
+      return { ...state, ...rowsReducer(state, { type: 'patch', row: action.category }) }
     case 'removeCategory':
-      return {
-        ...state,
-        rows: state.rows.filter((row) => row.id !== action.id),
-        total: Math.max(0, state.total - 1),
-      }
+      return { ...state, ...rowsReducer(state, { type: 'remove', id: action.id }) }
     case 'prependCategory':
-      return { ...state, rows: [action.category, ...state.rows], total: state.total + 1 }
+      return { ...state, ...rowsReducer(state, { type: 'prepend', row: action.category }) }
     case 'reorderRows': {
       // Optimistic local reorder used while the server round-trip is in
       // flight. Rewrite each row's `sortOrder` to its new index so the

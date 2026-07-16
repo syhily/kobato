@@ -2,9 +2,9 @@ import { useReducer } from 'react'
 
 import type { AdminTagDto } from '@/shared/types/tags'
 
-interface TagsState {
-  rows: AdminTagDto[]
-  total: number
+import { rowsReducer, type RowsState } from '@/ui/admin/shared/rowsReducer'
+
+interface TagsState extends RowsState<AdminTagDto> {
   hasMore: boolean
   q: string
 }
@@ -20,26 +20,17 @@ type TagsAction =
 function tagsReducer(state: TagsState, action: TagsAction): TagsState {
   switch (action.type) {
     case 'loaded':
-      return { ...state, rows: action.rows, total: action.total, hasMore: action.hasMore }
     case 'appended':
-      return { ...state, rows: [...state.rows, ...action.rows], total: action.total, hasMore: action.hasMore }
+      // `hasMore` stays on the entity slice; the machine owns rows/total.
+      return { ...state, ...rowsReducer(state, action), hasMore: action.hasMore }
     case 'setQ':
       return { ...state, q: action.value }
     case 'patchTag':
-      return {
-        ...state,
-        rows: state.rows.map((row) => (row.id === action.tag.id ? { ...row, ...action.tag } : row)),
-      }
+      return { ...state, ...rowsReducer(state, { type: 'patch', row: action.tag }) }
     case 'removeTag':
-      // Optimistic removal: drop the row from the visible list and
-      // decrement `total`. The next scroll/load re-syncs if needed.
-      return {
-        ...state,
-        rows: state.rows.filter((row) => row.id !== action.id),
-        total: Math.max(0, state.total - 1),
-      }
+      return { ...state, ...rowsReducer(state, { type: 'remove', id: action.id }) }
     case 'prependTag':
-      return { ...state, rows: [action.tag, ...state.rows], total: state.total + 1 }
+      return { ...state, ...rowsReducer(state, { type: 'prepend', row: action.tag }) }
   }
 }
 

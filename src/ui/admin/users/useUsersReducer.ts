@@ -2,12 +2,12 @@ import { useReducer } from 'react'
 
 import type { AdminUserDto } from '@/shared/types/users'
 
+import { rowsReducer, type RowsState } from '@/ui/admin/shared/rowsReducer'
+
 export type RoleFilter = 'all' | 'admin' | 'author' | 'visitor' | 'normal'
 export type SortOrder = 'recent' | 'commentCount'
 
-interface UsersState {
-  rows: AdminUserDto[]
-  total: number
+interface UsersState extends RowsState<AdminUserDto> {
   hasMore: boolean
   pageSize: number
   q: string
@@ -30,19 +30,9 @@ type UsersAction =
 function usersReducer(state: UsersState, action: UsersAction): UsersState {
   switch (action.type) {
     case 'loaded':
-      return {
-        ...state,
-        rows: action.rows,
-        total: action.total,
-        hasMore: action.hasMore,
-      }
     case 'appended':
-      return {
-        ...state,
-        rows: [...state.rows, ...action.rows],
-        total: action.total,
-        hasMore: action.hasMore,
-      }
+      // `hasMore` stays on the entity slice; the machine owns rows/total.
+      return { ...state, ...rowsReducer(state, action), hasMore: action.hasMore }
     case 'setQ':
       return { ...state, q: action.value }
     case 'setRole':
@@ -54,12 +44,12 @@ function usersReducer(state: UsersState, action: UsersAction): UsersState {
     case 'setPageSize':
       return { ...state, pageSize: action.value }
     case 'patchUser':
-      return {
-        ...state,
-        rows: state.rows.map((user) => (user.id === action.user.id ? { ...user, ...action.user } : user)),
-      }
+      return { ...state, ...rowsReducer(state, { type: 'patch', row: action.user }) }
     case 'removeUser':
-      return { ...state, rows: state.rows.filter((user) => user.id !== action.id) }
+      // Machine semantics: removing a user also decrements `total` so the
+      // header count updates immediately (unified with the other four
+      // admin rows surfaces — this hook previously skipped the decrement).
+      return { ...state, ...rowsReducer(state, { type: 'remove', id: action.id }) }
   }
 }
 
