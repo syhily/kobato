@@ -54,7 +54,9 @@ attaches via `services/lifecycle-adapter.ts` in each entity domain),
 storage, key, process), `music`, `pages`, `posts`, `pt`
 (Shiki/KaTeX prerender, canonicalize, comment-to-html),
 `settings` (install-flow, install-gate),
-`taxonomies/{categories,tags}`, `users`. Plus `audit`.
+`taxonomies/{categories,tags}`, `users`. Plus `audit`. Plus
+`webmentions` (W3C Webmention receive: target resolution, SSRF-guarded
+source fetch, link verification, moderation).
 
 Domains may import from `shared/`, `infra/`, and other `domains/`.
 `tests/contract.cookie.test.ts` pins `domains/auth/session-storage.ts`.

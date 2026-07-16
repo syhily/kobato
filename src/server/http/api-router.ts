@@ -18,6 +18,7 @@ import { adminTagsRouter } from '@/server/http/controllers/admin/tags.controller
 import { adminUsersAdminRouter } from '@/server/http/controllers/admin/users-admin.controller'
 import { adminUsersCrudRouter } from '@/server/http/controllers/admin/users-crud.controller'
 import { adminUsersSessionsRouter } from '@/server/http/controllers/admin/users-sessions.controller'
+import { adminWebmentionsRouter } from '@/server/http/controllers/admin/webmentions.controller'
 import { analyticsRouter } from '@/server/http/controllers/analytics.controller'
 import { avatarRouter } from '@/server/http/controllers/avatar.controller'
 import { commentsAuthedRouter } from '@/server/http/controllers/comments-authed.controller'
@@ -65,6 +66,7 @@ export const apiRouter = {
     comments: adminCommentsRouter,
     backup: adminBackupRouter,
     fonts: adminFontsRouter,
+    webmentions: adminWebmentionsRouter,
   },
 }
 

@@ -36,6 +36,7 @@ import { maxmindRouter } from '@/server/http/resources/maxmind'
 import { musicProxyRouter } from '@/server/http/resources/music-proxy'
 import { redirectsRouter } from '@/server/http/resources/redirects'
 import { sitemapRouter } from '@/server/http/resources/sitemap'
+import { webmentionRouter } from '@/server/http/resources/webmention'
 import { getRestoreState, getServerPhase } from '@/server/infra/lifecycle'
 import { root } from '@/server/infra/logger'
 import { sanitizeReqHeaders, resBindings } from '@/server/infra/logger/sanitizer'
@@ -213,6 +214,9 @@ export function configureMiddleware(app: Hono<Env>): void {
   app.route('/', fontsEmbeddedRouter)
   app.route('/', sitemapRouter)
   app.route('/', redirectsRouter)
+  // W3C Webmention receive endpoint (unauthenticated by protocol design;
+  // per-IP rate limit + moderation queue carry the abuse load).
+  app.route('/', webmentionRouter)
 
   // Admin branding resource routes
   app.route('/', brandingRouter)
