@@ -153,7 +153,7 @@ instead and leave a single-line pointer in `routes.ts`.
 `public/layout.tsx` is a **pathless** layout (`layout(file, …)`) that
 wraps every public-facing URL.
 
-It owns the `<PublicChrome>` wrapper which **statically imports
+It owns the `<BaseLayout>` wrapper which **statically imports
 `public.css`**. React Router only emits `<link rel="stylesheet">`
 tags into the SSR `<Links />` output for stylesheets reachable from
 the matched route module graph, so a static import inside the layout
@@ -188,7 +188,7 @@ helper).
 
 Resource routes (feeds, sitemap, generated images, JSON APIs) sit
 **outside** `public/layout.tsx`. They never render `<Outlet />`
-chrome, never import `<PublicChrome>`, and must not pull
+chrome, never import `<BaseLayout>`, and must not pull
 `public.css` into their bundle. Each one returns a `Response`
 directly from a `loader` (GET) or `action` (POST/PATCH/DELETE).
 

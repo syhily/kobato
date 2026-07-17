@@ -3,6 +3,7 @@ import type { LoaderFunctionArgs } from 'react-router'
 
 import type { ResolvedImageMeta } from '@/server/domains/images/services/enhance'
 import type { PortableTextBody } from '@/shared/pt/schema'
+import type { DraftMarker } from '@/shared/types/catalog'
 import type { MarkdownHeading } from '@/shared/utils/toc'
 
 import { tryGetSessionContext } from '@/server/domains/auth/context'
@@ -16,8 +17,6 @@ import { findPublicPostMetaBySlug } from '@/server/domains/posts/repos/single'
 import { ifNoneMatch, notModifiedResponse, weakEtag } from '@/server/infra/http/etag'
 import { redirectPermanent } from '@/server/infra/http/redirects'
 import { notFound } from '@/server/infra/http/status'
-
-type DraftMarker = 'draft' | 'unpublished-draft' | 'published-draft' | null
 
 export interface PagePreviewResult {
   page: {

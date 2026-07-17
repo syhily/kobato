@@ -9,6 +9,10 @@ import { Header } from '@/ui/public/chrome/Header'
 import { ScrollTopButton } from '@/ui/public/chrome/ScrollTopButton'
 import { ThemeToggle } from '@/ui/public/chrome/ThemeToggle'
 import { UserMenu } from '@/ui/public/chrome/UserMenu'
+// Static import here so React Router can preload `public.css` during SSR
+// and avoid FOUC. Do NOT re-export from `@/root` — that would pin this
+// module in the admin chunk and break the cascade separation.
+import '@/styles/public.css'
 
 export interface BaseLayoutProps {
   navigation?: NavigationItem[]

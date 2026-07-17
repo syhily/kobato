@@ -3,7 +3,7 @@ import { type ReactNode, Suspense } from 'react'
 import { Await, Link } from 'react-router'
 
 import type { SiteIdentitySettings } from '@/shared/config/types'
-import type { CommentFormUser, MarkdownHeading } from '@/shared/types/catalog'
+import type { CommentFormUser, DraftMarker, MarkdownHeading } from '@/shared/types/catalog'
 import type { DetailPageComments } from '@/shared/types/comments'
 
 import { formatLocalDate } from '@/shared/utils/formatter'
@@ -13,8 +13,6 @@ import { CommentsSkeleton } from '@/ui/public/comments/CommentsSkeleton'
 import { LikeButton } from '@/ui/public/LikeActions'
 import { postMetaClass, postMetaDateClass, postTitleClass } from '@/ui/public/post/postChrome'
 import { TableOfContents } from '@/ui/public/post/TableOfContents'
-
-export type DraftMarker = 'draft' | 'unpublished-draft' | 'published-draft' | null
 
 const DRAFT_MARKER_LABELS: Record<Exclude<DraftMarker, null>, { sr: string; visible: string }> = {
   draft: { sr: '未发布草稿：', visible: '【草稿】' },
@@ -27,15 +25,15 @@ export interface DetailBodyChromeProps {
   title: string
   date: Date
   updated?: Date | null
-  updatedVisibility?: 'shown' | 'hidden'
+  showUpdated?: boolean
   headings: MarkdownHeading[]
-  toc?: 'enabled' | 'disabled'
+  toc?: boolean
   likes: number
   permalink: string
   commentKey: string
   commentsPromise: Promise<DetailPageComments>
   currentUser?: CommentFormUser
-  comments?: 'enabled' | 'disabled'
+  comments?: boolean
   mode?: 'admin' | 'public'
   editHref?: string
   draftMarker?: DraftMarker
@@ -52,15 +50,15 @@ export function DetailBodyChrome({
   title,
   date,
   updated,
-  updatedVisibility = 'hidden',
+  showUpdated = false,
   headings,
-  toc = 'disabled',
+  toc = false,
   likes,
   permalink,
   commentKey,
   commentsPromise,
   currentUser,
-  comments = 'disabled',
+  comments = false,
   mode,
   editHref,
   draftMarker = null,
@@ -103,7 +101,7 @@ export function DetailBodyChrome({
           <time dateTime={publishedIso} className="tabular-nums">
             {formatLocalDate(date, 'yyyy-MM-dd HH:mm', siteIdentity)}
           </time>
-          {updatedVisibility === 'shown' && (
+          {showUpdated && (
             <div className="flex min-w-0 flex-wrap items-baseline gap-x-1">
               <span className="shrink-0">修改于</span>
               <time dateTime={updatedIso} className="tabular-nums">
@@ -114,7 +112,7 @@ export function DetailBodyChrome({
         </div>
         {metaExtra}
       </div>
-      <TableOfContents headings={headings} toc={toc} />
+      <TableOfContents headings={headings} toc={toc ? 'enabled' : 'disabled'} />
       <div className={contentWrapperClassName}>
         <div ref={postContentRef} className={cn('post-content', 'prose-blog prose prose-lg max-w-none')}>
           {children}
@@ -122,7 +120,7 @@ export function DetailBodyChrome({
       </div>
       <LikeButton permalink={permalink} commentKey={commentKey} likes={likes} />
       {afterLikeButton}
-      {comments === 'enabled' && (
+      {comments && (
         <Suspense fallback={<CommentsSkeleton />}>
           <Await resolve={commentsPromise}>
             {(resolved) => (

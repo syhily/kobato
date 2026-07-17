@@ -135,19 +135,7 @@ export function APlayer({
             <span className="aplayer-author text-xs text-ink-4 dark:text-ink-4"> - {renderArtist(audio.artist)}</span>
           </div>
           {appearance === 'fixed' ? null : <Lyrics show lrcText={audio.lrc} currentTime={audioControl.currentTime} />}
-          <PlaybackControls
-            volume={audioControl.volume}
-            onChangeVolume={audioControl.setVolume}
-            muted={audioControl.muted}
-            onToggleMuted={audioControl.toggleMuted}
-            themeColor={themeColor}
-            currentTime={audioControl.currentTime}
-            audioDurationSeconds={audioControl.duration}
-            bufferedSeconds={audioControl.bufferedSeconds}
-            onSeek={audioControl.seek}
-            loop={audioControl.loop}
-            onToggleLoop={audioControl.toggleLoop}
-          />
+          <PlaybackControls themeColor={themeColor} control={audioControl} />
         </div>
         <div
           className="aplayer-notice pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded bg-surface-dim px-2.5 py-aplayer-notice-pad-y text-xs text-ink-4 opacity-0 transition-all duration-300 ease-in-out dark:bg-surface-dim dark:text-ink-2"

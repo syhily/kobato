@@ -163,3 +163,5 @@ export function useAudioControl(options: UseAudioControlOptions) {
     toggleLoop,
   }
 }
+
+export type AudioControl = ReturnType<typeof useAudioControl>

@@ -9,7 +9,7 @@ import type { Route } from './+types/not-found'
 // canonical `Not WordPress` 404. Everything that does arrive here is a
 // genuine miss, so the loader unconditionally throws the plain 404 via
 // `notFound()`, which the public layout's `ErrorBoundary` (with its
-// synchronous `<PublicChrome>` shell) catches and renders as the regular
+// synchronous `<BaseLayout>` shell) catches and renders as the regular
 // 404 view. The `default` component MUST exist even though the loader
 // always throws: without it React Router treats the module as a resource
 // route and streams the raw thrown `Response` to the client (text/plain,

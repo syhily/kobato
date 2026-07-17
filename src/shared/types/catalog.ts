@@ -2,6 +2,8 @@ import type { MarkdownHeading } from '@/shared/utils/toc'
 
 export type { MarkdownHeading }
 
+export type DraftMarker = 'draft' | 'unpublished-draft' | 'published-draft' | null
+
 export interface Friend {
   website: string
   description?: string

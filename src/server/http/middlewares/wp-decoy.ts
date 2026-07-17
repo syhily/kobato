@@ -51,7 +51,7 @@ export const NOT_WORDPRESS_STATUS_TEXT = 'Not WordPress'
  * WordPress probe detector mounted as Hono middleware.
  *
  * Previously lived in RR loaders (`page.detail` + `not-found`) so the
- * error boundary would render inside `<PublicChrome>`. After the Hono
+ * error boundary would render inside `<BaseLayout>`. After the Hono
  * migration the 404 response is returned directly by the HTTP layer;
  * the root React Router boundary still catches it and switches to
  * `<NotWordPressView />` via `statusText === 'Not WordPress'`.

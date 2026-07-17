@@ -2,7 +2,7 @@ import { useMemo } from 'react'
 import { data } from 'react-router'
 
 import type { RouteHandle } from '@/root'
-import type { DraftMarker } from '@/ui/public/post/DetailBodyChrome'
+import type { DraftMarker } from '@/shared/types/catalog'
 
 import { getDbFromContext, tryGetSessionContext } from '@/server/domains/auth/context'
 import { loadDraftPreviewBySlug } from '@/server/domains/content/lifecycle'

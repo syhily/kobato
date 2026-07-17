@@ -1,12 +1,12 @@
 import { type ReactNode, useRef } from 'react'
 
-import type { CommentFormUser, DetailPageShell, MarkdownHeading } from '@/shared/types/catalog'
+import type { CommentFormUser, DetailPageShell, DraftMarker, MarkdownHeading } from '@/shared/types/catalog'
 import type { DetailPageComments } from '@/shared/types/comments'
 
 import { useMediumZoom } from '@/client/hooks/use-medium-zoom'
 import { useSiteIdentity } from '@/shared/lib/blog-config-context'
 import { Footer } from '@/ui/public/chrome/Footer'
-import { DetailBodyChrome, type DraftMarker } from '@/ui/public/post/DetailBodyChrome'
+import { DetailBodyChrome } from '@/ui/public/post/DetailBodyChrome'
 import { Image } from '@/ui/public/widgets/Image'
 
 export interface PageDetailBodyProps {
@@ -45,15 +45,15 @@ export function PageDetailBody({
             title={page.title}
             date={page.date}
             updated={page.updated}
-            updatedVisibility={page.showUpdated ? 'shown' : 'hidden'}
+            showUpdated={page.showUpdated}
             headings={headings}
-            toc={page.toc ? 'enabled' : 'disabled'}
+            toc={page.toc}
             likes={likes}
             permalink={page.permalink}
             commentKey={commentKey}
             commentsPromise={commentsPromise}
             currentUser={currentUser}
-            comments={page.comments ? 'enabled' : 'disabled'}
+            comments={page.comments}
             mode={mode}
             editHref={mode === 'admin' ? `/editor/page/${page.id}` : undefined}
             draftMarker={draftMarker}

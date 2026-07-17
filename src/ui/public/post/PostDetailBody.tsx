@@ -1,9 +1,8 @@
 import { type ReactNode, useRef } from 'react'
 import { Link } from 'react-router'
 
-import type { ClientTag, CommentFormUser, DetailPostShell, MarkdownHeading } from '@/shared/types/catalog'
+import type { ClientTag, CommentFormUser, DetailPostShell, DraftMarker, MarkdownHeading } from '@/shared/types/catalog'
 import type { DetailPageComments } from '@/shared/types/comments'
-import type { DraftMarker } from '@/ui/public/post/DetailBodyChrome'
 
 import { useMediumZoom } from '@/client/hooks/use-medium-zoom'
 import { useSiteIdentity } from '@/shared/lib/blog-config-context'
@@ -55,15 +54,15 @@ export function PostDetailBody({
                 title={post.title}
                 date={post.date}
                 updated={post.updated}
-                updatedVisibility={post.showUpdated ? 'shown' : 'hidden'}
+                showUpdated={post.showUpdated}
                 headings={headings}
-                toc={post.toc ? 'enabled' : 'disabled'}
+                toc={post.toc}
                 likes={likes}
                 permalink={post.permalink}
                 commentKey={commentKey}
                 commentsPromise={commentsPromise}
                 currentUser={currentUser}
-                comments={post.comments ? 'enabled' : 'disabled'}
+                comments={post.comments}
                 mode={mode}
                 editHref={mode === 'admin' ? `/editor/post/${post.id}` : undefined}
                 draftMarker={draftMarker}

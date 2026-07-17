@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
+import type { AudioControl } from '@/ui/public/aplayer/hooks/use-audio-control'
+
 import { renderToHtml } from '#/_helpers/render'
 import { PlaybackControls } from '@/ui/public/aplayer/controller'
 import { Lyrics, parseLrc } from '@/ui/public/aplayer/lyrics'
@@ -13,6 +15,23 @@ const audio = {
   url: 'https://example.com/audio.mp3',
   cover: 'https://example.com/cover.png',
   lrc: '[00:00.00]Line one\n[00:05.00]Line two',
+}
+
+const playbackControl: AudioControl = {
+  volume: 0.7,
+  setVolume: () => undefined,
+  muted: false,
+  toggleMuted: () => undefined,
+  isPlaying: false,
+  duration: 120,
+  currentTime: 12,
+  bufferedSeconds: 30,
+  playAudio: async () => undefined,
+  togglePlay: () => undefined,
+  seek: () => undefined,
+  isLoading: false,
+  loop: true,
+  toggleLoop: () => undefined,
 }
 
 describe('snapshot: medium-complexity aplayer components', () => {
@@ -32,21 +51,7 @@ describe('snapshot: medium-complexity aplayer components', () => {
   })
 
   it('PlaybackControls renders time, volume and loop button', () => {
-    const html = renderToHtml(
-      <PlaybackControls
-        themeColor="#ebd0c2"
-        volume={0.7}
-        onChangeVolume={() => undefined}
-        muted={false}
-        currentTime={12}
-        audioDurationSeconds={120}
-        bufferedSeconds={30}
-        onToggleMuted={() => undefined}
-        onSeek={() => undefined}
-        loop
-        onToggleLoop={() => undefined}
-      />,
-    )
+    const html = renderToHtml(<PlaybackControls themeColor="#ebd0c2" control={playbackControl} />)
     expect(html).toContain('aplayer-controller')
     expect(html).toContain('aplayer-time')
     expect(html).toContain('0:12')

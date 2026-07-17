@@ -26,7 +26,9 @@ import { ThemeProvider, THEME_COOKIE } from '@/ui/lib/ThemeProvider'
 import { ChunkReloadOverlay } from '@/ui/public/chrome/ChunkReloadOverlay'
 import { ErrorView } from '@/ui/public/chrome/ErrorView'
 import { NavigationSplash } from '@/ui/public/chrome/NavigationSplash'
-const PublicChrome = lazy(() => import('@/ui/public/chrome/PublicChrome').then((m) => ({ default: m.PublicChrome })))
+const PublicErrorLayout = lazy(() =>
+  import('@/ui/public/chrome/BaseLayout').then((module) => ({ default: module.BaseLayout })),
+)
 
 import type { Route } from './+types/root'
 
@@ -284,9 +286,9 @@ export function ErrorBoundary({ error, loaderData }: Route.ErrorBoundaryProps) {
         <MotionConfig reducedMotion="user" transition={defaultTransition}>
           {blogSettings ? (
             <Suspense fallback={body}>
-              <PublicChrome currentUser={loaderData?.currentUser ?? null} pathname="/" search="">
+              <PublicErrorLayout currentUser={loaderData?.currentUser ?? null} pathname="/" search="">
                 {body}
-              </PublicChrome>
+              </PublicErrorLayout>
             </Suspense>
           ) : (
             body

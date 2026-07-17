@@ -4,14 +4,14 @@ import type { RouteHandle } from '@/root'
 
 import { useReloadOnChunkError } from '@/client/hooks/use-chunk-error-recovery'
 import { isRecord } from '@/shared/utils/type-guards'
+import { BaseLayout } from '@/ui/public/chrome/BaseLayout'
 import { ErrorView } from '@/ui/public/chrome/ErrorView'
-import { PublicChrome } from '@/ui/public/chrome/PublicChrome'
 
 import type { Route } from './+types/layout'
 
 // Pathless layout that wraps every public-facing route.
 //
-// 1. STATIC CSS GRAPH. `PublicChrome` statically imports `public.css`.
+// 1. STATIC CSS GRAPH. `BaseLayout` statically imports `public.css`.
 //    Because this module is statically imported by the route manifest,
 //    React Router can include the compiled stylesheet in the SSR `<Links />`
 //    output for every public URL.
@@ -53,14 +53,14 @@ export default function PublicLayoutRoute() {
   const { pathname, search } = useLocation()
 
   return (
-    <PublicChrome currentUser={currentUser} footer={footer} pathname={pathname} search={search}>
+    <BaseLayout currentUser={currentUser} footer={footer} pathname={pathname} search={search}>
       <Outlet />
-    </PublicChrome>
+    </BaseLayout>
   )
 }
 
 // `ErrorBoundary` lives on this layout (not just on `root`) so that 404s
-// thrown by public routes still render INSIDE `<PublicChrome>` synchronously.
+// thrown by public routes still render INSIDE `<BaseLayout>` synchronously.
 // Without it the error would bubble up to the root boundary, which can only
 // reach the chrome through a lazy chunk and would re-introduce FOUC.
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
@@ -70,8 +70,8 @@ export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
   const { pathname, search } = useLocation()
 
   return (
-    <PublicChrome currentUser={currentUser} footer={footer} pathname={pathname} search={search}>
+    <BaseLayout currentUser={currentUser} footer={footer} pathname={pathname} search={search}>
       <ErrorView error={error} isDev={import.meta.env.DEV} />
-    </PublicChrome>
+    </BaseLayout>
   )
 }

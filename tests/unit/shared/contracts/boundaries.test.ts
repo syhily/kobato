@@ -809,6 +809,33 @@ describe('contract: module and bundle boundaries', () => {
     expect(commentBodyEditor).not.toMatch(/export\s+type\s+\{\s*Editor\s*\}/)
   })
 
+  it('keeps the public chrome, audio controls, and detail flags at their owning modules', () => {
+    expect(existsSync('src/ui/public/chrome/PublicChrome.tsx')).toBe(false)
+
+    const baseLayout = readFileSync('src/ui/public/chrome/BaseLayout.tsx', 'utf8')
+    expect(baseLayout).toMatch(/import ['"]@\/styles\/public\.css['"]/)
+
+    const audioControl = readFileSync('src/ui/public/aplayer/hooks/use-audio-control.ts', 'utf8')
+    expect(audioControl).toMatch(/export\s+type\s+AudioControl\s*=\s*ReturnType<typeof useAudioControl>/)
+
+    const playbackControls = readFileSync('src/ui/public/aplayer/controller.tsx', 'utf8')
+    expect(playbackControls).toMatch(/control:\s*AudioControl/)
+    expect(playbackControls).not.toMatch(/audioDurationSeconds/)
+
+    const detailChrome = readFileSync('src/ui/public/post/DetailBodyChrome.tsx', 'utf8')
+    expect(detailChrome).toMatch(/showUpdated\?:\s*boolean/)
+    expect(detailChrome).toMatch(/toc\?:\s*boolean/)
+    expect(detailChrome).toMatch(/comments\?:\s*boolean/)
+    expect(detailChrome).not.toMatch(/'shown'\s*\|\s*'hidden'|'enabled'\s*\|\s*'disabled'/)
+
+    const catalog = readFileSync('src/shared/types/catalog.ts', 'utf8')
+    expect(catalog).toMatch(/export\s+type\s+DraftMarker\s*=/)
+    const draftMarkerDefinitions = files('src', '-g', '*.ts', '-g', '*.tsx').filter((file) =>
+      /type\s+DraftMarker\s*=/.test(readFileSync(file, 'utf8')),
+    )
+    expect(draftMarkerDefinitions).toEqual(['src/shared/types/catalog.ts'])
+  })
+
   it('routes icon-button content through @/ui/components/icon-button-content', () => {
     expect(existsSync('src/ui/components/icon-button-content.tsx')).toBe(true)
     const component = readFileSync('src/ui/components/icon-button-content.tsx', 'utf8')
