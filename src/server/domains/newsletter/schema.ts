@@ -1,24 +1,17 @@
 import { z } from 'zod'
 
-/** Honeypot field: must stay empty (bots often fill every text input). */
-const NEWSLETTER_HONEYPOT_MAX_LEN = 240
+import { honeypotField } from '@/shared/utils/schema'
+
+const newsletterHoneypot = honeypotField('subtitle')
 
 // Mirrors the comment-submit honeypot (`subtitle` must stay blank).
 export const newsletterSubscribeSchema = z
   .object({
     email: z.email(),
     /** Leave blank — used for bot filtering only; stripped before `subscribe`. */
-    subtitle: z.string().max(NEWSLETTER_HONEYPOT_MAX_LEN).optional().default(''),
+    subtitle: newsletterHoneypot.schema,
   })
-  .superRefine((val, ctx) => {
-    if (val.subtitle.trim().length > 0) {
-      ctx.addIssue({
-        code: 'custom',
-        message: '输入数据无效。',
-        path: ['subtitle'],
-      })
-    }
-  })
+  .superRefine(newsletterHoneypot.refine)
 export type NewsletterSubscribeInput = z.infer<typeof newsletterSubscribeSchema>
 
 export const newsletterConfirmSchema = z.object({

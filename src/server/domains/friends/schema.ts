@@ -1,6 +1,7 @@
 import { z } from 'zod'
 
 import { isHttpUrl } from '@/shared/utils/safe-url'
+import { honeypotField } from '@/shared/utils/schema'
 
 // Helper: trim incoming text and treat null / the empty string as
 // `undefined` so the optional Zod fields below don't coerce a blank
@@ -52,8 +53,7 @@ export const upsertFriendSchema = z.object({
   visible: z.boolean().optional().default(true),
 })
 
-/** Honeypot field: must stay empty (bots often fill every text input). */
-const FRIEND_APPLY_HONEYPOT_MAX_LEN = 240
+const friendApplyHoneypot = honeypotField('contact')
 
 const HTTP_URL_MESSAGE = '请输入 http(s) URL'
 
@@ -84,15 +84,7 @@ export const applyFriendSchema = z
     poster: optionalHttpUrl(),
     rssUrl: optionalHttpUrl(),
     /** Leave blank — used for bot filtering only; stripped before `applyFriend`. */
-    contact: z.string().max(FRIEND_APPLY_HONEYPOT_MAX_LEN).optional().default(''),
+    contact: friendApplyHoneypot.schema,
   })
-  .superRefine((val, ctx) => {
-    if (val.contact.trim().length > 0) {
-      ctx.addIssue({
-        code: 'custom',
-        message: '输入数据无效。',
-        path: ['contact'],
-      })
-    }
-  })
+  .superRefine(friendApplyHoneypot.refine)
 export type ApplyFriendInput = z.infer<typeof applyFriendSchema>

@@ -1,14 +1,9 @@
 import { Hono } from 'hono'
-import { stat } from 'node:fs/promises'
 import path from 'node:path'
 
 import type { Env } from '@/server/http/context'
 
-import { IMMUTABLE_CACHE_CONTROL, respondWithLocalFile } from '@/server/http/resources/serve-local-file'
-import { getLogger } from '@/server/infra/logger'
-import { resolveLocalPath } from '@/server/infra/storage/backends/local'
-
-const log = getLogger('storage.local.http')
+import { IMMUTABLE_CACHE_CONTROL, serveStoredLocalFile } from '@/server/http/resources/serve-local-file'
 
 export const localStorageRouter = new Hono<Env>()
 
@@ -80,37 +75,14 @@ localStorageRouter.get('/storage/*', async (c) => {
     return c.body(null, 404)
   }
 
-  let abs: string
-  try {
-    abs = resolveLocalPath(key)
-  } catch {
-    return c.body(null, 400)
-  }
-
-  let size: number
-  let mtimeMs: number
-  try {
-    const st = await stat(abs)
-    if (!st.isFile()) {
-      return c.body(null, 404)
-    }
-    size = st.size
-    mtimeMs = Math.floor(st.mtimeMs)
-  } catch (error) {
-    if (error instanceof Error && 'code' in error && error.code === 'ENOENT') {
-      return c.body(null, 404)
-    }
-    log.warn('Failed to stat local object', { key, error: String(error) })
-    return c.body(null, 500)
-  }
-
-  return respondWithLocalFile({
-    absPath: abs,
-    size,
-    mtimeMs,
+  return serveStoredLocalFile({
+    key,
     contentType: contentTypeFor(key),
     cacheControl: IMMUTABLE_CACHE_CONTROL,
-    ifNoneMatch: c.req.header('if-none-match'),
-    range: c.req.header('range'),
+    headers: {
+      ifNoneMatch: c.req.header('if-none-match'),
+      range: c.req.header('range'),
+    },
+    logName: { scope: 'storage.local.http', target: 'local object' },
   })
 })

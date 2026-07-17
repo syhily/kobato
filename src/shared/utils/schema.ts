@@ -15,3 +15,21 @@ export function safeBoolean() {
     .union([z.literal('true'), z.literal('false'), z.boolean()])
     .transform((v) => (v === 'true' ? true : v === 'false' ? false : v))
 }
+
+const HONEYPOT_MAX_LENGTH = 240
+
+/** Build one deliberately-named bot trap while keeping its mechanics shared. */
+export function honeypotField<const TName extends string>(name: TName) {
+  return {
+    schema: z.string().max(HONEYPOT_MAX_LENGTH).optional().default(''),
+    refine: (value: Record<TName, string>, ctx: z.RefinementCtx) => {
+      if (value[name].trim().length > 0) {
+        ctx.addIssue({
+          code: 'custom',
+          message: '输入数据无效。',
+          path: [name],
+        })
+      }
+    },
+  }
+}

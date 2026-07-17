@@ -1,13 +1,15 @@
 import { createReadStream } from 'node:fs'
+import { stat } from 'node:fs/promises'
 import { Readable } from 'node:stream'
 
+import { getLogger } from '@/server/infra/logger'
+import { resolveLocalPath } from '@/server/infra/storage/backends/local'
+
 /**
- * Shared response assembly for the public file-serving resource routes
- * (`local-storage.ts`, `fonts-embedded.ts`). Both gate a URL down to an
- * absolute path inside STORAGE_DIR, `stat` it themselves (their 404/500
- * logging differs), and then stream the file with byte-range, ETag, and
- * immutable-cache handling — that last part lives here so the two routes
- * can't drift apart.
+ * Shared storage resolution and response assembly for the public file-serving
+ * resource routes (`local-storage.ts`, `fonts-embedded.ts`). Callers own only
+ * their URL gates and content-type mapping; this module owns filesystem error
+ * mapping plus byte-range, ETag, and immutable-cache handling.
  */
 
 // Both consumers serve content-addressed assets: uploads get timestamped
@@ -89,11 +91,58 @@ export interface LocalFileResponseInput {
   range: string | undefined
 }
 
+interface StoredLocalFileInput {
+  key: string
+  contentType: string
+  cacheControl: string
+  headers: {
+    ifNoneMatch: string | undefined
+    range: string | undefined
+  }
+  logName: {
+    scope: string
+    target: string
+  }
+}
+
+/** Resolve, stat, and respond with a file owned by the local storage backend. */
+export async function serveStoredLocalFile(input: StoredLocalFileInput): Promise<Response> {
+  let absPath: string
+  try {
+    absPath = resolveLocalPath(input.key)
+  } catch {
+    return new Response(null, { status: 400 })
+  }
+
+  try {
+    const file = await stat(absPath)
+    if (!file.isFile()) {
+      return new Response(null, { status: 404 })
+    }
+    return respondWithLocalFile({
+      absPath,
+      size: file.size,
+      mtimeMs: Math.floor(file.mtimeMs),
+      contentType: input.contentType,
+      cacheControl: input.cacheControl,
+      ...input.headers,
+    })
+  } catch (error) {
+    if (error instanceof Error && 'code' in error && error.code === 'ENOENT') {
+      return new Response(null, { status: 404 })
+    }
+    getLogger(input.logName.scope).warn(`Failed to stat ${input.logName.target}`, {
+      key: input.key,
+      error: String(error),
+    })
+    return new Response(null, { status: 500 })
+  }
+}
+
 /**
  * Assemble the full GET response for an already-stat'ed local file: 304 on
  * a matching `If-None-Match`, 416 / 206 for `Range` requests, 200 with the
- * streamed body otherwise. Stat failures stay with the caller — each route
- * logs its own 404/500.
+ * streamed body otherwise.
  */
 export function respondWithLocalFile(input: LocalFileResponseInput): Response {
   const { absPath, size, mtimeMs, contentType, cacheControl, ifNoneMatch } = input

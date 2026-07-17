@@ -2,9 +2,9 @@ import { z } from 'zod'
 
 import { commentBodySchema } from '@/shared/pt/comment-schema'
 import { httpUrlOrEmptyStringSchema } from '@/shared/utils/safe-url'
+import { honeypotField } from '@/shared/utils/schema'
 
-/** Honeypot field: must stay empty (bots often fill every text input). */
-const COMMENT_HONEYPOT_MAX_LEN = 240
+const commentHoneypot = honeypotField('subtitle')
 
 // `rid` arrives as a number from JSON callers. The previous form-encoded
 // path coerced from string; comments now POST JSON exclusively because
@@ -21,17 +21,9 @@ export const commentReplySchema = z
     /** Removed — no longer used. */
     rid: z.number().optional(),
     /** Leave blank — used for bot filtering only; stripped before `createComment`. */
-    subtitle: z.string().max(COMMENT_HONEYPOT_MAX_LEN).optional().default(''),
+    subtitle: commentHoneypot.schema,
   })
-  .superRefine((val, ctx) => {
-    if (val.subtitle.trim().length > 0) {
-      ctx.addIssue({
-        code: 'custom',
-        message: '输入数据无效。',
-        path: ['subtitle'],
-      })
-    }
-  })
+  .superRefine(commentHoneypot.refine)
 export type CommentReplyInput = z.infer<typeof commentReplySchema>
 
 export const commentRidSchema = z.object({
