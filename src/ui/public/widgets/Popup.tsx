@@ -15,8 +15,6 @@ export interface PopupProps {
   onClose: () => void
   /** Body max-width preset. Defaults to `sm` (300px / fit-content). */
   size?: PopupSize
-  /** Optional identifier surfaced as `data-popup-id` for outside-click detection. */
-  popupId?: string
   /** Forwarded to the dialog container for screen reader naming. */
   'aria-label'?: string
   /** Element id whose textContent names the dialog. Takes precedence over aria-label. */
@@ -72,7 +70,6 @@ export function Popup({
   open,
   onClose,
   size = 'sm',
-  popupId,
   'aria-label': ariaLabel,
   'aria-labelledby': ariaLabelledBy,
   children,
@@ -165,7 +162,6 @@ export function Popup({
         <motion.div
           key="popup-wrapper"
           ref={portalRef}
-          data-popup-id={popupId}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}

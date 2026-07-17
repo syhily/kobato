@@ -1,7 +1,7 @@
 import type { RefObject } from 'react'
 
 import { SearchIcon } from 'lucide-react'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useRef, useState } from 'react'
 import { flushSync } from 'react-dom'
 import { Form, useNavigate } from 'react-router'
 
@@ -55,47 +55,23 @@ export function SearchBar() {
   )
 }
 
-const SEARCH_POPUP_ID = 'global-search'
-
 export function SearchIconButton() {
   const [open, setOpen] = useState(false)
-  const triggerRef = useRef<HTMLButtonElement>(null)
   const popupInputRef = useRef<HTMLInputElement | null>(null)
   const handleClose = useCallback(() => setOpen(false), [])
   const focusPopupInput = useCallback(() => {
     popupInputRef.current?.focus({ preventScroll: true })
   }, [])
 
-  useEffect(() => {
-    if (!open) {
-      return
-    }
-    const onDocClick = (event: MouseEvent) => {
-      const target = event.target
-      if (target instanceof Node && triggerRef.current?.contains(target)) {
-        return
-      }
-      const popup = document.querySelector<HTMLElement>(`[data-popup-id="${SEARCH_POPUP_ID}"]`)
-      if (target instanceof Node && popup?.contains(target)) {
-        return
-      }
-      setOpen(false)
-    }
-    document.addEventListener('click', onDocClick)
-    return () => document.removeEventListener('click', onDocClick)
-  }, [open])
-
   return (
     <>
       <Button
-        ref={triggerRef}
         variant="dark"
         size="iconSm"
         shape="circle"
         title="搜索"
         aria-label="打开搜索"
-        onClick={(event) => {
-          event.stopPropagation()
+        onClick={() => {
           flushSync(() => setOpen(true))
           focusPopupInput()
         }}
@@ -118,7 +94,7 @@ interface SearchPopupProps {
 function SearchPopup({ open, onClose, inputRef }: SearchPopupProps) {
   const navigate = useNavigate()
   return (
-    <Popup open={open} onClose={onClose} size="md" popupId={SEARCH_POPUP_ID} aria-label="搜索文章">
+    <Popup open={open} onClose={onClose} size="md" aria-label="搜索文章">
       <Form
         className="text-center"
         method="get"

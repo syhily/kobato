@@ -6,7 +6,7 @@ import { Popup } from '@/ui/public/widgets/Popup'
 describe('snapshot: Popup', () => {
   it('renders nothing during SSR because the component is portal-based', () => {
     const html = renderToHtml(
-      <Popup open onClose={() => undefined} popupId="test-popup" aria-label="Test popup">
+      <Popup open onClose={() => undefined} aria-label="Test popup">
         <div>Popup body</div>
       </Popup>,
     )

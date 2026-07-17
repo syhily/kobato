@@ -770,23 +770,23 @@ describe('contract: module and bundle boundaries', () => {
     expect(offenders).toEqual([])
   })
 
-  it('drives popup outside-click detection via data-popup-id, not className', () => {
+  it('owns popup outside-click dismissal inside Popup (backdrop), with no data-popup-id protocol', () => {
     const popup = readFileSync('src/ui/public/widgets/Popup.tsx', 'utf8')
-    expect(popup).toMatch(/popupId\?:\s*string/)
-    expect(popup).toMatch(/data-popup-id=\{popupId\}/)
+    // The full-viewport fixed backdrop calls onClose: while open the rest of
+    // the document is inert, so every outside click lands there.
+    expect(popup).toMatch(/fixed inset-0 bg-scrim\/80 backdrop-blur-sm/)
+    expect(popup).toMatch(/onClick=\{onClose\}/)
+    expect(popup).not.toMatch(/popupId/)
+    expect(popup).not.toMatch(/data-popup-id/)
     expect(popup).not.toMatch(/^\s*className\?:\s*string/m)
 
     const qr = readFileSync('src/ui/public/widgets/QRDialog.tsx', 'utf8')
-    expect(qr).toMatch(/popupId=\{QR_POPUP_ID\}/)
-    expect(qr).toMatch(/\[data-popup-id="\$\{QR_POPUP_ID\}"\]/)
-    expect(qr).not.toMatch(/'\.qr-dialog-popup'/)
-    expect(qr).not.toMatch(/'qr-dialog-popup'/)
+    expect(qr).not.toMatch(/data-popup-id/)
+    expect(qr).not.toMatch(/document\.addEventListener\('click'/)
 
     const search = readFileSync('src/ui/public/Search.tsx', 'utf8')
-    expect(search).toMatch(/popupId=\{SEARCH_POPUP_ID\}/)
-    expect(search).toMatch(/\[data-popup-id="\$\{SEARCH_POPUP_ID\}"\]/)
-    expect(search).not.toMatch(/'\.global-search-popup'/)
-    expect(search).not.toMatch(/'global-search-popup'/)
+    expect(search).not.toMatch(/data-popup-id/)
+    expect(search).not.toMatch(/document\.addEventListener\('click'/)
   })
 
   it('routes icon-button content through @/ui/components/icon-button-content', () => {

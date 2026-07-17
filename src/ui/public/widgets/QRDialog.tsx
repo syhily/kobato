@@ -1,7 +1,7 @@
 import type { QRCodeSVG as QRCodeSVGComponent } from 'qrcode.react'
 import type { ReactNode } from 'react'
 
-import { Suspense, lazy, useCallback, useEffect, useRef, useState } from 'react'
+import { Suspense, lazy, useCallback, useState } from 'react'
 
 import type { VariantProps } from '@/ui/lib/cva'
 
@@ -25,38 +25,15 @@ const QRCodeSVG = lazy<typeof QRCodeSVGComponent>(async () => {
   return { default: mod.QRCodeSVG }
 })
 
-const QR_POPUP_ID = 'qr-dialog'
-
 export function QRDialog({ url, name, title, trigger, variant, size, shape, className }: QRDialogProps) {
-  const triggerRef = useRef<HTMLButtonElement>(null)
   const [open, setOpen] = useState(false)
 
   const handleOpen = useCallback(() => setOpen(true), [])
   const handleClose = useCallback(() => setOpen(false), [])
 
-  useEffect(() => {
-    if (!open) {
-      return
-    }
-    const onDocClick = (event: MouseEvent) => {
-      const target = event.target instanceof Node ? event.target : null
-      if (target && triggerRef.current?.contains(target)) {
-        return
-      }
-      const popup = document.querySelector<HTMLElement>(`[data-popup-id="${QR_POPUP_ID}"]`)
-      if (target && popup?.contains(target)) {
-        return
-      }
-      setOpen(false)
-    }
-    document.addEventListener('click', onDocClick)
-    return () => document.removeEventListener('click', onDocClick)
-  }, [open])
-
   return (
     <>
       <Button
-        ref={triggerRef}
         variant={variant ?? 'dark'}
         size={size ?? 'iconSm'}
         shape={shape ?? 'circle'}
@@ -68,7 +45,7 @@ export function QRDialog({ url, name, title, trigger, variant, size, shape, clas
         <IconButtonContent>{trigger}</IconButtonContent>
       </Button>
       {open && (
-        <Popup open={open} onClose={handleClose} popupId={QR_POPUP_ID} aria-label={title}>
+        <Popup open={open} onClose={handleClose} aria-label={title}>
           <div className="text-center">
             <div className="text-xl leading-tight font-semibold">{title}</div>
             <p className="mt-1 mb-2 text-base">{name}</p>
