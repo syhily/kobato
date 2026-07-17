@@ -31,6 +31,17 @@ interface ReindexProgress {
   failed: number
 }
 
+function persistedSearchSettings(source: SearchLoaderShape) {
+  return {
+    enabled: source.search.enabled,
+    mode: source.search.mode,
+    endpoint: source.search.endpoint,
+    model: source.search.model,
+    similarityThreshold: source.search.similarityThreshold,
+    trgmThreshold: source.search.trgmThreshold,
+  }
+}
+
 function SearchModeCard({ search }: { search: SearchLoaderShape }) {
   const { form, flushOnBlur, settingGroupProps, save } = useSettingsCard<
     SearchLoaderShape,
@@ -38,15 +49,19 @@ function SearchModeCard({ search }: { search: SearchLoaderShape }) {
   >({
     section: 'search',
     source: search,
+    mode: 'full',
     toState: (source) => ({
       enabled: source.search.enabled,
       mode: source.search.mode,
       trgmThreshold: source.search.trgmThreshold,
     }),
     fromState: (state) => ({
-      enabled: state.enabled,
-      mode: state.mode,
-      trgmThreshold: state.trgmThreshold,
+      search: {
+        ...persistedSearchSettings(search),
+        enabled: state.enabled,
+        mode: state.mode,
+        trgmThreshold: state.trgmThreshold,
+      },
     }),
   })
 
@@ -134,12 +149,13 @@ function SearchModeCard({ search }: { search: SearchLoaderShape }) {
 }
 
 function SearchOpenAiCard({ search }: { search: SearchLoaderShape }) {
-  const { form, flushOnBlur, settingGroupProps, display } = useSettingsCard<
+  const { form, flushOnBlur, settingGroupProps } = useSettingsCard<
     SearchLoaderShape,
     { endpoint: string; apiKey: string; model: string; similarityThreshold: number }
   >({
     section: 'search',
     source: search,
+    mode: 'full',
     toState: (source) => ({
       endpoint: source.search.endpoint ?? '',
       apiKey: '',
@@ -149,15 +165,18 @@ function SearchOpenAiCard({ search }: { search: SearchLoaderShape }) {
     fromState: (state) => {
       const trimmedKey = state.apiKey.trim()
       return {
-        endpoint: state.endpoint.trim(),
-        model: state.model.trim(),
-        similarityThreshold: state.similarityThreshold,
-        ...(trimmedKey ? { apiKey: trimmedKey } : {}),
+        search: {
+          ...persistedSearchSettings(search),
+          endpoint: state.endpoint.trim(),
+          model: state.model.trim(),
+          similarityThreshold: state.similarityThreshold,
+          ...(trimmedKey ? { apiKey: trimmedKey } : {}),
+        },
       }
     },
   })
 
-  const apiKeyConfigured = display.apiKeyMask !== null
+  const apiKeyConfigured = search.apiKeyMask !== null
   return (
     <SettingGroup title="OpenAI 配置" description="向量搜索需要调用 OpenAI Embedding API。" {...settingGroupProps}>
       <SettingGroupContent>
@@ -179,7 +198,7 @@ function SearchOpenAiCard({ search }: { search: SearchLoaderShape }) {
           label="API Key"
           htmlFor="search-api-key"
           hint={
-            apiKeyConfigured ? `当前已配置（结尾 …${display.apiKeyMask}）。留空保存表示保留现有 Key。` : '尚未配置。'
+            apiKeyConfigured ? `当前已配置（结尾 …${search.apiKeyMask}）。留空保存表示保留现有 Key。` : '尚未配置。'
           }
         >
           <SettingsInput
