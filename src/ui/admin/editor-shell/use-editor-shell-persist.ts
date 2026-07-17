@@ -4,11 +4,11 @@ import { useMutation } from '@tanstack/react-query'
 import { useCallback, useEffect, useRef, useState } from 'react'
 
 import type { PortableTextBody } from '@/shared/pt/schema'
+import type { SaveBodyOutput } from '@/shared/types/revision'
 import type {
   EditorShellStatus,
   EntityLike,
   RevisionLike,
-  SaveBodyOutput,
   UseEditorShellStateArgs,
 } from '@/ui/admin/editor-shell/editor-shell-types'
 import type { ActionBannerController } from '@/ui/admin/editor-shell/use-action-banner'
@@ -168,7 +168,9 @@ export function useEditorShellPersist<
       if (autosaveStatus.kind === 'saving') {
         setStatus({ kind: 'saving' })
       } else if (autosaveStatus.kind === 'saved') {
-        setStatus({ kind: 'saved', at: new Date(autosaveStatus.at) })
+        // The flush's own onBodySaved may have surfaced a save-result
+        // warning; the engine's generic 'saved' tick must not hide it.
+        setStatus((prev) => (prev.kind === 'warning' ? prev : { kind: 'saved', at: new Date(autosaveStatus.at) }))
       } else if (autosaveStatus.kind === 'retrying') {
         setStatus({ kind: 'error', message: autosaveStatus.message })
       }
@@ -221,7 +223,11 @@ export function useEditorShellPersist<
     createDraft.migrateToEditKey(savedEntity.id, draftResult.revision.clientRevisionToken, body)
     markBodySaved(draftResult.revision.body)
 
-    setStatus({ kind: 'saved', at: new Date() })
+    setStatus(
+      draftResult.warning !== undefined
+        ? { kind: 'warning', message: draftResult.warning }
+        : { kind: 'saved', at: new Date() },
+    )
     setIsCreating(false)
     void navigate(editPath(savedEntity.id), { replace: true })
   }, [

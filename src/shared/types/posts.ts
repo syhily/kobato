@@ -137,18 +137,6 @@ export interface UnpublishPostOutput {
   post: AdminPostDto
 }
 
-export interface SavePostBodyInput {
-  id: string
-  body: PortableTextBody
-  expectedClientRevisionToken?: string | null
-  force?: boolean
-  publishedAt?: string
-}
-
-export type SavePostBodyOutput =
-  | { status: 'saved'; revision: AdminRevisionDto }
-  | { status: 'conflict'; latest: AdminRevisionDto; expectedToken: string }
-
 export interface PreviewPostBodyInput {
   body: PortableTextBody
 }

@@ -3,11 +3,13 @@ import type { NavigateFunction } from 'react-router'
 import type { CreateDraftConfig } from '@/client/hooks/use-create-draft'
 import type { LocalDraftConfig } from '@/client/hooks/use-local-draft'
 import type { PortableTextBody } from '@/shared/pt/schema'
+import type { SaveBodyInput, SaveBodyOutput } from '@/shared/types/revision'
 
 export type EditorShellStatus =
   | { kind: 'idle' }
   | { kind: 'saving' }
   | { kind: 'saved'; at: Date }
+  | { kind: 'warning'; message: string }
   | { kind: 'error'; message: string }
   | { kind: 'conflict'; expectedToken: string }
   | { kind: 'info'; message: string }
@@ -30,6 +32,7 @@ export type SidebarSaveStatus =
   | { kind: 'saved'; atMs: number }
   | { kind: 'unsaved' }
   | { kind: 'conflict' }
+  | { kind: 'warning'; message: string }
   | { kind: 'error'; message: string }
   | { kind: 'info'; message: string }
 
@@ -55,17 +58,9 @@ export interface EditorShellDetail<TEntity extends EntityLike> {
   publishedRevision: RevisionLike | null
 }
 
-export interface SaveBodyInput {
-  id: string
-  body: PortableTextBody
-  expectedClientRevisionToken?: string | null
-  force?: boolean
-  publishedAt?: string
-}
-
-export type SaveBodyOutput =
-  | { status: 'saved'; revision: RevisionLike }
-  | { status: 'conflict'; expectedToken: string; latest: RevisionLike }
+// The save wire shape (`SaveBodyInput` / `SaveBodyOutput`, imported above)
+// is the single statement in `@/shared/types/revision` — the shell consumes
+// it directly so a save-result `warning` type-checks end to end.
 
 export interface UseEditorShellStateArgs<
   TMeta,

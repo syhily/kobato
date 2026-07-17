@@ -3,7 +3,7 @@ import { z } from 'zod'
 
 import { recordAuditEventFromContext } from '@/server/domains/audit/services/record'
 import { previewBody, saveBody } from '@/server/domains/content/lifecycle'
-import { listPagesSchema, savePageBodySchema, upsertPageMetaSchema } from '@/server/domains/pages/schema'
+import { listPagesSchema, upsertPageMetaSchema } from '@/server/domains/pages/schema'
 import {
   listPagesForAdmin,
   getPageDetailForAdmin,
@@ -25,8 +25,7 @@ import {
   listPageRevisionsOutputDto,
   listPagesOutputDto,
 } from '@/shared/contracts/pages'
-import { previewOutputDto, saveResultOutput } from '@/shared/contracts/revision'
-import { portableTextBodySchema } from '@/shared/pt/schema'
+import { previewBodyInput, previewOutputDto, saveBodyInput, saveResultOutput } from '@/shared/contracts/revision'
 import { idFromString } from '@/shared/utils/id'
 
 const idInput = z.object({ id: z.string().min(1) })
@@ -98,7 +97,7 @@ const unpublish = adminProc
 
 const saveDraft = adminProc
   .route({ method: 'POST', path: '/admin/pages/save-draft' })
-  .input(savePageBodySchema)
+  .input(saveBodyInput)
   .output(saveResultOutput)
   .handler(async ({ input, context }) => {
     const result = await saveBody(
@@ -125,7 +124,7 @@ const saveDraft = adminProc
 
 const publishLatest = adminProc
   .route({ method: 'POST', path: '/admin/pages/publish-latest' })
-  .input(savePageBodySchema)
+  .input(saveBodyInput)
   .output(saveResultOutput)
   .handler(async ({ input, context }) => {
     const result = await saveBody(
@@ -154,7 +153,7 @@ const publishLatest = adminProc
 
 const preview = adminProc
   .route({ method: 'POST', path: '/admin/pages/preview' })
-  .input(z.object({ body: portableTextBodySchema }))
+  .input(previewBodyInput)
   .output(previewOutputDto)
   .handler(async ({ input, context }) => {
     return previewBody(input.body, (body) => renderPagePortableTextToHtml(context.db, body, []))

@@ -49,7 +49,7 @@ describe('integration / draft publish flow', () => {
     )
     expect(draftRes.status).toBe(200)
 
-    // 3. Publish latest (body is required by savePostBodySchema)
+    // 3. Publish latest (body is required by saveBodyInput)
     const publishRes = await callRpc(
       '/admin/posts/publishLatest',
       {

@@ -1,7 +1,7 @@
 import { z } from 'zod'
 
 import type { Assert, Equals } from '@/shared/contracts/primitives'
-import type { AdminPageDetailDto, AdminPageDto, ListPagesOutput } from '@/shared/types/pages'
+import type { AdminPageDetailDto, AdminPageDto, ListPageRevisionsOutput, ListPagesOutput } from '@/shared/types/pages'
 
 import { idString, isoDateTime } from '@/shared/contracts/primitives'
 import { adminRevisionDto } from '@/shared/contracts/revision'
@@ -49,3 +49,6 @@ export const listPageRevisionsOutputDto = z.object({
 type _adminPageDtoParity = Assert<Equals<z.infer<typeof adminPageDto>, AdminPageDto>>
 type _adminPageDetailParity = Assert<Equals<z.infer<typeof adminPageDetailDto>, AdminPageDetailDto>>
 type _listPagesOutputParity = Assert<Equals<z.infer<typeof listPagesOutputDto>, ListPagesOutput>>
+type _listPageRevisionsOutputParity = Assert<
+  Equals<z.infer<typeof listPageRevisionsOutputDto>, ListPageRevisionsOutput>
+>

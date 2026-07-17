@@ -180,6 +180,8 @@ function SaveStatusLine({ status }: { status: SidebarSaveStatus }) {
       return <span className="text-xs text-destructive">{status.message}</span>
     case 'conflict':
       return <span className="text-xs text-destructive">检测到云端有更新的修订，请刷新后再保存。</span>
+    case 'warning':
+      return <span className="text-xs text-status-warn-fg">{status.message}</span>
     case 'info':
       return <span className="text-xs text-status-warn-fg">{status.message}</span>
   }

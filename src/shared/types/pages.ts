@@ -212,26 +212,6 @@ export interface UnpublishPageOutput {
   page: AdminPageDto
 }
 
-export interface SavePageBodyInput {
-  id: string
-  /** PortableText body. Validated by the server perimeter. */
-  body: PortableTextBody
-  /** Optimistic-concurrency token. */
-  expectedClientRevisionToken?: string | null
-  /** Override the conflict guard. */
-  force?: boolean
-  /** Optional ISO-8601 publish target. */
-  publishedAt?: string
-}
-
-export type SavePageBodyOutput =
-  | { status: 'saved'; revision: AdminRevisionDto }
-  | {
-      status: 'conflict'
-      latest: AdminRevisionDto
-      expectedToken: string
-    }
-
 export interface PreviewPageBodyInput {
   body: PortableTextBody
 }

@@ -169,6 +169,9 @@ export function deriveSidebarSaveStatus(args: {
   if (status.kind === 'conflict') {
     return { kind: 'conflict' }
   }
+  if (status.kind === 'warning') {
+    return { kind: 'warning', message: status.message }
+  }
   if (status.kind === 'info') {
     return { kind: 'info', message: status.message }
   }

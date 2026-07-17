@@ -228,4 +228,19 @@ describe('snapshot: PublishStatusRow (post meta)', () => {
     expect(html).toContain('2099年1月1日')
     expect(html).toContain('点击「发布草稿」会按上述时间上线')
   })
+
+  it('renders a save-result warning in the save-status line', () => {
+    const html = stableHtml(
+      renderToHtml(
+        <PublishStatusRow
+          status="live"
+          revisionSummary={null}
+          saveStatus={{ kind: 'warning', message: '图片库同步失败，部分图片可能无法正常显示。' }}
+          publishedAt=""
+          onChangePublishedAt={() => undefined}
+        />,
+      ),
+    )
+    expect(html).toContain('图片库同步失败，部分图片可能无法正常显示。')
+  })
 })

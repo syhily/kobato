@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import type { PortableTextBody } from '@/shared/pt/schema'
+import type { SaveBodyOutput } from '@/shared/types/revision'
 import type {
   EditorShellStatus,
   EntityLike,
   PublishState,
-  SaveBodyOutput,
   SidebarPublishStatus,
   UseEditorShellStateArgs,
   UseEditorShellStateOutput,
@@ -144,7 +144,9 @@ export function useEditorShellState<
   // --- Save reducers -------------------------------------------------------
   const onMetaSaved = useCallback(
     (saved: TEntity) => {
-      setStatus({ kind: 'saved', at: new Date() })
+      // A save round runs the meta and body legs concurrently; when the body
+      // leg already landed with a warning, the meta leg must not hide it.
+      setStatus((prev) => (prev.kind === 'warning' ? prev : { kind: 'saved', at: new Date() }))
       const freshMeta = metaDraftFromEntity(saved)
       resetMeta(freshMeta, saved.publishedAt)
       const saveMs = Date.parse(saved.updatedAt)
@@ -163,7 +165,11 @@ export function useEditorShellState<
         cancelActionBanner()
         return
       }
-      setStatus({ kind: 'saved', at: new Date() })
+      if (payload.warning !== undefined) {
+        setStatus({ kind: 'warning', message: payload.warning })
+      } else {
+        setStatus({ kind: 'saved', at: new Date() })
+      }
       const saveMs = Date.parse(payload.revision.updatedAt)
       if (!Number.isNaN(saveMs)) {
         setDisplaySaveAtMs(saveMs)

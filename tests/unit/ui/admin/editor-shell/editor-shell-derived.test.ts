@@ -5,6 +5,7 @@ import type { EditorShellDetail, EntityLike, RevisionLike } from '@/ui/admin/edi
 import {
   deriveBaselineRevision,
   deriveBaselineUpdatedAtMs,
+  deriveSidebarSaveStatus,
   localInputValueToIso,
   parseLocalDateTime,
 } from '@/ui/admin/editor-shell/editor-shell-derived'
@@ -101,5 +102,45 @@ describe('ui/admin/editor-shell/deriveBaselineUpdatedAtMs', () => {
 
   it('returns null when the winning timestamp is unparseable', () => {
     expect(deriveBaselineUpdatedAtMs(detail({ entity: { ...detail().entity, updatedAt: 'garbage' } }))).toBeNull()
+  })
+})
+
+describe('ui/admin/editor-shell/deriveSidebarSaveStatus', () => {
+  const base = {
+    isEditing: true,
+    isBodyDirty: false,
+    isMetaDirty: false,
+    displaySaveAtMs: null,
+  }
+
+  it('maps a warning shell status to a warning sidebar status', () => {
+    expect(
+      deriveSidebarSaveStatus({
+        ...base,
+        status: { kind: 'warning', message: '图片库同步失败，部分图片可能无法正常显示。' },
+        displaySaveAtMs: Date.parse('2026-07-10T00:00:00.000Z'),
+      }),
+    ).toEqual({ kind: 'warning', message: '图片库同步失败，部分图片可能无法正常显示。' })
+  })
+
+  it('keeps the warning visible while the draft is dirty, like error and info', () => {
+    expect(
+      deriveSidebarSaveStatus({
+        ...base,
+        status: { kind: 'warning', message: 'w' },
+        isBodyDirty: true,
+      }),
+    ).toEqual({ kind: 'warning', message: 'w' })
+  })
+
+  it('still projects a clean saved state when no warning is in flight', () => {
+    const atMs = Date.parse('2026-07-10T00:00:00.000Z')
+    expect(
+      deriveSidebarSaveStatus({
+        ...base,
+        status: { kind: 'saved', at: new Date(atMs) },
+        displaySaveAtMs: atMs,
+      }),
+    ).toEqual({ kind: 'saved', atMs })
   })
 })

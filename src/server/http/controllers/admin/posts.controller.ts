@@ -3,12 +3,7 @@ import { z } from 'zod'
 
 import { recordAuditEventFromContext } from '@/server/domains/audit/services/record'
 import { previewBody, saveBody } from '@/server/domains/content/lifecycle'
-import {
-  listPostsSchema,
-  previewPostBodySchema,
-  savePostBodySchema,
-  upsertPostMetaSchema,
-} from '@/server/domains/posts/schema'
+import { listPostsSchema, upsertPostMetaSchema } from '@/server/domains/posts/schema'
 import {
   getPostDetailForAdmin,
   listPostsForAdmin,
@@ -30,7 +25,7 @@ import {
   listPostRevisionsOutputDto,
   listPostsOutputDto,
 } from '@/shared/contracts/posts'
-import { previewOutputDto, saveResultOutput } from '@/shared/contracts/revision'
+import { previewBodyInput, previewOutputDto, saveBodyInput, saveResultOutput } from '@/shared/contracts/revision'
 import { idFromString } from '@/shared/utils/id'
 
 const idInput = z.object({ id: z.string().min(1) })
@@ -102,7 +97,7 @@ const unpublish = authorProc
 
 const saveDraft = authorProc
   .route({ method: 'POST', path: '/admin/posts/save-draft' })
-  .input(savePostBodySchema)
+  .input(saveBodyInput)
   .output(saveResultOutput)
   .handler(async ({ input, context }) => {
     const result = await saveBody(
@@ -130,7 +125,7 @@ const saveDraft = authorProc
 
 const publishLatest = authorProc
   .route({ method: 'POST', path: '/admin/posts/publish-latest' })
-  .input(savePostBodySchema)
+  .input(saveBodyInput)
   .output(saveResultOutput)
   .handler(async ({ input, context }) => {
     const result = await saveBody(
@@ -160,7 +155,7 @@ const publishLatest = authorProc
 
 const preview = authorProc
   .route({ method: 'POST', path: '/admin/posts/preview' })
-  .input(previewPostBodySchema)
+  .input(previewBodyInput)
   .output(previewOutputDto)
   .handler(async ({ input, context }) => {
     return previewBody(input.body, (body) => renderPostPortableTextToHtml(context.db, body, []))
