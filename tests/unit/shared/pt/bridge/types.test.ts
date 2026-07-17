@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import type { PmBlockNode } from '@/shared/pt/bridge/types'
+import type { PmBlockNode, PmDoc } from '@/shared/pt/bridge/types'
 import type { PortableTextBody } from '@/shared/pt/schema'
 
 import { arePortableTextBodiesEquivalent } from '@/shared/pt/bridge/canonicalize'
@@ -339,6 +339,103 @@ describe('contract: pt-bridge — round-trip on the standard subset', () => {
     const body: PortableTextBody = [{ _type: 'horizontalRule', _key: 'hr-1' }]
     const back = pmDocToBody(bodyToPmDoc(body))
     expect(back).toEqual(body)
+  })
+
+  it('preserves a Shift+Enter hard break through PM → PT → PM', () => {
+    const doc: PmDoc = {
+      type: 'doc',
+      content: [
+        {
+          type: 'paragraph',
+          attrs: { _key: 'p1' },
+          content: [{ type: 'text', text: '第一行' }, { type: 'hardBreak' }, { type: 'text', text: '第二行' }],
+        },
+      ],
+    }
+    const body = pmDocToBody(doc)
+    const block = body[0]
+    expect(block._type).toBe('block')
+    if (block._type !== 'block') {
+      return
+    }
+    // The PT hard break is a `\n` inside span text — the same shape
+    // `@portabletext/react` renders as `<br>`.
+    expect(block.children.map((span) => span.text)).toEqual(['第一行', '\n', '第二行'])
+    const pmAgain = bodyToPmDoc(body)
+    expect((pmAgain.content[0] as PmBlockNode).content?.map((n) => n.type)).toEqual(['text', 'hardBreak', 'text'])
+    const back = pmDocToBody(pmAgain)
+    expect(stripSpanKeys(back)).toEqual(stripSpanKeys(body))
+  })
+
+  it('restores hardBreak nodes from newlines embedded in span text', () => {
+    const body: PortableTextBody = [
+      {
+        _type: 'block',
+        _key: 'b1',
+        style: 'normal',
+        children: [{ _type: 'span', _key: 's1', text: 'a\nb' }],
+      },
+    ]
+    const doc = bodyToPmDoc(body)
+    expect((doc.content[0] as PmBlockNode).content?.map((n) => n.type)).toEqual(['text', 'hardBreak', 'text'])
+    const back = pmDocToBody(doc)
+    if (back[0]._type !== 'block') {
+      throw new Error('expected text block')
+    }
+    expect(back[0].children.map((span) => span.text)).toEqual(['a', '\n', 'b'])
+  })
+
+  it('round-trips consecutive hard breaks (blank line inside a paragraph)', () => {
+    const doc: PmDoc = {
+      type: 'doc',
+      content: [
+        {
+          type: 'paragraph',
+          attrs: { _key: 'p1' },
+          content: [
+            { type: 'text', text: 'a' },
+            { type: 'hardBreak' },
+            { type: 'hardBreak' },
+            { type: 'text', text: 'b' },
+          ],
+        },
+      ],
+    }
+    const body = pmDocToBody(doc)
+    if (body[0]._type !== 'block') {
+      throw new Error('expected text block')
+    }
+    expect(body[0].children.map((span) => span.text)).toEqual(['a', '\n', '\n', 'b'])
+    const pmAgain = bodyToPmDoc(body)
+    expect((pmAgain.content[0] as PmBlockNode).content?.map((n) => n.type)).toEqual([
+      'text',
+      'hardBreak',
+      'hardBreak',
+      'text',
+    ])
+  })
+
+  it('keeps decorator marks on the text around a hard break', () => {
+    const body: PortableTextBody = [
+      {
+        _type: 'block',
+        _key: 'b1',
+        style: 'normal',
+        children: [{ _type: 'span', _key: 's1', text: 'bold\nline', marks: ['strong'] }],
+      },
+    ]
+    const doc = bodyToPmDoc(body)
+    expect((doc.content[0] as PmBlockNode).content).toEqual([
+      { type: 'text', text: 'bold', marks: [{ type: 'bold' }] },
+      { type: 'hardBreak' },
+      { type: 'text', text: 'line', marks: [{ type: 'bold' }] },
+    ])
+    const back = pmDocToBody(doc)
+    if (back[0]._type !== 'block') {
+      throw new Error('expected text block')
+    }
+    expect(back[0].children[0].marks).toEqual(['strong'])
+    expect(back[0].children[2].marks).toEqual(['strong'])
   })
 })
 

@@ -1,11 +1,11 @@
-import type { PmBlockNode, PmInlineNode, PmMark } from '@/shared/pt/bridge/types'
+import type { PmBlockNode, PmHardBreakNode, PmInlineNode, PmMark } from '@/shared/pt/bridge/types'
 import type { MarkDef, Span, TextBlock, StandardBlockStyle } from '@/shared/pt/schema'
 
 import { headingLevelFromStyle } from '@/shared/pt/bridge/nodes/heading'
 import { stringAttr, hashLinkHref } from '@/shared/pt/bridge/utils'
 
 export function textBlockToPmNode(block: TextBlock, asListItemChild: boolean): PmBlockNode {
-  const inlines: PmInlineNode[] = []
+  const inlines: Array<PmInlineNode | PmHardBreakNode> = []
   for (const span of block.children) {
     pushSpan(inlines, span, block.markDefs ?? [])
   }
@@ -38,12 +38,27 @@ export function textBlockToPmNode(block: TextBlock, asListItemChild: boolean): P
   }
 }
 
-export function pushSpan(out: PmInlineNode[], span: Span, markDefs: readonly MarkDef[]): void {
+export function pushSpan(out: Array<PmInlineNode | PmHardBreakNode>, span: Span, markDefs: readonly MarkDef[]): void {
   if (span.text === '') {
     return
   }
   const marks = (span.marks ?? []).map((markName) => spanMarkToPmMark(markName, markDefs))
-  out.push({ type: 'text', text: span.text, marks: marks.length > 0 ? marks : undefined })
+  const pmMarks = marks.length > 0 ? marks : undefined
+  // A `\n` inside span text IS the PortableText hard break (Shift+Enter in
+  // the editor): `@portabletext/toolkit` splits span text on `\n` and both
+  // renderers map the break segment to `<br>`. Restore it as PM hardBreak
+  // nodes between the text segments so the editor shows the same break.
+  const segments = span.text.split('\n')
+  for (let i = 0; i < segments.length; i += 1) {
+    if (i > 0) {
+      out.push({ type: 'hardBreak' })
+    }
+    const segment = segments[i]
+    if (segment === '') {
+      continue
+    }
+    out.push({ type: 'text', text: segment, marks: pmMarks })
+  }
 }
 
 export function spanMarkToPmMark(markName: string, markDefs: readonly MarkDef[]): PmMark {
@@ -91,16 +106,23 @@ export function paragraphToTextBlock(
   const children: Span[] = []
   const markDefs: MarkDef[] = []
   let nextSpanKey = 0
-  const inlines = (node.content ?? []).filter(isInline)
-  for (const inline of inlines) {
+  for (const child of node.content ?? []) {
+    if (child.type === 'hardBreak') {
+      // Shift+Enter in the editor. PortableText's canonical hard-break
+      // representation is `\n` inside span text; keep it as its own span
+      // so the surrounding marks stay untouched.
+      nextSpanKey += 1
+      children.push({ _type: 'span', _key: `s-${nextSpanKey.toString(36)}`, text: '\n' })
+      continue
+    }
+    if (!isInline(child)) {
+      continue
+    }
     nextSpanKey += 1
     const spanKey = `s-${nextSpanKey.toString(36)}`
     const marks: string[] = []
-    for (const mark of inline.marks ?? []) {
+    for (const mark of child.marks ?? []) {
       const conv = pmMarkToSpanMark(mark)
-      if (conv === null) {
-        continue
-      }
       if ('decorator' in conv) {
         marks.push(conv.decorator)
       } else {
@@ -113,7 +135,7 @@ export function paragraphToTextBlock(
     children.push({
       _type: 'span',
       _key: spanKey,
-      text: inline.text,
+      text: child.text,
       marks: marks.length > 0 ? marks : undefined,
     })
   }
@@ -129,7 +151,7 @@ export function paragraphToTextBlock(
   }
 }
 
-export function pmMarkToSpanMark(mark: PmMark): { decorator: string } | { def: MarkDef } | null {
+export function pmMarkToSpanMark(mark: PmMark): { decorator: string } | { def: MarkDef } {
   switch (mark.type) {
     case 'bold':
       return { decorator: 'strong' }
@@ -175,7 +197,9 @@ export function pmMarkToSpanMark(mark: PmMark): { decorator: string } | { def: M
       return { def: { _type: 'footnoteRef', _key: key, targetKey, index } }
     }
     default:
-      return null
+      // Loud failure: silently dropping an unknown mark on save loses
+      // authored formatting. Register the mark here instead of swallowing it.
+      throw new Error(`pt-bridge: cannot save — no converter registered for PM mark type "${mark.type}"`)
   }
 }
 

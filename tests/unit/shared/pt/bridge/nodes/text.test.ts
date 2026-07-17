@@ -68,6 +68,28 @@ describe('shared/pt/bridge/nodes/text — pushSpan', () => {
     pushSpan(out as never, { _type: 'span', _key: 's', text: 'hi', marks: ['strong'] }, [])
     expect(out).toEqual([{ type: 'text', text: 'hi', marks: [{ type: 'bold' }] }])
   })
+
+  it('splits span text on newlines into hardBreak nodes between segments', () => {
+    const out: unknown[] = []
+    pushSpan(out as never, { _type: 'span', _key: 's', text: 'a\nb' }, [])
+    expect(out).toEqual([{ type: 'text', text: 'a' }, { type: 'hardBreak' }, { type: 'text', text: 'b' }])
+  })
+
+  it('emits one hardBreak per newline, skipping empty segments', () => {
+    const out: unknown[] = []
+    pushSpan(out as never, { _type: 'span', _key: 's', text: '\n' }, [])
+    expect(out).toEqual([{ type: 'hardBreak' }])
+  })
+
+  it('keeps marks on every text segment around a hardBreak', () => {
+    const out: unknown[] = []
+    pushSpan(out as never, { _type: 'span', _key: 's', text: 'a\nb', marks: ['strong'] }, [])
+    expect(out).toEqual([
+      { type: 'text', text: 'a', marks: [{ type: 'bold' }] },
+      { type: 'hardBreak' },
+      { type: 'text', text: 'b', marks: [{ type: 'bold' }] },
+    ])
+  })
 })
 
 describe('shared/pt/bridge/nodes/text — spanMarkToPmMark', () => {
@@ -109,8 +131,8 @@ describe('shared/pt/bridge/nodes/text — pmMarkToSpanMark', () => {
     expect(pmMarkToSpanMark({ type: 'code' })).toEqual({ decorator: 'code' })
   })
 
-  it('returns null for unknown mark types', () => {
-    expect(pmMarkToSpanMark({ type: 'somethingElse' } as never)).toBeNull()
+  it('throws on unknown mark types instead of dropping them', () => {
+    expect(() => pmMarkToSpanMark({ type: 'somethingElse' } as never)).toThrow(/somethingElse/)
   })
 
   it('rehydrates a link mark into a MarkDef', () => {

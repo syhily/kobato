@@ -194,7 +194,7 @@ describe('shared/pt/bridge/nodes/table — pmCellToTableCell', () => {
     expect(c.content[0]!.text).toBe('first')
   })
 
-  it('drops inline marks that pmMarkToSpanMark cannot convert (returns null)', () => {
+  it('throws on inline marks that pmMarkToSpanMark cannot convert (loud unknown policy)', () => {
     const node = pmCellWith([
       {
         type: 'paragraph',
@@ -202,8 +202,7 @@ describe('shared/pt/bridge/nodes/table — pmCellToTableCell', () => {
         content: [{ type: 'text', text: 'x', marks: [{ type: 'unsupportedMark', attrs: {} }] }],
       },
     ])
-    const c = pmCellToTableCell(node, ensureKeyEcho)
-    expect(c.content[0]!.marks).toBeUndefined()
+    expect(() => pmCellToTableCell(node, ensureKeyEcho)).toThrow(/unsupportedMark/)
   })
 
   it('applies decorator marks (bold/italic/etc.) and emits no markDefs', () => {

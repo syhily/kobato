@@ -1,4 +1,4 @@
-import type { PmBlockNode, PmMark } from '@/shared/pt/bridge/types'
+import type { PmBlockNode, PmHardBreakNode, PmInlineNode } from '@/shared/pt/bridge/types'
 import type { LinkMarkDef, TableBlock, TableCell, TableRow, Span } from '@/shared/pt/schema'
 
 import { pmMarkToSpanMark, pushSpan } from '@/shared/pt/bridge/nodes/text'
@@ -13,7 +13,7 @@ export function tableBlockToPmNode(block: TableBlock): PmBlockNode {
       type: 'tableRow',
       attrs: { _key: row._key },
       content: row.cells.map((cell) => {
-        const inlines: { type: 'text'; text: string; marks?: PmMark[] }[] = []
+        const inlines: Array<PmInlineNode | PmHardBreakNode> = []
         for (const span of cell.content) {
           pushSpan(inlines, span, cell.markDefs ?? [])
         }
@@ -72,16 +72,21 @@ export function pmCellToTableCell(
   const markDefs: LinkMarkDef[] = []
   let nextSpanKey = 0
   if (firstParagraph !== undefined) {
-    const inlines = (firstParagraph.content ?? []).filter(isInline)
-    for (const inline of inlines) {
+    for (const child of firstParagraph.content ?? []) {
+      if (child.type === 'hardBreak') {
+        // Same hard-break representation as paragraph children (`\n` span).
+        nextSpanKey += 1
+        content.push({ _type: 'span', _key: `s-${nextSpanKey.toString(36)}`, text: '\n' })
+        continue
+      }
+      if (!isInline(child)) {
+        continue
+      }
       nextSpanKey += 1
       const spanKey = `s-${nextSpanKey.toString(36)}`
       const marks: string[] = []
-      for (const mark of inline.marks ?? []) {
+      for (const mark of child.marks ?? []) {
         const conv = pmMarkToSpanMark(mark)
-        if (conv === null) {
-          continue
-        }
         if ('decorator' in conv) {
           marks.push(conv.decorator)
           continue
@@ -97,7 +102,7 @@ export function pmCellToTableCell(
       content.push({
         _type: 'span',
         _key: spanKey,
-        text: inline.text,
+        text: child.text,
         marks: marks.length > 0 ? marks : undefined,
       })
     }

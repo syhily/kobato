@@ -37,6 +37,21 @@ describe('PortableTextBody SSR renderer', () => {
     expect(html).toMatch(/<strong[^>]*>world<\/strong>/)
   })
 
+  it('renders a hard break inside a paragraph as <br>', () => {
+    const body: PortableTextBody = [
+      {
+        _type: 'block',
+        _key: 'p1',
+        style: 'normal',
+        children: [{ _type: 'span', _key: 's1', text: '第一行\n第二行' }],
+      },
+    ]
+    const html = stableHtml(renderInRouter(<PortableTextBodyComponent body={body} />))
+    expect(html).toContain('<br/>')
+    expect(html).toContain('第一行')
+    expect(html).toContain('第二行')
+  })
+
   it('renders custom blocks with the right wrappers', () => {
     const body: PortableTextBody = [
       {
