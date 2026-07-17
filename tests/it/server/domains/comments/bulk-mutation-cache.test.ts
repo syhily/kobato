@@ -28,6 +28,9 @@ const { TEST_BLOG_SETTINGS_BUNDLE } = await import('#/_helpers/blog-settings')
 // comments domain's services, so the sidebar latest-comments cache is
 // cleared just like on the five single-row mutation paths.
 const { bulkApproveCommentsForUser, bulkDeleteCommentsForUser } = await import('@/server/domains/users/services/admin')
+// The admin approve-delete-request path now also goes through the
+// comments domain's services (plan 052).
+const { softDeleteCommentById } = await import('@/server/domains/comments/services/moderate')
 
 const poolManager = createDbPool()
 const db: NodePgDatabase = poolManager.db
@@ -123,6 +126,27 @@ describe('comments/services/moderate — bulk mutations clear the sidebar cache'
     expect(deleted).toBe(1)
 
     // The cache must be cleared, so the next read no longer sees the row.
+    expect(await latestCommentsCache.get()).toBeNull()
+    const fresh = await latestComments(db)
+    expect(fresh).toHaveLength(0)
+  })
+})
+
+describe('comments/services/moderate — approve-delete-request clears the sidebar cache', () => {
+  it('softDeleteCommentById invalidates the warmed latest-comments cache', async () => {
+    const userId = await seedUser()
+    const postId = await seedPost('approve-delete-target')
+    const commentId = await seedComment(userId, postId, false)
+
+    // Warm the sidebar cache with the approved comment listed.
+    const warmed = await latestComments(db)
+    expect(warmed).toHaveLength(1)
+    expect(await latestCommentsCache.get()).not.toBeNull()
+
+    // Admin approves the user's delete request → soft delete.
+    await softDeleteCommentById(db, commentId)
+
+    // The cache must be cleared, so the re-read no longer sees the row.
     expect(await latestCommentsCache.get()).toBeNull()
     const fresh = await latestComments(db)
     expect(fresh).toHaveLength(0)

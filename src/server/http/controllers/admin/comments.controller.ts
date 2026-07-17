@@ -3,7 +3,6 @@ import { z } from 'zod'
 
 import { recordAuditEventFromContext } from '@/server/domains/audit/services/record'
 import { asAdminCommentsWire } from '@/server/domains/comments/projection'
-import { adminClearDeleteRequest, softDeleteCommentById } from '@/server/domains/comments/repos/moderation'
 import { findCommentWithUserById } from '@/server/domains/comments/repos/public-query/by-id'
 import {
   loadAdminPendingDashboard,
@@ -11,7 +10,12 @@ import {
   searchAuthorOptions,
   searchPageOptions,
 } from '@/server/domains/comments/services/admin-query'
-import { approveComment, deleteComment } from '@/server/domains/comments/services/moderate'
+import {
+  adminClearDeleteRequest,
+  approveComment,
+  deleteComment,
+  softDeleteCommentById,
+} from '@/server/domains/comments/services/moderate'
 import { adminProc } from '@/server/http/orpc-base'
 import { adminCommentDto, adminPendingDashboardDto } from '@/shared/contracts/comments'
 import { idFromString } from '@/shared/utils/id'

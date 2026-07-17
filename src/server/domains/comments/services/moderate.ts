@@ -6,10 +6,14 @@ import { withCommentBadgeTextColor } from '@/server/domains/comments/badge'
 import { clearLatestCommentsCache } from '@/server/domains/comments/cache'
 import { findCommentWithUserAndTarget } from '@/server/domains/comments/repos/admin-query'
 import {
+  adminClearDeleteRequest as adminClearDeleteRequestRepo,
   approveCommentById,
   bulkApprovePendingByUser as bulkApprovePendingByUserRepo,
   bulkSoftDeleteCommentsByUser as bulkSoftDeleteCommentsByUserRepo,
+  clearDeleteRequest as clearDeleteRequestRepo,
   deleteCommentById,
+  requestDeleteComment as requestDeleteCommentRepo,
+  softDeleteCommentById as softDeleteCommentByIdRepo,
 } from '@/server/domains/comments/repos/moderation'
 import {
   updateCommentBodyAndContent,
@@ -61,6 +65,31 @@ export async function bulkSoftDeleteCommentsByUser(db: NodePgDatabase, userId: b
   const deleted = await bulkSoftDeleteCommentsByUserRepo(db, userId)
   await clearLatestCommentsCache()
   return deleted
+}
+
+// Admin approval of a delete request sets deletedAt, so the sidebar
+// latest-comments cache must be cleared like on the paths above.
+export async function softDeleteCommentById(db: NodePgDatabase, id: bigint): Promise<void> {
+  await softDeleteCommentByIdRepo(db, id)
+  await clearLatestCommentsCache()
+}
+
+// No cache clear: only touches deleteRequestedAt, which the sidebar
+// latest-comments query does not filter on.
+export async function adminClearDeleteRequest(db: NodePgDatabase, id: bigint): Promise<boolean> {
+  return adminClearDeleteRequestRepo(db, id)
+}
+
+// No cache clear: only touches deleteRequestedAt, which the sidebar
+// latest-comments query does not filter on.
+export async function requestDeleteComment(db: NodePgDatabase, id: bigint, userId: bigint): Promise<void> {
+  await requestDeleteCommentRepo(db, id, userId)
+}
+
+// No cache clear: only touches deleteRequestedAt, which the sidebar
+// latest-comments query does not filter on.
+export async function clearDeleteRequest(db: NodePgDatabase, id: bigint, userId: bigint): Promise<boolean> {
+  return clearDeleteRequestRepo(db, id, userId)
 }
 
 export async function getCommentById(db: NodePgDatabase, rid: string) {
