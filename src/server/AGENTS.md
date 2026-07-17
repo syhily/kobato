@@ -46,7 +46,8 @@ Move every export from the root file into the subdirectory so callers
 always import from one predictable location.
 
 Domains: `analytics`, `auth` (session-storage, csrf, rbac, flows,
-verification-tokens), `comments` (loader, moderation, projection, likes,
+otp-flow, password-flow, passkey-flow, verification-tokens), `comments`
+(loader, moderation, projection, likes,
 token, badge, url, canonicalize), `content` (revision `repos/` +
 entity-agnostic draft→publish `lifecycle.ts` + restore-time
 `slug-reclaim.ts`; post/page behavior
