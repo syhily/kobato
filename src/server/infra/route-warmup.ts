@@ -184,7 +184,7 @@ function bundleWarmupScript(): Promise<string> {
           minify: true,
           sourcemap: false,
           target: 'es2020',
-          rollupOptions: {
+          rolldownOptions: {
             input: WARMUP_ENTRY,
             output: { format: 'iife' },
           },

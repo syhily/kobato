@@ -132,7 +132,7 @@ describe('infra/hono/dev — reactRouterHonoServer plugin', () => {
         'import.meta.env.REACT_ROUTER_HONO_SERVER_ASSETS_DIR': JSON.stringify('assets'),
         'import.meta.env.REACT_ROUTER_HONO_SERVER_BASENAME': JSON.stringify('/'),
       })
-      // No build/rollupOptions in the non-SSR path.
+      // No build/rolldownOptions in the non-SSR path.
       expect(result.build).toBeUndefined()
       expect(result.environments).toBeUndefined()
     })
@@ -152,7 +152,7 @@ describe('infra/hono/dev — reactRouterHonoServer plugin', () => {
       const cfg = viteUserConfig(reactRouterContext({ environmentBuildContext: { name: 'ssr' } }))
       const config = plugin.config as (config: UserConfig, env: unknown) => Promise<UserConfig | undefined>
       const result = (await config(cfg, {} as never)) as UserConfig
-      const output = result.build!.rollupOptions!.output as Record<'entryFileNames' | 'chunkFileNames', unknown>
+      const output = result.build!.rolldownOptions!.output as Record<'entryFileNames' | 'chunkFileNames', unknown>
       // entryFileNames always returns 'index.js' and rewrites facadeModuleId.
       const chunk = { facadeModuleId: 'orig' } as Record<string, string>
       expect((output.entryFileNames as (c: unknown) => string)(chunk)).toBe('index.js')
@@ -184,7 +184,7 @@ describe('infra/hono/dev — reactRouterHonoServer plugin', () => {
       )
       const config = plugin.config as (config: UserConfig, env: unknown) => Promise<UserConfig | undefined>
       const result = (await config(cfg, {} as never)) as UserConfig
-      const output = result.build!.rollupOptions!.output as { chunkFileNames: (c: { name: string }) => string }
+      const output = result.build!.rolldownOptions!.output as { chunkFileNames: (c: { name: string }) => string }
       expect(output.chunkFileNames({ name: 'server-build' })).toBe('build/server.js')
     })
 
@@ -193,7 +193,7 @@ describe('infra/hono/dev — reactRouterHonoServer plugin', () => {
       const cfg = viteUserConfig(reactRouterContext({ environmentBuildContext: { name: 'ssr' } }))
       const config = plugin.config as (config: UserConfig, env: unknown) => Promise<UserConfig | undefined>
       const result = (await config(cfg, {} as never)) as UserConfig
-      const output = result.build!.rollupOptions!.output as {
+      const output = result.build!.rolldownOptions!.output as {
         manualChunks: (id: string, meta: unknown) => string | undefined
       }
       const meta = {
@@ -236,8 +236,8 @@ describe('infra/hono/dev — reactRouterHonoServer plugin', () => {
       const cfg = viteUserConfig(reactRouterContext({ environmentBuildContext: { name: 'ssr' } }))
       const config = plugin.config as (config: UserConfig, env: unknown) => Promise<UserConfig | undefined>
       const result = (await config(cfg, {} as never)) as UserConfig
-      // build.rollupOptions.input should be the resolved entry.
-      expect((result.build!.rollupOptions as { input: string }).input).toBe('app/server.ts')
+      // build.rolldownOptions.input should be the resolved entry.
+      expect((result.build!.rolldownOptions as { input: string }).input).toBe('app/server.ts')
     })
 
     it('falls back to app/server/index.ts when the file way is absent', async () => {
@@ -246,7 +246,7 @@ describe('infra/hono/dev — reactRouterHonoServer plugin', () => {
       const cfg = viteUserConfig(reactRouterContext({ environmentBuildContext: { name: 'ssr' } }))
       const config = plugin.config as (config: UserConfig, env: unknown) => Promise<UserConfig | undefined>
       const result = (await config(cfg, {} as never)) as UserConfig
-      expect((result.build!.rollupOptions as { input: string }).input).toBe('app/server/index.ts')
+      expect((result.build!.rolldownOptions as { input: string }).input).toBe('app/server/index.ts')
     })
 
     it('uses the virtual module + warns once when no entry exists', async () => {
@@ -260,7 +260,9 @@ describe('infra/hono/dev — reactRouterHonoServer plugin', () => {
       const cfg = viteUserConfig(reactRouterContext({ environmentBuildContext: { name: 'ssr' } }))
       const config = plugin.config as (config: UserConfig, env: unknown) => Promise<UserConfig | undefined>
       const result = (await config(cfg, {} as never)) as UserConfig
-      expect((result.build!.rollupOptions as { input: string }).input).toBe('\0virtual:react-router-hono-server/server')
+      expect((result.build!.rolldownOptions as { input: string }).input).toBe(
+        '\0virtual:react-router-hono-server/server',
+      )
       expect(stderrWriteMock).toHaveBeenCalledTimes(1)
     })
 
@@ -270,7 +272,7 @@ describe('infra/hono/dev — reactRouterHonoServer plugin', () => {
       const cfg = viteUserConfig(reactRouterContext({ environmentBuildContext: { name: 'ssr' } }))
       const config = plugin.config as (config: UserConfig, env: unknown) => Promise<UserConfig | undefined>
       const result = (await config(cfg, {} as never)) as UserConfig
-      expect((result.build!.rollupOptions as { input: string }).input).toBe('custom/server.ts')
+      expect((result.build!.rolldownOptions as { input: string }).input).toBe('custom/server.ts')
       expect(existsSyncMock).not.toHaveBeenCalled()
     })
   })

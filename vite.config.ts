@@ -72,7 +72,7 @@ export default defineConfig(({ command }) => ({
               // this off for non-client consumers, and React Router's
               // `build.ssrEmitAssets` is no longer honored per-environment.
               emitAssets: true,
-              rollupOptions: {
+              rolldownOptions: {
                 input: 'src/server.ts',
               },
             },

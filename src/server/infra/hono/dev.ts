@@ -113,7 +113,7 @@ export function reactRouterHonoServer(options: ReactRouterHonoServerPluginOption
 
       const ssrConfig = {
         build: {
-          rollupOptions: {
+          rolldownOptions: {
             input: serverEntryPoint,
             output: {
               entryFileNames: (chunk) => {

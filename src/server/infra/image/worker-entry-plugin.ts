@@ -48,7 +48,7 @@ export function processWorkerEntryPlugin(): Plugin {
           write: false,
           minify: false,
           sourcemap: false,
-          rollupOptions: {
+          rolldownOptions: {
             input: WORKER_ENTRY,
             external: ['sharp', 'pg', 'node:worker_threads', 'node:buffer', 'node:module'],
             output: {
