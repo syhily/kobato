@@ -1,18 +1,9 @@
-import { Hono } from 'hono'
-import { bodyLimit } from 'hono/body-limit'
 import { mkdir, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 
-import type { Env } from '@/server/http/context'
-
-import { recordAuditEvent } from '@/server/domains/audit/services/record'
-import { csrfGuard } from '@/server/http/middlewares/csrf'
-import { requireRoleMw } from '@/server/http/middlewares/hono-rbac'
-import { getLogger } from '@/server/infra/logger'
+import { adminUploadRoute } from '@/server/http/resources/admin-upload-route'
 import { FONT_DIR } from '@/server/infra/paths'
 import { resetCanvasFont, resetFontCache } from '@/server/render/og/assets'
-
-const log = getLogger('fonts.http')
 
 const FONT_SLOTS = new Set(['og', 'calendar'])
 const FONT_MAX_BYTES = 60 * 1024 * 1024 // 60 MiB
@@ -32,25 +23,21 @@ function fontContentType(fileName: string): 'font/ttf' | 'font/otf' | null {
   return null
 }
 
-export const fontsRouter = new Hono<Env>().post(
-  '/api/admin/fonts/upload',
-  requireRoleMw('admin'),
-  csrfGuard,
-  bodyLimit({
-    maxSize: FONT_MAX_BYTES,
-    onError: (c) => c.json({ error: { message: '上传文件过大' } }, 413),
-  }),
-  async (c) => {
-    const body = await c.req.parseBody({ all: false })
+export const fontsRouter = adminUploadRoute({
+  path: '/api/admin/fonts/upload',
+  maxSize: FONT_MAX_BYTES,
+  tooLargeMessage: '上传文件过大',
+  missingFileMessage: '请上传文件',
+  logScope: 'fonts.http',
+  logMessage: 'Font uploaded',
+  validateBody(body, c) {
     const slot = body.slot
-    const file = body.file
     if (!isFontSlot(slot)) {
       return c.json({ error: { message: '未知的字体槽位' } }, 400)
     }
-    if (!(file instanceof File)) {
-      return c.json({ error: { message: '请上传文件' } }, 400)
-    }
-
+    return { value: slot }
+  },
+  async handler({ c, file, validated: slot }) {
     const contentType = fontContentType(file.name)
     if (!contentType) {
       return c.json({ error: { message: '仅支持 .ttf 或 .otf 字体文件' } }, 400)
@@ -70,17 +57,15 @@ export const fontsRouter = new Hono<Env>().post(
     // cache keeps serving the OLD font until a process restart.
     resetCanvasFont(slot)
 
-    recordAuditEvent({
-      action: 'font_uploaded',
-      actorId: c.var.viewer?.userId,
-      actorRole: c.var.viewer?.role ?? null,
-      resourceType: 'font',
-      resourceId: slot,
-      ipAddress: c.var.clientAddress,
-      userAgent: c.req.header('User-Agent') ?? null,
-      details: { size: buffer.length, contentType },
-    })
-    log.info('Font uploaded', { slot, size: buffer.length, dest })
-    return c.json({ slot, size: buffer.length })
+    return {
+      response: c.json({ slot, size: buffer.length }),
+      audit: {
+        action: 'font_uploaded',
+        resourceType: 'font',
+        resourceId: slot,
+        details: { size: buffer.length, contentType },
+      },
+      logContext: { slot, size: buffer.length, dest },
+    }
   },
-)
+})

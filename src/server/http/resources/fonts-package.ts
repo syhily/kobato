@@ -1,16 +1,6 @@
-import { Hono } from 'hono'
-import { bodyLimit } from 'hono/body-limit'
-
-import type { Env } from '@/server/http/context'
-
-import { recordAuditEvent } from '@/server/domains/audit/services/record'
 import { uploadFont, FONT_MAX_BYTES } from '@/server/domains/fonts/services/upload'
-import { csrfGuard } from '@/server/http/middlewares/csrf'
-import { requireRoleMw } from '@/server/http/middlewares/hono-rbac'
-import { getLogger } from '@/server/infra/logger'
+import { adminUploadRoute } from '@/server/http/resources/admin-upload-route'
 import { formatBytes } from '@/shared/utils/formatter'
-
-const log = getLogger('fonts.package.http')
 
 /**
  * Font *package* upload (self-hosted browser web fonts). Kept as a native
@@ -24,26 +14,21 @@ const log = getLogger('fonts.package.http')
  * lifetime; the client shows a spinner and the row is only inserted on
  * success, so there is no `processing`/`failed` state.
  */
-export const fontsPackageRouter = new Hono<Env>().post(
-  '/api/admin/fonts/package/upload',
-  requireRoleMw('admin'),
-  csrfGuard,
-  bodyLimit({
-    maxSize: FONT_MAX_BYTES,
-    onError: (c) => c.json({ error: { message: `上传文件过大（上限 ${formatBytes(FONT_MAX_BYTES)}）` } }, 413),
-  }),
-  async (c) => {
-    const body = await c.req.parseBody({ all: false })
-    const file = body.file
+export const fontsPackageRouter = adminUploadRoute({
+  path: '/api/admin/fonts/package/upload',
+  maxSize: FONT_MAX_BYTES,
+  tooLargeMessage: `上传文件过大（上限 ${formatBytes(FONT_MAX_BYTES)}）`,
+  missingFileMessage: '请上传字体文件',
+  logScope: 'fonts.package.http',
+  logMessage: 'Font package uploaded',
+  validateBody(body, c) {
     const familyName = body.familyName
-
     if (typeof familyName !== 'string' || familyName.trim() === '') {
       return c.json({ error: { message: '字体名称不能为空' } }, 400)
     }
-    if (!(file instanceof File)) {
-      return c.json({ error: { message: '请上传字体文件' } }, 400)
-    }
-
+    return { value: familyName }
+  },
+  async handler({ c, file, validated: familyName }) {
     const buffer = new Uint8Array(await file.arrayBuffer())
     const font = await uploadFont(c.var.db, {
       buffer,
@@ -51,18 +36,15 @@ export const fontsPackageRouter = new Hono<Env>().post(
       familyName,
     })
 
-    recordAuditEvent({
-      action: 'font_uploaded',
-      actorId: c.var.viewer?.userId,
-      actorRole: c.var.viewer?.role ?? null,
-      resourceType: 'font',
-      resourceId: font.id,
-      ipAddress: c.var.clientAddress,
-      userAgent: c.req.header('User-Agent') ?? null,
-      details: { familyName: font.familyName, hash: font.hash, size: buffer.length },
-    })
-    log.info('Font package uploaded', { id: font.id, familyName: font.familyName, size: buffer.length })
-
-    return c.json({ font })
+    return {
+      response: c.json({ font }),
+      audit: {
+        action: 'font_uploaded',
+        resourceType: 'font',
+        resourceId: font.id,
+        details: { familyName: font.familyName, hash: font.hash, size: buffer.length },
+      },
+      logContext: { id: font.id, familyName: font.familyName, size: buffer.length },
+    }
   },
-)
+})
