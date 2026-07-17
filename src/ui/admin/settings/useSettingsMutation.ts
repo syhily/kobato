@@ -4,12 +4,17 @@ import { useRevalidator } from 'react-router'
 import { toast } from 'sonner'
 
 import type { SettingsSection } from '@/shared/config/sections'
+import type { SettingsSectionPatch } from '@/shared/config/types'
 
 import { orpc } from '@/client/api/client'
+import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
 export interface UseSettingsMutationResult {
   /** Commit a section payload. Sets status to 'saving', calls mutateAsync + revalidation. Returns `true` on success, `false` on error. */
-  commit: (section: SettingsSection, payload: Record<string, unknown>) => Promise<boolean>
+  commit: <Section extends SettingsSection>(
+    section: Section,
+    payload: SettingsSectionPatch<Section>,
+  ) => Promise<boolean>
   /** Reset status to idle. */
   resetStatus: () => void
   /** Imperative revalidation (from useRevalidator). */
@@ -35,10 +40,10 @@ export function useSettingsMutation(): UseSettingsMutationResult {
   })
 
   const commit = useCallback(
-    async (section: SettingsSection, payload: Record<string, unknown>) => {
+    async <Section extends SettingsSection>(section: Section, payload: SettingsSectionPatch<Section>) => {
       setStatus('saving')
       try {
-        await updateMutation.mutateAsync({ section, payload })
+        await updateMutation.mutateAsync({ section, payload: unsafeCast<Record<string, unknown>>(payload) })
         setStatus('saved')
         void revalidator.revalidate()
         return true

@@ -7,8 +7,8 @@ import type { RateLimitSettings } from '@/shared/config/types'
 
 import { BOUNDS, BUCKET_META, GROUPS, type BucketKey } from '@/ui/admin/settings/rate-limit/constants'
 import { SettingGroup } from '@/ui/admin/settings/shell/SettingGroup'
+import { SettingsInput } from '@/ui/admin/settings/shell/SettingsInput'
 import { useSettingsCard } from '@/ui/admin/settings/shell/useSettingsCard'
-import { Input } from '@/ui/components/input'
 import { Popover, PopoverContent, PopoverTrigger } from '@/ui/components/popover'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/ui/components/table'
 import { cn } from '@/ui/lib/cn'
@@ -51,7 +51,8 @@ function WindowEditCell({
       </PopoverTrigger>
       <PopoverContent className="w-52 p-2" align="start">
         <div className="flex flex-col gap-2">
-          <Input
+          <SettingsInput
+            flushOnBlur={flushOnBlur}
             type="number"
             min={BOUNDS.windowSeconds.min}
             max={BOUNDS.windowSeconds.max}
@@ -61,7 +62,6 @@ function WindowEditCell({
               const val = e.target.value === '' ? BOUNDS.windowSeconds.min : Number(e.target.value)
               form.setValue(fieldName, val, { shouldDirty: true, shouldValidate: true })
             }}
-            onBlur={flushOnBlur}
             onKeyDown={(e) => {
               if (e.key === 'Enter') {
                 setOpen(false)
@@ -105,7 +105,8 @@ function AttemptsEditCell({
     ?.message
 
   return (
-    <Input
+    <SettingsInput
+      flushOnBlur={flushOnBlur}
       type="number"
       min={BOUNDS.maxAttempts.min}
       max={BOUNDS.maxAttempts.max}
@@ -115,7 +116,6 @@ function AttemptsEditCell({
         const val = e.target.value === '' ? BOUNDS.maxAttempts.min : Number(e.target.value)
         form.setValue(fieldName, val, { shouldDirty: true, shouldValidate: true })
       }}
-      onBlur={flushOnBlur}
     />
   )
 }

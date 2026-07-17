@@ -1,11 +1,11 @@
-import { useFieldArray } from 'react-hook-form'
+import { useFieldArray, useWatch } from 'react-hook-form'
 
 import type { SocialsSettings } from '@/shared/config/types'
 
 import { type SocialNetwork, SOCIAL_NETWORKS, getSocialNetworkMeta } from '@/shared/config/socials'
 import { SettingGroup } from '@/ui/admin/settings/shell/SettingGroup'
+import { SettingsInput } from '@/ui/admin/settings/shell/SettingsInput'
 import { useSettingsCard } from '@/ui/admin/settings/shell/useSettingsCard'
-import { Input } from '@/ui/components/input'
 import { Label } from '@/ui/components/label'
 import { SOCIAL_NETWORK_ICONS } from '@/ui/icons/brand'
 
@@ -35,7 +35,7 @@ function toFormState(source: SocialsSettings): { rows: SocialRow[] } {
 }
 
 export function SocialsEditor({ socials }: SocialsEditorProps) {
-  const { form, settingGroupProps } = useSettingsCard<SocialsSettings, { rows: SocialRow[] }>({
+  const { form, flushOnBlur, settingGroupProps } = useSettingsCard<SocialsSettings, { rows: SocialRow[] }>({
     section: 'socials',
     source: socials,
     toState: toFormState,
@@ -56,17 +56,12 @@ export function SocialsEditor({ socials }: SocialsEditorProps) {
     }),
   })
 
-  const { fields, update: updateField } = useFieldArray({ control: form.control, name: 'rows' })
+  const { fields } = useFieldArray({ control: form.control, name: 'rows' })
+  const rows = useWatch({ control: form.control, name: 'rows' })
 
   const patch = (index: number, update: Partial<SocialRow>) => {
-    const f = fields[index]
-    updateField(index, {
-      network: f.network,
-      name: f.name,
-      title: f.title,
-      link: f.link,
-      ...update,
-    })
+    const current = form.getValues(`rows.${index}`)
+    form.setValue(`rows.${index}`, { ...current, ...update }, { shouldDirty: true })
   }
 
   return (
@@ -77,8 +72,9 @@ export function SocialsEditor({ socials }: SocialsEditorProps) {
     >
       <div className="flex flex-col gap-3">
         {fields.map((field, index) => {
-          const meta = getSocialNetworkMeta(field.network)
-          const Icon = SOCIAL_NETWORK_ICONS[field.network]
+          const row = rows[index] ?? field
+          const meta = getSocialNetworkMeta(row.network)
+          const Icon = SOCIAL_NETWORK_ICONS[row.network]
           return (
             <div key={field.id} className="flex flex-col gap-3 rounded-xl border bg-muted/30 p-3">
               <div className="flex items-center gap-2">
@@ -93,30 +89,33 @@ export function SocialsEditor({ socials }: SocialsEditorProps) {
                 </div>
               </div>
               <div className="flex flex-col gap-3">
-                <Label htmlFor={`social-name-${field.network}`}>用户名（可选）</Label>
-                <Input
-                  id={`social-name-${field.network}`}
-                  value={field.name}
+                <Label htmlFor={`social-name-${row.network}`}>用户名（可选）</Label>
+                <SettingsInput
+                  flushOnBlur={flushOnBlur}
+                  id={`social-name-${row.network}`}
+                  value={row.name}
                   onChange={(e) => patch(index, { name: e.target.value })}
                   maxLength={60}
                   placeholder={meta.defaultName}
                 />
               </div>
               <div className="flex flex-col gap-3">
-                <Label htmlFor={`social-link-${field.network}`}>{meta.linkLabel}</Label>
-                <Input
-                  id={`social-link-${field.network}`}
-                  value={field.link}
+                <Label htmlFor={`social-link-${row.network}`}>{meta.linkLabel}</Label>
+                <SettingsInput
+                  flushOnBlur={flushOnBlur}
+                  id={`social-link-${row.network}`}
+                  value={row.link}
                   onChange={(e) => patch(index, { link: e.target.value })}
                   placeholder={meta.linkPlaceholder}
                 />
               </div>
               {meta.type === 'qrcode' ? (
                 <div className="flex flex-col gap-3">
-                  <Label htmlFor={`social-title-${field.network}`}>二维码弹窗标题（可选）</Label>
-                  <Input
-                    id={`social-title-${field.network}`}
-                    value={field.title}
+                  <Label htmlFor={`social-title-${row.network}`}>二维码弹窗标题（可选）</Label>
+                  <SettingsInput
+                    flushOnBlur={flushOnBlur}
+                    id={`social-title-${row.network}`}
+                    value={row.title}
                     onChange={(e) => patch(index, { title: e.target.value })}
                     maxLength={120}
                     placeholder={`扫码加我${meta.label}好友`}

@@ -416,17 +416,10 @@ describe('contract: module and bundle boundaries', () => {
     expect(source).not.toContain('submittedDraftRef')
     expect(source).not.toContain('setSnapshot(')
 
-    const formFiles = [
-      'src/ui/admin/settings/AssetsForm.tsx',
-      'src/ui/admin/settings/CommentsForm.tsx',
-      'src/ui/admin/settings/ContentForm.tsx',
-
-      'src/ui/admin/settings/GeneralForm.tsx',
-      'src/ui/admin/settings/MailForm.tsx',
-      'src/ui/admin/settings/SearchForm.tsx',
-      'src/ui/admin/settings/SeoForm.tsx',
-      'src/ui/admin/settings/SidebarForm.tsx',
-    ]
+    const formFiles = files('src/ui/admin/settings', '-g', '*.tsx').filter((file) => {
+      const formSource = readFileSync(file, 'utf8')
+      return /useSettingsCard(?:<|\()/.test(formSource) && !file.includes('/shell/')
+    })
     for (const file of formFiles) {
       const formSource = readFileSync(file, 'utf8')
       expect(formSource).toMatch(/useSettingsCard/)
@@ -436,6 +429,31 @@ describe('contract: module and bundle boundaries', () => {
       // every other form must not import `useRevalidator` directly.
       expect(formSource).not.toMatch(/import\s*\{[^}]*\buseRevalidator\b[^}]*\}\s*from\s*['"]react-router['"]/)
     }
+  })
+
+  it('keeps settings-card inputs on the blur-driven autosave contract', () => {
+    const settingsCardFiles = files('src/ui/admin/settings', '-g', '*.tsx').filter((file) => {
+      const source = readFileSync(file, 'utf8')
+      return /useSettingsCard(?:<|\()/.test(source) && !file.includes('/shell/')
+    })
+    const directInputAllowlist = new Set([
+      // Test-mail recipient is transient action state, not persisted settings.
+      'src/ui/admin/settings/MailForm.tsx',
+    ])
+
+    const bareInputOffenders = settingsCardFiles.filter((file) => {
+      if (directInputAllowlist.has(file)) {
+        return false
+      }
+      return readFileSync(file, 'utf8').includes("from '@/ui/components/input'")
+    })
+    expect(bareInputOffenders).toEqual([])
+
+    const directChangeOffenders = settingsCardFiles.filter((file) => {
+      const source = readFileSync(file, 'utf8')
+      return /on(?:Checked|Value)Change=\{field\.onChange\}/.test(source)
+    })
+    expect(directChangeOffenders).toEqual([])
   })
 
   it('keeps non-type catalog imports out of UI components', () => {

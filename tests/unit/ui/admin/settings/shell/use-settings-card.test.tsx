@@ -1,7 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type { SettingsSection } from '@/shared/config/sections'
-
 import { renderHook } from '#/_helpers/hook'
 import { useSettingsCard } from '@/ui/admin/settings/shell/useSettingsCard'
 
@@ -29,7 +27,7 @@ interface State {
 function makeHook(source: Source) {
   return () =>
     useSettingsCard<Source, State>({
-      section: 'general' as SettingsSection,
+      section: 'general',
       source,
       toState: (s) => ({ title: s.title }),
       fromState: (state) => ({ title: state.title }),

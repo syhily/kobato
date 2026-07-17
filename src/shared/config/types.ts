@@ -1,4 +1,4 @@
-import type { BundleKey } from '@/shared/config/sections'
+import type { BundleKey, SECTION_TO_BUNDLE_KEY, SettingsSection } from '@/shared/config/sections'
 import type { SocialNetwork } from '@/shared/config/socials'
 import type { Assert, Equals } from '@/shared/contracts/primitives'
 
@@ -342,6 +342,22 @@ export interface BlogSettingsBundle {
   analytics: AnalyticsSettings | null
   security: SecuritySettings | null
 }
+
+type DeepPartial<T> = T extends readonly (infer Item)[]
+  ? DeepPartial<Item>[]
+  : T extends object
+    ? { [Key in keyof T]?: DeepPartial<T[Key]> }
+    : T
+
+/**
+ * Compile-time contract for a settings card's write payload. The section
+ * literal selects the matching persisted DTO, while every nested property is
+ * optional because cards submit focused patches that `useSettingsCard`
+ * deep-merges with the latest loader snapshot.
+ */
+export type SettingsSectionPatch<Section extends SettingsSection> = DeepPartial<
+  NonNullable<BlogSettingsBundle[(typeof SECTION_TO_BUNDLE_KEY)[Section]]>
+>
 
 // Compile-time parity: BlogSettingsBundle keys must mirror the section →
 // bundle-key mapping in `sections.ts`. Adding a section without a bundle

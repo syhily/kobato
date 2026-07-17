@@ -209,7 +209,7 @@ describe('snapshot: useSettingsCard', () => {
 
   function TestCard() {
     const { form, display, settingGroupProps } = useSettingsCard<Source, State>({
-      section: 'general' as SettingsSection,
+      section: 'general',
       source: { title: 'Hello' },
       toState: (s) => ({ title: s.title }),
       fromState: (state) => ({ title: state.title }),

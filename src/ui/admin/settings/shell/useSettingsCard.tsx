@@ -12,6 +12,7 @@ import {
 } from 'react-hook-form'
 
 import type { SettingsSection } from '@/shared/config/sections'
+import type { SettingsSectionPatch } from '@/shared/config/types'
 
 import { getLogger } from '@/client/lib/logger'
 import { unsafeCast } from '@/shared/utils/unsafe-cast'
@@ -20,14 +21,19 @@ import { useSettingsMutation } from '@/ui/admin/settings/useSettingsMutation'
 
 const log = getLogger('settings.card')
 
-interface UseSettingsCardOptions<TSource extends object, TState extends FieldValues> {
-  section: SettingsSection
+interface UseSettingsCardBaseOptions<TSource extends object, TState extends FieldValues> {
   source: TSource
   toState: (source: TSource) => TState
-  fromState: (state: TState) => Record<string, unknown>
   schema?: z.ZodType<TState, any>
   mode?: 'patch' | 'full'
 }
+
+type UseSettingsCardOptions<TSource extends object, TState extends FieldValues> = {
+  [Section in SettingsSection]: UseSettingsCardBaseOptions<TSource, TState> & {
+    section: Section
+    fromState: (state: TState) => SettingsSectionPatch<Section>
+  }
+}[SettingsSection]
 
 interface UseSettingsCardResult<TSource extends object, TState extends FieldValues> {
   form: UseFormReturn<TState>
@@ -198,7 +204,7 @@ export function useSettingsCard<TSource extends object, TState extends FieldValu
         setLastCommitted(unsafeCast<DefaultValues<TState>>(values))
         // TSource is always a JSON-serialisable settings object; the mutation
         // endpoint takes Record<string, unknown> by design.
-        const ok = await commit(section, unsafeCast<Record<string, unknown>>(payload))
+        const ok = await commit(section, unsafeCast<SettingsSectionPatch<typeof section>>(payload))
         if (!ok) {
           setOptimisticSource(null)
         }

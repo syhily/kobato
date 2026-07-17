@@ -25,11 +25,11 @@ import type { FooterNavItem, NavigationSettings, SocialItem } from '@/shared/con
 
 import { SOCIAL_NETWORK_META, SOCIAL_NETWORKS } from '@/shared/config/socials'
 import { SettingGroup } from '@/ui/admin/settings/shell/SettingGroup'
+import { SettingsInput } from '@/ui/admin/settings/shell/SettingsInput'
 import { useSettingsCard } from '@/ui/admin/settings/shell/useSettingsCard'
 import { Button } from '@/ui/components/button'
 import { Checkbox } from '@/ui/components/checkbox'
 import { Field, FieldLabel } from '@/ui/components/field'
-import { Input } from '@/ui/components/input'
 import { Label } from '@/ui/components/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/components/select'
 
@@ -84,11 +84,15 @@ function SortableSideNavRow({
   field,
   index,
   form,
+  flushOnBlur,
+  save,
   onRemove,
 }: {
   field: SideNavRow
   index: number
   form: ReturnType<typeof useSettingsCard<NavigationSettings, { sideNavRows: SideNavRow[] }>>['form']
+  flushOnBlur: () => void
+  save: () => void
   onRemove: (index: number) => void
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
@@ -115,11 +119,17 @@ function SortableSideNavRow({
       <div className="flex flex-1 flex-col gap-2 sm:flex-row">
         <div className="flex flex-col gap-1 sm:flex-1">
           <Label htmlFor={`nav-text-${index}`}>显示文本</Label>
-          <Input id={`nav-text-${index}`} maxLength={40} {...form.register(`sideNavRows.${index}.text`)} />
+          <SettingsInput
+            flushOnBlur={flushOnBlur}
+            id={`nav-text-${index}`}
+            maxLength={40}
+            {...form.register(`sideNavRows.${index}.text`)}
+          />
         </div>
         <div className="flex flex-col gap-1 sm:flex-1">
           <Label htmlFor={`nav-link-${index}`}>链接</Label>
-          <Input
+          <SettingsInput
+            flushOnBlur={flushOnBlur}
             id={`nav-link-${index}`}
             maxLength={200}
             placeholder="/about 或 https://example.com"
@@ -132,7 +142,14 @@ function SortableSideNavRow({
               control={form.control}
               name={`sideNavRows.${index}.newTab` as const}
               render={({ field }) => (
-                <Checkbox id={`nav-newtab-${index}`} checked={field.value} onCheckedChange={field.onChange} />
+                <Checkbox
+                  id={`nav-newtab-${index}`}
+                  checked={field.value}
+                  onCheckedChange={(value) => {
+                    field.onChange(value)
+                    save()
+                  }}
+                />
               )}
             />
             <FieldLabel htmlFor={`nav-newtab-${index}`} className="font-normal">
@@ -155,7 +172,10 @@ function SortableSideNavRow({
 }
 
 function SideNavCard({ navigation }: { navigation: NavigationSettings }) {
-  const { form, settingGroupProps } = useSettingsCard<NavigationSettings, { sideNavRows: SideNavRow[] }>({
+  const { form, flushOnBlur, settingGroupProps, save } = useSettingsCard<
+    NavigationSettings,
+    { sideNavRows: SideNavRow[] }
+  >({
     section: 'navigation',
     source: navigation,
     toState: (source) => ({
@@ -217,6 +237,8 @@ function SideNavCard({ navigation }: { navigation: NavigationSettings }) {
                     field={field as SideNavRow}
                     index={index}
                     form={form}
+                    flushOnBlur={flushOnBlur}
+                    save={save}
                     onRemove={(i) => rows.remove(i)}
                   />
                 ))}
@@ -329,7 +351,10 @@ function SortableFooterNavRow({
 }
 
 function FooterNavCard({ navigation, socials }: { navigation: NavigationSettings; socials: SocialItem[] }) {
-  const { form, settingGroupProps } = useSettingsCard<NavigationSettings, { footerNavItems: FooterNavItemRowState[] }>({
+  const { form, settingGroupProps, save } = useSettingsCard<
+    NavigationSettings,
+    { footerNavItems: FooterNavItemRowState[] }
+  >({
     section: 'navigation',
     source: navigation,
     toState: (source) => ({
@@ -364,6 +389,7 @@ function FooterNavCard({ navigation, socials }: { navigation: NavigationSettings
   function updateFooterItem(index: number, patch: Partial<FooterNavItem>) {
     const current = rows.fields[index]
     rows.update(index, { ...current, ...patch } as FooterNavItemRowState)
+    save()
   }
 
   const configuredNetworks = new Set(socials.map((s) => s.network))

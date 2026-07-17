@@ -15,7 +15,7 @@ interface FormState {
   scheduledEnabled: boolean
   frequency: 'daily' | 'weekly' | 'monthly'
   hour: number
-  minute: number
+  minute: BackupSettings['scheduled']['minute']
   dayOfWeek?: number
   dayOfMonth?: number
   retentionEnabled: boolean
@@ -24,7 +24,11 @@ interface FormState {
 
 const WEEKDAY_LABELS = ['周一', '周二', '周三', '周四', '周五', '周六', '周日']
 const HOURS = Array.from({ length: 24 }, (_, i) => i)
-const MINUTES = [0, 30]
+const MINUTES = [0, 30] as const
+
+function asBackupMinute(value: string | null): BackupSettings['scheduled']['minute'] {
+  return value === '30' ? 30 : 0
+}
 
 interface BackupScheduleFormProps {
   backup: BackupSettings
@@ -154,7 +158,7 @@ export function BackupScheduleForm({ backup, canConfigure }: BackupScheduleFormP
                     <Select
                       value={String(field.value)}
                       onValueChange={(v) => {
-                        field.onChange(Number(v))
+                        field.onChange(asBackupMinute(v))
                         save()
                       }}
                       disabled={!canConfigure}
