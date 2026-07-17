@@ -1,8 +1,9 @@
 import type { ZodType } from 'zod'
 
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useState } from 'react'
 
-import { getDraft, removeDraft, setDraft, type DraftRecord, type DraftType } from '@/client/lib/draft-store'
+import { DRAFT_STORAGE_VERSION, draftEditKey, useDraftSession } from '@/client/lib/draft-session'
+import { removeDraft, setDraft, type DraftRecord, type DraftType } from '@/client/lib/draft-store'
 
 export interface CreateDraftConfig<TBody> {
   keyPrefix: string
@@ -12,22 +13,6 @@ export interface CreateDraftConfig<TBody> {
   editType: DraftType
   editKeyPrefix: string
   bodySchema: ZodType<TBody>
-}
-
-interface BroadcastMessage {
-  kind: 'cleared'
-  key: string
-}
-
-const STORAGE_VERSION = 1
-
-function isValidDraft<TBody, TMeta>(
-  record: DraftRecord,
-  config: CreateDraftConfig<TBody>,
-): record is DraftRecord<TBody, TMeta> & { meta: TMeta } {
-  return (
-    record.version === STORAGE_VERSION && config.bodySchema.safeParse(record.body).success && record.meta !== undefined
-  )
 }
 
 function readOrCreateSessionId(sessionKey: string): string {
@@ -45,6 +30,13 @@ function readOrCreateSessionId(sessionKey: string): string {
   } catch {
     return Date.now().toString(36)
   }
+}
+
+// A stored create draft is only usable when it carries meta. The draft
+// session has already version- and schema-checked the record by the time
+// this runs, so the predicate only adds the meta check.
+function hasMeta<TBody, TMeta>(record: DraftRecord): record is DraftRecord<TBody, TMeta> & { meta: TMeta } {
+  return record.meta !== undefined
 }
 
 export interface UseCreateDraftOptions<TBody, TMeta> {
@@ -66,126 +58,36 @@ export function useCreateDraft<TBody, TMeta>(
   const [sessionId] = useState(() => readOrCreateSessionId(config.sessionKey))
   const key = `${config.keyPrefix}${sessionId}`
 
-  const [loadedDraft, setLoadedDraft] = useState<{ body: TBody; meta: TMeta; savedAt: number } | null>(null)
-  const didReadRef = useRef(false)
-  const loadCompleteRef = useRef(false)
-
-  useEffect(() => {
-    if (didReadRef.current) {
-      return
+  // The draft lifecycle (load/persist/broadcast) lives in useDraftSession;
+  // this adapter only supplies the session key and the meta-carrying mapping.
+  // Note the raw record body is surfaced, not the parsed one — that is the
+  // behavior the create flow has always had.
+  const mapLoaded = useCallback((record: DraftRecord): { body: TBody; meta: TMeta; savedAt: number } | null => {
+    if (!hasMeta<TBody, TMeta>(record)) {
+      return null
     }
-    didReadRef.current = true
-    loadCompleteRef.current = false
+    return { body: record.body, meta: record.meta, savedAt: record.savedAt }
+  }, [])
 
-    let cancelled = false
-
-    void (async () => {
-      try {
-        const record = await getDraft(key)
-        if (cancelled) {
-          return
-        }
-        if (record === null) {
-          setLoadedDraft(null)
-          loadCompleteRef.current = true
-          return
-        }
-        if (!isValidDraft<TBody, TMeta>(record, config)) {
-          await removeDraft(key)
-          if (!cancelled) {
-            setLoadedDraft(null)
-          }
-          loadCompleteRef.current = true
-          return
-        }
-        setLoadedDraft({
-          body: record.body,
-          meta: record.meta,
-          savedAt: record.savedAt,
-        })
-        loadCompleteRef.current = true
-      } catch {
-        if (!cancelled) {
-          setLoadedDraft(null)
-        }
-        loadCompleteRef.current = true
-      }
-    })()
-
-    return () => {
-      cancelled = true
-    }
-  }, [key, config])
-
-  useEffect(() => {
-    if (!loadCompleteRef.current) {
-      return
-    }
-    const payload: DraftRecord<TBody, TMeta> = {
-      key,
-      type: config.createType,
-      body,
-      meta,
-      savedAt: Date.now(),
-      version: STORAGE_VERSION,
-    }
-
-    let cancelled = false
-
-    void (async () => {
-      try {
-        if (!cancelled) {
-          await setDraft(key, payload)
-        }
-      } catch {
-        // Quota or disabled storage — silently ignore.
-      }
-    })()
-
-    return () => {
-      cancelled = true
-    }
-  }, [key, body, meta, config.createType])
-
-  useEffect(() => {
-    let bc: BroadcastChannel | null = null
-    try {
-      bc = new BroadcastChannel(config.broadcastName)
-      bc.addEventListener('message', (event: MessageEvent<BroadcastMessage>) => {
-        if (event.data?.kind === 'cleared' && event.data.key === key) {
-          setLoadedDraft(null)
-        }
-      })
-    } catch {
-      // BroadcastChannel unavailable (older Safari).
-    }
-    return () => {
-      bc?.close()
-    }
-  }, [key, config.broadcastName])
-
-  const clearDraft = useCallback(() => {
-    void removeDraft(key)
-    setLoadedDraft(null)
-    try {
-      const bc = new BroadcastChannel(config.broadcastName)
-      const msg: BroadcastMessage = { kind: 'cleared', key }
-      bc.postMessage(msg)
-      bc.close()
-    } catch {
-      // Ignore.
-    }
-  }, [key, config.broadcastName])
+  const { loadedDraft, clearDraft } = useDraftSession<TBody, { body: TBody; meta: TMeta; savedAt: number }>({
+    key,
+    broadcastName: config.broadcastName,
+    draftType: config.createType,
+    bodySchema: config.bodySchema,
+    body,
+    meta,
+    mapLoaded,
+  })
 
   const migrateToEditKey = useCallback(
     (entityId: string, clientRevisionToken: string, latestBody: TBody) => {
-      const editKey = `${config.editKeyPrefix}${entityId}:${clientRevisionToken}`
+      const editKey = draftEditKey(config.editKeyPrefix, entityId, clientRevisionToken)
       const editPayload: DraftRecord<TBody> = {
         key: editKey,
         type: config.editType,
         body: latestBody,
         savedAt: Date.now(),
-        version: STORAGE_VERSION,
+        version: DRAFT_STORAGE_VERSION,
       }
       void (async () => {
         try {
