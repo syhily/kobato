@@ -2,10 +2,10 @@ import { describe, expect, it, vi } from 'vitest'
 
 import { makeAdminPost } from '#/_helpers/catalog'
 import { renderInRouter, renderToHtml, stableHtml } from '#/_helpers/render'
+import { localInputValueToIso } from '@/ui/admin/editor-shell/editor-shell-derived'
 import { PostEditorMetaAside, PostEditorMetaSheet } from '@/ui/admin/posts/PostEditorMetaPanel'
 import {
   EMPTY_POST_META_DRAFT,
-  localInputValueToIso,
   metaDraftFromPost,
   metaDraftsEqual,
   PostMetaSidebar,

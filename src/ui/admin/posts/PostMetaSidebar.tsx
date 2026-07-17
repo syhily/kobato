@@ -107,17 +107,6 @@ function isoToLocalInputValue(iso: string): string {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
 }
 
-export function localInputValueToIso(value: string): string | null {
-  if (value.trim() === '') {
-    return null
-  }
-  const ms = Date.parse(value)
-  if (Number.isNaN(ms)) {
-    return null
-  }
-  return new Date(ms).toISOString()
-}
-
 import type {
   SidebarPublishStatus,
   SidebarRevisionSummary,
