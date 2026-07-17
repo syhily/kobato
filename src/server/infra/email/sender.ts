@@ -46,6 +46,75 @@ interface CheckMailReadyOptions {
   ignoreEnabled?: boolean
 }
 
+interface BuildTransportOptions {
+  /** Test sends bypass the master switch so editors can verify connectivity first. */
+  forceEnabled?: boolean
+}
+
+// One registry entry per transport: which mail fields it needs before a
+// send can succeed, the user-facing message when they are missing, and
+// how to build it. `checkMailReady` and `buildTransport` are pure table
+// lookups over this — adding a transport is one entry here plus its
+// `MailTransport` class.
+interface TransportRegistryEntry {
+  isReady(mail: MailConfig): boolean
+  unconfiguredMessage: string
+  build(mail: MailConfig, opts?: BuildTransportOptions): MailTransport
+}
+
+const TRANSPORT_REGISTRY: Record<MailConfig['transport'], TransportRegistryEntry> = {
+  zeabur: {
+    isReady: (mail) => Boolean(mail.host && mail.apiKey && mail.sender),
+    unconfiguredMessage: 'Zeabur 邮件服务尚未配置完整（缺少 Host / API Key / 发件人）',
+    build: (mail, opts) =>
+      new ZeaburZSendTransport({
+        enabled: opts?.forceEnabled ?? mail.enabled,
+        sender: mail.sender,
+        host: mail.host,
+        apiKey: mail.apiKey,
+      }),
+  },
+  smtp: {
+    isReady: (mail) => Boolean(mail.smtpHost && mail.smtpUser && mail.smtpPass && mail.sender),
+    unconfiguredMessage: 'SMTP 服务尚未配置完整（缺少服务器地址 / 用户名 / 密码 / 发件人）',
+    build: (mail, opts) =>
+      new SmtpTransport({
+        enabled: opts?.forceEnabled ?? mail.enabled,
+        sender: mail.sender,
+        host: mail.smtpHost,
+        port: mail.smtpPort,
+        user: mail.smtpUser,
+        pass: mail.smtpPass,
+        secure: mail.smtpSecure,
+      }),
+  },
+  mailgun: {
+    isReady: (mail) => Boolean(mail.mailgunDomain && mail.mailgunApiKey && mail.sender),
+    unconfiguredMessage: 'Mailgun 服务尚未配置完整（缺少 Domain / API Key / 发件人）',
+    build: (mail, opts) =>
+      new MailgunTransport({
+        enabled: opts?.forceEnabled ?? mail.enabled,
+        sender: mail.sender,
+        domain: mail.mailgunDomain,
+        apiKey: mail.mailgunApiKey,
+      }),
+  },
+}
+
+// The `mail.transport` column is typed as a union, but a settings
+// snapshot written by an older/newer build can still hold an
+// out-of-union value — fall back to Zeabur like the dispatcher always
+// has. The widening cast exists precisely for that runtime case.
+function resolveTransportEntry(mail: MailConfig): TransportRegistryEntry {
+  const transport = mail.transport ?? 'zeabur'
+  const entry = (TRANSPORT_REGISTRY as Record<string, TransportRegistryEntry>)[transport]
+  if (entry === undefined) {
+    log.warn('Unknown mail transport, falling back to Zeabur ZSend', { transport })
+    return TRANSPORT_REGISTRY.zeabur
+  }
+  return entry
+}
+
 // Single source of truth for "should this notification actually fire?"
 // — used both internally by the comment-fired senders and by the admin
 // "send test" action so the UI can surface the same skip reason.
@@ -58,33 +127,9 @@ export function checkMailReady(
   if (!options.ignoreEnabled && !mail.enabled) {
     return { ready: false, reason: 'disabled', message: '邮件发送已在管理面板中关闭' }
   }
-  const transport = mail.transport ?? 'zeabur'
-  if (transport === 'smtp') {
-    if (!mail.smtpHost || !mail.smtpUser || !mail.smtpPass || !mail.sender) {
-      return {
-        ready: false,
-        reason: 'unconfigured',
-        message: 'SMTP 服务尚未配置完整（缺少服务器地址 / 用户名 / 密码 / 发件人）',
-      }
-    }
-    return { ready: true }
-  }
-  if (transport === 'mailgun') {
-    if (!mail.mailgunDomain || !mail.mailgunApiKey || !mail.sender) {
-      return {
-        ready: false,
-        reason: 'unconfigured',
-        message: 'Mailgun 服务尚未配置完整（缺少 Domain / API Key / 发件人）',
-      }
-    }
-    return { ready: true }
-  }
-  if (!mail.host || !mail.apiKey || !mail.sender) {
-    return {
-      ready: false,
-      reason: 'unconfigured',
-      message: 'Zeabur 邮件服务尚未配置完整（缺少 Host / API Key / 发件人）',
-    }
+  const entry = resolveTransportEntry(mail)
+  if (!entry.isReady(mail)) {
+    return { ready: false, reason: 'unconfigured', message: entry.unconfiguredMessage }
   }
   return { ready: true }
 }
@@ -131,36 +176,8 @@ function getTransport(): MailTransport {
   return transport
 }
 
-function buildTransport(mail: MailConfig): MailTransport {
-  const transport = mail.transport ?? 'zeabur'
-  if (transport === 'smtp') {
-    return new SmtpTransport({
-      enabled: mail.enabled,
-      sender: mail.sender,
-      host: mail.smtpHost,
-      port: mail.smtpPort,
-      user: mail.smtpUser,
-      pass: mail.smtpPass,
-      secure: mail.smtpSecure,
-    })
-  }
-  if (transport === 'mailgun') {
-    return new MailgunTransport({
-      enabled: mail.enabled,
-      sender: mail.sender,
-      domain: mail.mailgunDomain,
-      apiKey: mail.mailgunApiKey,
-    })
-  }
-  if (transport !== 'zeabur') {
-    log.warn('Unknown mail transport, falling back to Zeabur ZSend', { transport })
-  }
-  return new ZeaburZSendTransport({
-    enabled: mail.enabled,
-    sender: mail.sender,
-    host: mail.host,
-    apiKey: mail.apiKey,
-  })
+function buildTransport(mail: MailConfig, opts: BuildTransportOptions = {}): MailTransport {
+  return resolveTransportEntry(mail).build(mail, opts)
 }
 
 export async function sendEmail(
@@ -174,11 +191,6 @@ export async function sendEmail(
   return transport.send({ to, subject, html }, sendOptions)
 }
 
-// Re-export render so domain email composers can build HTML from React
-// Email components without reaching into `infra/email/render` directly.
-const renderEmail = render
-export { render, render as renderEmail }
-
 // Sent to a newly invited author with a setup link. The inviter is
 // BCC'd so admin actions stay on the audit trail (the recipient does
 // not see the BCC).
@@ -189,7 +201,7 @@ export async function sendAuthorInvite(
   inviterEmail?: string,
 ): Promise<SendResult> {
   const siteIdentity = requireBlogSettingsSection('siteIdentity')
-  const html = renderEmail(
+  const html = render(
     AuthorInvite({
       receiver: user.name,
       inviter: inviterName,
@@ -204,7 +216,7 @@ export async function sendAuthorInvite(
 // Sent when a user requests a password reset.
 export async function sendPasswordReset(user: { name: string; email: string }, link: string): Promise<SendResult> {
   const siteIdentity = requireBlogSettingsSection('siteIdentity')
-  const html = renderEmail(
+  const html = render(
     PasswordReset({
       receiver: user.name,
       link,
@@ -216,7 +228,7 @@ export async function sendPasswordReset(user: { name: string; email: string }, l
 // Sent when a user logs in with OTP enabled.
 export async function sendSignInOtp(user: { name: string; email: string }, otpCode: string): Promise<SendResult> {
   const siteIdentity = requireBlogSettingsSection('siteIdentity')
-  const html = renderEmail(
+  const html = render(
     SignInOtp({
       receiver: user.name,
       otpCode,
@@ -257,7 +269,7 @@ export async function sendTestMail(to: string): Promise<SendResult> {
   // Send through the configured transport so the test exercises the
   // same code path as production notifications, but force `enabled: true`
   // so editors can verify connectivity before flipping the public toggle.
-  const transport = buildTransportForTest(mail)
+  const transport = buildTransport(mail, { forceEnabled: true })
   try {
     return await transport.send({ to, subject, html })
   } catch (error) {
@@ -265,33 +277,4 @@ export async function sendTestMail(to: string): Promise<SendResult> {
     log.error('Test mail send failed: transport error', { to, error })
     return { ok: false, reason: 'network', message }
   }
-}
-
-function buildTransportForTest(mail: MailConfig): MailTransport {
-  const transport = mail.transport ?? 'zeabur'
-  if (transport === 'smtp') {
-    return new SmtpTransport({
-      enabled: true,
-      sender: mail.sender,
-      host: mail.smtpHost,
-      port: mail.smtpPort,
-      user: mail.smtpUser,
-      pass: mail.smtpPass,
-      secure: mail.smtpSecure,
-    })
-  }
-  if (transport === 'mailgun') {
-    return new MailgunTransport({
-      enabled: true,
-      sender: mail.sender,
-      domain: mail.mailgunDomain,
-      apiKey: mail.mailgunApiKey,
-    })
-  }
-  return new ZeaburZSendTransport({
-    enabled: true,
-    sender: mail.sender,
-    host: mail.host,
-    apiKey: mail.apiKey,
-  })
 }

@@ -93,143 +93,117 @@ afterEach(() => {
   invalidateMailTransportCache()
 })
 
-describe('infra/email/sender — checkMailReady', () => {
-  it('returns disabled when enabled is false', () => {
-    const result = checkMailReady({
-      enabled: false,
-      host: '',
-      apiKey: '',
-      sender: '',
-      transport: 'zeabur',
-      smtpHost: '',
-      smtpPort: 587,
-      smtpUser: '',
-      smtpPass: '',
-      smtpSecure: false,
-      mailgunDomain: '',
-      mailgunApiKey: '',
-    })
-    expect(result.ready).toBe(false)
-    if (!result.ready) {
-      expect(result.reason).toBe('disabled')
+describe('infra/email/sender — checkMailReady readiness matrix', () => {
+  type Mail = Parameters<typeof checkMailReady>[0]
+
+  const fullyConfigured: Mail = {
+    enabled: true,
+    host: 'h',
+    apiKey: 'k',
+    sender: 's',
+    transport: 'zeabur',
+    smtpHost: 'smtp.example.com',
+    smtpPort: 587,
+    smtpUser: 'u',
+    smtpPass: 'p',
+    smtpSecure: false,
+    mailgunDomain: 'mg.example.com',
+    mailgunApiKey: 'mg-key',
+  }
+
+  const cases: Array<{
+    name: string
+    mail: Mail
+    options?: Parameters<typeof checkMailReady>[1]
+    expected: { ready: true } | { ready: false; reason: 'disabled' | 'unconfigured' }
+  }> = [
+    {
+      name: 'disabled when the master switch is off',
+      mail: { ...fullyConfigured, enabled: false },
+      expected: { ready: false, reason: 'disabled' },
+    },
+    {
+      name: 'ready when disabled but test sends bypass the master switch',
+      mail: { ...fullyConfigured, enabled: false },
+      options: { ignoreEnabled: true },
+      expected: { ready: true },
+    },
+    // zeabur requires host / apiKey / sender
+    {
+      name: 'zeabur missing host',
+      mail: { ...fullyConfigured, transport: 'zeabur', host: '' },
+      expected: { ready: false, reason: 'unconfigured' },
+    },
+    {
+      name: 'zeabur missing apiKey',
+      mail: { ...fullyConfigured, transport: 'zeabur', apiKey: '' },
+      expected: { ready: false, reason: 'unconfigured' },
+    },
+    {
+      name: 'zeabur missing sender',
+      mail: { ...fullyConfigured, transport: 'zeabur', sender: '' },
+      expected: { ready: false, reason: 'unconfigured' },
+    },
+    {
+      name: 'zeabur fully configured',
+      mail: { ...fullyConfigured, transport: 'zeabur' },
+      expected: { ready: true },
+    },
+    // smtp requires smtpHost / smtpUser / smtpPass / sender
+    {
+      name: 'smtp missing host',
+      mail: { ...fullyConfigured, transport: 'smtp', smtpHost: '' },
+      expected: { ready: false, reason: 'unconfigured' },
+    },
+    {
+      name: 'smtp missing user',
+      mail: { ...fullyConfigured, transport: 'smtp', smtpUser: '' },
+      expected: { ready: false, reason: 'unconfigured' },
+    },
+    {
+      name: 'smtp missing pass',
+      mail: { ...fullyConfigured, transport: 'smtp', smtpPass: '' },
+      expected: { ready: false, reason: 'unconfigured' },
+    },
+    {
+      name: 'smtp missing sender',
+      mail: { ...fullyConfigured, transport: 'smtp', sender: '' },
+      expected: { ready: false, reason: 'unconfigured' },
+    },
+    {
+      name: 'smtp fully configured',
+      mail: { ...fullyConfigured, transport: 'smtp' },
+      expected: { ready: true },
+    },
+    // mailgun requires mailgunDomain / mailgunApiKey / sender
+    {
+      name: 'mailgun missing domain',
+      mail: { ...fullyConfigured, transport: 'mailgun', mailgunDomain: '' },
+      expected: { ready: false, reason: 'unconfigured' },
+    },
+    {
+      name: 'mailgun missing apiKey',
+      mail: { ...fullyConfigured, transport: 'mailgun', mailgunApiKey: '' },
+      expected: { ready: false, reason: 'unconfigured' },
+    },
+    {
+      name: 'mailgun missing sender',
+      mail: { ...fullyConfigured, transport: 'mailgun', sender: '' },
+      expected: { ready: false, reason: 'unconfigured' },
+    },
+    {
+      name: 'mailgun fully configured',
+      mail: { ...fullyConfigured, transport: 'mailgun' },
+      expected: { ready: true },
+    },
+  ]
+
+  it.each(cases)('$name', ({ mail, options, expected }) => {
+    const result = checkMailReady(mail, options)
+    expect(result.ready).toBe(expected.ready)
+    if (!result.ready && !expected.ready) {
+      expect(result.reason).toBe(expected.reason)
     }
-  })
-
-  it('returns unconfigured when zeabur fields are missing', () => {
-    const result = checkMailReady({
-      enabled: true,
-      host: '',
-      apiKey: '',
-      sender: '',
-      transport: 'zeabur',
-      smtpHost: '',
-      smtpPort: 587,
-      smtpUser: '',
-      smtpPass: '',
-      smtpSecure: false,
-      mailgunDomain: '',
-      mailgunApiKey: '',
-    })
-    expect(result.ready).toBe(false)
-    if (!result.ready) {
-      expect(result.reason).toBe('unconfigured')
-    }
-  })
-
-  it('returns ready when zeabur fields are set', () => {
-    const result = checkMailReady({
-      enabled: true,
-      host: 'h',
-      apiKey: 'k',
-      sender: 's',
-      transport: 'zeabur',
-      smtpHost: '',
-      smtpPort: 587,
-      smtpUser: '',
-      smtpPass: '',
-      smtpSecure: false,
-      mailgunDomain: '',
-      mailgunApiKey: '',
-    })
-    expect(result.ready).toBe(true)
-  })
-
-  it('returns unconfigured when smtp fields are missing', () => {
-    const result = checkMailReady({
-      enabled: true,
-      host: '',
-      apiKey: '',
-      sender: '',
-      transport: 'smtp',
-      smtpHost: '',
-      smtpPort: 587,
-      smtpUser: '',
-      smtpPass: '',
-      smtpSecure: false,
-      mailgunDomain: '',
-      mailgunApiKey: '',
-    })
-    expect(result.ready).toBe(false)
-    if (!result.ready) {
-      expect(result.reason).toBe('unconfigured')
-    }
-  })
-
-  it('returns ready when smtp fields are set', () => {
-    const result = checkMailReady({
-      enabled: true,
-      host: '',
-      apiKey: '',
-      sender: 's',
-      transport: 'smtp',
-      smtpHost: 'smtp.example.com',
-      smtpPort: 587,
-      smtpUser: 'u',
-      smtpPass: 'p',
-      smtpSecure: false,
-      mailgunDomain: '',
-      mailgunApiKey: '',
-    })
-    expect(result.ready).toBe(true)
-  })
-
-  it('returns unconfigured when mailgun fields are missing', () => {
-    const result = checkMailReady({
-      enabled: true,
-      host: '',
-      apiKey: '',
-      sender: '',
-      transport: 'mailgun',
-      smtpHost: '',
-      smtpPort: 587,
-      smtpUser: '',
-      smtpPass: '',
-      smtpSecure: false,
-      mailgunDomain: '',
-      mailgunApiKey: '',
-    })
-    expect(result.ready).toBe(false)
-    if (!result.ready) {
-      expect(result.reason).toBe('unconfigured')
-    }
-  })
-
-  it('returns ready when mailgun fields are set', () => {
-    const result = checkMailReady({
-      enabled: true,
-      host: '',
-      apiKey: '',
-      sender: 's',
-      transport: 'mailgun',
-      smtpHost: '',
-      smtpPort: 587,
-      smtpUser: '',
-      smtpPass: '',
-      smtpSecure: false,
-      mailgunDomain: 'mg.example.com',
-      mailgunApiKey: 'k',
-    })
-    expect(result.ready).toBe(true)
   })
 })
 
@@ -491,6 +465,32 @@ describe('infra/email/sender — sendTestMail', () => {
     transportSendMock.mockResolvedValueOnce({ ok: true })
     const result = await sendTestMail('to@x.com')
     expect(MailgunCtorMock).toHaveBeenCalledTimes(1)
+    expect(result.ok).toBe(true)
+  })
+
+  it('forces enabled on the built transport so test sends bypass the master switch', async () => {
+    setBlogSettingsBundleForTests({
+      ...TEST_BLOG_SETTINGS_BUNDLE,
+      mail: {
+        mail: {
+          enabled: false,
+          host: 'api.zeabur.com',
+          apiKey: 'k',
+          sender: 'noreply@example.com',
+          transport: 'zeabur',
+          smtpHost: '',
+          smtpPort: 587,
+          smtpUser: '',
+          smtpPass: '',
+          smtpSecure: false,
+          mailgunDomain: '',
+          mailgunApiKey: '',
+        },
+      },
+    })
+    transportSendMock.mockResolvedValueOnce({ ok: true })
+    const result = await sendTestMail('to@x.com')
+    expect(ZeaburCtorMock).toHaveBeenCalledWith(expect.objectContaining({ enabled: true }))
     expect(result.ok).toBe(true)
   })
 })

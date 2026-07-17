@@ -2,7 +2,8 @@ import { createElement } from 'react'
 
 import type { SendResult } from '@/server/infra/email/types'
 
-import { renderEmail, sendEmail } from '@/server/infra/email/sender'
+import { render } from '@/server/infra/email/render'
+import { sendEmail } from '@/server/infra/email/sender'
 import ConfirmSubscription from '@/server/infra/email/templates/ConfirmSubscription'
 import { requireBlogSettingsSection } from '@/shared/config/getters'
 
@@ -18,7 +19,7 @@ export async function sendConfirmSubscription(
   const { newsletter } = requireBlogSettingsSection('newsletter')
   const fromName = newsletter.fromName.trim() !== '' ? newsletter.fromName : siteIdentity.title
   const subjectPrefix = newsletter.subjectPrefix.trim() !== '' ? newsletter.subjectPrefix : siteIdentity.title
-  const html = renderEmail(
+  const html = render(
     createElement(ConfirmSubscription, {
       receiver: email,
       fromName,

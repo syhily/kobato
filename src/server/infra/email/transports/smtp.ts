@@ -1,16 +1,13 @@
-// SMTP transport — SPIKE STUB.
+// SMTP transport.
 //
-// This is the scaffolding for a second transport that lets self-hosters
-// not running on Zeabur send mail through any SMTP server. It is NOT
-// yet wired into the dispatcher in `sender.ts:getTransport()`; the
-// dispatcher still routes everything to `ZeaburZSendTransport`. The
-// `transport: 'smtp'` selector lands here in the next iteration once
-// the admin UI gains a form to configure `host` / `port` / `user` /
-// `pass`.
+// Lets self-hosters not running on Zeabur send mail through any SMTP
+// server. Wired into the dispatcher: the transport registry in
+// `sender.ts` routes here when `mail.transport === 'smtp'`, and the
+// admin settings UI exposes the `host` / `port` / `user` / `pass`
+// fields.
 //
-// What's in place now:
-//   - `SmtpConfig` shape (host, port, user, pass, secure) and the
-//     `MailTransport` implementation.
+//   - `SmtpConfig` shape (host, port, user, pass, secure) behind the
+//     shared `MailTransport` interface.
 //   - The same `disabled` / `unconfigured` skip semantics as Zeabur so
 //     both transports speak the same result vocabulary.
 //   - A thin `nodemailer.createTransport` + `sendMail` happy path.
@@ -20,7 +17,6 @@
 //     token refresh flow.
 //   - Connection pooling config (maxConnections / maxMessages).
 //   - A DKIM / SPF helper bundle.
-//   - Migration tooling that maps an existing Zeabur snapshot to SMTP.
 
 import nodemailer, { type Transporter } from 'nodemailer'
 
@@ -93,9 +89,9 @@ export class SmtpTransport implements MailTransport {
       const errorMessage = error instanceof Error ? error.message : String(error)
       log.error('SMTP mail send failed', { to: message.to, subject: message.subject, error })
       // nodemailer surfaces SMTP reject codes via `responseCode`; we
-      // don't dig them out here yet because the dispatcher does not
-      // route to this transport in production. When SMTP goes live the
-      // `upstream` branch should populate `status` from that code.
+      // don't dig them out here yet — when finer error classification is
+      // needed, the `upstream` branch should populate `status` from that
+      // code.
       return { ok: false, reason: 'network', message: errorMessage }
     }
   }

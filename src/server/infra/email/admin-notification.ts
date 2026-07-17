@@ -3,7 +3,8 @@ import type { ReactElement } from 'react'
 import type { SendResult } from '@/server/infra/email/types'
 import type { Logger } from '@/server/infra/logger'
 
-import { renderEmail, sendEmail } from '@/server/infra/email/sender'
+import { render } from '@/server/infra/email/render'
+import { sendEmail } from '@/server/infra/email/sender'
 import { requireBlogSettingsSection } from '@/shared/config/getters'
 
 // Single seam for every notification that goes to the site administrator
@@ -20,7 +21,7 @@ export async function sendAdminNotification({
   element: ReactElement
 }): Promise<SendResult> {
   const siteIdentity = requireBlogSettingsSection('siteIdentity')
-  const html = renderEmail(element)
+  const html = render(element)
   return sendEmail(siteIdentity.author.email, `您的网站【${siteIdentity.title}】${subject}`, html)
 }
 

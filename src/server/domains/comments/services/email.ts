@@ -10,7 +10,8 @@ import type { SendResult } from '@/server/infra/email/types'
 import { entityCommentUrl, findEntitySlugTitle } from '@/server/domains/comments/services/shared'
 import { commentBodyToHtml } from '@/server/domains/pt/services/comment-to-html'
 import { sendAdminNotification } from '@/server/infra/email/admin-notification'
-import { renderEmail, sendEmail } from '@/server/infra/email/sender'
+import { render } from '@/server/infra/email/render'
+import { sendEmail } from '@/server/infra/email/sender'
 import { AdminNotificationEmail } from '@/server/infra/email/templates/AdminNotificationEmail'
 import ApprovedComment from '@/server/infra/email/templates/ApprovedComment'
 import NewReply from '@/server/infra/email/templates/NewReply'
@@ -67,7 +68,7 @@ export async function sendNewReply(
     log.warn('Skipping reply email: target entity not found', { target })
     return { ok: false, reason: 'unconfigured', message: '评论目标已不存在' }
   }
-  const html = renderEmail(
+  const html = render(
     createElement(NewReply, {
       receiver: sourceUser.name,
       postTitle: entity.title,
@@ -97,7 +98,7 @@ export async function sendApprovedComment(
     log.warn('Skipping approval email: target entity not found', { target })
     return { ok: false, reason: 'unconfigured', message: '评论目标已不存在' }
   }
-  const html = renderEmail(
+  const html = render(
     createElement(ApprovedComment, {
       receiver: user.name,
       postTitle: entity.title,
