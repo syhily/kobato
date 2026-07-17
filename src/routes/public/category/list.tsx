@@ -19,20 +19,16 @@ export async function loader({ request, context, params }: Route.LoaderArgs): Pr
   }
 
   const rootPath = `/cats/${category.slug}`
+  const filters = {
+    includeHidden: true,
+    includeScheduled: false,
+    category: category.name,
+  }
 
   return listingLoader(db, {
     rawNum: params.num,
-    totalPosts: await countPublicPosts(db, {
-      includeHidden: true,
-      includeScheduled: false,
-      category: category.name,
-    }),
-    fetchPage: (pageNum, pageSize) =>
-      listPublicPostCardsPaginated(db, pageNum, pageSize, {
-        includeHidden: true,
-        includeScheduled: false,
-        category: category.name,
-      }),
+    totalPosts: await countPublicPosts(db, filters),
+    fetchPage: ({ pageNum, limit, offset }) => listPublicPostCardsPaginated(db, pageNum, limit, { ...filters, offset }),
     rootPath,
     metadata: { likes: true, views: true, comments: false },
     title: category.name,

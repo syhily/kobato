@@ -75,10 +75,10 @@ export async function loader({
   return listingLoader<HomeExtra>(db, {
     rawNum: params.num,
     totalPosts,
-    fetchPage: (pageNum, pageSize) =>
-      listPublicPostCardsPaginated(db, pageNum, pageSize, {
+    fetchPage: ({ pageNum, limit, offset }) =>
+      listPublicPostCardsPaginated(db, pageNum, limit, {
         ...filters,
-        offset: (pageNum - 1) * homePageSize,
+        offset,
       }),
     rootPath: '/',
     pageSize: homePageSize,

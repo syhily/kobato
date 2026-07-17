@@ -48,6 +48,12 @@ const DEFAULT_LISTING_METADATA: Required<ListingMetadataFlags> = {
 // (the root `meta()` already provides the site default).
 export type ListingSeoMode = 'always' | 'skip-on-first-page'
 
+interface ListingPageRequest {
+  pageNum: number
+  limit: number
+  offset: number
+}
+
 function calculateTotalPages(postCount: number, pageSize: number, mergeTailThreshold: number): number {
   const naturalTotalPage = Math.ceil(postCount / pageSize)
   if (mergeTailThreshold <= 0 || naturalTotalPage < 2) {
@@ -94,7 +100,7 @@ export async function listingLoader<TExtra = undefined>(
   }: {
     rawNum: string | undefined
     totalPosts: number
-    fetchPage: (pageNum: number, pageSize: number) => Promise<ListingPostCard[]>
+    fetchPage: (request: ListingPageRequest) => Promise<ListingPostCard[]>
     rootPath: string
     title?: string
     description?: string
@@ -146,11 +152,13 @@ export async function listingLoader<TExtra = undefined>(
   const currentPosts =
     totalPage === 0 || pageNum > totalPage
       ? []
-      : await fetchPage(
+      : await fetchPage({
           pageNum,
           // On the last page, expand the limit so tail-merged posts aren't truncated.
-          pageNum === totalPage ? totalPosts - (pageNum - 1) * effectivePageSize : effectivePageSize,
-        )
+          limit: pageNum === totalPage ? totalPosts - (pageNum - 1) * effectivePageSize : effectivePageSize,
+          // The offset always follows the stable configured page size, even when the final limit expands.
+          offset: (pageNum - 1) * effectivePageSize,
+        })
 
   const resolvedPosts = await getClientPostsWithMetadata(db, currentPosts, {
     ...DEFAULT_LISTING_METADATA,
