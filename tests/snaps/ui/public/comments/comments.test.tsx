@@ -3,7 +3,6 @@ import { describe, expect, it } from 'vitest'
 import type { CommentItemWire as CommentItemType } from '@/shared/types/comments'
 
 import { renderInRouter } from '#/_helpers/render'
-import { Comment } from '@/ui/public/comments/Comment'
 import { CommentItem } from '@/ui/public/comments/comment-item/CommentItem'
 
 function makeComment(overrides: Partial<CommentItemType> = {}): CommentItemType {
@@ -100,16 +99,6 @@ describe('snapshot: comment HTML', () => {
       <CommentItem comment={makeComment({ isPending: true })} depth={1} mode="public" pending />,
     )
     expect(html).toContain('您的评论正在等待审核中...')
-  })
-
-  it('rendered list of two siblings', () => {
-    const html = renderInRouter(
-      <Comment comments={[makeComment({ id: '1' }), makeComment({ id: '2', name: 'Bob' })]} mode="public" />,
-    )
-    expect(html).toContain('id="user-comment-1"')
-    expect(html).toContain('id="user-comment-2"')
-    expect(html).toContain('Alice')
-    expect(html).toContain('Bob')
   })
 
   it('does not emit any inline onerror= attributes on rendered comment HTML', () => {

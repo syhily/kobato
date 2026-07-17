@@ -161,7 +161,7 @@ function reducer(state: CommentTreeState, action: CommentTreeAction): CommentTre
   }
 }
 
-export function createCommentTreeState(items: CommentItemType[], rootsCount: number): CommentTreeState {
+function createCommentTreeState(items: CommentItemType[], rootsCount: number): CommentTreeState {
   return {
     items,
     rootsLoaded: Math.min(items.length, rootsCount),
@@ -169,8 +169,6 @@ export function createCommentTreeState(items: CommentItemType[], rootsCount: num
     replyToId: 0,
   }
 }
-
-export const commentTreeReducer = reducer
 
 export function Comments({ commentKey, comments, items, user }: CommentsProps) {
   if (comments == null) {
@@ -443,5 +441,3 @@ Comments.Header = CommentsHeader
 Comments.ReplyFormSlot = CommentsReplyFormSlot
 Comments.List = CommentsList
 Comments.LoadMore = CommentsLoadMore
-
-export type { CommentTreeAction, CommentTreeState }

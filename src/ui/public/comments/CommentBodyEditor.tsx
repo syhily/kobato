@@ -2,7 +2,7 @@ import type { JSONContent } from '@tiptap/core'
 
 import Link from '@tiptap/extension-link'
 import Placeholder from '@tiptap/extension-placeholder'
-import { type Editor, EditorContent, useEditor } from '@tiptap/react'
+import { EditorContent, useEditor } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import { useEffect, useMemo, useRef } from 'react'
 
@@ -139,5 +139,3 @@ export function CommentBodyEditor({
     </div>
   )
 }
-
-export type { Editor }

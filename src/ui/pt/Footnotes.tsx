@@ -1,5 +1,4 @@
 import {
-  cloneElement,
   createContext,
   isValidElement,
   use,
@@ -8,7 +7,6 @@ import {
   useMemo,
   useState,
   type ComponentProps,
-  type ReactElement,
   type ReactNode,
 } from 'react'
 
@@ -22,11 +20,8 @@ type FootnoteRegister = (href: string, preview: ReactNode) => () => void
 
 interface FootnoteElementProps {
   children?: ReactNode
-  className?: string
   href?: string
   id?: string
-  dataFootnoteBackref?: boolean
-  'data-footnote-backref'?: boolean
 }
 
 const FootnotePreviewContext = createContext<FootnoteContextValue | null>(null)
@@ -94,25 +89,6 @@ export function FootnotePreviewRegistrar({ anchorId, preview }: { anchorId: stri
   return null
 }
 
-export function FootnoteDefinition({ children, id, ...props }: ComponentProps<'li'>) {
-  const register = use(FootnoteRegisterContext)
-  const isFootnote = typeof id === 'string' && id.startsWith(FOOTNOTE_ID_PREFIX)
-  const preview = useMemo(() => stripBackrefs(children), [children])
-
-  useEffect(() => {
-    if (!isFootnote || register === null || typeof id !== 'string') {
-      return
-    }
-    return register(`#${id}`, preview)
-  }, [id, isFootnote, register, preview])
-
-  return (
-    <li {...props} id={id}>
-      {children}
-    </li>
-  )
-}
-
 function isReactNodeArray(value: unknown): value is ReactNode[] {
   return Array.isArray(value)
 }
@@ -146,33 +122,4 @@ function footnoteReferenceHref(node: ReactNode): string | undefined {
     }
   }
   return footnoteReferenceHref(children)
-}
-
-function stripBackrefs(node: ReactNode): ReactNode {
-  if (node === null || node === undefined || typeof node === 'boolean') {
-    return null
-  }
-  if (typeof node === 'string' || typeof node === 'number' || typeof node === 'bigint') {
-    return node
-  }
-  if (Array.isArray(node)) {
-    return node.map(stripBackrefs).filter((child) => child !== null)
-  }
-  if (!isValidElement<FootnoteElementProps>(node)) {
-    return node
-  }
-  if (isBackref(node.props)) {
-    return null
-  }
-
-  const children = stripBackrefs(node.props.children)
-  return cloneElement(node as ReactElement<FootnoteElementProps>, undefined, children)
-}
-
-function isBackref(props: FootnoteElementProps): boolean {
-  return (
-    props.dataFootnoteBackref === true ||
-    props['data-footnote-backref'] === true ||
-    props.className?.split(/\s+/).includes('data-footnote-backref') === true
-  )
 }

@@ -9,8 +9,6 @@ import { Footer } from '@/ui/public/chrome/Footer'
 import { DetailBodyChrome, type DraftMarker } from '@/ui/public/post/DetailBodyChrome'
 import { Image } from '@/ui/public/widgets/Image'
 
-export type { DraftMarker }
-
 export interface PageDetailBodyProps {
   page: DetailPageShell
   headings: MarkdownHeading[]

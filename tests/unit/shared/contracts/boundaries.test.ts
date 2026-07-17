@@ -789,6 +789,26 @@ describe('contract: module and bundle boundaries', () => {
     expect(search).not.toMatch(/document\.addEventListener\('click'/)
   })
 
+  it('keeps the public UI free of dead exports and one-use comment pass-throughs', () => {
+    const musicPlayer = readFileSync('src/ui/pt/blocks/MusicPlayer.tsx', 'utf8')
+    expect(musicPlayer).not.toMatch(/MusicPlayerInitHost|scheduleMusicPlayerInit/)
+
+    const footnotes = readFileSync('src/ui/pt/Footnotes.tsx', 'utf8')
+    expect(footnotes).not.toMatch(/FootnoteDefinition|stripBackrefs|isBackref/)
+
+    const comments = readFileSync('src/ui/public/comments/Comments.tsx', 'utf8')
+    expect(comments).not.toMatch(/export\s+function\s+createCommentTreeState/)
+    expect(comments).not.toMatch(/export\s+const\s+commentTreeReducer/)
+    expect(comments).not.toMatch(/export\s+type\s+\{\s*CommentTreeAction,\s*CommentTreeState\s*\}/)
+    expect(existsSync('src/ui/public/comments/Comment.tsx')).toBe(false)
+
+    const pageDetailBody = readFileSync('src/ui/public/post/PageDetailBody.tsx', 'utf8')
+    expect(pageDetailBody).not.toMatch(/export\s+type\s+\{\s*DraftMarker\s*\}/)
+
+    const commentBodyEditor = readFileSync('src/ui/public/comments/CommentBodyEditor.tsx', 'utf8')
+    expect(commentBodyEditor).not.toMatch(/export\s+type\s+\{\s*Editor\s*\}/)
+  })
+
   it('routes icon-button content through @/ui/components/icon-button-content', () => {
     expect(existsSync('src/ui/components/icon-button-content.tsx')).toBe(true)
     const component = readFileSync('src/ui/components/icon-button-content.tsx', 'utf8')
