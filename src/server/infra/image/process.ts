@@ -1,12 +1,8 @@
-import type { ProcessImageInput, ProcessImageResize, ProcessedImage } from '@/server/infra/image/process-worker'
+import type { ProcessImageInput, ProcessedImage } from '@/server/infra/image/process-worker'
 
 import { DOMAIN_ERROR_CODES, DomainError, type DomainErrorCode } from '@/server/infra/http/errors'
 import { getProcessPool } from '@/server/infra/image/process-pool'
 import { processImageInWorker, WorkerDomainError } from '@/server/infra/image/process-worker'
-
-// Re-export the public types so existing callers that import from this
-// module continue to compile without touching their import sites.
-export type { ProcessImageInput, ProcessImageResize, ProcessedImage }
 
 /**
  * Process an uploaded image buffer: decode, optional resize, re-encode to

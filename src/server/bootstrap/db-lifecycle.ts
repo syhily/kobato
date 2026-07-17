@@ -39,8 +39,7 @@ const hmr = isHmrData(import.meta.hot?.data) ? import.meta.hot.data : undefined
 let db!: ReturnType<typeof createDbPool>['db']
 let pool!: ReturnType<typeof createDbPool>['pool']
 
-function initPool() {
-  const instance = hmr?.db && hmr?.pool ? { db: hmr.db, pool: hmr.pool } : createDbPool()
+function wirePool(instance: ReturnType<typeof createDbPool>): ReturnType<typeof createDbPool> {
   db = instance.db
   pool = instance.pool
   const hot = import.meta.hot
@@ -54,6 +53,11 @@ function initPool() {
   initPageViewBatcher(db)
   initAuditLogBatcher(db, pool)
   startLikeTokenSweep(db)
+  return instance
+}
+
+function initPool() {
+  wirePool(hmr?.db && hmr?.pool ? { db: hmr.db, pool: hmr.pool } : createDbPool())
 }
 
 initPool()
@@ -154,25 +158,11 @@ export async function recreatePool(): Promise<{ db: typeof db; pool: typeof pool
     )
   }
 
-  const instance = createDbPool()
-  db = instance.db
-  pool = instance.pool
-  const hot = import.meta.hot
-  if (hot && hmr) {
-    hmr.db = db
-    hmr.pool = pool
-  }
-  setRestartDb(db)
-  setRestartRefreshSettings(refreshBlogSettings)
   resetAccessLogBatcher()
   resetPageViewBatcher()
   resetAuditLogBatcher()
-  initAccessLogBatcher(pool)
-  initPageViewBatcher(db)
-  initAuditLogBatcher(db, pool)
   resetLikeTokenSweep()
-  startLikeTokenSweep(db)
-  return instance
+  return wirePool(createDbPool())
 }
 
 export function getDb(): typeof db {

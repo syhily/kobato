@@ -21,6 +21,8 @@ const migrateDatabase = vi.fn()
 const scheduleNextArchive = vi.fn()
 const refreshBlogSettings = vi.fn()
 const restartServer = vi.fn()
+const setRestartDb = vi.fn()
+const setRestartRefreshSettings = vi.fn()
 const closePool = vi.fn()
 const registerShutdownHook = vi.fn((fn: () => unknown) => fn())
 const registerRestoreComplete = vi.fn((cb: (success: boolean, err?: Error) => Promise<void>) => {
@@ -44,8 +46,8 @@ vi.mock('@/server/infra/lifecycle', () => ({
   registerShutdownHook: (fn: () => unknown) => registerShutdownHook(fn),
   registerRestoreComplete: (cb: (success: boolean, err?: Error) => Promise<void>) => registerRestoreComplete(cb),
   restartServer: (...args: unknown[]) => restartServer(...args),
-  setRestartDb: vi.fn(),
-  setRestartRefreshSettings: vi.fn(),
+  setRestartDb: (...args: unknown[]) => setRestartDb(...args),
+  setRestartRefreshSettings: (...args: unknown[]) => setRestartRefreshSettings(...args),
 }))
 
 vi.mock('@/server/infra/logger', () => ({
@@ -119,6 +121,20 @@ describe('db-lifecycle', () => {
     expect(initAuditLogBatcher).toHaveBeenCalledWith(dbMock, poolMock)
     expect(resetLikeTokenSweep).toHaveBeenCalled()
     expect(startLikeTokenSweep).toHaveBeenCalledWith(dbMock)
+
+    const wiringOrder = [
+      resetAccessLogBatcher,
+      resetPageViewBatcher,
+      resetAuditLogBatcher,
+      resetLikeTokenSweep,
+      setRestartDb,
+      setRestartRefreshSettings,
+      initAccessLogBatcher,
+      initPageViewBatcher,
+      initAuditLogBatcher,
+      startLikeTokenSweep,
+    ].map((mock) => mock.mock.invocationCallOrder[0])
+    expect(wiringOrder).toEqual([...wiringOrder].sort((a, b) => a - b))
   })
 
   it('warns but continues when flush helpers fail during recreatePool', async () => {

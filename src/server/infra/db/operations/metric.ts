@@ -6,7 +6,6 @@ import type { EntityTarget } from '@/server/infra/db/target'
 import type { MetricRow, NewMetric } from '@/server/infra/db/types'
 
 import { metric } from '@/server/infra/db/schema/metric'
-import { targetKey } from '@/server/infra/db/target'
 
 // Filter clause used everywhere we look up a metric by entity target.
 // Drizzle's `and(eq, eq)` plus the partial-unique index
@@ -127,5 +126,3 @@ export async function decrementMetricVotes(db: NodePgDatabase, target: EntityTar
     .set({ voteUp: sql`GREATEST(${metric.voteUp} - 1, 0)` })
     .where(whereTarget(target))
 }
-
-export { targetKey }

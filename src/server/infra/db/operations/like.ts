@@ -6,7 +6,6 @@ import type { EntityTarget, EntityType } from '@/server/infra/db/target'
 
 import { comment } from '@/server/infra/db/schema/comment'
 import { like, metric } from '@/server/infra/db/schema/metric'
-import { targetKey } from '@/server/infra/db/target'
 
 // Filter clause used everywhere we look up like rows by entity target.
 function whereLikeTarget(target: EntityTarget) {
@@ -152,5 +151,3 @@ export async function existsActiveLikeToken(db: NodePgDatabase, target: EntityTa
     .limit(1)
   return rows.length > 0
 }
-
-export { targetKey }

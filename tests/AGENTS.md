@@ -95,7 +95,6 @@ ceremony:
   - `#/_helpers/redis` — Redis helpers (integration only)
   - `#/_helpers/rpc-call` — oRPC test caller (integration only)
   - `#/_helpers/session` — session fixtures (integration only)
-  - `#/_helpers/request` — HTTP request builders (integration only)
   - `#/_helpers/fetch` — fetch mocks (integration only)
 - `#/*` is mapped to `./tests/*` in `tsconfig.json` and resolved by Vitest.
 - `@/*` continues to map to `src/*`.

@@ -851,6 +851,23 @@ describe('contract: module and bundle boundaries', () => {
     )
   })
 
+  it('keeps pool wiring and low-level test helpers at their canonical owners', () => {
+    const lifecycle = readFileSync('src/server/bootstrap/db-lifecycle.ts', 'utf8')
+    expect(lifecycle).toMatch(/function wirePool\(/)
+
+    expect(existsSync('tests/_helpers/request.ts')).toBe(false)
+    const dbHelper = readFileSync('tests/_helpers/db.ts', 'utf8')
+    expect(dbHelper).toMatch(/export\s+function\s+seedMetric/)
+    expect(dbHelper).not.toMatch(/afterEach|\bvi\.|spyQueryModule|resetSeedIds|seedComment|seedUser|seedLike/)
+
+    const likeOperations = readFileSync('src/server/infra/db/operations/like.ts', 'utf8')
+    const metricOperations = readFileSync('src/server/infra/db/operations/metric.ts', 'utf8')
+    const imageProcess = readFileSync('src/server/infra/image/process.ts', 'utf8')
+    expect(likeOperations).not.toMatch(/export\s+\{\s*targetKey\s*\}/)
+    expect(metricOperations).not.toMatch(/export\s+\{\s*targetKey\s*\}/)
+    expect(imageProcess).not.toMatch(/export\s+type\s+\{/)
+  })
+
   it('routes icon-button content through @/ui/components/icon-button-content', () => {
     expect(existsSync('src/ui/components/icon-button-content.tsx')).toBe(true)
     const component = readFileSync('src/ui/components/icon-button-content.tsx', 'utf8')
