@@ -31,17 +31,89 @@ function ogCacheKey(slug: string, title: string, summary: string, cover: string)
   return `${getCacheSettings().cache.og.prefix}${slug}-${hash}`
 }
 
-const OG_HEADERS: HeadersInit = {
+const OG_HEADERS = {
   'Cache-Control': 'public, max-age=604800, immutable',
+}
+
+function respondPng(c: Context<Env>, buffer: Uint8Array, headers: Readonly<Record<string, string>>) {
+  c.header('Content-Type', 'image/png')
+  Object.entries(headers).forEach(([key, value]) => c.header(key, value))
+  return c.body(new Uint8Array(buffer))
 }
 
 function ogFallback(c: Context<Env>) {
   return c.redirect(joinUrl(requireBlogSettingsSection('siteIdentity').website, '/images/open-graph.png'))
 }
 
+interface OgEntity {
+  title: string
+  summary: string
+  cover: string
+}
+
+interface OgAdapter {
+  cacheKeyPrefix: string
+  useSiteSummaryFallback: boolean
+  resolve: (c: Context<Env>, slug: string) => Promise<OgEntity | null>
+}
+
+function createOgHandler(adapters: readonly OgAdapter[]) {
+  return async (c: Context<Env>) => {
+    const slug = stripPng(c.req.param('filename'))
+    if (!slug) {
+      return ogFallback(c)
+    }
+
+    const ttl = getCacheSettings().cache.og.ttlSeconds
+    const entities = await Promise.all(adapters.map((adapter) => adapter.resolve(c, slug)))
+    const selectedIndex = entities.findIndex((entity) => entity !== null)
+    const entity = entities[selectedIndex]
+    const adapter = adapters[selectedIndex]
+    if (!entity || !adapter) {
+      return ogFallback(c)
+    }
+
+    const summary =
+      entity.summary || (adapter.useSiteSummaryFallback ? requireBlogSettingsSection('siteIdentity').description : '')
+    const buffer = await loadBuffer(
+      ogCacheKey(`${adapter.cacheKeyPrefix}${slug}`, entity.title, summary, entity.cover),
+      () => drawOpenGraph({ title: entity.title, summary, cover: entity.cover }),
+      ttl,
+    )
+    return respondPng(c, buffer, OG_HEADERS)
+  }
+}
+
+const postOgAdapter: OgAdapter = {
+  cacheKeyPrefix: '',
+  useSiteSummaryFallback: false,
+  async resolve(c, slug) {
+    const post = await findPublicPostMetaBySlug(c.var.db, slug)
+    return post && isLive(post) ? { title: post.title, summary: post.summary, cover: post.cover } : null
+  },
+}
+
+const pageOgAdapter: OgAdapter = {
+  cacheKeyPrefix: '',
+  useSiteSummaryFallback: true,
+  async resolve(c, slug) {
+    const page = await findPublicPageMetaBySlug(c.var.db, slug)
+    return page && isLive(page) ? { title: page.title, summary: page.summary, cover: page.cover } : null
+  },
+}
+
+const categoryOgAdapter: OgAdapter = {
+  cacheKeyPrefix: 'cat-',
+  useSiteSummaryFallback: true,
+  async resolve(c, slug) {
+    const category = await findCategoryBySlug(c.var.db, slug)
+    return category ? { title: category.name, summary: category.description, cover: category.cover } : null
+  },
+}
+
 // ─── Avatar ───────────────────────────────────────────────────────
 
-const AVATAR_HEADERS: HeadersInit = {
+const AVATAR_HEADERS = {
   'Cache-Control': 'public, max-age=604800',
 }
 
@@ -57,75 +129,14 @@ const AVATAR_HEADERS: HeadersInit = {
 // regression — every request was hitting `param('hash')` →
 // `undefined` → fallback redirect.
 
-function stripPng(filename: string): string {
-  return filename.replace(/\.png$/, '')
+function stripPng(filename: string | undefined): string {
+  return filename?.replace(/\.png$/, '') ?? ''
 }
 
 export const imagesRouter = new Hono<Env>()
   .use(rateLimitByIp('images', 'resourceIp', { errorBody: { error: 'Too many requests' } }))
-  .get('/images/og/:filename{[^/]+\\.png}', async (c) => {
-    const slug = stripPng(c.req.param('filename'))
-    if (!slug) {
-      return ogFallback(c)
-    }
-
-    const ttl = getCacheSettings().cache.og.ttlSeconds
-    const [postMeta, pageMeta] = await Promise.all([
-      findPublicPostMetaBySlug(c.var.db, slug),
-      findPublicPageMetaBySlug(c.var.db, slug),
-    ])
-    const post = postMeta && isLive(postMeta) ? postMeta : null
-    const page = pageMeta && isLive(pageMeta) ? pageMeta : null
-    if (!post && !page) {
-      return ogFallback(c)
-    }
-
-    if (post) {
-      const buffer = await loadBuffer(
-        ogCacheKey(slug, post.title, post.summary, post.cover),
-        () => drawOpenGraph({ title: post.title, summary: post.summary, cover: post.cover }),
-        ttl,
-      )
-      c.header('Content-Type', 'image/png')
-      Object.entries(OG_HEADERS).forEach(([k, v]) => c.header(k, v))
-      return c.body(new Uint8Array(buffer))
-    }
-
-    if (!page) {
-      return ogFallback(c)
-    }
-    const summary = page.summary || requireBlogSettingsSection('siteIdentity').description
-    const buffer = await loadBuffer(
-      ogCacheKey(slug, page.title, summary, page.cover),
-      () => drawOpenGraph({ title: page.title, summary, cover: page.cover }),
-      ttl,
-    )
-    c.header('Content-Type', 'image/png')
-    Object.entries(OG_HEADERS).forEach(([k, v]) => c.header(k, v))
-    return c.body(new Uint8Array(buffer))
-  })
-  .get('/images/og/cats/:filename{[^/]+\\.png}', async (c) => {
-    const slug = stripPng(c.req.param('filename'))
-    if (!slug) {
-      return ogFallback(c)
-    }
-
-    const ttl = getCacheSettings().cache.og.ttlSeconds
-    const category = await findCategoryBySlug(c.var.db, slug)
-    if (!category) {
-      return ogFallback(c)
-    }
-
-    const summary = category.description || requireBlogSettingsSection('siteIdentity').description
-    const buffer = await loadBuffer(
-      ogCacheKey(`cat-${slug}`, category.name, summary, category.cover),
-      () => drawOpenGraph({ title: category.name, summary, cover: category.cover }),
-      ttl,
-    )
-    c.header('Content-Type', 'image/png')
-    Object.entries(OG_HEADERS).forEach(([k, v]) => c.header(k, v))
-    return c.body(new Uint8Array(buffer))
-  })
+  .get('/images/og/:filename{[^/]+\\.png}', createOgHandler([postOgAdapter, pageOgAdapter]))
+  .get('/images/og/cats/:filename{[^/]+\\.png}', createOgHandler([categoryOgAdapter]))
   .get('/images/calendar/:year/:filename{[^/]+\\.png}', async (c) => {
     const params = { year: c.req.param('year'), time: stripPng(c.req.param('filename')) }
     const headers = { 'Cache-Control': 'public, max-age=86400' }
@@ -159,9 +170,7 @@ export const imagesRouter = new Hono<Env>()
         return c.redirect(defaultAvatarUrl())
       }
       await cacheAvatar({ email: canonical, status: AvatarStatus.HAVE_AVATAR, buffer })
-      c.header('Content-Type', 'image/png')
-      Object.entries(AVATAR_HEADERS).forEach(([k, v]) => c.header(k, v))
-      return c.body(new Uint8Array(buffer))
+      return respondPng(c, buffer, AVATAR_HEADERS)
     }
 
     const avatar = await loadAvatar(canonical)
@@ -170,9 +179,7 @@ export const imagesRouter = new Hono<Env>()
         return c.redirect(defaultAvatarUrl())
       }
       if (avatar.buffer !== null) {
-        c.header('Content-Type', 'image/png')
-        Object.entries(AVATAR_HEADERS).forEach(([k, v]) => c.header(k, v))
-        return c.body(new Uint8Array(avatar.buffer))
+        return respondPng(c, avatar.buffer, AVATAR_HEADERS)
       }
     }
 
@@ -183,7 +190,5 @@ export const imagesRouter = new Hono<Env>()
     }
 
     await cacheAvatar({ email: canonical, status: AvatarStatus.HAVE_AVATAR, buffer })
-    c.header('Content-Type', 'image/png')
-    Object.entries(AVATAR_HEADERS).forEach(([k, v]) => c.header(k, v))
-    return c.body(new Uint8Array(buffer))
+    return respondPng(c, buffer, AVATAR_HEADERS)
   })

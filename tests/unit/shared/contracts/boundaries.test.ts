@@ -868,6 +868,14 @@ describe('contract: module and bundle boundaries', () => {
     expect(imageProcess).not.toMatch(/export\s+type\s+\{/)
   })
 
+  it('owns PNG emission and OG rendering in the images resource', () => {
+    const images = readFileSync('src/server/http/resources/images.ts', 'utf8')
+    expect(images).toMatch(/function respondPng\(/)
+    expect(images).toMatch(/function createOgHandler\(/)
+    expect(images.match(/c\.header\('Content-Type', 'image\/png'\)/g)).toHaveLength(1)
+    expect(images.match(/drawOpenGraph\(/g)).toHaveLength(1)
+  })
+
   it('routes icon-button content through @/ui/components/icon-button-content', () => {
     expect(existsSync('src/ui/components/icon-button-content.tsx')).toBe(true)
     const component = readFileSync('src/ui/components/icon-button-content.tsx', 'utf8')
