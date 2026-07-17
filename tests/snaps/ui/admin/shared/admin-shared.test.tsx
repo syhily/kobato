@@ -96,11 +96,11 @@ describe('snapshot: SearchShortcutHint', () => {
     expect(html).toContain('快捷键：Ctrl K')
   })
 
-  it('renders Command K hint on Mac platforms', () => {
+  it('renders the Ctrl K server fallback on Mac platforms', () => {
     vi.stubGlobal('navigator', { platform: 'MacIntel' })
     const html = stableHtml(renderToHtml(<SearchShortcutHint />))
-    expect(html).toContain('⌘')
+    expect(html).toContain('Ctrl')
     expect(html).toContain('K')
-    expect(html).toContain('快捷键：Command K')
+    expect(html).toContain('快捷键：Ctrl K')
   })
 })
