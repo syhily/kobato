@@ -1,5 +1,8 @@
-import type { PmBlockNode, PmNode } from '@/shared/pt/bridge/types'
+/* oxlint-disable typescript/no-unsafe-type-assertion */
+import type { BridgeReverseContext, PmBlockNode, PmNode } from '@/shared/pt/bridge/types'
 import type { Block, SolutionBlock } from '@/shared/pt/schema'
+
+import { isBlock } from '@/shared/pt/bridge/utils'
 
 export function solutionBlockToPmNode(
   block: SolutionBlock,
@@ -15,4 +18,16 @@ export function solutionBlockToPmNode(
     attrs: { _key: block._key },
     content: inner,
   }
+}
+
+export function pmSolutionToBlocks(node: PmBlockNode, out: Block[], ctx: BridgeReverseContext): void {
+  const inner: Block[] = []
+  for (const child of (node.content ?? []).filter(isBlock)) {
+    ctx.pushPmNode(inner, child)
+  }
+  out.push({
+    _type: 'solution',
+    _key: ctx.ensureKey(node.attrs),
+    children: inner as SolutionBlock['children'],
+  })
 }

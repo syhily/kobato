@@ -1,5 +1,5 @@
 /* oxlint-disable typescript/no-unsafe-type-assertion */
-import type { PmBlockNode, PmNode } from '@/shared/pt/bridge/types'
+import type { BridgeReverseContext, PmBlockNode, PmNode } from '@/shared/pt/bridge/types'
 import type {
   Block,
   FootnoteDefinitionBlock,
@@ -10,6 +10,8 @@ import type {
   Span,
   TableCell,
 } from '@/shared/pt/schema'
+
+import { isBlock } from '@/shared/pt/bridge/utils'
 
 export function footnoteDefinitionBlockToPmNode(
   block: FootnoteDefinitionBlock,
@@ -25,6 +27,21 @@ export function footnoteDefinitionBlockToPmNode(
     attrs: { _key: block._key, index: block.index },
     content: inner,
   }
+}
+
+export function pmFootnoteDefinitionToBlocks(node: PmBlockNode, out: Block[], ctx: BridgeReverseContext): void {
+  const inner: Block[] = []
+  for (const child of (node.content ?? []).filter(isBlock)) {
+    ctx.pushPmNode(inner, child)
+  }
+  const rawIndex = node.attrs?.index
+  const idx = typeof rawIndex === 'number' && Number.isFinite(rawIndex) ? Math.floor(rawIndex) : 1
+  out.push({
+    _type: 'footnoteDefinition',
+    _key: ctx.ensureKey(node.attrs),
+    index: idx >= 1 ? idx : 1,
+    children: inner as FootnoteDefinitionBlock['children'],
+  })
 }
 
 function walkMainColumnFootnoteRefs(body: PortableTextBody, visit: (targetKey: string, index: number) => void): void {
