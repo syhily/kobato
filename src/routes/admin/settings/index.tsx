@@ -3,12 +3,15 @@ import { useNavigate, useOutletContext } from 'react-router'
 
 import type { SettingsOutletContext } from '@/routes/admin/settings/layout'
 import type { SecretMasks } from '@/server/domains/settings/services/core'
+import type { SettingsSection } from '@/shared/config/sections'
+import type { Assert, Equals } from '@/shared/contracts/primitives'
 
 import { getRouteRequestContext } from '@/server/domains/auth/context'
 import { requireRole } from '@/server/domains/auth/rbac'
 import { settingsMeta } from '@/server/render/seo/settings-meta'
 import { NAV_GROUP_LABEL, SECTION_DISPLAY } from '@/shared/config/display'
 import { projectAssetsForAdmin, projectSearchForAdmin } from '@/shared/config/projection'
+import { SETTINGS_SECTIONS } from '@/shared/config/sections'
 import { AnalyticsForm } from '@/ui/admin/settings/AnalyticsForm'
 import { AssetsForm } from '@/ui/admin/settings/AssetsForm'
 import { BackupView } from '@/ui/admin/settings/BackupView'
@@ -46,10 +49,12 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   return null
 }
 
-const SECTION_CONFIGS: {
-  id: keyof typeof SECTION_DISPLAY
+interface SectionConfig {
+  id: SettingsSection
   render: (bundle: SettingsOutletContext['bundle'], tz: readonly string[], masks: SecretMasks) => React.ReactNode
-}[] = [
+}
+
+const SECTION_CONFIGS = [
   {
     id: 'general',
     render: (bundle, tz) => <GeneralForm siteIdentity={bundle.siteIdentity} timeZones={tz} />,
@@ -157,7 +162,12 @@ const SECTION_CONFIGS: {
       />
     ),
   },
-]
+] as const satisfies readonly SectionConfig[]
+
+type _sectionConfigsCoverAllSections = Assert<Equals<(typeof SECTION_CONFIGS)[number]['id'], SettingsSection>>
+type _sectionConfigsHaveNoDuplicates = Assert<
+  Equals<(typeof SECTION_CONFIGS)['length'], (typeof SETTINGS_SECTIONS)['length']>
+>
 
 const MOBILE_QUERY = '(max-width: 1023px)'
 

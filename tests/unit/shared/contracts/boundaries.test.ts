@@ -836,6 +836,21 @@ describe('contract: module and bundle boundaries', () => {
     expect(draftMarkerDefinitions).toEqual(['src/shared/types/catalog.ts'])
   })
 
+  it('derives shared settings and comment contracts from their canonical owners', () => {
+    const commentSchema = readFileSync('src/shared/pt/comment-schema.ts', 'utf8')
+    expect(commentSchema).toMatch(/textBlockSchema\.extend\(/)
+
+    const display = readFileSync('src/shared/config/display.ts', 'utf8')
+    expect(display).not.toMatch(/\bto:\s*['"]\/admin\/settings['"]/)
+    expect(display).not.toMatch(/SECTION_DISPLAY_LIST/)
+
+    const settingsRoute = readFileSync('src/routes/admin/settings/index.tsx', 'utf8')
+    expect(settingsRoute).toMatch(/Assert<\s*Equals<\(typeof SECTION_CONFIGS\)\[number\]\['id'\], SettingsSection>\s*>/)
+    expect(settingsRoute).toMatch(
+      /Assert<\s*Equals<\(typeof SECTION_CONFIGS\)\['length'\], \(typeof SETTINGS_SECTIONS\)\['length'\]>\s*>/,
+    )
+  })
+
   it('routes icon-button content through @/ui/components/icon-button-content', () => {
     expect(existsSync('src/ui/components/icon-button-content.tsx')).toBe(true)
     const component = readFileSync('src/ui/components/icon-button-content.tsx', 'utf8')

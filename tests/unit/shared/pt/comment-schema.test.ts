@@ -4,7 +4,13 @@ import { z } from 'zod'
 import type { CommentBody } from '@/shared/pt/comment-schema'
 
 import { commentBodyToMarkdown } from '@/shared/pt/comment-markdown'
-import { isCommentBodyEmpty, safeValidateCommentBody, validateCommentBody } from '@/shared/pt/comment-schema'
+import {
+  commentTextBlockSchema,
+  isCommentBodyEmpty,
+  safeValidateCommentBody,
+  validateCommentBody,
+} from '@/shared/pt/comment-schema'
+import { textBlockSchema } from '@/shared/pt/schema'
 
 // `commentBodyToMarkdown` is the rollback / plain-text snapshot
 // stored in `comment.content` after every save. The test fixtures
@@ -118,6 +124,10 @@ const validBody: CommentBody = [
 ]
 
 describe('validateCommentBody', () => {
+  it('inherits the canonical text-block field set', () => {
+    expect(Object.keys(commentTextBlockSchema.shape).sort()).toEqual(Object.keys(textBlockSchema.shape).sort())
+  })
+
   it('returns a valid comment body', () => {
     expect(validateCommentBody(validBody)).toEqual(validBody)
   })

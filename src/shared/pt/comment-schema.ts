@@ -5,8 +5,7 @@ import {
   linkMarkDefSchema,
   mathBlockSchema,
   mathInlineMarkDefSchema,
-  spanSchema,
-  TEXT_ALIGN_VALUES,
+  textBlockSchema,
 } from '@/shared/pt/schema'
 
 // Strict PortableText subset accepted in comment bodies. Comments are
@@ -35,19 +34,12 @@ const COMMENT_LIST_MAX_LEVEL = 4
 
 const COMMENT_BLOCK_STYLES = ['normal', 'blockquote'] as const
 
-const COMMENT_LIST_ITEMS = ['bullet', 'number'] as const
-
 // markDef union for comment text blocks.
 const commentMarkDefSchema = z.discriminatedUnion('_type', [linkMarkDefSchema, mathInlineMarkDefSchema])
 
-export const commentTextBlockSchema = z.object({
-  _type: z.literal('block'),
-  _key: z.string().min(1),
+export const commentTextBlockSchema = textBlockSchema.extend({
   style: z.enum(COMMENT_BLOCK_STYLES).optional(),
-  listItem: z.enum(COMMENT_LIST_ITEMS).optional(),
   level: z.number().int().min(1).max(COMMENT_LIST_MAX_LEVEL).optional(),
-  align: z.enum(TEXT_ALIGN_VALUES).optional(),
-  children: z.array(spanSchema),
   markDefs: z.array(commentMarkDefSchema).optional(),
 })
 
