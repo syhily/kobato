@@ -41,6 +41,7 @@ describe('fontsRouter', () => {
     }))
     vi.doMock('@/server/render/og/assets', () => ({
       resetFontCache: vi.fn(),
+      resetCanvasFont: vi.fn(),
     }))
 
     const fsMocks = {
@@ -64,6 +65,83 @@ describe('fontsRouter', () => {
     expect(res.status).toBe(200)
     await expect(res.json()).resolves.toEqual({ slot: 'og', size: 8 })
     expect(fsMocks.writeFile).toHaveBeenCalledWith('/tmp/fonts/og.ttf', Buffer.from('fontdata'))
+  })
+
+  it('invalidates the canvas font slot on upload — the next ensureCanvasFont re-reads', async () => {
+    // Use the REAL og/assets module here: the point of this test is the
+    // upload → invalidation → re-read chain, so only its leaf
+    // dependencies (settings, fs, the native font registry) are mocked.
+    const families = { og: 'OPPO Sans', calendar: '' }
+    const fsMocks = {
+      mkdir: vi.fn().mockResolvedValue(undefined),
+      writeFile: vi.fn().mockResolvedValue(undefined),
+      access: vi.fn().mockResolvedValue(undefined),
+      readFile: vi.fn().mockResolvedValue(Buffer.from('ttf-v1')),
+    }
+    const registered = new Set<string>()
+    // `vi.doMock` registrations are file-scoped: undo the partial assets
+    // mock from the first test so the real module loads below.
+    vi.doUnmock('@/server/render/og/assets')
+    vi.doMock('@/server/domains/audit/services/record', () => ({
+      recordAuditEvent: vi.fn(),
+    }))
+    vi.doMock('@/server/infra/logger', () => ({
+      getLogger: vi.fn(() => ({ info: vi.fn(), warn: vi.fn() })),
+    }))
+    vi.doMock('@/server/infra/paths', () => ({
+      FONT_DIR: '/tmp/fonts',
+    }))
+    vi.doMock('node:fs/promises', () => fsMocks)
+    vi.doMock('@napi-rs/canvas', () => ({
+      GlobalFonts: {
+        has: (family: string) => registered.has(family),
+        register: (_buffer: Buffer, family: string) => void registered.add(family),
+      },
+    }))
+    vi.doMock('@/shared/config/getters', () => ({
+      requireBlogSettingsSection: vi.fn((section: string) => {
+        if (section === 'fonts') {
+          return {
+            og: { family: families.og },
+            calendar: { family: families.calendar },
+          }
+        }
+        throw new Error(`unexpected settings section: ${section}`)
+      }),
+    }))
+    vi.doMock('@/server/domains/assets/services/routes', () => ({
+      resolveSiteAsset: vi.fn(async () => null),
+    }))
+
+    const { fontsRouter } = await import('@/server/http/resources/fonts')
+    const { ensureCanvasFont } = await import('@/server/render/og/assets')
+    const app = createTestApp()
+    app.route('/', fontsRouter)
+
+    // Warm the slot: the first render registers the family.
+    const first = await ensureCanvasFont('og')
+    expect(first?.family).toBe('OPPO Sans')
+    expect(fsMocks.readFile).toHaveBeenCalledTimes(1)
+
+    // Sanity: without an upload, the fast path serves the cached slot.
+    await ensureCanvasFont('og')
+    expect(fsMocks.readFile).toHaveBeenCalledTimes(1)
+
+    const form = new FormData()
+    form.append('slot', 'og')
+    form.append('file', new File(['ttf-v2'], 'font.ttf', { type: 'font/ttf' }))
+    const res = await app.request('/api/admin/fonts/upload', {
+      method: 'POST',
+      body: form,
+    })
+    expect(res.status).toBe(200)
+
+    // The very next render re-reads the file — no process restart needed.
+    fsMocks.readFile.mockResolvedValue(Buffer.from('ttf-v2'))
+    const second = await ensureCanvasFont('og')
+    expect(fsMocks.readFile).toHaveBeenCalledTimes(2)
+    expect(second?.family).toBe('OPPO Sans')
+    expect(second?.buffer).toEqual(Buffer.from('ttf-v2'))
   })
 
   it('rejects an unknown slot', async () => {

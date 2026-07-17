@@ -10,7 +10,7 @@ import { csrfGuard } from '@/server/http/middlewares/csrf'
 import { requireRoleMw } from '@/server/http/middlewares/hono-rbac'
 import { getLogger } from '@/server/infra/logger'
 import { FONT_DIR } from '@/server/infra/paths'
-import { resetFontCache } from '@/server/render/og/assets'
+import { resetCanvasFont, resetFontCache } from '@/server/render/og/assets'
 
 const log = getLogger('fonts.http')
 
@@ -66,6 +66,9 @@ export const fontsRouter = new Hono<Env>().post(
     const dest = path.join(FONT_DIR, `${slot}.${ext}`)
     await writeFile(dest, buffer)
     resetFontCache()
+    // Drop the registered slot state too — otherwise the single-flight
+    // cache keeps serving the OLD font until a process restart.
+    resetCanvasFont(slot)
 
     recordAuditEvent({
       action: 'font_uploaded',

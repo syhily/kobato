@@ -29,8 +29,9 @@ export async function logoDark(): Promise<Buffer> {
 // to find whichever file was uploaded.
 //
 // A single process-level Map caches the Buffer so repeated renders
-// don't re-read disk. Uploading a new font clears the cache so the
-// new file is picked up without a process restart.
+// don't re-read disk. Uploading a new font clears the buffer cache
+// (`resetFontCache`) and the registered slot state (`resetCanvasFont`)
+// so the new file is picked up without a process restart.
 //
 // Failure mode is **null, not throw**. An admin who hasn't uploaded
 // the file, or a missing file, must NOT 500 the OG / calendar route.
@@ -144,6 +145,11 @@ async function loadFontSlot(slot: 'og' | 'calendar'): Promise<FontSlot | null> {
 // family. Gating the assignment on `!GlobalFonts.has(...)` would leave
 // the slot null forever — every render re-reading the TTF AND falling
 // back to the system font despite the custom font being usable.
+//
+// Invalidation has two seams, both funneling through `resetCanvasFont`:
+// the font-upload route calls it after replacing the file, and the fast
+// path below re-checks the configured family on every call so a settings
+// edit takes effect on the very next render. Neither needs a restart.
 
 const canvasFontSlots: Record<'og' | 'calendar', FontSlot | null> = { og: null, calendar: null }
 const canvasFontFlights: Record<'og' | 'calendar', Promise<FontSlot | null> | null> = {
@@ -153,9 +159,19 @@ const canvasFontFlights: Record<'og' | 'calendar', Promise<FontSlot | null> | nu
 
 export function ensureCanvasFont(slot: 'og' | 'calendar'): Promise<FontSlot | null> {
   const cached = canvasFontSlots[slot]
-  // Fast path: font already registered. No promise indirection needed.
-  if (cached !== null && GlobalFonts.has(cached.family)) {
-    return Promise.resolve(cached)
+  if (cached !== null) {
+    // Settings-family recheck. `requireBlogSettingsSection` is a
+    // synchronous in-memory read (the settings snapshot lives in process
+    // memory), so this costs nothing per render. If the admin edited the
+    // family — including clearing it to '' — the cached slot is stale:
+    // drop it and fall through to a fresh load (an empty family lands on
+    // the null / system-fallback path).
+    if (requireBlogSettingsSection('fonts')[slot].family !== cached.family) {
+      resetCanvasFont(slot)
+    } else if (GlobalFonts.has(cached.family)) {
+      // Fast path: font already registered. No promise indirection needed.
+      return Promise.resolve(cached)
+    }
   }
   let flight = canvasFontFlights[slot]
   if (flight === null) {
@@ -187,8 +203,15 @@ export function ensureCanvasFont(slot: 'og' | 'calendar'): Promise<FontSlot | nu
   return flight
 }
 
-/** Clear single-flight font state so tests can exercise the registration paths. */
-export function resetCanvasFontForTests(slot?: 'og' | 'calendar'): void {
+/**
+ * The single invalidation seam for canvas fonts: clears the cached slot
+ * and any in-flight load for one slot (or all slots when called without
+ * an argument). The font-upload route calls this after replacing a file,
+ * and `ensureCanvasFont`'s fast path calls it on a settings-family
+ * mismatch — any future font mutation (e.g. a delete route) must call
+ * it too. Tests use it to exercise the registration paths.
+ */
+export function resetCanvasFont(slot?: 'og' | 'calendar'): void {
   if (slot === undefined) {
     canvasFontSlots.og = null
     canvasFontSlots.calendar = null
