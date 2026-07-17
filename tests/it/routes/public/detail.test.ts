@@ -94,15 +94,6 @@ vi.mock('@/ui/pt/render', () => ({
 }))
 
 vi.mock('@/server/http/loaders/comments', () => ({
-  loadDetailPageData: vi.fn(async () => ({
-    admin: false,
-    likes: { count: 0, liked: false },
-    commentData: { totalCount: 0, totalPages: 0, currentPage: 1 },
-    commentItems: [],
-    currentUser: null,
-    recentComments: [],
-    pendingComments: [],
-  })),
   // The detail loader now reads `loadDetailPageStreaming`; comments ride
   // along as a Promise so the loader can stream them through `<Await>`.
   loadDetailPageStreaming: vi.fn(async () => ({

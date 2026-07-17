@@ -45,29 +45,7 @@ export function isWordPressDecoyPath(pathname: string): boolean {
   return false
 }
 
-export function notWordPressSite(): never {
-  throw new Response('Not WordPress', { status: 404, statusText: 'Not WordPress' })
-}
-
 export const NOT_WORDPRESS_STATUS_TEXT = 'Not WordPress'
-
-// Loader-side guard that the two routes capable of matching a probe
-// path (`page.detail` for `:slug`, `not-found` for the splat) call at
-// the top of their loader. Throwing here — instead of from a root
-// middleware — means React Router treats the response like any other
-// loader error and walks up to the *closest* `ErrorBoundary`, which is
-// `routes/public/layout.tsx`'s synchronous `<PublicChrome>` shell. That
-// shell renders the same left-side menu / header / footer the regular
-// 404 view gets, instead of the chrome-less fallback that root's
-// boundary would produce when the throw originates above every
-// loader (cf. React Router docs §"next() and Error Handling": a
-// pre-`next()` middleware throw forces the boundary to the highest
-// loaded route, which is `root` here and only owns the lazy chrome).
-export function assertNotWordPressDecoy(request: Request): void {
-  if (isWordPressDecoyPath(new URL(request.url).pathname)) {
-    notWordPressSite()
-  }
-}
 
 /**
  * WordPress probe detector mounted as Hono middleware.

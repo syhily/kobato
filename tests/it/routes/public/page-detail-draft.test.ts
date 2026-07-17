@@ -89,15 +89,6 @@ vi.mock('@/server/domains/content/lifecycle', () => ({
 }))
 
 vi.mock('@/server/http/loaders/comments', () => ({
-  loadDetailPageData: vi.fn(async () => ({
-    admin: false,
-    likes: { count: 0, liked: false },
-    commentData: { totalCount: 0, totalPages: 0, currentPage: 1 },
-    commentItems: [],
-    currentUser: null,
-    recentComments: [],
-    pendingComments: [],
-  })),
   loadDetailPageStreaming: vi.fn(async () => ({
     critical: {
       admin: false,

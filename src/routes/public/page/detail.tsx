@@ -40,7 +40,6 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
     request,
     context,
     target: { type: 'page', ownerId: BigInt(preview.page.id) },
-    preload: () => Promise.resolve(),
   })
 
   return data(

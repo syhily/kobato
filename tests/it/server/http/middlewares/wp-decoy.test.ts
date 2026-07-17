@@ -3,22 +3,16 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { makePage, makePost } from '#/_helpers/catalog'
 import { makeLoaderArgs, unwrapLoaderData } from '#/_helpers/context'
 import { regularSession } from '#/_helpers/session'
-import {
-  assertNotWordPressDecoy,
-  isWordPressDecoyPath,
-  NOT_WORDPRESS_STATUS_TEXT,
-  notWordPressSite,
-} from '@/server/http/middlewares/wp-decoy'
+import { isWordPressDecoyPath } from '@/server/http/middlewares/wp-decoy'
 
-// WordPress probe decoy contract. Three layers under test:
+// WordPress probe decoy contract. Two things under test:
 //   1. `isWordPressDecoyPath` — pure predicate matching the patterns the
-//      project agreed to intercept.
-//   2. `wpDecoyMiddleware` — the single chokepoint that runs on the root
-//      route before any other loader, throwing the canonical `404`
-//      Response carrying the `Not WordPress` marker.
-//   3. `routes/page.detail.tsx` — sanity check that real page slugs still
+//      project agreed to intercept. The Hono wp-decoy middleware is the
+//      single chokepoint that runs this predicate before any route
+//      loader and answers hits with the canonical `404 Not WordPress`.
+//   2. `routes/page.detail.tsx` — sanity check that real page slugs still
 //      resolve through the page-detail loader (the middleware is what
-//      handles probes; the loader no longer re-checks).
+//      handles probes; the loader never re-checks).
 
 const session = regularSession()
 
@@ -77,17 +71,8 @@ vi.mock('@/ui/pt/render', () => ({
 }))
 
 vi.mock('@/server/http/loaders/comments', () => ({
-  loadDetailPageData: vi.fn(async () => ({
-    admin: false,
-    likes: { count: 0, liked: false },
-    commentData: { totalCount: 0, totalPages: 0, currentPage: 1 },
-    commentItems: [],
-    currentUser: null,
-    recentComments: [],
-    pendingComments: [],
-  })),
-  // The detail loader streams comments through `<Await>`; mock the streaming
-  // helper as well so the page-detail route resolves under test.
+  // The detail loader streams comments through `<Await>`; mock the
+  // streaming helper so the page-detail route resolves under test.
   loadDetailPageStreaming: vi.fn(async () => ({
     critical: {
       admin: false,
@@ -109,17 +94,6 @@ const pageDetailRoute = await import('@/routes/public/page/detail')
 beforeEach(() => {
   vi.clearAllMocks()
 })
-
-// Loaders / middlewares may be synchronous or async. Wrap the call in a
-// thunk so the try/catch catches both styles uniformly.
-async function captureThrown(call: () => unknown): Promise<unknown> {
-  try {
-    await call()
-  } catch (err) {
-    return err
-  }
-  throw new Error('expected call to throw')
-}
 
 describe('isWordPressDecoyPath', () => {
   it('matches WordPress probe patterns', () => {
@@ -174,51 +148,7 @@ describe('isWordPressDecoyPath', () => {
   })
 })
 
-describe('notWordPressSite', () => {
-  it('throws a 404 Response tagged with the Not WordPress marker', () => {
-    let thrown: unknown
-    try {
-      notWordPressSite()
-    } catch (err) {
-      thrown = err
-    }
-    expect(thrown).toBeInstanceOf(Response)
-    const response = thrown as Response
-    expect(response.status).toBe(404)
-    expect(response.statusText).toBe(NOT_WORDPRESS_STATUS_TEXT)
-  })
-})
-
-describe('assertNotWordPressDecoy (single-segment + multi-segment probes)', () => {
-  it('throws the WP-decoy 404 for multi-segment probe paths', async () => {
-    const thrown = await captureThrown(() =>
-      assertNotWordPressDecoy(new Request('http://localhost/wp-content/plugins/foo.php')),
-    )
-    expect(thrown).toBeInstanceOf(Response)
-    expect((thrown as Response).status).toBe(404)
-    expect((thrown as Response).statusText).toBe(NOT_WORDPRESS_STATUS_TEXT)
-  })
-
-  it('throws the WP-decoy 404 for single-segment .php probes', async () => {
-    const thrown = await captureThrown(() => assertNotWordPressDecoy(new Request('http://localhost/xmlrpc.php')))
-    expect(thrown).toBeInstanceOf(Response)
-    expect((thrown as Response).status).toBe(404)
-    expect((thrown as Response).statusText).toBe(NOT_WORDPRESS_STATUS_TEXT)
-  })
-
-  it('throws the WP-decoy 404 for the bare /cgi-bin segment', async () => {
-    const thrown = await captureThrown(() => assertNotWordPressDecoy(new Request('http://localhost/cgi-bin')))
-    expect(thrown).toBeInstanceOf(Response)
-    expect((thrown as Response).status).toBe(404)
-    expect((thrown as Response).statusText).toBe(NOT_WORDPRESS_STATUS_TEXT)
-  })
-
-  it('returns silently for ordinary paths', () => {
-    expect(() => assertNotWordPressDecoy(new Request('http://localhost/posts/hello'))).not.toThrow()
-  })
-})
-
-describe('routes/page.detail loader (probe interception lives in the loader)', () => {
+describe('routes/page.detail loader (probe interception lives in the middleware)', () => {
   it('still serves real page slugs', async () => {
     const data = unwrapLoaderData<{ page: { permalink: string } }>(
       await pageDetailRoute.loader(

@@ -49,7 +49,7 @@ async function loadCommentsAndItems(
 // (post body, likes, sidebar, current-user identity for the reply form).
 // Comments are intentionally excluded so the loader can stream them
 // alongside the SSR HTML.
-export async function loadDetailPageCritical(
+async function loadDetailPageCritical(
   db: NodePgDatabase,
   session: BlogSession,
   target: EntityTarget,
@@ -91,24 +91,4 @@ export async function loadDetailPageStreaming(
   const comments = loadCommentsAndItems(db, session, target)
   const critical = await loadDetailPageCritical(db, session, target, options)
   return { critical, comments }
-}
-
-// Backwards-compatible eager loader. Kept exported because
-// `tests/service.comments-page-data.test.ts` exercises the parallel-fanout
-// contract directly and the admin-comments listing path still wants the
-// fully-resolved shape.
-export async function loadDetailPageData(
-  db: NodePgDatabase,
-  session: BlogSession,
-  target: EntityTarget,
-  options?: { trackView?: boolean },
-) {
-  const commentsPromise = loadCommentsAndItems(db, session, target)
-  const critical = await loadDetailPageCritical(db, session, target, options)
-  const comments = await commentsPromise
-  return {
-    ...critical,
-    commentData: comments.commentData,
-    commentItems: comments.commentItems,
-  }
 }

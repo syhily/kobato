@@ -81,8 +81,6 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
     request,
     context,
     target: { type: 'post', ownerId: BigInt(post.id) },
-    preload: () => Promise.resolve(),
-    sidebar: { posts: sidebarPosts, tags: sidebarTags },
   })
 
   return data(

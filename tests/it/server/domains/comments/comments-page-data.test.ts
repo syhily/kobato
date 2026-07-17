@@ -5,7 +5,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { seedMetric } from '#/_helpers/db'
 import { regularSession } from '#/_helpers/session'
 
-// `loadDetailPageData` must fan out `loadComments`, `queryLikes`, and
+// `loadDetailPageStreaming` must fan out `loadComments`, `queryLikes`, and
 // `loadSidebarData` in parallel — they're independent and each is
 // individually slow. This test injects 50ms of artificial latency into all
 // three paths and asserts the wall clock stays below ~100ms (≈ slowest
@@ -29,7 +29,7 @@ const commentPublicQuery = await import('@/server/domains/comments/services/publ
 const likes = await import('@/server/domains/comments/services/likes')
 const sidebar = await import('@/server/http/loaders/sidebar')
 const metrics = await import('@/server/domains/analytics/repos/pv-batcher')
-const { loadDetailPageData } = await import('@/server/http/loaders/comments')
+const { loadDetailPageStreaming } = await import('@/server/http/loaders/comments')
 
 const POST_TIMING = { type: 'post' as const, ownerId: 1n }
 const POST_EMPTY = { type: 'post' as const, ownerId: 2n }
@@ -47,7 +47,7 @@ beforeEach(() => {
   vi.mocked(commentShared.ensureCommentPage).mockResolvedValue(seedMetric())
 })
 
-describe('services/comments/page-data — loadDetailPageData', () => {
+describe('services/comments/page-data — loadDetailPageStreaming', () => {
   it('loadComments + queryLikes + loadSidebarData run in parallel (≤100ms wall clock for 50ms each)', async () => {
     vi.mocked(commentPublicQuery.loadComments).mockImplementation(() =>
       delay({ count: 0, roots_count: 0, comments: [] }, 50),
@@ -67,7 +67,8 @@ describe('services/comments/page-data — loadDetailPageData', () => {
     )
 
     const start = Date.now()
-    await loadDetailPageData(mockDb, regularSession(), POST_TIMING)
+    const { comments } = await loadDetailPageStreaming(mockDb, regularSession(), POST_TIMING)
+    await comments
     const elapsed = Date.now() - start
 
     expect(elapsed).toBeLessThan(100)
@@ -88,9 +89,9 @@ describe('services/comments/page-data — loadDetailPageData', () => {
       isAdmin: false,
     } as unknown as Awaited<ReturnType<typeof sidebar.loadSidebarData>>)
 
-    const result = await loadDetailPageData(mockDb, regularSession(), POST_EMPTY)
+    const { comments } = await loadDetailPageStreaming(mockDb, regularSession(), POST_EMPTY)
 
-    expect(result.commentItems).toEqual([])
+    expect((await comments).commentItems).toEqual([])
     expect(commentPublicQuery.parseComments).not.toHaveBeenCalled()
   })
 
@@ -110,7 +111,8 @@ describe('services/comments/page-data — loadDetailPageData', () => {
     } as unknown as Awaited<ReturnType<typeof sidebar.loadSidebarData>>)
     const session = regularSession()
 
-    await loadDetailPageData(mockDb, session, POST_ONE_UPSERT)
+    const { comments } = await loadDetailPageStreaming(mockDb, session, POST_ONE_UPSERT)
+    await comments
 
     expect(commentShared.ensureCommentPage).toHaveBeenCalledOnce()
     expect(commentPublicQuery.loadComments).toHaveBeenCalledWith(mockDb, session, POST_ONE_UPSERT, 0, {
@@ -133,7 +135,7 @@ describe('services/comments/page-data — loadDetailPageData', () => {
       isAdmin: false,
     } as unknown as Awaited<ReturnType<typeof sidebar.loadSidebarData>>)
 
-    await loadDetailPageData(mockDb, regularSession(), POST_NO_TRACK, { trackView: false })
+    await loadDetailPageStreaming(mockDb, regularSession(), POST_NO_TRACK, { trackView: false })
 
     expect(metrics.bumpPageView).not.toHaveBeenCalled()
   })

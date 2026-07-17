@@ -2,14 +2,12 @@ import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 import type { LoaderFunctionArgs } from 'react-router'
 
 import type { EntityTarget } from '@/server/infra/db/target'
-import type { ClientTag, SidebarPostLink } from '@/shared/types/catalog'
 import type { DetailPageComments } from '@/shared/types/comments'
 
 import { trackAccess } from '@/server/domains/analytics/track'
 import { tryGetRequestContext, tryGetSessionContext } from '@/server/domains/auth/context'
 import { resolveSessionContext, userSession } from '@/server/domains/auth/primitives'
 import { loadDetailPageStreaming } from '@/server/http/loaders/comments'
-import { notFound } from '@/server/infra/http/status'
 
 export type PublicDetailCritical = Awaited<ReturnType<typeof loadDetailPageStreaming>>['critical']
 
@@ -18,18 +16,6 @@ export type PublicDetailCritical = Awaited<ReturnType<typeof loadDetailPageStrea
 // (`react-router-framework-mode/data-loading/data-loading` "Streaming with defer".)
 export interface PublicDetailData extends PublicDetailCritical {
   comments: Promise<DetailPageComments>
-}
-
-export interface PublicDetailSidebarData {
-  posts: SidebarPostLink[]
-  tags: ClientTag[]
-}
-
-export function requireDetailSource<T>(source: T | undefined): T {
-  if (source === undefined) {
-    notFound()
-  }
-  return source
 }
 
 function isPrefetchRequest(request: Request): boolean {
@@ -43,17 +29,10 @@ export async function loadPublicDetailData(
     request,
     context,
     target,
-    preload,
-    sidebar,
   }: Pick<LoaderFunctionArgs, 'request' | 'context'> & {
     target: EntityTarget
-    preload: () => Promise<void>
-    sidebar?: PublicDetailSidebarData
   },
-): Promise<{
-  detail: PublicDetailData
-  sidebar?: PublicDetailSidebarData
-}> {
+): Promise<{ detail: PublicDetailData }> {
   const sessionContext = tryGetSessionContext(context) ?? (await resolveSessionContext(db, request))
   const { session } = sessionContext
   const trackView = !isPrefetchRequest(request)
@@ -71,10 +50,9 @@ export async function loadPublicDetailData(
     void trackAccess(request, target, { isAdmin, clientAddress: reqCtx?.clientAddress })
   }
 
-  const [, streaming] = await Promise.all([preload(), loadDetailPageStreaming(db, session, target, { trackView })])
+  const streaming = await loadDetailPageStreaming(db, session, target, { trackView })
 
   return {
     detail: { ...streaming.critical, comments: streaming.comments },
-    sidebar,
   }
 }
