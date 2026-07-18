@@ -2,7 +2,7 @@ import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 import type { Pool } from 'pg'
 
 import { eq } from 'drizzle-orm'
-import { afterAll, beforeEach, describe, expect, it } from 'vitest'
+import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { clearAllTables } from '#/_helpers/integration-db'
 import { flushWorkerRedis } from '#/_helpers/redis'
@@ -10,6 +10,10 @@ import { createDbPool, closePool } from '@/server/infra/db/pool'
 import { content } from '@/server/infra/db/schema/content'
 import { page as pageMetaTable } from '@/server/infra/db/schema/page'
 import { user } from '@/server/infra/db/schema/user'
+
+// Spy mode keeps the originals — the race-window cases stub the reserve
+// lookup once so a real `page_slug_key` violation reaches the catch.
+vi.mock('@/server/domains/pages/repo', { spy: true })
 
 const { setBlogSettingsBundleForTests } = await import('@/server/domains/settings/services/test-utils')
 const { TEST_BLOG_SETTINGS_BUNDLE } = await import('#/_helpers/blog-settings')
@@ -269,6 +273,14 @@ describe('pages/services/mutate — createPage', () => {
     await mutate.createPage(db, { slug: 'dup', title: 'First' }, null)
     await expect(mutate.createPage(db, { slug: 'dup', title: 'Second' }, null)).rejects.toThrow(/已被其它页面/)
   })
+
+  it('maps a raw page_slug_key violation to CONFLICT', async () => {
+    await seedPage({ slug: 'raced', title: 'Existing' }) // meta row only, no registry row
+    vi.mocked(repo.findPageMetaBySlugForUpdate).mockResolvedValueOnce(null)
+    await expect(mutate.createPage(db, { slug: 'raced', title: 'New' }, null)).rejects.toMatchObject({
+      code: 'CONFLICT',
+    })
+  })
 })
 
 describe('pages/services/mutate — updatePageMeta', () => {
@@ -291,6 +303,15 @@ describe('pages/services/mutate — updatePageMeta', () => {
     await seedPage({ slug: 'taken', title: 'Taken' })
     const p = await seedPage({ slug: 'orig', title: 'Orig' })
     await expect(mutate.updatePageMeta(db, { id: p.id, slug: 'taken', title: 'Orig' })).rejects.toThrow(/已被其它页面/)
+  })
+
+  it('maps a raw page_slug_key violation to CONFLICT', async () => {
+    await seedPage({ slug: 'raced-taken', title: 'Existing' }) // meta row only, no registry row
+    const p = await seedPage({ slug: 'raced-orig', title: 'Orig' })
+    vi.mocked(repo.findPageMetaBySlugForUpdate).mockResolvedValueOnce(null)
+    await expect(mutate.updatePageMeta(db, { id: p.id, slug: 'raced-taken', title: 'Orig' })).rejects.toMatchObject({
+      code: 'CONFLICT',
+    })
   })
 })
 

@@ -4,6 +4,7 @@ import { eq } from 'drizzle-orm'
 
 import { findContentById } from '@/server/domains/content/repos/query'
 import { clearContentCaches } from '@/server/domains/content/shared'
+import { rethrowSlugConflict } from '@/server/domains/content/slug-conflict'
 import { reclaimSlugOnRestore } from '@/server/domains/content/slug-reclaim'
 import { toAdminPostDto, type AdminPostDto } from '@/server/domains/posts/projection'
 import { findPostMetaById, findPostMetaBySlugForUpdate } from '@/server/domains/posts/repos/single'
@@ -22,7 +23,7 @@ import {
 } from '@/server/infra/db/operations/slug-registry'
 import { findTagsByNames, seedTagsIfMissing } from '@/server/infra/db/operations/tag'
 import { post as postMetaTable } from '@/server/infra/db/schema/post'
-import { DomainError, isUniqueConstraintError } from '@/server/infra/http/errors'
+import { DomainError } from '@/server/infra/http/errors'
 import { getLogger } from '@/server/infra/logger'
 import { invalidateSearchCache } from '@/server/infra/search/search'
 import { resolveSlugForTaxonomy } from '@/server/infra/slug'
@@ -99,10 +100,7 @@ export async function createPost(
     })
     return toAdminPostDto(row, { tags: tagNames })
   } catch (err) {
-    if (isUniqueConstraintError(err, 'post_slug_key') || isUniqueConstraintError(err, 'uq_slug_registry_slug')) {
-      throw new DomainError('CONFLICT', `slug "${slug}" 已被占用。`)
-    }
-    throw err
+    rethrowSlugConflict(err, 'post', slug)
   }
 }
 
@@ -160,10 +158,7 @@ export async function updatePostMeta(
     }
     return toAdminPostDto(updated, { tags: tagNames })
   } catch (err) {
-    if (isUniqueConstraintError(err, 'post_slug_key') || isUniqueConstraintError(err, 'uq_slug_registry_slug')) {
-      throw new DomainError('CONFLICT', `slug "${slug}" 已被占用。`)
-    }
-    throw err
+    rethrowSlugConflict(err, 'post', slug)
   }
 }
 
