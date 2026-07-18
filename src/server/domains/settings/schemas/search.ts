@@ -19,4 +19,3 @@ export const searchSchema = z.object({
     trgmThreshold: z.coerce.number().min(0).max(1).default(0.3),
   }),
 })
-export type SearchInput = z.infer<typeof searchSchema>

@@ -1,5 +1,7 @@
 import { z } from 'zod'
 
+import { unsafeCast } from '@/shared/utils/unsafe-cast'
+
 // Centralised rate-limiting policy. Every bucket below maps 1:1 to a
 // surface in `@/server/infra/rate-limit`:
 //
@@ -66,10 +68,15 @@ export const RATE_LIMIT_BUCKET_KEYS = [
   'passkeyDeleteIp',
 ] as const
 
-export const rateLimitSchema = z.object(
+// `Object.fromEntries` widens the shape's static type to an index
+// signature; the runtime shape is exactly one bucket schema per
+// RATE_LIMIT_BUCKET_KEYS entry, so narrow the type back to the concrete
+// key set (runtime parse behavior is unchanged).
+const rateLimitShape = unsafeCast<Record<(typeof RATE_LIMIT_BUCKET_KEYS)[number], typeof rateLimitBucketSchema>>(
   Object.fromEntries(RATE_LIMIT_BUCKET_KEYS.map((key) => [key, rateLimitBucketSchema])),
 )
-export type RateLimitInput = z.infer<typeof rateLimitSchema>
+
+export const rateLimitSchema = z.object(rateLimitShape)
 
 /** Bounds re-exported so the admin form can mirror them in `min`/`max` attributes. */
 export const RATE_LIMIT_BOUNDS = {

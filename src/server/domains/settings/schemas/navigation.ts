@@ -23,4 +23,3 @@ export const navigationSchema = z.object({
       .max(5),
   }),
 })
-export type NavigationInput = z.infer<typeof navigationSchema>

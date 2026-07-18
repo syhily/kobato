@@ -81,6 +81,8 @@ beforeEach(() => {
         smtpUser: '',
         smtpPass: '',
         smtpSecure: false,
+        smtpRequireTls: true,
+        smtpRejectUnauthorized: true,
         mailgunDomain: '',
         mailgunApiKey: '',
       },
@@ -107,6 +109,8 @@ describe('infra/email/sender — checkMailReady readiness matrix', () => {
     smtpUser: 'u',
     smtpPass: 'p',
     smtpSecure: false,
+    smtpRequireTls: true,
+    smtpRejectUnauthorized: true,
     mailgunDomain: 'mg.example.com',
     mailgunApiKey: 'mg-key',
   }
@@ -231,6 +235,8 @@ describe('infra/email/sender — sendEmail', () => {
           smtpUser: 'user',
           smtpPass: 'pass',
           smtpSecure: false,
+          smtpRequireTls: false,
+          smtpRejectUnauthorized: false,
           mailgunDomain: '',
           mailgunApiKey: '',
         },
@@ -239,6 +245,10 @@ describe('infra/email/sender — sendEmail', () => {
     const result = await sendEmail('to@x.com', 'subj', '<p>hi</p>')
     expect(transportSendMock).toHaveBeenCalledTimes(1)
     expect(SmtpCtorMock).toHaveBeenCalledTimes(1)
+    // A stored `false` for either TLS flag must reach the transport —
+    // dropping them here used to force the nodemailer defaults (true).
+    // The transport-level `?? true` fallback is pinned in
+    // `transports/smtp.test.ts`.
     expect(SmtpCtorMock).toHaveBeenCalledWith(
       expect.objectContaining({
         host: 'smtp.example.com',
@@ -246,6 +256,8 @@ describe('infra/email/sender — sendEmail', () => {
         user: 'user',
         pass: 'pass',
         secure: false,
+        requireTls: false,
+        rejectUnauthorized: false,
         sender: 'noreply@example.com',
       }),
     )
@@ -267,6 +279,8 @@ describe('infra/email/sender — sendEmail', () => {
           smtpUser: '',
           smtpPass: '',
           smtpSecure: false,
+          smtpRequireTls: true,
+          smtpRejectUnauthorized: true,
           mailgunDomain: 'mg.example.com',
           mailgunApiKey: 'mg-key',
         },
@@ -314,6 +328,8 @@ describe('infra/email/sender — sendEmail', () => {
           smtpUser: '',
           smtpPass: '',
           smtpSecure: false,
+          smtpRequireTls: true,
+          smtpRejectUnauthorized: true,
           mailgunDomain: '',
           mailgunApiKey: '',
         },
@@ -378,6 +394,8 @@ describe('infra/email/sender — sendTestMail', () => {
           smtpUser: '',
           smtpPass: '',
           smtpSecure: false,
+          smtpRequireTls: true,
+          smtpRejectUnauthorized: true,
           mailgunDomain: '',
           mailgunApiKey: '',
         },
@@ -431,6 +449,8 @@ describe('infra/email/sender — sendTestMail', () => {
           smtpUser: 'user',
           smtpPass: 'pass',
           smtpSecure: false,
+          smtpRequireTls: true,
+          smtpRejectUnauthorized: true,
           mailgunDomain: '',
           mailgunApiKey: '',
         },
@@ -457,6 +477,8 @@ describe('infra/email/sender — sendTestMail', () => {
           smtpUser: '',
           smtpPass: '',
           smtpSecure: false,
+          smtpRequireTls: true,
+          smtpRejectUnauthorized: true,
           mailgunDomain: 'mg.example.com',
           mailgunApiKey: 'mg-key',
         },
@@ -483,6 +505,8 @@ describe('infra/email/sender — sendTestMail', () => {
           smtpUser: '',
           smtpPass: '',
           smtpSecure: false,
+          smtpRequireTls: true,
+          smtpRejectUnauthorized: true,
           mailgunDomain: '',
           mailgunApiKey: '',
         },

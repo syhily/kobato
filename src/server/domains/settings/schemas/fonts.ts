@@ -48,4 +48,3 @@ export const fontsSchema = z.object({
   post: slotFontListSchema,
   code: slotFontListSchema,
 })
-export type FontsInput = z.infer<typeof fontsSchema>

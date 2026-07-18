@@ -1,3 +1,5 @@
+import type { MailSettings } from '@/shared/config/types'
+
 // Per-slot status surfaced to the admin form. `etag` is what the form
 // uses for cache-busting in preview URLs (e.g. `/favicon.svg?v=<etag>`)
 // and to detect "is configured?" in the read-only view. We send the
@@ -51,6 +53,29 @@ export interface SearchLoaderShape {
     trgmThreshold: number
   }
   apiKeyMask: string | null
+}
+
+// Mirrors `MailSettings` but with the three secrets swapped for their
+// masks so the form never receives ciphertext. The outer `mail:` wrapper
+// matches `mailSchema` so the patches produced by `useSettingsCard`
+// validate on the server without translation.
+export interface MailLoaderShape {
+  mail: {
+    enabled: boolean
+    host: string
+    sender: string
+    apiKeyMask: string | null
+    transport: 'zeabur' | 'smtp' | 'mailgun'
+    smtpHost: string
+    smtpPort: number
+    smtpUser: string
+    smtpPassMask: string | null
+    smtpSecure: boolean
+    smtpRequireTls: boolean
+    smtpRejectUnauthorized: boolean
+    mailgunDomain: string
+    mailgunApiKeyMask: string | null
+  }
 }
 
 /**
@@ -180,5 +205,42 @@ export function projectSearchForAdmin(
       trgmThreshold: s.search.trgmThreshold ?? 0.3,
     },
     apiKeyMask: apiKeyMask ?? (apiKey === '' ? null : apiKey.slice(-4)),
+  }
+}
+
+/**
+ * Project the raw `MailSettings` (from the settings bundle) into the
+ * shape `<MailForm>` expects: the three encrypted secrets are swapped
+ * for their masks, and both SMTP TLS flags are forwarded — dropping them
+ * here used to silently flip a stored `false` back to `true` on the next
+ * SMTP-card save. The input is the post-hydration bundle slice, so the
+ * schema defaults guarantee every non-secret field is present.
+ */
+export function projectMailForAdmin(
+  mail: MailSettings,
+  masks?: {
+    apiKeyMask?: string | null
+    smtpPassMask?: string | null
+    mailgunApiKeyMask?: string | null
+  },
+): MailLoaderShape {
+  const m = mail.mail
+  return {
+    mail: {
+      enabled: m.enabled,
+      host: m.host,
+      sender: m.sender,
+      apiKeyMask: masks?.apiKeyMask ?? (m.apiKey ? m.apiKey.slice(-4) : null),
+      transport: m.transport,
+      smtpHost: m.smtpHost,
+      smtpPort: m.smtpPort,
+      smtpUser: m.smtpUser,
+      smtpPassMask: masks?.smtpPassMask ?? (m.smtpPass ? m.smtpPass.slice(-4) : null),
+      smtpSecure: m.smtpSecure,
+      smtpRequireTls: m.smtpRequireTls,
+      smtpRejectUnauthorized: m.smtpRejectUnauthorized,
+      mailgunDomain: m.mailgunDomain,
+      mailgunApiKeyMask: masks?.mailgunApiKeyMask ?? (m.mailgunApiKey ? m.mailgunApiKey.slice(-4) : null),
+    },
   }
 }

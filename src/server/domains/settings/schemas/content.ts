@@ -24,4 +24,3 @@ export const contentSchema = z.object({
     })
     .default({ sectionTitle: '尾声礼记' }),
 })
-export type ContentInput = z.infer<typeof contentSchema>

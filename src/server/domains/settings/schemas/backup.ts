@@ -32,4 +32,3 @@ export const backupSchema = z
       })
     }
   })
-export type BackupInput = z.infer<typeof backupSchema>

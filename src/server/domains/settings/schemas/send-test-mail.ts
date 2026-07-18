@@ -6,4 +6,3 @@ import { z } from 'zod'
 export const sendTestMailSchema = z.object({
   to: z.email(),
 })
-export type SendTestMailInput = z.infer<typeof sendTestMailSchema>

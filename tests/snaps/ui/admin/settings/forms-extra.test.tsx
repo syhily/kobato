@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 
-import type { MailLoaderShape } from '@/ui/admin/settings/MailForm'
+import type { MailLoaderShape } from '@/shared/config/projection'
 
 import { renderToHtml, stableHtml } from '#/_helpers/render'
 import { MailForm } from '@/ui/admin/settings/MailForm'

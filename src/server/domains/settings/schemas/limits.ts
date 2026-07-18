@@ -21,4 +21,3 @@ export const limitsSchema = z.object({
     .max(365 * 2)
     .default(180),
 })
-export type LimitsInput = z.infer<typeof limitsSchema>

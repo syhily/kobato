@@ -20,16 +20,18 @@ const OTP_TTL_MINUTES = 5
 interface MailConfig {
   enabled: boolean
   host: string
-  apiKey: string
+  apiKey?: string | undefined
   sender: string
   transport: 'zeabur' | 'smtp' | 'mailgun'
   smtpHost: string
   smtpPort: number
   smtpUser: string
-  smtpPass: string
+  smtpPass?: string | undefined
   smtpSecure: boolean
+  smtpRequireTls: boolean
+  smtpRejectUnauthorized: boolean
   mailgunDomain: string
-  mailgunApiKey: string
+  mailgunApiKey?: string | undefined
 }
 
 // Read the live mail slice straight from the snapshot. Mail senders only
@@ -71,7 +73,7 @@ const TRANSPORT_REGISTRY: Record<MailConfig['transport'], TransportRegistryEntry
         enabled: opts?.forceEnabled ?? mail.enabled,
         sender: mail.sender,
         host: mail.host,
-        apiKey: mail.apiKey,
+        apiKey: mail.apiKey ?? '',
       }),
   },
   smtp: {
@@ -84,8 +86,10 @@ const TRANSPORT_REGISTRY: Record<MailConfig['transport'], TransportRegistryEntry
         host: mail.smtpHost,
         port: mail.smtpPort,
         user: mail.smtpUser,
-        pass: mail.smtpPass,
+        pass: mail.smtpPass ?? '',
         secure: mail.smtpSecure,
+        requireTls: mail.smtpRequireTls,
+        rejectUnauthorized: mail.smtpRejectUnauthorized,
       }),
   },
   mailgun: {
@@ -96,7 +100,7 @@ const TRANSPORT_REGISTRY: Record<MailConfig['transport'], TransportRegistryEntry
         enabled: opts?.forceEnabled ?? mail.enabled,
         sender: mail.sender,
         domain: mail.mailgunDomain,
-        apiKey: mail.mailgunApiKey,
+        apiKey: mail.mailgunApiKey ?? '',
       }),
   },
 }

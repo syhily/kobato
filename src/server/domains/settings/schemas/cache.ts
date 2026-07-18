@@ -108,4 +108,3 @@ export const cacheSchema = z
       }
     }
   })
-export type CacheSettingsInput = z.infer<typeof cacheSchema>

@@ -83,7 +83,7 @@ async function resolveS3Context(options?: { requireEnabled?: boolean }): Promise
   if (options?.requireEnabled !== false && !storage.enabled) {
     throw new ActionFailure(503, '图片上传未开启；请到 /admin/settings/assets 打开「启用 S3 上传」')
   }
-  if (storage.secretAccessKey === '') {
+  if ((storage.secretAccessKey ?? '') === '') {
     throw new ActionFailure(503, '请先在 /admin/settings/assets 配置 S3 凭据')
   }
 
@@ -109,7 +109,7 @@ async function resolveS3Context(options?: { requireEnabled?: boolean }): Promise
     forcePathStyle: storage.forcePathStyle,
     credentials: {
       accessKeyId: storage.accessKeyId,
-      secretAccessKey: storage.secretAccessKey,
+      secretAccessKey: storage.secretAccessKey ?? '',
     },
     // Some S3-compatible services return base64-encoded Content-MD5 while
     // the AWS SDK v3 expects hex, causing a false "Checksum mismatch" on
@@ -337,7 +337,7 @@ export const s3Backend: StorageBackend = {
       s.endpoint.trim() !== '' &&
       s.bucket.trim() !== '' &&
       s.accessKeyId.trim() !== '' &&
-      s.secretAccessKey.trim() !== ''
+      (s.secretAccessKey ?? '').trim() !== ''
     )
   },
 

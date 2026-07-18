@@ -3,6 +3,8 @@ import { SendIcon } from 'lucide-react'
 import { useCallback, useState } from 'react'
 import { Controller } from 'react-hook-form'
 
+import type { MailLoaderShape } from '@/shared/config/projection'
+
 import { orpc } from '@/client/api/client'
 import { useSiteIdentity } from '@/shared/lib/blog-config-context'
 import { SettingsRow } from '@/ui/admin/settings/SettingsSection'
@@ -15,29 +17,6 @@ import { FieldLabel } from '@/ui/components/field'
 import { Input } from '@/ui/components/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/components/select'
 import { Switch } from '@/ui/components/switch'
-
-// Mirrors `MailSettings` but with `apiKeyMask` / `smtpPassMask` swapped in
-// for the encrypted secrets so the form never receives ciphertext. The
-// outer `mail:` wrapper matches `mailSchema` so the patches produced by
-// `useSettingsCard` validate on the server without translation.
-export interface MailLoaderShape {
-  mail: {
-    enabled: boolean
-    host: string
-    sender: string
-    apiKeyMask: string | null
-    transport: 'zeabur' | 'smtp' | 'mailgun'
-    smtpHost: string
-    smtpPort: number
-    smtpUser: string
-    smtpPassMask: string | null
-    smtpSecure: boolean
-    smtpRequireTls?: boolean
-    smtpRejectUnauthorized?: boolean
-    mailgunDomain: string
-    mailgunApiKeyMask: string | null
-  }
-}
 
 interface MailFormProps {
   mail: MailLoaderShape
@@ -311,8 +290,8 @@ function SmtpConfigCard({ mail }: { mail: MailLoaderShape }) {
       smtpUser: source.mail.smtpUser,
       smtpPass: '',
       smtpSecure: source.mail.smtpSecure,
-      smtpRequireTls: source.mail.smtpRequireTls ?? true,
-      smtpRejectUnauthorized: source.mail.smtpRejectUnauthorized ?? true,
+      smtpRequireTls: source.mail.smtpRequireTls,
+      smtpRejectUnauthorized: source.mail.smtpRejectUnauthorized,
     }),
     fromState: (state) => {
       const trimmedPass = state.smtpPass.trim()

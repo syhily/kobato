@@ -13,4 +13,3 @@ export const sidebarSchema = z.object({
     ),
   }),
 })
-export type SidebarInput = z.infer<typeof sidebarSchema>

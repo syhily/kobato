@@ -53,6 +53,7 @@ const fixture: BlogSettingsBundle = {
     pagination: { posts: 12, category: 12, tags: 12, search: 12 },
     feed: { full: false, size: 20 },
     post: { sort: 'desc', sortBy: 'publishedAt', featureEnabled: false },
+    footnotes: { sectionTitle: '尾声礼记' },
   },
   sidebar: {
     sidebar: {
@@ -89,6 +90,8 @@ const fixture: BlogSettingsBundle = {
       smtpUser: '',
       smtpPass: '',
       smtpSecure: false,
+      smtpRequireTls: true,
+      smtpRejectUnauthorized: true,
       mailgunDomain: '',
       mailgunApiKey: '',
     },

@@ -36,4 +36,3 @@ export const securitySchema = z.object({
     })
     .default({ enabled: false }),
 })
-export type SecurityInput = z.infer<typeof securitySchema>

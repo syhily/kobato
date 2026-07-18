@@ -1,7 +1,7 @@
 import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it, vi } from 'vitest'
 
-import type { MailLoaderShape } from '@/ui/admin/settings/MailForm'
+import type { MailLoaderShape } from '@/shared/config/projection'
 
 vi.mock('@/ui/admin/settings/useSettingsMutation', () => ({
   useSettingsMutation: () => ({

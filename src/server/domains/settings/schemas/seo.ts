@@ -14,4 +14,3 @@ export const seoSchema = z.object({
     height: z.coerce.number().int().min(315).max(4096),
   }),
 })
-export type SeoInput = z.infer<typeof seoSchema>

@@ -34,4 +34,3 @@ export const generalSchema = z.object({
   icpNo: z.string().trim().max(60).optional(),
   moeIcpNo: z.string().trim().max(60).optional(),
 })
-export type GeneralInput = z.infer<typeof generalSchema>

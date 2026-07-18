@@ -32,4 +32,3 @@ export const mailSchema = z.object({
     mailgunApiKey: z.string().trim().max(512).optional(),
   }),
 })
-export type MailInput = z.infer<typeof mailSchema>

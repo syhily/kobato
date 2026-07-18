@@ -9,4 +9,3 @@ export const newsletterSchema = z.object({
     subjectPrefix: z.string().trim().max(80).default(''),
   }),
 })
-export type NewsletterInput = z.infer<typeof newsletterSchema>

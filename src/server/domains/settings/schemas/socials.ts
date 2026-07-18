@@ -48,4 +48,3 @@ export const socialsSchema = z
       }
     })
   })
-export type SocialsInput = z.infer<typeof socialsSchema>

@@ -65,10 +65,11 @@ export interface ContentSettings {
     featureEnabled: boolean
   }
   /**
-   * Legacy rows may omit this bucket until the admin saves 「内容与分页」.
-   * Runtime renders fall back to 「尾声礼记」 via `@/shared/utils/footnotes-section-title`.
+   * The schema's `.default({ sectionTitle: '尾声礼记' })`
+   * (`schemas/content.ts`) fills this bucket on every read, so it is
+   * always present post-hydration.
    */
-  footnotes?: {
+  footnotes: {
     sectionTitle: string
   }
 }
@@ -122,19 +123,19 @@ export interface MailSettings {
   mail: {
     enabled: boolean
     host: string
-    apiKey: string
+    apiKey?: string | undefined
     sender: string
     /** Vendor selector — `'zeabur'`, `'smtp'`, or `'mailgun'`. */
     transport: 'zeabur' | 'smtp' | 'mailgun'
     smtpHost: string
     smtpPort: number
     smtpUser: string
-    smtpPass: string
+    smtpPass?: string | undefined
     smtpSecure: boolean
-    smtpRequireTls?: boolean
-    smtpRejectUnauthorized?: boolean
+    smtpRequireTls: boolean
+    smtpRejectUnauthorized: boolean
     mailgunDomain: string
-    mailgunApiKey: string
+    mailgunApiKey?: string | undefined
   }
 }
 
@@ -205,7 +206,7 @@ export interface AssetsSettings {
     region: string
     bucket: string
     accessKeyId: string
-    secretAccessKey: string
+    secretAccessKey?: string | undefined
     forcePathStyle: boolean
     urlTemplate: string
   }
@@ -250,7 +251,7 @@ export interface SearchSettings {
     enabled: boolean
     mode: 'vector' | 'like' | 'trgm'
     endpoint: string
-    apiKey: string
+    apiKey?: string | undefined
     model: string
     similarityThreshold: number
     trgmThreshold: number

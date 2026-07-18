@@ -12,4 +12,3 @@ export const commentsSchema = z.object({
     tokenTtlSeconds: z.coerce.number().int().min(60).max(86400).default(1800),
   }),
 })
-export type CommentsInput = z.infer<typeof commentsSchema>

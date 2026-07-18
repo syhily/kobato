@@ -8,4 +8,3 @@ export const corsSchema = z.object({
     origins: z.array(z.string().trim().min(1).max(253)).max(20).default([]),
   }),
 })
-export type CorsInput = z.infer<typeof corsSchema>

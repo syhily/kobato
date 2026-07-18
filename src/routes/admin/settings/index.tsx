@@ -10,7 +10,7 @@ import { getRouteRequestContext } from '@/server/domains/auth/context'
 import { requireRole } from '@/server/domains/auth/rbac'
 import { settingsMeta } from '@/server/render/seo/settings-meta'
 import { NAV_GROUP_LABEL, SECTION_DISPLAY } from '@/shared/config/display'
-import { projectAssetsForAdmin, projectSearchForAdmin } from '@/shared/config/projection'
+import { projectAssetsForAdmin, projectMailForAdmin, projectSearchForAdmin } from '@/shared/config/projection'
 import { SETTINGS_SECTIONS } from '@/shared/config/sections'
 import { AnalyticsForm } from '@/ui/admin/settings/AnalyticsForm'
 import { AssetsForm } from '@/ui/admin/settings/AssetsForm'
@@ -97,22 +97,11 @@ const SECTION_CONFIGS = [
     id: 'mail',
     render: (bundle, _tz, masks) => (
       <MailForm
-        mail={{
-          mail: {
-            enabled: bundle.mail.mail.enabled,
-            host: bundle.mail.mail.host,
-            sender: bundle.mail.mail.sender,
-            apiKeyMask: masks.mailApiKeyMask,
-            transport: bundle.mail.mail.transport,
-            smtpHost: bundle.mail.mail.smtpHost,
-            smtpPort: bundle.mail.mail.smtpPort,
-            smtpUser: bundle.mail.mail.smtpUser,
-            smtpPassMask: masks.mailSmtpPassMask,
-            smtpSecure: bundle.mail.mail.smtpSecure,
-            mailgunDomain: bundle.mail.mail.mailgunDomain,
-            mailgunApiKeyMask: masks.mailMailgunApiKeyMask,
-          },
-        }}
+        mail={projectMailForAdmin(bundle.mail, {
+          apiKeyMask: masks.mailApiKeyMask,
+          smtpPassMask: masks.mailSmtpPassMask,
+          mailgunApiKeyMask: masks.mailMailgunApiKeyMask,
+        })}
       />
     ),
   },

@@ -8,4 +8,3 @@ export const analyticsSchema = z.object({
     keepBotRows: coerceBoolean,
   }),
 })
-export type AnalyticsInput = z.infer<typeof analyticsSchema>

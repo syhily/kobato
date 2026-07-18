@@ -2,6 +2,7 @@ import type { z } from 'zod'
 
 import type { SettingsSection } from '@/shared/config/sections'
 import type { BlogSettingsBundle } from '@/shared/config/types'
+import type { Assert, Equals } from '@/shared/contracts/primitives'
 
 import { analyticsSchema } from '@/server/domains/settings/schemas/analytics'
 import { assetsSchema } from '@/server/domains/settings/schemas/assets'
@@ -209,3 +210,39 @@ export function buildDefaultSectionPayloads(): {
   }
   return out
 }
+
+// Compile-time parity: each section schema's OUTPUT type must equal its
+// bundle-slot DTO — hydration writes `parsed.data` straight into the
+// bundle (`services/hydrate.ts:81`), so drift here means the DTO lies.
+type _generalSchemaDtoParity = Assert<
+  Equals<z.infer<typeof generalSchema>, NonNullable<BlogSettingsBundle['siteIdentity']>>
+>
+type _assetsSchemaDtoParity = Assert<Equals<z.infer<typeof assetsSchema>, NonNullable<BlogSettingsBundle['assets']>>>
+type _navigationSchemaDtoParity = Assert<
+  Equals<z.infer<typeof navigationSchema>, NonNullable<BlogSettingsBundle['navigation']>>
+>
+type _socialsSchemaDtoParity = Assert<Equals<z.infer<typeof socialsSchema>, NonNullable<BlogSettingsBundle['socials']>>>
+type _contentSchemaDtoParity = Assert<Equals<z.infer<typeof contentSchema>, NonNullable<BlogSettingsBundle['content']>>>
+type _sidebarSchemaDtoParity = Assert<Equals<z.infer<typeof sidebarSchema>, NonNullable<BlogSettingsBundle['sidebar']>>>
+type _commentsSchemaDtoParity = Assert<
+  Equals<z.infer<typeof commentsSchema>, NonNullable<BlogSettingsBundle['comments']>>
+>
+type _seoSchemaDtoParity = Assert<Equals<z.infer<typeof seoSchema>, NonNullable<BlogSettingsBundle['seo']>>>
+type _mailSchemaDtoParity = Assert<Equals<z.infer<typeof mailSchema>, NonNullable<BlogSettingsBundle['mail']>>>
+type _newsletterSchemaDtoParity = Assert<
+  Equals<z.infer<typeof newsletterSchema>, NonNullable<BlogSettingsBundle['newsletter']>>
+>
+type _cacheSchemaDtoParity = Assert<Equals<z.infer<typeof cacheSchema>, NonNullable<BlogSettingsBundle['cache']>>>
+type _rateLimitSchemaDtoParity = Assert<
+  Equals<z.infer<typeof rateLimitSchema>, NonNullable<BlogSettingsBundle['rateLimit']>>
+>
+type _searchSchemaDtoParity = Assert<Equals<z.infer<typeof searchSchema>, NonNullable<BlogSettingsBundle['search']>>>
+type _fontsSchemaDtoParity = Assert<Equals<z.infer<typeof fontsSchema>, NonNullable<BlogSettingsBundle['fonts']>>>
+type _backupSchemaDtoParity = Assert<Equals<z.infer<typeof backupSchema>, NonNullable<BlogSettingsBundle['backup']>>>
+type _limitsSchemaDtoParity = Assert<Equals<z.infer<typeof limitsSchema>, NonNullable<BlogSettingsBundle['limits']>>>
+type _analyticsSchemaDtoParity = Assert<
+  Equals<z.infer<typeof analyticsSchema>, NonNullable<BlogSettingsBundle['analytics']>>
+>
+type _securitySchemaDtoParity = Assert<
+  Equals<z.infer<typeof securitySchema>, NonNullable<BlogSettingsBundle['security']>>
+>

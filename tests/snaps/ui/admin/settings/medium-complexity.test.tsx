@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 
-import type { AssetsLoaderShape } from '@/shared/config/projection'
+import type { AssetsLoaderShape, MailLoaderShape, SearchLoaderShape } from '@/shared/config/projection'
 import type {
   AnalyticsSettings,
   CommentsSettings,
@@ -9,14 +9,12 @@ import type {
   MailSettings,
   NavigationSettings,
   RateLimitSettings,
-  SearchSettings,
   SecuritySettings,
   SeoSettings,
   SidebarSettings,
   SiteIdentitySettings,
   SocialsSettings,
 } from '@/shared/config/types'
-import type { MailLoaderShape } from '@/ui/admin/settings/MailForm'
 
 import { renderToHtml, stableHtml } from '#/_helpers/render'
 import { AnalyticsForm } from '@/ui/admin/settings/AnalyticsForm'
@@ -185,7 +183,7 @@ const baseNavigation: NavigationSettings = {
   },
 }
 
-const baseSearch: SearchSettings & { apiKeyMask: string | null } = {
+const baseSearch: SearchLoaderShape = {
   search: {
     enabled: false,
     mode: 'like',
