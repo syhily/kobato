@@ -353,8 +353,11 @@ type DeepPartial<T> = T extends readonly (infer Item)[]
 /**
  * Compile-time contract for a settings card's write payload. The section
  * literal selects the matching persisted DTO, while every nested property is
- * optional because cards submit focused patches that `useSettingsCard`
- * deep-merges with the latest loader snapshot.
+ * optional because cards submit honest Section patches — only the fields the
+ * card owns, never loader masks or untouched sibling buckets. The server
+ * deep-merges the patch into the stored row (objects merge, arrays replace)
+ * and validates the merged section; `useSettingsCard` mirrors the same merge
+ * locally for its optimistic display projection.
  */
 export type SettingsSectionPatch<Section extends SettingsSection> = DeepPartial<
   NonNullable<BlogSettingsBundle[(typeof SECTION_TO_BUNDLE_KEY)[Section]]>

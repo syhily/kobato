@@ -15,6 +15,7 @@ import type { SettingsSection } from '@/shared/config/sections'
 import type { SettingsSectionPatch } from '@/shared/config/types'
 
 import { getLogger } from '@/client/lib/logger'
+import { mergeSectionPatch } from '@/shared/config/merge-section-patch'
 import { unsafeCast } from '@/shared/utils/unsafe-cast'
 import { useSettingsFlushContext } from '@/ui/admin/settings/shell/SettingsFlushProvider'
 import { useSettingsMutation } from '@/ui/admin/settings/useSettingsMutation'
@@ -25,7 +26,6 @@ interface UseSettingsCardBaseOptions<TSource extends object, TState extends Fiel
   source: TSource
   toState: (source: TSource) => TState
   schema?: z.ZodType<TState, any>
-  mode?: 'patch' | 'full'
 }
 
 type UseSettingsCardOptions<TSource extends object, TState extends FieldValues> = {
@@ -61,31 +61,6 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 function isFieldErrorRecord(value: unknown): value is Record<string, unknown> {
   return isRecord(value)
-}
-
-function deepMerge<T extends object>(
-  target: T,
-  patch: Record<string, unknown>,
-  seen: WeakSet<object> = new WeakSet(),
-): T {
-  // T is an arbitrary settings DTO; spreading into a plain record is the
-  // canonical shape-preserving copy. The structural identity holds because
-  // `patch` only adds/overrides keys that already exist on `T`.
-  const result: Record<string, unknown> = { ...unsafeCast<Record<string, unknown>>(target) }
-  for (const key of Object.keys(patch)) {
-    const patchVal = patch[key]
-    const targetVal = result[key]
-    if (isRecord(patchVal) && isRecord(targetVal)) {
-      if (seen.has(patchVal)) {
-        continue
-      }
-      seen.add(patchVal)
-      result[key] = deepMerge(targetVal, patchVal, seen)
-    } else {
-      result[key] = patchVal
-    }
-  }
-  return unsafeCast<T>(result)
 }
 
 // Zod issue paths are PropertyKey[] (string | number | symbol). RHF error
@@ -132,7 +107,6 @@ export function useSettingsCard<TSource extends object, TState extends FieldValu
   toState,
   fromState,
   schema,
-  mode: mergeMode = 'patch',
 }: UseSettingsCardOptions<TSource, TState>): UseSettingsCardResult<TSource, TState> {
   const [optimisticSource, setOptimisticSource] = useState<TSource | null>(null)
   const { commit, isPending, status } = useSettingsMutation()
@@ -194,17 +168,17 @@ export function useSettingsCard<TSource extends object, TState extends FieldValu
   const performSave = useCallback(() => {
     void handleSubmit(
       async (values) => {
+        // The card posts its honest Section patch — only the fields it
+        // owns, no masks, no untouched siblings. The server deep-merges
+        // the patch against the stored row and validates the result.
         const patchPayload = fromState(values)
-        // `fromState` returns a partial patch shape; in 'full' mode it IS the
-        // whole TSource. The structural identity holds because the caller's
-        // `fromState` is paired with the section's TSource contract.
-        const payload: TSource =
-          mergeMode === 'patch' ? deepMerge(source, patchPayload) : unsafeCast<TSource>(patchPayload)
-        setOptimisticSource(payload)
+        // `fromState` returns a partial patch shape over the section DTO;
+        // the display projection applies it onto the loader snapshot
+        // locally. Never POSTed — masks stay client-side.
+        const optimistic = mergeSectionPatch(source, unsafeCast<Record<string, unknown>>(patchPayload))
+        setOptimisticSource(optimistic)
         setLastCommitted(unsafeCast<DefaultValues<TState>>(values))
-        // TSource is always a JSON-serialisable settings object; the mutation
-        // endpoint takes Record<string, unknown> by design.
-        const ok = await commit(section, unsafeCast<SettingsSectionPatch<typeof section>>(payload))
+        const ok = await commit(section, patchPayload)
         if (!ok) {
           setOptimisticSource(null)
         }
@@ -213,7 +187,7 @@ export function useSettingsCard<TSource extends object, TState extends FieldValu
         log.debug('Settings save validation failed, skipping', { errors })
       },
     )()
-  }, [handleSubmit, mergeMode, section, commit, fromState, source])
+  }, [handleSubmit, section, commit, fromState, source])
 
   const isDirty = useCallback(() => {
     return JSON.stringify(getValues()) !== JSON.stringify(lastCommitted)

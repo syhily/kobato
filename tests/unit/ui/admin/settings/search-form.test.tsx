@@ -40,7 +40,7 @@ describe('SearchForm', () => {
     commit.mockResolvedValue(true)
   })
 
-  it('commits a changed trigram threshold inside the nested search settings', async () => {
+  it('commits a changed trigram threshold as a focused search patch', async () => {
     render(<SearchForm search={search} />)
 
     const input = screen.getByLabelText('三元组相似度阈值')
@@ -48,17 +48,15 @@ describe('SearchForm', () => {
     fireEvent.blur(input)
 
     await waitFor(() => expect(commit).toHaveBeenCalledOnce())
-    expect(commit).toHaveBeenCalledWith(
-      'search',
-      expect.objectContaining({
-        search: expect.objectContaining({ trgmThreshold: 0.8 }),
-      }),
-    )
-    expect(commit.mock.calls[0]?.[1]).not.toHaveProperty('trgmThreshold')
-    expect(commit.mock.calls[0]?.[1]).not.toHaveProperty('search.apiKey')
+    // The card posts only the fields it owns; the server merges them into
+    // the stored row (persistence of untouched fields is covered
+    // server-side by the section-patch merge tests).
+    expect(commit).toHaveBeenCalledWith('search', {
+      search: { enabled: false, mode: 'trgm', trgmThreshold: 0.8 },
+    })
   })
 
-  it('uses the same nested settings shape for the OpenAI search card', async () => {
+  it('commits the OpenAI card as a focused search patch', async () => {
     render(<SearchForm search={search} />)
 
     const input = screen.getByLabelText('相似度阈值')
@@ -66,13 +64,9 @@ describe('SearchForm', () => {
     fireEvent.blur(input)
 
     await waitFor(() => expect(commit).toHaveBeenCalledOnce())
-    expect(commit).toHaveBeenCalledWith(
-      'search',
-      expect.objectContaining({
-        search: expect.objectContaining({ similarityThreshold: 0.75 }),
-      }),
-    )
-    expect(commit.mock.calls[0]?.[1]).not.toHaveProperty('similarityThreshold')
-    expect(commit.mock.calls[0]?.[1]).not.toHaveProperty('search.apiKey')
+    // An empty API key input is omitted so the stored key survives.
+    expect(commit).toHaveBeenCalledWith('search', {
+      search: { endpoint: '', model: 'text-embedding-3-small', similarityThreshold: 0.75 },
+    })
   })
 })

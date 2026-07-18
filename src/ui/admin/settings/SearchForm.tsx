@@ -31,17 +31,6 @@ interface ReindexProgress {
   failed: number
 }
 
-function persistedSearchSettings(source: SearchLoaderShape) {
-  return {
-    enabled: source.search.enabled,
-    mode: source.search.mode,
-    endpoint: source.search.endpoint,
-    model: source.search.model,
-    similarityThreshold: source.search.similarityThreshold,
-    trgmThreshold: source.search.trgmThreshold,
-  }
-}
-
 function SearchModeCard({ search }: { search: SearchLoaderShape }) {
   const { form, flushOnBlur, settingGroupProps, save } = useSettingsCard<
     SearchLoaderShape,
@@ -49,7 +38,6 @@ function SearchModeCard({ search }: { search: SearchLoaderShape }) {
   >({
     section: 'search',
     source: search,
-    mode: 'full',
     toState: (source) => ({
       enabled: source.search.enabled,
       mode: source.search.mode,
@@ -57,7 +45,6 @@ function SearchModeCard({ search }: { search: SearchLoaderShape }) {
     }),
     fromState: (state) => ({
       search: {
-        ...persistedSearchSettings(search),
         enabled: state.enabled,
         mode: state.mode,
         trgmThreshold: state.trgmThreshold,
@@ -155,7 +142,6 @@ function SearchOpenAiCard({ search }: { search: SearchLoaderShape }) {
   >({
     section: 'search',
     source: search,
-    mode: 'full',
     toState: (source) => ({
       endpoint: source.search.endpoint ?? '',
       apiKey: '',
@@ -166,7 +152,6 @@ function SearchOpenAiCard({ search }: { search: SearchLoaderShape }) {
       const trimmedKey = state.apiKey.trim()
       return {
         search: {
-          ...persistedSearchSettings(search),
           endpoint: state.endpoint.trim(),
           model: state.model.trim(),
           similarityThreshold: state.similarityThreshold,

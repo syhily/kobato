@@ -53,7 +53,7 @@ describe('ui/admin/settings/shell/useSettingsCard', () => {
     expect(isSaving).toBe(false)
   })
 
-  it('saves the derived patch merged with the source', async () => {
+  it('commits the fromState patch verbatim (the server owns the merge)', async () => {
     const source: Source = { title: 'Hello', description: 'World' }
     const { form, save } = renderHook(makeHook(source))
     form.setValue('title', 'Updated')
@@ -61,7 +61,9 @@ describe('ui/admin/settings/shell/useSettingsCard', () => {
     await vi.waitFor(() => expect(commit).toHaveBeenCalledOnce())
     const [section, payload] = commit.mock.calls[0]!
     expect(section).toBe('general')
-    expect(payload).toEqual({ title: 'Updated', description: 'World' })
+    // The honest Section patch: only the fields this card owns. The
+    // server merges it into the stored row — no client-side snapshot.
+    expect(payload).toEqual({ title: 'Updated' })
   })
 
   it('does not mutate unrelated source fields', async () => {

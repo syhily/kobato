@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const mockState = vi.hoisted(() => ({
   encryptionKey: 'test-encryption-key-32-chars-long!!' as string | undefined,
+  findSettingByScope: vi.fn(),
   findSettingsByScopePrefix: vi.fn(),
   upsertSetting: vi.fn(),
 }))
@@ -57,6 +58,7 @@ vi.mock('@/server/infra/logger', () => ({
 }))
 
 vi.mock('@/server/infra/db/operations/setting', () => ({
+  findSettingByScope: mockState.findSettingByScope,
   findSettingsByScopePrefix: mockState.findSettingsByScopePrefix,
   upsertSetting: mockState.upsertSetting,
 }))
@@ -101,6 +103,8 @@ const { updateBlogSettingsSection } = await import('@/server/domains/settings/se
 describe('settings service — ENCRYPTION_KEY guard', () => {
   beforeEach(() => {
     mockState.encryptionKey = 'test-encryption-key-32-chars-long!!'
+    mockState.findSettingByScope.mockReset()
+    mockState.findSettingByScope.mockResolvedValue(null)
     mockState.findSettingsByScopePrefix.mockReset()
     mockState.upsertSetting.mockReset()
   })

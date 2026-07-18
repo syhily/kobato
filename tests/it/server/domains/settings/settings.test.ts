@@ -407,8 +407,9 @@ describe('services/settings — updateBlogSettingsSection', () => {
     expect(settingQueries.findSettingByScope).toHaveBeenCalledWith(db, 'blog.assets')
   })
 
-  it('does not read the rest of the document when patching a single section (write isolation)', async () => {
+  it('reads only its own section row when patching a single section (write isolation)', async () => {
     vi.mocked(settingQueries.findSettingsByScopePrefix).mockResolvedValue(bundleRows(fixtureBundle))
+    vi.mocked(settingQueries.findSettingByScope).mockResolvedValue(null)
     vi.mocked(settingQueries.upsertSetting).mockResolvedValue({
       id: 1n,
       scope: 'blog.general',
@@ -425,7 +426,8 @@ describe('services/settings — updateBlogSettingsSection', () => {
       null,
     )
 
-    expect(settingQueries.findSettingByScope).not.toHaveBeenCalled()
+    // The merge base costs exactly one read of the section's own row.
+    expect(settingQueries.findSettingByScope).toHaveBeenCalledExactlyOnceWith(db, 'blog.navigation')
 
     const [, data, , scope] = vi.mocked(settingQueries.upsertSetting).mock.calls[0]
     expect(scope).toBe('blog.navigation')
@@ -437,8 +439,9 @@ describe('services/settings — updateBlogSettingsSection', () => {
 })
 
 describe('services/settings — mail section', () => {
-  it("writes the full mail patch to scope='blog.mail' without reading existing when every secret is provided", async () => {
+  it("writes the full mail patch to scope='blog.mail' and encrypts every provided secret", async () => {
     vi.mocked(settingQueries.findSettingsByScopePrefix).mockResolvedValue(bundleRows(fixtureBundle))
+    vi.mocked(settingQueries.findSettingByScope).mockResolvedValue(null)
     vi.mocked(settingQueries.upsertSetting).mockResolvedValue({
       id: 1n,
       scope: 'blog.general',
@@ -477,7 +480,8 @@ describe('services/settings — mail section', () => {
     expect(typeof mail.mailgunApiKey).toBe('string')
     expect(String(mail.mailgunApiKey).startsWith('enc2:')).toBe(true)
     expect(mail.sender).toBe('noreply@example.com')
-    expect(settingQueries.findSettingByScope).not.toHaveBeenCalled()
+    // Every write reads its own section row once for the merge base.
+    expect(settingQueries.findSettingByScope).toHaveBeenCalledExactlyOnceWith(db, 'blog.mail')
   })
 
   it("preserves the existing apiKey by reading scope='blog.mail' when omitted", async () => {
@@ -763,26 +767,37 @@ describe('services/settings — rateLimit section', () => {
     expect(settingQueries.upsertSetting).not.toHaveBeenCalled()
   })
 
-  it('rejects a payload missing one of the four buckets', async () => {
-    vi.mocked(settingQueries.findSettingsByScopePrefix).mockResolvedValue([])
+  it('merges a partial rateLimit patch into the stored row', async () => {
+    const stored = bundleRows(fixtureBundle).find((row) => row.scope === 'blog.rateLimit')!
+    vi.mocked(settingQueries.findSettingByScope).mockResolvedValue(stored)
+    vi.mocked(settingQueries.findSettingsByScopePrefix).mockResolvedValue(bundleRows(fixtureBundle))
+    vi.mocked(settingQueries.upsertSetting).mockResolvedValue({
+      id: 1n,
+      scope: 'blog.general',
+      data: {},
+      updatedAt: new Date(),
+      updatedBy: null,
+    } as Setting)
 
-    await expect(
-      updateBlogSettingsSection(
-        db,
-        pool,
-        'rateLimit',
-        {
-          signInIp: { windowSeconds: 1800, maxAttempts: 5 },
-          commentPostIp: { windowSeconds: 3600, maxAttempts: 12 },
-          commentPostEmail: { windowSeconds: 3600, maxAttempts: 8 },
-          inviteIp: { windowSeconds: 3600, maxAttempts: 5 },
-          passwordResetIp: { windowSeconds: 1800, maxAttempts: 3 },
-          // likeIncreaseIp deliberately omitted
-        },
-        null,
-      ),
-    ).rejects.toBeInstanceOf(DomainError)
-    expect(settingQueries.upsertSetting).not.toHaveBeenCalled()
+    await updateBlogSettingsSection(
+      db,
+      pool,
+      'rateLimit',
+      {
+        signInIp: { windowSeconds: 600, maxAttempts: 3 },
+      },
+      null,
+    )
+
+    const [, data, , scope] = vi.mocked(settingQueries.upsertSetting).mock.calls[0]
+    expect(scope).toBe('blog.rateLimit')
+    const row = data as Record<string, unknown>
+    // The patched bucket is overwritten...
+    expect(row.signInIp).toEqual({ windowSeconds: 600, maxAttempts: 3 })
+    // ...and every bucket the patch omits survives from the stored row.
+    expect(row.commentPostIp).toEqual(fixtureBundle.rateLimit!.commentPostIp)
+    expect(row.likeIncreaseIp).toEqual(fixtureBundle.rateLimit!.likeIncreaseIp)
+    expect(row.passkeyDeleteIp).toEqual(fixtureBundle.rateLimit!.passkeyDeleteIp)
   })
 })
 
@@ -857,9 +872,12 @@ describe('services/settings — cache section', () => {
           cache: {
             og: { prefix: 'og:', ttlSeconds: 60 * 60 },
             calendar: { prefix: 'calendar:', ttlSeconds: 60 * 60 },
-            avatar: { prefix: 'og-foo:', ttlSeconds: 60 * 60 },
+            // `og` is a strict prefix of `og:` — and fails the
+            // must-end-with-`:` pattern, so the perimeter refuses it.
+            avatar: { prefix: 'og', ttlSeconds: 60 * 60 },
             imageMeta: { prefix: 'image-meta:', ttlSeconds: 60 * 60 },
             embeddingSearch: { prefix: 'embedding-search:', ttlSeconds: 60 * 60 * 24 * 7 },
+            searchResult: { prefix: 'search-result:', ttlSeconds: 60 * 60 },
           },
         },
         null,
@@ -900,11 +918,12 @@ describe('services/settings — cache section', () => {
         'cache',
         {
           cache: {
-            og: { prefix: 'rate:', ttlSeconds: 60 * 60 },
+            og: { prefix: 'rate-limit:', ttlSeconds: 60 * 60 },
             calendar: { prefix: 'calendar:', ttlSeconds: 60 * 60 },
             avatar: { prefix: 'avatar:', ttlSeconds: 60 * 60 },
             imageMeta: { prefix: 'image-meta:', ttlSeconds: 60 * 60 },
             embeddingSearch: { prefix: 'embedding-search:', ttlSeconds: 60 * 60 * 24 * 7 },
+            searchResult: { prefix: 'search-result:', ttlSeconds: 60 * 60 },
           },
         },
         null,
@@ -1057,6 +1076,164 @@ describe('services/settings — security section', () => {
         null,
       ),
     ).rejects.toBeInstanceOf(DomainError)
+  })
+})
+
+describe('services/settings — section patch merge', () => {
+  function mockStoredRow(scope: string, data: Record<string, unknown>): void {
+    vi.mocked(settingQueries.findSettingByScope).mockResolvedValue({
+      id: 1n,
+      scope,
+      data,
+      updatedAt: new Date(),
+      updatedBy: null,
+    } as Setting)
+    vi.mocked(settingQueries.findSettingsByScopePrefix).mockResolvedValue(bundleRows(fixtureBundle))
+    vi.mocked(settingQueries.upsertSetting).mockResolvedValue({
+      id: 1n,
+      scope: 'blog.general',
+      data: {},
+      updatedAt: new Date(),
+      updatedBy: null,
+    } as Setting)
+  }
+
+  it('keeps the stored SMTP TLS flags when a Zeabur-style patch only carries host', async () => {
+    // Regression for the mail TLS drift: the loader projection may not
+    // carry every field, so a focused patch must never reset the stored
+    // row's untouched fields.
+    mockStoredRow('blog.mail', {
+      mail: {
+        enabled: true,
+        host: 'old.zeabur.com',
+        apiKey: 'STORED-ZEABUR-KEY',
+        sender: 'a@b.co',
+        transport: 'smtp',
+        smtpHost: 'smtp.example.com',
+        smtpPort: 465,
+        smtpUser: 'user',
+        smtpSecure: true,
+        smtpRequireTls: false,
+        smtpRejectUnauthorized: false,
+      },
+    })
+
+    await updateBlogSettingsSection(db, pool, 'mail', { mail: { host: 'api.zeabur.com' } }, null)
+
+    const [, data, , scope] = vi.mocked(settingQueries.upsertSetting).mock.calls[0]
+    expect(scope).toBe('blog.mail')
+    const mail = (data as Record<string, unknown>).mail as Record<string, unknown>
+    expect(mail.host).toBe('api.zeabur.com')
+    expect(mail.smtpSecure).toBe(true)
+    expect(mail.smtpRequireTls).toBe(false)
+    expect(mail.smtpRejectUnauthorized).toBe(false)
+    expect(mail.transport).toBe('smtp')
+    expect(String(mail.apiKey).startsWith('enc2:')).toBe(true)
+  })
+
+  it('rejects an unknown key inside a nested bucket with the issue list', async () => {
+    const error = await updateBlogSettingsSection(
+      db,
+      pool,
+      'mail',
+      { mail: { host: 'api.zeabur.com', bogus: 1 } },
+      null,
+    ).catch((e: unknown) => e)
+
+    expect(error).toBeInstanceOf(DomainError)
+    expect((error as InstanceType<typeof DomainError>).code).toBe('BAD_REQUEST')
+    expect((error as InstanceType<typeof DomainError>).issues).toEqual([
+      { message: 'Unrecognized key: "bogus"', path: ['mail', 'bogus'] },
+    ])
+    expect(settingQueries.upsertSetting).not.toHaveBeenCalled()
+  })
+
+  it('rejects an unknown key at the section root with the issue list', async () => {
+    const error = await updateBlogSettingsSection(db, pool, 'mail', { bogus: {} }, null).catch((e: unknown) => e)
+
+    expect(error).toBeInstanceOf(DomainError)
+    expect((error as InstanceType<typeof DomainError>).code).toBe('BAD_REQUEST')
+    expect((error as InstanceType<typeof DomainError>).issues).toEqual([
+      { message: 'Unrecognized key: "bogus"', path: ['bogus'] },
+    ])
+    expect(settingQueries.upsertSetting).not.toHaveBeenCalled()
+  })
+
+  it('replaces csrf.exemptPaths wholesale instead of concatenating', async () => {
+    mockStoredRow('blog.security', {
+      csrf: { enabled: true, exemptPaths: ['/webhook/github', '/webhook/stripe'] },
+      cors: { enabled: false, origins: [] },
+      otp: { enabled: false },
+      passkey: { enabled: false },
+    })
+
+    await updateBlogSettingsSection(db, pool, 'security', { csrf: { exemptPaths: ['/webhook/github'] } }, null)
+
+    const [, data] = vi.mocked(settingQueries.upsertSetting).mock.calls[0]
+    const csrf = (data as Record<string, unknown>).csrf as Record<string, unknown>
+    expect(csrf.exemptPaths).toEqual(['/webhook/github'])
+    expect(csrf.enabled).toBe(true)
+  })
+
+  it('replaces sidebar widgets wholesale (array of objects)', async () => {
+    mockStoredRow('blog.sidebar', fixtureBundle.sidebar as unknown as Record<string, unknown>)
+
+    await updateBlogSettingsSection(
+      db,
+      pool,
+      'sidebar',
+      { sidebar: { widgets: [{ type: 'search', enabled: false }] } },
+      null,
+    )
+
+    const [, data] = vi.mocked(settingQueries.upsertSetting).mock.calls[0]
+    const sidebar = (data as Record<string, unknown>).sidebar as Record<string, unknown>
+    expect(sidebar.widgets).toEqual([{ type: 'search', enabled: false }])
+  })
+
+  it('merges a nested cors patch and preserves the sibling buckets', async () => {
+    mockStoredRow('blog.security', {
+      csrf: { enabled: true, exemptPaths: ['/webhook/github'] },
+      cors: { enabled: false, origins: ['https://a.example.com', 'https://b.example.com'] },
+      otp: { enabled: false },
+      passkey: { enabled: false },
+    })
+
+    await updateBlogSettingsSection(db, pool, 'security', { cors: { enabled: true } }, null)
+
+    const [, data] = vi.mocked(settingQueries.upsertSetting).mock.calls[0]
+    const row = data as Record<string, unknown>
+    expect(row.cors).toEqual({ enabled: true, origins: ['https://a.example.com', 'https://b.example.com'] })
+    expect(row.csrf).toEqual({ enabled: true, exemptPaths: ['/webhook/github'] })
+    expect(row.otp).toEqual({ enabled: false })
+    expect(row.passkey).toEqual({ enabled: false })
+  })
+
+  it('accepts a complete fonts payload and writes it verbatim', async () => {
+    vi.mocked(settingQueries.findSettingByScope).mockResolvedValue(null)
+    vi.mocked(settingQueries.findSettingsByScopePrefix).mockResolvedValue(bundleRows(fixtureBundle))
+    vi.mocked(settingQueries.upsertSetting).mockResolvedValue({
+      id: 1n,
+      scope: 'blog.general',
+      data: {},
+      updatedAt: new Date(),
+      updatedBy: null,
+    } as Setting)
+    // The fonts domain's setFontSlot path posts a full FontsSettings —
+    // a complete object is a valid patch.
+    const fontsPayload = {
+      og: { family: 'NotoSansCJK' },
+      calendar: { family: '' },
+      global: ['3f6b9a1e-2f3c-4b1e-9f2a-7b1c0d2e4f5a'],
+      post: [],
+      code: ['1a2b3c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d'],
+    }
+
+    await updateBlogSettingsSection(db, pool, 'fonts', fontsPayload, null)
+
+    const [, data, , scope] = vi.mocked(settingQueries.upsertSetting).mock.calls[0]
+    expect(scope).toBe('blog.fonts')
+    expect(data).toEqual(fontsPayload)
   })
 })
 

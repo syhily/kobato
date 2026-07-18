@@ -27,10 +27,9 @@ interface BucketCardProps {
   /** This bucket's authoritative settings (server-side snapshot). */
   settings: { prefix: string; ttlSeconds: number }
   /**
-   * The full cache slice — needed so a per-bucket save can re-send the
-   * other two buckets unchanged (the cache section on the server is
-   * atomic; we never want to nullify a bucket the editor isn't
-   * touching).
+   * The full cache slice — feeds the prefix-collision validation for the
+   * sibling buckets. The save itself posts only this card's bucket; the
+   * server merges it into the stored row.
    */
   allBuckets: CacheSlice
   isClearPending: boolean
@@ -124,9 +123,11 @@ export function BucketCard({ bucket, settings, allBuckets, isClearPending, clear
       ttlHours: draft.ttlHours,
     }
     submittedDraftRef.current = { value: submittedDraft }
+    // Honest Section patch: only the bucket this card owns. The server
+    // merges it into the stored cache row, so sibling buckets — possibly
+    // edited concurrently in another tab — are never re-sent.
     void save({
       cache: {
-        ...allBuckets,
         [bucket.id]: {
           prefix: submittedDraft.prefix,
           ttlSeconds: hoursToSeconds(submittedDraft.ttlHours),

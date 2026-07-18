@@ -222,6 +222,29 @@ edit is committed.
 auto-save; the whole point of the rework is that typing never fires a
 request.
 
+**Section patch (write path):** every card POSTs an honest Section patch —
+only the fields the card owns. There is no client-side merge: the server
+deep-merges the patch into the stored row (objects merge recursively,
+arrays replace wholesale), validates the merged section against the
+registry schema, and only then writes it. Patch keys are strict — an
+unknown key at any depth rejects with 400. Concretely:
+
+- `fromState` returns only the owned fields. Never emit loader mask
+  fields (`apiKeyMask`, `secretAccessKeyMask`, …) or re-spread untouched
+  sibling buckets (`...source.bucket`) — masks 400 on the strict walker,
+  siblings are preserved by the server merge.
+- The hook has **no `mode` option** (`'patch' | 'full'` was removed). A
+  card that owns its whole section returns its full state — a complete
+  object is a valid patch (`ThresholdForm` is the example).
+- List edits (append/remove/move) stay dirty-form commits as today — the
+  whole list is one array field and replaces the stored array on save.
+- `useSettingsCard`'s `display` is a local optimistic projection
+  (`mergeSectionPatch(source, patch)`) for masks/font families only; it
+  is never POSTed.
+- `src/shared/config/merge-section-patch.ts` is the single merge
+  implementation — server write base and client display projection share
+  it. Do not fork it.
+
 ## Layering
 
 - `server/*` may import `shared/*` and other `server/*`. Not `client/*`

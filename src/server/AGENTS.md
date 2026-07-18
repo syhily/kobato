@@ -221,9 +221,12 @@ redeploying. Examples: `assets.storage.enabled`, `seo.og.width`,
 - Pre-existing deployments missing optional sections are backfilled
   lazily by `loadSettingsFromDb()` + `upsertSetting`. Best-effort,
   swallows DB errors.
-- Admin saves go through `api.admin.settings.update` (oRPC), which
-  validates against `SECTION_REGISTRY[section].schema` and writes ONLY
-  that one row. No aggregate "reset to defaults" action.
+- Admin saves go through `api.admin.settings.update` (oRPC). The card
+  POSTs an honest Section patch (only the fields it owns); the server
+  strict-checks the keys, deep-merges the patch into the stored row
+  (objects merge, arrays replace), validates the merged section against
+  `SECTION_REGISTRY[section].schema`, and writes ONLY that one row. No
+  aggregate "reset to defaults" action.
 
 ## Content
 

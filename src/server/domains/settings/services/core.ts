@@ -1,6 +1,7 @@
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 import type { Pool } from 'pg'
 
+import type { SectionMeta } from '@/server/domains/settings/sections/registry'
 import type { Setting } from '@/server/infra/db/types'
 import type { SettingsSection } from '@/shared/config/sections'
 import type { BlogSettingsBundle, SecretMasks } from '@/shared/config/types'
@@ -11,12 +12,14 @@ import { SECRET_FIELDS } from '@/server/domains/settings/secrets'
 import { SECTION_REGISTRY } from '@/server/domains/settings/sections/registry'
 import { hydrateBlogSettings, refreshBlogSettings } from '@/server/domains/settings/services/hydrate'
 import { SECTION_CHANGE_HANDLERS } from '@/server/domains/settings/services/section-changes'
+import { assertSectionPatchKeys } from '@/server/domains/settings/services/section-patch'
 import { encryptIfNeeded } from '@/server/infra/crypto/secret-encryption'
 import { findSettingByScope, upsertSetting } from '@/server/infra/db/operations/setting'
 import { checkMailReady } from '@/server/infra/email/sender'
 import { DomainError } from '@/server/infra/http/errors'
 import { getLogger } from '@/server/infra/logger'
 import { getBlogSettingsBundleSync } from '@/shared/config/getters'
+import { mergeSectionPatch } from '@/shared/config/merge-section-patch'
 import { isValidPasskeyDomain } from '@/shared/utils/safe-url'
 import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
@@ -39,47 +42,59 @@ export async function updateBlogSettingsSection<S extends SettingsSection>(
   updatedBy: bigint | null,
 ): Promise<BlogSettingsBundle | null> {
   const meta = SECTION_REGISTRY[section]
-  const parsed = await meta.schema.safeParseAsync(payload)
-  if (!parsed.success) {
-    throw new DomainError(
-      'BAD_REQUEST',
-      '设置数据无效',
-      parsed.error.issues.map((issue) => ({
-        message: issue.message,
-        path: issue.path.map(String),
-      })),
-    )
-  }
-  if (section === 'security') {
-    const securityPayload = unsafeCast<{ otp?: { enabled?: boolean }; passkey?: { enabled?: boolean } }>(parsed.data)
-    if (securityPayload.otp?.enabled) {
-      const bundle = getBlogSettingsBundleSync()
-      const mail = bundle?.mail?.mail
-      if (!mail) {
-        throw new DomainError('BAD_REQUEST', '开启 OTP 前请先完成邮件服务配置（接入域名、API Key、发件人邮箱）')
-      }
-      const ready = checkMailReady(mail)
-      if (!ready.ready) {
-        throw new DomainError('BAD_REQUEST', `开启 OTP 前请先完成邮件服务配置：${ready.message}`)
-      }
-    }
-    if (securityPayload.passkey?.enabled) {
-      const bundle = getBlogSettingsBundleSync()
-      const website = bundle?.siteIdentity?.website
-      if (!website) {
-        throw new DomainError('BAD_REQUEST', '开启 Passkey 前请先配置站点域名（网站信息设置中的「站点地址」）')
-      }
-      if (!isValidPasskeyDomain(website)) {
-        throw new DomainError(
-          'BAD_REQUEST',
-          '开启 Passkey 需要站点使用公开可访问的 HTTPS 域名（不能使用 localhost 或 IP 地址）',
-        )
-      }
-    }
-  }
+  // Strict key check before any DB work: unknown keys (loader mask
+  // fields, renamed keys) are a client bug — 400 with the issue list.
+  assertSectionPatchKeys(section, payload)
 
   const bundle = await db.transaction(async (tx) => {
-    const nextRow = await applySectionPatch(tx, section, parsed.data)
+    // The stored row is the only honest write base: merge the patch onto
+    // it (objects merge, arrays replace), then validate the merged
+    // section. Reading inside the transaction keeps the merge base and
+    // the upsert atomic, and this single read also feeds the
+    // secret/branding preservation in `applySectionPatch`.
+    const storedRow = (await findSettingByScope(tx, meta.scope)) ?? null
+    const base = resolveMergeBase(meta, storedRow)
+    const merged = mergeSectionPatch(base, unsafeCast<Record<string, unknown>>(payload))
+    const parsed = await meta.schema.safeParseAsync(merged)
+    if (!parsed.success) {
+      throw new DomainError(
+        'BAD_REQUEST',
+        '设置数据无效',
+        parsed.error.issues.map((issue) => ({
+          message: issue.message,
+          path: issue.path.map(String),
+        })),
+      )
+    }
+    if (section === 'security') {
+      const securityPayload = unsafeCast<{ otp?: { enabled?: boolean }; passkey?: { enabled?: boolean } }>(parsed.data)
+      if (securityPayload.otp?.enabled) {
+        const current = getBlogSettingsBundleSync()
+        const mail = current?.mail?.mail
+        if (!mail) {
+          throw new DomainError('BAD_REQUEST', '开启 OTP 前请先完成邮件服务配置（接入域名、API Key、发件人邮箱）')
+        }
+        const ready = checkMailReady(mail)
+        if (!ready.ready) {
+          throw new DomainError('BAD_REQUEST', `开启 OTP 前请先完成邮件服务配置：${ready.message}`)
+        }
+      }
+      if (securityPayload.passkey?.enabled) {
+        const current = getBlogSettingsBundleSync()
+        const website = current?.siteIdentity?.website
+        if (!website) {
+          throw new DomainError('BAD_REQUEST', '开启 Passkey 前请先配置站点域名（网站信息设置中的「站点地址」）')
+        }
+        if (!isValidPasskeyDomain(website)) {
+          throw new DomainError(
+            'BAD_REQUEST',
+            '开启 Passkey 需要站点使用公开可访问的 HTTPS 域名（不能使用 localhost 或 IP 地址）',
+          )
+        }
+      }
+    }
+
+    const nextRow = applySectionPatch(section, parsed.data, storedRow)
 
     const encryptedRow = encryptSecretsInRow(section, nextRow)
     await upsertSetting(tx, encryptedRow, updatedBy, meta.scope)
@@ -97,6 +112,40 @@ export async function updateBlogSettingsSection<S extends SettingsSection>(
   }
 
   return bundle
+}
+
+/**
+ * Normalize the merge base for a section write: the stored row through
+ * the same lenient parse the read path performs (hydrate.ts), the
+ * registry defaults when no row exists, or `{}` for the two sections
+ * that ship no defaults (general / assets — their setup-time first write
+ * must arrive complete, which the merged validation enforces). The
+ * schema's `.default()`s stay reachable here, so a field missing from
+ * BOTH the stored row and the patch still gets its backfill default.
+ */
+function resolveMergeBase(meta: SectionMeta, storedRow: Setting | null): Record<string, unknown> {
+  if (storedRow !== null && storedRow.data !== null && typeof storedRow.data === 'object') {
+    const parsed = meta.schema.safeParse(storedRow.data)
+    if (parsed.success) {
+      return unsafeCast<Record<string, unknown>>(parsed.data)
+    }
+    // A row that fails the schema is treated as absent rather than merged
+    // onto a shape we no longer understand — same leniency as hydrate.
+    log.warn('Setting row failed schema validation; merging onto section defaults', { scope: meta.scope })
+  }
+  if (meta.defaults !== null) {
+    const parsed = meta.schema.safeParse(meta.defaults)
+    if (parsed.success) {
+      return unsafeCast<Record<string, unknown>>(parsed.data)
+    }
+    const first = parsed.error.issues[0]
+    const path = first ? first.path.join('.') : '<unknown>'
+    throw new DomainError(
+      'INTERNAL',
+      `${meta.scope} defaults invalid at \`${path}\`: ${first?.message ?? 'unknown reason'}`,
+    )
+  }
+  return {}
 }
 
 export function computeSecretMasks(bundle: BlogSettingsBundle): SecretMasks {
@@ -128,29 +177,26 @@ export function redactSecretsFromBundle(bundle: BlogSettingsBundle): BlogSetting
   return unsafeCast<BlogSettingsBundle>(clone)
 }
 
-async function applySectionPatch(
-  db: NodePgDatabase,
+function applySectionPatch(
   section: SettingsSection,
   validated: unknown,
-): Promise<Record<string, unknown>> {
+  storedRow: Setting | null,
+): Record<string, unknown> {
   let row = unsafeCast<Record<string, unknown>>(validated)
   const secretConfigs = SECRET_FIELDS.filter((f) => f.section === section)
   if (secretConfigs.length > 0) {
-    // Only hit the DB when at least one secret is missing from the
-    // incoming patch — a patch that includes every secret is a
-    // full overwrite and has nothing to preserve.
+    // A patch that omits a secret keeps the stored value; a patch that
+    // includes every secret is a full overwrite and has nothing to
+    // preserve. `storedRow` is the same read the merge base used.
     const needsExisting = secretConfigs.some((config) => !hasSecretInRow(row, config.path, config.field))
     if (needsExisting) {
-      // Read once and reuse for every secret in the section, so mail
-      // (apiKey + smtpPass) costs one SELECT instead of two.
-      const existingRow = await findSettingByScope(db, SECTION_REGISTRY[section].scope)
       for (const secretConfig of secretConfigs) {
-        row = preserveSecretOnPatch(row, existingRow, secretConfig.path, secretConfig.field)
+        row = preserveSecretOnPatch(row, storedRow, secretConfig.path, secretConfig.field)
       }
     }
   }
   if (section === 'assets') {
-    row = await preserveBrandingOnPatch(db, row)
+    row = preserveBrandingOnPatch(row, storedRow)
   }
   return row
 }
@@ -160,13 +206,9 @@ function hasSecretInRow(row: Record<string, unknown>, payloadPath: string, secre
   return bucket !== undefined && secretKey in bucket && bucket[secretKey] !== undefined
 }
 
-async function preserveBrandingOnPatch(
-  db: NodePgDatabase,
-  row: Record<string, unknown>,
-): Promise<Record<string, unknown>> {
-  const existingRow = await findSettingByScope(db, SECTION_REGISTRY.assets.scope)
+function preserveBrandingOnPatch(row: Record<string, unknown>, storedRow: Setting | null): Record<string, unknown> {
   const existingBranding = unsafeCast<Record<string, unknown> | undefined>(
-    unsafeCast<Record<string, unknown> | undefined>(existingRow?.data)?.branding,
+    unsafeCast<Record<string, unknown> | undefined>(storedRow?.data)?.branding,
   )
   const incomingBranding = unsafeCast<Record<string, unknown> | undefined>(row.branding)
   if (existingBranding === undefined && incomingBranding === undefined) {

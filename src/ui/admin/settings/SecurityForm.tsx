@@ -39,10 +39,7 @@ function CsrfToggleCard({ security }: { security: SecuritySettings }) {
     source: security,
     toState: (source) => ({ enabled: source.csrf.enabled }),
     fromState: (state) => ({
-      csrf: { ...security.csrf, enabled: state.enabled },
-      cors: security.cors,
-      otp: security.otp,
-      passkey: security.passkey,
+      csrf: { enabled: state.enabled },
     }),
   })
 
@@ -88,12 +85,8 @@ function CsrfExemptPathsCard({ security }: { security: SecuritySettings }) {
     }),
     fromState: (state) => ({
       csrf: {
-        ...security.csrf,
         exemptPaths: state.exemptPaths.map((row) => row.path.trim()).filter((p) => p !== ''),
       },
-      cors: security.cors,
-      otp: security.otp,
-      passkey: security.passkey,
     }),
   })
 
@@ -165,13 +158,10 @@ function CorsPolicyCard({ security }: { security: SecuritySettings }) {
       origins: source.cors.origins.map((url, i) => ({ clientId: `cors-origin-${i}`, url })),
     }),
     fromState: (state) => ({
-      csrf: security.csrf,
       cors: {
         enabled: state.enabled,
         origins: state.origins.map((row) => row.url.trim()).filter((url) => url !== ''),
       },
-      otp: security.otp,
-      passkey: security.passkey,
     }),
   })
 
@@ -280,10 +270,7 @@ function OtpToggleCard({ security, mail, mailMasks }: SecurityFormProps) {
     source: security,
     toState: (source) => ({ enabled: source.otp?.enabled ?? false }),
     fromState: (state) => ({
-      csrf: security.csrf,
-      cors: security.cors,
       otp: { enabled: state.enabled },
-      passkey: security.passkey,
     }),
   })
 
@@ -335,9 +322,6 @@ function PasskeyToggleCard({ security }: { security: SecuritySettings }) {
     source: security,
     toState: (source) => ({ enabled: source.passkey?.enabled ?? false }),
     fromState: (state) => ({
-      csrf: security.csrf,
-      cors: security.cors,
-      otp: security.otp,
       passkey: { enabled: state.enabled },
     }),
   })

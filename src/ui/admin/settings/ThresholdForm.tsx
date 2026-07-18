@@ -125,8 +125,8 @@ export function ThresholdForm({ rateLimit }: RateLimitFormProps) {
     section: 'rateLimit',
     source: rateLimit,
     toState: (source) => source,
-    fromState: (state) => ({ ...state }) as Record<string, unknown>,
-    mode: 'full',
+    // This card owns the whole section, so its full state IS the honest patch.
+    fromState: (state) => ({ ...state }),
   })
 
   return (

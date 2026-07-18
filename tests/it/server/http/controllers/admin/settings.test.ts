@@ -63,4 +63,20 @@ describe('adminSettingsRouter.update', () => {
       ),
     ).rejects.toMatchObject({ code: 'BAD_REQUEST' })
   })
+
+  it('surfaces the strict-patch issue list on the ORPCError data', async () => {
+    const issues = [{ message: 'Unrecognized key: "bogus"', path: ['mail', 'bogus'] }]
+    vi.mocked(updateBlogSettingsSection).mockRejectedValueOnce(new DomainError('BAD_REQUEST', '设置数据无效', issues))
+    const ctx = makeAuthedCtx()
+    await expect(
+      call(
+        adminSettingsRouter.update,
+        {
+          section: 'mail',
+          payload: { mail: { host: 'api.zeabur.com', bogus: 1 } },
+        },
+        { context: ctx },
+      ),
+    ).rejects.toMatchObject({ code: 'BAD_REQUEST', data: issues })
+  })
 })
