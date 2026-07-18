@@ -88,6 +88,7 @@ vi.mock('@/client/api/orpc-query', () => ({
         },
         list: {
           queryOptions: (args: unknown) => ({ queryKey: ['music', 'list', args], queryFn: async () => ({}) }),
+          infiniteOptions: (args: unknown) => ({ queryKey: ['music', 'list', args], queryFn: async () => ({}) }),
           key: (args: unknown) => ['music', 'list', args],
         },
         search: {

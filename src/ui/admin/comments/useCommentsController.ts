@@ -6,6 +6,7 @@ import { toast } from 'sonner'
 import type { CommentBody } from '@/shared/pt/comment-schema'
 
 import { orpc } from '@/client/api/client'
+import { orpcQuery } from '@/client/api/orpc-query'
 import { useInfiniteScrollSentinel } from '@/client/hooks/use-infinite-scroll-sentinel'
 import { getLogger } from '@/client/lib/logger'
 import { idStr } from '@/shared/utils/tools'
@@ -328,46 +329,36 @@ export function useCommentsController({ initialFilters }: UseCommentsControllerO
   const textMatch = filterText?.value ? filterText.op : ''
   const createdAfter = filterCreatedAfter ?? ''
   const createdBefore = filterCreatedBefore ?? ''
-  const listQueryKey = useMemo(
+  // Build the options once so the exact queryKey is available below for the
+  // local patches — the builder derives the key from `input(initialPageParam)`,
+  // so a second construction would just repeat the same work.
+  const listOptions = useMemo(
     () =>
-      [
-        'admin',
-        'comments',
-        'list',
-        {
-          status: filterStatus,
-          pageKey: filterPageKey,
-          userId: filterAuthorId,
-          q: textQuery,
-          match: textMatch,
-          createdAfter,
-          createdBefore,
+      orpcQuery.admin.comments.loadAll.infiniteOptions({
+        input: (pageParam: number) => ({
+          offset: pageParam,
+          limit: PAGE_SIZE,
+          ...(filterPageKey ? { pageKey: filterPageKey } : {}),
+          ...(filterAuthorId ? { userId: filterAuthorId } : {}),
+          ...(filterStatus !== 'all' ? { status: filterStatus } : {}),
+          // `textQuery`/`textMatch` are truthy together; guarding on both
+          // narrows `match` to the contract's operator union (drops '').
+          ...(textQuery && textMatch ? { q: textQuery, match: textMatch } : {}),
+          ...(createdAfter ? { createdAfter } : {}),
+          ...(createdBefore ? { createdBefore } : {}),
+        }),
+        getNextPageParam: (lastPage, _allPages, lastPageParam) => {
+          if (!lastPage.hasMore) {
+            return undefined
+          }
+          return (lastPageParam ?? 0) + PAGE_SIZE
         },
-      ] as const,
+        initialPageParam: 0,
+      }),
     [filterStatus, filterPageKey, filterAuthorId, textQuery, textMatch, createdAfter, createdBefore],
   )
 
-  const listQuery = useInfiniteQuery({
-    queryKey: listQueryKey,
-    queryFn: async ({ pageParam }) =>
-      orpc.admin.comments.loadAll({
-        offset: pageParam,
-        limit: PAGE_SIZE,
-        ...(filterPageKey ? { pageKey: filterPageKey } : {}),
-        ...(filterAuthorId ? { userId: filterAuthorId } : {}),
-        ...(filterStatus !== 'all' ? { status: filterStatus } : {}),
-        ...(filterText && filterText.value ? { q: filterText.value, match: filterText.op } : {}),
-        ...(filterCreatedAfter ? { createdAfter: filterCreatedAfter } : {}),
-        ...(filterCreatedBefore ? { createdBefore: filterCreatedBefore } : {}),
-      }),
-    getNextPageParam: (lastPage, _allPages, lastPageParam) => {
-      if (!lastPage.hasMore) {
-        return undefined
-      }
-      return (lastPageParam ?? 0) + PAGE_SIZE
-    },
-    initialPageParam: 0,
-  })
+  const listQuery = useInfiniteQuery(listOptions)
 
   const { hasNextPage, isFetchingNextPage, fetchNextPage, isLoading } = listQuery
   const comments = useMemo(() => listQuery.data?.pages.flatMap((page) => page.comments) ?? [], [listQuery.data])
@@ -392,9 +383,9 @@ export function useCommentsController({ initialFilters }: UseCommentsControllerO
 
   const patchList = useCallback(
     (patch: (data: AdminCommentsData) => AdminCommentsData) => {
-      queryClient.setQueryData<AdminCommentsData>(listQueryKey, (old) => (old ? patch(old) : old))
+      queryClient.setQueryData<AdminCommentsData>(listOptions.queryKey, (old) => (old ? patch(old) : old))
     },
-    [queryClient, listQueryKey],
+    [queryClient, listOptions],
   )
 
   const approveComment = useCallback((id: string) => patchList((data) => approveCommentInPages(data, id)), [patchList])
@@ -409,10 +400,11 @@ export function useCommentsController({ initialFilters }: UseCommentsControllerO
   )
 
   // Full refresh after mutations the local patches can't model (user edits,
-  // replies). Only the active filter combination has a live query, so the
-  // prefix invalidation refetches exactly that combination.
+  // replies). The procedure-level key covers every cached input combination
+  // of `loadAll`; only the active combination has a live query, so exactly
+  // that one refetches.
   const invalidateList = useCallback(() => {
-    void queryClient.invalidateQueries({ queryKey: ['admin', 'comments', 'list'], exact: false })
+    void queryClient.invalidateQueries({ queryKey: orpcQuery.admin.comments.loadAll.key() })
   }, [queryClient])
 
   return {

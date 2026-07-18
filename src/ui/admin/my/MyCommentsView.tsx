@@ -15,7 +15,6 @@ import { toast } from 'sonner'
 import type { MyCommentItem } from '@/routes/admin/me/comments'
 import type { MyCommentsStatus } from '@/shared/types/comments'
 
-import { orpc } from '@/client/api/client'
 import { orpcQuery } from '@/client/api/orpc-query'
 import { useInfiniteScrollSentinel } from '@/client/hooks/use-infinite-scroll-sentinel'
 import { useSiteIdentity } from '@/shared/lib/blog-config-context'
@@ -207,24 +206,24 @@ export function MyCommentsView({ status, q, entity, entityOptions, currentUser }
     updateParams({ status: null, entity: null, q: null })
   }, [updateParams])
 
-  const listQuery = useInfiniteQuery({
-    queryKey: ['comments', 'loadMine', { status, q, entity }],
-    queryFn: async ({ pageParam }) =>
-      orpc.comments.loadMine({
+  const listQuery = useInfiniteQuery(
+    orpcQuery.comments.loadMine.infiniteOptions({
+      input: (pageParam: number) => ({
         offset: pageParam,
         limit: PAGE_SIZE,
         ...(status !== 'all' ? { status } : {}),
         ...(q.trim() ? { q: q.trim() } : {}),
         ...(entity ? { entity } : {}),
       }),
-    getNextPageParam: (lastPage, _allPages, lastPageParam) => {
-      if (!lastPage.hasMore) {
-        return undefined
-      }
-      return (lastPageParam ?? 0) + PAGE_SIZE
-    },
-    initialPageParam: 0,
-  })
+      getNextPageParam: (lastPage, _allPages, lastPageParam) => {
+        if (!lastPage.hasMore) {
+          return undefined
+        }
+        return (lastPageParam ?? 0) + PAGE_SIZE
+      },
+      initialPageParam: 0,
+    }),
+  )
 
   const { hasNextPage, isFetchingNextPage, fetchNextPage, isLoading } = listQuery
   const items = useMemo(() => listQuery.data?.pages.flatMap((page) => page.items) ?? [], [listQuery.data])
@@ -239,7 +238,7 @@ export function MyCommentsView({ status, q, entity, entityOptions, currentUser }
   }, [listQuery.error])
 
   const invalidateList = useCallback(() => {
-    void queryClient.invalidateQueries({ queryKey: ['comments', 'loadMine'], exact: false })
+    void queryClient.invalidateQueries({ queryKey: orpcQuery.comments.loadMine.key() })
   }, [queryClient])
 
   const requestDelete = useMutation({

@@ -3,7 +3,7 @@ import { useCallback, useMemo, useState } from 'react'
 
 import type { MetingSearchHit, MetingSource, SearchMusicOutput } from '@/shared/types/music'
 
-import { orpc } from '@/client/api/client'
+import { orpcQuery } from '@/client/api/orpc-query'
 
 // Flatten fetched pages into one hit list, first occurrence winning on
 // `source:sourceId` collisions — upstream pages can overlap when the
@@ -32,25 +32,23 @@ export function useMetingMusicSearch({ limit }: { limit: number }) {
   const [submitted, setSubmitted] = useState<{ source: MetingSource; keyword: string } | null>(null)
   const queryClient = useQueryClient()
 
-  const searchQuery = useInfiniteQuery({
-    queryKey: ['admin', 'music', 'search', { ...submitted, limit }],
-    queryFn: async ({ pageParam }) => {
-      // `enabled` gates on submitted !== null, so this never fires null.
-      if (submitted === null) {
-        throw new Error('search fired before a keyword was submitted')
-      }
-      return orpc.admin.music.search({ ...submitted, limit, offset: pageParam })
-    },
-    getNextPageParam: (lastPage, _allPages, lastPageParam) => {
-      if (!lastPage.hasMore) {
-        return undefined
-      }
-      return (lastPageParam ?? 0) + limit
-    },
-    initialPageParam: 0,
-    enabled: submitted !== null,
-    staleTime: 0,
-  })
+  const searchQuery = useInfiniteQuery(
+    orpcQuery.admin.music.search.infiniteOptions({
+      // `enabled` gates on submitted !== null, so the null branch below
+      // (keyword '') is only ever embedded in the disabled query's key —
+      // it is never sent to the server.
+      input: (pageParam: number) => ({ ...submitted, keyword: submitted?.keyword ?? '', limit, offset: pageParam }),
+      getNextPageParam: (lastPage, _allPages, lastPageParam) => {
+        if (!lastPage.hasMore) {
+          return undefined
+        }
+        return (lastPageParam ?? 0) + limit
+      },
+      initialPageParam: 0,
+      enabled: submitted !== null,
+      staleTime: 0,
+    }),
+  )
 
   const { data, error, hasNextPage, isFetching, isFetchingNextPage, fetchNextPage } = searchQuery
 
@@ -73,7 +71,7 @@ export function useMetingMusicSearch({ limit }: { limit: number }) {
 
   const reset = useCallback(() => {
     setSubmitted(null)
-    queryClient.removeQueries({ queryKey: ['admin', 'music', 'search'] })
+    queryClient.removeQueries({ queryKey: orpcQuery.admin.music.search.key() })
   }, [queryClient])
 
   return {

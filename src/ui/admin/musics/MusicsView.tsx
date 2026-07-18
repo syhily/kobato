@@ -13,7 +13,7 @@ import {
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router'
 
-import { orpc } from '@/client/api/client'
+import { orpcQuery } from '@/client/api/orpc-query'
 import { unsafeCast } from '@/shared/utils/unsafe-cast'
 import { AlbumCard } from '@/ui/admin/musics/AlbumCard'
 import { MusicLibraryHero } from '@/ui/admin/musics/MusicLibraryHero'
@@ -125,27 +125,24 @@ export function MusicsView() {
 
   const [qInput, setQInput] = useState('')
 
-  const queryKey = useMemo(() => ['admin', 'music', 'list', { q, sortBy, sortOrder }], [q, sortBy, sortOrder])
-
-  const listQuery = useInfiniteQuery({
-    queryKey,
-    queryFn: async ({ pageParam }) => {
-      return orpc.admin.music.list({
+  const listQuery = useInfiniteQuery(
+    orpcQuery.admin.music.list.infiniteOptions({
+      input: (pageParam: number) => ({
         q: q || undefined,
         offset: pageParam,
         limit: PAGE_SIZE,
         sortBy,
         sortOrder,
-      })
-    },
-    getNextPageParam: (lastPage, _allPages, lastPageParam) => {
-      if (!lastPage.hasMore) {
-        return undefined
-      }
-      return (lastPageParam ?? 0) + PAGE_SIZE
-    },
-    initialPageParam: 0,
-  })
+      }),
+      getNextPageParam: (lastPage, _allPages, lastPageParam) => {
+        if (!lastPage.hasMore) {
+          return undefined
+        }
+        return (lastPageParam ?? 0) + PAGE_SIZE
+      },
+      initialPageParam: 0,
+    }),
+  )
 
   // Intersection observer for infinite scroll
   const { hasNextPage, isFetchingNextPage, fetchNextPage } = listQuery

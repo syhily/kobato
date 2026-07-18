@@ -7,6 +7,7 @@ import type { CommentBody } from '@/shared/pt/comment-schema'
 import type { AdminCommentWire as AdminComment } from '@/shared/types/comments'
 
 import { renderHook } from '#/_helpers/hook'
+import { orpcQuery } from '@/client/api/orpc-query'
 import {
   DATE_FILTER_OPERATORS,
   DEFAULT_DATE_OPERATOR,
@@ -31,14 +32,19 @@ import {
 
 // The controller owns a `useInfiniteQuery` + `useQueryClient`, so hook tests
 // need a real QueryClient above the memory router that `renderHook` mounts.
-// No fetch ever fires — effects do not run under the SSR hook runner.
+// No fetch ever fires — effects do not run under the SSR hook runner. The
+// QueryClient rides on the wrapper so cache-level assertions (seed → act →
+// inspect query state) can reach the same instance the hook saw.
 function makeWrapper() {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false, gcTime: 0 }, mutations: { retry: false } },
   })
-  return function Wrapper({ children }: { children: ReactNode }) {
-    return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
-  }
+  return Object.assign(
+    function Wrapper({ children }: { children: ReactNode }) {
+      return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+    },
+    { queryClient },
+  )
 }
 
 let commentId = 0
@@ -299,5 +305,25 @@ describe('ui/admin/comments/useCommentsController hook', () => {
     })
     expect(filters).toHaveLength(2)
     expect(filterStatus).toBe('approved')
+  })
+
+  it('invalidateList invalidates the cached loadAll pages for the active filter input', () => {
+    const wrapper = makeWrapper()
+    // With no filters the controller's infinite query embeds
+    // `input: { offset: 0, limit: 10 }` (PAGE_SIZE) in its key — seed exactly
+    // that entry and check the invalidation lands on it. (The react variant
+    // of the orpcQuery utils exposes the exact key via the options builder.)
+    const listKey = orpcQuery.admin.comments.loadAll.infiniteOptions({
+      input: (pageParam: number) => ({ offset: pageParam, limit: 10 }),
+      initialPageParam: 0,
+      // Not part of the key — required by the options builder's type.
+      getNextPageParam: () => undefined,
+    }).queryKey
+    wrapper.queryClient.setQueryData(listKey, makeData(makePage([])))
+    const { invalidateList } = renderHook(() => useCommentsController({ initialFilters: [] }), { wrapper })
+
+    invalidateList()
+
+    expect(wrapper.queryClient.getQueryState(listKey)?.isInvalidated).toBe(true)
   })
 })

@@ -6,6 +6,7 @@ import { toast } from 'sonner'
 import type { AdminFriendDto, DeleteFriendInput } from '@/shared/types/friends'
 
 import { orpc } from '@/client/api/client'
+import { orpcQuery } from '@/client/api/orpc-query'
 import { EditFriendDialog } from '@/ui/admin/friends/EditFriendDialog'
 import { FriendRow, FriendsSkeleton } from '@/ui/admin/friends/FriendRow'
 import { PendingFriendRow } from '@/ui/admin/friends/PendingFriendRow'
@@ -35,29 +36,28 @@ export function FriendsView() {
 
   // Pending bucket: applications arrive as `visible: false` and surface
   // on top of the list for one-click review.
-  const pendingQuery = useQuery({
-    queryKey: ['admin', 'friends', 'pending'],
-    queryFn: () => orpc.admin.friends.list({ visible: false, limit: PENDING_LIMIT }),
-  })
+  const pendingQuery = useQuery(
+    orpcQuery.admin.friends.list.queryOptions({ input: { visible: false, limit: PENDING_LIMIT } }),
+  )
   const pendingRows = pendingQuery.data?.friends ?? []
 
-  const listQuery = useInfiniteQuery({
-    queryKey: ['admin', 'friends', 'list', { q, includeHidden }],
-    queryFn: async ({ pageParam }) =>
-      orpc.admin.friends.list({
+  const listQuery = useInfiniteQuery(
+    orpcQuery.admin.friends.list.infiniteOptions({
+      input: (pageParam: number) => ({
         q: q || undefined,
         includeHidden: includeHidden ? true : undefined,
         offset: pageParam,
         limit: PAGE_SIZE,
       }),
-    getNextPageParam: (lastPage, _allPages, lastPageParam) => {
-      if (!lastPage.hasMore) {
-        return undefined
-      }
-      return (lastPageParam ?? 0) + PAGE_SIZE
-    },
-    initialPageParam: 0,
-  })
+      getNextPageParam: (lastPage, _allPages, lastPageParam) => {
+        if (!lastPage.hasMore) {
+          return undefined
+        }
+        return (lastPageParam ?? 0) + PAGE_SIZE
+      },
+      initialPageParam: 0,
+    }),
+  )
 
   const { hasNextPage, isFetchingNextPage, fetchNextPage, isLoading } = listQuery
   const rows = listQuery.data?.pages.flatMap((page) => page.friends) ?? []
@@ -91,9 +91,10 @@ export function FriendsView() {
   }, [hasNextPage, isFetchingNextPage, fetchNextPage])
 
   const invalidateList = useCallback(() => {
-    // Covers both the main list (`['admin', 'friends', 'list', …]`) and
-    // the pending bucket (`['admin', 'friends', 'pending']`).
-    void queryClient.invalidateQueries({ queryKey: ['admin', 'friends'], exact: false })
+    // One procedure key covers both buckets — the pending `queryOptions`
+    // fetch and the infinite list are the same procedure, and `.key()`
+    // partial-matches every cached input across both operation types.
+    void queryClient.invalidateQueries({ queryKey: orpcQuery.admin.friends.list.key() })
   }, [queryClient])
 
   const deleteMutation = useMutation({

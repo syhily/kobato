@@ -1,4 +1,4 @@
-import { useMutation, useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Loader2, Search, X } from 'lucide-react'
 import { motion } from 'motion/react'
 import { useCallback, useMemo, useState } from 'react'
@@ -11,6 +11,7 @@ import { orpcQuery } from '@/client/api/orpc-query'
 import { useInfiniteScrollSentinel } from '@/client/hooks/use-infinite-scroll-sentinel'
 import { transitions } from '@/client/lib/motion'
 import { hitToPreviewTrack, isPreviewId, SOURCE_OPTIONS } from '@/ui/admin/musics/meting-search'
+import { invalidateMusicLibrary } from '@/ui/admin/musics/music-library-cache'
 import { MusicLibraryHero } from '@/ui/admin/musics/MusicLibraryHero'
 import { useMusicPlayerActions, useMusicPlayerState } from '@/ui/admin/musics/MusicPlayerContext'
 import { SearchAlbumCard } from '@/ui/admin/musics/SearchAlbumCard'
@@ -20,6 +21,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger } from '@/ui/component
 
 export function AddMusicView() {
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
   const [keyword, setKeyword] = useState('')
   const [source, setSource] = useState<MetingSource>('netease')
   const [addingSourceId, setAddingSourceId] = useState<string | null>(null)
@@ -55,6 +57,9 @@ export function AddMusicView() {
     onSuccess: () => {
       toast.success('音乐已添加')
       setAddingSourceId(null)
+      // The library hero is staleTime: Infinity — without this it would
+      // keep showing the pre-add library for the rest of the session.
+      invalidateMusicLibrary(queryClient)
     },
     onError: (error) => {
       setAddingSourceId(null)

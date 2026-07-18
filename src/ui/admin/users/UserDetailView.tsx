@@ -123,7 +123,7 @@ export function UserDetailView({ userId, navigate, passkeyEnabled }: UserDetailV
     ...orpcQuery.admin.users.bulkApproveComments.mutationOptions(),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['admin', 'user'] })
-      void queryClient.invalidateQueries({ queryKey: ['admin', 'comments'] })
+      void queryClient.invalidateQueries({ queryKey: orpcQuery.admin.comments.loadAll.key() })
     },
   })
 
@@ -131,7 +131,7 @@ export function UserDetailView({ userId, navigate, passkeyEnabled }: UserDetailV
     ...orpcQuery.admin.users.bulkDeleteComments.mutationOptions(),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['admin', 'user'] })
-      void queryClient.invalidateQueries({ queryKey: ['admin', 'comments'] })
+      void queryClient.invalidateQueries({ queryKey: orpcQuery.admin.comments.loadAll.key() })
     },
   })
 
