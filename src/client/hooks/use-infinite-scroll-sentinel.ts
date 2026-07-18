@@ -4,22 +4,29 @@ import { useEffect, useRef } from 'react'
 
 // Shared IntersectionObserver driver for infinite-scroll lists. Consumers
 // mount the returned ref on a trailing sentinel div; once the sentinel
-// scrolls within `rootMargin` of the viewport, `fetchNextPage` fires.
+// scrolls within `rootMargin` of the root (the viewport by default),
+// `fetchNextPage` fires.
 //
 // The observer only re-arms while there IS a next page and no page fetch
 // is in flight, so a single intersection can never double-fire a request.
 // Used by the admin comment surfaces (`useCommentsController` for
-// `CommentsView`, and `MyCommentsView` directly) so both lists share one
-// sentinel implementation.
+// `CommentsView`, and `MyCommentsView` directly), the music library and
+// meting-search views, and the friends list, so they share one sentinel
+// implementation.
 export function useInfiniteScrollSentinel<TElement extends HTMLElement = HTMLDivElement>({
   hasNextPage,
   isFetchingNextPage,
   fetchNextPage,
+  root,
   rootMargin = '200px',
 }: {
   hasNextPage: boolean
   isFetchingNextPage: boolean
   fetchNextPage: () => unknown
+  /** Intersection root; defaults to the viewport. Passed as a ref object
+   *  (read at arm time, not during render) so scroll containers that mount
+   *  after first render — e.g. dialog bodies — work. */
+  root?: RefObject<Element | null>
   rootMargin?: string
 }): RefObject<TElement | null> {
   const sentinelRef = useRef<TElement>(null)
@@ -35,11 +42,11 @@ export function useInfiniteScrollSentinel<TElement extends HTMLElement = HTMLDiv
           void fetchNextPage()
         }
       },
-      { rootMargin },
+      { root: root?.current ?? null, rootMargin },
     )
     observer.observe(el)
     return () => observer.disconnect()
-  }, [hasNextPage, isFetchingNextPage, fetchNextPage, rootMargin])
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage, root, rootMargin])
 
   return sentinelRef
 }

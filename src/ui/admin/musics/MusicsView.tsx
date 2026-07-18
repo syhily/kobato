@@ -14,6 +14,7 @@ import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router'
 
 import { orpcQuery } from '@/client/api/orpc-query'
+import { useInfiniteScrollSentinel } from '@/client/hooks/use-infinite-scroll-sentinel'
 import { unsafeCast } from '@/shared/utils/unsafe-cast'
 import { AlbumCard } from '@/ui/admin/musics/AlbumCard'
 import { MusicLibraryHero } from '@/ui/admin/musics/MusicLibraryHero'
@@ -61,7 +62,6 @@ export function MusicsView() {
   const sortMenuId = useId()
   const sortTriggerRef = useRef<HTMLButtonElement>(null)
   const sortItemRefs = useRef<(HTMLButtonElement | null)[]>([])
-  const sentinelRef = useRef<HTMLDivElement>(null)
 
   // Close sort menu on click outside
   useEffect(() => {
@@ -146,24 +146,7 @@ export function MusicsView() {
 
   // Intersection observer for infinite scroll
   const { hasNextPage, isFetchingNextPage, fetchNextPage } = listQuery
-  useEffect(() => {
-    const el = sentinelRef.current
-    if (!el || !hasNextPage || isFetchingNextPage) {
-      return
-    }
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0]?.isIntersecting) {
-          void fetchNextPage()
-        }
-      },
-      { rootMargin: '200px' },
-    )
-
-    observer.observe(el)
-    return () => observer.disconnect()
-  }, [hasNextPage, isFetchingNextPage, fetchNextPage])
+  const sentinelRef = useInfiniteScrollSentinel({ hasNextPage, isFetchingNextPage, fetchNextPage })
 
   const allMusics = useMemo(() => {
     return listQuery.data?.pages.flatMap((page) => page.musics) ?? []

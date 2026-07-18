@@ -1,12 +1,13 @@
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { LoaderIcon, PlusIcon, SearchIcon } from 'lucide-react'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { toast } from 'sonner'
 
 import type { AdminFriendDto, DeleteFriendInput } from '@/shared/types/friends'
 
 import { orpc } from '@/client/api/client'
 import { orpcQuery } from '@/client/api/orpc-query'
+import { useInfiniteScrollSentinel } from '@/client/hooks/use-infinite-scroll-sentinel'
 import { EditFriendDialog } from '@/ui/admin/friends/EditFriendDialog'
 import { FriendRow, FriendsSkeleton } from '@/ui/admin/friends/FriendRow'
 import { PendingFriendRow } from '@/ui/admin/friends/PendingFriendRow'
@@ -32,7 +33,6 @@ export function FriendsView() {
   const queryClient = useQueryClient()
   const [editTarget, setEditTarget] = useState<EditTarget>(undefined)
   const [confirm, setConfirm] = useState<ConfirmState | null>(null)
-  const sentinelRef = useRef<HTMLDivElement>(null)
 
   // Pending bucket: applications arrive as `visible: false` and surface
   // on top of the list for one-click review.
@@ -69,26 +69,7 @@ export function FriendsView() {
     }
   }, [listQuery.error])
 
-  useEffect(() => {
-    const el = sentinelRef.current
-    if (!el || !hasNextPage || isFetchingNextPage) {
-      return
-    }
-
-    const loadMoreRef = { current: fetchNextPage }
-    loadMoreRef.current = fetchNextPage
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0]?.isIntersecting) {
-          void loadMoreRef.current()
-        }
-      },
-      { rootMargin: '200px' },
-    )
-    observer.observe(el)
-    return () => observer.disconnect()
-  }, [hasNextPage, isFetchingNextPage, fetchNextPage])
+  const sentinelRef = useInfiniteScrollSentinel({ hasNextPage, isFetchingNextPage, fetchNextPage })
 
   const invalidateList = useCallback(() => {
     // One procedure key covers both buckets — the pending `queryOptions`

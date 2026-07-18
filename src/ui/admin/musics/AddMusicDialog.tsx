@@ -6,6 +6,7 @@ import { toast } from 'sonner'
 import type { AdminMusicDto, MetingSearchHit, MetingSource } from '@/shared/types/music'
 
 import { orpcQuery } from '@/client/api/orpc-query'
+import { useInfiniteScrollSentinel } from '@/client/hooks/use-infinite-scroll-sentinel'
 import { hitToPreviewTrack, isPreviewId, SOURCE_OPTIONS } from '@/ui/admin/musics/meting-search'
 import { useMusicPlayerActions, useMusicPlayerState } from '@/ui/admin/musics/MusicPlayerContext'
 import { SearchResultItem } from '@/ui/admin/musics/SearchResultItem'
@@ -43,7 +44,6 @@ export function AddMusicDialog({ open, onClose, onAdded }: AddMusicDialogProps) 
   const [addedSourceIds, setAddedSourceIds] = useState<Set<string>>(new Set())
 
   const scrollRef = useRef<HTMLDivElement>(null)
-  const sentinelRef = useRef<HTMLDivElement>(null)
 
   const { currentTrack, isPlaying } = useMusicPlayerState()
   const { toggle, close, load } = useMusicPlayerActions()
@@ -60,6 +60,16 @@ export function AddMusicDialog({ open, onClose, onAdded }: AddMusicDialogProps) 
     loadMore,
     reset,
   } = useMetingMusicSearch({ limit: searchLimit })
+
+  // Infinite scroll inside the dialog's own scroll container — disarms
+  // while a page is in flight; `loadMore` self-guards too.
+  const sentinelRef = useInfiniteScrollSentinel({
+    hasNextPage: open && hasMore,
+    isFetchingNextPage: isLoadingMore,
+    fetchNextPage: loadMore,
+    root: scrollRef,
+    rootMargin: '0px',
+  })
 
   const addMutation = useMutation({
     ...orpcQuery.admin.music.add.mutationOptions(),
@@ -140,23 +150,6 @@ export function AddMusicDialog({ open, onClose, onAdded }: AddMusicDialogProps) 
     },
     [addingSourceId, submitAdd],
   )
-
-  // Infinite scroll via IntersectionObserver
-  useEffect(() => {
-    if (!open || !sentinelRef.current || !scrollRef.current) {
-      return
-    }
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          loadMore()
-        }
-      },
-      { root: scrollRef.current, threshold: 0 },
-    )
-    observer.observe(sentinelRef.current)
-    return () => observer.disconnect()
-  }, [loadMore, open])
 
   return (
     <Dialog open={open} onOpenChange={(next) => (next ? undefined : onClose())}>

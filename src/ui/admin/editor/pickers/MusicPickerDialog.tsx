@@ -1,11 +1,12 @@
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Music2Icon, PlusIcon, SearchIcon } from 'lucide-react'
-import { isValidElement, useEffect, useRef, useState } from 'react'
+import { isValidElement, useState } from 'react'
 
-import type { AdminMusicDto } from '@/shared/types/music'
+import type { AdminMusicDto, ListMusicOutput } from '@/shared/types/music'
 
 import { orpcQuery } from '@/client/api/orpc-query'
 import { AddMusicDialog } from '@/ui/admin/musics/AddMusicDialog'
+import { useDebouncedSearch } from '@/ui/admin/shared/useDebouncedSearch'
 import { Button } from '@/ui/components/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/ui/components/dialog'
 import { Input } from '@/ui/components/input'
@@ -38,44 +39,21 @@ export function MusicPickerDialog({ trigger, onPick, open: openProp, onOpenChang
     onOpenChange?.(next)
   }
   const [q, setQ] = useState('')
-  const [musics, setMusics] = useState<AdminMusicDto[] | null>(null)
+  const [qInput, setQInput] = useDebouncedSearch({ onChange: setQ })
   const [addOpen, setAddOpen] = useState(false)
+  const queryClient = useQueryClient()
 
-  const listQuery = useQuery(
-    orpcQuery.admin.music.list.queryOptions({
-      input: { q: q.trim() === '' ? undefined : q.trim(), limit: 60 },
-      enabled: false,
-    }),
-  )
-
-  const [lastAppliedData, setLastAppliedData] = useState(listQuery.data)
-  if (listQuery.data !== lastAppliedData) {
-    setLastAppliedData(listQuery.data)
-    if (listQuery.data) {
-      setMusics(listQuery.data.musics)
-    }
-  }
-
-  const lastFetchedQRef = useRef<string | null>(null)
-  useEffect(() => {
-    if (!open) {
-      lastFetchedQRef.current = null
-      return
-    }
-    const trimmed = q.trim()
-    if (lastFetchedQRef.current === trimmed) {
-      return
-    }
-    const handle = setTimeout(
-      () => {
-        lastFetchedQRef.current = trimmed
-        setMusics(null)
-        void listQuery.refetch()
-      },
-      lastFetchedQRef.current === null ? 0 : 300,
-    )
-    return () => clearTimeout(handle)
-  }, [q, open, listQuery])
+  // Key-driven: changing `q` changes the query key, replacing the old
+  // disabled-query + timer-debounce machine and its render-phase copy
+  // into local state. Accepted delta from that machine: reopening the
+  // dialog with a stale cached key now shows the cached rows while
+  // react-query revalidates, instead of flashing a spinner.
+  const listInput = { q: q.trim() === '' ? undefined : q.trim(), limit: 60 }
+  const listQuery = useQuery(orpcQuery.admin.music.list.queryOptions({ input: listInput, enabled: open }))
+  // `null` (not []) for undefined data keeps the 加载中/empty split — a
+  // fresh key yields `undefined` data → spinner, like the old
+  // clear-to-null flash.
+  const musics = listQuery.data?.musics ?? null
 
   return (
     <>
@@ -100,8 +78,8 @@ export function MusicPickerDialog({ trigger, onPick, open: openProp, onOpenChang
           <div className="flex items-center gap-2">
             <SearchIcon className="size-4 text-muted-foreground" />
             <Input
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
+              value={qInput}
+              onChange={(e) => setQInput(e.target.value)}
               placeholder="按曲名 / 演唱者搜索"
               className="max-w-md"
             />
@@ -145,10 +123,20 @@ export function MusicPickerDialog({ trigger, onPick, open: openProp, onOpenChang
           // immediately. We don't auto-pick so multi-add still works
           // (matches `MusicsView` behaviour where the dialog stays open
           // after each successful add).
-          setMusics((prev) => {
-            const next = prev === null ? [] : prev.filter((m) => m.id !== music.id)
-            return [music, ...next]
-          })
+          queryClient.setQueryData(
+            orpcQuery.admin.music.list.key({ input: { q: q.trim() === '' ? undefined : q.trim(), limit: 60 } }),
+            (old: ListMusicOutput | undefined): ListMusicOutput | undefined => {
+              if (old === undefined) {
+                return old
+              }
+              const isNewRow = old.musics.every((row) => row.id !== music.id)
+              return {
+                ...old,
+                musics: [music, ...old.musics.filter((row) => row.id !== music.id)],
+                total: isNewRow ? old.total + 1 : old.total,
+              }
+            },
+          )
         }}
       />
     </>
