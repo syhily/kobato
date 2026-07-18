@@ -49,9 +49,10 @@ Domains: `analytics`, `auth` (session-storage, csrf, rbac, flows,
 otp-flow, password-flow, passkey-flow, verification-tokens), `comments`
 (loader, moderation, projection, likes,
 token, badge, url, canonicalize), `content` (revision `repos/` +
-entity-agnostic draft→publish `lifecycle.ts` + restore-time
-`slug-reclaim.ts`; post/page behavior
-attaches via `services/lifecycle-adapter.ts` in each entity domain),
+entity-agnostic draft→publish `lifecycle.ts` + save-time library image
+sync `services/image-sync.ts` + restore-time `slug-reclaim.ts`; post/page
+behavior attaches via `services/lifecycle-adapter.ts` in each entity
+domain),
 `friends`, `images` (schema, service,
 storage, key, process), `music`, `pages`, `posts`, `pt`
 (Shiki/KaTeX prerender, canonicalize, comment-to-html),

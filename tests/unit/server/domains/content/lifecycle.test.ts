@@ -21,14 +21,14 @@ vi.mock('@/server/domains/content/repos/query', () => ({
   findLatestDraft: vi.fn(async () => null),
   findLatestRevision: vi.fn(async () => null),
 }))
-vi.mock('@/server/domains/pages/services/image-sync', () => ({
+vi.mock('@/server/domains/content/services/image-sync', () => ({
   syncLibraryImageBlocks: vi.fn(async () => undefined),
 }))
 
 const { loadDraftPreviewBySlug, previewBody, saveBody } = await import('@/server/domains/content/lifecycle')
 const { publishLatestRevision, saveDraftRevision } = await import('@/server/domains/content/repos/mutate')
 const query = await import('@/server/domains/content/repos/query')
-const { syncLibraryImageBlocks } = await import('@/server/domains/pages/services/image-sync')
+const { syncLibraryImageBlocks } = await import('@/server/domains/content/services/image-sync')
 
 const db = {} as NodePgDatabase
 

@@ -22,7 +22,7 @@ vi.mock('@/server/infra/db/operations/image', () => ({
 }))
 vi.mock('@/server/infra/storage/public-url', () => ({ getPublicBaseUrl: getPublicBaseUrlMock }))
 
-const { syncLibraryImageBlocks } = await import('@/server/domains/pages/services/image-sync')
+const { syncLibraryImageBlocks } = await import('@/server/domains/content/services/image-sync')
 
 const fakeDb = {} as NodePgDatabase
 
@@ -30,7 +30,7 @@ function img(_key: string, overrides: Record<string, unknown> = {}) {
   return { _type: 'image', _key, src: 'old-src', alt: '', ...overrides } as never
 }
 
-describe('pages/services/image-sync — collectImageBlocks routing', () => {
+describe('content/services/image-sync — collectImageBlocks routing', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     getPublicBaseUrlMock.mockReturnValue('https://cdn.test')
@@ -106,7 +106,7 @@ describe('pages/services/image-sync — collectImageBlocks routing', () => {
   })
 })
 
-describe('pages/services/image-sync — row resolution', () => {
+describe('content/services/image-sync — row resolution', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     getPublicBaseUrlMock.mockReturnValue('https://cdn.test')
@@ -161,7 +161,7 @@ describe('pages/services/image-sync — row resolution', () => {
   })
 })
 
-describe('pages/services/image-sync — alt write-back', () => {
+describe('content/services/image-sync — alt write-back', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     getPublicBaseUrlMock.mockReturnValue('https://cdn.test')

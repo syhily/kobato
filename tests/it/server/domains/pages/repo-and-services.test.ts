@@ -23,7 +23,6 @@ const mutate = await import('@/server/domains/pages/services/mutate')
 const adminQuery = await import('@/server/domains/pages/services/admin-query')
 const lifecycle = await import('@/server/domains/content/lifecycle')
 const { pageLifecycleAdapter } = await import('@/server/domains/pages/services/lifecycle-adapter')
-const imageSync = await import('@/server/domains/pages/services/image-sync')
 
 const poolManager = createDbPool()
 const db: NodePgDatabase = poolManager.db
@@ -418,22 +417,6 @@ describe('content/lifecycle (page adapter) — loadDraftPreviewBySlug', () => {
     const r = await lifecycle.loadDraftPreviewBySlug(db, pageLifecycleAdapter, 'drafty')
     expect(r).not.toBeNull()
     expect(r!.hasNewerDraft).toBe(true)
-  })
-})
-
-describe('pages/services/image-sync — syncLibraryImageBlocks', () => {
-  it('no-ops on an empty body', async () => {
-    await expect(imageSync.syncLibraryImageBlocks(db, [])).resolves.toBeUndefined()
-  })
-
-  it('no-ops on a body with no image blocks', async () => {
-    const body = [{ _type: 'paragraph', children: [{ _type: 'text', text: 'hi' }] }] as never
-    await expect(imageSync.syncLibraryImageBlocks(db, body)).resolves.toBeUndefined()
-  })
-
-  it('no-ops when imageId is undefined', async () => {
-    const body = [{ _type: 'image', src: 'https://x/y.jpg', alt: '' }] as never
-    await expect(imageSync.syncLibraryImageBlocks(db, body)).resolves.toBeUndefined()
   })
 })
 
