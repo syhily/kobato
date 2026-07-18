@@ -89,6 +89,41 @@ vi.mock('@/client/api/orpc-query', () => ({
   },
 }))
 
+// The meting search machine now lives in `useMetingMusicSearch` (covered by
+// `tests/unit/ui/admin/musics/use-meting-music-search.test.tsx`). Stub it so
+// each snapshot sets the machine's state directly instead of driving it
+// through the old `useQuery` mock — and so the view never reads the
+// list-shaped `useInfiniteQuery` stub above.
+const searchHookMock = vi.hoisted(() => ({
+  state: {
+    results: [] as MetingSearchHit[],
+    hasMore: false,
+    isSearching: false,
+    isLoadingMore: false,
+    error: null as string | null,
+    search: vi.fn(),
+    loadMore: vi.fn(),
+    reset: vi.fn(),
+  },
+}))
+
+vi.mock('@/ui/admin/musics/useMetingMusicSearch', () => ({
+  useMetingMusicSearch: () => searchHookMock.state,
+}))
+
+function resetSearchHookMock(): void {
+  searchHookMock.state = {
+    results: [],
+    hasMore: false,
+    isSearching: false,
+    isLoadingMore: false,
+    error: null,
+    search: vi.fn(),
+    loadMore: vi.fn(),
+    reset: vi.fn(),
+  }
+}
+
 // ───────────────────────────── fixtures ─────────────────────────────
 
 function makeAdminMusic(overrides: Partial<AdminMusicDto> = {}): AdminMusicDto {
@@ -387,10 +422,11 @@ describe('MusicDetailView render branches', () => {
 
 describe('AddMusicView render branches', () => {
   beforeEach(() => {
-    // Empty library + empty search by default; the populated-search
-    // branch is covered via SearchAlbumCard directly below.
+    // Empty library via libraryQuery (the view's only remaining useQuery)
+    // + the search machine idle; the populated-search branch is covered
+    // via SearchAlbumCard directly below.
     queryMocks.query = {
-      data: { results: [] as MetingSearchHit[], hasMore: false },
+      data: null,
       isLoading: false,
       isPending: false,
       isFetching: false,
@@ -398,6 +434,7 @@ describe('AddMusicView render branches', () => {
       error: null,
       refetch: vi.fn(),
     }
+    resetSearchHookMock()
   })
 
   it('renders the hero, search form, source selector and empty-search prompt', () => {
@@ -450,16 +487,11 @@ describe('AddMusicView render branches', () => {
   })
 
   it('renders the loading skeleton when an initial search is in flight', () => {
-    // isSearching === searchQuery.isFetching && nextOffset === 0. Setting
-    // isFetching true with no results surfaces the GridSkeleton branch.
-    queryMocks.query = {
-      data: null,
-      isLoading: false,
-      isPending: false,
-      isFetching: true,
-      isError: false,
-      error: null,
-      refetch: vi.fn(),
+    // The hook reports `isSearching` while the first page is in flight;
+    // with no results yet that surfaces the GridSkeleton branch.
+    searchHookMock.state = {
+      ...searchHookMock.state,
+      isSearching: true,
     }
     const html = stableHtml(
       renderInRouter(
@@ -475,14 +507,9 @@ describe('AddMusicView render branches', () => {
   })
 
   it('renders the error banner when the search query errored', () => {
-    queryMocks.query = {
-      data: null,
-      isLoading: false,
-      isPending: false,
-      isFetching: false,
-      isError: true,
-      error: { message: '搜索服务不可用' },
-      refetch: vi.fn(),
+    searchHookMock.state = {
+      ...searchHookMock.state,
+      error: '搜索服务不可用',
     }
     const html = stableHtml(
       renderInRouter(
@@ -501,11 +528,11 @@ describe('AddMusicView render branches', () => {
 // ─────────────── AddMusicView: populated search results branch ───────────
 //
 // The populated-results branch in AddMusicView (the `results.map` over
-// SearchAlbumCard) is gated on a render-phase seed-on-change pattern
-// (`searchQuery.data !== lastAppliedData`) that is unreachable in a
-// single SSR pass because `searchedKeyword` starts empty and there is
-// no event to flip it. The task notes this explicitly, so we cover the
-// reachable render branches above and skip the populated-results arm.
+// SearchAlbumCard) stays unreachable in a single SSR pass: the
+// `useMetingMusicSearch` machine starts idle (no submitted search) and only
+// an event (`search()`) starts fetching, so no results exist during SSR.
+// We cover the reachable render branches above and skip the populated-
+// results arm; SearchAlbumCard itself is snapshotted directly.
 
 // ────────────── Direct LyricsDisplay branch for completeness ─────────────
 //

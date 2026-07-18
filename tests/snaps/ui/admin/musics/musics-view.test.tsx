@@ -102,6 +102,41 @@ vi.mock('@/client/api/orpc-query', () => ({
   },
 }))
 
+// The meting search machine now lives in `useMetingMusicSearch` (covered by
+// `tests/unit/ui/admin/musics/use-meting-music-search.test.tsx`). Stub it so
+// each snapshot sets the machine's state directly instead of driving it
+// through the old `useQuery` mock — and so the view never reads the
+// list-shaped `useInfiniteQuery` stub above.
+const searchHookMock = vi.hoisted(() => ({
+  state: {
+    results: [] as MetingSearchHit[],
+    hasMore: false,
+    isSearching: false,
+    isLoadingMore: false,
+    error: null as string | null,
+    search: vi.fn(),
+    loadMore: vi.fn(),
+    reset: vi.fn(),
+  },
+}))
+
+vi.mock('@/ui/admin/musics/useMetingMusicSearch', () => ({
+  useMetingMusicSearch: () => searchHookMock.state,
+}))
+
+function resetSearchHookMock(): void {
+  searchHookMock.state = {
+    results: [],
+    hasMore: false,
+    isSearching: false,
+    isLoadingMore: false,
+    error: null,
+    search: vi.fn(),
+    loadMore: vi.fn(),
+    reset: vi.fn(),
+  }
+}
+
 // ───────────────────────────── fixtures ─────────────────────────────
 
 function makeAdminMusic(overrides: Partial<AdminMusicDto> = {}): AdminMusicDto {
@@ -291,7 +326,8 @@ describe('snapshot: MusicDetailView', () => {
 
 describe('snapshot: AddMusicView', () => {
   beforeEach(() => {
-    // libraryQuery (useQuery) — empty library initially.
+    // libraryQuery (useQuery) — empty library; the search machine
+    // (`useMetingMusicSearch`, stubbed above) starts idle with no results.
     queryMocks.query = {
       data: { musics: [], total: 0 },
       isLoading: false,
@@ -301,16 +337,7 @@ describe('snapshot: AddMusicView', () => {
       error: null,
       refetch: vi.fn(),
     }
-    // searchQuery (also useQuery via the mock) — no results yet.
-    queryMocks.query = {
-      data: { results: [] as MetingSearchHit[], hasMore: false },
-      isLoading: false,
-      isPending: false,
-      isFetching: false,
-      isError: false,
-      error: null,
-      refetch: vi.fn(),
-    }
+    resetSearchHookMock()
   })
 
   it('renders the add-music hero, search form and source selector', () => {

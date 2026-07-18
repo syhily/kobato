@@ -7,11 +7,11 @@ import { cn } from '@/ui/lib/cn'
 import { Image } from '@/ui/public/widgets/Image'
 
 export interface SearchResultItemProps {
-  hit: MetingSearchHit & { previewUrl?: string; _added?: boolean }
+  hit: MetingSearchHit
   previewActive: boolean
   adding: boolean
   added: boolean
-  onPreview: (hit: MetingSearchHit & { previewUrl?: string }) => void
+  onPreview: (hit: MetingSearchHit) => void
   onAdd: (hit: MetingSearchHit) => void
 }
 

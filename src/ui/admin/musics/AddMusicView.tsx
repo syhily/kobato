@@ -1,66 +1,43 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQuery } from '@tanstack/react-query'
 import { Loader2, Search, X } from 'lucide-react'
 import { motion } from 'motion/react'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router'
 import { toast } from 'sonner'
 
-import type { AdminMusicDto, MetingSource, MetingSearchHit } from '@/shared/types/music'
+import type { MetingSearchHit, MetingSource } from '@/shared/types/music'
 
 import { orpcQuery } from '@/client/api/orpc-query'
+import { useInfiniteScrollSentinel } from '@/client/hooks/use-infinite-scroll-sentinel'
 import { transitions } from '@/client/lib/motion'
+import { hitToPreviewTrack, isPreviewId, SOURCE_OPTIONS } from '@/ui/admin/musics/meting-search'
 import { MusicLibraryHero } from '@/ui/admin/musics/MusicLibraryHero'
 import { useMusicPlayerActions, useMusicPlayerState } from '@/ui/admin/musics/MusicPlayerContext'
 import { SearchAlbumCard } from '@/ui/admin/musics/SearchAlbumCard'
+import { useMetingMusicSearch } from '@/ui/admin/musics/useMetingMusicSearch'
 import { Label } from '@/ui/components/label'
 import { Select, SelectContent, SelectItem, SelectTrigger } from '@/ui/components/select'
-
-const SOURCE_OPTIONS: { value: string; label: string }[] = [
-  { value: 'netease', label: '网易云' },
-  { value: 'tencent', label: 'QQ音乐' },
-]
-
-function hitToPreviewTrack(hit: MetingSearchHit): AdminMusicDto {
-  return {
-    id: `preview:${hit.sourceId}`,
-    source: hit.source,
-    sourceId: hit.sourceId,
-    playerId: `preview:${hit.sourceId}`,
-    name: hit.name,
-    artist: hit.artist,
-    album: hit.album,
-    audioStoragePath: '',
-    audioUrl: hit.previewUrl ?? '',
-    coverStoragePath: '',
-    coverUrl: hit.coverUrl,
-    lyric: null,
-    uploaderId: null,
-    uploaderName: null,
-    createdAt: '',
-    updatedAt: '',
-  }
-}
-
-function isPreviewId(id: string | undefined): boolean {
-  return id !== undefined && id.startsWith('preview:')
-}
-
-const SEARCH_LIMIT = 24
 
 export function AddMusicView() {
   const navigate = useNavigate()
   const [keyword, setKeyword] = useState('')
   const [source, setSource] = useState<MetingSource>('netease')
-  const [results, setResults] = useState<MetingSearchHit[]>([])
-  const [hasMore, setHasMore] = useState(false)
-  const [nextOffset, setNextOffset] = useState(0)
-  const [searchedKeyword, setSearchedKeyword] = useState('')
   const [addingSourceId, setAddingSourceId] = useState<string | null>(null)
   const [addedSourceIds, setAddedSourceIds] = useState<Set<string>>(new Set())
 
   const { currentTrack, isPlaying } = useMusicPlayerState()
   const { load, toggle, close } = useMusicPlayerActions()
-  const queryClient = useQueryClient()
+
+  const {
+    results,
+    hasMore,
+    isSearching,
+    isLoadingMore,
+    error: errorMessage,
+    search,
+    loadMore,
+    reset,
+  } = useMetingMusicSearch({ limit: 24 })
 
   const libraryInput = useMemo(() => ({ offset: 0, limit: 30 }), [])
   const libraryQuery = useQuery(
@@ -72,14 +49,6 @@ export function AddMusicView() {
   )
   const libraryMusics = libraryQuery.data?.musics ?? []
   const libraryTotal = libraryQuery.data?.total ?? 0
-
-  const searchQuery = useQuery({
-    ...orpcQuery.admin.music.search.queryOptions({
-      input: { source, keyword: searchedKeyword, limit: SEARCH_LIMIT, offset: nextOffset },
-      staleTime: 0,
-    }),
-    enabled: searchedKeyword.length > 0,
-  })
 
   const addMutation = useMutation({
     ...orpcQuery.admin.music.add.mutationOptions(),
@@ -94,52 +63,9 @@ export function AddMusicView() {
   })
   const { mutate: submitAdd } = addMutation
 
-  // Keep latest flags in refs so loadMore reference is stable.
-  const hasMoreRef = useRef(hasMore)
-  const isFetchingRef = useRef(searchQuery.isFetching)
-  useEffect(() => {
-    hasMoreRef.current = hasMore
-    isFetchingRef.current = searchQuery.isFetching
-  })
-
-  const loadMore = useCallback(() => {
-    if (!hasMoreRef.current || isFetchingRef.current) {
-      return
-    }
-    setNextOffset((prev) => prev + SEARCH_LIMIT)
-  }, [])
-
   const triggerSearch = useCallback(() => {
-    const trimmed = keyword.trim()
-    if (trimmed === '') {
-      return
-    }
-    setResults([])
-    setNextOffset(0)
-    setSearchedKeyword(trimmed)
-  }, [keyword])
-
-  // Handle search results — accumulate for pagination. Adjust state during
-  // render when the data reference changes, instead of in an effect.
-  const [lastAppliedData, setLastAppliedData] = useState(searchQuery.data)
-  if (searchQuery.data !== lastAppliedData) {
-    setLastAppliedData(searchQuery.data)
-    if (searchQuery.data) {
-      const newResults = searchQuery.data.results
-      const hasMoreData = searchQuery.data.hasMore
-      setResults((prev) => {
-        if (prev.length === 0) {
-          return newResults
-        }
-        const existing = new Set(prev.map((r) => `${r.source}:${r.sourceId}`))
-        return [...prev, ...newResults.filter((r) => !existing.has(`${r.source}:${r.sourceId}`))]
-      })
-      setHasMore(hasMoreData)
-    }
-  }
-  useEffect(() => {
-    hasMoreRef.current = hasMore
-  }, [hasMore])
+    search({ source, keyword })
+  }, [search, source, keyword])
 
   const handleAdd = useCallback(
     (hit: MetingSearchHit) => {
@@ -181,27 +107,11 @@ export function AddMusicView() {
   }, [currentTrack])
 
   // Infinite scroll via IntersectionObserver
-  const sentinelRef = useRef<HTMLDivElement>(null)
-  useEffect(() => {
-    const el = sentinelRef.current
-    if (!el || !hasMore || searchQuery.isFetching) {
-      return
-    }
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          loadMore()
-        }
-      },
-      { rootMargin: '200px', threshold: 0 },
-    )
-    observer.observe(el)
-    return () => observer.disconnect()
-  }, [loadMore, hasMore, searchQuery.isFetching, results.length])
-
-  const isSearching = searchQuery.isFetching && nextOffset === 0
-  const isLoadingMore = searchQuery.isFetching && nextOffset > 0
-  const errorMessage = searchQuery.error?.message ?? null
+  const sentinelRef = useInfiniteScrollSentinel({
+    hasNextPage: hasMore,
+    isFetchingNextPage: isLoadingMore,
+    fetchNextPage: loadMore,
+  })
 
   return (
     <motion.div
@@ -257,12 +167,7 @@ export function AddMusicView() {
                   type="button"
                   onClick={() => {
                     setKeyword('')
-                    setSearchedKeyword('')
-                    setResults([])
-                    setNextOffset(0)
-                    queryClient.removeQueries({
-                      queryKey: orpcQuery.admin.music.search.key({ input: {} }),
-                    })
+                    reset()
                   }}
                   className="absolute top-1/2 right-3 -translate-y-1/2 text-ink-4 transition-colors hover:text-ink-2"
                 >

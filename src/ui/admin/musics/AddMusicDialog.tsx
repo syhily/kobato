@@ -1,13 +1,15 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useMutation } from '@tanstack/react-query'
 import { Loader2Icon, SearchIcon, XIcon } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
 
-import type { AdminMusicDto, MetingSource, MetingSearchHit } from '@/shared/types/music'
+import type { AdminMusicDto, MetingSearchHit, MetingSource } from '@/shared/types/music'
 
 import { orpcQuery } from '@/client/api/orpc-query'
+import { hitToPreviewTrack, isPreviewId, SOURCE_OPTIONS } from '@/ui/admin/musics/meting-search'
 import { useMusicPlayerActions, useMusicPlayerState } from '@/ui/admin/musics/MusicPlayerContext'
 import { SearchResultItem } from '@/ui/admin/musics/SearchResultItem'
+import { useMetingMusicSearch } from '@/ui/admin/musics/useMetingMusicSearch'
 import { Button } from '@/ui/components/button'
 import {
   Dialog,
@@ -23,40 +25,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Skeleton } from '@/ui/components/skeleton'
 import { skeletonKeys } from '@/ui/lib/skeleton-keys'
 
-const SOURCE_OPTIONS: { value: string; label: string }[] = [
-  { value: 'netease', label: '网易云' },
-  { value: 'tencent', label: 'QQ音乐' },
-]
-
 const RESULT_LIMIT_OPTIONS: { value: string; label: string }[] = [5, 10, 15, 20, 30].map((n) => ({
   value: String(n),
   label: `${n} 条`,
 }))
-
-function hitToPreviewTrack(hit: MetingSearchHit & { previewUrl?: string }): AdminMusicDto {
-  return {
-    id: `preview:${hit.sourceId}`,
-    source: hit.source,
-    sourceId: hit.sourceId,
-    playerId: `preview:${hit.sourceId}`,
-    name: hit.name,
-    artist: hit.artist,
-    album: hit.album,
-    audioStoragePath: '',
-    audioUrl: hit.previewUrl ?? '',
-    coverStoragePath: '',
-    coverUrl: hit.coverUrl,
-    lyric: null,
-    uploaderId: null,
-    uploaderName: null,
-    createdAt: '',
-    updatedAt: '',
-  }
-}
-
-function isPreviewId(id: string | undefined): boolean {
-  return id !== undefined && id.startsWith('preview:')
-}
 
 export interface AddMusicDialogProps {
   open: boolean
@@ -64,15 +36,9 @@ export interface AddMusicDialogProps {
   onAdded: (music: AdminMusicDto) => void
 }
 
-const SEARCH_LIMIT = 10
-
 export function AddMusicDialog({ open, onClose, onAdded }: AddMusicDialogProps) {
   const [keyword, setKeyword] = useState('')
   const [source, setSource] = useState<MetingSource>('netease')
-  const [results, setResults] = useState<MetingSearchHit[]>([])
-  const [hasMore, setHasMore] = useState(false)
-  const [nextOffset, setNextOffset] = useState(0)
-  const [enabled, setEnabled] = useState(false)
   const [addingSourceId, setAddingSourceId] = useState<string | null>(null)
   const [addedSourceIds, setAddedSourceIds] = useState<Set<string>>(new Set())
 
@@ -81,15 +47,19 @@ export function AddMusicDialog({ open, onClose, onAdded }: AddMusicDialogProps) 
 
   const { currentTrack, isPlaying } = useMusicPlayerState()
   const { toggle, close, load } = useMusicPlayerActions()
-  const queryClient = useQueryClient()
 
-  const searchQuery = useQuery({
-    ...orpcQuery.admin.music.search.queryOptions({
-      input: { source, keyword, limit: SEARCH_LIMIT, offset: nextOffset },
-      staleTime: 0,
-    }),
-    enabled,
-  })
+  // The limit feeds both the hook and the disabled 每页 select's display.
+  const searchLimit = 10
+  const {
+    results,
+    hasMore,
+    isSearching,
+    isLoadingMore,
+    error: errorMessage,
+    search,
+    loadMore,
+    reset,
+  } = useMetingMusicSearch({ limit: searchLimit })
 
   const addMutation = useMutation({
     ...orpcQuery.admin.music.add.mutationOptions(),
@@ -113,13 +83,9 @@ export function AddMusicDialog({ open, onClose, onAdded }: AddMusicDialogProps) 
     if (!open) {
       setKeyword('')
       setSource('netease')
-      setResults([])
-      setHasMore(false)
-      setNextOffset(0)
-      setEnabled(false)
       setAddedSourceIds(new Set())
       setAddingSourceId(null)
-      queryClient.removeQueries({ queryKey: orpcQuery.admin.music.search.key({ input: {} }) })
+      reset()
       if (currentTrack && isPreviewId(currentTrack.id)) {
         close()
       }
@@ -127,56 +93,14 @@ export function AddMusicDialog({ open, onClose, onAdded }: AddMusicDialogProps) 
   }
 
   const triggerSearch = useCallback(() => {
-    if (keyword.trim() === '') {
-      return
-    }
-    setResults([])
-    setNextOffset(0)
-    setEnabled(true)
-  }, [keyword])
+    search({ source, keyword })
+  }, [search, source, keyword])
 
-  // Keep latest flags in refs so loadMore reference is stable.
-  const hasMoreRef = useRef(hasMore)
-  const isFetchingRef = useRef(searchQuery.isFetching)
-  useEffect(() => {
-    hasMoreRef.current = hasMore
-    isFetchingRef.current = searchQuery.isFetching
-  })
-
-  const loadMore = useCallback(() => {
-    if (!hasMoreRef.current || isFetchingRef.current) {
-      return
-    }
-    setNextOffset((prev) => prev + SEARCH_LIMIT)
-  }, [])
-
-  // Handle search results — accumulate for pagination. Track the last
-  // applied `data` reference so we adjust state during render instead of
-  // cascading through an effect.
-  const [lastAppliedData, setLastAppliedData] = useState(searchQuery.data)
-  if (searchQuery.data !== lastAppliedData) {
-    setLastAppliedData(searchQuery.data)
-    if (searchQuery.data) {
-      const newResults = searchQuery.data.results
-      const hasMoreData = searchQuery.data.hasMore
-      setResults((prev) => {
-        if (prev.length === 0) {
-          return newResults
-        }
-        const existing = new Set(prev.map((r) => `${r.source}:${r.sourceId}`))
-        return [...prev, ...newResults.filter((r) => !existing.has(`${r.source}:${r.sourceId}`))]
-      })
-      setHasMore(hasMoreData)
-      if (!hasMoreData) {
-        setEnabled(false)
-      }
-    }
-  }
-  // Auto-load next page if sentinel is still inside scroll container and
-  // more pages exist. Reads geometry in an effect (post-render) so we
+  // Auto-load next page if the sentinel is still inside the scroll container
+  // and more pages exist. Reads geometry in an effect (post-render) so we
   // don't touch refs during render.
   useEffect(() => {
-    if (!searchQuery.data || !searchQuery.data.hasMore || searchQuery.isFetching) {
+    if (!hasMore) {
       return
     }
     const id = requestAnimationFrame(() => {
@@ -190,10 +114,10 @@ export function AddMusicDialog({ open, onClose, onAdded }: AddMusicDialogProps) 
       }
     })
     return () => cancelAnimationFrame(id)
-  }, [searchQuery.data, searchQuery.isFetching, loadMore])
+  }, [hasMore, loadMore])
 
   const onPreview = useCallback(
-    (hit: MetingSearchHit & { previewUrl?: string }) => {
+    (hit: MetingSearchHit) => {
       const previewId = `preview:${hit.sourceId}`
       if (currentTrack?.id === previewId) {
         toggle()
@@ -233,10 +157,6 @@ export function AddMusicDialog({ open, onClose, onAdded }: AddMusicDialogProps) 
     observer.observe(sentinelRef.current)
     return () => observer.disconnect()
   }, [loadMore, open])
-
-  const isSearching = searchQuery.isFetching && nextOffset === 0
-  const isLoadingMore = searchQuery.isFetching && nextOffset > 0
-  const errorMessage = searchQuery.error?.message ?? null
 
   return (
     <Dialog open={open} onOpenChange={(next) => (next ? undefined : onClose())}>
@@ -295,7 +215,7 @@ export function AddMusicDialog({ open, onClose, onAdded }: AddMusicDialogProps) 
               <Label htmlFor="add-music-limit" className="text-xs whitespace-nowrap text-muted-foreground">
                 每页
               </Label>
-              <Select items={RESULT_LIMIT_OPTIONS} value={String(SEARCH_LIMIT)} onValueChange={() => void 0}>
+              <Select items={RESULT_LIMIT_OPTIONS} value={String(searchLimit)} onValueChange={() => void 0}>
                 <SelectTrigger id="add-music-limit" size="sm" className="w-20" disabled>
                   <SelectValue />
                 </SelectTrigger>
@@ -323,15 +243,11 @@ export function AddMusicDialog({ open, onClose, onAdded }: AddMusicDialogProps) 
               <p className="text-sm text-muted-foreground">输入关键词后点击搜索。</p>
             ) : (
               results.map((hit) => {
-                const decorated = hit as MetingSearchHit & {
-                  previewUrl?: string
-                  _added?: boolean
-                }
                 const previewId = `preview:${hit.sourceId}`
                 return (
                   <SearchResultItem
                     key={`${hit.source}:${hit.sourceId}`}
-                    hit={decorated}
+                    hit={hit}
                     previewActive={currentTrack?.id === previewId && isPlaying}
                     adding={addingSourceId === hit.sourceId}
                     added={addedSourceIds.has(hit.sourceId)}

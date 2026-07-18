@@ -84,6 +84,40 @@ vi.mock('@/client/api/orpc-query', () => ({
   },
 }))
 
+// The meting search machine now lives in `useMetingMusicSearch` (covered by
+// `tests/unit/ui/admin/musics/use-meting-music-search.test.tsx`). Stub it so
+// each snapshot sets the machine's state directly instead of driving it
+// through the old `useQuery` mock.
+const searchHookMock = vi.hoisted(() => ({
+  state: {
+    results: [] as MetingSearchHit[],
+    hasMore: false,
+    isSearching: false,
+    isLoadingMore: false,
+    error: null as string | null,
+    search: vi.fn(),
+    loadMore: vi.fn(),
+    reset: vi.fn(),
+  },
+}))
+
+vi.mock('@/ui/admin/musics/useMetingMusicSearch', () => ({
+  useMetingMusicSearch: () => searchHookMock.state,
+}))
+
+function resetSearchHookMock(): void {
+  searchHookMock.state = {
+    results: [],
+    hasMore: false,
+    isSearching: false,
+    isLoadingMore: false,
+    error: null,
+    search: vi.fn(),
+    loadMore: vi.fn(),
+    reset: vi.fn(),
+  }
+}
+
 // Dialog primitives — same approach as the admin tags/friends specs. The
 // `Dialog` wrapper renders its children only when `open` is true so the
 // snapshot reflects the open dialog body without a browser portal.
@@ -213,6 +247,7 @@ function resetQueryMocks(): void {
     refetch: vi.fn(),
   }
   queryMocks.mutation = { mutate: vi.fn(), isPending: false }
+  resetSearchHookMock()
 }
 
 // ═══════════════════════════ AddMusicDialog ═══════════════════════════════
@@ -259,12 +294,11 @@ describe('snapshot: AddMusicDialog', () => {
   })
 
   it('renders skeletons when the search query is fetching and there are no results yet', () => {
-    // The dialog computes `isSearching = searchQuery.isFetching && nextOffset === 0`.
+    // The hook reports `isSearching` while the first page is in flight.
     // With no results yet, three Skeleton rows render.
-    queryMocks.query = {
-      ...queryMocks.query,
-      isFetching: true,
-      data: null,
+    searchHookMock.state = {
+      ...searchHookMock.state,
+      isSearching: true,
     }
     const html = stableHtml(
       renderToHtml(
@@ -279,10 +313,9 @@ describe('snapshot: AddMusicDialog', () => {
   })
 
   it('renders the error banner when the search query rejects', () => {
-    queryMocks.query = {
-      ...queryMocks.query,
-      isError: true,
-      error: { message: '上游服务暂不可用' },
+    searchHookMock.state = {
+      ...searchHookMock.state,
+      error: '上游服务暂不可用',
     }
     const html = stableHtml(
       renderToHtml(
@@ -419,9 +452,9 @@ describe('snapshot: AddMusicView', () => {
 
   it('renders the hero song count and a populated library snapshot when libraryQuery resolves', () => {
     // The hero reads libraryMusics / libraryTotal from `libraryQuery.data`
-    // directly (no seed-on-change), so a populated library IS reachable on
-    // SSR. The search results grid, however, shares the same unreachable
-    // seed pattern as AddMusicDialog and stays empty.
+    // directly, so a populated library IS reachable on SSR. The search
+    // results grid stays empty: the search machine starts idle and only an
+    // event (`search()`) starts fetching.
     const music = makeAdminMusic({ name: '蓝色风暴', artist: ['周杰伦'] })
     queryMocks.query = {
       ...queryMocks.query,
@@ -443,12 +476,11 @@ describe('snapshot: AddMusicView', () => {
   })
 
   it('renders the grid skeleton when the search query is fetching', () => {
-    // `isSearching = searchQuery.isFetching && nextOffset === 0`. With no
-    // results the GridSkeleton branch (12 animate-pulse cells) renders.
-    queryMocks.query = {
-      ...queryMocks.query,
-      isFetching: true,
-      data: null,
+    // The hook reports `isSearching` while the first page is in flight.
+    // With no results the GridSkeleton branch (12 animate-pulse cells) renders.
+    searchHookMock.state = {
+      ...searchHookMock.state,
+      isSearching: true,
     }
     const html = stableHtml(
       renderInRouter(
@@ -463,10 +495,9 @@ describe('snapshot: AddMusicView', () => {
   })
 
   it('renders the error banner when the search query rejects', () => {
-    queryMocks.query = {
-      ...queryMocks.query,
-      isError: true,
-      error: { message: '搜索接口超时' },
+    searchHookMock.state = {
+      ...searchHookMock.state,
+      error: '搜索接口超时',
     }
     const html = stableHtml(
       renderInRouter(
