@@ -57,6 +57,12 @@ binding lives in repo-side adapters (`livePostWhere` / `livePageWhere`).
 _Avoid_: hand-written `published && publishedRevisionId` checks (drifted
 copies of this gate)
 
+**Draft preview**:
+Viewing non-live content by direct link. Deliberate per-entity policy:
+authors may preview post drafts; only admins may preview page drafts.
+_Avoid_: "preview" without an entity qualifier (the rule differs per
+entity), admin-only (the stale claim the code never enforced)
+
 ### Settings
 
 **Section**:
@@ -71,3 +77,10 @@ A settings field stored encrypted (mail API keys, storage secret, search API
 key). Declared once; decrypt-on-load, preserve-on-omit, and masking all derive
 from that single declaration.
 _Avoid_: password, credential
+
+**Section patch**:
+The unit of a settings write: a partial Section payload carrying only the
+fields one card owns. The server merges it against the stored section
+(objects merge, lists replace) instead of trusting a client-assembled full
+snapshot; unknown fields are rejected.
+_Avoid_: full-section snapshot, loader shape as write base
