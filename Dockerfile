@@ -14,12 +14,28 @@ COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 RUN --mount=type=cache,target=/root/.local/share/pnpm/store \
     pnpm install --frozen-lockfile
 
+# UPX — compress the SEA binary during sea:build (scripts/sea/upx.ts runs
+# the compression whenever upx is on PATH and silently skips otherwise).
+# Debian bookworm ships NO upx package at all (removed over its license),
+# so install the pinned official release tarball instead.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends ca-certificates wget xz-utils \
+    && rm -rf /var/lib/apt/lists/* \
+    && arch="$(uname -m)" \
+    && case "$arch" in x86_64) upx_arch=amd64 ;; aarch64) upx_arch=arm64 ;; *) echo "unsupported arch: $arch" >&2; exit 1 ;; esac \
+    && wget -qO- "https://github.com/upx/upx/releases/download/v4.2.4/upx-4.2.4-${upx_arch}_linux.tar.xz" \
+       | tar -xJf- -C /usr/local/bin --strip-components=1 "upx-4.2.4-${upx_arch}_linux/upx" \
+    && upx --version
+
 # Build the SEA single executable: react-router build + tsdown bundle + SEA
-# blob + postject injection (see scripts/sea/build.ts). The copied node
-# binary and the sharp / @napi-rs/canvas platform packages pnpm installs
-# here are glibc builds, matching the debian runtime stage below.
+# blob + postject injection + UPX compression (see scripts/sea/build.ts).
+# The copied node binary and the sharp / @napi-rs/canvas platform packages
+# pnpm installs here are glibc builds, matching the debian runtime stage
+# below.
 COPY . .
-RUN pnpm run sea:build
+# SEA_UPX_REQUIRE: a missing UPX in this image must fail the build, never
+# silently ship an uncompressed binary.
+RUN SEA_UPX_REQUIRE=1 pnpm run sea:build
 
 FROM debian:bookworm-slim AS runtime
 

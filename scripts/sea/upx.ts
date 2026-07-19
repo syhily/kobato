@@ -16,13 +16,17 @@
 //                           upx-ucl explicitly (.github/workflows/sea.yml),
 //                           so release assets are always compressed
 //
+// `SEA_UPX_REQUIRE=1` flips the not-found skip into a hard failure — the
+// Dockerfile sets it so a broken UPX install can never silently ship an
+// uncompressed image again.
+//
 // Overrides: `SEA_UPX_BIN` (binary path), `SEA_UPX_ARGS` (flags, default
 // `--best`).
 
 import { spawnSync } from 'node:child_process'
 import { stat } from 'node:fs/promises'
 
-import { run } from './exec.ts'
+import { fail, run } from './exec.ts'
 
 const DEFAULT_UPX_ARGS = ['--best']
 
@@ -55,6 +59,9 @@ export async function maybeCompressWithUpx(binaryPath: string) {
   }
   const upx = resolveUpxBinary()
   if (upx === null) {
+    if (process.env.SEA_UPX_REQUIRE === '1') {
+      fail('upx is required (SEA_UPX_REQUIRE=1) but was not found on PATH.')
+    }
     console.warn('==> upx not found — skipping compression (install upx-ucl to shrink the binary)')
     return
   }
