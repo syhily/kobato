@@ -29,7 +29,7 @@ This repository is the complete product: public site, admin SPA, API, SSR render
 
 ## Requirements
 
-- Node.js 24+
+- Node.js 24+ (development and building from source only — the SEA binary deployment needs no runtime)
 - TimescaleDB 17+
 - Redis 7+
 
@@ -131,6 +131,62 @@ docker run -p 4321:4321 \
   -e ENCRYPTION_KEY=... \
   kobato
 ```
+
+### SEA binary (bare metal)
+
+Every release also ships a self-contained single executable — no Node.js
+runtime, no `node_modules`. The server bundle, client assets, and database
+migrations are embedded in the binary (UPX-compressed); the native packages
+(sharp, canvas) are extracted to a cache directory on first run. Targets:
+glibc Linux, x64 and arm64. You still need external TimescaleDB 17+ and
+Redis 7+.
+
+Download `kobato-linux-x64` (or `kobato-linux-arm64`) and its `.sha256`
+sidecar from the [latest release](../../releases/latest), verify, and
+install:
+
+```bash
+sha256sum -c kobato-linux-x64.sha256
+install -m 0755 kobato-linux-x64 /usr/local/bin/kobato
+kobato --version          # prints the baked-in version
+```
+
+Configure it with the same environment variables as the Docker deployment
+(`DATABASE_URL`, `REDIS_URL`, `SESSION_SECRET`, `ENCRYPTION_KEY`,
+`DATA_PATH` — see [Configuration](#configuration)). `DATA_PATH` defaults to
+`./data` relative to the working directory, so set it explicitly for a
+system install. The natives cache lands in `$XDG_CACHE_HOME/kobato`
+(override with `KOBATO_CACHE_DIR`). Database migrations run automatically
+at boot; on first boot, open `/admin/setup`.
+
+A minimal systemd unit:
+
+```ini
+[Unit]
+Description=Kobato blog CMS
+After=network-online.target postgresql.service redis.service
+
+[Service]
+Type=simple
+Environment=DATABASE_URL=postgres://user:pass@127.0.0.1:5432/kobato
+Environment=REDIS_URL=redis://127.0.0.1:6379
+Environment=SESSION_SECRET=change-me
+Environment=ENCRYPTION_KEY=change-me
+Environment=DATA_PATH=/var/lib/kobato
+ExecStart=/usr/local/bin/kobato
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target
+```
+
+The binary can update itself: in the admin console, open the version
+dialog → 检查更新 → 立即更新. It downloads the release asset for the current
+platform, verifies the sha256, swaps the executable in place (the previous
+one is kept as `kobato.bak` for manual rollback), and restarts. Self-update
+is intentionally unavailable inside Docker — upgrade containers by pulling
+a new image instead.
 
 ### Zeabur
 
