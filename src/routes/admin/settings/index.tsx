@@ -2,8 +2,8 @@ import { Children, useCallback, useEffect, useRef, useSyncExternalStore } from '
 import { useNavigate, useOutletContext } from 'react-router'
 
 import type { SettingsOutletContext } from '@/routes/admin/settings/layout'
-import type { SecretMasks } from '@/server/domains/settings/services/core'
 import type { SettingsSection } from '@/shared/config/sections'
+import type { SecretMasks } from '@/shared/config/types'
 import type { Assert, Equals } from '@/shared/contracts/primitives'
 
 import { getRouteRequestContext } from '@/server/domains/auth/context'

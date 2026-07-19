@@ -1,7 +1,6 @@
 import { isRouteErrorResponse, Outlet, useOutletContext, useRouteError } from 'react-router'
 
-import type { SecretMasks } from '@/server/domains/settings/services/core'
-import type { BlogSettingsBundle } from '@/shared/config/types'
+import type { BlogSettingsBundle, SecretMasks } from '@/shared/config/types'
 
 import { getDbFromContext } from '@/server/domains/auth/context'
 import { SECTION_REGISTRY } from '@/server/domains/settings/sections/registry'

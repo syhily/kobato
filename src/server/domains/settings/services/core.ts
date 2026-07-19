@@ -6,8 +6,6 @@ import type { Setting } from '@/server/infra/db/types'
 import type { SettingsSection } from '@/shared/config/sections'
 import type { BlogSettingsBundle, SecretMasks } from '@/shared/config/types'
 
-export type { SecretMasks }
-
 import { SECRET_FIELDS } from '@/server/domains/settings/secrets'
 import { SECTION_REGISTRY } from '@/server/domains/settings/sections/registry'
 import { hydrateBlogSettings, refreshBlogSettings } from '@/server/domains/settings/services/hydrate'
