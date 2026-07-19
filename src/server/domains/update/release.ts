@@ -1,0 +1,62 @@
+// Latest-release lookup against the GitHub Releases API (plan 090).
+// Extracted from `github.controller.ts` so both the public `github.release`
+// procedure and the self-update domain share one fetch/validate
+// implementation. Throws `DomainError('INTERNAL', …)`; HTTP callers decide
+// the wire-level translation.
+
+import { DomainError } from '@/server/infra/http/errors'
+import { APP_REPOSITORY } from '@/shared/config/version'
+import { isRecord } from '@/shared/utils/type-guards'
+
+export interface LatestRelease {
+  tagName: string
+  htmlUrl: string
+  name: string
+  publishedAt: string
+}
+
+export function parseRepo(full: string): { owner: string; repo: string } | null {
+  const m = full.match(/github\.com\/([^/]+)\/([^/]+)/)
+  if (!m) {
+    return null
+  }
+  return { owner: m[1]!, repo: m[2]! }
+}
+
+function isGitHubRelease(
+  value: unknown,
+): value is { tag_name: string; html_url: string; name: string; published_at: string } {
+  if (!isRecord(value)) {
+    return false
+  }
+  return (
+    typeof value.tag_name === 'string' &&
+    typeof value.html_url === 'string' &&
+    typeof value.name === 'string' &&
+    typeof value.published_at === 'string'
+  )
+}
+
+export async function fetchLatestRelease(): Promise<LatestRelease> {
+  const parsed = parseRepo(APP_REPOSITORY)
+  if (!parsed) {
+    throw new DomainError('INTERNAL', 'Invalid repository format')
+  }
+  const { owner, repo } = parsed
+  const res = await fetch(`https://api.github.com/repos/${owner}/${repo}/releases/latest`, {
+    signal: AbortSignal.timeout(30_000),
+  })
+  if (!res.ok) {
+    throw new DomainError('INTERNAL', 'Failed to fetch release')
+  }
+  const json: unknown = await res.json()
+  if (!isGitHubRelease(json)) {
+    throw new DomainError('INTERNAL', 'Unexpected response format from GitHub API')
+  }
+  return {
+    tagName: json.tag_name,
+    htmlUrl: json.html_url,
+    name: json.name,
+    publishedAt: json.published_at,
+  }
+}

@@ -58,6 +58,8 @@ storage, key, process), `music`, `pages`, `posts`, `pt`
 (Shiki/KaTeX prerender, canonicalize, comment-to-html),
 `settings` (install-flow, install-gate),
 `taxonomies/{categories,tags}`, `users`. Plus `audit`. Plus
+`update` (SEA self-update: gate, release fetch, download/verify/swap
+pipeline, single-job state machine). Plus
 `webmentions` (W3C Webmention receive: target resolution, SSRF-guarded
 source fetch, link verification, moderation).
 

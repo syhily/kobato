@@ -55,6 +55,9 @@ vi.mock('@/client/api/orpc-query', () => ({
       posts: { list: { queryOptions: (args: unknown) => ({ queryKey: ['posts', args], queryFn: async () => ({}) }) } },
       pages: { list: { queryOptions: (args: unknown) => ({ queryKey: ['pages', args], queryFn: async () => ({}) }) } },
       music: { list: { queryOptions: (args: unknown) => ({ queryKey: ['music', args], queryFn: async () => ({}) }) } },
+      update: {
+        status: { queryOptions: (args: unknown) => ({ queryKey: ['update-status', args], queryFn: async () => ({}) }) },
+      },
     },
     github: {
       avatar: { queryOptions: (args: unknown) => ({ queryKey: ['github-avatar', args], queryFn: async () => ({}) }) },

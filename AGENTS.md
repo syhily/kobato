@@ -153,6 +153,35 @@ The production Docker image ships only the SEA binary on a glibc base —
 musl is blocked by a postject `.gnu.hash` corruption bug on the musl
 node binary (see the comment at the top of `Dockerfile`).
 
+### SEA self-update
+
+Bare-metal SEA deployments can update themselves from the admin shell
+(VersionDialog → 检查更新 → 立即更新). The pipeline lives in
+`src/server/domains/update/` and is modeled on AdGuardHome's
+`internal/updater`: stage in `<execDir>/.kobato-update/`, stream-download
+the release asset (`kobato-linux-<arch>`, 512 MB cap), verify against the
+`.sha256` sidecar, `chmod 0o755`, rename the live binary to
+`<binary>.bak`, swap, then restart (detached re-spawn + `process.exit(0)`).
+Any failure after the backup step restores the `.bak` best-effort before
+rethrowing; the stage dir is always cleaned.
+
+The gate (`gate.ts`) requires ALL of: `isSea()`, linux x64/arm64, not
+containerized (`/.dockerenv` / `/proc/1/cgroup`), a writable binary
+directory, and a non-`-dev` build. Refusals surface as Chinese admin-facing
+strings in `reasons` — Docker deployments are refused by design (upgrade by
+pulling a new image). Never bypass the gate from a new caller.
+
+Admin procedures: `admin.update.check` / `admin.update.apply` /
+`admin.update.status` (oRPC, admin role). `apply` runs the job in-process
+in the background (one at a time; a concurrent apply is CONFLICT) and
+emits a `system_updated` audit event; the UI polls `status` every 1.5 s.
+There is no `'succeeded'` job state — the process exits on success and the
+UI reloads into the new version.
+
+Manual rollback: `mv kobato.bak kobato && systemctl restart <service>`
+(or the supervisor equivalent). The `.bak` sibling is left in place
+deliberately after a successful swap.
+
 ## Git
 
 - Semantic commits in English: `feat:`, `fix:`, `docs:`, `refactor:`,

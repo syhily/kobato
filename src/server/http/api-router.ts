@@ -15,6 +15,7 @@ import { adminRendersRouter } from '@/server/http/controllers/admin/renders.cont
 import { adminSettingsRouter } from '@/server/http/controllers/admin/settings.controller'
 import { adminStorageRouter } from '@/server/http/controllers/admin/storage.controller'
 import { adminTagsRouter } from '@/server/http/controllers/admin/tags.controller'
+import { adminUpdateRouter } from '@/server/http/controllers/admin/update.controller'
 import { adminUsersAdminRouter } from '@/server/http/controllers/admin/users-admin.controller'
 import { adminUsersCrudRouter } from '@/server/http/controllers/admin/users-crud.controller'
 import { adminUsersSessionsRouter } from '@/server/http/controllers/admin/users-sessions.controller'
@@ -69,6 +70,7 @@ export const apiRouter = {
     backup: adminBackupRouter,
     fonts: adminFontsRouter,
     webmentions: adminWebmentionsRouter,
+    update: adminUpdateRouter,
   },
 }
 
