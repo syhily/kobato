@@ -1,13 +1,15 @@
+import type { Context } from 'hono'
 import type { ContentfulStatusCode } from 'hono/utils/http-status'
 
 import { Hono } from 'hono'
 
+import type { MusicProvider, ProviderTrack } from '@/server/domains/music/providers/types'
 import type { Env } from '@/server/http/context'
 import type { MetingSource } from '@/shared/types/music'
 
 import { getProvider } from '@/server/domains/music/providers/registry'
+import { requireRoleMw } from '@/server/http/middlewares/hono-rbac'
 import { ActionFailure } from '@/server/infra/http/errors'
-import { hasAtLeast } from '@/shared/utils/roles'
 import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
 const SOURCE_REFERERS: Record<MetingSource, string> = {
@@ -16,14 +18,6 @@ const SOURCE_REFERERS: Record<MetingSource, string> = {
 }
 
 const VALID_SOURCES = new Set<string>(['netease', 'tencent'])
-
-function requireAuthor(c: { var: Env['Variables'] }): Response | null {
-  const viewer = c.var.viewer
-  if (!viewer || !hasAtLeast(viewer.role, 'author')) {
-    return new Response('Unauthorized', { status: 401 })
-  }
-  return null
-}
 
 async function proxyUpstream(targetUrl: string, referer: string): Promise<Response> {
   const upstreamRes = await fetch(targetUrl, {
@@ -78,54 +72,37 @@ function handleError(err: unknown) {
   return { error: message, status }
 }
 
+function proxyHandler(resolveUrl: (provider: MusicProvider, track: ProviderTrack) => Promise<string>) {
+  return async (c: Context<Env>) => {
+    const params = parseProxyParams(c)
+    if (params instanceof Response) {
+      return params
+    }
+
+    const provider = getProvider(params.source)
+    try {
+      const track = await provider.getTrack(params.sourceId)
+      if (track === null) {
+        return c.json({ error: 'Track not found' }, 404)
+      }
+      const url = await resolveUrl(provider, track)
+      return await proxyUpstream(url, SOURCE_REFERERS[params.source])
+    } catch (err: unknown) {
+      const { error, status } = handleError(err)
+      return c.json({ error }, status)
+    }
+  }
+}
+
 export const musicProxyRouter = new Hono<Env>()
 
-musicProxyRouter.get('/admin/music/proxy/cover', async (c) => {
-  const authError = requireAuthor(c)
-  if (authError) {
-    return authError
-  }
+musicProxyRouter.use('/admin/music/proxy/*', requireRoleMw('author'))
 
-  const params = parseProxyParams(c)
-  if (params instanceof Response) {
-    return params
-  }
-
-  const provider = getProvider(params.source)
-  try {
-    const track = await provider.getTrack(params.sourceId)
-    if (track === null) {
-      return c.json({ error: 'Track not found' }, 404)
-    }
-    const coverUrl = await provider.resolveCoverUrl(track)
-    return await proxyUpstream(coverUrl, SOURCE_REFERERS[params.source])
-  } catch (err: unknown) {
-    const { error, status } = handleError(err)
-    return c.json({ error }, status)
-  }
-})
-
-musicProxyRouter.get('/admin/music/proxy/audio', async (c) => {
-  const authError = requireAuthor(c)
-  if (authError) {
-    return authError
-  }
-
-  const params = parseProxyParams(c)
-  if (params instanceof Response) {
-    return params
-  }
-
-  const provider = getProvider(params.source)
-  try {
-    const track = await provider.getTrack(params.sourceId)
-    if (track === null) {
-      return c.json({ error: 'Track not found' }, 404)
-    }
-    const audioUrl = await provider.resolveAudioUrl(track)
-    return await proxyUpstream(audioUrl, SOURCE_REFERERS[params.source])
-  } catch (err: unknown) {
-    const { error, status } = handleError(err)
-    return c.json({ error }, status)
-  }
-})
+musicProxyRouter.get(
+  '/admin/music/proxy/cover',
+  proxyHandler((p, t) => p.resolveCoverUrl(t)),
+)
+musicProxyRouter.get(
+  '/admin/music/proxy/audio',
+  proxyHandler((p, t) => p.resolveAudioUrl(t)),
+)
