@@ -1,7 +1,7 @@
 // SEA asset collection.
 //
 // Builds the embedded-asset map consumed by `node --experimental-sea-config`
-// (see blob.mjs) and writes the `manifest.json` asset that the runtime
+// (see blob.ts) and writes the `manifest.json` asset that the runtime
 // bootstrap (`src/server/infra/sea-natives.ts`) uses to verify and extract
 // the native packages.
 //
@@ -39,7 +39,7 @@ import { mkdir, readdir, readFile, writeFile } from 'node:fs/promises'
 import { createRequire } from 'node:module'
 import { dirname, join, relative } from 'node:path'
 
-import { fail } from './exec.mjs'
+import { fail } from './exec.ts'
 import {
   repoRoot,
   seaIntermediatesDir,
@@ -47,29 +47,47 @@ import {
   seaServerBundlePath,
   seaSmokeWorkerBundlePath,
   seaWorkerBundlePath,
-} from './paths.mjs'
+} from './paths.ts'
 
 const requireFromRepo = createRequire(join(repoRoot, 'package.json'))
 
 const NATIVE_ENTRY_PACKAGES = ['sharp', 'sharp-ico', '@napi-rs/canvas']
 
-function sha256(bytes) {
+interface ManifestFileEntry {
+  key: string
+  path: string
+  sha256: string
+}
+
+interface SeaManifest {
+  version: string
+  target: string
+  files: ManifestFileEntry[]
+}
+
+interface PackageJsonShape {
+  version?: string
+  dependencies?: Record<string, string>
+  optionalDependencies?: Record<string, string>
+}
+
+function sha256(bytes: Buffer) {
   return createHash('sha256').update(bytes).digest('hex')
 }
 
-function toPosixPath(path) {
+function toPosixPath(path: string) {
   return path.split('\\').join('/')
 }
 
-async function readJson(path) {
+async function readJson(path: string): Promise<PackageJsonShape> {
   return JSON.parse(await readFile(path, 'utf-8'))
 }
 
 /** Recursive file listing of `root`, following symlinked files/dirs. */
-async function listFiles(root) {
-  const files = []
+async function listFiles(root: string) {
+  const files: string[] = []
 
-  async function walk(dir) {
+  async function walk(dir: string) {
     const entries = await readdir(dir, { withFileTypes: true })
     for (const entry of entries) {
       const path = join(dir, entry.name)
@@ -102,7 +120,7 @@ async function listFiles(root) {
  * is tried first; packages whose exports map hides it (sharp does) fall
  * back to realpath'ing the top-level node_modules symlink.
  */
-function resolvePackageRoot(name) {
+function resolvePackageRoot(name: string) {
   try {
     return realpathSync(dirname(requireFromRepo.resolve(`${name}/package.json`)))
   } catch {
@@ -122,11 +140,14 @@ function resolvePackageRoot(name) {
  * fail.
  */
 function collectNativePackageRoots() {
-  const rootsByName = new Map()
-  const queue = NATIVE_ENTRY_PACKAGES.map((name) => ({ name, root: null }))
+  const rootsByName = new Map<string, string>()
+  const queue: { name: string; root: string | null }[] = NATIVE_ENTRY_PACKAGES.map((name) => ({
+    name,
+    root: null,
+  }))
 
   while (queue.length > 0) {
-    const item = queue.shift()
+    const item = queue.shift()!
     if (rootsByName.has(item.name)) {
       continue
     }
@@ -141,7 +162,7 @@ function collectNativePackageRoots() {
     }
     rootsByName.set(item.name, root)
 
-    const pkg = JSON.parse(readFileSync(join(root, 'package.json'), 'utf-8'))
+    const pkg: PackageJsonShape = JSON.parse(readFileSync(join(root, 'package.json'), 'utf-8'))
     // Sibling lookup: the package's own node_modules dir. A scoped
     // package's realpath ends in `<store>/node_modules/@scope/<pkg>`, so
     // the store dir is two levels up (one for unscoped names).
@@ -162,7 +183,7 @@ function collectNativePackageRoots() {
 }
 
 /** Add every file of `root` to the asset map under `keyPrefix`. */
-async function addTree(assets, files, keyPrefix, root) {
+async function addTree(assets: Map<string, string>, files: ManifestFileEntry[], keyPrefix: string, root: string) {
   for (const file of await listFiles(root)) {
     const key = `${keyPrefix}/${toPosixPath(relative(root, file))}`
     if (assets.has(key)) {
@@ -177,9 +198,9 @@ async function addTree(assets, files, keyPrefix, root) {
  * Collect the full asset map, write `manifest.json` into the
  * intermediates dir, and return the map including that manifest asset.
  */
-export async function collectSeaAssets({ wasmPath }) {
-  const assets = new Map()
-  const files = []
+export async function collectSeaAssets({ wasmPath }: { wasmPath: string }) {
+  const assets = new Map<string, string>()
+  const files: ManifestFileEntry[] = []
 
   // Whole build/client tree (fingerprinted static assets + public files).
   await addTree(assets, files, 'client', join(repoRoot, 'build', 'client'))
@@ -239,8 +260,8 @@ export async function collectSeaAssets({ wasmPath }) {
   // between Node builds, and the bytes must be reproducible everywhere.
   files.sort((a, b) => (a.key < b.key ? -1 : a.key > b.key ? 1 : 0))
   const pkg = await readJson(join(repoRoot, 'package.json'))
-  const manifest = {
-    version: pkg.version,
+  const manifest: SeaManifest = {
+    version: pkg.version ?? fail('package.json has no "version" field'),
     target: `${process.platform}-${process.arch}`,
     files,
   }
@@ -256,7 +277,7 @@ export async function collectSeaAssets({ wasmPath }) {
 
 if (import.meta.url === `file://${process.argv[1]}`) {
   const { assets, manifest } = await collectSeaAssets({
-    wasmPath: process.argv[2] ?? fail('Usage: node scripts/sea/assets.mjs <path-to-cnfs-wasm>'),
+    wasmPath: process.argv[2] ?? fail('Usage: node scripts/sea/assets.ts <path-to-cnfs-wasm>'),
   })
   console.log(`Collected ${assets.size} assets for ${manifest.target} (${manifest.files.length} manifest files)`)
 }

@@ -6,8 +6,8 @@
 import { chmod, copyFile, mkdir, readFile, stat } from 'node:fs/promises'
 import { resolve } from 'node:path'
 
-import { fail, run, tryRun } from './exec.mjs'
-import { repoRoot, SEA_SENTINEL_FUSE, seaBinaryPath, seaBlobPath, seaDistDir } from './paths.mjs'
+import { fail, run, tryRun } from './exec.ts'
+import { repoRoot, SEA_SENTINEL_FUSE, seaBinaryPath, seaBlobPath, seaDistDir } from './paths.ts'
 
 function postjectPath() {
   return resolve(repoRoot, 'node_modules', '.bin', 'postject')

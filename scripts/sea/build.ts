@@ -8,7 +8,7 @@
 //   5. blob                     node --experimental-sea-config
 //   6. inject                   copy node + postject the blob
 //   7. upx                      compress the injected binary (linux, when
-//                               upx is available; scripts/sea/upx.mjs)
+//                               upx is available; scripts/sea/upx.ts)
 //   8. checksum                 dist-sea/kobato.sha256
 //
 // The build is platform-native by design: the embedded native packages
@@ -19,12 +19,12 @@ import { createHash } from 'node:crypto'
 import { readdir, readFile, rm, stat, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 
-import { collectSeaAssets } from './assets.mjs'
-import { runBlobStep } from './blob.mjs'
-import { fail, run } from './exec.mjs'
-import { runInjectStep } from './inject.mjs'
-import { repoRoot, seaBinaryPath, seaBinarySha256Path, seaIntermediatesDir } from './paths.mjs'
-import { maybeCompressWithUpx } from './upx.mjs'
+import { collectSeaAssets } from './assets.ts'
+import { runBlobStep } from './blob.ts'
+import { fail, run } from './exec.ts'
+import { runInjectStep } from './inject.ts'
+import { repoRoot, seaBinaryPath, seaBinarySha256Path, seaIntermediatesDir } from './paths.ts'
+import { maybeCompressWithUpx } from './upx.ts'
 
 const REQUIRED_NODE_MAJOR = 24
 
@@ -66,7 +66,7 @@ async function main() {
   run('pnpm', ['exec', 'tsdown', '--config', 'tsdown.sea.config.ts'])
 
   console.log('==> bundle check')
-  run(process.execPath, [join(repoRoot, 'scripts', 'sea', 'check-bundle.mjs')])
+  run(process.execPath, [join(repoRoot, 'scripts', 'sea', 'check-bundle.ts')])
 
   console.log('==> collect assets')
   const wasmPath = await locateCnfsWasm()

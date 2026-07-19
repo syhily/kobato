@@ -25,6 +25,9 @@
 // superuser). Imports: Node builtins plus `pg` (already a devDependency,
 // used for the per-run database and the seed SQL); no other dependencies.
 
+import type { ChildProcess } from 'node:child_process'
+import type { WriteStream } from 'node:fs'
+
 import { spawn, spawnSync } from 'node:child_process'
 import { randomBytes } from 'node:crypto'
 import { createWriteStream } from 'node:fs'
@@ -34,8 +37,41 @@ import { tmpdir } from 'node:os'
 import { join, resolve as resolvePath } from 'node:path'
 import pg from 'pg'
 
-import { fail } from './exec.mjs'
-import { seaBinaryPath } from './paths.mjs'
+import { fail } from './exec.ts'
+import { seaBinaryPath } from './paths.ts'
+
+interface CheckResult {
+  name: string
+  ok: boolean
+  detail: string
+}
+
+interface ExitState {
+  exited: boolean
+  code: number | null
+  signal: NodeJS.Signals | null
+}
+
+interface TempDirs {
+  root: string
+  data: string
+  cache: string
+  cwd: string
+}
+
+interface SmokeServer {
+  child: ChildProcess
+  exitState: ExitState
+  port: number
+  logStream: WriteStream
+  logClosed: Promise<void>
+  healthResponse: Response | null
+}
+
+interface SmokeDatabase {
+  databaseName: string
+  smokeDatabaseUrl: string
+}
 
 const DEFAULT_DATABASE_URL = 'postgres://test:test@127.0.0.1:5434/test'
 const DEFAULT_REDIS_URL = 'redis://127.0.0.1:6381'
@@ -51,11 +87,21 @@ const LOG_TAIL_LINES = 50
 const PNG_MAGIC = [0x89, 0x50, 0x4e, 0x47]
 const CALENDAR_MIN_BYTES = 2_048
 
-const results = []
-let serverLogPath = null
+const results: CheckResult[] = []
+let serverLogPath: string | null = null
+
+/**
+ * Initializer for variables assigned only inside `check` closures. Starting
+ * from a function call (not the `null` literal) keeps the declared union —
+ * TS otherwise narrows the variable to `null` at every later read, because
+ * closure assignments are invisible to its flow analysis.
+ */
+function none<T>(): T | null {
+  return null
+}
 
 /** Run one named check: print the verdict immediately, record it, never throw. */
-async function check(name, fn) {
+async function check(name: string, fn: () => string | void | Promise<string | void>) {
   try {
     const detail = (await fn()) ?? ''
     results.push({ name, ok: true, detail })
@@ -69,16 +115,16 @@ async function check(name, fn) {
   }
 }
 
-function sleep(ms) {
+function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
-function tailLines(text, count) {
+function tailLines(text: string, count: number) {
   return text.trim().split('\n').slice(-count).join('\n')
 }
 
 /** Connection URLs may carry credentials — print host + path only. */
-function describeUrl(rawUrl) {
+function describeUrl(rawUrl: string) {
   try {
     const url = new URL(rawUrl)
     return `${url.host}${url.pathname}`
@@ -89,22 +135,26 @@ function describeUrl(rawUrl) {
 
 /** A free high port on loopback, race-prone by nature but fine for a smoke. */
 function pickFreePort() {
-  return new Promise((resolve, reject) => {
+  return new Promise<number>((resolve, reject) => {
     const server = createServer()
     server.unref()
     server.once('error', reject)
     server.listen(0, '127.0.0.1', () => {
       const address = server.address()
+      if (address === null || typeof address === 'string') {
+        server.close(() => reject(new Error('listen returned no port')))
+        return
+      }
       server.close(() => resolve(address.port))
     })
   })
 }
 
-async function fetchManual(url) {
+async function fetchManual(url: string) {
   return fetch(url, { redirect: 'manual', signal: AbortSignal.timeout(FETCH_TIMEOUT_MS) })
 }
 
-async function makeTempDirs() {
+async function makeTempDirs(): Promise<TempDirs> {
   const root = await mkdtemp(join(tmpdir(), 'kobato-smoke-'))
   const dirs = { root, data: join(root, 'data'), cache: join(root, 'cache'), cwd: join(root, 'cwd') }
   await mkdir(dirs.data, { recursive: true })
@@ -113,7 +163,7 @@ async function makeTempDirs() {
   return dirs
 }
 
-async function ensureBinaryExists(binaryPath) {
+async function ensureBinaryExists(binaryPath: string) {
   try {
     await stat(binaryPath)
   } catch {
@@ -121,7 +171,7 @@ async function ensureBinaryExists(binaryPath) {
   }
 }
 
-function checkVersion(binaryPath) {
+function checkVersion(binaryPath: string) {
   const result = spawnSync(binaryPath, ['--version'], { encoding: 'utf-8', timeout: VERSION_TIMEOUT_MS })
   if (result.error) {
     throw new Error(`spawn failed: ${result.error.message}`)
@@ -137,7 +187,7 @@ function checkVersion(binaryPath) {
   return line
 }
 
-function checkNatives(binaryPath, cacheDir) {
+function checkNatives(binaryPath: string, cacheDir: string) {
   const expected = `SEA natives smoke passed: ${process.platform}-${process.arch}`
   const result = spawnSync(binaryPath, ['--smoke-natives'], {
     encoding: 'utf-8',
@@ -162,7 +212,7 @@ function checkNatives(binaryPath, cacheDir) {
  * graph pulls in `@/server/infra/env`) but never connects to anything, so
  * the same env the server boot gets is passed here.
  */
-function checkWorker(binaryPath, env) {
+function checkWorker(binaryPath: string, env: Record<string, string>) {
   const expected = `SEA worker smoke passed: ${process.platform}-${process.arch}`
   const result = spawnSync(binaryPath, ['--smoke-worker'], {
     encoding: 'utf-8',
@@ -187,7 +237,7 @@ function checkWorker(binaryPath, env) {
  * touches a shared one. Returns the smoke DATABASE_URL (same credentials,
  * swapped path). The caller drops the database in cleanup.
  */
-async function createSmokeDatabase(baseDatabaseUrl) {
+async function createSmokeDatabase(baseDatabaseUrl: string) {
   const databaseName = `kobato_smoke_${randomBytes(4).toString('hex')}`
   const client = new pg.Client({ connectionString: baseDatabaseUrl })
   await client.connect()
@@ -202,7 +252,7 @@ async function createSmokeDatabase(baseDatabaseUrl) {
 }
 
 /** Best-effort drop of the per-run database; failures are logged, not fatal. */
-async function dropSmokeDatabase(baseDatabaseUrl, databaseName) {
+async function dropSmokeDatabase(baseDatabaseUrl: string, databaseName: string) {
   const client = new pg.Client({ connectionString: baseDatabaseUrl })
   try {
     await client.connect()
@@ -231,7 +281,7 @@ const SEED_ADMIN_EMAIL = 'smoke-admin@kobato.local'
  *      writes, without replaying the passkey/setup-token wizard.
  * Both payloads must pass the real section Zod schemas at hydration time.
  */
-async function seedInstalledInstance(databaseUrl) {
+async function seedInstalledInstance(databaseUrl: string) {
   const year = new Date().getFullYear()
   const general = JSON.stringify({
     title: 'Kobato Smoke',
@@ -294,18 +344,18 @@ async function seedInstalledInstance(databaseUrl) {
  * log). Natives extraction, migrations, and the HTTP listener all happen
  * before the first response.
  */
-async function bootServer(binaryPath, dirs, env) {
+async function bootServer(binaryPath: string, dirs: TempDirs, env: Record<string, string>): Promise<SmokeServer> {
   const port = await pickFreePort()
-  const logStream = createWriteStream(serverLogPath, { flags: 'w' })
-  const logClosed = new Promise((resolve) => logStream.once('close', resolve))
+  const logStream = createWriteStream(serverLogPath ?? fail('serverLogPath unset'), { flags: 'w' })
+  const logClosed = new Promise<void>((resolve) => logStream.once('close', resolve))
   const child = spawn(binaryPath, [], {
     cwd: dirs.cwd,
     env: { ...process.env, ...env, PORT: String(port) },
     stdio: ['ignore', 'pipe', 'pipe'],
   })
-  child.stdout.pipe(logStream)
-  child.stderr.pipe(logStream)
-  const exitState = { exited: false, code: null, signal: null }
+  child.stdout?.pipe(logStream)
+  child.stderr?.pipe(logStream)
+  const exitState: ExitState = { exited: false, code: null, signal: null }
   child.once('exit', (code, signal) => {
     exitState.exited = true
     exitState.code = code
@@ -315,7 +365,7 @@ async function bootServer(binaryPath, dirs, env) {
 }
 
 /** Poll until the server answers with ANY HTTP status (or fails boot). */
-async function waitForHttp(url, exitState) {
+async function waitForHttp(url: string, exitState: ExitState) {
   const deadline = Date.now() + BOOT_TIMEOUT_MS
   let lastError = 'no attempt completed'
   while (Date.now() < deadline) {
@@ -334,7 +384,7 @@ async function waitForHttp(url, exitState) {
   throw new Error(`no HTTP response within ${BOOT_TIMEOUT_MS / 1000}s (last error: ${lastError})`)
 }
 
-async function waitForExit(server, timeoutMs) {
+async function waitForExit(server: SmokeServer, timeoutMs: number) {
   const { child, exitState } = server
   if (exitState.exited) {
     return { code: exitState.code, signal: exitState.signal, timeout: false }
@@ -342,11 +392,11 @@ async function waitForExit(server, timeoutMs) {
   // Two single-resolution promises raced: the child's exit, or the timeout
   // that SIGKILLs it. The loser resolves into the void (its listener/timer
   // is discarded), so no promise ever resolves twice.
-  const exited = new Promise((resolve) => {
+  const exited = new Promise<{ code: number | null; signal: NodeJS.Signals | null; timeout: boolean }>((resolve) => {
     child.once('exit', (code, signal) => resolve({ code, signal, timeout: false }))
   })
-  let timer = null
-  const timedOut = new Promise((resolve) => {
+  let timer: NodeJS.Timeout | undefined
+  const timedOut = new Promise<{ code: null; signal: null; timeout: true }>((resolve) => {
     timer = setTimeout(() => {
       child.kill('SIGKILL')
       resolve({ code: null, signal: null, timeout: true })
@@ -359,7 +409,7 @@ async function waitForExit(server, timeoutMs) {
   }
 }
 
-async function checkShutdown(server) {
+async function checkShutdown(server: SmokeServer) {
   const started = Date.now()
   server.child.kill('SIGTERM')
   const outcome = await waitForExit(server, SHUTDOWN_TIMEOUT_MS)
@@ -382,7 +432,7 @@ async function checkShutdown(server) {
  * Read after the log stream closed so no buffered writes are missed.
  */
 async function checkNativesReuse() {
-  const log = await readFile(serverLogPath, 'utf-8')
+  const log = await readFile(serverLogPath ?? fail('serverLogPath unset'), 'utf-8')
   const match = log.match(/"msg":"SEA natives ready","extracted":(\d+),"reused":(\d+)/)
   if (!match) {
     throw new Error('no "SEA natives ready" line in the server log')
@@ -394,7 +444,7 @@ async function checkNativesReuse() {
 }
 
 /** Fetch an SSR page and assert it is a 200 text/html document with markup. */
-async function fetchSsrPage(baseUrl, path) {
+async function fetchSsrPage(baseUrl: string, path: string) {
   const res = await fetchManual(`${baseUrl}${path}`)
   const body = await res.text()
   const contentType = res.headers.get('content-type') ?? ''
@@ -419,7 +469,7 @@ function calendarPath() {
  * redirect shows up as a 3xx here), carries a real PNG (magic bytes), and
  * is large enough that @napi-rs/canvas actually rendered something.
  */
-async function assertCalendarPng(res) {
+async function assertCalendarPng(res: Response) {
   const contentType = res.headers.get('content-type') ?? ''
   if (res.status !== 200) {
     const location = res.headers.get('location')
@@ -443,8 +493,8 @@ async function assertCalendarPng(res) {
  * is the response the boot poll already obtained in managed mode; pass
  * null to fetch /health directly (external mode).
  */
-async function runHttpChecks(baseUrl, healthResponse) {
-  let ssrPath = null
+async function runHttpChecks(baseUrl: string, healthResponse: Response | null) {
+  let ssrPath: string | null = null
   await check('GET /health — boot + install gate', async () => {
     const res = healthResponse ?? (await fetchManual(`${baseUrl}/health`))
     const location = res.headers.get('location')
@@ -461,22 +511,24 @@ async function runHttpChecks(baseUrl, healthResponse) {
     )
   })
 
-  let assetPath = null
+  let assetPath: string | null = null
   if (ssrPath !== null) {
-    await check(`GET ${ssrPath} — SSR HTML`, async () => {
-      const body = await fetchSsrPage(baseUrl, ssrPath)
+    const pagePath = ssrPath
+    await check(`GET ${pagePath} — SSR HTML`, async () => {
+      const body = await fetchSsrPage(baseUrl, pagePath)
       const match = body.match(/(?:href|src)="(\/assets\/[^"]+?\.js)"/)
       if (!match) {
         throw new Error('no /assets/*.js reference found in the SSR HTML')
       }
-      assetPath = match[1]
-      return `200 text/html, ${body.length} bytes, first asset ${assetPath}`
+      assetPath = match[1] ?? null
+      return `200 text/html, ${body.length} bytes, first asset ${assetPath ?? ''}`
     })
   }
 
   if (assetPath !== null) {
-    await check(`GET ${assetPath} — embedded static asset`, async () => {
-      const res = await fetchManual(`${baseUrl}${assetPath}`)
+    const firstAsset = assetPath
+    await check(`GET ${firstAsset} — embedded static asset`, async () => {
+      const res = await fetchManual(`${baseUrl}${firstAsset}`)
       const body = await res.arrayBuffer()
       const contentType = res.headers.get('content-type') ?? ''
       if (res.status !== 200) {
@@ -499,7 +551,7 @@ async function runHttpChecks(baseUrl, healthResponse) {
  * handler cannot render without a hydrated settings snapshot and answers
  * with a redirect or a 500) and reports SKIP instead of failing.
  */
-async function checkCalendar(baseUrl, { optional }) {
+async function checkCalendar(baseUrl: string, { optional }: { optional: boolean }) {
   await check(`GET ${calendarPath()} — canvas render over HTTP`, async () => {
     const res = await fetchManual(`${baseUrl}${calendarPath()}`)
     if (optional && res.status >= 300 && res.status < 400) {
@@ -513,7 +565,7 @@ async function checkCalendar(baseUrl, { optional }) {
 }
 
 /** Returns a cleanup callback; the caller runs it after the summary/log dump. */
-async function runManaged(binaryPath) {
+async function runManaged(binaryPath: string) {
   await ensureBinaryExists(binaryPath)
   const databaseUrl = process.env.DATABASE_URL ?? DEFAULT_DATABASE_URL
   const redisUrl = process.env.REDIS_URL ?? DEFAULT_REDIS_URL
@@ -525,8 +577,8 @@ async function runManaged(binaryPath) {
   console.log(`    redis:    ${describeUrl(redisUrl)}`)
   console.log(`    temp dir: ${dirs.root}`)
 
-  let server = null
-  let smokeDatabase = null
+  let server = none<SmokeServer>()
+  let smokeDatabase = none<SmokeDatabase>()
   try {
     await check('kobato --version', () => checkVersion(binaryPath))
     await check('kobato --smoke-natives (sharp + canvas)', () => checkNatives(binaryPath, dirs.cache))
@@ -558,11 +610,12 @@ async function runManaged(binaryPath) {
       })
 
       if (booted && server !== null) {
-        await runHttpChecks(`http://127.0.0.1:${server.port}`, server.healthResponse)
-        await check('SIGTERM clean shutdown', () => checkShutdown(server))
+        const bootedServer = server
+        await runHttpChecks(`http://127.0.0.1:${bootedServer.port}`, bootedServer.healthResponse)
+        await check('SIGTERM clean shutdown', () => checkShutdown(bootedServer))
         // Natives-ready is logged before the listener starts, but wait for
         // the stream flush anyway — buffered writes outlive the process.
-        await Promise.race([server.logClosed, sleep(2_000)])
+        await Promise.race([bootedServer.logClosed, sleep(2_000)])
         await check('natives cache reused by the server', () => checkNativesReuse())
       }
 
@@ -586,9 +639,10 @@ async function runManaged(binaryPath) {
         })
 
         if (restarted && server !== null) {
-          const baseUrl = `http://127.0.0.1:${server.port}`
+          const seededServer = server
+          const baseUrl = `http://127.0.0.1:${seededServer.port}`
           await check('GET /health — installed instance', async () => {
-            const res = server.healthResponse ?? (await fetchManual(`${baseUrl}/health`))
+            const res = seededServer.healthResponse ?? (await fetchManual(`${baseUrl}/health`))
             if (res.status !== 200) {
               throw new Error(`expected 200, got ${res.status}`)
             }
@@ -599,8 +653,8 @@ async function runManaged(binaryPath) {
             return `200 text/html, ${body.length} bytes`
           })
           await checkCalendar(baseUrl, { optional: false })
-          await check('SIGTERM clean shutdown (seeded install)', () => checkShutdown(server))
-          await Promise.race([server.logClosed, sleep(2_000)])
+          await check('SIGTERM clean shutdown (seeded install)', () => checkShutdown(seededServer))
+          await Promise.race([seededServer.logClosed, sleep(2_000)])
           await check('natives cache reused after restart', () => checkNativesReuse())
         }
       }
@@ -613,9 +667,10 @@ async function runManaged(binaryPath) {
 
   return async () => {
     if (smokeDatabase !== null) {
-      await dropSmokeDatabase(databaseUrl, smokeDatabase.databaseName).catch((error) => {
+      const { databaseName } = smokeDatabase
+      await dropSmokeDatabase(databaseUrl, databaseName).catch((error: unknown) => {
         console.warn(
-          `Warning: failed to drop ${smokeDatabase.databaseName}: ${error instanceof Error ? error.message : String(error)}`,
+          `Warning: failed to drop ${databaseName}: ${error instanceof Error ? error.message : String(error)}`,
         )
       })
     }
@@ -623,8 +678,8 @@ async function runManaged(binaryPath) {
   }
 }
 
-function normalizeBaseUrl(rawBaseUrl) {
-  let url
+function normalizeBaseUrl(rawBaseUrl: string) {
+  let url: URL
   try {
     url = new URL(rawBaseUrl)
   } catch {
@@ -635,11 +690,11 @@ function normalizeBaseUrl(rawBaseUrl) {
 
 async function main() {
   const args = process.argv.slice(2)
-  let cleanup = null
+  let cleanup: (() => Promise<void>) | null = null
 
   if (args[0] === '--external') {
     if (!args[1]) {
-      fail('Usage: node scripts/sea/smoke.mjs --external <baseUrl>')
+      fail('Usage: node scripts/sea/smoke.ts --external <baseUrl>')
     }
     const baseUrl = normalizeBaseUrl(args[1])
     console.log(`==> SEA smoke (external: ${baseUrl})`)
@@ -648,7 +703,7 @@ async function main() {
     await checkCalendar(baseUrl, { optional: true })
   } else {
     if (args[0]?.startsWith('--')) {
-      fail(`Unknown flag ${args[0]}. Usage: node scripts/sea/smoke.mjs [--external <baseUrl> | path-to-binary]`)
+      fail(`Unknown flag ${args[0]}. Usage: node scripts/sea/smoke.ts [--external <baseUrl> | path-to-binary]`)
     }
     const binaryPath = args[0] ? resolvePath(args[0]) : seaBinaryPath()
     console.log('==> SEA smoke (managed)')

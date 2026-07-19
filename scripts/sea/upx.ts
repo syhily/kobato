@@ -5,7 +5,7 @@
 // the self-updater's download (plans/090) gets proportionally smaller.
 //
 // Runs after postject injection and BEFORE the sha256 checksum
-// (scripts/sea/build.mjs), so the published checksum always matches the
+// (scripts/sea/build.ts), so the published checksum always matches the
 // compressed artifact.
 //
 // Skips — with a log line, never a failure — when:
@@ -22,17 +22,17 @@
 import { spawnSync } from 'node:child_process'
 import { stat } from 'node:fs/promises'
 
-import { run } from './exec.mjs'
+import { run } from './exec.ts'
 
 const DEFAULT_UPX_ARGS = ['--best']
 
-function resolveUpxBinary() {
+function resolveUpxBinary(): string | null {
   const bin = process.env.SEA_UPX_BIN ?? 'upx'
   const probe = spawnSync(bin, ['--version'], { stdio: 'ignore' })
   return probe.error === undefined && probe.status === 0 ? bin : null
 }
 
-function resolveUpxArgs() {
+function resolveUpxArgs(): string[] {
   const override = process.env.SEA_UPX_ARGS
   if (override !== undefined && override.trim() !== '') {
     return override.trim().split(/\s+/)
@@ -40,11 +40,11 @@ function resolveUpxArgs() {
   return DEFAULT_UPX_ARGS
 }
 
-function toMb(bytes) {
+function toMb(bytes: number) {
   return (bytes / 1024 / 1024).toFixed(1)
 }
 
-export async function maybeCompressWithUpx(binaryPath) {
+export async function maybeCompressWithUpx(binaryPath: string) {
   if (process.env.SEA_UPX === '0') {
     console.log('==> UPX compression skipped (SEA_UPX=0)')
     return

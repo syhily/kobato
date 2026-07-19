@@ -110,7 +110,7 @@ worker code are embedded in the binary and read from memory
 
 - `pnpm run sea:build` → `dist-sea/kobato` (+ `.sha256`). On linux the
   injected binary is UPX-compressed before the checksum when `upx` is on
-  PATH (`scripts/sea/upx.mjs`; CI installs `upx-ucl`, so release assets are
+  PATH (`scripts/sea/upx.ts`; CI installs `upx-ucl`, so release assets are
   always compressed). Skip with `SEA_UPX=0`; override flags with
   `SEA_UPX_ARGS` (default `--best`); macOS builds always skip.
 - `pnpm run sea:smoke [binary]` — 17-check deep smoke: version, natives,
@@ -136,7 +136,7 @@ worker code are embedded in the binary and read from memory
   `.github/workflows/sea.yml`. Local macOS builds work for verification
   but are not a delivery target; they need an official Node.js 24
   distribution — Homebrew's node lacks the SEA sentinel fuse
-  (`scripts/sea/inject.mjs` preflights this). An official tarball is
+  (`scripts/sea/inject.ts` preflights this). An official tarball is
   cached under the gitignored `tmp/`.
 
 Runtime rules for contributors:
@@ -147,7 +147,7 @@ Runtime rules for contributors:
   (`tests/unit/shared/contracts/boundaries.test.ts`).
 - Runtime file reads that must work under SEA go through
   `getEmbeddedAsset` / `listEmbeddedAssetKeys`. New resource types must
-  be added to `scripts/sea/assets.mjs` AND read via the sea helpers with
+  be added to `scripts/sea/assets.ts` AND read via the sea helpers with
   a non-SEA fallback.
 - `KOBATO_NATIVES_DIR` / `KOBATO_CACHE_DIR` are documented runtime env
   vars, deliberately read outside `env.ts` (see the allowlist comment on
@@ -248,7 +248,7 @@ bundles the whole server into the binary, and the runtime stage contains
 only that binary — no node runtime, no node_modules, and no second
 `pnpm install --prod` (that two-stage install was the pre-SEA rationale,
 see commit `ed83a5a`). The convention still holds because the SEA assets
-collector (`scripts/sea/assets.mjs`) embeds each native package's installed
+collector (`scripts/sea/assets.ts`) embeds each native package's installed
 dependency closure from the build stage's node_modules, so native packages
 must stay in `dependencies` to be installed with their platform binaries
 at build time.

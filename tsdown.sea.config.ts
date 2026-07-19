@@ -28,7 +28,7 @@ import { z } from 'zod'
 //                         imported by the prelude on demand.
 //
 // tsdown runs config-array entries in parallel, so none of them may
-// `clean` the shared outDir — scripts/sea/build.mjs wipes the
+// `clean` the shared outDir — scripts/sea/build.ts wipes the
 // intermediates dir before invoking tsdown.
 //
 // Native packages (sharp, sharp-ico, @napi-rs/canvas) are never statically

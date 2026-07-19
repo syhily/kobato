@@ -3,15 +3,15 @@
 
 import { writeFile } from 'node:fs/promises'
 
-import { run } from './exec.mjs'
-import { seaBlobPath, seaConfigPath, seaMainBundlePath } from './paths.mjs'
+import { run } from './exec.ts'
+import { seaBlobPath, seaConfigPath, seaMainBundlePath } from './paths.ts'
 
 /**
- * @param {Map<string, string>} assets asset key -> absolute file path
- *   (sorted — see assets.mjs). The config records absolute source paths;
+ * @param assets asset key -> absolute file path
+ *   (sorted — see assets.ts). The config records absolute source paths;
  *   only the keys end up in the blob.
  */
-export async function writeSeaConfig(assets) {
+export async function writeSeaConfig(assets: Map<string, string>) {
   const config = {
     main: seaMainBundlePath(),
     output: seaBlobPath(),
@@ -23,7 +23,7 @@ export async function writeSeaConfig(assets) {
   await writeFile(seaConfigPath(), `${JSON.stringify(config, null, 2)}\n`)
 }
 
-export async function runBlobStep(assets) {
+export async function runBlobStep(assets: Map<string, string>) {
   await writeSeaConfig(assets)
   run(process.execPath, ['--experimental-sea-config', seaConfigPath()])
 }

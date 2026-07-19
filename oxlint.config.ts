@@ -207,13 +207,13 @@ export default defineConfig({
   },
   overrides: [
     {
-      files: ['scripts/**/*.mjs'],
+      files: ['scripts/**/*.ts'],
       rules: {
-        // Plain-node build scripts (ESM .mjs, executed directly with
-        // `node scripts/...`) are not part of the tsc program (`allowJs`
-        // is off), so type-aware rules resolve every import to the
-        // `error` type and only produce false positives. Console output
-        // is the scripts' UI. Non-type-aware rules still apply.
+        // Plain-node build scripts (executed directly with `node
+        // scripts/...`, type-stripped at runtime). Console output is the
+        // scripts' UI, and the JSON/subprocess boundaries (JSON.parse, pg
+        // rows) keep the unsafe-* family off. Non-type-aware rules still
+        // apply.
         'no-console': 'off',
         'typescript/no-unsafe-argument': 'off',
         'typescript/no-unsafe-assignment': 'off',

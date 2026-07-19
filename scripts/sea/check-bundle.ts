@@ -11,7 +11,7 @@
 import { readFileSync } from 'node:fs'
 import { builtinModules } from 'node:module'
 
-import { seaMainBundlePath, seaServerBundlePath, seaWorkerBundlePath } from './paths.mjs'
+import { seaMainBundlePath, seaServerBundlePath, seaWorkerBundlePath } from './paths.ts'
 
 const builtins = new Set([...builtinModules, ...builtinModules.map((name) => `node:${name}`)])
 
@@ -27,12 +27,12 @@ const builtins = new Set([...builtinModules, ...builtinModules.map((name) => `no
 const allowedExternalSpecifiers = new Set(['@aws-sdk/signature-v4a'])
 const allowedRelativeSpecifiers = new Set(['./MyComponent'])
 
-function isAllowedSpecifier(specifier) {
+function isAllowedSpecifier(specifier: string) {
   return builtins.has(specifier) || specifier.startsWith('node:') || allowedExternalSpecifiers.has(specifier)
 }
 
 /** Comment and blank lines can legally contain require-like text. */
-function executableLines(text) {
+function executableLines(text: string) {
   return text
     .split('\n')
     .map((line) => line.trim())
@@ -47,8 +47,8 @@ function executableLines(text) {
     })
 }
 
-function checkBundle(bundlePath) {
-  const errors = []
+function checkBundle(bundlePath: string) {
+  const errors: string[] = []
   const text = readFileSync(bundlePath, 'utf-8')
 
   if (text.includes('import.meta.env')) {

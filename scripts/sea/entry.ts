@@ -1,7 +1,7 @@
 // SEA prelude — the CJS main baked into the single-executable binary.
 //
 // tsdown bundles this module into `dist-sea/intermediates/main.cjs`; see
-// `scripts/sea/build.mjs` for the full pipeline. At runtime inside the
+// `scripts/sea/build.ts` for the full pipeline. At runtime inside the
 // binary the prelude runs first and owns `process.argv` handling:
 //
 //   kobato --version | -v    print the baked-in version and exit

@@ -15,7 +15,7 @@ RUN --mount=type=cache,target=/root/.local/share/pnpm/store \
     pnpm install --frozen-lockfile
 
 # Build the SEA single executable: react-router build + tsdown bundle + SEA
-# blob + postject injection (see scripts/sea/build.mjs). The copied node
+# blob + postject injection (see scripts/sea/build.ts). The copied node
 # binary and the sharp / @napi-rs/canvas platform packages pnpm installs
 # here are glibc builds, matching the debian runtime stage below.
 COPY . .
