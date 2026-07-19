@@ -2,7 +2,7 @@ import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-// Extends feed-pt-render-branches.test.ts — fills in the remaining
+// Extends pt-html-branches.test.ts — fills in the remaining
 // uncovered branches: image alt/width/height/caption, code-block CDATA
 // in RSS mode, math svg/mathml web paths, twoColumn RSS concat, the
 // footnote section emit, heading-id map fallback, list/li marks, the
@@ -17,7 +17,7 @@ const musicMockState = {
   read: vi.fn<(db: unknown, ids: readonly string[]) => Promise<Map<string, unknown>>>(),
 }
 
-import { renderPortableTextToHtml } from '@/server/render/feed/feed-pt-render'
+import { renderPortableTextToHtml } from '@/server/render/pt-html'
 
 const fakeDb = {} as NodePgDatabase
 
@@ -26,7 +26,7 @@ beforeEach(() => {
   musicMockState.read.mockResolvedValue(new Map())
 })
 
-describe('render/feed/feed-pt-render — image block attribute branches', () => {
+describe('render/pt-html — image block attribute branches', () => {
   it('emits alt/width/height/caption when all are provided', async () => {
     const html = await renderPortableTextToHtml(
       fakeDb,
@@ -85,7 +85,7 @@ describe('render/feed/feed-pt-render — image block attribute branches', () => 
   })
 })
 
-describe('render/feed/feed-pt-render — code block RSS CDATA wrapping', () => {
+describe('render/pt-html — code block RSS CDATA wrapping', () => {
   it('wraps highlighted HTML in CDATA when in RSS mode', async () => {
     const html = await renderPortableTextToHtml(
       fakeDb,
@@ -110,7 +110,7 @@ describe('render/feed/feed-pt-render — code block RSS CDATA wrapping', () => {
   })
 })
 
-describe('render/feed/feed-pt-render — math block web paths', () => {
+describe('render/pt-html — math block web paths', () => {
   it('emits raw svg on the web path when svg is present', async () => {
     const html = await renderPortableTextToHtml(
       fakeDb,
@@ -130,7 +130,7 @@ describe('render/feed/feed-pt-render — math block web paths', () => {
   })
 })
 
-describe('render/feed/feed-pt-render — inline math marks (web path)', () => {
+describe('render/pt-html — inline math marks (web path)', () => {
   it('emits svg for an inline math mark on the web path', async () => {
     const html = await renderPortableTextToHtml(
       fakeDb,
@@ -166,7 +166,7 @@ describe('render/feed/feed-pt-render — inline math marks (web path)', () => {
   })
 })
 
-describe('render/feed/feed-pt-render — twoColumn RSS concat', () => {
+describe('render/pt-html — twoColumn RSS concat', () => {
   it('concatenates left+right without a wrapper div in RSS mode', async () => {
     const html = await renderPortableTextToHtml(
       fakeDb,
@@ -189,7 +189,7 @@ describe('render/feed/feed-pt-render — twoColumn RSS concat', () => {
   })
 })
 
-describe('render/feed/feed-pt-render — footnotes section', () => {
+describe('render/pt-html — footnotes section', () => {
   it('appends a footnotes section when footnoteDefinition blocks are present', async () => {
     const html = await renderPortableTextToHtml(
       fakeDb,
@@ -220,7 +220,7 @@ describe('render/feed/feed-pt-render — footnotes section', () => {
   })
 })
 
-describe('render/feed/feed-pt-render — heading id map fallback', () => {
+describe('render/pt-html — heading id map fallback', () => {
   it('uses the provided heading slug when present', async () => {
     const html = await renderPortableTextToHtml(
       fakeDb,
@@ -241,7 +241,7 @@ describe('render/feed/feed-pt-render — heading id map fallback', () => {
   })
 })
 
-describe('render/feed/feed-pt-render — lists and inline marks', () => {
+describe('render/pt-html — lists and inline marks', () => {
   it('wraps bullet and number list items with <ul>/<ol>', async () => {
     // The PortableText list shape: top-level block carries `listItem`,
     // and consecutive items with the same `level` form a list group.
@@ -314,7 +314,7 @@ describe('render/feed/feed-pt-render — lists and inline marks', () => {
   })
 })
 
-describe('render/feed/feed-pt-render — music player happy path', () => {
+describe('render/pt-html — music player happy path', () => {
   it('renders an <audio> figure with the resolved cover when the music meta resolves', async () => {
     musicMockState.read.mockResolvedValue(
       new Map([
@@ -360,7 +360,7 @@ describe('render/feed/feed-pt-render — music player happy path', () => {
   })
 })
 
-describe('render/feed/feed-pt-render — inline mark branches', () => {
+describe('render/pt-html — inline mark branches', () => {
   it('returns plain text when a mark name has no matching markDef', async () => {
     const html = await renderPortableTextToHtml(
       fakeDb,
@@ -413,7 +413,7 @@ describe('render/feed/feed-pt-render — inline mark branches', () => {
   })
 })
 
-describe('render/feed/feed-pt-render — table header row', () => {
+describe('render/pt-html — table header row', () => {
   it('emits <thead> from the first row when hasHeaderRow is true', async () => {
     const html = await renderPortableTextToHtml(
       fakeDb,

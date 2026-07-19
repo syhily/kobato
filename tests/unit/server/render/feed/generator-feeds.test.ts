@@ -7,18 +7,18 @@ vi.mock('@/server/domains/posts/repos/public-query/feed', () => ({
 }))
 vi.mock('@/server/domains/taxonomies/categories/services/query', () => ({
   listAllCategories: () => feedState.listCats(),
+  resolveCategoryBySlugOrName: (_db: unknown, v: string) =>
+    feedState.findCatBySlug(v).then((r) => r ?? feedState.findCatByName(v)),
 }))
 vi.mock('@/server/domains/taxonomies/tags/service', () => ({
-  findTagByName: (_db: unknown, name: string) => feedState.findTagByName(name),
-  findTagBySlug: (_db: unknown, slug: string) => feedState.findTagBySlug(slug),
+  resolveTagBySlugOrName: (_db: unknown, v: string) =>
+    feedState.findTagBySlug(v).then((r) => r ?? feedState.findTagByName(v)),
   getTagsByNames: (_db: unknown, names: string[]) => feedState.getTags(names),
 }))
 vi.mock('@/server/infra/db/operations/category', () => ({
   findCategoriesByNames: (_db: unknown, names: string[]) => feedState.findCats(names),
-  findCategoryByName: (_db: unknown, name: string) => feedState.findCatByName(name),
-  findCategoryBySlug: (_db: unknown, slug: string) => feedState.findCatBySlug(slug),
 }))
-vi.mock('@/server/render/feed/feed-pt-render', () => ({
+vi.mock('@/server/render/pt-html', () => ({
   renderPortableTextToHtml: () => feedState.render(),
 }))
 

@@ -6,11 +6,11 @@ import sanitizeHtml from 'sanitize-html'
 import type { Page, Post } from '@/shared/types/catalog'
 
 import { listPublicPostsWithContent } from '@/server/domains/posts/repos/public-query/feed'
-import { listAllCategories } from '@/server/domains/taxonomies/categories/services/query'
-import { findTagByName, findTagBySlug, getTagsByNames } from '@/server/domains/taxonomies/tags/service'
-import { findCategoriesByNames, findCategoryByName, findCategoryBySlug } from '@/server/infra/db/operations/category'
+import { listAllCategories, resolveCategoryBySlugOrName } from '@/server/domains/taxonomies/categories/services/query'
+import { getTagsByNames, resolveTagBySlugOrName } from '@/server/domains/taxonomies/tags/service'
+import { findCategoriesByNames } from '@/server/infra/db/operations/category'
 import { DomainError } from '@/server/infra/http/errors'
-import { renderPortableTextToHtml } from '@/server/render/feed/feed-pt-render'
+import { renderPortableTextToHtml } from '@/server/render/pt-html'
 import { requireBlogSettingsSection } from '@/shared/config/getters'
 import { joinUrl } from '@/shared/utils/urls'
 
@@ -240,8 +240,7 @@ async function selectFeedPosts(
   }
 
   if (options.category !== undefined) {
-    const category =
-      (await findCategoryBySlug(db, options.category)) ?? (await findCategoryByName(db, options.category))
+    const category = await resolveCategoryBySlugOrName(db, options.category)
     if (category === null) {
       return []
     }
@@ -249,7 +248,7 @@ async function selectFeedPosts(
   }
 
   if (options.tag !== undefined) {
-    const tag = (await findTagBySlug(db, options.tag)) ?? (await findTagByName(db, options.tag))
+    const tag = await resolveTagBySlugOrName(db, options.tag)
     if (tag === null) {
       return []
     }

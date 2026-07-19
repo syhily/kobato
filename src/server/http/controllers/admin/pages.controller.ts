@@ -18,7 +18,7 @@ import {
   updatePageMeta,
 } from '@/server/domains/pages/services/mutate'
 import { adminProc } from '@/server/http/orpc-base'
-import { renderPortableTextToHtml as renderPagePortableTextToHtml } from '@/server/render/feed/feed-pt-render'
+import { renderPortableTextToHtml as renderPagePortableTextToHtml } from '@/server/render/pt-html'
 import {
   adminPageDetailDto,
   adminPageDto,

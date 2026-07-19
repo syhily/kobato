@@ -15,7 +15,7 @@
  * Single source of truth referenced by:
  *   - PT schema (`linkMarkDefSchema` in `src/shared/pt/schema.ts`)
  *   - PT React renderer (`src/ui/pt/render-marks.tsx`, `render-blocks.tsx`)
- *   - Feed PT renderer (`src/server/render/feed/feed-pt-render.ts`)
+ *   - Server PT→HTML renderer (`src/server/render/pt-html.ts`)
  *   - Any future renderer or editor that emits <a href="…">.
  */
 

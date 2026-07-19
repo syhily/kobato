@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
-import { renderPortableTextToHtml } from '@/server/render/feed/feed-pt-render'
 import { sanitizeFeedHtml } from '@/server/render/feed/generator'
+import { renderPortableTextToHtml } from '@/server/render/pt-html'
 
 // A typed stand-in for the NodePgDatabase argument. `renderPortableTextToHtml`
 // only touches the DB when resolving music players; bodies without music

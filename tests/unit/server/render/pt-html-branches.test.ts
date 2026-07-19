@@ -2,7 +2,7 @@ import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-// Companion to feed-pt-render.test.ts — focuses on the RSS-mode and
+// Companion to pt-html.test.ts — focuses on the RSS-mode and
 // edge-config branches that the main spec doesn't exercise.
 
 vi.mock('@/server/domains/music/services/read', () => ({
@@ -13,7 +13,7 @@ const musicMockState = {
   read: vi.fn<(db: unknown, ids: readonly string[]) => Promise<Map<string, unknown>>>(),
 }
 
-import { renderPortableTextToHtml } from '@/server/render/feed/feed-pt-render'
+import { renderPortableTextToHtml } from '@/server/render/pt-html'
 
 const fakeDb = {} as NodePgDatabase
 
@@ -22,7 +22,7 @@ beforeEach(() => {
   musicMockState.read.mockResolvedValue(new Map())
 })
 
-describe('render/feed/feed-pt-render — RSS-mode branches', () => {
+describe('render/pt-html — RSS-mode branches', () => {
   it('renders math block as escaped TeX inside <code> in RSS mode', async () => {
     const html = await renderPortableTextToHtml(
       fakeDb,
@@ -80,7 +80,7 @@ describe('render/feed/feed-pt-render — RSS-mode branches', () => {
   })
 })
 
-describe('render/feed/feed-pt-render — code-block edge branches', () => {
+describe('render/pt-html — code-block edge branches', () => {
   it('omits the language class when language is empty', async () => {
     const html = await renderPortableTextToHtml(
       fakeDb,
@@ -114,7 +114,7 @@ describe('render/feed/feed-pt-render — code-block edge branches', () => {
   })
 })
 
-describe('render/feed/feed-pt-render — link sanitizer', () => {
+describe('render/pt-html — link sanitizer', () => {
   it('rewrites javascript: hrefs to "#" to defeat RSS-reader script injection', async () => {
     const html = await renderPortableTextToHtml(
       fakeDb,
@@ -190,7 +190,7 @@ describe('render/feed/feed-pt-render — link sanitizer', () => {
   })
 })
 
-describe('render/feed/feed-pt-render — table without header', () => {
+describe('render/pt-html — table without header', () => {
   it('emits only <tbody> when hasHeaderRow is false', async () => {
     const html = await renderPortableTextToHtml(
       fakeDb,
@@ -231,7 +231,7 @@ describe('render/feed/feed-pt-render — table without header', () => {
   })
 })
 
-describe('render/feed/feed-pt-render — music placeholder branches', () => {
+describe('render/pt-html — music placeholder branches', () => {
   it('renders a placeholder inside a twoColumn block when no music row resolves', async () => {
     musicMockState.read.mockResolvedValue(new Map())
     const html = await renderPortableTextToHtml(

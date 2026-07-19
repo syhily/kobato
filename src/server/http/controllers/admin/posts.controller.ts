@@ -18,7 +18,7 @@ import {
   updatePostMeta,
 } from '@/server/domains/posts/services/mutate'
 import { authorProc } from '@/server/http/orpc-base'
-import { renderPortableTextToHtml as renderPostPortableTextToHtml } from '@/server/render/feed/feed-pt-render'
+import { renderPortableTextToHtml as renderPostPortableTextToHtml } from '@/server/render/pt-html'
 import {
   adminPostDetailDto,
   adminPostDto,

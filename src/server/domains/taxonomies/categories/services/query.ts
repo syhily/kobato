@@ -3,6 +3,7 @@ import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 import { asc, inArray } from 'drizzle-orm'
 
 import type { AdminCategoriesListResult } from '@/server/domains/taxonomies/categories/projection'
+import type { CategoryRow } from '@/server/infra/db/types'
 import type { Category } from '@/shared/types/catalog'
 
 import { hydrateImageRefs } from '@/server/domains/images/services/enhance'
@@ -12,6 +13,7 @@ import { createRedisCache } from '@/server/infra/cache/redis-cache'
 import {
   type AdminCategoriesListFilters,
   findCategoryByName,
+  findCategoryBySlug,
   listAdminCategoryRows,
 } from '@/server/infra/db/operations/category'
 import { category as categoryTable } from '@/server/infra/db/schema/taxonomy'
@@ -115,4 +117,12 @@ export async function getCategoryLinks(db: NodePgDatabase, names: readonly strin
     result[row.name] = `/cats/${row.slug}`
   }
   return result
+}
+
+// Feed-only resolution rule: feed URLs accept a category slug, but
+// legacy subscribers may carry the display name. Public routes stay
+// slug-only (plan 080, Q1). Deliberately shallow: one composition, no
+// state, no cache.
+export async function resolveCategoryBySlugOrName(db: NodePgDatabase, value: string): Promise<CategoryRow | null> {
+  return (await findCategoryBySlug(db, value)) ?? (await findCategoryByName(db, value))
 }

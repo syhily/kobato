@@ -34,7 +34,7 @@ vi.mock('@/shared/utils/footnotes-section-title', () => ({
 }))
 
 import { getPublicMusicMetasByIds } from '@/server/domains/music/services/read'
-import { renderPortableTextToHtml } from '@/server/render/feed/feed-pt-render'
+import { renderPortableTextToHtml } from '@/server/render/pt-html'
 
 const dbMock = {} as NodePgDatabase
 

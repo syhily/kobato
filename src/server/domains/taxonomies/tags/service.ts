@@ -242,4 +242,9 @@ export async function getTagsByNames(db: NodePgDatabase, names: readonly string[
   return uniqueNames.map((name) => tagMap.get(name)).filter((t): t is Tag => t !== undefined)
 }
 
-export { findTagByName, findTagBySlug }
+// Feed-only resolution rule: feed URLs accept a tag slug, but legacy
+// subscribers may carry the display name. Public routes stay slug-only
+// (plan 080, Q1). Deliberately shallow: one composition, no state, no cache.
+export async function resolveTagBySlugOrName(db: NodePgDatabase, value: string): Promise<TagRow | null> {
+  return (await findTagBySlug(db, value)) ?? (await findTagByName(db, value))
+}

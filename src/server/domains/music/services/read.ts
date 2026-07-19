@@ -86,7 +86,7 @@ export async function getMusicMetaForPlayer(db: NodePgDatabase, playerId: string
 /**
  * Batch variant of `getMusicMetaForPlayer` — one query regardless of how
  * many players a page embeds. The single seam consumed by SSR
- * (`domains/pt/prerender`) and feed rendering (`render/feed/feed-pt-render`).
+ * (`domains/pt/prerender`) and feed rendering (`render/pt-html`).
  */
 export async function getPublicMusicMetasByIds(
   db: NodePgDatabase,

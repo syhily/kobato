@@ -10,7 +10,7 @@ import { DomainError } from '@/server/infra/http/errors'
 export function formatBlockMessage(kind: string, name: string, titles: readonly string[]): string {
   const preview = titles.slice(0, 5).join('、')
   const suffix = titles.length > 5 ? `等 ${titles.length} 篇文章` : `${titles.length} 篇文章`
-  return `${kind}「${name}」仍被 ${suffix}引用：${preview}。请先在 MDX frontmatter 中改写后再删除。`
+  return `${kind}「${name}」仍被 ${suffix}引用：${preview}。请先在引用文章中修改后再删除。`
 }
 
 // Pre-flight uniqueness guard for create. `entityLabel` is the
@@ -63,7 +63,7 @@ export async function ensureUniqueOnUpdateTaxonomy<T extends { id: bigint }>(
 
 // Block-only deletion: refuses to delete a taxonomy row while any post
 // still references it. The 409 body lists up to 5 referencing post
-// titles so the admin knows which files to fix. `listPostTitles` is a
+// titles so the admin knows which posts to fix. `listPostTitles` is a
 // deliberately slim seam (titles only, full inclusion gate) — the guard
 // must not pay for the full listing pipeline (tag batch, revision join,
 // cover/thumbhash hydration) just to name the referencing posts.
