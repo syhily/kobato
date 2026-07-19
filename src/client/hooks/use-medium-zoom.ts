@@ -15,10 +15,11 @@ import { type RefObject, useEffect } from 'react'
 //   only ever zoom this article's media (no leak into sidebar widgets
 //   or any other `.post-content` that might exist elsewhere).
 // - We do an initial attach pass and set up a `MutationObserver` so
-//   late-arriving images (Suspense-streamed MDX, lazy-imported MDX
-//   components, IntersectionObserver-driven reveal animations, etc.)
-//   are picked up the moment they enter the container — fixing the
-//   had committed before the first effect ran.
+//   late-arriving images (lazy-loaded PortableText blocks,
+//   IntersectionObserver-driven reveal animations, etc.) are picked up
+//   the moment they enter the container — fixing the race that
+//   previously depended on whether the body had committed before the
+//   first effect ran.
 // - Cleanup detaches everything currently attached and disconnects the
 //   observer, so a route swap (or the container element being
 //   re-mounted) cannot leave dangling listeners on stale `<img>` nodes.

@@ -47,7 +47,7 @@ import {
 
 export interface PortableTextBodyProps {
   body: PortableTextBodyType
-  /** Optional thumbhash hydration map. Mirrors the MDX `<PostBody>` prop. */
+  /** Optional thumbhash hydration map keyed by image src, supplied by the route loader. */
   imageMeta?: ImageMetaMap
   headingSlugs?: readonly string[]
   musicAutoplay?: 'suppressed' | 'default'

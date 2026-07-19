@@ -5,9 +5,10 @@ import type { MusicPlayerBlockMeta } from '@/shared/types/music'
 import { isSafeUrl } from '@/shared/sanitize-url'
 
 // Strict PortableText subset for this repository. PT is stored in
-// `content.body` (`jsonb`) and maps 1:1 to MDX React components.
-// A closed type union lets the SSR renderer and Tiptap bridge use
-// a finite switch; Zod rejects unknown payloads at the API perimeter.
+// `content.body` (`jsonb`) and maps 1:1 to the SSR renderer's React
+// components. A closed type union lets the SSR renderer and Tiptap
+// bridge use a finite switch; Zod rejects unknown payloads at the API
+// perimeter.
 
 const NON_EMPTY_KEY = z.string().min(1)
 

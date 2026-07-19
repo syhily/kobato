@@ -24,7 +24,7 @@ export interface AdminMusicDto {
   id: string
   source: MetingSource
   sourceId: string
-  /** Opaque 16-char `[a-z0-9]` handle. Quoted into MDX as `id="..."`. */
+  /** Opaque 16-char `[a-z0-9]` handle. Referenced by `musicPlayer` PortableText blocks as `playerId`. */
   playerId: string
   name: string
   artist: string[]

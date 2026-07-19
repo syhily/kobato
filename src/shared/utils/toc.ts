@@ -1,6 +1,7 @@
-// Flat heading list produced by the MDX pipeline (`MarkdownHeading`). Kept
-// isomorphic (no server-only re-export) so UI can build TOCs without importing
-// the catalog.
+// Flat heading list stored on the published content row (`content.headings`),
+// collected from the PortableText body at publish time (`collectHeadings`).
+// Kept isomorphic (no server-only re-export) so UI can build TOCs without
+// importing the catalog.
 export interface MarkdownHeading {
   depth: number
   slug: string
@@ -16,7 +17,7 @@ export interface TocOpts {
   maxHeadingLevel: number
 }
 
-// Convert the flat headings array emitted by the MDX compiler into a nested tree structure.
+// Convert the stored flat headings array into a nested tree structure.
 export function generateToC(headings: MarkdownHeading[], opts: TocOpts | false): TocItem[] {
   if (opts === false) {
     return []

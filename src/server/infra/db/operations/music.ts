@@ -138,9 +138,10 @@ export async function findMusicById(db: NodePgDatabase, id: bigint): Promise<Mus
 }
 
 /**
- * Public lookup keyed on the opaque `playerId` written into MDX. Skips
- * soft-deleted rows so a removed song renders the player as a no-op
- * placeholder instead of surfacing a 404 to the reader.
+ * Public lookup keyed on the opaque `playerId` stored in `musicPlayer`
+ * PortableText blocks. Skips soft-deleted rows so a removed song renders
+ * the player as a no-op placeholder instead of surfacing a 404 to the
+ * reader.
  */
 export async function findMusicByPlayerId(db: NodePgDatabase, playerId: string): Promise<MusicRow | null> {
   const rows = await db

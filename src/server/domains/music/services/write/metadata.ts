@@ -25,8 +25,8 @@ export interface MusicViewerContext {
  * Metadata-only edit for the admin UI. Provider id triplet
  * (`source`, `sourceId`, `playerId`), audio/cover storage paths,
  * uploader, and timestamps are intentionally untouched — the
- * upload pipeline owns those, and they are how MDX references the
- * row. `artist[]` is packed back to the historical
+ * upload pipeline owns those, and `playerId` is how `musicPlayer`
+ * PortableText blocks reference the row. `artist[]` is packed back to the historical
  * `'Artist A / Artist B'` row representation; the public
  * projection unpacks it again on read.
  */

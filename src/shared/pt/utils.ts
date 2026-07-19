@@ -103,9 +103,9 @@ export function collectHeadingSlotsInPortableTextRenderOrder(body: PortableTextB
 
 /**
  * Return the structured TOC entries this body would render. The slug
- * pipeline matches the one `rehype-slug` uses on MDX posts
- * path so heading anchors stay stable when a page migrates from MDX
- * into the new editor:
+ * pipeline matches the output `rehype-slug` produced on MDX posts, so
+ * heading anchors stayed stable when content migrated from MDX into
+ * the new editor:
  *
  *   - `transform` (optional) is applied to the heading text BEFORE
  *     `Slugger`. Server-side callers pass `deriveSlug` from

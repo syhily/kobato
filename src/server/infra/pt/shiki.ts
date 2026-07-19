@@ -6,9 +6,9 @@ import {
   transformerNotationWordHighlight,
 } from '@shikijs/transformers'
 
-// Shared shiki transformer list used by both `source.config.ts` (for MDX
-// build-time highlighting) and the runtime markdown parser. Keeping it in one
-// place removes the previous duplicate-config drift between the two.
+// Shiki transformer list used by the PT prerender highlighting pass
+// (`@/server/infra/pt/prerender`) when it pre-renders code blocks to HTML
+// at SSR time.
 export const shikiTransformers = () => [
   transformerNotationDiff({ matchAlgorithm: 'v3' }),
   transformerNotationHighlight({ matchAlgorithm: 'v3' }),

@@ -7,10 +7,10 @@ import type { FriendRow, NewFriend } from '@/server/infra/db/types'
 import { ilikeEscape } from '@/server/infra/db/ilike-escape'
 import { friend } from '@/server/infra/db/schema/friend'
 
-// Stable ascending id ordering for the public catalog. Output is fed
-// into `hydrateImages()` and the MDX `<Friends />` shuffle, so the
-// renderer-visible order is randomised per request — the SQL `ORDER
-// BY` exists only so thumbhash hydration produces deterministic
+// Stable ascending id ordering for the public catalog. Output flows
+// through `hydrateFriendImages()`, and the `<Friends />` PortableText
+// block's own shuffle decides the renderer-visible order — the SQL
+// `ORDER BY` exists only so thumbhash hydration produces deterministic
 // per-deploy resolution order, which keeps the in-process inflight
 // cache hot across reloads.
 export async function listPublicFriendRows(db: NodePgDatabase): Promise<FriendRow[]> {
