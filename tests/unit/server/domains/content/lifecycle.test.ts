@@ -53,6 +53,7 @@ function makeAdapter() {
         throw new DomainError('NOT_FOUND', 'missing')
       }
     },
+    canPreviewDraft: vi.fn(() => true),
     getId: (meta) => meta.id,
     getPublishedRevisionId: (meta) => meta.publishedRevisionId,
     projectPreview: (meta) => ({ id: meta.id.toString() }),

@@ -6,6 +6,7 @@ import type { ContentEntityType } from '@/server/domains/content/shared'
 import type { ContentRow } from '@/server/infra/db/types'
 import type { PortableTextBody, PortableTextHeading } from '@/shared/pt/schema'
 import type { AdminRevisionDto } from '@/shared/types/revision'
+import type { RoleOrNull } from '@/shared/utils/roles'
 
 import { toAdminRevisionDto } from '@/server/domains/content/projection'
 import { publishLatestRevision, saveDraftRevision } from '@/server/domains/content/repos/mutate'
@@ -21,14 +22,23 @@ const log = getLogger('content.lifecycle')
 /**
  * Entity-agnostic draft→publish lifecycle for content revisions. Posts
  * and pages share one pipeline; everything entity-specific attaches
- * through this adapter (meta lookup, access gate, preview projection,
- * force-overwrite audit, post-publish side effects).
+ * through this adapter (meta lookup, access gate, preview access gate,
+ * preview projection, force-overwrite audit, post-publish side effects).
  */
 export interface ContentEntityAdapter<TMeta, TPreview> {
   entityType: ContentEntityType
   findMetaById(db: NodePgDatabase, id: bigint): Promise<TMeta | null>
   findPublicMetaBySlug(db: NodePgDatabase, slug: string): Promise<TMeta | null>
   assertAccess(meta: TMeta | null, viewer?: ViewerContext): asserts meta is TMeta
+  /**
+   * Draft-preview gate — the per-entity preview access rule (CONTEXT.md
+   * "Draft preview"): posts allow author and above; pages allow admin
+   * only. Mounted by the public detail loaders before they call
+   * `loadDraftPreviewBySlug`. A predicate, not a throwing assert: the
+   * page loader must fall through to the published page when the viewer
+   * lacks preview rights.
+   */
+  canPreviewDraft(role: RoleOrNull | undefined): boolean
   getId(meta: TMeta): bigint
   getPublishedRevisionId(meta: TMeta): bigint | null
   projectPreview(meta: TMeta, revision: ContentRow | null): TPreview
@@ -148,9 +158,11 @@ export async function saveBody<TMeta, TPreview>(
 }
 
 /**
- * Admin-only draft preview by slug: projects the latest draft when one
- * exists, otherwise the published revision. Soft-deleted rows (filtered
- * by `findPublicMetaBySlug`) return `null`.
+ * Draft preview by slug: projects the latest draft when one exists,
+ * otherwise the published revision. Soft-deleted rows (filtered by
+ * `findPublicMetaBySlug`) return `null`. This module enforces no access
+ * rule — callers gate through `adapter.canPreviewDraft` (posts:
+ * author+; pages: admin only; CONTEXT.md "Draft preview").
  */
 export async function loadDraftPreviewBySlug<TMeta, TPreview>(
   db: NodePgDatabase,

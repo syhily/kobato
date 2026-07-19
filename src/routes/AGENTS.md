@@ -136,7 +136,9 @@ adopt React Router's segment-based filename convention.
   `'draft' | 'unpublished-draft' | 'published-draft' | null`.
   Service is `loadDraftPreviewBySlug(db, pageLifecycleAdapter, slug)`
   (`@/server/domains/content/lifecycle`) returning
-  `{ preview, hasNewerDraft }`.
+  `{ preview, hasNewerDraft }`. The preview access rule lives on the
+  entity adapter (`canPreviewDraft`): pages admin-only, posts author+
+  (mounted in the post detail route).
 
 ---
 

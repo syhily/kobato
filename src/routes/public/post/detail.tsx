@@ -23,7 +23,6 @@ import { requireBlogSettingsSection } from '@/shared/config/getters'
 import { getSidebarWidgetCount } from '@/shared/config/utils'
 import { toClientPost, toDetailPostShell } from '@/shared/types/catalog'
 import { canonicalPostPath } from '@/shared/utils/paths'
-import { hasAtLeast } from '@/shared/utils/roles'
 import { PortableTextBody } from '@/ui/pt/render'
 import { PostDetailBody } from '@/ui/public/post/PostDetailBody'
 
@@ -43,7 +42,7 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
     if (!sessionContext) {
       throw notFound()
     }
-    if (hasAtLeast(sessionContext.role, 'author')) {
+    if (postLifecycleAdapter.canPreviewDraft(sessionContext.role)) {
       const preview = await loadDraftPreviewBySlug(db, postLifecycleAdapter, params.slug)
       if (preview !== null) {
         sourcePost = preview.preview

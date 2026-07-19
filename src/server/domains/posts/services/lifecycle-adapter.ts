@@ -8,6 +8,7 @@ import { indexPost } from '@/server/domains/posts/services/search-index'
 import { assertOwnPostOr404 } from '@/server/domains/posts/services/shared'
 import { getLogger } from '@/server/infra/logger'
 import { invalidateSearchCache } from '@/server/infra/search/search'
+import { hasAtLeast } from '@/shared/utils/roles'
 
 const log = getLogger('posts.service')
 const auditLog = getLogger('audit.cms.posts')
@@ -17,6 +18,7 @@ export const postLifecycleAdapter: ContentEntityAdapter<PostMetaRow, CmsPost> = 
   findMetaById: findPostMetaById,
   findPublicMetaBySlug: findPublicPostMetaBySlug,
   assertAccess: assertOwnPostOr404,
+  canPreviewDraft: (role) => hasAtLeast(role, 'author'),
   getId: (meta) => meta.id,
   getPublishedRevisionId: (meta) => meta.publishedRevisionId,
   projectPreview: (meta, revision) => toCmsPost(meta, revision),

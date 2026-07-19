@@ -74,7 +74,7 @@ export async function loadPagePreview({
   const needsDraftLookup = sourcePage === undefined || (wantsDraftPreview && publishedPage !== undefined)
   if (needsDraftLookup) {
     const sessionContext = tryGetSessionContext(context) ?? (await resolveSessionContext(db, request))
-    if (sessionContext.role === 'admin') {
+    if (pageLifecycleAdapter.canPreviewDraft(sessionContext.role)) {
       const draftPreview = await loadDraftPreviewBySlug(db, pageLifecycleAdapter, slug)
       if (draftPreview !== null) {
         if (sourcePage === undefined) {

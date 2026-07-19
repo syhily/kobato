@@ -20,6 +20,7 @@ export const pageLifecycleAdapter: ContentEntityAdapter<PageMetaRow, CmsPage> = 
   findMetaById: findPageMetaById,
   findPublicMetaBySlug: findPublicPageMetaBySlug,
   assertAccess: assertPageExists,
+  canPreviewDraft: (role) => role === 'admin',
   getId: (meta) => meta.id,
   getPublishedRevisionId: (meta) => meta.publishedRevisionId,
   projectPreview: (meta, revision) => toCmsPage(meta, revision),
