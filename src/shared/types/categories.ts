@@ -14,12 +14,11 @@ export interface AdminCategoryDto {
   description: string
   sortOrder: number
   /**
-   * Number of MDX posts (visible + hidden + scheduled) whose
-   * `frontmatter.category` matches this row's `name`. Mirrors the
-   * delete-block guard's view of references — i.e. if `postCount > 0`,
-   * deletion via the admin will be rejected with 409. Computed by the
-   * service from `ContentCatalog.postsByCategory`; not persisted in
-   * the database.
+   * Number of live posts (visible + hidden + scheduled) whose
+   * `post.category` matches this row's `name`. Mirrors the delete-block
+   * guard's view of references — i.e. if `postCount > 0`, deletion via
+   * the admin will be rejected with 409. Computed by the service from
+   * `countPostsByTaxonomy`; not persisted in the database.
    */
   postCount: number
   createdAt: string

@@ -76,7 +76,7 @@ export function EditTagDialog({ tag, onClose, onSaved }: EditTagDialogProps) {
           <DialogTitle>{isEditing ? '编辑标签' : '新增标签'}</DialogTitle>
           <DialogDescription>
             {isEditing
-              ? '修改标签的展示信息；重命名后所有引用该标签的 MDX 文章 frontmatter 也需同步更新。'
+              ? '修改标签的展示信息；文章通过 id 关联标签，重命名后所有引用自动生效。'
               : '填写新标签的名称、URL slug 与 OG 图。'}
           </DialogDescription>
         </DialogHeader>

@@ -1,11 +1,12 @@
 import { bigserial, index, integer, pgTable, text, timestamp, varchar } from 'drizzle-orm/pg-core'
 
-// Post category. CRUD at `/admin/taxonomy/categories`. MDX references categories by
-// `name` (`UNIQUE`). `slug` drives `/cats/:slug` (`UNIQUE`). `sort_order`
-// orders `/categories`.
+// Post category. CRUD at `/admin/taxonomy/categories`. Posts reference a
+// category by `name` (`UNIQUE`), stored on `post.category` — renames do
+// NOT cascade to posts. `slug` drives `/cats/:slug` (`UNIQUE`).
+// `sort_order` orders `/categories`.
 //
-// Counters (`counts` on the public DTO) stay derived in
-// `ContentCatalog` from the post bucket — they are NOT stored here so
+// Counters (`counts` on the public DTO) stay derived from the post table
+// via `countPostsByTaxonomy` — they are NOT stored here so
 // a hot post's likes/views/comments churn never write-amplifies the
 // taxonomy table.
 export const category = pgTable(
@@ -31,8 +32,9 @@ export const category = pgTable(
   ],
 )
 
-// Post tag. CRUD at `/admin/taxonomy/tags`. MDX references tags by `name` (`UNIQUE`);
-// `slug` drives `/tags/:slug` (`UNIQUE`).
+// Post tag. CRUD at `/admin/taxonomy/tags`. Posts reference tags through
+// the `post_tag` join (by `tag.id`), so renames propagate automatically;
+// `name` is `UNIQUE`, `slug` drives `/tags/:slug` (`UNIQUE`).
 export const tag = pgTable('tag', {
   id: bigserial('id', { mode: 'bigint' }).primaryKey().notNull(),
   createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' })

@@ -144,8 +144,8 @@ export async function upsertAdminTag(
 }
 
 // Block-only deletion regardless of role. `deleteAdminTaxonomy` refuses
-// to remove a tag while any post still lists it in its frontmatter
-// `tags: [...]` — this is the project's intentional stricter-than-
+// to remove a tag while any post still references it through the
+// `post_tag` join — this is the project's intentional stricter-than-
 // RBAC-design fence: we never orphan posts, even when an admin clicks
 // delete. Authors get the same UX as admins because the cross-check is
 // global to the tag, not the viewer. Same contract as

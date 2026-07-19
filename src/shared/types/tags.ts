@@ -11,12 +11,11 @@ export interface AdminTagDto {
   slug: string
   ogImage: string
   /**
-   * Number of MDX posts (visible + hidden + scheduled) whose
-   * `frontmatter.tags[]` includes this row's `name`. Mirrors the
-   * delete-block guard's view of references — i.e. if `postCount > 0`,
-   * deletion via the admin will be rejected with 409. Computed by the
-   * service from `ContentCatalog.postsByTag`; not persisted in the
-   * database.
+   * Number of live posts (visible + hidden + scheduled) that reference
+   * this row through the `post_tag` join. Mirrors the delete-block
+   * guard's view of references — i.e. if `postCount > 0`, deletion via
+   * the admin will be rejected with 409. Computed by the service from
+   * `countPostsByTaxonomy`; not persisted in the database.
    */
   postCount: number
   createdAt: string

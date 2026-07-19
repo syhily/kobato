@@ -175,7 +175,7 @@ export function CategoriesView() {
                         setConfirm({
                           title: `删除分类「${row.name}」？`,
                           description:
-                            '此操作会从数据库直接删除该分类。如果仍有文章引用此分类，删除将被阻止；请先在 MDX frontmatter 中改写后再删除。',
+                            '此操作会从数据库直接删除该分类。如果仍有文章引用此分类，删除将被阻止；请先在引用文章中修改后再删除。',
                           actionLabel: '删除',
                           destructive: true,
                           onConfirm: () => submitDelete({ id: row.id }),

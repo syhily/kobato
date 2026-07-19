@@ -41,7 +41,7 @@ function AssetsDomainCard({ assets }: { assets: AssetsLoaderShape }) {
   return (
     <SettingGroup
       title="资源域名"
-      description="统一的资源域名：MDX `<MusicPlayer>` 读取音频/歌词，图片公共 URL 也复用这里的 host + scheme。"
+      description="统一的资源域名：`<MusicPlayer>` 音乐块读取音频/歌词，图片公共 URL 也复用这里的 host + scheme。"
       {...settingGroupProps}
     >
       <SettingGroupContent>

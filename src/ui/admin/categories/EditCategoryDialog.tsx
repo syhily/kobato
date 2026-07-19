@@ -94,7 +94,7 @@ export function EditCategoryDialog({ category, onClose, onSaved }: EditCategoryD
           <DialogTitle>{isEditing ? '编辑分类' : '新增分类'}</DialogTitle>
           <DialogDescription>
             {isEditing
-              ? '修改分类的展示信息；重命名后所有引用该分类的 MDX 文章 frontmatter 也需同步更新。'
+              ? '修改分类的展示信息；重命名不会自动更新文章引用的分类，需逐篇手动修改。'
               : '填写新分类的名称、URL slug 与展示封面。'}
           </DialogDescription>
         </DialogHeader>

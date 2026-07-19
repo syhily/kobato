@@ -135,7 +135,7 @@ export function TagsView() {
       setConfirm({
         title: `删除标签「${row.name}」？`,
         description:
-          '此操作会从数据库直接删除该标签。如果仍有文章引用此标签，删除将被阻止；请先在 MDX frontmatter 中改写后再删除。',
+          '此操作会从数据库直接删除该标签。如果仍有文章引用此标签，删除将被阻止；请先在引用文章中修改后再删除。',
         actionLabel: '删除',
         destructive: true,
         onConfirm: () => {

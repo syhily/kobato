@@ -288,7 +288,7 @@ function ContentFootnotesCard({ content }: { content: ContentSettings }) {
   return (
     <SettingGroup
       title="脚注汇总标题"
-      description="Portable Text 页面文末脚注列表上方的标题，默认为「尾声礼记」。不影响 MDX 文章页的脚注样式。"
+      description="Portable Text 页面文末脚注列表上方的标题，默认为「尾声礼记」。文章页始终使用默认标题，不受此设置影响。"
       {...settingGroupProps}
     >
       <SettingGroupContent>
