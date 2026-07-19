@@ -17,6 +17,7 @@ import { AdminListPage } from '@/ui/admin/shared/AdminListPage'
 import { type ConfirmState, ConfirmDialog } from '@/ui/admin/shared/ConfirmDialog'
 import { UserEditForm } from '@/ui/admin/users/UserEditForm'
 import { UserOperationsCard } from '@/ui/admin/users/UserOperationsCard'
+import { invalidateUsersCache } from '@/ui/admin/users/users-cache'
 import { Avatar, AvatarFallback, AvatarImage } from '@/ui/components/avatar'
 import { Badge } from '@/ui/components/badge'
 import { Button } from '@/ui/components/button'
@@ -85,7 +86,7 @@ export function UserDetailView({ userId, navigate, passkeyEnabled }: UserDetailV
       return orpc.admin.users.update({ id: userId, ...body })
     },
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ['admin', 'user'] })
+      invalidateUsersCache(queryClient)
     },
   })
 
@@ -101,7 +102,7 @@ export function UserDetailView({ userId, navigate, passkeyEnabled }: UserDetailV
     mutationFn: (vars: { userId: string; muted: boolean }) =>
       orpc.admin.users.mute({ id: vars.userId, muted: vars.muted }),
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ['admin', 'user'] })
+      invalidateUsersCache(queryClient)
     },
   })
 
@@ -115,14 +116,14 @@ export function UserDetailView({ userId, navigate, passkeyEnabled }: UserDetailV
   const restoreMutation = useMutation({
     mutationFn: (vars: { userId: string }) => orpc.admin.users.restore({ id: vars.userId, ...vars }),
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ['admin', 'user'] })
+      invalidateUsersCache(queryClient)
     },
   })
 
   const bulkApproveMutation = useMutation({
     ...orpcQuery.admin.users.bulkApproveComments.mutationOptions(),
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ['admin', 'user'] })
+      invalidateUsersCache(queryClient)
       void queryClient.invalidateQueries({ queryKey: orpcQuery.admin.comments.loadAll.key() })
     },
   })
@@ -130,7 +131,7 @@ export function UserDetailView({ userId, navigate, passkeyEnabled }: UserDetailV
   const bulkDeleteMutation = useMutation({
     ...orpcQuery.admin.users.bulkDeleteComments.mutationOptions(),
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ['admin', 'user'] })
+      invalidateUsersCache(queryClient)
       void queryClient.invalidateQueries({ queryKey: orpcQuery.admin.comments.loadAll.key() })
     },
   })
@@ -140,14 +141,14 @@ export function UserDetailView({ userId, navigate, passkeyEnabled }: UserDetailV
       orpc.admin.users.updateRole({ id: vars.userId, role: vars.role }),
     onSuccess: () => {
       setRoleDraft('')
-      void queryClient.invalidateQueries({ queryKey: ['admin', 'user'] })
+      invalidateUsersCache(queryClient)
     },
   })
 
   const clearPasskeysMutation = useMutation({
     mutationFn: (vars: { userId: string }) => orpc.admin.users.clearPasskeys({ id: vars.userId }),
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ['admin', 'user'] })
+      invalidateUsersCache(queryClient)
     },
   })
 

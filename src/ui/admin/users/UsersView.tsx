@@ -8,6 +8,7 @@ import { orpcQuery } from '@/client/api/orpc-query'
 import { useSiteIdentity } from '@/shared/lib/blog-config-context'
 import { useDebouncedSearch } from '@/ui/admin/shared/useDebouncedSearch'
 import { InviteAuthorDialog } from '@/ui/admin/users/InviteAuthorDialog'
+import { invalidateUsersCache } from '@/ui/admin/users/users-cache'
 import { UsersTable } from '@/ui/admin/users/UsersTable'
 import { UsersToolbar } from '@/ui/admin/users/UsersToolbar'
 import { useUsersReducer } from '@/ui/admin/users/useUsersReducer'
@@ -166,7 +167,7 @@ export function UsersView() {
         open={inviteOpen}
         onClose={() => setInviteOpen(false)}
         onInvited={() => {
-          void queryClient.invalidateQueries({ queryKey: ['admin', 'users'] })
+          invalidateUsersCache(queryClient)
         }}
       />
     </>
