@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { LoaderIcon, PlusIcon, SearchIcon, XIcon } from 'lucide-react'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router'
 import { toast } from 'sonner'
 
@@ -8,6 +8,7 @@ import type { AdminUserDto } from '@/shared/types/users'
 
 import { orpc } from '@/client/api/client'
 import { orpcQuery } from '@/client/api/orpc-query'
+import { useInfiniteScrollSentinel } from '@/client/hooks/use-infinite-scroll-sentinel'
 import { PostRow } from '@/ui/admin/posts/PostRow'
 import { PostsSkeleton } from '@/ui/admin/posts/PostsSkeleton'
 import { type PostStatusFilter, usePostsReducer } from '@/ui/admin/posts/usePostsReducer'
@@ -81,7 +82,6 @@ export function PostsView() {
 
   // --- Infinite scroll: load more ---
   const [loadingMore, setLoadingMore] = useState(false)
-  const sentinelRef = useRef<HTMLDivElement>(null)
   const hasMore = state.rows.length < state.total
 
   const loadMore = useCallback(async () => {
@@ -101,22 +101,11 @@ export function PostsView() {
     }
   }, [loadingMore, hasMore, state, dispatch])
 
-  useEffect(() => {
-    const el = sentinelRef.current
-    if (!el || !hasMore) {
-      return
-    }
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0]?.isIntersecting) {
-          void loadMore()
-        }
-      },
-      { rootMargin: '200px' },
-    )
-    observer.observe(el)
-    return () => observer.disconnect()
-  }, [loadMore, hasMore])
+  const sentinelRef = useInfiniteScrollSentinel({
+    hasNextPage: hasMore,
+    isFetchingNextPage: loadingMore,
+    fetchNextPage: loadMore,
+  })
 
   // --- Filter option data ---
   const { data: categoriesData } = useQuery(orpcQuery.admin.categories.list.queryOptions({ input: {} }))

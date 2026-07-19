@@ -1,11 +1,12 @@
 import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { ImageOffIcon, PlusIcon } from 'lucide-react'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
 
 import type { AdminImageDto } from '@/shared/types/images'
 
 import { orpc } from '@/client/api/client'
+import { useInfiniteScrollSentinel } from '@/client/hooks/use-infinite-scroll-sentinel'
 import { useAssetsSettings } from '@/shared/lib/blog-config-context'
 import { ImageDetailDialog } from '@/ui/admin/images/ImageDetailDialog'
 import { ImagesFilterBar } from '@/ui/admin/images/ImagesFilterBar'
@@ -30,7 +31,6 @@ export function ImagesView() {
   const [uploadOpen, setUploadOpen] = useState(false)
   const [selectedImage, setSelectedImage] = useState<AdminImageDto | null>(null)
   const [copiedId, setCopiedId] = useState<string | null>(null)
-  const sentinelRef = useRef<HTMLDivElement>(null)
 
   const queryKey = useMemo(() => ['admin', 'images', 'list', { q, kind }], [q, kind])
 
@@ -54,24 +54,7 @@ export function ImagesView() {
 
   const { hasNextPage, isFetchingNextPage, fetchNextPage, isLoading } = listQuery
 
-  useEffect(() => {
-    const el = sentinelRef.current
-    if (!el || !hasNextPage || isFetchingNextPage) {
-      return
-    }
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0]?.isIntersecting) {
-          void fetchNextPage()
-        }
-      },
-      { rootMargin: '200px' },
-    )
-
-    observer.observe(el)
-    return () => observer.disconnect()
-  }, [hasNextPage, isFetchingNextPage, fetchNextPage])
+  const sentinelRef = useInfiniteScrollSentinel({ hasNextPage, isFetchingNextPage, fetchNextPage })
 
   const allImages = useMemo(() => listQuery.data?.pages.flatMap((page) => page.images) ?? [], [listQuery.data])
   const total = listQuery.data?.pages[0]?.total ?? 0

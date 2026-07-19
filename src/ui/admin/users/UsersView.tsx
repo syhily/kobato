@@ -1,10 +1,11 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { LoaderIcon, MailIcon, SearchIcon } from 'lucide-react'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { toast } from 'sonner'
 
 import { orpc } from '@/client/api/client'
 import { orpcQuery } from '@/client/api/orpc-query'
+import { useInfiniteScrollSentinel } from '@/client/hooks/use-infinite-scroll-sentinel'
 import { useSiteIdentity } from '@/shared/lib/blog-config-context'
 import { useDebouncedSearch } from '@/ui/admin/shared/useDebouncedSearch'
 import { InviteAuthorDialog } from '@/ui/admin/users/InviteAuthorDialog'
@@ -62,7 +63,6 @@ export function UsersView() {
 
   // --- Infinite scroll: load more ---
   const [loadingMore, setLoadingMore] = useState(false)
-  const sentinelRef = useRef<HTMLDivElement>(null)
   const hasMore = state.hasMore
 
   const loadMore = useCallback(async () => {
@@ -82,22 +82,11 @@ export function UsersView() {
     }
   }, [loadingMore, hasMore, state, dispatch])
 
-  useEffect(() => {
-    const el = sentinelRef.current
-    if (!el || !hasMore) {
-      return
-    }
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0]?.isIntersecting) {
-          void loadMore()
-        }
-      },
-      { rootMargin: '200px' },
-    )
-    observer.observe(el)
-    return () => observer.disconnect()
-  }, [loadMore, hasMore])
+  const sentinelRef = useInfiniteScrollSentinel({
+    hasNextPage: hasMore,
+    isFetchingNextPage: loadingMore,
+    fetchNextPage: loadMore,
+  })
 
   const [qInput, setQInput] = useDebouncedSearch({
     delayMs: 300,

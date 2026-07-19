@@ -7,6 +7,7 @@ import type { AdminTagDto } from '@/shared/types/tags'
 
 import { orpc } from '@/client/api/client'
 import { orpcQuery } from '@/client/api/orpc-query'
+import { useInfiniteScrollSentinel } from '@/client/hooks/use-infinite-scroll-sentinel'
 import { AdminListPage } from '@/ui/admin/shared/AdminListPage'
 import { type ConfirmState, ConfirmDialog } from '@/ui/admin/shared/ConfirmDialog'
 import { useDebouncedSearch } from '@/ui/admin/shared/useDebouncedSearch'
@@ -57,7 +58,6 @@ export function TagsView() {
   }, [listError])
 
   const [loadingMore, setLoadingMore] = useState(false)
-  const sentinelRef = useRef<HTMLDivElement>(null)
   const hasMore = state.hasMore
 
   const loadMore = useCallback(async () => {
@@ -86,22 +86,11 @@ export function TagsView() {
     }
   }, [loadingMore, hasMore, state.q, state.rows.length, dispatch])
 
-  useEffect(() => {
-    const el = sentinelRef.current
-    if (!el || !hasMore) {
-      return
-    }
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0]?.isIntersecting) {
-          void loadMore()
-        }
-      },
-      { rootMargin: '200px' },
-    )
-    observer.observe(el)
-    return () => observer.disconnect()
-  }, [loadMore, hasMore])
+  const sentinelRef = useInfiniteScrollSentinel({
+    hasNextPage: hasMore,
+    isFetchingNextPage: loadingMore,
+    fetchNextPage: loadMore,
+  })
 
   // The fetcher hook's success callback doesn't receive the original
   // request payload, so latch the in-flight delete id into a ref. Once

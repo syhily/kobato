@@ -5,6 +5,7 @@ import { toast } from 'sonner'
 
 import { orpc } from '@/client/api/client'
 import { orpcQuery } from '@/client/api/orpc-query'
+import { useInfiniteScrollSentinel } from '@/client/hooks/use-infinite-scroll-sentinel'
 import { getLogger } from '@/client/lib/logger'
 import { AuditLogFilterBar } from '@/ui/admin/audit/AuditLogFilterBar'
 import { AuditLogRow } from '@/ui/admin/audit/AuditLogRow'
@@ -41,7 +42,6 @@ export function AuditLogView({ retentionDays }: AuditLogViewProps) {
   const [exportOpen, setExportOpen] = useState(false)
   const [includeFullIp, setIncludeFullIp] = useState(false)
   const lastQueryKeyRef = useRef<string | null>(null)
-  const sentinelRef = useRef<HTMLDivElement>(null)
 
   const actorsQuery = useQuery(orpcQuery.admin.auditLog.actors.queryOptions())
   const actors = useMemo(() => actorsQuery.data ?? [], [actorsQuery.data])
@@ -129,25 +129,11 @@ export function AuditLogView({ retentionDays }: AuditLogViewProps) {
     }
   }, [loadingMore, state.hasMore, buildQueryInput, state.items.length, dispatch])
 
-  useEffect(() => {
-    if (!state.hasMore) {
-      return
-    }
-    const el = sentinelRef.current
-    if (!el) {
-      return
-    }
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry?.isIntersecting) {
-          void loadMore()
-        }
-      },
-      { rootMargin: '200px' },
-    )
-    observer.observe(el)
-    return () => observer.disconnect()
-  }, [state.hasMore, loadMore])
+  const sentinelRef = useInfiniteScrollSentinel({
+    hasNextPage: state.hasMore,
+    isFetchingNextPage: loadingMore,
+    fetchNextPage: loadMore,
+  })
 
   const handleExport = useCallback(async () => {
     try {
