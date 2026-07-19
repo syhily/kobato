@@ -205,4 +205,23 @@ export default defineConfig({
     // avoid browser default positioning/backdrop styling.
     'jsx-a11y/prefer-tag-over-role': 'off',
   },
+  overrides: [
+    {
+      files: ['scripts/**/*.mjs'],
+      rules: {
+        // Plain-node build scripts (ESM .mjs, executed directly with
+        // `node scripts/...`) are not part of the tsc program (`allowJs`
+        // is off), so type-aware rules resolve every import to the
+        // `error` type and only produce false positives. Console output
+        // is the scripts' UI. Non-type-aware rules still apply.
+        'no-console': 'off',
+        'typescript/no-unsafe-argument': 'off',
+        'typescript/no-unsafe-assignment': 'off',
+        'typescript/no-unsafe-call': 'off',
+        'typescript/no-unsafe-member-access': 'off',
+        'typescript/no-unsafe-return': 'off',
+        'typescript/restrict-template-expressions': 'off',
+      },
+    },
+  ],
 })

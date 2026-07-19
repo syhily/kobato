@@ -5,9 +5,11 @@
 .github
 .husky
 .vscode
+.worktrees
 build
 coverage
 dist
+dist-sea
 docker
 data
 node_modules

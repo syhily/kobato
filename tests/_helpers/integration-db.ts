@@ -105,11 +105,11 @@ async function runTestMigrations(db: ReturnType<typeof drizzle>): Promise<void> 
 }
 
 /**
- * Create a fresh test database for the given Vitest worker, run migrations,
- * and return the connection URL.
+ * Create a fresh database WITHOUT running migrations and return its
+ * connection URL. Optional extensions migrations may rely on are
+ * pre-created so the full migration set applies cleanly.
  */
-export async function createWorkerDatabase(workerId: string): Promise<string> {
-  const dbName = `kobato_test_${workerId}_${Date.now()}`
+export async function createEmptyDatabase(dbName: string): Promise<string> {
   const adminPool = getAdminPool()
 
   try {
@@ -144,6 +144,17 @@ export async function createWorkerDatabase(workerId: string): Promise<string> {
     // ignore — extension not available in this Postgres build
   }
   await extPool.end()
+
+  return connectionString
+}
+
+/**
+ * Create a fresh test database for the given Vitest worker, run migrations,
+ * and return the connection URL.
+ */
+export async function createWorkerDatabase(workerId: string): Promise<string> {
+  const dbName = `kobato_test_${workerId}_${Date.now()}`
+  const connectionString = await createEmptyDatabase(dbName)
 
   // Run migrations in the newly-created database.
   // Use `connection: { connectionString, max: 1 }` to match the project's

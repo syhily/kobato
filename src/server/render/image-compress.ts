@@ -1,6 +1,11 @@
 import type { Buffer } from 'node:buffer'
+import type sharpDefault from 'sharp'
 
-import sharp from 'sharp'
+import { requireExternal } from '@/server/infra/sea'
+
+// Native module — must resolve against the extracted tree under SEA (see
+// `@/server/infra/sea`). Outside SEA this resolves node_modules normally.
+const sharp = requireExternal<typeof sharpDefault>('sharp')
 
 export interface CompressImageOptions {
   preserveAlpha?: boolean

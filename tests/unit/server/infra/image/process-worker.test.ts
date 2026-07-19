@@ -55,24 +55,30 @@ function mockSharp(opts: {
   }
 }
 
-vi.mock('sharp', () => {
-  let current: ((input: unknown) => SharpInstance) | null = null
-  return {
-    default: Object.assign(
-      (input: unknown) => {
-        if (current === null) {
-          throw new Error('sharp mock not configured')
-        }
-        return current(input)
+// The worker loads sharp via `requireExternal` (SEA-safe indirection), so
+// the mock targets the helper module, not the package.
+const sharpMock = vi.hoisted(() => {
+  let current: ((input: unknown) => unknown) | null = null
+  const fn = Object.assign(
+    (input: unknown) => {
+      if (current === null) {
+        throw new Error('sharp mock not configured')
+      }
+      return current(input)
+    },
+    {
+      __setMock(next: (input: unknown) => unknown) {
+        current = next
       },
-      {
-        __setMock(fn: (input: unknown) => SharpInstance) {
-          current = fn
-        },
-      },
-    ),
-  }
+    },
+  )
+  return { fn }
 })
+
+vi.mock('@/server/infra/sea', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/server/infra/sea')>()),
+  requireExternal: () => sharpMock.fn,
+}))
 
 vi.mock('@/shared/utils/thumbhash', () => ({
   rgbaToThumbHash: () => new Uint8Array([0, 1, 2, 3]),
@@ -90,10 +96,7 @@ async function run(input: Partial<ProcessImageInput> = {}) {
 
 describe('infra/image/process-worker — processImageInWorker', () => {
   it('processes a valid image and returns metadata + thumbhash', async () => {
-    const sharp = (await import('sharp')).default as unknown as {
-      __setMock(fn: (input: unknown) => SharpInstance): void
-    }
-    sharp.__setMock(
+    sharpMock.fn.__setMock(
       mockSharp({
         width: 128,
         height: 96,
@@ -109,10 +112,7 @@ describe('infra/image/process-worker — processImageInWorker', () => {
   })
 
   it('applies resize options when provided', async () => {
-    const sharp = (await import('sharp')).default as unknown as {
-      __setMock(fn: (input: unknown) => SharpInstance): void
-    }
-    sharp.__setMock(
+    sharpMock.fn.__setMock(
       mockSharp({
         width: 100,
         height: 100,
@@ -125,26 +125,17 @@ describe('infra/image/process-worker — processImageInWorker', () => {
   })
 
   it('throws WorkerDomainError when sharp construction fails', async () => {
-    const sharp = (await import('sharp')).default as unknown as {
-      __setMock(fn: (input: unknown) => SharpInstance): void
-    }
-    sharp.__setMock(mockSharp({ throwOnConstruct: true }))
+    sharpMock.fn.__setMock(mockSharp({ throwOnConstruct: true }))
     await expect(run()).rejects.toBeInstanceOf(WorkerDomainError)
   })
 
   it('throws WorkerDomainError when encode fails', async () => {
-    const sharp = (await import('sharp')).default as unknown as {
-      __setMock(fn: (input: unknown) => SharpInstance): void
-    }
-    sharp.__setMock(mockSharp({ width: 100, height: 100, throwOnEncode: true }))
+    sharpMock.fn.__setMock(mockSharp({ width: 100, height: 100, throwOnEncode: true }))
     await expect(run()).rejects.toBeInstanceOf(WorkerDomainError)
   })
 
   it('throws WorkerDomainError when dimensions are invalid', async () => {
-    const sharp = (await import('sharp')).default as unknown as {
-      __setMock(fn: (input: unknown) => SharpInstance): void
-    }
-    sharp.__setMock(mockSharp({ width: 0, height: 0 }))
+    sharpMock.fn.__setMock(mockSharp({ width: 0, height: 0 }))
     await expect(run()).rejects.toBeInstanceOf(WorkerDomainError)
   })
 

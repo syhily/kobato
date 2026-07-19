@@ -8,6 +8,7 @@
     "react-router.config.ts",
     "oxfmt.config.ts",
     "oxlint.config.ts",
+    "tsdown.sea.config.ts",
     "vite.config.ts",
     "**/.server/**/*",
     "**/.client/**/*",

@@ -3,6 +3,7 @@ import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { matchRoutes, type RouteObject } from 'react-router'
 
+import { getEmbeddedAsset, isSea, listEmbeddedAssetKeys } from '@/server/infra/sea'
 import {
   WARMUP_GLOBAL_EXCLUDED_PATTERNS,
   type RouteManifest,
@@ -28,6 +29,23 @@ export function getWarmupManifest(): WarmupManifest | null {
   }
 
   try {
+    if (isSea()) {
+      // Single-executable build: the warmup manifest is embedded in the
+      // binary (`client/assets/warmup-manifest.json`), not on disk.
+      const asset = getEmbeddedAsset('client/assets/warmup-manifest.json')
+      if (asset === null) {
+        cached = null
+        return null
+      }
+      const parsed: unknown = JSON.parse(asset.toString('utf-8'))
+      if (!isWarmupManifest(parsed)) {
+        cached = null
+        return null
+      }
+      cached = parsed
+      return cached
+    }
+
     const __dirname = dirname(fileURLToPath(import.meta.url))
     const manifestPath = join(__dirname, '..', '..', 'client', 'assets', 'warmup-manifest.json')
 
@@ -61,6 +79,20 @@ function readClientManifest(): RouteManifest | null {
   }
 
   try {
+    if (isSea()) {
+      // Single-executable build: enumerate the embedded assets instead of
+      // reading `build/client/assets` from disk.
+      const manifestKey = listEmbeddedAssetKeys('client/assets/manifest-').find((key) => key.endsWith('.js'))
+      if (!manifestKey) {
+        return null
+      }
+      const content = getEmbeddedAsset(manifestKey)?.toString('utf-8')
+      if (!content) {
+        return null
+      }
+      return parseClientManifest(content)
+    }
+
     const __dirname = dirname(fileURLToPath(import.meta.url))
     const assetsDir = join(__dirname, '..', '..', 'client', 'assets')
 

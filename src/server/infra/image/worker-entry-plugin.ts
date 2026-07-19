@@ -48,9 +48,17 @@ export function processWorkerEntryPlugin(): Plugin {
           write: false,
           minify: false,
           sourcemap: false,
+          // Node-targeted bundle: keeps runtime env access live (the
+          // client define plugin would otherwise rewrite it to `{}`,
+          // breaking `requireExternal`'s KOBATO_NATIVES_DIR lookup in the
+          // worker) and treats node builtins as external.
+          ssr: true,
           rolldownOptions: {
             input: WORKER_ENTRY,
-            external: ['sharp', 'pg', 'node:worker_threads', 'node:buffer', 'node:module'],
+            // `sharp` stays external only as a safety net — the worker now
+            // loads it via `requireExternal` (`@/server/infra/sea`), which
+            // the bundle inlines; its node builtins must stay external.
+            external: ['sharp', 'pg', 'node:worker_threads', 'node:buffer', 'node:module', 'node:os', 'node:path'],
             output: {
               format: 'es',
               entryFileNames: OUTPUT_FILE,

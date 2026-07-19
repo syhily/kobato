@@ -8,8 +8,24 @@ import { WASI } from 'node:wasi'
 import initWasm from '@/server/domains/fonts/vendor/cnfs.wasm?init'
 import { InputTemplateSchema } from '@/server/domains/fonts/vendor/gen/api_pb'
 import { getLogger } from '@/server/infra/logger'
+import { getEmbeddedAsset, isSea } from '@/server/infra/sea'
 
 const log = getLogger('fonts.wasm')
+
+// Under SEA the wasm binary is an embedded asset (key `wasm/cnfs.wasm`)
+// rather than a file next to the server bundle, so instantiate it
+// directly from memory — mirrors the Vite `?init` helper semantics
+// (fresh instance per call) without touching disk.
+async function instantiateEmbeddedWasm(imports: WebAssembly.Imports): Promise<WebAssembly.Instance> {
+  const bytes = getEmbeddedAsset('wasm/cnfs.wasm')
+  if (bytes === null) {
+    throw new Error('Embedded wasm asset missing: wasm/cnfs.wasm')
+  }
+  // Copy into a fresh Uint8Array: the DOM `BufferSource` overload requires
+  // an `ArrayBuffer`-backed view, which Node's `Buffer` is not typed as.
+  const result = await WebAssembly.instantiate(new Uint8Array(bytes), imports)
+  return result.instance
+}
 
 // Minimal WASM glue for the vendored cn-font-split wasm core, driven by
 // Node's built-in `node:wasi` (which binds `node:fs` directly——no
@@ -108,8 +124,9 @@ export async function fontSplit(props: FontSplitProps): Promise<FontSplitOutputF
 
     // Vite's `?init` helper compiles + instantiates per call, so concurrent
     // slice calls each get a fresh instance (the wasm core is stateful and
-    // runs `main` once via `wasi.start`).
-    const instance = await initWasm(imports)
+    // runs `main` once via `wasi.start`). Under SEA the bytes come from the
+    // embedded asset instead; instantiation stays per call.
+    const instance = isSea() ? await instantiateEmbeddedWasm(imports) : await initWasm(imports)
     wasi.start(instance)
 
     // Read back everything the core wrote into <root>/tmp/<key>/.

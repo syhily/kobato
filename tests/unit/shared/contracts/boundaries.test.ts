@@ -933,18 +933,75 @@ describe('contract: module and bundle boundaries', () => {
     expect(baseLayout).toMatch(/\btransform-gpu\b/)
   })
 
-  it('centralises all process.env access in src/server/infra/env.ts and src/server/infra/hono/dev.ts', () => {
+  it('centralises all process.env access in env.ts, hono/dev.ts, and the SEA runtime modules', () => {
     const offenders: string[] = []
+    // Exceptions beyond env.ts / dev.ts:
+    // - sea.ts / sea-natives.ts (SEA packaging): `KOBATO_NATIVES_DIR` is
+    //   runtime state written by the SEA prelude (`bootstrapSeaRuntime`)
+    //   and read lazily by `requireExternal` at call time — a parsed
+    //   createEnv snapshot cannot model a value assigned after module
+    //   load. `KOBATO_CACHE_DIR` / `XDG_CACHE_HOME` are read before the
+    //   env module's validation runs. Both modules must also stay
+    //   dependency-light because the worker bundle and SEA prelude inline
+    //   them ahead of the app graph.
+    const allowed = new Set([
+      'src/server/infra/env.ts',
+      'src/server/infra/hono/dev.ts',
+      'src/server/infra/sea.ts',
+      'src/server/infra/sea-natives.ts',
+    ])
     for (const file of files('src', '-g', '*.ts', '-g', '*.tsx')) {
       if (file.endsWith('.d.ts')) {
         continue
       }
-      if (file === 'src/server/infra/env.ts' || file === 'src/server/infra/hono/dev.ts') {
+      if (allowed.has(file)) {
         continue
       }
       const source = readFileSync(file, 'utf8')
       if (/\bprocess\.env\b/.test(source)) {
         offenders.push(file)
+      }
+    }
+
+    expect(offenders).toEqual([])
+  })
+
+  it('keeps sharp, sharp-ico, and @napi-rs/canvas behind requireExternal', () => {
+    // Static value imports of the native packages are banned under src/:
+    // the SEA single executable cannot resolve them at require time, so
+    // every consumer must go through `requireExternal` from
+    // `@/server/infra/sea` (see AGENTS.md → SEA packaging). `import type`
+    // stays legal — it is erased at compile time.
+    const offenders: string[] = []
+    const nativeFrom = /from\s*['"](?:sharp|sharp-ico|@napi-rs\/canvas)(?:\/[^'"]*)?['"]/
+    const nativeSideEffect = /^import\s*['"](?:sharp|sharp-ico|@napi-rs\/canvas)(?:\/[^'"]*)?['"]/
+    const anyFrom = /from\s*['"]/
+    for (const file of files('src', '-g', '*.ts', '-g', '*.tsx')) {
+      const source = readFileSync(file, 'utf8')
+      const stripped = source.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1')
+      // Track multiline import statements: a `from '<pkg>'` clause may
+      // sit on its own line, so remember whether the open statement is
+      // `import type`. `export ... from '<pkg>'` (no open import) is a
+      // static value reference too and is flagged.
+      let importIsType: boolean | null = null
+      for (const line of stripped.split('\n')) {
+        const trimmed = line.trim()
+        if (trimmed.startsWith('import')) {
+          importIsType = /^import\s+type[\s{]/.test(trimmed)
+          if (nativeSideEffect.test(trimmed)) {
+            offenders.push(`${file}: ${trimmed}`)
+            break
+          }
+        }
+        if (nativeFrom.test(trimmed)) {
+          if (importIsType !== true) {
+            offenders.push(`${file}: ${trimmed}`)
+            break
+          }
+        }
+        if (anyFrom.test(trimmed)) {
+          importIsType = null
+        }
       }
     }
 

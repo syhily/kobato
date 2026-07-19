@@ -13,6 +13,7 @@ import type {
 import { DOMAIN_ERROR_CODES, DomainError, type DomainErrorCode } from '@/server/infra/http/errors'
 import { registerShutdownHook } from '@/server/infra/lifecycle'
 import { getLogger } from '@/server/infra/logger'
+import { getEmbeddedAsset, isSea } from '@/server/infra/sea'
 
 const log = getLogger('image:process-pool')
 
@@ -301,6 +302,20 @@ export function __resetWorkerFactory(): void {
 }
 
 function defaultCreateWorker(): Worker {
+  if (isSea()) {
+    // Single-executable build: the worker bundle is embedded as a text
+    // asset and started with `eval: true`. This is the intended SEA
+    // mechanism — worker threads share the parent process environment,
+    // so the worker's own `requireExternal` calls resolve via
+    // `KOBATO_NATIVES_DIR` without workerData plumbing. (Fallback if a
+    // Node build rejects eval workers under SEA: extract the file to the
+    // cache dir and load it by path — not implemented yet.)
+    const code = getEmbeddedAsset('worker/process-worker.cjs')
+    if (code === null) {
+      throw new Error('Embedded worker asset missing: worker/process-worker.cjs')
+    }
+    return new Worker(code.toString('utf-8'), { eval: true })
+  }
   // In production the worker entry is emitted by `processWorkerEntryPlugin`
   // at `<server-build-dir>/assets/process-worker.js` (stable name, no hash).
   // We resolve it relative to the bundled module's own URL so the path is

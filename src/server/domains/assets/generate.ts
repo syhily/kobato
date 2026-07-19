@@ -1,5 +1,11 @@
-import sharp from 'sharp'
-import { encode as encodeIco } from 'sharp-ico'
+import type sharpDefault from 'sharp'
+
+import { requireExternal } from '@/server/infra/sea'
+
+// Native modules — must resolve against the extracted tree under SEA (see
+// `@/server/infra/sea`). Outside SEA they resolve node_modules normally.
+const sharp = requireExternal<typeof sharpDefault>('sharp')
+const { encode: encodeIco } = requireExternal<typeof import('sharp-ico')>('sharp-ico')
 
 // Caller (settings service) is responsible for uploading each buffer to
 // S3. Returning raw Buffers (not base64) avoids a redundant

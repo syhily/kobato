@@ -1,0 +1,108 @@
+name: SEA
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+  release:
+    types: [created]
+
+# Mirror docker.yml: never cancel — a release build must run to completion.
+concurrency:
+  group: sea-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: build (${{ matrix.target }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-24.04
+            target: linux-x64
+          - os: ubuntu-24.04-arm
+            target: linux-arm64
+    # The deep smoke boots the server against real services; the image must
+    # carry pgvector + timescaledb (same as docker/docker-compose.test.yml).
+    services:
+      postgres:
+        image: timescale/timescaledb-ha:pg17
+        env:
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U test"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 5
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 5
+    env:
+      DATABASE_URL: postgres://test:test@127.0.0.1:5432/test
+      REDIS_URL: redis://127.0.0.1:6379
+    steps:
+      - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.8.0
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: 'pnpm'
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm run sea:build
+      - name: Rename outputs to kobato-<target>
+        env:
+          BIN: kobato-${{ matrix.target }}
+        working-directory: dist-sea
+        run: |
+          mv kobato "$BIN"
+          sed "s/  kobato$/  $BIN/" kobato.sha256 > "$BIN.sha256"
+          rm kobato.sha256
+          sha256sum -c "$BIN.sha256"
+      - run: pnpm run sea:smoke "dist-sea/kobato-${{ matrix.target }}"
+      - uses: actions/upload-artifact@v7
+        with:
+          name: kobato-${{ matrix.target }}
+          retention-days: 7
+          path: |
+            dist-sea/kobato-${{ matrix.target }}
+            dist-sea/kobato-${{ matrix.target }}.sha256
+
+  # Release assets are uploaded only for release events, in a separate job
+  # so the elevated contents:write token never reaches the build matrix.
+  release-upload:
+    name: upload release assets
+    if: github.event_name == 'release'
+    needs: build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          pattern: kobato-linux-*
+          path: dist-sea
+          merge-multiple: true
+      - name: Upload binaries to the GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+        run: gh release upload "${{ github.event.release.tag_name }}" dist-sea/kobato-linux-* --clobber

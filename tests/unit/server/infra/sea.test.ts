@@ -1,0 +1,89 @@
+import type sharpDefault from 'sharp'
+
+import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'node:fs'
+import { homedir, tmpdir } from 'node:os'
+import { join } from 'node:path'
+import { afterEach, describe, expect, it, vi } from 'vitest'
+
+import { getEmbeddedAsset, isSea, listEmbeddedAssetKeys, requireExternal, resolveCacheDir } from '@/server/infra/sea'
+
+// Unit tests for the SEA runtime helpers. Vitest never runs as a single
+// executable, so every SEA-specific read path must degrade gracefully
+// (null / [] / false) and `requireExternal` must behave exactly like a
+// static import against the real node_modules tree.
+
+const tmpDirs: string[] = []
+
+function makeTmpDir(): string {
+  const dir = mkdtempSync(join(tmpdir(), 'kobato-sea-test-'))
+  tmpDirs.push(dir)
+  return dir
+}
+
+afterEach(() => {
+  vi.unstubAllEnvs()
+  while (tmpDirs.length > 0) {
+    rmSync(tmpDirs.pop()!, { recursive: true, force: true })
+  }
+})
+
+describe('infra/sea — SEA detection and embedded assets', () => {
+  it('isSea() is false under vitest', () => {
+    expect(isSea()).toBe(false)
+  })
+
+  it('getEmbeddedAsset returns null when not running as a SEA', () => {
+    expect(getEmbeddedAsset('client/assets/warmup-manifest.json')).toBeNull()
+  })
+
+  it('listEmbeddedAssetKeys returns [] when not running as a SEA', () => {
+    expect(listEmbeddedAssetKeys('client/assets/')).toEqual([])
+  })
+})
+
+describe('infra/sea — requireExternal', () => {
+  it('resolves packages from the real node_modules tree', () => {
+    const sharp = requireExternal<typeof sharpDefault>('sharp')
+    expect(typeof sharp).toBe('function')
+    // Callable: the constructor returns a pipeline without touching the
+    // input bytes until an output method runs.
+    const pipeline = sharp(Buffer.alloc(8))
+    expect(typeof pipeline.metadata).toBe('function')
+  })
+
+  it('resolves packages from KOBATO_NATIVES_DIR when set', () => {
+    // Mirror the production layout: KOBATO_NATIVES_DIR is the extracted
+    // `<cache>/natives-<hash>/node_modules` tree, so the fake package lives
+    // inside it and resolution walks up from the noop.cjs shim.
+    const dir = makeTmpDir()
+    const nativesDir = join(dir, 'node_modules')
+    const pkgDir = join(nativesDir, 'fake-native-pkg')
+    mkdirSync(pkgDir, { recursive: true })
+    writeFileSync(join(pkgDir, 'package.json'), JSON.stringify({ name: 'fake-native-pkg', main: 'index.js' }))
+    writeFileSync(join(pkgDir, 'index.js'), 'module.exports = { marker: 42 }\n')
+    vi.stubEnv('KOBATO_NATIVES_DIR', nativesDir)
+
+    const mod = requireExternal<{ marker: number }>('fake-native-pkg')
+    expect(mod.marker).toBe(42)
+  })
+})
+
+describe('infra/sea — resolveCacheDir', () => {
+  it('prefers KOBATO_CACHE_DIR over everything else', () => {
+    vi.stubEnv('KOBATO_CACHE_DIR', '/data/kobato-cache')
+    vi.stubEnv('XDG_CACHE_HOME', '/data/xdg')
+    expect(resolveCacheDir()).toBe('/data/kobato-cache')
+  })
+
+  it('falls back to $XDG_CACHE_HOME/kobato', () => {
+    vi.stubEnv('KOBATO_CACHE_DIR', undefined)
+    vi.stubEnv('XDG_CACHE_HOME', '/data/xdg')
+    expect(resolveCacheDir()).toBe(join('/data/xdg', 'kobato'))
+  })
+
+  it('falls back to ~/.cache/kobato when neither env var is set', () => {
+    vi.stubEnv('KOBATO_CACHE_DIR', undefined)
+    vi.stubEnv('XDG_CACHE_HOME', undefined)
+    expect(resolveCacheDir()).toBe(join(homedir(), '.cache', 'kobato'))
+  })
+})

@@ -1,14 +1,18 @@
 import type { SKRSContext2D } from '@napi-rs/canvas'
 import type { Buffer } from 'node:buffer'
 
-import { createCanvas } from '@napi-rs/canvas'
 import { format, getDate, getISODay, getMonth, getYear } from 'date-fns'
 import { Solar } from 'lunar-typescript'
 
 import { DomainError } from '@/server/infra/http/errors'
+import { requireExternal } from '@/server/infra/sea'
 import { compressImage } from '@/server/render/image-compress'
 import { ensureCanvasFont, type FontSlot } from '@/server/render/og/assets'
 import { isRecord } from '@/shared/utils/type-guards'
+
+// Native module — must resolve against the extracted tree under SEA (see
+// `@/server/infra/sea`). Outside SEA this resolves node_modules normally.
+const { createCanvas } = requireExternal<typeof import('@napi-rs/canvas')>('@napi-rs/canvas')
 
 const WIDTH = 600
 const HEIGHT = 880

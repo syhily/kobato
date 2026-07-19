@@ -99,6 +99,60 @@ When adding or removing routes from `src/routes.ts`, update the tier arrays
 in `src/server/infra/route-warmup.ts` (`TIER2_PUBLIC_ROUTES`,
 `TIER2_ADMIN_ROUTES`, etc.) to keep the warmup manifest in sync.
 
+## SEA packaging
+
+The production server also ships as a Node.js single executable (SEA):
+the server bundle plus client assets, drizzle migrations, wasm, and
+worker code are embedded in the binary and read from memory
+(`src/server/infra/sea.ts`); only the native packages (sharp, sharp-ico,
+@napi-rs/canvas) are extracted to a cache dir on first run
+(`src/server/infra/sea-natives.ts`).
+
+- `pnpm run sea:build` → `dist-sea/kobato` (+ `.sha256`).
+- `pnpm run sea:smoke [binary]` — 17-check deep smoke: version, natives,
+  a per-run `kobato_smoke_<rand>` database (created on the same Postgres
+  server, dropped in cleanup — the shared `test` DB is never touched),
+  `--smoke-worker` (a real sharp job round-tripping through the
+  `worker_threads` image pool), boot + migrations, fresh-install gate,
+  SSR, embedded asset, SQL seed (one minimal admin row plus the
+  `blog.general` / `blog.assets` settings roots — hydration backfills the
+  rest), a graceful restart (the settings snapshot only loads at boot;
+  the install gate itself is evaluated per request), installed `/health`
+  and `/` SSR, the @napi-rs/canvas calendar endpoint over HTTP, SIGTERM
+  ×2, and natives-cache reuse ×2. `--external <url>` runs only the HTTP
+  checks against an already-running server (e.g. a container), seeds
+  nothing, and reports the calendar check as SKIP on uninstalled
+  instances.
+- Binary CLI flags: `--version`, `--help`, `--smoke-natives`,
+  `--smoke-worker`. The first three need zero environment; the last one
+  requires the full server env (DATABASE_URL, REDIS_URL, SESSION_SECRET,
+  ENCRYPTION_KEY, DATA_PATH) because the pool graph pulls in
+  `@/server/infra/env` at import time — it validates but never connects.
+- Delivery targets are linux-x64 / linux-arm64, built by
+  `.github/workflows/sea.yml`. Local macOS builds work for verification
+  but are not a delivery target; they need an official Node.js 24
+  distribution — Homebrew's node lacks the SEA sentinel fuse
+  (`scripts/sea/inject.mjs` preflights this). An official tarball is
+  cached under the gitignored `tmp/`.
+
+Runtime rules for contributors:
+
+- NEVER statically value-import `sharp`, `sharp-ico`, or
+  `@napi-rs/canvas` — always `requireExternal` from `@/server/infra/sea`
+  (`import type` stays legal). Enforced by a boundaries contract test
+  (`tests/unit/shared/contracts/boundaries.test.ts`).
+- Runtime file reads that must work under SEA go through
+  `getEmbeddedAsset` / `listEmbeddedAssetKeys`. New resource types must
+  be added to `scripts/sea/assets.mjs` AND read via the sea helpers with
+  a non-SEA fallback.
+- `KOBATO_NATIVES_DIR` / `KOBATO_CACHE_DIR` are documented runtime env
+  vars, deliberately read outside `env.ts` (see the allowlist comment on
+  the process.env centralization rule in the boundaries test).
+
+The production Docker image ships only the SEA binary on a glibc base —
+musl is blocked by a postject `.gnu.hash` corruption bug on the musl
+node binary (see the comment at the top of `Dockerfile`).
+
 ## Git
 
 - Semantic commits in English: `feat:`, `fix:`, `docs:`, `refactor:`,
@@ -115,7 +169,8 @@ in `.claude/commands/release.md` and drives the full lifecycle:
    (user reviews and approves).
 2. Bump version, push develop, fast-forward merge to main, push main.
 3. Create git tag + GitHub release (Docker image builds automatically
-   via `.github/workflows/docker.yml`).
+   via `.github/workflows/docker.yml`; the SEA workflow attaches the
+   `kobato-linux-*` binaries to the release).
 4. Switch back to develop, prepare next patch version, push.
 
 No PRs — direct fast-forward merge from develop to main.
@@ -147,22 +202,23 @@ React hooks/components under `src/client/` and `src/ui/`.
 ## Dependencies
 
 Only packages that are **required at production runtime AND ship a native
-dynamic library** (or otherwise need to be re-installed from the lockfile
-inside the production Docker image — see `Dockerfile:21-23` and commit
-`ed83a5a`) belong in `package.json`'s `dependencies`. The current entries
-are the canonical examples:
+dynamic library** belong in `package.json`'s `dependencies`. The current
+entries are the canonical examples:
 
 - `@napi-rs/canvas`, `sharp` — native binaries fetched per platform.
 
 Every other dependency belongs in `devDependencies`, even if the server or
-client bundle imports it in production. The production Docker image is
-built with `pnpm install --frozen-lockfile` (full deps) then the runtime
-stage runs `pnpm install --prod --frozen-lockfile` against `pnpm-lock.yaml`,
-so anything in `devDependencies` is still resolvable from the build and
-bundled into the server / client output. Putting it in `dependencies`
-instead leads to `pnpm install --prod --frozen-lockfile` reinstalling it
-unnecessarily at runtime, bloating the image and re-pinning versions outside
-the tested build.
+client bundle imports it in production. The production Docker image ships a
+SEA single executable (see `Dockerfile` and `scripts/sea/`): the build
+stage runs `pnpm install --frozen-lockfile` with the full dev dependencies,
+bundles the whole server into the binary, and the runtime stage contains
+only that binary — no node runtime, no node_modules, and no second
+`pnpm install --prod` (that two-stage install was the pre-SEA rationale,
+see commit `ed83a5a`). The convention still holds because the SEA assets
+collector (`scripts/sea/assets.mjs`) embeds each native package's installed
+dependency closure from the build stage's node_modules, so native packages
+must stay in `dependencies` to be installed with their platform binaries
+at build time.
 
 Examples: `react`, `hono`, `drizzle-orm`, `ioredis`, `nodemailer`,
 `sanitize-html`, `feed`, `pg`, `bcryptjs`, `dompurify`, `fast-xml-parser` —

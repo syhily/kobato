@@ -1,5 +1,9 @@
+import type sharpDefault from 'sharp'
+import type { Sharp } from 'sharp'
+
 import { parentPort, workerData } from 'node:worker_threads'
-import sharp, { type Sharp } from 'sharp'
+
+import { requireExternal } from '@/server/infra/sea'
 
 // Relative import (not `@/shared/...`) so the worker is fully
 // self-contained: Node's `worker_threads` loads it directly in tests via
@@ -7,6 +11,11 @@ import sharp, { type Sharp } from 'sharp'
 // production bundle (emitted by `processWorkerEntryPlugin`) inlines the
 // thumbhash code without pulling in the rest of the app graph.
 import { rgbaToThumbHash } from '../../../shared/utils/thumbhash.ts'
+
+// Native module — must resolve against the extracted tree under SEA (see
+// `@/server/infra/sea`, which the worker bundle inlines). Outside SEA this
+// resolves node_modules normally.
+const sharp = requireExternal<typeof sharpDefault>('sharp')
 
 const THUMBHASH_MAX_DIMENSION = 100
 const MAX_INPUT_PIXELS = 16384 * 16384

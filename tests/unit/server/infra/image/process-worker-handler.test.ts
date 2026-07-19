@@ -36,22 +36,29 @@ function mockSharp(opts: {
   return () => staged
 }
 
-const sharpMockFn = { current: null as null | (() => SharpInstance) }
-
-vi.mock('sharp', () => ({
-  default: Object.assign(
+// The worker loads sharp via `requireExternal` (SEA-safe indirection), so
+// the mock targets the helper module, not the package.
+const sharpMock = vi.hoisted(() => {
+  let current: (() => unknown) | null = null
+  const fn = Object.assign(
     () => {
-      if (sharpMockFn.current === null) {
+      if (current === null) {
         throw new Error('not configured')
       }
-      return sharpMockFn.current()
+      return current()
     },
     {
-      __setMock(fn: () => SharpInstance) {
-        sharpMockFn.current = fn
+      __setMock(next: () => unknown) {
+        current = next
       },
     },
-  ),
+  )
+  return { fn }
+})
+
+vi.mock('@/server/infra/sea', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/server/infra/sea')>()),
+  requireExternal: () => sharpMock.fn,
 }))
 
 vi.mock('@/shared/utils/thumbhash', () => ({
@@ -78,8 +85,7 @@ beforeEach(() => {
 
 describe('infra/image/process-worker — worker message handler', () => {
   it('posts an ok response for a valid process request', async () => {
-    const sharp = (await import('sharp')).default as unknown as { __setMock(fn: () => SharpInstance): void }
-    sharp.__setMock(
+    sharpMock.fn.__setMock(
       mockSharp({
         width: 100,
         height: 100,
@@ -96,8 +102,7 @@ describe('infra/image/process-worker — worker message handler', () => {
   })
 
   it('posts an error response when the input is invalid', async () => {
-    const sharp = (await import('sharp')).default as unknown as { __setMock(fn: () => SharpInstance): void }
-    sharp.__setMock(mockSharp({ width: 0, height: 0 }))
+    sharpMock.fn.__setMock(mockSharp({ width: 0, height: 0 }))
     await importWorker()
     port.emit('message', { type: 'process', id: 9, input: { buffer: Buffer.from('bad'), jpegQuality: 80 } })
     await new Promise((r) => setImmediate(r))

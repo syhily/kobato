@@ -5,6 +5,7 @@ import { type ServerType, serve } from '@hono/node-server'
 import { type ServeStaticOptions, serveStatic } from '@hono/node-server/serve-static'
 import { type Env, Hono } from 'hono'
 import { createMiddleware } from 'hono/factory'
+import { getMimeType } from 'hono/utils/mime'
 import { createRequestHandler } from 'react-router'
 
 import type { HonoServerOptionsBase } from '@/server/infra/hono/types/hono-server-options-base'
@@ -15,8 +16,34 @@ import { getViteDevServer } from '@/server/infra/hono/dev-server-ref'
 import { bindIncomingRequestSocketInfo, getBuildMode, importBuild } from '@/server/infra/hono/helpers'
 import { cache } from '@/server/infra/hono/middleware'
 import { getLogger } from '@/server/infra/logger'
+import { getEmbeddedAsset, isSea } from '@/server/infra/sea'
 
 const log = getLogger('hono')
+
+/**
+ * SEA-mode replacement for `serveStatic` on the fingerprinted client
+ * assets: the `build/client` tree is embedded in the binary, so files are
+ * read from memory instead of disk. A miss mirrors serveStatic's behavior
+ * (`next()`), letting later middleware / the stale-chunk guard handle it.
+ */
+const serveEmbeddedStatic = createMiddleware(async (c, next) => {
+  if (c.req.method !== 'GET' && c.req.method !== 'HEAD') {
+    return next()
+  }
+  // The handler only runs under the `/<assetsDir>/*` mount, so the
+  // request path maps 1:1 onto the embedded `client/assets/...` keys.
+  // Unresolvable paths (traversal attempts included) simply match no key.
+  const asset = getEmbeddedAsset(`client${c.req.path}`)
+  if (asset === null) {
+    return next()
+  }
+  c.header('Content-Type', getMimeType(c.req.path) ?? 'application/octet-stream')
+  c.header('Content-Length', String(asset.byteLength))
+  if (c.req.method === 'HEAD') {
+    return c.body(null, 200)
+  }
+  return c.body(new Uint8Array(asset), 200)
+})
 
 interface HonoNodeServerOptions<E extends Env = BlankEnv> extends HonoServerOptionsBase<E> {
   /**
@@ -114,11 +141,18 @@ export async function createHonoServer<E extends Env = BlankEnv>(options?: HonoS
    * asset serving and the `build/client` directory does not exist yet.
    */
   if (PRODUCTION) {
-    app.use(
-      `/${import.meta.env.REACT_ROUTER_HONO_SERVER_ASSETS_DIR}/*`,
-      cache(60 * 60 * 24 * 365), // 1 year
-      serveStatic({ root: clientBuildPath, ...mergedOptions.serveStaticOptions?.clientAssets }),
-    )
+    const assetsPath = `/${import.meta.env.REACT_ROUTER_HONO_SERVER_ASSETS_DIR}/*`
+    if (isSea()) {
+      // Single-executable build: client assets are embedded in the binary
+      // (keys `client/assets/...`), nothing to read from disk.
+      app.use(assetsPath, cache(60 * 60 * 24 * 365), serveEmbeddedStatic)
+    } else {
+      app.use(
+        assetsPath,
+        cache(60 * 60 * 24 * 365), // 1 year
+        serveStatic({ root: clientBuildPath, ...mergedOptions.serveStaticOptions?.clientAssets }),
+      )
+    }
   }
 
   /**

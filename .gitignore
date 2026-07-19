@@ -1,6 +1,7 @@
 # React Router / Vite build output
 build/
 dist/
+dist-sea/
 .zeabur/
 
 # generated framework/content artifacts
