@@ -1,3 +1,15 @@
+# Bundled Vercel design.md Snapshot
+
+Source: https://vercel.com/design.md
+Fetched: 2026-06-19
+Status: local reference aid only. Open the live URL in the current turn for strict/docs-verified claims because Vercel marks this document alpha.
+
+## Contents
+
+- Lines below the separator: Vercel's light-theme Geist design markdown snapshot.
+- YAML token block: colors, P3 accents, typography, spacing, rounded values, and component defaults.
+- Markdown sections: Overview, Colors, Typography, Layout, Elevation & Depth, Motion, Shapes, Components, Voice & Content, Do's and Don'ts.
+
 ---
 version: alpha
 name: Geist

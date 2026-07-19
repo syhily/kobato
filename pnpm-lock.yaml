@@ -211,8 +211,8 @@ importers:
         specifier: ^29.1.1
         version: 29.1.1
       katex:
-        specifier: ^0.18.0
-        version: 0.18.0
+        specifier: ^0.18.1
+        version: 0.18.1
       lucide-react:
         specifier: ^1.25.0
         version: 1.25.0(react@19.2.7)
@@ -301,8 +301,8 @@ importers:
         specifier: ^19.14.1
         version: 19.14.1
       tsdown:
-        specifier: ^0.22.9
-        version: 0.22.9(typescript@7.0.2)
+        specifier: ^0.22.10
+        version: 0.22.10(typescript@7.0.2)
       typescript:
         specifier: 7.0.2
         version: 7.0.2
@@ -3272,8 +3272,8 @@ packages:
     engines: {node: '>=6'}
     hasBin: true
 
-  katex@0.18.0:
-    resolution: {integrity: sha512-rZ4Sw94Oja12Ib4+ee7inAr//yxj0G8RaAlh+ZpzfFhwTifGeJbqJ7D0FStcv6EV8DeNNU9Y8rPeg6vPUizlqg==}
+  katex@0.18.1:
+    resolution: {integrity: sha512-Td8GCYSxDAoMhHOlKmCFMJ/hz5qlAAb71n66Dryw9nfCVfumLo7nhuotbvKom/XPADmrYC3O5QR71EPq4DarJQ==}
     hasBin: true
 
   launder@1.7.1:
@@ -3630,8 +3630,8 @@ packages:
     resolution: {integrity: sha512-IQ7TZdoaqbT+LCpShg46jnZVlhWD2w6iQYAcYXfHARZ7X1t/UGhhceQDs5X0cGqKvYlHNOuv7Oa1xmb0oQuA3w==}
     engines: {node: '>=4'}
 
-  postcss@8.5.19:
-    resolution: {integrity: sha512-Mz8SaolMd8nB+G13WkORcxQKHZ/NE4xXevtkJHVuG+guo9/wYKlIMTKAqGdEmYOXR2ijPjTYNHssizdaVSUNdQ==}
+  postcss@8.5.20:
+    resolution: {integrity: sha512-lW616l85ucIQL+FocMmL7pQFPqBmwejrCMg+iPxyImlrANNJG9NHq/RkyCZopDhd8C3LA03PHRJDjkbGu8vvug==}
     engines: {node: ^10 || ^12 || >=14}
 
   postgres-array@2.0.0:
@@ -4034,14 +4034,14 @@ packages:
   trim-lines@3.0.1:
     resolution: {integrity: sha512-kRj8B+YHZCc9kQYdWfJB2/oUl9rA99qbowYYBtr4ui4mZyAQ2JpvVBd/6U2YloATfqBhBTSMhTpgBHtU0Mf3Rg==}
 
-  tsdown@0.22.9:
-    resolution: {integrity: sha512-/0QEjQEhOU1t1YxOIAGzFN7bIssd8P0pBpkOmNLCQi3c5UtrcMF5bvq3f30xHJNW9QCA9aUNcNAorMr2CTd6Lg==}
+  tsdown@0.22.10:
+    resolution: {integrity: sha512-jYY0J4jz102xVQw2bbHFjy521qKoV7uee6NP77KmojKz3w1DLOmlUVhKMvPdA8cNVRztYaWPOQMBh70zrZoCOg==}
     engines: {node: ^22.18.0 || >=24.11.0}
     hasBin: true
     peerDependencies:
       '@arethetypeswrong/core': ^0.18.1
-      '@tsdown/css': 0.22.9
-      '@tsdown/exe': 0.22.9
+      '@tsdown/css': 0.22.10
+      '@tsdown/exe': 0.22.10
       '@vitejs/devtools': '*'
       publint: ^0.3.8
       tsx: '*'
@@ -6892,7 +6892,7 @@ snapshots:
 
   json5@2.2.3: {}
 
-  katex@0.18.0:
+  katex@0.18.1:
     dependencies:
       commander: 8.3.0
 
@@ -7246,7 +7246,7 @@ snapshots:
       cssesc: 3.0.0
       util-deprecate: 1.0.2
 
-  postcss@8.5.19:
+  postcss@8.5.20:
     dependencies:
       nanoid: 3.3.16
       picocolors: 1.1.1
@@ -7510,7 +7510,7 @@ snapshots:
       is-plain-object: 5.0.0
       launder: 1.7.1
       parse-srcset: 1.0.2
-      postcss: 8.5.19
+      postcss: 8.5.20
 
   sax@1.6.0: {}
 
@@ -7684,7 +7684,7 @@ snapshots:
 
   trim-lines@3.0.1: {}
 
-  tsdown@0.22.9(typescript@7.0.2):
+  tsdown@0.22.10(typescript@7.0.2):
     dependencies:
       ansis: 4.3.1
       cac: 7.0.0
@@ -7826,7 +7826,7 @@ snapshots:
     dependencies:
       lightningcss: 1.32.0
       picomatch: 4.0.5
-      postcss: 8.5.19
+      postcss: 8.5.20
       rolldown: 1.1.5
       tinyglobby: 0.2.17
     optionalDependencies:

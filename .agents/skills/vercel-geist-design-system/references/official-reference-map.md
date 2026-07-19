@@ -1,0 +1,69 @@
+## Official Reference Map
+
+Use the non-redirecting official Vercel pages below as source-of-truth references. Redirect-only resources are listed only for routing/drift awareness and do not satisfy `Docs Evidence` unless they become non-redirecting official pages in the current turn.
+
+- Canonical design/token documents: `https://vercel.com/design.md` (light theme), `https://vercel.com/design.dark.md` (dark theme)
+- Bundled local snapshots for exact lookup and blocked-doc fallback only: `references/vercel-design.md`, `references/vercel-design-dark.md`
+- Main: `https://vercel.com/geist/introduction`
+- Conditional foundation supplements: `https://vercel.com/font`, `https://vercel.com/geist/introduction`, `https://vercel.com/geist/colors`, `https://vercel.com/geist/typography`, `https://vercel.com/geist/materials`
+- Guidelines: `https://vercel.com/design/guidelines`
+- Resources: these current resource URLs redirect to `https://vercel.com/geist/introduction`; do not rely on them as source-of-truth pages or `Docs Evidence` unless they become non-redirecting official pages in the current turn: `https://vercel.com/geist/icons`, `https://vercel.com/geist/geistcn-upgrade-guide`, `https://vercel.com/geist/geistcn-assets-guide`, `https://vercel.com/geist/geistcn-icons`, `https://vercel.com/geist/geistcn-logos`, `https://vercel.com/geist/guidelines`, `https://vercel.com/geist/changelog`.
+- Brands: `https://vercel.com/geist/brands`, `https://vercel.com/geist/brands#vercel`, `https://vercel.com/geist/brands#next-js`, `https://vercel.com/geist/brands#next-js-spelling`, `https://vercel.com/geist/brands#turbo`, `https://vercel.com/geist/brands#turborepo`, `https://vercel.com/geist/brands#turbopack`, `https://vercel.com/geist/brands#v0`, `https://vercel.com/geist/brands#ai-sdk`, `https://vercel.com/geist/brands#usage`, `https://vercel.com/geist/brands#misuse`
+- Components: open the concrete matching component URL below; never use a placeholder URL. Prefer the reference map or live nav URL for anchor/subcomponent entries such as Pill.
+  - Avatar: `https://vercel.com/geist/avatar`
+  - Badge: `https://vercel.com/geist/badge`
+  - Book: `https://vercel.com/geist/book`
+  - Browser: `https://vercel.com/geist/browser`
+  - Button: `https://vercel.com/geist/button`
+  - Calendar: `https://vercel.com/geist/calendar`
+  - Checkbox: `https://vercel.com/geist/checkbox`
+  - Choicebox: `https://vercel.com/geist/choicebox`
+  - Code Block: `https://vercel.com/geist/code-block`
+  - Collapse: `https://vercel.com/geist/collapse`
+  - Combobox: `https://vercel.com/geist/combobox`
+  - Command Menu: `https://vercel.com/geist/command-menu`
+  - Context Card: `https://vercel.com/geist/context-card`
+  - Context Menu: `https://vercel.com/geist/context-menu`
+  - Description: `https://vercel.com/geist/description`
+  - Destructive Action Modal: `https://vercel.com/geist/destructive-action-modal`
+  - Drawer: `https://vercel.com/geist/drawer`
+  - Empty State: `https://vercel.com/geist/empty-state`
+  - Entity: `https://vercel.com/geist/entity`
+  - Error: `https://vercel.com/geist/error`
+  - Feedback: `https://vercel.com/geist/feedback`
+  - Gauge: `https://vercel.com/geist/gauge`
+  - Grid: `https://vercel.com/geist/grid` (visible guide/cell component for explicitly requested or user-supplied Grid surfaces; ordinary CSS grid/flex remains the baseline for plain responsive layout and must not create decorative grid backgrounds)
+  - Input: `https://vercel.com/geist/input`
+  - Keyboard Input: `https://vercel.com/geist/keyboard-input`
+  - Loading Dots: `https://vercel.com/geist/loading-dots`
+  - Material: `https://vercel.com/geist/material`
+  - Menu: `https://vercel.com/geist/menu`
+  - MiddleTruncate: `https://vercel.com/geist/middle-truncate`
+  - Modal: `https://vercel.com/geist/modal`
+  - Multi Select: `https://vercel.com/geist/multi-select`
+  - Note: `https://vercel.com/geist/note`
+  - Pagination: `https://vercel.com/geist/pagination`
+  - Phone: `https://vercel.com/geist/phone`
+  - Pill: `https://vercel.com/geist/badge#pill`
+  - Progress: `https://vercel.com/geist/progress`
+  - Project Banner: `https://vercel.com/geist/project-banner`
+  - Radio: `https://vercel.com/geist/radio`
+  - Relative Time Card: `https://vercel.com/geist/relative-time-card`
+  - Scroller: `https://vercel.com/geist/scroller`
+  - Select: `https://vercel.com/geist/select`
+  - Sheet: `https://vercel.com/geist/sheet`
+  - Show More: `https://vercel.com/geist/show-more`
+  - Skeleton: `https://vercel.com/geist/skeleton`
+  - Slider: `https://vercel.com/geist/slider`
+  - Snippet: `https://vercel.com/geist/snippet`
+  - Spinner: `https://vercel.com/geist/spinner`
+  - Split Button: `https://vercel.com/geist/split-button`
+  - Status Dot: `https://vercel.com/geist/status-dot`
+  - Switch: `https://vercel.com/geist/switch`
+  - Table: `https://vercel.com/geist/table`
+  - Tabs: `https://vercel.com/geist/tabs`
+  - Textarea: `https://vercel.com/geist/textarea`
+  - Theme Switcher: `https://vercel.com/geist/theme-switcher`
+  - Toast: `https://vercel.com/geist/toast`
+  - Toggle: `https://vercel.com/geist/toggle`
+  - Tooltip: `https://vercel.com/geist/tooltip`

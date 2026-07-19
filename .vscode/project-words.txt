@@ -24,6 +24,7 @@ bradlc
 braindamage
 bufbuild
 buildx
+burstable
 bxaw
 bytea
 captainofphb
@@ -50,7 +51,7 @@ daiji
 datetime
 datong
 dbname
-Dedup
+dedup
 dichen
 dinesh
 dotum
@@ -90,7 +91,7 @@ googlebot
 gotop
 grayscale
 gungseo
-Haklex
+haklex
 hashtext
 healthcheck
 hefei
@@ -136,6 +137,7 @@ khtml
 koanughi
 koaunghi
 kobato
+kubepods
 labelledby
 lafoyer
 lanczos
@@ -283,12 +285,13 @@ shiki
 shikijs
 shinmun
 shmily
+simo
 simplewebauthn
 skia
 skrs
 slugignore
 smembers
-Songti
+songti
 sqlx
 srcset
 srem
@@ -349,6 +352,8 @@ wasi
 wasip
 weapi
 weavatar
+webmention
+webmentions
 wechat
 weibo
 wlwmanifest

@@ -17,25 +17,19 @@
       "source": "shadcn/ui",
       "sourceType": "github",
       "skillPath": "skills/shadcn/SKILL.md",
-      "computedHash": "ac9d0d69caac7de1d1e5647f3db3bcd2f13af355d6b3a78780fbf7fc80e8dca0"
-    },
-    "tailwind-best-practices": {
-      "source": "mastra-ai/mastra",
-      "sourceType": "github",
-      "skillPath": ".claude/skills/tailwind-best-practices/SKILL.md",
-      "computedHash": "7a94bb24f938aec684feaf5d93e862bc3c854d86d7d7d472293be793a2f4bda2"
-    },
-    "tailwind-design-system": {
-      "source": "wshobson/agents",
-      "sourceType": "github",
-      "skillPath": "plugins/frontend-mobile-development/skills/tailwind-design-system/SKILL.md",
-      "computedHash": "cd61afd28f594e8b6712b61749209cbb4466e3eec4e4223793bbd97fc85c1b63"
+      "computedHash": "d81caa0f86aabab65b25e302d454f23a3328760386ed9078345584c0d5c8058e"
     },
     "vercel-composition-patterns": {
       "source": "vercel-labs/agent-skills",
       "sourceType": "github",
       "skillPath": "skills/composition-patterns/SKILL.md",
       "computedHash": "575757e3e25761c8c562d6e395d29f0b76c98b1273c0bd72d88e6ab1bc9c7d42"
+    },
+    "vercel-geist-design-system": {
+      "source": "joe-simo/skills",
+      "sourceType": "github",
+      "skillPath": "skills/vercel-geist-design-system/SKILL.md",
+      "computedHash": "0fb25fb0abe8eb8a7da2aed591b6755397ed95dbe22c0ab3ad749178aa71a779"
     },
     "vercel-react-best-practices": {
       "source": "vercel-labs/agent-skills",
