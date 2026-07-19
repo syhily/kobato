@@ -68,7 +68,15 @@ jobs:
       - run: pnpm install --frozen-lockfile
       # UPX compresses the injected binary before the checksum step; the
       # smoke below then validates the compressed artifact end to end.
-      - run: sudo apt-get install -y upx-ucl
+      # Ubuntu's upx-ucl package lags upstream, so install the pinned
+      # official release tarball (same source as the Dockerfile).
+      - name: Install UPX
+        run: |
+          arch="$(uname -m)"
+          case "$arch" in x86_64) upx_arch=amd64 ;; aarch64) upx_arch=arm64 ;; *) echo "unsupported arch: $arch" >&2; exit 1 ;; esac
+          wget -qO- "https://github.com/upx/upx/releases/download/v5.2.0/upx-5.2.0-${upx_arch}_linux.tar.xz" \
+            | sudo tar -xJf- -C /usr/local/bin --strip-components=1 "upx-5.2.0-${upx_arch}_linux/upx"
+          upx --version
       - run: pnpm run sea:build
       - name: Rename outputs to kobato-<target>
         env:

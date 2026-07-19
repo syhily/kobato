@@ -110,11 +110,11 @@ worker code are embedded in the binary and read from memory
 
 - `pnpm run sea:build` → `dist-sea/kobato` (+ `.sha256`). On linux the
   injected binary is UPX-compressed before the checksum when `upx` is on
-  PATH (`scripts/sea/upx.ts`). Both build channels provide it: the SEA
-  workflow installs `upx-ucl` from Ubuntu universe; the Dockerfile
-  installs the pinned official tarball (bookworm ships no upx package)
-  and builds with `SEA_UPX_REQUIRE=1`, so a broken UPX install fails the
-  image build instead of silently shipping uncompressed. Skip locally
+  PATH (`scripts/sea/upx.ts`). Both build channels install the pinned
+  official 5.2.0 tarball (the SEA workflow on Ubuntu, the Dockerfile in
+  the bookworm builder — Debian ships no upx package at all), and the
+  Dockerfile builds with `SEA_UPX_REQUIRE=1`, so a broken UPX install
+  fails the image build instead of silently shipping uncompressed. Skip locally
   with `SEA_UPX=0`; override flags with `SEA_UPX_ARGS` (default
   `--best`); macOS builds always skip.
 - `pnpm run sea:smoke [binary]` — 17-check deep smoke: version, natives,

@@ -23,8 +23,8 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/* \
     && arch="$(uname -m)" \
     && case "$arch" in x86_64) upx_arch=amd64 ;; aarch64) upx_arch=arm64 ;; *) echo "unsupported arch: $arch" >&2; exit 1 ;; esac \
-    && wget -qO- "https://github.com/upx/upx/releases/download/v4.2.4/upx-4.2.4-${upx_arch}_linux.tar.xz" \
-       | tar -xJf- -C /usr/local/bin --strip-components=1 "upx-4.2.4-${upx_arch}_linux/upx" \
+    && wget -qO- "https://github.com/upx/upx/releases/download/v5.2.0/upx-5.2.0-${upx_arch}_linux.tar.xz" \
+       | tar -xJf- -C /usr/local/bin --strip-components=1 "upx-5.2.0-${upx_arch}_linux/upx" \
     && upx --version
 
 # Build the SEA single executable: react-router build + tsdown bundle + SEA

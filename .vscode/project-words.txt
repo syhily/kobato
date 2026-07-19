@@ -242,6 +242,7 @@ plsh
 pltclu
 pnpx
 portabletext
+postject
 prefetcher
 preopen
 prerender
@@ -318,6 +319,7 @@ topbar
 trae
 translog
 tsconfigs
+tsdown
 tsgo
 tsgolint
 tview
