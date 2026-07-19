@@ -40,8 +40,8 @@ export interface ListPostsFilters {
   offset?: number
   /** Page size. When undefined every match is returned. */
   limit?: number
-  /** Filter by category name. */
-  category?: string
+  /** Filter by category id. */
+  categoryId?: bigint
   /** Filter by tag name (JSONB contains). */
   tag?: string
   /** Filter by published flag. */
@@ -88,8 +88,8 @@ export function buildPostsWhere(filters: ListPostsFilters): SQL | undefined {
       conditions.push(search)
     }
   }
-  if (filters.category) {
-    conditions.push(eq(postMetaTable.category, filters.category))
+  if (filters.categoryId !== undefined) {
+    conditions.push(eq(postMetaTable.categoryId, filters.categoryId))
   }
   if (filters.tag) {
     conditions.push(
@@ -132,7 +132,7 @@ export function buildPostsOrderBy(filters: ListPostsFilters) {
 }
 
 export interface ListPublicPostsFilters {
-  category?: string
+  categoryId?: bigint
   tag?: string
   includeHidden?: boolean
   includeScheduled?: boolean
@@ -142,7 +142,7 @@ export interface ListPublicPostsFilters {
 }
 
 /** Public `date` is first publication time; falls back to `published_at` before the first publish. */
-export function toClientPostFromMeta(meta: PostMetaRow, tags: string[] = []): ClientPost {
+export function toClientPostFromMeta(meta: PostMetaRow, tags: string[] = [], categoryName = ''): ClientPost {
   const date = meta.firstPublishedAt ?? meta.publishedAt
   return {
     id: String(meta.id),
@@ -152,7 +152,7 @@ export function toClientPostFromMeta(meta: PostMetaRow, tags: string[] = []): Cl
     comments: meta.commentsEnabled,
     alias: readStringArray(meta.alias),
     tags,
-    category: meta.category,
+    category: categoryName,
     summary: meta.summary,
     cover: meta.cover || '/images/open-graph.png',
     og: meta.og ?? undefined,
@@ -173,8 +173,8 @@ export function buildPublicPostsWhere(filters: ListPublicPostsFilters, now = new
   if (!filters.includeHidden) {
     conditions.push(eq(postMetaTable.visible, true))
   }
-  if (filters.category) {
-    conditions.push(eq(postMetaTable.category, filters.category))
+  if (filters.categoryId !== undefined) {
+    conditions.push(eq(postMetaTable.categoryId, filters.categoryId))
   }
   if (filters.tag) {
     conditions.push(

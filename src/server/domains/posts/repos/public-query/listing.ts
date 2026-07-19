@@ -68,7 +68,7 @@ export async function listPublicPostCardsPaginated(
   pageSize: number,
   options?: PostVisibilityOptions & {
     sortBy?: 'publishedAt' | 'updatedAt'
-    category?: string
+    categoryId?: bigint
     tag?: string
     /** Override the default offset (`(pageNum - 1) * pageSize`). Used when the
         caller's pagination logic expands the last-page limit (tail-merge) so
@@ -81,7 +81,7 @@ export async function listPublicPostCardsPaginated(
   const metas = await listPublicPosts(db, {
     ...filters,
     sortBy: options?.sortBy,
-    category: options?.category,
+    categoryId: options?.categoryId,
     tag: options?.tag,
     limit: pageSize,
     offset,

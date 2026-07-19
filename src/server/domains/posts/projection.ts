@@ -23,6 +23,7 @@ export function toCmsPost(
     coverWidth?: number
     coverHeight?: number
     tags?: string[]
+    categoryName?: string
   } = {},
 ): CmsPost {
   const body = publishedRevision !== null ? readBody(publishedRevision.body) : []
@@ -34,7 +35,7 @@ export function toCmsPost(
   // fields are stated here. `headings` overrides the projection's empty
   // default when a published revision carries real anchors.
   return {
-    ...toClientPostFromMeta(meta, options.tags ?? []),
+    ...toClientPostFromMeta(meta, options.tags ?? [], options.categoryName ?? ''),
     coverThumbhash: options.coverThumbhash,
     headings,
     body,
@@ -63,6 +64,7 @@ export interface AdminPostDto {
   updatedAt: string
   deletedAt: string | null
   category: string
+  categoryId: string | null
   tags: string[]
   alias: string[]
   authorId: string | null
@@ -87,7 +89,7 @@ export interface AdminPostDto {
 
 export function toAdminPostDto(
   row: PostMetaRow & { authorName?: string | null },
-  options: { commentCount?: number; commentPublicId?: string; tags?: string[] } = {},
+  options: { commentCount?: number; commentPublicId?: string; tags?: string[]; categoryName?: string } = {},
 ): AdminPostDto {
   return {
     id: String(row.id),
@@ -106,7 +108,8 @@ export function toAdminPostDto(
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
     deletedAt: row.deletedAt === null ? null : row.deletedAt.toISOString(),
-    category: row.category,
+    category: options.categoryName ?? '',
+    categoryId: row.categoryId === null ? null : String(row.categoryId),
     tags: options.tags ?? [],
     alias: readStringArray(row.alias),
     authorId: row.authorId === null ? null : String(row.authorId),

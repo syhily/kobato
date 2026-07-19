@@ -62,7 +62,7 @@ const { generateFeeds } = await import('@/server/render/feed/generator')
 function fakeCatalog(
   opts: {
     posts?: unknown[]
-    categories?: { name: string; slug: string }[]
+    categories?: { id?: bigint; name: string; slug: string }[]
     tags?: { name: string; slug: string }[]
   } = {},
 ) {
@@ -133,7 +133,7 @@ describe('services/feed — generateFeeds (channel envelope)', () => {
 
   it('uses the same hidden-inclusive visibility for scoped RSS/Atom feeds', async () => {
     const catalog = fakeCatalog({
-      categories: [{ name: '技术', slug: 'tech' }],
+      categories: [{ id: 7n, name: '技术', slug: 'tech' }],
       tags: [{ name: 'React', slug: 'react' }],
     })
 
@@ -142,7 +142,7 @@ describe('services/feed — generateFeeds (channel envelope)', () => {
     expect(catalog.listPublicPostsWithContent).toHaveBeenLastCalledWith(expect.any(Object), {
       includeHidden: true,
       includeScheduled: false,
-      category: '技术',
+      categoryId: 7n,
       limit: 20,
     })
 

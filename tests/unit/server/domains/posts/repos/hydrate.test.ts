@@ -18,6 +18,10 @@ vi.mock('@/server/infra/db/operations/post-tag', () => ({
   findTagNamesByPostIds: vi.fn(async () => new Map()),
 }))
 
+vi.mock('@/server/infra/db/operations/category', () => ({
+  findCategoryNamesByIds: vi.fn(async () => new Map()),
+}))
+
 vi.mock('@/server/domains/images/services/enhance', () => ({
   hydrateImageRefs: vi.fn(
     async (
@@ -36,6 +40,7 @@ vi.mock('@/server/domains/images/services/enhance', () => ({
 const { hydratePublishedRevisions } = await import('@/server/domains/content/repos/query')
 const { hydrateImageRefs } = await import('@/server/domains/images/services/enhance')
 const { findTagNamesByPostIds } = await import('@/server/infra/db/operations/post-tag')
+const { findCategoryNamesByIds } = await import('@/server/infra/db/operations/category')
 const { hydratePostList } = await import('@/server/domains/posts/repos/hydrate')
 
 const db = {} as NodePgDatabase
@@ -58,7 +63,7 @@ function metaRow(overrides: Partial<PostMetaRow> = {}): PostMetaRow {
     publishedRevisionId: overrides.publishedRevisionId ?? null,
     firstPublishedAt: overrides.firstPublishedAt ?? null,
     authorId: overrides.authorId ?? null,
-    category: overrides.category ?? 'general',
+    categoryId: overrides.categoryId === undefined ? 1n : overrides.categoryId,
     alias: overrides.alias ?? [],
     pinnedAt: overrides.pinnedAt ?? null,
     createdAt: now,
@@ -93,8 +98,22 @@ describe('posts/repos/hydrate — hydratePostList matrix', () => {
   it('returns [] for empty input without touching any collaborator', async () => {
     await expect(hydratePostList(db, [])).resolves.toEqual([])
     expect(findTagNamesByPostIds).not.toHaveBeenCalled()
+    expect(findCategoryNamesByIds).not.toHaveBeenCalled()
     expect(hydratePublishedRevisions).not.toHaveBeenCalled()
     expect(hydrateImageRefs).not.toHaveBeenCalled()
+  })
+
+  it('resolves category names through the id batch; null and dangling ids yield an empty string', async () => {
+    vi.mocked(findCategoryNamesByIds).mockResolvedValue(new Map([[1n, 'Tech']]))
+    const posts = await hydratePostList(db, [
+      metaRow({ id: 1n, categoryId: 1n }),
+      metaRow({ id: 2n, categoryId: null }),
+      metaRow({ id: 3n, categoryId: 999n }),
+    ])
+    expect(findCategoryNamesByIds).toHaveBeenCalledWith(db, [1n, 999n])
+    expect(posts[0]?.category).toBe('Tech')
+    expect(posts[1]?.category).toBe('')
+    expect(posts[2]?.category).toBe('')
   })
 
   it('revision:none + images (defaults): tag batch + covers, empty body', async () => {

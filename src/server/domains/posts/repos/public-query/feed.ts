@@ -13,7 +13,7 @@ import { listPublicPosts } from '@/server/domains/posts/repos/public-query/listi
 export async function listPublicPostsWithContent(
   db: NodePgDatabase,
   options?: PostVisibilityOptions & {
-    category?: string
+    categoryId?: bigint
     tag?: string
     sortBy?: 'publishedAt' | 'updatedAt'
     limit?: number
@@ -22,7 +22,7 @@ export async function listPublicPostsWithContent(
   const filters = buildPublicPostFilters(options)
   const metas = await listPublicPosts(db, {
     ...filters,
-    category: options?.category,
+    categoryId: options?.categoryId,
     tag: options?.tag,
     sortBy: options?.sortBy,
     limit: options?.limit,

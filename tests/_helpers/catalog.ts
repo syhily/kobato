@@ -104,6 +104,7 @@ export function makeAdminPost(overrides: Partial<AdminPostDto> = {}): AdminPostD
     updatedAt: overrides.updatedAt ?? '2024-01-02T00:00:00.000Z',
     deletedAt: overrides.deletedAt ?? null,
     category: overrides.category ?? 'general',
+    categoryId: overrides.categoryId ?? '1',
     tags: overrides.tags ?? [],
     alias: overrides.alias ?? [],
     authorId: overrides.authorId ?? null,

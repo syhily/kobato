@@ -25,7 +25,7 @@ export interface UpsertPostMetaInput {
   showUpdated?: boolean
   visible?: boolean
   pinnedAt?: Date | null
-  category?: string
+  categoryId?: bigint | null
   tags?: string[]
   alias?: string[]
   publishedAt?: Date

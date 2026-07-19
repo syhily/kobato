@@ -32,7 +32,7 @@ async function seedPost(overrides: Partial<typeof post.$inferInsert> = {}) {
       showUpdated: false,
       visible: true,
       pinnedAt: null,
-      category: '',
+      categoryId: null,
       alias: [],
       publishedAt: new Date(),
       ...overrides,

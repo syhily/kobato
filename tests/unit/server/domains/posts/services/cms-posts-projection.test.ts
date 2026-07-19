@@ -31,7 +31,7 @@ function metaRow(overrides: Partial<PostMetaRow> = {}): PostMetaRow {
     publishedRevisionId: overrides.publishedRevisionId ?? null,
     firstPublishedAt: overrides.firstPublishedAt ?? null,
     authorId: overrides.authorId ?? null,
-    category: overrides.category ?? 'general',
+    categoryId: overrides.categoryId ?? 1n,
     alias: overrides.alias ?? [],
     pinnedAt: overrides.pinnedAt ?? null,
     createdAt: now,
@@ -75,6 +75,11 @@ describe('cms/posts/projection — toCmsPost', () => {
     expect(dto.imageSources).toEqual([])
     expect(dto.headings).toEqual([])
     expect(dto.permalink).toBe('/posts/hello')
+  })
+
+  it('projects the resolved category name and defaults to an empty string', () => {
+    expect(toCmsPost(metaRow({ categoryId: 5n }), null, { categoryName: 'Tech' }).category).toBe('Tech')
+    expect(toCmsPost(metaRow({ categoryId: null }), null).category).toBe('')
   })
 
   it('joins the published revision body when present', () => {

@@ -25,7 +25,7 @@ export interface PostMetaDraft {
   showUpdated: boolean
   visible: boolean
   pinned: boolean
-  category: string
+  categoryId: string
   tags: string[]
   alias: string[]
   publishedAt: string
@@ -43,7 +43,7 @@ export const EMPTY_POST_META_DRAFT: PostMetaDraft = {
   showUpdated: false,
   visible: true,
   pinned: false,
-  category: '',
+  categoryId: '',
   tags: [],
   alias: [],
   publishedAt: '',
@@ -62,7 +62,7 @@ export function metaDraftsEqual(a: PostMetaDraft, b: PostMetaDraft): boolean {
     a.showUpdated === b.showUpdated &&
     a.visible === b.visible &&
     a.pinned === b.pinned &&
-    a.category === b.category &&
+    a.categoryId === b.categoryId &&
     JSON.stringify(a.tags) === JSON.stringify(b.tags) &&
     JSON.stringify(a.alias) === JSON.stringify(b.alias) &&
     a.publishedAt === b.publishedAt
@@ -82,7 +82,7 @@ export function metaDraftFromPost(post: AdminPostDto): PostMetaDraft {
     showUpdated: post.showUpdated,
     visible: post.visible,
     pinned: post.pinnedAt !== null,
-    category: post.category,
+    categoryId: post.categoryId ?? '',
     tags: post.tags,
     alias: post.alias,
     publishedAt: futureLocalInputValueOrEmpty(post.publishedAt),
@@ -165,7 +165,7 @@ export function PostMetaSidebar({
               placeholder="可选，用于列表与社交分享卡片。"
             />
           </div>
-          <CategoryField value={draft.category} onChange={(value) => set('category', value)} disabled={disabled} />
+          <CategoryField value={draft.categoryId} onChange={(value) => set('categoryId', value)} disabled={disabled} />
           <TagsField values={draft.tags} onChange={(values) => set('tags', values)} disabled={disabled} />
           <AliasField values={draft.alias} onChange={(values) => set('alias', values)} disabled={disabled} />
         </CardContent>

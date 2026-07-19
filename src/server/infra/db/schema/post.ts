@@ -1,6 +1,8 @@
 import { sql } from 'drizzle-orm'
 import { bigint, bigserial, boolean, index, jsonb, pgTable, text, timestamp, varchar } from 'drizzle-orm/pg-core'
 
+import { category } from '@/server/infra/db/schema/taxonomy'
+
 export const post = pgTable(
   'post',
   {
@@ -33,7 +35,7 @@ export const post = pgTable(
     /** Author who created the post. NULL for legacy migrated posts. */
     authorId: bigint('author_id', { mode: 'bigint' }),
     // Post-specific taxonomy fields
-    category: varchar('category', { length: 20 }).notNull().default(''),
+    categoryId: bigint('category_id', { mode: 'bigint' }).references(() => category.id, { onDelete: 'set null' }),
     alias: jsonb('alias')
       .notNull()
       .default(sql`'[]'::jsonb`),
@@ -44,7 +46,7 @@ export const post = pgTable(
     // `slug` already has a UNIQUE constraint (implicit unique index);
     // no need for a redundant non-unique index.
     index('idx_post_deleted_at').on(table.deletedAt),
-    index('idx_post_category').on(table.category),
+    index('idx_post_category_id').on(table.categoryId),
     index('idx_post_published_at').on(table.publishedAt),
     index('idx_post_first_published_at').on(table.firstPublishedAt),
     index('idx_post_pinned_at').on(table.pinnedAt),

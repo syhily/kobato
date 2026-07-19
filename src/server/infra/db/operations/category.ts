@@ -57,6 +57,26 @@ export async function findCategoryBySlug(db: NodePgDatabase, slug: string): Prom
   return rows[0] ?? null
 }
 
+// The single seam for post→category name resolution: posts store
+// `category_id`, listings project the display NAME onto the wire DTO.
+// Mount this in `hydratePostList`-style pipelines (next to the tag-name
+// batch) rather than hand-joining per query.
+export async function findCategoryNamesByIds(db: NodePgDatabase, ids: readonly bigint[]): Promise<Map<bigint, string>> {
+  const map = new Map<bigint, string>()
+  if (ids.length === 0) {
+    return map
+  }
+  const unique = [...new Set(ids)]
+  const rows = await db
+    .select({ id: category.id, name: category.name })
+    .from(category)
+    .where(inArray(category.id, unique))
+  for (const row of rows) {
+    map.set(row.id, row.name)
+  }
+  return map
+}
+
 export async function insertCategory(db: NodePgDatabase, values: NewCategory): Promise<CategoryRow> {
   const now = new Date()
   const rows = await db
@@ -84,7 +104,6 @@ export async function deleteCategory(db: NodePgDatabase, id: bigint): Promise<bo
   return result.length > 0
 }
 
-// Idempotent insert used by the one-shot CLI seeder. `ON CONFLICT
 // Bulk-rewrite `sort_order` so the rows match the order in which their
 // ids appear in `orderedIds`. Each row's `sort_order` becomes its
 // 0-based index in the supplied array, and `updated_at` is bumped to

@@ -189,8 +189,8 @@ describe('ilikeEscape — comments repository', () => {
 describe('ilikeEscape — search posts', () => {
   it('finds posts by title with escaped wildcards', async () => {
     await db.insert(post).values([
-      { slug: 'post-1', title: 'How to get 50% off', summary: '', cover: '', category: '', publishedRevisionId: 1n },
-      { slug: 'post-2', title: '500 reasons to code', summary: '', cover: '', category: '', publishedRevisionId: 2n },
+      { slug: 'post-1', title: 'How to get 50% off', summary: '', cover: '', publishedRevisionId: 1n },
+      { slug: 'post-2', title: '500 reasons to code', summary: '', cover: '', publishedRevisionId: 2n },
     ])
     await db.insert(postSearchIndex).values([
       { postId: 1n, plainText: 'How to get 50% off' },
@@ -204,8 +204,8 @@ describe('ilikeEscape — search posts', () => {
 
   it('finds posts by summary with escaped wildcards', async () => {
     await db.insert(post).values([
-      { slug: 'post-1', title: 'Guide', summary: 'Save 50% today', cover: '', category: '', publishedRevisionId: 1n },
-      { slug: 'post-2', title: 'Guide 2', summary: 'Save 500 today', cover: '', category: '', publishedRevisionId: 2n },
+      { slug: 'post-1', title: 'Guide', summary: 'Save 50% today', cover: '', publishedRevisionId: 1n },
+      { slug: 'post-2', title: 'Guide 2', summary: 'Save 500 today', cover: '', publishedRevisionId: 2n },
     ])
     await db.insert(postSearchIndex).values([
       { postId: 1n, plainText: 'Save 50% today' },
@@ -219,8 +219,8 @@ describe('ilikeEscape — search posts', () => {
 
   it('finds posts by title with escaped underscores', async () => {
     await db.insert(post).values([
-      { slug: 'post-1', title: 'Guide to foo_bar', summary: '', cover: '', category: '', publishedRevisionId: 1n },
-      { slug: 'post-2', title: 'Guide to foobar', summary: '', cover: '', category: '', publishedRevisionId: 2n },
+      { slug: 'post-1', title: 'Guide to foo_bar', summary: '', cover: '', publishedRevisionId: 1n },
+      { slug: 'post-2', title: 'Guide to foobar', summary: '', cover: '', publishedRevisionId: 2n },
     ])
     await db.insert(postSearchIndex).values([
       { postId: 1n, plainText: '' },

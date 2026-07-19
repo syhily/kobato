@@ -8,7 +8,8 @@ import { Image } from '@/ui/public/widgets/Image'
 
 interface PostRowProps {
   post: AdminPostDto
-  onFilterCategory?: (category: string) => void
+  /** Receives the category ID string — the posts-list filter keys by id. */
+  onFilterCategory?: (categoryId: string) => void
 }
 
 function formatPostDate(post: AdminPostDto): string {
@@ -100,10 +101,10 @@ export function PostRow({ post, onFilterCategory }: PostRowProps) {
         {/* Meta */}
         <p className="mt-0.5 truncate text-(--text-admin-sm) text-muted-foreground">
           {post.authorName || '—'} 在{' '}
-          {post.category && onFilterCategory ? (
+          {post.categoryId !== null && onFilterCategory ? (
             <button
               type="button"
-              onClick={() => onFilterCategory(post.category!)}
+              onClick={() => onFilterCategory(post.categoryId!)}
               className="hover:text-foreground hover:underline"
             >
               {post.category}

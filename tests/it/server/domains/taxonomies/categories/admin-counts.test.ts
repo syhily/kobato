@@ -26,10 +26,13 @@ beforeEach(async () => {
 
 describe('listCategoriesForAdmin', () => {
   it('counts published posts per category regardless of visibility or scheduled date', async () => {
-    await db.insert(category).values([
-      { name: 'Tech', slug: 'tech', cover: '', description: '', sortOrder: 0 },
-      { name: 'Life', slug: 'life', cover: '', description: '', sortOrder: 1 },
-    ])
+    const [techRow, lifeRow] = await db
+      .insert(category)
+      .values([
+        { name: 'Tech', slug: 'tech', cover: '', description: '', sortOrder: 0 },
+        { name: 'Life', slug: 'life', cover: '', description: '', sortOrder: 1 },
+      ])
+      .returning()
 
     const future = new Date(Date.now() + 24 * 60 * 60 * 1000)
     const past = new Date(Date.now() - 24 * 60 * 60 * 1000)
@@ -41,7 +44,7 @@ describe('listCategoriesForAdmin', () => {
         title: 'Tech Visible',
         summary: '',
         cover: '',
-        category: 'Tech',
+        categoryId: techRow.id,
         visible: true,
         published: true,
         publishedAt: past,
@@ -53,7 +56,7 @@ describe('listCategoriesForAdmin', () => {
         title: 'Tech Hidden',
         summary: '',
         cover: '',
-        category: 'Tech',
+        categoryId: techRow.id,
         visible: false,
         published: true,
         publishedAt: past,
@@ -65,7 +68,7 @@ describe('listCategoriesForAdmin', () => {
         title: 'Tech Future',
         summary: '',
         cover: '',
-        category: 'Tech',
+        categoryId: techRow.id,
         visible: true,
         published: true,
         publishedAt: future,
@@ -77,7 +80,7 @@ describe('listCategoriesForAdmin', () => {
         title: 'Tech NoRev',
         summary: '',
         cover: '',
-        category: 'Tech',
+        categoryId: techRow.id,
         visible: true,
         published: true,
         publishedAt: past,
@@ -88,7 +91,7 @@ describe('listCategoriesForAdmin', () => {
         title: 'Tech Draft',
         summary: '',
         cover: '',
-        category: 'Tech',
+        categoryId: techRow.id,
         visible: true,
         published: false,
         publishedAt: past,
@@ -99,7 +102,7 @@ describe('listCategoriesForAdmin', () => {
         title: 'Tech Deleted',
         summary: '',
         cover: '',
-        category: 'Tech',
+        categoryId: techRow.id,
         visible: true,
         published: true,
         publishedAt: past,
@@ -111,7 +114,7 @@ describe('listCategoriesForAdmin', () => {
         title: 'Life Post',
         summary: '',
         cover: '',
-        category: 'Life',
+        categoryId: lifeRow.id,
         visible: true,
         published: true,
         publishedAt: past,
@@ -123,7 +126,7 @@ describe('listCategoriesForAdmin', () => {
         title: 'Uncategorized',
         summary: '',
         cover: '',
-        category: '',
+        categoryId: null,
         visible: true,
         published: true,
         publishedAt: past,
@@ -167,7 +170,7 @@ describe('listCategoriesForAdmin', () => {
         title: 'Tech Published',
         summary: '',
         cover: '',
-        category: 'Tech',
+        categoryId: cat.id,
         visible: true,
         published: true,
         publishedAt: past,
@@ -178,7 +181,7 @@ describe('listCategoriesForAdmin', () => {
         title: 'Tech Draft',
         summary: '',
         cover: '',
-        category: 'Tech',
+        categoryId: cat.id,
         visible: true,
         published: false,
         publishedAt: past,

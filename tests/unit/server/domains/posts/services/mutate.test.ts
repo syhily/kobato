@@ -34,6 +34,10 @@ vi.mock('@/server/domains/posts/services/shared', () => ({
   assertOwnPostOr404: vi.fn(),
 }))
 
+vi.mock('@/server/infra/db/operations/category', () => ({
+  findCategoryById: vi.fn().mockResolvedValue(null),
+}))
+
 vi.mock('@/server/infra/db/operations/post-tag', () => ({
   findTagNamesByPostId: vi.fn().mockResolvedValue(['tag1']),
   setPostTags: vi.fn().mockResolvedValue(undefined),

@@ -7,6 +7,7 @@ import type { Post, PostVisibilityOptions } from '@/shared/types/catalog'
 import { hydratePublishedRevisions } from '@/server/domains/content/repos/query'
 import { hydrateImageRefs } from '@/server/domains/images/services/enhance'
 import { toCmsPost } from '@/server/domains/posts/projection'
+import { findCategoryNamesByIds } from '@/server/infra/db/operations/category'
 import { findTagNamesByPostIds } from '@/server/infra/db/operations/post-tag'
 
 /**
@@ -53,11 +54,11 @@ export interface HydratePostListOptions {
 }
 
 /**
- * The public post-list assembly pipeline: batch tag names, project each
- * meta to a full `Post`, optionally join published revisions, optionally
- * hydrate covers. Every public listing (cards, archives, taxonomy, feed,
- * search hydration) is a one-liner over this — mount it instead of
- * hand-assembling a new copy.
+ * The public post-list assembly pipeline: batch tag + category names,
+ * project each meta to a full `Post`, optionally join published revisions,
+ * optionally hydrate covers. Every public listing (cards, archives,
+ * taxonomy, feed, search hydration) is a one-liner over this — mount it
+ * instead of hand-assembling a new copy.
  */
 export async function hydratePostList(
   db: NodePgDatabase,
@@ -72,10 +73,17 @@ export async function hydratePostList(
     db,
     metas.map((m) => m.id),
   )
+  const categoryMap = await findCategoryNamesByIds(
+    db,
+    metas.map((m) => m.categoryId).filter((id): id is bigint => id !== null),
+  )
   const posts = metas.map((meta) => {
     const revision =
       revisions === null || meta.publishedRevisionId === null ? null : (revisions.get(meta.publishedRevisionId) ?? null)
-    return toCmsPost(meta, revision, { tags: tagMap.get(meta.id) ?? [] })
+    return toCmsPost(meta, revision, {
+      tags: tagMap.get(meta.id) ?? [],
+      categoryName: categoryMap.get(meta.categoryId ?? -1n) ?? '',
+    })
   })
   if (options.images !== false) {
     await hydratePostImages(db, posts)

@@ -1,6 +1,7 @@
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 import type { Pool } from 'pg'
 
+import { eq } from 'drizzle-orm'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { clearAllTables } from '#/_helpers/integration-db'
@@ -56,7 +57,7 @@ async function seedTag(opts: Partial<typeof tagTable.$inferInsert> = {}): Promis
 }
 
 async function seedPublishedPost(
-  category?: string,
+  categoryId?: bigint | null,
   opts: { title?: string; visible?: boolean; publishedAt?: Date } = {},
 ): Promise<bigint> {
   const rows = await db
@@ -68,7 +69,7 @@ async function seedPublishedPost(
       publishedRevisionId: 1n,
       publishedAt: opts.publishedAt ?? new Date('2020-01-01'),
       firstPublishedAt: new Date('2020-01-01'),
-      category: category ?? '',
+      categoryId: categoryId ?? null,
       visible: opts.visible ?? true,
     })
     .returning({ id: postMetaTable.id })
@@ -145,7 +146,7 @@ describe('taxonomies/shared — deleteAdminTaxonomy', () => {
     const { deleteAdminTaxonomy } = await import('@/server/domains/taxonomies/shared')
     await expect(
       deleteAdminTaxonomy(1n, '标签', {
-        findById: async () => ({ name: 'X' }),
+        findById: async () => ({ id: 1n, name: 'X' }),
         deleteRow: async () => true,
         listPostTitles: async () => ['Post A'],
       }),
@@ -155,7 +156,7 @@ describe('taxonomies/shared — deleteAdminTaxonomy', () => {
     const { deleteAdminTaxonomy } = await import('@/server/domains/taxonomies/shared')
     let deleted = false
     const r = await deleteAdminTaxonomy(1n, '标签', {
-      findById: async () => ({ name: 'X' }),
+      findById: async () => ({ id: 1n, name: 'X' }),
       deleteRow: async () => {
         deleted = true
         return true
@@ -383,14 +384,14 @@ describe('taxonomies/categories/services/mutate — deleteAdminCategory', () => 
   })
   it('refuses to delete when posts reference it', async () => {
     const id = await seedCategory({ name: 'Tech', slug: 'tech2' })
-    await seedPublishedPost('Tech')
+    await seedPublishedPost(id)
     const { deleteAdminCategory } = await import('@/server/domains/taxonomies/categories/services/mutate')
     await expect(deleteAdminCategory(db, id)).rejects.toMatchObject({ code: 'CONFLICT' })
   })
   it('blocks on hidden + scheduled references and names them in the 409 body', async () => {
     const id = await seedCategory({ name: 'Tech', slug: 'tech3' })
-    await seedPublishedPost('Tech', { title: 'Hidden Post', visible: false })
-    await seedPublishedPost('Tech', { title: 'Scheduled Post', publishedAt: new Date('2099-01-01') })
+    await seedPublishedPost(id, { title: 'Hidden Post', visible: false })
+    await seedPublishedPost(id, { title: 'Scheduled Post', publishedAt: new Date('2099-01-01') })
     const { deleteAdminCategory } = await import('@/server/domains/taxonomies/categories/services/mutate')
     const error = await deleteAdminCategory(db, id).catch((e: unknown) => e)
     expect(error).toMatchObject({ code: 'CONFLICT' })
@@ -400,5 +401,25 @@ describe('taxonomies/categories/services/mutate — deleteAdminCategory', () => 
   it('returns false when the category does not exist', async () => {
     const { deleteAdminCategory } = await import('@/server/domains/taxonomies/categories/services/mutate')
     expect(await deleteAdminCategory(db, 9999n)).toBe(false)
+  })
+})
+
+describe('taxonomies/categories — rename cascades to posts with zero post writes', () => {
+  it('projects the new name through the id join without touching the post row', async () => {
+    const id = await seedCategory({ name: 'Old', slug: 'rename-me' })
+    const pid = await seedPublishedPost(id, { title: 'Rename Probe' })
+    const before = await db.select().from(postMetaTable).where(eq(postMetaTable.id, pid))
+    const { upsertAdminCategory } = await import('@/server/domains/taxonomies/categories/services/mutate')
+    await upsertAdminCategory(db, { id, name: 'New', cover: '', description: '' })
+    // The public pipeline resolves the display name via category_id…
+    const { listPublicPosts } = await import('@/server/domains/posts/repos/public-query/listing')
+    const { hydratePostList } = await import('@/server/domains/posts/repos/hydrate')
+    const metas = await listPublicPosts(db, { categoryId: id })
+    const posts = await hydratePostList(db, metas)
+    expect(posts[0]?.category).toBe('New')
+    // …while the post row itself saw no write: same reference, same updated_at.
+    const after = await db.select().from(postMetaTable).where(eq(postMetaTable.id, pid))
+    expect(after[0]?.categoryId).toBe(id)
+    expect(after[0]?.updatedAt).toEqual(before[0]?.updatedAt)
   })
 })

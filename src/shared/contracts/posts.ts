@@ -24,6 +24,7 @@ export const adminPostDto = z.object({
   updatedAt: isoDateTime,
   deletedAt: isoDateTime.nullable(),
   category: z.string(),
+  categoryId: idString.nullable(),
   tags: z.array(z.string()),
   alias: z.array(z.string()),
   authorId: idString.nullable(),

@@ -31,7 +31,7 @@ const sampleMeta = {
   createdAt: new Date('2024-01-01T00:00:00.000Z'),
   updatedAt: new Date('2024-01-02T00:00:00.000Z'),
   deletedAt: null,
-  category: 'general',
+  categoryId: null,
   alias: [],
   authorId: null,
   authorName: 'author',

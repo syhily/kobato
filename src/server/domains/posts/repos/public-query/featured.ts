@@ -2,10 +2,12 @@ import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
 import { and, desc, eq, isNotNull, sql } from 'drizzle-orm'
 
+import type { PostMetaRow } from '@/server/infra/db/types'
 import type { ClientPost, SidebarPostLink } from '@/shared/types/catalog'
 
 import { hydratePostImages, hydratePostList } from '@/server/domains/posts/repos/hydrate'
 import { livePostWhere, toClientPostFromMeta } from '@/server/domains/posts/repos/shared'
+import { findCategoryNamesByIds } from '@/server/infra/db/operations/category'
 import { findTagNamesByPostIds } from '@/server/infra/db/operations/post-tag'
 import { post as postMetaTable } from '@/server/infra/db/schema/post'
 import { requireBlogSettingsSection } from '@/shared/config/getters'
@@ -13,6 +15,10 @@ import { toSidebarPostLink } from '@/shared/types/catalog'
 import { shuffle } from '@/shared/utils/tools'
 
 const FEATURE_POST_COUNT = 3
+
+function categoryIdsOf(metas: readonly PostMetaRow[]): bigint[] {
+  return metas.map((m) => m.categoryId).filter((id): id is bigint => id !== null)
+}
 
 export async function selectFeaturePosts(db: NodePgDatabase, seed: string): Promise<ClientPost[]> {
   const content = requireBlogSettingsSection('content')
@@ -30,12 +36,17 @@ export async function selectFeaturePosts(db: NodePgDatabase, seed: string): Prom
     .orderBy(desc(postMetaTable.pinnedAt))
     .limit(FEATURE_POST_COUNT)
 
-  const pinnedTagMap = await findTagNamesByPostIds(
-    db,
-    pinnedMetas.map((m) => m.id),
-  )
-  const pinned = pinnedMetas.map((meta) => toClientPostFromMeta(meta, pinnedTagMap.get(meta.id) ?? []))
-  if (pinned.length === FEATURE_POST_COUNT) {
+  if (pinnedMetas.length === FEATURE_POST_COUNT) {
+    const [pinnedTagMap, pinnedCategoryMap] = await Promise.all([
+      findTagNamesByPostIds(
+        db,
+        pinnedMetas.map((m) => m.id),
+      ),
+      findCategoryNamesByIds(db, categoryIdsOf(pinnedMetas)),
+    ])
+    const pinned = pinnedMetas.map((meta) =>
+      toClientPostFromMeta(meta, pinnedTagMap.get(meta.id) ?? [], pinnedCategoryMap.get(meta.categoryId ?? -1n) ?? ''),
+    )
     await hydratePostImages(db, pinned)
     return pinned
   }
@@ -59,12 +70,28 @@ export async function selectFeaturePosts(db: NodePgDatabase, seed: string): Prom
   ])
 
   const recentIds = new Set(recentMetas.map((r) => r.id))
-  const pinnedSlugs = new Set(pinned.map((p) => p.slug))
-  const candidateIds = allWithCover.filter((m) => !pinnedSlugs.has(m.slug) && !recentIds.has(m.id)).map((m) => m.id)
-  const candidateTagMap = await findTagNamesByPostIds(db, candidateIds)
-  const candidates = allWithCover
-    .filter((m) => !pinnedSlugs.has(m.slug) && !recentIds.has(m.id))
-    .map((meta) => toClientPostFromMeta(meta, candidateTagMap.get(meta.id) ?? []))
+  const pinnedSlugs = new Set(pinnedMetas.map((m) => m.slug))
+  const candidateMetas = allWithCover.filter((m) => !pinnedSlugs.has(m.slug) && !recentIds.has(m.id))
+  // One name batch for the union of pinned + candidate rows — the same
+  // seam `hydratePostList` mounts for every other public listing.
+  const [pinnedTagMap, candidateTagMap, categoryMap] = await Promise.all([
+    findTagNamesByPostIds(
+      db,
+      pinnedMetas.map((m) => m.id),
+    ),
+    findTagNamesByPostIds(
+      db,
+      candidateMetas.map((m) => m.id),
+    ),
+    findCategoryNamesByIds(db, categoryIdsOf([...pinnedMetas, ...candidateMetas])),
+  ])
+  const categoryNameOf = (id: bigint | null): string => categoryMap.get(id ?? -1n) ?? ''
+  const pinned = pinnedMetas.map((meta) =>
+    toClientPostFromMeta(meta, pinnedTagMap.get(meta.id) ?? [], categoryNameOf(meta.categoryId)),
+  )
+  const candidates = candidateMetas.map((meta) =>
+    toClientPostFromMeta(meta, candidateTagMap.get(meta.id) ?? [], categoryNameOf(meta.categoryId)),
+  )
 
   const withCover = candidates.filter((post) => post.cover)
   const pool = withCover.length >= FEATURE_POST_COUNT - pinned.length ? withCover : candidates

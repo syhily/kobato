@@ -68,7 +68,7 @@ function buildPostUpsertPayload({
     showUpdated: meta.showUpdated,
     visible: meta.visible,
     pinnedAt: meta.pinned ? new Date().toISOString() : null,
-    category: meta.category,
+    categoryId: meta.categoryId === '' ? null : meta.categoryId,
     tags: meta.tags,
     alias: meta.alias,
     ...(publishedAt !== null ? { publishedAt } : {}),

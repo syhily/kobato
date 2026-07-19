@@ -8,6 +8,7 @@ import type { Post } from '@/shared/types/catalog'
 import { toCmsPost } from '@/server/domains/posts/projection'
 import { hydratePostImages } from '@/server/domains/posts/repos/hydrate'
 import { livePostWhere } from '@/server/domains/posts/repos/shared'
+import { findCategoryNamesByIds } from '@/server/infra/db/operations/category'
 import { findTagNamesByPostId } from '@/server/infra/db/operations/post-tag'
 import { content as contentTable } from '@/server/infra/db/schema/content'
 import { post as postMetaTable } from '@/server/infra/db/schema/post'
@@ -54,13 +55,24 @@ async function findPostWithRevisionBySlug(
   return { meta: post as PostMetaRow, revision: content as ContentRow | null }
 }
 
+async function resolveCategoryName(db: NodePgDatabase, categoryId: bigint | null): Promise<string> {
+  if (categoryId === null) {
+    return ''
+  }
+  const map = await findCategoryNamesByIds(db, [categoryId])
+  return map.get(categoryId) ?? ''
+}
+
 export async function findPostBySlug(db: NodePgDatabase, slug: string): Promise<Post | null> {
   const result = await findPostWithRevisionBySlug(db, slug, livePostWhere())
   if (result === null) {
     return null
   }
-  const tags = await findTagNamesByPostId(db, result.meta.id)
-  const post = toCmsPost(result.meta, result.revision, { tags })
+  const [tags, categoryName] = await Promise.all([
+    findTagNamesByPostId(db, result.meta.id),
+    resolveCategoryName(db, result.meta.categoryId),
+  ])
+  const post = toCmsPost(result.meta, result.revision, { tags, categoryName })
   await hydratePostImages(db, [post])
   return post
 }
@@ -70,8 +82,11 @@ export async function findPostBySlugForAdmin(db: NodePgDatabase, slug: string): 
   if (result === null) {
     return null
   }
-  const tags = await findTagNamesByPostId(db, result.meta.id)
-  const post = toCmsPost(result.meta, result.revision, { tags })
+  const [tags, categoryName] = await Promise.all([
+    findTagNamesByPostId(db, result.meta.id),
+    resolveCategoryName(db, result.meta.categoryId),
+  ])
+  const post = toCmsPost(result.meta, result.revision, { tags, categoryName })
   await hydratePostImages(db, [post])
   return post
 }

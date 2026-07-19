@@ -68,17 +68,20 @@ describe('listAllCategories', () => {
   })
 
   it('counts only live posts per category (scheduled and revision-less excluded)', async () => {
-    await db.insert(category).values({ name: 'GatedCat', slug: 'gated-cat', cover: '', description: '', sortOrder: 0 })
+    const [gatedCat] = await db
+      .insert(category)
+      .values({ name: 'GatedCat', slug: 'gated-cat', cover: '', description: '', sortOrder: 0 })
+      .returning()
     await db.insert(post).values([
-      { slug: 'live-c', title: 'Live', category: 'GatedCat', publishedRevisionId: 1n },
+      { slug: 'live-c', title: 'Live', categoryId: gatedCat.id, publishedRevisionId: 1n },
       {
         slug: 'sched-c',
         title: 'Sched',
-        category: 'GatedCat',
+        categoryId: gatedCat.id,
         publishedRevisionId: 2n,
         publishedAt: new Date(Date.now() + 86_400_000),
       },
-      { slug: 'norev-c', title: 'NoRev', category: 'GatedCat' },
+      { slug: 'norev-c', title: 'NoRev', categoryId: gatedCat.id },
     ])
 
     const { listAllCategories } = await import('@/server/domains/taxonomies/categories/services/query')

@@ -113,18 +113,18 @@ describe('render/feed/generator — generateFeeds', () => {
     expect(feedState.listPosts).not.toHaveBeenCalled()
   })
 
-  it('queries posts by category name when the slug matches', async () => {
-    feedState.findCatBySlug.mockResolvedValue({ name: 'React', slug: 'react' })
+  it('queries posts by category id when the slug matches', async () => {
+    feedState.findCatBySlug.mockResolvedValue({ id: 7n, name: 'React', slug: 'react' })
     feedState.listPosts.mockResolvedValue([])
     await generateFeeds(fakeDb, { category: 'react' })
     expect(feedState.listPosts).toHaveBeenCalled()
-    const opts = feedState.listPosts.mock.calls[0]![1] as { category: string }
-    expect(opts.category).toBe('React')
+    const opts = feedState.listPosts.mock.calls[0]![1] as { categoryId: bigint }
+    expect(opts.categoryId).toBe(7n)
   })
 
   it('falls back to category name lookup when slug misses', async () => {
     feedState.findCatBySlug.mockResolvedValue(null)
-    feedState.findCatByName.mockResolvedValue({ name: 'React', slug: 'react' })
+    feedState.findCatByName.mockResolvedValue({ id: 7n, name: 'React', slug: 'react' })
     feedState.listPosts.mockResolvedValue([])
     await generateFeeds(fakeDb, { category: 'React' })
     expect(feedState.listPosts).toHaveBeenCalled()

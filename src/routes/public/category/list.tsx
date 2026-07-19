@@ -22,7 +22,7 @@ export async function loader({ request, context, params }: Route.LoaderArgs): Pr
   const filters = {
     includeHidden: true,
     includeScheduled: false,
-    category: category.name,
+    categoryId: category.id,
   }
 
   return listingLoader(db, {

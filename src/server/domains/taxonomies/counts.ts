@@ -1,11 +1,11 @@
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
-import { and, eq, sql, type SQL } from 'drizzle-orm'
+import { and, eq, sql } from 'drizzle-orm'
 
 import { livePostWhere } from '@/server/domains/posts/repos/shared'
 import { post as postMetaTable } from '@/server/infra/db/schema/post'
 import { postTag } from '@/server/infra/db/schema/post-tag'
-import { tag as tagTable } from '@/server/infra/db/schema/taxonomy'
+import { category as categoryTable, tag as tagTable } from '@/server/infra/db/schema/taxonomy'
 
 export interface CountPostsByTaxonomyOptions {
   kind: 'category' | 'tag'
@@ -36,20 +36,17 @@ export async function countPostsByTaxonomy(
       : and(livePostWhere(), eq(postMetaTable.visible, true))!
 
   if (options.kind === 'category') {
-    const conditions: SQL[] = [gate]
-    if (options.name !== undefined) {
-      conditions.push(eq(postMetaTable.category, options.name))
-    }
-    const rows = await db
-      .select({ name: postMetaTable.category, count: sql<number>`count(${postMetaTable.id})::int` })
-      .from(postMetaTable)
-      .where(and(...conditions))
-      .groupBy(postMetaTable.category)
+    const base = db
+      .select({ name: categoryTable.name, count: sql<number>`count(${postMetaTable.id})::int` })
+      .from(categoryTable)
+      .leftJoin(postMetaTable, and(eq(postMetaTable.categoryId, categoryTable.id), gate))
+      .$dynamic()
+    const rows = await (options.name !== undefined ? base.where(eq(categoryTable.name, options.name)) : base).groupBy(
+      categoryTable.name,
+    )
     const counts = new Map<string, number>()
     for (const row of rows) {
-      if (row.name) {
-        counts.set(row.name, row.count)
-      }
+      counts.set(row.name, row.count)
     }
     return counts
   }

@@ -66,14 +66,16 @@ export async function ensureUniqueOnUpdateTaxonomy<T extends { id: bigint }>(
 // titles so the admin knows which posts to fix. `listPostTitles` is a
 // deliberately slim seam (titles only, full inclusion gate) — the guard
 // must not pay for the full listing pipeline (tag batch, revision join,
-// cover/thumbhash hydration) just to name the referencing posts.
-export async function deleteAdminTaxonomy<T extends { name: string }>(
+// cover/thumbhash hydration) just to name the referencing posts. It
+// receives the whole row: categories count references by `row.id` (posts
+// store `category_id`), tags by `row.name` (the `post_tag` join key).
+export async function deleteAdminTaxonomy<T extends { id: bigint; name: string }>(
   id: bigint,
   entityLabel: string,
   deps: {
     findById: (id: bigint) => Promise<T | null>
     deleteRow: (id: bigint) => Promise<boolean>
-    listPostTitles: (name: string) => Promise<string[]>
+    listPostTitles: (row: T) => Promise<string[]>
   },
 ): Promise<boolean> {
   const existing = await deps.findById(id)
@@ -81,7 +83,7 @@ export async function deleteAdminTaxonomy<T extends { name: string }>(
     return false
   }
 
-  const titles = await deps.listPostTitles(existing.name)
+  const titles = await deps.listPostTitles(existing)
   if (titles.length > 0) {
     throw new DomainError('CONFLICT', formatBlockMessage(entityLabel, existing.name, titles))
   }

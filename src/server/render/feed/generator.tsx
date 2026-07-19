@@ -244,7 +244,7 @@ async function selectFeedPosts(
     if (category === null) {
       return []
     }
-    return listPublicPostsWithContent(db, { ...visibility, category: category.name })
+    return listPublicPostsWithContent(db, { ...visibility, categoryId: category.id })
   }
 
   if (options.tag !== undefined) {

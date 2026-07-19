@@ -24,7 +24,7 @@ export function CategoryField({ value, onChange, disabled }: CategoryFieldProps)
         <SelectContent>
           <SelectItem value="">— 无分类 —</SelectItem>
           {categories.map((cat) => (
-            <SelectItem key={cat.id} value={cat.name}>
+            <SelectItem key={cat.id} value={cat.id}>
               {cat.name}
             </SelectItem>
           ))}

@@ -33,7 +33,7 @@ const populatedDraft: PostMetaDraft = {
   showUpdated: false,
   visible: true,
   pinned: true,
-  category: 'tech',
+  categoryId: '1',
   tags: ['react', 'ssr'],
   alias: ['/old-slug'],
   publishedAt: '2099-01-01T09:00',
@@ -246,7 +246,7 @@ describe('snapshot: PostMetaDraft pure helpers', () => {
     expect(metaDraftsEqual(a, { ...a, summary: 'diff' })).toBe(false)
     expect(metaDraftsEqual(a, { ...a, cover: 'diff' })).toBe(false)
     expect(metaDraftsEqual(a, { ...a, og: 'diff' })).toBe(false)
-    expect(metaDraftsEqual(a, { ...a, category: 'diff' })).toBe(false)
+    expect(metaDraftsEqual(a, { ...a, categoryId: 'diff' })).toBe(false)
     expect(metaDraftsEqual(a, { ...a, commentsEnabled: !a.commentsEnabled })).toBe(false)
     expect(metaDraftsEqual(a, { ...a, showToc: !a.showToc })).toBe(false)
     expect(metaDraftsEqual(a, { ...a, showUpdated: !a.showUpdated })).toBe(false)

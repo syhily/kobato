@@ -154,7 +154,7 @@ export async function deleteAdminTag(db: NodePgDatabase, id: bigint, _viewer?: T
   const deleted = await deleteAdminTaxonomy(id, '标签', {
     findById: (id) => findTagById(db, id),
     deleteRow: (id) => deleteTagRow(db, id),
-    listPostTitles: (name) => listPostTitlesByTaxonomy(db, 'tag', name),
+    listPostTitles: (row) => listPostTitlesByTaxonomy(db, 'tag', row.name),
   })
   if (deleted) {
     await clearTagCache().catch((err: unknown) => {

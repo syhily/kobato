@@ -28,6 +28,7 @@ describe('snapshot: PostRow', () => {
       published: false,
       cover: '',
       category: '',
+      categoryId: null,
       firstPublishedAt: null,
     })
     const html = stableHtml(renderInRouter(<PostRow post={post} />))

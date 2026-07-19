@@ -177,7 +177,7 @@ const upsertMeta = authorProc
       showToc: input.showToc,
       showUpdated: input.showUpdated,
       visible: input.visible,
-      category: input.category,
+      categoryId: input.categoryId,
       tags: input.tags,
       alias: input.alias,
       pinnedAt: input.pinnedAt === undefined || input.pinnedAt === null ? input.pinnedAt : new Date(input.pinnedAt),

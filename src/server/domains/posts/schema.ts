@@ -24,7 +24,7 @@ export const listPostsSchema = z.object({
   deletedStatus: z.enum(['all', 'deleted', 'normal']).optional().default('normal'),
   offset: z.coerce.number().int().min(0).optional(),
   limit: z.coerce.number().int().min(1).max(100).optional(),
-  category: z.string().trim().max(20).optional(),
+  categoryId: z.coerce.bigint().optional(),
   tag: z.string().trim().max(20).optional(),
   published: z
     .union([z.literal('true'), z.literal('false'), z.boolean()])
@@ -65,7 +65,7 @@ export const upsertPostMetaSchema = z.object({
   visible: safeBoolean().optional(),
   pinnedAt: z.iso.datetime({ offset: true }).nullable().optional(),
   publishedAt: z.iso.datetime({ offset: true }).optional(),
-  category: z.string().trim().max(20).optional().default(''),
+  categoryId: z.coerce.bigint().nullable().optional(),
   tags: z.array(z.string().trim().max(20)).optional().default([]),
   alias: z
     .array(

@@ -10,7 +10,7 @@ import { createDbPool, closePool } from '@/server/infra/db/pool'
 import { content as contentTable } from '@/server/infra/db/schema/content'
 import { post as postMetaTable } from '@/server/infra/db/schema/post'
 import { postTag } from '@/server/infra/db/schema/post-tag'
-import { tag as tagTable } from '@/server/infra/db/schema/taxonomy'
+import { category as categoryTable, tag as tagTable } from '@/server/infra/db/schema/taxonomy'
 
 vi.mock('@/server/domains/images/services/enhance', () => ({
   hydrateImageRefs: vi.fn(
@@ -47,11 +47,19 @@ async function seedPost(opts: Partial<typeof postMetaTable.$inferInsert> = {}): 
       firstPublishedAt: opts.firstPublishedAt ?? new Date('2026-01-01'),
       publishedAt: opts.publishedAt ?? new Date('2026-01-01'),
       cover: opts.cover ?? '',
-      category: opts.category ?? '',
+      categoryId: opts.categoryId ?? null,
       visible: opts.visible ?? true,
       ...opts,
     })
     .returning({ id: postMetaTable.id })
+  return rows[0]!.id
+}
+
+async function seedCategory(name: string, slug?: string): Promise<bigint> {
+  const rows = await db
+    .insert(categoryTable)
+    .values({ name, slug: slug ?? name.toLowerCase(), cover: '' })
+    .returning({ id: categoryTable.id })
   return rows[0]!.id
 }
 
@@ -93,7 +101,7 @@ describe('posts/repos/shared — buildPostsWhere', () => {
       buildPostsWhere({
         deletedStatus: 'normal',
         q: 'foo',
-        category: 'tech',
+        categoryId: 1n,
         tag: 'react',
         published: true,
         visible: true,
@@ -142,13 +150,14 @@ describe('posts/repos/shared — toClientPostFromMeta', () => {
       publishedRevisionId: 1n,
       firstPublishedAt: new Date('2026-01-01'),
       authorId: null,
-      category: 'tech',
+      categoryId: 1n,
       alias: ['a'],
       pinnedAt: null,
     }
-    const out = toClientPostFromMeta(meta, ['react'])
+    const out = toClientPostFromMeta(meta, ['react'], 'tech')
     expect(out.slug).toBe('s')
     expect(out.tags).toEqual(['react'])
+    expect(out.category).toBe('tech')
     expect(out.permalink).toBe('/posts/s')
   })
 })
@@ -329,10 +338,12 @@ describe('posts/repos/public-query/listing — listPublicPosts', () => {
     expect(rows).toHaveLength(1)
   })
   it('filters by category', async () => {
-    await seedPost({ slug: 'a', publishedRevisionId: 1n, category: 'tech' })
-    await seedPost({ slug: 'b', publishedRevisionId: 1n, category: 'life' })
+    const techId = await seedCategory('tech')
+    const lifeId = await seedCategory('life')
+    await seedPost({ slug: 'a', publishedRevisionId: 1n, categoryId: techId })
+    await seedPost({ slug: 'b', publishedRevisionId: 1n, categoryId: lifeId })
     const { listPublicPosts } = await import('@/server/domains/posts/repos/public-query/listing')
-    const rows = await listPublicPosts(db, { category: 'tech' })
+    const rows = await listPublicPosts(db, { categoryId: techId })
     expect(rows).toHaveLength(1)
   })
 })
@@ -492,7 +503,8 @@ describe('posts/repos/public-query/misc — listAllPosts', () => {
 
 describe('posts/repos/public-query/taxonomy — listPostsByTaxonomy', () => {
   it('lists posts by category', async () => {
-    await seedPost({ slug: 'c', publishedRevisionId: 1n, category: 'tech' })
+    const techId = await seedCategory('tech')
+    await seedPost({ slug: 'c', publishedRevisionId: 1n, categoryId: techId })
     const { listPostsByTaxonomy } = await import('@/server/domains/posts/repos/public-query/taxonomy')
     const posts = await listPostsByTaxonomy(db, 'category', 'tech')
     expect(posts[0]?.slug).toBe('c')
@@ -507,20 +519,22 @@ describe('posts/repos/public-query/taxonomy — listPostsByTaxonomy', () => {
   })
 })
 
-describe('posts/repos/public-query/taxonomy — listPostTitlesByTaxonomy', () => {
+describe('posts/repos/public-query/taxonomy — listPostTitlesByCategoryId / listPostTitlesByTaxonomy', () => {
   it('returns only titles, including hidden and scheduled posts', async () => {
-    await seedPost({ slug: 'vis', title: 'Visible', publishedRevisionId: 1n, category: 'tech' })
-    await seedPost({ slug: 'hid', title: 'Hidden', publishedRevisionId: 1n, category: 'tech', visible: false })
+    const techId = await seedCategory('tech')
+    const lifeId = await seedCategory('life')
+    await seedPost({ slug: 'vis', title: 'Visible', publishedRevisionId: 1n, categoryId: techId })
+    await seedPost({ slug: 'hid', title: 'Hidden', publishedRevisionId: 1n, categoryId: techId, visible: false })
     await seedPost({
       slug: 'sch',
       title: 'Scheduled',
       publishedRevisionId: 1n,
-      category: 'tech',
+      categoryId: techId,
       publishedAt: new Date('2099-01-01'),
     })
-    await seedPost({ slug: 'other', title: 'Other', publishedRevisionId: 1n, category: 'life' })
-    const { listPostTitlesByTaxonomy } = await import('@/server/domains/posts/repos/public-query/taxonomy')
-    const titles = await listPostTitlesByTaxonomy(db, 'category', 'tech')
+    await seedPost({ slug: 'other', title: 'Other', publishedRevisionId: 1n, categoryId: lifeId })
+    const { listPostTitlesByCategoryId } = await import('@/server/domains/posts/repos/public-query/taxonomy')
+    const titles = await listPostTitlesByCategoryId(db, techId)
     expect(titles.sort()).toEqual(['Hidden', 'Scheduled', 'Visible'])
   })
   it('excludes drafts (no published revision) and matches tags by name', async () => {

@@ -96,7 +96,7 @@ export const CategoryRow = memo(function CategoryRow({ category, sortEnabled, on
 
       {/* Post count */}
       <Link
-        to={`/admin/posts?category=${encodeURIComponent(category.name)}`}
+        to={`/admin/posts?category=${encodeURIComponent(category.id)}`}
         className="hidden w-(--spacing-admin-col-narrow) shrink-0 justify-end text-(--text-admin-sm) text-muted-foreground tabular-nums hover:text-foreground md:flex"
       >
         {category.postCount} 篇

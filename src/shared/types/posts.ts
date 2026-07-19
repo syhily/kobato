@@ -25,6 +25,7 @@ export interface AdminPostDto {
   updatedAt: string
   deletedAt: string | null
   category: string
+  categoryId: string | null
   tags: string[]
   alias: string[]
   authorId: string | null
@@ -57,7 +58,7 @@ export interface ListPostsInput {
   deletedStatus?: 'all' | 'deleted' | 'normal'
   offset?: number
   limit?: number
-  category?: string
+  categoryId?: string
   tag?: string
   published?: boolean
   visible?: boolean
@@ -103,7 +104,7 @@ export interface UpsertPostMetaInput {
   showUpdated?: boolean
   visible?: boolean
   publishedAt?: string
-  category?: string
+  categoryId?: string | null
   tags?: string[]
   alias?: string[]
   pinnedAt?: string | null

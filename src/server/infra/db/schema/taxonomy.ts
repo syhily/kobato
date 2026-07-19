@@ -1,9 +1,9 @@
 import { bigserial, index, integer, pgTable, text, timestamp, varchar } from 'drizzle-orm/pg-core'
 
 // Post category. CRUD at `/admin/taxonomy/categories`. Posts reference a
-// category by `name` (`UNIQUE`), stored on `post.category` — renames do
-// NOT cascade to posts. `slug` drives `/cats/:slug` (`UNIQUE`).
-// `sort_order` orders `/categories`.
+// category by id (`post.category_id` FK, `ON DELETE SET NULL`), so renames
+// cascade with zero post writes. `name` is `UNIQUE`; `slug` drives
+// `/cats/:slug` (`UNIQUE`). `sort_order` orders `/categories`.
 //
 // Counters (`counts` on the public DTO) stay derived from the post table
 // via `countPostsByTaxonomy` — they are NOT stored here so

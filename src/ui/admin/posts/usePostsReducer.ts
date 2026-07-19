@@ -32,7 +32,7 @@ interface PostsState extends RowsState<AdminPostDto> {
   published?: boolean
   /** Derived from `status`; present so the list API payload can read it directly. */
   visible?: boolean
-  category: string
+  category: string // opaque filter token — holds the category ID string; the `?category=` URL param is admin-internal
   tag: string
   authorId: string
   sortBy: 'publishedAt' | 'updatedAt'

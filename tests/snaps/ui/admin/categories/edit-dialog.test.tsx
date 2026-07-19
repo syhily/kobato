@@ -104,7 +104,7 @@ describe('snapshot: EditCategoryDialog (extra branches)', () => {
     // Edit-mode header copy (distinct from the create-mode 新增分类 copy).
     expect(html).toContain('编辑分类')
     // Edit-mode description (distinct from the create-mode description).
-    expect(html).toContain('修改分类的展示信息；重命名不会自动更新文章引用的分类，需逐篇手动修改。')
+    expect(html).toContain('修改分类的展示信息；文章通过 id 关联分类，重命名后所有引用自动生效。')
     // Edit-mode submit label. The controlled-input VALUES hydrate from the
     // draft state which is seeded synchronously during the second render
     // pass — but `renderToString` only commits a single pass, so we assert

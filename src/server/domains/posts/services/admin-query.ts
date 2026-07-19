@@ -13,6 +13,7 @@ import {
   type AdminPostsListResult,
   type ViewerContext,
 } from '@/server/domains/posts/services/shared'
+import { findCategoryNamesByIds } from '@/server/infra/db/operations/category'
 import { commentCountsByOwnerIds, metricsByOwnerIds } from '@/server/infra/db/operations/like'
 import { ensureMetricsBatch } from '@/server/infra/db/operations/metric'
 import { findTagNamesByPostId, findTagNamesByPostIds } from '@/server/infra/db/operations/post-tag'
@@ -41,10 +42,14 @@ export async function listPostsForAdmin(
     db,
     rows.map((row) => ({ type: 'post', ownerId: row.id })),
   )
-  const [metrics, countRows, tagMap] = await Promise.all([
+  const [metrics, countRows, tagMap, categoryMap] = await Promise.all([
     metricsByOwnerIds(db, 'post', ownerIds),
     commentCountsByOwnerIds(db, 'post', ownerIds),
     findTagNamesByPostIds(db, ownerIds),
+    findCategoryNamesByIds(
+      db,
+      rows.map((row) => row.categoryId).filter((id): id is bigint => id !== null),
+    ),
   ])
   const publicIdByOwner = new Map(metrics.map((m) => [String(m.ownerId), m.publicId]))
   const countByOwner = new Map(countRows.map((r) => [String(r.ownerId), r.count]))
@@ -54,6 +59,7 @@ export async function listPostsForAdmin(
         commentCount: countByOwner.get(String(row.id)) ?? 0,
         commentPublicId: publicIdByOwner.get(String(row.id)) ?? '',
         tags: tagMap.get(row.id) ?? [],
+        categoryName: categoryMap.get(row.categoryId ?? -1n) ?? '',
       }),
     ),
     total,
@@ -68,13 +74,14 @@ export async function getPostDetailForAdmin(
 ): Promise<AdminPostDetailDto | null> {
   const meta = await findPostMetaById(db, id)
   assertOwnPostOr404(meta, viewer)
-  const [latest, published, tags] = await Promise.all([
+  const [latest, published, tags, categoryMap] = await Promise.all([
     findLatestRevision(db, 'post', meta.id),
     meta.publishedRevisionId === null ? Promise.resolve(null) : findContentById(db, meta.publishedRevisionId),
     findTagNamesByPostId(db, meta.id),
+    findCategoryNamesByIds(db, meta.categoryId === null ? [] : [meta.categoryId]),
   ])
   return {
-    post: toAdminPostDto(meta, { tags }),
+    post: toAdminPostDto(meta, { tags, categoryName: categoryMap.get(meta.categoryId ?? -1n) ?? '' }),
     latestRevision: latest === null ? null : toAdminRevisionDto(latest),
     publishedRevision: published === null ? null : toAdminRevisionDto(published),
   }

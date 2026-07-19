@@ -15,6 +15,7 @@ import {
   type UpsertPostMetaInput,
   type ViewerContext,
 } from '@/server/domains/posts/services/shared'
+import { findCategoryById } from '@/server/infra/db/operations/category'
 import { findTagNamesByPostId, setPostTags } from '@/server/infra/db/operations/post-tag'
 import {
   deleteSlugRegistryByEntity,
@@ -66,6 +67,12 @@ export async function createPost(
   const slug = resolveSlug(input.slug, input.title)
   ensureSlugLegal(slug, 'post')
   const tagNames = input.tags ?? []
+  // Pre-flight the referenced category so a stale admin select fails with
+  // a 400 instead of tripping the FK mid-transaction.
+  const categoryRow = input.categoryId != null ? await findCategoryById(db, input.categoryId) : null
+  if (input.categoryId != null && categoryRow === null) {
+    throw new DomainError('BAD_REQUEST', '分类不存在')
+  }
   const now = new Date()
   try {
     const row = await db.transaction(async (tx) => {
@@ -88,7 +95,7 @@ export async function createPost(
           showUpdated: input.showUpdated ?? false,
           visible: input.visible ?? true,
           pinnedAt: input.pinnedAt === undefined ? null : input.pinnedAt,
-          category: input.category ?? '',
+          categoryId: input.categoryId ?? null,
           alias: input.alias ?? [],
           publishedAt: input.publishedAt ?? now,
           authorId: resolvedAuthorId,
@@ -98,7 +105,7 @@ export async function createPost(
       await insertSlugRegistry(tx, { slug, entityType: 'post', entityId: inserted.id })
       return inserted
     })
-    return toAdminPostDto(row, { tags: tagNames })
+    return toAdminPostDto(row, { tags: tagNames, categoryName: categoryRow?.name ?? '' })
   } catch (err) {
     rethrowSlugConflict(err, 'post', slug)
   }
@@ -118,6 +125,12 @@ export async function updatePostMeta(
   const tagNames = input.tags ?? []
   const existing = await findPostMetaById(db, id)
   assertOwnPostOr404(existing, viewer)
+  // Same pre-flight as createPost, but only when a NEW non-null id
+  // arrives — an untouched or explicitly cleared reference needs no lookup.
+  const categoryRow = input.categoryId != null ? await findCategoryById(db, input.categoryId) : null
+  if (input.categoryId != null && categoryRow === null) {
+    throw new DomainError('BAD_REQUEST', '分类不存在')
+  }
   try {
     const updated = await db.transaction(async (tx) => {
       if (existing.slug !== slug) {
@@ -140,7 +153,7 @@ export async function updatePostMeta(
           showUpdated: input.showUpdated ?? existing.showUpdated,
           visible: input.visible ?? existing.visible,
           pinnedAt: input.pinnedAt === undefined ? existing.pinnedAt : input.pinnedAt,
-          category: input.category ?? existing.category,
+          categoryId: input.categoryId === undefined ? existing.categoryId : input.categoryId,
           alias: input.alias ?? existing.alias,
           publishedAt: input.publishedAt ?? existing.publishedAt,
           updatedAt: new Date(),
@@ -156,7 +169,12 @@ export async function updatePostMeta(
     if (updated === null) {
       throw new DomainError('NOT_FOUND', '文章不存在或已被删除。')
     }
-    return toAdminPostDto(updated, { tags: tagNames })
+    let categoryName = categoryRow?.name ?? ''
+    if (categoryRow === null && input.categoryId === undefined && existing.categoryId !== null) {
+      const existingCategory = await findCategoryById(db, existing.categoryId)
+      categoryName = existingCategory?.name ?? ''
+    }
+    return toAdminPostDto(updated, { tags: tagNames, categoryName })
   } catch (err) {
     rethrowSlugConflict(err, 'post', slug)
   }
@@ -280,13 +298,14 @@ export async function restorePost(
 export async function unpublishPost(db: NodePgDatabase, id: bigint, viewer?: ViewerContext): Promise<AdminPostDto> {
   const existing = await findPostMetaById(db, id)
   assertOwnPostOr404(existing, viewer)
-  const [updated, tags] = await Promise.all([
+  const [updated, tags, categoryRow] = await Promise.all([
     updatePostMetaById(db, id, { published: false }),
     findTagNamesByPostId(db, id),
+    existing.categoryId === null ? Promise.resolve(null) : findCategoryById(db, existing.categoryId),
   ])
   if (updated === null) {
     throw new DomainError('NOT_FOUND', '文章不存在或已被删除。')
   }
   await afterPostStateChange(db, id, { index: 'remove' })
-  return toAdminPostDto(updated, { tags })
+  return toAdminPostDto(updated, { tags, categoryName: categoryRow?.name ?? '' })
 }

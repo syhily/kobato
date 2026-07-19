@@ -44,7 +44,7 @@ function buildQueryInput(state: ReturnType<typeof usePostsReducer>['state'], off
     deletedStatus: state.deletedStatus,
     offset,
     limit: PAGE_SIZE,
-    category: state.category || undefined,
+    categoryId: state.category || undefined,
     tag: state.tag || undefined,
     published: state.published,
     visible: state.visible,
@@ -119,7 +119,7 @@ export function PostsView() {
   const users = usersData?.users
 
   const categoryOptions = useMemo(
-    () => [{ value: '', label: '全部分类' }, ...(categories ?? []).map((c) => ({ value: c.name, label: c.name }))],
+    () => [{ value: '', label: '全部分类' }, ...(categories ?? []).map((c) => ({ value: c.id, label: c.name }))],
     [categories],
   )
   const tagNames = useMemo(() => (tags ?? []).map((t) => t.name), [tags])
