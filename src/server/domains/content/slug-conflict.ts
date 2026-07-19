@@ -10,17 +10,11 @@ import { DomainError, isUniqueConstraintError } from '@/server/infra/http/errors
  * create/rename that loses the reservation window must surface as a clean
  * 409, never a raw 23505. Anything else is rethrown unchanged.
  *
- * Drizzle wraps driver errors in `DrizzleQueryError`, so the match looks
- * through one level of `cause` to reach the original `pg.DatabaseError`.
+ * The guard itself looks through one level of `cause`, so driver errors
+ * wrapped in drizzle's `DrizzleQueryError` are matched here.
  */
 export function rethrowSlugConflict(err: unknown, entityType: ContentEntityType, slug: string): never {
-  const candidates = [err, err instanceof Error ? err.cause : undefined]
-  const isSlugConflict = candidates.some(
-    (candidate) =>
-      isUniqueConstraintError(candidate, `${entityType}_slug_key`) ||
-      isUniqueConstraintError(candidate, 'uq_slug_registry_slug'),
-  )
-  if (isSlugConflict) {
+  if (isUniqueConstraintError(err, `${entityType}_slug_key`) || isUniqueConstraintError(err, 'uq_slug_registry_slug')) {
     throw new DomainError('CONFLICT', `slug "${slug}" 已被占用。`)
   }
   throw err

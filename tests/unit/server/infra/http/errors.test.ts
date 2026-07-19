@@ -93,4 +93,26 @@ describe('server/infra/http/errors — isUniqueConstraintError', () => {
   it('returns false for pg errors with a different SQLSTATE', () => {
     expect(isUniqueConstraintError(buildPgError('23503'))).toBe(false)
   })
+
+  it('matches a driver error wrapped one level deep (DrizzleQueryError cause)', () => {
+    const wrapped = Object.assign(new Error('Failed query'), { cause: buildPgError('23505') })
+    expect(isUniqueConstraintError(wrapped)).toBe(true)
+  })
+
+  it('narrows a wrapped driver error to a specific constraint name', () => {
+    const wrapped = Object.assign(new Error('Failed query'), {
+      cause: buildPgError('23505', 'users_email_unique'),
+    })
+    expect(isUniqueConstraintError(wrapped, 'users_email_unique')).toBe(true)
+  })
+
+  it('returns false when the wrapped violation belongs to another constraint', () => {
+    const wrapped = Object.assign(new Error('Failed query'), { cause: buildPgError('23505', 'other_unique') })
+    expect(isUniqueConstraintError(wrapped, 'users_email_unique')).toBe(false)
+  })
+
+  it('returns false for a wrapped pg error with a different SQLSTATE', () => {
+    const wrapped = Object.assign(new Error('Failed query'), { cause: buildPgError('23503') })
+    expect(isUniqueConstraintError(wrapped)).toBe(false)
+  })
 })

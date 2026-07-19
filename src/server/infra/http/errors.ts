@@ -69,16 +69,24 @@ export const ErrorMessages = {
   INTERNAL_SERVER_ERROR: '服务器内部错误',
 } as const
 
-/** Detect a Postgres unique-constraint violation (SQLSTATE 23505). */
-/** When `constraintName` is passed, the match is narrowed to that specific constraint. */
+/**
+ * Detect a Postgres unique-constraint violation (SQLSTATE 23505). When
+ * `constraintName` is passed, the match is narrowed to that specific
+ * constraint. drizzle-orm wraps driver errors in `DrizzleQueryError`, so the
+ * match also looks through one level of `cause` to reach the original
+ * `pg.DatabaseError`.
+ */
 import { DatabaseError } from 'pg'
 
 export function isUniqueConstraintError(err: unknown, constraintName?: string): boolean {
-  if (err instanceof DatabaseError && err.code === '23505') {
-    if (constraintName) {
-      return err.constraint === constraintName
+  const candidates = [err, err instanceof Error ? err.cause : undefined]
+  return candidates.some((candidate) => {
+    if (candidate instanceof DatabaseError && candidate.code === '23505') {
+      if (constraintName) {
+        return candidate.constraint === constraintName
+      }
+      return true
     }
-    return true
-  }
-  return false
+    return false
+  })
 }
