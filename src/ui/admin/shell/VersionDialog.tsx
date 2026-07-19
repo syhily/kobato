@@ -11,6 +11,7 @@ import {
 import { useCallback, useState } from 'react'
 
 import { orpc } from '@/client/api/client'
+import { orpcQuery } from '@/client/api/orpc-query'
 import { APP_AUTHOR, APP_DESCRIPTION, APP_HOMEPAGE, APP_NAME, APP_VERSION } from '@/shared/config/version'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/ui/components/dialog'
 import { GithubIcon } from '@/ui/icons/brand'
@@ -31,11 +32,7 @@ export function VersionDialog({ open, onOpenChange }: VersionDialogProps) {
   const [latestVersion, setLatestVersion] = useState<string | null>(null)
   const [releaseUrl, setReleaseUrl] = useState<string | null>(null)
 
-  const { data: avatarData } = useQuery({
-    queryKey: ['github', 'avatar'],
-    queryFn: () => orpc.github.avatar({}),
-    staleTime: 1000 * 60 * 60,
-  })
+  const { data: avatarData } = useQuery(orpcQuery.github.avatar.queryOptions({ input: {}, staleTime: 1000 * 60 * 60 }))
 
   const handleCheckUpdate = useCallback(async () => {
     if (IS_DEV_BUILD) {

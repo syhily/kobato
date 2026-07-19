@@ -2,9 +2,7 @@ import { useQueries, useQuery } from '@tanstack/react-query'
 import { XIcon } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 
-import type { AdminTagDto } from '@/shared/types/tags'
-
-import { orpc } from '@/client/api/client'
+import { orpcQuery } from '@/client/api/orpc-query'
 import { Badge } from '@/ui/components/badge'
 import { Button } from '@/ui/components/button'
 import { Input } from '@/ui/components/input'
@@ -26,14 +24,13 @@ export function TagsField({ values, onChange, disabled }: TagsFieldProps) {
   const isComposingRef = useRef(false)
   // Suggestions are searched on demand on the server (`q`) instead of
   // downloading the tag catalogue up front — the list is unbounded.
-  const suggestionsQuery = useQuery({
-    queryKey: ['admin', 'tags', 'suggest', input.trim()],
-    queryFn: async (): Promise<AdminTagDto[]> => {
-      const page = await orpc.admin.tags.list({ q: input.trim(), limit: 20 })
-      return page.tags
-    },
-    placeholderData: (previous) => previous,
-  })
+  const suggestionsQuery = useQuery(
+    orpcQuery.admin.tags.list.queryOptions({
+      input: { q: input.trim(), limit: 20 },
+      select: (page) => page.tags,
+      placeholderData: (previous) => previous,
+    }),
+  )
   const tags = suggestionsQuery.data ?? []
 
   const addTag = useCallback(
@@ -70,14 +67,13 @@ export function TagsField({ values, onChange, disabled }: TagsFieldProps) {
   // match on the result), so the warning stays correct no matter how many
   // tags exist in total. Names are few and react-query caches per name.
   const existenceQueries = useQueries({
-    queries: values.map((name) => ({
-      queryKey: ['admin', 'tags', 'exists', name],
-      queryFn: async (): Promise<boolean> => {
-        const page = await orpc.admin.tags.list({ q: name, limit: 20 })
-        return page.tags.some((t) => t.name === name)
-      },
-      staleTime: 60_000,
-    })),
+    queries: values.map((name) =>
+      orpcQuery.admin.tags.list.queryOptions({
+        input: { q: name, limit: 20 },
+        select: (page) => page.tags.some((t) => t.name === name),
+        staleTime: 60_000,
+      }),
+    ),
   })
   const unknownTags = values.filter((name, index) => existenceQueries[index]?.data === false)
 

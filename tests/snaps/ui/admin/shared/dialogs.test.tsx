@@ -47,13 +47,17 @@ vi.mock('@tanstack/react-query', async () => {
 })
 
 // orpcQuery builds option objects; stub so imports stay cheap and the option
-// builders referenced by AdminSearchDialog don't try to build real keys.
+// builders referenced by AdminSearchDialog / VersionDialog don't try to build
+// real keys.
 vi.mock('@/client/api/orpc-query', () => ({
   orpcQuery: {
     admin: {
       posts: { list: { queryOptions: (args: unknown) => ({ queryKey: ['posts', args], queryFn: async () => ({}) }) } },
       pages: { list: { queryOptions: (args: unknown) => ({ queryKey: ['pages', args], queryFn: async () => ({}) }) } },
       music: { list: { queryOptions: (args: unknown) => ({ queryKey: ['music', args], queryFn: async () => ({}) }) } },
+    },
+    github: {
+      avatar: { queryOptions: (args: unknown) => ({ queryKey: ['github-avatar', args], queryFn: async () => ({}) }) },
     },
   },
 }))

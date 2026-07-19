@@ -7,6 +7,7 @@ import type { BackupSettings } from '@/shared/config/types'
 import type { BackupFileDto } from '@/shared/types/backup'
 
 import { orpc } from '@/client/api/client'
+import { orpcQuery } from '@/client/api/orpc-query'
 import { BackupFileList } from '@/ui/admin/settings/BackupFileList'
 import { BackupRestoreDialog } from '@/ui/admin/settings/BackupRestoreDialog'
 import { BackupScheduleForm } from '@/ui/admin/settings/BackupScheduleForm'
@@ -99,10 +100,7 @@ export function BackupView({ backup, timeZone }: BackupViewProps) {
   const [nextToken, setNextToken] = useState<string | undefined>()
   const [isLoadingMore, setIsLoadingMore] = useState(false)
 
-  const { data: statusData, isPending: statusLoading } = useQuery({
-    queryKey: ['admin', 'backup', 'status'],
-    queryFn: () => orpc.admin.backup.status(),
-  })
+  const { data: statusData, isPending: statusLoading } = useQuery(orpcQuery.admin.backup.status.queryOptions())
 
   const loadPage = useCallback(async (limit: number, token?: string) => {
     try {

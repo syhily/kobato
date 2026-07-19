@@ -6,9 +6,11 @@ import { toast } from 'sonner'
 import type { AdminImageDto } from '@/shared/types/images'
 
 import { orpc } from '@/client/api/client'
+import { orpcQuery } from '@/client/api/orpc-query'
 import { useInfiniteScrollSentinel } from '@/client/hooks/use-infinite-scroll-sentinel'
 import { useAssetsSettings } from '@/shared/lib/blog-config-context'
 import { ImageDetailDialog } from '@/ui/admin/images/ImageDetailDialog'
+import { invalidateImagesList } from '@/ui/admin/images/images-cache'
 import { ImagesFilterBar } from '@/ui/admin/images/ImagesFilterBar'
 import { JustifiedImageGrid, JustifiedImageGridSkeleton } from '@/ui/admin/images/JustifiedImageGrid'
 import { useImagesReducer } from '@/ui/admin/images/useImagesReducer'
@@ -32,25 +34,23 @@ export function ImagesView() {
   const [selectedImage, setSelectedImage] = useState<AdminImageDto | null>(null)
   const [copiedId, setCopiedId] = useState<string | null>(null)
 
-  const queryKey = useMemo(() => ['admin', 'images', 'list', { q, kind }], [q, kind])
-
-  const listQuery = useInfiniteQuery({
-    queryKey,
-    queryFn: async ({ pageParam }) =>
-      orpc.admin.images.list({
+  const listQuery = useInfiniteQuery(
+    orpcQuery.admin.images.list.infiniteOptions({
+      input: (pageParam: number) => ({
         q: q || undefined,
         kind: kind === 'all' ? undefined : kind,
         offset: pageParam,
         limit: pageSize,
       }),
-    getNextPageParam: (lastPage, _allPages, lastPageParam) => {
-      if (!lastPage.hasMore) {
-        return undefined
-      }
-      return (lastPageParam ?? 0) + pageSize
-    },
-    initialPageParam: 0,
-  })
+      getNextPageParam: (lastPage, _allPages, lastPageParam) => {
+        if (!lastPage.hasMore) {
+          return undefined
+        }
+        return (lastPageParam ?? 0) + pageSize
+      },
+      initialPageParam: 0,
+    }),
+  )
 
   const { hasNextPage, isFetchingNextPage, fetchNextPage, isLoading } = listQuery
 
@@ -66,7 +66,7 @@ export function ImagesView() {
   }, [listQuery.error])
 
   const invalidateList = useCallback(() => {
-    void queryClient.invalidateQueries({ queryKey: ['admin', 'images', 'list'], exact: false })
+    invalidateImagesList(queryClient)
   }, [queryClient])
 
   const deleteMutation = useMutation({

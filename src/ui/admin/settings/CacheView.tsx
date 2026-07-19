@@ -6,6 +6,7 @@ import type { CacheSettings } from '@/shared/config/types'
 import type { CacheBucketId, ClearCacheTarget, ReservedCacheBucketStats } from '@/shared/types/cache'
 
 import { orpc } from '@/client/api/client'
+import { orpcQuery } from '@/client/api/orpc-query'
 import { BucketCard } from '@/ui/admin/settings/cache/BucketCard'
 import { type ClearStatus, idleClearStatus } from '@/ui/admin/settings/cache/cache-status'
 import { CacheStatusLine } from '@/ui/admin/settings/cache/CacheStatusLine'
@@ -27,10 +28,7 @@ export function CacheView({ cache }: CacheViewProps) {
     data: stats,
     isPending: statsLoading,
     error: statsError,
-  } = useQuery({
-    queryKey: ['admin', 'cache', 'stats'],
-    queryFn: () => orpc.admin.cache.getStats({}),
-  })
+  } = useQuery(orpcQuery.admin.cache.getStats.queryOptions({ input: {} }))
 
   const clearMutation = useMutation({
     mutationFn: ({ target }: { target: ClearCacheTarget }) => orpc.admin.cache.clear({ target }),

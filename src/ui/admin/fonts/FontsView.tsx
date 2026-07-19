@@ -37,7 +37,9 @@ import type { FontsSettings } from '@/shared/config/types'
 import type { AdminFontDto, FontSlot } from '@/shared/types/fonts'
 
 import { orpc } from '@/client/api/client'
+import { orpcQuery } from '@/client/api/orpc-query'
 import { formatBytes } from '@/shared/utils/formatter'
+import { invalidateFontsList } from '@/ui/admin/fonts/fonts-cache'
 import { AdminListPage } from '@/ui/admin/shared/AdminListPage'
 import { ConfirmDialog, type ConfirmState } from '@/ui/admin/shared/ConfirmDialog'
 import { Button } from '@/ui/components/button'
@@ -139,10 +141,7 @@ export function FontsView() {
   const revalidator = useRevalidator()
   const [confirm, setConfirm] = useState<ConfirmState | null>(null)
 
-  const listQuery = useQuery({
-    queryKey: ['admin', 'fonts', 'list'],
-    queryFn: () => orpc.admin.fonts.list({}),
-  })
+  const listQuery = useQuery(orpcQuery.admin.fonts.list.queryOptions({ input: {} }))
 
   const fonts = listQuery.data?.fonts ?? []
 
@@ -152,7 +151,7 @@ export function FontsView() {
     mutationFn: (fontId: string) => orpc.admin.fonts.delete({ fontId }),
     onSuccess: () => {
       toast.success('字体已删除')
-      void queryClient.invalidateQueries({ queryKey: ['admin', 'fonts', 'list'] })
+      void invalidateFontsList(queryClient)
       void revalidator.revalidate()
     },
     onError: (error) => {
@@ -342,7 +341,7 @@ function useFontSlotsController() {
     },
     onSuccess: () => {
       inFlightRef.current = Math.max(0, inFlightRef.current - 1)
-      void queryClient.invalidateQueries({ queryKey: ['admin', 'fonts', 'list'] })
+      void invalidateFontsList(queryClient)
       void revalidator.revalidate()
     },
     onError: (error) => {
@@ -476,7 +475,7 @@ function UploadButton() {
         const data: unknown = await res.json().catch(() => null)
         throw new Error(extractApiErrorMessage(data) ?? `服务器错误 (${res.status})`)
       }
-      await queryClient.invalidateQueries({ queryKey: ['admin', 'fonts', 'list'] })
+      await invalidateFontsList(queryClient)
       void revalidator.revalidate()
       setPhase({ kind: 'success', familyName: familyName.trim() })
     } catch (err) {
