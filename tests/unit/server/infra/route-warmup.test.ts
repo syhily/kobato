@@ -41,21 +41,25 @@ function buildManifest(prefix: string): string {
     {
       entry: { module: '/assets/entry.js', imports: ['/assets/runtime.js'] },
       routes: {
-        root: { module: '/assets/root.js', imports: [] },
+        root: { id: 'root', module: '/assets/root.js', imports: [] },
         'routes/public/home': {
+          id: 'routes/public/home',
           module: '/assets/home.js',
           imports: ['/assets/shared.js'],
           clientLoaderModule: '/assets/home-loader.js',
         },
         'routes/admin/dashboard': {
+          id: 'routes/admin/dashboard',
           module: '/assets/dashboard.js',
           imports: ['/assets/admin-shared.js'],
         },
         'routes/editor/post/new': {
+          id: 'routes/editor/post/new',
           module: '/assets/editor-post.js',
           imports: ['/assets/editor-tiptap-core.js'],
         },
         'routes/auth/signin': {
+          id: 'routes/auth/signin',
           module: '/assets/signin.js',
           imports: ['/assets/canvas-hl.js'],
         },

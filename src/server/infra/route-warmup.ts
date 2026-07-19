@@ -1,7 +1,7 @@
 import type { Plugin } from 'vite'
 
 import { existsSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs'
-import { basename, join, resolve } from 'node:path'
+import { join, resolve } from 'node:path'
 import { build } from 'vite'
 
 import {
@@ -10,6 +10,7 @@ import {
   WARMUP_GLOBAL_EXCLUDED_PATTERNS,
   type RouteManifest,
 } from '../../shared/constants/route-warmup'
+import { collectManifestChunks, parseClientManifest, type WarmupManifest } from '../../shared/route-warmup/manifest'
 import { unsafeCast } from '../../shared/utils/unsafe-cast'
 
 // Route tier configuration
@@ -83,58 +84,7 @@ const EDITOR_ONLY_PATTERN = new RegExp(WARMUP_EDITOR_ONLY_PATTERN)
 
 const IDLE_SIZE_LIMIT = 100 * 1024 // 100 KB
 
-// Types
-
-interface WarmupManifest {
-  version: number
-  tier1: string[]
-  tier2_public: string[]
-  tier2_admin: string[]
-  tier2_editor: string[]
-  tier2_auth: string[]
-}
-
 // Helpers
-
-function collectChunks(manifest: RouteManifest, routeIds: string[]): string[] {
-  const chunks = new Set<string>()
-  for (const id of routeIds) {
-    if (id === 'root' || id === 'entry') {
-      const entry = id === 'entry' ? manifest.entry : manifest.routes['root']
-      if (entry) {
-        chunks.add(entry.module)
-        for (const imp of entry.imports) {
-          chunks.add(imp)
-        }
-      }
-      continue
-    }
-    const route = manifest.routes[id]
-    if (!route) {
-      continue
-    }
-    chunks.add(route.module)
-    for (const imp of route.imports) {
-      chunks.add(imp)
-    }
-    for (const extra of [
-      route.clientActionModule,
-      route.clientLoaderModule,
-      route.clientMiddlewareModule,
-      route.hydrateFallbackModule,
-    ]) {
-      if (extra) {
-        chunks.add(extra)
-      }
-    }
-  }
-  return [...chunks]
-}
-
-function matchesAny(chunk: string, patterns: RegExp[]): boolean {
-  const name = basename(chunk)
-  return patterns.some((p) => p.test(name))
-}
 
 function loadServerManifest(clientAssetsDir: string): RouteManifest | null {
   try {
@@ -146,14 +96,12 @@ function loadServerManifest(clientAssetsDir: string): RouteManifest | null {
     }
 
     const content = readFileSync(join(clientAssetsDir, manifestFile), 'utf-8')
-    const prefix = 'window.__reactRouterManifest='
-    if (!content.startsWith(prefix)) {
-      console.error('[route-warmup] React Router client manifest has unexpected format')
+    const manifest = parseClientManifest(content)
+    if (!manifest) {
+      console.error('[route-warmup] failed to parse the React Router client manifest')
       return null
     }
-
-    const jsonText = content.slice(prefix.length).replace(/;\s*$/, '')
-    return unsafeCast<RouteManifest>(JSON.parse(jsonText))
+    return manifest
   } catch (err) {
     console.error('[route-warmup] failed to load server manifest', err instanceof Error ? err.message : String(err))
     return null
@@ -295,11 +243,11 @@ export function routeWarmupPlugin(): Plugin {
         }
 
         // Collect per-tier chunks
-        const t1Raw = collectChunks(manifest, TIER1_ROUTES)
-        const t2PubRaw = collectChunks(manifest, TIER2_PUBLIC_ROUTES)
-        const t2AdminRaw = collectChunks(manifest, TIER2_ADMIN_ROUTES)
-        const t2EditorRaw = collectChunks(manifest, TIER2_EDITOR_ROUTES)
-        const t2AuthRaw = collectChunks(manifest, TIER2_AUTH_ROUTES)
+        const t1Raw = collectManifestChunks(manifest, TIER1_ROUTES)
+        const t2PubRaw = collectManifestChunks(manifest, TIER2_PUBLIC_ROUTES)
+        const t2AdminRaw = collectManifestChunks(manifest, TIER2_ADMIN_ROUTES)
+        const t2EditorRaw = collectManifestChunks(manifest, TIER2_EDITOR_ROUTES)
+        const t2AuthRaw = collectManifestChunks(manifest, TIER2_AUTH_ROUTES)
 
         // Also add entry imports to tier 1
         for (const imp of manifest.entry.imports) {
@@ -309,7 +257,8 @@ export function routeWarmupPlugin(): Plugin {
         // Deduplicate
         const tier1Set = new Set(t1Raw)
 
-        // Apply filters
+        // Apply filters. Exclusion patterns match against the chunk
+        // basename — the same idiom `collectManifestChunks` uses.
         const filterTier = (
           chunks: string[],
           allowEditor: boolean,
@@ -321,10 +270,11 @@ export function routeWarmupPlugin(): Plugin {
             if (excludeAlreadyIn.has(c)) {
               continue
             }
-            if (matchesAny(c, EXCLUDED_PATTERNS)) {
+            const name = c.split('/').pop() ?? c
+            if (EXCLUDED_PATTERNS.some((p) => p.test(name))) {
               continue
             }
-            if (!allowEditor && matchesAny(c, [EDITOR_ONLY_PATTERN])) {
+            if (!allowEditor && EDITOR_ONLY_PATTERN.test(name)) {
               continue
             }
             if (isIdle) {
@@ -385,5 +335,3 @@ export function routeWarmupPlugin(): Plugin {
     },
   }
 }
-
-// Manifest parser

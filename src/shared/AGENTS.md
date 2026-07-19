@@ -26,6 +26,8 @@ the server or client boundary catch and log it.
 - `types/` — DTO interfaces (parity-checked against `contracts/`).
 - `pt/` — PortableText schema, bridge, semantics, comment markdown,
   footnote-merge.
+- `route-warmup/` — warmup manifest file contract (parse, validate,
+  chunk collection) shared by the build plugin and the SSR reader.
 - `utils/` — `urls`, `safe-url`, `security`, `tools`,
   `formatter`, `pagination`, `toc`, `paths`, `roles`, `user-agent`,
   `chunk-error`, `comment-token`, `footnotes-section-title`.

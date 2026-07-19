@@ -520,6 +520,14 @@ describe('contract: module and bundle boundaries', () => {
       },
       {
         // Config-graph file (loaded by vite.config.ts): same alias caveat
+        // as the constants import above. The warmup file contract lives in
+        // this shared module so writer and reader cannot drift.
+        key: 'route-warmup.ts -> ../../shared/route-warmup/manifest',
+        file: 'src/server/infra/route-warmup.ts',
+        specifier: '../../shared/route-warmup/manifest',
+      },
+      {
+        // Config-graph file (loaded by vite.config.ts): same alias caveat
         // as above. `unsafeCast` is needed because the Vite dev-server types
         // are structurally compatible but not declared as our domain type.
         key: 'dev.ts -> ../../../shared/utils/unsafe-cast',
@@ -528,7 +536,7 @@ describe('contract: module and bundle boundaries', () => {
       },
       {
         // Config-graph file (loaded by vite.config.ts): same alias caveat.
-        // `unsafeCast` is used on the parsed route manifest / Vite internals.
+        // `unsafeCast` is used on Vite internals (the env/ssr flags).
         key: 'route-warmup.ts -> ../../shared/utils/unsafe-cast',
         file: 'src/server/infra/route-warmup.ts',
         specifier: '../../shared/utils/unsafe-cast',

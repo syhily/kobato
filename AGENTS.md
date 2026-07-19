@@ -81,6 +81,7 @@ the first-screen preload tight instead of widening it with unrelated routes.
 
 | File                                          | Role                                            |
 | --------------------------------------------- | ----------------------------------------------- |
+| `src/shared/route-warmup/manifest.ts`         | File-contract owner — parse, validate, collect  |
 | `src/server/infra/route-warmup.ts`            | Vite plugin — manifest generation               |
 | `src/server/render/warmup/manifest.ts`        | Server-side manifest reader + route matcher     |
 | `src/client/components/RouteWarmupScript.tsx` | Presentational — renders idle-warmup `<script>` |
