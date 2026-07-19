@@ -108,7 +108,11 @@ worker code are embedded in the binary and read from memory
 @napi-rs/canvas) are extracted to a cache dir on first run
 (`src/server/infra/sea-natives.ts`).
 
-- `pnpm run sea:build` → `dist-sea/kobato` (+ `.sha256`).
+- `pnpm run sea:build` → `dist-sea/kobato` (+ `.sha256`). On linux the
+  injected binary is UPX-compressed before the checksum when `upx` is on
+  PATH (`scripts/sea/upx.mjs`; CI installs `upx-ucl`, so release assets are
+  always compressed). Skip with `SEA_UPX=0`; override flags with
+  `SEA_UPX_ARGS` (default `--best`); macOS builds always skip.
 - `pnpm run sea:smoke [binary]` — 17-check deep smoke: version, natives,
   a per-run `kobato_smoke_<rand>` database (created on the same Postgres
   server, dropped in cleanup — the shared `test` DB is never touched),

@@ -66,6 +66,9 @@ jobs:
           node-version: 24
           cache: 'pnpm'
       - run: pnpm install --frozen-lockfile
+      # UPX compresses the injected binary before the checksum step; the
+      # smoke below then validates the compressed artifact end to end.
+      - run: sudo apt-get install -y upx-ucl
       - run: pnpm run sea:build
       - name: Rename outputs to kobato-<target>
         env:
