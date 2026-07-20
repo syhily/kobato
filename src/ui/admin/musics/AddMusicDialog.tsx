@@ -124,7 +124,10 @@ export function AddMusicDialog({ open, onClose, onAdded }: AddMusicDialogProps) 
       }
     })
     return () => cancelAnimationFrame(id)
-  }, [hasMore, loadMore])
+    // `sentinelRef` / `scrollRef` are stable ref objects (the former is
+    // returned from a hook, so the lint rule can't prove it) — listing them
+    // is a no-op that satisfies exhaustive-deps.
+  }, [hasMore, loadMore, sentinelRef])
 
   const onPreview = useCallback(
     (hit: MetingSearchHit) => {
