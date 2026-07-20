@@ -37,7 +37,7 @@ function makeHook(source: Source) {
 describe('ui/admin/settings/shell/useSettingsCard', () => {
   beforeEach(() => {
     commit.mockReset()
-    commit.mockResolvedValue(true)
+    commit.mockResolvedValue({ ok: true, section: {} })
   })
 
   it('seeds the form from the source', () => {

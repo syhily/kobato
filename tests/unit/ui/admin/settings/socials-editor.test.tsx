@@ -26,7 +26,7 @@ const socials: SocialsSettings = {
 describe('SocialsEditor', () => {
   beforeEach(() => {
     commit.mockReset()
-    commit.mockResolvedValue(true)
+    commit.mockResolvedValue({ ok: true, section: socials })
   })
 
   it('commits social-link edits on blur with the section payload shape', async () => {

@@ -31,7 +31,7 @@ const socials: SocialsSettings = {
 describe('SocialsEditor — focus retention across revalidates', () => {
   beforeEach(() => {
     commit.mockReset()
-    commit.mockResolvedValue(true)
+    commit.mockResolvedValue({ ok: true, section: socials })
   })
 
   it('keeps focus when a revalidate delivers an identical snapshot', () => {

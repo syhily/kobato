@@ -303,6 +303,16 @@ runtime deps go in `dependencies`.
 The save trigger model is **blur-driven, not debounce-driven** — there is no
 `onChange` autosave anywhere.
 
+**The save response is authoritative (Ghost's `useEditSettings`
+discipline):** `admin.settings.update` returns the merged, validated section
+in admin display shape (masks merged in for assets/mail/search — see
+`projectSectionForAdmin`). The card adopts the response as its new baseline
+(`savedSource`) and the mutation deliberately does NOT call
+`revalidator.revalidate()` — a save must never refetch the document out
+from under the user's hands. There is no client-side projection of the
+saved result; other cards converge on next navigation (accepted eventual
+consistency).
+
 **Three triggers, each wired to a specific control type:**
 
 | Control                                 | Trigger       | When it fires                      |
@@ -332,27 +342,25 @@ In addition, three framework-level flushes call every registered card via
 4. List append/remove/move buttons MUST NOT call `save()` — they leave the
    form dirty and the next blur/flush commits the whole list. Calling
    `save()` on append would filter empty rows in `fromState`, shrink the
-   payload, trigger a revalidate, and (before the reseed guard) wipe the
-   row the user just added.
+   payload, and (before the reseed guard) wipe the row the user just added.
 5. Don't destructure `flushOnBlur` in a card that has no text input —
    `no-unused-vars` is enforced.
 
-**Reseed guard (do not remove):** `useSettingsCard` only re-seeds the form
-from a new `source` prop when the form is **clean** (`getValues()` deep-equals
-`lastCommitted`). When the user has un-blurred edits, a concurrent
-`revalidator.revalidate()` (from another card's save) produces a fresh
-`source` reference but the card keeps the user's input. Removing this guard
-re-introduces the "empty row disappears" bug. The trade-off is accepted: a
-remote concurrent edit to the same section won't surface until the local
-edit is committed.
+**Reseed guard (backstop — do not remove):** `useSettingsCard` only re-seeds
+the form from a new `source` prop when the form is **clean** (`getValues()`
+deep-equals `lastCommitted`). Saves no longer revalidate the loader, so a
+new `source` identity only arrives on navigation back to the page or a
+remote concurrent edit; when it does and the user has uncommitted edits,
+the card keeps the user's input. Removing this guard re-introduces the
+"empty row disappears" bug. The trade-off is accepted: a remote concurrent
+edit to the same section won't surface until the local edit is committed.
 
 **No-op reseed skip (do not remove):** even when clean, the reseed calls
 `reset()` ONLY if `toState(source)` deep-differs from the current form
-values. A revalidate always delivers a new `source` identity — including
-right after the card's own save round-trips — and an unconditional `reset()`
-regenerates `useFieldArray` ids (remounting every row and dropping focus
-mid-typing) and clobbers the caret in plain inputs. This was the
-"one letter and the social-link input loses focus" bug.
+values. An unconditional `reset()` regenerates `useFieldArray` ids
+(remounting every row and dropping focus mid-typing) and clobbers the caret
+in plain inputs. This was the "one letter and the social-link input loses
+focus" bug.
 
 **No `debounceMs` option** — it was removed. Don't re-add onChange
 auto-save; the whole point of the rework is that typing never fires a
@@ -374,12 +382,12 @@ unknown key at any depth rejects with 400. Concretely:
   object is a valid patch (`ThresholdForm` is the example).
 - List edits (append/remove/move) stay dirty-form commits as today — the
   whole list is one array field and replaces the stored array on save.
-- `useSettingsCard`'s `display` is a local optimistic projection
-  (`mergeSectionPatch(source, patch)`) for masks/font families only; it
-  is never POSTed.
+- `useSettingsCard`'s `display` is the latest **server-confirmed** section
+  (the save response, masks/font families included), falling back to the
+  loader snapshot. It is never POSTed.
 - `src/shared/config/merge-section-patch.ts` is the single merge
-  implementation — server write base and client display projection share
-  it. Do not fork it.
+  implementation — used by the server write base only (the client no
+  longer projects display values). Do not fork it.
 
 ## Layering
 

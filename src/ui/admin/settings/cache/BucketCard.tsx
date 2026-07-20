@@ -77,8 +77,8 @@ export function BucketCard({ bucket, settings, allBuckets, isClearPending, clear
 
   const save = useCallback(
     async (payload: Record<string, unknown>) => {
-      const ok = await commit('cache', payload)
-      if (ok) {
+      const result = await commit('cache', payload)
+      if (result.ok) {
         onSaved?.()
       }
     },

@@ -5,7 +5,7 @@ import type { MailLoaderShape } from '@/shared/config/projection'
 
 vi.mock('@/ui/admin/settings/useSettingsMutation', () => ({
   useSettingsMutation: () => ({
-    commit: vi.fn(),
+    commit: vi.fn().mockResolvedValue({ ok: false }),
     resetStatus: vi.fn(),
     revalidate: vi.fn(),
     isPending: false,

@@ -1,6 +1,5 @@
 import { useMutation } from '@tanstack/react-query'
 import { useCallback, useEffect, useState } from 'react'
-import { useRevalidator } from 'react-router'
 import { toast } from 'sonner'
 
 import type { SettingsSection } from '@/shared/config/sections'
@@ -9,22 +8,28 @@ import type { SettingsSectionPatch } from '@/shared/config/types'
 import { orpc } from '@/client/api/client'
 import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
+export type SettingsCommitResult = { ok: true; section: unknown } | { ok: false }
+
 export interface UseSettingsMutationResult {
-  /** Commit a section payload. Sets status to 'saving', calls mutateAsync + revalidation. Returns `true` on success, `false` on error. */
+  /**
+   * Commit a section payload. Sets status to 'saving', posts to
+   * `admin.settings.update`. The response is AUTHORITATIVE — the merged,
+   * validated section in admin display shape (masks included). The caller
+   * adopts it as its new baseline; there is deliberately NO revalidate
+   * here: a save must never refetch the document out from under the
+   * user's hands (Ghost's useEditSettings discipline).
+   */
   commit: <Section extends SettingsSection>(
     section: Section,
     payload: SettingsSectionPatch<Section>,
-  ) => Promise<boolean>
+  ) => Promise<SettingsCommitResult>
   /** Reset status to idle. */
   resetStatus: () => void
-  /** Imperative revalidation (from useRevalidator). */
-  revalidate: () => Promise<void>
   isPending: boolean
   status: 'idle' | 'saving' | 'saved' | 'error'
 }
 
 export function useSettingsMutation(): UseSettingsMutationResult {
-  const revalidator = useRevalidator()
   const [status, setStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
 
   useEffect(() => {
@@ -40,22 +45,27 @@ export function useSettingsMutation(): UseSettingsMutationResult {
   })
 
   const commit = useCallback(
-    async <Section extends SettingsSection>(section: Section, payload: SettingsSectionPatch<Section>) => {
+    async <Section extends SettingsSection>(
+      section: Section,
+      payload: SettingsSectionPatch<Section>,
+    ): Promise<SettingsCommitResult> => {
       setStatus('saving')
       try {
-        await updateMutation.mutateAsync({ section, payload: unsafeCast<Record<string, unknown>>(payload) })
+        const result = await updateMutation.mutateAsync({
+          section,
+          payload: unsafeCast<Record<string, unknown>>(payload),
+        })
         setStatus('saved')
-        void revalidator.revalidate()
-        return true
+        return { ok: true, section: result.section }
       } catch (error: unknown) {
         setStatus('error')
         toast.error('保存失败', {
           description: error instanceof Error ? error.message : '请稍后重试',
         })
-        return false
+        return { ok: false }
       }
     },
-    [updateMutation, revalidator],
+    [updateMutation],
   )
 
   const resetStatus = useCallback(() => {
@@ -65,7 +75,6 @@ export function useSettingsMutation(): UseSettingsMutationResult {
   return {
     commit,
     resetStatus,
-    revalidate: revalidator.revalidate,
     isPending: updateMutation.isPending,
     status,
   }

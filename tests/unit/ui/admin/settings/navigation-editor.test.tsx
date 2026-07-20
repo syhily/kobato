@@ -29,7 +29,7 @@ const navigation: NavigationSettings = {
 describe('NavigationEditor', () => {
   beforeEach(() => {
     commit.mockReset()
-    commit.mockResolvedValue(true)
+    commit.mockResolvedValue({ ok: true, section: navigation })
   })
 
   it('commits side-navigation text edits on blur with the nested payload shape', async () => {

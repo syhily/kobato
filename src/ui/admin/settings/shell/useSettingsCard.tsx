@@ -15,7 +15,6 @@ import type { SettingsSection } from '@/shared/config/sections'
 import type { SettingsSectionPatch } from '@/shared/config/types'
 
 import { getLogger } from '@/client/lib/logger'
-import { mergeSectionPatch } from '@/shared/config/merge-section-patch'
 import { unsafeCast } from '@/shared/utils/unsafe-cast'
 import { useSettingsFlushContext } from '@/ui/admin/settings/shell/SettingsFlushProvider'
 import { useSettingsMutation } from '@/ui/admin/settings/useSettingsMutation'
@@ -49,6 +48,8 @@ interface UseSettingsCardResult<TSource extends object, TState extends FieldValu
    * `flushOnBlur`; the split name documents caller intent and leaves room for
    * the two to diverge later. */
   flush: () => void
+  /** Latest server-confirmed section (the save response, masks/font families
+   * included), falling back to the loader snapshot. Never POSTed. */
   display: TSource
   settingGroupProps: {
     saveState: 'idle' | 'saving' | 'saved' | 'error'
@@ -108,7 +109,7 @@ export function useSettingsCard<TSource extends object, TState extends FieldValu
   fromState,
   schema,
 }: UseSettingsCardOptions<TSource, TState>): UseSettingsCardResult<TSource, TState> {
-  const [optimisticSource, setOptimisticSource] = useState<TSource | null>(null)
+  const [savedSource, setSavedSource] = useState<TSource | null>(null)
   const { commit, isPending, status } = useSettingsMutation()
   const { registerFlush } = useSettingsFlushContext()
 
@@ -140,11 +141,12 @@ export function useSettingsCard<TSource extends object, TState extends FieldValu
   // the dirty guard: if `getValues()` deep-equals this, flush is a no-op.
   const [lastCommitted, setLastCommitted] = useState<DefaultValues<TState>>(initialValues)
 
-  // Re-seed form when source changes (after a save in another card, after a
-  // remote update, etc.). Reference-equality is insufficient on its own —
-  // `revalidator.revalidate()` produces a fresh `source` reference on every
-  // successful save, which would `reset()` away the user's in-flight edits.
-  // So we only reseed when the form is *clean* (no uncommitted local edits).
+  // Re-seed form when source changes (navigation back to the page, a remote
+  // concurrent edit — saves no longer revalidate the loader, so this is a
+  // backstop, not the hot path). Reference-equality is insufficient on its
+  // own — a fresh `source` reference with identical content must not
+  // `reset()` away the user's in-flight edits. So we only reseed when the
+  // form is *clean* (no uncommitted local edits).
   const [lastSourceSnapshot, setLastSourceSnapshot] = useState<TSource>(source)
   if (source !== lastSourceSnapshot) {
     setLastSourceSnapshot(source)
@@ -155,20 +157,19 @@ export function useSettingsCard<TSource extends object, TState extends FieldValu
     if (!hasUncommittedEdits) {
       const next = unsafeCast<DefaultValues<TState>>(toState(source))
       // Skip the reset when the incoming snapshot maps to the SAME form
-      // state — the typical case right after this card's own save
-      // round-trips through the revalidator. `reset()` is never free: it
-      // regenerates useFieldArray ids (remounting every row and dropping
-      // focus mid-typing) and clobbers the caret in plain inputs.
+      // state. `reset()` is never free: it regenerates useFieldArray ids
+      // (remounting every row and dropping focus mid-typing) and clobbers
+      // the caret in plain inputs.
       if (JSON.stringify(next) !== JSON.stringify(currentValues)) {
         reset(next)
         setLastCommitted(next)
       }
-      if (optimisticSource !== null) {
-        setOptimisticSource(null)
+      if (savedSource !== null) {
+        setSavedSource(null)
       }
     }
     // Dirty — keep the user's edits; the pending flush will commit them and
-    // the next revalidate (now clean) will reseed safely.
+    // the next source change (now clean) will reseed safely.
   }
 
   const performSave = useCallback(() => {
@@ -176,24 +177,28 @@ export function useSettingsCard<TSource extends object, TState extends FieldValu
       async (values) => {
         // The card posts its honest Section patch — only the fields it
         // owns, no masks, no untouched siblings. The server deep-merges
-        // the patch against the stored row and validates the result.
+        // the patch against the stored row, validates the result, and
+        // returns the merged section in admin display shape — the
+        // response is authoritative and becomes the card's new baseline.
         const patchPayload = fromState(values)
-        // `fromState` returns a partial patch shape over the section DTO;
-        // the display projection applies it onto the loader snapshot
-        // locally. Never POSTed — masks stay client-side.
-        const optimistic = mergeSectionPatch(source, unsafeCast<Record<string, unknown>>(patchPayload))
-        setOptimisticSource(optimistic)
-        setLastCommitted(unsafeCast<DefaultValues<TState>>(values))
-        const ok = await commit(section, patchPayload)
-        if (!ok) {
-          setOptimisticSource(null)
+        const result = await commit(section, patchPayload)
+        if (result.ok) {
+          // `result.section` is the server-produced TSource (masks merged
+          // in for assets/mail/search) — the same shape the loader feeds
+          // this card as `source`.
+          setSavedSource(unsafeCast<TSource>(result.section))
+          setLastCommitted(unsafeCast<DefaultValues<TState>>(values))
+        } else {
+          // Keep the form dirty (lastCommitted untouched) so the next
+          // flush retries; display falls back to the loader snapshot.
+          setSavedSource(null)
         }
       },
       (errors) => {
         log.debug('Settings save validation failed, skipping', { errors })
       },
     )()
-  }, [handleSubmit, section, commit, fromState, source])
+  }, [handleSubmit, section, commit, fromState])
 
   const isDirty = useCallback(() => {
     return JSON.stringify(getValues()) !== JSON.stringify(lastCommitted)
@@ -233,7 +238,7 @@ export function useSettingsCard<TSource extends object, TState extends FieldValu
     save,
     flushOnBlur,
     flush,
-    display: optimisticSource ?? source,
+    display: savedSource ?? source,
     settingGroupProps: {
       saveState: status,
     },

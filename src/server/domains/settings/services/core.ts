@@ -18,6 +18,8 @@ import { DomainError } from '@/server/infra/http/errors'
 import { getLogger } from '@/server/infra/logger'
 import { getBlogSettingsBundleSync } from '@/shared/config/getters'
 import { mergeSectionPatch } from '@/shared/config/merge-section-patch'
+import { projectAssetsForAdmin, projectMailForAdmin, projectSearchForAdmin } from '@/shared/config/projection'
+import { SECTION_TO_BUNDLE_KEY } from '@/shared/config/sections'
 import { isValidPasskeyDomain } from '@/shared/utils/safe-url'
 import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
@@ -173,6 +175,36 @@ export function redactSecretsFromBundle(bundle: BlogSettingsBundle): BlogSetting
     }
   }
   return unsafeCast<BlogSettingsBundle>(clone)
+}
+
+/**
+ * Project one section of a fresh bundle into the admin display shape the
+ * settings cards expect — the exact TSource contract the layout loader +
+ * `routes/admin/settings/index.tsx` produce (assets/mail/search get their
+ * masks merged in; every other section is the redacted bundle slice). The
+ * update endpoint returns this so the client can adopt the save response
+ * as its new baseline instead of revalidating the loader.
+ */
+export function projectSectionForAdmin(
+  section: SettingsSection,
+  bundle: BlogSettingsBundle,
+  masks: SecretMasks,
+): unknown {
+  const redacted = redactSecretsFromBundle(bundle)
+  if (section === 'assets') {
+    return projectAssetsForAdmin(unsafeCast(redacted.assets), masks.assetsSecretAccessKeyMask)
+  }
+  if (section === 'mail') {
+    return projectMailForAdmin(unsafeCast(redacted.mail), {
+      apiKeyMask: masks.mailApiKeyMask,
+      smtpPassMask: masks.mailSmtpPassMask,
+      mailgunApiKeyMask: masks.mailMailgunApiKeyMask,
+    })
+  }
+  if (section === 'search') {
+    return projectSearchForAdmin(redacted.search ?? undefined, masks.searchApiKeyMask)
+  }
+  return redacted[SECTION_TO_BUNDLE_KEY[section]]
 }
 
 function applySectionPatch(

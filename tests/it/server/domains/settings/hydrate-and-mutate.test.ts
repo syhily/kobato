@@ -99,8 +99,10 @@ describe('integration / admin settings', () => {
       ctx,
     )
     expect(updateRes.status).toBe(200)
-    const updateBody = await parseRpcJson<{ success: boolean }>(updateRes)
-    expect(updateBody.success).toBe(true)
+    // The response is authoritative: the merged section in admin display
+    // shape — the client adopts it as its new baseline without refetching.
+    const updateBody = await parseRpcJson<{ section: { maxRequestBodySize: number } }>(updateRes)
+    expect(updateBody.section.maxRequestBodySize).toBe(5 * 1024 * 1024)
 
     const { bundle } = await getAdminBlogSettings(db)
     expect(bundle?.limits?.maxRequestBodySize).toBe(5 * 1024 * 1024)

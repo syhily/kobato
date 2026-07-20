@@ -6,6 +6,8 @@ import { DomainError } from '@/server/infra/http/errors'
 
 vi.mock('@/server/domains/settings/services/core', () => ({
   updateBlogSettingsSection: vi.fn(),
+  computeSecretMasks: vi.fn(() => ({})),
+  projectSectionForAdmin: vi.fn(() => ({ projected: true })),
 }))
 
 const { updateBlogSettingsSection } = await import('@/server/domains/settings/services/core')
@@ -46,7 +48,7 @@ describe('adminSettingsRouter.update', () => {
       },
       { context: ctx },
     )
-    expect(res.success).toBe(true)
+    expect(res.section).toEqual({ projected: true })
   })
 
   it('throws BAD_REQUEST for an invalid payload', async () => {

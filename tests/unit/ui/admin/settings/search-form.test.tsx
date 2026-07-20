@@ -37,7 +37,7 @@ const search: SearchLoaderShape = {
 describe('SearchForm', () => {
   beforeEach(() => {
     commit.mockReset()
-    commit.mockResolvedValue(true)
+    commit.mockResolvedValue({ ok: true, section: search })
   })
 
   it('commits a changed trigram threshold as a focused search patch', async () => {
