@@ -141,12 +141,13 @@ migrations are embedded in the binary; the native packages
 glibc Linux, x64 and arm64. You still need external TimescaleDB 17+ and
 Redis 7+.
 
-Download `kobato-linux-x64` (or `kobato-linux-arm64`) and its `.sha256`
-sidecar from the [latest release](../../releases/latest), verify, and
-install:
+Download `kobato-linux-x64.tar.gz` (or `kobato-linux-arm64.tar.gz`) and its
+`.sha256` sidecar from the [latest release](../../releases/latest), verify,
+extract, and install:
 
 ```bash
-sha256sum -c kobato-linux-x64.sha256
+sha256sum -c kobato-linux-x64.tar.gz.sha256
+tar -xzf kobato-linux-x64.tar.gz
 install -m 0755 kobato-linux-x64 /usr/local/bin/kobato
 kobato --version          # prints the baked-in version
 ```

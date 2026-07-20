@@ -67,23 +67,30 @@ jobs:
           cache: 'pnpm'
       - run: pnpm install --frozen-lockfile
       - run: pnpm run sea:build
-      - name: Rename outputs to kobato-<target>
+      - name: Rename output to kobato-<target>
         env:
           BIN: kobato-${{ matrix.target }}
         working-directory: dist-sea
         run: |
+          sha256sum -c kobato.sha256
           mv kobato "$BIN"
-          sed "s/  kobato$/  $BIN/" kobato.sha256 > "$BIN.sha256"
           rm kobato.sha256
-          sha256sum -c "$BIN.sha256"
       - run: pnpm run sea:smoke "dist-sea/kobato-${{ matrix.target }}"
+      - name: Package tar.gz with checksum
+        env:
+          BIN: kobato-${{ matrix.target }}
+        working-directory: dist-sea
+        run: |
+          tar -czf "$BIN.tar.gz" "$BIN"
+          sha256sum "$BIN.tar.gz" > "$BIN.tar.gz.sha256"
+          sha256sum -c "$BIN.tar.gz.sha256"
       - uses: actions/upload-artifact@v7
         with:
           name: kobato-${{ matrix.target }}
           retention-days: 7
           path: |
-            dist-sea/kobato-${{ matrix.target }}
-            dist-sea/kobato-${{ matrix.target }}.sha256
+            dist-sea/kobato-${{ matrix.target }}.tar.gz
+            dist-sea/kobato-${{ matrix.target }}.tar.gz.sha256
 
   # Release assets are uploaded only for release events, in a separate job
   # so the elevated contents:write token never reaches the build matrix.

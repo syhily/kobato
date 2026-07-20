@@ -167,11 +167,12 @@ Bare-metal SEA deployments can update themselves from the admin shell
 (VersionDialog → 检查更新 → 立即更新). The pipeline lives in
 `src/server/domains/update/` and is modeled on AdGuardHome's
 `internal/updater`: stage in `<execDir>/.kobato-update/`, stream-download
-the release asset (`kobato-linux-<arch>`, 512 MB cap), verify against the
-`.sha256` sidecar, `chmod 0o755`, rename the live binary to
-`<binary>.bak`, swap, then restart (detached re-spawn + `process.exit(0)`).
-Any failure after the backup step restores the `.bak` best-effort before
-rethrowing; the stage dir is always cleaned.
+the release asset (`kobato-linux-<arch>.tar.gz`, 512 MB cap), verify the
+archive against the `.sha256` sidecar, extract the bare binary, `chmod
+0o755`, rename the live binary to `<binary>.bak`, swap, then restart
+(detached re-spawn + `process.exit(0)`). Any failure after the backup step
+restores the `.bak` best-effort before rethrowing; the stage dir is always
+cleaned.
 
 The gate (`gate.ts`) requires ALL of: `isSea()`, linux x64/arm64, not
 containerized (`/.dockerenv` / `/proc/1/cgroup`), a writable binary
@@ -207,7 +208,8 @@ in `.claude/commands/release.md` and drives the full lifecycle:
 2. Bump version, push develop, fast-forward merge to main, push main.
 3. Create git tag + GitHub release (Docker image builds automatically
    via `.github/workflows/docker.yml`; the SEA workflow attaches the
-   `kobato-linux-*` binaries to the release).
+   `kobato-linux-*.tar.gz` archives (plus `.sha256` sidecars) to the
+   release).
 4. Switch back to develop, prepare next patch version, push.
 
 No PRs — direct fast-forward merge from develop to main.
