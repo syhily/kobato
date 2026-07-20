@@ -108,15 +108,15 @@ worker code are embedded in the binary and read from memory
 @napi-rs/canvas) are extracted to a cache dir on first run
 (`src/server/infra/sea-natives.ts`).
 
-- `pnpm run sea:build` → `dist-sea/kobato` (+ `.sha256`). On linux the
-  injected binary is UPX-compressed before the checksum when `upx` is on
-  PATH (`scripts/sea/upx.ts`). Both build channels install the pinned
-  official 5.2.0 tarball (the SEA workflow on Ubuntu, the Dockerfile in
-  the bookworm builder — Debian ships no upx package at all), and the
-  Dockerfile builds with `SEA_UPX_REQUIRE=1`, so a broken UPX install
-  fails the image build instead of silently shipping uncompressed. Skip locally
-  with `SEA_UPX=0`; override flags with `SEA_UPX_ARGS` (default
-  `--best`); macOS builds always skip.
+- `pnpm run sea:build` → `dist-sea/kobato` (+ `.sha256`). The binary is
+  deliberately NOT UPX-compressed. Verified dead ends (UPX 5.2.0, linux
+  x64): inject-then-compress fails with `CantPackException: bad e_phoff`
+  (postject relocates the phdrs, [postject#87](https://github.com/nodejs/postject/issues/87));
+  `--force-execve` fails with `UnknownExecutableFormatException`;
+  compress-then-inject fails because UPX destroys the sentinel fuse.
+  Runtime-side it could never work anyway: Node finds the blob via
+  `dl_iterate_phdr` on the in-memory phdrs (a `NODE_SEA_BLOB` PT_NOTE),
+  which a packed stub does not present. Do not re-add an UPX step.
 - `pnpm run sea:smoke [binary]` — 17-check deep smoke: version, natives,
   a per-run `kobato_smoke_<rand>` database (created on the same Postgres
   server, dropped in cleanup — the shared `test` DB is never touched),

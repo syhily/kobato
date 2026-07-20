@@ -136,7 +136,7 @@ docker run -p 4321:4321 \
 
 Every release also ships a self-contained single executable — no Node.js
 runtime, no `node_modules`. The server bundle, client assets, and database
-migrations are embedded in the binary (UPX-compressed); the native packages
+migrations are embedded in the binary; the native packages
 (sharp, canvas) are extracted to a cache directory on first run. Targets:
 glibc Linux, x64 and arm64. You still need external TimescaleDB 17+ and
 Redis 7+.

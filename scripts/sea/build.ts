@@ -7,9 +7,7 @@
 //   4. assets                   collect embedded assets + manifest.json
 //   5. blob                     node --experimental-sea-config
 //   6. inject                   copy node + postject the blob
-//   7. upx                      compress the injected binary (linux, when
-//                               upx is available; scripts/sea/upx.ts)
-//   8. checksum                 dist-sea/kobato.sha256
+//   7. checksum                 dist-sea/kobato.sha256
 //
 // The build is platform-native by design: the embedded native packages
 // and the copied Node executable are the build machine's, so run it on
@@ -24,7 +22,6 @@ import { runBlobStep } from './blob.ts'
 import { fail, run } from './exec.ts'
 import { runInjectStep } from './inject.ts'
 import { repoRoot, seaBinaryPath, seaBinarySha256Path, seaIntermediatesDir } from './paths.ts'
-import { maybeCompressWithUpx } from './upx.ts'
 
 const REQUIRED_NODE_MAJOR = 24
 
@@ -78,9 +75,6 @@ async function main() {
 
   console.log('==> inject blob into node binary')
   await runInjectStep()
-
-  console.log('==> UPX compression')
-  await maybeCompressWithUpx(seaBinaryPath())
 
   await writeBinaryChecksum()
 
