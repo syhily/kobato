@@ -8,22 +8,23 @@ services:
     environment:
       # Server
       NODE_ENV: production
-      HOST: ${HOST:-0.0.0.0}
-      PORT: ${PORT:-4321}
+      server__host: ${HOST:-0.0.0.0}
+      server__port: ${PORT:-4321}
       # Database
-      DATABASE_URL: postgres://postgres:${POSTGRES_PASSWORD}@postgres:5432/kobato
-      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379
-      DB_POOL_MAX: ${DB_POOL_MAX:-20}
-      DB_STATEMENT_TIMEOUT_MS: ${DB_STATEMENT_TIMEOUT_MS:-30000}
+      database__url: postgres://postgres:${POSTGRES_PASSWORD}@postgres:5432/kobato
+      database__poolMax: ${DB_POOL_MAX:-20}
+      database__statementTimeoutMs: ${DB_STATEMENT_TIMEOUT_MS:-30000}
+      redis__url: redis://:${REDIS_PASSWORD}@redis:6379
       # Security
-      SESSION_SECRET: ${SESSION_SECRET:?SESSION_SECRET is required}
-      ENCRYPTION_KEY: ${ENCRYPTION_KEY:?ENCRYPTION_KEY is required}
+      auth__sessionSecret: ${SESSION_SECRET:?SESSION_SECRET is required}
+      security__encryptionKey: ${ENCRYPTION_KEY:?ENCRYPTION_KEY is required}
       # Logging
-      LOG_LEVEL: ${LOG_LEVEL:-info}
+      logging__level: ${LOG_LEVEL:-info}
       # Data directory
-      DATA_PATH: /data
+      paths__data: /data
     volumes:
       - kobato_data:/data
+      - kobato_config:/etc/kobato
     depends_on:
       postgres:
         condition: service_healthy
@@ -102,6 +103,7 @@ volumes:
   postgres_data:
   redis_data:
   kobato_data:
+  kobato_config:
 
 networks:
   kobato:

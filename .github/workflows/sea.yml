@@ -54,8 +54,8 @@ jobs:
           --health-timeout 3s
           --health-retries 5
     env:
-      DATABASE_URL: postgres://test:test@127.0.0.1:5432/test
-      REDIS_URL: redis://127.0.0.1:6379
+      database__url: postgres://test:test@127.0.0.1:5432/test
+      redis__url: redis://127.0.0.1:6379
     steps:
       - uses: actions/checkout@v6
       - uses: pnpm/action-setup@v4

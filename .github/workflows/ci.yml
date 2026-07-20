@@ -41,9 +41,9 @@ jobs:
           --health-timeout 3s
           --health-retries 5
     env:
-      DATABASE_URL: postgres://test:test@localhost:5434/test
-      REDIS_URL: redis://localhost:6381
-      SESSION_SECRET: ci-session-secret
+      database__url: postgres://test:test@localhost:5434/test
+      redis__url: redis://localhost:6381
+      auth__sessionSecret: ci-session-secret
     steps:
       - uses: actions/checkout@v6
       - uses: pnpm/action-setup@v4

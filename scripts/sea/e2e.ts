@@ -28,6 +28,7 @@ import {
   dropSmokeDatabase,
   ensureBinaryExists,
   makeTempDirs,
+  readConvergedConfig,
   seedInstalledInstance,
   waitForExit,
   waitForHttp,
@@ -43,8 +44,8 @@ async function main() {
   }
   await ensureBinaryExists(binaryPath)
 
-  const databaseUrl = process.env.DATABASE_URL ?? DEFAULT_DATABASE_URL
-  const redisUrl = process.env.REDIS_URL ?? DEFAULT_REDIS_URL
+  const databaseUrl = process.env.database__url ?? DEFAULT_DATABASE_URL
+  const redisUrl = process.env.redis__url ?? DEFAULT_REDIS_URL
   const dirs = await makeTempDirs()
   const serverLogPath = join(dirs.root, 'server.log')
 
@@ -58,15 +59,15 @@ async function main() {
   console.log(`    per-run db: ${database.databaseName}`)
 
   const env = {
-    DATABASE_URL: database.smokeDatabaseUrl,
-    REDIS_URL: redisUrl,
+    database__url: database.smokeDatabaseUrl,
+    redis__url: redisUrl,
     // Isolate all Redis keys (sessions, rate limits) from anything else
     // sharing this Redis instance — e.g. an it-suite worker mapped to the
     // same logical DB can leave an exceeded signin bucket behind.
-    REDIS_KEY_PREFIX: `e2e-${randomBytes(4).toString('hex')}:`,
-    SESSION_SECRET: randomBytes(32).toString('hex'),
-    ENCRYPTION_KEY: randomBytes(32).toString('hex'),
-    DATA_PATH: dirs.data,
+    redis__keyPrefix: `e2e-${randomBytes(4).toString('hex')}:`,
+    auth__sessionSecret: randomBytes(32).toString('hex'),
+    security__encryptionKey: randomBytes(32).toString('hex'),
+    paths__data: dirs.data,
     KOBATO_CACHE_DIR: dirs.cache,
     NODE_ENV: 'production',
   }
@@ -103,6 +104,16 @@ async function main() {
     if (health.status !== 200) {
       fail(`expected /health 200 on the seeded instance, got ${health.status}`)
     }
+
+    // The env-driven first boot must have written its overrides back into
+    // the config file — assert the instance is self-contained.
+    const converged = await readConvergedConfig(join(dirs.root, 'kobato.config.json'))
+    if (converged.databaseUrl !== database.smokeDatabaseUrl) {
+      fail(
+        `config file did not converge: database.url is ${converged.databaseUrl}, expected ${database.smokeDatabaseUrl}`,
+      )
+    }
+    console.log('    config file converged (env written back)')
 
     console.log('==> vitest run (tests/e2e)')
     const result = spawnSync('pnpm', ['exec', 'vitest', 'run', '--config', 'tests/e2e/vitest.config.ts'], {

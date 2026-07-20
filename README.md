@@ -41,14 +41,16 @@ Docker is recommended for local development.
 pnpm run docker:dev
 ```
 
-Copy `.env.example` to `.env` and set the database and Redis URLs:
+Copy `.env.example` to `.env` and set the database and Redis URLs (variable
+names follow the nested config path with a double underscore — see
+[Configuration](#configuration)):
 
 ```bash
 cp .env.example .env
-# DATABASE_URL=postgres://postgres:postgres@localhost:5433/kobato
-# REDIS_URL=redis://localhost:6380
-# SESSION_SECRET=$(openssl rand -hex 32)
-# ENCRYPTION_KEY=$(openssl rand -hex 32)
+# database__url=postgres://postgres:postgres@localhost:5433/kobato
+# redis__url=redis://localhost:6380
+# auth__sessionSecret=$(openssl rand -hex 32)
+# security__encryptionKey=$(openssl rand -hex 32)
 ```
 
 Install dependencies and start the dev server:
@@ -58,23 +60,47 @@ pnpm install
 pnpm run dev
 ```
 
-On first boot, open `/admin/setup` and enter the setup token printed in the console to create the admin account.
+On first boot the values from `.env` are written into a freshly created
+`kobato.config.json` in the repo root (gitignored) — subsequent boots read
+the file, so `.env` is only needed once. Open `/admin/setup` and enter the
+setup token printed in the console to create the admin account.
 Settings are seeded automatically.
 
 ## Configuration
 
-Most settings are managed in the admin dashboard.
-Database and session secrets are configured via environment variables:
+Most settings are managed in the admin dashboard. Infrastructure
+configuration (database, Redis, secrets, data paths) lives in
+**`kobato.config.json`** — always present, auto-created with defaults when
+missing:
 
-| Variable         | Description                                                                                  |
-| ---------------- | -------------------------------------------------------------------------------------------- |
-| `DATABASE_URL`   | PostgreSQL connection URL, e.g. `postgres://user:pass@localhost:5432/kobato`                 |
-| `REDIS_URL`      | Redis connection URL, e.g. `redis://localhost:6379`                                          |
-| `SESSION_SECRET` | HMAC secret for cookies. Generate with `openssl rand -hex 32`                                |
-| `ENCRYPTION_KEY` | AES-256-GCM key for encrypting secrets in the database. Generate with `openssl rand -hex 32` |
-| `DATA_PATH`      | Root data directory for fonts, dead-letter files, and MaxMind DB                             |
+1. `--config <path>` / `-c <path>`
+2. `<binary dir>/kobato.config.json` (SEA binary only)
+3. `./kobato.config.json`
+4. `~/.config/kobato.config.json`
 
-See `.env.example` for the full list of options.
+The first existing file wins. Environment variables override file values
+and are **written back into the file** — env is the injection mechanism,
+the file converges to the effective configuration. Variable names are the
+nested config path joined with a double underscore:
+
+| Variable                       | Config path                   | Description                                                      |
+| ------------------------------ | ----------------------------- | ---------------------------------------------------------------- |
+| `database__url`                | `database.url`                | PostgreSQL connection URL                                        |
+| `redis__url`                   | `redis.url`                   | Redis connection URL                                             |
+| `auth__sessionSecret`          | `auth.sessionSecret`          | HMAC secret for cookies. Generate with `openssl rand -hex 32`    |
+| `security__encryptionKey`      | `security.encryptionKey`      | AES-256-GCM key for encrypting secrets in the database           |
+| `paths__data`                  | `paths.data`                  | Root data directory for fonts, dead-letter files, and MaxMind DB |
+| `server__host`                 | `server.host`                 | Listen address, default `0.0.0.0`                                |
+| `server__port`                 | `server.port`                 | Listen port, default `4321`                                      |
+| `database__poolMax`            | `database.poolMax`            | Postgres pool size, default `20`                                 |
+| `database__statementTimeoutMs` | `database.statementTimeoutMs` | Per-query timeout, default `30000`                               |
+| `database__restoreRole`        | `database.restoreRole`        | Optional low-privilege role used during restore                  |
+| `redis__keyPrefix`             | `redis.keyPrefix`             | Optional prefix for every Redis key                              |
+| `paths__defaultFont`           | `paths.defaultFont`           | Optional fallback font file copied into `<data>/fonts`           |
+| `logging__level`               | `logging.level`               | `debug` / `info` / `warn` / `error` / `silent`                   |
+
+See `.env.example` for the full list of options and
+`kobato.config.example.json` for the file shape.
 
 ## Testing
 
@@ -108,7 +134,9 @@ ENCRYPTION_KEY=$(openssl rand -hex 32) \
 docker compose up -d
 ```
 
-Optional overrides:
+Optional overrides (compose forwards them to the app env; they are written
+into `/etc/kobato/config.json` on first boot and persist in the
+`kobato_config` volume):
 
 - `HOST` — default `0.0.0.0`
 - `PORT` — default `4321`
@@ -125,10 +153,12 @@ Use the included [`Dockerfile`](Dockerfile) to build locally:
 ```bash
 docker build -t kobato .
 docker run -p 4321:4321 \
-  -e DATABASE_URL=... \
-  -e REDIS_URL=... \
-  -e SESSION_SECRET=... \
-  -e ENCRYPTION_KEY=... \
+  -e database__url=... \
+  -e redis__url=... \
+  -e auth__sessionSecret=... \
+  -e security__encryptionKey=... \
+  -v kobato_data:/data \
+  -v kobato_config:/etc/kobato \
   kobato
 ```
 
@@ -152,13 +182,14 @@ install -m 0755 kobato-linux-x64 /usr/local/bin/kobato
 kobato --version          # prints the baked-in version
 ```
 
-Configure it with the same environment variables as the Docker deployment
-(`DATABASE_URL`, `REDIS_URL`, `SESSION_SECRET`, `ENCRYPTION_KEY`,
-`DATA_PATH` — see [Configuration](#configuration)). `DATA_PATH` defaults to
-`./data` relative to the working directory, so set it explicitly for a
-system install. The natives cache lands in `$XDG_CACHE_HOME/kobato`
-(override with `KOBATO_CACHE_DIR`). Database migrations run automatically
-at boot; on first boot, open `/admin/setup`.
+Configure it through `kobato.config.json` (see [Configuration](#configuration)):
+on first boot the binary creates it next to itself with defaults — edit the
+file, or pass `__`-style environment variables once and let them be written
+into the file. `paths.data` defaults to `./data` relative to the working
+directory, so set it explicitly for a system install. The natives cache
+lands in `$XDG_CACHE_HOME/kobato` (override with `KOBATO_CACHE_DIR`).
+Database migrations run automatically at boot; on first boot, open
+`/admin/setup`.
 
 A minimal systemd unit:
 
@@ -169,11 +200,11 @@ After=network-online.target postgresql.service redis.service
 
 [Service]
 Type=simple
-Environment=DATABASE_URL=postgres://user:pass@127.0.0.1:5432/kobato
-Environment=REDIS_URL=redis://127.0.0.1:6379
-Environment=SESSION_SECRET=change-me
-Environment=ENCRYPTION_KEY=change-me
-Environment=DATA_PATH=/var/lib/kobato
+Environment=database__url=postgres://user:pass@127.0.0.1:5432/kobato
+Environment=redis__url=redis://127.0.0.1:6379
+Environment=auth__sessionSecret=change-me
+Environment=security__encryptionKey=change-me
+Environment=paths__data=/var/lib/kobato
 ExecStart=/usr/local/bin/kobato
 Restart=always
 RestartSec=3

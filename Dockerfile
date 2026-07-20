@@ -48,8 +48,8 @@ COPY --from=build /app/dist-sea/kobato /usr/local/bin/kobato
 COPY --from=build /app/dist-sea/kobato.sha256 /usr/local/bin/kobato.sha256
 
 ENV NODE_ENV=production
-ENV HOST=0.0.0.0
-ENV PORT=4321
+ENV server__host=0.0.0.0
+ENV server__port=4321
 # The SEA binary extracts its embedded native packages (sharp, canvas) to
 # <XDG_CACHE_HOME>/kobato on first boot; point it at the data volume so the
 # extraction survives container replacement (src/server/infra/sea.ts).
@@ -62,10 +62,12 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
 
 # Ensure the data volume mount is writable by the non-root runtime user.
 # The app creates subdirectories (fonts, storage, analytics, audit, maxmind)
-# under DATA_PATH at startup.
-RUN mkdir -p /data && chown -R kobato:kobato /data
+# under DATA_PATH at startup. /etc/kobato holds the converged config file
+# (created on first boot, env overrides written back — see
+# src/server/infra/config.ts).
+RUN mkdir -p /data /etc/kobato && chown -R kobato:kobato /data /etc/kobato
 
 USER kobato
 
 ENTRYPOINT ["tini", "--"]
-CMD ["kobato"]
+CMD ["kobato", "--config", "/etc/kobato/config.json"]

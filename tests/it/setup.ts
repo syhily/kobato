@@ -11,7 +11,7 @@ let testDbUrl: string | null = null
 const { createWorkerDatabase, dropWorkerDatabase } = await import('#/_helpers/integration-db')
 const workerId = process.env.VITEST_WORKER_ID || '0'
 testDbUrl = await createWorkerDatabase(workerId)
-process.env.DATABASE_URL = testDbUrl
+process.env.database__url = testDbUrl
 
 afterAll(async () => {
   if (testDbUrl) {

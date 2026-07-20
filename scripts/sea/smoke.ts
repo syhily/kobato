@@ -53,6 +53,7 @@ import {
   ensureBinaryExists,
   fetchManual,
   makeTempDirs,
+  readConvergedConfig,
   seedInstalledInstance,
   sleep,
   waitForExit,
@@ -145,15 +146,22 @@ function checkNatives(binaryPath: string, cacheDir: string) {
 /**
  * `--smoke-worker` validates the full server env at import time (the pool
  * graph pulls in `@/server/infra/env`) but never connects to anything, so
- * the same env the server boot gets is passed here.
+ * the same env the server boot gets is passed here. The `--config` points
+ * at the temp cache dir — without it env loading would auto-create
+ * `kobato.config.json` next to the binary and persist the throwaway
+ * database URL and smoke secrets into it.
  */
 function checkWorker(binaryPath: string, env: Record<string, string>) {
   const expected = `SEA worker smoke passed: ${process.platform}-${process.arch}`
-  const result = spawnSync(binaryPath, ['--smoke-worker'], {
-    encoding: 'utf-8',
-    timeout: NATIVES_TIMEOUT_MS,
-    env: { ...process.env, ...env },
-  })
+  const result = spawnSync(
+    binaryPath,
+    ['--config', join(env.KOBATO_CACHE_DIR, 'kobato.config.json'), '--smoke-worker'],
+    {
+      encoding: 'utf-8',
+      timeout: NATIVES_TIMEOUT_MS,
+      env: { ...process.env, ...env },
+    },
+  )
   if (result.error) {
     throw new Error(`spawn failed: ${result.error.message}`)
   }
@@ -331,8 +339,8 @@ async function checkCalendar(baseUrl: string, { optional }: { optional: boolean 
 /** Returns a cleanup callback; the caller runs it after the summary/log dump. */
 async function runManaged(binaryPath: string) {
   await ensureBinaryExists(binaryPath)
-  const databaseUrl = process.env.DATABASE_URL ?? DEFAULT_DATABASE_URL
-  const redisUrl = process.env.REDIS_URL ?? DEFAULT_REDIS_URL
+  const databaseUrl = process.env.database__url ?? DEFAULT_DATABASE_URL
+  const redisUrl = process.env.redis__url ?? DEFAULT_REDIS_URL
   const dirs = await makeTempDirs()
   serverLogPath = join(dirs.root, 'server.log')
 
@@ -354,11 +362,11 @@ async function runManaged(binaryPath: string) {
 
     if (smokeDatabase !== null) {
       const env = {
-        DATABASE_URL: smokeDatabase.smokeDatabaseUrl,
-        REDIS_URL: redisUrl,
-        SESSION_SECRET: randomBytes(32).toString('hex'),
-        ENCRYPTION_KEY: randomBytes(32).toString('hex'),
-        DATA_PATH: dirs.data,
+        database__url: smokeDatabase.smokeDatabaseUrl,
+        redis__url: redisUrl,
+        auth__sessionSecret: randomBytes(32).toString('hex'),
+        security__encryptionKey: randomBytes(32).toString('hex'),
+        paths__data: dirs.data,
         KOBATO_CACHE_DIR: dirs.cache,
         NODE_ENV: 'production',
       }
@@ -381,6 +389,13 @@ async function runManaged(binaryPath: string) {
         // the stream flush anyway — buffered writes outlive the process.
         await Promise.race([bootedServer.logClosed, sleep(2_000)])
         await check('natives cache reused by the server', () => checkNativesReuse())
+        await check('config file converged (env written back)', async () => {
+          const converged = await readConvergedConfig(join(dirs.root, 'kobato.config.json'))
+          if (converged.databaseUrl !== smokeDatabase?.smokeDatabaseUrl) {
+            throw new Error(`database.url is ${converged.databaseUrl}, expected ${smokeDatabase?.smokeDatabaseUrl}`)
+          }
+          return 'database.url + sessionSecret persisted'
+        })
       }
 
       // ── Seeded phase: flip the instance to "installed" and reboot ──
@@ -394,11 +409,20 @@ async function runManaged(binaryPath: string) {
       const seeded =
         booted &&
         (await check('seed admin + core settings (SQL)', () =>
-          seedInstalledInstance(env.DATABASE_URL, { email: SEED_ADMIN_EMAIL, passwordHash: SEED_ADMIN_PASSWORD }),
+          seedInstalledInstance(env.database__url, { email: SEED_ADMIN_EMAIL, passwordHash: SEED_ADMIN_PASSWORD }),
         ))
       if (seeded) {
-        const restarted = await check('server restart (seeded install)', async () => {
-          server = await bootServer(binaryPath, dirs, env, serverLogPath ?? fail('serverLogPath unset'))
+        // The restart runs with a REDUCED env on purpose: database/redis/
+        // secrets/paths all come from the config file the first boot
+        // converged (env overrides were written back) — this is the
+        // file-only boot proof for the new configuration model. Only
+        // process-level vars (cache dir, NODE_ENV) stay in the env.
+        const fileOnlyEnv = {
+          KOBATO_CACHE_DIR: dirs.cache,
+          NODE_ENV: 'production',
+        }
+        const restarted = await check('server restart (seeded install, config file only)', async () => {
+          server = await bootServer(binaryPath, dirs, fileOnlyEnv, serverLogPath ?? fail('serverLogPath unset'))
           console.log(`    waiting for http://127.0.0.1:${server.port}/health (log: ${serverLogPath})`)
           const started = Date.now()
           server.healthResponse = await waitForHttp(`http://127.0.0.1:${server.port}/health`, server.exitState)
@@ -462,11 +486,11 @@ async function runBinaryOnly(binaryPath: string) {
   await check('kobato --smoke-natives (sharp + canvas)', () => checkNatives(binaryPath, dirs.cache))
   await check('kobato --smoke-worker (sharp worker pool)', () =>
     checkWorker(binaryPath, {
-      DATABASE_URL: process.env.DATABASE_URL ?? DEFAULT_DATABASE_URL,
-      REDIS_URL: process.env.REDIS_URL ?? DEFAULT_REDIS_URL,
-      SESSION_SECRET: randomBytes(32).toString('hex'),
-      ENCRYPTION_KEY: randomBytes(32).toString('hex'),
-      DATA_PATH: dirs.data,
+      database__url: process.env.database__url ?? DEFAULT_DATABASE_URL,
+      redis__url: process.env.redis__url ?? DEFAULT_REDIS_URL,
+      auth__sessionSecret: randomBytes(32).toString('hex'),
+      security__encryptionKey: randomBytes(32).toString('hex'),
+      paths__data: dirs.data,
       KOBATO_CACHE_DIR: dirs.cache,
       NODE_ENV: 'production',
     }),

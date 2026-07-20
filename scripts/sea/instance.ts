@@ -16,7 +16,7 @@ import type { WriteStream } from 'node:fs'
 import { spawn } from 'node:child_process'
 import { randomBytes } from 'node:crypto'
 import { createWriteStream } from 'node:fs'
-import { mkdir, mkdtemp, stat } from 'node:fs/promises'
+import { mkdir, mkdtemp, readFile, stat } from 'node:fs/promises'
 import { createServer } from 'node:net'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -149,6 +149,34 @@ export interface SeedAdminOptions {
   passwordHash: string
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === 'object' && !Array.isArray(value)
+}
+
+export interface ConvergedConfig {
+  databaseUrl: string
+  sessionSecret: string
+}
+
+/**
+ * Assert a temp config file converged: the env-driven boot wrote its
+ * overrides back (`database.url` + `auth.sessionSecret` present as raw
+ * strings — never the schema-transformed shape). Used by the smoke's and
+ * the e2e orchestrator's convergence checks.
+ */
+export async function readConvergedConfig(configPath: string): Promise<ConvergedConfig> {
+  const parsed: unknown = JSON.parse(await readFile(configPath, 'utf-8'))
+  const database = isRecord(parsed) && isRecord(parsed.database) ? parsed.database : null
+  const auth = isRecord(parsed) && isRecord(parsed.auth) ? parsed.auth : null
+  if (database === null || typeof database.url !== 'string' || database.url === '') {
+    throw new Error(`config file did not converge: ${configPath} has no database.url`)
+  }
+  if (auth === null || typeof auth.sessionSecret !== 'string' || auth.sessionSecret.length < 32) {
+    throw new Error(`config file did not converge: ${configPath} has no auth.sessionSecret`)
+  }
+  return { databaseUrl: database.url, sessionSecret: auth.sessionSecret }
+}
+
 /**
  * Flip the instance to "installed" with plain SQL:
  *   1. one minimal admin row — `hasAdmin()` (role = 'admin' AND
@@ -232,9 +260,13 @@ export async function bootServer(
   const port = await pickFreePort()
   const logStream = createWriteStream(logPath, { flags: 'w' })
   const logClosed = new Promise<void>((resolve) => logStream.once('close', resolve))
-  const child = spawn(binaryPath, [], {
+  // The config file MUST live inside the per-run temp root: without an
+  // explicit --config the binary would create/read kobato.config.json in
+  // its own directory or ~/.config and persist smoke secrets + the
+  // throwaway database URL into real locations.
+  const child = spawn(binaryPath, ['--config', join(dirs.root, 'kobato.config.json')], {
     cwd: dirs.cwd,
-    env: { ...process.env, ...env, PORT: String(port) },
+    env: { ...process.env, ...env, server__port: String(port) },
     stdio: ['ignore', 'pipe', 'pipe'],
   })
   child.stdout?.pipe(logStream)

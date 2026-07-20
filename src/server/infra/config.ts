@@ -1,0 +1,342 @@
+// Configuration file (`kobato.config.json`) — the default configuration
+// source, always present (auto-created when missing).
+//
+// Model (Ghost-style, see docs/research/ghost-settings-autosave.md and the
+// nconf env separator in ghost/core/core/shared/config/loader.ts):
+//
+//   - ONE declarative table (CONFIG_TABLE) is the single source of truth:
+//     each row maps a nested config path (`database.url`) to a TS export
+//     name (`DATABASE_URL`) and a Zod schema. The process env var name is
+//     derived by convention: `path.join('__')` → `database__url`.
+//   - Precedence: schema defaults < config file < env vars. Values coming
+//     from env that differ from the file are WRITTEN BACK into the file —
+//     env is the injection mechanism, the file converges to the effective
+//     configuration and stays the persistent record.
+//   - Location order: `--config <path>` / `-c <path>` (also `--config=…`)
+//     > `<execDir>/kobato.config.json` (SEA only — non-SEA execPath is the
+//     node binary itself) > `./kobato.config.json` > `~/.config/kobato.config.json`.
+//     The first existing file wins; when none exists, the file is created
+//     at the first candidate with table defaults and mode 0o600.
+//
+// `VITEST=true` makes loading read-only (no create, no write-back) and
+// skips the file entirely unless `--config` is given — otherwise test runs
+// would drop a config file into the repo root and persist test secrets.
+
+import { chmodSync, existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs'
+import { homedir } from 'node:os'
+import { dirname, join, resolve } from 'node:path'
+import { z } from 'zod'
+
+import { isSea } from '@/server/infra/sea'
+import { unsafeCast } from '@/shared/utils/unsafe-cast'
+
+export const CONFIG_FILE_NAME = 'kobato.config.json'
+
+export interface ConfigEntry {
+  /** Nested path inside the config file, e.g. ['database', 'url']. */
+  path: readonly string[]
+  /** Flat TS export name on `@/server/infra/env` (unchanged contract). */
+  export: string
+  schema: z.ZodType
+  /** Value written into a freshly created config file. */
+  fileDefault: unknown
+}
+
+export const CONFIG_TABLE = [
+  { path: ['server', 'host'], export: 'HOST', schema: z.string().min(1).default('0.0.0.0'), fileDefault: '0.0.0.0' },
+  {
+    path: ['server', 'port'],
+    export: 'PORT',
+    schema: z.coerce.number().int().min(1).max(65535).default(4321),
+    fileDefault: 4321,
+  },
+  { path: ['database', 'url'], export: 'DATABASE_URL', schema: z.url(), fileDefault: '' },
+  { path: ['redis', 'url'], export: 'REDIS_URL', schema: z.url(), fileDefault: '' },
+  {
+    path: ['database', 'poolMax'],
+    export: 'DB_POOL_MAX',
+    schema: z.coerce.number().int().min(1).max(100).optional().default(20),
+    fileDefault: 20,
+  },
+  {
+    path: ['database', 'statementTimeoutMs'],
+    export: 'DB_STATEMENT_TIMEOUT_MS',
+    schema: z.coerce.number().int().min(1_000).max(120_000).optional().default(30_000),
+    fileDefault: 30_000,
+  },
+  { path: ['database', 'restoreRole'], export: 'RESTORE_ROLE', schema: z.string().min(1).optional(), fileDefault: '' },
+  {
+    path: ['auth', 'sessionSecret'],
+    export: 'SESSION_SECRET',
+    schema: z
+      .string()
+      .min(32)
+      .transform((val) => val.split(',').map((s) => s.trim())),
+    fileDefault: '',
+  },
+  { path: ['security', 'encryptionKey'], export: 'ENCRYPTION_KEY', schema: z.string().min(32), fileDefault: '' },
+  { path: ['paths', 'data'], export: 'DATA_PATH', schema: z.string().min(1), fileDefault: './data' },
+  {
+    path: ['paths', 'defaultFont'],
+    export: 'DEFAULT_FONT_PATH',
+    schema: z.string().min(1).optional(),
+    fileDefault: '',
+  },
+  { path: ['redis', 'keyPrefix'], export: 'REDIS_KEY_PREFIX', schema: z.string().min(1).optional(), fileDefault: '' },
+  {
+    path: ['logging', 'level'],
+    export: 'LOG_LEVEL',
+    schema: z.enum(['debug', 'info', 'warn', 'error', 'silent']).optional(),
+    fileDefault: 'info',
+  },
+] as const satisfies readonly ConfigEntry[]
+
+/** env.ts's flat server schema, keyed by the table's TS export names. */
+export type TableServerSchema = {
+  [E in (typeof CONFIG_TABLE)[number] as E['export']]: E['schema']
+}
+
+/** Process env var name for a table entry — Ghost's `__` separator convention. */
+export function configEnvName(path: readonly string[]): string {
+  return path.join('__')
+}
+
+// ─── Config file location ────────────────────────────────────────────────
+
+/** Scan argv for `--config <path>` / `-c <path>` / `--config=<path>`. */
+function argvConfigPath(argv: string[]): string | null {
+  for (let i = 0; i < argv.length; i++) {
+    const arg = argv[i]
+    if (arg === '--config' || arg === '-c') {
+      const next = argv[i + 1]
+      if (next === undefined) {
+        fail(`命令行参数 ${arg} 需要一个配置文件路径。`)
+      }
+      return resolve(next)
+    }
+    if (arg.startsWith('--config=')) {
+      return resolve(arg.slice('--config='.length))
+    }
+  }
+  return null
+}
+
+export interface ConfigCandidateEnv {
+  sea: boolean
+  cwd: string
+  home: string
+}
+
+/** Location order: --config/-c > <execDir> (SEA only) > cwd > ~/.config. */
+export function configCandidates(argv: string[], env?: ConfigCandidateEnv): string[] {
+  const explicit = argvConfigPath(argv)
+  const { sea, cwd, home } = env ?? { sea: isSea(), cwd: process.cwd(), home: homedir() }
+  const candidates: (string | null)[] = [
+    explicit,
+    // Only the SEA binary owns its executable path; under plain node,
+    // execPath is the node binary itself and must not be consulted.
+    sea ? join(dirname(process.execPath), CONFIG_FILE_NAME) : null,
+    join(cwd, CONFIG_FILE_NAME),
+    join(home, '.config', CONFIG_FILE_NAME),
+  ]
+  return candidates.filter((candidate): candidate is string => candidate !== null)
+}
+
+// ─── File schema (generated from the table) ──────────────────────────────
+
+interface FileSchemaNode {
+  children: Record<string, FileSchemaNode>
+  entry?: ConfigEntry
+}
+
+function buildFileSchema(): z.ZodType {
+  const root: FileSchemaNode = { children: {} }
+  for (const entry of CONFIG_TABLE) {
+    let node = root
+    for (const key of entry.path.slice(0, -1)) {
+      node.children[key] ??= { children: {} }
+      node = node.children[key]
+    }
+    node.children[entry.path[entry.path.length - 1]] = { children: {}, entry }
+  }
+  const build = (node: FileSchemaNode): z.ZodType => {
+    if (node.entry) {
+      return node.entry.schema.optional()
+    }
+    const shape: Record<string, z.ZodType> = {}
+    for (const [key, child] of Object.entries(node.children)) {
+      shape[key] = build(child)
+    }
+    // Every level optional: partial config files are legal — missing values
+    // fall through to schema defaults or env vars.
+    return z.object(shape).strict().optional()
+  }
+  return build(root)
+}
+
+const fileSchema = buildFileSchema()
+
+function defaultFileContents(): Record<string, unknown> {
+  const root: Record<string, unknown> = {}
+  for (const entry of CONFIG_TABLE) {
+    let node = root
+    for (const key of entry.path.slice(0, -1)) {
+      node[key] ??= {}
+      node = unsafeCast<Record<string, unknown>>(node[key])
+    }
+    node[entry.path[entry.path.length - 1]] = entry.fileDefault
+  }
+  return root
+}
+
+// ─── Helpers ─────────────────────────────────────────────────────────────
+
+function fail(message: string): never {
+  process.stderr.write(`${message}\n`)
+  process.exit(1)
+}
+
+function getPath(obj: Record<string, unknown>, path: readonly string[]): unknown {
+  let node: unknown = obj
+  for (const key of path) {
+    if (node === null || typeof node !== 'object' || Array.isArray(node)) {
+      return undefined
+    }
+    node = unsafeCast<Record<string, unknown>>(node)[key]
+  }
+  return node
+}
+
+function setPath(obj: Record<string, unknown>, path: readonly string[], value: unknown): void {
+  let node = obj
+  for (const key of path.slice(0, -1)) {
+    node[key] ??= {}
+    node = unsafeCast<Record<string, unknown>>(node[key])
+  }
+  node[path[path.length - 1]] = value
+}
+
+/** Ghost's `parseValues`: env strings land in the file as native JSON types. */
+function parseEnvValue(raw: string): unknown {
+  if (/^-?\d+(\.\d+)?$/.test(raw)) {
+    return Number(raw)
+  }
+  if (raw === 'true' || raw === 'false') {
+    return raw === 'true'
+  }
+  return raw
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === 'object' && !Array.isArray(value)
+}
+
+/** '' means "unset" in the config file (mirrors emptyStringAsUndefined on
+ *  the env side) — strip it before validation so an auto-created file
+ *  with empty secrets passes its own schema on the next boot. */
+function stripEmptyStrings(value: unknown): unknown {
+  if (Array.isArray(value)) {
+    return value.map(stripEmptyStrings)
+  }
+  if (isRecord(value)) {
+    return Object.fromEntries(
+      Object.entries(value)
+        .filter(([, v]) => v !== '')
+        .map(([k, v]) => [k, stripEmptyStrings(v)]),
+    )
+  }
+  return value
+}
+
+function formatIssues(issues: readonly z.core.$ZodIssue[]): string {
+  return issues.map((issue) => `  - ${issue.path.join('.')}: ${issue.message}`).join('\n')
+}
+
+function writeConfigFile(filePath: string, data: Record<string, unknown>): void {
+  mkdirSync(dirname(filePath), { recursive: true })
+  const tempPath = `${filePath}.${process.pid}.tmp`
+  writeFileSync(tempPath, `${JSON.stringify(data, null, 2)}\n`, { mode: 0o600 })
+  chmodSync(tempPath, 0o600)
+  renameSync(tempPath, filePath)
+}
+
+// ─── Main entry ──────────────────────────────────────────────────────────
+
+/**
+ * Resolve the effective flat runtime env: schema defaults < config file <
+ * env vars, persisting env overrides back into the file. Fails the process
+ * (clear Chinese message) on unreadable/invalid config files.
+ */
+export function loadConfig(): Record<string, unknown> {
+  const explicit = argvConfigPath(process.argv.slice(2))
+  // Vitest without an explicit --config: env-only, never touch the
+  // filesystem — otherwise test runs would drop a config file into the
+  // repo root and persist test secrets. An explicit --config opts into
+  // the full behavior (tests point it at a temp dir).
+  if (process.env.VITEST === 'true' && explicit === null) {
+    return Object.fromEntries(CONFIG_TABLE.map((entry) => [entry.export, process.env[configEnvName(entry.path)]]))
+  }
+  const candidates = configCandidates(process.argv.slice(2))
+
+  const filePath = candidates.find((candidate) => existsSync(candidate)) ?? candidates[0]
+
+  let fileData: Record<string, unknown>
+  if (!existsSync(filePath)) {
+    fileData = defaultFileContents()
+    writeConfigFile(filePath, fileData)
+    process.stderr.write(`已创建默认配置文件:${filePath}\n`)
+  } else {
+    let raw: string
+    try {
+      raw = readFileSync(filePath, 'utf-8')
+    } catch (error) {
+      fail(`无法读取配置文件 ${filePath}:${error instanceof Error ? error.message : String(error)}`)
+    }
+    let parsedJson: unknown
+    try {
+      parsedJson = JSON.parse(raw)
+    } catch (error) {
+      fail(`配置文件 ${filePath} 不是合法的 JSON:${error instanceof Error ? error.message : String(error)}`)
+    }
+    if (!isRecord(parsedJson)) {
+      fail(`配置文件 ${filePath} 的顶层必须是一个 JSON 对象。`)
+    }
+    const stripped = stripEmptyStrings(parsedJson)
+    const result = fileSchema.safeParse(stripped)
+    if (!result.success) {
+      fail(`配置文件 ${filePath} 包含无效内容:\n${formatIssues(result.error.issues)}`)
+    }
+    // Read values from the RAW (stripped) JSON, not result.data: schemas
+    // like sessionSecret carry a transform (string → string[]), and the
+    // transformed output must never round-trip back into the file — the
+    // final transform runs exactly once, downstream in createEnv.
+    fileData = unsafeCast<Record<string, unknown>>(stripped)
+  }
+
+  const runtimeEnv: Record<string, unknown> = {}
+  const overrides: { path: readonly string[]; value: unknown }[] = []
+  for (const entry of CONFIG_TABLE) {
+    const envRaw = process.env[configEnvName(entry.path)]
+    const fileValue = getPath(fileData, entry.path)
+    runtimeEnv[entry.export] = envRaw ?? fileValue
+    if (envRaw !== undefined && envRaw !== fileValue) {
+      overrides.push({ path: entry.path, value: parseEnvValue(envRaw) })
+    }
+  }
+
+  if (overrides.length > 0) {
+    const next = structuredClone(fileData)
+    for (const override of overrides) {
+      setPath(next, override.path, override.value)
+    }
+    try {
+      writeConfigFile(filePath, next)
+    } catch (error) {
+      process.stderr.write(
+        `警告:无法将环境变量覆盖写回配置文件 ${filePath}(${error instanceof Error ? error.message : String(error)}),本次以内存中的生效值继续。\n`,
+      )
+    }
+  }
+
+  return runtimeEnv
+}

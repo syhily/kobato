@@ -17,7 +17,7 @@ const MIGRATIONS_TABLE = '__drizzle_migrations'
  * Used only for CREATE/DATABASE operations.
  */
 function getAdminPool(): Pool {
-  const baseUrl = new URL(process.env.DATABASE_URL!)
+  const baseUrl = new URL(process.env.database__url!)
   baseUrl.pathname = '/postgres'
   return new Pool({ connectionString: baseUrl.toString() })
 }
@@ -119,7 +119,7 @@ export async function createEmptyDatabase(dbName: string): Promise<string> {
     await adminPool.end()
   }
 
-  const testUrl = new URL(process.env.DATABASE_URL!)
+  const testUrl = new URL(process.env.database__url!)
   testUrl.pathname = `/${dbName}`
   const connectionString = testUrl.toString()
 

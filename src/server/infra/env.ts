@@ -1,9 +1,19 @@
 import process from 'node:process'
 import { z } from 'zod'
 
+import { CONFIG_TABLE, loadConfig, type TableServerSchema } from '@/server/infra/config'
 import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
 // Minimal t3-env replacement — Zod-only, server-only
+//
+// Configuration sources (lowest → highest precedence):
+//   1. schema defaults
+//   2. the config file `kobato.config.json` (always present — auto-created;
+//      env overrides are written back into it, see `@/server/infra/config`)
+//   3. process env vars, named by Ghost's `__` convention:
+//      `database__url` overrides `database.url`, etc. The validated TS
+//      export names below (`env.DATABASE_URL`, …) are unchanged; only the
+//      process-level variable names follow the nested convention.
 
 type ServerSchema = Record<string, z.ZodType>
 
@@ -18,7 +28,7 @@ interface EnvIssue {
 
 interface CreateEnvOptions<TServer extends ServerSchema> {
   server: TServer
-  runtimeEnv?: Record<string, string | undefined>
+  runtimeEnv?: Record<string, unknown>
   emptyStringAsUndefined?: boolean
   skipValidation?: boolean
   onValidationError?: (issues: readonly EnvIssue[]) => never
@@ -75,57 +85,22 @@ export function createEnv<TServer extends ServerSchema>(opts: CreateEnvOptions<T
   return unsafeCast<InferOutput<TServer>>(result)
 }
 
-// Project environment schema
+// Project environment schema — built from CONFIG_TABLE (the single source
+// of truth in `@/server/infra/config`). NODE_ENV stays process-env-only:
+// it selects the process mode, not a deployment setting.
 
 const envConfig = {
   server: {
-    // Default configuration. Normally let it as it is.
-    LOG_LEVEL: z.enum(['debug', 'info', 'warn', 'error', 'silent']).optional(),
-    HOST: z.string().min(1).default('0.0.0.0'),
-    PORT: z.coerce.number().int().min(1).max(65535).default(4321),
-
-    // Database
-    DATABASE_URL: z.url(),
-    REDIS_URL: z.url(),
-    DB_POOL_MAX: z.coerce.number().int().min(1).max(100).optional().default(20),
-    DB_STATEMENT_TIMEOUT_MS: z.coerce.number().int().min(1_000).max(120_000).optional().default(30_000),
-
-    // Session cookie signing. Minimum 32 characters to prevent trivial
-    // brute-force forgery of signed session cookies.
-    // Comma-separated list for secret rotation: the first secret is used
-    // for signing; all secrets are tried (in order) for verification.
-    SESSION_SECRET: z
-      .string()
-      .min(32)
-      .transform((val) => val.split(',').map((s) => s.trim())),
-
-    // AES-256-GCM key for encrypting secrets stored in the DB (API keys,
-    // S3 credentials). Generate with: openssl rand -hex 32
-    ENCRYPTION_KEY: z.string().min(32),
-
-    // Root data directory. All filesystem data (fonts, dead-letter files,
-    // MaxMind DB) lives in fixed subdirectories under this path.
-    // Required. Use `/data` in Docker, `./data` in local development.
-    DATA_PATH: z.string().min(1),
-
+    ...unsafeCast<TableServerSchema>(Object.fromEntries(CONFIG_TABLE.map((entry) => [entry.export, entry.schema]))),
     NODE_ENV: z.enum(['development', 'production', 'test']).optional().default('production'),
-
-    // Canvas fallback font path. When set and the /data/fonts/ directory
-    // is empty (e.g. bind-mounted), the file is copied at startup as the
-    // default OG / calendar font. The Docker image ships with font-noto-cjk.
-    DEFAULT_FONT_PATH: z.string().min(1).optional(),
-
-    // Optional prefix added to every Redis key by ioredis.
-    // Primarily used in tests to isolate parallel workers.
-    REDIS_KEY_PREFIX: z.string().min(1).optional(),
   },
-  runtimeEnv: process.env,
   emptyStringAsUndefined: true,
 }
 
 function loadEnv() {
   try {
-    return createEnv(envConfig)
+    const runtimeEnv = { ...loadConfig(), NODE_ENV: process.env.NODE_ENV }
+    return createEnv({ ...envConfig, runtimeEnv })
   } catch (error) {
     // Bootstrap-phase fallback: logger is not yet available because it
     // depends on env itself. Use stderr directly for the fatal message.
@@ -134,13 +109,14 @@ function loadEnv() {
         'Environment validation failed:',
         String(error),
         '',
-        'Please ensure the following variables are correctly set in your .env file:',
+        'Please ensure the following values are set in kobato.config.json',
+        '(or passed as `__`-style environment variables):',
         '',
-        '    DATABASE_URL   — PostgreSQL connection URL',
-        '    REDIS_URL      — Redis connection URL',
-        '    SESSION_SECRET — Session signing secret',
-        '    ENCRYPTION_KEY - The encryption key for sensitive content',
-        '    DATA_PATH      - Root directory for all local filesystem data',
+        '    database.url             — PostgreSQL connection URL',
+        '    redis.url                — Redis connection URL',
+        '    auth.sessionSecret       — Session signing secret',
+        '    security.encryptionKey   - The encryption key for sensitive content',
+        '    paths.data               - Root directory for all local filesystem data',
         '',
       ].join('\n'),
     )
@@ -163,6 +139,7 @@ export const {
   PORT,
   REDIS_KEY_PREFIX,
   REDIS_URL,
+  RESTORE_ROLE,
   SESSION_SECRET,
 } = env
 

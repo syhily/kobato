@@ -946,6 +946,9 @@ describe('contract: module and bundle boundaries', () => {
     //   them ahead of the app graph.
     const allowed = new Set([
       'src/server/infra/env.ts',
+      // The config-file loader is part of the env subsystem: it resolves
+      // `__`-convention env vars over kobato.config.json at module load.
+      'src/server/infra/config.ts',
       'src/server/infra/hono/dev.ts',
       'src/server/infra/sea.ts',
       'src/server/infra/sea-natives.ts',

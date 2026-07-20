@@ -15,13 +15,13 @@ const workerId = Number(process.env.VITEST_WORKER_ID || '0')
 const REDIS_KEY_PREFIX = `test:w${workerId}:`
 
 export const TEST_ENV = {
-  DATABASE_URL: POSTGRES_BASE_URL,
-  REDIS_URL,
-  REDIS_KEY_PREFIX,
-  SESSION_SECRET: 'vitest-session-secret-must-be-at-least-32-chars-long-ok',
-  ENCRYPTION_KEY: 'vitest-encryption-key-must-be-at-least-32-chars-long-ok',
-  DATA_PATH: '/tmp/kobato-data',
-  LOG_LEVEL: 'silent',
+  database__url: POSTGRES_BASE_URL,
+  redis__url: REDIS_URL,
+  redis__keyPrefix: REDIS_KEY_PREFIX,
+  auth__sessionSecret: 'vitest-session-secret-must-be-at-least-32-chars-long-ok',
+  security__encryptionKey: 'vitest-encryption-key-must-be-at-least-32-chars-long-ok',
+  paths__data: '/tmp/kobato-data',
+  logging__level: 'silent',
 } as const
 
 export function ensureTestEnv(): void {

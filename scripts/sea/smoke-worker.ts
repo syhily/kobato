@@ -16,8 +16,9 @@
 // server graph: the pool registers its teardown via
 // `@/server/infra/lifecycle`, which imports `@/server/infra/env` and exits
 // when required variables are missing. `--smoke-worker` therefore needs
-// the full server env (DATABASE_URL, REDIS_URL, SESSION_SECRET,
-// ENCRYPTION_KEY, DATA_PATH) — it validates but never opens a connection.
+// the full server configuration (database.url, redis.url,
+// auth.sessionSecret, security.encryptionKey, paths.data) — it validates
+// but never opens a connection.
 
 import type sharpDefault from 'sharp'
 

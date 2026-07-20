@@ -68,7 +68,7 @@ describe('storage/registry — local fallback', () => {
 
   it('round-trips bytes through the resolved local backend on the real filesystem', async () => {
     // Guard: never run filesystem assertions against the dev data directory.
-    expect(STORAGE_DIR.startsWith(TEST_ENV.DATA_PATH)).toBe(true)
+    expect(STORAGE_DIR.startsWith(TEST_ENV.paths__data)).toBe(true)
 
     setBlogSettingsBundleForTests(LOCAL_ONLY_BUNDLE)
     const { backend, driver } = activeBackend()

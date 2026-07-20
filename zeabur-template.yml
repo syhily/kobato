@@ -81,7 +81,7 @@ spec:
           - title: TimescaleDB port
             content: ${DATABASE_PORT_FORWARDED_PORT}
         env:
-          DATABASE_URL:
+          database__url:
             default: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}
             expose: true
           POSTGRES_DB:
@@ -142,7 +142,7 @@ spec:
           REDIS_PORT:
             default: ${DATABASE_PORT}
             expose: true
-          REDIS_URL:
+          redis__url:
             default: ${REDIS_CONNECTION_STRING}
             expose: true
         configs:
@@ -170,24 +170,26 @@ spec:
         volumes:
           - id: data
             dir: /data
+          - id: config
+            dir: /etc/kobato
         env:
-          HOST:
+          server__host:
             default: 0.0.0.0
-          PORT:
+          server__port:
             default: '4321'
-          LOG_LEVEL:
+          logging__level:
             default: info
-          DB_POOL_MAX:
+          database__poolMax:
             default: '20'
-          DB_STATEMENT_TIMEOUT_MS:
+          database__statementTimeoutMs:
             default: '30000'
-          SESSION_SECRET:
+          auth__sessionSecret:
             default: ${SESSION_SECRET}
-          ENCRYPTION_KEY:
+          security__encryptionKey:
             default: ${ENCRYPTION_KEY}
-          DATA_PATH:
+          paths__data:
             default: /data
-          DEFAULT_FONT_PATH:
+          paths__defaultFont:
             default: /usr/share/fonts/noto/NotoSansCJK-Regular.ttc
           NODE_ENV:
             default: production

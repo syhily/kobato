@@ -48,22 +48,30 @@ declare const __SEA_APP_VERSION__: string
 const USAGE = `kobato — self-hosted blog CMS (single executable)
 
 Usage:
-  kobato                   Start the server (requires the env vars below)
+  kobato                   Start the server (see configuration below)
   kobato --version, -v     Print the version and exit
   kobato --help, -h        Print this help and exit
   kobato --smoke-natives   Extract and load the native packages (sharp,
                            @napi-rs/canvas), run a tiny render, and exit
   kobato --smoke-worker    Round-trip a real sharp job through the
                            worker_threads image pool and exit. Requires
-                           the env vars below (the pool validates env at
-                           import time; nothing connects to them).
+                           the full configuration (validated, never
+                           connected to).
 
-Required environment variables:
-  DATABASE_URL     PostgreSQL connection URL
-  REDIS_URL        Redis connection URL
-  SESSION_SECRET   Session signing secret (>= 32 chars)
-  ENCRYPTION_KEY   AES-256-GCM key for stored secrets (>= 32 chars)
-  DATA_PATH        Root directory for local filesystem data
+Configuration:
+  --config, -c <path>      Config file to use. Resolution order without it:
+                           <binary dir>/kobato.config.json, then
+                           ./kobato.config.json, then
+                           ~/.config/kobato.config.json. The file is created
+                           with defaults when missing.
+  Environment variables    Override config values and are written back into
+                           the file. Names follow the nested path with a
+                           double underscore, e.g.:
+                             database.url           → database__url
+                             redis.url              → redis__url
+                             auth.sessionSecret     → auth__sessionSecret
+                             security.encryptionKey → security__encryptionKey
+                             paths.data             → paths__data
 
 Optional environment variables:
   KOBATO_CACHE_DIR Cache directory for extracted native packages

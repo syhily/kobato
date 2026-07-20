@@ -11,6 +11,38 @@ Repository conventions for AI agents and contributors.
 - Five layers under `src/`: `routes/` (orchestration), `server/` (SSR),
   `client/` (browser), `ui/` (components), `shared/` (isomorphic).
 
+## Config file
+
+Infrastructure configuration (database, Redis, secrets, paths, logging)
+lives in `kobato.config.json` — always present, auto-created with defaults
+when missing. `src/server/infra/config.ts`'s `CONFIG_TABLE` is the single
+source of truth: each row maps a nested config path (`database.url`) to a
+TS export name (`env.DATABASE_URL`) and a Zod schema; the process env var
+name is derived by convention (`path.join('__')` → `database__url`).
+
+- Location order: `--config <path>` / `-c <path>` → SEA
+  `<execDir>/kobato.config.json` (non-SEA skips it) → `./kobato.config.json`
+  → `~/.config/kobato.config.json`. First existing wins; none → created at
+  the first candidate with mode `0o600`.
+- Precedence: schema defaults < config file < env vars. Env-provided
+  values that differ from the file are **written back into it** — env is
+  the injection mechanism, the file converges to the effective config.
+- Flat legacy env names (`DATABASE_URL` etc.) were removed outright — only
+  the `__` names work. The TS export names are unchanged, so `src/`
+  consumers don't care.
+- `VITEST=true` without `--config` → env-only, zero filesystem access
+  (tests must not create files in the repo). An explicit `--config` opts
+  into full behavior (config tests point it at a temp dir).
+- Tooling that spawns the binary MUST pass `--config <tempDir>/…`
+  (`scripts/sea/instance.ts` bootServer, smoke's `--smoke-worker` check) —
+  otherwise env loading auto-creates `kobato.config.json` next to the
+  binary and persists throwaway database URLs and smoke secrets into it.
+- `NODE_ENV`, `KOBATO_CACHE_DIR`, `KOBATO_NATIVES_DIR` stay process-env
+  only (process mode / SEA prelude level). Blog settings stay in the DB.
+- Adding a config value: add a `CONFIG_TABLE` row → update
+  `kobato.config.example.json` + `.env.example` → cover it in
+  `tests/unit/server/infra/config.test.ts`.
+
 ## Subdirectory conventions
 
 Claude loads these additively as it moves through the codebase:
@@ -117,20 +149,22 @@ worker code are embedded in the binary and read from memory
   Runtime-side it could never work anyway: Node finds the blob via
   `dl_iterate_phdr` on the in-memory phdrs (a `NODE_SEA_BLOB` PT_NOTE),
   which a packed stub does not present. Do not re-add an UPX step.
-- `pnpm run sea:smoke [binary]` — 17-check deep smoke: version, natives,
+- `pnpm run sea:smoke [binary]` — 18-check deep smoke: version, natives,
   a per-run `kobato_smoke_<rand>` database (created on the same Postgres
   server, dropped in cleanup — the shared `test` DB is never touched),
   `--smoke-worker` (a real sharp job round-tripping through the
   `worker_threads` image pool), boot + migrations, fresh-install gate,
-  SSR, embedded asset, SQL seed (one minimal admin row plus the
-  `blog.general` / `blog.assets` settings roots — hydration backfills the
-  rest), a graceful restart (the settings snapshot only loads at boot;
-  the install gate itself is evaluated per request), installed `/health`
-  and `/` SSR, the @napi-rs/canvas calendar endpoint over HTTP, SIGTERM
-  ×2, and natives-cache reuse ×2. `--external <url>` runs only the HTTP
-  checks against an already-running server (e.g. a container), seeds
-  nothing, and reports the calendar check as SKIP on uninstalled
-  instances. `--binary-only [binary]` runs just the service-free checks
+  SSR, embedded asset, **config-file convergence** (the env-driven boot
+  writes `database.url` + secrets back into `--config`'s temp file), SQL
+  seed (one minimal admin row plus the `blog.general` / `blog.assets`
+  settings roots — hydration backfills the rest), a graceful restart on a
+  **reduced env that proves the converged file alone boots the server**
+  (the settings snapshot only loads at boot; the install gate itself is
+  evaluated per request), installed `/health` and `/` SSR, the
+  @napi-rs/canvas calendar endpoint over HTTP, SIGTERM ×2, and
+  natives-cache reuse ×2. `--external <url>` runs only the HTTP checks
+  against an already-running server (e.g. a container), seeds nothing,
+  and reports the calendar check as SKIP on uninstalled instances. `--binary-only [binary]` runs just the service-free checks
   (version, natives, worker pool) — the mode the macOS and Windows CI
   targets use, since neither can host the Postgres/Redis service
   containers (no Docker on macOS runners; Windows containers only on
@@ -140,15 +174,16 @@ worker code are embedded in the binary and read from memory
   random password), then runs `tests/e2e` against the live server over
   real HTTP: signin flow, public pages/feed/sitemap, and an admin
   create→render→delete round-trip via oRPC. The server env sets a per-run
-  `REDIS_KEY_PREFIX` so leftover rate-limit buckets on a shared Redis can
+  `redis__keyPrefix` so leftover rate-limit buckets on a shared Redis can
   never fail a login. The instance lifecycle is shared with the smoke via
   `scripts/sea/instance.ts`. The Linux CI matrix runs this right after
   `sea:smoke`.
 - Binary CLI flags: `--version`, `--help`, `--smoke-natives`,
   `--smoke-worker`. The first three need zero environment; the last one
-  requires the full server env (DATABASE_URL, REDIS_URL, SESSION_SECRET,
-  ENCRYPTION_KEY, DATA_PATH) because the pool graph pulls in
-  `@/server/infra/env` at import time — it validates but never connects.
+  requires the full server configuration (database.url, redis.url,
+  auth.sessionSecret, security.encryptionKey, paths.data) because the
+  pool graph pulls in `@/server/infra/env` at import time — it validates
+  but never connects.
 - Delivery targets are linux-x64 / linux-arm64 / darwin-arm64 /
   darwin-x64 / win32-x64 / win32-arm64, built by
   `.github/workflows/sea.yml`. The darwin (macos-15, macos-15-intel) and
