@@ -146,6 +146,13 @@ async function performShutdown(reason: string): Promise<void> {
 
 process.once('SIGTERM', () => requestShutdown('SIGTERM'))
 process.once('SIGINT', () => requestShutdown('SIGINT'))
+// Windows console control events: SIGHUP fires when the console window is
+// closed, SIGBREAK on Ctrl+Break — with SIGINT (Ctrl+C) these are the only
+// "signals" a Windows process can receive (there is no SIGTERM delivery;
+// taskkill / TerminateProcess gives no notification). On POSIX they are
+// legal to listen for and simply extend graceful shutdown to SIGHUP.
+process.once('SIGHUP', () => requestShutdown('SIGHUP'))
+process.once('SIGBREAK', () => requestShutdown('SIGBREAK'))
 
 // ─── Server Phase ────────────────────────────────────────
 

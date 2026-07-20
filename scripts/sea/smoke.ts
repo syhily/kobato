@@ -17,6 +17,13 @@
 // no binary, env, or lifecycle checks, and no database seeding. The
 // calendar check degrades to SKIP on an uninstalled instance.
 //
+// Binary-only mode (`--binary-only <binary>`): just the checks that need
+// no services — --version, --smoke-natives, and --smoke-worker against a
+// dummy (validated, never connected) env. Used by the macOS and Windows
+// CI targets: GitHub macOS runners have no Docker and Windows runners
+// only run Windows containers, so neither can host the Postgres/Redis
+// service containers; the full managed lifecycle stays on Linux.
+//
 // DATABASE_URL / REDIS_URL default to the docker-compose.test.yml stack
 // (postgres on 127.0.0.1:5434, redis on 127.0.0.1:6381) and can be
 // overridden through the environment — CI injects its service URLs the
@@ -24,20 +31,33 @@
 // role in both the local stack and the CI service is the cluster
 // superuser). Imports: Node builtins plus `pg` (already a devDependency,
 // used for the per-run database and the seed SQL); no other dependencies.
+//
+// The instance lifecycle (per-run database, boot, seed, HTTP polling) is
+// shared with the e2e orchestrator via scripts/sea/instance.ts.
 
-import type { ChildProcess } from 'node:child_process'
-import type { WriteStream } from 'node:fs'
-
-import { spawn, spawnSync } from 'node:child_process'
+import { spawnSync } from 'node:child_process'
 import { randomBytes } from 'node:crypto'
-import { createWriteStream } from 'node:fs'
-import { mkdir, mkdtemp, readFile, rm, stat } from 'node:fs/promises'
-import { createServer } from 'node:net'
-import { tmpdir } from 'node:os'
+import { readFile, rm } from 'node:fs/promises'
 import { join, resolve as resolvePath } from 'node:path'
-import pg from 'pg'
+
+import type { SmokeDatabase, SmokeServer } from './instance.ts'
 
 import { fail } from './exec.ts'
+import {
+  bootServer,
+  createSmokeDatabase,
+  DEFAULT_DATABASE_URL,
+  DEFAULT_REDIS_URL,
+  describeUrl,
+  dropSmokeDatabase,
+  ensureBinaryExists,
+  fetchManual,
+  makeTempDirs,
+  seedInstalledInstance,
+  sleep,
+  waitForExit,
+  waitForHttp,
+} from './instance.ts'
 import { seaBinaryPath } from './paths.ts'
 
 interface CheckResult {
@@ -46,40 +66,7 @@ interface CheckResult {
   detail: string
 }
 
-interface ExitState {
-  exited: boolean
-  code: number | null
-  signal: NodeJS.Signals | null
-}
-
-interface TempDirs {
-  root: string
-  data: string
-  cache: string
-  cwd: string
-}
-
-interface SmokeServer {
-  child: ChildProcess
-  exitState: ExitState
-  port: number
-  logStream: WriteStream
-  logClosed: Promise<void>
-  healthResponse: Response | null
-}
-
-interface SmokeDatabase {
-  databaseName: string
-  smokeDatabaseUrl: string
-}
-
-const DEFAULT_DATABASE_URL = 'postgres://test:test@127.0.0.1:5434/test'
-const DEFAULT_REDIS_URL = 'redis://127.0.0.1:6381'
-
-const BOOT_TIMEOUT_MS = 90_000
 const SHUTDOWN_TIMEOUT_MS = 15_000
-const POLL_INTERVAL_MS = 500
-const FETCH_TIMEOUT_MS = 5_000
 const VERSION_TIMEOUT_MS = 30_000
 const NATIVES_TIMEOUT_MS = 120_000
 const LOG_TAIL_LINES = 50
@@ -115,60 +102,8 @@ async function check(name: string, fn: () => string | void | Promise<string | vo
   }
 }
 
-function sleep(ms: number) {
-  return new Promise((resolve) => setTimeout(resolve, ms))
-}
-
 function tailLines(text: string, count: number) {
   return text.trim().split('\n').slice(-count).join('\n')
-}
-
-/** Connection URLs may carry credentials — print host + path only. */
-function describeUrl(rawUrl: string) {
-  try {
-    const url = new URL(rawUrl)
-    return `${url.host}${url.pathname}`
-  } catch {
-    return '(unparseable URL)'
-  }
-}
-
-/** A free high port on loopback, race-prone by nature but fine for a smoke. */
-function pickFreePort() {
-  return new Promise<number>((resolve, reject) => {
-    const server = createServer()
-    server.unref()
-    server.once('error', reject)
-    server.listen(0, '127.0.0.1', () => {
-      const address = server.address()
-      if (address === null || typeof address === 'string') {
-        server.close(() => reject(new Error('listen returned no port')))
-        return
-      }
-      server.close(() => resolve(address.port))
-    })
-  })
-}
-
-async function fetchManual(url: string) {
-  return fetch(url, { redirect: 'manual', signal: AbortSignal.timeout(FETCH_TIMEOUT_MS) })
-}
-
-async function makeTempDirs(): Promise<TempDirs> {
-  const root = await mkdtemp(join(tmpdir(), 'kobato-smoke-'))
-  const dirs = { root, data: join(root, 'data'), cache: join(root, 'cache'), cwd: join(root, 'cwd') }
-  await mkdir(dirs.data, { recursive: true })
-  await mkdir(dirs.cache, { recursive: true })
-  await mkdir(dirs.cwd, { recursive: true })
-  return dirs
-}
-
-async function ensureBinaryExists(binaryPath: string) {
-  try {
-    await stat(binaryPath)
-  } catch {
-    fail(`SEA binary not found at ${binaryPath}. Run pnpm run sea:build first (or pass the binary path).`)
-  }
 }
 
 function checkVersion(binaryPath: string) {
@@ -232,182 +167,11 @@ function checkWorker(binaryPath: string, env: Record<string, string>) {
   return expected
 }
 
-/**
- * Create a throwaway database on the same Postgres server so the run never
- * touches a shared one. Returns the smoke DATABASE_URL (same credentials,
- * swapped path). The caller drops the database in cleanup.
- */
-async function createSmokeDatabase(baseDatabaseUrl: string) {
-  const databaseName = `kobato_smoke_${randomBytes(4).toString('hex')}`
-  const client = new pg.Client({ connectionString: baseDatabaseUrl })
-  await client.connect()
-  try {
-    await client.query(`CREATE DATABASE "${databaseName}"`)
-  } finally {
-    await client.end()
-  }
-  const url = new URL(baseDatabaseUrl)
-  url.pathname = `/${databaseName}`
-  return { databaseName, smokeDatabaseUrl: url.toString() }
-}
-
-/** Best-effort drop of the per-run database; failures are logged, not fatal. */
-async function dropSmokeDatabase(baseDatabaseUrl: string, databaseName: string) {
-  const client = new pg.Client({ connectionString: baseDatabaseUrl })
-  try {
-    await client.connect()
-    // FORCE terminates any lingering backend connections from the stopped
-    // server (PG 13+; the local test stack and CI service are PG 17).
-    await client.query(`DROP DATABASE IF EXISTS "${databaseName}" WITH (FORCE)`)
-  } finally {
-    await client.end().catch(() => undefined)
-  }
-}
-
 // A bcrypt-format placeholder (the same dummy hash the auth layer uses for
 // timing equalization) — the smoke never logs in; the install gate only
 // counts the row.
 const SEED_ADMIN_PASSWORD = '$2b$12$EIX9MbHN0xG0yKqfNR4XPezHbhVzQzMn/37uD.LR8VgNTbQjD/II.'
 const SEED_ADMIN_EMAIL = 'smoke-admin@kobato.local'
-
-/**
- * Flip the instance to "installed" with plain SQL:
- *   1. one minimal admin row — `hasAdmin()` (role = 'admin' AND
- *      deleted_at IS NULL) is the whole install gate;
- *   2. the two settings scope roots the settings hydration requires
- *      (`blog.general` → siteIdentity, `blog.assets` → assets). On the
- *      next boot the server's own hydration backfills every other section
- *      with registry defaults — the same payloads the install flow
- *      writes, without replaying the passkey/setup-token wizard.
- * Both payloads must pass the real section Zod schemas at hydration time.
- */
-async function seedInstalledInstance(databaseUrl: string) {
-  const year = new Date().getFullYear()
-  const general = JSON.stringify({
-    title: 'Kobato Smoke',
-    description: 'SEA smoke test instance',
-    website: 'http://127.0.0.1',
-    keywords: [],
-    author: { name: 'Smoke Admin', email: SEED_ADMIN_EMAIL, url: 'http://127.0.0.1' },
-    locale: 'zh-CN',
-    timeZone: 'Asia/Shanghai',
-    timeFormat: 'yyyy-LL-dd HH:mm',
-    initialYear: year,
-    icpNo: '',
-    moeIcpNo: '',
-  })
-  const assets = JSON.stringify({
-    asset: { host: '127.0.0.1', scheme: 'http' },
-    storage: {
-      enabled: false,
-      endpoint: '',
-      region: '',
-      bucket: '',
-      accessKeyId: '',
-      secretAccessKey: '',
-      forcePathStyle: false,
-      urlTemplate: '',
-    },
-    upload: { maxBytes: 8 * 1024 * 1024, jpegQuality: 82 },
-  })
-
-  const client = new pg.Client({ connectionString: databaseUrl })
-  await client.connect()
-  try {
-    await client.query(
-      `INSERT INTO "user" ("name", "email", "password", "role", "created_at", "updated_at")
-       VALUES ('Smoke Admin', $1, $2, 'admin', now(), now())
-       ON CONFLICT ("email") DO NOTHING`,
-      [SEED_ADMIN_EMAIL, SEED_ADMIN_PASSWORD],
-    )
-    await client.query(
-      `INSERT INTO "setting" ("scope", "data", "updated_at", "updated_by")
-       VALUES ('blog.general', $1::jsonb, now(), NULL), ('blog.assets', $2::jsonb, now(), NULL)
-       ON CONFLICT ("scope") DO NOTHING`,
-      [general, assets],
-    )
-    const { rows } = await client.query(
-      `SELECT count(*)::int AS admins FROM "user" WHERE "role" = 'admin' AND "deleted_at" IS NULL`,
-    )
-    if (rows[0].admins !== 1) {
-      throw new Error(`expected exactly 1 admin after seeding, found ${rows[0].admins}`)
-    }
-    return 'admin row + blog.general/blog.assets inserted'
-  } finally {
-    await client.end()
-  }
-}
-
-/**
- * Spawn the server with an unrelated cwd and both output streams captured
- * to `serverLogPath` (truncated per boot, so each lifecycle gets its own
- * log). Natives extraction, migrations, and the HTTP listener all happen
- * before the first response.
- */
-async function bootServer(binaryPath: string, dirs: TempDirs, env: Record<string, string>): Promise<SmokeServer> {
-  const port = await pickFreePort()
-  const logStream = createWriteStream(serverLogPath ?? fail('serverLogPath unset'), { flags: 'w' })
-  const logClosed = new Promise<void>((resolve) => logStream.once('close', resolve))
-  const child = spawn(binaryPath, [], {
-    cwd: dirs.cwd,
-    env: { ...process.env, ...env, PORT: String(port) },
-    stdio: ['ignore', 'pipe', 'pipe'],
-  })
-  child.stdout?.pipe(logStream)
-  child.stderr?.pipe(logStream)
-  const exitState: ExitState = { exited: false, code: null, signal: null }
-  child.once('exit', (code, signal) => {
-    exitState.exited = true
-    exitState.code = code
-    exitState.signal = signal
-  })
-  return { child, exitState, port, logStream, logClosed, healthResponse: null }
-}
-
-/** Poll until the server answers with ANY HTTP status (or fails boot). */
-async function waitForHttp(url: string, exitState: ExitState) {
-  const deadline = Date.now() + BOOT_TIMEOUT_MS
-  let lastError = 'no attempt completed'
-  while (Date.now() < deadline) {
-    if (exitState.exited) {
-      throw new Error(
-        `server exited during boot (code ${exitState.code ?? 'null'}, signal ${exitState.signal ?? 'none'})`,
-      )
-    }
-    try {
-      return await fetchManual(url)
-    } catch (error) {
-      lastError = error instanceof Error ? error.message : String(error)
-      await sleep(POLL_INTERVAL_MS)
-    }
-  }
-  throw new Error(`no HTTP response within ${BOOT_TIMEOUT_MS / 1000}s (last error: ${lastError})`)
-}
-
-async function waitForExit(server: SmokeServer, timeoutMs: number) {
-  const { child, exitState } = server
-  if (exitState.exited) {
-    return { code: exitState.code, signal: exitState.signal, timeout: false }
-  }
-  // Two single-resolution promises raced: the child's exit, or the timeout
-  // that SIGKILLs it. The loser resolves into the void (its listener/timer
-  // is discarded), so no promise ever resolves twice.
-  const exited = new Promise<{ code: number | null; signal: NodeJS.Signals | null; timeout: boolean }>((resolve) => {
-    child.once('exit', (code, signal) => resolve({ code, signal, timeout: false }))
-  })
-  let timer: NodeJS.Timeout | undefined
-  const timedOut = new Promise<{ code: null; signal: null; timeout: true }>((resolve) => {
-    timer = setTimeout(() => {
-      child.kill('SIGKILL')
-      resolve({ code: null, signal: null, timeout: true })
-    }, timeoutMs)
-  })
-  try {
-    return await Promise.race([exited, timedOut])
-  } finally {
-    clearTimeout(timer)
-  }
-}
 
 async function checkShutdown(server: SmokeServer) {
   const started = Date.now()
@@ -548,8 +312,8 @@ async function runHttpChecks(baseUrl: string, healthResponse: Response | null) {
 /**
  * The @napi-rs/canvas calendar endpoint over HTTP. Managed mode requires
  * a rendered PNG; external mode tolerates an uninstalled instance (the
- * handler cannot render without a hydrated settings snapshot and answers
- * with a redirect or a 500) and reports SKIP instead of failing.
+ * handler cannot render without a settings snapshot and answers with a
+ * redirect or a 500) and reports SKIP instead of failing.
  */
 async function checkCalendar(baseUrl: string, { optional }: { optional: boolean }) {
   await check(`GET ${calendarPath()} — canvas render over HTTP`, async () => {
@@ -602,7 +366,7 @@ async function runManaged(binaryPath: string) {
       await check('kobato --smoke-worker (sharp worker pool)', () => checkWorker(binaryPath, env))
 
       const booted = await check('server boot (natives + migrations + redis)', async () => {
-        server = await bootServer(binaryPath, dirs, env)
+        server = await bootServer(binaryPath, dirs, env, serverLogPath ?? fail('serverLogPath unset'))
         console.log(`    waiting for http://127.0.0.1:${server.port}/health (log: ${serverLogPath})`)
         const started = Date.now()
         server.healthResponse = await waitForHttp(`http://127.0.0.1:${server.port}/health`, server.exitState)
@@ -628,10 +392,13 @@ async function runManaged(binaryPath: string) {
       // gracefully restarted. The restart doubles as a second
       // natives-cache reuse exercise.
       const seeded =
-        booted && (await check('seed admin + core settings (SQL)', () => seedInstalledInstance(env.DATABASE_URL)))
+        booted &&
+        (await check('seed admin + core settings (SQL)', () =>
+          seedInstalledInstance(env.DATABASE_URL, { email: SEED_ADMIN_EMAIL, passwordHash: SEED_ADMIN_PASSWORD }),
+        ))
       if (seeded) {
         const restarted = await check('server restart (seeded install)', async () => {
-          server = await bootServer(binaryPath, dirs, env)
+          server = await bootServer(binaryPath, dirs, env, serverLogPath ?? fail('serverLogPath unset'))
           console.log(`    waiting for http://127.0.0.1:${server.port}/health (log: ${serverLogPath})`)
           const started = Date.now()
           server.healthResponse = await waitForHttp(`http://127.0.0.1:${server.port}/health`, server.exitState)
@@ -678,6 +445,38 @@ async function runManaged(binaryPath: string) {
   }
 }
 
+/**
+ * Binary-only mode: the service-free checks (CLI flags, natives extraction
+ * and loading, the sharp worker pool). `--smoke-worker` validates the full
+ * server env at import time but never connects, so dummy URLs satisfy it.
+ * Returns a cleanup callback for the temp dirs (natives cache included).
+ */
+async function runBinaryOnly(binaryPath: string) {
+  await ensureBinaryExists(binaryPath)
+  const dirs = await makeTempDirs()
+
+  console.log(`    binary:   ${binaryPath}`)
+  console.log(`    temp dir: ${dirs.root}`)
+
+  await check('kobato --version', () => checkVersion(binaryPath))
+  await check('kobato --smoke-natives (sharp + canvas)', () => checkNatives(binaryPath, dirs.cache))
+  await check('kobato --smoke-worker (sharp worker pool)', () =>
+    checkWorker(binaryPath, {
+      DATABASE_URL: process.env.DATABASE_URL ?? DEFAULT_DATABASE_URL,
+      REDIS_URL: process.env.REDIS_URL ?? DEFAULT_REDIS_URL,
+      SESSION_SECRET: randomBytes(32).toString('hex'),
+      ENCRYPTION_KEY: randomBytes(32).toString('hex'),
+      DATA_PATH: dirs.data,
+      KOBATO_CACHE_DIR: dirs.cache,
+      NODE_ENV: 'production',
+    }),
+  )
+
+  return async () => {
+    await rm(dirs.root, { recursive: true, force: true }).catch(() => undefined)
+  }
+}
+
 function normalizeBaseUrl(rawBaseUrl: string) {
   let url: URL
   try {
@@ -701,9 +500,13 @@ async function main() {
     await runHttpChecks(baseUrl, null)
     // No seeding in external mode — the database belongs to someone else.
     await checkCalendar(baseUrl, { optional: true })
+  } else if (args[0] === '--binary-only') {
+    const binaryPath = args[1] ? resolvePath(args[1]) : seaBinaryPath()
+    console.log('==> SEA smoke (binary-only)')
+    cleanup = await runBinaryOnly(binaryPath)
   } else {
     if (args[0]?.startsWith('--')) {
-      fail(`Unknown flag ${args[0]}. Usage: node scripts/sea/smoke.ts [--external <baseUrl> | path-to-binary]`)
+      fail('Usage: node scripts/sea/smoke.ts [--external <baseUrl> | --binary-only [path-to-binary] | path-to-binary]')
     }
     const binaryPath = args[0] ? resolvePath(args[0]) : seaBinaryPath()
     console.log('==> SEA smoke (managed)')

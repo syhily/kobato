@@ -131,12 +131,20 @@ export function requireExternal<T>(name: string): T {
 
 /**
  * Base cache directory for runtime-extracted files (native packages).
- * `KOBATO_CACHE_DIR` env > `$XDG_CACHE_HOME/kobato` > `~/.cache/kobato`.
+ * `KOBATO_CACHE_DIR` env > Windows: `%LOCALAPPDATA%\kobato` >
+ * `$XDG_CACHE_HOME/kobato` > `~/.cache/kobato`.
  */
 export function resolveCacheDir(): string {
   const override = process.env.KOBATO_CACHE_DIR
   if (override !== undefined && override !== '') {
     return override
+  }
+  if (process.platform === 'win32') {
+    const localAppData = process.env.LOCALAPPDATA
+    return join(
+      localAppData !== undefined && localAppData !== '' ? localAppData : join(homedir(), 'AppData', 'Local'),
+      'kobato',
+    )
   }
   const xdg = process.env.XDG_CACHE_HOME
   if (xdg !== undefined && xdg !== '') {

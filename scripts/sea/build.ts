@@ -21,7 +21,7 @@ import { collectSeaAssets } from './assets.ts'
 import { runBlobStep } from './blob.ts'
 import { fail, run } from './exec.ts'
 import { runInjectStep } from './inject.ts'
-import { repoRoot, seaBinaryPath, seaBinarySha256Path, seaIntermediatesDir } from './paths.ts'
+import { repoRoot, seaBinaryFileName, seaBinaryPath, seaBinarySha256Path, seaIntermediatesDir } from './paths.ts'
 
 const REQUIRED_NODE_MAJOR = 24
 
@@ -46,7 +46,7 @@ async function locateCnfsWasm() {
 async function writeBinaryChecksum() {
   const hash = createHash('sha256')
   hash.update(await readFile(seaBinaryPath()))
-  await writeFile(seaBinarySha256Path(), `${hash.digest('hex')}  kobato\n`)
+  await writeFile(seaBinarySha256Path(), `${hash.digest('hex')}  ${seaBinaryFileName()}\n`)
 }
 
 async function main() {

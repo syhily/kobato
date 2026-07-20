@@ -12,6 +12,13 @@ Tests are split into three Vitest workspace projects. **All three mirror the `sr
   If you test `src/server/domains/posts/services/cms-posts.ts`, the test lives at `tests/it/server/domains/posts/services/cms-posts.test.ts`.
 - **`tests/snaps/`** — React SSR snapshot tests (render-to-string, no DB).
   If you test `src/ui/public/post/PostListViews.tsx`, the test lives at `tests/snaps/ui/public/post/post-list-views.test.tsx`.
+- **`tests/e2e/`** — True HTTP e2e: tests drive a real kobato instance (the
+  SEA binary booted by `scripts/sea/e2e.ts`) over plain `fetch`. No
+  in-process shortcuts, no `vi.mock`, no direct DB access. **Not part of
+  `pnpm test`** (the root config lists projects explicitly) — run it via
+  `pnpm run sea:e2e`, which boots the instance and injects the
+  `KOBATO_E2E_BASE_URL` / `KOBATO_E2E_ADMIN_EMAIL` /
+  `KOBATO_E2E_ADMIN_PASSWORD` env contract.
 
 Cross-cutting integration tests still live inside `tests/it/` under the primary domain they exercise — there is no `features/` bucket.
 
@@ -96,5 +103,7 @@ ceremony:
   - `#/_helpers/rpc-call` — oRPC test caller (integration only)
   - `#/_helpers/session` — session fixtures (integration only)
   - `#/_helpers/fetch` — fetch mocks (integration only)
+- `#/_helpers/e2e-client` — cookie-jar HTTP client + real signin (e2e only)
+- `#/_helpers/e2e-rpc` — oRPC-over-HTTP caller (e2e only)
 - `#/*` is mapped to `./tests/*` in `tsconfig.json` and resolved by Vitest.
 - `@/*` continues to map to `src/*`.

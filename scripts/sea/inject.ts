@@ -1,7 +1,8 @@
 // SEA blob injection: copy the Node executable and inject the blob with
-// postject. macOS (dev machines only — Linux is the delivery target)
-// needs the existing signature removed before injection and an ad-hoc
-// re-sign afterwards, or the kernel kills the modified arm64 binary.
+// postject. macOS needs the existing signature removed before injection
+// and an ad-hoc re-sign afterwards, or the kernel kills the modified
+// arm64 binary. Windows needs neither — postject patches the PE resource
+// section and no extra flags are required.
 
 import { chmod, copyFile, mkdir, readFile, stat } from 'node:fs/promises'
 import { resolve } from 'node:path'
@@ -10,7 +11,10 @@ import { fail, run, tryRun } from './exec.ts'
 import { repoRoot, SEA_SENTINEL_FUSE, seaBinaryPath, seaBlobPath, seaDistDir } from './paths.ts'
 
 function postjectPath() {
-  return resolve(repoRoot, 'node_modules', '.bin', 'postject')
+  const bin = resolve(repoRoot, 'node_modules', '.bin', 'postject')
+  // The .bin entry is a .cmd shim on Windows (run through the shell —
+  // see exec.ts); on POSIX it is an executable script directly.
+  return process.platform === 'win32' ? `${bin}.cmd` : bin
 }
 
 async function ensureBlobExists() {

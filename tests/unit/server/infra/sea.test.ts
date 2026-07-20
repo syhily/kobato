@@ -3,7 +3,7 @@ import type sharpDefault from 'sharp'
 import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'node:fs'
 import { homedir, tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { getEmbeddedAsset, isSea, listEmbeddedAssetKeys, requireExternal, resolveCacheDir } from '@/server/infra/sea'
 
@@ -85,5 +85,30 @@ describe('infra/sea — resolveCacheDir', () => {
     vi.stubEnv('KOBATO_CACHE_DIR', undefined)
     vi.stubEnv('XDG_CACHE_HOME', undefined)
     expect(resolveCacheDir()).toBe(join(homedir(), '.cache', 'kobato'))
+  })
+
+  describe('on Windows', () => {
+    const realPlatform = process.platform
+
+    beforeEach(() => {
+      Object.defineProperty(process, 'platform', { value: 'win32' })
+    })
+
+    afterEach(() => {
+      Object.defineProperty(process, 'platform', { value: realPlatform })
+    })
+
+    it('falls back to %LOCALAPPDATA%\\kobato', () => {
+      vi.stubEnv('KOBATO_CACHE_DIR', undefined)
+      vi.stubEnv('XDG_CACHE_HOME', '/data/xdg')
+      vi.stubEnv('LOCALAPPDATA', 'C:\\Users\\test\\AppData\\Local')
+      expect(resolveCacheDir()).toBe(join('C:\\Users\\test\\AppData\\Local', 'kobato'))
+    })
+
+    it('falls back to ~/AppData/Local/kobato when LOCALAPPDATA is unset', () => {
+      vi.stubEnv('KOBATO_CACHE_DIR', undefined)
+      vi.stubEnv('LOCALAPPDATA', undefined)
+      expect(resolveCacheDir()).toBe(join(homedir(), 'AppData', 'Local', 'kobato'))
+    })
   })
 })

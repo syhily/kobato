@@ -6,7 +6,9 @@ export default defineConfig({
   },
   test: {
     silent: 'passed-only',
-    projects: ['tests/*/vitest.config.ts'],
+    // Explicit list — tests/e2e needs a live SEA-booted instance (it is
+    // driven by `pnpm run sea:e2e`) and must never join the default run.
+    projects: ['tests/unit/vitest.config.ts', 'tests/it/vitest.config.ts', 'tests/snaps/vitest.config.ts'],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'html'],

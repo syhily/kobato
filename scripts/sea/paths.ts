@@ -8,7 +8,7 @@
 //   intermediates/manifest.json      embedded asset manifest (see assets.mjs)
 //   intermediates/sea-config.json    node --experimental-sea-config input
 //   intermediates/kobato.blob        generated SEA blob
-//   kobato                           final single-executable binary
+//   kobato(.exe)                     final single-executable binary
 //   kobato.sha256                    sha256sum-format checksum file
 
 import { resolve } from 'node:path'
@@ -56,7 +56,12 @@ export function seaBlobPath() {
 }
 
 export function seaBinaryPath() {
-  return resolve(seaDistDir(), 'kobato')
+  return resolve(seaDistDir(), seaBinaryFileName())
+}
+
+/** Windows refuses to execute a binary without the .exe extension. */
+export function seaBinaryFileName() {
+  return process.platform === 'win32' ? 'kobato.exe' : 'kobato'
 }
 
 export function seaBinarySha256Path() {

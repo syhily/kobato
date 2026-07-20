@@ -130,18 +130,47 @@ worker code are embedded in the binary and read from memory
   ×2, and natives-cache reuse ×2. `--external <url>` runs only the HTTP
   checks against an already-running server (e.g. a container), seeds
   nothing, and reports the calendar check as SKIP on uninstalled
-  instances.
+  instances. `--binary-only [binary]` runs just the service-free checks
+  (version, natives, worker pool) — the mode the macOS and Windows CI
+  targets use, since neither can host the Postgres/Redis service
+  containers (no Docker on macOS runners; Windows containers only on
+  Windows runners).
+- `pnpm run sea:e2e [binary]` — boots the binary exactly like the managed
+  smoke (per-run database, migrations, seeded admin — but with a KNOWN
+  random password), then runs `tests/e2e` against the live server over
+  real HTTP: signin flow, public pages/feed/sitemap, and an admin
+  create→render→delete round-trip via oRPC. The server env sets a per-run
+  `REDIS_KEY_PREFIX` so leftover rate-limit buckets on a shared Redis can
+  never fail a login. The instance lifecycle is shared with the smoke via
+  `scripts/sea/instance.ts`. The Linux CI matrix runs this right after
+  `sea:smoke`.
 - Binary CLI flags: `--version`, `--help`, `--smoke-natives`,
   `--smoke-worker`. The first three need zero environment; the last one
   requires the full server env (DATABASE_URL, REDIS_URL, SESSION_SECRET,
   ENCRYPTION_KEY, DATA_PATH) because the pool graph pulls in
   `@/server/infra/env` at import time — it validates but never connects.
-- Delivery targets are linux-x64 / linux-arm64, built by
-  `.github/workflows/sea.yml`. Local macOS builds work for verification
-  but are not a delivery target; they need an official Node.js 24
-  distribution — Homebrew's node lacks the SEA sentinel fuse
-  (`scripts/sea/inject.ts` preflights this). An official tarball is
-  cached under the gitignored `tmp/`.
+- Delivery targets are linux-x64 / linux-arm64 / darwin-arm64 /
+  darwin-x64 / win32-x64 / win32-arm64, built by
+  `.github/workflows/sea.yml`. The darwin (macos-15, macos-15-intel) and
+  win32 (windows-2025, windows-11-arm) matrix jobs run the
+  `--binary-only` smoke; the deep managed smoke stays Linux-only. The
+  darwin jobs need the `shasum -a 256` spelling (macOS has no
+  `sha256sum`); the win32 jobs run the rename/package steps under Git
+  Bash (`shell: bash`) and ship `kobato.exe`. Local macOS builds need an
+  official Node.js 24 distribution — Homebrew's node lacks the SEA
+  sentinel fuse (`scripts/sea/inject.ts` preflights this). An official
+  tarball is cached under the gitignored `tmp/`.
+- Windows runtime notes: the binary is `kobato.exe` (no extension →
+  refuses to execute); the build spawns everything through cmd
+  (`shell: true` in `scripts/sea/exec.ts`) because pnpm and the
+  `.bin/postject` entry are `.cmd` shims there. The natives cache
+  defaults to `%LOCALAPPDATA%\kobato` (`resolveCacheDir`). Windows
+  delivers no SIGTERM — graceful shutdown relies on SIGINT (Ctrl+C),
+  SIGHUP (console window closed), and SIGBREAK (Ctrl+Break), all
+  registered in `src/server/infra/lifecycle.ts`; service deployments
+  should wrap the binary with WinSW/NSSM, whose stop action sends
+  Ctrl+C into that same path. `taskkill /F` (TerminateProcess) can
+  never be graceful, on any platform level.
 
 Runtime rules for contributors:
 
@@ -178,7 +207,10 @@ The gate (`gate.ts`) requires ALL of: `isSea()`, linux x64/arm64, not
 containerized (`/.dockerenv` / `/proc/1/cgroup`), a writable binary
 directory, and a non-`-dev` build. Refusals surface as Chinese admin-facing
 strings in `reasons` — Docker deployments are refused by design (upgrade by
-pulling a new image). Never bypass the gate from a new caller.
+pulling a new image), and so are the darwin/win32 targets (macOS would
+need re-signing after the swap; Windows self-update is simply out of
+scope — both upgrade by downloading the new archive). Never bypass the
+gate from a new caller.
 
 Admin procedures: `admin.update.check` / `admin.update.apply` /
 `admin.update.status` (oRPC, admin role). `apply` runs the job in-process

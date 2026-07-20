@@ -76,6 +76,9 @@ jobs:
           mv kobato "$BIN"
           rm kobato.sha256
       - run: pnpm run sea:smoke "dist-sea/kobato-${{ matrix.target }}"
+      # True HTTP e2e against the SEA-booted instance (tests/e2e). Only on
+      # Linux — the darwin/win32 jobs have no Postgres/Redis services.
+      - run: pnpm run sea:e2e "dist-sea/kobato-${{ matrix.target }}"
       - name: Package tar.gz with checksum
         env:
           BIN: kobato-${{ matrix.target }}
@@ -92,12 +95,120 @@ jobs:
             dist-sea/kobato-${{ matrix.target }}.tar.gz
             dist-sea/kobato-${{ matrix.target }}.tar.gz.sha256
 
+  # macOS targets: separate job because GitHub service containers (the
+  # Postgres/Redis the deep smoke boots against) only run on Linux. The
+  # macOS smoke is therefore binary-only (--version / --smoke-natives /
+  # --smoke-worker); the full server lifecycle stays covered by the Linux
+  # targets above.
+  build-darwin:
+    name: build (${{ matrix.target }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-15
+            target: darwin-arm64
+          - os: macos-15-intel
+            target: darwin-x64
+    steps:
+      - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.8.0
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: 'pnpm'
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm run sea:build
+      - name: Rename output to kobato-<target>
+        env:
+          BIN: kobato-${{ matrix.target }}
+        working-directory: dist-sea
+        # macOS has no sha256sum; shasum -a 256 is flag-compatible.
+        run: |
+          shasum -a 256 -c kobato.sha256
+          mv kobato "$BIN"
+          rm kobato.sha256
+      - run: pnpm run sea:smoke --binary-only "dist-sea/kobato-${{ matrix.target }}"
+      - name: Package tar.gz with checksum
+        env:
+          BIN: kobato-${{ matrix.target }}
+        working-directory: dist-sea
+        run: |
+          tar -czf "$BIN.tar.gz" "$BIN"
+          shasum -a 256 "$BIN.tar.gz" > "$BIN.tar.gz.sha256"
+          shasum -a 256 -c "$BIN.tar.gz.sha256"
+      - uses: actions/upload-artifact@v7
+        with:
+          name: kobato-${{ matrix.target }}
+          retention-days: 7
+          path: |
+            dist-sea/kobato-${{ matrix.target }}.tar.gz
+            dist-sea/kobato-${{ matrix.target }}.tar.gz.sha256
+
+  # Windows targets: same split as macOS — the deep smoke needs Linux
+  # service containers, and Windows runners can only run Windows
+  # containers, so the smoke is binary-only here too. The rename/package
+  # steps run under Git Bash (sha256sum/tar); the binary is kobato.exe.
+  build-windows:
+    name: build (${{ matrix.target }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-2025
+            target: win32-x64
+          - os: windows-11-arm
+            target: win32-arm64
+    steps:
+      - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.8.0
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: 'pnpm'
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm run sea:build
+      - name: Rename output to kobato-<target>
+        env:
+          BIN: kobato-${{ matrix.target }}
+        working-directory: dist-sea
+        shell: bash
+        run: |
+          sha256sum -c kobato.sha256
+          mv kobato.exe "$BIN.exe"
+          rm kobato.sha256
+      - run: pnpm run sea:smoke --binary-only "dist-sea/kobato-${{ matrix.target }}.exe"
+      - name: Package tar.gz with checksum
+        env:
+          BIN: kobato-${{ matrix.target }}
+        working-directory: dist-sea
+        shell: bash
+        run: |
+          tar -czf "$BIN.tar.gz" "$BIN.exe"
+          sha256sum "$BIN.tar.gz" > "$BIN.tar.gz.sha256"
+          sha256sum -c "$BIN.tar.gz.sha256"
+      - uses: actions/upload-artifact@v7
+        with:
+          name: kobato-${{ matrix.target }}
+          retention-days: 7
+          path: |
+            dist-sea/kobato-${{ matrix.target }}.tar.gz
+            dist-sea/kobato-${{ matrix.target }}.tar.gz.sha256
+
   # Release assets are uploaded only for release events, in a separate job
   # so the elevated contents:write token never reaches the build matrix.
   release-upload:
     name: upload release assets
     if: github.event_name == 'release'
-    needs: build
+    needs: [build, build-darwin, build-windows]
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     permissions:
@@ -105,11 +216,11 @@ jobs:
     steps:
       - uses: actions/download-artifact@v8
         with:
-          pattern: kobato-linux-*
+          pattern: kobato-*
           path: dist-sea
           merge-multiple: true
       - name: Upload binaries to the GitHub Release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_REPO: ${{ github.repository }}
-        run: gh release upload "${{ github.event.release.tag_name }}" dist-sea/kobato-linux-* --clobber
+        run: gh release upload "${{ github.event.release.tag_name }}" dist-sea/kobato-* --clobber

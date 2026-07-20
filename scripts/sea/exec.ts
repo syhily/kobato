@@ -14,8 +14,13 @@ interface RunOptions {
   env?: NodeJS.ProcessEnv
 }
 
+// shell is REQUIRED on Windows: pnpm and the node_modules/.bin tools are
+// .cmd shims there, and CreateProcess cannot execute them directly —
+// only cmd.exe can.
+const NEEDS_SHELL = process.platform === 'win32'
+
 export function run(command: string, args: string[], options: RunOptions = {}) {
-  const result = spawnSync(command, args, { cwd: repoRoot, stdio: 'inherit', ...options })
+  const result = spawnSync(command, args, { cwd: repoRoot, stdio: 'inherit', shell: NEEDS_SHELL, ...options })
   if (result.error) {
     fail(`Failed to spawn ${command}: ${result.error.message}`)
   }
@@ -26,7 +31,7 @@ export function run(command: string, args: string[], options: RunOptions = {}) {
 
 /** Best-effort variant of `run` — logs a warning instead of failing. */
 export function tryRun(command: string, args: string[], options: RunOptions = {}) {
-  const result = spawnSync(command, args, { cwd: repoRoot, stdio: 'inherit', ...options })
+  const result = spawnSync(command, args, { cwd: repoRoot, stdio: 'inherit', shell: NEEDS_SHELL, ...options })
   if (result.error || result.status !== 0) {
     console.warn(`Warning: ${command} ${args.join(' ')} failed (ignored)`)
   }
