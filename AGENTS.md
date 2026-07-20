@@ -346,6 +346,14 @@ re-introduces the "empty row disappears" bug. The trade-off is accepted: a
 remote concurrent edit to the same section won't surface until the local
 edit is committed.
 
+**No-op reseed skip (do not remove):** even when clean, the reseed calls
+`reset()` ONLY if `toState(source)` deep-differs from the current form
+values. A revalidate always delivers a new `source` identity — including
+right after the card's own save round-trips — and an unconditional `reset()`
+regenerates `useFieldArray` ids (remounting every row and dropping focus
+mid-typing) and clobbers the caret in plain inputs. This was the
+"one letter and the social-link input loses focus" bug.
+
 **No `debounceMs` option** — it was removed. Don't re-add onChange
 auto-save; the whole point of the rework is that typing never fires a
 request.

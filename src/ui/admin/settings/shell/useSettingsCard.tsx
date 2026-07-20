@@ -153,10 +153,16 @@ export function useSettingsCard<TSource extends object, TState extends FieldValu
     const hasUncommittedEdits = JSON.stringify(currentValues) !== JSON.stringify(lastCommitted)
 
     if (!hasUncommittedEdits) {
-      // Clean — safe to adopt the new server snapshot verbatim.
       const next = unsafeCast<DefaultValues<TState>>(toState(source))
-      reset(next)
-      setLastCommitted(next)
+      // Skip the reset when the incoming snapshot maps to the SAME form
+      // state — the typical case right after this card's own save
+      // round-trips through the revalidator. `reset()` is never free: it
+      // regenerates useFieldArray ids (remounting every row and dropping
+      // focus mid-typing) and clobbers the caret in plain inputs.
+      if (JSON.stringify(next) !== JSON.stringify(currentValues)) {
+        reset(next)
+        setLastCommitted(next)
+      }
       if (optimisticSource !== null) {
         setOptimisticSource(null)
       }
