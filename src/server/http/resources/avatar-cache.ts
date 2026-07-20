@@ -2,7 +2,7 @@ import { Buffer } from 'node:buffer'
 
 import { createInflight } from '@/server/infra/redis/inflight'
 import { storage } from '@/server/infra/redis/storage'
-import { getCacheSettings } from '@/shared/config/getters'
+import { getCacheSettings, requireBlogSettingsSection } from '@/shared/config/getters'
 
 export interface Avatar {
   status: AvatarStatus
@@ -25,7 +25,16 @@ const avatarInflight = createInflight<Avatar | null>()
 function avatarConfig(): { prefix: string; ttlSeconds: number } {
   return getCacheSettings().cache.avatar
 }
-const avatarKey = (email: string): string => `${avatarConfig().prefix}${email}`
+const avatarKey = (email: string): string => `${avatarConfig().prefix}${avatarSize()}:${email}`
+
+// The fetch size is part of the cache key: the gravatar mirror is asked for
+// `comments.avatar.size` pixels (QQ maps the same setting onto qlogo specs),
+// so after an admin bumps that setting the next read must refetch instead of
+// serving the stale low-res payload until TTL expiry. Entries under the old
+// size age out at their stored TTL, same as a prefix rename.
+function avatarSize(): number {
+  return requireBlogSettingsSection('comments').comments.avatar.size
+}
 
 // Single-key cache layout (was two keys: `avatar-status-${email}` plus
 // `avatar-${email}`). Byte 0 is the status sentinel, the rest is the
@@ -61,8 +70,9 @@ function decodeAvatar(payload: unknown): Avatar | null {
 }
 
 export async function loadAvatar(email: string): Promise<Avatar | null> {
-  return avatarInflight(email, async () => {
-    const payload = await storage.getItemRaw(avatarKey(email))
+  const key = avatarKey(email)
+  return avatarInflight(key, async () => {
+    const payload = await storage.getItemRaw(key)
     return decodeAvatar(payload)
   })
 }

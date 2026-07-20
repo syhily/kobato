@@ -26,6 +26,7 @@ describe('avatar-cache helpers', () => {
       getCacheSettings: vi.fn().mockReturnValue({
         cache: { avatar: { prefix: 'avatar:', ttlSeconds: 3600 } },
       }),
+      requireBlogSettingsSection: vi.fn().mockReturnValue({ comments: { avatar: { size: 80 } } }),
     }))
 
     const { loadAvatar } = await importModule()
@@ -48,6 +49,7 @@ describe('avatar-cache helpers', () => {
       getCacheSettings: vi.fn().mockReturnValue({
         cache: { avatar: { prefix: 'avatar:', ttlSeconds: 3600 } },
       }),
+      requireBlogSettingsSection: vi.fn().mockReturnValue({ comments: { avatar: { size: 80 } } }),
     }))
 
     const { loadAvatar } = await importModule()
@@ -64,13 +66,14 @@ describe('avatar-cache helpers', () => {
       getCacheSettings: vi.fn().mockReturnValue({
         cache: { avatar: { prefix: 'avatar:', ttlSeconds: 3600 } },
       }),
+      requireBlogSettingsSection: vi.fn().mockReturnValue({ comments: { avatar: { size: 80 } } }),
     }))
 
     const { cacheAvatar } = await importModule()
     await cacheAvatar({ email: 'a@example.com', status: AvatarStatus.HAVE_AVATAR, buffer: Buffer.from('png') })
 
     expect(setItemRaw).toHaveBeenCalledWith(
-      'avatar:a@example.com',
+      'avatar:80:a@example.com',
       Buffer.concat([Buffer.from([AvatarStatus.HAVE_AVATAR]), Buffer.from('png')]),
       { ttl: 3600 },
     )
@@ -86,12 +89,13 @@ describe('avatar-cache helpers', () => {
       getCacheSettings: vi.fn().mockReturnValue({
         cache: { avatar: { prefix: 'avatar:', ttlSeconds: 3600 } },
       }),
+      requireBlogSettingsSection: vi.fn().mockReturnValue({ comments: { avatar: { size: 80 } } }),
     }))
 
     const { cacheAvatar } = await importModule()
     await cacheAvatar({ email: 'a@example.com', status: AvatarStatus.NO_AVATAR })
 
-    expect(setItemRaw).toHaveBeenCalledWith('avatar:a@example.com', Buffer.from([AvatarStatus.NO_AVATAR]), {
+    expect(setItemRaw).toHaveBeenCalledWith('avatar:80:a@example.com', Buffer.from([AvatarStatus.NO_AVATAR]), {
       ttl: 3600,
     })
   })

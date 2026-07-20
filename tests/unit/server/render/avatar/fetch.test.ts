@@ -59,11 +59,18 @@ describe('render/avatar/fetch — isQQEmail / getQQAvatarUrl', () => {
   })
 
   it('returns null for non-QQ emails', () => {
-    expect(getQQAvatarUrl('a@b.com')).toBeNull()
+    expect(getQQAvatarUrl('a@b.com', 80)).toBeNull()
   })
 
   it('builds the QQ avatar URL from the numeric uin', () => {
-    expect(getQQAvatarUrl('12345@qq.com')).toContain('dst_uin=12345')
+    expect(getQQAvatarUrl('12345@qq.com', 80)).toContain('dst_uin=12345')
+  })
+
+  it('picks spec=4 for sizes up to 100 and spec=5 above', () => {
+    expect(getQQAvatarUrl('12345@qq.com', 100)).toContain('spec=4')
+    expect(getQQAvatarUrl('12345@qq.com', 80)).toContain('spec=4')
+    expect(getQQAvatarUrl('12345@qq.com', 101)).toContain('spec=5')
+    expect(getQQAvatarUrl('12345@qq.com', 512)).toContain('spec=5')
   })
 })
 

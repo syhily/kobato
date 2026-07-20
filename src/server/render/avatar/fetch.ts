@@ -111,7 +111,7 @@ export function isQQEmail(email: string): boolean {
   return QQ_EMAIL_RE.test(email.trim())
 }
 
-export function getQQAvatarUrl(email: string): string | null {
+export function getQQAvatarUrl(email: string, size: number): string | null {
   const match = email
     .trim()
     .toLowerCase()
@@ -119,14 +119,18 @@ export function getQQAvatarUrl(email: string): string | null {
   if (!match) {
     return null
   }
-  return `https://q.qlogo.cn/headimg_dl?dst_uin=${match[1]}&spec=4`
+  // qlogo only serves fixed sizes (spec=4 → 100×100, spec=5 → 640×640).
+  // Pick the smallest spec that still covers the requested size so comments
+  // never upscale a low-res payload.
+  const spec = size > 100 ? 5 : 4
+  return `https://q.qlogo.cn/headimg_dl?dst_uin=${match[1]}&spec=${spec}`
 }
 
 /** Fetch the avatar PNG bytes from the QQ avatar CDN.
  *  Returns `null` when the request fails. The buffer is compressed
  *  before being handed back so the cache layer stores the smaller payload. */
 export async function fetchQQAvatarImage(email: string): Promise<Buffer | null> {
-  const url = getQQAvatarUrl(email)
+  const url = getQQAvatarUrl(email, requireBlogSettingsSection('comments').comments.avatar.size)
   if (url === null) {
     return null
   }
