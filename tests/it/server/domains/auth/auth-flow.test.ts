@@ -59,7 +59,7 @@ const settingsSnapshot = await import('@/server/domains/settings/services/hydrat
 const rateLimit = await import('@/server/infra/rate-limit')
 import type { User } from '@/server/infra/db/types'
 
-import { signUpInitialAdminWithSession } from '@/server/domains/auth/flows'
+import { signUpInitialAdminWithSession } from '@/server/domains/auth/signin-flow'
 
 const verifyUserPasswordMock = vi.mocked(userQuery.verifyUserPassword)
 

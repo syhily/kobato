@@ -42,7 +42,7 @@ vi.mock('@/server/domains/audit/services/record', () => ({
   recordAuditEvent: mocks.recordAuditEvent,
 }))
 
-import { signInWithPasskey } from '@/server/domains/auth/passkey-flow'
+import { signInWithPasskey } from '@/server/domains/auth/signin-flow'
 
 const db = {} as NodePgDatabase
 const session = { id: 'sess-1' } as unknown as BlogSession
@@ -123,20 +123,10 @@ describe('auth/passkey-flow — signInWithPasskey', () => {
       CLIENT,
       { authMethod: 'passkey' },
     )
-    expect(mocks.updateLastLogin).toHaveBeenCalledWith(db, 9n, CLIENT, 'vitest')
-    expect(mocks.recordAuditEvent).toHaveBeenCalledTimes(1)
-    expect(mocks.recordAuditEvent).toHaveBeenCalledWith(
-      expect.objectContaining({
-        action: 'login',
-        resourceType: 'session',
-        resourceId: 'sess-1',
-        actorId: 9n,
-        actorRole: 'admin',
-        ipAddress: CLIENT,
-        userAgent: 'vitest',
-        details: { method: 'passkey' },
-      }),
-    )
+    // establishLoginSession owns the entire login side-effect surface —
+    // the flow itself must NOT write last_login or a second login audit.
+    expect(mocks.updateLastLogin).not.toHaveBeenCalled()
+    expect(mocks.recordAuditEvent).not.toHaveBeenCalled()
   })
 
   it('surfaces the service error message verbatim', async () => {

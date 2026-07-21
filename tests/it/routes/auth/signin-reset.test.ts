@@ -65,8 +65,10 @@ vi.mock('@/server/domains/auth/context', async () => {
   }
 })
 
-vi.mock('@/server/domains/auth/flows', async () => {
-  const actual = await vi.importActual<typeof import('@/server/domains/auth/flows')>('@/server/domains/auth/flows')
+vi.mock('@/server/domains/auth/signin-flow', async () => {
+  const actual = await vi.importActual<typeof import('@/server/domains/auth/signin-flow')>(
+    '@/server/domains/auth/signin-flow',
+  )
   return {
     ...actual,
   }

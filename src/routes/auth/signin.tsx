@@ -3,18 +3,20 @@ import { data, redirect, useNavigation } from 'react-router'
 import { recordAuditEvent } from '@/server/domains/audit/services/record'
 import { getDbFromContext, getRouteRequestContext } from '@/server/domains/auth/context'
 import { validateCsrfForAction } from '@/server/domains/auth/csrf'
+import { isPasskeyEnabled } from '@/server/domains/auth/passkey-gate'
+import { logout } from '@/server/domains/auth/primitives'
+import { commitSessionWithMaxAge, destroySession } from '@/server/domains/auth/session-storage'
 import {
   type AuthFlowResult,
   handleCredentialLogin,
   handleOtpCancel,
   handleOtpResend,
   handleOtpVerify,
-} from '@/server/domains/auth/otp-flow'
-import { signInWithPasskey } from '@/server/domains/auth/passkey-flow'
-import { isPasskeyEnabled } from '@/server/domains/auth/passkey-gate'
-import { requestPasswordReset, resetPasswordWithToken } from '@/server/domains/auth/password-flow'
-import { logout } from '@/server/domains/auth/primitives'
-import { commitSessionWithMaxAge, destroySession } from '@/server/domains/auth/session-storage'
+  readLivePendingOtp,
+  requestPasswordReset,
+  resetPasswordWithToken,
+  signInWithPasskey,
+} from '@/server/domains/auth/signin-flow'
 import { peekToken } from '@/server/domains/auth/verification-tokens'
 import { ensureInstalledOrRedirect } from '@/server/domains/settings/install-gate'
 import { bundleFromMatches, routeMeta } from '@/server/render/seo/meta'
@@ -110,17 +112,16 @@ export async function loader({ request, context }: Route.LoaderArgs) {
     }
   }
 
-  // OTP pending state: if the user has already passed password check
-  // but not yet verified the OTP, show the OTP form instead.
-  const pendingOtpUser = session.get('pendingOtpUser')
+  // OTP pending state: the domain owns the session keys and the expiry
+  // rule — the loader only consumes the projection.
+  const otpState = readLivePendingOtp(session)
+  if (otpState.expired) {
+    throw redirect(`/admin/signin?redirect_to=${encodeURIComponent(redirectTo)}`, {
+      headers: { 'Set-Cookie': await commitSessionWithMaxAge(session) },
+    })
+  }
+  const pendingOtpUser = otpState.pending
   if (pendingOtpUser) {
-    if (pendingOtpUser.expiresAt < Date.now()) {
-      session.unset('pendingOtpUser')
-      session.unset('otpFailCount')
-      throw redirect(`/admin/signin?redirect_to=${encodeURIComponent(redirectTo)}`, {
-        headers: { 'Set-Cookie': await commitSessionWithMaxAge(session) },
-      })
-    }
     return data({
       redirectTo,
       action: 'verifyotp',

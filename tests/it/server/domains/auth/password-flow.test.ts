@@ -71,7 +71,7 @@ vi.mock('@/shared/config/getters', () => ({
   getBlogSettingsBundleSync: mocks.getBlogSettingsBundleSync,
 }))
 
-import { requestPasswordReset, resetPasswordWithToken } from '@/server/domains/auth/password-flow'
+import { requestPasswordReset, resetPasswordWithToken } from '@/server/domains/auth/signin-flow'
 
 const db = {} as NodePgDatabase
 const session = { id: 'sess-1' } as unknown as BlogSession

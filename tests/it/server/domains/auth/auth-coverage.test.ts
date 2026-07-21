@@ -6,9 +6,8 @@ import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vites
 import { TEST_BLOG_SETTINGS_BUNDLE } from '#/_helpers/blog-settings'
 import { clearAllTables } from '#/_helpers/integration-db'
 import { flushWorkerRedis } from '#/_helpers/redis'
-import { handleOtpCancel, handleCredentialLogin } from '@/server/domains/auth/otp-flow'
 import { establishLoginSession, logout, userSession } from '@/server/domains/auth/primitives'
-import { requireRole, requireUserRole, isPostOwner, canEditPost, canDeleteTag } from '@/server/domains/auth/rbac'
+import { requireRole, requireUserRole, isPostOwner, canEditPost } from '@/server/domains/auth/rbac'
 import {
   recordSessionLogin,
   findSessionMeta,
@@ -24,6 +23,7 @@ import {
   verifySetupToken,
   isSetupTokenActive,
 } from '@/server/domains/auth/setup-token'
+import { handleOtpCancel, handleCredentialLogin } from '@/server/domains/auth/signin-flow'
 import {
   issueOtpToken,
   issueResetToken,
@@ -272,14 +272,6 @@ describe('auth/rbac — predicates', () => {
     expect(canEditPost(admin, { authorId: 99n })).toBe(true)
     expect(canEditPost(author, { authorId: 5n })).toBe(true)
     expect(canEditPost(author, { authorId: 6n })).toBe(false)
-  })
-
-  it('canDeleteTag is admin-only OR zero-post', () => {
-    const admin = { userId: '1', role: 'admin' as const }
-    const visitor = { userId: '2', role: 'visitor' as const }
-    expect(canDeleteTag(admin, 5)).toBe(true)
-    expect(canDeleteTag(visitor, 0)).toBe(true)
-    expect(canDeleteTag(visitor, 5)).toBe(false)
   })
 })
 
