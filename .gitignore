@@ -58,6 +58,7 @@ data/
 .cursor/
 .junie/
 .trae/
+.kimi-code-session/
 .agents/settings.local.json
 .claude/settings.local.json
 .codegraph/
