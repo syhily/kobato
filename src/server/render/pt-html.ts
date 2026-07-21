@@ -1,7 +1,7 @@
-/* oxlint-disable typescript/no-unsafe-argument, typescript/no-unsafe-member-access, typescript/no-unsafe-return, typescript/no-unsafe-type-assertion */
+/* oxlint-disable typescript/no-unsafe-argument, typescript/no-unsafe-type-assertion */
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
-import { toHTML, type PortableTextComponents } from '@portabletext/to-html'
+import { toHTML, type PortableTextBlockComponent, type PortableTextComponents } from '@portabletext/to-html'
 
 import type {
   CodeBlock,
@@ -126,25 +126,71 @@ interface ComponentContext {
   musicByPlayerId: Map<string, MusicMeta>
 }
 
+// Mark → HTML rules shared by the block-level `marks` map and the
+// table-cell inline renderer (`applyInlineMarkHtml`), so the two paths
+// can never drift into divergent copies of the same rule.
+
+interface LinkMarkValue {
+  href?: string
+  rel?: string
+  target?: string
+}
+
+interface MathInlineMarkValue {
+  tex?: string
+  mathml?: string
+  svg?: string
+}
+
+interface FootnoteRefMarkValue {
+  index?: number
+}
+
+function renderLinkMark(children: string, value: LinkMarkValue): string {
+  const href = sanitizeUrl(value.href ?? '')
+  const rel = value.rel ? ` rel="${escapeHtml(value.rel)}"` : ''
+  const target = value.target ? ` target="${escapeHtml(value.target)}"` : ''
+  return `<a href="${escapeHtml(href)}"${rel}${target}>${children}</a>`
+}
+
+function renderMathInlineMark(children: string, value: MathInlineMarkValue | undefined, isRss: boolean): string {
+  // Feed readers cannot safely consume raw MathML/SVG (active elements,
+  // event attributes, external references), so RSS mode falls back to
+  // plain TeX inside <code>. The web path prefers SVG for consistency.
+  if (isRss) {
+    return `<code>${value?.tex ? escapeHtml(value.tex) : children}</code>`
+  }
+  if (value?.svg !== undefined && value.svg !== '') {
+    return value.svg
+  }
+  if (value?.mathml !== undefined && value.mathml !== '') {
+    return value.mathml
+  }
+  return `<code>${value?.tex ? escapeHtml(value.tex) : children}</code>`
+}
+
+function renderFootnoteRefMark(children: string, value: FootnoteRefMarkValue | undefined): string {
+  if (value === undefined) {
+    return children
+  }
+  return `<sup><a href="#user-content-fn-${value.index}">${value.index}</a></sup>`
+}
+
+// h1–h4 share one renderer body; only the tag differs.
+function makeHeadingBlock(ctx: ComponentContext, tag: 'h1' | 'h2' | 'h3' | 'h4'): PortableTextBlockComponent {
+  return ({ children, value }) => {
+    const id = ctx.headingIdByBlockKey.get((value as TextBlock)._key) ?? ''
+    return `<${tag} id="${escapeHtml(id)}">${children}</${tag}>`
+  }
+}
+
 function buildPortableTextComponents(ctx: ComponentContext): PortableTextComponents {
   return {
     block: {
-      h1: ({ children, value }) => {
-        const id = ctx.headingIdByBlockKey.get((value as TextBlock)._key) ?? ''
-        return `<h1 id="${escapeHtml(id)}">${children}</h1>`
-      },
-      h2: ({ children, value }) => {
-        const id = ctx.headingIdByBlockKey.get((value as TextBlock)._key) ?? ''
-        return `<h2 id="${escapeHtml(id)}">${children}</h2>`
-      },
-      h3: ({ children, value }) => {
-        const id = ctx.headingIdByBlockKey.get((value as TextBlock)._key) ?? ''
-        return `<h3 id="${escapeHtml(id)}">${children}</h3>`
-      },
-      h4: ({ children, value }) => {
-        const id = ctx.headingIdByBlockKey.get((value as TextBlock)._key) ?? ''
-        return `<h4 id="${escapeHtml(id)}">${children}</h4>`
-      },
+      h1: makeHeadingBlock(ctx, 'h1'),
+      h2: makeHeadingBlock(ctx, 'h2'),
+      h3: makeHeadingBlock(ctx, 'h3'),
+      h4: makeHeadingBlock(ctx, 'h4'),
       normal: ({ children }) => `<p>${children}</p>`,
       blockquote: ({ children }) => `<blockquote>${children}</blockquote>`,
     },
@@ -162,33 +208,9 @@ function buildPortableTextComponents(ctx: ComponentContext): PortableTextCompone
       underline: ({ children }) => `<u>${children}</u>`,
       'strike-through': ({ children }) => `<s>${children}</s>`,
       code: ({ children }) => `<code>${children}</code>`,
-      link: ({ value, children }) => {
-        if (value === undefined) {
-          return children
-        }
-        const href = sanitizeUrl(value.href)
-        const rel = value.rel ? ` rel="${escapeHtml(value.rel)}"` : ''
-        const target = value.target ? ` target="${escapeHtml(value.target)}"` : ''
-        return `<a href="${escapeHtml(href)}"${rel}${target}>${children}</a>`
-      },
-      mathInline: ({ value, children }) => {
-        if (ctx.isRss) {
-          return `<code>${value?.tex ? escapeHtml(value.tex) : children}</code>`
-        }
-        if (value?.svg !== undefined && value.svg !== '') {
-          return value.svg
-        }
-        if (value?.mathml !== undefined && value.mathml !== '') {
-          return value.mathml
-        }
-        return `<code>${value?.tex ? escapeHtml(value.tex) : children}</code>`
-      },
-      footnoteRef: ({ value, children }) => {
-        if (value === undefined) {
-          return children
-        }
-        return `<sup><a href="#user-content-fn-${value.index}">${value.index}</a></sup>`
-      },
+      link: ({ value, children }) => (value === undefined ? children : renderLinkMark(children, value)),
+      mathInline: ({ value, children }) => renderMathInlineMark(children, value, ctx.isRss),
+      footnoteRef: ({ value, children }) => renderFootnoteRefMark(children, value),
     },
     types: {
       image: ({ value }) => renderImageBlock(value as ImageBlock),
@@ -378,30 +400,15 @@ function applyInlineMarkHtml(
   if (def === undefined) {
     return text
   }
+  // Same mark rules as the block-level `marks` map — see the shared
+  // helpers at the top of this file.
   switch (def._type) {
-    case 'link': {
-      const href = sanitizeUrl(def.href ?? '')
-      const rel = def.rel ? ` rel="${escapeHtml(def.rel)}"` : ''
-      const target = def.target ? ` target="${escapeHtml(def.target)}"` : ''
-      return `<a href="${escapeHtml(href)}"${rel}${target}>${text}</a>`
-    }
-    case 'mathInline': {
-      // Feed readers cannot safely consume raw MathML/SVG (active elements,
-      // event attributes, external references), so RSS mode falls back to
-      // plain TeX inside <code>. The web path prefers SVG for consistency.
-      if (isRss) {
-        return `<code>${def.tex ? escapeHtml(def.tex) : text}</code>`
-      }
-      if (def.svg !== undefined && def.svg !== '') {
-        return def.svg
-      }
-      if (def.mathml !== undefined && def.mathml !== '') {
-        return def.mathml
-      }
-      return `<code>${def.tex ? escapeHtml(def.tex) : text}</code>`
-    }
+    case 'link':
+      return renderLinkMark(text, def)
+    case 'mathInline':
+      return renderMathInlineMark(text, def, isRss)
     case 'footnoteRef':
-      return `<sup><a href="#user-content-fn-${def.index}">${def.index}</a></sup>`
+      return renderFootnoteRefMark(text, def)
   }
   return text
 }
