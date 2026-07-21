@@ -13,7 +13,7 @@ import { readBucket, tryKeyedRateLimit } from '@/server/infra/rate-limit'
  * hard-coded bucket for edge cases.
  *
  * `opts.errorBody` picks the 429 wire shape. Omitted: throw
- * `HTTPException(429, 中文 message)` and let the perimeter `onError`
+ * `HTTPException(429, Chinese message)` and let the perimeter `onError`
  * render the standard API error JSON. Provided: answer
  * `c.json(errorBody, 429)` verbatim — the public resource-route
  * convention (`{ error: 'Too many requests' }`).

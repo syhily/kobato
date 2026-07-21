@@ -48,7 +48,7 @@ export function AddMusicDialog({ open, onClose, onAdded }: AddMusicDialogProps) 
   const { currentTrack, isPlaying } = useMusicPlayerState()
   const { toggle, close, load } = useMusicPlayerActions()
 
-  // The limit feeds both the hook and the disabled 每页 select's display.
+  // The limit feeds both the hook and the disabled per-page select's display.
   const searchLimit = 10
   const {
     results,

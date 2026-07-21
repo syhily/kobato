@@ -50,7 +50,7 @@ export function MusicPickerDialog({ trigger, onPick, open: openProp, onOpenChang
   // react-query revalidates, instead of flashing a spinner.
   const listInput = { q: q.trim() === '' ? undefined : q.trim(), limit: 60 }
   const listQuery = useQuery(orpcQuery.admin.music.list.queryOptions({ input: listInput, enabled: open }))
-  // `null` (not []) for undefined data keeps the 加载中/empty split — a
+  // `null` (not []) for undefined data keeps the loading/empty split — a
   // fresh key yields `undefined` data → spinner, like the old
   // clear-to-null flash.
   const musics = listQuery.data?.musics ?? null

@@ -18,133 +18,133 @@ export const file_api: GenFile /*@__PURE__*/ = fileDesc(
  */
 export type InputTemplate = Message<'api_interface.InputTemplate'> & {
   /**
-   * ttf/woff2 文件的 buffer
+   * ttf/woff2 file buffer
    *
    * @generated from field: bytes input = 1;
    */
   input: Uint8Array
 
   /**
-   * 切割后放置文件的文件夹
+   * directory for the split output files
    *
    * @generated from field: optional string out_dir = 2;
    */
   outDir?: string | undefined
 
   /**
-   * CSS 配置
+   * CSS config
    *
    * @generated from field: optional api_interface.InputTemplate.CssProperties css = 5;
    */
   css?: InputTemplate_CssProperties | undefined
 
   /**
-   * 目标类型
+   * target type
    *
    * @generated from field: optional string target_type = 6;
    */
   targetType?: string | undefined
 
   /**
-   * 子集
+   * subsets
    *
    * @generated from field: repeated bytes subsets = 7;
    */
   subsets: Uint8Array[]
 
   /**
-   * 包大小
+   * chunk size
    *
    * @generated from field: optional int32 chunk_size = 9;
    */
   chunkSize?: number | undefined
 
   /**
-   * 包大小容差
+   * chunk size tolerance
    *
    * @generated from field: optional float chunk_size_tolerance = 10;
    */
   chunkSizeTolerance?: number | undefined
 
   /**
-   * 最大允许子集数量
+   * max allowed subset count
    *
    * @generated from field: optional int32 max_allow_subsets_count = 11;
    */
   maxAllowSubsetsCount?: number | undefined
 
   /**
-   * 是否生成测试 HTML
+   * whether to generate test HTML
    *
    * @generated from field: optional bool test_html = 13;
    */
   testHtml?: boolean | undefined
 
   /**
-   * 是否生成 reporter.bin
+   * whether to generate reporter.bin
    *
    * @generated from field: optional bool reporter = 14;
    */
   reporter?: boolean | undefined
 
   /**
-   * 预览图像
+   * preview image
    *
    * @generated from field: optional api_interface.InputTemplate.PreviewImage preview_image = 15;
    */
   previewImage?: InputTemplate_PreviewImage | undefined
 
   /**
-   * 重命名输出字体
+   * rename output font
    *
    * @generated from field: optional string rename_output_font = 18;
    */
   renameOutputFont?: string | undefined
 
   /**
-   * TODO 构建模式
+   * TODO build mode
    *
    * @generated from field: optional string build_mode = 20;
    */
   buildMode?: string | undefined
 
   /**
-   * 是否进行语言区域优化
+   * whether to optimize by language areas
    *
    * @generated from field: optional bool language_areas = 8;
    */
   languageAreas?: boolean | undefined
 
   /**
-   * TODO 是否使用多线程
+   * TODO whether to use multiple threads
    *
    * @generated from field: optional bool multi_threads = 21;
    */
   multiThreads?: boolean | undefined
 
   /**
-   * 是否启用字体特性
+   * whether to enable font features
    *
    * @generated from field: optional bool font_feature = 22;
    */
   fontFeature?: boolean | undefined
 
   /**
-   * 是否减少最小分包，
+   * whether to reduce the minimum chunk count
    *
    * @generated from field: optional bool reduce_mins = 23;
    */
   reduceMins?: boolean | undefined
 
   /**
-   * 是否自动子集化
+   * whether to auto-subset
    *
    * @generated from field: optional bool auto_subset = 24;
    */
   autoSubset?: boolean | undefined
 
   /**
-   * 是否自动添加没有声明的字符
+   * whether to automatically add undeclared chars
    *
    * @generated from field: optional bool subset_remain_chars = 25;
    */
@@ -158,83 +158,83 @@ export type InputTemplate = Message<'api_interface.InputTemplate'> & {
 export const InputTemplateSchema: GenMessage<InputTemplate> /*@__PURE__*/ = messageDesc(file_api, 0)
 
 /**
- * CSS 属性配置
+ * CSS properties config
  *
  * @generated from message api_interface.InputTemplate.CssProperties
  */
 export type InputTemplate_CssProperties = Message<'api_interface.InputTemplate.CssProperties'> & {
   /**
-   * 字体家族名称
+   * font family name
    *
    * @generated from field: optional string font_family = 1;
    */
   fontFamily?: string | undefined
 
   /**
-   * 字体粗细
+   * font weight
    *
    * @generated from field: optional string font_weight = 2;
    */
   fontWeight?: string | undefined
 
   /**
-   * 字体样式
+   * font style
    *
    * @generated from field: optional string font_style = 3;
    */
   fontStyle?: string | undefined
 
   /**
-   * 字体显示方式
+   * font display
    *
    * @generated from field: optional string font_display = 4;
    */
   fontDisplay?: string | undefined
 
   /**
-   * 本地字体家族名称
+   * local font family names
    *
    * @generated from field: repeated string local_family = 5;
    */
   localFamily: string[]
 
   /**
-   * Polyfill 类型
+   * polyfill types
    *
    * @generated from field: repeated api_interface.InputTemplate.PolyfillType polyfill = 6;
    */
   polyfill: InputTemplate_PolyfillType[]
 
   /**
-   * 基础注释
+   * base comment
    *
    * @generated from field: optional bool comment_base = 11;
    */
   commentBase?: boolean | undefined
 
   /**
-   * 名称表注释
+   * name table comment
    *
    * @generated from field: optional bool comment_name_table = 12;
    */
   commentNameTable?: boolean | undefined
 
   /**
-   * Unicode 注释
+   * Unicode comment
    *
    * @generated from field: optional bool comment_unicodes = 13;
    */
   commentUnicodes?: boolean | undefined
 
   /**
-   * 是否压缩
+   * whether to compress
    *
    * @generated from field: optional bool compress = 8;
    */
   compress?: boolean | undefined
 
   /**
-   * 文件名
+   * file name
    *
    * @generated from field: optional string file_name = 9;
    */
@@ -252,20 +252,20 @@ export const InputTemplate_CssPropertiesSchema: GenMessage<InputTemplate_CssProp
 )
 
 /**
- * Polyfill 类型
+ * polyfill type
  *
  * @generated from message api_interface.InputTemplate.PolyfillType
  */
 export type InputTemplate_PolyfillType = Message<'api_interface.InputTemplate.PolyfillType'> & {
   /**
-   * 名称
+   * name
    *
    * @generated from field: string name = 1;
    */
   name: string
 
   /**
-   * 格式
+   * format
    *
    * @generated from field: string format = 2;
    */
@@ -283,20 +283,20 @@ export const InputTemplate_PolyfillTypeSchema: GenMessage<InputTemplate_Polyfill
 )
 
 /**
- * 预览图像
+ * preview image
  *
  * @generated from message api_interface.InputTemplate.PreviewImage
  */
 export type InputTemplate_PreviewImage = Message<'api_interface.InputTemplate.PreviewImage'> & {
   /**
-   * 会显示在 svg 中的文本
+   * text shown in the svg
    *
    * @generated from field: string text = 1;
    */
   text: string
 
   /**
-   * svg 文件的名称
+   * name of the svg file
    *
    * @generated from field: string name = 2;
    */
@@ -360,42 +360,42 @@ export const MultiMessagesSchema: GenMessage<MultiMessages> /*@__PURE__*/ = mess
  */
 export type OutputReport = Message<'api_interface.OutputReport'> & {
   /**
-   * 版本号
+   * version
    *
    * @generated from field: string version = 1;
    */
   version: string
 
   /**
-   * CSS相关信息，可以直接用
+   * CSS info, ready to use directly
    *
    * @generated from field: api_interface.OutputReport.Css css = 2;
    */
   css?: OutputReport_Css | undefined
 
   /**
-   * 平台信息，rust 的构建平台
+   * platform info — the platform rust built on
    *
    * @generated from field: string platform = 3;
    */
   platform: string
 
   /**
-   * 构建消息
+   * build message
    *
    * @generated from field: api_interface.OutputReport.BundleMessage bundle_message = 24;
    */
   bundleMessage?: OutputReport_BundleMessage | undefined
 
   /**
-   * name 表信息
+   * name table info
    *
    * @generated from field: repeated api_interface.OutputReport.NameTable name_table = 25;
    */
   nameTable: OutputReport_NameTable[]
 
   /**
-   * 子集详情
+   * subset details
    *
    * @generated from field: repeated api_interface.OutputReport.SubsetDetail subset_detail = 26;
    */
@@ -413,28 +413,28 @@ export const OutputReportSchema: GenMessage<OutputReport> /*@__PURE__*/ = messag
  */
 export type OutputReport_NameTable = Message<'api_interface.OutputReport.NameTable'> & {
   /**
-   * 平台
+   * platform
    *
    * @generated from field: string platform = 1;
    */
   platform: string
 
   /**
-   * 语言
+   * language
    *
    * @generated from field: string language = 2;
    */
   language: string
 
   /**
-   * 名称
+   * name
    *
    * @generated from field: string name = 3;
    */
   name: string
 
   /**
-   * 值
+   * value
    *
    * @generated from field: string value = 4;
    */
@@ -463,35 +463,35 @@ export type OutputReport_SubsetDetail = Message<'api_interface.OutputReport.Subs
   id: number
 
   /**
-   * 哈希值
+   * hash
    *
    * @generated from field: string hash = 2;
    */
   hash: string
 
   /**
-   * 文件名称
+   * file name
    *
    * @generated from field: string file_name = 6;
    */
   fileName: string
 
   /**
-   * 字节数
+   * byte count
    *
    * @generated from field: uint32 bytes = 3;
    */
   bytes: number
 
   /**
-   * 字符数组
+   * char array
    *
    * @generated from field: repeated uint32 chars = 4;
    */
   chars: number[]
 
   /**
-   * 构建时间
+   * build duration
    *
    * @generated from field: uint32 duration = 5;
    */
@@ -513,28 +513,28 @@ export const OutputReport_SubsetDetailSchema: GenMessage<OutputReport_SubsetDeta
  */
 export type OutputReport_BundleMessage = Message<'api_interface.OutputReport.BundleMessage'> & {
   /**
-   * 原始大小
+   * original size
    *
    * @generated from field: uint32 origin_size = 1;
    */
   originSize: number
 
   /**
-   * 产物大小
+   * bundled size
    *
    * @generated from field: uint32 bundled_size = 2;
    */
   bundledSize: number
 
   /**
-   * 原始字节数
+   * original bytes
    *
    * @generated from field: uint32 origin_bytes = 3;
    */
   originBytes: number
 
   /**
-   * 产物字节数
+   * bundled bytes
    *
    * @generated from field: uint32 bundled_bytes = 4;
    */
@@ -556,28 +556,28 @@ export const OutputReport_BundleMessageSchema: GenMessage<OutputReport_BundleMes
  */
 export type OutputReport_Css = Message<'api_interface.OutputReport.Css'> & {
   /**
-   * 字体家族
+   * font family
    *
    * @generated from field: string family = 1;
    */
   family: string
 
   /**
-   * 样式
+   * style
    *
    * @generated from field: string style = 2;
    */
   style: string
 
   /**
-   * 字重
+   * weight
    *
    * @generated from field: string weight = 3;
    */
   weight: string
 
   /**
-   * 显示方式
+   * display
    *
    * @generated from field: string display = 4;
    */
