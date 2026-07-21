@@ -1,32 +1,27 @@
+import { toast } from 'sonner'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { AdminCategoryDto } from '@/shared/types/categories'
 
 import { renderInRouter, stableHtml } from '#/_helpers/render'
+import { orpcQuery } from '@/client/api/orpc-query'
 import { CategoriesView } from '@/ui/admin/categories/CategoriesView'
 
-// CategoriesView drives its rows from a reducer (`useCategoriesReducer`)
-// and a list `useQuery` plus delete / reorder `useMutation`s, with DnD via
+// CategoriesView reads its rows straight from the list `useQuery` data
+// (TanStack single-track), plus delete / reorder `useMutation`s, with DnD via
 // dnd-kit. The existing `categories-view.test.tsx` covers the loading and
-// empty states; this spec adds populated rows (the `state.rows.map`
-// callback inside the SortableContext) and the error state.
+// empty states; this spec adds populated rows (the `rows.map` callback inside
+// the SortableContext), the error state, and the mutation side effects
+// (delete success invalidates the list so the row disappears).
 
-interface ControllerState {
-  rows: AdminCategoryDto[]
-  total: number
-  q: string
+interface CapturedMutationOptions {
+  onMutate?: (variables: { orderedIds: string[] }) => void
+  onSuccess?: (payload: unknown) => void
+  onError?: (error: Error) => void
 }
 
-const controllerState = vi.hoisted(() => ({
-  state: {
-    rows: [] as AdminCategoryDto[],
-    total: 0,
-    q: '',
-  } satisfies ControllerState,
-}))
-
-vi.mock('@/ui/admin/categories/useCategoriesReducer', () => ({
-  useCategoriesReducer: () => ({ state: controllerState.state, dispatch: vi.fn() }),
+const mutationCalls = vi.hoisted(() => ({
+  captured: [] as CapturedMutationOptions[],
 }))
 
 const queryMocks = vi.hoisted(() => ({
@@ -40,6 +35,10 @@ const queryMocks = vi.hoisted(() => ({
     mutate: vi.fn(),
     isPending: false,
   },
+  queryClient: {
+    invalidateQueries: vi.fn(),
+    setQueryData: vi.fn(),
+  },
 }))
 
 vi.mock('@tanstack/react-query', async () => {
@@ -47,7 +46,11 @@ vi.mock('@tanstack/react-query', async () => {
   return {
     ...actual,
     useQuery: () => queryMocks.query,
-    useMutation: () => queryMocks.mutation,
+    useMutation: (options: CapturedMutationOptions) => {
+      mutationCalls.captured.push(options)
+      return queryMocks.mutation
+    },
+    useQueryClient: () => queryMocks.queryClient,
   }
 })
 
@@ -123,15 +126,11 @@ function makeCategory(overrides: Partial<AdminCategoryDto> = {}): AdminCategoryD
   }
 }
 
-function setState(overrides: Partial<ControllerState> = {}): void {
-  controllerState.state = { ...controllerState.state, ...overrides }
-}
-
 // ─────────────────────────── shared setup ───────────────────────────
 
 describe('snapshot: CategoriesView branches', () => {
   beforeEach(() => {
-    controllerState.state = { rows: [], total: 0, q: '' }
+    mutationCalls.captured = []
     queryMocks.query = {
       data: null,
       isFetching: false,
@@ -139,13 +138,13 @@ describe('snapshot: CategoriesView branches', () => {
       refetch: vi.fn(),
     }
     queryMocks.mutation = { mutate: vi.fn(), isPending: false }
+    queryMocks.queryClient = { invalidateQueries: vi.fn(), setQueryData: vi.fn() }
   })
 
-  it('renders populated rows via the state.rows.map callback inside SortableContext', () => {
+  it('renders populated rows via the rows.map callback inside SortableContext', () => {
     const a = makeCategory({ id: 'cat-1', name: '前端', slug: 'frontend', sortOrder: 0, postCount: 4 })
     const b = makeCategory({ id: 'cat-2', name: '随笔', slug: 'essay', sortOrder: 1, postCount: 7 })
     queryMocks.query = { ...queryMocks.query, data: { categories: [a, b], total: 2 } }
-    setState({ rows: [a, b], total: 2 })
     const html = stableHtml(renderInRouter(<CategoriesView />, '/admin/taxonomy/categories'))
     expect(html).toContain('前端')
     expect(html).toContain('随笔')
@@ -172,5 +171,38 @@ describe('snapshot: CategoriesView branches', () => {
     expect(html).toContain('分类管理')
     // No rows + not fetching => empty state. The toast is mocked.
     expect(html).toContain('未找到分类')
+  })
+
+  it('invalidates the categories list when a delete succeeds so the row disappears', () => {
+    const a = makeCategory({ id: 'cat-1', name: '前端', slug: 'frontend' })
+    queryMocks.query = { ...queryMocks.query, data: { categories: [a], total: 1 } }
+    renderInRouter(<CategoriesView />, '/admin/taxonomy/categories')
+    // CategoriesView registers the delete mutation first, then reorder.
+    const deleteOptions = mutationCalls.captured[0]
+    expect(deleteOptions).toBeDefined()
+    deleteOptions.onSuccess?.({})
+    expect(toast.success).toHaveBeenCalledWith('已删除分类')
+    expect(queryMocks.queryClient.invalidateQueries).toHaveBeenCalledTimes(1)
+    expect(queryMocks.queryClient.invalidateQueries).toHaveBeenCalledWith({
+      queryKey: orpcQuery.admin.categories.list.key(),
+    })
+  })
+
+  it('reorder onMutate writes the optimistic order into the list cache', () => {
+    const a = makeCategory({ id: 'cat-1', name: '前端', sortOrder: 0 })
+    const b = makeCategory({ id: 'cat-2', name: '随笔', sortOrder: 1 })
+    queryMocks.query = { ...queryMocks.query, data: { categories: [a, b], total: 2 } }
+    renderInRouter(<CategoriesView />, '/admin/taxonomy/categories')
+    const reorderOptions = mutationCalls.captured[1]
+    expect(reorderOptions).toBeDefined()
+    reorderOptions.onMutate?.({ orderedIds: ['cat-2', 'cat-1'] })
+    expect(queryMocks.queryClient.setQueryData).toHaveBeenCalledTimes(1)
+    const [, next] = queryMocks.queryClient.setQueryData.mock.calls[0] as [
+      unknown,
+      { categories: AdminCategoryDto[]; total: number },
+    ]
+    expect(next.total).toBe(2)
+    expect(next.categories.map((row) => row.id)).toEqual(['cat-2', 'cat-1'])
+    expect(next.categories.map((row) => row.sortOrder)).toEqual([0, 1])
   })
 })

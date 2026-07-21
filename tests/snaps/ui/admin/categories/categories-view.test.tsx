@@ -1,25 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type { AdminCategoryDto } from '@/shared/types/categories'
-
 import { renderInRouter, renderToHtml, stableHtml } from '#/_helpers/render'
 import { CategoriesView } from '@/ui/admin/categories/CategoriesView'
 import { EditCategoryDialog } from '@/ui/admin/categories/EditCategoryDialog'
 
-// CategoriesView is gated behind a reducer controller, a list query, plus
-// delete/reorder mutations and a dnd-kit DnD context. We stub the controller
-// to empty rows and neutralize the queries and DnD primitives so SSR can
-// stream the chrome.
-
-const controllerState = vi.hoisted(() => ({
-  rows: [] as AdminCategoryDto[],
-  total: 0,
-  q: '',
-}))
-
-vi.mock('@/ui/admin/categories/useCategoriesReducer', () => ({
-  useCategoriesReducer: () => ({ state: controllerState, dispatch: vi.fn() }),
-}))
+// CategoriesView reads its rows straight from the list `useQuery` data
+// (TanStack single-track) plus delete/reorder mutations and a dnd-kit DnD
+// context. We neutralize the queries and DnD primitives so SSR can stream
+// the chrome.
 
 const queryMocks = vi.hoisted(() => ({
   query: {
@@ -33,6 +21,10 @@ const queryMocks = vi.hoisted(() => ({
     mutate: vi.fn(),
     isPending: false,
   },
+  queryClient: {
+    invalidateQueries: vi.fn(),
+    setQueryData: vi.fn(),
+  },
 }))
 
 vi.mock('@tanstack/react-query', async () => {
@@ -41,6 +33,7 @@ vi.mock('@tanstack/react-query', async () => {
     ...actual,
     useQuery: () => queryMocks.query,
     useMutation: () => queryMocks.mutation,
+    useQueryClient: () => queryMocks.queryClient,
   }
 })
 
@@ -88,9 +81,6 @@ vi.mock('@/ui/components/dialog', () => ({
 
 describe('snapshot: CategoriesView', () => {
   beforeEach(() => {
-    controllerState.rows = []
-    controllerState.total = 0
-    controllerState.q = ''
     queryMocks.query = {
       data: null,
       isPending: true,

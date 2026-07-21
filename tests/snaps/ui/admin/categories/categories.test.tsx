@@ -8,16 +8,6 @@ import { CategoriesView } from '@/ui/admin/categories/CategoriesView'
 import { CategoriesSkeleton, CategoryRow } from '@/ui/admin/categories/CategoryRow'
 import { EditCategoryDialog } from '@/ui/admin/categories/EditCategoryDialog'
 
-const controllerState = vi.hoisted(() => ({
-  rows: [] as AdminCategoryDto[],
-  total: 0,
-  q: '',
-}))
-
-vi.mock('@/ui/admin/categories/useCategoriesReducer', () => ({
-  useCategoriesReducer: () => ({ state: controllerState, dispatch: vi.fn() }),
-}))
-
 const queryMocks = vi.hoisted(() => ({
   query: {
     data: null as unknown,
@@ -135,9 +125,6 @@ function makeAdminCategory(overrides: Partial<AdminCategoryDto> = {}): AdminCate
 
 describe('snapshot: CategoriesView', () => {
   beforeEach(() => {
-    controllerState.rows = []
-    controllerState.total = 0
-    controllerState.q = ''
     queryMocks.query = {
       data: null as unknown,
       isPending: false,
@@ -165,12 +152,17 @@ describe('snapshot: CategoriesView', () => {
   })
 
   it('renders a list of categories', () => {
-    controllerState.rows = [
-      makeAdminCategory({ id: 'cat-1', name: '编程', slug: 'programming', postCount: 12 }),
-      makeAdminCategory({ id: 'cat-2', name: '随笔', slug: 'essays', postCount: 3 }),
-    ]
-    controllerState.total = 2
-    queryMocks.query = { ...queryMocks.query, isFetching: false }
+    queryMocks.query = {
+      ...queryMocks.query,
+      isFetching: false,
+      data: {
+        categories: [
+          makeAdminCategory({ id: 'cat-1', name: '编程', slug: 'programming', postCount: 12 }),
+          makeAdminCategory({ id: 'cat-2', name: '随笔', slug: 'essays', postCount: 3 }),
+        ],
+        total: 2,
+      },
+    }
     const html = stableHtml(renderInRouter(<CategoriesView />))
     expect(html).toContain('分类管理')
     expect(html).toContain('2')

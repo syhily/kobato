@@ -9,9 +9,9 @@ import {
 } from '@dnd-kit/core'
 import { restrictToVerticalAxis } from '@dnd-kit/modifiers'
 import { SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable'
-import { useMutation, useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { PlusIcon, SearchIcon } from 'lucide-react'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
 
 import type { AdminCategoryDto } from '@/shared/types/categories'
@@ -19,7 +19,6 @@ import type { AdminCategoryDto } from '@/shared/types/categories'
 import { orpcQuery } from '@/client/api/orpc-query'
 import { CategoriesSkeleton, CategoryRow } from '@/ui/admin/categories/CategoryRow'
 import { EditCategoryDialog } from '@/ui/admin/categories/EditCategoryDialog'
-import { useCategoriesReducer } from '@/ui/admin/categories/useCategoriesReducer'
 import { AdminListPage } from '@/ui/admin/shared/AdminListPage'
 import { type ConfirmState, ConfirmDialog } from '@/ui/admin/shared/ConfirmDialog'
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@/ui/components/empty'
@@ -27,21 +26,20 @@ import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@/ui/components/empt
 type EditTarget = AdminCategoryDto | null | undefined
 
 export function CategoriesView() {
-  const { state, dispatch } = useCategoriesReducer()
+  const queryClient = useQueryClient()
   const [editTarget, setEditTarget] = useState<EditTarget>(undefined)
   const [confirm, setConfirm] = useState<ConfirmState | null>(null)
 
-  const listQuery = useQuery(
-    orpcQuery.admin.categories.list.queryOptions({
-      input: {},
-    }),
-  )
-
-  useEffect(() => {
-    if (listQuery.data) {
-      dispatch({ type: 'loaded', rows: listQuery.data.categories, total: listQuery.data.total })
-    }
-  }, [listQuery.data, dispatch])
+  // Server rows live exclusively in the TanStack cache — the list procedure
+  // returns the full collection (no pagination), so the view reads the query
+  // data directly and mutations invalidate this namespace instead of patching
+  // a local mirror.
+  const listOptions = orpcQuery.admin.categories.list.queryOptions({ input: {} })
+  const listQuery = useQuery(listOptions)
+  // Memoized so the empty-fallback array identity is stable across renders —
+  // `handleDragEnd` depends on `rows` and oxlint flags a fresh `?? []` each render.
+  const rows = useMemo(() => listQuery.data?.categories ?? [], [listQuery.data?.categories])
+  const total = listQuery.data?.total ?? 0
 
   useEffect(() => {
     if (listQuery.error) {
@@ -49,16 +47,17 @@ export function CategoriesView() {
     }
   }, [listQuery.error])
 
-  const isListPending = listQuery.isFetching
-
-  const reload = useCallback(() => {
-    void listQuery.refetch()
-  }, [listQuery])
+  const invalidateList = useCallback(() => {
+    void queryClient.invalidateQueries({ queryKey: orpcQuery.admin.categories.list.key() })
+  }, [queryClient])
 
   const deleteMutation = useMutation({
     ...orpcQuery.admin.categories.delete.mutationOptions(),
     onSuccess: () => {
       toast.success('已删除分类')
+      // Invalidation re-syncs the cache so the deleted row disappears from
+      // the list immediately.
+      invalidateList()
     },
     onError: (error) => {
       setConfirm({
@@ -74,7 +73,22 @@ export function CategoriesView() {
 
   const reorderMutation = useMutation({
     ...orpcQuery.admin.categories.reorder.mutationOptions(),
-    onSuccess: (payload) => dispatch({ type: 'replaceRows', rows: payload.categories }),
+    onMutate: ({ orderedIds }) => {
+      // Optimistic local reorder while the server round-trip is in flight.
+      // Rewrite each row's `sortOrder` to its new index so the UI badge
+      // updates immediately; the mutation settles by invalidating the list,
+      // which restores the canonical server order (success or failure).
+      const byId = new Map(rows.map((row) => [row.id, row]))
+      const categories: AdminCategoryDto[] = []
+      for (const [index, id] of orderedIds.entries()) {
+        const row = byId.get(id)
+        if (row) {
+          categories.push({ ...row, sortOrder: index })
+        }
+      }
+      queryClient.setQueryData(listOptions.queryKey, { categories, total })
+    },
+    onSuccess: invalidateList,
     onError: (error) => {
       setConfirm({
         title: '排序保存失败',
@@ -83,12 +97,12 @@ export function CategoriesView() {
         destructive: false,
         onConfirm: () => undefined,
       })
-      reload()
+      invalidateList()
     },
   })
   const submitReorder = reorderMutation.mutate
 
-  const dndEnabled = state.rows.length > 1
+  const dndEnabled = rows.length > 1
   const isReorderPending = reorderMutation.isPending
 
   const sensors = useSensors(
@@ -100,7 +114,7 @@ export function CategoriesView() {
     (event: DragEndEvent) => {
       const { active, over } = event
       if (over && active.id !== over.id) {
-        const ids = state.rows.map((row) => row.id)
+        const ids = rows.map((row) => row.id)
         const oldIndex = ids.indexOf(String(active.id))
         const newIndex = ids.indexOf(String(over.id))
         if (oldIndex < 0 || newIndex < 0) {
@@ -112,14 +126,13 @@ export function CategoriesView() {
         if (next.every((id, index) => id === ids[index])) {
           return
         }
-        dispatch({ type: 'reorderRows', orderedIds: next })
         submitReorder({ orderedIds: next })
       }
     },
-    [dispatch, state.rows, submitReorder],
+    [rows, submitReorder],
   )
 
-  const isLoading = isListPending && state.rows.length === 0
+  const isLoading = listQuery.isFetching && rows.length === 0
 
   return (
     <>
@@ -127,7 +140,7 @@ export function CategoriesView() {
         <AdminListPage.Header
           title={
             <>
-              分类管理 <span className="text-sm font-normal text-muted-foreground">{state.total}</span>
+              分类管理 <span className="text-sm font-normal text-muted-foreground">{total}</span>
             </>
           }
         >
@@ -147,7 +160,7 @@ export function CategoriesView() {
         <AdminListPage.Body>
           {isLoading ? (
             <CategoriesSkeleton />
-          ) : state.rows.length === 0 ? (
+          ) : rows.length === 0 ? (
             <Empty>
               <EmptyHeader>
                 <EmptyMedia variant="icon">
@@ -163,9 +176,9 @@ export function CategoriesView() {
               onDragEnd={handleDragEnd}
               modifiers={[restrictToVerticalAxis]}
             >
-              <SortableContext items={state.rows.map((row) => row.id)} strategy={verticalListSortingStrategy}>
+              <SortableContext items={rows.map((row) => row.id)} strategy={verticalListSortingStrategy}>
                 <div className="divide-y">
-                  {state.rows.map((row) => (
+                  {rows.map((row) => (
                     <CategoryRow
                       key={row.id}
                       category={row}
@@ -193,12 +206,8 @@ export function CategoriesView() {
       <EditCategoryDialog
         category={editTarget}
         onClose={() => setEditTarget(undefined)}
-        onSaved={(saved) => {
-          if (editTarget === null) {
-            dispatch({ type: 'prependCategory', category: saved })
-          } else {
-            dispatch({ type: 'patchCategory', category: saved })
-          }
+        onSaved={() => {
+          invalidateList()
           setEditTarget(undefined)
         }}
       />
