@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 
 import type { PortableTextBody } from '@/shared/pt/schema'
 import type { SaveBodyOutput } from '@/shared/types/revision'
@@ -6,6 +6,7 @@ import type {
   EditorShellStatus,
   EntityLike,
   PublishState,
+  RevisionLike,
   SidebarPublishStatus,
   UseEditorShellStateArgs,
   UseEditorShellStateOutput,
@@ -15,6 +16,7 @@ import { useCreateDraft } from '@/client/hooks/use-create-draft'
 import { useLocalDraft } from '@/client/hooks/use-local-draft'
 import { arePortableTextBodiesEquivalent } from '@/shared/pt/bridge/canonicalize'
 import {
+  deriveBaselineRevision,
   deriveBaselineUpdatedAtMs,
   derivePublishState,
   deriveSidebarPublishStatus,
@@ -22,12 +24,16 @@ import {
   deriveSidebarSaveStatus,
 } from '@/ui/admin/editor-shell/editor-shell-derived'
 import { useActionBanner } from '@/ui/admin/editor-shell/use-action-banner'
-import { useEditorBodyState } from '@/ui/admin/editor-shell/use-editor-body-state'
 import { useEditorKeyboardShortcuts } from '@/ui/admin/editor-shell/use-editor-keyboard-shortcuts'
-import { useEditorMetaState } from '@/ui/admin/editor-shell/use-editor-meta-state'
-import { useEditorRevisionManager } from '@/ui/admin/editor-shell/use-editor-revision-manager'
 import { useEditorShellLayout } from '@/ui/admin/editor-shell/use-editor-shell-layout'
 import { useEditorShellPersist } from '@/ui/admin/editor-shell/use-editor-shell-persist'
+
+// The module owns the empty-body identity: both "no body yet" paths must
+// hand out this single reference, never a fresh `[]`. A fresh array per
+// recompute fed the conflict check below into an infinite
+// setState-during-render loop ("Too many re-renders") — live in edit mode
+// when an entity has zero revisions.
+const EMPTY_BODY: PortableTextBody = []
 
 export function useEditorShellState<
   TMeta extends { title: string; slug: string; published: boolean; publishedAt: string },
@@ -55,18 +61,70 @@ export function useEditorShellState<
 
   const isEditing = mode === 'edit' && detail !== undefined
 
-  // The sub-hooks take the loader-stable `detail` straight through (the shell
-  // TSX memoizes the literal it builds from the loader DTO) — there is no
-  // per-render args bag to memo-poison anymore.
-  const bodyState = useEditorBodyState(detail)
-  const { body, setBody, bodyKey, initialBody, lastSavedBody, replaceBody, markBodySaved } = bodyState
+  // --- Body state ------------------------------------------------------------
+  // `detail` is the loader-stable reference the screen memoizes, so the memos
+  // below recompute only when the loaded entity actually changes.
+  const initialBody = useMemo<PortableTextBody>(() => {
+    return deriveBaselineRevision(detail)?.body ?? EMPTY_BODY
+  }, [detail])
 
-  const metaState = useEditorMetaState(detail, emptyMeta, metaDraftFromEntity)
-  const { meta, setMeta, lastPersistedMeta, serverPublishedAtIso, resetMeta } = metaState
+  const [body, setBody] = useState<PortableTextBody>(initialBody)
 
-  const revisionManager = useEditorRevisionManager(detail)
-  const { expectedToken, latestRevision, publishedRevision, updateAfterSave } = revisionManager
+  const initialBodyKey = useMemo(() => {
+    if (detail === undefined) {
+      return 'create:initial'
+    }
+    const rev = deriveBaselineRevision(detail)
+    return rev !== null ? `${detail.entity.id}:${rev.clientRevisionToken}` : `${detail.entity.id}:empty`
+  }, [detail])
 
+  const [bodyKey, setBodyKey] = useState(initialBodyKey)
+  const [lastSavedBody, setLastSavedBody] = useState<PortableTextBody>(initialBody)
+
+  const replaceBody = useCallback((newBody: PortableTextBody, key: string) => {
+    setBody(newBody)
+    setBodyKey(key)
+  }, [])
+
+  const markBodySaved = useCallback((savedBody: PortableTextBody) => {
+    setLastSavedBody(savedBody)
+  }, [])
+
+  // --- Meta state ------------------------------------------------------------
+  const [meta, setMeta] = useState<TMeta>(detail !== undefined ? metaDraftFromEntity(detail.entity) : emptyMeta)
+  const [lastPersistedMeta, setLastPersistedMeta] = useState<TMeta>(
+    detail !== undefined ? metaDraftFromEntity(detail.entity) : { ...emptyMeta },
+  )
+  const [serverPublishedAtIso, setServerPublishedAtIso] = useState<string | null>(
+    detail !== undefined ? detail.entity.publishedAt : null,
+  )
+
+  const resetMeta = useCallback((freshMeta: TMeta, publishedAt: string | null) => {
+    setMeta(freshMeta)
+    setLastPersistedMeta(freshMeta)
+    setServerPublishedAtIso(publishedAt)
+  }, [])
+
+  // --- Revision race state -----------------------------------------------------
+  const [expectedToken, setExpectedToken] = useState<string | null>(
+    deriveBaselineRevision(detail)?.clientRevisionToken ?? null,
+  )
+  const [latestRevision, setLatestRevision] = useState<RevisionLike | null>(
+    detail !== undefined ? detail.latestRevision : null,
+  )
+  const [publishedRevision, setPublishedRevision] = useState<RevisionLike | null>(
+    detail !== undefined ? detail.publishedRevision : null,
+  )
+
+  const updateAfterSave = useCallback((revision: RevisionLike) => {
+    setExpectedToken(revision.clientRevisionToken)
+    setLatestRevision(revision)
+    if (revision.status === 'published') {
+      setPublishedRevision(revision)
+    }
+  }, [])
+
+  // --- Layout ------------------------------------------------------------------
   const { previewOpen, setPreviewOpen, metaOpen, setMetaOpen, isLg, editorScrollRef, previewScrollRef } =
     useEditorShellLayout()
 
@@ -97,23 +155,18 @@ export function useEditorShellState<
   } = useActionBanner()
 
   // --- Create-mode LS hydration --------------------------------------------
-  const createDraftHydratedRef = useRef(false)
-  useEffect(() => {
-    if (isEditing) {
-      return
+  // Render-phase state adjustment (the react-compiler-safe pattern, same as
+  // the conflict check below): hydrate once, the first time the create draft
+  // resolves. `null` means the load settled with nothing stored — mark
+  // hydrated and keep the empty draft.
+  const [createDraftHydrated, setCreateDraftHydrated] = useState(false)
+  if (!isEditing && !createDraftHydrated) {
+    setCreateDraftHydrated(true)
+    if (createDraft.loadedDraft !== null) {
+      setMeta(createDraft.loadedDraft.meta)
+      replaceBody(createDraft.loadedDraft.body, `create:restored:${createDraft.loadedDraft.savedAt}`)
     }
-    if (createDraftHydratedRef.current) {
-      return
-    }
-    if (createDraft.loadedDraft === null) {
-      createDraftHydratedRef.current = true
-      return
-    }
-    createDraftHydratedRef.current = true
-    setMeta(createDraft.loadedDraft.meta)
-    setBody(createDraft.loadedDraft.body)
-    replaceBody(createDraft.loadedDraft.body, `create:restored:${createDraft.loadedDraft.savedAt}`)
-  }, [isEditing, createDraft.loadedDraft, setMeta, replaceBody, setBody])
+  }
 
   // --- Conflict detection (edit mode) --------------------------------------
   const [conflict, setConflict] = useState<{
@@ -216,30 +269,35 @@ export function useEditorShellState<
     persistUnpublish,
   } = useEditorShellPersist({
     isEditing,
-    meta,
-    body,
-    expectedToken,
     detail,
-    serverPublishedAtIso,
-    conflict,
-    upsertMetaFn,
-    saveDraftFn,
-    publishFn,
-    unpublishFn,
-    buildUpsertMetaPayload,
-    directSaveDraft,
-    editPath,
-    navigate,
-    metaDraftFromEntity,
-    onMetaSaved,
-    onBodySaved,
-    onUnpublishSaved,
-    noteError,
-    setStatus,
-    setMeta,
-    setServerPublishedAtIso: metaState.setServerPublishedAtIso,
-    lastSavedBody,
-    markBodySaved,
+    draft: {
+      meta,
+      body,
+      expectedToken,
+      lastSavedBody,
+      serverPublishedAtIso,
+      conflict,
+    },
+    mutations: {
+      upsertMetaFn,
+      saveDraftFn,
+      publishFn,
+      unpublishFn,
+      buildUpsertMetaPayload,
+      directSaveDraft,
+    },
+    reducers: {
+      metaDraftFromEntity,
+      onMetaSaved,
+      onBodySaved,
+      onUnpublishSaved,
+      noteError,
+      setStatus,
+      setMeta,
+      setServerPublishedAtIso,
+      markBodySaved,
+    },
+    routing: { editPath, navigate },
     actionBanner: { begin: beginActionBanner },
     createDraft,
   })
@@ -247,7 +305,7 @@ export function useEditorShellState<
   // --- Derived flags + projections -----------------------------------------
   // Baseline timestamp (latest revision, else published, else the entity
   // row's own updatedAt) — single-owner projection from editor-shell-derived,
-  // consumed by the conflict dialog in the shell TSX.
+  // consumed by the conflict dialog in the screen.
   const baselineUpdatedAtMs = useMemo(() => (isEditing ? deriveBaselineUpdatedAtMs(detail) : null), [isEditing, detail])
 
   const publishState = useMemo<PublishState>(
@@ -255,16 +313,6 @@ export function useEditorShellState<
       isEditing ? derivePublishState(latestRevision, publishedRevision, meta.published) : { kind: 'not-published-yet' },
     [isEditing, latestRevision, publishedRevision, meta.published],
   )
-
-  const showPreviewPublicSyncHint = useMemo(() => {
-    if (!isEditing) {
-      return false
-    }
-    if (publishState.kind === 'draft-ahead') {
-      return true
-    }
-    return !arePortableTextBodiesEquivalent(body, lastSavedBody)
-  }, [isEditing, body, publishState, lastSavedBody])
 
   const sidebarPublishStatus = useMemo<SidebarPublishStatus | null>(
     () => deriveSidebarPublishStatus({ isEditing, publishState, publishedAt: meta.publishedAt }),
@@ -339,9 +387,6 @@ export function useEditorShellState<
     initialBody,
     isEditing,
 
-    status,
-    sidebarSaveStatus,
-
     previewOpen,
     setPreviewOpen,
     metaOpen,
@@ -351,34 +396,48 @@ export function useEditorShellState<
     editorScrollRef,
     previewScrollRef,
 
-    conflict,
-    baselineUpdatedAtMs,
-
     previewBanner,
     dismissPreviewBanner,
     createDraftSavedAt: createDraft.loadedDraft?.savedAt ?? null,
 
-    isPending,
-    isSavingDraft,
-    isPublishing,
-    isUnpublishing,
-    isCreating,
+    toolbar: {
+      previewOpen,
+      setPreviewOpen,
+      metaOpen,
+      setMetaOpen,
+      published: meta.published,
+      isPending,
+      isSavingDraft,
+      isPublishing,
+      isUnpublishing,
+      isCreating,
+      canPersistMeta,
+      canPublish,
+      publishStatus: sidebarPublishStatus,
+      persistCreate,
+      persistSave,
+      persistPublish,
+      persistUnpublish,
+    },
 
-    canPersistMeta,
-    canPublish,
-    publishState,
-    sidebarPublishStatus,
-    sidebarRevisionSummary,
-    showPreviewPublicSyncHint,
-    expectedToken,
+    sidebar: {
+      draft: meta,
+      onChange: setMeta,
+      disabled: isPending,
+      publishStatus: sidebarPublishStatus,
+      revisionSummary: sidebarRevisionSummary,
+      saveStatus: sidebarSaveStatus,
+      expectedToken,
+      body,
+      adoptRevisionFromHistory,
+    },
 
-    persistCreate,
-    persistSave,
-    persistPublish,
-    persistUnpublish,
-
-    adoptLocalDraft,
-    adoptServerVersion,
-    adoptRevisionFromHistory,
+    dialog: {
+      conflict,
+      serverBody: initialBody,
+      baselineUpdatedAtMs,
+      adoptLocalDraft,
+      adoptServerVersion,
+    },
   }
 }

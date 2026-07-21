@@ -2,12 +2,14 @@ import { describe, expect, it } from 'vitest'
 
 import type { EditorShellDetail, EntityLike, RevisionLike } from '@/ui/admin/editor-shell/editor-shell-types'
 
+import { localInputValueToIso, parseLocalDateTimeInput } from '@/ui/admin/editor-shell/editor-datetime'
 import {
   deriveBaselineRevision,
   deriveBaselineUpdatedAtMs,
+  derivePublishState,
+  deriveSidebarPublishStatus,
+  deriveSidebarRevisionSummary,
   deriveSidebarSaveStatus,
-  localInputValueToIso,
-  parseLocalDateTime,
 } from '@/ui/admin/editor-shell/editor-shell-derived'
 
 function revision(overrides: Partial<RevisionLike> = {}): RevisionLike {
@@ -48,10 +50,153 @@ describe('ui/admin/editor-shell/localInputValueToIso', () => {
     expect(Date.parse(iso!)).toBe(Date.parse('2026-06-01T12:00'))
   })
 
-  it('parseLocalDateTime shares the same empty/invalid contract', () => {
-    expect(parseLocalDateTime('')).toBe(Number.NaN)
-    expect(parseLocalDateTime('not-a-date')).toBe(Number.NaN)
-    expect(parseLocalDateTime('2026-06-01T12:00')).toBe(Date.parse('2026-06-01T12:00'))
+  it('parseLocalDateTimeInput shares the same empty/invalid contract', () => {
+    expect(parseLocalDateTimeInput('')).toBeNull()
+    expect(parseLocalDateTimeInput('not-a-date')).toBeNull()
+    expect(parseLocalDateTimeInput('2026-06-01T12:00')?.getTime()).toBe(Date.parse('2026-06-01T12:00'))
+  })
+})
+
+describe('ui/admin/editor-shell/derivePublishState', () => {
+  it('is not-published-yet when no revision exists at all', () => {
+    expect(derivePublishState(null, null, true)).toEqual({ kind: 'not-published-yet' })
+  })
+
+  it('is unpublished when the entity is not visible, keeping the last published revision number', () => {
+    const published = revision({ revisionNo: 2, status: 'published' })
+    expect(derivePublishState(published, published, false)).toEqual({
+      kind: 'unpublished',
+      lastPublishedRevisionNo: 2,
+    })
+  })
+
+  it('is unpublished with a null revision number when nothing was ever published', () => {
+    const draft = revision({ revisionNo: 3, status: 'draft' })
+    expect(derivePublishState(draft, null, false)).toEqual({ kind: 'unpublished', lastPublishedRevisionNo: null })
+  })
+
+  it('is published-current when the latest revision is the published one', () => {
+    const published = revision({ revisionNo: 4, status: 'published' })
+    expect(derivePublishState(published, published, true)).toEqual({ kind: 'published-current', revisionNo: 4 })
+  })
+
+  it('is draft-ahead when the latest revision is a draft over a published one', () => {
+    const draft = revision({ revisionNo: 5, status: 'draft' })
+    const published = revision({ revisionNo: 4, status: 'published' })
+    expect(derivePublishState(draft, published, true)).toEqual({
+      kind: 'draft-ahead',
+      draftRevisionNo: 5,
+      publishedRevisionNo: 4,
+    })
+  })
+
+  it('is draft-ahead with a null published number when only drafts exist', () => {
+    const draft = revision({ revisionNo: 2, status: 'draft' })
+    expect(derivePublishState(draft, null, true)).toEqual({
+      kind: 'draft-ahead',
+      draftRevisionNo: 2,
+      publishedRevisionNo: null,
+    })
+  })
+})
+
+describe('ui/admin/editor-shell/deriveSidebarPublishStatus', () => {
+  it('is never-saved in create mode and when nothing was published', () => {
+    expect(
+      deriveSidebarPublishStatus({ isEditing: false, publishState: { kind: 'not-published-yet' }, publishedAt: '' }),
+    ).toBe('never-saved')
+    expect(
+      deriveSidebarPublishStatus({ isEditing: true, publishState: { kind: 'not-published-yet' }, publishedAt: '' }),
+    ).toBe('never-saved')
+  })
+
+  it('is offline when unpublished', () => {
+    expect(
+      deriveSidebarPublishStatus({
+        isEditing: true,
+        publishState: { kind: 'unpublished', lastPublishedRevisionNo: 2 },
+        publishedAt: '',
+      }),
+    ).toBe('offline')
+  })
+
+  it('is scheduled when publishedAt is a future local input value', () => {
+    expect(
+      deriveSidebarPublishStatus({
+        isEditing: true,
+        publishState: { kind: 'published-current', revisionNo: 4 },
+        publishedAt: '2099-06-01T09:00',
+      }),
+    ).toBe('scheduled')
+  })
+
+  it('is live / live-with-draft-ahead for past publishedAt values', () => {
+    expect(
+      deriveSidebarPublishStatus({
+        isEditing: true,
+        publishState: { kind: 'published-current', revisionNo: 4 },
+        publishedAt: '2020-06-01T09:00',
+      }),
+    ).toBe('live')
+    expect(
+      deriveSidebarPublishStatus({
+        isEditing: true,
+        publishState: { kind: 'draft-ahead', draftRevisionNo: 5, publishedRevisionNo: 4 },
+        publishedAt: '2020-06-01T09:00',
+      }),
+    ).toBe('live-with-draft-ahead')
+  })
+
+  it('treats an unparseable publishedAt as not scheduled', () => {
+    expect(
+      deriveSidebarPublishStatus({
+        isEditing: true,
+        publishState: { kind: 'published-current', revisionNo: 4 },
+        publishedAt: 'garbage',
+      }),
+    ).toBe('live')
+  })
+})
+
+describe('ui/admin/editor-shell/deriveSidebarRevisionSummary', () => {
+  it('is null in create mode', () => {
+    expect(deriveSidebarRevisionSummary({ isEditing: false, publishState: { kind: 'not-published-yet' } })).toBeNull()
+  })
+
+  it('maps not-published-yet to no-revision', () => {
+    expect(deriveSidebarRevisionSummary({ isEditing: true, publishState: { kind: 'not-published-yet' } })).toEqual({
+      kind: 'no-revision',
+    })
+  })
+
+  it('maps published-current to the published revision number', () => {
+    expect(
+      deriveSidebarRevisionSummary({ isEditing: true, publishState: { kind: 'published-current', revisionNo: 4 } }),
+    ).toEqual({ kind: 'published-current', revisionNo: 4 })
+  })
+
+  it('maps unpublished to the last published revision, or no-revision when none exists', () => {
+    expect(
+      deriveSidebarRevisionSummary({
+        isEditing: true,
+        publishState: { kind: 'unpublished', lastPublishedRevisionNo: 2 },
+      }),
+    ).toEqual({ kind: 'published-current', revisionNo: 2 })
+    expect(
+      deriveSidebarRevisionSummary({
+        isEditing: true,
+        publishState: { kind: 'unpublished', lastPublishedRevisionNo: null },
+      }),
+    ).toEqual({ kind: 'no-revision' })
+  })
+
+  it('maps draft-ahead to both revision numbers', () => {
+    expect(
+      deriveSidebarRevisionSummary({
+        isEditing: true,
+        publishState: { kind: 'draft-ahead', draftRevisionNo: 5, publishedRevisionNo: 4 },
+      }),
+    ).toEqual({ kind: 'draft-ahead', draftRevisionNo: 5, publishedRevisionNo: 4 })
   })
 })
 

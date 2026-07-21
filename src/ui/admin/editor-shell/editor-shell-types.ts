@@ -111,6 +111,63 @@ export interface UseEditorShellStateArgs<
   navigate: NavigateFunction
 }
 
+/**
+ * Narrow slice consumed by the toolbar row (and the floating publish
+ * button, which shares the same publish/save gating).
+ */
+export interface EditorToolbarState {
+  previewOpen: boolean
+  setPreviewOpen: (updater: boolean | ((prev: boolean) => boolean)) => void
+  metaOpen: boolean
+  setMetaOpen: React.Dispatch<React.SetStateAction<boolean>>
+  /** `meta.published` — drives the unpublish button. */
+  published: boolean
+  isPending: boolean
+  isSavingDraft: boolean
+  isPublishing: boolean
+  isUnpublishing: boolean
+  isCreating: boolean
+  canPersistMeta: boolean
+  canPublish: boolean
+  publishStatus: SidebarPublishStatus | null
+  persistCreate: () => Promise<void>
+  persistSave: () => void
+  persistPublish: () => void
+  persistUnpublish: () => void
+}
+
+/**
+ * Narrow slice consumed by the meta panel (aside / Sheet): the sidebar
+ * draft bindings plus the revision-history extras wiring.
+ */
+export interface EditorSidebarState<TMeta> {
+  draft: TMeta
+  onChange: React.Dispatch<React.SetStateAction<TMeta>>
+  disabled: boolean
+  publishStatus: SidebarPublishStatus | null
+  revisionSummary: SidebarRevisionSummary | null
+  saveStatus: SidebarSaveStatus
+  expectedToken: string | null
+  body: PortableTextBody
+  adoptRevisionFromHistory: (revision: { body: PortableTextBody; revisionNo: number }) => void
+}
+
+/** Narrow slice consumed by the draft-conflict dialog. */
+export interface EditorDialogState {
+  conflict: { localBody: PortableTextBody; localSavedAt: number } | null
+  /** Baseline body the server holds — the dialog's "server version". */
+  serverBody: PortableTextBody
+  baselineUpdatedAtMs: number | null
+  adoptLocalDraft: () => Promise<void>
+  adoptServerVersion: () => void
+}
+
+/**
+ * Orchestrator output. The top level carries only what the screen body
+ * itself renders (editor column, preview pane, banners); subsection
+ * consumers receive one of the three narrow views above instead of the
+ * whole bag.
+ */
 export interface UseEditorShellStateOutput<TMeta> {
   meta: TMeta
   setMeta: React.Dispatch<React.SetStateAction<TMeta>>
@@ -119,8 +176,6 @@ export interface UseEditorShellStateOutput<TMeta> {
   bodyKey: string
   initialBody: PortableTextBody
   isEditing: boolean
-  status: EditorShellStatus
-  sidebarSaveStatus: SidebarSaveStatus
   previewOpen: boolean
   setPreviewOpen: (updater: boolean | ((prev: boolean) => boolean)) => void
   metaOpen: boolean
@@ -128,33 +183,10 @@ export interface UseEditorShellStateOutput<TMeta> {
   isLg: boolean
   editorScrollRef: React.RefObject<HTMLDivElement | null>
   previewScrollRef: React.RefObject<HTMLDivElement | null>
-  conflict: { localBody: PortableTextBody; localSavedAt: number } | null
-  /**
-   * ms-since-epoch of the baseline revision's last update (latest revision,
-   * else published, else the entity row's `updatedAt`); null in create mode
-   * or when the timestamp is unparseable. Feeds the conflict dialog.
-   */
-  baselineUpdatedAtMs: number | null
   previewBanner: { kind: 'draft' | 'published'; slug: string } | null
   dismissPreviewBanner: () => void
   createDraftSavedAt: number | null
-  isPending: boolean
-  isSavingDraft: boolean
-  isPublishing: boolean
-  isUnpublishing: boolean
-  isCreating: boolean
-  canPersistMeta: boolean
-  canPublish: boolean
-  publishState: PublishState
-  sidebarPublishStatus: SidebarPublishStatus | null
-  sidebarRevisionSummary: SidebarRevisionSummary | null
-  showPreviewPublicSyncHint: boolean
-  expectedToken: string | null
-  persistCreate: () => Promise<void>
-  persistSave: () => void
-  persistPublish: () => void
-  persistUnpublish: () => void
-  adoptLocalDraft: () => Promise<void>
-  adoptServerVersion: () => void
-  adoptRevisionFromHistory: (revision: { body: PortableTextBody; revisionNo: number }) => void
+  toolbar: EditorToolbarState
+  sidebar: EditorSidebarState<TMeta>
+  dialog: EditorDialogState
 }

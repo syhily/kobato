@@ -2,16 +2,14 @@ import { type ReactNode } from 'react'
 
 import type { AdminPageDto, PageMetaDraft } from '@/shared/types/pages'
 
-import { EMPTY_PAGE_META_DRAFT, PAGE_META_TOGGLE_FIELDS, pageMetaDraftsEqual } from '@/shared/types/pages'
+import { PAGE_META_TOGGLE_FIELDS } from '@/shared/types/pages'
 import { GeneratedOgPreview, ImageField } from '@/ui/admin/editor-shared/ImageField'
 import { PublishStatusRow } from '@/ui/admin/editor-shared/PublishStatusRow'
 import { ToggleRow } from '@/ui/admin/editor-shared/ToggleRow'
+import { futureLocalInputValueOrEmpty } from '@/ui/admin/editor-shell/editor-datetime'
 import { Card, CardContent, CardHeader, CardTitle } from '@/ui/components/card'
 import { Label } from '@/ui/components/label'
 import { Textarea } from '@/ui/components/textarea'
-
-export const EMPTY_META_DRAFT = EMPTY_PAGE_META_DRAFT
-export const metaDraftsEqual = pageMetaDraftsEqual
 
 export function metaDraftFromPage(page: AdminPageDto): PageMetaDraft {
   return {
@@ -27,29 +25,6 @@ export function metaDraftFromPage(page: AdminPageDto): PageMetaDraft {
     showFriends: page.showFriends,
     publishedAt: futureLocalInputValueOrEmpty(page.publishedAt),
   }
-}
-
-function futureLocalInputValueOrEmpty(iso: string): string {
-  const ms = Date.parse(iso)
-  if (Number.isNaN(ms) || ms <= Date.now()) {
-    return ''
-  }
-  return isoToLocalInputValue(iso)
-}
-
-/**
- * Convert an ISO-8601 wire DTO timestamp into the `YYYY-MM-DDTHH:mm`
- * shape that `<input type="datetime-local">` expects. Returns `''`
- * for invalid inputs so the picker just renders blank.
- */
-function isoToLocalInputValue(iso: string): string {
-  const ms = Date.parse(iso)
-  if (Number.isNaN(ms)) {
-    return ''
-  }
-  const d = new Date(ms)
-  const pad = (n: number) => n.toString().padStart(2, '0')
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
 }
 
 import type {

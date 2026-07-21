@@ -1,16 +1,13 @@
+import type { NavigateFunction } from 'react-router'
+
 import { describe, expect, it, vi } from 'vitest'
 
 import { makeAdminPost } from '#/_helpers/catalog'
 import { renderInRouter, renderToHtml, stableHtml } from '#/_helpers/render'
-import { localInputValueToIso } from '@/ui/admin/editor-shell/editor-shell-derived'
-import { PostEditorMetaAside, PostEditorMetaSheet } from '@/ui/admin/posts/PostEditorMetaPanel'
-import {
-  EMPTY_POST_META_DRAFT,
-  metaDraftFromPost,
-  metaDraftsEqual,
-  PostMetaSidebar,
-  type PostMetaDraft,
-} from '@/ui/admin/posts/PostMetaSidebar'
+import { EMPTY_POST_META_DRAFT, postMetaDraftsEqual, type PostMetaDraft } from '@/shared/types/posts'
+import { localInputValueToIso } from '@/ui/admin/editor-shell/editor-datetime'
+import { EditorMetaPanel } from '@/ui/admin/editor-shell/EditorMetaPanel'
+import { metaDraftFromPost, PostMetaSidebar } from '@/ui/admin/posts/PostMetaSidebar'
 
 // PostMetaSidebar is the props-driven aside rendered inside the post editor.
 // It owns no data fetching — every field is controlled via the `draft` prop —
@@ -231,27 +228,27 @@ describe('snapshot: PostMetaDraft pure helpers', () => {
     expect(Date.parse(localInputValueToIso(draft.publishedAt)!)).toBe(Date.parse(post.publishedAt))
   })
 
-  it('metaDraftsEqual returns true for identical drafts and false for any diff', () => {
+  it('postMetaDraftsEqual returns true for identical drafts and false for any diff', () => {
     // Build two drafts from the same source so generated ids/slugs match.
     const source = makeAdminPost({ slug: 'fixed-slug', tags: ['a'] })
     const a = metaDraftFromPost(source)
     const b = metaDraftFromPost(source)
-    expect(metaDraftsEqual(a, b)).toBe(true)
-    expect(metaDraftsEqual(a, { ...a, title: 'changed' })).toBe(false)
-    expect(metaDraftsEqual(a, { ...a, tags: ['x'] })).toBe(false)
-    expect(metaDraftsEqual(a, { ...a, alias: ['/x'] })).toBe(false)
-    expect(metaDraftsEqual(a, { ...a, published: !a.published })).toBe(false)
-    expect(metaDraftsEqual(a, { ...a, visible: !a.visible })).toBe(false)
-    expect(metaDraftsEqual(a, { ...a, pinned: !a.pinned })).toBe(false)
-    expect(metaDraftsEqual(a, { ...a, summary: 'diff' })).toBe(false)
-    expect(metaDraftsEqual(a, { ...a, cover: 'diff' })).toBe(false)
-    expect(metaDraftsEqual(a, { ...a, og: 'diff' })).toBe(false)
-    expect(metaDraftsEqual(a, { ...a, categoryId: 'diff' })).toBe(false)
-    expect(metaDraftsEqual(a, { ...a, commentsEnabled: !a.commentsEnabled })).toBe(false)
-    expect(metaDraftsEqual(a, { ...a, showToc: !a.showToc })).toBe(false)
-    expect(metaDraftsEqual(a, { ...a, showUpdated: !a.showUpdated })).toBe(false)
-    expect(metaDraftsEqual(a, { ...a, slug: 'diff' })).toBe(false)
-    expect(metaDraftsEqual(a, { ...a, publishedAt: '2099-01-01T00:00' })).toBe(false)
+    expect(postMetaDraftsEqual(a, b)).toBe(true)
+    expect(postMetaDraftsEqual(a, { ...a, title: 'changed' })).toBe(false)
+    expect(postMetaDraftsEqual(a, { ...a, tags: ['x'] })).toBe(false)
+    expect(postMetaDraftsEqual(a, { ...a, alias: ['/x'] })).toBe(false)
+    expect(postMetaDraftsEqual(a, { ...a, published: !a.published })).toBe(false)
+    expect(postMetaDraftsEqual(a, { ...a, visible: !a.visible })).toBe(false)
+    expect(postMetaDraftsEqual(a, { ...a, pinned: !a.pinned })).toBe(false)
+    expect(postMetaDraftsEqual(a, { ...a, summary: 'diff' })).toBe(false)
+    expect(postMetaDraftsEqual(a, { ...a, cover: 'diff' })).toBe(false)
+    expect(postMetaDraftsEqual(a, { ...a, og: 'diff' })).toBe(false)
+    expect(postMetaDraftsEqual(a, { ...a, categoryId: 'diff' })).toBe(false)
+    expect(postMetaDraftsEqual(a, { ...a, commentsEnabled: !a.commentsEnabled })).toBe(false)
+    expect(postMetaDraftsEqual(a, { ...a, showToc: !a.showToc })).toBe(false)
+    expect(postMetaDraftsEqual(a, { ...a, showUpdated: !a.showUpdated })).toBe(false)
+    expect(postMetaDraftsEqual(a, { ...a, slug: 'diff' })).toBe(false)
+    expect(postMetaDraftsEqual(a, { ...a, publishedAt: '2099-01-01T00:00' })).toBe(false)
   })
 
   it('localInputValueToIso round-trips a local input value and rejects garbage', () => {
@@ -268,74 +265,100 @@ describe('snapshot: PostMetaDraft pure helpers', () => {
   })
 })
 
-// ───────────────────────── PostEditorMetaPanel ────────────────────────────
-// The MetaPanel wrappers (Aside / Sheet) consume an `editor-shell` state
-// object. We build a minimal stub that satisfies the props so the SSR render
-// exercises the aside/sheet branch logic without bringing up the full editor
-// state machine (which depends on a TipTap editor instance + local-storage
-// draft sync).
+// ───────────────────────── EditorMetaPanel ────────────────────────────
+// The shared meta panel (aside / Sheet) consumes a narrow `sidebar` state
+// slice plus a delete/restore wiring bag. We build minimal stubs that satisfy
+// the props so the SSR render exercises the aside/sheet branch logic without
+// bringing up the full editor state machine (which depends on a TipTap editor
+// instance + local-storage draft sync).
 
-const editorShellState = {
-  meta: populatedDraft,
-  setMeta: noop,
-  isPending: false,
-  metaOpen: true,
-  setMetaOpen: noop,
-  sidebarPublishStatus: 'live' as const,
-  sidebarRevisionSummary: null,
-  sidebarSaveStatus: { kind: 'unsaved' as const },
+const sidebarState = {
+  draft: populatedDraft,
+  onChange: noop,
+  disabled: false,
+  publishStatus: 'live' as const,
+  revisionSummary: null,
+  saveStatus: { kind: 'unsaved' as const },
   expectedToken: 'token-abc',
   body: [],
   adoptRevisionFromHistory: noop,
-  isLg: true,
-  // The remaining editor-shell fields aren't read by the MetaPanel wrappers.
-} as unknown as React.ComponentProps<typeof PostEditorMetaAside>['state']
+}
 
-describe('snapshot: PostEditorMetaAside', () => {
+const deleteRestore = {
+  listPath: '/admin/posts',
+  deleteFn: async () => undefined,
+  restoreFn: async () => undefined,
+  invalidateList: noop,
+  navigate: (() => undefined) as unknown as NavigateFunction,
+}
+
+function renderMetaPanel(entity: { id: string; slug: string; title: string; deletedAt: string | null } | undefined) {
+  return stableHtml(
+    renderInRouter(
+      <EditorMetaPanel
+        entityKind="post"
+        entityLabel="文章"
+        entity={entity}
+        previewOpen={false}
+        metaOpen={true}
+        setMetaOpen={noop}
+        isLg={true}
+        sidebar={sidebarState}
+        renderSidebar={(props) => <PostMetaSidebar {...props} />}
+        deleteRestore={deleteRestore}
+      />,
+      '/editor/post/1',
+    ),
+  )
+}
+
+describe('snapshot: EditorMetaPanel (aside)', () => {
   it('renders the sidebar (lg aside) with revision + delete extras for an existing post', () => {
     const post = makeAdminPost({ title: 'Editable Post' })
-    const detail = { post, latestRevision: null, publishedRevision: null }
-    const html = stableHtml(
-      renderInRouter(<PostEditorMetaAside mode="edit" detail={detail} state={editorShellState} />, '/editor/post/1'),
-    )
+    const html = renderMetaPanel({ id: post.id, slug: post.slug, title: post.title, deletedAt: post.deletedAt })
     // Aside + sidebar body.
     expect(html).toContain('基本信息')
-    // MetaExtras renders the revision-history trigger + delete button (edit mode).
+    // Extras renders the revision-history trigger + delete button (edit mode).
     expect(html).toContain('历史版本')
     expect(html).toContain('删除文章')
   })
 
   it('renders the restore button when the post is soft-deleted', () => {
     const post = makeAdminPost({ deletedAt: '2024-03-01T00:00:00.000Z' })
-    const detail = { post, latestRevision: null, publishedRevision: null }
-    const html = stableHtml(
-      renderInRouter(<PostEditorMetaAside mode="edit" detail={detail} state={editorShellState} />, '/editor/post/1'),
-    )
+    const html = renderMetaPanel({ id: post.id, slug: post.slug, title: post.title, deletedAt: post.deletedAt })
     expect(html).toContain('恢复文章')
     expect(html).not.toContain('删除文章')
   })
 
-  it('omits the extras block in create mode (no detail)', () => {
-    const html = stableHtml(
-      renderInRouter(
-        <PostEditorMetaAside mode="create" detail={undefined} state={editorShellState} />,
-        '/editor/post/new',
-      ),
-    )
+  it('omits the extras block in create mode (no entity)', () => {
+    const html = renderMetaPanel(undefined)
     expect(html).toContain('基本信息')
     expect(html).not.toContain('历史版本')
     expect(html).not.toContain('删除文章')
   })
 })
 
-describe('snapshot: PostEditorMetaSheet', () => {
+describe('snapshot: EditorMetaPanel (sheet)', () => {
   it('renders the sheet wrapper (closed state emits no panel body on SSR)', () => {
     const post = makeAdminPost({ title: 'Sheet Post' })
-    const detail = { post, latestRevision: null, publishedRevision: null }
     // The Base UI Sheet portal does not emit its content during SSR when
     // closed, but the component still mounts without throwing.
     const html = stableHtml(
-      renderInRouter(<PostEditorMetaSheet mode="edit" detail={detail} state={editorShellState} />, '/editor/post/1'),
+      renderInRouter(
+        <EditorMetaPanel
+          entityKind="post"
+          entityLabel="文章"
+          entity={{ id: post.id, slug: post.slug, title: post.title, deletedAt: post.deletedAt }}
+          previewOpen={true}
+          metaOpen={false}
+          setMetaOpen={noop}
+          isLg={true}
+          sidebar={sidebarState}
+          renderSidebar={(props) => <PostMetaSidebar {...props} />}
+          deleteRestore={deleteRestore}
+        />,
+        '/editor/post/1',
+      ),
     )
     // ConfirmDialog (closed) emits nothing; the sheet content is portalled.
     // We only assert the render doesn't throw — user-visible copy is behind

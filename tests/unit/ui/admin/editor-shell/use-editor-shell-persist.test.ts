@@ -16,8 +16,8 @@ import { renderHook } from '#/_helpers/hook'
 //     `actionBanner.begin(kind, legs)` — the leg count (draft: 1 or 2 by
 //     body divergence, publish: 1) is persist's own knowledge
 //
-// `localInputValueToIso` lives in editor-shell-derived.ts and is covered
-// directly by editor-shell-derived.test.ts; the persist paths below only
+// `localInputValueToIso` lives in editor-datetime.ts and is covered
+// directly by editor-datetime.test.ts; the persist paths below only
 // assert its ISO output flows into the mutation payloads.
 
 const mutate = vi.fn()
@@ -37,6 +37,8 @@ vi.mock('@/client/hooks/use-autosave', () => ({
   useAutosave: vi.fn(),
 }))
 
+import type { UseEditorShellPersistArgs } from '@/ui/admin/editor-shell/use-editor-shell-persist'
+
 import { useEditorShellPersist } from '@/ui/admin/editor-shell/use-editor-shell-persist'
 
 type Meta = { title: string; slug: string; published: boolean; publishedAt: string }
@@ -51,36 +53,53 @@ function block(key: string, text: string) {
   return { _type: 'block' as const, _key: key, children: [{ _type: 'span' as const, _key: `${key}-s`, text }] }
 }
 
-function makeArgs(overrides: Partial<Parameters<typeof useEditorShellPersist>[0]> = {}) {
+type Args = UseEditorShellPersistArgs<Meta, { id: string; slug: string; updatedAt: string; publishedAt: null }>
+
+function makeArgs(
+  overrides: {
+    isEditing?: Args['isEditing']
+    detail?: Args['detail']
+    draft?: Partial<Args['draft']>
+    mutations?: Partial<Args['mutations']>
+    reducers?: Partial<Args['reducers']>
+  } = {},
+): Args {
   return {
-    isEditing: false,
-    meta: baseMeta,
-    body: [] as never,
-    expectedToken: null,
-    detail: undefined,
-    serverPublishedAtIso: null,
-    conflict: null,
-    upsertMetaFn: vi.fn(),
-    saveDraftFn: vi.fn(),
-    publishFn: vi.fn(),
-    unpublishFn: vi.fn(),
-    buildUpsertMetaPayload: vi.fn(),
-    directSaveDraft: vi.fn(),
-    editPath: (id: string) => `/edit/${id}`,
-    navigate: vi.fn(),
-    metaDraftFromEntity: vi.fn(() => baseMeta),
-    onMetaSaved: vi.fn(),
-    onBodySaved: vi.fn(),
-    onUnpublishSaved: vi.fn(),
-    noteError: vi.fn(),
-    setStatus: vi.fn(),
-    setMeta: vi.fn(),
-    setServerPublishedAtIso: vi.fn(),
-    lastSavedBody: [],
-    markBodySaved: vi.fn(),
+    isEditing: overrides.isEditing ?? false,
+    detail: overrides.detail,
+    draft: {
+      meta: baseMeta,
+      body: [] as never,
+      expectedToken: null,
+      lastSavedBody: [],
+      serverPublishedAtIso: null,
+      conflict: null,
+      ...overrides.draft,
+    },
+    mutations: {
+      upsertMetaFn: vi.fn(),
+      saveDraftFn: vi.fn(),
+      publishFn: vi.fn(),
+      unpublishFn: vi.fn(),
+      buildUpsertMetaPayload: vi.fn(),
+      directSaveDraft: vi.fn(),
+      ...overrides.mutations,
+    },
+    reducers: {
+      metaDraftFromEntity: vi.fn(() => baseMeta),
+      onMetaSaved: vi.fn(),
+      onBodySaved: vi.fn(),
+      onUnpublishSaved: vi.fn(),
+      noteError: vi.fn(),
+      setStatus: vi.fn(),
+      setMeta: vi.fn(),
+      setServerPublishedAtIso: vi.fn(),
+      markBodySaved: vi.fn(),
+      ...overrides.reducers,
+    },
+    routing: { editPath: (id: string) => `/edit/${id}`, navigate: vi.fn() },
     actionBanner: { begin: vi.fn() },
     createDraft: { migrateToEditKey: vi.fn() },
-    ...overrides,
   }
 }
 
@@ -116,7 +135,7 @@ describe('ui/admin/editor-shell/useEditorShellPersist — handler gating', () =>
     const args = makeArgs({ isEditing: false })
     const { persistSave } = renderHook(() => useEditorShellPersist(args))
     persistSave()
-    expect(args.setStatus).not.toHaveBeenCalled()
+    expect(args.reducers.setStatus).not.toHaveBeenCalled()
     expect(mutate).not.toHaveBeenCalled()
   })
 
@@ -124,7 +143,7 @@ describe('ui/admin/editor-shell/useEditorShellPersist — handler gating', () =>
     const args = makeArgs({ isEditing: false })
     const { persistPublish } = renderHook(() => useEditorShellPersist(args))
     persistPublish()
-    expect(args.setStatus).toHaveBeenCalledWith({ kind: 'error', message: '请先保存基本信息再发布。' })
+    expect(args.reducers.setStatus).toHaveBeenCalledWith({ kind: 'error', message: '请先保存基本信息再发布。' })
     expect(mutate).not.toHaveBeenCalled()
   })
 
@@ -132,7 +151,7 @@ describe('ui/admin/editor-shell/useEditorShellPersist — handler gating', () =>
     const args = makeArgs({ isEditing: false })
     const { persistUnpublish } = renderHook(() => useEditorShellPersist(args))
     persistUnpublish()
-    expect(args.setStatus).not.toHaveBeenCalled()
+    expect(args.reducers.setStatus).not.toHaveBeenCalled()
     expect(mutate).not.toHaveBeenCalled()
   })
 
@@ -148,7 +167,7 @@ describe('ui/admin/editor-shell/useEditorShellPersist — handler gating', () =>
     const { persistCreate } = renderHook(() => useEditorShellPersist(args))
     await persistCreate()
     expect(mutateAsync).not.toHaveBeenCalled()
-    expect(args.navigate).not.toHaveBeenCalled()
+    expect(args.routing.navigate).not.toHaveBeenCalled()
   })
 })
 
@@ -167,20 +186,22 @@ describe('ui/admin/editor-shell/useEditorShellPersist — edit-mode save dispatc
     const args = makeArgs({
       isEditing: true,
       detail,
-      meta: { ...baseMeta, publishedAt: '2025-01-01T00:00' },
-      buildUpsertMetaPayload: vi.fn().mockReturnValue(payload),
-      lastSavedBody: [block('b1', 'same')],
-      body: [block('b1', 'same')], // semantically equal -> not diverged
+      draft: {
+        meta: { ...baseMeta, publishedAt: '2025-01-01T00:00' },
+        lastSavedBody: [block('b1', 'same')],
+        body: [block('b1', 'same')], // semantically equal -> not diverged
+      },
+      mutations: { buildUpsertMetaPayload: vi.fn().mockReturnValue(payload) },
     })
     const { persistSave } = renderHook(() => useEditorShellPersist(args))
     persistSave()
 
     // setStatus({ kind: 'saving' }) is the first call.
-    expect(args.setStatus).toHaveBeenCalledWith({ kind: 'saving' })
+    expect(args.reducers.setStatus).toHaveBeenCalledWith({ kind: 'saving' })
     // upsertMeta mutation fired exactly once with the built payload.
     expect(mutate).toHaveBeenCalledTimes(1)
-    expect(args.buildUpsertMetaPayload).toHaveBeenCalledWith({
-      meta: args.meta,
+    expect(args.mutations.buildUpsertMetaPayload).toHaveBeenCalledWith({
+      meta: args.draft.meta,
       id: 'e1',
       publishedAt: expect.any(String),
     })
@@ -197,11 +218,13 @@ describe('ui/admin/editor-shell/useEditorShellPersist — edit-mode save dispatc
     const args = makeArgs({
       isEditing: true,
       detail,
-      meta: { ...baseMeta, publishedAt: '' },
-      buildUpsertMetaPayload: vi.fn().mockReturnValue({ meta: baseMeta }),
-      lastSavedBody: [block('old', 'old text')],
-      body: [block('new', 'new text')], // diverged
-      expectedToken: 'tok-1',
+      draft: {
+        meta: { ...baseMeta, publishedAt: '' },
+        lastSavedBody: [block('old', 'old text')],
+        body: [block('new', 'new text')], // diverged
+        expectedToken: 'tok-1',
+      },
+      mutations: { buildUpsertMetaPayload: vi.fn().mockReturnValue({ meta: baseMeta }) },
     })
     const { persistSave } = renderHook(() => useEditorShellPersist(args))
     persistSave()
@@ -220,17 +243,19 @@ describe('ui/admin/editor-shell/useEditorShellPersist — edit-mode save dispatc
     const args = makeArgs({
       isEditing: true,
       detail,
-      meta: { ...baseMeta, publishedAt: '2025-06-01T12:00' },
-      body: [block('b1', 'x')],
-      expectedToken: 'tok-1',
+      draft: {
+        meta: { ...baseMeta, publishedAt: '2025-06-01T12:00' },
+        body: [block('b1', 'x')],
+        expectedToken: 'tok-1',
+      },
     })
     const { persistPublish } = renderHook(() => useEditorShellPersist(args))
     persistPublish()
 
-    expect(args.setStatus).toHaveBeenCalledWith({ kind: 'saving' })
+    expect(args.reducers.setStatus).toHaveBeenCalledWith({ kind: 'saving' })
     expect(mutate).toHaveBeenCalledTimes(1)
     // setServerPublishedAtIso is updated to the parsed ISO.
-    expect(args.setServerPublishedAtIso).toHaveBeenCalledWith(expect.any(String))
+    expect(args.reducers.setServerPublishedAtIso).toHaveBeenCalledWith(expect.any(String))
     expect(args.actionBanner.begin).toHaveBeenCalledWith('published', 1)
   })
 
@@ -244,7 +269,7 @@ describe('ui/admin/editor-shell/useEditorShellPersist — edit-mode save dispatc
     const { persistUnpublish } = renderHook(() => useEditorShellPersist(args))
     persistUnpublish()
 
-    expect(args.setStatus).toHaveBeenCalledWith({ kind: 'saving' })
+    expect(args.reducers.setStatus).toHaveBeenCalledWith({ kind: 'saving' })
     expect(mutate).toHaveBeenCalledTimes(1)
   })
 })

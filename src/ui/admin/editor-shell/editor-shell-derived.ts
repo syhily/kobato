@@ -9,23 +9,7 @@ import type {
   SidebarSaveStatus,
 } from '@/ui/admin/editor-shell/editor-shell-types'
 
-// --- Autosave guard ---------------------------------------------------------
-
-export interface AutosavePendingArg {
-  upsertMetaApi: { isPending: boolean }
-  saveDraftApi: { isPending: boolean }
-  publishApi: { isPending: boolean }
-  unpublishApi: { isPending: boolean }
-}
-
-export function isPendingForAutosave({
-  upsertMetaApi,
-  saveDraftApi,
-  publishApi,
-  unpublishApi,
-}: AutosavePendingArg): boolean {
-  return upsertMetaApi.isPending || saveDraftApi.isPending || publishApi.isPending || unpublishApi.isPending
-}
+import { parseLocalDateTimeInput } from '@/ui/admin/editor-shell/editor-datetime'
 
 // --- Publish-state derivation -----------------------------------------------
 
@@ -79,28 +63,6 @@ export function deriveBaselineUpdatedAtMs<TEntity extends EntityLike>(
   return Number.isNaN(ms) ? null : ms
 }
 
-// --- Date-time picker parsing -------------------------------------------------
-
-// The picker's local-tz input string has exactly two outcomes across the
-// shell: an ISO timestamp or "no value". Both `''` and unparseable input map
-// to the no-value sentinel — `null` here, `Number.NaN` in
-// `parseLocalDateTime` below — and this one parser owns that decision.
-export function localInputValueToIso(localValue: string): string | null {
-  if (localValue === '') {
-    return null
-  }
-  const ms = Date.parse(localValue)
-  if (Number.isNaN(ms)) {
-    return null
-  }
-  return new Date(ms).toISOString()
-}
-
-export function parseLocalDateTime(localValue: string): number {
-  const iso = localInputValueToIso(localValue)
-  return iso === null ? Number.NaN : Date.parse(iso)
-}
-
 // --- Sidebar derivations ----------------------------------------------------
 
 export function deriveSidebarPublishStatus(args: {
@@ -118,7 +80,7 @@ export function deriveSidebarPublishStatus(args: {
   if (publishState.kind === 'unpublished') {
     return 'offline'
   }
-  const ts = parseLocalDateTime(publishedAt)
+  const ts = parseLocalDateTimeInput(publishedAt)?.getTime() ?? Number.NaN
   const isFuture = !Number.isNaN(ts) && ts > Date.now()
   if (isFuture) {
     return 'scheduled'

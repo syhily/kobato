@@ -114,6 +114,64 @@ export interface UpsertPostMetaOutput {
   post: AdminPostDto
 }
 
+// Single source of truth for the editor/sidebar metadata draft shape.
+export interface PostMetaDraft {
+  slug: string
+  title: string
+  summary: string
+  cover: string
+  og: string
+  published: boolean
+  commentsEnabled: boolean
+  showToc: boolean
+  showUpdated: boolean
+  visible: boolean
+  pinned: boolean
+  categoryId: string
+  tags: string[]
+  alias: string[]
+  /** `<input type="datetime-local">` value (no timezone). Empty = leave server publishedAt alone. */
+  publishedAt: string
+}
+
+export const EMPTY_POST_META_DRAFT: PostMetaDraft = {
+  slug: '',
+  title: '',
+  summary: '',
+  cover: '',
+  og: '',
+  published: false,
+  commentsEnabled: true,
+  showToc: false,
+  showUpdated: false,
+  visible: true,
+  pinned: false,
+  categoryId: '',
+  tags: [],
+  alias: [],
+  publishedAt: '',
+}
+
+export function postMetaDraftsEqual(a: PostMetaDraft, b: PostMetaDraft): boolean {
+  return (
+    a.slug === b.slug &&
+    a.title === b.title &&
+    a.summary === b.summary &&
+    a.cover === b.cover &&
+    a.og === b.og &&
+    a.published === b.published &&
+    a.commentsEnabled === b.commentsEnabled &&
+    a.showToc === b.showToc &&
+    a.showUpdated === b.showUpdated &&
+    a.visible === b.visible &&
+    a.pinned === b.pinned &&
+    a.categoryId === b.categoryId &&
+    JSON.stringify(a.tags) === JSON.stringify(b.tags) &&
+    JSON.stringify(a.alias) === JSON.stringify(b.alias) &&
+    a.publishedAt === b.publishedAt
+  )
+}
+
 export interface DeletePostInput {
   id: string
 }

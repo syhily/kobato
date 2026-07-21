@@ -4,6 +4,7 @@ import { zhCN } from 'date-fns/locale'
 import { CalendarIcon } from 'lucide-react'
 import { useMemo, useState } from 'react'
 
+import { dateToLocalInputValue, parseLocalDateTimeInput } from '@/ui/admin/editor-shell/editor-datetime'
 import { Button } from '@/ui/components/button'
 import { Calendar } from '@/ui/components/calendar'
 import { Popover, PopoverContent, PopoverTrigger } from '@/ui/components/popover'
@@ -28,7 +29,7 @@ const CALENDAR_COMPONENTS = { Dropdown: CalendarDropdown }
 
 export function DateTimePicker({ value, onChange, disabled, id }: DateTimePickerProps) {
   const [open, setOpen] = useState(false)
-  const parsed = parseLocal(value)
+  const parsed = parseLocalDateTimeInput(value)
   const triggerId = id ?? 'datetime-picker'
 
   const { startMonth, endMonth } = useMemo(() => {
@@ -44,7 +45,7 @@ export function DateTimePicker({ value, onChange, disabled, id }: DateTimePicker
   }, [parsed])
 
   const commit = (next: Date) => {
-    onChange(toLocalInputValue(next))
+    onChange(dateToLocalInputValue(next))
   }
 
   const handleDateSelect = (selectedDate: Date | undefined) => {
@@ -238,19 +239,4 @@ function defaultTime(): Date {
   const d = new Date()
   d.setHours(9, 0, 0, 0)
   return d
-}
-
-function parseLocal(value: string): Date | null {
-  if (value.trim() === '') {
-    return null
-  }
-  const ms = Date.parse(value)
-  if (Number.isNaN(ms)) {
-    return null
-  }
-  return new Date(ms)
-}
-
-function toLocalInputValue(date: Date): string {
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`
 }

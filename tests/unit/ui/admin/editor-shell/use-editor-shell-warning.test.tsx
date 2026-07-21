@@ -141,10 +141,9 @@ describe('ui/admin/editor-shell/useEditorShellState — save-result warnings', (
 
     act(() => slots[1]?.onSuccess?.(payload as never))
 
-    expect(result.current.status).toEqual({ kind: 'warning', message: WARNING })
-    expect(result.current.sidebarSaveStatus).toEqual({ kind: 'warning', message: WARNING })
+    expect(result.current.sidebar.saveStatus).toEqual({ kind: 'warning', message: WARNING })
     // The save still landed: the revision token advanced.
-    expect(result.current.expectedToken).toBe('tok-1')
+    expect(result.current.sidebar.expectedToken).toBe('tok-1')
   })
 
   it('does not let the concurrent meta leg clobber a body-leg warning', () => {
@@ -163,8 +162,7 @@ describe('ui/admin/editor-shell/useEditorShellState — save-result warnings', (
       } as never),
     )
 
-    expect(result.current.status).toEqual({ kind: 'warning', message: WARNING })
-    expect(result.current.sidebarSaveStatus).toEqual({ kind: 'warning', message: WARNING })
+    expect(result.current.sidebar.saveStatus).toEqual({ kind: 'warning', message: WARNING })
   })
 
   it('clears the warning on the next clean save', () => {
@@ -176,11 +174,10 @@ describe('ui/admin/editor-shell/useEditorShellState — save-result warnings', (
     }
 
     act(() => slots[1]?.onSuccess?.(warned as never))
-    expect(result.current.status).toEqual({ kind: 'warning', message: WARNING })
+    expect(result.current.sidebar.saveStatus).toEqual({ kind: 'warning', message: WARNING })
 
     act(() => slots[1]?.onSuccess?.(clean as never))
-    expect(result.current.status).toEqual({ kind: 'saved', at: expect.any(Date) })
-    expect(result.current.sidebarSaveStatus).toEqual({
+    expect(result.current.sidebar.saveStatus).toEqual({
       kind: 'saved',
       atMs: Date.parse('2026-07-10T00:00:00.000Z'),
     })

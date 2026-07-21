@@ -1,73 +1,18 @@
 import { type ReactNode } from 'react'
 
-import type { AdminPostDto } from '@/shared/types/posts'
+import type { AdminPostDto, PostMetaDraft } from '@/shared/types/posts'
 
 import { POST_META_TOGGLE_FIELDS } from '@/shared/types/posts'
 import { GeneratedOgPreview, ImageField } from '@/ui/admin/editor-shared/ImageField'
 import { PublishStatusRow } from '@/ui/admin/editor-shared/PublishStatusRow'
 import { ToggleRow } from '@/ui/admin/editor-shared/ToggleRow'
+import { futureLocalInputValueOrEmpty } from '@/ui/admin/editor-shell/editor-datetime'
 import { AliasField } from '@/ui/admin/posts/meta/AliasField'
 import { CategoryField } from '@/ui/admin/posts/meta/CategoryField'
 import { TagsField } from '@/ui/admin/posts/meta/TagsField'
 import { Card, CardContent, CardHeader, CardTitle } from '@/ui/components/card'
 import { Label } from '@/ui/components/label'
 import { Textarea } from '@/ui/components/textarea'
-
-export interface PostMetaDraft {
-  slug: string
-  title: string
-  summary: string
-  cover: string
-  og: string
-  published: boolean
-  commentsEnabled: boolean
-  showToc: boolean
-  showUpdated: boolean
-  visible: boolean
-  pinned: boolean
-  categoryId: string
-  tags: string[]
-  alias: string[]
-  publishedAt: string
-}
-
-export const EMPTY_POST_META_DRAFT: PostMetaDraft = {
-  slug: '',
-  title: '',
-  summary: '',
-  cover: '',
-  og: '',
-  published: false,
-  commentsEnabled: true,
-  showToc: false,
-  showUpdated: false,
-  visible: true,
-  pinned: false,
-  categoryId: '',
-  tags: [],
-  alias: [],
-  publishedAt: '',
-}
-
-export function metaDraftsEqual(a: PostMetaDraft, b: PostMetaDraft): boolean {
-  return (
-    a.slug === b.slug &&
-    a.title === b.title &&
-    a.summary === b.summary &&
-    a.cover === b.cover &&
-    a.og === b.og &&
-    a.published === b.published &&
-    a.commentsEnabled === b.commentsEnabled &&
-    a.showToc === b.showToc &&
-    a.showUpdated === b.showUpdated &&
-    a.visible === b.visible &&
-    a.pinned === b.pinned &&
-    a.categoryId === b.categoryId &&
-    JSON.stringify(a.tags) === JSON.stringify(b.tags) &&
-    JSON.stringify(a.alias) === JSON.stringify(b.alias) &&
-    a.publishedAt === b.publishedAt
-  )
-}
 
 export function metaDraftFromPost(post: AdminPostDto): PostMetaDraft {
   return {
@@ -87,24 +32,6 @@ export function metaDraftFromPost(post: AdminPostDto): PostMetaDraft {
     alias: post.alias,
     publishedAt: futureLocalInputValueOrEmpty(post.publishedAt),
   }
-}
-
-function futureLocalInputValueOrEmpty(iso: string): string {
-  const ms = Date.parse(iso)
-  if (Number.isNaN(ms) || ms <= Date.now()) {
-    return ''
-  }
-  return isoToLocalInputValue(iso)
-}
-
-function isoToLocalInputValue(iso: string): string {
-  const ms = Date.parse(iso)
-  if (Number.isNaN(ms)) {
-    return ''
-  }
-  const d = new Date(ms)
-  const pad = (n: number) => n.toString().padStart(2, '0')
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
 }
 
 import type {

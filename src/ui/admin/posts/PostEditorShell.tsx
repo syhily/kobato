@@ -1,30 +1,18 @@
 import type { NavigateFunction } from 'react-router'
 
 import { useQueryClient } from '@tanstack/react-query'
-import { useMemo } from 'react'
 
-import type { AdminPostDetailDto, AdminPostDto, UpsertPostMetaInput } from '@/shared/types/posts'
+import type { AdminPostDetailDto, PostMetaDraft, UpsertPostMetaInput } from '@/shared/types/posts'
+import type { EditorScreenAdapter } from '@/ui/admin/editor-shell/EditorScreen'
 
 import { orpc } from '@/client/api/client'
 import { orpcQuery } from '@/client/api/orpc-query'
+import { useContentSettings } from '@/shared/lib/blog-config-context'
 import { portableTextBodySchema } from '@/shared/pt/schema'
-import { CreateModeBanner } from '@/ui/admin/editor-shared/CreateModeBanner'
-import { TitleSlugStrip } from '@/ui/admin/editor-shared/TitleSlugStrip'
-import { ActionBanner } from '@/ui/admin/editor-shell/ActionBanner'
-import { DraftConflictDialog } from '@/ui/admin/editor-shell/DraftConflictDialog'
-import { FloatingPublishButton } from '@/ui/admin/editor-shell/FloatingPublishButton'
-import { PreviewPane } from '@/ui/admin/editor-shell/PreviewPanel'
-import { useEditorShellState } from '@/ui/admin/editor-shell/use-editor-shell-state'
-import { PageBodyEditor } from '@/ui/admin/editor/PageBodyEditor'
-import { PostEditorMetaAside, PostEditorMetaSheet } from '@/ui/admin/posts/PostEditorMetaPanel'
-import { PostEditorToolbar } from '@/ui/admin/posts/PostEditorToolbar'
-import {
-  EMPTY_POST_META_DRAFT,
-  metaDraftFromPost,
-  metaDraftsEqual,
-  type PostMetaDraft,
-} from '@/ui/admin/posts/PostMetaSidebar'
-import { cn } from '@/ui/lib/cn'
+import { EMPTY_POST_META_DRAFT, postMetaDraftsEqual } from '@/shared/types/posts'
+import { EditorScreen } from '@/ui/admin/editor-shell/EditorScreen'
+import { buildPostUpsertPayload } from '@/ui/admin/posts/build-post-upsert-payload'
+import { metaDraftFromPost, PostMetaSidebar } from '@/ui/admin/posts/PostMetaSidebar'
 
 export interface PostEditorShellProps {
   mode: 'create' | 'edit'
@@ -49,188 +37,75 @@ const POST_CREATE_DRAFT_CONFIG = {
   bodySchema: portableTextBodySchema,
 }
 
-function buildPostUpsertPayload({
-  meta,
-  id,
-  publishedAt,
-}: {
-  meta: PostMetaDraft
-  id?: string
-  publishedAt: string | null
-}): UpsertPostMetaInput {
-  return {
-    ...(id !== undefined ? { id } : {}),
-    ...(meta.slug.trim() !== '' ? { slug: meta.slug.trim() } : {}),
-    title: meta.title.trim(),
-    summary: meta.summary.trim(),
-    cover: meta.cover.trim(),
-    og: meta.og.trim() === '' ? null : meta.og.trim(),
-    commentsEnabled: meta.commentsEnabled,
-    showToc: meta.showToc,
-    showUpdated: meta.showUpdated,
-    visible: meta.visible,
-    pinnedAt: meta.pinned ? new Date().toISOString() : null,
-    categoryId: meta.categoryId === '' ? null : meta.categoryId,
-    tags: meta.tags,
-    alias: meta.alias,
-    ...(publishedAt !== null ? { publishedAt } : {}),
-  }
-}
+// Module-level DTO accessors — stable identities so the screen's memoized
+// detail object only recomputes when the loader DTO itself changes.
+const getEntity = (d: AdminPostDetailDto) => d.post
+const getLatestRevision = (d: AdminPostDetailDto) => d.latestRevision
+const getPublishedRevision = (d: AdminPostDetailDto) => d.publishedRevision
 
+// Thin post binding over the shared `EditorScreen`: DTO accessors, draft
+// configs, wire calls (with admin-list cache invalidation), and the post
+// meta sidebar. All screen structure + shared state live in `editor-shell`.
 export function PostEditorShell({ mode, detail, navigate }: PostEditorShellProps) {
-  const isEditing = mode === 'edit' && detail !== undefined
   const queryClient = useQueryClient()
+  const featureEnabled = useContentSettings().post.featureEnabled
 
-  // Loader-stable detail object for the state hook: the query DTO prop is
-  // referentially stable, so memoizing on it keeps the sub-hook memos from
-  // recomputing every render (an unstable detail used to feed the conflict
-  // check into a "Too many re-renders" loop on revision-less entities).
-  const editorDetail = useMemo(
-    () =>
-      detail
-        ? {
-            entity: detail.post,
-            latestRevision: detail.latestRevision,
-            publishedRevision: detail.publishedRevision,
-          }
-        : undefined,
-    [detail],
-  )
+  const invalidateList = () => {
+    // The admin list lives in the TanStack cache (useInfiniteQuery in
+    // PostsView) — invalidate the namespace so a meta save (including the
+    // create flow) is reflected when the user returns to the list.
+    void queryClient.invalidateQueries({ queryKey: orpcQuery.admin.posts.list.key() })
+  }
 
-  // --- Shared state hook ---------------------------------------------------
-  // The hook owns `useMutation()` internally — Shell only provides
-  // entity-specific mutation functions + the LS hook factories.
-  const state = useEditorShellState<PostMetaDraft, AdminPostDto, UpsertPostMetaInput>({
-    mode,
+  const adapter: EditorScreenAdapter<
+    PostMetaDraft,
+    AdminPostDetailDto['post'],
+    AdminPostDetailDto,
+    UpsertPostMetaInput
+  > = {
     entityKind: 'post',
-    detail: editorDetail,
+    entityLabel: '文章',
+    listPath: '/admin/posts',
+    bannerBasePath: '/posts',
+    publicPath: (slug) => `/posts/${slug}`,
+    analyticsPath: (id) => `/editor/post/${id}/analytics`,
+    editPath: (id) => `/editor/post/${id}`,
+
+    getEntity,
+    getLatestRevision,
+    getPublishedRevision,
+
     emptyMeta: EMPTY_POST_META_DRAFT,
     metaDraftFromEntity: metaDraftFromPost,
-    metaDraftsEqual,
+    metaDraftsEqual: postMetaDraftsEqual,
     localDraftConfig: POST_LOCAL_DRAFT_CONFIG,
     createDraftConfig: POST_CREATE_DRAFT_CONFIG,
+
     upsertMetaFn: async (input) => {
       const result = await orpc.admin.posts.upsertMeta(input)
-      // The admin list lives in the TanStack cache (useInfiniteQuery in
-      // PostsView) — invalidate the namespace so a meta save (including the
-      // create flow) is reflected when the user returns to the list.
-      void queryClient.invalidateQueries({ queryKey: orpcQuery.admin.posts.list.key() })
+      invalidateList()
       return result.post
     },
     saveDraftFn: (input) => orpc.admin.posts.saveDraft(input),
     publishFn: async (input) => {
       const result = await orpc.admin.posts.publishLatest(input)
-      void queryClient.invalidateQueries({ queryKey: orpcQuery.admin.posts.list.key() })
+      invalidateList()
       return result
     },
     unpublishFn: async (input) => {
       const result = await orpc.admin.posts.unpublish(input)
-      void queryClient.invalidateQueries({ queryKey: orpcQuery.admin.posts.list.key() })
+      invalidateList()
       return result.post
     },
     buildUpsertMetaPayload: buildPostUpsertPayload,
     directSaveDraft: (input) => orpc.admin.posts.saveDraft(input),
-    editPath: (id) => `/editor/post/${id}`,
-    navigate,
-  })
 
-  return (
-    <div
-      className={cn(
-        'flex flex-col gap-0 p-2 md:gap-4 md:p-4',
-        state.previewOpen ? 'min-h-0 flex-1' : 'min-h-admin-content-min',
-      )}
-    >
-      <PostEditorToolbar mode={mode} detail={detail} state={state} />
+    deleteEntityFn: (id) => orpc.admin.posts.delete({ id }),
+    restoreEntityFn: (id) => orpc.admin.posts.restore({ id }),
+    invalidateList,
 
-      {isEditing && state.previewBanner !== null ? (
-        <ActionBanner
-          kind={state.previewBanner.kind}
-          slug={state.previewBanner.slug}
-          basePath="/posts"
-          onClose={state.dismissPreviewBanner}
-        />
-      ) : null}
+    renderMetaSidebar: (props) => <PostMetaSidebar {...props} featureGate={featureEnabled ? 'enabled' : 'disabled'} />,
+  }
 
-      {/* Layout grid. Three states drive the column template:
-       *    - preview off + meta open  → [editor | meta]      (2 col)
-       *    - preview off + meta hidden → [editor]              (1 col)
-       *    - preview on               → [editor | preview]    (2 col)
-       *      meta is moved into a `Sheet` overlay. */}
-      <div
-        className={cn(
-          'mt-4 grid min-h-0 gap-4 md:mt-0',
-          state.previewOpen ? 'flex-1' : 'grow',
-          !state.previewOpen && state.metaOpen && 'lg:grid-cols-[minmax(0,1fr)_360px]',
-          !state.previewOpen && !state.metaOpen && 'lg:grid-cols-[minmax(0,1fr)]',
-          state.previewOpen && 'lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]',
-        )}
-      >
-        <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-2">
-          {mode === 'create' ? <CreateModeBanner entityLabel="文章" draftSavedAt={state.createDraftSavedAt} /> : null}
-          {!state.previewOpen ? (
-            <TitleSlugStrip
-              entityLabel="文章"
-              title={state.meta.title}
-              slug={state.meta.slug}
-              onTitleChange={(value) => state.setMeta((m) => ({ ...m, title: value }))}
-              onSlugChange={(value) => state.setMeta((m) => ({ ...m, slug: value }))}
-              disabled={state.isPending}
-            />
-          ) : null}
-          <PageBodyEditor
-            initialBody={state.initialBody}
-            bodyKey={state.bodyKey}
-            onBodyChange={state.setBody}
-            disabled={state.isPending}
-            livePreviewOpen={state.previewOpen}
-            scrollContainerRef={state.editorScrollRef}
-            floatingActions={
-              isEditing ? (
-                <FloatingPublishButton
-                  onPublish={state.persistPublish}
-                  disabled={state.isPending || !state.canPublish}
-                  pending={state.isPublishing}
-                  title={
-                    state.canPublish
-                      ? state.sidebarPublishStatus === 'scheduled'
-                        ? '将最新草稿按计划时间上线 (Cmd/Ctrl+Shift+P)'
-                        : '将最新草稿发布到线上 (Cmd/Ctrl+Shift+P)'
-                      : '当前没有待发布的草稿'
-                  }
-                />
-              ) : null
-            }
-          />
-        </div>
-        {state.previewOpen ? (
-          <section aria-label="实时预览" className="flex min-h-0 min-w-0 flex-1 flex-col">
-            <PreviewPane
-              body={state.body}
-              title={state.meta.title}
-              slug={state.meta.slug}
-              scrollContainerRef={state.previewScrollRef}
-            />
-          </section>
-        ) : null}
-        {!state.previewOpen && state.metaOpen ? (
-          <PostEditorMetaAside mode={mode} detail={detail} state={state} />
-        ) : null}
-      </div>
-      {state.previewOpen || !state.isLg ? <PostEditorMetaSheet mode={mode} detail={detail} state={state} /> : null}
-      {state.conflict !== null && isEditing ? (
-        <DraftConflictDialog
-          open={true}
-          localBody={state.conflict.localBody}
-          serverBody={state.initialBody}
-          localSavedAt={state.conflict.localSavedAt}
-          serverUpdatedAt={state.baselineUpdatedAtMs}
-          onChooseLocal={() => {
-            void state.adoptLocalDraft()
-          }}
-          onChooseServer={state.adoptServerVersion}
-        />
-      ) : null}
-    </div>
-  )
+  return <EditorScreen mode={mode} detail={detail} navigate={navigate} adapter={adapter} />
 }

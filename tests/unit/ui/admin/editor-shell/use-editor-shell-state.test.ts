@@ -2,18 +2,17 @@ import { describe, expect, it, vi } from 'vitest'
 
 import { renderHook } from '#/_helpers/hook'
 
-// useEditorShellState is the orchestrator that wires body / meta /
-// revision / layout / persist sub-hooks together. The SSR renderHook
-// harness renders a single synchronous pass, so effects (keyboard
-// shortcuts, autosave, scroll listeners) do not fire. We mock the four
-// leaf dependencies that need a provider or DOM:
+// useEditorShellState is the orchestrator that owns body / meta / revision
+// state and wires layout + persist together. The SSR renderHook harness
+// renders a single synchronous pass, so effects (keyboard shortcuts,
+// autosave, scroll listeners) do not fire. We mock the four leaf
+// dependencies that need a provider or DOM:
 //   - @tanstack/react-query (useMutation)
 //   - @/client/hooks/use-autosave
 //   - @/client/hooks/use-local-draft
 //   - @/client/hooks/use-create-draft
-// and assert the create-mode initial-return surface: derived flags,
-// the projected sidebar/publish state, and the gating of
-// canPersistMeta / canPublish.
+// and assert the create-mode initial-return surface: the screen-level
+// fields plus the three narrow views (toolbar / sidebar / dialog).
 
 const mutate = vi.fn()
 const mutateAsync = vi.fn().mockResolvedValue(undefined)
@@ -84,7 +83,7 @@ function makeCreateArgs() {
 }
 
 describe('ui/admin/editor-shell/useEditorShellState — create-mode initial surface', () => {
-  it('returns the full projected output shape with sensible create-mode defaults', () => {
+  it('returns the screen-level fields with sensible create-mode defaults', () => {
     const result = renderHook(() => useEditorShellState<Meta, EntityLike>(makeCreateArgs()))
 
     // Meta + body state.
@@ -94,59 +93,75 @@ describe('ui/admin/editor-shell/useEditorShellState — create-mode initial surf
     expect(result.initialBody).toEqual([])
     expect(result.isEditing).toBe(false)
 
-    // Status flags.
-    expect(result.status).toEqual({ kind: 'idle' })
-    expect(result.isPending).toBe(false)
-    expect(result.isSavingDraft).toBe(false)
-    expect(result.isPublishing).toBe(false)
-    expect(result.isUnpublishing).toBe(false)
-    expect(result.isCreating).toBe(false)
-
-    // Derived publish state — create mode is always not-published-yet.
-    expect(result.publishState).toEqual({ kind: 'not-published-yet' })
-    expect(result.canPublish).toBe(false) // requires isEditing
-    // canPersistMeta flips on a non-empty title; empty here -> false.
-    expect(result.canPersistMeta).toBe(false)
-
-    // Sidebar projections.
-    expect(result.sidebarPublishStatus).toBe('never-saved') // not editing
-    expect(result.sidebarRevisionSummary).toBeNull() // not editing
-    // No conflict in create mode.
-    expect(result.conflict).toBeNull()
-    expect(result.baselineUpdatedAtMs).toBeNull()
-    expect(result.previewBanner).toBeNull()
-    expect(result.createDraftSavedAt).toBeNull()
-    // No expected token in create mode.
-    expect(result.expectedToken).toBeNull()
-
     // Layout state.
     expect(result.previewOpen).toBe(false)
     expect(typeof result.setPreviewOpen).toBe('function')
     expect(result.metaOpen).toBe(true) // isLg defaults to true in SSR
     expect(result.isLg).toBe(true)
 
-    // Handlers present.
-    expect(result.persistCreate).toBeInstanceOf(Function)
-    expect(result.persistSave).toBeInstanceOf(Function)
-    expect(result.persistPublish).toBeInstanceOf(Function)
-    expect(result.persistUnpublish).toBeInstanceOf(Function)
+    // Banners / create-draft projection.
+    expect(result.previewBanner).toBeNull()
+    expect(result.createDraftSavedAt).toBeNull()
     expect(result.dismissPreviewBanner).toBeInstanceOf(Function)
-    expect(result.adoptLocalDraft).toBeInstanceOf(Function)
-    expect(result.adoptServerVersion).toBeInstanceOf(Function)
-    expect(result.adoptRevisionFromHistory).toBeInstanceOf(Function)
+  })
+
+  it('projects the toolbar view (pending flags, gating, persist handlers)', () => {
+    const result = renderHook(() => useEditorShellState<Meta, EntityLike>(makeCreateArgs()))
+    const { toolbar } = result
+
+    // Flags: nothing pending with mocked idle mutations.
+    expect(toolbar.isPending).toBe(false)
+    expect(toolbar.isSavingDraft).toBe(false)
+    expect(toolbar.isPublishing).toBe(false)
+    expect(toolbar.isUnpublishing).toBe(false)
+    expect(toolbar.isCreating).toBe(false)
+
+    // Create-mode gating: canPublish requires isEditing; canPersistMeta
+    // flips on a non-empty title (empty here -> false).
+    expect(toolbar.canPublish).toBe(false)
+    expect(toolbar.canPersistMeta).toBe(false)
+    expect(toolbar.published).toBe(false)
+    expect(toolbar.publishStatus).toBe('never-saved') // not editing
+
+    // Handlers present.
+    expect(toolbar.persistCreate).toBeInstanceOf(Function)
+    expect(toolbar.persistSave).toBeInstanceOf(Function)
+    expect(toolbar.persistPublish).toBeInstanceOf(Function)
+    expect(toolbar.persistUnpublish).toBeInstanceOf(Function)
+  })
+
+  it('projects the sidebar view (draft bindings, status, revision extras)', () => {
+    const result = renderHook(() => useEditorShellState<Meta, EntityLike>(makeCreateArgs()))
+    const { sidebar } = result
+
+    expect(sidebar.draft).toEqual(emptyMeta)
+    expect(sidebar.disabled).toBe(false)
+    expect(sidebar.publishStatus).toBe('never-saved') // not editing
+    expect(sidebar.revisionSummary).toBeNull() // not editing
+    expect(sidebar.saveStatus).toEqual({ kind: 'unsaved' })
+    // No expected token in create mode.
+    expect(sidebar.expectedToken).toBeNull()
+    expect(sidebar.body).toEqual([])
+    expect(sidebar.adoptRevisionFromHistory).toBeInstanceOf(Function)
+  })
+
+  it('projects the dialog view (conflict state + adoption handlers)', () => {
+    const result = renderHook(() => useEditorShellState<Meta, EntityLike>(makeCreateArgs()))
+    const { dialog } = result
+
+    // No conflict in create mode.
+    expect(dialog.conflict).toBeNull()
+    expect(dialog.serverBody).toEqual([])
+    expect(dialog.baselineUpdatedAtMs).toBeNull()
+    expect(dialog.adoptLocalDraft).toBeInstanceOf(Function)
+    expect(dialog.adoptServerVersion).toBeInstanceOf(Function)
   })
 
   it('canPersistMeta becomes true when the title is non-empty', () => {
     const args = makeCreateArgs()
     args.emptyMeta = { ...emptyMeta, title: 'Draft Title' }
     const result = renderHook(() => useEditorShellState<Meta, EntityLike>(args))
-    expect(result.canPersistMeta).toBe(true)
-  })
-
-  it('showPreviewPublicSyncHint is false in create mode', () => {
-    const result = renderHook(() => useEditorShellState<Meta, EntityLike>(makeCreateArgs()))
-    // Only meaningful in edit mode.
-    expect(result.showPreviewPublicSyncHint).toBe(false)
+    expect(result.toolbar.canPersistMeta).toBe(true)
   })
 
   it('baselineUpdatedAtMs falls back to the entity updatedAt in edit mode with no revisions', () => {
@@ -160,7 +175,7 @@ describe('ui/admin/editor-shell/useEditorShellState — create-mode initial surf
       },
     }
     const result = renderHook(() => useEditorShellState<Meta, EntityLike>(args))
-    expect(result.baselineUpdatedAtMs).toBe(Date.parse('2026-07-01T00:00:00.000Z'))
+    expect(result.dialog.baselineUpdatedAtMs).toBe(Date.parse('2026-07-01T00:00:00.000Z'))
   })
 
   it('adoptLocalDraft / adoptServerVersion / adoptRevisionFromHistory short-circuit in create mode', async () => {
@@ -168,9 +183,9 @@ describe('ui/admin/editor-shell/useEditorShellState — create-mode initial surf
     const result = renderHook(() => useEditorShellState<Meta, EntityLike>(args))
     // Each adoption helper guards on isEditing/detail; in create mode
     // they resolve without touching the body/meta state.
-    await expect(result.adoptLocalDraft()).resolves.toBeUndefined()
-    expect(() => result.adoptServerVersion()).not.toThrow()
-    expect(() => result.adoptRevisionFromHistory({ body: [], revisionNo: 1 })).not.toThrow()
+    await expect(result.dialog.adoptLocalDraft()).resolves.toBeUndefined()
+    expect(() => result.dialog.adoptServerVersion()).not.toThrow()
+    expect(() => result.sidebar.adoptRevisionFromHistory({ body: [], revisionNo: 1 })).not.toThrow()
     // directSaveDraft must not have been called by adoptLocalDraft.
     expect(args.directSaveDraft).not.toHaveBeenCalled()
   })

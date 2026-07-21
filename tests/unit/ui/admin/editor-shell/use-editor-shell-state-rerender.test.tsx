@@ -112,8 +112,8 @@ function makeEditArgs() {
 
 describe('ui/admin/editor-shell/useEditorShellState — client re-renders', () => {
   it('create mode survives re-renders with a referentially stable initialBody', () => {
-    // Regression: use-editor-body-state memoized on `[args]` (rebuilt every
-    // render), so create-mode `initialBody` was a fresh `[]` per render. The
+    // Regression: the body-state memo once sat on an args bag rebuilt every
+    // render, so create-mode `initialBody` was a fresh `[]` per render. The
     // shell's conflict check saw a "changed" initialBody every pass and
     // setState-during-render looped until React threw "Too many re-renders"
     // on /editor/post/new.
@@ -122,7 +122,7 @@ describe('ui/admin/editor-shell/useEditorShellState — client re-renders', () =
     rerender()
     rerender()
     expect(result.current.initialBody).toBe(firstBody)
-    expect(result.current.conflict).toBeNull()
+    expect(result.current.dialog.conflict).toBeNull()
   })
 
   it('edit mode with zero revisions survives re-renders with a referentially stable initialBody', () => {
@@ -136,6 +136,6 @@ describe('ui/admin/editor-shell/useEditorShellState — client re-renders', () =
     rerender()
     rerender()
     expect(result.current.initialBody).toBe(firstBody)
-    expect(result.current.conflict).toBeNull()
+    expect(result.current.dialog.conflict).toBeNull()
   })
 })
