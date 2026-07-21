@@ -20,8 +20,76 @@ import { DomainError } from '@/server/infra/http/errors'
 import { arePortableTextBodiesEquivalent } from '@/shared/pt/bridge/canonicalize'
 import { portableTextBodySchema } from '@/shared/pt/schema'
 
+/** The tx handle handed to a `db.transaction(...)` callback. */
+type RevisionTx = Parameters<Parameters<NodePgDatabase['transaction']>[0]>[0]
+
 function metaTableFor(type: ContentType) {
   return type === 'page' ? pageMetaTable : postMetaTable
+}
+
+export interface LockedMeta {
+  id: bigint
+  firstPublishedAt: Date | null
+}
+
+/**
+ * Shared transaction prologue for the revision mutations: lock the owner
+ * meta row (`SELECT … FOR UPDATE`, throwing NOT_FOUND when it is gone)
+ * and load the latest content revision (any status). Both
+ * `saveDraftRevision` and `publishLatestRevision` used to open with a
+ * verbatim copy of this block.
+ */
+export async function lockMetaAndLoadLatest(
+  tx: RevisionTx,
+  type: ContentType,
+  ownerId: bigint,
+): Promise<{ meta: LockedMeta; latest: ContentRow | undefined }> {
+  const metaTable = metaTableFor(type)
+  const lockRows = await tx
+    .select({ id: metaTable.id, firstPublishedAt: metaTable.firstPublishedAt })
+    .from(metaTable)
+    .where(eq(metaTable.id, ownerId))
+    .for('update')
+  const locked = lockRows[0]
+  if (locked === undefined) {
+    throw new DomainError('NOT_FOUND', `${type} meta row ${ownerId} not found`)
+  }
+
+  const latestRows = await tx
+    .select()
+    .from(contentTable)
+    .where(and(eq(contentTable.type, type), eq(contentTable.ownerId, ownerId)))
+    .orderBy(desc(contentTable.revisionNo))
+    .limit(1)
+  return { meta: locked, latest: latestRows[0] }
+}
+
+export interface TokenConflict {
+  status: 'conflict'
+  latest: ContentRow
+  expectedToken: string
+}
+
+/**
+ * The optimistic-concurrency check both mutations run before writing.
+ * A conflict requires all of: the client did NOT pass `force`, the
+ * client echoed an expectation token, a latest revision exists, and the
+ * tokens differ. `undefined` expectation means "no expectation" (skip);
+ * `null` is a real token value that simply never matches. The four
+ * former call sites were this same predicate with an inline
+ * `latest !== undefined` guard folded in.
+ */
+export function checkTokenConflict(
+  latest: ContentRow | undefined,
+  input: { expectedClientRevisionToken?: string | null; force?: boolean },
+): TokenConflict | null {
+  if (input.force === true || input.expectedClientRevisionToken === undefined || latest === undefined) {
+    return null
+  }
+  if (input.expectedClientRevisionToken === latest.clientRevisionToken) {
+    return null
+  }
+  return { status: 'conflict', latest, expectedToken: latest.clientRevisionToken }
 }
 
 export async function saveDraftRevision(
@@ -31,22 +99,7 @@ export async function saveDraftRevision(
 ): Promise<SaveDraftResult> {
   const metaTable = metaTableFor(type)
   return db.transaction(async (tx) => {
-    const lockRows = await tx
-      .select({ id: metaTable.id, firstPublishedAt: metaTable.firstPublishedAt })
-      .from(metaTable)
-      .where(eq(metaTable.id, input.ownerId))
-      .for('update')
-    if (lockRows.length === 0) {
-      throw new DomainError('NOT_FOUND', `${type} meta row ${input.ownerId} not found`)
-    }
-
-    const latestRows = await tx
-      .select()
-      .from(contentTable)
-      .where(and(eq(contentTable.type, type), eq(contentTable.ownerId, input.ownerId)))
-      .orderBy(desc(contentTable.revisionNo))
-      .limit(1)
-    const latest = latestRows[0]
+    const { latest } = await lockMetaAndLoadLatest(tx, type, input.ownerId)
 
     const nextToken = randomUUID()
     const now = new Date()
@@ -55,12 +108,9 @@ export async function saveDraftRevision(
     const headingsJson = input.headings
 
     if (latest !== undefined && latest.status === 'draft') {
-      if (
-        !input.force &&
-        input.expectedClientRevisionToken !== undefined &&
-        input.expectedClientRevisionToken !== latest.clientRevisionToken
-      ) {
-        return { status: 'conflict' as const, latest, expectedToken: latest.clientRevisionToken }
+      const conflict = checkTokenConflict(latest, input)
+      if (conflict !== null) {
+        return conflict
       }
       const updated = await tx
         .update(contentTable)
@@ -78,13 +128,9 @@ export async function saveDraftRevision(
       return { status: 'saved' as const, row: updated[0] }
     }
 
-    if (
-      !input.force &&
-      input.expectedClientRevisionToken !== undefined &&
-      latest !== undefined &&
-      input.expectedClientRevisionToken !== latest.clientRevisionToken
-    ) {
-      return { status: 'conflict' as const, latest, expectedToken: latest.clientRevisionToken }
+    const conflict = checkTokenConflict(latest, input)
+    if (conflict !== null) {
+      return conflict
     }
 
     const inputBody = portableTextBodySchema.safeParse(input.body)
@@ -126,22 +172,7 @@ export async function publishLatestRevision(
 ): Promise<PublishLatestResult> {
   const metaTable = metaTableFor(type)
   return db.transaction(async (tx) => {
-    const lockRows = await tx
-      .select({ id: metaTable.id, firstPublishedAt: metaTable.firstPublishedAt })
-      .from(metaTable)
-      .where(eq(metaTable.id, input.ownerId))
-      .for('update')
-    if (lockRows.length === 0) {
-      throw new DomainError('NOT_FOUND', `${type} meta row ${input.ownerId} not found`)
-    }
-
-    const latestRows = await tx
-      .select()
-      .from(contentTable)
-      .where(and(eq(contentTable.type, type), eq(contentTable.ownerId, input.ownerId)))
-      .orderBy(desc(contentTable.revisionNo))
-      .limit(1)
-    const latest = latestRows[0]
+    const { meta, latest } = await lockMetaAndLoadLatest(tx, type, input.ownerId)
 
     const nextToken = randomUUID()
     const now = new Date()
@@ -149,12 +180,9 @@ export async function publishLatestRevision(
     let savedRow: ContentRow
 
     if (latest !== undefined && latest.status === 'draft') {
-      if (
-        !input.force &&
-        input.expectedClientRevisionToken !== undefined &&
-        input.expectedClientRevisionToken !== latest.clientRevisionToken
-      ) {
-        return { status: 'conflict' as const, latest, expectedToken: latest.clientRevisionToken }
+      const conflict = checkTokenConflict(latest, input)
+      if (conflict !== null) {
+        return conflict
       }
       const updated = await tx
         .update(contentTable)
@@ -171,13 +199,9 @@ export async function publishLatestRevision(
         .returning()
       savedRow = updated[0]
     } else {
-      if (
-        !input.force &&
-        input.expectedClientRevisionToken !== undefined &&
-        latest !== undefined &&
-        input.expectedClientRevisionToken !== latest.clientRevisionToken
-      ) {
-        return { status: 'conflict' as const, latest, expectedToken: latest.clientRevisionToken }
+      const conflict = checkTokenConflict(latest, input)
+      if (conflict !== null) {
+        return conflict
       }
       const nextRevisionNo = (latest?.revisionNo ?? 0) + 1
       const insert: NewContent = {
@@ -201,7 +225,7 @@ export async function publishLatestRevision(
         publishedRevisionId: savedRow.id,
         published: true,
         publishedAt: input.publishedAt ?? now,
-        firstPublishedAt: lockRows[0]?.firstPublishedAt ?? input.publishedAt ?? now,
+        firstPublishedAt: meta.firstPublishedAt ?? input.publishedAt ?? now,
         updatedAt: now,
       })
       .where(eq(metaTable.id, input.ownerId))

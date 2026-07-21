@@ -1,25 +1,7 @@
 import { z } from 'zod'
 
+import { idSchema, optionalText, slugSchema } from '@/server/domains/content/schemas/meta-fields'
 import { safeBoolean } from '@/shared/utils/schema'
-
-const slugSchema = z
-  .string()
-  .trim()
-  .min(1)
-  .max(80)
-  .regex(/^[a-z0-9]+(?:[._-][a-z0-9]+)*$/, 'Invalid slug')
-
-const optionalText = (max: number) =>
-  z
-    .string()
-    .trim()
-    .max(max)
-    .optional()
-    .transform((value) => value ?? '')
-
-const idSchema = z.object({
-  id: z.string().min(1),
-})
 
 export const listPagesSchema = z.object({
   q: z.string().trim().max(100).optional(),

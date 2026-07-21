@@ -6,6 +6,7 @@ import type { PostMetaRow } from '@/server/infra/db/types'
 import type { ClientPost, ListingPostCard, PostVisibilityOptions } from '@/shared/types/catalog'
 
 import { queryMetadata } from '@/server/domains/comments/services/likes'
+import { applyLimitOffset } from '@/server/domains/content/repos/pagination'
 import { buildPublicPostFilters, hydratePostList } from '@/server/domains/posts/repos/hydrate'
 import { buildPublicPostsWhere, type ListPublicPostsFilters } from '@/server/domains/posts/repos/shared'
 import { post as postMetaTable } from '@/server/infra/db/schema/post'
@@ -20,20 +21,7 @@ export async function listPublicPosts(
   const col = filters.sortBy === 'updatedAt' ? postMetaTable.updatedAt : postMetaTable.firstPublishedAt
   const where = buildPublicPostsWhere(filters, now)
   const q = db.select().from(postMetaTable).where(where).orderBy(desc(col))
-  if (filters.limit !== undefined) {
-    if (filters.offset !== undefined && filters.offset > 0) {
-      const result = await q.limit(filters.limit).offset(filters.offset)
-      return result
-    }
-    const result = await q.limit(filters.limit)
-    return result
-  }
-  if (filters.offset !== undefined && filters.offset > 0) {
-    const result = await q.offset(filters.offset)
-    return result
-  }
-  const result = await q
-  return result
+  return applyLimitOffset(q, filters)
 }
 
 export async function countPublicPosts(
