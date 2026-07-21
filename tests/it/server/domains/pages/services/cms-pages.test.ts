@@ -10,7 +10,7 @@ import type { ContentRow } from '@/server/infra/db/types'
 // itself is mocked to keep this test layer focused on:
 //   1. DomainError surfacing (slug validation, missing rows),
 //   2. body validation through the PortableText perimeter,
-//   3. DTO projection (CmsPage, AdminPageDto, AdminRevisionDto),
+//   3. DTO projection (Page, AdminPageDto, AdminRevisionDto),
 //   4. conflict-vs-saved branching translated to the wire shape.
 
 vi.mock('@/server/domains/pages/repo', () => ({
@@ -191,9 +191,9 @@ describe('cms/pages/service — listPagesForAdmin / getPageDetailForAdmin', () =
     expect(last.hasMore).toBe(false)
   })
 
-  it('getPageDetailForAdmin returns null for missing rows (route then 404s)', async () => {
+  it('getPageDetailForAdmin throws NOT_FOUND for missing rows (same contract as posts)', async () => {
     vi.mocked(repo.findPageMetaById).mockResolvedValue(null)
-    expect(await adminQuery.getPageDetailForAdmin(db, 99n)).toBeNull()
+    await expect(adminQuery.getPageDetailForAdmin(db, 99n)).rejects.toMatchObject({ code: 'NOT_FOUND' })
   })
 
   it('getPageDetailForAdmin projects latest + published revisions independently', async () => {
@@ -205,11 +205,11 @@ describe('cms/pages/service — listPagesForAdmin / getPageDetailForAdmin', () =
     vi.mocked(query.findContentById).mockResolvedValue(published)
 
     const detail = await adminQuery.getPageDetailForAdmin(db, 7n)
-    expect(detail?.page.id).toBe('7')
-    expect(detail?.latestRevision?.revisionNo).toBe(4)
-    expect(detail?.latestRevision?.status).toBe('draft')
-    expect(detail?.publishedRevision?.revisionNo).toBe(3)
-    expect(detail?.publishedRevision?.status).toBe('published')
+    expect(detail.page.id).toBe('7')
+    expect(detail.latestRevision?.revisionNo).toBe(4)
+    expect(detail.latestRevision?.status).toBe('draft')
+    expect(detail.publishedRevision?.revisionNo).toBe(3)
+    expect(detail.publishedRevision?.status).toBe('published')
   })
 })
 

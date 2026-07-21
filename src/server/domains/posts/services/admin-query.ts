@@ -63,7 +63,7 @@ export async function getPostDetailForAdmin(
   db: NodePgDatabase,
   id: bigint,
   viewer?: ViewerContext,
-): Promise<AdminPostDetailDto | null> {
+): Promise<AdminPostDetailDto> {
   const meta = await findPostMetaById(db, id)
   assertOwnPostOr404(meta, viewer)
   const [latest, published, tags, categoryMap] = await Promise.all([

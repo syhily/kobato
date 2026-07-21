@@ -362,16 +362,15 @@ describe('pages/services/admin-query — listPagesForAdmin', () => {
 })
 
 describe('pages/services/admin-query — getPageDetailForAdmin', () => {
-  it('returns null for unknown id', async () => {
-    expect(await adminQuery.getPageDetailForAdmin(db, 9999n)).toBeNull()
+  it('throws NOT_FOUND for unknown id', async () => {
+    await expect(adminQuery.getPageDetailForAdmin(db, 9999n)).rejects.toMatchObject({ code: 'NOT_FOUND' })
   })
 
   it('returns page with null revisions when none exist', async () => {
     const p = await seedPage()
     const r = await adminQuery.getPageDetailForAdmin(db, p.id)
-    expect(r).not.toBeNull()
-    expect(r!.latestRevision).toBeNull()
-    expect(r!.publishedRevision).toBeNull()
+    expect(r.latestRevision).toBeNull()
+    expect(r.publishedRevision).toBeNull()
   })
 
   it('returns page with revisions when they exist', async () => {
@@ -380,8 +379,7 @@ describe('pages/services/admin-query — getPageDetailForAdmin', () => {
     await db.update(pageMetaTable).set({ publishedRevisionId: rev.id }).where(eq(pageMetaTable.id, p.id))
 
     const r = await adminQuery.getPageDetailForAdmin(db, p.id)
-    expect(r).not.toBeNull()
-    expect(r!.publishedRevision).not.toBeNull()
+    expect(r.publishedRevision).not.toBeNull()
   })
 })
 

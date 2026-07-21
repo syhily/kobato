@@ -2,6 +2,7 @@ import { call } from '@orpc/server'
 import { describe, expect, it, vi } from 'vitest'
 
 import { makeAuthedCtx } from '#/_helpers/mock-ctx'
+import { DomainError } from '@/server/infra/http/errors'
 
 vi.mock('@/server/domains/pages/services/mutate', () => ({
   createPage: vi.fn(),
@@ -64,8 +65,8 @@ const revisionStub = {
 }
 
 describe('adminPagesRouter.get', () => {
-  it('throws NOT_FOUND when the page detail is null', async () => {
-    vi.mocked(adminQueryService.getPageDetailForAdmin).mockResolvedValueOnce(null)
+  it('surfaces NOT_FOUND when the service throws a DomainError', async () => {
+    vi.mocked(adminQueryService.getPageDetailForAdmin).mockRejectedValueOnce(new DomainError('NOT_FOUND'))
     const ctx = makeAuthedCtx()
     await expect(call(adminPagesRouter.get, { id: '999' }, { context: ctx })).rejects.toMatchObject({
       code: 'NOT_FOUND',

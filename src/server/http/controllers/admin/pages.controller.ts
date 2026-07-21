@@ -2,7 +2,6 @@ import { ORPCError } from '@orpc/server'
 import { z } from 'zod'
 
 import { recordAuditEventFromContext } from '@/server/domains/audit/services/record'
-import { previewBody, saveBody } from '@/server/domains/content/lifecycle'
 import { listPagesSchema, upsertPageMetaSchema } from '@/server/domains/pages/schema'
 import {
   listPagesForAdmin,
@@ -17,15 +16,14 @@ import {
   unpublishPage,
   updatePageMeta,
 } from '@/server/domains/pages/services/mutate'
+import { makeRevisionRouter } from '@/server/http/controllers/admin/revision-router'
 import { adminProc } from '@/server/http/orpc-base'
-import { renderPortableTextToHtml as renderPagePortableTextToHtml } from '@/server/render/pt-html'
 import {
   adminPageDetailDto,
   adminPageDto,
   listPageRevisionsOutputDto,
   listPagesOutputDto,
 } from '@/shared/contracts/pages'
-import { previewBodyInput, previewOutputDto, saveBodyInput, saveResultOutput } from '@/shared/contracts/revision'
 import { idFromString } from '@/shared/utils/id'
 
 const idInput = z.object({ id: z.string().min(1) })
@@ -40,13 +38,9 @@ const get = adminProc
   .route({ method: 'GET', path: '/admin/pages/get' })
   .input(idInput)
   .output(adminPageDetailDto)
-  .handler(async ({ input, context }) => {
-    const detail = await getPageDetailForAdmin(context.db, idFromString(input.id))
-    if (detail === null) {
-      throw new ORPCError('NOT_FOUND', { message: '页面不存在或已被删除。' })
-    }
-    return detail
-  })
+  // NOT_FOUND comes from the service (DomainError, translated by
+  // `domainErrorGuard`) — same contract as the posts controller.
+  .handler(({ input, context }) => getPageDetailForAdmin(context.db, idFromString(input.id)))
 
 const remove = adminProc
   .route({ method: 'POST', path: '/admin/pages/remove' })
@@ -95,69 +89,22 @@ const unpublish = adminProc
     return { page }
   })
 
-const saveDraft = adminProc
-  .route({ method: 'POST', path: '/admin/pages/save-draft' })
-  .input(saveBodyInput)
-  .output(saveResultOutput)
-  .handler(async ({ input, context }) => {
-    const result = await saveBody(
-      context.db,
-      pageLifecycleAdapter,
-      {
-        entityId: idFromString(input.id),
-        body: input.body,
-        expectedClientRevisionToken: input.expectedClientRevisionToken ?? undefined,
-        force: input.force,
-        authorId: idFromString(context.viewer.userId),
-      },
-      'draft',
-    )
-    if (result.status === 'saved') {
-      recordAuditEventFromContext(context, {
-        action: 'page_draft_saved',
-        resourceType: 'page',
-        resourceId: input.id,
-      })
-    }
-    return result
-  })
-
-const publishLatest = adminProc
-  .route({ method: 'POST', path: '/admin/pages/publish-latest' })
-  .input(saveBodyInput)
-  .output(saveResultOutput)
-  .handler(async ({ input, context }) => {
-    const result = await saveBody(
-      context.db,
-      pageLifecycleAdapter,
-      {
-        entityId: idFromString(input.id),
-        body: input.body,
-        expectedClientRevisionToken: input.expectedClientRevisionToken ?? undefined,
-        force: input.force,
-        authorId: idFromString(context.viewer.userId),
-        publishedAt: input.publishedAt !== undefined ? new Date(input.publishedAt) : undefined,
-      },
-      'publish',
-    )
-    if (result.status === 'saved') {
-      recordAuditEventFromContext(context, {
-        action: 'page_published',
-        resourceType: 'page',
-        resourceId: input.id,
-        details: { publishedAt: input.publishedAt },
-      })
-    }
-    return result
-  })
-
-const preview = adminProc
-  .route({ method: 'POST', path: '/admin/pages/preview' })
-  .input(previewBodyInput)
-  .output(previewOutputDto)
-  .handler(async ({ input, context }) => {
-    return previewBody(input.body, (body) => renderPagePortableTextToHtml(context.db, body, []))
-  })
+// save-draft / publish-latest / preview come from the shared revision
+// factory. Pages deliberately do NOT pass `context.viewer` into
+// `saveBody`: editing is already admin-only via `adminProc`, so the page
+// adapter has no ownership rule to evaluate — see the
+// `passViewerToSaveBody` option doc in `controllers/admin/revision-router.ts`.
+const { saveDraft, publishLatest, preview } = makeRevisionRouter({
+  proc: adminProc,
+  adapter: pageLifecycleAdapter,
+  basePath: '/admin/pages',
+  audit: {
+    resourceType: 'page',
+    draftSavedAction: 'page_draft_saved',
+    publishedAction: 'page_published',
+  },
+  passViewerToSaveBody: false,
+})
 
 const upsertMeta = adminProc
   .route({ method: 'POST', path: '/admin/pages/upsert-meta' })

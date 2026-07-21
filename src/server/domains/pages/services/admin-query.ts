@@ -8,6 +8,7 @@ import { findContentById, findLatestRevision, listRevisions } from '@/server/dom
 import { listForAdmin } from '@/server/domains/content/services/admin-list'
 import { toAdminPageDto } from '@/server/domains/pages/projection'
 import { countPageMetas, findPageMetaById, listPageMetas, type ListPagesFilters } from '@/server/domains/pages/repo'
+import { DomainError } from '@/server/infra/http/errors'
 
 export interface AdminPagesListResult {
   pages: AdminPageDto[]
@@ -30,10 +31,13 @@ export async function listPagesForAdmin(
   return { pages: items, total, hasMore }
 }
 
-export async function getPageDetailForAdmin(db: NodePgDatabase, id: bigint): Promise<AdminPageDetailDto | null> {
+export async function getPageDetailForAdmin(db: NodePgDatabase, id: bigint): Promise<AdminPageDetailDto> {
   const meta = await findPageMetaById(db, id)
   if (meta === null) {
-    return null
+    // Same service-throws contract as posts' getPostDetailForAdmin: the
+    // `domainErrorGuard` middleware translates this to ORPC NOT_FOUND,
+    // so the controller has no null branch.
+    throw new DomainError('NOT_FOUND', '页面不存在或已被删除。')
   }
   const [latest, published] = await Promise.all([
     findLatestRevision(db, 'page', meta.id),

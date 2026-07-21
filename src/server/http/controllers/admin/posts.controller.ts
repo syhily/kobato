@@ -2,7 +2,6 @@ import { ORPCError } from '@orpc/server'
 import { z } from 'zod'
 
 import { recordAuditEventFromContext } from '@/server/domains/audit/services/record'
-import { previewBody, saveBody } from '@/server/domains/content/lifecycle'
 import { listPostsSchema, upsertPostMetaSchema } from '@/server/domains/posts/schema'
 import {
   getPostDetailForAdmin,
@@ -17,15 +16,14 @@ import {
   unpublishPost,
   updatePostMeta,
 } from '@/server/domains/posts/services/mutate'
+import { makeRevisionRouter } from '@/server/http/controllers/admin/revision-router'
 import { authorProc } from '@/server/http/orpc-base'
-import { renderPortableTextToHtml as renderPostPortableTextToHtml } from '@/server/render/pt-html'
 import {
   adminPostDetailDto,
   adminPostDto,
   listPostRevisionsOutputDto,
   listPostsOutputDto,
 } from '@/shared/contracts/posts'
-import { previewBodyInput, previewOutputDto, saveBodyInput, saveResultOutput } from '@/shared/contracts/revision'
 import { idFromString } from '@/shared/utils/id'
 
 const idInput = z.object({ id: z.string().min(1) })
@@ -40,13 +38,9 @@ const get = authorProc
   .route({ method: 'GET', path: '/admin/posts/get' })
   .input(idInput)
   .output(adminPostDetailDto)
-  .handler(async ({ input, context }) => {
-    const detail = await getPostDetailForAdmin(context.db, idFromString(input.id), context.viewer)
-    if (detail === null) {
-      throw new ORPCError('NOT_FOUND', { message: '文章不存在或已被删除。' })
-    }
-    return detail
-  })
+  // NOT_FOUND comes from the service (`assertOwnPostOr404` throws a
+  // DomainError, translated by `domainErrorGuard`) — no null branch here.
+  .handler(({ input, context }) => getPostDetailForAdmin(context.db, idFromString(input.id), context.viewer))
 
 const remove = authorProc
   .route({ method: 'POST', path: '/admin/posts/remove' })
@@ -95,71 +89,21 @@ const unpublish = authorProc
     return { post }
   })
 
-const saveDraft = authorProc
-  .route({ method: 'POST', path: '/admin/posts/save-draft' })
-  .input(saveBodyInput)
-  .output(saveResultOutput)
-  .handler(async ({ input, context }) => {
-    const result = await saveBody(
-      context.db,
-      postLifecycleAdapter,
-      {
-        entityId: idFromString(input.id),
-        body: input.body,
-        expectedClientRevisionToken: input.expectedClientRevisionToken ?? undefined,
-        force: input.force,
-        authorId: idFromString(context.viewer.userId),
-      },
-      'draft',
-      context.viewer,
-    )
-    if (result.status === 'saved') {
-      recordAuditEventFromContext(context, {
-        action: 'post_draft_saved',
-        resourceType: 'post',
-        resourceId: input.id,
-      })
-    }
-    return result
-  })
-
-const publishLatest = authorProc
-  .route({ method: 'POST', path: '/admin/posts/publish-latest' })
-  .input(saveBodyInput)
-  .output(saveResultOutput)
-  .handler(async ({ input, context }) => {
-    const result = await saveBody(
-      context.db,
-      postLifecycleAdapter,
-      {
-        entityId: idFromString(input.id),
-        body: input.body,
-        expectedClientRevisionToken: input.expectedClientRevisionToken ?? undefined,
-        force: input.force,
-        authorId: idFromString(context.viewer.userId),
-        publishedAt: input.publishedAt !== undefined ? new Date(input.publishedAt) : undefined,
-      },
-      'publish',
-      context.viewer,
-    )
-    if (result.status === 'saved') {
-      recordAuditEventFromContext(context, {
-        action: 'post_published',
-        resourceType: 'post',
-        resourceId: input.id,
-        details: { publishedAt: input.publishedAt },
-      })
-    }
-    return result
-  })
-
-const preview = authorProc
-  .route({ method: 'POST', path: '/admin/posts/preview' })
-  .input(previewBodyInput)
-  .output(previewOutputDto)
-  .handler(async ({ input, context }) => {
-    return previewBody(input.body, (body) => renderPostPortableTextToHtml(context.db, body, []))
-  })
+// save-draft / publish-latest / preview come from the shared revision
+// factory. Posts pass `context.viewer` into `saveBody` so the adapter can
+// enforce author-owns-post (`assertOwnPostOr404`) — see the
+// `passViewerToSaveBody` option doc in `controllers/admin/revision-router.ts`.
+const { saveDraft, publishLatest, preview } = makeRevisionRouter({
+  proc: authorProc,
+  adapter: postLifecycleAdapter,
+  basePath: '/admin/posts',
+  audit: {
+    resourceType: 'post',
+    draftSavedAction: 'post_draft_saved',
+    publishedAction: 'post_published',
+  },
+  passViewerToSaveBody: true,
+})
 
 const upsertMeta = authorProc
   .route({ method: 'POST', path: '/admin/posts/upsert-meta' })

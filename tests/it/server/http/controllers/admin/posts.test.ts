@@ -2,6 +2,7 @@ import { call } from '@orpc/server'
 import { describe, expect, it, vi } from 'vitest'
 
 import { makeAuthedCtx } from '#/_helpers/mock-ctx'
+import { DomainError } from '@/server/infra/http/errors'
 
 vi.mock('@/server/domains/posts/services/mutate', () => ({
   createPost: vi.fn(),
@@ -32,8 +33,8 @@ const lifecycle = await import('@/server/domains/content/lifecycle')
 const { adminPostsRouter } = await import('@/server/http/controllers/admin/posts.controller')
 
 describe('adminPostsRouter.get', () => {
-  it('throws NOT_FOUND when the post detail is null', async () => {
-    vi.mocked(adminQueryService.getPostDetailForAdmin).mockResolvedValueOnce(null)
+  it('surfaces NOT_FOUND when the service throws a DomainError', async () => {
+    vi.mocked(adminQueryService.getPostDetailForAdmin).mockRejectedValueOnce(new DomainError('NOT_FOUND'))
     const ctx = makeAuthedCtx()
     await expect(call(adminPostsRouter.get, { id: '999' }, { context: ctx })).rejects.toMatchObject({
       code: 'NOT_FOUND',
