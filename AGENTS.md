@@ -27,8 +27,8 @@ name is derived by convention (`path.join('__')` → `database__url`).
 - Precedence: schema defaults < config file < env vars. Env-provided
   values that differ from the file are **written back into it** — env is
   the injection mechanism, the file converges to the effective config.
-- Flat legacy env names (`DATABASE_URL` etc.) were removed outright — only
-  the `__` names work. The TS export names are unchanged, so `src/`
+- Flat legacy env names (`DATABASE_URL` etc.) were removed — only the
+  `__` names work. The TS export names are unchanged, so `src/`
   consumers don't care.
 - `VITEST=true` without `--config` → env-only, zero filesystem access
   (tests must not create files in the repo). An explicit `--config` opts
@@ -38,7 +38,7 @@ name is derived by convention (`path.join('__')` → `database__url`).
   otherwise env loading auto-creates `kobato.config.json` next to the
   binary and persists throwaway database URLs and smoke secrets into it.
 - `NODE_ENV`, `KOBATO_CACHE_DIR`, `KOBATO_NATIVES_DIR` stay process-env
-  only (process mode / SEA prelude level). Blog settings stay in the DB.
+  only. Blog settings stay in the DB.
 - Adding a config value: add a `CONFIG_TABLE` row → update
   `kobato.config.example.json` + `.env.example` → cover it in
   `tests/unit/server/infra/config.test.ts`.
@@ -95,19 +95,17 @@ proactively loads high-priority route chunks:
 | critical path | Matched launch route only                 | `<link rel="modulepreload">` in HTML `<head>` |
 | tier 1        | Public layout + home (fallback)           | `<link rel="modulepreload">` in HTML `<head>` |
 | tier 2 public | Archives, categories, tags, search, pages | Idle `modulepreload` via inline `<script>`    |
-| tier 2 admin  | Dashboard, posts, settings, etc.          | Idle warmup (only for authenticated admins)   |
-| tier 2 editor | Editor shells                             | Idle warmup (only for admins)                 |
+| tier 2 admin  | Dashboard, posts, settings, etc.          | Idle warmup (authenticated admins only)       |
+| tier 2 editor | Editor shells                             | Idle warmup (admins only)                     |
 | tier 2 auth   | Signin, setup                             | Idle warmup (all visitors)                    |
 
 The plugin runs in the SSR `writeBundle` hook (after both client and server
-builds finish), reads the React Router client manifest from
-`build/client/assets/manifest-*.js`, and writes
-`build/client/assets/warmup-manifest.json`.
-
-At request time, `src/server/render/warmup/manifest.ts` re-reads the client
-manifest, matches the request pathname with `matchRoutes`, and emits the
-critical preloads for the matched route and its ancestor layouts. This keeps
-the first-screen preload tight instead of widening it with unrelated routes.
+builds finish), reads the client manifest `build/client/assets/manifest-*.js`,
+and writes `build/client/assets/warmup-manifest.json`. At request time,
+`src/server/render/warmup/manifest.ts` re-reads the client manifest, matches
+the pathname with `matchRoutes`, and emits critical preloads for the matched
+route and its ancestor layouts — keeping the first-screen preload tight
+instead of widening it with unrelated routes.
 
 **Key files:**
 
@@ -119,11 +117,11 @@ the first-screen preload tight instead of widening it with unrelated routes.
 | `src/client/components/RouteWarmupScript.tsx` | Presentational — renders idle-warmup `<script>` |
 | `src/root.tsx`                                | Layout wires critical links + tier-2 script     |
 
-**Exclusion rules:** Heavy lazy-only chunks are excluded from both critical
-and idle preloads (`canvas-*`, `ImageEditorCanvas-*`, `qrcode*`, `player-*`).
-`editor-tiptap-*` is allowed only in the editor idle tier. Shiki grammar
-chunks are excluded (not in any route's `imports` array). Chunks > 100 KB are
-excluded from idle warmup. The idle script respects
+**Exclusion rules:** heavy lazy-only chunks are excluded from critical and
+idle preloads (`canvas-*`, `ImageEditorCanvas-*`, `qrcode*`, `player-*`);
+`editor-tiptap-*` is allowed only in the editor idle tier; Shiki grammar
+chunks are excluded (not in any route's `imports` array); chunks > 100 KB
+are excluded from idle warmup. The idle script respects
 `navigator.connection.saveData`, skips 2g, and defers until the page is
 visible.
 
@@ -141,60 +139,56 @@ worker code are embedded in the binary and read from memory
 (`src/server/infra/sea-natives.ts`).
 
 - `pnpm run sea:build` → `dist-sea/kobato` (+ `.sha256`). The binary is
-  deliberately NOT UPX-compressed. Verified dead ends (UPX 5.2.0, linux
-  x64): inject-then-compress fails with `CantPackException: bad e_phoff`
-  (postject relocates the phdrs, [postject#87](https://github.com/nodejs/postject/issues/87));
+  deliberately NOT UPX-compressed — every ordering is a verified dead end
+  (UPX 5.2.0, linux x64): inject-then-compress fails with
+  `CantPackException: bad e_phoff` (postject relocates the phdrs,
+  [postject#87](https://github.com/nodejs/postject/issues/87));
   `--force-execve` fails with `UnknownExecutableFormatException`;
-  compress-then-inject fails because UPX destroys the sentinel fuse.
-  Runtime-side it could never work anyway: Node finds the blob via
-  `dl_iterate_phdr` on the in-memory phdrs (a `NODE_SEA_BLOB` PT_NOTE),
-  which a packed stub does not present. Do not re-add an UPX step.
+  compress-then-inject destroys the sentinel fuse; and Node finds the
+  blob via `dl_iterate_phdr` on the in-memory phdrs, which a packed stub
+  does not present. Do not re-add an UPX step.
 - `pnpm run sea:smoke [binary]` — 18-check deep smoke: version, natives,
-  a per-run `kobato_smoke_<rand>` database (created on the same Postgres
-  server, dropped in cleanup — the shared `test` DB is never touched),
   `--smoke-worker` (a real sharp job round-tripping through the
-  `worker_threads` image pool), boot + migrations, fresh-install gate,
-  SSR, embedded asset, **config-file convergence** (the env-driven boot
-  writes `database.url` + secrets back into `--config`'s temp file), SQL
-  seed (one minimal admin row plus the `blog.general` / `blog.assets`
-  settings roots — hydration backfills the rest), a graceful restart on a
-  **reduced env that proves the converged file alone boots the server**
-  (the settings snapshot only loads at boot; the install gate itself is
-  evaluated per request), installed `/health` and `/` SSR, the
-  @napi-rs/canvas calendar endpoint over HTTP, SIGTERM ×2, and
+  `worker_threads` image pool), boot + migrations on a per-run
+  `kobato_smoke_<rand>` database (created on the same Postgres server,
+  dropped in cleanup — the shared `test` DB is never touched),
+  fresh-install gate, SSR, embedded asset, **config-file convergence**
+  (the env-driven boot writes `database.url` + secrets back into
+  `--config`'s temp file), SQL seed (one minimal admin row plus the
+  `blog.general` / `blog.assets` roots — hydration backfills the rest),
+  a graceful restart on a **reduced env that proves the converged file
+  alone boots the server** (the settings snapshot only loads at boot;
+  the install gate is evaluated per request), installed `/health` and
+  `/` SSR, the @napi-rs/canvas calendar endpoint over HTTP, SIGTERM ×2,
   natives-cache reuse ×2. `--external <url>` runs only the HTTP checks
   against an already-running server (e.g. a container), seeds nothing,
-  and reports the calendar check as SKIP on uninstalled instances. `--binary-only [binary]` runs just the service-free checks
-  (version, natives, worker pool) — the mode the macOS and Windows CI
-  targets use, since neither can host the Postgres/Redis service
-  containers (no Docker on macOS runners; Windows containers only on
-  Windows runners).
-- `pnpm run sea:e2e [binary]` — boots the binary exactly like the managed
-  smoke (per-run database, migrations, seeded admin — but with a KNOWN
-  random password), then runs `tests/e2e` against the live server over
-  real HTTP: signin flow, public pages/feed/sitemap, and an admin
-  create→render→delete round-trip via oRPC. The server env sets a per-run
-  `redis__keyPrefix` so leftover rate-limit buckets on a shared Redis can
-  never fail a login. The instance lifecycle is shared with the smoke via
-  `scripts/sea/instance.ts`. The Linux CI matrix runs this right after
-  `sea:smoke`.
+  and reports the calendar check as SKIP on uninstalled instances.
+  `--binary-only [binary]` runs just the service-free checks (version,
+  natives, worker pool) — the mode the macOS and Windows CI targets use
+  (neither can host the Postgres/Redis service containers).
+- `pnpm run sea:e2e [binary]` — boots the binary like the managed smoke
+  (per-run database, migrations, seeded admin with a KNOWN random
+  password), then runs `tests/e2e` against the live server over real
+  HTTP: signin flow, public pages/feed/sitemap, and an admin
+  create→render→delete round-trip via oRPC. The server env sets a
+  per-run `redis__keyPrefix` so leftover rate-limit buckets on a shared
+  Redis can never fail a login. The instance lifecycle is shared with
+  the smoke via `scripts/sea/instance.ts`. The Linux CI matrix runs this
+  right after `sea:smoke`.
 - Binary CLI flags: `--version`, `--help`, `--smoke-natives`,
   `--smoke-worker`. The first three need zero environment; the last one
-  requires the full server configuration (database.url, redis.url,
-  auth.sessionSecret, security.encryptionKey, paths.data) because the
-  pool graph pulls in `@/server/infra/env` at import time — it validates
-  but never connects.
+  requires the full server configuration because the pool graph pulls in
+  `@/server/infra/env` at import time — it validates but never connects.
 - Delivery targets are linux-x64 / linux-arm64 / darwin-arm64 /
   darwin-x64 / win32-x64 / win32-arm64, built by
-  `.github/workflows/sea.yml`. The darwin (macos-15, macos-15-intel) and
-  win32 (windows-2025, windows-11-arm) matrix jobs run the
-  `--binary-only` smoke; the deep managed smoke stays Linux-only. The
-  darwin jobs need the `shasum -a 256` spelling (macOS has no
-  `sha256sum`); the win32 jobs run the rename/package steps under Git
-  Bash (`shell: bash`) and ship `kobato.exe`. Local macOS builds need an
-  official Node.js 24 distribution — Homebrew's node lacks the SEA
-  sentinel fuse (`scripts/sea/inject.ts` preflights this). An official
-  tarball is cached under the gitignored `tmp/`.
+  `.github/workflows/sea.yml`. The deep managed smoke stays Linux-only;
+  the darwin and win32 matrix jobs run `--binary-only`. The darwin jobs
+  need the `shasum -a 256` spelling (macOS has no `sha256sum`); the
+  win32 jobs run the rename/package steps under Git Bash (`shell: bash`)
+  and ship `kobato.exe`. Local macOS builds need an official Node.js 24
+  distribution — Homebrew's node lacks the SEA sentinel fuse
+  (`scripts/sea/inject.ts` preflights this). An official tarball is
+  cached under the gitignored `tmp/`.
 - Windows runtime notes: the binary is `kobato.exe` (no extension →
   refuses to execute); the build spawns everything through cmd
   (`shell: true` in `scripts/sea/exec.ts`) because pnpm and the
@@ -235,20 +229,18 @@ Bare-metal SEA deployments can update themselves from the admin shell
 (VersionDialog → 检查更新 → 立即更新). The pipeline lives in
 `src/server/domains/update/` and is modeled on AdGuardHome's
 `internal/updater`: stage in `<execDir>/.kobato-update/`, stream-download
-the release asset (`kobato-linux-<arch>.tar.gz`, 512 MB cap), verify the
-archive against the `.sha256` sidecar, extract the bare binary, `chmod
-0o755`, rename the live binary to `<binary>.bak`, swap, then restart
-(detached re-spawn + `process.exit(0)`). Any failure after the backup step
-restores the `.bak` best-effort before rethrowing; the stage dir is always
-cleaned.
+the release asset (`kobato-linux-<arch>.tar.gz`, 512 MB cap), verify
+against the `.sha256` sidecar, extract the bare binary, `chmod 0o755`,
+rename the live binary to `<binary>.bak`, swap, then restart (detached
+re-spawn + `process.exit(0)`). Failures after the backup step restore the
+`.bak` best-effort; the stage dir is always cleaned.
 
 The gate (`gate.ts`) requires ALL of: `isSea()`, linux x64/arm64, not
 containerized (`/.dockerenv` / `/proc/1/cgroup`), a writable binary
 directory, and a non-`-dev` build. Refusals surface as Chinese admin-facing
 strings in `reasons` — Docker deployments are refused by design (upgrade by
-pulling a new image), and so are the darwin/win32 targets (macOS would
-need re-signing after the swap; Windows self-update is simply out of
-scope — both upgrade by downloading the new archive). Never bypass the
+pulling a new image), and so are darwin/win32 (macOS would need re-signing
+after the swap; Windows self-update is out of scope). Never bypass the
 gate from a new caller.
 
 Admin procedures: `admin.update.check` / `admin.update.apply` /
@@ -279,8 +271,7 @@ in `.claude/commands/release.md` and drives the full lifecycle:
 2. Bump version, push develop, fast-forward merge to main, push main.
 3. Create git tag + GitHub release (Docker image builds automatically
    via `.github/workflows/docker.yml`; the SEA workflow attaches the
-   `kobato-linux-*.tar.gz` archives (plus `.sha256` sidecars) to the
-   release).
+   `kobato-linux-*.tar.gz` archives plus `.sha256` sidecars).
 4. Switch back to develop, prepare next patch version, push.
 
 No PRs — direct fast-forward merge from develop to main.
@@ -312,28 +303,24 @@ React hooks/components under `src/client/` and `src/ui/`.
 ## Dependencies
 
 Only packages that are **required at production runtime AND ship a native
-dynamic library** belong in `package.json`'s `dependencies`. The current
-entries are the canonical examples:
+dynamic library** belong in `package.json`'s `dependencies`:
 
 - `@napi-rs/canvas`, `sharp` — native binaries fetched per platform.
 
 Every other dependency belongs in `devDependencies`, even if the server or
-client bundle imports it in production. The production Docker image ships a
-SEA single executable (see `Dockerfile` and `scripts/sea/`): the build
-stage runs `pnpm install --frozen-lockfile` with the full dev dependencies,
-bundles the whole server into the binary, and the runtime stage contains
-only that binary — no node runtime, no node_modules, and no second
+client bundle imports it in production. The production image ships a SEA
+binary: the build stage runs `pnpm install --frozen-lockfile` with the full
+dev dependencies and bundles the server, and the runtime stage contains
+only that binary — no node runtime, no node_modules, no second
 `pnpm install --prod` (that two-stage install was the pre-SEA rationale,
-see commit `ed83a5a`). The convention still holds because the SEA assets
-collector (`scripts/sea/assets.ts`) embeds each native package's installed
-dependency closure from the build stage's node_modules, so native packages
-must stay in `dependencies` to be installed with their platform binaries
-at build time.
+see commit `ed83a5a`). Native packages must stay in `dependencies` so the
+build stage installs their platform binaries and the SEA assets collector
+(`scripts/sea/assets.ts`) can embed each package's installed dependency
+closure.
 
 Examples: `react`, `hono`, `drizzle-orm`, `ioredis`, `nodemailer`,
 `sanitize-html`, `feed`, `pg`, `bcryptjs`, `dompurify`, `fast-xml-parser` —
-all `devDependencies`, despite being production imports. Only the native
-runtime deps go in `dependencies`.
+all `devDependencies`, despite being production imports.
 
 ## Settings autosave
 
@@ -348,9 +335,8 @@ in admin display shape (masks merged in for assets/mail/search — see
 `projectSectionForAdmin`). The card adopts the response as its new baseline
 (`savedSource`) and the mutation deliberately does NOT call
 `revalidator.revalidate()` — a save must never refetch the document out
-from under the user's hands. There is no client-side projection of the
-saved result; other cards converge on next navigation (accepted eventual
-consistency).
+from under the user's hands. Other cards converge on next navigation
+(accepted eventual consistency).
 
 **Three triggers, each wired to a specific control type:**
 
@@ -360,7 +346,7 @@ consistency).
 | Switch / RadioGroup / Select / Combobox | `save`        | `onChange`, immediately            |
 | List append/remove/move                 | none          | Relies on the next blur or a flush |
 
-In addition, three framework-level flushes call every registered card via
+Three framework-level flushes call every registered card via
 `SettingsFlushProvider`: close button + ESC (`flushAll`), scroll-away
 (`IntersectionObserver` → `flushSection(id)`), and page hide
 (`visibilitychange` / `pagehide` → `flushAll`).
@@ -370,9 +356,8 @@ In addition, three framework-level flushes call every registered card via
 1. Destructure the trigger you need from `useSettingsCard()`:
    - text input → `flushOnBlur`
    - switch/select/radio → `save` (never call `save` from a text input)
-   - the panel-level flushes (close / scroll-away / page-hide) invoke the
-     same `flushOnBlur` through the SettingsFlushProvider registry —
-     there is no separate `flush` member
+   - the panel-level flushes invoke the same `flushOnBlur` through the
+     SettingsFlushProvider registry — there is no separate `flush` member
 2. Render text inputs through `<SettingsInput flushOnBlur={flushOnBlur} {...form.register('x')}>`
    — **never** bare `<Input>`. The wrapper merges RHF's onBlur with
    `flushOnBlur`; spreading `register` first would clobber it. For multi-line
@@ -383,29 +368,28 @@ In addition, three framework-level flushes call every registered card via
 4. List append/remove/move buttons MUST NOT call `save()` — they leave the
    form dirty and the next blur/flush commits the whole list. Calling
    `save()` on append would filter empty rows in `fromState`, shrink the
-   payload, and (before the reseed guard) wipe the row the user just added.
+   payload, and wipe the row the user just added.
 5. Don't destructure `flushOnBlur` in a card that has no text input —
    `no-unused-vars` is enforced.
 
 **Reseed guard (backstop — do not remove):** `useSettingsCard` only re-seeds
 the form from a new `source` prop when the form is **clean** (`getValues()`
-deep-equals `lastCommitted`). Saves no longer revalidate the loader, so a
-new `source` identity only arrives on navigation back to the page or a
-remote concurrent edit; when it does and the user has uncommitted edits,
-the card keeps the user's input. Removing this guard re-introduces the
-"empty row disappears" bug. The trade-off is accepted: a remote concurrent
-edit to the same section won't surface until the local edit is committed.
+deep-equals `lastCommitted`). A new `source` identity only arrives on
+navigation back to the page or a remote concurrent edit; when it does and
+the user has uncommitted edits, the card keeps the user's input. Removing
+this guard re-introduces the "empty row disappears" bug. Accepted
+trade-off: a remote concurrent edit to the same section won't surface
+until the local edit is committed.
 
 **No-op reseed skip (do not remove):** even when clean, the reseed calls
 `reset()` ONLY if `toState(source)` deep-differs from the current form
 values. An unconditional `reset()` regenerates `useFieldArray` ids
-(remounting every row and dropping focus mid-typing) and clobbers the caret
-in plain inputs. This was the "one letter and the social-link input loses
+(remounting every row and dropping focus mid-typing) and clobbers the
+caret in plain inputs — the "one letter and the social-link input loses
 focus" bug.
 
 **No `debounceMs` option** — it was removed. Don't re-add onChange
-auto-save; the whole point of the rework is that typing never fires a
-request.
+auto-save; typing never fires a request.
 
 **Section patch (write path):** every card POSTs an honest Section patch —
 only the fields the card owns. There is no client-side merge: the server
@@ -421,14 +405,13 @@ unknown key at any depth rejects with 400. Concretely:
 - The hook has **no `mode` option** (`'patch' | 'full'` was removed). A
   card that owns its whole section returns its full state — a complete
   object is a valid patch (`ThresholdForm` is the example).
-- List edits (append/remove/move) stay dirty-form commits as today — the
-  whole list is one array field and replaces the stored array on save.
+- List edits (append/remove/move) stay dirty-form commits — the whole
+  list is one array field and replaces the stored array on save.
 - `useSettingsCard`'s `display` is the latest **server-confirmed** section
   (the save response, masks/font families included), falling back to the
   loader snapshot. It is never POSTed.
 - `src/shared/config/merge-section-patch.ts` is the single merge
-  implementation — used by the server write base only (the client no
-  longer projects display values). Do not fork it.
+  implementation — used by the server write base only. Do not fork it.
 
 ## Layering
 

@@ -9,11 +9,9 @@ Route modules live alongside resource routes (feeds, sitemap, OG
 images, JSON APIs) under the same folder so the per-URL contract is
 obvious from the file system.
 
-This file is the long-form companion to the **route manifest**
-declared in `@/routes`. The manifest itself stays terse so the URL
-table reads top-to-bottom; reach for this file when you need the
-**why** behind a particular `layout()`, route ordering, or `id`
-disambiguator.
+This file is the long-form companion to the terse **route manifest**
+in `@/routes` — reach for it when you need the **why** behind a
+`layout()`, route ordering, or `id` disambiguator.
 
 ---
 
@@ -45,9 +43,8 @@ Page modules grouped into four nested trees, each with its own layout
 We do **not** use React Router's segment-based filename convention
 (`_index.tsx`, `($slug).tsx`, `…_._archive.tsx`). The URL is the
 contract — `routes.ts` is the manifest and the filesystem is just
-storage. Instead, route modules are **grouped by area into
-sub-directories**, and within each directory each file is named by
-its **role**:
+storage. Route modules are **grouped by area into sub-directories**,
+and within each directory each file is named by its **role**:
 
 ```
 src/routes/
@@ -88,10 +85,10 @@ Conventions inside an area directory:
 | `<area>/<role>.tsx`      | Flat role within an area — e.g. `public/home.tsx`, `public/not-found.tsx`, `admin/welcome.tsx`, `auth/signin.tsx`.    |
 | `<area>/redirect.<x>.ts` | Tiny redirect-only resource route (e.g. `my/redirect.profile.ts`).                                                    |
 
-When you add a new route, pick the area directory it belongs to,
-choose a role filename from the table above, and add the manifest
-entry in `@/routes`. Do not introduce a fifth pattern, and **never**
-adopt React Router's segment-based filename convention.
+When you add a new route, pick the area directory, choose a role
+filename from the table, and add the manifest entry in `@/routes`. Do
+not introduce a fifth pattern, and **never** adopt React Router's
+segment-based filename convention.
 
 ---
 
@@ -115,14 +112,9 @@ adopt React Router's segment-based filename convention.
   internal id.
 - Custom block components in `@/ui/pt/blocks/`.
 - `visible=false` posts are hidden from the public home and random-post
-  widgets but stay in `/archives`, `/tags/:slug`, `/search/:keyword`,
-  `sitemap.xml`, feeds, and category/tag listings and counts.
-  Future-dated posts stay excluded until publish time.
-- **Draft post visibility gate.** A post is considered draft (invisible
-  to the public) when `status=draft` OR `publishedRevisionId=null`.
-  All public queries MUST check both conditions. A post with
-  `status=published` but no published revision must NOT appear on the home
-  page, in listings, feeds, or sitemap.
+  widgets but stay in archives, tags, search, sitemap, feeds, and
+  category/tag listings. The full visibility/live gate rules are owned
+  by `src/server/AGENTS.md` → Content.
 
 ## Page draft preview
 
@@ -144,29 +136,24 @@ adopt React Router's segment-based filename convention.
 
 ## Manifest anchors
 
-The route manifest in `@/routes` is intentionally short (≈90
-non-blank lines). Each block has an anchor comment that points back
-to one of the sections below. If you find yourself wanting to write a
-multi-paragraph rationale inside the manifest itself, write it here
-instead and leave a single-line pointer in `routes.ts`.
+Each block in the manifest has an anchor comment pointing at one of the
+sections below. Put multi-paragraph rationale here, not in `routes.ts` —
+leave a single-line pointer in the manifest instead.
 
 ### A. Public layout (`routes/public/layout.tsx`)
 
 `public/layout.tsx` is a **pathless** layout (`layout(file, …)`) that
-wraps every public-facing URL.
-
-It owns the `<BaseLayout>` wrapper which **statically imports
-`public.css`**. React Router only emits `<link rel="stylesheet">`
-tags into the SSR `<Links />` output for stylesheets reachable from
-the matched route module graph, so a static import inside the layout
-guarantees the very first paint is fully styled. **Do not** lazy-load
+wraps every public-facing URL. It owns the `<BaseLayout>` wrapper which
+**statically imports `public.css`**: React Router only emits
+`<link rel="stylesheet">` tags for stylesheets reachable from the
+matched route module graph, so a static import inside the layout
+guarantees the first paint is fully styled. **Do not** lazy-load
 `public.css` from a child route or move it into a regular component —
 both would reintroduce FOUC for the public surface.
 
-The admin / login / install / API routes live **outside** this
-layout on purpose: the admin SPA chunk and the JSON resource
-routes must not pull the public stylesheet cascade into their
-bundles.
+The admin / login / install / API routes live **outside** this layout
+on purpose: their bundles must not pull in the public stylesheet
+cascade.
 
 ### B. Splat catch-all inside the public layout
 
@@ -176,15 +163,11 @@ route('*', 'routes/public/not-found.tsx'),
 
 The splat MUST stay last inside `public/layout.tsx`. React Router
 treats `*` as the **lowest-priority** match, so this only fires for
-paths nothing else handles — multi-segment WordPress probes such as:
-
-- `/wp-content/plugins/x.php`
-- `/cgi-bin/test`
-- `/wp-includes/wlwmanifest.xml`
-
-Single-segment `.php` or `cgi-bin` probes hit `:slug` first and are
-intercepted inside `routes/public/page/detail.tsx` (see the wp-decoy
-helper).
+paths nothing else handles — multi-segment WordPress probes such as
+`/wp-content/plugins/x.php`, `/cgi-bin/test`, or
+`/wp-includes/wlwmanifest.xml`. Single-segment `.php` / `cgi-bin`
+probes hit `:slug` first and are intercepted inside
+`routes/public/page/detail.tsx` (see the wp-decoy helper).
 
 ### C. Resource routes outside the public layout
 
@@ -223,22 +206,19 @@ do not reintroduce a scope-from-URL helper.
 
 All internal API endpoints live in the Hono server (`src/server/http/`)
 and are mounted as oRPC procedures. They do **not** appear in
-`routes.ts` — the React Router manifest only contains page routes.
+`routes.ts` — the manifest only contains page routes.
 
 ### F. Auth split-screen layout (`routes/auth/layout.tsx`)
 
-`routes/auth/layout.tsx` owns the public-facing left/right
-split-screen layout shared by login, the stage-1 install (admin
-sign-up), and the stage-2 install (settings). These three routes
-share the same chrome but are **independent** of the admin SPA
-shell.
+`routes/auth/layout.tsx` owns the split-screen layout shared by login,
+the stage-1 install (admin sign-up), and the stage-2 install
+(settings) — independent of the admin SPA shell.
 
 ### G. admin SPA shell (`routes/admin/layout.tsx`)
 
-The SPA admin shell owns its own chrome (sidebar + topbar) under
-`routes/admin/layout.tsx`. It opts out of `BaseLayout` via
-`handle.layout = 'admin'` and does **not** reuse the public
-login/install split-screen layout from section F.
+The SPA admin shell owns its own chrome (sidebar + topbar). It opts out
+of `BaseLayout` via `handle.layout = 'admin'` and does **not** reuse
+the public login/install split-screen layout from section F.
 
 ### H. Settings sub-layout (`routes/admin/settings/layout.tsx`)
 

@@ -31,9 +31,9 @@ parent.
     `FloatingPublishButton`, `PreviewPanel`, `RevisionsDrawer`,
     `DateTimePicker`. `PostEditorShell.tsx` and `PageEditorShell.tsx`
     consume the hook + sub-components and stay thin (~500 LOC each)
-    by encoding only their entity-specific bindings (DTO key shape,
-    API endpoint paths, sidebar component, mutation payload fields,
-    UI text). No new shared state belongs in either Shell — extend
+    by encoding only entity-specific bindings (DTO key shape, API
+    endpoint paths, sidebar component, mutation payload fields, UI
+    text). No new shared state belongs in either Shell — extend
     `useEditorShellState` instead.
 
 ## Cross-cutting UI modules
@@ -48,12 +48,8 @@ parent.
   `ui/pt/blocks/` (CodeBlock, BlockImage, MusicPlayer, Solution,
   Friends).
 - `ui/icons/` — Static-export icon library. Named imports only — no
-  `<Icon name="..." />` string lookups.
-
-  **Icon source policy:** Import icons directly from `lucide-react`.
-  The build pipeline tree-shakes unused icons so only the ones
-  referenced in source code ship to browsers.
-
+  `<Icon name="..." />` string lookups. Import icons directly from
+  `lucide-react`; the build tree-shakes unused icons.
 - `ui/lib/` — UI utilities (`cn`, `code-languages`, `ThemeProvider`,
   `blog-config-context`, `use-media-query`). shadcn's `aliases.lib` is
   pinned here. No `src/lib/` parallel.
@@ -61,38 +57,35 @@ parent.
 ## Tailwind-merge tokens
 
 `cn.ts` extends `tailwind-merge` with every project token namespace so
-that custom `--text-*`, `--color-*`, `--shadow-*`, etc. tokens are
-classified into the correct merge group. Without this registration,
-`cn('text-toc-toggle text-ink-3')` would collapse to `'text-ink-3'`
-because tailwind-merge sees both as opaque `text-*` utilities and
-arbitrates them as the same group.
+custom `--text-*`, `--color-*`, `--shadow-*` tokens are classified into
+the correct merge group — otherwise `cn('text-toc-toggle text-ink-3')`
+collapses to `'text-ink-3'` because tailwind-merge sees both as opaque
+`text-*` utilities.
 
 ### Token system
 
 `tailwind.css` layers tokens in three tiers, with one-way dataflow from
 the bottom up:
 
-1. **Raw brand tokens** — declared in `:root` and re-bound in `.dark { … }`.
-   They are the only place a hex value lives. Examples: `--brand`,
+1. **Raw brand tokens** — declared in `:root` and re-bound in
+   `.dark { … }`. The only place a hex value lives: `--brand`,
    `--ink-1`, `--surface-body`, `--line-muted`, `--chip-bg`.
-
 2. **shadcn slot aliases** — also in `:root`, mapped onto the raw layer
    by name so the shadcn primitives keep working unmodified:
    `--background` ← `--surface-body`, `--foreground` ← `--ink-1`,
    `--card` / `--popover` ← `--canvas`, `--muted` / `--secondary` ←
    `--surface-dim`, `--accent` ← `--line`, `--border` ← `--line`,
    `--input` ← `--line-widget`, `--ring` ← `--brand`.
-
 3. **`@theme inline` bridge** — the same names with a `--color-` (or
    `--shadow-`, `--text-`, …) prefix so Tailwind v4 emits utilities for
    them. `cn.ts` mirrors that prefix-stripped list. `inline` keeps the
    tokens reactive to `.dark` rebinds in tier 1.
 
 Shadow tokens cannot be re-bound directly in `.dark { }` because
-`@theme inline` tokens are immutable once registered. That's why every
-shadow has a `*-value` indirection: `.dark` rewrites
-`--shadow-card-value`, and the bridge alias `--shadow-card =
-var(--shadow-card-value)` passes the new value through transparently.
+`@theme inline` tokens are immutable once registered. Hence the
+`*-value` indirection: `.dark` rewrites `--shadow-card-value`, and the
+bridge alias `--shadow-card = var(--shadow-card-value)` passes the new
+value through.
 
 ### Practical rule for adding a new theme-aware utility
 
@@ -123,11 +116,10 @@ Every adjacent tier carries 3 to 8 L of perceptible separation, and no
 | line         | `#475672` | 38  | default border (cards, inputs, …) |
 | line-widget  | `#5b6b88` | 44  | strong border (input emphasis)    |
 
-The earlier release had `--line === --surface-soft` (both `#2a3553`),
-which made every `border-line` consumer vanish on top of the soft
-surface. Lifting the line trio out of the surface band fixes form-
-element visibility and restores `--accent` (which resolves to `--line`
-via the shadcn alias) as a perceptible hover-state.
+The line trio must stay out of the surface band: when `--line` equaled
+`--surface-soft`, every `border-line` consumer vanished on top of the
+soft surface and `--accent` (which resolves to `--line`) lost its
+perceptible hover state.
 
 ## Component rules
 
@@ -144,11 +136,9 @@ via the shadcn alias) as a perceptible hover-state.
 
 - Raw HTML uses `dangerouslySetInnerHTML` on the host element — no
   generic `Html` wrapper.
-- Conditional classNames go through `cn()` from `@/ui/lib/cn`. It
-  composes `clsx` with a project-customised `tailwind-merge` that
-  registers every `@theme` token. Adding a new `--<namespace>-<name>`
-  token in `tailwind.css` MUST be paired with an entry in `cn.ts`'s
-  per-namespace list — enforced by
+- Conditional classNames go through `cn()` from `@/ui/lib/cn`. Adding a
+  new `--<namespace>-<name>` token in `tailwind.css` MUST be paired
+  with an entry in `cn.ts`'s per-namespace list — enforced by
   `tests/contract.tailwind-tokens.test.ts`.
 - Use `<Image />` from `@/ui/public/widgets/Image` for transformed
   remote images.
@@ -185,9 +175,13 @@ scrolling past unrelated concerns."
     `page.show_friends` toggle.
 - Server-only PT helpers in `@/server/domains/pt/*` (prerender,
   canonicalize) must never reach the client bundle.
-- PT ↔ ProseMirror bridge is `@/shared/pt/bridge` — single file. Custom
-  blocks ride a generic `blockCard` PM node. Round-trip is
-  contract-tested in `tests/contract.pt-bridge.test.ts`.
+- PT ↔ ProseMirror bridge is `@/shared/pt/bridge/` — a directory of
+  per-concern modules (`pt-to-pm.ts`, `pm-to-pt.ts`, `node-registry.ts`,
+  `types.ts`, `utils.ts`, `canonicalize.ts`, plus per-node modules under
+  `nodes/`). Custom blocks ride a generic `blockCard` PM node.
+  Round-trip is contract-tested in `tests/unit/shared/pt/bridge/`
+  (`types.test.ts`, `node-registry.test.ts`, `utils.test.ts`, and the
+  `nodes/` cases).
 - SSR renderer is `@/ui/pt/render` (`PortableTextBody`), composing
   `@portabletext/react` with `@/ui/pt/blocks/*`. Heading anchor ids
   align with post anchors.
@@ -197,8 +191,10 @@ scrolling past unrelated concerns."
   code + link + `mathInline`/`footnoteRef`) and
   `tiptap/TableBubbleMenu` (table selection), mutually exclusive →
   `tiptap/SlashMenu` (`@tiptap/suggestion`, catalogue in
-  `tiptap/slash-commands.ts`; pickers dispatch `CustomEvent`s from
-  `tiptap/editor-events.ts`).
+  `tiptap/slash-commands.ts`; pickers are invoked through
+  `editor.storage.editorActions` — the `EditorActionsExtension` in
+  `tiptap/editor-actions.ts`, populated from React via
+  `editor-actions-setter.ts`).
 - Image block uses a React NodeView (`tiptap/ImageNodeView`) for inline
   alt + caption edits.
 - **Table dialect**: cells are inline-only — no nested blocks, lists,

@@ -244,6 +244,7 @@ pnpx
 portabletext
 postject
 prefetcher
+preheader
 preopen
 prerender
 procfile

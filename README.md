@@ -9,8 +9,8 @@
 > _"A little bird carrying hope, one letter at a time."_
 
 **Kobato** is a self-hosted blog CMS built by [Yufan Sheng](https://github.com/syhily)
-— the engine behind [且听书吟](https://yufan.me). It runs on React Router 8 (SSR), Hono, and oRPC.
-It provide a built-in `/admin` console for everything.
+— the engine behind [且听书吟](https://yufan.me). It runs on React Router 8 (SSR), Hono, and oRPC,
+with a built-in `/admin` console for everything.
 Content is stored as **PortableText** and authored through a Tiptap editor that round-trips losslessly to the wire format.
 
 This repository is the complete product: public site, admin SPA, API, SSR renderer, install gate, and database migrations.
@@ -231,9 +231,9 @@ pnpm run dev         # development server
 pnpm run build       # production build
 pnpm run test        # run tests
 pnpm run test:fast   # run unit and snapshot tests without Docker
-pnpm run fmt   # formatting
-pnpm run lint  # lint
-pnpm run type  # TypeScript check
+pnpm run fmt         # formatting
+pnpm run lint        # lint
+pnpm run type        # TypeScript check
 pnpm run db:gen      # generate Drizzle migrations
 pnpm run docker:dev  # start dev components
 pnpm run docker:test # start test components

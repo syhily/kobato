@@ -32,39 +32,33 @@ One folder per business domain. Base vocabulary:
 `schema.ts / repo.ts / service.ts / projection.ts / cache.ts` plus
 feature-named files (`preview.ts`, `loader.ts`, etc.).
 
-When any domain file (`service.ts`, `repo.ts`, `schema.ts`, etc.)
-grows beyond ~300 lines, split it into a focused subdirectory with
-per-use-case modules (e.g. `services/catalog.ts`, `repos/admin-query.ts`,
-`schemas/general.ts`). Shared helpers and types stay in the root file
-or move to a `shared.ts` within the subdirectory. Callers import from
-the specific module rather than the monolithic file.
+When any domain file grows beyond ~300 lines, split it into a focused
+subdirectory with per-use-case modules (e.g. `services/catalog.ts`,
+`repos/admin-query.ts`, `schemas/general.ts`). Shared helpers and types
+stay in the root file or move to a `shared.ts` within the subdirectory.
+Callers import from the specific module rather than the monolithic file.
 
 **Consistency rule**: once a subdirectory exists for a base vocabulary
 file (e.g. `services/` or `repos/`), the corresponding root file
 (`service.ts` or `repo.ts`) MUST NOT coexist in the same domain.
-Move every export from the root file into the subdirectory so callers
-always import from one predictable location.
+Move every export into the subdirectory so callers always import from
+one predictable location.
 
 Domains: `analytics`, `auth` (session-storage, csrf, rbac, flows,
-otp-flow, password-flow, passkey-flow, verification-tokens), `comments`
-(loader, moderation, projection, likes,
-token, badge, url, canonicalize), `content` (revision `repos/` +
-entity-agnostic draft→publish `lifecycle.ts` + save-time library image
-sync `services/image-sync.ts` + restore-time `slug-reclaim.ts` + admin
-list orchestration `services/admin-list.ts` (`listForAdmin`, used by the
-posts/pages admin-list adapters) + shared limit/offset ladder
-`repos/pagination.ts`; post/page
-behavior attaches via `services/lifecycle-adapter.ts` in each entity
-domain),
-`friends`, `images` (schema, service,
-storage, key, process), `music`, `pages`, `posts`, `pt`
-(Shiki/KaTeX prerender, canonicalize, comment-to-html),
-`settings` (install-flow, install-gate),
-`taxonomies/{categories,tags}`, `users`. Plus `audit`. Plus
-`update` (SEA self-update: gate, release fetch, download/verify/swap
-pipeline, single-job state machine). Plus
-`webmentions` (W3C Webmention receive: target resolution, SSRF-guarded
-source fetch, link verification, moderation).
+verification-tokens), `comments` (loader, moderation, projection,
+likes, token, badge, url, canonicalize), `content` (revision `repos/`,
+entity-agnostic draft→publish `lifecycle.ts`, save-time library image
+sync `services/image-sync.ts`, restore-time `slug-reclaim.ts`, admin
+list orchestration `services/admin-list.ts`, shared limit/offset ladder
+`repos/pagination.ts`; post/page behavior attaches via each entity
+domain's `services/lifecycle-adapter.ts`), `friends`, `images` (schema,
+service, storage, key, process), `music`, `pages`, `posts`, `pt`
+(Shiki/KaTeX prerender, canonicalize, comment-to-html), `settings`
+(install-flow, install-gate), `taxonomies/{categories,tags}`, `users`,
+`audit`, `update` (SEA self-update: gate, release fetch,
+download/verify/swap pipeline, single-job state machine), `webmentions`
+(W3C Webmention receive: target resolution, SSRF-guarded source fetch,
+link verification, moderation).
 
 Domains may import from `shared/`, `infra/`, and other `domains/`.
 `tests/contract.cookie.test.ts` pins `domains/auth/session-storage.ts`.
@@ -99,8 +93,7 @@ middleware; the leaf procedure picks one and inherits the guard.
 ### Controllers
 
 Shape: `procBase.input(zod).output(zod).handler(({input, context}) => …)`,
-exported on the file's `<domain>Router`. Handlers orchestrate only;
-business logic stays in `server/domains/<x>/service.ts`.
+exported on the file's `<domain>Router`.
 
 **Adding an endpoint**: (1) shared schema → `shared/contracts/<domain>.ts`
 with a parity assertion, OR inline `z.object({...})` next to the
@@ -167,31 +160,19 @@ the caller's responsibility.
 
 ### Env vars vs database settings
 
-Env vars live in `@/server/infra/env.ts` and require a redeploy to change.
-Database settings live in the `setting` table and are editable at runtime via
-`/admin/settings`. Three categories decide where a config belongs:
+Env vars (`@/server/infra/env.ts`) require a redeploy; database settings
+(the `setting` table) are editable at runtime via `/admin/settings`.
+Env vars are for: (1) immutable runtime constants (`HOST`, `PORT`,
+`LOG_LEVEL`, `DB_POOL_MAX`, `DB_STATEMENT_TIMEOUT_MS`), (2) secrets and
+credentials that must not live in the database (`DATABASE_URL`,
+`REDIS_URL`, `SESSION_SECRET`, `ENCRYPTION_KEY`), (3) deployment-local
+filesystem paths (`DATA_PATH`). Everything else — feature toggles,
+thresholds, URLs, CDN hosts, pagination sizes, relative font paths —
+is a database setting (`assets.storage.enabled`, `seo.og.width`,
+`analytics.trackAdmin`, `cache.og.ttlSeconds`).
 
-**Category 1 — Env var (immutable runtime constants)**
-Configuration that is set once during deployment and never changed by admins.
-Examples: `HOST`, `PORT`, `LOG_LEVEL`, `DB_POOL_MAX`, `DB_STATEMENT_TIMEOUT_MS`.
-
-**Category 2 — Env var (secrets & credentials)**
-Passwords, API keys, connection strings, and signing secrets that must not live
-in the database (or must be encrypted if they do). Examples: `DATABASE_URL`,
-`REDIS_URL`, `SESSION_SECRET`, `ENCRYPTION_KEY`.
-
-**Category 3 — Env var (deployment-local filesystem paths)**
-Paths that are specific to the Docker/host environment and meaningless to change
-at runtime. Example: `DATA_PATH`.
-
-**What belongs in database settings**
-Everything else: feature toggles, thresholds, URLs, CDN hosts, pagination sizes,
-relative font paths, and any behavior an admin might want to flip without
-redeploying. Examples: `assets.storage.enabled`, `seo.og.width`,
-`analytics.trackAdmin`, `cache.og.ttlSeconds`.
-
-- Negative rule: if a config could reasonably be toggled by an admin from the
-  dashboard, it MUST be a database setting, not an env var.
+- Negative rule: if a config could reasonably be toggled by an admin
+  from the dashboard, it MUST be a database setting, not an env var.
 
 ## Configuration & Install Gate
 
@@ -221,9 +202,8 @@ redeploying. Examples: `assets.storage.enabled`, `seo.og.width`,
   `getInstallState()` and routes: no admin → `/admin/setup`;
   installed → through. Static assets, framework internals, and the
   install/login pair are exempt via `ensureInstalledOrRedirect()` /
-  `ensureNoAdminOrRedirect()`. After the one-step install migration,
-  "has admin" is equivalent to "installed" — there is no intermediate
-  state.
+  `ensureNoAdminOrRedirect()`. "Has admin" is equivalent to
+  "installed" — there is no intermediate state.
 - Pre-existing deployments missing optional sections are backfilled
   lazily by `loadSettingsFromDb()` + `upsertSetting`. Best-effort,
   swallows DB errors.
@@ -252,28 +232,23 @@ redeploying. Examples: `assets.storage.enabled`, `seo.og.width`,
   projection function that produces a public `cover` field MUST
   replicate this fallback and be covered by a unit test in
   `tests/service.cms-posts-projection.test.ts`.
-- **Draft post visibility gate.** A post is considered draft (invisible
-  to the public) when `status=draft` OR `publishedRevisionId=null`.
-  The admin lifecycle filter treats both cases as draft; all public
-  queries MUST check both conditions: listings
-  (`buildPublicPostsWhere`), direct links (`findPostBySlug`), and
-  public taxonomy counts (`countPostsByTaxonomy` with the `public`
-  gate: live + `visible`). Search is
-  gated too — `@/server/infra/search/search.ts::searchPosts` takes the
-  gate as a caller-supplied `baseWhere` (the HTTP search loader passes
-  `livePostWhere(...)`), keeping `infra/` free of business rules.
-  A post with `status=published` but no published revision must NOT
-  appear on the home page, in listings, feeds, sitemap, or search
-  results. The full "live" gate (not deleted, published, has
-  a published revision, `publishedAt` not in the future) is defined
-  once in `@/server/domains/content/schema.ts` with two projections
-  that MUST be changed together: `isLive` (in-memory predicate) and
-  `liveContentWhere` (SQL fragment for post/page meta columns). SQL
-  call sites bind columns through the repo-side adapters
-  `livePostWhere` (`posts/repos/shared.ts`) / `livePageWhere`
-  (`pages/repo.ts`) — never hand-assemble the column struct. Admin
-  taxonomy counts deliberately include scheduled posts but still
-  require a published revision (`countPostsByTaxonomy` with the
+- **Draft post visibility gate.** A post is draft (public-invisible)
+  when `status=draft` OR `publishedRevisionId=null`; all public queries
+  MUST check both conditions: listings (`buildPublicPostsWhere`), direct
+  links (`findPostBySlug`), and public taxonomy counts
+  (`countPostsByTaxonomy` with the `public` gate: live + `visible`).
+  Search is gated too — `@/server/infra/search/search.ts::searchPosts`
+  takes the gate as a caller-supplied `baseWhere` (the HTTP search
+  loader passes `livePostWhere(...)`), keeping `infra/` free of
+  business rules. The full "live" gate (not deleted, published, has a
+  published revision, `publishedAt` not in the future) is defined once
+  in `@/server/domains/content/schema.ts` with two projections that
+  MUST be changed together: `isLive` (in-memory predicate) and
+  `liveContentWhere` (SQL fragment). SQL call sites bind columns through
+  the repo-side adapters `livePostWhere` (`posts/repos/shared.ts`) /
+  `livePageWhere` (`pages/repo.ts`) — never hand-assemble the column
+  struct. Admin taxonomy counts deliberately include scheduled posts but
+  still require a published revision (`countPostsByTaxonomy` with the
   `admin` gate).
 
 ### Taxonomies (categories, tags, friends)
@@ -338,51 +313,47 @@ redeploying. Examples: `assets.storage.enabled`, `seo.og.width`,
   as images). The per-track `storageDriver` is persisted so reads/deletes
   and URL resolution dispatch correctly.
 - PortableText references rows via a 16-char lowercase random id. Service
-  is netease-only via the inline `NeteaseResolver`; `(source, sourceId)` is unique with
-  `source` reserved as varchar for future providers. Lyrics live in
-  `music.lyric` so the player avoids a second round trip.
+  is netease-only via the inline `NeteaseResolver`; `(source, sourceId)`
+  is unique with `source` reserved as varchar for future providers.
+  Lyrics live in `music.lyric` so the player avoids a second round trip.
 
 ### Audit Log
 
-- **When to record**: Every state-mutating admin operation, auth
+- **When to record**: every state-mutating admin operation, auth
   lifecycle event (login/logout/password reset), and bulk action MUST
   emit an audit event. Read-only queries (list, get, preview) MUST NOT.
-- **How to record**: Import `recordAuditEventFromContext` from
+- **How to record**: import `recordAuditEventFromContext` from
   `@/server/domains/audit/service` and call it after the mutation
   succeeds (so failures are not logged). Never inline the context
   extraction — the helper reads `actorId`, `actorRole`, `ipAddress`,
   and `userAgent` from `HandlerContext` consistently.
-- **Action naming**: Use kebab-case verbs in present tense:
+- **Action naming**: kebab-case verbs in present tense,
   `<entity>_<verb>` (e.g. `post_published`, `user_soft_deleted`).
   Avoid `_by_admin` suffixes; the actor identity already distinguishes
   who performed the action.
-- **Resource type**: Use the singular table/entity name (`post`,
-  `page`, `user`, `session`, `comment`, `setting`, …). Keep it
-  consistent with `RESOURCE_TYPE_OPTIONS` in the admin UI filter.
-- **Details**: Put only non-sensitive metadata in `details`. L3
-  sensitive fields (`email`, `ip`, `userAgent`, `phone`, `cookie`,
-  `deviceId`, `authorEmail`, `authorIp`) are automatically tagged with
-  `{E}…{/E}` before storage and masked to `***` in API responses.
-  Do NOT put passwords, tokens, or raw session ids in details.
+- **Resource type**: the singular table/entity name (`post`, `page`,
+  `user`, `session`, `comment`, `setting`, …), consistent with
+  `RESOURCE_TYPE_OPTIONS` in the admin UI filter.
+- **Details**: only non-sensitive metadata. L3 sensitive fields
+  (`email`, `ip`, `userAgent`, `phone`, `cookie`, `deviceId`,
+  `authorEmail`, `authorIp`) are automatically tagged with `{E}…{/E}`
+  before storage and masked to `***` in API responses. Do NOT put
+  passwords, tokens, or raw session ids in details.
 - **Retention**: DB rows are kept for `auditLogDbRetentionDays`
-  (default 30, max 90). Older rows are archived daily at 04:00 to S3
-  as `audit-log/archive/YYYY-MM-DD.jsonl.gz` and then deleted from
-  the DB. S3 archives are kept for `auditLogArchiveRetentionDays`
-  (default 180). The `audit_log` table is excluded from `pg_dump`
-  backups.
-- **Querying**: The admin list API clamps `dateFrom` to the retention
-  boundary server-side so the UI cannot request data that has already
-  been archived.
-- **Batcher**: Events are buffered in memory (threshold 50 events /
-  500ms flush) and written via Postgres `COPY FROM STDIN` for
-  throughput. On COPY failure the batch falls back to per-row INSERT.
-  Events in the buffer at process shutdown are flushed on `SIGTERM` /
-  `SIGINT` / `beforeExit`.
-- **UI sync checklist**: When adding a new action, add a Chinese
+  (default 30, max 90), then archived daily at 04:00 to S3 as
+  `audit-log/archive/YYYY-MM-DD.jsonl.gz` and deleted from the DB. S3
+  archives are kept for `auditLogArchiveRetentionDays` (default 180).
+  The `audit_log` table is excluded from `pg_dump` backups.
+- **Querying**: the admin list API clamps `dateFrom` to the retention
+  boundary server-side so the UI cannot request already-archived data.
+- **Batcher**: events are buffered in memory (threshold 50 events /
+  500ms flush) and written via Postgres `COPY FROM STDIN`; on COPY
+  failure the batch falls back to per-row INSERT. Buffered events are
+  flushed on `SIGTERM` / `SIGINT` / `beforeExit`.
+- **UI sync checklist**: when adding a new action, add a Chinese
   translation to `ACTION_OPTIONS` in
   `src/ui/admin/audit/filter-constants.ts`. Untranslated actions fall
-  back to the raw slug in the admin list and filter, so keep the list
-  in sync with every emitted event.
+  back to the raw slug in the admin list and filter.
 
 ## Server layering constraints
 
