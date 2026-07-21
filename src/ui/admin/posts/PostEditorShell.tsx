@@ -1,10 +1,12 @@
 import type { NavigateFunction } from 'react-router'
 
+import { useQueryClient } from '@tanstack/react-query'
 import { useMemo } from 'react'
 
 import type { AdminPostDetailDto, AdminPostDto, UpsertPostMetaInput } from '@/shared/types/posts'
 
 import { orpc } from '@/client/api/client'
+import { orpcQuery } from '@/client/api/orpc-query'
 import { portableTextBodySchema } from '@/shared/pt/schema'
 import { CreateModeBanner } from '@/ui/admin/editor-shared/CreateModeBanner'
 import { TitleSlugStrip } from '@/ui/admin/editor-shared/TitleSlugStrip'
@@ -77,6 +79,7 @@ function buildPostUpsertPayload({
 
 export function PostEditorShell({ mode, detail, navigate }: PostEditorShellProps) {
   const isEditing = mode === 'edit' && detail !== undefined
+  const queryClient = useQueryClient()
 
   // Loader-stable detail object for the state hook: the query DTO prop is
   // referentially stable, so memoizing on it keeps the sub-hook memos from
@@ -108,12 +111,21 @@ export function PostEditorShell({ mode, detail, navigate }: PostEditorShellProps
     createDraftConfig: POST_CREATE_DRAFT_CONFIG,
     upsertMetaFn: async (input) => {
       const result = await orpc.admin.posts.upsertMeta(input)
+      // The admin list lives in the TanStack cache (useInfiniteQuery in
+      // PostsView) — invalidate the namespace so a meta save (including the
+      // create flow) is reflected when the user returns to the list.
+      void queryClient.invalidateQueries({ queryKey: orpcQuery.admin.posts.list.key() })
       return result.post
     },
     saveDraftFn: (input) => orpc.admin.posts.saveDraft(input),
-    publishFn: (input) => orpc.admin.posts.publishLatest(input),
+    publishFn: async (input) => {
+      const result = await orpc.admin.posts.publishLatest(input)
+      void queryClient.invalidateQueries({ queryKey: orpcQuery.admin.posts.list.key() })
+      return result
+    },
     unpublishFn: async (input) => {
       const result = await orpc.admin.posts.unpublish(input)
+      void queryClient.invalidateQueries({ queryKey: orpcQuery.admin.posts.list.key() })
       return result.post
     },
     buildUpsertMetaPayload: buildPostUpsertPayload,

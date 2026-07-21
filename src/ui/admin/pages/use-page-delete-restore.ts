@@ -1,4 +1,4 @@
-import { useMutation } from '@tanstack/react-query'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useNavigate } from 'react-router'
 import { toast } from 'sonner'
@@ -6,10 +6,12 @@ import { toast } from 'sonner'
 import type { AdminPageDetailDto } from '@/shared/types/pages'
 
 import { orpc } from '@/client/api/client'
+import { orpcQuery } from '@/client/api/orpc-query'
 import { type ConfirmState } from '@/ui/admin/shared/ConfirmDialog'
 
 export function usePageDeleteRestore(detail: AdminPageDetailDto | undefined) {
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
   const [confirm, setConfirm] = useState<ConfirmState | null>(null)
 
   const page = detail?.page
@@ -18,6 +20,7 @@ export function usePageDeleteRestore(detail: AdminPageDetailDto | undefined) {
     mutationFn: (id: string) => orpc.admin.pages.delete({ id }),
     onSuccess: () => {
       toast.success('页面已删除')
+      void queryClient.invalidateQueries({ queryKey: orpcQuery.admin.pages.list.key() })
       void navigate('/admin/pages')
     },
     onError: (error) => {
@@ -35,6 +38,7 @@ export function usePageDeleteRestore(detail: AdminPageDetailDto | undefined) {
     mutationFn: (id: string) => orpc.admin.pages.restore({ id }),
     onSuccess: () => {
       toast.success('页面已恢复')
+      void queryClient.invalidateQueries({ queryKey: orpcQuery.admin.pages.list.key() })
       void navigate(0)
     },
     onError: (error) => {

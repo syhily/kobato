@@ -5,6 +5,7 @@ import type { AdminRevisionDto } from '@/shared/types/revision'
 
 import { toAdminRevisionDto } from '@/server/domains/content/projection'
 import { findContentById, findLatestRevision, listRevisions } from '@/server/domains/content/repos/query'
+import { listForAdmin } from '@/server/domains/content/services/admin-list'
 import { toAdminPostDto, type AdminPostDetailDto } from '@/server/domains/posts/projection'
 import { countPostMetas, listPostMetas } from '@/server/domains/posts/repos/admin-query'
 import { findPostMetaById } from '@/server/domains/posts/repos/single'
@@ -14,8 +15,6 @@ import {
   type ViewerContext,
 } from '@/server/domains/posts/services/shared'
 import { findCategoryNamesByIds } from '@/server/infra/db/operations/category'
-import { commentCountsByOwnerIds, metricsByOwnerIds } from '@/server/infra/db/operations/like'
-import { ensureMetricsBatch } from '@/server/infra/db/operations/metric'
 import { findTagNamesByPostId, findTagNamesByPostIds } from '@/server/infra/db/operations/post-tag'
 import { idFromString } from '@/shared/utils/id'
 
@@ -28,43 +27,36 @@ export async function listPostsForAdmin(
   if (viewer && viewer.role !== 'admin') {
     appliedFilters = { ...filters, authorId: idFromString(viewer.userId) }
   }
-  const offset = appliedFilters.offset ?? 0
-  const limit = appliedFilters.limit ?? 20
-  const [rows, total] = await Promise.all([
-    listPostMetas(db, { ...appliedFilters, limit, offset }),
-    countPostMetas(db, appliedFilters),
-  ])
-  if (rows.length === 0) {
-    return { posts: [], total, hasMore: false }
-  }
-  const ownerIds = rows.map((row) => row.id)
-  await ensureMetricsBatch(
-    db,
-    rows.map((row) => ({ type: 'post', ownerId: row.id })),
-  )
-  const [metrics, countRows, tagMap, categoryMap] = await Promise.all([
-    metricsByOwnerIds(db, 'post', ownerIds),
-    commentCountsByOwnerIds(db, 'post', ownerIds),
-    findTagNamesByPostIds(db, ownerIds),
-    findCategoryNamesByIds(
-      db,
-      rows.map((row) => row.categoryId).filter((id): id is bigint => id !== null),
-    ),
-  ])
-  const publicIdByOwner = new Map(metrics.map((m) => [String(m.ownerId), m.publicId]))
-  const countByOwner = new Map(countRows.map((r) => [String(r.ownerId), r.count]))
-  return {
-    posts: rows.map((row) =>
-      toAdminPostDto(row, {
-        commentCount: countByOwner.get(String(row.id)) ?? 0,
-        commentPublicId: publicIdByOwner.get(String(row.id)) ?? '',
-        tags: tagMap.get(row.id) ?? [],
-        categoryName: categoryMap.get(row.categoryId ?? -1n) ?? '',
-      }),
-    ),
-    total,
-    hasMore: offset + rows.length < total,
-  }
+  const { items, total, hasMore } = await listForAdmin(db, {
+    entityType: 'post',
+    filters: appliedFilters,
+    defaultLimit: 20,
+    listRows: listPostMetas,
+    countRows: countPostMetas,
+    loadExtras: async (db, rows) => {
+      const [tagMap, categoryMap] = await Promise.all([
+        findTagNamesByPostIds(
+          db,
+          rows.map((row) => row.id),
+        ),
+        findCategoryNamesByIds(
+          db,
+          rows.map((row) => row.categoryId).filter((id): id is bigint => id !== null),
+        ),
+      ])
+      return new Map(
+        rows.map((row) => [
+          row.id,
+          {
+            tags: tagMap.get(row.id) ?? [],
+            categoryName: categoryMap.get(row.categoryId ?? -1n) ?? '',
+          },
+        ]),
+      )
+    },
+    toDto: (row, engagement, extras) => toAdminPostDto(row, { ...engagement, ...extras }),
+  })
+  return { posts: items, total, hasMore }
 }
 
 export async function getPostDetailForAdmin(

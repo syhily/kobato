@@ -2,9 +2,14 @@ import { useReducer } from 'react'
 
 import type { AdminCategoryDto } from '@/shared/types/categories'
 
-import { rowsReducer, type RowsState } from '@/ui/admin/shared/rowsReducer'
+// Rows state for the categories admin list. The shared rowsReducer was
+// retired with the infinite-query migration; categories keeps its rows/total
+// bookkeeping inline because it is the last reducer-based admin surface
+// (reorder + optimistic patch/remove/prepend).
 
-interface CategoriesState extends RowsState<AdminCategoryDto> {
+interface CategoriesState {
+  rows: AdminCategoryDto[]
+  total: number
   q: string
 }
 
@@ -20,15 +25,25 @@ type CategoriesAction =
 function categoriesReducer(state: CategoriesState, action: CategoriesAction): CategoriesState {
   switch (action.type) {
     case 'loaded':
-      return { ...state, ...rowsReducer(state, action) }
+      return { ...state, rows: action.rows, total: action.total }
     case 'setQ':
       return { ...state, q: action.value }
     case 'patchCategory':
-      return { ...state, ...rowsReducer(state, { type: 'patch', row: action.category }) }
+      return {
+        ...state,
+        rows: state.rows.map((row) => (row.id === action.category.id ? { ...row, ...action.category } : row)),
+      }
     case 'removeCategory':
-      return { ...state, ...rowsReducer(state, { type: 'remove', id: action.id }) }
+      // Optimistic removal: drop the row from the visible list and
+      // decrement `total` (never below zero). The next reload re-syncs if
+      // needed.
+      return {
+        ...state,
+        rows: state.rows.filter((row) => row.id !== action.id),
+        total: Math.max(0, state.total - 1),
+      }
     case 'prependCategory':
-      return { ...state, ...rowsReducer(state, { type: 'prepend', row: action.category }) }
+      return { ...state, rows: [action.category, ...state.rows], total: state.total + 1 }
     case 'reorderRows': {
       // Optimistic local reorder used while the server round-trip is in
       // flight. Rewrite each row's `sortOrder` to its new index so the

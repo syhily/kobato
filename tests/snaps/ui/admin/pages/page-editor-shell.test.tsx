@@ -6,24 +6,19 @@ import type { AdminUserDto } from '@/shared/types/users'
 import { renderInRouter, stableHtml } from '#/_helpers/render'
 import { PagesView } from '@/ui/admin/pages/PagesView'
 
-// `PagesView` issues two `useQuery` calls (`admin.pages.list` + `admin.users.
-// list`) and an imperative `orpc.admin.pages.list` for the infinite-scroll
-// sentinel. We hoist query singletons so each test can swap the resolved
-// list / users data + loading flag without re-mocking, mirroring the
-// musics-view pattern. `orpc` itself is stubbed inert for the loadMore path.
-//
-// The component's `state.rows` / `state.total` are populated from the query
-// result via a `useEffect` — effects don't run during SSR (`renderToString`),
-// so on a single render the rows array is always empty. We therefore assert
-// on the loading branch (skeleton), the empty branch (未找到页面), and the
-// header chrome (title, new-page link, status / author filter triggers) that
-// render unconditionally. The populated-rows branch lives behind the effect
-// and is covered by integration tests instead.
+// `PagesView` drives its rows from `useInfiniteQuery` (`admin.pages.list` —
+// server state lives in the TanStack cache) and its author options from a
+// `useQuery` (`admin.users.list`). We hoist query singletons so each test
+// can swap the resolved list / users data + loading flag without
+// re-mocking, mirroring the posts-branches pattern.
 const queryMocks = vi.hoisted(() => ({
-  list: {
-    data: null as unknown,
-    isPending: true,
-    error: null as unknown,
+  infinite: {
+    data: undefined as { pages: { pages: AdminPageDto[]; total: number; hasMore: boolean }[] } | undefined,
+    isLoading: true,
+    error: null as Error | null,
+    hasNextPage: false,
+    isFetchingNextPage: false,
+    fetchNextPage: vi.fn(),
   },
   users: {
     data: null as unknown,
@@ -36,16 +31,8 @@ vi.mock('@tanstack/react-query', async () => {
   const actual = await vi.importActual<typeof import('@tanstack/react-query')>('@tanstack/react-query')
   return {
     ...actual,
-    // The first useQuery call resolves `list`; the second resolves `users`.
-    // Track call order via a closure counter so both queries see the right
-    // fixture on each synchronous SSR render.
-    useQuery: (() => {
-      let callIndex = 0
-      return () => {
-        callIndex += 1
-        return callIndex % 2 === 1 ? queryMocks.list : queryMocks.users
-      }
-    })(),
+    useInfiniteQuery: () => queryMocks.infinite,
+    useQuery: () => queryMocks.users,
   }
 })
 
@@ -54,7 +41,7 @@ vi.mock('@/client/api/orpc-query', () => ({
     admin: {
       pages: {
         list: {
-          queryOptions: (args: unknown) => ({ queryKey: ['pages', 'list', args], queryFn: async () => ({}) }),
+          infiniteOptions: (args: unknown) => ({ queryKey: ['pages', 'list', args], queryFn: async () => ({}) }),
         },
       },
       users: {
@@ -62,14 +49,6 @@ vi.mock('@/client/api/orpc-query', () => ({
           queryOptions: (args: unknown) => ({ queryKey: ['users', 'list', args], queryFn: async () => ({}) }),
         },
       },
-    },
-  },
-}))
-
-vi.mock('@/client/api/client', () => ({
-  orpc: {
-    admin: {
-      pages: { list: vi.fn(async () => ({ pages: [], total: 0, hasMore: false })) },
     },
   },
 }))
@@ -129,14 +108,21 @@ function renderView() {
 
 describe('snapshot: PagesView', () => {
   beforeEach(() => {
-    queryMocks.list = { data: null, isPending: true, error: null }
+    queryMocks.infinite = {
+      data: undefined,
+      isLoading: true,
+      error: null,
+      hasNextPage: false,
+      isFetchingNextPage: false,
+      fetchNextPage: vi.fn(),
+    }
     queryMocks.users = { data: { users: [makeAdminUser()], total: 1 }, isPending: false, error: null }
   })
 
   it('renders the header chrome (title, filters, new-page link) regardless of query state', () => {
     const html = renderView()
-    // Header title always renders; the total span is 0 until the loaded
-    // effect runs (effects don't fire on SSR), but the title text is static.
+    // Header title always renders; the total span is 0 until the list
+    // resolves, but the title text is static.
     expect(html).toContain('页面管理')
     // New-page anchor — present in every render branch.
     expect(html).toContain('新建页面')
@@ -148,9 +134,7 @@ describe('snapshot: PagesView', () => {
   })
 
   it('renders the list skeleton while the initial query is pending', () => {
-    // list isPending=true and state.rows is empty (initial reducer state) →
-    // isLoading=true → the PagesSkeleton branch mounts.
-    queryMocks.list = { data: null, isPending: true, error: null }
+    // infinite isLoading=true → the PagesSkeleton branch mounts.
     const html = renderView()
     expect(html).toContain('页面管理')
     expect(html).toContain('skeleton')
@@ -159,20 +143,28 @@ describe('snapshot: PagesView', () => {
   })
 
   it('renders the empty state when the list resolves with zero rows', () => {
-    // list resolves successfully but the loaded effect hasn't populated
-    // state.rows on SSR (effects don't run). state.rows.length === 0 →
-    // the Empty branch mounts. isLoading is false because isPending=false.
-    queryMocks.list = {
-      data: { pages: [makeAdminPage()], total: 1, hasMore: false },
-      isPending: false,
-      error: null,
+    queryMocks.infinite = {
+      ...queryMocks.infinite,
+      isLoading: false,
+      data: { pages: [{ pages: [], total: 0, hasMore: false }] },
     }
     const html = renderView()
     expect(html).toContain('页面管理')
     // The Empty branch renders the search-icon empty state.
     expect(html).toContain('未找到页面')
-    // The skeleton branch is gone once isPending flips false.
+    // The skeleton branch is gone once loading flips false.
     expect(html).not.toContain('skeleton')
+  })
+
+  it('renders populated rows and the end-of-list sentinel', () => {
+    queryMocks.infinite = {
+      ...queryMocks.infinite,
+      isLoading: false,
+      data: { pages: [{ pages: [makeAdminPage()], total: 1, hasMore: false }] },
+    }
+    const html = renderView()
+    expect(html).toContain('关于')
+    expect(html).toContain('已加载全部页面')
   })
 
   it('renders the author filter trigger with the seeded author list available', () => {

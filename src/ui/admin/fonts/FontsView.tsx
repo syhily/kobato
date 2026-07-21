@@ -39,7 +39,6 @@ import type { AdminFontDto, FontSlot } from '@/shared/types/fonts'
 import { orpc } from '@/client/api/client'
 import { orpcQuery } from '@/client/api/orpc-query'
 import { formatBytes } from '@/shared/utils/formatter'
-import { invalidateFontsList } from '@/ui/admin/fonts/fonts-cache'
 import { AdminListPage } from '@/ui/admin/shared/AdminListPage'
 import { ConfirmDialog, type ConfirmState } from '@/ui/admin/shared/ConfirmDialog'
 import { Button } from '@/ui/components/button'
@@ -151,7 +150,11 @@ export function FontsView() {
     mutationFn: (fontId: string) => orpc.admin.fonts.delete({ fontId }),
     onSuccess: () => {
       toast.success('字体已删除')
-      void invalidateFontsList(queryClient)
+      // Invalidate via the procedure-level orpcQuery key — a hand-rolled
+      // ['admin','fonts','list'] array can never match the nested key
+      // grammar (TanStack's prefix matcher bails on the first
+      // element-type mismatch) and would leave the list stale forever.
+      void queryClient.invalidateQueries({ queryKey: orpcQuery.admin.fonts.list.key() })
       void revalidator.revalidate()
     },
     onError: (error) => {
@@ -341,7 +344,7 @@ function useFontSlotsController() {
     },
     onSuccess: () => {
       inFlightRef.current = Math.max(0, inFlightRef.current - 1)
-      void invalidateFontsList(queryClient)
+      void queryClient.invalidateQueries({ queryKey: orpcQuery.admin.fonts.list.key() })
       void revalidator.revalidate()
     },
     onError: (error) => {
@@ -475,7 +478,8 @@ function UploadButton() {
         const data: unknown = await res.json().catch(() => null)
         throw new Error(extractApiErrorMessage(data) ?? `服务器错误 (${res.status})`)
       }
-      await invalidateFontsList(queryClient)
+      // Await the refetch so the success phase renders the fresh list.
+      await queryClient.invalidateQueries({ queryKey: orpcQuery.admin.fonts.list.key() })
       void revalidator.revalidate()
       setPhase({ kind: 'success', familyName: familyName.trim() })
     } catch (err) {

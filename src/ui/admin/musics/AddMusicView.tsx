@@ -11,7 +11,6 @@ import { orpcQuery } from '@/client/api/orpc-query'
 import { useInfiniteScrollSentinel } from '@/client/hooks/use-infinite-scroll-sentinel'
 import { transitions } from '@/client/lib/motion'
 import { hitToPreviewTrack, isPreviewId, SOURCE_OPTIONS } from '@/ui/admin/musics/meting-search'
-import { invalidateMusicLibrary } from '@/ui/admin/musics/music-library-cache'
 import { MusicLibraryHero } from '@/ui/admin/musics/MusicLibraryHero'
 import { useMusicPlayerActions, useMusicPlayerState } from '@/ui/admin/musics/MusicPlayerContext'
 import { SearchAlbumCard } from '@/ui/admin/musics/SearchAlbumCard'
@@ -59,7 +58,7 @@ export function AddMusicView() {
       setAddingSourceId(null)
       // The library hero is staleTime: Infinity — without this it would
       // keep showing the pre-add library for the rest of the session.
-      invalidateMusicLibrary(queryClient)
+      void queryClient.invalidateQueries({ queryKey: orpcQuery.admin.music.list.key() })
     },
     onError: (error) => {
       setAddingSourceId(null)

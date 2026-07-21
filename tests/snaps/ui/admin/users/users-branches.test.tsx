@@ -1,69 +1,63 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { AdminUserDto } from '@/shared/types/users'
-import type { RoleFilter, SortOrder } from '@/ui/admin/users/useUsersReducer'
+import type { UsersFilters } from '@/ui/admin/users/useUsersFilters'
 
 import { renderInRouter, stableHtml } from '#/_helpers/render'
 import { UsersView } from '@/ui/admin/users/UsersView'
 
-// `UsersView` is driven by `useUsersReducer` + three TanStack Query hooks
-// (list + query client + mutations are never fired in SSR). The existing
-// `users.test.tsx` only snapshots the loading chrome; this suite covers the
-// remaining render-path branches:
-//   - populated rows via `state.rows.map`,
+// `UsersView` drives its rows from `useInfiniteQuery` (server state lives in
+// the TanStack cache) and its filters from `useUsersFilters`. To maximise
+// render-path branch coverage we bypass both: a hoisted filters singleton
+// each test can flip, and a hoisted slot for the infinite list query. The
+// existing `users.test.tsx` only snapshots the loading chrome; this suite
+// covers the remaining render-path branches:
+//   - populated rows via `rows.map`,
 //   - empty state,
 //   - loading skeleton,
 //   - error toast path (render still completes),
 //   - active search value in the input,
-//   - `hasMore` sentinel vs end-of-list sentinel.
+//   - `hasNextPage` sentinel vs end-of-list sentinel.
 
 // ───────────────────────── controller mock ──────────────────────────
 
-interface ControllerState {
-  rows: AdminUserDto[]
-  total: number
-  hasMore: boolean
-  pageSize: number
-  q: string
-  role: RoleFilter
-  sortBy: SortOrder
-  includeDeleted: boolean
-}
-
-const controllerState = vi.hoisted((): { state: ControllerState } => ({
-  state: {
-    rows: [] as AdminUserDto[],
-    total: 0,
-    hasMore: false,
-    pageSize: 20,
+const controller = vi.hoisted((): { filters: UsersFilters } => ({
+  filters: {
     q: '',
-    role: 'all' as RoleFilter,
-    sortBy: 'recent' as SortOrder,
+    role: 'all',
+    sortBy: 'recent',
+    pageSize: 20,
     includeDeleted: false,
   },
 }))
 
-vi.mock('@/ui/admin/users/useUsersReducer', () => ({
-  useUsersReducer: () => ({
-    state: controllerState.state,
-    dispatch: vi.fn(),
-  }),
-}))
+vi.mock('@/ui/admin/users/useUsersFilters', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/ui/admin/users/useUsersFilters')>()
+  return {
+    ...actual,
+    useUsersFilters: () => ({
+      filters: controller.filters,
+      setQ: vi.fn(),
+      setRole: vi.fn(),
+      setSortBy: vi.fn(),
+      setPageSize: vi.fn(),
+      setIncludeDeleted: vi.fn(),
+    }),
+  }
+})
 
 // ─────────────────────── react-query mock ───────────────────────────
 
+const listQuery = vi.hoisted(() => ({
+  data: undefined as { pages: { users: AdminUserDto[]; total: number; hasMore: boolean }[] } | undefined,
+  isLoading: true,
+  error: null as Error | null,
+  hasNextPage: false,
+  isFetchingNextPage: false,
+  fetchNextPage: vi.fn(),
+}))
+
 const queryMocks = vi.hoisted(() => ({
-  query: {
-    data: null as {
-      users: AdminUserDto[]
-      total: number
-      hasMore: boolean
-    } | null,
-    isPending: true,
-    isFetching: false,
-    error: null as Error | null,
-    refetch: vi.fn(),
-  },
   mutation: {
     mutate: vi.fn(),
     isPending: false,
@@ -77,7 +71,7 @@ vi.mock('@tanstack/react-query', async () => {
   const actual = await vi.importActual<typeof import('@tanstack/react-query')>('@tanstack/react-query')
   return {
     ...actual,
-    useQuery: () => queryMocks.query,
+    useInfiniteQuery: () => listQuery,
     useMutation: () => queryMocks.mutation,
     useQueryClient: () => queryMocks.queryClient,
   }
@@ -125,8 +119,14 @@ function makeAdminUser(overrides: Partial<AdminUserDto> = {}): AdminUserDto {
   }
 }
 
-function setState(overrides: Partial<ControllerState> = {}): void {
-  controllerState.state = { ...controllerState.state, ...overrides }
+function setFilters(overrides: Partial<UsersFilters> = {}): void {
+  controller.filters = { ...controller.filters, ...overrides }
+}
+
+function setList(users: AdminUserDto[], total = users.length): void {
+  listQuery.data = { pages: [{ users, total, hasMore: false }] }
+  listQuery.isLoading = false
+  listQuery.error = null
 }
 
 function renderUsers(): string {
@@ -137,29 +137,24 @@ function renderUsers(): string {
 
 describe('snapshot: UsersView branches', () => {
   beforeEach(() => {
-    controllerState.state = {
-      rows: [],
-      total: 0,
-      hasMore: false,
-      pageSize: 20,
+    controller.filters = {
       q: '',
       role: 'all',
       sortBy: 'recent',
+      pageSize: 20,
       includeDeleted: false,
     }
-    queryMocks.query = {
-      data: null,
-      isPending: true,
-      isFetching: false,
-      error: null,
-      refetch: vi.fn(),
-    }
+    listQuery.data = undefined
+    listQuery.isLoading = true
+    listQuery.error = null
+    listQuery.hasNextPage = false
+    listQuery.isFetchingNextPage = false
     queryMocks.mutation = { mutate: vi.fn(), isPending: false }
     debouncedSearch.value = ''
     debouncedSearch.setInput = vi.fn()
   })
 
-  it('renders populated rows via the state.rows.map callback', () => {
+  it('renders populated rows via the rows.map callback', () => {
     const a = makeAdminUser({ id: 'user-1', name: 'Alice', role: 'admin' })
     const b = makeAdminUser({
       id: 'user-2',
@@ -167,12 +162,7 @@ describe('snapshot: UsersView branches', () => {
       role: 'visitor',
       isMuted: true,
     })
-    setState({ rows: [a, b], total: 2, hasMore: false })
-    queryMocks.query = {
-      ...queryMocks.query,
-      isPending: false,
-      data: { users: [a, b], total: 2, hasMore: false },
-    }
+    setList([a, b], 2)
 
     const html = renderUsers()
     expect(html).toContain('用户管理')
@@ -186,11 +176,7 @@ describe('snapshot: UsersView branches', () => {
   })
 
   it('renders the empty-state branch once the list resolves without rows', () => {
-    queryMocks.query = {
-      ...queryMocks.query,
-      isPending: false,
-      data: { users: [], total: 0, hasMore: false },
-    }
+    setList([])
     const html = renderUsers()
     expect(html).toContain('用户管理')
     expect(html).toContain('未找到用户')
@@ -198,7 +184,6 @@ describe('snapshot: UsersView branches', () => {
   })
 
   it('renders the loading skeleton while the first page is pending', () => {
-    queryMocks.query = { ...queryMocks.query, isPending: true, data: null }
     const html = renderUsers()
     expect(html).toContain('用户管理')
     expect(html).toContain('skeleton')
@@ -206,12 +191,9 @@ describe('snapshot: UsersView branches', () => {
   })
 
   it('still renders the chrome when the list query errors (toast path)', () => {
-    queryMocks.query = {
-      ...queryMocks.query,
-      isPending: false,
-      error: new Error('lookup failed'),
-      data: null,
-    }
+    listQuery.isLoading = false
+    listQuery.error = new Error('lookup failed')
+    listQuery.data = undefined
     const html = renderUsers()
     expect(html).toContain('用户管理')
     expect(html).toContain('未找到用户')
@@ -219,24 +201,16 @@ describe('snapshot: UsersView branches', () => {
 
   it('reflects the active search term in the search input value', () => {
     debouncedSearch.value = '关键词'
-    queryMocks.query = {
-      ...queryMocks.query,
-      isPending: false,
-      data: { users: [], total: 0, hasMore: false },
-    }
+    setList([])
     const html = renderUsers()
     expect(html).toContain('value="关键词"')
     expect(html).toContain('搜索用户名或邮箱')
   })
 
-  it('renders the load-more sentinel when hasMore is true', () => {
+  it('renders the load-more sentinel when hasNextPage is true', () => {
     const a = makeAdminUser({ id: 'user-3', name: 'Carol' })
-    setState({ rows: [a], total: 50, hasMore: true })
-    queryMocks.query = {
-      ...queryMocks.query,
-      isPending: false,
-      data: { users: [a], total: 50, hasMore: true },
-    }
+    setList([a], 50)
+    listQuery.hasNextPage = true
     const html = renderUsers()
     expect(html).toContain('Carol')
     expect(html).toContain('class="h-1"')
@@ -244,12 +218,8 @@ describe('snapshot: UsersView branches', () => {
   })
 
   it('marks the toolbar filter button active when a role filter is applied', () => {
-    setState({ role: 'admin', includeDeleted: true })
-    queryMocks.query = {
-      ...queryMocks.query,
-      isPending: false,
-      data: { users: [], total: 0, hasMore: false },
-    }
+    setFilters({ role: 'admin', includeDeleted: true })
+    setList([])
     const html = renderUsers()
     expect(html).toContain('筛选')
     expect(html).toContain('border-foreground/30')

@@ -1,5 +1,6 @@
 import type { NavigateFunction } from 'react-router'
 
+import { useQueryClient } from '@tanstack/react-query'
 import {
   ArrowLeftIcon,
   ExternalLinkIcon,
@@ -19,6 +20,7 @@ import { Link } from 'react-router'
 import type { AdminPageDetailDto, AdminPageDto, PageMetaDraft, UpsertPageMetaInput } from '@/shared/types/pages'
 
 import { orpc } from '@/client/api/client'
+import { orpcQuery } from '@/client/api/orpc-query'
 import { portableTextBodySchema } from '@/shared/pt/schema'
 import { CreateModeBanner } from '@/ui/admin/editor-shared/CreateModeBanner'
 import { TitleSlugStrip } from '@/ui/admin/editor-shared/TitleSlugStrip'
@@ -68,6 +70,7 @@ export function PageEditorShell({ mode, detail, navigate }: PageEditorShellProps
   // Local narrowing flag so TS knows `detail` is defined in the
   // `isEditing` JSX branches below.
   const isEditing = mode === 'edit' && detail !== undefined
+  const queryClient = useQueryClient()
   const { confirm, setConfirm, handleDelete, handleRestore } = usePageDeleteRestore(isEditing ? detail : undefined)
 
   // Loader-stable detail object for the state hook: the query DTO prop is
@@ -100,12 +103,21 @@ export function PageEditorShell({ mode, detail, navigate }: PageEditorShellProps
     createDraftConfig: PAGE_CREATE_DRAFT_CONFIG,
     upsertMetaFn: async (input) => {
       const result = await orpc.admin.pages.upsertMeta(input)
+      // The admin list lives in the TanStack cache (useInfiniteQuery in
+      // PagesView) — invalidate the namespace so a meta save (including the
+      // create flow) is reflected when the user returns to the list.
+      void queryClient.invalidateQueries({ queryKey: orpcQuery.admin.pages.list.key() })
       return result.page
     },
     saveDraftFn: (input) => orpc.admin.pages.saveDraft(input),
-    publishFn: (input) => orpc.admin.pages.publishLatest(input),
+    publishFn: async (input) => {
+      const result = await orpc.admin.pages.publishLatest(input)
+      void queryClient.invalidateQueries({ queryKey: orpcQuery.admin.pages.list.key() })
+      return result
+    },
     unpublishFn: async (input) => {
       const result = await orpc.admin.pages.unpublish(input)
+      void queryClient.invalidateQueries({ queryKey: orpcQuery.admin.pages.list.key() })
       return result.page
     },
     buildUpsertMetaPayload: buildPageUpsertPayload,

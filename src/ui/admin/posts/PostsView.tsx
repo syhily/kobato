@@ -1,17 +1,21 @@
-import { useQuery } from '@tanstack/react-query'
+import { useInfiniteQuery, useQuery } from '@tanstack/react-query'
 import { LoaderIcon, PlusIcon, SearchIcon, XIcon } from 'lucide-react'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo } from 'react'
 import { Link } from 'react-router'
 import { toast } from 'sonner'
 
 import type { AdminUserDto } from '@/shared/types/users'
 
-import { orpc } from '@/client/api/client'
 import { orpcQuery } from '@/client/api/orpc-query'
 import { useInfiniteScrollSentinel } from '@/client/hooks/use-infinite-scroll-sentinel'
 import { PostRow } from '@/ui/admin/posts/PostRow'
 import { PostsSkeleton } from '@/ui/admin/posts/PostsSkeleton'
-import { type PostStatusFilter, usePostsReducer } from '@/ui/admin/posts/usePostsReducer'
+import {
+  deriveStatusFields,
+  type PostStatusFilter,
+  type PostsFilters,
+  usePostsFilters,
+} from '@/ui/admin/posts/usePostsFilters'
 import { AdminListPage } from '@/ui/admin/shared/AdminListPage'
 import { Combobox, ComboboxContent, ComboboxItem, ComboboxTrigger, ComboboxValue } from '@/ui/components/combobox'
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@/ui/components/empty'
@@ -38,74 +42,48 @@ const PAGE_SIZE = 10
 const pill =
   'h-9 gap-1 rounded-(--radius) border-border px-3 text-(--text-admin-sm) font-medium shadow-none hover:bg-accent focus-visible:border-border focus-visible:ring-0 data-[popup-open]:border-border data-[popup-open]:ring-0'
 
-function buildQueryInput(state: ReturnType<typeof usePostsReducer>['state'], offset: number) {
+function buildQueryInput(filters: PostsFilters, offset: number) {
   return {
-    q: state.q || undefined,
-    deletedStatus: state.deletedStatus,
+    ...deriveStatusFields(filters.status),
     offset,
     limit: PAGE_SIZE,
-    categoryId: state.category || undefined,
-    tag: state.tag || undefined,
-    published: state.published,
-    visible: state.visible,
-    sortBy: state.sortBy,
-    sortOrder: state.sortOrder,
-    authorId: state.authorId || undefined,
+    categoryId: filters.category || undefined,
+    tag: filters.tag || undefined,
+    sortBy: filters.sortBy,
+    sortOrder: filters.sortOrder,
+    authorId: filters.authorId || undefined,
   }
 }
 
 export function PostsView() {
-  const { state, dispatch } = usePostsReducer()
+  const { filters, setStatus, setCategory, setTag, setAuthorId, setSortBy, setSortOrder } = usePostsFilters()
 
-  // --- Initial page query ---
-  const {
-    data: listData,
-    isPending: isListPending,
-    error: listError,
-  } = useQuery(
-    orpcQuery.admin.posts.list.queryOptions({
-      input: buildQueryInput(state, 0),
+  // Server rows live exclusively in the TanStack cache — every loaded page
+  // is refetched together on invalidation, and mutations invalidate this
+  // namespace instead of patching local mirrors.
+  const listQuery = useInfiniteQuery(
+    orpcQuery.admin.posts.list.infiniteOptions({
+      input: (pageParam: number) => buildQueryInput(filters, pageParam),
+      getNextPageParam: (lastPage, _allPages, lastPageParam) => {
+        if (!lastPage.hasMore) {
+          return undefined
+        }
+        return (lastPageParam ?? 0) + PAGE_SIZE
+      },
+      initialPageParam: 0,
     }),
   )
+  const { hasNextPage, isFetchingNextPage, fetchNextPage } = listQuery
+  const sentinelRef = useInfiniteScrollSentinel({ hasNextPage, isFetchingNextPage, fetchNextPage })
+
+  const rows = useMemo(() => listQuery.data?.pages.flatMap((page) => page.posts) ?? [], [listQuery.data])
+  const total = listQuery.data?.pages[0]?.total ?? 0
 
   useEffect(() => {
-    if (listData) {
-      dispatch({ type: 'loaded', rows: listData.posts, total: listData.total })
+    if (listQuery.error) {
+      toast.error('加载文章列表失败', { description: listQuery.error.message })
     }
-  }, [listData, dispatch])
-
-  useEffect(() => {
-    if (listError) {
-      toast.error('加载文章列表失败', { description: listError.message })
-    }
-  }, [listError])
-
-  // --- Infinite scroll: load more ---
-  const [loadingMore, setLoadingMore] = useState(false)
-  const hasMore = state.rows.length < state.total
-
-  const loadMore = useCallback(async () => {
-    if (loadingMore || !hasMore) {
-      return
-    }
-    setLoadingMore(true)
-    try {
-      const result = await orpc.admin.posts.list(buildQueryInput(state, state.rows.length))
-      dispatch({ type: 'appended', rows: result.posts, total: result.total })
-    } catch (err) {
-      toast.error('加载更多文章失败', {
-        description: err instanceof Error ? err.message : String(err),
-      })
-    } finally {
-      setLoadingMore(false)
-    }
-  }, [loadingMore, hasMore, state, dispatch])
-
-  const sentinelRef = useInfiniteScrollSentinel({
-    hasNextPage: hasMore,
-    isFetchingNextPage: loadingMore,
-    fetchNextPage: loadMore,
-  })
+  }, [listQuery.error])
 
   // --- Filter option data ---
   const { data: categoriesData } = useQuery(orpcQuery.admin.categories.list.queryOptions({ input: {} }))
@@ -131,8 +109,7 @@ export function PostsView() {
     [users],
   )
 
-  const isLoading = isListPending && state.rows.length === 0
-  const sortValue = `${state.sortBy}-${state.sortOrder}`
+  const sortValue = `${filters.sortBy}-${filters.sortOrder}`
 
   return (
     <>
@@ -140,7 +117,7 @@ export function PostsView() {
         <AdminListPage.Header
           title={
             <>
-              文章管理 <span className="text-sm font-normal text-muted-foreground">{state.total}</span>
+              文章管理 <span className="text-sm font-normal text-muted-foreground">{total}</span>
             </>
           }
         >
@@ -148,10 +125,8 @@ export function PostsView() {
             {/* Status */}
             <Select
               items={STATUS_OPTIONS}
-              value={state.status}
-              onValueChange={(value) => {
-                dispatch({ type: 'setStatus', value: (value ?? 'all') as PostStatusFilter })
-              }}
+              value={filters.status}
+              onValueChange={(value) => setStatus((value ?? 'all') as PostStatusFilter)}
             >
               <SelectTrigger className={pill}>
                 <SelectValue />
@@ -169,10 +144,10 @@ export function PostsView() {
             <div className="relative">
               <Select
                 items={categoryOptions}
-                value={state.category}
-                onValueChange={(value) => dispatch({ type: 'setCategory', value: value ?? '' })}
+                value={filters.category}
+                onValueChange={(value) => setCategory(value ?? '')}
               >
-                <SelectTrigger className={cn(pill, state.category && 'pr-7 [&>span:last-child]:hidden')}>
+                <SelectTrigger className={cn(pill, filters.category && 'pr-7 [&>span:last-child]:hidden')}>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -183,10 +158,10 @@ export function PostsView() {
                   ))}
                 </SelectContent>
               </Select>
-              {state.category && (
+              {filters.category && (
                 <button
                   type="button"
-                  onClick={() => dispatch({ type: 'setCategory', value: '' })}
+                  onClick={() => setCategory('')}
                   className="absolute top-1/2 right-1.5 z-10 flex size-5 -translate-y-1/2 items-center justify-center rounded-sm text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
                 >
                   <XIcon className="size-3.5" />
@@ -196,12 +171,8 @@ export function PostsView() {
 
             {/* Tag */}
             <div className="relative">
-              <Combobox
-                items={tagNames}
-                value={state.tag || null}
-                onValueChange={(value) => dispatch({ type: 'setTag', value: value ?? '' })}
-              >
-                <ComboboxTrigger className={cn(pill, state.tag && 'pr-7 [&>span:last-child]:hidden')}>
+              <Combobox items={tagNames} value={filters.tag || null} onValueChange={(value) => setTag(value ?? '')}>
+                <ComboboxTrigger className={cn(pill, filters.tag && 'pr-7 [&>span:last-child]:hidden')}>
                   <ComboboxValue placeholder="全部标签" />
                 </ComboboxTrigger>
                 <ComboboxContent<string> inputPlaceholder="搜索标签…" emptyMessage="无匹配标签">
@@ -212,10 +183,10 @@ export function PostsView() {
                   )}
                 </ComboboxContent>
               </Combobox>
-              {state.tag && (
+              {filters.tag && (
                 <button
                   type="button"
-                  onClick={() => dispatch({ type: 'setTag', value: '' })}
+                  onClick={() => setTag('')}
                   className="absolute top-1/2 right-1.5 z-10 flex size-5 -translate-y-1/2 items-center justify-center rounded-sm text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
                 >
                   <XIcon className="size-3.5" />
@@ -227,10 +198,10 @@ export function PostsView() {
             <div className="relative">
               <Select
                 items={authorOptions}
-                value={state.authorId}
-                onValueChange={(value) => dispatch({ type: 'setAuthorId', value: value ?? '' })}
+                value={filters.authorId}
+                onValueChange={(value) => setAuthorId(value ?? '')}
               >
-                <SelectTrigger className={cn(pill, state.authorId && 'pr-7 [&>span:last-child]:hidden')}>
+                <SelectTrigger className={cn(pill, filters.authorId && 'pr-7 [&>span:last-child]:hidden')}>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -241,10 +212,10 @@ export function PostsView() {
                   ))}
                 </SelectContent>
               </Select>
-              {state.authorId && (
+              {filters.authorId && (
                 <button
                   type="button"
-                  onClick={() => dispatch({ type: 'setAuthorId', value: '' })}
+                  onClick={() => setAuthorId('')}
                   className="absolute top-1/2 right-1.5 z-10 flex size-5 -translate-y-1/2 items-center justify-center rounded-sm text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
                 >
                   <XIcon className="size-3.5" />
@@ -267,8 +238,8 @@ export function PostsView() {
                   (rawSortBy === 'publishedAt' || rawSortBy === 'updatedAt') &&
                   (rawSortOrder === 'asc' || rawSortOrder === 'desc')
                 ) {
-                  dispatch({ type: 'setSortBy', value: rawSortBy })
-                  dispatch({ type: 'setSortOrder', value: rawSortOrder })
+                  setSortBy(rawSortBy)
+                  setSortOrder(rawSortOrder)
                 }
               }}
             >
@@ -295,9 +266,9 @@ export function PostsView() {
         </AdminListPage.Header>
 
         <AdminListPage.Body>
-          {isLoading ? (
+          {listQuery.isLoading ? (
             <PostsSkeleton />
-          ) : state.rows.length === 0 ? (
+          ) : rows.length === 0 ? (
             <Empty>
               <EmptyHeader>
                 <EmptyMedia variant="icon">
@@ -309,24 +280,20 @@ export function PostsView() {
           ) : (
             <>
               <div className="divide-y">
-                {state.rows.map((row) => (
-                  <PostRow
-                    key={row.id}
-                    post={row}
-                    onFilterCategory={(category) => dispatch({ type: 'setCategory', value: category })}
-                  />
+                {rows.map((row) => (
+                  <PostRow key={row.id} post={row} onFilterCategory={(category) => setCategory(category)} />
                 ))}
               </div>
               {/* Sentinel for infinite scroll */}
-              {hasMore && <div ref={sentinelRef} className="h-1" />}
+              {hasNextPage && <div ref={sentinelRef} className="h-1" />}
               {/* Bottom status */}
               <div className="py-6 text-center text-sm text-muted-foreground">
-                {loadingMore ? (
+                {isFetchingNextPage ? (
                   <span className="inline-flex items-center gap-2">
                     <LoaderIcon className="size-4 animate-spin" />
                     加载中…
                   </span>
-                ) : !hasMore && state.rows.length > 0 ? (
+                ) : !hasNextPage && rows.length > 0 ? (
                   '已加载全部文章'
                 ) : null}
               </div>

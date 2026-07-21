@@ -6,6 +6,7 @@ import type { CmsPage } from '@/server/domains/pages/projection'
 import type { NewPageMeta, PageMetaRow } from '@/server/infra/db/types'
 import type { Page } from '@/shared/types/catalog'
 
+import { applyLimitOffset } from '@/server/domains/content/repos/pagination'
 import { findContentById, hydratePublishedRevisions } from '@/server/domains/content/repos/query'
 import { isLive, liveContentWhere, type LiveContentOptions } from '@/server/domains/content/schema'
 import { hydrateImageRefs } from '@/server/domains/images/services/enhance'
@@ -94,16 +95,7 @@ export async function listPageMetas(db: NodePgDatabase, filters: ListPagesFilter
     .leftJoin(user, eq(user.id, pageMetaTable.authorId))
     .orderBy(desc(pageMetaTable.updatedAt))
   const q = where ? base.where(where) : base
-  if (filters.limit !== undefined) {
-    if (filters.offset !== undefined && filters.offset > 0) {
-      return q.limit(filters.limit).offset(filters.offset)
-    }
-    return q.limit(filters.limit)
-  }
-  if (filters.offset !== undefined && filters.offset > 0) {
-    return q.offset(filters.offset)
-  }
-  return q
+  return applyLimitOffset(q, filters)
 }
 
 export async function countPageMetas(db: NodePgDatabase, filters: ListPagesFilters = {}): Promise<number> {

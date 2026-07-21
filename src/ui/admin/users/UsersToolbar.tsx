@@ -1,7 +1,7 @@
 import { FilterIcon, XIcon } from 'lucide-react'
 import { useState } from 'react'
 
-import type { RoleFilter, SortOrder } from '@/ui/admin/users/useUsersReducer'
+import type { RoleFilter, SortOrder } from '@/ui/admin/users/useUsersFilters'
 
 import { Button } from '@/ui/components/button'
 import { Checkbox } from '@/ui/components/checkbox'

@@ -1,4 +1,4 @@
-import { useMutation } from '@tanstack/react-query'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { SaveIcon, XIcon } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
@@ -32,6 +32,7 @@ const EMPTY_DRAFT = {
 }
 
 export function EditTagDialog({ tag, onClose, onSaved }: EditTagDialogProps) {
+  const queryClient = useQueryClient()
   const [draft, setDraft] = useState(EMPTY_DRAFT)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [lastTag, setLastTag] = useState<typeof tag>(tag)
@@ -41,6 +42,9 @@ export function EditTagDialog({ tag, onClose, onSaved }: EditTagDialogProps) {
     onSuccess: (payload) => {
       toast.success('标签已保存')
       setErrorMessage(null)
+      // The list lives in the TanStack cache (useInfiniteQuery in TagsView);
+      // invalidate the namespace instead of patching a local mirror.
+      void queryClient.invalidateQueries({ queryKey: orpcQuery.admin.tags.list.key() })
       onSaved(payload.tag)
     },
     onError: (error) => {

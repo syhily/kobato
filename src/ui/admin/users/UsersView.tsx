@@ -1,9 +1,8 @@
-import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query'
 import { LoaderIcon, MailIcon, SearchIcon } from 'lucide-react'
-import { useCallback, useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
 
-import { orpc } from '@/client/api/client'
 import { orpcQuery } from '@/client/api/orpc-query'
 import { useInfiniteScrollSentinel } from '@/client/hooks/use-infinite-scroll-sentinel'
 import { useSiteIdentity } from '@/shared/lib/blog-config-context'
@@ -12,88 +11,60 @@ import { InviteAuthorDialog } from '@/ui/admin/users/InviteAuthorDialog'
 import { invalidateUsersCache } from '@/ui/admin/users/users-cache'
 import { UsersTable } from '@/ui/admin/users/UsersTable'
 import { UsersToolbar } from '@/ui/admin/users/UsersToolbar'
-import { useUsersReducer } from '@/ui/admin/users/useUsersReducer'
+import { type UsersFilters, useUsersFilters } from '@/ui/admin/users/useUsersFilters'
 import { Button } from '@/ui/components/button'
 import { InputGroup, InputGroupAddon, InputGroupInput } from '@/ui/components/input-group'
 
-function buildQueryInput(state: ReturnType<typeof useUsersReducer>['state'], offset: number) {
+function buildQueryInput(filters: UsersFilters, offset: number) {
   return {
     offset,
-    limit: state.pageSize,
-    q: state.q || undefined,
-    role: state.role !== 'all' ? state.role : undefined,
-    includeDeleted: state.includeDeleted ? true : undefined,
-    sortBy: state.sortBy !== 'recent' ? state.sortBy : undefined,
+    limit: filters.pageSize,
+    q: filters.q || undefined,
+    role: filters.role !== 'all' ? filters.role : undefined,
+    includeDeleted: filters.includeDeleted ? true : undefined,
+    sortBy: filters.sortBy !== 'recent' ? filters.sortBy : undefined,
   }
 }
 
 export function UsersView() {
   const config = useSiteIdentity()
-  const { state, dispatch } = useUsersReducer()
+  const { filters, setQ, setRole, setSortBy, setPageSize, setIncludeDeleted } = useUsersFilters()
 
   const queryClient = useQueryClient()
 
-  // --- Initial page query ---
-  const {
-    data: listData,
-    isPending: isListPending,
-    error: listError,
-  } = useQuery(
-    orpcQuery.admin.users.list.queryOptions({
-      input: buildQueryInput(state, 0),
+  // Server rows live exclusively in the TanStack cache — every loaded page
+  // is refetched together on invalidation, and mutations invalidate this
+  // namespace instead of patching local mirrors.
+  const listQuery = useInfiniteQuery(
+    orpcQuery.admin.users.list.infiniteOptions({
+      input: (pageParam: number) => buildQueryInput(filters, pageParam),
+      getNextPageParam: (lastPage, _allPages, lastPageParam) => {
+        if (!lastPage.hasMore) {
+          return undefined
+        }
+        return (lastPageParam ?? 0) + filters.pageSize
+      },
+      initialPageParam: 0,
     }),
   )
+  const { hasNextPage, isFetchingNextPage, fetchNextPage } = listQuery
+  const sentinelRef = useInfiniteScrollSentinel({ hasNextPage, isFetchingNextPage, fetchNextPage })
+
+  const rows = useMemo(() => listQuery.data?.pages.flatMap((page) => page.users) ?? [], [listQuery.data])
+  const total = listQuery.data?.pages[0]?.total ?? 0
 
   useEffect(() => {
-    if (listData) {
-      dispatch({
-        type: 'loaded',
-        rows: listData.users,
-        total: listData.total,
-        hasMore: listData.hasMore,
-      })
+    if (listQuery.error) {
+      toast.error('加载用户列表失败', { description: listQuery.error.message })
     }
-  }, [listData, dispatch])
-
-  useEffect(() => {
-    if (listError) {
-      toast.error('加载用户列表失败', { description: listError.message })
-    }
-  }, [listError])
-
-  // --- Infinite scroll: load more ---
-  const [loadingMore, setLoadingMore] = useState(false)
-  const hasMore = state.hasMore
-
-  const loadMore = useCallback(async () => {
-    if (loadingMore || !hasMore) {
-      return
-    }
-    setLoadingMore(true)
-    try {
-      const result = await orpc.admin.users.list(buildQueryInput(state, state.rows.length))
-      dispatch({ type: 'appended', rows: result.users, total: result.total, hasMore: result.hasMore })
-    } catch (err) {
-      toast.error('加载更多用户失败', {
-        description: err instanceof Error ? err.message : String(err),
-      })
-    } finally {
-      setLoadingMore(false)
-    }
-  }, [loadingMore, hasMore, state, dispatch])
-
-  const sentinelRef = useInfiniteScrollSentinel({
-    hasNextPage: hasMore,
-    isFetchingNextPage: loadingMore,
-    fetchNextPage: loadMore,
-  })
+  }, [listQuery.error])
 
   const [qInput, setQInput] = useDebouncedSearch({
     delayMs: 300,
-    onChange: (value) => dispatch({ type: 'setQ', value }),
+    onChange: setQ,
   })
 
-  const isLoading = isListPending && state.rows.length === 0
+  const isLoading = listQuery.isLoading
 
   const [inviteOpen, setInviteOpen] = useState(false)
 
@@ -103,9 +74,7 @@ export function UsersView() {
         <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-baseline gap-2">
             <h1 className="text-2xl font-semibold tracking-tight">用户管理</h1>
-            {!isLoading && (
-              <span className="text-lg font-normal text-muted-foreground">{state.total.toLocaleString()}</span>
-            )}
+            {!isLoading && <span className="text-lg font-normal text-muted-foreground">{total.toLocaleString()}</span>}
           </div>
           <div className="flex items-center gap-2">
             <InputGroup className="h-9 w-full sm:w-56">
@@ -120,14 +89,14 @@ export function UsersView() {
               />
             </InputGroup>
             <UsersToolbar
-              role={state.role}
-              sortBy={state.sortBy}
-              pageSize={state.pageSize}
-              includeDeleted={state.includeDeleted}
-              onRoleChange={(value) => dispatch({ type: 'setRole', value })}
-              onSortByChange={(value) => dispatch({ type: 'setSortBy', value })}
-              onPageSizeChange={(value) => dispatch({ type: 'setPageSize', value })}
-              onIncludeDeletedChange={(value) => dispatch({ type: 'setIncludeDeleted', value })}
+              role={filters.role}
+              sortBy={filters.sortBy}
+              pageSize={filters.pageSize}
+              includeDeleted={filters.includeDeleted}
+              onRoleChange={setRole}
+              onSortByChange={setSortBy}
+              onPageSizeChange={setPageSize}
+              onIncludeDeletedChange={setIncludeDeleted}
             />
             <Button type="button" variant="default" size="sm" onClick={() => setInviteOpen(true)}>
               <MailIcon data-icon /> 邀请作者
@@ -135,18 +104,18 @@ export function UsersView() {
           </div>
         </header>
 
-        <UsersTable rows={state.rows} config={config} isLoading={isLoading} />
+        <UsersTable rows={rows} config={config} isLoading={isLoading} />
 
         {/* Sentinel for infinite scroll */}
-        {hasMore && <div ref={sentinelRef} className="h-1" />}
+        {hasNextPage && <div ref={sentinelRef} className="h-1" />}
         {/* Bottom status */}
         <div className="py-6 text-center text-sm text-muted-foreground">
-          {loadingMore ? (
+          {isFetchingNextPage ? (
             <span className="inline-flex items-center gap-2">
               <LoaderIcon className="size-4 animate-spin" />
               加载中…
             </span>
-          ) : !hasMore && state.rows.length > 0 ? (
+          ) : !hasNextPage && rows.length > 0 ? (
             '已加载全部用户'
           ) : null}
         </div>

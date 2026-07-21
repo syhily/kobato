@@ -5,10 +5,9 @@ import type { AdminRevisionDto } from '@/shared/types/revision'
 
 import { toAdminRevisionDto } from '@/server/domains/content/projection'
 import { findContentById, findLatestRevision, listRevisions } from '@/server/domains/content/repos/query'
+import { listForAdmin } from '@/server/domains/content/services/admin-list'
 import { toAdminPageDto } from '@/server/domains/pages/projection'
 import { countPageMetas, findPageMetaById, listPageMetas, type ListPagesFilters } from '@/server/domains/pages/repo'
-import { commentCountsByOwnerIds, metricsByOwnerIds } from '@/server/infra/db/operations/like'
-import { ensureMetricsBatch } from '@/server/infra/db/operations/metric'
 
 export interface AdminPagesListResult {
   pages: AdminPageDto[]
@@ -20,36 +19,15 @@ export async function listPagesForAdmin(
   db: NodePgDatabase,
   filters: ListPagesFilters = {},
 ): Promise<AdminPagesListResult> {
-  const offset = filters.offset ?? 0
-  const limit = filters.limit ?? 100
-  const [rows, total] = await Promise.all([
-    listPageMetas(db, { ...filters, limit, offset }),
-    countPageMetas(db, filters),
-  ])
-  if (rows.length === 0) {
-    return { pages: [], total, hasMore: false }
-  }
-  const ownerIds = rows.map((row) => row.id)
-  await ensureMetricsBatch(
-    db,
-    rows.map((row) => ({ type: 'page', ownerId: row.id })),
-  )
-  const [metrics, countRows] = await Promise.all([
-    metricsByOwnerIds(db, 'page', ownerIds),
-    commentCountsByOwnerIds(db, 'page', ownerIds),
-  ])
-  const publicIdByOwner = new Map(metrics.map((m) => [String(m.ownerId), m.publicId]))
-  const countByOwner = new Map(countRows.map((r) => [String(r.ownerId), r.count]))
-  return {
-    pages: rows.map((row) =>
-      toAdminPageDto(row, {
-        commentCount: countByOwner.get(String(row.id)) ?? 0,
-        commentPublicId: publicIdByOwner.get(String(row.id)) ?? '',
-      }),
-    ),
-    total,
-    hasMore: offset + rows.length < total,
-  }
+  const { items, total, hasMore } = await listForAdmin(db, {
+    entityType: 'page',
+    filters,
+    defaultLimit: 100,
+    listRows: listPageMetas,
+    countRows: countPageMetas,
+    toDto: (row, engagement) => toAdminPageDto(row, engagement),
+  })
+  return { pages: items, total, hasMore }
 }
 
 export async function getPageDetailForAdmin(db: NodePgDatabase, id: bigint): Promise<AdminPageDetailDto | null> {

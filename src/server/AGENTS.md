@@ -50,7 +50,10 @@ otp-flow, password-flow, passkey-flow, verification-tokens), `comments`
 (loader, moderation, projection, likes,
 token, badge, url, canonicalize), `content` (revision `repos/` +
 entity-agnostic draft→publish `lifecycle.ts` + save-time library image
-sync `services/image-sync.ts` + restore-time `slug-reclaim.ts`; post/page
+sync `services/image-sync.ts` + restore-time `slug-reclaim.ts` + admin
+list orchestration `services/admin-list.ts` (`listForAdmin`, used by the
+posts/pages admin-list adapters) + shared limit/offset ladder
+`repos/pagination.ts`; post/page
 behavior attaches via `services/lifecycle-adapter.ts` in each entity
 domain),
 `friends`, `images` (schema, service,

@@ -1,17 +1,21 @@
-import { useQuery } from '@tanstack/react-query'
+import { useInfiniteQuery, useQuery } from '@tanstack/react-query'
 import { LoaderIcon, PlusIcon, SearchIcon, XIcon } from 'lucide-react'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo } from 'react'
 import { Link } from 'react-router'
 import { toast } from 'sonner'
 
 import type { AdminUserDto } from '@/shared/types/users'
 
-import { orpc } from '@/client/api/client'
 import { orpcQuery } from '@/client/api/orpc-query'
 import { useInfiniteScrollSentinel } from '@/client/hooks/use-infinite-scroll-sentinel'
 import { PageRow } from '@/ui/admin/pages/PageRow'
 import { PagesSkeleton } from '@/ui/admin/pages/PagesSkeleton'
-import { type PageStatusFilter, usePagesReducer } from '@/ui/admin/pages/usePagesReducer'
+import {
+  deriveStatusFields,
+  type PageStatusFilter,
+  type PagesFilters,
+  usePagesFilters,
+} from '@/ui/admin/pages/usePagesFilters'
 import { AdminListPage } from '@/ui/admin/shared/AdminListPage'
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@/ui/components/empty'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/components/select'
@@ -29,71 +33,44 @@ const PAGE_SIZE = 10
 const pill =
   'h-9 gap-1 rounded-(--radius) border-border px-3 text-(--text-admin-sm) font-medium shadow-none hover:bg-accent focus-visible:border-border focus-visible:ring-0 data-[popup-open]:border-border data-[popup-open]:ring-0'
 
-function buildQueryInput(state: ReturnType<typeof usePagesReducer>['state'], offset: number) {
+function buildQueryInput(filters: PagesFilters, offset: number) {
   return {
-    q: state.q || undefined,
-    deletedStatus: state.deletedStatus,
-    published: state.published,
+    ...deriveStatusFields(filters.status),
     offset,
     limit: PAGE_SIZE,
-    authorId: state.authorId || undefined,
+    authorId: filters.authorId || undefined,
   }
 }
 
 export function PagesView() {
-  const { state, dispatch } = usePagesReducer()
+  const { filters, setStatus, setAuthorId } = usePagesFilters()
 
-  // --- Initial page query ---
-  const {
-    data: listData,
-    isPending: isListPending,
-    error: listError,
-  } = useQuery(
-    orpcQuery.admin.pages.list.queryOptions({
-      input: buildQueryInput(state, 0),
+  // Server rows live exclusively in the TanStack cache — every loaded page
+  // is refetched together on invalidation, and mutations invalidate this
+  // namespace instead of patching local mirrors.
+  const listQuery = useInfiniteQuery(
+    orpcQuery.admin.pages.list.infiniteOptions({
+      input: (pageParam: number) => buildQueryInput(filters, pageParam),
+      getNextPageParam: (lastPage, _allPages, lastPageParam) => {
+        if (!lastPage.hasMore) {
+          return undefined
+        }
+        return (lastPageParam ?? 0) + PAGE_SIZE
+      },
+      initialPageParam: 0,
     }),
   )
+  const { hasNextPage, isFetchingNextPage, fetchNextPage } = listQuery
+  const sentinelRef = useInfiniteScrollSentinel({ hasNextPage, isFetchingNextPage, fetchNextPage })
+
+  const rows = useMemo(() => listQuery.data?.pages.flatMap((page) => page.pages) ?? [], [listQuery.data])
+  const total = listQuery.data?.pages[0]?.total ?? 0
 
   useEffect(() => {
-    if (listData) {
-      dispatch({ type: 'loaded', rows: listData.pages, total: listData.total })
+    if (listQuery.error) {
+      toast.error('加载页面列表失败', { description: listQuery.error.message })
     }
-  }, [listData, dispatch])
-
-  useEffect(() => {
-    if (listError) {
-      toast.error('加载页面列表失败', { description: listError.message })
-    }
-  }, [listError])
-
-  // --- Infinite scroll: load more ---
-  const [loadingMore, setLoadingMore] = useState(false)
-  const hasMore = state.rows.length < state.total
-
-  const loadMore = useCallback(async () => {
-    if (loadingMore || !hasMore) {
-      return
-    }
-    setLoadingMore(true)
-    try {
-      const result = await orpc.admin.pages.list(buildQueryInput(state, state.rows.length))
-      dispatch({ type: 'appended', rows: result.pages, total: result.total })
-    } catch (err) {
-      toast.error('加载更多页面失败', {
-        description: err instanceof Error ? err.message : String(err),
-      })
-    } finally {
-      setLoadingMore(false)
-    }
-  }, [loadingMore, hasMore, state, dispatch])
-
-  const sentinelRef = useInfiniteScrollSentinel({
-    hasNextPage: hasMore,
-    isFetchingNextPage: loadingMore,
-    fetchNextPage: loadMore,
-  })
-
-  const isLoading = isListPending && state.rows.length === 0
+  }, [listQuery.error])
 
   // --- Filter option data ---
   const { data: usersData } = useQuery(
@@ -114,7 +91,7 @@ export function PagesView() {
         <AdminListPage.Header
           title={
             <>
-              页面管理 <span className="text-sm font-normal text-muted-foreground">{state.total}</span>
+              页面管理 <span className="text-sm font-normal text-muted-foreground">{total}</span>
             </>
           }
         >
@@ -123,12 +100,10 @@ export function PagesView() {
             <div className="relative">
               <Select
                 items={STATUS_OPTIONS}
-                value={state.status}
-                onValueChange={(value) => {
-                  dispatch({ type: 'setStatus', value: (value ?? 'all') as PageStatusFilter })
-                }}
+                value={filters.status}
+                onValueChange={(value) => setStatus((value ?? 'all') as PageStatusFilter)}
               >
-                <SelectTrigger className={cn(pill, state.status !== 'all' && 'pr-7 [&>span:last-child]:hidden')}>
+                <SelectTrigger className={cn(pill, filters.status !== 'all' && 'pr-7 [&>span:last-child]:hidden')}>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -139,10 +114,10 @@ export function PagesView() {
                   ))}
                 </SelectContent>
               </Select>
-              {state.status !== 'all' && (
+              {filters.status !== 'all' && (
                 <button
                   type="button"
-                  onClick={() => dispatch({ type: 'setStatus', value: 'all' })}
+                  onClick={() => setStatus('all')}
                   className="absolute top-1/2 right-1.5 z-10 flex size-5 -translate-y-1/2 items-center justify-center rounded-sm text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
                 >
                   <XIcon className="size-3.5" />
@@ -154,10 +129,10 @@ export function PagesView() {
             <div className="relative">
               <Select
                 items={authorOptions}
-                value={state.authorId}
-                onValueChange={(value) => dispatch({ type: 'setAuthorId', value: value ?? '' })}
+                value={filters.authorId}
+                onValueChange={(value) => setAuthorId(value ?? '')}
               >
-                <SelectTrigger className={cn(pill, state.authorId && 'pr-7 [&>span:last-child]:hidden')}>
+                <SelectTrigger className={cn(pill, filters.authorId && 'pr-7 [&>span:last-child]:hidden')}>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -168,10 +143,10 @@ export function PagesView() {
                   ))}
                 </SelectContent>
               </Select>
-              {state.authorId && (
+              {filters.authorId && (
                 <button
                   type="button"
-                  onClick={() => dispatch({ type: 'setAuthorId', value: '' })}
+                  onClick={() => setAuthorId('')}
                   className="absolute top-1/2 right-1.5 z-10 flex size-5 -translate-y-1/2 items-center justify-center rounded-sm text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
                 >
                   <XIcon className="size-3.5" />
@@ -191,9 +166,9 @@ export function PagesView() {
         </AdminListPage.Header>
 
         <AdminListPage.Body>
-          {isLoading ? (
+          {listQuery.isLoading ? (
             <PagesSkeleton />
-          ) : state.rows.length === 0 ? (
+          ) : rows.length === 0 ? (
             <Empty>
               <EmptyHeader>
                 <EmptyMedia variant="icon">
@@ -205,20 +180,20 @@ export function PagesView() {
           ) : (
             <>
               <div className="divide-y">
-                {state.rows.map((row) => (
+                {rows.map((row) => (
                   <PageRow key={row.id} page={row} />
                 ))}
               </div>
               {/* Sentinel for infinite scroll */}
-              {hasMore && <div ref={sentinelRef} className="h-1" />}
+              {hasNextPage && <div ref={sentinelRef} className="h-1" />}
               {/* Bottom status */}
               <div className="py-6 text-center text-sm text-muted-foreground">
-                {loadingMore ? (
+                {isFetchingNextPage ? (
                   <span className="inline-flex items-center gap-2">
                     <LoaderIcon className="size-4 animate-spin" />
                     加载中…
                   </span>
-                ) : !hasMore && state.rows.length > 0 ? (
+                ) : !hasNextPage && rows.length > 0 ? (
                   '已加载全部页面'
                 ) : null}
               </div>

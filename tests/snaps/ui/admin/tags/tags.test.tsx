@@ -8,36 +8,22 @@ import { EditTagDialog } from '@/ui/admin/tags/EditTagDialog'
 import { TagRow, TagsSkeleton } from '@/ui/admin/tags/TagRows'
 import { TagsView } from '@/ui/admin/tags/TagsView'
 
-const controllerState = vi.hoisted(() => ({
-  rows: [] as AdminTagDto[],
-  total: 0,
-  hasMore: false,
-  q: '',
-}))
-
-vi.mock('@/ui/admin/tags/useTagsReducer', () => ({
-  useTagsReducer: () => ({ state: controllerState, dispatch: vi.fn() }),
-}))
+// TagsView drives its rows from `useInfiniteQuery` (server state lives in
+// the TanStack cache) and its search filter from `useTagsFilters`. The list
+// query is stubbed through a hoisted slot so each test can pick the branch;
+// the delete mutation and the query client are stubbed alongside.
 
 const queryMocks = vi.hoisted(() => ({
-  query: {
-    data: null as unknown,
-    isPending: false,
-    isFetching: false,
-    error: null,
-    refetch: vi.fn(),
-  },
   mutation: {
     mutate: vi.fn(),
     isPending: false,
   },
   infinite: {
-    data: { pages: [] as unknown[] },
+    data: undefined as { pages: { tags: AdminTagDto[]; total: number; hasMore: boolean }[] } | undefined,
     isLoading: false,
-    isFetching: false,
-    isFetchingNextPage: false,
+    error: null as Error | null,
     hasNextPage: false,
-    error: null,
+    isFetchingNextPage: false,
     fetchNextPage: vi.fn(),
   },
   queryClient: {
@@ -49,7 +35,6 @@ vi.mock('@tanstack/react-query', async () => {
   const actual = await vi.importActual<typeof import('@tanstack/react-query')>('@tanstack/react-query')
   return {
     ...actual,
-    useQuery: () => queryMocks.query,
     useMutation: () => queryMocks.mutation,
     useInfiniteQuery: () => queryMocks.infinite,
     useQueryClient: () => queryMocks.queryClient,
@@ -95,31 +80,41 @@ function makeAdminTag(overrides: Partial<AdminTagDto> = {}): AdminTagDto {
   }
 }
 
+function resetInfinite(): void {
+  queryMocks.infinite = {
+    data: undefined,
+    isLoading: false,
+    error: null,
+    hasNextPage: false,
+    isFetchingNextPage: false,
+    fetchNextPage: vi.fn(),
+  }
+}
+
+function setList(tags: AdminTagDto[], total = tags.length): void {
+  queryMocks.infinite = {
+    ...queryMocks.infinite,
+    data: { pages: [{ tags, total, hasMore: false }] },
+    isLoading: false,
+    error: null,
+  }
+}
+
 describe('snapshot: TagsView', () => {
   beforeEach(() => {
-    controllerState.rows = []
-    controllerState.total = 0
-    controllerState.hasMore = false
-    controllerState.q = ''
-    queryMocks.query = {
-      data: null as unknown,
-      isPending: false,
-      isFetching: false,
-      error: null,
-      refetch: vi.fn(),
-    }
+    resetInfinite()
     queryMocks.mutation = { mutate: vi.fn(), isPending: false }
   })
 
   it('renders the loading skeleton while fetching', () => {
-    queryMocks.query = { ...queryMocks.query, isPending: true }
+    queryMocks.infinite = { ...queryMocks.infinite, isLoading: true }
     const html = stableHtml(renderInRouter(<TagsView />))
     expect(html).toContain('标签管理')
     expect(html).toContain('skeleton')
   })
 
   it('renders the empty state when no tags exist', () => {
-    queryMocks.query = { ...queryMocks.query, isPending: false }
+    setList([])
     const html = stableHtml(renderInRouter(<TagsView />))
     expect(html).toContain('标签管理')
     expect(html).toContain('未找到标签')
@@ -127,12 +122,10 @@ describe('snapshot: TagsView', () => {
   })
 
   it('renders a list of tags', () => {
-    controllerState.rows = [
+    setList([
       makeAdminTag({ id: 'tag-1', name: 'React', slug: 'react', postCount: 8 }),
       makeAdminTag({ id: 'tag-2', name: 'TypeScript', slug: 'typescript', postCount: 5 }),
-    ]
-    controllerState.total = 2
-    queryMocks.query = { ...queryMocks.query, isPending: false }
+    ])
     const html = stableHtml(renderInRouter(<TagsView />))
     expect(html).toContain('标签管理')
     expect(html).toContain('2')

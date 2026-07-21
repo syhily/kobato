@@ -5,43 +5,28 @@ import type { AdminTagDto } from '@/shared/types/tags'
 import { renderInRouter, stableHtml } from '#/_helpers/render'
 import { TagsView } from '@/ui/admin/tags/TagsView'
 
-// TagsView drives its rows from a reducer (`useTagsReducer`) and a list
-// `useQuery` plus a delete `useMutation`, with the search box wired through
-// `useDebouncedSearch`. The existing `tags-view.test.tsx` covers the loading
-// and empty states; this spec adds populated rows (the `state.rows.map`
-// callback branch), the error state, and the search-active state.
-
-interface ControllerState {
-  rows: AdminTagDto[]
-  total: number
-  hasMore: boolean
-  q: string
-}
-
-const controllerState = vi.hoisted((): { state: ControllerState } => ({
-  state: {
-    rows: [] as AdminTagDto[],
-    total: 0,
-    hasMore: false,
-    q: '',
-  },
-}))
-
-vi.mock('@/ui/admin/tags/useTagsReducer', () => ({
-  useTagsReducer: () => ({ state: controllerState.state, dispatch: vi.fn() }),
-}))
+// TagsView drives its rows from `useInfiniteQuery` (server state lives in
+// the TanStack cache) and its search filter from `useTagsFilters`, with the
+// search box wired through `useDebouncedSearch`. The existing
+// `tags-view.test.tsx` covers the loading and empty states; this spec adds
+// populated rows (the `rows.map` callback branch), the error state, and the
+// search-active state.
 
 const queryMocks = vi.hoisted(() => ({
-  query: {
-    data: null as unknown,
-    isPending: true,
-    isFetching: false,
-    error: null as Error | null,
-    refetch: vi.fn(),
-  },
   mutation: {
     mutate: vi.fn(),
     isPending: false,
+  },
+  infinite: {
+    data: undefined as { pages: { tags: AdminTagDto[]; total: number; hasMore: boolean }[] } | undefined,
+    isLoading: true,
+    error: null as Error | null,
+    hasNextPage: false,
+    isFetchingNextPage: false,
+    fetchNextPage: vi.fn(),
+  },
+  queryClient: {
+    invalidateQueries: vi.fn(),
   },
 }))
 
@@ -49,8 +34,9 @@ vi.mock('@tanstack/react-query', async () => {
   const actual = await vi.importActual<typeof import('@tanstack/react-query')>('@tanstack/react-query')
   return {
     ...actual,
-    useQuery: () => queryMocks.query,
     useMutation: () => queryMocks.mutation,
+    useInfiniteQuery: () => queryMocks.infinite,
+    useQueryClient: () => queryMocks.queryClient,
   }
 })
 
@@ -99,32 +85,36 @@ function makeTag(overrides: Partial<AdminTagDto> = {}): AdminTagDto {
   }
 }
 
-function setState(overrides: Partial<ControllerState> = {}): void {
-  controllerState.state = { ...controllerState.state, ...overrides }
+function setList(tags: AdminTagDto[], total = tags.length): void {
+  queryMocks.infinite = {
+    ...queryMocks.infinite,
+    data: { pages: [{ tags, total, hasMore: false }] },
+    isLoading: false,
+    error: null,
+  }
 }
 
 // ─────────────────────────── shared setup ───────────────────────────
 
 describe('snapshot: TagsView branches', () => {
   beforeEach(() => {
-    controllerState.state = { rows: [], total: 0, hasMore: false, q: '' }
-    queryMocks.query = {
-      data: null,
-      isPending: true,
-      isFetching: false,
+    queryMocks.infinite = {
+      data: undefined,
+      isLoading: true,
       error: null,
-      refetch: vi.fn(),
+      hasNextPage: false,
+      isFetchingNextPage: false,
+      fetchNextPage: vi.fn(),
     }
     queryMocks.mutation = { mutate: vi.fn(), isPending: false }
     debouncedSearch.value = ''
     debouncedSearch.setInput = vi.fn()
   })
 
-  it('renders populated rows via the state.rows.map callback', () => {
+  it('renders populated rows via the rows.map callback', () => {
     const a = makeTag({ id: 'tag-1', name: 'react', slug: 'react', postCount: 5 })
     const b = makeTag({ id: 'tag-2', name: 'vite', slug: 'vite', postCount: 2 })
-    queryMocks.query = { ...queryMocks.query, isPending: false, data: { tags: [a, b], total: 2, hasMore: false } }
-    setState({ rows: [a, b], total: 2 })
+    setList([a, b])
     const html = stableHtml(renderInRouter(<TagsView />, '/admin/taxonomy/tags'))
     expect(html).toContain('react')
     expect(html).toContain('vite')
@@ -139,28 +129,28 @@ describe('snapshot: TagsView branches', () => {
   })
 
   it('renders the empty-state branch once the list resolves without rows', () => {
-    queryMocks.query = { ...queryMocks.query, isPending: false }
+    setList([])
     const html = stableHtml(renderInRouter(<TagsView />, '/admin/taxonomy/tags'))
     expect(html).toContain('未找到标签')
   })
 
   it('still renders the chrome when the list query errors (toast path)', () => {
-    queryMocks.query = {
-      ...queryMocks.query,
-      isPending: false,
+    queryMocks.infinite = {
+      ...queryMocks.infinite,
+      isLoading: false,
       error: new Error('network down'),
-      data: null,
+      data: undefined,
     }
     const html = stableHtml(renderInRouter(<TagsView />, '/admin/taxonomy/tags'))
     expect(html).toContain('标签管理')
-    // With no rows and not pending, the empty state renders. The toast
+    // With no rows and not loading, the empty state renders. The toast
     // call is mocked so no assertion is needed on its side effect.
     expect(html).toContain('未找到标签')
   })
 
   it('reflects the active search term in the search input value', () => {
     debouncedSearch.value = '关键'
-    queryMocks.query = { ...queryMocks.query, isPending: false }
+    setList([])
     const html = stableHtml(renderInRouter(<TagsView />, '/admin/taxonomy/tags'))
     // The search input mirrors the debounced value as its `value` attr.
     expect(html).toContain('value="关键"')

@@ -1,6 +1,6 @@
-import { useMutation, useQuery } from '@tanstack/react-query'
+import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { LoaderIcon, PlusIcon, SearchIcon } from 'lucide-react'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
 
 import type { AdminTagDto } from '@/shared/types/tags'
@@ -13,7 +13,7 @@ import { type ConfirmState, ConfirmDialog } from '@/ui/admin/shared/ConfirmDialo
 import { useDebouncedSearch } from '@/ui/admin/shared/useDebouncedSearch'
 import { EditTagDialog } from '@/ui/admin/tags/EditTagDialog'
 import { TagRow, TagsSkeleton } from '@/ui/admin/tags/TagRows'
-import { useTagsReducer } from '@/ui/admin/tags/useTagsReducer'
+import { useTagsFilters } from '@/ui/admin/tags/useTagsFilters'
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@/ui/components/empty'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/ui/components/table'
 
@@ -22,96 +22,53 @@ const PAGE_SIZE = 30
 type EditTarget = AdminTagDto | null | undefined
 
 export function TagsView() {
-  const { state, dispatch } = useTagsReducer()
+  const { q, setQ } = useTagsFilters()
+  const queryClient = useQueryClient()
   const [confirm, setConfirm] = useState<ConfirmState | null>(null)
   const [editTarget, setEditTarget] = useState<EditTarget>(undefined)
 
-  const {
-    data: listData,
-    isPending: isListPending,
-    error: listError,
-  } = useQuery(
-    orpcQuery.admin.tags.list.queryOptions({
-      input: {
-        q: state.q || undefined,
-        offset: 0,
+  // Server rows live exclusively in the TanStack cache — every loaded page
+  // is refetched together on invalidation, and mutations invalidate this
+  // namespace instead of patching local mirrors.
+  const listQuery = useInfiniteQuery(
+    orpcQuery.admin.tags.list.infiniteOptions({
+      input: (pageParam: number) => ({
+        q: q || undefined,
+        offset: pageParam,
         limit: PAGE_SIZE,
+      }),
+      getNextPageParam: (lastPage, _allPages, lastPageParam) => {
+        if (!lastPage.hasMore) {
+          return undefined
+        }
+        return (lastPageParam ?? 0) + PAGE_SIZE
       },
+      initialPageParam: 0,
     }),
   )
+  const { hasNextPage, isFetchingNextPage, fetchNextPage } = listQuery
+  const sentinelRef = useInfiniteScrollSentinel({ hasNextPage, isFetchingNextPage, fetchNextPage })
+
+  const rows = useMemo(() => listQuery.data?.pages.flatMap((page) => page.tags) ?? [], [listQuery.data])
+  const total = listQuery.data?.pages[0]?.total ?? 0
 
   useEffect(() => {
-    if (listData) {
-      dispatch({
-        type: 'loaded',
-        rows: listData.tags,
-        total: listData.total,
-        hasMore: listData.hasMore,
-      })
+    if (listQuery.error) {
+      toast.error('加载标签列表失败', { description: listQuery.error.message })
     }
-  }, [listData, dispatch])
+  }, [listQuery.error])
 
-  useEffect(() => {
-    if (listError) {
-      toast.error('加载标签列表失败', { description: listError.message })
-    }
-  }, [listError])
-
-  const [loadingMore, setLoadingMore] = useState(false)
-  const hasMore = state.hasMore
-
-  const loadMore = useCallback(async () => {
-    if (loadingMore || !hasMore) {
-      return
-    }
-    setLoadingMore(true)
-    try {
-      const result = await orpc.admin.tags.list({
-        q: state.q || undefined,
-        offset: state.rows.length,
-        limit: PAGE_SIZE,
-      })
-      dispatch({
-        type: 'appended',
-        rows: result.tags,
-        total: result.total,
-        hasMore: result.hasMore,
-      })
-    } catch (err) {
-      toast.error('加载更多标签失败', {
-        description: err instanceof Error ? err.message : String(err),
-      })
-    } finally {
-      setLoadingMore(false)
-    }
-  }, [loadingMore, hasMore, state.q, state.rows.length, dispatch])
-
-  const sentinelRef = useInfiniteScrollSentinel({
-    hasNextPage: hasMore,
-    isFetchingNextPage: loadingMore,
-    fetchNextPage: loadMore,
-  })
-
-  // The fetcher hook's success callback doesn't receive the original
-  // request payload, so latch the in-flight delete id into a ref. Once
-  // the server confirms the delete, the success handler reads this id
-  // and dispatches the row removal — keeping the optimistic UI
-  // accurate even if the server rejects with 409 ("still referenced"),
-  // because in that case the row stays put and the error message is
-  // surfaced through the confirm dialog.
-  const pendingDeleteIdRef = useRef<string | null>(null)
+  // On success the whole list namespace is invalidated (EditTagDialog does
+  // the same for upserts) instead of patching a local mirror — a rejected
+  // delete (409 "still referenced") leaves the cache untouched and the error
+  // is surfaced through the confirm dialog.
   const deleteApi = useMutation({
     mutationFn: (id: string) => orpc.admin.tags.delete({ id }),
     onSuccess: () => {
-      const id = pendingDeleteIdRef.current
-      pendingDeleteIdRef.current = null
-      if (id) {
-        dispatch({ type: 'removeTag', id })
-      }
+      void queryClient.invalidateQueries({ queryKey: orpcQuery.admin.tags.list.key() })
       setEditTarget(undefined)
     },
     onError: (error) => {
-      pendingDeleteIdRef.current = null
       setConfirm({
         title: '无法删除标签',
         description: error.message,
@@ -124,10 +81,10 @@ export function TagsView() {
 
   const [qInput, setQInput] = useDebouncedSearch({
     delayMs: 300,
-    onChange: (value) => dispatch({ type: 'setQ', value }),
+    onChange: setQ,
   })
 
-  const isLoading = isListPending && state.rows.length === 0
+  const isLoading = listQuery.isLoading
   const isDialogOpen = editTarget !== undefined
 
   const handleDelete = useCallback(
@@ -139,7 +96,6 @@ export function TagsView() {
         actionLabel: '删除',
         destructive: true,
         onConfirm: () => {
-          pendingDeleteIdRef.current = row.id
           deleteApi.mutate(row.id)
         },
       })
@@ -153,7 +109,7 @@ export function TagsView() {
         <AdminListPage.Header
           title={
             <>
-              标签管理 <span className="text-sm font-normal text-muted-foreground">{state.total}</span>
+              标签管理 <span className="text-sm font-normal text-muted-foreground">{total}</span>
             </>
           }
         >
@@ -194,7 +150,7 @@ export function TagsView() {
             <TableBody>
               {isLoading ? (
                 <TagsSkeleton />
-              ) : state.rows.length === 0 ? (
+              ) : rows.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={4} className="p-0">
                     <Empty className="border-0">
@@ -208,7 +164,7 @@ export function TagsView() {
                   </TableCell>
                 </TableRow>
               ) : (
-                state.rows.map((row) => (
+                rows.map((row) => (
                   <TagRow
                     key={row.id}
                     tag={row}
@@ -222,16 +178,16 @@ export function TagsView() {
           </Table>
 
           {/* Sentinel for infinite scroll */}
-          {hasMore && <div ref={sentinelRef} className="h-1" />}
+          {hasNextPage && <div ref={sentinelRef} className="h-1" />}
 
           {/* Bottom status */}
           <div className="py-6 text-center text-sm text-muted-foreground">
-            {loadingMore ? (
+            {isFetchingNextPage ? (
               <span className="inline-flex items-center gap-2">
                 <LoaderIcon className="size-4 animate-spin" />
                 加载中…
               </span>
-            ) : !hasMore && state.rows.length > 0 ? (
+            ) : !hasNextPage && rows.length > 0 ? (
               '已加载全部标签'
             ) : null}
           </div>
@@ -241,14 +197,7 @@ export function TagsView() {
       <EditTagDialog
         tag={editTarget}
         onClose={() => setEditTarget(undefined)}
-        onSaved={(saved) => {
-          if (editTarget === null) {
-            dispatch({ type: 'prependTag', tag: saved })
-          } else {
-            dispatch({ type: 'patchTag', tag: saved })
-          }
-          setEditTarget(undefined)
-        }}
+        onSaved={() => setEditTarget(undefined)}
       />
 
       <ConfirmDialog state={confirm} onClose={() => setConfirm(null)} />

@@ -1,65 +1,52 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { AdminPostDto } from '@/shared/types/posts'
-import type { PostStatusFilter } from '@/ui/admin/posts/usePostsReducer'
+import type { PostStatusFilter, PostsFilters } from '@/ui/admin/posts/usePostsFilters'
 
 import { makeAdminPost } from '#/_helpers/catalog'
 import { renderInRouter, stableHtml } from '#/_helpers/render'
 import { PostsView } from '@/ui/admin/posts/PostsView'
 
-// PostsView drives its rows from a reducer (`usePostsReducer`) and four
-// `useQuery` calls: the post list plus the secondary option-list queries for
-// categories, tags and authors. To maximise render-path branch coverage we
-// bypass the real reducer entirely and pass a hoisted `state` singleton so
-// each test can flip a single filter / sort field, and we route the four
-// query calls through two hoisted result slots: the first call resolves to
-// the list result, the remaining three resolve to the option-list payloads.
+// PostsView drives its rows from `useInfiniteQuery` (server state lives in
+// the TanStack cache) and its filters from `usePostsFilters`. To maximise
+// render-path branch coverage we bypass both: a hoisted filters singleton
+// each test can flip, and two hoisted query slots — the infinite list
+// query and the shared slot for the three option-list queries.
 
-interface ControllerState {
-  rows: AdminPostDto[]
-  total: number
-  q: string
-  deletedStatus: 'all' | 'deleted' | 'normal'
-  pageSize: number
-  status: PostStatusFilter
-  published?: boolean
-  visible?: boolean
-  category: string
-  tag: string
-  authorId: string
-  sortBy: 'publishedAt' | 'updatedAt'
-  sortOrder: 'asc' | 'desc'
-}
-
-const controllerState = vi.hoisted(() => ({
-  state: {
-    rows: [] as AdminPostDto[],
-    total: 0,
-    q: '',
-    deletedStatus: 'all' as 'all' | 'deleted' | 'normal',
-    pageSize: 10,
+const controller = vi.hoisted(() => ({
+  filters: {
     status: 'all' as PostStatusFilter,
     category: '',
     tag: '',
     authorId: '',
-    sortBy: 'publishedAt' as 'publishedAt' | 'updatedAt',
-    sortOrder: 'desc' as 'asc' | 'desc',
-  } satisfies ControllerState,
+    sortBy: 'publishedAt' as PostsFilters['sortBy'],
+    sortOrder: 'desc' as PostsFilters['sortOrder'],
+  } satisfies PostsFilters,
 }))
 
-vi.mock('@/ui/admin/posts/usePostsReducer', () => ({
-  usePostsReducer: () => ({ state: controllerState.state, dispatch: vi.fn() }),
-  // The real PostsView imports the type as a value-resolved reference for
-  // its cast inside `onValueChange`; the helper is not actually executed
-  // under SSR (event handlers don't fire) but the symbol must resolve.
-}))
+vi.mock('@/ui/admin/posts/usePostsFilters', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/ui/admin/posts/usePostsFilters')>()
+  return {
+    ...actual,
+    usePostsFilters: () => ({
+      filters: controller.filters,
+      setStatus: vi.fn(),
+      setCategory: vi.fn(),
+      setTag: vi.fn(),
+      setAuthorId: vi.fn(),
+      setSortBy: vi.fn(),
+      setSortOrder: vi.fn(),
+    }),
+  }
+})
 
 const listQuery = vi.hoisted(() => ({
-  data: null as { posts: AdminPostDto[]; total: number; hasMore: boolean } | null,
-  isPending: true,
-  isFetching: false,
+  data: undefined as { pages: { posts: AdminPostDto[]; total: number; hasMore: boolean }[] } | undefined,
+  isLoading: true,
   error: null as Error | null,
-  refetch: vi.fn(),
+  hasNextPage: false,
+  isFetchingNextPage: false,
+  fetchNextPage: vi.fn(),
 }))
 
 // The three auxiliary option-list queries share a single slot because
@@ -76,13 +63,8 @@ vi.mock('@tanstack/react-query', async () => {
   const actual = await vi.importActual<typeof import('@tanstack/react-query')>('@tanstack/react-query')
   return {
     ...actual,
-    useQuery: (() => {
-      let calls = 0
-      return () => {
-        calls += 1
-        return calls === 1 ? listQuery : auxQuery
-      }
-    })(),
+    useInfiniteQuery: () => listQuery,
+    useQuery: () => auxQuery,
   }
 })
 
@@ -99,21 +81,22 @@ function makePost(overrides: Partial<AdminPostDto> = {}): AdminPostDto {
   })
 }
 
-function setState(overrides: Partial<ControllerState> = {}): void {
-  controllerState.state = { ...controllerState.state, ...overrides }
+function setFilters(overrides: Partial<PostsFilters> = {}): void {
+  controller.filters = { ...controller.filters, ...overrides }
 }
 
 function setList(posts: AdminPostDto[], total = posts.length): void {
-  listQuery.data = { posts, total, hasMore: false }
-  listQuery.isPending = false
+  listQuery.data = { pages: [{ posts, total, hasMore: false }] }
+  listQuery.isLoading = false
   listQuery.error = null
 }
 
 function resetQueries(): void {
-  listQuery.data = null
-  listQuery.isPending = true
-  listQuery.isFetching = false
+  listQuery.data = undefined
+  listQuery.isLoading = true
   listQuery.error = null
+  listQuery.hasNextPage = false
+  listQuery.isFetchingNextPage = false
   auxQuery.data = null
   auxQuery.isPending = false
   auxQuery.isFetching = false
@@ -123,12 +106,7 @@ function resetQueries(): void {
 
 describe('snapshot: PostsView branches', () => {
   beforeEach(() => {
-    controllerState.state = {
-      rows: [],
-      total: 0,
-      q: '',
-      deletedStatus: 'all',
-      pageSize: 10,
+    controller.filters = {
       status: 'all',
       category: '',
       tag: '',
@@ -151,7 +129,6 @@ describe('snapshot: PostsView branches', () => {
 
   it('renders the empty-state branch once the list resolves without rows', () => {
     setList([])
-    setState({ total: 0 })
     const html = stableHtml(renderInRouter(<PostsView />, '/admin/posts'))
     expect(html).toContain('未找到文章')
     // The create affordance remains visible.
@@ -162,7 +139,6 @@ describe('snapshot: PostsView branches', () => {
     const a = makePost({ id: '1000001', title: ' populated-row-title ' })
     const b = makePost({ id: '1000002', title: '另一篇文章' })
     setList([a, b], 2)
-    setState({ rows: [a, b], total: 2 })
     const html = stableHtml(renderInRouter(<PostsView />, '/admin/posts'))
     expect(html).toContain('已加载全部文章')
     // PostRow renders the title.
@@ -172,9 +148,9 @@ describe('snapshot: PostsView branches', () => {
   // ────────────────────────────── error ──────────────────────────────
 
   it('still renders the chrome when the list query errors (toast path)', () => {
-    listQuery.isPending = false
+    listQuery.isLoading = false
     listQuery.error = new Error('boom')
-    listQuery.data = null
+    listQuery.data = undefined
     const html = stableHtml(renderInRouter(<PostsView />, '/admin/posts'))
     // Header + empty body still render; the toast is mocked.
     expect(html).toContain('文章管理')
@@ -182,7 +158,7 @@ describe('snapshot: PostsView branches', () => {
     expect(html).toContain('未找到文章')
   })
 
-  // ───────────────────── each status-filter value ───────────────────
+  // ─────────────────── each status-filter value ───────────────────
 
   it.each(['all', 'published', 'draft', 'hidden', 'deleted'] satisfies PostStatusFilter[])(
     'renders the status-filter trigger labelled for the %s status',
@@ -195,7 +171,7 @@ describe('snapshot: PostsView branches', () => {
         deleted: '已删除',
       }
       setList([])
-      setState({ status })
+      setFilters({ status })
       const html = stableHtml(renderInRouter(<PostsView />, '/admin/posts'))
       expect(html).toContain(labels[status])
     },
@@ -210,7 +186,7 @@ describe('snapshot: PostsView branches', () => {
     ['updatedAt', 'asc', '最早更新'],
   ] as const)('renders the sort trigger labelled %s for %s-%s', (sortBy, sortOrder, label) => {
     setList([])
-    setState({ sortBy, sortOrder })
+    setFilters({ sortBy, sortOrder })
     const html = stableHtml(renderInRouter(<PostsView />, '/admin/posts'))
     expect(html).toContain(label)
   })
@@ -265,14 +241,14 @@ describe('snapshot: PostsView branches', () => {
 
   it('renders the category-filter active state with the value as the trigger label', () => {
     setList([])
-    setState({ category: 'tech' })
+    setFilters({ category: 'tech' })
     const html = stableHtml(renderInRouter(<PostsView />, '/admin/posts'))
     expect(html).toContain('tech')
   })
 
   it('renders the tag-filter active state', () => {
     setList([])
-    setState({ tag: 'react' })
+    setFilters({ tag: 'react' })
     const html = stableHtml(renderInRouter(<PostsView />, '/admin/posts'))
     expect(html).toContain('react')
   })
@@ -280,22 +256,8 @@ describe('snapshot: PostsView branches', () => {
   it('renders the author-filter active state', () => {
     auxQuery.data = { users: [{ id: 'u-1', name: '雨帆' }] }
     setList([])
-    setState({ authorId: 'u-1' })
+    setFilters({ authorId: 'u-1' })
     const html = stableHtml(renderInRouter(<PostsView />, '/admin/posts'))
     expect(html).toContain('雨帆')
-  })
-
-  // ────────────────────── search-query active ───────────────────────
-
-  it('keeps the search term in the list query input when q is set', () => {
-    setList([])
-    setState({ q: '关键词' })
-    // We cannot introspect the query call args directly (the hook is
-    // mocked away), but `buildQueryInput` derives `q: undefined | string`
-    // from state.q, and rendering with a non-empty q must not crash and
-    // still emit the list chrome.
-    const html = stableHtml(renderInRouter(<PostsView />, '/admin/posts'))
-    expect(html).toContain('文章管理')
-    expect(html).toContain('未找到文章')
   })
 })

@@ -1,4 +1,4 @@
-import { useMutation } from '@tanstack/react-query'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Trash2Icon, Undo2Icon } from 'lucide-react'
 import { useState } from 'react'
 import { useNavigate } from 'react-router'
@@ -9,6 +9,7 @@ import type { UseEditorShellStateOutput } from '@/ui/admin/editor-shell/editor-s
 import type { PostMetaDraft } from '@/ui/admin/posts/PostMetaSidebar'
 
 import { orpc } from '@/client/api/client'
+import { orpcQuery } from '@/client/api/orpc-query'
 import { useContentSettings } from '@/shared/lib/blog-config-context'
 import { RevisionHistoryDrawer } from '@/ui/admin/editor-shell/RevisionsDrawer'
 import { PostMetaSidebar } from '@/ui/admin/posts/PostMetaSidebar'
@@ -75,6 +76,7 @@ function MetaExtras({
 
 function usePostDeleteRestore(detail: AdminPostDetailDto | undefined) {
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
   const [confirm, setConfirm] = useState<ConfirmState | null>(null)
 
   const post = detail?.post
@@ -83,6 +85,7 @@ function usePostDeleteRestore(detail: AdminPostDetailDto | undefined) {
     mutationFn: (id: string) => orpc.admin.posts.delete({ id }),
     onSuccess: () => {
       toast.success('文章已删除')
+      void queryClient.invalidateQueries({ queryKey: orpcQuery.admin.posts.list.key() })
       void navigate('/admin/posts')
     },
     onError: (error) => {
@@ -100,6 +103,7 @@ function usePostDeleteRestore(detail: AdminPostDetailDto | undefined) {
     mutationFn: (id: string) => orpc.admin.posts.restore({ id }),
     onSuccess: () => {
       toast.success('文章已恢复')
+      void queryClient.invalidateQueries({ queryKey: orpcQuery.admin.posts.list.key() })
       void navigate(0) // full reload to refetch
     },
     onError: (error) => {

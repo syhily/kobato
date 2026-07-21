@@ -4,6 +4,7 @@ import { eq, sql, getColumns } from 'drizzle-orm'
 
 import type { PostMetaWithAuthor, ListPostsFilters } from '@/server/domains/posts/repos/shared'
 
+import { applyLimitOffset } from '@/server/domains/content/repos/pagination'
 import { buildPostsWhere, buildPostsOrderBy } from '@/server/domains/posts/repos/shared'
 import { post as postMetaTable } from '@/server/infra/db/schema/post'
 import { user } from '@/server/infra/db/schema/user'
@@ -19,16 +20,7 @@ export async function listPostMetas(db: NodePgDatabase, filters: ListPostsFilter
     .leftJoin(user, eq(user.id, postMetaTable.authorId))
     .orderBy(buildPostsOrderBy(filters))
   const q = where ? base.where(where) : base
-  if (filters.limit !== undefined) {
-    if (filters.offset !== undefined && filters.offset > 0) {
-      return q.limit(filters.limit).offset(filters.offset)
-    }
-    return q.limit(filters.limit)
-  }
-  if (filters.offset !== undefined && filters.offset > 0) {
-    return q.offset(filters.offset)
-  }
-  return q
+  return applyLimitOffset(q, filters)
 }
 
 export async function countPostMetas(db: NodePgDatabase, filters: ListPostsFilters = {}): Promise<number> {

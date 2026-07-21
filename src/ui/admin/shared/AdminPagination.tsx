@@ -32,7 +32,7 @@ interface AdminPaginationProps {
  * Index conventions:
  *   - The component's external API stays 0-based (`currentPage`,
  *     `onChange(page)`) because the rest of the admin business code
- *     (`useCommentsController`, `useUsersReducer`, `loadXxx({
+ *     (`useCommentsController`, `loadXxx({
  *     offset: page * pageSize })`) is 0-based.
  *   - Internally we add 1 before calling `computePageWindow`
  *     (which is 1-based) and subtract 1 when wiring the click

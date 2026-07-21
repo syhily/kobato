@@ -109,6 +109,7 @@ export function UserDetailView({ userId, navigate, passkeyEnabled }: UserDetailV
   const deleteMutation = useMutation({
     mutationFn: (vars: { userId: string }) => orpc.admin.users.softDelete({ id: vars.userId }),
     onSuccess: () => {
+      invalidateUsersCache(queryClient)
       void navigate('/admin/security/users')
     },
   })

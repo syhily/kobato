@@ -10,7 +10,6 @@ import { orpcQuery } from '@/client/api/orpc-query'
 import { useInfiniteScrollSentinel } from '@/client/hooks/use-infinite-scroll-sentinel'
 import { useAssetsSettings } from '@/shared/lib/blog-config-context'
 import { ImageDetailDialog } from '@/ui/admin/images/ImageDetailDialog'
-import { invalidateImagesList } from '@/ui/admin/images/images-cache'
 import { ImagesFilterBar } from '@/ui/admin/images/ImagesFilterBar'
 import { JustifiedImageGrid, JustifiedImageGridSkeleton } from '@/ui/admin/images/JustifiedImageGrid'
 import { useImagesReducer } from '@/ui/admin/images/useImagesReducer'
@@ -65,8 +64,12 @@ export function ImagesView() {
     }
   }, [listQuery.error])
 
+  // The grid caches as `type: 'infinite'` and the editor's
+  // ImageLibraryPicker as `type: 'query'`; the procedure-level orpcQuery
+  // key partial-matches both operation types — a hand-rolled
+  // ['admin','images','list'] array never would.
   const invalidateList = useCallback(() => {
-    invalidateImagesList(queryClient)
+    void queryClient.invalidateQueries({ queryKey: orpcQuery.admin.images.list.key() })
   }, [queryClient])
 
   const deleteMutation = useMutation({

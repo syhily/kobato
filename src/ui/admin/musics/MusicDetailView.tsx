@@ -9,7 +9,6 @@ import { orpc } from '@/client/api/client'
 import { orpcQuery } from '@/client/api/orpc-query'
 import { transitions } from '@/client/lib/motion'
 import { LyricsDisplay } from '@/ui/admin/musics/LyricsDisplay'
-import { invalidateMusicLibrary } from '@/ui/admin/musics/music-library-cache'
 import { useMusicPlayerActions, useMusicPlayerState, useMusicPlayerTime } from '@/ui/admin/musics/MusicPlayerContext'
 import { ConfirmDialog, type ConfirmState } from '@/ui/admin/shared/ConfirmDialog'
 import { cn } from '@/ui/lib/cn'
@@ -58,7 +57,9 @@ export function MusicDetailView() {
       orpc.admin.music.update(input),
     onSuccess: (data) => {
       queryClient.setQueryData(orpcQuery.admin.music.get.key({ input: { id } }), { music: data.music })
-      invalidateMusicLibrary(queryClient)
+      // The library is cached under both operation types (`query` hero,
+      // `infinite` grid); the procedure-level orpcQuery key matches both.
+      void queryClient.invalidateQueries({ queryKey: orpcQuery.admin.music.list.key() })
       toast.success('已保存')
       setEditing(false)
     },
@@ -128,7 +129,7 @@ export function MusicDetailView() {
   const deleteMutation = useMutation({
     mutationFn: (musicId: string) => orpc.admin.music.delete({ id: musicId }),
     onSuccess: () => {
-      invalidateMusicLibrary(queryClient)
+      void queryClient.invalidateQueries({ queryKey: orpcQuery.admin.music.list.key() })
       toast.success('已删除')
       void navigate('/admin/library/music')
     },

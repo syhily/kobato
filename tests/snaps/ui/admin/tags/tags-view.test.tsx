@@ -6,32 +6,26 @@ import { renderInRouter, renderToHtml, stableHtml } from '#/_helpers/render'
 import { EditTagDialog } from '@/ui/admin/tags/EditTagDialog'
 import { TagsView } from '@/ui/admin/tags/TagsView'
 
-// The view drives its rows through a reducer hook plus four TanStack-query
-// calls (list + delete mutation). We stub the controller to keep an empty
-// list and short-circuit the queries so SSR can emit the loading chrome.
-
-const controllerState = vi.hoisted(() => ({
-  rows: [] as AdminTagDto[],
-  total: 0,
-  hasMore: false,
-  q: '',
-}))
-
-vi.mock('@/ui/admin/tags/useTagsReducer', () => ({
-  useTagsReducer: () => ({ state: controllerState, dispatch: vi.fn() }),
-}))
+// The view drives its rows from `useInfiniteQuery` (server state lives in
+// the TanStack cache) plus a delete `useMutation`, with the search box wired
+// through `useDebouncedSearch`. We stub the list query so SSR can emit the
+// loading / empty chrome.
 
 const queryMocks = vi.hoisted(() => ({
-  query: {
-    data: null as unknown,
-    isPending: true,
-    isFetching: false,
-    error: null,
-    refetch: vi.fn(),
-  },
   mutation: {
     mutate: vi.fn(),
     isPending: false,
+  },
+  infinite: {
+    data: undefined as { pages: { tags: AdminTagDto[]; total: number; hasMore: boolean }[] } | undefined,
+    isLoading: true,
+    error: null as Error | null,
+    hasNextPage: false,
+    isFetchingNextPage: false,
+    fetchNextPage: vi.fn(),
+  },
+  queryClient: {
+    invalidateQueries: vi.fn(),
   },
 }))
 
@@ -39,8 +33,9 @@ vi.mock('@tanstack/react-query', async () => {
   const actual = await vi.importActual<typeof import('@tanstack/react-query')>('@tanstack/react-query')
   return {
     ...actual,
-    useQuery: () => queryMocks.query,
     useMutation: () => queryMocks.mutation,
+    useInfiniteQuery: () => queryMocks.infinite,
+    useQueryClient: () => queryMocks.queryClient,
   }
 })
 
@@ -72,22 +67,18 @@ vi.mock('@/ui/components/dialog', () => ({
 
 describe('snapshot: TagsView', () => {
   beforeEach(() => {
-    controllerState.rows = []
-    controllerState.total = 0
-    controllerState.hasMore = false
-    controllerState.q = ''
-    queryMocks.query = {
-      data: null,
-      isPending: true,
-      isFetching: false,
+    queryMocks.infinite = {
+      data: undefined,
+      isLoading: true,
       error: null,
-      refetch: vi.fn(),
+      hasNextPage: false,
+      isFetchingNextPage: false,
+      fetchNextPage: vi.fn(),
     }
     queryMocks.mutation = { mutate: vi.fn(), isPending: false }
   })
 
   it('renders the header, search box, new-tag button and table chrome while loading', () => {
-    queryMocks.query = { ...queryMocks.query, isPending: true }
     const html = stableHtml(renderInRouter(<TagsView />, '/admin/taxonomy/tags'))
     expect(html).toContain('标签管理')
     expect(html).toContain('搜索名称或 slug')
@@ -99,7 +90,11 @@ describe('snapshot: TagsView', () => {
   })
 
   it('renders the empty state once the pending query resolves without rows', () => {
-    queryMocks.query = { ...queryMocks.query, isPending: false }
+    queryMocks.infinite = {
+      ...queryMocks.infinite,
+      isLoading: false,
+      data: { pages: [{ tags: [], total: 0, hasMore: false }] },
+    }
     const html = stableHtml(renderInRouter(<TagsView />, '/admin/taxonomy/tags'))
     expect(html).toContain('标签管理')
     expect(html).toContain('未找到标签')
