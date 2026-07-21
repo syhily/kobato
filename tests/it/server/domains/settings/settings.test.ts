@@ -48,7 +48,8 @@ const db = {
 const pool = {} as any
 
 const settingQueries = await import('@/server/infra/db/operations/setting')
-const { getAdminBlogSettings, updateBlogSettingsSection } = await import('@/server/domains/settings/services/core')
+const { updateBlogSettingsSection } = await import('@/server/domains/settings/services/core')
+const { hydrateBlogSettings } = await import('@/server/domains/settings/services/hydrate')
 const { setBlogSettingsBundleForTests, warmBlogSettingsSnapshot } =
   await import('@/server/domains/settings/services/test-utils')
 const { getBlogSettingsBundleSync, getCacheSettings } = await import('@/shared/config/getters')
@@ -256,23 +257,23 @@ beforeEach(async () => {
   setBlogSettingsBundleForTests(undefined)
 })
 
-describe('services/settings — getAdminBlogSettings', () => {
+describe('services/settings — hydrateBlogSettings', () => {
   it('returns null when no DB rows exist (pre-install)', async () => {
     vi.mocked(settingQueries.findSettingsByScopePrefix).mockResolvedValue([])
 
-    const dto = await getAdminBlogSettings(db)
+    const bundle = await hydrateBlogSettings(db)
 
-    expect(dto.bundle).toBeNull()
+    expect(bundle).toBeNull()
   })
 
   it('returns the assembled bundle when every section row passes schema validation', async () => {
     vi.mocked(settingQueries.findSettingsByScopePrefix).mockResolvedValue(bundleRows(fixtureBundle))
 
-    const dto = await getAdminBlogSettings(db)
+    const bundle = await hydrateBlogSettings(db)
 
-    expect(dto.bundle).not.toBeNull()
-    expect(dto.bundle?.siteIdentity?.title).toBe(fixtureBundle.siteIdentity!.title)
-    expect(dto.bundle?.sidebar?.sidebar.widgets[0].enabled).toBe(true)
+    expect(bundle).not.toBeNull()
+    expect(bundle?.siteIdentity?.title).toBe(fixtureBundle.siteIdentity!.title)
+    expect(bundle?.sidebar?.sidebar.widgets[0].enabled).toBe(true)
   })
 
   it('treats a deployment as uninstalled when only some sections exist', async () => {
@@ -288,9 +289,9 @@ describe('services/settings — getAdminBlogSettings', () => {
       } as Setting,
     ])
 
-    const dto = await getAdminBlogSettings(db)
+    const bundle = await hydrateBlogSettings(db)
 
-    expect(dto.bundle).toBeNull()
+    expect(bundle).toBeNull()
   })
 })
 
@@ -1314,10 +1315,10 @@ describe('services/settings — snapshot reader', () => {
       updatedBy: null,
     } as Setting)
 
-    const dto = await getAdminBlogSettings(db)
+    const bundle = await hydrateBlogSettings(db)
 
-    expect(dto.bundle).not.toBeNull()
-    const cache = dto.bundle!.cache!.cache
+    expect(bundle).not.toBeNull()
+    const cache = bundle!.cache!.cache
     expect(cache.imageMeta).toEqual({ prefix: 'image-meta:', ttlSeconds: 60 * 60 })
     const upsertCalls = vi.mocked(settingQueries.upsertSetting).mock.calls
     expect(upsertCalls.some((call) => call[3] === 'blog.cache')).toBe(true)

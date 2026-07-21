@@ -10,12 +10,6 @@ import {
   sectionFromScope,
   SETTINGS_SCOPE_PREFIX,
 } from '@/server/domains/settings/sections/registry'
-import {
-  bumpSettingsVersion,
-  getSettingsVersion,
-  readLocalSettingsVersion,
-  setLocalSettingsVersion,
-} from '@/server/domains/settings/services/version'
 import { decryptIfNeeded } from '@/server/infra/crypto/secret-encryption'
 import { findSettingsByScopePrefix, upsertSetting } from '@/server/infra/db/operations/setting'
 import { getLogger } from '@/server/infra/logger'
@@ -116,28 +110,19 @@ async function backfillMissingSectionDefaults(bundle: BlogSettingsBundle, db: No
 }
 
 export async function hydrateBlogSettings(db: NodePgDatabase): Promise<BlogSettingsBundle | null> {
+  // Single-process deployment model: the in-process snapshot is always
+  // authoritative once loaded. (A Redis-shared version counter used to
+  // promise cross-process invalidation, but the local-version short-circuit
+  // made it unreachable — deleted rather than pretending.)
   const pending = BLOG_SETTINGS_SNAPSHOT_SLOT.readHydration()
   if (pending) {
-    const cached = BLOG_SETTINGS_SNAPSHOT_SLOT.read()
-    if (cached === null) {
-      return pending
-    }
-    if (readLocalSettingsVersion() > 0) {
-      return pending
-    }
-    const sharedVersion = await getSettingsVersion()
-    if (sharedVersion <= readLocalSettingsVersion()) {
-      return pending
-    }
+    return pending
   }
 
-  BLOG_SETTINGS_SNAPSHOT_SLOT.writeHydration(undefined)
-  const targetVersion = await getSettingsVersion()
   const newPending = (async () => {
     try {
       const value = await loadSettingsFromDb(db)
       BLOG_SETTINGS_SNAPSHOT_SLOT.write(value)
-      setLocalSettingsVersion(targetVersion)
       return value
     } catch (error) {
       BLOG_SETTINGS_SNAPSHOT_SLOT.writeHydration(undefined)
@@ -150,7 +135,5 @@ export async function hydrateBlogSettings(db: NodePgDatabase): Promise<BlogSetti
 
 export async function refreshBlogSettings(db: NodePgDatabase): Promise<BlogSettingsBundle | null> {
   BLOG_SETTINGS_SNAPSHOT_SLOT.writeHydration(undefined)
-  await bumpSettingsVersion()
-  const result = await hydrateBlogSettings(db)
-  return result
+  return hydrateBlogSettings(db)
 }

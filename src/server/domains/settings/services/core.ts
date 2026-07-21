@@ -1,5 +1,6 @@
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 import type { Pool } from 'pg'
+import type { z } from 'zod'
 
 import type { SectionMeta } from '@/server/domains/settings/sections/registry'
 import type { Setting } from '@/server/infra/db/types'
@@ -8,7 +9,7 @@ import type { BlogSettingsBundle, SecretMasks } from '@/shared/config/types'
 
 import { SECRET_FIELDS } from '@/server/domains/settings/secrets'
 import { SECTION_REGISTRY } from '@/server/domains/settings/sections/registry'
-import { hydrateBlogSettings, refreshBlogSettings } from '@/server/domains/settings/services/hydrate'
+import { refreshBlogSettings } from '@/server/domains/settings/services/hydrate'
 import { SECTION_CHANGE_HANDLERS } from '@/server/domains/settings/services/section-changes'
 import { assertSectionPatchKeys } from '@/server/domains/settings/services/section-patch'
 import { encryptIfNeeded } from '@/server/infra/crypto/secret-encryption'
@@ -18,21 +19,19 @@ import { DomainError } from '@/server/infra/http/errors'
 import { getLogger } from '@/server/infra/logger'
 import { getBlogSettingsBundleSync } from '@/shared/config/getters'
 import { mergeSectionPatch } from '@/shared/config/merge-section-patch'
-import { projectAssetsForAdmin, projectMailForAdmin, projectSearchForAdmin } from '@/shared/config/projection'
+import {
+  assetsLoaderShapeSchema,
+  mailLoaderShapeSchema,
+  projectAssetsForAdmin,
+  projectMailForAdmin,
+  projectSearchForAdmin,
+  searchLoaderShapeSchema,
+} from '@/shared/config/projection'
 import { SECTION_TO_BUNDLE_KEY } from '@/shared/config/sections'
 import { isValidPasskeyDomain } from '@/shared/utils/safe-url'
 import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
 const log = getLogger('settings.service')
-
-export interface AdminBlogSettingsDto {
-  bundle: BlogSettingsBundle | null
-}
-
-export async function getAdminBlogSettings(db: NodePgDatabase): Promise<AdminBlogSettingsDto> {
-  const bundle = await hydrateBlogSettings(db)
-  return { bundle }
-}
 
 export async function updateBlogSettingsSection<S extends SettingsSection>(
   db: NodePgDatabase,
@@ -177,6 +176,17 @@ export function redactSecretsFromBundle(bundle: BlogSettingsBundle): BlogSetting
   return unsafeCast<BlogSettingsBundle>(clone)
 }
 
+// Per-section runtime gate for the admin display shape: the three masked
+// sections validate against their loader-shape Zod twins, every other
+// section against the registry schema (its stored shape IS the admin
+// shape there). A drifting projection fails HERE — loudly, at the
+// assembly point — instead of silently mistyping the save response.
+const SECTION_OUTPUT_SCHEMAS: Partial<Record<SettingsSection, z.ZodType>> = {
+  assets: assetsLoaderShapeSchema,
+  mail: mailLoaderShapeSchema,
+  search: searchLoaderShapeSchema,
+}
+
 /**
  * Project one section of a fresh bundle into the admin display shape the
  * settings cards expect — the exact TSource contract the layout loader +
@@ -191,20 +201,30 @@ export function projectSectionForAdmin(
   masks: SecretMasks,
 ): unknown {
   const redacted = redactSecretsFromBundle(bundle)
+  let projected: unknown
   if (section === 'assets') {
-    return projectAssetsForAdmin(unsafeCast(redacted.assets), masks.assetsSecretAccessKeyMask)
-  }
-  if (section === 'mail') {
-    return projectMailForAdmin(unsafeCast(redacted.mail), {
+    projected = projectAssetsForAdmin(unsafeCast(redacted.assets), masks.assetsSecretAccessKeyMask)
+  } else if (section === 'mail') {
+    projected = projectMailForAdmin(unsafeCast(redacted.mail), {
       apiKeyMask: masks.mailApiKeyMask,
       smtpPassMask: masks.mailSmtpPassMask,
       mailgunApiKeyMask: masks.mailMailgunApiKeyMask,
     })
+  } else if (section === 'search') {
+    projected = projectSearchForAdmin(redacted.search ?? undefined, masks.searchApiKeyMask)
+  } else {
+    projected = redacted[SECTION_TO_BUNDLE_KEY[section]]
   }
-  if (section === 'search') {
-    return projectSearchForAdmin(redacted.search ?? undefined, masks.searchApiKeyMask)
+
+  const schema = SECTION_OUTPUT_SCHEMAS[section] ?? SECTION_REGISTRY[section].schema
+  const result = schema.safeParse(projected)
+  if (!result.success) {
+    throw new DomainError(
+      'INTERNAL',
+      `admin 投影形状校验失败(${section}):${result.error.issues[0]?.path.join('.') ?? '<root>'} ${result.error.issues[0]?.message ?? ''}`,
+    )
   }
-  return redacted[SECTION_TO_BUNDLE_KEY[section]]
+  return result.data
 }
 
 function applySectionPatch(

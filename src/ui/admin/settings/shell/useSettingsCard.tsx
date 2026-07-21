@@ -42,12 +42,10 @@ interface UseSettingsCardResult<TSource extends object, TState extends FieldValu
    * state worth deferring. */
   save: () => void
   /** Blur-driven commit. No-op when the form matches the last committed
-   * snapshot. Used by `<SettingsInput>` on every text input. */
+   * snapshot. Used by `<SettingsInput>` on every text input, and by the
+   * panel-level flush triggers (close / scroll-away / page-hide) via the
+   * SettingsFlushProvider registry. */
   flushOnBlur: () => void
-  /** Top-level flush (close / scroll-away / page-hide). Same dirty guard as
-   * `flushOnBlur`; the split name documents caller intent and leaves room for
-   * the two to diverge later. */
-  flush: () => void
   /** Latest server-confirmed section (the save response, masks/font families
    * included), falling back to the loader snapshot. Never POSTed. */
   display: TSource
@@ -209,7 +207,8 @@ export function useSettingsCard<TSource extends object, TState extends FieldValu
     performSave()
   }, [performSave])
 
-  // Text input blur — skip when nothing changed.
+  // Text input blur — skip when nothing changed. Also the callback the
+  // panel-level flush registry invokes (close / scroll-away / page-hide).
   const flushOnBlur = useCallback(() => {
     if (!isDirty()) {
       return
@@ -217,27 +216,18 @@ export function useSettingsCard<TSource extends object, TState extends FieldValu
     performSave()
   }, [isDirty, performSave])
 
-  // Close / scroll-away / page-hide — skip when nothing changed.
-  const flush = useCallback(() => {
-    if (!isDirty()) {
-      return
-    }
-    performSave()
-  }, [isDirty, performSave])
-
   // Register this card's flush so the panel-level triggers (close, scroll,
-  // visibilitychange) can reach it. Re-registers when `flush` identity
+  // visibilitychange) can reach it. Re-registers when `flushOnBlur` identity
   // changes (i.e. when `lastCommitted` moves).
   useEffect(() => {
-    return registerFlush(section, flush)
-  }, [registerFlush, section, flush])
+    return registerFlush(section, flushOnBlur)
+  }, [registerFlush, section, flushOnBlur])
 
   return {
     form,
     isSaving: isPending,
     save,
     flushOnBlur,
-    flush,
     display: savedSource ?? source,
     settingGroupProps: {
       saveState: status,

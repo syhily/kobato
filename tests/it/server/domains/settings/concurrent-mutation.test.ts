@@ -7,7 +7,7 @@ import { clearAllTables } from '#/_helpers/integration-db'
 import { makeAuthedCtx } from '#/_helpers/mock-ctx'
 import { flushWorkerRedis } from '#/_helpers/redis'
 import { callRpc } from '#/_helpers/rpc-call'
-import { getAdminBlogSettings } from '@/server/domains/settings/services/core'
+import { hydrateBlogSettings } from '@/server/domains/settings/services/hydrate'
 import { createDbPool, closePool } from '@/server/infra/db/pool'
 import { setting } from '@/server/infra/db/schema/config'
 
@@ -111,7 +111,7 @@ describe('integration / concurrent settings edits', () => {
     expect(generalRes.status).toBe(200)
 
     // Read back both
-    const { bundle } = await getAdminBlogSettings(db)
+    const bundle = await hydrateBlogSettings(db)
     expect(bundle?.limits?.maxRequestBodySize).toBe(5 * 1024 * 1024)
     expect(bundle?.siteIdentity?.title).toBe('Updated Title')
   })

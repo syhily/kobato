@@ -10,7 +10,6 @@ import {
   updateBlogSettingsSection,
 } from '@/server/domains/settings/services/core'
 import { adminProc } from '@/server/http/orpc-base'
-import { DomainError } from '@/server/infra/http/errors'
 import { SETTINGS_SECTIONS } from '@/shared/config/sections'
 import { safeBigInt } from '@/shared/utils/tools'
 
@@ -26,22 +25,16 @@ const update = adminProc
   // admin display shape (masks merged in for assets/mail/search). The
   // client adopts it as its new baseline instead of revalidating the
   // loader — a save must never refetch the document out from under the
-  // user's hands.
+  // user's hands. The oRPC output schema is necessarily loose (the shape
+  // is per-section); the REAL runtime gate lives in
+  // `projectSectionForAdmin`, which validates against the per-section
+  // schema at assembly time.
   .output(z.object({ section: z.unknown() }))
   .handler(async ({ input, context }) => {
     const editorId = safeBigInt(context.viewer.userId)
-    let bundle
-    try {
-      bundle = await updateBlogSettingsSection(context.db, context.pool, input.section, input.payload, editorId)
-    } catch (err) {
-      if (err instanceof DomainError && err.code === 'BAD_REQUEST') {
-        throw new ORPCError('BAD_REQUEST', {
-          message: err.message,
-          data: err.issues,
-        })
-      }
-      throw err
-    }
+    // DomainError translation lives in orpc-base's domainErrorGuard —
+    // no per-controller catch here.
+    const bundle = await updateBlogSettingsSection(context.db, context.pool, input.section, input.payload, editorId)
     recordAuditEventFromContext(context, {
       action: 'settings_updated',
       resourceType: 'setting',

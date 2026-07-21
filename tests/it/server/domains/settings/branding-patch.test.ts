@@ -7,7 +7,7 @@ import { clearAllTables } from '#/_helpers/integration-db'
 import { makeAuthedCtx } from '#/_helpers/mock-ctx'
 import { flushWorkerRedis } from '#/_helpers/redis'
 import { callRpc, parseRpcJson } from '#/_helpers/rpc-call'
-import { getAdminBlogSettings } from '@/server/domains/settings/services/core'
+import { hydrateBlogSettings } from '@/server/domains/settings/services/hydrate'
 import { createDbPool, closePool } from '@/server/infra/db/pool'
 import { setting } from '@/server/infra/db/schema/config'
 
@@ -113,7 +113,7 @@ describe('integration / branding settings', () => {
     )
     expect(updateRes.status).toBe(200)
 
-    const { bundle } = await getAdminBlogSettings(db)
+    const bundle = await hydrateBlogSettings(db)
     expect(bundle?.assets?.branding?.robotsTxt).toBe('User-agent: *\nDisallow: /admin')
   })
 
@@ -141,7 +141,7 @@ describe('integration / branding settings', () => {
     expect(updateBody.section.asset.host).toBe('updated.example.com')
     expect(updateBody.section).toHaveProperty('secretAccessKeyMask')
 
-    const { bundle } = await getAdminBlogSettings(db)
+    const bundle = await hydrateBlogSettings(db)
     expect(bundle?.assets?.asset.host).toBe('updated.example.com')
     expect(bundle?.assets?.branding?.faviconSvg?.etag).toBe(SAMPLE_REF.etag)
     expect(bundle?.assets?.branding?.logoSvg?.etag).toBe(SAMPLE_REF.etag)
@@ -162,7 +162,7 @@ describe('integration / branding settings', () => {
       ctx,
     )
 
-    const { bundle } = await getAdminBlogSettings(db)
+    const bundle = await hydrateBlogSettings(db)
     expect(bundle?.assets?.branding?.robotsTxt).toBe('User-agent: *')
     expect(bundle?.assets?.branding?.faviconSvg?.etag).toBe(SAMPLE_REF.etag)
     expect(bundle?.assets?.branding?.logoSvg?.etag).toBe(SAMPLE_REF.etag)

@@ -92,24 +92,7 @@ describe('ui/admin/settings/shell/useSettingsCard', () => {
     const source: Source = { title: 'Hello', description: 'World' }
     const { flushOnBlur } = renderHook(makeHook(source))
     flushOnBlur()
-    expect(commit).not.toHaveBeenCalled()
-  })
-
-  it('flush is a no-op when the form is clean', () => {
-    const source: Source = { title: 'Hello', description: 'World' }
-    const { flush } = renderHook(makeHook(source))
-    flush()
-    expect(commit).not.toHaveBeenCalled()
-  })
-
-  it('exposes flushOnBlur and flush as distinct callable triggers', () => {
-    const source: Source = { title: 'Hello', description: 'World' }
-    const { flushOnBlur, flush } = renderHook(makeHook(source))
-    expect(typeof flushOnBlur).toBe('function')
-    expect(typeof flush).toBe('function')
-    // Clean form → neither fires a commit.
-    flushOnBlur()
-    flush()
+    flushOnBlur() // panel-level flush registry invokes the same callback
     expect(commit).not.toHaveBeenCalled()
   })
 

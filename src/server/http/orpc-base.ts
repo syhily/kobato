@@ -52,7 +52,14 @@ const domainErrorGuard = root.middleware(async ({ next }) => {
     return await next({})
   } catch (error) {
     if (error instanceof DomainError) {
-      throw new ORPCError(error.code, { status: domainStatus(error), message: error.message })
+      // Forward the issue list (e.g. strict settings-patch keys) so API
+      // consumers can map errors back to fields — one translation point
+      // for every procedure, not per-controller catches.
+      throw new ORPCError(error.code, {
+        status: domainStatus(error),
+        message: error.message,
+        ...(error.issues ? { data: error.issues } : {}),
+      })
     }
     if (error instanceof ActionFailure) {
       throw new ORPCError('INTERNAL_SERVER_ERROR', {

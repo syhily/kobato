@@ -7,7 +7,7 @@ import { clearAllTables } from '#/_helpers/integration-db'
 import { makeAuthedCtx, makePublicCtx } from '#/_helpers/mock-ctx'
 import { flushWorkerRedis } from '#/_helpers/redis'
 import { callRpc, parseRpcJson } from '#/_helpers/rpc-call'
-import { getAdminBlogSettings } from '@/server/domains/settings/services/core'
+import { hydrateBlogSettings } from '@/server/domains/settings/services/hydrate'
 import { createDbPool, closePool } from '@/server/infra/db/pool'
 import { setting } from '@/server/infra/db/schema/config'
 
@@ -104,7 +104,7 @@ describe('integration / admin settings', () => {
     const updateBody = await parseRpcJson<{ section: { maxRequestBodySize: number } }>(updateRes)
     expect(updateBody.section.maxRequestBodySize).toBe(5 * 1024 * 1024)
 
-    const { bundle } = await getAdminBlogSettings(db)
+    const bundle = await hydrateBlogSettings(db)
     expect(bundle?.limits?.maxRequestBodySize).toBe(5 * 1024 * 1024)
   })
 })

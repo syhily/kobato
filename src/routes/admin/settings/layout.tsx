@@ -4,11 +4,8 @@ import type { BlogSettingsBundle, SecretMasks } from '@/shared/config/types'
 
 import { getDbFromContext } from '@/server/domains/auth/context'
 import { SECTION_REGISTRY } from '@/server/domains/settings/sections/registry'
-import {
-  computeSecretMasks,
-  getAdminBlogSettings,
-  redactSecretsFromBundle,
-} from '@/server/domains/settings/services/core'
+import { computeSecretMasks, redactSecretsFromBundle } from '@/server/domains/settings/services/core'
+import { hydrateBlogSettings } from '@/server/domains/settings/services/hydrate'
 import { getSupportedTimeZones } from '@/server/domains/settings/timezones'
 import { upsertSetting } from '@/server/infra/db/operations/setting'
 import { SECTION_TO_BUNDLE_KEY, SETTINGS_SECTIONS } from '@/shared/config/sections'
@@ -87,7 +84,7 @@ function assertSettingsBundle(value: Record<string, unknown>): asserts value is 
 
 export async function loader({ request, context }: Route.LoaderArgs) {
   const db = getDbFromContext({ request, context })
-  const { bundle } = await getAdminBlogSettings(db)
+  const bundle = await hydrateBlogSettings(db)
   if (bundle === null) {
     throw new Response('站点尚未完成安装。', { status: 503 })
   }

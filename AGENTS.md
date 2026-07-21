@@ -217,6 +217,10 @@ Runtime rules for contributors:
   `getEmbeddedAsset` / `listEmbeddedAssetKeys`. New resource types must
   be added to `scripts/sea/assets.ts` AND read via the sea helpers with
   a non-SEA fallback.
+- Embedded asset keys are owned by `src/shared/sea/assets.ts` — the
+  single owner of the writer/reader key contract. New keys go there;
+  never hardcode a key in `scripts/` or `src/server/`. Enforced by
+  `tests/unit/shared/contracts/sea-assets.test.ts`.
 - `KOBATO_NATIVES_DIR` / `KOBATO_CACHE_DIR` are documented runtime env
   vars, deliberately read outside `env.ts` (see the allowlist comment on
   the process.env centralization rule in the boundaries test).
@@ -366,7 +370,9 @@ In addition, three framework-level flushes call every registered card via
 1. Destructure the trigger you need from `useSettingsCard()`:
    - text input → `flushOnBlur`
    - switch/select/radio → `save` (never call `save` from a text input)
-   - you usually don't need `flush` directly (the framework owns it)
+   - the panel-level flushes (close / scroll-away / page-hide) invoke the
+     same `flushOnBlur` through the SettingsFlushProvider registry —
+     there is no separate `flush` member
 2. Render text inputs through `<SettingsInput flushOnBlur={flushOnBlur} {...form.register('x')}>`
    — **never** bare `<Input>`. The wrapper merges RHF's onBlur with
    `flushOnBlur`; spreading `register` first would clobber it. For multi-line

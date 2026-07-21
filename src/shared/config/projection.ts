@@ -1,4 +1,7 @@
+import { z } from 'zod'
+
 import type { MailSettings } from '@/shared/config/types'
+import type { Assert, Equals } from '@/shared/contracts/primitives'
 
 // Per-slot status surfaced to the admin form. `etag` is what the form
 // uses for cache-busting in preview URLs (e.g. `/favicon.svg?v=<etag>`)
@@ -8,6 +11,76 @@ export interface BrandingSlotStatus {
   /** Empty string when the slot has no custom upload. */
   etag: string
 }
+
+// Zod twins of the three masked loader shapes. They are the runtime gate
+// of the settings save response (see `projectSectionForAdmin`): the save
+// round-trip must produce exactly the shape the loader serves, or the
+// assembly is drifting.
+
+const brandingSlotStatusSchema = z.object({ etag: z.string() })
+
+export const assetsLoaderShapeSchema = z.object({
+  asset: z.object({ host: z.string(), scheme: z.enum(['http', 'https']) }),
+  storage: z.object({
+    enabled: z.boolean(),
+    endpoint: z.string(),
+    region: z.string(),
+    bucket: z.string(),
+    accessKeyId: z.string(),
+    forcePathStyle: z.boolean(),
+    urlTemplate: z.string(),
+  }),
+  secretAccessKeyMask: z.string().nullable(),
+  upload: z.object({ maxBytes: z.number(), jpegQuality: z.number() }),
+  branding: z.object({
+    faviconSvg: brandingSlotStatusSchema,
+    faviconIco: brandingSlotStatusSchema,
+    appleTouchIcon: brandingSlotStatusSchema,
+    icon192: brandingSlotStatusSchema,
+    icon512: brandingSlotStatusSchema,
+    logoSvg: brandingSlotStatusSchema,
+    logoDarkSvg: brandingSlotStatusSchema,
+    logoLargeSvg: brandingSlotStatusSchema,
+    logoLargeDarkSvg: brandingSlotStatusSchema,
+    openGraph: brandingSlotStatusSchema,
+    blogPoster: brandingSlotStatusSchema,
+    blogPosterDark: brandingSlotStatusSchema,
+    defaultAvatar: brandingSlotStatusSchema,
+    robotsTxt: z.string(),
+  }),
+})
+
+export const mailLoaderShapeSchema = z.object({
+  mail: z.object({
+    enabled: z.boolean(),
+    host: z.string(),
+    sender: z.string(),
+    apiKeyMask: z.string().nullable(),
+    transport: z.enum(['zeabur', 'smtp', 'mailgun']),
+    smtpHost: z.string(),
+    smtpPort: z.number(),
+    smtpUser: z.string(),
+    smtpPassMask: z.string().nullable(),
+    smtpSecure: z.boolean(),
+    smtpRequireTls: z.boolean(),
+    smtpRejectUnauthorized: z.boolean(),
+    mailgunDomain: z.string(),
+    mailgunApiKeyMask: z.string().nullable(),
+  }),
+})
+
+export const searchLoaderShapeSchema = z.object({
+  search: z.object({
+    enabled: z.boolean(),
+    mode: z.enum(['vector', 'like', 'trgm']),
+    endpoint: z.string(),
+    apiKey: z.string(),
+    model: z.string(),
+    similarityThreshold: z.number(),
+    trgmThreshold: z.number(),
+  }),
+  apiKeyMask: z.string().nullable(),
+})
 
 export interface AssetsLoaderShape {
   asset: { host: string; scheme: 'http' | 'https' }
@@ -244,3 +317,10 @@ export function projectMailForAdmin(
     },
   }
 }
+
+// Compile-time parity: the Zod twins above must stay isomorphic to the
+// hand-written interfaces the forms consume, or the runtime gate would be
+// validating a different shape than the one the UI expects.
+type _assetsShapeParity = Assert<Equals<z.infer<typeof assetsLoaderShapeSchema>, AssetsLoaderShape>>
+type _mailShapeParity = Assert<Equals<z.infer<typeof mailLoaderShapeSchema>, MailLoaderShape>>
+type _searchShapeParity = Assert<Equals<z.infer<typeof searchLoaderShapeSchema>, SearchLoaderShape>>

@@ -23,8 +23,6 @@ export interface UseSettingsMutationResult {
     section: Section,
     payload: SettingsSectionPatch<Section>,
   ) => Promise<SettingsCommitResult>
-  /** Reset status to idle. */
-  resetStatus: () => void
   isPending: boolean
   status: 'idle' | 'saving' | 'saved' | 'error'
 }
@@ -68,13 +66,8 @@ export function useSettingsMutation(): UseSettingsMutationResult {
     [updateMutation],
   )
 
-  const resetStatus = useCallback(() => {
-    setStatus('idle')
-  }, [])
-
   return {
     commit,
-    resetStatus,
     isPending: updateMutation.isPending,
     status,
   }

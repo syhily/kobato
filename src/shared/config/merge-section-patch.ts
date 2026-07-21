@@ -8,8 +8,8 @@ function isRecord(value: unknown): value is Record<string, unknown> {
  * Deep-merge a Section patch into a base settings object. Records merge
  * recursively; arrays and every non-record value REPLACE (never concat).
  * This is the single merge implementation for the settings write path:
- * the server applies it to the stored row before validating and the
- * client uses it for the optimistic display projection — do not fork it.
+ * the server applies it to the stored row before validating. The client
+ * display comes from the save response instead — do not fork it.
  */
 export function mergeSectionPatch<T extends object>(
   base: T,
