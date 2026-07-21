@@ -11,7 +11,7 @@ import { resolveSessionContext } from '@/server/domains/auth/primitives'
 import { loadDraftPreviewBySlug } from '@/server/domains/content/lifecycle'
 import { isLive } from '@/server/domains/content/schema'
 import { resolveImageMetaBySources } from '@/server/domains/images/services/enhance'
-import { buildDbPage, findPageBySlug } from '@/server/domains/pages/repo'
+import { findPageBySlug } from '@/server/domains/pages/repo'
 import { pageLifecycleAdapter } from '@/server/domains/pages/services/lifecycle-adapter'
 import { findPublicPostMetaBySlug } from '@/server/domains/posts/repos/single'
 import { ifNoneMatch, notModifiedResponse, weakEtag } from '@/server/infra/http/etag'
@@ -77,12 +77,14 @@ export async function loadPagePreview({
     if (pageLifecycleAdapter.canPreviewDraft(sessionContext.role)) {
       const draftPreview = await loadDraftPreviewBySlug(db, pageLifecycleAdapter, slug)
       if (draftPreview !== null) {
+        // `draftPreview.preview` is already the shared `Page` DTO
+        // (`toCmsPage` returns it directly) — no promotion step.
         if (sourcePage === undefined) {
-          sourcePage = buildDbPage(draftPreview.preview)
+          sourcePage = draftPreview.preview
           draftMarker = 'draft'
         } else if (wantsDraftPreview) {
           if (draftPreview.hasNewerDraft) {
-            sourcePage = buildDbPage(draftPreview.preview)
+            sourcePage = draftPreview.preview
             draftMarker = 'unpublished-draft'
           } else {
             draftMarker = 'published-draft'

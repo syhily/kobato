@@ -1,6 +1,5 @@
 import type { ContentRow, PostMetaRow } from '@/server/infra/db/types'
-import type { PortableTextBody } from '@/shared/pt/schema'
-import type { ClientPost } from '@/shared/types/catalog'
+import type { Post } from '@/shared/types/catalog'
 import type { AdminRevisionDto } from '@/shared/types/revision'
 
 import { readBody, readHeadings } from '@/server/domains/content/projection-helpers'
@@ -9,12 +8,8 @@ import { readStringArray } from '@/shared/utils/tools'
 
 // --- Public catalog projection ----------------------------------------------
 
-export interface CmsPost extends ClientPost {
-  body: PortableTextBody
-  imageSources: string[]
-  publishedRevisionId: bigint | null
-}
-
+// `toCmsPost` returns the shared `Post` DTO directly (`@/shared/types/catalog`)
+// — there is no server-side variant of the shape.
 export function toCmsPost(
   meta: PostMetaRow,
   publishedRevision: ContentRow | null,
@@ -25,7 +20,7 @@ export function toCmsPost(
     tags?: string[]
     categoryName?: string
   } = {},
-): CmsPost {
+): Post {
   const body = publishedRevision !== null ? readBody(publishedRevision.body) : []
   const imageSources = publishedRevision !== null ? readStringArray(publishedRevision.imageSources) : []
   const headings = publishedRevision !== null ? readHeadings(publishedRevision.headings) : []

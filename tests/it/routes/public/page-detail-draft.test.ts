@@ -64,7 +64,6 @@ vi.mock('@/server/domains/pages/repo', () => ({
   findPageMetaById: vi.fn(async () => null),
   findPublicPageMetaBySlug: vi.fn(async () => null),
   findPageBySlug: vi.fn(async (_db: unknown, slug: string) => (slug === 'about' ? publishedPage : null)),
-  buildDbPage: (p: unknown) => p,
 }))
 vi.mock('@/server/domains/posts/repos/public-query/listing', () => ({}))
 vi.mock('@/server/domains/posts/repos/single', () => ({
@@ -200,7 +199,7 @@ describe('routes/page.detail draft preview', () => {
 
   it('shows 【未发布的草稿】 for an admin opening a published page with `?draft=true` when a newer draft exists', async () => {
     currentSession = adminSession()
-    // The service projects the meta + latest draft into a `CmsPage`
+    // The service projects the meta + latest draft into a `Page`
     // whose `body` is the draft. The route then swaps `sourcePage`
     // to that projection so the rendered body is the draft one.
     draftPreviewMock.mockResolvedValueOnce({

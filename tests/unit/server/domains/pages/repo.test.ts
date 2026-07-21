@@ -144,7 +144,6 @@ function fakeDb(rows: unknown[] = []): NodePgDatabase {
 }
 
 import {
-  buildDbPage,
   countPageMetas,
   findPageBySlug,
   findPageMetaById,
@@ -214,34 +213,6 @@ describe('pages repo', () => {
     const db = fakeDb([{ id: 1n, deletedAt: null }])
     expect(await softDeletePageMeta(db, 1n)).toBe(true)
     expect(await restorePageMeta(db, 1n)).toBe(true)
-  })
-
-  it('builds a public page DTO', () => {
-    const cms = {
-      id: 1n,
-      title: 'T',
-      date: new Date(),
-      updated: new Date(),
-      comments: 0,
-      cover: '',
-      coverThumbhash: null,
-      coverWidth: null,
-      coverHeight: null,
-      og: null,
-      published: true,
-      summary: '',
-      toc: [],
-      showUpdated: false,
-      showFriends: false,
-      slug: 's',
-      permalink: '/s',
-      headings: [],
-      body: [],
-      imageSources: [],
-      publishedRevisionId: null,
-    } as never
-    const page = buildDbPage(cms)
-    expect(page.slug).toBe('s')
   })
 
   it('finds a page by slug', async () => {

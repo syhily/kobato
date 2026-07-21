@@ -1,8 +1,10 @@
-import type { ContentEntityAdapter, ForceOverwriteEntry } from '@/server/domains/content/lifecycle'
+import type { ContentEntityAdapter } from '@/server/domains/content/lifecycle'
 import type { PostMetaRow } from '@/server/infra/db/types'
+import type { Post } from '@/shared/types/catalog'
 
+import { recordForceOverwriteAudit } from '@/server/domains/content/lifecycle'
 import { clearContentCaches } from '@/server/domains/content/shared'
-import { toCmsPost, type CmsPost } from '@/server/domains/posts/projection'
+import { toCmsPost } from '@/server/domains/posts/projection'
 import { findPostMetaById, findPublicPostMetaBySlug } from '@/server/domains/posts/repos/single'
 import { indexPost } from '@/server/domains/posts/services/search-index'
 import { assertOwnPostOr404 } from '@/server/domains/posts/services/shared'
@@ -13,7 +15,7 @@ import { hasAtLeast } from '@/shared/utils/roles'
 const log = getLogger('posts.service')
 const auditLog = getLogger('audit.cms.posts')
 
-export const postLifecycleAdapter: ContentEntityAdapter<PostMetaRow, CmsPost> = {
+export const postLifecycleAdapter: ContentEntityAdapter<PostMetaRow, Post> = {
   entityType: 'post',
   findMetaById: findPostMetaById,
   findPublicMetaBySlug: findPublicPostMetaBySlug,
@@ -22,17 +24,7 @@ export const postLifecycleAdapter: ContentEntityAdapter<PostMetaRow, CmsPost> = 
   getId: (meta) => meta.id,
   getPublishedRevisionId: (meta) => meta.publishedRevisionId,
   projectPreview: (meta, revision) => toCmsPost(meta, revision),
-  recordForceOverwrite(entry: ForceOverwriteEntry<PostMetaRow>): void {
-    auditLog.info('force_overwrite_save', {
-      mode: entry.mode,
-      actor: entry.authorId === null ? null : entry.authorId.toString(),
-      postMetaId: entry.meta.id.toString(),
-      overwrittenRevisionId: entry.overwritten.id.toString(),
-      overwrittenRevisionToken: entry.overwritten.clientRevisionToken,
-      clientExpectedToken: entry.expectedClientRevisionToken ?? null,
-      resultRevisionId: entry.resultRow.id.toString(),
-    })
-  },
+  recordForceOverwrite: (entry) => recordForceOverwriteAudit(auditLog, 'postMetaId', entry),
   async afterPublish(db, meta, body, warnings) {
     await clearContentCaches('post', meta.id)
     await invalidateSearchCache()

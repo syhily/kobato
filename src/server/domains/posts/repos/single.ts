@@ -72,6 +72,8 @@ export async function findPostBySlug(db: NodePgDatabase, slug: string): Promise<
     findTagNamesByPostId(db, result.meta.id),
     resolveCategoryName(db, result.meta.categoryId),
   ])
+  // `toCmsPost` returns the shared `Post` DTO directly (no `CmsPost`
+  // variant exists) — hydrate images in place and return as-is.
   const post = toCmsPost(result.meta, result.revision, { tags, categoryName })
   await hydratePostImages(db, [post])
   return post
@@ -86,6 +88,7 @@ export async function findPostBySlugForAdmin(db: NodePgDatabase, slug: string): 
     findTagNamesByPostId(db, result.meta.id),
     resolveCategoryName(db, result.meta.categoryId),
   ])
+  // See `findPostBySlug` — `toCmsPost`'s return already IS the `Post` DTO.
   const post = toCmsPost(result.meta, result.revision, { tags, categoryName })
   await hydratePostImages(db, [post])
   return post

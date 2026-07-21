@@ -1,6 +1,5 @@
 import type { ContentRow, PageMetaRow } from '@/server/infra/db/types'
-import type { PortableTextBody } from '@/shared/pt/schema'
-import type { ClientPage } from '@/shared/types/catalog'
+import type { Page } from '@/shared/types/catalog'
 import type { AdminRevisionDto } from '@/shared/types/revision'
 
 import { readBody, readHeadings } from '@/server/domains/content/projection-helpers'
@@ -8,25 +7,14 @@ import { readStringArray } from '@/shared/utils/tools'
 
 // --- Public catalog projection ----------------------------------------------
 
-// SSR-rendered `Page` DTO returned by the catalog. Mirrors the
-// historical `ClientPage` shape exactly so the public detail route +
-// SEO + feeds carry forward unchanged. The `body` slot now carries
-// PortableText (was MDXContent), and `imageSources` flows from the
-// `content` revision rather than from the MDX AST.
-export interface CmsPage extends ClientPage {
-  /** PortableText payload. Empty array for pages whose published revision is missing. */
-  body: PortableTextBody
-  imageSources: string[]
-  /** The `content.id` whose body is being rendered (used for cache keys / debug). */
-  publishedRevisionId: bigint | null
-}
-
 // `toCmsPage` is the catalog-facing projection: it accepts the meta
 // row joined with the published revision (or null when the page has
-// never been published) and produces the public DTO. Pages without a
-// published revision still surface in the catalog (so the admin can
-// link to them while drafting), but with an empty body and no
-// headings — the public detail route renders an empty body.
+// never been published) and produces the shared `Page` DTO
+// (`@/shared/types/catalog`) directly — there is no server-side variant
+// of the shape. Pages without a published revision still surface in the
+// catalog (so the admin can link to them while drafting), but with an
+// empty body and no headings — the public detail route renders an
+// empty body.
 export function toCmsPage(
   meta: PageMetaRow,
   publishedRevision: ContentRow | null,
@@ -35,7 +23,7 @@ export function toCmsPage(
     coverWidth?: number
     coverHeight?: number
   } = {},
-): CmsPage {
+): Page {
   const body = publishedRevision !== null ? readBody(publishedRevision.body) : []
   const imageSources = publishedRevision !== null ? readStringArray(publishedRevision.imageSources) : []
   const headings = publishedRevision !== null ? readHeadings(publishedRevision.headings) : []

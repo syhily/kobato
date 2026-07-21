@@ -2,7 +2,6 @@ import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
 import { and, desc, eq, getColumns, isNotNull, isNull, or, sql, type SQL } from 'drizzle-orm'
 
-import type { CmsPage } from '@/server/domains/pages/projection'
 import type { NewPageMeta, PageMetaRow } from '@/server/infra/db/types'
 import type { Page } from '@/shared/types/catalog'
 
@@ -244,40 +243,14 @@ async function hydratePageImages(db: NodePgDatabase, pages: Page[]): Promise<voi
   )
 }
 
-// Promote a `CmsPage` (DB-backed projection) into the public `Page` shape.
-export function buildDbPage(page: CmsPage): Page {
-  return {
-    id: page.id,
-    title: page.title,
-    date: page.date,
-    updated: page.updated,
-    comments: page.comments,
-    cover: page.cover,
-    coverThumbhash: page.coverThumbhash,
-    coverWidth: page.coverWidth,
-    coverHeight: page.coverHeight,
-    og: page.og,
-    published: page.published,
-    summary: page.summary,
-    toc: page.toc,
-    showUpdated: page.showUpdated,
-    showFriends: page.showFriends,
-    slug: page.slug,
-    permalink: page.permalink,
-    headings: page.headings,
-    body: page.body,
-    imageSources: page.imageSources,
-    publishedRevisionId: page.publishedRevisionId,
-  }
-}
-
 export async function findPageBySlug(db: NodePgDatabase, slug: string): Promise<Page | null> {
   const meta = await findPublicPageMetaBySlug(db, slug)
   if (meta === null || !isLive(meta)) {
     return null
   }
   const revision = meta.publishedRevisionId === null ? null : await findContentById(db, meta.publishedRevisionId)
-  const page = buildDbPage(toCmsPage(meta, revision))
+  // `toCmsPage` already returns the shared `Page` DTO — no promotion step.
+  const page = toCmsPage(meta, revision)
   await hydratePageImages(db, [page])
   return page
 }
@@ -293,7 +266,7 @@ export async function listAllPages(db: NodePgDatabase): Promise<Page[]> {
   const revisionMap = await hydratePublishedRevisions(db, visible)
   const pages = visible.map((meta) => {
     const revision = meta.publishedRevisionId === null ? null : (revisionMap.get(meta.publishedRevisionId) ?? null)
-    return buildDbPage(toCmsPage(meta, revision))
+    return toCmsPage(meta, revision)
   })
   await hydratePageImages(db, pages)
   return pages

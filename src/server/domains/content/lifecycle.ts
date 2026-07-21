@@ -13,7 +13,7 @@ import { publishLatestRevision, saveDraftRevision } from '@/server/domains/conte
 import { findContentById, findLatestDraft, findLatestRevision } from '@/server/domains/content/repos/query'
 import { canonicalizeBodyOrThrow } from '@/server/domains/content/save-helpers'
 import { syncLibraryImageBlocks } from '@/server/domains/content/services/image-sync'
-import { getLogger } from '@/server/infra/logger'
+import { getLogger, type Logger } from '@/server/infra/logger'
 import { deriveSlug } from '@/server/infra/slug'
 import { collectHeadings, collectImageStoragePaths } from '@/shared/pt/utils'
 
@@ -54,6 +54,29 @@ export interface ForceOverwriteEntry<TMeta> {
   overwritten: ContentRow
   expectedClientRevisionToken?: string | null
   resultRow: ContentRow
+}
+
+/**
+ * Shared `force_overwrite_save` audit payload for the entity adapters'
+ * `recordForceOverwrite`. The only per-entity differences are the logger
+ * scope (`audit.cms.posts` / `audit.cms.pages`) and the meta id key name
+ * (`postMetaId` / `pageMetaId`) — both stay with the caller so the
+ * emitted context keeps its historical shape byte-for-byte.
+ */
+export function recordForceOverwriteAudit<TMeta extends { id: bigint }>(
+  auditLog: Logger,
+  metaIdKey: 'postMetaId' | 'pageMetaId',
+  entry: ForceOverwriteEntry<TMeta>,
+): void {
+  auditLog.info('force_overwrite_save', {
+    mode: entry.mode,
+    actor: entry.authorId === null ? null : entry.authorId.toString(),
+    [metaIdKey]: entry.meta.id.toString(),
+    overwrittenRevisionId: entry.overwritten.id.toString(),
+    overwrittenRevisionToken: entry.overwritten.clientRevisionToken,
+    clientExpectedToken: entry.expectedClientRevisionToken ?? null,
+    resultRevisionId: entry.resultRow.id.toString(),
+  })
 }
 
 export interface SaveBodyInput {

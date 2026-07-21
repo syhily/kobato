@@ -56,7 +56,6 @@ const mockDb = {} as NodePgDatabase
 const mocks = vi.hoisted(() => ({
   findPublicPostMetaBySlug: vi.fn(async (): Promise<unknown> => null),
   findPageBySlug: vi.fn(async (): Promise<unknown> => null),
-  buildDbPage: vi.fn((p: unknown) => p),
   loadDraftPreviewBySlug: vi.fn(async (): Promise<unknown> => null),
   tryGetSessionContext: vi.fn((): unknown => null),
   resolveSessionContext: vi.fn(async () => ({ role: 'anonymous', user: null, session: null })),
@@ -70,7 +69,6 @@ vi.mock('@/server/domains/pages/repo', () => ({
   findPageBySlug: mocks.findPageBySlug,
   findPageMetaById: vi.fn(async () => null),
   findPublicPageMetaBySlug: vi.fn(async () => null),
-  buildDbPage: mocks.buildDbPage,
 }))
 vi.mock('@/server/domains/content/lifecycle', () => ({
   loadDraftPreviewBySlug: mocks.loadDraftPreviewBySlug,

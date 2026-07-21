@@ -67,7 +67,6 @@ vi.mock('@/server/domains/pages/repo', () => ({
     }
     return null
   }),
-  buildDbPage: (p: unknown) => p,
 }))
 vi.mock('@/server/domains/friends/service', () => ({
   listAllFriends: vi.fn(async () => []),
