@@ -24,13 +24,13 @@ const { setBlogSettingsBundleForTests } = await import('@/server/domains/setting
 const { TEST_BLOG_SETTINGS_BUNDLE } = await import('#/_helpers/blog-settings')
 
 // Import the users-domain entry points AFTER the mocks are registered.
-// The invariant under test: these bulk mutations are routed through the
-// comments domain's services, so the sidebar latest-comments cache is
-// cleared just like on the five single-row mutation paths.
+// The invariant under test: these bulk mutations reach the comments
+// domain's repo mutations, which clear the sidebar latest-comments
+// cache inline — forgetting the invalidation is impossible.
 const { bulkApproveCommentsForUser, bulkDeleteCommentsForUser } = await import('@/server/domains/users/services/admin')
-// The admin approve-delete-request path now also goes through the
-// comments domain's services (plan 052).
-const { softDeleteCommentById } = await import('@/server/domains/comments/services/moderate')
+// The admin approve-delete-request path calls the repo mutation
+// directly; the cache invalidation is sunk into the mutation itself.
+const { softDeleteCommentById } = await import('@/server/domains/comments/repos/moderation')
 
 const poolManager = createDbPool()
 const db: NodePgDatabase = poolManager.db
@@ -91,7 +91,7 @@ async function seedComment(userId: bigint, ownerId: bigint, isPending: boolean):
   return rows[0]!.id
 }
 
-describe('comments/services/moderate — bulk mutations clear the sidebar cache', () => {
+describe('comments/repos/moderation — bulk mutations clear the sidebar cache', () => {
   it('users-domain bulk approve invalidates the warmed latest-comments cache', async () => {
     const userId = await seedUser()
     const postId = await seedPost('bulk-approve-target')
@@ -132,7 +132,7 @@ describe('comments/services/moderate — bulk mutations clear the sidebar cache'
   })
 })
 
-describe('comments/services/moderate — approve-delete-request clears the sidebar cache', () => {
+describe('comments/repos/moderation — approve-delete-request clears the sidebar cache', () => {
   it('softDeleteCommentById invalidates the warmed latest-comments cache', async () => {
     const userId = await seedUser()
     const postId = await seedPost('approve-delete-target')

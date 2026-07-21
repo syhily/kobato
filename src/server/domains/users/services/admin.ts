@@ -5,7 +5,7 @@ import type { User } from '@/server/infra/db/types'
 
 import { revokeAllSessionsOfUser } from '@/server/domains/auth/session-storage'
 import { issueResetToken, issueSetupToken } from '@/server/domains/auth/verification-tokens'
-import { bulkApprovePendingByUser, bulkSoftDeleteCommentsByUser } from '@/server/domains/comments/services/moderate'
+import { bulkApprovePendingByUser, bulkSoftDeleteCommentsByUser } from '@/server/domains/comments/repos/moderation'
 import {
   type AdminUserRow,
   type AdminUsersListFilters,

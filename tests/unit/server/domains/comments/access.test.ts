@@ -26,34 +26,34 @@ describe('server/domains/comments/services/access — verifyCommentAccess', () =
   })
 
   it('returns ok when the token proves ownership', async () => {
-    vi.mocked(verifyCommentOwnership).mockResolvedValueOnce({ ok: true, cleaned: cookie })
+    vi.mocked(verifyCommentOwnership).mockResolvedValueOnce({ token: 'tok', cleaned: cookie })
     const result = await verifyCommentAccess(db, cookie, '1')
     expect(result.ok).toBe(true)
     expect(findCommentWithUserById).not.toHaveBeenCalled()
   })
 
   it('falls back to session ownership when token proves nothing', async () => {
-    vi.mocked(verifyCommentOwnership).mockResolvedValueOnce({ ok: false, cleaned: cookie })
+    vi.mocked(verifyCommentOwnership).mockResolvedValueOnce({ token: null, cleaned: cookie })
     vi.mocked(findCommentWithUserById).mockResolvedValueOnce({ userId: 42n } as never)
     const result = await verifyCommentAccess(db, cookie, '1', { id: '42', role: 'visitor' })
     expect(result.ok).toBe(true)
   })
 
   it('returns ok=false when session id does not match the comment author', async () => {
-    vi.mocked(verifyCommentOwnership).mockResolvedValueOnce({ ok: false, cleaned: cookie })
+    vi.mocked(verifyCommentOwnership).mockResolvedValueOnce({ token: null, cleaned: cookie })
     vi.mocked(findCommentWithUserById).mockResolvedValueOnce({ userId: 99n } as never)
     const result = await verifyCommentAccess(db, cookie, '1', { id: '42', role: 'visitor' })
     expect(result.ok).toBe(false)
   })
 
   it('returns ok=false when there is no session and no token ownership', async () => {
-    vi.mocked(verifyCommentOwnership).mockResolvedValueOnce({ ok: false, cleaned: cookie })
+    vi.mocked(verifyCommentOwnership).mockResolvedValueOnce({ token: null, cleaned: cookie })
     const result = await verifyCommentAccess(db, cookie, '1')
     expect(result.ok).toBe(false)
   })
 
   it('returns ok=false when the comment does not exist', async () => {
-    vi.mocked(verifyCommentOwnership).mockResolvedValueOnce({ ok: false, cleaned: cookie })
+    vi.mocked(verifyCommentOwnership).mockResolvedValueOnce({ token: null, cleaned: cookie })
     vi.mocked(findCommentWithUserById).mockResolvedValueOnce(null as never)
     const result = await verifyCommentAccess(db, cookie, '1', { id: '42', role: 'visitor' })
     expect(result.ok).toBe(false)

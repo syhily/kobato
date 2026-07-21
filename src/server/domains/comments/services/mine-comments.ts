@@ -8,6 +8,7 @@ import { countMyComments, listMyComments } from '@/server/domains/comments/repos
 import { findParentCommentsByIds } from '@/server/domains/comments/repos/public-query/by-id'
 import { resolveEntitiesForComments } from '@/server/domains/comments/repos/public-query/entities'
 import { mineSoftDeleteCutoff } from '@/server/domains/comments/repos/shared'
+import { entityPermalink } from '@/server/domains/comments/services/shared'
 
 export interface MineCommentItem {
   id: string
@@ -27,10 +28,6 @@ export interface LoadMineCommentsResult {
 }
 
 const EXCERPT_LIMIT = 80
-
-function entityPermalink(type: EntityType, slug: string): string {
-  return type === 'post' ? `/posts/${slug}` : `/${slug}`
-}
 
 function makeExcerpt(raw: string): string {
   const trimmed = raw.trim()

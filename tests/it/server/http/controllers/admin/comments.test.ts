@@ -13,9 +13,12 @@ vi.mock('@/server/domains/comments/services/admin-query', () => ({
 }))
 
 vi.mock('@/server/domains/comments/services/moderate', () => ({
-  adminClearDeleteRequest: vi.fn(),
   approveComment: vi.fn(),
-  deleteComment: vi.fn(),
+}))
+
+vi.mock('@/server/domains/comments/repos/moderation', () => ({
+  adminClearDeleteRequest: vi.fn(),
+  deleteCommentById: vi.fn(),
   softDeleteCommentById: vi.fn(),
 }))
 
@@ -29,6 +32,7 @@ vi.mock('@/server/domains/comments/repos/public-query/by-id', () => ({
 
 const adminQuery = await import('@/server/domains/comments/services/admin-query')
 const moderate = await import('@/server/domains/comments/services/moderate')
+const moderationRepo = await import('@/server/domains/comments/repos/moderation')
 const projection = await import('@/server/domains/comments/projection')
 const queryRepo = await import('@/server/domains/comments/repos/public-query/by-id')
 const { adminCommentsRouter } = await import('@/server/http/controllers/admin/comments.controller')
@@ -82,7 +86,7 @@ describe('adminCommentsRouter.approve', () => {
 
 describe('adminCommentsRouter.delete', () => {
   it('resolves to undefined on success', async () => {
-    vi.mocked(moderate.deleteComment).mockResolvedValueOnce(undefined)
+    vi.mocked(moderationRepo.deleteCommentById).mockResolvedValueOnce(undefined)
     const ctx = makeAuthedCtx()
     const res = await call(adminCommentsRouter.delete, { commentId: '1' }, { context: ctx })
     expect(res).toBeUndefined()
@@ -261,7 +265,7 @@ describe('adminCommentsRouter.approveCommentDeletion', () => {
     vi.mocked(queryRepo.findCommentWithUserById).mockResolvedValueOnce({
       deleteRequestedAt: new Date(),
     } as unknown as Awaited<ReturnType<typeof queryRepo.findCommentWithUserById>>)
-    vi.mocked(moderate.softDeleteCommentById).mockResolvedValueOnce(undefined)
+    vi.mocked(moderationRepo.softDeleteCommentById).mockResolvedValueOnce(undefined)
     const ctx = makeAuthedCtx()
     const res = await call(
       adminCommentsRouter.approveCommentDeletion,
@@ -295,7 +299,7 @@ describe('adminCommentsRouter.approveCommentDeletion', () => {
     vi.mocked(queryRepo.findCommentWithUserById).mockResolvedValueOnce({
       deleteRequestedAt: new Date(),
     } as unknown as Awaited<ReturnType<typeof queryRepo.findCommentWithUserById>>)
-    vi.mocked(moderate.adminClearDeleteRequest).mockResolvedValueOnce(true)
+    vi.mocked(moderationRepo.adminClearDeleteRequest).mockResolvedValueOnce(true)
     const ctx = makeAuthedCtx()
     const res = await call(
       adminCommentsRouter.approveCommentDeletion,
@@ -303,8 +307,8 @@ describe('adminCommentsRouter.approveCommentDeletion', () => {
       { context: ctx },
     )
     expect(res).toEqual({ success: true })
-    expect(moderate.adminClearDeleteRequest).toHaveBeenCalledWith(ctx.db, 1n)
-    expect(moderate.softDeleteCommentById).not.toHaveBeenCalled()
+    expect(moderationRepo.adminClearDeleteRequest).toHaveBeenCalledWith(ctx.db, 1n)
+    expect(moderationRepo.softDeleteCommentById).not.toHaveBeenCalled()
   })
 })
 

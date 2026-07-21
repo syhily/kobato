@@ -3,7 +3,11 @@ import { z } from 'zod'
 import { asCommentItemsWire } from '@/server/domains/comments/projection'
 import { findCommentsByIds } from '@/server/domains/comments/repos/public-query/by-id'
 import { parseComments } from '@/server/domains/comments/services/public-query'
-import { cleanupExpiredTokens, revokeCommentToken } from '@/server/domains/comments/services/token'
+import {
+  cleanupExpiredTokens,
+  revokeCommentToken,
+  verifyCommentOwnership,
+} from '@/server/domains/comments/services/token'
 import { publicProc } from '@/server/http/orpc-base'
 import { commentItemDto } from '@/shared/contracts/comments'
 import { parseCommentTokensCookie, serializeCommentTokensCookie } from '@/shared/utils/comment-token'
@@ -17,15 +21,10 @@ const revokeToken = publicProc
   .output(successOutput)
   .handler(async ({ input, context }) => {
     const cookie = parseCommentTokensCookie(context.request.headers.get('Cookie'))
-    const { cleaned, validEntries } = await cleanupExpiredTokens(cookie)
-    let targetToken: string | null = null
-    for (const entry of validEntries) {
-      if (entry.payload.commentId === input.rid) {
-        targetToken = entry.token
-        break
-      }
-    }
-    if (targetToken) {
+    // `verifyCommentOwnership` runs the same cleanup + token-match loop;
+    // the matched token is the one to revoke.
+    const { cleaned, token: targetToken } = await verifyCommentOwnership(cookie, input.rid)
+    if (targetToken !== null) {
       await revokeCommentToken(targetToken)
     }
     const next: typeof cleaned = {}

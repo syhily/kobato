@@ -3,6 +3,11 @@ import { z } from 'zod'
 
 import { recordAuditEventFromContext } from '@/server/domains/audit/services/record'
 import { asAdminCommentsWire } from '@/server/domains/comments/projection'
+import {
+  adminClearDeleteRequest,
+  deleteCommentById,
+  softDeleteCommentById,
+} from '@/server/domains/comments/repos/moderation'
 import { findCommentWithUserById } from '@/server/domains/comments/repos/public-query/by-id'
 import {
   loadAdminPendingDashboard,
@@ -10,12 +15,7 @@ import {
   searchAuthorOptions,
   searchPageOptions,
 } from '@/server/domains/comments/services/admin-query'
-import {
-  adminClearDeleteRequest,
-  approveComment,
-  deleteComment,
-  softDeleteCommentById,
-} from '@/server/domains/comments/services/moderate'
+import { approveComment } from '@/server/domains/comments/services/moderate'
 import { adminProc } from '@/server/http/orpc-base'
 import { adminCommentDto, adminPendingDashboardDto } from '@/shared/contracts/comments'
 import { idFromString } from '@/shared/utils/id'
@@ -38,7 +38,7 @@ const deleteOne = adminProc
   .input(z.object({ commentId: z.string() }))
   .output(z.void())
   .handler(async ({ input, context }) => {
-    await deleteComment(context.db, input.commentId)
+    await deleteCommentById(context.db, idFromString(input.commentId))
     recordAuditEventFromContext(context, {
       action: 'comment_deleted',
       resourceType: 'comment',

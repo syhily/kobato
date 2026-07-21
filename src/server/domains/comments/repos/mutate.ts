@@ -4,6 +4,7 @@ import { and, eq } from 'drizzle-orm'
 
 import type { Comment, NewComment } from '@/server/infra/db/types'
 
+import { clearLatestCommentsCache } from '@/server/domains/comments/cache'
 import { comment } from '@/server/infra/db/schema/comment'
 
 export async function insertComment(db: NodePgDatabase, values: NewComment): Promise<Comment | null> {
@@ -15,6 +16,12 @@ export async function updateCommentContent(db: NodePgDatabase, id: bigint, conte
   await db.update(comment).set({ content }).where(eq(comment.id, id))
 }
 
+// Like `repos/moderation.ts`, the mutations below clear the sidebar
+// latest-comments cache inline so no caller can forget it. The
+// optimistic-lock pair clears only when a row was actually updated —
+// a conflicting write (0 rows) leaves the cache alone, matching the
+// historical service-level behaviour where the CONFLICT throw happened
+// before the clear.
 export async function updateCommentBodyAndContent(
   db: NodePgDatabase,
   id: bigint,
@@ -22,6 +29,7 @@ export async function updateCommentBodyAndContent(
   content: string,
 ): Promise<void> {
   await db.update(comment).set({ body, content }).where(eq(comment.id, id))
+  await clearLatestCommentsCache()
 }
 
 // Fresh-edit variant of `comment.updateOwn`: an owner editing their own
@@ -41,7 +49,11 @@ export async function updateOwnCommentBody(
     .update(comment)
     .set({ body, content, updatedAt: new Date() })
     .where(and(eq(comment.id, id), eq(comment.updatedAt, expectedUpdatedAt)))
-  return result.rowCount ?? 0
+  const affected = result.rowCount ?? 0
+  if (affected > 0) {
+    await clearLatestCommentsCache()
+  }
+  return affected
 }
 
 // Re-pend variant of `comment.updateOwn`: when an owner edits their own
@@ -62,5 +74,9 @@ export async function updateOwnCommentBodyAndPending(
     .update(comment)
     .set({ body, content, isPending: true, updatedAt: new Date() })
     .where(and(eq(comment.id, id), eq(comment.updatedAt, expectedUpdatedAt)))
-  return result.rowCount ?? 0
+  const affected = result.rowCount ?? 0
+  if (affected > 0) {
+    await clearLatestCommentsCache()
+  }
+  return affected
 }

@@ -3,18 +3,8 @@ import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 import type { CommentBody } from '@/shared/pt/comment-schema'
 
 import { withCommentBadgeTextColor } from '@/server/domains/comments/badge'
-import { clearLatestCommentsCache } from '@/server/domains/comments/cache'
 import { findCommentWithUserAndTarget } from '@/server/domains/comments/repos/admin-query'
-import {
-  adminClearDeleteRequest as adminClearDeleteRequestRepo,
-  approveCommentById,
-  bulkApprovePendingByUser as bulkApprovePendingByUserRepo,
-  bulkSoftDeleteCommentsByUser as bulkSoftDeleteCommentsByUserRepo,
-  clearDeleteRequest as clearDeleteRequestRepo,
-  deleteCommentById,
-  requestDeleteComment as requestDeleteCommentRepo,
-  softDeleteCommentById as softDeleteCommentByIdRepo,
-} from '@/server/domains/comments/repos/moderation'
+import { approveCommentById } from '@/server/domains/comments/repos/moderation'
 import {
   updateCommentBodyAndContent,
   updateOwnCommentBody,
@@ -32,10 +22,13 @@ import { idFromString } from '@/shared/utils/id'
 const adminLog = getLogger('comments.admin')
 const OWN_EDIT_GRACE_MS = 30 * 60 * 1000
 
+// The sidebar latest-comments cache is invalidated inside the repo
+// mutations themselves (`repos/moderation.ts`, `repos/mutate.ts`), so
+// the service layer has no cache calls to forget.
+
 export async function approveComment(db: NodePgDatabase, rid: string) {
   const id = idFromString(rid)
   await approveCommentById(db, id)
-  await clearLatestCommentsCache()
   const c = await findCommentWithUserAndTarget(db, id)
   if (c) {
     const target = asCommentTarget(c.comment.type, c.comment.ownerId)
@@ -47,60 +40,10 @@ export async function approveComment(db: NodePgDatabase, rid: string) {
   }
 }
 
-export async function deleteComment(db: NodePgDatabase, rid: string) {
-  await deleteCommentById(db, idFromString(rid))
-  await clearLatestCommentsCache()
-}
-
-// Bulk entry points called by the users domain's admin actions. Same
-// invariant as the single-row paths above: every mutation clears the
-// sidebar latest-comments cache.
-export async function bulkApprovePendingByUser(db: NodePgDatabase, userId: bigint): Promise<number> {
-  const approved = await bulkApprovePendingByUserRepo(db, userId)
-  await clearLatestCommentsCache()
-  return approved
-}
-
-export async function bulkSoftDeleteCommentsByUser(db: NodePgDatabase, userId: bigint): Promise<number> {
-  const deleted = await bulkSoftDeleteCommentsByUserRepo(db, userId)
-  await clearLatestCommentsCache()
-  return deleted
-}
-
-// Admin approval of a delete request sets deletedAt, so the sidebar
-// latest-comments cache must be cleared like on the paths above.
-export async function softDeleteCommentById(db: NodePgDatabase, id: bigint): Promise<void> {
-  await softDeleteCommentByIdRepo(db, id)
-  await clearLatestCommentsCache()
-}
-
-// No cache clear: only touches deleteRequestedAt, which the sidebar
-// latest-comments query does not filter on.
-export async function adminClearDeleteRequest(db: NodePgDatabase, id: bigint): Promise<boolean> {
-  return adminClearDeleteRequestRepo(db, id)
-}
-
-// No cache clear: only touches deleteRequestedAt, which the sidebar
-// latest-comments query does not filter on.
-export async function requestDeleteComment(db: NodePgDatabase, id: bigint, userId: bigint): Promise<void> {
-  await requestDeleteCommentRepo(db, id, userId)
-}
-
-// No cache clear: only touches deleteRequestedAt, which the sidebar
-// latest-comments query does not filter on.
-export async function clearDeleteRequest(db: NodePgDatabase, id: bigint, userId: bigint): Promise<boolean> {
-  return clearDeleteRequestRepo(db, id, userId)
-}
-
-export async function getCommentById(db: NodePgDatabase, rid: string) {
-  return findCommentWithUserById(db, idFromString(rid))
-}
-
 export async function updateComment(db: NodePgDatabase, rid: string, newBody: CommentBody) {
   const id = idFromString(rid)
   const { body, content } = await canonicalizeCommentBody(newBody)
   await updateCommentBodyAndContent(db, id, body, content)
-  await clearLatestCommentsCache()
 
   const r = await findCommentWithUserById(db, id)
   if (r === null) {
@@ -149,6 +92,5 @@ export async function updateOwnComment(db: NodePgDatabase, rid: string, newBody:
     }
   }
 
-  await clearLatestCommentsCache()
   return { ...withCommentBadgeTextColor(r), content: null }
 }

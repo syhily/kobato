@@ -55,12 +55,11 @@ vi.mock('@/server/render/avatar/cache', () => ({
 vi.mock('@/server/domains/comments/services/token', () => ({
   appendCommentToken: vi.fn(),
   issueCommentToken: vi.fn(),
-  verifyCommentOwnership: vi.fn().mockResolvedValue({ ok: false, cleaned: [] }),
+  verifyCommentOwnership: vi.fn().mockResolvedValue({ token: null, cleaned: [] }),
 }))
 
 vi.mock('@/server/domains/comments/services/moderate', () => ({
   updateComment: vi.fn(),
-  getCommentById: vi.fn(),
 }))
 
 vi.mock('@/server/domains/comments/repos/public-query/by-id', () => ({

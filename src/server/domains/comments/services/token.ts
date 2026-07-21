@@ -155,18 +155,19 @@ export function appendCommentToken(
 }
 
 /**
- * Check whether the caller owns the given comment via a valid token.
- * Returns the cleaned cookie (for Set-Cookie refresh) and a boolean.
+ * Find the caller's valid token for the given comment, if any.
+ * Returns the matching token (so callers can act on it, e.g. revoke)
+ * or `null`, plus the cleaned cookie (for Set-Cookie refresh).
  */
 export async function verifyCommentOwnership(
   cookie: CommentTokenCookie,
   commentId: string,
-): Promise<{ ok: boolean; cleaned: CommentTokenCookie }> {
+): Promise<{ token: string | null; cleaned: CommentTokenCookie }> {
   const { cleaned, validEntries } = await cleanupExpiredTokens(cookie)
   for (const entry of validEntries) {
     if (entry.payload.commentId === commentId) {
-      return { ok: true, cleaned }
+      return { token: entry.token, cleaned }
     }
   }
-  return { ok: false, cleaned }
+  return { token: null, cleaned }
 }

@@ -18,26 +18,39 @@ export interface MetricTarget {
   ownerId: bigint
 }
 
+/** Narrow a database `type` column to the entity types that comments can
+ *  attach to. Returns `null` when either argument is null or the type is
+ *  neither `'post'` nor `'page'` (caller decides how to handle).
+ *  Centralises the check so call sites don't need `as` casts — the
+ *  throwing wrapper is `resolveMetricTarget`. */
+export function asCommentTarget(type: string | null, ownerId: bigint | null): MetricTarget | null {
+  if (type === null || ownerId === null) {
+    return null
+  }
+  if (type !== 'post' && type !== 'page') {
+    return null
+  }
+  return { type, ownerId }
+}
+
 export async function resolveMetricTarget(db: NodePgDatabase, key: string): Promise<MetricTarget> {
   const row = await findMetricByPublicId(db, key)
   if (row === null || row.type === null || row.ownerId === null) {
     throw new DomainError('NOT_FOUND', '评论目标不存在')
   }
-  if (row.type !== 'post' && row.type !== 'page') {
+  const target = asCommentTarget(row.type, row.ownerId)
+  if (target === null) {
     throw new DomainError('BAD_REQUEST', '无效的评论目标类型')
   }
-  return { type: row.type, ownerId: row.ownerId }
+  return target
 }
 
 export async function safeResolveMetricTarget(db: NodePgDatabase, key: string): Promise<MetricTarget | null> {
   const row = await findMetricByPublicId(db, key)
-  if (row === null || row.type === null || row.ownerId === null) {
+  if (row === null) {
     return null
   }
-  if (row.type !== 'post' && row.type !== 'page') {
-    return null
-  }
-  return { type: row.type, ownerId: row.ownerId }
+  return asCommentTarget(row.type, row.ownerId)
 }
 
 export function trimSiteSuffix(title: string | null): string {
@@ -62,23 +75,6 @@ export function toLatestComment(row: PendingCommentRow): LatestComment {
     authorLink: row.authorLink ?? '',
     permalink: `${path}#user-comment-${row.id}`,
   }
-}
-
-/** Narrow a database `type` column to the entity types that comments can
- *  attach to. Throws if the value is neither `'post'` nor `'page'`;
- *  returns `null` when either argument is null (caller decides how to
- *  handle). Centralises the check so call sites don't need `as` casts. */
-export function asCommentTarget(
-  type: string | null,
-  ownerId: bigint | null,
-): { type: 'post' | 'page'; ownerId: bigint } | null {
-  if (type === null || ownerId === null) {
-    return null
-  }
-  if (type !== 'post' && type !== 'page') {
-    return null
-  }
-  return { type, ownerId }
 }
 
 export async function ensureCommentPage(

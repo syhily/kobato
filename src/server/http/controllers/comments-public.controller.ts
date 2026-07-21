@@ -6,9 +6,10 @@ import type { CommentReq } from '@/shared/types/comments'
 import { recordAuditEventFromContext } from '@/server/domains/audit/services/record'
 import { userSession } from '@/server/domains/auth/primitives'
 import { asCommentItemWire, asCommentItemsWire } from '@/server/domains/comments/projection'
+import { findCommentWithUserById } from '@/server/domains/comments/repos/public-query/by-id'
 import { commentReplySchema, commentRidSchema } from '@/server/domains/comments/schema'
 import { verifyCommentAccess } from '@/server/domains/comments/services/access'
-import { getCommentById, updateComment } from '@/server/domains/comments/services/moderate'
+import { updateComment } from '@/server/domains/comments/services/moderate'
 import { createComment } from '@/server/domains/comments/services/mutate'
 import { loadComments, parseComments } from '@/server/domains/comments/services/public-query'
 import { resolveMetricTarget } from '@/server/domains/comments/services/shared'
@@ -20,6 +21,7 @@ import { requireBlogSettingsSection } from '@/shared/config/getters'
 import { commentItemDto } from '@/shared/contracts/comments'
 import { commentBodySchema } from '@/shared/pt/comment-schema'
 import { parseCommentTokensCookie, serializeCommentTokensCookie } from '@/shared/utils/comment-token'
+import { idFromString } from '@/shared/utils/id'
 
 const replyComment = publicProc
   .route({ method: 'POST', path: '/comments/reply' })
@@ -101,7 +103,7 @@ const getRaw = publicProc
       throw new ORPCError('FORBIDDEN', { message: '无权查看该评论' })
     }
     responseHeaders.append('Set-Cookie', serializeCommentTokensCookie(cleaned))
-    const comment = await getCommentById(context.db, input.rid)
+    const comment = await findCommentWithUserById(context.db, idFromString(input.rid))
     if (!comment) {
       throw new ORPCError('NOT_FOUND', { message: '评论不存在' })
     }

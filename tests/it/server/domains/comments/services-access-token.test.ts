@@ -60,16 +60,16 @@ async function seedComment(opts: Partial<typeof comment.$inferInsert> = {}): Pro
   return rows[0]!.id
 }
 
-describe('comments/services/moderate — getCommentById', () => {
+describe('comments/repos/public-query — findCommentWithUserById', () => {
   it('returns null when the comment does not exist', async () => {
-    const { getCommentById } = await import('@/server/domains/comments/services/moderate')
-    expect(await getCommentById(db, '9999')).toBeNull()
+    const { findCommentWithUserById } = await import('@/server/domains/comments/repos/public-query/by-id')
+    expect(await findCommentWithUserById(db, 9999n)).toBeNull()
   })
   it('returns the comment with the user join', async () => {
     const u1 = await seedUser()
     const id = await seedComment({ userId: u1 })
-    const { getCommentById } = await import('@/server/domains/comments/services/moderate')
-    const r = await getCommentById(db, String(id))
+    const { findCommentWithUserById } = await import('@/server/domains/comments/repos/public-query/by-id')
+    const r = await findCommentWithUserById(db, id)
     expect(r?.name).toBe('Alice')
   })
 })
@@ -87,12 +87,12 @@ describe('comments/services/moderate — approveComment', () => {
   })
 })
 
-describe('comments/services/moderate — deleteComment', () => {
+describe('comments/repos/moderation — deleteCommentById', () => {
   it('hard-deletes the row', async () => {
     const u1 = await seedUser()
     const id = await seedComment({ userId: u1 })
-    const { deleteComment } = await import('@/server/domains/comments/services/moderate')
-    await deleteComment(db, String(id))
+    const { deleteCommentById } = await import('@/server/domains/comments/repos/moderation')
+    await deleteCommentById(db, id)
     const rows = await db.select({ id: comment.id }).from(comment)
     expect(rows).toHaveLength(0)
   })
@@ -294,22 +294,22 @@ describe('comments/services/token — cleanupExpiredTokens', () => {
 })
 
 describe('comments/services/token — verifyCommentOwnership', () => {
-  it('returns ok=false when no token list is supplied', async () => {
+  it('returns token=null when no token list is supplied', async () => {
     const { verifyCommentOwnership } = await import('@/server/domains/comments/services/token')
     const r = await verifyCommentOwnership({}, '7')
-    expect(r.ok).toBe(false)
+    expect(r.token).toBeNull()
   })
-  it('returns ok=true when a backed token matches the commentId', async () => {
+  it('returns the matched token when a backed token matches the commentId', async () => {
     const { issueCommentToken, verifyCommentOwnership } = await import('@/server/domains/comments/services/token')
     const token = await issueCommentToken(77n, 7n, 'post:1', 60)
     const r = await verifyCommentOwnership({ 'post:1': [{ token, expiresAt: Date.now() + 60_000 }] }, '77')
-    expect(r.ok).toBe(true)
+    expect(r.token).toBe(token)
   })
-  it('returns ok=false when the backed token does not match the commentId', async () => {
+  it('returns token=null when the backed token does not match the commentId', async () => {
     const { issueCommentToken, verifyCommentOwnership } = await import('@/server/domains/comments/services/token')
     const token = await issueCommentToken(111n, 7n, 'post:1', 60)
     const r = await verifyCommentOwnership({ 'post:1': [{ token, expiresAt: Date.now() + 60_000 }] }, '222')
-    expect(r.ok).toBe(false)
+    expect(r.token).toBeNull()
   })
 })
 
