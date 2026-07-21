@@ -15,7 +15,7 @@ import {
   resolveSessionMaxAge,
   type SessionUser,
 } from '@/server/domains/auth/session-storage'
-import { findUserById, updateLastLogin, verifyUserPassword } from '@/server/infra/db/operations/user'
+import { findUserById, updateLastLogin } from '@/server/infra/db/operations/user'
 import { DomainError } from '@/server/infra/http/errors'
 import { getLogger } from '@/server/infra/logger'
 import { redisInstance } from '@/server/infra/redis/storage'
@@ -39,6 +39,16 @@ export interface EstablishedLoginSession {
   setCookie: string
 }
 
+/**
+ * Establish a login session after ANY successful credential check
+ * (password / OTP / passkey / setup). This function owns the ENTIRE
+ * login side-effect surface: it destroys the anonymous session, mints
+ * the new sid, writes `last_login`, and records the `login` audit event
+ * (attributed to the NEW sid). Callers MUST NOT re-write last_login or
+ * record a second login audit — doing so double-writes and (before this
+ * contract was made explicit) attributed the duplicate audit to the
+ * just-destroyed anonymous sid.
+ */
 export async function establishLoginSession(
   db: NodePgDatabase,
   session: BlogSession,
@@ -103,30 +113,6 @@ export async function establishLoginSession(
   })
 
   return { sid, setCookie }
-}
-
-export async function login(
-  db: NodePgDatabase,
-  {
-    email,
-    password,
-    session,
-    request,
-    clientAddress,
-  }: {
-    email: string
-    password: string
-    session: BlogSession
-    request: Request
-    clientAddress: string
-  },
-): Promise<EstablishedLoginSession | null> {
-  const user = await verifyUserPassword(db, email, password)
-  if (user === null || !user.role) {
-    // Users without a role cannot log in (anonymous placeholder accounts).
-    return null
-  }
-  return establishLoginSession(db, session, user, request, clientAddress)
 }
 
 export function userSession(session: BlogSession): SessionUser | undefined {
