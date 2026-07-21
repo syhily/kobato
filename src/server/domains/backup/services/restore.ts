@@ -57,12 +57,11 @@ export async function extractBackupSql(buffer: Buffer, fileName: string): Promis
   throw new ActionFailure(400, '不支持的备份文件格式，仅支持 .sql 或 .gz')
 }
 
-export const TIMESCALEDB_VERSION_RE = /^\d+\.\d+\.\d+$/
-
-export function validateSemverForSql(version: string): boolean {
-  const parts = version.split('.')
-  return parts.length === 3 && parts.every((p) => /^\d+$/.test(p))
-}
+// Single semver gate for the dumped TimescaleDB version: the parse site is
+// the only place the value enters the process, and it throws on anything
+// that is not `x.y.z`, so downstream consumers (e.g. the ALTER EXTENSION
+// literal below) can trust the shape without re-validating.
+const TIMESCALEDB_VERSION_RE = /^\d+\.\d+\.\d+$/
 
 export function readTimescaleVersionFromDump(sql: string): string | null {
   const block = /COPY _timescaledb_catalog\.metadata[^\n]*\n([\s\S]*?)^\\\.$/m.exec(sql)
@@ -181,13 +180,11 @@ END $$;`
               to: dumpedVersion,
             })
             try {
-              if (!validateSemverForSql(dumpedVersion)) {
-                throw new ActionFailure(400, 'TimescaleDB 版本号格式非法，无法执行扩展升级。')
-              }
-              // dumpedVersion is validated to /^\d+\.\d+\.\d+$/ above, so it is
-              // safe to inline as a literal. ALTER EXTENSION ... UPDATE TO does
-              // NOT accept a bind parameter, so drizzleSql`... ${v}` (which emits
-              // `$1`) fails at runtime — use sql.raw with the validated literal.
+              // dumpedVersion is validated to /^\d+\.\d+\.\d+$/ by
+              // readTimescaleVersionFromDump, so it is safe to inline as a
+              // literal. ALTER EXTENSION ... UPDATE TO does NOT accept a
+              // bind parameter, so drizzleSql`... ${v}` (which emits `$1`)
+              // fails at runtime — use sql.raw with the validated literal.
               await db.execute(drizzleSql.raw(`ALTER EXTENSION timescaledb UPDATE TO '${dumpedVersion}'`))
             } catch (err) {
               log.warn('Failed to upgrade timescaledb extension before post_restore', {

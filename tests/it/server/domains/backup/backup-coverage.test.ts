@@ -11,12 +11,7 @@ import {
   deleteBackup,
   listBackups,
 } from '@/server/domains/backup/services/backup'
-import {
-  extractBackupSql,
-  validateSemverForSql,
-  readTimescaleVersionFromDump,
-  TIMESCALEDB_VERSION_RE,
-} from '@/server/domains/backup/services/restore'
+import { extractBackupSql, readTimescaleVersionFromDump } from '@/server/domains/backup/services/restore'
 import { getPgConnectionOptions, MAX_SQL_SIZE } from '@/server/domains/backup/services/shared'
 import { validateBackupSql } from '@/server/domains/backup/services/validate'
 import { createDbPool, closePool } from '@/server/infra/db/pool'
@@ -167,17 +162,6 @@ describe('backup/restore — extractBackupSql', () => {
 })
 
 describe('backup/restore — version helpers', () => {
-  it('validateSemverForSql accepts x.y.z', () => {
-    expect(validateSemverForSql('2.13.1')).toBe(true)
-    expect(validateSemverForSql('2.13')).toBe(false)
-    expect(validateSemverForSql('2.13.1-rc')).toBe(false)
-  })
-
-  it('TIMESCALEDB_VERSION_RE matches plain semver', () => {
-    expect(TIMESCALEDB_VERSION_RE.test('2.13.1')).toBe(true)
-    expect(TIMESCALEDB_VERSION_RE.test('2.13.1-dev')).toBe(false)
-  })
-
   it('readTimescaleVersionFromDump returns null when no COPY block exists', () => {
     expect(readTimescaleVersionFromDump('-- no metadata\nSELECT 1;')).toBeNull()
   })
