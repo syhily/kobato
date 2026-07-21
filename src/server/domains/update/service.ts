@@ -1,16 +1,41 @@
 // Self-update service — the interface the admin procedures mount
-// (plan 090). Orchestration only: release lookup + gate evaluation +
-// version comparison live in their own modules; the job state machine
-// lives in `job.ts`.
+// (plan 090). Orchestration: release lookup + gate evaluation + version
+// comparison; the job state machine lives in `job.ts` and the controller
+// reads its status reader directly.
 
-import type { UpdateCheckResult, UpdateJobStatus } from '@/shared/types/update'
+import type { UpdateCheckResult } from '@/shared/types/update'
 
 import { evaluateSelfUpdateGate } from '@/server/domains/update/gate'
-import { getUpdateJobStatus as readUpdateJobStatus, startUpdateJob } from '@/server/domains/update/job'
+import { startUpdateJob } from '@/server/domains/update/job'
 import { fetchLatestRelease } from '@/server/domains/update/release'
-import { isNewerVersion } from '@/server/domains/update/version'
 import { DomainError } from '@/server/infra/http/errors'
 import { APP_VERSION } from '@/shared/config/version'
+
+// Semver-lite comparison for release tags (plan 090). Strips a leading `v`,
+// compares numeric `x.y.z` triples; pre-release suffixes beyond the dev gate
+// (`-dev` is refused upstream by the self-update gate) are ignored.
+function parseTriple(version: string): [number, number, number] {
+  const core = version.replace(/^v/, '').split('-', 2)[0] ?? ''
+  const parts = core.split('.')
+  const nums: number[] = []
+  for (let i = 0; i < 3; i++) {
+    const n = Number.parseInt(parts[i] ?? '', 10)
+    nums.push(Number.isNaN(n) ? 0 : n)
+  }
+  return [nums[0]!, nums[1]!, nums[2]!]
+}
+
+export function isNewerVersion(latest: string, current: string): boolean {
+  const [lx, ly, lz] = parseTriple(latest)
+  const [cx, cy, cz] = parseTriple(current)
+  if (lx !== cx) {
+    return lx > cx
+  }
+  if (ly !== cy) {
+    return ly > cy
+  }
+  return lz > cz
+}
 
 export async function checkForUpdate(): Promise<UpdateCheckResult> {
   const gate = evaluateSelfUpdateGate()
@@ -37,8 +62,4 @@ export async function applyUpdate(): Promise<{ fromVersion: string; toVersion: s
   }
   startUpdateJob(check.tagName)
   return { fromVersion: check.currentVersion, toVersion: check.latestVersion }
-}
-
-export function getUpdateJobStatus(): UpdateJobStatus {
-  return readUpdateJobStatus()
 }

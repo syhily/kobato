@@ -7,10 +7,11 @@ import { DomainError } from '@/server/infra/http/errors'
 const serviceMocks = vi.hoisted(() => ({
   checkForUpdate: vi.fn(),
   applyUpdate: vi.fn(),
-  getUpdateJobStatus: vi.fn(),
 }))
+const jobMocks = vi.hoisted(() => ({ getUpdateJobStatus: vi.fn() }))
 
 vi.mock('@/server/domains/update/service', () => serviceMocks)
+vi.mock('@/server/domains/update/job', () => jobMocks)
 
 vi.mock('@/server/domains/audit/services/record', () => ({
   recordAuditEventFromContext: vi.fn(),
@@ -49,7 +50,7 @@ describe('admin update controller', () => {
       reasons: [],
     })
     serviceMocks.applyUpdate.mockResolvedValue({ fromVersion: '6.4.0', toVersion: '6.5.0' })
-    serviceMocks.getUpdateJobStatus.mockReturnValue({ state: 'downloading', targetVersion: 'v6.5.0' })
+    jobMocks.getUpdateJobStatus.mockReturnValue({ state: 'downloading', targetVersion: 'v6.5.0' })
   })
 
   it('check returns the update check result for admins', async () => {

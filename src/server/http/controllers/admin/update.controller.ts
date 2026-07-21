@@ -1,7 +1,8 @@
 import { z } from 'zod'
 
 import { recordAuditEventFromContext } from '@/server/domains/audit/services/record'
-import { applyUpdate, checkForUpdate, getUpdateJobStatus } from '@/server/domains/update/service'
+import { getUpdateJobStatus } from '@/server/domains/update/job'
+import { applyUpdate, checkForUpdate } from '@/server/domains/update/service'
 import { adminProc } from '@/server/http/orpc-base'
 import { updateCheckResultDto, updateJobStatusDto } from '@/shared/contracts/update'
 

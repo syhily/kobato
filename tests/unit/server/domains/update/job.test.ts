@@ -1,10 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const pipelineMocks = vi.hoisted(() => ({ runSelfUpdate: vi.fn() }))
-const restartMocks = vi.hoisted(() => ({ scheduleSelfRestart: vi.fn() }))
 
 vi.mock('@/server/domains/update/pipeline', () => ({ runSelfUpdate: pipelineMocks.runSelfUpdate }))
-vi.mock('@/server/domains/update/restart', () => ({ scheduleSelfRestart: restartMocks.scheduleSelfRestart }))
 
 // job.ts holds module-level job state; reset the registry and re-import per
 // test so each case starts from a clean machine.
@@ -23,10 +21,15 @@ function deferred<T>() {
 }
 
 describe('update/job startUpdateJob', () => {
+  // The restart is injected (see `StartUpdateJobOptions.restart`): a plain
+  // spy replaces the detached-respawn + `process.exit` seam, which must
+  // never fire inside a vitest worker.
+  const restart = vi.fn()
+
   beforeEach(() => {
     vi.resetModules()
     pipelineMocks.runSelfUpdate.mockReset()
-    restartMocks.scheduleSelfRestart.mockReset()
+    restart.mockReset()
   })
 
   it('starts idle', async () => {
@@ -39,7 +42,7 @@ describe('update/job startUpdateJob', () => {
     const gate = deferred<void>()
     pipelineMocks.runSelfUpdate.mockReturnValue(gate.promise)
 
-    job.startUpdateJob('v9.9.9')
+    job.startUpdateJob('v9.9.9', { restart })
     expect(job.getUpdateJobStatus()).toEqual({ state: 'downloading', targetVersion: 'v9.9.9' })
 
     // NB: `vi.resetModules()` gives job.ts its own copy of the errors
@@ -47,7 +50,7 @@ describe('update/job startUpdateJob', () => {
     // assert the DomainError shape by its properties instead.
     let caught: unknown
     try {
-      job.startUpdateJob('v9.9.9')
+      job.startUpdateJob('v9.9.9', { restart })
     } catch (err) {
       caught = err
     }
@@ -56,29 +59,24 @@ describe('update/job startUpdateJob', () => {
     gate.resolve()
   })
 
-  it('tracks pipeline states and schedules the restart on success without exiting the process', async () => {
+  it('tracks pipeline states and schedules the restart on success', async () => {
     const job = await loadJob()
-    const exitSpy = vi.spyOn(process, 'exit').mockImplementation((() => undefined) as never)
-    try {
-      const gate = deferred<void>()
-      pipelineMocks.runSelfUpdate.mockImplementation(({ onState }: { onState: (s: string) => void }) => {
-        onState('verifying')
-        return gate.promise
-      })
+    const gate = deferred<void>()
+    pipelineMocks.runSelfUpdate.mockImplementation(({ onState }: { onState: (s: string) => void }) => {
+      onState('verifying')
+      return gate.promise
+    })
 
-      job.startUpdateJob('v9.9.9')
-      expect(job.getUpdateJobStatus().state).toBe('verifying')
+    job.startUpdateJob('v9.9.9', { restart })
+    expect(job.getUpdateJobStatus().state).toBe('verifying')
 
-      gate.resolve()
-      await vi.waitFor(() => {
-        expect(job.getUpdateJobStatus().state).toBe('restarting')
-      })
-      expect(restartMocks.scheduleSelfRestart).toHaveBeenCalledOnce()
-      // The restart seam is fully mocked: process.exit must never fire in tests.
-      expect(exitSpy).not.toHaveBeenCalled()
-    } finally {
-      exitSpy.mockRestore()
-    }
+    gate.resolve()
+    await vi.waitFor(() => {
+      expect(job.getUpdateJobStatus().state).toBe('restarting')
+    })
+    // The injected spy stands in for the real detached respawn +
+    // `process.exit(0)`; it must be called exactly once, on success only.
+    expect(restart).toHaveBeenCalledOnce()
   })
 
   it('marks the job failed on pipeline error and allows a retry', async () => {
@@ -86,7 +84,7 @@ describe('update/job startUpdateJob', () => {
     const gate = deferred<void>()
     pipelineMocks.runSelfUpdate.mockReturnValue(gate.promise)
 
-    job.startUpdateJob('v9.9.9')
+    job.startUpdateJob('v9.9.9', { restart })
     gate.reject(new Error('更新包校验失败，已中止'))
 
     await vi.waitFor(() => {
@@ -97,12 +95,12 @@ describe('update/job startUpdateJob', () => {
       error: '更新包校验失败，已中止',
       targetVersion: 'v9.9.9',
     })
-    expect(restartMocks.scheduleSelfRestart).not.toHaveBeenCalled()
+    expect(restart).not.toHaveBeenCalled()
 
     // A failed job releases the single-job slot.
     const retry = deferred<void>()
     pipelineMocks.runSelfUpdate.mockReturnValue(retry.promise)
-    job.startUpdateJob('v9.9.10')
+    job.startUpdateJob('v9.9.10', { restart })
     expect(job.getUpdateJobStatus()).toEqual({ state: 'downloading', targetVersion: 'v9.9.10' })
     retry.resolve()
   })

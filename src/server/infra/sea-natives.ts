@@ -25,7 +25,8 @@
 //
 // Dependency discipline: this module runs inside the SEA prelude before
 // the server graph (and its env-validated modules) is available, so it
-// must only import node builtins, `@/server/infra/sea`, and type-only
+// must only import node builtins, `@/server/infra/sea`,
+// `@/shared/sea/assets` (side-effect-free constants), and type-only
 // symbols — never the pino logger or the env facade (both validate env
 // vars at module scope).
 
@@ -36,11 +37,13 @@ import { dirname, join } from 'node:path'
 import type { Logger } from '@/server/infra/logger'
 
 import { getEmbeddedAsset, isSea, resolveCacheDir } from '@/server/infra/sea'
+import {
+  SEA_MANIFEST_KEY,
+  SEA_NATIVE_ASSET_PREFIX,
+  SEA_SERVER_BUNDLE_KEY,
+  SEA_SMOKE_WORKER_BUNDLE_KEY,
+} from '@/shared/sea/assets'
 
-export const SEA_MANIFEST_KEY = 'manifest.json'
-export const SEA_SERVER_BUNDLE_KEY = 'server/server.mjs'
-export const SEA_SMOKE_WORKER_BUNDLE_KEY = 'worker/smoke-worker.cjs'
-const NATIVE_ASSET_PREFIX = 'node_modules/'
 const NOOP_SHIM_CONTENT = 'module.exports = require\n'
 
 export interface SeaManifestFile {
@@ -224,7 +227,7 @@ export function extractNatives(options: ExtractNativesOptions): ExtractNativesRe
   for (const file of manifest.files) {
     // Only native packages are extracted; every other asset stays in the
     // blob and is read from memory via `getEmbeddedAsset`.
-    if (!file.key.startsWith(NATIVE_ASSET_PREFIX)) {
+    if (!file.key.startsWith(SEA_NATIVE_ASSET_PREFIX)) {
       continue
     }
     assertSafeRelativePath(file.path)

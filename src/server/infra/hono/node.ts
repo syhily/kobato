@@ -17,6 +17,7 @@ import { bindIncomingRequestSocketInfo, getBuildMode, importBuild } from '@/serv
 import { cache } from '@/server/infra/hono/middleware'
 import { getLogger } from '@/server/infra/logger'
 import { getEmbeddedAsset, isSea } from '@/server/infra/sea'
+import { SEA_CLIENT_ASSET_PREFIX } from '@/shared/sea/assets'
 
 const log = getLogger('hono')
 
@@ -31,9 +32,10 @@ const serveEmbeddedStatic = createMiddleware(async (c, next) => {
     return next()
   }
   // The handler only runs under the `/<assetsDir>/*` mount, so the
-  // request path maps 1:1 onto the embedded `client/assets/...` keys.
+  // request path maps 1:1 onto the embedded `client/assets/...` keys
+  // (the leading `/` of the path makes room for the prefix).
   // Unresolvable paths (traversal attempts included) simply match no key.
-  const asset = getEmbeddedAsset(`client${c.req.path}`)
+  const asset = getEmbeddedAsset(`${SEA_CLIENT_ASSET_PREFIX}${c.req.path.slice(1)}`)
   if (asset === null) {
     return next()
   }

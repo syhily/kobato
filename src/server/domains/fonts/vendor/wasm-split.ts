@@ -9,17 +9,18 @@ import initWasm from '@/server/domains/fonts/vendor/cnfs.wasm?init'
 import { InputTemplateSchema } from '@/server/domains/fonts/vendor/gen/api_pb'
 import { getLogger } from '@/server/infra/logger'
 import { getEmbeddedAsset, isSea } from '@/server/infra/sea'
+import { SEA_WASM_CNFS_KEY } from '@/shared/sea/assets'
 
 const log = getLogger('fonts.wasm')
 
-// Under SEA the wasm binary is an embedded asset (key `wasm/cnfs.wasm`)
+// Under SEA the wasm binary is an embedded asset (see `@/shared/sea/assets`)
 // rather than a file next to the server bundle, so instantiate it
 // directly from memory — mirrors the Vite `?init` helper semantics
 // (fresh instance per call) without touching disk.
 async function instantiateEmbeddedWasm(imports: WebAssembly.Imports): Promise<WebAssembly.Instance> {
-  const bytes = getEmbeddedAsset('wasm/cnfs.wasm')
+  const bytes = getEmbeddedAsset(SEA_WASM_CNFS_KEY)
   if (bytes === null) {
-    throw new Error('Embedded wasm asset missing: wasm/cnfs.wasm')
+    throw new Error(`Embedded wasm asset missing: ${SEA_WASM_CNFS_KEY}`)
   }
   // Copy into a fresh Uint8Array: the DOM `BufferSource` overload requires
   // an `ArrayBuffer`-backed view, which Node's `Buffer` is not typed as.

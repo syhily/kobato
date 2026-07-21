@@ -28,6 +28,8 @@ the server or client boundary catch and log it.
   footnote-merge.
 - `route-warmup/` — warmup manifest file contract (parse, validate,
   chunk collection) shared by the build plugin and the SSR reader.
+- `sea/` — SEA embedded-asset key contract (single owner for the writer
+  in `scripts/sea/` and the runtime readers under `src/server/`).
 - `utils/` — `urls`, `safe-url`, `security`, `tools`,
   `formatter`, `pagination`, `toc`, `paths`, `roles`, `user-agent`,
   `chunk-error`, `comment-token`, `footnotes-section-title`.

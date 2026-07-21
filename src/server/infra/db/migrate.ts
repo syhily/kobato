@@ -11,6 +11,7 @@ import { createHash } from 'node:crypto'
 import { DATABASE_URL } from '@/server/infra/env'
 import { getLogger } from '@/server/infra/logger'
 import { getEmbeddedAsset, isSea, listEmbeddedAssetKeys } from '@/server/infra/sea'
+import { SEA_DRIZZLE_ASSET_PREFIX } from '@/shared/sea/assets'
 
 const MIGRATIONS_FOLDER = './drizzle'
 const MIGRATIONS_SCHEMA = 'drizzle'
@@ -24,8 +25,8 @@ const DRIZZLE_LOCK_ID = 982_347_561
 
 const log = getLogger('db:migrations')
 
-// Embedded asset keys look like `drizzle/<folder>/migration.sql`.
-const EMBEDDED_MIGRATIONS_PREFIX = 'drizzle/'
+// Embedded asset keys look like `<SEA_DRIZZLE_ASSET_PREFIX><folder>/migration.sql`
+// (the prefix is owned by `@/shared/sea/assets`).
 const MIGRATION_SQL_SUFFIX = '/migration.sql'
 
 /**
@@ -57,9 +58,9 @@ const SEA_MIGRATION_ASSETS: EmbeddedMigrationAssets = {
  */
 function readEmbeddedMigrationFiles(assets: EmbeddedMigrationAssets): MigrationMeta[] {
   const migrations = assets
-    .listKeys(EMBEDDED_MIGRATIONS_PREFIX)
+    .listKeys(SEA_DRIZZLE_ASSET_PREFIX)
     .filter((key) => key.endsWith(MIGRATION_SQL_SUFFIX))
-    .map((key) => ({ key, name: key.slice(EMBEDDED_MIGRATIONS_PREFIX.length, -MIGRATION_SQL_SUFFIX.length) }))
+    .map((key) => ({ key, name: key.slice(SEA_DRIZZLE_ASSET_PREFIX.length, -MIGRATION_SQL_SUFFIX.length) }))
   migrations.sort((a, b) => a.name.localeCompare(b.name))
 
   return migrations.map(({ key, name }) => {

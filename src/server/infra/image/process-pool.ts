@@ -14,6 +14,7 @@ import { DOMAIN_ERROR_CODES, DomainError, type DomainErrorCode } from '@/server/
 import { registerShutdownHook } from '@/server/infra/lifecycle'
 import { getLogger } from '@/server/infra/logger'
 import { getEmbeddedAsset, isSea } from '@/server/infra/sea'
+import { SEA_PROCESS_WORKER_BUNDLE_KEY } from '@/shared/sea/assets'
 
 const log = getLogger('image:process-pool')
 
@@ -310,9 +311,9 @@ function defaultCreateWorker(): Worker {
     // `KOBATO_NATIVES_DIR` without workerData plumbing. (Fallback if a
     // Node build rejects eval workers under SEA: extract the file to the
     // cache dir and load it by path — not implemented yet.)
-    const code = getEmbeddedAsset('worker/process-worker.cjs')
+    const code = getEmbeddedAsset(SEA_PROCESS_WORKER_BUNDLE_KEY)
     if (code === null) {
-      throw new Error('Embedded worker asset missing: worker/process-worker.cjs')
+      throw new Error(`Embedded worker asset missing: ${SEA_PROCESS_WORKER_BUNDLE_KEY}`)
     }
     return new Worker(code.toString('utf-8'), { eval: true })
   }

@@ -4,20 +4,14 @@ import { DomainError } from '@/server/infra/http/errors'
 
 const gateMocks = vi.hoisted(() => ({ evaluateSelfUpdateGate: vi.fn() }))
 const releaseMocks = vi.hoisted(() => ({ fetchLatestRelease: vi.fn() }))
-const jobMocks = vi.hoisted(() => ({
-  startUpdateJob: vi.fn(),
-  getUpdateJobStatus: vi.fn(),
-}))
+const jobMocks = vi.hoisted(() => ({ startUpdateJob: vi.fn() }))
 
 vi.mock('@/server/domains/update/gate', () => ({ evaluateSelfUpdateGate: gateMocks.evaluateSelfUpdateGate }))
 vi.mock('@/server/domains/update/release', () => ({ fetchLatestRelease: releaseMocks.fetchLatestRelease }))
-vi.mock('@/server/domains/update/job', () => ({
-  getUpdateJobStatus: jobMocks.getUpdateJobStatus,
-  startUpdateJob: jobMocks.startUpdateJob,
-}))
+vi.mock('@/server/domains/update/job', () => ({ startUpdateJob: jobMocks.startUpdateJob }))
 vi.mock('@/shared/config/version', () => ({ APP_VERSION: '6.4.0' }))
 
-const { checkForUpdate, applyUpdate, getUpdateJobStatus } = await import('@/server/domains/update/service')
+const { checkForUpdate, applyUpdate, isNewerVersion } = await import('@/server/domains/update/service')
 
 function release(tagName: string) {
   return {
@@ -33,7 +27,6 @@ describe('update/service', () => {
     vi.clearAllMocks()
     gateMocks.evaluateSelfUpdateGate.mockReturnValue({ canSelfUpdate: true, reasons: [] })
     releaseMocks.fetchLatestRelease.mockResolvedValue(release('v6.5.0'))
-    jobMocks.getUpdateJobStatus.mockReturnValue({ state: 'idle' })
   })
 
   it('composes the check result from release, gate, and version comparison', async () => {
@@ -89,9 +82,43 @@ describe('update/service', () => {
     })
     expect(jobMocks.startUpdateJob).not.toHaveBeenCalled()
   })
+})
 
-  it('exposes the job status from the job module', () => {
-    jobMocks.getUpdateJobStatus.mockReturnValue({ state: 'downloading', targetVersion: 'v6.5.0' })
-    expect(getUpdateJobStatus()).toEqual({ state: 'downloading', targetVersion: 'v6.5.0' })
+describe('update/service isNewerVersion', () => {
+  it('detects newer patch, minor, and major versions', () => {
+    expect(isNewerVersion('v1.2.4', '1.2.3')).toBe(true)
+    expect(isNewerVersion('v1.3.0', '1.2.9')).toBe(true)
+    expect(isNewerVersion('v2.0.0', '1.9.9')).toBe(true)
+  })
+
+  it('detects same or older versions', () => {
+    expect(isNewerVersion('v1.2.3', '1.2.3')).toBe(false)
+    expect(isNewerVersion('1.2.3', '1.2.3')).toBe(false)
+    expect(isNewerVersion('v1.2.2', '1.2.3')).toBe(false)
+    expect(isNewerVersion('v1.1.9', '1.2.0')).toBe(false)
+    expect(isNewerVersion('v0.9.9', '1.0.0')).toBe(false)
+  })
+
+  it('treats a leading v on either side as equal', () => {
+    expect(isNewerVersion('v1.2.3', 'v1.2.3')).toBe(false)
+    expect(isNewerVersion('1.2.4', 'v1.2.3')).toBe(true)
+  })
+
+  it('ignores pre-release suffixes beyond the dev gate', () => {
+    expect(isNewerVersion('v1.2.3', '1.2.3-dev')).toBe(false)
+    expect(isNewerVersion('v1.2.4-beta', '1.2.3')).toBe(true)
+    expect(isNewerVersion('v1.2.3', '1.2.4-dev')).toBe(false)
+  })
+
+  it('compares numerically, not lexically', () => {
+    expect(isNewerVersion('v1.10.0', '1.9.9')).toBe(true)
+    expect(isNewerVersion('v1.2.10', '1.2.9')).toBe(true)
+  })
+
+  it('pads missing parts with zero and tolerates junk segments', () => {
+    expect(isNewerVersion('v1.2', '1.1.9')).toBe(true)
+    expect(isNewerVersion('v1.2', '1.2.1')).toBe(false)
+    expect(isNewerVersion('v2', '1.9.9')).toBe(true)
+    expect(isNewerVersion('garbage', '0.0.1')).toBe(false)
   })
 })

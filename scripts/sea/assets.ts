@@ -5,16 +5,8 @@
 // bootstrap (`src/server/infra/sea-natives.ts`) uses to verify and extract
 // the native packages.
 //
-// Asset keys (the runtime contract — do not rename without touching the
-// readers in src/server/):
-//   manifest.json                    this build's manifest (see below)
-//   server/server.mjs                single-file ESM server bundle
-//   client/<path>                    whole build/client tree (static assets)
-//   drizzle/<folder>/<file>          whole drizzle/ tree (migrations)
-//   wasm/cnfs.wasm                   the cn-font-split wasm core
-//   worker/process-worker.cjs        tsdown-emitted image worker (text)
-//   worker/smoke-worker.cjs          tsdown-emitted --smoke-worker entry
-//   node_modules/<pkg>/<file>        native packages, extracted at first run
+// Every asset key comes from `src/shared/sea/assets.ts` — the single
+// owner of the writer/reader key contract. Do not hardcode keys here.
 //
 // The manifest is `{ version, target, files: [{ key, path, sha256 }] }`
 // where `path` equals the asset key. Only `node_modules/`-prefixed entries
@@ -39,6 +31,18 @@ import { mkdir, readdir, readFile, writeFile } from 'node:fs/promises'
 import { createRequire } from 'node:module'
 import { dirname, join, relative } from 'node:path'
 
+// Relative import on purpose: this script runs under plain `node` (no
+// tsconfig path aliases), so `@/shared/...` would not resolve.
+import {
+  SEA_CLIENT_ASSET_PREFIX,
+  SEA_DRIZZLE_ASSET_PREFIX,
+  SEA_MANIFEST_KEY,
+  SEA_NATIVE_ASSET_PREFIX,
+  SEA_PROCESS_WORKER_BUNDLE_KEY,
+  SEA_SERVER_BUNDLE_KEY,
+  SEA_SMOKE_WORKER_BUNDLE_KEY,
+  SEA_WASM_CNFS_KEY,
+} from '../../src/shared/sea/assets.ts'
 import { fail } from './exec.ts'
 import {
   repoRoot,
@@ -182,10 +186,10 @@ function collectNativePackageRoots() {
   return rootsByName
 }
 
-/** Add every file of `root` to the asset map under `keyPrefix`. */
+/** Add every file of `root` to the asset map under `keyPrefix` (with trailing slash). */
 async function addTree(assets: Map<string, string>, files: ManifestFileEntry[], keyPrefix: string, root: string) {
   for (const file of await listFiles(root)) {
-    const key = `${keyPrefix}/${toPosixPath(relative(root, file))}`
+    const key = `${keyPrefix}${toPosixPath(relative(root, file))}`
     if (assets.has(key)) {
       fail(`Duplicate SEA asset key ${key} (from ${file})`)
     }
@@ -203,47 +207,47 @@ export async function collectSeaAssets({ wasmPath }: { wasmPath: string }) {
   const files: ManifestFileEntry[] = []
 
   // Whole build/client tree (fingerprinted static assets + public files).
-  await addTree(assets, files, 'client', join(repoRoot, 'build', 'client'))
+  await addTree(assets, files, SEA_CLIENT_ASSET_PREFIX, join(repoRoot, 'build', 'client'))
 
   // Whole drizzle/ tree (migration.sql files + snapshots).
-  await addTree(assets, files, 'drizzle', join(repoRoot, 'drizzle'))
+  await addTree(assets, files, SEA_DRIZZLE_ASSET_PREFIX, join(repoRoot, 'drizzle'))
 
   // The cn-font-split wasm core (single hashed file inside the server
   // build, pinned to a stable key — build.mjs locates it).
-  assets.set('wasm/cnfs.wasm', wasmPath)
-  files.push({ key: 'wasm/cnfs.wasm', path: 'wasm/cnfs.wasm', sha256: sha256(await readFile(wasmPath)) })
+  assets.set(SEA_WASM_CNFS_KEY, wasmPath)
+  files.push({ key: SEA_WASM_CNFS_KEY, path: SEA_WASM_CNFS_KEY, sha256: sha256(await readFile(wasmPath)) })
 
   // The tsdown-emitted single-file ESM server bundle. Materialized into
   // the natives cache dir at runtime (its manifest entry drives both the
   // dir name and the sha256 verification) and imported from there —
   // top-level await keeps it out of the CJS prelude bundle.
   const serverPath = seaServerBundlePath()
-  assets.set('server/server.mjs', serverPath)
+  assets.set(SEA_SERVER_BUNDLE_KEY, serverPath)
   files.push({
-    key: 'server/server.mjs',
-    path: 'server/server.mjs',
+    key: SEA_SERVER_BUNDLE_KEY,
+    path: SEA_SERVER_BUNDLE_KEY,
     sha256: sha256(await readFile(serverPath)),
   })
 
   // The tsdown-emitted image worker, embedded as text and started via
   // `new Worker(code, { eval: true })` under SEA.
   const workerPath = seaWorkerBundlePath()
-  assets.set('worker/process-worker.cjs', workerPath)
+  assets.set(SEA_PROCESS_WORKER_BUNDLE_KEY, workerPath)
   files.push({
-    key: 'worker/process-worker.cjs',
-    path: 'worker/process-worker.cjs',
+    key: SEA_PROCESS_WORKER_BUNDLE_KEY,
+    path: SEA_PROCESS_WORKER_BUNDLE_KEY,
     sha256: sha256(await readFile(workerPath)),
   })
 
   // The tsdown-emitted worker-pool smoke entry. Materialized into the
   // natives cache dir on demand by the prelude's `--smoke-worker` flag —
-  // the same mechanism as `server/server.mjs` (sha256-verified, atomic
+  // the same mechanism as the server bundle (sha256-verified, atomic
   // writes, stale-dir GC) — and imported from there.
   const smokeWorkerPath = seaSmokeWorkerBundlePath()
-  assets.set('worker/smoke-worker.cjs', smokeWorkerPath)
+  assets.set(SEA_SMOKE_WORKER_BUNDLE_KEY, smokeWorkerPath)
   files.push({
-    key: 'worker/smoke-worker.cjs',
-    path: 'worker/smoke-worker.cjs',
+    key: SEA_SMOKE_WORKER_BUNDLE_KEY,
+    path: SEA_SMOKE_WORKER_BUNDLE_KEY,
     sha256: sha256(await readFile(smokeWorkerPath)),
   })
 
@@ -251,7 +255,7 @@ export async function collectSeaAssets({ wasmPath }: { wasmPath: string }) {
   // @napi-rs/canvas, laid out as a flat node_modules tree so Node's
   // resolver works unchanged inside the extraction dir.
   for (const [name, root] of collectNativePackageRoots()) {
-    await addTree(assets, files, `node_modules/${name}`, root)
+    await addTree(assets, files, `${SEA_NATIVE_ASSET_PREFIX}${name}/`, root)
   }
 
   // Manifest: sorted for deterministic bytes (the runtime natives dir is
@@ -268,7 +272,7 @@ export async function collectSeaAssets({ wasmPath }: { wasmPath: string }) {
   await mkdir(seaIntermediatesDir(), { recursive: true })
   const manifestPath = seaManifestPath()
   await writeFile(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`)
-  assets.set('manifest.json', manifestPath)
+  assets.set(SEA_MANIFEST_KEY, manifestPath)
 
   // Deterministic asset order in the generated sea-config.json.
   const sorted = new Map([...assets.entries()].sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0)))

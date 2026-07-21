@@ -15,6 +15,7 @@ import {
   parseClientManifest,
   type WarmupManifest,
 } from '@/shared/route-warmup/manifest'
+import { SEA_CLIENT_ASSET_PREFIX } from '@/shared/sea/assets'
 import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
 let cached: WarmupManifest | null | undefined
@@ -32,7 +33,7 @@ export function getWarmupManifest(): WarmupManifest | null {
     if (isSea()) {
       // Single-executable build: the warmup manifest is embedded in the
       // binary (`client/assets/warmup-manifest.json`), not on disk.
-      const asset = getEmbeddedAsset('client/assets/warmup-manifest.json')
+      const asset = getEmbeddedAsset(`${SEA_CLIENT_ASSET_PREFIX}assets/warmup-manifest.json`)
       if (asset === null) {
         cached = null
         return null
@@ -82,7 +83,9 @@ function readClientManifest(): RouteManifest | null {
     if (isSea()) {
       // Single-executable build: enumerate the embedded assets instead of
       // reading `build/client/assets` from disk.
-      const manifestKey = listEmbeddedAssetKeys('client/assets/manifest-').find((key) => key.endsWith('.js'))
+      const manifestKey = listEmbeddedAssetKeys(`${SEA_CLIENT_ASSET_PREFIX}assets/manifest-`).find((key) =>
+        key.endsWith('.js'),
+      )
       if (!manifestKey) {
         return null
       }

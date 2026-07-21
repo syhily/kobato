@@ -202,17 +202,41 @@ async function checkShutdown(server: SmokeServer) {
  * The server's bootstrap logs `SEA natives ready` with per-file counts;
  * a warm cache (populated by the --smoke-natives check) means reused > 0.
  * Read after the log stream closed so no buffered writes are missed.
+ * Lines are parsed as JSON and matched on the `msg` field — never on key
+ * order or substrings, so a logger refactor can't false-fail the smoke.
  */
 async function checkNativesReuse() {
   const log = await readFile(serverLogPath ?? fail('serverLogPath unset'), 'utf-8')
-  const match = log.match(/"msg":"SEA natives ready","extracted":(\d+),"reused":(\d+)/)
-  if (!match) {
+  let extracted: number | null = null
+  let reused: number | null = null
+  for (const line of log.split('\n')) {
+    if (!line.startsWith('{')) {
+      continue
+    }
+    try {
+      const entry: unknown = JSON.parse(line)
+      if (
+        typeof entry === 'object' &&
+        entry !== null &&
+        'msg' in entry &&
+        entry.msg === 'SEA natives ready' &&
+        'extracted' in entry &&
+        'reused' in entry
+      ) {
+        extracted = Number(entry.extracted)
+        reused = Number(entry.reused)
+      }
+    } catch {
+      // Not a JSON line (warnings, stacks) — skip.
+    }
+  }
+  if (extracted === null || reused === null) {
     throw new Error('no "SEA natives ready" line in the server log')
   }
-  if (Number(match[2]) === 0) {
-    throw new Error(`server re-extracted the natives despite a warm cache (${match[0]})`)
+  if (reused === 0) {
+    throw new Error(`server re-extracted the natives despite a warm cache (extracted=${extracted} reused=${reused})`)
   }
-  return `extracted=${match[1]} reused=${match[2]}`
+  return `extracted=${extracted} reused=${reused}`
 }
 
 /** Fetch an SSR page and assert it is a 200 text/html document with markup. */
