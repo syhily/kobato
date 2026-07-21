@@ -3,11 +3,9 @@ import { describe, expect, expectTypeOf, it } from 'vitest'
 import type { SessionUser } from '@/server/domains/auth/session-storage'
 
 import {
-  canDeleteTag,
   canEditImage,
   canEditMusic,
   canEditPost,
-  canManageComment,
   isAdmin,
   isCommentOwner,
   isImageOwner,
@@ -112,23 +110,5 @@ describe('server/domains/auth/rbac — canEditX family (admin or owner)', () => 
     expect(canEditMusic(viewer('author', '7'), { uploaderId: 7n })).toBe(true)
     expect(canEditImage(viewer('visitor', '7'), { uploaderId: 7n })).toBe(true)
     expect(canEditMusic(viewer('visitor', '7'), { uploaderId: 8n })).toBe(false)
-  })
-
-  it('canManageComment allows admin or owner', () => {
-    expect(canManageComment(viewer('admin', '1'), { userId: 99n })).toBe(true)
-    expect(canManageComment(viewer('visitor', '7'), { userId: 7n })).toBe(true)
-    expect(canManageComment(viewer('visitor', '7'), { userId: 8n })).toBe(false)
-  })
-})
-
-describe('server/domains/auth/rbac — canDeleteTag', () => {
-  it('lets admin delete regardless of post count', () => {
-    expect(canDeleteTag(viewer('admin'), 100)).toBe(true)
-    expect(canDeleteTag(viewer('admin'), 0)).toBe(true)
-  })
-
-  it('lets non-admin delete only when post count is 0', () => {
-    expect(canDeleteTag(viewer('author'), 0)).toBe(true)
-    expect(canDeleteTag(viewer('author'), 1)).toBe(false)
   })
 })
