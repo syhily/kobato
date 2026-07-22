@@ -1,18 +1,19 @@
-import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { LoaderIcon, PlusIcon, SearchIcon } from 'lucide-react'
-import { useCallback, useEffect, useState } from 'react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { PlusIcon, SearchIcon } from 'lucide-react'
+import { useCallback, useState } from 'react'
 import { toast } from 'sonner'
 
 import type { AdminFriendDto, DeleteFriendInput } from '@/shared/types/friends'
 
 import { orpc } from '@/client/api/client'
 import { orpcQuery } from '@/client/api/orpc-query'
-import { useInfiniteScrollSentinel } from '@/client/hooks/use-infinite-scroll-sentinel'
 import { EditFriendDialog } from '@/ui/admin/friends/EditFriendDialog'
 import { FriendRow, FriendsSkeleton } from '@/ui/admin/friends/FriendRow'
 import { PendingFriendRow } from '@/ui/admin/friends/PendingFriendRow'
+import { AdminInfiniteListFooter } from '@/ui/admin/shared/AdminInfiniteListFooter'
 import { AdminListPage } from '@/ui/admin/shared/AdminListPage'
 import { type ConfirmState, ConfirmDialog } from '@/ui/admin/shared/ConfirmDialog'
+import { useAdminInfiniteList } from '@/ui/admin/shared/useAdminInfiniteList'
 import { useDebouncedSearch } from '@/ui/admin/shared/useDebouncedSearch'
 import { Button } from '@/ui/components/button'
 import { Checkbox } from '@/ui/components/checkbox'
@@ -41,35 +42,18 @@ export function FriendsView() {
   )
   const pendingRows = pendingQuery.data?.friends ?? []
 
-  const listQuery = useInfiniteQuery(
-    orpcQuery.admin.friends.list.infiniteOptions({
-      input: (pageParam: number) => ({
-        q: q || undefined,
-        includeHidden: includeHidden ? true : undefined,
-        offset: pageParam,
-        limit: PAGE_SIZE,
-      }),
-      getNextPageParam: (lastPage, _allPages, lastPageParam) => {
-        if (!lastPage.hasMore) {
-          return undefined
-        }
-        return (lastPageParam ?? 0) + PAGE_SIZE
-      },
-      initialPageParam: 0,
+  const { rows, total, isLoading, hasNextPage, isFetchingNextPage, sentinelRef } = useAdminInfiniteList({
+    namespace: orpcQuery.admin.friends.list,
+    pageSize: PAGE_SIZE,
+    buildInput: (offset) => ({
+      q: q || undefined,
+      includeHidden: includeHidden ? true : undefined,
+      offset,
+      limit: PAGE_SIZE,
     }),
-  )
-
-  const { hasNextPage, isFetchingNextPage, fetchNextPage, isLoading } = listQuery
-  const rows = listQuery.data?.pages.flatMap((page) => page.friends) ?? []
-  const total = listQuery.data?.pages[0]?.total ?? 0
-
-  useEffect(() => {
-    if (listQuery.error) {
-      toast.error('加载友链列表失败', { description: listQuery.error.message })
-    }
-  }, [listQuery.error])
-
-  const sentinelRef = useInfiniteScrollSentinel({ hasNextPage, isFetchingNextPage, fetchNextPage })
+    selectRows: (page) => page.friends,
+    noun: '友链',
+  })
 
   const invalidateList = useCallback(() => {
     // One procedure key covers both buckets — the pending `queryOptions`
@@ -88,7 +72,6 @@ export function FriendsView() {
       toast.error('删除友链失败', { description: error.message })
     },
   })
-  const submitDelete = deleteMutation.mutate
 
   // One-click approve: flip `visible` through the existing upsert path.
   // Rows without a poster can't pass the upsert schema — the UI keeps
@@ -112,7 +95,6 @@ export function FriendsView() {
       toast.error('通过友链失败', { description: error.message })
     },
   })
-  const submitApprove = approveMutation.mutate
 
   const [qInput, setQInput] = useDebouncedSearch({
     delayMs: 300,
@@ -128,10 +110,10 @@ export function FriendsView() {
         description: '此操作会从数据库直接删除该友链。如果只是临时下线，请改为编辑后取消「在公共页面显示」。',
         actionLabel: '删除',
         destructive: true,
-        onConfirm: () => submitDelete({ id: row.id }),
+        onConfirm: () => deleteMutation.mutate({ id: row.id }),
       })
     },
-    [submitDelete],
+    [deleteMutation],
   )
 
   return (
@@ -187,7 +169,7 @@ export function FriendsView() {
                     friend={row}
                     disabled={isDialogOpen}
                     approving={approveMutation.isPending}
-                    onApprove={() => submitApprove(row)}
+                    onApprove={() => approveMutation.mutate(row)}
                     onEdit={() => setEditTarget(row)}
                     onDelete={() => handleDelete(row)}
                   />
@@ -223,16 +205,12 @@ export function FriendsView() {
 
           {hasNextPage && <div ref={sentinelRef} className="h-1" />}
 
-          <div className="py-6 text-center text-sm text-muted-foreground">
-            {isFetchingNextPage ? (
-              <span className="inline-flex items-center gap-2">
-                <LoaderIcon className="size-4 animate-spin" />
-                加载中…
-              </span>
-            ) : !hasNextPage && rows.length > 0 ? (
-              '已加载全部友链'
-            ) : null}
-          </div>
+          <AdminInfiniteListFooter
+            noun="友链"
+            rowCount={rows.length}
+            hasNextPage={hasNextPage}
+            isFetchingNextPage={isFetchingNextPage}
+          />
         </AdminListPage.Body>
       </AdminListPage>
 

@@ -1,14 +1,6 @@
-import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import {
-  FileTextIcon,
-  ListChecksIcon,
-  LoaderIcon,
-  RotateCcwIcon,
-  SearchIcon,
-  SquarePenIcon,
-  Trash2Icon,
-} from 'lucide-react'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { FileTextIcon, ListChecksIcon, RotateCcwIcon, SearchIcon, SquarePenIcon, Trash2Icon } from 'lucide-react'
+import { useCallback, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router'
 import { toast } from 'sonner'
 
@@ -16,7 +8,6 @@ import type { MyCommentItem } from '@/routes/admin/me/comments'
 import type { MyCommentsStatus } from '@/shared/types/comments'
 
 import { orpcQuery } from '@/client/api/orpc-query'
-import { useInfiniteScrollSentinel } from '@/client/hooks/use-infinite-scroll-sentinel'
 import { useSiteIdentity } from '@/shared/lib/blog-config-context'
 import { commentBodySchema } from '@/shared/pt/comment-schema'
 import { formatLocalDate } from '@/shared/utils/formatter'
@@ -31,7 +22,9 @@ import {
   type FilterItem,
 } from '@/ui/admin/comments/useCommentsController'
 import { MyEditCommentDialog } from '@/ui/admin/my/MyEditCommentDialog'
+import { AdminInfiniteListFooter } from '@/ui/admin/shared/AdminInfiniteListFooter'
 import { AdminListPage } from '@/ui/admin/shared/AdminListPage'
+import { useAdminInfiniteList } from '@/ui/admin/shared/useAdminInfiniteList'
 import { useDebouncedSearch } from '@/ui/admin/shared/useDebouncedSearch'
 import { Avatar, AvatarFallback, AvatarImage } from '@/ui/components/avatar'
 import { Badge } from '@/ui/components/badge'
@@ -206,36 +199,26 @@ export function MyCommentsView({ status, q, entity, entityOptions, currentUser }
     updateParams({ status: null, entity: null, q: null })
   }, [updateParams])
 
-  const listQuery = useInfiniteQuery(
-    orpcQuery.comments.loadMine.infiniteOptions({
-      input: (pageParam: number) => ({
-        offset: pageParam,
-        limit: PAGE_SIZE,
-        ...(status !== 'all' ? { status } : {}),
-        ...(q.trim() ? { q: q.trim() } : {}),
-        ...(entity ? { entity } : {}),
-      }),
-      getNextPageParam: (lastPage, _allPages, lastPageParam) => {
-        if (!lastPage.hasMore) {
-          return undefined
-        }
-        return (lastPageParam ?? 0) + PAGE_SIZE
-      },
-      initialPageParam: 0,
+  const {
+    rows: items,
+    total,
+    isLoading,
+    hasNextPage,
+    isFetchingNextPage,
+    sentinelRef,
+  } = useAdminInfiniteList({
+    namespace: orpcQuery.comments.loadMine,
+    pageSize: PAGE_SIZE,
+    buildInput: (offset) => ({
+      offset,
+      limit: PAGE_SIZE,
+      ...(status !== 'all' ? { status } : {}),
+      ...(q.trim() ? { q: q.trim() } : {}),
+      ...(entity ? { entity } : {}),
     }),
-  )
-
-  const { hasNextPage, isFetchingNextPage, fetchNextPage, isLoading } = listQuery
-  const items = useMemo(() => listQuery.data?.pages.flatMap((page) => page.items) ?? [], [listQuery.data])
-  const total = listQuery.data?.pages[0]?.total ?? 0
-
-  const sentinelRef = useInfiniteScrollSentinel({ hasNextPage, isFetchingNextPage, fetchNextPage })
-
-  useEffect(() => {
-    if (listQuery.error) {
-      toast.error('加载评论失败', { description: listQuery.error.message })
-    }
-  }, [listQuery.error])
+    selectRows: (page) => page.items,
+    noun: '评论',
+  })
 
   const invalidateList = useCallback(() => {
     void queryClient.invalidateQueries({ queryKey: orpcQuery.comments.loadMine.key() })
@@ -341,16 +324,12 @@ export function MyCommentsView({ status, q, entity, entityOptions, currentUser }
 
         {hasNextPage && <div ref={sentinelRef} className="h-1" />}
         {(isFetchingNextPage || (!hasNextPage && items.length > 0)) && (
-          <div className="py-6 text-center text-sm text-muted-foreground">
-            {isFetchingNextPage ? (
-              <span className="inline-flex items-center gap-2">
-                <LoaderIcon className="size-4 animate-spin" />
-                加载中…
-              </span>
-            ) : (
-              '已加载全部评论'
-            )}
-          </div>
+          <AdminInfiniteListFooter
+            noun="评论"
+            rowCount={items.length}
+            hasNextPage={hasNextPage}
+            isFetchingNextPage={isFetchingNextPage}
+          />
         )}
       </AdminListPage.Body>
 

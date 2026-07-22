@@ -1,19 +1,18 @@
-import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { LoaderIcon, PlusIcon, SearchIcon } from 'lucide-react'
-import { useCallback, useEffect, useMemo, useState } from 'react'
-import { toast } from 'sonner'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { PlusIcon, SearchIcon } from 'lucide-react'
+import { useCallback, useState } from 'react'
 
 import type { AdminTagDto } from '@/shared/types/tags'
 
 import { orpc } from '@/client/api/client'
 import { orpcQuery } from '@/client/api/orpc-query'
-import { useInfiniteScrollSentinel } from '@/client/hooks/use-infinite-scroll-sentinel'
+import { AdminInfiniteListFooter } from '@/ui/admin/shared/AdminInfiniteListFooter'
 import { AdminListPage } from '@/ui/admin/shared/AdminListPage'
 import { type ConfirmState, ConfirmDialog } from '@/ui/admin/shared/ConfirmDialog'
+import { useAdminInfiniteList } from '@/ui/admin/shared/useAdminInfiniteList'
 import { useDebouncedSearch } from '@/ui/admin/shared/useDebouncedSearch'
 import { EditTagDialog } from '@/ui/admin/tags/EditTagDialog'
 import { TagRow, TagsSkeleton } from '@/ui/admin/tags/TagRows'
-import { useTagsFilters } from '@/ui/admin/tags/useTagsFilters'
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@/ui/components/empty'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/ui/components/table'
 
@@ -22,41 +21,22 @@ const PAGE_SIZE = 30
 type EditTarget = AdminTagDto | null | undefined
 
 export function TagsView() {
-  const { q, setQ } = useTagsFilters()
+  const [q, setQ] = useState('')
   const queryClient = useQueryClient()
   const [confirm, setConfirm] = useState<ConfirmState | null>(null)
   const [editTarget, setEditTarget] = useState<EditTarget>(undefined)
 
-  // Server rows live exclusively in the TanStack cache — every loaded page
-  // is refetched together on invalidation, and mutations invalidate this
-  // namespace instead of patching local mirrors.
-  const listQuery = useInfiniteQuery(
-    orpcQuery.admin.tags.list.infiniteOptions({
-      input: (pageParam: number) => ({
-        q: q || undefined,
-        offset: pageParam,
-        limit: PAGE_SIZE,
-      }),
-      getNextPageParam: (lastPage, _allPages, lastPageParam) => {
-        if (!lastPage.hasMore) {
-          return undefined
-        }
-        return (lastPageParam ?? 0) + PAGE_SIZE
-      },
-      initialPageParam: 0,
+  const { rows, total, isLoading, hasNextPage, isFetchingNextPage, sentinelRef } = useAdminInfiniteList({
+    namespace: orpcQuery.admin.tags.list,
+    pageSize: PAGE_SIZE,
+    buildInput: (offset) => ({
+      q: q || undefined,
+      offset,
+      limit: PAGE_SIZE,
     }),
-  )
-  const { hasNextPage, isFetchingNextPage, fetchNextPage } = listQuery
-  const sentinelRef = useInfiniteScrollSentinel({ hasNextPage, isFetchingNextPage, fetchNextPage })
-
-  const rows = useMemo(() => listQuery.data?.pages.flatMap((page) => page.tags) ?? [], [listQuery.data])
-  const total = listQuery.data?.pages[0]?.total ?? 0
-
-  useEffect(() => {
-    if (listQuery.error) {
-      toast.error('加载标签列表失败', { description: listQuery.error.message })
-    }
-  }, [listQuery.error])
+    selectRows: (page) => page.tags,
+    noun: '标签',
+  })
 
   // On success the whole list namespace is invalidated (EditTagDialog does
   // the same for upserts) instead of patching a local mirror — a rejected
@@ -84,7 +64,6 @@ export function TagsView() {
     onChange: setQ,
   })
 
-  const isLoading = listQuery.isLoading
   const isDialogOpen = editTarget !== undefined
 
   const handleDelete = useCallback(
@@ -181,16 +160,12 @@ export function TagsView() {
           {hasNextPage && <div ref={sentinelRef} className="h-1" />}
 
           {/* Bottom status */}
-          <div className="py-6 text-center text-sm text-muted-foreground">
-            {isFetchingNextPage ? (
-              <span className="inline-flex items-center gap-2">
-                <LoaderIcon className="size-4 animate-spin" />
-                加载中…
-              </span>
-            ) : !hasNextPage && rows.length > 0 ? (
-              '已加载全部标签'
-            ) : null}
-          </div>
+          <AdminInfiniteListFooter
+            noun="标签"
+            rowCount={rows.length}
+            hasNextPage={hasNextPage}
+            isFetchingNextPage={isFetchingNextPage}
+          />
         </AdminListPage.Body>
       </AdminListPage>
 

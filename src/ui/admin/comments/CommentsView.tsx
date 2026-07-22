@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { LoaderIcon, SearchIcon } from 'lucide-react'
+import { SearchIcon } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import type { AdminCommentWire as AdminComment } from '@/shared/types/comments'
@@ -13,6 +13,7 @@ import { EditCommentDialog } from '@/ui/admin/comments/EditCommentDialog'
 import { EditUserDialog } from '@/ui/admin/comments/EditUserDialog'
 import { ReplyCommentDialog } from '@/ui/admin/comments/ReplyCommentDialog'
 import { useCommentsController } from '@/ui/admin/comments/useCommentsController'
+import { AdminInfiniteListFooter } from '@/ui/admin/shared/AdminInfiniteListFooter'
 import { AdminListPage } from '@/ui/admin/shared/AdminListPage'
 import { type ConfirmState, ConfirmDialog } from '@/ui/admin/shared/ConfirmDialog'
 import { useDebouncedSearch } from '@/ui/admin/shared/useDebouncedSearch'
@@ -278,16 +279,12 @@ export function CommentsView({ currentUserName, currentUserEmail, initialFilters
 
           {hasMore && <div ref={sentinelRef} className="h-1" />}
           {(isFetchingNextPage || (!hasMore && comments.length > 0)) && (
-            <div className="py-6 text-center text-sm text-muted-foreground">
-              {isFetchingNextPage ? (
-                <span className="inline-flex items-center gap-2">
-                  <LoaderIcon className="size-4 animate-spin" />
-                  加载中…
-                </span>
-              ) : (
-                '已加载全部评论'
-              )}
-            </div>
+            <AdminInfiniteListFooter
+              noun="评论"
+              rowCount={comments.length}
+              hasNextPage={hasMore}
+              isFetchingNextPage={isFetchingNextPage}
+            />
           )}
         </AdminListPage.Body>
       </AdminListPage>

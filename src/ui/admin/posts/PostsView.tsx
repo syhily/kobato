@@ -1,13 +1,11 @@
-import { useInfiniteQuery, useQuery } from '@tanstack/react-query'
-import { LoaderIcon, PlusIcon, SearchIcon, XIcon } from 'lucide-react'
-import { useEffect, useMemo } from 'react'
+import { useQuery } from '@tanstack/react-query'
+import { PlusIcon, SearchIcon, XIcon } from 'lucide-react'
+import { useMemo } from 'react'
 import { Link } from 'react-router'
-import { toast } from 'sonner'
 
 import type { AdminUserDto } from '@/shared/types/users'
 
 import { orpcQuery } from '@/client/api/orpc-query'
-import { useInfiniteScrollSentinel } from '@/client/hooks/use-infinite-scroll-sentinel'
 import { PostRow } from '@/ui/admin/posts/PostRow'
 import { PostsSkeleton } from '@/ui/admin/posts/PostsSkeleton'
 import {
@@ -16,7 +14,9 @@ import {
   type PostsFilters,
   usePostsFilters,
 } from '@/ui/admin/posts/usePostsFilters'
+import { AdminInfiniteListFooter } from '@/ui/admin/shared/AdminInfiniteListFooter'
 import { AdminListPage } from '@/ui/admin/shared/AdminListPage'
+import { useAdminInfiniteList } from '@/ui/admin/shared/useAdminInfiniteList'
 import { Combobox, ComboboxContent, ComboboxItem, ComboboxTrigger, ComboboxValue } from '@/ui/components/combobox'
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@/ui/components/empty'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/components/select'
@@ -58,32 +58,13 @@ function buildQueryInput(filters: PostsFilters, offset: number) {
 export function PostsView() {
   const { filters, setStatus, setCategory, setTag, setAuthorId, setSortBy, setSortOrder } = usePostsFilters()
 
-  // Server rows live exclusively in the TanStack cache — every loaded page
-  // is refetched together on invalidation, and mutations invalidate this
-  // namespace instead of patching local mirrors.
-  const listQuery = useInfiniteQuery(
-    orpcQuery.admin.posts.list.infiniteOptions({
-      input: (pageParam: number) => buildQueryInput(filters, pageParam),
-      getNextPageParam: (lastPage, _allPages, lastPageParam) => {
-        if (!lastPage.hasMore) {
-          return undefined
-        }
-        return (lastPageParam ?? 0) + PAGE_SIZE
-      },
-      initialPageParam: 0,
-    }),
-  )
-  const { hasNextPage, isFetchingNextPage, fetchNextPage } = listQuery
-  const sentinelRef = useInfiniteScrollSentinel({ hasNextPage, isFetchingNextPage, fetchNextPage })
-
-  const rows = useMemo(() => listQuery.data?.pages.flatMap((page) => page.posts) ?? [], [listQuery.data])
-  const total = listQuery.data?.pages[0]?.total ?? 0
-
-  useEffect(() => {
-    if (listQuery.error) {
-      toast.error('加载文章列表失败', { description: listQuery.error.message })
-    }
-  }, [listQuery.error])
+  const { rows, total, isLoading, hasNextPage, isFetchingNextPage, sentinelRef } = useAdminInfiniteList({
+    namespace: orpcQuery.admin.posts.list,
+    pageSize: PAGE_SIZE,
+    buildInput: (offset) => buildQueryInput(filters, offset),
+    selectRows: (page) => page.posts,
+    noun: '文章',
+  })
 
   // --- Filter option data ---
   const { data: categoriesData } = useQuery(orpcQuery.admin.categories.list.queryOptions({ input: {} }))
@@ -266,7 +247,7 @@ export function PostsView() {
         </AdminListPage.Header>
 
         <AdminListPage.Body>
-          {listQuery.isLoading ? (
+          {isLoading ? (
             <PostsSkeleton />
           ) : rows.length === 0 ? (
             <Empty>
@@ -287,16 +268,12 @@ export function PostsView() {
               {/* Sentinel for infinite scroll */}
               {hasNextPage && <div ref={sentinelRef} className="h-1" />}
               {/* Bottom status */}
-              <div className="py-6 text-center text-sm text-muted-foreground">
-                {isFetchingNextPage ? (
-                  <span className="inline-flex items-center gap-2">
-                    <LoaderIcon className="size-4 animate-spin" />
-                    加载中…
-                  </span>
-                ) : !hasNextPage && rows.length > 0 ? (
-                  '已加载全部文章'
-                ) : null}
-              </div>
+              <AdminInfiniteListFooter
+                noun="文章"
+                rowCount={rows.length}
+                hasNextPage={hasNextPage}
+                isFetchingNextPage={isFetchingNextPage}
+              />
             </>
           )}
         </AdminListPage.Body>

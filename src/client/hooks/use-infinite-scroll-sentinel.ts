@@ -9,10 +9,9 @@ import { useEffect, useRef } from 'react'
 //
 // The observer only re-arms while there IS a next page and no page fetch
 // is in flight, so a single intersection can never double-fire a request.
-// Used by the admin comment surfaces (`useCommentsController` for
-// `CommentsView`, and `MyCommentsView` directly), the music library and
-// meting-search views, and the friends list, so they share one sentinel
-// implementation.
+// Used by `useAdminInfiniteList` for the admin list views, and directly by
+// the surfaces with custom scroll roots (the meting-search dialog/view and
+// the audit log, which paginate manually).
 export function useInfiniteScrollSentinel<TElement extends HTMLElement = HTMLDivElement>({
   hasNextPage,
   isFetchingNextPage,

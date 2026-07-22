@@ -5,9 +5,9 @@ import type { AdminTagDto } from '@/shared/types/tags'
 import { renderInRouter, stableHtml } from '#/_helpers/render'
 import { TagsView } from '@/ui/admin/tags/TagsView'
 
-// TagsView drives its rows from `useInfiniteQuery` (server state lives in
-// the TanStack cache) and its search filter from `useTagsFilters`, with the
-// search box wired through `useDebouncedSearch`. The existing
+// TagsView drives its rows from `useAdminInfiniteList` (server state lives
+// in the TanStack cache, via an internal `useInfiniteQuery`), with the search
+// box wired through `useDebouncedSearch`. The existing
 // `tags-view.test.tsx` covers the loading and empty states; this spec adds
 // populated rows (the `rows.map` callback branch), the error state, and the
 // search-active state.

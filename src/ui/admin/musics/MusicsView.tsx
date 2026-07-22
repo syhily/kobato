@@ -1,4 +1,3 @@
-import { useInfiniteQuery } from '@tanstack/react-query'
 import {
   ArrowDownAZ,
   ArrowUpAZ,
@@ -10,15 +9,15 @@ import {
   Plus,
   Search,
 } from 'lucide-react'
-import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useId, useRef, useState } from 'react'
 import { useNavigate } from 'react-router'
 
 import { orpcQuery } from '@/client/api/orpc-query'
-import { useInfiniteScrollSentinel } from '@/client/hooks/use-infinite-scroll-sentinel'
 import { unsafeCast } from '@/shared/utils/unsafe-cast'
 import { AlbumCard } from '@/ui/admin/musics/AlbumCard'
 import { MusicLibraryHero } from '@/ui/admin/musics/MusicLibraryHero'
 import { useMusicPlayerActions } from '@/ui/admin/musics/MusicPlayerContext'
+import { useAdminInfiniteList } from '@/ui/admin/shared/useAdminInfiniteList'
 import { cn } from '@/ui/lib/cn'
 
 export type MusicSortBy = 'createdAt' | 'updatedAt' | 'name' | 'artist' | 'album'
@@ -125,35 +124,26 @@ export function MusicsView() {
 
   const [qInput, setQInput] = useState('')
 
-  const listQuery = useInfiniteQuery(
-    orpcQuery.admin.music.list.infiniteOptions({
-      input: (pageParam: number) => ({
-        q: q || undefined,
-        offset: pageParam,
-        limit: PAGE_SIZE,
-        sortBy,
-        sortOrder,
-      }),
-      getNextPageParam: (lastPage, _allPages, lastPageParam) => {
-        if (!lastPage.hasMore) {
-          return undefined
-        }
-        return (lastPageParam ?? 0) + PAGE_SIZE
-      },
-      initialPageParam: 0,
+  const {
+    rows: allMusics,
+    total,
+    isLoading,
+    hasNextPage,
+    isFetchingNextPage,
+    sentinelRef,
+  } = useAdminInfiniteList({
+    namespace: orpcQuery.admin.music.list,
+    pageSize: PAGE_SIZE,
+    buildInput: (offset) => ({
+      q: q || undefined,
+      offset,
+      limit: PAGE_SIZE,
+      sortBy,
+      sortOrder,
     }),
-  )
-
-  // Intersection observer for infinite scroll
-  const { hasNextPage, isFetchingNextPage, fetchNextPage } = listQuery
-  const sentinelRef = useInfiniteScrollSentinel({ hasNextPage, isFetchingNextPage, fetchNextPage })
-
-  const allMusics = useMemo(() => {
-    return listQuery.data?.pages.flatMap((page) => page.musics) ?? []
-  }, [listQuery.data])
-
-  const total = listQuery.data?.pages[0]?.total ?? 0
-  const isLoading = listQuery.isLoading
+    selectRows: (page) => page.musics,
+    noun: '音乐',
+  })
 
   const handlePlayAll = useCallback(() => {
     if (allMusics.length > 0) {
@@ -329,9 +319,7 @@ export function MusicsView() {
                 加载中…
               </div>
             )}
-            {!listQuery.hasNextPage && allMusics.length > 0 && (
-              <p className="text-sm text-ink-4">已加载全部 {total} 首歌曲</p>
-            )}
+            {!hasNextPage && allMusics.length > 0 && <p className="text-sm text-ink-4">已加载全部 {total} 首歌曲</p>}
           </div>
         </>
       )}

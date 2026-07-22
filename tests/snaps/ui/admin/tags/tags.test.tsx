@@ -8,10 +8,10 @@ import { EditTagDialog } from '@/ui/admin/tags/EditTagDialog'
 import { TagRow, TagsSkeleton } from '@/ui/admin/tags/TagRows'
 import { TagsView } from '@/ui/admin/tags/TagsView'
 
-// TagsView drives its rows from `useInfiniteQuery` (server state lives in
-// the TanStack cache) and its search filter from `useTagsFilters`. The list
-// query is stubbed through a hoisted slot so each test can pick the branch;
-// the delete mutation and the query client are stubbed alongside.
+// TagsView drives its rows from `useAdminInfiniteList` (server state lives
+// in the TanStack cache, via an internal `useInfiniteQuery`). The list query
+// is stubbed through a hoisted slot so each test can pick the branch; the
+// delete mutation and the query client are stubbed alongside.
 
 const queryMocks = vi.hoisted(() => ({
   mutation: {

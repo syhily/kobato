@@ -1,13 +1,12 @@
-import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { ImageOffIcon, PlusIcon } from 'lucide-react'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useState } from 'react'
 import { toast } from 'sonner'
 
 import type { AdminImageDto } from '@/shared/types/images'
 
 import { orpc } from '@/client/api/client'
 import { orpcQuery } from '@/client/api/orpc-query'
-import { useInfiniteScrollSentinel } from '@/client/hooks/use-infinite-scroll-sentinel'
 import { useAssetsSettings } from '@/shared/lib/blog-config-context'
 import { ImageDetailDialog } from '@/ui/admin/images/ImageDetailDialog'
 import { ImagesFilterBar } from '@/ui/admin/images/ImagesFilterBar'
@@ -16,6 +15,7 @@ import { useImagesReducer } from '@/ui/admin/images/useImagesReducer'
 import { AdminListPage } from '@/ui/admin/shared/AdminListPage'
 import { type ConfirmState, ConfirmDialog } from '@/ui/admin/shared/ConfirmDialog'
 import { UploadImageDialog } from '@/ui/admin/shared/UploadImageDialog'
+import { useAdminInfiniteList } from '@/ui/admin/shared/useAdminInfiniteList'
 import { useDebouncedSearch } from '@/ui/admin/shared/useDebouncedSearch'
 import { Button } from '@/ui/components/button'
 import { Card } from '@/ui/components/card'
@@ -33,36 +33,25 @@ export function ImagesView() {
   const [selectedImage, setSelectedImage] = useState<AdminImageDto | null>(null)
   const [copiedId, setCopiedId] = useState<string | null>(null)
 
-  const listQuery = useInfiniteQuery(
-    orpcQuery.admin.images.list.infiniteOptions({
-      input: (pageParam: number) => ({
-        q: q || undefined,
-        kind: kind === 'all' ? undefined : kind,
-        offset: pageParam,
-        limit: pageSize,
-      }),
-      getNextPageParam: (lastPage, _allPages, lastPageParam) => {
-        if (!lastPage.hasMore) {
-          return undefined
-        }
-        return (lastPageParam ?? 0) + pageSize
-      },
-      initialPageParam: 0,
+  const {
+    rows: allImages,
+    total,
+    isLoading,
+    hasNextPage,
+    isFetchingNextPage,
+    sentinelRef,
+  } = useAdminInfiniteList({
+    namespace: orpcQuery.admin.images.list,
+    pageSize,
+    buildInput: (offset) => ({
+      q: q || undefined,
+      kind: kind === 'all' ? undefined : kind,
+      offset,
+      limit: pageSize,
     }),
-  )
-
-  const { hasNextPage, isFetchingNextPage, fetchNextPage, isLoading } = listQuery
-
-  const sentinelRef = useInfiniteScrollSentinel({ hasNextPage, isFetchingNextPage, fetchNextPage })
-
-  const allImages = useMemo(() => listQuery.data?.pages.flatMap((page) => page.images) ?? [], [listQuery.data])
-  const total = listQuery.data?.pages[0]?.total ?? 0
-
-  useEffect(() => {
-    if (listQuery.error) {
-      toast.error('加载图片列表失败', { description: listQuery.error.message })
-    }
-  }, [listQuery.error])
+    selectRows: (page) => page.images,
+    noun: '图片',
+  })
 
   // The grid caches as `type: 'infinite'` and the editor's
   // ImageLibraryPicker as `type: 'query'`; the procedure-level orpcQuery
@@ -83,7 +72,6 @@ export function ImagesView() {
       toast.error('删除图片失败', { description: error.message })
     },
   })
-  const submitDelete = deleteMutation.mutate
 
   const updateNoteMutation = useMutation({
     mutationFn: (vars: { id: string; note: string | null }) =>
@@ -168,12 +156,12 @@ export function ImagesView() {
         actionLabel: '删除',
         destructive: true,
         onConfirm: () => {
-          submitDelete(image.id)
+          deleteMutation.mutate(image.id)
           setSelectedImage(null)
         },
       })
     },
-    [submitDelete],
+    [deleteMutation],
   )
 
   const onRecalculateThumbhash = useCallback(

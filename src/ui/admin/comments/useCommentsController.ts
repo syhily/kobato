@@ -1,18 +1,16 @@
-import { useInfiniteQuery, useQueryClient, type InfiniteData } from '@tanstack/react-query'
+import { useQueryClient, type InfiniteData } from '@tanstack/react-query'
 import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react'
 import { useSearchParams } from 'react-router'
-import { toast } from 'sonner'
 
 import type { CommentBody } from '@/shared/pt/comment-schema'
 
 import { orpc } from '@/client/api/client'
 import { orpcQuery } from '@/client/api/orpc-query'
-import { useInfiniteScrollSentinel } from '@/client/hooks/use-infinite-scroll-sentinel'
-import { getLogger } from '@/client/lib/logger'
 import { idStr } from '@/shared/utils/tools'
 import { isRecord } from '@/shared/utils/type-guards'
 import { unsafeCast } from '@/shared/utils/unsafe-cast'
 import { filterPillsReducer, type ActiveFilter as GenericActiveFilter } from '@/ui/admin/shared/filterPillsReducer'
+import { useAdminInfiniteList } from '@/ui/admin/shared/useAdminInfiniteList'
 
 export type FilterStatus = 'all' | 'pending' | 'approved' | 'deleteRequested'
 
@@ -156,8 +154,6 @@ export interface StatusCounts {
 
 const PAGE_SIZE = 10
 const URL_SYNC_DEBOUNCE_MS = 300
-
-const log = getLogger('comments.useCommentsController')
 
 export type AdminCommentsPage = Awaited<ReturnType<typeof orpc.admin.comments.loadAll>>
 export type AdminCommentsData = InfiniteData<AdminCommentsPage, number>
@@ -329,63 +325,47 @@ export function useCommentsController({ initialFilters }: UseCommentsControllerO
   const textMatch = filterText?.value ? filterText.op : ''
   const createdAfter = filterCreatedAfter ?? ''
   const createdBefore = filterCreatedBefore ?? ''
-  // Build the options once so the exact queryKey is available below for the
-  // local patches — the builder derives the key from `input(initialPageParam)`,
-  // so a second construction would just repeat the same work.
-  const listOptions = useMemo(
-    () =>
-      orpcQuery.admin.comments.loadAll.infiniteOptions({
-        input: (pageParam: number) => ({
-          offset: pageParam,
-          limit: PAGE_SIZE,
-          ...(filterPageKey ? { pageKey: filterPageKey } : {}),
-          ...(filterAuthorId ? { userId: filterAuthorId } : {}),
-          ...(filterStatus !== 'all' ? { status: filterStatus } : {}),
-          // `textQuery`/`textMatch` are truthy together; guarding on both
-          // narrows `match` to the contract's operator union (drops '').
-          ...(textQuery && textMatch ? { q: textQuery, match: textMatch } : {}),
-          ...(createdAfter ? { createdAfter } : {}),
-          ...(createdBefore ? { createdBefore } : {}),
-        }),
-        getNextPageParam: (lastPage, _allPages, lastPageParam) => {
-          if (!lastPage.hasMore) {
-            return undefined
-          }
-          return (lastPageParam ?? 0) + PAGE_SIZE
-        },
-        initialPageParam: 0,
-      }),
-    [filterStatus, filterPageKey, filterAuthorId, textQuery, textMatch, createdAfter, createdBefore],
-  )
+  const {
+    rows: comments,
+    total,
+    firstPage,
+    isLoading,
+    hasNextPage,
+    isFetchingNextPage,
+    sentinelRef,
+    queryKey: listQueryKey,
+  } = useAdminInfiniteList({
+    namespace: orpcQuery.admin.comments.loadAll,
+    pageSize: PAGE_SIZE,
+    buildInput: (offset) => ({
+      offset,
+      limit: PAGE_SIZE,
+      ...(filterPageKey ? { pageKey: filterPageKey } : {}),
+      ...(filterAuthorId ? { userId: filterAuthorId } : {}),
+      ...(filterStatus !== 'all' ? { status: filterStatus } : {}),
+      // `textQuery`/`textMatch` are truthy together; guarding on both
+      // narrows `match` to the contract's operator union (drops '').
+      ...(textQuery && textMatch ? { q: textQuery, match: textMatch } : {}),
+      ...(createdAfter ? { createdAfter } : {}),
+      ...(createdBefore ? { createdBefore } : {}),
+    }),
+    selectRows: (page) => page.comments,
+    noun: '评论',
+  })
+  const statusCounts = firstPage?.statusCounts ?? ZERO_STATUS_COUNTS
 
-  const listQuery = useInfiniteQuery(listOptions)
-
-  const { hasNextPage, isFetchingNextPage, fetchNextPage, isLoading } = listQuery
-  const comments = useMemo(() => listQuery.data?.pages.flatMap((page) => page.comments) ?? [], [listQuery.data])
-  const total = listQuery.data?.pages[0]?.total ?? 0
-  const statusCounts = listQuery.data?.pages[0]?.statusCounts ?? ZERO_STATUS_COUNTS
-
+  // The hook rebuilds the query key every render; keep the latest in a ref
+  // (synced from an effect) so the cache-patch callbacks below stay
+  // referentially stable.
+  const listQueryKeyRef = useRef(listQueryKey)
   useEffect(() => {
-    if (!listQuery.error) {
-      return
-    }
-    if (listQuery.isFetchNextPageError) {
-      toast.error('加载更多评论失败')
-      log.warn('Failed to load more comments', { error: listQuery.error })
-    } else {
-      toast.error('加载评论列表失败', {
-        description: listQuery.error instanceof Error ? listQuery.error.message : String(listQuery.error),
-      })
-    }
-  }, [listQuery.error, listQuery.isFetchNextPageError])
-
-  const sentinelRef = useInfiniteScrollSentinel({ hasNextPage, isFetchingNextPage, fetchNextPage })
-
+    listQueryKeyRef.current = listQueryKey
+  }, [listQueryKey])
   const patchList = useCallback(
     (patch: (data: AdminCommentsData) => AdminCommentsData) => {
-      queryClient.setQueryData<AdminCommentsData>(listOptions.queryKey, (old) => (old ? patch(old) : old))
+      queryClient.setQueryData<AdminCommentsData>(listQueryKeyRef.current, (old) => (old ? patch(old) : old))
     },
-    [queryClient, listOptions],
+    [queryClient],
   )
 
   const approveComment = useCallback((id: string) => patchList((data) => approveCommentInPages(data, id)), [patchList])
