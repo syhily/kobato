@@ -68,8 +68,6 @@ export interface UseEditorShellStateArgs<
   TUpsertMetaInput = Record<string, unknown>,
 > {
   mode: 'create' | 'edit'
-  /** `'post' | 'page'` — drives body-key prefixes and route stubs. */
-  entityKind: 'post' | 'page'
 
   /** Pre-loaded detail (edit-mode only). */
   detail?: EditorShellDetail<TEntity>

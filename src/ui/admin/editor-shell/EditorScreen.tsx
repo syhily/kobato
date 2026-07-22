@@ -130,7 +130,6 @@ export function EditorScreen<
 
   const state: UseEditorShellStateOutput<TMeta> = useEditorShellState<TMeta, TEntity, TUpsertMetaInput>({
     mode,
-    entityKind: adapter.entityKind,
     detail: editorDetail,
     emptyMeta: adapter.emptyMeta,
     metaDraftFromEntity: adapter.metaDraftFromEntity,

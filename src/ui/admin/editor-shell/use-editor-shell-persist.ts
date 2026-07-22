@@ -9,21 +9,21 @@ import type {
   EditorShellDetail,
   EditorShellStatus,
   EntityLike,
+  RevisionLike,
   UseEditorShellStateArgs,
 } from '@/ui/admin/editor-shell/editor-shell-types'
-import type { ActionBannerController } from '@/ui/admin/editor-shell/use-action-banner'
 
 import { useAutosave, type AutosaveStatus } from '@/client/hooks/use-autosave'
 import { arePortableTextBodiesEquivalent } from '@/shared/pt/bridge/canonicalize'
 import { localInputValueToIso } from '@/ui/admin/editor-shell/editor-datetime'
+import { deriveBaselineRevision, deriveBaselineUpdatedAtMs } from '@/ui/admin/editor-shell/editor-shell-derived'
+import { useActionBanner } from '@/ui/admin/editor-shell/use-action-banner'
 
 /** Live draft snapshot the persist flows read (autosave + the four persist handlers). */
 export interface EditorShellPersistDraft<TMeta> {
   meta: TMeta
   body: PortableTextBody
   expectedToken: string | null
-  lastSavedBody: PortableTextBody
-  serverPublishedAtIso: string | null
   conflict: { localBody: PortableTextBody; localSavedAt: number } | null
 }
 
@@ -41,17 +41,20 @@ export interface EditorShellPersistMutations<
   directSaveDraft: UseEditorShellStateArgs<TMeta, TEntity, TUpsertMetaInput>['directSaveDraft']
 }
 
-/** Orchestrator-owned reducers the mutation callbacks report back into. */
-export interface EditorShellPersistReducers<TMeta, TEntity> {
-  metaDraftFromEntity: (entity: TEntity) => TMeta
-  onMetaSaved: (entity: TEntity) => void
-  onBodySaved: (payload: SaveBodyOutput) => void
-  onUnpublishSaved: (entity: TEntity, freshMeta: TMeta) => void
-  noteError: (message: string) => void
-  setStatus: React.Dispatch<React.SetStateAction<EditorShellStatus>>
-  setMeta: React.Dispatch<React.SetStateAction<TMeta>>
-  setServerPublishedAtIso: React.Dispatch<React.SetStateAction<string | null>>
-  markBodySaved: (savedBody: PortableTextBody) => void
+/**
+ * The few writes persist must report into orchestrator-owned state. The meta
+ * draft and the revision-token race stay in the orchestrator: the token keys
+ * the local-storage draft (`useLocalDraft`), and the conflict that draft
+ * surfaces gates autosave here — moving the token into persist would close
+ * a hook-ordering cycle between the two modules.
+ */
+export interface EditorShellPersistNotifications<TMeta> {
+  /** Adopt the server-confirmed meta draft after a meta save / unpublish. */
+  applyServerMeta: (meta: TMeta) => void
+  /** Flip the local meta draft's `published` flag after a successful publish. */
+  markMetaPublished: () => void
+  /** Advance the revision race (expected token + latest/published) after a body save. */
+  noteRevisionSaved: (revision: RevisionLike) => void
 }
 
 export interface UseEditorShellPersistArgs<
@@ -59,21 +62,17 @@ export interface UseEditorShellPersistArgs<
   TEntity extends EntityLike,
   TUpsertMetaInput = Record<string, unknown>,
 > {
-  isEditing: boolean
+  /** Pre-loaded detail; `undefined` means create mode — every edit flow gates on it. */
   detail?: EditorShellDetail<TEntity>
   draft: EditorShellPersistDraft<TMeta>
   mutations: EditorShellPersistMutations<TMeta, TEntity, TUpsertMetaInput>
-  reducers: EditorShellPersistReducers<TMeta, TEntity>
+  /** Entity → meta-draft projection, straight from `UseEditorShellStateArgs`. */
+  metaDraftFromEntity: (entity: TEntity) => TMeta
+  notifications: EditorShellPersistNotifications<TMeta>
   routing: {
     editPath: (id: string) => string
     navigate: NavigateFunction
   }
-  /**
-   * Narrow slice of the banner protocol: persist arms the countdown
-   * (`begin(kind, legs)`) and owns the leg count — the orchestrator's
-   * reducers note and cancel legs through the same controller.
-   */
-  actionBanner: Pick<ActionBannerController, 'begin'>
   createDraft: { migrateToEditKey: (id: string, token: string, body: PortableTextBody) => void }
 }
 
@@ -82,48 +81,122 @@ export function useEditorShellPersist<
   TEntity extends EntityLike,
   TUpsertMetaInput = Record<string, unknown>,
 >(args: UseEditorShellPersistArgs<TMeta, TEntity, TUpsertMetaInput>) {
-  const { isEditing, detail, draft, mutations, reducers, routing, actionBanner, createDraft } = args
-  const { meta, body, expectedToken, lastSavedBody, serverPublishedAtIso, conflict } = draft
+  const { detail, draft, mutations, metaDraftFromEntity, notifications, routing, createDraft } = args
+  const { meta, body, expectedToken, conflict } = draft
   const { upsertMetaFn, saveDraftFn, publishFn, unpublishFn, buildUpsertMetaPayload, directSaveDraft } = mutations
-  const {
-    metaDraftFromEntity,
-    onMetaSaved,
-    onBodySaved,
-    onUnpublishSaved,
-    noteError,
-    setStatus,
-    setMeta,
-    setServerPublishedAtIso,
-    markBodySaved,
-  } = reducers
+  const { applyServerMeta, markMetaPublished, noteRevisionSaved } = notifications
   const { editPath, navigate } = routing
-  // Destructured so the persist handlers can dep on the stable callback
-  // itself, not on the narrow wrapper object the orchestrator rebuilds.
-  const beginActionBanner = actionBanner.begin
+  const isEditing = detail !== undefined
+
+  // --- Owned save-flow state -------------------------------------------------
+  // Status, the save timestamp, saved-body bookkeeping, the server's
+  // publishedAt, and the post-save preview banner all live here: every
+  // persist flow writes them and the orchestrator only projects them into
+  // the sidebar / toolbar views. The banner protocol (arm → note legs →
+  // show / cancel) never crosses the module boundary anymore — persist arms
+  // the countdown and the mutation callbacks below note and cancel legs.
+  const [status, setStatus] = useState<EditorShellStatus>({ kind: 'idle' })
+  const [displaySaveAtMs, setDisplaySaveAtMs] = useState<number | null>(() => deriveBaselineUpdatedAtMs(detail))
+  const [lastSavedBody, setLastSavedBody] = useState<PortableTextBody>(() => deriveBaselineRevision(detail)?.body ?? [])
+  const [serverPublishedAtIso, setServerPublishedAtIso] = useState<string | null>(detail?.entity.publishedAt ?? null)
+  const {
+    banner: previewBanner,
+    begin: beginActionBanner,
+    noteLeg: noteActionLegSucceeded,
+    cancel: cancelActionBanner,
+    dismiss: dismissPreviewBanner,
+  } = useActionBanner()
+
+  const markBodySaved = useCallback((savedBody: PortableTextBody) => {
+    setLastSavedBody(savedBody)
+  }, [])
+
+  // --- Mutation reducers (module-private) ------------------------------------
+  const noteError = useCallback(
+    (message: string) => {
+      setStatus({ kind: 'error', message })
+      cancelActionBanner()
+    },
+    [cancelActionBanner],
+  )
+
+  const noteMetaSaved = useCallback(
+    (saved: TEntity) => {
+      // A save round runs the meta and body legs concurrently; when the body
+      // leg already landed with a warning, the meta leg must not hide it.
+      setStatus((prev) => (prev.kind === 'warning' ? prev : { kind: 'saved', at: new Date() }))
+      applyServerMeta(metaDraftFromEntity(saved))
+      setServerPublishedAtIso(saved.publishedAt)
+      const saveMs = Date.parse(saved.updatedAt)
+      if (!Number.isNaN(saveMs)) {
+        setDisplaySaveAtMs(saveMs)
+      }
+      noteActionLegSucceeded(saved.slug)
+    },
+    [applyServerMeta, metaDraftFromEntity, noteActionLegSucceeded],
+  )
+
+  const noteBodySaved = useCallback(
+    (payload: SaveBodyOutput) => {
+      if (payload.status === 'conflict') {
+        setStatus({ kind: 'conflict', expectedToken: payload.expectedToken })
+        cancelActionBanner()
+        return
+      }
+      if (payload.warning !== undefined) {
+        setStatus({ kind: 'warning', message: payload.warning })
+      } else {
+        setStatus({ kind: 'saved', at: new Date() })
+      }
+      const saveMs = Date.parse(payload.revision.updatedAt)
+      if (!Number.isNaN(saveMs)) {
+        setDisplaySaveAtMs(saveMs)
+      }
+      const slugForBanner = meta.slug.trim() === '' ? (detail?.entity.slug ?? '') : meta.slug.trim()
+      noteActionLegSucceeded(slugForBanner)
+      noteRevisionSaved(payload.revision)
+      markBodySaved(payload.revision.body)
+    },
+    [meta.slug, detail, cancelActionBanner, noteActionLegSucceeded, noteRevisionSaved, markBodySaved],
+  )
+
+  const noteUnpublishSaved = useCallback(
+    (saved: TEntity) => {
+      setStatus({ kind: 'saved', at: new Date() })
+      applyServerMeta(metaDraftFromEntity(saved))
+      setServerPublishedAtIso(saved.publishedAt)
+      const saveMs = Date.parse(saved.updatedAt)
+      if (!Number.isNaN(saveMs)) {
+        setDisplaySaveAtMs(saveMs)
+      }
+      dismissPreviewBanner()
+    },
+    [applyServerMeta, metaDraftFromEntity, dismissPreviewBanner],
+  )
 
   const upsertMetaMutation = useMutation({
     mutationFn: upsertMetaFn,
-    onSuccess: (saved) => onMetaSaved(saved),
+    onSuccess: (saved) => noteMetaSaved(saved),
     onError: (error) => noteError(error.message),
   })
   const saveDraftMutation = useMutation({
     mutationFn: saveDraftFn,
-    onSuccess: (payload) => onBodySaved(payload),
+    onSuccess: (payload) => noteBodySaved(payload),
     onError: (error) => noteError(error.message),
   })
   const publishMutation = useMutation({
     mutationFn: publishFn,
     onSuccess: (payload) => {
-      onBodySaved(payload)
+      noteBodySaved(payload)
       if (payload.status === 'saved') {
-        setMeta((m) => ({ ...m, published: true }))
+        markMetaPublished()
       }
     },
     onError: (error) => noteError(error.message),
   })
   const unpublishMutation = useMutation({
     mutationFn: unpublishFn,
-    onSuccess: (saved) => onUnpublishSaved(saved, metaDraftFromEntity(saved)),
+    onSuccess: (saved) => noteUnpublishSaved(saved),
     onError: (error) => noteError(error.message),
   })
 
@@ -137,13 +210,13 @@ export function useEditorShellPersist<
   // --- Autosave ------------------------------------------------------------
   const [isCreating, setIsCreating] = useState(false)
   const autosaveEnabled = isEditing && conflict === null && !isSubmittingAny
-  // The `onBodySaved` reducer reads from a closure that captures
+  // The `noteBodySaved` reducer reads from a closure that captures
   // `detail`, `expectedToken`, etc. We mirror it through a ref so the
   // autosave flush always picks up the latest values without forcing
   // every keystroke to recreate the flush callback.
   const handleBodySavedRef = useRef<(payload: SaveBodyOutput) => void>(() => undefined)
   useEffect(() => {
-    handleBodySavedRef.current = onBodySaved
+    handleBodySavedRef.current = noteBodySaved
   })
 
   const flushAutosave = useCallback(
@@ -173,7 +246,7 @@ export function useEditorShellPersist<
       if (autosaveStatus.kind === 'saving') {
         setStatus({ kind: 'saving' })
       } else if (autosaveStatus.kind === 'saved') {
-        // The flush's own onBodySaved may have surfaced a save-result
+        // The flush's own noteBodySaved may have surfaced a save-result
         // warning; the engine's generic 'saved' tick must not hide it.
         setStatus((prev) => (prev.kind === 'warning' ? prev : { kind: 'saved', at: new Date(autosaveStatus.at) }))
       } else if (autosaveStatus.kind === 'retrying') {
@@ -244,7 +317,6 @@ export function useEditorShellPersist<
     buildUpsertMetaPayload,
     editPath,
     navigate,
-    setStatus,
     markBodySaved,
   ])
 
@@ -276,7 +348,6 @@ export function useEditorShellPersist<
     upsertMetaMutation,
     saveDraftMutation,
     buildUpsertMetaPayload,
-    setStatus,
     beginActionBanner,
     lastSavedBody,
   ])
@@ -296,17 +367,7 @@ export function useEditorShellPersist<
       ...(publishedAtIso !== null ? { publishedAt: publishedAtIso } : {}),
     })
     setServerPublishedAtIso(publishedAtIso ?? new Date().toISOString())
-  }, [
-    isEditing,
-    detail,
-    body,
-    expectedToken,
-    meta.publishedAt,
-    publishMutation,
-    setStatus,
-    setServerPublishedAtIso,
-    beginActionBanner,
-  ])
+  }, [isEditing, detail, body, expectedToken, meta.publishedAt, publishMutation, beginActionBanner])
 
   const persistUnpublish = useCallback(() => {
     if (!isEditing || !detail) {
@@ -314,7 +375,7 @@ export function useEditorShellPersist<
     }
     setStatus({ kind: 'saving' })
     unpublishMutation.mutate({ id: detail.entity.id })
-  }, [isEditing, detail, unpublishMutation, setStatus])
+  }, [isEditing, detail, unpublishMutation])
 
   // --- Mutation pending flags ----------------------------------------------
   const isPending = isSubmittingAny || isCreating
@@ -323,6 +384,18 @@ export function useEditorShellPersist<
   const isUnpublishing = unpublishMutation.isPending
 
   return {
+    // Owned save-flow state the orchestrator projects into the sidebar and
+    // dialog. `setStatus` / `markBodySaved` are returned for the
+    // orchestrator's own adoption handlers (local-draft / server-version /
+    // revision-history), the only writers outside this module.
+    status,
+    setStatus,
+    displaySaveAtMs,
+    lastSavedBody,
+    markBodySaved,
+    previewBanner,
+    dismissPreviewBanner,
+    noteBodySaved,
     isPending,
     isSavingDraft,
     isPublishing,

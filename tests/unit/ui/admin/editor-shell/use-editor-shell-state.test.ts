@@ -60,7 +60,6 @@ const emptyMeta: Meta = { title: '', slug: '', published: false, publishedAt: ''
 function makeCreateArgs() {
   return {
     mode: 'create' as const,
-    entityKind: 'post' as const,
     emptyMeta,
     metaDraftFromEntity: vi.fn((e: EntityLike) => ({
       title: '',

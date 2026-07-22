@@ -111,7 +111,6 @@ function makeEditArgs() {
   }
   return {
     mode: 'edit' as const,
-    entityKind: 'post' as const,
     detail,
     emptyMeta,
     metaDraftFromEntity: vi.fn((e: EntityLike) => ({
