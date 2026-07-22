@@ -11,8 +11,8 @@ import type { RoleOrNull } from '@/shared/utils/roles'
 import { toAdminRevisionDto } from '@/server/domains/content/projection'
 import { publishLatestRevision, saveDraftRevision } from '@/server/domains/content/repos/mutate'
 import { findContentById, findLatestDraft, findLatestRevision } from '@/server/domains/content/repos/query'
-import { canonicalizeBodyOrThrow } from '@/server/domains/content/save-helpers'
 import { syncLibraryImageBlocks } from '@/server/domains/content/services/image-sync'
+import { canonicalizePortableTextBody } from '@/server/domains/pt/services/canonicalize'
 import { getLogger, type Logger } from '@/server/infra/logger'
 import { deriveSlug } from '@/server/infra/slug'
 import { collectHeadings, collectImageStoragePaths } from '@/shared/pt/utils'
@@ -117,7 +117,7 @@ export async function saveBody<TMeta, TPreview>(
 ): Promise<SaveBodyResult> {
   const meta = await adapter.findMetaById(db, input.entityId)
   adapter.assertAccess(meta, viewer)
-  const body = await canonicalizeBodyOrThrow(input.body)
+  const body = await canonicalizePortableTextBody(input.body)
 
   const warnings: string[] = []
 
@@ -212,7 +212,7 @@ export async function previewBody(
   // Route preview through the same canonicalize + prerender pipeline as
   // the save path so the preview matches what will actually be published
   // (Shiki/KaTeX artifacts included).
-  const body = await canonicalizeBodyOrThrow(rawBody)
+  const body = await canonicalizePortableTextBody(rawBody)
   const html = await render(body)
   const headings = collectHeadings(body, deriveSlug)
   return { html, headings }
