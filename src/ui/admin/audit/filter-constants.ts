@@ -2,7 +2,11 @@ import type { ComponentType, SVGProps } from 'react'
 
 import { CalendarIcon, ListChecksIcon, NetworkIcon, SearchIcon, UserIcon } from 'lucide-react'
 
-import type { AuditLogFilterFieldKey } from '@/ui/admin/audit/useAuditLogReducer'
+import type { ActiveFilter as GenericActiveFilter } from '@/ui/admin/shared/filterPillsReducer'
+
+export type AuditLogFilterFieldKey = 'action' | 'resourceType' | 'actor' | 'ip' | 'date'
+
+export type ActiveFilter = GenericActiveFilter<AuditLogFilterFieldKey>
 
 export type FieldIcon = ComponentType<SVGProps<SVGSVGElement>>
 

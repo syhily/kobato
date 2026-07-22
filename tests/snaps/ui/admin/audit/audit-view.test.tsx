@@ -1,13 +1,63 @@
-import { describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { AuditLogActorDto, AuditLogItemDto } from '@/shared/types/audit'
-import type { ActiveFilter } from '@/ui/admin/audit/useAuditLogReducer'
+import type { ActiveFilter } from '@/ui/admin/audit/filter-constants'
 
 import { renderInRouter, renderToHtml, stableHtml } from '#/_helpers/render'
 import { AuditLogFilterAddButton } from '@/ui/admin/audit/AuditLogFilterAddButton'
 import { AuditLogFilterPill } from '@/ui/admin/audit/AuditLogFilterPill'
 import { AuditLogRow } from '@/ui/admin/audit/AuditLogRow'
 import { AuditLogView } from '@/ui/admin/audit/AuditLogView'
+
+// AuditLogView drives its rows from `useAdminInfiniteList` (server state
+// lives in the TanStack cache, via an internal `useInfiniteQuery`). The list
+// query is stubbed through a hoisted slot so each test can pick the branch;
+// the actors query and the export mutation are stubbed alongside.
+
+const queryMocks = vi.hoisted(() => ({
+  infinite: {
+    data: undefined as { pages: { items: AuditLogItemDto[]; total: number; hasMore: boolean }[] } | undefined,
+    isLoading: false,
+    error: null as Error | null,
+    hasNextPage: false,
+    isFetchingNextPage: false,
+    fetchNextPage: vi.fn(),
+  },
+  query: {
+    data: undefined as AuditLogActorDto[] | undefined,
+  },
+  mutation: {
+    mutate: vi.fn(),
+    mutateAsync: vi.fn(),
+    isPending: false,
+  },
+}))
+
+vi.mock('@tanstack/react-query', async () => {
+  const actual = await vi.importActual<typeof import('@tanstack/react-query')>('@tanstack/react-query')
+  return {
+    ...actual,
+    useQuery: () => queryMocks.query,
+    useMutation: () => queryMocks.mutation,
+    useInfiniteQuery: () => queryMocks.infinite,
+  }
+})
+
+// `orpcQuery` builds the query/mutation option objects the hooks above
+// consume; stub the option builders so the import stays side-effect free.
+vi.mock('@/client/api/orpc-query', () => ({
+  orpcQuery: {
+    admin: {
+      auditLog: {
+        list: { infiniteOptions: () => ({ queryKey: ['auditLog', 'list'] }) },
+        actors: { queryOptions: () => ({ queryKey: ['actors'], queryFn: async () => [] }) },
+        exportCsv: { mutationOptions: () => ({ mutationKey: ['exportCsv'] }) },
+      },
+    },
+  },
+}))
+
+vi.mock('sonner', () => ({ toast: { error: vi.fn(), success: vi.fn() } }))
 
 // Canonical fixtures shared by the snapshot tests below. Shapes mirror
 // `AuditLogItemDto` / `AuditLogActorDto` exactly so changing the wire
@@ -39,13 +89,24 @@ const ACTORS: AuditLogActorDto[] = [
 ]
 
 describe('snapshot: AuditLogView', () => {
+  beforeEach(() => {
+    queryMocks.infinite = {
+      data: { pages: [{ items: [], total: 0, hasMore: false }] },
+      isLoading: false,
+      error: null,
+      hasNextPage: false,
+      isFetchingNextPage: false,
+      fetchNextPage: vi.fn(),
+    }
+    queryMocks.query = { data: ACTORS }
+    queryMocks.mutation = { mutate: vi.fn(), mutateAsync: vi.fn(), isPending: false }
+  })
+
   it('renders the page shell under SSR (header, filter trigger, export button)', () => {
-    // AuditLogView drives its data via useQuery + an effect that only
-    // fires on the client, so SSR lands with `items=[]` and no active
-    // filters. The empty-state branch renders; we assert the always-on
-    // chrome (header copy, the "筛选" trigger that the filter bar mounts
-    // when no filter is active, and the export affordance) without
-    // depending on the pending query resolving.
+    // The list query resolves with zero rows and no active filters, so the
+    // empty-state branch renders; we assert the always-on chrome (header
+    // copy, the "筛选" trigger that the filter bar mounts when no filter is
+    // active, and the export affordance).
     const html = stableHtml(renderInRouter(<AuditLogView retentionDays={90} />, '/admin/security/audit-log'))
 
     // Header copy — title and the retention-window description both

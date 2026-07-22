@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { AuditLogActorDto, AuditLogItemDto } from '@/shared/types/audit'
-import type { ActiveFilter } from '@/ui/admin/audit/useAuditLogReducer'
+import type { ActiveFilter } from '@/ui/admin/audit/filter-constants'
 
 import { renderInRouter, stableHtml } from '#/_helpers/render'
 import { AuditLogView } from '@/ui/admin/audit/AuditLogView'
@@ -9,59 +9,29 @@ import { AuditLogView } from '@/ui/admin/audit/AuditLogView'
 // The companion `audit-view.test.tsx` covers the empty-state shell (no
 // filters, no rows) and exercises `AuditLogRow` / filter-pill components
 // directly. This suite drives the remaining render-path branches in
-// `AuditLogView` itself by MOCKING `useAuditLogReducer` so we can
-// populate `state.items` (the `.map` callback), `state.hasMore`, and
-// `state.filters` (the `hasActiveFilters` header-vs-body placement +
-// the multi-type filter-pill render branches) without depending on the
-// data-load effect (which never fires under SSR).
+// `AuditLogView` itself: populated rows (the `rows.map` callback), the
+// loading skeleton, the has-more sentinel, the export-pending label, and
+// the active-filter pills with the filter bar relocated below the header.
+//
+// Rows come from `useAdminInfiniteList` (an internal `useInfiniteQuery`,
+// stubbed below through a hoisted slot). Filter pills live in the view's
+// own `useReducer(filterPillsReducer, [])`; the `react` mock swaps ONLY
+// that one useReducer call for a hoisted slot so tests can inject active
+// filters — every other useReducer consumer delegates to the real React.
 
-// ─────────────────────── controller mock ────────────────────────────
-
-interface ControllerShape {
-  state: {
-    items: AuditLogItemDto[]
-    total: number
-    hasMore: boolean
-    filters: ActiveFilter[]
-  }
-  dispatch: ReturnType<typeof vi.fn>
-  pageSize: number
-  hasMore: boolean
-  filterAction: string
-  filterResourceType: string
-  filterActorId: string
-  filterDateFrom: string
-  filterDateTo: string
-}
-
-const controller = vi.hoisted<ControllerShape>(() => ({
-  state: { items: [], total: 0, hasMore: false, filters: [] },
+const mocks = vi.hoisted(() => ({
+  filters: [] as ActiveFilter[],
   dispatch: vi.fn(),
-  pageSize: 20,
-  hasMore: false,
-  filterAction: '',
-  filterResourceType: '',
-  filterActorId: '',
-  filterDateFrom: '',
-  filterDateTo: '',
-}))
-
-vi.mock('@/ui/admin/audit/useAuditLogReducer', () => ({
-  useAuditLogReducer: () => controller,
-  // Re-exported by the source module; keep the stubs available so the
-  // real imports inside AuditLogView's transitive graph still resolve.
-  parseDateFilter: () => null,
-  dateFilterLabel: () => '时间',
-  resolveDateFilterBounds: () => ({ from: '', to: '' }),
-}))
-
-// ─────────────────────── react-query mock ───────────────────────────
-
-const queryMocks = vi.hoisted(() => ({
+  infinite: {
+    data: undefined as { pages: { items: AuditLogItemDto[]; total: number; hasMore: boolean }[] } | undefined,
+    isLoading: false,
+    error: null as Error | null,
+    hasNextPage: false,
+    isFetchingNextPage: false,
+    fetchNextPage: vi.fn(),
+  },
   query: {
     data: undefined as AuditLogActorDto[] | undefined,
-    isPending: false,
-    error: null as unknown,
   },
   mutation: {
     mutate: vi.fn(),
@@ -70,12 +40,27 @@ const queryMocks = vi.hoisted(() => ({
   },
 }))
 
+vi.mock('react', async () => {
+  const actual = await vi.importActual<typeof import('react')>('react')
+  const { filterPillsReducer } = await vi.importActual<typeof import('@/ui/admin/shared/filterPillsReducer')>(
+    '@/ui/admin/shared/filterPillsReducer',
+  )
+  return {
+    ...actual,
+    useReducer: (reducer: unknown, ...rest: unknown[]) =>
+      reducer === filterPillsReducer
+        ? [mocks.filters, mocks.dispatch]
+        : (actual.useReducer as (...args: unknown[]) => unknown)(reducer, ...rest),
+  }
+})
+
 vi.mock('@tanstack/react-query', async () => {
   const actual = await vi.importActual<typeof import('@tanstack/react-query')>('@tanstack/react-query')
   return {
     ...actual,
-    useQuery: () => queryMocks.query,
-    useMutation: () => queryMocks.mutation,
+    useQuery: () => mocks.query,
+    useMutation: () => mocks.mutation,
+    useInfiniteQuery: () => mocks.infinite,
   }
 })
 
@@ -85,6 +70,7 @@ vi.mock('@/client/api/orpc-query', () => ({
   orpcQuery: {
     admin: {
       auditLog: {
+        list: { infiniteOptions: () => ({ queryKey: ['auditLog', 'list'] }) },
         actors: { queryOptions: () => ({ queryKey: ['actors'], queryFn: async () => [] }) },
         exportCsv: { mutationOptions: () => ({ mutationKey: ['exportCsv'] }) },
       },
@@ -121,34 +107,42 @@ function makeRow(overrides: Partial<AuditLogItemDto> = {}): AuditLogItemDto {
   }
 }
 
+function setList(items: AuditLogItemDto[], hasMore = false, total = items.length): void {
+  mocks.infinite = {
+    ...mocks.infinite,
+    data: { pages: [{ items, total, hasMore }] },
+    isLoading: false,
+    error: null,
+    hasNextPage: hasMore,
+  }
+}
+
 // ────────────────────────────── setup ───────────────────────────────
 
 describe('snapshot: AuditLogView branches', () => {
   beforeEach(() => {
-    controller.state = { items: [], total: 0, hasMore: false, filters: [] }
-    controller.hasMore = false
-    controller.filterAction = ''
-    controller.filterResourceType = ''
-    controller.filterActorId = ''
-    controller.filterDateFrom = ''
-    controller.filterDateTo = ''
-    queryMocks.query = { data: ACTORS, isPending: false, error: null }
-    queryMocks.mutation = { mutate: vi.fn(), mutateAsync: vi.fn(), isPending: false }
+    mocks.filters = []
+    mocks.dispatch = vi.fn()
+    mocks.infinite = {
+      data: undefined,
+      isLoading: false,
+      error: null,
+      hasNextPage: false,
+      isFetchingNextPage: false,
+      fetchNextPage: vi.fn(),
+    }
+    mocks.query = { data: ACTORS }
+    mocks.mutation = { mutate: vi.fn(), mutateAsync: vi.fn(), isPending: false }
   })
 
-  it('renders populated log rows via the state.items.map callback', () => {
-    // Drive the controller into the data-loaded state with two rows.
-    // The `.map` callback renders each `AuditLogRow`; we assert the
+  it('renders populated log rows via the rows.map callback', () => {
+    // Drive the list into the data-loaded state with two rows. The
+    // `rows.map` callback renders each `AuditLogRow`; we assert the
     // user-visible action label + actor name + resource type resolve.
-    controller.state = {
-      items: [
-        makeRow({ action: 'login', actorName: '雨帆', resourceType: 'session' }),
-        makeRow({ action: 'post_published', actorName: '访客甲', resourceType: 'post', resourceId: '128' }),
-      ],
-      total: 2,
-      hasMore: false,
-      filters: [],
-    }
+    setList([
+      makeRow({ action: 'login', actorName: '雨帆', resourceType: 'session' }),
+      makeRow({ action: 'post_published', actorName: '访客甲', resourceType: 'post', resourceId: '128' }),
+    ])
 
     const html = stableHtml(renderInRouter(<AuditLogView retentionDays={90} />, '/admin/security/audit-log'))
 
@@ -160,36 +154,44 @@ describe('snapshot: AuditLogView branches', () => {
     expect(html).toContain('文章发布')
     expect(html).toContain('访客甲')
     expect(html).toContain('文章')
-    // End-of-list sentinel (no hasMore + items > 0).
+    // End-of-list footer (no hasNextPage + rows > 0).
     expect(html).toContain('已加载全部审计日志')
   })
 
   it('renders the empty-state branch when no rows are loaded', () => {
-    controller.state = { items: [], total: 0, hasMore: false, filters: [] }
+    setList([])
 
     const html = stableHtml(renderInRouter(<AuditLogView retentionDays={30} />, '/admin/security/audit-log'))
 
     expect(html).toContain('暂无审计日志记录')
-    // End-of-list sentinel is gated behind `items.length > 0`.
+    // End-of-list footer is gated behind `rows.length > 0`.
+    expect(html).not.toContain('已加载全部审计日志')
+  })
+
+  it('renders the loading skeleton while the first page is pending', () => {
+    mocks.infinite = { ...mocks.infinite, data: undefined, isLoading: true }
+
+    const html = stableHtml(renderInRouter(<AuditLogView retentionDays={90} />, '/admin/security/audit-log'))
+
+    // The skeleton branch mounts placeholder rows instead of the empty
+    // state or the list footer.
+    expect(html).toContain('data-slot="skeleton"')
+    expect(html).not.toContain('暂无审计日志记录')
     expect(html).not.toContain('已加载全部审计日志')
   })
 
   it('renders the active-filter pills (multi-type) and relocates the filter bar below the header', () => {
     // `hasActiveFilters` flips the filter-bar placement: when filters
     // are active the bar renders BELOW the header (instead of inside
-    // it) and the add-button switches to "添加筛选". Drive the
-    // controller with multiple filter types so every pill render branch
-    // in AuditLogFilterBar / AuditLogFilterPill runs.
-    controller.state = {
-      items: [makeRow()],
-      total: 1,
-      hasMore: false,
-      filters: [
-        { field: 'action', value: 'login', label: '登录' },
-        { field: 'resourceType', value: 'post', label: '文章' },
-        { field: 'ip', value: '203.0.113', label: 'IP' },
-      ],
-    }
+    // it) and the add-button switches to "添加筛选". Drive multiple
+    // filter types so every pill render branch in AuditLogFilterBar /
+    // AuditLogFilterPill runs.
+    mocks.filters = [
+      { field: 'action', value: 'login', label: '登录' },
+      { field: 'resourceType', value: 'post', label: '文章' },
+      { field: 'ip', value: '203.0.113', label: 'IP' },
+    ]
+    setList([makeRow()])
 
     const html = stableHtml(renderInRouter(<AuditLogView retentionDays={90} />, '/admin/security/audit-log'))
 
@@ -213,8 +215,8 @@ describe('snapshot: AuditLogView branches', () => {
     // The export button label flips to '导出中…' when the mutation is
     // pending. Drive the mock mutation into the pending state to hit
     // that render branch.
-    queryMocks.mutation = { mutate: vi.fn(), mutateAsync: vi.fn(), isPending: true }
-    controller.state = { items: [], total: 0, hasMore: false, filters: [] }
+    mocks.mutation = { mutate: vi.fn(), mutateAsync: vi.fn(), isPending: true }
+    setList([])
 
     const html = stableHtml(renderInRouter(<AuditLogView retentionDays={90} />, '/admin/security/audit-log'))
 
@@ -223,21 +225,14 @@ describe('snapshot: AuditLogView branches', () => {
     expect(html).toContain('disabled')
   })
 
-  it('renders the load-more sentinel + spinner branch when hasMore is true', () => {
-    // `state.hasMore` gates the sentinel `<div ref={sentinelRef}>`
-    // mount. The `loadingMore` spinner branch is event-gated (set in
-    // the IntersectionObserver callback), so the coverable branch here
-    // is the sentinel + the absence of the end-of-list footer.
-    controller.state = {
-      items: [makeRow()],
-      total: 50,
-      hasMore: true,
-      filters: [],
-    }
+  it('renders the load-more sentinel branch when hasNextPage is true', () => {
+    // `hasNextPage` gates the sentinel `<div ref={sentinelRef}>` mount and
+    // suppresses the end-of-list footer.
+    setList([makeRow()], true, 50)
 
     const html = stableHtml(renderInRouter(<AuditLogView retentionDays={90} />, '/admin/security/audit-log'))
 
-    // With hasMore true the end-of-list footer is hidden.
+    // With hasNextPage true the end-of-list footer is hidden.
     expect(html).not.toContain('已加载全部审计日志')
     // The populated row still renders.
     expect(html).toContain('雨帆')

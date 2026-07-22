@@ -1,16 +1,17 @@
 import { useMutation, useQuery } from '@tanstack/react-query'
-import { DownloadIcon, LoaderIcon, SearchIcon } from 'lucide-react'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { toast } from 'sonner'
+import { DownloadIcon, SearchIcon } from 'lucide-react'
+import { useCallback, useMemo, useReducer, useState } from 'react'
 
-import { orpc } from '@/client/api/client'
+import type { ActiveFilter, AuditLogFilterFieldKey } from '@/ui/admin/audit/filter-constants'
+
 import { orpcQuery } from '@/client/api/orpc-query'
-import { useInfiniteScrollSentinel } from '@/client/hooks/use-infinite-scroll-sentinel'
-import { getLogger } from '@/client/lib/logger'
 import { AuditLogFilterBar } from '@/ui/admin/audit/AuditLogFilterBar'
 import { AuditLogRow } from '@/ui/admin/audit/AuditLogRow'
-import { parseDateFilter, type AuditLogFilterFieldKey, useAuditLogReducer } from '@/ui/admin/audit/useAuditLogReducer'
+import { AdminInfiniteListFooter } from '@/ui/admin/shared/AdminInfiniteListFooter'
 import { AdminListPage } from '@/ui/admin/shared/AdminListPage'
+import { parseDateFilter } from '@/ui/admin/shared/date-filter'
+import { filterPillsReducer } from '@/ui/admin/shared/filterPillsReducer'
+import { useAdminInfiniteList } from '@/ui/admin/shared/useAdminInfiniteList'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -28,116 +29,52 @@ import { Skeleton } from '@/ui/components/skeleton'
 import { skeletonKeys } from '@/ui/lib/skeleton-keys'
 
 const PAGE_SIZE = 20
-const log = getLogger('audit.AuditLogView')
+
+function buildQueryInput(filters: ActiveFilter[], offset: number) {
+  const action = filters.find((f) => f.field === 'action')?.value
+  const resourceType = filters.find((f) => f.field === 'resourceType')?.value
+  const actorId = filters.find((f) => f.field === 'actor')?.value
+  const ip = filters.find((f) => f.field === 'ip')?.value
+  const dateRange = parseDateFilter(filters.find((f) => f.field === 'date')?.value)
+
+  return {
+    offset,
+    limit: PAGE_SIZE,
+    ...(action ? { action } : {}),
+    ...(resourceType ? { resourceType } : {}),
+    ...(actorId ? { actorId } : {}),
+    ...(ip ? { ip } : {}),
+    ...(dateRange?.from ? { dateFrom: dateRange.from } : {}),
+    ...(dateRange?.to ? { dateTo: dateRange.to } : {}),
+  }
+}
 
 interface AuditLogViewProps {
   retentionDays: number
 }
 
 export function AuditLogView({ retentionDays }: AuditLogViewProps) {
-  const { state, dispatch } = useAuditLogReducer()
+  const [filters, dispatch] = useReducer(filterPillsReducer<AuditLogFilterFieldKey>, [])
 
-  const [isLoading, setIsLoading] = useState(false)
-  const [loadingMore, setLoadingMore] = useState(false)
   const [exportOpen, setExportOpen] = useState(false)
   const [includeFullIp, setIncludeFullIp] = useState(false)
-  const lastQueryKeyRef = useRef<string | null>(null)
+
+  const { rows, isLoading, hasNextPage, isFetchingNextPage, sentinelRef } = useAdminInfiniteList({
+    namespace: orpcQuery.admin.auditLog.list,
+    pageSize: PAGE_SIZE,
+    buildInput: (offset) => buildQueryInput(filters, offset),
+    selectRows: (page) => page.items,
+    noun: '审计日志',
+  })
 
   const actorsQuery = useQuery(orpcQuery.admin.auditLog.actors.queryOptions())
   const actors = useMemo(() => actorsQuery.data ?? [], [actorsQuery.data])
 
   const exportMutation = useMutation(orpcQuery.admin.auditLog.exportCsv.mutationOptions())
 
-  const buildQueryInput = useCallback(
-    (offset: number) => {
-      const action = state.filters.find((f) => f.field === 'action')?.value
-      const resourceType = state.filters.find((f) => f.field === 'resourceType')?.value
-      const actorId = state.filters.find((f) => f.field === 'actor')?.value
-      const ip = state.filters.find((f) => f.field === 'ip')?.value
-      const dateValue = state.filters.find((f) => f.field === 'date')?.value
-      const dateRange = parseDateFilter(dateValue)
-
-      return {
-        offset,
-        limit: PAGE_SIZE,
-        ...(action ? { action } : {}),
-        ...(resourceType ? { resourceType } : {}),
-        ...(actorId ? { actorId } : {}),
-        ...(ip ? { ip } : {}),
-        ...(dateRange?.from ? { dateFrom: dateRange.from } : {}),
-        ...(dateRange?.to ? { dateTo: dateRange.to } : {}),
-      }
-    },
-    [state.filters],
-  )
-
-  const loadItems = useCallback(
-    async (input: { offset: number; limit: number }) => {
-      setIsLoading(true)
-      try {
-        const result = await orpc.admin.auditLog.list(input)
-        dispatch({
-          type: 'loaded',
-          items: result.items,
-          total: result.total,
-          hasMore: result.hasMore,
-        })
-      } catch (error) {
-        toast.error('加载审计日志失败', { description: error instanceof Error ? error.message : String(error) })
-      } finally {
-        setIsLoading(false)
-      }
-    },
-    [dispatch],
-  )
-
-  const reload = useCallback(
-    (force = false) => {
-      const input = buildQueryInput(0)
-      const key = JSON.stringify(input)
-      if (!force && key === lastQueryKeyRef.current) {
-        return
-      }
-      lastQueryKeyRef.current = key
-      void loadItems(input)
-    },
-    [loadItems, buildQueryInput],
-  )
-
-  useEffect(() => {
-    reload()
-  }, [reload])
-
-  const loadMore = useCallback(async () => {
-    if (loadingMore || !state.hasMore) {
-      return
-    }
-    setLoadingMore(true)
-    try {
-      const result = await orpc.admin.auditLog.list(buildQueryInput(state.items.length))
-      dispatch({
-        type: 'appended',
-        items: result.items,
-        total: result.total,
-        hasMore: result.hasMore,
-      })
-    } catch (error) {
-      toast.error('加载更多审计日志失败')
-      log.warn('Failed to load more audit logs', { error })
-    } finally {
-      setLoadingMore(false)
-    }
-  }, [loadingMore, state.hasMore, buildQueryInput, state.items.length, dispatch])
-
-  const sentinelRef = useInfiniteScrollSentinel({
-    hasNextPage: state.hasMore,
-    isFetchingNextPage: loadingMore,
-    fetchNextPage: loadMore,
-  })
-
   const handleExport = useCallback(async () => {
     try {
-      const input = buildQueryInput(0)
+      const input = buildQueryInput(filters, 0)
       const result = await exportMutation.mutateAsync({
         action: input.action,
         resourceType: input.resourceType,
@@ -161,7 +98,7 @@ export function AuditLogView({ retentionDays }: AuditLogViewProps) {
     } catch {
       // Error is surfaced via exportMutation.error / isPending state
     }
-  }, [buildQueryInput, exportMutation, includeFullIp])
+  }, [filters, exportMutation, includeFullIp])
 
   const handleAddFilter = useCallback(
     (field: AuditLogFilterFieldKey, value: string, label: string) => {
@@ -181,11 +118,11 @@ export function AuditLogView({ retentionDays }: AuditLogViewProps) {
     dispatch({ type: 'clearFilters' })
   }, [dispatch])
 
-  const hasActiveFilters = state.filters.length > 0
+  const hasActiveFilters = filters.length > 0
 
   const filterBar = (
     <AuditLogFilterBar
-      filters={state.filters}
+      filters={filters}
       onAddFilter={handleAddFilter}
       onRemoveFilter={handleRemoveFilter}
       onClearFilters={handleClearFilters}
@@ -220,35 +157,34 @@ export function AuditLogView({ retentionDays }: AuditLogViewProps) {
       {hasActiveFilters && filterBar}
 
       <AdminListPage.Body>
-        <div className="divide-y">
-          {isLoading ? (
+        {isLoading ? (
+          <div className="divide-y">
             <AuditLogSkeleton />
-          ) : state.items.length === 0 ? (
-            <Empty>
-              <EmptyHeader>
-                <EmptyMedia variant="icon">
-                  <SearchIcon />
-                </EmptyMedia>
-                <EmptyTitle>暂无审计日志记录</EmptyTitle>
-              </EmptyHeader>
-            </Empty>
-          ) : (
-            state.items.map((row) => <AuditLogRow key={row.id} row={row} />)
-          )}
-        </div>
-
-        {state.hasMore && <div ref={sentinelRef} className="h-1" />}
-        {(loadingMore || (!state.hasMore && state.items.length > 0)) && (
-          <div className="py-6 text-center text-sm text-muted-foreground">
-            {loadingMore ? (
-              <span className="inline-flex items-center gap-2">
-                <LoaderIcon className="size-4 animate-spin" />
-                加载中…
-              </span>
-            ) : (
-              '已加载全部审计日志'
-            )}
           </div>
+        ) : rows.length === 0 ? (
+          <Empty>
+            <EmptyHeader>
+              <EmptyMedia variant="icon">
+                <SearchIcon />
+              </EmptyMedia>
+              <EmptyTitle>暂无审计日志记录</EmptyTitle>
+            </EmptyHeader>
+          </Empty>
+        ) : (
+          <>
+            <div className="divide-y">
+              {rows.map((row) => (
+                <AuditLogRow key={row.id} row={row} />
+              ))}
+            </div>
+            {hasNextPage && <div ref={sentinelRef} className="h-1" />}
+            <AdminInfiniteListFooter
+              noun="审计日志"
+              rowCount={rows.length}
+              hasNextPage={hasNextPage}
+              isFetchingNextPage={isFetchingNextPage}
+            />
+          </>
         )}
       </AdminListPage.Body>
 
