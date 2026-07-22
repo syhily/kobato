@@ -48,6 +48,37 @@ export class DomainError extends Error {
   }
 }
 
+/**
+ * Wire shape of a `DomainError` flattened into a plain object. The class
+ * (and its prototype chain) does not survive the structured-clone boundary
+ * of a `worker_threads` message, so the image process worker reports
+ * errors in this shape (see `process-worker.ts`) and the main thread
+ * rehydrates them below.
+ */
+export interface DomainErrorWire {
+  name: string
+  code?: string
+  message: string
+  issues?: { message: string; path?: string[] }[]
+}
+
+/**
+ * Rehydrate a wire-format error back into a real `DomainError`, or return
+ * `null` when it is not one (different `name`, missing `code`, or a code
+ * outside `DOMAIN_ERROR_CODES`). The caller owns the fallback for
+ * non-domain errors.
+ */
+export function domainErrorFromWire(error: DomainErrorWire): DomainError | null {
+  if (error.name === 'DomainError' && error.code !== undefined && isDomainErrorCode(error.code)) {
+    return new DomainError(error.code, error.message, error.issues)
+  }
+  return null
+}
+
+function isDomainErrorCode(code: string): code is DomainErrorCode {
+  return (DOMAIN_ERROR_CODES as readonly string[]).includes(code)
+}
+
 export class ActionFailure extends Error {
   constructor(
     readonly status: number,

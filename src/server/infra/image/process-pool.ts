@@ -10,7 +10,7 @@ import type {
   WorkerResponse,
 } from '@/server/infra/image/process-worker'
 
-import { DOMAIN_ERROR_CODES, DomainError, type DomainErrorCode } from '@/server/infra/http/errors'
+import { domainErrorFromWire } from '@/server/infra/http/errors'
 import { registerShutdownHook } from '@/server/infra/lifecycle'
 import { getLogger } from '@/server/infra/logger'
 import { getEmbeddedAsset, isSea } from '@/server/infra/sea'
@@ -238,19 +238,11 @@ export class WorkerPool {
 
 /**
  * Turn the wire-format error object back into a `DomainError` when the
- * worker reported one, otherwise return a plain `Error`. Keeping this on
- * the main thread (rather than shipping the class prototype across the
- * boundary) avoids structured-clone pitfalls.
+ * worker reported one (see `domainErrorFromWire`), otherwise fall back to
+ * a plain `Error` carrying just the message.
  */
 function rehydrateError(msg: WorkerErrResponse): unknown {
-  if (msg.error.name === 'DomainError' && msg.error.code !== undefined && isDomainErrorCode(msg.error.code)) {
-    return new DomainError(msg.error.code, msg.error.message, msg.error.issues)
-  }
-  return new Error(msg.error.message)
-}
-
-function isDomainErrorCode(code: string): code is DomainErrorCode {
-  return (DOMAIN_ERROR_CODES as readonly string[]).includes(code)
+  return domainErrorFromWire(msg.error) ?? new Error(msg.error.message)
 }
 
 // ─── Module singleton ─────────────────────────────────────

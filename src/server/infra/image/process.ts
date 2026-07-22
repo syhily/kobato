@@ -1,6 +1,6 @@
 import type { ProcessImageInput, ProcessedImage } from '@/server/infra/image/process-worker'
 
-import { DOMAIN_ERROR_CODES, DomainError, type DomainErrorCode } from '@/server/infra/http/errors'
+import { domainErrorFromWire } from '@/server/infra/http/errors'
 import { getProcessPool } from '@/server/infra/image/process-pool'
 import { processImageInWorker, WorkerDomainError } from '@/server/infra/image/process-worker'
 
@@ -36,12 +36,8 @@ export async function processImageBuffer(input: ProcessImageInput): Promise<Proc
  * unchanged.
  */
 function rehydrateDomainError(err: unknown): unknown {
-  if (err instanceof WorkerDomainError && isDomainErrorCode(err.code)) {
-    return new DomainError(err.code, err.message, err.issues)
+  if (err instanceof WorkerDomainError) {
+    return domainErrorFromWire(err) ?? err
   }
   return err
-}
-
-function isDomainErrorCode(code: string): code is DomainErrorCode {
-  return (DOMAIN_ERROR_CODES as readonly string[]).includes(code)
 }

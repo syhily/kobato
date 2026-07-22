@@ -3,6 +3,8 @@ import type { Sharp } from 'sharp'
 
 import { parentPort, workerData } from 'node:worker_threads'
 
+import type { DomainErrorWire } from '@/server/infra/http/errors'
+
 import { requireExternal } from '@/server/infra/sea'
 
 // Relative import (not `@/shared/...`) so the worker is fully
@@ -62,7 +64,10 @@ export interface WorkerErrResponse {
   type: 'process:result'
   id: number
   ok: false
-  error: { name: string; code?: string; message: string; issues?: { message: string; path?: string[] }[] }
+  // Type-only reference (erased at runtime): the wire contract is owned by
+  // `domainErrorFromWire` in `@/server/infra/http/errors`, which must stay
+  // out of this module's runtime graph (see `WorkerDomainError` below).
+  error: DomainErrorWire
 }
 
 export type WorkerResponse = WorkerOkResponse | WorkerErrResponse
@@ -70,16 +75,16 @@ export type WorkerResponse = WorkerOkResponse | WorkerErrResponse
 /**
  * Lightweight stand-in for `DomainError` used inside the worker isolate.
  *
- * We deliberately avoid importing `@/server/infra/http/errors` here —
- * that module uses TypeScript parameter properties (`readonly` in the
- * constructor) which Node's `--experimental-strip-types` cannot transform,
- * and pulling it in would also bring transitive deps. The pool
- * rehydrates these into real `DomainError` instances on the main thread
- * (see `rehydrateError` in `process-pool.ts`), so callers see the exact
- * same exception type they did before the worker offload.
+ * We deliberately avoid importing `@/server/infra/http/errors` here at
+ * runtime — that module uses TypeScript parameter properties (`readonly`
+ * in the constructor) which Node's `--experimental-strip-types` cannot
+ * transform, and pulling it in would also bring transitive deps. The main
+ * thread rehydrates these into real `DomainError` instances via
+ * `domainErrorFromWire` (in `@/server/infra/http/errors`), so callers see
+ * the exact same exception type they did before the worker offload.
  *
  * The `name` is set to `'DomainError'` so the wire format matches what
- * `rehydrateError` checks for.
+ * `domainErrorFromWire` checks for.
  */
 export class WorkerDomainError extends Error {
   readonly code: string
