@@ -1,15 +1,17 @@
 import { type ReactNode } from 'react'
 
 import type { AdminPageDto, PageMetaDraft } from '@/shared/types/pages'
+import type {
+  SidebarPublishStatus,
+  SidebarRevisionSummary,
+  SidebarSaveStatus,
+} from '@/ui/admin/editor-shell/editor-shell-types'
 
 import { PAGE_META_TOGGLE_FIELDS } from '@/shared/types/pages'
-import { GeneratedOgPreview, ImageField } from '@/ui/admin/editor-shared/ImageField'
-import { PublishStatusRow } from '@/ui/admin/editor-shared/PublishStatusRow'
-import { ToggleRow } from '@/ui/admin/editor-shared/ToggleRow'
+import { BasicInfoCard } from '@/ui/admin/editor-shared/BasicInfoCard'
+import { CoverOgCard } from '@/ui/admin/editor-shared/CoverOgCard'
+import { ToggleOptionsCard } from '@/ui/admin/editor-shared/ToggleOptionsCard'
 import { futureLocalInputValueOrEmpty } from '@/ui/admin/editor-shell/editor-datetime'
-import { Card, CardContent, CardHeader, CardTitle } from '@/ui/components/card'
-import { Label } from '@/ui/components/label'
-import { Textarea } from '@/ui/components/textarea'
 
 export function metaDraftFromPage(page: AdminPageDto): PageMetaDraft {
   return {
@@ -26,12 +28,6 @@ export function metaDraftFromPage(page: AdminPageDto): PageMetaDraft {
     publishedAt: futureLocalInputValueOrEmpty(page.publishedAt),
   }
 }
-
-import type {
-  SidebarPublishStatus,
-  SidebarRevisionSummary,
-  SidebarSaveStatus,
-} from '@/ui/admin/editor-shell/editor-shell-types'
 
 export interface MetaSidebarProps {
   draft: PageMetaDraft
@@ -82,97 +78,38 @@ export function MetaSidebar({
 
   return (
     <div className="flex flex-col gap-4">
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">基本信息</CardTitle>
-        </CardHeader>
-        <CardContent className="grid gap-4">
-          <PublishStatusRow
-            status={publishStatus ?? 'never-saved'}
-            revisionSummary={revisionSummary ?? null}
-            saveStatus={saveStatus}
-            publishedAt={draft.publishedAt}
-            onChangePublishedAt={(value) => set('publishedAt', value)}
-            disabled={disabled}
-          />
-          <div className="grid gap-2">
-            <Label htmlFor="page-summary">摘要</Label>
-            <Textarea
-              id="page-summary"
-              value={draft.summary}
-              onChange={(e) => set('summary', e.target.value)}
-              rows={3}
-              maxLength={500}
-              disabled={disabled}
-              placeholder="可选，用于列表与社交分享卡片。"
-            />
-          </div>
-        </CardContent>
-      </Card>
+      <BasicInfoCard
+        summaryId="page-summary"
+        summary={draft.summary}
+        onSummaryChange={(value) => set('summary', value)}
+        publishStatus={publishStatus}
+        revisionSummary={revisionSummary}
+        saveStatus={saveStatus}
+        publishedAt={draft.publishedAt}
+        onChangePublishedAt={(value) => set('publishedAt', value)}
+        disabled={disabled}
+      />
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">封面 / OG 图</CardTitle>
-        </CardHeader>
-        <CardContent className="grid gap-4">
-          <p className="text-xs text-muted-foreground">
-            两项均为可选。封面用于列表与文章顶部展示；OG 图供社交平台分享卡片使用，留空则回退到默认生成的 OG 卡片。
-          </p>
-          <ImageField
-            id="page-cover"
-            label="封面图"
-            value={draft.cover}
-            onChange={(value) => set('cover', value)}
-            disabled={disabled}
-            aspect="aspect-[16/9]"
-            urlPlaceholder="https://… 或从图片库挑选"
-            emptyHint="点击此处上传封面，或粘贴一张图片 URL。"
-          />
-          <ImageField
-            id="page-og"
-            label="OG 图"
-            value={draft.og}
-            onChange={(value) => set('og', value)}
-            disabled={disabled}
-            aspect="aspect-[1200/630]"
-            urlPlaceholder="留空则使用默认生成的 OG"
-            emptyContent={
-              ogPreviewSlug !== null && ogPreviewSlug !== undefined && ogPreviewSlug !== '' ? (
-                <GeneratedOgPreview
-                  slug={ogPreviewSlug}
-                  cover={draft.cover}
-                  title={draft.title}
-                  summary={draft.summary}
-                />
-              ) : undefined
-            }
-            emptyHint={
-              ogPreviewSlug !== null && ogPreviewSlug !== undefined && ogPreviewSlug !== ''
-                ? '当前展示的是默认生成的 OG。点击图片可上传一张专属 OG 覆盖。'
-                : '页面首次保存后，这里会展示默认生成的 OG 预览。也可现在点击上传一张专属 OG。'
-            }
-          />
-        </CardContent>
-      </Card>
+      <CoverOgCard
+        coverId="page-cover"
+        ogId="page-og"
+        entityLabel="页面"
+        cover={draft.cover}
+        onCoverChange={(value) => set('cover', value)}
+        og={draft.og}
+        onOgChange={(value) => set('og', value)}
+        title={draft.title}
+        summary={draft.summary}
+        ogPreviewSlug={ogPreviewSlug}
+        disabled={disabled}
+      />
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">展示选项</CardTitle>
-        </CardHeader>
-        <CardContent className="grid gap-3">
-          {PAGE_META_TOGGLE_FIELDS.map((field) => (
-            <ToggleRow
-              key={field.key}
-              id={field.id}
-              label={field.label}
-              description={field.description}
-              checked={draft[field.key]}
-              onCheckedChange={(value) => set(field.key, value)}
-              disabled={disabled}
-            />
-          ))}
-        </CardContent>
-      </Card>
+      <ToggleOptionsCard
+        fields={PAGE_META_TOGGLE_FIELDS}
+        value={(key) => draft[key]}
+        onToggle={(key, value) => set(key, value)}
+        disabled={disabled}
+      />
       {extras !== undefined ? extras : null}
     </div>
   )
