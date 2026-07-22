@@ -1,9 +1,10 @@
-import { existsSync, readFileSync, readdirSync } from 'node:fs'
+import { existsSync, readdirSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { matchRoutes, type RouteObject } from 'react-router'
 
-import { getEmbeddedAsset, isSea, listEmbeddedAssetKeys } from '@/server/infra/sea'
+import { isSea, listEmbeddedAssetKeys } from '@/server/infra/sea'
+import { readAssetTextOrDisk } from '@/server/infra/sea-asset'
 import {
   WARMUP_GLOBAL_EXCLUDED_PATTERNS,
   type RouteManifest,
@@ -30,32 +31,18 @@ export function getWarmupManifest(): WarmupManifest | null {
   }
 
   try {
-    if (isSea()) {
-      // Single-executable build: the warmup manifest is embedded in the
-      // binary (`client/assets/warmup-manifest.json`), not on disk.
-      const asset = getEmbeddedAsset(`${SEA_CLIENT_ASSET_PREFIX}assets/warmup-manifest.json`)
-      if (asset === null) {
-        cached = null
-        return null
-      }
-      const parsed: unknown = JSON.parse(asset.toString('utf-8'))
-      if (!isWarmupManifest(parsed)) {
-        cached = null
-        return null
-      }
-      cached = parsed
-      return cached
-    }
-
     const __dirname = dirname(fileURLToPath(import.meta.url))
-    const manifestPath = join(__dirname, '..', '..', 'client', 'assets', 'warmup-manifest.json')
-
-    if (!existsSync(manifestPath)) {
+    // Single-executable build: the warmup manifest is embedded in the
+    // binary (`client/assets/warmup-manifest.json`), not on disk.
+    const raw = readAssetTextOrDisk(
+      `${SEA_CLIENT_ASSET_PREFIX}assets/warmup-manifest.json`,
+      join(__dirname, '..', '..', 'client', 'assets', 'warmup-manifest.json'),
+    )
+    if (raw === null) {
       cached = null
       return null
     }
 
-    const raw = readFileSync(manifestPath, 'utf-8')
     const parsed: unknown = JSON.parse(raw)
     if (!isWarmupManifest(parsed)) {
       cached = null
@@ -80,36 +67,29 @@ function readClientManifest(): RouteManifest | null {
   }
 
   try {
-    if (isSea()) {
-      // Single-executable build: enumerate the embedded assets instead of
-      // reading `build/client/assets` from disk.
-      const manifestKey = listEmbeddedAssetKeys(`${SEA_CLIENT_ASSET_PREFIX}assets/manifest-`).find((key) =>
-        key.endsWith('.js'),
-      )
-      if (!manifestKey) {
-        return null
-      }
-      const content = getEmbeddedAsset(manifestKey)?.toString('utf-8')
-      if (!content) {
-        return null
-      }
-      return parseClientManifest(content)
-    }
-
     const __dirname = dirname(fileURLToPath(import.meta.url))
     const assetsDir = join(__dirname, '..', '..', 'client', 'assets')
 
-    if (!existsSync(assetsDir)) {
-      return null
+    // Discover the hashed manifest bundle: embedded asset keys under SEA,
+    // the `build/client/assets` directory listing on disk.
+    let manifestFile: string | undefined
+    if (isSea()) {
+      const key = listEmbeddedAssetKeys(`${SEA_CLIENT_ASSET_PREFIX}assets/manifest-`).find((k) => k.endsWith('.js'))
+      manifestFile = key?.slice(`${SEA_CLIENT_ASSET_PREFIX}assets/`.length)
+    } else if (existsSync(assetsDir)) {
+      manifestFile = readdirSync(assetsDir).find((f) => f.startsWith('manifest-') && f.endsWith('.js'))
     }
-
-    const files = readdirSync(assetsDir)
-    const manifestFile = files.find((f) => f.startsWith('manifest-') && f.endsWith('.js'))
     if (!manifestFile) {
       return null
     }
 
-    const content = readFileSync(join(assetsDir, manifestFile), 'utf-8')
+    const content = readAssetTextOrDisk(
+      `${SEA_CLIENT_ASSET_PREFIX}assets/${manifestFile}`,
+      join(assetsDir, manifestFile),
+    )
+    if (content === null) {
+      return null
+    }
     return parseClientManifest(content)
   } catch {
     return null

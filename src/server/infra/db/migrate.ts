@@ -11,6 +11,7 @@ import { createHash } from 'node:crypto'
 import { DATABASE_URL } from '@/server/infra/env'
 import { getLogger } from '@/server/infra/logger'
 import { getEmbeddedAsset, isSea, listEmbeddedAssetKeys } from '@/server/infra/sea'
+import { requireEmbeddedAssetText } from '@/server/infra/sea-asset'
 import { SEA_DRIZZLE_ASSET_PREFIX } from '@/shared/sea/assets'
 
 const MIGRATIONS_FOLDER = './drizzle'
@@ -64,11 +65,7 @@ function readEmbeddedMigrationFiles(assets: EmbeddedMigrationAssets): MigrationM
   migrations.sort((a, b) => a.name.localeCompare(b.name))
 
   return migrations.map(({ key, name }) => {
-    const asset = assets.getAsset(key)
-    if (asset === null) {
-      throw new Error(`Embedded migration asset missing: ${key}`)
-    }
-    const query = asset.toString('utf-8')
+    const query = requireEmbeddedAssetText(assets.getAsset(key), `Embedded migration asset missing: ${key}`)
     return {
       sql: query.split('--> statement-breakpoint'),
       bps: true,
