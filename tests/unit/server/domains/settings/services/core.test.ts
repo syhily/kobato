@@ -5,8 +5,10 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { BlogSettingsBundle } from '@/shared/config/types'
 
+import { limitsSchema } from '@/server/domains/settings/schemas/limits'
 import { SECRET_FIELDS } from '@/server/domains/settings/secrets'
 import { computeSecretMasks, updateBlogSettingsSection } from '@/server/domains/settings/services/core'
+import { DomainError } from '@/server/infra/http/errors'
 
 const mockPool = {} as unknown as Pool
 const mockTx = {} as unknown as NodePgDatabase
@@ -31,9 +33,13 @@ const mocks = vi.hoisted(() => {
   }
 })
 
-vi.mock('@/server/domains/settings/sections/registry', () => ({
-  SECTION_REGISTRY: mocks.SECTION_REGISTRY,
-}))
+vi.mock('@/server/domains/settings/sections/registry', async (importOriginal) => {
+  // Keep the real `validateSectionDefaults` — the corrupt-defaults test
+  // proves the write path's merge base goes through it. Only the
+  // registry entries themselves are doubled.
+  const actual = await importOriginal<typeof import('@/server/domains/settings/sections/registry')>()
+  return { ...actual, SECTION_REGISTRY: mocks.SECTION_REGISTRY }
+})
 
 vi.mock('@/server/domains/settings/services/hydrate', () => ({
   hydrateBlogSettings: mocks.hydrateBlogSettings,
@@ -58,10 +64,34 @@ vi.mock('@/server/infra/logger', () => ({
 }))
 
 describe('server/domains/settings/services/core', () => {
+  const originalLimitsMeta = mocks.SECTION_REGISTRY.limits
+
   beforeEach(() => {
     vi.clearAllMocks()
+    mocks.SECTION_REGISTRY.limits = originalLimitsMeta
     mocks.sectionChangeHandlers.clear()
     mocks.refreshBlogSettings.mockResolvedValue({ limits: {} } as BlogSettingsBundle)
+  })
+
+  it('rejects the write through the shared defaults validator when the section seed is corrupt', async () => {
+    // No stored row → the merge base falls back to the registry defaults,
+    // validated by the same `validateSectionDefaults` the hydration
+    // backfill uses. The thrown message must be identical to the one
+    // `buildDefaultSectionPayloads` surfaces for the same corruption.
+    mocks.SECTION_REGISTRY.limits = {
+      scope: 'blog.limits',
+      schema: limitsSchema,
+      key: 'limits',
+      defaults: { maxRequestBodySize: 'ten' },
+    } as unknown as typeof originalLimitsMeta
+
+    const error = await updateBlogSettingsSection(mockDb, mockPool, 'limits', {}, null).catch((e: unknown) => e)
+
+    expect(error).toBeInstanceOf(DomainError)
+    expect((error as DomainError).code).toBe('INTERNAL')
+    expect((error as DomainError).message).toBe(
+      'blog.limits defaults invalid at `maxRequestBodySize`: Invalid input: expected number, received NaN',
+    )
   })
 
   it('calls refreshBlogSettings before invoking the section change handler', async () => {

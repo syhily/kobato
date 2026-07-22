@@ -8,7 +8,7 @@ import type { SettingsSection } from '@/shared/config/sections'
 import type { BlogSettingsBundle, SecretMasks } from '@/shared/config/types'
 
 import { SECRET_FIELDS } from '@/server/domains/settings/secrets'
-import { SECTION_REGISTRY } from '@/server/domains/settings/sections/registry'
+import { SECTION_REGISTRY, validateSectionDefaults } from '@/server/domains/settings/sections/registry'
 import { refreshBlogSettings } from '@/server/domains/settings/services/hydrate'
 import { SECTION_CHANGE_HANDLERS } from '@/server/domains/settings/services/section-changes'
 import { assertSectionPatchKeys } from '@/server/domains/settings/services/section-patch'
@@ -133,16 +133,9 @@ function resolveMergeBase(meta: SectionMeta, storedRow: Setting | null): Record<
     log.warn('Setting row failed schema validation; merging onto section defaults', { scope: meta.scope })
   }
   if (meta.defaults !== null) {
-    const parsed = meta.schema.safeParse(meta.defaults)
-    if (parsed.success) {
-      return unsafeCast<Record<string, unknown>>(parsed.data)
-    }
-    const first = parsed.error.issues[0]
-    const path = first ? first.path.join('.') : '<unknown>'
-    throw new DomainError(
-      'INTERNAL',
-      `${meta.scope} defaults invalid at \`${path}\`: ${first?.message ?? 'unknown reason'}`,
-    )
+    // The registry owns the one defaults validator — identical thrown
+    // message to the hydration backfill path.
+    return validateSectionDefaults(meta)
   }
   return {}
 }

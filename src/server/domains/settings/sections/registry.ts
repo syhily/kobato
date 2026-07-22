@@ -23,11 +23,18 @@ import { seoSchema } from '@/server/domains/settings/schemas/seo'
 import { sidebarSchema } from '@/server/domains/settings/schemas/sidebar'
 import { socialsSchema } from '@/server/domains/settings/schemas/socials'
 import {
+  analyticsDefaults,
+  backupDefaults,
   cacheDefaults,
   commentsDefaults,
   contentDefaults,
+  fontsDefaults,
+  limitsDefaults,
   mailDefaults,
   navigationDefaults,
+  newsletterDefaults,
+  searchDefaults,
+  securityDefaults,
   seoDefaults,
   sidebarDefaults,
   socialsDefaults,
@@ -35,6 +42,7 @@ import {
 import { DomainError } from '@/server/infra/http/errors'
 import { rateLimitDefaults } from '@/shared/config/defaults'
 import { SETTINGS_SECTIONS } from '@/shared/config/sections'
+import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
 export interface SectionMeta<
   S extends z.ZodType = z.ZodType,
@@ -85,9 +93,7 @@ export const SECTION_REGISTRY = {
     scope: 'blog.newsletter',
     schema: newsletterSchema,
     key: 'newsletter',
-    defaults: {
-      newsletter: { enabled: false, fromName: '', subjectPrefix: '' },
-    },
+    defaults: newsletterDefaults,
   },
   cache: { scope: 'blog.cache', schema: cacheSchema, key: 'cache', defaults: cacheDefaults },
   rateLimit: {
@@ -100,68 +106,37 @@ export const SECTION_REGISTRY = {
     scope: 'blog.search',
     schema: searchSchema,
     key: 'search',
-    defaults: {
-      search: {
-        enabled: false,
-        mode: 'trgm',
-        endpoint: '',
-        apiKey: '',
-        model: 'text-embedding-3-small',
-        similarityThreshold: 0.5,
-        trgmThreshold: 0.3,
-      },
-    },
+    defaults: searchDefaults,
   },
   fonts: {
     scope: 'blog.fonts',
     schema: fontsSchema,
     key: 'fonts',
-    defaults: {
-      og: { family: 'NotoSansCJK' },
-      calendar: { family: 'NotoSansCJK' },
-      global: [],
-      post: [],
-      code: [],
-    },
+    defaults: fontsDefaults,
   },
   backup: {
     scope: 'blog.backup',
     schema: backupSchema,
     key: 'backup',
-    defaults: {
-      scheduled: { enabled: false, frequency: 'daily', hour: 3, minute: 0 },
-      retention: { enabled: true, days: 30 },
-    },
+    defaults: backupDefaults,
   },
   limits: {
     scope: 'blog.limits',
     schema: limitsSchema,
     key: 'limits',
-    defaults: {
-      maxRequestBodySize: 10 * 1024 * 1024,
-      sessionMaxAge: 60 * 60 * 24 * 30,
-      auditLogDbRetentionDays: 30,
-      auditLogArchiveRetentionDays: 180,
-    },
+    defaults: limitsDefaults,
   },
   analytics: {
     scope: 'blog.analytics',
     schema: analyticsSchema,
     key: 'analytics',
-    defaults: {
-      analytics: { trackAdmin: false, keepBotRows: false },
-    },
+    defaults: analyticsDefaults,
   },
   security: {
     scope: 'blog.security',
     schema: securitySchema,
     key: 'security',
-    defaults: {
-      csrf: { enabled: true, exemptPaths: [] },
-      cors: { enabled: false, origins: [] },
-      otp: { enabled: false },
-      passkey: { enabled: false },
-    },
+    defaults: securityDefaults,
   },
 } as const satisfies Record<SettingsSection, SectionMeta>
 
@@ -183,6 +158,26 @@ export function sectionFromScope(scope: string): SettingsSection | null {
 }
 
 /**
+ * Validate one section's seed `defaults` against its own `schema`,
+ * returning the parsed payload. Throws a DomainError when the seed
+ * drifted from the schema. This is the single defaults validator: both
+ * `buildDefaultSectionPayloads` (hydration backfill) and the write
+ * path's merge base (`services/core.ts`) go through it.
+ */
+export function validateSectionDefaults(meta: SectionMeta): Record<string, unknown> {
+  const check = meta.schema.safeParse(meta.defaults)
+  if (!check.success) {
+    const first = check.error.issues[0]
+    const path = first ? first.path.join('.') : '<unknown>'
+    throw new DomainError(
+      'INTERNAL',
+      `${meta.scope} defaults invalid at \`${path}\`: ${first?.message ?? 'unknown reason'}`,
+    )
+  }
+  return unsafeCast<Record<string, unknown>>(check.data)
+}
+
+/**
  * Validate every section's `defaults` payload against its own
  * `schema`, returning the list of `(section, parsed-payload)` pairs
  * for sections that ship with a non-null seed.
@@ -197,16 +192,7 @@ export function buildDefaultSectionPayloads(): {
     if (meta.defaults === null) {
       continue
     }
-    const check = meta.schema.safeParse(meta.defaults)
-    if (!check.success) {
-      const first = check.error.issues[0]
-      const path = first ? first.path.join('.') : '<unknown>'
-      throw new DomainError(
-        'INTERNAL',
-        `${meta.scope} defaults invalid at \`${path}\`: ${first?.message ?? 'unknown reason'}`,
-      )
-    }
-    out.push({ section, payload: check.data as Record<string, unknown> })
+    out.push({ section, payload: validateSectionDefaults(meta) })
   }
   return out
 }

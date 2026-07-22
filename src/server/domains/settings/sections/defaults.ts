@@ -1,3 +1,8 @@
+// Seed defaults for every settings section that ships one — the registry
+// (./registry.ts) references them all by name, in registry order. The one
+// exception is `rateLimitDefaults`, which stays in
+// `@/shared/config/defaults` because the infra rate-limit fallback
+// (`@/server/infra/rate-limit`) shares it.
 const navigationDefaults = { navigation: { sideNav: [], footerNav: [] } } as const
 const socialsDefaults = { socials: [] } as const
 const contentDefaults = {
@@ -46,6 +51,9 @@ const mailDefaults = {
     mailgunApiKey: '',
   },
 } as const
+const newsletterDefaults = {
+  newsletter: { enabled: false, fromName: '', subjectPrefix: '' },
+} as const
 const cacheDefaults = {
   cache: {
     og: { prefix: 'og:', ttlSeconds: 60 * 60 * 24 },
@@ -57,6 +65,43 @@ const cacheDefaults = {
     searchResult: { prefix: 'search-result:', ttlSeconds: 60 * 60 },
   },
 } as const
+const searchDefaults = {
+  search: {
+    enabled: false,
+    mode: 'trgm' as const,
+    endpoint: '',
+    apiKey: '',
+    model: 'text-embedding-3-small',
+    similarityThreshold: 0.5,
+    trgmThreshold: 0.3,
+  },
+} as const
+const fontsDefaults = {
+  og: { family: 'NotoSansCJK' },
+  calendar: { family: 'NotoSansCJK' },
+  global: [],
+  post: [],
+  code: [],
+} as const
+const backupDefaults = {
+  scheduled: { enabled: false, frequency: 'daily' as const, hour: 3, minute: 0 },
+  retention: { enabled: true, days: 30 },
+} as const
+const limitsDefaults = {
+  maxRequestBodySize: 10 * 1024 * 1024,
+  sessionMaxAge: 60 * 60 * 24 * 30,
+  auditLogDbRetentionDays: 30,
+  auditLogArchiveRetentionDays: 180,
+} as const
+const analyticsDefaults = {
+  analytics: { trackAdmin: false, keepBotRows: false },
+} as const
+const securityDefaults = {
+  csrf: { enabled: true, exemptPaths: [] },
+  cors: { enabled: false, origins: [] },
+  otp: { enabled: false },
+  passkey: { enabled: false },
+} as const
 
 export {
   navigationDefaults,
@@ -66,7 +111,14 @@ export {
   commentsDefaults,
   seoDefaults,
   mailDefaults,
+  newsletterDefaults,
   cacheDefaults,
+  searchDefaults,
+  fontsDefaults,
+  backupDefaults,
+  limitsDefaults,
+  analyticsDefaults,
+  securityDefaults,
 }
 
 export const ASSETS_STORAGE_INSTALL_DEFAULTS = {
