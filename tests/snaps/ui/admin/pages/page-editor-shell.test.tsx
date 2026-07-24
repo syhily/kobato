@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type { AdminPageDto } from '@/shared/types/pages'
-import type { AdminUserDto } from '@/shared/types/users'
+import type { AdminPageDto } from '@/shared/contracts/pages'
+import type { AdminUserDto } from '@/shared/contracts/users'
 
 import { renderInRouter, stableHtml } from '#/_helpers/render'
 import { PagesView } from '@/ui/admin/pages/PagesView'

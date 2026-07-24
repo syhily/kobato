@@ -1,45 +1,8 @@
-// Wire-format DTOs for the music management endpoints.
+// Wire-format DTOs for the music management endpoints. The row/result
+// DTOs (`AdminMusicDto`, `MetingSearchHit`, list/search/add/update
+// outputs) are zod-derived in `@/shared/contracts/music`.
 
-export type MetingSource = 'netease' | 'tencent'
-
-export interface MetingSearchHit {
-  source: MetingSource
-  /** Provider-side song id, stringified for transport stability. */
-  sourceId: string
-  name: string
-  artist: string[]
-  album: string
-  /** Pre-resolved cover URL for the search result thumbnail. */
-  coverUrl: string
-  /**
-   * Direct streaming URL returned by the upstream provider. These URLs
-   * are short-lived (token-signed, ~1h on netease) and intentionally
-   * NOT persisted — they exist only so the dialog's `<audio>` element
-   * can preview the song before it gets imported.
-   */
-  previewUrl: string
-}
-
-export interface AdminMusicDto {
-  id: string
-  source: MetingSource
-  sourceId: string
-  /** Opaque 16-char `[a-z0-9]` handle. Referenced by `musicPlayer` PortableText blocks as `playerId`. */
-  playerId: string
-  name: string
-  artist: string[]
-  album: string
-  audioStoragePath: string
-  audioUrl: string
-  coverStoragePath: string
-  coverUrl: string
-  /** LRC text. `null` when the upstream provider had no lyric. */
-  lyric: string | null
-  uploaderId: string | null
-  uploaderName: string | null
-  createdAt: string
-  updatedAt: string
-}
+import type { MetingSource } from '@/shared/contracts/music'
 
 export interface ListMusicInput {
   q?: string
@@ -47,12 +10,6 @@ export interface ListMusicInput {
   limit?: number
   sortBy?: 'createdAt' | 'updatedAt' | 'name' | 'artist' | 'album'
   sortOrder?: 'asc' | 'desc'
-}
-
-export interface ListMusicOutput {
-  musics: AdminMusicDto[]
-  total: number
-  hasMore: boolean
 }
 
 export interface SearchMusicInput {
@@ -64,18 +21,9 @@ export interface SearchMusicInput {
   offset?: number
 }
 
-export interface SearchMusicOutput {
-  results: MetingSearchHit[]
-  hasMore: boolean
-}
-
 export interface AddMusicInput {
   source: MetingSource
   sourceId: string
-}
-
-export interface AddMusicOutput {
-  music: AdminMusicDto
 }
 
 export interface DeleteMusicInput {
@@ -94,22 +42,6 @@ export interface UpdateMusicInput {
   artist: string[]
   album?: string
   lyric?: string
-}
-
-export interface UpdateMusicOutput {
-  music: AdminMusicDto
-}
-
-// Public GET payload — what `/api/music/get?id=...` returns
-// to the browser-side `<MusicPlayer />` so APlayer can render.
-export interface PublicMusicMeta {
-  id: string
-  name: string
-  artist: string
-  album: string
-  url: string
-  pic: string
-  lyric: string
 }
 
 // Resolved metadata embedded into a `musicPlayer` PortableText block at SSR time.

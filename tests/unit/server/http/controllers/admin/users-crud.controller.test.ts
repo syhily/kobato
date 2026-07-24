@@ -3,15 +3,18 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { makeAuthedCtx } from '#/_helpers/mock-ctx'
 import { parseRpcJson } from '#/_helpers/rpc-call'
 
-const updateUserByIdWithGuard = vi.hoisted(() => vi.fn())
+const updateUserById = vi.hoisted(() => vi.fn())
 
 vi.mock('@/server/domains/users/services/admin', () => ({
   fetchAdminUserDto: vi.fn(),
   listUsersForAdmin: vi.fn(),
-  restoreAdminUser: vi.fn(),
   softDeleteUserWithGuard: vi.fn(),
   toAdminUserDto: vi.fn(),
-  updateUserByIdWithGuard,
+}))
+
+vi.mock('@/server/infra/db/operations/user', () => ({
+  restoreUserById: vi.fn(),
+  updateUserById,
 }))
 
 vi.mock('@/server/domains/audit/services/record', () => ({
@@ -39,8 +42,8 @@ async function call(path: string, input: unknown) {
 
 describe('admin users-crud controller', () => {
   beforeEach(() => {
-    updateUserByIdWithGuard.mockReset()
-    updateUserByIdWithGuard.mockResolvedValue({ id: 1n })
+    updateUserById.mockReset()
+    updateUserById.mockResolvedValue({ id: 1n })
   })
 
   describe('update', () => {
@@ -53,7 +56,7 @@ describe('admin users-crud controller', () => {
       expect(response.status).toBe(200)
       const body = await parseRpcJson<{ success: boolean }>(response)
       expect(body.success).toBe(true)
-      expect(updateUserByIdWithGuard).toHaveBeenCalledWith(
+      expect(updateUserById).toHaveBeenCalledWith(
         expect.anything(),
         1n,
         expect.objectContaining({ link: 'https://example.com' }),
@@ -78,8 +81,8 @@ describe('admin users-crud controller', () => {
         name: 'Alice',
       })
       expect(response.status).toBe(200)
-      expect(updateUserByIdWithGuard).toHaveBeenCalledWith(expect.anything(), 1n, { name: 'Alice' })
-      expect(updateUserByIdWithGuard).not.toHaveBeenCalledWith(
+      expect(updateUserById).toHaveBeenCalledWith(expect.anything(), 1n, { name: 'Alice' })
+      expect(updateUserById).not.toHaveBeenCalledWith(
         expect.anything(),
         1n,
         expect.objectContaining({ email: expect.anything() }),

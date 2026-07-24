@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import type { AdminImageDto } from '@/shared/types/images'
+import type { AdminImageDto } from '@/shared/contracts/images'
 
 import { buildJustifiedRows } from '@/ui/admin/images/JustifiedImageGrid'
 

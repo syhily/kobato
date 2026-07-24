@@ -11,25 +11,24 @@ vi.mock('@/server/infra/db/operations/user', () => ({
   findUserByEmail: vi.fn().mockResolvedValue(null),
   findUserById: vi.fn(),
   insertAuthor: vi.fn(),
+  restoreUserById: vi.fn(),
+  setUserMuted: vi.fn(),
   softDeleteUserById: vi.fn(),
   updateUserById: vi.fn(),
   updateUserRole: vi.fn(),
 }))
 vi.mock('@/server/domains/users/services/admin', () => ({
-  bulkApproveCommentsForUser: vi.fn().mockResolvedValue(0),
-  bulkDeleteCommentsForUser: vi.fn().mockResolvedValue(0),
   fetchAdminUserDto: vi.fn(),
-  findUserById: vi.fn(),
   listUsersForAdmin: vi.fn(),
-  muteAdminUser: vi.fn(),
-  restoreAdminUser: vi.fn().mockResolvedValue(true),
-  softDeleteAdminUser: vi.fn().mockResolvedValue(true),
   toAdminUserDto: (row: unknown) => row,
-  updateUserByIdWithGuard: vi.fn(),
   updateUserRoleWithGuard: vi.fn(),
   softDeleteUserWithGuard: vi.fn(),
   inviteAuthorWithRollback: vi.fn(),
   sendPasswordResetToUser: vi.fn(),
+}))
+vi.mock('@/server/domains/comments/services/moderate', () => ({
+  bulkApproveCommentsByUser: vi.fn().mockResolvedValue({ approved: 0 }),
+  bulkDeleteCommentsByUser: vi.fn().mockResolvedValue({ deleted: 0 }),
 }))
 vi.mock('@/server/domains/auth/session-storage', () => ({
   revokeAllSessionsOfUser: vi.fn().mockResolvedValue(undefined),
@@ -58,6 +57,7 @@ const { adminUsersAdminRouter } = await import('@/server/http/controllers/admin/
 const { adminUsersSessionsRouter } = await import('@/server/http/controllers/admin/users-sessions.controller')
 const adminUsersRouter = { ...adminUsersCrudRouter, ...adminUsersAdminRouter, ...adminUsersSessionsRouter }
 const usersService = await import('@/server/domains/users/services/admin')
+const userOps = await import('@/server/infra/db/operations/user')
 
 describe('adminUsersRouter.list', () => {
   it('passes query params through to the service and projects each row', async () => {
@@ -139,8 +139,8 @@ describe('adminUsersRouter.softDelete', () => {
 })
 
 describe('adminUsersRouter.update', () => {
-  it('throws NOT_FOUND when updateUserByIdWithGuard yields null', async () => {
-    vi.mocked(usersService.updateUserByIdWithGuard).mockResolvedValueOnce(null)
+  it('throws NOT_FOUND when updateUserById yields null', async () => {
+    vi.mocked(userOps.updateUserById).mockResolvedValueOnce(null)
     const ctx = makeAuthedCtx()
     await expect(call(adminUsersRouter.update, { id: '99', name: 'X' }, { context: ctx })).rejects.toMatchObject({
       code: 'NOT_FOUND',
@@ -148,8 +148,8 @@ describe('adminUsersRouter.update', () => {
   })
 
   it('returns success on a successful patch', async () => {
-    vi.mocked(usersService.updateUserByIdWithGuard).mockResolvedValueOnce({ id: '1', name: 'X' } as unknown as Awaited<
-      ReturnType<typeof usersService.updateUserByIdWithGuard>
+    vi.mocked(userOps.updateUserById).mockResolvedValueOnce({ id: '1', name: 'X' } as unknown as Awaited<
+      ReturnType<typeof userOps.updateUserById>
     >)
     const ctx = makeAuthedCtx()
     const res = await call(adminUsersRouter.update, { id: '1', name: 'X' }, { context: ctx })
@@ -157,24 +157,22 @@ describe('adminUsersRouter.update', () => {
   })
 })
 
-const userQuery = await import('@/server/domains/users/services/admin')
-
 describe('adminUsersRouter.revokeAllSessions', () => {
   it('allows an admin to revoke their own sessions', async () => {
-    vi.mocked(userQuery.findUserById).mockResolvedValueOnce({
+    vi.mocked(userOps.findUserById).mockResolvedValueOnce({
       id: 1n,
       role: 'admin',
-    } as unknown as Awaited<ReturnType<typeof userQuery.findUserById>>)
+    } as unknown as Awaited<ReturnType<typeof userOps.findUserById>>)
     const ctx = makeAuthedCtx({ userId: '1' })
     const res = await call(adminUsersRouter.revokeAllSessions, { userId: '1' }, { context: ctx })
     expect(res).toEqual({ success: true })
   })
 
   it("forbids an admin from revoking another admin's sessions", async () => {
-    vi.mocked(userQuery.findUserById).mockResolvedValueOnce({
+    vi.mocked(userOps.findUserById).mockResolvedValueOnce({
       id: 2n,
       role: 'admin',
-    } as unknown as Awaited<ReturnType<typeof userQuery.findUserById>>)
+    } as unknown as Awaited<ReturnType<typeof userOps.findUserById>>)
     const ctx = makeAuthedCtx({ userId: '1' })
     await expect(call(adminUsersRouter.revokeAllSessions, { userId: '2' }, { context: ctx })).rejects.toMatchObject({
       code: 'FORBIDDEN',
@@ -182,10 +180,10 @@ describe('adminUsersRouter.revokeAllSessions', () => {
   })
 
   it("allows an admin to revoke a visitor's sessions", async () => {
-    vi.mocked(userQuery.findUserById).mockResolvedValueOnce({
+    vi.mocked(userOps.findUserById).mockResolvedValueOnce({
       id: 2n,
       role: 'visitor',
-    } as unknown as Awaited<ReturnType<typeof userQuery.findUserById>>)
+    } as unknown as Awaited<ReturnType<typeof userOps.findUserById>>)
     const ctx = makeAuthedCtx({ userId: '1' })
     const res = await call(adminUsersRouter.revokeAllSessions, { userId: '2' }, { context: ctx })
     expect(res).toEqual({ success: true })

@@ -1,10 +1,10 @@
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
 import type { MusicRow } from '@/server/infra/db/types'
-import type { AdminMusicDto, ListMusicInput, ListMusicOutput, PublicMusicMeta } from '@/shared/types/music'
+import type { AdminMusicDto, ListMusicOutput, PublicMusicMeta } from '@/shared/contracts/music'
+import type { ListMusicInput } from '@/shared/types/music'
 
 import { toAdminMusicDto } from '@/server/domains/music/projection'
-import { safeBuildMusicPublicUrl } from '@/server/domains/music/storage'
 import {
   type AdminMusicListFilters,
   countAdminMusic,
@@ -13,6 +13,7 @@ import {
   findMusicByPlayerIds,
   listAdminMusicRows,
 } from '@/server/infra/db/operations/music'
+import { safeResolveAssetUrl } from '@/server/infra/storage/public-url'
 
 export async function listMusicForAdmin(db: NodePgDatabase, input: ListMusicInput = {}): Promise<ListMusicOutput> {
   const offset = clampOffset(input.offset)
@@ -58,7 +59,7 @@ export const DEFAULT_MUSIC_COVER_URL = '/images/default-music-cover.png'
  * vinyl image so the track stays playable (unplayable ≠ coverless).
  */
 function toPublicMusicMeta(row: MusicRow): PublicMusicMeta | null {
-  const audioUrl = safeBuildMusicPublicUrl(row.audioStoragePath, row.storageDriver)
+  const audioUrl = safeResolveAssetUrl(row.storageDriver, row.audioStoragePath)
   if (audioUrl === null) {
     return null
   }
@@ -68,7 +69,7 @@ function toPublicMusicMeta(row: MusicRow): PublicMusicMeta | null {
     artist: row.artist,
     album: row.album,
     url: audioUrl,
-    pic: safeBuildMusicPublicUrl(row.coverStoragePath, row.storageDriver) ?? DEFAULT_MUSIC_COVER_URL,
+    pic: safeResolveAssetUrl(row.storageDriver, row.coverStoragePath) ?? DEFAULT_MUSIC_COVER_URL,
     lyric: row.lyric ?? '',
   }
 }

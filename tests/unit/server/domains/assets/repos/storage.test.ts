@@ -33,6 +33,7 @@ import {
   putBrandingObject,
   s3KeyForSlot,
 } from '@/server/domains/assets/repos/storage'
+import { StorageObjectNotFound } from '@/server/infra/storage/backend'
 
 const pngHeader = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])
 const svgBuffer = Buffer.from('<?xml version="1.0"?><svg></svg>')
@@ -129,12 +130,17 @@ describe('assets storage', () => {
       driver: 's3',
     })
     expect(buffer).toBeNull()
+    // A non-not-found failure must NOT probe the legacy key — only the
+    // seam's typed `StorageObjectNotFound` triggers the auto-migration.
+    expect(backend.get).toHaveBeenCalledTimes(1)
   })
 
   it('auto-migrates from legacy extensionless key when new key is not found', async () => {
     // First call (new key `branding/icon-192.png`) → not found.
     // Second call (legacy key `branding/icon-192`) → found → auto-migrate.
-    backend.get.mockRejectedValueOnce(new Error('Not Found')).mockResolvedValueOnce(pngHeader)
+    backend.get
+      .mockRejectedValueOnce(new StorageObjectNotFound('branding/icon-192.png'))
+      .mockResolvedValueOnce(pngHeader)
 
     const buffer = await fetchBrandingObject('icon192', {
       etag: 'c',
@@ -159,8 +165,10 @@ describe('assets storage', () => {
   })
 
   it('auto-migrates and still returns null when both keys are missing', async () => {
-    // Both new and legacy keys return 404.
-    backend.get.mockRejectedValueOnce(new Error('Not Found')).mockRejectedValueOnce(new Error('Not Found'))
+    // Both new and legacy keys are absent from the backend.
+    backend.get
+      .mockRejectedValueOnce(new StorageObjectNotFound('branding/icon-192.png'))
+      .mockRejectedValueOnce(new StorageObjectNotFound('branding/icon-192'))
 
     const buffer = await fetchBrandingObject('icon192', {
       etag: 'd',

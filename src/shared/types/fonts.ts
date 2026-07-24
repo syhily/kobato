@@ -1,5 +1,3 @@
-import type { StorageDriver } from '@/shared/config/types'
-
 /**
  * A single resolved, browser-ready web font in a slot: the CSS family name
  * (for the `font-family` stack) and the absolute URL of the self-hosted
@@ -19,32 +17,6 @@ export interface ResolvedFonts {
   global: ResolvedFont[]
   post: ResolvedFont[]
   code: ResolvedFont[]
-}
-
-/** The three browser web-font slots managed by `/admin/library/fonts`. */
-export type FontSlot = 'global' | 'post' | 'code'
-
-/** Wire DTO for a single font row in the admin library list. */
-export interface AdminFontDto {
-  id: string
-  familyName: string
-  sourceName: string
-  hash: string
-  cssKey: string
-  storageDriver: StorageDriver
-  chunkCount: number
-  totalBytes: number
-  etag: string
-  createdAt: string
-}
-
-export interface ListFontsOutput {
-  fonts: AdminFontDto[]
-}
-
-export interface SetFontSlotInput {
-  slot: FontSlot
-  fontIds: string[]
 }
 
 export interface DeleteFontInput {

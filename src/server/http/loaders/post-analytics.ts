@@ -1,7 +1,7 @@
 import type { LoaderFunctionArgs } from 'react-router'
 
 import type { CountersDto, HeatmapCell, MetricRow, MetricType, ViewsPoint } from '@/shared/contracts/analytics'
-import type { AdminPostDto } from '@/shared/types/posts'
+import type { AdminPostDto } from '@/shared/contracts/posts'
 
 import { queryCounters } from '@/server/domains/analytics/services/counters'
 import { queryHeatmap } from '@/server/domains/analytics/services/heatmap'

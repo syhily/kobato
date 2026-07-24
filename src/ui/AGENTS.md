@@ -27,14 +27,20 @@ parent.
     `useEditorShellState` (shared FSM for both Post + Page editor
     shells — body/meta drafts, draft-conflict resolution, autosave,
     revision-token race, persist save/publish/unpublish, keyboard
-    shortcuts, layout toggles), `DraftConflictDialog`,
+    shortcuts, layout toggles), `EditorScreen` (the single screen both
+    entities render, driven by an `EditorScreenAdapter`),
+    `makeEditorAdapter` (factory that turns a static per-entity
+    config — nouns, paths, draft configs, oRPC namespace, unwrap key —
+    plus per-render runtime into that adapter), `DraftConflictDialog`,
     `FloatingPublishButton`, `PreviewPanel`, `RevisionsDrawer`,
     `DateTimePicker`. `PostEditorShell.tsx` and `PageEditorShell.tsx`
-    consume the hook + sub-components and stay thin (~500 LOC each)
-    by encoding only entity-specific bindings (DTO key shape, API
+    (under `posts/` / `pages/`) are thin config-only call sites of the
+    factory encoding only entity-specific bindings (DTO key shape, API
     endpoint paths, sidebar component, mutation payload fields, UI
-    text). No new shared state belongs in either Shell — extend
-    `useEditorShellState` instead.
+    text); `PostEditorRoute.tsx` / `PageEditorRoute.tsx` delegate the
+    query → error → skeleton → shell flow to
+    `editor-shared/EditorRouteLoader`. No new shared state belongs in
+    either Shell — extend `useEditorShellState` instead.
 
 ## Cross-cutting UI modules
 

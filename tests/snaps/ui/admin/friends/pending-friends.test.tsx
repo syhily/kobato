@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type { AdminFriendDto } from '@/shared/types/friends'
+import type { AdminFriendDto } from '@/shared/contracts/friends'
 
 import { renderInRouter, stableHtml } from '#/_helpers/render'
 import { FriendsView } from '@/ui/admin/friends/FriendsView'

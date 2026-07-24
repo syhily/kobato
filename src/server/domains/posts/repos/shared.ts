@@ -1,9 +1,9 @@
-import { and, asc, desc, eq, isNotNull, isNull, or, sql, type SQL } from 'drizzle-orm'
+import { and, asc, desc, eq, isNotNull, isNull, not, or, sql, type SQL } from 'drizzle-orm'
 
 import type { PostMetaRow } from '@/server/infra/db/types'
 import type { ClientPost } from '@/shared/types/catalog'
 
-import { liveContentWhere, type LiveContentOptions } from '@/server/domains/content/schema'
+import { liveContentWhere, promotedContentWhere, type LiveContentOptions } from '@/server/domains/content/schema'
 import { ilikeEscape } from '@/server/infra/db/ilike-escape'
 import { post as postMetaTable } from '@/server/infra/db/schema/post'
 import { postTag } from '@/server/infra/db/schema/post-tag'
@@ -31,6 +31,20 @@ export function livePostWhere(options?: LiveContentOptions): SQL {
   )
 }
 
+/**
+ * Repo-side binding of the promoted gate for the `post` table. Binds
+ * the two meta columns once and delegates to `promotedContentWhere`, so
+ * call sites never hand-assemble the column struct (and can't drift
+ * into their own copy of the gate). See the warning on `isPromoted` in
+ * `content/schema.ts`.
+ */
+export function promotedPostWhere(): SQL {
+  return promotedContentWhere({
+    published: postMetaTable.published,
+    publishedRevisionId: postMetaTable.publishedRevisionId,
+  })
+}
+
 export interface ListPostsFilters {
   /** Free-text query matched case-insensitively against `slug` and `title`. */
   q?: string
@@ -56,10 +70,12 @@ export interface ListPostsFilters {
   authorId?: bigint
   /**
    * Coarse lifecycle bucket — partitions every live row into one of two
-   * sets that match the `StatusBadge` logic in `PostsView`:
-   *   - `'published'`: `published = true AND published_revision_id IS NOT NULL`
-   *                   (publicly visible on the site).
-   *   - `'draft'`: everything else (`published = false`, OR
+   * sets that match the `StatusBadge` logic in `PostsView`, routed
+   * through the promoted gate (`promotedPostWhere`):
+   *   - `'published'`: promoted — `published = true AND
+   *                    published_revision_id IS NOT NULL` (has a
+   *                    published revision to show).
+   *   - `'draft'`: not promoted (`published = false`, OR
    *                `published_revision_id IS NULL` meaning the row has
    *                only ever held draft revisions / was never promoted).
    *
@@ -110,12 +126,9 @@ export function buildPostsWhere(filters: ListPostsFilters): SQL | undefined {
     conditions.push(eq(postMetaTable.authorId, filters.authorId))
   }
   if (filters.lifecycle === 'published') {
-    conditions.push(eq(postMetaTable.published, true), isNotNull(postMetaTable.publishedRevisionId))
+    conditions.push(promotedPostWhere())
   } else if (filters.lifecycle === 'draft') {
-    const draftClause = or(eq(postMetaTable.published, false), isNull(postMetaTable.publishedRevisionId))
-    if (draftClause !== undefined) {
-      conditions.push(draftClause)
-    }
+    conditions.push(not(promotedPostWhere()))
   }
   if (conditions.length === 0) {
     return undefined

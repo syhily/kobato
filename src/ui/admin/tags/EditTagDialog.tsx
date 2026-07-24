@@ -3,7 +3,8 @@ import { SaveIcon, XIcon } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
 
-import type { AdminTagDto, UpsertTagInput } from '@/shared/types/tags'
+import type { AdminTagDto } from '@/shared/contracts/tags'
+import type { UpsertTagInput } from '@/shared/types/tags'
 
 import { orpcQuery } from '@/client/api/orpc-query'
 import { CoverInputRow } from '@/ui/admin/shared/CoverInputRow'

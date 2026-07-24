@@ -3,7 +3,7 @@ import type { ReactNode } from 'react'
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 
-import type { AdminMusicDto } from '@/shared/types/music'
+import type { AdminMusicDto } from '@/shared/contracts/music'
 
 import { transitions } from '@/client/lib/motion'
 import { useMusicPlayerState } from '@/ui/admin/musics/MusicPlayerContext'

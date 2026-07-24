@@ -5,7 +5,8 @@ import { ZodError } from 'zod'
 
 import type { Env } from '@/server/http/context'
 
-import { ActionFailure, DomainError, domainStatus, ErrorMessages } from '@/server/infra/http/errors'
+import { translateDomainError } from '@/server/http/translate-domain-error'
+import { ActionFailure, DomainError, ErrorMessages } from '@/server/infra/http/errors'
 import { getLogger } from '@/server/infra/logger'
 import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
@@ -27,28 +28,21 @@ export function onErrorHandler(err: Error, c: Context<Env>): Response {
     )
   }
 
-  if (err instanceof ActionFailure) {
-    if (err.headers) {
-      const h = new Headers(err.headers)
+  if (err instanceof ActionFailure || err instanceof DomainError) {
+    const translated = translateDomainError(err)
+    if (translated.headers) {
+      const h = new Headers(translated.headers)
       h.forEach((v, k) => c.header(k, v, { append: true }))
     }
     c.header('X-Request-Id', requestId)
     return c.json(
       {
         error: {
-          message: err.message,
-          issues: err.issues,
+          message: translated.message,
+          issues: translated.issues,
         },
       },
-      unsafeCast<400 | 401 | 403 | 404 | 409 | 413 | 429 | 500>(err.status),
-    )
-  }
-
-  if (err instanceof DomainError) {
-    c.header('X-Request-Id', requestId)
-    return c.json(
-      { error: { message: err.message, issues: err.issues } },
-      unsafeCast<400 | 401 | 403 | 404 | 409 | 429 | 500>(domainStatus(err)),
+      unsafeCast<400 | 401 | 403 | 404 | 409 | 413 | 429 | 500>(translated.status),
     )
   }
 

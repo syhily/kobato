@@ -1,7 +1,7 @@
 import { type ReactNode } from 'react'
 import { describe, expect, it, vi } from 'vitest'
 
-import type { CommentItemWire as CommentItemType } from '@/shared/types/comments'
+import type { CommentItemWire as CommentItemType } from '@/shared/contracts/comments'
 
 import { renderInRouter, renderToHtml, stableHtml } from '#/_helpers/render'
 import { CommentActions } from '@/ui/public/comments/comment-item/CommentActions'

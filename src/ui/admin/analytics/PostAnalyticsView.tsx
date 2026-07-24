@@ -9,7 +9,7 @@ import type {
   MetricType,
   ViewsPoint,
 } from '@/shared/contracts/analytics'
-import type { AdminPostDto } from '@/shared/types/posts'
+import type { AdminPostDto } from '@/shared/contracts/posts'
 
 import { METRIC_GROUPS } from '@/shared/contracts/analytics'
 import { Counters } from '@/ui/admin/analytics/Counters'

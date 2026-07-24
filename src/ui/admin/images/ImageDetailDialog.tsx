@@ -1,7 +1,7 @@
 import { CheckIcon, CopyIcon, ExternalLinkIcon, RefreshCwIcon, Trash2Icon, XIcon } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 
-import type { AdminImageDto } from '@/shared/types/images'
+import type { AdminImageDto } from '@/shared/contracts/images'
 
 import { formatBytes } from '@/shared/utils/formatter'
 import { Button } from '@/ui/components/button'

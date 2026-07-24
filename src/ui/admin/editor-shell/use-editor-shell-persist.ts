@@ -3,8 +3,8 @@ import type { NavigateFunction } from 'react-router'
 import { useMutation } from '@tanstack/react-query'
 import { useCallback, useEffect, useRef, useState } from 'react'
 
+import type { SaveBodyOutput } from '@/shared/contracts/revision'
 import type { PortableTextBody } from '@/shared/pt/schema'
-import type { SaveBodyOutput } from '@/shared/types/revision'
 import type {
   EditorShellDetail,
   EditorShellStatus,

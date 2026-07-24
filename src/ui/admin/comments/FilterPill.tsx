@@ -5,16 +5,18 @@ import { DateFilterEditor, formatDateInput } from '@/ui/admin/comments/DateFilte
 import { type FieldDefinition, FILTER_FIELDS, STATUS_OPTIONS } from '@/ui/admin/comments/filter-constants'
 import { TextFilterEditor } from '@/ui/admin/comments/TextFilterEditor'
 import {
-  DEFAULT_DATE_OPERATOR,
   DEFAULT_TEXT_OPERATOR,
-  dateFilterLabel,
-  parseDateFilter,
   parseTextFilter,
   textFilterLabel,
   type ActiveFilter,
   type FilterItem,
   type TextFilterOperator,
 } from '@/ui/admin/comments/useCommentsController'
+import {
+  DEFAULT_SINGLE_DATE_OPERATOR,
+  parseSingleDateFilter,
+  singleDateFilterLabel,
+} from '@/ui/admin/shared/date-filter'
 import { Combobox, ComboboxContent, ComboboxItem, ComboboxTrigger, ComboboxValue } from '@/ui/components/combobox'
 import { Popover, PopoverContent, PopoverTrigger } from '@/ui/components/popover'
 import { cn } from '@/ui/lib/cn'
@@ -148,9 +150,9 @@ export function FilterPill({
   const dateValue = useMemo(
     () =>
       filter.field === 'date'
-        ? (parseDateFilter(filter.value) ?? {
+        ? (parseSingleDateFilter(filter.value) ?? {
             date: formatDateInput(new Date()),
-            op: DEFAULT_DATE_OPERATOR,
+            op: DEFAULT_SINGLE_DATE_OPERATOR,
           })
         : null,
     [filter.field, filter.value],
@@ -200,7 +202,7 @@ export function FilterPill({
               if (!next) {
                 return
               }
-              onValueChange(JSON.stringify(next), dateFilterLabel(next))
+              onValueChange(JSON.stringify(next), singleDateFilterLabel(next))
             }}
           />
         ) : filter.field === 'text' && textValue ? (

@@ -2,7 +2,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Music2Icon, PlusIcon, SearchIcon } from 'lucide-react'
 import { isValidElement, useState } from 'react'
 
-import type { AdminMusicDto, ListMusicOutput } from '@/shared/types/music'
+import type { AdminMusicDto, ListMusicOutput } from '@/shared/contracts/music'
 
 import { orpcQuery } from '@/client/api/orpc-query'
 import { AddMusicDialog } from '@/ui/admin/musics/AddMusicDialog'

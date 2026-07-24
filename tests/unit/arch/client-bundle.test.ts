@@ -1,13 +1,20 @@
 /**
  * Client-bundle architecture guard.
  *
- * Walks `src/ui`, `src/client` and `src/shared` — the layers whose modules
- * can reach the browser bundle — and fails if any of them value-imports a
- * Node-only specifier: a `node:*` builtin (or its bare alias), or a package
- * whose dependency chain only resolves under Node. The last leak of this
- * kind surfaced as a vite externalization warning plus a runtime break in
- * the browser (sanitize-html → postcss, fixed in 31b49a6e); this guard
- * turns the next one into a CI failure.
+ * Walks `src/ui`, `src/client`, `src/routes` and `src/shared` — the layers
+ * whose modules can reach the browser bundle — and fails if any of them
+ * value-imports a Node-only specifier: a `node:*` builtin (or its bare
+ * alias), or a package whose dependency chain only resolves under Node. The
+ * last leak of this kind surfaced as a vite externalization warning plus a
+ * runtime break in the browser (sanitize-html → postcss, fixed in 31b49a6e);
+ * this guard turns the next one into a CI failure.
+ *
+ * Route modules legitimately value-import `@/server/*` for their loaders —
+ * the React Router compiler strips loader/action from the client build — so
+ * only direct node-only specifiers are denied there, not server aliases. A
+ * route that pulls a server module into its RENDER path (the settings
+ * services/core leak) stays invisible to this scan: keep server imports
+ * loader-only and project through `@/shared/*` (src/routes/AGENTS.md).
  *
  * Type-only imports (`import type …`) are erased at build time and ignored.
  *
@@ -24,7 +31,7 @@ import { join, relative } from 'node:path'
 import { describe, expect, it } from 'vitest'
 
 const PROJECT_ROOT = process.cwd()
-const CLIENT_LAYERS = ['src/ui', 'src/client', 'src/shared']
+const CLIENT_LAYERS = ['src/ui', 'src/client', 'src/routes', 'src/shared']
 
 const NODE_BUILTINS = [
   'assert',

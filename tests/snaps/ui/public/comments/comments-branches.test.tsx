@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 
-import type { CommentItemWire as CommentItemType, Comments as CommentsData } from '@/shared/types/comments'
+import type { CommentItemWire as CommentItemType } from '@/shared/contracts/comments'
+import type { Comments as CommentsData } from '@/shared/types/comments'
 
 import { renderInRouter, stableHtml } from '#/_helpers/render'
 import { Comments } from '@/ui/public/comments/Comments'

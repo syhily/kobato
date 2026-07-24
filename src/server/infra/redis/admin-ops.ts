@@ -1,4 +1,5 @@
-import type { AdminCacheStatsDto, ClearCacheResultDto, ClearCacheTarget } from '@/shared/types/cache'
+import type { AdminCacheStatsDto, ClearCacheResultDto } from '@/shared/contracts/cache'
+import type { ClearCacheTarget } from '@/shared/types/cache'
 
 import { DomainError } from '@/server/infra/http/errors'
 import {

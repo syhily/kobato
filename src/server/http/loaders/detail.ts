@@ -8,6 +8,7 @@ import { trackAccess } from '@/server/domains/analytics/track'
 import { tryGetRequestContext, tryGetSessionContext } from '@/server/domains/auth/context'
 import { resolveSessionContext, userSession } from '@/server/domains/auth/primitives'
 import { loadDetailPageStreaming } from '@/server/http/loaders/comments'
+import { extractRequestFacts } from '@/server/http/utils/request-facts'
 
 export type PublicDetailCritical = Awaited<ReturnType<typeof loadDetailPageStreaming>>['critical']
 
@@ -47,7 +48,7 @@ export async function loadPublicDetailData(
   // `trackAccess`. `void`d — never blocks the loader.
   if (trackView) {
     const reqCtx = tryGetRequestContext(context)
-    void trackAccess(request, target, { isAdmin, clientAddress: reqCtx?.clientAddress })
+    void trackAccess(extractRequestFacts(request), target, { isAdmin, clientAddress: reqCtx?.clientAddress })
   }
 
   const streaming = await loadDetailPageStreaming(db, session, target, { trackView })

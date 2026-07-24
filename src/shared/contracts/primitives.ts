@@ -1,7 +1,5 @@
 import { z } from 'zod'
 
-import type { MarkdownHeading } from '@/shared/utils/toc'
-
 // ─── primitive wire helpers ────────────────────────────
 export const idString = z.string().regex(/^\d+$/, 'numeric id required')
 export const isoDateTime = z.iso.datetime()
@@ -13,9 +11,8 @@ export const markdownHeadingDto = z.object({
   text: z.string(),
 })
 
-// ─── parity assertion helpers ──────────────────────────
+// ─── compile-time equality helpers ─────────────────────
+// Used by the settings system (shared/config, settings registry, and the
+// admin settings route) for compile-time equality checks.
 export type Equals<X, Y> = (<T>() => T extends X ? 1 : 2) extends <T>() => T extends Y ? 1 : 2 ? true : false
 export type Assert<T extends true> = T
-
-// ─── parity assertions ─────────────────────────────────
-type _markdownHeadingDtoParity = Assert<Equals<z.infer<typeof markdownHeadingDto>, MarkdownHeading>>

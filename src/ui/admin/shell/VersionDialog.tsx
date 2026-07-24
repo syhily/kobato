@@ -10,7 +10,7 @@ import {
 } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 
-import type { UpdateCheckResult, UpdateJobState } from '@/shared/types/update'
+import type { UpdateCheckResult, UpdateJobState } from '@/shared/contracts/update'
 
 import { orpc } from '@/client/api/client'
 import { orpcQuery } from '@/client/api/orpc-query'

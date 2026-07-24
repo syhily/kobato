@@ -4,12 +4,12 @@ import { useEffect, useMemo, useState } from 'react'
 import { FieldValuePicker } from '@/ui/admin/comments/FieldValuePicker'
 import { type FieldDefinition, FILTER_FIELDS, STATUS_OPTIONS } from '@/ui/admin/comments/filter-constants'
 import {
-  DEFAULT_DATE_OPERATOR,
   DEFAULT_TEXT_OPERATOR,
   type ActiveFilter,
   type FilterFieldKey,
   type FilterItem,
 } from '@/ui/admin/comments/useCommentsController'
+import { DEFAULT_SINGLE_DATE_OPERATOR } from '@/ui/admin/shared/date-filter'
 import { Popover, PopoverContent, PopoverTrigger } from '@/ui/components/popover'
 import { cn } from '@/ui/lib/cn'
 
@@ -125,7 +125,11 @@ export function FilterAddButton({
                         return
                       }
                       if (field.key === 'date') {
-                        handleAddAndClose('date', JSON.stringify({ date: '', op: DEFAULT_DATE_OPERATOR }), '时间')
+                        handleAddAndClose(
+                          'date',
+                          JSON.stringify({ date: '', op: DEFAULT_SINGLE_DATE_OPERATOR }),
+                          '时间',
+                        )
                         return
                       }
                       setSelectedField(field.key)

@@ -1,7 +1,8 @@
 import { Trash2Icon, XIcon } from 'lucide-react'
 import { useState } from 'react'
 
-import type { CacheBucketStats, ClearCacheTarget } from '@/shared/types/cache'
+import type { CacheBucketStats } from '@/shared/contracts/cache'
+import type { ClearCacheTarget } from '@/shared/types/cache'
 
 import {
   AlertDialog,

@@ -1,6 +1,6 @@
 import type { ContentRow, PageMetaRow } from '@/server/infra/db/types'
+import type { AdminRevisionDto } from '@/shared/contracts/revision'
 import type { Page } from '@/shared/types/catalog'
-import type { AdminRevisionDto } from '@/shared/types/revision'
 
 import { readBody, readHeadings } from '@/server/domains/content/projection-helpers'
 import { readStringArray } from '@/shared/utils/tools'

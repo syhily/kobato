@@ -5,11 +5,12 @@ import type { Env } from '@/server/http/context'
 
 import { hasAtLeast, type Role } from '@/shared/utils/roles'
 
-// Hono-side RBAC helpers for resource routers (`/api/analytics/events`
-// SSE stream, future resource endpoints) that live OUTSIDE the oRPC
-// surface. The oRPC procedures themselves go through the
+// Hono-side RBAC middleware for the resource routers
+// (`server/http/resources/`: analytics SSE, admin uploads, backup,
+// branding, music proxy, maxmind) that live OUTSIDE the oRPC surface.
+// The oRPC procedures themselves go through the
 // `requireAuth / requireRole` middleware in `src/server/http/orpc-base.ts`
-// — these helpers exist only for native Hono routes that bypass the
+// — this middleware exists only for native Hono routes that bypass the
 // RPCHandler bridge.
 
 export const requireRoleMw = (role: Role) =>

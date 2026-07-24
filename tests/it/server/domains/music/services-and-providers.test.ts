@@ -13,13 +13,19 @@ import { user } from '@/server/infra/db/schema/user'
 const { setBlogSettingsBundleForTests } = await import('@/server/domains/settings/services/test-utils')
 const { TEST_BLOG_SETTINGS_BUNDLE } = await import('#/_helpers/blog-settings')
 
-vi.mock('@/server/domains/music/storage', () => ({
-  ensureMusicStorageEnabled: vi.fn(async () => undefined),
-  putMusicAudio: vi.fn(async () => ({ driver: 's3' })),
-  putMusicCover: vi.fn(async () => ({ driver: 's3' })),
-  deleteMusicObject: vi.fn(async () => undefined),
-  buildMusicPublicUrl: vi.fn((p: string) => `https://assets.example.com/${p}`),
-  safeBuildMusicPublicUrl: vi.fn((p: string) => `https://assets.example.com/${p}`),
+const storageBackendMock = vi.hoisted(() => ({
+  put: vi.fn(async () => ({ key: 'mock', size: 0 })),
+  delete: vi.fn(async () => undefined),
+}))
+
+vi.mock('@/server/infra/storage/registry', () => ({
+  activeBackend: vi.fn(() => ({ backend: storageBackendMock, driver: 's3' })),
+  backendFor: vi.fn(() => storageBackendMock),
+}))
+
+vi.mock('@/server/infra/storage/public-url', () => ({
+  resolveAssetUrl: vi.fn((_driver: string, p: string) => `https://assets.example.com/${p}`),
+  safeResolveAssetUrl: vi.fn((_driver: string, p: string) => `https://assets.example.com/${p}`),
 }))
 
 const processImageBufferMock = vi.fn(async ({ buffer }: { buffer: Buffer }) => ({
@@ -34,7 +40,7 @@ vi.mock('@/server/infra/image/process', () => ({
 }))
 
 const read = await import('@/server/domains/music/services/read')
-const storageMod = await import('@/server/domains/music/storage')
+const publicUrlMod = await import('@/server/infra/storage/public-url')
 const searchService = await import('@/server/domains/music/services/search')
 const addMod = await import('@/server/domains/music/services/write/add')
 const metadataMod = await import('@/server/domains/music/services/write/metadata')
@@ -162,9 +168,9 @@ describe('music/services/read — getPublicMusicMetasByIds', () => {
 
   it('keeps a coverless track playable with the default cover', async () => {
     await seedMusic({ playerId: 'nocover', coverStoragePath: 'musics/nocover.jpg' })
-    const buildMock = vi.mocked(storageMod.safeBuildMusicPublicUrl)
+    const buildMock = vi.mocked(publicUrlMod.safeResolveAssetUrl)
     // toPublicMusicMeta builds the audio URL first, then the cover URL.
-    buildMock.mockImplementationOnce((path: string) => `https://assets.example.com/${path}`)
+    buildMock.mockImplementationOnce((_driver: string, path: string) => `https://assets.example.com/${path}`)
     buildMock.mockImplementationOnce(() => null)
     const metas = await read.getPublicMusicMetasByIds(db, ['nocover'])
     expect(metas.get('nocover')?.pic).toBe(read.DEFAULT_MUSIC_COVER_URL)
@@ -173,7 +179,7 @@ describe('music/services/read — getPublicMusicMetasByIds', () => {
 
   it('drops entries whose audio URL is unbuildable', async () => {
     await seedMusic({ playerId: 'noaudio' })
-    vi.mocked(storageMod.safeBuildMusicPublicUrl).mockImplementationOnce(() => null)
+    vi.mocked(publicUrlMod.safeResolveAssetUrl).mockImplementationOnce(() => null)
     const metas = await read.getPublicMusicMetasByIds(db, ['noaudio'])
     expect(metas.size).toBe(0)
   })
@@ -311,6 +317,14 @@ describe('music/services/write/add — addMusic', () => {
     expect(resolveAudioUrl).toHaveBeenCalledWith(track)
     expect(resolveCoverUrl).toHaveBeenCalledTimes(1)
     expect(resolveCoverUrl).toHaveBeenCalledWith(track)
+    // Both assets land on the active backend with their fixed content types
+    // (MP3 audio, JPEG cover) — previously pinned at the music/storage seam.
+    expect(storageBackendMock.put).toHaveBeenCalledWith(
+      expect.objectContaining({ key: r.audioStoragePath, contentType: 'audio/mpeg', visibility: 'public' }),
+    )
+    expect(storageBackendMock.put).toHaveBeenCalledWith(
+      expect.objectContaining({ key: r.coverStoragePath, contentType: 'image/jpeg', visibility: 'public' }),
+    )
   })
 })
 

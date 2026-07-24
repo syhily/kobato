@@ -2,7 +2,7 @@ import { useMutation } from '@tanstack/react-query'
 import { CheckIcon, ImageIcon, LinkIcon, ReplyIcon, SquarePenIcon, Trash2Icon, UserIcon, XIcon } from 'lucide-react'
 import { toast } from 'sonner'
 
-import type { AdminCommentWire as AdminComment } from '@/shared/types/comments'
+import type { AdminCommentWire as AdminComment } from '@/shared/contracts/comments'
 
 import { orpcQuery } from '@/client/api/orpc-query'
 import { useSiteIdentity } from '@/shared/lib/blog-config-context'

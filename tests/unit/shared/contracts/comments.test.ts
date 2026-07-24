@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
+import type { AdminCommentWire as AdminComment } from '@/shared/contracts/comments'
 import type { CommentBody } from '@/shared/pt/comment-schema'
-import type { AdminCommentWire as AdminComment } from '@/shared/types/comments'
 import type { AdminCommentsData, StatusCounts } from '@/ui/admin/comments/useCommentsController'
 
 import {

@@ -6,6 +6,7 @@ import type { BrandingObjectRef, StorageDriver } from '@/shared/config/types'
 import { BINARY_SLOTS, SVG_SLOTS } from '@/server/assets/defaults'
 import { ActionFailure } from '@/server/infra/http/errors'
 import { getLogger } from '@/server/infra/logger'
+import { StorageObjectNotFound } from '@/server/infra/storage/backend'
 import { activeBackend, backendFor } from '@/server/infra/storage/registry'
 
 const log = getLogger('branding.storage')
@@ -307,7 +308,7 @@ export async function fetchBrandingObject(slot: BrandingSlot, ref: BrandingObjec
     // If the current key isn't found, try the legacy (extensionless) key.
     // On success, copy to the current key and delete the legacy object so
     // subsequent reads hit the new key directly.
-    if (isNotFoundError(error)) {
+    if (error instanceof StorageObjectNotFound) {
       const legacyKey = legacyKeyForSlot(slot)
       try {
         const legacyBuffer = await backend.get(legacyKey)
@@ -347,24 +348,4 @@ export async function fetchBrandingObject(slot: BrandingSlot, ref: BrandingObjec
     })
     return null
   }
-}
-
-/** Heuristic check for 404 / not-found errors across backends. */
-function isNotFoundError(error: unknown): boolean {
-  if (error instanceof Error) {
-    const msg = error.message.toLowerCase()
-    if (msg.includes('not found') || msg.includes('404') || msg.includes('does not exist') || msg.includes('enoent')) {
-      return true
-    }
-  }
-  // ActionFailure with status 404 from the local backend
-  if (
-    typeof error === 'object' &&
-    error !== null &&
-    'status' in error &&
-    (error as Record<string, unknown>).status === 404
-  ) {
-    return true
-  }
-  return false
 }

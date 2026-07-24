@@ -1,7 +1,7 @@
 import { ImagePlusIcon, LinkIcon, SparklesIcon, XIcon } from 'lucide-react'
 import { useState, type ReactNode } from 'react'
 
-import type { AdminImageDto } from '@/shared/types/images'
+import type { AdminImageDto } from '@/shared/contracts/images'
 
 import { ImageLibraryPicker } from '@/ui/admin/editor/pickers/ImageLibraryPicker'
 import { UploadImageDialog } from '@/ui/admin/shared/UploadImageDialog'

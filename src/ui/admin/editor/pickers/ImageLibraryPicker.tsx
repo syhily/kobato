@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query'
 import { ImageIcon, SearchIcon, UploadIcon } from 'lucide-react'
 import { isValidElement, useState } from 'react'
 
-import type { AdminImageDto } from '@/shared/types/images'
+import type { AdminImageDto } from '@/shared/contracts/images'
 
 import { orpcQuery } from '@/client/api/orpc-query'
 import { UploadImageDialog } from '@/ui/admin/shared/UploadImageDialog'

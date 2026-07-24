@@ -2,6 +2,8 @@ import type { Readable } from 'node:stream'
 
 import type { StorageDriver } from '@/shared/config/types'
 
+import { ActionFailure } from '@/server/infra/http/errors'
+
 /**
  * The backend a stored object lives in. Every asset — image, music track,
  * branding slot, backup — records its driver so reads, deletes, and the
@@ -45,6 +47,11 @@ export interface PutStreamInput {
  * URL resolution is intentionally NOT on this interface: the public URL
  * depends on the driver + the configured base URLs, which the registry
  * and `public-url.ts` handle centrally.
+ *
+ * Error contract: a read of an absent object (`get` / `getStream`) rejects
+ * with `StorageObjectNotFound` — never a backend-specific error — so callers
+ * `instanceof`-check instead of substring-matching messages. Deletes are
+ * idempotent and stay silent on a missing object.
  */
 export interface StorageBackend {
   readonly driver: StorageDriver
@@ -52,17 +59,31 @@ export interface StorageBackend {
   isAvailable(): boolean
   put(input: PutObjectInput): Promise<StoredObjectMeta>
   /** Streaming put for large/unknown-length bodies (backups). `size` in the result is best-effort. */
-  putStream?(input: PutStreamInput): Promise<StoredObjectMeta>
+  putStream(input: PutStreamInput): Promise<StoredObjectMeta>
   /** Read the whole object into a buffer (capped at `MAX_OBJECT_BUFFER_SIZE`). */
   get(key: string): Promise<Buffer>
   /** Stream an object without buffering (large backups). */
-  getStream?(key: string): Promise<Readable>
+  getStream(key: string): Promise<Readable>
   exists(key: string): Promise<boolean>
   delete(key: string): Promise<void>
   deleteMany(keys: string[]): Promise<void>
   /** Delete every object under `prefix` including the prefix directory itself. */
   deletePrefix(prefix: string): Promise<void>
   list(prefix: string, opts?: { maxKeys?: number }): Promise<StoredObjectMeta[]>
+}
+
+/**
+ * The seam's typed not-found. Both adapters throw exactly this when an
+ * object is absent (local: ENOENT / a directory key; S3: `NoSuchKey` /
+ * `NotFound` / a bare 404, or an empty `GetObject` body). It extends
+ * `ActionFailure(404)` so a miss that escapes a caller still maps to a 404
+ * at the HTTP perimeter — the contract the local adapter always had.
+ */
+export class StorageObjectNotFound extends ActionFailure {
+  constructor(readonly key: string) {
+    super(404, `存储对象不存在: ${key}`)
+    this.name = 'StorageObjectNotFound'
+  }
 }
 
 /** Hard cap for buffered reads (images / music / branding). Backups stream past it. */

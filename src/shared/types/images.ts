@@ -2,38 +2,15 @@
 // are stringified, public projection is separate from row-level fields,
 // and paginated list responses carry an explicit `total`.
 
-export type AdminImageKind = 'generic' | 'category' | 'friend'
+import type { AdminImageDto } from '@/shared/contracts/images'
 
-export interface AdminImageDto {
-  id: string
-  kind: AdminImageKind
-  storagePath: string
-  publicUrl: string
-  mimeType: string
-  width: number
-  height: number
-  byteSize: number
-  thumbhash: string | null
-  uploaderId: string | null
-  /** Display name of the user who uploaded the image. */
-  uploaderName: string | null
-  note: string | null
-  createdAt: string
-  updatedAt: string
-}
+export type AdminImageKind = 'generic' | 'category' | 'friend'
 
 export interface ListImagesInput {
   q?: string
   kind?: AdminImageKind | 'all'
   offset?: number
   limit?: number
-}
-
-export interface ListImagesOutput {
-  images: AdminImageDto[]
-  /** Total rows matching the filter (independent of `offset`/`limit`). */
-  total: number
-  hasMore: boolean
 }
 
 export interface UploadImageInput {

@@ -3,8 +3,8 @@ import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 import { asc, inArray } from 'drizzle-orm'
 
 import type { TagRow } from '@/server/infra/db/types'
+import type { AdminTagDto } from '@/shared/contracts/tags'
 import type { Tag } from '@/shared/types/catalog'
-import type { AdminTagDto } from '@/shared/types/tags'
 
 import { listPostTitlesByTaxonomy } from '@/server/domains/posts/repos/public-query/taxonomy'
 import { countPostsByTaxonomy } from '@/server/domains/taxonomies/counts'

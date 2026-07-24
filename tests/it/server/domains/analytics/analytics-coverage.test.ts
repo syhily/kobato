@@ -207,7 +207,7 @@ describe('analytics/heatmap — queryHeatmap', () => {
 
 describe('analytics/visitor-cookie — resolveVisitorCookie', () => {
   it('generates a fresh cookie when none is present', () => {
-    const res = resolveVisitorCookie(new Request('http://localhost/'))
+    const res = resolveVisitorCookie(null)
     expect(res.visitorId).toMatch(/^[a-f0-9]{24}$/)
     expect(res.setCookie).toContain(`${KOBATO_AID_COOKIE}=`)
     expect(res.setCookie).toContain('HttpOnly')
@@ -216,26 +216,20 @@ describe('analytics/visitor-cookie — resolveVisitorCookie', () => {
 
   it('returns the existing id when a valid cookie is present', () => {
     const existing = 'abcdef0123456789abcdef0123456789'
-    const req = new Request('http://localhost/', {
-      headers: { cookie: `${KOBATO_AID_COOKIE}=${existing}` },
-    })
-    const res = resolveVisitorCookie(req)
+    const res = resolveVisitorCookie(`${KOBATO_AID_COOKIE}=${existing}`)
     expect(res.visitorId).toBe(existing)
     expect(res.setCookie).toBeNull()
   })
 
   it('rotates when an existing cookie has an invalid shape', () => {
-    const req = new Request('http://localhost/', {
-      headers: { cookie: `${KOBATO_AID_COOKIE}=NOT-VALID-@@@` },
-    })
-    const res = resolveVisitorCookie(req)
+    const res = resolveVisitorCookie(`${KOBATO_AID_COOKIE}=NOT-VALID-@@@`)
     expect(res.visitorId).not.toBe('NOT-VALID-@@@')
     expect(res.setCookie).not.toBeNull()
   })
 
   it('returns null set-cookie when no Cookie header is present', () => {
     // Same as no-cookie case but explicit
-    const res = resolveVisitorCookie(new Request('http://localhost/'))
+    const res = resolveVisitorCookie(null)
     expect(res.setCookie).not.toBeNull()
   })
 })

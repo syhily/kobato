@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type { AuditLogActorDto, AuditLogItemDto } from '@/shared/types/audit'
+import type { AuditLogActorDto, AuditLogItemDto } from '@/shared/contracts/audit'
 import type { ActiveFilter } from '@/ui/admin/audit/filter-constants'
 
 import { renderInRouter, renderToHtml, stableHtml } from '#/_helpers/render'

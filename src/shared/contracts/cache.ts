@@ -1,13 +1,5 @@
 import { z } from 'zod'
 
-import type { Assert, Equals } from '@/shared/contracts/primitives'
-import type {
-  AdminCacheStatsDto,
-  CacheBucketStats,
-  ClearCacheResultDto,
-  ReservedCacheBucketStats,
-} from '@/shared/types/cache'
-
 import { isoDateTime } from '@/shared/contracts/primitives'
 
 const cacheBucketId = z.enum(['og', 'calendar', 'avatar', 'imageMeta', 'embeddingSearch', 'searchResult'])
@@ -20,8 +12,10 @@ const cacheBucketStatsDto = z.object({
   prefix: z.string(),
   ttlSeconds: z.number().int().nonnegative(),
   pattern: z.string(),
+  /** Approximate count from a SCAN sweep, not authoritative under churn. */
   keyCount: z.number().int().nonnegative(),
 })
+export type CacheBucketStats = z.infer<typeof cacheBucketStatsDto>
 
 const reservedCacheBucketStatsDto = z.object({
   id: reservedCacheBucketId,
@@ -31,6 +25,7 @@ const reservedCacheBucketStatsDto = z.object({
   pattern: z.string(),
   keyCount: z.number().int().nonnegative(),
 })
+export type ReservedCacheBucketStats = z.infer<typeof reservedCacheBucketStatsDto>
 
 export const adminCacheStatsDto = z.object({
   buckets: z.array(cacheBucketStatsDto),
@@ -38,6 +33,7 @@ export const adminCacheStatsDto = z.object({
   total: z.number().int().nonnegative(),
   generatedAt: isoDateTime,
 })
+export type AdminCacheStatsDto = z.infer<typeof adminCacheStatsDto>
 
 export const clearCacheResultDto = z.object({
   cleared: z.array(
@@ -50,11 +46,4 @@ export const clearCacheResultDto = z.object({
   total: z.number().int().nonnegative(),
   refreshedStats: adminCacheStatsDto,
 })
-
-// ─── parity assertions ─────────────────────────────────
-type _cacheBucketStatsParity = Assert<Equals<z.infer<typeof cacheBucketStatsDto>, CacheBucketStats>>
-type _reservedCacheBucketStatsParity = Assert<
-  Equals<z.infer<typeof reservedCacheBucketStatsDto>, ReservedCacheBucketStats>
->
-type _adminCacheStatsParity = Assert<Equals<z.infer<typeof adminCacheStatsDto>, AdminCacheStatsDto>>
-type _clearCacheResultParity = Assert<Equals<z.infer<typeof clearCacheResultDto>, ClearCacheResultDto>>
+export type ClearCacheResultDto = z.infer<typeof clearCacheResultDto>

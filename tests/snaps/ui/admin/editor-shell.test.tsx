@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 
-import type { AdminRevisionDto } from '@/shared/types/revision'
+import type { AdminRevisionDto } from '@/shared/contracts/revision'
 
 import { renderInRouter, renderToHtml, stableHtml } from '#/_helpers/render'
 import { DateTimePicker } from '@/ui/admin/editor-shell/DateTimePicker'

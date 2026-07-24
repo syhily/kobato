@@ -14,7 +14,7 @@ import { PlusIcon, SearchIcon } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
 
-import type { AdminCategoryDto } from '@/shared/types/categories'
+import type { AdminCategoryDto } from '@/shared/contracts/categories'
 
 import { orpcQuery } from '@/client/api/orpc-query'
 import { CategoriesSkeleton, CategoryRow } from '@/ui/admin/categories/CategoryRow'

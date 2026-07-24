@@ -3,7 +3,7 @@
 // comparison; the job state machine lives in `job.ts` and the controller
 // reads its status reader directly.
 
-import type { UpdateCheckResult } from '@/shared/types/update'
+import type { UpdateCheckResult } from '@/shared/contracts/update'
 
 import { evaluateSelfUpdateGate } from '@/server/domains/update/gate'
 import { startUpdateJob } from '@/server/domains/update/job'

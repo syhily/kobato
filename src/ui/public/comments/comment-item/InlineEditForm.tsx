@@ -1,8 +1,9 @@
 import { useMutation } from '@tanstack/react-query'
 import { useEffect, useState } from 'react'
 
+import type { CommentItemWire as CommentItemType } from '@/shared/contracts/comments'
 import type { CommentBody } from '@/shared/pt/comment-schema'
-import type { CommentEditOutput, CommentItemWire as CommentItemType, CommentRawOutput } from '@/shared/types/comments'
+import type { CommentEditOutput, CommentRawOutput } from '@/shared/types/comments'
 
 import { orpcQuery } from '@/client/api/orpc-query'
 import { Button } from '@/ui/components/button'

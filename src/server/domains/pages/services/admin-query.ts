@@ -1,7 +1,7 @@
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
 import type { AdminPageDetailDto, AdminPageDto } from '@/server/domains/pages/projection'
-import type { AdminRevisionDto } from '@/shared/types/revision'
+import type { AdminRevisionDto } from '@/shared/contracts/revision'
 
 import { toAdminRevisionDto } from '@/server/domains/content/projection'
 import { findContentById, findLatestRevision, listRevisions } from '@/server/domains/content/repos/query'

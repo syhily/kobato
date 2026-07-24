@@ -16,13 +16,8 @@
 // `CommentItemWire` directly and collapse these helpers into a
 // single identity call.
 
-import type {
-  AdminComment,
-  AdminCommentWire,
-  CommentAndUser,
-  CommentItem,
-  CommentItemWire,
-} from '@/shared/types/comments'
+import type { AdminCommentWire, CommentItemWire } from '@/shared/contracts/comments'
+import type { AdminComment, CommentAndUser, CommentItem } from '@/shared/types/comments'
 
 import { withCommentBadgeTextColor } from '@/server/domains/comments/badge'
 

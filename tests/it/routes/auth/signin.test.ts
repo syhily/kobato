@@ -128,8 +128,8 @@ vi.mock('@/server/domains/audit/services/record', () => ({
   recordAuditEvent: vi.fn(() => undefined),
 }))
 
-vi.mock('@/server/domains/comments/repos/public-query/by-id', () => ({
-  countApprovedCommentsByUser: vi.fn(async () => 0),
+vi.mock('@/server/domains/comments/services/public-query', () => ({
+  hasApprovedComments: vi.fn(async () => false),
 }))
 
 vi.mock('@/shared/config/getters', () => ({

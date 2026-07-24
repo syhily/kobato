@@ -3,7 +3,8 @@ import { Trash2Icon } from 'lucide-react'
 import { useCallback, useState } from 'react'
 
 import type { CacheSettings } from '@/shared/config/types'
-import type { CacheBucketId, ClearCacheTarget, ReservedCacheBucketStats } from '@/shared/types/cache'
+import type { ReservedCacheBucketStats } from '@/shared/contracts/cache'
+import type { CacheBucketId, ClearCacheTarget } from '@/shared/types/cache'
 
 import { orpc } from '@/client/api/client'
 import { orpcQuery } from '@/client/api/orpc-query'

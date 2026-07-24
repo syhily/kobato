@@ -2,7 +2,7 @@ import { useMutation } from '@tanstack/react-query'
 import { SaveIcon, XIcon } from 'lucide-react'
 import { useState } from 'react'
 
-import type { AdminCommentWire as AdminComment } from '@/shared/types/comments'
+import type { AdminCommentWire as AdminComment } from '@/shared/contracts/comments'
 
 import { orpc } from '@/client/api/client'
 import { idStr } from '@/shared/utils/tools'

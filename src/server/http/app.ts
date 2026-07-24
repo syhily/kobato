@@ -7,6 +7,7 @@ import type { HandlerContext } from '@/server/http/orpc-base'
 import { apiRouter } from '@/server/http/api-router'
 import { csrfGuard } from '@/server/http/middlewares/csrf'
 import { dynamicBodyLimit } from '@/server/http/middlewares/dynamic-body-limit'
+import { extractRequestFacts } from '@/server/http/utils/request-facts'
 import { getBlogSettingsBundleSync } from '@/shared/config/getters'
 
 // ─── oRPC + Hono perimeter ──────────────────────────────
@@ -59,6 +60,7 @@ export function createApiApp(): Hono<Env> {
     const responseHeaders = new Headers()
     const context: HandlerContext = {
       request: c.req.raw,
+      requestFacts: extractRequestFacts(c.req.raw),
       session: c.var.session,
       viewer: c.var.viewer ?? null,
       clientAddress: c.var.clientAddress,

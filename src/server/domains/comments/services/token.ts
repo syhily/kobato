@@ -157,7 +157,8 @@ export function appendCommentToken(
 /**
  * Find the caller's valid token for the given comment, if any.
  * Returns the matching token (so callers can act on it, e.g. revoke)
- * or `null`, plus the cleaned cookie (for Set-Cookie refresh).
+ * or `null`, plus the cleaned cookie with expired and invalid entries
+ * dropped.
  */
 export async function verifyCommentOwnership(
   cookie: CommentTokenCookie,

@@ -7,11 +7,11 @@ import { deleteAllCredentials } from '@/server/domains/auth/passkey-service'
 import {
   fetchAdminUserDto,
   inviteAuthorWithRollback,
-  muteAdminUser,
   sendPasswordResetToUser,
   updateUserRoleWithGuard,
 } from '@/server/domains/users/services/admin'
 import { adminProc } from '@/server/http/orpc-base'
+import { setUserMuted } from '@/server/infra/db/operations/user'
 import { tryInviteByEmailRateLimit, tryInviteRateLimit } from '@/server/infra/rate-limit'
 import { getBlogSettingsBundleSync } from '@/shared/config/getters'
 import { adminUserDto } from '@/shared/contracts/users'
@@ -24,7 +24,7 @@ const mute = adminProc
   .input(z.object({ id: z.string().min(1), muted: z.boolean() }))
   .output(z.object({ user: adminUserDto }))
   .handler(async ({ input, context }) => {
-    const updated = await muteAdminUser(context.db, idFromString(input.id), input.muted)
+    const updated = await setUserMuted(context.db, idFromString(input.id), input.muted)
     if (!updated) {
       throw new ORPCError('NOT_FOUND', { message: '用户不存在或为管理员（管理员不可禁言）' })
     }

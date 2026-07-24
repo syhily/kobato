@@ -7,7 +7,7 @@
 
 import { spawn } from 'node:child_process'
 
-import type { UpdateJobStatus } from '@/shared/types/update'
+import type { UpdateJobStatus } from '@/shared/contracts/update'
 
 import { runSelfUpdate } from '@/server/domains/update/pipeline'
 import { DomainError } from '@/server/infra/http/errors'

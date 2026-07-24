@@ -15,15 +15,6 @@ export function getImageStorage(): AssetsSettings['storage'] {
   return requireBlogSettingsSection('assets').storage
 }
 
-/**
- * Whether S3 is configured as the primary backend for new uploads.
- * Kept for UI consumers; the "uploads disabled" 503 no longer applies
- * (local storage always accepts writes).
- */
-export function isUploadEnabled(): boolean {
-  return activeBackend().driver === 's3'
-}
-
 export interface PutImageInput {
   /** Storage key relative to the bucket root / local root, e.g. `images/2026/05/...jpg`. */
   storagePath: string

@@ -3,7 +3,8 @@ import { SaveIcon, XIcon } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { toast } from 'sonner'
 
-import type { AdminFriendDto, UpsertFriendInput } from '@/shared/types/friends'
+import type { AdminFriendDto } from '@/shared/contracts/friends'
+import type { UpsertFriendInput } from '@/shared/types/friends'
 
 import { orpcQuery } from '@/client/api/orpc-query'
 import { extractFriendHostSafe } from '@/shared/types/images'

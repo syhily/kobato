@@ -5,7 +5,7 @@ import { eq, inArray } from 'drizzle-orm'
 
 import type { FontRow } from '@/server/infra/db/schema/font'
 import type { FontsSettings } from '@/shared/config/types'
-import type { FontSlot } from '@/shared/types/fonts'
+import type { FontSlot } from '@/shared/contracts/fonts'
 
 import { deleteFontPackage } from '@/server/domains/fonts/storage'
 import { SECTION_REGISTRY } from '@/server/domains/settings/sections/registry'

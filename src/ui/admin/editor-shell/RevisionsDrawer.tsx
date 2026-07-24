@@ -3,8 +3,8 @@ import { ArrowLeftIcon, CheckIcon, HistoryIcon, RefreshCcwIcon } from 'lucide-re
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { toast } from 'sonner'
 
+import type { AdminRevisionDto } from '@/shared/contracts/revision'
 import type { PortableTextBody } from '@/shared/pt/schema'
-import type { AdminRevisionDto } from '@/shared/types/revision'
 
 import { orpcQuery } from '@/client/api/orpc-query'
 import { diffBodies, DiffPanel } from '@/ui/admin/editor/portable-text-diff'

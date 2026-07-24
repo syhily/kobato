@@ -1,7 +1,7 @@
 import { useMutation } from '@tanstack/react-query'
 import { useRevalidator } from 'react-router'
 
-import type { CommentItemWire as CommentItemType } from '@/shared/types/comments'
+import type { CommentItemWire as CommentItemType } from '@/shared/contracts/comments'
 
 import { orpcQuery } from '@/client/api/orpc-query'
 import { useSiteIdentity } from '@/shared/lib/blog-config-context'

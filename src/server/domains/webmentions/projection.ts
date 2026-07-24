@@ -1,5 +1,5 @@
 import type { WebmentionRow } from '@/server/infra/db/types'
-import type { AdminWebmentionWire } from '@/shared/types/webmentions'
+import type { AdminWebmentionWire } from '@/shared/contracts/webmentions'
 
 export function asAdminWebmentionWire(row: WebmentionRow): AdminWebmentionWire {
   return {

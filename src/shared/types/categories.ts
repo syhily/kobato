@@ -5,25 +5,7 @@
 // never ships `id` to the browser, but the admin shell uses it as
 // the React list key.
 
-export interface AdminCategoryDto {
-  id: string
-  name: string
-  slug: string
-  cover: string
-  og: string | null
-  description: string
-  sortOrder: number
-  /**
-   * Number of live posts (visible + hidden + scheduled) whose
-   * `post.category_id` references this row. Mirrors the delete-block
-   * guard's view of references — i.e. if `postCount > 0`, deletion via
-   * the admin will be rejected with 409. Computed by the service from
-   * `countPostsByTaxonomy`; not persisted in the database.
-   */
-  postCount: number
-  createdAt: string
-  updatedAt: string
-}
+import type { AdminCategoryDto } from '@/shared/contracts/categories'
 
 export interface ListCategoriesInput {
   q?: string

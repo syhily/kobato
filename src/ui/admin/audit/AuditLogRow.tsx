@@ -1,7 +1,7 @@
 import { ChevronRightIcon } from 'lucide-react'
 import { useCallback, useState } from 'react'
 
-import type { AuditLogItemDto } from '@/shared/types/audit'
+import type { AuditLogItemDto } from '@/shared/contracts/audit'
 
 import { useSiteIdentity } from '@/shared/lib/blog-config-context'
 import { formatLocalDate } from '@/shared/utils/formatter'

@@ -6,7 +6,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { act, renderHook, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type { MetingSearchHit, SearchMusicOutput } from '@/shared/types/music'
+import type { MetingSearchHit, SearchMusicOutput } from '@/shared/contracts/music'
 
 // Mock the oRPC client so no fetch ever fires. The mock captures every
 // search call and lets each test program canned pages by offset.

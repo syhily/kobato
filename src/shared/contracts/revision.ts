@@ -1,10 +1,5 @@
 import { z } from 'zod'
 
-import type { Assert, Equals } from '@/shared/contracts/primitives'
-import type { PreviewPageBodyOutput } from '@/shared/types/pages'
-import type { PreviewPostBodyOutput } from '@/shared/types/posts'
-import type { AdminRevisionDto, SaveBodyInput, SaveBodyOutput } from '@/shared/types/revision'
-
 import { idString, isoDateTime, markdownHeadingDto } from '@/shared/contracts/primitives'
 import { portableTextBodySchema } from '@/shared/pt/schema'
 import { safeBoolean } from '@/shared/utils/schema'
@@ -21,6 +16,7 @@ export const adminRevisionDto = z.object({
   createdAt: isoDateTime,
   updatedAt: isoDateTime,
 })
+export type AdminRevisionDto = z.infer<typeof adminRevisionDto>
 
 // Single statement of the post/page body-save + preview input shapes; the
 // admin posts and pages controllers both consume these.
@@ -31,11 +27,14 @@ export const saveBodyInput = z.object({
   force: safeBoolean().optional(),
   publishedAt: z.iso.datetime({ offset: true }).optional(),
 })
+export type SaveBodyInput = z.infer<typeof saveBodyInput>
 
 export const previewBodyInput = z.object({
   body: portableTextBodySchema,
 })
 
+// The server emits `warning` when a non-fatal side effect (image-library
+// sync) failed — the editor surfaces it instead of swallowing it.
 export const saveResultOutput = z.discriminatedUnion('status', [
   z.object({ status: z.literal('saved'), revision: adminRevisionDto, warning: z.string().optional() }),
   z.object({
@@ -45,15 +44,9 @@ export const saveResultOutput = z.discriminatedUnion('status', [
     warning: z.string().optional(),
   }),
 ])
+export type SaveBodyOutput = z.infer<typeof saveResultOutput>
 
 export const previewOutputDto = z.object({
   html: z.string(),
   headings: z.array(markdownHeadingDto),
 })
-
-// ─── parity helpers ────────────────────────────────────
-type _adminRevisionDtoParity = Assert<Equals<z.infer<typeof adminRevisionDto>, AdminRevisionDto>>
-type _saveBodyInputParity = Assert<Equals<z.infer<typeof saveBodyInput>, SaveBodyInput>>
-type _saveResultOutputParity = Assert<Equals<z.infer<typeof saveResultOutput>, SaveBodyOutput>>
-type _previewOutputPostParity = Assert<Equals<z.infer<typeof previewOutputDto>, PreviewPostBodyOutput>>
-type _previewOutputPageParity = Assert<Equals<z.infer<typeof previewOutputDto>, PreviewPageBodyOutput>>

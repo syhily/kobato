@@ -5,22 +5,7 @@
 // never ships `id` to the browser, but the admin shell uses it as
 // the React list key.
 
-export interface AdminTagDto {
-  id: string
-  name: string
-  slug: string
-  ogImage: string
-  /**
-   * Number of live posts (visible + hidden + scheduled) that reference
-   * this row through the `post_tag` join. Mirrors the delete-block
-   * guard's view of references — i.e. if `postCount > 0`, deletion via
-   * the admin will be rejected with 409. Computed by the service from
-   * `countPostsByTaxonomy`; not persisted in the database.
-   */
-  postCount: number
-  createdAt: string
-  updatedAt: string
-}
+import type { AdminTagDto } from '@/shared/contracts/tags'
 
 // `offset` / `limit` mirror the comment moderation listing
 // (`LoadAllCommentsInput`): the admin table is paginated server-side

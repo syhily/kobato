@@ -4,12 +4,9 @@ import { z } from 'zod'
 import { recordAuditEventFromContext } from '@/server/domains/audit/services/record'
 import { revokeSessionWithGuard } from '@/server/domains/auth/service'
 import { revokeAllSessionsOfUser } from '@/server/domains/auth/session-storage'
-import {
-  bulkApproveCommentsForUser,
-  bulkDeleteCommentsForUser,
-  findUserById,
-} from '@/server/domains/users/services/admin'
+import { bulkApproveCommentsByUser, bulkDeleteCommentsByUser } from '@/server/domains/comments/services/moderate'
 import { adminProc } from '@/server/http/orpc-base'
+import { findUserById } from '@/server/infra/db/operations/user'
 import { idFromString } from '@/shared/utils/id'
 
 const userIdInput = z.object({ userId: z.string().min(1) })
@@ -61,7 +58,7 @@ const bulkApproveComments = adminProc
   .input(userIdInput)
   .output(z.object({ approved: z.number() }))
   .handler(async ({ input, context }) => {
-    const result = await bulkApproveCommentsForUser(context.db, idFromString(input.userId))
+    const result = await bulkApproveCommentsByUser(context.db, idFromString(input.userId))
     recordAuditEventFromContext(context, {
       action: 'comments_bulk_approved',
       resourceType: 'comment',
@@ -76,7 +73,7 @@ const bulkDeleteComments = adminProc
   .input(userIdInput)
   .output(z.object({ deleted: z.number() }))
   .handler(async ({ input, context }) => {
-    const result = await bulkDeleteCommentsForUser(context.db, idFromString(input.userId))
+    const result = await bulkDeleteCommentsByUser(context.db, idFromString(input.userId))
     recordAuditEventFromContext(context, {
       action: 'comments_bulk_deleted',
       resourceType: 'comment',

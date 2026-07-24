@@ -1,5 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import type { RequestFacts } from '@/server/infra/http/request-facts'
+
 import { TEST_BLOG_SETTINGS_BUNDLE } from '#/_helpers/blog-settings'
 import { flushWorkerRedis } from '#/_helpers/redis'
 import { setBlogSettingsBundleForTests } from '@/server/domains/settings/services/test-utils'
@@ -8,6 +10,22 @@ const pushAccessEvent = vi.fn()
 vi.mock('@/server/domains/analytics/repos/batcher', () => ({ pushAccessEvent }))
 
 const { trackAccess, KOBATO_AID_COOKIE } = await import('@/server/domains/analytics/track')
+
+function makeFacts(overrides: Partial<RequestFacts> = {}): RequestFacts {
+  return {
+    path: '/post/1',
+    userAgent: null,
+    referer: null,
+    acceptLanguage: null,
+    purpose: null,
+    cookie: null,
+    ...overrides,
+  }
+}
+
+const BOT_UA = 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)'
+const CHROME_UA =
+  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36'
 
 beforeEach(async () => {
   vi.clearAllMocks()
@@ -25,8 +43,7 @@ describe('analytics/track — trackAccess', () => {
       ...TEST_BLOG_SETTINGS_BUNDLE,
       analytics: { analytics: { trackAdmin: false, keepBotRows: false } },
     })
-    const req = new Request('http://localhost/post/1')
-    await trackAccess(req, { type: 'post', ownerId: 1n }, { isAdmin: true })
+    await trackAccess(makeFacts(), { type: 'post', ownerId: 1n }, { isAdmin: true })
     expect(pushAccessEvent).not.toHaveBeenCalled()
   })
 
@@ -35,22 +52,17 @@ describe('analytics/track — trackAccess', () => {
       ...TEST_BLOG_SETTINGS_BUNDLE,
       analytics: { analytics: { trackAdmin: true, keepBotRows: false } },
     })
-    const req = new Request('http://localhost/post/1')
-    await trackAccess(req, { type: 'post', ownerId: 1n }, { isAdmin: true })
+    await trackAccess(makeFacts(), { type: 'post', ownerId: 1n }, { isAdmin: true })
     expect(pushAccessEvent).toHaveBeenCalledTimes(1)
   })
 
   it('skips prefetch requests', async () => {
-    const req = new Request('http://localhost/post/1', { headers: { purpose: 'prefetch' } })
-    await trackAccess(req, null)
+    await trackAccess(makeFacts({ purpose: 'prefetch' }), null)
     expect(pushAccessEvent).not.toHaveBeenCalled()
   })
 
   it('skips bot traffic when keepBotRows is false', async () => {
-    const req = new Request('http://localhost/post/1', {
-      headers: { 'user-agent': 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)' },
-    })
-    await trackAccess(req, null)
+    await trackAccess(makeFacts({ userAgent: BOT_UA }), null)
     expect(pushAccessEvent).not.toHaveBeenCalled()
   })
 
@@ -59,21 +71,12 @@ describe('analytics/track — trackAccess', () => {
       ...TEST_BLOG_SETTINGS_BUNDLE,
       analytics: { analytics: { trackAdmin: false, keepBotRows: true } },
     })
-    const req = new Request('http://localhost/post/1', {
-      headers: { 'user-agent': 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)' },
-    })
-    await trackAccess(req, null)
+    await trackAccess(makeFacts({ userAgent: BOT_UA }), null)
     expect(pushAccessEvent).toHaveBeenCalledTimes(1)
   })
 
   it('records a normal visit', async () => {
-    const req = new Request('http://localhost/post/1', {
-      headers: {
-        'user-agent':
-          'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36',
-      },
-    })
-    await trackAccess(req, { type: 'post', ownerId: 1n })
+    await trackAccess(makeFacts({ userAgent: CHROME_UA }), { type: 'post', ownerId: 1n })
     expect(pushAccessEvent).toHaveBeenCalledTimes(1)
     const event = pushAccessEvent.mock.calls[0]![0]
     expect(event.path).toBe('/post/1')
@@ -89,11 +92,6 @@ describe('analytics/track — trackAccess', () => {
     pushAccessEvent.mockImplementationOnce(() => {
       throw new Error('boom')
     })
-    const req = new Request('http://localhost/post/1', {
-      headers: {
-        'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 Chrome/120.0 Safari/537.36',
-      },
-    })
-    await expect(trackAccess(req, null)).resolves.toBeUndefined()
+    await expect(trackAccess(makeFacts({ userAgent: CHROME_UA }), null)).resolves.toBeUndefined()
   })
 })

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import type { AdminUserDto } from '@/shared/types/users'
+import type { AdminUserDto } from '@/shared/contracts/users'
 
 import { TEST_BLOG_SETTINGS_BUNDLE } from '#/_helpers/blog-settings'
 import { renderInRouter, renderToHtml, stableHtml } from '#/_helpers/render'

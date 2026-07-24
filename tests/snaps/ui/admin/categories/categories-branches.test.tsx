@@ -1,7 +1,7 @@
 import { toast } from 'sonner'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type { AdminCategoryDto } from '@/shared/types/categories'
+import type { AdminCategoryDto } from '@/shared/contracts/categories'
 
 import { renderInRouter, stableHtml } from '#/_helpers/render'
 import { orpcQuery } from '@/client/api/orpc-query'

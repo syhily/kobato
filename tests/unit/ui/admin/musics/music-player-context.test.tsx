@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import type { AdminMusicDto } from '@/shared/types/music'
+import type { AdminMusicDto } from '@/shared/contracts/music'
 
 import { renderHook } from '#/_helpers/hook'
 import {

@@ -1,7 +1,7 @@
 import type { MusicRow } from '@/server/infra/db/types'
-import type { AdminMusicDto, MetingSearchHit } from '@/shared/types/music'
+import type { AdminMusicDto, MetingSearchHit } from '@/shared/contracts/music'
 
-import { buildMusicPublicUrl } from '@/server/domains/music/storage'
+import { resolveAssetUrl } from '@/server/infra/storage/public-url'
 
 export function toAdminMusicDto(
   row: MusicRow & { uploaderName?: string | null },
@@ -20,9 +20,9 @@ export function toAdminMusicDto(
     artist: splitArtist(row.artist),
     album: row.album,
     audioStoragePath: row.audioStoragePath,
-    audioUrl: buildMusicPublicUrl(row.audioStoragePath, row.storageDriver),
+    audioUrl: resolveAssetUrl(row.storageDriver, row.audioStoragePath),
     coverStoragePath: row.coverStoragePath,
-    coverUrl: buildMusicPublicUrl(row.coverStoragePath, row.storageDriver),
+    coverUrl: resolveAssetUrl(row.storageDriver, row.coverStoragePath),
     lyric: row.lyric,
     uploaderId: row.uploaderId === null ? null : row.uploaderId.toString(),
     uploaderName,

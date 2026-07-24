@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import type { AdminPageDto } from '@/shared/types/pages'
+import type { AdminPageDto } from '@/shared/contracts/pages'
 
 import { renderInRouter, stableHtml } from '#/_helpers/render'
 import { PageRow } from '@/ui/admin/pages/PageRow'

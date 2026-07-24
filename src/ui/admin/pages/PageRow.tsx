@@ -1,7 +1,7 @@
 import { ImageIcon, MessageSquareIcon, SquarePenIcon } from 'lucide-react'
 import { Link } from 'react-router'
 
-import type { AdminPageDto } from '@/shared/types/pages'
+import type { AdminPageDto } from '@/shared/contracts/pages'
 
 import { cn } from '@/ui/lib/cn'
 import { Image } from '@/ui/public/widgets/Image'

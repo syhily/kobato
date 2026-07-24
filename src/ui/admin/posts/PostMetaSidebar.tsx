@@ -1,6 +1,7 @@
 import { type ReactNode } from 'react'
 
-import type { AdminPostDto, PostMetaDraft } from '@/shared/types/posts'
+import type { AdminPostDto } from '@/shared/contracts/posts'
+import type { PostMetaDraft } from '@/shared/types/posts'
 import type {
   SidebarPublishStatus,
   SidebarRevisionSummary,

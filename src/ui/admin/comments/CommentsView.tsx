@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query'
 import { SearchIcon } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
-import type { AdminCommentWire as AdminComment } from '@/shared/types/comments'
+import type { AdminCommentWire as AdminComment } from '@/shared/contracts/comments'
 import type { ActiveFilter, FilterFieldKey, FilterItem } from '@/ui/admin/comments/useCommentsController'
 
 import { orpcQuery } from '@/client/api/orpc-query'

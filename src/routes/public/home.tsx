@@ -13,6 +13,7 @@ import { listingLoader } from '@/server/http/loaders/listing'
 import { listingHeaders, publicShouldRevalidate } from '@/server/http/loaders/route-exports'
 import { loadSidebarData } from '@/server/http/loaders/sidebar'
 import { selectSidebarTags } from '@/server/http/loaders/sidebar-select'
+import { extractRequestFacts } from '@/server/http/utils/request-facts'
 import { metaWithFallback } from '@/server/render/seo/meta'
 import { requireBlogSettingsSection } from '@/shared/config/getters'
 import { getSidebarWidgetCount, isSidebarWidgetEnabled } from '@/shared/config/utils'
@@ -41,7 +42,7 @@ export async function loader({
   // admin-exemption (so the dashboard owner doesn't pollute their
   // own visitor metrics) lives inside `trackAccess`; pass `isAdmin`
   // so it can apply the exemption and honour the analytics settings.
-  void trackAccess(request, null, {
+  void trackAccess(extractRequestFacts(request), null, {
     isAdmin: userSession(session)?.role === 'admin',
     clientAddress,
   })

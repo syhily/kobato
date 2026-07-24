@@ -1,6 +1,6 @@
 import { createContext, type ReactNode, use, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
-import type { AdminMusicDto } from '@/shared/types/music'
+import type { AdminMusicDto } from '@/shared/contracts/music'
 
 import { useDominantColor } from '@/ui/admin/musics/useDominantColor'
 

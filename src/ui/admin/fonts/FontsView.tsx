@@ -34,7 +34,7 @@ import { useRouteLoaderData, useRevalidator } from 'react-router'
 import { toast } from 'sonner'
 
 import type { FontsSettings } from '@/shared/config/types'
-import type { AdminFontDto, FontSlot } from '@/shared/types/fonts'
+import type { AdminFontDto, FontSlot } from '@/shared/contracts/fonts'
 
 import { orpc } from '@/client/api/client'
 import { orpcQuery } from '@/client/api/orpc-query'

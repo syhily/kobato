@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type { AdminMusicDto, MetingSearchHit } from '@/shared/types/music'
+import type { AdminMusicDto, MetingSearchHit } from '@/shared/contracts/music'
 
 import { renderInRouter, renderToHtml, stableHtml } from '#/_helpers/render'
 import { AddMusicDialog } from '@/ui/admin/musics/AddMusicDialog'

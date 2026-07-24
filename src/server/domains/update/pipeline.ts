@@ -18,7 +18,7 @@ import { Readable } from 'node:stream'
 import { pipeline } from 'node:stream/promises'
 import { createGunzip } from 'node:zlib'
 
-import type { UpdateJobState } from '@/shared/types/update'
+import type { UpdateJobState } from '@/shared/contracts/update'
 
 import { APP_REPOSITORY } from '@/shared/config/version'
 import { unsafeCast } from '@/shared/utils/unsafe-cast'

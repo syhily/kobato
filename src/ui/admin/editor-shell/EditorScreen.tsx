@@ -4,8 +4,8 @@ import { useMemo } from 'react'
 
 import type { CreateDraftConfig } from '@/client/hooks/use-create-draft'
 import type { LocalDraftConfig } from '@/client/hooks/use-local-draft'
+import type { SaveBodyInput, SaveBodyOutput } from '@/shared/contracts/revision'
 import type { PortableTextBody } from '@/shared/pt/schema'
-import type { SaveBodyInput, SaveBodyOutput } from '@/shared/types/revision'
 import type { EntityLike, RevisionLike, UseEditorShellStateOutput } from '@/ui/admin/editor-shell/editor-shell-types'
 import type { MetaSidebarSlotProps } from '@/ui/admin/editor-shell/EditorMetaPanel'
 

@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest'
 
+import type { CommentItemWire as CommentItemType } from '@/shared/contracts/comments'
 import type { CommentFormUser } from '@/shared/types/catalog'
-import type { CommentItemWire as CommentItemType, Comments as CommentsData } from '@/shared/types/comments'
+import type { Comments as CommentsData } from '@/shared/types/comments'
 
 import { renderInRouter } from '#/_helpers/render'
 import { CommentActions } from '@/ui/public/comments/comment-item/CommentActions'

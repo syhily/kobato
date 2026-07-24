@@ -12,11 +12,12 @@ import { music } from '@/server/infra/db/schema/media'
 const { setBlogSettingsBundleForTests } = await import('@/server/domains/settings/services/test-utils')
 const { TEST_BLOG_SETTINGS_BUNDLE } = await import('#/_helpers/blog-settings')
 
-// URL building is stubbed at the storage seam: every path resolves to a CDN
-// URL except `musics/coverless.jpg`, which simulates an S3 row whose CDN base
-// is gone — the track keeps playing on the bundled default cover.
-vi.mock('@/server/domains/music/storage', () => ({
-  safeBuildMusicPublicUrl: vi.fn((path: string) =>
+// URL building is stubbed at the public-url seam: every path resolves to a
+// CDN URL except `musics/coverless.jpg`, which simulates an S3 row whose CDN
+// base is gone — the track keeps playing on the bundled default cover.
+vi.mock('@/server/infra/storage/public-url', () => ({
+  resolveAssetUrl: vi.fn((_driver: string, path: string) => `https://assets.example.com/${path}`),
+  safeResolveAssetUrl: vi.fn((_driver: string, path: string) =>
     path === 'musics/coverless.jpg' ? null : `https://assets.example.com/${path}`,
   ),
 }))

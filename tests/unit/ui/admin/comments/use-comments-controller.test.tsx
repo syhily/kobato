@@ -3,32 +3,26 @@ import type { ReactNode } from 'react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { describe, expect, it } from 'vitest'
 
+import type { AdminCommentWire as AdminComment } from '@/shared/contracts/comments'
 import type { CommentBody } from '@/shared/pt/comment-schema'
-import type { AdminCommentWire as AdminComment } from '@/shared/types/comments'
 
 import { renderHook } from '#/_helpers/hook'
 import { orpcQuery } from '@/client/api/orpc-query'
 import {
-  DATE_FILTER_OPERATORS,
-  DEFAULT_DATE_OPERATOR,
   DEFAULT_TEXT_OPERATOR,
   approveCommentInPages,
   clearDeleteRequestInPages,
-  dateFilterLabel,
-  isDateFilterOperator,
   isTextFilterOperator,
-  parseDateFilter,
   parseTextFilter,
   removeCommentFromPages,
-  resolveDateFilterBounds,
   textFilterLabel,
   updateCommentBodyInPages,
   useCommentsController,
   type AdminCommentsData,
   type AdminCommentsPage,
-  type DateFilterValue,
   type TextFilterValue,
 } from '@/ui/admin/comments/useCommentsController'
+import { type SingleDateFilterValue } from '@/ui/admin/shared/date-filter'
 
 // The controller owns a `useInfiniteQuery` + `useQueryClient`, so hook tests
 // need a real QueryClient above the memory router that `renderHook` mounts.
@@ -108,49 +102,13 @@ function makeData(...pages: AdminCommentsPage[]): AdminCommentsData {
 }
 
 describe('ui/admin/comments/useCommentsController helpers', () => {
-  it('validates date operators', () => {
-    for (const op of DATE_FILTER_OPERATORS.map((o) => o.value)) {
-      expect(isDateFilterOperator(op)).toBe(true)
-    }
-    expect(isDateFilterOperator('invalid')).toBe(false)
-  })
-
+  // The date-filter helpers moved to `@/ui/admin/shared/date-filter` (the
+  // converged two-mode module) — their coverage lives in
+  // `tests/unit/ui/admin/shared/date-filter.test.ts`.
   it('validates text operators', () => {
     expect(isTextFilterOperator('contains')).toBe(true)
     expect(isTextFilterOperator('does-not-contain')).toBe(true)
     expect(isTextFilterOperator('starts-with')).toBe(false)
-  })
-
-  it('parses a date filter', () => {
-    const value: DateFilterValue = { date: '2024-03-15', op: 'is-greater' }
-    expect(parseDateFilter(JSON.stringify(value))).toEqual(value)
-  })
-
-  it('rejects malformed date filters', () => {
-    expect(parseDateFilter(undefined)).toBeNull()
-    expect(parseDateFilter('not-json')).toBeNull()
-    expect(parseDateFilter('{}')).toBeNull()
-    expect(parseDateFilter('{"date":"2024-01-01","op":"invalid"}')).toBeNull()
-  })
-
-  it('labels a date filter', () => {
-    const value: DateFilterValue = { date: '2024-03-15', op: 'is-or-less' }
-    expect(dateFilterLabel(value)).toBe('不晚于 2024-03-15')
-  })
-
-  it('resolves date bounds', () => {
-    const value: DateFilterValue = { date: '2024-03-15', op: DEFAULT_DATE_OPERATOR }
-    const bounds = resolveDateFilterBounds(value)
-    const expectedEnd = new Date('2024-03-15')
-    expectedEnd.setHours(23, 59, 59, 999)
-    expect(bounds.before).toBe(expectedEnd.toISOString())
-    expect(bounds.after).toBeUndefined()
-  })
-
-  it('returns empty bounds for invalid dates', () => {
-    const bounds = resolveDateFilterBounds({ date: 'not-a-date', op: 'is-less' })
-    expect(bounds.after).toBeUndefined()
-    expect(bounds.before).toBeUndefined()
   })
 
   it('parses a text filter', () => {
@@ -276,7 +234,7 @@ describe('ui/admin/comments/useCommentsController hook', () => {
 
   it('parses text and date filters', () => {
     const text: TextFilterValue = { op: 'contains', value: 'hello' }
-    const date: DateFilterValue = { date: '2024-03-15', op: 'is-greater' }
+    const date: SingleDateFilterValue = { date: '2024-03-15', op: 'is-greater' }
     const { filterText, filterDateRange, filterCreatedAfter } = renderHook(
       () =>
         useCommentsController({

@@ -1,7 +1,7 @@
 import { RotateCwIcon, SaveIcon, UploadIcon, XIcon } from 'lucide-react'
 import { Suspense, type SubmitEventHandler, lazy, useCallback, useEffect, useRef, useState } from 'react'
 
-import type { AdminImageDto } from '@/shared/types/images'
+import type { AdminImageDto } from '@/shared/contracts/images'
 import type { LockedAspect } from '@/ui/admin/shared/ImageEditorCanvas'
 
 import { orpc } from '@/client/api/client'

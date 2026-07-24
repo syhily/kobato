@@ -1,8 +1,5 @@
 import { z } from 'zod'
 
-import type { Assert, Equals } from '@/shared/contracts/primitives'
-import type { AdminWebmentionWire } from '@/shared/types/webmentions'
-
 import { idString, isoDateTime } from '@/shared/contracts/primitives'
 
 export const adminWebmentionDto = z.object({
@@ -18,6 +15,4 @@ export const adminWebmentionDto = z.object({
   createdAt: isoDateTime,
   moderatedAt: isoDateTime.nullable(),
 })
-
-// ─── parity assertion ──────────────────────────────────
-type _adminWebmentionDtoParity = Assert<Equals<z.infer<typeof adminWebmentionDto>, AdminWebmentionWire>>
+export type AdminWebmentionWire = z.infer<typeof adminWebmentionDto>

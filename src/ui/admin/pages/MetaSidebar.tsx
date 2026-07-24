@@ -1,6 +1,7 @@
 import { type ReactNode } from 'react'
 
-import type { AdminPageDto, PageMetaDraft } from '@/shared/types/pages'
+import type { AdminPageDto } from '@/shared/contracts/pages'
+import type { PageMetaDraft } from '@/shared/types/pages'
 import type {
   SidebarPublishStatus,
   SidebarRevisionSummary,

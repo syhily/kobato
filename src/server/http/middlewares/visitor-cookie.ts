@@ -15,7 +15,7 @@ export const honoVisitorCookieMiddleware = createMiddleware<Env>(async (c, next)
   if (isExempt(url.pathname)) {
     return next()
   }
-  const { setCookie } = resolveVisitorCookie(c.req.raw)
+  const { setCookie } = resolveVisitorCookie(c.req.raw.headers.get('cookie'))
   await next()
   if (setCookie) {
     c.header('Set-Cookie', setCookie, { append: true })

@@ -1,7 +1,7 @@
 import { ImageOffIcon, XIcon } from 'lucide-react'
 import { useState } from 'react'
 
-import type { AdminImageDto } from '@/shared/types/images'
+import type { AdminImageDto } from '@/shared/contracts/images'
 
 import { UploadImageDialog, type UploadKind } from '@/ui/admin/shared/UploadImageDialog'
 import { Button } from '@/ui/components/button'

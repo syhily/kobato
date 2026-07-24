@@ -1,6 +1,19 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { AuditContext } from '@/server/domains/audit/types'
+import type { RequestFacts } from '@/server/infra/http/request-facts'
+
+function makeRequestFacts(overrides: Partial<RequestFacts> = {}): RequestFacts {
+  return {
+    path: '/',
+    userAgent: null,
+    referer: null,
+    acceptLanguage: null,
+    purpose: null,
+    cookie: null,
+    ...overrides,
+  }
+}
 
 const pushAuditEvent = vi.fn()
 const loggerMock = { error: vi.fn(), warn: vi.fn(), info: vi.fn(), debug: vi.fn() }
@@ -63,9 +76,7 @@ describe('audit/service', () => {
       const context = {
         viewer: { userId: 1n, role: 'admin' },
         clientAddress: '192.168.1.1',
-        request: new Request('http://localhost', {
-          headers: { 'User-Agent': 'TestBot/1.0' },
-        }),
+        requestFacts: makeRequestFacts({ userAgent: 'TestBot/1.0' }),
       } as unknown as AuditContext
 
       const result = buildAuditContext(context)
@@ -81,7 +92,7 @@ describe('audit/service', () => {
       const context = {
         viewer: null,
         clientAddress: '192.168.1.1',
-        request: new Request('http://localhost'),
+        requestFacts: makeRequestFacts(),
       } as unknown as AuditContext
 
       const result = buildAuditContext(context)
@@ -99,9 +110,7 @@ describe('audit/service', () => {
       const context = {
         viewer: { userId: 42n, role: 'author' },
         clientAddress: '10.0.0.1',
-        request: new Request('http://localhost', {
-          headers: { 'User-Agent': 'Mozilla/5.0' },
-        }),
+        requestFacts: makeRequestFacts({ userAgent: 'Mozilla/5.0' }),
       } as unknown as AuditContext
 
       recordAuditEventFromContext(context, {

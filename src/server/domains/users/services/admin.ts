@@ -5,7 +5,6 @@ import type { User } from '@/server/infra/db/types'
 
 import { revokeAllSessionsOfUser } from '@/server/domains/auth/session-storage'
 import { issueResetToken, issueSetupToken } from '@/server/domains/auth/verification-tokens'
-import { bulkApprovePendingByUser, bulkSoftDeleteCommentsByUser } from '@/server/domains/comments/repos/moderation'
 import {
   type AdminUserRow,
   type AdminUsersListFilters,
@@ -15,16 +14,10 @@ import {
 } from '@/server/domains/users/repos/admin-query'
 import {
   countAdmins,
-  findEmailById,
-  findFirstAdminUser,
   findUserByEmail,
   findUserById,
-  hasAdmin,
   insertAuthor,
-  restoreUserById,
-  setUserMuted,
   softDeleteUserById,
-  updateUserById,
   updateUserRole,
 } from '@/server/infra/db/operations/user'
 import { sendAuthorInvite, sendPasswordReset as sendPasswordResetEmail } from '@/server/infra/email/sender'
@@ -103,32 +96,6 @@ export async function listUsersForAdmin(
     listAdminUsers(db, offset, limit, filters, sortBy),
   ])
   return { users, total, hasMore: offset + users.length < total }
-}
-
-export async function getAdminUser(db: NodePgDatabase, id: bigint): Promise<AdminUserRow | null> {
-  return findAdminUserById(db, id)
-}
-
-export async function softDeleteAdminUser(db: NodePgDatabase, id: bigint): Promise<boolean> {
-  return softDeleteUserById(db, id)
-}
-
-export async function restoreAdminUser(db: NodePgDatabase, id: bigint): Promise<boolean> {
-  return restoreUserById(db, id)
-}
-
-export async function muteAdminUser(db: NodePgDatabase, id: bigint, muted: boolean) {
-  return setUserMuted(db, id, muted)
-}
-
-export async function bulkApproveCommentsForUser(db: NodePgDatabase, userId: bigint): Promise<{ approved: number }> {
-  const approved = await bulkApprovePendingByUser(db, userId)
-  return { approved }
-}
-
-export async function bulkDeleteCommentsForUser(db: NodePgDatabase, userId: bigint): Promise<{ deleted: number }> {
-  const deleted = await bulkSoftDeleteCommentsByUser(db, userId)
-  return { deleted }
 }
 
 // Role update with guard
@@ -239,44 +206,6 @@ export async function sendPasswordResetToUser(
   return { userId: user.id }
 }
 
-// Update user by ID (admin patch)
-
-export interface AdminUserPatch {
-  name?: string
-  email?: string
-  link?: string
-  badgeName?: string
-  badgeColor?: string
-  badgeTextColor?: string | null
-}
-
-export async function updateUserByIdWithGuard(
-  db: NodePgDatabase,
-  targetId: bigint,
-  patch: AdminUserPatch,
-): Promise<User | null> {
-  const dbPatch: Parameters<typeof updateUserById>[2] = {}
-  if (patch.name !== undefined) {
-    dbPatch.name = patch.name
-  }
-  if (patch.email !== undefined) {
-    dbPatch.email = patch.email
-  }
-  if (patch.link !== undefined) {
-    dbPatch.link = patch.link
-  }
-  if (patch.badgeName !== undefined) {
-    dbPatch.badgeName = patch.badgeName
-  }
-  if (patch.badgeColor !== undefined) {
-    dbPatch.badgeColor = patch.badgeColor
-  }
-  if (patch.badgeTextColor !== undefined) {
-    dbPatch.badgeTextColor = patch.badgeTextColor
-  }
-  return updateUserById(db, targetId, dbPatch)
-}
-
 // Soft delete user with guard
 
 export async function softDeleteUserWithGuard(
@@ -304,5 +233,3 @@ export async function softDeleteUserWithGuard(
   await revokeAllSessionsOfUser(targetId)
   return { previousRole: target.role }
 }
-
-export { findEmailById, findFirstAdminUser, findUserById, hasAdmin }

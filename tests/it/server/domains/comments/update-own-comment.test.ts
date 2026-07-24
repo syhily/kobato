@@ -5,20 +5,17 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { CommentWithUser } from '@/server/domains/comments/repos/shared'
 
-// `updateOwnComment` (visitor self-edit of their own comment) branches
-// on the age of the row at edit time:
+// `updateOwnComment` (visitor self-edit of their own comment) delegates
+// the grace-window branch to the pure `decideOwnEdit` decider — see
+// `tests/unit/server/domains/comments/services/policy.test.ts` for the
+// timestamp matrix. This file pins what remains at the persistence
+// seam:
 //
-//   * Inside the 30-minute grace window from `createdAt` — keep
-//     whatever moderation state the row is already in, do NOT bump
-//     `is_pending`, and do NOT notify the admin. The commenter is
-//     polishing a just-posted reply; nothing reviewer-facing changed.
-//   * Outside the window — re-pend (`is_pending = true`,
-//     `updatedAt = now()`) and fire `sendNewComment` so the moderation
-//     inbox sees the edit.
-//
-// Both paths share the same DB-read → canonicalize → DB-write →
-// refetch → projection pipeline; the only differences are the SQL
-// helper picked and whether the email fires.
+//   * the decision drives WHICH optimistic-lock write runs
+//     (`updateOwnCommentBody` vs `updateOwnCommentBodyAndPending`) and
+//     whether the admin notification fires;
+//   * a lost optimistic-lock race (0 rows affected) rejects CONFLICT;
+//   * a row that vanishes mid-edit returns null without writing.
 
 vi.mock('@/server/domains/comments/repos/public-query/by-id', () => ({
   findCommentWithUserById: vi.fn(),
@@ -28,8 +25,8 @@ vi.mock('@/server/domains/comments/repos/admin-query', () => ({
 }))
 
 vi.mock('@/server/domains/comments/repos/mutate', () => ({
-  updateOwnCommentBody: vi.fn(async () => undefined),
-  updateOwnCommentBodyAndPending: vi.fn(async () => undefined),
+  updateOwnCommentBody: vi.fn(async () => 1),
+  updateOwnCommentBodyAndPending: vi.fn(async () => 1),
   updateCommentBodyAndContent: vi.fn(),
 }))
 
@@ -129,8 +126,8 @@ beforeEach(() => {
   vi.clearAllMocks()
 })
 
-describe('updateOwnComment — grace-window branch', () => {
-  it('edit within 30 minutes keeps approved state and stays silent', async () => {
+describe('updateOwnComment — decision wiring', () => {
+  it('a silent-edit decision rewrites the body in place and skips the admin email', async () => {
     const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000)
     const existing = row({ createAt: tenMinutesAgo, isPending: false })
     findCommentMock.mockResolvedValueOnce(existing).mockResolvedValueOnce(existing)
@@ -151,7 +148,7 @@ describe('updateOwnComment — grace-window branch', () => {
     expect(result?.isPending).toBe(false)
   })
 
-  it('edit older than 30 minutes re-pends and notifies admin', async () => {
+  it('a re-pend decision re-queues the comment and notifies the admin', async () => {
     const hourAgo = new Date(Date.now() - 60 * 60 * 1000)
     const existing = row({ createAt: hourAgo, isPending: false })
     const refetched = row({ createAt: hourAgo, isPending: true })
@@ -176,6 +173,21 @@ describe('updateOwnComment — grace-window branch', () => {
     expect(commentArg.isPending).toBe(true)
     expect(targetArg).toEqual({ type: 'post', ownerId: 1n })
     expect(result?.isPending).toBe(true)
+  })
+})
+
+describe('updateOwnComment — persistence edges', () => {
+  it('throws CONFLICT when the optimistic lock loses the race', async () => {
+    const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000)
+    const existing = row({ createAt: tenMinutesAgo })
+    findCommentMock.mockResolvedValueOnce(existing)
+    vi.mocked(mutateRepo.updateOwnCommentBody).mockResolvedValueOnce(0)
+
+    await expect(updateOwnComment(db, '42', NEW_BODY)).rejects.toThrow(/评论已被修改/)
+
+    // A rejected write must not trigger the refetch or the admin email.
+    expect(findCommentMock).toHaveBeenCalledTimes(1)
+    expect(emails.sendNewComment).not.toHaveBeenCalled()
   })
 
   it('returns null and skips writes when the row vanished mid-edit', async () => {

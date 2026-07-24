@@ -86,8 +86,8 @@ describe('parseCommentFiltersFromSearchParams — date', () => {
     expect(chip.label).toBe('之后 2026-06-01')
   })
 
-  it('falls back to DEFAULT_DATE_OPERATOR (is-or-less) when only `date` is set', () => {
-    // Regression: the previous fallback used `DATE_FILTER_OPERATORS[0]!.value`
+  it('falls back to DEFAULT_SINGLE_DATE_OPERATOR (is-or-less) when only `date` is set', () => {
+    // Regression: the previous fallback used `SINGLE_DATE_FILTER_OPERATORS[0]!.value`
     // which is `'is-less'` — the day-bound exclusive form. Ghost's
     // default and the picker's default is `'is-or-less'`, which
     // includes the day. A hand-typed URL like `?date=2026-06-01`
@@ -100,7 +100,7 @@ describe('parseCommentFiltersFromSearchParams — date', () => {
     expect(filters[0]!.label).toBe('不晚于 2026-06-01')
   })
 
-  it('falls back to DEFAULT_DATE_OPERATOR when `dateOp` is invalid', () => {
+  it('falls back to DEFAULT_SINGLE_DATE_OPERATOR when `dateOp` is invalid', () => {
     const filters = parseCommentFiltersFromSearchParams(new URLSearchParams('date=2026-06-01&dateOp=bogus'))
     const value = JSON.parse(filters[0]!.value) as { date: string; op: string }
     expect(value.op).toBe('is-or-less')

@@ -22,8 +22,10 @@ the server or client boundary catch and log it.
 ## Structure
 
 - `config/` — `blog`, `settings`, `socials` (BlogSettingsBundle).
-- `contracts/` — Zod schemas (the wire format).
-- `types/` — DTO interfaces (parity-checked against `contracts/`).
+- `contracts/` — Zod schemas (the wire format) plus the DTO types derived
+  from them.
+- `types/` — Standalone shared types and isomorphic helpers with no
+  contract twin (catalog projections, domain inputs, image URL helpers).
 - `pt/` — PortableText schema, bridge, semantics, comment markdown,
   footnote-merge.
 - `route-warmup/` — warmup manifest file contract (parse, validate,
@@ -34,11 +36,15 @@ the server or client boundary catch and log it.
   `formatter`, `pagination`, `toc`, `paths`, `roles`, `user-agent`,
   `chunk-error`, `comment-token`, `footnotes-section-title`.
 
-## Zod / Type parity
+## Zod DTO single source
 
-Zod DTOs in `shared/contracts/` are paired with compile-time
-`Equals<z.infer, TInterface>` parity assertions against
-`src/shared/types/*.ts`. Drift becomes a build error.
+Each wire DTO is declared once as a Zod schema in `shared/contracts/`; its
+TS type is derived in the same module (`export type AdminPostDto =
+z.infer<typeof adminPostDto>`). There are no hand-written DTO twins and no
+parity assertions — consumers `import type` the DTO from the owning
+contracts module. `shared/types/` keeps only types that have no contract
+schema. The `Assert`/`Equals` helpers in `contracts/primitives` remain for
+the settings system's compile-time registry checks.
 
 ## Client API usage
 

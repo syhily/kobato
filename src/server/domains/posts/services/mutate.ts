@@ -3,6 +3,7 @@ import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 import { eq } from 'drizzle-orm'
 
 import { findContentById } from '@/server/domains/content/repos/query'
+import { isPromoted } from '@/server/domains/content/schema'
 import { clearContentCaches } from '@/server/domains/content/shared'
 import { rethrowSlugConflict } from '@/server/domains/content/slug-conflict'
 import { reclaimSlugOnRestore } from '@/server/domains/content/slug-reclaim'
@@ -270,7 +271,7 @@ export async function restorePost(
       const restoredMeta = await findPostMetaById(tx, id)
       if (restoredMeta !== null) {
         slugConflict = await reclaimSlugOnRestore(tx, 'post', id, restoredMeta.slug)
-        if (restoredMeta.published && restoredMeta.publishedRevisionId !== null) {
+        if (isPromoted(restoredMeta)) {
           const revision = await findContentById(tx, restoredMeta.publishedRevisionId)
           if (revision !== null) {
             data = {

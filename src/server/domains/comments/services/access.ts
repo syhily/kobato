@@ -14,7 +14,8 @@ import { idFromString } from '@/shared/utils/id'
  * 2. Token ownership — the caller has a valid comment token.
  * 3. Session ownership — the caller is logged in and their user ID matches the comment's author.
  *
- * Returns the cleaned cookie (for Set-Cookie refresh) and a boolean.
+ * Returns whether access is granted, plus the cleaned cookie with
+ * expired and invalid entries dropped.
  */
 export async function verifyCommentAccess(
   db: NodePgDatabase,

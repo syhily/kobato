@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type { AdminUserDto } from '@/shared/types/users'
+import type { AdminUserDto } from '@/shared/contracts/users'
 
 import { renderInRouter, renderToHtml, stableHtml } from '#/_helpers/render'
 import { UserDetailView } from '@/ui/admin/users/UserDetailView'

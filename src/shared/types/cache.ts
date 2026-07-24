@@ -40,10 +40,6 @@ export interface ReservedCacheBucket {
   pattern: string
 }
 
-export interface ReservedCacheBucketStats extends ReservedCacheBucket {
-  keyCount: number
-}
-
 export const RESERVED_CACHE_BUCKETS: readonly ReservedCacheBucket[] = [
   {
     id: 'session',
@@ -72,26 +68,8 @@ export interface CacheBucket {
   pattern: string
 }
 
-export interface CacheBucketStats extends CacheBucket {
-  /** Approximate count from a SCAN sweep, not authoritative under churn. */
-  keyCount: number
-}
-
-export interface AdminCacheStatsDto {
-  buckets: CacheBucketStats[]
-  reserved: ReservedCacheBucketStats[]
-  total: number
-  generatedAt: string
-}
-
 export type ClearCacheTarget = CacheBucketId | 'all'
 
 export interface ClearCacheInput {
   target: ClearCacheTarget
-}
-
-export interface ClearCacheResultDto {
-  cleared: { bucketId: CacheBucketId; label: string; removed: number }[]
-  total: number
-  refreshedStats: AdminCacheStatsDto
 }

@@ -5,7 +5,7 @@ import type { AssetsSettings } from '@/shared/config/types'
 import { TEST_BLOG_SETTINGS_BUNDLE } from '#/_helpers/blog-settings'
 import { setBlogSettingsBundleForTests } from '@/server/domains/settings/services/test-utils'
 
-const { isUploadEnabled, putImage } = await import('@/server/domains/images/storage')
+const { putImage } = await import('@/server/domains/images/storage')
 const { getPublicBaseUrl } = await import('@/server/infra/storage/public-url')
 const { localBackend } = await import('@/server/infra/storage/backends/local')
 
@@ -20,7 +20,6 @@ afterEach(() => {
 
 describe('server/images/storage — toggle dispatch', () => {
   it('reports the public base URL from the assets section host when uploads are ON', () => {
-    expect(isUploadEnabled()).toBe(true)
     expect(getPublicBaseUrl()).toBe('https://assets.example.com')
   })
 
@@ -43,7 +42,6 @@ describe('server/images/storage — toggle dispatch', () => {
         storage: { ...fixtureAssets.storage, enabled: false },
       },
     })
-    expect(isUploadEnabled()).toBe(false)
     expect(getPublicBaseUrl()).toBe('https://assets.example.com')
   })
 

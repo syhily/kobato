@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type { AdminFriendDto } from '@/shared/types/friends'
+import type { AdminFriendDto } from '@/shared/contracts/friends'
 
 import { renderInRouter, renderToHtml, stableHtml } from '#/_helpers/render'
 import { EditFriendDialog } from '@/ui/admin/friends/EditFriendDialog'

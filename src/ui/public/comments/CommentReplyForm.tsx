@@ -2,14 +2,10 @@ import { useMutation } from '@tanstack/react-query'
 import { PencilIcon } from 'lucide-react'
 import { useRef, useState } from 'react'
 
+import type { CommentItemWire as CommentItemType } from '@/shared/contracts/comments'
 import type { CommentBody } from '@/shared/pt/comment-schema'
 import type { CommentFormUser } from '@/shared/types/catalog'
-import type {
-  CommentItemWire as CommentItemType,
-  FindAvatarOutput,
-  ReplyCommentInput,
-  ReplyCommentOutput,
-} from '@/shared/types/comments'
+import type { FindAvatarOutput, ReplyCommentInput, ReplyCommentOutput } from '@/shared/types/comments'
 
 import { orpcQuery } from '@/client/api/orpc-query'
 import { useCommentGuest } from '@/client/hooks/use-comment-guest'

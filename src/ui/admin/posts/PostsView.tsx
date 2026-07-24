@@ -3,7 +3,7 @@ import { PlusIcon, SearchIcon, XIcon } from 'lucide-react'
 import { useMemo } from 'react'
 import { Link } from 'react-router'
 
-import type { AdminUserDto } from '@/shared/types/users'
+import type { AdminUserDto } from '@/shared/contracts/users'
 
 import { orpcQuery } from '@/client/api/orpc-query'
 import { PostRow } from '@/ui/admin/posts/PostRow'

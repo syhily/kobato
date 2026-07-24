@@ -1,7 +1,7 @@
 import { CheckIcon, ExternalLinkIcon, SquarePenIcon, Trash2Icon } from 'lucide-react'
 import { memo } from 'react'
 
-import type { AdminFriendDto } from '@/shared/types/friends'
+import type { AdminFriendDto } from '@/shared/contracts/friends'
 
 import { safeHref } from '@/shared/utils/safe-url'
 import { Badge } from '@/ui/components/badge'

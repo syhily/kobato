@@ -3,7 +3,7 @@ import { Loader2Icon, SearchIcon, XIcon } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
 
-import type { AdminMusicDto, MetingSearchHit, MetingSource } from '@/shared/types/music'
+import type { AdminMusicDto, MetingSearchHit, MetingSource } from '@/shared/contracts/music'
 
 import { orpcQuery } from '@/client/api/orpc-query'
 import { useInfiniteScrollSentinel } from '@/client/hooks/use-infinite-scroll-sentinel'

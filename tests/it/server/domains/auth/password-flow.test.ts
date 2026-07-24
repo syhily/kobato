@@ -20,7 +20,7 @@ const mocks = vi.hoisted(() => ({
   updateUserById: vi.fn<(db: unknown, id: unknown, patch: unknown) => Promise<null>>(async () => null),
   sendPasswordReset: vi.fn<(user: unknown, link: string) => Promise<{ ok: boolean }>>(async () => ({ ok: true })),
   recordAuditEvent: vi.fn(),
-  countApprovedCommentsByUser: vi.fn(async () => 0),
+  hasApprovedComments: vi.fn(async () => false),
   tryPasswordResetRateLimit: vi.fn(async () => ({ count: 1, exceeded: false })),
   tryPasswordResetByEmailRateLimit: vi.fn(async () => ({ count: 1, exceeded: false })),
   deleteAllCredentials: vi.fn(async () => 0),
@@ -50,8 +50,8 @@ vi.mock('@/server/domains/audit/services/record', () => ({
   recordAuditEvent: mocks.recordAuditEvent,
 }))
 
-vi.mock('@/server/domains/comments/repos/public-query/by-id', () => ({
-  countApprovedCommentsByUser: mocks.countApprovedCommentsByUser,
+vi.mock('@/server/domains/comments/services/public-query', () => ({
+  hasApprovedComments: mocks.hasApprovedComments,
 }))
 
 vi.mock('@/server/infra/rate-limit', () => ({
@@ -212,12 +212,12 @@ describe('auth/password-flow — requestPasswordReset', () => {
       password: '',
       deletedAt: null,
     } as never)
-    mocks.countApprovedCommentsByUser.mockResolvedValueOnce(0)
+    mocks.hasApprovedComments.mockResolvedValueOnce(false)
 
     const result = await requestPasswordReset(db, CLIENT, request(), formWith({ email: 'anon@example.com' }))
 
     expect(result).toEqual({ type: 'success', message: GENERIC })
-    expect(mocks.countApprovedCommentsByUser).toHaveBeenCalledWith(db, 8n)
+    expect(mocks.hasApprovedComments).toHaveBeenCalledWith(db, 8n)
     expect(mocks.updateUserById).not.toHaveBeenCalled()
     expect(mocks.issueResetToken).not.toHaveBeenCalled()
     expect(mocks.sendPasswordReset).not.toHaveBeenCalled()
@@ -233,7 +233,7 @@ describe('auth/password-flow — requestPasswordReset', () => {
       password: '',
       deletedAt: null,
     } as never)
-    mocks.countApprovedCommentsByUser.mockResolvedValueOnce(3)
+    mocks.hasApprovedComments.mockResolvedValueOnce(true)
 
     const result = await requestPasswordReset(db, CLIENT, request(), formWith({ email: 'anon@example.com' }))
 

@@ -1,7 +1,7 @@
 import { ImageIcon, MessageSquareIcon, PinIcon, SquarePenIcon } from 'lucide-react'
 import { Link } from 'react-router'
 
-import type { AdminPostDto } from '@/shared/types/posts'
+import type { AdminPostDto } from '@/shared/contracts/posts'
 
 import { cn } from '@/ui/lib/cn'
 import { Image } from '@/ui/public/widgets/Image'

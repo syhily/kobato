@@ -2,7 +2,7 @@ import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
 import type { AdminListFilters, AdminPendingKind } from '@/server/domains/comments/repos/shared'
 import type { AdminCommentsResult } from '@/server/domains/comments/types'
-import type { AdminPendingDashboardDto, AdminPendingItemDto } from '@/shared/types/comments'
+import type { AdminPendingDashboardDto, AdminPendingItemDto } from '@/shared/contracts/comments'
 
 import { withCommentBadgeTextColor } from '@/server/domains/comments/badge'
 import {

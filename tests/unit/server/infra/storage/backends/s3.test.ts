@@ -64,6 +64,14 @@ async function importBackend() {
   return mod.s3Backend
 }
 
+// `importBackend` resets the module registry, so the `StorageObjectNotFound`
+// the backend throws is a different class instance from any top-level
+// import. Re-import it from the reset registry for `instanceof` assertions.
+async function importNotFoundError() {
+  const mod = await import('@/server/infra/storage/backend')
+  return mod.StorageObjectNotFound
+}
+
 function setBundle(bundle: BlogSettingsBundle) {
   snapshotSlot?.write(bundle)
   snapshotSlot?.writeHydration(Promise.resolve(bundle))
@@ -159,7 +167,7 @@ describe('storage/backends/s3 — putStream', () => {
     const backend = await importBackend()
     sendMock.mockResolvedValue({})
     const body = Readable.from([Buffer.from('x')])
-    await backend.putStream!({ key: 'backup/b.sql.gz', body, contentType: 'application/gzip' })
+    await backend.putStream({ key: 'backup/b.sql.gz', body, contentType: 'application/gzip' })
     expect(commandInput(0).CacheControl).toBe('private, max-age=31536000')
   })
 })
@@ -241,10 +249,11 @@ describe('storage/backends/s3 — exists', () => {
 })
 
 describe('storage/backends/s3 — get', () => {
-  it('throws ActionFailure(404) when Body is undefined', async () => {
+  it('throws StorageObjectNotFound when Body is undefined', async () => {
     const backend = await importBackend()
+    const notFound = await importNotFoundError()
     sendMock.mockResolvedValue({ Body: undefined })
-    await expect(backend.get('key')).rejects.toMatchObject({ status: 404 })
+    await expect(backend.get('key')).rejects.toBeInstanceOf(notFound)
   })
 
   it('resolves with the concatenated buffer', async () => {
@@ -289,6 +298,58 @@ describe('storage/backends/s3 — get', () => {
     await new Promise((r) => setImmediate(r))
     stream.destroy(new Error('boom'))
     await expect(promise).rejects.toThrow('boom')
+  })
+})
+
+describe('storage/backends/s3 — not-found normalization', () => {
+  // The SDK's three not-found shapes: an XML error name (`NoSuchKey` on
+  // GetObject, `NotFound` on HeadObject) or a bare 404 with no name from
+  // S3-compatible providers.
+  const NOT_FOUND_CASES: [string, unknown][] = [
+    ['NoSuchKey', Object.assign(new Error('The specified key does not exist.'), { name: 'NoSuchKey' })],
+    ['NotFound', Object.assign(new Error('Not Found'), { name: 'NotFound' })],
+    ['bare 404', { $metadata: { httpStatusCode: 404 } }],
+  ]
+
+  it.each(NOT_FOUND_CASES)('get() maps an SDK %s rejection to StorageObjectNotFound', async (_label, sdkError) => {
+    const backend = await importBackend()
+    const notFound = await importNotFoundError()
+    sendMock.mockRejectedValue(sdkError)
+    await expect(backend.get('missing')).rejects.toBeInstanceOf(notFound)
+  })
+
+  it.each(NOT_FOUND_CASES)(
+    'getStream() maps an SDK %s rejection to StorageObjectNotFound',
+    async (_label, sdkError) => {
+      const backend = await importBackend()
+      const notFound = await importNotFoundError()
+      sendMock.mockRejectedValue(sdkError)
+      await expect(backend.getStream('missing')).rejects.toBeInstanceOf(notFound)
+    },
+  )
+
+  it('getStream() throws StorageObjectNotFound when Body is undefined', async () => {
+    const backend = await importBackend()
+    const notFound = await importNotFoundError()
+    sendMock.mockResolvedValue({ Body: undefined })
+    await expect(backend.getStream('missing')).rejects.toBeInstanceOf(notFound)
+  })
+
+  it('the mapped error keeps the 404 status and carries the key', async () => {
+    const backend = await importBackend()
+    sendMock.mockRejectedValue(Object.assign(new Error('no key'), { name: 'NoSuchKey' }))
+    await expect(backend.get('images/missing.jpg')).rejects.toMatchObject({
+      name: 'StorageObjectNotFound',
+      status: 404,
+      key: 'images/missing.jpg',
+    })
+  })
+
+  it.each(['get', 'getStream'] as const)('%s() propagates non-not-found SDK errors unchanged', async (method) => {
+    const backend = await importBackend()
+    const boom = new Error('credentials rejected')
+    sendMock.mockRejectedValue(boom)
+    await expect(backend[method]('k')).rejects.toBe(boom)
   })
 })
 

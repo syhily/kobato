@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { describe, expect, it, vi } from 'vitest'
 
-import type { AdminCategoryDto } from '@/shared/types/categories'
+import type { AdminCategoryDto } from '@/shared/contracts/categories'
 
 import { renderToHtml, stableHtml } from '#/_helpers/render'
 import { EditCategoryDialog } from '@/ui/admin/categories/EditCategoryDialog'

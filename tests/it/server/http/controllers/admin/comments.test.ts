@@ -1,7 +1,8 @@
 import { call } from '@orpc/server'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type { AdminComment, AdminCommentWire } from '@/shared/types/comments'
+import type { AdminCommentWire } from '@/shared/contracts/comments'
+import type { AdminComment } from '@/shared/types/comments'
 
 import { makeAuthedCtx } from '#/_helpers/mock-ctx'
 

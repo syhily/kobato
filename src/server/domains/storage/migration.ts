@@ -164,17 +164,13 @@ export async function migrateLocalToS3(db: NodePgDatabase): Promise<MigrationRes
       let alreadyInS3 = false
       if (await s3Backend.exists(row.path)) {
         alreadyInS3 = true
-      } else if (s3Backend.putStream !== undefined && localBackend.getStream !== undefined) {
+      } else {
         await s3Backend.putStream({
           key: row.path,
           body: await localBackend.getStream(row.path),
           contentType: 'application/gzip',
           visibility: 'private',
         })
-      } else {
-        // Fallback (backends without streaming): buffer with the standard cap.
-        const body = await localBackend.get(row.path)
-        await s3Backend.put({ key: row.path, body, contentType: 'application/gzip', visibility: 'private' })
       }
       await db.update(backupTable).set({ storageDriver: 's3' }).where(eq(backupTable.id, row.id))
       await deleteLocalSafe(row.path)

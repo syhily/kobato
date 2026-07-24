@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import type { PublicMusicMeta } from '@/shared/contracts/music'
 import type {
   FootnoteDefinitionBlock,
   MusicPlayerBlock,
@@ -7,7 +8,6 @@ import type {
   SolutionBlock,
   TwoColumnBlock,
 } from '@/shared/pt/schema'
-import type { PublicMusicMeta } from '@/shared/types/music'
 
 vi.mock('@/server/domains/music/services/read', () => ({
   getPublicMusicMetasByIds: vi.fn(),

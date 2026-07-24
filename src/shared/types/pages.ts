@@ -1,48 +1,12 @@
+import type { AdminPageDetailDto, AdminPageDto } from '@/shared/contracts/pages'
 import type { PortableTextBody } from '@/shared/pt/schema'
-import type { MarkdownHeading } from '@/shared/types/catalog'
-import type { AdminRevisionDto } from '@/shared/types/revision'
 
 // Wire-format DTOs for the `/admin/pages` editor and the
 // `/api/admin/list-pages` oRPC procedure. Lives in `@/shared`
 // so server and client import the same shape without crossing
-// the boundary. Bigints are stringified.
-
-export interface AdminPageDto {
-  id: string
-  slug: string
-  title: string
-  summary: string
-  cover: string
-  og: string | null
-  published: boolean
-  commentsEnabled: boolean
-  showToc: boolean
-  /** Render the "Updated on XXXX" secondary timestamp on the public detail page. */
-  showUpdated: boolean
-  /** Render the global friends grid at the bottom of the page detail route. */
-  showFriends: boolean
-  /** ISO-8601. Editable from the metadata panel. */
-  publishedAt: string
-  /** `null` while the page has never been published. */
-  publishedRevisionId: string | null
-  createdAt: string
-  updatedAt: string
-  /** When non-null the row is soft-deleted. */
-  deletedAt: string | null
-  authorId: string | null
-  authorName: string | null
-  /** Approved comment count for this page's metric row. */
-  commentCount: number
-  /** The page's `metric.public_id` UUID — used by the admin comment-count link. */
-  commentPublicId: string
-}
-
-export interface AdminPageDetailDto {
-  page: AdminPageDto
-  /** Latest revision (draft preferred over published). */
-  latestRevision: AdminRevisionDto | null
-  publishedRevision: AdminRevisionDto | null
-}
+// the boundary. Bigints are stringified. The row DTOs
+// (`AdminPageDto`, `AdminPageDetailDto`, list/revision outputs) are
+// zod-derived in `@/shared/contracts/pages`.
 
 export interface ListPagesInput {
   q?: string
@@ -58,12 +22,6 @@ export interface ListPagesInput {
   limit?: number
 }
 
-export interface ListPagesOutput {
-  pages: AdminPageDto[]
-  total: number
-  hasMore: boolean
-}
-
 export interface GetPageInput {
   /** Stringified bigint id (admin DTO field). */
   id: string
@@ -73,10 +31,6 @@ export type GetPageOutput = AdminPageDetailDto | null
 
 export interface ListPageRevisionsInput {
   id: string
-}
-
-export interface ListPageRevisionsOutput {
-  revisions: AdminRevisionDto[]
 }
 
 // `id` absent → create a new row. Present → update the matching row.
@@ -214,12 +168,6 @@ export interface UnpublishPageOutput {
 
 export interface PreviewPageBodyInput {
   body: PortableTextBody
-}
-
-export interface PreviewPageBodyOutput {
-  /** Rendered HTML for the preview pane. */
-  html: string
-  headings: MarkdownHeading[]
 }
 
 export interface RenderMathInput {

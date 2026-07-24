@@ -3,7 +3,7 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type { UpdateCheckResult, UpdateJobStatus } from '@/shared/types/update'
+import type { UpdateCheckResult, UpdateJobStatus } from '@/shared/contracts/update'
 
 const orpcMocks = vi.hoisted(() => ({
   check: vi.fn(),

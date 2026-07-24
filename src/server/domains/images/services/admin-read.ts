@@ -1,7 +1,8 @@
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
 import type { ImageRow } from '@/server/infra/db/types'
-import type { AdminImageDto, ListImagesInput, ListImagesOutput } from '@/shared/types/images'
+import type { AdminImageDto, ListImagesOutput } from '@/shared/contracts/images'
+import type { ListImagesInput } from '@/shared/types/images'
 
 import {
   type AdminImagesListFilters,

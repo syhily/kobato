@@ -1,7 +1,7 @@
 import { SearchIcon, UserIcon } from 'lucide-react'
 import { useMemo, useState } from 'react'
 
-import type { AuditLogActorDto } from '@/shared/types/audit'
+import type { AuditLogActorDto } from '@/shared/contracts/audit'
 
 import { Input } from '@/ui/components/input'
 import { cn } from '@/ui/lib/cn'

@@ -1,9 +1,9 @@
-import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query'
 import { useCallback, useMemo, useState } from 'react'
 
-import type { MetingSearchHit, MetingSource, SearchMusicOutput } from '@/shared/types/music'
+import type { MetingSearchHit, MetingSource, SearchMusicOutput } from '@/shared/contracts/music'
 
 import { orpcQuery } from '@/client/api/orpc-query'
+import { useAdminInfiniteList } from '@/ui/admin/shared/useAdminInfiniteList'
 
 // Flatten fetched pages into one hit list, first occurrence winning on
 // `source:sourceId` collisions — upstream pages can overlap when the
@@ -23,36 +23,37 @@ export function dedupeSearchHits(pages: SearchMusicOutput[]): MetingSearchHit[] 
     })
 }
 
-// One search-pagination machine for the meting "add music" surfaces.
-// `useInfiniteQuery`'s pages ARE the accumulation — the hook holds no
-// offset state, no result state, and no mirror refs. Callers render only:
-// they keep their own keyword/source inputs, add mutation, and preview
-// wiring, and drive the machine through `search` / `loadMore` / `reset`.
+// One search-pagination machine for the meting "add music" surfaces, built
+// on the shared admin infinite-list scaffold — the search endpoint reports
+// only `hasMore`, which the scaffold's optional-`total` page shape absorbs.
+// The hook holds no offset state, no result state, and no mirror refs.
+// Callers render only: they keep their own keyword/source inputs, add
+// mutation, and preview wiring, and drive the machine through `search` /
+// `loadMore` / `reset`.
 export function useMetingMusicSearch({ limit }: { limit: number }) {
   const [submitted, setSubmitted] = useState<{ source: MetingSource; keyword: string } | null>(null)
-  const queryClient = useQueryClient()
 
-  const searchQuery = useInfiniteQuery(
-    orpcQuery.admin.music.search.infiniteOptions({
-      // `enabled` gates on submitted !== null, so the null branch below
-      // (keyword '') is only ever embedded in the disabled query's key —
-      // it is never sent to the server.
-      input: (pageParam: number) => ({ ...submitted, keyword: submitted?.keyword ?? '', limit, offset: pageParam }),
-      getNextPageParam: (lastPage, _allPages, lastPageParam) => {
-        if (!lastPage.hasMore) {
-          return undefined
-        }
-        return (lastPageParam ?? 0) + limit
-      },
-      initialPageParam: 0,
-      enabled: submitted !== null,
-      staleTime: 0,
-    }),
-  )
+  const {
+    pages,
+    hasNextPage,
+    isFetching,
+    isFetchingNextPage,
+    fetchNextPage,
+    error,
+    reset: resetSearchCache,
+  } = useAdminInfiniteList({
+    namespace: orpcQuery.admin.music.search,
+    pageSize: limit,
+    // `enabled` gates on submitted !== null, so the null branch below
+    // (keyword '') is only ever embedded in the disabled query's key —
+    // it is never sent to the server.
+    buildInput: (offset) => ({ ...submitted, keyword: submitted?.keyword ?? '', limit, offset }),
+    selectRows: (page) => page.results,
+    // No `noun`: the dialog/view renders the error inline instead of a toast.
+    enabled: submitted !== null,
+  })
 
-  const { data, error, hasNextPage, isFetching, isFetchingNextPage, fetchNextPage } = searchQuery
-
-  const results = useMemo(() => dedupeSearchHits(data?.pages ?? []), [data])
+  const results = useMemo(() => dedupeSearchHits(pages), [pages])
 
   const search = useCallback(({ source, keyword }: { source: MetingSource; keyword: string }) => {
     const trimmed = keyword.trim()
@@ -71,8 +72,8 @@ export function useMetingMusicSearch({ limit }: { limit: number }) {
 
   const reset = useCallback(() => {
     setSubmitted(null)
-    queryClient.removeQueries({ queryKey: orpcQuery.admin.music.search.key() })
-  }, [queryClient])
+    resetSearchCache()
+  }, [resetSearchCache])
 
   return {
     results,

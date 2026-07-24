@@ -7,6 +7,7 @@ import type { BlogSession } from '@/server/domains/auth/session-storage'
 import type { MetricTarget } from '@/server/domains/comments/services/shared'
 import type { CommentAndUser, CommentReq } from '@/server/domains/comments/types'
 import type { NewComment } from '@/server/infra/db/types'
+import type { RequestFacts } from '@/server/infra/http/request-facts'
 
 import { userSession } from '@/server/domains/auth/primitives'
 import { withCommentBadgeTextColor } from '@/server/domains/comments/badge'
@@ -20,6 +21,13 @@ import {
 import { findCommentRootId } from '@/server/domains/comments/repos/public-query/threads'
 import { canonicalizeCommentBody } from '@/server/domains/comments/services/canonicalize'
 import { sendNewComment, sendNewReply } from '@/server/domains/comments/services/email'
+import {
+  DEDUPE_SAMPLE_LIMIT,
+  DEDUPE_WINDOW_MS,
+  decideCommenterGate,
+  decideContentGate,
+  decideEmailGate,
+} from '@/server/domains/comments/services/policy'
 import { safeResolveMetricTarget } from '@/server/domains/comments/services/shared'
 import { hasRegisteredAccount, insertCommentUser, updateLastLogin } from '@/server/infra/db/operations/user'
 import { fireAndForgetNotify } from '@/server/infra/email/admin-notification'
@@ -48,7 +56,7 @@ interface ValidatedSubmission {
 async function validateSubmission(
   db: NodePgDatabase,
   commentReq: CommentReq,
-  req: Request,
+  facts: RequestFacts,
   clientAddress: string,
   session: BlogSession,
 ): Promise<ValidatedSubmission> {
@@ -57,9 +65,14 @@ async function validateSubmission(
     throw new DomainError('NOT_FOUND', '系统错误，评论的目标页面不存在。')
   }
 
+  // The registered-account fence only applies to anonymous submissions,
+  // so the lookup stays lazy for logged-in commenters. It must be
+  // evaluated before `insertCommentUser` writes anything.
   const loginUser = userSession(session)
-  if (loginUser === undefined && (await hasRegisteredAccount(db, commentReq.email))) {
-    throw new DomainError('UNAUTHORIZED', '该邮箱已经注册，请登录后再进行评论留言。')
+  const emailRegistered = loginUser === undefined ? await hasRegisteredAccount(db, commentReq.email) : false
+  const emailFailure = decideEmailGate(loginUser, emailRegistered)
+  if (emailFailure) {
+    throw new DomainError(emailFailure.code, emailFailure.message)
   }
 
   const u = await insertCommentUser(db, commentReq.name, commentReq.email, commentReq.link || '')
@@ -67,36 +80,33 @@ async function validateSubmission(
     throw new DomainError('INTERNAL', '系统错误，用户创建失败。')
   }
 
-  if (u.role === 'admin') {
-    if (loginUser === undefined) {
-      throw new DomainError('UNAUTHORIZED', '管理员账号需要登陆才能评论。')
-    }
-  } else if (loginUser !== undefined && loginUser.email !== u.email) {
-    throw new DomainError('FORBIDDEN', '评论邮箱与登陆账号不相符。')
-  }
-
-  if (u.isMuted) {
-    throw new DomainError('FORBIDDEN', '您的评论功能已被管理员禁用，如有疑问请联系站长。')
+  const commenterFailure = decideCommenterGate(loginUser, u)
+  if (commenterFailure) {
+    throw new DomainError(commenterFailure.code, commenterFailure.message)
   }
 
   const { body: canonicalBody, content: markdownSnapshot } = await canonicalizeCommentBody(commentReq.body)
-
-  const MAX_COMMENT_LENGTH = 10_000
-  if (markdownSnapshot.length > MAX_COMMENT_LENGTH) {
-    throw new DomainError('BAD_REQUEST', `评论内容过长，最多 ${MAX_COMMENT_LENGTH} 个字符。`)
-  }
-
   const contentHash = hashContent(markdownSnapshot)
 
-  if (u.role !== 'admin') {
-    const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
-    const recent = await recentCommentsForUserDedupe(db, u.id, since, 20)
-    if (recent.some((c) => c.contentHash === contentHash)) {
-      throw new DomainError('CONFLICT', '重复评论，你已经有了相同的留言，如果在页面看不到，说明它正在等待站长审核。')
-    }
+  // Admins skip the dedupe window — don't even run the SELECT for them.
+  // Null hashes can never equal the submitted hash; drop them at the
+  // boundary so the decider works on plain strings.
+  const recentRows =
+    u.role === 'admin'
+      ? []
+      : await recentCommentsForUserDedupe(db, u.id, new Date(Date.now() - DEDUPE_WINDOW_MS), DEDUPE_SAMPLE_LIMIT)
+  const recentContentHashes = recentRows.map((c) => c.contentHash).filter((h): h is string => h !== null)
+  const contentFailure = decideContentGate({
+    role: u.role,
+    contentLength: markdownSnapshot.length,
+    contentHash,
+    recentContentHashes,
+  })
+  if (contentFailure) {
+    throw new DomainError(contentFailure.code, contentFailure.message)
   }
 
-  await updateLastLogin(db, u.id, clientAddress, req.headers.get('User-Agent'))
+  await updateLastLogin(db, u.id, clientAddress, facts.userAgent)
 
   let rootId = 0n
   if (commentReq.rid !== undefined && commentReq.rid !== 0) {
@@ -190,12 +200,12 @@ async function notifyCommentCreated(db: NodePgDatabase, info: CommentAndUser, ta
 export async function createComment(
   db: NodePgDatabase,
   commentReq: CommentReq,
-  req: Request,
+  facts: RequestFacts,
   clientAddress: string,
   session: BlogSession,
 ): Promise<CommentAndUser> {
-  const sub = await validateSubmission(db, commentReq, req, clientAddress, session)
-  const info = await persistComment(db, commentReq, sub, req.headers.get('User-Agent'), clientAddress)
+  const sub = await validateSubmission(db, commentReq, facts, clientAddress, session)
+  const info = await persistComment(db, commentReq, sub, facts.userAgent, clientAddress)
   await notifyCommentCreated(db, info, sub.target)
   await clearLatestCommentsCache()
   return info

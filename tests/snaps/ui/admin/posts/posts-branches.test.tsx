@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type { AdminPostDto } from '@/shared/types/posts'
+import type { AdminPostDto } from '@/shared/contracts/posts'
 import type { PostStatusFilter, PostsFilters } from '@/ui/admin/posts/usePostsFilters'
 
 import { makeAdminPost } from '#/_helpers/catalog'

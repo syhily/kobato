@@ -9,7 +9,7 @@ import {
   VolumeOffIcon,
 } from 'lucide-react'
 
-import type { AdminUserDto } from '@/shared/types/users'
+import type { AdminUserDto } from '@/shared/contracts/users'
 import type { ConfirmState } from '@/ui/admin/shared/ConfirmDialog'
 
 import { Button } from '@/ui/components/button'

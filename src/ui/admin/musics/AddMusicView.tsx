@@ -5,7 +5,7 @@ import { useCallback, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router'
 import { toast } from 'sonner'
 
-import type { MetingSearchHit, MetingSource } from '@/shared/types/music'
+import type { MetingSearchHit, MetingSource } from '@/shared/contracts/music'
 
 import { orpcQuery } from '@/client/api/orpc-query'
 import { useInfiniteScrollSentinel } from '@/client/hooks/use-infinite-scroll-sentinel'

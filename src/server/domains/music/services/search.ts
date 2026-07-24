@@ -1,4 +1,4 @@
-import type { MetingSource, SearchMusicOutput } from '@/shared/types/music'
+import type { MetingSource, SearchMusicOutput } from '@/shared/contracts/music'
 
 import { getProvider } from '@/server/domains/music/providers/registry'
 import { unsafeCast } from '@/shared/utils/unsafe-cast'

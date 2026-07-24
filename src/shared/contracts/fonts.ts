@@ -1,11 +1,10 @@
 import { z } from 'zod'
 
-import type { Assert, Equals } from '@/shared/contracts/primitives'
-import type { AdminFontDto, ListFontsOutput, FontSlot, SetFontSlotInput } from '@/shared/types/fonts'
-
 import { isoDateTime } from '@/shared/contracts/primitives'
 
+/** The three browser web-font slots managed by `/admin/library/fonts`. */
 export const fontSlot = z.enum(['global', 'post', 'code'])
+export type FontSlot = z.infer<typeof fontSlot>
 
 // The `id` is a uuid (not the numeric `idString` used by image/post ids —
 // the `font` table's PK is `uuid`), so it is validated inline.
@@ -21,18 +20,15 @@ export const adminFontDto = z.object({
   etag: z.string(),
   createdAt: isoDateTime,
 })
+export type AdminFontDto = z.infer<typeof adminFontDto>
 
 export const listFontsOutputDto = z.object({
   fonts: z.array(adminFontDto),
 })
+export type ListFontsOutput = z.infer<typeof listFontsOutputDto>
 
 export const setFontSlotInputDto = z.object({
   slot: fontSlot,
   fontIds: z.array(z.uuid()).max(8),
 })
-
-// ─── parity assertions ─────────────────────────────────
-type _adminFontDtoParity = Assert<Equals<z.infer<typeof adminFontDto>, AdminFontDto>>
-type _listFontsParity = Assert<Equals<z.infer<typeof listFontsOutputDto>, ListFontsOutput>>
-type _setFontSlotParity = Assert<Equals<z.infer<typeof setFontSlotInputDto>, SetFontSlotInput>>
-type _fontSlotParity = Assert<Equals<z.infer<typeof fontSlot>, FontSlot>>
+export type SetFontSlotInput = z.infer<typeof setFontSlotInputDto>

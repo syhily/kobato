@@ -2,6 +2,7 @@ import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 import type { Pool } from 'pg'
 
 import { eq } from 'drizzle-orm'
+import { Readable } from 'node:stream'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { clearAllTables } from '#/_helpers/integration-db'
@@ -48,6 +49,13 @@ vi.mock('@/server/infra/storage/registry', () => {
         throw new Error(`S3 mock: object not found: ${key}`)
       }
       return b
+    },
+    getStream: async (key: string) => {
+      const b = s3Mock.store.get(key)
+      if (b === undefined) {
+        throw new Error(`S3 mock: object not found: ${key}`)
+      }
+      return Readable.from([b])
     },
     delete: async () => {},
     deleteMany: async () => {},

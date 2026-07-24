@@ -2,7 +2,7 @@ import { SquarePenIcon, Trash2Icon } from 'lucide-react'
 import { memo } from 'react'
 import { Link } from 'react-router'
 
-import type { AdminTagDto } from '@/shared/types/tags'
+import type { AdminTagDto } from '@/shared/contracts/tags'
 
 import { Skeleton } from '@/ui/components/skeleton'
 import { TableCell, TableRow } from '@/ui/components/table'

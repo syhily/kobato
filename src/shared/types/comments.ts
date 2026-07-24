@@ -5,29 +5,11 @@ export interface LatestComment {
   permalink: string
 }
 
-// Welcome-dashboard moderation inbox row. Same shape for both queues —
-// the `kind` discriminator decides which buttons the UI renders.
+// Welcome-dashboard moderation inbox filter. The row DTOs live in
+// `@/shared/contracts/comments`; this is the queue-switching union.
 export type AdminPendingKind = 'all' | 'approval' | 'deletion'
 
-export interface AdminPendingItemDto {
-  id: string
-  kind: 'approval' | 'deletion'
-  authorName: string
-  authorLink: string | null
-  excerpt: string
-  createdAtIso: string
-  deleteRequestedAtIso: string | null
-  pageTitle: string | null
-  pagePermalink: string | null
-}
-
-export interface AdminPendingDashboardDto {
-  items: AdminPendingItemDto[]
-  total: number
-  hasMore: boolean
-  counts: { all: number; approval: number; deletion: number }
-}
-
+import type { AdminCommentWire, AdminPendingDashboardDto, CommentItemWire } from '@/shared/contracts/comments'
 import type { CommentBody } from '@/shared/pt/comment-schema'
 
 export interface CommentAndUser {
@@ -181,72 +163,11 @@ export interface FilterAutocompleteInput {
 }
 
 // Output DTOs below intentionally use the **wire** comment types
-// (`CommentItemWire` / `AdminCommentWire`) rather than the earlier
-// `CommentItem` / `AdminComment` interfaces. The wire shapes match
-// what `JSON.stringify` actually emits: bigint ids stringified, Date
-// timestamps ISO-encoded. The earlier interfaces are kept for the
-// server-side query layer.
-
-export interface CommentItemWire {
-  id: string
-  createAt: string
-  updatedAt: string
-  deleteAt: string | null
-  deleteRequestedAt?: string | null
-  body: CommentBody
-  type: 'post' | 'page' | null
-  ownerId: string | null
-  userId: string
-  isVerified: boolean | null
-  rid: number
-  isCollapsed: boolean | null
-  isPending: boolean | null
-  isPinned: boolean | null
-  voteUp: number | null
-  voteDown: number | null
-  rootId: string | null
-  name: string
-  emailVerified: boolean
-  link: string | null
-  badgeName: string | null
-  badgeColor: string | null
-  badgeTextColor: string | null
-  children?: CommentItemWire[]
-}
-
-export interface AdminCommentWire {
-  id: string
-  createAt: string
-  updatedAt: string
-  deleteAt: string | null
-  deleteRequestedAt?: string | null
-  body: CommentBody
-  type: 'post' | 'page' | null
-  ownerId: string | null
-  userId: string
-  isVerified: boolean | null
-  rid: number
-  isCollapsed: boolean | null
-  isPending: boolean | null
-  isPinned: boolean | null
-  voteUp: number | null
-  voteDown: number | null
-  rootId: string | null
-  name: string
-  emailVerified: boolean
-  link: string | null
-  badgeName: string | null
-  badgeColor: string | null
-  badgeTextColor: string | null
-  content: string | null
-  ua: string | null
-  ip: string | null
-  email: string
-  pageTitle: string | null
-  pagePublicId: string | null
-  pageCover: string | null
-  pagePermalink: string | null
-}
+// (`CommentItemWire` / `AdminCommentWire` from `@/shared/contracts/comments`)
+// rather than the earlier `CommentItem` / `AdminComment` interfaces. The
+// wire shapes match what `JSON.stringify` actually emits: bigint ids
+// stringified, Date timestamps ISO-encoded. The earlier interfaces are
+// kept for the server-side query layer.
 
 export interface ReplyCommentOutput {
   comment: CommentItemWire

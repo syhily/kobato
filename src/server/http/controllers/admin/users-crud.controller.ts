@@ -5,12 +5,11 @@ import { recordAuditEventFromContext } from '@/server/domains/audit/services/rec
 import {
   fetchAdminUserDto,
   listUsersForAdmin,
-  restoreAdminUser,
   softDeleteUserWithGuard,
   toAdminUserDto,
-  updateUserByIdWithGuard,
 } from '@/server/domains/users/services/admin'
 import { adminProc } from '@/server/http/orpc-base'
+import { restoreUserById, updateUserById } from '@/server/infra/db/operations/user'
 import { adminUserDto } from '@/shared/contracts/users'
 import { idFromString } from '@/shared/utils/id'
 import { optionalHttpUrlSchema } from '@/shared/utils/safe-url'
@@ -86,7 +85,7 @@ const update = adminProc
       ...(badgeColor !== undefined && { badgeColor }),
       ...(badgeTextColor !== undefined && { badgeTextColor }),
     }
-    const updated = await updateUserByIdWithGuard(context.db, idFromString(id), patch)
+    const updated = await updateUserById(context.db, idFromString(id), patch)
     if (updated === null) {
       throw new ORPCError('NOT_FOUND', { message: '用户不存在' })
     }
@@ -118,7 +117,7 @@ const restore = adminProc
   .input(idInput)
   .output(successOutput)
   .handler(async ({ input, context }) => {
-    const ok = await restoreAdminUser(context.db, idFromString(input.id))
+    const ok = await restoreUserById(context.db, idFromString(input.id))
     if (!ok) {
       throw new ORPCError('NOT_FOUND', { message: '用户不存在' })
     }

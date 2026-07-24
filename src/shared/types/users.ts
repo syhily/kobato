@@ -1,3 +1,5 @@
+import type { AdminUserDto } from '@/shared/contracts/users'
+
 export const userSortOrders = ['recent', 'commentCount'] as const
 export type UserSortOrder = (typeof userSortOrders)[number]
 
@@ -18,26 +20,6 @@ export interface UserIdInput {
 
 export interface MuteUserInput extends UserIdInput {
   muted: boolean
-}
-
-export interface AdminUserDto {
-  id: string
-  name: string
-  email: string
-  link: string | null
-  badgeName: string | null
-  badgeColor: string | null
-  badgeTextColor: string | null
-  role: 'admin' | 'author' | 'visitor' | null
-  isMuted: boolean
-  emailVerified: boolean
-  createdAt: string
-  deletedAt: string | null
-  commentCount: number
-  pendingCount: number
-  lastCommentAt: string | null
-  passkeyCount: number
-  passkeyForce: boolean
 }
 
 export interface UpdateUserInput {

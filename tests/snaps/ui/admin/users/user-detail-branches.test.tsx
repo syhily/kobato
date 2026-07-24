@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type { AdminCommentWire as AdminComment } from '@/shared/types/comments'
-import type { AdminUserDto } from '@/shared/types/users'
+import type { AdminCommentWire as AdminComment } from '@/shared/contracts/comments'
+import type { AdminUserDto } from '@/shared/contracts/users'
 
 import { renderInRouter, stableHtml } from '#/_helpers/render'
 import { UserDetailView } from '@/ui/admin/users/UserDetailView'

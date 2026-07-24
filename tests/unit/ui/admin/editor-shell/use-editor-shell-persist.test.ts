@@ -47,7 +47,7 @@ vi.mock('@/client/hooks/use-autosave', () => ({
   useAutosave: vi.fn(),
 }))
 
-import type { AdminRevisionDto, SaveBodyOutput } from '@/shared/types/revision'
+import type { AdminRevisionDto, SaveBodyOutput } from '@/shared/contracts/revision'
 import type { EditorShellDetail, EntityLike } from '@/ui/admin/editor-shell/editor-shell-types'
 import type { UseEditorShellPersistArgs } from '@/ui/admin/editor-shell/use-editor-shell-persist'
 

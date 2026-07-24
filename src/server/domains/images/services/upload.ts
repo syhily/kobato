@@ -1,7 +1,7 @@
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
 import type { ImageRow } from '@/server/infra/db/types'
-import type { AdminImageDto } from '@/shared/types/images'
+import type { AdminImageDto } from '@/shared/contracts/images'
 
 import { type ImageKindSpec, buildObjectKey } from '@/server/domains/images/key'
 import { toAdminImageDto } from '@/server/domains/images/services/admin-read'

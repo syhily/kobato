@@ -1,5 +1,5 @@
 import type { CategoryRow } from '@/server/infra/db/types'
-import type { AdminCategoryDto } from '@/shared/types/categories'
+import type { AdminCategoryDto } from '@/shared/contracts/categories'
 
 export type { AdminCategoryDto }
 

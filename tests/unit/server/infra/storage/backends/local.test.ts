@@ -15,6 +15,7 @@ vi.mock('@/server/infra/paths', async (importOriginal) => {
 })
 
 import { ActionFailure } from '@/server/infra/http/errors'
+import { StorageObjectNotFound } from '@/server/infra/storage/backend'
 import { localBackend, resolveLocalPath } from '@/server/infra/storage/backends/local'
 
 afterAll(() => {
@@ -63,8 +64,18 @@ describe('storage/local — put/get round-trip', () => {
     expect(all.some((p) => p.includes('.tmp-'))).toBe(false)
   })
 
-  it('throws ActionFailure(404) when reading a missing object', async () => {
-    await expect(localBackend.get('nope.jpg')).rejects.toBeInstanceOf(ActionFailure)
+  it('throws StorageObjectNotFound when reading a missing object', async () => {
+    await expect(localBackend.get('nope.jpg')).rejects.toBeInstanceOf(StorageObjectNotFound)
+  })
+
+  it('throws StorageObjectNotFound when streaming a missing object', async () => {
+    await expect(localBackend.getStream('nope.jpg')).rejects.toBeInstanceOf(StorageObjectNotFound)
+  })
+
+  it('StorageObjectNotFound still maps to a 404 at the HTTP perimeter', async () => {
+    // The typed error extends ActionFailure(404) so an uncaught miss keeps
+    // the local adapter's long-standing status contract.
+    await expect(localBackend.get('nope.jpg')).rejects.toMatchObject({ status: 404 })
   })
 
   it('exists() reflects presence', async () => {
@@ -121,22 +132,18 @@ describe('storage/local — delete + list', () => {
   })
 })
 
-describe('storage/local — directory keys resolve to 404, not EISDIR', () => {
+describe('storage/local — directory keys resolve to StorageObjectNotFound, not EISDIR', () => {
   beforeEach(async () => {
     rmSync(tmp.root, { recursive: true, force: true })
     await localBackend.put({ key: 'images/a.jpg', body: Buffer.from('a'), contentType: 'image/jpeg' })
   })
 
-  it('get() on a directory key throws ActionFailure(404)', async () => {
+  it('get() on a directory key throws StorageObjectNotFound', async () => {
     // 'images' resolves to the images/ directory, not a file.
-    await expect(localBackend.get('images')).rejects.toBeInstanceOf(ActionFailure)
+    await expect(localBackend.get('images')).rejects.toBeInstanceOf(StorageObjectNotFound)
   })
 
-  it('getStream() on a directory key throws ActionFailure(404)', async () => {
-    // `getStream` is optional on the backend interface; the local backend
-    // implements it, so assert presence then exercise it.
-    const getStream = localBackend.getStream
-    expect(getStream).toBeDefined()
-    await expect(getStream!('images')).rejects.toBeInstanceOf(ActionFailure)
+  it('getStream() on a directory key throws StorageObjectNotFound', async () => {
+    await expect(localBackend.getStream('images')).rejects.toBeInstanceOf(StorageObjectNotFound)
   })
 })

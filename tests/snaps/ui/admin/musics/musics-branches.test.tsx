@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type { AdminMusicDto, MetingSearchHit } from '@/shared/types/music'
+import type { AdminMusicDto, MetingSearchHit } from '@/shared/contracts/music'
 
 import { renderInRouter, renderToHtml, stableHtml } from '#/_helpers/render'
 import { AddMusicView } from '@/ui/admin/musics/AddMusicView'
@@ -272,11 +272,13 @@ describe('MusicsView render branches', () => {
       isPending: false,
       data: { pages: [{ musics: [a], total: 1, hasMore: false }] },
     }
-    // `sortMenuOpen` starts false, so the dropdown contents (role="menu")
-    // are not rendered. We assert the trigger remains, but the menu is gone.
+    // The sort menu starts closed — the design-system DropdownMenu keeps the
+    // popup unmounted until the trigger opens it — so the trigger renders
+    // but no role="menu" appears in the SSR output. Base UI applies
+    // `aria-expanded` only after hydration, so SSR asserts `aria-haspopup`.
     const html = renderMusics()
     expect(html).toContain('aria-label="排序"')
-    expect(html).toContain('aria-expanded="false"')
+    expect(html).toContain('aria-haspopup="menu"')
     expect(html).not.toContain('role="menu"')
     expect(html).not.toContain('aria-haspopup="menuitem"')
   })

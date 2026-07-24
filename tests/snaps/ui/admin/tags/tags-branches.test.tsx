@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type { AdminTagDto } from '@/shared/types/tags'
+import type { AdminTagDto } from '@/shared/contracts/tags'
 
 import { renderInRouter, stableHtml } from '#/_helpers/render'
 import { TagsView } from '@/ui/admin/tags/TagsView'

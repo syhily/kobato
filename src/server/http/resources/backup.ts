@@ -12,10 +12,10 @@ import { extractBackupSql, restoreFromSql } from '@/server/domains/backup/servic
 import { checkPgToolsAvailable } from '@/server/domains/backup/services/shared'
 import { validateBackupSql } from '@/server/domains/backup/services/validate'
 import { refreshBlogSettings } from '@/server/domains/settings/services/hydrate'
-import { findFirstAdminUser, hasAdmin } from '@/server/domains/users/services/admin'
 import { csrfGuard } from '@/server/http/middlewares/csrf'
 import { requireRoleMw } from '@/server/http/middlewares/hono-rbac'
 import { rateLimitByIp } from '@/server/http/middlewares/rate-limit'
+import { findFirstAdminUser, hasAdmin } from '@/server/infra/db/operations/user'
 import { getRestoreState, resetRestoreState } from '@/server/infra/lifecycle'
 import { getLogger } from '@/server/infra/logger'
 

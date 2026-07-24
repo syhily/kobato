@@ -2,11 +2,11 @@ import { CalendarIcon, CheckIcon, ChevronDownIcon } from 'lucide-react'
 import { useMemo, useRef, useState } from 'react'
 
 import {
-  DATE_FILTER_OPERATORS,
-  DEFAULT_DATE_OPERATOR,
-  type DateFilterOperator,
-  type DateFilterValue,
-} from '@/ui/admin/comments/useCommentsController'
+  DEFAULT_SINGLE_DATE_OPERATOR,
+  SINGLE_DATE_FILTER_OPERATORS,
+  type SingleDateFilterOperator,
+  type SingleDateFilterValue,
+} from '@/ui/admin/shared/date-filter'
 import { Calendar } from '@/ui/components/calendar'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/ui/components/dropdown-menu'
 import { Popover, PopoverContent, PopoverTrigger } from '@/ui/components/popover'
@@ -43,11 +43,11 @@ function DateOperatorTrigger({
   onChange,
   className,
 }: {
-  value: DateFilterOperator
-  onChange: (op: DateFilterOperator) => void
+  value: SingleDateFilterOperator
+  onChange: (op: SingleDateFilterOperator) => void
   className?: string
 }) {
-  const currentLabel = DATE_FILTER_OPERATORS.find((o) => o.value === value)?.label ?? value
+  const currentLabel = SINGLE_DATE_FILTER_OPERATORS.find((o) => o.value === value)?.label ?? value
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
@@ -61,7 +61,7 @@ function DateOperatorTrigger({
         <ChevronDownIcon className="size-3.5 text-muted-foreground" />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="w-32">
-        {DATE_FILTER_OPERATORS.map((option) => (
+        {SINGLE_DATE_FILTER_OPERATORS.map((option) => (
           <DropdownMenuItem
             key={option.value}
             onClick={() => onChange(option.value)}
@@ -77,12 +77,12 @@ function DateOperatorTrigger({
 }
 
 interface DateFilterEditorProps {
-  value: DateFilterValue | null
-  onChange: (next: DateFilterValue | null) => void
+  value: SingleDateFilterValue | null
+  onChange: (next: SingleDateFilterValue | null) => void
 }
 
 export function DateFilterEditor({ value, onChange }: DateFilterEditorProps) {
-  const op = value?.op ?? DEFAULT_DATE_OPERATOR
+  const op = value?.op ?? DEFAULT_SINGLE_DATE_OPERATOR
   const [localDate, setLocalDate] = useState(value?.date ?? '')
   const [calendarOpen, setCalendarOpen] = useState(false)
   const [isFocused, setIsFocused] = useState(false)
@@ -137,7 +137,7 @@ export function DateFilterEditor({ value, onChange }: DateFilterEditorProps) {
     setCalendarOpen(false)
   }
 
-  const handleOperatorChange = (nextOp: DateFilterOperator) => {
+  const handleOperatorChange = (nextOp: SingleDateFilterOperator) => {
     const date = value?.date ?? (parsedDate ? formatDateInput(parsedDate) : '')
     onChange({ date, op: nextOp })
   }

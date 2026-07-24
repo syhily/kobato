@@ -4,7 +4,7 @@ import { ExternalLinkIcon, GripVerticalIcon, SquarePenIcon, Trash2Icon } from 'l
 import { Fragment, memo } from 'react'
 import { Link } from 'react-router'
 
-import type { AdminCategoryDto } from '@/shared/types/categories'
+import type { AdminCategoryDto } from '@/shared/contracts/categories'
 
 import { Skeleton } from '@/ui/components/skeleton'
 import { Tooltip } from '@/ui/components/tooltip'

@@ -9,7 +9,7 @@ import {
   Plus,
   Search,
 } from 'lucide-react'
-import { useCallback, useEffect, useId, useRef, useState } from 'react'
+import { useCallback, useState } from 'react'
 import { useNavigate } from 'react-router'
 
 import { orpcQuery } from '@/client/api/orpc-query'
@@ -18,6 +18,7 @@ import { AlbumCard } from '@/ui/admin/musics/AlbumCard'
 import { MusicLibraryHero } from '@/ui/admin/musics/MusicLibraryHero'
 import { useMusicPlayerActions } from '@/ui/admin/musics/MusicPlayerContext'
 import { useAdminInfiniteList } from '@/ui/admin/shared/useAdminInfiniteList'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/ui/components/dropdown-menu'
 import { cn } from '@/ui/lib/cn'
 
 export type MusicSortBy = 'createdAt' | 'updatedAt' | 'name' | 'artist' | 'album'
@@ -57,70 +58,6 @@ export function MusicsView() {
   const [sortBy, setSortBy] = useState<MusicSortBy>('createdAt')
   const [sortOrder, setSortOrder] = useState<MusicSortOrder>('desc')
   const { load } = useMusicPlayerActions()
-  const [sortMenuOpen, setSortMenuOpen] = useState(false)
-  const sortMenuId = useId()
-  const sortTriggerRef = useRef<HTMLButtonElement>(null)
-  const sortItemRefs = useRef<(HTMLButtonElement | null)[]>([])
-
-  // Close sort menu on click outside
-  useEffect(() => {
-    if (!sortMenuOpen) {
-      return
-    }
-    const handler = (e: MouseEvent) => {
-      const target = e.target instanceof Node ? e.target : null
-      const menu = sortTriggerRef.current?.closest('[data-sort-menu]')
-      if (target && menu && !menu.contains(target)) {
-        setSortMenuOpen(false)
-      }
-    }
-    document.addEventListener('mousedown', handler)
-    return () => document.removeEventListener('mousedown', handler)
-  }, [sortMenuOpen])
-
-  const focusSortItem = useCallback((index: number) => {
-    const item = sortItemRefs.current[index]
-    if (item) {
-      item.focus()
-    }
-  }, [])
-
-  const handleSortTriggerKeyDown = useCallback(
-    (e: React.KeyboardEvent<HTMLButtonElement>) => {
-      if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
-        e.preventDefault()
-        setSortMenuOpen(true)
-        requestAnimationFrame(() => {
-          const idx = e.key === 'ArrowDown' ? 0 : sortItemRefs.current.length - 1
-          focusSortItem(idx)
-        })
-      }
-    },
-    [focusSortItem],
-  )
-
-  const handleSortItemKeyDown = useCallback(
-    (e: React.KeyboardEvent<HTMLButtonElement>, index: number) => {
-      if (e.key === 'ArrowDown') {
-        e.preventDefault()
-        focusSortItem(Math.min(index + 1, sortItemRefs.current.length - 1))
-      } else if (e.key === 'ArrowUp') {
-        e.preventDefault()
-        focusSortItem(Math.max(index - 1, 0))
-      } else if (e.key === 'Home') {
-        e.preventDefault()
-        focusSortItem(0)
-      } else if (e.key === 'End') {
-        e.preventDefault()
-        focusSortItem(sortItemRefs.current.length - 1)
-      } else if (e.key === 'Escape') {
-        e.preventDefault()
-        setSortMenuOpen(false)
-        sortTriggerRef.current?.focus()
-      }
-    },
-    [focusSortItem],
-  )
 
   const [qInput, setQInput] = useState('')
 
@@ -174,7 +111,6 @@ export function MusicsView() {
         setSortBy(next)
         setSortOrder('asc')
       }
-      setSortMenuOpen(false)
     },
     [sortBy],
   )
@@ -207,60 +143,38 @@ export function MusicsView() {
           </button>
 
           {/* Sort */}
-          <div className="relative shrink-0" data-sort-menu>
-            <div className="flex items-center overflow-hidden rounded-full bg-surface-dim">
-              <button
-                ref={sortTriggerRef}
-                type="button"
-                onClick={() => setSortMenuOpen((v) => !v)}
-                onKeyDown={handleSortTriggerKeyDown}
+          <div className="flex shrink-0 items-center overflow-hidden rounded-full bg-surface-dim">
+            <DropdownMenu>
+              <DropdownMenuTrigger
                 className="flex items-center gap-2 px-3 py-2.5 text-sm font-medium text-ink-1 transition-colors hover:bg-surface sm:px-4"
                 aria-label="排序"
-                aria-haspopup="menu"
-                aria-expanded={sortMenuOpen}
-                aria-controls={sortMenuId}
               >
                 <SortIcon sortBy={sortBy} sortOrder={sortOrder} />
                 <span className="hidden sm:inline">{SORT_LABELS[sortBy]}</span>
-              </button>
-              <div className="h-5 w-px bg-line-muted" />
-              <button
-                type="button"
-                onClick={() => setSortOrder((order) => (order === 'asc' ? 'desc' : 'asc'))}
-                className="px-3 py-2.5 text-sm text-ink-4 transition-colors hover:bg-surface hover:text-ink-1 sm:px-4"
-              >
-                {sortOrder === 'asc' ? '升序' : '降序'}
-              </button>
-            </div>
-
-            {sortMenuOpen && (
-              <div
-                id={sortMenuId}
-                role="menu"
-                className="absolute top-full left-0 z-50 mt-1 w-40 overflow-hidden rounded-lg bg-popover py-1 shadow-xl ring-1 ring-line-muted"
-              >
-                {sortLabelEntries().map(([key, label], index) => (
-                  <button
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-40">
+                {sortLabelEntries().map(([key, label]) => (
+                  <DropdownMenuItem
                     key={key}
-                    ref={(el) => {
-                      sortItemRefs.current[index] = el
-                    }}
-                    type="button"
-                    role="menuitem"
-                    tabIndex={-1}
                     onClick={() => handleSortChange(key)}
-                    onKeyDown={(e) => handleSortItemKeyDown(e, index)}
-                    className={cn(
-                      'flex w-full items-center justify-between px-3 py-2 text-left text-sm transition-colors',
-                      sortBy === key ? 'text-ink-1' : 'text-ink-3 hover:bg-surface hover:text-ink-1',
-                    )}
+                    className={cn(sortBy === key ? 'text-ink-1' : 'text-ink-3')}
                   >
                     <span>{label}</span>
-                    {sortBy === key && <span className="text-ink-4">{sortOrder === 'asc' ? '升序' : '降序'}</span>}
-                  </button>
+                    {sortBy === key && (
+                      <span className="ml-auto text-ink-4">{sortOrder === 'asc' ? '升序' : '降序'}</span>
+                    )}
+                  </DropdownMenuItem>
                 ))}
-              </div>
-            )}
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <div className="h-5 w-px bg-line-muted" />
+            <button
+              type="button"
+              onClick={() => setSortOrder((order) => (order === 'asc' ? 'desc' : 'asc'))}
+              className="px-3 py-2.5 text-sm text-ink-4 transition-colors hover:bg-surface hover:text-ink-1 sm:px-4"
+            >
+              {sortOrder === 'asc' ? '升序' : '降序'}
+            </button>
           </div>
 
           <form

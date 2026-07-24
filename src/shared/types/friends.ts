@@ -5,17 +5,7 @@
 // never ships `id` to the browser, but the admin shell uses it as
 // the React list key.
 
-export interface AdminFriendDto {
-  id: string
-  website: string
-  description: string | null
-  homepage: string
-  poster: string
-  rssUrl: string | null
-  visible: boolean
-  createdAt: string
-  updatedAt: string
-}
+import type { AdminFriendDto } from '@/shared/contracts/friends'
 
 // `offset` / `limit` mirror the tag and comment moderation listings:
 // the admin table is paginated server-side because friend rows can

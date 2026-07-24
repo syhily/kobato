@@ -3,6 +3,8 @@ import type { Pool } from 'pg'
 
 import type { HandlerContext } from '@/server/http/orpc-base'
 
+import { extractRequestFacts } from '@/server/http/utils/request-facts'
+
 // Builders for the `context` argument passed to oRPC procedures
 // (via `call(router.method, input, { context })`). Authed procedures
 // gate on `context.session.get('user')` via the `requireAuth` /
@@ -35,8 +37,10 @@ function makeSessionStub(user: { id: string; role: string } | undefined, session
 export function makeAuthedCtx(opts: MockCtxOptions = {}): HandlerContext {
   const userId = opts.userId ?? '1'
   const role = opts.role ?? 'admin'
+  const request = new Request(opts.url ?? 'http://localhost/rpc')
   return {
-    request: new Request(opts.url ?? 'http://localhost/rpc'),
+    request,
+    requestFacts: extractRequestFacts(request),
     session: makeSessionStub({ id: userId, role }, opts.sessionId ?? 'session-1'),
     viewer: { userId, role },
     clientAddress: opts.clientAddress ?? '127.0.0.1',
@@ -47,8 +51,10 @@ export function makeAuthedCtx(opts: MockCtxOptions = {}): HandlerContext {
 }
 
 export function makePublicCtx(opts: MockCtxOptions = {}): HandlerContext {
+  const request = new Request(opts.url ?? 'http://localhost/rpc')
   return {
-    request: new Request(opts.url ?? 'http://localhost/rpc'),
+    request,
+    requestFacts: extractRequestFacts(request),
     session: makeSessionStub(undefined, opts.sessionId ?? 'session-1'),
     viewer: null,
     clientAddress: opts.clientAddress ?? '127.0.0.1',

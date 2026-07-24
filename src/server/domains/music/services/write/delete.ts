@@ -2,9 +2,9 @@ import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
 import type { MusicViewerContext } from '@/server/domains/music/services/write/metadata'
 
-import { deleteMusicObject } from '@/server/domains/music/storage'
 import { findMusicById, softDeleteMusic } from '@/server/infra/db/operations/music'
 import { DomainError, ErrorMessages } from '@/server/infra/http/errors'
+import { backendFor } from '@/server/infra/storage/registry'
 
 export async function deleteMusic(db: NodePgDatabase, id: bigint, viewer?: MusicViewerContext): Promise<void> {
   const existing = await findMusicById(db, id)
@@ -19,8 +19,8 @@ export async function deleteMusic(db: NodePgDatabase, id: bigint, viewer?: Music
   // DB soft-delete so the admin table doesn't keep showing a "missing"
   // row when the delete only fails on the S3 leg.
   await Promise.allSettled([
-    deleteMusicObject(existing.audioStoragePath, existing.storageDriver),
-    deleteMusicObject(existing.coverStoragePath, existing.storageDriver),
+    backendFor(existing.storageDriver).delete(existing.audioStoragePath),
+    backendFor(existing.storageDriver).delete(existing.coverStoragePath),
   ])
 
   const deleted = await softDeleteMusic(db, id)

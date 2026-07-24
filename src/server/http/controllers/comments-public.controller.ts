@@ -14,7 +14,7 @@ import { createComment } from '@/server/domains/comments/services/mutate'
 import { loadComments, parseComments } from '@/server/domains/comments/services/public-query'
 import { resolveMetricTarget } from '@/server/domains/comments/services/shared'
 import { appendCommentToken, issueCommentToken } from '@/server/domains/comments/services/token'
-import { publicProc, resourceRateLimit } from '@/server/http/orpc-base'
+import { commentTokenCookie, publicProc, resourceRateLimit } from '@/server/http/orpc-base'
 import { getLogger } from '@/server/infra/logger'
 import { tryCommentPostRateLimit, tryCommentPostRateLimitByEmail } from '@/server/infra/rate-limit'
 import { requireBlogSettingsSection } from '@/shared/config/getters'
@@ -28,7 +28,7 @@ const replyComment = publicProc
   .input(commentReplySchema)
   .output(z.object({ comment: commentItemDto }))
   .handler(async ({ input, context }) => {
-    const { request, clientAddress, session, responseHeaders } = context
+    const { requestFacts, clientAddress, session, responseHeaders } = context
     const isAdmin = userSession(session)?.role === 'admin'
     if (!isAdmin) {
       const byIp = await tryCommentPostRateLimit(clientAddress)
@@ -48,7 +48,7 @@ const replyComment = publicProc
       body: input.body,
       rid: input.rid,
     }
-    const comment = await createComment(context.db, commentPayload, request, clientAddress, session)
+    const comment = await createComment(context.db, commentPayload, requestFacts, clientAddress, session)
     recordAuditEventFromContext(context, {
       action: 'comment_created',
       resourceType: 'comment',
@@ -59,7 +59,7 @@ const replyComment = publicProc
       try {
         const ttl = requireBlogSettingsSection('comments').comments.tokenTtlSeconds
         const token = await issueCommentToken(comment.id, comment.userId, input.page_key, ttl)
-        const existing = parseCommentTokensCookie(request.headers.get('Cookie'))
+        const existing = parseCommentTokensCookie(requestFacts.cookie)
         const next = appendCommentToken(existing, input.page_key, token, ttl)
         responseHeaders.append('Set-Cookie', serializeCommentTokensCookie(next))
       } catch (err) {
@@ -94,15 +94,14 @@ const getRaw = publicProc
   .route({ method: 'GET', path: '/comments/get-raw' })
   .input(commentRidSchema)
   .output(z.object({ body: commentBodySchema }))
+  .use(commentTokenCookie)
   .handler(async ({ input, context }) => {
-    const { request, session, responseHeaders } = context
-    const sessionUser = userSession(session)
-    const cookie = parseCommentTokensCookie(request.headers.get('Cookie'))
-    const { ok, cleaned } = await verifyCommentAccess(context.db, cookie, input.rid, sessionUser)
+    const sessionUser = userSession(context.session)
+    const { ok, cleaned } = await verifyCommentAccess(context.db, context.commentTokens.cookie, input.rid, sessionUser)
     if (!ok) {
       throw new ORPCError('FORBIDDEN', { message: '无权查看该评论' })
     }
-    responseHeaders.append('Set-Cookie', serializeCommentTokensCookie(cleaned))
+    context.commentTokens.refreshed = cleaned
     const comment = await findCommentWithUserById(context.db, idFromString(input.rid))
     if (!comment) {
       throw new ORPCError('NOT_FOUND', { message: '评论不存在' })
@@ -115,15 +114,14 @@ const edit = publicProc
   .input(commentRidSchema.extend({ body: commentBodySchema }))
   .output(z.object({ comment: commentItemDto }))
   .use(resourceRateLimit)
+  .use(commentTokenCookie)
   .handler(async ({ input, context }) => {
-    const { request, session, responseHeaders } = context
-    const sessionUser = userSession(session)
-    const cookie = parseCommentTokensCookie(request.headers.get('Cookie'))
-    const { ok, cleaned } = await verifyCommentAccess(context.db, cookie, input.rid, sessionUser)
+    const sessionUser = userSession(context.session)
+    const { ok, cleaned } = await verifyCommentAccess(context.db, context.commentTokens.cookie, input.rid, sessionUser)
     if (!ok) {
       throw new ORPCError('FORBIDDEN', { message: '无权编辑该评论' })
     }
-    responseHeaders.append('Set-Cookie', serializeCommentTokensCookie(cleaned))
+    context.commentTokens.refreshed = cleaned
     const updated = await updateComment(context.db, input.rid, input.body)
     if (!updated) {
       throw new ORPCError('NOT_FOUND', { message: '更新评论失败' })

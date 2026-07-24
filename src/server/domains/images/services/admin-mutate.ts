@@ -1,6 +1,6 @@
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
-import type { AdminImageDto } from '@/shared/types/images'
+import type { AdminImageDto } from '@/shared/contracts/images'
 
 import { canEditImage, type ViewerContext } from '@/server/domains/auth/rbac'
 import { toAdminImageDto } from '@/server/domains/images/services/admin-read'
@@ -13,9 +13,10 @@ import {
   updateImageNoteWithUploader,
   updateImageThumbhashWithUploader,
 } from '@/server/infra/db/operations/image'
-import { ActionFailure, DomainError, ErrorMessages } from '@/server/infra/http/errors'
+import { DomainError, ErrorMessages } from '@/server/infra/http/errors'
 import { processImageBuffer } from '@/server/infra/image/process'
 import { getLogger } from '@/server/infra/logger'
+import { StorageObjectNotFound } from '@/server/infra/storage/backend'
 
 const log = getLogger('images.service')
 
@@ -85,7 +86,7 @@ export async function recalculateImageThumbhash(
   try {
     buffer = await getImage(existing.storagePath, existing.storageDriver)
   } catch (error) {
-    if (error instanceof ActionFailure && error.status === 404) {
+    if (error instanceof StorageObjectNotFound) {
       throw new DomainError('NOT_FOUND', '存储中未找到该图片对象')
     }
     const errorDetail =

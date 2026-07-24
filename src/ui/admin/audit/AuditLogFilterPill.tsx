@@ -1,7 +1,7 @@
 import { XIcon } from 'lucide-react'
 import { useMemo, useState } from 'react'
 
-import type { AuditLogActorDto } from '@/shared/types/audit'
+import type { AuditLogActorDto } from '@/shared/contracts/audit'
 
 import { AuditLogActorPicker } from '@/ui/admin/audit/AuditLogActorPicker'
 import {

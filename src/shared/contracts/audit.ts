@@ -1,8 +1,5 @@
 import { z } from 'zod'
 
-import type { Assert, Equals } from '@/shared/contracts/primitives'
-import type { AuditLogActorDto, AuditLogItemDto, AuditLogListInput, AuditLogListOutput } from '@/shared/types/audit'
-
 // Audit Log DTOs
 
 export const auditLogItemDto = z.object({
@@ -19,6 +16,7 @@ export const auditLogItemDto = z.object({
   userAgentMasked: z.string().nullable(),
   createdAt: z.string(), // ISO-8601
 })
+export type AuditLogItemDto = z.infer<typeof auditLogItemDto>
 
 export const auditLogListInput = z.object({
   offset: z.number().int().min(0).default(0),
@@ -36,6 +34,7 @@ export const auditLogListInput = z.object({
     .regex(/^\d{4}-\d{2}-\d{2}$/)
     .optional(),
 })
+export type AuditLogListInput = z.infer<typeof auditLogListInput>
 
 export const auditLogExportInput = auditLogListInput.omit({ offset: true, limit: true }).extend({
   includeFullIp: z.boolean().optional(),
@@ -46,17 +45,13 @@ export const auditLogListOutput = z.object({
   total: z.number().int(),
   hasMore: z.boolean(),
 })
+export type AuditLogListOutput = z.infer<typeof auditLogListOutput>
 
 export const auditLogActorDto = z.object({
   actorId: z.string(),
   actorName: z.string(),
   email: z.string(),
 })
+export type AuditLogActorDto = z.infer<typeof auditLogActorDto>
 
 export const auditLogActorsOutput = z.array(auditLogActorDto)
-
-// ─── parity assertions ─────────────────────────────────
-type _auditLogItemDtoParity = Assert<Equals<z.infer<typeof auditLogItemDto>, AuditLogItemDto>>
-type _auditLogListInputParity = Assert<Equals<z.infer<typeof auditLogListInput>, AuditLogListInput>>
-type _auditLogListOutputParity = Assert<Equals<z.infer<typeof auditLogListOutput>, AuditLogListOutput>>
-type _auditLogActorDtoParity = Assert<Equals<z.infer<typeof auditLogActorDto>, AuditLogActorDto>>

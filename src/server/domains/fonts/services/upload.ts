@@ -3,7 +3,7 @@ import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 import { createHash } from 'node:crypto'
 
 import type { FontRow } from '@/server/infra/db/schema/font'
-import type { AdminFontDto } from '@/shared/types/fonts'
+import type { AdminFontDto } from '@/shared/contracts/fonts'
 
 import { findFontByHash, toAdminFontDto } from '@/server/domains/fonts/services/read'
 import { sliceFont } from '@/server/domains/fonts/slice'

@@ -1,4 +1,4 @@
-import type { AdminPostDto } from '@/shared/types/posts'
+import type { AdminPostDto } from '@/shared/contracts/posts'
 
 interface StatusBadgeProps {
   post: AdminPostDto

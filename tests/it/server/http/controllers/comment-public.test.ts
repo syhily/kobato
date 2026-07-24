@@ -84,6 +84,7 @@ const publicQuery = await import('@/server/domains/comments/services/public-quer
 const shared = await import('@/server/domains/comments/services/shared')
 const mutate = await import('@/server/domains/comments/services/mutate')
 const token = await import('@/server/domains/comments/services/token')
+const byId = await import('@/server/domains/comments/repos/public-query/by-id')
 const { avatarRouter } = await import('@/server/http/controllers/avatar.controller')
 const { commentsPublicRouter } = await import('@/server/http/controllers/comments-public.controller')
 const commentsRouter = commentsPublicRouter
@@ -216,6 +217,26 @@ describe('commentsRouter.getRaw', () => {
     await expect(call(commentsRouter.getRaw, { rid: 'not-a-number' }, { context: ctx })).rejects.toMatchObject({
       code: 'BAD_REQUEST',
     })
+  })
+
+  it('returns the body and refreshes the comment-token cookie on a valid token', async () => {
+    vi.mocked(token.verifyCommentOwnership).mockResolvedValueOnce({
+      token: 'tok-1',
+      cleaned: { 'pk-1': [{ token: 'tok-1', expiresAt: 123 }] },
+    })
+    vi.mocked(byId.findCommentWithUserById).mockResolvedValueOnce({ body: validBody } as never)
+    const ctx = makePublicCtx()
+    const res = (await call(commentsRouter.getRaw, { rid: '1' }, { context: ctx })) as { body: unknown }
+    expect(res.body).toEqual(validBody)
+    expect(ctx.responseHeaders.get('Set-Cookie')).toContain('__comment_tokens=')
+  })
+
+  it('throws FORBIDDEN without refreshing the cookie when no token matches', async () => {
+    const ctx = makePublicCtx()
+    await expect(call(commentsRouter.getRaw, { rid: '1' }, { context: ctx })).rejects.toMatchObject({
+      code: 'FORBIDDEN',
+    })
+    expect(ctx.responseHeaders.get('Set-Cookie')).toBeNull()
   })
 })
 

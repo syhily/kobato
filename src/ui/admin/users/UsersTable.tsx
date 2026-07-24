@@ -3,7 +3,7 @@ import { memo } from 'react'
 import { Link, useNavigate } from 'react-router'
 
 import type { SiteIdentitySettings } from '@/shared/config/types'
-import type { AdminUserDto } from '@/shared/types/users'
+import type { AdminUserDto } from '@/shared/contracts/users'
 
 import { formatLocalDate } from '@/shared/utils/formatter'
 import { roleLabel } from '@/shared/utils/roles'

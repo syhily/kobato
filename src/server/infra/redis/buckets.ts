@@ -1,4 +1,5 @@
-import type { CacheBucket, CacheBucketId, CacheBucketStats, ReservedCacheBucketStats } from '@/shared/types/cache'
+import type { CacheBucketStats, ReservedCacheBucketStats } from '@/shared/contracts/cache'
+import type { CacheBucket, CacheBucketId } from '@/shared/types/cache'
 
 import { REDIS_KEY_PREFIX } from '@/server/infra/env'
 import { getLogger } from '@/server/infra/logger'

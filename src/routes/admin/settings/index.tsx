@@ -2,18 +2,16 @@ import { Children, useCallback, useEffect, useRef, useSyncExternalStore } from '
 import { useNavigate, useOutletContext } from 'react-router'
 
 import type { SettingsOutletContext } from '@/routes/admin/settings/layout'
-import type { AssetsLoaderShape, MailLoaderShape, SearchLoaderShape } from '@/shared/config/projection'
 import type { SettingsSection } from '@/shared/config/sections'
 import type { SecretMasks } from '@/shared/config/types'
 import type { Assert, Equals } from '@/shared/contracts/primitives'
 
 import { getRouteRequestContext } from '@/server/domains/auth/context'
 import { requireRole } from '@/server/domains/auth/rbac'
-import { projectSectionForAdmin } from '@/server/domains/settings/services/core'
 import { settingsMeta } from '@/server/render/seo/settings-meta'
 import { NAV_GROUP_LABEL, SECTION_DISPLAY } from '@/shared/config/display'
+import { projectAssetsForAdmin, projectMailForAdmin, projectSearchForAdmin } from '@/shared/config/projection'
 import { SETTINGS_SECTIONS } from '@/shared/config/sections'
-import { unsafeCast } from '@/shared/utils/unsafe-cast'
 import { AnalyticsForm } from '@/ui/admin/settings/AnalyticsForm'
 import { AssetsForm } from '@/ui/admin/settings/AssetsForm'
 import { BackupView } from '@/ui/admin/settings/BackupView'
@@ -64,7 +62,7 @@ const SECTION_CONFIGS = [
   {
     id: 'assets',
     render: (bundle, _tz, masks) => (
-      <AssetsForm assets={unsafeCast<AssetsLoaderShape>(projectSectionForAdmin('assets', bundle, masks))} />
+      <AssetsForm assets={projectAssetsForAdmin(bundle.assets, masks.assetsSecretAccessKeyMask)} />
     ),
   },
   {
@@ -98,13 +96,19 @@ const SECTION_CONFIGS = [
   {
     id: 'mail',
     render: (bundle, _tz, masks) => (
-      <MailForm mail={unsafeCast<MailLoaderShape>(projectSectionForAdmin('mail', bundle, masks))} />
+      <MailForm
+        mail={projectMailForAdmin(bundle.mail, {
+          apiKeyMask: masks.mailApiKeyMask,
+          smtpPassMask: masks.mailSmtpPassMask,
+          mailgunApiKeyMask: masks.mailMailgunApiKeyMask,
+        })}
+      />
     ),
   },
   {
     id: 'search',
     render: (bundle, _tz, masks) => (
-      <SearchForm search={unsafeCast<SearchLoaderShape>(projectSectionForAdmin('search', bundle, masks))} />
+      <SearchForm search={projectSearchForAdmin(bundle.search, masks.searchApiKeyMask)} />
     ),
   },
   {

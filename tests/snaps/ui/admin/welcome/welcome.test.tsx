@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 
-import type { AdminPendingDashboardDto, AdminPendingItemDto } from '@/shared/types/comments'
+import type { AdminPendingDashboardDto, AdminPendingItemDto } from '@/shared/contracts/comments'
 
 import { renderInRouter, stableHtml } from '#/_helpers/render'
 import {

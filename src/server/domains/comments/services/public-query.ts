@@ -12,6 +12,7 @@ import {
   latestDistinctCommentIds,
   pendingComments as pendingCommentsRepo,
 } from '@/server/domains/comments/repos/public-query/admin'
+import { countApprovedCommentsByUser } from '@/server/domains/comments/repos/public-query/by-id'
 import {
   countCommentsAndRoots,
   findChildComments,
@@ -33,6 +34,16 @@ export async function pendingComments(db: NodePgDatabase): Promise<LatestComment
     getSidebarWidgetCount(requireBlogSettingsSection('sidebar'), 'recentComments'),
   )
   return rows.map(toLatestComment)
+}
+
+/**
+ * Whether the user has at least one approved (non-pending) comment —
+ * the "established commenter" rule consumed cross-domain, e.g. by the
+ * signin flow that lets an anonymous commenter claim their account via
+ * password reset.
+ */
+export async function hasApprovedComments(db: NodePgDatabase, userId: bigint): Promise<boolean> {
+  return (await countApprovedCommentsByUser(db, userId)) >= 1
 }
 
 export async function latestComments(db: NodePgDatabase): Promise<LatestComment[]> {

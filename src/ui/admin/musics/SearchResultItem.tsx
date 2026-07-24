@@ -1,6 +1,6 @@
 import { Loader2Icon, Pause, Play, PlusIcon } from 'lucide-react'
 
-import type { MetingSearchHit } from '@/shared/types/music'
+import type { MetingSearchHit } from '@/shared/contracts/music'
 
 import { Button } from '@/ui/components/button'
 import { cn } from '@/ui/lib/cn'

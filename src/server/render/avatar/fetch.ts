@@ -2,7 +2,7 @@ import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
 import { Buffer } from 'node:buffer'
 
-import { findEmailById } from '@/server/domains/users/services/admin'
+import { findEmailById } from '@/server/infra/db/operations/user'
 import { getLogger } from '@/server/infra/logger'
 import { safeFetch } from '@/server/infra/safe-fetch'
 import { compressImage } from '@/server/render/image-compress'

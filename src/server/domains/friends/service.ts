@@ -1,8 +1,8 @@
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
 import type { FriendRow } from '@/server/infra/db/types'
+import type { AdminFriendDto } from '@/shared/contracts/friends'
 import type { Friend } from '@/shared/types/catalog'
-import type { AdminFriendDto } from '@/shared/types/friends'
 
 import { sendNewFriendApplication } from '@/server/domains/friends/email'
 import { hydrateImageRefs } from '@/server/domains/images/services/enhance'

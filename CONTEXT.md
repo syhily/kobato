@@ -13,6 +13,17 @@ content is reachable by direct link; listing surfaces may filter further.
 _Avoid_: catalog-visible (retired `isCatalogVisible`), published (overloaded —
 says nothing about soft-delete, revision, or scheduling)
 
+**Promoted**:
+A post or page is promoted when it is marked published and has a published
+revision attached, regardless of soft-delete state and scheduling. Promoted is
+the projection used by lifecycle bucketing (draft vs published) and restore
+re-indexing; Live implies Promoted, not the reverse. Its paired projections
+are `isPromoted` (in-memory) and `promotedContentWhere` (SQL) in
+`src/server/domains/content/schema.ts`, bound per entity by
+`promotedPostWhere`.
+_Avoid_: live (stricter — adds the not-deleted and not-future legs),
+published (overloaded — the bare flag misses the required published revision)
+
 **Visible**:
 A post flag controlling _listing_ only: `visible=false` hides the post from the
 home page and random-post widgets, but it stays in archives, tags, search,
@@ -54,8 +65,8 @@ The paired projections `isLive` (in-memory) and `liveContentWhere` (SQL) in
 `src/server/domains/content/schema.ts` that decide whether a row satisfies
 Live. Both take the same `{ asOf, includeScheduled }` options; entity column
 binding lives in repo-side adapters (`livePostWhere` / `livePageWhere`).
-_Avoid_: hand-written `published && publishedRevisionId` checks (drifted
-copies of this gate)
+_Avoid_: hand-written `published && publishedRevisionId` checks (that's the
+Promoted gate (q.v.) — route them through its projections instead)
 
 **Draft preview**:
 Viewing non-live content by direct link. Deliberate per-entity policy:

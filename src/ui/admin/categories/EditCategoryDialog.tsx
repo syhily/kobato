@@ -3,7 +3,8 @@ import { SaveIcon, XIcon } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { toast } from 'sonner'
 
-import type { AdminCategoryDto, UpsertCategoryInput } from '@/shared/types/categories'
+import type { AdminCategoryDto } from '@/shared/contracts/categories'
+import type { UpsertCategoryInput } from '@/shared/types/categories'
 
 import { orpcQuery } from '@/client/api/orpc-query'
 import { isSafeImageSegment } from '@/shared/types/images'

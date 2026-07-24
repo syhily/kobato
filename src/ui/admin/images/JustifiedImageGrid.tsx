@@ -1,7 +1,7 @@
 import { motion, useReducedMotion } from 'motion/react'
 import { useMemo } from 'react'
 
-import type { AdminImageDto } from '@/shared/types/images'
+import type { AdminImageDto } from '@/shared/contracts/images'
 
 import { transitions } from '@/client/lib/motion'
 import { getImageUrl } from '@/shared/types/images'

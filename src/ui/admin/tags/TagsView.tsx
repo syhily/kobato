@@ -2,7 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { PlusIcon, SearchIcon } from 'lucide-react'
 import { useCallback, useState } from 'react'
 
-import type { AdminTagDto } from '@/shared/types/tags'
+import type { AdminTagDto } from '@/shared/contracts/tags'
 
 import { orpc } from '@/client/api/client'
 import { orpcQuery } from '@/client/api/orpc-query'

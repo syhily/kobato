@@ -1,4 +1,5 @@
 import type { EntityTarget } from '@/server/infra/db/target'
+import type { RequestFacts } from '@/server/infra/http/request-facts'
 
 import { enrichEvent } from '@/server/domains/analytics/enrich'
 import { pushAccessEvent } from '@/server/domains/analytics/repos/batcher'
@@ -25,19 +26,17 @@ const log = getLogger('analytics.track')
 
 const KOBATO_AID_COOKIE = 'kobato_aid'
 
-function readVisitorCookie(headers: Headers): string | null {
-  const cookie = headers.get('cookie')
-  if (!cookie) {
+function readVisitorCookie(cookieHeader: string | null): string | null {
+  if (!cookieHeader) {
     return null
   }
   const re = new RegExp(`(?:^|;\\s*)${KOBATO_AID_COOKIE}=([^;]+)`)
-  const m = cookie.match(re)
+  const m = cookieHeader.match(re)
   return m ? decodeURIComponent(m[1]!) : null
 }
 
-function isPrefetchRequest(request: Request): boolean {
-  const purpose = request.headers.get('purpose') ?? request.headers.get('sec-purpose')
-  return purpose?.toLowerCase().includes('prefetch') ?? false
+function isPrefetch(facts: RequestFacts): boolean {
+  return facts.purpose?.toLowerCase().includes('prefetch') ?? false
 }
 
 export interface TrackAccessOptions {
@@ -54,13 +53,13 @@ export interface TrackAccessOptions {
   isAdmin?: boolean
   /**
    * Pre-resolved client address from the Hono middleware context.
-   * Falls back to the request's connection info if not provided.
+   * Falls back to `'unknown'` when not provided.
    */
   clientAddress?: string
 }
 
 export async function trackAccess(
-  request: Request,
+  facts: RequestFacts,
   target: EntityTarget | null,
   options: TrackAccessOptions = {},
 ): Promise<void> {
@@ -71,20 +70,19 @@ export async function trackAccess(
     if (options.isAdmin && !analytics.trackAdmin) {
       return
     }
-    if (isPrefetchRequest(request)) {
+    if (isPrefetch(facts)) {
       return
     }
     const ip = options.clientAddress ?? 'unknown'
-    const url = new URL(request.url)
     const event = await enrichEvent({
       ts: options.now ?? new Date(),
       ip,
-      ua: request.headers.get('user-agent') ?? '',
-      path: url.pathname,
-      referer: request.headers.get('referer'),
-      acceptLanguage: request.headers.get('accept-language'),
+      ua: facts.userAgent ?? '',
+      path: facts.path,
+      referer: facts.referer,
+      acceptLanguage: facts.acceptLanguage,
       target,
-      sessionId: readVisitorCookie(request.headers),
+      sessionId: readVisitorCookie(facts.cookie),
     })
 
     if (event.isBot && !analytics.keepBotRows && !options.skipBotFilter) {

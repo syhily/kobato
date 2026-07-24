@@ -5,9 +5,13 @@ import { ORPCError, os } from '@orpc/server'
 
 import type { ViewerContext } from '@/server/domains/auth/rbac'
 import type { Env } from '@/server/http/context'
+import type { RequestFacts } from '@/server/infra/http/request-facts'
+import type { CommentTokenCookie } from '@/shared/utils/comment-token'
 
-import { ActionFailure, DomainError, domainStatus, ErrorMessages } from '@/server/infra/http/errors'
+import { translateDomainError } from '@/server/http/translate-domain-error'
+import { ActionFailure, DomainError, ErrorMessages } from '@/server/infra/http/errors'
 import { tryResourceRateLimit } from '@/server/infra/rate-limit'
+import { parseCommentTokensCookie, serializeCommentTokensCookie } from '@/shared/utils/comment-token'
 import { hasAtLeast, type Role } from '@/shared/utils/roles'
 
 // Context every oRPC procedure sees. The Hono `/rpc/*` bridge in
@@ -21,6 +25,12 @@ import { hasAtLeast, type Role } from '@/shared/utils/roles'
 // have a per-procedure header channel, so this is the bridge's job.
 export interface HandlerContext {
   request: Request
+  /**
+   * Transport-agnostic facts extracted from `request` by the bridge
+   * (`extractRequestFacts`). Domain services receive this struct and
+   * never touch the raw `Request`.
+   */
+  requestFacts: RequestFacts
   session: Env['Variables']['session']
   viewer: ViewerContext | null
   clientAddress: string
@@ -45,26 +55,32 @@ const root = os.$context<HandlerContext>()
 // oRPC only recognises its own `ORPCError`. Any other exception
 // (including our `DomainError`) is silently converted to a generic
 // 500 "Internal server error" — losing the domain code and message.
-// This middleware intercepts `DomainError` before oRPC swallows it
-// and translates it to an `ORPCError` with the correct HTTP status.
-const domainErrorGuard = root.middleware(async ({ next }) => {
+// This middleware intercepts domain-layer failures (`DomainError` /
+// `ActionFailure`) before oRPC swallows them and translates them to an
+// `ORPCError` with the correct HTTP status. The translation itself is
+// shared with the Hono adapter via `translateDomainError`, so both
+// transports honor the same status, message, issues, and headers.
+const domainErrorGuard = root.middleware(async ({ context, next }) => {
   try {
     return await next({})
   } catch (error) {
-    if (error instanceof DomainError) {
+    if (error instanceof DomainError || error instanceof ActionFailure) {
+      const translated = translateDomainError(error)
+      // Failure headers (e.g. rate-limit `Retry-After`) ride the
+      // bridge's `responseHeaders` channel — the RPC wire format has no
+      // per-procedure header channel of its own.
+      if (translated.headers) {
+        new Headers(translated.headers).forEach((value, key) => {
+          context.responseHeaders.append(key, value)
+        })
+      }
       // Forward the issue list (e.g. strict settings-patch keys) so API
       // consumers can map errors back to fields — one translation point
       // for every procedure, not per-controller catches.
-      throw new ORPCError(error.code, {
-        status: domainStatus(error),
-        message: error.message,
-        ...(error.issues ? { data: error.issues } : {}),
-      })
-    }
-    if (error instanceof ActionFailure) {
-      throw new ORPCError('INTERNAL_SERVER_ERROR', {
-        status: error.status,
-        message: error.message,
+      throw new ORPCError(error instanceof DomainError ? error.code : 'INTERNAL_SERVER_ERROR', {
+        status: translated.status,
+        message: translated.message,
+        ...(translated.issues ? { data: translated.issues } : {}),
       })
     }
     throw error
@@ -121,6 +137,36 @@ export const resourceRateLimit = root.middleware(async ({ context, next }) => {
     throw new ORPCError('TOO_MANY_REQUESTS', { message: '请求过于频繁，请稍后再试。' })
   }
   return next({})
+})
+
+// ─── Middleware: comment-token cookie round trip ────────
+// Single owner of the `__comment_tokens` parse → verify/clean →
+// Set-Cookie dance for the public comment procedures. The middleware
+// parses the request cookie before the handler runs; the handler reads
+// `context.commentTokens.cookie`, runs the domain verify/cleanup, and
+// assigns the cleaned value to `context.commentTokens.refreshed` — the
+// middleware then serializes it as the `Set-Cookie` refresh. No
+// assignment → no Set-Cookie. The write-back lives in a `finally` so a
+// handler that assigns and then throws (e.g. valid token but missing
+// comment) still refreshes the cookie, matching the old inline order.
+export interface CommentTokenCookieJar {
+  /** The parsed `__comment_tokens` cookie carried by the request. */
+  cookie: CommentTokenCookie
+  /** Assign the cleaned cookie here to schedule the `Set-Cookie` refresh. */
+  refreshed?: CommentTokenCookie
+}
+
+export const commentTokenCookie = root.middleware(async ({ context, next }) => {
+  const jar: CommentTokenCookieJar = {
+    cookie: parseCommentTokensCookie(context.requestFacts.cookie),
+  }
+  try {
+    return await next({ context: { ...context, commentTokens: jar } })
+  } finally {
+    if (jar.refreshed !== undefined) {
+      context.responseHeaders.append('Set-Cookie', serializeCommentTokensCookie(jar.refreshed))
+    }
+  }
 })
 
 // ─── Public base procedure ──────────────────────────────

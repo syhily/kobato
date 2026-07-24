@@ -1,6 +1,16 @@
 import { describe, expect, it } from 'vitest'
 
-import { dateFilterLabel, parseDateFilter, resolveDateFilterBounds } from '@/ui/admin/shared/date-filter'
+import {
+  DEFAULT_SINGLE_DATE_OPERATOR,
+  dateFilterLabel,
+  isSingleDateFilterOperator,
+  parseDateFilter,
+  parseSingleDateFilter,
+  resolveDateFilterBounds,
+  resolveSingleDateFilterBounds,
+  SINGLE_DATE_FILTER_OPERATORS,
+  singleDateFilterLabel,
+} from '@/ui/admin/shared/date-filter'
 
 describe('parseDateFilter', () => {
   it('returns null for empty string', () => {
@@ -81,5 +91,142 @@ describe('resolveDateFilterBounds', () => {
       from: '2026-01-01',
       to: undefined,
     })
+  })
+})
+
+// ─────────────────────── single date + operator mode ───────────────────────
+// The comments filter mode: one calendar day compared with a Ghost-style
+// operator. Moved out of `useCommentsController` when the module converged.
+
+describe('parseSingleDateFilter', () => {
+  it('returns null for undefined or empty input', () => {
+    expect(parseSingleDateFilter(undefined)).toBeNull()
+    expect(parseSingleDateFilter('')).toBeNull()
+  })
+
+  it('returns null for malformed JSON', () => {
+    expect(parseSingleDateFilter('not-json')).toBeNull()
+    expect(parseSingleDateFilter('{')).toBeNull()
+  })
+
+  it('returns null for non-object JSON', () => {
+    expect(parseSingleDateFilter(JSON.stringify([1, 2, 3]))).toBeNull()
+  })
+
+  it('returns null when the date or op is missing', () => {
+    expect(parseSingleDateFilter('{}')).toBeNull()
+    expect(parseSingleDateFilter(JSON.stringify({ op: 'is-less' }))).toBeNull()
+    expect(parseSingleDateFilter(JSON.stringify({ date: '2026-06-01' }))).toBeNull()
+  })
+
+  it('returns null for an unknown operator', () => {
+    expect(parseSingleDateFilter(JSON.stringify({ date: '2026-06-01', op: 'bogus' }))).toBeNull()
+    expect(parseSingleDateFilter('{"date":"2024-01-01","op":"invalid"}')).toBeNull()
+  })
+
+  it('parses a well-formed {date, op} payload', () => {
+    expect(parseSingleDateFilter(JSON.stringify({ date: '2026-06-01', op: 'is-or-less' }))).toEqual({
+      date: '2026-06-01',
+      op: 'is-or-less',
+    })
+  })
+})
+
+describe('isSingleDateFilterOperator', () => {
+  it('accepts the four Ghost operators', () => {
+    for (const op of SINGLE_DATE_FILTER_OPERATORS) {
+      expect(isSingleDateFilterOperator(op.value)).toBe(true)
+    }
+  })
+
+  it('rejects anything else', () => {
+    expect(isSingleDateFilterOperator('is')).toBe(false)
+    expect(isSingleDateFilterOperator('invalid')).toBe(false)
+    expect(isSingleDateFilterOperator(null)).toBe(false)
+    expect(isSingleDateFilterOperator(undefined)).toBe(false)
+    expect(isSingleDateFilterOperator(42)).toBe(false)
+  })
+})
+
+describe('singleDateFilterLabel', () => {
+  it('renders `<operator-label> <date>` for the four operators', () => {
+    expect(singleDateFilterLabel({ date: '2026-06-01', op: 'is-less' })).toBe('之前 2026-06-01')
+    expect(singleDateFilterLabel({ date: '2026-06-01', op: 'is-or-less' })).toBe('不晚于 2026-06-01')
+    expect(singleDateFilterLabel({ date: '2026-06-01', op: 'is-greater' })).toBe('之后 2026-06-01')
+    expect(singleDateFilterLabel({ date: '2026-06-01', op: 'is-or-greater' })).toBe('不早于 2026-06-01')
+  })
+})
+
+describe('resolveSingleDateFilterBounds', () => {
+  // The bounds are built in the runner's local timezone (matching what the
+  // picker does), so we mirror the SUT's construction here instead of
+  // hard-coding UTC offsets — otherwise the test would only pass in UTC.
+  function expectedBounds(date: string) {
+    const start = new Date(date)
+    start.setHours(0, 0, 0, 0)
+    const end = new Date(date)
+    end.setHours(23, 59, 59, 999)
+    return { startIso: start.toISOString(), endIso: end.toISOString() }
+  }
+
+  it('returns no bounds for a null filter', () => {
+    expect(resolveSingleDateFilterBounds(null)).toEqual({ after: undefined, before: undefined })
+  })
+
+  it('maps is-less to < start-of-day (the day is the exclusive ceiling)', () => {
+    const { startIso } = expectedBounds('2026-06-01')
+    const bounds = resolveSingleDateFilterBounds({ date: '2026-06-01', op: 'is-less' })
+    expect(bounds.after).toBeUndefined()
+    expect(bounds.before).toBe(startIso)
+  })
+
+  it('maps is-or-less to <= end-of-day (the default — Ghost behaviour)', () => {
+    const { endIso } = expectedBounds('2026-06-01')
+    const bounds = resolveSingleDateFilterBounds({ date: '2026-06-01', op: 'is-or-less' })
+    expect(bounds.after).toBeUndefined()
+    expect(bounds.before).toBe(endIso)
+  })
+
+  it('maps is-greater to > end-of-day (the day is the exclusive floor)', () => {
+    const { endIso } = expectedBounds('2026-06-01')
+    const bounds = resolveSingleDateFilterBounds({ date: '2026-06-01', op: 'is-greater' })
+    expect(bounds.after).toBe(endIso)
+    expect(bounds.before).toBeUndefined()
+  })
+
+  it('maps is-or-greater to >= start-of-day', () => {
+    const { startIso } = expectedBounds('2026-06-01')
+    const bounds = resolveSingleDateFilterBounds({ date: '2026-06-01', op: 'is-or-greater' })
+    expect(bounds.after).toBe(startIso)
+    expect(bounds.before).toBeUndefined()
+  })
+
+  it('returns no bounds when the date is empty (operator-only chip)', () => {
+    // A freshly added date chip is operator-first — the user picks the
+    // operator before typing a date, so the editor may commit `{date: '',
+    // op}`. The bounds resolver must not crash on `new
+    // Date('').toISOString()` and must return undefined bounds so the
+    // server-side filter is a no-op until the user types a date.
+    expect(resolveSingleDateFilterBounds({ date: '', op: 'is-greater' })).toEqual({
+      after: undefined,
+      before: undefined,
+    })
+    expect(resolveSingleDateFilterBounds({ date: '', op: 'is-or-less' })).toEqual({
+      after: undefined,
+      before: undefined,
+    })
+  })
+
+  it('returns no bounds when the date is unparseable', () => {
+    // Defensive against `new Date('not-a-date')` returning an `Invalid
+    // Date` whose `toISOString` would throw.
+    expect(resolveSingleDateFilterBounds({ date: 'not-a-date', op: 'is-less' })).toEqual({
+      after: undefined,
+      before: undefined,
+    })
+  })
+
+  it('keeps the default operator aligned with Ghost (is-or-less)', () => {
+    expect(DEFAULT_SINGLE_DATE_OPERATOR).toBe('is-or-less')
   })
 })

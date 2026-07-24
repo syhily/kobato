@@ -10,7 +10,9 @@ vi.mock('@/server/infra/logger', () => ({
 import { onErrorHandler } from '@/server/http/errors'
 import { ActionFailure, DomainError } from '@/server/infra/http/errors'
 
-async function run(err: Error): Promise<{ status: number; body: unknown; requestIdHeader: string | null }> {
+async function run(
+  err: Error,
+): Promise<{ status: number; body: unknown; requestIdHeader: string | null; header: (name: string) => string | null }> {
   const app = new Hono()
   app.use('*', async (c, next) => {
     c.set('requestId' as never, 'req-1' as never)
@@ -25,6 +27,7 @@ async function run(err: Error): Promise<{ status: number; body: unknown; request
     status: res.status,
     body: await res.json(),
     requestIdHeader: res.headers.get('X-Request-Id'),
+    header: (name) => res.headers.get(name),
   }
 }
 
@@ -50,6 +53,7 @@ describe('server/http/errors — onErrorHandler', () => {
   it('appends ActionFailure headers onto the response', async () => {
     const res = await run(new ActionFailure(429, 'slow down', undefined, { 'X-RateLimit': '100' }))
     expect(res.status).toBe(429)
+    expect(res.header('X-RateLimit')).toBe('100')
   })
 
   it('returns the domain status for DomainError', async () => {

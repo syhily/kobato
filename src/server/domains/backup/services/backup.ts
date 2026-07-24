@@ -153,9 +153,6 @@ export async function createBackup(
   })
 
   const { backend, driver } = activeBackend()
-  if (backend.putStream === undefined) {
-    throw new Error('Active storage backend does not support streaming uploads; cannot create backup')
-  }
   const uploadDone = backend.putStream({
     key,
     body: uploadStream,

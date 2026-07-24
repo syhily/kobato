@@ -8,9 +8,8 @@ import {
   revokeCommentToken,
   verifyCommentOwnership,
 } from '@/server/domains/comments/services/token'
-import { publicProc } from '@/server/http/orpc-base'
+import { commentTokenCookie, publicProc } from '@/server/http/orpc-base'
 import { commentItemDto } from '@/shared/contracts/comments'
-import { parseCommentTokensCookie, serializeCommentTokensCookie } from '@/shared/utils/comment-token'
 import { idFromString } from '@/shared/utils/id'
 
 const successOutput = z.object({ success: z.boolean() })
@@ -19,11 +18,11 @@ const revokeToken = publicProc
   .route({ method: 'POST', path: '/comments/revoke-token' })
   .input(z.object({ rid: z.string() }))
   .output(successOutput)
+  .use(commentTokenCookie)
   .handler(async ({ input, context }) => {
-    const cookie = parseCommentTokensCookie(context.request.headers.get('Cookie'))
     // `verifyCommentOwnership` runs the same cleanup + token-match loop;
     // the matched token is the one to revoke.
-    const { cleaned, token: targetToken } = await verifyCommentOwnership(cookie, input.rid)
+    const { cleaned, token: targetToken } = await verifyCommentOwnership(context.commentTokens.cookie, input.rid)
     if (targetToken !== null) {
       await revokeCommentToken(targetToken)
     }
@@ -34,7 +33,7 @@ const revokeToken = publicProc
         next[pageKey] = filtered
       }
     }
-    context.responseHeaders.append('Set-Cookie', serializeCommentTokensCookie(next))
+    context.commentTokens.refreshed = next
     return { success: true }
   })
 
@@ -42,9 +41,9 @@ const myComments = publicProc
   .route({ method: 'GET', path: '/comments/my-comments' })
   .input(z.object({ page_key: z.string() }))
   .output(z.object({ comments: z.array(commentItemDto), expiresAt: z.record(z.string(), z.number()) }))
+  .use(commentTokenCookie)
   .handler(async ({ input, context }) => {
-    const cookie = parseCommentTokensCookie(context.request.headers.get('Cookie'))
-    const { cleaned, validEntries } = await cleanupExpiredTokens(cookie)
+    const { cleaned, validEntries } = await cleanupExpiredTokens(context.commentTokens.cookie)
     const commentIds: bigint[] = []
     for (const entry of validEntries) {
       if (entry.payload.pageKey === input.page_key) {
@@ -57,7 +56,7 @@ const myComments = publicProc
     for (const entry of validEntries) {
       expiresAt[entry.payload.commentId] = entry.expiresAt
     }
-    context.responseHeaders.append('Set-Cookie', serializeCommentTokensCookie(cleaned))
+    context.commentTokens.refreshed = cleaned
     return { comments: asCommentItemsWire(items), expiresAt }
   })
 

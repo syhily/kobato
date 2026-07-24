@@ -3,7 +3,8 @@ import { PlusIcon, SearchIcon } from 'lucide-react'
 import { useCallback, useState } from 'react'
 import { toast } from 'sonner'
 
-import type { AdminFriendDto, DeleteFriendInput } from '@/shared/types/friends'
+import type { AdminFriendDto } from '@/shared/contracts/friends'
+import type { DeleteFriendInput } from '@/shared/types/friends'
 
 import { orpc } from '@/client/api/client'
 import { orpcQuery } from '@/client/api/orpc-query'

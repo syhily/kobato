@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 
-import type { AdminPageDetailDto, PageMetaDraft } from '@/shared/types/pages'
+import type { AdminPageDetailDto } from '@/shared/contracts/pages'
+import type { PageMetaDraft } from '@/shared/types/pages'
 
 import { renderInRouter, renderToHtml, stableHtml } from '#/_helpers/render'
 import { MetaSidebar } from '@/ui/admin/pages/MetaSidebar'

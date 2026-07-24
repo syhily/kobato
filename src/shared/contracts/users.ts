@@ -1,8 +1,5 @@
 import { z } from 'zod'
 
-import type { Assert, Equals } from '@/shared/contracts/primitives'
-import type { AdminUserDto } from '@/shared/types/users'
-
 import { idString, isoDateTime } from '@/shared/contracts/primitives'
 
 export const adminUserDto = z.object({
@@ -24,6 +21,4 @@ export const adminUserDto = z.object({
   passkeyCount: z.number().int().nonnegative(),
   passkeyForce: z.boolean(),
 })
-
-// ─── parity assertion ──────────────────────────────────
-type _adminUserDtoParity = Assert<Equals<z.infer<typeof adminUserDto>, AdminUserDto>>
+export type AdminUserDto = z.infer<typeof adminUserDto>

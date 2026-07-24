@@ -4,7 +4,7 @@ import { makeAuthedCtx } from '#/_helpers/mock-ctx'
 import { parseRpcJson } from '#/_helpers/rpc-call'
 
 const fetchAdminUserDto = vi.hoisted(() => vi.fn())
-const muteAdminUser = vi.hoisted(() => vi.fn())
+const setUserMuted = vi.hoisted(() => vi.fn())
 const updateUserRoleWithGuard = vi.hoisted(() => vi.fn())
 const inviteAuthorWithRollback = vi.hoisted(() => vi.fn())
 const sendPasswordResetToUser = vi.hoisted(() => vi.fn())
@@ -12,10 +12,13 @@ const deleteAllCredentials = vi.hoisted(() => vi.fn())
 
 vi.mock('@/server/domains/users/services/admin', () => ({
   fetchAdminUserDto,
-  muteAdminUser,
   updateUserRoleWithGuard,
   inviteAuthorWithRollback,
   sendPasswordResetToUser,
+}))
+
+vi.mock('@/server/infra/db/operations/user', () => ({
+  setUserMuted,
 }))
 
 vi.mock('@/server/domains/audit/services/record', () => ({
@@ -80,7 +83,7 @@ describe('admin users-admin controller', () => {
       passkeyCount: 0,
       passkeyForce: false,
     })
-    muteAdminUser.mockResolvedValue({ id: 1n })
+    setUserMuted.mockResolvedValue({ id: 1n })
     updateUserRoleWithGuard.mockResolvedValue({ role: 'visitor' })
     inviteAuthorWithRollback.mockResolvedValue({ userId: 2n })
     sendPasswordResetToUser.mockResolvedValue({ userId: 3n })
@@ -91,11 +94,11 @@ describe('admin users-admin controller', () => {
     expect(response.status).toBe(200)
     const body = await parseRpcJson<{ user: unknown }>(response)
     expect(body.user).toBeDefined()
-    expect(muteAdminUser).toHaveBeenCalledWith(expect.anything(), 1n, true)
+    expect(setUserMuted).toHaveBeenCalledWith(expect.anything(), 1n, true)
   })
 
   it('returns 404 when muting a non-existent user', async () => {
-    muteAdminUser.mockResolvedValue(null)
+    setUserMuted.mockResolvedValue(null)
     const response = await call('/mute', { id: '1', muted: true })
     expect(response.status).toBe(404)
   })

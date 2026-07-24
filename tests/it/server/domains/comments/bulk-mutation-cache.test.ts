@@ -12,7 +12,7 @@ import { comment } from '@/server/infra/db/schema/comment'
 import { post } from '@/server/infra/db/schema/post'
 import { user } from '@/server/infra/db/schema/user'
 
-// The users-domain service module pulls the email sender in transitively.
+// The comments service module pulls the email sender in transitively.
 // The bulk comment paths never send mail, but stub the boundary so the
 // module graph can never reach the network.
 vi.mock('@/server/infra/email/sender', () => ({
@@ -23,11 +23,13 @@ vi.mock('@/server/infra/email/sender', () => ({
 const { setBlogSettingsBundleForTests } = await import('@/server/domains/settings/services/test-utils')
 const { TEST_BLOG_SETTINGS_BUNDLE } = await import('#/_helpers/blog-settings')
 
-// Import the users-domain entry points AFTER the mocks are registered.
-// The invariant under test: these bulk mutations reach the comments
-// domain's repo mutations, which clear the sidebar latest-comments
-// cache inline — forgetting the invalidation is impossible.
-const { bulkApproveCommentsForUser, bulkDeleteCommentsForUser } = await import('@/server/domains/users/services/admin')
+// Import the comments-domain service entry points AFTER the mocks are
+// registered. The invariant under test: these bulk mutations reach the
+// comments domain's repo mutations, which clear the sidebar
+// latest-comments cache inline — forgetting the invalidation is
+// impossible.
+const { bulkApproveCommentsByUser, bulkDeleteCommentsByUser } =
+  await import('@/server/domains/comments/services/moderate')
 // The admin approve-delete-request path calls the repo mutation
 // directly; the cache invalidation is sunk into the mutation itself.
 const { softDeleteCommentById } = await import('@/server/domains/comments/repos/moderation')
@@ -92,7 +94,7 @@ async function seedComment(userId: bigint, ownerId: bigint, isPending: boolean):
 }
 
 describe('comments/repos/moderation — bulk mutations clear the sidebar cache', () => {
-  it('users-domain bulk approve invalidates the warmed latest-comments cache', async () => {
+  it('bulk approve-by-user invalidates the warmed latest-comments cache', async () => {
     const userId = await seedUser()
     const postId = await seedPost('bulk-approve-target')
     const commentId = await seedComment(userId, postId, true)
@@ -102,7 +104,7 @@ describe('comments/repos/moderation — bulk mutations clear the sidebar cache',
     expect(warmed).toHaveLength(0)
     expect(await latestCommentsCache.get()).not.toBeNull()
 
-    const { approved } = await bulkApproveCommentsForUser(db, userId)
+    const { approved } = await bulkApproveCommentsByUser(db, userId)
     expect(approved).toBe(1)
 
     // The cache must be cleared, so the next read sees the approved row.
@@ -112,7 +114,7 @@ describe('comments/repos/moderation — bulk mutations clear the sidebar cache',
     expect(fresh[0]!.permalink).toBe(`/posts/bulk-approve-target/#user-comment-${commentId}`)
   })
 
-  it('users-domain bulk soft-delete invalidates the warmed latest-comments cache', async () => {
+  it('bulk soft-delete-by-user invalidates the warmed latest-comments cache', async () => {
     const userId = await seedUser()
     const postId = await seedPost('bulk-delete-target')
     await seedComment(userId, postId, false)
@@ -122,7 +124,7 @@ describe('comments/repos/moderation — bulk mutations clear the sidebar cache',
     expect(warmed).toHaveLength(1)
     expect(await latestCommentsCache.get()).not.toBeNull()
 
-    const { deleted } = await bulkDeleteCommentsForUser(db, userId)
+    const { deleted } = await bulkDeleteCommentsByUser(db, userId)
     expect(deleted).toBe(1)
 
     // The cache must be cleared, so the next read no longer sees the row.

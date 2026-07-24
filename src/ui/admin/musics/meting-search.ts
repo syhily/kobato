@@ -1,4 +1,4 @@
-import type { AdminMusicDto, MetingSearchHit } from '@/shared/types/music'
+import type { AdminMusicDto, MetingSearchHit } from '@/shared/contracts/music'
 
 export const SOURCE_OPTIONS: { value: string; label: string }[] = [
   { value: 'netease', label: '网易云' },

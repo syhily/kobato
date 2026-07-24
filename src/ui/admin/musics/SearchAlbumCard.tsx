@@ -1,6 +1,6 @@
 import { Loader2, Pause, Play, Plus } from 'lucide-react'
 
-import type { MetingSearchHit } from '@/shared/types/music'
+import type { MetingSearchHit } from '@/shared/contracts/music'
 
 import { Equalizer } from '@/ui/admin/musics/Equalizer'
 import { cn } from '@/ui/lib/cn'

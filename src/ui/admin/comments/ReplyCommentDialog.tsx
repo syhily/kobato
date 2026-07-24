@@ -3,8 +3,8 @@ import { SendIcon, XIcon } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
 
+import type { AdminCommentWire as AdminComment } from '@/shared/contracts/comments'
 import type { CommentBody } from '@/shared/pt/comment-schema'
-import type { AdminCommentWire as AdminComment } from '@/shared/types/comments'
 
 import { orpcQuery } from '@/client/api/orpc-query'
 import { idStr } from '@/shared/utils/tools'

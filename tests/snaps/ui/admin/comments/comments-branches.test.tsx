@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import type { AdminCommentWire as AdminComment } from '@/shared/contracts/comments'
 import type { CommentBody } from '@/shared/pt/comment-schema'
-import type { AdminCommentWire as AdminComment } from '@/shared/types/comments'
 import type { ActiveFilter } from '@/ui/admin/comments/useCommentsController'
 
 import { renderInRouter, stableHtml } from '#/_helpers/render'

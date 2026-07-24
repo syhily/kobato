@@ -1,6 +1,6 @@
 import { Play, Pause } from 'lucide-react'
 
-import type { AdminMusicDto } from '@/shared/types/music'
+import type { AdminMusicDto } from '@/shared/contracts/music'
 
 import { Equalizer } from '@/ui/admin/musics/Equalizer'
 import { useMusicPlayerActions, useMusicPlayerState } from '@/ui/admin/musics/MusicPlayerContext'

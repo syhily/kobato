@@ -50,7 +50,7 @@ export function buildAuditContext(context: AuditContext) {
     actorId: context.viewer?.userId,
     actorRole: context.viewer?.role ?? null,
     ipAddress: context.clientAddress,
-    userAgent: context.request.headers.get('User-Agent') ?? null,
+    userAgent: context.requestFacts.userAgent,
   }
 }
 

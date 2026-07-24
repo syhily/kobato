@@ -1,6 +1,6 @@
 import { XIcon } from 'lucide-react'
 
-import type { AuditLogActorDto } from '@/shared/types/audit'
+import type { AuditLogActorDto } from '@/shared/contracts/audit'
 import type { ActiveFilter, AuditLogFilterFieldKey } from '@/ui/admin/audit/filter-constants'
 
 import { AuditLogFilterAddButton } from '@/ui/admin/audit/AuditLogFilterAddButton'

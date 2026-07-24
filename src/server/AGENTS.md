@@ -46,7 +46,7 @@ one predictable location.
 
 Domains: `analytics`, `auth` (session-storage, csrf, rbac, flows,
 verification-tokens), `comments` (loader, moderation, projection,
-likes, token, badge, url, canonicalize), `content` (revision `repos/`,
+likes, token, badge, url, canonicalize, pure policy gates `services/policy.ts`), `content` (revision `repos/`,
 entity-agnostic draft→publish `lifecycle.ts`, save-time library image
 sync `services/image-sync.ts`, restore-time `slug-reclaim.ts`, admin
 list orchestration `services/admin-list.ts`, shared limit/offset ladder
@@ -96,10 +96,11 @@ Shape: `procBase.input(zod).output(zod).handler(({input, context}) => …)`,
 exported on the file's `<domain>Router`.
 
 **Adding an endpoint**: (1) shared schema → `shared/contracts/<domain>.ts`
-with a parity assertion, OR inline `z.object({...})` next to the
-procedure; (2) append a procedure to the matching controller, picking
-the right base; (3) controller already wired in `api-router.ts`?
-done — else add one line under `apiRouter` or `apiRouter.admin`.
+(the DTO type is the `z.infer` export from the same module), OR inline
+`z.object({...})` next to the procedure; (2) append a procedure to the
+matching controller, picking the right base; (3) controller already wired
+in `api-router.ts`? done — else add one line under `apiRouter` or
+`apiRouter.admin`.
 
 ### Router and mount
 
@@ -309,9 +310,9 @@ is a database setting (`assets.storage.enabled`, `seo.og.width`,
 
 - Postgres `music` table; audio (`musics/<playerId>.mp3`) and 300×300
   JPEG covers (`musics/<playerId>.jpg`) in the active storage backend,
-  written via `@/server/domains/music/storage` (same active-backend model
-  as images). The per-track `storageDriver` is persisted so reads/deletes
-  and URL resolution dispatch correctly.
+  written straight through `@/server/infra/storage/registry::activeBackend`
+  (same active-backend model as images). The per-track `storageDriver` is
+  persisted so reads/deletes and URL resolution dispatch correctly.
 - PortableText references rows via a 16-char lowercase random id. Service
   is netease-only via the inline `NeteaseResolver`; `(source, sourceId)`
   is unique with `source` reserved as varchar for future providers.

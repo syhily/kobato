@@ -2,7 +2,8 @@ import { SaveIcon, SquarePenIcon, Trash2Icon, XIcon } from 'lucide-react'
 import { type SubmitEventHandler, useCallback, useMemo, useRef, useState } from 'react'
 
 import type { CacheSettings } from '@/shared/config/types'
-import type { CacheBucketId, CacheBucketStats } from '@/shared/types/cache'
+import type { CacheBucketStats } from '@/shared/contracts/cache'
+import type { CacheBucketId } from '@/shared/types/cache'
 import type { ClearStatus } from '@/ui/admin/settings/cache/cache-status'
 
 import { MAX_TTL_HOURS, MIN_TTL_HOURS, SECONDS_PER_HOUR } from '@/ui/admin/settings/cache/cache-constants'

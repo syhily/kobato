@@ -40,8 +40,8 @@ export interface VisitorCookieResolution {
   setCookie: string | null
 }
 
-export function resolveVisitorCookie(request: Request): VisitorCookieResolution {
-  const existing = readCookie(request.headers.get('cookie'), KOBATO_AID_COOKIE)
+export function resolveVisitorCookie(cookieHeader: string | null): VisitorCookieResolution {
+  const existing = readCookie(cookieHeader, KOBATO_AID_COOKIE)
   if (existing && /^[a-f0-9]{16,64}$/i.test(existing)) {
     return { visitorId: existing, setCookie: null }
   }

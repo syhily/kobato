@@ -4,7 +4,8 @@ import { useCallback, useState } from 'react'
 import { Link } from 'react-router'
 import { toast } from 'sonner'
 
-import type { AdminPendingItemDto, ListPendingDashboardOutput } from '@/shared/types/comments'
+import type { AdminPendingItemDto } from '@/shared/contracts/comments'
+import type { ListPendingDashboardOutput } from '@/shared/types/comments'
 
 import { orpc } from '@/client/api/client'
 import { orpcQuery } from '@/client/api/orpc-query'

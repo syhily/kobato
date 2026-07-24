@@ -5,7 +5,7 @@ import { Hono } from 'hono'
 
 import type { MusicProvider, ProviderTrack } from '@/server/domains/music/providers/types'
 import type { Env } from '@/server/http/context'
-import type { MetingSource } from '@/shared/types/music'
+import type { MetingSource } from '@/shared/contracts/music'
 
 import { getProvider } from '@/server/domains/music/providers/registry'
 import { requireRoleMw } from '@/server/http/middlewares/hono-rbac'

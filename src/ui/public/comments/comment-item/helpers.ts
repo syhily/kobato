@@ -1,6 +1,6 @@
 import { use, type ReactNode } from 'react'
 
-import type { CommentItemWire as CommentItemType } from '@/shared/types/comments'
+import type { CommentItemWire as CommentItemType } from '@/shared/contracts/comments'
 
 import { cn } from '@/ui/lib/cn'
 import {

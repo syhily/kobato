@@ -1,25 +1,25 @@
 import { z } from 'zod'
 
-import type { Assert, Equals } from '@/shared/contracts/primitives'
-import type { AdminCommentWire, AdminPendingDashboardDto, CommentItemWire } from '@/shared/types/comments'
-
 import { idString, isoDateTime } from '@/shared/contracts/primitives'
 import { commentBodySchema } from '@/shared/pt/comment-schema'
 
+// Welcome-dashboard moderation inbox row. Same shape for both queues —
+// the `kind` discriminator decides which buttons the UI renders.
+const adminPendingItemDto = z.object({
+  id: idString,
+  kind: z.enum(['approval', 'deletion']),
+  authorName: z.string(),
+  authorLink: z.string().nullable(),
+  excerpt: z.string(),
+  createdAtIso: isoDateTime,
+  deleteRequestedAtIso: isoDateTime.nullable(),
+  pageTitle: z.string().nullable(),
+  pagePermalink: z.string().nullable(),
+})
+export type AdminPendingItemDto = z.infer<typeof adminPendingItemDto>
+
 export const adminPendingDashboardDto = z.object({
-  items: z.array(
-    z.object({
-      id: idString,
-      kind: z.enum(['approval', 'deletion']),
-      authorName: z.string(),
-      authorLink: z.string().nullable(),
-      excerpt: z.string(),
-      createdAtIso: isoDateTime,
-      deleteRequestedAtIso: isoDateTime.nullable(),
-      pageTitle: z.string().nullable(),
-      pagePermalink: z.string().nullable(),
-    }),
-  ),
+  items: z.array(adminPendingItemDto),
   total: z.number().int().nonnegative(),
   hasMore: z.boolean(),
   counts: z.object({
@@ -28,6 +28,7 @@ export const adminPendingDashboardDto = z.object({
     deletion: z.number().int().nonnegative(),
   }),
 })
+export type AdminPendingDashboardDto = z.infer<typeof adminPendingDashboardDto>
 
 // ─── comments (public wire — no PII) ───
 export const commentBaseDto = z.object({
@@ -56,9 +57,14 @@ export const commentBaseDto = z.object({
   badgeTextColor: z.string().nullable(),
 })
 
-export const commentItemDto: z.ZodType<CommentItemWire> = commentBaseDto.extend({
-  children: z.lazy(() => z.array(commentItemDto).optional()),
-}) as z.ZodType<CommentItemWire>
+// The recursive `children` branch uses a getter so zod resolves the schema
+// lazily and `z.infer` derives the recursive wire type directly.
+export const commentItemDto = commentBaseDto.extend({
+  get children() {
+    return z.array(commentItemDto).optional()
+  },
+})
+export type CommentItemWire = z.infer<typeof commentItemDto>
 
 // ─── admin comment wire (includes PII fields + content) ───
 export const adminCommentBaseDto = commentBaseDto.extend({
@@ -70,12 +76,12 @@ export const adminCommentBaseDto = commentBaseDto.extend({
 
 export const adminCommentDto = adminCommentBaseDto.extend({
   pageTitle: z.string().nullable(),
+  // The metric's `public_id` UUID for the page the comment belongs to.
+  // Drives the admin moderation filter Combobox.
   pagePublicId: z.string().nullable(),
   pageCover: z.string().nullable(),
+  // Fully-qualified public URL for the page this comment belongs to.
+  // Powers the per-row "查看文章" overflow-menu item.
   pagePermalink: z.string().nullable(),
 })
-
-// ─── parity assertions ─────────────────────────────────
-type _adminPendingDashboardParity = Assert<Equals<z.infer<typeof adminPendingDashboardDto>, AdminPendingDashboardDto>>
-type _commentItemWireParity = Assert<Equals<z.infer<typeof commentItemDto>, CommentItemWire>>
-type _adminCommentWireParity = Assert<Equals<z.infer<typeof adminCommentDto>, AdminCommentWire>>
+export type AdminCommentWire = z.infer<typeof adminCommentDto>

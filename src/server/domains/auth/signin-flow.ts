@@ -26,7 +26,7 @@ import { MIN_PASSWORD_LENGTH, PASSWORD_COMPLEXITY_RE, signInSchema } from '@/ser
 import { commitSessionWithMaxAge } from '@/server/domains/auth/session-storage'
 import { invalidateSetupToken } from '@/server/domains/auth/setup-token'
 import { consumeToken, issueOtpToken, issueResetToken, verifyOtpToken } from '@/server/domains/auth/verification-tokens'
-import { countApprovedCommentsByUser } from '@/server/domains/comments/repos/public-query/by-id'
+import { hasApprovedComments } from '@/server/domains/comments/services/public-query'
 import { ASSETS_STORAGE_INSTALL_DEFAULTS } from '@/server/domains/settings/sections/defaults'
 import { buildDefaultSectionPayloads, SECTION_REGISTRY } from '@/server/domains/settings/sections/registry'
 import { refreshBlogSettings } from '@/server/domains/settings/services/hydrate'
@@ -540,8 +540,7 @@ export async function requestPasswordReset(
     } else if (u && !u.role && u.password === '' && !u.deletedAt) {
       // Anonymous commenter with at least one approved comment can
       // claim the account by setting a password.
-      const approved = await countApprovedCommentsByUser(db, u.id)
-      if (approved >= 1) {
+      if (await hasApprovedComments(db, u.id)) {
         await updateUserById(db, u.id, { role: 'visitor' })
         await issueTokenAndEmail(db, u, 'visitor', clientAddress, request)
       }

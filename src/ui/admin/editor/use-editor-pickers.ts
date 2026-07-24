@@ -2,8 +2,8 @@ import type { Editor } from '@tiptap/react'
 
 import { useCallback, useState } from 'react'
 
-import type { AdminImageDto } from '@/shared/types/images'
-import type { AdminMusicDto } from '@/shared/types/music'
+import type { AdminImageDto } from '@/shared/contracts/images'
+import type { AdminMusicDto } from '@/shared/contracts/music'
 
 import { generateBlockKey } from '@/shared/pt/utils'
 

@@ -1,6 +1,6 @@
 import type { ContentRow, PostMetaRow } from '@/server/infra/db/types'
+import type { AdminRevisionDto } from '@/shared/contracts/revision'
 import type { Post } from '@/shared/types/catalog'
-import type { AdminRevisionDto } from '@/shared/types/revision'
 
 import { readBody, readHeadings } from '@/server/domains/content/projection-helpers'
 import { toClientPostFromMeta } from '@/server/domains/posts/repos/shared'

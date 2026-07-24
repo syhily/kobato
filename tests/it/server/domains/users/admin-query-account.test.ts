@@ -24,6 +24,7 @@ vi.mock('@/server/infra/email/sender', () => ({
 const admin = await import('@/server/domains/users/services/admin')
 const account = await import('@/server/domains/users/services/account')
 const adminQuery = await import('@/server/domains/users/repos/admin-query')
+const userOps = await import('@/server/infra/db/operations/user')
 
 const poolManager = createDbPool()
 const db: NodePgDatabase = poolManager.db
@@ -184,38 +185,38 @@ describe('users/services/admin — listUsersForAdmin', () => {
   })
 })
 
-describe('users/services/admin — softDeleteAdminUser / restoreAdminUser', () => {
+describe('infra/db/operations/user — softDeleteUserById / restoreUserById', () => {
   it('soft-deletes then restores a user', async () => {
     const u = await seedUser({ name: 'Del', email: 'd@example.com' })
 
-    expect(await admin.softDeleteAdminUser(db, u.id)).toBe(true)
+    expect(await userOps.softDeleteUserById(db, u.id)).toBe(true)
     const afterDelete = await db.select().from(user).where(eq(user.id, u.id)).limit(1)
     expect(afterDelete[0].deletedAt).not.toBeNull()
 
-    expect(await admin.restoreAdminUser(db, u.id)).toBe(true)
+    expect(await userOps.restoreUserById(db, u.id)).toBe(true)
     const afterRestore = await db.select().from(user).where(eq(user.id, u.id)).limit(1)
     expect(afterRestore[0].deletedAt).toBeNull()
   })
 
   it('returns false when soft-deleting an already-deleted row', async () => {
     const u = await seedUser({ name: 'Del', email: 'd@example.com', deletedAt: new Date() })
-    expect(await admin.softDeleteAdminUser(db, u.id)).toBe(false)
+    expect(await userOps.softDeleteUserById(db, u.id)).toBe(false)
   })
 })
 
-describe('users/services/admin — muteAdminUser', () => {
+describe('infra/db/operations/user — setUserMuted', () => {
   it('flips isMuted for non-admin users', async () => {
     const u = await seedUser({ name: 'M', email: 'm@example.com', role: 'visitor' })
-    const r1 = await admin.muteAdminUser(db, u.id, true)
+    const r1 = await userOps.setUserMuted(db, u.id, true)
     expect(r1?.isMuted).toBe(true)
 
-    const r2 = await admin.muteAdminUser(db, u.id, false)
+    const r2 = await userOps.setUserMuted(db, u.id, false)
     expect(r2?.isMuted).toBe(false)
   })
 
   it('returns null when targeting an admin (cannot mute admins)', async () => {
     const u = await seedUser({ name: 'M', email: 'm@example.com', role: 'admin' })
-    const r = await admin.muteAdminUser(db, u.id, true)
+    const r = await userOps.setUserMuted(db, u.id, true)
     expect(r).toBeNull()
   })
 })
@@ -324,10 +325,10 @@ describe('users/services/admin — sendPasswordResetToUser', () => {
   })
 })
 
-describe('users/services/admin — updateUserByIdWithGuard', () => {
+describe('infra/db/operations/user — updateUserById', () => {
   it('applies only provided fields', async () => {
     const u = await seedUser({ name: 'Orig', email: 'orig@example.com', link: 'https://old.example.com' })
-    const updated = await admin.updateUserByIdWithGuard(db, u.id, { name: 'New' })
+    const updated = await userOps.updateUserById(db, u.id, { name: 'New' })
     expect(updated?.name).toBe('New')
     expect(updated?.link).toBe('https://old.example.com')
   })
@@ -338,7 +339,7 @@ describe('users/services/admin — updateUserByIdWithGuard', () => {
       email: 'b@example.com',
       badgeTextColor: '#fff',
     })
-    const updated = await admin.updateUserByIdWithGuard(db, u.id, { badgeTextColor: null })
+    const updated = await userOps.updateUserById(db, u.id, { badgeTextColor: null })
     expect(updated?.badgeTextColor).toBeNull()
   })
 })

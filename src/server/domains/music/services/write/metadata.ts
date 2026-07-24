@@ -1,6 +1,6 @@
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
-import type { AdminMusicDto } from '@/shared/types/music'
+import type { AdminMusicDto } from '@/shared/contracts/music'
 import type { Role } from '@/shared/utils/roles'
 
 import { toAdminMusicDto } from '@/server/domains/music/projection'

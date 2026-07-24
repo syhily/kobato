@@ -116,10 +116,6 @@ const userQueryMocks = vi.hoisted(() => ({
 
 vi.mock('@/server/infra/db/operations/user', () => userQueryMocks)
 
-vi.mock('@/server/domains/comments/repos/query', () => ({
-  countApprovedCommentsByUser: vi.fn(async () => 0),
-}))
-
 vi.mock('@/server/infra/email/sender', () => ({
   sendPasswordReset: vi.fn(async () => undefined),
 }))

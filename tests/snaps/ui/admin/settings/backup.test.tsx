@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { BackupSettings } from '@/shared/config/types'
-import type { CacheBucketStats } from '@/shared/types/cache'
+import type { CacheBucketStats } from '@/shared/contracts/cache'
 
 import { renderInRouter, renderToHtml, stableHtml } from '#/_helpers/render'
 import { BackupFileList } from '@/ui/admin/settings/BackupFileList'

@@ -14,6 +14,7 @@ import {
   type PutObjectInput,
   type PutStreamInput,
   type StorageBackend,
+  StorageObjectNotFound,
   type StoredObjectMeta,
 } from '@/server/infra/storage/backend'
 
@@ -130,13 +131,14 @@ export const localBackend: StorageBackend = {
     try {
       st = await stat(abs)
     } catch (error) {
-      throw errnoCode(error) === 'ENOENT' ? new ActionFailure(404, '本地文件不存在') : error
+      throw errnoCode(error) === 'ENOENT' ? new StorageObjectNotFound(key) : error
     }
     // A key that resolves to a directory is not a readable object — surface
-    // a 404 instead of letting `readFile` throw EISDIR (which the HTTP layer
-    // would turn into a 500). Matches the `isFile()` guard the route uses.
+    // the seam's not-found instead of letting `readFile` throw EISDIR (which
+    // the HTTP layer would turn into a 500). Matches the `isFile()` guard the
+    // route uses.
     if (!st.isFile()) {
-      throw new ActionFailure(404, '本地文件不存在')
+      throw new StorageObjectNotFound(key)
     }
     if (st.size > MAX_OBJECT_BUFFER_SIZE) {
       throw new ActionFailure(413, `本地文件过大 (${st.size} 字节)，超出 ${MAX_OBJECT_BUFFER_SIZE} 字节限制`)
@@ -150,10 +152,10 @@ export const localBackend: StorageBackend = {
     try {
       st = await stat(abs)
     } catch (error) {
-      throw errnoCode(error) === 'ENOENT' ? new ActionFailure(404, '本地文件不存在') : error
+      throw errnoCode(error) === 'ENOENT' ? new StorageObjectNotFound(key) : error
     }
     if (!st.isFile()) {
-      throw new ActionFailure(404, '本地文件不存在')
+      throw new StorageObjectNotFound(key)
     }
     return createReadStream(abs)
   },

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type { AdminCategoryDto } from '@/shared/types/categories'
+import type { AdminCategoryDto } from '@/shared/contracts/categories'
 
 import { renderInRouter, renderToHtml, stableHtml } from '#/_helpers/render'
 import { CategoriesView } from '@/ui/admin/categories/CategoriesView'

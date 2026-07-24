@@ -13,12 +13,13 @@ const opsMock = vi.hoisted(() => ({
   findMusicByPlayerId: vi.fn(),
   findMusicByPlayerIds: vi.fn(),
 }))
-const storageMock = vi.hoisted(() => ({
-  safeBuildMusicPublicUrl: vi.fn(),
+const publicUrlMock = vi.hoisted(() => ({
+  resolveAssetUrl: vi.fn(),
+  safeResolveAssetUrl: vi.fn(),
 }))
 
 vi.mock('@/server/infra/db/operations/music', () => opsMock)
-vi.mock('@/server/domains/music/storage', () => storageMock)
+vi.mock('@/server/infra/storage/public-url', () => publicUrlMock)
 
 const { DEFAULT_MUSIC_COVER_URL, getMusicMetaForPlayer, getPublicMusicMetasByIds } =
   await import('@/server/domains/music/services/read')
@@ -48,7 +49,9 @@ function makeRow(overrides: Partial<MusicRow> = {}): MusicRow {
 
 beforeEach(() => {
   vi.clearAllMocks()
-  storageMock.safeBuildMusicPublicUrl.mockImplementation((path: string) => `https://cdn.example.com/${path}`)
+  publicUrlMock.safeResolveAssetUrl.mockImplementation(
+    (_driver: string, path: string) => `https://cdn.example.com/${path}`,
+  )
 })
 
 describe('music/services/read — DEFAULT_MUSIC_COVER_URL', () => {
@@ -79,7 +82,7 @@ describe('music/services/read — getMusicMetaForPlayer', () => {
 
   it('falls back to the default cover when the cover URL is unbuildable', async () => {
     opsMock.findMusicByPlayerId.mockResolvedValue(makeRow())
-    storageMock.safeBuildMusicPublicUrl.mockImplementation((path: string) =>
+    publicUrlMock.safeResolveAssetUrl.mockImplementation((_driver: string, path: string) =>
       path === 'musics/c.jpg' ? null : `https://cdn.example.com/${path}`,
     )
     const meta = await getMusicMetaForPlayer(fakeDb, 'p1')
@@ -90,7 +93,7 @@ describe('music/services/read — getMusicMetaForPlayer', () => {
 
   it('returns null when the audio URL is unbuildable (unplayable ≠ coverless)', async () => {
     opsMock.findMusicByPlayerId.mockResolvedValue(makeRow())
-    storageMock.safeBuildMusicPublicUrl.mockImplementation((path: string) =>
+    publicUrlMock.safeResolveAssetUrl.mockImplementation((_driver: string, path: string) =>
       path === 'musics/a.mp3' ? null : `https://cdn.example.com/${path}`,
     )
     expect(await getMusicMetaForPlayer(fakeDb, 'p1')).toBeNull()
@@ -114,7 +117,7 @@ describe('music/services/read — getPublicMusicMetasByIds', () => {
 
   it('keeps a coverless track playable with the default cover', async () => {
     opsMock.findMusicByPlayerIds.mockResolvedValue([makeRow()])
-    storageMock.safeBuildMusicPublicUrl.mockImplementation((path: string) =>
+    publicUrlMock.safeResolveAssetUrl.mockImplementation((_driver: string, path: string) =>
       path === 'musics/c.jpg' ? null : `https://cdn.example.com/${path}`,
     )
     const metas = await getPublicMusicMetasByIds(fakeDb, ['p1'])
@@ -123,7 +126,7 @@ describe('music/services/read — getPublicMusicMetasByIds', () => {
 
   it('drops entries whose audio URL is unbuildable', async () => {
     opsMock.findMusicByPlayerIds.mockResolvedValue([makeRow()])
-    storageMock.safeBuildMusicPublicUrl.mockReturnValue(null)
+    publicUrlMock.safeResolveAssetUrl.mockReturnValue(null)
     const metas = await getPublicMusicMetasByIds(fakeDb, ['p1'])
     expect(metas.size).toBe(0)
   })

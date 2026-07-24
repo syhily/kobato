@@ -1,8 +1,5 @@
 import { z } from 'zod'
 
-import type { Assert, Equals } from '@/shared/contracts/primitives'
-import type { AdminImageDto, ListImagesOutput } from '@/shared/types/images'
-
 import { idString, isoDateTime } from '@/shared/contracts/primitives'
 
 export const adminImageDto = z.object({
@@ -16,18 +13,17 @@ export const adminImageDto = z.object({
   byteSize: z.number().int().nonnegative(),
   thumbhash: z.string().nullable(),
   uploaderId: idString.nullable(),
+  /** Display name of the user who uploaded the image. */
   uploaderName: z.string().nullable(),
   note: z.string().nullable(),
   createdAt: isoDateTime,
   updatedAt: isoDateTime,
 })
+export type AdminImageDto = z.infer<typeof adminImageDto>
 
 export const listImagesOutputDto = z.object({
   images: z.array(adminImageDto),
   total: z.number().int().nonnegative(),
   hasMore: z.boolean(),
 })
-
-// ─── parity assertions ─────────────────────────────────
-type _adminImageDtoParity = Assert<Equals<z.infer<typeof adminImageDto>, AdminImageDto>>
-type _listImagesParity = Assert<Equals<z.infer<typeof listImagesOutputDto>, ListImagesOutput>>
+export type ListImagesOutput = z.infer<typeof listImagesOutputDto>

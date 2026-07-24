@@ -5,8 +5,8 @@ import { ArrowLeftIcon } from 'lucide-react'
 import { useState } from 'react'
 import { Link } from 'react-router'
 
-import type { AdminCommentWire as AdminComment } from '@/shared/types/comments'
-import type { AdminUserDto } from '@/shared/types/users'
+import type { AdminCommentWire as AdminComment } from '@/shared/contracts/comments'
+import type { AdminUserDto } from '@/shared/contracts/users'
 
 import { orpc } from '@/client/api/client'
 import { orpcQuery } from '@/client/api/orpc-query'

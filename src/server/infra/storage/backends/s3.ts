@@ -1,4 +1,4 @@
-import type { ServiceInputTypes, ServiceOutputTypes, _Object } from '@aws-sdk/client-s3'
+import type { GetObjectCommandOutput, ServiceInputTypes, ServiceOutputTypes, _Object } from '@aws-sdk/client-s3'
 import type { FinalizeRequestMiddleware, HandlerExecutionContext } from '@smithy/types'
 
 import { createHash } from 'node:crypto'
@@ -13,6 +13,7 @@ import {
   DEFAULT_PRIVATE_CACHE_CONTROL,
   DEFAULT_PUBLIC_CACHE_CONTROL,
   MAX_OBJECT_BUFFER_SIZE,
+  StorageObjectNotFound,
 } from '@/server/infra/storage/backend'
 import { requireBlogSettingsSection } from '@/shared/config/getters'
 import { unsafeCast } from '@/shared/utils/unsafe-cast'
@@ -202,6 +203,18 @@ function parseS3Contents(contents: _Object[] | undefined): StoredObjectMeta[] {
 }
 
 /**
+ * The SDK's not-found vocabulary, normalized into one predicate:
+ * `NoSuchKey` (XML-error S3 services on `GetObject`), `NotFound`
+ * (`HeadObject`), or a bare 404 from S3-compatible providers that don't
+ * set an error name.
+ */
+function isS3NotFoundError(error: unknown): boolean {
+  const name = unsafeCast<{ name?: string }>(error).name
+  const statusCode = unsafeCast<{ $metadata?: { httpStatusCode?: number } }>(error).$metadata?.httpStatusCode
+  return name === 'NoSuchKey' || name === 'NotFound' || statusCode === 404
+}
+
+/**
  * Existence check via a single `HeadObject`. Cheaper and more precise than
  * the prior `listS3Objects(key, 1)` approach (one request, exact-key match
  * rather than a prefix listing the migration would otherwise fire for every
@@ -216,9 +229,7 @@ async function objectExists(key: string): Promise<boolean> {
     await client.send(new sdk.HeadObjectCommand({ Bucket: bucket, Key: key }))
     return true
   } catch (error) {
-    const name = unsafeCast<{ name?: string }>(error).name
-    const statusCode = unsafeCast<{ $metadata?: { httpStatusCode?: number } }>(error).$metadata?.httpStatusCode
-    if (name === 'NotFound' || statusCode === 404) {
+    if (isS3NotFoundError(error)) {
       return false
     }
     log.warn('HeadObject failed; treating key as absent', { key, error: String(error) })
@@ -253,12 +264,32 @@ async function listObjects(prefix: string, maxKeys = 10_000): Promise<StoredObje
   return objects
 }
 
+/**
+ * `GetObject` with the seam's not-found normalization: an SDK `NoSuchKey` /
+ * `NotFound` / bare-404 rejection becomes `StorageObjectNotFound`; any other
+ * failure propagates unchanged.
+ */
+async function sendGetObject(
+  sdk: AwsSdk,
+  client: S3ClientInstance,
+  bucket: string,
+  key: string,
+): Promise<GetObjectCommandOutput> {
+  try {
+    return await client.send(new sdk.GetObjectCommand({ Bucket: bucket, Key: key }))
+  } catch (error) {
+    throw isS3NotFoundError(error) ? new StorageObjectNotFound(key) : error
+  }
+}
+
 async function getObjectBuffer(key: string, maxSize = MAX_OBJECT_BUFFER_SIZE): Promise<Buffer> {
   const sdk = await getAwsSdk()
   const { client, bucket } = await resolveS3Context({ requireEnabled: false })
-  const response = await client.send(new sdk.GetObjectCommand({ Bucket: bucket, Key: key }))
+  const response = await sendGetObject(sdk, client, bucket, key)
   if (response.Body === undefined) {
-    throw new ActionFailure(404, 'S3 对象不存在或内容为空')
+    // An empty body is indistinguishable from a miss for callers — surface
+    // the seam's not-found either way.
+    throw new StorageObjectNotFound(key)
   }
   const contentLength = response.ContentLength
   if (contentLength !== undefined && contentLength > maxSize) {
@@ -285,14 +316,14 @@ async function getObjectBuffer(key: string, maxSize = MAX_OBJECT_BUFFER_SIZE): P
 /**
  * Stream an object without buffering it into memory. Used for backups,
  * which can exceed the `MAX_OBJECT_BUFFER_SIZE` cap that buffered reads
- * enforce. Throws `ActionFailure(404)` on a missing/empty object.
+ * enforce. Throws `StorageObjectNotFound` on a missing/empty object.
  */
 async function getObjectStream(key: string): Promise<Readable> {
   const sdk = await getAwsSdk()
   const { client, bucket } = await resolveS3Context({ requireEnabled: false })
-  const response = await client.send(new sdk.GetObjectCommand({ Bucket: bucket, Key: key }))
+  const response = await sendGetObject(sdk, client, bucket, key)
   if (response.Body === undefined) {
-    throw new ActionFailure(404, 'S3 对象不存在或内容为空')
+    throw new StorageObjectNotFound(key)
   }
   return unsafeCast<Readable>(response.Body)
 }

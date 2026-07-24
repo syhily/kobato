@@ -1,5 +1,5 @@
 import type { ContentRow } from '@/server/infra/db/types'
-import type { AdminRevisionDto } from '@/shared/types/revision'
+import type { AdminRevisionDto } from '@/shared/contracts/revision'
 
 import { readBody, readHeadings } from '@/server/domains/content/projection-helpers'
 import { readStringArray } from '@/shared/utils/tools'

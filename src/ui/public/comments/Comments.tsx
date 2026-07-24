@@ -2,10 +2,10 @@ import { useMutation } from '@tanstack/react-query'
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { flushSync } from 'react-dom'
 
+import type { CommentItemWire as CommentItemType } from '@/shared/contracts/comments'
 import type { CommentFormUser } from '@/shared/types/catalog'
 import type {
   Comments as CommentsData,
-  CommentItemWire as CommentItemType,
   LoadCommentsInput,
   LoadCommentsOutput,
   MyCommentsOutput,

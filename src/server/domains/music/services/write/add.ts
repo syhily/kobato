@@ -2,7 +2,7 @@ import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
 import type { ProviderTrack } from '@/server/domains/music/providers/types'
 import type { MusicRow, NewMusic } from '@/server/infra/db/types'
-import type { AdminMusicDto } from '@/shared/types/music'
+import type { AdminMusicDto } from '@/shared/contracts/music'
 
 import { toAdminMusicDto } from '@/server/domains/music/projection'
 import { getProvider } from '@/server/domains/music/providers/registry'
@@ -14,11 +14,11 @@ import {
   MAX_AUDIO_BYTES,
   MAX_COVER_BYTES,
 } from '@/server/domains/music/services/write/shared'
-import { deleteMusicObject, putMusicAudio, putMusicCover } from '@/server/domains/music/storage'
 import { insertMusic, findMusicBySourceAndId } from '@/server/infra/db/operations/music'
 import { DomainError } from '@/server/infra/http/errors'
 import { processImageBuffer } from '@/server/infra/image/process'
 import { getLogger } from '@/server/infra/logger'
+import { activeBackend, backendFor } from '@/server/infra/storage/registry'
 
 const log = getLogger('music.service')
 
@@ -101,14 +101,14 @@ export async function addMusic(db: NodePgDatabase, input: AddMusicInputs): Promi
     throw error
   }
 
-  // Upload both assets in parallel. Both target the active backend, so
-  // they return the same driver; capture it once to persist on the row
-  // and to target the right backend on rollback.
-  const [audioResult, coverResult] = await Promise.all([
-    putMusicAudio(audioStoragePath, audioBuffer),
-    putMusicCover(coverStoragePath, coverProcessed),
+  // Upload both assets in parallel. Resolving the active backend once
+  // guarantees audio and cover land on the same driver; it is persisted
+  // on the row and targets the rollback deletes below.
+  const { backend, driver } = activeBackend()
+  await Promise.all([
+    backend.put({ key: audioStoragePath, body: audioBuffer, contentType: 'audio/mpeg', visibility: 'public' }),
+    backend.put({ key: coverStoragePath, body: coverProcessed, contentType: 'image/jpeg', visibility: 'public' }),
   ])
-  const driver = audioResult.driver ?? coverResult.driver
 
   const newRow: NewMusic = {
     source: input.source,
@@ -134,7 +134,7 @@ export async function addMusic(db: NodePgDatabase, input: AddMusicInputs): Promi
       driver,
       error,
     })
-    await Promise.allSettled([deleteMusicObject(audioStoragePath, driver), deleteMusicObject(coverStoragePath, driver)])
+    await Promise.allSettled([backendFor(driver).delete(audioStoragePath), backendFor(driver).delete(coverStoragePath)])
     throw new DomainError('INTERNAL', '音乐元数据写入失败，请稍后重试')
   }
 

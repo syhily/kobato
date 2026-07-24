@@ -2,8 +2,8 @@ import type { NavigateFunction } from 'react-router'
 
 import type { CreateDraftConfig } from '@/client/hooks/use-create-draft'
 import type { LocalDraftConfig } from '@/client/hooks/use-local-draft'
+import type { SaveBodyInput, SaveBodyOutput } from '@/shared/contracts/revision'
 import type { PortableTextBody } from '@/shared/pt/schema'
-import type { SaveBodyInput, SaveBodyOutput } from '@/shared/types/revision'
 
 export type EditorShellStatus =
   | { kind: 'idle' }
