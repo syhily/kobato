@@ -56,16 +56,11 @@ beforeEach(() => {
   mocks.findPublicPageMetaBySlug.mockImplementation(async () => null)
 })
 
-import type { imagesRouter as ImagesRouter } from '@/server/http/resources/images'
-
-let imagesRouter: typeof ImagesRouter
-
-beforeEach(async () => {
-  if (!imagesRouter) {
-    const mod = await import('@/server/http/resources/images')
-    imagesRouter = mod.imagesRouter
-  }
-})
+// Static import on purpose: a lazy beforeEach import puts the first heavy
+// module load under the 10s hookTimeout and flakes under parallel load, while
+// a top-level import is measured as file import time. vi.mock calls above are
+// hoisted, so the mocks still apply.
+import { imagesRouter } from '@/server/http/resources/images'
 
 async function requestOg(slug: string) {
   const res = await imagesRouter.request(`/images/og/${slug}.png`)
