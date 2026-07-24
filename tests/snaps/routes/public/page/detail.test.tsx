@@ -92,7 +92,9 @@ describe('snapshot: routes/public/page/detail', () => {
     )
     expect(html).toContain('左邻右舍')
     expect(html).toContain('Alice')
+    // The apply affordance is a button; the form (and its honeypot) stays
+    // inside the dialog.
     expect(html).toContain('申请友链')
-    expect(html).toContain('name="contact"')
+    expect(html).not.toContain('name="contact"')
   })
 })
