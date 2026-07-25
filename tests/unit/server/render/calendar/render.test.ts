@@ -63,4 +63,22 @@ describe('services/images/calendar — renderCalendar', () => {
     const buffer = await renderCalendar(parseISO('2024-02-09'))
     expect(buffer.byteLength).toBeGreaterThan(0)
   })
+
+  it('clamps a very long quote instead of overflowing the card', { timeout: 30_000 }, async () => {
+    // Entries from the complete built-in bank can run 100+ chars; the
+    // renderer must clamp them to three lines with an ellipsis.
+    globalThis.fetch = vi.fn(
+      async () =>
+        new Response(JSON.stringify({ content: 'long', translation: '很长'.repeat(60), author: '某人' }), {
+          headers: { 'Content-Type': 'application/json' },
+        }),
+    )
+
+    const buffer = await renderCalendar(parseISO('2024-04-24'))
+
+    expect(buffer[0]).toBe(0x89)
+    const meta = await sharp(buffer).metadata()
+    expect(meta.width).toBe(600)
+    expect(meta.height).toBe(880)
+  })
 })

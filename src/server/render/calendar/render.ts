@@ -148,6 +148,18 @@ export async function renderCalendar(date: Date, theme: CalendarTheme = 'light')
   ctx.font = `36px ${calFont}`
   const quoteText = quote.content
   const quoteLines = wrapText(ctx, quoteText, maxTextWidth)
+  // The full built-in bank contains entries of 100+ chars, which would
+  // overflow the card and collide with the author line — clamp to the
+  // three lines that fit and ellipsize the last visible one.
+  const MAX_QUOTE_LINES = 3
+  if (quoteLines.length > MAX_QUOTE_LINES) {
+    quoteLines.length = MAX_QUOTE_LINES
+    let last = quoteLines[MAX_QUOTE_LINES - 1]
+    while (last.length > 1 && ctx.measureText(`${last}…`).width > maxTextWidth) {
+      last = last.slice(0, -1)
+    }
+    quoteLines[MAX_QUOTE_LINES - 1] = `${last}…`
+  }
   let y = quoteY
   const lineHeight = 56
 

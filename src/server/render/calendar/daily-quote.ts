@@ -1,4 +1,4 @@
-import { format, getDayOfYear } from 'date-fns'
+import { format } from 'date-fns'
 
 import type { CustomQuote, DailyQuoteSource } from '@/shared/config/types'
 
@@ -18,8 +18,11 @@ import { isRecord } from '@/shared/utils/type-guards'
 //     silently behaves like `local`.
 //   local  — the built-in bank, no remote call at all.
 //
-// Local picks are deterministic per date (`getDayOfYear % length`), so a
-// re-render after the PNG cache expires still shows the same quote.
+// Local picks are deterministic per date (FNV-1a hash of the ISO date,
+// modulo the bank length), so a re-render after the PNG cache expires
+// still shows the same quote. Hashing — rather than day-of-year modulo —
+// keeps banks larger than 366 entries fully reachable across years (the
+// built-in bank holds the complete BullshitGenerator famous list, 10k+).
 //
 // Known degradations of the remote providers:
 //   - ONE (`v3.wufazhuce.com`) has no date parameter — it only serves
@@ -36,8 +39,18 @@ export interface DailyQuote {
   author: string
 }
 
+// FNV-1a over the ISO date, modulo the bank length. Deterministic per
+// date — a re-render after the PNG cache expires still shows the same
+// quote — and, unlike day-of-year modulo, every entry of a bank larger
+// than 366 stays reachable across years.
 export function pickForDate(bank: readonly DailyQuote[], date: Date): DailyQuote {
-  return bank[getDayOfYear(date) % bank.length]
+  const key = format(date, 'yyyy-MM-dd')
+  let hash = 0x811c9dc5
+  for (let i = 0; i < key.length; i++) {
+    hash ^= key.charCodeAt(i)
+    hash = Math.imul(hash, 0x01000193)
+  }
+  return bank[(hash >>> 0) % bank.length]
 }
 
 function parseJson(body: ArrayBuffer): unknown {
