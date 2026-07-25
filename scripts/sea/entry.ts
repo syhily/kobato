@@ -68,10 +68,9 @@ Configuration:
                            the file. Names follow the nested path with a
                            double underscore, e.g.:
                              database.url           → database__url
-                             redis.url              → redis__url
-                             auth.sessionSecret     → auth__sessionSecret
+                             security.sessionSecret → security__sessionSecret
                              security.encryptionKey → security__encryptionKey
-                             paths.data             → paths__data
+                             storage.data           → storage__data
 
 Optional environment variables:
   KOBATO_CACHE_DIR Cache directory for extracted native packages

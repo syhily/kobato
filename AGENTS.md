@@ -6,14 +6,14 @@ Repository conventions for AI agents and contributors.
 
 - React Router 8 Framework Mode with SSR (`appDirectory: 'src'`).
 - React 19 TSX/TS only.
-- Postgres + Redis.
+- Postgres.
 - Path alias `@/*` → `./src/*`.
 - Five layers under `src/`: `routes/` (orchestration), `server/` (SSR),
   `client/` (browser), `ui/` (components), `shared/` (isomorphic).
 
 ## Config file
 
-Infrastructure configuration (database, Redis, secrets, paths, logging)
+Infrastructure configuration (database, secrets, paths, logging)
 lives in `kobato.config.json` — always present, auto-created with defaults
 when missing. `src/server/infra/config.ts`'s `CONFIG_TABLE` is the single
 source of truth: each row maps a nested config path (`database.url`) to a
@@ -30,6 +30,12 @@ name is derived by convention (`path.join('__')` → `database__url`).
 - Flat legacy env names (`DATABASE_URL` etc.) were removed — only the
   `__` names work. The TS export names are unchanged, so `src/`
   consumers don't care.
+- Legacy config keys are migrated on load (`migrateLegacyKeys` in
+  `config.ts`): `auth.sessionSecret` → `security.sessionSecret`,
+  `paths.*` → `storage.*`, `logging.level` → `server.loggingLevel`, and
+  the removed `redis` block is dropped. The file is rewritten and a
+  Chinese stderr line summarizes the applied migrations. Legacy ENV var
+  names are NOT migrated — only the file keys.
 - `VITEST=true` without `--config` → env-only, zero filesystem access
   (tests must not create files in the repo). An explicit `--config` opts
   into full behavior (config tests point it at a temp dir).
@@ -165,16 +171,14 @@ worker code are embedded in the binary and read from memory
   and reports the calendar check as SKIP on uninstalled instances.
   `--binary-only [binary]` runs just the service-free checks (version,
   natives, worker pool) — the mode the macOS and Windows CI targets use
-  (neither can host the Postgres/Redis service containers).
+  (neither can host the Postgres service container).
 - `pnpm run sea:e2e [binary]` — boots the binary like the managed smoke
   (per-run database, migrations, seeded admin with a KNOWN random
   password), then runs `tests/e2e` against the live server over real
   HTTP: signin flow, public pages/feed/sitemap, and an admin
-  create→render→delete round-trip via oRPC. The server env sets a
-  per-run `redis__keyPrefix` so leftover rate-limit buckets on a shared
-  Redis can never fail a login. The instance lifecycle is shared with
-  the smoke via `scripts/sea/instance.ts`. The Linux CI matrix runs this
-  right after `sea:smoke`.
+  create→render→delete round-trip via oRPC. The instance lifecycle is
+  shared with the smoke via `scripts/sea/instance.ts`. The Linux CI
+  matrix runs this right after `sea:smoke`.
 - Binary CLI flags: `--version`, `--help`, `--smoke-natives`,
   `--smoke-worker`. The first three need zero environment; the last one
   requires the full server configuration because the pool graph pulls in
@@ -318,7 +322,7 @@ build stage installs their platform binaries and the SEA assets collector
 (`scripts/sea/assets.ts`) can embed each package's installed dependency
 closure.
 
-Examples: `react`, `hono`, `drizzle-orm`, `ioredis`, `nodemailer`,
+Examples: `react`, `hono`, `drizzle-orm`, `nodemailer`,
 `sanitize-html`, `feed`, `pg`, `bcryptjs`, `dompurify`, `fast-xml-parser` —
 all `devDependencies`, despite being production imports.
 

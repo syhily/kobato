@@ -31,7 +31,6 @@ spec:
 
     - **Kobato** — the blog CMS (pre-built image from GHCR)
     - **TimescaleDB** — PostgreSQL with time-series support for content and analytics
-    - **Redis** — sessions, rate limiting, and cache
 
     ## After deployment
 
@@ -100,66 +99,12 @@ spec:
             default: postgres
             expose: true
 
-    - name: redis
-      icon: https://raw.githubusercontent.com/zeabur/service-icons/main/marketplace/redis.svg
-      template: PREBUILT
-      spec:
-        id: redis
-        source:
-          image: redis/redis-stack-server:latest
-        ports:
-          - id: database
-            port: 6379
-            type: TCP
-        volumes:
-          - id: data
-            dir: /data
-        instructions:
-          - title: Command to connect to your Redis
-            content: redis-cli -h ${PORT_FORWARDED_HOSTNAME} -p ${DATABASE_PORT_FORWARDED_PORT} -a ${REDIS_PASSWORD}
-          - title: Redis Connection String
-            content: redis://:${REDIS_PASSWORD}@${PORT_FORWARDED_HOSTNAME}:${DATABASE_PORT_FORWARDED_PORT}
-          - title: Redis password
-            content: ${REDIS_PASSWORD}
-          - title: Redis host
-            content: ${PORT_FORWARDED_HOSTNAME}
-          - title: Redis port
-            content: ${DATABASE_PORT_FORWARDED_PORT}
-        env:
-          CONFFILE:
-            default: /etc/redis-stack.conf
-          REDIS_ARGS:
-            default: --requirepass ${REDIS_PASSWORD}
-          REDIS_CONNECTION_STRING:
-            default: redis://:${REDIS_PASSWORD}@${REDIS_HOST}:${REDIS_PORT}
-            expose: true
-          REDIS_HOST:
-            default: ${CONTAINER_HOSTNAME}
-            expose: true
-          REDIS_PASSWORD:
-            default: ${PASSWORD}
-            expose: true
-          REDIS_PORT:
-            default: ${DATABASE_PORT}
-            expose: true
-          redis__url:
-            default: ${REDIS_CONNECTION_STRING}
-            expose: true
-        configs:
-          - path: /etc/redis-stack.conf
-            template: |
-              port 6379
-              daemonize no
-            permission: null
-            envsubst: null
-
     - name: kobato
       icon: https://raw.githubusercontent.com/syhily/kobato/main/src/server/assets/defaults/favicon.svg
       template: PREBUILT
       domainKey: PUBLIC_DOMAIN
       dependencies:
         - timescaledb
-        - redis
       spec:
         source:
           image: ghcr.io/syhily/kobato:latest
@@ -177,19 +122,19 @@ spec:
             default: 0.0.0.0
           server__port:
             default: '4321'
-          logging__level:
+          server__loggingLevel:
             default: info
           database__poolMax:
             default: '20'
           database__statementTimeoutMs:
             default: '30000'
-          auth__sessionSecret:
+          security__sessionSecret:
             default: ${SESSION_SECRET}
           security__encryptionKey:
             default: ${ENCRYPTION_KEY}
-          paths__data:
+          storage__data:
             default: /data
-          paths__defaultFont:
+          storage__defaultFont:
             default: /usr/share/fonts/noto/NotoSansCJK-Regular.ttc
           NODE_ENV:
             default: production

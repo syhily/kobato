@@ -25,7 +25,6 @@ import pg from 'pg'
 import { fail } from './exec.ts'
 
 export const DEFAULT_DATABASE_URL = 'postgres://test:test@127.0.0.1:5434/test'
-export const DEFAULT_REDIS_URL = 'redis://127.0.0.1:6381'
 
 export const BOOT_TIMEOUT_MS = 90_000
 const POLL_INTERVAL_MS = 500
@@ -160,21 +159,21 @@ export interface ConvergedConfig {
 
 /**
  * Assert a temp config file converged: the env-driven boot wrote its
- * overrides back (`database.url` + `auth.sessionSecret` present as raw
+ * overrides back (`database.url` + `security.sessionSecret` present as raw
  * strings — never the schema-transformed shape). Used by the smoke's and
  * the e2e orchestrator's convergence checks.
  */
 export async function readConvergedConfig(configPath: string): Promise<ConvergedConfig> {
   const parsed: unknown = JSON.parse(await readFile(configPath, 'utf-8'))
   const database = isRecord(parsed) && isRecord(parsed.database) ? parsed.database : null
-  const auth = isRecord(parsed) && isRecord(parsed.auth) ? parsed.auth : null
+  const security = isRecord(parsed) && isRecord(parsed.security) ? parsed.security : null
   if (database === null || typeof database.url !== 'string' || database.url === '') {
     throw new Error(`config file did not converge: ${configPath} has no database.url`)
   }
-  if (auth === null || typeof auth.sessionSecret !== 'string' || auth.sessionSecret.length < 32) {
-    throw new Error(`config file did not converge: ${configPath} has no auth.sessionSecret`)
+  if (security === null || typeof security.sessionSecret !== 'string' || security.sessionSecret.length < 32) {
+    throw new Error(`config file did not converge: ${configPath} has no security.sessionSecret`)
   }
-  return { databaseUrl: database.url, sessionSecret: auth.sessionSecret }
+  return { databaseUrl: database.url, sessionSecret: security.sessionSecret }
 }
 
 /**
@@ -265,11 +264,11 @@ export async function bootServer(
   // its own directory or ~/.config and persist smoke secrets + the
   // throwaway database URL into real locations.
   //
-  // Config vars (`database__url`, `redis__url`, …) must NOT be inherited
-  // from the parent environment: CI defines them at job level, and a
-  // leaked value silently overrides the converged config file (env >
-  // file) — the file-only restart would then boot against the
-  // maintenance database instead of the per-run smoke one. Config
+  // Config vars (`database__url`, `security__sessionSecret`, …) must NOT be
+  // inherited from the parent environment: CI defines them at job
+  // level, and a leaked value silently overrides the converged config
+  // file (env > file) — the file-only restart would then boot against
+  // the maintenance database instead of the per-run smoke one. Config
   // reaches the child only through the explicit `env` argument (and
   // server__port below).
   const parentEnv = Object.fromEntries(Object.entries(process.env).filter(([key]) => !key.includes('__')))

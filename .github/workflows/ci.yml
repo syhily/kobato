@@ -31,19 +31,9 @@ jobs:
           --health-interval 5s
           --health-timeout 3s
           --health-retries 5
-      redis:
-        image: redis:7-alpine
-        ports:
-          - 6381:6379
-        options: >-
-          --health-cmd "redis-cli ping"
-          --health-interval 5s
-          --health-timeout 3s
-          --health-retries 5
     env:
       database__url: postgres://test:test@localhost:5434/test
-      redis__url: redis://localhost:6381
-      auth__sessionSecret: ci-session-secret
+      security__sessionSecret: ci-session-secret
     steps:
       - uses: actions/checkout@v6
       - uses: pnpm/action-setup@v4

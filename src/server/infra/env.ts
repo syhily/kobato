@@ -113,10 +113,9 @@ function loadEnv() {
         '(or passed as `__`-style environment variables):',
         '',
         '    database.url             — PostgreSQL connection URL',
-        '    redis.url                — Redis connection URL',
-        '    auth.sessionSecret       — Session signing secret',
+        '    security.sessionSecret   — Session signing secret',
         '    security.encryptionKey   - The encryption key for sensitive content',
-        '    paths.data               - Root directory for all local filesystem data',
+        '    storage.data             - Root directory for all local filesystem data',
         '',
       ].join('\n'),
     )
@@ -137,8 +136,6 @@ export const {
   LOG_LEVEL,
   NODE_ENV,
   PORT,
-  REDIS_KEY_PREFIX,
-  REDIS_URL,
   RESTORE_ROLE,
   SESSION_SECRET,
 } = env

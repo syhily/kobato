@@ -17,6 +17,10 @@
 //     node binary itself) > `./kobato.config.json` > `~/.config/kobato.config.json`.
 //     The first existing file wins; when none exists, the file is created
 //     at the first candidate with table defaults and mode 0o600.
+//   - Legacy keys from older releases (`auth.sessionSecret`, `paths.*`,
+//     `logging.level`, the removed `redis` block) are migrated to the
+//     current layout on load and the file is rewritten, so config files
+//     written by older versions keep booting (see migrateLegacyKeys).
 //
 // `VITEST=true` makes loading read-only (no create, no write-back) and
 // skips the file entirely unless `--config` is given — otherwise test runs
@@ -50,8 +54,13 @@ export const CONFIG_TABLE = [
     schema: z.coerce.number().int().min(1).max(65535).default(4321),
     fileDefault: 4321,
   },
+  {
+    path: ['server', 'loggingLevel'],
+    export: 'LOG_LEVEL',
+    schema: z.enum(['debug', 'info', 'warn', 'error', 'silent']).optional(),
+    fileDefault: 'info',
+  },
   { path: ['database', 'url'], export: 'DATABASE_URL', schema: z.url(), fileDefault: '' },
-  { path: ['redis', 'url'], export: 'REDIS_URL', schema: z.url(), fileDefault: '' },
   {
     path: ['database', 'poolMax'],
     export: 'DB_POOL_MAX',
@@ -66,7 +75,7 @@ export const CONFIG_TABLE = [
   },
   { path: ['database', 'restoreRole'], export: 'RESTORE_ROLE', schema: z.string().min(1).optional(), fileDefault: '' },
   {
-    path: ['auth', 'sessionSecret'],
+    path: ['security', 'sessionSecret'],
     export: 'SESSION_SECRET',
     schema: z
       .string()
@@ -75,19 +84,12 @@ export const CONFIG_TABLE = [
     fileDefault: '',
   },
   { path: ['security', 'encryptionKey'], export: 'ENCRYPTION_KEY', schema: z.string().min(32), fileDefault: '' },
-  { path: ['paths', 'data'], export: 'DATA_PATH', schema: z.string().min(1), fileDefault: './data' },
+  { path: ['storage', 'data'], export: 'DATA_PATH', schema: z.string().min(1), fileDefault: './data' },
   {
-    path: ['paths', 'defaultFont'],
+    path: ['storage', 'defaultFont'],
     export: 'DEFAULT_FONT_PATH',
     schema: z.string().min(1).optional(),
     fileDefault: '',
-  },
-  { path: ['redis', 'keyPrefix'], export: 'REDIS_KEY_PREFIX', schema: z.string().min(1).optional(), fileDefault: '' },
-  {
-    path: ['logging', 'level'],
-    export: 'LOG_LEVEL',
-    schema: z.enum(['debug', 'info', 'warn', 'error', 'silent']).optional(),
-    fileDefault: 'info',
   },
 ] as const satisfies readonly ConfigEntry[]
 
@@ -260,6 +262,102 @@ function writeConfigFile(filePath: string, data: Record<string, unknown>): void 
   renameSync(tempPath, filePath)
 }
 
+// ─── Legacy key migration ────────────────────────────────────────────────
+
+/**
+ * In-place migration for config files written before the config-key renames
+ * (`auth.sessionSecret` → `security.sessionSecret`, `paths.*` → `storage.*`,
+ * `logging.level` → `server.loggingLevel`) and before Redis was removed —
+ * every auto-created file from that era carries a `redis` block the strict
+ * file schema now rejects. Legacy values MOVE into the current layout
+ * without ever overwriting a value the file already holds there; a legacy
+ * key whose target slot is taken is dropped. Returns one Chinese note per
+ * consumed legacy key so the caller can log a single summary line.
+ */
+export function migrateLegacyKeys(data: Record<string, unknown>): { migrated: boolean; notes: string[] } {
+  const notes: string[] = []
+  // '' means "unset" in the config file (see stripEmptyStrings) — a target
+  // slot holding '' must not block a real legacy value from moving over.
+  const taken = (value: unknown): boolean => value !== undefined && value !== ''
+
+  /** Move source[sourceKey] into target[targetKey]; never overwrite. */
+  const moveKey = (
+    source: Record<string, unknown>,
+    sourceKey: string,
+    target: Record<string, unknown>,
+    targetKey: string,
+    label: string,
+  ): void => {
+    if (taken(target[targetKey])) {
+      notes.push(`${label}(目标已存在,丢弃旧值)`)
+    } else {
+      target[targetKey] = source[sourceKey]
+      notes.push(label)
+    }
+    delete source[sourceKey]
+  }
+
+  // auth.sessionSecret → security.sessionSecret (the auth section is gone).
+  const auth = data.auth
+  if (isRecord(auth)) {
+    const hadSecret = typeof auth.sessionSecret === 'string'
+    if (hadSecret) {
+      const security: Record<string, unknown> = isRecord(data.security) ? data.security : {}
+      data.security = security
+      moveKey(auth, 'sessionSecret', security, 'sessionSecret', 'auth.sessionSecret → security.sessionSecret')
+    }
+    // An emptied section must not survive — the strict schema rejects it
+    // (env write-backs could persist `auth: {}` after stripEmptyStrings).
+    if (Object.keys(auth).length === 0) {
+      delete data.auth
+      if (!hadSecret) {
+        notes.push('auth(已删除)')
+      }
+    }
+  }
+
+  // paths.* → storage.* (per-key move; the paths section is gone).
+  const paths = data.paths
+  if (isRecord(paths)) {
+    if (Object.keys(paths).length > 0) {
+      const storage: Record<string, unknown> = isRecord(data.storage) ? data.storage : {}
+      data.storage = storage
+      for (const key of Object.keys(paths)) {
+        moveKey(paths, key, storage, key, `paths.${key} → storage.${key}`)
+      }
+    } else {
+      notes.push('paths(已删除)')
+    }
+    delete data.paths
+  }
+
+  // logging.level → server.loggingLevel (the logging section is gone).
+  const logging = data.logging
+  if (isRecord(logging)) {
+    const hadLevel = typeof logging.level === 'string'
+    if (hadLevel) {
+      const server: Record<string, unknown> = isRecord(data.server) ? data.server : {}
+      data.server = server
+      moveKey(logging, 'level', server, 'loggingLevel', 'logging.level → server.loggingLevel')
+    }
+    if (Object.keys(logging).length === 0) {
+      delete data.logging
+      if (!hadLevel) {
+        notes.push('logging(已删除)')
+      }
+    }
+  }
+
+  // redis: dropped together with the Redis dependency — old auto-created
+  // files all carry the block, and the strict schema would reject it.
+  if ('redis' in data) {
+    delete data.redis
+    notes.push('redis(已删除)')
+  }
+
+  return { migrated: notes.length > 0, notes }
+}
+
 // ─── Main entry ──────────────────────────────────────────────────────────
 
 /**
@@ -300,6 +398,19 @@ export function loadConfig(): Record<string, unknown> {
     }
     if (!isRecord(parsedJson)) {
       fail(`配置文件 ${filePath} 的顶层必须是一个 JSON 对象。`)
+    }
+    // Migrate legacy keys (renames + the removed redis block) before
+    // validation — the strict file schema would reject them otherwise.
+    const { migrated, notes } = migrateLegacyKeys(parsedJson)
+    if (migrated) {
+      try {
+        writeConfigFile(filePath, parsedJson)
+      } catch (error) {
+        process.stderr.write(
+          `警告:无法将迁移后的配置写回配置文件 ${filePath}(${error instanceof Error ? error.message : String(error)}),本次以内存中的生效值继续。\n`,
+        )
+      }
+      process.stderr.write(`已迁移配置文件 ${filePath} 中的旧配置项:${notes.join(', ')}\n`)
     }
     const stripped = stripEmptyStrings(parsedJson)
     const result = fileSchema.safeParse(stripped)

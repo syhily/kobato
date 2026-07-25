@@ -14,21 +14,18 @@ services:
       database__url: postgres://postgres:${POSTGRES_PASSWORD}@postgres:5432/kobato
       database__poolMax: ${DB_POOL_MAX:-20}
       database__statementTimeoutMs: ${DB_STATEMENT_TIMEOUT_MS:-30000}
-      redis__url: redis://:${REDIS_PASSWORD}@redis:6379
       # Security
-      auth__sessionSecret: ${SESSION_SECRET:?SESSION_SECRET is required}
+      security__sessionSecret: ${SESSION_SECRET:?SESSION_SECRET is required}
       security__encryptionKey: ${ENCRYPTION_KEY:?ENCRYPTION_KEY is required}
       # Logging
-      logging__level: ${LOG_LEVEL:-info}
+      server__loggingLevel: ${LOG_LEVEL:-info}
       # Data directory
-      paths__data: /data
+      storage__data: /data
     volumes:
       - kobato_data:/data
       - kobato_config:/etc/kobato
     depends_on:
       postgres:
-        condition: service_healthy
-      redis:
         condition: service_healthy
     restart: unless-stopped
     security_opt:
@@ -71,37 +68,8 @@ services:
           cpus: '0.25'
           memory: 256M
 
-  redis:
-    image: redis:7-alpine
-    command: redis-server --requirepass ${REDIS_PASSWORD:?REDIS_PASSWORD is required}
-    environment:
-      REDISCLI_AUTH: ${REDIS_PASSWORD}
-    volumes:
-      - redis_data:/data
-    healthcheck:
-      test: ['CMD', 'redis-cli', 'ping']
-      interval: 5s
-      timeout: 3s
-      retries: 5
-    restart: unless-stopped
-    security_opt:
-      - no-new-privileges:true
-    cap_drop:
-      - ALL
-    networks:
-      - kobato
-    deploy:
-      resources:
-        limits:
-          cpus: '1'
-          memory: 256M
-        reservations:
-          cpus: '0.1'
-          memory: 64M
-
 volumes:
   postgres_data:
-  redis_data:
   kobato_data:
   kobato_config:
 

@@ -86,13 +86,13 @@ export interface ExtractNativesResult {
 // they are missing — the SEA prelude must instead run with zero env
 // (`--version`, `--help`, `--smoke-natives` work without a database).
 // Same call shape, plain JSON lines on stdout; debug lines are gated on
-// logging__level=debug, mirroring the production default level of 'info'.
+// server__loggingLevel=debug, mirroring the production default level of 'info'.
 const log: Pick<Logger, 'info' | 'debug'> = {
   info: (message, context) => {
     process.stdout.write(`${JSON.stringify({ level: 'info', msg: message, ...context })}\n`)
   },
   debug: (message, context) => {
-    if (process.env.logging__level === 'debug') {
+    if (process.env.server__loggingLevel === 'debug') {
       process.stderr.write(`${JSON.stringify({ level: 'debug', msg: message, ...context })}\n`)
     }
   },

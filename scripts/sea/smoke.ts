@@ -1,7 +1,7 @@
 // Deep end-to-end smoke for the built SEA binary (`pnpm run sea:smoke`).
 //
 // Managed mode (default): verify dist-sea/kobato end to end against a real
-// Postgres/Redis — the CLI flags, native-package extraction and loading,
+// Postgres — the CLI flags, native-package extraction and loading,
 // a real sharp job through the worker_threads image pool, and a full
 // server lifecycle against a FRESH per-run database (`kobato_smoke_<rand>`,
 // created on the same Postgres server and dropped in cleanup): boot with
@@ -21,16 +21,16 @@
 // no services — --version, --smoke-natives, and --smoke-worker against a
 // dummy (validated, never connected) env. Used by the macOS and Windows
 // CI targets: GitHub macOS runners have no Docker and Windows runners
-// only run Windows containers, so neither can host the Postgres/Redis
-// service containers; the full managed lifecycle stays on Linux.
+// only run Windows containers, so neither can host the Postgres
+// service container; the full managed lifecycle stays on Linux.
 //
-// DATABASE_URL / REDIS_URL default to the docker-compose.test.yml stack
-// (postgres on 127.0.0.1:5434, redis on 127.0.0.1:6381) and can be
-// overridden through the environment — CI injects its service URLs the
-// same way. The role must be allowed to CREATE/DROP DATABASE (the `test`
-// role in both the local stack and the CI service is the cluster
-// superuser). Imports: Node builtins plus `pg` (already a devDependency,
-// used for the per-run database and the seed SQL); no other dependencies.
+// DATABASE_URL defaults to the docker-compose.test.yml stack (postgres
+// on 127.0.0.1:5434) and can be overridden through the environment —
+// CI injects its service URL the same way. The role must be allowed to
+// CREATE/DROP DATABASE (the `test` role in both the local stack and the
+// CI service is the cluster superuser). Imports: Node builtins plus
+// `pg` (already a devDependency, used for the per-run database and the
+// seed SQL); no other dependencies.
 //
 // The instance lifecycle (per-run database, boot, seed, HTTP polling) is
 // shared with the e2e orchestrator via scripts/sea/instance.ts.
@@ -47,7 +47,6 @@ import {
   bootServer,
   createSmokeDatabase,
   DEFAULT_DATABASE_URL,
-  DEFAULT_REDIS_URL,
   describeUrl,
   dropSmokeDatabase,
   ensureBinaryExists,
@@ -364,13 +363,11 @@ async function checkCalendar(baseUrl: string, { optional }: { optional: boolean 
 async function runManaged(binaryPath: string) {
   await ensureBinaryExists(binaryPath)
   const databaseUrl = process.env.database__url ?? DEFAULT_DATABASE_URL
-  const redisUrl = process.env.redis__url ?? DEFAULT_REDIS_URL
   const dirs = await makeTempDirs()
   serverLogPath = join(dirs.root, 'server.log')
 
   console.log(`    binary:   ${binaryPath}`)
   console.log(`    database: ${describeUrl(databaseUrl)}`)
-  console.log(`    redis:    ${describeUrl(redisUrl)}`)
   console.log(`    temp dir: ${dirs.root}`)
 
   let server = none<SmokeServer>()
@@ -387,17 +384,16 @@ async function runManaged(binaryPath: string) {
     if (smokeDatabase !== null) {
       const env = {
         database__url: smokeDatabase.smokeDatabaseUrl,
-        redis__url: redisUrl,
-        auth__sessionSecret: randomBytes(32).toString('hex'),
+        security__sessionSecret: randomBytes(32).toString('hex'),
         security__encryptionKey: randomBytes(32).toString('hex'),
-        paths__data: dirs.data,
+        storage__data: dirs.data,
         KOBATO_CACHE_DIR: dirs.cache,
         NODE_ENV: 'production',
       }
 
       await check('kobato --smoke-worker (sharp worker pool)', () => checkWorker(binaryPath, env))
 
-      const booted = await check('server boot (natives + migrations + redis)', async () => {
+      const booted = await check('server boot (natives + migrations)', async () => {
         server = await bootServer(binaryPath, dirs, env, serverLogPath ?? fail('serverLogPath unset'))
         console.log(`    waiting for http://127.0.0.1:${server.port}/health (log: ${serverLogPath})`)
         const started = Date.now()
@@ -436,7 +432,7 @@ async function runManaged(binaryPath: string) {
           seedInstalledInstance(env.database__url, { email: SEED_ADMIN_EMAIL, passwordHash: SEED_ADMIN_PASSWORD }),
         ))
       if (seeded) {
-        // The restart runs with a REDUCED env on purpose: database/redis/
+        // The restart runs with a REDUCED env on purpose: database/
         // secrets/paths all come from the config file the first boot
         // converged (env overrides were written back) — this is the
         // file-only boot proof for the new configuration model. Only
@@ -511,10 +507,9 @@ async function runBinaryOnly(binaryPath: string) {
   await check('kobato --smoke-worker (sharp worker pool)', () =>
     checkWorker(binaryPath, {
       database__url: process.env.database__url ?? DEFAULT_DATABASE_URL,
-      redis__url: process.env.redis__url ?? DEFAULT_REDIS_URL,
-      auth__sessionSecret: randomBytes(32).toString('hex'),
+      security__sessionSecret: randomBytes(32).toString('hex'),
       security__encryptionKey: randomBytes(32).toString('hex'),
-      paths__data: dirs.data,
+      storage__data: dirs.data,
       KOBATO_CACHE_DIR: dirs.cache,
       NODE_ENV: 'production',
     }),

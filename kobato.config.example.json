@@ -1,7 +1,8 @@
 {
   "server": {
     "host": "0.0.0.0",
-    "port": 4321
+    "port": 4321,
+    "loggingLevel": "info"
   },
   "database": {
     "url": "postgres://user:password@localhost:5432/kobato",
@@ -9,21 +10,12 @@
     "statementTimeoutMs": 30000,
     "restoreRole": ""
   },
-  "redis": {
-    "url": "redis://localhost:6379",
-    "keyPrefix": ""
-  },
-  "auth": {
-    "sessionSecret": ""
-  },
   "security": {
+    "sessionSecret": "",
     "encryptionKey": ""
   },
-  "paths": {
+  "storage": {
     "data": "./data",
     "defaultFont": ""
-  },
-  "logging": {
-    "level": "info"
   }
 }

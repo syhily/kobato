@@ -7,7 +7,7 @@
 // code becomes this script's exit code; the server, the per-run database,
 // and the temp dirs are always cleaned up.
 //
-// DATABASE_URL / REDIS_URL default to the docker-compose.test.yml stack,
+// DATABASE_URL defaults to the docker-compose.test.yml stack,
 // exactly like the smoke. The e2e tests themselves are HTTP-only — they
 // receive the base URL and the admin credentials through the KOBATO_E2E_*
 // env vars and never touch the database directly.
@@ -23,7 +23,6 @@ import {
   bootServer,
   createSmokeDatabase,
   DEFAULT_DATABASE_URL,
-  DEFAULT_REDIS_URL,
   describeUrl,
   dropSmokeDatabase,
   ensureBinaryExists,
@@ -45,14 +44,12 @@ async function main() {
   await ensureBinaryExists(binaryPath)
 
   const databaseUrl = process.env.database__url ?? DEFAULT_DATABASE_URL
-  const redisUrl = process.env.redis__url ?? DEFAULT_REDIS_URL
   const dirs = await makeTempDirs()
   const serverLogPath = join(dirs.root, 'server.log')
 
   console.log('==> SEA e2e (managed boot + tests/e2e)')
   console.log(`    binary:   ${binaryPath}`)
   console.log(`    database: ${describeUrl(databaseUrl)}`)
-  console.log(`    redis:    ${describeUrl(redisUrl)}`)
   console.log(`    temp dir: ${dirs.root}`)
 
   const database = await createSmokeDatabase(databaseUrl)
@@ -60,14 +57,9 @@ async function main() {
 
   const env = {
     database__url: database.smokeDatabaseUrl,
-    redis__url: redisUrl,
-    // Isolate all Redis keys (sessions, rate limits) from anything else
-    // sharing this Redis instance — e.g. an it-suite worker mapped to the
-    // same logical DB can leave an exceeded signin bucket behind.
-    redis__keyPrefix: `e2e-${randomBytes(4).toString('hex')}:`,
-    auth__sessionSecret: randomBytes(32).toString('hex'),
+    security__sessionSecret: randomBytes(32).toString('hex'),
     security__encryptionKey: randomBytes(32).toString('hex'),
-    paths__data: dirs.data,
+    storage__data: dirs.data,
     KOBATO_CACHE_DIR: dirs.cache,
     NODE_ENV: 'production',
   }

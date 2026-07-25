@@ -31,7 +31,6 @@ This repository is the complete product: public site, admin SPA, API, SSR render
 
 - Node.js 24+ (development and building from source only — the SEA binary deployment needs no runtime)
 - TimescaleDB 17+
-- Redis 7+
 
 ## Quick start
 
@@ -41,15 +40,14 @@ Docker is recommended for local development.
 pnpm run docker:dev
 ```
 
-Copy `.env.example` to `.env` and set the database and Redis URLs (variable
+Copy `.env.example` to `.env` and set the database URL (variable
 names follow the nested config path with a double underscore — see
 [Configuration](#configuration)):
 
 ```bash
 cp .env.example .env
 # database__url=postgres://postgres:postgres@localhost:5433/kobato
-# redis__url=redis://localhost:6380
-# auth__sessionSecret=$(openssl rand -hex 32)
+# security__sessionSecret=$(openssl rand -hex 32)
 # security__encryptionKey=$(openssl rand -hex 32)
 ```
 
@@ -69,7 +67,7 @@ Settings are seeded automatically.
 ## Configuration
 
 Most settings are managed in the admin dashboard. Infrastructure
-configuration (database, Redis, secrets, data paths) lives in
+configuration (database, secrets, data paths) lives in
 **`kobato.config.json`** — always present, auto-created with defaults when
 missing:
 
@@ -86,18 +84,16 @@ nested config path joined with a double underscore:
 | Variable                       | Config path                   | Description                                                      |
 | ------------------------------ | ----------------------------- | ---------------------------------------------------------------- |
 | `database__url`                | `database.url`                | PostgreSQL connection URL                                        |
-| `redis__url`                   | `redis.url`                   | Redis connection URL                                             |
-| `auth__sessionSecret`          | `auth.sessionSecret`          | HMAC secret for cookies. Generate with `openssl rand -hex 32`    |
+| `security__sessionSecret`      | `security.sessionSecret`      | HMAC secret for cookies. Generate with `openssl rand -hex 32`    |
 | `security__encryptionKey`      | `security.encryptionKey`      | AES-256-GCM key for encrypting secrets in the database           |
-| `paths__data`                  | `paths.data`                  | Root data directory for fonts, dead-letter files, and MaxMind DB |
+| `storage__data`                | `storage.data`                | Root data directory for fonts, dead-letter files, and MaxMind DB |
 | `server__host`                 | `server.host`                 | Listen address, default `0.0.0.0`                                |
 | `server__port`                 | `server.port`                 | Listen port, default `4321`                                      |
 | `database__poolMax`            | `database.poolMax`            | Postgres pool size, default `20`                                 |
 | `database__statementTimeoutMs` | `database.statementTimeoutMs` | Per-query timeout, default `30000`                               |
 | `database__restoreRole`        | `database.restoreRole`        | Optional low-privilege role used during restore                  |
-| `redis__keyPrefix`             | `redis.keyPrefix`             | Optional prefix for every Redis key                              |
-| `paths__defaultFont`           | `paths.defaultFont`           | Optional fallback font file copied into `<data>/fonts`           |
-| `logging__level`               | `logging.level`               | `debug` / `info` / `warn` / `error` / `silent`                   |
+| `storage__defaultFont`         | `storage.defaultFont`         | Optional fallback font file copied into `<data>/fonts`           |
+| `server__loggingLevel`         | `server.loggingLevel`         | `debug` / `info` / `warn` / `error` / `silent`                   |
 
 See `.env.example` for the full list of options and
 `kobato.config.example.json` for the file shape.
@@ -110,7 +106,7 @@ For fast local feedback without Docker, run unit tests and snapshot tests only:
 pnpm run test:fast
 ```
 
-Full coverage uses an ephemeral docker compose stack (tmpfs-backed Postgres and Redis that are discarded on stop):
+Full coverage uses an ephemeral docker compose stack (tmpfs-backed Postgres that is discarded on stop):
 
 ```bash
 pnpm run docker:test
@@ -121,14 +117,13 @@ pnpm run test
 
 ### Docker Compose (recommended)
 
-The root `docker-compose.yml` runs the app with TimescaleDB and Redis on an isolated internal network.
-Neither database is exposed to the host.
+The root `docker-compose.yml` runs the app with TimescaleDB on an isolated internal network.
+The database is not exposed to the host.
 
 Launch the stack with randomly generated secrets:
 
 ```bash
 POSTGRES_PASSWORD=$(openssl rand -hex 16) \
-REDIS_PASSWORD=$(openssl rand -hex 16) \
 SESSION_SECRET=$(openssl rand -hex 32) \
 ENCRYPTION_KEY=$(openssl rand -hex 32) \
 docker compose up -d
@@ -154,8 +149,7 @@ Use the included [`Dockerfile`](Dockerfile) to build locally:
 docker build -t kobato .
 docker run -p 4321:4321 \
   -e database__url=... \
-  -e redis__url=... \
-  -e auth__sessionSecret=... \
+  -e security__sessionSecret=... \
   -e security__encryptionKey=... \
   -v kobato_data:/data \
   -v kobato_config:/etc/kobato \
@@ -168,8 +162,7 @@ Every release also ships a self-contained single executable — no Node.js
 runtime, no `node_modules`. The server bundle, client assets, and database
 migrations are embedded in the binary; the native packages
 (sharp, canvas) are extracted to a cache directory on first run. Targets:
-glibc Linux, x64 and arm64. You still need external TimescaleDB 17+ and
-Redis 7+.
+glibc Linux, x64 and arm64. You still need an external TimescaleDB 17+.
 
 Download `kobato-linux-x64.tar.gz` (or `kobato-linux-arm64.tar.gz`) and its
 `.sha256` sidecar from the [latest release](../../releases/latest), verify,
@@ -185,7 +178,7 @@ kobato --version          # prints the baked-in version
 Configure it through `kobato.config.json` (see [Configuration](#configuration)):
 on first boot the binary creates it next to itself with defaults — edit the
 file, or pass `__`-style environment variables once and let them be written
-into the file. `paths.data` defaults to `./data` relative to the working
+into the file. `storage.data` defaults to `./data` relative to the working
 directory, so set it explicitly for a system install. The natives cache
 lands in `$XDG_CACHE_HOME/kobato` (override with `KOBATO_CACHE_DIR`).
 Database migrations run automatically at boot; on first boot, open
@@ -196,15 +189,14 @@ A minimal systemd unit:
 ```ini
 [Unit]
 Description=Kobato blog CMS
-After=network-online.target postgresql.service redis.service
+After=network-online.target postgresql.service
 
 [Service]
 Type=simple
 Environment=database__url=postgres://user:pass@127.0.0.1:5432/kobato
-Environment=redis__url=redis://127.0.0.1:6379
-Environment=auth__sessionSecret=change-me
+Environment=security__sessionSecret=change-me
 Environment=security__encryptionKey=change-me
-Environment=paths__data=/var/lib/kobato
+Environment=storage__data=/var/lib/kobato
 ExecStart=/usr/local/bin/kobato
 Restart=always
 RestartSec=3
